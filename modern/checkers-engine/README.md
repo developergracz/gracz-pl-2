@@ -25,6 +25,8 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - responsywny interfejs HTML5 obsługujący mysz i ekran dotykowy,
 - podpisane i wygasające sesje logowania,
 - lobby z listą pokoi, tworzeniem pokoju i automatycznym startem partii,
+- rejestracja i logowanie z hasłami chronionymi algorytmem scrypt,
+- kompletny interfejs HTML5 konta i lobby,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
@@ -35,6 +37,7 @@ pole w obu kierunkach. Reguły są odseparowane od transportu, bazy danych i UI.
 
 ```bash
 npm test
+npm run test:browser
 ```
 
 Testy nie wymagają bazy danych ani zewnętrznych pakietów. Serwer przyjmuje
