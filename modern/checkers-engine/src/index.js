@@ -1,4 +1,5 @@
 export const BOARD_SIZE = 8;
+export const NO_PROGRESS_DRAW_PLY = 80;
 
 export const PLAYERS = Object.freeze({
   WHITE: "white",
@@ -38,13 +39,19 @@ export function createInitialState() {
     }
   }
 
-  return freezeState({
+  const state = {
     board,
     turn: PLAYERS.WHITE,
     forcedPiece: null,
     winner: null,
+    status: "active",
+    drawReason: null,
+    noProgressPly: 0,
+    positionCounts: {},
     moveNumber: 1,
-  });
+  };
+  state.positionCounts[positionKey(state)] = 1;
+  return freezeState(state);
 }
 
 export function createState({
@@ -52,11 +59,20 @@ export function createState({
   turn = PLAYERS.WHITE,
   forcedPiece = null,
   winner = null,
+  status = winner ? "won" : "active",
+  drawReason = null,
+  noProgressPly = 0,
+  positionCounts = null,
   moveNumber = 1,
 } = {}) {
   validateBoard(board);
   assertPlayer(turn);
-  return freezeState({ board: cloneBoard(board), turn, forcedPiece, winner, moveNumber });
+  const state = {
+    board: cloneBoard(board), turn, forcedPiece, winner, status, drawReason,
+    noProgressPly, positionCounts: positionCounts ? { ...positionCounts } : {}, moveNumber,
+  };
+  if (Object.keys(state.positionCounts).length === 0) state.positionCounts[positionKey(state)] = 1;
+  return freezeState(state);
 }
 
 export function createEmptyBoard() {
@@ -65,7 +81,7 @@ export function createEmptyBoard() {
 
 export function getLegalMoves(state) {
   validateState(state);
-  if (state.winner) return [];
+  if (state.status !== "active" || state.winner) return [];
 
   const starts = state.forcedPiece
     ? [state.forcedPiece]
@@ -87,7 +103,8 @@ export function applyMove(state, requestedMove) {
   }
 
   const board = cloneBoard(state.board);
-  let piece = board[legalMove.from.row][legalMove.from.column];
+  const originalPiece = board[legalMove.from.row][legalMove.from.column];
+  let piece = originalPiece;
   board[legalMove.from.row][legalMove.from.column] = null;
 
   if (legalMove.capture) {
@@ -105,6 +122,10 @@ export function applyMove(state, requestedMove) {
         turn: state.turn,
         forcedPiece: { ...legalMove.to },
         winner: null,
+        status: "active",
+        drawReason: null,
+        noProgressPly: 0,
+        positionCounts: { ...state.positionCounts },
         moveNumber: state.moveNumber,
       });
     }
@@ -116,10 +137,50 @@ export function applyMove(state, requestedMove) {
     turn: nextPlayer,
     forcedPiece: null,
     winner: null,
+    status: "active",
+    drawReason: null,
+    noProgressPly: legalMove.capture || originalPiece.endsWith("-man")
+      ? 0
+      : state.noProgressPly + 1,
+    positionCounts: { ...state.positionCounts },
     moveNumber: state.moveNumber + 1,
   };
   nextState.winner = determineWinner(nextState);
+  if (nextState.winner) nextState.status = "won";
+  const key = positionKey(nextState);
+  nextState.positionCounts[key] = (nextState.positionCounts[key] ?? 0) + 1;
+  if (!nextState.winner && nextState.positionCounts[key] >= 3) {
+    nextState.status = "draw";
+    nextState.drawReason = "threefold-repetition";
+  } else if (!nextState.winner && nextState.noProgressPly >= NO_PROGRESS_DRAW_PLY) {
+    nextState.status = "draw";
+    nextState.drawReason = "no-progress";
+  }
   return freezeState(nextState);
+}
+
+export function replayGame(moves, initialState = createInitialState()) {
+  if (!Array.isArray(moves)) throw new TypeError("Historia ruchów musi być tablicą.");
+  return moves.reduce((state, move) => applyMove(state, move), initialState);
+}
+
+export function serializeState(state) {
+  validateState(state);
+  return JSON.stringify(state);
+}
+
+export function deserializeState(serialized) {
+  let value;
+  try {
+    value = JSON.parse(serialized);
+  } catch {
+    throw new TypeError("Zapis partii nie jest prawidłowym JSON-em.");
+  }
+  return createState(value);
+}
+
+export function positionKey(state) {
+  return `${state.turn}|${state.forcedPiece ? `${state.forcedPiece.row}:${state.forcedPiece.column}` : "-"}|${state.board.flat().map(pieceCode).join("")}`;
 }
 
 export function determineWinner(state) {
@@ -195,6 +256,15 @@ function playerForPiece(piece) {
   return null;
 }
 
+function pieceCode(piece) {
+  return ({
+    [PIECES.WHITE_MAN]: "w",
+    [PIECES.WHITE_KING]: "W",
+    [PIECES.BLACK_MAN]: "b",
+    [PIECES.BLACK_KING]: "B",
+  })[piece] ?? ".";
+}
+
 function normalizeMove(move) {
   if (!move?.from || !move?.to) throw new IllegalMoveError("Ruch wymaga pól from i to.", "INVALID_MOVE");
   return {
@@ -229,6 +299,7 @@ function validateState(state) {
   validateBoard(state.board);
   assertPlayer(state.turn);
   if (state.forcedPiece) normalizePosition(state.forcedPiece);
+  if (!["active", "won", "draw"].includes(state.status)) throw new TypeError("Nieznany status gry.");
 }
 
 function validateBoard(board) {
@@ -252,5 +323,6 @@ function freezeState(state) {
   state.board.forEach(Object.freeze);
   Object.freeze(state.board);
   if (state.forcedPiece) Object.freeze(state.forcedPiece);
+  Object.freeze(state.positionCounts);
   return Object.freeze(state);
 }
