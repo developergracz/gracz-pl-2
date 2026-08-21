@@ -1,0 +1,1441 @@
+﻿package pl.gracz.checkers {
+	
+	import flash.display.MovieClip;	
+	import flash.text.*;
+	import flash.events.MouseEvent;
+	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import fl.transitions.Tween;
+	import fl.transitions.easing.*;
+
+	
+	import fl.transitions.TweenEvent;
+	import flash.utils.setInterval;
+	import flash.utils.clearInterval;
+	
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
+	
+	import pl.gracz.checkers.Piece;
+	import pl.gracz.checkers.Server;
+	import pl.gracz.ui.*;
+	import pl.gracz.utils.*;
+	import flash.geom.*;
+	import com.smartfoxserver.v2.entities.data.ISFSObject;
+	import com.smartfoxserver.v2.entities.data.SFSObject;
+	import flash.display.Sprite;
+	import flash.media.Sound;
+
+	
+	public class Game extends MovieClip {		
+	
+	
+		private var s:*;
+		public static var boardSize:int = 16;
+		
+		public var currentTurn:int = 1;
+		public var playerName:String = "";
+		
+		public var roomInfo:String = "Stół 1, norm. 3min";
+		//public var currentBoard:Array = new Array();
+		
+		private var player1Id:int			// Id of player 1
+		private var player2Id:int			// Id of player 2
+		private var player1Name:String		// Name of player 1
+		private var player2Name:String		// Name of player 2
+		private var whoseTurn:int
+		public var gameStarted:Boolean
+		private var myPlayerID:int = 1;		 
+		private var waitingInterval:uint;
+		
+		private var container:Object;
+		public var firstPlayer:int;
+
+		public var stats:Stats;// = new Stats(this);
+
+		public var chat:ChatBox;
+		public var users_box:UsersBox;
+		public var hist:HistoryBox;
+		public var opt_box:OptionsBox;
+		public var addOpt:AdditionalOptions;// = new AdditionalOptions();
+		public var circle:LastMoveCircle = new LastMoveCircle();
+		
+		public var checkInterval:uint;
+		
+		
+		//////////////////////////////////////////////////////
+		public var boardSize:int = 8;
+		public var currentBoard:Array = new Array();
+		public var movingPiece:Piece = null;
+		public var jumps_this_turn:Boolean = false;
+		var board:Array = [];
+		//var turn:int = 2; //2 is black, 4 is red
+		var legal_moves:Array = [];
+		var moves_this_turn:Array = [];
+		//var txt:TextField = new TextField();
+		var force_jumps:Boolean = true; //true if game rules require you to take available jumps
+		var piece_array:Array = [];
+		var captures:int = 0;
+		var game_over:Boolean = false;
+		//var jumps_this_turn:Boolean = false;
+		//var cpu_color:int = 2; //0: none, 2:red, 4: black
+		//var line:Sprite;
+		var cont:MovieClip;
+		public var pieceSize:Number = 33.34;
+		public var movesObject:ISFSObject = new SFSObject();
+		
+		public var lastMoveLane:MovieClip = new MovieClip;
+		public var isMouseDown:Boolean = false;
+		
+		
+		public var mySound:Sound = new clickSound(); 
+		public var wantSound:Boolean = false; 
+		
+		public var jumps_array:Array = [];
+		public var jumps_length_array:Array = [];
+		
+		public var activePiece:Piece = null;
+		
+		public function Game(scene:*):void {
+			s = scene;
+			addOpt = new AdditionalOptions(s);
+			stats = new Stats(s);
+			drawBackground();
+			
+			
+			this.addEventListener(KeyboardEvent.KEY_DOWN, traceBoard);
+			this.addEventListener(MouseEvent.MOUSE_DOWN, mouseEventDown);
+			this.addEventListener(MouseEvent.MOUSE_UP, mouseEventUp);
+			
+		}
+		
+		
+		public function mouseEventDown(e:MouseEvent){
+			isMouseDown = true;
+			//trace("DOWN");
+		}
+		
+		public function mouseEventUp(e:MouseEvent){
+			isMouseDown = false;
+			//trace("UP");
+			onPieceBack();
+			
+		}
+		
+
+		public function traceBoard(e:KeyboardEvent) {
+			
+			trace("* * * * * * * *");
+			for(var i=0; i< board.length; i++) {
+				trace(board[i]);
+			}
+			trace("* * * * * * * *");
+		}
+		
+		public function setCurrentTurn(val:int){
+			currentTurn = val;
+		}
+		
+		public function setMyPlayerID(val:int) {
+			myPlayerID = val;
+		}
+		
+		public function drawBackground():void {
+			
+			//setting background
+			//s.bg.setInfo("Stół n, czas 15min");
+			s.bg.x = s.stage.stageWidth/2;
+			s.bg.y = s.stage.stageHeight/2;
+			s.bg.setInfo(roomInfo);
+			this.addChild(s.bg);
+			
+			//setting chat window
+			chat = new ChatBox(s);
+			chat.x = 747;
+			chat.y = 485;
+			
+			
+			//setting history window
+			hist = new HistoryBox(s);
+			hist.x = 747;
+			hist.y = 485;
+			
+			//setting users window
+			users_box = new UsersBox();
+			users_box.x = 747;
+			users_box.y = 485;
+			
+			//setting options box
+			opt_box = new OptionsBox();
+			opt_box.x = 747;
+			opt_box.y = 485;
+			
+			//setting stats window
+			stats.x = 747;
+			stats.y = 145;
+			this.addChild(stats);
+			
+			// additional options
+			addOpt.x = 747;
+			addOpt.y = 320;
+			this.addChild(addOpt);
+			
+			//setting buttons
+			s.playb.y = s.inviteb.y = 275;
+			s.playb.x = 675; s.inviteb.x = 810;
+			s.playb.enabled = false;
+			s.playb.alpha = 0.4;
+			this.addChild(s.playb); this.addChild(s.inviteb);
+
+			
+			
+			//setting tabs
+			var tabs_mc:Tabs = new Tabs(s, new Array(chat, hist, users_box, opt_box));
+			tabs_mc.x = 747-140; tabs_mc.y = 450-90;
+			this.addChild(tabs_mc);
+			
+			this.addChild(chat);
+			this.addChild(hist);
+			this.addChild(users_box);
+			this.addChild(opt_box);
+			
+			//this.addChild(tabs);
+			
+			//setting board
+			s.board.x = s.stage.stageWidth/2;
+			s.board.y = s.stage.stageHeight/2;
+			s.board.visible = true;
+			
+			resetBoard();
+			this.addChild( s.board );
+
+			//s.board.addEventListener( MouseEvent.CLICK, boardClickEvent );
+			s.playb.addEventListener( MouseEvent.CLICK, playClickEvent );
+			
+		}
+		
+		
+		public function createSquares():void {
+			
+			
+			cont = s.board as MovieClip;
+			board = makeCheckerPieces(boardSize, boardSize);
+			//trace(board);
+			
+			cont.addChild(lastMoveLane);	
+			
+			for(var i=0; i<boardSize; i++) {
+				for(var j=0; j<boardSize; j++) {
+					
+					var sq:Square = new Square(j,i);
+					//((i+j)%2 == 0)?(1):(2);
+					sq.gotoAndStop(1);
+					sq.x = 15 -391 + (i*pieceSize*2);
+					sq.y = 20 -242 + (j*pieceSize*2);
+					sq.scaleX = 1.1;
+					sq.scaleY = 1.1;
+					//s.board.addChild(sq);
+					cont.addChild(sq);
+				}
+			}
+			
+			for(var i=0; i<boardSize; i++) {
+				var temp_row = board[i];
+				for(var j=0; j<boardSize; j++) {
+					
+					if(temp_row[j] == 2 || temp_row[j] == 4) {
+						var p:Piece = new Piece(i,j,(temp_row[j] == 2)?("WHITE"):("RED"));
+						p.x =  15 -391 + (j*pieceSize*2);
+						p.y =  20 -242 + (i*pieceSize*2);
+						p.scaleX = 1;
+						p.scaleY = 1;
+						p.setColor(temp_row[j]);
+						cont.addChild(p);
+							
+						p.addEventListener(MouseEvent.MOUSE_DOWN, onPieceDown);
+						this.addEventListener(MouseEvent.MOUSE_UP, onPieceUp);
+						piece_array.push(p);
+					}
+				}
+			}
+			
+			//lastMoveLane.visible = false;
+		}
+		
+		public function makeCheckerPieces(awidth:int,aheight:int):Array{
+			var i:int; var j:int; var tmp:int;
+			var val:int = 0; 
+			var arr:Array = [];
+			var line:Array = [];
+			for ( i = 0; i < aheight; i++){
+				for (j = 0; j < awidth; j++){
+					tmp = val;
+					if (i<3){
+						tmp = 2 * val;
+					} else if (awidth - i < 4){
+						tmp = 4 * val;
+					}
+					line.push(tmp);
+					val = Math.abs(val - 1);
+				};
+				arr.push(line);
+				line = [];
+				val = Math.abs(val - 1);
+			}
+			return arr;
+		};
+		
+		
+		public function onPieceBack(){
+			
+			if(movingPiece != null && movingPiece.dragging){
+				
+				trace("Back from "+movingPiece.x+":"+movingPiece.y+" to "+movingPiece.start_x+":"+movingPiece.start_y);
+				
+				movingPiece.stopDrag();
+				movingPiece.x = movingPiece.start_x;
+				movingPiece.y = movingPiece.start_y;
+				
+				
+				movingPiece.setDragg(false);
+				movingPiece = null;
+			}
+		}
+		
+		public function onPieceUp(e:MouseEvent){
+			
+			if(e.target is Piece && (e.target as Piece).dragging) {
+				var arr:Array = getObjectsUnderPoint(new Point(e.stageX, e.stageY));
+				//var p:Piece = movingPiece;
+				var p:Piece = e.target as Piece;
+				p.stopDrag();
+				var cur_col:int = 2*(firstPlayer == 1?(currentTurn):((currentTurn)%2 +1));
+				
+				pc: {
+					for each(var ob in arr){
+						ob = ob.parent;
+						//trace(ob);
+						if(ob is Square){
+							/* TODO: if object is free && is move available */
+							
+							for each(var r in legal_moves){
+								trace("Comparing: "+r+" "+ob.srow+","+ob.scol);
+								if(r[0] == ob.srow && r[1] == ob.scol && p.current_row != ob.srow && p.current_col != ob.scol) {
+									
+									//draw line
+									//lastMoveLane.graphics.clear();
+									//lastMoveLane.graphics.moveTo(p.start_x, p.start_y);
+									//lastMoveLane.graphics.lineStyle(5, 0xff6600);
+									//lastMoveLane.graphics.lineTo(ob.x, ob.y);
+									
+									//draw rectangle
+									//lastMoveLane.graphics.clear();
+									/*try{
+										lastMoveLane.removeChildAt(0); lastMoveLane.removeChildAt(0);
+									}catch(e:Error){};*/
+									clearSelectedSquare();
+									
+									/*var selectedSquare:SelectedSquare = new SelectedSquare();
+									selectedSquare.x = p.start_x; selectedSquare.y = p.start_y;
+									lastMoveLane.addChild(selectedSquare);
+									
+									selectedSquare = new SelectedSquare();
+									selectedSquare.x = ob.x; selectedSquare.y = ob.y;
+									lastMoveLane.addChild(selectedSquare);*/
+									createSelectedSquare(p.start_x, p.start_y);		
+									createSelectedSquare(ob.x, ob.y);		
+									//lastMoveLane.graphics.moveTo(p.start_x, p.start_y);
+									//lastMoveLane.graphics.lineStyle(5, 0xff6600);
+									//lastMoveLane.graphics.lineTo(ob.x, ob.y);
+									
+									// create object - ready to send: p.is_queen?(turn+4):turn, p.current_row, p.current_col, ob.srow, ob.scol, p.is_queen?(turn+4):turn;
+									//trace("1");
+									var sfso:SFSObject = new SFSObject();
+									sfso.putInt("x1", p.current_row);
+									sfso.putInt("y1", p.current_col);
+									sfso.putInt("p1", p.piece_color);
+									
+									p.x = ob.x;
+									p.y = ob.y;
+									p.setDragg(false);
+									
+									board[p.current_row][p.current_col] = 1;
+									
+									
+									// SOUND
+									if(opt_box.acceptSound()){
+										mySound.play();
+									}
+		
+									
+									//trace("2");
+									var removed_piece:Piece = null;
+									
+									if(jumps_this_turn){
+										removed_piece = searchPieceBetween(p,ob);
+										trace("Removed Piece: "+removed_piece+" ("+removed_piece.current_row+":"+removed_piece.current_col);
+										
+										
+										sfso.putInt("rx", removed_piece.current_row );
+										sfso.putInt("ry", removed_piece.current_col );
+										sfso.putInt("rp", removed_piece.piece_color );
+										//removePiece( removed_piece );
+									}else{
+										trace("No jumps");
+									}
+									
+									
+									
+									//x1,y1,x2,y2,piece
+									//hist.addMove( p.current_row, p.current_col, ob.srow, ob.scol , true);
+									hist.addMove( p.current_row,p.current_col,p.piece_color, ob.srow,ob.scol,p.piece_color, (removed_piece!=null)?removed_piece.current_row:-1,(removed_piece!=null)?removed_piece.current_col:-1, (removed_piece!=null)?removed_piece.piece_color:-1,  true);
+									
+									if(removed_piece != null){
+										removePiece( removed_piece );
+									}
+				
+									p.current_row = ob.srow; 
+									p.current_col = ob.scol; 
+									
+									sfso.putInt("x2", p.current_row);
+									sfso.putInt("y2", p.current_col);
+									
+									sfso.putInt("p2", p.piece_color);
+									
+									board[p.current_row][p.current_col] = p.piece_color;//p.is_queen?(cur_col+4):(cur_col);
+									
+
+									// change turn if there's no another beat
+									if(!jumps_this_turn || !test_for_jumps(p) ){
+										
+										// check 4 change as queen
+										if( p.current_row == ((cur_col == 2)?(boardSize-1):(0)) ){
+											if(!p.is_queen){
+												
+												trace("New Queeen!");
+												p.setQueen();
+												board[ob.srow][ob.scol] = cur_col+4;//p.piece_color;//cur_col+4;
+												sfso.removeElement("p2");
+												sfso.putInt("p2", cur_col+4);//);//cur_col+4);
+											}
+										}
+										activePiece = null;
+										
+										//add info about turn
+										sfso.putBool("changeTurn", true);
+										addOpt.enableUndo();
+									
+
+										currentTurn = currentTurn == 1?2:1;
+
+										stats.changeTurn();	
+									}else{
+										//add info about turn
+										sfso.putBool("changeTurn", false);
+										activePiece = p;
+										// add current moves
+										//movesObject.putSFSObject( movesObject.size().toString(), sfso);
+										addOpt.enableUndo();
+									}
+									
+									movesObject.putSFSObject( movesObject.size().toString(), sfso);
+									trace("SENDING DATA!");
+									var sc:ISFSObject = new SFSObject();
+									sc.putSFSObject("moves", movesObject);
+									s.s.sendSFSData("move", sc);
+										
+									trace("Sending moves: "+sfso.getInt("x1")+":"+sfso.getInt("y1")+" ("+sfso.getInt("p1")+") -> "+sfso.getInt("x2")+":"+sfso.getInt("y2")+" ("+sfso.getInt("p2")+")");
+
+									movesObject = new SFSObject();
+										
+									
+									break pc;
+								}								
+							}
+
+						}
+					}
+					
+					if(p.dragging){
+						p.x = p.start_x;
+						p.y = p.start_y;
+						p.setDragg(false);
+					}
+				}
+				
+				trace("++++++++++++++++++++++++++++++++++++\nCurrent Turn: "+(currentTurn*2));
+				
+			}else{
+				onPieceBack();
+			}
+			movingPiece = null;
+			
+			check4fix();
+		}
+		
+		
+		public function check4fix():void {
+		
+			for(var i:int = 0; i<boardSize; i++){
+				for(var j:int = 0; j<boardSize; j++){
+					if(board[i][j] == 1){
+						var p:Piece = getPiece(i,j);
+						if(p != null){
+							p.setRemoved();
+						}
+					}
+				}
+			}
+		}
+		
+		public function searchPieceBetween(currentPiece:Piece, destinationSquare:Square):Piece {
+			
+			var move_row:int = currentPiece.current_row-destinationSquare.srow;
+			var move_col:int = currentPiece.current_col-destinationSquare.scol;
+			
+			/*if(Math.abs(move_row) == 2 && Math.abs(move_col) == 2) {
+				//get piece at
+				var _row:int = (move_row > 0)?(currentPiece.current_row-1):(currentPiece.current_row+1);
+				var _col:int = (move_col > 0)?(currentPiece.current_col-1):(currentPiece.current_col+1);
+
+				return getPiece(_row, _col);
+			}else{*/
+				// queen
+				var i:int;
+				var _row_transition:int = (currentPiece.current_row > destinationSquare.srow)?(-1):(1);
+				var _col_transition:int = (currentPiece.current_col > destinationSquare.scol)?(-1):(1);
+				
+				//trace("Row: "+_row_transition+" Col: "+_col_transition+" Length: "+Math.abs(move_row));
+				for(i=1; i<Math.abs(move_row); i++){
+					var c:int = currentPiece.current_col+(_col_transition*i);
+					var r:int = currentPiece.current_row+(_row_transition*i);
+					if( board[r][c] != 1 ){
+						move_row = r;
+						move_col = c;
+						break;
+					}
+				}
+				return getPiece(move_row, move_col, true);
+				
+			/*}
+			
+			return null;*/
+		}
+		
+		
+		public function getPiece(__row:int, __col:int, removed:Boolean = false):Piece {
+			
+			var arr:Array = new Array();
+			for each(var piece in piece_array) {
+				//trace((piece as Piece).current_row+" == "+__row+" && "+(piece as Piece).current_col+" == "+__col);
+				if((piece as Piece).current_row == __row && (piece as Piece).current_col == __col ){//!(removed?(piece as Piece).removed:false)) {
+					//trace("--pushed--");
+					arr.push( (piece as Piece) );
+					//return (piece as Piece);
+				}
+			}
+			//&& !(piece as Piece).removed
+			for(var i:int = 0; i<arr.length; i++){
+				if((arr[i] as Piece).removed == false){
+					return arr[i];
+				}
+			}
+			return arr[0];
+		}
+		
+		public function getRemovedPiece(__row:int, __col:int, removed:Boolean = false):Piece {
+			
+			var arr:Array = new Array();
+			for each(var piece in piece_array) {
+				if((piece as Piece).current_row == __row && (piece as Piece).current_col == __col ){//!(removed?(piece as Piece).removed:false)) {
+					arr.push( (piece as Piece) );
+					//return (piece as Piece);
+				}
+			}
+			//&& !(piece as Piece).removed
+			for(var i:int = 0; i<arr.length; i++){
+				if((arr[i] as Piece).removed){
+					return arr[i];
+				}
+			}
+			trace("Error: Removed piece doesn't exist!");
+			return null;
+		}
+		
+		public function removePiece(p:Piece){
+			
+				
+			board[p.current_row][p.current_col] = 1;
+			trace("Remove finished: "+p+" ("+p.current_row+":"+p.current_col+")");
+			p.setRemoved();		
+		}
+		
+		
+		public function unRemovePiece(__x:int, __y:int, __p:int){
+			
+			var p:Piece = getRemovedPiece(__x, __y);
+			p.setUnRemoved(__p);
+			board[p.current_row][p.current_col] = __p;
+			//trace("Remove finished: "+p+" ("+p.current_row+":"+p.current_col+")");
+					
+		}
+		
+		
+		public function onPieceDown(e:MouseEvent){
+			
+			var p:Piece = (e.currentTarget as Piece);
+			
+			if(p != movingPiece && (movingPiece == null || !movingPiece.dragging) && (activePiece == null || activePiece == p) ){
+				get_moves();
+				//trace("T: "+turn+" P: "+p.piece_color);
+				var cur_col:int = 2*(firstPlayer == 1?(currentTurn):((currentTurn)%2 +1));
+				//if( s.s.sfs.isConnected && s.s.isGameStarted() && isPlayerTurn() && (p.piece_color == currentTurn*2 || (p.piece_color == currentTurn*2+4)) && !p.removed ){
+				if( s.s.sfs.isConnected && s.s.isGameStarted() && isPlayerTurn() && (p.piece_color == cur_col || (p.piece_color == cur_col+4)) && !p.removed ){
+				
+				//if ((p.piece_color == turn || (p.piece_color == turn+4)) && !p.removed ){
+					
+					var arr:Array = get_legal_moves(p);
+					//trace("Arr: "+arr);
+					if ((arr.length > 0)|| jumps_this_turn == false){
+							//trace("move is good");
+							//lastMoveLane.graphics.clear();
+							/* BOUNDARY BOX
+							p.x =  15 -391 + (j*pieceSize*2);
+							p.y =  20 -242 + (i*pieceSize*2);
+							*/
+							
+							p.startDrag(true, new Rectangle(15 -391, 20 -242, (7*2)*pieceSize, (7*2)*pieceSize)); // ADD BOUNDARY BOX!
+							
+							
+							p.setDragg(true);
+							p.set_start_x_y(p.x, p.y);
+							
+							movingPiece = p;
+							
+							// swap mc (show on top);
+							var container:MovieClip = p.parent as MovieClip; 
+							container.swapChildren(p, container.getChildAt(container.numChildren-2));
+							//var dropShadow:DropShadowFilter = new DropShadowFilter();
+							//object.filters = new Array(dropShadow);
+							//hilight_moves(arr);
+					};
+				};
+			}
+		}
+		
+		
+				
+		//-----------------------------------------------------------------
+		//Moves 
+		//-----------------------------------------------------------------
+		
+		function get_moves(checkLength:Boolean = true):void{
+			
+				var tree:Array = [];
+				var a_move:Array = [];
+				var a_piece:Piece;
+				jumps_this_turn = false;
+				var tmp:Boolean = false;
+				var i:int;
+				var cur_col:int = 2*(firstPlayer == 1?(currentTurn):((currentTurn)%2 +1));
+				jumps_array = [];
+				//if(checkLength){
+					//jumps_length_array = [];
+				//}
+				var moves_array:Array = [];
+				
+				for (i = 0; i < piece_array.length; i++){
+					a_piece = piece_array[i];
+					if ((cur_col == a_piece.piece_color ||cur_col+4 == a_piece.piece_color) && (a_piece.removed == false)){
+						tree.push(a_piece);
+					};
+				};
+				
+				//test all for jumps
+				for (i = 0; i < tree.length; i++){
+				//	if (jumps_this_turn == false){
+						tmp = test_for_jumps(tree[i]);
+						//isBeatAvailable(tree[i] as Piece);
+				//	};
+					if (tmp == true){
+						//trace ("tree i is a true jump : "+tree[i]);
+						jumps_array.push(tree[i]);
+						jumps_this_turn = true;
+						trace("Jump on "+(tree[i] as Piece).current_row+":"+(tree[i] as Piece).current_col);
+				//		break;
+					}
+				};
+				trace ("jumps_this_turn :"+jumps_this_turn+" ("+jumps_array.length+")");
+				
+				/*if(jumps_this_turn && jumps_array.length > 1 && checkLength) {
+					for(i=0; i<jumps_array.length; i++){
+						jumps_length_array.push(0);
+						var p:Piece = jumps_array[i] as Piece;
+						
+						moves_array = get_legal_moves(p);
+						for(var j:int=0; j<moves_array.length; j++){
+							trace(i+": "+moves_array[j]);
+							jumps_this_turn = true;
+							getLongestMove(p, i);
+							//trace("Length: "+moves_array[moves_array.length-1]);
+							
+						}
+						trace("Length ["+i+"] :"+jumps_length_array[i]);
+					}
+
+				}*/
+		};
+		/*
+		public function getLongestMove(p:Piece, el:int, c:int = 0) {
+			
+			var count:int = c;
+			// backup
+			var removed:Piece;
+			var p2:Piece = new Piece(p.current_row, p.current_col, "WHITE");
+			
+			
+			var moves_array:Array = get_legal_moves(p);
+			trace("Moves Array ["+p.current_row+":"+p.current_col+"]: "+moves_array);
+			count++;
+			if(moves_array.length > 0){
+				
+				for(var i:int=0; i<moves_array.length; i++){
+					//moves_array[i]
+					removed = searchPieceBetween(p, new Square(moves_array[i][0], moves_array[i][1]) );
+					trace("Remove "+p.current_row+":"+p.current_col+"->"+moves_array[i][0]+":"+moves_array[i][1]);
+					removePiece( removed );
+					selectSquare(p.current_row, p.current_col, moves_array[i][0], moves_array[i][1], p.piece_color, false);
+					get_moves(false);
+					if(jumps_this_turn){
+					
+						getLongestMove(p, el, count);
+					}
+					selectSquare(p.current_row, p.current_col, p2.current_row, p2.current_col, p.piece_color, false);
+					trace("UnRemove"+removed);
+					unRemovePiece(removed.current_row, removed.current_col, removed.piece_color);
+					
+				}
+				
+				
+			}
+			
+			trace("Next count: "+count);
+			if(count > jumps_length_array[el]){
+				jumps_length_array[el] = count;
+			}
+			
+			//return count;
+		}*/
+		
+		function get_legal_moves(an_obj:Piece):Array{ 
+			var a_move:Array = [];
+			var a_jump:Array = [];
+			var test_row:int = 0;
+			var test_col:int = 0;
+			var dx:int = 0;
+			var dy:int = 0;
+			var row:int = an_obj.current_row;
+			var col:int = an_obj.current_col;
+			var i:int;
+			legal_moves = [];
+			
+			var possible_moves:Array = [[-1,-1],[1,-1],[-1,1],[1,1]];
+			var cur_col:int = 2*(firstPlayer == 1?(currentTurn):((currentTurn)%2 +1));
+			
+			//trace("isQueen: "+an_obj.is_queen);
+			if (an_obj.piece_color == (an_obj.is_queen?(cur_col+4):(cur_col))){
+				//it is this side's turn - test for moves				
+				
+				// add here option to switch - must beat or no?
+				if( !jumps_this_turn ) {
+					
+					//trace("No jumps");
+					if(an_obj.is_queen){
+						for (i = 0; i < possible_moves.length; i++){
+							a_move = possible_moves[i];
+							
+							
+							test_row = row + a_move[0];
+							test_col = col + a_move[1];
+							
+							if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								continue;
+							}else{
+							
+								while( test_row >= 0 && test_col >= 0 && test_row <= boardSize-1 && test_col <= boardSize-1 ){
+									
+									//trace("Test: "+test_row+ " "+test_col);
+									if( board[test_row][test_col] == 1){
+										legal_moves.push([test_row,test_col]);
+		
+										test_row += a_move[0];
+										test_col += a_move[1];
+
+									}else{
+										break;
+									}
+								}
+							}
+						}
+					}else{
+						
+						possible_moves = (cur_col == 2)?([[1,-1],[1,1]]):([[-1,-1],[-1,1]]);
+						for (i = 0; i < possible_moves.length; i++){
+							a_move = possible_moves[i];
+							test_row = row + a_move[0];
+							test_col = col + a_move[1];
+							
+							if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								continue;
+							}
+							
+							if ((board[test_row] != null) && (board[test_row][test_col] != null)){
+								//tested square is valid
+								if ( (board[test_row][test_col] == 1) ){
+									legal_moves.push([test_row,test_col]);
+								};
+							}
+						}
+					}
+				}
+				// add here option to switch - must beat or no?
+				if( jumps_this_turn ){
+					//trace("Yep, jumps");
+					if(an_obj.is_queen){
+						
+						for (i = 0; i < possible_moves.length; i++){
+							
+							//trace("Possible: "+i);
+							a_move = possible_moves[i];
+							
+							test_row = row + a_move[0];
+							test_col = col + a_move[1];
+							
+							if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								
+							}else{
+							
+								//place before
+								while( board[test_row][test_col] == 1){
+									
+									test_row += a_move[0];
+									test_col += a_move[1];
+									
+									if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+										break;
+									}
+								}
+								
+								//trace("test_r: "+test_row+" test_c: "+test_row);
+								// enemy piece
+								if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								
+								}else{
+									if ( (board[test_row][test_col] != an_obj.piece_color) && (board[test_row][test_col] != an_obj.piece_color-4)){
+									
+										test_row += a_move[0];
+										test_col += a_move[1];
+										
+										//trace("test_r: "+test_row+" test_c: "+test_row);
+										if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+											//break;
+										}else{
+											//place after
+											//trace("while");
+											while( board[test_row][test_col] == 1){
+												
+												//trace("w test_r: "+test_row+" test_c: "+test_row);
+												legal_moves.push([test_row,test_col]);
+				
+												test_row += a_move[0];
+												test_col += a_move[1];
+												
+												if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+													break;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}else{
+						
+						possible_moves = [[-1,-1],[1,-1],[-1,1],[1,1]];
+						for (i = 0; i < possible_moves.length; i++){
+							a_move = possible_moves[i];
+							test_row = row + a_move[0];
+							test_col = col + a_move[1];
+							
+							if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								;
+							}else{
+							
+								if ( (board[test_row][test_col] != an_obj.piece_color) && (board[test_row][test_col] != an_obj.piece_color+4) && (board[test_row][test_col] != 1)){
+									
+									//tested square contains other side's piece - test for jump
+									//a_move = possible_moves[i];
+									a_move[0] += a_move[0];//a jump
+									a_move[1] += a_move[1];//a jump
+									test_row = row + a_move[0];
+									test_col = col + a_move[1];
+									
+									if ((board[test_row] != null) && (board[test_row][test_col] != null)){
+		
+										if (board[test_row][test_col] == 1){
+										// a valid jump 
+											legal_moves.push([test_row,test_col]);
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+			trace("legal_moves :"+legal_moves);
+			
+			
+			return legal_moves;
+		};
+		
+		
+		// add check for queen
+		function test_for_jumps(an_obj:Piece):Boolean{
+			//returns true if any legal moves for specified piece are jumps;
+			var jump_possible:Boolean = false; 
+			var a_move:Array = [];
+			var test_row:int = 0;
+			var test_col:int = 0;	
+			var cur_col:int = 2*(firstPlayer == 1?(currentTurn):((currentTurn)%2 +1));
+			
+			if (an_obj.piece_color == cur_col || an_obj.piece_color == cur_col+4){
+				//it is this side's turn - test for moves
+				var possible_moves:Array = [[-1,-1],[1,-1],[-1,1],[1,1]];
+
+				if(an_obj.is_queen){
+					//trace("Queen");	
+					for (i = 0; i < possible_moves.length; i++){
+						a_move = possible_moves[i];
+						test_row = an_obj.current_row + a_move[0];
+						test_col = an_obj.current_col + a_move[1];
+							
+						if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+							continue;
+						}
+						
+						//place before
+						while( board[test_row][test_col] == 1){
+							
+							test_row += a_move[0];
+							test_col += a_move[1];
+							
+							if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+								break;
+							}
+						}
+						//trace("Looking for enemy piece: "+i+"/"+possible_moves.length);
+						// enemy piece
+						if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+						}else{
+							trace( test_row+" "+test_col );
+							if ( (board[test_row][test_col] != an_obj.piece_color) && (board[test_row][test_col] != (an_obj.piece_color-4))){
+								//trace("There's enemy!");
+								test_row += a_move[0];
+								test_col += a_move[1];
+								
+								if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+									//break;
+								}else{
+									if( board[test_row][test_col] == 1){
+											
+										jump_possible = true;
+										//trace("Jump possible at: "+test_row+":"+test_col);
+									}else{
+										//trace("No more space!");
+									}
+								}
+							}else{
+								//trace("No enemy");
+							}
+						};
+					}
+			}else{
+				for (var i:int = 0; i < possible_moves.length; i++){
+					a_move = possible_moves[i];
+					test_row = an_obj.current_row + a_move[0];
+					test_col = an_obj.current_col + a_move[1];
+					
+					if(test_row < 0 || test_col < 0 || test_row > boardSize-1 || test_col > boardSize-1 ){
+						continue;
+					}
+					
+					if ((board[test_row] != null) && (board[test_row][test_col] != null)){
+						
+						if ((board[test_row][test_col] != an_obj.piece_color) && (board[test_row][test_col] != (an_obj.piece_color+4)) && (board[test_row][test_col] != 1)){
+							 //trace ("tested square contains other side's piece - test for jump");
+							a_move[0] += a_move[0];//a jump
+							a_move[1] += a_move[1];//a jump
+							test_row = an_obj.current_row + a_move[0];
+							test_col = an_obj.current_col + a_move[1];
+							
+							if ((board[test_row] != null) && (board[test_row][test_col] != null)){
+								if (board[test_row][test_col] == 1){
+									jump_possible = true;
+									//trace("Jump possible at: "+test_row+":"+test_col);
+								};
+							};
+						};
+					};
+				};
+			};
+		}
+			//trace ("returning is jump possible :"+jump_possible);
+			return jump_possible;
+		};
+		
+		
+		
+		
+		public function enableUndo():void {
+			
+			addOpt.enableUndo();
+		}
+		
+		
+		public function setCircle(__x:int, __y:int):void {
+			circle.x = (s.board.getChildAt(__x*boardSize + __y)as MovieClip).x;
+			circle.y = (s.board.getChildAt(__x*boardSize + __y)as MovieClip).y;
+		}
+		
+		public function setTitle( __obj:Object, __name:String ):void {
+			__obj.b_title.text = __name;
+			__obj.name = String( "button_"+__name.toLowerCase() );
+		}
+		
+		/* * * * * *  			G A M E  			* * * * * */
+		public function createBoard():void {
+			
+		}
+		
+		public function clearBoard():void {
+			
+			cont = s.board as MovieClip;
+			while(s.board.numChildren > 1){
+				s.board.removeChildAt(0);
+			}
+			piece_array = [];
+			//lastMoveLane.graphics.clear();
+			/*try{
+				lastMoveLane.removeChildAt(0); lastMoveLane.removeChildAt(0);
+			}catch(e:Error){};*/
+			clearSelectedSquare();
+			//circle.x = circle.y = -10000;
+			addOpt.enableTie(); addOpt.enableUndo(); addOpt.resetTie();
+		}
+		
+		public function resetBoard():void {
+			
+			clearBoard();
+			
+			createSquares();
+		}
+		
+		public function hideSquares():void {
+			
+			for(var i=0; i<boardSize; i++) {
+				
+				for(var j=0; j<boardSize; j++) {
+					(s.board.getChildAt(i*boardSize + j)as MovieClip).alpha = 0;
+				}
+			}
+		}
+		
+		public function showSquares():void {
+			
+			for(var i=0; i<boardSize; i++) {
+				
+				for(var j=0; j<boardSize; j++) {
+					(s.board.getChildAt(i*boardSize + j)as MovieClip).alpha = 1;
+				}
+			}
+		}
+		
+		public function hideSquare(__x:int, __y:int):void {
+			
+			//(s.board.getChildAt(__x*boardSize + __y)as MovieClip).alpha = 0;
+			(getPiece(__x, __y, false) as Piece).setRemoved();
+		}
+		
+		public function showSquare(__x:int, __y:int, __p:int):void {
+			
+			//(s.board.getChildAt(__x*boardSize + __y)as MovieClip).alpha = 1;
+			(getPiece(__x, __y, true) as Piece).setUnRemoved(__p);
+		}
+		
+		public function moveSquare(__x:int, __y:int, __x2:int, __y2:int, __p:int){
+				var p:Piece = getPiece(__x, __y, false);
+				p.current_row =  __x2;
+				p.current_col =  __y2;
+				
+				
+				//s.g.clearSelectedSquare();
+				//createSelectedSquare(p.x, p.y);
+				
+				
+				p.x =  15 -391 + (__y2*pieceSize*2);
+				p.y =  20 -242 + (__x2*pieceSize*2);
+				p.setColor(__p);
+				
+				//createSelectedSquare(p.x, p.y);
+		}
+		
+		
+		
+		public function isPlayerTurn():Boolean {
+			trace("currentTurn: "+currentTurn+" isPlayerTurn: "+(s.s.sfs.mySelf.playerId == currentTurn)?(true):(false));
+			return (s.s.sfs.mySelf.playerId == currentTurn)?(true):(false);
+		}
+		
+		public function selectSquare( __i:int, __j:int, __i2:int, __j2:int, __p:int, showHistoryMove:Boolean = true ):void {
+			
+			//trace("Array "+ currentBoard[__i][__j]);
+			//if( currentBoard[__i][__j] == 0 ) {
+				/*firstPlayer 1 currentTurn
+							2
+							*/
+				//currentBoard[__i][__j] = 1;
+				//currentBoard[__i2][__j2] = __p;
+				
+				
+				//trace("Set "+__i2+":"+__j2+" as "+__p);
+				var p:Piece = getPiece(__i, __j);
+				
+				board[p.current_row][p.current_col] = 1;
+				p.current_row = __i2;
+				p.current_col = __j2;
+				board[p.current_row][p.current_col] = __p;//(p.is_queen?((currentTurn*2)+4):(currentTurn*2));
+				
+				if(__p == 6 || __p == 8){
+					p.setQueen();
+				}
+				
+				p.setColor(__p);
+				
+				//(firstPlayer == 1)?(currentTurn):((currentTurn)%2 +1);
+				//(s.board.getChildAt(__i*boardSize + __j)as MovieClip).gotoAndStop((firstPlayer == 1)?(currentTurn+1):((currentTurn)%2 +2));
+				
+				//s.board.removeChild(lastMoveLane);
+				
+				//lastMoveLane = new Sprite;
+				
+				//lastMoveLane.graphics.clear();
+				/*try{
+					lastMoveLane.removeChildAt(0); lastMoveLane.removeChildAt(0);
+				}catch(e:Error){};*/
+				if(showHistoryMove){
+					clearSelectedSquare();
+					//lastMoveLane.graphics.moveTo(p.x, p.y);
+					//lastMoveLane.graphics.lineStyle(5, 0xff6600);
+					/*var selectedSquare:SelectedSquare = new SelectedSquare();
+										selectedSquare.x = p.x; selectedSquare.y = p.y;
+										lastMoveLane.addChild(selectedSquare);*/
+										
+					createSelectedSquare(p.x, p.y);		
+				}
+				p.x =  15 -391 + (__j2*pieceSize*2);
+				p.y =  20 -242 + (__i2*pieceSize*2);
+				
+				
+				/*selectedSquare = new SelectedSquare();
+									selectedSquare.x = p.x; selectedSquare.y = p.y;
+									lastMoveLane.addChild(selectedSquare);*/
+				if(showHistoryMove){
+					createSelectedSquare(p.x, p.y);				
+				}
+				//p.x -= (__i-__i2)*pieceSize*2;
+				//p.y -= (__j-__j2)*pieceSize*2;
+				//lastMoveLane.graphics.lineTo(p.x, p.y);
+					//stats.showTurn((firstPlayer == 1)?(currentTurn):((currentTurn)%2 +1));
+				
+			//}
+			
+			
+		}
+		
+		public function createSelectedSquare(__x:int, __y:int):void {
+			var selectedSquare:SelectedSquare = new SelectedSquare();
+			selectedSquare.x = __x; 
+			selectedSquare.y = __y;
+			lastMoveLane.addChild(selectedSquare);
+		}
+		
+		public function createSelectedSquareByPos(__x:int, __y:int):void {
+			var selectedSquare:SelectedSquare = new SelectedSquare();
+			//p.x =  15 -391 + (__j2*pieceSize*2);
+			//p.y =  20 -242 + (__i2*pieceSize*2);
+			selectedSquare.x = 15 -391 + (__y*pieceSize*2);
+			selectedSquare.y = 20 -242 + (__x*pieceSize*2);
+			lastMoveLane.addChild(selectedSquare);
+			
+		}
+		
+		public function clearSelectedSquare():void {
+			
+			try{
+				lastMoveLane.removeChildAt(0); lastMoveLane.removeChildAt(0);
+			}catch(e:Error){};
+		}
+		
+		//public function spectatorUpdate( __i:int, __j:int, __t:int ):void { 
+		public function spectatorUpdate( __x:int, __y:int, __p:int,  __x2:int, __y2:int, __p2:int, __rx:int, __ry:int, __rp:int, __t:int):void { 
+		
+			/*currentBoard[__i][__j] = __t;
+			
+			(s.board.getChildAt(__i*boardSize + __j)as MovieClip).gotoAndStop(__t+1);
+			
+			//s.g.stats.firstMove == 1
+			trace(__i+" "+__j+" "+__t)
+			if(s.s.isGameStarted()) {
+				//if(__t == 1){
+					hist.addMove( __i, __j, false, __t);
+				//}else {
+					//hist.addMove( __i, __j, false, __t);
+				//}
+			}*/
+			if(__x != __x2 && __y != __y2){
+				trace("Spec update: "+__x+":"+__y+"("+__p+") -> "+__x2+":"+__y2+"("+__p2+")"+" Remove "+__rx+":"+__ry+"("+__rp+") "+__t);
+				
+				/*var p:Piece = getPiece(__x, __y);
+				p.current_row = __x2;
+				p.current_col = __y2;
+				p.setColor(__p2);
+				
+				board[__x][__y] = 1;
+				board[__x2][__y2] = __p2;*/
+				
+				
+				var removed_piece:Piece;
+				
+				if( __rx > -1 ){
+					removed_piece = getPiece(__rx, __ry);
+					removePiece(removed_piece);
+				}
+				
+				/*__p = board[__x][__y];*/
+				if(s.s.isGameStarted()) {
+					//hist.addMove( __x, __y, __p, __x2, __y2, __p2, __rx, __ry, __rp, false, s.g.stats.firstMove == 1?__t%2+1:__t);
+					hist.addMove( __x, __y, __p, __x2, __y2, __p2, __rx, __ry, __rp, false, s.g.firstPlayer==1?((__p2==4 || __p2==8)?(1):(2)):((__p2==2 || __p2==6)?(1):(2)));
+					 
+				}
+				selectSquare(__x, __y, __x2, __y2, __p2);
+			}
+			
+			
+			//clear board and create new pieces?
+		}
+		
+		/**
+		 * Initialize the game
+		 */
+		public function initGame(params:Object = null):void
+		{
+			if (params != null)
+			{
+				container = params.container;
+				gameStarted = false;
+			}
+		}
+		
+		/**
+		 * Destroy the game instance
+		 */
+		public function destroyGame(params:Object = null):void
+		{
+			//s.sfs.removeEventListener(SFSEvent.EXTENSION_RESPONSE, s.onExtensionResponse);
+			//alert.gotoAndStop("Disconnect");
+			//sfs.removeEventListener(SFSEvent.onSpectatorSwitched, onSpectatorSwitched)
+		}
+		
+		
+		/* * * * * *  		A N I M A T I O N S 	* * * * * */
+		
+		//some problems with tween by y - disappered mc...
+		public function hideElement( mc:Object ):void {
+			var start_y:Number = mc.y;
+			var end_y:Number = mc.y-s.stage.stageHeight;
+			mc.y = end_y;
+			//var myTween:Tween = new Tween(mc, "y", Strong.easeOut, start_y, end_y, 5, true);
+			var myTweenHideAlpha:Tween = new Tween(mc, "alpha", Strong.easeOut, 1, 0, 1, true);
+			//myTween2.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = false; trace("HIDE"); myTween.removeEventListener(TweenEvent.MOTION_FINISH, function(e:Event){});});
+			
+		}
+		public function showElement( mc:Object ):void {
+			var start_y:Number = s.stage.stageHeight*3/2;
+			var end_y:Number = s.stage.stageHeight/2;
+			mc.visible = true;
+			mc.y = end_y;
+			//var myTween:Tween = new Tween(mc, "y", Strong.easeOut, start_y, end_y, 2, true);
+			var myTweenShowAlpha:Tween = new Tween(mc, "alpha", Strong.easeOut, 0, 1, 1, true);
+			//myTween2.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = true; mc.alpha = 1; trace("SHOW"); myTween2.removeEventListener(TweenEvent.MOTION_FINISH, function(e:Event){});});
+			
+		}
+		public function setAlpha( mc:Object, __start:Number, __end:Number ):void {
+			var myTween:Tween = new Tween(mc, "alpha", Strong.easeOut, __start, __end, 2, true);
+			
+				(__end == 0 )?( myTween.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = false; }) ):( mc.visible = true);
+		}
+
+		/* * * * * *  		L I S T E N E R S   	* * * * * */		
+		
+		public function playClickEvent( e:MouseEvent ):void {
+			
+			//trace(s.s.amIPlayer());
+			if( s.s.sfs.isConnected && s.s.amIPlayer() && !s.s.isGameStarted() && e.currentTarget.enabled) {
+				
+				// alone || not blocked
+				trace(s.s.getEnemyNickname());
+				if( !s.s.isBlocked(s.s.getEnemyNickname()) && !s.s.amIBlocked  ) {
+					s.tellReady();
+					stats.hideStartButton();
+				}else{
+					
+					if( s.s.isBlocked(s.s.getEnemyNickname()) ) {
+					    s.showAlert("Nie możesz rozpocząć gry\nPrzeciwnik znajduję się na Twojej liście zablokowanych graczy!");
+					}else{
+						s.showAlert("Nie możesz rozpocząć gry\nZnajdujesz się na liście zablokowanych graczy przeciwnika!");
+					}
+				}
+			}
+		}
+		
+		
+		/*public function boardClickEvent( e:MouseEvent ):void {
+
+			if( s.s.sfs.isConnected && s.s.isGameStarted() && isPlayerTurn() ) {
+				
+				if( String(e.target.name).search("square") != -1) {
+					//var str:String = String(e.target.name);
+					
+					var temp:Array = String(e.target.name).split("_");
+					
+					if( currentBoard[int(temp[1])][int(temp[2])] == 0 ) {
+						//selectSquare( int(temp[1]), int(temp[2]) );
+						
+						
+						var param:Array = new Array();
+						param.push({type: "int", name:"x", value: int(temp[1])});
+						param.push({type: "int", name:"y", value: int(temp[2])});
+						//trace("MOVE: "+param[0]+" "+param[1]);
+						s.s.sendData("move", param);
+						
+						hist.addMove( int(temp[1]), int(temp[2]), true);
+						
+						addOpt.enableUndo();
+					}
+				}
+			}
+		}*/
+		
+		
+		
+		
+		/**
+		 * Handle the opponent move
+		 */
+		//public function moveReceived(turn:int, __x:int, __y:int, __x2:int, __y2:int, __p:int):void
+		public function moveReceived(turn:int, movesObj:SFSObject):void
+		{
+			//var movingPlayer:int = params.getInt("t")
+			trace("moveReceived");
+			//whoseTurn = (turn == 1) ? 2 : 1
+			
+			var temp:ISFSObject;
+			for(var i:int = 0; i<movesObj.size(); i++){
+				
+				temp = movesObj.getSFSObject( i.toString() );
+				
+				
+				var __x:int = temp.getInt("x1");
+				var __y:int = temp.getInt("y1");
+				var __p:int = temp.getInt("p1");
+				
+				var __x2:int = temp.getInt("x2");
+				var __y2:int = temp.getInt("y2");
+				var __p2:int = temp.getInt("p2");
+				
+				trace("New move: "+__x+":"+__y+" -> "+__x2+":"+__y2+" ("+__p2+")");
+				
+				// SOUND
+				if(opt_box.acceptSound()){
+					mySound.play();
+				}
+				
+				var __rx:int = -1;
+				var __ry:int = -1;
+				var __rp:int = -1;
+				
+				
+				if(temp.containsKey("rx")){
+					var removed_piece:Piece = getPiece( temp.getInt("rx"), temp.getInt("ry"), true );
+					removePiece( removed_piece );
+					__rx = temp.getInt("rx");
+					__ry = temp.getInt("ry");
+					__rp = temp.getInt("rp");
+				}
+				
+				selectSquare(__x, __y, __x2, __y2, __p2);
+				if(s.s.amIPlayer()) {
+					//hist.addMove( __x, __y, false);
+					hist.addMove( __x,__y,__p,  __x2,__y2,__p2,  __rx,__ry,__rp, false);
+				}else {
+					//hist.addMove( __x, __y, false, firstPlayer==1?turn:((turn == 1)?2:1)); //s.g.firstPlayer==1?boardRow[2]:((boardRow[2] == 1)?2:1)
+					hist.addMove( __x,__y,__p, __x2,__y2,__p2, __rx,__ry,__rp, false, s.g.firstPlayer==1?turn:((turn == 1)?2:1));
+					//hist.addMove( __x,__y,__p, __x2,__y2,__p2, __rx,__ry,__rp, false, s.g.firstPlayer==1?((__p==4 || __p==8)?(1):(2)):((__p==2 || __p==6)?(1):(2)));
+				}
+				
+				//if(removed_piece != null){
+					//removePiece( removed_piece );
+				//}
+				
+				/*if(__p == 6 || __p == 8){
+												
+					trace("New Queeen!");
+					var p:Piece = getPiece(__x2, __y2).setQueen();
+					
+					//board[__x][__y] = __p;//p.piece_color;//cur_col+4;
+				}*/
+			}
+			
+			
+			// set queen
+			/*var __x:int = temp.getInt("x2");
+			var __y:int = temp.getInt("y2");
+			var __p:int = temp.getInt("p2");
+			
+			//if( __x == ((__p == 2)?(boardSize-1):(0)) ){
+				if(__p == 6 || __p == 8){
+												
+					trace("New Queeen!");
+					var p:Piece = getPiece(__x, __y).setQueen();
+					
+					board[__x][__y] = __p;//p.piece_color;//cur_col+4;
+				}*/
+			//}
+			
+			check4fix();
+			
+			if(temp.getBool("changeTurn")) {
+				currentTurn = currentTurn == 1?2:1;
+				stats.changeTurn();	
+			}
+			
+			
+			//checkInterval = setInterval (check4fix, 200);
+			check4fix();
+			addOpt.resetLastUndo();
+		}
+		
+
+	}
+}

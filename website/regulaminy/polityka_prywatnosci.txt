@@ -1,0 +1,36 @@
+Polityka prywatności
+
+Czesław Socha, zamieszkały przy ul. Żabiej 3, w Chełmie Ślaskim (kod pocztowy: 41-403) jest Administratorem danych osobowych. Dane osobowe Użytkowników są przetwarzane zgodnie z przepisami ustawy z dnia 29 sierpnia 1997 roku o ochronie danych osobowych (tekst jednolity Dz.U. z 2002 r., nr 101, poz. 926 z późniejszymi zmianami) oraz ustawy z dnia 18 lipca 2002 roku o świadczeniu usług drogą elektroniczną (Dz.U. nr 144, poz. 1204 z późniejszymi zmianami). Dane osobowe podane przez Użytkownika w formularzu rejestracyjnym służą Administratorowi serwisu do zawarcia, zmiany, rozwiązania umowy z Użytkownikiem.
+
+Serwis Gracz.pl przykłada wielką wagę do kwestii zachowania prywatności swoich użytkowników. Dbamy o bezpieczeństwo udostępnionych nam danych. Dane te są szczególnie chronione i zabezpieczone przed dostępem osób nieupoważnionych. Państwa dane osobowe przetwarzane są przez serwis Gracz.pl zgodnie z art. 23 ust. 1, pkt 1,3 i 5 ustawy o ochronie danych osobowych w celach związanych z prowadzeniem działalności reklamowej.
+
+W formularzu rejestracyjnym należy podać swoje, zgodne z prawdą, dane kontaktowe (np. adres e-mail). Informacje kontaktowe, zawarte w formularzu rejestracyjnym, wykorzystywane są do kontaktowania się z użytkownikiem. 
+Gracz.pl. Dla własnych celów marketingowych, wykorzystuje tylko adres e-mail.
+
+Serwis Gracz.pl zapewnia bezpieczeństwo danych swoich Użytkowników. Dane składowane na naszych serwerach są w możliwie najlepszy dostępny nam sposób zabezpieczone przez wglądem osób niepowołanych. Jedynie wąskie grono uprawnionych osób ma wgląd w dane osobowe Użytkowników.
+
+Administrator serwisu w przypadku jakichkolwiek podejrzeń co do prawdziwości lub aktualności podanych przez Użytkownika danych, ma prawo do zweryfikowania tych danych. Ma prawo zażądać od Uczestnika przesłania kserokopii dokumentu tożsamości lub innych niezbędnych dokumentów do potwierdzenia danych. Przesłanie jakichkolwiek dokumentów lub ich kopii jest dobrowolne. W przypadku niepotwierdzenia poprawności danych lub pojawienia się uzasadnionych wątpliwości co do rzetelności tych danych Administrator serwisu ma prawo do zablokowania lub usunięcia danego konta. 
+Administrator serwisu, na podstawie obowiązującego prawa, ma obowiązek udostępnić dane osobowe upoważnionym podmiotom Państwowym (w szczególności na wniosek organów ścigania).
+
+Gracz.pl zapewnia swoim Użytkownikom możliwość modyfikacji wcześniej podanych informacji oraz wyrejestrowania się z naszego serwisu (usunięcia konta). Serwis Gracz.pl zastrzega sobie prawo do wprowadzania zmian do Polityki ochrony prywatności. 
+
+
+
+Zgodnie z ustawą z dnia 16 listopada 2012 r i wprowadzonymi z dniem 22 marca zmianami, wyjaśniamy  zasady oraz sposób gromadzenia, przetwarzania oraz wykorzystywania informacji o użytkownikach naszego serwisu internetowego, zawartych w plikach cookies. 
+
+
+1. Pliki Cookies
+Podczas wizyt na naszej stronie, na Państwa komputerze zapisywane są informacje zwane cookies („ciasteczka”), które są plikami tekstowymi odpowiadającymi zapytaniom HTTP kierowanym do naszego serwera. Stosowanie cookies to przyjęta praktyka większości serwisów WWW. Służą one do zapewnienia optymalnej obsługi Państwa wizyty na naszej stronie oraz umożliwiają szybszy i łatwiejszy dostęp do informacji. Przechowywana informacja lub uzyskiwanie do niej dostępu nie powoduje zmian konfiguracyjnych w Państwa urządzeniu i oprogramowaniu na nim zainstalowanym. Jeśli nie zgadzasz się zapisywanie i odbieranie informacji w plikach cookies, możesz zmienić zasady dotyczące cookies za pomocą ustawień swojej przeglądarki internetowej.
+
+W przypadku wyłączenia funkcji cookies, niektóre elementy naszej witryny internetowej mogą być niedostępne. 
+
+2. Gromadzenie danych
+Dane gromadzone w plikach cookies to standardowe informacje takie jak:
+- identyfikator bieżącej sesji logowania
+- identyfikatory wymagane przez narzędzie statystyczne Google Analytics (o tym niżej).
+
+3. Wykorzystywanie danych
+Ta strona używa Google Analytics oraz innych narzędzi analitycznych, które pomagają w okazjonalnym badaniu, jak użytkownicy korzystają z tej witryny. Narzędzia te wykorzystują pliki cookies, w celu zbierania standardowych informacji wymienionych powyżej. Dane te są całkowicie anonimowe. Ciasteczka nie mogą być wykorzystywane do pozyskania danych z Twojego twardego dysku, Twojego adresu e-mail, czy też dotyczących Ciebie danych osobowych. Dane te nie są udostępniane osobom trzecim. 
+Google Analytics możliwia nam wgląd w to ile użytkowników znajduje się na stronie, z jakich przeglądarek oraz z jakich systemów operacyjnych korzystają, ile czasu spędzają na stronie, z jakiego kraju i miejscowości pochodzą i kilka innych danych statystycznych pomocnych nam przy rozwijaniu serwisu - są to standardowe dane zbierane przez większość serwisów internetowych)
+
+Z poważaniem, serwis Gracz.pl

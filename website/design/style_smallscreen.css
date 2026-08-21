@@ -1,0 +1,79 @@
+body { margin:0; padding:0; font-family: 'Titillium Web', sans-serif;  }
+#box_crown { display:none; }
+.opis_serwisu { font-style:italic; }
+.zacheta_do_grania { display:none; }
+.banner { display:none; }
+button, .button_normal { width:98%; padding:10pt; margin:1px; background-color: #099; color:white; border:none; }
+a.button_normal { display:block; width:91%; color:white; }
+a.button_normal:link { color:white; }
+a.button_normal:hover { color:#FFC; }
+a.button_normal:visited { color:white; }
+.button_hot { display:block; width:88%; padding:10pt; text-align:center; background-color: #F60; color:white; border:none; margin:1px; }
+a.button_hot:link { color:white; }
+a.button_hot:hover { color:#FFC; }
+a.button_hot:visited { color:white; }
+.button_cold { display:block; text-align:center; background-color: #069; color:white; border:none; }
+.button_cold img { vertical-align:-20%; }
+input[type=text], input[type=password], input[type=email], textarea { width:88%; padding:10pt; border:1px solid silver; }
+hr { border: 1px solid silver; }
+ul { padding:0;}
+
+#box_logo { padding:5pt; }
+#box_login .button_cold{ margin-bottom:10px; }
+#box_login .content { background-color: #F0F0F0; padding:10pt; }
+#box_login .links { font-size:90%; padding:5pt; }
+a:link { text-decoration:none; }
+img { max-width: 100%; }
+
+a:link { color: #6e6e6e; }
+a:visited { color: #6e6e6e; }
+a:hover { color: red; }
+
+.rank { text-align:center; }
+.rank table { margin:auto; }
+.game_links { display:none; }
+
+
+/* Login form on seperate page */
+.uniform_labels { width:auto !important; float:none !important; }
+.uniform_labels fieldset { border:none; }
+.uniform_labels .przycisk { margin:0 !important; width:100% !important; }
+#login, #password { display:block; width:89% !important; }
+.box.light.login div { }
+/* END: Login form on seperate page */
+
+nav { display:none; }
+nav ul { list-style-position: inside; }
+nav ul li { display:block; padding:10pt; margin:1px; background:#FFC;  }
+nav ul li a { padding:10pt;  }
+
+.numberOfPlayers { display:inline; margin-left:5px; }
+.numberOfPlayersLabel {  }
+
+.username { display:none; }
+.tournament { display:none; }
+
+.game_online { margin-left:5pt; }
+
+article { padding:5pt; }
+table th { background-color: #E8E8E8; }
+table td { background-color: #F4F4F4; }
+
+.spectators_and_users { font-size:80%; }
+#roomListContainer:before { content: "Lista stołów dla tej gry"; font-size:130%; }
+#userListContainer:before { content: "Lista graczy online"; font-size:130%; }
+#userListContainer { margin-top:10pt; }
+
+#icon_invitations { float:right; }
+#icon_invitations .list { display:none; }
+
+#no_websocket_support_warning { display:none; background-color:#F60; color:white; font-size:85%; padding:10pt; margin-top:10pt; }
+.actual_game_statistics { background-color: #EEE; padding:5pt; font-size:85%; }
+
+div.option { width:88%; clear:both; }
+
+ul.gry_pozycje li { display:block; }
+
+footer { font-size:85%; background:#E2E2E2; padding:5pt; text-align:center; }
+footer .links { display:block; }
+.licznik_zapytan_SQL { display:none; }

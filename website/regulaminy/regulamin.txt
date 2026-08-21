@@ -1,0 +1,65 @@
+﻿Regulamin serwisu Gracz.pl 
+
+§. 1   WSTĘP DO REGULAMINU
+1.1   Niniejszy Regulamin (zwany dalej Regulaminem) został sporządzony na podstawie przepisów prawa obowiązujących w Rzeczypospolitej Polskiej. Regulamin ustanawia zasady działania oraz funkcjonowania Serwisu internetowego Gracz.pl. Regulamin określa prawa i obowiązki Użytkowników Serwisu oraz zakres uprawnień i odpowiedzialności Administratora Serwisu. Każdy użytkownik, w chwili rejestracji zobowiązany jest zapoznać się z treścią niniejszego Regulaminu oraz dołączonych do niego załączników i może rozpocząć korzystanie z serwisu jedynie po akceptacji zawartych w nim warunków.
+
+1.2.  Usługa jest świadczona przez serwis Gracz.pl, którego właścicielem jest Socha Czesław, zamieszkały przy ul. Żabiej 3, w Chełmie Ślaskim (kod pocztowy: 41-403).
+1.3  Własność intelektualna objęta jest ochroną prawną. 
+
+§. 2   WYJAŚNIENIE POJĘĆ UŻYTYCH W REGULAMINIE
+• Administrator Serwisu – Socha Czesław
+• Osoba - Osoba fizyczna lub prawna, a także jednostka organizacyjna nie posiadająca osobowości prawnej.
+• Konto (profil) Użytkownika - wydzielony obszar w Serwisu, którym Uczestnik dowolnie zarządza dodając różne informacje, zgodnie z obowiązującym Regulaminem oraz Polityką prywatności. 
+• Login - Utworzona podczas rejestracji konta, unikalna w skali serwisu, osobista nazwa Konta Użytkownika, pozwalająca jednoznacznie go zidentyfikować. Login podawany jest przez Użytkownika podczas procesu rejestracji, jest wymagany m. in. do procesu logowania Użytkownika.
+• Baza kont użytkowników - zbiór danych gromadzonych podczas procesu Rejestracji i udostępnianych przez Użytkowników Serwisu. Dane te są (za zgodą Użytkowników) gromadzone oraz przetwarzane w systemie informatycznym na potrzeby świadczonych usług.
+• Gracz.pl  - to Serwis o charakterze rozrywkowym, zamieszczony pod adresem www.Gracz.pl
+• Serwis - rodzaj interaktywnych stron WWW umożliwiających wykonywanie określonych czynności związanych z tematyką Serwisu, np. granie w Gry Wieloosobowe.
+• Gra Wieloosobowa – gra, umożliwiająca toczenie rozgrywki przez więcej niż jedną osobę.
+• Regulamin - dokument, który wraz z Polityką Prywatności, określa prawa i obowiązki Użytkowników oraz Administratora, którzy są zobowiązani do ich przestrzegania.  
+• Użytkownik - pełnoletnia osoba fizyczna, posiadająca pełną zdolność do wykonywania czynności prawnych, która poprzez akceptację Regulaminu (oraz rejestrację) posiadła dostęp do usług oferowanych przez Serwis LUB osoba niepełnoletnia (lub nie posiadająca pełnej zdolności do czynności prawnych), pod warunkiem uzyskania zgody rodzica lub opiekuna.
+
+§. 3   TECHNICZNE ASPEKTY KORZYSTANIA Z SERWISU
+ 3.1   Społeczność serwisu Gracz.pl tworzą jego Użytkownicy, którzy dobrowolnie korzystają ze zbioru usług oferowanych przez serwis.
+ 3.2   Warunkiem wystarczającym do korzystania z usług oferowanych przez serwis jest posiadanie dowolnego urządzenia umożliwiającego dostęp do sieci Internet oraz oprogramowania pozwalającego na przeglądanie multimedialnych zasobów WWW będących częścią tej sieci oraz oprogramowania do odbioru poczty e-mail (w przypadku gdy użytkownik korzysta z konta e-mail umożliwiającego dostęp do niego przez przeglądarkę, oprogramowanie do odbioru poczty nie jest wymagane). Przeglądarka powinna obsługiwać takie technologie jak: animacje Flash, pliki Cookies, skrypty JavaScript oraz język HTML5.
+ 3.3   Przedmiotem działalności serwisu jest prowadzenie przez Administratora Bazy kont użytkowników (tzw. profili) umożliwiających dostęp do oferowanych usług takich jak: gry, ranking graczy, tworzenie turniejów, gry dwu- i wieloosobowe, zawieranie znajomości, kontakt pomiędzy Użytkownikami itp., jak również udostępnianie przez Administratora zasobów Serwisu w celu umieszczania korzystania przez Użytkowników z multimedialnych Gier Wieloosobowych.
+ 3.4   Administrator Serwisu ma prawo do ingerencji w dane zgromadzone na kontach użytkowników w przypadku gdy dane te powodują nieprawidłowe działanie serwisu.
+
+§. 4   ZASADY KORZYSTANIA Z SERWISU I SYTUACJE W KTÓRYCH MOŻE DOJŚĆ DO ZABLOKOWANIA ŚWIADCZONYCH USŁUG
+ 4.1   Każdy Użytkownik Serwisu może posiadać jedynie jedno konto (jeden Profil), który będzie reprezentował tylko i wyłącznie jego osobę w społeczności. 
+ 4.2   Zabrania się rejestracji kont z danymi osób trzecich (lub nazwami instytucji) bez zgody tychże osób (lub instytucji).
+ 4.3   Zabrania się korzystania z kont innych osób bez wyraźnego przyzwolenia tychże osób.
+ 4.4   Za wszelkie treści zgromadzone w ramach swojego konta odpowiada wyłącznie Użytkownik.
+ 4.5   Zabrania się podejmowania jakichkolwiek działań mogących wpływać negatywnie na pracę serwisu lub serwerów obsługujących serwis, w szczególności zabrania się wysyłania tzw. spamu, przeprowadzania ataków DoS, DDos, DRDoS i podobnych. W przypadku stwierdzenia takich czynności Administrator ma prawo zablokować konto użytkownika oraz nałożyć blokadę na adres IP Użytkownika. W rażących przypadkach, które skutkują blokowaniem przez atakującego dostępu (lub utrudnieniem dostępu - np. zmniejszeniem prędkości działania) do usług serwisu dla innych Użytkowników, będą wyciągane w stosunku do atakującego konsekwencje prawne.
+ 4.6   Administrator ma prawo zablokować również konta które naruszają jakikolwiek z punktów Regulaminu.
+ 4.7   Zabronione jest używanie słów powszechnie uznawanych za wulgarne.
+ 4.8   W przypadku umieszczenia na Koncie treści bezprawnych, obraźliwych, nieprawdziwych, niezgodnych z przepisami prawa, propagujących przemoc, nienawiść, naruszających normy moralne lub dobre obyczaje, Administrator może usunąć te treści, a także uprawniony jest do zablokowania Konta. Administrator zastrzega sobie prawo do usunięcia jakiejkolwiek treści umieszczonej na Koncie, którą uzna za niestosowną, a także treści które naruszają warunki niniejszego regulaminu. Użytkownik, który dopuszcza się w tym zakresie naruszenia regulaminu odpowiada osobiście za wszelkie roszczenia osób pokrzywdzonych.
+ 4.9   W przypadkach, w których zablokowanie lub usunięcie konta Użytkownika spowodowane jest interwencją Administratora Serwisu, na założenie nowego konta konieczna jest wcześniejsza zgoda Administratora Serwisu.
+ 
+§5. ODPOWIEDZIALNOŚĆ STRON
+ 5.1   Każda ze Stron umowy o świadczenie usług drogą elektroniczną może ją rozwiązać ze skutkiem natychmiastowym i bez podania przyczyny.
+ 5.2   Rozwiązanie umowy przez Użytkownika polega na usunięciu przez niego Konta. Usunięcie Konta przez Użytkownika skutkuje usunięciem jego danych osobowych z bazy danych serwisu.
+ 5.3   Do założenia konta wymagane jest podanie w formularzu rejestracyjnym następujących, zgodnych z prawdą danych: login, e-mail, hasło, płeć. Pozostałe dane są opcjonalne (nie są wymagane do korzystania z serwisu). Założenie konta jest równoznaczne z zawarciem umowy na czas nieokreślony, o świadczeniu usług drogą elektroniczną. 
+ 5.4   Wszystkie treści umieszczane przez Uczestnika na swoim Profilu (koncie) mogą być oglądane przez innych Użytkowników Serwisu.
+ 5.5   Administrator Serwisu nie odpowiada za roszczenia osób których wizerunki lub dane zostały opublikowane przez Użytkownika bez ich zgody. Odpowiedzialność spoczywa wyłącznie na Użytkowniku lub innej osobie która dopuściła się takiego naruszenia regulaminu (zgodnie z niniejszym Regulaminem, z mocy którego Użytkownik ponosi pełną odpowiedzialność za zgromadzone na swoim koncie treści).
+ 
+§. 6 PRZETWARZANIE DANYCH OSOBOWYCH ORAZ WSTĘP DO POLITYKI PRYWATNOŚCI
+ 6.1  Administrator Serwisu jest Administratorem danych osobowych. 
+ 6.2   Rejestracja Uczestnika jest jednoznaczna z wyrażeniem przez niego zgody na umieszczenie i przetwarzanie jego danych osobowych, na warunkach opisanych w Polityce Prywatności będącej załącznikiem do Regulaminu serwisu Gracz.pl
+ 6.3   Użytkownicy mają prawo do wglądu w swoje dane, ich aktualizacji oraz ich usunięcia (tzw. wyrejestrowania się).
+ 6.4   Użytkownik ma obowiązek zaktualizować dane w przypadku gdy uległy one zmianie.
+ 6.5   Administrator Serwisu w przypadku jakichkolwiek podejrzeń co do prawdziwości lub aktualności podanych przez Użytkownika danych, ma prawo do zweryfikowania tych danych.
+ 6.6    Administratora Serwisu, na podstawie obowiązującego prawa, ma obowiązek udostępnić dane osobowe upoważnionym podmiotom Państwowym (w szczególności na wniosek organów ścigania).
+
+§. 7 AWARIE I PRZERWY TECHNICZNE
+ 7.1   Wszelkie usterki, zakłócenia w funkcjonowaniu serwisu należy zgłaszać do Administratora serwisu.
+ 7.2   Administrator Serwisu nie ma wpływu na pewne aspekty związane z działaniem Serwisu. W przypadku problemów z jego funkcjonowaniem spowodowanych czynnikami losowymi, awarią sprzętu, niedozwolonym działaniem Użytkowników (jak ataki odmowy usługi) lub innymi nieokreślonymi powodami Administrator Serwisu nie ponosi za to odpowiedzialności. Nawet w przypadku skasowania danych na kontach Użytkowników. Jednakże Administrator zobowiązuje się do świadczenia usług o możliwie najwyższej jakości. 
+ 7.3   Zastrzegamy sobie prawo do przerw technicznych, spowodowanych działaniami Administratora Serwisu, mającymi na celu konserwację, ulepszanie lub naprawianie Serwisu. Niekiedy wymagają one czasowego wyłączenia Serwisu lub niektórych jego modułów. Staramy się jednak zawsze wcześniej poinformować o tym Użytkowników. Wyjątkiem są przypadki w których awaria wystąpiła nagle.
+
+§. 8 REKLAMACJE I SKARGI
+ 8.1   Użytkownik może złożyć skargi i reklamacje na świadczone usługi za pomocą formularza kontaktowego znajdującego się na stronie http://www.gracz.pl/kontakt.php . Administrator ma 14 dni roboczych na rozpatrzenie reklamacji i skarg z wyjątkiem tych, które mogą pozostać nierozpatrzone. Administrator może nie rozpatrywać reklamacji i skarg, które wynikają z nieznajomości Regulaminu lub obowiązującego prawa. Administrator może także nie rozpoznawać reklamacji i skarg które wynikają ze skutków działań innych osób wykorzystujących funkcje Serwisu.
+
+§. 9 POSTANOWIENIA KOŃCOWE
+ 9.1   Niniejszy Regulamin znajduje się (wraz z załącznikami) pod adresem : www.gracz.pl/rejestracja.php
+ 9.2   Zastrzegamy sobie prawo do zmiany niniejszego regulaminu. Użytkownicy zostaną powiadomieni o tym fakcie za pomocą ogłoszenia lub wiadomości. Użytkownik serwisu powinien zapoznać się z treścią zmodyfikowanego Regulaminu i zaakceptować go w przypadku chęci kontynuowania uczestnictwa. W przypadku niezaakceptowania zmodyfikowanego regulaminu Użytkownik musi odstąpić od korzystania z usług Serwisu poprzez usunięcie swojego konta. 
+ 9.3   Niniejszy regulamin obowiązuje od chwili umieszczenia go na Serwisu. Po akceptacji Regulaminu przez Uczestnika umowa miedzy nim a Administratorem staje się wiążąca.
+ 9.4   Wszystkie postanowienia niniejszego regulaminu są wiążące i pozostają w mocy do momentu unieważnienia któregokolwiek z nich przez prawomocne orzeczenie sądu. Ten fakt nie unieważnia pozostałych postanowień niniejszego regulaminu, których orzeczenie sądu nie dotyczy.

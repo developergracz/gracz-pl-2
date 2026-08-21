@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head>
+		<title>gomoku</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<style type="text/css" media="screen">
+		html, body { height:100%; background-color: #e0e0ae;}
+		body { margin:0; padding:0; overflow:hidden; text-align:"center"; }
+		#flashContent { width:100%; height:100%; align:"center";}
+		</style>
+		<script language="JavaScript">
+		
+			function closePopup() {
+				win.close();
+			}
+			function openPopup() {
+				win = window.open("", "Gomoku, Stół 1", "width=920,height=630,toolbar=no,menubar=no,location=no,status=no,scrollbars=no,resizable=yes");
+				win.document.writeln('<div id="flashContent">\
+			<div align="center">\
+			  <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" name="gomoku" width="100%" height="97%" align="middle" id="gomoku">\
+	            <param name="movie" value="gomoku.swf" />\
+			    <param name="quality" value="high" />\
+			    <param name="bgcolor" value="#e0e0ae" />\
+			    <param name="play" value="true" />\
+			    <param name="loop" value="true" />\
+			    <param name="wmode" value="window" />\
+			    <param name="scale" value="showall" />\
+			    <param name="menu" value="false" />\
+			    <param name="devicefont" value="false" />\
+			    <param name="salign" value="CC" />\
+			    <param name="allowScriptAccess" value="sameDomain" />\
+			    <param name="allowFullScreen" value="true" />\
+			    <!--[if !IE]>-->\
+				<object type="application/x-shockwave-flash" data="gomoku.swf" width="100%" height="97%">\
+					<param name="movie" value="gomoku.swf" />\
+					<param name="quality" value="high" />\
+					<param name="bgcolor" value="#e0e0ae" />\
+					<param name="play" value="true" />\
+					<param name="loop" value="true" />\
+					<param name="wmode" value="window" />\
+					<param name="scale" value="showall" />\
+					<param name="menu" value="false" />\
+					<param name="devicefont" value="false" />\
+					<param name="salign" value="CC" />\
+					<param name="allowScriptAccess" value="sameDomain" />\
+					<param name="allowFullScreen" value="true" />\
+				<!--<![endif]-->\
+			    <a href="http://www.adobe.com/go/getflash">\
+			      <img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" align="middle" />\
+		        </a>\
+		          <!--[if !IE]>-->\
+				</object>\
+				<!--<![endif]-->\
+		      </object>\
+		      </div>\
+		</div>');
+			}
+		</script>
+	</head>
+	<body>
+		<a href="javascript:openPopup()">Otwórz w nowym oknie</a><br /><br />
+		<div id="flashContent">
+			<div align="center">
+			  <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" name="gomoku" width="920" height="620" align="middle" id="gomoku">
+	            <param name="movie" value="gomoku.swf" />
+			    <param name="quality" value="high" />
+			    <param name="bgcolor" value="#e0e0ae" />
+			    <param name="play" value="true" />
+			    <param name="loop" value="true" />
+			    <param name="wmode" value="window" />
+			    <param name="scale" value="showall" />
+			    <param name="menu" value="false" />
+			    <param name="devicefont" value="false" />
+			    <param name="salign" value="CC" />
+			    <param name="allowScriptAccess" value="sameDomain" />
+			    <param name="allowFullScreen" value="true" />
+			    <!--[if !IE]>-->
+				<object type="application/x-shockwave-flash" data="gomoku.swf" width="920" height="620">
+					<param name="movie" value="gomoku.swf" />
+					<param name="quality" value="high" />
+					<param name="bgcolor" value="#e0e0ae" />
+					<param name="play" value="true" />
+					<param name="loop" value="true" />
+					<param name="wmode" value="window" />
+					<param name="scale" value="showall" />
+					<param name="menu" value="false" />
+					<param name="devicefont" value="false" />
+					<param name="salign" value="CC" />
+					<param name="allowScriptAccess" value="sameDomain" />
+					<param name="allowFullScreen" value="true" />
+				<!--<![endif]-->
+			    <a href="http://www.adobe.com/go/getflash">
+			      <img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" align="middle" />
+		        </a>
+		          <!--[if !IE]>-->
+				</object>
+				<!--<![endif]-->
+		      </object>
+		      </div>
+		</div>
+</body>
+</html>

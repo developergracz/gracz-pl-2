@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pl" xml:lang="pl">
+	<head>
+		<title></title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<style type="text/css" media="screen">
+		html, body { height:100%; background-color: #5A3A25; background: #5A3A25 url('ornament.png') repeat;}
+		body { margin:0; padding:0; overflow:hidden; text-align:center; background: url('site-loader.gif') no-repeat center center; }
+		#myContent { width:100%; height:100%; align:center; }
+		A {text-decoration: none; color: white; font-weight:bold;}
+		A:link {text-decoration: none; color: white;}
+		A:visited {text-decoration: none; color: white;}
+		A:active {text-decoration: none; color: white;}
+		A:hover {font-weight:bold; color: white;}
+		</style>
+		<script type="text/javascript" src="swfobject.js"></script>
+		<script language="JavaScript">
+		
+			var gameStarted = false;
+			var flashvars = {};
+			var fpver = "11.3";
+			if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)){ //test for MSIE x.x;
+				fpver = "10.0";
+			}
+			var params = { swliveconnect:"true", scale:"showall", bgcolor:"#5A3A25", allowfullscreen:"true", allowscriptaccess:"sameDomain", wmode:"transparent", allowFullScreenInteractive:"true"};
+			var attributes = { id:"flashContent", name:"checkers" };
+			swfobject.embedSWF("checkers.swf", "myContent", "97%", "97%", fpver, "expressInstall.swf", flashvars, params, attributes, callbackFn);
+			
+			 
+			function callbackFn(e) { 
+				if(!e.success) {
+					var r=confirm("Gra do poprawnego działania wymaga oprogramowania Adobe Flash Player. Aby zainstalować, naciśnij OK.");
+					if (r) {
+						window.location.href = "http://get.adobe.com/pl/flashplayer/";
+					}
+				}
+			}
+			
+			function f(){ 
+				if(gameStarted)
+					if(confirm('Czy na pewno chcesz zamknąć okno z grą?')){ return false; return true; }
+			}
+			
+			function openPopup() {
+				var ua = navigator.userAgent.toLowerCase(); 
+				if (ua.indexOf('safari')!=-1 && ua.indexOf('chrome')  == -1){ 
+					window.open('index_pop.html', '_blank', 'width=920,height=560,toolbar=no,menubar=no,location=no,status=no,scrollbars=no,resizable=yes,top=0,left=0');
+				}else{
+					window.open('index_pop.html', '_blank', 'width=920,height=620,toolbar=no,menubar=no,location=no,status=no,scrollbars=no,resizable=yes,top=0,left=0');
+				}
+				return false;
+			}
+
+			function setGameStarted(isStarted) {
+				gameStarted = isStarted;
+			}
+			
+			window.onbeforeunload = function() {
+				if(gameStarted){
+					return "Próbujesz zamknąć okno, w którym toczy się gra.";
+				}
+			}
+		</script>
+	</head>
+	<body onclose="return f();">
+	<a href="index_pop.html" onclick="return openPopup()">Otwórz w nowym oknie</a><br /><br />
+		<div id="myContent">
+		</div>	
+	</body>
+</html>

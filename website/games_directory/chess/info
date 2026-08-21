@@ -1,0 +1,7 @@
+Niniejszy katalog umieszczony jest w lokalizacji:
+/home/gracz/public_html/games_directory/chess
+
+Tutaj znajdą się pliki html, wszelkie obrazki, skrypty, wymagane przez pisaną przez Pana grę.
+Serwer Apache działa na użytkowniku www-data i grupie www-data, Pana pliki należą do konta "damian" i grupy "damian_mikolajczyk". Aby pliki przesłane do niniejszego katalogu były widoczne przez przeglądarkę pod adresem:
+http://gracz.pl/games_directory/chess/*
+...należy nadać im prawa odczytu dla "others".

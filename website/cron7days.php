@@ -1,0 +1,5 @@
+<?php 
+fopen("kaka","w");
+
+
+?>

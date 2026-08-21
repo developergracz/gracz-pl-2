@@ -1,0 +1,22 @@
+<!--
+	:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	SFS2X Client Configuration file
+	(c) 2011 gotoAndPlay
+	:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+-->
+
+<SmartFoxConfig>
+
+	<!-- Mandatory Settings -->
+  <ip>164.132.59.104</ip>
+	<port>9933</port>
+	<zone>Gomoku</zone>
+	<!-- End Mandatory Settings -->
+	
+	<debug>true</debug>
+	
+	<httpPort>8080</httpPort>
+	<useBlueBox>true</useBlueBox>
+	<blueBoxPollingRate>500</blueBoxPollingRate>
+	
+</SmartFoxConfig>

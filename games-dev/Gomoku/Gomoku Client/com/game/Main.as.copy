@@ -1,0 +1,721 @@
+﻿package com.game {
+	
+	import flash.display.MovieClip;	
+	import flash.text.*;
+	import flash.events.MouseEvent;
+	import flash.events.KeyboardEvent;
+	import fl.transitions.Tween;
+	import fl.transitions.easing.*;
+
+	import it.gotoandplay.smartfoxserver.SmartFoxClient;
+	import it.gotoandplay.smartfoxserver.data.*;
+	import it.gotoandplay.smartfoxserver.SFSEvent;
+	import fl.transitions.TweenEvent;
+	import flash.events.Event;
+	import flash.utils.setInterval;
+	import flash.utils.clearInterval;
+	
+	import flash.events.TimerEvent;
+	import flash.utils.Timer;
+	
+	import com.game.Server;
+	import com.game.ChatBox;
+	import com.game.Background;
+	
+	public class Main extends MovieClip {
+		
+		public var bg:Background = new Background();
+		public var menu:mcMenu = new mcMenu();
+		public var shad:Shadow = new Shadow();
+		public var logo:Logo = new Logo();
+		public var board:mainBoard = new mainBoard();
+		public var sboard:settingsBoard = new settingsBoard();
+		
+		public var mainMenu:MovieClip = new MovieClip();
+		public var button_play:myButton = new myButton();
+		public var button_settings:myButton = new myButton();
+		public var button_exit:myButton = new myButton();
+		public var button_again:myButton = new myButton();
+		public var button_save:myButton = new myButton();
+		public var button_default:myButton = new myButton();
+		public var button_back:backButton = new backButton();
+		public var button_back_set:backButton = new backButton();
+		public var current_turn_img:currentTurnImg = new currentTurnImg();
+		
+		public var alert:mcAlert = new mcAlert();
+		
+		public var currentTurn:int = 1;
+		public var playerName:String = "";
+		public static var boardSize:int = 15;
+		public var roomInfo:String = "";
+		public var currentBoard:Array = new Array();
+		
+		public var s:Server = new Server( this );
+		
+		
+		
+		private var container:Object
+		private var extensionName:String = "TicTacToe";
+		private var statusTF:TextField;
+		private var myOpponent:User			// My opponent user object
+		private var player1Id:int			// Id of player 1
+		private var player2Id:int			// Id of player 2
+		private var player1Name:String		// Name of player 1
+		private var player2Name:String		// Name of player 2
+		private var whoseTurn:int
+		private var gameStarted:Boolean
+		private var myPlayerID:int = 1;		 
+		private var waitingInterval:uint;
+		
+		private var chat:ChatBox = new ChatBox();
+		private var stats:Stats = new Stats();
+		
+		private var playb:playButton = new playButton();
+		private var inviteb:inviteButton = new inviteButton();
+		
+		
+		public var f=new Array(256);
+			public var five=new Array(5);
+			public var q=new Array(3);
+			public var m=new Array(3);
+			public var c=new Array(3);
+			public var best;
+			
+			public var da=new Array(1,16,15,17);
+			public var e=new Array(1,2,4,12,24);
+			
+		public function Main():void {
+
+			drawBackground();
+			
+			
+			
+			var i;
+			for(i=0;i<3;i++)
+			  {
+			  q[i]=new Array(256);
+			  m[i]=new Array(256);
+			  }
+			
+			newgame(true);
+			
+		}
+		
+		public function drawBackground():void {
+			
+			//setting background
+			bg.x = stage.stageWidth/2;
+			bg.y = stage.stageHeight/2;
+			bg.setInfo(roomInfo);
+			stage.addChild(bg);
+			
+			//setting chat window
+			chat.x = 747;
+			chat.y = 485;
+			stage.addChild(chat);
+			
+			//setting stats window
+			stats.x = 747;
+			stats.y = 175;
+			stage.addChild(stats);
+			
+			//setting buttons
+			playb.y = inviteb.y = 325;
+			playb.x = 675; inviteb.x = 810;
+			stage.addChild(playb); stage.addChild(inviteb);
+			
+			//setting board
+			board.x = stage.stageWidth/2;
+			board.y = stage.stageHeight/2;
+			board.visible = true;
+			createSquares();
+			resetBoard();
+			stage.addChild( board );
+			
+			//trace(board.x + " " + board.y);
+			board.addEventListener( MouseEvent.CLICK, boardClickEvent );
+			/*
+			menu.x = stage.stageWidth/2;
+			menu.y = stage.stageHeight;
+			menu.player1img.visible = false;
+			menu.player2img.visible = false;
+			stage.addChild( menu );
+			
+			logo.x = stage.stageWidth/2;
+			logo.y = 100;
+			stage.addChild( logo );
+			
+			
+			button_play.x = button_settings.x = button_exit.x = stage.stageWidth/2;
+			button_play.y = -150;
+			button_settings.y = 0;
+			button_exit.y = 150;
+			
+			setTitle( button_play, "Play" );
+			setTitle( button_settings, "Settings" );
+			setTitle( button_exit, "Exit" );
+			mainMenu.addChild( button_play );
+			mainMenu.addChild( button_settings );
+			mainMenu.addChild( button_exit );
+			mainMenu.y = stage.stageHeight/2;
+			stage.addChild( mainMenu );
+			mainMenu.addEventListener( MouseEvent.CLICK, menuClickEvent );
+			
+			board.x = stage.stageWidth/2;
+			board.y = stage.stageHeight*3/2;
+			board.visible = false;
+			stage.addChild( board );
+			
+			sboard.x = stage.stageWidth/2;
+			sboard.y = (stage.stageHeight*3/2)-50;
+			sboard.visible = false;
+			
+			button_save.width *= 0.7;
+			button_save.scaleY = button_save.scaleX;
+			button_save.x = -100;
+			button_save.y = (sboard.height/2)+50;
+			setTitle( button_save, "Save" );
+			sboard.input_name.text = playerName;
+			
+			button_default.width *= 0.7;
+			button_default.scaleY = button_default.scaleX;
+			button_default.x = 100;
+			button_default.y = (sboard.height/2)+50;
+			setTitle( button_default, "Default" );
+			
+			sboard.addChild( button_save );
+			sboard.addChild( button_default );
+			
+			button_back_set.addEventListener( MouseEvent.CLICK, backButtonEvent );
+			button_back_set.x = (sboard.width/2)-60;
+			button_back_set.y = -(sboard.height/2)+100;
+			sboard.addChild( button_back_set );
+			stage.addChild( sboard );
+			
+			current_turn_img.x = stage.stageWidth/2;
+			current_turn_img.y = 160;
+			current_turn_img.visible = false;
+			stage.addChild( current_turn_img );*/
+			
+		}
+		
+		/*
+			TODO: duplicate movieclips
+		*/
+		
+		public function createSquares():void {
+			
+			for(var i=0; i<boardSize; i++) {
+				for(var j=0; j<boardSize; j++) {
+					var s:Square = new Square();
+					s.name = "square_"+i+"_"+j;
+					s.gotoAndStop(1);
+					s.x = -408+(i*36.7);
+					s.y = -258+(j*36.7);
+					this.board.addChild(s);
+				}
+			}
+		}
+		
+		public function setTitle( __obj:Object, __name:String ):void {
+			__obj.b_title.text = __name;
+			__obj.name = String( "button_"+__name.toLowerCase() );
+		}
+		
+		/* * * * * *  			G A M E  			* * * * * */
+		public function createBoard():void {
+			
+		}
+		
+		public function resetBoard():void {
+			for(var i=0; i<boardSize; i++) {
+
+				currentBoard[i] = new Array();
+				
+				for(var j=0; j<boardSize; j++) {
+					//trace(j);
+					currentBoard[i][j] = 0;
+					(board.getChildAt(i*boardSize + j)as MovieClip).gotoAndStop(1);
+					//(board.getChildByName("square_"+i+"_"+j) as MovieClip).gotoAndStop(1);
+				}
+			}
+				
+		}
+		
+		public function isPlayerTurn():Boolean {
+			s.debugTrace( (myPlayerID == currentTurn) ? "It's your turn" : "It's your opponent's turn" );
+			return (myPlayerID == currentTurn)?(true):(false);
+		}
+		
+		public function showTurn():void {
+			
+			menu.player1img.visible = false;
+			menu.player2img.visible = false;
+			
+			menu["player"+currentTurn+"img"].visible = true;
+			current_turn_img.gotoAndStop( isPlayerTurn()?(1):(2));
+		}
+
+		
+		public function selectSquare( __i:int, __j:int ):void {
+			
+			//trace("Array "+ currentBoard[__i][__j]);
+			if( currentBoard[__i][__j] == 0 ) {
+				currentBoard[__i][__j] = currentTurn;
+				(board.getChildAt(__i*boardSize + __j)as MovieClip).gotoAndStop(currentTurn+1);
+				var obj:Object = {}; obj.x = __i; obj.y = __j;
+				
+				//s.sfs.sendXtMessage(extensionName, "move", obj)
+				//changeTurn();				
+				
+				f[__i*boardSize + __j]=1;
+				
+				ai();
+				//go(__i*boardSize + __j);
+				
+				
+			}
+		}
+	
+		public function connect():void {
+			showConnectingAlert();
+			s.connect();
+		}
+		
+		public function showConnectingAlert():void {
+			alert.gotoAndStop("Connect");
+			alert.alpha = 0;
+			alert.visible = true;
+			alert.x = stage.stageWidth/2;
+			alert.y = stage.stageHeight/2;
+			setAlpha( alert, 0, 1 );
+			stage.addChild( alert );
+		}
+		
+		public function waitingForOpponent():void {
+			alert.alpha = 1;
+			alert.gotoAndStop("Opponent");
+			button_back.addEventListener( MouseEvent.CLICK, backButtonEventLogout );
+			/*button_back.x = (alert.width/2)-60;
+			button_back.y = -(alert.height/2)+60;*/
+			button_back.x = (alert.width/3);
+			button_back.y = -95;
+			alert.addChild( button_back );
+		}
+		
+		public function creationRoomCompleated():void {
+			setAlpha( alert, 1, 0 );
+			resetBoard();
+			showElement( board );
+			board.addEventListener( MouseEvent.CLICK, boardClickEvent );
+		}
+		
+		public function setAgainButton():void {
+			button_again.y = (stage.stageHeight/2)-180;
+			button_again.addEventListener( MouseEvent.CLICK, playAgainEvent );
+			alert.addChild(button_again);
+		}
+		
+		/**
+		 * Initialize the game
+		 */
+		public function initGame(params:Object = null):void
+		{
+			if (params != null)
+			{
+				container = params.container;
+				gameStarted = false;
+				
+				// Register to SmartFox events
+				s.sfs = params.sfs;
+				s.sfs.addEventListener(SFSEvent.onExtensionResponse, s.onExtensionResponse);
+			
+				// Setup my properties
+				myPlayerID = s.sfs.playerId;
+				
+				// Show "wait" message
+				waitingForOpponent();
+				
+				// Tell extension I'm ready to play
+				s.debugTrace("Ready!");
+				s.sfs.sendXtMessage(extensionName, "ready", null);
+			}
+		}
+		
+		/**
+		 * Destroy the game instance
+		 */
+		public function destroyGame(params:Object = null):void
+		{
+			s.sfs.removeEventListener(SFSEvent.onExtensionResponse, s.onExtensionResponse);
+			alert.gotoAndStop("Disconnect");
+			//sfs.removeEventListener(SFSEvent.onSpectatorSwitched, onSpectatorSwitched)
+		}
+		
+		/**
+		 * Start the game
+		 */
+		public function startGame(params:Object):void
+		{
+			currentTurn = params.t;
+			player1Id = params.p1i;
+			player2Id = params.p2i;
+			player1Name = params.p1n;
+			player2Name = params.p2n;
+			
+			resetBoard();
+			board.addEventListener( MouseEvent.CLICK, boardClickEvent );
+			
+			menu.player1txt.text = player1Name;
+			menu.player2txt.text = player2Name;
+			
+			showTurn();
+			gameStarted = true;
+			s.debugTrace("Start game!");
+			creationRoomCompleated();
+			current_turn_img.visible = true;
+		}
+		
+		/* * * * * *  		A N I M A T I O N S 	* * * * * */
+		
+		//some problems with tween by y - disappered mc...
+		public function hideElement( mc:Object ):void {
+			var start_y:Number = mc.y;
+			var end_y:Number = mc.y-stage.stageHeight;
+			mc.y = end_y;
+			//var myTween:Tween = new Tween(mc, "y", Strong.easeOut, start_y, end_y, 5, true);
+			var myTweenHideAlpha:Tween = new Tween(mc, "alpha", Strong.easeOut, 1, 0, 1, true);
+			//myTween2.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = false; trace("HIDE"); myTween.removeEventListener(TweenEvent.MOTION_FINISH, function(e:Event){});});
+			
+		}
+		public function showElement( mc:Object ):void {
+			var start_y:Number = stage.stageHeight*3/2;
+			var end_y:Number = stage.stageHeight/2;
+			mc.visible = true;
+			mc.y = end_y;
+			//var myTween:Tween = new Tween(mc, "y", Strong.easeOut, start_y, end_y, 2, true);
+			var myTweenShowAlpha:Tween = new Tween(mc, "alpha", Strong.easeOut, 0, 1, 1, true);
+			//myTween2.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = true; mc.alpha = 1; trace("SHOW"); myTween2.removeEventListener(TweenEvent.MOTION_FINISH, function(e:Event){});});
+			
+		}
+		public function setAlpha( mc:Object, __start:Number, __end:Number ):void {
+			var myTween:Tween = new Tween(mc, "alpha", Strong.easeOut, __start, __end, 2, true);
+			
+				(__end == 0 )?( myTween.addEventListener(TweenEvent.MOTION_FINISH, function(e:Event){ mc.visible = false; }) ):( mc.visible = true);
+		}
+
+		/* * * * * *  		L I S T E N E R S   	* * * * * */
+		
+		public function menuClickEvent( e:MouseEvent ):void {
+			
+			mainMenu.removeEventListener( MouseEvent.CLICK, menuClickEvent );
+			switch(e.target.parent.name) {
+				case "button_play":
+					//stage.removeChild( mainMenu );
+					hideElement( mainMenu );
+					connect();
+					button_again.visible = false;
+					break;
+				case "button_settings":
+					button_save.addEventListener( MouseEvent.CLICK, saveSettingsEvent );
+					button_default.addEventListener( MouseEvent.CLICK, setDefaultSettingsEvent );
+					hideElement( mainMenu );
+					
+					if(s.getSharedObject().data.nick != undefined ) {
+						sboard.input_name.text = s.getSharedObject().data.nick;
+						sboard.input_server.text = s.getSharedObject().data.ip+":"+s.getSharedObject().data.port;
+					}
+					showElement( sboard );
+					
+					break;
+				case "button_exit":
+					// Native Application!
+					//NativeApplication.nativeApplication.exit();
+					
+					if( s.sfs.isConnected )
+						s.sfs.disconnect();
+					s.debugTrace("Exit!");
+					break;
+				default:
+			}
+		}
+		
+		public function boardClickEvent( e:MouseEvent ):void {
+
+			trace(String(e.target.name));
+			if( isPlayerTurn() ) {
+				if( String(e.target.name).search("square") != -1) {
+					//var str:String = String(e.target.name);
+					var temp:Array = String(e.target.name).split("_");
+					selectSquare( int(temp[1]), int(temp[2]) );
+					
+				}
+			}
+		}
+		
+		public function playAgainEvent( e:MouseEvent ):void {
+			button_again.removeEventListener( MouseEvent.CLICK, playAgainEvent );
+			alert.removeChild( button_again );
+
+			waitingForOpponent();
+			s.restartGame();
+			
+		}
+		
+		public function saveSettingsEvent( e:MouseEvent ):void {
+			trace("Saving settings...");
+			button_save.removeEventListener( MouseEvent.CLICK, saveSettingsEvent );
+			button_default.removeEventListener( MouseEvent.CLICK, setDefaultSettingsEvent );
+			
+			playerName = sboard.input_name.text;
+			var str:String = sboard.input_server.text;
+			var ip:String;
+			var pt:int;
+			if( str.length > 0 ) {
+				ip = str.substr(0, str.lastIndexOf(":"));
+				pt = int(str.substr(str.lastIndexOf(":")+1, str.length-1));
+			} else {
+				ip = "";
+				pt = 0;
+			}
+			s.setSharedObject(playerName, ip, pt, s.sfs.defaultZone);
+			
+			trace(playerName);
+			if( s.sfs.isConnected )
+				s.sfs.disconnect();
+			
+			backToMenu();
+		}
+		
+		public function setDefaultSettingsEvent( e:MouseEvent ):void {
+			
+			button_save.removeEventListener( MouseEvent.CLICK, saveSettingsEvent );
+			button_default.removeEventListener( MouseEvent.CLICK, setDefaultSettingsEvent );
+			
+			s.removeSharedObject();
+			sboard.input_name.text = "";
+			sboard.input_server.text = "91.121.73.217:9339";
+			
+			if( s.sfs.isConnected )
+				s.sfs.disconnect();
+			
+			backToMenu();
+		}
+		
+		
+		public function backButtonEvent( e:MouseEvent ):void {
+			button_save.removeEventListener( MouseEvent.CLICK, saveSettingsEvent );
+			backToMenu();
+		}
+		
+		public function backButtonEventLogout( e:MouseEvent ):void {
+			//button_save.removeEventListener( MouseEvent.CLICK, saveSettingsEvent );
+			//s.sfs.leaveRoom(s.sfs.getActiveRoom().getId());
+			try{
+				s.sfs.logout();
+			}catch(e:Error){};
+			
+			hideElement( alert );
+			alert.removeChild(button_back);
+			backToMenu(false);
+		}
+		
+		public function backToMenu( settings:Boolean = true):void {
+			if(settings) {
+				sboard.visible = true;
+				hideElement( sboard );
+			}
+			showElement( mainMenu );
+			mainMenu.addEventListener( MouseEvent.CLICK, menuClickEvent );
+			current_turn_img.visible = false;
+		}
+		
+		
+		
+		
+		
+		
+		
+		/* AI */
+		public function think():void {
+			
+			
+			var a0,a,d,h,n,p,z;
+			best=0;
+			n=0;
+			
+			for(p=0;p<3;p++)
+				for(a0=0;a0<256;a0++){
+					q[p][a0]=0;
+					m[p][a0]=0;
+				}
+			for(a0=0;a0<256;a0++){
+				for(d=0;d<4;d++)
+					if((a0/16<12||d==0)&&(a0%16<12||d==1||d==2)&&(a0%16>3||d!=2)){
+						
+						c[1]=0;
+						c[2]=0;
+						
+						for(z=0;z<5;z++)
+							c[f[a0+z*da[d]]]++;
+						
+						if(!c[1])
+							p=2;
+						else if(!c[2])
+							p=1;
+						else 
+							p=0;
+						
+						if(p)
+							for(z=0;z<5;z++){
+								
+								if(c[p]==5)
+									five[z]=a0+z*da[d];
+								else if(f[a0+z*da[d]]==0){
+									a=a0+z*da[d];
+									q[0][a]+=e[c[p]];
+									
+									if(c[p]>=2)
+										q[p][a]+=e[c[p]];
+									if(c[p]>m[p][a])
+										m[p][a]=c[p];
+								}
+							}
+						}
+						
+					for(p=1;p<3;p++)
+						if(q[p][a0]>=e[4]){
+						
+							h=2*m[p][a0];
+							if(p==2)
+								h++;
+							
+							if(q[0][a0]<256)
+								q[0][a0]+=256*h;
+							else if(q[0][a0]<256*h)
+								q[0][a0]=256*h;
+						}
+					if(q[0][a0]>q[0][best])
+						n=0;
+					if(q[0][a0]>=q[0][best]){
+						n++;
+						if(Math.random()*n<1)
+							best=a0;
+					}
+			}
+		}
+			
+		public function checkwin():void {
+			
+			var z;
+			if(five[1]!=0)
+			  {
+			  for(z=0;z<5;z++)
+				{
+				if(f[five[z]]==1)
+				  //document.images[five[z]].src=win1.src;
+				  trace("WIN1 AI");
+				else
+				  //document.images[five[z]].src=win2.src;
+				  trace("WIN2");
+				}
+			  //document.images[238].src=clear_lt.src;
+			  //f[238]=1;
+			  //document.images[239].src=clear_rt.src;
+			  //f[239]=1;
+			  //document.images[254].src=clear_lb.src;
+			  //f[254]=1;
+			  //document.images[255].src=clear_rb.src;
+			  //f[255]=1;
+			  }
+		}
+		
+		public function newgame(first:Boolean):void {
+			
+			var s,i;
+			five[1]=0;
+			s=1;
+			
+			for(i=0;i<256;i++) {
+			  if(f[s-1]||first) {
+				  /*if ((s-1)%16 == 0)
+				  {
+					if ((s-1)/16 == 0)
+					  //document.images[s-1].src=emp_lt.src;
+					else if ((s-1)/16 == 15)
+					  //document.images[s-1].src=emp_lb.src;
+					else
+					  //document.images[s-1].src=emp_l.src;
+				  }
+				  else if ((s-1)%16 == 15)
+				  {
+					if ((s-1)/16 < 1)
+					  //document.images[s-1].src=emp_rt.src;
+					else if ((s-1)/16 >= 15)
+					  //document.images[s-1].src=emp_rb.src;
+					else
+					  //document.images[s-1].src=emp_r.src;
+				  }
+				  else
+				  {
+					if ((s-1)/16 < 1)
+					  //document.images[s-1].src=emp_t.src;
+					else if ((s-1)/16 >= 15)
+					  //document.images[s-1].src=emp_b.src;
+					else
+					  //document.images[s-1].src=emp.src;
+				  }*/
+				f[s-1]=0;
+				}
+			  s=s*180%257;
+			  }
+			   //s=s*180%257; //?
+			}
+			
+			
+			public function ai():void {
+				
+				var d,ofs,z,c2;
+				think();
+				checkwin();
+				
+				if(five[1]==0) {
+						
+					// set ai move
+					
+					var __x:int, __y:int;
+					
+					__x = Math.floor(best/boardSize);
+					__y = best%boardSize;
+					
+					
+					s.debugTrace("AI move: "+__x+":"+__y+" ("+best+")");
+					currentTurn = 2;
+					selectSquare(__x, __y);
+					
+					//currentTurn = (currentTurn == 0)?(1):(0);
+					
+					
+					//document.images[best].src=p2.src;
+					f[best]=2;
+					currentBoard[__x][__y] = currentTurn;
+				
+					for(d=0;d<4;d++)
+					  for(ofs=-4;ofs<=0;ofs++)
+						if((best/16+ofs>=0 && best/16+ofs<12 || d==0)
+						  &&(best%16+ofs>=0 && best%16+ofs<12 || d==1 || d ==2)
+						  &&(best%16-ofs>=4 && best%16-ofs<16 || d!=2)) {
+						  	c2=0;
+						  for(z=0;z<5;z++)
+							if(f[best+(z+ofs)*da[d]]==2)
+							  c2++;
+						  if(c2==5)
+							for(z=0;z<5;z++)
+							  five[z]=best+(z+ofs)*da[d];
+					}
+				checkwin();
+			}
+				
+		}
+	}
+}

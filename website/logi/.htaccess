@@ -1,0 +1,7 @@
+
+ErrorDocument 404 "Nie ma takiej strony."
+ErrorDocument 403 "Nie masz dostępu do tego folderu."
+
+
+Order deny,allow
+Deny from all

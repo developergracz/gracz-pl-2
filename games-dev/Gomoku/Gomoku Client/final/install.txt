@@ -1,0 +1,12 @@
+//INSTALACJA ROZSZERZENIA
+
+1. Zainstalowaæ oraz skonfigurowaæ SmartFoxServer2X.
+2. W katalogu aplikacji w folderze "SFS2X/extensions" utworzyæ katalog "gomoku".
+3. Do utworzonego katalogu skopiowaæ plik GomokuExtension.jar (dostêpne w katalogu "server").
+4. Skonfigurowaæ strefê oraz rozszerzenie po stronie serwera.
+5. Pliki znajduj¹ce siê w katalogu "client" skopiowaæ w miejsce docelowe na serwerze, plik "gomoku_config.xml" skonfigurowaæ zgodnie z danymi serwera.
+
+
+//KORZYSTANIE Z LOKALNEGO DYSKU
+
+W przypadku korzystania z aplikacji komputera lokalnego nale¿y dodaæ folder aplikacji do bezpiecznych (FlashPlayer).

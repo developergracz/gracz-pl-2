@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+	<script type="text/javascript" src="skrypty/sfs2x-api.js"></script>
+  <title>Pokoje rozgrywek</title>
+  <style type="text/css">
+		body { background-color:#FDFDFD; font-family: "Verdana"; font-size:12pt; text-align:center; }
+		#connection_status { display:inline-block; background-color:red; padding:10pt; }
+		table { border-collapse:collapse; margin:auto; }
+		table td,th { border:1px solid silver; padding: 5pt; }
+		button { padding: 5pt; cursor:pointer; }
+  </style>
+</head>
+<body>
+	<div id="connection_status">Rozłączony</div><br/><br />
+
+	<script type="text/javascript">
+		var link_dolaczania_do_pokoju = "http://gracz.pl/join_room.php?";
+		var zoneName = "Gomoku";
+		
+		// Create configuration object
+		var config = {};
+		config.host = "127.0.0.1";
+		config.port = 8888;
+		config.zone = zoneName;
+		config.debug = false;	
+	
+		var smartFox = new SmartFox(config);
+		
+		// Set client details
+		var platform = navigator.appName;
+		var version = navigator.appVersion;
+		smartFox.setClientDetails(platform, version);
+		smartFox.connect();
+		
+		smartFox.addEventListener(SFS2X.SFSEvent.CONNECTION, onConnection, this);
+		smartFox.addEventListener(SFS2X.SFSEvent.LOGIN, onLogin, this);
+		smartFox.addEventListener(SFS2X.SFSEvent.LOGIN_ERROR, onLoginError, this);
+		smartFox.addEventListener(SFS2X.SFSEvent.ROOM_ADD, onRoomAdded, this);
+		smartFox.addEventListener(SFS2X.SFSEvent.ROOM_CREATION_ERROR, onRoomCreationError, this);
+		console.log("SmartFox API version: " + smartFox.version);
+
+		
+		function onConnection(evtParams)
+		{
+			smartFox.send(new SFS2X.Requests.System.LoginRequest());		
+		}
+
+
+		function onLogin(evtParams)
+		{
+			console.log("Login successful!");
+
+			var roomManager = smartFox.roomManager;
+			var roomList = roomManager.getRoomList();
+			jQuery("#connection_status").css('backgroundColor','lime').text("Połączony");
+			var table = jQuery("<table>");
+			//console.log(JSON.stringify(roomList[1]) );
+
+			var trh = jQuery("<tr>");
+			jQuery(trh).append("<th>Nazwa</th>");
+			jQuery(trh).append("<th>Identyfikator</th>");
+			jQuery(trh).append("<th>Identyfikator grupy</th>");
+			jQuery(trh).append("<th>Pokój z grą?</th>");
+			jQuery(trh).append("<th>Pokój ukryty?</th>");
+			jQuery(trh).append("<th>Jesteś przyłączony?</th>");
+			jQuery(trh).append("<th>Chroniony hasłem?</th>");
+			jQuery(trh).append("<th>Dołącz do gry</th>");
+			jQuery(table).append(trh);
+			
+			for (var i=0; i<roomList.length; i++)
+			{
+				var tr = jQuery("<tr>");
+				jQuery(tr).append("<td>"+roomList[i].name+"</td>");
+				jQuery(tr).append("<td>"+roomList[i].id+"</td>");
+				jQuery(tr).append("<td>"+roomList[i].groupId+"</td>");
+				jQuery(tr).append("<td>"+(roomList[i].isGame?"tak":"nie")+"</td>");
+				jQuery(tr).append("<td>"+(roomList[i].isHidden?"tak":"nie")+"</td>");
+				jQuery(tr).append("<td>"+(roomList[i].isJoined?"tak":"nie")+"</td>");
+				jQuery(tr).append("<td>"+(roomList[i].isPasswordProtected?"tak":"nie")+"</td>");
+				var button = jQuery("<button>");
+				button.attr('identyfikatorPokoju',roomList[i].id);
+				button.attr('nazwaPokoju',roomList[i].name);
+				button.text("Wejdź do pokoju");
+				button.click(function (){
+					location.href = link_dolaczania_do_pokoju+"zoneName="+jQuery(this).attr('nazwaPokoju')+"&roomId="+jQuery(this).attr('identyfikatorPokoju');
+				});
+				var td = jQuery("<td>");
+				jQuery(td).append(button);
+				jQuery(tr).append(td);
+				
+				jQuery(table).append(tr)
+			}
+			jQuery(document.body).append(table);
+
+			// Create a new Chat Room
+			var roomSettings = new SFS2X.Requests.RoomSettings("Piggy's Chat Room");
+			roomSettings.maxUsers = 40;
+			roomSettings.groupId = "ChatGroup";
+			 
+			smartFox.send(new SFS2X.Requests.System.CreateRoomRequest(roomSettings));
+		}
+
+		function onLoginError(evtParams)
+		{
+			console.log("Login failure: " + evtParams.errorMessage);
+		}
+
+		function onRoomAdded(evt)
+		{
+				alert("A new Room was added: " + evt.params.room )
+		}
+		 
+		function onRoomCreationError(evt)
+		{
+				alert("An error occurred while attempting to create the Room: " + evt.params.errorMessage)
+		}
+
+	</script>
+</body>
+</html>
