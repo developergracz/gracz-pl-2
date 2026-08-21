@@ -44,8 +44,8 @@ document.querySelector("#invite-button").addEventListener("click", async () => {
 });
 document.querySelectorAll("[data-console-tab]").forEach((button) => button.addEventListener("click", () => {
   document.querySelectorAll("[data-console-tab]").forEach((item) => item.classList.toggle("active", item === button));
-  const labels = { chat: "Dostępne stoły", history: "Historia gry", users: "Użytkownicy", options: "Opcje" };
-  document.querySelector("#console-panel h3").textContent = labels[button.dataset.consoleTab];
+  const messages = { chat: "", history: "Brak zapisanych ruchów.", users: "Gracze pojawią się tutaj po rozpoczęciu gry.", options: "Opcje stołu będą dostępne po rozpoczęciu gry." };
+  document.querySelector("#console-content").textContent = messages[button.dataset.consoleTab];
 }));
 document.querySelector("#lobby-chat-form").addEventListener("submit", (event) => event.preventDefault());
 renderMiniBoard();
