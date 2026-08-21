@@ -44,11 +44,8 @@ document.querySelector("#invite-button").addEventListener("click", async () => {
 });
 document.querySelectorAll("[data-console-tab]").forEach((button) => button.addEventListener("click", () => {
   document.querySelectorAll("[data-console-tab]").forEach((item) => item.classList.toggle("active", item === button));
-  const labels = { chat: "Dostępne stoły", history: "Historia gry pojawi się po rozpoczęciu partii.", users: "Użytkownicy pojawią się po zajęciu miejsc.", options: "Opcje stołu będą dostępne po rozpoczęciu partii." };
-  const panel = document.querySelector("#console-panel");
-  if (button.dataset.consoleTab === "chat") panel.innerHTML = '<h3>Dostępne stoły</h3><div id="rooms" class="rooms"></div>';
-  else panel.innerHTML = `<p>${labels[button.dataset.consoleTab]}</p>`;
-  if (button.dataset.consoleTab === "chat") loadRooms();
+  const labels = { chat: "Dostępne stoły", history: "Historia gry", users: "Użytkownicy", options: "Opcje" };
+  document.querySelector("#console-panel h3").textContent = labels[button.dataset.consoleTab];
 }));
 renderMiniBoard();
 
