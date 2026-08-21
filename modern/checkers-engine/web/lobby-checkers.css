@@ -222,7 +222,7 @@
 
 .checkers:not(.expanded) .module-body {
   min-height: 0;
-  align-items: start;
+  align-items: stretch;
 }
 
 .gomoku .module-body {
@@ -379,13 +379,16 @@
 
 .checkers.expanded .board-column {
   width: 100%;
-  align-self: start;
+  align-self: stretch;
 }
 
 .checkers.expanded .module-side {
   display: flex;
   flex-direction: column;
-  height: min(420px, 62vh, calc(100vw - 340px));
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
+  box-sizing: border-box;
   padding: 8px;
 }
 
