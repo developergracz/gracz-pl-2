@@ -374,9 +374,16 @@
 }
 
 .checkers.expanded .console-panel {
-  flex: 1;
-  min-height: 190px;
-  max-height: none;
+  flex: 0 0 auto;
+  grid-template-rows: minmax(132px, 1fr) auto;
+  width: 100%;
+  height: clamp(180px, 23vh, 230px);
+  min-height: 180px;
+  max-height: 230px;
+}
+
+.checkers.expanded .console-content {
+  min-height: 0;
 }
 
 .checkers.expanded .room-browser { display:none; }
