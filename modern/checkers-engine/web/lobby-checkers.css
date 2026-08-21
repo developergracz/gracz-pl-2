@@ -61,6 +61,74 @@
   font-weight: bold;
   opacity: 1;
 }
+
+.console-lobby-data {
+  display: none !important;
+}
+
+.checkers:not(.expanded) .seat-paper {
+  min-height: 54px;
+  margin: 3px 3px 5px;
+  padding: 6px 4px 12px;
+}
+
+.checkers:not(.expanded) .seat-paper button {
+  min-width: 50px;
+  padding: 4px 5px;
+  font-size: 11px;
+}
+
+.checkers:not(.expanded) .console-actions {
+  margin: 4px 0 2px;
+}
+
+.checkers:not(.expanded) .console-actions button {
+  min-height: 24px;
+  padding: 2px;
+  font-size: 11px;
+}
+
+.checkers:not(.expanded) .game-actions {
+  gap: 2px;
+}
+
+.checkers:not(.expanded) .game-actions button {
+  padding: 2px 0;
+  font-size: 7px;
+}
+
+.checkers:not(.expanded) .console-tabs {
+  margin-top: 3px;
+}
+
+.checkers:not(.expanded) .console-tabs button {
+  padding: 3px 0;
+  font-size: 8px;
+}
+
+.checkers:not(.expanded) .console-panel {
+  grid-template-rows: minmax(54px, 1fr) auto;
+  min-height: 86px;
+  max-height: 92px;
+  padding: 2px;
+}
+
+.checkers:not(.expanded) .console-content {
+  min-height: 54px;
+  padding: 3px;
+  font-size: 9px;
+}
+
+.checkers:not(.expanded) .lobby-chat-form {
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.checkers:not(.expanded) .lobby-chat-input {
+  min-height: 22px;
+  padding: 2px 4px;
+  font-size: 9px;
+}
 .console-actions { display:grid; grid-template-columns:1fr 1.25fr; gap:9px; margin:7px 0 4px; }
 .console-actions button { position:relative; min-height:31px; padding:4px; font-weight:bold; }
 .console-actions button:last-child { background:white; border:1px solid #bad4df; }
