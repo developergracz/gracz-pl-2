@@ -92,13 +92,53 @@ test("piece is promoted on the last row", () => {
   assert.equal(next.board[7][0], PIECES.WHITE_KING);
 });
 
-test("king can move in both directions", () => {
+test("flying king can move any distance in all diagonal directions", () => {
   const state = stateWith([
     [4, 3, PIECES.WHITE_KING],
     [0, 1, PIECES.BLACK_MAN],
   ]);
   const destinations = getLegalMoves(state).map((move) => `${move.to.row}:${move.to.column}`).sort();
-  assert.deepEqual(destinations, ["3:2", "3:4", "5:2", "5:4"]);
+  assert.deepEqual(destinations, [
+    "0:7", "1:0", "1:6", "2:1", "2:5", "3:2", "3:4",
+    "5:2", "5:4", "6:1", "6:5", "7:0", "7:6",
+  ]);
+});
+
+test("flying king may land on any empty square beyond a captured piece", () => {
+  const state = stateWith([
+    [6, 1, PIECES.WHITE_KING],
+    [4, 3, PIECES.BLACK_MAN],
+  ]);
+  const destinations = getLegalMoves(state).map((move) => `${move.to.row}:${move.to.column}`).sort();
+  assert.deepEqual(destinations, ["0:7", "1:6", "2:5", "3:4"]);
+});
+
+test("flying king continues capturing with the same piece before turn changes", () => {
+  const state = stateWith([
+    [7, 0, PIECES.WHITE_KING],
+    [5, 2, PIECES.BLACK_MAN],
+    [2, 5, PIECES.BLACK_MAN],
+  ]);
+  const afterFirstCapture = applyMove(state, {
+    from: { row: 7, column: 0 },
+    to: { row: 4, column: 3 },
+  });
+  assert.equal(afterFirstCapture.turn, PLAYERS.WHITE);
+  assert.deepEqual(afterFirstCapture.forcedPiece, { row: 4, column: 3 });
+  assert.deepEqual(
+    getLegalMoves(afterFirstCapture).map((move) => `${move.to.row}:${move.to.column}`).sort(),
+    ["0:7", "1:6"],
+  );
+
+  const finished = applyMove(afterFirstCapture, {
+    from: { row: 4, column: 3 },
+    to: { row: 1, column: 6 },
+  });
+  assert.equal(finished.turn, PLAYERS.BLACK);
+  assert.equal(finished.forcedPiece, null);
+  assert.equal(finished.board[5][2], null);
+  assert.equal(finished.board[2][5], null);
+  assert.equal(finished.board[1][6], PIECES.WHITE_KING);
 });
 
 test("player with no pieces loses", () => {
