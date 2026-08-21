@@ -38,7 +38,7 @@ try {
     displayName: "Alicja",
     password: "alice-secret-123",
   });
-  await alicePage.getByRole("button", { name: "Utwórz pokój" }).click();
+  await alicePage.locator("#host-seat").click();
   await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
 
   const bob = await browser.newContext();
@@ -48,7 +48,7 @@ try {
     displayName: "Robert",
     password: "robert-secret-123",
   });
-  await bobPage.getByRole("button", { name: "Dołącz" }).click();
+  await bobPage.locator("#guest-seat").click();
   await bobPage.waitForURL(/\/game\.html\?game=game-browser-room/);
   await bobPage.locator(".square").first().waitFor();
   assert.equal(await bobPage.locator(".square").count(), 64);
