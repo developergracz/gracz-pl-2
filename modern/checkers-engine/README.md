@@ -13,6 +13,9 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - promocja pionka na damkę,
 - sprawdzanie kolejności tur,
 - zakończenie gry po utracie pionków lub legalnych ruchów,
+- remis przez trzykrotne powtórzenie pozycji lub 80 półruchów bez postępu,
+- zapis, odczyt i deterministyczne odtwarzanie partii,
+- wersjonowany kontrakt wiadomości multiplayer z walidacją danych wejściowych,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
