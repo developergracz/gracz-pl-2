@@ -24,7 +24,7 @@ export class LobbyService {
   touchUser({ userId, displayName }) {
     requireText(userId, "userId");
     requireText(displayName, "displayName");
-    this.#presence.set(userId, { userId, displayName, seenAt: Date.now() });
+    this.#presence.set(userId, { userId, displayName: normalizeDisplayName(displayName), seenAt: Date.now() });
   }
 
   listRooms() {
@@ -41,7 +41,7 @@ export class LobbyService {
         candidate.white?.id === presence.userId || candidate.black?.id === presence.userId);
       return {
         userId: presence.userId,
-        displayName: presence.displayName,
+        displayName: normalizeDisplayName(presence.displayName),
         status: room?.status === "playing" ? "w grze" : "dostępny",
         roomId: room?.roomId ?? null,
         roomName: room?.roomName ?? null,
@@ -52,7 +52,7 @@ export class LobbyService {
   listInvitations(userId) {
     return [...this.#invitations.values()]
       .filter((invitation) => invitation.toId === userId && invitation.status === "pending")
-      .map((invitation) => structuredClone(invitation));
+      .map((invitation) => structuredClone({ ...invitation, fromName: normalizeDisplayName(invitation.fromName) }));
   }
 
   createRoom({ ownerId, ownerName, roomName = "Nowy pokój" }) {
@@ -63,7 +63,7 @@ export class LobbyService {
     if (existing) return publicRoom(existing);
     const room = {
       roomId: this.idGenerator(), roomName, status: "waiting",
-      white: { id: ownerId, name: ownerName }, black: null, gameId: null,
+      white: { id: ownerId, name: normalizeDisplayName(ownerName) }, black: null, gameId: null,
     };
     this.#rooms.set(room.roomId, room);
     return publicRoom(room);
@@ -89,7 +89,7 @@ export class LobbyService {
     }
     const invitation = {
       invitationId: this.idGenerator(), status: "pending", roomId,
-      roomName: room.roomName, fromId, fromName, toId, createdAt: Date.now(),
+      roomName: room.roomName, fromId, fromName: normalizeDisplayName(fromName), toId, createdAt: Date.now(),
     };
     this.#invitations.set(invitation.invitationId, invitation);
     return structuredClone(invitation);
@@ -102,7 +102,7 @@ export class LobbyService {
     }
     invitation.status = accept ? "accepted" : "declined";
     if (!accept) return { accepted: false };
-    const room = await this.joinRoom({ roomId: invitation.roomId, playerId: userId, playerName: userName });
+    const room = await this.joinRoom({ roomId: invitation.roomId, playerId: userId, playerName: normalizeDisplayName(userName) });
     return { accepted: true, room };
   }
 
@@ -111,7 +111,7 @@ export class LobbyService {
     if (!room) throw new LobbyError("Pokój nie istnieje.", "ROOM_NOT_FOUND");
     if (room.status !== "waiting") throw new LobbyError("Pokój nie oczekuje na gracza.", "ROOM_NOT_JOINABLE");
     if (room.white.id === playerId) throw new LobbyError("Twórca pokoju nie może dołączyć drugi raz.", "DUPLICATE_PLAYER");
-    room.black = { id: playerId, name: playerName };
+    room.black = { id: playerId, name: normalizeDisplayName(playerName) };
     room.status = "playing";
     room.gameId = `game-${room.roomId}`;
     await this.sessionStore.create(createGameSession({
@@ -124,8 +124,16 @@ export class LobbyService {
 function publicRoom(room) {
   return structuredClone({
     roomId: room.roomId, roomName: room.roomName, status: room.status,
-    white: room.white, black: room.black, gameId: room.gameId,
+    white: room.white ? { ...room.white, name: normalizeDisplayName(room.white.name) } : null,
+    black: room.black ? { ...room.black, name: normalizeDisplayName(room.black.name) } : null,
+    gameId: room.gameId,
   });
+}
+
+function normalizeDisplayName(value) {
+  if (typeof value !== "string") return value;
+  if (value.localeCompare("Czeslaw", "pl", { sensitivity: "base" }) === 0) return "Czesław";
+  return value.normalize("NFC");
 }
 
 function requireText(value, field) {
