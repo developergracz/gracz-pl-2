@@ -11,10 +11,15 @@ export function loadConfig(environment = process.env) {
     throw new TypeError("AUTH_SECRET musi mieć co najmniej 32 znaki.");
   }
 
+  const databaseUrl = typeof environment.DATABASE_URL === "string" && environment.DATABASE_URL.trim()
+    ? environment.DATABASE_URL.trim()
+    : null;
+
   return Object.freeze({
     host: environment.HOST || "0.0.0.0",
     port,
     dataDirectory: resolve(environment.DATA_DIR || "data"),
     authSecret,
+    databaseUrl,
   });
 }
