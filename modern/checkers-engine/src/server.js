@@ -31,7 +31,7 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
   if (request.method === "GET" && webRoot) {
-    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css" })[url.pathname];
+    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css", "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css" })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile));
   }
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
