@@ -1,0 +1,25 @@
+/* Wyrównanie lewej konsoli Gomoku do prawej konsoli Warcabów.
+   Panel boczny rozciąga się do pełnej wysokości modułu, a okno czatu
+   wypełnia wolną przestrzeń, dzięki czemu dolna krawędź pola wpisywania
+   kończy się na tej samej wysokości co po prawej stronie. */
+.gomoku .module-body {
+  align-items: stretch;
+}
+
+.gomoku .module-side {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gomoku .console-panel {
+  flex: 1 1 auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: none;
+  min-height: 0;
+}
+
+.gomoku .console-content {
+  min-height: 0;
+}
