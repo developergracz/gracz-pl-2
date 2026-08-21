@@ -16,6 +16,9 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - remis przez trzykrotne powtórzenie pozycji lub 80 półruchów bez postępu,
 - zapis, odczyt i deterministyczne odtwarzanie partii,
 - wersjonowany kontrakt wiadomości multiplayer z walidacją danych wejściowych,
+- autorytatywna sesja serwerowa z przypisaniem graczy do kolorów,
+- bezpieczne rozłączenie i ponowne połączenie z migawką stanu,
+- idempotentne żądania ruchu i trwały dziennik zdarzeń,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
