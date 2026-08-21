@@ -3,6 +3,40 @@ let session = JSON.parse(sessionStorage.getItem("gracz-session") || "null");
 const authSection = document.querySelector("#auth"), lobbySection = document.querySelector("#lobby");
 const form = document.querySelector("#auth-form"), nameField = document.querySelector("#name-field");
 
+function renderMiniBoard() {
+  const board = document.querySelector("#mini-board");
+  if (!board) return;
+  board.replaceChildren();
+  for (let row = 0; row < 8; row += 1) {
+    for (let column = 0; column < 8; column += 1) {
+      const square = document.createElement("span");
+      const dark = (row + column) % 2 === 1;
+      square.className = `mini-square ${dark ? "dark" : "light"}`;
+      if (dark && (row < 3 || row > 4)) {
+        const piece = document.createElement("i");
+        piece.className = `mini-piece ${row < 3 ? "white" : "black"}`;
+        square.append(piece);
+      }
+      board.append(square);
+    }
+  }
+}
+
+const checkersModule = document.querySelector("#checkers-module");
+const expandCheckers = document.querySelector("#expand-checkers");
+const closeCheckers = document.querySelector("#close-checkers");
+function setCheckersExpanded(expanded) {
+  checkersModule.classList.toggle("expanded", expanded);
+  expandCheckers.setAttribute("aria-expanded", String(expanded));
+  expandCheckers.textContent = expanded ? "pomniejsz grę" : "zagraj w Warcaby";
+  closeCheckers.hidden = !expanded;
+  document.body.classList.toggle("game-expanded", expanded);
+}
+expandCheckers.addEventListener("click", () => setCheckersExpanded(!checkersModule.classList.contains("expanded")));
+closeCheckers.addEventListener("click", () => setCheckersExpanded(false));
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") setCheckersExpanded(false); });
+renderMiniBoard();
+
 document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => {
   mode = button.dataset.mode; document.querySelectorAll("[data-mode]").forEach((item) => item.classList.toggle("active", item === button));
   nameField.hidden = mode !== "register"; nameField.querySelector("input").required = mode === "register";
