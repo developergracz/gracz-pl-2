@@ -19,11 +19,67 @@
 .board-coordinates.rows { display:grid; grid-template-rows:repeat(8,1fr); place-items:center; }
 .table-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; color:#fff5d5; }
 .fullscreen-control { width:30px; height:30px; border:1px solid #fff9; border-radius:4px; background:#fff3; color:white; font-size:21px; cursor:pointer; }
-.seat-paper { display:flex; justify-content:space-around; align-items:center; min-height:105px; margin:10px 8px 14px; padding:16px; transform:rotate(-4deg); border:1px solid #b9b1a5; border-radius:3px 3px 18px 3px; background:linear-gradient(145deg,#eee,#ddd); box-shadow:4px 7px 5px #754c2e66; }
-.seat-paper button { padding:8px 16px; transform:rotate(4deg); font-weight:bold; }
+.seat-paper {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 112px;
+  margin: 12px 12px 20px;
+  padding: 20px 14px 28px;
+  overflow: hidden;
+  transform: rotate(-4deg);
+  border: 1px solid #b5ada2;
+  border-radius: 4px 4px 22px 5px;
+  background: linear-gradient(155deg, #f7f7f5 0%, #e2e0dc 72%, #d3cec5 100%);
+  box-shadow: 6px 9px 5px #754c2e66;
+}
+.seat-paper::after {
+  content: "";
+  position: absolute;
+  right: -8%;
+  bottom: -31px;
+  left: -8%;
+  height: 54px;
+  transform: rotate(1deg);
+  border-top: 1px solid #c8c1b7;
+  border-radius: 50% 45% 0 0;
+  background: linear-gradient(#eeeae4, #dad5cc);
+  box-shadow: 0 -2px 3px #fff8;
+}
+.seat-paper button {
+  position: relative;
+  z-index: 1;
+  min-width: 88px;
+  padding: 8px 14px;
+  transform: rotate(4deg);
+  border: 1px solid #b8b8b8;
+  border-radius: 3px;
+  background: linear-gradient(#fff, #e5e5e5);
+  box-shadow: 1px 2px 3px #7775;
+  color: #222;
+  font-weight: bold;
+  opacity: 1;
+}
 .console-actions { display:grid; grid-template-columns:1fr 1.25fr; gap:12px; margin:10px 0 6px; }
-.console-actions button { min-height:38px; font-weight:bold; }
+.console-actions button { position:relative; min-height:38px; font-weight:bold; }
 .console-actions button:last-child { background:white; border:1px solid #bad4df; }
+.console-actions button::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #9c4a56;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8ca1, #ce3b65 63%, #8b2640);
+  box-shadow: inset 0 2px 3px #fff7, 1px 2px 3px #70402c99;
+}
+.console-actions button:last-child::after {
+  border-color: #bb8613;
+  background: radial-gradient(circle at 35% 30%, #fff59a, #f2c52f 62%, #c18a08);
+}
 .game-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
 .game-actions button { padding:6px 2px; font-size:10px; font-weight:bold; }
 .console-tabs { display:grid; grid-template-columns:repeat(4,1fr); margin-top:10px; }
@@ -98,22 +154,24 @@
 
 .checkers.expanded > header,
 .checkers.expanded .module-body {
-  width: min(1100px, 96vw);
+  width: min(1040px, 96vw);
   margin: 0 auto;
 }
 
 .checkers.expanded .module-body {
-  min-height: calc(100vh - 110px);
-  grid-template-columns: minmax(440px, 1fr) minmax(280px, 360px);
-  align-items: start;
-  padding: clamp(12px, 2vw, 24px);
-  border:10px solid #fff;
-  border-radius:18px;
-  box-shadow:0 5px 18px #5558;
+  min-height: 0;
+  grid-template-columns: minmax(430px, 1.7fr) minmax(270px, .9fr);
+  align-items: stretch;
+  gap: clamp(12px, 1.7vw, 22px);
+  padding: clamp(12px, 1.5vw, 18px);
+  border: 12px solid #fff;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #e6b879, #d9a15f);
+  box-shadow: 0 5px 18px #5558;
 }
 
 .checkers.expanded .mini-board {
-  width: min(70vh, 100%);
+  width: 100%;
   max-width: none;
   margin: auto;
 }
@@ -122,8 +180,20 @@
 .checkers.expanded > header h2 { font-size:40px; }
 .checkers.expanded .open-checkers { display:none; }
 
+.checkers.expanded .board-column {
+  width: 100%;
+  align-self: start;
+}
+
 .checkers.expanded .module-side {
+  display: flex;
+  flex-direction: column;
   padding: 8px;
+}
+
+.checkers.expanded .console-panel {
+  flex: 1;
+  min-height: 150px;
 }
 
 @media (max-width: 720px) {
