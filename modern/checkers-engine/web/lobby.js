@@ -28,8 +28,28 @@ function renderMiniBoard() {
 function alignGomokuConsole() {
   const board = document.querySelector(".gomoku .gomoku-board");
   const side = document.querySelector(".gomoku .module-side");
-  if (!board || !side || lobbySection.hidden) return;
-  side.style.height = `${Math.round(board.getBoundingClientRect().height)}px`;
+  const panel = document.querySelector(".gomoku .console-panel");
+  if (!board || !side || !panel || lobbySection.hidden) return;
+
+  side.style.height = "auto";
+  panel.style.height = "auto";
+  panel.style.flex = "0 0 auto";
+
+  const boardRect = board.getBoundingClientRect();
+  const sideRect = side.getBoundingClientRect();
+  const panelRect = panel.getBoundingClientRect();
+  const sideHeight = Math.round(boardRect.height);
+  const remaining = Math.max(92, Math.round(boardRect.bottom - panelRect.top));
+
+  side.style.height = `${sideHeight}px`;
+  panel.style.height = `${remaining}px`;
+  panel.style.minHeight = `${remaining}px`;
+  panel.style.maxHeight = "none";
+  panel.style.flex = "0 0 auto";
+
+  if (Math.abs(sideRect.top - boardRect.top) > 1) {
+    side.style.height = `${Math.max(0, Math.round(boardRect.bottom - sideRect.top))}px`;
+  }
 }
 
 const checkersModule = document.querySelector("#checkers-module");
