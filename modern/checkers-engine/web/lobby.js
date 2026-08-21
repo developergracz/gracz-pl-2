@@ -47,6 +47,7 @@ document.querySelectorAll("[data-console-tab]").forEach((button) => button.addEv
   const labels = { chat: "Dostępne stoły", history: "Historia gry", users: "Użytkownicy", options: "Opcje" };
   document.querySelector("#console-panel h3").textContent = labels[button.dataset.consoleTab];
 }));
+document.querySelector("#lobby-chat-form").addEventListener("submit", (event) => event.preventDefault());
 renderMiniBoard();
 
 document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => {
