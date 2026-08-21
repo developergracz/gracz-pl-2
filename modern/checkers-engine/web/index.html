@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Warcaby — Gracz.pl 2.0</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header>
+      <p class="eyebrow">GRACZ.PL 2.0</p>
+      <h1>Warcaby</h1>
+      <p id="status" role="status">Łączenie z partią…</p>
+    </header>
+    <section class="board-wrap" aria-label="Plansza do warcabów">
+      <div id="board" class="board" role="grid"></div>
+    </section>
+    <footer>
+      <span id="identity"></span>
+      <button id="reconnect" type="button">Połącz ponownie</button>
+    </footer>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
