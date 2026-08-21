@@ -12,12 +12,15 @@ import { SessionNotFoundError } from "./store.js";
 import { RealtimeHub } from "./realtime.js";
 import { AuthError } from "./auth.js";
 import { LobbyError } from "./lobby.js";
+import { AccountError } from "./accounts.js";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export function createGameHttpServer({ store, auth = null, lobby = null, logger = { error() {} }, realtime = new RealtimeHub() }) {
+export function createGameHttpServer({ store, auth = null, accounts = null, lobby = null, webRoot = null, logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
     try {
-      await route(request, response, store, realtime, auth, lobby);
+      await route(request, response, store, realtime, auth, accounts, lobby, webRoot);
     } catch (error) {
       logger.error(error);
       sendError(response, error);
@@ -25,10 +28,22 @@ export function createGameHttpServer({ store, auth = null, lobby = null, logger 
   }).on("close", () => realtime.close());
 }
 
-async function route(request, response, store, realtime, auth, lobby) {
+async function route(request, response, store, realtime, auth, accounts, lobby, webRoot) {
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { status: "ok" });
+  }
+  if (request.method === "GET" && webRoot) {
+    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css" })[url.pathname];
+    if (staticFile) return sendStatic(response, join(webRoot, staticFile));
+  }
+  if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
+    const account = await accounts.register(await readJson(request));
+    return sendJson(response, 201, { token: auth.issue(account), user: account });
+  }
+  if (request.method === "POST" && url.pathname === "/auth/login" && auth && accounts) {
+    const account = await accounts.authenticate(await readJson(request));
+    return sendJson(response, 200, { token: auth.issue(account), user: account });
   }
   if (request.method === "POST" && url.pathname === "/auth/session" && auth) {
     const userId = request.headers["x-authenticated-user-id"];
@@ -133,12 +148,21 @@ function sendError(response, error) {
   if (error instanceof HttpError) return sendJson(response, error.status, errorBody(error));
   if (error instanceof SessionNotFoundError) return sendJson(response, 404, errorBody(error));
   if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
+  if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : 400, errorBody(error));
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
   if (error instanceof SessionError || error?.name === "IllegalMoveError" || error instanceof TypeError) {
     return sendJson(response, 400, errorBody(error));
   }
   return sendJson(response, 500, { error: { code: "INTERNAL_ERROR", message: "Wewnętrzny błąd serwera." } });
+}
+
+async function sendStatic(response, path) {
+  const extension = path.split(".").at(-1);
+  const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
+  const content = await readFile(path);
+  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" });
+  response.end(content);
 }
 
 function errorBody(error) {
