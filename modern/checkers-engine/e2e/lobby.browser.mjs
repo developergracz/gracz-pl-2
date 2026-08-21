@@ -20,27 +20,34 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
 
+async function register(page, { userId, displayName, password }) {
+  await page.goto(baseUrl);
+  await page.getByRole("button", { name: "Nowe konto" }).click();
+  await page.locator('[name="userId"]').fill(userId);
+  await page.locator('[name="displayName"]').fill(displayName);
+  await page.locator('[name="password"]').fill(password);
+  await page.locator("#auth-form button[type=submit]").click();
+  await page.getByText("Zalogowany jako").waitFor();
+}
+
 try {
   const alice = await browser.newContext();
   const alicePage = await alice.newPage();
-  await alicePage.goto(baseUrl);
-  await alicePage.getByRole("button", { name: "Nowe konto" }).click();
-  await alicePage.locator('[name="userId"]').fill("alice");
-  await alicePage.locator('[name="displayName"]').fill("Alicja");
-  await alicePage.locator('[name="password"]').fill("alice-secret-123");
-  await alicePage.getByRole("button", { name: "Wejdź do lobby" }).click();
-  await alicePage.getByText("Zalogowany jako").waitFor();
+  await register(alicePage, {
+    userId: "alice",
+    displayName: "Alicja",
+    password: "alice-secret-123",
+  });
   await alicePage.getByRole("button", { name: "Utwórz pokój" }).click();
   await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
 
   const bob = await browser.newContext();
   const bobPage = await bob.newPage();
-  await bobPage.goto(baseUrl);
-  await bobPage.getByRole("button", { name: "Nowe konto" }).click();
-  await bobPage.locator('[name="userId"]').fill("bob-user");
-  await bobPage.locator('[name="displayName"]').fill("Robert");
-  await bobPage.locator('[name="password"]').fill("robert-secret-123");
-  await bobPage.getByRole("button", { name: "Wejdź do lobby" }).click();
+  await register(bobPage, {
+    userId: "bob-user",
+    displayName: "Robert",
+    password: "robert-secret-123",
+  });
   await bobPage.getByRole("button", { name: "Dołącz" }).click();
   await bobPage.waitForURL(/\/game\.html\?game=game-browser-room/);
   await bobPage.locator(".square").first().waitFor();
