@@ -6,6 +6,8 @@ import {
   disconnectPlayer,
   getSessionSnapshot,
   reconnectPlayer,
+  sendChatMessage,
+  submitGameAction,
   submitMove,
 } from "./session.js";
 import { SessionNotFoundError } from "./store.js";
@@ -85,7 +87,7 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
     return sendJson(response, 201, { gameId: session.gameId });
   }
 
-  const match = url.pathname.match(/^\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves|disconnect|reconnect|events))?$/);
+  const match = url.pathname.match(/^\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves|disconnect|reconnect|events|chat|actions))?$/);
   if (!match) return sendJson(response, 404, { error: { code: "NOT_FOUND", message: "Nie znaleziono endpointu." } });
   const [, gameId, action] = match;
   const playerId = trustedUser(request, auth).userId;
@@ -109,6 +111,18 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
       eventSequence: result.event.sequence,
       snapshot: getSessionSnapshot(result.session, playerId),
     });
+  }
+  if (request.method === "POST" && action === "chat") {
+    session = sendChatMessage(session, { playerId, text: (await readJson(request)).text });
+    await store.save(session);
+    realtime.publish(session, "chat.message");
+    return sendJson(response, 201, getSessionSnapshot(session, playerId));
+  }
+  if (request.method === "POST" && action === "actions") {
+    session = submitGameAction(session, { playerId, action: (await readJson(request)).action });
+    await store.save(session);
+    realtime.publish(session, "game.action");
+    return sendJson(response, 200, getSessionSnapshot(session, playerId));
   }
   if (request.method === "POST" && action === "disconnect") {
     session = disconnectPlayer(session, playerId);

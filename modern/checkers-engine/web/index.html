@@ -1,26 +1,9 @@
-<!doctype html>
-<html lang="pl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Warcaby — Gracz.pl 2.0</title>
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <main class="game-shell">
-    <header>
-      <p class="eyebrow">GRACZ.PL 2.0</p>
-      <h1>Warcaby</h1>
-      <p id="status" role="status">Łączenie z partią…</p>
-    </header>
-    <section class="board-wrap" aria-label="Plansza do warcabów">
-      <div id="board" class="board" role="grid"></div>
-    </section>
-    <footer>
-      <span id="identity"></span>
-      <button id="reconnect" type="button">Połącz ponownie</button>
-    </footer>
-  </main>
-  <script type="module" src="./app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Warcaby — Gracz.pl 2.0</title><link rel="stylesheet" href="./styles.css"></head>
+<body><main class="console" aria-label="Konsola gry Warcaby"><header class="console-header"><div><p class="eyebrow">GRACZ.PL 2.0</p><h1>Warcaby</h1></div><p id="status" role="status">Łączenie z partią…</p></header>
+<section class="game-area"><div class="board-column"><div class="files" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div><div class="board-row"><div class="ranks" aria-hidden="true"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div><section class="board-wrap" aria-label="Plansza do warcabów"><div id="board" class="board" role="grid"></div></section></div></div>
+<aside class="side-panel"><div class="table-title">Stół 1, norm. 3 min</div><section class="score-card" aria-label="Gracze"><div class="player"><i id="white-light"></i><span id="white-player">Białe</span><strong id="white-clock">03:00</strong></div><div class="player"><i id="black-light"></i><span id="black-player">Czarne</span><strong id="black-clock">03:00</strong></div></section>
+<div class="primary-actions"><button id="start" type="button">START</button><button id="invite" type="button">ZAPROŚ</button></div><div class="game-actions"><button data-action="resign" type="button">REZYGNUJ</button><button data-action="draw" type="button">REMIS</button><button data-action="undo" type="button">COFNIJ</button><button data-action="block" type="button">ZABLOKUJ</button></div>
+<nav class="tabs" aria-label="Panele konsoli"><button class="active" data-tab="chat" type="button">chat</button><button data-tab="history" type="button">historia</button><button data-tab="users" type="button">użytkownicy</button><button data-tab="options" type="button">opcje</button></nav>
+<section class="tab-panel active" data-panel="chat"><div id="chat-log" class="chat-log"><p class="system-message">Witaj w konsoli gry.</p></div><form id="chat-form"><input id="chat-input" maxlength="160" placeholder="Napisz wiadomość…" autocomplete="off"><button>Wyślij</button></form></section>
+<section class="tab-panel" data-panel="history"><table><thead><tr><th>ruch</th><th>gracz</th><th>zapis</th></tr></thead><tbody id="history-body"><tr><td colspan="3">Brak ruchów</td></tr></tbody></table></section>
+<section class="tab-panel" data-panel="users"><ul id="users-list"></ul></section><section class="tab-panel options" data-panel="options"><label><input id="rotate-board" type="checkbox"> Obróć planszę</label><label><input id="sound" type="checkbox" checked> Dźwięki gry</label><button id="reconnect" type="button">Połącz ponownie</button></section><footer><span id="identity"></span><span>© Gracz.pl</span></footer></aside></section></main><div id="toast" role="status" aria-live="polite"></div><script type="module" src="./app.js"></script></body></html>

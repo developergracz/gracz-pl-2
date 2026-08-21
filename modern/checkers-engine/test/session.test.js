@@ -11,6 +11,8 @@ import {
   reconnectPlayer,
   serializeSession,
   submitMove,
+  sendChatMessage,
+  submitGameAction,
 } from "../src/session.js";
 
 const firstMove = { from: { row: 2, column: 1 }, to: { row: 3, column: 0 } };
@@ -24,6 +26,22 @@ test("session assigns players to colors", () => {
   assert.equal(session.players.white.id, "alice");
   assert.equal(session.players.black.id, "bob");
   assert.equal(session.game.turn, PLAYERS.WHITE);
+});
+
+test("chat and classic console actions are shared in the session", () => {
+  let session = sendChatMessage(newSession(), { playerId: "alice", text: "Powodzenia!" });
+  assert.equal(session.messages[0].text, "Powodzenia!");
+  session = submitGameAction(session, { playerId: "alice", action: "draw" });
+  assert.equal(session.pendingOffer.type, "draw");
+  session = submitGameAction(session, { playerId: "bob", action: "draw" });
+  assert.equal(session.game.status, "draw");
+  assert.equal(session.game.drawReason, "agreement");
+});
+
+test("resignation ends the game for the opponent", () => {
+  const session = submitGameAction(newSession(), { playerId: "alice", action: "resign" });
+  assert.equal(session.game.status, "won");
+  assert.equal(session.game.winner, "black");
 });
 
 test("server accepts a move only from the player whose turn it is", () => {

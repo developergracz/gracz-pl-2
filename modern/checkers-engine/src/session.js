@@ -23,9 +23,54 @@ export function createGameSession({ gameId, whitePlayerId, blackPlayerId, game =
       [PLAYERS.BLACK]: { id: blackPlayerId, connected: true },
     },
     game,
+    messages: [],
+    pendingOffer: null,
+    blockedPlayers: [],
     events: [event(1, "session.created", { whitePlayerId, blackPlayerId })],
     processedRequests: {},
   });
+}
+
+export function sendChatMessage(session, { playerId, text }) {
+  validateSession(session);
+  const color = requirePlayer(session, playerId);
+  if (typeof text !== "string" || text.trim().length < 1 || text.trim().length > 160) {
+    throw new SessionError("Wiadomość musi mieć od 1 do 160 znaków.", "INVALID_MESSAGE");
+  }
+  const message = Object.freeze({ id: session.events.length + 1, playerId, color, text: text.trim() });
+  return appendEvent({ ...session, messages: [...session.messages, message] }, "chat.message", message);
+}
+
+export function submitGameAction(session, { playerId, action }) {
+  validateSession(session);
+  const color = requirePlayer(session, playerId);
+  const opponent = color === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE;
+  if (action === "resign") {
+    if (session.game.status !== "active") throw new SessionError("Partia jest już zakończona.", "GAME_FINISHED");
+    const game = createState({ ...session.game, status: "won", winner: opponent, forcedPiece: null });
+    return appendEvent({ ...session, game, pendingOffer: null }, "game.resigned", { playerId, color });
+  }
+  if (action === "draw" || action === "undo") {
+    if (session.pendingOffer?.type === action && session.pendingOffer.playerId !== playerId) {
+      let game = session.game;
+      if (action === "draw") game = createState({ ...game, status: "draw", winner: null, drawReason: "agreement", forcedPiece: null });
+      if (action === "undo") {
+        const moves = session.events.filter((item) => item.type === "move.accepted");
+        if (!moves.length) throw new SessionError("Nie ma ruchu do cofnięcia.", "NOTHING_TO_UNDO");
+        game = moves.length === 1 ? createInitialState() : createState(moves.at(-2).payload.game);
+      }
+      return appendEvent({ ...session, game, pendingOffer: null }, `${action}.accepted`, { playerId });
+    }
+    return appendEvent({ ...session, pendingOffer: { type: action, playerId } }, `${action}.offered`, { playerId });
+  }
+  if (action === "block") {
+    const opponentId = session.players[opponent].id;
+    const blockedPlayers = session.blockedPlayers.includes(opponentId)
+      ? session.blockedPlayers.filter((id) => id !== opponentId)
+      : [...session.blockedPlayers, opponentId];
+    return appendEvent({ ...session, blockedPlayers }, "player.blocked", { playerId, opponentId });
+  }
+  throw new SessionError("Nieznana akcja konsoli.", "INVALID_ACTION");
 }
 
 export function submitMove(session, { playerId, requestId, move }) {
@@ -80,6 +125,9 @@ export function getSessionSnapshot(session, playerId) {
     color,
     players: session.players,
     game: session.game,
+    messages: session.messages,
+    pendingOffer: session.pendingOffer,
+    blockedPlayers: session.blockedPlayers,
     lastEventSequence: session.events.at(-1)?.sequence ?? 0,
   });
 }
@@ -102,6 +150,9 @@ export function deserializeSession(serialized) {
     game: createState(value.game),
     events: value.events.map((item) => event(item.sequence, item.type, item.payload)),
     processedRequests: { ...value.processedRequests },
+    messages: [...(value.messages ?? [])],
+    pendingOffer: value.pendingOffer ?? null,
+    blockedPlayers: [...(value.blockedPlayers ?? [])],
   });
 }
 
@@ -129,6 +180,18 @@ function colorForPlayer(session, playerId) {
   return null;
 }
 
+function requirePlayer(session, playerId) {
+  requireId(playerId, "playerId");
+  const color = colorForPlayer(session, playerId);
+  if (!color) throw new SessionError("Gracz nie należy do tej partii.", "PLAYER_NOT_IN_GAME");
+  return color;
+}
+
+function appendEvent(session, type, payload) {
+  const nextEvent = event(session.events.length + 1, type, payload);
+  return freezeSession({ ...session, events: [...session.events, nextEvent], processedRequests: { ...session.processedRequests } });
+}
+
 function event(sequence, type, payload) {
   return Object.freeze({ sequence, type, payload: Object.freeze(structuredClone(payload)) });
 }
@@ -152,6 +215,8 @@ function freezeSession(session) {
   Object.freeze(session.players.black);
   Object.freeze(session.players);
   Object.freeze(session.events);
+  Object.freeze(session.messages);
+  Object.freeze(session.blockedPlayers);
   Object.freeze(session.processedRequests);
   return Object.freeze(session);
 }
