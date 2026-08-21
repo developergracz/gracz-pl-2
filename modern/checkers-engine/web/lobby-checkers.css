@@ -232,28 +232,29 @@
 }
 
 .mini-square.light {
-  background: #ead9b9;
+  background: #ead4ad;
 }
 
 .mini-square.dark {
-  background: #754535;
+  background: #87674a;
 }
 
 .mini-piece {
   display: block;
-  width: 70%;
+  width: 74%;
   aspect-ratio: 1;
   border-radius: 50%;
-  box-shadow: inset 0 3px 5px #fff8, 0 2px 3px #0008;
+  box-shadow: inset 0 1px 1px #fff4, inset 0 -2px 3px #0006, 0 1px 2px #0008;
 }
 
 .mini-piece.white {
-  background: radial-gradient(circle at 35% 30%, #fff, #e4e1d8 65%, #9c978d);
+  border: 1px solid #c5c1b7;
+  background: radial-gradient(circle at 45% 38%, #fdfdf9 0 58%, #e7e5dc 74%, #b5b1a7 100%);
 }
 
 .mini-piece.black {
-  border: 1px solid #050505;
-  background: radial-gradient(circle at 35% 30%, #555, #15171b 62%, #050608);
+  border: 2px solid #141414;
+  background: radial-gradient(circle at 45% 38%, #393a3a 0 45%, #292929 66%, #121313 100%);
 }
 
 .game-expanded {
