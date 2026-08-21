@@ -124,7 +124,7 @@
 .open-checkers { display:block; margin:10px 4px 2px auto; border:0; background:transparent; color:#5b7887; text-decoration:underline; cursor:pointer; }
 
 .checkers:not(.expanded) .module-body {
-  min-height: 390px;
+  min-height: 0;
   align-items: start;
 }
 
