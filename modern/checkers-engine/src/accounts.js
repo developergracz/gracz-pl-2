@@ -1,5 +1,7 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 
 const scrypt = promisify(scryptCallback);
 
@@ -36,6 +38,64 @@ export class MemoryAccountService {
       throw new AccountError("Nieprawidłowy login lub hasło.", "INVALID_CREDENTIALS");
     }
     return publicAccount(account);
+  }
+}
+
+export class FileAccountService {
+  #writeQueue = Promise.resolve();
+
+  constructor(filePath) {
+    if (typeof filePath !== "string" || filePath.length === 0) throw new TypeError("Ścieżka bazy kont jest wymagana.");
+    this.filePath = filePath;
+  }
+
+  async register({ userId, displayName, password }) {
+    const normalizedId = normalizeUserId(userId);
+    validateDisplayName(displayName);
+    validatePassword(password);
+    return this.#exclusive(async () => {
+      const records = await this.#read();
+      if (records[normalizedId]) throw new AccountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
+      const salt = randomBytes(16);
+      const passwordHash = await hashPassword(password, salt);
+      records[normalizedId] = {
+        userId: normalizedId, displayName,
+        salt: salt.toString("base64"), passwordHash: passwordHash.toString("base64"),
+      };
+      await this.#write(records);
+      return Object.freeze({ userId: normalizedId, displayName });
+    });
+  }
+
+  async authenticate({ userId, password }) {
+    const normalizedId = normalizeUserId(userId);
+    const records = await this.#read();
+    const record = records[normalizedId];
+    const salt = record ? Buffer.from(record.salt, "base64") : Buffer.alloc(16);
+    const expected = record ? Buffer.from(record.passwordHash, "base64") : Buffer.alloc(64);
+    const actual = await hashPassword(typeof password === "string" ? password : "", salt);
+    if (!record || expected.length !== actual.length || !timingSafeEqual(actual, expected)) {
+      throw new AccountError("Nieprawidłowy login lub hasło.", "INVALID_CREDENTIALS");
+    }
+    return Object.freeze({ userId: record.userId, displayName: record.displayName });
+  }
+
+  async #read() {
+    try { return JSON.parse(await readFile(this.filePath, "utf8")); }
+    catch (error) { if (error?.code === "ENOENT") return {}; throw error; }
+  }
+
+  async #write(records) {
+    await mkdir(dirname(this.filePath), { recursive: true });
+    const temporary = `${this.filePath}.${process.pid}.tmp`;
+    await writeFile(temporary, JSON.stringify(records), { encoding: "utf8", mode: 0o600 });
+    await rename(temporary, this.filePath);
+  }
+
+  #exclusive(operation) {
+    const result = this.#writeQueue.then(operation, operation);
+    this.#writeQueue = result.catch(() => {});
+    return result;
   }
 }
 
