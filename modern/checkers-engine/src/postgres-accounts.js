@@ -1,6 +1,7 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import pg from "pg";
+import { AccountError } from "./accounts.js";
 
 const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
@@ -46,7 +47,7 @@ export class PostgresAccountService {
         [normalizedId, displayName.trim(), salt, passwordHash],
       );
     } catch (error) {
-      if (error?.code === "23505") throw accountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
+      if (error?.code === "23505") throw new AccountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
       throw error;
     }
     return Object.freeze({ userId: normalizedId, displayName: displayName.trim() });
@@ -64,7 +65,7 @@ export class PostgresAccountService {
     const expected = record?.password_hash ?? Buffer.alloc(64);
     const actual = await hashPassword(typeof password === "string" ? password : "", salt);
     if (!record || expected.length !== actual.length || !timingSafeEqual(actual, expected)) {
-      throw accountError("Nieprawidłowy login lub hasło.", "INVALID_CREDENTIALS");
+      throw new AccountError("Nieprawidłowy login lub hasło.", "INVALID_CREDENTIALS");
     }
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
@@ -80,26 +81,19 @@ async function hashPassword(password, salt) {
 
 function normalizeUserId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9_-]{3,32}$/.test(value)) {
-    throw accountError("Login musi mieć 3–32 znaki: litery, cyfry, _ lub -.", "INVALID_ACCOUNT");
+    throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, _ lub -.", "INVALID_ACCOUNT");
   }
   return value.toLowerCase();
 }
 
 function validateDisplayName(value) {
   if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 40) {
-    throw accountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT");
+    throw new AccountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT");
   }
 }
 
 function validatePassword(value) {
   if (typeof value !== "string" || value.length < 10 || value.length > 128) {
-    throw accountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD");
+    throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD");
   }
-}
-
-function accountError(message, code) {
-  const error = new Error(message);
-  error.name = "AccountError";
-  error.code = code;
-  return error;
 }
