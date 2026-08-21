@@ -21,6 +21,8 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - idempotentne żądania ruchu i trwały dziennik zdarzeń,
 - działające HTTP API oraz magazyn sesji w pamięci lub prywatnych plikach JSON,
 - integracyjny test dwóch klientów połączonych z rzeczywistym serwerem,
+- kanał zdarzeń SSE aktualizujący plansze obu graczy w czasie rzeczywistym,
+- responsywny interfejs HTML5 obsługujący mysz i ekran dotykowy,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
