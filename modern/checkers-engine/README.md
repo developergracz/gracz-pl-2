@@ -19,6 +19,8 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - autorytatywna sesja serwerowa z przypisaniem graczy do kolorów,
 - bezpieczne rozłączenie i ponowne połączenie z migawką stanu,
 - idempotentne żądania ruchu i trwały dziennik zdarzeń,
+- działające HTTP API oraz magazyn sesji w pamięci lub prywatnych plikach JSON,
+- integracyjny test dwóch klientów połączonych z rzeczywistym serwerem,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
@@ -30,6 +32,10 @@ pole w obu kierunkach. Reguły są odseparowane od transportu, bazy danych i UI.
 ```bash
 npm test
 ```
+
+Testy nie wymagają bazy danych ani zewnętrznych pakietów. Serwer przyjmuje
+tożsamość z nagłówka `x-player-id`, który w środowisku publicznym musi być
+ustawiany wyłącznie przez zaufaną warstwę logowania/API gateway.
 
 ## Przykład
 
