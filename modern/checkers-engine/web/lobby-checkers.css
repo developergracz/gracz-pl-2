@@ -353,8 +353,10 @@
 
 .checkers.expanded .module-body {
   flex: 0 0 auto;
+  width: fit-content;
+  max-width: 96vw;
   min-height: 0;
-  grid-template-columns: minmax(0, 460px) minmax(230px, 260px);
+  grid-template-columns: minmax(0, 420px) minmax(230px, 260px);
   justify-content: center;
   align-items: start;
   gap: clamp(12px, 1.7vw, 22px);
