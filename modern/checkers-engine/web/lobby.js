@@ -25,6 +25,13 @@ function renderMiniBoard() {
   }
 }
 
+function alignGomokuConsole() {
+  const board = document.querySelector(".gomoku .gomoku-board");
+  const side = document.querySelector(".gomoku .module-side");
+  if (!board || !side || lobbySection.hidden) return;
+  side.style.height = `${Math.round(board.getBoundingClientRect().height)}px`;
+}
+
 const checkersModule = document.querySelector("#checkers-module");
 const expandCheckers = document.querySelector("#expand-checkers");
 const closeCheckers = document.querySelector("#close-checkers");
@@ -52,6 +59,12 @@ document.querySelectorAll("[data-console-tab]").forEach((button) => button.addEv
 }));
 document.querySelector("#lobby-chat-form").addEventListener("submit", (event) => event.preventDefault());
 renderMiniBoard();
+window.addEventListener("resize", alignGomokuConsole);
+
+if ("ResizeObserver" in window) {
+  const gomokuBoard = document.querySelector(".gomoku .gomoku-board");
+  if (gomokuBoard) new ResizeObserver(alignGomokuConsole).observe(gomokuBoard);
+}
 
 document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => {
   mode = button.dataset.mode; document.querySelectorAll("[data-mode]").forEach((item) => item.classList.toggle("active", item === button));
@@ -112,5 +125,6 @@ function showLobby() {
   document.querySelector("#account-box").innerHTML = `<strong></strong><span>konto gracza</span><nav><a>profil</a><a>wiadomości</a><a>ustawienia</a></nav>`;
   document.querySelector("#account-box strong").textContent = session.user.displayName;
   loadRooms();
+  requestAnimationFrame(() => requestAnimationFrame(alignGomokuConsole));
 }
 if (session) showLobby();
