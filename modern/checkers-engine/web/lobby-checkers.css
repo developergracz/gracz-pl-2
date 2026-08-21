@@ -271,6 +271,17 @@
   visibility: hidden;
 }
 
+/* Odtworzenie wyglądu planszy Gomoku z poprzedniej konsoli Flash. */
+.gomoku .gomoku-board {
+  border: 0;
+  box-shadow: none;
+  background-color: #62a29b;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .28) 1px, transparent 1px);
+  background-size: 6.25% 6.25%;
+}
+
 .close-module {
   display: block;
   margin: 0 0 10px auto;
