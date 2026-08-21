@@ -358,7 +358,7 @@
   min-height: 0;
   grid-template-columns: minmax(0, 420px) minmax(230px, 260px);
   justify-content: center;
-  align-items: start;
+  align-items: stretch;
   gap: clamp(12px, 1.7vw, 22px);
   padding: clamp(12px, 1.5vw, 18px);
   border: 12px solid #fff;
@@ -382,10 +382,13 @@
   align-self: stretch;
 }
 
+/* expanded-console-alignment-v2:
+   prawa kolumna ma dokładnie wysokość kolumny planszy,
+   a chat zajmuje całe pozostałe miejsce do jej dolnej krawędzi. */
 .checkers.expanded .module-side {
-  display: flex;
-  flex-direction: column;
-  height: auto;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto;
+  height: 100%;
   min-height: 0;
   align-self: stretch;
   box-sizing: border-box;
@@ -393,12 +396,16 @@
 }
 
 .checkers.expanded .console-panel {
-  flex: 1 1 auto;
+  align-self: stretch;
   grid-template-rows: minmax(0, 1fr) auto;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
   max-height: none;
+}
+
+.checkers.expanded #lobby-error:empty {
+  display: none;
 }
 
 .checkers.expanded .console-content {
