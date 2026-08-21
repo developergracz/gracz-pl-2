@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { get } from "node:http";
 import test from "node:test";
 
 import { createGameHttpServer } from "../src/server.js";
@@ -94,4 +95,20 @@ test("file store persists private session JSON and restores it", async () => {
   const raw = await readFile(join(directory, "durable.json"), "utf8");
   assert.equal(JSON.parse(raw).game.turn, "black");
   assert.equal((await store.get("durable")).events.length, 2);
+});
+
+test("SSE sends an initial real-time snapshot to a connected player", async () => {
+  await withServer(new MemorySessionStore(), async (baseUrl) => {
+    await jsonRequest(`${baseUrl}/games`, {
+      method: "POST", body: { gameId: "live", whitePlayerId: "alice", blackPlayerId: "bob" },
+    });
+    const chunk = await new Promise((resolve, reject) => {
+      const request = get(`${baseUrl}/games/live/events`, { headers: { "x-player-id": "alice" } }, (response) => {
+        response.once("data", (data) => { resolve(data.toString("utf8")); request.destroy(); });
+      });
+      request.on("error", (error) => error.code === "ECONNRESET" ? undefined : reject(error));
+    });
+    assert.match(chunk, /event: game\.snapshot/);
+    assert.match(chunk, /"color":"white"/);
+  });
 });
