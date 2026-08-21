@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+import { MemoryAccountService } from "../src/accounts.js";
+import { AuthService } from "../src/auth.js";
+import { LobbyService } from "../src/lobby.js";
+import { createGameHttpServer } from "../src/server.js";
+import { MemorySessionStore } from "../src/store.js";
+
+const require = createRequire(import.meta.url);
+const { chromium } = require("playwright");
+const store = new MemorySessionStore();
+const auth = new AuthService({ secret: "browser-test-secret-with-more-than-32-characters" });
+const accounts = new MemoryAccountService();
+const lobby = new LobbyService({ sessionStore: store, idGenerator: () => "browser-room" });
+const webRoot = fileURLToPath(new URL("../web", import.meta.url));
+const server = createGameHttpServer({ store, auth, accounts, lobby, webRoot });
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+const baseUrl = `http://127.0.0.1:${server.address().port}`;
+const browser = await chromium.launch({ headless: true });
+
+try {
+  const alice = await browser.newContext();
+  const alicePage = await alice.newPage();
+  await alicePage.goto(baseUrl);
+  await alicePage.getByRole("button", { name: "Nowe konto" }).click();
+  await alicePage.locator('[name="userId"]').fill("alice");
+  await alicePage.locator('[name="displayName"]').fill("Alicja");
+  await alicePage.locator('[name="password"]').fill("alice-secret-123");
+  await alicePage.getByRole("button", { name: "Wejdź do lobby" }).click();
+  await alicePage.getByText("Zalogowany jako").waitFor();
+  await alicePage.getByRole("button", { name: "Utwórz pokój" }).click();
+  await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
+
+  const bob = await browser.newContext();
+  const bobPage = await bob.newPage();
+  await bobPage.goto(baseUrl);
+  await bobPage.getByRole("button", { name: "Nowe konto" }).click();
+  await bobPage.locator('[name="userId"]').fill("bob-user");
+  await bobPage.locator('[name="displayName"]').fill("Robert");
+  await bobPage.locator('[name="password"]').fill("robert-secret-123");
+  await bobPage.getByRole("button", { name: "Wejdź do lobby" }).click();
+  await bobPage.getByRole("button", { name: "Dołącz" }).click();
+  await bobPage.waitForURL(/\/game\.html\?game=game-browser-room/);
+  await bobPage.locator(".square").first().waitFor();
+  assert.equal(await bobPage.locator(".square").count(), 64);
+  assert.match(await bobPage.locator("#status").textContent(), /Twój ruch|Ruch przeciwnika/);
+  console.log("Browser journey passed: register → lobby → room → HTML5 board");
+} finally {
+  await browser.close();
+  await new Promise((resolve) => server.close(resolve));
+}
