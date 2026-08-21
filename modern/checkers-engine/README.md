@@ -27,6 +27,9 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - lobby z listą pokoi, tworzeniem pokoju i automatycznym startem partii,
 - rejestracja i logowanie z hasłami chronionymi algorytmem scrypt,
 - kompletny interfejs HTML5 konta i lobby,
+- trwała baza kont w prywatnym pliku z atomowym zapisem,
+- blokada wielokrotnych prób logowania,
+- CI GitHub uruchamiający testy modułów i pełny test Chromium,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
