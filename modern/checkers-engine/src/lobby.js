@@ -12,6 +12,8 @@ export class LobbyError extends Error {
 
 export class LobbyService {
   #rooms = new Map();
+  #presence = new Map();
+  #invitations = new Map();
 
   constructor({ sessionStore, idGenerator = randomUUID }) {
     if (!sessionStore) throw new TypeError("Magazyn sesji jest wymagany.");
@@ -19,20 +21,89 @@ export class LobbyService {
     this.idGenerator = idGenerator;
   }
 
+  touchUser({ userId, displayName }) {
+    requireText(userId, "userId");
+    requireText(displayName, "displayName");
+    this.#presence.set(userId, { userId, displayName, seenAt: Date.now() });
+  }
+
   listRooms() {
     return [...this.#rooms.values()].map(publicRoom);
+  }
+
+  listPlayers() {
+    const cutoff = Date.now() - 45_000;
+    for (const [userId, presence] of this.#presence) {
+      if (presence.seenAt < cutoff) this.#presence.delete(userId);
+    }
+    return [...this.#presence.values()].map((presence) => {
+      const room = [...this.#rooms.values()].find((candidate) =>
+        candidate.white?.id === presence.userId || candidate.black?.id === presence.userId);
+      return {
+        userId: presence.userId,
+        displayName: presence.displayName,
+        status: room?.status === "playing" ? "w grze" : "dostępny",
+        roomId: room?.roomId ?? null,
+        roomName: room?.roomName ?? null,
+      };
+    });
+  }
+
+  listInvitations(userId) {
+    return [...this.#invitations.values()]
+      .filter((invitation) => invitation.toId === userId && invitation.status === "pending")
+      .map((invitation) => structuredClone(invitation));
   }
 
   createRoom({ ownerId, ownerName, roomName = "Nowy pokój" }) {
     requireText(ownerId, "ownerId");
     requireText(ownerName, "ownerName");
     requireText(roomName, "roomName");
+    const existing = [...this.#rooms.values()].find((room) => room.white.id === ownerId && room.status === "waiting");
+    if (existing) return publicRoom(existing);
     const room = {
       roomId: this.idGenerator(), roomName, status: "waiting",
       white: { id: ownerId, name: ownerName }, black: null, gameId: null,
     };
     this.#rooms.set(room.roomId, room);
     return publicRoom(room);
+  }
+
+  createInvitation({ fromId, fromName, toId, roomId }) {
+    requireText(fromId, "fromId");
+    requireText(fromName, "fromName");
+    requireText(toId, "toId");
+    requireText(roomId, "roomId");
+    if (fromId === toId) throw new LobbyError("Nie możesz zaprosić samego siebie.", "INVALID_INVITATION");
+    const room = this.#rooms.get(roomId);
+    if (!room || room.status !== "waiting" || room.white.id !== fromId) {
+      throw new LobbyError("Najpierw zajmij miejsce przy własnym stole.", "ROOM_NOT_JOINABLE");
+    }
+    const target = this.listPlayers().find((player) => player.userId === toId);
+    if (!target) throw new LobbyError("Gracz nie jest już dostępny.", "PLAYER_OFFLINE");
+    if (target.status === "w grze") throw new LobbyError("Ten gracz jest już w grze.", "PLAYER_BUSY");
+    for (const invitation of this.#invitations.values()) {
+      if (invitation.status === "pending" && invitation.fromId === fromId && invitation.toId === toId && invitation.roomId === roomId) {
+        return structuredClone(invitation);
+      }
+    }
+    const invitation = {
+      invitationId: this.idGenerator(), status: "pending", roomId,
+      roomName: room.roomName, fromId, fromName, toId, createdAt: Date.now(),
+    };
+    this.#invitations.set(invitation.invitationId, invitation);
+    return structuredClone(invitation);
+  }
+
+  async respondInvitation({ invitationId, userId, userName, accept }) {
+    const invitation = this.#invitations.get(invitationId);
+    if (!invitation || invitation.toId !== userId || invitation.status !== "pending") {
+      throw new LobbyError("Zaproszenie nie jest już aktualne.", "INVITATION_NOT_FOUND");
+    }
+    invitation.status = accept ? "accepted" : "declined";
+    if (!accept) return { accepted: false };
+    const room = await this.joinRoom({ roomId: invitation.roomId, playerId: userId, playerName: userName });
+    return { accepted: true, room };
   }
 
   async joinRoom({ roomId, playerId, playerName }) {
