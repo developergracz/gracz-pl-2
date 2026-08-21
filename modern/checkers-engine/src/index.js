@@ -202,6 +202,19 @@ export function opponentOf(player) {
 
 function quietMoves(board, from) {
   const piece = board[from.row][from.column];
+  if (isKing(piece)) {
+    return ALL_DIRECTIONS.flatMap(([rowDelta, columnDelta]) => {
+      const moves = [];
+      let row = from.row + rowDelta;
+      let column = from.column + columnDelta;
+      while (insideBoard({ row, column }) && board[row][column] === null) {
+        moves.push({ from: { ...from }, to: { row, column } });
+        row += rowDelta;
+        column += columnDelta;
+      }
+      return moves;
+    });
+  }
   return movementDirections(piece).flatMap(([rowDelta, columnDelta]) => {
     const to = { row: from.row + rowDelta, column: from.column + columnDelta };
     return insideBoard(to) && board[to.row][to.column] === null
@@ -214,6 +227,35 @@ function captureMoves(board, from) {
   const piece = board[from.row][from.column];
   const owner = playerForPiece(piece);
   if (!owner) return [];
+
+  if (isKing(piece)) {
+    return ALL_DIRECTIONS.flatMap(([rowDelta, columnDelta]) => {
+      const moves = [];
+      let row = from.row + rowDelta;
+      let column = from.column + columnDelta;
+      let capture = null;
+
+      while (insideBoard({ row, column })) {
+        const occupant = board[row][column];
+        if (!occupant) {
+          if (capture) {
+            moves.push({
+              from: { ...from },
+              to: { row, column },
+              capture: { ...capture },
+            });
+          }
+        } else if (!capture && playerForPiece(occupant) === opponentOf(owner)) {
+          capture = { row, column };
+        } else {
+          break;
+        }
+        row += rowDelta;
+        column += columnDelta;
+      }
+      return moves;
+    });
+  }
 
   return movementDirections(piece).flatMap(([rowDelta, columnDelta]) => {
     const capture = { row: from.row + rowDelta, column: from.column + columnDelta };
@@ -232,6 +274,10 @@ function movementDirections(piece) {
   if (piece === PIECES.BLACK_MAN) return [[-1, -1], [-1, 1]];
   if (piece === PIECES.WHITE_KING || piece === PIECES.BLACK_KING) return ALL_DIRECTIONS;
   return [];
+}
+
+function isKing(piece) {
+  return piece === PIECES.WHITE_KING || piece === PIECES.BLACK_KING;
 }
 
 function promoteIfNeeded(piece, row) {
