@@ -2,6 +2,9 @@ let mode = "login";
 let session = JSON.parse(sessionStorage.getItem("gracz-session") || "null");
 const authSection = document.querySelector("#auth"), lobbySection = document.querySelector("#lobby");
 const form = document.querySelector("#auth-form"), nameField = document.querySelector("#name-field");
+const hostSeat = document.querySelector("#host-seat");
+const guestSeat = document.querySelector("#guest-seat");
+let lobbyRooms = [];
 
 function renderMiniBoard() {
   const board = document.querySelector("#mini-board");
@@ -65,17 +68,40 @@ form.addEventListener("submit", async (event) => {
 
 document.querySelector("#room-form").addEventListener("submit", async (event) => {
   event.preventDefault(); const roomName = new FormData(event.currentTarget).get("roomName");
-  await api("/lobby/rooms", { method: "POST", body: JSON.stringify({ roomName }), headers: { "content-type": "application/json" } }); await loadRooms();
+  await createRoom(roomName);
+});
+hostSeat.addEventListener("click", () => createRoom("Szybka gra"));
+guestSeat.addEventListener("click", async () => {
+  const room = lobbyRooms.find((item) => item.status === "waiting" && item.white.id !== session.user.userId);
+  if (room) await joinRoom(room);
 });
 document.querySelector("#logout").addEventListener("click", () => { sessionStorage.clear(); location.reload(); });
 
+async function createRoom(roomName) {
+  hostSeat.disabled = true;
+  try {
+    await api("/lobby/rooms", { method: "POST", body: JSON.stringify({ roomName }), headers: { "content-type": "application/json" } });
+    await loadRooms();
+  } finally {
+    hostSeat.disabled = false;
+  }
+}
+async function joinRoom(room) {
+  const joined = await api(`/lobby/rooms/${room.roomId}/join`, { method: "POST" });
+  location.href = `/game.html?game=${encodeURIComponent(joined.gameId)}&player=${encodeURIComponent(session.user.userId)}`;
+}
 async function loadRooms() { const result = await api("/lobby/rooms"); renderRooms(result.rooms); }
 function renderRooms(rooms) {
+  lobbyRooms = rooms;
+  const ownWaitingRoom = rooms.some((room) => room.status === "waiting" && room.white.id === session.user.userId);
+  const joinableRoom = rooms.find((room) => room.status === "waiting" && room.white.id !== session.user.userId);
+  hostSeat.disabled = ownWaitingRoom;
+  guestSeat.disabled = !joinableRoom;
   const root = document.querySelector("#rooms"); root.replaceChildren();
   rooms.forEach((room) => { const item = document.createElement("article"); item.className = "room";
     item.innerHTML = `<div><strong></strong><p></p></div>`; item.querySelector("strong").textContent = room.roomName; item.querySelector("p").textContent = `${room.white.name} · ${room.status}`;
     const button = document.createElement("button"); button.className = "primary"; button.textContent = room.status === "waiting" ? "Dołącz" : "W grze"; button.disabled = room.status !== "waiting" || room.white.id === session.user.userId;
-    button.addEventListener("click", async () => { const joined = await api(`/lobby/rooms/${room.roomId}/join`, { method: "POST" }); location.href = `/game.html?game=${encodeURIComponent(joined.gameId)}&player=${encodeURIComponent(session.user.userId)}`; });
+    button.addEventListener("click", () => joinRoom(room));
     item.append(button); root.append(item); });
 }
 async function api(path, options = {}) { const response = await fetch(path, { ...options, headers: { ...options.headers, authorization: `Bearer ${session.token}` } }); const result = await response.json(); if (!response.ok) { document.querySelector("#lobby-error").textContent = result.error?.message; throw new Error(result.error?.message); } return result; }
