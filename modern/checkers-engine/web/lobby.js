@@ -25,11 +25,35 @@ document.querySelector("#logout").addEventListener("click", () => { sessionStora
 async function loadRooms() { const result = await api("/lobby/rooms"); renderRooms(result.rooms); }
 function renderRooms(rooms) {
   const root = document.querySelector("#rooms"); root.replaceChildren();
-  rooms.forEach((room) => { const item = document.createElement("article"); item.className = "room";
-    item.innerHTML = `<div><strong></strong><p></p></div>`; item.querySelector("strong").textContent = room.roomName; item.querySelector("p").textContent = `${room.white.name} · ${room.status}`;
-    const button = document.createElement("button"); button.className = "primary"; button.textContent = room.status === "waiting" ? "Dołącz" : "W grze"; button.disabled = room.status !== "waiting" || room.white.id === session.user.userId;
-    button.addEventListener("click", async () => { const joined = await api(`/lobby/rooms/${room.roomId}/join`, { method: "POST" }); location.href = `/game.html?game=${encodeURIComponent(joined.gameId)}&player=${encodeURIComponent(session.user.userId)}`; });
-    item.append(button); root.append(item); });
+  rooms.forEach((room) => {
+    const item = document.createElement("article"); item.className = "room";
+    item.innerHTML = `<div><strong></strong><p></p></div>`;
+    item.querySelector("strong").textContent = room.roomName;
+    item.querySelector("p").textContent = `${room.white.name} · ${room.status}`;
+
+    const button = document.createElement("button");
+    button.className = "primary";
+    const isParticipant = room.white.id === session.user.userId || room.black?.id === session.user.userId;
+
+    if (room.status === "playing") {
+      button.textContent = isParticipant ? "Wróć do gry" : "W grze";
+      button.disabled = !isParticipant;
+      if (isParticipant) button.addEventListener("click", () => {
+        location.href = `/game.html?game=${encodeURIComponent(room.gameId)}&player=${encodeURIComponent(session.user.userId)}`;
+      });
+    } else if (room.white.id === session.user.userId) {
+      button.textContent = "Oczekiwanie";
+      button.disabled = true;
+    } else {
+      button.textContent = "Dołącz";
+      button.addEventListener("click", async () => {
+        const joined = await api(`/lobby/rooms/${room.roomId}/join`, { method: "POST" });
+        location.href = `/game.html?game=${encodeURIComponent(joined.gameId)}&player=${encodeURIComponent(session.user.userId)}`;
+      });
+    }
+
+    item.append(button); root.append(item);
+  });
 }
 async function api(path, options = {}) { const response = await fetch(path, { ...options, headers: { ...options.headers, authorization: `Bearer ${session.token}` } }); const result = await response.json(); if (!response.ok) { document.querySelector("#lobby-error").textContent = result.error?.message; throw new Error(result.error?.message); } return result; }
 function showLobby() { authSection.hidden = true; lobbySection.hidden = false; document.querySelector("#user-name").textContent = session.user.displayName; loadRooms(); }
