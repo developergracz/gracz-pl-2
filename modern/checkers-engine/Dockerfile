@@ -7,6 +7,7 @@ COPY src ./src
 COPY web ./web
 
 ENV HOST=0.0.0.0 PORT=3000 DATA_DIR=/app/data
+RUN mkdir -p /app/data && chown -R node:node /app/data
 VOLUME ["/app/data"]
 EXPOSE 3000
 USER node
