@@ -352,9 +352,11 @@
 }
 
 .checkers.expanded .module-body {
+  flex: 0 0 auto;
   min-height: 0;
-  grid-template-columns: minmax(430px, 1.7fr) minmax(270px, .9fr);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 460px) minmax(230px, 260px);
+  justify-content: center;
+  align-items: start;
   gap: clamp(12px, 1.7vw, 22px);
   padding: clamp(12px, 1.5vw, 18px);
   border: 12px solid #fff;
@@ -364,8 +366,8 @@
 }
 
 .checkers.expanded .mini-board {
-  width: 100%;
-  max-width: none;
+  width: min(420px, 62vh, calc(100vw - 340px));
+  max-width: 420px;
   margin: auto;
 }
 
@@ -381,16 +383,17 @@
 .checkers.expanded .module-side {
   display: flex;
   flex-direction: column;
+  height: min(420px, 62vh, calc(100vw - 340px));
   padding: 8px;
 }
 
 .checkers.expanded .console-panel {
-  flex: 0 0 auto;
-  grid-template-rows: minmax(132px, 1fr) auto;
+  flex: 1 1 auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   width: 100%;
-  height: clamp(180px, 23vh, 230px);
-  min-height: 180px;
-  max-height: 230px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
 }
 
 .checkers.expanded .console-content {
@@ -410,6 +413,11 @@
 
   .checkers.expanded .module-side {
     width: min(94vw, 540px);
+    height: auto;
     margin: auto;
+  }
+
+  .checkers.expanded .console-panel {
+    min-height: 220px;
   }
 }
