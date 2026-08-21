@@ -1,0 +1,30 @@
+name: CheckersEngine
+
+on:
+  pull_request:
+    paths:
+      - "modern/checkers-engine/**"
+      - ".github/workflows/checkers-engine.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modern/checkers-engine/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
