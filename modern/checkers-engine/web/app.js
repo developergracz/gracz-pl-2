@@ -2,6 +2,8 @@ const params = new URLSearchParams(location.search);
 const gameId = params.get("game") ?? "demo";
 const playerId = params.get("player") ?? "alice";
 const api = params.get("api") ?? "";
+const loginSession = JSON.parse(sessionStorage.getItem("gracz-session") || "null");
+const authHeaders = loginSession ? { authorization: `Bearer ${loginSession.token}` } : { "x-player-id": playerId };
 const boardElement = document.querySelector("#board");
 const statusElement = document.querySelector("#status");
 document.querySelector("#identity").textContent = `Gracz: ${playerId}`;
@@ -46,7 +48,7 @@ async function choose(position, piece, ownTurn) {
   const requestId = crypto.randomUUID();
   const response = await fetch(`${api}/games/${gameId}/moves`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-player-id": playerId },
+    headers: { "content-type": "application/json", ...authHeaders },
     body: JSON.stringify({ requestId, move: { from: selected, to: position } }),
   });
   const result = await response.json();
@@ -55,7 +57,7 @@ async function choose(position, piece, ownTurn) {
 }
 
 async function connect() {
-  const response = await fetch(`${api}/games/${gameId}/events`, { headers: { "x-player-id": playerId } });
+  const response = await fetch(`${api}/games/${gameId}/events`, { headers: authHeaders });
   if (!response.ok || !response.body) throw new Error("Nie udało się połączyć z partią.");
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
