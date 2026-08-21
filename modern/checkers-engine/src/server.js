@@ -13,14 +13,15 @@ import { RealtimeHub } from "./realtime.js";
 import { AuthError } from "./auth.js";
 import { LobbyError } from "./lobby.js";
 import { AccountError } from "./accounts.js";
+import { LoginRateLimiter, RateLimitError } from "./rate-limit.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export function createGameHttpServer({ store, auth = null, accounts = null, lobby = null, webRoot = null, logger = { error() {} }, realtime = new RealtimeHub() }) {
+export function createGameHttpServer({ store, auth = null, accounts = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
     try {
-      await route(request, response, store, realtime, auth, accounts, lobby, webRoot);
+      await route(request, response, store, realtime, auth, accounts, lobby, webRoot, loginRateLimiter);
     } catch (error) {
       logger.error(error);
       sendError(response, error);
@@ -28,7 +29,7 @@ export function createGameHttpServer({ store, auth = null, accounts = null, lobb
   }).on("close", () => realtime.close());
 }
 
-async function route(request, response, store, realtime, auth, accounts, lobby, webRoot) {
+async function route(request, response, store, realtime, auth, accounts, lobby, webRoot, loginRateLimiter) {
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { status: "ok" });
@@ -42,8 +43,17 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
     return sendJson(response, 201, { token: auth.issue(account), user: account });
   }
   if (request.method === "POST" && url.pathname === "/auth/login" && auth && accounts) {
-    const account = await accounts.authenticate(await readJson(request));
-    return sendJson(response, 200, { token: auth.issue(account), user: account });
+    const credentials = await readJson(request);
+    const rateKey = `${request.socket.remoteAddress ?? "unknown"}:${String(credentials.userId).toLowerCase()}`;
+    loginRateLimiter.assertAllowed(rateKey);
+    try {
+      const account = await accounts.authenticate(credentials);
+      loginRateLimiter.recordSuccess(rateKey);
+      return sendJson(response, 200, { token: auth.issue(account), user: account });
+    } catch (error) {
+      loginRateLimiter.recordFailure(rateKey);
+      throw error;
+    }
   }
   if (request.method === "POST" && url.pathname === "/auth/session" && auth) {
     const userId = request.headers["x-authenticated-user-id"];
@@ -149,6 +159,7 @@ function sendError(response, error) {
   if (error instanceof SessionNotFoundError) return sendJson(response, 404, errorBody(error));
   if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
   if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : 400, errorBody(error));
+  if (error instanceof RateLimitError) return sendJson(response, 429, errorBody(error));
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
   if (error instanceof SessionError || error?.name === "IllegalMoveError" || error instanceof TypeError) {
