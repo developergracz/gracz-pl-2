@@ -23,6 +23,8 @@ i — jako źródło prawdy — na serwerze multiplayer.
 - integracyjny test dwóch klientów połączonych z rzeczywistym serwerem,
 - kanał zdarzeń SSE aktualizujący plansze obu graczy w czasie rzeczywistym,
 - responsywny interfejs HTML5 obsługujący mysz i ekran dotykowy,
+- podpisane i wygasające sesje logowania,
+- lobby z listą pokoi, tworzeniem pokoju i automatycznym startem partii,
 - niemutowalny wynik operacji (stan wejściowy nie jest zmieniany).
 
 Wersja 0.1 odwzorowuje wariant 8×8 widoczny w starym serwerze Gracz.pl:
