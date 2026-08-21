@@ -25,16 +25,31 @@ function renderMiniBoard() {
 const checkersModule = document.querySelector("#checkers-module");
 const expandCheckers = document.querySelector("#expand-checkers");
 const closeCheckers = document.querySelector("#close-checkers");
+const openCheckers = document.querySelector("#open-checkers");
 function setCheckersExpanded(expanded) {
   checkersModule.classList.toggle("expanded", expanded);
   expandCheckers.setAttribute("aria-expanded", String(expanded));
-  expandCheckers.textContent = expanded ? "pomniejsz grę" : "zagraj w Warcaby";
+  expandCheckers.textContent = expanded ? "×" : "⛶";
+  expandCheckers.title = expanded ? "Pomniejsz konsolę" : "Pokaż konsolę na całym ekranie";
   closeCheckers.hidden = !expanded;
   document.body.classList.toggle("game-expanded", expanded);
 }
 expandCheckers.addEventListener("click", () => setCheckersExpanded(!checkersModule.classList.contains("expanded")));
+openCheckers.addEventListener("click", () => setCheckersExpanded(true));
 closeCheckers.addEventListener("click", () => setCheckersExpanded(false));
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") setCheckersExpanded(false); });
+document.querySelector("#invite-button").addEventListener("click", async () => {
+  await navigator.clipboard?.writeText(location.href);
+  document.querySelector("#invite-button").textContent = "LINK SKOPIOWANY";
+});
+document.querySelectorAll("[data-console-tab]").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll("[data-console-tab]").forEach((item) => item.classList.toggle("active", item === button));
+  const labels = { chat: "Dostępne stoły", history: "Historia gry pojawi się po rozpoczęciu partii.", users: "Użytkownicy pojawią się po zajęciu miejsc.", options: "Opcje stołu będą dostępne po rozpoczęciu partii." };
+  const panel = document.querySelector("#console-panel");
+  if (button.dataset.consoleTab === "chat") panel.innerHTML = '<h3>Dostępne stoły</h3><div id="rooms" class="rooms"></div>';
+  else panel.innerHTML = `<p>${labels[button.dataset.consoleTab]}</p>`;
+  if (button.dataset.consoleTab === "chat") loadRooms();
+}));
 renderMiniBoard();
 
 document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => {
