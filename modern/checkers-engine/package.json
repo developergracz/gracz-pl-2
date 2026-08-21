@@ -6,6 +6,7 @@
   "description": "Deterministic, server-authoritative checkers rules engine for Gracz.pl 2.0",
   "exports": "./src/index.js",
   "scripts": {
+    "start": "node src/main.js",
     "test": "node --test",
     "test:browser": "node e2e/lobby.browser.mjs"
   },

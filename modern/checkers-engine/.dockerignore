@@ -1,0 +1,7 @@
+node_modules
+data
+.git
+.github
+e2e
+test
+npm-debug.log

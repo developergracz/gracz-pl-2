@@ -43,6 +43,20 @@ npm test
 npm run test:browser
 ```
 
+## Wdrożenie testowe
+
+Najprościej uruchomić kompletny serwer z trwałym zapisem danych przez Docker
+Compose:
+
+```bash
+AUTH_SECRET="zmień-na-losowy-sekret-minimum-32-znaki" docker compose -f compose.test.yml up --build
+```
+
+Po uruchomieniu lobby jest dostępne pod `http://localhost:3000`, a kontrola
+stanu pod `http://localhost:3000/health`. Dane kont i partii są zachowywane w
+wolumenie `checkers-data`. W publicznym środowisku `AUTH_SECRET` musi być
+unikalnym, losowym sekretem przekazanym przez menedżer sekretów.
+
 Testy nie wymagają bazy danych ani zewnętrznych pakietów. Serwer przyjmuje
 tożsamość z nagłówka `x-player-id`, który w środowisku publicznym musi być
 ustawiany wyłącznie przez zaufaną warstwę logowania/API gateway.
