@@ -142,13 +142,13 @@
   font-size: 9px;
 }
 
-.checkers:not(.expanded) .lobby-chat-form,
+.checkers:not(.expanded) .lobby-chat-entry,
 .gomoku .lobby-chat-entry {
   margin-top: 2px;
   padding-top: 2px;
 }
 
-.checkers:not(.expanded) .lobby-chat-input,
+.checkers:not(.expanded) .lobby-chat-entry input,
 .gomoku .lobby-chat-entry input {
   min-height: 22px;
   padding: 2px 4px;
@@ -206,8 +206,12 @@
   border-top: 2px groove #d7b98c;
 }
 .lobby-chat-entry input {
+  display: block;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   min-height: 27px;
+  margin: 0;
   padding: 3px 6px;
   border: 2px inset #dfcfb6;
   background: #fffaf0;
