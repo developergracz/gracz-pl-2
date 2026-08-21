@@ -1,0 +1,23 @@
+:root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0b0d12; color: #f7f7f8; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at top, #232a38, #090b0f 62%); }
+.game-shell { width: min(94vw, 760px); padding: clamp(18px, 4vw, 36px); }
+header { display: grid; gap: 4px; margin-bottom: 20px; }
+.eyebrow { color: #ff4d57; font-weight: 800; letter-spacing: .18em; margin: 0; }
+h1 { font-size: clamp(34px, 7vw, 64px); line-height: 1; margin: 0; }
+#status { color: #b8c0cf; min-height: 1.5em; }
+.board-wrap { padding: clamp(8px, 2vw, 16px); border-radius: 24px; background: #171b24; box-shadow: 0 24px 70px #0009; }
+.board { aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr); overflow: hidden; border-radius: 14px; touch-action: manipulation; }
+.square { position: relative; border: 0; padding: 0; display: grid; place-items: center; }
+.square.light { background: #e7d7bd; }
+.square.dark { background: #6c3f31; cursor: pointer; }
+.square.selected { box-shadow: inset 0 0 0 5px #ffcf4a; }
+.square.legal::after { content: ""; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #8be28b; box-shadow: 0 0 0 7px #8be28b33; }
+.piece { width: 78%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset 0 5px 6px #fff4, inset 0 -7px 8px #0008, 0 5px 8px #0007; z-index: 1; }
+.piece.white { background: #f4f1e9; border: 3px solid #c9c4b7; }
+.piece.black { background: #181a1f; border: 3px solid #050607; }
+.piece.king::after { content: "★"; display: grid; place-items: center; height: 100%; color: #ffcf4a; font-size: clamp(18px, 5vw, 38px); }
+footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 18px; color: #aeb6c5; }
+button { font: inherit; }
+#reconnect { border: 1px solid #41495a; border-radius: 999px; background: #202632; color: white; padding: 10px 16px; cursor: pointer; }
+@media (max-width: 520px) { .game-shell { width: 100vw; padding: 12px; } .board-wrap { border-radius: 16px; } }
