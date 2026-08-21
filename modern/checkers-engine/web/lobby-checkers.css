@@ -2,6 +2,19 @@
   display: none !important;
 }
 
+.game-grid {
+  align-items: stretch;
+}
+
+.game-module {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-module .module-body {
+  flex: 1;
+}
+
 .module-link,
 .close-module {
   border: 0;
@@ -66,65 +79,77 @@
   display: none !important;
 }
 
-.checkers:not(.expanded) .seat-paper {
+.checkers:not(.expanded) .seat-paper,
+.gomoku .seat-paper {
   min-height: 54px;
   margin: 3px 3px 5px;
   padding: 6px 4px 12px;
 }
 
-.checkers:not(.expanded) .seat-paper button {
+.checkers:not(.expanded) .seat-paper button,
+.gomoku .seat-paper button {
   min-width: 50px;
   padding: 4px 5px;
   font-size: 11px;
 }
 
-.checkers:not(.expanded) .console-actions {
+.checkers:not(.expanded) .console-actions,
+.gomoku .console-actions {
   margin: 4px 0 2px;
 }
 
-.checkers:not(.expanded) .console-actions button {
+.checkers:not(.expanded) .console-actions button,
+.gomoku .console-actions button {
   min-height: 24px;
   padding: 2px;
   font-size: 11px;
 }
 
-.checkers:not(.expanded) .game-actions {
+.checkers:not(.expanded) .game-actions,
+.gomoku .game-actions {
   gap: 2px;
 }
 
-.checkers:not(.expanded) .game-actions button {
+.checkers:not(.expanded) .game-actions button,
+.gomoku .game-actions button {
   padding: 2px 0;
   font-size: 7px;
 }
 
-.checkers:not(.expanded) .console-tabs {
+.checkers:not(.expanded) .console-tabs,
+.gomoku .console-tabs {
   margin-top: 3px;
 }
 
-.checkers:not(.expanded) .console-tabs button {
+.checkers:not(.expanded) .console-tabs button,
+.gomoku .console-tabs button {
   padding: 3px 0;
   font-size: 8px;
 }
 
-.checkers:not(.expanded) .console-panel {
+.checkers:not(.expanded) .console-panel,
+.gomoku .console-panel {
   grid-template-rows: minmax(54px, 1fr) auto;
   min-height: 86px;
   max-height: 92px;
   padding: 2px;
 }
 
-.checkers:not(.expanded) .console-content {
+.checkers:not(.expanded) .console-content,
+.gomoku .console-content {
   min-height: 54px;
   padding: 3px;
   font-size: 9px;
 }
 
-.checkers:not(.expanded) .lobby-chat-form {
+.checkers:not(.expanded) .lobby-chat-form,
+.gomoku .lobby-chat-entry {
   margin-top: 2px;
   padding-top: 2px;
 }
 
-.checkers:not(.expanded) .lobby-chat-input {
+.checkers:not(.expanded) .lobby-chat-input,
+.gomoku .lobby-chat-entry input {
   min-height: 22px;
   padding: 2px 4px;
   font-size: 9px;
@@ -196,7 +221,16 @@
   align-items: start;
 }
 
+.gomoku .module-body {
+  min-height: 0;
+  align-items: start;
+}
+
 .checkers:not(.expanded) .module-side {
+  align-self: start;
+}
+
+.gomoku .module-side {
   align-self: start;
 }
 
@@ -204,10 +238,33 @@
   margin-bottom: 3px;
 }
 
+.gomoku .table-heading {
+  margin-bottom: 3px;
+}
+
 .checkers:not(.expanded) .fullscreen-control {
   width: 27px;
   height: 27px;
   font-size: 18px;
+}
+
+.gomoku .fullscreen-control {
+  width: 27px;
+  height: 27px;
+  font-size: 18px;
+}
+
+.gomoku .fullscreen-control:disabled,
+.gomoku button:disabled {
+  cursor: default;
+}
+
+.gomoku .console-content {
+  color: #624a35;
+}
+
+.gomoku-open {
+  visibility: hidden;
 }
 
 .close-module {
