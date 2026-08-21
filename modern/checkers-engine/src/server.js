@@ -9,20 +9,21 @@ import {
   submitMove,
 } from "./session.js";
 import { SessionNotFoundError } from "./store.js";
+import { RealtimeHub } from "./realtime.js";
 
-export function createGameHttpServer({ store, logger = { error() {} } }) {
+export function createGameHttpServer({ store, logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
     try {
-      await route(request, response, store);
+      await route(request, response, store, realtime);
     } catch (error) {
       logger.error(error);
       sendError(response, error);
     }
-  });
+  }).on("close", () => realtime.close());
 }
 
-async function route(request, response, store) {
+async function route(request, response, store, realtime) {
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { status: "ok" });
@@ -34,11 +35,16 @@ async function route(request, response, store) {
     return sendJson(response, 201, { gameId: session.gameId });
   }
 
-  const match = url.pathname.match(/^\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves|disconnect|reconnect))?$/);
+  const match = url.pathname.match(/^\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves|disconnect|reconnect|events))?$/);
   if (!match) return sendJson(response, 404, { error: { code: "NOT_FOUND", message: "Nie znaleziono endpointu." } });
   const [, gameId, action] = match;
   const playerId = trustedPlayerId(request);
   let session = await store.get(gameId);
+
+  if (request.method === "GET" && action === "events") {
+    realtime.subscribe(session, playerId, response);
+    return;
+  }
 
   if (request.method === "GET" && !action) {
     return sendJson(response, 200, getSessionSnapshot(session, playerId));
@@ -47,6 +53,7 @@ async function route(request, response, store) {
     const body = await readJson(request);
     const result = submitMove(session, { playerId, requestId: body.requestId, move: body.move });
     await store.save(result.session);
+    realtime.publish(result.session, "game.updated");
     return sendJson(response, 200, {
       duplicate: result.duplicate,
       eventSequence: result.event.sequence,
@@ -56,11 +63,13 @@ async function route(request, response, store) {
   if (request.method === "POST" && action === "disconnect") {
     session = disconnectPlayer(session, playerId);
     await store.save(session);
+    realtime.publish(session, "player.disconnected");
     return sendJson(response, 200, { disconnected: true });
   }
   if (request.method === "POST" && action === "reconnect") {
     const result = reconnectPlayer(session, playerId);
     await store.save(result.session);
+    realtime.publish(result.session, "player.reconnected");
     return sendJson(response, 200, result.snapshot);
   }
   return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
