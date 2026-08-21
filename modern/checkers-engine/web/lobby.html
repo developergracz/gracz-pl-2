@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lobby — Gracz.pl 2.0</title><link rel="stylesheet" href="./lobby.css">
+</head>
+<body>
+  <main>
+    <header><p class="brand">GRACZ<span>.PL</span></p><h1>Grajmy razem.</h1><p>Nowoczesne warcaby multiplayer.</p></header>
+    <section id="auth" class="card">
+      <div class="tabs"><button data-mode="login" class="active">Logowanie</button><button data-mode="register">Nowe konto</button></div>
+      <form id="auth-form">
+        <label>Login<input name="userId" minlength="3" maxlength="32" required autocomplete="username"></label>
+        <label id="name-field" hidden>Nazwa gracza<input name="displayName" minlength="2" maxlength="40" autocomplete="nickname"></label>
+        <label>Hasło<input name="password" type="password" minlength="10" required autocomplete="current-password"></label>
+        <button class="primary" type="submit">Wejdź do lobby</button><p id="auth-error" class="error" role="alert"></p>
+      </form>
+    </section>
+    <section id="lobby" hidden>
+      <div class="lobby-head"><div><p>Zalogowany jako</p><strong id="user-name"></strong></div><button id="logout">Wyloguj</button></div>
+      <form id="room-form" class="create"><input name="roomName" value="Szybka gra" maxlength="40" required><button class="primary">Utwórz pokój</button></form>
+      <h2>Dostępne pokoje</h2><div id="rooms" class="rooms"></div><p id="lobby-error" class="error" role="alert"></p>
+    </section>
+  </main><script type="module" src="./lobby.js"></script>
+</body></html>
