@@ -58,14 +58,14 @@ export class SecureAccountService {
     const phone = cleanPhone(input?.phone);
     const verificationChannel = normalizeVerificationChannel(input?.verificationChannel);
     if (verificationChannel === "sms" && !phone) throw new AccountError("Aby otrzymać kod SMS, wpisz prawidłowy numer telefonu.", "INVALID_PHONE");
-    if (verificationChannel === "sms") throw new AccountError("Wysyłka kodów SMS nie jest jeszcze skonfigurowana. Wybierz kod na adres e-mail.", "SMS_NOT_CONFIGURED");
 
     const account = await this.base.register(input);
     try {
       await this.#setCurrentPassword(account.userId, input.password);
       await this.pool.query(`UPDATE gracz_accounts SET phone=$2, verification_channel=$3, contact_verified=FALSE WHERE user_id=$1`, [account.userId, phone || null, verificationChannel]);
       await this.#sendRegistrationCode(account.userId);
-      throw new AccountError("Kod aktywacyjny został wysłany na podany adres e-mail. Wpisz 6 cyfr, aby aktywować konto.", "VERIFICATION_REQUIRED");
+      const destination = verificationChannel === "sms" ? "SMS na podany numer telefonu" : "wiadomości e-mail na podany adres";
+      throw new AccountError(`Kod aktywacyjny został wysłany w ${destination}. Wpisz 6 cyfr, aby aktywować konto.`, "VERIFICATION_REQUIRED");
     } catch (error) {
       if (error?.code !== "VERIFICATION_REQUIRED") await this.pool.query(`DELETE FROM gracz_accounts WHERE user_id=$1 AND contact_verified=FALSE`, [account.userId]).catch(() => {});
       throw error;
@@ -73,12 +73,9 @@ export class SecureAccountService {
   }
 
   async #sendRegistrationCode(userId) {
-    const { rows } = await this.pool.query(`SELECT user_id,display_name,email,verification_channel,contact_verified FROM gracz_accounts WHERE user_id=$1`, [userId]);
+    const { rows } = await this.pool.query(`SELECT user_id,display_name,email,phone,verification_channel,contact_verified FROM gracz_accounts WHERE user_id=$1`, [userId]);
     const account = rows[0];
     if (!account || account.contact_verified) return { ok: true };
-    if (account.verification_channel !== "email") throw new AccountError("Ten kanał weryfikacji nie jest jeszcze obsługiwany.", "CHANNEL_NOT_CONFIGURED");
-    const email = cleanEmail(account.email);
-    if (!email) throw new AccountError("Do aktywacji konta wymagany jest prawidłowy adres e-mail.", "EMAIL_REQUIRED");
     const code = String(randomInt(100000, 1000000));
     await this.pool.query(
       `INSERT INTO gracz_registration_codes(user_id,code_hash,expires_at,attempts,created_at)
@@ -86,7 +83,15 @@ export class SecureAccountService {
        ON CONFLICT(user_id) DO UPDATE SET code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,attempts=0,created_at=NOW()`,
       [userId, hashToken(code)],
     );
-    await sendVerificationEmail({ to: email, displayName: account.display_name, code });
+    if (account.verification_channel === "sms") {
+      const phone = cleanPhone(account.phone);
+      if (!phone) throw new AccountError("Do aktywacji SMS wymagany jest prawidłowy numer telefonu.", "INVALID_PHONE");
+      await sendVerificationSms({ to: phone, displayName: account.display_name, code });
+    } else {
+      const email = cleanEmail(account.email);
+      if (!email) throw new AccountError("Do aktywacji konta wymagany jest prawidłowy adres e-mail.", "EMAIL_REQUIRED");
+      await sendVerificationEmail({ to: email, displayName: account.display_name, code });
+    }
     return { ok: true };
   }
 
@@ -183,13 +188,16 @@ async function sendVerificationEmail({ to, displayName, code }) {
   const apiKey = String(process.env.RESEND_API_KEY ?? "").trim();
   const from = String(process.env.EMAIL_FROM ?? "").trim();
   if (!apiKey || !from) throw new AccountError("Wysyłka e-mail nie jest jeszcze skonfigurowana na serwerze.", "EMAIL_NOT_CONFIGURED");
+  const name = displayName || "Graczu";
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({
-      from, to: [to], subject: "Kod aktywacyjny Gracz.pl",
-      text: `Witaj ${displayName || "Graczu"}!\n\nTwój kod aktywacyjny Gracz.pl to: ${code}\n\nKod jest ważny przez 10 minut. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:24px"><h2>Gracz.pl</h2><p>Witaj ${escapeHtml(displayName || "Graczu")}!</p><p>Twój kod aktywacyjny:</p><div style="font-size:34px;font-weight:800;letter-spacing:8px;padding:18px;background:#f2f5f3;border-radius:10px;text-align:center">${code}</div><p>Kod jest ważny przez 10 minut.</p><p style="color:#6b7470">Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.</p></div>`,
+      from,
+      to: [to],
+      subject: "Witaj w Gracz.pl — Twój kod aktywacyjny",
+      text: `Witaj ${name}!\n\nDziękujemy za dołączenie do społeczności Gracz.pl. Aby zakończyć tworzenie konta i rozpocząć grę, potwierdź swój adres e-mail.\n\nTWÓJ KOD AKTYWACYJNY: ${code}\n\nKod jest ważny przez 10 minut i może zostać użyty tylko do aktywacji Twojego konta.\n\nDla Twojego bezpieczeństwa nigdy nie przekazuj tego kodu innej osobie. Administracja Gracz.pl nigdy nie prosi o podanie hasła ani kodu aktywacyjnego.\n\nJeśli to nie Ty zakładałeś konto w Gracz.pl, zignoruj tę wiadomość.\n\nŻyczymy wielu emocjonujących rozgrywek!\nZespół Gracz.pl`,
+      html: `<div style="margin:0;padding:32px 16px;background:#071016;font-family:Arial,Helvetica,sans-serif;color:#eaf4ef"><div style="max-width:620px;margin:0 auto;border:1px solid #24443a;border-radius:18px;overflow:hidden;background:#0d171d;box-shadow:0 20px 60px rgba(0,0,0,.35)"><div style="padding:28px 32px;text-align:center;background:linear-gradient(135deg,#10251c,#0b171c);border-bottom:1px solid #24443a"><div style="font-size:30px;font-weight:900;letter-spacing:-2px;color:#fff">gracz<span style="color:#ff3d4a;font-size:16px">.PL</span></div><div style="margin-top:8px;color:#7f9b90;font-size:13px">Gry online · Rywalizacja · Społeczność</div></div><div style="padding:34px 34px 28px"><h1 style="margin:0 0 18px;font-size:25px;color:#fff">Witaj, ${escapeHtml(name)}!</h1><p style="margin:0 0 14px;line-height:1.65;color:#c0d0c9">Dziękujemy za dołączenie do społeczności <strong style="color:#fff">Gracz.pl</strong>. Twoje konto jest już prawie gotowe.</p><p style="margin:0 0 24px;line-height:1.65;color:#c0d0c9">Aby zakończyć rejestrację i rozpocząć grę, wpisz poniższy kod w oknie aktywacji konta:</p><div style="margin:24px 0;padding:22px;text-align:center;border:1px solid #2d6d4c;border-radius:12px;background:#0a2618"><div style="font-size:12px;text-transform:uppercase;letter-spacing:1.7px;color:#74b591">Twój kod aktywacyjny</div><div style="margin-top:10px;font-size:38px;font-weight:900;letter-spacing:10px;color:#43ed92">${code}</div></div><p style="margin:0 0 22px;text-align:center;color:#9db2a8;font-size:13px">Kod jest ważny przez <strong style="color:#fff">10 minut</strong>.</p><div style="padding:16px 18px;border-radius:10px;background:#101f25;border-left:4px solid #e2ad45;color:#b9c7c1;font-size:13px;line-height:1.55"><strong style="color:#f4d285">Bezpieczeństwo konta</strong><br>Nigdy nie przekazuj tego kodu innej osobie. Administracja Gracz.pl nigdy nie poprosi Cię o podanie hasła ani kodu aktywacyjnego.</div><p style="margin:24px 0 0;line-height:1.6;color:#b8c7c0">Jeżeli to nie Ty zakładałeś konto, po prostu zignoruj tę wiadomość.</p><p style="margin:24px 0 0;color:#e9f4ef">Życzymy wielu emocjonujących rozgrywek!<br><strong>Zespół Gracz.pl</strong></p></div><div style="padding:18px 32px;text-align:center;border-top:1px solid #1f3530;color:#698078;font-size:11px">Ta wiadomość została wysłana automatycznie w związku z próbą utworzenia konta w Gracz.pl.</div></div></div>`,
     }),
   });
   if (!response.ok) {
@@ -198,6 +206,30 @@ async function sendVerificationEmail({ to, displayName, code }) {
     throw new AccountError("Nie udało się wysłać kodu aktywacyjnego. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
   }
 }
+
+async function sendVerificationSms({ to, displayName, code }) {
+  const accountSid = String(process.env.TWILIO_ACCOUNT_SID ?? "").trim();
+  const authToken = String(process.env.TWILIO_AUTH_TOKEN ?? "").trim();
+  const from = String(process.env.TWILIO_FROM_NUMBER ?? "").trim();
+  if (!accountSid || !authToken || !from) throw new AccountError("Wysyłka SMS nie jest jeszcze skonfigurowana na serwerze.", "SMS_NOT_CONFIGURED");
+  const name = String(displayName || "Graczu").trim().slice(0, 40);
+  const body = `Gracz.pl: Witaj ${name}! Twój kod aktywacyjny to ${code}. Kod jest ważny 10 minut. Nie udostępniaj go nikomu. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`;
+  const form = new URLSearchParams({ To: to, From: from, Body: body });
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`, "utf8").toString("base64")}`,
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: form,
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.error("Nie udało się wysłać SMS-a aktywacyjnego:", response.status, detail.slice(0, 300));
+    throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
+  }
+}
+
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]); }
 export async function hashPasswordV2(password, salt) { return hashPassword(password, salt, CURRENT_SCRYPT); }
 async function hashPassword(password, salt, params) { return scrypt(password, salt, 64, params); }
