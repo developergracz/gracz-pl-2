@@ -23,6 +23,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: modern/checkers-engine
@@ -31,9 +32,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: modern/checkers-engine/package.json
-      - run: npm install --ignore-scripts
-      - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund
+      - name: Static syntax checks
+        run: npm run check
+      - name: Unit and integration tests
+        run: npm test
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        run: npm run test:browser
