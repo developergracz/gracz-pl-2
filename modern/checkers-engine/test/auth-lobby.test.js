@@ -15,9 +15,9 @@ test("signed login token identifies user and detects tampering", () => {
 
 test("expired login token is rejected", () => {
   let now = 1_000_000;
-  const auth = new AuthService({ secret: "a-secure-test-secret-with-at-least-32-characters", ttlSeconds: 10, clock: () => now });
+  const auth = new AuthService({ secret: "a-secure-test-secret-with-at-least-32-characters", ttlSeconds: 60, clock: () => now });
   const token = auth.issue({ userId: "alice", displayName: "Alicja" });
-  now += 11_000;
+  now += 61_000;
   assert.throws(() => auth.verify(token), (error) => error.code === "SESSION_EXPIRED");
 });
 
