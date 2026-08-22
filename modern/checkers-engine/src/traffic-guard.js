@@ -91,14 +91,21 @@ export class TrafficGuard {
 
 export function clientSource(request) {
   const trustCloudflare = String(process.env.TRUST_CLOUDFLARE_HEADERS || "").toLowerCase() === "true";
-  const cfIp = request.headers?.["cf-connecting-ip"];
-  if (trustCloudflare && typeof cfIp === "string" && cfIp.trim()) return normalizeAddress(cfIp);
+  const trustProxy = String(process.env.TRUST_PROXY_HEADERS || "").toLowerCase() === "true";
 
-  const forwarded = request.headers?.["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.trim()) {
-    const chain = forwarded.split(",").map((part) => part.trim()).filter(Boolean);
-    if (chain.length) return normalizeAddress(chain.at(-1));
+  if (trustCloudflare) {
+    const cfIp = request.headers?.["cf-connecting-ip"];
+    if (typeof cfIp === "string" && cfIp.trim()) return normalizeAddress(cfIp);
   }
+
+  if (trustProxy) {
+    const forwarded = request.headers?.["x-forwarded-for"];
+    if (typeof forwarded === "string" && forwarded.trim()) {
+      const chain = forwarded.split(",").map((part) => part.trim()).filter(Boolean);
+      if (chain.length) return normalizeAddress(chain[0]);
+    }
+  }
+
   return normalizeAddress(request.socket?.remoteAddress || "unknown");
 }
 
