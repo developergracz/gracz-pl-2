@@ -27,10 +27,7 @@ export class TrafficGuard {
     this.#consume(`global:${source}`, 600, 60_000, "global-ip");
     this.#consume(`endpoint:${source}:${method}:${endpointClass(path)}`, endpointLimit(method, path), 60_000, "endpoint-ip");
 
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-      this.#consume(`mutation:${source}`, 120, 60_000, "mutation-ip");
-    }
-
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) this.#consume(`mutation:${source}`, 120, 60_000, "mutation-ip");
     if (method === "POST" && path === "/auth/register") this.#consume(`register:${source}`, 8, 15 * 60_000, "register-ip");
     if (method === "POST" && path === "/auth/login") this.#consume(`login-ip:${source}`, 40, 15 * 60_000, "login-ip");
     if (method === "POST" && path === "/auth/reset-password") this.#consume(`reset:${source}`, 8, 30 * 60_000, "password-reset-ip");
@@ -93,14 +90,14 @@ export class TrafficGuard {
 }
 
 export function clientSource(request) {
+  const trustCloudflare = String(process.env.TRUST_CLOUDFLARE_HEADERS || "").toLowerCase() === "true";
   const cfIp = request.headers?.["cf-connecting-ip"];
-  const cfRay = request.headers?.["cf-ray"];
-  if (typeof cfIp === "string" && cfIp.trim() && typeof cfRay === "string" && cfRay.trim()) return normalizeAddress(cfIp);
+  if (trustCloudflare && typeof cfIp === "string" && cfIp.trim()) return normalizeAddress(cfIp);
 
   const forwarded = request.headers?.["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.trim()) {
     const chain = forwarded.split(",").map((part) => part.trim()).filter(Boolean);
-    if (chain.length) return normalizeAddress(chain[0]);
+    if (chain.length) return normalizeAddress(chain.at(-1));
   }
   return normalizeAddress(request.socket?.remoteAddress || "unknown");
 }
