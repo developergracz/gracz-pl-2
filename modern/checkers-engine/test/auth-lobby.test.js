@@ -21,6 +21,32 @@ test("expired login token is rejected", () => {
   assert.throws(() => auth.verify(token), (error) => error.code === "SESSION_EXPIRED");
 });
 
+test("server issues HttpOnly Secure SameSite cookie and accepts it as session", async () => {
+  const store = new MemorySessionStore();
+  const auth = new AuthService({ secret: "a-secure-test-secret-with-at-least-32-characters" });
+  const server = createGameHttpServer({ store, auth });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const login = await fetch(`${baseUrl}/auth/session`, {
+      method: "POST",
+      headers: { "x-authenticated-user-id": "alice", "x-authenticated-display-name": "Alicja" },
+    });
+    assert.equal(login.status, 201);
+    const setCookie = login.headers.get("set-cookie");
+    assert.match(setCookie, /__Host-gracz_session=/);
+    assert.match(setCookie, /HttpOnly/i);
+    assert.match(setCookie, /Secure/i);
+    assert.match(setCookie, /SameSite=Strict/i);
+    const cookie = setCookie.split(";")[0];
+    const me = await fetch(`${baseUrl}/auth/me`, { headers: { cookie } });
+    assert.equal(me.status, 200);
+    assert.equal((await me.json()).user.userId, "alice");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("lobby creates waiting room and starts game when second player joins", async () => {
   const store = new MemorySessionStore();
   const lobby = new LobbyService({ sessionStore: store, idGenerator: () => "room-1" });
