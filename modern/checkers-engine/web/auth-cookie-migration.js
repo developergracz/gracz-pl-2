@@ -167,6 +167,28 @@
     }
   }
 
+  function installTermsCheckboxOpen() {
+    const terms = document.querySelector("#terms");
+    const termsLink = document.querySelector("#terms-link");
+    const registerTab = document.querySelector('[data-mode="register"]');
+    if (!terms || !termsLink || !registerTab) return;
+
+    const accepted = () => localStorage.getItem("gracz-terms-v1") === "accepted";
+    const syncAcceptedState = () => { if (accepted()) terms.checked = true; };
+
+    terms.addEventListener("click", (event) => {
+      if (!registerTab.classList.contains("active") || accepted()) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      terms.checked = false;
+      termsLink.click();
+    }, true);
+
+    window.addEventListener("focus", () => setTimeout(syncAcceptedState, 100));
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(syncAcceptedState, 100); });
+    syncAcceptedState();
+  }
+
   function installActivationDialog() {
     const error = document.querySelector("#auth-error"), form = document.querySelector("#auth-form");
     if (!error || !form) return;
@@ -207,6 +229,7 @@
     clarifyRegistrationEmailLabel();
     installRegistrationVerificationFields();
     installRegistrationDraftPreservation();
+    installTermsCheckboxOpen();
     installActivationDialog();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true }); else install();
