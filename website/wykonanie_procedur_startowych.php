@@ -5,9 +5,8 @@ include_once("variables_local.php");
 include_once('../variables_global.php'); // przetworzenie 5ms
 include_once("exceptions.php");
 
-
 $load = sys_getloadavg();
-if ($load[0] > 80) {
+if (is_array($load) && $load[0] > 80) {
     header('HTTP/1.1 503 Too busy, try again later');
     die('<meta charset="utf8" /><div style="width:70%; font-size:200%; margin:auto; margin-top:300px; background:f5f5f5; border-radius:10pt;">Przepraszamy,<br />nasz serwer jest zbyt obciążony. Spróbuj ponownie później.<br /><br /><span style="font-size:300%;">;(</span></div>');
 }
@@ -24,15 +23,12 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
-// Włączernie/Wyłączenie wyświetlania błędów
 ini_set('display_errors',$production_mode?"Off":"On");
 if (!$production_mode)
   error_reporting(E_ALL^E_NOTICE^E_DEPRECATED);
 else
   error_reporting(E_ERROR^E_WARNING);
 
-
-// Włączanie kompresji GZIP
 if(!ini_get('zlib.output_compression')){
   if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && substr_count($_SERVER['HTTP_ACCEPT_ENCODING'],'gzip')){
     ini_set('zlib.output_compression_level',1);
@@ -48,9 +44,8 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
   $plik_wystapienia = addslashes(htmlspecialchars($plik_wystapienia));
   $linia = intval($linia);
 
-  // Never write credentials, session ids or CSRF/reset tokens into application logs.
   $safe_request = $_REQUEST;
-  foreach (array('password','password2','old_password','new_password','token','PHPSESSID','authorization') as $sensitive_key)
+  foreach (array('password','password2','password_confirmation','old_password','new_password','new_password_confirm','token','PHPSESSID','authorization') as $sensitive_key)
   {
     if (isset($safe_request[$sensitive_key]))
       $safe_request[$sensitive_key] = '[REDACTED]';
@@ -90,7 +85,6 @@ function UnhandledExceptionsCatcher($exception)
   global $path;
   $plik = fopen($path['log_exceptions_php'],'a+');
   if (!$plik) return;
-  // Do not serialize request data or credentials in the exception log.
   fwrite($plik,get_class($exception).': '.$exception->getMessage()."\r\n");
   fwrite($plik,'==========================================='."\r\n");
   fclose($plik);
@@ -113,12 +107,11 @@ if (isset($_SERVER['X-Purpose'])&&$_SERVER['X-Purpose']=='preview')
 
 session_start();
 
-include_once($actual_path.'library_main.php'); // przetworzenie 40ms
-
-DatabaseConnect(); // ok. 10ms
+include_once($actual_path.'library_main.php');
+DatabaseConnect();
+include_once($actual_path.'legacy_auth_security.php');
 
 header('Content-Type: text/html; charset=UTF-8;');
-srand();
 
 if (strpos($_SERVER['REQUEST_URI'], $path['activate_account'])>0)
   Logout();
@@ -128,7 +121,14 @@ try
 {
   if (isset($_POST['buttonLogin']))
   {
-    AuthorizeUser($_POST['login'], $_POST['password'], isset($_POST['remember_me'])?($_POST['remember_me']=='on'?true:false):false);
+    $login_ok = SecureAuthorizeUser(
+      isset($_POST['login']) ? $_POST['login'] : '',
+      isset($_POST['password']) ? $_POST['password'] : '',
+      isset($_POST['remember_me']) && $_POST['remember_me'] === 'on'
+    );
+    if (!$login_ok) {
+      $komunikat_logowania = 'Nieprawidłowy login/e-mail lub hasło.';
+    }
   }else
   {
     AuthorizeUser();
@@ -136,6 +136,10 @@ try
 }catch(ExceptionRoot $e)
 {
   $komunikat_logowania = $e;
+}catch(Exception $e)
+{
+  $komunikat_logowania = 'Logowanie nie powiodło się.';
+  error_log('Gracz.pl login error: '.get_class($e));
 }
 
 ProtectAgainstSessionHijacking();
