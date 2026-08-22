@@ -44,24 +44,27 @@ const server = createGameHttpServer({
   logger: console,
 });
 
-// Nagłówki ochronne ustawiane przed głównym handlerem HTTP. Polityka CSP pozostawia
-// inline CSS/JS wyłącznie przejściowo, dopóki frontend lobby nie zostanie rozdzielony
-// na pliki bez skryptów inline. Pozostałe źródła są ograniczone do tej samej domeny.
+// Warstwa nagłówków ochronnych. Inline JS/CSS pozostaje czasowo dopuszczony tylko
+// dlatego, że część odziedziczonego frontendu nie została jeszcze rozdzielona na
+// osobne pliki. Docelowo polityka CSP przejdzie na nonce/hash bez unsafe-inline.
 server.prependListener("request", (_request, response) => {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  response.setHeader("Origin-Agent-Cluster", "?1");
+  response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()");
   response.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'none'; worker-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests",
   );
-  response.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 });
 
-// Jawne limity HTTP ograniczają ryzyko połączeń wiszących oraz prostych ataków
-// typu slow-client. Wartości są konserwatywne dla lekkiego API gier i lobby.
+// Jawne limity HTTP ograniczają ryzyko wiszących połączeń i prostych ataków
+// slow-client. Wartości są konserwatywne dla lekkiego API gier i lobby.
 server.requestTimeout = 20_000;
 server.headersTimeout = 10_000;
 server.keepAliveTimeout = 5_000;
