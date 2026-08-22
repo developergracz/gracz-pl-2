@@ -68,7 +68,7 @@ export class AdaptiveBotDefense {
       (accountId ? this.#score(`account:${normalize(accountId)}`) : 0) +
       (accountId ? this.#score(`pair:${source}:${normalize(accountId)}`) : 0) +
       (endpoint === "register" ? this.#score(`register:${source}`) : 0);
-    return score >= 8;
+    return score >= 16;
   }
 
   async verifyIfRequired({ source, accountId = "", endpoint = "auth", token = "" }) {
