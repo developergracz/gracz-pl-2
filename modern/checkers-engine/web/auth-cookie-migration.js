@@ -84,17 +84,40 @@
     bye.style.cssText = "margin-top:20px;color:#f2f8f5;font-size:18px;font-weight:800";
     bye.textContent = `Do zobaczenia, ${safeName}!`;
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "Wróć do logowania";
-    button.style.cssText = "margin-top:24px;padding:12px 26px;border:0;border-radius:8px;background:linear-gradient(180deg,#22e779,#0db455);color:#fff;font-weight:900;cursor:pointer";
+    const hint = document.createElement("div");
+    hint.style.cssText = "margin-top:14px;color:#789087;font-size:11px";
+    hint.textContent = "Okno zamknie się automatycznie za 10 sekund.";
 
-    const finish = () => location.replace("/");
-    button.addEventListener("click", finish);
-    card.append(logo, icon, title, p1, p2, bye, button);
+    const actions = document.createElement("div");
+    actions.style.cssText = "display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px";
+
+    const loginButton = document.createElement("button");
+    loginButton.type = "button";
+    loginButton.textContent = "Zaloguj ponownie";
+    loginButton.style.cssText = "min-width:170px;padding:12px 22px;border:0;border-radius:8px;background:linear-gradient(180deg,#22e779,#0db455);color:#fff;font-weight:900;cursor:pointer;box-shadow:0 8px 24px #0db45535";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "Zamknij";
+    closeButton.style.cssText = "min-width:130px;padding:12px 22px;border:1px solid #49615a;border-radius:8px;background:#111b20;color:#dce8e2;font-weight:800;cursor:pointer";
+
+    let finished = false;
+    let timeoutId = null;
+    const showLogin = () => {
+      if (finished) return;
+      finished = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      location.replace("/");
+    };
+
+    loginButton.addEventListener("click", showLogin);
+    closeButton.addEventListener("click", showLogin);
+    actions.append(loginButton, closeButton);
+    card.append(logo, icon, title, p1, p2, bye, hint, actions);
     overlay.append(card);
     document.body.append(overlay);
-    setTimeout(finish, 7000);
+    loginButton.focus();
+    timeoutId = setTimeout(showLogin, 10_000);
   }
 
   function installLogout() {
