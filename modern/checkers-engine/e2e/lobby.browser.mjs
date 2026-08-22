@@ -20,12 +20,15 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
 
-async function register(page, { userId, displayName, password }) {
-  await page.goto(baseUrl);
+async function register(page, { userId, displayName, email, password }) {
+  await page.goto(`${baseUrl}/lobby.html`);
   await page.getByRole("button", { name: "Nowe konto" }).click();
   await page.locator('[name="userId"]').fill(userId);
   await page.locator('[name="displayName"]').fill(displayName);
+  await page.locator('[name="email"]').fill(email);
   await page.locator('[name="password"]').fill(password);
+  await page.locator('[name="passwordConfirm"]').fill(password);
+  await page.locator('#terms').check();
   await page.locator("#auth-form button[type=submit]").click();
   await page.getByText("Zalogowany jako").waitFor();
 }
@@ -36,7 +39,8 @@ try {
   await register(alicePage, {
     userId: "alice",
     displayName: "Alicja",
-    password: "alice-secret-123",
+    email: "alice@example.test",
+    password: "Alice-secret-123!",
   });
   await alicePage.locator("#host-seat").click();
   await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
@@ -46,7 +50,8 @@ try {
   await register(bobPage, {
     userId: "bob-user",
     displayName: "Robert",
-    password: "robert-secret-123",
+    email: "bob@example.test",
+    password: "Robert-secret-123!",
   });
   await bobPage.locator("#guest-seat").click();
   await bobPage.waitForURL(/\/game\.html\?game=game-browser-room/);
