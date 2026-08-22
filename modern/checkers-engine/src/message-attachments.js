@@ -43,9 +43,17 @@ export class MessageAttachmentService {
   async save(userId, messageId, input = {}) {
     await this.ready;
     assertMessageId(messageId);
-    const { rows } = await this.pool.query("SELECT sender_id FROM gracz_messages WHERE message_id=$1", [messageId]);
-    if (!rows[0]) throw new AccountError("Nie znaleziono wiadomości.", "MESSAGE_NOT_FOUND");
-    if (rows[0].sender_id !== userId) throw new AccountError("Załącznik może dodać tylko nadawca wiadomości.", "INVALID_MESSAGE");
+    const { rows } = await this.pool.query(
+      `SELECT m.sender_id,m.read_at,m.sender_deleted,
+              EXISTS(SELECT 1 FROM gracz_message_attachments a WHERE a.message_id=m.message_id) AS has_attachment
+       FROM gracz_messages m WHERE m.message_id=$1`,
+      [messageId],
+    );
+    const message = rows[0];
+    if (!message) throw new AccountError("Nie znaleziono wiadomości.", "MESSAGE_NOT_FOUND");
+    if (message.sender_id !== userId || message.sender_deleted) throw new AccountError("Załącznik może dodać tylko nadawca wiadomości.", "INVALID_MESSAGE");
+    if (message.has_attachment) throw new AccountError("Załącznika do wysłanej wiadomości nie można podmienić.", "INVALID_ATTACHMENT");
+    if (message.read_at) throw new AccountError("Nie można dodać załącznika po przeczytaniu wiadomości przez odbiorcę.", "INVALID_ATTACHMENT");
 
     const mimeType = String(input.mimeType ?? "").toLowerCase();
     if (!ALLOWED_TYPES.has(mimeType)) throw new AccountError("Dozwolone są tylko zrzuty ekranu PNG lub JPG/JPEG.", "INVALID_ATTACHMENT");
@@ -61,12 +69,16 @@ export class MessageAttachmentService {
     cipher.setAAD(Buffer.from(`${messageId}:${mimeType}:${data.length}`, "utf8"));
     const ciphertext = Buffer.concat([cipher.update(data), cipher.final()]);
     const authTag = cipher.getAuthTag();
-    await this.pool.query(
-      `INSERT INTO gracz_message_attachments (message_id,file_name,mime_type,file_size,iv,auth_tag,ciphertext)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (message_id) DO UPDATE SET file_name=EXCLUDED.file_name,mime_type=EXCLUDED.mime_type,file_size=EXCLUDED.file_size,iv=EXCLUDED.iv,auth_tag=EXCLUDED.auth_tag,ciphertext=EXCLUDED.ciphertext`,
-      [messageId, fileName, mimeType, data.length, iv, authTag, ciphertext],
-    );
+    try {
+      await this.pool.query(
+        `INSERT INTO gracz_message_attachments (message_id,file_name,mime_type,file_size,iv,auth_tag,ciphertext)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [messageId, fileName, mimeType, data.length, iv, authTag, ciphertext],
+      );
+    } catch (error) {
+      if (error?.code === "23505") throw new AccountError("Załącznika do wysłanej wiadomości nie można podmienić.", "INVALID_ATTACHMENT");
+      throw error;
+    }
     return { messageId, fileName, mimeType, fileSize: data.length };
   }
 
@@ -84,12 +96,15 @@ export class MessageAttachmentService {
     await this.ready;
     assertMessageId(messageId);
     const { rows } = await this.pool.query(
-      `SELECT a.file_name,a.mime_type,a.file_size,a.iv,a.auth_tag,a.ciphertext,m.sender_id,m.recipient_id
+      `SELECT a.file_name,a.mime_type,a.file_size,a.iv,a.auth_tag,a.ciphertext,
+              m.sender_id,m.recipient_id,m.sender_deleted,m.recipient_deleted
        FROM gracz_message_attachments a JOIN gracz_messages m ON m.message_id=a.message_id WHERE a.message_id=$1`,
       [messageId],
     );
     const row = rows[0];
-    if (!row || (row.sender_id !== userId && row.recipient_id !== userId)) throw new AccountError("Nie znaleziono załącznika.", "MESSAGE_NOT_FOUND");
+    const senderCanRead = row && row.sender_id === userId && !row.sender_deleted;
+    const recipientCanRead = row && row.recipient_id === userId && !row.recipient_deleted;
+    if (!row || (!senderCanRead && !recipientCanRead)) throw new AccountError("Nie znaleziono załącznika.", "MESSAGE_NOT_FOUND");
     try {
       const decipher = createDecipheriv("aes-256-gcm", this.key, row.iv);
       decipher.setAAD(Buffer.from(`${messageId}:${row.mime_type}:${row.file_size}`, "utf8"));
