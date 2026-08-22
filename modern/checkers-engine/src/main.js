@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { FileAccountService } from "./accounts.js";
 import { PostgresAccountService } from "./postgres-accounts.js";
+import { SecureAccountService } from "./secure-accounts.js";
 import { MessageAttachmentService } from "./message-attachments.js";
 import { AuthService } from "./auth.js";
 import { loadConfig } from "./config.js";
@@ -18,9 +19,14 @@ const store = config.databaseUrl
   : new FileSessionStore(join(config.dataDirectory, "sessions"));
 if (config.databaseUrl && store.ready) await store.ready;
 
-const accounts = config.databaseUrl
+const baseAccounts = config.databaseUrl
   ? new PostgresAccountService(config.databaseUrl, config.authSecret)
   : new FileAccountService(join(config.dataDirectory, "accounts.json"));
+if (config.databaseUrl && baseAccounts.ready) await baseAccounts.ready;
+
+const accounts = config.databaseUrl
+  ? new SecureAccountService(baseAccounts, config.databaseUrl)
+  : baseAccounts;
 if (config.databaseUrl && accounts.ready) await accounts.ready;
 
 const messageAttachments = config.databaseUrl
@@ -63,7 +69,7 @@ server.maxHeadersCount = 100;
 
 server.listen(config.port, config.host, () => {
   console.log(`CheckersEngine działa na http://${config.host}:${config.port}`);
-  console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
+  console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL + wersjonowane haszowanie" : "plik lokalny (tryb developerski)"}`);
   console.log(`Magazyn sesji gier: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
 });
 
