@@ -188,11 +188,11 @@ function assertRegistrationLooksHuman(input) {
 }
 
 function validatePassword(value) {
-  if (typeof value !== "string" || value.length < 10 || value.length > 128) {
-    throw new AccountError("Hasło musi mieć 10–128 znaków.", "WEAK_PASSWORD");
+  if (typeof value !== "string" || value.length < 15 || value.length > 128) {
+    throw new AccountError("Hasło musi mieć 15–128 znaków.", "WEAK_PASSWORD");
   }
   const normalized = value.normalize("NFKC").toLowerCase();
-  if (COMMON_PASSWORDS.has(normalized) || /^(.)\1{9,}$/.test(normalized) || /^123456/.test(normalized)) {
+  if (COMMON_PASSWORDS.has(normalized) || /^(.)\1{14,}$/.test(normalized) || /^123456/.test(normalized)) {
     throw new AccountError("To hasło jest zbyt popularne lub łatwe do odgadnięcia. Wybierz inne.", "WEAK_PASSWORD");
   }
 }
