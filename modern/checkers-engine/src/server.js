@@ -183,7 +183,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
     const html = content.toString("utf8").replace("</body>", '<script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
-  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8", "cache-control": "no-store" }); response.end(content);
+  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" }); response.end(content);
 }
 function errorBody(error) { return { error: { code: error.code ?? "INVALID_REQUEST", message: error.message } }; }
 function sendJson(response, status, body) { response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); response.end(JSON.stringify(body)); }
