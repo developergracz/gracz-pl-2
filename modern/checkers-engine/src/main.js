@@ -6,6 +6,7 @@ import { PostgresAccountService } from "./postgres-accounts.js";
 import { SecureAccountService } from "./secure-accounts.js";
 import { MessageAttachmentService } from "./message-attachments.js";
 import { AuthService } from "./auth.js";
+import { MemoryAuthSessionStore, PostgresAuthSessionStore } from "./auth-sessions.js";
 import { loadConfig } from "./config.js";
 import { LobbyService } from "./lobby.js";
 import { createGameHttpServer } from "./server.js";
@@ -29,6 +30,11 @@ const accounts = config.databaseUrl
   : baseAccounts;
 if (config.databaseUrl && accounts.ready) await accounts.ready;
 
+const authSessions = config.databaseUrl
+  ? new PostgresAuthSessionStore(config.databaseUrl)
+  : new MemoryAuthSessionStore();
+if (authSessions.ready) await authSessions.ready;
+
 const messageAttachments = config.databaseUrl
   ? new MessageAttachmentService(config.databaseUrl, config.authSecret)
   : null;
@@ -37,6 +43,7 @@ if (messageAttachments?.ready) await messageAttachments.ready;
 const server = createGameHttpServer({
   store,
   accounts,
+  authSessions,
   messageAttachments,
   auth: new AuthService({ secret: config.authSecret }),
   lobby: new LobbyService({ sessionStore: store }),
@@ -63,8 +70,6 @@ server.prependListener("request", (_request, response) => {
   response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 });
 
-// Jawne limity HTTP ograniczają ryzyko wiszących połączeń i prostych ataków
-// slow-client. Wartości są konserwatywne dla lekkiego API gier i lobby.
 server.requestTimeout = 20_000;
 server.headersTimeout = 10_000;
 server.keepAliveTimeout = 5_000;
@@ -74,6 +79,7 @@ server.listen(config.port, config.host, () => {
   console.log(`CheckersEngine działa na http://${config.host}:${config.port}`);
   console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL + wersjonowane haszowanie" : "plik lokalny (tryb developerski)"}`);
   console.log(`Magazyn sesji gier: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
+  console.log(`Rejestr sesji logowania: ${config.databaseUrl ? "PostgreSQL" : "pamięć procesu (tryb developerski)"}`);
 });
 
 let shuttingDown = false;
@@ -85,6 +91,7 @@ async function shutdown(signal) {
     try {
       if (typeof store.close === "function") await store.close();
       if (typeof accounts.close === "function") await accounts.close();
+      if (typeof authSessions.close === "function") await authSessions.close();
       if (messageAttachments && typeof messageAttachments.close === "function") await messageAttachments.close();
       process.exit(0);
     } catch (error) {
