@@ -4,7 +4,7 @@ import test from "node:test";
 import { AdaptiveBotDefense, ChallengeRequiredError } from "../src/adaptive-bot-defense.js";
 import { TrafficGuard, TrafficLimitError } from "../src/traffic-guard.js";
 
-test("adaptive challenge appears only after suspicious authentication failures", async () => {
+test("adaptive challenge appears only after repeated suspicious authentication failures", async () => {
   let now = 1_000_000;
   const defense = new AdaptiveBotDefense({
     siteKey: "site-key",
@@ -14,6 +14,8 @@ test("adaptive challenge appears only after suspicious authentication failures",
     expectedHostname: "gracz.pl",
   });
   const input = { source: "203.0.113.10", accountId: "alice", endpoint: "login" };
+  assert.equal(defense.requiresChallenge(input), false);
+  defense.recordFailure(input);
   assert.equal(defense.requiresChallenge(input), false);
   defense.recordFailure(input);
   assert.equal(defense.requiresChallenge(input), true);
