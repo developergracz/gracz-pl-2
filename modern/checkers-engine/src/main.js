@@ -15,6 +15,7 @@ const store = new FileSessionStore(join(config.dataDirectory, "sessions"));
 const accounts = config.databaseUrl
   ? new PostgresAccountService(config.databaseUrl, config.authSecret)
   : new FileAccountService(join(config.dataDirectory, "accounts.json"));
+if (config.databaseUrl && accounts.ready) await accounts.ready;
 const messageAttachments = config.databaseUrl
   ? new MessageAttachmentService(config.databaseUrl, config.authSecret)
   : null;
