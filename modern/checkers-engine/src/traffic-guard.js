@@ -24,19 +24,19 @@ export class TrafficGuard {
     if (path === "/health") return;
 
     const source = clientSource(request);
-    this.#consume(`global:${source}`, 600, 60_000, "global-ip");
-    this.#consume(`endpoint:${source}:${method}:${endpointClass(path)}`, endpointLimit(method, path), 60_000, "endpoint-ip");
+    this.#consume(`global:${source}`, 600, 60_000, "global");
+    this.#consume(`endpoint:${source}:${method}:${endpointClass(path)}`, endpointLimit(method, path), 60_000, "endpoint");
 
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) this.#consume(`mutation:${source}`, 120, 60_000, "mutation-ip");
-    if (method === "POST" && path === "/auth/register") this.#consume(`register:${source}`, 8, 15 * 60_000, "register-ip");
-    if (method === "POST" && path === "/auth/login") this.#consume(`login-ip:${source}`, 40, 15 * 60_000, "login-ip");
-    if (method === "POST" && path === "/auth/reset-password") this.#consume(`reset:${source}`, 8, 30 * 60_000, "password-reset-ip");
-    if (method === "POST" && path === "/messages") this.#consume(`messages:${source}`, 20, 60_000, "messages-ip");
-    if (method === "POST" && /^\/messages\/[0-9a-f-]{36}\/attachment$/i.test(path)) this.#consume(`attachments:${source}`, 10, 10 * 60_000, "attachments-ip");
-    if (method === "POST" && path === "/lobby/invitations") this.#consume(`invites:${source}`, 30, 60_000, "invitations-ip");
-    if (method === "POST" && path === "/lobby/rooms") this.#consume(`rooms:${source}`, 20, 60_000, "rooms-ip");
-    if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/chat$/.test(path)) this.#consume(`game-chat:${source}`, 30, 15_000, "game-chat-ip");
-    if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/moves$/.test(path)) this.#consume(`moves:${source}`, 120, 60_000, "moves-ip");
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) this.#consume(`mutation:${source}`, 120, 60_000, "mutation");
+    if (method === "POST" && path === "/auth/register") this.#consume(`register:${source}`, 8, 15 * 60_000, "register");
+    if (method === "POST" && path === "/auth/login") this.#consume(`login-ip:${source}`, 40, 15 * 60_000, "login");
+    if (method === "POST" && path === "/auth/reset-password") this.#consume(`reset:${source}`, 8, 30 * 60_000, "password-reset");
+    if (method === "POST" && path === "/messages") this.#consume(`messages:${source}`, 20, 60_000, "messages");
+    if (method === "POST" && /^\/messages\/[0-9a-f-]{36}\/attachment$/i.test(path)) this.#consume(`attachments:${source}`, 10, 10 * 60_000, "attachments");
+    if (method === "POST" && path === "/lobby/invitations") this.#consume(`invites:${source}`, 30, 60_000, "invitations");
+    if (method === "POST" && path === "/lobby/rooms") this.#consume(`rooms:${source}`, 20, 60_000, "rooms");
+    if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/chat$/.test(path)) this.#consume(`game-chat:${source}`, 30, 15_000, "game-chat");
+    if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/moves$/.test(path)) this.#consume(`moves:${source}`, 120, 60_000, "moves");
   }
 
   assertAccountAllowed({ request, userId, action = "api" }) {
