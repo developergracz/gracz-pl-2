@@ -14,21 +14,24 @@
 
       <table>
       <thead><tr><th>Miejsce</th><th>Użytkownik</th><th>Punktacja</th></tr></thead>
-      <?php 
-      $HTML_crown = ' <img src="'.$directory['design'].'icon_crown.png" alt="1 miejsce" title="Tytuł najlepszego gracza" style="vertical-align:middle" /> ';
+      <?php
+      $HTML_crown = ' <img src="'.htmlspecialchars($directory['design'], ENT_QUOTES, 'UTF-8').'icon_crown.png" alt="1 miejsce" title="Tytuł najlepszego gracza" style="vertical-align:middle" /> ';
       $i = 0;
       foreach(getPlayersRank() as $wiersz)
       {
         $i++;
-        $wiersz['scores_sum'] = intval($wiersz['scores_sum']);
-        echo('<tr><td class="text_right">'.($i==1?$HTML_crown:'').' '.$i.' </td><td><a href="'.$path['profile'].'-'.$wiersz['login'].'">'.$wiersz['login'].'</a></td><td class="text_center">'.$wiersz['scores_sum'].'</td></tr>');
-        if ($i>100) break;
+        $scores = intval(isset($wiersz['scores_sum']) ? $wiersz['scores_sum'] : 0);
+        $loginRaw = isset($wiersz['login']) ? (string)$wiersz['login'] : '';
+        $loginText = htmlspecialchars($loginRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $loginUrl = rawurlencode($loginRaw);
+        echo('<tr><td class="text_right">'.($i==1?$HTML_crown:'').' '.$i.' </td><td><a href="'.htmlspecialchars($path['profile'], ENT_QUOTES, 'UTF-8').'-'.$loginUrl.'">'.$loginText.'</a></td><td class="text_center">'.$scores.'</td></tr>');
+        if ($i>=100) break;
       }
       ?>
       </table>
-      
-      <div style="text-align:right">Oglądnij również <a href="<?php echo($path['statistics']); ?>">statystyki serwisu</a>.</div>
+
+      <div style="text-align:right">Oglądnij również <a href="<?php echo(htmlspecialchars($path['statistics'], ENT_QUOTES, 'UTF-8')); ?>">statystyki serwisu</a>.</div>
     </div>
   </div>
-	
+
 <?php include_once($footer); ?>
