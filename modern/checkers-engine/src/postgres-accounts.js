@@ -88,6 +88,25 @@ export class PostgresAccountService {
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
 
+  async resetPasswordWithEmail({ userId, email, newPassword }) {
+    await this.ready;
+    const normalizedId = normalizeUserId(userId);
+    const safeEmail = cleanEmail(email);
+    if (!safeEmail || !isEmail(safeEmail)) throw new AccountError("Podaj prawidłowy adres e-mail.", "INVALID_ACCOUNT");
+    validatePassword(newPassword);
+    const { rows } = await this.pool.query(
+      `SELECT user_id, email, recovery_email FROM gracz_accounts WHERE user_id=$1`,
+      [normalizedId],
+    );
+    const account = rows[0];
+    const matches = account && [account.email, account.recovery_email].filter(Boolean).some((value) => String(value).toLowerCase() === safeEmail);
+    if (!matches) throw new AccountError("Nie udało się potwierdzić danych konta.", "RECOVERY_FAILED");
+    const salt = randomBytes(16);
+    const passwordHash = await hashPassword(newPassword, salt);
+    await this.pool.query(`UPDATE gracz_accounts SET salt=$2, password_hash=$3 WHERE user_id=$1`, [normalizedId, salt, passwordHash]);
+    return { ok: true };
+  }
+
   async getProfile(userId) {
     await this.ready;
     const normalizedId = normalizeUserId(userId);
@@ -136,11 +155,7 @@ export class PostgresAccountService {
        LIMIT 20`,
       [current, pattern],
     );
-    return rows.map((row) => ({
-      userId: row.user_id,
-      displayName: row.display_name,
-      allowMessages: row.profile_data?.allowMessages !== false,
-    }));
+    return rows.map((row) => ({ userId: row.user_id, displayName: row.display_name, allowMessages: row.profile_data?.allowMessages !== false }));
   }
 
   async sendPrivateMessage(senderId, input = {}) {
@@ -152,10 +167,7 @@ export class PostgresAccountService {
     const body = String(input.body ?? "").trim().slice(0, 5000);
     if (!subject) throw new AccountError("Wpisz temat wiadomości.", "INVALID_MESSAGE");
     if (!body) throw new AccountError("Wpisz treść wiadomości.", "INVALID_MESSAGE");
-    const { rows: recipients } = await this.pool.query(
-      `SELECT user_id, display_name, profile_data FROM gracz_accounts WHERE user_id=$1`,
-      [recipient],
-    );
+    const { rows: recipients } = await this.pool.query(`SELECT user_id, display_name, profile_data FROM gracz_accounts WHERE user_id=$1`, [recipient]);
     const target = recipients[0];
     if (!target) throw new AccountError("Nie znaleziono odbiorcy.", "ACCOUNT_NOT_FOUND");
     if (target.profile_data?.allowMessages === false) throw new AccountError("Ten gracz nie przyjmuje prywatnych wiadomości.", "MESSAGES_DISABLED");
@@ -184,8 +196,7 @@ export class PostgresAccountService {
        JOIN gracz_accounts s ON s.user_id=m.sender_id
        JOIN gracz_accounts r ON r.user_id=m.recipient_id
        WHERE ${where}
-       ORDER BY m.created_at DESC
-       LIMIT 100`,
+       ORDER BY m.created_at DESC LIMIT 100`,
       [id],
     );
     const unread = await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_messages WHERE recipient_id=$1 AND recipient_deleted=FALSE AND read_at IS NULL`, [id]);
@@ -225,58 +236,26 @@ export class PostgresAccountService {
   async close() { await this.pool.end(); }
 }
 
-async function hashPassword(password, salt) {
-  return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
-}
+async function hashPassword(password, salt) { return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }); }
 function normalizeUserId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9._-]{3,32}$/.test(value)) throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
   return value.toLowerCase();
 }
-function validateDisplayName(value) {
-  if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 40) throw new AccountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT");
-}
-function validatePassword(value) {
-  if (typeof value !== "string" || value.length < 10 || value.length > 128) throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD");
-}
+function validateDisplayName(value) { if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 40) throw new AccountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT"); }
+function validatePassword(value) { if (typeof value !== "string" || value.length < 10 || value.length > 128) throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD"); }
 function cleanEmail(value) { return typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : ""; }
 function isEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value); }
-function defaultProfile({ twoFactor = false } = {}) {
-  return { bio: "", country: "PL", city: "", language: "pl", showOnline: true, allowInvites: true, allowMessages: true, newsletter: false, twoFactor: Boolean(twoFactor) };
-}
+function defaultProfile({ twoFactor = false } = {}) { return { bio: "", country: "PL", city: "", language: "pl", showOnline: true, allowInvites: true, allowMessages: true, newsletter: false, twoFactor: Boolean(twoFactor) }; }
 function sanitizeProfile(input) {
   return {
-    bio: String(input.bio ?? "").trim().slice(0, 280),
-    country: String(input.country ?? "PL").trim().slice(0, 2).toUpperCase(),
-    city: String(input.city ?? "").trim().slice(0, 60),
-    language: ["pl", "en", "de"].includes(input.language) ? input.language : "pl",
-    showOnline: input.showOnline !== false,
-    allowInvites: input.allowInvites !== false,
-    allowMessages: input.allowMessages !== false,
-    newsletter: input.newsletter === true,
-    twoFactor: input.twoFactor === true,
+    bio: String(input.bio ?? "").trim().slice(0, 280), country: String(input.country ?? "PL").trim().slice(0, 2).toUpperCase(), city: String(input.city ?? "").trim().slice(0, 60),
+    language: ["pl", "en", "de"].includes(input.language) ? input.language : "pl", showOnline: input.showOnline !== false, allowInvites: input.allowInvites !== false,
+    allowMessages: input.allowMessages !== false, newsletter: input.newsletter === true, twoFactor: input.twoFactor === true,
   };
 }
 function publicProfile(row) {
-  return Object.freeze({
-    userId: row.user_id,
-    displayName: row.display_name,
-    email: row.email ?? "",
-    recoveryEmail: row.recovery_email ?? "",
-    createdAt: row.created_at,
-    ...defaultProfile(),
-    ...(row.profile_data ?? {}),
-  });
+  return Object.freeze({ userId: row.user_id, displayName: row.display_name, email: row.email ?? "", recoveryEmail: row.recovery_email ?? "", createdAt: row.created_at, ...defaultProfile(), ...(row.profile_data ?? {}) });
 }
 function messageRow(row, names = {}) {
-  return Object.freeze({
-    messageId: row.message_id,
-    senderId: row.sender_id,
-    senderName: row.sender_name ?? names.senderName ?? row.sender_id,
-    recipientId: row.recipient_id,
-    recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id,
-    subject: row.subject,
-    body: row.body,
-    createdAt: row.created_at,
-    readAt: row.read_at,
-  });
+  return Object.freeze({ messageId: row.message_id, senderId: row.sender_id, senderName: row.sender_name ?? names.senderName ?? row.sender_id, recipientId: row.recipient_id, recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id, subject: row.subject, body: row.body, createdAt: row.created_at, readAt: row.read_at });
 }
