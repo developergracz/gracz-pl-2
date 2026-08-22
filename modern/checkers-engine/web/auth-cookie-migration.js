@@ -154,12 +154,20 @@
     password.addEventListener("keydown", submitOnEnter);
   }
 
+  function clarifyRegistrationEmailLabel() {
+    const field = document.querySelector("#email-field");
+    if (!field) return;
+    const textNode = [...field.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    if (textNode) textNode.textContent = "Wpisz Twój adres e-mail";
+  }
+
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
   const install = () => {
     installLogout();
     installEnterLogin();
+    clarifyRegistrationEmailLabel();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true });
   else install();
