@@ -51,24 +51,33 @@ export class PostgresAccountService {
   async register({ userId, displayName, password, email = "", recoveryEmail = "", twoFactor = false }) {
     await this.ready;
     const normalizedId = normalizeUserId(userId);
-    validateDisplayName(displayName);
+    const safeDisplayName = normalizeDisplayName(displayName);
     validatePassword(password);
     const salt = randomBytes(16);
     const passwordHash = await hashPassword(password, salt);
     const safeEmail = cleanEmail(email);
     const safeRecoveryEmail = cleanEmail(recoveryEmail);
     const profile = defaultProfile({ twoFactor });
+    const client = await this.pool.connect();
     try {
-      await this.pool.query(
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext(lower($1)))", [safeDisplayName]);
+      const duplicateName = await client.query("SELECT 1 FROM gracz_accounts WHERE lower(display_name)=lower($1) LIMIT 1", [safeDisplayName]);
+      if (duplicateName.rowCount) throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+      await client.query(
         `INSERT INTO gracz_accounts (user_id, display_name, salt, password_hash, email, recovery_email, profile_data)
          VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-        [normalizedId, displayName.trim(), salt, passwordHash, safeEmail || null, safeRecoveryEmail || null, JSON.stringify(profile)],
+        [normalizedId, safeDisplayName, salt, passwordHash, safeEmail || null, safeRecoveryEmail || null, JSON.stringify(profile)],
       );
+      await client.query("COMMIT");
     } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
       if (error?.code === "23505") throw new AccountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
       throw error;
+    } finally {
+      client.release();
     }
-    return Object.freeze({ userId: normalizedId, displayName: displayName.trim() });
+    return Object.freeze({ userId: normalizedId, displayName: safeDisplayName });
   }
 
   async authenticate({ userId, password }) {
@@ -122,23 +131,38 @@ export class PostgresAccountService {
   async updateProfile(userId, input = {}) {
     await this.ready;
     const normalizedId = normalizeUserId(userId);
-    const displayName = String(input.displayName ?? "").trim();
-    validateDisplayName(displayName);
+    const displayName = normalizeDisplayName(input.displayName);
     const email = cleanEmail(input.email);
     const recoveryEmail = cleanEmail(input.recoveryEmail);
     if (email && !isEmail(email)) throw new AccountError("Podaj prawidłowy adres e-mail.", "INVALID_ACCOUNT");
     if (recoveryEmail && !isEmail(recoveryEmail)) throw new AccountError("Podaj prawidłowy e-mail odzyskiwania.", "INVALID_ACCOUNT");
     if (email && recoveryEmail && email === recoveryEmail) throw new AccountError("E-mail odzyskiwania musi być inny niż główny.", "INVALID_ACCOUNT");
     const profile = sanitizeProfile(input);
-    const { rows } = await this.pool.query(
-      `UPDATE gracz_accounts
-       SET display_name=$2, email=$3, recovery_email=$4, profile_data=$5::jsonb
-       WHERE user_id=$1
-       RETURNING user_id, display_name, email, recovery_email, created_at, profile_data`,
-      [normalizedId, displayName, email || null, recoveryEmail || null, JSON.stringify(profile)],
-    );
-    if (!rows[0]) throw new AccountError("Nie znaleziono konta.", "ACCOUNT_NOT_FOUND");
-    return publicProfile(rows[0]);
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext(lower($1)))", [displayName]);
+      const duplicateName = await client.query(
+        "SELECT 1 FROM gracz_accounts WHERE lower(display_name)=lower($1) AND user_id<>$2 LIMIT 1",
+        [displayName, normalizedId],
+      );
+      if (duplicateName.rowCount) throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+      const { rows } = await client.query(
+        `UPDATE gracz_accounts
+         SET display_name=$2, email=$3, recovery_email=$4, profile_data=$5::jsonb
+         WHERE user_id=$1
+         RETURNING user_id, display_name, email, recovery_email, created_at, profile_data`,
+        [normalizedId, displayName, email || null, recoveryEmail || null, JSON.stringify(profile)],
+      );
+      if (!rows[0]) throw new AccountError("Nie znaleziono konta.", "ACCOUNT_NOT_FOUND");
+      await client.query("COMMIT");
+      return publicProfile(rows[0]);
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async searchPlayers(currentUserId, query = "") {
@@ -147,11 +171,11 @@ export class PostgresAccountService {
     const q = String(query ?? "").trim().slice(0, 40);
     const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
     const { rows } = await this.pool.query(
-      `SELECT user_id, display_name, profile_data
+      `SELECT DISTINCT ON (lower(display_name)) user_id, display_name, profile_data, created_at
        FROM gracz_accounts
        WHERE user_id <> $1
          AND (user_id ILIKE $2 ESCAPE '\\' OR display_name ILIKE $2 ESCAPE '\\')
-       ORDER BY display_name ASC
+       ORDER BY lower(display_name), created_at ASC, user_id ASC
        LIMIT 20`,
       [current, pattern],
     );
@@ -240,6 +264,10 @@ async function hashPassword(password, salt) { return scrypt(password, salt, 64, 
 function normalizeUserId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9._-]{3,32}$/.test(value)) throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
   return value.toLowerCase();
+}
+function normalizeDisplayName(value) {
+  validateDisplayName(value);
+  return value.trim().replace(/\s+/g, " ");
 }
 function validateDisplayName(value) { if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 40) throw new AccountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT"); }
 function validatePassword(value) { if (typeof value !== "string" || value.length < 10 || value.length > 128) throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD"); }
