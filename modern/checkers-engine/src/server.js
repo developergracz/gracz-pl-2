@@ -22,15 +22,15 @@ import { join } from "node:path";
 const SESSION_COOKIE = "__Host-gracz_session";
 const COOKIE_TOKEN_MARKER = "cookie";
 
-export function createGameHttpServer({ store, auth = null, accounts = null, messageAttachments = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
+export function createGameHttpServer({ store, auth = null, authSessions = null, accounts = null, messageAttachments = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
-    try { await route(request, response, store, realtime, auth, accounts, messageAttachments, lobby, webRoot, loginRateLimiter); }
+    try { await route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter); }
     catch (error) { logger.error(error); sendError(response, error); }
   }).on("close", () => realtime.close());
 }
 
-async function route(request, response, store, realtime, auth, accounts, messageAttachments, lobby, webRoot, loginRateLimiter) {
+async function route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter) {
   const url = new URL(request.url, "http://localhost");
   assertSameOriginMutation(request);
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
@@ -45,11 +45,13 @@ async function route(request, response, store, realtime, auth, accounts, message
     })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
   }
+
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
     const account = await accounts.register(await readJson(request));
-    issueSessionCookie(response, auth.issue(account));
+    await establishSession(response, auth, authSessions, account);
     return sendJson(response, 201, { token: COOKIE_TOKEN_MARKER, user: account });
   }
+
   if (request.method === "POST" && url.pathname === "/auth/login" && auth && accounts) {
     const credentials = await readJson(request);
     const rateKey = `${request.socket.remoteAddress ?? "unknown"}:${String(credentials.userId).toLowerCase()}`;
@@ -57,62 +59,80 @@ async function route(request, response, store, realtime, auth, accounts, message
     try {
       const account = await accounts.authenticate(credentials);
       loginRateLimiter.recordSuccess(rateKey);
-      issueSessionCookie(response, auth.issue(account));
+      await establishSession(response, auth, authSessions, account);
       return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: account });
     } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
   }
+
   if (request.method === "POST" && url.pathname === "/auth/logout") {
+    if (auth && authSessions) {
+      try {
+        const user = await trustedUser(request, auth, authSessions);
+        if (user.tokenId) await authSessions.revoke(user.tokenId);
+      } catch (error) {
+        if (!(error instanceof AuthError)) throw error;
+      }
+    }
     clearSessionCookie(response);
     return sendJson(response, 200, { ok: true });
   }
+
   if (request.method === "GET" && url.pathname === "/auth/me" && auth) {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     return sendJson(response, 200, { user: { userId: user.userId, displayName: user.displayName } });
   }
+
   if (request.method === "POST" && url.pathname === "/auth/migrate" && auth) {
-    const user = trustedUser(request, auth);
-    issueSessionCookie(response, auth.issue(user));
+    const token = bearerToken(request);
+    if (!token) throw new AuthError("Brak tokenu do migracji sesji.");
+    const user = auth.verify(token);
+    if (authSessions && user.tokenId && await authSessions.has(user.tokenId)) await authSessions.assertActive(user);
+    await establishSession(response, auth, authSessions, user);
+    if (authSessions && user.tokenId && await authSessions.has(user.tokenId)) await authSessions.revoke(user.tokenId);
     return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: { userId: user.userId, displayName: user.displayName } });
   }
+
   if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
     const body = await readJson(request);
     const rateKey = `${request.socket.remoteAddress ?? "unknown"}:reset:${String(body.userId ?? "").toLowerCase()}`;
     loginRateLimiter.assertAllowed(rateKey);
     try {
       await accounts.resetPasswordWithEmail(body);
+      if (authSessions) await authSessions.revokeAll(String(body.userId ?? "").toLowerCase());
       loginRateLimiter.recordSuccess(rateKey);
       clearSessionCookie(response);
-      return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Możesz się zalogować nowym hasłem." });
+      return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Wszystkie wcześniejsze sesje zostały zakończone." });
     } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
   }
+
   // Wyłącznie pomocniczy endpoint dla testów/integracji bez podłączonego modułu kont.
   if (request.method === "POST" && url.pathname === "/auth/session" && auth && !accounts) {
     const userId = request.headers["x-authenticated-user-id"];
     const displayName = request.headers["x-authenticated-display-name"];
-    const token = auth.issue({ userId, displayName });
-    issueSessionCookie(response, token);
+    const token = await establishSession(response, auth, authSessions, { userId, displayName });
     return sendJson(response, 201, { token, user: { userId, displayName } });
   }
 
   if (accounts && auth && url.pathname === "/account/profile") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     if (request.method === "GET") return sendJson(response, 200, { profile: await accounts.getProfile(user.userId) });
     if (request.method === "PUT") {
       const profile = await accounts.updateProfile(user.userId, await readJson(request));
       const nextUser = { userId: profile.userId, displayName: profile.displayName };
-      issueSessionCookie(response, auth.issue(nextUser));
+      await establishSession(response, auth, authSessions, nextUser);
+      if (authSessions && user.tokenId) await authSessions.revoke(user.tokenId);
       return sendJson(response, 200, { profile, user: nextUser, token: COOKIE_TOKEN_MARKER });
     }
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
 
   if (accounts && auth && url.pathname === "/players/search" && request.method === "GET") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     return sendJson(response, 200, { players: await accounts.searchPlayers(user.userId, url.searchParams.get("q") ?? "") });
   }
 
   if (accounts && auth && url.pathname === "/messages") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     if (request.method === "GET") {
       const result = await accounts.listPrivateMessages(user.userId, url.searchParams.get("folder") ?? "inbox");
       if (messageAttachments && result.messages?.length) {
@@ -127,7 +147,7 @@ async function route(request, response, store, realtime, auth, accounts, message
 
   const attachmentMatch = messageAttachments && accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})\/attachment$/i);
   if (attachmentMatch) {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     if (request.method === "POST") return sendJson(response, 201, { attachment: await messageAttachments.save(user.userId, attachmentMatch[1], await readJson(request, 1_500_000)) });
     if (request.method === "GET") return sendJson(response, 200, { attachment: await messageAttachments.get(user.userId, attachmentMatch[1]) });
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
@@ -135,31 +155,31 @@ async function route(request, response, store, realtime, auth, accounts, message
 
   const privateMessageMatch = accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})$/i);
   if (privateMessageMatch) {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     if (request.method === "PATCH") return sendJson(response, 200, await accounts.updatePrivateMessage(user.userId, privateMessageMatch[1], (await readJson(request)).action));
     if (request.method === "DELETE") return sendJson(response, 200, await accounts.deletePrivateMessage(user.userId, privateMessageMatch[1]));
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
 
   if (lobby && url.pathname === "/lobby/state" && request.method === "GET") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     lobby.touchUser(user);
     return sendJson(response, 200, { rooms: lobby.listRooms(), players: lobby.listPlayers(), invitations: lobby.listInvitations(user.userId) });
   }
   if (lobby && url.pathname === "/lobby/invitations" && request.method === "POST") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     lobby.touchUser(user);
     const body = await readJson(request);
     return sendJson(response, 201, lobby.createInvitation({ fromId: user.userId, fromName: user.displayName, toId: body.toId, roomId: body.roomId }));
   }
   const invitationMatch = lobby && url.pathname.match(/^\/lobby\/invitations\/([a-zA-Z0-9_-]{1,128})\/respond$/);
   if (invitationMatch && request.method === "POST") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     const body = await readJson(request);
     return sendJson(response, 200, await lobby.respondInvitation({ invitationId: invitationMatch[1], userId: user.userId, userName: user.displayName, accept: body.accept === true }));
   }
   if (lobby && url.pathname === "/lobby/rooms") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     lobby.touchUser(user);
     if (request.method === "GET") return sendJson(response, 200, { rooms: lobby.listRooms() });
     if (request.method === "POST") {
@@ -169,19 +189,24 @@ async function route(request, response, store, realtime, auth, accounts, message
   }
   const lobbyMatch = lobby && url.pathname.match(/^\/lobby\/rooms\/([a-zA-Z0-9_-]{1,128})\/join$/);
   if (lobbyMatch && request.method === "POST") {
-    const user = trustedUser(request, auth);
+    const user = await trustedUser(request, auth, authSessions);
     lobby.touchUser(user);
     return sendJson(response, 200, await lobby.joinRoom({ roomId: lobbyMatch[1], playerId: user.userId, playerName: user.displayName }));
   }
 
   if (request.method === "POST" && url.pathname === "/games") {
-    const body = await readJson(request); const session = createGameSession(body); await store.create(session);
+    const body = await readJson(request);
+    if (auth) {
+      const user = await trustedUser(request, auth, authSessions);
+      if (body.whitePlayerId !== user.userId) throw new HttpError("Nie możesz utworzyć partii w imieniu innego gracza.", "FORBIDDEN", 403);
+    }
+    const session = createGameSession(body); await store.create(session);
     return sendJson(response, 201, { gameId: session.gameId });
   }
   const match = url.pathname.match(/^\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves|disconnect|reconnect|events|chat|actions))?$/);
   if (!match) return sendJson(response, 404, { error: { code: "NOT_FOUND", message: "Nie znaleziono endpointu." } });
   const [, gameId, action] = match;
-  const playerId = trustedUser(request, auth).userId;
+  const playerId = (await trustedUser(request, auth, authSessions)).userId;
   let session = await store.get(gameId);
   if (request.method === "GET" && action === "events") { realtime.subscribe(session, playerId, response); return; }
   if (request.method === "GET" && !action) return sendJson(response, 200, getSessionSnapshot(session, playerId));
@@ -197,19 +222,36 @@ async function route(request, response, store, realtime, auth, accounts, message
   return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
 }
 
-function trustedUser(request, auth) {
+async function establishSession(response, auth, authSessions, user) {
+  const token = auth.issue({ userId: user.userId, displayName: user.displayName });
+  const claims = auth.verify(token);
+  if (authSessions) await authSessions.create(claims);
+  issueSessionCookie(response, token);
+  return token;
+}
+
+async function trustedUser(request, auth, authSessions) {
   if (auth) {
     const cookieToken = parseCookies(request.headers.cookie)[SESSION_COOKIE];
-    if (cookieToken) return auth.verify(cookieToken);
-    const authorization = request.headers.authorization;
-    if (typeof authorization === "string" && authorization.startsWith("Bearer ") && authorization.slice(7) !== COOKIE_TOKEN_MARKER) {
-      return auth.verify(authorization.slice(7));
+    const token = cookieToken || bearerToken(request);
+    if (!token || token === COOKIE_TOKEN_MARKER) throw new AuthError("Brak aktywnej sesji logowania.");
+    const user = auth.verify(token);
+    if (authSessions && user.tokenId) {
+      if (await authSessions.has(user.tokenId)) await authSessions.assertActive(user);
+      else await authSessions.create(user); // jednorazowe przejęcie ważnej sesji sprzed wdrożenia rejestru
     }
-    throw new AuthError("Brak aktywnej sesji logowania.");
+    return user;
   }
   const playerId = request.headers["x-player-id"];
   if (typeof playerId !== "string" || playerId.length < 1 || playerId.length > 128) throw new HttpError("Brak tożsamości gracza.", "UNAUTHENTICATED", 401);
   return { userId: playerId, displayName: playerId };
+}
+
+function bearerToken(request) {
+  const authorization = request.headers.authorization;
+  if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) return null;
+  const token = authorization.slice(7);
+  return token && token !== COOKIE_TOKEN_MARKER ? token : null;
 }
 
 function parseCookies(header) {
