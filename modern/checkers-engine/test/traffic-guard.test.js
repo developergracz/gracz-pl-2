@@ -51,7 +51,8 @@ test("trusted proxy headers may be used only when explicitly enabled", () => {
   const previous = process.env.TRUST_PROXY_HEADERS;
   process.env.TRUST_PROXY_HEADERS = "true";
   try {
-    assert.equal(clientSource({ headers: { "x-forwarded-for": "198.51.100.2, 203.0.113.9" }, socket: { remoteAddress: "127.0.0.1" } }), "203.0.113.9");
+    // In a standard X-Forwarded-For chain the left-most address is the original client.
+    assert.equal(clientSource({ headers: { "x-forwarded-for": "198.51.100.2, 203.0.113.9" }, socket: { remoteAddress: "127.0.0.1" } }), "198.51.100.2");
   } finally {
     if (previous === undefined) delete process.env.TRUST_PROXY_HEADERS; else process.env.TRUST_PROXY_HEADERS = previous;
   }
