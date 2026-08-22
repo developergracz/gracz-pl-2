@@ -12,7 +12,7 @@ import { FileSessionStore } from "./store.js";
 const config = loadConfig();
 const store = new FileSessionStore(join(config.dataDirectory, "sessions"));
 const accounts = config.databaseUrl
-  ? new PostgresAccountService(config.databaseUrl)
+  ? new PostgresAccountService(config.databaseUrl, config.authSecret)
   : new FileAccountService(join(config.dataDirectory, "accounts.json"));
 
 const server = createGameHttpServer({
