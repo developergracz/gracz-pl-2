@@ -106,6 +106,7 @@ if (isset($_SERVER['X-Purpose'])&&$_SERVER['X-Purpose']=='preview')
 }
 
 session_start();
+include_once($actual_path.'legacy_security_shim.php');
 
 include_once($actual_path.'library_main.php');
 DatabaseConnect();
