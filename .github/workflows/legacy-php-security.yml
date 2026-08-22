@@ -1,0 +1,60 @@
+name: Legacy PHP Security Checks
+
+on:
+  pull_request:
+    paths:
+      - "website/**"
+      - ".github/workflows/legacy-php-security.yml"
+  push:
+    branches:
+      - main
+      - feature/checkers-engine-foundation
+    paths:
+      - "website/**"
+      - ".github/workflows/legacy-php-security.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-php-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-cli
+      - name: Lint all PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(find website -type f -name '*.php' -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No PHP files found"
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            php -l "$file"
+          done
+      - name: Reject committed secret files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find website -type f \( -name '.htpasswd' -o -name '.env' -o -name '.env.*' \) -print -quit | grep -q .; then
+            echo 'Secret file detected in website/' >&2
+            exit 1
+          fi
+      - name: Reject obvious legacy secret assignments
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --include='*.php' '(facebook_app_secret|database_password|seed_private)[[:space:]]*=[[:space:]]*["'"'][^$]' website; then
+            echo 'Potential hard-coded secret assignment detected' >&2
+            exit 1
+          fi
