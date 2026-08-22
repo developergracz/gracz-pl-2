@@ -19,6 +19,9 @@ import { LoginRateLimiter, RateLimitError } from "./rate-limit.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+const SESSION_COOKIE = "__Host-gracz_session";
+const COOKIE_TOKEN_MARKER = "cookie";
+
 export function createGameHttpServer({ store, auth = null, accounts = null, messageAttachments = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
@@ -29,12 +32,13 @@ export function createGameHttpServer({ store, auth = null, accounts = null, mess
 
 async function route(request, response, store, realtime, auth, accounts, messageAttachments, lobby, webRoot, loginRateLimiter) {
   const url = new URL(request.url, "http://localhost");
+  assertSameOriginMutation(request);
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
   if (request.method === "GET" && webRoot) {
     const staticFile = ({
       "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css",
       "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css",
-      "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js",
+      "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js",
       "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
       "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
@@ -43,7 +47,8 @@ async function route(request, response, store, realtime, auth, accounts, message
   }
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
     const account = await accounts.register(await readJson(request));
-    return sendJson(response, 201, { token: auth.issue(account), user: account });
+    issueSessionCookie(response, auth.issue(account));
+    return sendJson(response, 201, { token: COOKIE_TOKEN_MARKER, user: account });
   }
   if (request.method === "POST" && url.pathname === "/auth/login" && auth && accounts) {
     const credentials = await readJson(request);
@@ -52,8 +57,22 @@ async function route(request, response, store, realtime, auth, accounts, message
     try {
       const account = await accounts.authenticate(credentials);
       loginRateLimiter.recordSuccess(rateKey);
-      return sendJson(response, 200, { token: auth.issue(account), user: account });
+      issueSessionCookie(response, auth.issue(account));
+      return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: account });
     } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
+  }
+  if (request.method === "POST" && url.pathname === "/auth/logout") {
+    clearSessionCookie(response);
+    return sendJson(response, 200, { ok: true });
+  }
+  if (request.method === "GET" && url.pathname === "/auth/me" && auth) {
+    const user = trustedUser(request, auth);
+    return sendJson(response, 200, { user: { userId: user.userId, displayName: user.displayName } });
+  }
+  if (request.method === "POST" && url.pathname === "/auth/migrate" && auth) {
+    const user = trustedUser(request, auth);
+    issueSessionCookie(response, auth.issue(user));
+    return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: { userId: user.userId, displayName: user.displayName } });
   }
   if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
     const body = await readJson(request);
@@ -62,13 +81,16 @@ async function route(request, response, store, realtime, auth, accounts, message
     try {
       await accounts.resetPasswordWithEmail(body);
       loginRateLimiter.recordSuccess(rateKey);
+      clearSessionCookie(response);
       return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Możesz się zalogować nowym hasłem." });
     } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
   }
-  if (request.method === "POST" && url.pathname === "/auth/session" && auth) {
+  // Wyłącznie pomocniczy endpoint dla testów/integracji bez podłączonego modułu kont.
+  if (request.method === "POST" && url.pathname === "/auth/session" && auth && !accounts) {
     const userId = request.headers["x-authenticated-user-id"];
     const displayName = request.headers["x-authenticated-display-name"];
     const token = auth.issue({ userId, displayName });
+    issueSessionCookie(response, token);
     return sendJson(response, 201, { token, user: { userId, displayName } });
   }
 
@@ -78,7 +100,8 @@ async function route(request, response, store, realtime, auth, accounts, message
     if (request.method === "PUT") {
       const profile = await accounts.updateProfile(user.userId, await readJson(request));
       const nextUser = { userId: profile.userId, displayName: profile.displayName };
-      return sendJson(response, 200, { profile, user: nextUser, token: auth.issue(nextUser) });
+      issueSessionCookie(response, auth.issue(nextUser));
+      return sendJson(response, 200, { profile, user: nextUser, token: COOKIE_TOKEN_MARKER });
     }
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
@@ -176,13 +199,49 @@ async function route(request, response, store, realtime, auth, accounts, message
 
 function trustedUser(request, auth) {
   if (auth) {
+    const cookieToken = parseCookies(request.headers.cookie)[SESSION_COOKIE];
+    if (cookieToken) return auth.verify(cookieToken);
     const authorization = request.headers.authorization;
-    if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) throw new AuthError("Brak tokenu logowania.");
-    return auth.verify(authorization.slice(7));
+    if (typeof authorization === "string" && authorization.startsWith("Bearer ") && authorization.slice(7) !== COOKIE_TOKEN_MARKER) {
+      return auth.verify(authorization.slice(7));
+    }
+    throw new AuthError("Brak aktywnej sesji logowania.");
   }
   const playerId = request.headers["x-player-id"];
   if (typeof playerId !== "string" || playerId.length < 1 || playerId.length > 128) throw new HttpError("Brak tożsamości gracza.", "UNAUTHENTICATED", 401);
   return { userId: playerId, displayName: playerId };
+}
+
+function parseCookies(header) {
+  const cookies = {};
+  for (const part of String(header ?? "").split(";")) {
+    const index = part.indexOf("=");
+    if (index < 1) continue;
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+    if (!key) continue;
+    try { cookies[key] = decodeURIComponent(value); } catch { cookies[key] = value; }
+  }
+  return cookies;
+}
+
+function issueSessionCookie(response, token) {
+  response.setHeader("Set-Cookie", `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=3600; HttpOnly; Secure; SameSite=Strict`);
+}
+
+function clearSessionCookie(response) {
+  response.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`);
+}
+
+function assertSameOriginMutation(request) {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return;
+  const fetchSite = request.headers["sec-fetch-site"];
+  if (fetchSite === "cross-site") throw new HttpError("Żądanie z obcej strony zostało zablokowane.", "CROSS_SITE_REQUEST", 403);
+  const origin = request.headers.origin;
+  if (!origin) return;
+  let originHost;
+  try { originHost = new URL(origin).host; } catch { throw new HttpError("Nieprawidłowe źródło żądania.", "CROSS_SITE_REQUEST", 403); }
+  if (originHost !== request.headers.host) throw new HttpError("Żądanie z obcej strony zostało zablokowane.", "CROSS_SITE_REQUEST", 403);
 }
 
 async function readJson(request, maxBytes = 16_384) {
@@ -206,7 +265,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
   const extension = path.split(".").at(-1); const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
   let content = await readFile(path);
   if (injectHomepageExtras) {
-    const html = content.toString("utf8").replace("</body>", '<script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
+    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
   response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" }); response.end(content);
