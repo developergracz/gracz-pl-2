@@ -9,7 +9,7 @@ const els = {
   composeClose: document.querySelector('#compose-close'), composeCancel: document.querySelector('#compose-cancel'), composeForm: document.querySelector('#compose-form'), composeStatus: document.querySelector('#compose-status'),
   recipientSearch: document.querySelector('#recipient-search'), recipientId: document.querySelector('#recipient-id'), recipientResults: document.querySelector('#recipient-results'), recipientSelected: document.querySelector('#recipient-selected'), bodyCount: document.querySelector('#body-count')
 };
-els.user.textContent = session.user.displayName || session.user.userId;
+els.user.textContent = `${session.user.displayName || session.user.userId} (@${session.user.userId})`;
 
 function headers(json = false) { const h = { authorization: `Bearer ${session.token}`, accept: 'application/json' }; if (json) h['content-type'] = 'application/json'; return h; }
 async function api(url, options = {}) {
@@ -19,7 +19,7 @@ async function api(url, options = {}) {
   if (!r.ok) throw new Error(data.error?.message || `Błąd ${r.status}`);
   return data;
 }
-function esc(s) { return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function esc(s) { return String(s ?? '').replace(/[&<>'\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c])); }
 function formatDate(v) { const d = new Date(v); const now = new Date(); return d.toDateString() === now.toDateString() ? d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('pl-PL',{day:'2-digit',month:'short'}); }
 function fullDate(v) { return new Date(v).toLocaleString('pl-PL',{dateStyle:'long',timeStyle:'short'}); }
 function folderMeta(folder) {
@@ -48,18 +48,21 @@ function renderList() {
   if (!items.length) { els.list.innerHTML = '<div class="list-empty">Brak wiadomości w tym folderze.</div>'; return; }
   els.list.replaceChildren();
   for (const m of items) {
-    const sent = state.folder === 'sent'; const person = sent ? (m.recipientName || m.recipientId) : (m.senderName || m.senderId); const unread = !sent && !m.readAt;
+    const sent = state.folder === 'sent';
+    const personName = sent ? (m.recipientName || m.recipientId) : (m.senderName || m.senderId);
+    const personId = sent ? m.recipientId : m.senderId;
+    const unread = !sent && !m.readAt;
     const row = document.createElement('article'); row.className = `message-row${unread?' unread':''}${state.selected?.messageId===m.messageId?' active':''}`; row.dataset.id = m.messageId;
-    row.innerHTML = `<div class="avatar">${esc(String(person).charAt(0).toUpperCase())}</div><div class="message-meta"><div class="message-topline"><span class="message-name">${sent?'Do: ':''}${esc(person)}</span>${unread?'<i class="unread-dot"></i>':''}</div><div class="message-subject">${esc(m.subject)}</div><div class="message-preview">${esc(m.body.replace(/\s+/g,' ').slice(0,110))}</div></div><time class="message-time">${esc(formatDate(m.createdAt))}</time>`;
+    row.innerHTML = `<div class="avatar">${esc(String(personName).charAt(0).toUpperCase())}</div><div class="message-meta"><div class="message-topline"><span class="message-name">${sent?'Do: ':''}${esc(personName)} <small>(@${esc(personId)})</small></span>${unread?'<i class="unread-dot"></i>':''}</div><div class="message-subject">${esc(m.subject)}</div><div class="message-preview">${esc(m.body.replace(/\s+/g,' ').slice(0,110))}</div></div><time class="message-time">${esc(formatDate(m.createdAt))}</time>`;
     row.addEventListener('click', () => openMessage(m)); els.list.append(row);
   }
 }
 function emptyView() { els.view.classList.remove('open'); els.view.innerHTML = '<div class="empty-state"><div>✉</div><h2>Wybierz wiadomość</h2><p>Treść wybranej wiadomości pojawi się tutaj.</p></div>'; }
 async function openMessage(m) {
   state.selected = m; if (state.folder !== 'sent' && !m.readAt) { try { await api(`/messages/${m.messageId}`, { method:'PATCH', body:JSON.stringify({action:'read'}) }); m.readAt = new Date().toISOString(); state.unreadCount = Math.max(0,state.unreadCount-1); els.unreadBadge.textContent=state.unreadCount; els.inboxBadge.textContent=state.unreadCount; } catch {} }
-  renderList(); const sent = state.folder === 'sent'; const person = sent ? (m.recipientName || m.recipientId) : (m.senderName || m.senderId);
+  renderList(); const sent = state.folder === 'sent'; const personName = sent ? (m.recipientName || m.recipientId) : (m.senderName || m.senderId); const personId = sent ? m.recipientId : m.senderId;
   els.view.classList.add('open');
-  els.view.innerHTML = `<article class="message-detail"><header class="detail-head"><div><h2>${esc(m.subject)}</h2><div class="detail-person"><span class="avatar">${esc(String(person).charAt(0).toUpperCase())}</span><div><strong>${sent?'Do: ':'Od: '}${esc(person)}</strong><div class="detail-date">${esc(fullDate(m.createdAt))}</div></div></div></div></header><div class="detail-actions">${!sent?'<button class="primary" data-act="reply">↩ Odpowiedz</button>':''}${!sent?`<button data-act="${state.folder==='archive'?'unarchive':'archive'}">${state.folder==='archive'?'Przenieś do odebranych':'▤ Archiwizuj'}</button>`:''}<button class="danger" data-act="delete">Usuń</button><button data-act="close">Zamknij</button></div><div class="detail-body">${esc(m.body)}</div></article>`;
+  els.view.innerHTML = `<article class="message-detail"><header class="detail-head"><div><h2>${esc(m.subject)}</h2><div class="detail-person"><span class="avatar">${esc(String(personName).charAt(0).toUpperCase())}</span><div><strong>${sent?'Do: ':'Od: '}${esc(personName)} (@${esc(personId)})</strong><div class="detail-date">${esc(fullDate(m.createdAt))}</div></div></div></div></header><div class="detail-actions">${!sent?'<button class="primary" data-act="reply">↩ Odpowiedz</button>':''}${!sent?`<button data-act="${state.folder==='archive'?'unarchive':'archive'}">${state.folder==='archive'?'Przenieś do odebranych':'▤ Archiwizuj'}</button>`:''}<button class="danger" data-act="delete">Usuń</button><button data-act="close">Zamknij</button></div><div class="detail-body">${esc(m.body)}</div></article>`;
   els.view.querySelector('[data-act="close"]').addEventListener('click', emptyView);
   const reply = els.view.querySelector('[data-act="reply"]'); if (reply) reply.addEventListener('click',()=>openCompose({recipientId:m.senderId,recipientName:m.senderName||m.senderId,subject:m.subject.startsWith('Re:')?m.subject:`Re: ${m.subject}`}));
   const archive = els.view.querySelector('[data-act="archive"],[data-act="unarchive"]'); if (archive) archive.addEventListener('click',async()=>{ await api(`/messages/${m.messageId}`,{method:'PATCH',body:JSON.stringify({action:archive.dataset.act})}); await load(state.folder); });
@@ -72,14 +75,19 @@ function openCompose(prefill = {}) {
   setTimeout(()=>els.recipientSearch.focus(),0);
 }
 function closeCompose(){ els.compose.hidden=true; els.recipientResults.hidden=true; }
-function selectRecipient(p){ els.recipientId.value=p.userId; els.recipientSearch.value=`${p.displayName} (@${p.userId})`; els.recipientSelected.textContent=`Odbiorca: ${p.displayName} (@${p.userId})`; els.recipientResults.hidden=true; }
+function selectRecipient(p){
+  els.recipientId.value=p.userId;
+  els.recipientSearch.value=`Login: ${p.userId} | Nazwa: ${p.displayName}`;
+  els.recipientSelected.textContent=`Wybrany odbiorca — LOGIN: ${p.userId} | nazwa gracza: ${p.displayName}. Wiadomość trafi dokładnie na konto @${p.userId}.`;
+  els.recipientResults.hidden=true;
+}
 let searchTimer;
 els.recipientSearch.addEventListener('input',()=>{
-  els.recipientId.value=''; els.recipientSelected.textContent='Wybierz odbiorcę z listy wyników.'; clearTimeout(searchTimer); const q=els.recipientSearch.value.trim(); if(q.length<1){els.recipientResults.hidden=true;return}
-  searchTimer=setTimeout(async()=>{ try{ const data=await api(`/players/search?q=${encodeURIComponent(q)}`); els.recipientResults.replaceChildren(); if(!data.players?.length){els.recipientResults.innerHTML='<button type="button" disabled>Nie znaleziono graczy</button>';els.recipientResults.hidden=false;return} data.players.forEach(p=>{const b=document.createElement('button');b.type='button';b.disabled=!p.allowMessages;b.innerHTML=`<span><strong>${esc(p.displayName)}</strong><small> @${esc(p.userId)}</small></span><small>${p.allowMessages?'wybierz':'wiadomości wyłączone'}</small>`;b.addEventListener('click',()=>selectRecipient(p));els.recipientResults.append(b)});els.recipientResults.hidden=false;}catch(e){els.composeStatus.textContent=e.message}},200);
+  els.recipientId.value=''; els.recipientSelected.textContent='Wybierz odbiorcę z listy wyników. Zwróć uwagę na LOGIN oznaczony znakiem @.'; clearTimeout(searchTimer); const q=els.recipientSearch.value.trim(); if(q.length<1){els.recipientResults.hidden=true;return}
+  searchTimer=setTimeout(async()=>{ try{ const data=await api(`/players/search?q=${encodeURIComponent(q)}`); els.recipientResults.replaceChildren(); if(!data.players?.length){els.recipientResults.innerHTML='<button type="button" disabled>Nie znaleziono graczy</button>';els.recipientResults.hidden=false;return} data.players.forEach(p=>{const b=document.createElement('button');b.type='button';b.disabled=!p.allowMessages;b.innerHTML=`<span><strong>${esc(p.displayName)}</strong><small> — LOGIN: @${esc(p.userId)}</small></span><small>${p.allowMessages?'wybierz konto':'wiadomości wyłączone'}</small>`;b.addEventListener('click',()=>selectRecipient(p));els.recipientResults.append(b)});els.recipientResults.hidden=false;}catch(e){els.composeStatus.textContent=e.message}},200);
 });
 els.composeForm.elements.body.addEventListener('input',()=>els.bodyCount.textContent=String(els.composeForm.elements.body.value.length));
-els.composeForm.addEventListener('submit',async e=>{e.preventDefault();els.composeStatus.className='';if(!els.recipientId.value){els.composeStatus.textContent='Wybierz odbiorcę z listy graczy.';return}const payload={recipientId:els.recipientId.value,subject:els.composeForm.elements.subject.value,body:els.composeForm.elements.body.value};const btn=els.composeForm.querySelector('.send-btn');btn.disabled=true;btn.textContent='Wysyłanie…';try{await api('/messages',{method:'POST',body:JSON.stringify(payload)});els.composeStatus.textContent='Wiadomość została wysłana.';els.composeStatus.className='ok';setTimeout(async()=>{closeCompose();await load('sent')},500)}catch(err){els.composeStatus.textContent=err.message}finally{btn.disabled=false;btn.textContent='Wyślij wiadomość ➤'}});
+els.composeForm.addEventListener('submit',async e=>{e.preventDefault();els.composeStatus.className='';if(!els.recipientId.value){els.composeStatus.textContent='Wybierz odbiorcę z listy graczy.';return}const payload={recipientId:els.recipientId.value,subject:els.composeForm.elements.subject.value,body:els.composeForm.elements.body.value};const btn=els.composeForm.querySelector('.send-btn');btn.disabled=true;btn.textContent='Wysyłanie…';try{const result=await api('/messages',{method:'POST',body:JSON.stringify(payload)});els.composeStatus.textContent=`Wiadomość wysłana na konto @${result.message?.recipientId || els.recipientId.value}.`;els.composeStatus.className='ok';setTimeout(async()=>{closeCompose();await load('sent')},700)}catch(err){els.composeStatus.textContent=err.message}finally{btn.disabled=false;btn.textContent='Wyślij wiadomość ➤'}});
 
 document.querySelectorAll('[data-folder]').forEach(b=>b.addEventListener('click',()=>load(b.dataset.folder)));
 els.composeBtn.addEventListener('click',()=>openCompose()); els.composeClose.addEventListener('click',closeCompose); els.composeCancel.addEventListener('click',closeCompose); els.compose.addEventListener('click',e=>{if(e.target===els.compose)closeCompose()});
