@@ -11,7 +11,6 @@ if (is_array($load) && $load[0] > 80) {
     die('<meta charset="utf8" /><div style="width:70%; font-size:200%; margin:auto; margin-top:300px; background:f5f5f5; border-radius:10pt;">Przepraszamy,<br />nasz serwer jest zbyt obciążony. Spróbuj ponownie później.<br /><br /><span style="font-size:300%;">;(</span></div>');
 }
 
-// Harden session cookies. Respect HTTPS terminated by a trusted reverse proxy.
 $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
             (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
 ini_set('session.use_strict_mode', '1');
@@ -22,6 +21,7 @@ session_set_cookie_params(30*24*60*60, '/', $domain, $is_https, true);
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
 ini_set('display_errors',$production_mode?"Off":"On");
 if (!$production_mode)
@@ -92,8 +92,8 @@ function UnhandledExceptionsCatcher($exception)
 }
 
 if ($production_mode) {
-	set_exception_handler('UnhandledExceptionsCatcher');
-	set_error_handler('UnhandledErrorsCatcher');
+  set_exception_handler('UnhandledExceptionsCatcher');
+  set_error_handler('UnhandledErrorsCatcher');
 }
 
 mb_internal_encoding('UTF-8');
@@ -107,6 +107,8 @@ if (isset($_SERVER['X-Purpose'])&&$_SERVER['X-Purpose']=='preview')
 
 session_start();
 include_once($actual_path.'legacy_security_shim.php');
+include_once($actual_path.'legacy_output_security.php');
+gracz_legacy_enable_output_security();
 
 include_once($actual_path.'library_main.php');
 DatabaseConnect();
