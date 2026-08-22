@@ -30,6 +30,9 @@ export class SecureAccountService {
   async #initialize() {
     if (this.base.ready) await this.base.ready;
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS password_hash_version SMALLINT NOT NULL DEFAULT 1`);
+    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS phone VARCHAR(24)`);
+    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS verification_channel VARCHAR(10) NOT NULL DEFAULT 'email'`);
+    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS contact_verified BOOLEAN NOT NULL DEFAULT FALSE`);
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
         token_hash BYTEA PRIMARY KEY,
@@ -46,8 +49,17 @@ export class SecureAccountService {
     await this.ready;
     assertRegistrationLooksHuman(input);
     validatePassword(input?.password);
+    const phone = cleanPhone(input?.phone);
+    const verificationChannel = normalizeVerificationChannel(input?.verificationChannel);
+    if (verificationChannel === "sms" && !phone) {
+      throw new AccountError("Aby otrzymać kod SMS, wpisz prawidłowy numer telefonu.", "INVALID_PHONE");
+    }
     const account = await this.base.register(input);
     await this.#setCurrentPassword(account.userId, input.password);
+    await this.pool.query(
+      `UPDATE gracz_accounts SET phone=$2, verification_channel=$3, contact_verified=FALSE WHERE user_id=$1`,
+      [account.userId, phone || null, verificationChannel],
+    );
     return account;
   }
 
@@ -72,16 +84,21 @@ export class SecureAccountService {
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
 
-  async createPasswordResetToken({ userId, email }) {
+  async createPasswordResetToken({ userId, email, phone, verificationChannel = "email" }) {
     await this.ready;
     const normalizedId = normalizeUserId(userId);
+    const channel = normalizeVerificationChannel(verificationChannel);
     const safeEmail = cleanEmail(email);
+    const safePhone = cleanPhone(phone);
     const { rows } = await this.pool.query(
       `SELECT user_id FROM gracz_accounts
-       WHERE user_id=$1 AND (lower(email)=lower($2) OR lower(recovery_email)=lower($2))`,
-      [normalizedId, safeEmail],
+       WHERE user_id=$1 AND (
+         ($2='email' AND (lower(email)=lower($3) OR lower(recovery_email)=lower($3)))
+         OR ($2='sms' AND phone=$4)
+       )`,
+      [normalizedId, channel, safeEmail, safePhone],
     );
-    if (!rows[0]) return { ok: true, token: null };
+    if (!rows[0]) return { ok: true, token: null, channel };
     const token = randomBytes(32).toString("base64url");
     const tokenHash = hashToken(token);
     await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE user_id=$1 OR expires_at < NOW()`, [normalizedId]);
@@ -90,17 +107,19 @@ export class SecureAccountService {
        VALUES($1,$2,NOW()+INTERVAL '15 minutes')`,
       [tokenHash, normalizedId],
     );
-    return { ok: true, token };
+    return { ok: true, token, channel };
   }
 
-  async resetPasswordWithEmail({ userId, email, newPassword, token }) {
+  async resetPasswordWithEmail({ userId, email, phone, verificationChannel = "email", newPassword, token }) {
     await this.ready;
     if (typeof token !== "string" || token.length < 32) {
-      throw new AccountError("Reset hasła wymaga jednorazowego tokenu wysłanego na e-mail.", "RECOVERY_TOKEN_REQUIRED");
+      throw new AccountError("Reset hasła wymaga jednorazowego kodu lub tokenu weryfikacyjnego.", "RECOVERY_TOKEN_REQUIRED");
     }
     validatePassword(newPassword);
     const normalizedId = normalizeUserId(userId);
+    const channel = normalizeVerificationChannel(verificationChannel);
     const safeEmail = cleanEmail(email);
+    const safePhone = cleanPhone(phone);
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
@@ -109,11 +128,12 @@ export class SecureAccountService {
          FROM gracz_password_reset_tokens t
          JOIN gracz_accounts a ON a.user_id=t.user_id
          WHERE t.token_hash=$1 AND t.user_id=$2 AND t.used_at IS NULL AND t.expires_at>NOW()
-           AND (lower(a.email)=lower($3) OR lower(a.recovery_email)=lower($3))
+           AND (( $3='email' AND (lower(a.email)=lower($4) OR lower(a.recovery_email)=lower($4)) )
+             OR ( $3='sms' AND a.phone=$5 ))
          FOR UPDATE`,
-        [hashToken(token), normalizedId, safeEmail],
+        [hashToken(token), normalizedId, channel, safeEmail, safePhone],
       );
-      if (!rows[0]) throw new AccountError("Token resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
+      if (!rows[0]) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
       const salt = randomBytes(16);
       const passwordHash = await hashPassword(newPassword, salt, CURRENT_SCRYPT);
       await client.query(
@@ -178,6 +198,17 @@ function normalizeUserId(value) {
 
 function cleanEmail(value) {
   return typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : "";
+}
+
+function cleanPhone(value) {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim().replace(/[\s()-]/g, "");
+  if (!normalized) return "";
+  return /^\+?[0-9]{7,15}$/.test(normalized) ? normalized : "";
+}
+
+function normalizeVerificationChannel(value) {
+  return value === "sms" ? "sms" : "email";
 }
 
 function assertRegistrationLooksHuman(input) {
