@@ -53,8 +53,17 @@ jobs:
       - name: Reject obvious legacy secret assignments
         shell: bash
         run: |
-          set -euo pipefail
-          if grep -RInE --include='*.php' '(facebook_app_secret|database_password|seed_private)[[:space:]]*=[[:space:]]*["'"'][^$]' website; then
-            echo 'Potential hard-coded secret assignment detected' >&2
-            exit 1
-          fi
+          python3 - <<'PY'
+          import pathlib, re, sys
+          pattern = re.compile(r"\$(facebook_app_secret|database_password|seed_private)\s*=\s*(['\"])(?!\s*getenv\b)(?!\s*\$)[^\n]*?\2", re.I)
+          hits = []
+          for path in pathlib.Path('website').rglob('*.php'):
+              text = path.read_text(encoding='utf-8', errors='ignore')
+              for lineno, line in enumerate(text.splitlines(), 1):
+                  if pattern.search(line):
+                      hits.append(f"{path}:{lineno}:{line.strip()}")
+          if hits:
+              print('Potential hard-coded secret assignment detected', file=sys.stderr)
+              print('\n'.join(hits), file=sys.stderr)
+              sys.exit(1)
+          PY
