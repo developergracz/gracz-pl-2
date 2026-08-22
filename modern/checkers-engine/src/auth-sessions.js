@@ -12,6 +12,12 @@ export class MemoryAuthSessionStore {
     this.#sessions.set(tokenId, { tokenId, userId, expiresAt, revokedAt: null });
   }
 
+  async has(tokenId) {
+    if (!tokenId) return false;
+    this.#cleanup();
+    return this.#sessions.has(tokenId);
+  }
+
   async assertActive({ tokenId, userId, expiresAt }) {
     validateSessionRecord({ tokenId, userId, expiresAt });
     this.#cleanup();
@@ -78,6 +84,13 @@ export class PostgresAuthSessionStore {
        ON CONFLICT (token_id) DO UPDATE SET user_id=EXCLUDED.user_id,expires_at=EXCLUDED.expires_at,revoked_at=NULL`,
       [tokenId, userId, expiresAt],
     );
+  }
+
+  async has(tokenId) {
+    await this.ready;
+    if (!tokenId) return false;
+    const { rows } = await this.pool.query(`SELECT 1 FROM gracz_auth_sessions WHERE token_id=$1 LIMIT 1`, [tokenId]);
+    return Boolean(rows[0]);
   }
 
   async assertActive({ tokenId, userId, expiresAt }) {
