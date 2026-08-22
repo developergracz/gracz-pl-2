@@ -3,7 +3,7 @@
 <?php
 function CreateAccountSecureLegacy($login, $email, $password, $password_confirm, $sex, $token, $accept_terms)
 {
-  global $database_handle, $database_prefix, $seed_private;
+  global $database_handle, $database_prefix;
 
   if (!IsTokenValid($token)) {
     throw new ExceptionAccessDenied('Nieprawidłowy token bezpieczeństwa. Odśwież stronę i spróbuj ponownie.');
@@ -43,9 +43,15 @@ function CreateAccountSecureLegacy($login, $email, $password, $password_confirm,
     throw new ExceptionInvalidData();
   }
 
-  // Zachowujemy zgodność ze starym logowaniem SHA-1 do czasu kontrolowanej migracji schematu bazy.
-  // Nowe konta mają jednak wymuszone długie hasła, a sam INSERT jest parametryzowany.
-  $password_hash_legacy = sha1($seed_private.$password);
+  if (!LegacyPasswordColumnSupportsModernHash()) {
+    throw new RuntimeException('Rejestracja jest chwilowo wstrzymana do czasu zastosowania bezpiecznej migracji kolumny hasła.');
+  }
+
+  $password_hash = HashModernPassword($password);
+  if ($password_hash === false) {
+    throw new RuntimeException('Nie udało się utworzyć bezpiecznego skrótu hasła.');
+  }
+
   $activation_code = random_int(100000000, 2147483647);
 
   $query = 'INSERT INTO '.$database_prefix.'_users
@@ -56,7 +62,7 @@ function CreateAccountSecureLegacy($login, $email, $password, $password_confirm,
   try {
     $stmt = $database_handle->prepare($query);
     $stmt->bindValue(':login', $login, PDO::PARAM_STR);
-    $stmt->bindValue(':password', $password_hash_legacy, PDO::PARAM_STR);
+    $stmt->bindValue(':password', $password_hash, PDO::PARAM_STR);
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->bindValue(':sex', $sex, PDO::PARAM_INT);
     $stmt->bindValue(':ip', isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '', PDO::PARAM_STR);
