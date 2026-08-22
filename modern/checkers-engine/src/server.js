@@ -19,15 +19,15 @@ import { LoginRateLimiter, RateLimitError } from "./rate-limit.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export function createGameHttpServer({ store, auth = null, accounts = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
+export function createGameHttpServer({ store, auth = null, accounts = null, messageAttachments = null, lobby = null, webRoot = null, loginRateLimiter = new LoginRateLimiter(), logger = { error() {} }, realtime = new RealtimeHub() }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
   return createServer(async (request, response) => {
-    try { await route(request, response, store, realtime, auth, accounts, lobby, webRoot, loginRateLimiter); }
+    try { await route(request, response, store, realtime, auth, accounts, messageAttachments, lobby, webRoot, loginRateLimiter); }
     catch (error) { logger.error(error); sendError(response, error); }
   }).on("close", () => realtime.close());
 }
 
-async function route(request, response, store, realtime, auth, accounts, lobby, webRoot, loginRateLimiter) {
+async function route(request, response, store, realtime, auth, accounts, messageAttachments, lobby, webRoot, loginRateLimiter) {
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
   if (request.method === "GET" && webRoot) {
@@ -90,10 +90,26 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
 
   if (accounts && auth && url.pathname === "/messages") {
     const user = trustedUser(request, auth);
-    if (request.method === "GET") return sendJson(response, 200, await accounts.listPrivateMessages(user.userId, url.searchParams.get("folder") ?? "inbox"));
+    if (request.method === "GET") {
+      const result = await accounts.listPrivateMessages(user.userId, url.searchParams.get("folder") ?? "inbox");
+      if (messageAttachments && result.messages?.length) {
+        const meta = await messageAttachments.getMetaForMessages(result.messages.map((message) => message.messageId));
+        result.messages = result.messages.map((message) => ({ ...message, attachment: meta.get(message.messageId) ?? null }));
+      }
+      return sendJson(response, 200, result);
+    }
     if (request.method === "POST") return sendJson(response, 201, { message: await accounts.sendPrivateMessage(user.userId, await readJson(request)) });
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
+
+  const attachmentMatch = messageAttachments && accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})\/attachment$/i);
+  if (attachmentMatch) {
+    const user = trustedUser(request, auth);
+    if (request.method === "POST") return sendJson(response, 201, { attachment: await messageAttachments.save(user.userId, attachmentMatch[1], await readJson(request, 1_500_000)) });
+    if (request.method === "GET") return sendJson(response, 200, { attachment: await messageAttachments.get(user.userId, attachmentMatch[1]) });
+    return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
+  }
+
   const privateMessageMatch = accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})$/i);
   if (privateMessageMatch) {
     const user = trustedUser(request, auth);
@@ -169,9 +185,9 @@ function trustedUser(request, auth) {
   return { userId: playerId, displayName: playerId };
 }
 
-async function readJson(request) {
+async function readJson(request, maxBytes = 16_384) {
   const chunks = []; let length = 0;
-  for await (const chunk of request) { length += chunk.length; if (length > 16_384) throw new HttpError("Żądanie jest za duże.", "PAYLOAD_TOO_LARGE", 413); chunks.push(chunk); }
+  for await (const chunk of request) { length += chunk.length; if (length > maxBytes) throw new HttpError("Żądanie jest za duże.", "PAYLOAD_TOO_LARGE", 413); chunks.push(chunk); }
   try { return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); }
   catch { throw new HttpError("Nieprawidłowy JSON.", "INVALID_JSON", 400); }
 }
