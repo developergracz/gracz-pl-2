@@ -74,7 +74,9 @@
   }
   async function openProfile(e) { e?.preventDefault(); overlay.classList.add('open'); await loadProfile(); }
   document.querySelectorAll('.account-box a').forEach(a => {
-    if (a.textContent.trim().toLowerCase() === 'profil') { a.classList.add('profile-link'); a.href='#profil'; a.addEventListener('click', openProfile); }
+    const label = a.textContent.trim().toLowerCase();
+    if (label === 'profil') { a.classList.add('profile-link'); a.href='#profil'; a.addEventListener('click', openProfile); }
+    if (label === 'wiadomości') { a.href='/messages.html'; a.title='Prywatne wiadomości Gracz.pl'; }
   });
   form.addEventListener('submit', async e => {
     e.preventDefault(); setStatus('Zapisywanie…');
