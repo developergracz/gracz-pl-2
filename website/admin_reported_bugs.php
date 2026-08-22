@@ -1,4 +1,12 @@
 <?php include("variables_local.php"); include_once($header); ?>
+<?php
+  if (!isset($_SESSION['account_type']) || $_SESSION['account_type'] < ADMINISTRATOR) {
+    http_response_code(403);
+    echo('<div class="negative">Brak uprawnień administratora.</div>');
+    include_once($footer);
+    exit();
+  }
+?>
 
   <div class="box light">
     <div class="corner top left"></div>
