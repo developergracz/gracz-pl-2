@@ -55,6 +55,16 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
       return sendJson(response, 200, { token: auth.issue(account), user: account });
     } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
   }
+  if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
+    const body = await readJson(request);
+    const rateKey = `${request.socket.remoteAddress ?? "unknown"}:reset:${String(body.userId ?? "").toLowerCase()}`;
+    loginRateLimiter.assertAllowed(rateKey);
+    try {
+      await accounts.resetPasswordWithEmail(body);
+      loginRateLimiter.recordSuccess(rateKey);
+      return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Możesz się zalogować nowym hasłem." });
+    } catch (error) { loginRateLimiter.recordFailure(rateKey); throw error; }
+  }
   if (request.method === "POST" && url.pathname === "/auth/session" && auth) {
     const userId = request.headers["x-authenticated-user-id"];
     const displayName = request.headers["x-authenticated-display-name"];
