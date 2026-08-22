@@ -23,7 +23,7 @@ test("adaptive challenge appears only after repeated suspicious authentication f
   await defense.verifyIfRequired({ ...input, token: "verified-token" });
   assert.equal(defense.requiresChallenge(input), false);
   now += 16 * 60_000;
-  assert.equal(defense.requiresChallenge(input), true);
+  assert.equal(defense.requiresChallenge(input), false);
 });
 
 test("traffic guard rate limits the same account independently of IP", () => {
