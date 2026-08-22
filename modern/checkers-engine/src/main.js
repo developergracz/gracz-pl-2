@@ -12,6 +12,7 @@ import { LobbyService } from "./lobby.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
+import { TrafficGuard, TrafficLimitError } from "./traffic-guard.js";
 
 const config = loadConfig();
 
@@ -51,6 +52,26 @@ const server = createGameHttpServer({
   logger: console,
 });
 
+// Warstwa ochrony ruchu działa przed właściwym routerem aplikacji. Ogranicza ruch
+// globalny oraz szczególnie kosztowne/łatwe do spamowania endpointy: logowanie,
+// rejestrację, reset hasła, wiadomości, załączniki, zaproszenia, chat i ruchy gry.
+const applicationRequestHandler = server.listeners("request")[0];
+const trafficGuard = new TrafficGuard();
+server.removeAllListeners("request");
+server.on("request", (request, response) => {
+  try {
+    trafficGuard.assertAllowed(request);
+  } catch (error) {
+    if (!(error instanceof TrafficLimitError)) throw error;
+    response.setHeader("Retry-After", String(error.retryAfterSeconds));
+    response.setHeader("Cache-Control", "no-store");
+    response.writeHead(429, { "content-type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: { code: error.code, message: error.message, scope: error.scope } }));
+    return;
+  }
+  applicationRequestHandler.call(server, request, response);
+});
+
 // Warstwa nagłówków ochronnych. Inline JS/CSS pozostaje czasowo dopuszczony tylko
 // dlatego, że część odziedziczonego frontendu nie została jeszcze rozdzielona na
 // osobne pliki. Docelowo polityka CSP przejdzie na nonce/hash bez unsafe-inline.
@@ -80,6 +101,7 @@ server.listen(config.port, config.host, () => {
   console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL + wersjonowane haszowanie" : "plik lokalny (tryb developerski)"}`);
   console.log(`Magazyn sesji gier: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
   console.log(`Rejestr sesji logowania: ${config.databaseUrl ? "PostgreSQL" : "pamięć procesu (tryb developerski)"}`);
+  console.log("Ochrona ruchu: limity globalne + anti-spam dla wrażliwych endpointów");
 });
 
 let shuttingDown = false;
