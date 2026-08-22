@@ -161,6 +161,71 @@
     if (textNode) textNode.textContent = "Wpisz Twój adres e-mail";
   }
 
+  function installRegistrationVerificationFields() {
+    const form = document.querySelector("#auth-form");
+    const emailField = document.querySelector("#email-field");
+    const registerTab = document.querySelector('[data-mode="register"]');
+    if (!form || !emailField || !registerTab || document.querySelector("#phone-field")) return;
+
+    const phoneField = document.createElement("label");
+    phoneField.id = "phone-field";
+    phoneField.hidden = true;
+    phoneField.textContent = "Wpisz Twój numer telefonu";
+    const phoneInput = document.createElement("input");
+    phoneInput.name = "phone";
+    phoneInput.type = "tel";
+    phoneInput.inputMode = "tel";
+    phoneInput.autocomplete = "tel";
+    phoneInput.maxLength = 24;
+    phoneInput.placeholder = "np. +48 500 600 700";
+    const phoneHelp = document.createElement("small");
+    phoneHelp.className = "field-help";
+    phoneHelp.textContent = "Numer będzie używany do kodów SMS i odzyskiwania dostępu, jeśli wybierzesz SMS.";
+    phoneField.append(phoneInput, phoneHelp);
+
+    const channelField = document.createElement("fieldset");
+    channelField.id = "verification-channel-field";
+    channelField.hidden = true;
+    channelField.style.cssText = "margin:0;padding:10px 12px;border:1px solid #243840;border-radius:8px";
+    const legend = document.createElement("legend");
+    legend.textContent = "Gdzie chcesz otrzymać kod aktywacyjny?";
+    legend.style.cssText = "padding:0 6px;font-weight:700";
+
+    const emailLabel = document.createElement("label");
+    emailLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:6px 0;font-weight:500";
+    const emailRadio = document.createElement("input");
+    emailRadio.type = "radio";
+    emailRadio.name = "verificationChannel";
+    emailRadio.value = "email";
+    emailRadio.checked = true;
+    emailLabel.append(emailRadio, document.createTextNode("Kod na adres e-mail"));
+
+    const smsLabel = document.createElement("label");
+    smsLabel.style.cssText = emailLabel.style.cssText;
+    const smsRadio = document.createElement("input");
+    smsRadio.type = "radio";
+    smsRadio.name = "verificationChannel";
+    smsRadio.value = "sms";
+    smsLabel.append(smsRadio, document.createTextNode("Kod SMS na numer telefonu"));
+
+    const channelHelp = document.createElement("small");
+    channelHelp.className = "field-help";
+    channelHelp.textContent = "Ten sam wybrany kanał będzie mógł służyć później do odzyskiwania hasła.";
+    channelField.append(legend, emailLabel, smsLabel, channelHelp);
+    emailField.after(phoneField, channelField);
+
+    const sync = () => {
+      const registering = registerTab.classList.contains("active");
+      phoneField.hidden = !registering;
+      channelField.hidden = !registering;
+      phoneInput.required = registering && smsRadio.checked;
+    };
+    emailRadio.addEventListener("change", sync);
+    smsRadio.addEventListener("change", sync);
+    new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] });
+    sync();
+  }
+
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
@@ -168,6 +233,7 @@
     installLogout();
     installEnterLogin();
     clarifyRegistrationEmailLabel();
+    installRegistrationVerificationFields();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true });
   else install();
