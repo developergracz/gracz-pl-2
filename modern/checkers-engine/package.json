@@ -9,7 +9,7 @@
     "start": "node src/main.js",
     "test": "node --test",
     "test:browser": "node e2e/lobby.browser.mjs",
-    "check": "node --check src/main.js && node --check src/server.js && node --check src/auth.js && node --check src/secure-accounts.js"
+    "check": "node --check src/main.js && node --check src/server.js && node --check src/auth.js && node --check src/secure-accounts.js && node --check src/traffic-guard.js"
   },
   "engines": {
     "node": ">=24"
