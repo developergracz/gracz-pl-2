@@ -31,7 +31,14 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
   if (request.method === "GET" && webRoot) {
-    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css", "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css" })[url.pathname];
+    const staticFile = ({
+      "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css",
+      "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css",
+      "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js",
+      "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
+      "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
+      "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
+    })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
   }
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
@@ -57,15 +64,31 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
 
   if (accounts && auth && url.pathname === "/account/profile") {
     const user = trustedUser(request, auth);
-    if (request.method === "GET") {
-      const profile = await accounts.getProfile(user.userId);
-      return sendJson(response, 200, { profile });
-    }
+    if (request.method === "GET") return sendJson(response, 200, { profile: await accounts.getProfile(user.userId) });
     if (request.method === "PUT") {
       const profile = await accounts.updateProfile(user.userId, await readJson(request));
       const nextUser = { userId: profile.userId, displayName: profile.displayName };
       return sendJson(response, 200, { profile, user: nextUser, token: auth.issue(nextUser) });
     }
+    return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
+  }
+
+  if (accounts && auth && url.pathname === "/players/search" && request.method === "GET") {
+    const user = trustedUser(request, auth);
+    return sendJson(response, 200, { players: await accounts.searchPlayers(user.userId, url.searchParams.get("q") ?? "") });
+  }
+
+  if (accounts && auth && url.pathname === "/messages") {
+    const user = trustedUser(request, auth);
+    if (request.method === "GET") return sendJson(response, 200, await accounts.listPrivateMessages(user.userId, url.searchParams.get("folder") ?? "inbox"));
+    if (request.method === "POST") return sendJson(response, 201, { message: await accounts.sendPrivateMessage(user.userId, await readJson(request)) });
+    return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
+  }
+  const privateMessageMatch = accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})$/i);
+  if (privateMessageMatch) {
+    const user = trustedUser(request, auth);
+    if (request.method === "PATCH") return sendJson(response, 200, await accounts.updatePrivateMessage(user.userId, privateMessageMatch[1], (await readJson(request)).action));
+    if (request.method === "DELETE") return sendJson(response, 200, await accounts.deletePrivateMessage(user.userId, privateMessageMatch[1]));
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
 
@@ -146,7 +169,7 @@ function sendError(response, error) {
   if (error instanceof HttpError) return sendJson(response, error.status, errorBody(error));
   if (error instanceof SessionNotFoundError) return sendJson(response, 404, errorBody(error));
   if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
-  if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : error.code === "ACCOUNT_NOT_FOUND" ? 404 : 400, errorBody(error));
+  if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : ["ACCOUNT_NOT_FOUND","MESSAGE_NOT_FOUND"].includes(error.code) ? 404 : error.code === "MESSAGES_DISABLED" ? 403 : 400, errorBody(error));
   if (error instanceof RateLimitError) return sendJson(response, 429, errorBody(error));
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" || error.code === "INVITATION_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
@@ -160,7 +183,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
     const html = content.toString("utf8").replace("</body>", '<script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
-  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" }); response.end(content);
+  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8", "cache-control": "no-store" }); response.end(content);
 }
 function errorBody(error) { return { error: { code: error.code ?? "INVALID_REQUEST", message: error.message } }; }
 function sendJson(response, status, body) { response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); response.end(JSON.stringify(body)); }
