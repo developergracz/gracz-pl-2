@@ -136,10 +136,31 @@
     }, true);
   }
 
+  function installEnterLogin() {
+    const form = document.querySelector("#auth-form");
+    const login = form?.elements?.userId;
+    const password = form?.elements?.password;
+    if (!form || !login || !password) return;
+
+    const submitOnEnter = (event) => {
+      if (event.key !== "Enter" || event.isComposing || event.repeat) return;
+      const loginTab = document.querySelector('[data-mode="login"]');
+      if (!loginTab?.classList.contains("active")) return;
+      event.preventDefault();
+      form.requestSubmit(document.querySelector("#auth-submit"));
+    };
+
+    login.addEventListener("keydown", submitOnEnter);
+    password.addEventListener("keydown", submitOnEnter);
+  }
+
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
-  const install = () => installLogout();
+  const install = () => {
+    installLogout();
+    installEnterLogin();
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true });
   else install();
 })();
