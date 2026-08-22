@@ -18,12 +18,15 @@ export class MemoryAccountService {
 
   async register({ userId, displayName, password }) {
     const normalizedId = normalizeUserId(userId);
-    validateDisplayName(displayName);
+    const safeDisplayName = normalizeDisplayName(displayName);
     validatePassword(password);
     if (this.#accounts.has(normalizedId)) throw new AccountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
+    if ([...this.#accounts.values()].some((account) => sameDisplayName(account.displayName, safeDisplayName))) {
+      throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+    }
     const salt = randomBytes(16);
     const passwordHash = await hashPassword(password, salt);
-    const account = { userId: normalizedId, displayName, salt, passwordHash };
+    const account = { userId: normalizedId, displayName: safeDisplayName, salt, passwordHash };
     this.#accounts.set(normalizedId, account);
     return publicAccount(account);
   }
@@ -51,19 +54,22 @@ export class FileAccountService {
 
   async register({ userId, displayName, password }) {
     const normalizedId = normalizeUserId(userId);
-    validateDisplayName(displayName);
+    const safeDisplayName = normalizeDisplayName(displayName);
     validatePassword(password);
     return this.#exclusive(async () => {
       const records = await this.#read();
       if (records[normalizedId]) throw new AccountError("Takie konto już istnieje.", "ACCOUNT_EXISTS");
+      if (Object.values(records).some((record) => sameDisplayName(record.displayName, safeDisplayName))) {
+        throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+      }
       const salt = randomBytes(16);
       const passwordHash = await hashPassword(password, salt);
       records[normalizedId] = {
-        userId: normalizedId, displayName,
+        userId: normalizedId, displayName: safeDisplayName,
         salt: salt.toString("base64"), passwordHash: passwordHash.toString("base64"),
       };
       await this.#write(records);
-      return Object.freeze({ userId: normalizedId, displayName });
+      return Object.freeze({ userId: normalizedId, displayName: safeDisplayName });
     });
   }
 
@@ -108,6 +114,15 @@ function normalizeUserId(value) {
     throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
   }
   return value.toLowerCase();
+}
+
+function normalizeDisplayName(value) {
+  validateDisplayName(value);
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function sameDisplayName(a, b) {
+  return String(a ?? "").trim().toLocaleLowerCase("pl-PL") === String(b ?? "").trim().toLocaleLowerCase("pl-PL");
 }
 
 function validateDisplayName(value) {
