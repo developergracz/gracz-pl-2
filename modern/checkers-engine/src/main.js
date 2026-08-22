@@ -12,9 +12,9 @@ import { LobbyService } from "./lobby.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
-import { TrafficGuard, TrafficLimitError } from "./traffic-guard.js";
 
 const config = loadConfig();
+const turnstileEnabled = Boolean(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY);
 
 const store = config.databaseUrl
   ? new PostgresSessionStore(config.databaseUrl)
@@ -52,29 +52,6 @@ const server = createGameHttpServer({
   logger: console,
 });
 
-// Warstwa ochrony ruchu działa przed właściwym routerem aplikacji. Ogranicza ruch
-// globalny oraz szczególnie kosztowne/łatwe do spamowania endpointy: logowanie,
-// rejestrację, reset hasła, wiadomości, załączniki, zaproszenia, chat i ruchy gry.
-const applicationRequestHandler = server.listeners("request")[0];
-const trafficGuard = new TrafficGuard();
-server.removeAllListeners("request");
-server.on("request", (request, response) => {
-  try {
-    trafficGuard.assertAllowed(request);
-  } catch (error) {
-    if (!(error instanceof TrafficLimitError)) throw error;
-    response.setHeader("Retry-After", String(error.retryAfterSeconds));
-    response.setHeader("Cache-Control", "no-store");
-    response.writeHead(429, { "content-type": "application/json; charset=utf-8" });
-    response.end(JSON.stringify({ error: { code: error.code, message: error.message, scope: error.scope } }));
-    return;
-  }
-  applicationRequestHandler.call(server, request, response);
-});
-
-// Warstwa nagłówków ochronnych. Inline JS/CSS pozostaje czasowo dopuszczony tylko
-// dlatego, że część odziedziczonego frontendu nie została jeszcze rozdzielona na
-// osobne pliki. Docelowo polityka CSP przejdzie na nonce/hash bez unsafe-inline.
 server.prependListener("request", (_request, response) => {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "DENY");
@@ -84,9 +61,14 @@ server.prependListener("request", (_request, response) => {
   response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   response.setHeader("Origin-Agent-Cluster", "?1");
   response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()");
+
+  const turnstileOrigin = "https://challenges.cloudflare.com";
+  const scriptSrc = turnstileEnabled ? `'self' 'unsafe-inline' ${turnstileOrigin}` : "'self' 'unsafe-inline'";
+  const connectSrc = turnstileEnabled ? `'self' ${turnstileOrigin}` : "'self'";
+  const frameSrc = turnstileEnabled ? turnstileOrigin : "'none'";
   response.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'none'; worker-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests",
+    `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; frame-src ${frameSrc}; font-src 'self'; object-src 'none'; media-src 'none'; worker-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests`,
   );
   response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 });
@@ -101,7 +83,7 @@ server.listen(config.port, config.host, () => {
   console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL + wersjonowane haszowanie" : "plik lokalny (tryb developerski)"}`);
   console.log(`Magazyn sesji gier: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
   console.log(`Rejestr sesji logowania: ${config.databaseUrl ? "PostgreSQL" : "pamięć procesu (tryb developerski)"}`);
-  console.log("Ochrona ruchu: limity globalne + anti-spam dla wrażliwych endpointów");
+  console.log(`Ochrona anty-bot: IP + konto + endpoint + credential stuffing/password spraying${turnstileEnabled ? " + adaptacyjny Cloudflare Turnstile" : " (Turnstile oczekuje na klucze środowiskowe)"}`);
 });
 
 let shuttingDown = false;
@@ -123,6 +105,4 @@ async function shutdown(signal) {
   });
 }
 
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.once(signal, () => void shutdown(signal));
-}
+for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => void shutdown(signal));
