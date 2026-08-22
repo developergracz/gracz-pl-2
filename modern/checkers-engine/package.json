@@ -1,22 +1,23 @@
 {
   "name": "@gracz/checkers-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Deterministic, server-authoritative checkers rules engine for Gracz.pl 2.0",
+  "description": "Server-authoritative multiplayer platform foundation for Gracz.pl",
   "exports": "./src/index.js",
   "scripts": {
     "start": "node src/main.js",
     "test": "node --test",
-    "test:browser": "node e2e/lobby.browser.mjs"
+    "test:browser": "node e2e/lobby.browser.mjs",
+    "check": "node --check src/main.js && node --check src/server.js && node --check src/auth.js && node --check src/secure-accounts.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "dependencies": {
-    "pg": "^8.16.3"
+    "pg": "^8.23.0"
   },
   "devDependencies": {
-    "playwright": "^1.55.0"
+    "playwright": "^1.62.1"
   }
 }
