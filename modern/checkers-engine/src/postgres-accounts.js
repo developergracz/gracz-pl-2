@@ -1,4 +1,4 @@
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import pg from "pg";
 import { AccountError } from "./accounts.js";
@@ -30,6 +30,22 @@ export class PostgresAccountService {
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS email VARCHAR(254)`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS recovery_email VARCHAR(254)`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS profile_data JSONB NOT NULL DEFAULT '{}'::jsonb`);
+    await this.pool.query(`
+      CREATE TABLE IF NOT EXISTS gracz_messages (
+        message_id UUID PRIMARY KEY,
+        sender_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
+        recipient_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
+        subject VARCHAR(120) NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        read_at TIMESTAMPTZ,
+        recipient_archived BOOLEAN NOT NULL DEFAULT FALSE,
+        sender_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        recipient_deleted BOOLEAN NOT NULL DEFAULT FALSE
+      )
+    `);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_recipient_idx ON gracz_messages(recipient_id, created_at DESC)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_sender_idx ON gracz_messages(sender_id, created_at DESC)`);
   }
 
   async register({ userId, displayName, password, email = "", recoveryEmail = "", twoFactor = false }) {
@@ -106,6 +122,106 @@ export class PostgresAccountService {
     return publicProfile(rows[0]);
   }
 
+  async searchPlayers(currentUserId, query = "") {
+    await this.ready;
+    const current = normalizeUserId(currentUserId);
+    const q = String(query ?? "").trim().slice(0, 40);
+    const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+    const { rows } = await this.pool.query(
+      `SELECT user_id, display_name, profile_data
+       FROM gracz_accounts
+       WHERE user_id <> $1
+         AND (user_id ILIKE $2 ESCAPE '\\' OR display_name ILIKE $2 ESCAPE '\\')
+       ORDER BY display_name ASC
+       LIMIT 20`,
+      [current, pattern],
+    );
+    return rows.map((row) => ({
+      userId: row.user_id,
+      displayName: row.display_name,
+      allowMessages: row.profile_data?.allowMessages !== false,
+    }));
+  }
+
+  async sendPrivateMessage(senderId, input = {}) {
+    await this.ready;
+    const sender = normalizeUserId(senderId);
+    const recipient = normalizeUserId(input.recipientId);
+    if (sender === recipient) throw new AccountError("Nie możesz wysłać wiadomości do samego siebie.", "INVALID_MESSAGE");
+    const subject = String(input.subject ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+    const body = String(input.body ?? "").trim().slice(0, 5000);
+    if (!subject) throw new AccountError("Wpisz temat wiadomości.", "INVALID_MESSAGE");
+    if (!body) throw new AccountError("Wpisz treść wiadomości.", "INVALID_MESSAGE");
+    const { rows: recipients } = await this.pool.query(
+      `SELECT user_id, display_name, profile_data FROM gracz_accounts WHERE user_id=$1`,
+      [recipient],
+    );
+    const target = recipients[0];
+    if (!target) throw new AccountError("Nie znaleziono odbiorcy.", "ACCOUNT_NOT_FOUND");
+    if (target.profile_data?.allowMessages === false) throw new AccountError("Ten gracz nie przyjmuje prywatnych wiadomości.", "MESSAGES_DISABLED");
+    const messageId = randomUUID();
+    const { rows } = await this.pool.query(
+      `INSERT INTO gracz_messages (message_id, sender_id, recipient_id, subject, body)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING message_id, sender_id, recipient_id, subject, body, created_at, read_at`,
+      [messageId, sender, recipient, subject, body],
+    );
+    return messageRow(rows[0], { senderName: null, recipientName: target.display_name });
+  }
+
+  async listPrivateMessages(userId, folder = "inbox") {
+    await this.ready;
+    const id = normalizeUserId(userId);
+    const safeFolder = ["inbox", "unread", "sent", "archive"].includes(folder) ? folder : "inbox";
+    let where = "m.recipient_id=$1 AND m.recipient_deleted=FALSE AND m.recipient_archived=FALSE";
+    if (safeFolder === "unread") where += " AND m.read_at IS NULL";
+    if (safeFolder === "archive") where = "m.recipient_id=$1 AND m.recipient_deleted=FALSE AND m.recipient_archived=TRUE";
+    if (safeFolder === "sent") where = "m.sender_id=$1 AND m.sender_deleted=FALSE";
+    const { rows } = await this.pool.query(
+      `SELECT m.message_id, m.sender_id, m.recipient_id, m.subject, m.body, m.created_at, m.read_at,
+              s.display_name AS sender_name, r.display_name AS recipient_name
+       FROM gracz_messages m
+       JOIN gracz_accounts s ON s.user_id=m.sender_id
+       JOIN gracz_accounts r ON r.user_id=m.recipient_id
+       WHERE ${where}
+       ORDER BY m.created_at DESC
+       LIMIT 100`,
+      [id],
+    );
+    const unread = await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_messages WHERE recipient_id=$1 AND recipient_deleted=FALSE AND read_at IS NULL`, [id]);
+    return { folder: safeFolder, unreadCount: unread.rows[0]?.count ?? 0, messages: rows.map((row) => messageRow(row)) };
+  }
+
+  async updatePrivateMessage(userId, messageId, action) {
+    await this.ready;
+    const id = normalizeUserId(userId);
+    if (!/^[0-9a-f-]{36}$/i.test(String(messageId))) throw new AccountError("Nieprawidłowy identyfikator wiadomości.", "INVALID_MESSAGE");
+    if (action === "read") {
+      const { rowCount } = await this.pool.query(`UPDATE gracz_messages SET read_at=COALESCE(read_at,NOW()) WHERE message_id=$1 AND recipient_id=$2 AND recipient_deleted=FALSE`, [messageId, id]);
+      if (!rowCount) throw new AccountError("Nie znaleziono wiadomości.", "MESSAGE_NOT_FOUND");
+      return { ok: true };
+    }
+    if (action === "archive" || action === "unarchive") {
+      const { rowCount } = await this.pool.query(`UPDATE gracz_messages SET recipient_archived=$3 WHERE message_id=$1 AND recipient_id=$2 AND recipient_deleted=FALSE`, [messageId, id, action === "archive"]);
+      if (!rowCount) throw new AccountError("Nie znaleziono wiadomości.", "MESSAGE_NOT_FOUND");
+      return { ok: true };
+    }
+    throw new AccountError("Nieprawidłowa operacja na wiadomości.", "INVALID_MESSAGE");
+  }
+
+  async deletePrivateMessage(userId, messageId) {
+    await this.ready;
+    const id = normalizeUserId(userId);
+    if (!/^[0-9a-f-]{36}$/i.test(String(messageId))) throw new AccountError("Nieprawidłowy identyfikator wiadomości.", "INVALID_MESSAGE");
+    const { rows } = await this.pool.query(`SELECT sender_id, recipient_id FROM gracz_messages WHERE message_id=$1`, [messageId]);
+    const message = rows[0];
+    if (!message || (message.sender_id !== id && message.recipient_id !== id)) throw new AccountError("Nie znaleziono wiadomości.", "MESSAGE_NOT_FOUND");
+    if (message.sender_id === id) await this.pool.query(`UPDATE gracz_messages SET sender_deleted=TRUE WHERE message_id=$1`, [messageId]);
+    if (message.recipient_id === id) await this.pool.query(`UPDATE gracz_messages SET recipient_deleted=TRUE WHERE message_id=$1`, [messageId]);
+    await this.pool.query(`DELETE FROM gracz_messages WHERE message_id=$1 AND sender_deleted=TRUE AND recipient_deleted=TRUE`, [messageId]);
+    return { ok: true };
+  }
+
   async close() { await this.pool.end(); }
 }
 
@@ -149,5 +265,18 @@ function publicProfile(row) {
     createdAt: row.created_at,
     ...defaultProfile(),
     ...(row.profile_data ?? {}),
+  });
+}
+function messageRow(row, names = {}) {
+  return Object.freeze({
+    messageId: row.message_id,
+    senderId: row.sender_id,
+    senderName: row.sender_name ?? names.senderName ?? row.sender_id,
+    recipientId: row.recipient_id,
+    recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id,
+    subject: row.subject,
+    body: row.body,
+    createdAt: row.created_at,
+    readAt: row.read_at,
   });
 }
