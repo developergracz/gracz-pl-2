@@ -31,7 +31,7 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
   const url = new URL(request.url, "http://localhost");
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
   if (request.method === "GET" && webRoot) {
-    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css", "/homepage-consoles.js": "homepage-consoles.js", "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css" })[url.pathname];
+    const staticFile = ({ "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css", "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css", "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html", "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css" })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
   }
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
@@ -53,6 +53,20 @@ async function route(request, response, store, realtime, auth, accounts, lobby, 
     const displayName = request.headers["x-authenticated-display-name"];
     const token = auth.issue({ userId, displayName });
     return sendJson(response, 201, { token, user: { userId, displayName } });
+  }
+
+  if (accounts && auth && url.pathname === "/account/profile") {
+    const user = trustedUser(request, auth);
+    if (request.method === "GET") {
+      const profile = await accounts.getProfile(user.userId);
+      return sendJson(response, 200, { profile });
+    }
+    if (request.method === "PUT") {
+      const profile = await accounts.updateProfile(user.userId, await readJson(request));
+      const nextUser = { userId: profile.userId, displayName: profile.displayName };
+      return sendJson(response, 200, { profile, user: nextUser, token: auth.issue(nextUser) });
+    }
+    return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
   }
 
   if (lobby && url.pathname === "/lobby/state" && request.method === "GET") {
@@ -132,18 +146,18 @@ function sendError(response, error) {
   if (error instanceof HttpError) return sendJson(response, error.status, errorBody(error));
   if (error instanceof SessionNotFoundError) return sendJson(response, 404, errorBody(error));
   if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
-  if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : 400, errorBody(error));
+  if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : error.code === "ACCOUNT_NOT_FOUND" ? 404 : 400, errorBody(error));
   if (error instanceof RateLimitError) return sendJson(response, 429, errorBody(error));
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" || error.code === "INVITATION_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
   if (error instanceof SessionError || error?.name === "IllegalMoveError" || error instanceof TypeError) return sendJson(response, 400, errorBody(error));
   return sendJson(response, 500, { error: { code: "INTERNAL_ERROR", message: "Wewnętrzny błąd serwera." } });
 }
-async function sendStatic(response, path, injectHomepageConsoles = false) {
+async function sendStatic(response, path, injectHomepageExtras = false) {
   const extension = path.split(".").at(-1); const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
   let content = await readFile(path);
-  if (injectHomepageConsoles) {
-    const html = content.toString("utf8").replace("</body>", '<script src="/homepage-consoles.js" defer></script></body>');
+  if (injectHomepageExtras) {
+    const html = content.toString("utf8").replace("</body>", '<script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
   response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" }); response.end(content);
