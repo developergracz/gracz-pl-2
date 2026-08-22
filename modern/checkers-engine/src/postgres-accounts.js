@@ -80,8 +80,8 @@ async function hashPassword(password, salt) {
 }
 
 function normalizeUserId(value) {
-  if (typeof value !== "string" || !/^[a-zA-Z0-9_-]{3,32}$/.test(value)) {
-    throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, _ lub -.", "INVALID_ACCOUNT");
+  if (typeof value !== "string" || !/^[a-zA-Z0-9._-]{3,32}$/.test(value)) {
+    throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
   }
   return value.toLowerCase();
 }
