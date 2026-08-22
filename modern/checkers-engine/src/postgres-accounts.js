@@ -1,14 +1,31 @@
-import { randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  hkdfSync,
+  randomBytes,
+  randomUUID,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from "node:crypto";
 import { promisify } from "node:util";
 import pg from "pg";
 import { AccountError } from "./accounts.js";
 
 const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
+const MESSAGE_PREFIX = "enc:v1:";
 
 export class PostgresAccountService {
-  constructor(connectionString) {
+  constructor(connectionString, encryptionSecret) {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany dla PostgreSQL.");
+    if (typeof encryptionSecret !== "string" || encryptionSecret.length < 32) throw new TypeError("Sekret szyfrowania wiadomości musi mieć co najmniej 32 znaki.");
+    this.messageKey = Buffer.from(hkdfSync(
+      "sha256",
+      Buffer.from(encryptionSecret, "utf8"),
+      Buffer.from("gracz.pl/messages/v1", "utf8"),
+      Buffer.from("private-message-encryption", "utf8"),
+      32,
+    ));
     this.pool = new Pool({
       connectionString,
       ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false },
@@ -44,6 +61,7 @@ export class PostgresAccountService {
         recipient_deleted BOOLEAN NOT NULL DEFAULT FALSE
       )
     `);
+    await this.pool.query(`ALTER TABLE gracz_messages ALTER COLUMN subject TYPE TEXT`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_recipient_idx ON gracz_messages(recipient_id, created_at DESC)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_sender_idx ON gracz_messages(sender_id, created_at DESC)`);
   }
@@ -196,13 +214,15 @@ export class PostgresAccountService {
     if (!target) throw new AccountError("Nie znaleziono odbiorcy.", "ACCOUNT_NOT_FOUND");
     if (target.profile_data?.allowMessages === false) throw new AccountError("Ten gracz nie przyjmuje prywatnych wiadomości.", "MESSAGES_DISABLED");
     const messageId = randomUUID();
+    const encryptedSubject = encryptMessageText(subject, this.messageKey, messageId, "subject");
+    const encryptedBody = encryptMessageText(body, this.messageKey, messageId, "body");
     const { rows } = await this.pool.query(
       `INSERT INTO gracz_messages (message_id, sender_id, recipient_id, subject, body)
        VALUES ($1,$2,$3,$4,$5)
        RETURNING message_id, sender_id, recipient_id, subject, body, created_at, read_at`,
-      [messageId, sender, recipient, subject, body],
+      [messageId, sender, recipient, encryptedSubject, encryptedBody],
     );
-    return messageRow(rows[0], { senderName: null, recipientName: target.display_name });
+    return messageRow(rows[0], { senderName: null, recipientName: target.display_name }, this.messageKey);
   }
 
   async listPrivateMessages(userId, folder = "inbox") {
@@ -224,7 +244,7 @@ export class PostgresAccountService {
       [id],
     );
     const unread = await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_messages WHERE recipient_id=$1 AND recipient_deleted=FALSE AND read_at IS NULL`, [id]);
-    return { folder: safeFolder, unreadCount: unread.rows[0]?.count ?? 0, messages: rows.map((row) => messageRow(row)) };
+    return { folder: safeFolder, unreadCount: unread.rows[0]?.count ?? 0, messages: rows.map((row) => messageRow(row, {}, this.messageKey)) };
   }
 
   async updatePrivateMessage(userId, messageId, action) {
@@ -267,6 +287,34 @@ const BLOCKED_PASSWORDS = new Set([
   "graczpl", "gracz.pl", "test123456", "testtest", "socharomario2010", "socharomario2010@"
 ]);
 
+function encryptMessageText(value, key, messageId, field) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  cipher.setAAD(Buffer.from(`${messageId}:${field}`, "utf8"));
+  const ciphertext = Buffer.concat([cipher.update(String(value), "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${MESSAGE_PREFIX}${iv.toString("base64url")}.${tag.toString("base64url")}.${ciphertext.toString("base64url")}`;
+}
+
+function decryptMessageText(value, key, messageId, field) {
+  const text = String(value ?? "");
+  if (!text.startsWith(MESSAGE_PREFIX)) return text;
+  try {
+    const payload = text.slice(MESSAGE_PREFIX.length);
+    const [ivPart, tagPart, cipherPart] = payload.split(".");
+    if (!ivPart || !tagPart || cipherPart === undefined) throw new Error("invalid encrypted payload");
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivPart, "base64url"));
+    decipher.setAAD(Buffer.from(`${messageId}:${field}`, "utf8"));
+    decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(cipherPart, "base64url")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return "[Nie można odszyfrować tej wiadomości]";
+  }
+}
+
 async function hashPassword(password, salt) { return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }); }
 function normalizeUserId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9._-]{3,32}$/.test(value)) throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
@@ -301,6 +349,9 @@ function sanitizeProfile(input) {
 function publicProfile(row) {
   return Object.freeze({ userId: row.user_id, displayName: row.display_name, email: row.email ?? "", recoveryEmail: row.recovery_email ?? "", createdAt: row.created_at, ...defaultProfile(), ...(row.profile_data ?? {}) });
 }
-function messageRow(row, names = {}) {
-  return Object.freeze({ messageId: row.message_id, senderId: row.sender_id, senderName: row.sender_name ?? names.senderName ?? row.sender_id, recipientId: row.recipient_id, recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id, subject: row.subject, body: row.body, createdAt: row.created_at, readAt: row.read_at });
+function messageRow(row, names = {}, messageKey = null) {
+  const messageId = row.message_id;
+  const subject = messageKey ? decryptMessageText(row.subject, messageKey, messageId, "subject") : row.subject;
+  const body = messageKey ? decryptMessageText(row.body, messageKey, messageId, "body") : row.body;
+  return Object.freeze({ messageId, senderId: row.sender_id, senderName: row.sender_name ?? names.senderName ?? row.sender_id, recipientId: row.recipient_id, recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id, subject, body, createdAt: row.created_at, readAt: row.read_at });
 }
