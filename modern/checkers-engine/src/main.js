@@ -38,6 +38,29 @@ const server = createGameHttpServer({
   logger: console,
 });
 
+// Nagłówki ochronne ustawiane przed głównym handlerem HTTP. Polityka CSP pozostawia
+// inline CSS/JS wyłącznie przejściowo, dopóki frontend lobby nie zostanie rozdzielony
+// na pliki bez skryptów inline. Pozostałe źródła są ograniczone do tej samej domeny.
+server.prependListener("request", (_request, response) => {
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  response.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+  );
+  response.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+});
+
+// Jawne limity HTTP ograniczają ryzyko połączeń wiszących oraz prostych ataków
+// typu slow-client. Wartości są konserwatywne dla lekkiego API gier i lobby.
+server.requestTimeout = 20_000;
+server.headersTimeout = 10_000;
+server.keepAliveTimeout = 5_000;
+server.maxHeadersCount = 100;
+
 server.listen(config.port, config.host, () => {
   console.log(`CheckersEngine działa na http://${config.host}:${config.port}`);
   console.log(`Magazyn kont: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
