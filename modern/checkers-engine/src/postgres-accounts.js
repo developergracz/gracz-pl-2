@@ -260,6 +260,13 @@ export class PostgresAccountService {
   async close() { await this.pool.end(); }
 }
 
+const BLOCKED_PASSWORDS = new Set([
+  "password", "password1", "password123", "qwerty", "qwerty123", "1234567890", "123456789", "12345678",
+  "admin", "administrator", "letmein", "welcome", "welcome123", "iloveyou", "abc123", "zaq12wsx",
+  "haslo", "haslo123", "haslo1234", "haslo2026", "gracz", "gracz123", "gracz1234", "gracz2026",
+  "graczpl", "gracz.pl", "test123456", "testtest", "socharomario2010", "socharomario2010@"
+]);
+
 async function hashPassword(password, salt) { return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }); }
 function normalizeUserId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9._-]{3,32}$/.test(value)) throw new AccountError("Login musi mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_ACCOUNT");
@@ -270,7 +277,17 @@ function normalizeDisplayName(value) {
   return value.trim().replace(/\s+/g, " ");
 }
 function validateDisplayName(value) { if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 40) throw new AccountError("Nazwa gracza musi mieć 2–40 znaków.", "INVALID_ACCOUNT"); }
-function validatePassword(value) { if (typeof value !== "string" || value.length < 10 || value.length > 128) throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD"); }
+function validatePassword(value) {
+  if (typeof value !== "string" || value.length < 10 || value.length > 128) throw new AccountError("Hasło musi mieć co najmniej 10 znaków.", "WEAK_PASSWORD");
+  const normalized = value.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+  const simplified = normalized.replace(/[^a-z0-9ąćęłńóśźż.]/g, "");
+  if (BLOCKED_PASSWORDS.has(normalized) || BLOCKED_PASSWORDS.has(simplified)) {
+    throw new AccountError("To hasło jest zbyt popularne lub przewidywalne. Wybierz inne, unikalne hasło.", "WEAK_PASSWORD");
+  }
+  if (/^(.)\1{9,}$/.test(normalized) || /^(0123456789|1234567890|9876543210)/.test(normalized)) {
+    throw new AccountError("To hasło jest zbyt łatwe do odgadnięcia. Wybierz inne hasło.", "WEAK_PASSWORD");
+  }
+}
 function cleanEmail(value) { return typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : ""; }
 function isEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value); }
 function defaultProfile({ twoFactor = false } = {}) { return { bio: "", country: "PL", city: "", language: "pl", showOnline: true, allowInvites: true, allowMessages: true, newsletter: false, twoFactor: Boolean(twoFactor) }; }
