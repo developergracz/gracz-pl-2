@@ -3,7 +3,7 @@
 <?php
 function ChangeLegacyPasswordSecure($userId, $oldPassword, $newPassword, $confirmPassword, $token)
 {
-  global $database_handle, $database_prefix, $seed_private;
+  global $database_handle, $database_prefix;
 
   if ($_SESSION['account_type'] < USER || intval($userId) !== intval($_SESSION['id'])) {
     throw new ExceptionAccessDenied();
@@ -29,17 +29,23 @@ function ChangeLegacyPasswordSecure($userId, $oldPassword, $newPassword, $confir
     throw new ExceptionPasswordsAreIdentical('Nowe hasło musi różnić się od obecnego.');
   }
 
-  $oldHash = sha1($seed_private.$oldPassword);
-  $newHash = sha1($seed_private.$newPassword);
-
   $stmt = $database_handle->prepare(
-    'SELECT id FROM '.$database_prefix.'_users WHERE id = :id AND password = :password LIMIT 1'
+    'SELECT password FROM '.$database_prefix.'_users WHERE id = :id LIMIT 1'
   );
   $stmt->bindValue(':id', intval($userId), PDO::PARAM_INT);
-  $stmt->bindValue(':password', $oldHash, PDO::PARAM_STR);
   $stmt->execute();
-  if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$row || !VerifyLegacyOrModernPassword($row['password'], $oldPassword)) {
     throw new ExceptionInvalidPassword('Wprowadzone aktualne hasło jest nieprawidłowe.');
+  }
+
+  if (!LegacyPasswordColumnSupportsModernHash()) {
+    throw new RuntimeException('Kolumna hasła w bazie jest zbyt krótka dla bezpiecznego hasha. Najpierw zastosuj migrację 2026-08-22_password_hash_upgrade.sql.');
+  }
+
+  $newHash = HashModernPassword($newPassword);
+  if ($newHash === false) {
+    throw new RuntimeException('Nie udało się utworzyć bezpiecznego skrótu hasła.');
   }
 
   $stmt = $database_handle->prepare(
@@ -47,14 +53,14 @@ function ChangeLegacyPasswordSecure($userId, $oldPassword, $newPassword, $confir
   );
   $stmt->bindValue(':new_password', $newHash, PDO::PARAM_STR);
   $stmt->bindValue(':id', intval($userId), PDO::PARAM_INT);
-  $stmt->bindValue(':old_password', $oldHash, PDO::PARAM_STR);
+  $stmt->bindValue(':old_password', $row['password'], PDO::PARAM_STR);
   $stmt->execute();
 
   if ($stmt->rowCount() !== 1) {
     throw new ExceptionSQL();
   }
 
-  DailyAdd('Zmieniono hasło konta '.intval($userId).'.', LEVEL_INF);
+  DailyAdd('Zmieniono hasło konta '.intval($userId).' i zapisano nowoczesny hash.', LEVEL_INF);
   Logout();
   return true;
 }
