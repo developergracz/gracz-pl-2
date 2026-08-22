@@ -29,7 +29,6 @@ export class SecureAccountService {
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS phone VARCHAR(24)`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS verification_channel VARCHAR(10) NOT NULL DEFAULT 'email'`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS contact_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-    await this.pool.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE created_at < NOW() AND contact_verified=FALSE AND NOT EXISTS (SELECT 1 FROM gracz_registration_codes c WHERE c.user_id=gracz_accounts.user_id)`).catch(() => {});
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS gracz_registration_codes (
         user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
@@ -39,6 +38,7 @@ export class SecureAccountService {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await this.pool.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE contact_verified=FALSE AND NOT EXISTS (SELECT 1 FROM gracz_registration_codes c WHERE c.user_id=gracz_accounts.user_id)`);
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
         token_hash BYTEA PRIMARY KEY,
@@ -65,9 +65,9 @@ export class SecureAccountService {
       await this.#setCurrentPassword(account.userId, input.password);
       await this.pool.query(`UPDATE gracz_accounts SET phone=$2, verification_channel=$3, contact_verified=FALSE WHERE user_id=$1`, [account.userId, phone || null, verificationChannel]);
       await this.#sendRegistrationCode(account.userId);
-      return Object.freeze({ ...account, verificationRequired: true, verificationChannel });
+      throw new AccountError("Kod aktywacyjny został wysłany na podany adres e-mail. Wpisz 6 cyfr, aby aktywować konto.", "VERIFICATION_REQUIRED");
     } catch (error) {
-      await this.pool.query(`DELETE FROM gracz_accounts WHERE user_id=$1 AND contact_verified=FALSE`, [account.userId]).catch(() => {});
+      if (error?.code !== "VERIFICATION_REQUIRED") await this.pool.query(`DELETE FROM gracz_accounts WHERE user_id=$1 AND contact_verified=FALSE`, [account.userId]).catch(() => {});
       throw error;
     }
   }
@@ -103,7 +103,7 @@ export class SecureAccountService {
          FROM gracz_accounts a JOIN gracz_registration_codes c ON c.user_id=a.user_id
          WHERE a.user_id=$1 FOR UPDATE OF c`, [normalizedId]);
       const record = rows[0];
-      if (!record || new Date(record.expires_at).getTime() <= Date.now() || Number(record.attempts) >= 5) throw new AccountError("Kod aktywacyjny wygasł. Poproś o nowy kod.", "VERIFICATION_EXPIRED");
+      if (!record || new Date(record.expires_at).getTime() <= Date.now() || Number(record.attempts) >= 5) throw new AccountError("Kod aktywacyjny wygasł. Załóż konto ponownie, aby otrzymać nowy kod.", "VERIFICATION_EXPIRED");
       const actual = hashToken(safeCode);
       if (record.code_hash.length !== actual.length || !timingSafeEqual(record.code_hash, actual)) {
         await client.query(`UPDATE gracz_registration_codes SET attempts=attempts+1 WHERE user_id=$1`, [normalizedId]);
@@ -119,15 +119,9 @@ export class SecureAccountService {
     } finally { client.release(); }
   }
 
-  async resendRegistrationCode({ userId }) {
+  async authenticate({ userId, password, verificationCode }) {
     await this.ready;
-    const normalizedId = normalizeUserId(userId);
-    await this.#sendRegistrationCode(normalizedId);
-    return { ok: true };
-  }
-
-  async authenticate({ userId, password }) {
-    await this.ready;
+    if (verificationCode !== undefined) return this.verifyRegistrationCode({ userId, code: verificationCode });
     const normalizedId = normalizeUserId(userId);
     const { rows } = await this.pool.query(`SELECT user_id,display_name,salt,password_hash,password_hash_version,contact_verified FROM gracz_accounts WHERE user_id=$1`, [normalizedId]);
     const record = rows[0];
