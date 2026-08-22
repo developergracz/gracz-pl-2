@@ -15,6 +15,29 @@ if (in_array($action, $mutating, true) && $method !== 'POST') {
   exit();
 }
 
+function sanitizeLegacyConversationMessage($message)
+{
+  $message = trim((string)$message);
+  if ($message === '') {
+    throw new ExceptionInvalidData('Wiadomość nie może być pusta.');
+  }
+  if (mb_strlen($message, 'UTF-8') > 1024) {
+    throw new ExceptionInvalidData('Wiadomość jest zbyt długa.');
+  }
+
+  // Legacy renderer supports BBCode that can create arbitrary href/src values.
+  // Disable URL/image BBCode in user messages until the renderer is replaced.
+  $message = preg_replace('/\[(?:\/)?(?:url|img)(?:=[^\]]*)?\]/iu', '', $message);
+
+  // Never persist raw HTML from the client in the legacy conversation store.
+  $message = strip_tags($message);
+
+  // Remove control characters except tab/newline/carriage return.
+  $message = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $message);
+
+  return trim($message);
+}
+
 switch ($action)
 {
   case 'receive':
@@ -40,9 +63,10 @@ switch ($action)
   case 'send':
     try
     {
+      $safeMessage = sanitizeLegacyConversationMessage(isset($_POST['message']) ? $_POST['message'] : '');
       SendMessageToUser(
         isset($_POST['id_user_recipient']) ? $_POST['id_user_recipient'] : 0,
-        isset($_POST['message']) ? $_POST['message'] : '',
+        $safeMessage,
         isset($_POST['token']) ? $_POST['token'] : ''
       );
       echo(json_encode(array('state' => 'sent')));
