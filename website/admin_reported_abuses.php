@@ -15,14 +15,21 @@
       <p>Lista nadużyć zgłoszonych przez użytkowników.</p>
        
       <?php
-        if ($_GET['delete_abuse_report'])
+        // Security: state-changing admin actions must never be triggered by GET.
+        if (isset($_GET['delete_abuse_report']))
+        {
+          http_response_code(405);
+          echo('<span class="negative">Usuwanie przez link GET zostało wyłączone ze względów bezpieczeństwa. Użyj akcji POST w panelu administracyjnym.</span>');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_abuse_report']))
         {
           try{
-            DeleteAbuseReport($_GET['delete_abuse_report'], $_GET['token']);
+            DeleteAbuseReport($_POST['delete_abuse_report'], isset($_POST['token']) ? $_POST['token'] : '');
             echo('<span class="positive">Zgłoszenie zostało pomyślnie usunięte.</span>');
           }catch(Exception $e)
           {
-            echo($e);
+            echo(htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
           }
         }
         
@@ -30,12 +37,10 @@
           DisplayReportedAbuses();
         }catch(Exception $e)
         {
-          echo($e);
+          echo(htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
         }
-      
       ?>
 
-      
       <br style="clear:both;" />
           
     </div>
