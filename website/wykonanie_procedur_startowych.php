@@ -2,7 +2,7 @@
 
 // Plik variables_local.php musi zostać wczytany
 include_once("variables_local.php");
-include_once('../variables_global.php'); // przetworzenie 5ms
+include_once('../variables_global.php');
 include_once("exceptions.php");
 
 $load = sys_getloadavg();
@@ -45,7 +45,7 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
   $linia = intval($linia);
 
   $safe_request = $_REQUEST;
-  foreach (array('password','password2','password_confirmation','old_password','new_password','new_password_confirm','token','PHPSESSID','authorization') as $sensitive_key)
+  foreach (array('password','password2','password_confirmation','old_password','new_password','new_password_confirm','password_old','password_new','password_new_confirm','token','PHPSESSID','authorization') as $sensitive_key)
   {
     if (isset($safe_request[$sensitive_key]))
       $safe_request[$sensitive_key] = '[REDACTED]';
@@ -53,10 +53,7 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
   $parametry = addslashes(htmlspecialchars(print_r($safe_request,true)));
   $url = addslashes(htmlspecialchars(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : ''));
   $IP = addslashes(htmlspecialchars(isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''));
-  if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))
-    $proxy = addslashes(htmlspecialchars($_SERVER['HTTP_X_FORWARDED_FOR']));
-  else
-    $proxy = '';
+  $proxy = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? addslashes(htmlspecialchars($_SERVER['HTTP_X_FORWARDED_FOR'])) : '';
 
   $plik = fopen($path['log_errors_php'],'a+');
   if (!$plik) return;
@@ -74,9 +71,7 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
 function UnhandledErrorsCatcher($errno, $errstr, $errfile, $errline)
 {
   if(in_array($errno, array(E_ERROR, E_WARNING, E_PARSE, E_RECOVERABLE_ERROR)))
-  {
     savePHPError($errno,$errstr,$errfile,$errline);
-  }
   return false;
 }
 
@@ -106,8 +101,14 @@ if (isset($_SERVER['X-Purpose'])&&$_SERVER['X-Purpose']=='preview')
 }
 
 session_start();
-include_once($actual_path.'legacy_security_shim.php');
 
+// Migrate weak legacy numeric CSRF tokens to 256-bit random tokens. Existing open
+// forms may need one refresh during the migration, but no weak token is retained.
+if (!isset($_SESSION['token']) || !is_string($_SESSION['token']) || strlen($_SESSION['token']) < 64) {
+  $_SESSION['token'] = bin2hex(random_bytes(32));
+}
+
+include_once($actual_path.'legacy_security_shim.php');
 include_once($actual_path.'library_main.php');
 DatabaseConnect();
 include_once($actual_path.'legacy_auth_security.php');
@@ -130,9 +131,13 @@ try
     if (!$login_ok) {
       $komunikat_logowania = 'Nieprawidłowy login/e-mail lub hasło.';
     }
+    // Legacy login code may have generated a weak numeric token internally.
+    $_SESSION['token'] = bin2hex(random_bytes(32));
   }else
   {
     AuthorizeUser();
+    if (!isset($_SESSION['token']) || !is_string($_SESSION['token']) || strlen($_SESSION['token']) < 64)
+      $_SESSION['token'] = bin2hex(random_bytes(32));
   }
 }catch(ExceptionRoot $e)
 {
