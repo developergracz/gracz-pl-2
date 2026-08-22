@@ -6,12 +6,19 @@ on:
       - "modern/checkers-engine/**"
       - ".github/workflows/checkers-engine.yml"
   push:
-    branches: [main]
+    branches:
+      - main
+      - feature/checkers-engine-foundation
     paths:
       - "modern/checkers-engine/**"
+      - ".github/workflows/checkers-engine.yml"
 
 permissions:
   contents: read
+
+concurrency:
+  group: checkers-engine-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -24,6 +31,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: modern/checkers-engine/package.json
       - run: npm install --ignore-scripts
       - run: npm test
       - run: npx playwright install --with-deps chromium
