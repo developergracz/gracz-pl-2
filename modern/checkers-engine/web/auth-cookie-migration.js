@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_KEY = "gracz-session";
   const COOKIE_MARKER = "cookie";
+  const REGISTRATION_DRAFT_PREFIX = "gracz-registration-draft:";
 
   function readSession() {
     try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null"); }
@@ -113,6 +114,59 @@
     emailRadio.addEventListener("change", sync); smsRadio.addEventListener("change", sync); new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] }); sync();
   }
 
+  function installRegistrationDraftPreservation() {
+    const form = document.querySelector("#auth-form");
+    const registerTab = document.querySelector('[data-mode="register"]');
+    if (!form || !registerTab) return;
+
+    const saveDraft = () => {
+      const values = {};
+      for (const field of form.elements) {
+        if (!field?.name || field.name === "website") continue;
+        if (field.type === "radio") {
+          if (field.checked) values[field.name] = { type: "radio", value: field.value };
+        } else if (field.type === "checkbox") {
+          values[field.name] = { type: "checkbox", checked: field.checked };
+        } else {
+          values[field.name] = { type: field.type || "text", value: field.value };
+        }
+      }
+      window.name = REGISTRATION_DRAFT_PREFIX + JSON.stringify({ savedAt: Date.now(), values });
+    };
+
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest?.('a[href*="regulamin.html"]');
+      if (!link || !registerTab.classList.contains("active")) return;
+      saveDraft();
+    }, true);
+
+    if (!window.name.startsWith(REGISTRATION_DRAFT_PREFIX)) return;
+    let draft = null;
+    try { draft = JSON.parse(window.name.slice(REGISTRATION_DRAFT_PREFIX.length)); } catch {}
+    window.name = "";
+    if (!draft?.values || Date.now() - Number(draft.savedAt || 0) > 30 * 60 * 1000) return;
+
+    registerTab.click();
+    for (const [name, saved] of Object.entries(draft.values)) {
+      const fields = [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+      for (const field of fields) {
+        if (saved.type === "radio") field.checked = field.value === saved.value;
+        else if (saved.type === "checkbox") field.checked = Boolean(saved.checked);
+        else field.value = String(saved.value ?? "");
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    if (localStorage.getItem("gracz-terms-v1") === "accepted") {
+      const terms = form.elements.terms;
+      if (terms) {
+        terms.checked = true;
+        terms.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+  }
+
   function installActivationDialog() {
     const error = document.querySelector("#auth-error"), form = document.querySelector("#auth-form");
     if (!error || !form) return;
@@ -147,6 +201,13 @@
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
-  const install = () => { installLogout(); installEnterLogin(); clarifyRegistrationEmailLabel(); installRegistrationVerificationFields(); installActivationDialog(); };
+  const install = () => {
+    installLogout();
+    installEnterLogin();
+    clarifyRegistrationEmailLabel();
+    installRegistrationVerificationFields();
+    installRegistrationDraftPreservation();
+    installActivationDialog();
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true }); else install();
 })();
