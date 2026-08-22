@@ -26,14 +26,33 @@ test("traffic guard throttles message and game chat spam independently", () => {
   for (let i = 0; i < 20; i += 1) guard.assertAllowed(request("POST", "/messages"));
   assert.throws(() => guard.assertAllowed(request("POST", "/messages")), (error) => error.scope === "messages");
 
-  const otherIp = "203.0.113.11";
-  for (let i = 0; i < 30; i += 1) guard.assertAllowed(request("POST", "/games/abc123/chat", otherIp));
-  assert.throws(() => guard.assertAllowed(request("POST", "/games/abc123/chat", otherIp)), (error) => error.scope === "game-chat");
+  for (let i = 0; i < 30; i += 1) guard.assertAllowed(request("POST", "/games/abc123/chat"));
+  assert.throws(() => guard.assertAllowed(request("POST", "/games/abc123/chat")), (error) => error.scope === "game-chat");
 });
 
-test("health endpoint is excluded and forwarded source uses the nearest proxy value", () => {
+test("health endpoint is excluded and untrusted forwarded headers are ignored", () => {
   const guard = new TrafficGuard();
   const health = request("GET", "/health");
   for (let i = 0; i < 1_000; i += 1) guard.assertAllowed(health);
-  assert.equal(clientSource({ headers: { "x-forwarded-for": "198.51.100.2, 203.0.113.9" }, socket: {} }), "203.0.113.9");
+
+  const previousProxy = process.env.TRUST_PROXY_HEADERS;
+  const previousCloudflare = process.env.TRUST_CLOUDFLARE_HEADERS;
+  delete process.env.TRUST_PROXY_HEADERS;
+  delete process.env.TRUST_CLOUDFLARE_HEADERS;
+  try {
+    assert.equal(clientSource({ headers: { "x-forwarded-for": "198.51.100.2" }, socket: { remoteAddress: "127.0.0.1" } }), "127.0.0.1");
+  } finally {
+    if (previousProxy === undefined) delete process.env.TRUST_PROXY_HEADERS; else process.env.TRUST_PROXY_HEADERS = previousProxy;
+    if (previousCloudflare === undefined) delete process.env.TRUST_CLOUDFLARE_HEADERS; else process.env.TRUST_CLOUDFLARE_HEADERS = previousCloudflare;
+  }
+});
+
+test("trusted proxy headers may be used only when explicitly enabled", () => {
+  const previous = process.env.TRUST_PROXY_HEADERS;
+  process.env.TRUST_PROXY_HEADERS = "true";
+  try {
+    assert.equal(clientSource({ headers: { "x-forwarded-for": "198.51.100.2, 203.0.113.9" }, socket: { remoteAddress: "127.0.0.1" } }), "203.0.113.9");
+  } finally {
+    if (previous === undefined) delete process.env.TRUST_PROXY_HEADERS; else process.env.TRUST_PROXY_HEADERS = previous;
+  }
 });
