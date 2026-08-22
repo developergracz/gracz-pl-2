@@ -8,6 +8,11 @@ const scrypt = promisify(scryptCallback);
 const HASH_VERSION = 2;
 const LEGACY_SCRYPT = Object.freeze({ N: 16_384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
 const CURRENT_SCRYPT = Object.freeze({ N: 131_072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 });
+const COMMON_PASSWORDS = new Set([
+  "password", "password1", "password123", "qwerty", "qwerty123", "qwertyuiop",
+  "1234567890", "123456789", "12345678", "1111111111", "administrator", "admin123",
+  "letmein123", "welcome123", "iloveyou123", "zaq12wsx", "qazwsx123", "polska123",
+]);
 
 export class SecureAccountService {
   constructor(baseService, connectionString) {
@@ -39,6 +44,8 @@ export class SecureAccountService {
 
   async register(input) {
     await this.ready;
+    assertRegistrationLooksHuman(input);
+    validatePassword(input?.password);
     const account = await this.base.register(input);
     await this.#setCurrentPassword(account.userId, input.password);
     return account;
@@ -173,8 +180,19 @@ function cleanEmail(value) {
   return typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : "";
 }
 
+function assertRegistrationLooksHuman(input) {
+  if (!input || typeof input !== "object") throw new AccountError("Nieprawidłowe dane rejestracji.", "INVALID_ACCOUNT");
+  if (typeof input.website === "string" && input.website.trim()) {
+    throw new AccountError("Nie można utworzyć konta.", "AUTOMATION_REJECTED");
+  }
+}
+
 function validatePassword(value) {
   if (typeof value !== "string" || value.length < 10 || value.length > 128) {
     throw new AccountError("Hasło musi mieć 10–128 znaków.", "WEAK_PASSWORD");
+  }
+  const normalized = value.normalize("NFKC").toLowerCase();
+  if (COMMON_PASSWORDS.has(normalized) || /^(.)\1{9,}$/.test(normalized) || /^123456/.test(normalized)) {
+    throw new AccountError("To hasło jest zbyt popularne lub łatwe do odgadnięcia. Wybierz inne.", "WEAK_PASSWORD");
   }
 }
