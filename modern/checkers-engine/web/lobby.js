@@ -275,7 +275,7 @@ async function api(path, options = {}) {
 function showLobby() {
   authSection.hidden = true; lobbySection.hidden = false;
   document.querySelector("#user-name").textContent = session.user.displayName;
-  document.querySelector("#account-box").innerHTML = `<strong></strong><span>konto gracza</span><nav><a>profil</a><a>wiadomości</a><a>ustawienia</a></nav>`;
+  document.querySelector("#account-box").innerHTML = `<a href="/settings.html#account" aria-label="Otwórz konto gracza"><strong></strong></a><a href="/settings.html#account">konto gracza</a><nav><a href="/settings.html#account">profil</a><a href="/messages.html">wiadomości</a><a href="/settings.html">ustawienia</a></nav>`;
   document.querySelector("#account-box strong").textContent = session.user.displayName;
   ensureInvitePanel(); refreshLobbyState();
   if (lobbyPoll) clearInterval(lobbyPoll); lobbyPoll = setInterval(refreshLobbyState, 5000);
