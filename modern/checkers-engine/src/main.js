@@ -12,7 +12,8 @@ import { LobbyService } from "./lobby.js";
 import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
 import { TournamentService, createTournamentHandler } from "./tournaments.js";
 import { RankingService, createRankingHandler } from "./rankings.js";
-import { NewsletterService, createNewsletterHandler } from "./newsletter.js";
+import { NewsletterService, NewsletterError, createNewsletterHandler } from "./newsletter.js";
+import { moderateNick } from "./nick-moderation.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
@@ -40,6 +41,30 @@ const tournamentHandler = createTournamentHandler({ service: tournaments, auth, 
 const rankings = new RankingService(config.databaseUrl || null); await rankings.ready;
 const rankingHandler = createRankingHandler({ service: rankings, auth, authSessions });
 const newsletter = new NewsletterService(config.databaseUrl || null); await newsletter.ready;
+
+function assertAllowedNewsletterNick(nick) {
+  const cleanNick = String(nick || "").trim();
+  if (!cleanNick) return;
+  const moderation = moderateNick(cleanNick);
+  if (moderation.allowed) return;
+  if (moderation.reason === "reserved") {
+    throw new NewsletterError("Ten nick jest zastrzeżony przez administrację Gracz.pl. Wybierz inny.", "NICK_RESERVED", 400);
+  }
+  throw new NewsletterError("Ten nick zawiera niedozwolone lub obraźliwe treści. Wybierz inny nick.", "NICK_BLOCKED", 400);
+}
+
+const originalCheckNickAvailability = newsletter.checkNickAvailability.bind(newsletter);
+newsletter.checkNickAvailability = async (nick) => {
+  assertAllowedNewsletterNick(nick);
+  return originalCheckNickAvailability(nick);
+};
+
+const originalNewsletterSubscribe = newsletter.subscribe.bind(newsletter);
+newsletter.subscribe = async (input = {}) => {
+  assertAllowedNewsletterNick(input.preferredNick);
+  return originalNewsletterSubscribe(input);
+};
+
 const newsletterHandler = createNewsletterHandler(newsletter);
 const server = createGameHttpServer({ store, accounts, authSessions, messageAttachments, auth, lobby: new LobbyService({ sessionStore: store }), webRoot, logger: console });
 
