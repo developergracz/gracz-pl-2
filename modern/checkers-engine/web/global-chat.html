@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chat ogólny — Gracz.pl</title>
+  <meta name="description" content="Chat ogólny społeczności Gracz.pl — rozmowy graczy na żywo.">
+  <link rel="stylesheet" href="/global-chat.css">
+</head>
+<body>
+  <main class="chat-shell">
+    <header class="chat-topbar">
+      <a class="brand" href="/">gracz<span>.PL</span><small>CHAT OGÓLNY</small></a>
+      <nav><a href="/">Strona główna</a><a href="/players.html">Gracze</a><a href="/messages.html">Wiadomości</a><a href="/settings.html">Ustawienia</a><span id="identity">Ładowanie…</span></nav>
+    </header>
+
+    <aside class="chat-sidebar">
+      <section class="room-card">
+        <p class="eyebrow">SPOŁECZNOŚĆ</p>
+        <h1># chat-ogólny</h1>
+        <p>Rozmawiaj z graczami, umawiaj się na partie i dziel się wynikami.</p>
+        <div class="live-pill"><i></i><strong id="online-count">0</strong> online</div>
+      </section>
+
+      <section class="side-section">
+        <div class="side-head"><b>Gracze online</b><button id="refresh-presence" type="button" title="Odśwież">↻</button></div>
+        <div id="online-list" class="online-list"></div>
+      </section>
+
+      <section class="rules-card">
+        <b>Zasady chatu</b>
+        <p>Szanuj innych graczy. Bez spamu, gróźb, treści bezprawnych i publikowania cudzych danych.</p>
+        <a href="/regulamin.html">Zobacz regulamin →</a>
+      </section>
+    </aside>
+
+    <section class="chat-main">
+      <header class="conversation-head">
+        <div><h2>Chat ogólny</h2><p id="connection-state"><span class="dot"></span> Łączenie z chatem…</p></div>
+        <div class="head-actions">
+          <button id="sound-toggle" type="button" aria-pressed="true">🔔 Dźwięki</button>
+          <button id="compact-toggle" type="button" aria-pressed="false">↕ Kompaktowy</button>
+        </div>
+      </header>
+
+      <div id="reply-bar" class="reply-bar" hidden><span>Odpowiadasz na: <b id="reply-name"></b></span><button id="cancel-reply" type="button">×</button></div>
+      <div id="message-list" class="message-list" aria-live="polite" aria-label="Wiadomości chatu"></div>
+      <button id="jump-new" class="jump-new" hidden type="button">↓ Nowe wiadomości</button>
+
+      <footer class="composer-wrap">
+        <div id="emoji-panel" class="emoji-panel" hidden></div>
+        <form id="chat-form" class="composer">
+          <button id="emoji-button" class="icon-btn" type="button" title="Emotikony">😊</button>
+          <textarea id="message-input" maxlength="600" rows="1" placeholder="Napisz wiadomość do wszystkich graczy…" aria-label="Wiadomość"></textarea>
+          <div class="composer-meta"><span><b id="char-count">0</b>/600</span><span>Enter — wyślij · Shift+Enter — nowa linia</span></div>
+          <button id="send-button" class="send-btn" type="submit">Wyślij</button>
+        </form>
+      </footer>
+    </section>
+  </main>
+
+  <div id="context-menu" class="context-menu" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/global-chat.js"></script>
+</body>
+</html>
