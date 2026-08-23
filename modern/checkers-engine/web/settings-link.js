@@ -12,6 +12,23 @@
     }
     .main-nav a:hover { color: #55ec97; transform: translateY(-1px); }
     .main-nav a.active { font-weight: 750; }
+
+    /* Panel konta: wszystkie pozycje bez poziomych linii/podkreśleń. */
+    #account-box a,
+    #account-box a:link,
+    #account-box a:visited,
+    #account-box a:hover,
+    #account-box a:active,
+    .account-box a,
+    .account-box a:link,
+    .account-box a:visited,
+    .account-box a:hover,
+    .account-box a:active {
+      text-decoration: none !important;
+      text-decoration-line: none !important;
+      border-bottom: 0 !important;
+      box-shadow: none !important;
+    }
   `;
   document.head.appendChild(navStyle);
 
