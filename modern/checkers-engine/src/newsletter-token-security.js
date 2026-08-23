@@ -15,22 +15,28 @@ export async function hardenNewsletterTokens(service) {
 
   service.getSubscriberStatus = async (token) => {
     await service.ready;
-    const tokenHash = hashToken(String(token || ""));
+    const rawToken = String(token || "");
+    const tokenHash = hashToken(rawToken);
     const result = await pool.query(`
       SELECT s.subscriber_id,s.email,s.preferred_nick,s.status,s.created_at,
         (SELECT COUNT(*)::int FROM gracz_newsletter_subscribers x WHERE x.status='active') AS total_active,
         (SELECT COUNT(*)::int FROM gracz_newsletter_subscribers x
           WHERE x.status='active' AND (x.created_at < s.created_at OR (x.created_at = s.created_at AND x.subscriber_id::text <= s.subscriber_id::text))) AS position
       FROM gracz_newsletter_subscribers s
-      WHERE s.unsubscribe_token_hash=$1
+      WHERE s.unsubscribe_token_hash=$1 OR s.unsubscribe_token::text=$2
       LIMIT 1
-    `, [tokenHash]);
+    `, [tokenHash, rawToken]);
     return result.rows[0] || null;
   };
 
   service.unsubscribe = async (token) => {
     await service.ready;
-    const result = await pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',updated_at=NOW() WHERE unsubscribe_token_hash=$1 RETURNING email`, [hashToken(String(token || ""))]);
+    const rawToken = String(token || "");
+    const result = await pool.query(
+      `UPDATE gracz_newsletter_subscribers SET status='unsubscribed',updated_at=NOW()
+       WHERE unsubscribe_token_hash=$1 OR unsubscribe_token::text=$2 RETURNING email`,
+      [hashToken(rawToken), rawToken],
+    );
     return Boolean(result.rows[0]);
   };
 
@@ -40,7 +46,11 @@ export async function hardenNewsletterTokens(service) {
     if (email) {
       const existing = await pool.query(`SELECT subscriber_id,unsubscribe_token FROM gracz_newsletter_subscribers WHERE LOWER(email)=LOWER($1) LIMIT 1`, [email]);
       if (existing.rows[0] && !existing.rows[0].unsubscribe_token) {
-        await pool.query(`UPDATE gracz_newsletter_subscribers SET unsubscribe_token=$2,unsubscribe_token_hash=NULL,updated_at=NOW() WHERE subscriber_id=$1`, [existing.rows[0].subscriber_id, randomUUID()]);
+        const freshToken = randomUUID();
+        await pool.query(
+          `UPDATE gracz_newsletter_subscribers SET unsubscribe_token=$2,unsubscribe_token_hash=$3,updated_at=NOW() WHERE subscriber_id=$1`,
+          [existing.rows[0].subscriber_id, freshToken, hashToken(freshToken)],
+        );
       }
     }
 
