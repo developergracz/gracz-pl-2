@@ -61,4 +61,65 @@
 
   const tournamentSection=document.querySelector('.tournament');
   if(tournamentSection){const button=tournamentSection.querySelector('.primary');if(button){button.type='button';button.addEventListener('click',()=>{location.href='/tournaments.html'});button.setAttribute('aria-label','Zobacz turnieje Gracz.pl')}const rankingButton=tournamentSection.querySelector('.ranking button');if(rankingButton){rankingButton.type='button';rankingButton.addEventListener('click',()=>{location.href='/ranking.html'});rankingButton.setAttribute('aria-label','Zobacz ranking Gracz.pl')}}
+
+  /* Bezpieczne wylogowanie: unieważnia sesję na serwerze i blokuje odtworzenie
+     zalogowanego widoku po użyciu przycisku Wstecz (bfcache). */
+  const restoreLoggedOutView = () => {
+    const auth = document.querySelector('#auth');
+    const lobby = document.querySelector('#lobby');
+    if (lobby) lobby.hidden = true;
+    if (auth) auth.hidden = false;
+    const note = document.querySelector('#logged-out-note');
+    if (note) note.textContent = 'Zaloguj się, aby rozpocząć grę';
+  };
+
+  const logoutButton = document.querySelector('#logout');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      logoutButton.disabled = true;
+      try {
+        await fetch('/auth/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+      } catch (_) {
+        /* Nawet przy chwilowym błędzie sieci usuwamy lokalny stan logowania. */
+      }
+      sessionStorage.removeItem('gracz-session');
+      sessionStorage.removeItem('gracz-auth-token');
+      localStorage.removeItem('gracz-auth-token');
+      restoreLoggedOutView();
+      history.replaceState({ loggedOut: true }, '', '/');
+      location.replace('/');
+    }, true);
+  }
+
+  window.addEventListener('pageshow', async (event) => {
+    const backForward = event.persisted || performance.getEntriesByType('navigation').some((entry) => entry.type === 'back_forward');
+    if (!backForward) return;
+
+    if (!sessionStorage.getItem('gracz-session')) restoreLoggedOutView();
+
+    try {
+      const response = await fetch('/auth/me', {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (!response.ok) {
+        sessionStorage.removeItem('gracz-session');
+        sessionStorage.removeItem('gracz-auth-token');
+        localStorage.removeItem('gracz-auth-token');
+        restoreLoggedOutView();
+        if (location.pathname !== '/') location.replace('/');
+      }
+    } catch (_) {
+      if (!sessionStorage.getItem('gracz-session')) restoreLoggedOutView();
+    }
+  });
 })();
