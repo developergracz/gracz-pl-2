@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import { FileAccountService } from "./accounts.js";
@@ -17,6 +18,7 @@ import { PostgresSessionStore } from "./postgres-session-store.js";
 
 const config = loadConfig();
 const turnstileEnabled = Boolean(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY);
+const webRoot = fileURLToPath(new URL("../web", import.meta.url));
 
 const store = config.databaseUrl
   ? new PostgresSessionStore(config.databaseUrl)
@@ -58,14 +60,32 @@ const server = createGameHttpServer({
   messageAttachments,
   auth,
   lobby: new LobbyService({ sessionStore: store }),
-  webRoot: fileURLToPath(new URL("../web", import.meta.url)),
+  webRoot,
   logger: console,
 });
+
+async function serveTournamentAsset(request, response) {
+  if (request.method !== "GET") return false;
+  const pathname = new URL(request.url, "http://localhost").pathname;
+  const file = ({
+    "/tournaments.html": "tournaments.html",
+    "/tournaments.css": "tournaments.css",
+    "/tournaments.js": "tournaments.js",
+  })[pathname];
+  if (!file) return false;
+  const extension = file.split(".").at(-1);
+  const contentType = ({ html: "text/html", css: "text/css", js: "text/javascript" })[extension] || "application/octet-stream";
+  const content = await readFile(join(webRoot, file));
+  response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" });
+  response.end(content);
+  return true;
+}
 
 const baseRequestHandler = server.listeners("request")[0];
 server.removeAllListeners("request");
 server.on("request", async (request, response) => {
   try {
+    if (await serveTournamentAsset(request, response)) return;
     if (await globalChatHandler(request, response)) return;
     if (await tournamentHandler(request, response)) return;
     return baseRequestHandler(request, response);
