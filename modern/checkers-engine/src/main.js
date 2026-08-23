@@ -14,6 +14,7 @@ import { TournamentService, createTournamentHandler } from "./tournaments.js";
 import { RankingService, createRankingHandler } from "./rankings.js";
 import { NewsletterService, NewsletterError, createNewsletterHandler } from "./newsletter.js";
 import { moderateNick } from "./nick-moderation.js";
+import { protectNewsletterRequest, verifyNewsletterHuman, isRateLimitError } from "./public-security.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
@@ -62,6 +63,8 @@ newsletter.checkNickAvailability = async (nick) => {
 const originalNewsletterSubscribe = newsletter.subscribe.bind(newsletter);
 newsletter.subscribe = async (input = {}) => {
   assertAllowedNewsletterNick(input.preferredNick);
+  const human = await verifyNewsletterHuman(input);
+  if (!human.ok) throw new NewsletterError("Potwierdź, że nie jesteś botem i spróbuj ponownie.", "HUMAN_VERIFICATION_REQUIRED", 403);
   return originalNewsletterSubscribe(input);
 };
 
@@ -117,7 +120,11 @@ async function serveExtendedAsset(request, response) {
   if (!file) return false;
   const extension = file.split(".").at(-1);
   const contentType = ({ html: "text/html", css: "text/css", js: "text/javascript" })[extension] || "application/octet-stream";
-  const content = await readFile(join(webRoot, file));
+  let content = await readFile(join(webRoot, file));
+  if (file === "coming-soon.html") {
+    const siteKey = String(process.env.TURNSTILE_SITE_KEY || "").replace(/["'<>]/g, "");
+    content = Buffer.from(content.toString("utf8").replaceAll("__TURNSTILE_SITE_KEY__", siteKey));
+  }
   response.writeHead(200, {
     "content-type": `${contentType}; charset=utf-8`,
     "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -135,6 +142,7 @@ server.removeAllListeners("request");
 server.on("request", async (request, response) => {
   try {
     if (blockPublicAccountAccess(request, response)) return;
+    protectNewsletterRequest(request);
     if (await serveExtendedAsset(request, response)) return;
     if (await newsletterHandler(request, response)) return;
     if (await globalChatHandler(request, response)) return;
@@ -142,7 +150,17 @@ server.on("request", async (request, response) => {
     if (await rankingHandler(request, response)) return;
     return baseRequestHandler(request, response);
   } catch (error) {
-    console.error("Application request error:", error);
+    if (isRateLimitError(error)) {
+      response.writeHead(429, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": String(error.retryAfterSeconds || 60) });
+      response.end(JSON.stringify({ error: { code: "TOO_MANY_ATTEMPTS", message: error.message } }));
+      return;
+    }
+    if (error?.message === "INVALID_ORIGIN") {
+      response.writeHead(403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      response.end(JSON.stringify({ error: { code: "INVALID_ORIGIN", message: "Żądanie zostało odrzucone ze względów bezpieczeństwa." } }));
+      return;
+    }
+    console.error("Application request error:", error?.name || "Error");
     if (!response.headersSent && !response.writableEnded) {
       response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
       response.end(JSON.stringify({ error: { code: "APP_INTERNAL_ERROR", message: "Wewnętrzny błąd aplikacji." } }));
@@ -159,12 +177,13 @@ server.prependListener("request", (_request, response) => {
   response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   response.setHeader("Origin-Agent-Cluster", "?1");
   response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()");
+  response.setHeader("Cache-Control", "no-store");
   const turnstileOrigin = "https://challenges.cloudflare.com";
   const scriptSrc = turnstileEnabled ? `'self' 'unsafe-inline' ${turnstileOrigin}` : "'self' 'unsafe-inline'";
   const connectSrc = turnstileEnabled ? `'self' ${turnstileOrigin}` : "'self'";
   const frameSrc = turnstileEnabled ? turnstileOrigin : "'none'";
   response.setHeader("Content-Security-Policy", `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; frame-src ${frameSrc}; font-src 'self'; object-src 'none'; media-src 'none'; worker-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests`);
-  response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 });
 
 server.requestTimeout = 20_000;
@@ -175,6 +194,7 @@ server.listen(config.port, config.host, () => {
   console.log(`Gracz.pl działa na http://${config.host}:${config.port}`);
   console.log("Strona główna: wersja w przygotowaniu + newsletter");
   console.log(`Newsletter: ${config.databaseUrl ? "PostgreSQL" : "tryb developerski"}`);
+  console.log(`Turnstile: ${turnstileEnabled ? "włączony" : "wyłączony"}`);
 });
 
 let shuttingDown = false;
@@ -194,7 +214,7 @@ async function shutdown(signal) {
       await rankings.close();
       process.exit(0);
     } catch (error) {
-      console.error("Błąd podczas zamykania aplikacji:", error);
+      console.error("Błąd podczas zamykania aplikacji:", error?.name || "Error");
       process.exit(1);
     }
   });
