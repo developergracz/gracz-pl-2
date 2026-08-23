@@ -45,6 +45,11 @@
         link.title = 'Centrum turniejowe Gracz.pl';
         link.setAttribute('aria-label', 'Otwórz centrum turniejowe');
       }
+      if (label === 'SPOŁECZNOŚĆ') {
+        link.href = '/community.html';
+        link.title = 'Społeczność Gracz.pl';
+        link.setAttribute('aria-label', 'Otwórz społeczność Gracz.pl');
+      }
     }
 
     if (!mainNav.querySelector('[data-global-chat-link]')) {
