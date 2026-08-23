@@ -9,6 +9,7 @@ export class GlobalChatService {
     this.memory = [];
     this.presence = new Map();
     this.rate = new Map();
+    this.subscribers = new Set();
     this.ready = this.pool ? this.init() : Promise.resolve();
   }
 
@@ -45,7 +46,37 @@ export class GlobalChatService {
 
   online() {
     const cutoff = Date.now() - 90_000;
-    return [...this.presence.values()].filter((item) => item.seenAt >= cutoff).map(({ userId, displayName }) => ({ userId, displayName })).slice(0, 100);
+    return [...this.presence.values()]
+      .filter((item) => item.seenAt >= cutoff)
+      .map(({ userId, displayName }) => ({ userId, displayName }))
+      .slice(0, 100);
+  }
+
+  subscribe(response, user) {
+    this.touch(user);
+    response.writeHead(200, {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-store, no-transform",
+      connection: "keep-alive",
+      "x-accel-buffering": "no",
+    });
+    response.write(`event: connected\ndata: ${JSON.stringify({ online: this.online() })}\n\n`);
+    const client = { response, userId: user.userId };
+    this.subscribers.add(client);
+    const ping = setInterval(() => {
+      if (!response.writableEnded) response.write(`event: ping\ndata: ${Date.now()}\n\n`);
+    }, 25_000);
+    const close = () => { clearInterval(ping); this.subscribers.delete(client); };
+    response.on("close", close);
+    response.on("finish", close);
+  }
+
+  broadcast(event, payload) {
+    const data = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+    for (const client of this.subscribers) {
+      if (client.response.writableEnded) { this.subscribers.delete(client); continue; }
+      client.response.write(data);
+    }
   }
 
   assertRate(userId, body) {
@@ -58,11 +89,11 @@ export class GlobalChatService {
   }
 
   cleanBody(value) {
-    const body = String(value ?? "").replace(/\r/g, "").trim().slice(0, 600);
-    if (!body) throw chatError("Wpisz wiadomość.", "CHAT_EMPTY", 400);
-    if (body.length > 600) throw chatError("Wiadomość jest za długa.", "CHAT_TOO_LONG", 400);
-    if ((body.match(/https?:\/\//gi) || []).length > 2) throw chatError("W jednej wiadomości można umieścić maksymalnie 2 linki.", "CHAT_LINK_LIMIT", 400);
-    return body;
+    const raw = String(value ?? "").replace(/\r/g, "").trim();
+    if (!raw) throw chatError("Wpisz wiadomość.", "CHAT_EMPTY", 400);
+    if (raw.length > 600) throw chatError("Wiadomość jest za długa.", "CHAT_TOO_LONG", 400);
+    if ((raw.match(/https?:\/\//gi) || []).length > 2) throw chatError("W jednej wiadomości można umieścić maksymalnie 2 linki.", "CHAT_LINK_LIMIT", 400);
+    return raw;
   }
 
   async list(user, limit = 80) {
@@ -78,57 +109,77 @@ export class GlobalChatService {
     const body = this.cleanBody(input.body);
     this.assertRate(user.userId, body);
     const replyTo = /^[0-9a-f-]{36}$/i.test(String(input.replyTo || "")) ? String(input.replyTo) : null;
-    const item = { messageId: randomUUID(), userId: user.userId, displayName: user.displayName, body, replyTo, reactions: {}, createdAt: new Date().toISOString(), editedAt: null, deleted: false };
-    if (!this.pool) { this.memory.push(item); if (this.memory.length > 500) this.memory.splice(0, this.memory.length - 500); return item; }
-    const { rows } = await this.pool.query(`INSERT INTO gracz_global_chat(message_id,user_id,display_name,body,reply_to) VALUES($1,$2,$3,$4,$5) RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [item.messageId, item.userId, item.displayName, item.body, replyTo]);
-    return mapRow(rows[0]);
+    let item = { messageId: randomUUID(), userId: user.userId, displayName: user.displayName, body, replyTo, reactions: {}, createdAt: new Date().toISOString(), editedAt: null, deleted: false };
+    if (!this.pool) {
+      this.memory.push(item);
+      if (this.memory.length > 500) this.memory.splice(0, this.memory.length - 500);
+    } else {
+      const { rows } = await this.pool.query(`INSERT INTO gracz_global_chat(message_id,user_id,display_name,body,reply_to) VALUES($1,$2,$3,$4,$5) RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [item.messageId, item.userId, item.displayName, item.body, replyTo]);
+      item = mapRow(rows[0]);
+    }
+    this.broadcast("message.created", { message: item, online: this.online() });
+    return item;
   }
 
   async edit(user, messageId, bodyValue) {
     const body = this.cleanBody(bodyValue);
+    let item;
     if (!this.pool) {
-      const item = this.memory.find((m) => m.messageId === messageId && m.userId === user.userId && !m.deleted);
+      item = this.memory.find((m) => m.messageId === messageId && m.userId === user.userId && !m.deleted);
       if (!item) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
-      item.body = body; item.editedAt = new Date().toISOString(); return item;
+      item.body = body; item.editedAt = new Date().toISOString();
+    } else {
+      const { rows } = await this.pool.query(`UPDATE gracz_global_chat SET body=$3,edited_at=NOW() WHERE message_id=$1 AND user_id=$2 AND deleted=FALSE AND created_at > NOW()-INTERVAL '15 minutes' RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [messageId, user.userId, body]);
+      if (!rows[0]) throw chatError("Wiadomość można edytować tylko przez 15 minut.", "CHAT_EDIT_EXPIRED", 403);
+      item = mapRow(rows[0]);
     }
-    const { rows } = await this.pool.query(`UPDATE gracz_global_chat SET body=$3,edited_at=NOW() WHERE message_id=$1 AND user_id=$2 AND deleted=FALSE AND created_at > NOW()-INTERVAL '15 minutes' RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [messageId, user.userId, body]);
-    if (!rows[0]) throw chatError("Wiadomość można edytować tylko przez 15 minut.", "CHAT_EDIT_EXPIRED", 403);
-    return mapRow(rows[0]);
+    this.broadcast("message.updated", { message: item });
+    return item;
   }
 
   async remove(user, messageId) {
     if (!this.pool) {
       const item = this.memory.find((m) => m.messageId === messageId && m.userId === user.userId);
       if (!item) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
-      item.deleted = true; item.body = ""; return { ok: true };
+      item.deleted = true; item.body = "";
+    } else {
+      const { rowCount } = await this.pool.query(`UPDATE gracz_global_chat SET deleted=TRUE,body='' WHERE message_id=$1 AND user_id=$2`, [messageId, user.userId]);
+      if (!rowCount) throw chatError("Nie możesz usunąć tej wiadomości.", "CHAT_FORBIDDEN", 403);
     }
-    const { rowCount } = await this.pool.query(`UPDATE gracz_global_chat SET deleted=TRUE,body='' WHERE message_id=$1 AND user_id=$2`, [messageId, user.userId]);
-    if (!rowCount) throw chatError("Nie możesz usunąć tej wiadomości.", "CHAT_FORBIDDEN", 403);
+    this.broadcast("message.deleted", { messageId });
     return { ok: true };
   }
 
   async react(user, messageId, emoji) {
     const allowed = new Set(["👍","❤️","😂","😮","👏","🔥"]);
     if (!allowed.has(emoji)) throw chatError("Nieprawidłowa reakcja.", "CHAT_REACTION", 400);
+    let item;
     if (!this.pool) {
-      const item = this.memory.find((m) => m.messageId === messageId && !m.deleted); if (!item) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
-      const users = new Set(item.reactions[emoji] || []); users.has(user.userId) ? users.delete(user.userId) : users.add(user.userId); item.reactions[emoji] = [...users]; return item;
+      item = this.memory.find((m) => m.messageId === messageId && !m.deleted);
+      if (!item) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
+      const users = new Set(item.reactions[emoji] || []); users.has(user.userId) ? users.delete(user.userId) : users.add(user.userId); item.reactions[emoji] = [...users];
+    } else {
+      const { rows } = await this.pool.query(`SELECT reactions FROM gracz_global_chat WHERE message_id=$1 AND deleted=FALSE`, [messageId]);
+      if (!rows[0]) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
+      const reactions = rows[0].reactions || {}; const users = new Set(reactions[emoji] || []); users.has(user.userId) ? users.delete(user.userId) : users.add(user.userId); reactions[emoji] = [...users];
+      const updated = await this.pool.query(`UPDATE gracz_global_chat SET reactions=$2::jsonb WHERE message_id=$1 RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [messageId, JSON.stringify(reactions)]);
+      item = mapRow(updated.rows[0]);
     }
-    const { rows } = await this.pool.query(`SELECT reactions FROM gracz_global_chat WHERE message_id=$1 AND deleted=FALSE`, [messageId]);
-    if (!rows[0]) throw chatError("Nie znaleziono wiadomości.", "CHAT_NOT_FOUND", 404);
-    const reactions = rows[0].reactions || {}; const users = new Set(reactions[emoji] || []); users.has(user.userId) ? users.delete(user.userId) : users.add(user.userId); reactions[emoji] = [...users];
-    const updated = await this.pool.query(`UPDATE gracz_global_chat SET reactions=$2::jsonb WHERE message_id=$1 RETURNING message_id,user_id,display_name,body,reply_to,reactions,created_at,edited_at,deleted`, [messageId, JSON.stringify(reactions)]);
-    return mapRow(updated.rows[0]);
+    this.broadcast("message.updated", { message: item });
+    return item;
   }
 
   async report(user, messageId, reasonValue) {
     const reason = String(reasonValue || "inne").trim().slice(0, 240) || "inne";
-    if (!this.pool) return { ok: true };
-    await this.pool.query(`INSERT INTO gracz_global_chat_reports(report_id,message_id,reporter_id,reason) VALUES($1,$2,$3,$4) ON CONFLICT(message_id,reporter_id) DO NOTHING`, [randomUUID(), messageId, user.userId, reason]);
+    if (this.pool) await this.pool.query(`INSERT INTO gracz_global_chat_reports(report_id,message_id,reporter_id,reason) VALUES($1,$2,$3,$4) ON CONFLICT(message_id,reporter_id) DO NOTHING`, [randomUUID(), messageId, user.userId, reason]);
     return { ok: true };
   }
 
-  async close() { if (this.pool) await this.pool.end(); }
+  async close() {
+    for (const client of this.subscribers) client.response.end();
+    this.subscribers.clear();
+    if (this.pool) await this.pool.end();
+  }
 }
 
 export function createGlobalChatHandler({ service, auth, authSessions }) {
@@ -139,6 +190,7 @@ export function createGlobalChatHandler({ service, auth, authSessions }) {
     try {
       const user = await trustedChatUser(request, auth, authSessions);
       service.touch(user);
+      if (request.method === "GET" && url.pathname === "/global-chat/events") { service.subscribe(response, user); return true; }
       if (request.method === "GET" && url.pathname === "/global-chat/messages") return json(response, 200, await service.list(user, url.searchParams.get("limit")));
       if (request.method === "GET" && url.pathname === "/global-chat/presence") return json(response, 200, { online: service.online() });
       if (request.method === "POST" && url.pathname === "/global-chat/messages") return json(response, 201, { message: await service.send(user, await readJson(request)) });
@@ -165,7 +217,13 @@ async function trustedChatUser(request, auth, authSessions) {
   return { userId: user.userId, displayName: user.displayName, tokenId: user.tokenId };
 }
 
-async function readJson(request) { const chunks=[]; let size=0; for await (const c of request) { size += c.length; if (size>16_384) throw chatError("Żądanie jest za duże.","PAYLOAD_TOO_LARGE",413); chunks.push(c); } try { return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}"); } catch { throw chatError("Nieprawidłowe dane.","INVALID_JSON",400); } }
+async function readJson(request) {
+  const chunks=[]; let size=0;
+  for await (const c of request) { size += c.length; if (size>16_384) throw chatError("Żądanie jest za duże.","PAYLOAD_TOO_LARGE",413); chunks.push(c); }
+  try { return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}"); }
+  catch { throw chatError("Nieprawidłowe dane.","INVALID_JSON",400); }
+}
+
 function json(response,status,body){ if(response.writableEnded) return true; response.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}); response.end(JSON.stringify(body)); return true; }
 function mapRow(r){ return { messageId:r.message_id,userId:r.user_id,displayName:r.display_name,body:r.body,replyTo:r.reply_to,reactions:r.reactions||{},createdAt:r.created_at,editedAt:r.edited_at,deleted:Boolean(r.deleted) }; }
 function chatError(message,code,status){ const e=new Error(message); e.code=code; e.status=status; return e; }
