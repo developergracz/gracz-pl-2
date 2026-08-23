@@ -3,6 +3,35 @@ const message = document.querySelector('#newsletter-message');
 const nickInput = document.querySelector('#preferred-nick');
 const nickButton = document.querySelector('#check-nick');
 const nickMessage = document.querySelector('#nick-availability');
+const welcomeModal = document.querySelector('#welcome-modal');
+const welcomeNick = document.querySelector('#welcome-nick');
+const welcomeMailTitle = document.querySelector('#welcome-mail-title');
+const welcomeMailText = document.querySelector('#welcome-mail-text');
+
+function showWelcomeModal({ nick, email, mailSent }) {
+  const displayNick = nick || 'Graczu';
+  welcomeNick.textContent = displayNick;
+  if (mailSent) {
+    welcomeMailTitle.textContent = `Wysłaliśmy do Ciebie, ${displayNick}, wiadomość.`;
+    welcomeMailText.textContent = `Wiadomość została wysłana na adres ${email}. Sprawdź swoją skrzynkę pocztową, a także folder Spam lub Oferty, jeśli nie zobaczysz jej od razu.`;
+  } else {
+    welcomeMailTitle.textContent = `Twój zapis został przyjęty, ${displayNick}.`;
+    welcomeMailText.textContent = `Adres ${email} został zapisany poprawnie. Wiadomość powitalna nie została jeszcze wysłana — wyślemy ją, gdy tylko usługa pocztowa będzie gotowa.`;
+  }
+  welcomeModal.hidden = false;
+  document.body.classList.add('modal-open');
+  welcomeModal.querySelector('.welcome-ok')?.focus();
+}
+
+function closeWelcomeModal() {
+  welcomeModal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+document.querySelectorAll('[data-close-welcome]').forEach((element) => element.addEventListener('click', closeWelcomeModal));
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !welcomeModal?.hidden) closeWelcomeModal();
+});
 
 async function checkNick() {
   const nick = String(nickInput?.value || '').trim();
@@ -94,6 +123,7 @@ form?.addEventListener('submit', async (event) => {
     message.classList.add('ok');
     const place = result.position && result.total ? ` Jesteś nr ${result.position} z ${result.total} aktywnie zapisanych osób.` : '';
     message.textContent = (result.message || 'Dziękujemy! Jesteś na liście startowej Gracz.pl.') + place;
+    showWelcomeModal({ nick: preferredNick, email, mailSent: Boolean(result.welcomeEmailSent) });
     form.reset();
     nickMessage.className = 'message';
     nickMessage.textContent = '';
