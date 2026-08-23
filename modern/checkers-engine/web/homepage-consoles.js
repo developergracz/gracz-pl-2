@@ -3,110 +3,70 @@
   style.textContent = `
   .classic-home-console{height:100%;display:grid;grid-template-columns:1fr;background:#091219;color:#dce6eb;overflow:hidden}
   .classic-home-console.gomoku-console-home{background:#091219}
-  .classic-home-boardwrap{display:grid;place-items:center;min-width:0;min-height:0;padding:14px;background:radial-gradient(circle at 50% 45%,#13232b 0,#091219 72%)}
-  .classic-checker-board{width:min(100%,420px);height:auto;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:2px solid #9a7046;box-shadow:0 14px 35px #0008,inset 0 0 0 1px #f3d7ab}
+  .classic-home-boardwrap{display:grid;place-items:center;min-width:0;min-height:0;padding:12px;background:radial-gradient(circle at 50% 45%,#13232b 0,#091219 72%)}
+  .classic-checker-board{width:min(100%,390px);height:auto;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:2px solid #9a7046;border-radius:5px;box-shadow:0 14px 35px #0008,inset 0 0 0 1px #f3d7ab}
   .classic-square{position:relative;display:grid;place-items:center}.classic-square.light{background:#efd19b}.classic-square.dark{background:#76583d}
   .classic-piece{width:68%;aspect-ratio:1;border-radius:50%;box-shadow:inset 0 2px 3px #fff7,0 2px 3px #0006;border:1px solid #777}.classic-piece.white{background:radial-gradient(circle at 35% 28%,#fff,#ece9df 60%,#bbb)}.classic-piece.black{background:radial-gradient(circle at 35% 28%,#454545,#171717 65%,#050505);border-color:#111}
-  .classic-gomoku-board{width:min(100%,420px);height:auto;aspect-ratio:1;position:relative;background-color:#69a9a5;background-image:linear-gradient(#d8eeee 1px,transparent 1px),linear-gradient(90deg,#d8eeee 1px,transparent 1px);background-size:22px 22px;border:2px solid #4d817d;box-shadow:0 14px 35px #0008}
-  .classic-stone{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 2px #0006}.classic-stone.white{background:#f4f4ef;border:1px solid #c9c9c2}.classic-stone.black{background:#121212;border:1px solid #000}
+  .classic-gomoku-board{width:min(100%,390px);height:auto;aspect-ratio:1;position:relative;background-color:#2f9fa1;background-image:linear-gradient(#bde9e9 1px,transparent 1px),linear-gradient(90deg,#bde9e9 1px,transparent 1px),linear-gradient(135deg,#2ba0a4,#237f86);background-size:24px 24px,24px 24px,100% 100%;border:2px solid #82e5e8;border-radius:5px;box-shadow:0 14px 35px #0008,0 0 24px #2fbec944}
+  .classic-stone{position:absolute;width:19px;height:19px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 2px 4px #0008}.classic-stone.white{background:radial-gradient(circle at 35% 28%,#fff,#e9eeee 62%,#aeb8b8);border:1px solid #c9d0d0}.classic-stone.black{background:radial-gradient(circle at 35% 28%,#414a50,#101418 64%,#020304);border:1px solid #000}
 
   .games-zone{margin:2px 34px 18px;padding:22px;border:1px solid #1e323c;border-radius:16px;background:linear-gradient(180deg,#0b151c 0%,#081117 100%);box-shadow:0 18px 45px #0005}
-  .games-zone-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:17px}.games-zone-head .eyebrow{display:block;margin-bottom:5px}.games-zone-head h2{margin:0;font-size:25px;letter-spacing:-.7px}.games-zone-head p{margin:6px 0 0;color:#80939e;font-size:11px}.games-zone-summary{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.games-zone-summary span{padding:7px 10px;border:1px solid #263944;border-radius:999px;background:#0e1a22;color:#91a4ae;font-size:9px}.games-zone-summary b{color:#58e998}
-  .games-zone .game-showcase{padding:0;gap:16px}.games-zone .game-card{position:relative;border-color:#263944;border-radius:14px;background:linear-gradient(180deg,#0d1921,#091219);box-shadow:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.games-zone .game-card:hover{transform:translateY(-2px);border-color:#34515f;box-shadow:0 18px 35px #0006}.games-zone .game-card.checkers-card{box-shadow:inset 0 3px 0 #1ee078}.games-zone .game-card.gomoku{box-shadow:inset 0 3px 0 #8d4add}
-  .games-zone .card-top{padding:17px 18px 13px}.game-title-row{display:flex;align-items:center;gap:9px}.game-symbol{display:grid;place-items:center;width:34px;height:34px;border:1px solid #2c464f;border-radius:9px;background:#10231d;color:#61e89a;font-size:18px}.gomoku .game-symbol{background:#20152a;border-color:#4e3267;color:#c28aff}.game-title-row h2{font-size:18px!important;letter-spacing:-.3px}.game-title-row p{margin-top:2px!important}.game-status{display:flex;align-items:center;gap:6px;margin-top:6px;color:#7e929c;font-size:9px}.game-status i{width:7px;height:7px;border-radius:50%;background:#21df78;box-shadow:0 0 9px #21df7888}.gomoku .game-status i{background:#a35fea;box-shadow:0 0 9px #a35fea66}
-  .games-zone .game-preview{height:330px;margin:0 14px;border:1px solid #293b45;border-radius:10px;overflow:hidden;background:#091219;box-shadow:inset 0 0 25px #0005}.games-zone .classic-home-console{border-radius:0}.games-zone .classic-home-boardwrap{padding:16px}
+  .games-zone-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:17px}.games-zone-head .eyebrow{display:block;margin-bottom:5px}.games-zone-head h2{margin:0;font-size:25px;letter-spacing:-.7px}.games-zone-head p{margin:6px 0 0;color:#80939e;font-size:11px}
+  .games-zone-filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.games-zone-filters button{padding:8px 11px;border:1px solid #263944;border-radius:8px;background:#0e1a22;color:#91a4ae;font-size:9px;cursor:pointer}.games-zone-filters button:hover{border-color:#366278;color:#d9eef7}.games-zone-filters button.active{border-color:#1f7b4c;background:#153c29;color:#6ff0a9;box-shadow:0 0 14px #1ee07818}
+  .games-zone .game-showcase{padding:0;gap:16px}.games-zone .game-card{position:relative;border-color:#263944;border-radius:14px;background:linear-gradient(180deg,#0d1921,#091219);box-shadow:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.games-zone .game-card:hover{transform:translateY(-2px);border-color:#34515f;box-shadow:0 18px 35px #0006}.games-zone .game-card.checkers-card{box-shadow:inset 0 3px 0 #1ee078}.games-zone .game-card.gomoku{box-shadow:inset 0 3px 0 #2388d6}
+  .games-zone .card-top{padding:17px 18px 13px}.game-title-row{display:flex;align-items:center;gap:9px}.game-symbol{display:grid;place-items:center;width:36px;height:36px;border:1px solid #2c464f;border-radius:50%;background:#10331f;color:#61e89a;font-size:18px;box-shadow:0 0 18px #17d66c22}.gomoku .game-symbol{background:#0c3154;border-color:#1f6ca4;color:#65b9ff;box-shadow:0 0 18px #2388d633}.game-title-row h2{font-size:18px!important;letter-spacing:-.3px}.game-title-row p{margin-top:2px!important}.game-status{display:flex;align-items:center;gap:6px;margin-top:6px;color:#7e929c;font-size:9px}.game-status i{width:7px;height:7px;border-radius:50%;background:#21df78;box-shadow:0 0 9px #21df7888}.gomoku .game-status i{background:#2e97e7;box-shadow:0 0 9px #2e97e777}
+  .games-zone .game-preview{height:330px;margin:0 14px;border:1px solid #293b45;border-radius:10px;overflow:hidden;background:#091219;box-shadow:inset 0 0 25px #0005}.games-zone .classic-home-console{border-radius:0}.games-zone .classic-home-boardwrap{padding:14px}
   .game-info-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 14px 0}.game-info-strip span{display:grid;gap:2px;padding:8px 9px;border:1px solid #20323c;border-radius:8px;background:#0b161d;color:#778b96;font-size:8px}.game-info-strip b{color:#dce6eb;font-size:10px;font-weight:700}
-  .games-zone .game-card-foot{grid-template-columns:auto 1fr;align-items:center;padding:13px 14px 15px}.games-zone .game-card-foot>div{min-width:110px}.games-zone .game-card-foot strong{font-size:16px}.games-zone .game-card-foot span{font-size:9px}.games-zone .play-btn{min-height:42px;display:grid;place-items:center;border-radius:8px;background:linear-gradient(180deg,#23df79,#12b95e);color:#04130a;box-shadow:0 8px 20px #11bd5c22}.games-zone .play-btn:hover{filter:brightness(1.08)}.games-zone .play-btn.purple{background:linear-gradient(180deg,#a054e0,#7432b0);color:#fff}.games-zone .play-btn[disabled]{opacity:.72;cursor:not-allowed}.game-badge{position:absolute;top:13px;right:52px;padding:5px 8px;border:1px solid #275a42;border-radius:999px;background:#10291d;color:#67e89f;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}.gomoku .game-badge{right:16px;border-color:#56376d;background:#21162a;color:#c997ef}
-  .games-zone-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.games-zone-foot article{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid #20313b;border-radius:9px;background:#0b151c}.games-zone-foot b{font-size:10px}.games-zone-foot span{color:#738792;font-size:8px}
+  .games-zone .game-card-foot{grid-template-columns:auto 1fr;align-items:center;padding:13px 14px 15px}.games-zone .game-card-foot>div{min-width:110px}.games-zone .game-card-foot strong{font-size:16px}.games-zone .game-card-foot span{font-size:9px}.games-zone .play-btn{min-height:42px;display:grid;place-items:center;border-radius:8px;background:linear-gradient(180deg,#23df79,#12b95e);color:#04130a;box-shadow:0 8px 20px #11bd5c22;cursor:pointer}.games-zone .play-btn:hover{filter:brightness(1.08)}.games-zone .play-btn.purple{background:linear-gradient(180deg,#278fe0,#1763ad);color:#fff;box-shadow:0 8px 20px #1c78c833}.games-zone .play-btn:disabled{opacity:1;cursor:pointer}.game-badge{position:absolute;top:13px;right:52px;padding:5px 8px;border:1px solid #275a42;border-radius:999px;background:#10291d;color:#67e89f;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}.gomoku .game-badge{right:16px;border-color:#1f6297;background:#0b2944;color:#67b8ff}
+  .games-zone-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.games-zone-foot article{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid #20313b;border-radius:9px;background:#0b151c;cursor:pointer;transition:.15s}.games-zone-foot article:hover{border-color:#315365;background:#0e1b23}.games-zone-foot b{font-size:10px}.games-zone-foot span{color:#738792;font-size:8px}
+  .game-hidden{display:none!important}
+  .game-info-pop{position:fixed;z-index:13000;inset:0;display:grid;place-items:center;padding:20px;background:#02080cbb;backdrop-filter:blur(5px)}.game-info-pop[hidden]{display:none}.game-info-card{width:min(420px,92vw);padding:22px;border:1px solid #2d4654;border-radius:14px;background:#0b151d;box-shadow:0 28px 70px #000b}.game-info-card h3{margin:0 0 8px}.game-info-card p{margin:0 0 16px;color:#879ba6;font-size:11px;line-height:1.55}.game-info-card button{width:100%;padding:10px;border:1px solid #2d6647;border-radius:8px;background:#123822;color:#6fe8a2;cursor:pointer}
 
   .pw-reset-link{display:block;margin:10px auto 0;border:0;background:transparent;color:#61e895;font-size:11px;cursor:pointer;text-decoration:underline}.pw-reset-overlay{position:fixed;inset:0;z-index:12000;display:none;align-items:center;justify-content:center;background:rgba(2,8,12,.86);backdrop-filter:blur(8px);padding:20px}.pw-reset-overlay.open{display:flex}.pw-reset-card{width:min(430px,95vw);padding:24px;border:1px solid #2a3a45;border-radius:15px;background:#0d171e;color:#eef5f8;box-shadow:0 30px 80px #000}.pw-reset-card h2{margin:0 0 6px;font-size:22px}.pw-reset-card p{margin:0 0 18px;color:#8fa1ac;font-size:11px;line-height:1.5}.pw-reset-card label{display:grid;gap:6px;margin:11px 0;font-size:11px;font-weight:700}.pw-reset-card input{padding:12px;border:1px solid #344651;border-radius:8px;background:#081116;color:#f4f8fa;outline:none}.pw-reset-card input:focus{border-color:#20dc72;box-shadow:0 0 0 3px #20dc7218}.pw-reset-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}.pw-reset-actions button{padding:10px 15px;border-radius:8px;font-weight:800;cursor:pointer}.pw-reset-cancel{border:1px solid #354550;background:#0b1218;color:#cbd7dd}.pw-reset-submit{border:0;background:linear-gradient(#20e578,#0fb958);color:#fff}.pw-reset-status{min-height:18px;margin-top:10px;font-size:11px}.pw-reset-status.ok{color:#67eaa0}.pw-reset-status.err{color:#ff7777}
-  @media(max-width:900px){.classic-home-boardwrap{padding:10px}.games-zone{margin-left:12px;margin-right:12px;padding:14px}.games-zone-head{align-items:flex-start;flex-direction:column}.games-zone-summary{justify-content:flex-start}.games-zone .game-showcase{grid-template-columns:1fr}.games-zone .game-preview{height:300px}.game-info-strip{grid-template-columns:1fr 1fr}.games-zone-foot{grid-template-columns:1fr}}
+  @media(max-width:900px){.classic-home-boardwrap{padding:10px}.games-zone{margin-left:12px;margin-right:12px;padding:14px}.games-zone-head{align-items:flex-start;flex-direction:column}.games-zone-filters{justify-content:flex-start}.games-zone .game-showcase{grid-template-columns:1fr}.games-zone .game-preview{height:300px}.game-info-strip{grid-template-columns:1fr 1fr}.games-zone-foot{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
 
-  function checkerBoard() {
-    const board = document.createElement('div'); board.className = 'classic-checker-board';
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
-      const sq = document.createElement('div'); const dark = (r + c) % 2 === 1; sq.className = `classic-square ${dark ? 'dark' : 'light'}`;
-      if (dark && (r < 3 || r > 4)) { const p = document.createElement('i'); p.className = `classic-piece ${r < 3 ? 'white' : 'black'}`; sq.appendChild(p); }
-      board.appendChild(sq);
-    }
+  function checkerBoard(){
+    const board=document.createElement('div');board.className='classic-checker-board';
+    for(let r=0;r<8;r++)for(let c=0;c<8;c++){const sq=document.createElement('div');const dark=(r+c)%2===1;sq.className=`classic-square ${dark?'dark':'light'}`;if(dark&&(r<3||r>4)){const p=document.createElement('i');p.className=`classic-piece ${r<3?'black':'white'}`;sq.appendChild(p)}board.appendChild(sq)}
     return board;
   }
-  function gomokuBoard() {
-    const board = document.createElement('div'); board.className = 'classic-gomoku-board';
-    const stones = [['white',20,22],['black',35,40],['white',50,18],['black',64,49],['white',78,27],['black',48,62],['white',58,72],['black',29,68],['white',70,60]];
-    for (const [kind,x,y] of stones) { const s = document.createElement('i'); s.className = `classic-stone ${kind}`; s.style.left = `${x}%`; s.style.top = `${y}%`; board.appendChild(s); }
-    return board;
+  function gomokuBoard(){
+    const board=document.createElement('div');board.className='classic-gomoku-board';
+    const stones=[['black',44,34],['white',52,34],['black',44,42],['black',52,42],['white',60,42],['white',36,50],['black',44,50],['white',52,50],['black',60,50],['black',68,50],['black',36,58],['white',44,58],['black',52,58],['white',60,58],['black',52,66]];
+    for(const[kind,x,y]of stones){const s=document.createElement('i');s.className=`classic-stone ${kind}`;s.style.left=`${x}%`;s.style.top=`${y}%`;board.appendChild(s)}return board;
   }
-  function install(preview, kind) {
-    if (!preview) return;
-    const root = document.createElement('div'); root.className = `classic-home-console ${kind === 'gomoku' ? 'gomoku-console-home' : ''}`;
-    const wrap = document.createElement('div'); wrap.className = 'classic-home-boardwrap';
-    wrap.appendChild(kind === 'gomoku' ? gomokuBoard() : checkerBoard());
-    root.append(wrap);
-    preview.replaceChildren(root);
-  }
+  function install(preview,kind){if(!preview)return;const root=document.createElement('div');root.className=`classic-home-console ${kind==='gomoku'?'gomoku-console-home':''}`;const wrap=document.createElement('div');wrap.className='classic-home-boardwrap';wrap.appendChild(kind==='gomoku'?gomokuBoard():checkerBoard());root.append(wrap);preview.replaceChildren(root)}
 
-  function decorateGameCard(card, kind) {
-    if (!card || card.dataset.decorated === 'true') return;
-    card.dataset.decorated = 'true';
-    const top = card.querySelector('.card-top');
-    const titleBlock = top?.querySelector('div');
-    const h2 = titleBlock?.querySelector('h2');
-    const p = titleBlock?.querySelector('p');
-    if (titleBlock && h2 && p) {
-      const wrap = document.createElement('div'); wrap.className='game-title-row';
-      const symbol = document.createElement('span'); symbol.className='game-symbol'; symbol.textContent=kind==='gomoku'?'◉':'⛀';
-      const text = document.createElement('div'); text.append(h2,p);
-      const status = document.createElement('div'); status.className='game-status'; status.innerHTML=`<i></i>${kind==='gomoku'?'Tryb klasyczny · 5 w linii':'Multiplayer · ranking · turnieje'}`;
-      text.append(status); wrap.append(symbol,text); titleBlock.replaceWith(wrap);
+  function decorateGameCard(card,kind){
+    if(!card||card.dataset.decorated==='true')return;card.dataset.decorated='true';
+    const top=card.querySelector('.card-top'),titleBlock=top?.querySelector('div'),h2=titleBlock?.querySelector('h2'),p=titleBlock?.querySelector('p');
+    if(titleBlock&&h2&&p){const wrap=document.createElement('div');wrap.className='game-title-row';const symbol=document.createElement('span');symbol.className='game-symbol';symbol.textContent=kind==='gomoku'?'◉':'⛀';const text=document.createElement('div');text.append(h2,p);const status=document.createElement('div');status.className='game-status';status.innerHTML=`<i></i>${kind==='gomoku'?'Twoje zasady · 5 w linii':'Multiplayer · ranking · turnieje'}`;text.append(status);wrap.append(symbol,text);titleBlock.replaceWith(wrap)}
+    const badge=document.createElement('span');badge.className='game-badge';badge.textContent=kind==='gomoku'?'BETA':'NAJPOPULARNIEJSZA';card.appendChild(badge);
+    const preview=card.querySelector('.game-preview'),info=document.createElement('div');info.className='game-info-strip';info.innerHTML=kind==='gomoku'?'<span><b>2 graczy</b>pojedynek</span><span><b>5 w linii</b>cel gry</span><span><b>3–15 min</b>typowo</span><span><b>Ranking</b>opcjonalny</span>':'<span><b>2 graczy</b>najczęściej</span><span><b>3–30 min</b>czas gry</span><span><b>ELO ranking</b>rankingowa</span><span><b>Turnieje</b>dostępne</span>';preview?.after(info);
+    if(kind==='gomoku'){
+      const play=card.querySelector('.play-btn');if(play){play.disabled=false;play.removeAttribute('disabled');play.setAttribute('aria-disabled','false');play.addEventListener('click',()=>{location.href='/players.html?game=gomoku'})}
     }
-    const badge = document.createElement('span'); badge.className='game-badge'; badge.textContent=kind==='gomoku'?'BETA':'NAJPOPULARNIEJSZA'; card.appendChild(badge);
-    const preview = card.querySelector('.game-preview');
-    const info = document.createElement('div'); info.className='game-info-strip';
-    info.innerHTML = kind==='gomoku'
-      ? '<span><b>2 graczy</b>pojedynek</span><span><b>5 w linii</b>cel gry</span><span><b>3–15 min</b>typowo</span><span><b>Ranking</b>planowany</span>'
-      : '<span><b>2 graczy</b>pojedynek</span><span><b>3–30 min</b>tempo</span><span><b>ELO</b>ranking</span><span><b>Turnieje</b>aktywne</span>';
-    preview?.after(info);
   }
 
-  function decorateShowcase() {
-    const showcase = document.querySelector('.game-showcase');
-    if (!showcase || showcase.closest('.games-zone')) return;
-    const zone = document.createElement('section'); zone.className='games-zone';
-    const head = document.createElement('header'); head.className='games-zone-head';
-    head.innerHTML='<div><span class="eyebrow">CENTRUM GIER</span><h2>Wybierz grę i rozpocznij rozgrywkę</h2><p>Jedno miejsce dla stołów, rankingów, zaproszeń i społeczności graczy.</p></div><div class="games-zone-summary"><span><b>2</b> gry</span><span><b>online</b> multiplayer</span><span><b>ELO</b> rankingi</span></div>';
-    showcase.parentNode.insertBefore(zone,showcase); zone.append(head,showcase);
-    decorateGameCard(showcase.querySelector('.checkers-card'),'checkers');
-    decorateGameCard(showcase.querySelector('.gomoku'),'gomoku');
-    const foot = document.createElement('div'); foot.className='games-zone-foot';
-    foot.innerHTML='<article><b>⚡ Szybki start</b><span>Wejdź do lobby i znajdź wolny stół.</span></article><article><b>🏆 Rywalizacja</b><span>Graj rankingowo, turniejowo lub towarzysko.</span></article><article><b>👥 Gra ze znajomymi</b><span>Twórz własny stół i wysyłaj zaproszenia.</span></article>';
-    zone.append(foot);
+  function addGameInfo(){
+    const pop=document.createElement('div');pop.className='game-info-pop';pop.hidden=true;pop.innerHTML='<div class="game-info-card"><h3 id="game-info-title">Informacje o grze</h3><p id="game-info-text"></p><button type="button">Zamknij</button></div>';document.body.appendChild(pop);const close=()=>pop.hidden=true;pop.querySelector('button').addEventListener('click',close);pop.addEventListener('click',e=>{if(e.target===pop)close()});return{open(title,text){pop.querySelector('#game-info-title').textContent=title;pop.querySelector('#game-info-text').textContent=text;pop.hidden=false}}
   }
 
-  function installPasswordReset() {
-    const form = document.querySelector('#auth-form'); if (!form || document.querySelector('.pw-reset-link')) return;
-    const btn = document.createElement('button'); btn.type='button'; btn.className='pw-reset-link'; btn.textContent='Nie pamiętam hasła'; form.appendChild(btn);
-    const overlay = document.createElement('div'); overlay.className='pw-reset-overlay';
-    overlay.innerHTML = `<form class="pw-reset-card"><h2>Reset hasła</h2><p>Podaj login i adres e-mail zapisany na koncie. Po poprawnej weryfikacji ustawisz nowe hasło.</p><label>Login<input name="userId" minlength="3" maxlength="32" required autocomplete="username"></label><label>Adres e-mail<input name="email" type="email" maxlength="254" required autocomplete="email"></label><label>Nowe hasło<input name="newPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><label>Powtórz nowe hasło<input name="confirmPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><div class="pw-reset-actions"><button type="button" class="pw-reset-cancel">Anuluj</button><button type="submit" class="pw-reset-submit">Ustaw nowe hasło</button></div><div class="pw-reset-status"></div></form>`;
-    document.body.appendChild(overlay);
-    const resetForm = overlay.querySelector('form'); const status = overlay.querySelector('.pw-reset-status');
-    const close = () => { overlay.classList.remove('open'); status.textContent=''; status.className='pw-reset-status'; resetForm.reset(); };
-    btn.addEventListener('click',()=>overlay.classList.add('open')); overlay.querySelector('.pw-reset-cancel').addEventListener('click',close); overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
-    resetForm.addEventListener('submit', async e => {
-      e.preventDefault(); status.className='pw-reset-status'; status.textContent='Sprawdzanie danych…';
-      const data = Object.fromEntries(new FormData(resetForm).entries());
-      if (data.newPassword !== data.confirmPassword) { status.textContent='Nowe hasła nie są identyczne.'; status.classList.add('err'); return; }
-      if (String(data.newPassword).length < 10) { status.textContent='Nowe hasło musi mieć co najmniej 10 znaków.'; status.classList.add('err'); return; }
-      try {
-        const r = await fetch('/auth/reset-password',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({userId:data.userId,email:data.email,newPassword:data.newPassword})});
-        const result = await r.json().catch(()=>({})); if(!r.ok) throw new Error(result.error?.message || 'Nie udało się zmienić hasła.');
-        status.textContent='Hasło zostało zmienione. Zamknij okno i zaloguj się nowym hasłem.'; status.classList.add('ok');
-      } catch(err) { status.textContent=err.message; status.classList.add('err'); }
-    });
+  function decorateShowcase(){
+    const showcase=document.querySelector('.game-showcase');if(!showcase||showcase.closest('.games-zone'))return;
+    const zone=document.createElement('section');zone.className='games-zone';const head=document.createElement('header');head.className='games-zone-head';head.innerHTML='<div><span class="eyebrow">CENTRUM GIER</span><h2>Wybierz grę i rozpocznij rozgrywkę</h2><p>Jedno miejsce dla stołów, rankingów, turniejów i społeczności graczy.</p></div><div class="games-zone-filters"><button class="active" data-filter="all">Wszystkie gry</button><button data-filter="checkers">Warcaby</button><button data-filter="gomoku">Gomoku</button><button data-go-ranking>Ranking ELO</button></div>';
+    showcase.parentNode.insertBefore(zone,showcase);zone.append(head,showcase);const checkers=showcase.querySelector('.checkers-card'),gomoku=showcase.querySelector('.gomoku');decorateGameCard(checkers,'checkers');decorateGameCard(gomoku,'gomoku');
+    head.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{head.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===btn));const f=btn.dataset.filter;checkers.classList.toggle('game-hidden',f==='gomoku');gomoku.classList.toggle('game-hidden',f==='checkers')}));head.querySelector('[data-go-ranking]').addEventListener('click',()=>location.href='/ranking.html');
+    const foot=document.createElement('div');foot.className='games-zone-foot';foot.innerHTML='<article data-fast><b>⚡ Szybki start</b><span>Wejdź do lobby i znajdź wolny stół.</span></article><article data-rank><b>🏆 Rywalizacja</b><span>Graj rankingowo, turniejowo lub towarzysko.</span></article><article data-friends><b>👥 Gra ze znajomymi</b><span>Twórz własny stół i wysyłaj zaproszenia.</span></article>';zone.append(foot);foot.querySelector('[data-fast]').addEventListener('click',()=>location.href='/players.html');foot.querySelector('[data-rank]').addEventListener('click',()=>location.href='/ranking.html');foot.querySelector('[data-friends]').addEventListener('click',()=>location.href='/community.html');
+    const info=addGameInfo();checkers.querySelector('.icon-btn')?.addEventListener('contextmenu',e=>e.preventDefault());const cIcon=checkers.querySelector('.game-symbol');cIcon?.addEventListener('click',()=>info.open('Warcaby online','Klasyczne warcaby multiplayer z rankingiem ELO, stołami prywatnymi, turniejami i zaproszeniami znajomych.'));const gIcon=gomoku.querySelector('.game-symbol');gIcon?.addEventListener('click',()=>info.open('Gomoku online','Gomoku w klasycznym zielono-niebieskim stylu planszy znanym z wcześniejszej wersji Flash.'));
   }
 
-  const run = () => { install(document.querySelector('.checkers-card .game-preview'), 'checkers'); install(document.querySelector('.game-card.gomoku .game-preview'), 'gomoku'); decorateShowcase(); installPasswordReset(); };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, {once:true}); else run();
+  function installPasswordReset(){
+    const form=document.querySelector('#auth-form');if(!form||document.querySelector('.pw-reset-link'))return;const btn=document.createElement('button');btn.type='button';btn.className='pw-reset-link';btn.textContent='Nie pamiętam hasła';form.appendChild(btn);const overlay=document.createElement('div');overlay.className='pw-reset-overlay';overlay.innerHTML=`<form class="pw-reset-card"><h2>Reset hasła</h2><p>Podaj login i adres e-mail zapisany na koncie. Po poprawnej weryfikacji ustawisz nowe hasło.</p><label>Login<input name="userId" minlength="3" maxlength="32" required autocomplete="username"></label><label>Adres e-mail<input name="email" type="email" maxlength="254" required autocomplete="email"></label><label>Nowe hasło<input name="newPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><label>Powtórz nowe hasło<input name="confirmPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><div class="pw-reset-actions"><button type="button" class="pw-reset-cancel">Anuluj</button><button type="submit" class="pw-reset-submit">Ustaw nowe hasło</button></div><div class="pw-reset-status"></div></form>`;document.body.appendChild(overlay);const resetForm=overlay.querySelector('form'),status=overlay.querySelector('.pw-reset-status');const close=()=>{overlay.classList.remove('open');status.textContent='';status.className='pw-reset-status';resetForm.reset()};btn.addEventListener('click',()=>overlay.classList.add('open'));overlay.querySelector('.pw-reset-cancel').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});resetForm.addEventListener('submit',async e=>{e.preventDefault();status.className='pw-reset-status';status.textContent='Sprawdzanie danych…';const data=Object.fromEntries(new FormData(resetForm).entries());if(data.newPassword!==data.confirmPassword){status.textContent='Nowe hasła nie są identyczne.';status.classList.add('err');return}if(String(data.newPassword).length<10){status.textContent='Nowe hasło musi mieć co najmniej 10 znaków.';status.classList.add('err');return}try{const r=await fetch('/auth/reset-password',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({userId:data.userId,email:data.email,newPassword:data.newPassword})});const result=await r.json().catch(()=>({}));if(!r.ok)throw new Error(result.error?.message||'Nie udało się zmienić hasła.');status.textContent='Hasło zostało zmienione. Zamknij okno i zaloguj się nowym hasłem.';status.classList.add('ok')}catch(err){status.textContent=err.message;status.classList.add('err')}})
+  }
+
+  const run=()=>{install(document.querySelector('.checkers-card .game-preview'),'checkers');install(document.querySelector('.game-card.gomoku .game-preview'),'gomoku');decorateShowcase();installPasswordReset()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 })();
