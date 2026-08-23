@@ -67,14 +67,16 @@ async function serveExtendedAsset(request, response) {
   if (request.method !== "GET") return false;
   const pathname = new URL(request.url, "http://localhost").pathname;
   const publicDomain = isPublicDomain(request);
-
-  // Strona główna zawsze pokazuje wersję „w budowie”. Dzięki temu nie zależymy
-  // od nagłówków proxy Rendera przy wejściu na gracz.pl.
   const landing = pathname === "/" || (publicDomain && pathname === "/lobby.html");
   const file = landing ? "coming-soon.html" : ({
     "/coming-soon.html": "coming-soon.html",
     "/coming-soon.css": "coming-soon.css",
     "/coming-soon.js": "coming-soon.js",
+    "/regulamin-newslettera.html": "regulamin-newslettera.html",
+    "/polityka-prywatnosci.html": "polityka-prywatnosci.html",
+    "/legal.css": "legal.css",
+    "/aktualnosci.html": "aktualnosci.html",
+    "/news.css": "news.css",
     "/lobby.html": "lobby.html",
     "/homepage-consoles.js": "homepage-consoles.js",
     "/tournaments.html": "tournaments.html",
