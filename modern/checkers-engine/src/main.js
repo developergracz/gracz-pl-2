@@ -10,6 +10,7 @@ import { MemoryAuthSessionStore, PostgresAuthSessionStore } from "./auth-session
 import { loadConfig } from "./config.js";
 import { LobbyService } from "./lobby.js";
 import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
+import { TournamentService, createTournamentHandler } from "./tournaments.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
@@ -46,6 +47,9 @@ const auth = new AuthService({ secret: config.authSecret });
 const globalChat = new GlobalChatService(config.databaseUrl || null);
 await globalChat.ready;
 const globalChatHandler = createGlobalChatHandler({ service: globalChat, auth, authSessions });
+const tournaments = new TournamentService(config.databaseUrl || null);
+await tournaments.ready;
+const tournamentHandler = createTournamentHandler({ service: tournaments, auth, authSessions });
 
 const server = createGameHttpServer({
   store,
@@ -63,12 +67,13 @@ server.removeAllListeners("request");
 server.on("request", async (request, response) => {
   try {
     if (await globalChatHandler(request, response)) return;
+    if (await tournamentHandler(request, response)) return;
     return baseRequestHandler(request, response);
   } catch (error) {
-    console.error("Global chat request error:", error);
+    console.error("Application request error:", error);
     if (!response.headersSent && !response.writableEnded) {
       response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      response.end(JSON.stringify({ error: { code: "CHAT_INTERNAL_ERROR", message: "Wewnętrzny błąd chatu." } }));
+      response.end(JSON.stringify({ error: { code: "APP_INTERNAL_ERROR", message: "Wewnętrzny błąd aplikacji." } }));
     }
   }
 });
@@ -105,6 +110,7 @@ server.listen(config.port, config.host, () => {
   console.log(`Magazyn sesji gier: ${config.databaseUrl ? "PostgreSQL" : "plik lokalny (tryb developerski)"}`);
   console.log(`Rejestr sesji logowania: ${config.databaseUrl ? "PostgreSQL" : "pamięć procesu (tryb developerski)"}`);
   console.log(`Chat ogólny: ${config.databaseUrl ? "PostgreSQL + SSE realtime" : "pamięć procesu + SSE realtime"}`);
+  console.log(`Turnieje: ${config.databaseUrl ? "PostgreSQL + automatyczne parowania" : "pamięć procesu + automatyczne parowania"}`);
   console.log(`Ochrona anty-bot: IP + konto + endpoint + credential stuffing/password spraying${turnstileEnabled ? " + adaptacyjny Cloudflare Turnstile" : " (Turnstile oczekuje na klucze środowiskowe)"}`);
 });
 
@@ -120,6 +126,7 @@ async function shutdown(signal) {
       if (typeof authSessions.close === "function") await authSessions.close();
       if (messageAttachments && typeof messageAttachments.close === "function") await messageAttachments.close();
       await globalChat.close();
+      await tournaments.close();
       process.exit(0);
     } catch (error) {
       console.error("Błąd podczas zamykania aplikacji:", error);
