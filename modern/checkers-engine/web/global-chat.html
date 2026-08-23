@@ -6,6 +6,12 @@
   <title>Chat ogólny — Gracz.pl</title>
   <meta name="description" content="Chat ogólny społeczności Gracz.pl — rozmowy graczy na żywo.">
   <link rel="stylesheet" href="/global-chat.css">
+  <style>
+    .chat-main{overflow:hidden}
+    .composer-wrap{z-index:30}
+    .emoji-panel{left:16px!important;bottom:calc(100% + 8px)!important;max-width:calc(100% - 32px);max-height:220px;overflow-y:auto;overflow-x:hidden}
+    @media(max-width:600px){.emoji-panel{left:8px!important;max-width:calc(100% - 16px);max-height:190px}}
+  </style>
 </head>
 <body>
   <main class="chat-shell">
