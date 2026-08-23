@@ -2,6 +2,7 @@ import pg from "pg";
 import { AuthError } from "./auth.js";
 
 const { Pool } = pg;
+const IDLE_TIMEOUT_SECONDS = 30 * 60;
 
 export class MemoryAuthSessionStore {
   #sessions = new Map();
@@ -9,7 +10,8 @@ export class MemoryAuthSessionStore {
   async create({ tokenId, userId, expiresAt }) {
     validateSessionRecord({ tokenId, userId, expiresAt });
     this.#cleanup();
-    this.#sessions.set(tokenId, { tokenId, userId, expiresAt, revokedAt: null });
+    const now = nowSeconds();
+    this.#sessions.set(tokenId, { tokenId, userId, expiresAt, revokedAt: null, lastSeenAt: now });
   }
 
   async has(tokenId) {
@@ -22,9 +24,12 @@ export class MemoryAuthSessionStore {
     validateSessionRecord({ tokenId, userId, expiresAt });
     this.#cleanup();
     const session = this.#sessions.get(tokenId);
-    if (!session || session.userId !== userId || session.revokedAt || session.expiresAt <= nowSeconds()) {
+    const now = nowSeconds();
+    if (!session || session.userId !== userId || session.revokedAt || session.expiresAt <= now || session.lastSeenAt < now - IDLE_TIMEOUT_SECONDS) {
+      if (session && !session.revokedAt) session.revokedAt = now;
       throw new AuthError("Sesja logowania została zakończona.", "SESSION_REVOKED");
     }
+    session.lastSeenAt = now;
   }
 
   async revoke(tokenId) {
@@ -36,9 +41,7 @@ export class MemoryAuthSessionStore {
   async revokeAll(userId) {
     if (typeof userId !== "string" || !userId) return;
     const revokedAt = nowSeconds();
-    for (const session of this.#sessions.values()) {
-      if (session.userId === userId) session.revokedAt = revokedAt;
-    }
+    for (const session of this.#sessions.values()) if (session.userId === userId) session.revokedAt = revokedAt;
   }
 
   #cleanup() {
@@ -66,12 +69,15 @@ export class PostgresAuthSessionStore {
         token_id UUID PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         expires_at TIMESTAMPTZ NOT NULL,
         revoked_at TIMESTAMPTZ
       )
     `);
+    await this.pool.query(`ALTER TABLE gracz_auth_sessions ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_auth_sessions_user_idx ON gracz_auth_sessions(user_id, expires_at DESC)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_auth_sessions_expiry_idx ON gracz_auth_sessions(expires_at)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_auth_sessions_activity_idx ON gracz_auth_sessions(last_seen_at)`);
     await this.cleanup();
   }
 
@@ -79,9 +85,9 @@ export class PostgresAuthSessionStore {
     await this.ready;
     validateSessionRecord({ tokenId, userId, expiresAt });
     await this.pool.query(
-      `INSERT INTO gracz_auth_sessions(token_id,user_id,expires_at)
-       VALUES($1,$2,to_timestamp($3))
-       ON CONFLICT (token_id) DO UPDATE SET user_id=EXCLUDED.user_id,expires_at=EXCLUDED.expires_at,revoked_at=NULL`,
+      `INSERT INTO gracz_auth_sessions(token_id,user_id,expires_at,last_seen_at)
+       VALUES($1,$2,to_timestamp($3),NOW())
+       ON CONFLICT (token_id) DO UPDATE SET user_id=EXCLUDED.user_id,expires_at=EXCLUDED.expires_at,last_seen_at=NOW(),revoked_at=NULL`,
       [tokenId, userId, expiresAt],
     );
   }
@@ -97,12 +103,17 @@ export class PostgresAuthSessionStore {
     await this.ready;
     validateSessionRecord({ tokenId, userId, expiresAt });
     const { rows } = await this.pool.query(
-      `SELECT 1 FROM gracz_auth_sessions
+      `UPDATE gracz_auth_sessions
+       SET last_seen_at=NOW()
        WHERE token_id=$1 AND user_id=$2 AND revoked_at IS NULL AND expires_at>NOW()
-       LIMIT 1`,
+         AND last_seen_at > NOW() - INTERVAL '30 minutes'
+       RETURNING token_id`,
       [tokenId, userId],
     );
-    if (!rows[0]) throw new AuthError("Sesja logowania została zakończona.", "SESSION_REVOKED");
+    if (!rows[0]) {
+      await this.pool.query(`UPDATE gracz_auth_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE token_id=$1`, [tokenId]).catch(() => {});
+      throw new AuthError("Sesja logowania została zakończona.", "SESSION_REVOKED");
+    }
   }
 
   async revoke(tokenId) {
