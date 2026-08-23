@@ -7,6 +7,7 @@ import { SecureAccountService } from "./secure-accounts.js";
 import { MessageAttachmentService } from "./message-attachments.js";
 import { AuthService } from "./auth.js";
 import { MemoryAuthSessionStore, PostgresAuthSessionStore } from "./auth-sessions.js";
+import { AuditLogService, attachRequestAudit } from "./audit-log.js";
 import { loadConfig } from "./config.js";
 import { LobbyService } from "./lobby.js";
 import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
@@ -32,6 +33,7 @@ const accounts = config.databaseUrl ? new SecureAccountService(baseAccounts, con
 if (config.databaseUrl && accounts.ready) await accounts.ready;
 const authSessions = config.databaseUrl ? new PostgresAuthSessionStore(config.databaseUrl) : new MemoryAuthSessionStore();
 if (authSessions.ready) await authSessions.ready;
+const audit = new AuditLogService(config.databaseUrl || null); await audit.ready;
 const messageAttachments = config.databaseUrl ? new MessageAttachmentService(config.databaseUrl, config.authSecret) : null;
 if (messageAttachments?.ready) await messageAttachments.ready;
 
@@ -50,17 +52,12 @@ function assertAllowedNewsletterNick(nick) {
   if (!cleanNick) return;
   const moderation = moderateNick(cleanNick);
   if (moderation.allowed) return;
-  if (moderation.reason === "reserved") {
-    throw new NewsletterError("Ten nick jest zastrzeżony przez administrację Gracz.pl. Wybierz inny.", "NICK_RESERVED", 400);
-  }
+  if (moderation.reason === "reserved") throw new NewsletterError("Ten nick jest zastrzeżony przez administrację Gracz.pl. Wybierz inny.", "NICK_RESERVED", 400);
   throw new NewsletterError("Ten nick zawiera niedozwolone lub obraźliwe treści. Wybierz inny nick.", "NICK_BLOCKED", 400);
 }
 
 const originalCheckNickAvailability = newsletter.checkNickAvailability.bind(newsletter);
-newsletter.checkNickAvailability = async (nick) => {
-  assertAllowedNewsletterNick(nick);
-  return originalCheckNickAvailability(nick);
-};
+newsletter.checkNickAvailability = async (nick) => { assertAllowedNewsletterNick(nick); return originalCheckNickAvailability(nick); };
 
 const originalNewsletterSubscribe = newsletter.subscribe.bind(newsletter);
 newsletter.subscribe = async (input = {}) => {
@@ -78,12 +75,14 @@ function hostnameFromRequest(request) {
   const host = forwarded || String(request.headers.host || "").trim();
   return host.toLowerCase().replace(/^https?:\/\//, "").split(":")[0].replace(/\.$/, "");
 }
-
+function requestSource(request) {
+  const forwarded = String(request.headers["cf-connecting-ip"] || request.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return forwarded || request.socket?.remoteAddress || "unknown";
+}
 function isPublicDomain(request) {
   const hostname = hostnameFromRequest(request);
   return hostname === "gracz.pl" || hostname === "www.gracz.pl";
 }
-
 function blockPublicAccountAccess(request, response) {
   if (!isPublicDomain(request) || request.method !== "POST") return false;
   const pathname = new URL(request.url, "http://localhost").pathname;
@@ -99,25 +98,12 @@ async function serveExtendedAsset(request, response) {
   const publicDomain = isPublicDomain(request);
   const landing = pathname === "/" || (publicDomain && pathname === "/lobby.html");
   const file = landing ? "coming-soon.html" : ({
-    "/coming-soon.html": "coming-soon.html",
-    "/coming-soon.css": "coming-soon.css",
-    "/coming-soon.js": "coming-soon.js",
-    "/regulamin-newslettera.html": "regulamin-newslettera.html",
-    "/polityka-prywatnosci.html": "polityka-prywatnosci.html",
-    "/legal.css": "legal.css",
-    "/aktualnosci.html": "aktualnosci.html",
-    "/news.css": "news.css",
-    "/lobby.html": "lobby.html",
-    "/homepage-consoles.js": "homepage-consoles.js",
-    "/tournaments.html": "tournaments.html",
-    "/tournaments.css": "tournaments.css",
-    "/tournaments.js": "tournaments.js",
-    "/community.html": "community.html",
-    "/community.css": "community.css",
-    "/community.js": "community.js",
-    "/ranking.html": "ranking.html",
-    "/ranking.css": "ranking.css",
-    "/ranking.js": "ranking.js",
+    "/coming-soon.html": "coming-soon.html", "/coming-soon.css": "coming-soon.css", "/coming-soon.js": "coming-soon.js",
+    "/regulamin-newslettera.html": "regulamin-newslettera.html", "/polityka-prywatnosci.html": "polityka-prywatnosci.html", "/legal.css": "legal.css",
+    "/aktualnosci.html": "aktualnosci.html", "/news.css": "news.css", "/lobby.html": "lobby.html", "/homepage-consoles.js": "homepage-consoles.js",
+    "/tournaments.html": "tournaments.html", "/tournaments.css": "tournaments.css", "/tournaments.js": "tournaments.js",
+    "/community.html": "community.html", "/community.css": "community.css", "/community.js": "community.js",
+    "/ranking.html": "ranking.html", "/ranking.css": "ranking.css", "/ranking.js": "ranking.js",
   })[pathname];
   if (!file) return false;
   const extension = file.split(".").at(-1);
@@ -128,12 +114,8 @@ async function serveExtendedAsset(request, response) {
     content = Buffer.from(content.toString("utf8").replaceAll("__TURNSTILE_SITE_KEY__", siteKey));
   }
   response.writeHead(200, {
-    "content-type": `${contentType}; charset=utf-8`,
-    "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    "pragma": "no-cache",
-    "expires": "0",
-    "surrogate-control": "no-store",
-    "vary": "Host, X-Forwarded-Host",
+    "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "pragma": "no-cache", "expires": "0", "surrogate-control": "no-store", "vary": "Host, X-Forwarded-Host",
   });
   response.end(content);
   return true;
@@ -142,6 +124,7 @@ async function serveExtendedAsset(request, response) {
 const baseRequestHandler = server.listeners("request")[0];
 server.removeAllListeners("request");
 server.on("request", async (request, response) => {
+  attachRequestAudit({ request, response, audit, source: requestSource(request) });
   try {
     if (blockPublicAccountAccess(request, response)) return;
     protectNewsletterRequest(request);
@@ -154,13 +137,11 @@ server.on("request", async (request, response) => {
   } catch (error) {
     if (isRateLimitError(error)) {
       response.writeHead(429, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": String(error.retryAfterSeconds || 60) });
-      response.end(JSON.stringify({ error: { code: "TOO_MANY_ATTEMPTS", message: error.message } }));
-      return;
+      response.end(JSON.stringify({ error: { code: "TOO_MANY_ATTEMPTS", message: error.message } })); return;
     }
     if (error?.message === "INVALID_ORIGIN") {
       response.writeHead(403, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      response.end(JSON.stringify({ error: { code: "INVALID_ORIGIN", message: "Żądanie zostało odrzucone ze względów bezpieczeństwa." } }));
-      return;
+      response.end(JSON.stringify({ error: { code: "INVALID_ORIGIN", message: "Żądanie zostało odrzucone ze względów bezpieczeństwa." } })); return;
     }
     console.error("Application request error:", error?.name || "Error");
     if (!response.headersSent && !response.writableEnded) {
@@ -197,6 +178,7 @@ server.listen(config.port, config.host, () => {
   console.log("Strona główna: wersja w przygotowaniu + newsletter");
   console.log(`Newsletter: ${config.databaseUrl ? "PostgreSQL" : "tryb developerski"}`);
   console.log(`Turnstile: ${turnstileEnabled ? "włączony" : "wyłączony"}`);
+  console.log(`Audit log: ${config.databaseUrl ? "włączony" : "tryb bez bazy"}`);
 });
 
 let shuttingDown = false;
@@ -210,6 +192,7 @@ async function shutdown(signal) {
       if (typeof accounts.close === "function") await accounts.close();
       if (typeof authSessions.close === "function") await authSessions.close();
       if (messageAttachments && typeof messageAttachments.close === "function") await messageAttachments.close();
+      await audit.close();
       await newsletter.close();
       await globalChat.close();
       await tournaments.close();
