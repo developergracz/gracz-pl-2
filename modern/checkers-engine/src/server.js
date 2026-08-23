@@ -64,7 +64,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
       "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js", "/adaptive-challenge.js": "adaptive-challenge.js", "/settings-link.js": "settings-link.js",
       "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
       "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
-      "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js",
+      "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js", "/avatar-library.js": "avatar-library.js",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
     })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
