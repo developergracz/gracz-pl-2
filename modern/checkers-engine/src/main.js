@@ -64,13 +64,16 @@ const server = createGameHttpServer({
   logger: console,
 });
 
-async function serveTournamentAsset(request, response) {
+async function serveExtendedAsset(request, response) {
   if (request.method !== "GET") return false;
   const pathname = new URL(request.url, "http://localhost").pathname;
   const file = ({
     "/tournaments.html": "tournaments.html",
     "/tournaments.css": "tournaments.css",
     "/tournaments.js": "tournaments.js",
+    "/community.html": "community.html",
+    "/community.css": "community.css",
+    "/community.js": "community.js",
   })[pathname];
   if (!file) return false;
   const extension = file.split(".").at(-1);
@@ -85,7 +88,7 @@ const baseRequestHandler = server.listeners("request")[0];
 server.removeAllListeners("request");
 server.on("request", async (request, response) => {
   try {
-    if (await serveTournamentAsset(request, response)) return;
+    if (await serveExtendedAsset(request, response)) return;
     if (await globalChatHandler(request, response)) return;
     if (await tournamentHandler(request, response)) return;
     return baseRequestHandler(request, response);
@@ -149,7 +152,7 @@ async function shutdown(signal) {
       await tournaments.close();
       process.exit(0);
     } catch (error) {
-      console.error("Błąd podczas zamykania aplikacji:", error);
+      console.error("Błą̨d podczas zamykania aplikacji:", error);
       process.exit(1);
     }
   });
