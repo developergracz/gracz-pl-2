@@ -10,13 +10,8 @@
       line-height: 1;
       transition: color .18s ease, border-color .18s ease, transform .18s ease, opacity .18s ease;
     }
-    .main-nav a:hover {
-      color: #55ec97;
-      transform: translateY(-1px);
-    }
-    .main-nav a.active {
-      font-weight: 750;
-    }
+    .main-nav a:hover { color: #55ec97; transform: translateY(-1px); }
+    .main-nav a.active { font-weight: 750; }
   `;
   document.head.appendChild(navStyle);
 
@@ -24,10 +19,7 @@
   if (account) {
     for (const link of account.querySelectorAll('a')) {
       const label = link.textContent.trim().toLowerCase();
-      if (label === 'ustawienia') {
-        link.href = '/settings.html';
-        link.setAttribute('aria-label', 'Otwórz ustawienia konta');
-      }
+      if (label === 'ustawienia') { link.href = '/settings.html'; link.setAttribute('aria-label', 'Otwórz ustawienia konta'); }
       if (label === 'wiadomości' && !link.getAttribute('href')) link.href = '/messages.html';
     }
   }
@@ -38,39 +30,18 @@
       const rawLabel = link.textContent.trim();
       const cleanLabel = rawLabel.replace(/⌄/g, '').trim();
       if (cleanLabel !== rawLabel) link.textContent = cleanLabel;
-
       const label = cleanLabel.toUpperCase();
-      if (label === 'TURNIEJE') {
-        link.href = '/tournaments.html';
-        link.title = 'Centrum turniejowe Gracz.pl';
-        link.setAttribute('aria-label', 'Otwórz centrum turniejowe');
-      }
-      if (label === 'SPOŁECZNOŚĆ') {
-        link.href = '/community.html';
-        link.title = 'Społeczność Gracz.pl';
-        link.setAttribute('aria-label', 'Otwórz społeczność Gracz.pl');
-      }
+      if (label === 'TURNIEJE') { link.href='/tournaments.html'; link.title='Centrum turniejowe Gracz.pl'; link.setAttribute('aria-label','Otwórz centrum turniejowe'); }
+      if (label === 'RANKING') { link.href='/ranking.html'; link.title='Ranking Gracz.pl'; link.setAttribute('aria-label','Otwórz ranking graczy'); }
+      if (label === 'SPOŁECZNOŚĆ') { link.href='/community.html'; link.title='Społeczność Gracz.pl'; link.setAttribute('aria-label','Otwórz społeczność Gracz.pl'); }
     }
 
     if (!mainNav.querySelector('[data-global-chat-link]')) {
-      const link = document.createElement('a');
-      link.href = '/global-chat.html';
-      link.dataset.globalChatLink = 'true';
-      link.textContent = 'CHAT OGÓLNY';
-      link.title = 'Chat ogólny społeczności Gracz.pl';
-      const help = [...mainNav.querySelectorAll('a')].find((item) => item.textContent.trim().toUpperCase() === 'POMOC');
-      if (help) mainNav.insertBefore(link, help);
-      else mainNav.append(link);
+      const link=document.createElement('a'); link.href='/global-chat.html'; link.dataset.globalChatLink='true'; link.textContent='CHAT OGÓLNY'; link.title='Chat ogólny społeczności Gracz.pl';
+      const help=[...mainNav.querySelectorAll('a')].find(item=>item.textContent.trim().toUpperCase()==='POMOC'); if(help)mainNav.insertBefore(link,help);else mainNav.append(link);
     }
   }
 
-  const tournamentSection = document.querySelector('.tournament');
-  if (tournamentSection) {
-    const button = tournamentSection.querySelector('.primary');
-    if (button) {
-      button.type = 'button';
-      button.addEventListener('click', () => { location.href = '/tournaments.html'; });
-      button.setAttribute('aria-label', 'Zobacz turnieje Gracz.pl');
-    }
-  }
+  const tournamentSection=document.querySelector('.tournament');
+  if(tournamentSection){const button=tournamentSection.querySelector('.primary');if(button){button.type='button';button.addEventListener('click',()=>{location.href='/tournaments.html'});button.setAttribute('aria-label','Zobacz turnieje Gracz.pl')}const rankingButton=tournamentSection.querySelector('.ranking button');if(rankingButton){rankingButton.type='button';rankingButton.addEventListener('click',()=>{location.href='/ranking.html'});rankingButton.setAttribute('aria-label','Zobacz ranking Gracz.pl')}}
 })();
