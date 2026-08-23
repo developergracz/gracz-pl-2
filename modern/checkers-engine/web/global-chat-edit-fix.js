@@ -44,25 +44,43 @@
       if(article){const bodyNode=article.querySelector('.message-body');if(bodyNode)bodyNode.textContent=body;const head=article.querySelector('.message-head');if(head&&!head.querySelector('.edited')){const ed=document.createElement('span');ed.className='edited';ed.textContent='edytowano';head.append(ed)}}
       close();
     } catch (error) {
-      alert(error.message || 'Nie udało się zapisać zmiany.');
+      const toast=document.querySelector('#toast');
+      if(toast){toast.textContent=error.message||'Nie udało się zapisać zmiany.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3000)}
     } finally {
       save.disabled=false; save.textContent='Zapisz zmiany';
     }
   });
 
-  document.addEventListener('click', (event) => {
+  function interceptEdit(event){
     const button = event.target.closest('#context-menu button');
     if (!button || !/Edytuj/i.test(button.textContent || '')) return;
     const menu = document.querySelector('#context-menu');
-    const left = parseFloat(menu?.style.left || '0'), top = parseFloat(menu?.style.top || '0');
-    let article = null;
     const messages=[...document.querySelectorAll('.message[data-id]')];
-    let best=Infinity;
-    for(const item of messages){const r=item.getBoundingClientRect();const dx=Math.max(r.left-left,0,left-r.right),dy=Math.max(r.top-top,0,top-r.bottom);const d=dx*dx+dy*dy;if(d<best){best=d;article=item}}
+    if(!messages.length) return;
+    const menuRect=menu?.getBoundingClientRect();
+    let article=null,best=Infinity;
+    for(const item of messages){
+      const r=item.getBoundingClientRect();
+      const px=menuRect ? menuRect.left : event.clientX;
+      const py=menuRect ? menuRect.top : event.clientY;
+      const cx=Math.max(r.left,Math.min(px,r.right));
+      const cy=Math.max(r.top,Math.min(py,r.bottom));
+      const d=(cx-px)*(cx-px)+(cy-py)*(cy-py);
+      if(d<best){best=d;article=item}
+    }
     if(!article) return;
-    event.preventDefault(); event.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
     if(menu) menu.hidden=true;
-    const body=article.querySelector('.message-body')?.textContent || '';
-    open(article.dataset.id, body);
-  }, true);
+    open(article.dataset.id, article.querySelector('.message-body')?.textContent || '');
+  }
+
+  document.addEventListener('click', interceptEdit, true);
+  const menu=document.querySelector('#context-menu');
+  if(menu) menu.addEventListener('click', interceptEdit, true);
+  new MutationObserver(()=>{
+    const m=document.querySelector('#context-menu');
+    if(m && !m.dataset.editFixBound){m.dataset.editFixBound='1';m.addEventListener('click',interceptEdit,true)}
+  }).observe(document.body,{childList:true,subtree:true});
 })();
