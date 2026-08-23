@@ -63,10 +63,35 @@
     const info=addGameInfo();checkers.querySelector('.icon-btn')?.addEventListener('contextmenu',e=>e.preventDefault());const cIcon=checkers.querySelector('.game-symbol');cIcon?.addEventListener('click',()=>info.open('Warcaby online','Klasyczne warcaby multiplayer z rankingiem ELO, stołami prywatnymi, turniejami i zaproszeniami znajomych.'));const gIcon=gomoku.querySelector('.game-symbol');gIcon?.addEventListener('click',()=>info.open('Gomoku online','Gomoku w klasycznym zielono-niebieskim stylu planszy znanym z wcześniejszej wersji Flash.'));
   }
 
+  function installNavigationLinks(){
+    const normalize=value=>String(value||'').replace(/[⌄▼▾]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+    const routes={
+      'TURNIEJE':'/tournaments.html',
+      'RANKING':'/ranking.html',
+      'SPOŁECZNOŚĆ':'/community.html',
+      'CHAT OGÓLNY':'/global-chat.html'
+    };
+    document.querySelectorAll('.main-nav a').forEach(link=>{
+      const label=normalize(link.textContent);
+      if(label==='GRY'){
+        link.href='#games';
+        link.addEventListener('click',event=>{event.preventDefault();document.querySelector('#games')?.scrollIntoView({behavior:'smooth',block:'start'})});
+        return;
+      }
+      if(routes[label]) link.href=routes[label];
+      if(label==='SKLEP') link.addEventListener('click',event=>{event.preventDefault();const info=addGameInfo();info.open('Sklep Gracz.pl','Moduł sklepu jest przygotowywany. Link jest aktywny i wkrótce zostanie podłączony do pełnej oferty nagród, dodatków i elementów profilu.')});
+      if(label==='POMOC') link.addEventListener('click',event=>{event.preventDefault();const info=addGameInfo();info.open('Pomoc Gracz.pl','Centrum pomocy jest aktywne. W sprawach gry możesz skorzystać z Chatu ogólnego, Wiadomości lub ustawień konta. Pełna baza pomocy zostanie podłączona jako osobna podstrona.')});
+    });
+    const accountRoutes={profil:'/settings.html#account',wiadomości:'/messages.html',ustawienia:'/settings.html'};
+    document.querySelectorAll('#account-box nav a').forEach(link=>{const key=String(link.textContent||'').trim().toLowerCase();if(accountRoutes[key])link.href=accountRoutes[key]});
+    document.querySelectorAll('.tournament button').forEach(button=>{const label=normalize(button.textContent);if(label.includes('TURNIEJE'))button.addEventListener('click',()=>location.href='/tournaments.html');if(label.includes('RANKING'))button.addEventListener('click',()=>location.href='/ranking.html')});
+    document.querySelectorAll('.feature-strip article').forEach(card=>{const label=normalize(card.querySelector('b')?.textContent);card.style.cursor='pointer';if(label.includes('RANKING'))card.addEventListener('click',()=>location.href='/ranking.html');else if(label.includes('SPOŁECZNOŚĆ'))card.addEventListener('click',()=>location.href='/community.html');else if(label.includes('UCZCIWA GRA'))card.addEventListener('click',()=>location.href='/settings.html#security');else if(label.includes('NAGRODY'))card.addEventListener('click',()=>document.querySelector('.tournament')?.scrollIntoView({behavior:'smooth'}))});
+  }
+
   function installPasswordReset(){
     const form=document.querySelector('#auth-form');if(!form||document.querySelector('.pw-reset-link'))return;const btn=document.createElement('button');btn.type='button';btn.className='pw-reset-link';btn.textContent='Nie pamiętam hasła';form.appendChild(btn);const overlay=document.createElement('div');overlay.className='pw-reset-overlay';overlay.innerHTML=`<form class="pw-reset-card"><h2>Reset hasła</h2><p>Podaj login i adres e-mail zapisany na koncie. Po poprawnej weryfikacji ustawisz nowe hasło.</p><label>Login<input name="userId" minlength="3" maxlength="32" required autocomplete="username"></label><label>Adres e-mail<input name="email" type="email" maxlength="254" required autocomplete="email"></label><label>Nowe hasło<input name="newPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><label>Powtórz nowe hasło<input name="confirmPassword" type="password" minlength="10" maxlength="128" required autocomplete="new-password"></label><div class="pw-reset-actions"><button type="button" class="pw-reset-cancel">Anuluj</button><button type="submit" class="pw-reset-submit">Ustaw nowe hasło</button></div><div class="pw-reset-status"></div></form>`;document.body.appendChild(overlay);const resetForm=overlay.querySelector('form'),status=overlay.querySelector('.pw-reset-status');const close=()=>{overlay.classList.remove('open');status.textContent='';status.className='pw-reset-status';resetForm.reset()};btn.addEventListener('click',()=>overlay.classList.add('open'));overlay.querySelector('.pw-reset-cancel').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});resetForm.addEventListener('submit',async e=>{e.preventDefault();status.className='pw-reset-status';status.textContent='Sprawdzanie danych…';const data=Object.fromEntries(new FormData(resetForm).entries());if(data.newPassword!==data.confirmPassword){status.textContent='Nowe hasła nie są identyczne.';status.classList.add('err');return}if(String(data.newPassword).length<10){status.textContent='Nowe hasło musi mieć co najmniej 10 znaków.';status.classList.add('err');return}try{const r=await fetch('/auth/reset-password',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({userId:data.userId,email:data.email,newPassword:data.newPassword})});const result=await r.json().catch(()=>({}));if(!r.ok)throw new Error(result.error?.message||'Nie udało się zmienić hasła.');status.textContent='Hasło zostało zmienione. Zamknij okno i zaloguj się nowym hasłem.';status.classList.add('ok')}catch(err){status.textContent=err.message;status.classList.add('err')}})
   }
 
-  const run=()=>{install(document.querySelector('.checkers-card .game-preview'),'checkers');install(document.querySelector('.game-card.gomoku .game-preview'),'gomoku');decorateShowcase();installPasswordReset()};
+  const run=()=>{install(document.querySelector('.checkers-card .game-preview'),'checkers');install(document.querySelector('.game-card.gomoku .game-preview'),'gomoku');decorateShowcase();installNavigationLinks();installPasswordReset()};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 })();
