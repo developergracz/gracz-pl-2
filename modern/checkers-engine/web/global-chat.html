@@ -4,14 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Chat ogólny — Gracz.pl</title>
-  <meta name="description" content="Chat ogólny społeczności Gracz.pl — rozmowy graczy na żywo.">
+  <meta name="description" content="Rozbudowany chat społeczności Gracz.pl — tematy, znajomi i wyszukiwanie rozmów.">
   <link rel="stylesheet" href="/global-chat.css">
-  <style>
-    .chat-main{overflow:hidden}
-    .composer-wrap{z-index:30}
-    .emoji-panel{left:16px!important;bottom:calc(100% + 8px)!important;max-width:calc(100% - 32px);max-height:220px;overflow-y:auto;overflow-x:hidden}
-    @media(max-width:600px){.emoji-panel{left:8px!important;max-width:calc(100% - 16px);max-height:190px}}
-  </style>
 </head>
 <body>
   <main class="chat-shell">
@@ -24,37 +18,64 @@
       <section class="room-card">
         <p class="eyebrow">SPOŁECZNOŚĆ</p>
         <h1>chat-ogólny</h1>
-        <p>Rozmawiaj z graczami, umawiaj się na partie i dziel się wynikami.</p>
+        <p>Rozmawiaj, zakładaj tematy, wyszukuj dyskusje i utrzymuj kontakt ze znajomymi.</p>
         <div class="live-pill"><i></i><strong id="online-count">0</strong> online</div>
       </section>
 
-      <section class="side-section">
+      <div class="side-tabs" role="tablist">
+        <button class="active" data-side="topics" type="button">Tematy</button>
+        <button data-side="friends" type="button">Znajomi</button>
+        <button data-side="online" type="button">Online</button>
+      </div>
+
+      <section class="side-panel active" data-side-panel="topics">
+        <div class="side-head"><b>Tematy rozmów</b><button id="new-topic" type="button">＋</button></div>
+        <label class="mini-search"><span>⌕</span><input id="topic-search" type="search" placeholder="Szukaj tematów…"></label>
+        <div id="topic-list" class="topic-list"></div>
+      </section>
+
+      <section class="side-panel" data-side-panel="friends">
+        <div class="side-head"><b>Moi znajomi</b><button id="add-friend" type="button">＋</button></div>
+        <div id="friend-requests" class="friend-requests"></div>
+        <div id="friend-list" class="friend-list"></div>
+      </section>
+
+      <section class="side-panel" data-side-panel="online">
         <div class="side-head"><b>Gracze online</b><button id="refresh-presence" type="button" title="Odśwież">↻</button></div>
         <div id="online-list" class="online-list"></div>
       </section>
 
-      <section class="rules-card">
-        <b>Zasady chatu</b>
-        <p>Szanuj innych graczy. Bez spamu, gróźb, treści bezprawnych i publikowania cudzych danych.</p>
-        <a href="/regulamin.html">Zobacz regulamin →</a>
-      </section>
+      <section class="rules-card"><b>Zasady chatu</b><p>Szanuj innych. Bez spamu, gróźb, treści bezprawnych i publikowania cudzych danych.</p><a href="/regulamin.html">Zobacz regulamin →</a></section>
     </aside>
 
     <section class="chat-main">
       <header class="conversation-head">
-        <div><h2>Chat ogólny</h2><p id="connection-state"><span class="dot"></span> Łączenie z chatem…</p></div>
+        <div><h2 id="conversation-title">Chat ogólny</h2><p id="connection-state"><span class="dot"></span> Łączenie z chatem…</p></div>
         <div class="head-actions">
+          <button id="search-toggle" type="button">⌕ Wyszukaj</button>
           <button id="sound-toggle" type="button" aria-pressed="true">🔔 Dźwięki</button>
           <button id="compact-toggle" type="button" aria-pressed="false">↕ Kompaktowy</button>
         </div>
       </header>
 
+      <section id="search-panel" class="search-panel" hidden>
+        <div class="search-grid">
+          <label><span>Słowo / temat</span><input id="search-q" type="search" placeholder="np. turniej, warcaby…"></label>
+          <label><span>Użytkownik</span><input id="search-user" type="search" placeholder="login użytkownika"></label>
+          <label><span>Od daty</span><input id="search-from" type="date"></label>
+          <label><span>Do daty</span><input id="search-to" type="date"></label>
+        </div>
+        <div class="search-actions"><button id="search-reset" type="button">Wyczyść</button><button id="search-run" class="primary" type="button">Szukaj w chacie</button></div>
+      </section>
+
+      <div id="active-filter" class="active-filter" hidden><span id="active-filter-text"></span><button id="clear-filter" type="button">×</button></div>
       <div id="reply-bar" class="reply-bar" hidden><span>Odpowiadasz na: <b id="reply-name"></b></span><button id="cancel-reply" type="button">×</button></div>
       <div id="message-list" class="message-list" aria-live="polite" aria-label="Wiadomości chatu"></div>
       <button id="jump-new" class="jump-new" hidden type="button">↓ Nowe wiadomości</button>
 
       <footer class="composer-wrap">
         <div id="emoji-panel" class="emoji-panel" hidden></div>
+        <div id="topic-chip" class="topic-chip" hidden><span>Temat: <b id="topic-chip-title"></b></span><button id="topic-clear" type="button">×</button></div>
         <form id="chat-form" class="composer">
           <button id="emoji-button" class="icon-btn" type="button" title="Emotikony">😊</button>
           <textarea id="message-input" maxlength="600" rows="1" placeholder="Napisz wiadomość do wszystkich graczy…" aria-label="Wiadomość"></textarea>
@@ -64,6 +85,25 @@
       </footer>
     </section>
   </main>
+
+  <dialog id="topic-dialog" class="chat-dialog">
+    <form method="dialog" id="topic-form">
+      <header><div><h3>Dodaj temat rozmowy</h3><p>Utwórz osobny wątek na konkretny temat.</p></div><button value="cancel" class="dialog-x">×</button></header>
+      <label>Tytuł<input id="topic-title" maxlength="80" required placeholder="np. Turniej warcabowy w niedzielę"></label>
+      <label>Kategoria<select id="topic-category"><option>ogólne</option><option>warcaby</option><option>gomoku</option><option>szachy</option><option>turnieje</option><option>pomoc</option><option>offtopic</option></select></label>
+      <label>Opis<textarea id="topic-description" maxlength="280" rows="3" placeholder="Krótko opisz temat rozmowy…"></textarea></label>
+      <footer><button value="cancel">Anuluj</button><button id="topic-create" class="primary" value="default">Utwórz temat</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="friend-dialog" class="chat-dialog">
+    <form method="dialog" id="friend-form">
+      <header><div><h3>Dodaj znajomego</h3><p>Wyszukaj użytkownika Gracz.pl i wyślij zaproszenie.</p></div><button value="cancel" class="dialog-x">×</button></header>
+      <label>Szukaj gracza<input id="friend-query" autocomplete="off" placeholder="login lub nazwa gracza"></label>
+      <div id="friend-results" class="friend-results"></div>
+      <footer><button value="cancel">Zamknij</button></footer>
+    </form>
+  </dialog>
 
   <div id="context-menu" class="context-menu" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
