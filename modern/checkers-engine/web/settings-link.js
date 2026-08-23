@@ -35,7 +35,11 @@
   const mainNav = document.querySelector('.main-nav');
   if (mainNav) {
     for (const link of mainNav.querySelectorAll('a')) {
-      const label = link.textContent.trim().toUpperCase();
+      const rawLabel = link.textContent.trim();
+      const cleanLabel = rawLabel.replace(/⌄/g, '').trim();
+      if (cleanLabel !== rawLabel) link.textContent = cleanLabel;
+
+      const label = cleanLabel.toUpperCase();
       if (label === 'TURNIEJE') {
         link.href = '/tournaments.html';
         link.title = 'Centrum turniejowe Gracz.pl';
