@@ -46,13 +46,14 @@ async function serveExtendedAsset(request, response) {
   if (request.method !== "GET") return false;
   const pathname = new URL(request.url, "http://localhost").pathname;
   const file = ({
+    "/":"lobby.html","/lobby.html":"lobby.html","/homepage-consoles.js":"homepage-consoles.js",
     "/tournaments.html":"tournaments.html","/tournaments.css":"tournaments.css","/tournaments.js":"tournaments.js",
     "/community.html":"community.html","/community.css":"community.css","/community.js":"community.js",
     "/ranking.html":"ranking.html","/ranking.css":"ranking.css","/ranking.js":"ranking.js",
   })[pathname];
   if (!file) return false;
   const extension=file.split(".").at(-1); const contentType=({html:"text/html",css:"text/css",js:"text/javascript"})[extension]||"application/octet-stream";
-  const content=await readFile(join(webRoot,file)); response.writeHead(200,{"content-type":`${contentType}; charset=utf-8`,"cache-control":"no-store"}); response.end(content); return true;
+  const content=await readFile(join(webRoot,file)); response.writeHead(200,{"content-type":`${contentType}; charset=utf-8`,"cache-control":"no-store, no-cache, must-revalidate, proxy-revalidate","pragma":"no-cache","expires":"0","surrogate-control":"no-store"}); response.end(content); return true;
 }
 
 const baseRequestHandler=server.listeners("request")[0]; server.removeAllListeners("request");
