@@ -2,6 +2,8 @@
   const STORAGE_KEY = "gracz-session";
   const COOKIE_MARKER = "cookie";
   const REGISTRATION_DRAFT_PREFIX = "gracz-registration-draft:";
+  const TERMS_PENDING_KEY = "gracz-registration-terms-pending";
+  let termsAcceptedForRestoredDraft = false;
 
   function readSession() {
     try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null"); }
@@ -158,13 +160,19 @@
       }
     }
 
-    if (localStorage.getItem("gracz-terms-v1") === "accepted") {
-      const terms = form.elements.terms;
-      if (terms) {
+    const pendingBaseline = sessionStorage.getItem(TERMS_PENDING_KEY);
+    const acceptedAt = localStorage.getItem("gracz-terms-accepted-at") || "";
+    const terms = form.elements.terms;
+    if (terms) {
+      if (pendingBaseline !== null && acceptedAt && acceptedAt !== pendingBaseline) {
         terms.checked = true;
-        terms.dispatchEvent(new Event("change", { bubbles: true }));
+        termsAcceptedForRestoredDraft = true;
+      } else {
+        terms.checked = false;
       }
+      terms.dispatchEvent(new Event("change", { bubbles: true }));
     }
+    sessionStorage.removeItem(TERMS_PENDING_KEY);
   }
 
   function installTermsCheckboxOpen() {
@@ -173,20 +181,26 @@
     const registerTab = document.querySelector('[data-mode="register"]');
     if (!terms || !termsLink || !registerTab) return;
 
-    const accepted = () => localStorage.getItem("gracz-terms-v1") === "accepted";
-    const syncAcceptedState = () => { if (accepted()) terms.checked = true; };
+    if (!termsAcceptedForRestoredDraft) terms.checked = false;
 
-    terms.addEventListener("click", (event) => {
-      if (!registerTab.classList.contains("active") || accepted()) return;
+    const openTerms = (event) => {
+      if (!registerTab.classList.contains("active")) return;
+      if (termsAcceptedForRestoredDraft && terms.checked) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       terms.checked = false;
+      sessionStorage.setItem(TERMS_PENDING_KEY, localStorage.getItem("gracz-terms-accepted-at") || "");
+      termsLink.target = "_self";
+      termsLink.removeAttribute("rel");
       termsLink.click();
-    }, true);
+    };
 
-    window.addEventListener("focus", () => setTimeout(syncAcceptedState, 100));
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(syncAcceptedState, 100); });
-    syncAcceptedState();
+    terms.addEventListener("click", openTerms, true);
+
+    new MutationObserver(() => {
+      if (!registerTab.classList.contains("active")) return;
+      if (!termsAcceptedForRestoredDraft) terms.checked = false;
+    }).observe(registerTab, { attributes: true, attributeFilter: ["class"] });
   }
 
   function installActivationDialog() {
