@@ -61,9 +61,10 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     const staticFile = ({
       "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css",
       "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css",
-      "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js", "/adaptive-challenge.js": "adaptive-challenge.js",
+      "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js", "/adaptive-challenge.js": "adaptive-challenge.js", "/settings-link.js": "settings-link.js",
       "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
       "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
+      "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
     })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
@@ -378,7 +379,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
   const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
   let content = await readFile(path);
   if (injectHomepageExtras) {
-    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script></body>');
+    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script><script src="/settings-link.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
   response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" });
