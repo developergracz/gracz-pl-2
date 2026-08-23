@@ -67,9 +67,11 @@ async function serveExtendedAsset(request, response) {
   if (request.method !== "GET") return false;
   const pathname = new URL(request.url, "http://localhost").pathname;
   const publicDomain = isPublicDomain(request);
-  const publicLanding = publicDomain && (pathname === "/" || pathname === "/lobby.html");
-  const file = publicLanding ? "coming-soon.html" : ({
-    "/": "lobby.html",
+
+  // Strona główna zawsze pokazuje wersję „w budowie”. Dzięki temu nie zależymy
+  // od nagłówków proxy Rendera przy wejściu na gracz.pl.
+  const landing = pathname === "/" || (publicDomain && pathname === "/lobby.html");
+  const file = landing ? "coming-soon.html" : ({
     "/coming-soon.html": "coming-soon.html",
     "/coming-soon.css": "coming-soon.css",
     "/coming-soon.js": "coming-soon.js",
@@ -144,7 +146,7 @@ server.keepAliveTimeout = 5_000;
 server.maxHeadersCount = 100;
 server.listen(config.port, config.host, () => {
   console.log(`Gracz.pl działa na http://${config.host}:${config.port}`);
-  console.log("Publiczna domena: strona w przygotowaniu + newsletter");
+  console.log("Strona główna: wersja w przygotowaniu + newsletter");
   console.log(`Newsletter: ${config.databaseUrl ? "PostgreSQL" : "tryb developerski"}`);
 });
 
