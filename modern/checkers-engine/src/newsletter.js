@@ -21,23 +21,30 @@ export class NewsletterService {
         preferred_nick VARCHAR(32),
         consent_version VARCHAR(32) NOT NULL,
         consent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        terms_version VARCHAR(32),
+        privacy_version VARCHAR(32),
+        terms_accepted_at TIMESTAMPTZ,
         status VARCHAR(20) NOT NULL DEFAULT 'active',
         unsubscribe_token UUID NOT NULL UNIQUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS terms_version VARCHAR(32)`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS privacy_version VARCHAR(32)`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_email_unique ON gracz_newsletter_subscribers (LOWER(email))`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_nick_unique ON gracz_newsletter_subscribers (LOWER(preferred_nick)) WHERE preferred_nick IS NOT NULL`);
   }
 
-  async subscribe({ email, preferredNick = "", consent = false }) {
+  async subscribe({ email, preferredNick = "", consent = false, acceptedTerms = false, termsVersion = "newsletter-v1", privacyVersion = "privacy-v1" }) {
     await this.ready;
     if (!this.pool) throw new NewsletterError("Zapisy są chwilowo niedostępne.", "NEWSLETTER_UNAVAILABLE", 503);
     const cleanEmail = String(email || "").trim().toLowerCase();
     const cleanNick = String(preferredNick || "").trim();
     if (!validEmail(cleanEmail)) throw new NewsletterError("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL", 400);
     if (!validNick(cleanNick)) throw new NewsletterError("Nick może mieć 3–32 znaki: litery (także polskie), cyfry, kropkę, _ lub -.", "INVALID_NICK", 400);
+    if (acceptedTerms !== true) throw new NewsletterError("Zaakceptuj regulamin newslettera i zapoznaj się z polityką prywatności.", "TERMS_REQUIRED", 400);
     if (consent !== true) throw new NewsletterError("Zaznacz zgodę na otrzymywanie informacji o starcie Gracz.pl.", "CONSENT_REQUIRED", 400);
 
     const existing = await this.pool.query(`SELECT subscriber_id,preferred_nick FROM gracz_newsletter_subscribers WHERE LOWER(email)=LOWER($1) LIMIT 1`, [cleanEmail]);
@@ -46,12 +53,12 @@ export class NewsletterService {
         const nickTaken = await this.pool.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE LOWER(preferred_nick)=LOWER($1) AND subscriber_id<>$2 LIMIT 1`, [cleanNick, existing.rows[0].subscriber_id]);
         if (nickTaken.rows[0]) throw new NewsletterError("Ten nick jest już zarezerwowany. Wybierz inny.", "NICK_TAKEN", 409);
       }
-      await this.pool.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,consent_version='launch-v1',consent_at=NOW(),status='active',updated_at=NOW() WHERE subscriber_id=$1`, [existing.rows[0].subscriber_id, cleanNick || null]);
+      await this.pool.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,consent_version='launch-v1',consent_at=NOW(),terms_version=$3,privacy_version=$4,terms_accepted_at=NOW(),status='active',updated_at=NOW() WHERE subscriber_id=$1`, [existing.rows[0].subscriber_id, cleanNick || null, termsVersion, privacyVersion]);
       return { ok: true, alreadySubscribed: true, preferredNick: cleanNick || null, message: cleanNick ? `Twój zapis został zaktualizowany. Nick ${cleanNick} jest przypisany do Twojego adresu e-mail.` : "Twój zapis został zaktualizowany." };
     }
 
     try {
-      await this.pool.query(`INSERT INTO gracz_newsletter_subscribers(subscriber_id,email,preferred_nick,consent_version,unsubscribe_token) VALUES($1,$2,$3,'launch-v1',$4)`, [randomUUID(), cleanEmail, cleanNick || null, randomUUID()]);
+      await this.pool.query(`INSERT INTO gracz_newsletter_subscribers(subscriber_id,email,preferred_nick,consent_version,terms_version,privacy_version,terms_accepted_at,unsubscribe_token) VALUES($1,$2,$3,'launch-v1',$4,$5,NOW(),$6)`, [randomUUID(), cleanEmail, cleanNick || null, termsVersion, privacyVersion, randomUUID()]);
     } catch (error) {
       if (error?.code === "23505" && String(error.constraint || "").includes("nick")) throw new NewsletterError("Ten nick jest już zarezerwowany. Wybierz inny.", "NICK_TAKEN", 409);
       if (error?.code === "23505") throw new NewsletterError("Ten adres e-mail jest już zapisany.", "EMAIL_EXISTS", 409);
