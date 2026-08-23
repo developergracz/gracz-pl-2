@@ -13,6 +13,7 @@ import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
 import { TournamentService, createTournamentHandler } from "./tournaments.js";
 import { RankingService, createRankingHandler } from "./rankings.js";
 import { NewsletterService, NewsletterError, createNewsletterHandler } from "./newsletter.js";
+import { hardenNewsletterTokens } from "./newsletter-token-security.js";
 import { moderateNick } from "./nick-moderation.js";
 import { protectNewsletterRequest, verifyNewsletterHuman, isRateLimitError } from "./public-security.js";
 import { createGameHttpServer } from "./server.js";
@@ -42,6 +43,7 @@ const tournamentHandler = createTournamentHandler({ service: tournaments, auth, 
 const rankings = new RankingService(config.databaseUrl || null); await rankings.ready;
 const rankingHandler = createRankingHandler({ service: rankings, auth, authSessions });
 const newsletter = new NewsletterService(config.databaseUrl || null); await newsletter.ready;
+await hardenNewsletterTokens(newsletter);
 
 function assertAllowedNewsletterNick(nick) {
   const cleanNick = String(nick || "").trim();
