@@ -21,28 +21,48 @@
     }
     return board;
   }
+
   function gomoku(){
     const board=document.createElement('div');board.className='homepage-gomoku-board';
     const stones=[['black',44,34],['white',52,34],['black',44,42],['black',52,42],['white',60,42],['white',36,50],['black',44,50],['white',52,50],['black',60,50],['black',68,50],['black',36,58],['white',44,58],['black',52,58],['white',60,58],['black',52,66]];
     stones.forEach(([kind,x,y])=>{const s=document.createElement('i');s.className=kind;s.style.left=x+'%';s.style.top=y+'%';board.appendChild(s)});
     return board;
   }
-  function replacePreview(selector, boardFactory){
-    const preview=document.querySelector(selector);if(!preview)return;
-    if(preview.dataset.finalBoard==='1')return;
+
+  function ensurePreview(selector, boardFactory, boardClass){
+    const preview=document.querySelector(selector);
+    if(!preview)return;
+    const valid=preview.querySelector('.homepage-board-only') && preview.querySelector('.'+boardClass);
+    if(valid)return;
     const wrap=document.createElement('div');wrap.className='homepage-board-only';wrap.appendChild(boardFactory());
-    preview.replaceChildren(wrap);preview.dataset.finalBoard='1';
+    preview.replaceChildren(wrap);
   }
+
   function dedupeNav(){
-    const seen=new Set();document.querySelectorAll('.main-nav a').forEach(a=>{const key=(a.textContent||'').trim().toUpperCase();if(key==='CHAT OGÓLNY'){if(seen.has(key))a.remove();else seen.add(key)}});
+    const seen=new Set();
+    document.querySelectorAll('.main-nav a').forEach(a=>{
+      const key=(a.textContent||'').trim().toUpperCase();
+      if(key==='CHAT OGÓLNY'){if(seen.has(key))a.remove();else seen.add(key)}
+    });
   }
+
   function apply(){
-    replacePreview('.checkers-card .game-preview',checkers);
-    replacePreview('.game-card.gomoku .game-preview',gomoku);
+    ensurePreview('.checkers-card .game-preview',checkers,'homepage-checkers-board');
+    ensurePreview('.game-card.gomoku .game-preview',gomoku,'homepage-gomoku-board');
     dedupeNav();
   }
+
   apply();
   document.addEventListener('DOMContentLoaded',apply,{once:true});
-  window.addEventListener('load',()=>{apply();setTimeout(apply,200);setTimeout(apply,900)});
-  setTimeout(apply,400);
+  window.addEventListener('load',apply);
+
+  const observer=new MutationObserver(()=>apply());
+  observer.observe(document.documentElement,{subtree:true,childList:true});
+
+  let attempts=0;
+  const timer=setInterval(()=>{
+    apply();
+    attempts+=1;
+    if(attempts>40)clearInterval(timer);
+  },250);
 })();
