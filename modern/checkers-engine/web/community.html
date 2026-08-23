@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Społeczność — Gracz.pl</title>
+  <meta name="description" content="Społeczność Gracz.pl — gracze, znajomi, kluby, aktywność, wydarzenia i rozmowy.">
+  <link rel="stylesheet" href="/community.css">
+</head>
+<body>
+  <main class="community-shell">
+    <header class="topbar">
+      <a class="brand" href="/">gracz<span>.PL</span><small>SPOŁECZNOŚĆ</small></a>
+      <nav><a href="/">Strona główna</a><a href="/tournaments.html">Turnieje</a><a href="/global-chat.html">Chat ogólny</a><a href="/messages.html">Wiadomości</a><span id="identity">Ładowanie…</span></nav>
+    </header>
+
+    <aside class="sidebar">
+      <section class="profile-card">
+        <div id="me-avatar" class="avatar large">G</div>
+        <div><strong id="me-name">Gracz</strong><span id="me-id">@gracz</span></div>
+        <a href="/settings.html">Edytuj profil</a>
+      </section>
+      <nav class="side-nav" aria-label="Sekcje społeczności">
+        <button class="active" data-view="feed">◫ <span>Aktualności</span></button>
+        <button data-view="players">◎ <span>Gracze</span></button>
+        <button data-view="friends">♟ <span>Znajomi</span><b id="friend-count">0</b></button>
+        <button data-view="requests">✦ <span>Zaproszenia</span><b id="request-count">0</b></button>
+        <button data-view="clubs">◆ <span>Kluby i grupy</span></button>
+        <button data-view="events">◇ <span>Wydarzenia</span></button>
+      </nav>
+      <div class="quick-links"><b>Szybkie przejścia</b><a href="/global-chat.html">Chat ogólny</a><a href="/tournaments.html">Centrum turniejowe</a><a href="/players.html">Lobby graczy</a></div>
+    </aside>
+
+    <section class="content">
+      <header class="content-head">
+        <div><p class="eyebrow">GRACZ.PL COMMUNITY</p><h1 id="view-title">Społeczność</h1><p id="view-subtitle">Poznawaj graczy, obserwuj aktywność i buduj swoją sieć znajomych.</p></div>
+        <div class="search-wrap"><span>⌕</span><input id="global-search" placeholder="Szukaj gracza po nazwie lub loginie…" autocomplete="off"><kbd>Enter</kbd></div>
+      </header>
+
+      <section id="stats" class="stats-grid">
+        <article><span>Online</span><strong id="stat-online">0</strong><small>aktywnych graczy</small></article>
+        <article><span>Znajomi</span><strong id="stat-friends">0</strong><small>w Twojej sieci</small></article>
+        <article><span>Zaproszenia</span><strong id="stat-requests">0</strong><small>oczekujących</small></article>
+        <article><span>Tematy</span><strong id="stat-topics">0</strong><small>aktywnych dyskusji</small></article>
+      </section>
+
+      <section id="view-feed" class="view active">
+        <div class="section-grid two">
+          <article class="panel"><header><div><b>Aktywność społeczności</b><span>Najnowsze rozmowy i tematy</span></div><button id="refresh-feed">Odśwież</button></header><div id="feed-list" class="feed-list"></div></article>
+          <aside class="panel"><header><div><b>Gracze online</b><span>Dostępni teraz</span></div><a href="/players.html">Lobby →</a></header><div id="online-list" class="people-list"></div></aside>
+        </div>
+        <div class="section-grid two lower">
+          <article class="panel"><header><div><b>Popularne tematy</b><span>Dołącz do rozmowy</span></div><a href="/global-chat.html">Wszystkie →</a></header><div id="topic-list" class="topic-list"></div></article>
+          <article class="panel"><header><div><b>Szybkie akcje</b><span>Najczęściej używane funkcje</span></div></header><div class="action-grid"><a href="/global-chat.html">💬 Otwórz chat</a><a href="/messages.html">✉ Napisz wiadomość</a><a href="/tournaments.html">🏆 Znajdź turniej</a><button id="find-player">👤 Znajdź gracza</button></div></article>
+        </div>
+      </section>
+
+      <section id="view-players" class="view"><div class="panel"><header><div><b>Wyszukiwarka graczy</b><span>Znajdź użytkowników Gracz.pl</span></div></header><div id="player-results" class="cards-grid"></div></div></section>
+      <section id="view-friends" class="view"><div class="panel"><header><div><b>Moi znajomi</b><span>Twoja sieć graczy</span></div></header><div id="friends-list" class="cards-grid"></div></div></section>
+      <section id="view-requests" class="view"><div class="panel"><header><div><b>Zaproszenia do znajomych</b><span>Akceptuj lub odrzucaj prośby</span></div></header><div id="requests-list" class="cards-grid"></div></div></section>
+      <section id="view-clubs" class="view"><div class="panel"><header><div><b>Kluby i grupy</b><span>Miejsce dla społeczności wokół gier i turniejów</span></div><button id="club-info">Jak to działa?</button></header><div class="cards-grid"><article class="feature-card"><span>♟</span><b>Kluby warcabowe</b><p>Twórz drużyny, organizuj wewnętrzne ligi i buduj ranking klubu.</p><small>Moduł przygotowany do dalszego podłączenia.</small></article><article class="feature-card"><span>◉</span><b>Grupy Gomoku</b><p>Umawiaj treningi, turnieje i dyskusje tematyczne.</p><small>Moduł przygotowany do dalszego podłączenia.</small></article><article class="feature-card"><span>🏆</span><b>Ekipa turniejowa</b><p>Śledź wydarzenia, zaproszenia i wspólne wyniki.</p><small>Moduł przygotowany do dalszego podłączenia.</small></article></div></div></section>
+      <section id="view-events" class="view"><div class="panel"><header><div><b>Wydarzenia społeczności</b><span>Turnieje i aktywności graczy</span></div><a href="/tournaments.html">Centrum turniejowe →</a></header><div id="events-list" class="event-cards"><article><span class="event-icon">🏆</span><div><b>Turnieje Gracz.pl</b><p>Przeglądaj trwające i nadchodzące turnieje.</p></div><a href="/tournaments.html">Otwórz</a></article><article><span class="event-icon">💬</span><div><b>Dyskusje społeczności</b><p>Tematy, rozmowy i gracze online.</p></div><a href="/global-chat.html">Otwórz</a></article></div></div></section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/community.js"></script>
+</body>
+</html>
