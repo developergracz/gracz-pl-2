@@ -7,11 +7,41 @@ const welcomeModal = document.querySelector('#welcome-modal');
 const welcomeNick = document.querySelector('#welcome-nick');
 const welcomeMailTitle = document.querySelector('#welcome-mail-title');
 const welcomeMailText = document.querySelector('#welcome-mail-text');
+const turnstileWrap = document.querySelector('#turnstile-wrap');
+const turnstileSiteKey = String(document.querySelector('meta[name="turnstile-site-key"]')?.content || '').trim();
 const NICK_MIN = 3;
 const NICK_MAX = 16;
 let nickCheckTimer = null;
 let nickCheckSequence = 0;
 let lastNickAvailable = null;
+let turnstileToken = '';
+let turnstileWidgetId = null;
+
+function initTurnstile() {
+  if (!turnstileSiteKey || turnstileSiteKey === '__TURNSTILE_SITE_KEY__') return;
+  turnstileWrap.hidden = false;
+  const script = document.createElement('script');
+  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  script.async = true;
+  script.defer = true;
+  script.onload = () => {
+    if (!window.turnstile) return;
+    turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
+      sitekey: turnstileSiteKey,
+      theme: 'dark',
+      callback: (token) => { turnstileToken = String(token || ''); },
+      'expired-callback': () => { turnstileToken = ''; },
+      'error-callback': () => { turnstileToken = ''; },
+    });
+  };
+  document.head.appendChild(script);
+}
+initTurnstile();
+
+function resetTurnstile() {
+  turnstileToken = '';
+  if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+}
 
 function showWelcomeModal({ nick, email, mailSent }) {
   const displayNick = nick || 'Graczu';
@@ -78,15 +108,16 @@ form?.addEventListener('submit',async(event)=>{
   if(data.get('consent')!=='on'){message.classList.add('error');message.textContent='Zaznacz zgodę, aby zapisać się na listę.';return;}
   const email=String(data.get('email')||'').trim(); const preferredNick=String(data.get('preferredNick')||'').trim();
   if(!email){message.classList.add('error');message.textContent='Podaj adres e-mail.';return;}
+  if(turnstileSiteKey && turnstileSiteKey !== '__TURNSTILE_SITE_KEY__' && !turnstileToken){message.classList.add('error');message.textContent='Potwierdź weryfikację antybotową przed zapisem.';return;}
   if(preferredNick&&!validNickFormat(preferredNick)){message.classList.add('error');message.textContent=`Nick musi mieć ${NICK_MIN}–${NICK_MAX} znaków i może zawierać litery, cyfry, kropkę, _ lub -.`;return;}
   if(preferredNick){const available=await checkNick({automatic:true});if(!available){message.classList.add('error');message.textContent=`Nie można zapisać nicku „${preferredNick}”. Jest zajęty albo niedozwolony. Wybierz inny.`;return;}}
   const button=form.querySelector('button[type="submit"]'); button.disabled=true; button.textContent='ZAPISUJĘ…';
   try{
-    const response=await fetch('/newsletter/subscribe',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({email,preferredNick,consent:true,acceptedTerms:true,termsVersion:'newsletter-v1',privacyVersion:'privacy-v1'})});
+    const response=await fetch('/newsletter/subscribe',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({email,preferredNick,consent:true,acceptedTerms:true,termsVersion:'newsletter-v1',privacyVersion:'privacy-v1',turnstileToken})});
     const result=await response.json(); if(!response.ok)throw new Error(result.error?.message||'Nie udało się zapisać.');
     message.classList.add('ok'); const place=result.position&&result.total?` Jesteś nr ${result.position} z ${result.total} aktywnie zapisanych osób.`:'';
     message.textContent=(result.message||'Dziękujemy! Jesteś na liście startowej Gracz.pl.')+place;
-    showWelcomeModal({nick:preferredNick,email,mailSent:Boolean(result.welcomeEmailSent)}); form.reset(); lastNickAvailable=null; nickMessage.className='message'; nickMessage.textContent='';
-  }catch(error){message.classList.add('error');message.textContent=error.message||'Spróbuj ponownie za chwilę.';}
+    showWelcomeModal({nick:preferredNick,email,mailSent:Boolean(result.welcomeEmailSent)}); form.reset(); lastNickAvailable=null; nickMessage.className='message'; nickMessage.textContent=''; resetTurnstile();
+  }catch(error){message.classList.add('error');message.textContent=error.message||'Spróbuj ponownie za chwilę.'; resetTurnstile();}
   finally{button.disabled=false;button.textContent='ZAPISZ MNIE NA START →';}
 });
