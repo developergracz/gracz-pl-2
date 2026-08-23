@@ -8,6 +8,7 @@ import { MessageAttachmentService } from "./message-attachments.js";
 import { AuthService } from "./auth.js";
 import { MemoryAuthSessionStore, PostgresAuthSessionStore } from "./auth-sessions.js";
 import { AuditLogService, attachRequestAudit } from "./audit-log.js";
+import { AccessControlService } from "./access-control.js";
 import { loadConfig } from "./config.js";
 import { LobbyService } from "./lobby.js";
 import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
@@ -34,6 +35,7 @@ if (config.databaseUrl && accounts.ready) await accounts.ready;
 const authSessions = config.databaseUrl ? new PostgresAuthSessionStore(config.databaseUrl) : new MemoryAuthSessionStore();
 if (authSessions.ready) await authSessions.ready;
 const audit = new AuditLogService(config.databaseUrl || null); await audit.ready;
+const accessControl = new AccessControlService(config.databaseUrl || null); await accessControl.ready;
 const messageAttachments = config.databaseUrl ? new MessageAttachmentService(config.databaseUrl, config.authSecret) : null;
 if (messageAttachments?.ready) await messageAttachments.ready;
 
@@ -179,6 +181,7 @@ server.listen(config.port, config.host, () => {
   console.log(`Newsletter: ${config.databaseUrl ? "PostgreSQL" : "tryb developerski"}`);
   console.log(`Turnstile: ${turnstileEnabled ? "włączony" : "wyłączony"}`);
   console.log(`Audit log: ${config.databaseUrl ? "włączony" : "tryb bez bazy"}`);
+  console.log(`RBAC: ${config.databaseUrl ? "włączony" : "tryb bez bazy"}`);
 });
 
 let shuttingDown = false;
@@ -192,6 +195,7 @@ async function shutdown(signal) {
       if (typeof accounts.close === "function") await accounts.close();
       if (typeof authSessions.close === "function") await authSessions.close();
       if (messageAttachments && typeof messageAttachments.close === "function") await messageAttachments.close();
+      await accessControl.close();
       await audit.close();
       await newsletter.close();
       await globalChat.close();
