@@ -7,6 +7,11 @@ form?.addEventListener('submit', async (event) => {
   message.textContent = '';
 
   const data = new FormData(form);
+  if (data.get('terms') !== 'on') {
+    message.classList.add('error');
+    message.textContent = 'Zaakceptuj regulamin i zapoznaj się z polityką prywatności.';
+    return;
+  }
   if (data.get('consent') !== 'on') {
     message.classList.add('error');
     message.textContent = 'Zaznacz zgodę, aby zapisać się na listę.';
@@ -37,11 +42,8 @@ form?.addEventListener('submit', async (event) => {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
-      headers: {
-        'content-type': 'application/json',
-        'accept': 'application/json'
-      },
-      body: JSON.stringify({ email, preferredNick, consent: true })
+      headers: { 'content-type': 'application/json', 'accept': 'application/json' },
+      body: JSON.stringify({ email, preferredNick, consent: true, acceptedTerms: true, termsVersion: 'newsletter-v1', privacyVersion: 'privacy-v1' })
     });
 
     const result = await response.json();
