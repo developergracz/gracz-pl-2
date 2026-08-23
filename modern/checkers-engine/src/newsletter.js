@@ -37,7 +37,7 @@ export class NewsletterService {
     const cleanEmail = String(email || "").trim().toLowerCase();
     const cleanNick = String(preferredNick || "").trim();
     if (!validEmail(cleanEmail)) throw new NewsletterError("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL", 400);
-    if (!validNick(cleanNick)) throw new NewsletterError("Nick może mieć 3–32 znaki: litery, cyfry, kropkę, _ lub -.", "INVALID_NICK", 400);
+    if (!validNick(cleanNick)) throw new NewsletterError("Nick może mieć 3–32 znaki: litery (także polskie), cyfry, kropkę, _ lub -.", "INVALID_NICK", 400);
     if (consent !== true) throw new NewsletterError("Zaznacz zgodę na otrzymywanie informacji o starcie Gracz.pl.", "CONSENT_REQUIRED", 400);
 
     const existing = await this.pool.query(`SELECT subscriber_id,preferred_nick FROM gracz_newsletter_subscribers WHERE LOWER(email)=LOWER($1) LIMIT 1`, [cleanEmail]);
@@ -47,7 +47,7 @@ export class NewsletterService {
         if (nickTaken.rows[0]) throw new NewsletterError("Ten nick jest już zarezerwowany. Wybierz inny.", "NICK_TAKEN", 409);
       }
       await this.pool.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,consent_version='launch-v1',consent_at=NOW(),status='active',updated_at=NOW() WHERE subscriber_id=$1`, [existing.rows[0].subscriber_id, cleanNick || null]);
-      return { ok: true, alreadySubscribed: true, preferredNick: cleanNick || null, message: "Twój zapis został zaktualizowany." };
+      return { ok: true, alreadySubscribed: true, preferredNick: cleanNick || null, message: cleanNick ? `Twój zapis został zaktualizowany. Nick ${cleanNick} jest przypisany do Twojego adresu e-mail.` : "Twój zapis został zaktualizowany." };
     }
 
     try {
@@ -57,7 +57,7 @@ export class NewsletterService {
       if (error?.code === "23505") throw new NewsletterError("Ten adres e-mail jest już zapisany.", "EMAIL_EXISTS", 409);
       throw error;
     }
-    return { ok: true, preferredNick: cleanNick || null, message: cleanNick ? `Dziękujemy. Nick ${cleanNick} został zarezerwowany.` : "Dziękujemy. Jesteś na liście pierwszych użytkowników Gracz.pl." };
+    return { ok: true, preferredNick: cleanNick || null, message: cleanNick ? `Dziękujemy. Zapis zakończony pomyślnie, a nick ${cleanNick} został zarezerwowany.` : "Dziękujemy. Jesteś na liście pierwszych użytkowników Gracz.pl." };
   }
 
   async close() { if (this.pool) await this.pool.end(); }
@@ -85,6 +85,6 @@ export function createNewsletterHandler(service) {
 }
 
 function validEmail(value) { return typeof value === "string" && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value); }
-function validNick(value) { return value === "" || (typeof value === "string" && /^[A-Za-z0-9_.-]{3,32}$/.test(value)); }
+function validNick(value) { return value === "" || (typeof value === "string" && /^[\p{L}\p{N}_.-]{3,32}$/u.test(value)); }
 async function readJson(request, limit = 8192) { let size=0;const chunks=[];for await(const chunk of request){size+=chunk.length;if(size>limit)throw new NewsletterError("Za duże żądanie.","REQUEST_TOO_LARGE",413);chunks.push(chunk)}try{return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}")}catch{throw new NewsletterError("Nieprawidłowe dane formularza.","INVALID_JSON",400)} }
 function sendJson(response,status,body){response.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify(body));}
