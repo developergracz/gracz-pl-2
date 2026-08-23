@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 
 export async function hardenNewsletterTokens(service) {
   if (!service?.pool) return service;
@@ -36,8 +36,15 @@ export async function hardenNewsletterTokens(service) {
 
   const originalSubscribe = service.subscribe.bind(service);
   service.subscribe = async (input = {}) => {
-    const result = await originalSubscribe(input);
     const email = String(input.email || "").trim().toLowerCase();
+    if (email) {
+      const existing = await pool.query(`SELECT subscriber_id,unsubscribe_token FROM gracz_newsletter_subscribers WHERE LOWER(email)=LOWER($1) LIMIT 1`, [email]);
+      if (existing.rows[0] && !existing.rows[0].unsubscribe_token) {
+        await pool.query(`UPDATE gracz_newsletter_subscribers SET unsubscribe_token=$2,unsubscribe_token_hash=NULL,updated_at=NOW() WHERE subscriber_id=$1`, [existing.rows[0].subscriber_id, randomUUID()]);
+      }
+    }
+
+    const result = await originalSubscribe(input);
     if (email) {
       const row = await pool.query(`SELECT subscriber_id,unsubscribe_token::text AS token FROM gracz_newsletter_subscribers WHERE LOWER(email)=LOWER($1) LIMIT 1`, [email]);
       const token = row.rows[0]?.token;
