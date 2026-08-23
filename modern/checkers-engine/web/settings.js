@@ -1,3 +1,5 @@
+import "./avatar-library.js";
+
 const STORAGE_KEY = "gracz-player-settings-v1";
 const sections = {
   account: ["Konto i profil", "Zarządzaj danymi widocznymi dla innych graczy."],
