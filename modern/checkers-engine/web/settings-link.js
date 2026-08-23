@@ -1,4 +1,25 @@
 (() => {
+  const navStyle = document.createElement('style');
+  navStyle.textContent = `
+    .main-nav a {
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: .035em;
+      text-transform: none;
+      line-height: 1;
+      transition: color .18s ease, border-color .18s ease, transform .18s ease, opacity .18s ease;
+    }
+    .main-nav a:hover {
+      color: #55ec97;
+      transform: translateY(-1px);
+    }
+    .main-nav a.active {
+      font-weight: 750;
+    }
+  `;
+  document.head.appendChild(navStyle);
+
   const account = document.querySelector('#account-box nav');
   if (account) {
     for (const link of account.querySelectorAll('a')) {
