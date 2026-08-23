@@ -65,6 +65,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
       "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
       "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
       "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js", "/avatar-library.js": "avatar-library.js",
+      "/global-chat.html": "global-chat.html", "/global-chat.css": "global-chat.css", "/global-chat.js": "global-chat.js",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
     })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
