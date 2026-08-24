@@ -46,6 +46,9 @@ include_once($actual_path.'library_main.php');
 DatabaseConnect();
 header('Content-Type: text/html; charset=UTF-8;');
 
+// One central rule for every POST/PUT/PATCH/DELETE: valid CSRF token (new) or valid session-bound legacy token.
+RequestGuardService::enforceStateChangingRequest();
+
 if(strpos(isset($_SERVER['REQUEST_URI'])?$_SERVER['REQUEST_URI']:'',$path['activate_account'])>0) Logout();
 
 $komunikat_logowania='';
@@ -87,8 +90,6 @@ ProtectAgainstSessionHijacking();
 if(IsIPAddressBlocked(SecurityService::clientIp())){ http_response_code(403); exit('Twój adres IP został zablokowany.'); }
 
 $currentScript=basename(isset($_SERVER['SCRIPT_NAME'])?$_SERVER['SCRIPT_NAME']:'');
-
-// Moderator/admin/owner must complete 2FA immediately after password authentication.
 if(!empty($_SESSION['initiated'])&&!empty($_SESSION['id'])){
   $currentRole=RbacService::currentRole($database_handle,$database_prefix);
   if(TwoFactorService::roleRequires2fa($currentRole) && (empty($_SESSION['2fa_verified_at']) || time()-(int)$_SESSION['2fa_verified_at']>43200)){
@@ -100,7 +101,6 @@ if(!empty($_SESSION['initiated'])&&!empty($_SESSION['id'])){
   }
 }
 
-// Central RBAC gate. Each privileged route gets only the permission it actually needs.
 $privilegedPermissions=array(
   'admin_panel_secure.php'=>'audit.read','service_administration_panel.php'=>'audit.read','mailing.php'=>'content.manage',
   'admin_reported_abuses.php'=>'moderation.review','admin_reported_bugs.php'=>'content.manage','advertisement_management.php'=>'content.manage',
