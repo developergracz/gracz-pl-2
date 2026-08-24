@@ -22,7 +22,7 @@ const browser = await chromium.launch({ headless: true });
 
 async function register(page, { userId, displayName, email, password }) {
   await page.goto(`${baseUrl}/lobby.html`);
-  await page.getByRole("button", { name: "Nowe konto" }).click();
+  await page.getByRole("tab", { name: "Nowe konto" }).click();
   await page.locator('[name="userId"]').fill(userId);
   await page.locator('[name="displayName"]').fill(displayName);
   await page.locator('[name="email"]').fill(email);

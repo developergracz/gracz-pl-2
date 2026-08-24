@@ -52,10 +52,52 @@ test("lobby creates waiting room and starts game when second player joins", asyn
   const lobby = new LobbyService({ sessionStore: store, idGenerator: () => "room-1" });
   const waiting = lobby.createRoom({ ownerId: "alice", ownerName: "Alicja", roomName: "Szybka gra" });
   assert.equal(waiting.status, "waiting");
+  assert.equal(waiting.gameType, "checkers");
   const playing = await lobby.joinRoom({ roomId: "room-1", playerId: "bob", playerName: "Robert" });
   assert.equal(playing.status, "playing");
   assert.equal(playing.gameId, "game-room-1");
   assert.equal((await store.get(playing.gameId)).players.black.id, "bob");
+});
+
+test("Thousand lobby waits for three players and starts shared game only on third seat", async () => {
+  const store = new MemorySessionStore();
+  const created = [];
+  const thousandService = {
+    async createGame(input) { created.push(structuredClone(input)); return { gameId: input.gameId, revision: 1 }; },
+  };
+  const lobby = new LobbyService({ sessionStore: store, thousandService, idGenerator: () => "room-1000" });
+  let room = lobby.createRoom({ ownerId: "alice", ownerName: "Alicja", roomName: "Tysiąc", gameType: "thousand" });
+  assert.equal(room.maxPlayers, 3);
+  assert.equal(room.filledSeats, 1);
+  room = await lobby.joinRoom({ roomId: "room-1000", playerId: "bob", playerName: "Robert" });
+  assert.equal(room.status, "waiting");
+  assert.equal(room.filledSeats, 2);
+  assert.equal(created.length, 0);
+  room = await lobby.joinRoom({ roomId: "room-1000", playerId: "carol", playerName: "Karolina" });
+  assert.equal(room.status, "playing");
+  assert.equal(room.filledSeats, 3);
+  assert.equal(room.gameId, "thousand-room-1000");
+  assert.equal(created.length, 1);
+  assert.deepEqual(created[0].players.map((player) => player.userId), ["alice", "bob", "carol"]);
+});
+
+test("Thousand invitations carry the game type and second accepted invite starts the game", async () => {
+  const store = new MemorySessionStore();
+  const thousandService = { async createGame(input) { return { gameId: input.gameId, revision: 1 }; } };
+  let id=0;
+  const lobby = new LobbyService({ sessionStore: store, thousandService, idGenerator: () => `id-${++id}` });
+  lobby.touchUser({ userId:"alice",displayName:"Alicja" });
+  lobby.touchUser({ userId:"bob",displayName:"Robert" });
+  lobby.touchUser({ userId:"carol",displayName:"Karolina" });
+  const room=lobby.createRoom({ownerId:"alice",ownerName:"Alicja",roomName:"Tysiąc",gameType:"thousand"});
+  const first=lobby.createInvitation({fromId:"alice",fromName:"Alicja",toId:"bob",roomId:room.roomId});
+  assert.equal(first.gameType,"thousand");
+  let result=await lobby.respondInvitation({invitationId:first.invitationId,userId:"bob",userName:"Robert",accept:true});
+  assert.equal(result.room.status,"waiting");
+  const second=lobby.createInvitation({fromId:"alice",fromName:"Alicja",toId:"carol",roomId:room.roomId});
+  result=await lobby.respondInvitation({invitationId:second.invitationId,userId:"carol",userName:"Karolina",accept:true});
+  assert.equal(result.room.status,"playing");
+  assert.match(result.room.gameId,/^thousand-/);
 });
 
 test("two logged-in users create and join a room through the real API", async () => {

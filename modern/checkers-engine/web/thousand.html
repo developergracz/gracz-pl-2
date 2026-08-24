@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tysiąc online — Gracz.pl</title>
+  <meta name="description" content="Tysiąc online na Gracz.pl — trzyosobowa gra karciana multiplayer.">
+  <link rel="stylesheet" href="/thousand.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="side-nav" aria-label="Nawigacja Gracz.pl">
+      <a class="brand" href="/lobby.html" aria-label="Gracz.pl">gracz<span>.PL</span></a>
+      <div class="nav-profile">
+        <div id="nav-avatar" class="avatar">G</div>
+        <div><strong id="nav-name">Gracz</strong><span><i></i> online</span></div>
+      </div>
+      <nav>
+        <a href="/lobby.html">⌂ <span>Gry</span></a>
+        <a href="/players.html">◫ <span>Warcaby</span></a>
+        <a href="/lobby.html#games">⌘ <span>Gomoku</span></a>
+        <a class="active" href="/thousand.html">♣ <span>Tysiąc</span></a>
+        <a href="/settings.html#profile">♙ <span>Profil</span></a>
+        <a href="/ranking.html">♜ <span>Ranking</span></a>
+        <a href="/messages.html">✉ <span>Wiadomości</span></a>
+        <a href="/community.html">♧ <span>Społeczność</span></a>
+        <a href="/tournaments.html">♛ <span>Turnieje</span></a>
+        <a href="/settings.html">⚙ <span>Ustawienia</span></a>
+      </nav>
+      <div class="online-foot"><i></i><span id="connection-state">łączenie…</span></div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="title-block"><strong>TYSIĄC ONLINE</strong><span>Gracz.pl Multiplayer</span></div>
+        <div class="table-meta" aria-label="Informacje o partii">
+          <span>Rozdanie <b id="round-number">1</b></span>
+          <span>Kontrakt <b id="contract-value">—</b></span>
+          <span>Atut <b id="trump-value">—</b></span>
+        </div>
+        <div class="top-actions">
+          <a href="/lobby.html" class="ghost-btn">← Wyjdź z gry</a>
+          <a href="/settings.html" class="ghost-btn">⚙ Ustawienia</a>
+        </div>
+      </header>
+
+      <main class="content">
+        <section id="setup" class="setup" hidden>
+          <div class="setup-card">
+            <p class="eyebrow">NOWY STÓŁ</p>
+            <h1>Utwórz partię Tysiąca</h1>
+            <p>Do rozgrywki potrzebnych jest dokładnie trzech zalogowanych graczy.</p>
+            <form id="setup-form">
+              <div class="you"><span>Ty</span><strong id="me-name">—</strong></div>
+              <div class="setup-grid">
+                <label>Login gracza 2<input id="player2-id" required minlength="2" maxlength="64" autocomplete="off"></label>
+                <label>Nazwa gracza 2<input id="player2-name" required maxlength="64" autocomplete="off"></label>
+                <label>Login gracza 3<input id="player3-id" required minlength="2" maxlength="64" autocomplete="off"></label>
+                <label>Nazwa gracza 3<input id="player3-name" required maxlength="64" autocomplete="off"></label>
+              </div>
+              <button class="primary-btn" type="submit">UTWÓRZ STÓŁ</button>
+              <p id="setup-message" class="message" role="status"></p>
+            </form>
+          </div>
+        </section>
+
+        <section id="game" class="game-layout" hidden>
+          <aside class="left-rail">
+            <section class="panel bidding-panel">
+              <header><span>LICYTACJA</span><b id="bid-value">—</b></header>
+              <div id="bid-log" class="bid-log"></div>
+            </section>
+            <section class="panel meld-panel">
+              <header><span>MELDUNKI</span></header>
+              <div class="meld-grid">
+                <div><b>40</b><small>♠</small></div>
+                <div><b>60</b><small>♣</small></div>
+                <div><b>80</b><small>♦</small></div>
+                <div><b>100</b><small>♥</small></div>
+              </div>
+            </section>
+          </aside>
+
+          <section class="table-column">
+            <div class="table-frame">
+              <div class="felt" id="felt-table">
+                <div id="seat-left" class="seat seat-left"></div>
+                <div id="seat-right" class="seat seat-right"></div>
+                <div id="seat-self" class="seat seat-self"></div>
+
+                <div id="cards-left" class="opponent-cards cards-left" aria-hidden="true"></div>
+                <div id="cards-right" class="opponent-cards cards-right" aria-hidden="true"></div>
+
+                <div class="center-area">
+                  <div id="phase-label" class="phase-label">—</div>
+                  <div id="trick" class="trick" aria-live="polite"></div>
+                  <div class="talon-zone">
+                    <span id="talon-label">MUSIK</span>
+                    <div id="talon" class="talon"></div>
+                  </div>
+                </div>
+
+                <div class="turn-banner"><span id="turn-message">Oczekiwanie na stan gry…</span></div>
+                <div id="hand" class="hand" aria-label="Twoje karty"></div>
+                <div class="hand-hint" id="hand-hint"></div>
+              </div>
+            </div>
+
+            <section class="action-panel">
+              <div id="controls" class="controls"></div>
+              <p id="action-message" class="message" role="status" aria-live="polite"></p>
+            </section>
+          </section>
+
+          <aside class="right-rail">
+            <section class="panel score-panel">
+              <header><span>WYNIKI</span><small>do 1000</small></header>
+              <div id="score-list" class="score-list"></div>
+            </section>
+            <section class="panel status-panel">
+              <header><span>STAN STOŁU</span></header>
+              <dl class="game-meta">
+                <div><dt>Faza</dt><dd id="status-phase">—</dd></div>
+                <div><dt>Najwyższa oferta</dt><dd id="status-bid">—</dd></div>
+                <div><dt>Rozgrywający</dt><dd id="status-declarer">—</dd></div>
+                <div><dt>Numer lewy</dt><dd id="status-trick">0</dd></div>
+              </dl>
+            </section>
+            <a class="panel chat-link" href="/global-chat.html"><span>CHAT GRACZ.PL</span><b>Otwórz czat ogólny →</b><small>Czat stołu podłączymy jako osobny bezpieczny kanał.</small></a>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/thousand.js" defer></script>
+</body>
+</html>
