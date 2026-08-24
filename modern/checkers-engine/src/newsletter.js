@@ -59,7 +59,10 @@ async function verifyTurnstile(secretKey,token){
   return true;
 }
 
-export function createNewsletterHandler(service,{siteKey='',secretKey=''}={}){
+export function createNewsletterHandler(service,{
+  siteKey=process.env.TURNSTILE_SITE_KEY||'',
+  secretKey=process.env.TURNSTILE_SECRET_KEY||''
+}={}){
   const turnstileEnabled=Boolean(siteKey&&secretKey);
   return async(request,response)=>{
     const url=new URL(request.url,'http://localhost');
