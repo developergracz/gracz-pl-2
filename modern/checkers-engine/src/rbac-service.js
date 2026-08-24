@@ -1,0 +1,49 @@
+import pg from "pg";
+const { Pool } = pg;
+
+export const ROLES = Object.freeze(["player", "moderator", "administrator", "owner"]);
+const LEVEL = Object.freeze({ player: 0, moderator: 10, administrator: 20, owner: 30 });
+const PERMISSIONS = Object.freeze({
+  player: new Set(["game.play", "profile.manage", "message.send", "chat.use"]),
+  moderator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban"]),
+  administrator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban", "admin.users", "admin.audit", "admin.settings"]),
+  owner: new Set(["*"]),
+});
+
+export class RbacError extends Error {
+  constructor(message = "Brak uprawnień.") { super(message); this.name = "RbacError"; this.code = "FORBIDDEN"; this.status = 403; }
+}
+
+export class RbacService {
+  constructor(databaseUrl = null, { audit = null } = {}) {
+    this.pool = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 2 }) : null;
+    this.memory = new Map(); this.audit = audit; this.ready = this.pool ? this.initialize() : Promise.resolve();
+  }
+  async initialize() {
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_roles(user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE, role VARCHAR(24) NOT NULL DEFAULT 'player' CHECK(role IN ('player','moderator','administrator','owner')), mfa_required BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_role_history(change_id BIGSERIAL PRIMARY KEY,user_id VARCHAR(32) NOT NULL,old_role VARCHAR(24),new_role VARCHAR(24) NOT NULL,changed_by VARCHAR(32) NOT NULL,changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+  }
+  normalize(role) { return ROLES.includes(role) ? role : "player"; }
+  async getRole(userId) {
+    const id = String(userId || "").toLowerCase(); if (!id) return "player";
+    if (!this.pool) return this.memory.get(id) || "player";
+    await this.ready; const { rows } = await this.pool.query(`SELECT role FROM gracz_roles WHERE user_id=$1`, [id]); return this.normalize(rows[0]?.role);
+  }
+  async can(userId, permission) { const role = await this.getRole(userId); return PERMISSIONS[role].has("*") || PERMISSIONS[role].has(permission); }
+  async require(userId, permission) { if (!await this.can(userId, permission)) throw new RbacError(); return true; }
+  requiresMfa(role) { return LEVEL[this.normalize(role)] >= LEVEL.moderator; }
+  async setRole({ actorId, targetId, role, actorMfaVerified = false }) {
+    const next = this.normalize(role); if (next !== role) throw new RbacError("Nieprawidłowa rola.");
+    const actorRole = await this.getRole(actorId); const oldRole = await this.getRole(targetId);
+    if (LEVEL[actorRole] < LEVEL.administrator) throw new RbacError();
+    if (LEVEL[oldRole] >= LEVEL[actorRole] && actorId !== targetId) throw new RbacError("Nie możesz zmienić roli konta o równych lub wyższych uprawnieniach.");
+    if (next === "owner" && actorRole !== "owner") throw new RbacError("Tylko właściciel może nadać rolę owner.");
+    if (LEVEL[next] >= LEVEL.moderator && !actorMfaVerified) throw new RbacError("Zmiana uprzywilejowanej roli wymaga MFA.");
+    const id = String(targetId).toLowerCase();
+    if (!this.pool) this.memory.set(id, next); else {
+      await this.ready; const client = await this.pool.connect(); try { await client.query("BEGIN"); await client.query(`INSERT INTO gracz_roles(user_id,role,mfa_required,updated_at) VALUES($1,$2,$3,NOW()) ON CONFLICT(user_id) DO UPDATE SET role=EXCLUDED.role,mfa_required=EXCLUDED.mfa_required,updated_at=NOW()`, [id,next,this.requiresMfa(next)]); await client.query(`INSERT INTO gracz_role_history(user_id,old_role,new_role,changed_by) VALUES($1,$2,$3,$4)`, [id,oldRole,next,String(actorId).toLowerCase()]); await client.query("COMMIT"); } catch (e) { await client.query("ROLLBACK").catch(()=>{}); throw e; } finally { client.release(); }
+    }
+    await this.audit?.record({ actorId, eventType:"role.changed", targetType:"account", targetId:id, metadata:{ oldRole, newRole:next } }); return { userId:id, role:next, mfaRequired:this.requiresMfa(next) };
+  }
+  async close() { if (this.pool) await this.pool.end(); }
+}
