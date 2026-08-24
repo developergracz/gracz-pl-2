@@ -49,7 +49,7 @@ final class RbacService
         if (!TwoFactorService::roleRequires2fa($role)) return true;
         if (empty($_SESSION['2fa_verified_at']) || time() - (int)$_SESSION['2fa_verified_at'] > 43200) {
             http_response_code(403);
-            exit('Dostęp administracyjny wymaga uwierzytelnienia dwuskładnikowego.');
+            exit('<h1>Wymagana weryfikacja 2FA</h1><p>Moderatorzy i administratorzy muszą potwierdzić drugi składnik przed wejściem do panelu.</p><p><a href="admin_2fa.php">Przejdź do weryfikacji 2FA</a></p>');
         }
         return true;
     }
