@@ -33,6 +33,7 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
         ownerName:user.displayName,
         roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
         gameType:body.gameType||'checkers',
+        maxPlayers:body.maxPlayers??null,
       });
       return sendJson(response,201,room);
     }catch(error){
