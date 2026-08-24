@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Turnieje — Gracz.pl</title>
+  <meta name="description" content="Profesjonalne centrum turniejowe Gracz.pl — zapisy, drabinki, parowania, wyniki i klasyfikacje.">
+  <link rel="stylesheet" href="/tournaments.css">
+</head>
+<body>
+  <main class="t-shell">
+    <header class="t-topbar">
+      <a class="brand" href="/">gracz<span>.PL</span><small>CENTRUM TURNIEJOWE</small></a>
+      <nav><a href="/">Strona główna</a><a href="/players.html">Gracze</a><a href="/global-chat.html">Chat</a><a href="/messages.html">Wiadomości</a><a href="/settings.html">Ustawienia</a><span id="identity">Ładowanie…</span></nav>
+    </header>
+
+    <aside class="t-sidebar">
+      <section class="hero-card">
+        <div class="hero-icon">🏆</div>
+        <p class="eyebrow">GRACZ.PL ARENA</p>
+        <h1>Turnieje</h1>
+        <p>Rywalizuj w profesjonalnych turniejach, śledź parowania, rundy i klasyfikację na żywo.</p>
+        <button id="create-tournament" class="primary wide" type="button">＋ Utwórz turniej</button>
+      </section>
+
+      <nav class="side-menu" aria-label="Widoki turniejów">
+        <button class="active" data-view="all"><span>◈</span><b>Wszystkie</b><small id="count-all">0</small></button>
+        <button data-view="live"><span>●</span><b>Trwające</b><small id="count-live">0</small></button>
+        <button data-view="registration"><span>✦</span><b>Zapisy otwarte</b><small id="count-open">0</small></button>
+        <button data-view="mine"><span>★</span><b>Moje turnieje</b><small id="count-mine">0</small></button>
+        <button data-view="finished"><span>✓</span><b>Zakończone</b><small id="count-finished">0</small></button>
+      </nav>
+
+      <section class="info-card">
+        <b>Obsługiwane systemy</b>
+        <span>System szwajcarski</span><span>Pucharowy / knockout</span><span>Każdy z każdym</span>
+      </section>
+    </aside>
+
+    <section class="t-main">
+      <header class="page-head">
+        <div><p class="eyebrow">CENTRUM RYWALIZACJI</p><h2>Turnieje Gracz.pl</h2><p>Znajdź turniej, zapisz się albo stwórz własne wydarzenie.</p></div>
+        <div class="head-stats"><div><strong id="stat-live">0</strong><span>trwa teraz</span></div><div><strong id="stat-players">0</strong><span>zapisanych</span></div></div>
+      </header>
+
+      <section class="filters">
+        <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Szukaj po nazwie lub organizatorze…"></label>
+        <select id="game-filter"><option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option><option value="szachy">Szachy</option></select>
+        <select id="format-filter"><option value="all">Wszystkie formaty</option><option value="swiss">Szwajcarski</option><option value="knockout">Pucharowy</option><option value="round_robin">Każdy z każdym</option></select>
+        <button id="refresh" type="button" title="Odśwież">↻</button>
+      </section>
+
+      <div id="tournament-list" class="tournament-grid"></div>
+    </section>
+  </main>
+
+  <dialog id="create-dialog" class="dialog">
+    <form id="create-form" method="dialog">
+      <header><div><p class="eyebrow">NOWY TURNIEJ</p><h2>Utwórz turniej</h2><p>Skonfiguruj zasady, format i termin wydarzenia.</p></div><button class="x" value="cancel">×</button></header>
+      <div class="form-grid">
+        <label class="wide">Nazwa turnieju<input id="ct-title" maxlength="80" required placeholder="np. Niedzielny Puchar Gracz.pl"></label>
+        <label>Gra<select id="ct-game"><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option><option value="szachy">Szachy</option></select></label>
+        <label>System<select id="ct-format"><option value="swiss">Szwajcarski</option><option value="knockout">Pucharowy / knockout</option><option value="round_robin">Każdy z każdym</option></select></label>
+        <label>Maks. graczy<select id="ct-max"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></label>
+        <label>Liczba rund<input id="ct-rounds" type="number" min="1" max="15" value="5"></label>
+        <label>Tempo gry<input id="ct-time" value="5+0" pattern="\d{1,3}(\+\d{1,2})?" placeholder="5+0"></label>
+        <label>Start<input id="ct-start" type="datetime-local"></label>
+        <label>Widoczność<select id="ct-visibility"><option value="public">Publiczny</option><option value="unlisted">Tylko z linku</option></select></label>
+        <label class="switch-line"><span>Turniej rankingowy</span><input id="ct-rated" type="checkbox" checked></label>
+        <label class="wide">Opis<textarea id="ct-description" maxlength="600" rows="4" placeholder="Zasady, informacje dla uczestników, nagrody…"></textarea></label>
+      </div>
+      <footer><button value="cancel">Anuluj</button><button id="create-submit" class="primary" value="default">Utwórz turniej</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="dialog detail-dialog">
+    <div id="detail-content"></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/tournaments.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+services:
+  checkers-engine:
+    build: .
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-test-only-secret-change-before-public-use}
+    ports:
+      - "3000:3000"
+    volumes:
+      - checkers-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  checkers-data:

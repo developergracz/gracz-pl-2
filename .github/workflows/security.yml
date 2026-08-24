@@ -1,0 +1,39 @@
+name: Security checks
+
+on:
+  push:
+    branches: ["feature/checkers-engine-foundation"]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: modern/checkers-engine/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run check --if-present
+      - run: npm test --if-present
+
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
