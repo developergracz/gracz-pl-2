@@ -5,7 +5,7 @@ function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,char=>({'
 
 async function sendWelcomeEmail({to,nick,position}){
   const apiKey=String(process.env.RESEND_API_KEY||'').trim();
-  const from=String(process.env.NEWSLETTER_FROM_EMAIL||'Gracz.pl <newsletter@gracz.pl>').trim();
+  const from=String(process.env.NEWSLETTER_FROM||process.env.EMAIL_FROM||process.env.NEWSLETTER_FROM_EMAIL||'Gracz.pl <newsletter@gracz.pl>').trim();
   if(!apiKey)return {sent:false,reason:'EMAIL_PROVIDER_NOT_CONFIGURED'};
   const safeEmail=escapeHtml(to);
   const safeNick=escapeHtml(nick||'nie podano');
