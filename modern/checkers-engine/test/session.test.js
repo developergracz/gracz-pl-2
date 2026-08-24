@@ -110,6 +110,27 @@ test("forced multi-capture survives persistence and reconnect", () => {
   assert.equal(finished.game.turn, PLAYERS.BLACK);
 });
 
+test("undo reverses the whole multi-capture turn", () => {
+  const initial = multiCaptureSession();
+  const afterFirstCapture = submitMove(initial, {
+    playerId: "alice",
+    requestId: "capture-1",
+    move: { from: { row: 1, column: 0 }, to: { row: 3, column: 2 } },
+  }).session;
+  const afterSecondCapture = submitMove(afterFirstCapture, {
+    playerId: "alice",
+    requestId: "capture-2",
+    move: { from: { row: 3, column: 2 }, to: { row: 5, column: 4 } },
+  }).session;
+
+  const offered = submitGameAction(afterSecondCapture, { playerId: "bob", action: "undo" });
+  const accepted = submitGameAction(offered, { playerId: "alice", action: "undo" });
+
+  assert.deepEqual(accepted.game.board, initial.game.board);
+  assert.equal(accepted.game.turn, PLAYERS.WHITE);
+  assert.equal(accepted.game.forcedPiece, null);
+});
+
 test("spectator or unknown user cannot read private player snapshot", () => {
   assert.throws(
     () => getSessionSnapshot(newSession(), "mallory"),
