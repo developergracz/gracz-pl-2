@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS prefix_security_sessions (
 CREATE TABLE IF NOT EXISTS prefix_security_tokens (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   purpose ENUM('newsletter_check','newsletter_unsubscribe','password_reset','email_change','account_activation') NOT NULL,
+  subject_id BIGINT NULL,
   subject_hash CHAR(64) NOT NULL,
   token_hash CHAR(64) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -73,7 +74,8 @@ CREATE TABLE IF NOT EXISTS prefix_security_tokens (
   used_at DATETIME NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_security_token_hash (token_hash),
-  KEY idx_security_tokens_subject (purpose, subject_hash, expires_at)
+  KEY idx_security_tokens_subject (purpose, subject_hash, expires_at),
+  KEY idx_security_tokens_subject_id (purpose, subject_id, expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS prefix_moderation_events (
