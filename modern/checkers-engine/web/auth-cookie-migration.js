@@ -120,11 +120,12 @@
     const form = document.querySelector("#auth-form");
     const registerTab = document.querySelector('[data-mode="register"]');
     if (!form || !registerTab) return;
+    const sensitiveDraftNames = new Set(["password", "newPassword", "confirmPassword", "verificationCode", "code"]);
 
     const saveDraft = () => {
       const values = {};
       for (const field of form.elements) {
-        if (!field?.name || field.name === "website") continue;
+        if (!field?.name || field.name === "website" || field.type === "password" || sensitiveDraftNames.has(field.name)) continue;
         if (field.type === "radio") {
           if (field.checked) values[field.name] = { type: "radio", value: field.value };
         } else if (field.type === "checkbox") {
@@ -150,8 +151,10 @@
 
     registerTab.click();
     for (const [name, saved] of Object.entries(draft.values)) {
+      if (sensitiveDraftNames.has(name) || saved?.type === "password") continue;
       const fields = [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
       for (const field of fields) {
+        if (field.type === "password") continue;
         if (saved.type === "radio") field.checked = field.value === saved.value;
         else if (saved.type === "checkbox") field.checked = Boolean(saved.checked);
         else field.value = String(saved.value ?? "");
