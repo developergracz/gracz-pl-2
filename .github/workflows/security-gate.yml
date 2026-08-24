@@ -24,16 +24,19 @@ jobs:
       - name: Reject committed runtime logs and secret files
         run: |
           set -euo pipefail
-          test -z "$(git ls-files 'website/logi/*.log' 'website/logi/*.txt' '*.pem' '*.key' '.env' '.env.*' | grep -v '\.env\.example$' || true)" || {
-            echo 'Runtime logs or secret-like files are tracked by git.' >&2
-            git ls-files 'website/logi/*.log' 'website/logi/*.txt' '*.pem' '*.key' '.env' '.env.*'
+          tracked="$(git ls-files 'website/logi/*.log' 'website/logi/*.txt' '*.pem' '*.key' '.env' '.env.*' \
+            | grep -v '^\.env\.example$' \
+            | grep -v '^website/Facebook/HttpClients/certs/DigiCertHighAssuranceEVRootCA\.pem$' || true)"
+          if [ -n "$tracked" ]; then
+            echo 'Runtime logs or secret-like files are tracked by git:' >&2
+            printf '%s\n' "$tracked" >&2
             exit 1
-          }
+          fi
 
       - name: Basic secret-pattern scan
         run: |
           set -euo pipefail
-          if git grep -nEI '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AKIA[0-9A-Z]{16}|sk_live_[0-9A-Za-z]+|TURNSTILE_SECRET_KEY[[:space:]]*=|DATABASE_PASSWORD[[:space:]]*=|RESEND_API_KEY[[:space:]]*=)' -- ':!*.md' ':!*.example'; then
+          if git grep -nEI '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AKIA[0-9A-Z]{16}|sk_live_[0-9A-Za-z]+|TURNSTILE_SECRET_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+|DATABASE_PASSWORD[[:space:]]*=[[:space:]]*[^[:space:]#]+|RESEND_API_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+)' -- ':!*.md' ':!*.example'; then
             echo 'Potential secret detected. Rotate the key and remove it from history before deployment.' >&2
             exit 1
           fi
