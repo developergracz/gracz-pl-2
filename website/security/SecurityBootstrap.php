@@ -14,6 +14,7 @@ require_once __DIR__.'/NewsletterService.php';
 require_once __DIR__.'/SessionService.php';
 require_once __DIR__.'/PasswordResetService.php';
 require_once __DIR__.'/AdminActionService.php';
+require_once __DIR__.'/RequestGuardService.php';
 require_once __DIR__.'/MonitoringBootstrap.php';
 
 SecurityService::sendSecurityHeaders();
