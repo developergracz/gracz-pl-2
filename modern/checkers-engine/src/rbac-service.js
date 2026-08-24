@@ -22,6 +22,16 @@ export class RbacService {
   async initialize() {
     await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_roles(user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE, role VARCHAR(24) NOT NULL DEFAULT 'player' CHECK(role IN ('player','moderator','administrator','owner')), mfa_required BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_role_history(change_id BIGSERIAL PRIMARY KEY,user_id VARCHAR(32) NOT NULL,old_role VARCHAR(24),new_role VARCHAR(24) NOT NULL,changed_by VARCHAR(32) NOT NULL,changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+    const bootstrap = String(process.env.GRACZ_OWNER_USER_ID || "").trim().toLowerCase();
+    if (bootstrap && /^[a-z0-9._-]{3,32}$/.test(bootstrap)) {
+      const result = await this.pool.query(`INSERT INTO gracz_roles(user_id,role,mfa_required,updated_at)
+        SELECT $1,'owner',TRUE,NOW()
+        WHERE EXISTS(SELECT 1 FROM gracz_accounts WHERE user_id=$1)
+          AND NOT EXISTS(SELECT 1 FROM gracz_roles WHERE role='owner')
+        ON CONFLICT(user_id) DO NOTHING
+        RETURNING user_id`, [bootstrap]);
+      if (result.rows[0]) await this.audit?.record({ actorId: bootstrap, eventType: "owner.bootstrap", outcome: "success", targetType: "account", targetId: bootstrap });
+    }
   }
   normalize(role) { return ROLES.includes(role) ? role : "player"; }
   async getRole(userId) {
