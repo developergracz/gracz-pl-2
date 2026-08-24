@@ -11,46 +11,49 @@
     <div class="border right"></div>
     <div class="content">
       <h1>Przypomnij hasło</h1>
-       <?php
-    	
-      if (isset($_GET['id_account']))
-    	{
+      <?php
+      if (isset($_GET['id_account']) && isset($_GET['activation_code']))
+      {
+        SecurityRequireRateLimit('password_reset_activate', 10, 3600, 3600);
         if(AccountActivateGeneratedPassword($_GET['id_account'], $_GET['activation_code']))
-    		{
-          echo('<div class="positive">Twoje nowe (wygenerowane) hasło zostało aktywowane. Prosimy zmień je na takie które będziesz pamiętał - możesz to zrobić <a href="'.$path['account_settings'].'">tutaj</a></div>');
-    		}else
-    		{
-    		  echo('<div class="negative">Wystapił błąd przy próbie aktywacji nowego (wygenerowanego) hasła.</div>');		
-    		}
-    	}
-    	
+        {
+          AuditLog('password.reset_completed', 'user', intval($_GET['id_account']));
+          echo('<div class="positive">Hasło zostało zmienione. Dla bezpieczeństwa zaloguj się ponownie i ustaw własne, unikalne hasło.</div>');
+        }else
+        {
+          AuditLog('password.reset_activation_failed', 'user', intval($_GET['id_account']));
+          echo('<div class="negative">Link jest nieprawidłowy lub wygasł.</div>');
+        }
+      }
 
       if (isset($_POST['email']))
-      {	
-        if(AccountSendNewGeneratedPassword($_POST['email']))
-    	 {
-         echo("<p>Gratulacje, nowe hasło zostało wygenerowane i wysłane na podany adres e-mail.</p><p><a href=\"".$directory['base']."index.php\">&bull; Powrót do strony głównej</a></p>");
-    	 }else
-    	 {
-    		 echo('<div class="negative">Wystąpił błąd podczas próby wygenerowania nowego hasła. Być może podałeś nieprawidłowy adres e-mail? Sprawdź poprawność danych i spróbuj ponownie.</div>');
-    	 }		
+      {
+        try {
+          RequireCsrf();
+          SecurityRequireRateLimit('password_reset_ip', 5, 3600, 3600);
+          $normalizedEmail = strtolower(trim($_POST['email']));
+          SecurityRequireRateLimit('password_reset_email', 3, 3600, 3600, $normalizedEmail);
+          if (!VerifyTurnstile()) throw new RuntimeException('Nie udało się potwierdzić weryfikacji bezpieczeństwa.');
+
+          // Zawsze ta sama odpowiedź, aby nie ujawniać, czy adres znajduje się w bazie.
+          @AccountSendNewGeneratedPassword($normalizedEmail);
+          AuditLog('password.reset_requested', 'account', SecurityHashIdentifier($normalizedEmail));
+          echo('<div class="positive">Jeżeli podany adres jest przypisany do konta, wysłaliśmy wiadomość z dalszymi instrukcjami.</div>');
+        } catch (Exception $e) {
+          AuditLog('password.reset_request_blocked', 'account', null, array('reason'=>$e->getMessage()));
+          echo('<div class="negative">'.htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8').'</div>');
+        }
       }else if (!isset($_REQUEST['activation_code']))
       {
-        echo('
-        <p>Aby wygenerować nowe hasło dla swojego konta, wpisz poniżej swój adres e-mail podany podczas rejestracji konta po czym kliknij przycisk &quot;Wyślij mi nowe hasło&quot;. Po tej operacji nowe hasło zostanie Ci dostarczone poprzez pocztę elektroniczną na podany adres e-mail.</p>	
-
-        <form action="" method="post">
-    	   <div>
-           <label for="email">Wprowadź swój adres e-mail:</label>
-    	     <input type="text" name="email" id="email" />
-           <button type="submit">Wyślij mi nowe hasło</button>
-    		</div>
-    	 </form>
-    	 ');
+        echo('<p>Wpisz adres e-mail przypisany do konta. Ze względów bezpieczeństwa nie informujemy, czy dany adres znajduje się w bazie.</p>');
+        echo('<form action="" method="post" autocomplete="off"><div>'.CsrfField().'
+          <label for="email">Adres e-mail:</label>
+          <input type="email" name="email" id="email" maxlength="254" autocomplete="email" required />'.TurnstileWidget().'
+          <button type="submit">Wyślij instrukcje</button>
+        </div></form>');
       }
-      
       ?>
-	
+
     </div>
   </div>
 
