@@ -1,7 +1,15 @@
 import pg from 'pg';
+import { randomInt, randomUUID } from 'node:crypto';
 const {Pool}=pg;
 
-function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}
+function escapeHtml(value){return String(value??'').replace(/[&<>'\"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[char]))}
+function legacySubscriberValue(meta){
+  const type=String(meta?.udt_name||meta?.data_type||'').toLowerCase();
+  if(type==='int2')return randomInt(1,32767);
+  if(type==='int4')return randomInt(1,2147483647);
+  if(type==='int8'||type==='numeric'||type==='decimal')return `${Date.now()}${String(randomInt(0,1000000)).padStart(6,'0')}`;
+  return randomUUID();
+}
 
 async function sendWelcomeEmail({to,nick,position}){
   const apiKey=String(process.env.RESEND_API_KEY||'').trim();
@@ -22,24 +30,22 @@ export class NewsletterService{
   constructor(connectionString){
     this.pool=connectionString?new Pool({connectionString,ssl:connectionString.includes('localhost')||connectionString.includes('127.0.0.1')?false:{rejectUnauthorized:false},max:3}):null;
     this.memory=new Map();
+    this.legacySubscriberId=null;
     this.ready=this.initialize();
   }
   async initialize(){
     if(!this.pool)return;
     await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_newsletter_subscribers(id BIGSERIAL PRIMARY KEY,email VARCHAR(254) NOT NULL UNIQUE,email_normalized VARCHAR(254) NOT NULL UNIQUE,consent_version VARCHAR(32) NOT NULL,consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),status VARCHAR(24) NOT NULL DEFAULT 'subscribed',unsubscribed_at TIMESTAMPTZ,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
-    // Migracja starej tabeli. W produkcyjnej bazie historyczna kolumna subscriber_id
-    // może nadal być NOT NULL, mimo że aktualny INSERT już jej nie używa.
-    // ALTER TABLE ... DROP NOT NULL jest idempotentny i bezpieczny dla tej kolumny.
-    const legacy=await this.pool.query(`SELECT table_schema FROM information_schema.columns WHERE table_name='gracz_newsletter_subscribers' AND column_name='subscriber_id' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY CASE WHEN table_schema=current_schema() THEN 0 WHEN table_schema='public' THEN 1 ELSE 2 END LIMIT 1`);
+    const legacy=await this.pool.query(`SELECT table_schema,data_type,udt_name,is_nullable,column_default FROM information_schema.columns WHERE table_name='gracz_newsletter_subscribers' AND column_name='subscriber_id' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY CASE WHEN table_schema=current_schema() THEN 0 WHEN table_schema='public' THEN 1 ELSE 2 END LIMIT 1`);
     if(legacy.rowCount>0){
-      const schema=String(legacy.rows[0].table_schema).replace(/"/g,'""');
-      await this.pool.query(`ALTER TABLE "${schema}".gracz_newsletter_subscribers ALTER COLUMN subscriber_id DROP NOT NULL`);
+      const meta=legacy.rows[0];
+      if(String(meta.is_nullable).toUpperCase()==='NO'&&!meta.column_default)this.legacySubscriberId=meta;
     }
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick VARCHAR(24)`);
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick_normalized VARCHAR(24)`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_preferred_nick_unique ON gracz_newsletter_subscribers(preferred_nick_normalized) WHERE preferred_nick_normalized IS NOT NULL AND status='subscribed'`);
   }
-  normalize(email){const value=String(email||'').trim().toLowerCase();if(value.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value))throw Object.assign(new Error('Podaj prawidłowy adres e-mail.'),{code:'INVALID_EMAIL'});return value;}
+  normalize(email){const value=String(email||'').trim().toLowerCase();if(value.length>254||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(value))throw Object.assign(new Error('Podaj prawidłowy adres e-mail.'),{code:'INVALID_EMAIL'});return value;}
   normalizeNick(nick,{optional=true}={}){const value=String(nick||'').trim();if(!value&&optional)return {value:null,normalized:null};if(!/^[A-Za-z0-9_.-]{3,24}$/.test(value))throw Object.assign(new Error('Nick może mieć 3–24 znaki: litery, cyfry, _, . lub -.'),{code:'INVALID_NICK'});return {value,normalized:value.toLowerCase()};}
   async nicknameAvailable(nick){const parsed=this.normalizeNick(nick,{optional:false});if(this.pool){await this.ready;const result=await this.pool.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE preferred_nick_normalized=$1 AND status='subscribed' LIMIT 1`,[parsed.normalized]);return {available:result.rowCount===0,nick:parsed.value};}for(const item of this.memory.values())if(item.preferredNickNormalized===parsed.normalized&&item.status==='subscribed')return {available:false,nick:parsed.value};return {available:true,nick:parsed.value};}
   async activeCount(){if(this.pool){await this.ready;const result=await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_newsletter_subscribers WHERE status='subscribed'`);return Number(result.rows?.[0]?.count||0)}return [...this.memory.values()].filter(item=>item.status==='subscribed').length;}
@@ -48,7 +54,7 @@ export class NewsletterService{
     if(consent!==true)throw Object.assign(new Error('Zgoda na zapis jest wymagana.'),{code:'CONSENT_REQUIRED'});
     const normalized=this.normalize(email);const nick=this.normalizeNick(preferredNick);
     if(nick.normalized){const availability=await this.nicknameAvailable(nick.value);if(!availability.available){if(this.pool){const own=await this.pool.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE lower(email)=lower($1) AND preferred_nick_normalized=$2 LIMIT 1`,[normalized,nick.normalized]);if(own.rowCount===0)throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});}else{const own=this.memory.get(normalized);if(own?.preferredNickNormalized!==nick.normalized)throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});}}}
-    if(this.pool){await this.ready;const client=await this.pool.connect();try{await client.query('BEGIN');const updated=await client.query(`UPDATE gracz_newsletter_subscribers SET email=$1,email_normalized=$1,preferred_nick=$2,preferred_nick_normalized=$3,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW() WHERE lower(email)=lower($1) OR email_normalized=$1`,[normalized,nick.value,nick.normalized]);if(updated.rowCount===0)await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$1,$2,$3,'launch-v2','subscribed',NOW(),NULL,NOW())`,[normalized,nick.value,nick.normalized]);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');if(error?.code==='23505'){const detail=String(error.detail||'').toLowerCase();if(detail.includes('preferred_nick')||detail.includes('nick'))throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});throw Object.assign(new Error('Ten adres e-mail jest już zapisany na liście.'),{code:'EMAIL_EXISTS'});}throw error;}finally{client.release();}}else this.memory.set(normalized,{email:normalized,preferredNick:nick.value,preferredNickNormalized:nick.normalized,status:'subscribed',consentedAt:new Date().toISOString()});
+    if(this.pool){await this.ready;const client=await this.pool.connect();try{await client.query('BEGIN');const updated=await client.query(`UPDATE gracz_newsletter_subscribers SET email=$1,email_normalized=$1,preferred_nick=$2,preferred_nick_normalized=$3,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW() WHERE lower(email)=lower($1) OR email_normalized=$1`,[normalized,nick.value,nick.normalized]);if(updated.rowCount===0){if(this.legacySubscriberId){const subscriberId=legacySubscriberValue(this.legacySubscriberId);await client.query(`INSERT INTO gracz_newsletter_subscribers(subscriber_id,email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$2,$2,$3,$4,'launch-v2','subscribed',NOW(),NULL,NOW())`,[subscriberId,normalized,nick.value,nick.normalized]);}else{await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$1,$2,$3,'launch-v2','subscribed',NOW(),NULL,NOW())`,[normalized,nick.value,nick.normalized]);}}await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');if(error?.code==='23505'){const detail=String(error.detail||'').toLowerCase();if(detail.includes('preferred_nick')||detail.includes('nick'))throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});throw Object.assign(new Error('Ten adres e-mail jest już zapisany na liście.'),{code:'EMAIL_EXISTS'});}throw error;}finally{client.release();}}else this.memory.set(normalized,{email:normalized,preferredNick:nick.value,preferredNickNormalized:nick.normalized,status:'subscribed',consentedAt:new Date().toISOString()});
     const position=await this.activeCount();let emailDelivery={sent:false};try{emailDelivery=await sendWelcomeEmail({to:normalized,nick:nick.value,position});}catch(error){console.error('[newsletter] welcome email failed',error);emailDelivery={sent:false,reason:error.code||'WELCOME_EMAIL_FAILED'};}return {ok:true,emailSent:emailDelivery.sent,message:nick.value?`Dziękujemy! Zapisano e-mail i zgłoszono nick „${nick.value}” do rezerwacji.`:'Dziękujemy! Jesteś na liście startowej Gracz.pl.'};
   }
   async unsubscribe(email){const normalized=this.normalize(email);if(this.pool){await this.ready;await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 OR lower(email)=lower($1)`,[normalized]);}else this.memory.delete(normalized);return {ok:true};}
