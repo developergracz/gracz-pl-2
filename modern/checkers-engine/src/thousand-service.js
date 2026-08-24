@@ -26,7 +26,7 @@ export class ThousandGameService {
   async createGame({players,gameId=randomUUID(),dealerIndex=0,rules}={}){
     const normalizedPlayers=normalizePlayers(players);
     const deck=shuffleThousandDeck(undefined,this.random);
-    const state=createThousandInitialState({dealerIndex,deck,rules});
+    const state=createThousandInitialState({dealerIndex,deck,rules,playerCount:normalizedPlayers.length});
     return this.repository.create({gameId,players:normalizedPlayers,state});
   }
 
@@ -59,20 +59,17 @@ export class ThousandGameService {
     return buildView(saved,playerIndex);
   }
 
-  async close(){
-    if(typeof this.repository.close==='function') await this.repository.close();
-  }
+  async close(){if(typeof this.repository.close==='function') await this.repository.close();}
 }
 
 function buildView(record,playerIndex){
   const state=thousandPublicView(record.state,playerIndex);
   state.history=[];
-  const legalCardIds=record.state.status==='playing'&&record.state.currentPlayerIndex===playerIndex
-    ? getLegalThousandCards(record.state,playerIndex)
-    : [];
+  const legalCardIds=record.state.status==='playing'&&record.state.currentPlayerIndex===playerIndex?getLegalThousandCards(record.state,playerIndex):[];
   return {
     gameId:record.gameId,
     revision:record.revision,
+    playerCount:record.players.length,
     players:record.players.map((player,index)=>({userId:player.userId,displayName:player.displayName,seat:index})),
     viewerIndex:playerIndex,
     state,
@@ -82,8 +79,8 @@ function buildView(record,playerIndex){
 }
 
 function normalizePlayers(players){
-  if(!Array.isArray(players)||players.length!==3){
-    throw new ThousandServiceError('Tysiąc wymaga dokładnie trzech graczy.','INVALID_PLAYER_COUNT');
+  if(!Array.isArray(players)||players.length<2||players.length>4){
+    throw new ThousandServiceError('Tysiąc obsługuje od dwóch do czterech graczy.','INVALID_PLAYER_COUNT');
   }
   const seen=new Set();
   return players.map((player,index)=>{
