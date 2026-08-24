@@ -15,6 +15,56 @@
     if(!response.ok) throw new Error(body.error?.message||'Nie udało się wykonać operacji.');
     return body;
   }
+
+  function installGuestButton(){
+    const form=document.querySelector('#auth-form');
+    if(!form||document.querySelector('#guest-thousand-demo'))return;
+    const button=document.createElement('button');
+    button.id='guest-thousand-demo';
+    button.type='button';
+    button.textContent='WEJDŹ JAKO GOŚĆ — ZOBACZ TYSIĄCA';
+    button.style.cssText='width:100%;margin-top:2px;padding:12px;border:1px solid #b89b43;border-radius:7px;background:linear-gradient(180deg,#fff0a9,#d8aa3c);color:#182018;font-weight:900;cursor:pointer';
+    const note=document.createElement('small');
+    note.id='guest-thousand-note';
+    note.textContent='Tryb demonstracyjny · bez zakładania konta · bez wpływu na ranking';
+    note.style.cssText='display:block;text-align:center;color:#8fa0ac;font-size:10px;margin-top:-5px';
+    const submit=form.querySelector('#auth-submit');
+    submit?.insertAdjacentElement('afterend',button);
+    button.insertAdjacentElement('afterend',note);
+    button.addEventListener('click',enterGuestDemo);
+  }
+
+  async function enterGuestDemo(){
+    const button=document.querySelector('#guest-thousand-demo');
+    const note=document.querySelector('#guest-thousand-note');
+    if(!button)return;
+    button.disabled=true;
+    button.textContent='URUCHAMIAM TRYB GOŚCIA…';
+    if(note)note.textContent='Tworzę bezpieczną sesję i stół demonstracyjny.';
+    try{
+      const guest=await api('/auth/guest',{method:'POST'});
+      sessionStorage.setItem('gracz-session',JSON.stringify({token:'cookie',user:guest.user}));
+      const suffix=guest.user.userId.replace(/^guest-/,'').slice(0,8);
+      const result=await api('/thousand/games',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          dealerIndex:2,
+          players:[
+            {userId:guest.user.userId,displayName:guest.user.displayName},
+            {userId:`demo-a-${suffix}`,displayName:'Anna · demo'},
+            {userId:`demo-b-${suffix}`,displayName:'Marek · demo'}
+          ]
+        })
+      });
+      location.href=`/thousand.html?game=${encodeURIComponent(result.gameId)}`;
+    }catch(error){
+      button.disabled=false;
+      button.textContent='WEJDŹ JAKO GOŚĆ — ZOBACZ TYSIĄCA';
+      if(note){note.textContent=error.message;note.style.color='#ff8585'}
+    }
+  }
+
   function ownRoom(){
     const user=currentUser(); if(!user)return null;
     return state.rooms.find(room=>room.gameType===GAME_TYPE&&room.seats?.some(seat=>seat?.id===user.userId)&&room.status==='waiting')||null;
@@ -131,7 +181,7 @@
   }
 
   function start(){
-    installCard(); ensureModal(); refresh();
+    installGuestButton(); installCard(); ensureModal(); refresh();
     if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refresh,POLL_MS);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
