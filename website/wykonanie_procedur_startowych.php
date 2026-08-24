@@ -86,19 +86,25 @@ if(!empty($_SESSION['initiated'])&&!empty($_SESSION['id'])){
 ProtectAgainstSessionHijacking();
 if(IsIPAddressBlocked(SecurityService::clientIp())){ http_response_code(403); exit('Twój adres IP został zablokowany.'); }
 
-// Central RBAC gate. Each privileged route gets only the permission it actually needs.
 $currentScript=basename(isset($_SERVER['SCRIPT_NAME'])?$_SERVER['SCRIPT_NAME']:'');
+
+// Moderator/admin/owner must complete 2FA immediately after password authentication.
+if(!empty($_SESSION['initiated'])&&!empty($_SESSION['id'])){
+  $currentRole=RbacService::currentRole($database_handle,$database_prefix);
+  if(TwoFactorService::roleRequires2fa($currentRole) && (empty($_SESSION['2fa_verified_at']) || time()-(int)$_SESSION['2fa_verified_at']>43200)){
+    if(!in_array($currentScript,array('admin_2fa.php','wyloguj.php'),true)){
+      GraczAudit()->record('auth.2fa.required',$_SESSION['id'],array('role'=>$currentRole));
+      if(!headers_sent()) header('Location: '.$directory['base'].'admin_2fa.php');
+      exit('To konto wymaga weryfikacji 2FA. <a href="admin_2fa.php">Przejdź do weryfikacji</a>.');
+    }
+  }
+}
+
+// Central RBAC gate. Each privileged route gets only the permission it actually needs.
 $privilegedPermissions=array(
-  'admin_panel_secure.php'=>'audit.read',
-  'service_administration_panel.php'=>'audit.read',
-  'mailing.php'=>'content.manage',
-  'admin_reported_abuses.php'=>'moderation.review',
-  'admin_reported_bugs.php'=>'content.manage',
-  'advertisement_management.php'=>'content.manage',
-  'code_paste_management.php'=>'content.manage',
-  'gry_dodaj.php'=>'content.manage',
-  'daily.php'=>'audit.read',
-  'moderator_panel.php'=>'moderation.review'
+  'admin_panel_secure.php'=>'audit.read','service_administration_panel.php'=>'audit.read','mailing.php'=>'content.manage',
+  'admin_reported_abuses.php'=>'moderation.review','admin_reported_bugs.php'=>'content.manage','advertisement_management.php'=>'content.manage',
+  'code_paste_management.php'=>'content.manage','gry_dodaj.php'=>'content.manage','daily.php'=>'audit.read','moderator_panel.php'=>'moderation.review'
 );
 if(isset($privilegedPermissions[$currentScript])){
   GraczRequirePermission($privilegedPermissions[$currentScript]);
