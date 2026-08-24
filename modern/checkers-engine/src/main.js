@@ -14,6 +14,10 @@ import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
 import { TournamentService, createTournamentHandler } from "./tournaments.js";
 import { RankingService, createRankingHandler } from "./rankings.js";
 import { NewsletterService, createNewsletterHandler } from "./newsletter.js";
+import { ThousandGameService } from "./thousand-service.js";
+import { MemoryThousandRepository, PostgresThousandRepository } from "./thousand-repository.js";
+import { ThousandRealtimeHub } from "./thousand-realtime.js";
+import { createThousandHttpHandler } from "./thousand-http.js";
 import { createGameHttpServer } from "./server.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
@@ -40,6 +44,15 @@ const rankings = new RankingService(config.databaseUrl || null); await rankings.
 const rankingHandler = createRankingHandler({ service: rankings, auth, authSessions });
 const newsletter = new NewsletterService(config.databaseUrl || null); await newsletter.ready;
 const newsletterHandler = createNewsletterHandler(newsletter);
+
+const thousandRepository = config.databaseUrl
+  ? new PostgresThousandRepository(config.databaseUrl)
+  : new MemoryThousandRepository();
+if (thousandRepository.ready) await thousandRepository.ready;
+const thousandService = new ThousandGameService({ repository: thousandRepository });
+const thousandRealtime = new ThousandRealtimeHub({ service: thousandService });
+const thousandHandler = createThousandHttpHandler({ service: thousandService, auth, authSessions, realtime: thousandRealtime });
+
 const server = createGameHttpServer({ store, accounts, authSessions, messageAttachments, auth, lobby: new LobbyService({ sessionStore: store }), webRoot, logger: console });
 
 async function serveExtendedAsset(request, response) {
@@ -50,7 +63,8 @@ async function serveExtendedAsset(request, response) {
     "/lobby.html":"lobby.html","/homepage-consoles.js":"homepage-consoles.js",
     "/tournaments.html":"tournaments.html","/tournaments.css":"tournaments.css","/tournaments.js":"tournaments.js",
     "/community.html":"community.html","/community.css":"community.css","/community.js":"community.js",
-    "/ranking.html":"ranking.html","/ranking.css":"ranking.css","/ranking.js":"ranking.js"
+    "/ranking.html":"ranking.html","/ranking.css":"ranking.css","/ranking.js":"ranking.js",
+    "/thousand.html":"thousand.html","/thousand.css":"thousand.css","/thousand.js":"thousand.js"
   })[pathname];
   if (!file) return false;
   const extension=file.split(".").at(-1); const contentType=({html:"text/html",css:"text/css",js:"text/javascript"})[extension]||"application/octet-stream";
@@ -58,8 +72,8 @@ async function serveExtendedAsset(request, response) {
 }
 
 const baseRequestHandler=server.listeners("request")[0]; server.removeAllListeners("request");
-server.on("request",async(request,response)=>{try{if(await newsletterHandler(request,response))return;if(await serveExtendedAsset(request,response))return;if(await globalChatHandler(request,response))return;if(await tournamentHandler(request,response))return;if(await rankingHandler(request,response))return;return baseRequestHandler(request,response)}catch(error){console.error("Application request error:",error);if(!response.headersSent&&!response.writableEnded){response.writeHead(500,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify({error:{code:"APP_INTERNAL_ERROR",message:"Wewnętrzny błąd aplikacji."}}))}}});
+server.on("request",async(request,response)=>{try{if(await newsletterHandler(request,response))return;if(await thousandHandler(request,response))return;if(await serveExtendedAsset(request,response))return;if(await globalChatHandler(request,response))return;if(await tournamentHandler(request,response))return;if(await rankingHandler(request,response))return;return baseRequestHandler(request,response)}catch(error){console.error("Application request error:",error);if(!response.headersSent&&!response.writableEnded){response.writeHead(500,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify({error:{code:"APP_INTERNAL_ERROR",message:"Wewnętrzny błąd aplikacji."}}))}}});
 server.prependListener("request",(_request,response)=>{response.setHeader("X-Content-Type-Options","nosniff");response.setHeader("X-Frame-Options","DENY");response.setHeader("X-Permitted-Cross-Domain-Policies","none");response.setHeader("Referrer-Policy","strict-origin-when-cross-origin");response.setHeader("Cross-Origin-Opener-Policy","same-origin");response.setHeader("Cross-Origin-Resource-Policy","same-origin");response.setHeader("Origin-Agent-Cluster","?1");response.setHeader("Permissions-Policy","camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()");const turnstileOrigin="https://challenges.cloudflare.com";const scriptSrc=turnstileEnabled?`'self' 'unsafe-inline' ${turnstileOrigin}`:"'self' 'unsafe-inline'";const connectSrc=turnstileEnabled?`'self' ${turnstileOrigin}`:"'self'";const frameSrc=turnstileEnabled?turnstileOrigin:"'none'";response.setHeader("Content-Security-Policy",`default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; frame-src ${frameSrc}; font-src 'self'; object-src 'none'; media-src 'none'; worker-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests`);response.setHeader("Strict-Transport-Security","max-age=31536000; includeSubDomains")});
 server.requestTimeout=20_000;server.headersTimeout=10_000;server.keepAliveTimeout=5_000;server.maxHeadersCount=100;
-server.listen(config.port,config.host,()=>{console.log(`Gracz.pl działa na http://${config.host}:${config.port}`);console.log(`Publiczna strona: coming soon + newsletter`);console.log(`Newsletter: ${config.databaseUrl?"PostgreSQL":"pamięć procesu (tryb developerski)"}`)});
-let shuttingDown=false;async function shutdown(signal){if(shuttingDown)return;shuttingDown=true;console.log(`Otrzymano ${signal}. Zamykanie serwera…`);server.close(async()=>{try{if(typeof store.close==="function")await store.close();if(typeof accounts.close==="function")await accounts.close();if(typeof authSessions.close==="function")await authSessions.close();if(messageAttachments&&typeof messageAttachments.close==="function")await messageAttachments.close();await globalChat.close();await tournaments.close();await rankings.close();await newsletter.close();process.exit(0)}catch(error){console.error("Błąd podczas zamykania aplikacji:",error);process.exit(1)}})}for(const signal of ["SIGINT","SIGTERM"])process.once(signal,()=>void shutdown(signal));
+server.listen(config.port,config.host,()=>{console.log(`Gracz.pl działa na http://${config.host}:${config.port}`);console.log(`Publiczna strona: coming soon + newsletter`);console.log(`Newsletter: ${config.databaseUrl?"PostgreSQL":"pamięć procesu (tryb developerski)"}`);console.log(`Tysiąc: ${config.databaseUrl?"PostgreSQL + realtime SSE":"pamięć procesu + realtime SSE"}`)});
+let shuttingDown=false;async function shutdown(signal){if(shuttingDown)return;shuttingDown=true;console.log(`Otrzymano ${signal}. Zamykanie serwera…`);server.close(async()=>{try{thousandRealtime.close();await thousandService.close();if(typeof store.close==="function")await store.close();if(typeof accounts.close==="function")await accounts.close();if(typeof authSessions.close==="function")await authSessions.close();if(messageAttachments&&typeof messageAttachments.close==="function")await messageAttachments.close();await globalChat.close();await tournaments.close();await rankings.close();await newsletter.close();process.exit(0)}catch(error){console.error("Błąd podczas zamykania aplikacji:",error);process.exit(1)}})}for(const signal of ["SIGINT","SIGTERM"])process.once(signal,()=>void shutdown(signal));
