@@ -40,6 +40,26 @@ export class AuthService {
     return `${encoded}.${this.#sign(encoded)}`;
   }
 
+  issueGuest({ userId, displayName, ttlSeconds = 1800 }) {
+    requireText(userId, "userId");
+    requireText(displayName, "displayName");
+    if (!Number.isInteger(ttlSeconds) || ttlSeconds < 60 || ttlSeconds > 3600) {
+      throw new TypeError("Sesja gościa musi trwać od 60 s do 1 h.");
+    }
+    const issuedAt = Math.floor(this.clock() / 1000);
+    // Token gościa celowo nie ma jti ani wersji v2. Dzięki temu nie jest zapisywany
+    // jako normalna sesja konta w PostgreSQL i nie wymaga rekordu gracz_accounts.
+    const payload = {
+      sub: userId,
+      name: displayName,
+      guest: true,
+      iat: issuedAt,
+      exp: issuedAt + ttlSeconds,
+    };
+    const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    return `${encoded}.${this.#sign(encoded)}`;
+  }
+
   verify(token) {
     if (typeof token !== "string" || token.length < 10 || token.length > MAX_TOKEN_LENGTH) {
       throw new AuthError("Nieprawidłowy token logowania.");
@@ -80,6 +100,7 @@ export class AuthService {
       expiresAt: payload.exp,
       tokenId: payload.jti ?? null,
       tokenVersion: payload.v ?? 1,
+      guest: payload.guest === true,
     });
   }
 
