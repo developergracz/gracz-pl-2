@@ -4,7 +4,8 @@ const message=document.querySelector('#newsletter-message');
 let turnstileConfig=null;
 let turnstileWidgetId=null;
 let turnstileReadyPromise=null;
-let pendingChallenge=null;
+let currentChallengeToken=null;
+let tokenWaiters=[];
 
 async function loadTurnstileConfig(){
   try{
@@ -22,6 +23,7 @@ function loadTurnstileScript(){
   turnstileReadyPromise=new Promise((resolve,reject)=>{
     const existing=document.querySelector('script[data-gracz-turnstile]');
     if(existing){
+      if(window.turnstile){resolve();return;}
       existing.addEventListener('load',resolve,{once:true});
       existing.addEventListener('error',reject,{once:true});
       return;
@@ -38,34 +40,49 @@ function loadTurnstileScript(){
   return turnstileReadyPromise;
 }
 
+function resolveTokenWaiters(token){
+  const waiters=tokenWaiters.splice(0);
+  for(const waiter of waiters){clearTimeout(waiter.timeout);waiter.resolve(token);}
+}
+
+function rejectTokenWaiters(error){
+  const waiters=tokenWaiters.splice(0);
+  for(const waiter of waiters){clearTimeout(waiter.timeout);waiter.reject(error);}
+}
+
 async function ensureTurnstile(){
   if(!turnstileConfig)turnstileConfig=await loadTurnstileConfig();
   if(!turnstileConfig?.enabled)return false;
   await loadTurnstileScript();
   if(turnstileWidgetId!==null)return true;
+
   const host=document.createElement('div');
   host.id='newsletter-turnstile';
   host.setAttribute('aria-hidden','true');
+  host.style.position='absolute';
+  host.style.width='1px';
+  host.style.height='1px';
+  host.style.overflow='hidden';
+  host.style.opacity='0';
+  host.style.pointerEvents='none';
   form.appendChild(host);
+
   turnstileWidgetId=window.turnstile.render(host,{
     sitekey:turnstileConfig.siteKey,
     appearance:'interaction-only',
-    execution:'execute',
+    execution:'render',
     'response-field':false,
     callback(token){
-      if(pendingChallenge){
-        pendingChallenge.resolve(token);
-        pendingChallenge=null;
-      }
+      currentChallengeToken=token;
+      resolveTokenWaiters(token);
     },
     'error-callback'(){
-      if(pendingChallenge){
-        pendingChallenge.reject(new Error('Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.'));
-        pendingChallenge=null;
-      }
+      currentChallengeToken=null;
+      rejectTokenWaiters(new Error('Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.'));
     },
     'expired-callback'(){
-      if(turnstileWidgetId!==null)window.turnstile.reset(turnstileWidgetId);
+      currentChallengeToken=null;
+      if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
     }
   });
   return true;
@@ -74,19 +91,21 @@ async function ensureTurnstile(){
 async function getChallengeToken(){
   const enabled=await ensureTurnstile();
   if(!enabled)return null;
-  if(pendingChallenge)throw new Error('Weryfikacja bezpieczeństwa już trwa.');
+  if(currentChallengeToken)return currentChallengeToken;
+
   return await new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>{
-      if(pendingChallenge){
-        pendingChallenge=null;
-        reject(new Error('Weryfikacja bezpieczeństwa trwała zbyt długo. Spróbuj ponownie.'));
-      }
-    },15000);
-    pendingChallenge={
-      resolve(token){clearTimeout(timeout);resolve(token);},
-      reject(error){clearTimeout(timeout);reject(error);}
+    const waiter={
+      resolve,
+      reject,
+      timeout:setTimeout(()=>{
+        tokenWaiters=tokenWaiters.filter(item=>item!==waiter);
+        reject(new Error('Nie udało się zakończyć weryfikacji bezpieczeństwa. Odśwież stronę i spróbuj ponownie.'));
+      },10000)
     };
-    window.turnstile.execute(turnstileWidgetId);
+    tokenWaiters.push(waiter);
+    if(turnstileWidgetId!==null&&window.turnstile){
+      try{window.turnstile.reset(turnstileWidgetId);}catch{}
+    }
   });
 }
 
@@ -100,8 +119,10 @@ form?.addEventListener('submit',async(event)=>{
     message.textContent='Zaznacz zgodę, aby zapisać się na listę.';
     return;
   }
+
   const button=form.querySelector('button');
   button.disabled=true;
+  button.textContent='ZAPISUJĘ…';
   try{
     const challengeToken=await getChallengeToken();
     const response=await fetch('/newsletter/subscribe',{
@@ -118,12 +139,14 @@ form?.addEventListener('submit',async(event)=>{
     message.classList.add('ok');
     message.textContent=result.message||'Dziękujemy! Jesteś na liście startowej Gracz.pl.';
     form.reset();
+    currentChallengeToken=null;
+    if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
   }catch(error){
     message.classList.add('error');
     message.textContent=error.message||'Spróbuj ponownie za chwilę.';
   }finally{
-    if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
     button.disabled=false;
+    button.textContent='ZAPISZ MNIE NA START →';
   }
 });
 
