@@ -8,7 +8,18 @@ export class SecurityService {
   }
   source(request){return trustedClientSource(request);}
   host(request){const raw=String(request.headers?.["x-forwarded-host"]||request.headers?.host||"").split(",")[0].trim();return raw.toLowerCase().split(":")[0];}
-  assertSameOrigin(request){if(!MUTATIONS.has(String(request.method||"").toUpperCase()))return;const fetchSite=String(request.headers?.["sec-fetch-site"]||"");if(fetchSite==="cross-site")throw http403();const origin=request.headers?.origin;if(!origin)return;let originHost;try{originHost=new URL(origin).host.toLowerCase();}catch{throw http403();}const requestHost=String(request.headers?.host||"").toLowerCase();if(originHost!==requestHost)throw http403();}
+  assertSameOrigin(request){
+    if(!MUTATIONS.has(String(request.method||"").toUpperCase()))return;
+    const fetchSite=String(request.headers?.["sec-fetch-site"]||"").toLowerCase();
+    if(fetchSite==="cross-site")throw http403();
+    const requestHost=String(request.headers?.host||"").toLowerCase();
+    const origin=String(request.headers?.origin||"").trim();
+    const referer=String(request.headers?.referer||"").trim();
+    if(origin){let originHost;try{originHost=new URL(origin).host.toLowerCase();}catch{throw http403();}if(originHost!==requestHost)throw http403();return;}
+    if(referer){let refererHost;try{refererHost=new URL(referer).host.toLowerCase();}catch{throw http403();}if(refererHost!==requestHost)throw http403();return;}
+    if(fetchSite==="same-origin"||fetchSite==="same-site")return;
+    if(String(process.env.NODE_ENV||"").toLowerCase()==="production")throw http403();
+  }
   limit(request,scope,identity,{limit,windowMs}){const source=this.source(request);const id=String(identity||"anonymous").trim().toLowerCase().slice(0,254);this.limiter.consume(`${scope}:ip:${source}`,{limit,windowMs,message:"Zbyt wiele prób."});if(id&&id!=="anonymous")this.limiter.consume(`${scope}:identity:${id}`,{limit:Math.max(2,Math.ceil(limit/2)),windowMs,message:"Zbyt wiele prób dla tych danych."});}
   challengeConfig(request){const host=this.host(request);const allowed=host==="gracz.pl"||host==="www.gracz.pl"||Boolean(process.env.ALLOW_TURNSTILE_ON_TEST_HOSTS==="true");const enabled=Boolean(this.siteKey&&this.secretKey&&allowed);return{enabled,provider:enabled?"turnstile":null,siteKey:enabled?this.siteKey:null};}
   async verifyTurnstile(request,token,{required=true}={}){const cfg=this.challengeConfig(request);if(!cfg.enabled){if(required&&(this.host(request)==="gracz.pl"||this.host(request)==="www.gracz.pl"))throw securityError("TURNSTILE_NOT_CONFIGURED","Weryfikacja bezpieczeństwa nie jest skonfigurowana.",503);return{verified:false,disabled:true};}const clean=String(token||"").trim();if(!clean)throw securityError("TURNSTILE_REQUIRED","Wymagana jest weryfikacja bezpieczeństwa.",403);const form=new URLSearchParams({secret:this.secretKey,response:clean,remoteip:this.source(request)});let result;try{const response=await this.fetchImpl("https://challenges.cloudflare.com/turnstile/v0/siteverify",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:form,signal:AbortSignal.timeout(8_000)});if(!response.ok)throw new Error(`http-${response.status}`);result=await response.json();}catch(error){await this.audit?.record({eventType:"turnstile.error",outcome:"failure",source:this.source(request),metadata:{reason:"provider-unavailable"}});throw securityError("TURNSTILE_UNAVAILABLE","Weryfikacja bezpieczeństwa jest chwilowo niedostępna.",503);}
