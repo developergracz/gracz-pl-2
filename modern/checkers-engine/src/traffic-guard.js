@@ -37,6 +37,14 @@ export class TrafficGuard {
     if (method === "POST" && path === "/lobby/rooms") this.#consume(`rooms:${source}`, 20, 60_000, "rooms");
     if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/chat$/.test(path)) this.#consume(`game-chat:${source}`, 30, 15_000, "game-chat");
     if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/moves$/.test(path)) this.#consume(`moves:${source}`, 120, 60_000, "moves");
+
+    // Global-chat social actions are cheaper than full messages, but without
+    // dedicated limits they can still be abused to create database/broadcast flood.
+    if (method === "GET" && path === "/global-chat/events") this.#consume(`global-chat-stream:${source}`, 20, 60_000, "global-chat-stream");
+    if (method === "POST" && path === "/global-chat/topics") this.#consume(`global-chat-topics:${source}`, 5, 10 * 60_000, "global-chat-topics");
+    if (method === "POST" && path === "/global-chat/friends") this.#consume(`global-chat-friends:${source}`, 20, 10 * 60_000, "global-chat-friends");
+    if (method === "POST" && /^\/global-chat\/messages\/[0-9a-f-]{36}\/reaction$/i.test(path)) this.#consume(`global-chat-reactions:${source}`, 60, 60_000, "global-chat-reactions");
+    if (method === "POST" && /^\/global-chat\/messages\/[0-9a-f-]{36}\/report$/i.test(path)) this.#consume(`global-chat-reports:${source}`, 20, 10 * 60_000, "global-chat-reports");
   }
 
   assertAccountAllowed({ request, userId, action = "api" }) {
