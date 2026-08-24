@@ -1,5 +1,4 @@
 <?php
-
 /* Global configuration. Secrets MUST come from environment variables. */
 include('constants_global.php');
 include('kody_bledow.php');
@@ -8,9 +7,7 @@ function GraczEnv($name, $default = null, $required = false)
 {
     $value = getenv($name);
     if ($value === false || $value === '') {
-        if ($required) {
-            throw new RuntimeException('Missing required environment variable: '.$name);
-        }
+        if ($required) throw new RuntimeException('Missing required environment variable: '.$name);
         return $default;
     }
     return $value;
@@ -53,7 +50,8 @@ $path['profile_edit'] = $path['account_settings'];
 $path['register'] = $directory['base'].'register';
 $path['logout'] = $directory['base'].'wyloguj';
 $path['admin_game_add'] = $directory['base'].'gry_dodaj';
-$path['admin_panel'] = $directory['base'].'service_administration_panel';
+$path['admin_panel'] = $directory['base'].'admin_panel_secure';
+$path['admin_legacy_panel'] = $directory['base'].'service_administration_panel';
 $path['admin_reported_abuses'] = $directory['base'].'admin_reported_abuses';
 $path['admin_reported_bugs'] = $directory['base'].'admin_reported_bugs';
 $path['log_IP'] = $directory['logi'].'log_IP.txt';
@@ -95,6 +93,12 @@ $path['library_main'] = $directory['base'].'library_main.php';
 $path['library_games'] = $directory['base'].'library_games.php';
 $path['library_facebook'] = $directory['base'].'library_facebook.php';
 
+// Legacy infrastructure admin tools are disabled by default and must be set explicitly outside Git.
+$path['phpmyadmin'] = GraczEnv('GRACZ_PHPMYADMIN_URL', '');
+$path['nagios'] = GraczEnv('GRACZ_NAGIOS_URL', '');
+$path['webalizer'] = GraczEnv('GRACZ_WEBALIZER_URL', '');
+$path['awstats'] = GraczEnv('GRACZ_AWSTATS_URL', '');
+
 $cpu_load = sys_getloadavg();
 $cpu_load = isset($cpu_load[0]) ? floatval($cpu_load[0]) : 0;
 $max_number_of_results_per_page = 9;
@@ -108,16 +112,12 @@ $conversations_checking_period_normal = (2+5*$cpu_load)*1000;
 $conversations_checking_period_lazy = (3+15*$cpu_load)*1000;
 $player_active_state_time_period = 15;
 
-// OAuth/DB/application secrets are intentionally not committed.
 $facebook_client_id = GraczEnv('FACEBOOK_CLIENT_ID', '');
 $facebook_app_secret = GraczEnv('FACEBOOK_APP_SECRET', '');
 $smartfox_port = intval(GraczEnv('SMARTFOX_PORT', '8888'));
 $smartfox_address = GraczEnv('SMARTFOX_ADDRESS', isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : '127.0.0.1');
 $remote_IP = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
-
-// Legacy password pepper. Keep it outside Git and rotate only together with password migration.
 $seed_private = GraczEnv('GRACZ_PASSWORD_PEPPER', '', $production_mode);
-
 $database_address = GraczEnv('DB_HOST', '127.0.0.1:3306', $production_mode);
 $database_username = GraczEnv('DB_USER', 'gracz_app', $production_mode);
 $database_password = GraczEnv('DB_PASSWORD', '', $production_mode);
