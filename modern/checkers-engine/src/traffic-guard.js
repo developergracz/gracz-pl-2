@@ -90,9 +90,13 @@ export class TrafficGuard {
 }
 
 export function clientSource(request) {
-  const trustCloudflare = String(process.env.TRUST_CLOUDFLARE_HEADERS || "").toLowerCase() === "true";
+  const onRender = String(process.env.RENDER || "").toLowerCase() === "true";
+  const trustCloudflare = onRender || String(process.env.TRUST_CLOUDFLARE_HEADERS || "").toLowerCase() === "true";
   const trustProxy = String(process.env.TRUST_PROXY_HEADERS || "").toLowerCase() === "true";
 
+  // Render routes public web traffic through Cloudflare and forwards CF-Connecting-IP.
+  // Prefer that single-value header on Render so rate limits are keyed to the real
+  // client instead of the shared proxy socket address or a spoofable XFF chain.
   if (trustCloudflare) {
     const cfIp = request.headers?.["cf-connecting-ip"];
     if (typeof cfIp === "string" && cfIp.trim()) return normalizeAddress(cfIp);
