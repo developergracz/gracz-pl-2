@@ -105,6 +105,7 @@ export class SecureAccountService {
       const actual = hashToken(safeCode);
       if (record.code_hash.length !== actual.length || !timingSafeEqual(record.code_hash, actual)) {
         await client.query(`UPDATE gracz_registration_codes SET attempts=attempts+1 WHERE user_id=$1`, [normalizedId]);
+        await client.query("COMMIT");
         throw new AccountError("Nieprawidłowy kod aktywacyjny.", "INVALID_VERIFICATION_CODE");
       }
       await client.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE user_id=$1`, [normalizedId]);
