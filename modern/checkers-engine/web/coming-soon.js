@@ -3,6 +3,8 @@ const message=document.querySelector('#newsletter-message');
 const nickInput=document.querySelector('#preferred-nick');
 const nickCheckButton=document.querySelector('#check-nick');
 const nickMessage=document.querySelector('#nick-message');
+const successModal=document.querySelector('#signup-success-modal');
+const successModalText=document.querySelector('#success-modal-text');
 
 let turnstileConfig=null;
 let turnstileWidgetId=null;
@@ -100,6 +102,21 @@ async function getChallengeToken(){
   });
 }
 
+function openSuccessModal(text){
+  if(!successModal)return;
+  if(successModalText)successModalText.textContent=text||'Twój adres został zapisany na liście startowej Gracz.pl.';
+  successModal.hidden=false;
+  document.body.classList.add('success-modal-open');
+  requestAnimationFrame(()=>document.querySelector('#success-modal-ok')?.focus());
+}
+function closeSuccessModal(){
+  if(!successModal)return;
+  successModal.hidden=true;
+  document.body.classList.remove('success-modal-open');
+}
+document.querySelectorAll('[data-close-success]').forEach(el=>el.addEventListener('click',closeSuccessModal));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&successModal&&!successModal.hidden)closeSuccessModal();});
+
 nickCheckButton?.addEventListener('click',async()=>{
   const nick=String(nickInput?.value||'').trim();
   nickMessage.className='nick-message';
@@ -132,7 +149,9 @@ form?.addEventListener('submit',async(event)=>{
     const response=await fetch('/newsletter/subscribe',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:String(data.get('email')||'').trim(),preferredNick:String(data.get('preferredNick')||'').trim(),legal:true,consent:true,challengeToken})});
     const result=await response.json();
     if(!response.ok)throw new Error(result.error?.message||'Nie udało się zapisać.');
-    message.classList.add('ok');message.textContent=result.message||'Dziękujemy! Jesteś na liście startowej Gracz.pl.';
+    const successText=result.message||'Dziękujemy! Jesteś na liście startowej Gracz.pl.';
+    message.classList.add('ok');message.textContent=successText;
+    openSuccessModal(successText);
     form.reset();nickMessage.textContent='';currentChallengeToken=null;
     if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
   }catch(error){message.classList.add('error');message.textContent=error.message||'Spróbuj ponownie za chwilę.';}
