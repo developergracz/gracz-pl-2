@@ -32,6 +32,7 @@ export class NewsletterService {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
     for (const statement of [
+      `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS id BIGSERIAL`,
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick VARCHAR(24)`,
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick_normalized VARCHAR(24)`,
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS confirmation_token_hash BYTEA`,
@@ -41,6 +42,7 @@ export class NewsletterService {
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS position_token_hash BYTEA`,
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS unsubscribe_token_hash BYTEA`,
     ]) await this.pool.query(statement);
+    await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_id_unique ON gracz_newsletter_subscribers(id)`);
     await this.pool.query(`DROP INDEX IF EXISTS gracz_newsletter_preferred_nick_unique`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_preferred_nick_unique_v2 ON gracz_newsletter_subscribers(preferred_nick_normalized) WHERE preferred_nick_normalized IS NOT NULL AND status IN ('pending_confirmation','subscribed')`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_newsletter_confirmation_hash_idx ON gracz_newsletter_subscribers(confirmation_token_hash) WHERE confirmation_token_hash IS NOT NULL`);
