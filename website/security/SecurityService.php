@@ -8,7 +8,7 @@ final class SecurityService
 
     public static function configureSessionCookie()
     {
-        $secure = self::isHttps();
+        $secure = self::isHttps() || getenv('GRACZ_ENV') === 'production';
         ini_set('session.use_strict_mode','1');
         ini_set('session.use_only_cookies','1');
         ini_set('session.use_trans_sid','0');
@@ -34,7 +34,6 @@ final class SecurityService
         header('Cross-Origin-Opener-Policy: same-origin');
         header('Cross-Origin-Resource-Policy: same-site');
         if (self::isHttps()) header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
-        // Legacy pages still contain inline JS/CSS. Sources are allow-listed and unsafe-inline should be removed after nonce migration.
         header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; upgrade-insecure-requests");
     }
     public static function initializeSessionState()
