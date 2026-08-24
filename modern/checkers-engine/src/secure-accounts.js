@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomInt, scrypt as scryptCallback, timingSaf
 import { promisify } from "node:util";
 import pg from "pg";
 import { AccountError } from "./accounts.js";
+import { SecureMailService } from "./secure-mail-service.js";
 
 const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
@@ -13,6 +14,7 @@ const COMMON_PASSWORDS = new Set([
   "1234567890", "123456789", "12345678", "1111111111", "administrator", "admin123",
   "letmein123", "welcome123", "iloveyou123", "zaq12wsx", "qazwsx123", "polska123",
 ]);
+const systemMail = new SecureMailService();
 
 export class SecureAccountService {
   constructor(baseService, connectionString) {
@@ -29,25 +31,21 @@ export class SecureAccountService {
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS phone VARCHAR(24)`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS verification_channel VARCHAR(10) NOT NULL DEFAULT 'email'`);
     await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS contact_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_registration_codes (
-        user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-        code_hash BYTEA NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        attempts SMALLINT NOT NULL DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_registration_codes (
+      user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
+      code_hash BYTEA NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      attempts SMALLINT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
     await this.pool.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE contact_verified=FALSE AND NOT EXISTS (SELECT 1 FROM gracz_registration_codes c WHERE c.user_id=gracz_accounts.user_id)`);
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
-        token_hash BYTEA PRIMARY KEY,
-        user_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-        expires_at TIMESTAMPTZ NOT NULL,
-        used_at TIMESTAMPTZ,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
+      token_hash BYTEA PRIMARY KEY,
+      user_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_password_reset_user_idx ON gracz_password_reset_tokens(user_id, created_at DESC)`);
   }
 
@@ -58,7 +56,6 @@ export class SecureAccountService {
     const phone = cleanPhone(input?.phone);
     const verificationChannel = normalizeVerificationChannel(input?.verificationChannel);
     if (verificationChannel === "sms" && !phone) throw new AccountError("Aby otrzymać kod SMS, wpisz prawidłowy numer telefonu.", "INVALID_PHONE");
-
     const account = await this.base.register(input);
     try {
       await this.#setCurrentPassword(account.userId, input.password);
@@ -77,12 +74,9 @@ export class SecureAccountService {
     const account = rows[0];
     if (!account || account.contact_verified) return { ok: true };
     const code = String(randomInt(100000, 1000000));
-    await this.pool.query(
-      `INSERT INTO gracz_registration_codes(user_id,code_hash,expires_at,attempts,created_at)
-       VALUES($1,$2,NOW()+INTERVAL '10 minutes',0,NOW())
-       ON CONFLICT(user_id) DO UPDATE SET code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,attempts=0,created_at=NOW()`,
-      [userId, hashToken(code)],
-    );
+    await this.pool.query(`INSERT INTO gracz_registration_codes(user_id,code_hash,expires_at,attempts,created_at)
+      VALUES($1,$2,NOW()+INTERVAL '10 minutes',0,NOW())
+      ON CONFLICT(user_id) DO UPDATE SET code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,attempts=0,created_at=NOW()`, [userId, hashToken(code)]);
     if (account.verification_channel === "sms") {
       const phone = cleanPhone(account.phone);
       if (!phone) throw new AccountError("Do aktywacji SMS wymagany jest prawidłowy numer telefonu.", "INVALID_PHONE");
@@ -103,10 +97,9 @@ export class SecureAccountService {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      const { rows } = await client.query(
-        `SELECT a.user_id,a.display_name,c.code_hash,c.expires_at,c.attempts
-         FROM gracz_accounts a JOIN gracz_registration_codes c ON c.user_id=a.user_id
-         WHERE a.user_id=$1 FOR UPDATE OF c`, [normalizedId]);
+      const { rows } = await client.query(`SELECT a.user_id,a.display_name,c.code_hash,c.expires_at,c.attempts
+        FROM gracz_accounts a JOIN gracz_registration_codes c ON c.user_id=a.user_id
+        WHERE a.user_id=$1 FOR UPDATE OF c`, [normalizedId]);
       const record = rows[0];
       if (!record || new Date(record.expires_at).getTime() <= Date.now() || Number(record.attempts) >= 5) throw new AccountError("Kod aktywacyjny wygasł. Załóż konto ponownie, aby otrzymać nowy kod.", "VERIFICATION_EXPIRED");
       const actual = hashToken(safeCode);
@@ -185,24 +178,13 @@ export class SecureAccountService {
 }
 
 async function sendVerificationEmail({ to, displayName, code }) {
-  const apiKey = String(process.env.RESEND_API_KEY ?? "").trim();
-  const from = String(process.env.EMAIL_FROM ?? "").trim();
-  if (!apiKey || !from) throw new AccountError("Wysyłka e-mail nie jest jeszcze skonfigurowana na serwerze.", "EMAIL_NOT_CONFIGURED");
-  const name = displayName || "Graczu";
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject: "Witaj w Gracz.pl — Twój kod aktywacyjny",
-      text: `Witaj ${name}!\n\nDziękujemy za dołączenie do społeczności Gracz.pl. Aby zakończyć tworzenie konta i rozpocząć grę, potwierdź swój adres e-mail.\n\nTWÓJ KOD AKTYWACYJNY: ${code}\n\nKod jest ważny przez 10 minut i może zostać użyty tylko do aktywacji Twojego konta.\n\nDla Twojego bezpieczeństwa nigdy nie przekazuj tego kodu innej osobie. Administracja Gracz.pl nigdy nie prosi o podanie hasła ani kodu aktywacyjnego.\n\nJeśli to nie Ty zakładałeś konto w Gracz.pl, zignoruj tę wiadomość.\n\nŻyczymy wielu emocjonujących rozgrywek!\nZespół Gracz.pl`,
-      html: `<div style="margin:0;padding:32px 16px;background:#071016;font-family:Arial,Helvetica,sans-serif;color:#eaf4ef"><div style="max-width:620px;margin:0 auto;border:1px solid #24443a;border-radius:18px;overflow:hidden;background:#0d171d;box-shadow:0 20px 60px rgba(0,0,0,.35)"><div style="padding:28px 32px;text-align:center;background:linear-gradient(135deg,#10251c,#0b171c);border-bottom:1px solid #24443a"><div style="font-size:30px;font-weight:900;letter-spacing:-2px;color:#fff">gracz<span style="color:#ff3d4a;font-size:16px">.PL</span></div><div style="margin-top:8px;color:#7f9b90;font-size:13px">Gry online · Rywalizacja · Społeczność</div></div><div style="padding:34px 34px 28px"><h1 style="margin:0 0 18px;font-size:25px;color:#fff">Witaj, ${escapeHtml(name)}!</h1><p style="margin:0 0 14px;line-height:1.65;color:#c0d0c9">Dziękujemy za dołączenie do społeczności <strong style="color:#fff">Gracz.pl</strong>. Twoje konto jest już prawie gotowe.</p><p style="margin:0 0 24px;line-height:1.65;color:#c0d0c9">Aby zakończyć rejestrację i rozpocząć grę, wpisz poniższy kod w oknie aktywacji konta:</p><div style="margin:24px 0;padding:22px;text-align:center;border:1px solid #2d6d4c;border-radius:12px;background:#0a2618"><div style="font-size:12px;text-transform:uppercase;letter-spacing:1.7px;color:#74b591">Twój kod aktywacyjny</div><div style="margin-top:10px;font-size:38px;font-weight:900;letter-spacing:10px;color:#43ed92">${code}</div></div><p style="margin:0 0 22px;text-align:center;color:#9db2a8;font-size:13px">Kod jest ważny przez <strong style="color:#fff">10 minut</strong>.</p><div style="padding:16px 18px;border-radius:10px;background:#101f25;border-left:4px solid #e2ad45;color:#b9c7c1;font-size:13px;line-height:1.55"><strong style="color:#f4d285">Bezpieczeństwo konta</strong><br>Nigdy nie przekazuj tego kodu innej osobie. Administracja Gracz.pl nigdy nie poprosi Cię o podanie hasła ani kodu aktywacyjnego.</div><p style="margin:24px 0 0;line-height:1.6;color:#b8c7c0">Jeżeli to nie Ty zakładałeś konto, po prostu zignoruj tę wiadomość.</p><p style="margin:24px 0 0;color:#e9f4ef">Życzymy wielu emocjonujących rozgrywek!<br><strong>Zespół Gracz.pl</strong></p></div><div style="padding:18px 32px;text-align:center;border-top:1px solid #1f3530;color:#698078;font-size:11px">Ta wiadomość została wysłana automatycznie w związku z próbą utworzenia konta w Gracz.pl.</div></div></div>`,
-    }),
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("Nie udało się wysłać e-maila aktywacyjnego:", response.status, detail.slice(0, 300));
+  const name = String(displayName || "Graczu").trim().slice(0, 40) || "Graczu";
+  const text = `Witaj ${name}!\n\nTwój kod aktywacyjny Gracz.pl: ${code}\n\nKod jest ważny przez 10 minut. Nigdy nie przekazuj go innej osobie. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto"><h1>Witaj, ${escapeHtml(name)}!</h1><p>Aby aktywować konto Gracz.pl, wpisz poniższy kod:</p><p style="font-size:34px;font-weight:900;letter-spacing:8px">${escapeHtml(code)}</p><p>Kod jest ważny przez 10 minut. Administracja Gracz.pl nigdy nie prosi o hasło ani kod aktywacyjny.</p></div>`;
+  try {
+    const result = await systemMail.send({ to, subject: "Witaj w Gracz.pl — Twój kod aktywacyjny", text, html, purpose: "account-verify" });
+    if (!result.sent) throw new Error(result.reason || "EMAIL_NOT_CONFIGURED");
+  } catch {
     throw new AccountError("Nie udało się wysłać kodu aktywacyjnego. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
   }
 }
@@ -213,24 +195,18 @@ async function sendVerificationSms({ to, displayName, code }) {
   const from = String(process.env.TWILIO_FROM_NUMBER ?? "").trim();
   if (!accountSid || !authToken || !from) throw new AccountError("Wysyłka SMS nie jest jeszcze skonfigurowana na serwerze.", "SMS_NOT_CONFIGURED");
   const name = String(displayName || "Graczu").trim().slice(0, 40);
-  const body = `Gracz.pl: Witaj ${name}! Twój kod aktywacyjny to ${code}. Kod jest ważny 10 minut. Nie udostępniaj go nikomu. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`;
+  const body = `Gracz.pl: Witaj ${name}! Twój kod aktywacyjny to ${code}. Kod jest ważny 10 minut. Nie udostępniaj go nikomu.`;
   const form = new URLSearchParams({ To: to, From: from, Body: body });
   const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
     method: "POST",
-    headers: {
-      authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`, "utf8").toString("base64")}`,
-      "content-type": "application/x-www-form-urlencoded",
-    },
+    headers: { authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`, "utf8").toString("base64")}`, "content-type": "application/x-www-form-urlencoded" },
     body: form,
+    signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("Nie udało się wysłać SMS-a aktywacyjnego:", response.status, detail.slice(0, 300));
-    throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
-  }
+  if (!response.ok) throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
 }
 
-function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]); }
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]); }
 export async function hashPasswordV2(password, salt) { return hashPassword(password, salt, CURRENT_SCRYPT); }
 async function hashPassword(password, salt, params) { return scrypt(password, salt, 64, params); }
 function hashToken(token) { return createHash("sha256").update(token, "utf8").digest(); }
