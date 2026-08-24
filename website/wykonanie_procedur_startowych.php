@@ -4,6 +4,7 @@ include_once("variables_local.php");
 include_once('../variables_global.php');
 include_once("exceptions.php");
 include_once($actual_path.'security_core.php');
+include_once($actual_path.'security_services.php');
 
 SecurityApplyHeaders();
 SecurityConfigureSession(isset($domain) ? $domain : '');
@@ -91,6 +92,18 @@ DatabaseConnect();
 RateLimitEnsureTable();
 AuditEnsureTable();
 
+// Centralna brama paneli uprzywilejowanych. Zwykłe konto gracza nie może wejść bezpośrednim URL-em.
+$currentScript = basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
+$privilegedScripts = array(
+  'service_administration_panel.php','mailing.php','admin_reported_abuses.php','admin_reported_bugs.php',
+  'advertisement_management.php','code_paste_management.php','daily.php'
+);
+if (in_array($currentScript, $privilegedScripts, true)) {
+  SecurityRequireRole('administrator');
+  SecurityRequirePrivilegedMfa();
+  AuditLog('admin.page_access', 'script', $currentScript);
+}
+
 header('Content-Type: text/html; charset=UTF-8;');
 srand();
 
@@ -117,6 +130,7 @@ try
       SecurityRotateSessionAfterLogin();
       RateLimitReset('login_hard', $compoundIdentity);
       RateLimitReset('login_soft', $compoundIdentity);
+      unset($_SESSION['security_role']);
       AuditLog('auth.login_success', 'user', isset($_SESSION['id']) ? $_SESSION['id'] : null);
     } else {
       AuditLog('auth.login_failed', 'account', $loginIdentity);
