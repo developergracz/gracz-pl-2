@@ -3,6 +3,8 @@ import pg from "pg";
 
 const { Pool } = pg;
 const TOPIC_CATEGORIES = new Set(["ogólne", "warcaby", "gomoku", "szachy", "turnieje", "pomoc", "offtopic"]);
+const MAX_CHAT_SSE_TOTAL = 500;
+const MAX_CHAT_SSE_PER_USER = 3;
 
 export class GlobalChatService {
   constructor(databaseUrl = null) {
@@ -85,21 +87,33 @@ export class GlobalChatService {
 
   subscribe(response, user) {
     this.touch(user);
+    const userConnections = [...this.subscribers].filter((client) => client.userId === user.userId).length;
+    if (this.subscribers.size >= MAX_CHAT_SSE_TOTAL) throw chatError("Chat jest chwilowo przeciążony. Spróbuj ponownie za chwilę.", "CHAT_STREAM_CAPACITY", 503);
+    if (userConnections >= MAX_CHAT_SSE_PER_USER) throw chatError("Masz już zbyt wiele otwartych połączeń z chatem.", "CHAT_STREAM_LIMIT", 429);
+
     response.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store, no-transform", connection: "keep-alive", "x-accel-buffering": "no" });
-    response.write(`event: connected\ndata: ${JSON.stringify({ online: this.online() })}\n\n`);
-    const client = { response, userId: user.userId };
+    const client = { response, userId: user.userId, ping: null, closed: false, close: null };
+    const close = () => {
+      if (client.closed) return;
+      client.closed = true;
+      if (client.ping) clearInterval(client.ping);
+      this.subscribers.delete(client);
+      if (!response.writableEnded) response.end();
+    };
+    client.close = close;
     this.subscribers.add(client);
-    const ping = setInterval(() => { if (!response.writableEnded) response.write(`event: ping\ndata: ${Date.now()}\n\n`); }, 25_000);
-    const close = () => { clearInterval(ping); this.subscribers.delete(client); };
-    response.on("close", close); response.on("finish", close);
+    response.on("close", close);
+    response.on("finish", close);
+
+    if (!writeSse(client, `event: connected\ndata: ${JSON.stringify({ online: this.online() })}\n\n`)) return close();
+    client.ping = setInterval(() => {
+      if (!writeSse(client, `event: ping\ndata: ${Date.now()}\n\n`)) close();
+    }, 25_000);
   }
 
   broadcast(event, payload) {
     const data = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
-    for (const client of this.subscribers) {
-      if (client.response.writableEnded) { this.subscribers.delete(client); continue; }
-      client.response.write(data);
-    }
+    for (const client of [...this.subscribers]) if (!writeSse(client, data)) client.close?.();
   }
 
   assertRate(userId, body) {
@@ -245,7 +259,7 @@ export class GlobalChatService {
 
   async removeFriend(user,relationId){if(!this.pool){const before=this.memoryFriends.length;this.memoryFriends=this.memoryFriends.filter(r=>!(r.relationId===relationId&&(r.requesterId===user.userId||r.addresseeId===user.userId)));if(before===this.memoryFriends.length)throw chatError("Nie znaleziono znajomego.","FRIEND_NOT_FOUND",404);return{ok:true};}const {rowCount}=await this.pool.query(`DELETE FROM gracz_chat_friends WHERE relation_id=$1 AND (requester_id=$2 OR addressee_id=$2)`,[relationId,user.userId]);if(!rowCount)throw chatError("Nie znaleziono znajomego.","FRIEND_NOT_FOUND",404);return{ok:true};}
 
-  async close(){for(const client of this.subscribers)client.response.end();this.subscribers.clear();if(this.pool)await this.pool.end();}
+  async close(){for(const client of [...this.subscribers])client.close?.();this.subscribers.clear();if(this.pool)await this.pool.end();}
 }
 
 export function createGlobalChatHandler({service,auth,authSessions}){return async function globalChatHandler(request,response){const url=new URL(request.url,"http://localhost");if(!url.pathname.startsWith("/global-chat"))return false;if(url.pathname.endsWith(".html")||url.pathname.endsWith(".css")||url.pathname.endsWith(".js"))return false;try{const user=await trustedChatUser(request,auth,authSessions);service.touch(user);
@@ -267,6 +281,7 @@ export function createGlobalChatHandler({service,auth,authSessions}){return asyn
 async function trustedChatUser(request,auth,authSessions){const cookies=Object.fromEntries(String(request.headers.cookie||"").split(";").map((part)=>{const i=part.indexOf("=");return i>0?[part.slice(0,i).trim(),decodeURIComponent(part.slice(i+1).trim())]:["",""];}).filter(([k])=>k));const token=cookies["__Host-gracz_session"]||(String(request.headers.authorization||"").startsWith("Bearer ")?String(request.headers.authorization).slice(7):null);if(!token||token==="cookie")throw chatError("Zaloguj się, aby korzystać z chatu.","UNAUTHENTICATED",401);const user=auth.verify(token);if(authSessions&&user.tokenId&&await authSessions.has(user.tokenId))await authSessions.assertActive(user);return{userId:user.userId,displayName:user.displayName,tokenId:user.tokenId};}
 async function readJson(request){const chunks=[];let size=0;for await(const c of request){size+=c.length;if(size>32_768)throw chatError("Żądanie jest za duże.","PAYLOAD_TOO_LARGE",413);chunks.push(c);}try{return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}");}catch{throw chatError("Nieprawidłowe dane.","INVALID_JSON",400);}}
 function json(response,status,body){if(response.writableEnded)return true;response.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify(body));return true;}
+function writeSse(client,data){const response=client?.response;if(client?.closed||!response||response.writableEnded||response.destroyed)return false;try{return response.write(data)!==false;}catch{return false;}}
 function mapRow(r){return{messageId:r.message_id,userId:r.user_id,displayName:r.display_name,body:r.body,replyTo:r.reply_to,topicId:r.topic_id||null,topicTitle:r.topic_title||null,topicCategory:r.topic_category||null,reactions:r.reactions||{},createdAt:r.created_at,editedAt:r.edited_at,deleted:Boolean(r.deleted)};}
 function mapTopic(r){return{topicId:r.topic_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description||"",category:r.category||"ogólne",createdAt:r.created_at,closed:Boolean(r.closed),messageCount:Number(r.message_count||0)};}
 function mapFriend(r){return{relationId:r.relation_id,requesterId:r.requester_id,requesterName:r.requester_name,addresseeId:r.addressee_id,addresseeName:r.addressee_name,status:r.status,createdAt:r.created_at,updatedAt:r.updated_at};}
