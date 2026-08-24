@@ -67,7 +67,7 @@ async function serveExtendedAsset(request, response) {
     "/tournaments.html":"tournaments.html","/tournaments.css":"tournaments.css","/tournaments.js":"tournaments.js",
     "/community.html":"community.html","/community.css":"community.css","/community.js":"community.js",
     "/ranking.html":"ranking.html","/ranking.css":"ranking.css","/ranking.js":"ranking.js",
-    "/thousand.html":"thousand.html","/thousand.css":"thousand.css","/thousand.js":"thousand.js"
+    "/thousand.html":"thousand.html","/thousand.css":"thousand.css","/thousand-multiplayer.css":"thousand-multiplayer.css","/thousand.js":"thousand.js"
   })[pathname];
   if (!file) return false;
   const extension=file.split(".").at(-1);
