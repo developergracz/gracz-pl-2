@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { AuthError } from './auth.js';
 
 const SESSION_COOKIE='__Host-gracz_session';
@@ -7,6 +8,20 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
   if(!auth) throw new TypeError('Uwierzytelnianie jest wymagane.');
   return async function platformLobbyHttpHandler(request,response){
     const url=new URL(request.url,'http://localhost');
+
+    if(request.method==='POST'&&url.pathname==='/auth/guest'){
+      try{
+        assertSameOriginMutation(request);
+        const suffix=randomBytes(4).toString('hex');
+        const user={userId:`guest-${suffix}`,displayName:`Gość ${suffix.slice(0,4).toUpperCase()}`};
+        const token=auth.issueGuest({...user,ttlSeconds:1800});
+        response.setHeader('Set-Cookie',`${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=1800; HttpOnly; Secure; SameSite=Lax`);
+        return sendJson(response,201,{token:'cookie',user:{...user,guest:true},expiresIn:1800});
+      }catch(error){
+        return sendJson(response,Number.isInteger(error?.status)?error.status:400,errorBody(error));
+      }
+    }
+
     if(request.method!=='POST'||url.pathname!=='/lobby/rooms') return false;
     try{
       assertSameOriginMutation(request);
