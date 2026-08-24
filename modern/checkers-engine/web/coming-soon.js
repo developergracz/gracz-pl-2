@@ -1,5 +1,7 @@
 const form=document.querySelector('#newsletter-form');
 const message=document.querySelector('#newsletter-message');
+const emailInput=document.querySelector('#newsletter-email');
+const emailValidation=document.querySelector('#email-validation');
 const nickInput=document.querySelector('#preferred-nick');
 const nickCheckButton=document.querySelector('#check-nick');
 const nickMessage=document.querySelector('#nick-message');
@@ -102,6 +104,30 @@ async function getChallengeToken(){
   });
 }
 
+function showEmailValidation(text){
+  if(!emailValidation||!emailInput)return;
+  emailValidation.textContent=text;
+  emailValidation.hidden=false;
+  emailInput.classList.add('input-invalid');
+  emailInput.setAttribute('aria-invalid','true');
+}
+function clearEmailValidation(){
+  if(!emailValidation||!emailInput)return;
+  emailValidation.hidden=true;
+  emailValidation.textContent='';
+  emailInput.classList.remove('input-invalid');
+  emailInput.removeAttribute('aria-invalid');
+}
+function validateEmailField(){
+  const value=String(emailInput?.value||'').trim();
+  if(!value){showEmailValidation('Wypełnij to pole.');emailInput?.focus();return false;}
+  if(!emailInput.checkValidity()){showEmailValidation('Podaj prawidłowy adres e-mail.');emailInput?.focus();return false;}
+  clearEmailValidation();
+  return true;
+}
+emailInput?.addEventListener('input',clearEmailValidation);
+emailInput?.addEventListener('blur',()=>{if(String(emailInput.value||'').trim()&&!emailInput.checkValidity())showEmailValidation('Podaj prawidłowy adres e-mail.');});
+
 function openSuccessModal(text){
   if(!successModal)return;
   if(successModalText)successModalText.textContent=text||'Twój adres został zapisany na liście startowej Gracz.pl.';
@@ -139,6 +165,7 @@ nickInput?.addEventListener('input',()=>{nickMessage.className='nick-message';ni
 form?.addEventListener('submit',async(event)=>{
   event.preventDefault();
   message.className='message';message.textContent='';
+  if(!validateEmailField())return;
   const data=new FormData(form);
   if(data.get('legal')!=='on'){message.classList.add('error');message.textContent='Zaakceptuj Regulamin i Politykę prywatności.';return;}
   if(data.get('consent')!=='on'){message.classList.add('error');message.textContent='Zaznacz zgodę, aby zapisać się na listę.';return;}
@@ -152,7 +179,7 @@ form?.addEventListener('submit',async(event)=>{
     const successText=result.message||'Dziękujemy! Jesteś na liście startowej Gracz.pl.';
     message.classList.add('ok');message.textContent=successText;
     openSuccessModal(successText);
-    form.reset();nickMessage.textContent='';currentChallengeToken=null;
+    form.reset();clearEmailValidation();nickMessage.textContent='';currentChallengeToken=null;
     if(turnstileWidgetId!==null&&window.turnstile)window.turnstile.reset(turnstileWidgetId);
   }catch(error){message.classList.add('error');message.textContent=error.message||'Spróbuj ponownie za chwilę.';}
   finally{button.disabled=false;button.textContent='ZAPISZ MNIE NA START →';}
