@@ -63,6 +63,7 @@ async function serveExtendedAsset(request, response) {
   const pathname = new URL(request.url, "http://localhost").pathname;
   const file = ({
     "/":"coming-soon.html","/coming-soon.html":"coming-soon.html","/coming-soon.css":"coming-soon.css","/coming-soon.js":"coming-soon.js",
+    "/aktualnosci.html":"aktualnosci.html","/polityka-prywatnosci.html":"polityka-prywatnosci.html",
     "/lobby.html":"lobby.html","/homepage-consoles.js":"homepage-consoles.js","/thousand-lobby.js":"thousand-lobby.js",
     "/tournaments.html":"tournaments.html","/tournaments.css":"tournaments.css","/tournaments.js":"tournaments.js",
     "/community.html":"community.html","/community.css":"community.css","/community.js":"community.js",
