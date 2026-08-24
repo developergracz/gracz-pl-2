@@ -5,7 +5,7 @@ import { ThousandConcurrencyError, ThousandNotFoundError } from './thousand-repo
 
 const SESSION_COOKIE='__Host-gracz_session';
 
-export function createThousandHttpHandler({service,auth,authSessions=null,clock=()=>Date.now()}={}){
+export function createThousandHttpHandler({service,auth,authSessions=null,realtime=null,clock=()=>Date.now()}={}){
   if(!service) throw new TypeError('Serwis Tysiąca jest wymagany.');
   if(!auth) throw new TypeError('Uwierzytelnianie jest wymagane dla API Tysiąca.');
   const limiter=new ActionLimiter({clock});
@@ -30,21 +30,28 @@ export function createThousandHttpHandler({service,auth,authSessions=null,clock=
         return sendJson(response,201,{gameId:game.gameId,revision:game.revision});
       }
 
-      const match=url.pathname.match(/^\/thousand\/games\/([a-zA-Z0-9_-]{8,96})(?:\/(actions|next-round))?$/);
+      const match=url.pathname.match(/^\/thousand\/games\/([a-zA-Z0-9_-]{8,96})(?:\/(actions|next-round|events))?$/);
       if(!match) return sendJson(response,404,{error:{code:'THOUSAND_ROUTE_NOT_FOUND',message:'Nie znaleziono endpointu Tysiąca.'}});
       const [,gameId,action]=match;
 
       if(request.method==='GET'&&!action){
         return sendJson(response,200,await service.getView(gameId,user.userId));
       }
+      if(request.method==='GET'&&action==='events'){
+        if(!realtime) return sendJson(response,501,{error:{code:'THOUSAND_REALTIME_DISABLED',message:'Aktualizacje realtime nie są dostępne.'}});
+        await realtime.subscribe(gameId,user.userId,response);
+        return true;
+      }
       if(request.method==='POST'&&action==='actions'){
         const body=await readJson(request);
         const result=await service.performAction(gameId,user.userId,body.action,{expectedRevision:body.expectedRevision??null});
+        await realtime?.publish(gameId,'thousand.updated');
         return sendJson(response,200,result);
       }
       if(request.method==='POST'&&action==='next-round'){
         const body=await readJson(request);
         const result=await service.nextRound(gameId,user.userId,{expectedRevision:body.expectedRevision??null});
+        await realtime?.publish(gameId,'thousand.round-started');
         return sendJson(response,200,result);
       }
       return sendJson(response,405,{error:{code:'METHOD_NOT_ALLOWED',message:'Niedozwolona metoda.'}});
