@@ -17,8 +17,10 @@ export function createAdminSecurityHandler({auth,authSessions,rbac,mfa,audit,sec
       if(request.method==="GET"&&url.pathname==="/admin/security/me")return json(response,200,{user:{userId:user.userId,displayName:user.displayName,role,mfaEnabled:await mfa.isEnabled(user.userId)}});
       if(request.method==="POST"&&url.pathname==="/admin/security/mfa/setup"){
         if(role!=="moderator")await rbac.require(user.userId,"admin.settings");
+        const mfaAlreadyEnabled=await mfa.isEnabled(user.userId);
+        if(mfaAlreadyEnabled)await requirePrivilegedMfa(user.userId,request,mfa);
         const setup=await mfa.begin(user.userId);
-        await audit?.record({actorId:user.userId,eventType:"mfa.setup.started",source:security.source(request),userAgent:request.headers["user-agent"]});
+        await audit?.record({actorId:user.userId,eventType:mfaAlreadyEnabled?"mfa.reset.started":"mfa.setup.started",source:security.source(request),userAgent:request.headers["user-agent"],metadata:{reconfiguration:mfaAlreadyEnabled}});
         return json(response,200,setup);
       }
       if(request.method==="POST"&&url.pathname==="/admin/security/mfa/enable"){
