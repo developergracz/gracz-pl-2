@@ -13,7 +13,6 @@ if (isset($load[0]) && $load[0] > 80) {
 SecurityService::configureSessionCookie();
 ini_set('display_errors',$production_mode?"Off":"On");
 if (!$production_mode) error_reporting(E_ALL^E_NOTICE^E_DEPRECATED); else error_reporting(E_ERROR^E_WARNING);
-
 if(!ini_get('zlib.output_compression') && isset($_SERVER['HTTP_ACCEPT_ENCODING']) && substr_count($_SERVER['HTTP_ACCEPT_ENCODING'],'gzip')){
   ini_set('zlib.output_compression_level',1);
   ob_start('ob_gzhandler');
@@ -24,123 +23,93 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
   global $path;
   $safeRequest = SecurityService::redact($_REQUEST);
   $entry = array(
-    'time'=>gmdate('c'),
-    'code'=>intval($kod_bledu),
-    'description'=>SecurityService::redact((string)$opis_bledu),
-    'file'=>(string)$plik_wystapienia,
-    'line'=>intval($linia),
+    'time'=>gmdate('c'),'code'=>intval($kod_bledu),'description'=>SecurityService::redact((string)$opis_bledu),
+    'file'=>(string)$plik_wystapienia,'line'=>intval($linia),
     'ip_hash'=>hash('sha256', SecurityService::clientIp().'|'.(getenv('GRACZ_AUDIT_PEPPER') ?: 'local')),
-    'url'=>isset($_SERVER['REQUEST_URI']) ? SecurityService::redact($_SERVER['REQUEST_URI']) : '',
-    'request'=>$safeRequest
+    'url'=>isset($_SERVER['REQUEST_URI']) ? SecurityService::redact($_SERVER['REQUEST_URI']) : '','request'=>$safeRequest
   );
-  $plik = @fopen($path['log_errors_php'],'a+');
-  if (!$plik) return;
-  fwrite($plik,json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\r\n");
-  fclose($plik);
+  $plik = @fopen($path['log_errors_php'],'a+'); if (!$plik) return;
+  fwrite($plik,json_encode($entry,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\r\n"); fclose($plik);
 }
-function UnhandledErrorsCatcher($errno, $errstr, $errfile, $errline)
-{
-  if(in_array($errno, array(E_ERROR,E_WARNING,E_PARSE,E_RECOVERABLE_ERROR), true)) savePHPError($errno,$errstr,$errfile,$errline);
-  return false;
-}
+function UnhandledErrorsCatcher($errno,$errstr,$errfile,$errline){ if(in_array($errno,array(E_ERROR,E_WARNING,E_PARSE,E_RECOVERABLE_ERROR),true)) savePHPError($errno,$errstr,$errfile,$errline); return false; }
 function UnhandledExceptionsCatcher($exception)
 {
-  global $path;
-  $plik = @fopen($path['log_exceptions_php'],'a+');
-  if (!$plik) return;
-  $safe = array('time'=>gmdate('c'),'type'=>get_class($exception),'message'=>SecurityService::redact($exception->getMessage()),'file'=>$exception->getFile(),'line'=>$exception->getLine());
-  fwrite($plik,json_encode($safe,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\r\n");
-  fclose($plik);
-  return false;
+  global $path; $plik=@fopen($path['log_exceptions_php'],'a+'); if(!$plik) return;
+  $safe=array('time'=>gmdate('c'),'type'=>get_class($exception),'message'=>SecurityService::redact($exception->getMessage()),'file'=>$exception->getFile(),'line'=>$exception->getLine());
+  fwrite($plik,json_encode($safe,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\r\n"); fclose($plik); return false;
 }
-if ($production_mode) { set_exception_handler('UnhandledExceptionsCatcher'); set_error_handler('UnhandledErrorsCatcher'); }
+if($production_mode){ set_exception_handler('UnhandledExceptionsCatcher'); set_error_handler('UnhandledErrorsCatcher'); }
 
-mb_internal_encoding('UTF-8');
-date_default_timezone_set('Europe/Warsaw');
-
-// Session IDs are accepted from secure cookies only; never from GET/POST/localStorage.
-session_start();
-SecurityService::initializeSessionState();
+mb_internal_encoding('UTF-8'); date_default_timezone_set('Europe/Warsaw');
+session_start(); SecurityService::initializeSessionState();
 include_once($actual_path.'library_main.php');
 DatabaseConnect();
 header('Content-Type: text/html; charset=UTF-8;');
 
-if (strpos(isset($_SERVER['REQUEST_URI'])?$_SERVER['REQUEST_URI']:'', $path['activate_account'])>0) Logout();
+if(strpos(isset($_SERVER['REQUEST_URI'])?$_SERVER['REQUEST_URI']:'',$path['activate_account'])>0) Logout();
 
-$komunikat_logowania = '';
+$komunikat_logowania='';
 try {
-  if (isset($_POST['buttonLogin'])) {
+  if(isset($_POST['buttonLogin'])){
     SecurityService::verifyOrigin();
-    $legacyToken = isset($_POST['token']) ? (string)$_POST['token'] : '';
-    if (!IsTokenValid($legacyToken)) throw new RuntimeException('Nieprawidłowy token bezpieczeństwa formularza.');
-
-    // After suspicious failed attempts, require an anti-bot challenge before checking another password.
-    if (!empty($_SESSION['login_requires_turnstile'])) {
-      TurnstileService::verifyRequest();
-    }
-
-    $limiter = GraczRateLimiter();
-    $ip = SecurityService::clientIp();
-    $loginIdentity = isset($_POST['login']) ? strtolower(trim($_POST['login'])) : '';
-    $limiter->enforce('login-ip', $ip, 20, 900);
-    $limiter->enforce('login-account', $loginIdentity, 12, 900);
-    $remember = isset($_POST['remember_me']) ? ($_POST['remember_me']=='on') : (isset($_POST['pamietaj_sesje']) && $_POST['pamietaj_sesje']=='on');
-    $authorized = AuthorizeUser($_POST['login'], $_POST['password'], $remember);
-    if ($authorized) {
-      SecurityService::rotateSessionAfterAuthentication();
-      unset($_SESSION['login_requires_turnstile']);
-      if (!empty($_SESSION['id'])) GraczSessions()->registerCurrent($_SESSION['id']);
-      GraczAudit()->record('auth.login.success', isset($_SESSION['id'])?$_SESSION['id']:null, array('login'=>$loginIdentity));
+    $legacyToken=isset($_POST['token'])?(string)$_POST['token']:'';
+    if(!IsTokenValid($legacyToken)) throw new RuntimeException('Nieprawidłowy token bezpieczeństwa formularza.');
+    if(!empty($_SESSION['login_requires_turnstile'])) TurnstileService::verifyRequest();
+    $limiter=GraczRateLimiter(); $ip=SecurityService::clientIp();
+    $loginIdentity=isset($_POST['login'])?strtolower(trim($_POST['login'])):'';
+    $limiter->enforce('login-ip',$ip,20,900); $limiter->enforce('login-account',$loginIdentity,12,900);
+    $remember=isset($_POST['remember_me'])?($_POST['remember_me']=='on'):(isset($_POST['pamietaj_sesje'])&&$_POST['pamietaj_sesje']=='on');
+    $authorized=AuthorizeUser($_POST['login'],$_POST['password'],$remember);
+    if($authorized){
+      SecurityService::rotateSessionAfterAuthentication(); unset($_SESSION['login_requires_turnstile']);
+      if(!empty($_SESSION['id'])) GraczSessions()->registerCurrent($_SESSION['id']);
+      GraczAudit()->record('auth.login.success',isset($_SESSION['id'])?$_SESSION['id']:null,array('login'=>$loginIdentity));
     } else {
-      $delay = $limiter->loginDelaySeconds($loginIdentity, $ip);
-      if ($delay >= 15) $_SESSION['login_requires_turnstile'] = true;
-      GraczAudit()->record('auth.login.failed', null, array('login'=>$loginIdentity,'delay_seconds'=>$delay,'turnstile_required'=>!empty($_SESSION['login_requires_turnstile'])), 'warning');
-      if ($delay > 0) sleep($delay);
+      $delay=$limiter->loginDelaySeconds($loginIdentity,$ip);
+      if($delay>=15) $_SESSION['login_requires_turnstile']=true;
+      GraczAudit()->record('auth.login.failed',null,array('login'=>$loginIdentity,'delay_seconds'=>$delay,'turnstile_required'=>!empty($_SESSION['login_requires_turnstile'])),'warning');
+      if($delay>0) sleep($delay);
     }
-  } else {
-    AuthorizeUser();
-  }
-} catch(ExceptionRoot $e) {
-  $komunikat_logowania = $e;
-} catch(Exception $e) {
-  $komunikat_logowania = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
-}
+  } else AuthorizeUser();
+}catch(ExceptionRoot $e){ $komunikat_logowania=$e; }
+catch(Exception $e){ $komunikat_logowania=htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8'); }
 
-// Validate the server-side session registry on every authenticated request.
-if (!empty($_SESSION['initiated']) && !empty($_SESSION['id'])) {
-  try {
-    if (!GraczSessions()->validateCurrent($_SESSION['id'])) {
-      GraczAudit()->record('auth.session.revoked_or_expired', $_SESSION['id'], array(), 'warning');
-      Logout();
-      SecurityService::destroySession();
-      http_response_code(401);
-      exit('Sesja wygasła lub została unieważniona. Zaloguj się ponownie.');
+if(!empty($_SESSION['initiated'])&&!empty($_SESSION['id'])){
+  try{
+    if(!GraczSessions()->validateCurrent($_SESSION['id'])){
+      GraczAudit()->record('auth.session.revoked_or_expired',$_SESSION['id'],array(),'warning'); Logout(); SecurityService::destroySession();
+      http_response_code(401); exit('Sesja wygasła lub została unieważniona. Zaloguj się ponownie.');
     }
-  } catch(Exception $e) {
-    // Session registry becomes strict once DB migration is applied; do not expose internals.
-  }
+  }catch(Exception $e){}
 }
 
 ProtectAgainstSessionHijacking();
-if (IsIPAddressBlocked(SecurityService::clientIp())) { http_response_code(403); exit('Twój adres IP został zablokowany.'); }
+if(IsIPAddressBlocked(SecurityService::clientIp())){ http_response_code(403); exit('Twój adres IP został zablokowany.'); }
 
-$currentScript = basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
-$adminScripts = array(
-  'admin_panel_secure.php','service_administration_panel.php','mailing.php','admin_reported_abuses.php','admin_reported_bugs.php',
-  'advertisement_management.php','code_paste_management.php','gry_dodaj.php','daily.php'
+// Central RBAC gate. Each privileged route gets only the permission it actually needs.
+$currentScript=basename(isset($_SERVER['SCRIPT_NAME'])?$_SERVER['SCRIPT_NAME']:'');
+$privilegedPermissions=array(
+  'admin_panel_secure.php'=>'audit.read',
+  'service_administration_panel.php'=>'audit.read',
+  'mailing.php'=>'content.manage',
+  'admin_reported_abuses.php'=>'moderation.review',
+  'admin_reported_bugs.php'=>'content.manage',
+  'advertisement_management.php'=>'content.manage',
+  'code_paste_management.php'=>'content.manage',
+  'gry_dodaj.php'=>'content.manage',
+  'daily.php'=>'audit.read',
+  'moderator_panel.php'=>'moderation.review'
 );
-if (in_array($currentScript, $adminScripts, true)) {
-  GraczRequirePermission('audit.read');
+if(isset($privilegedPermissions[$currentScript])){
+  GraczRequirePermission($privilegedPermissions[$currentScript]);
   GraczRequireAdmin2fa();
-  // Unsafe legacy admin state changes via GET are disabled.
-  if ($currentScript === 'service_administration_panel.php' && (isset($_GET['block']) || isset($_GET['unblock']))) {
-    GraczAudit()->record('admin.legacy_get_mutation.blocked', isset($_SESSION['id'])?$_SESSION['id']:null, array('script'=>$currentScript), 'warning');
-    http_response_code(405);
-    exit('Ta operacja administracyjna wymaga bezpiecznego formularza POST.');
+  if($currentScript==='service_administration_panel.php'&&(isset($_GET['block'])||isset($_GET['unblock']))){
+    GraczAudit()->record('admin.legacy_get_mutation.blocked',isset($_SESSION['id'])?$_SESSION['id']:null,array('script'=>$currentScript),'warning');
+    http_response_code(405); exit('Ta operacja administracyjna wymaga bezpiecznego formularza POST.');
   }
-  GraczAudit()->record('admin.area.access', isset($_SESSION['id'])?$_SESSION['id']:null, array('script'=>$currentScript));
+  GraczAudit()->record('admin.area.access',isset($_SESSION['id'])?$_SESSION['id']:null,array('script'=>$currentScript,'permission'=>$privilegedPermissions[$currentScript]));
 }
 
-if (isset($_REQUEST['facebookRegister'])) facebookRedirectToFacebookLoginPage();
-if (isset($_REQUEST['error_reason'])&&$_REQUEST['error_reason']=='user_denied') header('Location: '.$service_base_address."\r\n");
+if(isset($_REQUEST['facebookRegister'])) facebookRedirectToFacebookLoginPage();
+if(isset($_REQUEST['error_reason'])&&$_REQUEST['error_reason']=='user_denied') header('Location: '.$service_base_address."\r\n");
 ZapiszAdresIPInternauty();
