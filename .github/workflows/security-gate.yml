@@ -25,9 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: modern/checkers-engine/package-lock.json
-      - run: npm ci --ignore-scripts --no-fund --no-audit
+      - name: Install dependencies without lifecycle scripts
+        run: npm install --ignore-scripts --no-fund --no-audit
       - name: Syntax checks
         run: npm run check
       - name: Tests
