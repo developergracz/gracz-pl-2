@@ -46,6 +46,33 @@ export class PostgresSessionStore {
       CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
       ON gracz_game_sessions(updated_at DESC)
     `);
+    await this.#clearStaleConnections();
+  }
+
+  async #clearStaleConnections() {
+    const { rows } = await this.pool.query(`SELECT game_id, state FROM gracz_game_sessions`);
+    for (const row of rows) {
+      let session;
+      try {
+        session = deserializeSession(row.state);
+      } catch {
+        continue;
+      }
+      if (!session.players?.white?.connected && !session.players?.black?.connected) continue;
+      const restartedSession = {
+        ...session,
+        players: {
+          white: { ...session.players.white, connected: false },
+          black: { ...session.players.black, connected: false },
+        },
+      };
+      await this.pool.query(
+        `UPDATE gracz_game_sessions
+         SET state = $2, updated_at = NOW()
+         WHERE game_id = $1 AND state = $3`,
+        [row.game_id, serializeSession(restartedSession), row.state],
+      );
+    }
   }
 
   async create(session) {
