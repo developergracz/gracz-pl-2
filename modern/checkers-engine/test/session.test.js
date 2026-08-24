@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { PLAYERS } from "../src/index.js";
+import { PIECES, PLAYERS, createEmptyBoard, createState } from "../src/index.js";
 import {
   SessionError,
   createGameSession,
@@ -19,6 +19,15 @@ const firstMove = { from: { row: 2, column: 1 }, to: { row: 3, column: 0 } };
 
 function newSession() {
   return createGameSession({ gameId: "game-1", whitePlayerId: "alice", blackPlayerId: "bob" });
+}
+
+function multiCaptureSession() {
+  const board = createEmptyBoard();
+  board[1][0] = PIECES.WHITE_MAN;
+  board[2][1] = PIECES.BLACK_MAN;
+  board[4][3] = PIECES.BLACK_MAN;
+  const game = createState({ board, turn: PLAYERS.WHITE });
+  return createGameSession({ gameId: "multi-1", whitePlayerId: "alice", blackPlayerId: "bob", game });
 }
 
 test("session assigns players to colors", () => {
@@ -74,6 +83,31 @@ test("disconnected player cannot move and receives snapshot after reconnect", ()
   assert.equal(snapshot.color, PLAYERS.WHITE);
   assert.deepEqual(snapshot.game, session.game);
   assert.equal(snapshot.lastEventSequence, 3);
+});
+
+test("forced multi-capture survives persistence and reconnect", () => {
+  const firstCapture = submitMove(multiCaptureSession(), {
+    playerId: "alice",
+    requestId: "capture-1",
+    move: { from: { row: 1, column: 0 }, to: { row: 3, column: 2 } },
+  }).session;
+  assert.deepEqual(firstCapture.game.forcedPiece, { row: 3, column: 2 });
+  assert.equal(firstCapture.game.turn, PLAYERS.WHITE);
+
+  const persisted = deserializeSession(serializeSession(firstCapture));
+  const disconnected = disconnectPlayer(persisted, "alice");
+  const { session: reconnected, snapshot } = reconnectPlayer(disconnected, "alice");
+
+  assert.deepEqual(snapshot.game.forcedPiece, { row: 3, column: 2 });
+  assert.equal(snapshot.game.turn, PLAYERS.WHITE);
+
+  const finished = submitMove(reconnected, {
+    playerId: "alice",
+    requestId: "capture-2",
+    move: { from: { row: 3, column: 2 }, to: { row: 5, column: 4 } },
+  }).session;
+  assert.equal(finished.game.forcedPiece, null);
+  assert.equal(finished.game.turn, PLAYERS.BLACK);
 });
 
 test("spectator or unknown user cannot read private player snapshot", () => {
