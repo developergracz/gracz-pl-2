@@ -29,10 +29,12 @@ export class PostgresSessionStore {
       CREATE TABLE IF NOT EXISTS gracz_game_sessions (
         game_id VARCHAR(128) PRIMARY KEY,
         state TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await this.pool.query(`ALTER TABLE gracz_game_sessions ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
     await this.pool.query(`
       CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
       ON gracz_game_sessions(updated_at DESC)
@@ -44,9 +46,9 @@ export class PostgresSessionStore {
     assertGameId(session?.gameId);
     try {
       await this.pool.query(
-        `INSERT INTO gracz_game_sessions (game_id, state)
-         VALUES ($1, $2)`,
-        [session.gameId, serializeSession(session)],
+        `INSERT INTO gracz_game_sessions (game_id, state, version)
+         VALUES ($1, $2, $3)`,
+        [session.gameId, serializeSession(session), sessionVersion(session)],
       );
     } catch (error) {
       if (error?.code === "23505") {
@@ -73,19 +75,33 @@ export class PostgresSessionStore {
   async save(session) {
     await this.ready;
     assertGameId(session?.gameId);
-    await this.pool.query(
-      `INSERT INTO gracz_game_sessions (game_id, state)
-       VALUES ($1, $2)
-       ON CONFLICT (game_id)
-       DO UPDATE SET state = EXCLUDED.state, updated_at = NOW()`,
-      [session.gameId, serializeSession(session)],
+    const serialized = serializeSession(session);
+    const nextVersion = sessionVersion(session);
+    const expectedVersion = Math.max(1, nextVersion - 1);
+    const { rowCount } = await this.pool.query(
+      `UPDATE gracz_game_sessions
+       SET state = $2, version = $3, updated_at = NOW()
+       WHERE game_id = $1
+         AND (version = $4 OR (version = $3 AND state = $2))`,
+      [session.gameId, serialized, nextVersion, expectedVersion],
     );
+    if (!rowCount) {
+      const conflict = new Error("Stan partii zmienił się w międzyczasie. Pobierz aktualny stan i ponów operację.");
+      conflict.code = "SESSION_EXISTS";
+      throw conflict;
+    }
     return session;
   }
 
   async close() {
     await this.pool.end();
   }
+}
+
+function sessionVersion(session) {
+  const version = Array.isArray(session?.events) ? session.events.length : 0;
+  if (!Number.isInteger(version) || version < 1) throw new TypeError("Sesja nie zawiera prawidłowej wersji zdarzeń.");
+  return version;
 }
 
 function assertGameId(gameId) {
