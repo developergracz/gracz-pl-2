@@ -14,7 +14,6 @@ function SecurityCurrentRole()
         $dbRole = $stmt->fetchColumn();
         if (in_array($dbRole, array('player','moderator','administrator','owner'), true)) $role = $dbRole;
     } catch (Exception $e) {
-        // Kompatybilność podczas wdrożenia migracji: stare ADMINISTRATOR=100 mapujemy na administratora.
         if (isset($_SESSION['account_type']) && defined('ADMINISTRATOR') && intval($_SESSION['account_type']) >= ADMINISTRATOR) $role = 'administrator';
     }
 
@@ -45,12 +44,110 @@ function SecurityRequirePrivilegedMfa()
 {
     $role = SecurityCurrentRole();
     if (SecurityRoleLevel($role) < SecurityRoleLevel('moderator')) return true;
-    // Włącz po skonfigurowaniu TOTP/WebAuthn dla wszystkich kont uprzywilejowanych.
     if (SecurityEnv('PRIVILEGED_MFA_REQUIRED', '0') === '1' && empty($_SESSION['mfa_verified_at'])) {
         AuditLog('mfa.required', 'user', isset($_SESSION['id']) ? $_SESSION['id'] : null);
         http_response_code(403);
         exit('To konto wymaga dodatkowego uwierzytelnienia 2FA.');
     }
+    return true;
+}
+
+function SecurityPasswordIsModern($hash)
+{
+    $info = password_get_info((string)$hash);
+    return !empty($info['algo']);
+}
+
+function SecuritySetModernPasswordForIdentity($identity, $plainPassword)
+{
+    global $database_handle, $database_prefix;
+    if (!$database_handle || $plainPassword === '') return false;
+    $hash = password_hash((string)$plainPassword, PASSWORD_DEFAULT);
+    if ($hash === false) throw new RuntimeException('Nie udało się bezpiecznie zapisać hasła.');
+    $stmt = $database_handle->prepare('UPDATE '.$database_prefix.'_users SET password=:hash WHERE login=:identity OR email=:identity LIMIT 1');
+    $stmt->execute(array(':hash'=>$hash, ':identity'=>trim((string)$identity)));
+    if (!empty($_SESSION['id'])) $_SESSION['password'] = $hash;
+    return $stmt->rowCount() > 0;
+}
+
+function SecurityLoadUserForLogin($identity)
+{
+    global $database_handle, $database_prefix;
+    $stmt = $database_handle->prepare('SELECT id,id_facebook,account_type,login,email,password,can_change_login,dont_show_my_friends_to_others,show_desktop_notifications,play_new_message_sound FROM '.$database_prefix.'_users WHERE login=:identity OR email=:identity LIMIT 1');
+    $stmt->execute(array(':identity'=>trim((string)$identity)));
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function SecurityInitializeAuthenticatedSession(array $row, $rememberSession = false)
+{
+    global $database_handle, $database_prefix;
+    $_SESSION['initiated'] = true;
+    $_SESSION['id'] = $row['id'];
+    $_SESSION['id_facebook'] = isset($row['id_facebook']) ? $row['id_facebook'] : null;
+    $_SESSION['login'] = $row['login'];
+    $_SESSION['email'] = $row['email'];
+    $_SESSION['password'] = $row['password'];
+    $_SESSION['account_type'] = $row['account_type'];
+    $_SESSION['can_change_login'] = isset($row['can_change_login']) ? $row['can_change_login'] : 0;
+    $_SESSION['dont_show_my_friends_to_others'] = !empty($row['dont_show_my_friends_to_others']);
+    $_SESSION['show_desktop_notifications'] = !empty($row['show_desktop_notifications']);
+    $_SESSION['play_new_message_sound'] = !empty($row['play_new_message_sound']);
+    $_SESSION['remember_me'] = (bool)$rememberSession;
+    GenerateNewToken();
+
+    try { $_SESSION['friends'] = GetFriendList(); } catch (Exception $e) { $_SESSION['friends'] = array(); }
+    try { $_SESSION['blacklist'] = GetUserBlackList(); } catch (Exception $e) { $_SESSION['blacklist'] = array(); }
+    try { $_SESSION['profile'] = GetAccountDetails($row['id']); } catch (Exception $e) { $_SESSION['profile'] = array(); }
+    $_SESSION['host'] = GetHostByAddr(SecurityClientIp());
+
+    $stmt = $database_handle->prepare('UPDATE '.$database_prefix.'_users SET date_last_visit=CURRENT_TIMESTAMP(), date_last_login=CURRENT_TIMESTAMP(), logged_in=1, IP=:ip, session_id=:sid, token=:token WHERE id=:id LIMIT 1');
+    $stmt->execute(array(':ip'=>SecurityClientIp(), ':sid'=>session_id(), ':token'=>$_SESSION['token'], ':id'=>intval($row['id'])));
+    return true;
+}
+
+function SecurityPersistSessionId()
+{
+    global $database_handle, $database_prefix;
+    if (!$database_handle || empty($_SESSION['id'])) return;
+    $stmt = $database_handle->prepare('UPDATE '.$database_prefix.'_users SET session_id=:sid WHERE id=:id LIMIT 1');
+    $stmt->execute(array(':sid'=>session_id(), ':id'=>intval($_SESSION['id'])));
+}
+
+/**
+ * Logowanie zgodne wstecznie: stare SHA-1 działa tylko do pierwszego poprawnego logowania,
+ * po czym hasło jest automatycznie przepisywane do password_hash(). Nowe hasła są weryfikowane password_verify().
+ */
+function SecurityAuthorizeUser($identity, $plainPassword, $rememberSession = false)
+{
+    global $seed_private;
+    $identity = trim((string)$identity);
+    $plainPassword = (string)$plainPassword;
+    if ($identity === '' || $plainPassword === '') return false;
+
+    $row = SecurityLoadUserForLogin($identity);
+    if (!$row) {
+        // Stałoczasowa praca dla nieistniejącego konta ogranicza różnice czasowe enumeracji.
+        password_verify($plainPassword, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+        return false;
+    }
+
+    $stored = (string)$row['password'];
+    if (SecurityPasswordIsModern($stored)) {
+        if (!password_verify($plainPassword, $stored)) return false;
+        if (password_needs_rehash($stored, PASSWORD_DEFAULT)) {
+            SecuritySetModernPasswordForIdentity($row['login'], $plainPassword);
+            $row['password'] = $_SESSION['password'];
+        }
+        return SecurityInitializeAuthenticatedSession($row, $rememberSession);
+    }
+
+    // Kompatybilność wyłącznie migracyjna dla historycznych SHA-1 z prywatnym seedem.
+    $legacy = sha1($seed_private.$plainPassword);
+    if (!hash_equals($stored, $legacy)) return false;
+
+    SecurityInitializeAuthenticatedSession($row, $rememberSession);
+    SecuritySetModernPasswordForIdentity($row['login'], $plainPassword);
+    AuditLog('auth.password_hash_upgraded', 'user', $row['id'], array('from'=>'legacy_sha1','to'=>'password_hash'));
     return true;
 }
 
@@ -64,7 +161,7 @@ function TokenServiceIssue($subjectType, $subjectId, $purpose, $ttlSeconds = 360
         ':st'=>substr($subjectType,0,40), ':sid'=>substr((string)$subjectId,0,191), ':purpose'=>substr($purpose,0,50),
         ':hash'=>$hash, ':expires'=>date('Y-m-d H:i:s', time()+max(60,intval($ttlSeconds)))
     ));
-    return $plain; // jedyny moment, gdy token jawny opuszcza usługę – wyłącznie do linku wysyłanego użytkownikowi
+    return $plain;
 }
 
 function TokenServiceConsume($plainToken, $purpose)
