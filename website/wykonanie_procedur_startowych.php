@@ -5,7 +5,6 @@ include_once('../variables_global.php');
 include_once("exceptions.php");
 
 // Nie ufamy nagłówkom Cloudflare, jeśli origin nie został jawnie skonfigurowany jako dostępny wyłącznie przez Cloudflare.
-// Zapobiega to podszywaniu się pod IP klienta przy bezpośrednim dostępie do originu.
 if (getenv('TRUST_CLOUDFLARE_PROXY') !== '1') {
   unset($_SERVER['HTTP_CF_CONNECTING_IP']);
 }
@@ -134,6 +133,7 @@ try
     $loggedIn = SecurityAuthorizeUser($_POST['login'], $_POST['password'], isset($_POST['remember_me'])?($_POST['remember_me']=='on'):false);
     if ($loggedIn) {
       SecurityRotateSessionAfterLogin();
+      SecurityPersistSessionId();
       RateLimitReset('login_hard', $compoundIdentity);
       RateLimitReset('login_soft', $compoundIdentity);
       unset($_SESSION['security_role']);
