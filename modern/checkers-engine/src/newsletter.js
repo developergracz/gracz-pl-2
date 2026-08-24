@@ -27,12 +27,14 @@ export class NewsletterService{
   async initialize(){
     if(!this.pool)return;
     await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_newsletter_subscribers(id BIGSERIAL PRIMARY KEY,email VARCHAR(254) NOT NULL UNIQUE,email_normalized VARCHAR(254) NOT NULL UNIQUE,consent_version VARCHAR(32) NOT NULL,consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),status VARCHAR(24) NOT NULL DEFAULT 'subscribed',unsubscribed_at TIMESTAMPTZ,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
-    // Starsza wersja tabeli miała techniczną kolumnę subscriber_id jako NOT NULL.
-    // Aktualny model używa id BIGSERIAL i nie zapisuje subscriber_id, więc stary constraint
-    // blokował poprawne zapisy błędem PostgreSQL 23502. Usuwamy wyłącznie NOT NULL
-    // z tej nieużywanej kolumny, jeżeli rzeczywiście istnieje w starej bazie.
-    const legacySubscriberId=await this.pool.query(`SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='gracz_newsletter_subscribers' AND column_name='subscriber_id' LIMIT 1`);
-    if(legacySubscriberId.rowCount>0)await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ALTER COLUMN subscriber_id DROP NOT NULL`);
+    // Migracja starej tabeli. W produkcyjnej bazie historyczna kolumna subscriber_id
+    // może nadal być NOT NULL, mimo że aktualny INSERT już jej nie używa.
+    // ALTER TABLE ... DROP NOT NULL jest idempotentny i bezpieczny dla tej kolumny.
+    const legacy=await this.pool.query(`SELECT table_schema FROM information_schema.columns WHERE table_name='gracz_newsletter_subscribers' AND column_name='subscriber_id' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY CASE WHEN table_schema=current_schema() THEN 0 WHEN table_schema='public' THEN 1 ELSE 2 END LIMIT 1`);
+    if(legacy.rowCount>0){
+      const schema=String(legacy.rows[0].table_schema).replace(/"/g,'""');
+      await this.pool.query(`ALTER TABLE "${schema}".gracz_newsletter_subscribers ALTER COLUMN subscriber_id DROP NOT NULL`);
+    }
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick VARCHAR(24)`);
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick_normalized VARCHAR(24)`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_preferred_nick_unique ON gracz_newsletter_subscribers(preferred_nick_normalized) WHERE preferred_nick_normalized IS NOT NULL AND status='subscribed'`);
