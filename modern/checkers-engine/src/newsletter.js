@@ -13,7 +13,7 @@ export class NewsletterService{
   }
   normalize(email){
     const value=String(email||'').trim().toLowerCase();
-    if(value.length>254||!^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value))throw Object.assign(new Error('Podaj prawidłowy adres e-mail.'),{code:'INVALID_EMAIL'});
+    if(value.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value))throw Object.assign(new Error('Podaj prawidłowy adres e-mail.'),{code:'INVALID_EMAIL'});
     return value;
   }
   async subscribe({email,consent}){
