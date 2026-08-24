@@ -9,9 +9,25 @@ export class NewsletterService{
   }
   async initialize(){
     if(!this.pool)return;
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_newsletter_subscribers(id BIGSERIAL PRIMARY KEY,email VARCHAR(254) NOT NULL UNIQUE,email_normalized VARCHAR(254) NOT NULL UNIQUE,consent_version VARCHAR(32) NOT NULL,consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),status VARCHAR(24) NOT NULL DEFAULT 'subscribed',unsubscribed_at TIMESTAMPTZ,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_newsletter_subscribers(id BIGSERIAL PRIMARY KEY,email VARCHAR(254) NOT NULL UNIQUE,email_normalized VARCHAR(254),consent_version VARCHAR(32),consented_at TIMESTAMPTZ DEFAULT NOW(),status VARCHAR(24) DEFAULT 'subscribed',unsubscribed_at TIMESTAMPTZ,created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW())`);
+
+    // Bezpieczna migracja tabeli utworzonej przez starszą wersję newslettera.
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS email_normalized VARCHAR(254)`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS consent_version VARCHAR(32)`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS consented_at TIMESTAMPTZ DEFAULT NOW()`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS status VARCHAR(24) DEFAULT 'subscribed'`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMPTZ`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`);
+    await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`);
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick VARCHAR(24)`);
     await this.pool.query(`ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick_normalized VARCHAR(24)`);
+
+    await this.pool.query(`UPDATE gracz_newsletter_subscribers SET email_normalized=LOWER(TRIM(email)) WHERE email_normalized IS NULL OR email_normalized=''`);
+    await this.pool.query(`UPDATE gracz_newsletter_subscribers SET consent_version='launch-v1' WHERE consent_version IS NULL OR consent_version=''`);
+    await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='subscribed' WHERE status IS NULL OR status=''`);
+    await this.pool.query(`UPDATE gracz_newsletter_subscribers SET consented_at=COALESCE(consented_at,created_at,NOW()),updated_at=COALESCE(updated_at,NOW())`);
+
+    await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_email_normalized_unique ON gracz_newsletter_subscribers(email_normalized) WHERE email_normalized IS NOT NULL`);
     await this.pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS gracz_newsletter_preferred_nick_unique ON gracz_newsletter_subscribers(preferred_nick_normalized) WHERE preferred_nick_normalized IS NOT NULL AND status='subscribed'`);
   }
   normalize(email){
