@@ -7,11 +7,30 @@ export class SecureMailService {
   get enabled(){return Boolean(this.apiKey && this.from && typeof this.fetchImpl === "function");}
   async send({ to, subject, text, html, purpose }) {
     if (!SAFE_PURPOSES.has(purpose)) throw new TypeError("Nieprawidłowy cel wiadomości systemowej.");
-    const email=normalizeEmail(to); if (!this.enabled) return { sent:false, reason:"EMAIL_PROVIDER_NOT_CONFIGURED" };
-    const response=await this.fetchImpl("https://api.resend.com/emails",{method:"POST",headers:{authorization:`Bearer ${this.apiKey}`,"content-type":"application/json"},body:JSON.stringify({from:this.from,to:[email],subject:String(subject).slice(0,180),text:text?String(text):undefined,html:html?String(html):undefined}),signal:AbortSignal.timeout(10_000)});
-    if(!response.ok) throw Object.assign(new Error("Nie udało się wysłać wiadomości systemowej."),{code:"MAIL_DELIVERY_FAILED",status:502});
-    const result=await response.json().catch(()=>({}));
-    await this.audit?.record({eventType:"mail.sent",outcome:"success",targetType:"email",targetId:emailFingerprint(email),metadata:{purpose,provider:"resend",providerId:result.id?String(result.id).slice(0,120):null}});
+    const email=normalizeEmail(to);
+    const target=emailFingerprint(email);
+    if (!this.enabled) {
+      console.error("[mail] provider not configured", {purpose,target,hasApiKey:Boolean(this.apiKey),hasFrom:Boolean(this.from),hasFetch:typeof this.fetchImpl === "function"});
+      throw Object.assign(new Error("Usługa wysyłki e-mail nie jest skonfigurowana."),{code:"EMAIL_PROVIDER_NOT_CONFIGURED",status:503});
+    }
+    console.log("[mail] resend request", {purpose,target,from:this.from});
+    let response;
+    try {
+      response=await this.fetchImpl("https://api.resend.com/emails",{method:"POST",headers:{authorization:`Bearer ${this.apiKey}`,"content-type":"application/json"},body:JSON.stringify({from:this.from,to:[email],subject:String(subject).slice(0,180),text:text?String(text):undefined,html:html?String(html):undefined}),signal:AbortSignal.timeout(10_000)});
+    } catch (error) {
+      console.error("[mail] resend network error", {purpose,target,code:error?.code||null,message:String(error?.message||error).slice(0,300)});
+      throw Object.assign(new Error("Nie udało się połączyć z usługą wysyłki e-mail."),{code:"MAIL_PROVIDER_UNREACHABLE",status:502});
+    }
+    const raw=await response.text().catch(()=>"");
+    let result={};
+    try { result=raw?JSON.parse(raw):{}; } catch { result={}; }
+    if(!response.ok) {
+      const providerMessage=String(result?.message||result?.error?.message||raw||"Brak szczegółów").replace(/\s+/g," ").slice(0,500);
+      console.error("[mail] resend rejected", {purpose,target,status:response.status,providerMessage});
+      throw Object.assign(new Error(`Resend odrzucił wiadomość (${response.status}): ${providerMessage}`),{code:"MAIL_DELIVERY_FAILED",status:502,providerStatus:response.status});
+    }
+    console.log("[mail] resend accepted", {purpose,target,status:response.status,providerId:result.id?String(result.id).slice(0,120):null});
+    await this.audit?.record({eventType:"mail.sent",outcome:"success",targetType:"email",targetId:target,metadata:{purpose,provider:"resend",providerId:result.id?String(result.id).slice(0,120):null}});
     return {sent:true,id:result.id||null};
   }
 }
