@@ -12,43 +12,16 @@ require_once __DIR__.'/RbacService.php';
 require_once __DIR__.'/SecureMailService.php';
 require_once __DIR__.'/NewsletterService.php';
 require_once __DIR__.'/SessionService.php';
+require_once __DIR__.'/PasswordResetService.php';
 
 SecurityService::sendSecurityHeaders();
 SecurityService::configureSessionCookie();
 
-function GraczRateLimiter()
-{
-    global $database_handle, $database_prefix;
-    return new RateLimitService($database_handle, $database_prefix);
-}
-function GraczAudit()
-{
-    global $database_handle, $database_prefix;
-    return new AuditService($database_handle, $database_prefix);
-}
-function GraczNewsletter()
-{
-    global $database_handle, $database_prefix;
-    if (!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.');
-    return new NewsletterService($database_handle, $database_prefix);
-}
-function GraczSessions()
-{
-    global $database_handle, $database_prefix;
-    if (!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.');
-    return new SessionService($database_handle, $database_prefix);
-}
-function GraczRequireCsrf()
-{
-    return SecurityService::verifyStateChangingRequest();
-}
-function GraczRequirePermission($permission)
-{
-    global $database_handle, $database_prefix;
-    return RbacService::requirePermission($permission, $database_handle, $database_prefix);
-}
-function GraczRequireAdmin2fa()
-{
-    global $database_handle, $database_prefix;
-    return RbacService::requireAdmin2fa($database_handle, $database_prefix);
-}
+function GraczRateLimiter(){ global $database_handle,$database_prefix; return new RateLimitService($database_handle,$database_prefix); }
+function GraczAudit(){ global $database_handle,$database_prefix; return new AuditService($database_handle,$database_prefix); }
+function GraczNewsletter(){ global $database_handle,$database_prefix; if(!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.'); return new NewsletterService($database_handle,$database_prefix); }
+function GraczSessions(){ global $database_handle,$database_prefix; if(!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.'); return new SessionService($database_handle,$database_prefix); }
+function GraczPasswordReset(){ global $database_handle,$database_prefix,$seed_private; if(!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.'); return new PasswordResetService($database_handle,$database_prefix,$seed_private); }
+function GraczRequireCsrf(){ return SecurityService::verifyStateChangingRequest(); }
+function GraczRequirePermission($permission){ global $database_handle,$database_prefix; return RbacService::requirePermission($permission,$database_handle,$database_prefix); }
+function GraczRequireAdmin2fa(){ global $database_handle,$database_prefix; return RbacService::requireAdmin2fa($database_handle,$database_prefix); }
