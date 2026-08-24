@@ -7,7 +7,11 @@ try {
     GraczRateLimiter()->enforce('upload-user',(string)$_SESSION['id'],10,3600);
     GraczRateLimiter()->enforce('upload-ip',SecurityService::clientIp(),30,3600);
     if(empty($_FILES['file'])) throw new InvalidArgumentException('Brak pliku.');
-    $destination=$actual_path.'uploads/private';
+    $destination=getenv('GRACZ_PRIVATE_UPLOAD_DIR');
+    if(!$destination){
+        if(getenv('GRACZ_ENV')==='production') throw new RuntimeException('Prywatny magazyn uploadów nie jest skonfigurowany.');
+        $destination=sys_get_temp_dir().DIRECTORY_SEPARATOR.'gracz-private-uploads';
+    }
     $stored=UploadSecurityService::store($_FILES['file'],$destination,5242880);
     $moderation=array('decision'=>'allow','value'=>$stored['filename'],'reason'=>null,'hash'=>hash('sha256',$stored['filename']));
     ModerationService::recordDecision($database_handle,$database_prefix,$_SESSION['id'],'upload',$moderation);
