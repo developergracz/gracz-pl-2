@@ -1,8 +1,7 @@
 <?php
 
-// Plik variables_local.php musi zostać wczytany
 include_once("variables_local.php");
-include_once('../variables_global.php'); // przetworzenie 5ms
+include_once('../variables_global.php');
 include_once("exceptions.php");
 include_once($actual_path.'security_core.php');
 
@@ -15,14 +14,12 @@ if (is_array($load) && isset($load[0]) && $load[0] > 80) {
     die('<meta charset="utf8" /><div style="width:70%; font-size:200%; margin:auto; margin-top:300px; background:f5f5f5; border-radius:10pt;">Przepraszamy,<br />nasz serwer jest zbyt obciążony. Spróbuj ponownie później.<br /><br /><span style="font-size:300%;">;(</span></div>');
 }
 
-// Włączenie/Wyłączenie wyświetlania błędów
 ini_set('display_errors',$production_mode?"Off":"On");
 if (!$production_mode)
   error_reporting(E_ALL^E_NOTICE^E_DEPRECATED);
 else
   error_reporting(E_ERROR^E_WARNING);
 
-// Włączanie kompresji GZIP
 if(!ini_get('zlib.output_compression')){
   if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && substr_count($_SERVER['HTTP_ACCEPT_ENCODING'],'gzip')){
     ini_set('zlib.output_compression_level',1);
@@ -37,7 +34,6 @@ function savePHPError($kod_bledu, $opis_bledu, $plik_wystapienia, $linia)
   $opis_bledu = htmlspecialchars((string)$opis_bledu, ENT_QUOTES, 'UTF-8');
   $plik_wystapienia = htmlspecialchars((string)$plik_wystapienia, ENT_QUOTES, 'UTF-8');
   $linia = intval($linia);
-  // Nigdy nie zapisujemy całego $_REQUEST bez filtrowania: może zawierać hasła, tokeny i prywatne wiadomości.
   $parametry = htmlspecialchars(print_r(SecurityRedactArray($_REQUEST),true), ENT_QUOTES, 'UTF-8');
   $url = htmlspecialchars(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', ENT_QUOTES, 'UTF-8');
   $IP = SecurityHashIdentifier(SecurityClientIp());
@@ -67,8 +63,7 @@ function UnhandledExceptionsCatcher($exception)
   global $path;
   $plik = @fopen($path['log_exceptions_php'],'a+');
   if (!$plik) return;
-  // Logujemy klasę i komunikat, ale bez pełnego stack trace z argumentami funkcji.
-  fwrite($plik,get_class($exception).': '.SecurityRedactArray(array('message'=>$exception->getMessage()))['message']."\r\n");
+  fwrite($plik,get_class($exception).': '.htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8')."\r\n");
   fwrite($plik,'==========================================='."\r\n");
   fclose($plik);
   return false;
@@ -88,12 +83,11 @@ if (isset($_SERVER['X-Purpose'])&&$_SERVER['X-Purpose']=='preview')
   exit();
 }
 
-// Zabronione: ustawianie identyfikatora sesji na podstawie danych POST (session fixation).
 session_start();
 SecurityEnforceSessionLifetime();
 
-include_once($actual_path.'library_main.php'); // przetworzenie 40ms
-DatabaseConnect(); // ok. 10ms
+include_once($actual_path.'library_main.php');
+DatabaseConnect();
 RateLimitEnsureTable();
 AuditEnsureTable();
 
@@ -108,13 +102,10 @@ try
 {
   if (isset($_POST['buttonLogin']))
   {
+    RequireCsrf();
     $loginIdentity = strtolower(trim(isset($_POST['login']) ? $_POST['login'] : ''));
     $compoundIdentity = SecurityClientIp().'|'.$loginIdentity;
-
-    // Limit twardy: 15 prób / 15 min, następnie blokada 30 min.
     SecurityRequireRateLimit('login_hard', 15, 900, 1800, $compoundIdentity);
-
-    // Po kilku próbach wymagamy dodatkowej weryfikacji Turnstile, jeżeli klucze są skonfigurowane.
     $softAllowed = RateLimitCheck('login_soft', 5, 900, 0, $compoundIdentity);
     if (!$softAllowed && TurnstileEnabled() && !VerifyTurnstile()) {
       AuditLog('auth.turnstile_failed', 'account', $loginIdentity);
