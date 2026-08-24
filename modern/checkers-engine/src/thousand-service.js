@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   applyThousandAction,
   createThousandInitialState,
+  getLegalThousandCards,
   shuffleThousandDeck,
   startNextThousandRound,
   thousandPublicView,
@@ -32,14 +33,7 @@ export class ThousandGameService {
   async getView(gameId,userId){
     const record=await this.repository.get(assertGameId(gameId));
     const playerIndex=findPlayerIndex(record.players,userId);
-    return {
-      gameId:record.gameId,
-      revision:record.revision,
-      players:record.players.map((player,index)=>({userId:player.userId,displayName:player.displayName,seat:index})),
-      viewerIndex:playerIndex,
-      state:thousandPublicView(record.state,playerIndex),
-      updatedAt:record.updatedAt,
-    };
+    return buildView(record,playerIndex);
   }
 
   async performAction(gameId,userId,action,{expectedRevision=null}={}){
@@ -51,10 +45,7 @@ export class ThousandGameService {
     const safeAction={...structuredClone(action),playerIndex};
     const nextState=applyThousandAction(record.state,safeAction);
     const saved=await this.repository.save(record.gameId,record.revision,{...record,state:nextState});
-    return {
-      revision:saved.revision,
-      state:thousandPublicView(saved.state,playerIndex),
-    };
+    return buildView(saved,playerIndex);
   }
 
   async nextRound(gameId,userId,{expectedRevision=null}={}){
@@ -65,12 +56,28 @@ export class ThousandGameService {
     const playerIndex=findPlayerIndex(record.players,userId);
     const nextState=startNextThousandRound(record.state,{deck:shuffleThousandDeck(undefined,this.random)});
     const saved=await this.repository.save(record.gameId,record.revision,{...record,state:nextState});
-    return {revision:saved.revision,state:thousandPublicView(saved.state,playerIndex)};
+    return buildView(saved,playerIndex);
   }
 
   async close(){
     if(typeof this.repository.close==='function') await this.repository.close();
   }
+}
+
+function buildView(record,playerIndex){
+  const state=thousandPublicView(record.state,playerIndex);
+  const legalCardIds=record.state.status==='playing'&&record.state.currentPlayerIndex===playerIndex
+    ? getLegalThousandCards(record.state,playerIndex)
+    : [];
+  return {
+    gameId:record.gameId,
+    revision:record.revision,
+    players:record.players.map((player,index)=>({userId:player.userId,displayName:player.displayName,seat:index})),
+    viewerIndex:playerIndex,
+    state,
+    legalCardIds,
+    updatedAt:record.updatedAt,
+  };
 }
 
 function normalizePlayers(players){
