@@ -57,7 +57,7 @@ export class NewsletterService{
       const client=await this.pool.connect();
       try{
         await client.query('BEGIN');
-        const updated=await client.query(`UPDATE gracz_newsletter_subscribers SET email=$1,email_normalized=$1,preferred_nick=$2,preferred_nick_normalized=$3,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW() WHERE lower(email)=lower($1) OR email_normalized=$1 RETURNING id`,[normalized,nick.value,nick.normalized]);
+        const updated=await client.query(`UPDATE gracz_newsletter_subscribers SET email=$1,email_normalized=$1,preferred_nick=$2,preferred_nick_normalized=$3,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW() WHERE lower(email)=lower($1) OR email_normalized=$1`,[normalized,nick.value,nick.normalized]);
         if(updated.rowCount===0){
           await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$1,$2,$3,'launch-v2','subscribed',NOW(),NULL,NOW())`,[normalized,nick.value,nick.normalized]);
         }
