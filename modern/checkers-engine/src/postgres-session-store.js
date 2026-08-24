@@ -36,6 +36,13 @@ export class PostgresSessionStore {
     `);
     await this.pool.query(`ALTER TABLE gracz_game_sessions ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
     await this.pool.query(`
+      UPDATE gracz_game_sessions
+      SET version = GREATEST(1, jsonb_array_length((state::jsonb)->'events'))
+      WHERE version = 1
+        AND jsonb_typeof((state::jsonb)->'events') = 'array'
+        AND jsonb_array_length((state::jsonb)->'events') > 1
+    `);
+    await this.pool.query(`
       CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
       ON gracz_game_sessions(updated_at DESC)
     `);
