@@ -4,13 +4,15 @@ require_once __DIR__.'/TokenService.php';
 require_once __DIR__.'/RateLimitService.php';
 require_once __DIR__.'/AuditService.php';
 require_once __DIR__.'/TurnstileService.php';
+require_once __DIR__.'/DataProtectionService.php';
+require_once __DIR__.'/UploadSecurityService.php';
+require_once __DIR__.'/ModerationService.php';
+require_once __DIR__.'/TwoFactorService.php';
+require_once __DIR__.'/RbacService.php';
 
 SecurityService::sendSecurityHeaders();
 SecurityService::configureSessionCookie();
 
-/**
- * Return shared security services after the legacy PDO connection exists.
- */
 function GraczRateLimiter()
 {
     global $database_handle, $database_prefix;
@@ -26,4 +28,16 @@ function GraczAudit()
 function GraczRequireCsrf()
 {
     return SecurityService::verifyStateChangingRequest();
+}
+
+function GraczRequirePermission($permission)
+{
+    global $database_handle, $database_prefix;
+    return RbacService::requirePermission($permission, $database_handle, $database_prefix);
+}
+
+function GraczRequireAdmin2fa()
+{
+    global $database_handle, $database_prefix;
+    return RbacService::requireAdmin2fa($database_handle, $database_prefix);
 }
