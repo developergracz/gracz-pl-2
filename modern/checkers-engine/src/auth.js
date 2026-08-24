@@ -4,6 +4,9 @@ const TOKEN_VERSION = 2;
 const TOKEN_ISSUER = "gracz.pl";
 const TOKEN_AUDIENCE = "gracz.pl-web";
 const MAX_TOKEN_LENGTH = 4096;
+// Stare tokeny v1 nie miały jti/iss/aud i nie mogły być skutecznie unieważniane
+// w magazynie sesji. Pozostawiamy krótki, zamknięty okres migracji do ciasteczek v2.
+const LEGACY_V1_ACCEPT_UNTIL = 1788220800; // 2026-09-01T00:00:00Z
 
 export class AuthError extends Error {
   constructor(message, code = "UNAUTHENTICATED") {
@@ -83,14 +86,18 @@ export class AuthService {
       throw new AuthError("Token logowania wygasł.", "SESSION_EXPIRED");
     }
 
-    // Tokeny v1 pozostają akceptowane przez okres migracyjny, aby wdrożenie nie
-    // wylogowało użytkowników w trakcie aktywnej sesji. Wszystkie nowe tokeny są v2.
     if (payload.v !== undefined) {
       if (payload.v !== TOKEN_VERSION || payload.iss !== TOKEN_ISSUER || payload.aud !== TOKEN_AUDIENCE) {
         throw new AuthError("Token logowania pochodzi z niewłaściwego źródła.");
       }
       if (!payload.jti || !Number.isInteger(payload.iat) || payload.iat > now + 60 || payload.exp - payload.iat > 86_400) {
         throw new AuthError("Token logowania ma nieprawidłowe parametry.");
+      }
+    } else {
+      // V1 jest tolerowany wyłącznie przez krótki okres migracyjny i tylko gdy
+      // jego pozostały czas życia mieści się w aktualnym maksimum 24 h.
+      if (now >= LEGACY_V1_ACCEPT_UNTIL || payload.exp - now > 86_400) {
+        throw new AuthError("Starsza sesja logowania wygasła. Zaloguj się ponownie.", "SESSION_EXPIRED");
       }
     }
 
