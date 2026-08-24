@@ -59,13 +59,25 @@ async function verifyTurnstile(secretKey,token){
   return true;
 }
 
+function requestHostname(request){
+  const forwarded=String(request.headers['x-forwarded-host']||'').split(',')[0].trim();
+  const raw=forwarded||String(request.headers.host||'');
+  return raw.toLowerCase().split(':')[0];
+}
+
+function isProductionNewsletterHost(hostname){
+  return hostname==='gracz.pl'||hostname==='www.gracz.pl';
+}
+
 export function createNewsletterHandler(service,{
   siteKey=process.env.TURNSTILE_SITE_KEY||'',
   secretKey=process.env.TURNSTILE_SECRET_KEY||''
 }={}){
-  const turnstileEnabled=Boolean(siteKey&&secretKey);
+  const turnstileConfigured=Boolean(siteKey&&secretKey);
   return async(request,response)=>{
     const url=new URL(request.url,'http://localhost');
+    const hostname=requestHostname(request);
+    const turnstileEnabled=turnstileConfigured&&isProductionNewsletterHost(hostname);
     if(request.method==='GET'&&url.pathname==='/newsletter/challenge-config'){
       response.writeHead(200,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
       response.end(JSON.stringify({enabled:turnstileEnabled,provider:turnstileEnabled?'turnstile':null,siteKey:turnstileEnabled?siteKey:null}));
