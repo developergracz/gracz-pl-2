@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - main
-      - feature/checkers-engine-foundation
+      - "feature/**"
     paths:
       - "modern/checkers-engine/**"
       - ".github/workflows/checkers-engine.yml"
@@ -32,8 +32,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: modern/checkers-engine/package-lock.json
       - name: Install dependencies
-        run: npm install --ignore-scripts --no-fund
+        run: npm ci --ignore-scripts --no-fund --no-audit
       - name: Static syntax checks
         run: npm run check
       - name: Unit and integration tests
