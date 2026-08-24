@@ -10,11 +10,11 @@ export class ChallengeRequiredError extends Error {
 }
 
 export class ChallengeFailedError extends Error {
-  constructor() {
-    super("Weryfikacja anty-botowa nie powiodła się.");
+  constructor(message = "Weryfikacja anty-botowa nie powiodła się.", code = "CHALLENGE_FAILED", status = 403) {
+    super(message);
     this.name = "ChallengeFailedError";
-    this.code = "CHALLENGE_FAILED";
-    this.status = 403;
+    this.code = code;
+    this.status = status;
   }
 }
 
@@ -62,6 +62,7 @@ export class AdaptiveBotDefense {
   requiresChallenge({ source, accountId = "", endpoint = "auth" }) {
     if (!this.enabled) return false;
     if ((this.#verifiedUntil.get(source) || 0) > this.clock()) return false;
+    if (isProduction() && (endpoint === "register" || endpoint === "reset")) return true;
     const score =
       this.#score(`ip:${source}`) +
       this.#score(`endpoint:${source}:${endpoint}`) +
@@ -72,8 +73,12 @@ export class AdaptiveBotDefense {
   }
 
   async verifyIfRequired({ source, accountId = "", endpoint = "auth", token = "" }) {
+    const mandatory = isProduction() && (endpoint === "register" || endpoint === "reset");
+    if (mandatory && !this.enabled) {
+      throw new ChallengeFailedError("Weryfikacja bezpieczeństwa jest wymagana, ale nie została skonfigurowana.", "CHALLENGE_NOT_CONFIGURED", 503);
+    }
     if (!this.requiresChallenge({ source, accountId, endpoint })) return { challenged: false };
-    if (!token) throw new ChallengeRequiredError(this.siteKey);
+    if (!token) throw new ChallengeRequiredError(this.siteKey, mandatory ? "high-risk-operation" : "suspicious-traffic");
 
     const form = new URLSearchParams({ secret: this.secretKey, response: String(token), remoteip: String(source) });
     let result;
@@ -87,10 +92,11 @@ export class AdaptiveBotDefense {
       if (!response.ok) throw new Error(`turnstile-http-${response.status}`);
       result = await response.json();
     } catch {
-      throw new ChallengeFailedError();
+      throw new ChallengeFailedError("Weryfikacja anty-botowa jest chwilowo niedostępna.", "CHALLENGE_UNAVAILABLE", 503);
     }
 
-    const hostnameOk = !this.expectedHostname || String(result.hostname || "").toLowerCase() === this.expectedHostname;
+    const hostname = String(result.hostname || "").toLowerCase();
+    const hostnameOk = !this.expectedHostname || hostname === this.expectedHostname || (this.expectedHostname === "gracz.pl" && hostname === "www.gracz.pl");
     if (!result.success || !hostnameOk) throw new ChallengeFailedError();
 
     this.#verifiedUntil.set(source, this.clock() + 15 * 60_000);
@@ -137,4 +143,8 @@ export class AdaptiveBotDefense {
 
 function normalize(value) {
   return String(value || "").trim().toLowerCase().slice(0, 128);
+}
+
+function isProduction() {
+  return String(process.env.NODE_ENV || "").toLowerCase() === "production";
 }
