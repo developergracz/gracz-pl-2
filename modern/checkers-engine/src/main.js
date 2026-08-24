@@ -46,9 +46,15 @@ const rankingHandler = createRankingHandler({ service: rankings, auth, authSessi
 const newsletter = new NewsletterService(config.databaseUrl || null); await newsletter.ready;
 const newsletterHandler = createNewsletterHandler(newsletter);
 
-const thousandRepository = config.databaseUrl
-  ? new PostgresThousandRepository(config.databaseUrl)
-  : new MemoryThousandRepository();
+// Public newsletter protection: bounded per-IP windows for costly/public endpoints.
+// Turnstile remains the second layer on production gracz.pl.
+const newsletterRateBuckets = new Map();
+function requestIp(request){return String(request.headers["cf-connecting-ip"]||request.headers["x-forwarded-for"]||request.socket?.remoteAddress||"unknown").split(",")[0].trim().slice(0,80)}
+function newsletterRatePolicy(pathname){if(pathname==="/newsletter/subscribe")return {limit:5,windowMs:15*60_000};if(pathname==="/newsletter/nick-availability")return {limit:40,windowMs:60_000};return null}
+function allowNewsletterRequest(request,pathname){const policy=newsletterRatePolicy(pathname);if(!policy)return {ok:true};const now=Date.now();const key=`${requestIp(request)}:${pathname}`;let bucket=newsletterRateBuckets.get(key);if(!bucket||now-bucket.started>=policy.windowMs){bucket={started:now,count:0};newsletterRateBuckets.set(key,bucket)}bucket.count+=1;if(newsletterRateBuckets.size>5000){for(const [k,v] of newsletterRateBuckets){if(now-v.started>30*60_000)newsletterRateBuckets.delete(k)}}return {ok:bucket.count<=policy.limit,retryAfter:Math.max(1,Math.ceil((policy.windowMs-(now-bucket.started))/1000))}}
+function rejectNewsletterAbuse(response,retryAfter){response.setHeader("Retry-After",String(retryAfter));response.writeHead(429,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify({error:{code:"RATE_LIMITED",message:"Zbyt wiele prób. Odczekaj chwilę i spróbuj ponownie."}}))}
+
+const thousandRepository = config.databaseUrl ? new PostgresThousandRepository(config.databaseUrl) : new MemoryThousandRepository();
 if (thousandRepository.ready) await thousandRepository.ready;
 const thousandService = new ThousandGameService({ repository: thousandRepository });
 const thousandRealtime = new ThousandRealtimeHub({ service: thousandService });
@@ -82,6 +88,8 @@ async function serveExtendedAsset(request, response) {
 
 const baseRequestHandler=server.listeners("request")[0]; server.removeAllListeners("request");
 server.on("request",async(request,response)=>{try{
+  const pathname=new URL(request.url,"http://localhost").pathname;
+  const rate=allowNewsletterRequest(request,pathname);if(!rate.ok){rejectNewsletterAbuse(response,rate.retryAfter);return;}
   if(await newsletterHandler(request,response))return;
   if(await thousandHandler(request,response))return;
   if(await platformLobbyHandler(request,response))return;
