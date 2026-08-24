@@ -58,7 +58,7 @@ if ($production_mode) { set_exception_handler('UnhandledExceptionsCatcher'); set
 mb_internal_encoding('UTF-8');
 date_default_timezone_set('Europe/Warsaw');
 
-// Session IDs are accepted from secure cookies only; never from GET/POST.
+// Session IDs are accepted from secure cookies only; never from GET/POST/localStorage.
 session_start();
 SecurityService::initializeSessionState();
 include_once($actual_path.'library_main.php');
@@ -70,23 +70,31 @@ if (strpos(isset($_SERVER['REQUEST_URI'])?$_SERVER['REQUEST_URI']:'', $path['act
 $komunikat_logowania = '';
 try {
   if (isset($_POST['buttonLogin'])) {
-    // Legacy login forms already carry $_SESSION['token']; keep this CSRF mechanism until the form renderer is modernized.
     SecurityService::verifyOrigin();
     $legacyToken = isset($_POST['token']) ? (string)$_POST['token'] : '';
     if (!IsTokenValid($legacyToken)) throw new RuntimeException('Nieprawidłowy token bezpieczeństwa formularza.');
+
+    // After suspicious failed attempts, require an anti-bot challenge before checking another password.
+    if (!empty($_SESSION['login_requires_turnstile'])) {
+      TurnstileService::verifyRequest();
+    }
 
     $limiter = GraczRateLimiter();
     $ip = SecurityService::clientIp();
     $loginIdentity = isset($_POST['login']) ? strtolower(trim($_POST['login'])) : '';
     $limiter->enforce('login-ip', $ip, 20, 900);
     $limiter->enforce('login-account', $loginIdentity, 12, 900);
-    $authorized = AuthorizeUser($_POST['login'], $_POST['password'], isset($_POST['remember_me']) ? ($_POST['remember_me']=='on') : false);
+    $remember = isset($_POST['remember_me']) ? ($_POST['remember_me']=='on') : (isset($_POST['pamietaj_sesje']) && $_POST['pamietaj_sesje']=='on');
+    $authorized = AuthorizeUser($_POST['login'], $_POST['password'], $remember);
     if ($authorized) {
       SecurityService::rotateSessionAfterAuthentication();
+      unset($_SESSION['login_requires_turnstile']);
+      if (!empty($_SESSION['id'])) GraczSessions()->registerCurrent($_SESSION['id']);
       GraczAudit()->record('auth.login.success', isset($_SESSION['id'])?$_SESSION['id']:null, array('login'=>$loginIdentity));
     } else {
       $delay = $limiter->loginDelaySeconds($loginIdentity, $ip);
-      GraczAudit()->record('auth.login.failed', null, array('login'=>$loginIdentity,'delay_seconds'=>$delay), 'warning');
+      if ($delay >= 15) $_SESSION['login_requires_turnstile'] = true;
+      GraczAudit()->record('auth.login.failed', null, array('login'=>$loginIdentity,'delay_seconds'=>$delay,'turnstile_required'=>!empty($_SESSION['login_requires_turnstile'])), 'warning');
       if ($delay > 0) sleep($delay);
     }
   } else {
@@ -98,18 +106,38 @@ try {
   $komunikat_logowania = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
 }
 
+// Validate the server-side session registry on every authenticated request.
+if (!empty($_SESSION['initiated']) && !empty($_SESSION['id'])) {
+  try {
+    if (!GraczSessions()->validateCurrent($_SESSION['id'])) {
+      GraczAudit()->record('auth.session.revoked_or_expired', $_SESSION['id'], array(), 'warning');
+      Logout();
+      SecurityService::destroySession();
+      http_response_code(401);
+      exit('Sesja wygasła lub została unieważniona. Zaloguj się ponownie.');
+    }
+  } catch(Exception $e) {
+    // Session registry becomes strict once DB migration is applied; do not expose internals.
+  }
+}
+
 ProtectAgainstSessionHijacking();
 if (IsIPAddressBlocked(SecurityService::clientIp())) { http_response_code(403); exit('Twój adres IP został zablokowany.'); }
 
-// Central privileged-area gate: one policy for all current administration modules.
 $currentScript = basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
 $adminScripts = array(
-  'service_administration_panel.php','mailing.php','admin_reported_abuses.php','admin_reported_bugs.php',
+  'admin_panel_secure.php','service_administration_panel.php','mailing.php','admin_reported_abuses.php','admin_reported_bugs.php',
   'advertisement_management.php','code_paste_management.php','gry_dodaj.php','daily.php'
 );
 if (in_array($currentScript, $adminScripts, true)) {
   GraczRequirePermission('audit.read');
   GraczRequireAdmin2fa();
+  // Unsafe legacy admin state changes via GET are disabled.
+  if ($currentScript === 'service_administration_panel.php' && (isset($_GET['block']) || isset($_GET['unblock']))) {
+    GraczAudit()->record('admin.legacy_get_mutation.blocked', isset($_SESSION['id'])?$_SESSION['id']:null, array('script'=>$currentScript), 'warning');
+    http_response_code(405);
+    exit('Ta operacja administracyjna wymaga bezpiecznego formularza POST.');
+  }
   GraczAudit()->record('admin.area.access', isset($_SESSION['id'])?$_SESSION['id']:null, array('script'=>$currentScript));
 }
 
