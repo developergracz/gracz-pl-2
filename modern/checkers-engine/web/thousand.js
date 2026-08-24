@@ -26,6 +26,7 @@ async function showSetup(){
     const result=await request('/auth/me');
     me=result.user;
     $('#me-name').textContent=`${me.displayName} (${me.userId})`;
+    updateNavigationIdentity(me.displayName);
   }catch(error){
     $('#setup-message').className='message error';
     $('#setup-message').textContent='Najpierw zaloguj się do Gracz.pl.';
@@ -76,17 +77,30 @@ function applyView(data){
 function render(){
   if(!view)return;
   const state=view.state;
+  const me=view.players[view.viewerIndex];
+  updateNavigationIdentity(me?.displayName||'Gracz');
   $('#round-number').textContent=state.roundNumber;
   $('#contract-value').textContent=state.contract??'—';
-  $('#trump-value').textContent=state.trumpSuit?suitName[state.trumpSuit]:'—';
+  $('#trump-value').textContent=state.trumpSuit?suitSymbol[state.trumpSuit]:'—';
   $('#bid-value').textContent=state.bid.highest??'—';
   $('#phase-label').textContent=phaseName[state.status]??state.status;
   renderScores();
   renderSeats();
+  renderOpponentCards();
+  renderBidLog();
+  renderStatusPanel();
   renderTrick();
   renderTalon();
   renderControls();
   renderHand();
+}
+
+function updateNavigationIdentity(displayName){
+  const safe=String(displayName||'Gracz').trim()||'Gracz';
+  const name=$('#nav-name');
+  const avatar=$('#nav-avatar');
+  if(name)name.textContent=safe;
+  if(avatar)avatar.textContent=initials(safe);
 }
 
 function renderScores(){
@@ -94,7 +108,8 @@ function renderScores(){
   $('#score-list').innerHTML=view.players.map((player,index)=>{
     const key=playerKey(index);
     const active=state.currentPlayerIndex===index?' active':'';
-    return `<div class="score-row${active}"><div><strong>${escapeHtml(player.displayName)}</strong><small>${index===state.declarerIndex?'rozgrywający':index===state.dealerIndex?'rozdający':''}</small></div><b>${state.scores[key]}</b></div>`;
+    const role=index===state.declarerIndex?'rozgrywający':index===state.dealerIndex?'rozdający':'';
+    return `<div class="score-row${active}"><div><strong>${escapeHtml(player.displayName)}</strong><small>${escapeHtml(role)}</small></div><b>${state.scores[key]}</b></div>`;
   }).join('');
 }
 
@@ -114,7 +129,52 @@ function renderSeat(selector,index,isSelf=false){
   const turn=state.currentPlayerIndex===index?' turn':'';
   const node=$(selector);
   node.className=`seat ${selector.slice(1)}${turn}`;
-  node.innerHTML=`<strong>${escapeHtml(player.displayName)}${isSelf?' · TY':''}</strong><small>${count} kart · ${state.roundPoints[playerKey(index)]} pkt</small>`;
+  node.innerHTML=`<span class="seat-avatar" aria-hidden="true">${escapeHtml(initials(player.displayName))}</span><strong>${escapeHtml(player.displayName)}${isSelf?' · TY':''}</strong><small>${count} kart · ${state.roundPoints[playerKey(index)]} pkt</small><span class="seat-score">${state.scores[playerKey(index)]}</span>`;
+}
+
+function renderOpponentCards(){
+  const me=view.viewerIndex;
+  const left=(me+1)%3;
+  const right=(me+2)%3;
+  fillOpponentCards('#cards-left',view.state.hands[playerKey(left)].length);
+  fillOpponentCards('#cards-right',view.state.hands[playerKey(right)].length);
+}
+
+function fillOpponentCards(selector,count){
+  const root=$(selector);
+  if(!root)return;
+  const safeCount=Math.max(0,Math.min(12,Number(count)||0));
+  root.innerHTML=Array.from({length:safeCount},()=>'<span class="mini-back"></span>').join('');
+}
+
+function renderBidLog(){
+  const state=view.state;
+  const passed=new Set(state.bid.passed||[]);
+  const root=$('#bid-log');
+  if(!root)return;
+  root.innerHTML=view.players.map((player,index)=>{
+    const isHighest=state.bid.highestBidderIndex===index;
+    const isPassed=passed.has(index);
+    const klass=[isPassed?'passed':'',isHighest?'current':''].filter(Boolean).join(' ');
+    let value='—';
+    if(isPassed)value='PAS';
+    else if(isHighest&&state.bid.highest!==null)value=String(state.bid.highest);
+    else if(state.status!=='bidding'&&index===state.declarerIndex)value=String(state.contract??state.bid.highest??'—');
+    return `<div class="bid-row ${klass}"><span>${escapeHtml(player.displayName)}</span><b>${escapeHtml(value)}</b></div>`;
+  }).join('');
+}
+
+function renderStatusPanel(){
+  const state=view.state;
+  const declarer=state.declarerIndex===null?null:view.players[state.declarerIndex];
+  const phase=$('#status-phase');
+  const bid=$('#status-bid');
+  const declarerNode=$('#status-declarer');
+  const trick=$('#status-trick');
+  if(phase)phase.textContent=phaseName[state.status]??state.status;
+  if(bid)bid.textContent=state.bid.highest??'—';
+  if(declarerNode)declarerNode.textContent=declarer?.displayName??'—';
+  if(trick)trick.textContent=String(state.trickNumber??0);
 }
 
 function renderTrick(){
@@ -124,6 +184,8 @@ function renderTrick(){
 
 function renderTalon(){
   const talon=view.state.talon;
+  const label=$('#talon-label');
+  if(label)label.hidden=!talon.length;
   if(!talon.length){$('#talon').innerHTML='';return}
   $('#talon').innerHTML=talon.map(card=>card.hidden?cardHtml(card,true):cardHtml(card,false)).join('');
 }
@@ -133,13 +195,13 @@ function renderControls(){
   const me=view.viewerIndex;
   const myTurn=state.currentPlayerIndex===me;
   const current=state.currentPlayerIndex===null?null:view.players[state.currentPlayerIndex];
-  $('#turn-message').textContent=current?`${myTurn?'Twój ruch':'Ruch gracza'}${myTurn?'':`: ${current.displayName}`}`:phaseSummary(state);
+  $('#turn-message').textContent=current?`${myTurn?'Twoja kolej':'Ruch gracza'}${myTurn?'':`: ${current.displayName}`}`:phaseSummary(state);
   const controls=$('#controls');
   controls.innerHTML='';
 
   if(state.status==='bidding'&&myTurn){
     const min=(state.bid.highest??90)+10;
-    controls.innerHTML=`<div class="field"><input id="bid-input" type="number" min="${min}" max="360" step="10" value="${min}"><button id="bid-button">LICYTUJ</button></div><button id="pass-button" class="secondary">PAS</button>`;
+    controls.innerHTML=`<div class="field"><input id="bid-input" aria-label="Wartość licytacji" type="number" min="${min}" max="360" step="10" value="${min}"><button id="bid-button">LICYTUJ</button></div><button id="pass-button" class="secondary">PAS</button>`;
     $('#bid-button').onclick=()=>sendAction({type:'bid',amount:Number($('#bid-input').value)});
     $('#pass-button').onclick=()=>sendAction({type:'pass'});
   }else if(state.status==='talon'&&state.declarerIndex===me){
@@ -148,14 +210,14 @@ function renderControls(){
   }else if(state.status==='discard'&&state.declarerIndex===me){
     const opponents=[0,1,2].filter(index=>index!==me);
     const mapping=selectedGiftCards.map((id,index)=>`${formatCardId(id)} → ${view.players[opponents[index]]?.displayName??'?'}`).join(' · ');
-    controls.innerHTML=`<span>${mapping||'Wybierz z ręki dwie karty — po jednej dla każdego przeciwnika.'}</span><button id="give-button" ${selectedGiftCards.length===2?'':'disabled'}>PRZEKAŻ KARTY</button>`;
+    controls.innerHTML=`<span>${mapping||'Wybierz dwie karty — po jednej dla każdego przeciwnika.'}</span><button id="give-button" ${selectedGiftCards.length===2?'':'disabled'}>PRZEKAŻ KARTY</button>`;
     $('#give-button').onclick=()=>{
       if(selectedGiftCards.length!==2)return;
       sendAction({type:'give-cards',gifts:opponents.map((toPlayerIndex,index)=>({toPlayerIndex,cardId:selectedGiftCards[index]}))});
     };
   }else if(state.status==='contract'&&state.declarerIndex===me){
     const min=state.bid.highest;
-    controls.innerHTML=`<div class="field"><input id="contract-input" type="number" min="${min}" max="360" step="10" value="${min}"><button id="contract-button">USTAL KONTRAKT</button></div>`;
+    controls.innerHTML=`<div class="field"><input id="contract-input" aria-label="Wartość kontraktu" type="number" min="${min}" max="360" step="10" value="${min}"><button id="contract-button">USTAL KONTRAKT</button></div>`;
     $('#contract-button').onclick=()=>sendAction({type:'contract',amount:Number($('#contract-input').value)});
   }else if(state.status==='playing'&&myTurn&&state.trick.length===0){
     controls.innerHTML='<label class="marriage"><input id="marriage-check" type="checkbox"> Zgłoś meldunek przy tej karcie</label>';
@@ -206,7 +268,7 @@ async function sendAction(action){
     setActionMessage('');
   }catch(error){
     setActionMessage(error.message,true);
-    if(error.status===409) await refresh().catch(()=>{});
+    if(error.status===409)await refresh().catch(()=>{});
   }finally{disableControls(false)}
 }
 
@@ -235,6 +297,10 @@ function cardHtml(card,back=false,label=null,{selected=false,illegal=false}={}){
   return `<div class="${classes}" data-card-id="${escapeHtml(card.id)}"${title}><span>${escapeHtml(card.rank)}</span><span class="suit">${suitSymbol[card.suit]}</span><span class="bottom">${escapeHtml(card.rank)}</span></div>`;
 }
 
+function initials(value){
+  return String(value??'?').trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase().slice(0,2)||'?';
+}
+
 function formatCardId(id){
   const [suit,rank]=String(id).split('-');
   return `${rank??''}${suitSymbol[suit]??''}`;
@@ -255,6 +321,6 @@ function disableControls(disabled){for(const node of document.querySelectorAll('
 function setActionMessage(text,isError=false){const node=$('#action-message');node.textContent=text;node.className=`message${isError?' error':''}`}
 function setSetupMessage(text,isError=false){const node=$('#setup-message');node.textContent=text;node.className=`message${isError?' error':''}`}
 function showFatal(error){$('#connection-state').textContent='błąd';const target=$('#action-message')||$('#setup-message');if(target){target.textContent=error.message||'Nie udało się uruchomić gry.';target.className='message error'}}
-function escapeHtml(value){return String(value??'').replace(/[&<>"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[char]))}
+function escapeHtml(value){return String(value??'').replace(/[&<>\"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[char]))}
 
 addEventListener('beforeunload',()=>eventSource?.close());
