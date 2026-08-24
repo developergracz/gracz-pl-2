@@ -66,6 +66,7 @@ export class ThousandGameService {
 
 function buildView(record,playerIndex){
   const state=thousandPublicView(record.state,playerIndex);
+  state.history=[];
   const legalCardIds=record.state.status==='playing'&&record.state.currentPlayerIndex===playerIndex
     ? getLegalThousandCards(record.state,playerIndex)
     : [];
