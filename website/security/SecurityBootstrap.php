@@ -11,6 +11,7 @@ require_once __DIR__.'/TwoFactorService.php';
 require_once __DIR__.'/RbacService.php';
 require_once __DIR__.'/SecureMailService.php';
 require_once __DIR__.'/NewsletterService.php';
+require_once __DIR__.'/SessionService.php';
 
 SecurityService::sendSecurityHeaders();
 SecurityService::configureSessionCookie();
@@ -30,6 +31,12 @@ function GraczNewsletter()
     global $database_handle, $database_prefix;
     if (!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.');
     return new NewsletterService($database_handle, $database_prefix);
+}
+function GraczSessions()
+{
+    global $database_handle, $database_prefix;
+    if (!($database_handle instanceof PDO)) throw new RuntimeException('Database connection unavailable.');
+    return new SessionService($database_handle, $database_prefix);
 }
 function GraczRequireCsrf()
 {
