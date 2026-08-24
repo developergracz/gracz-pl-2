@@ -85,8 +85,10 @@ export class NewsletterService {
       if (existing?.status === "subscribed") return neutral;
       if (existing?.confirmationSentAt && Date.now() - existing.confirmationSentAt < RESEND_COOLDOWN_MS) return neutral;
       const confirmation = this.tokens.issue();
-      this.memory.set(normalized, { email: normalized, preferredNick: nick.value, preferredNickNormalized: nick.normalized, status: "pending_confirmation", confirmationHash: confirmation.tokenHash, confirmationExpiresAt: Date.now() + CONFIRM_TTL_MS, confirmationSentAt: Date.now() });
-      await this.sendConfirmation(normalized, nick.value, confirmation.token);
+      this.memory.set(normalized, { email: normalized, preferredNick: nick.value, preferredNickNormalized: nick.normalized, status: "pending_confirmation", confirmationHash: confirmation.tokenHash, confirmationExpiresAt: Date.now() + CONFIRM_TTL_MS, confirmationSentAt: null });
+      const delivery = await this.sendConfirmation(normalized, nick.value, confirmation.token);
+      if (!delivery?.sent) throw newsletterError("EMAIL_PROVIDER_NOT_CONFIGURED", "Wysyłka wiadomości e-mail nie jest jeszcze skonfigurowana. Spróbuj ponownie później.", 503);
+      const item = this.memory.get(normalized); if (item) item.confirmationSentAt = Date.now();
       return neutral;
     }
 
@@ -103,15 +105,25 @@ export class NewsletterService {
         if (conflict.rowCount) throw newsletterError("NICK_TAKEN", "Ten nick jest już zarezerwowany. Wybierz inny.");
       }
       const confirmation = this.tokens.issue(); confirmationToken = confirmation.token;
-      if (existing) await client.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,preferred_nick_normalized=$3,status='pending_confirmation',consent_version=$4,consented_at=NOW(),confirmation_token_hash=$5,confirmation_expires_at=NOW()+INTERVAL '24 hours',confirmation_sent_at=NOW(),position_token_hash=NULL,unsubscribe_token_hash=NULL,unsubscribed_at=NULL,updated_at=NOW() WHERE email_normalized=$1`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
-      else await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,confirmation_token_hash,confirmation_expires_at,confirmation_sent_at) VALUES($1,$1,$2,$3,$4,'pending_confirmation',$5,NOW()+INTERVAL '24 hours',NOW())`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
+      if (existing) await client.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,preferred_nick_normalized=$3,status='pending_confirmation',consent_version=$4,consented_at=NOW(),confirmation_token_hash=$5,confirmation_expires_at=NOW()+INTERVAL '24 hours',confirmation_sent_at=NULL,position_token_hash=NULL,unsubscribe_token_hash=NULL,unsubscribed_at=NULL,updated_at=NOW() WHERE email_normalized=$1`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
+      else await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,confirmation_token_hash,confirmation_expires_at,confirmation_sent_at) VALUES($1,$1,$2,$3,$4,'pending_confirmation',$5,NOW()+INTERVAL '24 hours',NULL)`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
       if (error?.code === "23505") throw newsletterError("DUPLICATE", "Nie udało się zapisać tych danych.");
       throw error;
     } finally { client.release(); }
-    if (confirmationToken) await this.sendConfirmation(normalized, nick.value, confirmationToken).catch(error => console.error("[newsletter] confirmation mail failed", error?.code || error?.message));
+    if (confirmationToken) {
+      try {
+        const delivery = await this.sendConfirmation(normalized, nick.value, confirmationToken);
+        if (!delivery?.sent) throw newsletterError("EMAIL_PROVIDER_NOT_CONFIGURED", "Wysyłka wiadomości e-mail nie jest jeszcze skonfigurowana. Spróbuj ponownie później.", 503);
+        await this.pool.query(`UPDATE gracz_newsletter_subscribers SET confirmation_sent_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 AND status='pending_confirmation'`, [normalized]);
+      } catch (error) {
+        await this.pool.query(`UPDATE gracz_newsletter_subscribers SET confirmation_sent_at=NULL,updated_at=NOW() WHERE email_normalized=$1 AND status='pending_confirmation'`, [normalized]).catch(() => {});
+        console.error("[newsletter] confirmation mail failed", error?.code || error?.message);
+        throw error;
+      }
+    }
     return neutral;
   }
 
