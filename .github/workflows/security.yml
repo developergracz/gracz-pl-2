@@ -1,0 +1,69 @@
+name: Security gates
+
+on:
+  push:
+    branches: [ main, security-hardening ]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax check
+        run: |
+          set -euo pipefail
+          find website -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node critical vulnerability gate
+        working-directory: website
+        run: |
+          set -euo pipefail
+          if [ -f package.json ]; then
+            npm ci --ignore-scripts
+            npm audit --audit-level=critical
+          else
+            echo 'No package.json - npm audit skipped.'
+          fi
+      - name: Composer vulnerability gate
+        run: |
+          set -euo pipefail
+          if [ -f composer.lock ]; then
+            composer install --no-dev --no-interaction --no-scripts --no-plugins
+            composer audit
+          else
+            echo 'No composer.lock - Composer audit skipped.'
+          fi
+
+  committed-secret-patterns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject common hard-coded secret assignments
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=.git --exclude='.env.example' \
+            '(DB_PASSWORD|database_password|app_secret|api[_-]?key|secret[_-]?key)[[:space:]]*=[[:space:]]*["'"'][^"'"']{8,}["'"']' .; then
+            echo 'Potential hard-coded secret detected.' >&2
+            exit 1
+          fi
