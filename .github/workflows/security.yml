@@ -59,22 +59,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reject common hard-coded secret assignments
+      - name: Scan current tree for hard-coded secrets and auth localStorage
         run: |
-          set -euo pipefail
-          if grep -RInE --exclude-dir=.git --exclude='.env.example' \
-            '(DB_PASSWORD|database_password|app_secret|api[_-]?key|secret[_-]?key)[[:space:]]*=[[:space:]]*["'"'][^"'"']{8,}["'"']' .; then
-            echo 'Potential hard-coded secret detected.' >&2
-            exit 1
-          fi
-      - name: Reject login/auth tokens stored in localStorage
-        run: |
-          set -euo pipefail
-          if grep -RInE --exclude-dir=.git --include='*.js' --include='*.php' --include='*.html' \
-            'localStorage\.(setItem|getItem)[[:space:]]*\([[:space:]]*["'"'](token|auth|access[_-]?token|refresh[_-]?token|session|session_id)' website; then
-            echo 'Authentication/session material must not be stored in localStorage.' >&2
-            exit 1
-          fi
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          root = pathlib.Path('.')
+          text_ext = {'.php', '.js', '.html', '.htm', '.json', '.yml', '.yaml', '.ini', '.conf', '.env'}
+          secret_re = re.compile(r'''(?i)(DB_PASSWORD|database_password|app_secret|api[_-]?key|secret[_-]?key)\s*=\s*["'][^"']{8,}["']''')
+          storage_re = re.compile(r'''(?i)localStorage\.(?:setItem|getItem)\s*\(\s*["'](?:token|auth|access[_-]?token|refresh[_-]?token|session|session_id)["']''')
+          findings = []
+
+          for path in root.rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path.name == '.env.example':
+                  continue
+              if path.suffix.lower() not in text_ext and path.name not in {'.env'}:
+                  continue
+              try:
+                  data = path.read_text(encoding='utf-8', errors='ignore')
+              except OSError:
+                  continue
+              if secret_re.search(data):
+                  findings.append(f'{path}: potential hard-coded secret assignment')
+              if path.parts and path.parts[0] == 'website' and storage_re.search(data):
+                  findings.append(f'{path}: authentication/session material in localStorage')
+
+          if findings:
+              print('\n'.join(findings), file=sys.stderr)
+              sys.exit(1)
+          print('Current-tree security policy scan passed.')
+          PY
       - name: Ensure committed env files are absent
         run: |
           set -euo pipefail
