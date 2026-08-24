@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { createGameSession } from "./session.js";
 
 const GAME_CONFIG = Object.freeze({
-  checkers: Object.freeze({ maxPlayers: 2, label: "Warcaby" }),
-  thousand: Object.freeze({ maxPlayers: 3, label: "Tysiąc" }),
+  checkers: Object.freeze({ maxPlayers: 2, minPlayers: 2, label: "Warcaby" }),
+  thousand: Object.freeze({ maxPlayers: 4, minPlayers: 2, defaultPlayers: 3, label: "Tysiąc" }),
 });
 
 export class LobbyError extends Error {
@@ -33,18 +33,13 @@ export class LobbyService {
     this.#presence.set(userId, { userId, displayName: normalizeDisplayName(displayName), seenAt: Date.now() });
   }
 
-  listRooms() {
-    return [...this.#rooms.values()].map(publicRoom);
-  }
+  listRooms() { return [...this.#rooms.values()].map(publicRoom); }
 
   listPlayers() {
     const cutoff = Date.now() - 45_000;
-    for (const [userId, presence] of this.#presence) {
-      if (presence.seenAt < cutoff) this.#presence.delete(userId);
-    }
+    for (const [userId, presence] of this.#presence) if (presence.seenAt < cutoff) this.#presence.delete(userId);
     return [...this.#presence.values()].map((presence) => {
-      const room = [...this.#rooms.values()].find((candidate) =>
-        candidate.seats.some((seat) => seat?.id === presence.userId));
+      const room = [...this.#rooms.values()].find((candidate) => candidate.seats.some((seat) => seat?.id === presence.userId));
       return {
         userId: presence.userId,
         displayName: normalizeDisplayName(presence.displayName),
@@ -57,27 +52,25 @@ export class LobbyService {
   }
 
   listInvitations(userId) {
-    return [...this.#invitations.values()]
-      .filter((invitation) => invitation.toId === userId && invitation.status === "pending")
-      .map((invitation) => structuredClone({ ...invitation, fromName: normalizeDisplayName(invitation.fromName) }));
+    return [...this.#invitations.values()].filter((invitation) => invitation.toId === userId && invitation.status === "pending").map((invitation) => structuredClone({ ...invitation, fromName: normalizeDisplayName(invitation.fromName) }));
   }
 
-  createRoom({ ownerId, ownerName, roomName = "Nowy pokój", gameType = "checkers" }) {
+  createRoom({ ownerId, ownerName, roomName = "Nowy pokój", gameType = "checkers", maxPlayers = null }) {
     requireText(ownerId, "ownerId");
     requireText(ownerName, "ownerName");
     requireText(roomName, "roomName");
     const config = gameConfig(gameType);
-    const existing = [...this.#rooms.values()].find((room) =>
-      room.gameType === gameType && room.seats[0]?.id === ownerId && room.status === "waiting");
+    const seatCount = resolveSeatCount(gameType, maxPlayers, config);
+    const existing = [...this.#rooms.values()].find((room) => room.gameType === gameType && room.seats[0]?.id === ownerId && room.status === "waiting");
     if (existing) return publicRoom(existing);
-    const seats = Array(config.maxPlayers).fill(null);
+    const seats = Array(seatCount).fill(null);
     seats[0] = { id: ownerId, name: normalizeDisplayName(ownerName) };
     const room = {
       roomId: this.idGenerator(),
       roomName,
       gameType,
       gameLabel: config.label,
-      maxPlayers: config.maxPlayers,
+      maxPlayers: seatCount,
       status: "waiting",
       seats,
       gameId: null,
@@ -87,47 +80,23 @@ export class LobbyService {
   }
 
   createInvitation({ fromId, fromName, toId, roomId }) {
-    requireText(fromId, "fromId");
-    requireText(fromName, "fromName");
-    requireText(toId, "toId");
-    requireText(roomId, "roomId");
+    requireText(fromId, "fromId"); requireText(fromName, "fromName"); requireText(toId, "toId"); requireText(roomId, "roomId");
     if (fromId === toId) throw new LobbyError("Nie możesz zaprosić samego siebie.", "INVALID_INVITATION");
     const room = this.#rooms.get(roomId);
-    if (!room || room.status !== "waiting" || room.seats[0]?.id !== fromId) {
-      throw new LobbyError("Najpierw zajmij miejsce przy własnym stole.", "ROOM_NOT_JOINABLE");
-    }
-    if (room.seats.some((seat) => seat?.id === toId)) {
-      throw new LobbyError("Ten gracz już siedzi przy tym stole.", "DUPLICATE_PLAYER");
-    }
+    if (!room || room.status !== "waiting" || room.seats[0]?.id !== fromId) throw new LobbyError("Najpierw zajmij miejsce przy własnym stole.", "ROOM_NOT_JOINABLE");
+    if (room.seats.some((seat) => seat?.id === toId)) throw new LobbyError("Ten gracz już siedzi przy tym stole.", "DUPLICATE_PLAYER");
     const target = this.listPlayers().find((player) => player.userId === toId);
     if (!target) throw new LobbyError("Gracz nie jest już dostępny.", "PLAYER_OFFLINE");
     if (target.status === "w grze") throw new LobbyError("Ten gracz jest już w grze.", "PLAYER_BUSY");
-    for (const invitation of this.#invitations.values()) {
-      if (invitation.status === "pending" && invitation.fromId === fromId && invitation.toId === toId && invitation.roomId === roomId) {
-        return structuredClone(invitation);
-      }
-    }
-    const invitation = {
-      invitationId: this.idGenerator(),
-      status: "pending",
-      roomId,
-      roomName: room.roomName,
-      gameType: room.gameType,
-      gameLabel: room.gameLabel,
-      fromId,
-      fromName: normalizeDisplayName(fromName),
-      toId,
-      createdAt: Date.now(),
-    };
+    for (const invitation of this.#invitations.values()) if (invitation.status === "pending" && invitation.fromId === fromId && invitation.toId === toId && invitation.roomId === roomId) return structuredClone(invitation);
+    const invitation = { invitationId: this.idGenerator(), status: "pending", roomId, roomName: room.roomName, gameType: room.gameType, gameLabel: room.gameLabel, fromId, fromName: normalizeDisplayName(fromName), toId, createdAt: Date.now() };
     this.#invitations.set(invitation.invitationId, invitation);
     return structuredClone(invitation);
   }
 
   async respondInvitation({ invitationId, userId, userName, accept }) {
     const invitation = this.#invitations.get(invitationId);
-    if (!invitation || invitation.toId !== userId || invitation.status !== "pending") {
-      throw new LobbyError("Zaproszenie nie jest już aktualne.", "INVITATION_NOT_FOUND");
-    }
+    if (!invitation || invitation.toId !== userId || invitation.status !== "pending") throw new LobbyError("Zaproszenie nie jest już aktualne.", "INVITATION_NOT_FOUND");
     invitation.status = accept ? "accepted" : "declined";
     if (!accept) return { accepted: false };
     const room = await this.joinRoom({ roomId: invitation.roomId, playerId: userId, playerName: normalizeDisplayName(userName) });
@@ -148,54 +117,29 @@ export class LobbyService {
       if (room.gameType === "thousand") {
         if (!this.thousandService) throw new LobbyError("Silnik Tysiąca nie jest dostępny.", "GAME_SERVICE_UNAVAILABLE");
         room.gameId = `thousand-${room.roomId}`;
-        await this.thousandService.createGame({
-          gameId: room.gameId,
-          players: room.seats.map((seat) => ({ userId: seat.id, displayName: seat.name })),
-        });
+        await this.thousandService.createGame({ gameId: room.gameId, players: room.seats.map((seat) => ({ userId: seat.id, displayName: seat.name })) });
       } else {
         room.gameId = `game-${room.roomId}`;
-        await this.sessionStore.create(createGameSession({
-          gameId: room.gameId,
-          whitePlayerId: room.seats[0].id,
-          blackPlayerId: room.seats[1].id,
-        }));
+        await this.sessionStore.create(createGameSession({ gameId: room.gameId, whitePlayerId: room.seats[0].id, blackPlayerId: room.seats[1].id }));
       }
     }
     return publicRoom(room);
   }
 }
 
+function resolveSeatCount(gameType, requested, config) {
+  if (gameType !== "thousand") return config.maxPlayers;
+  if (requested === null || requested === undefined || requested === "") return config.defaultPlayers;
+  const value = Number(requested);
+  if (!Number.isInteger(value) || value < config.minPlayers || value > config.maxPlayers) throw new LobbyError("Stół Tysiąca może mieć 2, 3 albo 4 graczy.", "INVALID_ROOM");
+  return value;
+}
+
 function publicRoom(room) {
   const seats = room.seats.map((seat) => seat ? { id: seat.id, name: normalizeDisplayName(seat.name) } : null);
-  return structuredClone({
-    roomId: room.roomId,
-    roomName: room.roomName,
-    gameType: room.gameType,
-    gameLabel: room.gameLabel,
-    maxPlayers: room.maxPlayers,
-    filledSeats: seats.filter(Boolean).length,
-    status: room.status,
-    seats,
-    white: room.gameType === "checkers" ? seats[0] : null,
-    black: room.gameType === "checkers" ? seats[1] : null,
-    gameId: room.gameId,
-  });
+  return structuredClone({ roomId: room.roomId, roomName: room.roomName, gameType: room.gameType, gameLabel: room.gameLabel, maxPlayers: room.maxPlayers, filledSeats: seats.filter(Boolean).length, status: room.status, seats, white: room.gameType === "checkers" ? seats[0] : null, black: room.gameType === "checkers" ? seats[1] : null, gameId: room.gameId });
 }
 
-function gameConfig(gameType) {
-  const config = GAME_CONFIG[gameType];
-  if (!config) throw new LobbyError("Nieobsługiwany typ gry.", "INVALID_GAME_TYPE");
-  return config;
-}
-
-function normalizeDisplayName(value) {
-  if (typeof value !== "string") return value;
-  if (value.localeCompare("Czeslaw", "pl", { sensitivity: "base" }) === 0) return "Czesław";
-  return value.normalize("NFC");
-}
-
-function requireText(value, field) {
-  if (typeof value !== "string" || value.length < 1 || value.length > 128) {
-    throw new LobbyError(`Pole ${field} jest nieprawidłowe.`, "INVALID_ROOM");
-  }
-}
+function gameConfig(gameType) { const config = GAME_CONFIG[gameType]; if (!config) throw new LobbyError("Nieobsługiwany typ gry.", "INVALID_GAME_TYPE"); return config; }
+function normalizeDisplayName(value) { if (typeof value !== "string") return value; if (value.localeCompare("Czeslaw", "pl", { sensitivity: "base" }) === 0) return "Czesław"; return value.normalize("NFC"); }
+function requireText(value, field) { if (typeof value !== "string" || value.length < 1 || value.length > 128) throw new LobbyError(`Pole ${field} jest nieprawidłowe.`, "INVALID_ROOM"); }
