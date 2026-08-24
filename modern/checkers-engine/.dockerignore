@@ -5,3 +5,12 @@ data
 e2e
 test
 npm-debug.log
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
