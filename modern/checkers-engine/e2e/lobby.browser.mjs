@@ -28,7 +28,16 @@ async function register(page, { userId, displayName, email, password }) {
   await page.locator('[name="email"]').fill(email);
   await page.locator('[name="password"]').fill(password);
   await page.locator('[name="passwordConfirm"]').fill(password);
-  await page.locator('#terms').check();
+
+  // Ustawienie właściwości DOM jest stabilniejsze w headless CI niż kliknięcie stylizowanego checkboxa,
+  // które potrafi uruchomić oczekiwanie Playwright na nieistniejącą nawigację.
+  await page.locator('#terms').evaluate((element) => {
+    element.checked = true;
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  assert.equal(await page.locator('#terms').isChecked(), true);
+
   await page.locator("#auth-form button[type=submit]").click();
   await page.getByText("Zalogowany jako").waitFor();
 }
