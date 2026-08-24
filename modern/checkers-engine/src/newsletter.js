@@ -44,7 +44,7 @@ export class NewsletterService{
       const availability=await this.nicknameAvailable(nick.value);
       if(!availability.available){
         if(this.pool){
-          const own=await this.pool.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE email_normalized=$1 AND preferred_nick_normalized=$2 LIMIT 1`,[normalized,nick.normalized]);
+          const own=await this.pool.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE lower(email)=lower($1) AND preferred_nick_normalized=$2 LIMIT 1`,[normalized,nick.normalized]);
           if(own.rowCount===0)throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});
         }else{
           const own=this.memory.get(normalized);
@@ -54,11 +54,24 @@ export class NewsletterService{
     }
     if(this.pool){
       await this.ready;
+      const client=await this.pool.connect();
       try{
-        await this.pool.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$1,$2,$3,'launch-v2','subscribed',NOW(),NULL,NOW()) ON CONFLICT(email_normalized) DO UPDATE SET preferred_nick=EXCLUDED.preferred_nick,preferred_nick_normalized=EXCLUDED.preferred_nick_normalized,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW()`,[normalized,nick.value,nick.normalized]);
+        await client.query('BEGIN');
+        const updated=await client.query(`UPDATE gracz_newsletter_subscribers SET email=$1,email_normalized=$1,preferred_nick=$2,preferred_nick_normalized=$3,status='subscribed',consent_version='launch-v2',consented_at=NOW(),unsubscribed_at=NULL,updated_at=NOW() WHERE lower(email)=lower($1) OR email_normalized=$1 RETURNING id`,[normalized,nick.value,nick.normalized]);
+        if(updated.rowCount===0){
+          await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,consented_at,unsubscribed_at,updated_at) VALUES($1,$1,$2,$3,'launch-v2','subscribed',NOW(),NULL,NOW())`,[normalized,nick.value,nick.normalized]);
+        }
+        await client.query('COMMIT');
       }catch(error){
-        if(error?.code==='23505')throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});
+        await client.query('ROLLBACK');
+        if(error?.code==='23505'){
+          const detail=String(error.detail||'').toLowerCase();
+          if(detail.includes('preferred_nick')||detail.includes('nick'))throw Object.assign(new Error('Ten nick jest już zarezerwowany. Wybierz inny.'),{code:'NICK_TAKEN'});
+          throw Object.assign(new Error('Ten adres e-mail jest już zapisany na liście.'),{code:'EMAIL_EXISTS'});
+        }
         throw error;
+      }finally{
+        client.release();
       }
     }else this.memory.set(normalized,{email:normalized,preferredNick:nick.value,preferredNickNormalized:nick.normalized,status:'subscribed',consentedAt:new Date().toISOString()});
     return {ok:true,message:nick.value?`Dziękujemy! Zapisano e-mail i zgłoszono nick „${nick.value}” do rezerwacji.`:'Dziękujemy! Jesteś na liście startowej Gracz.pl.'};
@@ -67,7 +80,7 @@ export class NewsletterService{
     const normalized=this.normalize(email);
     if(this.pool){
       await this.ready;
-      await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),updated_at=NOW() WHERE email_normalized=$1`,[normalized]);
+      await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 OR lower(email)=lower($1)`,[normalized]);
     }else this.memory.delete(normalized);
     return {ok:true};
   }
