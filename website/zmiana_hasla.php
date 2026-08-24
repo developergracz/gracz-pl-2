@@ -16,14 +16,13 @@ if (empty($_SESSION['initiated']) || $_SESSION['account_type'] < USER) {
       $confirm = isset($_POST['new_password_confirm']) ? (string)$_POST['new_password_confirm'] : '';
       if (!hash_equals($new, $confirm)) throw new InvalidArgumentException('Nowe hasła nie są identyczne.');
       $old = isset($_POST['old_password']) ? (string)$_POST['old_password'] : '';
-      AccountChangePassword($_SESSION['id'], $old, $new, $confirm);
       $uid = (int)$_SESSION['id'];
-      GraczAudit()->record('auth.password.changed', $uid);
-      // Password change revokes the current browser session immediately. Other persisted sessions
-      // must also be marked revoked in prefix_security_sessions when that migration is enabled.
+      AccountChangePassword($uid, $old, $new, $confirm);
+      GraczSessions()->revokeAllForUser($uid, 'password_change');
+      GraczAudit()->record('auth.password.changed', $uid, array('all_sessions_revoked'=>true));
       Logout();
       SecurityService::destroySession();
-      echo('<div class="positive">Hasło zostało zmienione. Ze względów bezpieczeństwa zostałeś wylogowany. Zaloguj się ponownie.</div>');
+      echo('<div class="positive">Hasło zostało zmienione. Wszystkie aktywne sesje tego konta zostały unieważnione. Zaloguj się ponownie.</div>');
     } catch(Exception $e) {
       GraczAudit()->record('auth.password.change_failed', isset($_SESSION['id'])?$_SESSION['id']:null, array('type'=>get_class($e)), 'warning');
       echo('<div class="negative">'.htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8').'</div>');
