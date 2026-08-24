@@ -31,6 +31,10 @@
             if ($passwordCheck !== true) throw new RuntimeException($passwordCheck);
 
             CreateAccount($_POST['login'], $_POST['email'], $_POST['password'], $_POST['password_confirmation'], $_POST['sex']);
+            // Stary CreateAccount zapisuje historyczny hash. Natychmiast zastępujemy go password_hash().
+            if (!SecuritySetModernPasswordForIdentity($_POST['email'], $_POST['password'])) {
+              throw new RuntimeException('Konto utworzono, ale nie udało się zakończyć bezpiecznego zapisu hasła. Skontaktuj się z administratorem.');
+            }
             AuditLog('account.registered', 'account', strtolower(trim($_POST['login'])));
             echo('<div class="positive"><img src="'.$directory['design'].'icon_letter.png" alt="" width="16" />&nbsp;&nbsp;Twoje konto zostało utworzone. Na podany adres e-mail został wysłany link aktywujący konto - prosimy o jego kliknięcie aby dokończyć proces rejestracji.</div><br /><br /><a href="'.$directory['base'].'index.php">Strona główna</a>');
             $account_created = true;
