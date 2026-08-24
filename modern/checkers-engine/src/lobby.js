@@ -12,15 +12,18 @@ export class LobbyService{
   constructor({sessionStore,thousandService=null,idGenerator=randomUUID}){if(!sessionStore)throw new TypeError("Magazyn sesji jest wymagany.");this.sessionStore=sessionStore;this.thousandService=thousandService;this.idGenerator=idGenerator}
   touchUser({userId,displayName}){requireText(userId,"userId");requireText(displayName,"displayName");this.#presence.set(userId,{userId,displayName:normalizeDisplayName(displayName),seenAt:Date.now()})}
   listRooms(){return[...this.#rooms.values()].map(publicRoom)}
-  listPlayers(){const cutoff=Date.now()-45000;for(const[userId,presence]of this.#presence)if(presence.seenAt<cutoff)this.#presence.delete(userId);return[...this.#presence.values()].map(presence=>{const room=[...this.#rooms.values()].find(candidate=>candidate.seats.some(seat=>seat?.id===presence.userId));return{userId:presence.userId,displayName:normalizeDisplayName(presence.displayName),status:room?.status==="playing"?"w grze":room?.status==="waiting"?"przy stole":"dostępny",roomId:room?.roomId??null,roomName:room?.roomName??null,gameType:room?.gameType??null}})}
+  listPlayers(){const cutoff=Date.now()-45000;for(const[userId,presence]of this.#presence)if(presence.seenAt<cutoff)this.#presence.delete(userId);return[...this.#presence.values()].map(presence=>{const room=roomForUser(this.#rooms,presence.userId);return{userId:presence.userId,displayName:normalizeDisplayName(presence.displayName),status:room?.status==="playing"?"w grze":room?.status==="waiting"?"przy stole":"dostępny",roomId:room?.roomId??null,roomName:room?.roomName??null,gameType:room?.gameType??null}})}
   listInvitations(userId){this.#cleanupInvitations();return[...this.#invitations.values()].filter(inv=>inv.toId===userId&&inv.status==="pending").map(inv=>structuredClone({...inv,fromName:normalizeDisplayName(inv.fromName)}))}
 
   createRoom({ownerId,ownerName,roomName="Nowy pokój",gameType="checkers",maxPlayers=null,access="public"}){
     requireText(ownerId,"ownerId");requireText(ownerName,"ownerName");requireText(roomName,"roomName");
     if(!ROOM_ACCESS.has(access))throw new LobbyError("Nieprawidłowy tryb dostępu do pokoju.","INVALID_ROOM");
     const config=gameConfig(gameType);const seatCount=resolveSeatCount(gameType,maxPlayers,config);
-    const ownedWaiting=[...this.#rooms.values()].filter(room=>room.gameType===gameType&&room.seats[0]?.id===ownerId&&room.status==="waiting");
-    const exact=ownedWaiting.find(room=>room.maxPlayers===seatCount&&room.access===access);if(exact)return publicRoom(exact);
+    const currentRoom=roomForUser(this.#rooms,ownerId);
+    if(currentRoom&&currentRoom.status==="playing")throw new LobbyError("Nie możesz utworzyć nowego stołu podczas trwającej gry.","PLAYER_BUSY");
+    if(currentRoom&&currentRoom.seats[0]?.id!==ownerId)throw new LobbyError("Najpierw opuść obecny stół, zanim utworzysz własny.","PLAYER_ALREADY_SEATED");
+    const ownedWaiting=[...this.#rooms.values()].filter(room=>room.seats[0]?.id===ownerId&&room.status==="waiting");
+    const exact=ownedWaiting.find(room=>room.gameType===gameType&&room.maxPlayers===seatCount&&room.access===access);if(exact)return publicRoom(exact);
     for(const oldRoom of ownedWaiting){
       const filled=oldRoom.seats.filter(Boolean).length;
       if(filled>1)throw new LobbyError(`Masz już stół ${oldRoom.maxPlayers}-osobowy z zaproszonymi graczami. Utwórz nowy wariant dopiero po zakończeniu tego stołu.`,"ROOM_VARIANT_LOCKED");
@@ -37,7 +40,7 @@ export class LobbyService{
     const room=this.#rooms.get(roomId);if(!room||room.status!=="waiting"||room.seats[0]?.id!==fromId)throw new LobbyError("Najpierw zajmij miejsce przy własnym stole.","ROOM_NOT_JOINABLE");
     if(room.seats.every(Boolean))throw new LobbyError("Przy tym stole nie ma już wolnych miejsc.","ROOM_FULL");
     if(room.seats.some(seat=>seat?.id===toId))throw new LobbyError("Ten gracz już siedzi przy tym stole.","DUPLICATE_PLAYER");
-    const target=this.listPlayers().find(player=>player.userId===toId);if(!target)throw new LobbyError("Gracz nie jest już dostępny.","PLAYER_OFFLINE");if(target.status==="w grze")throw new LobbyError("Ten gracz jest już w grze.","PLAYER_BUSY");
+    const target=this.listPlayers().find(player=>player.userId===toId);if(!target)throw new LobbyError("Gracz nie jest już dostępny.","PLAYER_OFFLINE");if(target.status!=="dostępny")throw new LobbyError("Ten gracz jest już przy innym stole lub w grze.","PLAYER_BUSY");
     for(const inv of this.#invitations.values())if(inv.status==="pending"&&inv.fromId===fromId&&inv.toId===toId&&inv.roomId===roomId)return structuredClone(inv);
     const invitation={invitationId:this.idGenerator(),status:"pending",roomId,roomName:room.roomName,gameType:room.gameType,gameLabel:room.gameLabel,fromId,fromName:normalizeDisplayName(fromName),toId,createdAt:Date.now()};this.#invitations.set(invitation.invitationId,invitation);return structuredClone(invitation)
   }
@@ -47,6 +50,7 @@ export class LobbyService{
   async joinRoom({roomId,playerId,playerName,invitationId=null}){
     this.#cleanupInvitations();
     const room=this.#rooms.get(roomId);if(!room)throw new LobbyError("Pokój nie istnieje.","ROOM_NOT_FOUND");if(room.status!=="waiting")throw new LobbyError("Pokój nie oczekuje na gracza.","ROOM_NOT_JOINABLE");if(room.seats.some(seat=>seat?.id===playerId))throw new LobbyError("Ten gracz już siedzi przy tym stole.","DUPLICATE_PLAYER");
+    const occupiedRoom=roomForUser(this.#rooms,playerId);if(occupiedRoom&&occupiedRoom.roomId!==roomId)throw new LobbyError("Najpierw opuść obecny stół lub zakończ grę.","PLAYER_ALREADY_SEATED");
     if(room.access==="private"){
       const invitation=invitationId?this.#invitations.get(invitationId):null;
       const validInvitation=invitation&&invitation.status==="pending"&&invitation.roomId===roomId&&invitation.toId===playerId;
@@ -67,6 +71,7 @@ export class LobbyService{
   #cleanupInvitations(){const cutoff=Date.now()-INVITATION_TTL_MS;for(const[id,inv]of this.#invitations)if(inv.status!=="pending"||inv.createdAt<cutoff)this.#invitations.delete(id)}
 }
 
+function roomForUser(rooms,userId){return[...rooms.values()].find(room=>room.seats.some(seat=>seat?.id===userId))??null}
 function publicRoom(room){const seats=room.seats.map(seat=>seat?{id:seat.id,name:normalizeDisplayName(seat.name)}:null);return structuredClone({roomId:room.roomId,roomName:room.roomName,gameType:room.gameType,gameLabel:room.gameLabel,maxPlayers:room.maxPlayers,filledSeats:seats.filter(Boolean).length,access:room.access??"public",status:room.status,seats,white:room.gameType==="checkers"?seats[0]:null,black:room.gameType==="checkers"?seats[1]:null,gameId:room.gameId})}
 function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.maxPlayers;const value=requested===null||requested===undefined?config.defaultPlayers:Number(requested);if(!Number.isInteger(value)||value<config.minPlayers||value>config.maxPlayers)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
 function gameConfig(gameType){const config=GAME_CONFIG[gameType];if(!config)throw new LobbyError("Nieobsługiwany typ gry.","INVALID_GAME_TYPE");return config}
