@@ -1,6 +1,23 @@
 import pg from 'pg';
 const {Pool}=pg;
 
+function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}
+
+async function sendWelcomeEmail({to,nick,position}){
+  const apiKey=String(process.env.RESEND_API_KEY||'').trim();
+  const from=String(process.env.NEWSLETTER_FROM_EMAIL||'Gracz.pl <newsletter@gracz.pl>').trim();
+  if(!apiKey)return {sent:false,reason:'EMAIL_PROVIDER_NOT_CONFIGURED'};
+  const safeEmail=escapeHtml(to);
+  const safeNick=escapeHtml(nick||'nie podano');
+  const safePosition=Number.isFinite(position)&&position>0?position:null;
+  const listText=safePosition?`Jesteś użytkownikiem nr ${safePosition} na aktywnej liście startowej.`:'Twój zapis na listę startową jest aktywny.';
+  const html=`<!doctype html><html lang="pl"><body style="margin:0;background:#071015;color:#eef6f2;font-family:Arial,sans-serif"><div style="max-width:760px;margin:0 auto;padding:42px 28px"><div style="font-size:34px;font-weight:900;margin-bottom:44px">Gracz.<span style="color:#45e889">pl</span></div><h1 style="font-size:34px;line-height:1.15;margin:0 0 22px">Witamy na liście startowej Gracz.pl!</h1><p style="font-size:18px;line-height:1.55;color:#dbe8e1">Dziękujemy za zapis do newslettera i listy pierwszych użytkowników naszej platformy gier multiplayer.</p><div style="margin:34px 0;padding:28px;border:1px solid #28503f;border-radius:16px;background:#0d181d"><p style="font-size:18px;margin:0 0 14px"><strong>Adres e-mail:</strong> ${safeEmail}</p><p style="font-size:18px;margin:0 0 14px"><strong>Zarezerwowany nick:</strong> ${safeNick}</p><p style="font-size:18px;margin:0"><strong>Miejsce na liście:</strong> ${escapeHtml(listText)}</p></div><p style="font-size:18px;line-height:1.55;color:#dbe8e1">Będziemy informować Cię o najważniejszych etapach budowy Gracz.pl, testach gier, nowych funkcjach oraz terminie uruchomienia platformy.</p><p style="margin-top:34px"><a href="https://gracz.pl" style="display:inline-block;background:linear-gradient(180deg,#32e982,#0db95a);color:#041009;text-decoration:none;font-weight:900;padding:15px 24px;border-radius:9px">Przejdź do Gracz.pl</a></p><p style="margin-top:40px;color:#8fa199;font-size:14px;line-height:1.6">Wiadomość została wysłana, ponieważ ten adres został zapisany do newslettera Gracz.pl. Aby zrezygnować z wiadomości, skorzystaj z opcji wypisu dostępnej w serwisie.<br>Gracz.pl · Chełm Śląski, ul. Żabia 3</p></div></body></html>`;
+  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({from,to:[to],subject:'Witamy na liście startowej Gracz.pl!',html})});
+  if(!response.ok){const detail=await response.text().catch(()=>String(response.status));throw Object.assign(new Error(`Nie udało się wysłać e-maila potwierdzającego: ${detail}`),{code:'WELCOME_EMAIL_FAILED'});}
+  const result=await response.json().catch(()=>({}));
+  return {sent:true,id:result.id||null};
+}
+
 export class NewsletterService{
   constructor(connectionString){
     this.pool=connectionString?new Pool({connectionString,ssl:connectionString.includes('localhost')||connectionString.includes('127.0.0.1')?false:{rejectUnauthorized:false},max:3}):null;
@@ -34,6 +51,10 @@ export class NewsletterService{
     }
     for(const item of this.memory.values())if(item.preferredNickNormalized===parsed.normalized&&item.status==='subscribed')return {available:false,nick:parsed.value};
     return {available:true,nick:parsed.value};
+  }
+  async activeCount(){
+    if(this.pool){await this.ready;const result=await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_newsletter_subscribers WHERE status='subscribed'`);return Number(result.rows?.[0]?.count||0)}
+    return [...this.memory.values()].filter(item=>item.status==='subscribed').length;
   }
   async subscribe({email,consent,legal,preferredNick}){
     if(legal!==true)throw Object.assign(new Error('Akceptacja Regulaminu i Polityki prywatności jest wymagana.'),{code:'LEGAL_REQUIRED'});
@@ -70,18 +91,17 @@ export class NewsletterService{
           throw Object.assign(new Error('Ten adres e-mail jest już zapisany na liście.'),{code:'EMAIL_EXISTS'});
         }
         throw error;
-      }finally{
-        client.release();
-      }
+      }finally{client.release();}
     }else this.memory.set(normalized,{email:normalized,preferredNick:nick.value,preferredNickNormalized:nick.normalized,status:'subscribed',consentedAt:new Date().toISOString()});
-    return {ok:true,message:nick.value?`Dziękujemy! Zapisano e-mail i zgłoszono nick „${nick.value}” do rezerwacji.`:'Dziękujemy! Jesteś na liście startowej Gracz.pl.'};
+    const position=await this.activeCount();
+    let emailDelivery={sent:false};
+    try{emailDelivery=await sendWelcomeEmail({to:normalized,nick:nick.value,position});}catch(error){console.error('[newsletter] welcome email failed',error);emailDelivery={sent:false,reason:error.code||'WELCOME_EMAIL_FAILED'};}
+    return {ok:true,emailSent:emailDelivery.sent,message:nick.value?`Dziękujemy! Zapisano e-mail i zgłoszono nick „${nick.value}” do rezerwacji.`:'Dziękujemy! Jesteś na liście startowej Gracz.pl.'};
   }
   async unsubscribe(email){
     const normalized=this.normalize(email);
-    if(this.pool){
-      await this.ready;
-      await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 OR lower(email)=lower($1)`,[normalized]);
-    }else this.memory.delete(normalized);
+    if(this.pool){await this.ready;await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 OR lower(email)=lower($1)`,[normalized]);}
+    else this.memory.delete(normalized);
     return {ok:true};
   }
   async close(){if(this.pool)await this.pool.end();}
