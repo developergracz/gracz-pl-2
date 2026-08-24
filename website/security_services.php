@@ -126,7 +126,6 @@ function SecurityAuthorizeUser($identity, $plainPassword, $rememberSession = fal
 
     $row = SecurityLoadUserForLogin($identity);
     if (!$row) {
-        // Stałoczasowa praca dla nieistniejącego konta ogranicza różnice czasowe enumeracji.
         password_verify($plainPassword, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
         return false;
     }
@@ -136,12 +135,12 @@ function SecurityAuthorizeUser($identity, $plainPassword, $rememberSession = fal
         if (!password_verify($plainPassword, $stored)) return false;
         if (password_needs_rehash($stored, PASSWORD_DEFAULT)) {
             SecuritySetModernPasswordForIdentity($row['login'], $plainPassword);
-            $row['password'] = $_SESSION['password'];
+            $refreshed = SecurityLoadUserForLogin($row['login']);
+            if ($refreshed) $row = $refreshed;
         }
         return SecurityInitializeAuthenticatedSession($row, $rememberSession);
     }
 
-    // Kompatybilność wyłącznie migracyjna dla historycznych SHA-1 z prywatnym seedem.
     $legacy = sha1($seed_private.$plainPassword);
     if (!hash_equals($stored, $legacy)) return false;
 
