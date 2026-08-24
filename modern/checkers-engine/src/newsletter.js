@@ -24,20 +24,12 @@ export class NewsletterService {
       id BIGSERIAL PRIMARY KEY,
       email VARCHAR(254) NOT NULL UNIQUE,
       email_normalized VARCHAR(254) NOT NULL UNIQUE,
-      preferred_nick VARCHAR(24),
-      preferred_nick_normalized VARCHAR(24),
-      consent_version VARCHAR(64) NOT NULL,
-      consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      preferred_nick VARCHAR(24), preferred_nick_normalized VARCHAR(24),
+      consent_version VARCHAR(64) NOT NULL, consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       status VARCHAR(32) NOT NULL DEFAULT 'pending_confirmation',
-      confirmation_token_hash BYTEA,
-      confirmation_expires_at TIMESTAMPTZ,
-      confirmation_sent_at TIMESTAMPTZ,
-      confirmed_at TIMESTAMPTZ,
-      position_token_hash BYTEA,
-      unsubscribe_token_hash BYTEA,
-      unsubscribed_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      confirmation_token_hash BYTEA, confirmation_expires_at TIMESTAMPTZ, confirmation_sent_at TIMESTAMPTZ, confirmed_at TIMESTAMPTZ,
+      position_token_hash BYTEA, unsubscribe_token_hash BYTEA, unsubscribed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
     for (const statement of [
       `ALTER TABLE gracz_newsletter_subscribers ADD COLUMN IF NOT EXISTS preferred_nick VARCHAR(24)`,
@@ -83,8 +75,7 @@ export class NewsletterService {
   async subscribe({ email, consent, legal, preferredNick }) {
     if (legal !== true) throw newsletterError("LEGAL_REQUIRED", "Akceptacja Regulaminu i Polityki prywatności jest wymagana.");
     if (consent !== true) throw newsletterError("CONSENT_REQUIRED", "Zgoda na zapis jest wymagana.");
-    const normalized = this.normalize(email);
-    const nick = this.normalizeNick(preferredNick);
+    const normalized = this.normalize(email), nick = this.normalizeNick(preferredNick);
     const neutral = { ok: true, pendingConfirmation: true, message: "Jeżeli podany adres może zostać zapisany, wyślemy wiadomość z linkiem potwierdzającym." };
 
     if (!this.pool) {
@@ -98,49 +89,45 @@ export class NewsletterService {
     }
 
     await this.ready;
-    const client = await this.pool.connect();
-    let confirmationToken = null;
+    const client = await this.pool.connect(); let confirmationToken = null;
     try {
       await client.query("BEGIN");
-      const existingResult = await client.query(`SELECT id,status,confirmation_sent_at,preferred_nick_normalized FROM gracz_newsletter_subscribers WHERE email_normalized=$1 FOR UPDATE`, [normalized]);
-      const existing = existingResult.rows[0];
+      const { rows } = await client.query(`SELECT id,status,confirmation_sent_at FROM gracz_newsletter_subscribers WHERE email_normalized=$1 FOR UPDATE`, [normalized]);
+      const existing = rows[0];
       if (existing?.status === "subscribed") { await client.query("COMMIT"); return neutral; }
       if (existing?.confirmation_sent_at && Date.now() - new Date(existing.confirmation_sent_at).getTime() < RESEND_COOLDOWN_MS) { await client.query("COMMIT"); return neutral; }
-
       if (nick.normalized) {
         const conflict = await client.query(`SELECT 1 FROM gracz_newsletter_subscribers WHERE preferred_nick_normalized=$1 AND email_normalized<>$2 AND status IN ('pending_confirmation','subscribed') LIMIT 1`, [nick.normalized, normalized]);
         if (conflict.rowCount) throw newsletterError("NICK_TAKEN", "Ten nick jest już zarezerwowany. Wybierz inny.");
       }
-
-      const confirmation = this.tokens.issue();
-      confirmationToken = confirmation.token;
-      if (existing) {
-        await client.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,preferred_nick_normalized=$3,status='pending_confirmation',consent_version=$4,consented_at=NOW(),confirmation_token_hash=$5,confirmation_expires_at=NOW()+INTERVAL '24 hours',confirmation_sent_at=NOW(),position_token_hash=NULL,unsubscribe_token_hash=NULL,unsubscribed_at=NULL,updated_at=NOW() WHERE email_normalized=$1`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
-      } else {
-        await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,confirmation_token_hash,confirmation_expires_at,confirmation_sent_at) VALUES($1,$1,$2,$3,$4,'pending_confirmation',$5,NOW()+INTERVAL '24 hours',NOW())`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
-      }
+      const confirmation = this.tokens.issue(); confirmationToken = confirmation.token;
+      if (existing) await client.query(`UPDATE gracz_newsletter_subscribers SET preferred_nick=$2,preferred_nick_normalized=$3,status='pending_confirmation',consent_version=$4,consented_at=NOW(),confirmation_token_hash=$5,confirmation_expires_at=NOW()+INTERVAL '24 hours',confirmation_sent_at=NOW(),position_token_hash=NULL,unsubscribe_token_hash=NULL,unsubscribed_at=NULL,updated_at=NOW() WHERE email_normalized=$1`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
+      else await client.query(`INSERT INTO gracz_newsletter_subscribers(email,email_normalized,preferred_nick,preferred_nick_normalized,consent_version,status,confirmation_token_hash,confirmation_expires_at,confirmation_sent_at) VALUES($1,$1,$2,$3,$4,'pending_confirmation',$5,NOW()+INTERVAL '24 hours',NOW())`, [normalized,nick.value,nick.normalized,CONSENT_VERSION,confirmation.tokenHash]);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
       if (error?.code === "23505") throw newsletterError("DUPLICATE", "Nie udało się zapisać tych danych.");
       throw error;
     } finally { client.release(); }
-
-    if (confirmationToken) await this.sendConfirmation(normalized, nick.value, confirmationToken).catch((error) => console.error("[newsletter] confirmation mail failed", error?.code || error?.message));
+    if (confirmationToken) await this.sendConfirmation(normalized, nick.value, confirmationToken).catch(error => console.error("[newsletter] confirmation mail failed", error?.code || error?.message));
     return neutral;
   }
 
   async sendConfirmation(to, nick, token) {
     const link = `${this.baseUrl}/newsletter/confirm?token=${encodeURIComponent(token)}`;
-    const text = `Potwierdź zapis do Gracz.pl: ${link}\n\nLink jest ważny przez 24 godziny. Jeśli to nie Ty podałeś ten adres, zignoruj tę wiadomość.`;
-    const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto"><h1>Potwierdź zapis do Gracz.pl</h1><p>${escapeHtml(nick ? `Nick: ${nick}` : "Lista startowa Gracz.pl")}</p><p><a href="${escapeHtml(link)}">Potwierdź mój zapis</a></p><p>Link jest ważny przez 24 godziny. Jeżeli to nie Ty podałeś ten adres, zignoruj tę wiadomość.</p></div>`;
+    const text = `Otwórz stronę potwierdzenia zapisu do Gracz.pl: ${link}\n\nNa stronie kliknij przycisk potwierdzenia. Link jest ważny przez 24 godziny.`;
+    const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto"><h1>Potwierdź zapis do Gracz.pl</h1><p>${escapeHtml(nick ? `Nick: ${nick}` : "Lista startowa Gracz.pl")}</p><p><a href="${escapeHtml(link)}">Przejdź do potwierdzenia</a></p><p>Na stronie kliknij przycisk potwierdzenia. Link jest ważny przez 24 godziny.</p></div>`;
     return this.mail.send({ to, subject: "Potwierdź zapis do Gracz.pl", text, html, purpose: "newsletter-confirm" });
   }
 
   async confirm(token) {
     const tokenHash = this.tokens.hash(String(token || ""));
     if (!this.pool) {
-      for (const item of this.memory.values()) if (bufferEqual(item.confirmationHash, tokenHash) && item.confirmationExpiresAt > Date.now()) { item.status = "subscribed"; const position = this.tokens.issue(), unsubscribe = this.tokens.issue(); item.positionHash=position.tokenHash;item.unsubscribeHash=unsubscribe.tokenHash; await this.sendWelcome(item.email,item.preferredNick,position.token,unsubscribe.token); return { ok:true,message:"Zapis został potwierdzony." }; }
+      for (const item of this.memory.values()) if (bufferEqual(item.confirmationHash, tokenHash) && item.confirmationExpiresAt > Date.now()) {
+        item.status = "subscribed"; item.confirmationHash = null;
+        const position = this.tokens.issue(), unsubscribe = this.tokens.issue(); item.positionHash = position.tokenHash; item.unsubscribeHash = unsubscribe.tokenHash;
+        await this.sendWelcome(item.email, item.preferredNick, position.token, unsubscribe.token); return { ok: true, message: "Zapis został potwierdzony." };
+      }
       throw newsletterError("TOKEN_INVALID", "Link potwierdzający jest nieprawidłowy albo wygasł.");
     }
     await this.ready;
@@ -152,16 +139,30 @@ export class NewsletterService {
       const position = this.tokens.issue(), unsubscribe = this.tokens.issue();
       await client.query(`UPDATE gracz_newsletter_subscribers SET status='subscribed',confirmed_at=NOW(),confirmation_token_hash=NULL,confirmation_expires_at=NULL,position_token_hash=$2,unsubscribe_token_hash=$3,updated_at=NOW() WHERE id=$1`, [rows[0].id,position.tokenHash,unsubscribe.tokenHash]);
       await client.query("COMMIT"); data={email:rows[0].email,nick:rows[0].preferred_nick,positionToken:position.token,unsubscribeToken:unsubscribe.token};
-    } catch(error){await client.query("ROLLBACK").catch(()=>{});throw error;}finally{client.release();}
-    await this.sendWelcome(data.email,data.nick,data.positionToken,data.unsubscribeToken).catch((error)=>console.error("[newsletter] welcome mail failed",error?.code||error?.message));
+    } catch(error){ await client.query("ROLLBACK").catch(()=>{}); throw error; } finally { client.release(); }
+    await this.sendWelcome(data.email,data.nick,data.positionToken,data.unsubscribeToken).catch(error=>console.error("[newsletter] welcome mail failed",error?.code||error?.message));
     return { ok:true,message:"Zapis został potwierdzony. Witaj na liście startowej Gracz.pl!" };
   }
 
-  async sendWelcome(to,nick,positionToken,unsubscribeToken){const positionLink=`${this.baseUrl}/newsletter/position?token=${encodeURIComponent(positionToken)}`;const unsubscribeLink=`${this.baseUrl}/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;const text=`Witaj na liście Gracz.pl!\n${nick?`Nick: ${nick}\n`:""}Sprawdź miejsce: ${positionLink}\nWypisz się: ${unsubscribeLink}`;const html=`<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto"><h1>Witaj na liście Gracz.pl!</h1>${nick?`<p>Nick: <strong>${escapeHtml(nick)}</strong></p>`:""}<p><a href="${escapeHtml(positionLink)}">Sprawdź swoje miejsce</a></p><p><a href="${escapeHtml(unsubscribeLink)}">Wypisz się</a></p></div>`;return this.mail.send({to,subject:"Witaj na liście startowej Gracz.pl",text,html,purpose:"newsletter-welcome"});}
+  async sendWelcome(to,nick,positionToken,unsubscribeToken){
+    const positionLink=`${this.baseUrl}/newsletter/position?token=${encodeURIComponent(positionToken)}`;
+    const unsubscribeLink=`${this.baseUrl}/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+    const text=`Witaj na liście Gracz.pl!\n${nick?`Nick: ${nick}\n`:""}Sprawdź miejsce: ${positionLink}\nWypisz się: ${unsubscribeLink}`;
+    const html=`<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto"><h1>Witaj na liście Gracz.pl!</h1>${nick?`<p>Nick: <strong>${escapeHtml(nick)}</strong></p>`:""}<p><a href="${escapeHtml(positionLink)}">Sprawdź swoje miejsce</a></p><p><a href="${escapeHtml(unsubscribeLink)}">Przejdź do wypisania</a></p></div>`;
+    return this.mail.send({to,subject:"Witaj na liście startowej Gracz.pl",text,html,purpose:"newsletter-welcome"});
+  }
 
-  async position(token){const hash=this.tokens.hash(String(token||""));if(!this.pool){const active=[...this.memory.values()].filter(x=>x.status==="subscribed");const index=active.findIndex(x=>bufferEqual(x.positionHash,hash));if(index<0)throw newsletterError("TOKEN_INVALID","Nieprawidłowy token.");return{position:index+1};}await this.ready;const{rows}=await this.pool.query(`SELECT s.id,(SELECT COUNT(*)::int FROM gracz_newsletter_subscribers x WHERE x.status='subscribed' AND x.id<=s.id) AS position FROM gracz_newsletter_subscribers s WHERE s.position_token_hash=$1 AND s.status='subscribed'`,[hash]);if(!rows[0])throw newsletterError("TOKEN_INVALID","Nieprawidłowy token.");return{position:Number(rows[0].position)};}
+  async position(token){
+    const hash=this.tokens.hash(String(token||""));
+    if(!this.pool){const active=[...this.memory.values()].filter(x=>x.status==="subscribed");const index=active.findIndex(x=>bufferEqual(x.positionHash,hash));if(index<0)throw newsletterError("TOKEN_INVALID","Nieprawidłowy token.");return{position:index+1};}
+    await this.ready;const{rows}=await this.pool.query(`SELECT s.id,(SELECT COUNT(*)::int FROM gracz_newsletter_subscribers x WHERE x.status='subscribed' AND x.id<=s.id) AS position FROM gracz_newsletter_subscribers s WHERE s.position_token_hash=$1 AND s.status='subscribed'`,[hash]);if(!rows[0])throw newsletterError("TOKEN_INVALID","Nieprawidłowy token.");return{position:Number(rows[0].position)};
+  }
 
-  async unsubscribeByToken(token){const hash=this.tokens.hash(String(token||""));if(!this.pool){for(const item of this.memory.values())if(bufferEqual(item.unsubscribeHash,hash)){item.status="unsubscribed";item.positionHash=null;item.unsubscribeHash=null;return{ok:true};}return{ok:true};}await this.ready;await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),position_token_hash=NULL,unsubscribe_token_hash=NULL,confirmation_token_hash=NULL,updated_at=NOW() WHERE unsubscribe_token_hash=$1`,[hash]);return{ok:true};}
+  async unsubscribeByToken(token){
+    const hash=this.tokens.hash(String(token||""));
+    if(!this.pool){for(const item of this.memory.values())if(bufferEqual(item.unsubscribeHash,hash)){item.status="unsubscribed";item.positionHash=null;item.unsubscribeHash=null;return{ok:true};}return{ok:true};}
+    await this.ready;await this.pool.query(`UPDATE gracz_newsletter_subscribers SET status='unsubscribed',unsubscribed_at=NOW(),position_token_hash=NULL,unsubscribe_token_hash=NULL,confirmation_token_hash=NULL,updated_at=NOW() WHERE unsubscribe_token_hash=$1`,[hash]);return{ok:true};
+  }
 
   async close(){if(this.pool)await this.pool.end();}
 }
@@ -173,23 +174,28 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
       enforceNewsletterHost(request,security);
       if(request.method==="GET"&&url.pathname==="/newsletter/challenge-config")return json(response,200,security.challengeConfig(request));
       if(request.method==="GET"&&url.pathname==="/newsletter/nick-availability"){security.limit(request,"newsletter-nick",url.searchParams.get("nick")||"anonymous",{limit:30,windowMs:60_000});return json(response,200,await service.nicknameAvailable(url.searchParams.get("nick")||""));}
-      if(request.method==="GET"&&url.pathname==="/newsletter/confirm"){security.limit(request,"newsletter-confirm","anonymous",{limit:20,windowMs:15*60_000});const result=await service.confirm(url.searchParams.get("token")||"");return html(response,200,successPage(result.message));}
+      if(request.method==="GET"&&url.pathname==="/newsletter/confirm"){security.limit(request,"newsletter-confirm-page","anonymous",{limit:30,windowMs:15*60_000});const token=url.searchParams.get("token")||"";service.tokens.hash(token);return html(response,200,actionPage("/newsletter/confirm","Potwierdź zapis","Kliknij przycisk, aby aktywować zapis do listy Gracz.pl.",token,"Potwierdzam zapis"));}
+      if(request.method==="POST"&&url.pathname==="/newsletter/confirm"){security.assertSameOrigin(request);security.limit(request,"newsletter-confirm","anonymous",{limit:12,windowMs:15*60_000});const form=await readForm(request);const result=await service.confirm(form.get("token")||"");return html(response,200,successPage(result.message));}
       if(request.method==="GET"&&url.pathname==="/newsletter/position"){security.limit(request,"newsletter-position","anonymous",{limit:30,windowMs:15*60_000});const result=await service.position(url.searchParams.get("token")||"");return html(response,200,successPage(`Twoje aktualne miejsce na liście: ${result.position}.`));}
-      if(request.method==="GET"&&url.pathname==="/newsletter/unsubscribe"){security.limit(request,"newsletter-unsubscribe","anonymous",{limit:20,windowMs:15*60_000});await service.unsubscribeByToken(url.searchParams.get("token")||"");return html(response,200,successPage("Adres został wypisany z listy Gracz.pl."));}
+      if(request.method==="GET"&&url.pathname==="/newsletter/unsubscribe"){security.limit(request,"newsletter-unsubscribe-page","anonymous",{limit:30,windowMs:15*60_000});const token=url.searchParams.get("token")||"";service.tokens.hash(token);return html(response,200,actionPage("/newsletter/unsubscribe","Wypisz z listy","Kliknij przycisk, aby potwierdzić wypisanie adresu z listy Gracz.pl.",token,"Wypisz mnie"));}
+      if(request.method==="POST"&&url.pathname==="/newsletter/unsubscribe"){security.assertSameOrigin(request);security.limit(request,"newsletter-unsubscribe","anonymous",{limit:12,windowMs:15*60_000});const form=await readForm(request);await service.unsubscribeByToken(form.get("token")||"");return html(response,200,successPage("Adres został wypisany z listy Gracz.pl."));}
       if(request.method!=="POST"||url.pathname!=="/newsletter/subscribe")return false;
-      security.assertSameOrigin(request); const body=await readJson(request,10_000); const normalized=service.normalize(body.email);
+      security.assertSameOrigin(request);const body=await readJson(request,10_000),normalized=service.normalize(body.email);
       security.limit(request,"newsletter-subscribe",normalized,{limit:5,windowMs:30*60_000});
       await security.verifyTurnstile(request,body.challengeToken,{required:isProduction()});
       return json(response,202,await service.subscribe(body));
-    }catch(error){if(error instanceof RateLimitError&&error.retryAfterSeconds)response.setHeader("Retry-After",String(error.retryAfterSeconds));const status=Number(error.status)||(error instanceof RateLimitError?429:400);return json(response,status,{error:{code:error.code||"NEWSLETTER_ERROR",message:error.message||"Nie udało się wykonać operacji."}});}
+    }catch(error){if(error instanceof RateLimitError&&error.retryAfterSeconds)response.setHeader("Retry-After",String(error.retryAfterSeconds));const status=Number(error.status)||(error instanceof RateLimitError?429:400);return errorResponse(response,status,error);}
   };
 }
 
 function enforceNewsletterHost(request,security){if(!isProduction())return;const host=security.host(request);if(host!=="gracz.pl"&&host!=="www.gracz.pl")throw newsletterError("HOST_NOT_ALLOWED","Publiczne operacje newslettera są dostępne wyłącznie przez gracz.pl.",403);}
 function isProduction(){return String(process.env.NODE_ENV||"").toLowerCase()==="production";}
 async function readJson(request,limit){let raw="";for await(const chunk of request){raw+=chunk;if(raw.length>limit)throw newsletterError("REQUEST_TOO_LARGE","Żądanie jest zbyt duże.",413);}try{return JSON.parse(raw||"{}");}catch{throw newsletterError("INVALID_JSON","Nieprawidłowe dane.");}}
+async function readForm(request,limit=4096){let raw="";for await(const chunk of request){raw+=chunk;if(raw.length>limit)throw newsletterError("REQUEST_TOO_LARGE","Żądanie jest zbyt duże.",413);}return new URLSearchParams(raw);}
 function json(response,status,body){response.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});response.end(JSON.stringify(body));return true;}
 function html(response,status,body){response.writeHead(status,{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"});response.end(body);return true;}
+function errorResponse(response,status,error){if(String(error?.message||"").includes("token")||error?.code==="TOKEN_INVALID")return html(response,status,successPage("Link jest nieprawidłowy albo wygasł."));return json(response,status,{error:{code:error.code||"NEWSLETTER_ERROR",message:error.message||"Nie udało się wykonać operacji."}});}
+function actionPage(action,title,message,token,button){return `<!doctype html><html lang="pl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} — Gracz.pl</title><body style="margin:0;background:#071015;color:#eef6f2;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh"><main style="max-width:620px;padding:40px;text-align:center"><h1>Gracz.pl</h1><h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p><form method="post" action="${escapeHtml(action)}"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit" style="padding:14px 22px;border:0;border-radius:8px;background:#32e982;color:#041009;font-weight:800;cursor:pointer">${escapeHtml(button)}</button></form></main></body></html>`;}
 function successPage(message){return `<!doctype html><html lang="pl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gracz.pl</title><body style="margin:0;background:#071015;color:#eef6f2;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh"><main style="max-width:620px;padding:40px;text-align:center"><h1>Gracz.pl</h1><p>${escapeHtml(message)}</p><p><a style="color:#48e78c" href="/">Wróć na stronę główną</a></p></main></body></html>`;}
 function newsletterError(code,message,status=400){return Object.assign(new Error(message),{code,status});}
 function escapeHtml(value){return String(value??"").replace(/[&<>'\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
