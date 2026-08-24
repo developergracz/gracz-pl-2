@@ -3,6 +3,13 @@
 include_once("variables_local.php");
 include_once('../variables_global.php');
 include_once("exceptions.php");
+
+// Nie ufamy nagłówkom Cloudflare, jeśli origin nie został jawnie skonfigurowany jako dostępny wyłącznie przez Cloudflare.
+// Zapobiega to podszywaniu się pod IP klienta przy bezpośrednim dostępie do originu.
+if (getenv('TRUST_CLOUDFLARE_PROXY') !== '1') {
+  unset($_SERVER['HTTP_CF_CONNECTING_IP']);
+}
+
 include_once($actual_path.'security_core.php');
 include_once($actual_path.'security_services.php');
 
@@ -92,7 +99,6 @@ DatabaseConnect();
 RateLimitEnsureTable();
 AuditEnsureTable();
 
-// Centralna brama paneli uprzywilejowanych. Zwykłe konto gracza nie może wejść bezpośrednim URL-em.
 $currentScript = basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '');
 $privilegedScripts = array(
   'service_administration_panel.php','mailing.php','admin_reported_abuses.php','admin_reported_bugs.php',
@@ -125,7 +131,7 @@ try
       throw new RuntimeException('Wymagana jest dodatkowa weryfikacja bezpieczeństwa.');
     }
 
-    $loggedIn = AuthorizeUser($_POST['login'], $_POST['password'], isset($_POST['remember_me'])?($_POST['remember_me']=='on'):false);
+    $loggedIn = SecurityAuthorizeUser($_POST['login'], $_POST['password'], isset($_POST['remember_me'])?($_POST['remember_me']=='on'):false);
     if ($loggedIn) {
       SecurityRotateSessionAfterLogin();
       RateLimitReset('login_hard', $compoundIdentity);
