@@ -7,7 +7,12 @@ let turnstileReadyPromise=null;
 let currentChallengeToken=null;
 let tokenWaiters=[];
 
+function isRenderTestHost(){
+  return location.hostname==='onrender.com'||location.hostname.endsWith('.onrender.com');
+}
+
 async function loadTurnstileConfig(){
+  if(isRenderTestHost())return {enabled:false,provider:null,siteKey:null};
   try{
     const response=await fetch('/newsletter/challenge-config',{headers:{accept:'application/json'},cache:'no-store'});
     if(!response.ok)return {enabled:false};
@@ -51,6 +56,7 @@ function rejectTokenWaiters(error){
 }
 
 async function ensureTurnstile(){
+  if(isRenderTestHost())return false;
   if(!turnstileConfig)turnstileConfig=await loadTurnstileConfig();
   if(!turnstileConfig?.enabled)return false;
   await loadTurnstileScript();
@@ -89,6 +95,7 @@ async function ensureTurnstile(){
 }
 
 async function getChallengeToken(){
+  if(isRenderTestHost())return null;
   const enabled=await ensureTurnstile();
   if(!enabled)return null;
   if(currentChallengeToken)return currentChallengeToken;
