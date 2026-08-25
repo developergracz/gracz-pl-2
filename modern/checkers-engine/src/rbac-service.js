@@ -5,8 +5,8 @@ export const ROLES = Object.freeze(["player", "moderator", "administrator", "own
 const LEVEL = Object.freeze({ player: 0, moderator: 10, administrator: 20, owner: 30 });
 const PERMISSIONS = Object.freeze({
   player: new Set(["game.play", "profile.manage", "message.send", "chat.use"]),
-  moderator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban"]),
-  administrator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban", "admin.users", "admin.audit", "admin.settings"]),
+  moderator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban", "newsletter.read", "newsletter.security.read"]),
+  administrator: new Set(["game.play", "profile.manage", "message.send", "chat.use", "moderation.review", "moderation.warn", "moderation.ban", "admin.users", "admin.audit", "admin.settings", "newsletter.read", "newsletter.manage", "newsletter.email.reveal", "newsletter.security.read"]),
   owner: new Set(["*"]),
 });
 
