@@ -51,13 +51,13 @@ export class NewsletterService {
   }
 
   normalize(email) {
-    const value = String(email || "").trim().toLowerCase();
+    const value = String(email || "").normalize("NFKC").trim().toLowerCase();
     if (value.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) throw newsletterError("INVALID_EMAIL", "Podaj prawidłowy adres e-mail.");
     return value;
   }
 
   normalizeNick(nick, { optional = true } = {}) {
-    const value = String(nick || "").trim();
+    const value = String(nick || "").normalize("NFKC").trim();
     if (!value && optional) return { value: null, normalized: null };
     if (!/^[A-Za-z0-9_.-]{3,24}$/.test(value)) throw newsletterError("INVALID_NICK", "Nick może mieć 3–24 znaki: litery, cyfry, _, . lub -.");
     return { value, normalized: value.toLowerCase() };
@@ -194,10 +194,34 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
       if(request.method==="GET"&&url.pathname==="/newsletter/unsubscribe"){security.limit(request,"newsletter-unsubscribe-page","anonymous",{limit:30,windowMs:15*60_000});const token=url.searchParams.get("token")||"";service.tokens.hash(token);return html(response,200,actionPage("/newsletter/unsubscribe","Wypisz z listy","Kliknij przycisk, aby potwierdzić wypisanie adresu z listy Gracz.pl.",token,"Wypisz mnie"));}
       if(request.method==="POST"&&url.pathname==="/newsletter/unsubscribe"){security.assertSameOrigin(request);security.limit(request,"newsletter-unsubscribe","anonymous",{limit:12,windowMs:15*60_000});const form=await readForm(request);await service.unsubscribeByToken(form.get("token")||"");return html(response,200,successPage("Adres został wypisany z listy Gracz.pl."));}
       if(request.method!=="POST"||url.pathname!=="/newsletter/subscribe")return false;
-      security.assertSameOrigin(request);const body=await readJson(request,10_000),normalized=service.normalize(body.email);
+      security.assertSameOrigin(request);
+      const body=await readJson(request,10_000);
+      const neutral={ok:true,pendingConfirmation:true,message:"Jeżeli podany adres może zostać zapisany, wyślemy wiadomość z linkiem potwierdzającym."};
+
+      // Honeypot failures are deliberately indistinguishable from successful submissions.
+      if(String(body.website||"").trim()){
+        await security.audit?.record({eventType:"newsletter.honeypot",outcome:"blocked",source:security.source(request),metadata:{}});
+        return json(response,202,neutral);
+      }
+
+      const normalized=service.normalize(body.email);
+      const nick=service.normalizeNick(body.preferredNick);
       security.limit(request,"newsletter-subscribe",normalized,{limit:5,windowMs:30*60_000});
+      if(nick.normalized)security.limit(request,"newsletter-subscribe-nick",nick.normalized,{limit:6,windowMs:30*60_000});
+
+      const startedAt=Number(body.formStartedAt);
+      const elapsed=Number.isFinite(startedAt)&&startedAt>0?Date.now()-startedAt:null;
+      if(elapsed!==null&&elapsed>=0&&elapsed<800){
+        security.limit(request,"newsletter-fast-submit",normalized,{limit:2,windowMs:10*60_000});
+        await security.audit?.record({eventType:"newsletter.fast_submit",outcome:"suspicious",source:security.source(request),metadata:{elapsedBucket:"under-800ms"}});
+      }
+
+      const submissionId=String(body.submissionId||"").trim();
+      if(submissionId&&!/^[A-Za-z0-9-]{16,80}$/.test(submissionId))throw newsletterError("INVALID_SUBMISSION_ID","Nieprawidłowe dane formularza.");
+      if(submissionId)security.limit(request,"newsletter-submission-id",submissionId,{limit:2,windowMs:30*60_000});
+
       await security.verifyTurnstile(request,body.challengeToken,{required:isProduction()});
-      return json(response,202,await service.subscribe(body));
+      return json(response,202,await service.subscribe({...body,preferredNick:nick.value}));
     }catch(error){if(error instanceof RateLimitError&&error.retryAfterSeconds)response.setHeader("Retry-After",String(error.retryAfterSeconds));const status=Number(error.status)||(error instanceof RateLimitError?429:400);return errorResponse(response,status,error);}
   };
 }
