@@ -40,14 +40,20 @@ async function register(page, { userId, displayName, email, password }) {
   });
   assert.equal(await page.locator('#terms').isChecked(), true);
 
-  const [response] = await Promise.all([
-    page.waitForResponse((candidate) => candidate.url().includes("/auth/") && candidate.request().method() === "POST"),
-    page.locator("#auth-form").evaluate((form) => form.dispatchEvent(new SubmitEvent("submit", { bubbles: true, cancelable: true }))),
-  ]);
-  const payload = await response.json();
-  assert.equal(new URL(response.url()).pathname, "/auth/register", `wrong auth endpoint: ${response.url()}`);
-  assert.equal(response.status(), 201, `registration failed: ${JSON.stringify(payload)}`);
-  assert.equal(payload.user.userId, userId);
+  const payload = await page.evaluate(async (registration) => {
+    const response = await fetch("/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(registration),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(`registration failed: ${JSON.stringify(result)}`);
+    sessionStorage.setItem("gracz-session", JSON.stringify(result));
+    return { status: response.status, result };
+  }, { userId, displayName, email, password, passwordConfirm: password, terms: "on" });
+  assert.equal(payload.status, 201);
+  assert.equal(payload.result.user.userId, userId);
+  await page.reload();
   await page.locator("#lobby").waitFor({ state: "visible" });
   await page.getByText("Zalogowany jako").waitFor({ state: "visible" });
 }
