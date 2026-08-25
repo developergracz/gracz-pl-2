@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { RbacService } from "../src/rbac-service.js";
-import { NewsletterAdminService, maskEmail } from "../src/newsletter-admin-service.js";
+import { NewsletterAdminService, maskEmail, parseSubscriberSearch } from "../src/newsletter-admin-service.js";
 import { createNewsletterAdminHandler } from "../src/newsletter-admin-handler.js";
 
 function response(){return{status:null,headers:{},body:"",writeHead(status,headers={}){this.status=status;this.headers=headers;},end(value){this.body=String(value||"");}};}
@@ -32,6 +32,13 @@ test("maskEmail never returns the full address",()=>{
   assert.equal(maskEmail("czeslaw@example.com"),"cz***@example.com");
   assert.equal(maskEmail("a@example.com"),"a***@example.com");
   assert.equal(maskEmail("invalid"),"***");
+});
+
+test("subscriber search accepts nick or masked email but rejects a full email",()=>{
+  assert.deepEqual(parseSubscriberSearch("Victorio"),{kind:"nick",value:"victorio"});
+  assert.deepEqual(parseSubscriberSearch("cz***@gmail.com"),{kind:"maskedEmail",prefix:"cz",domain:"gmail.com"});
+  assert.throws(()=>parseSubscriberSearch("czeslaw@gmail.com"),error=>error.code==="INVALID_REQUEST"&&error.status===400);
+  assert.throws(()=>parseSubscriberSearch("cz**@gmail.com"),error=>error.code==="INVALID_REQUEST"&&error.status===400);
 });
 
 test("RBAC grants newsletter read/security to moderator, all newsletter permissions to administrator",async()=>{
