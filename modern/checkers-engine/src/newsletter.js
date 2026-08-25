@@ -127,6 +127,67 @@ export class NewsletterService {
     return neutral;
   }
 
+  async resendConfirmation(email) {
+    const normalized = this.normalize(email);
+    const neutral = { ok: true, message: "Jeżeli adres oczekuje na potwierdzenie, wyślemy nową wiadomość." };
+
+    if (!this.pool) {
+      const item = this.memory.get(normalized);
+      if (!item || item.status !== "pending_confirmation") return neutral;
+      if (item.confirmationSentAt && Date.now() - item.confirmationSentAt < RESEND_COOLDOWN_MS) return neutral;
+      const confirmation = this.tokens.issue();
+      item.confirmationHash = confirmation.tokenHash;
+      item.confirmationExpiresAt = Date.now() + CONFIRM_TTL_MS;
+      item.confirmationSentAt = null;
+      const delivery = await this.sendConfirmation(item.email, item.preferredNick, confirmation.token);
+      if (!delivery?.sent) throw newsletterError("EMAIL_PROVIDER_NOT_CONFIGURED", "Wysyłka wiadomości e-mail nie jest jeszcze skonfigurowana. Spróbuj ponownie później.", 503);
+      item.confirmationSentAt = Date.now();
+      return neutral;
+    }
+
+    await this.ready;
+    const client = await this.pool.connect();
+    let message = null;
+    try {
+      await client.query("BEGIN");
+      const { rows } = await client.query(
+        `SELECT id,email,preferred_nick,status,confirmation_sent_at FROM gracz_newsletter_subscribers WHERE email_normalized=$1 FOR UPDATE`,
+        [normalized],
+      );
+      const item = rows[0];
+      if (!item || item.status !== "pending_confirmation") {
+        await client.query("COMMIT");
+        return neutral;
+      }
+      if (item.confirmation_sent_at && Date.now() - new Date(item.confirmation_sent_at).getTime() < RESEND_COOLDOWN_MS) {
+        await client.query("COMMIT");
+        return neutral;
+      }
+      const confirmation = this.tokens.issue();
+      await client.query(
+        `UPDATE gracz_newsletter_subscribers SET confirmation_token_hash=$2,confirmation_expires_at=NOW()+INTERVAL '24 hours',confirmation_sent_at=NULL,updated_at=NOW() WHERE id=$1`,
+        [item.id, confirmation.tokenHash],
+      );
+      await client.query("COMMIT");
+      message = { email: item.email, nick: item.preferred_nick, token: confirmation.token };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    if (message) {
+      const delivery = await this.sendConfirmation(message.email, message.nick, message.token);
+      if (!delivery?.sent) throw newsletterError("EMAIL_PROVIDER_NOT_CONFIGURED", "Wysyłka wiadomości e-mail nie jest jeszcze skonfigurowana. Spróbuj ponownie później.", 503);
+      await this.pool.query(
+        `UPDATE gracz_newsletter_subscribers SET confirmation_sent_at=NOW(),updated_at=NOW() WHERE email_normalized=$1 AND status='pending_confirmation'`,
+        [normalized],
+      );
+    }
+    return neutral;
+  }
+
   async sendConfirmation(to, nick, token) {
     const link = `${this.baseUrl}/newsletter/confirm?token=${encodeURIComponent(token)}`;
     const text = `Otwórz stronę potwierdzenia zapisu do Gracz.pl: ${link}\n\nNa stronie kliknij przycisk potwierdzenia. Link jest ważny przez 24 godziny.`;
@@ -187,6 +248,14 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
     try{
       enforceNewsletterHost(request,security);
       if(request.method==="GET"&&url.pathname==="/newsletter/challenge-config")return json(response,200,security.challengeConfig(request));
+      if(request.method==="POST"&&url.pathname==="/newsletter/resend"){
+        security.assertSameOrigin(request);
+        const body=await readJson(request,4096),normalized=service.normalize(body.email);
+        security.limit(request,"newsletter-resend",normalized,{limit:4,windowMs:60*60_000});
+        await security.verifyTurnstile(request,body.challengeToken,{required:isProduction()});
+        return json(response,202,await service.resendConfirmation(normalized));
+      }
+
       if(request.method==="GET"&&url.pathname==="/newsletter/nick-availability"){security.limit(request,"newsletter-nick",url.searchParams.get("nick")||"anonymous",{limit:30,windowMs:60_000});return json(response,200,await service.nicknameAvailable(url.searchParams.get("nick")||""));}
       if(request.method==="GET"&&url.pathname==="/newsletter/confirm"){security.limit(request,"newsletter-confirm-page","anonymous",{limit:30,windowMs:15*60_000});const token=url.searchParams.get("token")||"";service.tokens.hash(token);return html(response,200,actionPage("/newsletter/confirm","Potwierdź zapis","Kliknij przycisk, aby aktywować zapis do listy Gracz.pl.",token,"Potwierdzam zapis"));}
       if(request.method==="POST"&&url.pathname==="/newsletter/confirm"){security.assertSameOrigin(request);security.limit(request,"newsletter-confirm","anonymous",{limit:12,windowMs:15*60_000});const form=await readForm(request);const result=await service.confirm(form.get("token")||"");return html(response,200,successPage(result.message));}
