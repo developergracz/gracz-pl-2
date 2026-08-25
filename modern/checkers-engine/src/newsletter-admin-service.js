@@ -94,7 +94,17 @@ export class NewsletterAdminService {
     if(query.status&&query.status!=="all"){params.push(String(query.status));where.push(`s.status=$${params.length}`);}
     if(query.fromDate){params.push(String(query.fromDate));where.push(`s.created_at>=$${params.length}::timestamptz`);}
     if(query.toDate){params.push(String(query.toDate));where.push(`s.created_at<=$${params.length}::timestamptz`);}
-    if(query.search){params.push(`%${String(query.search).trim().toLowerCase().slice(0,120)}%`);where.push(`(lower(COALESCE(s.preferred_nick,'')) LIKE $${params.length} OR s.email_normalized LIKE $${params.length})`);}
+    if(query.search){
+      const search=parseSubscriberSearch(query.search);
+      if(search.kind==="nick"){
+        params.push(`%${search.value}%`);
+        where.push(`lower(COALESCE(s.preferred_nick,'')) LIKE $${params.length}`);
+      }else{
+        params.push(search.prefix,search.prefix.length,search.domain);
+        const prefixParam=params.length-2,lengthParam=params.length-1,domainParam=params.length;
+        where.push(`left(split_part(s.email_normalized,'@',1),$${lengthParam})=$${prefixParam} AND split_part(s.email_normalized,'@',2)=$${domainParam}`);
+      }
+    }
     if(query.source){params.push(String(query.source).trim().toLowerCase());where.push(`EXISTS(SELECT 1 FROM newsletter_subscriber_sources ss2 JOIN newsletter_sources ns2 ON ns2.id=ss2.source_id WHERE ss2.subscriber_id=s.id AND ns2.code=$${params.length})`);}
     const clause=where.length?`WHERE ${where.join(" AND ")}`:"";
     const count=await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_newsletter_subscribers s ${clause}`,params);
@@ -154,6 +164,16 @@ export class NewsletterAdminService {
 }
 
 export function maskEmail(value){const email=String(value||"").trim().toLowerCase();const at=email.lastIndexOf("@");if(at<1)return "***";const local=email.slice(0,at),domain=email.slice(at+1);return `${local.slice(0,2)}***@${domain}`;}
+export function parseSubscriberSearch(value){
+  const raw=String(value||"").normalize("NFKC").trim().toLowerCase();
+  if(!raw||raw.length>120)throw badRequest("Nieprawidłowa wartość wyszukiwania.");
+  if(raw.includes("@")||raw.includes("***")){
+    const match=raw.match(/^([a-z0-9]{1,2})\*{3}@([a-z0-9.-]+\.[a-z]{2,63})$/i);
+    if(!match)throw badRequest("Dla ochrony prywatności wyszukuj e-mail wyłącznie w postaci zmaskowanej, np. cz***@gmail.com.");
+    return {kind:"maskedEmail",prefix:match[1],domain:match[2]};
+  }
+  return {kind:"nick",value:raw};
+}
 function mapSubscriberRow(row){return{id:Number(row.id),maskedEmail:maskEmail(row.email),nick:row.preferred_nick||null,status:row.status,consentVersion:row.consent_version||null,consentedAt:row.consented_at||null,createdAt:row.created_at,confirmedAt:row.confirmed_at||null,unsubscribedAt:row.unsubscribed_at||null,updatedAt:row.updated_at||null,sourceCode:row.source_code||null,lastEventType:row.last_event_type||null,lastEventAt:row.last_event_at||null};}
 function safeMetadata(value){if(!value||typeof value!=="object"||Array.isArray(value))return{};const out={};for(const[k,v]of Object.entries(value)){if(/email|token|secret|password|authorization|cookie|ip|user.?agent/i.test(k))continue;if(["string","number","boolean"].includes(typeof v)||v===null)out[k]=typeof v==="string"?v.slice(0,300):v;}return out;}
 function validHash(value){const text=String(value||"").trim().toLowerCase();return /^[a-f0-9]{64}$/.test(text)?text:null;}
