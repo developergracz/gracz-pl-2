@@ -1,0 +1,98 @@
+name: Security gates
+
+on:
+  push:
+    branches: [ main, security-hardening ]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax check
+        run: |
+          set -euo pipefail
+          find website -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan repository history for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node critical vulnerability gate
+        working-directory: website
+        run: |
+          set -euo pipefail
+          if [ -f package.json ]; then
+            npm ci --ignore-scripts
+            npm audit --audit-level=critical
+          else
+            echo 'No package.json - npm audit skipped.'
+          fi
+      - name: Composer vulnerability gate
+        run: |
+          set -euo pipefail
+          if [ -f composer.lock ]; then
+            composer install --no-dev --no-interaction --no-scripts --no-plugins
+            composer audit
+          else
+            echo 'No composer.lock - Composer audit skipped.'
+          fi
+
+  security-policy-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan current tree for hard-coded secrets and auth localStorage
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          root = pathlib.Path('.')
+          text_ext = {'.php', '.js', '.html', '.htm', '.json', '.yml', '.yaml', '.ini', '.conf', '.env'}
+          secret_re = re.compile(r'''(?i)(DB_PASSWORD|database_password|app_secret|api[_-]?key|secret[_-]?key)\s*=\s*["'][^"']{8,}["']''')
+          storage_re = re.compile(r'''(?i)localStorage\.(?:setItem|getItem)\s*\(\s*["'](?:token|auth|access[_-]?token|refresh[_-]?token|session|session_id)["']''')
+          findings = []
+
+          for path in root.rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path.name == '.env.example':
+                  continue
+              if path.suffix.lower() not in text_ext and path.name not in {'.env'}:
+                  continue
+              try:
+                  data = path.read_text(encoding='utf-8', errors='ignore')
+              except OSError:
+                  continue
+              if secret_re.search(data):
+                  findings.append(f'{path}: potential hard-coded secret assignment')
+              if path.parts and path.parts[0] == 'website' and storage_re.search(data):
+                  findings.append(f'{path}: authentication/session material in localStorage')
+
+          if findings:
+              print('\n'.join(findings), file=sys.stderr)
+              sys.exit(1)
+          print('Current-tree security policy scan passed.')
+          PY
+      - name: Ensure committed env files are absent
+        run: |
+          set -euo pipefail
+          test ! -f .env
+          test ! -f website/.env

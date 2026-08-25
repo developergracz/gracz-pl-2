@@ -1,52 +1,28 @@
 <?php
-/**
- * Strona wylogowania
- *
- * Po wejściu na nią, użytkownik zostaje automatycznie wylogowany.
- */
+/** CSRF-safe logout: GET only shows confirmation, POST revokes and destroys the session. */
 include("variables_local.php"); include_once($header); ?>
-
-
-  <div class="box light">
-    <div class="corner top left"></div>
-    <div class="corner bottom left"></div>
-    <div class="corner top right"></div>
-    <div class="corner bottom right"></div>
-    <div class="border top"></div>
-    <div class="border bottom"></div>
-    <div class="border left"></div>
-    <div class="border right"></div>
-    <div class="content">
-      <?php
-        $login = $_SESSION['login'];
-        
-        if (Logout())
-        {	
-          // Zmienna $nazwa_typu_konta jest obecnie nieużywana
-          echo('
-            <h1 class="positive">Wylogowałeś się poprawnie</h1>
-
-         
-            <div style="margin-left:50pt; margin-bottom:50pt;">
-            <p>Dziękujemy Ci, '.$login.', za skorzystanie z naszego serwisu.</p>
-
-            <p>Mamy nadzieje, że dobrze się bawiłeś! Zapraszamy ponownie.</p>
-
-            <a href="'.$directory['base'].'index.php">Zaloguj sie ponownie</a>
-            </div>
-
-          ');
-        }else
-        {
-          echo('
-          <div class="uwaga">Nie możesz się wylogować, ponieważ nie zalogowałeś się do tej pory ;)</div>
-          ');
-        }
-      	
-      	
-        RedirectJavaScript($service_base_address,3);   
-      ?>
-    </div>
-  </div>
-
+<div class="box light"><div class="content">
+<?php
+$loggedIn = !empty($_SESSION['initiated']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_logout'])) {
+    try {
+        SecurityService::verifyStateChangingRequest();
+        $userId = isset($_SESSION['id']) ? (int)$_SESSION['id'] : null;
+        $login = isset($_SESSION['login']) ? $_SESSION['login'] : '';
+        if ($userId) GraczSessions()->revokeCurrent('logout');
+        GraczAudit()->record('auth.logout', $userId, array('login'=>$login));
+        Logout();
+        SecurityService::destroySession();
+        echo('<h1 class="positive">Wylogowałeś się poprawnie</h1><p>Sesja została natychmiast unieważniona.</p><a href="'.$directory['base'].'index.php">Strona główna</a>');
+    } catch (Exception $e) {
+        echo('<div class="negative">Nie udało się bezpiecznie zakończyć sesji.</div>');
+    }
+} elseif ($loggedIn) {
+    echo('<h1>Wylogowanie</h1><p>Czy na pewno chcesz się wylogować?</p>');
+    echo('<form method="post" action="">'.SecurityService::csrfInput().'<button type="submit" name="confirm_logout" value="1">Wyloguj mnie</button></form>');
+} else {
+    echo('<div class="uwaga">Nie jesteś obecnie zalogowany.</div>');
+}
+?>
+</div></div>
 <?php include_once($footer); ?>

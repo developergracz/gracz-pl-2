@@ -1,6 +1,28 @@
 /secrets
 /zapiski
 
+# Environment/secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Database dumps / backups
+*.sql.gz
+*.dump
+*.backup
+/backups/
+
+# Runtime security data
+website/logi/*.log
+website/logi/*.jsonl
+website/uploads/*
+!website/uploads/.htaccess
+
 # Cache and logs (Symfony2)
 /app/cache/*
 /app/logs/*

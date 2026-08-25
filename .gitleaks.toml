@@ -1,0 +1,13 @@
+title = "Gracz.pl Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Environment variable names without committed values"
+paths = ['''^\.env\.example$''']
+
+[[allowlists]]
+description = "Known weak-password examples used only by the password rejection list"
+paths = ['''^website/security/SecurityService\.php$''']
+regexes = ['''password1234''', '''qwerty123456''', '''123456789012''', '''admin12345678''']
