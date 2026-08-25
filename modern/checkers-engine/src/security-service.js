@@ -11,13 +11,31 @@ export class SecurityService {
   assertSameOrigin(request){
     if(!MUTATIONS.has(String(request.method||"").toUpperCase()))return;
     const fetchSite=String(request.headers?.["sec-fetch-site"]||"").toLowerCase();
-    if(fetchSite==="cross-site")throw http403();
-    const requestHost=String(request.headers?.host||"").toLowerCase();
+    const requestHost=this.host(request);
     const origin=String(request.headers?.origin||"").trim();
     const referer=String(request.headers?.referer||"").trim();
-    if(origin){let originHost;try{originHost=new URL(origin).host.toLowerCase();}catch{throw http403();}if(originHost!==requestHost)throw http403();return;}
-    if(referer){let refererHost;try{refererHost=new URL(referer).host.toLowerCase();}catch{throw http403();}if(refererHost!==requestHost)throw http403();return;}
+
+    // Render/Cloudflare can expose an internal Host header while the browser correctly
+    // sends Origin/Referer for the public gracz.pl host. Compare against the public
+    // forwarded host via host() rather than the raw Host header.
+    if(origin){
+      let originHost;
+      try{originHost=new URL(origin).hostname.toLowerCase();}catch{throw http403();}
+      if(!requestHost||originHost!==requestHost)throw http403();
+      return;
+    }
+    if(referer){
+      let refererHost;
+      try{refererHost=new URL(referer).hostname.toLowerCase();}catch{throw http403();}
+      if(!requestHost||refererHost!==requestHost)throw http403();
+      return;
+    }
+
+    // Sec-Fetch-Site is a useful fallback only when Origin/Referer are absent.
+    // A valid matching Origin/Referer above is stronger evidence and avoids false
+    // positives after users arrive from an e-mail link and submit our own form.
     if(fetchSite==="same-origin"||fetchSite==="same-site")return;
+    if(fetchSite==="cross-site")throw http403();
     if(String(process.env.NODE_ENV||"").toLowerCase()==="production")throw http403();
   }
   limit(request,scope,identity,{limit,windowMs}){const source=this.source(request);const id=String(identity||"anonymous").trim().toLowerCase().slice(0,254);this.limiter.consume(`${scope}:ip:${source}`,{limit,windowMs,message:"Zbyt wiele prób."});if(id&&id!=="anonymous")this.limiter.consume(`${scope}:identity:${id}`,{limit:Math.max(2,Math.ceil(limit/2)),windowMs,message:"Zbyt wiele prób dla tych danych."});}
