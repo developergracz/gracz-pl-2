@@ -39,10 +39,11 @@ async function register(page, { userId, displayName, email, password }) {
   assert.equal(await page.locator('#terms').isChecked(), true);
 
   const [response] = await Promise.all([
-    page.waitForResponse((candidate) => candidate.url().endsWith("/auth/register") && candidate.request().method() === "POST"),
+    page.waitForResponse((candidate) => candidate.url().includes("/auth/") && candidate.request().method() === "POST"),
     page.locator("#auth-form button[type=submit]").click(),
   ]);
   const payload = await response.json();
+  assert.equal(new URL(response.url()).pathname, "/auth/register", `wrong auth endpoint: ${response.url()}`);
   assert.equal(response.status(), 201, `registration failed: ${JSON.stringify(payload)}`);
   assert.equal(payload.user.userId, userId);
   await page.locator("#lobby").waitFor({ state: "visible" });
