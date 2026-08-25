@@ -68,7 +68,7 @@ try {
     password: "Alice-secret-123!",
   });
   await alicePage.locator("#host-seat").evaluate((button) => button.click());
-  await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
+  await alicePage.getByText("Szybka gra", { exact: true }).waitFor({ state: "attached" });
 
   const bob = await browser.newContext();
   const bobPage = await bob.newPage();
