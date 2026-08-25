@@ -40,7 +40,7 @@ async function register(page, { userId, displayName, email, password }) {
 
   const [response] = await Promise.all([
     page.waitForResponse((candidate) => candidate.url().includes("/auth/") && candidate.request().method() === "POST"),
-    page.locator("#auth-form button[type=submit]").click(),
+    page.locator("#auth-form").evaluate((form) => form.requestSubmit()),
   ]);
   const payload = await response.json();
   assert.equal(new URL(response.url()).pathname, "/auth/register", `wrong auth endpoint: ${response.url()}`);
