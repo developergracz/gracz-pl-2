@@ -11,7 +11,7 @@ function tokenFrom(text, path) {
 
 test("newsletter stores only hashes for confirmation, position and unsubscribe tokens", async () => {
   const sent = [];
-  const mail = { send: async message => { sent.push(message); return { ok: true }; } };
+  const mail = { send: async message => { sent.push(message); return { sent: true }; } };
   const tokens = new TokenService();
   const service = new NewsletterService(null, { tokenService: tokens, mail, baseUrl: "https://gracz.pl" });
 
