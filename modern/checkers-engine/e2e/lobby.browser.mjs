@@ -21,6 +21,8 @@ const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
 
 async function register(page, { userId, displayName, email, password }) {
+  page.on("pageerror", (error) => console.error("BROWSER_PAGE_ERROR", error.message, error.stack));
+  page.on("console", (message) => { if (message.type() === "error") console.error("BROWSER_CONSOLE_ERROR", message.text()); });
   await page.goto(`${baseUrl}/lobby.html`);
   await page.getByRole("tab", { name: "Nowe konto" }).click();
   await page.locator('[name="userId"]').fill(userId);
