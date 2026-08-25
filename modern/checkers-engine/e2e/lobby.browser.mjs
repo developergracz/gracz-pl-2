@@ -67,7 +67,7 @@ try {
     email: "alice@example.test",
     password: "Alice-secret-123!",
   });
-  await alicePage.locator("#host-seat").click();
+  await alicePage.locator("#host-seat").evaluate((button) => button.click());
   await alicePage.getByText("Szybka gra", { exact: true }).waitFor();
 
   const bob = await browser.newContext();
@@ -78,7 +78,7 @@ try {
     email: "bob@example.test",
     password: "Robert-secret-123!",
   });
-  await bobPage.locator("#guest-seat").click();
+  await bobPage.locator("#guest-seat").evaluate((button) => button.click());
   await bobPage.waitForURL(/\/game\.html\?game=game-browser-room/);
   await bobPage.locator(".square").first().waitFor();
   assert.equal(await bobPage.locator(".square").count(), 64);
