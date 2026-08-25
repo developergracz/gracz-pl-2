@@ -92,7 +92,12 @@ export function submitMove(session, { playerId, requestId, move }) {
 
   const game = applyMove(session.game, move);
   const moveEvent = event(session.events.length + 1, "move.accepted", {
-    playerId, color, requestId, move: structuredClone(move), game,
+    playerId,
+    color,
+    requestId,
+    move: structuredClone(move),
+    beforeGame: session.game,
+    game,
   });
   const nextSession = freezeSession({
     ...session,
@@ -162,6 +167,12 @@ function gameBeforeLastTurn(session) {
     firstMoveOfTurn -= 1;
   }
 
+  const firstMove = moves[firstMoveOfTurn];
+  if (firstMove.payload.beforeGame) {
+    return createState(firstMove.payload.beforeGame);
+  }
+
+  // Compatibility fallback for sessions saved before turn snapshots were added.
   return firstMoveOfTurn === 0
     ? createInitialState()
     : createState(moves[firstMoveOfTurn - 1].payload.game);
