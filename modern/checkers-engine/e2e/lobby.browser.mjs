@@ -38,8 +38,15 @@ async function register(page, { userId, displayName, email, password }) {
   });
   assert.equal(await page.locator('#terms').isChecked(), true);
 
-  await page.locator("#auth-form button[type=submit]").click();
-  await page.getByText("Zalogowany jako").waitFor();
+  const [response] = await Promise.all([
+    page.waitForResponse((candidate) => candidate.url().endsWith("/auth/register") && candidate.request().method() === "POST"),
+    page.locator("#auth-form button[type=submit]").click(),
+  ]);
+  const payload = await response.json();
+  assert.equal(response.status(), 201, `registration failed: ${JSON.stringify(payload)}`);
+  assert.equal(payload.user.userId, userId);
+  await page.locator("#lobby").waitFor({ state: "visible" });
+  await page.getByText("Zalogowany jako").waitFor({ state: "visible" });
 }
 
 try {
