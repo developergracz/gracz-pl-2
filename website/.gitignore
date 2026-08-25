@@ -78,3 +78,11 @@ fabric.properties
 /.web-server-pid
 /web/css/
 /web/js/
+
+# Security: never commit private keys, certificates or runtime logs
+*.pem
+*.key
+*.p12
+*.pfx
+logi/*.log
+logi/*.txt
