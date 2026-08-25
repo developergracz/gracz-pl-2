@@ -242,7 +242,7 @@ export class NewsletterService {
   async close(){if(this.pool)await this.pool.end();}
 }
 
-export function createNewsletterHandler(service,{security=new SecurityService()}={}){
+export function createNewsletterHandler(service,{security=new SecurityService(),monitor=null}={}){
   return async function newsletterHandler(request,response){
     const url=new URL(request.url,"http://localhost"); if(!url.pathname.startsWith("/newsletter/"))return false;
     try{
@@ -253,6 +253,7 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
         const body=await readJson(request,4096),normalized=service.normalize(body.email);
         security.limit(request,"newsletter-resend",normalized,{limit:4,windowMs:60*60_000});
         await security.verifyTurnstile(request,body.challengeToken,{required:isProduction()});
+        await monitor?.observeNewsletter({event:"resend",source:security.source(request)});
         return json(response,202,await service.resendConfirmation(normalized));
       }
 
@@ -270,6 +271,7 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
       // Honeypot failures are deliberately indistinguishable from successful submissions.
       if(String(body.website||"").trim()){
         await security.audit?.record({eventType:"newsletter.honeypot",outcome:"blocked",source:security.source(request),metadata:{}});
+        await monitor?.observeNewsletter({event:"honeypot",source:security.source(request)});
         return json(response,202,neutral);
       }
 
@@ -283,6 +285,7 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
       if(elapsed!==null&&elapsed>=0&&elapsed<800){
         security.limit(request,"newsletter-fast-submit",normalized,{limit:2,windowMs:10*60_000});
         await security.audit?.record({eventType:"newsletter.fast_submit",outcome:"suspicious",source:security.source(request),metadata:{elapsedBucket:"under-800ms"}});
+        await monitor?.observeNewsletter({event:"fast-submit",source:security.source(request)});
       }
 
       const submissionId=String(body.submissionId||"").trim();
@@ -290,13 +293,15 @@ export function createNewsletterHandler(service,{security=new SecurityService()}
       if(submissionId)security.limit(request,"newsletter-submission-id",submissionId,{limit:2,windowMs:30*60_000});
 
       await security.verifyTurnstile(request,body.challengeToken,{required:isProduction()});
+      await monitor?.observeNewsletter({event:"subscribe",source:security.source(request)});
       return json(response,202,await service.subscribe({...body,preferredNick:nick.value}));
-    }catch(error){if(error instanceof RateLimitError&&error.retryAfterSeconds)response.setHeader("Retry-After",String(error.retryAfterSeconds));const status=Number(error.status)||(error instanceof RateLimitError?429:400);return errorResponse(response,status,error);}
+    }catch(error){if(error instanceof RateLimitError){if(error.retryAfterSeconds)response.setHeader("Retry-After",String(error.retryAfterSeconds));await security.audit?.record({eventType:"newsletter.rate_limited",outcome:"blocked",source:security.source(request),metadata:{path:url.pathname,retryAfterBucket:retryAfterBucket(error.retryAfterSeconds)}});}const status=Number(error.status)||(error instanceof RateLimitError?429:400);return errorResponse(response,status,error);}
   };
 }
 
 function enforceNewsletterHost(request,security){if(!isProduction())return;const host=security.host(request);if(host!=="gracz.pl"&&host!=="www.gracz.pl")throw newsletterError("HOST_NOT_ALLOWED","Publiczne operacje newslettera są dostępne wyłącznie przez gracz.pl.",403);}
 function isProduction(){return String(process.env.NODE_ENV||"").toLowerCase()==="production";}
+function retryAfterBucket(seconds){const value=Number(seconds)||0;return value<=60?"under-1m":value<=900?"under-15m":"over-15m";}
 async function readJson(request,limit){let raw="";for await(const chunk of request){raw+=chunk;if(raw.length>limit)throw newsletterError("REQUEST_TOO_LARGE","Żądanie jest zbyt duże.",413);}try{return JSON.parse(raw||"{}");}catch{throw newsletterError("INVALID_JSON","Nieprawidłowe dane.");}}
 async function readForm(request,limit=4096){let raw="";for await(const chunk of request){raw+=chunk;if(raw.length>limit)throw newsletterError("REQUEST_TOO_LARGE","Żądanie jest zbyt duże.",413);}return new URLSearchParams(raw);}
 function securityHeaders(contentType){return{"content-type":contentType,"cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"same-origin","x-frame-options":"DENY","permissions-policy":"camera=(), microphone=(), geolocation=()","content-security-policy":"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"};}
