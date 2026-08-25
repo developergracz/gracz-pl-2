@@ -1,0 +1,81 @@
+name: Security Gate
+
+on:
+  push:
+    branches: [ main, security-hardening-2026-08 ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: PHP syntax check
+        run: |
+          set -euo pipefail
+          find website -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Reject committed runtime logs and secret files
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files 'website/logi/*.log' 'website/logi/*.txt' '*.pem' '*.key' '.env' '.env.*' \
+            | grep -v '^\.env\.example$' \
+            | grep -v '^website/Facebook/HttpClients/certs/DigiCertHighAssuranceEVRootCA\.pem$' || true)"
+          if [ -n "$tracked" ]; then
+            echo 'Runtime logs or secret-like files are tracked by git:' >&2
+            printf '%s\n' "$tracked" >&2
+            exit 1
+          fi
+
+      - name: Basic secret-pattern scan
+        run: |
+          set -euo pipefail
+          if git grep -nEI '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AKIA[0-9A-Z]{16}|sk_live_[0-9A-Za-z]+|TURNSTILE_SECRET_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+|DATABASE_PASSWORD[[:space:]]*=[[:space:]]*[^[:space:]#]+|RESEND_API_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+)' -- ':!*.md' ':!*.example'; then
+            echo 'Potential secret detected. Rotate the key and remove it from history before deployment.' >&2
+            exit 1
+          fi
+
+      - name: Enforce SmartFox legacy quarantine
+        run: |
+          set -euo pipefail
+          test -f games-dev/LEGACY_SECURITY_QUARANTINE.md
+
+          # Podatne legacy JAR-y nie mogą pojawić się w webroot ani poza kontrolowanym katalogiem games-dev.
+          escaped="$(find website -type f \( -name 'log4j-1.*.jar' -o -name 'commons-collections-3.2.1.jar' -o -name 'mysql-connector-java-5.1.34-bin.jar' \) -print)"
+          if [ -n "$escaped" ]; then
+            echo 'Blocked: obsolete JAR reached deployable website tree:' >&2
+            printf '%s\n' "$escaped" >&2
+            exit 1
+          fi
+
+          # Każda zmiana binariów legacy wymaga osobnego audytu kompatybilności.
+          if [ -n "${GITHUB_BASE_REF:-}" ]; then
+            git fetch origin "$GITHUB_BASE_REF" --depth=1 || true
+            changed="$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD -- games-dev | grep -E '\.jar$' || true)"
+          else
+            changed="$(git diff --name-only HEAD^ HEAD -- games-dev | grep -E '\.jar$' || true)"
+          fi
+          if [ -n "$changed" ]; then
+            echo 'Blocked: legacy JAR changed without dedicated compatibility migration:' >&2
+            printf '%s\n' "$changed" >&2
+            exit 1
+          fi
+
+          find games-dev -type f \( -name 'log4j-1.*.jar' -o -name 'commons-collections-3.2.1.jar' -o -name 'mysql-connector-java-5.1.34-bin.jar' \) -print \
+            | sed 's/^/QUARANTINED legacy dependency: /'
+
+      - name: Ensure security core is present
+        run: |
+          set -euo pipefail
+          test -f website/security_core.php
+          test -f website/security_services.php
+          grep -q 'SecurityConfigureSession' website/security_core.php
+          grep -q 'RateLimitCheck' website/security_core.php
+          grep -q 'SecurityAuthorizeUser' website/security_services.php
+          grep -q 'password_verify' website/security_services.php
