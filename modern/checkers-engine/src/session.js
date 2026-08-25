@@ -54,11 +54,7 @@ export function submitGameAction(session, { playerId, action }) {
     if (session.pendingOffer?.type === action && session.pendingOffer.playerId !== playerId) {
       let game = session.game;
       if (action === "draw") game = createState({ ...game, status: "draw", winner: null, drawReason: "agreement", forcedPiece: null });
-      if (action === "undo") {
-        const moves = session.events.filter((item) => item.type === "move.accepted");
-        if (!moves.length) throw new SessionError("Nie ma ruchu do cofnięcia.", "NOTHING_TO_UNDO");
-        game = moves.length === 1 ? createInitialState() : createState(moves.at(-2).payload.game);
-      }
+      if (action === "undo") game = gameBeforeLastTurn(session);
       return appendEvent({ ...session, game, pendingOffer: null }, `${action}.accepted`, { playerId });
     }
     return appendEvent({ ...session, pendingOffer: { type: action, playerId } }, `${action}.offered`, { playerId });
@@ -96,7 +92,12 @@ export function submitMove(session, { playerId, requestId, move }) {
 
   const game = applyMove(session.game, move);
   const moveEvent = event(session.events.length + 1, "move.accepted", {
-    playerId, color, requestId, move: structuredClone(move), game,
+    playerId,
+    color,
+    requestId,
+    move: structuredClone(move),
+    beforeGame: session.game,
+    game,
   });
   const nextSession = freezeSession({
     ...session,
@@ -154,6 +155,27 @@ export function deserializeSession(serialized) {
     pendingOffer: value.pendingOffer ?? null,
     blockedPlayers: [...(value.blockedPlayers ?? [])],
   });
+}
+
+function gameBeforeLastTurn(session) {
+  const moves = session.events.filter((item) => item.type === "move.accepted");
+  if (!moves.length) throw new SessionError("Nie ma ruchu do cofnięcia.", "NOTHING_TO_UNDO");
+
+  const lastColor = moves.at(-1).payload.color;
+  let firstMoveOfTurn = moves.length - 1;
+  while (firstMoveOfTurn > 0 && moves[firstMoveOfTurn - 1].payload.color === lastColor) {
+    firstMoveOfTurn -= 1;
+  }
+
+  const firstMove = moves[firstMoveOfTurn];
+  if (firstMove.payload.beforeGame) {
+    return createState(firstMove.payload.beforeGame);
+  }
+
+  // Compatibility fallback for sessions saved before turn snapshots were added.
+  return firstMoveOfTurn === 0
+    ? createInitialState()
+    : createState(moves[firstMoveOfTurn - 1].payload.game);
 }
 
 function setConnection(session, playerId, connected) {
