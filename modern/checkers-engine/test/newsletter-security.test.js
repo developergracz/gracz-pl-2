@@ -95,3 +95,41 @@ test("honeypot is silently accepted without storing or sending anything", async 
   assert.equal(subscribed, false);
   assert.equal(auditEvents[0].eventType, "newsletter.honeypot");
 });
+
+
+test("resend rotates the confirmation token and keeps responses neutral", async () => {
+  const sent = [];
+  const mail = { send: async message => { sent.push(message); return { sent: true }; } };
+  const service = new NewsletterService(null, { mail, baseUrl: "https://gracz.pl" });
+
+  await service.subscribe({
+    email: "resend-test@example.com",
+    preferredNick: "ResendTest",
+    legal: true,
+    consent: true,
+  });
+  const firstToken = tokenFrom(sent[0].text, "/newsletter/confirm");
+
+  // Cooldown prevents mail floods without disclosing whether the address exists.
+  assert.deepEqual(await service.resendConfirmation("resend-test@example.com"), {
+    ok: true,
+    message: "Jeżeli adres oczekuje na potwierdzenie, wyślemy nową wiadomość.",
+  });
+  assert.equal(sent.length, 1);
+
+  service.memory.get("resend-test@example.com").confirmationSentAt = 0;
+  await service.resendConfirmation("resend-test@example.com");
+  assert.equal(sent.length, 2);
+  const secondToken = tokenFrom(sent[1].text, "/newsletter/confirm");
+  assert.notEqual(secondToken, firstToken);
+
+  await assert.rejects(service.confirm(firstToken), error => error.code === "TOKEN_INVALID");
+  await service.confirm(secondToken);
+  await assert.rejects(service.confirm(secondToken), error => error.code === "TOKEN_INVALID");
+
+  // Unknown and already confirmed addresses receive the same neutral result.
+  const unknown = await service.resendConfirmation("unknown@example.com");
+  const confirmed = await service.resendConfirmation("resend-test@example.com");
+  assert.deepEqual(unknown, confirmed);
+  await service.close();
+});
