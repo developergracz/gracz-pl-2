@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { withNewsletterLifecycleAnalytics } from "../src/newsletter-analytics-wrapper.js";
 
 function fakeService() {
@@ -76,4 +78,13 @@ test("non-overridden service methods remain bound to the original service",async
   const wrapped=withNewsletterLifecycleAnalytics(service,recorder);
   assert.deepEqual(await wrapped.nicknameAvailable("Player"),{available:true});
   assert.deepEqual(await wrapped.position("token"),{position:1});
+});
+
+test("lifecycle recorder explicitly types parameters reused by INSERT SELECT dedupe queries",async()=>{
+  const recorderPath=fileURLToPath(new URL("../src/newsletter-lifecycle-recorder.js",import.meta.url));
+  const source=await readFile(recorderPath,"utf8");
+  assert.match(source,/SELECT \$1::bigint,'marketing_newsletter',\$2::varchar,\$3::varchar,\$4::varchar,\$5::timestamptz/);
+  assert.match(source,/subscriber_id=\$1::bigint[\s\S]*consent_version=\$2::varchar[\s\S]*action=\$3::varchar[\s\S]*occurred_at=\$5::timestamptz/);
+  assert.match(source,/SELECT \$1::bigint,\$2::varchar,\$3::bigint,\$4::timestamptz/);
+  assert.match(source,/subscriber_id=\$1::bigint[\s\S]*event_type=\$2::varchar[\s\S]*occurred_at=\$4::timestamptz/);
 });
