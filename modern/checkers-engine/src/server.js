@@ -79,8 +79,8 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     try {
       const account = await accounts.register(body);
       botDefense.recordRegistration({ source });
-      await establishSession(response, auth, authSessions, account);
-      return sendJson(response, 201, { token: COOKIE_TOKEN_MARKER, user: account });
+      const token = await establishSession(response, auth, authSessions, account);
+      return sendJson(response, 201, { token: clientSessionToken(token), user: account });
     } catch (error) {
       botDefense.recordFailure({ source, accountId: body.userId, endpoint: "register" });
       throw error;
@@ -98,8 +98,8 @@ async function route(request, response, store, realtime, auth, authSessions, acc
       const account = await accounts.authenticate(credentials);
       loginRateLimiter.recordSuccess(rateKey);
       botDefense.recordSuccess({ source, accountId: credentials.userId });
-      await establishSession(response, auth, authSessions, account);
-      return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: account });
+      const token = await establishSession(response, auth, authSessions, account);
+      return sendJson(response, 200, { token: clientSessionToken(token), user: account });
     } catch (error) {
       loginRateLimiter.recordFailure(rateKey);
       botDefense.recordFailure({ source, accountId: credentials.userId, endpoint: "login" });
@@ -309,6 +309,10 @@ async function trustedUser(request, auth, authSessions) {
   const playerId = request.headers["x-player-id"];
   if (typeof playerId !== "string" || playerId.length < 1 || playerId.length > 128) throw new HttpError("Brak tożsamości gracza.", "UNAUTHENTICATED", 401);
   return { userId: playerId, displayName: playerId };
+}
+
+function clientSessionToken(token) {
+  return String(process.env.NODE_ENV || "").toLowerCase() === "production" ? COOKIE_TOKEN_MARKER : token;
 }
 
 function bearerToken(request) {
