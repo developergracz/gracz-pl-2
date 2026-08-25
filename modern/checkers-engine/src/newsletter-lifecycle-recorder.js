@@ -87,7 +87,7 @@ export class NewsletterLifecycleRecorder {
     const sourceId = await this.#sourceId(sourceCode);
     if (!sourceId) return null;
     await this.pool.query(
-      `INSERT INTO newsletter_subscriber_sources(subscriber_id,source_id) VALUES($1,$2) ON CONFLICT(subscriber_id,source_id) DO NOTHING`,
+      `INSERT INTO newsletter_subscriber_sources(subscriber_id,source_id) VALUES($1::bigint,$2::bigint) ON CONFLICT(subscriber_id,source_id) DO NOTHING`,
       [subscriberId, sourceId],
     );
     return sourceId;
@@ -97,10 +97,14 @@ export class NewsletterLifecycleRecorder {
     if (!occurredAt || !subscriber?.consent_version) return;
     await this.pool.query(
       `INSERT INTO newsletter_consent_history(subscriber_id,consent_type,consent_version,action,source,occurred_at,metadata)
-       SELECT $1,'marketing_newsletter',$2,$3,$4,$5,'{}'::jsonb
+       SELECT $1::bigint,'marketing_newsletter',$2::varchar,$3::varchar,$4::varchar,$5::timestamptz,'{}'::jsonb
        WHERE NOT EXISTS(
          SELECT 1 FROM newsletter_consent_history
-         WHERE subscriber_id=$1 AND consent_type='marketing_newsletter' AND consent_version=$2 AND action=$3 AND occurred_at=$5
+         WHERE subscriber_id=$1::bigint
+           AND consent_type='marketing_newsletter'
+           AND consent_version=$2::varchar
+           AND action=$3::varchar
+           AND occurred_at=$5::timestamptz
        )`,
       [subscriber.id, subscriber.consent_version, action, String(sourceCode || "homepage").toLowerCase(), occurredAt],
     );
@@ -111,16 +115,19 @@ export class NewsletterLifecycleRecorder {
     if (dedupe) {
       await this.pool.query(
         `INSERT INTO newsletter_events(subscriber_id,event_type,source_id,occurred_at,metadata)
-         SELECT $1,$2,$3,$4,'{}'::jsonb
+         SELECT $1::bigint,$2::varchar,$3::bigint,$4::timestamptz,'{}'::jsonb
          WHERE NOT EXISTS(
-           SELECT 1 FROM newsletter_events WHERE subscriber_id=$1 AND event_type=$2 AND occurred_at=$4
+           SELECT 1 FROM newsletter_events
+           WHERE subscriber_id=$1::bigint
+             AND event_type=$2::varchar
+             AND occurred_at=$4::timestamptz
          )`,
         [subscriberId, eventType, sourceId, occurredAt],
       );
       return;
     }
     await this.pool.query(
-      `INSERT INTO newsletter_events(subscriber_id,event_type,source_id,occurred_at,metadata) VALUES($1,$2,$3,$4,'{}'::jsonb)`,
+      `INSERT INTO newsletter_events(subscriber_id,event_type,source_id,occurred_at,metadata) VALUES($1::bigint,$2::varchar,$3::bigint,$4::timestamptz,'{}'::jsonb)`,
       [subscriberId, eventType, sourceId, occurredAt],
     );
   }
