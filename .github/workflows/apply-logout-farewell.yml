@@ -1,0 +1,34 @@
+name: Apply logout farewell
+
+on:
+  push:
+    branches: [feature/checkers-engine-foundation]
+    paths:
+      - scripts/add-logout-farewell.mjs
+      - .github/workflows/apply-logout-farewell.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/checkers-engine-foundation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/add-logout-farewell.mjs
+      - name: Commit patched lobby
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modern/checkers-engine/web/lobby.js
+          git commit -m "feat: add personalized logout farewell"
+          git push

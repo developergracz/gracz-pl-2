@@ -1,0 +1,101 @@
+(() => {
+  const style=document.createElement('style');
+  style.textContent=`
+    .gracz-modal-overlay{position:fixed;inset:0;z-index:16000;display:none;place-items:center;padding:24px;background:rgba(2,7,11,.82);backdrop-filter:blur(6px)}
+    .gracz-modal-overlay.open{display:grid}
+    .gracz-modal-card{width:min(560px,94vw);border:1px solid #29454e;border-radius:14px;background:linear-gradient(180deg,#0d1a21,#081218);box-shadow:0 28px 90px #000c;color:#e5efeb;overflow:hidden}
+    .gracz-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 12px;border-bottom:1px solid #1f363e}
+    .gracz-modal-head h3{margin:0;font-size:19px}.gracz-modal-head p{margin:5px 0 0;color:#78908a;font-size:11px}
+    .gracz-modal-x{border:0;background:transparent;color:#91a59f;font-size:25px;cursor:pointer}
+    .gracz-modal-body{padding:18px 20px}.gracz-modal-body textarea{width:100%;min-height:112px;resize:vertical;box-sizing:border-box;padding:12px 13px;border:1px solid #2a4650;border-radius:9px;background:#071218;color:#eef6f3;font:inherit;line-height:1.5;outline:none}.gracz-modal-body textarea:focus{border-color:#20b96a;box-shadow:0 0 0 3px #20b96a18}
+    .gracz-modal-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#718781;font-size:10px}
+    .gracz-modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:0 20px 18px}.gracz-modal-actions button{padding:9px 15px;border:1px solid #29424a;border-radius:8px;background:#0b1820;color:#aebfba;font-weight:700;cursor:pointer}.gracz-modal-actions .primary{border-color:#23804e;background:linear-gradient(180deg,#1bc96c,#10934d);color:#fff}.gracz-modal-actions .danger{border-color:#7b3139;background:#351419;color:#ff9da4}.gracz-modal-actions button:disabled{opacity:.55;cursor:wait}
+  `;
+  document.head.appendChild(style);
+
+  const overlay=document.createElement('div');
+  overlay.className='gracz-modal-overlay';
+  overlay.innerHTML='<section class="gracz-modal-card" role="dialog" aria-modal="true"><header class="gracz-modal-head"><div><h3></h3><p></p></div><button class="gracz-modal-x" type="button" aria-label="Zamknij">×</button></header><div class="gracz-modal-body"><textarea maxlength="600"></textarea><div class="gracz-modal-meta"><span></span><span><b>0</b>/600</span></div></div><footer class="gracz-modal-actions"><button class="cancel" type="button">Anuluj</button><button class="ok primary" type="button">Zapisz zmiany</button></footer></section>';
+  document.body.appendChild(overlay);
+
+  const title=overlay.querySelector('h3');
+  const desc=overlay.querySelector('.gracz-modal-head p');
+  const textarea=overlay.querySelector('textarea');
+  const meta=overlay.querySelector('.gracz-modal-meta span');
+  const count=overlay.querySelector('.gracz-modal-meta b');
+  const ok=overlay.querySelector('.ok');
+  let mode='',activeId='',article=null;
+
+  function close(){overlay.classList.remove('open');mode='';activeId='';article=null;}
+  overlay.querySelector('.cancel').addEventListener('click',close);
+  overlay.querySelector('.gracz-modal-x').addEventListener('click',close);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open')){e.preventDefault();close()}});
+  textarea.addEventListener('input',()=>count.textContent=String(textarea.value.length));
+
+  function show(kind,id,node){
+    mode=kind;activeId=id;article=node;overlay.classList.add('open');
+    textarea.hidden=kind==='delete';overlay.querySelector('.gracz-modal-meta').hidden=kind==='delete';
+    ok.className='ok '+(kind==='delete'?'danger':'primary');
+    if(kind==='edit'){
+      title.textContent='Edytuj wiadomość';desc.textContent='Zmień treść swojej wiadomości bez opuszczania chatu.';
+      textarea.value=node.querySelector('.message-body')?.textContent||'';meta.textContent='Zmiana zostanie oznaczona jako edytowana.';ok.textContent='Zapisz zmiany';count.textContent=String(textarea.value.length);setTimeout(()=>textarea.focus(),0);
+    } else if(kind==='delete'){
+      title.textContent='Usunąć wiadomość?';desc.textContent='Wiadomość zostanie usunięta z chatu. Tej operacji nie można cofnąć.';ok.textContent='Usuń wiadomość';
+    } else {
+      title.textContent='Zgłoś wiadomość';desc.textContent='Podaj krótki powód zgłoszenia do moderacji.';
+      textarea.value='spam';meta.textContent='Zgłoszenie trafi do weryfikacji.';ok.textContent='Wyślij zgłoszenie';count.textContent=String(textarea.value.length);setTimeout(()=>textarea.focus(),0);
+    }
+  }
+
+  async function request(url,options){
+    const r=await fetch(url,{credentials:'same-origin',headers:{accept:'application/json',...(options?.headers||{})},...options});
+    let data={};try{data=await r.json()}catch{}
+    if(!r.ok)throw new Error(data.error?.message||`Błąd ${r.status}`);return data;
+  }
+
+  ok.addEventListener('click',async()=>{
+    if(!activeId)return;
+    ok.disabled=true;const old=ok.textContent;ok.textContent=mode==='delete'?'Usuwanie…':'Zapisywanie…';
+    try{
+      if(mode==='edit'){
+        const body=textarea.value.trim();if(!body)return;
+        const data=await request(`/global-chat/messages/${encodeURIComponent(activeId)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({body})});
+        const b=article?.querySelector('.message-body');if(b)b.textContent=data.message?.body||body;
+        const h=article?.querySelector('.message-head');if(h&&!h.querySelector('.edited')){const s=document.createElement('span');s.className='edited';s.textContent='edytowano';h.append(s)}
+      } else if(mode==='delete'){
+        await request(`/global-chat/messages/${encodeURIComponent(activeId)}`,{method:'DELETE'});article?.remove();
+      } else {
+        const reason=textarea.value.trim();if(!reason)return;
+        await request(`/global-chat/messages/${encodeURIComponent(activeId)}/report`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reason})});
+        const t=document.querySelector('#toast');if(t){t.textContent='Zgłoszenie zapisano do weryfikacji.';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+      }
+      close();
+    }catch(err){desc.textContent=err.message||'Operacja nie powiodła się.'}
+    finally{ok.disabled=false;ok.textContent=old}
+  });
+
+  function nearestArticle(menu){
+    const items=[...document.querySelectorAll('.message[data-id]')];if(!items.length)return null;
+    const mr=menu.getBoundingClientRect();const px=mr.left,py=mr.top;let best=null,dist=Infinity;
+    for(const item of items){const r=item.getBoundingClientRect(),cx=Math.max(r.left,Math.min(px,r.right)),cy=Math.max(r.top,Math.min(py,r.bottom)),d=(cx-px)**2+(cy-py)**2;if(d<dist){dist=d;best=item}}
+    return best;
+  }
+
+  function rebindMenu(){
+    const menu=document.querySelector('#context-menu');if(!menu||menu.hidden)return;
+    const node=nearestArticle(menu);if(!node)return;
+    for(const button of [...menu.querySelectorAll('button')]){
+      if(button.dataset.graczBound==='1')continue;
+      const text=(button.textContent||'').trim();let kind='';
+      if(/Edytuj/i.test(text))kind='edit';else if(/Usuń/i.test(text))kind='delete';else if(/Zgłoś/i.test(text))kind='report';else continue;
+      const clone=button.cloneNode(true);clone.dataset.graczBound='1';
+      clone.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();menu.hidden=true;show(kind,node.dataset.id,node)});
+      button.replaceWith(clone);
+    }
+  }
+
+  const menu=document.querySelector('#context-menu');
+  if(menu)new MutationObserver(()=>queueMicrotask(rebindMenu)).observe(menu,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+  document.addEventListener('click',()=>queueMicrotask(rebindMenu),true);
+})();

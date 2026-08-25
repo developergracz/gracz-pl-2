@@ -1,0 +1,22 @@
+export class RateLimitError extends Error {
+  constructor(retryAfterSeconds,message="Zbyt wiele prób."){super(`${message} Spróbuj ponownie za ${retryAfterSeconds} s.`);this.name="RateLimitError";this.code="TOO_MANY_ATTEMPTS";this.retryAfterSeconds=retryAfterSeconds;this.status=429;}
+}
+
+export class LoginRateLimiter {
+  #entries=new Map();#sources=new Map();#operations=0;
+  constructor({maxAttempts=5,windowMs=15*60_000,lockoutMs=60_000,maxLockoutMs=60*60_000,sourceMaxAttempts=30,maxEntries=10_000,clock=()=>Date.now()}={}){this.maxAttempts=maxAttempts;this.windowMs=windowMs;this.lockoutMs=lockoutMs;this.maxLockoutMs=maxLockoutMs;this.sourceMaxAttempts=sourceMaxAttempts;this.maxEntries=maxEntries;this.clock=clock;}
+  assertAllowed(key){this.#maintenance();this.#consumeSource(key);const e=this.#current(key),now=this.clock();if(e.lockedUntil>now)throw new RateLimitError(Math.ceil((e.lockedUntil-now)/1000),"Zbyt wiele prób logowania.");}
+  recordFailure(key){this.#maintenance();const now=this.clock(),e=this.#current(key);if(now-e.windowStartedAt>=this.windowMs&&e.lockedUntil<=now){e.attempts=0;e.windowStartedAt=now;}e.attempts+=1;e.lastSeenAt=now;if(e.attempts>=this.maxAttempts){e.lockoutLevel=Math.min(8,(e.lockoutLevel||0)+1);const delay=Math.min(this.maxLockoutMs,this.lockoutMs*2**(e.lockoutLevel-1));e.lockedUntil=now+delay;e.attempts=0;e.windowStartedAt=now;}this.#entries.set(key,e);}
+  recordSuccess(key){this.#entries.delete(key);}
+  #consumeSource(key){const source=sourceFromKey(key),now=this.clock();let e=this.#sources.get(source);if(!e||now-e.windowStartedAt>=this.windowMs)e={attempts:0,windowStartedAt:now,lastSeenAt:now};e.attempts+=1;e.lastSeenAt=now;this.#sources.set(source,e);if(e.attempts>this.sourceMaxAttempts){const retry=Math.max(1,Math.ceil((e.windowStartedAt+this.windowMs-now)/1000));throw new RateLimitError(retry,"Wykryto zbyt wiele prób uwierzytelnienia z tego źródła.");}}
+  #current(key){const now=this.clock();return this.#entries.get(key)??{attempts:0,windowStartedAt:now,lockedUntil:0,lockoutLevel:0,lastSeenAt:now};}
+  #maintenance(){this.#operations+=1;if(this.#operations%100!==0&&this.#entries.size+this.#sources.size<this.maxEntries)return;const now=this.clock(),expiry=Math.max(this.windowMs,this.maxLockoutMs)*2;for(const[k,e]of this.#entries)if(now-(e.lastSeenAt??e.windowStartedAt)>expiry&&e.lockedUntil<=now)this.#entries.delete(k);for(const[k,e]of this.#sources)if(now-e.lastSeenAt>this.windowMs*2)this.#sources.delete(k);const total=this.#entries.size+this.#sources.size;if(total<=this.maxEntries)return;const candidates=[...[...this.#entries.entries()].map(([k,e])=>["entry",k,e.lastSeenAt??e.windowStartedAt]),...[...this.#sources.entries()].map(([k,e])=>["source",k,e.lastSeenAt])].sort((a,b)=>a[2]-b[2]).slice(0,total-this.maxEntries);for(const[kind,key]of candidates)(kind==="entry"?this.#entries:this.#sources).delete(key);}
+}
+
+export class AbuseRateLimiter {
+  #entries=new Map();#operations=0;
+  constructor({maxEntries=25_000,clock=()=>Date.now()}={}){this.maxEntries=maxEntries;this.clock=clock;}
+  consume(key,{limit,windowMs,message="Zbyt wiele żądań."}){if(typeof key!=="string"||!key)throw new TypeError("Klucz limitera jest wymagany.");if(!Number.isInteger(limit)||limit<1)throw new TypeError("Limit musi być dodatnią liczbą całkowitą.");if(!Number.isInteger(windowMs)||windowMs<1000)throw new TypeError("Okno limitera musi mieć co najmniej 1 s.");this.#maintenance();const now=this.clock();let e=this.#entries.get(key);if(!e||now-e.windowStartedAt>=windowMs)e={count:0,windowStartedAt:now,lastSeenAt:now,windowMs};e.count+=1;e.lastSeenAt=now;e.windowMs=windowMs;this.#entries.set(key,e);if(e.count>limit){const retry=Math.max(1,Math.ceil((e.windowStartedAt+windowMs-now)/1000));throw new RateLimitError(retry,message);}}
+  #maintenance(){this.#operations+=1;if(this.#operations%100!==0&&this.#entries.size<this.maxEntries)return;const now=this.clock();for(const[k,e]of this.#entries)if(now-e.lastSeenAt>e.windowMs*2)this.#entries.delete(k);if(this.#entries.size<=this.maxEntries)return;const oldest=[...this.#entries.entries()].sort((a,b)=>a[1].lastSeenAt-b[1].lastSeenAt).slice(0,this.#entries.size-this.maxEntries);for(const[k]of oldest)this.#entries.delete(k);}
+}
+function sourceFromKey(key){const value=String(key??"unknown"),marker=value.lastIndexOf(":reset:");if(marker>=0)return value.slice(0,marker)||"unknown";const last=value.lastIndexOf(":");return last>0?value.slice(0,last):value;}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ustawienia konta — Gracz.pl</title>
+  <meta name="description" content="Zaawansowane ustawienia konta gracza w Gracz.pl.">
+  <link rel="stylesheet" href="/settings.css">
+</head>
+<body>
+  <div class="settings-shell">
+    <header class="topbar">
+      <a class="brand" href="/">gracz<span>.PL</span><small>USTAWIENIA KONTA</small></a>
+      <nav class="top-actions"><a href="/">← Strona główna</a><a href="/messages.html">Wiadomości</a><span id="identity" class="identity">Ładowanie…</span></nav>
+    </header>
+
+    <aside class="settings-nav" aria-label="Kategorie ustawień">
+      <div class="nav-title">Panel gracza</div>
+      <button class="active" data-section="account"><span>👤</span>Konto i profil</button>
+      <button data-section="security"><span>🛡</span>Bezpieczeństwo</button>
+      <button data-section="privacy"><span>🔐</span>Prywatność</button>
+      <button data-section="notifications"><span>🔔</span>Powiadomienia</button>
+      <button data-section="messages"><span>✉</span>Wiadomości i chat</button>
+      <button data-section="games"><span>🎮</span>Gry i rozgrywka</button>
+      <button data-section="appearance"><span>🎨</span>Wygląd i dostępność</button>
+      <button data-section="sessions"><span>💻</span>Sesje i urządzenia</button>
+      <button data-section="data"><span>🗂</span>Dane i konto</button>
+      <div class="nav-footer"><span class="status-dot"></span> Połączenie chronione</div>
+    </aside>
+
+    <main class="settings-main">
+      <div class="page-head">
+        <div><p class="eyebrow">CENTRUM USTAWIEŃ</p><h1 id="page-title">Konto i profil</h1><p id="page-subtitle">Zarządzaj danymi widocznymi dla innych graczy.</p></div>
+        <div id="save-state" class="save-state">Wszystkie zmiany zapisane</div>
+      </div>
+
+      <section class="panel active" data-panel="account">
+        <article class="card profile-card">
+          <div class="avatar" id="avatar">G</div>
+          <div class="profile-copy"><h2 id="profile-name">Gracz</h2><p id="profile-id">@gracz</p><span class="verified">✓ Konto aktywne</span></div>
+          <button class="secondary" type="button" data-toast="Zmiana avatara będzie dostępna po uruchomieniu biblioteki multimediów.">Zmień avatar</button>
+        </article>
+        <article class="card"><header><div><h2>Dane profilu</h2><p>Informacje widoczne w serwisie i przy stole.</p></div></header><div class="form-grid">
+          <label>Nazwa gracza<input id="display-name" maxlength="40" autocomplete="nickname"></label>
+          <label>Login<input id="user-id" disabled></label>
+          <label class="wide">Opis profilu<textarea id="bio" maxlength="300" rows="4" placeholder="Napisz kilka słów o sobie…"></textarea><small><span id="bio-count">0</span>/300</small></label>
+          <label>Kraj<select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="other">Inny</option></select></label>
+          <label>Język<select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
+        </div><footer><button class="primary" id="save-profile" type="button">Zapisz profil</button></footer></article>
+        <article class="card"><header><div><h2>Kontakt i odzyskiwanie</h2><p>Dane używane do aktywacji i odzyskiwania dostępu.</p></div></header><div class="form-grid"><label>Adres e-mail<input id="email" type="email" disabled placeholder="Potwierdzony adres konta"></label><label>E-mail odzyskiwania<input id="recovery-email" type="email" placeholder="Dodatkowy adres e-mail"></label><label>Numer telefonu<input id="phone" type="tel" placeholder="+48 …"></label><label>Preferowany kanał odzyskiwania<select id="recovery-channel"><option value="email">E-mail</option><option value="sms">SMS</option></select></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="security">
+        <article class="security-score"><div><span>Poziom ochrony konta</span><strong id="security-score">Dobry</strong></div><div class="score-bar"><i></i><i></i><i></i><i></i></div><p>Włącz 2FA i sprawdź aktywne sesje, aby uzyskać najwyższy poziom ochrony.</p></article>
+        <article class="card"><header><div><h2>Hasło</h2><p>Używaj unikalnego hasła o długości co najmniej 15 znaków.</p></div><span class="badge good">Chronione</span></header><div class="action-row"><div><b>Zmiana hasła</b><span>Po zmianie hasła stare sesje powinny zostać zakończone.</span></div><button class="secondary" data-action="password" type="button">Zmień hasło</button></div></article>
+        <article class="card"><header><div><h2>Uwierzytelnianie dwuskładnikowe (2FA)</h2><p>Dodatkowa warstwa ochrony przy logowaniu.</p></div><span id="twofa-badge" class="badge warn">Wyłączone</span></header><div class="setting-row"><div><b>Aplikacja uwierzytelniająca</b><span>Kod jednorazowy TOTP przy każdym nowym logowaniu.</span></div><label class="switch"><input id="twofa" type="checkbox"><i></i></label></div><div class="setting-row"><div><b>Kody zapasowe</b><span>Jednorazowe kody awaryjnego dostępu do konta.</span></div><button class="secondary" data-toast="Kody zapasowe będą generowane po wdrożeniu serwerowego modułu 2FA." type="button">Zarządzaj</button></div></article>
+        <article class="card"><header><div><h2>Alerty bezpieczeństwa</h2><p>Powiadomienia o podejrzanej aktywności.</p></div></header><div class="setting-row"><div><b>Nowe logowanie</b><span>Alert e-mail po logowaniu z nowego urządzenia.</span></div><label class="switch"><input data-setting="security.newLogin" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Zmiana danych konta</b><span>Informuj o zmianie hasła, e-maila i metod odzyskiwania.</span></div><label class="switch"><input data-setting="security.accountChanges" type="checkbox" checked><i></i></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="privacy">
+        <article class="card"><header><div><h2>Widoczność profilu</h2><p>Zdecyduj, kto może zobaczyć Twoją aktywność.</p></div></header>
+          <div class="select-row"><div><b>Profil gracza</b><span>Podstawowe informacje i osiągnięcia.</span></div><select data-setting="privacy.profile"><option value="all">Wszyscy</option><option value="friends">Znajomi</option><option value="none">Tylko ja</option></select></div>
+          <div class="select-row"><div><b>Status online</b><span>Czy inni widzą, że jesteś w serwisie.</span></div><select data-setting="privacy.online"><option value="all">Wszyscy</option><option value="friends">Znajomi</option><option value="none">Nikt</option></select></div>
+          <div class="select-row"><div><b>Historia gier</b><span>Rozegrane partie, wyniki i przeciwnicy.</span></div><select data-setting="privacy.history"><option value="all">Wszyscy</option><option value="friends">Znajomi</option><option value="none">Tylko ja</option></select></div>
+        </article>
+        <article class="card"><header><div><h2>Kontakty i zaproszenia</h2><p>Kontroluj, kto może się z Tobą kontaktować.</p></div></header>
+          <div class="select-row"><div><b>Prywatne wiadomości</b><span>Kto może wysyłać Ci wiadomości.</span></div><select data-setting="privacy.messages"><option value="all">Wszyscy gracze</option><option value="friends">Tylko znajomi</option><option value="none">Nikt</option></select></div>
+          <div class="select-row"><div><b>Zaproszenia do gry</b><span>Kto może zaprosić Cię do stołu.</span></div><select data-setting="privacy.invites"><option value="all">Wszyscy gracze</option><option value="friends">Tylko znajomi</option><option value="none">Nikt</option></select></div>
+          <div class="setting-row"><div><b>Automatycznie blokuj podejrzane kontakty</b><span>Ogranicza spam i powtarzające się niechciane zaproszenia.</span></div><label class="switch"><input data-setting="privacy.antiSpam" type="checkbox" checked><i></i></label></div>
+        </article>
+        <article class="card"><header><div><h2>Zablokowani użytkownicy</h2><p>Lista graczy, których wiadomości i zaproszenia są blokowane.</p></div><button class="secondary" data-toast="Lista blokad zostanie połączona z serwerowym modułem społecznościowym." type="button">Zarządzaj listą</button></header></article>
+      </section>
+
+      <section class="panel" data-panel="notifications">
+        <article class="card"><header><div><h2>Powiadomienia w serwisie</h2><p>Wybierz zdarzenia, o których chcesz być informowany.</p></div></header>
+          <div class="setting-row"><div><b>Nowe wiadomości</b><span>Powiadomienia o prywatnych wiadomościach.</span></div><label class="switch"><input data-setting="notify.messages" type="checkbox" checked><i></i></label></div>
+          <div class="setting-row"><div><b>Zaproszenia do gry</b><span>Informuj o nowych zaproszeniach do stołu.</span></div><label class="switch"><input data-setting="notify.invites" type="checkbox" checked><i></i></label></div>
+          <div class="setting-row"><div><b>Turnieje i wydarzenia</b><span>Start zapisów, rozpoczęcie turnieju i wyniki.</span></div><label class="switch"><input data-setting="notify.tournaments" type="checkbox" checked><i></i></label></div>
+          <div class="setting-row"><div><b>Osiągnięcia i ranking</b><span>Awans, rekord, odznaka i zmiana ligi.</span></div><label class="switch"><input data-setting="notify.ranking" type="checkbox" checked><i></i></label></div>
+        </article>
+        <article class="card"><header><div><h2>Kanały powiadomień</h2><p>Gdzie mają trafiać ważne informacje.</p></div></header><div class="setting-row"><div><b>E-mail</b><span>Bezpieczeństwo konta i ważne informacje.</span></div><label class="switch"><input data-setting="notify.email" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>SMS</b><span>Krytyczne alerty i odzyskiwanie dostępu.</span></div><label class="switch"><input data-setting="notify.sms" type="checkbox"><i></i></label></div><div class="setting-row"><div><b>Dźwięk w przeglądarce</b><span>Krótki sygnał dla wiadomości i zaproszeń.</span></div><label class="switch"><input data-setting="notify.sound" type="checkbox" checked><i></i></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="messages">
+        <article class="card"><header><div><h2>Wiadomości prywatne</h2><p>Ustawienia poczty wewnętrznej Gracz.pl.</p></div></header><div class="setting-row"><div><b>Potwierdzenia odczytu</b><span>Pokazuj nadawcy, że wiadomość została otwarta.</span></div><label class="switch"><input data-setting="messages.readReceipts" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Automatycznie archiwizuj stare rozmowy</b><span>Przenieś nieaktywne rozmowy do archiwum po 90 dniach.</span></div><label class="switch"><input data-setting="messages.autoArchive" type="checkbox"><i></i></label></div><div class="setting-row"><div><b>Podgląd treści w powiadomieniach</b><span>Wyświetl fragment wiadomości w alercie.</span></div><label class="switch"><input data-setting="messages.preview" type="checkbox" checked><i></i></label></div></article>
+        <article class="card"><header><div><h2>Chat w grach</h2><p>Kontrola rozmów podczas rozgrywki.</p></div></header><div class="setting-row"><div><b>Chat przy stole</b><span>Włącz pole rozmowy w konsoli gry.</span></div><label class="switch"><input data-setting="chat.enabled" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Filtr obraźliwych treści</b><span>Ukrywaj treści potencjalnie naruszające zasady społeczności.</span></div><label class="switch"><input data-setting="chat.filter" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Emotikony i formatowanie</b><span>Pozwól na emotikony i podstawowe formatowanie tekstu.</span></div><label class="switch"><input data-setting="chat.richText" type="checkbox" checked><i></i></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="games">
+        <article class="card"><header><div><h2>Rozgrywka</h2><p>Domyślne zachowanie konsoli gier.</p></div></header><div class="setting-row"><div><b>Dźwięki ruchów</b><span>Efekty dźwiękowe podczas partii.</span></div><label class="switch"><input data-setting="games.sound" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Potwierdzenie rezygnacji</b><span>Zapytaj ponownie przed poddaniem partii.</span></div><label class="switch"><input data-setting="games.confirmResign" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Automatyczne obracanie planszy</b><span>Ustaw pionki użytkownika zawsze od dołu.</span></div><label class="switch"><input data-setting="games.autoRotate" type="checkbox" checked><i></i></label></div><div class="select-row"><div><b>Domyślne tempo gry</b><span>Preferowany czas przy szybkim tworzeniu stołu.</span></div><select data-setting="games.time"><option value="3">3 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option></select></div></article>
+        <article class="card"><header><div><h2>Zaproszenia i dobieranie graczy</h2><p>Preferencje dotyczące przeciwników.</p></div></header><div class="setting-row"><div><b>Akceptuj szybkie dobieranie</b><span>Pozwól systemowi automatycznie znaleźć przeciwnika.</span></div><label class="switch"><input data-setting="games.matchmaking" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Preferuj podobny ranking</b><span>W pierwszej kolejności szukaj graczy o zbliżonym poziomie.</span></div><label class="switch"><input data-setting="games.similarRating" type="checkbox" checked><i></i></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="appearance">
+        <article class="card"><header><div><h2>Wygląd</h2><p>Dostosuj interfejs do swoich preferencji.</p></div></header><div class="select-row"><div><b>Motyw</b><span>Kolorystyka całego panelu.</span></div><select data-setting="appearance.theme"><option value="dark">Ciemny</option><option value="system">Zgodny z systemem</option></select></div><div class="select-row"><div><b>Rozmiar interfejsu</b><span>Skala tekstu i elementów sterujących.</span></div><select data-setting="appearance.scale"><option value="compact">Kompaktowy</option><option value="normal">Standardowy</option><option value="large">Powiększony</option></select></div><div class="setting-row"><div><b>Ogranicz animacje</b><span>Zmniejsza ruchome efekty i przejścia.</span></div><label class="switch"><input data-setting="appearance.reduceMotion" type="checkbox"><i></i></label></div><div class="setting-row"><div><b>Wysoki kontrast</b><span>Wzmocnij obramowania i różnice tonalne.</span></div><label class="switch"><input data-setting="appearance.highContrast" type="checkbox"><i></i></label></div></article>
+        <article class="card"><header><div><h2>Dostępność</h2><p>Ustawienia pomagające korzystać z serwisu.</p></div></header><div class="setting-row"><div><b>Wyraźny fokus klawiatury</b><span>Mocniejsze oznaczenie aktualnie wybranego elementu.</span></div><label class="switch"><input data-setting="access.focus" type="checkbox" checked><i></i></label></div><div class="setting-row"><div><b>Opisy elementów interaktywnych</b><span>Dodatkowe etykiety dla technologii asystujących.</span></div><label class="switch"><input data-setting="access.labels" type="checkbox" checked><i></i></label></div></article>
+      </section>
+
+      <section class="panel" data-panel="sessions">
+        <article class="card"><header><div><h2>Aktywna sesja</h2><p>Urządzenie używane obecnie.</p></div><span class="badge good">To urządzenie</span></header><div class="device"><div class="device-icon">🖥</div><div><b>Przeglądarka internetowa</b><span id="device-info">Bieżąca sesja · aktywna teraz</span><small>Sesja chroniona ciasteczkiem HttpOnly i SameSite.</small></div></div></article>
+        <article class="card"><header><div><h2>Inne urządzenia</h2><p>Kontroluj pozostałe aktywne logowania.</p></div></header><div class="empty-state">Brak danych o innych urządzeniach w tym widoku.</div><footer><button class="danger-outline" data-toast="Wylogowanie wszystkich urządzeń zostanie podłączone do rejestru sesji po wdrożeniu endpointu zarządzania sesjami." type="button">Wyloguj inne urządzenia</button></footer></article>
+      </section>
+
+      <section class="panel" data-panel="data">
+        <article class="card"><header><div><h2>Twoje dane</h2><p>Kontrola nad danymi zapisanymi w Gracz.pl.</p></div></header><div class="action-row"><div><b>Pobierz kopię danych</b><span>Profil, ustawienia, historia aktywności i dane konta.</span></div><button class="secondary" data-action="export" type="button">Przygotuj eksport</button></div><div class="action-row"><div><b>Historia aktywności</b><span>Logowania i najważniejsze operacje na koncie.</span></div><button class="secondary" data-toast="Historia aktywności będzie dostępna po uruchomieniu dziennika audytowego użytkownika." type="button">Zobacz historię</button></div></article>
+        <article class="card danger-zone"><header><div><h2>Strefa niebezpieczna</h2><p>Operacje mogące ograniczyć lub zakończyć działanie konta.</p></div></header><div class="action-row"><div><b>Dezaktywuj konto</b><span>Ukryj profil i zablokuj logowanie do czasu ponownej aktywacji.</span></div><button class="danger-outline" data-toast="Dezaktywacja konta wymaga dodatkowego potwierdzenia i zostanie podłączona do backendu w osobnym kroku." type="button">Dezaktywuj</button></div><div class="action-row"><div><b>Usuń konto</b><span>Trwałe usunięcie konta zgodnie z zasadami przechowywania danych.</span></div><button class="danger" data-toast="Usunięcie konta wymaga weryfikacji tożsamości i okresu ochronnego. Funkcja serwerowa nie jest jeszcze aktywna." type="button">Usuń konto</button></div></article>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="password-dialog"><form method="dialog" class="dialog-card"><button class="dialog-x" value="cancel" aria-label="Zamknij">×</button><h2>Zmiana hasła</h2><p>Ze względów bezpieczeństwa zmiana hasła korzysta z istniejącego mechanizmu odzyskiwania i weryfikacji e-mail.</p><label>Login<input id="password-user" disabled></label><button id="password-reset" class="primary" value="cancel" type="button">Przejdź do bezpiecznej zmiany hasła</button><button class="secondary" value="cancel">Anuluj</button></form></dialog>
+  <script type="module" src="/settings.js"></script>
+</body>
+</html>
