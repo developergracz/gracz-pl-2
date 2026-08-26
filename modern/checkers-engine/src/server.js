@@ -376,6 +376,7 @@ function sendError(response, error) {
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" || error.code === "INVITATION_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
   if (error instanceof SessionError || error?.name === "IllegalMoveError" || error instanceof TypeError) return sendJson(response, 400, errorBody(error));
+  if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) return sendJson(response, error.status, errorBody(error));
   return sendJson(response, 500, { error: { code: "INTERNAL_ERROR", message: "Wewnętrzny błąd serwera." } });
 }
 
