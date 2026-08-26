@@ -50,3 +50,18 @@
 .mini-piece{width:72%;height:72%;aspect-ratio:auto;margin:auto;align-self:center;justify-self:center}
 .game-preview .preview-console{width:auto;flex:1 1 0;min-width:0}
 @media(max-width:720px){.checkers-preview .mini-board,.gomoku .gomoku-board{width:auto!important;height:100%!important;flex-basis:auto!important}}
+
+
+/* Kamienie Gomoku nad siatką — linie nie prześwitują przez pionki */
+.gomoku .gomoku-board{
+  background-image:
+    radial-gradient(circle at 20% 30%,#f8f8f5 0 8px,transparent 9px),
+    radial-gradient(circle at 35% 45%,#090b0c 0 8px,transparent 9px),
+    radial-gradient(circle at 50% 25%,#f8f8f5 0 8px,transparent 9px),
+    radial-gradient(circle at 65% 55%,#090b0c 0 8px,transparent 9px),
+    radial-gradient(circle at 80% 35%,#f8f8f5 0 8px,transparent 9px),
+    linear-gradient(rgba(213,236,233,.78) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(213,236,233,.78) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,22px 22px,22px 22px;
+  background-position:center;
+}
