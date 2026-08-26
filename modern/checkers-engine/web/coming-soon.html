@@ -57,7 +57,7 @@
 <section class="newsletter-zone" id="newsletter">
   <div class="newsletter-copy">
     <span>PIERWSI GRACZE</span>
-    <h2>Dołącz do listy startowej Gracz.pl</h2>
+    <h2>Dołącz do gracz.pl</h2>
     <p>Zostaw adres e-mail i — jeśli chcesz — zarezerwuj swój nick. Nie zakładasz jeszcze konta gracza.</p>
   </div>
   <aside class="signup">
@@ -65,14 +65,13 @@
       <div class="form-trap" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><label>Strona internetowa<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
       <input name="formStartedAt" type="hidden"><input name="submissionId" type="hidden">
       <label class="field-label">Adres e-mail<input id="newsletter-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="twoj@email.pl" required></label>
-      <div id="email-validation" class="field-validation" role="alert" aria-live="polite" hidden></div>
+      <div id="email-validation" class="field-validation" role="alert" aria-live="polite" hidden>Wypełnij to pole.</div>
       <label class="field-label">Preferowany nick<small class="field-hint">opcjonalnie, 3–24 znaki</small><input id="preferred-nick" name="preferredNick" type="text" autocomplete="nickname" minlength="3" maxlength="24" placeholder="np. Victorio"></label>
-      <button id="check-nick" class="nick-check" type="button">SPRAWDŹ, CZY TWÓJ ULUBIONY NICK JEST WOLNY</button>
+      <button id="check-nick" class="nick-check" type="button"><span>SPRAWDŹ, CZY TWÓJ ULUBIONY NICK JEST WOLNY</span></button>
       <p id="nick-message" class="nick-message" role="status" aria-live="polite"></p>
       <label class="consent"><input name="legal" type="checkbox" required><span>Akceptuję <a href="/regulamin.html">Regulamin</a> i <a href="/polityka-prywatnosci.html">Politykę prywatności</a> oraz zapoznałem(-am) się z zasadami przetwarzania danych.</span></label>
       <label class="consent"><input name="consent" type="checkbox" required><span>Chcę otrzymywać wiadomości dotyczące startu, testów i rozwoju Gracz.pl. Wiem, że mogę wycofać zgodę w każdej chwili.</span></label>
-      <div class="security-box" aria-label="Zabezpieczenie formularza"><span class="security-check">✓</span><div><strong>Ochrona aktywna</strong><small>Weryfikacja bezpieczeństwa</small></div><b>CLOUDFLARE<small>TURNSTILE</small></b></div>
-      <small class="security-note">Weryfikacja bezpieczeństwa chroni formularz przed automatycznymi zapisami.</small>
+      <p class="security-note">Formularz jest chroniony automatycznie przed spamem i botami.</p>
       <button class="submit-action" type="submit">ZAPISZ MNIE NA START →</button>
       <p id="newsletter-message" class="message" role="status" aria-live="polite"></p>
     </form>
