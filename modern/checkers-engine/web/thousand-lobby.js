@@ -9,13 +9,6 @@
   function currentUser(){try{return JSON.parse(sessionStorage.getItem('gracz-session')||'null')?.user||null}catch{return null}}
   async function api(path,options={}){const response=await fetch(path,{credentials:'same-origin',...options,headers:{accept:'application/json',...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error?.message||'Nie udało się wykonać operacji.');return body}
 
-  function installGuestButton(){
-    const form=document.querySelector('#auth-form');if(!form||document.querySelector('#guest-thousand-demo'))return;
-    const button=document.createElement('button');button.id='guest-thousand-demo';button.type='button';button.textContent='WEJDŹ JAKO GOŚĆ — ZOBACZ TYSIĄCA';button.style.cssText='width:100%;margin-top:2px;padding:12px;border:1px solid #b89b43;border-radius:7px;background:linear-gradient(180deg,#fff0a9,#d8aa3c);color:#182018;font-weight:900;cursor:pointer';
-    const note=document.createElement('small');note.id='guest-thousand-note';note.textContent='Tryb demonstracyjny · 3 graczy · bez wpływu na ranking';note.style.cssText='display:block;text-align:center;color:#8fa0ac;font-size:10px;margin-top:-5px';
-    form.querySelector('#auth-submit')?.insertAdjacentElement('afterend',button);button.insertAdjacentElement('afterend',note);button.addEventListener('click',enterDemo);
-  }
-
   async function ensureDemoUser(){const existing=currentUser();if(existing)return existing;const guest=await api('/auth/guest',{method:'POST'});sessionStorage.setItem('gracz-session',JSON.stringify({token:'cookie',user:guest.user}));return guest.user}
   async function enterDemo(event){
     const button=event?.currentTarget||document.querySelector('#guest-thousand-demo')||document.querySelector('#open-thousand-demo');if(!button||button.dataset.busy==='1')return;
@@ -63,6 +56,6 @@
   }
   function renderIncoming(){for(const invitation of state.invitations.filter(inv=>inv.gameType===GAME_TYPE)){let box=document.querySelector(`[data-incoming-id="${CSS.escape(invitation.invitationId)}"]`);if(box)box.remove();box=document.createElement('aside');box.className='thousand-invite';box.dataset.incomingId=invitation.invitationId;const title=document.createElement('strong');title.textContent=`${invitation.fromName} zaprasza Cię do Tysiąca`;const text=document.createElement('div');text.textContent=`Stół: ${invitation.roomName}`;const actions=document.createElement('div');actions.className='thousand-invite-actions';const no=document.createElement('button'),yes=document.createElement('button');no.type=yes.type='button';no.textContent='Odrzuć';yes.textContent='Akceptuj';no.addEventListener('click',()=>answer(invitation,false,box));yes.addEventListener('click',()=>answer(invitation,true,box));actions.append(no,yes);box.append(title,text,actions);document.body.append(box)}}
   async function answer(invitation,accept,box){try{const result=await api(`/lobby/invitations/${encodeURIComponent(invitation.invitationId)}/respond`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({accept})});box.remove();if(result.accepted&&result.room?.status==='playing'&&result.room.gameId){sessionStorage.setItem('thousand-entered-game',result.room.gameId);location.href=`/thousand.html?game=${encodeURIComponent(result.room.gameId)}`;return}await refresh()}catch(error){box.querySelector('div').textContent=error.message}}
-  function start(){installGuestButton();installCard();ensureModal();refresh();if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refresh,POLL_MS)}
+  function start(){installCard();ensureModal();refresh();if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refresh,POLL_MS)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
