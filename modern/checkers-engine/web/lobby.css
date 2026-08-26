@@ -29,3 +29,15 @@
 .preview-chat{flex:1;min-height:0;display:flex;flex-direction:column;padding:5px;background:#fff8e8;border:1px solid #af8b59;color:#725b43;font-size:7px}.preview-chat small{display:block;margin-top:auto;padding:4px;background:#fffdf7;border:1px solid #d5c5aa;color:#9b8a75;font-size:6px}
 .gomoku-console{background:linear-gradient(180deg,#8dc5bd,#68a69e)!important;border-left-color:#4d807a!important}.gomoku-console>strong{background:#356f69}.gomoku-console .preview-seats{background:linear-gradient(165deg,#f2faf8,#d5e8e4)}
 @media(max-width:700px){.game-preview .preview-console{flex-basis:36%;width:36%;padding:5px}.preview-seats{margin:4px 0;padding:3px}.preview-chat{padding:3px}}
+
+
+/* Trzy równe kafelki gier w jednym rzędzie na szerokim ekranie */
+.game-showcase{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.game-showcase .game-card{width:100%;min-width:0;height:100%;display:flex;flex-direction:column}
+.game-showcase .game-preview{height:210px}
+.game-showcase .card-top{min-height:76px;padding:14px 15px}
+.game-showcase .card-top h2{font-size:18px}
+.game-showcase .game-card-foot{margin-top:auto;grid-template-columns:82px minmax(0,1fr);gap:10px;padding:12px 14px}
+.game-showcase .play-btn{padding:11px 7px;font-size:10px}
+@media(max-width:1200px){.game-showcase{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.game-showcase{grid-template-columns:1fr;padding-inline:10px}.game-showcase .game-preview{height:220px}}
