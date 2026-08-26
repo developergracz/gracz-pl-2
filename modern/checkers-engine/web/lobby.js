@@ -59,7 +59,7 @@ function setCheckersExpanded(expanded) {
   closeCheckers.hidden = !expanded;
   document.body.classList.toggle("game-expanded", expanded);
 }
-expandCheckers.addEventListener("click", () => setCheckersExpanded(!checkersModule.classList.contains("expanded")));
+expandCheckers.addEventListener("click", () => { location.href = "/players.html"; });
 openCheckers.addEventListener("click", () => setCheckersExpanded(true));
 closeCheckers.addEventListener("click", () => setCheckersExpanded(false));
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") { setCheckersExpanded(false); closeInvitePanel(); } });
