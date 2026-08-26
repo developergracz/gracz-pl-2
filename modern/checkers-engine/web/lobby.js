@@ -47,22 +47,7 @@ function alignGomokuConsole() {
   if (Math.abs(sideRect.top - boardRect.top) > 1) side.style.height = `${Math.max(0, Math.round(boardRect.bottom - sideRect.top))}px`;
 }
 
-const checkersModule = document.querySelector("#checkers-module");
-const expandCheckers = document.querySelector("#expand-checkers");
-const closeCheckers = document.querySelector("#close-checkers");
-const openCheckers = document.querySelector("#open-checkers");
-function setCheckersExpanded(expanded) {
-  checkersModule.classList.toggle("expanded", expanded);
-  expandCheckers.setAttribute("aria-expanded", String(expanded));
-  expandCheckers.textContent = expanded ? "×" : "⛶";
-  expandCheckers.title = expanded ? "Pomniejsz konsolę" : "Pokaż konsolę na całym ekranie";
-  closeCheckers.hidden = !expanded;
-  document.body.classList.toggle("game-expanded", expanded);
-}
-expandCheckers.addEventListener("click", () => { location.href = "/players.html"; });
-openCheckers.addEventListener("click", () => setCheckersExpanded(true));
-closeCheckers.addEventListener("click", () => setCheckersExpanded(false));
-document.addEventListener("keydown", (event) => { if (event.key === "Escape") { setCheckersExpanded(false); closeInvitePanel(); } });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeInvitePanel(); });
 
 function ensureInvitePanel() {
   let overlay = document.querySelector("#invite-overlay");
