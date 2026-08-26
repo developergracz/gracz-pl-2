@@ -41,3 +41,12 @@
 .game-showcase .play-btn{padding:11px 7px;font-size:10px}
 @media(max-width:1200px){.game-showcase{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){.game-showcase{grid-template-columns:1fr;padding-inline:10px}.game-showcase .game-preview{height:220px}}
+
+
+/* Kwadratowe pola i precyzyjne centrowanie pionków w miniaturach */
+.checkers-preview .mini-board,.gomoku .gomoku-board{width:auto!important;height:100%!important;aspect-ratio:1/1!important;flex:0 0 auto!important}
+.checkers-preview .mini-board{padding:6px}
+.mini-square{overflow:hidden;place-items:center}
+.mini-piece{width:72%;height:72%;aspect-ratio:auto;margin:auto;align-self:center;justify-self:center}
+.game-preview .preview-console{width:auto;flex:1 1 0;min-width:0}
+@media(max-width:720px){.checkers-preview .mini-board,.gomoku .gomoku-board{width:auto!important;height:100%!important;flex-basis:auto!important}}
