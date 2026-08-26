@@ -20,7 +20,7 @@ function renderMiniBoard() {
       square.className = `mini-square ${dark ? "dark" : "light"}`;
       if (dark && (row < 3 || row > 4)) {
         const piece = document.createElement("i");
-        piece.className = `mini-piece ${row < 3 ? "white" : "black"}`;
+        piece.className = `mini-piece ${row < 3 ? "black" : "white"}`;
         square.append(piece);
       }
       board.append(square);
