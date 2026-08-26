@@ -9,34 +9,54 @@
 <link rel="stylesheet" href="/homepage-scale.css">
 </head>
 <body>
-<main class="page game-home">
-<header class="site-header pre-thousand-header">
-  <a class="brand-box" href="/">
-    <span class="logo">gracz<span>.PL</span><small>Gry online multiplayer bez pobierania</small></span>
-  </a>
-  <nav class="main-nav pre-thousand-nav" aria-label="Główna nawigacja">
-    <a class="active" href="/">STRONA GŁÓWNA</a>
-    <a href="#games">GRY</a>
-    <a href="/tournaments.html">TURNIEJE</a>
-    <a href="/ranking.html">RANKING</a>
-    <a href="/community.html">SPOŁECZNOŚĆ</a>
-    <a href="/global-chat.html">CHAT OGÓLNY</a>
-    <a href="#" aria-label="Sklep — w przygotowaniu">SKLEP</a>
-    <a href="/aktualnosci.html">POMOC</a>
+<main class="page game-home approved-homepage">
+<header class="site-header approved-header">
+  <a class="brand-box approved-brand" href="/"><span class="logo">gracz<span>.PL</span><small>Gry online multiplayer bez pobierania</small></span></a>
+  <nav class="main-nav approved-nav" aria-label="Główna nawigacja">
+    <a class="active" href="/">STRONA GŁÓWNA</a><a href="#games">GRY</a><a href="/tournaments.html">TURNIEJE</a><a href="/ranking.html">RANKING</a><a href="/community.html">SPOŁECZNOŚĆ</a><a href="/global-chat.html">CHAT OGÓLNY</a><a href="#">SKLEP</a><a href="/aktualnosci.html">POMOC</a>
   </nav>
-  <section class="account-panel" aria-label="Panel użytkownika">
-    <div class="account-user"><span class="account-avatar">VI</span><div><strong>Victorio</strong><small>Online</small></div></div>
+  <div class="online-counter">● <span>1 283 graczy online</span></div>
+  <section class="account-panel approved-account" aria-label="Panel użytkownika">
+    <div class="account-user"><span class="account-avatar">VI</span><div><strong id="header-user-name">Victorio</strong><small id="header-user-status">Online</small></div></div>
     <nav class="account-links" aria-label="Opcje konta"><a href="/settings.html#account">Profil</a><a href="/messages.html">Wiadomości</a><a href="/settings.html">Ustawienia</a></nav>
-    <form class="logout-form" method="post" action="/auth/logout" target="logout-target"><button type="submit">Wyloguj</button></form>
-    <iframe name="logout-target" title="Wylogowanie" hidden></iframe>
+    <form id="header-logout-form" class="logout-form" method="post" action="/auth/logout"><button type="submit">Wyloguj</button></form>
   </section>
 </header>
-<section class="home-hero"><div class="hero-actions"><a class="primary-cta" href="/lobby.html">▶ ZAGRAJ TERAZ</a><a class="secondary-cta" href="#games">ZOBACZ GRY</a></div><div class="hero-perks"><span>♟ Online multiplayer</span><span>🏆 Rankingi i osiągnięcia</span><span>▥ Liczne statystyki</span><span>⚡ Szybka rozgrywka</span><span>▣ Bez instalacji</span></div><div class="hero-board" aria-hidden="true"><div class="hero-board-grid"></div><i class="p p1"></i><i class="p p2 light"></i><i class="p p3"></i><i class="p p4 light"></i><i class="p p5"></i></div></section>
-<section class="game-center" id="games"><div class="section-head"><div><span>CENTRUM GIER</span><h1>Wybierz grę i rozpocznij rozgrywkę</h1><p>Jedno miejsce dla stołów, rankingów, turniejów i społeczności graczy.</p></div><div class="filters"><button>Wszystkie gry</button><button class="selected">2 gry</button><button>Online multiplayer</button><button>ELO ranking</button></div></div><div class="game-grid">
-<article class="game-card checkers-card"><div class="game-title-row"><div class="game-icon green">♟</div><div><h2>WARCABY <em>ONLINE</em></h2><p>Klasyka, która wciąga!</p><div class="chips"><span>● Multiplayer</span><span>● Ranking</span><span>● Turnieje</span></div></div><b class="tag green-tag">NAJPOPULARNIEJSZA</b></div><div class="game-body"><div class="checkers-board" aria-label="Podgląd planszy warcabów"></div><div class="game-facts"><p><b>♟ 2 graczy</b><small>Najczęściej</small></p><p><b>◷ 3–30 min</b><small>Czas gry</small></p><p><b>▥ ELO ranking</b><small>Rankingowa</small></p><p><b>🏆 Turnieje</b><small>Dostępne</small></p></div></div><div class="card-footer"><div><strong>👥 1 283</strong><small>graczy online</small></div><a class="play green-play" href="/lobby.html">▶ GRAJ W WARCABY</a></div></article>
-<article class="game-card gomoku-card"><div class="game-title-row"><div class="game-icon blue">✥</div><div><h2>GOMOKU <em>ONLINE</em></h2><p>Strategia i pięć w linii.</p><div class="chips blue-chips"><span>● Twoje zasady</span><span>● 5 w linii</span></div></div><b class="tag blue-tag">BETA</b></div><div class="game-body"><div class="gomoku-board" aria-label="Podgląd planszy Gomoku"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="game-facts blue-facts"><p><b>👥 2 graczy</b><small>Pojedynek</small></p><p><b>◷ 5 w linii</b><small>Cel gry</small></p><p><b>◷ 3–15 min</b><small>Typowo</small></p><p><b>▥ Ranking</b><small>Opcjonalny</small></p></div></div><div class="card-footer"><div><strong>👥 742</strong><small>graczy online</small></div><a class="play blue-play" href="/lobby.html#gomoku">▶ GRAJ W GOMOKU</a></div></article>
-</div></section>
-<section class="feature-strip"><article><b>⚡ Szybki start</b><span>Wejdź do lobby i zagraj od razu.</span></article><article><b>🏆 Rywalizacja</b><span>Graj rankingowo i awansuj w tabeli.</span></article><article><b>👥 Gra ze znajomymi</b><span>Twórz stoły prywatne i zapraszaj znajomych.</span></article></section><section class="stats-strip"><div><b>👥 1 283</b><span>graczy online</span></div><div><b>🎮 2 567</b><span>aktywnych gier</span></div><div><b>🏆 15 024</b><span>rozegranych gier</span></div><div><b>◎ 96%</b><span>pozytywnych ocen</span></div></section>
+
+<section class="approved-hero">
+  <div class="hero-copy">
+    <span class="hero-eyebrow">GRACZ.PL · MULTIPLAYER</span>
+    <h1>Graj.<br>Rywalizuj.<br>Zdobywaj <em>ranking.</em></h1>
+    <p>Dołącz do graczy i zagraj w swoje ulubione gry online.<br>Bez pobierania, zawsze i wszędzie.</p>
+    <div class="hero-actions"><a class="primary-cta" href="/lobby.html">▶ ZAGRAJ TERAZ</a><a class="secondary-cta" href="#games">ZOBACZ GRY</a></div>
+    <div class="hero-perks"><span>♟ Online multiplayer</span><span>🏆 Rankingi i osiągnięcia</span><span>◉ Uczciwa gra</span><span>⚡ Szybka rozgrywka</span><span>▣ Bez instalacji</span></div>
+  </div>
+  <aside class="promo-banner" aria-label="Reklama Gracz.pl">
+    <div class="promo-copy"><small>ZAGRAJ NA</small><strong>gracz<span>.PL</span></strong><p>Gry online multiplayer<br><em>bez pobierania!</em></p><a href="/lobby.html">▶ GRAJ TERAZ</a></div>
+    <div class="promo-trophy" aria-hidden="true"><div class="cup">★</div><div class="spark s1"></div><div class="spark s2"></div><div class="spark s3"></div></div>
+  </aside>
+</section>
+
+<section class="game-center approved-game-center" id="games">
+  <div class="section-head"><div><span>CENTRUM GIER</span><h1>Wybierz grę i rozpocznij rozgrywkę</h1><p>Jedno miejsce dla stołów, rankingów, turniejów i społeczności graczy.</p></div><div class="filters"><button>Wszystkie gry</button><button class="selected">2 gry</button><button>Online multiplayer</button><button>ELO ranking</button></div></div>
+  <div class="game-grid">
+    <article class="game-card checkers-card">
+      <div class="game-title-row"><div class="game-icon green">♟</div><div><h2>WARCABY <em>ONLINE</em></h2><p>Klasyka, która wciąga!</p><div class="chips"><span>● Multiplayer</span><span>● Ranking</span><span>● Turnieje</span></div></div><b class="tag green-tag">NAJPOPULARNIEJSZA</b></div>
+      <div class="game-body"><div class="checkers-board approved-square-board" aria-label="Podgląd planszy warcabów"></div><div class="game-facts"><p><b>♟ 2 graczy</b><small>Najczęściej</small></p><p><b>◷ 3–30 min</b><small>Czas gry</small></p><p><b>▥ ELO ranking</b><small>Rankingowa</small></p><p><b>🏆 Turnieje</b><small>Dostępne</small></p></div></div>
+      <div class="card-footer"><div><strong>👥 1 283</strong><small>graczy online</small></div><a class="play green-play" href="/lobby.html">▶ GRAJ W WARCABY</a></div>
+    </article>
+    <article class="game-card gomoku-card">
+      <div class="game-title-row"><div class="game-icon blue">✥</div><div><h2>GOMOKU <em>ONLINE</em></h2><p>Strategia i piękno w linii.</p><div class="chips blue-chips"><span>● Tylko zasady</span><span>● 5 w linii</span></div></div><b class="tag blue-tag">BETA</b></div>
+      <div class="game-body"><div class="gomoku-board approved-square-board" aria-label="Podgląd planszy Gomoku"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="game-facts blue-facts"><p><b>👥 2 graczy</b><small>Pojedynki</small></p><p><b>◷ 5 w linii</b><small>Cel gry</small></p><p><b>◷ 3–15 min</b><small>Typowo</small></p><p><b>▥ Ranking</b><small>Opcjonalny</small></p></div></div>
+      <div class="card-footer"><div><strong>👥 742</strong><small>graczy online</small></div><a class="play blue-play" href="/lobby.html#gomoku">▶ GRAJ W GOMOKU</a></div>
+    </article>
+  </div>
+</section>
+<section class="feature-strip approved-features"><article><b>⚡ Szybki start</b><span>Wejdź do lobby i zagraj od razu.</span></article><article><b>🏆 Rywalizacja</b><span>Graj rankingowo i awansuj w tabeli.</span></article><article><b>👥 Gra ze znajomymi</b><span>Twórz stoły prywatne i zapraszaj znajomych.</span></article><article><b>🛡 Bezpieczna rozgrywka</b><span>Uczciwa gra i ochrona Twoich danych.</span></article></section>
+
 <section class="newsletter-zone" id="newsletter"><div class="newsletter-copy"><span>PIERWSI GRACZE</span><h2>Dołącz do listy startowej Gracz.pl</h2><p>Zostaw adres e-mail i — jeśli chcesz — zarezerwuj swój nick. Zachowujemy działający system double opt-in i zabezpieczenia formularza.</p></div><aside class="signup"><form id="newsletter-form" novalidate><div class="form-trap" aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><label>Strona internetowa<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div><input name="formStartedAt" type="hidden"><input name="submissionId" type="hidden"><label class="field-label">Adres e-mail<input id="newsletter-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="twoj@email.pl" required></label><div id="email-validation" class="field-validation" role="alert" aria-live="polite" hidden>Wypełnij to pole.</div><label class="field-label">Preferowany nick<small class="field-hint">opcjonalnie, 3–24 znaki</small><input id="preferred-nick" name="preferredNick" type="text" autocomplete="nickname" minlength="3" maxlength="24" placeholder="np. Victorio"></label><button id="check-nick" class="nick-check" type="button">SPRAWDŹ, CZY NICK JEST WOLNY</button><p id="nick-message" class="nick-message" role="status" aria-live="polite"></p><label class="consent"><input name="legal" type="checkbox" required><span>Akceptuję <a href="/regulamin.html">Regulamin</a> i <a href="/polityka-prywatnosci.html">Politykę prywatności</a>.</span></label><label class="consent"><input name="consent" type="checkbox" required><span>Chcę otrzymywać wiadomości dotyczące startu, testów i rozwoju Gracz.pl.</span></label><p class="security-note">Formularz jest chroniony automatycznie przed spamem i botami.</p><button class="submit-action" type="submit">ZAPISZ MNIE NA START →</button><p id="newsletter-message" class="message" role="status" aria-live="polite"></p></form></aside></section>
-<footer>© 2026 Gracz.pl · <a href="/regulamin.html">Regulamin</a> · <a href="/polityka-prywatnosci.html">Polityka prywatności</a></footer></main>
-<div id="signup-success-modal" class="success-modal" hidden><div class="success-modal-backdrop" data-close-success></div><section class="success-modal-card sketch-two" role="dialog" aria-modal="true" aria-labelledby="success-modal-title"><button class="success-modal-close" type="button" aria-label="Zamknij" data-close-success>×</button><h2 id="success-modal-title">Dziękujemy Ci <strong id="success-modal-nick">gracz</strong><br>za zapisanie się<br>do naszego newslettera!</h2><div class="success-modal-divider" aria-hidden="true"><span></span><b>♥</b><span></span></div><p class="success-modal-copy">Na wskazany adres e-mail zostanie<br class="desktop-break"> wysłana wiadomość potwierdzająca zapisanie się<br class="desktop-break"> do naszego newslettera wraz<br class="desktop-break"> z Twoim wybranym nickiem <strong id="success-modal-nick-inline">gracz</strong>.</p><p class="success-modal-copy success-modal-copy-last">Będziemy informować Cię o testach,<br class="desktop-break"> premierze i uruchomieniu platformy.</p><div class="success-modal-brand">gracz<span>.pl</span></div><button id="success-modal-ok" class="success-modal-action" type="button" data-close-success>Zamknij</button></section></div><script src="/coming-soon.js" defer></script></body></html>
+<footer>© 2026 Gracz.pl · <a href="/regulamin.html">Regulamin</a> · <a href="/polityka-prywatnosci.html">Polityka prywatności</a></footer>
+</main>
+<div id="signup-success-modal" class="success-modal" hidden><div class="success-modal-backdrop" data-close-success></div><section class="success-modal-card sketch-two" role="dialog" aria-modal="true" aria-labelledby="success-modal-title"><button class="success-modal-close" type="button" aria-label="Zamknij" data-close-success>×</button><h2 id="success-modal-title">Dziękujemy Ci <strong id="success-modal-nick">gracz</strong><br>za zapisanie się<br>do naszego newslettera!</h2><div class="success-modal-divider" aria-hidden="true"><span></span><b>♥</b><span></span></div><p class="success-modal-copy">Na wskazany adres e-mail zostanie<br class="desktop-break"> wysłana wiadomość potwierdzająca zapisanie się<br class="desktop-break"> do naszego newslettera wraz<br class="desktop-break"> z Twoim wybranym nickiem <strong id="success-modal-nick-inline">gracz</strong>.</p><p class="success-modal-copy success-modal-copy-last">Będziemy informować Cię o testach,<br class="desktop-break"> premierze i uruchomieniu platformy.</p><div class="success-modal-brand">gracz<span>.pl</span></div><button id="success-modal-ok" class="success-modal-action" type="button" data-close-success>Zamknij</button></section></div>
+<script src="/coming-soon.js" defer></script>
+</body></html>
