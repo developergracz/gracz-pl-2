@@ -368,3 +368,18 @@ function installNewsletterV2() {
 }
 
 installNewsletterV2();
+
+document.querySelector('[data-placeholder="shop"]')?.addEventListener("click", (event) => {
+  event.preventDefault();
+  let notice = document.querySelector("#navigation-notice");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "navigation-notice";
+    Object.assign(notice.style, { position: "fixed", right: "20px", bottom: "20px", zIndex: "9999", padding: "12px 16px", border: "1px solid #28503f", borderRadius: "9px", background: "#0b171d", color: "#eef6f2", boxShadow: "0 12px 34px #0008" });
+    document.body.append(notice);
+  }
+  notice.textContent = "Sklep Gracz.pl jest jeszcze w przygotowaniu.";
+  notice.hidden = false;
+  clearTimeout(notice.hideTimer);
+  notice.hideTimer = setTimeout(() => { notice.hidden = true; }, 3000);
+});
