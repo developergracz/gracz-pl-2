@@ -234,6 +234,14 @@
     observer.observe(error, { childList: true, characterData: true, subtree: true });
   }
 
+  function openRequestedAuthMode() {
+    if (location.hash !== "#register") return;
+    const registerTab = document.querySelector('[data-mode="register"]');
+    if (!registerTab) return;
+    registerTab.click();
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
+  }
+
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
@@ -245,6 +253,7 @@
     installRegistrationDraftPreservation();
     installTermsCheckboxOpen();
     installActivationDialog();
+    openRequestedAuthMode();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true }); else install();
 })();
