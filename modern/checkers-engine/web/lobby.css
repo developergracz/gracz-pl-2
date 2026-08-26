@@ -15,3 +15,17 @@
 .gomoku .game-preview::after{content:"Stół 1 · norm. 3 min\A\A  USIĄDŹ      USIĄDŹ\A\A START        ZAPROŚ\A ─────────────\A  CHAT   HISTORIA\A\A Chat Gomoku\A\A Napisz wiadomość...";background:linear-gradient(180deg,#d8eee8,#b9d7cf);border-left-color:#58746e}
 .gomoku .gomoku-board{background-color:#5fa39d;background-image:linear-gradient(#d5ece9 1px,transparent 1px),linear-gradient(90deg,#d5ece9 1px,transparent 1px),radial-gradient(circle at 20% 30%,#f6f6f3 0 8px,transparent 9px),radial-gradient(circle at 35% 45%,#111 0 8px,transparent 9px),radial-gradient(circle at 50% 25%,#f6f6f3 0 8px,transparent 9px),radial-gradient(circle at 65% 55%,#111 0 8px,transparent 9px),radial-gradient(circle at 80% 35%,#f6f6f3 0 8px,transparent 9px);background-size:22px 22px,22px 22px,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%;background-position:center}
 @media(max-width:700px){.checkers-preview .mini-board,.gomoku .gomoku-board{width:64%;flex-basis:64%}.game-preview::after{width:36%;font-size:8px;padding:8px 6px}}
+
+
+/* Wierne podglądy konsol Warcabów i Gomoku na stronie głównej */
+.game-preview::after{content:none!important;display:none!important}
+.game-preview .preview-console{flex:1 1 34%;width:34%;min-width:0;height:100%;display:flex;flex-direction:column;padding:8px;background:linear-gradient(180deg,#e5b46b,#cf9553);border-left:1px solid #a56f37;color:#39281a;font-size:8px;line-height:1.25}
+.preview-console>strong{display:block;padding:5px 4px;color:#fff8e8;text-align:center;background:#79502d;border-radius:3px;font-family:Georgia,serif;font-size:9px}
+.preview-seats{margin:6px 0;padding:5px;background:linear-gradient(165deg,#f7f4ed,#ddd5c8);border:1px solid #c7b8a0;box-shadow:0 2px 4px #73491f55}
+.preview-seats span{display:flex;align-items:center;justify-content:space-between;gap:3px;padding:3px 1px;border-bottom:1px solid #c9bca8;font-weight:700}
+.preview-seats span:last-child{border-bottom:0}.preview-seats b{padding:2px 3px;background:#fff;border:1px solid #bbb1a2;border-radius:2px;font-size:6px;text-transform:uppercase}
+.preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px}.preview-actions b{padding:5px 2px;text-align:center;background:linear-gradient(#fff,#dedede);border:1px solid #b4966a;border-radius:2px;font-size:7px}
+.preview-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:1px}.preview-tabs span{padding:4px 1px;text-align:center;background:#ead9bc;border:1px solid #af8b59;font-size:6px}.preview-tabs .active{background:#fff8e8}
+.preview-chat{flex:1;min-height:0;display:flex;flex-direction:column;padding:5px;background:#fff8e8;border:1px solid #af8b59;color:#725b43;font-size:7px}.preview-chat small{display:block;margin-top:auto;padding:4px;background:#fffdf7;border:1px solid #d5c5aa;color:#9b8a75;font-size:6px}
+.gomoku-console{background:linear-gradient(180deg,#8dc5bd,#68a69e)!important;border-left-color:#4d807a!important}.gomoku-console>strong{background:#356f69}.gomoku-console .preview-seats{background:linear-gradient(165deg,#f2faf8,#d5e8e4)}
+@media(max-width:700px){.game-preview .preview-console{flex-basis:36%;width:36%;padding:5px}.preview-seats{margin:4px 0;padding:3px}.preview-chat{padding:3px}}
