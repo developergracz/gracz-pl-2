@@ -63,7 +63,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
       "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css",
       "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js", "/adaptive-challenge.js": "adaptive-challenge.js", "/settings-link.js": "settings-link.js",
       "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js", "/messages-dialog-fix.js": "messages-dialog-fix.js",
-      "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
+      "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/gomoku.html": "gomoku.html", "/regulamin.html": "regulamin.html",
       "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js", "/avatar-library.js": "avatar-library.js",
       "/global-chat.html": "global-chat.html", "/global-chat.css": "global-chat.css", "/global-chat.js": "global-chat.js",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
