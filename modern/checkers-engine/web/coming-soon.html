@@ -10,13 +10,26 @@
 </head>
 <body>
 <main class="page game-home">
-<header class="site-header">
-  <a class="logo" href="/">gracz<span>.PL</span><small>Gry online multiplayer bez pobierania</small></a>
-  <div class="online-pill">● 1 283 graczy online</div>
-  <nav class="main-nav" aria-label="Główna nawigacja">
-    <a class="active" href="#games">GRY</a><a href="/tournaments.html">TURNIEJE</a><a href="/ranking.html">RANKING</a><a href="/community.html">SPOŁECZNOŚĆ</a><a href="#newsletter">NEWSLETTER</a><a href="/global-chat.html">CHAT OGÓLNY</a><a href="/aktualnosci.html">POMOC</a>
+<header class="site-header pre-thousand-header">
+  <a class="brand-box" href="/">
+    <span class="logo">gracz<span>.PL</span><small>Gry online multiplayer bez pobierania</small></span>
+  </a>
+  <nav class="main-nav pre-thousand-nav" aria-label="Główna nawigacja">
+    <a class="active" href="/">STRONA GŁÓWNA</a>
+    <a href="#games">GRY</a>
+    <a href="/tournaments.html">TURNIEJE</a>
+    <a href="/ranking.html">RANKING</a>
+    <a href="/community.html">SPOŁECZNOŚĆ</a>
+    <a href="/global-chat.html">CHAT OGÓLNY</a>
+    <a href="#" aria-label="Sklep — w przygotowaniu">SKLEP</a>
+    <a href="/aktualnosci.html">POMOC</a>
   </nav>
-  <div class="profile-chip"><span class="avatar">VI</span><div><b>Victorio</b><small>Online</small></div></div>
+  <section class="account-panel" aria-label="Panel użytkownika">
+    <div class="account-user"><span class="account-avatar">VI</span><div><strong>Victorio</strong><small>Online</small></div></div>
+    <nav class="account-links" aria-label="Opcje konta"><a href="/settings.html#account">Profil</a><a href="/messages.html">Wiadomości</a><a href="/settings.html">Ustawienia</a></nav>
+    <form class="logout-form" method="post" action="/auth/logout" target="logout-target"><button type="submit">Wyloguj</button></form>
+    <iframe name="logout-target" title="Wylogowanie" hidden></iframe>
+  </section>
 </header>
 <section class="home-hero"><div class="hero-actions"><a class="primary-cta" href="/lobby.html">▶ ZAGRAJ TERAZ</a><a class="secondary-cta" href="#games">ZOBACZ GRY</a></div><div class="hero-perks"><span>♟ Online multiplayer</span><span>🏆 Rankingi i osiągnięcia</span><span>▥ Liczne statystyki</span><span>⚡ Szybka rozgrywka</span><span>▣ Bez instalacji</span></div><div class="hero-board" aria-hidden="true"><div class="hero-board-grid"></div><i class="p p1"></i><i class="p p2 light"></i><i class="p p3"></i><i class="p p4 light"></i><i class="p p5"></i></div></section>
 <section class="game-center" id="games"><div class="section-head"><div><span>CENTRUM GIER</span><h1>Wybierz grę i rozpocznij rozgrywkę</h1><p>Jedno miejsce dla stołów, rankingów, turniejów i społeczności graczy.</p></div><div class="filters"><button>Wszystkie gry</button><button class="selected">2 gry</button><button>Online multiplayer</button><button>ELO ranking</button></div></div><div class="game-grid">
