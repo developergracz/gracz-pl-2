@@ -210,6 +210,22 @@
       const message = document.createElement("p"); message.setAttribute("role", "alert"); message.style.cssText = "min-height:20px;margin:4px 0 0;color:#ff8b91;font-size:12px;line-height:1.45";
       for (const input of [email,code,password,confirm]) input.style.cssText = "box-sizing:border-box;width:100%;padding:12px 13px;border:1px solid #3b5060;border-radius:8px;background:#071017;color:#fff;font:inherit";
       for (const button of [requestButton,resetButton]) button.style.cssText = "width:100%;padding:13px;border:0;border-radius:8px;background:linear-gradient(180deg,#3f7aee,#2854bc);color:#fff;font-weight:900;cursor:pointer";
+      const passwordField = createPasswordVisibilityField(password);
+      const confirmField = createPasswordVisibilityField(confirm);
+      function createPasswordVisibilityField(input) {
+        const field = document.createElement("div"); field.style.cssText = "position:relative;width:100%";
+        input.style.paddingRight = "72px";
+        const toggle = document.createElement("button"); toggle.type = "button"; toggle.textContent = "Pokaż"; toggle.setAttribute("aria-label", "Pokaż hasło"); toggle.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:6px;border:0;background:transparent;color:#79aaff;font-size:12px;font-weight:800;cursor:pointer";
+        toggle.addEventListener("click", () => {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          toggle.textContent = show ? "Ukryj" : "Pokaż";
+          toggle.setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
+          input.focus();
+        });
+        field.append(input, toggle);
+        return field;
+      }
       const setBusy = (button, busy, text) => { button.disabled = busy; if (text) button.textContent = text; };
       requestButton.addEventListener("click", async () => {
         const address = email.value.trim().toLowerCase();
@@ -243,7 +259,7 @@
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
       });
       close.addEventListener("click", () => overlay.remove()); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.remove(); });
-      stepOne.append(email,requestButton); stepTwo.append(code,password,confirm,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay); email.focus();
+      stepOne.append(email,requestButton); stepTwo.append(code,passwordField,confirmField,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay); email.focus();
     });
   }
 
