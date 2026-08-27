@@ -159,7 +159,7 @@ export class SecureAccountService {
     if (channel === "email" && !safeEmail) return { ok: true };
     if (channel === "sms") {
       if (!safePhone) return { ok: true };
-      if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_FROM_NUMBER) {
+      if (![process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN, process.env.TWILIO_FROM_NUMBER].every(value => typeof value === "string" && value.trim())) {
         throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
       }
     }
