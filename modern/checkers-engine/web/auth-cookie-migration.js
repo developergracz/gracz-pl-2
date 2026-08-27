@@ -258,6 +258,13 @@
           message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetCompleted = true; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false;
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
       });
+      for (const input of [code,password,confirm]) {
+        input.addEventListener("keydown", event => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          if (!resetButton.disabled) resetButton.click();
+        });
+      }
       close.addEventListener("click", () => overlay.remove()); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.remove(); });
       stepOne.append(email,requestButton); stepTwo.append(code,passwordField,confirmField,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay); email.focus();
     });
