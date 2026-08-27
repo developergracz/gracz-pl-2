@@ -203,7 +203,7 @@
       const email = document.createElement("input"); email.type = "email"; email.placeholder = "Adres e-mail przypisany do konta"; email.autocomplete = "email"; email.required = true;
       const requestButton = document.createElement("button"); requestButton.type = "button"; requestButton.textContent = "Wyślij kod odzyskiwania";
       const stepTwo = document.createElement("div"); stepTwo.hidden = true; stepTwo.style.cssText = "display:grid;gap:12px";
-      const code = document.createElement("input"); code.type = "text"; code.inputMode = "numeric"; code.maxLength = 6; code.placeholder = "6-cyfrowy kod"; code.autocomplete = "one-time-code"; code.addEventListener("input", () => { code.value = code.value.replace(/\\D/g, "").slice(0, 6); });
+      const code = document.createElement("input"); code.type = "text"; code.inputMode = "numeric"; code.maxLength = 6; code.placeholder = "6-cyfrowy kod"; code.autocomplete = "one-time-code"; code.addEventListener("input", () => { code.value = code.value.replace(/\D/g, "").slice(0, 6); });
       const password = document.createElement("input"); password.type = "password"; password.minLength = 15; password.maxLength = 128; password.placeholder = "Nowe hasło — minimum 15 znaków"; password.autocomplete = "new-password";
       const confirm = document.createElement("input"); confirm.type = "password"; confirm.minLength = 15; confirm.maxLength = 128; confirm.placeholder = "Powtórz nowe hasło"; confirm.autocomplete = "new-password";
       const resetButton = document.createElement("button"); resetButton.type = "button"; resetButton.textContent = "Ustaw nowe hasło";
@@ -213,7 +213,7 @@
       const setBusy = (button, busy, text) => { button.disabled = busy; if (text) button.textContent = text; };
       requestButton.addEventListener("click", async () => {
         const address = email.value.trim().toLowerCase();
-        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(address)) { message.textContent = "Wpisz prawidłowy adres e-mail."; email.focus(); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(address)) { message.textContent = "Wpisz prawidłowy adres e-mail."; email.focus(); return; }
         setBusy(requestButton, true, "Wysyłanie kodu…"); message.textContent = "";
         try {
           const response = await fetch("/auth/request-password-reset", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:address, verificationChannel:"email" }) });
@@ -226,8 +226,8 @@
       resetButton.addEventListener("click", async () => {
         if (resetCompleted) { overlay.remove(); if (recoveredUserId) loginInput.value = recoveredUserId; document.querySelector("#auth-password")?.focus(); return; }
         const newPassword = password.value;
-        if (!/^\\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
-        if (newPassword.length < 15 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 15 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
+        if (!/^\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
+        if (newPassword.length < 15 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 15 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
         if (newPassword !== confirm.value) { message.style.color = "#ff8b91"; message.textContent = "Wpisane hasła nie są identyczne."; confirm.focus(); return; }
         setBusy(resetButton, true, "Zmiana hasła…"); message.textContent = "";
         try {
