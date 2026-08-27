@@ -145,6 +145,25 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: { userId: user.userId, displayName: user.displayName } });
   }
 
+  if (request.method === "POST" && url.pathname === "/auth/request-password-reset" && accounts?.requestPasswordReset) {
+    const body = await readJson(request);
+    const source = clientSource(request);
+    trafficGuard.assertCredentialAttempt({ request, accountId: body.userId, endpoint: "reset-request" });
+    const rateKey = `${source}:reset-request:${String(body.userId ?? "").toLowerCase()}`;
+    loginRateLimiter.assertAllowed(rateKey);
+    await botDefense.verifyIfRequired({ source, accountId: body.userId, endpoint: "reset-request", token: body.challengeToken });
+    try {
+      await accounts.requestPasswordReset(body);
+      loginRateLimiter.recordSuccess(rateKey);
+      botDefense.recordSuccess({ source, accountId: body.userId });
+      return sendJson(response, 200, { ok: true, message: "Jeżeli podane dane pasują do konta, kod odzyskiwania został wysłany." });
+    } catch (error) {
+      loginRateLimiter.recordFailure(rateKey);
+      botDefense.recordFailure({ source, accountId: body.userId, endpoint: "reset-request" });
+      throw error;
+    }
+  }
+
   if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
     const body = await readJson(request);
     const source = clientSource(request);
