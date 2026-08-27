@@ -191,6 +191,7 @@
   function installPasswordRecovery() {
     const trigger = document.querySelector("#forgot-password");
     const loginInput = document.querySelector('#auth-form [name="userId"]');
+    const pendingKey = "gracz-password-recovery-pending";
     if (!trigger || !loginInput) return;
     trigger.addEventListener("click", () => {
       if (document.querySelector("#password-recovery-overlay")) return;
@@ -234,6 +235,7 @@
         try {
           const response = await fetch("/auth/request-password-reset", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:address, verificationChannel:"email" }) });
           const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się wysłać kodu.");
+          sessionStorage.setItem(pendingKey, JSON.stringify({ email: address, stage: "code" }));
           stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = "Jeżeli adres jest przypisany do Twojego konta, kod został wysłany e-mailem."; code.focus();
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
       });
@@ -255,6 +257,7 @@
           const response = await fetch("/auth/reset-password", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:email.value.trim().toLowerCase(), verificationChannel:"email", token:code.value, newPassword }) });
           const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się zmienić hasła.");
           recoveredUserId = String(result.userId || "");
+          sessionStorage.removeItem(pendingKey);
           message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetCompleted = true; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false;
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
       });
@@ -265,9 +268,22 @@
           if (!resetButton.disabled) resetButton.click();
         });
       }
-      close.addEventListener("click", () => overlay.remove()); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.remove(); });
-      stepOne.append(email,requestButton); stepTwo.append(code,passwordField,confirmField,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay); email.focus();
+      close.addEventListener("click", () => { sessionStorage.removeItem(pendingKey); overlay.remove(); });
+      stepOne.append(email,requestButton); stepTwo.append(code,passwordField,confirmField,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay);
+      let pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem(pendingKey) || "null"); } catch { sessionStorage.removeItem(pendingKey); }
+      if (pending?.stage === "code" && typeof pending.email === "string") {
+        email.value = pending.email;
+        stepOne.hidden = true;
+        stepTwo.hidden = false;
+        message.style.color = "#63dda0";
+        message.textContent = "Wpisz otrzymany 6-cyfrowy kod i ustaw nowe hasło.";
+        code.focus();
+      } else {
+        email.focus();
+      }
     });
+    if (sessionStorage.getItem(pendingKey)) trigger.click();
   }
 
   function installActivationDialog() {
