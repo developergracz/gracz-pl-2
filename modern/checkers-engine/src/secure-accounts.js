@@ -152,29 +152,36 @@ export class SecureAccountService {
 
   async requestPasswordReset({ userId, email, phone, verificationChannel = "email" } = {}) {
     await this.ready;
-    let normalizedId;
-    try { normalizedId = normalizeUserId(userId); } catch { return { ok: true }; }
     const channel = normalizeVerificationChannel(verificationChannel);
     const safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
-    if (channel === "email" && !safeEmail) return { ok: true };
-    if (channel === "sms") {
+    let account = null;
+    if (channel === "email") {
+      if (!safeEmail) return { ok: true };
+      const { rows } = await this.pool.query(
+        `SELECT user_id,display_name,email FROM gracz_accounts WHERE lower(email)=lower($1) ORDER BY created_at DESC LIMIT 2`,
+        [safeEmail],
+      );
+      if (rows.length !== 1) return { ok: true };
+      account = rows[0];
+    } else {
+      let normalizedId;
+      try { normalizedId = normalizeUserId(userId); } catch { return { ok: true }; }
       if (!safePhone) return { ok: true };
       if (![process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN, process.env.TWILIO_FROM_NUMBER].every(value => typeof value === "string" && value.trim())) {
         throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
       }
+      const { rows } = await this.pool.query(
+        `SELECT user_id,display_name,phone FROM gracz_accounts WHERE user_id=$1 AND phone=$2 LIMIT 1`,
+        [normalizedId, safePhone],
+      );
+      account = rows[0] || null;
     }
-    const { rows } = await this.pool.query(
-      `SELECT user_id,display_name,email,recovery_email,phone FROM gracz_accounts
-       WHERE user_id=$1 AND (($2='email' AND (lower(email)=lower($3) OR lower(recovery_email)=lower($3))) OR ($2='sms' AND phone=$4))`,
-      [normalizedId, channel, safeEmail, safePhone],
-    );
-    const account = rows[0];
     if (!account) return { ok: true };
     const code = String(randomInt(100000, 1000000));
-    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE user_id=$1 OR expires_at<NOW()`, [normalizedId]);
+    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE user_id=$1 OR expires_at<NOW()`, [account.user_id]);
     await this.pool.query(
       `INSERT INTO gracz_password_reset_tokens(token_hash,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '10 minutes')`,
-      [hashToken(code), normalizedId],
+      [hashToken(code), account.user_id],
     );
     if (channel === "sms") await sendPasswordResetSms({ to: safePhone, displayName: account.display_name, code });
     else await sendPasswordResetEmail({ to: safeEmail, displayName: account.display_name, code });
@@ -194,19 +201,30 @@ export class SecureAccountService {
 
   async resetPasswordWithEmail({ userId, email, phone, verificationChannel = "email", newPassword, token }) {
     await this.ready;
-    if (typeof token !== "string" || (!/^\\d{6}$/.test(token.trim()) && token.length < 32)) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
+    const safeToken = typeof token === "string" ? token.trim() : "";
+    if (!/^\\d{6}$/.test(safeToken) && safeToken.length < 32) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
     validatePassword(newPassword);
-    const normalizedId = normalizeUserId(userId), channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    const channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    let normalizedId = null;
+    if (channel === "sms") normalizedId = normalizeUserId(userId);
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      const { rows } = await client.query(`SELECT t.user_id FROM gracz_password_reset_tokens t JOIN gracz_accounts a ON a.user_id=t.user_id WHERE t.token_hash=$1 AND t.user_id=$2 AND t.used_at IS NULL AND t.expires_at>NOW() AND (($3='email' AND (lower(a.email)=lower($4) OR lower(a.recovery_email)=lower($4))) OR ($3='sms' AND a.phone=$5)) FOR UPDATE`, [hashToken(token), normalizedId, channel, safeEmail, safePhone]);
-      if (!rows[0]) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
+      const { rows } = await client.query(
+        `SELECT t.user_id FROM gracz_password_reset_tokens t
+         JOIN gracz_accounts a ON a.user_id=t.user_id
+         WHERE t.token_hash=$1 AND t.used_at IS NULL AND t.expires_at>NOW()
+         AND (($2='email' AND lower(a.email)=lower($3)) OR ($2='sms' AND t.user_id=$4 AND a.phone=$5))
+         FOR UPDATE OF t`,
+        [hashToken(safeToken), channel, safeEmail, normalizedId, safePhone],
+      );
+      const recoveredId = rows[0]?.user_id;
+      if (!recoveredId) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
       const salt = randomBytes(16), passwordHash = await hashPassword(newPassword, salt, CURRENT_SCRYPT);
-      await client.query(`UPDATE gracz_accounts SET salt=$2,password_hash=$3,password_hash_version=$4 WHERE user_id=$1`, [normalizedId, salt, passwordHash, HASH_VERSION]);
-      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE token_hash=$1`, [hashToken(token)]);
+      await client.query(`UPDATE gracz_accounts SET salt=$2,password_hash=$3,password_hash_version=$4 WHERE user_id=$1`, [recoveredId, salt, passwordHash, HASH_VERSION]);
+      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE token_hash=$1`, [hashToken(safeToken)]);
       await client.query("COMMIT");
-      return { ok: true };
+      return { ok: true, userId: recoveredId };
     } catch (error) { await client.query("ROLLBACK").catch(() => {}); throw error; } finally { client.release(); }
   }
 
