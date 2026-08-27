@@ -54,6 +54,12 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const url = new URL(request.url, "http://localhost");
   assertSameOriginMutation(request);
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
+  if (request.method === "GET" && url.pathname === "/auth/sms-config") {
+    const enabled = [process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN, process.env.TWILIO_FROM_NUMBER]
+      .every(value => typeof value === "string" && value.trim());
+    response.setHeader("Cache-Control", "no-store");
+    return sendJson(response, 200, { enabled });
+  }
   if (request.method === "GET" && url.pathname === "/security/challenge-config") {
     return sendJson(response, 200, { enabled: botDefense.enabled, provider: botDefense.enabled ? "turnstile" : null, siteKey: botDefense.enabled ? botDefense.siteKey : null });
   }
