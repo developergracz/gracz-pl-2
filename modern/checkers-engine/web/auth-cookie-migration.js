@@ -108,12 +108,12 @@
     const legend = document.createElement("legend"); legend.textContent = "Gdzie chcesz otrzymać kod aktywacyjny?"; legend.style.cssText = "padding:0 6px;font-weight:700";
     const emailLabel = document.createElement("label"); emailLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:6px 0;font-weight:500";
     const emailRadio = document.createElement("input"); emailRadio.type = "radio"; emailRadio.name = "verificationChannel"; emailRadio.value = "email"; emailRadio.checked = true; emailLabel.append(emailRadio, document.createTextNode("Kod na adres e-mail"));
-    const smsLabel = document.createElement("label"); smsLabel.style.cssText = emailLabel.style.cssText;
+    let smsEnabled = false; const smsLabel = document.createElement("label"); smsLabel.hidden = true; smsLabel.style.cssText = emailLabel.style.cssText;
     const smsRadio = document.createElement("input"); smsRadio.type = "radio"; smsRadio.name = "verificationChannel"; smsRadio.value = "sms"; smsLabel.append(smsRadio, document.createTextNode("Kod SMS na numer telefonu"));
     const channelHelp = document.createElement("small"); channelHelp.className = "field-help"; channelHelp.textContent = "Ten sam wybrany kanał będzie mógł służyć później do odzyskiwania hasła.";
     channelField.append(legend, emailLabel, smsLabel, channelHelp); emailField.after(phoneField, channelField);
-    const sync = () => { const registering = registerTab.classList.contains("active"); phoneField.hidden = !registering; channelField.hidden = !registering; phoneInput.required = registering && smsRadio.checked; };
-    emailRadio.addEventListener("change", sync); smsRadio.addEventListener("change", sync); new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] }); sync();
+    const sync = () => { const registering = registerTab.classList.contains("active"); if (!smsEnabled) { emailRadio.checked = true; smsRadio.checked = false; } smsLabel.hidden = !smsEnabled; phoneField.hidden = !registering || !smsEnabled || !smsRadio.checked; channelField.hidden = !registering; phoneInput.required = registering && smsEnabled && smsRadio.checked; };
+    emailRadio.addEventListener("change", sync); smsRadio.addEventListener("change", sync); new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] }); sync(); fetch("/auth/sms-config", { headers:{ accept:"application/json" }, cache:"no-store" }).then(response => response.ok ? response.json() : { enabled:false }).then(result => { smsEnabled = result.enabled === true; sync(); }).catch(() => { smsEnabled = false; sync(); });
   }
 
   function installRegistrationDraftPreservation() {
@@ -205,7 +205,7 @@
       const channel = document.createElement("select");
       const emailOption = document.createElement("option"); emailOption.value = "email"; emailOption.textContent = "Wyślij kod na adres e-mail";
       const smsOption = document.createElement("option"); smsOption.value = "sms"; smsOption.textContent = "Wyślij kod SMS na numer telefonu";
-      channel.append(emailOption, smsOption); channelLabel.append(channel);
+      channel.append(emailOption); channelLabel.append(channel); fetch("/auth/sms-config", { headers:{ accept:"application/json" }, cache:"no-store" }).then(response => response.ok ? response.json() : { enabled:false }).then(result => { if (result.enabled === true && ![...channel.options].some(option => option.value === "sms")) channel.append(smsOption); }).catch(() => {});
       const email = document.createElement("input"); email.type = "email"; email.placeholder = "Adres e-mail przypisany do konta"; email.autocomplete = "email";
       const phone = document.createElement("input"); phone.type = "tel"; phone.inputMode = "tel"; phone.placeholder = "Numer telefonu, np. +48 500 600 700"; phone.autocomplete = "tel"; phone.hidden = true;
       const channelHelp = document.createElement("small"); channelHelp.textContent = "SMS jest dostępny tylko wtedy, gdy numer został podany podczas rejestracji."; channelHelp.style.cssText = "color:#7f94a2;font-size:10px;line-height:1.4";
