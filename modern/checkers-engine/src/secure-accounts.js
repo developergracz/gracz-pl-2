@@ -202,7 +202,7 @@ export class SecureAccountService {
   async resetPasswordWithEmail({ userId, email, phone, verificationChannel = "email", newPassword, token }) {
     await this.ready;
     const safeToken = typeof token === "string" ? token.trim() : "";
-    if (!/^\\d{6}$/.test(safeToken) && safeToken.length < 32) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
+    if (!/^\d{6}$/.test(safeToken) && safeToken.length < 32) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
     validatePassword(newPassword);
     const channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
     let normalizedId = null;
