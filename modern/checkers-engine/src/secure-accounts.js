@@ -178,10 +178,19 @@ export class SecureAccountService {
     }
     if (!account) return { ok: true };
     const code = String(randomInt(100000, 1000000));
-    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE user_id=$1 OR expires_at<NOW()`, [account.user_id]);
+    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE expires_at<NOW()`);
     await this.pool.query(
       `INSERT INTO gracz_password_reset_tokens(token_hash,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '10 minutes')`,
       [hashToken(code), account.user_id],
+    );
+    await this.pool.query(
+      `DELETE FROM gracz_password_reset_tokens
+       WHERE user_id=$1 AND token_hash NOT IN (
+         SELECT token_hash FROM gracz_password_reset_tokens
+         WHERE user_id=$1 AND used_at IS NULL AND expires_at>NOW()
+         ORDER BY created_at DESC LIMIT 3
+       )`,
+      [account.user_id],
     );
     if (channel === "sms") await sendPasswordResetSms({ to: safePhone, displayName: account.display_name, code });
     else await sendPasswordResetEmail({ to: safeEmail, userId: account.user_id, displayName: account.display_name, code });
@@ -222,7 +231,7 @@ export class SecureAccountService {
       if (!recoveredId) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
       const salt = randomBytes(16), passwordHash = await hashPassword(newPassword, salt, CURRENT_SCRYPT);
       await client.query(`UPDATE gracz_accounts SET salt=$2,password_hash=$3,password_hash_version=$4 WHERE user_id=$1`, [recoveredId, salt, passwordHash, HASH_VERSION]);
-      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE token_hash=$1`, [hashToken(safeToken)]);
+      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL`, [recoveredId]);
       await client.query("COMMIT");
       return { ok: true, userId: recoveredId };
     } catch (error) { await client.query("ROLLBACK").catch(() => {}); throw error; } finally { client.release(); }
