@@ -281,7 +281,13 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     if (request.method === "GET") return sendJson(response, 200, { rooms: lobby.listRooms() });
     if (request.method === "POST") {
       const body = await readJson(request);
-      return sendJson(response, 201, lobby.createRoom({ ownerId: user.userId, ownerName: user.displayName, roomName: body.roomName }));
+      return sendJson(response, 201, lobby.createRoom({
+        ownerId: user.userId,
+        ownerName: user.displayName,
+        roomName: body.roomName,
+        gameType: body.gameType,
+        maxPlayers: body.maxPlayers,
+      }));
     }
   }
   const lobbyMatch = lobby && url.pathname.match(/^\/lobby\/rooms\/([a-zA-Z0-9_-]{1,128})\/join$/);
