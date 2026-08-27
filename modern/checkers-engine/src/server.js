@@ -385,7 +385,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
   const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
   let content = await readFile(path);
   if (injectHomepageExtras) {
-    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script><script src="/settings-link.js" defer></script></body>');
+    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js?v=20260827-six-digit-code-1" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script><script src="/settings-link.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
   response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" });
