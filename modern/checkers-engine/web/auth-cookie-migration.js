@@ -223,7 +223,9 @@
           stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = result.message || "Jeżeli dane są prawidłowe, kod został wysłany."; code.focus();
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
       });
+      let resetCompleted = false;
       resetButton.addEventListener("click", async () => {
+        if (resetCompleted) { overlay.remove(); loginInput.value = user.value.trim(); document.querySelector("#auth-password")?.focus(); return; }
         const newPassword = password.value;
         if (!/^\\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
         if (newPassword.length < 15 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 15 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
@@ -232,7 +234,7 @@
         try {
           const response = await fetch("/auth/reset-password", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ userId:user.value.trim(), email:email.value.trim().toLowerCase(), token:code.value, newPassword }) });
           const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się zmienić hasła.");
-          message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false; resetButton.onclick = () => { overlay.remove(); loginInput.value = user.value.trim(); document.querySelector("#auth-password")?.focus(); };
+          message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetCompleted = true; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false;
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
       });
       close.addEventListener("click", () => overlay.remove()); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.remove(); });
