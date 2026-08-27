@@ -205,8 +205,8 @@
       const requestButton = document.createElement("button"); requestButton.type = "button"; requestButton.textContent = "Wyślij kod odzyskiwania";
       const stepTwo = document.createElement("div"); stepTwo.hidden = true; stepTwo.style.cssText = "display:grid;gap:12px";
       const code = document.createElement("input"); code.type = "text"; code.inputMode = "numeric"; code.maxLength = 6; code.placeholder = "6-cyfrowy kod"; code.autocomplete = "one-time-code"; code.addEventListener("input", () => { code.value = code.value.replace(/\D/g, "").slice(0, 6); });
-      const password = document.createElement("input"); password.type = "password"; password.minLength = 15; password.maxLength = 128; password.placeholder = "Nowe hasło — minimum 15 znaków"; password.autocomplete = "new-password";
-      const confirm = document.createElement("input"); confirm.type = "password"; confirm.minLength = 15; confirm.maxLength = 128; confirm.placeholder = "Powtórz nowe hasło"; confirm.autocomplete = "new-password";
+      const password = document.createElement("input"); password.type = "password"; password.minLength = 14; password.maxLength = 128; password.placeholder = "Nowe hasło — minimum 14 znaków"; password.autocomplete = "new-password";
+      const confirm = document.createElement("input"); confirm.type = "password"; confirm.minLength = 14; confirm.maxLength = 128; confirm.placeholder = "Powtórz nowe hasło"; confirm.autocomplete = "new-password";
       const resetButton = document.createElement("button"); resetButton.type = "button"; resetButton.textContent = "Ustaw nowe hasło";
       const message = document.createElement("p"); message.setAttribute("role", "alert"); message.style.cssText = "min-height:20px;margin:4px 0 0;color:#ff8b91;font-size:12px;line-height:1.45";
       for (const input of [email,code,password,confirm]) input.style.cssText = "box-sizing:border-box;width:100%;padding:12px 13px;border:1px solid #3b5060;border-radius:8px;background:#071017;color:#fff;font:inherit";
@@ -250,7 +250,7 @@
         if (resetCompleted) { overlay.remove(); if (recoveredUserId) loginInput.value = recoveredUserId; document.querySelector("#auth-password")?.focus(); return; }
         const newPassword = password.value;
         if (!/^\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
-        if (newPassword.length < 15 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 15 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
+        if (newPassword.length < 14 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 14 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
         if (newPassword !== confirm.value) { message.style.color = "#ff8b91"; message.textContent = "Wpisane hasła nie są identyczne."; confirm.focus(); return; }
         setBusy(resetButton, true, "Zmiana hasła…"); message.textContent = "";
         try {
