@@ -154,18 +154,19 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   if (request.method === "POST" && url.pathname === "/auth/request-password-reset" && accounts?.requestPasswordReset) {
     const body = await readJson(request);
     const source = clientSource(request);
-    trafficGuard.assertCredentialAttempt({ request, accountId: body.userId, endpoint: "reset-request" });
-    const rateKey = `${source}:reset-request:${String(body.userId ?? "").toLowerCase()}`;
+    const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
+    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset-request" });
+    const rateKey = `${source}:reset-request:${recoveryId}`;
     loginRateLimiter.assertAllowed(rateKey);
-    await botDefense.verifyIfRequired({ source, accountId: body.userId, endpoint: "reset-request", token: body.challengeToken });
+    await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset-request", token: body.challengeToken });
     try {
       await accounts.requestPasswordReset(body);
       loginRateLimiter.recordSuccess(rateKey);
-      botDefense.recordSuccess({ source, accountId: body.userId });
-      return sendJson(response, 200, { ok: true, message: "Jeżeli podane dane pasują do konta, kod odzyskiwania został wysłany." });
+      botDefense.recordSuccess({ source, accountId: recoveryId });
+      return sendJson(response, 200, { ok: true, message: "Jeżeli adres e-mail pasuje do jednego konta, kod odzyskiwania został wysłany." });
     } catch (error) {
       loginRateLimiter.recordFailure(rateKey);
-      botDefense.recordFailure({ source, accountId: body.userId, endpoint: "reset-request" });
+      botDefense.recordFailure({ source, accountId: recoveryId, endpoint: "reset-request" });
       throw error;
     }
   }
@@ -173,20 +174,22 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
     const body = await readJson(request);
     const source = clientSource(request);
-    trafficGuard.assertCredentialAttempt({ request, accountId: body.userId, endpoint: "reset" });
-    const rateKey = `${source}:reset:${String(body.userId ?? "").toLowerCase()}`;
+    const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
+    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset" });
+    const rateKey = `${source}:reset:${recoveryId}`;
     loginRateLimiter.assertAllowed(rateKey);
-    await botDefense.verifyIfRequired({ source, accountId: body.userId, endpoint: "reset", token: body.challengeToken });
+    await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset", token: body.challengeToken });
     try {
-      await accounts.resetPasswordWithEmail(body);
-      if (authSessions) await authSessions.revokeAll(String(body.userId ?? "").toLowerCase());
+      const result = await accounts.resetPasswordWithEmail(body);
+      const recoveredUserId = String(result?.userId ?? body.userId ?? "").trim().toLowerCase();
+      if (authSessions && recoveredUserId) await authSessions.revokeAll(recoveredUserId);
       loginRateLimiter.recordSuccess(rateKey);
-      botDefense.recordSuccess({ source, accountId: body.userId });
+      botDefense.recordSuccess({ source, accountId: recoveryId });
       clearSessionCookie(response);
-      return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Wszystkie wcześniejsze sesje zostały zakończone." });
+      return sendJson(response, 200, { ok: true, userId: recoveredUserId, message: "Hasło zostało zmienione. Wszystkie wcześniejsze sesje zostały zakończone." });
     } catch (error) {
       loginRateLimiter.recordFailure(rateKey);
-      botDefense.recordFailure({ source, accountId: body.userId, endpoint: "reset" });
+      botDefense.recordFailure({ source, accountId: recoveryId, endpoint: "reset" });
       throw error;
     }
   }
