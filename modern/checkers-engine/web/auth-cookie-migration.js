@@ -221,6 +221,11 @@
           stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = "Jeżeli adres jest przypisany do jednego konta, kod został wysłany e-mailem."; code.focus();
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
       });
+      email.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        if (!requestButton.disabled) requestButton.click();
+      });
       let resetCompleted = false;
       let recoveredUserId = "";
       resetButton.addEventListener("click", async () => {
