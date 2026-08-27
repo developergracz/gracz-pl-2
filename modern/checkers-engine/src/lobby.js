@@ -44,7 +44,9 @@ export class LobbyService{
     const room=this.#rooms.get(roomId);if(!room)throw new LobbyError("Pokój nie istnieje.","ROOM_NOT_FOUND");if(room.status!=="waiting")throw new LobbyError("Pokój nie oczekuje na gracza.","ROOM_NOT_JOINABLE");if(room.seats.some(seat=>seat?.id===playerId))throw new LobbyError("Ten gracz już siedzi przy tym stole.","DUPLICATE_PLAYER");
     const freeSeat=room.seats.findIndex(seat=>seat===null);if(freeSeat<0)throw new LobbyError("Przy tym stole nie ma wolnych miejsc.","ROOM_FULL");room.seats[freeSeat]={id:playerId,name:normalizeDisplayName(playerName)};
     if(room.seats.every(Boolean)){
+      const previousStatus=room.status,previousGameId=room.gameId;
       room.status="playing";
+      try{
       if(room.gameType==="thousand"){
         if(!this.thousandService)throw new LobbyError("Silnik Tysiąca nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");room.gameId=`thousand-${room.roomId}`;await this.thousandService.createGame({gameId:room.gameId,players:room.seats.map(seat=>({userId:seat.id,displayName:seat.name}))});
       }else if(room.gameType==="gomoku"){
@@ -52,6 +54,7 @@ export class LobbyService{
       }else{
         room.gameId=`game-${room.roomId}`;await this.sessionStore.create(createGameSession({gameId:room.gameId,whitePlayerId:room.seats[0].id,blackPlayerId:room.seats[1].id}));
       }
+      }catch(error){room.seats[freeSeat]=null;room.status=previousStatus;room.gameId=previousGameId;throw error}
     }
     return publicRoom(room)
   }
