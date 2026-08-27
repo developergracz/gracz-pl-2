@@ -218,7 +218,7 @@
         try {
           const response = await fetch("/auth/request-password-reset", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:address, verificationChannel:"email" }) });
           const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się wysłać kodu.");
-          stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = "Jeżeli adres jest przypisany do jednego konta, kod został wysłany e-mailem."; code.focus();
+          stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = "Jeżeli adres jest przypisany do konta, kod został wysłany e-mailem. Wiadomość może dotrzeć w ciągu kilku minut — sprawdź również Spam."; code.focus();
         } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
       });
       email.addEventListener("keydown", event => {
