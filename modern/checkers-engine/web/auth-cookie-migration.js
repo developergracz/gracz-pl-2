@@ -178,29 +178,14 @@
   function installTermsCheckboxOpen() {
     const terms = document.querySelector("#terms");
     const termsLink = document.querySelector("#terms-link");
-    const registerTab = document.querySelector('[data-mode="register"]');
-    if (!terms || !termsLink || !registerTab) return;
+    if (!terms || !termsLink) return;
 
-    if (!termsAcceptedForRestoredDraft) terms.checked = false;
-
-    const openTerms = (event) => {
-      if (!registerTab.classList.contains("active")) return;
-      if (termsAcceptedForRestoredDraft && terms.checked) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      terms.checked = false;
-      sessionStorage.setItem(TERMS_PENDING_KEY, localStorage.getItem("gracz-terms-accepted-at") || "");
-      termsLink.target = "_self";
-      termsLink.removeAttribute("rel");
-      termsLink.click();
-    };
-
-    terms.addEventListener("click", openTerms, true);
-
-    new MutationObserver(() => {
-      if (!registerTab.classList.contains("active")) return;
-      if (!termsAcceptedForRestoredDraft) terms.checked = false;
-    }).observe(registerTab, { attributes: true, attributeFilter: ["class"] });
+    // Użytkownik akceptuje regulamin bezpośrednio w formularzu.
+    // Sam link pozostaje dostępny w nowej karcie i nie blokuje checkboxa.
+    terms.disabled = false;
+    terms.removeAttribute("aria-disabled");
+    termsLink.target = "_blank";
+    termsLink.rel = "noopener";
   }
 
   function installActivationDialog() {
