@@ -65,3 +65,12 @@
   background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,22px 22px,22px 22px;
   background-position:center;
 }
+
+
+.gomoku-mode-overlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;padding:22px;background:rgba(2,7,11,.9);backdrop-filter:blur(8px)}
+.gomoku-mode-dialog{position:relative;width:min(620px,94vw);padding:32px;border:1px solid #28516b;border-radius:16px;background:linear-gradient(180deg,#101d27,#08131b);box-shadow:0 30px 90px #000c;color:#eef6f8;text-align:center}
+.gomoku-mode-dialog h2{margin:0 42px 10px;font-size:27px;color:#fff}.gomoku-mode-dialog p{margin:0 auto 24px;max-width:490px;color:#9fb2bd;font-size:14px;line-height:1.6}
+.gomoku-mode-close{position:absolute;right:14px;top:11px;width:36px;height:36px;border:0;background:transparent;color:#a9bcc7;font-size:29px;cursor:pointer}
+.gomoku-mode-actions{display:grid;grid-template-columns:1fr 1fr;gap:13px}.gomoku-mode-actions a{display:flex;min-height:82px;align-items:center;justify-content:center;flex-direction:column;gap:6px;border-radius:10px;text-decoration:none;font-weight:900;font-size:16px}
+.gomoku-mode-actions a small{font-size:11px;font-weight:500;opacity:.82}.gomoku-mode-local{border:1px solid #39708e;background:#102d40;color:#bfe7ff}.gomoku-mode-online{border:1px solid #168a51;background:linear-gradient(180deg,#1bd774,#0da755);color:#04150b}
+@media(max-width:560px){.gomoku-mode-actions{grid-template-columns:1fr}.gomoku-mode-dialog{padding:28px 18px}}
