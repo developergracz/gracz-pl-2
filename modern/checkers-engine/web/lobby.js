@@ -368,3 +368,26 @@ document.querySelector('[data-placeholder="shop"]')?.addEventListener("click", (
   clearTimeout(notice.hideTimer);
   notice.hideTimer = setTimeout(() => { notice.hidden = true; }, 3000);
 });
+
+
+function installGomokuModeChooser() {
+  const entry = document.querySelector("#open-gomoku-mode");
+  if (!entry || entry.dataset.modeChooser === "ready") return;
+  entry.dataset.modeChooser = "ready";
+  entry.addEventListener("click", (event) => {
+    event.preventDefault();
+    if (document.querySelector(".gomoku-mode-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.className = "gomoku-mode-overlay";
+    overlay.innerHTML = `<section class="gomoku-mode-dialog" role="dialog" aria-modal="true" aria-labelledby="gomoku-mode-title"><button class="gomoku-mode-close" type="button" aria-label="Zamknij">×</button><h2 id="gomoku-mode-title">Jak chcesz zagrać w Gomoku?</h2><p>Wybierz wersję lokalną dla dwóch osób przy jednym urządzeniu albo grę online z innymi użytkownikami przy stołach Gomoku.</p><div class="gomoku-mode-actions"><a class="gomoku-mode-local" href="/gomoku.html?mode=local">WERSJA LOKALNA<small>2 osoby na jednym urządzeniu</small></a><a class="gomoku-mode-online" href="/gomoku-players.html">GRA ONLINE<small>Lista stołów i inni gracze</small></a></div></section>`;
+    const close = () => { document.removeEventListener("keydown", onKey); overlay.remove(); entry.focus(); };
+    const onKey = (keyEvent) => { if (keyEvent.key === "Escape") close(); };
+    overlay.querySelector(".gomoku-mode-close").addEventListener("click", close);
+    overlay.addEventListener("click", (clickEvent) => { if (clickEvent.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.append(overlay);
+    overlay.querySelector(".gomoku-mode-local").focus();
+  });
+}
+
+installGomokuModeChooser();
