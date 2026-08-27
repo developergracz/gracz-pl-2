@@ -188,6 +188,22 @@
     termsLink.rel = "noopener";
   }
 
+  function preventDuplicateRecoveryEmailAutofill() {
+    const form = document.querySelector("#auth-form");
+    const email = form?.elements?.email;
+    const recovery = form?.elements?.recoveryEmail;
+    if (!email || !recovery) return;
+    recovery.setAttribute("autocomplete", "off");
+    const clearCopiedAddress = () => {
+      const primary = String(email.value || "").trim().toLowerCase();
+      const secondary = String(recovery.value || "").trim().toLowerCase();
+      if (primary && secondary === primary && document.activeElement !== recovery) recovery.value = "";
+    };
+    email.addEventListener("input", () => setTimeout(clearCopiedAddress, 0));
+    recovery.addEventListener("input", () => setTimeout(clearCopiedAddress, 0));
+    for (const delay of [0, 150, 600]) setTimeout(clearCopiedAddress, delay);
+  }
+
   function installPasswordRecovery() {
     const trigger = document.querySelector("#forgot-password");
     const loginInput = document.querySelector('#auth-form [name="userId"]');
@@ -335,6 +351,7 @@
     installRegistrationVerificationFields();
     installRegistrationDraftPreservation();
     installTermsCheckboxOpen();
+    preventDuplicateRecoveryEmailAutofill();
     installPasswordRecovery();
     installActivationDialog();
     openRequestedAuthMode();
