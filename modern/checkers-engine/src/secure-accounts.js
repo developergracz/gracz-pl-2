@@ -150,16 +150,23 @@ export class SecureAccountService {
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
 
-  async requestPasswordReset({ userId, email } = {}) {
+  async requestPasswordReset({ userId, email, phone, verificationChannel = "email" } = {}) {
     await this.ready;
     let normalizedId;
     try { normalizedId = normalizeUserId(userId); } catch { return { ok: true }; }
-    const safeEmail = cleanEmail(email);
-    if (!safeEmail) return { ok: true };
+    const channel = normalizeVerificationChannel(verificationChannel);
+    const safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    if (channel === "email" && !safeEmail) return { ok: true };
+    if (channel === "sms") {
+      if (!safePhone) return { ok: true };
+      if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_FROM_NUMBER) {
+        throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
+      }
+    }
     const { rows } = await this.pool.query(
-      `SELECT user_id,display_name,email,recovery_email FROM gracz_accounts
-       WHERE user_id=$1 AND (lower(email)=lower($2) OR lower(recovery_email)=lower($2))`,
-      [normalizedId, safeEmail],
+      `SELECT user_id,display_name,email,recovery_email,phone FROM gracz_accounts
+       WHERE user_id=$1 AND (($2='email' AND (lower(email)=lower($3) OR lower(recovery_email)=lower($3))) OR ($2='sms' AND phone=$4))`,
+      [normalizedId, channel, safeEmail, safePhone],
     );
     const account = rows[0];
     if (!account) return { ok: true };
@@ -169,8 +176,9 @@ export class SecureAccountService {
       `INSERT INTO gracz_password_reset_tokens(token_hash,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '10 minutes')`,
       [hashToken(code), normalizedId],
     );
-    await sendPasswordResetEmail({ to: safeEmail, displayName: account.display_name, code });
-    return { ok: true };
+    if (channel === "sms") await sendPasswordResetSms({ to: safePhone, displayName: account.display_name, code });
+    else await sendPasswordResetEmail({ to: safeEmail, displayName: account.display_name, code });
+    return { ok: true, channel };
   }
 
   async createPasswordResetToken({ userId, email, phone, verificationChannel = "email" }) {
@@ -216,6 +224,23 @@ export class SecureAccountService {
   updatePrivateMessage(...args) { return this.base.updatePrivateMessage(...args); }
   deletePrivateMessage(...args) { return this.base.deletePrivateMessage(...args); }
   async close() { await Promise.allSettled([typeof this.base.close === "function" ? this.base.close() : Promise.resolve(), this.pool.end()]); }
+}
+
+async function sendPasswordResetSms({ to, displayName, code }) {
+  const accountSid = String(process.env.TWILIO_ACCOUNT_SID ?? "").trim();
+  const authToken = String(process.env.TWILIO_AUTH_TOKEN ?? "").trim();
+  const from = String(process.env.TWILIO_FROM_NUMBER ?? "").trim();
+  if (!accountSid || !authToken || !from) throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
+  const name = String(displayName || "Graczu").trim().slice(0, 40);
+  const body = `gracz.pl: ${name}, kod odzyskiwania hasła: ${code}. Kod jest ważny 10 minut. Nie udostępniaj go nikomu.`;
+  const form = new URLSearchParams({ To: to, From: from, Body: body });
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
+    method: "POST",
+    headers: { authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`, "utf8").toString("base64")}`, "content-type": "application/x-www-form-urlencoded" },
+    body: form,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
 }
 
 async function sendPasswordResetEmail({ to, displayName, code }) {
