@@ -188,6 +188,58 @@
     termsLink.rel = "noopener";
   }
 
+  function installPasswordRecovery() {
+    const trigger = document.querySelector("#forgot-password");
+    const loginInput = document.querySelector('#auth-form [name="userId"]');
+    if (!trigger || !loginInput) return;
+    trigger.addEventListener("click", () => {
+      if (document.querySelector("#password-recovery-overlay")) return;
+      const overlay = document.createElement("div"); overlay.id = "password-recovery-overlay"; overlay.style.cssText = "position:fixed;inset:0;z-index:22000;display:grid;place-items:center;padding:24px;background:rgba(2,7,11,.92);backdrop-filter:blur(9px)";
+      const card = document.createElement("section"); card.style.cssText = "position:relative;width:min(520px,94vw);max-height:calc(100vh - 48px);overflow:auto;padding:32px;border:1px solid #304d68;border-radius:16px;background:linear-gradient(180deg,#101b24,#0a1219);box-shadow:0 30px 90px #000c;color:#eef5f9";
+      const close = document.createElement("button"); close.type = "button"; close.textContent = "×"; close.setAttribute("aria-label", "Zamknij"); close.style.cssText = "position:absolute;right:15px;top:12px;border:0;background:transparent;color:#a9bac6;font-size:30px;cursor:pointer";
+      const title = document.createElement("h2"); title.textContent = "Odzyskaj dostęp do konta"; title.style.cssText = "margin:0 38px 8px 0";
+      const intro = document.createElement("p"); intro.textContent = "Podaj login i adres e-mail przypisany do konta. Wyślemy 6-cyfrowy kod ważny przez 10 minut."; intro.style.cssText = "color:#9eb0bc;line-height:1.55;font-size:13px";
+      const stepOne = document.createElement("div"); stepOne.style.cssText = "display:grid;gap:12px";
+      const user = document.createElement("input"); user.type = "text"; user.value = String(loginInput.value || ""); user.placeholder = "Login"; user.autocomplete = "username";
+      const email = document.createElement("input"); email.type = "email"; email.placeholder = "Adres e-mail"; email.autocomplete = "email";
+      const requestButton = document.createElement("button"); requestButton.type = "button"; requestButton.textContent = "Wyślij kod odzyskiwania";
+      const stepTwo = document.createElement("div"); stepTwo.hidden = true; stepTwo.style.cssText = "display:grid;gap:12px";
+      const code = document.createElement("input"); code.type = "text"; code.inputMode = "numeric"; code.maxLength = 6; code.placeholder = "6-cyfrowy kod"; code.autocomplete = "one-time-code"; code.addEventListener("input", () => { code.value = code.value.replace(/\\D/g, "").slice(0, 6); });
+      const password = document.createElement("input"); password.type = "password"; password.minLength = 15; password.maxLength = 128; password.placeholder = "Nowe hasło — minimum 15 znaków"; password.autocomplete = "new-password";
+      const confirm = document.createElement("input"); confirm.type = "password"; confirm.minLength = 15; confirm.maxLength = 128; confirm.placeholder = "Powtórz nowe hasło"; confirm.autocomplete = "new-password";
+      const resetButton = document.createElement("button"); resetButton.type = "button"; resetButton.textContent = "Ustaw nowe hasło";
+      const message = document.createElement("p"); message.setAttribute("role", "alert"); message.style.cssText = "min-height:20px;margin:4px 0 0;color:#ff8b91;font-size:12px;line-height:1.45";
+      for (const input of [user,email,code,password,confirm]) input.style.cssText = "width:100%;padding:12px 13px;border:1px solid #3b5060;border-radius:8px;background:#071017;color:#fff;font:inherit";
+      for (const button of [requestButton,resetButton]) button.style.cssText = "width:100%;padding:13px;border:0;border-radius:8px;background:linear-gradient(180deg,#3f7aee,#2854bc);color:#fff;font-weight:900;cursor:pointer";
+      const setBusy = (button, busy, text) => { button.disabled = busy; if (text) button.textContent = text; };
+      requestButton.addEventListener("click", async () => {
+        const userId = user.value.trim(), address = email.value.trim().toLowerCase();
+        if (!/^[a-zA-Z0-9._-]{3,32}$/.test(userId)) { message.textContent = "Wpisz prawidłowy login."; user.focus(); return; }
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(address)) { message.textContent = "Wpisz prawidłowy adres e-mail."; email.focus(); return; }
+        setBusy(requestButton, true, "Wysyłanie kodu…"); message.textContent = "";
+        try {
+          const response = await fetch("/auth/request-password-reset", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ userId, email:address }) });
+          const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się wysłać kodu.");
+          stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = result.message || "Jeżeli dane są prawidłowe, kod został wysłany."; code.focus();
+        } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
+      });
+      resetButton.addEventListener("click", async () => {
+        const newPassword = password.value;
+        if (!/^\\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
+        if (newPassword.length < 15 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 15 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
+        if (newPassword !== confirm.value) { message.style.color = "#ff8b91"; message.textContent = "Wpisane hasła nie są identyczne."; confirm.focus(); return; }
+        setBusy(resetButton, true, "Zmiana hasła…"); message.textContent = "";
+        try {
+          const response = await fetch("/auth/reset-password", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ userId:user.value.trim(), email:email.value.trim().toLowerCase(), token:code.value, newPassword }) });
+          const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się zmienić hasła.");
+          message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false; resetButton.onclick = () => { overlay.remove(); loginInput.value = user.value.trim(); document.querySelector("#auth-password")?.focus(); };
+        } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
+      });
+      close.addEventListener("click", () => overlay.remove()); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.remove(); });
+      stepOne.append(user,email,requestButton); stepTwo.append(code,password,confirm,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay); user.focus();
+    });
+  }
+
   function installActivationDialog() {
     const error = document.querySelector("#auth-error"), form = document.querySelector("#auth-form");
     if (!error || !form) return;
@@ -237,6 +289,7 @@
     installRegistrationVerificationFields();
     installRegistrationDraftPreservation();
     installTermsCheckboxOpen();
+    installPasswordRecovery();
     installActivationDialog();
     openRequestedAuthMode();
   };
