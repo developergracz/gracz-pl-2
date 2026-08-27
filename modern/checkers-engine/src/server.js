@@ -71,6 +71,15 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
   }
 
+  if (request.method === "GET" && url.pathname === "/auth/availability" && accounts?.checkAvailability) {
+    response.setHeader("Cache-Control", "no-store");
+    const availability = await accounts.checkAvailability({
+      userId: url.searchParams.get("userId"),
+      displayName: url.searchParams.get("displayName"),
+    });
+    return sendJson(response, 200, { availability });
+  }
+
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
     const body = await readJson(request);
     const source = clientSource(request);
