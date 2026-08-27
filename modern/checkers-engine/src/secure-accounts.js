@@ -158,10 +158,10 @@ export class SecureAccountService {
     if (channel === "email") {
       if (!safeEmail) return { ok: true };
       const { rows } = await this.pool.query(
-        `SELECT user_id,display_name,email FROM gracz_accounts WHERE lower(email)=lower($1) ORDER BY created_at DESC LIMIT 2`,
+        `SELECT user_id,display_name,email FROM gracz_accounts WHERE lower(email)=lower($1) ORDER BY created_at DESC LIMIT 1`,
         [safeEmail],
       );
-      if (rows.length !== 1) return { ok: true };
+      if (!rows.length) return { ok: true };
       account = rows[0];
     } else {
       let normalizedId;
