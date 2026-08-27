@@ -49,6 +49,24 @@ export class SecureAccountService {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_password_reset_user_idx ON gracz_password_reset_tokens(user_id, created_at DESC)`);
   }
 
+  async checkAvailability({ userId, displayName } = {}) {
+    await this.ready;
+    const normalizedId = typeof userId === "string" && /^[a-zA-Z0-9._-]{3,32}$/.test(userId.trim())
+      ? userId.trim().toLowerCase()
+      : null;
+    const safeDisplayName = typeof displayName === "string" && displayName.trim().length >= 2 && displayName.trim().length <= 40
+      ? displayName.trim().replace(/\s+/g, " ")
+      : null;
+    const { rows } = await this.pool.query(`SELECT
+      CASE WHEN $1::text IS NULL THEN NULL ELSE EXISTS(SELECT 1 FROM gracz_accounts WHERE user_id=$1) END AS user_taken,
+      CASE WHEN $2::text IS NULL THEN NULL ELSE EXISTS(SELECT 1 FROM gracz_accounts WHERE lower(display_name)=lower($2)) END AS display_taken`,
+      [normalizedId, safeDisplayName]);
+    return Object.freeze({
+      userId: normalizedId === null ? null : !rows[0].user_taken,
+      displayName: safeDisplayName === null ? null : !rows[0].display_taken,
+    });
+  }
+
   async register(input) {
     await this.ready;
     assertRegistrationLooksHuman(input);
