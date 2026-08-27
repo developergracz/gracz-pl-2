@@ -150,6 +150,29 @@ export class SecureAccountService {
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
 
+  async requestPasswordReset({ userId, email } = {}) {
+    await this.ready;
+    let normalizedId;
+    try { normalizedId = normalizeUserId(userId); } catch { return { ok: true }; }
+    const safeEmail = cleanEmail(email);
+    if (!safeEmail) return { ok: true };
+    const { rows } = await this.pool.query(
+      `SELECT user_id,display_name,email,recovery_email FROM gracz_accounts
+       WHERE user_id=$1 AND (lower(email)=lower($2) OR lower(recovery_email)=lower($2))`,
+      [normalizedId, safeEmail],
+    );
+    const account = rows[0];
+    if (!account) return { ok: true };
+    const code = String(randomInt(100000, 1000000));
+    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE user_id=$1 OR expires_at<NOW()`, [normalizedId]);
+    await this.pool.query(
+      `INSERT INTO gracz_password_reset_tokens(token_hash,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '10 minutes')`,
+      [hashToken(code), normalizedId],
+    );
+    await sendPasswordResetEmail({ to: safeEmail, displayName: account.display_name, code });
+    return { ok: true };
+  }
+
   async createPasswordResetToken({ userId, email, phone, verificationChannel = "email" }) {
     await this.ready;
     const normalizedId = normalizeUserId(userId), channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
@@ -163,7 +186,7 @@ export class SecureAccountService {
 
   async resetPasswordWithEmail({ userId, email, phone, verificationChannel = "email", newPassword, token }) {
     await this.ready;
-    if (typeof token !== "string" || token.length < 32) throw new AccountError("Reset hasła wymaga jednorazowego kodu lub tokenu weryfikacyjnego.", "RECOVERY_TOKEN_REQUIRED");
+    if (typeof token !== "string" || (!/^\\d{6}$/.test(token.trim()) && token.length < 32)) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
     validatePassword(newPassword);
     const normalizedId = normalizeUserId(userId), channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
     const client = await this.pool.connect();
@@ -193,6 +216,14 @@ export class SecureAccountService {
   updatePrivateMessage(...args) { return this.base.updatePrivateMessage(...args); }
   deletePrivateMessage(...args) { return this.base.deletePrivateMessage(...args); }
   async close() { await Promise.allSettled([typeof this.base.close === "function" ? this.base.close() : Promise.resolve(), this.pool.end()]); }
+}
+
+async function sendPasswordResetEmail({ to, displayName, code }) {
+  const name = String(displayName || "Graczu").trim().slice(0, 40) || "Graczu";
+  const text = `Witaj ${name}!\n\nKod odzyskiwania hasła w serwisie gracz.pl: ${code}\n\nKod jest ważny przez 10 minut. Jeśli nie prosiłeś o zmianę hasła, zignoruj tę wiadomość.`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto"><h1>Odzyskiwanie hasła</h1><p>Witaj, ${escapeHtml(name)}. Twój kod odzyskiwania:</p><p style="font-size:34px;font-weight:900;letter-spacing:8px">${escapeHtml(code)}</p><p>Kod jest ważny przez 10 minut. Nigdy nie przekazuj go innej osobie.</p></div>`;
+  const result = await systemMail.send({ to, subject: "gracz.pl — kod odzyskiwania hasła", text, html, purpose: "password-reset" });
+  if (!result.sent) throw new AccountError("Nie udało się wysłać kodu odzyskiwania. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
 }
 
 async function sendVerificationEmail({ to, displayName, code }) {
