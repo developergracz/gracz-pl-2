@@ -151,6 +151,30 @@ test("Gomoku lobby starts one shared game for two independent players", async ()
   assert.equal(gomokuService.view(playing.gameId, "bob").color, "white");
 });
 
+test("room API preserves the requested Gomoku game type", async () => {
+  const store = new MemorySessionStore();
+  const auth = new AuthService({ secret: "a-secure-test-secret-with-at-least-32-characters" });
+  const gomokuService = new GomokuService();
+  const lobby = new LobbyService({ sessionStore: store, gomokuService, idGenerator: () => "gomoku-api-room" });
+  const server = createGameHttpServer({ store, auth, lobby });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const token = auth.issue({ userId: "alice", displayName: "Alicja" });
+    const response = await fetch(`${baseUrl}/lobby/rooms`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ roomName: "Gomoku — Alicja", gameType: "gomoku", maxPlayers: 2 }),
+    });
+    assert.equal(response.status, 201);
+    const room = await response.json();
+    assert.equal(room.gameType, "gomoku");
+    assert.equal(room.maxPlayers, 2);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("lobby rolls back the second Gomoku seat when game startup fails", async () => {
   const store = new MemorySessionStore();
   const brokenService = { createGame() { throw new Error("startup failed"); } };
