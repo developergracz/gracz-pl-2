@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { AuthError, AuthService } from "../src/auth.js";
 import { LobbyService } from "../src/lobby.js";
+import { GomokuService } from "../src/gomoku-service.js";
 import { MemorySessionStore } from "../src/store.js";
 import { createGameHttpServer } from "../src/server.js";
 
@@ -134,4 +135,30 @@ test("two logged-in users create and join a room through the real API", async ()
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("Gomoku lobby starts one shared game for two independent players", async () => {
+  const store = new MemorySessionStore();
+  const gomokuService = new GomokuService();
+  const lobby = new LobbyService({ sessionStore: store, gomokuService, idGenerator: () => "gomoku-room" });
+  const waiting = lobby.createRoom({ ownerId: "alice", ownerName: "Alicja", roomName: "Stół Alicji", gameType: "gomoku" });
+  assert.equal(waiting.status, "waiting");
+  assert.equal(waiting.maxPlayers, 2);
+  const playing = await lobby.joinRoom({ roomId: waiting.roomId, playerId: "bob", playerName: "Robert" });
+  assert.equal(playing.status, "playing");
+  assert.equal(playing.gameId, "gomoku-gomoku-room");
+  assert.equal(gomokuService.view(playing.gameId, "alice").color, "black");
+  assert.equal(gomokuService.view(playing.gameId, "bob").color, "white");
+});
+
+test("lobby rolls back the second Gomoku seat when game startup fails", async () => {
+  const store = new MemorySessionStore();
+  const brokenService = { createGame() { throw new Error("startup failed"); } };
+  const lobby = new LobbyService({ sessionStore: store, gomokuService: brokenService, idGenerator: () => "broken-room" });
+  lobby.createRoom({ ownerId: "alice", ownerName: "Alicja", roomName: "Stół", gameType: "gomoku" });
+  await assert.rejects(() => lobby.joinRoom({ roomId: "broken-room", playerId: "bob", playerName: "Robert" }), /startup failed/);
+  const room = lobby.listRooms()[0];
+  assert.equal(room.status, "waiting");
+  assert.equal(room.filledSeats, 1);
+  assert.equal(room.gameId, null);
 });
