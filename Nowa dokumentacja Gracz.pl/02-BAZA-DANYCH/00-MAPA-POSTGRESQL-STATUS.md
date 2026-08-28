@@ -41,8 +41,13 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Turnieje — `gracz_tournaments` | AS-IS zamknięte na poziomie kodu; DDL/DML, status, formaty i ryzyka startu zweryfikowane |
 | Turnieje — `gracz_tournament_players` | AS-IS zamknięte na poziomie kodu; FK do turnieju, standings, join/leave i race limit/seed zweryfikowane |
 | Turnieje — `gracz_tournament_matches` | AS-IS zamknięte na poziomie kodu; FK do turnieju, pairingi, wynik, awans rund i concurrency zweryfikowane |
-| Pozostałe obszary | do opracowania/weryfikacji |
-| **Łącznie** | **mapa 26 tabel w toku** |
+| Newsletter — `gracz_newsletter_subscribers` | AS-IS zamknięte na poziomie kodu; double opt-in, token hashes, transakcje, FOR UPDATE i retencja zweryfikowane |
+| Newsletter — `newsletter_sources` | AS-IS zamknięte; DDL, CHECK, bootstrap homepage zweryfikowane |
+| Newsletter — `newsletter_subscriber_sources` | AS-IS zamknięte; FK, UNIQUE, source attribution zweryfikowane |
+| Newsletter — `newsletter_consent_history` | AS-IS zamknięte; FK, CHECK, consent lifecycle i ryzyko dedupe concurrency zweryfikowane |
+| Newsletter — `newsletter_events` | AS-IS zamknięte; FK SET NULL, indeksy, lifecycle/security analytics zweryfikowane |
+| **Inwentaryzacja kodowa** | **26/26 tabel zmapowane** |
+| **Formalne zamknięcie ETAPU 1B** | **pozostaje porównanie z produkcją/Renderem i końcowy model match** |
 
 ## Potwierdzony PostgreSQL — Gry
 
@@ -187,10 +192,58 @@ Ryzyka AS-IS: brak transakcji przy create/start/report/advance, race przy join i
 
 Dokument: `08-TURNIEJE-POSTGRESQL-AS-IS.md`.
 
-## Pozostałe obszary
+## Potwierdzony PostgreSQL — Newsletter
 
-Dalsza mapa obejmuje m.in. newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
+### `gracz_newsletter_subscribers`
+- `id BIGSERIAL PRIMARY KEY`,
+- unikalny e-mail i e-mail znormalizowany,
+- preferred nick + częściowy UNIQUE dla aktywnego pending/subscribed,
+- wersja i czas zgody,
+- status lifecycle,
+- hashe tokenów confirmation/position/unsubscribe,
+- 24-godzinny TTL tokenu potwierdzenia,
+- daty sent/confirmed/unsubscribed/created/updated.
+
+`subscribe`, `resendConfirmation` i `confirm` wykorzystują transakcje i `FOR UPDATE`. Wysłanie maila oraz lifecycle analytics odbywają się poza główną transakcją.
+
+### `newsletter_sources`
+- `id BIGSERIAL PRIMARY KEY`,
+- `code UNIQUE`,
+- `source_type` z CHECK,
+- active/timestamps,
+- bootstrap źródła `homepage`.
+
+### `newsletter_subscriber_sources`
+- FK do subskrybenta `ON DELETE RESTRICT`,
+- FK do źródła `ON DELETE RESTRICT`,
+- UNIQUE `(subscriber_id,source_id)`,
+- metadata JSONB i referencje campaign/partner.
+
+### `newsletter_consent_history`
+- FK do subskrybenta `ON DELETE RESTRICT`,
+- action CHECK `granted/confirmed/revoked`,
+- consent type/version/source/time/metadata,
+- indeksy historii,
+- dedupe w kodzie przez `WHERE NOT EXISTS`, bez odpowiadającego potwierdzonego UNIQUE.
+
+### `newsletter_events`
+- opcjonalny FK do subskrybenta `ON DELETE SET NULL`,
+- opcjonalny FK do source `ON DELETE SET NULL`,
+- `event_type`, czas, source/user-agent hashes, metadata JSONB,
+- indeksy po czasie/subscriber/type/source.
+
+Lifecycle source/consent/events jest best-effort po operacji głównej i nie jest atomowy ze zmianą stanu subskrypcji.
+
+Dokument: `09-NEWSLETTER-POSTGRESQL-AS-IS.md`.
+
+## Stan końcowy inwentaryzacji kodowej
+
+Wszystkie 26 tabel objętych mapą zostały zidentyfikowane i udokumentowane na podstawie kodu.
+
+Nie oznacza to jeszcze formalnego zamknięcia ETAPU 1B. Pozostają dwa kroki kontrolne:
+1. porównanie schematu wynikającego z repozytorium z rzeczywistym PostgreSQL na środowisku produkcyjnym/Render,
+2. końcowy model match i rejestr rozbieżności.
 
 ## Kryterium zakończenia ETAPU 1B
 
-ETAP 1B można uznać za zakończony dopiero po udokumentowaniu wszystkich 26 tabel, sprawdzeniu dowodów DDL/DML i oznaczeniu rozbieżności wymagających weryfikacji środowiska.
+ETAP 1B można uznać za zakończony po potwierdzeniu 26/26 tabel, sprawdzeniu produkcyjnego schematu i oznaczeniu wszystkich rozbieżności między kodem a środowiskiem.
