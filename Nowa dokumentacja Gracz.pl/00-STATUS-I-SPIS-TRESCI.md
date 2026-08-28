@@ -4,7 +4,7 @@ Data: 28.08.2026
 
 ## Zasada źródła prawdy
 
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA** oraz **ARCHITEKTURA DOCELOWA**. Punktem odniesienia rozpoczętej analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Punktem odniesienia rozpoczętej analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
 
 ## Stan audytu i architektury
 
@@ -39,25 +39,53 @@ Zatwierdzone i zapisane:
 - macierz migracji rzeczywistych 28 tabel Render: 28/28,
 - rollback/reconciliation/GO-NO-GO: ZATWIERDZONE na poziomie architektonicznym.
 
-Zamknięcie ETAPU 2 nie oznacza wykonania migracji produkcyjnej. Produkcyjne DDL/DML, backfill, writer cutover, migracja workerów/endpointów i wyłączanie legacy należą do kolejnego etapu.
+Zamknięcie ETAPU 2 nie oznacza wykonania migracji produkcyjnej. Produkcyjne DDL/DML, backfill, writer cutover, migracja workerów/endpointów i wyłączanie legacy należą do ETAPU 3.
 
 ### ETAP 3 — plan migracji i przygotowanie wykonania
 
-**STATUS: OTWARTY 28.08.2026.**
+**STATUS: W TRAKCIE od 28.08.2026.**
 
-Pierwszy zakres:
-1. preflight środowiska i danych,
-2. wykonawcza kolejność DDL,
-3. backfill DML i provenance/re-key,
-4. migracja kodu i endpointów,
-5. eventy/outbox i workerzy,
-6. testy/reconciliation,
-7. cutover writerów,
-8. rollback/runbook,
-9. observation window,
-10. contract/deprecate legacy.
+#### Iteracja 1 — Preflight migracji
 
-ETAP 3 musi korzystać z zatwierdzonego PostgreSQL V3 FINAL i macierzy 28/28. Nie zmienia architektury V3 bez jawnego ADR/change-control.
+**STATUS: ROZPOCZĘTA.**
+
+Utworzono:
+- `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
+
+Preflight definiuje 15 bramek przed pierwszym wykonawczym DDL/backfillem:
+- baseline commitów i środowiska,
+- świeży schema snapshot,
+- backup i restore test,
+- row counts/size 28 tabel,
+- PK/UNIQUE/FK/orphan/collision profiling,
+- data-quality/status profiling,
+- writer/reader/endpoint inventory,
+- worker/event/realtime inventory,
+- crypto compatibility,
+- Identity/key mapping,
+- active-state inventory,
+- security/credentials/permissions,
+- lock/capacity assessment,
+- maintenance/cutover/feature flags,
+- rollback i GO/NO-GO.
+
+Ważne: Preflight nie jest jeszcze oznaczony jako GO, ponieważ część kryteriów wymaga świeżych dowodów z rzeczywistego Render PostgreSQL i środowiska wykonawczego.
+
+#### Następny krok ETAPU 3
+
+**Environment Baseline + 28-table Data Profile.**
+
+Do zebrania:
+1. świeży schema dump,
+2. pełny backup + restore evidence,
+3. aktualne counts i sizes 28/28,
+4. duplicate/orphan/collision reports,
+5. krytyczne profile Identity/Game/Tournament/Messaging/Chat/Moderation/Newsletter,
+6. inventory produkcyjnych writerów/readers/endpoints/workers.
+
+Dopiero po zamknięciu tych dowodów przechodzimy do wykonawczego **Planu DDL migracji**.
+
+ETAP 3 korzysta z zatwierdzonego PostgreSQL V3 FINAL i macierzy 28/28. Nie zmienia architektury V3 bez jawnego ADR/change-control.
 
 ## Spis dokumentacji
 
@@ -89,6 +117,9 @@ ETAP 3 musi korzystać z zatwierdzonego PostgreSQL V3 FINAL i macierzy 28/28. Ni
 - `02-BAZA-DANYCH/18-POSTGRESQL-V3-ITERACJA-7-MODERATION.md`
 - `02-BAZA-DANYCH/19-POSTGRESQL-V3-ITERACJA-8-MACIERZ-MIGRACJI-28-AS-IS-DO-V3.md`
 - `02-BAZA-DANYCH/20-POSTGRESQL-V3-FINAL.md`
+
+### Migracja — ETAP 3
+- `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
 
 ## Reguła dalszej pracy
 
