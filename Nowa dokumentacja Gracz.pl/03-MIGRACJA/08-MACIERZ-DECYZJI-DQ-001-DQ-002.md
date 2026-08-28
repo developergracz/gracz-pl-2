@@ -1,7 +1,7 @@
 # ETAP 3 — Macierz decyzji DQ-001 / DQ-002
 
 Data: 28.08.2026  
-Status: **DQ-001 DECISION-READY / DQ-002 EVIDENCE COMPLETE — BUSINESS RESOLUTION REQUIRED / BEZ DML / DDL V3 NO-GO**
+Status: **DQ-001 DECISION-READY / DQ-002 DECISION-READY — 5 KONT POTWIERDZONYCH JAKO TESTOWE / BEZ DML / DDL V3 NO-GO**
 
 ## 1. DQ-001
 
@@ -18,32 +18,35 @@ Root cause potwierdzony: EPHEMERAL-GUEST został dopuszczony przez lukę authori
 - W chwili capture żadne z pięciu kont nie miało aktywnej auth session.
 - Wszystkie pięć ma 0 references w Social/Global Chat/Moderation, Tournament i badanym Games footprint.
 
-## 3. Macierz per-account
+## 3. Decyzja biznesowa właściciela projektu
 
-| Konto | Grupa | Evidence | Decyzja techniczna | Co pozostaje |
-|---|---|---|---|---|
-| `gamerpl` | A | unverified; reg code 1; auth 0; audit 0; newsletter pending | `REQUIRE-EMAIL-CHANGE` dla aktywnego konta albo `LEGACY-IDENTITY` po potwierdzeniu | status biznesowy / kontrola kanału |
-| `gamerde` | A | unverified; reset 1; reg code 1; audit: pending-registration + 5 login | `REQUIRE-EMAIL-CHANGE` dla aktywnego konta albo `LEGACY-IDENTITY` po potwierdzeniu | status biznesowy / kontrola kanału |
-| `gracz.pl` | B | verified; 3 sent messages; 4 login audit events; newsletter subscribed | zachować identity/history; `KEEP-CANONICAL` tylko po potwierdzeniu prawa do kanału, inaczej `REQUIRE-EMAIL-CHANGE` | wybór canonical w grupie B |
-| `gamerpolska` | B | verified; activation; 5 login + logout; newsletter subscribed | zachować identity/history; `KEEP-CANONICAL` tylko po potwierdzeniu prawa do kanału, inaczej `REQUIRE-EMAIL-CHANGE` | wybór canonical w grupie B |
-| `gamer` | B | verified; 4 historical sessions, 0 active; activation; login/logout; newsletter subscribed | zachować identity/history; `KEEP-CANONICAL` tylko po potwierdzeniu prawa do kanału, inaczej `REQUIRE-EMAIL-CHANGE` | wybór canonical w grupie B |
+Właściciel projektu potwierdził 28.08.2026, że wszystkie pięć kont objętych DQ-002 zostało utworzonych testowo podczas prac nad Gracz.pl.
 
-## 4. Zasada decyzji DQ-002
+To rozstrzyga brakujący status biznesowy. Informacja ta nie zmienia historycznego evidence ani nie oznacza automatycznej zgody na fizyczne usunięcie danych.
 
-Wspólny normalized-email nie dowodzi wspólnej osoby. Dlatego:
+## 4. Macierz per-account po decyzji biznesowej
 
-- **MERGE — NIE na obecnym evidence.**
-- **DELETE — NIE na obecnym evidence.**
-- Maksymalnie jedno konto w każdej grupie może zachować konfliktujący canonical normalized-email.
-- Pozostałe aktywne konta: `REQUIRE-EMAIL-CHANGE`.
-- `LEGACY-IDENTITY` tylko po osobnym potwierdzeniu statusu test/legacy/inactive.
-- Collector nie może sam wskazać właściciela kanału kontaktowego; wymaga to biznesowego/ownership resolution.
+| Konto | Grupa | Evidence skrót | Klasyfikacja |
+|---|---|---|---|
+| `gamerpl` | A | unverified; reg code 1; auth 0; audit 0; newsletter pending | `LEGACY-IDENTITY` — TEST |
+| `gamerde` | A | unverified; reset 1; reg code 1; audit login footprint | `LEGACY-IDENTITY` — TEST |
+| `gracz.pl` | B | verified; 3 sent messages; 4 login audit events; newsletter subscribed | `LEGACY-IDENTITY` — TEST; zachować provenance/history do czasu kontrolowanej remediation |
+| `gamerpolska` | B | verified; activation/login lineage; newsletter subscribed | `LEGACY-IDENTITY` — TEST |
+| `gamer` | B | verified; 4 historical sessions; activation/login/logout; newsletter subscribed | `LEGACY-IDENTITY` — TEST |
 
-## 5. Status bramki
+## 5. Formalna decyzja DQ-002
 
-DQ-002 nie jest już zablokowane brakiem technicznego evidence. Jest zablokowane **wyłącznie przed mutacją** brakiem ostatecznego business/ownership resolution dla każdej grupy.
+- Wszystkie pięć kont: **LEGACY-IDENTITY / TEST**.
+- `KEEP-CANONICAL`: NIE jest wymagane dla żadnego z pięciu kont jako konta produkcyjnego.
+- `REQUIRE-EMAIL-CHANGE`: NIE jest wymagane jako polityka aktywnego użytkownika, ponieważ konta zostały biznesowo sklasyfikowane jako testowe.
+- `MERGE`: NIE.
+- Automatyczny `DELETE`: NIE.
+- Historyczne zależności, wiadomości, audit, newsletter/recovery/session artefacts muszą zostać uwzględnione przez przyszłą kontrolowaną remediation.
 
-**DML: NIE WYKONYWAĆ.**  
-**DDL V3: NO-GO.**
+## 6. Status bramki
 
-Po zatwierdzeniu per-account ownership/status można zamrozić decision record i przygotować reviewowalny DML remediation. Pozostałe gate'y preflight nadal obowiązują.
+**DQ-002: DECISION-READY.** Techniczne evidence i wymagane rozstrzygnięcie biznesowe są kompletne.
+
+Nie wykonano DML. Następny krok ETAPU 3 to przygotowanie reviewowalnej remediation DML oraz zamknięcie pozostałych gate'ów preflight przed jakąkolwiek mutacją produkcji.
+
+**DDL V3: NO-GO** — zamknięcie decyzji DQ-002 nie zamyka pozostałych bramek preflight.
