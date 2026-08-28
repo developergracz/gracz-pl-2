@@ -28,9 +28,19 @@ Zatwierdzone i zapisane:
 
 **STATUS: W TRAKCIE od 28.08.2026.**
 
+## FORMALNY GATE PRODUKCYJNEGO DDL
+
+**DDL V3: NO-GO.**
+
+Bezpośrednie blokery Data Quality:
+- **DQ-001** — orphan friendship / nierozstrzygnięty principal `guest-*`,
+- **DQ-002** — 2 grupy kolizji normalized-email obejmujące 5 kont; decyzje per-account niezatwierdzone.
+
+Do czasu zamknięcia tych blockerów oraz pozostałych bramek preflight nie wolno uruchamiać produkcyjnego executable `EXPAND`, `BACKFILL`, nowych V3 `UNIQUE/FK/NOT NULL` ani destructive remediation.
+
 #### Iteracja 1 — Preflight migracji
 
-**STATUS: W TRAKCIE — DATA QUALITY ZPROFILOWANE, BLOCKERY ZIDENTYFIKOWANE I CZĘŚCIOWO SKORELOWANE HISTORYCZNIE.**
+**STATUS: W TRAKCIE — DATA QUALITY ZPROFILOWANE, BLOCKERY ZIDENTYFIKOWANE, HISTORYCZNIE SKORELOWANE I OBJĘTE MACIERZĄ DECYZYJNĄ.**
 
 Zapisane artefakty:
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
@@ -42,6 +52,7 @@ Zapisane artefakty:
 - `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
+- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
 
 Potwierdzone środowiskowo:
 - Render PostgreSQL 18.4,
@@ -68,9 +79,15 @@ Potwierdzone w writerach i historii AS-IS:
 
 Wniosek: DQ-002 ma silnie potwierdzoną chronologię pre-guard. DQ-001 ma potwierdzoną lukę istniejącą od momentu wprowadzenia friendship, ale źródło principalu `guest-*` nadal wymaga korelacji historycznej. Newsletter pozostaje hybrydą legacy/new i wymaga zachowania provenance.
 
+Macierz `08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` formalizuje bezpieczne warianty remediation bez wykonywania DML:
+- DQ-001: `MAP-TO-CANONICAL`, `LEGACY-QUARANTINE`, ewentualny późniejszy `DELETE-AS-INVALID`,
+- DQ-002: `KEEP-CANONICAL`, `REQUIRE-EMAIL-CHANGE`, `LEGACY-IDENTITY`, wyjątkowo `MERGE` przy silnym dowodzie,
+- domyślnie: **nie scalać kont** i **nie przepinać guest principal bez jednoznacznego dowodu**.
+
 Otwarte krytyczne bramki:
-- decyzja/remediation DQ-001 i DQ-002 + rerun weryfikacyjny,
-- guest principal/deploy correlation DQ-001 oraz finalna per-account decyzja DQ-002,
+- domknięcie źródła `guest-*` i decyzja DQ-001,
+- privacy-safe per-account evidence + decyzja dla wszystkich 5 kont DQ-002,
+- rerun data-quality po remediation,
 - świeży schema snapshot/diff w punkcie wykonania,
 - pełny backup + restore test,
 - pełny writer/reader/endpoint/worker inventory,
@@ -101,8 +118,10 @@ Produkcja pozostaje **NO-GO**, dopóki otwarte blockery Preflight nie zostaną z
 #### Następny krok
 
 Następna praca wykonawcza:
-- domknąć historyczną korelację principalu `guest-*`,
-- przygotować zatwierdzaną decyzję remediation dla DQ-001 i per-account dla DQ-002 bez automatycznego MERGE/DELETE,
+- domknąć kodowe/historyczne źródło principalu `guest-*`,
+- zebrać privacy-safe evidence per account dla `gamerpl`, `gamerde`, `gracz.pl`, `gamerpolska`, `gamer`,
+- uzupełnić i zatwierdzić decyzję remediation per rekord w macierzy `08`,
+- dopiero potem przygotować osobny **PLAN DML REMEDIATION** — nadal bez automatycznego wykonania na produkcji,
 - równolegle kontynuować pełny writer/reader/endpoint/worker inventory.
 
 Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable EXPAND.
@@ -149,6 +168,7 @@ Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable
 - `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
+- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
 
 ## Reguła dalszej pracy
 
