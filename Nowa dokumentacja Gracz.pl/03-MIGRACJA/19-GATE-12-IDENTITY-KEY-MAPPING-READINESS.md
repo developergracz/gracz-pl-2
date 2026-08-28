@@ -1,7 +1,7 @@
 # ETAP 3 — Bramka 12: Identity / key mapping readiness
 
 Data: 29.08.2026  
-Status: **OPEN / REVIEW — NIE JEST JESZCZE PASS**
+Status: **BLOCKED / REVIEW — FRESH COLLECTOR: 1 CANONICAL CANDIDATE Z PUSTYM E-MAILEM**
 
 ## 1. Cel
 
@@ -17,6 +17,7 @@ Bramka 12 ma udowodnić, że każda tożsamość i każdy credential/lifecycle a
 - `01-PREFLIGHT-MIGRACJI.md` — Bramka 12 = Identity/key mapping readiness,
 - `08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`,
 - `11-DQ-002-PER-ACCOUNT-EVIDENCE.md`,
+- `20-GATE-12-FRESH-RUNTIME-EVIDENCE-20260829.md`,
 - PostgreSQL V3 Iteracja 4 Identity/Role/Audit,
 - PostgreSQL V3 Iteracja 6 Messaging/Chat,
 - aktualny kod `postgres-accounts.js`, `secure-accounts.js`, `auth-sessions.js`, `rbac-service.js`,
@@ -100,6 +101,8 @@ Fresh collector musi potwierdzić, że wszystkie canonical candidates mają:
 - poprawną długość hash,
 - brak NULL/empty credential material.
 
+Fresh capture 29.08.2026 potwierdził: 6 candidates, version 1 = 1, version 2 = 5, unsupported = 0, invalid salt = 0, invalid hash = 0. Ten warunek jest **PASS**.
+
 ## 5. Email / status mapping
 
 ### Decyzja G12-004 — email
@@ -109,12 +112,20 @@ Dla canonical candidates:
 
 Przed backfill musi być 0 collision groups po wyłączeniu jawnie quarantined DQ-002 identities i 0 pustych emaili dla rekordów, które mają trafić do `v3.users`.
 
+Fresh capture 29.08.2026 potwierdził:
+- normalized email collision groups = **0**,
+- blank email canonical candidates = **1**.
+
+Wąski read-only drill-down wykazał, że blocker dotyczy `user_id='gracz'`. Konto jest `contact_verified=true`, ma poprawny credential oraz historyczne zależności: 5 odebranych prywatnych wiadomości, 7 referencji audit i 1 friendship row. Nie wolno automatycznie wymyślać e-maila, usuwać konta ani klasyfikować go jako test bez decyzji biznesowej.
+
 ### Decyzja G12-005 — status initial mapping
 Jeżeli fresh evidence nie ujawni dodatkowego persistent account-state modelu:
 - `contact_verified = TRUE` -> `status='active'`,
 - `contact_verified = FALSE` -> `status='pending'`.
 
 `suspended/banned/deleted` nie są generowane z domysłu. Jeśli Gate 13 / Moderation evidence wykaże egzekwowalny stan wymagający takiego mapowania, status mapping zostanie rozszerzony przed backfill.
+
+Fresh capture: canonical `active=6`, canonical `pending=0`; quarantine verified=3, unverified=2.
 
 ## 6. Auth sessions
 
@@ -127,7 +138,7 @@ Preferowany cutover: **drain / re-login** zamiast migracji istniejących sesji, 
 
 Jeżeli migracja aktywnych sesji okaże się wymagana, powstaje osobny zatwierdzony mapping/token-hash contract przed DML.
 
-Wcześniejszy capture wykazał 0 aktywnych sesji, ale Bramka 12/13 wymaga fresh recheck przed cutover.
+Fresh capture 29.08.2026: sessions total=3, active now=0, canonical active=0, quarantine active=0. Warunek readiness dla drain/re-login jest **PASS** na moment capture.
 
 ## 7. Password reset / registration codes
 
@@ -141,6 +152,12 @@ Tokeny i kody są krótkotrwałe i AS-IS przechowuje ich hash, nie plaintext.
 
 `registration_codes` pozostaje warunkową funkcją produktu również w `02-identity-audit-v3.sql`; przed produkcyjnym GO trzeba potwierdzić, czy feature pozostaje aktywny.
 
+Fresh capture 29.08.2026:
+- reset tokens total=1, active=0,
+- registration codes total=2, active=0.
+
+Readiness dla expiry/drain jest **PASS** na moment capture.
+
 ## 8. MFA
 
 Bramka 11 potwierdziła:
@@ -149,6 +166,8 @@ Bramka 11 potwierdziła:
 
 ### Decyzja G12-008
 Brak bieżącego MFA backfillu. `v3.mfa_credentials` pozostaje docelową strukturą dla nowych danych. Nie wymyślamy historycznego credential material.
+
+Fresh capture 29.08.2026 ponownie potwierdził `gracz_mfa=0`.
 
 Jeżeli fresh snapshot przed cutover pokaże `gracz_mfa > 0`, Bramka 12 wraca do REVIEW i wymaga ponownego crypto/key mapping check dla tych rekordów.
 
@@ -171,7 +190,7 @@ V3 rozdziela:
 - legacy role history zachowuje `source_system/source_record_id` i nie jest deduplikowana na podstawie podobnego timestampu/tekstu,
 - role przypisane quarantined identities nie tworzą aktywnego privileged V3 usera; zachowujemy provenance historyczne.
 
-Fresh collector musi potwierdzić 0 nieznanych role values.
+Fresh collector 29.08.2026 potwierdził current role rows=0 i unknown role values=0. Warunek jest **PASS**.
 
 ## 10. Bramka 12 — kryteria PASS
 
@@ -188,16 +207,39 @@ Bramka 12 może przejść do **PASS** dopiero, gdy fresh read-only evidence potw
 9. aktywne sessions/reset/registration workflow mają jawny drain/migrate plan,
 10. counts mapowania `MIGRATE/QUARANTINE/SKIP-WITH-APPROVAL` sumują się do pełnego source setu.
 
-## 11. Następny artefakt
+Fresh collector potwierdził PASS dla 1, 2, 3, 5, 6, 7, 8 i bieżącego drain state dla 9. Kryterium **4 nie jest spełnione** z powodu pustego e-maila konta `gracz`; dlatego końcowa reconciliation z kryterium 10 również nie może zostać zatwierdzona jako finalna przed decyzją dla tego konta.
 
-Uruchomić wyłącznie read-only collector Bramy 12, który raportuje counts/statusy i nie wypisuje:
-- emaili,
-- password hash/salt,
-- tokenów/kodów,
-- MFA secretów,
-- danych prywatnych wiadomości.
+## 11. Fresh evidence — wynik wykonania
 
-Do czasu wyniku collector + reconciliation:
+Pełny privacy-safe wynik zapisano w:
 
-**BRAMKA 12 = OPEN / REVIEW.**  
+`20-GATE-12-FRESH-RUNTIME-EVIDENCE-20260829.md`.
+
+Najważniejsze wartości:
+- source accounts: **11**,
+- approved DQ-002 quarantine: **5**,
+- canonical candidates: **6**,
+- invalid user IDs: **0**,
+- username collision groups: **0**,
+- canonical email collision groups: **0**,
+- canonical blank email: **1** (`gracz`),
+- unsupported password hash versions: **0**,
+- invalid salt/hash shapes: **0/0**,
+- active sessions/reset/registration workflows: **0/0/0**,
+- MFA rows: **0**,
+- unknown role values: **0**.
+
+## 12. Decyzja i następny krok
+
+**BRAMKA 12 = BLOCKED / REVIEW.**  
 **PRODUKCYJNY DDL/DML = NO-GO.**
+
+Jedyny obecnie wykazany blocker Gate 12 to `gracz` bez wymaganego e-maila.
+
+Bezpieczne rozstrzygnięcie musi być jedno z dwóch:
+1. `KEEP-CANONICAL` — konto otrzymuje prawidłowy, unikalny i zweryfikowany e-mail normalną ścieżką aplikacyjną/account-management, po czym wykonujemy fresh recheck Gate 12 C + reconciliation;
+2. `LEGACY-IDENTITY / TEST` — wyłącznie po jawnym potwierdzeniu biznesowym; wtedy rozszerzamy quarantine i zachowujemy jego historyczne message/audit/friendship provenance.
+
+Do tego czasu: `gracz = CANONICAL-CANDIDATE / BLOCKED-EMAIL`.
+
+Osobno pozostaje otwarte dokładne porównanie SHA-256 runtime ciphertext ↔ `gracz_restore_test_20260828`; Bramka 11 decryptability pozostaje PASS.
