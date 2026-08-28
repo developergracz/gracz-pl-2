@@ -30,6 +30,8 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Gry — Tysiąc / `gracz_thousand_games` | AS-IS zamknięte; JSONB, revision i optimistic locking zweryfikowane |
 | Gry — Gomoku | AS-IS zamknięte; brak persistence PostgreSQL, stan wyłącznie w pamięci procesu |
 | Gry — legacy `prefix_*` | materiał porównawczy MySQL; DDL legacy do weryfikacji, nie liczyć automatycznie do mapy PostgreSQL |
+| Wiadomości prywatne — `gracz_messages` | DDL/DML, FK, indeksy, szyfrowanie i foldery opracowane |
+| Załączniki wiadomości — `gracz_message_attachments` | DDL/DML, FK 1:1, AES-256-GCM i walidacja plików opracowane |
 | Pozostałe obszary | do opracowania/weryfikacji |
 | **Łącznie** | **mapa 26 tabel w toku** |
 
@@ -62,9 +64,41 @@ Aktualny kod nie tworzy ani nie używa tabeli PostgreSQL dla Gomoku. `GomokuServ
 
 Dokument: `04-GRY-GOMOKU-AS-IS.md`.
 
+## Potwierdzony PostgreSQL — Wiadomości prywatne
+
+### `gracz_messages`
+- `message_id UUID PRIMARY KEY`,
+- `sender_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE`,
+- `recipient_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE`,
+- `subject TEXT NOT NULL` po wykonaniu `ALTER COLUMN`,
+- `body TEXT NOT NULL`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+- `read_at TIMESTAMPTZ`,
+- `recipient_archived BOOLEAN NOT NULL DEFAULT FALSE`,
+- `sender_deleted BOOLEAN NOT NULL DEFAULT FALSE`,
+- `recipient_deleted BOOLEAN NOT NULL DEFAULT FALSE`,
+- indeksy po `(recipient_id, created_at DESC)` i `(sender_id, created_at DESC)`.
+
+Temat i treść są szyfrowane aplikacyjnie przed zapisem.
+
+### `gracz_message_attachments`
+- `message_id UUID PRIMARY KEY REFERENCES gracz_messages(message_id) ON DELETE CASCADE`,
+- `file_name VARCHAR(120) NOT NULL`,
+- `storage_name VARCHAR(80)`,
+- `mime_type VARCHAR(32) NOT NULL`,
+- `file_size INTEGER NOT NULL`,
+- `iv BYTEA NOT NULL`,
+- `auth_tag BYTEA NOT NULL`,
+- `ciphertext BYTEA NOT NULL`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`.
+
+Model jest 1:1 z wiadomością; załączniki są szyfrowane AES-256-GCM.
+
+Dokument: `05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md`.
+
 ## Pozostałe obszary
 
-Dalsza mapa obejmuje m.in. wiadomości, moderację, chat globalny, turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
+Dalsza mapa obejmuje m.in. moderację, chat globalny, turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
 
 ## Kryterium zakończenia ETAPU 1B
 
