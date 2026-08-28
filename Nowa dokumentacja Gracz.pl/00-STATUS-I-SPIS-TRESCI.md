@@ -25,42 +25,45 @@ Ukończone:
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md` — iteracja 3,
 - `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md` — iteracja 4,
 - `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md` — iteracja 5,
-- `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md` — iteracja 6.
+- `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md` — iteracja 6,
+- `02-BAZA-DANYCH/18-POSTGRESQL-V3-ITERACJA-7-MODERATION.md` — iteracja 7.
 
-### PostgreSQL V3 — Iteracja 6: Messaging & Global Chat — ZAKOŃCZONA
+### PostgreSQL V3 — Iteracja 7: Moderation — ZAKOŃCZONA
 
 Zdefiniowano projektowo:
-- odrębny Messaging V3 i Global Chat & Social V3 przy wspólnej infrastrukturze Identity/Outbox/Realtime,
-- `private_messages`, `private_message_user_state`, `private_message_attachments`,
-- szyfrowanie prywatnych wiadomości i key versioning,
-- per-user read/archive/delete state bez przypadkowego kasowania danych drugiej strony,
-- brak `ON DELETE CASCADE users -> private_messages`,
-- `chat_channels`, `chat_topics`, `chat_messages`, `chat_message_events`,
-- złożony FK zabezpieczający topic↔channel,
-- relacyjne `chat_reactions` eliminujące JSONB lost-update,
-- `social_friendships` z kanoniczną nieuporządkowaną parą i DB-level ochroną race A↔B,
-- `chat_reports` jako intake do przyszłego Moderation V3,
-- atomowe mutacje + outbox + idempotency,
-- Realtime Gateway z broker/shared ephemeral store zamiast process-local SSE/presence,
-- migrację wszystkich 6 tabel AS-IS Messaging + Global Chat z zachowaniem szyfrowania/provenance i bez wymyślania brakujących timestampów/relacji.
+- `moderation_cases` jako jednostkę workflow z version/CAS,
+- `moderation_reports` jako kanoniczny intake z provenance,
+- append-only `moderation_actions`,
+- `moderation_sanctions` jako current persistent enforcement state dla mute/ban/restrictions,
+- `moderation_appeals` z pełnym review workflow,
+- `moderation_evidence` z minimalizacją danych i ochroną prywatnych treści,
+- atomowe kontrakty mute/ban/unmute/unban/resolve/appeal w granicy Moderation,
+- cross-context hide/delete jako workflow przez Outbox, bez bezpośredniego zapisu do tabel Chat,
+- global ban jako workflow z Identity, a nie fałszywa jedna transakcja ACID ponad bounded contexts,
+- integrację z RBAC, Audit, Security, Outbox, Idempotency i Realtime,
+- retencję/legal hold oraz monitoring,
+- kontrolowaną migrację `gracz_moderation_decisions`, `gracz_moderation_appeals` i intake `gracz_global_chat_reports`.
 
-Najważniejsza decyzja: prywatne wiadomości nie zostały włączone do `chat_messages`, ponieważ mają inny model bezpieczeństwa, szyfrowania, dostępu i retencji. Wspólna pozostaje infrastruktura, nie tabela domenowa.
+Korekta względem uproszczonego mappingu: legacy decisions i appeals nie są mechanicznie scalane w case. AS-IS decision jest wynikiem filtra, appeal wskazuje decision, a chat report jest osobnym intake. V3 zachowuje tę semantykę i tworzy case tylko według jawnych reguł workflow. AS-IS nie potwierdza persistent ban/mute tables, więc V3 nie backfilluje fikcyjnych sankcji historycznych.
 
 ### Następny krok ETAPU 2
 
-**PostgreSQL V3 — Iteracja 7: Moderation V3.**
+**PostgreSQL V3 — Iteracja 8: końcowa macierz migracji 28 tabel AS-IS -> V3.**
 
 Zakres:
-1. `moderation_cases`,
-2. źródła zgłoszeń/flags/reports,
-3. `moderation_actions`,
-4. sanctions: mute/ban/restrictions,
-5. appeals i review workflow,
-6. integracja z Identity, Chat, Messaging i Audit,
-7. outbox/idempotency,
-8. migracja `gracz_moderation_decisions` i `gracz_moderation_appeals`.
+1. wszystkie 28 tabel rzeczywistego Render PostgreSQL,
+2. mapping tabela -> V3 bounded context/table,
+3. mapping kluczowych kolumn i identyfikatorów,
+4. MIGRATE / TRANSFORM / MERGE / DEPRECATE / ARCHIVE,
+5. reguły provenance i re-key,
+6. orphan/duplicate/conflict handling,
+7. walidacja counts/checksums/invariants,
+8. kolejność backfill/cutover/rollback,
+9. warunki wyłączenia legacy.
 
-Po Moderation V3 pozostanie końcowa macierz migracji kolumna-po-kolumnie z 28 tabel AS-IS do struktur V3 oraz formalne domknięcie modelu PostgreSQL V3 w ETAPIE 2.
+Po Iteracji 8:
+- formalny dokument PostgreSQL V3 FINAL,
+- formalne zamknięcie modelu danych w ETAPIE 2.
 
 ## Spis dokumentacji
 
@@ -87,6 +90,7 @@ Po Moderation V3 pozostanie końcowa macierz migracji kolumna-po-kolumnie z 28 t
 - `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md`
 - `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md`
 - `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md`
+- `02-BAZA-DANYCH/18-POSTGRESQL-V3-ITERACJA-7-MODERATION.md`
 
 ## Reguła dalszej pracy
 
