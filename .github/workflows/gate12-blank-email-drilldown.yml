@@ -5,7 +5,7 @@ on:
     branches:
       - feature/homepage-game-center
     paths:
-      - modern/checkers-engine/src/gate12-runtime-proxy.mjs
+      - modern/checkers-engine/package.json
 
 permissions:
   contents: read
