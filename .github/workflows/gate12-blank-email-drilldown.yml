@@ -1,0 +1,40 @@
+name: Gate 12 blank email drilldown
+
+on:
+  push:
+    branches:
+      - feature/homepage-game-center
+    paths:
+      - modern/checkers-engine/src/gate12-runtime-proxy.mjs
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll privacy-safe blank-email endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://gracz-checkers-test.onrender.com/__g12b_20260829_77070c02e822ae430907a2fa9e154550536eb4f332045c0b'
+          rm -f gate12-blank-email-result.json
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 15 "$url" -o gate12-blank-email-result.json; then
+              if python -c "import json; from pathlib import Path; d=json.loads(Path('gate12-blank-email-result.json').read_text()); assert d.get('test') == 'gate12-blank-email-drilldown-v1' and d.get('readOnly') is True"; then
+                python -c "import json; from pathlib import Path; print(json.dumps(json.loads(Path('gate12-blank-email-result.json').read_text()), indent=2, sort_keys=True))"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo 'Gate 12 blank-email endpoint did not become available' >&2
+          exit 1
+      - name: Upload privacy-safe drilldown
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate12-blank-email-drilldown
+          path: gate12-blank-email-result.json
+          if-no-files-found: error
+          retention-days: 1
