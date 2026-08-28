@@ -47,45 +47,42 @@ Zamknięcie ETAPU 2 nie oznacza wykonania migracji produkcyjnej. Produkcyjne DDL
 
 #### Iteracja 1 — Preflight migracji
 
-**STATUS: ROZPOCZĘTA.**
+**STATUS: W TRAKCIE.**
 
 Utworzono:
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
+- `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
+- `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
+- `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
 
-Preflight definiuje 15 bramek przed pierwszym wykonawczym DDL/backfillem:
-- baseline commitów i środowiska,
-- świeży schema snapshot,
-- backup i restore test,
-- row counts/size 28 tabel,
-- PK/UNIQUE/FK/orphan/collision profiling,
-- data-quality/status profiling,
+#### Potwierdzone dowody środowiskowe
+
+- Render PostgreSQL: **18.4**,
+- rzeczywista liczba tabel: **28/28**,
+- dokładne `COUNT(*)`: **28/28 — PASS**,
+- fizyczne rozmiary tabela/index/TOAST: **28/28 — PASS**,
+- łączna liczba rekordów: **13 865**,
+- `gracz_audit_log`: **13 743** rekordy (~99,1% wszystkich wierszy),
+- łączny fizyczny rozmiar zestawu 28 tabel: około **8,2 MiB**,
+- sekwencje, timestamp ranges, constraint counts i index counts: zebrane.
+
+Wniosek: wolumen jest mały; główne ryzyko migracji jest semantyczne i operacyjne, nie wydajnościowe.
+
+#### Otwarte bramki preflight
+
+Preflight **nie ma jeszcze statusu GO**. Pozostają co najmniej:
+- świeży schema snapshot/diff w punkcie preflight,
+- pełny backup i kontrolowany restore test,
+- duplicate/orphan/collision/data-quality profiling,
+- krytyczne profile Identity/Game/Tournament/Messaging/Chat/Moderation/Newsletter,
 - writer/reader/endpoint inventory,
 - worker/event/realtime inventory,
 - crypto compatibility,
-- Identity/key mapping,
-- active-state inventory,
-- security/credentials/permissions,
-- lock/capacity assessment,
-- maintenance/cutover/feature flags,
-- rollback i GO/NO-GO.
+- active-state/cutover assessment,
+- credential rotation/DB permissions/secret hygiene,
+- rollback/maintenance window i końcowe GO/NO-GO.
 
-Ważne: Preflight nie jest jeszcze oznaczony jako GO, ponieważ część kryteriów wymaga świeżych dowodów z rzeczywistego Render PostgreSQL i środowiska wykonawczego.
-
-#### Następny krok ETAPU 3
-
-**Environment Baseline + 28-table Data Profile.**
-
-Do zebrania:
-1. świeży schema dump,
-2. pełny backup + restore evidence,
-3. aktualne counts i sizes 28/28,
-4. duplicate/orphan/collision reports,
-5. krytyczne profile Identity/Game/Tournament/Messaging/Chat/Moderation/Newsletter,
-6. inventory produkcyjnych writerów/readers/endpoints/workers.
-
-Dopiero po zamknięciu tych dowodów przechodzimy do wykonawczego **Planu DDL migracji**.
-
-ETAP 3 korzysta z zatwierdzonego PostgreSQL V3 FINAL i macierzy 28/28. Nie zmienia architektury V3 bez jawnego ADR/change-control.
+Nie uruchamiamy produkcyjnego DDL/backfillu przed zamknięciem krytycznych blockerów.
 
 ## Spis dokumentacji
 
@@ -120,6 +117,9 @@ ETAP 3 korzysta z zatwierdzonego PostgreSQL V3 FINAL i macierzy 28/28. Nie zmien
 
 ### Migracja — ETAP 3
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
+- `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
+- `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
+- `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
 
 ## Reguła dalszej pracy
 
