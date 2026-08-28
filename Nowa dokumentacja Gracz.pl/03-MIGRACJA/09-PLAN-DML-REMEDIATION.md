@@ -1,7 +1,7 @@
 # ETAP 3 — PLAN DML REMEDIATION
 
 Data: 28.08.2026  
-Status: **DQ-001 DECISION-READY / DQ-002 EVIDENCE COMPLETE — BUSINESS RESOLUTION REQUIRED / BEZ SQL / DDL V3 NO-GO**
+Status: **DQ-001 DECISION-READY / DQ-002 DECISION-READY — WSZYSTKIE 5 KONT TESTOWE / BEZ SQL / DDL V3 NO-GO**
 
 ## 1. Cel
 
@@ -18,44 +18,39 @@ Bezpieczna rama przyszłej remediation DQ-001 i DQ-002. Dokument nie zawiera wyk
 
 ## 3. DQ-001
 
-Decyzja: **LEGACY-QUARANTINE** dla 1 orphan friendship z EPHEMERAL-GUEST. Wykluczyć z aktywnego Social V3; brak guest->account mapping. Fizyczny DELETE wymaga osobnej autoryzacji. Przed DML nadal wymagane backup/restore evidence, writer guard, provenance i postcheck.
+Decyzja: **LEGACY-QUARANTINE** dla 1 orphan friendship z EPHEMERAL-GUEST. Wykluczyć z aktywnego Social V3; brak guest->account mapping. Fizyczny DELETE wymaga osobnej autoryzacji.
 
-## 4. DQ-002 — evidence complete
+## 4. DQ-002 — evidence + decyzja biznesowa kompletne
 
-Collector 11 potwierdził:
+Collector 11 potwierdził techniczny footprint pięciu kont. Właściciel projektu następnie potwierdził, że `gamerpl`, `gamerde`, `gracz.pl`, `gamerpolska` i `gamer` były kontami testowymi utworzonymi podczas prac nad Gracz.pl.
 
-- Grupa A: `gamerpl`, `gamerde` — oba `contact_verified=false`.
-- Grupa B: `gracz.pl`, `gamerpolska`, `gamer` — wszystkie `contact_verified=true`.
-- `gamerpl`: registration code 1, bez auth/audit/messages.
-- `gamerde`: reset token 1, registration code 1, audit pending-registration + 5 login.
-- `gracz.pl`: 3 sent private messages, 4 login audit events.
-- `gamerpolska`: activation verified, 5 login, 1 logout, 1 failed registration event.
-- `gamer`: 4 historyczne sessions, 0 aktywnych; activation verified; login/logout.
-- Wszystkie pięć: 0 Social/Global Chat/Moderation, 0 Tournament, 0 badanych Games references.
-- Newsletter correlation: grupa A wskazuje pending confirmation; grupa B subscribed. To korelacja kanału, nie identity proof.
+Formalna klasyfikacja wszystkich pięciu: **LEGACY-IDENTITY / TEST**.
+
+Nie wykonywać automatycznego MERGE ani DELETE. Konto `gracz.pl` ma historyczne prywatne wiadomości; inne konta mają m.in. audit, recovery, registration, session i newsletter artefacts. Remediation musi zachować provenance i referential/history safety.
 
 ## 5. Decision record per account
 
-| Konto | Grupa | Kierunek remediation | Status |
+| Konto | Grupa | Klasyfikacja | Kierunek przyszłej remediation |
 |---|---|---|---|
-| `gamerpl` | A | aktywne -> `REQUIRE-EMAIL-CHANGE`; test/legacy/inactive -> `LEGACY-IDENTITY` | BUSINESS/OWNERSHIP REQUIRED |
-| `gamerde` | A | aktywne -> `REQUIRE-EMAIL-CHANGE`; test/legacy/inactive -> `LEGACY-IDENTITY` | BUSINESS/OWNERSHIP REQUIRED |
-| `gracz.pl` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
-| `gamerpolska` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
-| `gamer` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
+| `gamerpl` | A | `LEGACY-IDENTITY / TEST` | wyłączyć z aktywnego modelu V3 po precheck; zachować provenance |
+| `gamerde` | A | `LEGACY-IDENTITY / TEST` | jw.; uwzględnić reset/registration artefacts |
+| `gracz.pl` | B | `LEGACY-IDENTITY / TEST` | jw.; obowiązkowo zachować historię wiadomości/provenance |
+| `gamerpolska` | B | `LEGACY-IDENTITY / TEST` | jw.; uwzględnić audit/newsletter lineage |
+| `gamer` | B | `LEGACY-IDENTITY / TEST` | jw.; uwzględnić historyczne sessions/audit/newsletter |
 
-**MERGE i DELETE pozostają niedozwolone na obecnym evidence.**
+`KEEP-CANONICAL` i `REQUIRE-EMAIL-CHANGE` nie są wymagane dla tych pięciu jako aktywnych identity, ponieważ biznesowo potwierdzono ich testowy charakter.
 
-## 6. Co jest potrzebne przed wygenerowaniem wykonywalnego DML
+## 6. Gate'y przed wykonywalnym DML
 
-- dla każdej grupy wskazać maksymalnie jedno konto uprawnione do zachowania obecnego canonical normalized-email,
-- sklasyfikować pozostałe konta jako aktywne (`REQUIRE-EMAIL-CHANGE`) albo potwierdzone test/legacy/inactive (`LEGACY-IDENTITY`),
-- ustalić jednoznaczną politykę password recovery po zmianie,
-- zamrozić decision record,
-- backup + restore test,
-- pre-remediation snapshot,
+Decyzja biznesowa DQ-002 jest zamknięta. Nadal wymagane przed mutacją:
+
+- pełny backup + udokumentowany restore test,
+- świeży pre-remediation snapshot,
 - writer freeze/guard tam, gdzie wymagany,
-- świeży rerun data-quality.
+- jednoznaczna polityka zachowania historycznych zależności/provenance,
+- postcheck i rollback procedure,
+- świeży rerun data-quality,
+- weryfikacja, że stan pięciu kont i ich zależności nie zmienił się od collectora 11.
 
 ## 7. Planowane artefakty wykonawcze
 
@@ -66,11 +61,11 @@ Collector 11 potwierdził:
 5. `09e-rollback-procedure.md`
 6. `09f-remediation-runbook.md`
 
-Nie tworzyć wykonywalnego SQL przed zamknięciem powyższych gate'ów.
+Przygotowanie tych artefaktów może rozpocząć się jako następny krok ETAPU 3, ale ich wykonanie na produkcji pozostaje zabronione do zamknięcia wymaganych gate'ów.
 
 ## 8. Kolejność przyszłego wykonania
 
-Freeze decyzji -> readonly precheck -> backup/restore evidence -> writer control -> DQ-001 quarantine -> verify -> DQ-002 grupa A -> verify -> grupa B -> verify -> global postcheck -> rerun data-quality -> reconciliation -> dopiero ocena V3 DDL gate.
+Freeze decision record -> readonly precheck -> backup/restore evidence -> writer control -> DQ-001 quarantine -> verify -> DQ-002 legacy/test remediation -> verify -> global postcheck -> rerun data-quality -> reconciliation -> dopiero ocena V3 DDL gate.
 
 ## 9. STOP conditions
 
@@ -79,7 +74,7 @@ STOP/ROLLBACK gdy snapshot się zmieni, pojawi się nowy rekord w grupie, zmieni
 ## 10. Formalny status
 
 **DQ-001: DECISION-READY, DML niewykonany.**  
-**DQ-002: EVIDENCE COMPLETE, oczekuje business/ownership resolution przed mutacją.**  
+**DQ-002: DECISION-READY — 5/5 kont `LEGACY-IDENTITY / TEST`, DML niewykonany.**  
 **DDL V3: NO-GO.**
 
 Pozostałe preflight gates nadal obejmują fresh schema snapshot, backup/restore, writer/reader/endpoint/worker inventory, crypto compatibility, active-state/cutover, credential rotation/least privilege oraz rollback/maintenance/final GO-NO-GO.
