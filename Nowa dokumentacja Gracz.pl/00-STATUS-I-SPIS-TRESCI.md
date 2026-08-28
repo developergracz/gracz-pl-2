@@ -31,7 +31,7 @@ Opracowane obszary:
 - gry / Warcaby — `gracz_game_sessions`, AS-IS zamknięte, w tym realne ryzyko lost update i brak single-writer,
 - gry / Tysiąc — `gracz_thousand_games`, AS-IS zamknięte, w tym JSONB, revision i optimistic locking,
 - gry / Gomoku — AS-IS zamknięte jako model pamięciowy; aktualny kod nie posiada persistence PostgreSQL dla tej gry,
-- wiadomości prywatne — `gracz_messages` oraz `gracz_message_attachments`, rdzeń DDL/DML, relacje, szyfrowanie i załączniki opracowane,
+- wiadomości prywatne — `gracz_messages` oraz `gracz_message_attachments`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, relacje, szyfrowanie, załączniki, soft-delete i fizyczny delete po usunięciu przez obie strony,
 - legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
 Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym moderacja, chat globalny, turnieje, newsletter oraz końcowe porównanie z produkcją/model match.
@@ -46,7 +46,7 @@ Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym mod
 - `02-BAZA-DANYCH/02-GRY-WARCABY-POSTGRESQL-AS-IS.md` — Warcaby: legacy SmartFox/MySQL vs modern PostgreSQL, DDL/DML `gracz_game_sessions`, sesja, ranking i concurrency.
 - `02-BAZA-DANYCH/03-GRY-TYSIAC-POSTGRESQL-AS-IS.md` — Tysiąc: `gracz_thousand_games`, JSONB, revision, optimistic locking, API i realtime.
 - `02-BAZA-DANYCH/04-GRY-GOMOKU-AS-IS.md` — Gomoku: model pamięciowy, ruchy, revision w RAM, idempotency requestId, lobby i brak persistence PostgreSQL.
-- `02-BAZA-DANYCH/05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md` — wiadomości prywatne i załączniki: DDL/DML, FK, indeksy, szyfrowanie, foldery, soft-delete i AES-256-GCM.
+- `02-BAZA-DANYCH/05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md` — wiadomości prywatne i załączniki: DDL/DML, FK, indeksy, szyfrowanie, foldery, pełna ścieżka delete i AES-256-GCM.
 
 ## Reguła dalszej pracy
 
