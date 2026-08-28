@@ -4,7 +4,7 @@ Data: 28.08.2026
 
 ## Status
 
-Zweryfikowany fragment audytu AS-IS Warcabów. Źródła: legacy `MoveHandler.java` i `CheckersExtension.java` oraz modern `postgres-session-store.js`, `session.js`, `rankings.js`.
+Zweryfikowany audyt AS-IS Warcabów. Źródła: legacy `MoveHandler.java` i `CheckersExtension.java` oraz modern `postgres-session-store.js`, `session.js`, `rankings.js`, `server.js`.
 
 ## 1. Legacy SmartFox/MySQL
 
@@ -116,23 +116,82 @@ Ranking korzysta z identyfikatorów graczy, statusu i zwycięzcy zapisanych w JS
 
 Potwierdzone: `state` jest `TEXT`, lecz ranking rzutuje je na `jsonb`; pokazany DDL nie ma CHECK poprawności JSON ani indeksu na status/winner. Istnieje indeks po `updated_at DESC`.
 
-## 7. Concurrency i integralność
+## 7. Concurrency i model zapisu — potwierdzone przez `server.js`
+
+Wyższa warstwa została sprawdzona. Dla operacji na grze serwer wykonuje najpierw:
+
+```js
+let session = await store.get(gameId);
+```
+
+Następnie niezależne ścieżki HTTP wykonują read-modify-write:
+
+```js
+// ruch
+const result = submitMove(session, ...);
+await store.save(result.session);
+
+// chat
+session = sendChatMessage(session, ...);
+await store.save(session);
+
+// akcja gry: resign/draw/undo/block
+session = submitGameAction(session, ...);
+await store.save(session);
+
+// disconnect
+session = disconnectPlayer(session, playerId);
+await store.save(session);
+
+// reconnect
+const result = reconnectPlayer(session, playerId);
+await store.save(result.session);
+```
+
+Po zapisie wykonywany jest osobno `realtime.publish(...)`.
 
 ### POTWIERDZONE
-- `save()` nie ma revision/optimistic lockingu w SQL.
-- zapis tego samego `game_id` ma semantykę last-write-wins na poziomie store.
-- sesja ma aplikacyjną deduplikację `requestId`.
-- integralność struktury sesji jest głównie egzekwowana przez warstwę aplikacji.
-- pojedynczy upsert jest pojedynczą operacją SQL.
 
-### WYMAGA WERYFIKACJI
-- czy wyższa warstwa serializuje wszystkie zapisy jednej sesji (single-writer/match actor lub odpowiednik),
-- czy możliwy jest równoległy read-modify-write i lost update,
-- czy istnieją dodatkowe `ALTER TABLE`,
-- czy istnieje migracja danych z `prefix_*` do `gracz_game_sessions`,
-- czy istnieją inne zależności po `game_id`.
+- Nie ma match-actora ani single-writer per `gameId` w analizowanej ścieżce.
+- Nie ma kolejki per gra, mutexa ani blokady serializującej modyfikacje jednej sesji.
+- Każde żądanie HTTP pobiera snapshot przez `store.get(gameId)` i następnie zapisuje nowy pełny snapshot.
+- `PostgresSessionStore.save()` nie sprawdza `revision` ani poprzedniej wersji.
+- Deduplikacja `requestId` chroni przed ponownym przetworzeniem tego samego requestu ruchu, ale nie chroni przed dwoma różnymi równoległymi requestami bazującymi na tej samej wersji sesji.
+- `realtime.publish(...)` jest wykonywany po zapisie DB i nie jest częścią transakcji z PostgreSQL.
 
-## 8. Legacy vs Modern
+### POTWIERDZONE RYZYKO LOST UPDATE
+
+Możliwy jest scenariusz:
+
+```text
+Request A -> GET state S0
+Request B -> GET state S0
+Request A -> modyfikacja -> S1 -> SAVE
+Request B -> modyfikacja -> S2 -> SAVE
+```
+
+Drugi zapis może nadpisać pełny `state` zapisany przez pierwszy request, ponieważ upsert ma semantykę last-write-wins i nie sprawdza wersji.
+
+Dotyczy to nie tylko dwóch ruchów, ale potencjalnie także konfliktów pomiędzy:
+- ruch ↔ chat,
+- ruch ↔ disconnect/reconnect,
+- ruch ↔ resign/draw/undo/block,
+- dwoma różnymi akcjami gry.
+
+Nie oznacza to, że konflikt wystąpi w każdym żądaniu; oznacza, że aktualny kod nie ma mechanizmu, który gwarantowałby jego wykluczenie.
+
+## 8. Integralność i atomiczność realtime
+
+Pojedynczy upsert sesji jest atomowy w PostgreSQL, ale zapis stanu i publikacja realtime są dwiema osobnymi operacjami:
+
+```text
+store.save(session)
+-> realtime.publish(session, event)
+```
+
+Kod nie pokazuje Transactional Outbox ani innego atomowego połączenia trwałego zapisu z publikacją zdarzenia. W przypadku awarii pomiędzy tymi krokami DB może zawierać nowy stan, którego klienci nie otrzymają przez bieżącą publikację realtime.
+
+## 9. Legacy vs Modern
 
 Legacy: trzy tabele `prefix_*`, ruch tekstowy i część stanu w pamięci SmartFox.
 
@@ -140,12 +199,14 @@ Modern: `gracz_game_sessions`, skonsolidowany snapshot JSON, historia eventów, 
 
 Legacy MySQL nie jest automatycznie częścią mapy 26 tabel PostgreSQL; służy jako materiał porównawczy/migracyjny.
 
-## 9. Wnioski audytowe — klasyfikacja ostrożna
+## 10. Wnioski audytowe
 
-### CRITICAL — potencjalne / do potwierdzenia wyższą warstwą
-- Możliwy lost update przy równoległym read-modify-write, ponieważ store nie posiada revision/optimistic lockingu. Nie klasyfikować jako potwierdzony incydent bez analizy callerów `save()`.
+### CRITICAL
+- **Potwierdzone ryzyko lost update**: model `GET -> modyfikacja -> save pełnego snapshotu` nie ma single-writer, mutexa ani optimistic lockingu.
+- Równoległe różne requesty mogą bazować na tym samym stanie i ostatni zapis może nadpisać wcześniejszą zmianę.
 
 ### HIGH
+- Zapis PostgreSQL i `realtime.publish()` nie są jedną operacją atomową; brak potwierdzonego Outbox.
 - Integralność domeny gry jest głównie aplikacyjna; schemat SQL nie waliduje struktury `state`.
 - Ranking zależy od rzutowania `TEXT` do `jsonb`.
 
@@ -155,8 +216,17 @@ Legacy MySQL nie jest automatycznie częścią mapy 26 tabel PostgreSQL; służy
 - Brak osobnych relacyjnych struktur ruchów utrudnia bezpośrednią analitykę SQL.
 
 ### LOW / obserwacja
-- Model `TEXT` + `state::jsonb` działa funkcjonalnie, lecz wymaga dalszej oceny pod kątem docelowej skali i utrzymania.
+- Model `TEXT` + `state::jsonb` działa funkcjonalnie, lecz wymaga oceny docelowej skali i utrzymania.
 
-## 10. Następny krok
+## 11. Elementy nadal wymagające weryfikacji
 
-Przed zamknięciem Warcabów należy przeanalizować wyższą warstwę wywołującą `PostgresSessionStore.save()` i ustalić model współbieżności/single-writer. Następnie można zamknąć podsekcję Warcabów i przejść do kolejnej gry, w tym `gracz_thousand_games`.
+- ewentualne późniejsze `ALTER TABLE` dotyczące `gracz_game_sessions`,
+- migracja danych z legacy `prefix_*`,
+- inne zależności po `game_id`, jeśli występują poza przeanalizowanymi plikami,
+- rzeczywiste zachowanie środowiska produkcyjnego/Render przy wielu instancjach.
+
+## 12. Status podsekcji Warcabów
+
+Analiza modelu PostgreSQL Warcabów oraz jego podstawowego modelu concurrency została zamknięta na poziomie kodu AS-IS. Kluczowa hipoteza o lost update została rozstrzygnięta: brak single-writer/optimistic lockingu w analizowanej ścieżce jest potwierdzony.
+
+Następny logiczny krok ETAPU 1B — GRY: analiza kolejnego modelu PostgreSQL, w szczególności `gracz_thousand_games` (Tysiąc), a następnie dalsze tabele/moduły gier.
