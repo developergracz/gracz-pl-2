@@ -12,7 +12,7 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 PASS.**  
+**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 PASS / DDL V3 REVIEW ROZPOCZĘTY.**  
 **DDL V3: REVIEW DOZWOLONY / WYKONANIE PRODUKCYJNE NO-GO.**
 
 ### Data Quality
@@ -53,6 +53,22 @@ Na aktywnej gałęzi Render `feature/homepage-game-center` usunięto wszystkie t
 - tymczasowe `COPY scripts ./scripts` cofnięte — `62e5cb7e259842c060e0e2174f26ad4e1fd0bc00`,
 - runtime self-check usunięty — `e01b40e18442194870f9b465fd0007c12840010c`.
 
+### DDL V3 REVIEW
+- `03-MIGRACJA/18-DDL-V3-REVIEW.md` — **REVIEW PASS DO GENEROWANIA SKRYPTÓW / PRODUKCJA NO-GO**.
+- Naming V3: **osobny schema namespace `v3`**.
+- `game_match_events`: `UNIQUE(match_id,sequence_no)` pozostaje; `(match_id,aggregate_version)` jest indeksem nieunikalnym.
+- Fencing: aktualny lease + monotonic token + `game_matches.last_fencing_token`.
+- Outbox: jawny stale-claim reclaim contract.
+- Idempotency: terminalne deterministyczne `failed`; transient failure = rollback/retry, nie terminal failure.
+- Messaging: pierwszy backfill zachowuje istniejący ciphertext; re-encryption jest osobną późniejszą operacją.
+- Statusy domenowe: preferowane `VARCHAR + CHECK`, nie PostgreSQL ENUM.
+
+Pierwsze executable drafts utworzone jako **REVIEW ONLY / DO NOT RUN ON PRODUCTION**:
+- `03-MIGRACJA/DDL-V3/00-precheck-readonly.sql` — commit `92f3e948e5c2a2911a206f90d2a8207c283e5101`,
+- `03-MIGRACJA/DDL-V3/01-v3-foundation.sql` — commit `4e9d387b8c95929c417c4f238d00889ae4a907dd`.
+
+`00-precheck-readonly.sql` nie wykonuje żadnych mutacji. `01-v3-foundation.sql` jest wyłącznie draftem do review i nie został uruchomiony na Render.
+
 ### Remediation planning
 Przygotowano reviewowalny komplet:
 - `03-MIGRACJA/09a-dml-precheck-readonly.sql` — readonly snapshot/assertions.
@@ -65,7 +81,7 @@ Przygotowano reviewowalny komplet:
 Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-**ETAP 3 → DDL V3 REVIEW + domknięcie pozostałych bramek preflight.**
+**ETAP 3 → DDL V3 REVIEW → przygotować `02-identity-audit-v3.sql` jako review-only executable draft, równolegle domykając pozostałe bramki preflight.**
 
 Review DDL może być prowadzone teraz, ponieważ Bramka 11 została zamknięta. Nie oznacza to zgody na wykonanie DDL w produkcji.
 
@@ -106,6 +122,9 @@ Review DDL może być prowadzone teraz, ponieważ Bramka 11 została zamknięta.
 - `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md`
 - `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md`
 - `03-MIGRACJA/17-RUNTIME-CRYPTO-SELFCHECK.md`
+- `03-MIGRACJA/18-DDL-V3-REVIEW.md`
+- `03-MIGRACJA/DDL-V3/00-precheck-readonly.sql`
+- `03-MIGRACJA/DDL-V3/01-v3-foundation.sql`
 - `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs`
 
 ## Spis dokumentacji — ETAP 2
