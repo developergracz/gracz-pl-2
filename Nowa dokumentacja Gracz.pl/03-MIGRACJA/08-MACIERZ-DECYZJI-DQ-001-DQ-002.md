@@ -1,117 +1,75 @@
 # ETAP 3 — Macierz decyzji DQ-001 / DQ-002
 
 Data: 28.08.2026  
-Status: **ARTEFAKT DECYZYJNY — BEZ DML / DDL V3 NO-GO**
+Status: **DQ-001 DECISION-READY / DQ-002 OTWARTE — BEZ DML / DDL V3 NO-GO**
 
 ## 1. Cel
 
-Dokument stanowi pomost pomiędzy:
-
-- rekonstrukcją przyczyny historycznego driftu danych,
-- a wykonawczym planem remediation przed V3 `EXPAND -> BACKFILL -> VERIFY/RECONCILE -> CUTOVER`.
+Dokument łączy dowody Data Quality z decyzjami remediation przed wykonaniem jakiegokolwiek DML lub V3 DDL.
 
 Zakres:
 
-- **DQ-001** — orphan friendship,
-- **DQ-002** — kolizje normalized-email obejmujące 5 kont.
+- **DQ-001** — orphan friendship z ephemeral guest,
+- **DQ-002** — 2 grupy normalized-email obejmujące 5 kont.
 
-Dokument **nie autoryzuje i nie wykonuje** żadnego `UPDATE`, `DELETE`, `MERGE`, przepięcia FK/logical refs ani produkcyjnego DDL.
+## 2. POTWIERDZONE
 
----
-
-## 2. Źródła dowodowe
-
-Podstawa decyzji:
-
-- środowiskowy data-quality/drill-down z Render PostgreSQL,
-- `07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`,
-- kod AS-IS `origin/main @ db3c15a`,
-- historia Git writerów.
-
-### POTWIERDZONE
+### DQ-001
 
 - istnieje 1 orphan friendship,
-- requester orphan ma principal typu `guest-*`, addressee jest kontem kanonicznym,
+- requester ma format `guest-*`, addressee jest canonical account,
 - `gracz_chat_friends` nie ma FK do `gracz_accounts`,
-- writer `requestFriend()` nie wykonuje account-existence check,
-- funkcja friendship została wprowadzona 23.08.2026 już z tą luką,
-- DQ-002 po drill-down obejmuje 2 grupy normalized-email i 5 kont,
-- wszystkie 5 kont powstało przed commitem `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c`, który dodał guard unique-email,
-- najpóźniejsze z 5 kont powstało około 11 min 33 s przed commitem guardu,
-- obecny writer standardowej rejestracji/profile update blokuje nową kolizję po `trim().toLowerCase()`.
+- `requestFriend()` nie sprawdza istnienia obu kont,
+- commit `a377bfc151914ba8bc448cf6e55ffb9598f522eb` dodał ephemeral guest tokens dla podglądu gier,
+- commit `06b6352499332c35fcf836d1dac5b0b9a21469aa` dodał `POST /auth/guest`, generujący `guest-` + 8 hex i 30-minutową sesję,
+- guest celowo nie wymaga `gracz_accounts` ani normalnego wpisu session registry,
+- commit `2b8821088dd7025bd4c97680d1b84650288eae90` dodał wejście „jako gość” do demonstracji Tysiąca, bez zakładania konta i bez wpływu na ranking,
+- `trustedChatUser()` nie odrzuca guest capability,
+- `requestFriend()` może więc utrwalić ephemeral guest jako requestera persistent friendship.
 
-### WYMAGA DALSZEGO DOWODU
+### DQ-002
 
-- źródło i lifecycle principalu `guest-*`,
-- czy guest powinien mieć trwałą tożsamość produktową,
-- czy konkretny orphan można jednoznacznie przypiąć do istniejącego konta,
-- czy któreś z 5 kont należą do tej samej osoby,
-- status biznesowy kont: główne / poboczne / testowe / legacy,
-- dokładny deploy/endpoint odpowiadający za każdy historyczny zapis.
+- 2 grupy normalized-email, łącznie 5 kont,
+- wszystkie 5 kont powstało przed commitem `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c` dodającym guard unique-email,
+- najpóźniejsze konto powstało około 11 min 33 s przed guardem,
+- obecny standardowy writer blokuje nowe kolizje po `trim().toLowerCase()`.
 
----
+## 3. DQ-001 — klasyfikacja i decyzja
 
-# CZĘŚĆ A — DQ-001 ORPHAN FRIENDSHIP
+### Root cause
 
-## 3. Stan problemu
+**EPHEMERAL-GUEST został dopuszczony przez lukę authorization/bounded-context do persistent Social writer.**
 
-Rekord friendship zawiera requestera, którego nie ma w `gracz_accounts`.
+Nie ma podstaw, by traktować `guest-*` jako usunięte lub niepełne konto. Mechanizm został zaprojektowany właśnie jako tożsamość bez konta.
 
-Przyczyna klasy architektonicznej jest znana: writer oraz schemat pozwalały zapisać relację bez referencyjnej walidacji obu stron.
+### Macierz
 
-Nie jest natomiast jeszcze udowodniona geneza samego `guest-*`.
+| Pole | Wynik |
+|---|---|
+| Typ principalu | **EPHEMERAL-GUEST** |
+| Persistence Identity | Brak canonical account z założenia |
+| Generator | `POST /auth/guest`, `randomBytes(4).hex` |
+| TTL | 1800 s domyślnie |
+| Trwała relacja Social przez guest | Możliwa wskutek luki authz/writera |
+| Canonical mapping | Brak dowodu |
+| `MAP-TO-CANONICAL` | **NIE** |
+| Backfill do aktywnego Social V3 | **NIE** |
+| Decyzja remediation | **LEGACY-QUARANTINE** |
+| Późniejszy DELETE | Tylko osobno zatwierdzony, po zachowaniu provenance |
+| Status DQ-001 | **DECISION-READY** |
 
-## 4. Warianty decyzji DQ-001
+### Wymaganie V3
 
-| Wariant | Kiedy dopuszczalny | Działanie przyszłe | Ryzyko | Ocena |
-|---|---|---|---|---|
-| **MAP-TO-CANONICAL** | Tylko gdy audit/session/deploy evidence jednoznacznie wskaże konto | Przepięcie requestera z zachowaniem provenance i audytu | Błędne przypisanie relacji innej osobie | Warunkowo dopuszczalny |
-| **LEGACY-QUARANTINE** | Gdy brak jednoznacznego mapowania | Zachować rekord historycznie, wyłączyć z backfillu V3 | Brak relacji w aktywnym grafie V3 | **Domyślny bezpieczny wariant** |
-| **DELETE-AS-INVALID** | Tylko po formalnym potwierdzeniu, że rekord jest błędny i bez wartości historycznej | Kontrolowany DELETE dopiero w remediation/CONTRACT | Utrata śladu historycznego | Nie teraz |
-| **PERSISTENT-GUEST-IDENTITY** | Tylko jeśli produkt świadomie zatwierdzi trwałych guestów | Osobny model Identity/Principal Type dla guestów | Znaczne zwiększenie złożoności Identity/Social | Nie rekomendować bez wymagania biznesowego |
+Persistent Social writes muszą wymagać canonical registered identity; guest capability musi być jawnie odrzucana dla trwałych operacji Social, a requester/addressee muszą przejść canonical identity validation.
 
-## 5. Macierz decyzji DQ-001
+## 4. DQ-002 — zasada nadrzędna
 
-| Pole | Stan obecny | Decyzja robocza |
-|---|---|---|
-| Requester istnieje w accounts | Nie | BLOCKER |
-| Addressee istnieje w accounts | Tak | PASS |
-| Jednoznaczne mapowanie guest -> konto | Niepotwierdzone | Nie wykonywać UPDATE |
-| Wartość historyczna rekordu | Możliwa | Zachować provenance |
-| Backfill do canonical Social V3 | Niedozwolony wprost | Wyłączyć do czasu decyzji |
-| Fizyczne usunięcie | Brak autoryzacji | Nie wykonywać |
-| Docelowy writer | Musi walidować obie strony | Wymagane przed cutover |
-| Docelowa integralność | Canonical Identity + constraint/FK | Dopiero po remediation |
-
-## 6. Kryterium decyzji DQ-001
-
-Preferowana kolejność:
-
-1. znaleźć źródło `guest-*`,
-2. ustalić, czy istnieje wiarygodne mapowanie do konta,
-3. przy dowodzie — `MAP-TO-CANONICAL`,
-4. bez dowodu — `LEGACY-QUARANTINE`,
-5. DELETE dopiero jako późniejsza, osobno zatwierdzona operacja.
-
----
-
-# CZĘŚĆ B — DQ-002 NORMALIZED-EMAIL COLLISIONS
-
-## 7. Zasada nadrzędna
-
-Wspólny normalized-email **nie jest dowodem wspólnej tożsamości osoby**.
-
-Dlatego:
+Wspólny normalized-email **nie jest dowodem wspólnej osoby**. Dlatego:
 
 - brak automatycznego MERGE,
 - brak automatycznego DELETE,
-- brak wyboru konta tylko na podstawie `created_at`,
-- brak wyboru konta tylko dlatego, że ma najwięcej danych,
-- brak V3 UNIQUE, dopóki konflikt nie zostanie rozwiązany.
-
-Dodatkowo password recovery pozostaje ryzykowne, ponieważ historyczny konflikt e-mail może powodować niejednoznaczność wyboru konta.
-
-## 8. Grupy DQ-002 po drill-down
+- brak wyboru canonical account tylko po wieku lub liczbie danych,
+- brak V3 `UNIQUE(email_normalized)` do czasu remediation.
 
 ### Grupa A
 
@@ -124,201 +82,41 @@ Dodatkowo password recovery pozostaje ryzykowne, ponieważ historyczny konflikt 
 - `gamerpolska`
 - `gamer`
 
-Adresów e-mail nie zapisujemy w tym dokumencie. Pracujemy na identyfikatorach kont i grupach kolizji.
-
----
-
-## 9. Macierz per konto
-
-Legenda statusów decyzji:
-
-- **TBD-BUSINESS** — wymaga decyzji biznesowej użytkownika/właściciela systemu,
-- **TBD-EVIDENCE** — wymaga dowodu technicznego/audytowego,
-- **SAFE-DEFAULT** — bezpieczna decyzja domyślna przy braku dodatkowych dowodów.
-
-| Konto | Grupa | Status biznesowy | Powiązane dane potwierdzone w drill-down | Kandydat remediation | Ryzyko dla użytkownika | UX / komunikacja | Status decyzji |
-|---|---|---|---|---|---|---|---|
-| `gamerpl` | A | TBD | konto ma realną historię aktywności | KEEP-CANONICAL **lub** REQUIRE-EMAIL-CHANGE | utrata dostępu do recovery / pomyłka tożsamości | przy zmianie e-mail: ponowna weryfikacja i jasny komunikat | TBD-BUSINESS + TBD-EVIDENCE |
-| `gamerde` | A | TBD | konto ma realną historię aktywności | KEEP-CANONICAL **lub** REQUIRE-EMAIL-CHANGE | jak wyżej | jak wyżej | TBD-BUSINESS + TBD-EVIDENCE |
-| `gracz.pl` | B | TBD | konto ma realną historię aktywności | KEEP-CANONICAL **lub** REQUIRE-EMAIL-CHANGE | jak wyżej | jak wyżej | TBD-BUSINESS + TBD-EVIDENCE |
-| `gamerpolska` | B | TBD | konto ma realną historię aktywności | KEEP-CANONICAL **lub** REQUIRE-EMAIL-CHANGE / LEGACY-IDENTITY | jak wyżej | jak wyżej | TBD-BUSINESS + TBD-EVIDENCE |
-| `gamer` | B | TBD | konto ma realną historię aktywności | KEEP-CANONICAL **lub** REQUIRE-EMAIL-CHANGE / LEGACY-IDENTITY | jak wyżej | jak wyżej | TBD-BUSINESS + TBD-EVIDENCE |
-
-### Uwaga
-
-Drill-down wykazał zależności obejmujące klasy danych takie jak:
-
-- sesje auth,
-- prywatne wiadomości,
-- reset tokeny,
-- registration codes.
-
-Nie należy na tej podstawie przypisywać identycznego zestawu zależności każdemu z pięciu kont, jeśli nie ma osobnego dowodu per konto. Macierz ma zostać uzupełniona per-account evidence przed wykonawczym DML.
-
----
-
-## 10. Dozwolone polityki remediation DQ-002
-
-### A. KEEP-CANONICAL
-
-Jedno konto w danej grupie zachowuje dany canonical normalized-email.
-
-Warunki:
-
-- istnieje uzasadnienie biznesowe i techniczne,
-- konto ma potwierdzone prawo do kanału kontaktowego,
-- pozostałe konta nie są automatycznie usuwane.
-
-### B. REQUIRE-EMAIL-CHANGE
-
-Konto pozostaje pełnoprawnym kontem z całą historią, ale konfliktujący e-mail nie może pozostać canonical.
-
-Możliwe wykonanie przyszłe:
-
-- oznaczenie stanu `email_reverification_required`,
-- przy następnym bezpiecznym logowaniu wymuszenie podania innego e-maila,
-- nowy e-mail musi przejść weryfikację,
-- do czasu rozwiązania konfliktu recovery po konflikującym e-mailu nie może być użyte do wyboru konta.
-
-To jest preferowany wariant, gdy konta są niezależne i wszystkie mają zachować historię.
-
-### C. LEGACY-IDENTITY
-
-Konto i historia są zachowane, ale konto nie posiada aktywnego canonical e-mail do czasu ponownej weryfikacji lub decyzji właściciela.
-
-Przydatne dla kont nieaktywnych/testowych, ale wymaga potwierdzenia statusu biznesowego.
-
-### D. MERGE
-
-Najwyższe ryzyko.
-
-Dopuszczalne tylko, gdy:
-
-- istnieje silny dowód, że konta należą do tej samej osoby,
-- właściciel systemu zatwierdzi scalenie,
-- istnieje pełna mapa przepięcia wszystkich zależności,
-- zachowany zostanie immutable audit/provenance,
-- przygotowany jest rollback/reconciliation plan.
-
-**MERGE nie jest decyzją domyślną.**
-
----
-
-## 11. Jak wybrać canonical account w grupie
-
-Nie stosować pojedynczego heurystycznego kryterium.
-
-Macierz dowodowa dla każdej grupy powinna zawierać:
-
-1. `created_at` i lineage,
-2. `contact_verified` / kanał weryfikacji,
-3. ostatnie bezpieczne logowanie / aktywność,
-4. aktywne i historyczne sesje,
-5. prywatne wiadomości i inne zależności,
-6. reset tokeny i registration codes,
-7. audit events rejestracji i zmian profilu,
-8. status biznesowy konta,
-9. dowód kontroli nad adresem kontaktowym,
-10. ewentualne zależności spoza Identity.
-
-Decyzja canonical musi być audytowalna.
-
----
-
-## 12. Ryzyko UX i bezpieczeństwa
-
-### Najważniejsze ryzyka
-
-- użytkownik może stracić recovery do prawidłowego konta,
-- system może wysłać kod resetu w kontekście niewłaściwego konta,
-- automatyczny merge może zmieszać historię dwóch niezależnych profili,
-- automatyczny delete może usunąć wiadomości/sesje/historię,
-- cichy reset e-maila może być odebrany jako przejęcie konta.
-
-### Zasada UX remediation
-
-Jeśli remediation będzie widoczna dla użytkownika:
-
-- nie ujawniać istnienia innych kont ani ich nazw w komunikacie,
-- komunikat powinien mówić o konieczności ponownej weryfikacji danych kontaktowych,
-- nie blokować dostępu do historii bez wyraźnej przyczyny bezpieczeństwa,
-- zmiana e-maila powinna wymagać zalogowanej sesji lub równoważnej silnej weryfikacji,
-- wszystkie administracyjne wyjątki audytować.
-
----
-
-## 13. Proponowana decyzja robocza przed zebraniem pełnego evidence
-
-### DQ-001
-
-**SAFE-DEFAULT: `LEGACY-QUARANTINE`**, chyba że odnajdziemy jednoznaczne mapowanie guest -> canonical account.
-
-### DQ-002
-
-**SAFE-DEFAULT: NIE SCALAĆ.**
-
-Dla każdej grupy:
-
-- wybrać maksymalnie jedno `KEEP-CANONICAL` dopiero po evidence,
-- pozostałe aktywne, niezależne konta kierować do `REQUIRE-EMAIL-CHANGE`,
-- `LEGACY-IDENTITY` tylko po potwierdzeniu statusu legacy/test/inactive,
-- `MERGE` wyłącznie jako jawny wyjątek z pełnym planem.
-
----
-
-## 14. Warunki przed wykonawczym PLAN DML
-
-Nie tworzyć produkcyjnego remediation scriptu, dopóki nie ma:
-
-- decyzji DQ-001,
-- decyzji per-account dla wszystkich 5 kont,
-- snapshotu zależności per konto,
-- backup + restore test,
-- planu rollback,
-- zasady recovery podczas remediation,
-- planu audytu zmian,
-- fresh data-quality rerun tuż przed wykonaniem.
-
----
-
-## 15. Warunki dopuszczenia V3 UNIQUE/FK
-
-### DQ-001 / Social
-
-Przed FK/canonical reference:
-
-- brak nieobsłużonych orphanów,
-- wszystkie aktywne relations wskazują istniejące canonical identities,
-- writer nie pozwala tworzyć nowych orphanów,
-- VERIFY daje 0 naruszeń.
-
-### DQ-002 / Identity
-
-Przed `UNIQUE(email_normalized)`:
-
-- każda grupa kolizji ma wykonane remediation,
-- istnieje najwyżej jedno aktywne canonical normalized-email,
-- password recovery jest jednoznaczne,
-- backfill `email_normalized` jest deterministyczny,
-- duplicate query zwraca 0 konfliktów,
-- constraint może zostać dodany bez utraty danych.
-
----
-
-## 16. Formalny status
-
-**DDL V3: NO-GO.**
-
-Powód:
-
-- DQ-001 — decyzja dotycząca orphan friendship / guest principal niezamknięta,
-- DQ-002 — decyzja per-account dla 5 kont niezamknięta.
-
-DQ-003 pozostaje REVIEW/provenance i nie jest w tej chwili głównym blockerem Identity/Social DDL, ale musi zostać zachowane poprawne mapowanie consent lifecycle.
-
-Następny krok po tym dokumencie:
-
-1. domknięcie źródła `guest-*`,
-2. zebranie privacy-safe per-account evidence dla pięciu kont,
-3. zatwierdzenie polityki dla każdego rekordu,
-4. dopiero potem przygotowanie osobnego **PLANU DML REMEDIATION** — nadal bez automatycznego wykonania na produkcji.
+## 5. Macierz per konto DQ-002
+
+| Konto | Grupa | Potwierdzony footprint z drill-down | Kandydat remediation | Status |
+|---|---|---|---|---|
+| `gamerpl` | A | registration code | KEEP-CANONICAL lub REQUIRE-EMAIL-CHANGE | TBD-EVIDENCE + TBD-BUSINESS |
+| `gamerde` | A | reset token + registration code | KEEP-CANONICAL lub REQUIRE-EMAIL-CHANGE | TBD-EVIDENCE + TBD-BUSINESS |
+| `gracz.pl` | B | private messages sent | KEEP-CANONICAL lub REQUIRE-EMAIL-CHANGE | TBD-EVIDENCE + TBD-BUSINESS |
+| `gamerpolska` | B | brak zależności w dotychczasowym drill-downie | REQUIRE-EMAIL-CHANGE / LEGACY-IDENTITY / KEEP-CANONICAL po evidence | TBD-EVIDENCE + TBD-BUSINESS |
+| `gamer` | B | auth sessions | KEEP-CANONICAL lub REQUIRE-EMAIL-CHANGE / LEGACY-IDENTITY | TBD-EVIDENCE + TBD-BUSINESS |
+
+## 6. Dozwolone polityki DQ-002
+
+- **KEEP-CANONICAL** — maksymalnie jedno konto w grupie zachowuje canonical normalized-email po potwierdzeniu prawa do kanału kontaktowego.
+- **REQUIRE-EMAIL-CHANGE** — konto i historia zostają; użytkownik musi zweryfikować nowy adres.
+- **LEGACY-IDENTITY** — dla potwierdzonych kont legacy/test/inactive.
+- **MERGE** — tylko jako wyjątkowa decyzja przy silnym dowodzie wspólnej osoby, pełnej mapie zależności i immutable provenance.
+
+## 7. Evidence wymagane przed decyzją DQ-002
+
+Dla każdego konta:
+
+1. `created_at`, verification state,
+2. ostatnia aktywność i sessions,
+3. messages/attachments,
+4. reset tokens / registration codes,
+5. audit/roles,
+6. game/tournament/moderation/newsletter references,
+7. writer/deploy lineage, jeśli możliwa,
+8. status biznesowy,
+9. dowód kontroli nad kanałem kontaktowym.
+
+## 8. Formalny status
+
+- **DQ-001: przyczyna zamknięta, decyzja LEGACY-QUARANTINE zapisana; DML niewykonany.**
+- **DQ-002: otwarte — wymagane per-account evidence i decyzje.**
+- **DDL V3: NO-GO.**
+
+Następny krok: zebrać privacy-safe evidence DQ-002 dla pięciu kont, następnie uzupełnić `09-PLAN-DML-REMEDIATION.md`; wykonywalny DML powstanie dopiero po zamknięciu wymaganych gate'ów.
