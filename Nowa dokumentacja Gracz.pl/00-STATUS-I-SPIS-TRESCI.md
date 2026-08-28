@@ -3,54 +3,47 @@
 Data: 28.08.2026
 
 ## Zasada źródła prawdy
-
 Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
 
 ## ETAP 1B — mapa PostgreSQL
-
 **STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
 
 ## ETAP 2 — architektura docelowa i PostgreSQL V3
-
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-
-**STATUS: W TRAKCIE — REMEDIATION-PLANNING.**  
+**STATUS: W TRAKCIE — REMEDIATION-PLANNING / ARTEFAKTY 09a–09f PRZYGOTOWANE.**  
 **DDL V3: NO-GO.**
 
 ### Data Quality
+- **DQ-001 — DECISION-READY:** `LEGACY-QUARANTINE`; DML niewykonany.
+- **DQ-002 — DECISION-READY:** 5/5 kont biznesowo potwierdzone jako testowe i sklasyfikowane `LEGACY-IDENTITY / TEST`; MERGE NIE; automatyczny DELETE NIE; DML niewykonany.
 
-- **DQ-001 — DECISION-READY:** root cause EPHEMERAL-GUEST -> persistent Social writer; decyzja `LEGACY-QUARANTINE`; DML niewykonany.
-- **DQ-002 — DECISION-READY:** collector 11 wykonany READ ONLY i zakończony ROLLBACK; 2 grupy / 5 kont potwierdzone. Właściciel projektu potwierdził, że wszystkie pięć kont było utworzonych testowo podczas prac nad Gracz.pl. Wszystkie sklasyfikowano `LEGACY-IDENTITY / TEST`. MERGE: NIE. Automatyczny DELETE: NIE. DML niewykonany.
+### Remediation planning
+Przygotowano reviewowalny komplet:
+- `03-MIGRACJA/09a-dml-precheck-readonly.sql` — readonly snapshot/assertions.
+- `03-MIGRACJA/09b-dq001-remediation.sql` — DQ-001 review-only, obecnie NO-OP.
+- `03-MIGRACJA/09c-dq002-remediation.sql` — DQ-002 review-only, obecnie NO-OP.
+- `03-MIGRACJA/09d-dml-postcheck-readonly.sql` — readonly verify.
+- `03-MIGRACJA/09e-rollback-procedure.md` — STOP/rollback procedure.
+- `03-MIGRACJA/09f-remediation-runbook.md` — kolejność review i warunki dopuszczenia przyszłych mutacji.
 
-### DQ-002 — decyzja per-account
-
-- `gamerpl` — `LEGACY-IDENTITY / TEST`.
-- `gamerde` — `LEGACY-IDENTITY / TEST`.
-- `gracz.pl` — `LEGACY-IDENTITY / TEST`; zachować provenance/history prywatnych wiadomości.
-- `gamerpolska` — `LEGACY-IDENTITY / TEST`; zachować audit/newsletter provenance.
-- `gamer` — `LEGACY-IDENTITY / TEST`; zachować session/audit/newsletter provenance.
-
-`KEEP-CANONICAL` i `REQUIRE-EMAIL-CHANGE` nie są wymagane dla tych pięciu jako aktywnych identity. Historyczne zależności muszą być obsłużone przez kontrolowaną remediation.
+Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek do dalszej weryfikacji to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-
-**ETAP 3 → REMEDIATION-PLANNING → przygotowanie reviewowalnych artefaktów DML dla DQ-001 i DQ-002, bez wykonywania ich na produkcji.**
+**ETAP 3 → PREFLIGHT GATES → backup/restore evidence + writer/reader/endpoint/worker inventory + crypto compatibility + active-state/cutover + credential/least-privilege gate.**
 
 ### Otwarte bramki krytyczne
-
-- przygotowanie remediation + późniejszy rerun data-quality,
 - fresh schema snapshot/diff,
 - pełny backup + udokumentowany restore test,
 - pełny writer/reader/endpoint/worker inventory,
 - crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
+- późniejszy rerun data-quality/reconciliation,
 - rollback/maintenance window i finalny GO/NO-GO.
 
-## Artefakty ETAPU 3
-
+## Artefakty ETAPU 3 — główne
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
 - `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
 - `03-MIGRACJA/02-ENVIRONMENT-BASELINE.md`
@@ -61,14 +54,19 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 - `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
-- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` — DQ-001 i DQ-002 decision-ready.
-- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md` — plan po decyzji 5x `LEGACY-IDENTITY / TEST`, bez wykonywalnego SQL.
-- `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md` — DQ-001 decision-ready.
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` — wykonany READ ONLY.
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — evidence + business resolution complete.
+- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
+- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md`
+- `03-MIGRACJA/09a-dml-precheck-readonly.sql`
+- `03-MIGRACJA/09b-dq001-remediation.sql`
+- `03-MIGRACJA/09c-dq002-remediation.sql`
+- `03-MIGRACJA/09d-dml-postcheck-readonly.sql`
+- `03-MIGRACJA/09e-rollback-procedure.md`
+- `03-MIGRACJA/09f-remediation-runbook.md`
+- `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md`
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql`
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md`
 
 ## Spis dokumentacji — ETAP 2
-
 ### Architektura
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md`
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
@@ -99,5 +97,4 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 - `02-BAZA-DANYCH/20-POSTGRESQL-V3-FINAL.md`
 
 ## Reguła dalszej pracy
-
 Każdy ukończony i zweryfikowany fragment jest zapisywany w `Nowa dokumentacja Gracz.pl/` i odnotowywany tutaj. AS-IS, dowody środowiskowe, architektura docelowa i artefakty migracyjne pozostają rozdzielone.
