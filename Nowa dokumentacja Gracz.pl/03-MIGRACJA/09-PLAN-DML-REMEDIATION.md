@@ -1,60 +1,63 @@
 # ETAP 3 — PLAN DML REMEDIATION
 
 Data: 28.08.2026  
-Status: **SZKIELET WYKONAWCZY — DQ-001 DECISION-READY / DQ-002 OTWARTE / BEZ SQL / DDL V3 NO-GO**
+Status: **DQ-001 DECISION-READY / DQ-002 EVIDENCE COMPLETE — BUSINESS RESOLUTION REQUIRED / BEZ SQL / DDL V3 NO-GO**
 
 ## 1. Cel
 
-Dokument definiuje bezpieczną ramę przyszłej remediation dla:
+Bezpieczna rama przyszłej remediation DQ-001 i DQ-002. Dokument nie zawiera wykonywalnego DML i nie autoryzuje zmian produkcyjnych.
 
-- **DQ-001** — orphan friendship utworzony przez ephemeral guest,
-- **DQ-002** — 2 grupy kolizji normalized-email obejmujące 5 kont.
+## 2. Zasady
 
-Dokument nie zawiera wykonywalnego DML i nie autoryzuje zmian produkcyjnych.
-
-## 2. Zasady nadrzędne
-
-1. **No evidence, no mutation.**
-2. DML remediation jest wykonywane osobno od V3 DDL.
-3. Każda zmiana ma precheck, transaction boundary, audit/provenance, postcheck i rollback.
+1. No evidence, no mutation.
+2. DML remediation osobno od V3 DDL.
+3. Precheck, transakcja, audit/provenance, postcheck i rollback.
 4. Brak automatycznego MERGE/DELETE kont.
-5. Brak mapowania guest -> account bez jednoznacznego dowodu.
+5. Brak mapowania guest -> account bez dowodu.
 6. Brak PII w dokumentacji remediation.
 
-## 3. Warunki wejścia do wykonania DML
+## 3. DQ-001
 
-### DQ-001
+Decyzja: **LEGACY-QUARANTINE** dla 1 orphan friendship z EPHEMERAL-GUEST. Wykluczyć z aktywnego Social V3; brak guest->account mapping. Fizyczny DELETE wymaga osobnej autoryzacji. Przed DML nadal wymagane backup/restore evidence, writer guard, provenance i postcheck.
 
-Analiza przyczyny jest zamknięta. Przed wykonaniem nadal wymagane są:
+## 4. DQ-002 — evidence complete
 
-- freeze dokładnego rekordu,
-- backup + restore evidence,
-- wybór sposobu technicznego realizacji quarantine,
-- audit/provenance,
-- postcheck,
-- potwierdzenie, że writer nie tworzy nowych persistent Social records dla guest.
+Collector 11 potwierdził:
 
-### DQ-002
+- Grupa A: `gamerpl`, `gamerde` — oba `contact_verified=false`.
+- Grupa B: `gracz.pl`, `gamerpolska`, `gamer` — wszystkie `contact_verified=true`.
+- `gamerpl`: registration code 1, bez auth/audit/messages.
+- `gamerde`: reset token 1, registration code 1, audit pending-registration + 5 login.
+- `gracz.pl`: 3 sent private messages, 4 login audit events.
+- `gamerpolska`: activation verified, 5 login, 1 logout, 1 failed registration event.
+- `gamer`: 4 historyczne sessions, 0 aktywnych; activation verified; login/logout.
+- Wszystkie pięć: 0 Social/Global Chat/Moderation, 0 Tournament, 0 badanych Games references.
+- Newsletter correlation: grupa A wskazuje pending confirmation; grupa B subscribed. To korelacja kanału, nie identity proof.
 
-Nadal wymagane:
+## 5. Decision record per account
 
-- per-account evidence dla wszystkich 5 kont,
-- status biznesowy i mapa zależności,
-- decyzja per rekord,
-- jednoznaczna polityka password recovery.
+| Konto | Grupa | Kierunek remediation | Status |
+|---|---|---|---|
+| `gamerpl` | A | aktywne -> `REQUIRE-EMAIL-CHANGE`; test/legacy/inactive -> `LEGACY-IDENTITY` | BUSINESS/OWNERSHIP REQUIRED |
+| `gamerde` | A | aktywne -> `REQUIRE-EMAIL-CHANGE`; test/legacy/inactive -> `LEGACY-IDENTITY` | BUSINESS/OWNERSHIP REQUIRED |
+| `gracz.pl` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
+| `gamerpolska` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
+| `gamer` | B | zachować identity/history; `KEEP-CANONICAL` tylko jeśli potwierdzona kontrola kanału, inaczej `REQUIRE-EMAIL-CHANGE` | OWNERSHIP REQUIRED |
 
-### Preflight wspólny
+**MERGE i DELETE pozostają niedozwolone na obecnym evidence.**
 
-- fresh schema snapshot,
-- pełny backup + restore test,
-- writer/reader/endpoint/worker inventory,
-- crypto compatibility,
-- active-state/cutover,
-- credential rotation/least privilege,
-- rollback/maintenance plan,
-- świeży rerun data-quality przed wykonaniem.
+## 6. Co jest potrzebne przed wygenerowaniem wykonywalnego DML
 
-## 4. Planowane artefakty wykonawcze
+- dla każdej grupy wskazać maksymalnie jedno konto uprawnione do zachowania obecnego canonical normalized-email,
+- sklasyfikować pozostałe konta jako aktywne (`REQUIRE-EMAIL-CHANGE`) albo potwierdzone test/legacy/inactive (`LEGACY-IDENTITY`),
+- ustalić jednoznaczną politykę password recovery po zmianie,
+- zamrozić decision record,
+- backup + restore test,
+- pre-remediation snapshot,
+- writer freeze/guard tam, gdzie wymagany,
+- świeży rerun data-quality.
+
+## 7. Planowane artefakty wykonawcze
 
 1. `09a-dml-precheck-readonly.sql`
 2. `09b-dq001-remediation.sql`
@@ -63,161 +66,20 @@ Nadal wymagane:
 5. `09e-rollback-procedure.md`
 6. `09f-remediation-runbook.md`
 
-Nie tworzyć wykonywalnego SQL przed zamknięciem wymaganych gate'ów.
+Nie tworzyć wykonywalnego SQL przed zamknięciem powyższych gate'ów.
 
-# CZĘŚĆ A — DQ-001
+## 8. Kolejność przyszłego wykonania
 
-## 5. Decision record DQ-001
+Freeze decyzji -> readonly precheck -> backup/restore evidence -> writer control -> DQ-001 quarantine -> verify -> DQ-002 grupa A -> verify -> grupa B -> verify -> global postcheck -> rerun data-quality -> reconciliation -> dopiero ocena V3 DDL gate.
 
-| Pole | Wartość |
-|---|---|
-| Rekord problemowy | 1 orphan friendship |
-| Typ requestera | **EPHEMERAL-GUEST** |
-| Generator | `POST /auth/guest`, `guest-` + 8 hex |
-| TTL | 1800 s domyślnie |
-| `gracz_accounts` | Celowo brak |
-| Trwała auth session | Guest nie wymaga rekordu konta/session registry |
-| Root cause | Authz/bounded-context gap: ephemeral guest dopuszczony do persistent Social write |
-| Mapowanie guest -> konto | **Brak dowodu; nie wykonywać** |
-| Decyzja końcowa | **LEGACY-QUARANTINE** |
-| Backfill Social V3 | Wykluczyć z aktywnego canonical graph |
-| Fizyczny DELETE | Nieautoryzowany; możliwy później wyłącznie jako osobna decyzja |
-| Provenance/audit | Wymagane |
+## 9. STOP conditions
 
-## 6. Logiczny plan DQ-001
+STOP/ROLLBACK gdy snapshot się zmieni, pojawi się nowy rekord w grupie, zmieni się e-mail/status, odkryta zostanie niezmapowana zależność, operacja dotknie większej liczby rekordów, recovery/session semantics są niejednoznaczne albo audit/postcheck nie przejdzie.
 
-### LEGACY-QUARANTINE — zatwierdzony kierunek
+## 10. Formalny status
 
-1. readonly precheck dokładnego relation ID i oczekiwanego stanu,
-2. zapis/utrwalenie provenance przed mutacją lub oznaczeniem migracyjnym,
-3. wyłączenie rekordu z aktywnego backfillu Social V3,
-4. brak jakiegokolwiek przypięcia guest do registered identity,
-5. writer guard: persistent Social wymaga canonical registered identity,
-6. verify: aktywny canonical Social graph nie zawiera orphan principal,
-7. ponowny data-quality check.
-
-### MAP-TO-CANONICAL
-
-**Odrzucone przy obecnym evidence.** Wspólny czas, display name lub późniejsze konto nie są wystarczającym dowodem.
-
-### DELETE-AS-INVALID
-
-Może być rozważone dopiero później, ponieważ relacja `pending` powstała przez potwierdzoną lukę capability/authz. Wymaga jednak osobnej autoryzacji DML, backupu i zachowania provenance. Nie jest obecnie wykonywane.
-
-# CZĘŚĆ B — DQ-002
-
-## 7. Decision record per account
-
-| Konto | Grupa | Potwierdzony footprint | Status biznesowy | Decyzja | Status |
-|---|---|---|---|---|---|
-| `gamerpl` | A | registration code | TBD | TBD | EVIDENCE REQUIRED |
-| `gamerde` | A | reset token + registration code | TBD | TBD | EVIDENCE REQUIRED |
-| `gracz.pl` | B | private messages sent | TBD | TBD | EVIDENCE REQUIRED |
-| `gamerpolska` | B | brak zależności w dotychczasowym drill-downie | TBD | TBD | EVIDENCE REQUIRED |
-| `gamer` | B | auth sessions | TBD | TBD | EVIDENCE REQUIRED |
-
-Wspólny normalized-email nie jest dowodem wspólnej osoby. Domyślnie: **NIE SCALAĆ**.
-
-## 8. Minimalny evidence pack DQ-002
-
-Dla każdego konta zebrać privacy-safe:
-
-- `created_at`, status/weryfikację kontaktu,
-- sesje i ostatnią aktywność,
-- messages/attachments,
-- reset tokens i registration codes,
-- audit/role references,
-- game/tournament/moderation/newsletter references,
-- writer/deploy lineage, jeśli dostępne,
-- status biznesowy: główne/poboczne/testowe/legacy.
-
-## 9. Dozwolone decyzje DQ-002
-
-- **KEEP-CANONICAL** — maksymalnie jedno konto w grupie dla danego canonical normalized-email.
-- **REQUIRE-EMAIL-CHANGE** — historia zostaje, wymagany nowy zweryfikowany adres.
-- **LEGACY-IDENTITY** — dla potwierdzonych legacy/test/inactive.
-- **MERGE** — wyjątek wysokiego ryzyka, tylko przy silnym dowodzie wspólnej osoby i pełnej mapie zależności.
-
-# CZĘŚĆ C — wykonanie
-
-## 10. Kolejność przyszłego DML
-
-1. Freeze decyzji i snapshotów.
-2. Readonly precheck.
-3. Backup + restore evidence.
-4. Writer freeze/maintenance, jeśli potrzebne.
-5. DQ-001 remediation/quarantine.
-6. VERIFY DQ-001.
-7. DQ-002 grupa A.
-8. VERIFY A.
-9. DQ-002 grupa B.
-10. VERIFY B.
-11. Global postcheck.
-12. Rerun data-quality.
-13. Reconciliation z macierzą decyzji.
-14. Dopiero potem ocena właściwych gate'ów V3 DDL.
-
-## 11. Wymagania transakcyjne
-
-Każda operacja musi:
-
-- sprawdzić oczekiwany rekord i stan przed mutacją,
-- przerwać się przy niezgodności snapshotu,
-- adresować stabilne identyfikatory, nie szerokie warunki e-mailowe,
-- używać atomowej transakcji tam, gdzie właściwe,
-- zachować audit/provenance,
-- wykonać postcheck przed COMMIT, jeśli możliwe,
-- mieć jawny rollback.
-
-## 12. Race-condition control
-
-Przed remediation sprawdzić, czy aktywne writery mogą równolegle:
-
-- tworzyć friendship,
-- zmieniać e-mail/status kont,
-- tworzyć sesje/recovery tokeny.
-
-W razie ryzyka zastosować maintenance window, feature flag/write freeze lub odpowiedni locking/version check.
-
-## 13. Rollback
-
-Minimalnie:
-
-- pre-remediation snapshot,
-- dokładne IDs dotkniętych rekordów,
-- wartości przed/po,
-- sposób odtworzenia,
-- wpływ na sessions/recovery,
-- audit/provenance,
-- warunki logicznego rollbacku vs restore.
-
-## 14. Postcheck
-
-Po remediation:
-
-- DQ-001 nie występuje w aktywnym canonical Social graph,
-- DQ-002 collision count = 0 dla aktywnego canonical modelu,
-- brak nowych orphan references,
-- recovery jest jednoznaczne,
-- wszystkie zależności zachowane,
-- audit trail kompletny,
-- testy auth/profile/messages/social przechodzą,
-- data-quality collector potwierdza oczekiwany stan.
-
-## 15. STOP conditions
-
-STOP/ROLLBACK, gdy:
-
-- precheck różni się od snapshotu,
-- pojawia się nowy rekord w grupie,
-- zmienił się status/e-mail konta,
-- odkryto niezmapowaną zależność,
-- operacja dotyka większej liczby rekordów,
-- recovery/session semantics są niejednoznaczne,
-- audit/provenance lub postcheck nie przechodzi.
-
-## 16. Relacja do V3 DDL
-
+**DQ-001: DECISION-READY, DML niewykonany.**  
+**DQ-002: EVIDENCE COMPLETE, oczekuje business/ownership resolution przed mutacją.**  
 **DDL V3: NO-GO.**
 
-DQ-001 jest **DECISION-READY**, ale remediation nie została wykonana. DQ-002 nadal wymaga evidence i decyzji. Ponadto pozostają pozostałe bramki preflight: backup/restore, writer inventory, crypto compatibility, active-state/cutover, credentials/least privilege, rollback i finalny GO/NO-GO.
+Pozostałe preflight gates nadal obejmują fresh schema snapshot, backup/restore, writer/reader/endpoint/worker inventory, crypto compatibility, active-state/cutover, credential rotation/least privilege oraz rollback/maintenance/final GO-NO-GO.
