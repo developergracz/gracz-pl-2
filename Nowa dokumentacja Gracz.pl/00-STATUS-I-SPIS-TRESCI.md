@@ -35,9 +35,16 @@ Opracowane obszary:
 - moderacja — `gracz_moderation_decisions` oraz `gracz_moderation_appeals`, rdzeń AS-IS zamknięty; zweryfikowane DDL/DML, filtry treści, odwołania, integracja z audytem i RBAC oraz braki trwałego workflow ban/review w analizowanym module,
 - globalny chat — `gracz_chat_topics`, `gracz_global_chat`, `gracz_chat_friends`, `gracz_global_chat_reports`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, SSE/presence, raporty, relacje znajomych, soft-delete, integracja z moderacją oraz ryzyka concurrency/integralności,
 - turnieje — `gracz_tournaments`, `gracz_tournament_players`, `gracz_tournament_matches`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, zapisy uczestników, pairingi, wyniki, standings, awans rund i ryzyka concurrency/atomowości,
+- newsletter — `gracz_newsletter_subscribers`, `newsletter_sources`, `newsletter_subscriber_sources`, `newsletter_consent_history`, `newsletter_events`, AS-IS zamknięte na poziomie kodu; zweryfikowane double opt-in, token hashes, source attribution, historia zgód, analytics/events, transakcje oraz granice atomowości,
 - legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
-Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym newsletter oraz końcowe porównanie z produkcją/model match.
+### Stan inwentaryzacji ETAPU 1B
+
+**26/26 tabel PostgreSQL zostało zmapowanych na podstawie kodu.**
+
+Do formalnego zamknięcia ETAPU 1B pozostają:
+1. porównanie mapy repozytorium z rzeczywistym schematem produkcyjnym PostgreSQL/Render,
+2. końcowy model match i rejestr rozbieżności.
 
 ## Spis dokumentacji
 
@@ -53,6 +60,7 @@ Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym new
 - `02-BAZA-DANYCH/06-MODERACJA-POSTGRESQL-AS-IS.md` — moderacja: decyzje automatycznego filtra, odwołania, DDL/DML, integracja z kontami/chatem/audytem/RBAC oraz ryzyka i niepotwierdzone elementy workflow.
 - `02-BAZA-DANYCH/07-GLOBAL-CHAT-POSTGRESQL-AS-IS.md` — Global Chat: cztery tabele PostgreSQL, DDL/DML, SSE/presence, tematy, znajomi, raportowanie, reakcje JSONB, soft-delete i ryzyka concurrency/integralności.
 - `02-BAZA-DANYCH/08-TURNIEJE-POSTGRESQL-AS-IS.md` — turnieje: trzy tabele PostgreSQL, DDL/DML, uczestnicy, pairingi, raportowanie wyników, standings, awans rund, autoryzacja i ryzyka concurrency/atomowości.
+- `02-BAZA-DANYCH/09-NEWSLETTER-POSTGRESQL-AS-IS.md` — newsletter: pięć tabel PostgreSQL, double opt-in, tokeny, consent/source/event history, administracja, bezpieczeństwo, retencja i granice atomowości.
 
 ## Reguła dalszej pracy
 
