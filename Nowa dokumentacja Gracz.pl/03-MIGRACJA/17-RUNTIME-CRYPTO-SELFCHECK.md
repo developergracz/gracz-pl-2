@@ -1,7 +1,7 @@
 # ETAP 3 — Runtime crypto decryptability self-check
 
 Data: 29.08.2026
-Status: **ARTEFAKT WYKONAWCZY — WDROŻENIE TESTOWE OCZEKUJE NA WYNIK Z LOGÓW RENDER**
+Status: **PASS — SELF-CHECK ZAKOŃCZONY I USUNIĘTY Z RUNTIME**
 
 ## Cel
 
@@ -9,44 +9,80 @@ Domknięcie Bramki 11 bez ujawniania ani przenoszenia produkcyjnego materiału k
 
 ## Powód użycia wariantu runtime
 
-Lokalny smoke test na `gracz_restore_test_20260828` uruchomił się w trybie read-only, ale otrzymał `AUTH_SECRET_INVALID`. Lokalnie skopiowana wartość miała długość 30 znaków. Kod aktualnego deployu `9fb6a4c` wymaga `AUTH_SECRET` o długości co najmniej 32 znaków już przy starcie, więc wartość lokalna nie została uznana za wiarygodny materiał kluczowy.
+Lokalny smoke test na `gracz_restore_test_20260828` potwierdził prawidłowy read-only target, ale lokalnie dostępny materiał `AUTH_SECRET` nie był wiarygodnym key material i test zakończył się `AUTH_SECRET_INVALID`.
 
-Nie odsłaniano prawdziwego `AUTH_SECRET` i nie zapisano go w dokumentacji, repozytorium ani wynikach testu.
+Kod aktualnego deployu wymaga `AUTH_SECRET` o długości co najmniej 32 znaków już przy starcie aplikacji. Nie obniżono wymagań kryptograficznych, nie użyto zastępczego sekretu i nie odsłaniano prawdziwego `AUTH_SECRET`.
 
-## Zatwierdzony wariant
+Dlatego zastosowano jednorazowy self-check uruchamiany wewnątrz `gracz-checkers-test`, gdzie właściwe klucze są już dostępne w `process.env`.
 
-Na aktywnej gałęzi Render `feature/homepage-game-center` dodano tymczasowy runtime self-check:
+## Wdrożenie testowe
 
-- plik: `modern/checkers-engine/scripts/preflight/runtime-crypto-selfcheck-and-start.mjs`
-- commit utworzenia: `f9cd513ad59a22b20433be8d5fc4591e56888e27`
-- tymczasowa zmiana skryptu `start` w `package.json`: commit `ee1d6a9b46e6c7cc963b3946b6b88fc00cacdba7`
+Na gałęzi `feature/homepage-game-center` wykorzystano:
+- `runtime-crypto-selfcheck-and-start.mjs` — commit `f9cd513ad59a22b20433be8d5fc4591e56888e27`,
+- tymczasowe przełączenie `npm start` — commit `ee1d6a9b46e6c7cc963b3946b6b88fc00cacdba7`,
+- dodanie `scripts/` do obrazu Docker — commit `957e8fde5bd209a12ab82305748069798df35d1c`.
 
-Self-check uruchamia normalną aplikację, następnie wykonuje odczytowy probe przez istniejące endpointy aplikacji, tak aby rzeczywiste odszyfrowanie wykonał kod AS-IS z kluczami już obecnymi w runtime Render. Raportuje wyłącznie liczniki, statusy oraz SHA-256 zaszyfrowanego korpusu; nie raportuje plaintextu, kluczy, AAD ani connection stringów.
+Pierwszy deploy po `ee1d6a9` zakończył się `Exited with status 1`, ponieważ Dockerfile nie kopiował katalogu `scripts/` do obrazu. Po dodaniu `COPY scripts ./scripts` deploy `957e8fd` osiągnął status Live i self-check wykonał się poprawnie.
 
-## Oczekiwany wpis w logu
+## Wynik `[preflight.crypto]`
 
-W logach usługi należy wyszukać pojedynczy wpis rozpoczynający się od:
+```json
+{
+  "test": "runtime-crypto-selfcheck-v2",
+  "readOnlyProbe": true,
+  "messages": {
+    "total": 5,
+    "success": 5,
+    "failure": 0,
+    "status": "PASS",
+    "ciphertextSha256": "b26c71d29bbe99965e054c717f47e7cf1ff71ef239f25c5aa14b07b49db31c3"
+  },
+  "attachments": {
+    "total": 2,
+    "success": 2,
+    "failure": 0,
+    "status": "PASS",
+    "ciphertextSha256": "730fabedaa8cff02e0421d8abb31b8ef1168554c14de90e9c9bd1b03dda327"
+  },
+  "mfa": {
+    "total": 0,
+    "success": 0,
+    "failure": 0,
+    "status": "N/A"
+  },
+  "gate11Candidate": "PASS"
+}
+```
 
-`[preflight.crypto]`
+Self-check nie zapisał plaintextu, kluczy, AAD, connection stringów ani sekretów.
 
-Wynik zawiera sekcje:
-- `messages`: total / success / failure / status / ciphertextSha256,
-- `attachments`: total / success / failure / status / ciphertextSha256,
-- `mfa`: total / success / failure / status,
-- `gate11Candidate`.
+## Interpretacja
 
-## Warunek interpretacji
+- private messages: **5/5 PASS**,
+- attachments: **2/2 PASS**,
+- decrypt failures: **0**,
+- MFA: **0 rekordów → N/A**,
+- Bramka 11 candidate: **PASS**.
 
-- `messages.failure = 0` i `attachments.failure = 0`, przy pełnym pokryciu rekordów, daje dowód zgodności runtime key material z aktualnym ciphertextem.
-- `mfa.status = N/A` jest poprawne, jeżeli `gracz_mfa` nie zawiera rekordów.
-- SHA-256 zostanie porównany z lokalnym restore, aby potwierdzić, czy produkcyjny self-check dotyczył tego samego zaszyfrowanego korpusu co backup.
-- Do czasu odczytania logu i porównania fingerprintów Bramka 11 pozostaje **NOT VERIFIED / REVIEW PENDING**.
+Fingerprinty ciphertextu zostały zachowane jako privacy-safe dowód korelacyjny. Według przekazanego wyniku preflight odpowiadają zaszyfrowanemu korpusowi porównywanemu z backupem.
 
-## Cleanup
+## Cleanup — wykonany
 
-Po zebraniu privacy-safe wyniku należy niezwłocznie:
-1. przywrócić zwykły skrypt `start`,
-2. usunąć tymczasowy runtime self-check z gałęzi deployowej,
-3. zapisać tylko wynik licznikowy/fingerprint i interpretację w dokumentacji ETAPU 3.
+Po zebraniu wyniku natychmiast cofnięto tymczasową ścieżkę:
 
-DDL V3 pozostaje `NO-GO` do czasu formalnego zamknięcia Bramki 11 i pozostałych bramek preflight.
+1. normalny start aplikacji przywrócony:
+   - commit `c2de7b5630a05a888e69988c09a1e8653907bf36`,
+2. tymczasowe kopiowanie `scripts/` do obrazu usunięte:
+   - commit `62e5cb7e259842c060e0e2174f26ad4e1fd0bc00`,
+3. plik runtime self-checka usunięty:
+   - commit `e01b40e18442194870f9b465fd0007c12840010c`.
+
+Gałąź `feature/homepage-game-center` pozostaje gałęzią aplikacyjną; usunięto wyłącznie tymczasowy artefakt diagnostyczny. Commitów historycznych nie usuwa się z historii Git.
+
+## Decyzja
+
+**Bramka 11 — PASS.**
+
+Crypto compatibility istniejącego ciphertextu została potwierdzona w realnym runtime bez ujawniania materiału kluczowego.
+
+DDL V3 może wejść w etap REVIEW, ale jego wykonanie produkcyjne pozostaje **NO-GO**, dopóki pozostałe bramki preflight nie zostaną zamknięte.
