@@ -24,23 +24,6 @@ Zatwierdzone i zapisane:
 - macierz migracji 28/28 AS-IS -> V3,
 - `02-BAZA-DANYCH/20-POSTGRESQL-V3-FINAL.md` — finalna konsolidacja i zatwierdzenie.
 
-#### Wynik ETAPU 2
-
-- bounded contexts: ZATWIERDZONE,
-- ownership danych: ZATWIERDZONY,
-- docelowy model tabel V3: ZATWIERDZONY,
-- PK/FK/UNIQUE/CHECK i indeksy: ZATWIERDZONE zgodnie z Iteracjami 2–7,
-- CAS/versioning: ZATWIERDZONE,
-- single-writer/fencing invariant: ZATWIERDZONY,
-- Transactional Outbox: ZATWIERDZONY,
-- Idempotency: ZATWIERDZONE,
-- kontrakty transakcyjne: ZATWIERDZONE,
-- retencja/archiwizacja: ZATWIERDZONE na poziomie zasad z iteracji,
-- macierz migracji rzeczywistych 28 tabel Render: 28/28,
-- rollback/reconciliation/GO-NO-GO: ZATWIERDZONE na poziomie architektonicznym.
-
-Zamknięcie ETAPU 2 nie oznacza wykonania migracji produkcyjnej. Produkcyjne DDL/DML, backfill, writer cutover, migracja workerów/endpointów i wyłączanie legacy należą do ETAPU 3.
-
 ### ETAP 3 — plan migracji i przygotowanie wykonania
 
 **STATUS: W TRAKCIE od 28.08.2026.**
@@ -49,40 +32,60 @@ Zamknięcie ETAPU 2 nie oznacza wykonania migracji produkcyjnej. Produkcyjne DDL
 
 **STATUS: W TRAKCIE.**
 
-Utworzono:
+Zapisane artefakty:
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
 - `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
+- `03-MIGRACJA/02-ENVIRONMENT-BASELINE.md`
 - `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
 - `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
 
-#### Potwierdzone dowody środowiskowe
+Potwierdzone:
+- Render PostgreSQL 18.4,
+- rzeczywista liczba tabel 28/28,
+- dokładne COUNT(*) 28/28 — PASS,
+- physical size/index/TOAST 28/28 — PASS,
+- łączna liczba rekordów 13 865,
+- `gracz_audit_log` 13 743 rekordy (~99,1% wszystkich wierszy),
+- cały zestaw 28 tabel około 8,2 MiB,
+- sekwencje, timestamp ranges, constraint counts i index counts zebrane.
 
-- Render PostgreSQL: **18.4**,
-- rzeczywista liczba tabel: **28/28**,
-- dokładne `COUNT(*)`: **28/28 — PASS**,
-- fizyczne rozmiary tabela/index/TOAST: **28/28 — PASS**,
-- łączna liczba rekordów: **13 865**,
-- `gracz_audit_log`: **13 743** rekordy (~99,1% wszystkich wierszy),
-- łączny fizyczny rozmiar zestawu 28 tabel: około **8,2 MiB**,
-- sekwencje, timestamp ranges, constraint counts i index counts: zebrane.
+Wniosek: ryzyko wydajnościowe backfillu jest niskie przy aktualnym wolumenie; nie jest to jeszcze dowód pełnej czystości semantycznej ani gotowości do produkcyjnego DDL.
 
-Wniosek: wolumen jest mały; główne ryzyko migracji jest semantyczne i operacyjne, nie wydajnościowe.
-
-#### Otwarte bramki preflight
-
-Preflight **nie ma jeszcze statusu GO**. Pozostają co najmniej:
-- świeży schema snapshot/diff w punkcie preflight,
-- pełny backup i kontrolowany restore test,
-- duplicate/orphan/collision/data-quality profiling,
-- krytyczne profile Identity/Game/Tournament/Messaging/Chat/Moderation/Newsletter,
-- writer/reader/endpoint inventory,
-- worker/event/realtime inventory,
-- crypto compatibility,
+Otwarte krytyczne bramki:
+- świeży schema snapshot/diff w punkcie wykonania,
+- pełny backup + restore test,
+- duplicate/orphan/collision/data-quality profile,
+- writer/reader/endpoint/worker inventory,
+- crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
-- credential rotation/DB permissions/secret hygiene,
+- credential rotation/least privilege/secret hygiene,
 - rollback/maintenance window i końcowe GO/NO-GO.
 
-Nie uruchamiamy produkcyjnego DDL/backfillu przed zamknięciem krytycznych blockerów.
+#### Iteracja 2 — Plan DDL migracji
+
+**STATUS: ROZPOCZĘTY 28.08.2026 — PLAN, NO-GO DLA PRODUKCYJNEGO DDL.**
+
+Utworzono:
+- `03-MIGRACJA/04-PLAN-DDL-MIGRACJI-ITERACJA-2.md`
+
+Plan zatwierdza framework:
+- `EXPAND -> BACKFILL -> VERIFY/RECONCILE -> CUTOVER -> OBSERVE -> CONTRACT`,
+- podział DDL per bounded context,
+- kolejność zależności backfill,
+- zasady lock/timeout/index/constraint,
+- rollback przed i po writer cutover,
+- zakaz DROP w pierwszej fazie cutover,
+- writer cutover per context,
+- Transactional Outbox/Idempotency jako fundament V3.
+
+Produkcja pozostaje **NO-GO**, dopóki otwarte blockery Preflight nie zostaną zamknięte.
+
+#### Następny krok
+
+Następny artefakt wykonawczy:
+- `05-DATA-QUALITY-ORPHAN-COLLISION-COLLECTOR.sql`
+
+Jego celem będzie read-only profiling rzeczywistych danych przed dodaniem przyszłych V3 UNIQUE/FK/NOT NULL i przed backfillem.
 
 ## Spis dokumentacji
 
@@ -118,8 +121,10 @@ Nie uruchamiamy produkcyjnego DDL/backfillu przed zamknięciem krytycznych block
 ### Migracja — ETAP 3
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
 - `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
+- `03-MIGRACJA/02-ENVIRONMENT-BASELINE.md`
 - `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
 - `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
+- `03-MIGRACJA/04-PLAN-DDL-MIGRACJI-ITERACJA-2.md`
 
 ## Reguła dalszej pracy
 
