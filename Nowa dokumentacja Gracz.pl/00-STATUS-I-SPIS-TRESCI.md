@@ -32,9 +32,10 @@ Opracowane obszary:
 - gry / Tysiąc — `gracz_thousand_games`, AS-IS zamknięte, w tym JSONB, revision i optimistic locking,
 - gry / Gomoku — AS-IS zamknięte jako model pamięciowy; aktualny kod nie posiada persistence PostgreSQL dla tej gry,
 - wiadomości prywatne — `gracz_messages` oraz `gracz_message_attachments`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, relacje, szyfrowanie, załączniki, soft-delete i fizyczny delete po usunięciu przez obie strony,
+- moderacja — `gracz_moderation_decisions` oraz `gracz_moderation_appeals`, rdzeń AS-IS zamknięty; zweryfikowane DDL/DML, filtry treści, odwołania, integracja z audytem i RBAC oraz braki trwałego workflow ban/review w analizowanym module,
 - legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
-Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym moderacja, chat globalny, turnieje, newsletter oraz końcowe porównanie z produkcją/model match.
+Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym globalny chat, turnieje, newsletter oraz końcowe porównanie z produkcją/model match.
 
 ## Spis dokumentacji
 
@@ -47,6 +48,7 @@ Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym mod
 - `02-BAZA-DANYCH/03-GRY-TYSIAC-POSTGRESQL-AS-IS.md` — Tysiąc: `gracz_thousand_games`, JSONB, revision, optimistic locking, API i realtime.
 - `02-BAZA-DANYCH/04-GRY-GOMOKU-AS-IS.md` — Gomoku: model pamięciowy, ruchy, revision w RAM, idempotency requestId, lobby i brak persistence PostgreSQL.
 - `02-BAZA-DANYCH/05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md` — wiadomości prywatne i załączniki: DDL/DML, FK, indeksy, szyfrowanie, foldery, pełna ścieżka delete i AES-256-GCM.
+- `02-BAZA-DANYCH/06-MODERACJA-POSTGRESQL-AS-IS.md` — moderacja: decyzje automatycznego filtra, odwołania, DDL/DML, integracja z kontami/chatem/audytem/RBAC oraz ryzyka i niepotwierdzone elementy workflow.
 
 ## Reguła dalszej pracy
 
