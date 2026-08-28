@@ -36,7 +36,7 @@ Następnie kod wykonuje:
 ALTER TABLE gracz_messages ALTER COLUMN subject TYPE TEXT
 ```
 
-Efektywny typ `subject` w schemacie tworzonym przez aktualny kod to więc `TEXT NOT NULL`.
+Efektywny typ `subject` w schemacie tworzonym przez aktualny kod to `TEXT NOT NULL`.
 
 Indeksy:
 ```sql
@@ -144,13 +144,39 @@ Operacja jest idempotentna dzięki `COALESCE(read_at,NOW())`.
 
 Kod aktualizuje `recipient_archived` tylko dla odbiorcy i tylko jeśli wiadomość nie została wcześniej logicznie usunięta po stronie odbiorcy.
 
-### Usuwanie
+### Usuwanie — pełna ścieżka POTWIERDZONA
 
-Model zawiera osobne flagi:
-- `sender_deleted`,
-- `recipient_deleted`.
+Po sprawdzeniu `deletePrivateMessage()` potwierdzono pełny model usuwania:
 
-Jest to soft-delete zależny od roli użytkownika, a nie natychmiastowe fizyczne usunięcie rekordu po pierwszym usunięciu przez jedną stronę.
+1. Kod pobiera `sender_id` i `recipient_id` dla `message_id`.
+2. Operacja jest dozwolona tylko wtedy, gdy bieżący użytkownik jest nadawcą albo odbiorcą.
+3. Jeśli usuwa nadawca:
+```sql
+UPDATE gracz_messages
+SET sender_deleted=TRUE
+WHERE message_id=$1
+```
+4. Jeśli usuwa odbiorca:
+```sql
+UPDATE gracz_messages
+SET recipient_deleted=TRUE
+WHERE message_id=$1
+```
+5. Po każdej operacji wykonywane jest:
+```sql
+DELETE FROM gracz_messages
+WHERE message_id=$1
+  AND sender_deleted=TRUE
+  AND recipient_deleted=TRUE
+```
+
+Wniosek AS-IS:
+- pierwsze usunięcie przez jedną stronę jest soft-delete,
+- rekord pozostaje w PostgreSQL dla drugiej strony,
+- fizyczne usunięcie następuje dopiero po logicznym usunięciu przez nadawcę i odbiorcę,
+- fizyczny `DELETE` wiadomości usuwa również załącznik przez FK `ON DELETE CASCADE`.
+
+W analizowanej ścieżce nie ma mechanizmu automatycznego usuwania wiadomości po określonym czasie ani pola `expires_at`/`retention_until`.
 
 ## 6. Załączniki
 
@@ -212,27 +238,30 @@ Dopiero po tej autoryzacji ciphertext jest odszyfrowywany AES-256-GCM.
 - Dostęp do załącznika jest ograniczony do nadawcy/odbiorcy, z uwzględnieniem flag usunięcia.
 - Model załączników jest 1:1 z wiadomością.
 - Indeksy wspierają skrzynkę odbiorczą i wysłane wiadomości po użytkowniku i czasie.
+- Soft-delete jest niezależny dla nadawcy i odbiorcy.
+- Fizyczny DELETE rekordu jest wykonywany dopiero po ustawieniu obu flag usunięcia.
+- Fizyczne usunięcie wiadomości kaskadowo usuwa załącznik.
 
 ## 10. Ryzyka / obserwacje AS-IS
 
 ### HIGH
-- Usunięcie konta przez `ON DELETE CASCADE` usuwa fizycznie wiadomości, w których konto jest nadawcą albo odbiorcą, co ma wpływ na retencję/audyt i wymaga świadomej decyzji biznesowej w architekturze docelowej.
+- Usunięcie konta przez `ON DELETE CASCADE` usuwa fizycznie wiadomości, w których konto jest nadawcą albo odbiorcą, niezależnie od tego, czy druga strona zachowała wiadomość. Ma to wpływ na retencję/audyt i wymaga świadomej decyzji biznesowej w architekturze docelowej.
 
 ### MEDIUM
-- `subject` jest tworzony jako `VARCHAR(120)`, a następnie zmieniany na `TEXT`; ograniczenie 120 znaków jest więc utrzymywane przez aplikację, nie przez końcowy typ kolumny.
+- Brak potwierdzonej polityki czasowej retencji w kodzie: wiadomość może pozostawać w DB bezterminowo, dopóki nie zostanie usunięta przez obie strony lub przez kaskadę po usunięciu konta.
+- `subject` jest tworzony jako `VARCHAR(120)`, a następnie zmieniany na `TEXT`; ograniczenie 120 znaków jest utrzymywane przez aplikację, nie przez końcowy typ kolumny.
 - Brak potwierdzonego CHECK na `file_size`, MIME czy długość subject/body — te ograniczenia są aplikacyjne.
 - Jeden załącznik na wiadomość wynika z PK `message_id`; jest to twarde ograniczenie schematu.
 
 ### LOW / obserwacja
 - `storage_name` jest nullable ze względu na kompatybilność z wcześniejszymi rekordami; kod odszyfrowania ma fallback dla starszego formatu AAD bez `storage_name`.
 
-## 11. WYMAGA DALSZEJ WERYFIKACJI
+## 11. WYMAGA WERYFIKACJI ŚRODOWISKA
 
-- pełna logika fizycznego usuwania rekordu po ustawieniu flag obu stron,
-- czy istnieją dodatkowe `ALTER TABLE`/indeksy poza analizowanymi plikami,
 - rzeczywisty stan schematu na produkcyjnym PostgreSQL/Render,
-- polityka retencji i backupów zaszyfrowanych wiadomości,
-- rotacja kluczy szyfrowania i migracja ciphertextów.
+- polityka backupów i retencji danych poza kodem aplikacji,
+- rotacja kluczy szyfrowania i migracja istniejących ciphertextów,
+- ewentualne zewnętrzne joby/cron/procedury DB realizujące retencję poza analizowanym repozytorium.
 
 ## 12. Status obszaru
 
@@ -240,4 +269,8 @@ Potwierdzone tabele PostgreSQL prywatnej komunikacji:
 1. `gracz_messages`,
 2. `gracz_message_attachments`.
 
-DDL, główne DML, relacje, szyfrowanie, foldery i załączniki zostały zmapowane AS-IS. Obszar wymaga jeszcze punktowej weryfikacji pełnej ścieżki delete/retencji i produkcyjnego schematu, ale jego rdzeń PostgreSQL jest udokumentowany.
+DDL, DML, relacje, szyfrowanie, foldery, załączniki oraz pełna ścieżka soft-delete -> physical delete zostały zmapowane AS-IS na poziomie kodu repozytorium.
+
+**Status: WIADOMOŚCI PRYWATNE — AS-IS ZAMKNIĘTE NA POZIOMIE KODU.**
+
+Otwarte pozostają wyłącznie elementy zależne od środowiska produkcyjnego/operacyjnego, których nie należy dopowiadać bez dowodu.
