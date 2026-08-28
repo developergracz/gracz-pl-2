@@ -29,7 +29,7 @@ Zatwierdzone: Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i
 Aktualny stan Data Quality:
 
 - **DQ-001 — ANALIZA PRZYCZYNY ZAMKNIĘTA / DECISION-READY.** Root cause: ephemeral guest przeznaczony do preview/demo został dopuszczony do persistent Social writer. Decyzja: `LEGACY-QUARANTINE`; żadnego DML jeszcze nie wykonano.
-- **DQ-002 — OTWARTE.** 2 grupy normalized-email, 5 kont; wymagane privacy-safe per-account evidence i decyzja dla każdego konta.
+- **DQ-002 — W TOKU: PER-ACCOUNT EVIDENCE.** 2 grupy normalized-email, 5 kont; collector privacy-safe został przygotowany i oczekuje na wykonanie na produkcyjnym Render PostgreSQL.
 
 Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia globalnego NO-GO.
 
@@ -53,7 +53,8 @@ Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia g
 - grupa B: `gracz.pl`, `gamerpolska`, `gamer`,
 - guard unique-email został dodany dopiero w `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c`,
 - wszystkie 5 kont powstało wcześniej; najpóźniejsze około 11 min 33 s przed guardem,
-- brak automatycznego MERGE/DELETE.
+- brak automatycznego MERGE/DELETE,
+- przygotowany collector DQ-002 zbiera wyłącznie privacy-safe counts/timestamps/statuses oraz audit event types, bez surowych e-maili, treści wiadomości, tokenów i kodów.
 
 ### Stan środowiskowy
 
@@ -68,7 +69,7 @@ Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia g
 
 ### Otwarte bramki krytyczne
 
-- DQ-002 per-account evidence i decyzje,
+- wykonanie collectora DQ-002 i decyzje per-account,
 - remediation + rerun data-quality,
 - fresh schema snapshot/diff,
 - pełny backup + restore test,
@@ -93,18 +94,18 @@ Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia g
 - `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
 - `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md`
 - `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md` — **DQ-001 DECISION-READY**.
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` — **privacy-safe read-only collector, gotowy do wykonania**.
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — arkusz wynikowy, oczekuje na wynik collectora.
 
 ## Następny krok
 
-**DQ-002 — zebrać privacy-safe evidence per account dla:**
+**Uruchomić `11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` na Render PostgreSQL**, bez ujawniania connection string/password. Następnie:
 
-- `gamerpl`,
-- `gamerde`,
-- `gracz.pl`,
-- `gamerpolska`,
-- `gamer`.
-
-Następnie wypełnić decyzje per rekord w `08` i `09`. Dopiero po zamknięciu wymaganych gate'ów można przygotować i zatwierdzić wykonywalny DML, a później rozważać V3 DDL.
+1. zapisać wynik,
+2. uzupełnić `11-DQ-002-PER-ACCOUNT-EVIDENCE.md`,
+3. zatwierdzić decyzję dla `gamerpl`, `gamerde`, `gracz.pl`, `gamerpolska`, `gamer`,
+4. przenieść decyzje do `08` i `09`,
+5. dopiero po pozostałych wymaganych gate'ach przygotować reviewowalny DML.
 
 ## Spis dokumentacji
 
