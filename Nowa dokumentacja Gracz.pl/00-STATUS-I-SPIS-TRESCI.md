@@ -30,9 +30,32 @@ Rzeczywisty Render zawiera **28 tabel**, czyli dwa obiekty ponad zakres 26-tabel
 - MEDIUM: `gracz_role_changes` obok `gracz_role_history`,
 - MEDIUM: dodatkowe `version` w `gracz_game_sessions` bez wcześniejszego potwierdzenia użycia przez DML Warcabów jako CAS.
 
-### Następny etap
+### ETAP 2 — architektura docelowa i plan migracji
 
-**ETAP 2 — ARCHITEKTURA DOCELOWA I PLAN MIGRACJI.**
+**STATUS: ROZPOCZĘTY 28.08.2026.**
+
+Ukończony pierwszy dokument projektowy:
+- `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`.
+
+Backend V3 definiuje docelowo:
+- modularny backend z bounded contextami,
+- wspólną platformę gier z niezależnymi silnikami domenowymi,
+- `match-actor` / single-writer dla pojedynczego meczu,
+- ochronę przed split-brain przez ownership/fencing,
+- Transactional Outbox,
+- idempotentne komendy i konsumentów,
+- Realtime Gateway oddzielony od źródła prawdy,
+- trwały model dla Gomoku,
+- atomowy model krytycznych operacji turniejowych,
+- docelową normalizację newslettera,
+- konsolidację modeli ról i audytu,
+- model wdrożeniowy modular monolith + wydzielone runtime/workers jako etap przejściowy.
+
+### Następny krok ETAPU 2
+
+**Model danych docelowy PostgreSQL V3.**
+
+Ma on przełożyć architekturę Backend V3 na konkretne tabele, klucze, constrainty, outbox, idempotency, model meczów, projekcje i plan przejścia z obecnych 28 tabel.
 
 Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ograniczenie migracyjne i nie może usuwać obiektów legacy bez analizy danych, retencji i aktywnych writerów/readers.
 
@@ -40,6 +63,7 @@ Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ogranicze
 
 ### Architektura
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md` — punkt wyjścia architektury.
+- `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md` — architektura docelowa Backend V3: bounded contexts, match-actor/single-writer, outbox, realtime, ownership danych, deployment i kolejność implementacyjna.
 
 ### PostgreSQL
 - `02-BAZA-DANYCH/00-MAPA-POSTGRESQL-STATUS.md` — końcowy status ETAPU 1B.
