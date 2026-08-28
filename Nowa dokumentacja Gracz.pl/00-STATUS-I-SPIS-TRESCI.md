@@ -16,34 +16,33 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 
 ## ETAP 3 — migracja
 
-**STATUS: W TRAKCIE.**  
+**STATUS: W TRAKCIE — REMEDIATION-PLANNING.**  
 **DDL V3: NO-GO.**
 
 ### Data Quality
 
 - **DQ-001 — DECISION-READY:** root cause EPHEMERAL-GUEST -> persistent Social writer; decyzja `LEGACY-QUARANTINE`; DML niewykonany.
-- **DQ-002 — EVIDENCE COMPLETE / BUSINESS RESOLUTION REQUIRED:** collector 11 wykonany na produkcyjnym Render PostgreSQL w READ ONLY, zakończony ROLLBACK. 2 grupy / 5 kont potwierdzone. Brak podstaw do MERGE/DELETE. DML niewykonany.
+- **DQ-002 — DECISION-READY:** collector 11 wykonany READ ONLY i zakończony ROLLBACK; 2 grupy / 5 kont potwierdzone. Właściciel projektu potwierdził, że wszystkie pięć kont było utworzonych testowo podczas prac nad Gracz.pl. Wszystkie sklasyfikowano `LEGACY-IDENTITY / TEST`. MERGE: NIE. Automatyczny DELETE: NIE. DML niewykonany.
 
-### DQ-002 — najważniejsze evidence
+### DQ-002 — decyzja per-account
 
-Grupa A: `gamerpl`, `gamerde` — oba unverified. `gamerpl` ma registration code; `gamerde` reset token + registration code i audit login footprint.
+- `gamerpl` — `LEGACY-IDENTITY / TEST`.
+- `gamerde` — `LEGACY-IDENTITY / TEST`.
+- `gracz.pl` — `LEGACY-IDENTITY / TEST`; zachować provenance/history prywatnych wiadomości.
+- `gamerpolska` — `LEGACY-IDENTITY / TEST`; zachować audit/newsletter provenance.
+- `gamer` — `LEGACY-IDENTITY / TEST`; zachować session/audit/newsletter provenance.
 
-Grupa B: `gracz.pl`, `gamerpolska`, `gamer` — wszystkie verified, ale mają niezależny footprint. `gracz.pl` ma 3 wysłane wiadomości; `gamerpolska` registration/activation/login lineage; `gamer` registration/activation oraz 4 historyczne auth sessions. Zachować identity/history; maksymalnie jedno konto w grupie może zachować obecny canonical normalized-email po ownership resolution.
-
-Wszystkie pięć kont ma 0 references w badanym Social/Global Chat/Moderation, Tournament i Games footprint oraz 0 aktywnych auth sessions w chwili capture.
+`KEEP-CANONICAL` i `REQUIRE-EMAIL-CHANGE` nie są wymagane dla tych pięciu jako aktywnych identity. Historyczne zależności muszą być obsłużone przez kontrolowaną remediation.
 
 ### Aktualny punkt wznowienia
 
-**ETAP 3 → DQ-002 → BUSINESS/OWNERSHIP RESOLUTION PER GROUP → freeze decision record → przygotowanie reviewowalnego DML dopiero po wymaganych gate'ach.**
-
-Nie wykonywać DML ani DDL na produkcji.
+**ETAP 3 → REMEDIATION-PLANNING → przygotowanie reviewowalnych artefaktów DML dla DQ-001 i DQ-002, bez wykonywania ich na produkcji.**
 
 ### Otwarte bramki krytyczne
 
-- business/ownership resolution DQ-002,
-- remediation + rerun data-quality,
+- przygotowanie remediation + późniejszy rerun data-quality,
 - fresh schema snapshot/diff,
-- pełny backup + restore test,
+- pełny backup + udokumentowany restore test,
 - pełny writer/reader/endpoint/worker inventory,
 - crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
@@ -62,11 +61,11 @@ Nie wykonywać DML ani DDL na produkcji.
 - `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
-- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` — zaktualizowana po collectorze 11.
-- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md` — evidence complete, bez wykonywalnego SQL.
+- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` — DQ-001 i DQ-002 decision-ready.
+- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md` — plan po decyzji 5x `LEGACY-IDENTITY / TEST`, bez wykonywalnego SQL.
 - `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md` — DQ-001 decision-ready.
 - `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` — wykonany READ ONLY.
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — uzupełniony rzeczywistym evidence.
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — evidence + business resolution complete.
 
 ## Spis dokumentacji — ETAP 2
 
