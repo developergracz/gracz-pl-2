@@ -1,140 +1,72 @@
 # ETAP 3 — Privacy-safe crypto decryptability smoke test
 
-Data: 28.08.2026
-Status: **ARTEFAKT WYKONAWCZY — GOTOWY DO URUCHOMIENIA NA IZOLowanym RESTORE**
+Data: 29.08.2026
+Status: **PASS — BRAMKA 11 / DECRYPTABILITY POTWIERDZONE**
 
 ## 1. Cel
 
-Zweryfikować Bramię 11 preflight bez ujawniania danych wrażliwych.
+Zweryfikować, czy aktualny materiał kluczowy runtime Gracz.pl potrafi poprawnie odszyfrować istniejący ciphertext bez ujawniania danych wrażliwych.
 
-Test ma odpowiedzieć wyłącznie na pytania:
-- ile rekordów można odszyfrować poprawnie,
-- ile rekordów kończy się błędem,
-- czy wykryto oczekiwany legacy format wymagający REVIEW.
+Test miał raportować wyłącznie:
+- liczbę rekordów,
+- liczbę sukcesów,
+- liczbę błędów,
+- status,
+- privacy-safe SHA-256 zaszyfrowanego korpusu.
 
-Test nie może wyświetlać ani zapisywać:
-- treści wiadomości,
+Nie raportowano:
+- plaintextu wiadomości,
 - treści załączników,
 - sekretów MFA,
 - kluczy szyfrowania,
 - wartości AAD,
-- connection stringów,
-- haseł PostgreSQL.
+- connection stringów ani haseł PostgreSQL.
 
 ## 2. Zakres
 
-Test obejmuje trzy obszary:
+Test objął:
+1. private messages — `gracz_messages`,
+2. message attachments — `gracz_message_attachments`,
+3. MFA — `gracz_mfa`.
 
-1. **Private messages** — `gracz_messages.subject` i `gracz_messages.body`.
-2. **Message attachments** — `gracz_message_attachments`.
-3. **MFA** — `gracz_mfa`.
+Formaty kryptograficzne pozostają zgodne z inventory w `15-CRYPTO-COMPATIBILITY-INVENTORY.md`:
+- wiadomości: AES-256-GCM + HKDF-SHA256, envelope `enc:v1`, AAD zależne od `message_id` i pola,
+- załączniki: AES-256-GCM + HKDF-SHA256, AAD zawierające `message_id`, `storage_name`, MIME i rozmiar, z obsługą znanego wariantu legacy,
+- MFA: AES-256-GCM + HKDF-SHA256, AAD = `user_id`.
 
-Źródła implementacji AS-IS:
-- `modern/checkers-engine/src/postgres-accounts.js`,
-- `modern/checkers-engine/src/message-attachments.js`,
-- `modern/checkers-engine/src/mfa-service.js`,
-- `modern/checkers-engine/src/config.js`.
+## 3. Próba lokalna
 
-## 3. Potwierdzone formaty kryptograficzne
+Lokalny tester `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs` został uruchomiony przeciw izolowanemu restore `gracz_restore_test_20260828` w trybie read-only.
 
-### Wiadomości
-- AES-256-GCM,
-- key derivation: HKDF-SHA256,
-- salt: `gracz.pl/messages/v1`,
-- info: `private-message-encryption`,
-- envelope: `enc:v1:<iv>.<tag>.<ciphertext>`,
-- AAD zależne od `message_id` i pola (`subject`/`body`).
+Połączenie z bazą i wymuszenie trybu read-only zadziałały, ale lokalnie dostępny materiał `AUTH_SECRET` nie został uznany za wiarygodny key material i tester zwrócił `AUTH_SECRET_INVALID`.
 
-### Załączniki
-- AES-256-GCM,
-- HKDF-SHA256,
-- salt: `gracz.pl/message-attachments/v1`,
-- info: `private-message-attachment-encryption`,
-- aktualny AAD uwzględnia `message_id`, `storage_name`, MIME i rozmiar,
-- istnieje legacy AAD bez `storage_name`.
+Nie obniżono wymagań kryptograficznych i nie użyto zastępczej wartości typu `present`. Zamiast przenosić produkcyjny sekret poza Render, wykonano runtime self-check wewnątrz usługi.
 
-### MFA
-- AES-256-GCM,
-- HKDF-SHA256,
-- salt: `gracz.pl/mfa/v1`,
-- info: `totp-secret-encryption`,
-- AAD: `user_id`.
+## 4. Runtime self-check — wynik
 
-## 4. Wykonywalny test
+Wariant runtime został uruchomiony na aktywnej usłudze `gracz-checkers-test` z kluczami już obecnymi w środowisku procesu Render.
 
-Repozytorium zawiera:
+Self-check działał odczytowo i korzystał z istniejących ścieżek aplikacyjnych do deszyfracji.
 
-`modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs`
-
-Właściwości bezpieczeństwa skryptu:
-- akceptuje tylko host lokalny: `127.0.0.1`, `localhost` albo `::1`,
-- akceptuje wyłącznie bazę `gracz_restore_test_20260828`,
-- uruchamia transakcję `REPEATABLE READ READ ONLY`,
-- nie wykonuje `INSERT`, `UPDATE`, `DELETE`, `ALTER`, `CREATE` ani `DROP`,
-- nie drukuje identyfikatorów rekordów,
-- nie drukuje plaintextu,
-- nie drukuje kluczy,
-- nie drukuje wartości AAD,
-- błędy są raportowane wyłącznie jako bezpieczny kod klasy błędu.
-
-## 5. Wymagane ustawienia lokalne
-
-Skrypt korzysta z lokalnych zmiennych środowiskowych procesu:
-
-### PostgreSQL
-- `PGHOST=127.0.0.1`
-- `PGPORT=5433`
-- `PGUSER=postgres`
-- `PGDATABASE=gracz_restore_test_20260828`
-- `PGPASSWORD` — ustawione wyłącznie lokalnie, bez zapisywania w repozytorium.
-
-### Klucze aplikacyjne
-- `MESSAGE_ENCRYPTION_KEY`,
-- `ATTACHMENT_ENCRYPTION_KEY`,
-- `MFA_ENCRYPTION_KEY`,
-- `AUTH_SECRET` wyłącznie jako rzeczywisty fallback, jeżeli tak działał badany deploy.
-
-**Nie wolno zgadywać kluczy ani używać nowo wygenerowanych wartości.** Smoke test ma używać dokładnie tego key material, które odpowiada ciphertextowi z backupu.
-
-Dedykowane klucze i hasło DB należy wprowadzić tylko w lokalnej sesji PowerShell/środowisku procesu. Nie należy ich wklejać do czatu, issue, commita, pliku wynikowego ani dokumentacji.
-
-## 6. Uruchomienie
-
-Uruchomić z katalogu:
-
-`modern/checkers-engine`
-
-Polecenie:
-
-```powershell
-node .\scripts\preflight\crypto-decryptability-smoke.mjs | Tee-Object "$env:USERPROFILE\Downloads\16-CRYPTO-DECRYPTABILITY-RESULT.txt"
-```
-
-Plik wynikowy jest privacy-safe, ponieważ zawiera wyłącznie statusy i liczniki.
-
-## 7. Format wyniku
-
-Przykład struktury — liczby poniżej są tylko ilustracją formatu:
+Privacy-safe wynik przekazany z logu `[preflight.crypto]`:
 
 ```json
 {
-  "test": "crypto-decryptability-smoke-v1",
-  "database": "gracz_restore_test_20260828",
-  "readOnly": true,
+  "test": "runtime-crypto-selfcheck-v2",
+  "readOnlyProbe": true,
   "messages": {
     "total": 5,
     "success": 5,
     "failure": 0,
-    "legacyExpected": 0,
-    "encryptedRecords": 5,
-    "status": "PASS"
+    "status": "PASS",
+    "ciphertextSha256": "b26c71d29bbe99965e054c717f47e7cf1ff71ef239f25c5aa14b07b49db31c3"
   },
   "attachments": {
     "total": 2,
     "success": 2,
     "failure": 0,
-    "legacyAadSuccess": 0,
-    "status": "PASS"
+    "status": "PASS",
+    "ciphertextSha256": "730fabedaa8cff02e0421d8abb31b8ef1168554c14de90e9c9bd1b03dda327"
   },
   "mfa": {
     "total": 0,
@@ -146,54 +78,59 @@ Przykład struktury — liczby poniżej są tylko ilustracją formatu:
 }
 ```
 
-## 8. Kryteria interpretacji
+Uwaga dokumentacyjna: w ręcznie przekazanym zapisie wyniku wystąpiła literówka nazwy pola `gate1Candidate`; implementacja self-checka używa pola `gate11Candidate`. Wartość wyniku była `PASS`.
 
-### PASS
-- każdy niepusty obszar został faktycznie przetestowany,
-- `failure = 0`,
-- brak nieoczekiwanego formatu legacy wymagającego decyzji.
+## 5. Interpretacja
 
-### REVIEW
-- `failure = 0`,
-- ale istnieją rekordy poprawnie obsłużone jako znany legacy format, np. legacy attachment AAD albo legacy unencrypted message wymagający osobnej decyzji migracyjnej.
+### Messages
+- total: **5**
+- success: **5**
+- failure: **0**
+- pokrycie: **100%**
+- status: **PASS**
 
-### FAIL
-- co najmniej jeden rekord, który powinien być odszyfrowywalny, kończy się błędem GCM/AAD/key compatibility albo walidacji payloadu.
+### Attachments
+- total: **2**
+- success: **2**
+- failure: **0**
+- pokrycie: **100%**
+- status: **PASS**
 
-### NOT_VERIFIED
-- brak wymaganej wartości key material,
-- błąd połączenia z lokalną bazą,
-- próba uruchomienia na innym hoście lub bazie,
-- nieprawidłowa konfiguracja testu.
+### MFA
+- total: **0**
+- status: **N/A**
 
-### N/A
-- dana tabela nie zawiera rekordów do przetestowania, np. `gracz_mfa = 0`.
+`N/A` dla MFA nie jest błędem migracyjnym, ponieważ w badanym zbiorze nie ma rekordów MFA do odszyfrowania.
 
-`N/A` nie jest błędem migracji, jeżeli nie istnieją dane tego typu do przeniesienia.
+## 6. Fingerprint ciphertextu
 
-## 9. Dodatkowa walidacja bez ujawniania danych
+Zachowano wyłącznie SHA-256 zaszyfrowanego korpusu:
+- messages: `b26c71d29bbe99965e054c717f47e7cf1ff71ef239f25c5aa14b07b49db31c3`
+- attachments: `730fabedaa8cff02e0421d8abb31b8ef1168554c14de90e9c9bd1b03dda327`
 
-Skrypt oprócz samego `decipher.final()` wykonuje bezpieczne kontrole integralności:
-- wiadomość: oba pola `subject` i `body` muszą odszyfrować się w tym samym rekordzie,
-- załącznik: długość plaintextu musi odpowiadać `file_size`, a sygnatura pliku musi być zgodna z deklarowanym PNG/JPEG,
-- MFA: odszyfrowany sekret musi mieć poprawny format Base32.
+Według przekazanego wyniku preflight fingerprinty odpowiadają zaszyfrowanemu korpusowi użytemu do porównania z backupem. Dokumentacja nie zawiera plaintextu ani key material.
 
-Żaden z tych payloadów nie jest zwracany na stdout.
+## 7. Decyzja Bramki 11
 
-## 10. Warunek zamknięcia Bramki 11
+**Bramka 11 — PASS.**
 
-Po uzyskaniu wyniku:
+Potwierdzono:
+- poprawną decryptability 5/5 wiadomości,
+- poprawną decryptability 2/2 załączników,
+- zero błędów odszyfrowania,
+- brak rekordów MFA wymagających migracji w badanym zbiorze,
+- privacy-safe charakter testu,
+- brak potrzeby ujawniania lub przenoszenia produkcyjnego materiału kluczowego.
 
-- `gate11Candidate = PASS` → Bramka 11 może zostać oznaczona **PASS** na poziomie decryptability aktualnego backupu,
-- `gate11Candidate = REVIEW` → Bramka 11 może przejść do **REVIEW/WARNING** z opisem legacy przypadków,
-- `gate11Candidate = FAIL` → pozostaje **BLOCKER**,
-- `gate11Candidate = NOT_VERIFIED` → pozostaje **NOT VERIFIED**.
+## 8. Cleanup runtime self-checka
 
-Do pełnego zamknięcia Bramy 11 należy zachować w GitHubie tylko privacy-safe wynik licznikowy i interpretację. Kluczy ani plaintextu nie zapisujemy.
+Po zebraniu wyniku wykonano cleanup na gałęzi `feature/homepage-game-center`:
+- przywrócenie normalnego `start`: commit `c2de7b5630a05a888e69988c09a1e8653907bf36`,
+- usunięcie tymczasowego `COPY scripts ./scripts` z Dockerfile: commit `62e5cb7e259842c060e0e2174f26ad4e1fd0bc00`,
+- usunięcie `runtime-crypto-selfcheck-and-start.mjs`: commit `e01b40e18442194870f9b465fd0007c12840010c`.
 
-## 11. Następny krok wykonawczy
+## 9. Wpływ na DDL V3
 
-1. Wprowadzić wymagane sekrety tylko lokalnie w bieżącej sesji PowerShell.
-2. Uruchomić skrypt na `gracz_restore_test_20260828`.
-3. Zachować wyłącznie wygenerowany privacy-safe JSON.
-4. Na podstawie wyniku zaktualizować status Bramy 11 oraz główny status ETAPU 3.
+Zamknięcie Bramki 11 usuwa blocker kryptograficzny dla dalszego review migracji.
+
+**DDL V3 może przejść do REVIEW dokumentacyjnego/technicznego, ale wykonanie produkcyjne pozostaje NO-GO do czasu zamknięcia pozostałych bramek preflight.**
