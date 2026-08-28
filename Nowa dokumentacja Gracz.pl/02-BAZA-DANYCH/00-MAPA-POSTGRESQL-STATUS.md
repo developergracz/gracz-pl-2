@@ -32,6 +32,8 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Gry — legacy `prefix_*` | materiał porównawczy MySQL; DDL legacy do weryfikacji, nie liczyć automatycznie do mapy PostgreSQL |
 | Wiadomości prywatne — `gracz_messages` | AS-IS zamknięte na poziomie kodu; DDL/DML, FK, indeksy, szyfrowanie, foldery i delete zweryfikowane |
 | Załączniki wiadomości — `gracz_message_attachments` | AS-IS zamknięte na poziomie kodu; FK 1:1, AES-256-GCM, walidacja i cascade delete zweryfikowane |
+| Moderacja — `gracz_moderation_decisions` | AS-IS rdzenia zamknięte; DDL/DML, filtr, audit integration i ryzyka zweryfikowane |
+| Moderacja — `gracz_moderation_appeals` | AS-IS rdzenia zamknięte; FK do decyzji, DML odwołań i braki workflow review zweryfikowane |
 | Pozostałe obszary | do opracowania/weryfikacji |
 | **Łącznie** | **mapa 26 tabel w toku** |
 
@@ -102,9 +104,36 @@ Model jest 1:1 z wiadomością; załączniki są szyfrowane AES-256-GCM i usuwan
 
 Dokument: `05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md`.
 
+## Potwierdzony PostgreSQL — Moderacja
+
+### `gracz_moderation_decisions`
+- `decision_id UUID PRIMARY KEY`,
+- `user_id VARCHAR(32)` bez FK w potwierdzonym DDL,
+- `context VARCHAR(32) NOT NULL`,
+- `outcome VARCHAR(16) NOT NULL`,
+- `reason VARCHAR(64)`,
+- `content_hash CHAR(64)`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`.
+
+Bieżący `record()` zapisuje `decision_id,user_id,context,outcome,reason`; `content_hash` nie jest w tej ścieżce wypełniany.
+
+### `gracz_moderation_appeals`
+- `appeal_id UUID PRIMARY KEY`,
+- `decision_id UUID NOT NULL REFERENCES gracz_moderation_decisions(decision_id) ON DELETE CASCADE`,
+- `user_id VARCHAR(32) NOT NULL`,
+- `explanation TEXT NOT NULL`,
+- `status VARCHAR(16) NOT NULL DEFAULT 'open'`,
+- `reviewed_by VARCHAR(32)`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+- `reviewed_at TIMESTAMPTZ`.
+
+Nie potwierdzono w `moderation-service.js` osobnej trwałej tabeli banów ani implementacji review/close odwołania. RBAC definiuje permissions `moderation.review`, `moderation.warn` i `moderation.ban`, ale samo uprawnienie nie jest dowodem istnienia mechanizmu wykonawczego.
+
+Dokument: `06-MODERACJA-POSTGRESQL-AS-IS.md`.
+
 ## Pozostałe obszary
 
-Dalsza mapa obejmuje m.in. moderację, chat globalny, turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
+Dalsza mapa obejmuje m.in. globalny chat (w tym `gracz_global_chat_reports`), turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
 
 ## Kryterium zakończenia ETAPU 1B
 
