@@ -30,7 +30,7 @@ Zatwierdzone i zapisane:
 
 #### Iteracja 1 — Preflight migracji
 
-**STATUS: W TRAKCIE.**
+**STATUS: W TRAKCIE — DATA QUALITY ZPROFILOWANE, BLOCKERY ZIDENTYFIKOWANE.**
 
 Zapisane artefakty:
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
@@ -38,8 +38,12 @@ Zapisane artefakty:
 - `03-MIGRACJA/02-ENVIRONMENT-BASELINE.md`
 - `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
 - `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
+- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION-COLLECTOR.sql`
+- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
+- `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
+- `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
 
-Potwierdzone:
+Potwierdzone środowiskowo:
 - Render PostgreSQL 18.4,
 - rzeczywista liczba tabel 28/28,
 - dokładne COUNT(*) 28/28 — PASS,
@@ -47,15 +51,27 @@ Potwierdzone:
 - łączna liczba rekordów 13 865,
 - `gracz_audit_log` 13 743 rekordy (~99,1% wszystkich wierszy),
 - cały zestaw 28 tabel około 8,2 MiB,
-- sekwencje, timestamp ranges, constraint counts i index counts zebrane.
+- sekwencje, timestamp ranges, constraint counts i index counts zebrane,
+- 1 orphan friendship,
+- 2 grupy kolizji normalized-email obejmujące 5 kont,
+- 3 rozbieżności newsletter `consent_at` vs `consented_at`.
 
-Wniosek: ryzyko wydajnościowe backfillu jest niskie przy aktualnym wolumenie; nie jest to jeszcze dowód pełnej czystości semantycznej ani gotowości do produkcyjnego DDL.
+Potwierdzone w writerach AS-IS @ `db3c15a`:
+- friendship writer nie weryfikuje requester/addressee w `gracz_accounts`,
+- `gracz_chat_friends` nie ma FK do accounts,
+- standardowy Postgres account writer normalizuje e-mail `trim + lower` i blokuje duplikat,
+- profile update także sprawdza konflikt e-mail,
+- aktualny newsletter zapisuje `consented_at`,
+- lifecycle recorder używa `consented_at` jako czasu `granted`.
+
+Wniosek: data-quality gate nie jest zamknięta. Orphan jest zgodny z luką referencyjną writera; geneza guest principal wymaga dowodu historycznego. Kolizje e-mail nie są wyjaśnione przez standardową ścieżkę rejestracji baseline i wymagają correlation z historią writerów/deployów. Newsletter jest hybrydą legacy/new i wymaga zatwierdzenia semantyki canonical consent timestamp.
 
 Otwarte krytyczne bramki:
+- decyzja/remediation DQ-001 i DQ-002 + rerun weryfikacyjny,
+- historyczne correlation audit/deploy dla kolizyjnych kont i guest principal,
 - świeży schema snapshot/diff w punkcie wykonania,
 - pełny backup + restore test,
-- duplicate/orphan/collision/data-quality profile,
-- writer/reader/endpoint/worker inventory,
+- pełny writer/reader/endpoint/worker inventory,
 - crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
@@ -82,10 +98,12 @@ Produkcja pozostaje **NO-GO**, dopóki otwarte blockery Preflight nie zostaną z
 
 #### Następny krok
 
-Następny artefakt wykonawczy:
-- `05-DATA-QUALITY-ORPHAN-COLLISION-COLLECTOR.sql`
+Następna praca wykonawcza:
+- historyczne correlation dla DQ-001/DQ-002,
+- następnie zatwierdzenie decyzji remediation per blocker bez automatycznego MERGE/DELETE,
+- równolegle kontynuacja pełnego writer/reader/endpoint/worker inventory.
 
-Jego celem będzie read-only profiling rzeczywistych danych przed dodaniem przyszłych V3 UNIQUE/FK/NOT NULL i przed backfillem.
+Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable EXPAND.
 
 ## Spis dokumentacji
 
@@ -125,6 +143,10 @@ Jego celem będzie read-only profiling rzeczywistych danych przed dodaniem przys
 - `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
 - `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
 - `03-MIGRACJA/04-PLAN-DDL-MIGRACJI-ITERACJA-2.md`
+- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION-COLLECTOR.sql`
+- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
+- `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
+- `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
 
 ## Reguła dalszej pracy
 
