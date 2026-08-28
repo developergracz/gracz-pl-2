@@ -34,6 +34,10 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Załączniki wiadomości — `gracz_message_attachments` | AS-IS zamknięte na poziomie kodu; FK 1:1, AES-256-GCM, walidacja i cascade delete zweryfikowane |
 | Moderacja — `gracz_moderation_decisions` | AS-IS rdzenia zamknięte; DDL/DML, filtr, audit integration i ryzyka zweryfikowane |
 | Moderacja — `gracz_moderation_appeals` | AS-IS rdzenia zamknięte; FK do decyzji, DML odwołań i braki workflow review zweryfikowane |
+| Global Chat — `gracz_chat_topics` | AS-IS zamknięte na poziomie kodu; DDL/DML, indeks, brak FK, kategorie i tematy zweryfikowane |
+| Global Chat — `gracz_global_chat` | AS-IS zamknięte na poziomie kodu; DDL/DML, JSONB reactions, soft-delete, SSE i concurrency zweryfikowane |
+| Global Chat — `gracz_chat_friends` | AS-IS zamknięte na poziomie kodu; DDL/DML, CHECK, unique i race A↔B zweryfikowane |
+| Global Chat — `gracz_global_chat_reports` | AS-IS zamknięte na poziomie kodu; DDL/DML, idempotency raportu i brak FK zweryfikowane |
 | Pozostałe obszary | do opracowania/weryfikacji |
 | **Łącznie** | **mapa 26 tabel w toku** |
 
@@ -131,9 +135,61 @@ Nie potwierdzono w `moderation-service.js` osobnej trwałej tabeli banów ani im
 
 Dokument: `06-MODERACJA-POSTGRESQL-AS-IS.md`.
 
+## Potwierdzony PostgreSQL — Global Chat
+
+### `gracz_chat_topics`
+- `topic_id UUID PRIMARY KEY`,
+- `owner_id TEXT NOT NULL`,
+- `owner_name TEXT NOT NULL`,
+- `title TEXT NOT NULL`,
+- `description TEXT NOT NULL DEFAULT ''`,
+- `category TEXT NOT NULL DEFAULT 'ogólne'`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+- `closed BOOLEAN NOT NULL DEFAULT FALSE`,
+- indeks `gracz_chat_topics_created_idx(created_at DESC)`,
+- brak FK do konta w potwierdzonym DDL.
+
+### `gracz_global_chat`
+- `message_id UUID PRIMARY KEY`,
+- `user_id TEXT NOT NULL`,
+- `display_name TEXT NOT NULL`,
+- `body TEXT NOT NULL`,
+- `reply_to UUID`,
+- `topic_id UUID`,
+- `reactions JSONB NOT NULL DEFAULT '{}'::jsonb`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+- `edited_at TIMESTAMPTZ`,
+- `deleted BOOLEAN NOT NULL DEFAULT FALSE`,
+- indeksy po czasie, użytkowniku i temacie,
+- brak FK dla `user_id`, `reply_to`, `topic_id` w potwierdzonym DDL.
+
+Reakcje są aktualizowane read-modify-write bez revision/lockingu, co tworzy ryzyko lost update. Realtime działa przez SSE i pamięć procesu; zapis DB i broadcast nie są atomowe.
+
+### `gracz_chat_friends`
+- `relation_id UUID PRIMARY KEY`,
+- requester/addressee jako `TEXT`,
+- `status TEXT NOT NULL DEFAULT 'pending'`,
+- CHECK `requester_id <> addressee_id`,
+- UNIQUE `(requester_id, addressee_id)`,
+- indeks po requester/addressee/status,
+- brak FK do kont w potwierdzonym DDL.
+
+Kontrola pary A↔B odbywa się przed INSERT w aplikacji; kierunkowy UNIQUE nie wyklucza wyścigu dwóch równoległych zaproszeń w przeciwnych kierunkach.
+
+### `gracz_global_chat_reports`
+- `report_id UUID PRIMARY KEY`,
+- `message_id UUID NOT NULL`,
+- `reporter_id TEXT NOT NULL`,
+- `reason TEXT NOT NULL`,
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+- UNIQUE `(message_id, reporter_id)`,
+- brak FK do wiadomości i konta w potwierdzonym DDL.
+
+Dokument: `07-GLOBAL-CHAT-POSTGRESQL-AS-IS.md`.
+
 ## Pozostałe obszary
 
-Dalsza mapa obejmuje m.in. globalny chat (w tym `gracz_global_chat_reports`), turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
+Dalsza mapa obejmuje m.in. turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
 
 ## Kryterium zakończenia ETAPU 1B
 
