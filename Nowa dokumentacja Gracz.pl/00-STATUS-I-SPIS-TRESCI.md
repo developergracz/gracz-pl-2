@@ -3,7 +3,7 @@
 Data: 28.08.2026
 
 ## Zasada źródła prawdy
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader oraz worker/event/realtime inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`; późniejsze commity do tego punktu są dokumentacyjne i nie zmieniają analizowanego kodu aplikacji.
 
 ## ETAP 1B — mapa PostgreSQL
 **STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
@@ -12,7 +12,7 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-**STATUS: W TRAKCIE — PREFLIGHT / WRITER-READER INVENTORY 28/28 WYKONANE.**  
+**STATUS: W TRAKCIE — PREFLIGHT / BRAMKI 9–10 ZMAPOWANE KODOWO.**  
 **DDL V3: NO-GO.**
 
 ### Data Quality
@@ -31,6 +31,11 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 - **Bramka 9 — WARNING:** mapa kodowa jest kompletna, ale do `PASS` pozostaje korelacja aktualnego deployu/procesów/jobów z analizowanym runtime.
 - Szczególne ostrzeżenia: `gracz_game_sessions.version` nie jest używany przez aktualny store jako CAS; tournament lifecycle jest wielostatementowy; newsletter lifecycle analytics są best-effort po core commicie; Chat DB→realtime nie jest atomowy; dwa production-only legacy tables nie mają potwierdzonego current runtime path.
 
+### Worker / Event / Realtime inventory
+- `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md` — aktualny runtime zmapowany.
+- Potwierdzono process-local SSE dla Warcabów, Tysiąca i Global Chat, direct mail w request path, best-effort newsletter lifecycle analytics, process-local SecurityMonitor, cleanup głównie startup/opportunistic oraz brak Transactional Outbox AS-IS.
+- **Bramka 10 — WARNING:** repo/runtime inventory jest kompletny; do `PASS` pozostaje środowiskowe potwierdzenie braku osobnego Render cron/worker/service/starego writera.
+
 ### Remediation planning
 Przygotowano reviewowalny komplet:
 - `03-MIGRACJA/09a-dml-precheck-readonly.sql` — readonly snapshot/assertions.
@@ -43,12 +48,11 @@ Przygotowano reviewowalny komplet:
 Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-**ETAP 3 → PREFLIGHT GATE 10 — worker/event/realtime inventory.**
+**ETAP 3 → PREFLIGHT GATE 11 — crypto compatibility i key/version inventory.**
 
 ### Otwarte bramki krytyczne
 - fresh schema snapshot/diff,
-- deploy/process/job correlation potrzebna do domknięcia bramki 9,
-- worker/event/realtime inventory,
+- deploy/process/job correlation potrzebna do domknięcia bramek 9–10,
 - crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
@@ -79,6 +83,7 @@ Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany
 - `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md`
 - `03-MIGRACJA/12-BACKUP-I-RESTORE-TEST.md`
 - `03-MIGRACJA/13-WRITER-READER-INVENTORY.md`
+- `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md`
 
 ## Spis dokumentacji — ETAP 2
 ### Architektura
