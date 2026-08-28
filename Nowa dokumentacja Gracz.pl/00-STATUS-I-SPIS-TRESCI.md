@@ -53,6 +53,7 @@ Zapisane artefakty:
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
 - `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
+- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md` — szkielet wykonawczy, bez SQL i bez autoryzacji produkcyjnego DML.
 
 Potwierdzone środowiskowo:
 - Render PostgreSQL 18.4,
@@ -83,6 +84,8 @@ Macierz `08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` formalizuje bezpieczne warianty re
 - DQ-001: `MAP-TO-CANONICAL`, `LEGACY-QUARANTINE`, ewentualny późniejszy `DELETE-AS-INVALID`,
 - DQ-002: `KEEP-CANONICAL`, `REQUIRE-EMAIL-CHANGE`, `LEGACY-IDENTITY`, wyjątkowo `MERGE` przy silnym dowodzie,
 - domyślnie: **nie scalać kont** i **nie przepinać guest principal bez jednoznacznego dowodu**.
+
+`09-PLAN-DML-REMEDIATION.md` definiuje już ramę wykonawczą: precheck, freeze decyzji, osobne operacje DQ-001/DQ-002, kontrolę race condition, transakcje, rollback, postcheck, stop conditions oraz kryteria zakończenia. Dokument nadal nie zawiera wykonywalnego SQL.
 
 Otwarte krytyczne bramki:
 - domknięcie źródła `guest-*` i decyzja DQ-001,
@@ -121,7 +124,7 @@ Następna praca wykonawcza:
 - domknąć kodowe/historyczne źródło principalu `guest-*`,
 - zebrać privacy-safe evidence per account dla `gamerpl`, `gamerde`, `gracz.pl`, `gamerpolska`, `gamer`,
 - uzupełnić i zatwierdzić decyzję remediation per rekord w macierzy `08`,
-- dopiero potem przygotować osobny **PLAN DML REMEDIATION** — nadal bez automatycznego wykonania na produkcji,
+- uzupełnić `09-PLAN-DML-REMEDIATION.md` o zatwierdzone decyzje — nadal bez automatycznego wykonania na produkcji,
 - równolegle kontynuować pełny writer/reader/endpoint/worker inventory.
 
 Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable EXPAND.
@@ -169,6 +172,7 @@ Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
 - `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
+- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md`
 
 ## Reguła dalszej pracy
 
