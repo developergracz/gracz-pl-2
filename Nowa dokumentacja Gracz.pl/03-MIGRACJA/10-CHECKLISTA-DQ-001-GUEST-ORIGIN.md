@@ -1,127 +1,88 @@
-# ETAP 3 — Checklista DQ-001: pochodzenie `guest-*`
+# ETAP 3 — DQ-001: pochodzenie `guest-*`
 
 Data: 28.08.2026  
-Status: **ARTEFAKT ANALITYCZNY — DQ-001 W TOKU / BEZ DML / DDL V3 NO-GO**
+Status: **ANALIZA PRZYCZYNY ZAMKNIĘTA — DECISION-READY / BEZ DML / DDL V3 NO-GO**
 
-## 1. Cel
+## 1. Wynik
 
-Domknąć pochodzenie principalu `guest-*` występującego w orphan friendship i podjąć audytowalną decyzję remediation DQ-001 przed przygotowaniem wykonywalnego DML.
+DQ-001 został domknięty na poziomie kodu i historii Git. Principal `guest-*` jest **EPHEMERAL-GUEST**: techniczną, krótkotrwałą tożsamością do demonstracji gry, która z założenia nie ma rekordu w `gracz_accounts` ani trwałej sesji konta w PostgreSQL.
 
-Dokument nie autoryzuje żadnego `UPDATE`, `DELETE`, przepięcia relacji ani DDL.
+Dokument nie autoryzuje żadnego DML ani DDL.
 
-## 2. Stan potwierdzony
+## 2. POTWIERDZONE — generator i lifecycle
 
-- istnieje 1 orphan friendship,
-- requester ma identyfikator typu `guest-*` i nie istnieje w `gracz_accounts`,
-- addressee istnieje w `gracz_accounts`,
-- `gracz_chat_friends` nie ma FK do `gracz_accounts`,
-- historyczny writer friendship pozwalał wykonać INSERT bez account-existence check,
-- luka istniała od momentu wprowadzenia friendship,
-- brak jeszcze dowodu pozwalającego przypisać konkretny `guest-*` do canonical account.
+1. Commit `a377bfc151914ba8bc448cf6e55ffb9598f522eb` z 24.08.2026 03:09:05 UTC dodał `AuthService.issueGuest()` jako „tymczasowe sesje gościa do podglądu gier”.
+2. Token guest ma domyślny TTL 1800 s i maksymalnie 3600 s.
+3. Token guest celowo nie ma `jti` ani wersji v2; komentarz w kodzie wprost stwierdza, że nie jest zapisywany jako normalna sesja konta w PostgreSQL i nie wymaga rekordu `gracz_accounts`.
+4. Commit `06b6352499332c35fcf836d1dac5b0b9a21469aa` z 24.08.2026 03:09:28 UTC dodał `POST /auth/guest`.
+5. Endpoint generuje po stronie serwera `randomBytes(4).toString('hex')` i identyfikator `guest-${suffix}` — dokładnie `guest-` + 8 znaków hex.
+6. Produkcyjny requester `guest-24ea096d` pasuje dokładnie do tego formatu.
+7. Commit `2b8821088dd7025bd4c97680d1b84650288eae90` dodał UI „WEJDŹ JAKO GOŚĆ — ZOBACZ TYSIĄCA”, opisane jako tryb demonstracyjny bez zakładania konta i bez wpływu na ranking.
 
-## 3. Checklista źródła principalu
+## 3. POTWIERDZONE — droga do persistent friendship
 
-### A. Generowanie identyfikatora
+`trustedChatUser()` akceptuje poprawnie podpisany token i sprawdza rejestr `authSessions` tylko wtedy, gdy token ma `tokenId`. Guest token ma `tokenId = null`, więc nie wymaga rekordu w `gracz_auth_sessions`. Handler przekazuje dalej `userId` i `displayName`, nie odrzucając flagi `guest`.
 
-- [ ] znaleźć wszystkie historyczne wystąpienia literalne i konstrukcje tworzące `guest-*`,
-- [ ] sprawdzić frontend, backend, testy, fixtures i skrypty pomocnicze,
-- [ ] sprawdzić historię commitów z okresu przed utworzeniem orphan friendship,
-- [ ] ustalić format/sposób generowania suffixu guest ID,
-- [ ] ustalić, czy ID pochodziło z klienta, serwera, sesji, cookie, local/session storage lub test harness.
+`requestFriend()` następnie:
 
-### B. Lifecycle guest
+- używa `user.userId` jako requestera,
+- nie wykonuje lookupu requestera w `gracz_accounts`,
+- nie wykonuje lookupu addressee w `gracz_accounts`,
+- zapisuje relację bezpośrednio do `gracz_chat_friends`.
 
-- [ ] ustalić moment utworzenia guest principal,
-- [ ] ustalić TTL/lifetime,
-- [ ] ustalić, czy principal przetrwa restart procesu/przeglądarki,
-- [ ] ustalić, czy guest był zapisywany w PostgreSQL lub tylko w pamięci/kliencie,
-- [ ] ustalić, czy istniała promocja guest -> registered account,
-- [ ] ustalić, czy promocja zachowywała/mapowała guest ID,
-- [ ] ustalić, czy guest był tylko tożsamością techniczną czy świadomą tożsamością produktową.
+Historia `global-chat.js` nie wykazuje zmiany tego writera pomiędzy wprowadzeniem sesji guest a timestampem problematycznej relacji. Oznacza to, że ephemeral guest mógł wejść do trwałego writera Social.
 
-### C. Authentication / session evidence
+## 4. Klasyfikacja root cause
 
-- [ ] sprawdzić historyczne ścieżki `trustedUser` / `trustedChatUser` / auth/session,
-- [ ] ustalić, czy endpoint friendship wymagał authenticated account,
-- [ ] ustalić, czy nagłówki/parametry użytkownika mogły być przyjęte bez canonical account lookup,
-- [ ] sprawdzić, czy guest mógł uzyskać trwałą `gracz_auth_sessions` — nie zakładać tego bez dowodu,
-- [ ] skorelować czas orphan friendship z audit/session evidence bez ujawniania PII.
+**ROOT CAUSE: AUTHORIZATION / BOUNDED-CONTEXT GAP.**
 
-### D. Friendship writer
+Funkcja guest była zamierzona dla krótkotrwałego preview/demo, ale capability guest nie zostało ograniczone na granicy Global Chat / Social. Persistent friendship zaakceptowało ephemeral principal, a schemat nie posiadał FK ani równoważnej walidacji canonical identity.
 
-- [ ] potwierdzić dokładną wersję writera działającą w czasie utworzenia rekordu,
-- [ ] potwierdzić źródło requester ID przekazywanego do `requestFriend()`,
-- [ ] potwierdzić źródło addressee ID,
-- [ ] sprawdzić, czy istniał bypass/test endpoint,
-- [ ] sprawdzić, czy writer dopuszczał guest przez zamierzony kontrakt czy wyłącznie przez brak walidacji.
-
-### E. Evidence produkcyjne
-
-- [ ] sprawdzić audit log wokół timestampu utworzenia relacji,
-- [ ] sprawdzić, czy ten sam guest ID występuje w innych tabelach/zdarzeniach,
-- [ ] sprawdzić, czy istnieje późniejsze konto możliwe do powiązania przez silny dowód techniczny,
-- [ ] nie używać samego display name, czasu ani podobieństwa identyfikatora jako dowodu mapowania,
-- [ ] nie zapisywać PII do dokumentacji migracyjnej.
-
-## 4. Klasyfikacja końcowa guest
-
-Po zebraniu evidence principal musi otrzymać dokładnie jedną klasyfikację:
-
-- **EPHEMERAL-GUEST** — techniczna, nietrwała tożsamość bez canonical account,
-- **TRANSITIONAL-GUEST** — principal poprzedzający rejestrację, z udowodnionym lub nieudowodnionym mapowaniem,
-- **PERSISTENT-GUEST** — świadomie trwała tożsamość produktowa,
-- **INVALID/TEST PRINCIPAL** — artefakt błędu/testu/bypassu,
-- **UNRESOLVED-HISTORICAL** — brak wystarczającego dowodu do bardziej szczegółowej klasyfikacji.
+To nie jest dowód, że `guest-24ea096d` był kiedyś kontem usuniętym. Wręcz przeciwnie: mechanizm guest był zaprojektowany tak, aby konta nie wymagać.
 
 ## 5. Decision record DQ-001
 
-Do uzupełnienia po evidence:
-
 | Pole | Wynik |
 |---|---|
-| Typ guest principal | TBD |
-| Generator / writer | TBD |
-| Persistence | TBD |
-| Authentication semantics | TBD |
-| Guest friendship zamierzone? | TBD |
-| Canonical account mapping | TBD |
-| Siła dowodu mapowania | TBD |
-| Decyzja remediation | TBD |
-| Uzasadnienie | TBD |
-| Ryzyko | TBD |
-| Wymagany postcheck | TBD |
+| Typ principalu | **EPHEMERAL-GUEST** |
+| Generator | `POST /auth/guest` + `randomBytes(4).hex` |
+| Format ID | `guest-` + 8 znaków hex |
+| TTL | 1800 s domyślnie |
+| `gracz_accounts` | Celowo brak |
+| `gracz_auth_sessions` | Guest nie wymaga trwałego wpisu |
+| Friendship przez guest | Możliwe wskutek luki authz/writera; niepotwierdzone jako wymaganie biznesowe |
+| Canonical account mapping | **Brak dowodu — nie wykonywać mapowania** |
+| Klasyfikacja problemu | Persistent Social write przez ephemeral principal |
+| Decyzja remediation | **LEGACY-QUARANTINE** |
+| Alternatywa późniejsza | `DELETE-AS-INVALID` tylko po zachowaniu provenance i osobnej autoryzacji DML |
+| `MAP-TO-CANONICAL` | Odrzucone przy obecnym evidence |
 
-## 6. Dozwolone decyzje remediation
+## 6. Decyzja remediation
 
-1. **MAP-TO-CANONICAL** — tylko przy jednoznacznym, audytowalnym dowodzie.
-2. **LEGACY-QUARANTINE** — bezpieczny default, jeśli brak jednoznacznego mapowania; rekord zachowany jako provenance, ale nie trafia do aktywnego canonical Social V3.
-3. **DELETE-AS-INVALID** — dopiero po formalnym potwierdzeniu braku wartości historycznej i osobnej autoryzacji DML.
-4. **PERSISTENT-GUEST-IDENTITY** — tylko jeśli wymaganie biznesowe świadomie utrzymuje trwałych guestów w V3.
+Dla migracji V3 rekord nie może wejść do aktywnego canonical Social graph. Bezpieczna decyzja to **LEGACY-QUARANTINE**:
 
-## 7. Kryteria zamknięcia DQ-001
+1. zachować provenance problematycznej relacji,
+2. wyłączyć ją z aktywnego backfillu Social V3,
+3. nie przypinać guest do żadnego konta bez niezależnego, jednoznacznego dowodu,
+4. ewentualne fizyczne usunięcie rozpatrywać dopiero jako osobno zatwierdzony DML.
 
-DQ-001 można oznaczyć jako **DECISION-READY**, gdy:
+## 7. Wymaganie dla writera docelowego
 
-- znana jest historyczna ścieżka tworzenia lub wiarygodnie udokumentowano jej brak w repo,
-- ustalono lifecycle guest,
-- ustalono kontrakt friendship wobec guestów,
-- zebrano produkcyjne evidence wystarczające do decyzji,
-- wybrano jedną decyzję remediation,
-- decyzja została wpisana do `08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`,
-- decyzja została przeniesiona do `09-PLAN-DML-REMEDIATION.md`, nadal bez wykonania.
+Przed Social V3 cutover należy usunąć przyczynę, nie tylko rekord:
 
-## 8. STOP conditions
+- persistent social writes muszą wymagać canonical registered identity,
+- guest token/capability musi być jawnie odrzucany dla friendship i innych trwałych operacji Social, chyba że produkt świadomie dopuści konkretną funkcję,
+- requester i addressee muszą być walidowani względem canonical Identity,
+- docelowe constraints/FK można egzekwować dopiero po remediation danych.
 
-Natychmiast zatrzymać decyzję `MAP-TO-CANONICAL`, jeśli:
+## 8. Elementy niewymagane do decyzji LEGACY-QUARANTINE
 
-- mapowanie opiera się tylko na podobnej nazwie/display name,
-- istnieje więcej niż jedno możliwe konto,
-- brak spójnego audit/session evidence,
-- dane z kodu i produkcji są sprzeczne,
-- wymagane byłoby ujawnienie lub zgadywanie tożsamości użytkownika.
+Nie jest potrzebne zgadywanie, kto korzystał z konkretnej sesji guest ani próba korelacji jej z późniejszym kontem. Takie dochodzenie byłoby wymagane tylko przy wariancie `MAP-TO-CANONICAL`, którego obecny evidence nie uzasadnia.
 
-W takim przypadku bezpieczny kierunek pozostaje `LEGACY-QUARANTINE` do czasu uzyskania lepszego dowodu.
+## 9. Status gate
 
-## 9. Relacja do GO/NO-GO
+**DQ-001: DECISION-READY — przyczyna i klasyfikacja zamknięte.**
 
-Zamknięcie DQ-001 usuwa tylko jeden blocker Data Quality. **Nie oznacza automatycznego GO dla V3 DDL.** Nadal wymagane są m.in. DQ-002, rerun data-quality po remediation, backup + restore test, fresh schema diff, writer/reader/worker inventory, crypto compatibility, active-state/cutover, credential/least-privilege gate oraz finalne GO/NO-GO.
+Nie oznacza to wykonania remediation. Rekord nadal istnieje w AS-IS do czasu kontrolowanego DML lub mechanizmu quarantine w backfillu.
+
+**DDL V3 pozostaje NO-GO**, ponieważ DQ-002 oraz pozostałe bramki preflight nadal są otwarte.
