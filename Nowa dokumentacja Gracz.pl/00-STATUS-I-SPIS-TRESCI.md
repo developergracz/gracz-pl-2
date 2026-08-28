@@ -19,20 +19,21 @@ Nie wolno dopisywać niepotwierdzonych tabel, kolumn, metod ani zachowań.
 - Ustalono bazowy stan repozytorium do analizy.
 - Potwierdzono współistnienie nowej warstwy Node.js oraz elementów legacy SmartFox/Java/Flash.
 - PostgreSQL jest analizowany jako trwała warstwa danych.
-- Stan części funkcji Gomoku/lobby występuje w pamięci procesu i wymaga uwzględnienia w dalszej analizie architektury.
 - W kodzie występuje SSE; WebSocket/realtime w architekturze docelowej należy traktować oddzielnie od stanu obecnego.
 
 ### ETAP 1B — mapa PostgreSQL
 
 Zakres mapy: **26 tabel**.
 
-Opracowane/rozpoczęte obszary:
+Opracowane obszary:
 - tożsamość — 7 tabel,
 - audyt — 1 tabela,
-- gry / Warcaby — potwierdzono i udokumentowano PostgreSQL `gracz_game_sessions`; analiza concurrency wyższej warstwy pozostaje do domknięcia,
+- gry / Warcaby — `gracz_game_sessions`, AS-IS zamknięte, w tym realne ryzyko lost update i brak single-writer,
+- gry / Tysiąc — `gracz_thousand_games`, AS-IS zamknięte, w tym JSONB, revision i optimistic locking,
+- gry / Gomoku — AS-IS zamknięte jako model pamięciowy; aktualny kod nie posiada persistence PostgreSQL dla tej gry,
 - legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
-Do pełnego zamknięcia mapy pozostają dalsze tabele gier oraz wiadomości, moderacja, chat globalny, turnieje, newsletter i końcowe porównanie z produkcją/model match.
+Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym wiadomości, moderacja, chat globalny, turnieje, newsletter oraz końcowe porównanie z produkcją/model match.
 
 ## Spis dokumentacji
 
@@ -41,7 +42,9 @@ Do pełnego zamknięcia mapy pozostają dalsze tabele gier oraz wiadomości, mod
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md` — potwierdzony punkt wyjścia architektury.
 - `02-BAZA-DANYCH/00-MAPA-POSTGRESQL-STATUS.md` — status kompletnej mapy 26 tabel.
 - `02-BAZA-DANYCH/01-TOZSAMOSC-I-AUDYT.md` — zakres pierwszych ukończonych partii mapowania.
-- `02-BAZA-DANYCH/02-GRY-WARCABY-POSTGRESQL-AS-IS.md` — Warcaby: legacy SmartFox/MySQL vs modern PostgreSQL, DDL/DML `gracz_game_sessions`, model sesji, ranking i ryzyka concurrency.
+- `02-BAZA-DANYCH/02-GRY-WARCABY-POSTGRESQL-AS-IS.md` — Warcaby: legacy SmartFox/MySQL vs modern PostgreSQL, DDL/DML `gracz_game_sessions`, sesja, ranking i concurrency.
+- `02-BAZA-DANYCH/03-GRY-TYSIAC-POSTGRESQL-AS-IS.md` — Tysiąc: `gracz_thousand_games`, JSONB, revision, optimistic locking, API i realtime.
+- `02-BAZA-DANYCH/04-GRY-GOMOKU-AS-IS.md` — Gomoku: model pamięciowy, ruchy, revision w RAM, idempotency requestId, lobby i brak persistence PostgreSQL.
 
 ## Reguła dalszej pracy
 
