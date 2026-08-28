@@ -6,7 +6,7 @@ Status: **ANALIZA WYKONANA / PRODUKCJA NADAL NO-GO DLA DDL**
 
 ## 1. Cel
 
-Powiązać wykryte w produkcji anomalie danych z rzeczywistymi writerami AS-IS i przygotować niedestrukcyjny plan naprawy przed V3 EXPAND/BACKFILL.
+Powiązać wykryte w produkcji anomalie danych z rzeczywistymi writerami AS-IS i historią ich zmian oraz przygotować niedestrukcyjny plan naprawy przed V3 EXPAND/BACKFILL.
 
 Dowód środowiskowy z drill-down:
 - 1 orphan friendship,
@@ -35,22 +35,31 @@ Nie ma FK z `requester_id` ani `addressee_id` do `gracz_accounts`.
 ### Writer
 
 `GlobalChatService.requestFriend(user, input)`:
-1. normalizuje wyłącznie `targetId` przez `trim().toLowerCase()`,
+1. normalizuje `targetId` przez `trim().toLowerCase()`,
 2. odrzuca pusty target i relację do samego siebie,
 3. sprawdza tylko, czy relacja A-B lub B-A już istnieje,
-4. następnie wykonuje `INSERT INTO gracz_chat_friends(...)` z `user.userId` oraz `targetId`.
+4. wykonuje `INSERT INTO gracz_chat_friends(...)` z `user.userId` oraz `targetId`.
 
 Writer **nie sprawdza w `gracz_accounts` istnienia ani requestera, ani addressee**.
 
-`trustedChatUser()` sprawdza poprawność tokenu/sesji, ale nie wykonuje lookupu konta w `gracz_accounts`. Oznacza to, że ważny principal z tokenu nie jest w tym miejscu ponownie wiązany z kanonicznym rekordem konta.
+`trustedChatUser()` sprawdza token/sesję, ale nie wykonuje lookupu principalu w `gracz_accounts` przed zapisem relacji.
+
+### Historia źródłowa
+
+Funkcja znajomych została dodana w commicie:
+- `10a0e625067c007a42de507c50fa3cd820ed7185`,
+- 23.08.2026 02:15:31 UTC,
+- `Rozbuduj chat o tematy znajomych i zaawansowane wyszukiwanie`.
+
+Patch tego commita wprowadził jednocześnie `gracz_chat_friends` oraz `requestFriend()`. Już w momencie wprowadzenia funkcji tabela nie miała FK do accounts, a writer nie wykonywał account-existence check.
+
+Produkcyjny orphan został utworzony później, 26.08.2026. Chronologia jest więc zgodna z tym, że działał writer podatny na zapis niekanonicznego principalu.
 
 ### Ocena przyczyny DQ-001
 
-**POTWIERDZONE:** kod pozwala zapisać friendship bez referencyjnej weryfikacji konta.
+**POTWIERDZONE:** od początku funkcji friendship w przeanalizowanej historii kodowej istniała luka referencyjna pozwalająca zapisać relację bez potwierdzenia obu kont.
 
-**WYMAGA WERYFIKACJI HISTORYCZNEJ:** sam baseline `db3c15a` nie dowodzi, który historyczny endpoint/deploy utworzył principal typu `guest-*`. Aktualny frontend Global Chat wymaga `/auth/me` i po błędzie wraca na stronę główną. Nie należy więc twierdzić bez logów/historii deployu, że obecny frontend generuje guestów.
-
-Wniosek: istniejący orphan jest zgodny z luką referencyjną writera, ale dokładna geneza konkretnego guest principal wymaga historycznego correlation/deploy evidence.
+**WYMAGA WERYFIKACJI HISTORYCZNEJ:** nie ustalono jeszcze kodowego źródła samego principalu `guest-*`. Baseline frontend Global Chat korzysta z `/auth/me` i po braku autoryzacji wraca na stronę główną. Nie wolno więc twierdzić bez dodatkowego dowodu, że aktualny frontend generuje guestów.
 
 ---
 
@@ -58,14 +67,14 @@ Wniosek: istniejący orphan jest zgodny z luką referencyjną writera, ale dokł
 
 Źródło: `modern/checkers-engine/src/postgres-accounts.js` @ `db3c15a`.
 
-### Normalizacja
+### Aktualna normalizacja
 
 `cleanEmail(value)` wykonuje:
 - `trim()`,
 - `toLowerCase()`,
 - ograniczenie do 254 znaków.
 
-### Rejestracja
+### Aktualny guard
 
 `PostgresAccountService.register()`:
 - oblicza `safeEmail = cleanEmail(email)`,
@@ -74,36 +83,43 @@ Wniosek: istniejący orphan jest zgodny z luką referencyjną writera, ale dokł
 - przy trafieniu zwraca `EMAIL_EXISTS`,
 - dopiero potem wykonuje INSERT.
 
-### Aktualizacja profilu
+`updateProfile()` stosuje analogiczną kontrolę dla innego `user_id`.
 
-`updateProfile()` stosuje tę samą normalizację oraz kontrolę duplikatu dla innego `user_id`.
+`SecureAccountService.register()` deleguje utworzenie konta do `this.base.register(input)`, czyli przy PostgreSQL do powyższego writera.
 
-### Warstwa SecureAccountService
+### Historyczne potwierdzenie momentu wprowadzenia ochrony
 
-Źródło: `modern/checkers-engine/src/secure-accounts.js` @ `db3c15a`.
+Historia Git pokazuje, że ochrona przed duplikatem e-mail została dodana dopiero w commicie:
+- `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c`,
+- 27.08.2026 07:31:58 UTC,
+- `Require unique email for account recovery`.
 
-`SecureAccountService.register()` deleguje utworzenie rekordu do `this.base.register(input)`, czyli w konfiguracji PostgreSQL do `PostgresAccountService.register()`.
+Patch dodał dokładnie guardy e-mail w `register()` oraz `updateProfile()`.
+
+Privacy-safe chronologia pięciu kont z kolizji:
+
+| Konto w grupie | `created_at` UTC | Względem commita guard |
+|---|---|---|
+| A1 | 26.08.2026 04:54:06 | przed guardem |
+| A2 | 26.08.2026 22:36:57 | przed guardem |
+| B1 | 22.08.2026 00:19:00 | przed guardem |
+| B2 | 26.08.2026 04:42:01 | przed guardem |
+| B3 | 27.08.2026 07:20:25 | przed guardem |
+
+Najpóźniejsze z kolizyjnych kont powstało około **11 min 33 s przed commitem**, który dodał kontrolę unikalności e-mail.
 
 ### Ocena przyczyny DQ-002
 
-**POTWIERDZONE:** writer bazowy `db3c15a` nie powinien dopuścić nowej kolizji wynikającej wyłącznie z case/leading/trailing whitespace w e-mailu podczas standardowej rejestracji lub `updateProfile()`.
+**POTWIERDZONE KODOWO I CHRONOLOGICZNIE:** wszystkie 5 kont z kolizji istniało przed wprowadzeniem do repozytorium guardu unique-email. To usuwa wcześniejszą sprzeczność: obecny baseline nie powinien tworzyć takich duplikatów, ale historyczna wersja kodu przed 27.08.2026 nie posiadała tej ochrony.
 
-Dlatego 2 istniejące grupy / 5 kont **nie są wyjaśnione przez bieżącą ścieżkę standardowej rejestracji w baseline**.
-
-Najbardziej prawdopodobne klasy źródła, wymagające dowodu historycznego:
-- wcześniejsza wersja writera przed wdrożeniem tej kontroli,
-- inny writer/import/migracja,
-- deploy drift pomiędzy repo a działającą wersją,
-- ręczna/administracyjna mutacja danych.
-
-Nie wolno arbitralnie przypisać jednej z tych przyczyn bez logów/commit-deploy correlation.
+**WYMAGA WERYFIKACJI ŚRODOWISKA:** czas commita nie jest automatycznie czasem deployu Render. Nadal nie wolno twierdzić bez deploy/audit correlation, że każdy z pięciu rekordów powstał dokładnie przez standardowy endpoint rejestracji, choć chronologia bardzo silnie wspiera scenariusz pre-guard.
 
 ### Dodatkowe ryzyko bezpieczeństwa
 
 `SecureAccountService.requestPasswordReset()` dla e-maila wybiera:
 `... WHERE lower(email)=lower($1) ORDER BY created_at DESC LIMIT 1`.
 
-Przy istniejących duplikatach normalized-email oznacza to niejednoznaczność semantyczną: żądanie resetu może być przypisane do najnowszego pasującego rekordu zamiast do jednoznacznej tożsamości. Jest to powód, aby DQ-002 traktować jako **BLOCKER Identity**, a nie kosmetyczną duplikację.
+Przy istniejących duplikatach normalized-email odzyskiwanie jest semantycznie niejednoznaczne: system może wybrać najnowsze pasujące konto. DQ-002 pozostaje **BLOCKER Identity** do czasu uporządkowania tożsamości i recovery.
 
 ---
 
@@ -113,170 +129,122 @@ Przy istniejących duplikatach normalized-email oznacza to niejednoznaczność s
 - `modern/checkers-engine/src/newsletter.js` @ `db3c15a`,
 - `modern/checkers-engine/src/newsletter-lifecycle-recorder.js` @ `db3c15a`.
 
-### Aktualny lifecycle
+Aktualny `NewsletterService` definiuje i używa `consented_at`. Przy ponownym subscribe ustawia `consented_at=NOW()`, a dla nowego INSERT pole korzysta z DEFAULT `NOW()`.
 
-`NewsletterService` definiuje i używa pola `consented_at`.
+W aktualnym writerze `newsletter.js` legacy `consent_at` nie jest używane do nowego lifecycle.
 
-Przy ponownym subscribe istniejącego rekordu writer ustawia m.in.:
-- `consent_version=...`,
-- `consented_at=NOW()`,
-- status `pending_confirmation`,
-- nowe tokeny lifecycle.
+`NewsletterLifecycleRecorder.captureSubscribe()` pobiera `subscriber.consented_at` i zapisuje ten timestamp jako zdarzenie zgody `granted` w `newsletter_consent_history`. Potwierdzenie double opt-in używa osobnego `confirmed_at`.
 
-Przy nowym INSERT pole `consented_at` korzysta z DEFAULT `NOW()`.
+### Ocena DQ-003
 
-W przeanalizowanym aktualnym writerze `newsletter.js` pole legacy `consent_at` nie jest używane do tego lifecycle.
-
-`NewsletterLifecycleRecorder.captureSubscribe()` pobiera `subscriber.consented_at` i zapisuje właśnie ten timestamp jako zdarzenie zgody `granted` w `newsletter_consent_history`.
-
-### Ocena przyczyny DQ-003
-
-**POTWIERDZONE:** aktualny lifecycle traktuje `consented_at` jako źródło czasu udzielenia zgody.
+**POTWIERDZONE:** aktualny lifecycle traktuje `consented_at` jako źródło czasu udzielenia zgody/request, a `confirmed_at` jako moment potwierdzenia.
 
 **POTWIERDZONE ze schematu produkcyjnego:** `consent_at` i `consented_at` współistnieją w hybrydowej tabeli legacy/new.
 
-Dlatego 3 rozbieżności należy interpretować jako drift semantyki legacy/new, a nie automatycznie jako korupcję danych.
-
-Nie należy nadpisywać `consent_at = consented_at` bez zachowania provenance i bez ustalenia znaczenia starego pola.
+Trzech rozbieżności nie należy automatycznie „naprawiać” przez zrównanie pól. Legacy timestamp należy zachować jako provenance do czasu pełnego backfillu i interpretacji historycznej.
 
 ---
 
 ## 5. Plan naprawy DQ-001 — orphan friendship
 
-### Zakaz
-
 Nie wykonywać automatycznego `UPDATE requester_id`, ponieważ nie istnieje dowód mapujący guest principal do konkretnego pełnego konta.
 
-### Zalecana decyzja V3
+Kolejność remediation:
+1. zachować identyfikator relacji i minimalne provenance,
+2. sprawdzić dostępne audit/session/deploy evidence dla guest principal,
+3. tylko przy jednoznacznym dowodzie wykonać mapowanie do kanonicznej Identity,
+4. bez dowodu — oznaczyć rekord jako legacy orphan/quarantine i wyłączyć go z backfillu V3,
+5. fizyczne usunięcie dopiero w CONTRACT po okresie obserwacji i zatwierdzeniu.
 
-Persistent social relation ma wskazywać wyłącznie kanoniczne Identity V3.
-Guest/anonymous principal nie powinien być trwałym członkiem grafu znajomości, chyba że produkt świadomie wprowadzi osobny typ encji guest.
-
-### Remediation dla istniejącego rekordu
-
-Kolejność:
-1. zachować identyfikator relacji i minimalne provenance w raporcie/quarantine,
-2. sprawdzić audit/deploy/session evidence, czy da się jednoznacznie wskazać kanoniczne konto requestera,
-3. tylko przy jednoznacznym dowodzie wykonać kontrolowane mapowanie,
-4. bez takiego dowodu — sklasyfikować rekord jako legacy orphan i wyłączyć go z backfillu V3; fizyczne usunięcie dopiero w CONTRACT po okresie obserwacji.
-
-### Naprawa writera przed cutover
-
-Przed V3 writer cutover:
-- requester musi pochodzić z kanonicznej Identity,
-- addressee musi istnieć,
-- constraint/FK dodawać dopiero po wyzerowaniu orphanów,
-- relacja A-B powinna mieć kanoniczny klucz niezależny od kierunku lub równoważny mechanizm zapobiegający race A-B/B-A.
+Przed writer cutover V3:
+- requester i addressee muszą być rozwiązywani do kanonicznej Identity,
+- FK/constraint dopiero po wyzerowaniu nieobsłużonych orphanów,
+- relacja A-B musi mieć kanoniczny mechanizm zapobiegający równoległemu A-B/B-A.
 
 ---
 
 ## 6. Plan naprawy DQ-002 — normalized-email collisions
 
-### Zakaz
-
 Nie wykonywać automatycznego MERGE ani DELETE pięciu kont.
 
-### Dlaczego
-
-Drill-down potwierdził, że część kont posiada różne zależności biznesowe (m.in. sesje, prywatne wiadomości, reset/registration state). Sam wspólny normalized-email nie dowodzi, że konta należą do tej samej kanonicznej tożsamości.
-
-### Remediation
-
-Dla każdej z 2 grup utworzyć prywatną mapę decyzyjną poza publiczną dokumentacją PII:
-- account lineage / created_at,
+Dla każdej z dwóch grup potrzebna jest decyzja per konto oparta na:
+- lineage/created_at,
 - verification state,
-- ostatnie bezpieczne logowanie,
-- zależności FK/logical refs,
-- ewentualny audit event rejestracji/zmiany profilu,
-- dowód kontroli nad adresem kontaktowym.
+- zależnościach sesji/wiadomości/resetów/kodów,
+- audit events rejestracji/zmian profilu, jeśli dostępne,
+- dowodzie kontroli nad kanałem kontaktowym.
 
-Następnie wybrać per konto jedną z polityk:
-- **KEEP-CANONICAL** — konto zachowane jako właściciel normalized-email,
-- **REQUIRE-EMAIL-CHANGE** — konto zachowane, ale bez prawa do konfliktującego canonical email do czasu ponownej weryfikacji,
-- **LEGACY-IDENTITY** — konto migrowane z zachowaniem historii, lecz bez aktywnego canonical email,
-- **MERGE** — tylko jeśli istnieje silny, audytowalny dowód tej samej osoby oraz przygotowana jest pełna mapa przepięcia zależności.
+Dozwolone polityki:
+- **KEEP-CANONICAL**,
+- **REQUIRE-EMAIL-CHANGE**,
+- **LEGACY-IDENTITY**,
+- **MERGE** tylko przy silnym i audytowalnym dowodzie tej samej tożsamości oraz pełnej mapie przepięcia zależności.
 
-Domyślna bezpieczna polityka przy braku dowodu: **nie scalać**.
+Domyślna polityka przy braku dowodu: **nie scalać**.
 
-### Guard przed V3
-
-Docelowa baza musi egzekwować unikalność dokładnie tej samej funkcji normalizacji, której używa aplikacja. Najbezpieczniej przechowywać jawne `email_normalized` i nałożyć UNIQUE na tę wartość, zamiast polegać na rozproszonych `lower(email)` w query.
-
-Reset hasła po e-mailu nie może używać „najpierw/najnowszy pasujący rekord” jako rozstrzygnięcia tożsamości.
+V3 powinno przechowywać jawne `email_normalized` i egzekwować UNIQUE dokładnie na tej samej funkcji normalizacji, której używa aplikacja. Password recovery nie może rozstrzygać konfliktu przez `ORDER BY created_at DESC LIMIT 1`.
 
 ---
 
 ## 7. Plan naprawy DQ-003 — newsletter consent timestamps
 
-`consented_at` przyjąć w projekcie V3 jako timestamp aktualnego `granted` lifecycle, ponieważ właśnie jego używa aktualny writer i lifecycle recorder.
+`consented_at` traktować jako kandydat canonical timestamp aktualnego lifecycle, zgodnie z aktualnym writerem i lifecycle recorderem.
 
 Legacy `consent_at`:
-- zachować jako provenance podczas migracji,
-- nie traktować automatycznie jako canonical,
-- dla trzech rozbieżnych rekordów zbudować mapping historyczny z consent history/events,
-- dla `pending_confirmation` nie interpretować `granted` jako pełnego double-opt-in `confirmed`.
+- zachować jako provenance,
+- nie nadpisywać automatycznie,
+- skorelować z `newsletter_consent_history` i `newsletter_events`,
+- dla `pending_confirmation` nie utożsamiać request/granted z pełnym double-opt-in `confirmed`.
 
-Docelowy model powinien rozdzielać co najmniej:
-- moment złożenia zgody/request (`granted/requested` zgodnie z zatwierdzoną semantyką),
-- moment potwierdzenia double opt-in,
-- moment wycofania,
-- wersję zgody i źródło.
+Docelowy model ma jawnie rozdzielać request/granted, confirmation, revocation, consent version i source.
 
 ---
 
-## 8. Co jest udowodnione, a czego jeszcze nie wolno twierdzić
+## 8. Klasyfikacja dowodów
 
 ### POTWIERDZONE
 
-- friendship writer nie weryfikuje referencji do kont,
-- tabela friendship nie ma FK do accounts,
-- standardowy Postgres account writer normalizuje e-mail trim+lower i blokuje duplikat,
-- profile update także sprawdza duplikat,
-- secure wrapper deleguje rejestrację do base writer,
+- friendship writer nie weryfikuje referencji do accounts,
+- friendship funkcja została wprowadzona 23.08.2026 już bez FK/account-existence check,
+- orphan powstał po wprowadzeniu tego podatnego writera,
+- aktualny account writer normalizuje e-mail trim+lower i blokuje duplikaty,
+- guard unique-email został dodany dopiero 27.08.2026 07:31:58 UTC,
+- wszystkie 5 kolizyjnych kont ma `created_at` sprzed tego commita,
 - aktualny newsletter używa `consented_at`,
 - lifecycle recorder propaguje `consented_at` do consent history,
 - produkcja zawiera anomalie wskazane przez drill-down.
 
 ### WYMAGA WERYFIKACJI ŚRODOWISKA / HISTORII
 
-- który konkretny deploy utworzył guest principal,
-- czy konkretny orphan powstał przez obecny writer czy wcześniejszą wersję,
-- który historyczny writer utworzył 5 kont z 2 normalized-email,
+- źródło principalu `guest-*`,
+- dokładny deploy Render, w którym powstał orphan,
+- dokładny endpoint/deploy odpowiadający za każde z pięciu kont,
 - czy którakolwiek para kont reprezentuje tę samą osobę,
-- dokładna semantyka starego `consent_at`,
-- correlation audit-log -> account creation/profile change dla kolizyjnych kont.
+- pełna historyczna semantyka `consent_at`,
+- correlation audit-log -> account creation/profile change.
 
 ---
 
-## 9. Kryteria zamknięcia bramki Data Quality
+## 9. Kryteria zamknięcia Data Quality
 
-DQ-001 można zamknąć, gdy:
-- orphan jest jednoznacznie zmapowany albo formalnie zakwalifikowany do quarantine/legacy exclusion,
-- nowy writer nie może tworzyć nowych orphanów,
-- rerun collector nie wykazuje nieobsłużonego orphan blockera.
+DQ-001 zamknięty, gdy orphan jest jednoznacznie zmapowany albo formalnie objęty quarantine/legacy exclusion, nowy writer nie może tworzyć nowych orphanów i rerun nie wykazuje nieobsłużonego blockera.
 
-DQ-002 można zamknąć, gdy:
-- każda z 2 grup ma zatwierdzoną decyzję per account,
-- nie ma niejednoznacznego aktywnego canonical normalized-email,
-- reset/recovery ma jednoznaczną tożsamość,
-- V3 UNIQUE może zostać założony po verify bez konfliktu.
+DQ-002 zamknięty, gdy każda z 2 grup ma decyzję per account, istnieje tylko jedna aktywna canonical identity per normalized-email, recovery jest jednoznaczne i przyszły V3 UNIQUE przechodzi VERIFY bez konfliktu.
 
-DQ-003 REVIEW można zamknąć, gdy:
-- zatwierdzona jest semantyka canonical consent timestamp,
-- legacy timestamp jest zachowany jako provenance lub udokumentowanie odrzucony,
-- consent history i lifecycle są spójnie backfillowane.
+DQ-003 REVIEW zamknięty, gdy zatwierdzona jest semantyka canonical consent timestamp, legacy provenance jest zachowane i consent history/events są spójnie backfillowane.
 
 ---
 
-## 10. Status ETAPU 3 po tym audycie
+## 10. Status ETAPU 3
 
-Audyt writerów dla trzech wykrytych obszarów blocker/review jest wykonany na baseline `db3c15a`.
+Audyt writerów i historyczna korelacja źródłowa zostały znacząco zawężone. DQ-002 ma potwierdzoną chronologię **pre-guard**, a DQ-001 ma potwierdzoną lukę istniejącą od momentu wprowadzenia friendship.
 
-**Produkcja pozostaje NO-GO dla executable DDL.**
+**Produkcja nadal pozostaje NO-GO dla executable DDL.**
 
-Nadal otwarte są co najmniej:
-- historyczne/correlation evidence potrzebne do decyzji DQ-001/DQ-002,
-- pełny writer/reader/endpoint/worker inventory poza tym wycinkiem,
+Nadal otwarte:
+- guest principal / deploy correlation DQ-001,
+- per-account remediation decision DQ-002,
+- pełny writer/reader/endpoint/worker inventory,
 - backup + restore test,
 - crypto decryptability/key/AAD compatibility,
 - active-state/cutover assessment,
