@@ -34,9 +34,10 @@ Opracowane obszary:
 - wiadomości prywatne — `gracz_messages` oraz `gracz_message_attachments`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, relacje, szyfrowanie, załączniki, soft-delete i fizyczny delete po usunięciu przez obie strony,
 - moderacja — `gracz_moderation_decisions` oraz `gracz_moderation_appeals`, rdzeń AS-IS zamknięty; zweryfikowane DDL/DML, filtry treści, odwołania, integracja z audytem i RBAC oraz braki trwałego workflow ban/review w analizowanym module,
 - globalny chat — `gracz_chat_topics`, `gracz_global_chat`, `gracz_chat_friends`, `gracz_global_chat_reports`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, SSE/presence, raporty, relacje znajomych, soft-delete, integracja z moderacją oraz ryzyka concurrency/integralności,
+- turnieje — `gracz_tournaments`, `gracz_tournament_players`, `gracz_tournament_matches`, AS-IS zamknięte na poziomie kodu; zweryfikowane DDL/DML, zapisy uczestników, pairingi, wyniki, standings, awans rund i ryzyka concurrency/atomowości,
 - legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
-Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym turnieje, newsletter oraz końcowe porównanie z produkcją/model match.
+Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym newsletter oraz końcowe porównanie z produkcją/model match.
 
 ## Spis dokumentacji
 
@@ -51,6 +52,7 @@ Do pełnego zamknięcia ETAPU 1B pozostają pozostałe tabele/obszary, w tym tur
 - `02-BAZA-DANYCH/05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md` — wiadomości prywatne i załączniki: DDL/DML, FK, indeksy, szyfrowanie, foldery, pełna ścieżka delete i AES-256-GCM.
 - `02-BAZA-DANYCH/06-MODERACJA-POSTGRESQL-AS-IS.md` — moderacja: decyzje automatycznego filtra, odwołania, DDL/DML, integracja z kontami/chatem/audytem/RBAC oraz ryzyka i niepotwierdzone elementy workflow.
 - `02-BAZA-DANYCH/07-GLOBAL-CHAT-POSTGRESQL-AS-IS.md` — Global Chat: cztery tabele PostgreSQL, DDL/DML, SSE/presence, tematy, znajomi, raportowanie, reakcje JSONB, soft-delete i ryzyka concurrency/integralności.
+- `02-BAZA-DANYCH/08-TURNIEJE-POSTGRESQL-AS-IS.md` — turnieje: trzy tabele PostgreSQL, DDL/DML, uczestnicy, pairingi, raportowanie wyników, standings, awans rund, autoryzacja i ryzyka concurrency/atomowości.
 
 ## Reguła dalszej pracy
 
