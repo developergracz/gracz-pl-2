@@ -3,7 +3,7 @@
 Data: 28.08.2026
 
 ## Zasada źródła prawdy
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`.
 
 ## ETAP 1B — mapa PostgreSQL
 **STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
@@ -12,12 +12,24 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-**STATUS: W TRAKCIE — REMEDIATION-PLANNING / ARTEFAKTY 09a–09f PRZYGOTOWANE.**  
+**STATUS: W TRAKCIE — PREFLIGHT / WRITER-READER INVENTORY 28/28 WYKONANE.**  
 **DDL V3: NO-GO.**
 
 ### Data Quality
 - **DQ-001 — DECISION-READY:** `LEGACY-QUARANTINE`; DML niewykonany.
 - **DQ-002 — DECISION-READY:** 5/5 kont biznesowo potwierdzone jako testowe i sklasyfikowane `LEGACY-IDENTITY / TEST`; MERGE NIE; automatyczny DELETE NIE; DML niewykonany.
+
+### Backup / restore
+- **Bramka 3 — pełny backup: PASS.**
+- **Bramka 4 — restore test: PASS.**
+- Dowód: `03-MIGRACJA/12-BACKUP-I-RESTORE-TEST.md`.
+- Restore wykonano do izolowanej PostgreSQL 18.6; odtworzenie zakończone bez błędu, 28/28 tabel dostępnych.
+
+### Writer / Reader inventory
+- `03-MIGRACJA/13-WRITER-READER-INVENTORY.md` — mapa **28/28** tabel produkcyjnych.
+- Repozytoryjne writer/read paths, główne mutujące endpointy, transaction boundaries, cutover risk i V3 owners zostały sklasyfikowane.
+- **Bramka 9 — WARNING:** mapa kodowa jest kompletna, ale do `PASS` pozostaje korelacja aktualnego deployu/procesów/jobów z analizowanym runtime.
+- Szczególne ostrzeżenia: `gracz_game_sessions.version` nie jest używany przez aktualny store jako CAS; tournament lifecycle jest wielostatementowy; newsletter lifecycle analytics są best-effort po core commicie; Chat DB→realtime nie jest atomowy; dwa production-only legacy tables nie mają potwierdzonego current runtime path.
 
 ### Remediation planning
 Przygotowano reviewowalny komplet:
@@ -28,15 +40,15 @@ Przygotowano reviewowalny komplet:
 - `03-MIGRACJA/09e-rollback-procedure.md` — STOP/rollback procedure.
 - `03-MIGRACJA/09f-remediation-runbook.md` — kolejność review i warunki dopuszczenia przyszłych mutacji.
 
-Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek do dalszej weryfikacji to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
+Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-**ETAP 3 → PREFLIGHT GATES → backup/restore evidence + writer/reader/endpoint/worker inventory + crypto compatibility + active-state/cutover + credential/least-privilege gate.**
+**ETAP 3 → PREFLIGHT GATE 10 — worker/event/realtime inventory.**
 
 ### Otwarte bramki krytyczne
 - fresh schema snapshot/diff,
-- pełny backup + udokumentowany restore test,
-- pełny writer/reader/endpoint/worker inventory,
+- deploy/process/job correlation potrzebna do domknięcia bramki 9,
+- worker/event/realtime inventory,
 - crypto compatibility Messaging/attachments/MFA,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
@@ -65,6 +77,8 @@ Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany
 - `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md`
 - `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql`
 - `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md`
+- `03-MIGRACJA/12-BACKUP-I-RESTORE-TEST.md`
+- `03-MIGRACJA/13-WRITER-READER-INVENTORY.md`
 
 ## Spis dokumentacji — ETAP 2
 ### Architektura
