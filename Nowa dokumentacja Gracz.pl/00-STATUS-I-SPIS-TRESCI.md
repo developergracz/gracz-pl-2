@@ -23,41 +23,46 @@ Ukończone:
 - `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — iteracja 1,
 - `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md` — iteracja 2,
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md` — iteracja 3,
-- `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md` — iteracja 4.
+- `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md` — iteracja 4,
+- `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md` — iteracja 5.
 
-### PostgreSQL V3 — Iteracja 4: Identity & Access + Role/Audit — ZAKOŃCZONA
+### PostgreSQL V3 — Iteracja 5: Newsletter — ZAKOŃCZONA
 
 Zdefiniowano projektowo:
-- `users`, `user_profiles`, `auth_sessions`,
-- `password_reset_tokens`, `registration_codes`, `mfa_credentials`,
-- `roles`, `user_roles`,
-- kanoniczny append-only `role_change_events`,
-- kanoniczny append-only `audit_log`,
-- odrębny `security_events`,
-- version/CAS dla krytycznych zmian statusu użytkownika,
-- hash tokenów oraz szyfrowanie sekretów MFA,
-- atomowy kontrakt zmiany roli: current state + role event + audit + outbox + idempotency,
-- merge `gracz_role_changes` + `gracz_role_history` z provenance i bez wymyślania brakujących danych,
-- kontrolowany DEPRECATE legacy audit po data profiling/retencji/backupie,
-- zasady retencji, prywatności i zakaz credential secrets w audit/outbox.
+- `newsletter_subscribers` jako current state,
+- `newsletter_tokens` z hashami i lifecycle tokenów,
+- `newsletter_sources` i `newsletter_subscriber_sources` jako attribution,
+- `newsletter_consents` jako dedykowaną append-only historię zgód,
+- `newsletter_events` jako lifecycle/operational history,
+- opcjonalny model kampanii bez blokowania migracji rdzenia,
+- atomowe kontrakty `subscribe`, `resend_confirmation`, `confirm`, `unsubscribe`, bounce/block,
+- integrację Identity z nullable `user_id` i `ON DELETE SET NULL`,
+- Transactional Outbox dla mail delivery,
+- idempotentne retry API/worker/provider,
+- rozdzielenie statusu dostarczalności od stanu zgody,
+- migrację wszystkich pięciu tabel newslettera AS-IS,
+- szczególną obsługę hybrydowych identyfikatorów/kolumn `gracz_newsletter_subscribers`,
+- migrację online: shadow/backfill/validate/cutover/read-only legacy/rollback,
+- rozdzieloną retencję consent, lifecycle, tokenów i delivery telemetry.
 
-Ważna decyzja: historia ról nie opiera się wyłącznie na JSON `old_roles/new_roles`; V3 zapisuje granularne `assigned/revoked` z `role_code_snapshot`, aktorem, reason, correlation i provenance. Pozwala to zachować legacy rekord nawet wtedy, gdy nie można wiarygodnie odtworzyć FK do aktualnej roli.
+Korekta względem uproszczonego założenia wejściowego: AS-IS już posiada osobne `newsletter_consent_history` i `newsletter_events`; V3 nie tworzy historii z domysłu. Naprawia przede wszystkim hybrydowy subscriber schema, deduplikację consent i brak atomowości lifecycle/mail delivery.
 
 ### Następny krok ETAPU 2
 
-**PostgreSQL V3 — Iteracja 5: Newsletter V3.**
+**PostgreSQL V3 — Iteracja 6: Messaging & Global Chat V3.**
 
 Zakres:
-1. normalizacja HIGH drift `gracz_newsletter_subscribers`,
-2. `newsletter_subscribers`, sources i attribution,
-3. pełna historia zgód i lifecycle events,
-4. double opt-in,
-5. token hashing i retencja,
-6. `DB transaction -> outbox -> mail worker -> provider/delivery event`,
-7. idempotency/deduplikacja i migracja hybrydowych pól legacy.
+1. prywatne wiadomości i załączniki,
+2. bezpieczna semantyka kasowania/retencji wiadomości,
+3. Global Chat topics/messages,
+4. concurrency-safe reactions,
+5. symetryczne friendships bez race,
+6. reports i integracja Moderation,
+7. trwały multi-instance realtime/pub-sub,
+8. outbox/idempotency.
 
-Po Newsletter V3:
-- Messaging / Global Chat / Moderation,
+Po Iteracji 6:
+- Moderation V3,
 - końcowa macierz migracji kolumna-po-kolumnie z 28 tabel AS-IS do V3.
 
 ## Spis dokumentacji
@@ -83,6 +88,7 @@ Po Newsletter V3:
 - `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md`
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md`
 - `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md`
+- `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md`
 
 ## Reguła dalszej pracy
 
