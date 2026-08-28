@@ -49,6 +49,24 @@ export class SecureAccountService {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_password_reset_user_idx ON gracz_password_reset_tokens(user_id, created_at DESC)`);
   }
 
+  async checkAvailability({ userId, displayName } = {}) {
+    await this.ready;
+    const normalizedId = typeof userId === "string" && /^[a-zA-Z0-9._-]{3,32}$/.test(userId.trim())
+      ? userId.trim().toLowerCase()
+      : null;
+    const safeDisplayName = typeof displayName === "string" && displayName.trim().length >= 2 && displayName.trim().length <= 40
+      ? displayName.trim().replace(/\s+/g, " ")
+      : null;
+    const { rows } = await this.pool.query(`SELECT
+      CASE WHEN $1::text IS NULL THEN NULL ELSE EXISTS(SELECT 1 FROM gracz_accounts WHERE user_id=$1) END AS user_taken,
+      CASE WHEN $2::text IS NULL THEN NULL ELSE EXISTS(SELECT 1 FROM gracz_accounts WHERE lower(display_name)=lower($2)) END AS display_taken`,
+      [normalizedId, safeDisplayName]);
+    return Object.freeze({
+      userId: normalizedId === null ? null : !rows[0].user_taken,
+      displayName: safeDisplayName === null ? null : !rows[0].display_taken,
+    });
+  }
+
   async register(input) {
     await this.ready;
     assertRegistrationLooksHuman(input);
@@ -84,7 +102,7 @@ export class SecureAccountService {
     } else {
       const email = cleanEmail(account.email);
       if (!email) throw new AccountError("Do aktywacji konta wymagany jest prawidłowy adres e-mail.", "EMAIL_REQUIRED");
-      await sendVerificationEmail({ to: email, displayName: account.display_name, code });
+      await sendVerificationEmail({ to: email, userId: account.user_id, displayName: account.display_name, code });
     }
     return { ok: true };
   }
@@ -132,6 +150,53 @@ export class SecureAccountService {
     return Object.freeze({ userId: record.user_id, displayName: record.display_name });
   }
 
+  async requestPasswordReset({ userId, email, phone, verificationChannel = "email" } = {}) {
+    await this.ready;
+    const channel = normalizeVerificationChannel(verificationChannel);
+    const safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    let account = null;
+    if (channel === "email") {
+      if (!safeEmail) return { ok: true };
+      const { rows } = await this.pool.query(
+        `SELECT user_id,display_name,email FROM gracz_accounts WHERE lower(email)=lower($1) ORDER BY created_at DESC LIMIT 1`,
+        [safeEmail],
+      );
+      if (!rows.length) return { ok: true };
+      account = rows[0];
+    } else {
+      let normalizedId;
+      try { normalizedId = normalizeUserId(userId); } catch { return { ok: true }; }
+      if (!safePhone) return { ok: true };
+      if (![process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN, process.env.TWILIO_FROM_NUMBER].every(value => typeof value === "string" && value.trim())) {
+        throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
+      }
+      const { rows } = await this.pool.query(
+        `SELECT user_id,display_name,phone FROM gracz_accounts WHERE user_id=$1 AND phone=$2 LIMIT 1`,
+        [normalizedId, safePhone],
+      );
+      account = rows[0] || null;
+    }
+    if (!account) return { ok: true };
+    const code = String(randomInt(100000, 1000000));
+    await this.pool.query(`DELETE FROM gracz_password_reset_tokens WHERE expires_at<NOW()`);
+    await this.pool.query(
+      `INSERT INTO gracz_password_reset_tokens(token_hash,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '10 minutes')`,
+      [hashToken(code), account.user_id],
+    );
+    await this.pool.query(
+      `DELETE FROM gracz_password_reset_tokens
+       WHERE user_id=$1 AND token_hash NOT IN (
+         SELECT token_hash FROM gracz_password_reset_tokens
+         WHERE user_id=$1 AND used_at IS NULL AND expires_at>NOW()
+         ORDER BY created_at DESC LIMIT 3
+       )`,
+      [account.user_id],
+    );
+    if (channel === "sms") await sendPasswordResetSms({ to: safePhone, displayName: account.display_name, code });
+    else await sendPasswordResetEmail({ to: safeEmail, userId: account.user_id, displayName: account.display_name, code });
+    return { ok: true, channel };
+  }
+
   async createPasswordResetToken({ userId, email, phone, verificationChannel = "email" }) {
     await this.ready;
     const normalizedId = normalizeUserId(userId), channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
@@ -145,19 +210,30 @@ export class SecureAccountService {
 
   async resetPasswordWithEmail({ userId, email, phone, verificationChannel = "email", newPassword, token }) {
     await this.ready;
-    if (typeof token !== "string" || token.length < 32) throw new AccountError("Reset hasła wymaga jednorazowego kodu lub tokenu weryfikacyjnego.", "RECOVERY_TOKEN_REQUIRED");
+    const safeToken = typeof token === "string" ? token.trim() : "";
+    if (!/^\d{6}$/.test(safeToken) && safeToken.length < 32) throw new AccountError("Wpisz prawidłowy 6-cyfrowy kod odzyskiwania.", "RECOVERY_TOKEN_REQUIRED");
     validatePassword(newPassword);
-    const normalizedId = normalizeUserId(userId), channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    const channel = normalizeVerificationChannel(verificationChannel), safeEmail = cleanEmail(email), safePhone = cleanPhone(phone);
+    let normalizedId = null;
+    if (channel === "sms") normalizedId = normalizeUserId(userId);
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      const { rows } = await client.query(`SELECT t.user_id FROM gracz_password_reset_tokens t JOIN gracz_accounts a ON a.user_id=t.user_id WHERE t.token_hash=$1 AND t.user_id=$2 AND t.used_at IS NULL AND t.expires_at>NOW() AND (($3='email' AND (lower(a.email)=lower($4) OR lower(a.recovery_email)=lower($4))) OR ($3='sms' AND a.phone=$5)) FOR UPDATE`, [hashToken(token), normalizedId, channel, safeEmail, safePhone]);
-      if (!rows[0]) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
+      const { rows } = await client.query(
+        `SELECT t.user_id FROM gracz_password_reset_tokens t
+         JOIN gracz_accounts a ON a.user_id=t.user_id
+         WHERE t.token_hash=$1 AND t.used_at IS NULL AND t.expires_at>NOW()
+         AND (($2='email' AND lower(a.email)=lower($3)) OR ($2='sms' AND t.user_id=$4 AND a.phone=$5))
+         FOR UPDATE OF t`,
+        [hashToken(safeToken), channel, safeEmail, normalizedId, safePhone],
+      );
+      const recoveredId = rows[0]?.user_id;
+      if (!recoveredId) throw new AccountError("Kod resetu jest nieprawidłowy albo wygasł.", "RECOVERY_FAILED");
       const salt = randomBytes(16), passwordHash = await hashPassword(newPassword, salt, CURRENT_SCRYPT);
-      await client.query(`UPDATE gracz_accounts SET salt=$2,password_hash=$3,password_hash_version=$4 WHERE user_id=$1`, [normalizedId, salt, passwordHash, HASH_VERSION]);
-      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE token_hash=$1`, [hashToken(token)]);
+      await client.query(`UPDATE gracz_accounts SET salt=$2,password_hash=$3,password_hash_version=$4 WHERE user_id=$1`, [recoveredId, salt, passwordHash, HASH_VERSION]);
+      await client.query(`UPDATE gracz_password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL`, [recoveredId]);
       await client.query("COMMIT");
-      return { ok: true };
+      return { ok: true, userId: recoveredId };
     } catch (error) { await client.query("ROLLBACK").catch(() => {}); throw error; } finally { client.release(); }
   }
 
@@ -177,12 +253,50 @@ export class SecureAccountService {
   async close() { await Promise.allSettled([typeof this.base.close === "function" ? this.base.close() : Promise.resolve(), this.pool.end()]); }
 }
 
-async function sendVerificationEmail({ to, displayName, code }) {
+async function sendPasswordResetSms({ to, displayName, code }) {
+  const accountSid = String(process.env.TWILIO_ACCOUNT_SID ?? "").trim();
+  const authToken = String(process.env.TWILIO_AUTH_TOKEN ?? "").trim();
+  const from = String(process.env.TWILIO_FROM_NUMBER ?? "").trim();
+  if (!accountSid || !authToken || !from) throw new AccountError("Odzyskiwanie hasła przez SMS nie jest jeszcze dostępne.", "SMS_NOT_CONFIGURED");
+  const name = String(displayName || "Graczu").trim().slice(0, 40);
+  const body = `gracz.pl: ${name}, kod odzyskiwania hasła: ${code}. Kod jest ważny 10 minut. Nie udostępniaj go nikomu.`;
+  const form = new URLSearchParams({ To: to, From: from, Body: body });
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
+    method: "POST",
+    headers: { authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`, "utf8").toString("base64")}`, "content-type": "application/x-www-form-urlencoded" },
+    body: form,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
+}
+
+async function sendPasswordResetEmail({ to, userId, displayName, code }) {
   const name = String(displayName || "Graczu").trim().slice(0, 40) || "Graczu";
-  const text = `Witaj ${name}!\n\nTwój kod aktywacyjny Gracz.pl: ${code}\n\nKod jest ważny przez 10 minut. Nigdy nie przekazuj go innej osobie. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`;
-  const html = `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto"><h1>Witaj, ${escapeHtml(name)}!</h1><p>Aby aktywować konto Gracz.pl, wpisz poniższy kod:</p><p style="font-size:34px;font-weight:900;letter-spacing:8px">${escapeHtml(code)}</p><p>Kod jest ważny przez 10 minut. Administracja Gracz.pl nigdy nie prosi o hasło ani kod aktywacyjny.</p></div>`;
+  const login = String(userId || "").trim().slice(0, 32);
+  const safeName = escapeHtml(name), safeLogin = escapeHtml(login), safeCode = escapeHtml(code);
+  const text = `Witaj ${name}!
+
+Otrzymaliśmy prośbę o zmianę hasła w serwisie gracz.pl.
+Login: ${login}
+
+Twój 6-cyfrowy kod odzyskiwania: ${code}
+
+Kod jest ważny przez 10 minut. Wpisz go w formularzu odzyskiwania hasła.
+
+Administracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu odzyskiwania. Jeśli to nie Ty prosiłeś o zmianę hasła, zignoruj tę wiadomość.`;
+  const html = `<!doctype html><html lang="pl"><body style="margin:0;padding:0;background:#050b10;color:#eef5f9;font-family:Verdana,Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050b10;padding:30px 12px"><tr><td align="center"><table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:100%;max-width:620px;border:1px solid #284154;border-radius:18px;background:linear-gradient(180deg,#101c25,#091218);overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.45)"><tr><td style="padding:28px 34px;border-bottom:1px solid #203747"><div style="font-size:31px;font-weight:900;letter-spacing:-2px;color:#f4f8fb">gracz<span style="font-size:17px;color:#ff3448;letter-spacing:-1px">.pl</span></div><div style="margin-top:7px;color:#7f96a6;font-size:11px">GRY ONLINE · SPOŁECZNOŚĆ · FAIR PLAY</div></td></tr><tr><td style="padding:34px"><div style="display:inline-block;padding:6px 11px;border:1px solid #285b43;border-radius:999px;background:#0d281b;color:#64e59d;font-size:11px;font-weight:700">✓ Bezpieczne odzyskiwanie konta</div><h1 style="margin:22px 0 10px;color:#f5f8fa;font-size:30px;line-height:1.2">Witaj <span style="color:#64a1ff">${safeName}</span>&nbsp;!</h1><p style="margin:0 0 18px;color:#b6c4cd;font-size:15px;line-height:1.65">Otrzymaliśmy prośbę o zmianę hasła w serwisie gracz.pl. Użyj poniższego kodu, aby odzyskać dostęp do konta.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:22px 0;border:1px solid #29475f;border-radius:12px;background:#071521"><tr><td style="padding:15px 18px;color:#8fa5b4;font-size:12px">Twój login</td><td align="right" style="padding:15px 18px;color:#79aaff;font-size:20px;font-weight:900;letter-spacing:.02em">${safeLogin}</td></tr></table><div style="padding:25px 18px;border:1px solid #356ecb;border-radius:14px;background:linear-gradient(135deg,#0d2745,#10203a);text-align:center"><div style="margin-bottom:10px;color:#99b7df;font-size:12px;font-weight:700;letter-spacing:.06em">TWÓJ 6-CYFROWY KOD ODZYSKIWANIA</div><div style="color:#ffffff;font-size:38px;font-weight:900;letter-spacing:10px;line-height:1.2">${safeCode}</div><div style="margin-top:12px;color:#8fa9c8;font-size:11px">Kod jest ważny przez 10 minut.</div></div><p style="margin:22px 0 8px;color:#d9e4ea;font-size:13px;font-weight:700">Co zrobić dalej?</p><ol style="margin:8px 0 0;padding-left:21px;color:#aebdc7;font-size:13px;line-height:1.75"><li>Wróć do otwartego formularza gracz.pl.</li><li>Wpisz dokładnie wszystkie 6 cyfr kodu.</li><li>Ustaw i potwierdź nowe hasło.</li><li>Kliknij „Ustaw nowe hasło”.</li></ol><div style="margin-top:22px;padding:16px 18px;border:1px solid #713944;border-radius:10px;background:#271418;color:#ffd0d5;font-family:Verdana,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.7;letter-spacing:.01em">⚠ Jeśli to nie Ty prosiłeś o zmianę hasła, zignoruj tę wiadomość. Kod wygaśnie automatycznie.</div><div style="margin-top:14px;padding:14px 16px;border-left:3px solid #f1ad45;background:#21190e;color:#d8c39f;font-size:11px;line-height:1.55">🔒 Administracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu odzyskiwania.</div></td></tr><tr><td style="padding:20px 34px;border-top:1px solid #203747;color:#718794;font-size:10px;line-height:1.55">© 2026 gracz.pl</td></tr></table></td></tr></table></body></html>`;
+  const result = await systemMail.send({ to, subject: "gracz.pl — kod odzyskiwania hasła", text, html, purpose: "password-reset" });
+  if (!result.sent) throw new AccountError("Nie udało się wysłać kodu odzyskiwania. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
+}
+
+async function sendVerificationEmail({ to, userId, displayName, code }) {
+  const name = String(displayName || "Graczu").trim().slice(0, 40) || "Graczu";
+  const login = String(userId || "").trim().slice(0, 32);
+  const safeName = escapeHtml(name), safeLogin = escapeHtml(login), safeCode = escapeHtml(code);
+  const text = `Dziękujemy Ci ${name} !\n\nWitaj w gracz.pl. Twoje konto jest już prawie gotowe.\nLogin: ${login}\n\nTwój 6-cyfrowy kod aktywacyjny: ${code}\n\nKod jest ważny przez 10 minut. Wpisz go w oknie aktywacji konta.\n\nAdministracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu aktywacyjnego. Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.`;
+  const html = `<!doctype html><html lang="pl"><body style="margin:0;padding:0;background:#050b10;color:#eef5f9;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050b10;padding:30px 12px"><tr><td align="center"><table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:100%;max-width:620px;border:1px solid #284154;border-radius:18px;background:linear-gradient(180deg,#101c25,#091218);overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.45)"><tr><td style="padding:28px 34px;border-bottom:1px solid #203747"><div style="font-size:31px;font-weight:900;letter-spacing:-2px;color:#f4f8fb">gracz<span style="font-size:17px;color:#ff3448;letter-spacing:-1px">.pl</span></div><div style="margin-top:7px;color:#7f96a6;font-size:11px">GRY ONLINE · SPOŁECZNOŚĆ · FAIR PLAY</div></td></tr><tr><td style="padding:34px"><div style="display:inline-block;padding:6px 11px;border:1px solid #285b43;border-radius:999px;background:#0d281b;color:#64e59d;font-size:11px;font-weight:700">✓ Bezpieczna aktywacja konta</div><h1 style="margin:22px 0 10px;color:#f5f8fa;font-size:30px;line-height:1.2">Dziękujemy Ci <span style="color:#64a1ff">${safeName}</span>&nbsp;!</h1><p style="margin:0 0 18px;color:#b6c4cd;font-size:15px;line-height:1.65">Witaj w gracz.pl. Twoje konto jest już prawie gotowe. Potwierdź adres e-mail, wpisując poniższy kod w oknie aktywacji.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:22px 0;border:1px solid #29475f;border-radius:12px;background:#071521"><tr><td style="padding:15px 18px;color:#8fa5b4;font-size:12px">Twój login</td><td align="right" style="padding:15px 18px;color:#79aaff;font-size:20px;font-weight:900;letter-spacing:.02em">${safeLogin}</td></tr></table><div style="padding:25px 18px;border:1px solid #356ecb;border-radius:14px;background:linear-gradient(135deg,#0d2745,#10203a);text-align:center"><div style="margin-bottom:10px;color:#99b7df;font-size:12px;font-weight:700;letter-spacing:.06em">TWÓJ 6-CYFROWY KOD AKTYWACYJNY</div><div style="color:#ffffff;font-size:38px;font-weight:900;letter-spacing:10px;line-height:1.2">${safeCode}</div><div style="margin-top:12px;color:#8fa9c8;font-size:11px">Kod jest ważny przez 10 minut.</div></div><p style="margin:22px 0 8px;color:#d9e4ea;font-size:13px;font-weight:700">Co zrobić dalej?</p><ol style="margin:8px 0 0;padding-left:21px;color:#aebdc7;font-size:13px;line-height:1.75"><li>Wróć do otwartego formularza gracz.pl.</li><li>Wpisz dokładnie wszystkie 6 cyfr kodu.</li><li>Kliknij „Aktywuj konto”.</li></ol><div style="margin-top:22px;padding:16px 18px;border:1px solid #713944;border-radius:10px;background:#271418;color:#ffbdc4;font-size:13px;font-weight:800;line-height:1.55">⚠ Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość. Kod wygaśnie automatycznie.</div><div style="margin-top:14px;padding:14px 16px;border-left:3px solid #f1ad45;background:#21190e;color:#d8c39f;font-size:11px;line-height:1.55">🔒 Administracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu aktywacyjnego.</div></td></tr><tr><td style="padding:20px 34px;border-top:1px solid #203747;color:#718794;font-size:10px;line-height:1.55">© 2026 gracz.pl</td></tr></table></td></tr></table></body></html>`;
   try {
-    const result = await systemMail.send({ to, subject: "Witaj w Gracz.pl — Twój kod aktywacyjny", text, html, purpose: "account-verify" });
+    const result = await systemMail.send({ to, subject: "Dziękujemy za rejestrację w gracz.pl — kod aktywacyjny", text, html, purpose: "account-verify" });
     if (!result.sent) throw new Error(result.reason || "EMAIL_NOT_CONFIGURED");
   } catch {
     throw new AccountError("Nie udało się wysłać kodu aktywacyjnego. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
@@ -215,4 +329,4 @@ function cleanEmail(value) { return typeof value === "string" ? value.trim().toL
 function cleanPhone(value) { if (typeof value !== "string") return ""; const normalized = value.trim().replace(/[\s()-]/g, ""); if (!normalized) return ""; return /^\+?[0-9]{7,15}$/.test(normalized) ? normalized : ""; }
 function normalizeVerificationChannel(value) { return value === "sms" ? "sms" : "email"; }
 function assertRegistrationLooksHuman(input) { if (!input || typeof input !== "object") throw new AccountError("Nieprawidłowe dane rejestracji.", "INVALID_ACCOUNT"); if (typeof input.website === "string" && input.website.trim()) throw new AccountError("Nie można utworzyć konta.", "AUTOMATION_REJECTED"); }
-function validatePassword(value) { if (typeof value !== "string" || value.length < 15 || value.length > 128) throw new AccountError("Hasło musi mieć 15–128 znaków.", "WEAK_PASSWORD"); const normalized = value.normalize("NFKC").toLowerCase(); if (COMMON_PASSWORDS.has(normalized) || /^(.)\1{14,}$/.test(normalized) || /^123456/.test(normalized)) throw new AccountError("To hasło jest zbyt popularne lub łatwe do odgadnięcia. Wybierz inne.", "WEAK_PASSWORD"); }
+function validatePassword(value) { if (typeof value !== "string" || value.length < 14 || value.length > 128) throw new AccountError("Hasło musi mieć 14–128 znaków.", "WEAK_PASSWORD"); const normalized = value.normalize("NFKC").toLowerCase(); if (COMMON_PASSWORDS.has(normalized) || /^(.)\1{13,}$/.test(normalized) || /^123456/.test(normalized)) throw new AccountError("To hasło jest zbyt popularne lub łatwe do odgadnięcia. Wybierz inne.", "WEAK_PASSWORD"); }

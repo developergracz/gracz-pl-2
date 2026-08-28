@@ -54,6 +54,12 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const url = new URL(request.url, "http://localhost");
   assertSameOriginMutation(request);
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
+  if (request.method === "GET" && url.pathname === "/auth/sms-config") {
+    const enabled = [process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN, process.env.TWILIO_FROM_NUMBER]
+      .every(value => typeof value === "string" && value.trim());
+    response.setHeader("Cache-Control", "no-store");
+    return sendJson(response, 200, { enabled });
+  }
   if (request.method === "GET" && url.pathname === "/security/challenge-config") {
     return sendJson(response, 200, { enabled: botDefense.enabled, provider: botDefense.enabled ? "turnstile" : null, siteKey: botDefense.enabled ? botDefense.siteKey : null });
   }
@@ -62,13 +68,22 @@ async function route(request, response, store, realtime, auth, authSessions, acc
       "/": "lobby.html", "/lobby.html": "lobby.html", "/lobby.js": "lobby.js", "/lobby.css": "lobby.css",
       "/lobby-checkers.css": "lobby-checkers.css", "/lobby-gomoku-alignment.css": "lobby-gomoku-alignment.css",
       "/homepage-consoles.js": "homepage-consoles.js", "/profile-modal.js": "profile-modal.js", "/auth-cookie-migration.js": "auth-cookie-migration.js", "/adaptive-challenge.js": "adaptive-challenge.js", "/settings-link.js": "settings-link.js",
-      "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js",
-      "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/regulamin.html": "regulamin.html",
+      "/messages.html": "messages.html", "/messages.css": "messages.css", "/messages.js": "messages.js", "/messages-dialog-fix.js": "messages-dialog-fix.js",
+      "/players.html": "players.html", "/players.js": "players.js", "/players.css": "players.css", "/gomoku.html": "gomoku.html", "/gomoku.js": "gomoku.js", "/gomoku-players.html": "gomoku-players.html", "/gomoku-players.js": "gomoku-players.js", "/regulamin.html": "regulamin.html",
       "/settings.html": "settings.html", "/settings.css": "settings.css", "/settings.js": "settings.js", "/avatar-library.js": "avatar-library.js",
       "/global-chat.html": "global-chat.html", "/global-chat.css": "global-chat.css", "/global-chat.js": "global-chat.js",
       "/game.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css", "/classic-console.css": "classic-console.css"
     })[url.pathname];
     if (staticFile) return sendStatic(response, join(webRoot, staticFile), staticFile === "lobby.html");
+  }
+
+  if (request.method === "GET" && url.pathname === "/auth/availability" && accounts?.checkAvailability) {
+    response.setHeader("Cache-Control", "no-store");
+    const availability = await accounts.checkAvailability({
+      userId: url.searchParams.get("userId"),
+      displayName: url.searchParams.get("displayName"),
+    });
+    return sendJson(response, 200, { availability });
   }
 
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
@@ -136,23 +151,45 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     return sendJson(response, 200, { token: COOKIE_TOKEN_MARKER, user: { userId: user.userId, displayName: user.displayName } });
   }
 
+  if (request.method === "POST" && url.pathname === "/auth/request-password-reset" && accounts?.requestPasswordReset) {
+    const body = await readJson(request);
+    const source = clientSource(request);
+    const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
+    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset-request" });
+    const rateKey = `${source}:reset-request:${recoveryId}`;
+    loginRateLimiter.assertAllowed(rateKey);
+    await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset-request", token: body.challengeToken });
+    try {
+      await accounts.requestPasswordReset(body);
+      loginRateLimiter.recordSuccess(rateKey);
+      botDefense.recordSuccess({ source, accountId: recoveryId });
+      return sendJson(response, 200, { ok: true, message: "Jeżeli adres e-mail pasuje do jednego konta, kod odzyskiwania został wysłany." });
+    } catch (error) {
+      loginRateLimiter.recordFailure(rateKey);
+      botDefense.recordFailure({ source, accountId: recoveryId, endpoint: "reset-request" });
+      throw error;
+    }
+  }
+
   if (request.method === "POST" && url.pathname === "/auth/reset-password" && accounts?.resetPasswordWithEmail) {
     const body = await readJson(request);
     const source = clientSource(request);
-    trafficGuard.assertCredentialAttempt({ request, accountId: body.userId, endpoint: "reset" });
-    const rateKey = `${source}:reset:${String(body.userId ?? "").toLowerCase()}`;
+    const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
+    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset" });
+    const rateKey = `${source}:reset:${recoveryId}`;
     loginRateLimiter.assertAllowed(rateKey);
-    await botDefense.verifyIfRequired({ source, accountId: body.userId, endpoint: "reset", token: body.challengeToken });
+    await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset", token: body.challengeToken });
     try {
-      await accounts.resetPasswordWithEmail(body);
-      if (authSessions) await authSessions.revokeAll(String(body.userId ?? "").toLowerCase());
+      const result = await accounts.resetPasswordWithEmail(body);
+      const recoveredUserId = String(result?.userId ?? body.userId ?? "").trim().toLowerCase();
+      if (authSessions && recoveredUserId) await authSessions.revokeAll(recoveredUserId);
       loginRateLimiter.recordSuccess(rateKey);
-      botDefense.recordSuccess({ source, accountId: body.userId });
+      botDefense.recordSuccess({ source, accountId: recoveryId });
       clearSessionCookie(response);
-      return sendJson(response, 200, { ok: true, message: "Hasło zostało zmienione. Wszystkie wcześniejsze sesje zostały zakończone." });
+      return sendJson(response, 200, { ok: true, userId: recoveredUserId, message: "Hasło zostało zmienione. Wszystkie wcześniejsze sesje zostały zakończone." });
     } catch (error) {
       loginRateLimiter.recordFailure(rateKey);
-      botDefense.recordFailure({ source, accountId: body.userId, endpoint: "reset" });
+      botDefense.recordFailure({ source, accountId: recoveryId, endpoint: "reset" });
       throw error;
     }
   }
@@ -244,7 +281,13 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     if (request.method === "GET") return sendJson(response, 200, { rooms: lobby.listRooms() });
     if (request.method === "POST") {
       const body = await readJson(request);
-      return sendJson(response, 201, lobby.createRoom({ ownerId: user.userId, ownerName: user.displayName, roomName: body.roomName }));
+      return sendJson(response, 201, lobby.createRoom({
+        ownerId: user.userId,
+        ownerName: user.displayName,
+        roomName: body.roomName,
+        gameType: body.gameType,
+        maxPlayers: body.maxPlayers,
+      }));
     }
   }
   const lobbyMatch = lobby && url.pathname.match(/^\/lobby\/rooms\/([a-zA-Z0-9_-]{1,128})\/join$/);
@@ -376,6 +419,7 @@ function sendError(response, error) {
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" || error.code === "INVITATION_NOT_FOUND" ? 404 : 409, errorBody(error));
   if (error?.code === "SESSION_EXISTS") return sendJson(response, 409, errorBody(error));
   if (error instanceof SessionError || error?.name === "IllegalMoveError" || error instanceof TypeError) return sendJson(response, 400, errorBody(error));
+  if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) return sendJson(response, error.status, errorBody(error));
   return sendJson(response, 500, { error: { code: "INTERNAL_ERROR", message: "Wewnętrzny błąd serwera." } });
 }
 
@@ -384,7 +428,7 @@ async function sendStatic(response, path, injectHomepageExtras = false) {
   const contentType = ({ html: "text/html", js: "text/javascript", css: "text/css" })[extension] ?? "application/octet-stream";
   let content = await readFile(path);
   if (injectHomepageExtras) {
-    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script><script src="/settings-link.js" defer></script></body>');
+    const html = content.toString("utf8").replace("</body>", '<script src="/auth-cookie-migration.js?v=20260827-six-digit-code-1" defer></script><script src="/adaptive-challenge.js" defer></script><script src="/homepage-consoles.js" defer></script><script src="/profile-modal.js" defer></script><script src="/settings-link.js" defer></script></body>');
     content = Buffer.from(html, "utf8");
   }
   response.writeHead(200, { "content-type": `${contentType}; charset=utf-8`, "cache-control": "no-store" });

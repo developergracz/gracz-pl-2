@@ -20,7 +20,7 @@ function renderMiniBoard() {
       square.className = `mini-square ${dark ? "dark" : "light"}`;
       if (dark && (row < 3 || row > 4)) {
         const piece = document.createElement("i");
-        piece.className = `mini-piece ${row < 3 ? "white" : "black"}`;
+        piece.className = `mini-piece ${row < 3 ? "black" : "white"}`;
         square.append(piece);
       }
       board.append(square);
@@ -47,22 +47,7 @@ function alignGomokuConsole() {
   if (Math.abs(sideRect.top - boardRect.top) > 1) side.style.height = `${Math.max(0, Math.round(boardRect.bottom - sideRect.top))}px`;
 }
 
-const checkersModule = document.querySelector("#checkers-module");
-const expandCheckers = document.querySelector("#expand-checkers");
-const closeCheckers = document.querySelector("#close-checkers");
-const openCheckers = document.querySelector("#open-checkers");
-function setCheckersExpanded(expanded) {
-  checkersModule.classList.toggle("expanded", expanded);
-  expandCheckers.setAttribute("aria-expanded", String(expanded));
-  expandCheckers.textContent = expanded ? "×" : "⛶";
-  expandCheckers.title = expanded ? "Pomniejsz konsolę" : "Pokaż konsolę na całym ekranie";
-  closeCheckers.hidden = !expanded;
-  document.body.classList.toggle("game-expanded", expanded);
-}
-expandCheckers.addEventListener("click", () => setCheckersExpanded(!checkersModule.classList.contains("expanded")));
-openCheckers.addEventListener("click", () => setCheckersExpanded(true));
-closeCheckers.addEventListener("click", () => setCheckersExpanded(false));
-document.addEventListener("keydown", (event) => { if (event.key === "Escape") { setCheckersExpanded(false); closeInvitePanel(); } });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeInvitePanel(); });
 
 function ensureInvitePanel() {
   let overlay = document.querySelector("#invite-overlay");
@@ -282,3 +267,127 @@ function showLobby() {
   requestAnimationFrame(() => requestAnimationFrame(alignGomokuConsole));
 }
 if (session) showLobby();
+
+function installNewsletterV2() {
+  const section = document.querySelector('.newsletter');
+  if (!section || section.dataset.v2 === '1') return;
+  section.dataset.v2 = '1';
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .newsletter-v2{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(360px,1.35fr);gap:28px;align-items:start;padding:28px 30px;border:1px solid #28493c;border-radius:16px;background:linear-gradient(135deg,#0d171c,#111f24);box-shadow:0 18px 52px #0006;color:#eef7f2}
+    .newsletter-v2 h3{margin:0 0 8px;font-size:28px}.newsletter-v2 .lead{margin:0;color:#aebdb6;line-height:1.55}.newsletter-v2 .nl-badge{display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;padding:5px 9px;border:1px solid #276445;border-radius:999px;color:#59ec96;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    .nl-form{display:grid;gap:12px}.nl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nl-field{display:grid;gap:6px}.nl-field label,.nl-group legend{font-size:12px;font-weight:800;color:#dce9e2}.nl-field input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #314b43;border-radius:8px;background:#091216;color:#fff;outline:none}.nl-field input:focus{border-color:#25cf70;box-shadow:0 0 0 3px #25cf7020}
+    .nl-group{margin:0;padding:11px 12px 10px;border:1px solid #263b35;border-radius:9px}.nl-group legend{padding:0 6px}.nl-options{display:flex;flex-wrap:wrap;gap:8px 13px}.nl-options label,.nl-consent{display:flex;align-items:flex-start;gap:7px;color:#bfcdc6;font-size:12px;line-height:1.35}.nl-options input,.nl-consent input{accent-color:#20d96d;margin-top:2px}.nl-consent a{color:#69e99d}
+    .nl-submit{padding:12px 18px;border:0;border-radius:8px;background:linear-gradient(180deg,#25ed7b,#0fba55);color:#06150c;font-weight:900;cursor:pointer;box-shadow:0 9px 26px #10bd5635}.nl-submit:disabled{opacity:.55;cursor:wait}.nl-status{min-height:18px;margin:0;color:#ff9d9d;font-size:12px}.nl-safe{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border:1px solid #234434;border-radius:8px;background:#0d1d15;color:#9fb5aa;font-size:11px;line-height:1.4}
+    .nl-thanks{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:22px;background:rgba(1,5,8,.86);backdrop-filter:blur(10px)}.nl-thanks[hidden]{display:none}.nl-thanks-card{position:relative;width:min(650px,94vw);padding:38px 38px 32px;text-align:center;border:1px solid #285b50;border-radius:20px;background:linear-gradient(180deg,#10191f,#080f14);box-shadow:0 34px 100px #000c,0 0 55px #18d66f18;color:#fff}.nl-thanks-brand{margin-bottom:22px;font-size:24px;font-weight:950;letter-spacing:-1.5px}.nl-thanks-brand span{color:#ff3946;font-size:13px}.nl-thanks-card h2{margin:0;font-size:34px;line-height:1.16}.nl-thanks-card h2 strong{color:#57a9ff}.nl-heart{display:flex;align-items:center;gap:12px;justify-content:center;margin:22px 0;color:#ef4356}.nl-heart:before,.nl-heart:after{content:'';height:1px;width:120px;background:#516069}.nl-thanks-card p{margin:8px auto;max-width:520px;color:#d8e0e4;line-height:1.65}.nl-thanks-card .secondary{color:#9eacb4}.nl-thanks-card .chosen-nick{color:#57a9ff;font-weight:800}.nl-thanks-ok{width:100%;margin-top:24px;padding:13px 18px;border:0;border-radius:9px;background:linear-gradient(180deg,#28ea7b,#12b859);color:#04120a;font-size:16px;font-weight:950;cursor:pointer}.nl-thanks-close{position:absolute;right:16px;top:14px;width:36px;height:36px;border:1px solid #33454f;border-radius:50%;background:#070d11;color:#fff;font-size:21px;cursor:pointer}
+    @media(max-width:820px){.newsletter-v2{grid-template-columns:1fr}.nl-row{grid-template-columns:1fr}.nl-thanks-card{padding:34px 22px 26px}.nl-thanks-card h2{font-size:28px}}
+  `;
+  document.head.append(style);
+
+  section.className = 'newsletter newsletter-v2';
+  section.innerHTML = `
+    <div class="nl-copy"><span class="nl-badge">✉ Newsletter Gracz.pl</span><h3>Bądź na bieżąco</h3><p class="lead">Zapisz się, aby otrzymywać informacje o testach, premierze platformy, turniejach i najważniejszych nowościach Gracz.pl.</p></div>
+    <form class="nl-form" id="newsletter-v2-form" novalidate>
+      <div class="nl-row"><div class="nl-field"><label for="nl-nick">Twój nick</label><input id="nl-nick" name="nick" maxlength="40" autocomplete="nickname" placeholder="np. gracz123" required></div><div class="nl-field"><label for="nl-email">Adres e-mail</label><input id="nl-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="twoj@email.pl" required></div></div>
+      <fieldset class="nl-group"><legend>Interesujące Cię gry</legend><div class="nl-options"><label><input type="checkbox" name="games" value="warcaby" checked> Warcaby</label><label><input type="checkbox" name="games" value="gomoku" checked> Gomoku</label><label><input type="checkbox" name="games" value="tysiac"> Tysiąc</label><label><input type="checkbox" name="games" value="poker"> Poker</label></div></fieldset>
+      <fieldset class="nl-group"><legend>O czym chcesz wiedzieć</legend><div class="nl-options"><label><input type="checkbox" name="topics" value="testy" checked> Testy platformy</label><label><input type="checkbox" name="topics" value="premiera" checked> Premiera i uruchomienie</label><label><input type="checkbox" name="topics" value="turnieje"> Turnieje</label><label><input type="checkbox" name="topics" value="nowosci" checked> Nowości</label></div></fieldset>
+      <label class="nl-consent"><input type="checkbox" name="consent" required><span>Wyrażam zgodę na otrzymywanie newslettera Gracz.pl na podany adres e-mail. Zapoznałem się z <a href="/polityka-prywatnosci.html" target="_blank" rel="noopener">Polityką prywatności</a>.</span></label>
+      <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+      <div class="nl-safe">🛡 <span>Twój adres wykorzystamy wyłącznie do obsługi newslettera. Zapis można w każdej chwili anulować.</span></div>
+      <button class="nl-submit" type="submit">ZAPISZ SIĘ →</button><p class="nl-status" role="alert" aria-live="polite"></p>
+    </form>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'nl-thanks';
+  overlay.hidden = true;
+  overlay.innerHTML = `<section class="nl-thanks-card" role="dialog" aria-modal="true" aria-labelledby="nl-thanks-title"><button class="nl-thanks-close" type="button" aria-label="Zamknij">×</button><div class="nl-thanks-brand">gracz<span>.pl</span></div><h2 id="nl-thanks-title">Dziękujemy Ci <strong>gracz</strong><br>za zapisanie się<br>do naszego serwisu!</h2><div class="nl-heart">♥</div><p>Na wskazany adres e-mail zostanie wysłana wiadomość potwierdzająca zapisanie się do naszego newslettera wraz z Twoim wybranym nickiem <span class="chosen-nick">„gracz”</span>.</p><p class="secondary">Będziemy informować Cię o testach, premierze i uruchomieniu platformy.</p><button class="nl-thanks-ok" type="button">✓ OK</button></section>`;
+  document.body.append(overlay);
+
+  const closeThanks = () => { overlay.hidden = true; };
+  overlay.querySelector('.nl-thanks-close').addEventListener('click', closeThanks);
+  overlay.querySelector('.nl-thanks-ok').addEventListener('click', closeThanks);
+  overlay.addEventListener('click', (event) => { if (event.target === overlay) closeThanks(); });
+
+  const newsletterForm = section.querySelector('#newsletter-v2-form');
+  newsletterForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const status = newsletterForm.querySelector('.nl-status');
+    const submit = newsletterForm.querySelector('.nl-submit');
+    const data = new FormData(newsletterForm);
+    const nick = String(data.get('nick') || '').trim();
+    const email = String(data.get('email') || '').trim().toLowerCase();
+    const website = String(data.get('website') || '');
+    if (website) return;
+    if (nick.length < 2) { status.textContent = 'Podaj nick składający się z co najmniej 2 znaków.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { status.textContent = 'Podaj prawidłowy adres e-mail.'; return; }
+    if (!data.get('consent')) { status.textContent = 'Aby się zapisać, zaznacz zgodę na newsletter.'; return; }
+    const payload = { nick, email, games: data.getAll('games'), topics: data.getAll('topics'), source: 'homepage', consent: true };
+    submit.disabled = true; submit.textContent = 'ZAPISYWANIE…'; status.textContent = '';
+    try {
+      let saved = false;
+      for (const endpoint of ['/api/newsletter/subscribe', '/newsletter/subscribe', '/ajaxNewsletter.php']) {
+        try {
+          const response = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json', 'accept': 'application/json' }, body: JSON.stringify(payload) });
+          if (response.ok) { saved = true; break; }
+          if (![404, 405].includes(response.status)) {
+            let message = '';
+            try { message = (await response.json()).error?.message || ''; } catch {}
+            if (message) throw new Error(message);
+          }
+        } catch (error) {
+          if (error?.message) status.textContent = error.message;
+        }
+      }
+      if (!saved) {
+        localStorage.setItem('gracz-newsletter-pending', JSON.stringify({ ...payload, savedAt: new Date().toISOString() }));
+      }
+      overlay.querySelector('h2 strong').textContent = nick;
+      overlay.querySelector('.chosen-nick').textContent = `„${nick}”`;
+      overlay.hidden = false;
+      newsletterForm.reset();
+    } finally {
+      submit.disabled = false; submit.textContent = 'ZAPISZ SIĘ →';
+    }
+  });
+}
+
+installNewsletterV2();
+
+document.querySelector('[data-placeholder="shop"]')?.addEventListener("click", (event) => {
+  event.preventDefault();
+  let notice = document.querySelector("#navigation-notice");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "navigation-notice";
+    Object.assign(notice.style, { position: "fixed", right: "20px", bottom: "20px", zIndex: "9999", padding: "12px 16px", border: "1px solid #28503f", borderRadius: "9px", background: "#0b171d", color: "#eef6f2", boxShadow: "0 12px 34px #0008" });
+    document.body.append(notice);
+  }
+  notice.textContent = "Sklep Gracz.pl jest jeszcze w przygotowaniu.";
+  notice.hidden = false;
+  clearTimeout(notice.hideTimer);
+  notice.hideTimer = setTimeout(() => { notice.hidden = true; }, 3000);
+});
+
+
+function installGomokuModeChooser() {
+  const entry = document.querySelector("#open-gomoku-mode");
+  if (!entry || entry.dataset.modeChooser === "ready") return;
+  entry.dataset.modeChooser = "ready";
+  entry.addEventListener("click", (event) => {
+    event.preventDefault();
+    if (document.querySelector(".gomoku-mode-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.className = "gomoku-mode-overlay";
+    overlay.innerHTML = `<section class="gomoku-mode-dialog" role="dialog" aria-modal="true" aria-labelledby="gomoku-mode-title"><button class="gomoku-mode-close" type="button" aria-label="Zamknij">×</button><h2 id="gomoku-mode-title">Jak chcesz zagrać w Gomoku?</h2><p>Wybierz wersję lokalną dla dwóch osób przy jednym urządzeniu albo grę online z innymi użytkownikami przy stołach Gomoku.</p><div class="gomoku-mode-actions"><a class="gomoku-mode-local" href="/gomoku.html?mode=local">WERSJA LOKALNA<small>2 osoby na jednym urządzeniu</small></a><a class="gomoku-mode-online" href="/gomoku-players.html">GRA ONLINE<small>Lista stołów i inni gracze</small></a></div></section>`;
+    const close = () => { document.removeEventListener("keydown", onKey); overlay.remove(); entry.focus(); };
+    const onKey = (keyEvent) => { if (keyEvent.key === "Escape") close(); };
+    overlay.querySelector(".gomoku-mode-close").addEventListener("click", close);
+    overlay.addEventListener("click", (clickEvent) => { if (clickEvent.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.append(overlay);
+    overlay.querySelector(".gomoku-mode-local").focus();
+  });
+}
+
+installGomokuModeChooser();

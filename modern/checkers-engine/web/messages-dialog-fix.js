@@ -4,7 +4,7 @@
   document.head.appendChild(style);
   const overlay=document.createElement('div');
   overlay.className='gracz-confirm-overlay';
-  overlay.innerHTML='<section class="gracz-confirm-card" role="dialog" aria-modal="true"><header><h3>Usunąć wiadomość?</h3><p>Wiadomość zostanie usunięta z Twojej skrzynki. Tej operacji nie można cofnąć.</p></header><footer class="gracz-confirm-actions"><button class="cancel" type="button">Anuluj</button><button class="danger" type="button">Usuń wiadomość</button></footer></section>';
+  overlay.innerHTML='<section class="gracz-confirm-card" role="dialog" aria-modal="true"><header><h3>Czy na pewno chcesz usunąć tę wiadomość?</h3><p>Wiadomość zostanie trwale usunięta z Twojej skrzynki. Tej operacji nie można cofnąć.</p></header><footer class="gracz-confirm-actions"><button class="danger" type="button">Usuń</button><button class="cancel" type="button">Anuluj</button></footer></section>';
   document.body.appendChild(overlay);
   const cancel=overlay.querySelector('.cancel'),danger=overlay.querySelector('.danger');
   let pendingId=null;
@@ -22,7 +22,7 @@
       close();location.reload();
     }catch(err){
       const p=overlay.querySelector('p');p.textContent=err.message||'Nie udało się usunąć wiadomości.';
-    }finally{danger.disabled=false;danger.textContent='Usuń wiadomość';}
+    }finally{danger.disabled=false;danger.textContent='Usuń';}
   });
   document.addEventListener('click',e=>{
     const btn=e.target.closest('#message-view [data-act="delete"]');
@@ -31,6 +31,6 @@
     const id=row?.dataset.id;
     if(!id)return;
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-    pendingId=id;overlay.querySelector('p').textContent='Wiadomość zostanie usunięta z Twojej skrzynki. Tej operacji nie można cofnąć.';overlay.classList.add('open');
+    pendingId=id;overlay.querySelector('p').textContent='Wiadomość zostanie trwale usunięta z Twojej skrzynki. Tej operacji nie można cofnąć.';overlay.classList.add('open');cancel.focus();
   },true);
 })();

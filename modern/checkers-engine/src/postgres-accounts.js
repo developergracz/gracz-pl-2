@@ -82,6 +82,11 @@ export class PostgresAccountService {
       await client.query("SELECT pg_advisory_xact_lock(hashtext(lower($1)))", [safeDisplayName]);
       const duplicateName = await client.query("SELECT 1 FROM gracz_accounts WHERE lower(display_name)=lower($1) LIMIT 1", [safeDisplayName]);
       if (duplicateName.rowCount) throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+      if (safeEmail) {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`email:${safeEmail}`]);
+        const duplicateEmail = await client.query("SELECT 1 FROM gracz_accounts WHERE lower(email)=lower($1) LIMIT 1", [safeEmail]);
+        if (duplicateEmail.rowCount) throw new AccountError("Ten adres e-mail jest już przypisany do innego konta.", "EMAIL_EXISTS");
+      }
       await client.query(
         `INSERT INTO gracz_accounts (user_id, display_name, salt, password_hash, email, recovery_email, profile_data)
          VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
@@ -165,6 +170,14 @@ export class PostgresAccountService {
         [displayName, normalizedId],
       );
       if (duplicateName.rowCount) throw new AccountError("Ta nazwa gracza jest już zajęta. Wybierz inną nazwę.", "DISPLAY_NAME_EXISTS");
+      if (email) {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`email:${email}`]);
+        const duplicateEmail = await client.query(
+          "SELECT 1 FROM gracz_accounts WHERE lower(email)=lower($1) AND user_id<>$2 LIMIT 1",
+          [email, normalizedId],
+        );
+        if (duplicateEmail.rowCount) throw new AccountError("Ten adres e-mail jest już przypisany do innego konta.", "EMAIL_EXISTS");
+      }
       const { rows } = await client.query(
         `UPDATE gracz_accounts
          SET display_name=$2, email=$3, recovery_email=$4, profile_data=$5::jsonb
