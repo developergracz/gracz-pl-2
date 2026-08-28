@@ -38,6 +38,9 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Global Chat — `gracz_global_chat` | AS-IS zamknięte na poziomie kodu; DDL/DML, JSONB reactions, soft-delete, SSE i concurrency zweryfikowane |
 | Global Chat — `gracz_chat_friends` | AS-IS zamknięte na poziomie kodu; DDL/DML, CHECK, unique i race A↔B zweryfikowane |
 | Global Chat — `gracz_global_chat_reports` | AS-IS zamknięte na poziomie kodu; DDL/DML, idempotency raportu i brak FK zweryfikowane |
+| Turnieje — `gracz_tournaments` | AS-IS zamknięte na poziomie kodu; DDL/DML, status, formaty i ryzyka startu zweryfikowane |
+| Turnieje — `gracz_tournament_players` | AS-IS zamknięte na poziomie kodu; FK do turnieju, standings, join/leave i race limit/seed zweryfikowane |
+| Turnieje — `gracz_tournament_matches` | AS-IS zamknięte na poziomie kodu; FK do turnieju, pairingi, wynik, awans rund i concurrency zweryfikowane |
 | Pozostałe obszary | do opracowania/weryfikacji |
 | **Łącznie** | **mapa 26 tabel w toku** |
 
@@ -119,8 +122,6 @@ Dokument: `05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md`.
 - `content_hash CHAR(64)`,
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`.
 
-Bieżący `record()` zapisuje `decision_id,user_id,context,outcome,reason`; `content_hash` nie jest w tej ścieżce wypełniany.
-
 ### `gracz_moderation_appeals`
 - `appeal_id UUID PRIMARY KEY`,
 - `decision_id UUID NOT NULL REFERENCES gracz_moderation_decisions(decision_id) ON DELETE CASCADE`,
@@ -131,65 +132,64 @@ Bieżący `record()` zapisuje `decision_id,user_id,context,outcome,reason`; `con
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
 - `reviewed_at TIMESTAMPTZ`.
 
-Nie potwierdzono w `moderation-service.js` osobnej trwałej tabeli banów ani implementacji review/close odwołania. RBAC definiuje permissions `moderation.review`, `moderation.warn` i `moderation.ban`, ale samo uprawnienie nie jest dowodem istnienia mechanizmu wykonawczego.
-
 Dokument: `06-MODERACJA-POSTGRESQL-AS-IS.md`.
 
 ## Potwierdzony PostgreSQL — Global Chat
 
 ### `gracz_chat_topics`
 - `topic_id UUID PRIMARY KEY`,
-- `owner_id TEXT NOT NULL`,
-- `owner_name TEXT NOT NULL`,
-- `title TEXT NOT NULL`,
-- `description TEXT NOT NULL DEFAULT ''`,
-- `category TEXT NOT NULL DEFAULT 'ogólne'`,
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
-- `closed BOOLEAN NOT NULL DEFAULT FALSE`,
-- indeks `gracz_chat_topics_created_idx(created_at DESC)`,
-- brak FK do konta w potwierdzonym DDL.
+- brak FK do konta w potwierdzonym DDL,
+- indeks po `created_at DESC`.
 
 ### `gracz_global_chat`
 - `message_id UUID PRIMARY KEY`,
-- `user_id TEXT NOT NULL`,
-- `display_name TEXT NOT NULL`,
-- `body TEXT NOT NULL`,
-- `reply_to UUID`,
-- `topic_id UUID`,
-- `reactions JSONB NOT NULL DEFAULT '{}'::jsonb`,
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
-- `edited_at TIMESTAMPTZ`,
-- `deleted BOOLEAN NOT NULL DEFAULT FALSE`,
-- indeksy po czasie, użytkowniku i temacie,
-- brak FK dla `user_id`, `reply_to`, `topic_id` w potwierdzonym DDL.
-
-Reakcje są aktualizowane read-modify-write bez revision/lockingu, co tworzy ryzyko lost update. Realtime działa przez SSE i pamięć procesu; zapis DB i broadcast nie są atomowe.
+- `reactions JSONB`, soft-delete, indeksy po czasie/użytkowniku/temacie,
+- brak FK dla user/reply/topic,
+- read-modify-write reakcji bez revision/lockingu,
+- SSE i presence w pamięci procesu.
 
 ### `gracz_chat_friends`
-- `relation_id UUID PRIMARY KEY`,
-- requester/addressee jako `TEXT`,
-- `status TEXT NOT NULL DEFAULT 'pending'`,
-- CHECK `requester_id <> addressee_id`,
-- UNIQUE `(requester_id, addressee_id)`,
-- indeks po requester/addressee/status,
-- brak FK do kont w potwierdzonym DDL.
-
-Kontrola pary A↔B odbywa się przed INSERT w aplikacji; kierunkowy UNIQUE nie wyklucza wyścigu dwóch równoległych zaproszeń w przeciwnych kierunkach.
+- CHECK requester != addressee,
+- kierunkowy UNIQUE `(requester_id,addressee_id)`,
+- brak FK do kont,
+- race A↔B możliwy przy równoległych zaproszeniach.
 
 ### `gracz_global_chat_reports`
 - `report_id UUID PRIMARY KEY`,
-- `message_id UUID NOT NULL`,
-- `reporter_id TEXT NOT NULL`,
-- `reason TEXT NOT NULL`,
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
-- UNIQUE `(message_id, reporter_id)`,
-- brak FK do wiadomości i konta w potwierdzonym DDL.
+- UNIQUE `(message_id,reporter_id)`,
+- brak FK do wiadomości/konta.
 
 Dokument: `07-GLOBAL-CHAT-POSTGRESQL-AS-IS.md`.
 
+## Potwierdzony PostgreSQL — Turnieje
+
+### `gracz_tournaments`
+- `tournament_id UUID PRIMARY KEY`,
+- owner/title/game/format/status/visibility/max_players/rounds/time_control/rated,
+- `starts_at`, `current_round`, `created_at`, `finished_at`,
+- indeks `(status, starts_at)`,
+- brak FK ownera do konta w potwierdzonym DDL.
+
+### `gracz_tournament_players`
+- PK `(tournament_id,user_id)`,
+- FK `tournament_id -> gracz_tournaments` z `ON DELETE CASCADE`,
+- points/wins/draws/losses/buchholz/status/seed,
+- brak FK usera do konta.
+
+### `gracz_tournament_matches`
+- `match_id UUID PRIMARY KEY`,
+- FK `tournament_id -> gracz_tournaments` z `ON DELETE CASCADE`,
+- round/board/white/black/result/status/reported_by,
+- indeks `(tournament_id,round,board)`, ale brak UNIQUE dla tej trójki,
+- brak FK graczy i brak potwierdzonego DB-level powiązania meczu z realną sesją gry.
+
+Ryzyka AS-IS: brak transakcji przy create/start/report/advance, race przy join i seed, brak CAS przy zakończeniu meczu i awansie rundy, wieloetapowy recompute standings bez transakcji.
+
+Dokument: `08-TURNIEJE-POSTGRESQL-AS-IS.md`.
+
 ## Pozostałe obszary
 
-Dalsza mapa obejmuje m.in. turnieje, newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
+Dalsza mapa obejmuje m.in. newsletter, porównanie ze środowiskiem produkcyjnym i analizę modelu match.
 
 ## Kryterium zakończenia ETAPU 1B
 
