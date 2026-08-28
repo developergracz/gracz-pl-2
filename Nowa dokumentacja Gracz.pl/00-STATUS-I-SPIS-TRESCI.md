@@ -32,10 +32,11 @@ Rzeczywisty Render zawiera **28 tabel**, czyli dwa obiekty ponad zakres 26-tabel
 
 ### ETAP 2 — architektura docelowa i plan migracji
 
-**STATUS: ROZPOCZĘTY 28.08.2026.**
+**STATUS: W TRAKCIE od 28.08.2026.**
 
-Ukończony pierwszy dokument projektowy:
-- `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`.
+Ukończone dokumenty projektowe:
+- `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`,
+- `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — iteracja 1: założenia, bounded contexts i kompletna mapa 28 tabel Render -> status V3.
 
 Backend V3 definiuje docelowo:
 - modularny backend z bounded contextami,
@@ -51,11 +52,24 @@ Backend V3 definiuje docelowo:
 - konsolidację modeli ról i audytu,
 - model wdrożeniowy modular monolith + wydzielone runtime/workers jako etap przejściowy.
 
+Model PostgreSQL V3 — iteracja 1 klasyfikuje wszystkie 28 tabel środowiska:
+- KEEP-AS-IS: 0,
+- MIGRATE-AND-TRANSFORM: 25,
+- MERGE: 2,
+- DEPRECATE: 1.
+
+Klasyfikacja jest decyzją projektową, nie zgodą na destrukcyjną migrację. Legacy audit może zostać usunięty dopiero po analizie danych, retencji i zależności.
+
 ### Następny krok ETAPU 2
 
-**Model danych docelowy PostgreSQL V3.**
+**Model danych PostgreSQL V3 — iteracja 2: konkretne struktury tabel, typy, PK/FK/UNIQUE/CHECK, indeksy, versioning, outbox i idempotency.**
 
-Ma on przełożyć architekturę Backend V3 na konkretne tabele, klucze, constrainty, outbox, idempotency, model meczów, projekcje i plan przejścia z obecnych 28 tabel.
+Pierwsza kolejność projektowa:
+1. Integration foundation — outbox/idempotency/identyfikatory korelacyjne,
+2. Game Platform — kanoniczny match model,
+3. Tournament,
+4. Identity & Access + Role/Audit,
+5. pozostałe bounded contexts.
 
 Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ograniczenie migracyjne i nie może usuwać obiektów legacy bez analizy danych, retencji i aktywnych writerów/readers.
 
@@ -78,6 +92,7 @@ Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ogranicze
 - `02-BAZA-DANYCH/09-NEWSLETTER-POSTGRESQL-AS-IS.md` — newsletter.
 - `02-BAZA-DANYCH/10-POROWNANIE-POSTGRESQL-REPO-PRODUKCJA.md` — rzeczywiste porównanie z Renderem.
 - `02-BAZA-DANYCH/11-MODEL-MATCH-I-ROZBIEZNOSCI.md` — końcowy Model Match i rejestr rozbieżności.
+- `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — docelowy model V3, iteracja 1: założenia, bounded contexts, mapa 28 tabel -> KEEP/MIGRATE/DEPRECATE/MERGE oraz wymagania migracyjne.
 
 ## Reguła dalszej pracy
 
