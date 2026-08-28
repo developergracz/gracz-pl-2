@@ -5,6 +5,7 @@ COPY package.json ./
 RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY src ./src
 COPY web ./web
+COPY scripts ./scripts
 
 ENV HOST=0.0.0.0 PORT=3000 DATA_DIR=/app/data
 RUN mkdir -p /app/data && chown -R node:node /app/data
