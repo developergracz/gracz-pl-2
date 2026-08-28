@@ -36,7 +36,8 @@ Rzeczywisty Render zawiera **28 tabel**, czyli dwa obiekty ponad zakres 26-tabel
 
 Ukończone dokumenty projektowe:
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`,
-- `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — iteracja 1: założenia, bounded contexts i kompletna mapa 28 tabel Render -> status V3.
+- `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — iteracja 1: założenia, bounded contexts i kompletna mapa 28 tabel Render -> status V3,
+- `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md` — iteracja 2: konkretne DDL-style Game Platform, match-actor ownership/fencing, Transactional Outbox i idempotency.
 
 Backend V3 definiuje docelowo:
 - modularny backend z bounded contextami,
@@ -60,16 +61,52 @@ Model PostgreSQL V3 — iteracja 1 klasyfikuje wszystkie 28 tabel środowiska:
 
 Klasyfikacja jest decyzją projektową, nie zgodą na destrukcyjną migrację. Legacy audit może zostać usunięty dopiero po analizie danych, retencji i zależności.
 
+### PostgreSQL V3 — Iteracja 2: stan
+
+**ZAKOŃCZONY BLOK: Game Platform + Outbox + Idempotency.**
+
+Zdefiniowano projektowo:
+- `game_definitions`,
+- `game_matches`,
+- `game_match_participants`,
+- `game_match_events`,
+- `game_match_snapshots`,
+- `match_actor_leases`,
+- `outbox_events`,
+- `idempotency_keys`,
+- opcjonalny `processed_messages` dla wysokowolumenowych konsumentów.
+
+Najważniejsze decyzje:
+- `game_matches` jest kanonicznym agregatem meczu; historyczna nazwa `gracz_game_sessions` nie jest przenoszona jako źródło stanu meczu,
+- `version` jest obowiązkowym elementem kontraktu DML, nie tylko kolumną,
+- nie stosujemy `UNIQUE(owner_actor_id)` jako ochrony split-brain,
+- ownership jest per `match_id` przez lease i rosnący fencing token,
+- stary writer po utracie ownership nie może zatwierdzić późniejszego zapisu,
+- zmiana stanu + domain event + outbox są atomowe w jednej transakcji,
+- retry komend oraz konsumenci eventów są idempotentni,
+- Realtime publikuje dopiero po commitcie przez outbox/broker,
+- Warcaby, Tysiąc i Gomoku otrzymują jeden wspólny kontrakt persistence/runtime.
+
 ### Następny krok ETAPU 2
 
-**Model danych PostgreSQL V3 — iteracja 2: konkretne struktury tabel, typy, PK/FK/UNIQUE/CHECK, indeksy, versioning, outbox i idempotency.**
+**PostgreSQL V3 — Iteracja 3: Tournament V3.**
 
-Pierwsza kolejność projektowa:
-1. Integration foundation — outbox/idempotency/identyfikatory korelacyjne,
-2. Game Platform — kanoniczny match model,
-3. Tournament,
-4. Identity & Access + Role/Audit,
-5. pozostałe bounded contexts.
+Zakres następnego bloku:
+1. `tournaments`,
+2. `tournament_registrations`,
+3. `tournament_rounds`,
+4. `tournament_matches`,
+5. versioning agregatu turnieju,
+6. atomowe `join/start/report_result/advance_round`,
+7. jawne powiązanie `tournament_matches.match_id -> game_matches.match_id`,
+8. constrainty blokujące podwójne mecze/board/round,
+9. integracja z outbox i idempotency.
+
+Po Tournament V3 kolejność pozostaje:
+- Identity & Access + Role/Audit,
+- Newsletter V3,
+- Messaging / Global Chat / Moderation,
+- końcowa macierz migracji kolumna-po-kolumnie z 28 tabel AS-IS do struktur V3.
 
 Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ograniczenie migracyjne i nie może usuwać obiektów legacy bez analizy danych, retencji i aktywnych writerów/readers.
 
@@ -93,6 +130,7 @@ Projektowanie ETAPU 2 musi traktować wykryty schema drift jako realne ogranicze
 - `02-BAZA-DANYCH/10-POROWNANIE-POSTGRESQL-REPO-PRODUKCJA.md` — rzeczywiste porównanie z Renderem.
 - `02-BAZA-DANYCH/11-MODEL-MATCH-I-ROZBIEZNOSCI.md` — końcowy Model Match i rejestr rozbieżności.
 - `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md` — docelowy model V3, iteracja 1: założenia, bounded contexts, mapa 28 tabel -> KEEP/MIGRATE/DEPRECATE/MERGE oraz wymagania migracyjne.
+- `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md` — konkretne definicje Game Platform V3, match-actor lease/fencing, Transactional Outbox, idempotency i kontrakt migracji Warcaby/Tysiąc/Gomoku.
 
 ## Reguła dalszej pracy
 
