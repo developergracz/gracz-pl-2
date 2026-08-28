@@ -3,7 +3,7 @@
 Data: 28.08.2026
 
 ## Zasada źródła prawdy
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader, worker/event/realtime i crypto inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`; późniejsze commity do tego punktu są dokumentacyjne i nie zmieniają analizowanego kodu aplikacji.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader, worker/event/realtime i crypto inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`; późniejsze commity do tego punktu są dokumentacyjne/diagnostyczne i nie zmieniają produkcyjnego runtime aplikacji.
 
 ## ETAP 1B — mapa PostgreSQL
 **STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
@@ -12,7 +12,7 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-**STATUS: W TRAKCIE — PREFLIGHT / BRAMKI 9–11 ZMAPOWANE KODOWO.**  
+**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 SMOKE TEST GOTOWY DO URUCHOMIENIA.**  
 **DDL V3: NO-GO.**
 
 ### Data Quality
@@ -40,7 +40,9 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 - `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md` — zmapowano formaty private-message, attachment i MFA.
 - Potwierdzono AES-256-GCM + HKDF, dokładne AAD dependencies, message envelope `enc:v1`, attachment legacy AAD variant oraz brak jawnego key-version dla attachments/MFA.
 - Potwierdzono także możliwość fallbacku trzech dedykowanych kluczy szyfrowania do `AUTH_SECRET`, co wymaga ostrożności przy rotacji.
-- **Bramka 11 — NOT VERIFIED:** code-format inventory jest kompletne, ale potrzebny privacy-safe decryptability smoke test na izolowanym restore; plaintext nie może trafić do raportów/logów/GitHuba.
+- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md` — gotowa procedura privacy-safe.
+- `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs` — gotowy wykonywalny tester read-only; wymusza host lokalny oraz bazę `gracz_restore_test_20260828` i wypisuje wyłącznie statusy/liczniki.
+- **Bramka 11 — NOT VERIFIED:** format i test są przygotowane; brakuje wyłącznie faktycznego uruchomienia testu z właściwym key material na izolowanym restore i zapisania privacy-safe wyniku.
 
 ### Remediation planning
 Przygotowano reviewowalny komplet:
@@ -54,12 +56,12 @@ Przygotowano reviewowalny komplet:
 Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-**ETAP 3 → PREFLIGHT GATE 11 — privacy-safe crypto decryptability smoke test na izolowanym restore.**
+**ETAP 3 → PREFLIGHT GATE 11 → uruchomić `crypto-decryptability-smoke.mjs` na `gracz_restore_test_20260828`, zachować wyłącznie privacy-safe JSON i sklasyfikować Bramkę 11 jako PASS / REVIEW / FAIL / NOT VERIFIED.**
 
 ### Otwarte bramki krytyczne
 - fresh schema snapshot/diff,
 - deploy/process/job correlation potrzebna do domknięcia bramek 9–10,
-- crypto decryptability smoke test,
+- wykonanie przygotowanego crypto decryptability smoke test,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
 - późniejszy rerun data-quality/reconciliation,
@@ -91,6 +93,8 @@ Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany
 - `03-MIGRACJA/13-WRITER-READER-INVENTORY.md`
 - `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md`
 - `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md`
+- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md`
+- `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs`
 
 ## Spis dokumentacji — ETAP 2
 ### Architektura
