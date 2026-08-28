@@ -26,11 +26,13 @@ Nie wolno dopisywać niepotwierdzonych tabel, kolumn, metod ani zachowań.
 
 Zakres mapy: **26 tabel**.
 
-Rozpoczęte i opracowane obszary:
+Opracowane/rozpoczęte obszary:
 - tożsamość — 7 tabel,
-- audyt — 1 tabela.
+- audyt — 1 tabela,
+- gry / Warcaby — potwierdzono i udokumentowano PostgreSQL `gracz_game_sessions`; analiza concurrency wyższej warstwy pozostaje do domknięcia,
+- legacy Checkers `prefix_gameplays`, `prefix_moves`, `prefix_scores` — udokumentowane porównawczo jako MySQL/SmartFox, nie liczone automatycznie do mapy PostgreSQL.
 
-Do pełnego zamknięcia mapy pozostają obszary obejmujące m.in. gry, wiadomości, moderację, chat globalny, turnieje i newsletter oraz końcowe porównanie z produkcją/model match.
+Do pełnego zamknięcia mapy pozostają dalsze tabele gier oraz wiadomości, moderacja, chat globalny, turnieje, newsletter i końcowe porównanie z produkcją/model match.
 
 ## Spis dokumentacji
 
@@ -39,6 +41,7 @@ Do pełnego zamknięcia mapy pozostają obszary obejmujące m.in. gry, wiadomoś
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md` — potwierdzony punkt wyjścia architektury.
 - `02-BAZA-DANYCH/00-MAPA-POSTGRESQL-STATUS.md` — status kompletnej mapy 26 tabel.
 - `02-BAZA-DANYCH/01-TOZSAMOSC-I-AUDYT.md` — zakres pierwszych ukończonych partii mapowania.
+- `02-BAZA-DANYCH/02-GRY-WARCABY-POSTGRESQL-AS-IS.md` — Warcaby: legacy SmartFox/MySQL vs modern PostgreSQL, DDL/DML `gracz_game_sessions`, model sesji, ranking i ryzyka concurrency.
 
 ## Reguła dalszej pracy
 
