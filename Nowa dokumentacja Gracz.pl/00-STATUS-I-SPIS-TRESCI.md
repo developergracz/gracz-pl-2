@@ -24,46 +24,43 @@ Ukończone:
 - `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md` — iteracja 2,
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md` — iteracja 3,
 - `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md` — iteracja 4,
-- `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md` — iteracja 5.
+- `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md` — iteracja 5,
+- `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md` — iteracja 6.
 
-### PostgreSQL V3 — Iteracja 5: Newsletter — ZAKOŃCZONA
+### PostgreSQL V3 — Iteracja 6: Messaging & Global Chat — ZAKOŃCZONA
 
 Zdefiniowano projektowo:
-- `newsletter_subscribers` jako current state,
-- `newsletter_tokens` z hashami i lifecycle tokenów,
-- `newsletter_sources` i `newsletter_subscriber_sources` jako attribution,
-- `newsletter_consents` jako dedykowaną append-only historię zgód,
-- `newsletter_events` jako lifecycle/operational history,
-- opcjonalny model kampanii bez blokowania migracji rdzenia,
-- atomowe kontrakty `subscribe`, `resend_confirmation`, `confirm`, `unsubscribe`, bounce/block,
-- integrację Identity z nullable `user_id` i `ON DELETE SET NULL`,
-- Transactional Outbox dla mail delivery,
-- idempotentne retry API/worker/provider,
-- rozdzielenie statusu dostarczalności od stanu zgody,
-- migrację wszystkich pięciu tabel newslettera AS-IS,
-- szczególną obsługę hybrydowych identyfikatorów/kolumn `gracz_newsletter_subscribers`,
-- migrację online: shadow/backfill/validate/cutover/read-only legacy/rollback,
-- rozdzieloną retencję consent, lifecycle, tokenów i delivery telemetry.
+- odrębny Messaging V3 i Global Chat & Social V3 przy wspólnej infrastrukturze Identity/Outbox/Realtime,
+- `private_messages`, `private_message_user_state`, `private_message_attachments`,
+- szyfrowanie prywatnych wiadomości i key versioning,
+- per-user read/archive/delete state bez przypadkowego kasowania danych drugiej strony,
+- brak `ON DELETE CASCADE users -> private_messages`,
+- `chat_channels`, `chat_topics`, `chat_messages`, `chat_message_events`,
+- złożony FK zabezpieczający topic↔channel,
+- relacyjne `chat_reactions` eliminujące JSONB lost-update,
+- `social_friendships` z kanoniczną nieuporządkowaną parą i DB-level ochroną race A↔B,
+- `chat_reports` jako intake do przyszłego Moderation V3,
+- atomowe mutacje + outbox + idempotency,
+- Realtime Gateway z broker/shared ephemeral store zamiast process-local SSE/presence,
+- migrację wszystkich 6 tabel AS-IS Messaging + Global Chat z zachowaniem szyfrowania/provenance i bez wymyślania brakujących timestampów/relacji.
 
-Korekta względem uproszczonego założenia wejściowego: AS-IS już posiada osobne `newsletter_consent_history` i `newsletter_events`; V3 nie tworzy historii z domysłu. Naprawia przede wszystkim hybrydowy subscriber schema, deduplikację consent i brak atomowości lifecycle/mail delivery.
+Najważniejsza decyzja: prywatne wiadomości nie zostały włączone do `chat_messages`, ponieważ mają inny model bezpieczeństwa, szyfrowania, dostępu i retencji. Wspólna pozostaje infrastruktura, nie tabela domenowa.
 
 ### Następny krok ETAPU 2
 
-**PostgreSQL V3 — Iteracja 6: Messaging & Global Chat V3.**
+**PostgreSQL V3 — Iteracja 7: Moderation V3.**
 
 Zakres:
-1. prywatne wiadomości i załączniki,
-2. bezpieczna semantyka kasowania/retencji wiadomości,
-3. Global Chat topics/messages,
-4. concurrency-safe reactions,
-5. symetryczne friendships bez race,
-6. reports i integracja Moderation,
-7. trwały multi-instance realtime/pub-sub,
-8. outbox/idempotency.
+1. `moderation_cases`,
+2. źródła zgłoszeń/flags/reports,
+3. `moderation_actions`,
+4. sanctions: mute/ban/restrictions,
+5. appeals i review workflow,
+6. integracja z Identity, Chat, Messaging i Audit,
+7. outbox/idempotency,
+8. migracja `gracz_moderation_decisions` i `gracz_moderation_appeals`.
 
-Po Iteracji 6:
-- Moderation V3,
-- końcowa macierz migracji kolumna-po-kolumnie z 28 tabel AS-IS do V3.
+Po Moderation V3 pozostanie końcowa macierz migracji kolumna-po-kolumnie z 28 tabel AS-IS do struktur V3 oraz formalne domknięcie modelu PostgreSQL V3 w ETAPIE 2.
 
 ## Spis dokumentacji
 
@@ -89,6 +86,7 @@ Po Iteracji 6:
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md`
 - `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md`
 - `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md`
+- `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md`
 
 ## Reguła dalszej pracy
 
