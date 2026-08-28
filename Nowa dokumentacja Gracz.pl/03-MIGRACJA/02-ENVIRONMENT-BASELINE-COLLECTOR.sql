@@ -1,6 +1,7 @@
 -- Gracz.pl ETAP 3 — Environment Baseline Collector
--- READ-ONLY. Uruchomić na Render PostgreSQL przez psql.
--- Nie zawiera DDL/DML. Nie wklejać connection string/hasła do repo ani czatu.
+-- READ-ONLY wobec danych trwałych: skrypt nie zmienia tabel produkcyjnych.
+-- Używa wyłącznie sesyjnej tabeli TEMP do policzenia exact row counts + sizes.
+-- Nie wklejać connection string/hasła do repo ani czatu.
 
 \pset pager off
 \timing on
@@ -20,6 +21,7 @@ WHERE schemaname NOT IN ('pg_catalog','information_schema')
 ORDER BY schemaname, tablename;
 
 \echo '=== 03 TABLE COUNTS + SIZES ==='
+DROP TABLE IF EXISTS baseline_table_profile;
 CREATE TEMP TABLE baseline_table_profile (
   schemaname text,
   tablename text,
@@ -27,7 +29,7 @@ CREATE TEMP TABLE baseline_table_profile (
   total_bytes bigint,
   table_bytes bigint,
   index_bytes bigint
-) ON COMMIT DROP;
+);
 
 DO $baseline$
 DECLARE r record; c bigint;
@@ -54,6 +56,8 @@ SELECT schemaname, tablename, exact_rows,
        pg_size_pretty(index_bytes) AS indexes_size
 FROM baseline_table_profile
 ORDER BY schemaname, tablename;
+
+DROP TABLE baseline_table_profile;
 
 \echo '=== 04 INDEXES ==='
 SELECT schemaname, tablename, indexname, indexdef
