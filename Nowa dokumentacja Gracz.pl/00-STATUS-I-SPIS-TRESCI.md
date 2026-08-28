@@ -4,72 +4,43 @@ Data: 28.08.2026
 
 ## Zasada źródła prawdy
 
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą rozpoczętej analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno.
 
 ## ETAP 1B — mapa PostgreSQL
 
-**STATUS: ZAMKNIĘTY 28.08.2026.**
-
-Mapa kodowa 26/26, rzeczywisty dump Render 28 tabel, porównanie i Model Match zakończone.
+**STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
 
 ## ETAP 2 — architektura docelowa i PostgreSQL V3
 
-**STATUS: ZAMKNIĘTY 28.08.2026.**
-
-Zatwierdzone: Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i `02-BAZA-DANYCH/20-POSTGRESQL-V3-FINAL.md`.
+**STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
 
-**STATUS: W TRAKCIE od 28.08.2026.**
-
-### FORMALNY GATE
-
+**STATUS: W TRAKCIE.**  
 **DDL V3: NO-GO.**
 
-Aktualny stan Data Quality:
+### Data Quality
 
-- **DQ-001 — ANALIZA PRZYCZYNY ZAMKNIĘTA / DECISION-READY.** Root cause: ephemeral guest przeznaczony do preview/demo został dopuszczony do persistent Social writer. Decyzja: `LEGACY-QUARANTINE`; żadnego DML jeszcze nie wykonano.
-- **DQ-002 — W TOKU: PER-ACCOUNT EVIDENCE.** 2 grupy normalized-email, 5 kont; collector privacy-safe został przygotowany i oczekuje na wykonanie na produkcyjnym Render PostgreSQL.
+- **DQ-001 — DECISION-READY:** root cause EPHEMERAL-GUEST -> persistent Social writer; decyzja `LEGACY-QUARANTINE`; DML niewykonany.
+- **DQ-002 — EVIDENCE COMPLETE / BUSINESS RESOLUTION REQUIRED:** collector 11 wykonany na produkcyjnym Render PostgreSQL w READ ONLY, zakończony ROLLBACK. 2 grupy / 5 kont potwierdzone. Brak podstaw do MERGE/DELETE. DML niewykonany.
 
-Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia globalnego NO-GO.
+### DQ-002 — najważniejsze evidence
 
-### Potwierdzone DQ-001
+Grupa A: `gamerpl`, `gamerde` — oba unverified. `gamerpl` ma registration code; `gamerde` reset token + registration code i audit login footprint.
 
-- commit `a377bfc151914ba8bc448cf6e55ffb9598f522eb` dodał tymczasowe guest sessions do podglądu gier,
-- guest token ma domyślny TTL 1800 s, brak `jti` i z założenia nie wymaga `gracz_accounts` ani normalnej trwałej auth session,
-- commit `06b6352499332c35fcf836d1dac5b0b9a21469aa` dodał `POST /auth/guest`, generujący serwerowo `guest-` + 8 hex,
-- produkcyjny `guest-24ea096d` pasuje dokładnie do tego formatu,
-- commit `2b8821088dd7025bd4c97680d1b84650288eae90` dodał UI wejścia do demonstracji Tysiąca jako gość, bez zakładania konta i bez wpływu na ranking,
-- `trustedChatUser()` nie odrzuca guest capability,
-- `requestFriend()` nie waliduje requestera/addressee względem `gracz_accounts`,
-- w rezultacie ephemeral guest mógł utworzyć persistent friendship,
-- `MAP-TO-CANONICAL` nie ma podstaw dowodowych,
-- aktywny backfill Social V3 ma wykluczyć ten rekord; kierunek remediation: `LEGACY-QUARANTINE`.
+Grupa B: `gracz.pl`, `gamerpolska`, `gamer` — wszystkie verified, ale mają niezależny footprint. `gracz.pl` ma 3 wysłane wiadomości; `gamerpolska` registration/activation/login lineage; `gamer` registration/activation oraz 4 historyczne auth sessions. Zachować identity/history; maksymalnie jedno konto w grupie może zachować obecny canonical normalized-email po ownership resolution.
 
-### Potwierdzone DQ-002
+Wszystkie pięć kont ma 0 references w badanym Social/Global Chat/Moderation, Tournament i Games footprint oraz 0 aktywnych auth sessions w chwili capture.
 
-- drill-down: 2 grupy / 5 kont,
-- grupa A: `gamerpl`, `gamerde`,
-- grupa B: `gracz.pl`, `gamerpolska`, `gamer`,
-- guard unique-email został dodany dopiero w `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c`,
-- wszystkie 5 kont powstało wcześniej; najpóźniejsze około 11 min 33 s przed guardem,
-- brak automatycznego MERGE/DELETE,
-- przygotowany collector DQ-002 zbiera wyłącznie privacy-safe counts/timestamps/statuses oraz audit event types, bez surowych e-maili, treści wiadomości, tokenów i kodów.
+### Aktualny punkt wznowienia
 
-### Stan środowiskowy
+**ETAP 3 → DQ-002 → BUSINESS/OWNERSHIP RESOLUTION PER GROUP → freeze decision record → przygotowanie reviewowalnego DML dopiero po wymaganych gate'ach.**
 
-- Render PostgreSQL 18.4,
-- 28/28 tabel,
-- 13 865 rekordów łącznie,
-- `gracz_audit_log`: 13 743 (~99,1%),
-- DB ok. 8,2 MiB,
-- 1 orphan friendship,
-- 2 grupy collision / 5 accounts,
-- 3 divergences newsletter `consent_at` vs `consented_at`.
+Nie wykonywać DML ani DDL na produkcji.
 
 ### Otwarte bramki krytyczne
 
-- wykonanie collectora DQ-002 i decyzje per-account,
+- business/ownership resolution DQ-002,
 - remediation + rerun data-quality,
 - fresh schema snapshot/diff,
 - pełny backup + restore test,
@@ -91,23 +62,13 @@ Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia g
 - `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
 - `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
 - `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
-- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
-- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md`
-- `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md` — **DQ-001 DECISION-READY**.
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` — **privacy-safe read-only collector, gotowy do wykonania**.
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — arkusz wynikowy, oczekuje na wynik collectora.
+- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md` — zaktualizowana po collectorze 11.
+- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md` — evidence complete, bez wykonywalnego SQL.
+- `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md` — DQ-001 decision-ready.
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` — wykonany READ ONLY.
+- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md` — uzupełniony rzeczywistym evidence.
 
-## Następny krok
-
-**Uruchomić `11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql` na Render PostgreSQL**, bez ujawniania connection string/password. Następnie:
-
-1. zapisać wynik,
-2. uzupełnić `11-DQ-002-PER-ACCOUNT-EVIDENCE.md`,
-3. zatwierdzić decyzję dla `gamerpl`, `gamerde`, `gracz.pl`, `gamerpolska`, `gamer`,
-4. przenieść decyzje do `08` i `09`,
-5. dopiero po pozostałych wymaganych gate'ach przygotować reviewowalny DML.
-
-## Spis dokumentacji
+## Spis dokumentacji — ETAP 2
 
 ### Architektura
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md`
@@ -127,7 +88,7 @@ Ponadto pozostają inne bramki preflight, więc zamknięcie DQ-001 nie zmienia g
 - `02-BAZA-DANYCH/10-POROWNANIE-POSTGRESQL-REPO-PRODUKCJA.md`
 - `02-BAZA-DANYCH/11-MODEL-MATCH-I-ROZBIEZNOSCI.md`
 
-### PostgreSQL V3 — ETAP 2
+### PostgreSQL V3
 - `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md`
 - `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md`
 - `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md`
