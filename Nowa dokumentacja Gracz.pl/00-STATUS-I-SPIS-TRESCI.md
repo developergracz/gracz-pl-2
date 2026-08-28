@@ -30,7 +30,7 @@ Zatwierdzone i zapisane:
 
 #### Iteracja 1 — Preflight migracji
 
-**STATUS: W TRAKCIE — DATA QUALITY ZPROFILOWANE, BLOCKERY ZIDENTYFIKOWANE.**
+**STATUS: W TRAKCIE — DATA QUALITY ZPROFILOWANE, BLOCKERY ZIDENTYFIKOWANE I CZĘŚCIOWO SKORELOWANE HISTORYCZNIE.**
 
 Zapisane artefakty:
 - `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
@@ -56,19 +56,21 @@ Potwierdzone środowiskowo:
 - 2 grupy kolizji normalized-email obejmujące 5 kont,
 - 3 rozbieżności newsletter `consent_at` vs `consented_at`.
 
-Potwierdzone w writerach AS-IS @ `db3c15a`:
+Potwierdzone w writerach i historii AS-IS:
 - friendship writer nie weryfikuje requester/addressee w `gracz_accounts`,
 - `gracz_chat_friends` nie ma FK do accounts,
-- standardowy Postgres account writer normalizuje e-mail `trim + lower` i blokuje duplikat,
-- profile update także sprawdza konflikt e-mail,
+- friendship zostało wprowadzone w commicie `10a0e625067c007a42de507c50fa3cd820ed7185` z 23.08.2026 już bez FK/account-existence check,
+- standardowy Postgres account writer w baseline normalizuje e-mail `trim + lower` i blokuje duplikat,
+- guard unique-email został dodany dopiero w commicie `6e7a55ea8e5d2f4db4dabb2e15d1e1acb459bf1c` z 27.08.2026 07:31:58 UTC,
+- wszystkie 5 kont z dwóch kolizyjnych grup ma `created_at` sprzed tego commita; najpóźniejsze powstało około 11 min 33 s wcześniej,
 - aktualny newsletter zapisuje `consented_at`,
 - lifecycle recorder używa `consented_at` jako czasu `granted`.
 
-Wniosek: data-quality gate nie jest zamknięta. Orphan jest zgodny z luką referencyjną writera; geneza guest principal wymaga dowodu historycznego. Kolizje e-mail nie są wyjaśnione przez standardową ścieżkę rejestracji baseline i wymagają correlation z historią writerów/deployów. Newsletter jest hybrydą legacy/new i wymaga zatwierdzenia semantyki canonical consent timestamp.
+Wniosek: DQ-002 ma silnie potwierdzoną chronologię pre-guard. DQ-001 ma potwierdzoną lukę istniejącą od momentu wprowadzenia friendship, ale źródło principalu `guest-*` nadal wymaga korelacji historycznej. Newsletter pozostaje hybrydą legacy/new i wymaga zachowania provenance.
 
 Otwarte krytyczne bramki:
 - decyzja/remediation DQ-001 i DQ-002 + rerun weryfikacyjny,
-- historyczne correlation audit/deploy dla kolizyjnych kont i guest principal,
+- guest principal/deploy correlation DQ-001 oraz finalna per-account decyzja DQ-002,
 - świeży schema snapshot/diff w punkcie wykonania,
 - pełny backup + restore test,
 - pełny writer/reader/endpoint/worker inventory,
@@ -99,9 +101,9 @@ Produkcja pozostaje **NO-GO**, dopóki otwarte blockery Preflight nie zostaną z
 #### Następny krok
 
 Następna praca wykonawcza:
-- historyczne correlation dla DQ-001/DQ-002,
-- następnie zatwierdzenie decyzji remediation per blocker bez automatycznego MERGE/DELETE,
-- równolegle kontynuacja pełnego writer/reader/endpoint/worker inventory.
+- domknąć historyczną korelację principalu `guest-*`,
+- przygotować zatwierdzaną decyzję remediation dla DQ-001 i per-account dla DQ-002 bez automatycznego MERGE/DELETE,
+- równolegle kontynuować pełny writer/reader/endpoint/worker inventory.
 
 Dopiero po zamknięciu właściwych bramek można dopuścić pierwszy executable EXPAND.
 
