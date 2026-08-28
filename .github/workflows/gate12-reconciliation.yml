@@ -1,0 +1,38 @@
+name: Gate 12 reconciliation
+
+on:
+  push:
+    branches:
+      - feature/homepage-game-center
+    paths:
+      - modern/checkers-engine/package.json
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll privacy-safe Gate 12 reconciliation endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://gracz-checkers-test.onrender.com/__g12r_20260829_7d4a3e85b64f4f7aa69cfcb2f41d9d13'
+          rm -f gate12-reconciliation-result.json
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 15 "$url" -o gate12-reconciliation-result.json; then
+              python -c "import json; from pathlib import Path; d=json.loads(Path('gate12-reconciliation-result.json').read_text()); assert d.get('test') == 'gate12-reconciliation-runtime-v1' and d.get('readOnly') is True; print(json.dumps(d, indent=2, sort_keys=True)); assert d.get('status') == 'PASS'"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Gate 12 reconciliation endpoint did not become available' >&2
+          exit 1
+      - name: Upload Gate 12 reconciliation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate12-reconciliation-evidence
+          path: gate12-reconciliation-result.json
+          if-no-files-found: error
+          retention-days: 1
