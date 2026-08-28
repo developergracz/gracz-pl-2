@@ -1,9 +1,9 @@
 # Nowa dokumentacja Gracz.pl — status i spis treści
 
-Data: 28.08.2026
+Data: 29.08.2026
 
 ## Zasada źródła prawdy
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader, worker/event/realtime i crypto inventory dodatkowo przeanalizowano aktualny runtime wiring `main` przy stanie `8dee41deea93465f5777de318b5866be898ff237`; późniejsze commity do tego punktu są dokumentacyjne/diagnostyczne i nie zmieniają produkcyjnego runtime aplikacji.
+Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader, worker/event/realtime i crypto inventory dodatkowo przeanalizowano aktualny runtime wiring oraz aktywną gałąź Render `feature/homepage-game-center`.
 
 ## ETAP 1B — mapa PostgreSQL
 **STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
@@ -12,8 +12,8 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 **STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
 
 ## ETAP 3 — migracja
-**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 SMOKE TEST GOTOWY DO URUCHOMIENIA.**  
-**DDL V3: NO-GO.**
+**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 PASS.**  
+**DDL V3: REVIEW DOZWOLONY / WYKONANIE PRODUKCYJNE NO-GO.**
 
 ### Data Quality
 - **DQ-001 — DECISION-READY:** `LEGACY-QUARANTINE`; DML niewykonany.
@@ -36,13 +36,22 @@ Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **
 - Potwierdzono process-local SSE dla Warcabów, Tysiąca i Global Chat, direct mail w request path, best-effort newsletter lifecycle analytics, process-local SecurityMonitor, cleanup głównie startup/opportunistic oraz brak Transactional Outbox AS-IS.
 - **Bramka 10 — WARNING:** repo/runtime inventory jest kompletny; do `PASS` pozostaje środowiskowe potwierdzenie braku osobnego Render cron/worker/service/starego writera.
 
-### Crypto compatibility
+### Crypto compatibility — Bramka 11
 - `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md` — zmapowano formaty private-message, attachment i MFA.
-- Potwierdzono AES-256-GCM + HKDF, dokładne AAD dependencies, message envelope `enc:v1`, attachment legacy AAD variant oraz brak jawnego key-version dla attachments/MFA.
-- Potwierdzono także możliwość fallbacku trzech dedykowanych kluczy szyfrowania do `AUTH_SECRET`, co wymaga ostrożności przy rotacji.
-- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md` — gotowa procedura privacy-safe.
-- `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs` — gotowy wykonywalny tester read-only; wymusza host lokalny oraz bazę `gracz_restore_test_20260828` i wypisuje wyłącznie statusy/liczniki.
-- **Bramka 11 — NOT VERIFIED:** format i test są przygotowane; brakuje wyłącznie faktycznego uruchomienia testu z właściwym key material na izolowanym restore i zapisania privacy-safe wyniku.
+- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md` — wynik końcowy **PASS**.
+- `03-MIGRACJA/17-RUNTIME-CRYPTO-SELFCHECK.md` — runtime self-check **PASS**, cleanup wykonany.
+- Runtime self-check: `readOnlyProbe=true`.
+- Private messages: **5/5 success, 0 failure, PASS**.
+- Attachments: **2/2 success, 0 failure, PASS**.
+- MFA: **0 rekordów, N/A**.
+- Zachowano wyłącznie privacy-safe SHA-256 ciphertextu; plaintext i key material nie zostały zapisane w dokumentacji ani repozytorium.
+- **Bramka 11 — PASS.** Blocker kryptograficzny został zamknięty.
+
+### Cleanup runtime self-checka
+Na aktywnej gałęzi Render `feature/homepage-game-center` usunięto wszystkie tymczasowe elementy diagnostyczne:
+- normalny `start` przywrócony — `c2de7b5630a05a888e69988c09a1e8653907bf36`,
+- tymczasowe `COPY scripts ./scripts` cofnięte — `62e5cb7e259842c060e0e2174f26ad4e1fd0bc00`,
+- runtime self-check usunięty — `e01b40e18442194870f9b465fd0007c12840010c`.
 
 ### Remediation planning
 Przygotowano reviewowalny komplet:
@@ -56,14 +65,16 @@ Przygotowano reviewowalny komplet:
 Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
 
 ### Aktualny punkt wznowienia
-**ETAP 3 → PREFLIGHT GATE 11 → uruchomić `crypto-decryptability-smoke.mjs` na `gracz_restore_test_20260828`, zachować wyłącznie privacy-safe JSON i sklasyfikować Bramkę 11 jako PASS / REVIEW / FAIL / NOT VERIFIED.**
+**ETAP 3 → DDL V3 REVIEW + domknięcie pozostałych bramek preflight.**
+
+Review DDL może być prowadzone teraz, ponieważ Bramka 11 została zamknięta. Nie oznacza to zgody na wykonanie DDL w produkcji.
 
 ### Otwarte bramki krytyczne
 - fresh schema snapshot/diff,
 - deploy/process/job correlation potrzebna do domknięcia bramek 9–10,
-- wykonanie przygotowanego crypto decryptability smoke test,
 - active-state/cutover assessment,
 - credential rotation/least privilege/secret hygiene,
+- capacity/locking assessment,
 - późniejszy rerun data-quality/reconciliation,
 - rollback/maintenance window i finalny GO/NO-GO.
 
@@ -94,6 +105,7 @@ Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany
 - `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md`
 - `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md`
 - `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md`
+- `03-MIGRACJA/17-RUNTIME-CRYPTO-SELFCHECK.md`
 - `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs`
 
 ## Spis dokumentacji — ETAP 2
