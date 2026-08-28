@@ -30,8 +30,8 @@ Nie wolno rekonstruować brakujących kolumn lub metod na podstawie domysłów.
 | Gry — Tysiąc / `gracz_thousand_games` | AS-IS zamknięte; JSONB, revision i optimistic locking zweryfikowane |
 | Gry — Gomoku | AS-IS zamknięte; brak persistence PostgreSQL, stan wyłącznie w pamięci procesu |
 | Gry — legacy `prefix_*` | materiał porównawczy MySQL; DDL legacy do weryfikacji, nie liczyć automatycznie do mapy PostgreSQL |
-| Wiadomości prywatne — `gracz_messages` | DDL/DML, FK, indeksy, szyfrowanie i foldery opracowane |
-| Załączniki wiadomości — `gracz_message_attachments` | DDL/DML, FK 1:1, AES-256-GCM i walidacja plików opracowane |
+| Wiadomości prywatne — `gracz_messages` | AS-IS zamknięte na poziomie kodu; DDL/DML, FK, indeksy, szyfrowanie, foldery i delete zweryfikowane |
+| Załączniki wiadomości — `gracz_message_attachments` | AS-IS zamknięte na poziomie kodu; FK 1:1, AES-256-GCM, walidacja i cascade delete zweryfikowane |
 | Pozostałe obszary | do opracowania/weryfikacji |
 | **Łącznie** | **mapa 26 tabel w toku** |
 
@@ -81,6 +81,12 @@ Dokument: `04-GRY-GOMOKU-AS-IS.md`.
 
 Temat i treść są szyfrowane aplikacyjnie przed zapisem.
 
+Delete AS-IS:
+- nadawca ustawia `sender_deleted=TRUE`,
+- odbiorca ustawia `recipient_deleted=TRUE`,
+- fizyczny `DELETE` następuje dopiero przy obu flagach `TRUE`,
+- w analizowanej ścieżce brak czasowego TTL/retention pola.
+
 ### `gracz_message_attachments`
 - `message_id UUID PRIMARY KEY REFERENCES gracz_messages(message_id) ON DELETE CASCADE`,
 - `file_name VARCHAR(120) NOT NULL`,
@@ -92,7 +98,7 @@ Temat i treść są szyfrowane aplikacyjnie przed zapisem.
 - `ciphertext BYTEA NOT NULL`,
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`.
 
-Model jest 1:1 z wiadomością; załączniki są szyfrowane AES-256-GCM.
+Model jest 1:1 z wiadomością; załączniki są szyfrowane AES-256-GCM i usuwane kaskadowo po fizycznym DELETE wiadomości.
 
 Dokument: `05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md`.
 
