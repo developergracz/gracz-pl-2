@@ -17,6 +17,15 @@ const PASS1_RUNTIME_MODULES = [
 ];
 const FORBIDDEN_RUNTIME_DDL = /\b(?:CREATE\s+(?:TABLE|INDEX|UNIQUE\s+INDEX|OR\s+REPLACE\s+FUNCTION|FUNCTION|TRIGGER)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX|TRIGGER|FUNCTION)|TRUNCATE\s+TABLE|GRANT\s+|REVOKE\s+)/i;
 
+const PASS1_MIGRATIONS = [
+  { version: 1, name: "identity" },
+  { version: 2, name: "messages" },
+  { version: 3, name: "game-sessions" },
+  { version: 4, name: "secure-account" },
+  { version: 5, name: "auth-sessions" },
+  { version: 6, name: "message-attachments" },
+];
+
 test("Gate 14A.3 runtime modules contain no executable DDL/DCL statements", async () => {
   for (const file of PASS1_RUNTIME_MODULES) {
     const source = await readFile(join(src, file), "utf8");
@@ -24,18 +33,11 @@ test("Gate 14A.3 runtime modules contain no executable DDL/DCL statements", asyn
   }
 });
 
-test("Gate 14A.3 migrations 001-006 are contiguous and named as approved", async () => {
+test("Gate 14A.3 migrations 001-006 remain contiguous and named as approved", async () => {
   const migrations = await discoverMigrations(migrationsDir);
   assert.deepEqual(
-    migrations.map(({ version, name }) => ({ version, name })),
-    [
-      { version: 1, name: "identity" },
-      { version: 2, name: "messages" },
-      { version: 3, name: "game-sessions" },
-      { version: 4, name: "secure-account" },
-      { version: 5, name: "auth-sessions" },
-      { version: 6, name: "message-attachments" },
-    ],
+    migrations.slice(0, PASS1_MIGRATIONS.length).map(({ version, name }) => ({ version, name })),
+    PASS1_MIGRATIONS,
   );
-  assert.ok(migrations.every((migration) => /^[a-f0-9]{64}$/.test(migration.checksum)));
+  assert.ok(migrations.slice(0, PASS1_MIGRATIONS.length).every((migration) => /^[a-f0-9]{64}$/.test(migration.checksum)));
 });
