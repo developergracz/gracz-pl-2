@@ -1,209 +1,169 @@
-# ETAP 3 — Bramka 13: Active-State Inventory — fresh results
+# ETAP 3 — Bramka 13: Active-State Inventory — final status
 
 Data: 29.08.2026  
 Środowisko: `gracz_pl_database` / PostgreSQL 18.4  
-Status: **GATE 13 = REVIEW / NOT VERIFIED — NIE PASS**
+Status: **GATE 13 = PASS — PRE-CUTOVER READINESS**
 
-## 1. Cel i zasada dowodowa
+> Uwaga: pierwotny fresh inventory wykazał persisted nonterminal rows i miał status REVIEW. Elementy te zostały następnie rozstrzygnięte w Gate 13A. Pełny decision record i fresh drilldown evidence znajduje się w `25-GATE-13A-STALE-NONTERMINAL-STATE-RESULTS.md`.
 
-Bramka 13 ustala rzeczywisty aktywny stan domenowy przed migracją V3: gry, turnieje, sesje, krótkotrwałe workflow tożsamości, newsletter, moderację/social oraz process-local runtime.
+## 1. Zakres i metoda
 
-Pierwotna propozycja oparta o nazwy `system_workers`, `system_cron`, `outbox_events`, `system_ws_connections`, `storage_pending` lub `storage_dirty_pages` NIE została wykonana, ponieważ nie były to potwierdzone tabele AS-IS. Collector został zbudowany wyłącznie na rzeczywistym schemacie i aktualnym kodzie Gracz.pl.
+Gate 13 ustala rzeczywisty aktywny stan domenowy przed migracją V3: gry, turnieje, auth sessions, reset/registration/MFA, newsletter, moderation/social, operational PostgreSQL oraz process-local runtime.
+
+Pierwotna propozycja oparta o hipotetyczne tabele `system_workers`, `system_cron`, `outbox_events`, `system_ws_connections`, `storage_pending` i podobne nie została wykonana. Collector został oparty wyłącznie na potwierdzonym schemacie AS-IS i aktualnym kodzie.
 
 Collector źródłowy:
 `22-GATE-13-ACTIVE-STATE-INVENTORY.sql`
 
-## 2. Sposób wykonania
+Canonical first capture:
+- `2026-08-29T00:11:17.199Z`,
+- database: `gracz_pl_database`,
+- PostgreSQL 18.4,
+- run `33222770175`,
+- job `99020147640`,
+- `PASS-COLLECTOR`,
+- `BEGIN TRANSACTION READ ONLY` + `ROLLBACK`,
+- bez wypisywania danych wrażliwych.
 
-Fresh persisted-state evidence pobrano z runtime Render przez tymczasowy proces diagnostyczny, który:
-- nie uruchamiał normalnego `src/main.js`,
-- nie uruchamiał inicjalizatorów aplikacji,
-- otworzył `BEGIN TRANSACTION READ ONLY`,
-- potwierdził `transaction_read_only=on`,
-- wykonywał tylko agregaty `SELECT`,
-- zakończył transakcję `ROLLBACK`,
-- nie wypisywał user_id, e-maili, tokenów, hashy, saltów, kodów, sekretów MFA ani treści wiadomości.
+## 2. Fresh active-state inventory — wyniki bazowe
 
-Capture DB: `2026-08-29T00:11:17.199Z`  
-Database: `gracz_pl_database`  
-User: `gracz_pl_database_user`  
-PostgreSQL: `18.4`  
-Collector: **PASS-COLLECTOR**  
-Transakcja: **READ ONLY**
+### Auth / Identity
+- persisted auth sessions: 3,
+- aktywne wg runtime rule: **0**,
+- aktywne reset tokens: **0**,
+- aktywne registration codes: **0**,
+- MFA enabled/setup pending: **0**.
 
-GitHub Actions evidence:
-- run: `33222770175`,
-- job: `99020147640`,
-- conclusion: `success`,
-- artifact: `gate13-runtime-evidence`, artifact id `9705768051`.
-
-`PASS-COLLECTOR` oznacza poprawne zebranie dowodu, nie automatyczny PASS całej Bramki 13.
-
-## 3. Warcaby / persisted game sessions
-
-Fresh wynik:
-- sessions total: **2**,
-- invalid JSON: **0**,
-- game status `active`: **2**,
-- terminal `won/draw`: **0**,
-- unknown status: **0**,
-- `active` z co najmniej jednym zapisanym `players.*.connected=true`: **2**,
-- updated w ostatnich 10 minutach: **0**.
-
-W bazie istnieją dwa niezamknięte snapshoty Warcabów. `connected=true` jest częścią serializowanego snapshotu i jest zmieniane przez `disconnectPlayer/reconnectPlayer`; nie jest samodzielnym dowodem aktualnego połączenia sieciowego. Brak zapisu w ostatnich 10 minutach oznacza, że collector nie wykazał świeżej aktywności tych sesji.
-
-**Warcaby = REVIEW.** Przed cutover wymagana jest jawna decyzja `DRAIN / MIGRATE / ARCHIVE-OR-QUARANTINE` dla obu niezamkniętych rekordów.
-
-## 4. Tysiąc
-
-Fresh wynik:
-- games total: **29**,
-- `in_progress`: **29**,
-- status `bidding`: **29**,
-- awaiting next round/redeal: **0**,
-- `game-ended`: **0**,
-- unknown status: **0**,
-- updated w ostatnich 10 minutach: **0**.
-
-Aktualny engine tworzy nowy stan Tysiąca ze statusem `bidding`. Wszystkie 29 rekordów pozostaje w tym stanie i żaden nie był aktualizowany w ostatnich 10 minutach. Nie dowodzi to, że 29 rozgrywek jest obecnie używanych, ale dowodzi istnienia 29 semantycznie niezamkniętych rekordów source-setu.
-
-**Tysiąc = REVIEW.** Wymagane jawne mapowanie do `MIGRATE / ARCHIVE / QUARANTINE / SKIP-WITH-APPROVAL` albo fresh drain evidence przed cutover.
-
-## 5. Turnieje
-
-Fresh wynik:
+### Turnieje
 - tournaments total: **0**,
-- registration: **0**,
-- live: **0**,
-- finished: **0**,
-- unknown status: **0**,
-- open tournament matches: **0**.
+- live/registration: **0**,
+- open matches: **0**.
 
-**PASS dla aktywnego stanu turniejowego na moment capture.**
+### Newsletter
+- subscribed: 3,
+- pending_confirmation: 2,
+- aktywne niewygasłe confirmation workflow: **0**.
 
-## 6. Auth sessions
-
-Fresh wynik:
-- persisted sessions total: **3**,
-- unrevoked + unexpired: **0**,
-- active wg rzeczywistej reguły runtime: **0**,
-- idle/expired and not revoked: **3**.
-
-Rzeczywisty warunek aktywności użyty przez runtime i collector:
-
-`revoked_at IS NULL AND expires_at > NOW() AND last_seen_at > NOW() - INTERVAL '30 minutes'`
-
-**PASS dla drain/re-login na moment capture.** Brak aktywnych sesji użytkowników.
-
-## 7. Reset / registration / MFA
-
-Fresh wynik:
-- reset tokens total: **1**,
-- reset tokens active: **0**,
-- registration codes total: **2**,
-- registration codes active: **0**,
-- MFA rows total: **0**,
-- MFA enabled: **0**,
-- MFA setup pending: **0**.
-
-**PASS dla aktywnego workflow Identity na moment capture.**
-
-## 8. Newsletter
-
-Fresh wynik:
-- subscribers total: **5**,
-- subscribed: **3**,
-- pending_confirmation total: **2**,
-- pending_confirmation unexpired: **0**,
-- pending confirmation delivery gap: **0**,
-- pending_confirmation expired: **2**,
-- unknown status: **0**.
-
-Trzy rekordy `subscribed` nie są pending write. Oba `pending_confirmation` są wygasłe; nie ma aktywnego, niewygasłego confirmation workflow.
-
-**PASS dla krótkotrwałego newsletter active-state na moment capture**, przy zachowaniu provenance 2 wygasłych rekordów.
-
-## 9. Moderation / Social
-
-Fresh wynik:
-- moderation decisions total: **6**,
+### Moderation
 - open moderation appeals: **0**,
-- unknown appeal statuses: **0**,
-- global chat reports without resolution-state: **0**,
-- friendship rows with status `pending`: **2**.
+- unresolved global-chat reports: **0**.
 
-Brak aktywnych appeal/report workflow. Dwa oczekujące friendship workflows wymagają jawnego zachowania podczas migracji.
-
-**Social = REVIEW.** Preferowane zachowanie `pending` 1:1, jeżeli docelowy model V3 to wspiera; w przeciwnym razie wymagana osobna decyzja transformacyjna przed DML.
-
-## 10. PostgreSQL operational snapshot
-
-Fresh wynik poza samym collectorem:
+### PostgreSQL operational snapshot
 - other client connections: **0**,
 - other active connections: **0**,
-- other idle-in-transaction: **0**,
-- other transactions >30s: **0**,
+- idle-in-transaction: **0**,
+- transactions >30s: **0**,
 - waiting locks: **0**.
 
-**PASS jako punktowy operational snapshot.** Nie jest to dowód, że writer nie może uruchomić się później.
+## 3. Persisted nonterminal rows — rozstrzygnięcie Gate 13A
 
-## 11. Process-local runtime — granica dowodu
+Pierwotny inventory wykazał:
+- 2 Checkers `active`,
+- 29 Thousand `bidding`,
+- 2 friendship `pending`.
 
-Analiza aktualnego kodu potwierdza process-local state bez reprezentacji w PostgreSQL:
-- Lobby: rooms, presence i invitations — in-memory,
-- Gomoku: aktywne gry/draw offers — in-memory,
-- Global Chat: presence i SSE subscribers — in-memory,
-- Tysiąc realtime: SSE subscriber registry — in-memory.
+Gate 13A wykonał dodatkowe fresh READ ONLY drilldowny i sklasyfikował te rekordy.
 
-Diagnostyczny deploy zastąpił poprzedni proces, dlatego collector raportował:
+### Checkers 2/2
 
-`processLocalPreDeployStateObservable = false`
+Potwierdzono:
+- oba mają wyłącznie canonical participants,
+- 0 ruchów,
+- 0 wiadomości chatu sesji,
+- brak pending offer,
+- tylko początkowy event utworzenia,
+- brak świeżej aktywności.
 
-Nie wolno retrospektywnie stwierdzić, że przed deployem było `0` pokoi, `0` gier Gomoku, `0` presence lub `0` SSE connections. Ten obszar jest **NOT VERIFIED**, nie PASS.
+Klasyfikacja:
+**`LEGACY-GAME-STATE / STALE-PRISTINE-SHELL`**.
 
-Bezpieczny cutover wymaga maintenance/drain contract: zatrzymanie nowych mutacji, kontrolowane zakończenie albo jawne przerwanie process-local sessions według zatwierdzonej polityki oraz fresh final active-state check bezpośrednio przed writer cutover.
+Nie są traktowane jako realnie aktywne rozgrywki przy cutover. Snapshot/provenance ma zostać zachowany; brak autoryzacji DELETE.
 
-## 12. Decyzja Gate 13
+### Thousand 29/29
 
-**GATE 13 = REVIEW / NOT VERIFIED — NIE PASS.**
+Potwierdzono:
+- wszystkie 29 są niekońcowe, ale starsze niż 24 h,
+- wszystkie mają co najmniej jednego participant ID spoza aktualnego `gracz_accounts`,
+- 0/29 ma kompletny canonical participant set,
+- 26 ma revision 1, tylko 3 revision >1, revision max 2,
+- 18/29 dokładnie pasuje do historycznego guest/demo signature z kodu,
+- pozostałych 11 nie mapujemy heurystycznie do żadnego konta.
 
-Otwarte elementy:
-1. **2** persisted Checkers sessions nadal mają `game.status=active`;
-2. **29** persisted Thousand games ma niekońcowy status `bidding`;
-3. **2** friendship workflows ma status `pending`;
-4. process-local pre-deploy state nie został i po restarcie nie może zostać retrospektywnie zmierzony.
+Klasyfikacja całego zbioru:
+**`LEGACY-GAME-STATE / NONCANONICAL-PARTICIPANTS / QUARANTINE`**.
 
-Jednocześnie fresh capture potwierdził brak:
-- aktywnych auth sessions,
-- aktywnych reset tokens,
-- aktywnych registration codes,
-- MFA setup,
-- aktywnych turniejów,
-- open moderation appeals,
-- global-chat reports,
-- aktywnego newsletter confirmation workflow,
-- konkurencyjnych DB client transactions/locks w chwili capture.
+Nie wolno backfillować ich jako aktywne canonical matches V3. Zachować source snapshot/provenance; brak autoryzacji DELETE.
 
-## 13. Następny bezpieczny krok — Gate 13A
+### Social pending 2/2
 
-Przed zmianą Gate 13 na PASS należy wykonać **Gate 13A — stale/nonterminal state resolution**:
-1. sklasyfikować 2 Checkers `active` jako realnie wznawialne albo legacy/test/stale;
-2. sklasyfikować 29 Thousand `bidding` analogicznie i ustalić backfill/archival policy;
-3. potwierdzić mapping 2 pending friendship workflows;
-4. zapisać maintenance/drain contract dla process-local Lobby/Gomoku/SSE;
-5. przed cutover wykonać fresh READ ONLY recheck active-state.
+Potwierdzono:
+- 0 canonical↔canonical,
+- 1 mixed quarantine↔canonical,
+- 1 z ephemeral/unknown principal; wcześniejszy DQ-001 potwierdził `EPHEMERAL-GUEST` i decyzję `LEGACY-QUARANTINE`.
 
-Do tego czasu:
-- **Gate 13 = REVIEW / NOT VERIFIED**,
-- Gate 14 może być przygotowywany dokumentacyjnie, ale Gate 13 nie jest zamknięty,
-- Gate 15 final GO/NO-GO nie może dać GO,
-- produkcyjny DDL/DML V3 = **NO-GO**.
+Klasyfikacja:
+**`LEGACY-SOCIAL-PENDING / QUARANTINE`**.
 
-## 14. Cleanup diagnostyki
+Nie włączać do aktywnego canonical Social graph V3; zachować provenance; brak autoryzacji DELETE.
 
-Po capture:
-- `package.json` przywrócono do normalnego startu `node --require ./src/pg-secure-preload.cjs src/main.js`,
-- tymczasowy `gate13-runtime-proxy.mjs` usunięto,
-- tymczasowy `gate13-runtime-evidence.yml` usunięto.
+## 4. Process-local runtime — zamknięcie przez cutover contract
 
-Repozytorium jest oczyszczone z diagnostyki Gate 13. Finalny live deploy normalnego startu należy traktować osobno od stanu repo, jeżeli nie ma bezpośredniego dowodu Render-live konkretnego cleanup commitu.
+Kod potwierdza process-local state bez trwałej reprezentacji w PostgreSQL:
+- Lobby rooms/presence/invitations,
+- Gomoku in-memory games,
+- Global Chat presence/SSE,
+- Thousand SSE subscribers.
+
+Tego stanu nie wolno retrospektywnie uznawać za `0` po restarcie diagnostycznym.
+
+Zamiast zgadywania zatwierdzona zostaje techniczna precondition dla finalnego cutover:
+
+1. zamknąć wejście do nowych mutacji / maintenance,
+2. zatrzymać normalny application writer,
+3. nie uruchamiać równoległego writera,
+4. po zatrzymaniu wykonać fresh READ ONLY Gate 13 recheck,
+5. recheck musi potwierdzić brak nowej aktywnej canonical rozgrywki i brak konkurencyjnych transakcji/locków,
+6. jeśli wykryta zostanie realna aktywność — **ABORT / NO-GO**.
+
+Po zatrzymaniu procesu process-local state jest zerowany konstrukcyjnie; Gate 15 musi potwierdzić single-writer/maintenance state przed cutover.
+
+## 5. Decyzja Gate 13
+
+**GATE 13 = PASS — PRE-CUTOVER READINESS.**
+
+Uzasadnienie:
+- brak aktywnych auth/reset/registration/MFA workflows,
+- brak aktywnych turniejów,
+- brak aktywnego newsletter confirmation workflow,
+- brak open moderation workflow,
+- brak konkurencyjnych DB clients/transactions/locks w fresh capture,
+- wszystkie persisted nonterminal leftovers zostały sklasyfikowane i otrzymały niedestrukcyjną politykę migracyjną,
+- process-local state ma jawny maintenance/drain contract.
+
+### Warunek obowiązkowy
+
+Ten PASS **nie zastępuje finalnego cutover check**.
+
+Bezpośrednio przed produkcyjnym writer cutover należy wykonać fresh Gate 13 recheck już po zatrzymaniu normalnego writera. Niespełnienie warunku oznacza Gate 15 = NO-GO.
+
+## 6. Cleanup diagnostyki
+
+Gate 13A cleanup commit na gałęzi `feature/homepage-game-center`:
+
+`e39175911a69d59b4ee6ab8238bbe758a46df2c1`
+
+Repo po cleanup:
+- normalny start: `node --require ./src/pg-secure-preload.cjs src/main.js`,
+- wszystkie tymczasowe proxy Gate 13A usunięte,
+- brak trwałego workflow Gate 13A.
+
+Stan konkretnego Render-live cleanup deployu jest osobnym dowodem operacyjnym i może zostać potwierdzony w Gate 15, jeżeli jest wymagany do finalnego GO.
+
+## 7. Następny krok
+
+Po Gate 13 / Gate 13A:
+
+**następna bramka = Gate 14 — Security / Credentials / Permissions readiness.**
+
+Gate 15 final GO/NO-GO nadal pozostaje otwarty.  
+Produkcja V3: **NO-GO** do finalnego spełnienia wszystkich warunków cutover.
