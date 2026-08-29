@@ -125,6 +125,8 @@
       color: var(--muted);
       font-size: .88rem;
     }
+    .footer-brand { color: var(--text); }
+    .footer-brand > span { color: var(--brand-red); }
     @media (max-width: 700px) {
       body { display: block; padding: 12px; }
       main { border-radius: 20px; padding: 24px 20px; }
@@ -164,7 +166,7 @@
 
     <footer>
       <span>Dziękujemy za cierpliwość.</span>
-      <span>© gracz.pl</span>
+      <span>© <span class="footer-brand">gracz<span>.pl</span></span></span>
     </footer>
   </main>
 </body>
