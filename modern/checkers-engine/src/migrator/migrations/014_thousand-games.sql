@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS gracz_thousand_games(
+  game_id VARCHAR(96) PRIMARY KEY,
+  players JSONB NOT NULL,
+  state JSONB NOT NULL,
+  revision BIGINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
