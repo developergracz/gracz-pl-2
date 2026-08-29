@@ -17,6 +17,10 @@ This directory is owned by the dedicated migrator, not by the application runtim
 
 Gate 14A/Gate 15 default is forward-fix. Destructive automatic down-migrations are not provided. Rollback means restoring the pre-approved application/database state according to the Gate 15 runbook or applying a reviewed forward corrective migration.
 
-## Current Gate 14A.2 state
+## Current Gate 14A.4 state
 
-The migration runner and schema-check contract exist, but the 79 inventoried runtime DDL/DCL statements have not yet all been extracted into versioned SQL files. Do not activate `assertRuntimeSchema()` in `src/main.js` and do not run the migrator against production until extraction, code reconciliation, tests, Gate 14B role design, and explicit authorization are complete.
+The 79 inventoried runtime DDL/DCL statements have been extracted into migrations `001` through `014` on the isolated audit branch. Runtime modules perform schema verification instead of self-migration.
+
+`assertRuntimeSchema()` is wired before the first PostgreSQL-backed service is created. When `DATABASE_URL` is present, runtime requires `gracz_schema_migrations` to match the exact migration sequence, names and SHA-256 checksums; otherwise startup fails closed.
+
+This branch must not be deployed to Render or production before the reviewed migration sequence has been applied to the target database. The migrator must not be run against production until Gate 14B role design, Gate 14C crypto remediation, Gate 14D production configuration, Gate 15 controls, and explicit authorization allow it.
