@@ -9,7 +9,11 @@ const migrationsDirectory = join(dirname(fileURLToPath(import.meta.url)), "migra
 export async function assertRuntimeSchema(databaseUrl) {
   if (!databaseUrl) return { skipped: true, reason: "no-database-url" };
   const migrations = await discoverMigrations(migrationsDirectory);
-  const pool = new Pool({ connectionString: databaseUrl, max: 1 });
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false },
+    max: 1,
+  });
   try {
     let rows;
     try {
