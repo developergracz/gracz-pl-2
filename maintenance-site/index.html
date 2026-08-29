@@ -10,14 +10,15 @@
   <title>Gracz.pl — trwa modernizacja</title>
   <style>
     :root {
-      color-scheme: light dark;
+      color-scheme: dark;
       --bg: #08111f;
-      --panel: rgba(15, 28, 48, .92);
+      --panel: rgba(15, 28, 48, .94);
       --text: #f4f7fb;
       --muted: #b7c4d6;
       --line: rgba(255,255,255,.12);
       --accent: #7dd3fc;
       --accent-2: #a7f3d0;
+      --brand-red: #ff2938;
       --shadow: 0 24px 70px rgba(0,0,0,.32);
     }
     * { box-sizing: border-box; }
@@ -27,7 +28,7 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 24px;
+      padding: 18px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
@@ -36,42 +37,44 @@
         var(--bg);
     }
     main {
-      width: min(880px, 100%);
+      width: min(940px, 100%);
       border: 1px solid var(--line);
-      border-radius: 28px;
-      padding: clamp(28px, 6vw, 64px);
+      border-radius: 24px;
+      padding: clamp(26px, 4vw, 42px);
       background: var(--panel);
       box-shadow: var(--shadow);
       backdrop-filter: blur(12px);
     }
+    .topline {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
     .brand {
       display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-    .mark {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      color: #07111f;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      align-items: baseline;
+      color: #fff;
+      font-size: 38px;
       font-weight: 900;
+      letter-spacing: -3px;
+      line-height: .9;
+      white-space: nowrap;
+    }
+    .brand span {
+      color: var(--brand-red);
+      font-size: 20px;
+      letter-spacing: -1px;
     }
     .status {
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      margin-top: 40px;
-      padding: 9px 13px;
+      padding: 8px 12px;
       border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--muted);
-      font-size: .92rem;
+      font-size: .9rem;
     }
     .dot {
       width: 9px;
@@ -81,56 +84,69 @@
       box-shadow: 0 0 0 5px rgba(167,243,208,.10);
     }
     h1 {
-      margin: 22px 0 18px;
+      margin: 24px 0 14px;
       max-width: 760px;
-      font-size: clamp(2.25rem, 7vw, 4.8rem);
-      line-height: .98;
+      font-size: clamp(2.5rem, 5.4vw, 4rem);
+      line-height: 1;
       letter-spacing: -.045em;
     }
     .lead {
-      max-width: 690px;
+      max-width: 790px;
       margin: 0;
       color: var(--muted);
-      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
-      line-height: 1.7;
+      font-size: clamp(1rem, 1.7vw, 1.18rem);
+      line-height: 1.55;
     }
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-top: 38px;
+      margin-top: 26px;
     }
     .card {
-      min-height: 118px;
-      padding: 18px;
+      min-height: 104px;
+      padding: 16px 18px;
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: 16px;
       background: rgba(255,255,255,.035);
     }
-    .card strong { display: block; margin-bottom: 8px; }
-    .card span { color: var(--muted); font-size: .94rem; line-height: 1.5; }
+    .card strong { display: block; margin-bottom: 7px; }
+    .card span { color: var(--muted); font-size: .9rem; line-height: 1.42; }
     footer {
       display: flex;
       justify-content: space-between;
       gap: 18px;
       flex-wrap: wrap;
-      margin-top: 42px;
-      padding-top: 22px;
+      margin-top: 26px;
+      padding-top: 18px;
       border-top: 1px solid var(--line);
       color: var(--muted);
-      font-size: .9rem;
+      font-size: .88rem;
     }
     @media (max-width: 700px) {
+      body { display: block; padding: 12px; }
+      main { border-radius: 20px; padding: 24px 20px; }
+      .brand { font-size: 34px; }
+      .brand span { font-size: 18px; }
       .grid { grid-template-columns: 1fr; }
-      main { border-radius: 22px; }
+    }
+    @media (min-width: 701px) and (max-height: 760px) {
+      body { padding: 10px; }
+      main { padding: 24px 32px; }
+      h1 { margin-top: 18px; font-size: clamp(2.3rem, 5vw, 3.35rem); }
+      .lead { font-size: 1rem; line-height: 1.45; }
+      .grid { margin-top: 18px; }
+      .card { min-height: 88px; padding: 13px 15px; }
+      footer { margin-top: 18px; padding-top: 14px; }
     }
   </style>
 </head>
 <body>
   <main aria-labelledby="page-title">
-    <div class="brand"><span class="mark" aria-hidden="true">G</span><span>gracz.pl</span></div>
-
-    <div class="status"><span class="dot" aria-hidden="true"></span><span>Trwa modernizacja serwisu</span></div>
+    <div class="topline">
+      <div class="brand" aria-label="gracz.pl">gracz<span>.PL</span></div>
+      <div class="status"><span class="dot" aria-hidden="true"></span><span>Trwa modernizacja serwisu</span></div>
+    </div>
 
     <h1 id="page-title">Gracz.pl wraca w nowej odsłonie.</h1>
     <p class="lead">
