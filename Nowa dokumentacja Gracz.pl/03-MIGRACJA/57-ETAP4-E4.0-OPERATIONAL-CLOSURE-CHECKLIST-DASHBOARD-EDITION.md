@@ -2,10 +2,10 @@
 
 Data: 29.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status bieżący: **E4.0 INCOMPLETE / HOLD — D1 PASS, D2 PASS, D3 PASS, D4 PASS**  
-Powiązany blocker dashboardu: **B-01 — OPEN / E4.0 niezamknięte operacyjnie**
+Status bieżący: **E4.0 COMPLETE — D1–D10 PASS / B-01 CLOSED / E4.1 READY**  
+Production V3: **NO-GO**
 
-> Ten dokument synchronizuje wykonanie E4.0 z `56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md`. Nie zastępuje `46`, `47`, `49`, `50` ani `51`. Nie wykonuje żadnej zmiany w Renderze, bazie danych ani sekretach. `PASS` może zostać nadany wyłącznie na podstawie rzeczywistego evidence operacyjnego.
+> Ten dokument synchronizuje wykonanie E4.0 z `56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md`. Nie zastępuje `46`, `47`, `49`, `50` ani `51`. Nie wykonuje żadnej zmiany w Renderze, bazie danych ani sekretach. `PASS` jest nadawany wyłącznie na podstawie rzeczywistego evidence operacyjnego.
 
 ## 1. Zasada nadrzędna
 
@@ -18,215 +18,177 @@ B-01 można zamknąć tylko wtedy, gdy wszystkie poniższe warunki są jednocze�
 5. environment jest zamrożony,
 6. GitHub/source baseline jest zamrożony,
 7. exact source SHA jest zapisany,
-8. finalna read-only kontrola potwierdza brak driftu.
+8. finalna read-only kontrola potwierdza brak driftu,
+9. execution log jest kompletny i nie zawiera sekretów.
 
-Brak jednego dowodu = `E4.0 INCOMPLETE / HOLD` i B-01 pozostaje otwarty.
+Wszystkie wymagane warunki zostały udowodnione fresh evidence 29.08.2026.
 
 ---
 
 # 2. Dashboard execution matrix
 
-| ID | Kontrola | Status bieżący | Wymagane evidence | Owner | PASS condition | HOLD/BLOCKER condition | Next action |
-|---|---|---|---|---|---|---|---|
-| E4.0-D1 | Właściwy Render Web Service | `PASS` | nazwa usługi, timestamp, identyfikacja środowiska | system/operator owner | jednoznacznie wskazana właściwa usługa | brak pewności, która usługa jest źródłem ruchu/writera | zakończone |
-| E4.0-D2 | Auto-Deploy freeze | `PASS` | presence-only: `Auto-Deploy = Off` | platform/operator owner | Auto-Deploy Off | jakikolwiek inny stan | zakończone — Off potwierdzone po zapisie |
-| E4.0-D3 | Events freeze | `PASS` | Events: brak deploy/restart/rollback/queued deploy | platform/operator owner | brak aktywnej operacji deploymentowej | deploy/restart/rollback/queue aktywne | zakończone — fresh Events czyste |
-| E4.0-D4 | Public mutation lock | `PASS` | Maintenance Mode / zatwierdzony alternatywny lock + read-only public validation | application/operator owner | publiczne ścieżki mutacji niedostępne | aplikacja nadal przyjmuje mutacje | zakończone — Free fallback Suspend + public validation |
-| E4.0-D5 | Writer inventory | `HOLD` | lista wszystkich writerów + status każdego | DB/operations owner | każdy writer STOPPED lub MUTATIONS BLOCKED | jeden aktywny lub niepotwierdzony writer | zinwentaryzować wszystkie writery |
-| E4.0-D6 | Writer activity verification | `HOLD` | Logs/Events bez aktywności mutacyjnej po freeze | DB/operations owner | brak aktywnego DML path | aktywny job/script/shell/writer | HOLD |
-| E4.0-D7 | Environment freeze | `HOLD` | presence-only: `ENVIRONMENT FROZEN — NO CHANGES` | platform/security owner | brak nieautoryzowanych zmian env | zmiana credentiali/secrets/config | nowy baseline + ponowna ocena |
-| E4.0-D8 | GitHub/source freeze | `PARTIAL` | PR #26 state + branch + exact SHA | source/change owner | PR OPEN/DRAFT/NOT MERGED, SHA zgodny | niezrecenzowana zmiana SHA/merge/deploy | HOLD + baseline review |
-| E4.0-D9 | Final read-only recheck | `HOLD` | powtórzone wyniki D2–D8 | system/operator owner | wszystkie warunki nadal obowiązują jednocześnie | jakikolwiek drift | B-01 pozostaje otwarty |
-| E4.0-D10 | Execution log completion | `IN PROGRESS` | zaktualizowany `46-...EXECUTION-LOG.md` bez sekretów | documentation/operator owner | komplet niesekretnych evidence | brak timestamp/statusu/writera/SHA | uzupełniać po każdym dowodzie |
+| ID | Kontrola | Status | Evidence / wynik |
+|---|---|---|---|
+| E4.0-D1 | Właściwy Render Web Service | `PASS` | `gracz-checkers-test`, Docker, Frankfurt; `gracz-pl-database`, PostgreSQL 18, Frankfurt |
+| E4.0-D2 | Auto-Deploy freeze | `PASS` | `Auto-Deploy = Off`; ponownie potwierdzone w finalnym rechecku 16:47 CEST |
+| E4.0-D3 | Events freeze | `PASS` | brak aktywnego/queued deployu, restartu i rollbacku; finalny recheck 16:42 CEST bez driftu |
+| E4.0-D4 | Public mutation lock | `PASS` | Free fallback `Suspend Web Service`; publiczny adres potwierdził suspension 15:39 i ponownie 16:43 CEST |
+| E4.0-D5 | Writer inventory | `PASS` | w obserwowanym Render workspace tylko Web Service + PostgreSQL; brak dodatkowych Blueprint/Workflow/Webhook writer-candidates; Web Service suspended |
+| E4.0-D6 | Writer activity verification | `PASS` | runtime logs zakończone przy suspension; brak późniejszych logów aplikacji; DB metrics bez nowego istotnego Transaction Volume po freeze; brak aktywnego writer path zaobserwowanego |
+| E4.0-D7 | Environment freeze | `PASS` | wartości sekretów zamaskowane; brak zmian; brak Secret Files; brak Linked Environment Groups |
+| E4.0-D8 | GitHub/source freeze | `PASS` | PR #26 OPEN/DRAFT/NOT MERGED; branch `audit/gate14a2-runtime-ddl-separation`; SHA `cb073bad3050ffc9726e0a1528c2ec4a4808f12e` |
+| E4.0-D9 | Final read-only recheck | `PASS` | Events clean, suspension active, public lock active, Auto-Deploy Off, source/env bez driftu |
+| E4.0-D10 | Execution log completion | `PASS` | `46-...EXECUTION-LOG.md` uzupełniony bez sekretów |
 
 ---
 
-# 3. Wykonanie ekran po ekranie
+# 3. Evidence summary ekran po ekranie
 
-## D1 — Potwierdź właściwy Web Service
+## D1 — Właściwy Web Service — PASS
 
-Render Dashboard → wybierz usługę obsługującą środowisko używane w preflight.
+Render Dashboard → projekt `My project` → `Production`.
 
-Zapisz bez sekretów:
-- nazwa usługi,
-- typ usługi,
-- region, jeśli widoczny,
-- timestamp rozpoczęcia freeze,
-- operator.
+Fresh evidence:
 
-**Fresh evidence 29.08.2026:** `gracz-checkers-test` jednoznacznie zidentyfikowany jako właściwy Web Service w środowisku `Production`; evidence zapisane w `46-...EXECUTION-LOG.md`.
+- `gracz-checkers-test` jednoznacznie zidentyfikowany jako właściwy Web Service,
+- `gracz-pl-database` jako PostgreSQL 18,
+- oba zasoby w regionie Frankfurt.
 
-**Status:** `PASS`.
-
-## D2 — Auto-Deploy
+## D2 — Auto-Deploy — PASS
 
 Render → Web Service → Settings → Deploy → Auto-Deploy.
 
-Wymagany stan:
+- stan początkowy: `On Commit`,
+- operator zmienił na `Off`,
+- **15:04 CEST** — `Off` potwierdzone po `Save changes`,
+- **16:47 CEST** — finalny recheck ponownie pokazał `Off`.
 
-`Auto-Deploy = Off`
+Nie uruchamiano manual deploy, restartu ani rollbacku.
 
-Nie uruchamiać manual deploy, restartu ani rollbacku.
-
-**Fresh evidence 29.08.2026 15:04 CEST:** stan przed freeze był `On Commit`; operator ustawił `Off`, zapisał zmianę i ponownie potwierdził w tej samej sekcji `Auto-Deploy = Off`. `Save changes` po zapisie nie wykazywało niezapisanej zmiany.
-
-**Status:** `PASS`.
-
-## D3 — Events
+## D3 — Events — PASS
 
 Render → Web Service → Events.
 
-Potwierdź:
-- brak deployu `In progress`,
-- brak queued deploy,
-- brak restartu,
-- brak rollbacku,
-- brak config-change deployment.
+- **15:11 CEST** — brak aktywnego/queued deployu, restartu i rollbacku,
+- **16:42 CEST** — najnowsze zdarzenia nadal dotyczyły suspension z 15:37; brak późniejszego resume/deploy/restart/rollback.
 
-**Fresh evidence 29.08.2026 15:11 CEST:** najnowszy widoczny event deploymentowy dla `3dfb9ab` był zakończony jako `Deploy live` z zielonym potwierdzeniem. Powiązany `Deploy started` był historyczny z 02:41. W bieżącym widoku nie było widocznego `In progress`, queued deploy, aktywnego restartu, rollbacku ani aktywnej config-change deployment operation. Wcześniejszy widoczny deploy `8a52dd4` również był zakończony jako `Deploy live`.
+## D4 — Public mutation lock — PASS
 
-**Status:** `PASS`.
+Maintenance Mode był niedostępny na planie Free.
 
-## D4 — Public mutation lock
+Zatwierdzony fallback:
 
-Render → Settings → Maintenance Mode, jeżeli ta kontrola jest dostępna dla usługi, albo wcześniej zatwierdzony alternatywny mutation lock.
+`Suspend Web Service` wyłącznie dla `gracz-checkers-test`.
 
-Po aktywacji wykonaj wyłącznie read-only walidację publicznego endpointu. Nie testuj poprzez tworzenie danych.
+Fresh evidence:
 
-**Fresh evidence 29.08.2026:**
-- 15:25 CEST — `Maintenance Mode` było niedostępne dla bieżącej instancji Free; Render wyświetlił informację, że funkcja jest tylko dla płatnych instancji,
-- zastosowano zatwierdzony fallback `Suspend Web Service` wyłącznie dla `gracz-checkers-test`,
-- 15:37 CEST — Render potwierdził `gracz-checkers-test has been suspended`,
-- 15:39 CEST — read-only wejście na publiczny adres `gracz-checkers-test.onrender.com` wyświetliło `This service has been suspended by its owner.` zamiast normalnej aplikacji,
-- podczas walidacji nie wykonano logowania, formularza ani żadnej operacji zapisującej.
+- **15:37 CEST** — Render: `gracz-checkers-test has been suspended`,
+- **15:39 CEST** — publiczny URL: `This service has been suspended by its owner.`,
+- **16:43 CEST** — finalny publiczny recheck: ten sam komunikat.
 
-**Status:** `PASS` — publiczny Web Service nie przyjmuje normalnego ruchu aplikacyjnego; D5/D6 nadal muszą osobno potwierdzić wszystkie inne potencjalne writery i ich brak aktywności.
+Nie testowano mutacji przez logowanie ani formularze.
 
-## D5 — Writer inventory
+## D5 — Writer inventory — PASS
 
-Zidentyfikuj wszystkie potencjalne writery:
-- główny Web Service,
-- Background Workers,
-- Cron Jobs,
-- Private Services,
-- webhook consumers,
-- one-off jobs/workflows,
-- operator shells/scripts,
-- inne usługi korzystające z tej samej PostgreSQL.
+Fresh evidence:
 
-Dla każdego zapisz:
-- logiczną nazwę,
-- typ,
-- status `STOPPED` albo `MUTATIONS BLOCKED`.
+- projekt `Production` zawierał 2 zasoby: `gracz-checkers-test` i `gracz-pl-database`,
+- `gracz-checkers-test` = `Suspended by you`,
+- workspace search dla `gracz` pokazywał tylko te dwa zasoby,
+- `Blueprints`: brak instancji,
+- search `workflow`: `No matching results`,
+- `Webhooks`: brak skonfigurowanego webhooka; widoczna wyłącznie funkcja do utworzenia/upgrade,
+- brak dodatkowego widocznego Worker/Cron/Private Service/Workflow/Blueprint writer-candidate.
 
-Nie zapisuj `DATABASE_URL` ani credentiali.
+## D6 — Writer activity verification — PASS
 
-**PASS:** każdy writer potwierdzony.  
-**BLOCKER:** jeden writer aktywny lub nieznany.
+Web Service:
 
-## D6 — Writer activity verification
+- `Suspended by you`,
+- `Service suspended` o **15:37 CEST**,
+- `Logs`: `Newer logs are unavailable because the service is suspended.`,
+- ostatni proces zakończony przy suspension (`SIGTERM`), brak późniejszych logów runtime.
 
-Sprawdź Logs/Events dla każdego potencjalnego writera.
+PostgreSQL:
 
-Potwierdź brak:
-- nowych operacji mutacyjnych po freeze,
-- aktywnego cron/background joba zapisującego,
-- ręcznej sesji operatora wykonującej DML,
-- restartu/redeployu writera.
+- krótkie połączenia techniczne nie zostały uznane za dowód DML,
+- `Active Connections` po freeze na niskim poziomie bazowym,
+- `Transaction Volume` po suspension bez nowych istotnych skoków,
+- `pgAdmin` i `PgHero` nie były wdrożone — dostępne wyłącznie przyciski `Deploy app`.
 
-**PASS:** brak aktywnej ścieżki zapisu.  
-**HOLD:** nie można tego udowodnić.
+Wniosek: brak zaobserwowanej aktywnej ścieżki mutacyjnej po freeze.
 
-## D7 — Environment freeze
+## D7 — Environment freeze — PASS
 
-Render → Environment.
+Render → Web Service → Environment.
 
-Nie zmieniaj wartości. Nie kopiuj sekretów.
+Widoczne nazwy zmiennych:
 
-Potwierdź wyłącznie stan:
+- `AUTH_SECRET`,
+- `DATABASE_URL`,
+- `EMAIL_FROM`,
+- `NEWSLETTER_FROM`,
+- `RESEND_API_KEY`,
+- `TURNSTILE_SECRET_KEY`,
+- `TURNSTILE_SITE_KEY`.
 
-`ENVIRONMENT FROZEN — NO CHANGES`
+Wartości pozostawały zamaskowane. Nie użyto `Edit`, `Export`, ikon oka ani kopiowania.
 
-Do zakończenia E4.1 nie zmieniaj m.in. `DATABASE_URL`, `AUTH_SECRET`, crypto roots, `NODE_ENV`, Turnstile, Resend, Twilio ani proxy trust flags. Nie dodawaj `MIGRATOR_DATABASE_URL` do normalnego runtime.
+Dodatkowo:
 
-**PASS:** brak zmian.  
-**HOLD:** jakakolwiek nieautoryzowana zmiana wymaga nowego baseline.
+- brak istniejących Secret Files,
+- `No environment groups available to link.`,
+- nie zmieniano żadnego env/secreta/credentialu.
 
-## D8 — GitHub/source freeze
+**D7 PASS oznacza stabilność obecnego environment, a nie docelową kwalifikację V3. Docelowy security environment jest oceniany w E4.8.**
 
-Potwierdzić:
+## D8 — GitHub/source freeze — PASS
+
+Fresh GitHub snapshot:
+
 - PR #26 = `OPEN`,
-- PR #26 = `DRAFT`,
-- PR #26 = `NOT MERGED`,
+- draft = `TRUE`,
+- merged = `FALSE`,
 - branch = `audit/gate14a2-runtime-ddl-separation`,
-- head SHA = `cb073bad3050ffc9726e0a1528c2ec4a4808f12e` albo formalnie zatwierdzony replacement baseline.
+- head SHA = `cb073bad3050ffc9726e0a1528c2ec4a4808f12e`,
+- base = `feature/homepage-game-center`.
 
-Aktualny znany snapshot dashboardu:
+Dokumentacyjne commity na `main` są dozwolone i nie zmieniają zamrożonego runtime baseline PR #26.
 
-`PASS — SOURCE BASELINE UNCHANGED`
+## D9 — Final read-only recheck — PASS
 
-Ten PASS dotyczy tylko source baseline i **nie oznacza zgody na merge/deploy**.
+Finalny recheck potwierdził jednocześnie:
 
-## D9 — Final read-only recheck
+- **16:42 CEST** — Events bez driftu,
+- **16:43 CEST** — publiczny URL nadal suspended,
+- **16:47 CEST** — Auto-Deploy nadal `Off`,
+- environment bez zmian od D7,
+- writer evidence bez nowej aktywności,
+- PR #26 i head SHA bez driftu.
 
-Po wykonaniu D1–D8 ponownie sprawdź:
-- Auto-Deploy nadal Off,
-- mutation lock nadal aktywny,
-- Events nadal czyste,
-- każdy writer nadal STOPPED/MUTATIONS BLOCKED,
-- Environment bez zmian,
-- PR #26 nadal OPEN/DRAFT/NOT MERGED,
-- source SHA bez driftu.
+## D10 — Execution log — PASS
 
-**PASS:** wszystkie warunki jednocześnie prawdziwe.  
-**HOLD:** dowolny drift.
+`46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md` został zaktualizowany o komplet niesekretnych evidence D1–D9 i formalną decyzję E4.0.
 
-## D10 — Execution log
-
-Uzupełnić `46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md` wyłącznie o niesekretne evidence:
-- freeze start timestamp,
-- Render service name,
-- Auto-Deploy = Off,
-- mutation lock status,
-- Events = no active deploy/restart/rollback,
-- writer inventory + status,
-- environment frozen = true,
-- PR #26 state,
-- exact source SHA,
-- final verification timestamp,
-- operator confirmation.
-
-Nie zapisywać sekretów, connection stringów ani tokenów.
+Nie zapisano sekretów, tokenów, credentiali ani connection stringów.
 
 ---
 
 # 4. Dashboard decision rule dla B-01
 
-## Zamknięcie blockera
+## Wynik
 
-B-01 można oznaczyć jako:
+Wszystkie D1–D10 mają wymagane evidence i status `PASS`.
 
-`CLOSED — E4.0 OPERATIONALLY COMPLETE`
+Dlatego:
 
-tylko jeśli D1–D10 mają komplet wymaganych evidence i żaden warunek nie jest `HOLD/BLOCKER`.
+- `B-01 = CLOSED — E4.0 OPERATIONALLY COMPLETE`,
+- `E4.0 = COMPLETE`,
+- `E4.1 = READY`,
+- `Level B = NOT YET ACHIEVED`,
+- `Production V3 = NO-GO`.
 
-Wtedy dashboard może zostać zaktualizowany:
-
-- E4.0 → `COMPLETE`,
-- B-01 → `CLOSED`,
-- E4.1 → `READY`,
-- Level B → nadal `NOT YET ACHIEVED`, ale staje się operacyjnie osiągalny,
-- Production V3 → nadal `NO-GO` do E4.10 i finalnej decyzji.
-
-## Brak zamknięcia
-
-Jeśli choć jeden z D1–D10 nie ma pełnego dowodu:
-
-- E4.0 → `INCOMPLETE / HOLD`,
-- B-01 → `OPEN`,
-- E4.1–E4.10 → `BLOCKED BY E4.0`,
-- Level B → `NOT YET ACHIEVED`,
-- Production V3 → `NO-GO`.
+Zamknięcie E4.0 nie jest zgodą na produkcyjny deploy ani mutacje. Oznacza jedynie gotowość do uruchomienia **E4.1 — Fresh Pre-Mutation Evidence** zgodnie z jego własnym kontraktem.
 
 ---
 
@@ -234,21 +196,21 @@ Jeśli choć jeden z D1–D10 nie ma pełnego dowodu:
 
 | Element | Status |
 |---|---|
-| D1 właściwy Web Service | `PASS — fresh operational evidence recorded` |
-| D2 Auto-Deploy | `PASS — Off confirmed after Save changes` |
-| D3 Events | `PASS — no active/queued deploy, restart or rollback visible in fresh Events` |
-| D4 mutation lock | `PASS — gracz-checkers-test suspended; public address confirms service suspended` |
-| D5 writer inventory | `HOLD — operational proof pending` |
-| D6 writer activity | `HOLD — operational proof pending` |
-| D7 environment freeze | `HOLD — operational proof pending` |
-| D8 GitHub/source freeze | `PARTIAL / current source snapshot confirmed` |
-| D9 final recheck | `BLOCKED BY D5–D8` |
-| D10 execution log completion | `IN PROGRESS — D1/D2/D3/D4 recorded` |
-| B-01 | `OPEN / IN PROGRESS` |
-| E4.0 | `INCOMPLETE / HOLD` |
-| E4.1 | `BLOCKED BY E4.0` |
+| D1 właściwy Web Service | `PASS` |
+| D2 Auto-Deploy | `PASS` |
+| D3 Events | `PASS` |
+| D4 mutation lock | `PASS` |
+| D5 writer inventory | `PASS` |
+| D6 writer activity | `PASS` |
+| D7 environment freeze | `PASS` |
+| D8 GitHub/source freeze | `PASS` |
+| D9 final recheck | `PASS` |
+| D10 execution log completion | `PASS` |
+| B-01 | `CLOSED — E4.0 OPERATIONALLY COMPLETE` |
+| E4.0 | `COMPLETE` |
+| E4.1 | `READY` |
 | Production V3 | `NO-GO` |
 
 ## Zasada końcowa
 
-Dashboard Edition nie zmienia statusu projektu przez samo istnienie dokumentu. Status zmienia się dopiero po zastosowaniu kontroli i zebraniu fresh operational evidence.
+Dashboard Edition nie nadaje zgody produkcyjnej przez samo zamknięcie freeze. Dalsza promocja wymaga wykonania E4.1–E4.10 zgodnie z evidence-first i fail-closed contract.
