@@ -226,10 +226,140 @@ Powody:
 - brak świeżej aktualizacji persisted game state w ostatnich 10 minutach,
 - stale Checkers/Thousand state zostało jawnie sklasyfikowane jako persisted stale legacy state do późniejszej reconciliacji, bez mutacji w E4.1.
 
-## 4. Zakres read-only i następny krok
+## 4. E4.1-D — Fresh Gate 14 AS-IS security / DB permissions collector
+
+### 4.1 Repo-only preflight i integralność collectora
+
+Zweryfikowano kanoniczną checklistę oraz właściwy collector:
+
+- `48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md`,
+- `26-GATE-14-SECURITY-CREDENTIALS-PERMISSIONS-COLLECTOR.sql`,
+- historyczny wynik odniesienia `27-GATE-14-SECURITY-CREDENTIALS-PERMISSIONS-RESULTS.md`.
+
+Collector:
+
+- rozpoczyna `BEGIN TRANSACTION READ ONLY`,
+- kończy `ROLLBACK`,
+- wykonuje wyłącznie odczyty katalogów/metadanych PostgreSQL,
+- nie wykonuje DDL/DCL/DML,
+- nie wypisuje connection stringów, passwordów, secret values, tokenów, ciphertextów ani PII.
+
+Kanoniczny Git blob SHA collectora na `main`:
+
+`95565d8342787ac70dc5c14108d3b7823e28d152`
+
+Lokalna kopia użyta do wykonania została zweryfikowana jako bajt-w-bajt zgodna z tym blobem. Do run użyto pliku `.sql`.
+
+Dodatkowo przed run ustawiono session-level guard:
+
+`PGOPTIONS=-c default_transaction_read_only=on`
+
+oraz lokalnie potwierdzono status `READY` bez ujawniania DB URL.
+
+### 4.2 Fresh execution — metoda i wynik
+
+Fresh collector został wykonany po freeze przeciwko `gracz_pl_database` przez `psql 18.6`.
+
+Checklistowy brak nazwy roli w samym collectorze uzupełniono bezpiecznym read-only odczytem `SELECT current_user AS current_db_role;` w tej samej sesji. Nie ujawniono żadnych credential values.
+
+Fresh evidence:
+
+- `current_db_role = gracz_pl_database_user`,
+- `transaction_read_only = 1`,
+- `current_connection_ssl = 1`,
+- `server_ssl_enabled = 1`,
+- `row_security_on = 1`,
+- `password_encryption_scram_sha_256 = 0`,
+- `rolsuper = 0`,
+- `rolreplication = 0`,
+- `rolbypassrls = 0`,
+- `rolcanlogin = 1`,
+- `rolcreatedb = 1`,
+- `rolcreaterole = 1`,
+- `direct_role_memberships = 0`,
+- `database_connect = 1`,
+- `database_create = 1`,
+- `database_owner_current = 1`,
+- `database_temp = 1`,
+- `public_schema_create = 1`,
+- `public_schema_usage = 1`,
+- `public_tables_total = 28`,
+- `tables_owned_by_current = 28`,
+- `tables_select/insert/update/delete/truncate/references/trigger = 28/28`,
+- `public_sequences_total = 8`,
+- `sequences_owned_by_current = 8`,
+- `sequences_select/update/usage = 8/8`,
+- `public_schema_create_grants = 0`,
+- `public_table_select_grants = 0`,
+- `public_table_write_grants = 0`,
+- `rls_enabled_tables = 0`,
+- `rls_forced_tables = 0`,
+- `default_acl_public_write_entries = 0`,
+- `default_acl_rows_current_owner = 0`.
+
+Collector zakończył się `ROLLBACK`.
+
+Raw fresh result został zachowany jako:
+
+`60-ETAP4-E4.1-D-GATE14-FRESH-DB-PERMISSIONS-RESULT-2026-08-29.txt`
+
+SHA-256 oryginalnego lokalnego pliku wynikowego przed normalizacją kodowania do repozytorium:
+
+`e7183029d1467b743466e5643750ca152538e9d8e52653109ca11a0bc5012e1a`
+
+### 4.3 Interpretacja — collector PASS nie oznacza security PASS
+
+**Fresh collector execution = PASS.**
+
+Ten PASS oznacza wyłącznie, że wymagany snapshot został poprawnie zebrany w trybie read-only. Nie oznacza, że obecny model bezpieczeństwa jest zaakceptowany.
+
+**Gate 14 AS-IS DB security posture = BLOCKED / REMEDIATION REQUIRED.**
+
+Fresh blocker evidence:
+
+- bieżąca rola ma `CREATEDB=1`,
+- bieżąca rola ma `CREATEROLE=1`,
+- bieżąca rola jest właścicielem bazy,
+- ma `database CREATE`,
+- ma `public schema CREATE`,
+- jest właścicielem `28/28` tabel i ma pełny odczyt/zapis oraz `TRUNCATE`/`REFERENCES`/`TRIGGER` na `28/28`,
+- jest właścicielem `8/8` sekwencji i ma `SELECT`/`UPDATE`/`USAGE` na `8/8`,
+- bieżące ustawienie `password_encryption` nie zostało potwierdzone jako `scram-sha-256`.
+
+Fresh pozytywne evidence:
+
+- SSL jest aktywne,
+- `PUBLIC` nie ma schema CREATE, table SELECT ani table write grants,
+- default ACL nie daje `PUBLIC` uprawnień zapisu,
+- `RLS` jest obecnie wyłączone; ten fakt jest informacyjny i sam w sobie nie stanowi automatycznego blockera.
+
+W E4.1 **nie naprawiamy** tych uprawnień. E4.1-D jest snapshotem AS-IS przed remediation.
+
+Zakres tego fresh SQL collectora obejmuje PostgreSQL DB permissions/security metadata. Nie odświeża on samodzielnie runtime/app evidence dotyczącego crypto roots, `NODE_ENV`, Turnstile, `PUBLIC_BASE_URL` ani provider configuration. Historycznych wniosków dla tych obszarów nie należy przedstawiać jako fresh E4.1-D evidence bez osobnego fresh capture.
+
+### 4.4 Decision
+
+**E4.1-D = PASS — fresh Gate 14 DB permissions evidence collected and preserved.**
+
+Jednocześnie:
+
+**Gate 14 AS-IS DB security = BLOCKED / REMEDIATION REQUIRED.**
+
+Powody:
+
+- collector działał read-only i zakończył `ROLLBACK`,
+- wymagane DB role/privilege/ownership evidence zostało zebrane,
+- nie ujawniono credential values, sekretów ani PII,
+- nie wykonano żadnej zmiany uprawnień,
+- fresh evidence potwierdza broad current-role blocker, który ma zostać rozwiązany dopiero w kontrolowanych krokach remediation po zakończeniu E4.1.
+
+**Production remains READ-ONLY / NO-MUTATION; no permissions are changed in E4.1.**
+
+## 5. Zakres read-only i następny krok
 
 E4.1-B = **PASS**.  
 E4.1-C = **PASS**.  
+E4.1-D = **PASS — fresh evidence collected; AS-IS DB security remains BLOCKED**.  
 E4.1 jako całość pozostaje **IN PROGRESS**.  
 Production V3 pozostaje **NO-GO**.
 
@@ -249,4 +379,6 @@ Do czasu pełnego E4.1 COMPLETE nadal zabronione są:
 
 Następny kanoniczny punkt checklisty:
 
-**E4.1-D — Fresh Gate 14 AS-IS security / DB permissions collector**, nadal wyłącznie read-only dla produkcji.
+**E4.1-E — Backup: fresh pre-mutation anchor.**
+
+Wymagany jest świeży backup/snapshot wykonany po E4.0 i przed pierwszą mutacją; identyfikator/timestamp należy zapisać bez sekretów. Brak świeżego backupu jest warunkiem ABORT dla dalszej ścieżki mutacyjnej.
