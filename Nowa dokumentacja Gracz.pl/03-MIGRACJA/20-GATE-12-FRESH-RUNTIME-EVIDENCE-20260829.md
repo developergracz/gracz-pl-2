@@ -2,7 +2,9 @@
 
 Data: 29.08.2026  
 Środowisko: `gracz_pl_database` / PostgreSQL 18.4  
-Status: **COLLECTOR PASS / BRAMKA 12 BLOCKED — 1 CANONICAL CANDIDATE Z PUSTYM E-MAILEM**
+Status capture: **COLLECTOR PASS / BRAMKA 12 BYŁA BLOCKED — 1 CANONICAL CANDIDATE Z PUSTYM E-MAILEM**
+
+> Uwaga audytowa: ten dokument zachowuje stan historycznego capture przed decyzją biznesową. Finalne rozstrzygnięcie i ponowny reconciliation zapisano w `21-GATE-12-DECISION-AND-RECONCILIATION.md`.
 
 ## 1. Sposób zebrania dowodu
 
@@ -39,7 +41,7 @@ Reconciliation: `11 = 5 QUARANTINE + 6 canonical candidates`.
 - normalized email collision groups: **0**,
 - accounts in normalized email collision groups: **0**.
 
-**BLOCKER: 1 pusty wymagany e-mail w canonical candidates.**
+**BLOCKER W TYM CAPTURE: 1 pusty wymagany e-mail w canonical candidates.**
 
 ### D. Password envelope readiness
 - candidate count: **6**,
@@ -49,7 +51,7 @@ Reconciliation: `11 = 5 QUARANTINE + 6 canonical candidates`.
 - invalid salt shape: **0**,
 - invalid hash shape: **0**.
 
-**PASS.** Wszystkie 6 credential sets nadaje się do wersjonowanego envelope bez znajomości plaintextu hasła.
+**PASS.** Wszystkie 6 credential sets nadawało się do wersjonowanego envelope bez znajomości plaintextu hasła.
 
 ### E. Initial status mapping
 - candidate → active: **6**,
@@ -57,15 +59,13 @@ Reconciliation: `11 = 5 QUARANTINE + 6 canonical candidates`.
 - quarantine verified: **3**,
 - quarantine unverified: **2**.
 
-Mapowanie `contact_verified=true -> active` obejmuje wszystkie 6 canonical candidates.
-
 ### F. Auth sessions
 - sessions total: **3**,
 - active now: **0**,
 - canonical active now: **0**,
 - quarantine active now: **0**.
 
-**PASS dla drain/re-login.** Brak aktywnych sesji wymagających migracji.
+**PASS dla drain/re-login.**
 
 ### G. Password reset
 - reset tokens total: **1**,
@@ -97,28 +97,26 @@ Mapowanie `contact_verified=true -> active` obejmuje wszystkie 6 canonical candi
 - quarantine role rows: **0**,
 - privileged role rows: **0**.
 
-**PASS.** Brak nieznanych lub uprzywilejowanych bieżących przypisań do przeniesienia.
+**PASS.**
 
 ### K. Role history footprint
 - role history rows: **0**,
 - role change rows: **0**.
 
 ### L. Quarantined identity historical references
-Dla zatwierdzonego zestawu DQ-002 istnieją historyczne referencje, które należy zachować jako provenance:
+Dla zatwierdzonego w tym momencie zestawu DQ-002 istniały historyczne referencje, które należy zachować jako provenance:
 - private message rows: **3**,
 - audit rows: **25**,
 - registration rows: **2**,
 - reset rows: **1**,
 - session rows: **0**.
 
-To nie jest powód do tworzenia fikcyjnych canonical users. Snapshot/provenance musi zostać zachowany zgodnie z projektem V3.
-
 ### M. DQ-002 quarantine consistency
 - quarantine accounts present: **5**,
 - collision groups: **2**,
 - accounts in collision groups: **5**.
 
-**PASS względem zatwierdzonego DQ-002.** Zestaw odpowiada wcześniejszej decyzji biznesowej 5x `LEGACY-IDENTITY / TEST`.
+**PASS względem ówczesnego zatwierdzonego DQ-002.**
 
 ## 3. Wąski drill-down blockera C
 
@@ -126,7 +124,7 @@ Ponieważ Gate 12 wymaga `0` pustych e-maili dla rekordów, które mają trafić
 
 Capture: `2026-08-28T23:51:25.443Z`.
 
-Jedynym canonical candidate z pustym e-mailem jest:
+Jedynym canonical candidate z pustym e-mailem był:
 
 - `user_id`: **`gracz`**,
 - created_at: `2026-08-22T00:04:37.362Z`,
@@ -148,47 +146,62 @@ Jedynym canonical candidate z pustym e-mailem jest:
 - tournament rows: **0**,
 - global chat rows: **0**.
 
-Wniosek: `gracz` nie może zostać automatycznie usunięty ani automatycznie przeniesiony do quarantine wyłącznie z powodu pustego e-maila. Ma credential i istniejące historyczne zależności.
+Wniosek z tego capture: `gracz` nie mogło zostać automatycznie usunięte ani przeniesione do quarantine bez decyzji biznesowej.
 
-## 4. Decyzja Gate 12
+## 4. Decyzja w chwili pierwszego capture
 
-**BRAMKA 12 = BLOCKED / REVIEW — NIE PASS.**
+**BRAMKA 12 = BLOCKED / REVIEW — w chwili tego capture.**
 
-Jedyny blocker wykryty przez fresh collector to brak wymaganego e-maila dla canonical candidate `gracz`.
+Jedynym blockerem był brak wymaganego e-maila dla canonical candidate `gracz`.
 
-Nie wolno:
-- wymyślać zastępczego adresu e-mail,
-- kopiować pustego e-maila do `v3.users`,
-- oznaczać `gracz` jako test/quarantine bez jawnego rozstrzygnięcia biznesowego,
-- usuwać konta lub jego zależności,
-- uruchamiać produkcyjnego DDL/DML V3 przed rozstrzygnięciem.
+Dopuszczalne były dwie ścieżki:
+1. `KEEP-CANONICAL` z prawidłowym zweryfikowanym e-mailem,
+2. `LEGACY-IDENTITY / TEST` po jawnym potwierdzeniu biznesowym.
 
-Dopuszczalne ścieżki rozstrzygnięcia:
-1. **KEEP-CANONICAL** — przypisać prawidłowy, unikalny i zweryfikowany e-mail normalną ścieżką aplikacyjną/account-management przed backfillem, a następnie ponowić Gate 12 email/reconciliation collector.
-2. **LEGACY-IDENTITY / TEST** — wyłącznie po jawnym potwierdzeniu biznesowym, że `gracz` również jest kontem testowym; wtedy rozszerzyć quarantine i zachować jego 5 message refs, 7 audit refs oraz 1 friendship ref jako provenance.
+## 5. Cleanup diagnostyki pierwszego capture
 
-Do czasu jednej z tych decyzji klasyfikacja `gracz` pozostaje **CANONICAL-CANDIDATE / BLOCKED-EMAIL**.
-
-## 5. Cleanup diagnostyki
-
-Po zebraniu dowodów rozpoczęto natychmiastowy cleanup gałęzi testowej:
-- normalny `npm start` przywrócony do `src/main.js`,
-- tymczasowy główny Gate 12 runtime proxy usunięty,
-- tymczasowy blank-email drill-down proxy usunięty,
-- tymczasowe workflow dowodowe usunięte.
-
-Historia commitów pozostaje audytowalna; diagnostyka nie jest częścią docelowego kodu aplikacji.
+Po zebraniu dowodów:
+- normalny `npm start` przywrócono do `src/main.js`,
+- tymczasowy główny Gate 12 runtime proxy usunięto,
+- tymczasowy blank-email drill-down proxy usunięto,
+- tymczasowe workflow dowodowe usunięto.
 
 ## 6. Osobny otwarty dowód kryptograficzny
 
 Bramka 11 decryptability pozostaje **PASS**. Osobno nadal obowiązuje wcześniej zapisany wymóg odzyskania dokładnych 64-znakowych fingerprintów SHA-256 z oryginalnego runtime capture w celu udowodnienia bitowej równości `runtime ciphertext ↔ gracz_restore_test_20260828`.
 
-Ten punkt nie jest przyczyną blockera Gate 12, ale pozostaje otwartym wymaganiem dowodowym przed produkcyjnym GO.
+Ten punkt nie był przyczyną blockera Gate 12, ale pozostaje otwartym wymaganiem dowodowym przed produkcyjnym GO.
 
-## 7. Stan wykonawczy
+## 7. Stan historyczny po pierwszym capture
 
 - Gate 11 decryptability: **PASS**,
 - Gate 12 collector: **PASS technicznie**,
-- Gate 12 readiness: **BLOCKED / REVIEW**,
-- produkcyjny DDL/DML V3: **NO-GO**,
-- następne bezpieczne działanie dla Gate 12: rozstrzygnięcie `gracz` i fresh recheck C + reconciliation.
+- Gate 12 readiness: **BLOCKED / REVIEW w chwili capture**,
+- produkcyjny DDL/DML V3: **NO-GO**.
+
+## 8. Rozstrzygnięcie po decyzji biznesowej
+
+29.08.2026 właściciel projektu jednoznacznie potwierdził:
+
+**`gracz` = `LEGACY-IDENTITY / TEST`.**
+
+Po rozszerzeniu approved quarantine do 6 kont wykonano nowy read-only reconciliation capture `2026-08-28T23:58:14.581Z`.
+
+Finalny wynik:
+- source accounts = **11**,
+- quarantine = **6**,
+- canonical candidates = **5**,
+- canonical blank email = **0**,
+- username collisions = **0**,
+- email collisions = **0**,
+- invalid credential shapes = **0**,
+- active canonical sessions/reset/registration = **0/0/0**,
+- canonical MFA = **0**,
+- unknown role values = **0**,
+- mapping total = **11**.
+
+Finalna decyzja została zapisana w:
+
+`21-GATE-12-DECISION-AND-RECONCILIATION.md`.
+
+**Bramka 12 = PASS.**
