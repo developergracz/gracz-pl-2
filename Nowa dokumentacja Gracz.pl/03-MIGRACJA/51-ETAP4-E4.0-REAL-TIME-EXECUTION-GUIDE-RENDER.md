@@ -63,7 +63,7 @@ Wynik:
 - `PASS` jeśli nie ma aktywnej operacji deploymentowej,
 - `HOLD` jeśli jest aktywny deploy/restart/rollback lub oczekujący deploy.
 
-## Ekran 4 — Settings → Maintenance Mode
+## Ekran 4 — Settings → Maintenance Mode / approved Free fallback
 
 Render Dashboard → Web Service → Settings → Maintenance Mode.
 
@@ -74,22 +74,48 @@ Jeśli usługa jest płatnym Web Service i opcja jest dostępna:
 
 Render Maintenance Mode pozostawia usługę uruchomioną, ale odcina publiczny internet. Publiczne requesty otrzymują `503 Service Unavailable`. Usługa może nadal być osiągalna przez private network i SSH, dlatego sam Maintenance Mode nie jest wystarczającym dowodem zatrzymania wszystkich writerów.
 
-Jeśli Maintenance Mode nie jest dostępny:
+### Aktualna usługa Free — zatwierdzony fallback
+
+Fresh screen evidence 29.08.2026 15:25 CEST dla `gracz-checkers-test` potwierdziło:
+- `Maintenance Mode Disabled`,
+- komunikat `Maintenance mode is only available for paid instances`,
+- widoczny kontrolny przycisk `Suspend Web Service`.
+
+Dla bieżącej instancji `Free` zatwierdzonym alternatywnym mutation lock jest:
+
+`Suspend Web Service`
+
+Stosuj go tylko po PASS D2 i D3. Zawieszaj wyłącznie `gracz-checkers-test`; **nie zawieszaj `gracz-pl-database`**.
+
+Po wybraniu `Suspend Web Service`:
+1. potwierdź akcję wyłącznie jeśli dialog jednoznacznie dotyczy `gracz-checkers-test`,
+2. poczekaj na stan Render wskazujący, że Web Service jest zawieszony/niedostępny,
+3. nie uruchamiaj Resume, Deploy, Restart ani Rollback,
+4. przejdź do publicznej walidacji read-only,
+5. utrzymuj usługę zawieszoną przez dalszy freeze do późniejszego, jawnie autoryzowanego uruchomienia.
+
+Nie używaj `Upgrade` tylko po to, aby włączyć Maintenance Mode podczas E4.0.
+
+Jeśli Maintenance Mode ani zatwierdzony fallback nie są zastosowane:
 - nie oznaczaj PASS automatycznie,
-- użyj wyłącznie wcześniej zatwierdzonego alternatywnego mechanizmu blokady mutacji,
-- inaczej `HOLD`.
+- `D4 = HOLD`.
 
 Wynik:
-- `PASS` jeśli publiczne mutacje są faktycznie zablokowane,
-- `HOLD` jeśli publiczny writer nadal może przyjmować mutacje.
+- `PASS` dopiero po potwierdzeniu, że publiczne mutacje są faktycznie zablokowane,
+- `HOLD` jeśli publiczny writer nadal może przyjmować mutacje albo suspend nie został potwierdzony.
 
-## Ekran 5 — publiczna walidacja maintenance
+## Ekran 5 — publiczna walidacja maintenance / suspend
 
 Z osobnej karty przeglądarki lub bezpiecznego read-only checku sprawdź publiczny adres usługi.
 
 Jeśli używasz Render Maintenance Mode, oczekiwane jest:
 - `503 Service Unavailable`,
 - domyślna albo zatwierdzona strona maintenance.
+
+Jeśli używasz zatwierdzonego fallbacku `Suspend Web Service`, oczekiwane jest:
+- brak normalnej odpowiedzi aplikacji Gracz.pl,
+- brak możliwości dotarcia do publicznych ścieżek aplikacji,
+- brak testowego tworzenia danych.
 
 Nie wykonuj żadnych operacji zapisujących.
 
@@ -182,7 +208,7 @@ Niezrecenzowana zmiana SHA = `HOLD`.
 Wróć do Web Service i wykonaj drugą, read-only kontrolę:
 - Auto-Deploy nadal `Off`,
 - Maintenance Mode / mutation lock nadal aktywny,
-- Events bez aktywnego deployu/restartu/rollbacku,
+- Events bez aktywnego deploy/restart/rollback,
 - wszyscy writerzy nadal `STOPPED` albo `MUTATIONS BLOCKED`,
 - Environment bez zmian.
 
