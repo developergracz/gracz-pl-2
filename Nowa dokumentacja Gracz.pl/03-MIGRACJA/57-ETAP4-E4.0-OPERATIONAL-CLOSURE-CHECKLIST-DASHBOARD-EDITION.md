@@ -2,8 +2,8 @@
 
 Data: 29.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status wejściowy: **E4.0 INCOMPLETE / HOLD**  
-Powiązany blocker dashboardu: **B-01 — E4.0 niezamknięte operacyjnie**
+Status bieżący: **E4.0 INCOMPLETE / HOLD — D1 PASS, D2 PASS**  
+Powiązany blocker dashboardu: **B-01 — OPEN / E4.0 niezamknięte operacyjnie**
 
 > Ten dokument synchronizuje wykonanie E4.0 z `56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md`. Nie zastępuje `46`, `47`, `49`, `50` ani `51`. Nie wykonuje żadnej zmiany w Renderze, bazie danych ani sekretach. `PASS` może zostać nadany wyłącznie na podstawie rzeczywistego evidence operacyjnego.
 
@@ -26,18 +26,18 @@ Brak jednego dowodu = `E4.0 INCOMPLETE / HOLD` i B-01 pozostaje otwarty.
 
 # 2. Dashboard execution matrix
 
-| ID | Kontrola | Status startowy | Wymagane evidence | Owner | PASS condition | HOLD/BLOCKER condition | Next action |
+| ID | Kontrola | Status bieżący | Wymagane evidence | Owner | PASS condition | HOLD/BLOCKER condition | Next action |
 |---|---|---|---|---|---|---|---|
-| E4.0-D1 | Właściwy Render Web Service | `HOLD` | nazwa usługi, timestamp, identyfikacja środowiska | system/operator owner | jednoznacznie wskazana właściwa usługa | brak pewności, która usługa jest źródłem ruchu/writera | potwierdzić usługę |
-| E4.0-D2 | Auto-Deploy freeze | `HOLD` | presence-only: `Auto-Deploy = Off` | platform/operator owner | Auto-Deploy Off | jakikolwiek inny stan | ustawić/potwierdzić Off |
-| E4.0-D3 | Events freeze | `HOLD` | Events: brak deploy/restart/rollback/queued deploy | platform/operator owner | brak aktywnej operacji deploymentowej | deploy/restart/rollback/queue aktywne | wstrzymać procedurę i ponowić kontrolę |
+| E4.0-D1 | Właściwy Render Web Service | `PASS` | nazwa usługi, timestamp, identyfikacja środowiska | system/operator owner | jednoznacznie wskazana właściwa usługa | brak pewności, która usługa jest źródłem ruchu/writera | zakończone |
+| E4.0-D2 | Auto-Deploy freeze | `PASS` | presence-only: `Auto-Deploy = Off` | platform/operator owner | Auto-Deploy Off | jakikolwiek inny stan | zakończone — Off potwierdzone po zapisie |
+| E4.0-D3 | Events freeze | `HOLD` | Events: brak deploy/restart/rollback/queued deploy | platform/operator owner | brak aktywnej operacji deploymentowej | deploy/restart/rollback/queue aktywne | sprawdzić Events |
 | E4.0-D4 | Public mutation lock | `HOLD` | Maintenance Mode / zatwierdzony alternatywny lock + read-only public validation | application/operator owner | publiczne ścieżki mutacji niedostępne | aplikacja nadal przyjmuje mutacje | zatrzymać i naprawić lock |
 | E4.0-D5 | Writer inventory | `HOLD` | lista wszystkich writerów + status każdego | DB/operations owner | każdy writer STOPPED lub MUTATIONS BLOCKED | jeden aktywny lub niepotwierdzony writer | nie przechodzić dalej |
 | E4.0-D6 | Writer activity verification | `HOLD` | Logs/Events bez aktywności mutacyjnej po freeze | DB/operations owner | brak aktywnego DML path | aktywny job/script/shell/writer | HOLD |
 | E4.0-D7 | Environment freeze | `HOLD` | presence-only: `ENVIRONMENT FROZEN — NO CHANGES` | platform/security owner | brak nieautoryzowanych zmian env | zmiana credentiali/secrets/config | nowy baseline + ponowna ocena |
 | E4.0-D8 | GitHub/source freeze | `PARTIAL` | PR #26 state + branch + exact SHA | source/change owner | PR OPEN/DRAFT/NOT MERGED, SHA zgodny | niezrecenzowana zmiana SHA/merge/deploy | HOLD + baseline review |
 | E4.0-D9 | Final read-only recheck | `HOLD` | powtórzone wyniki D2–D8 | system/operator owner | wszystkie warunki nadal obowiązują jednocześnie | jakikolwiek drift | B-01 pozostaje otwarty |
-| E4.0-D10 | Execution log completion | `HOLD` | zaktualizowany `46-...EXECUTION-LOG.md` bez sekretów | documentation/operator owner | komplet niesekretnych evidence | brak timestamp/statusu/writera/SHA | uzupełnić log |
+| E4.0-D10 | Execution log completion | `IN PROGRESS` | zaktualizowany `46-...EXECUTION-LOG.md` bez sekretów | documentation/operator owner | komplet niesekretnych evidence | brak timestamp/statusu/writera/SHA | uzupełniać po każdym dowodzie |
 
 ---
 
@@ -54,12 +54,13 @@ Zapisz bez sekretów:
 - timestamp rozpoczęcia freeze,
 - operator.
 
-**PASS:** usługa jest jednoznacznie właściwa.  
-**HOLD:** istnieje niepewność, czy inna usługa/workflow może również zapisywać do tej samej DB.
+**Fresh evidence 29.08.2026:** `gracz-checkers-test` jednoznacznie zidentyfikowany jako właściwy Web Service w środowisku `Production`; evidence zapisane w `46-...EXECUTION-LOG.md`.
+
+**Status:** `PASS`.
 
 ## D2 — Auto-Deploy
 
-Render → Web Service → Settings → Auto-Deploy.
+Render → Web Service → Settings → Deploy → Auto-Deploy.
 
 Wymagany stan:
 
@@ -67,8 +68,9 @@ Wymagany stan:
 
 Nie uruchamiać manual deploy, restartu ani rollbacku.
 
-**PASS:** `Off`.  
-**HOLD:** inny stan.
+**Fresh evidence 29.08.2026 15:04 CEST:** stan przed freeze był `On Commit`; operator ustawił `Off`, zapisał zmianę i ponownie potwierdził w tej samej sekcji `Auto-Deploy = Off`. `Save changes` po zapisie nie wykazywało niezapisanej zmiany.
+
+**Status:** `PASS`.
 
 ## D3 — Events
 
@@ -221,21 +223,21 @@ Jeśli choć jeden z D1–D10 nie ma pełnego dowodu:
 
 ---
 
-# 5. Status startowy Dashboard Edition
+# 5. Bieżący status Dashboard Edition
 
 | Element | Status |
 |---|---|
-| D1 właściwy Web Service | `HOLD — operational proof pending` |
-| D2 Auto-Deploy | `HOLD — operational proof pending` |
+| D1 właściwy Web Service | `PASS — fresh operational evidence recorded` |
+| D2 Auto-Deploy | `PASS — Off confirmed after Save changes` |
 | D3 Events | `HOLD — operational proof pending` |
 | D4 mutation lock | `HOLD — operational proof pending` |
 | D5 writer inventory | `HOLD — operational proof pending` |
 | D6 writer activity | `HOLD — operational proof pending` |
 | D7 environment freeze | `HOLD — operational proof pending` |
 | D8 GitHub/source freeze | `PARTIAL / current source snapshot confirmed` |
-| D9 final recheck | `BLOCKED BY D1–D8` |
-| D10 execution log completion | `BLOCKED BY D1–D9` |
-| B-01 | `OPEN` |
+| D9 final recheck | `BLOCKED BY D3–D8` |
+| D10 execution log completion | `IN PROGRESS — D1/D2 recorded` |
+| B-01 | `OPEN / IN PROGRESS` |
 | E4.0 | `INCOMPLETE / HOLD` |
 | E4.1 | `BLOCKED BY E4.0` |
 | Production V3 | `NO-GO` |
