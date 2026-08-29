@@ -64,3 +64,16 @@ test("Gate 14A migrations 001-014 are contiguous and match the approved extracti
   );
   assert.ok(migrations.every((migration) => /^[a-f0-9]{64}$/.test(migration.checksum)));
 });
+
+test("Gate 14A runtime schema check runs before the first PostgreSQL service and never invokes the migrator", async () => {
+  const main = await readFile(join(src, "main.js"), "utf8");
+  const checker = await readFile(join(src, "runtime-schema-check.js"), "utf8");
+  const checkCall = main.indexOf("await assertRuntimeSchema(config.databaseUrl)");
+  const firstDbService = main.indexOf("new AuditService(config.databaseUrl");
+
+  assert.ok(checkCall >= 0, "main.js nie wywołuje fail-closed runtime schema check");
+  assert.ok(firstDbService > checkCall, "runtime schema check musi wykonać się przed pierwszym serwisem PostgreSQL");
+  assert.match(checker, /SELECT version,name,checksum FROM gracz_schema_migrations ORDER BY version/);
+  assert.doesNotMatch(main, /migrate-v3|MIGRATOR_DATABASE_URL/, "runtime nie może uruchamiać migratora");
+  assert.doesNotMatch(checker, FORBIDDEN_RUNTIME_DDL, "runtime schema checker nie może wykonywać DDL/DCL");
+});
