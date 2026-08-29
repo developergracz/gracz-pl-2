@@ -15,16 +15,26 @@ Cel: wyświetlać prostą stronę informacyjną pod `gracz.pl` bez uruchamiania 
 - obecny produkcyjny Web Service ma pozostać `Suspended`,
 - `Auto-Deploy` dla istniejącego Web Service pozostaje `Off`.
 
-## Render Static Site — ustawienia
+## Render Static Site — Blueprint
 
-Utwórz osobny Render **Static Site** z tego samego repozytorium.
+Gotowa konfiguracja znajduje się w:
 
+`maintenance-site/render.yaml`
+
+Blueprint tworzy osobny Static Site:
+
+- Name: `gracz-pl-maintenance`
+- Runtime: `static`
+- Plan: `free`
 - Branch: `main`
-- Root Directory: `maintenance-site`
-- Build Command: `echo maintenance-site`
-- Publish Directory: `.`
+- Build Command: brak realnego builda — tylko komunikat kontrolny
+- Publish Directory: `.` względem `maintenance-site`
 - Auto-Deploy: `Off`
 - Environment variables: brak
+
+W Render utwórz Blueprint z repozytorium `developergracz/gracz-pl-2` i wskaż ścieżkę Blueprint Path:
+
+`maintenance-site/render.yaml`
 
 Najpierw zweryfikuj wygenerowany adres `*.onrender.com`. Dopiero po poprawnym smoke teście przepnij custom domain `gracz.pl` z zawieszonego Web Service do osobnego Static Site.
 
