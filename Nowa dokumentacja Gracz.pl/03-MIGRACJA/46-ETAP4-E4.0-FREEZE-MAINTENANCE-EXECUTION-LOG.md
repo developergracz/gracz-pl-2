@@ -84,7 +84,33 @@ Klasyfikacja dowodu:
 - D2 nie dowodzi jeszcze, że po zmianie konfiguracji nie istnieje aktywny/queued deploy — to jest osobna kontrola E4.0-D3 w `Events`,
 - nie zmieniano DB, secretów ani environment.
 
-Następna kontrola: **E4.0-D3 — Events freeze**.
+### E4.0-D3 — Events freeze — PASS
+
+Fresh evidence operatora z Render Dashboard, timestamp z ekranu: **29.08.2026 15:11 CEST**.
+
+Potwierdzona ścieżka:
+
+`gracz-checkers-test → Events`
+
+W aktualnym widoku `Events`:
+
+- najnowszy widoczny deploy dla `3dfb9ab` ma stan `Deploy live` i zielone potwierdzenie zakończenia,
+- odpowiadający mu wpis `Deploy started` jest historyczny i datowany na **29.08.2026 02:41**, z opisem `New commit via Auto-Deploy`,
+- wcześniejszy widoczny deploy `8a52dd4` również ma stan `Deploy live`,
+- nie było widocznego deployu `In progress`,
+- nie było widocznego queued deploy,
+- nie było widocznego aktywnego restartu,
+- nie było widocznego aktywnego rollbacku,
+- nie było widocznej aktywnej operacji config-change deployment.
+
+Klasyfikacja dowodu:
+
+- `E4.0-D3 = PASS — w fresh widoku Events brak aktywnej lub oczekującej operacji deploymentowej`,
+- historyczne zakończone eventy nie stanowią aktywnej operacji,
+- D3 nie potwierdza jeszcze blokady publicznych mutacji ani stanu writerów,
+- nie uruchamiano żadnej operacji z `Manual Deploy`, `Restart service` ani `Rollback`.
+
+Następna kontrola: **E4.0-D4 — Public mutation lock / Maintenance Mode**.
 
 ## 4. Maintenance controls — CZĘŚCIOWO POTWIERDZONE / E4.0 NADAL HOLD
 
@@ -99,11 +125,11 @@ Kontrakt E4.0 wymaga jednocześnie:
 Aktualnie potwierdzono:
 
 - właściwy Web Service (`E4.0-D1 = PASS`),
-- `Auto-Deploy = Off` (`E4.0-D2 = PASS`).
+- `Auto-Deploy = Off` (`E4.0-D2 = PASS`),
+- brak aktywnego deploy/restart/rollback/queued deploy w fresh `Events` (`E4.0-D3 = PASS`).
 
 Nadal brak wystarczającego evidence dla:
 
-- braku aktywnego deploy/restart/rollback/queued deploy po freeze,
 - aktywnego Maintenance Mode / alternatywnego mutation lock,
 - pełnego writer inventory i stanu każdego writera,
 - braku aktywności mutacyjnej writerów,
@@ -141,15 +167,9 @@ Read-only przegląd repozytorium i przygotowanie dokumentacji pozostają dozwolo
 
 ## 7. Następny wymagany dowód
 
-Następny operacyjny krok to **E4.0-D3 — Events freeze** dla `gracz-checkers-test`.
+Następny operacyjny krok to **E4.0-D4 — Public mutation lock / Maintenance Mode** dla `gracz-checkers-test`.
 
-Należy potwierdzić w Render `Events`:
-
-- brak deployu `In progress`,
-- brak queued deploy,
-- brak restartu,
-- brak rollbacku,
-- brak aktywnej config-change deployment operation.
+Należy potwierdzić w Render `Settings → Maintenance Mode`, czy kontrola jest dostępna dla usługi. Jeżeli jest dostępna, mutation lock musi zostać aktywowany zgodnie z runbookiem, a następnie potwierdzony read-only bez tworzenia danych. Jeżeli nie jest dostępna, należy zastosować wyłącznie wcześniej zatwierdzony alternatywny mutation lock.
 
 E4.0 może zostać oznaczone jako wykonane dopiero po uzyskaniu evidence, że:
 
