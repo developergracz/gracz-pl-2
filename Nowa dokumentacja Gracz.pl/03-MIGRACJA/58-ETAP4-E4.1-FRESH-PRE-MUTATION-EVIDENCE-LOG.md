@@ -128,9 +128,39 @@ Status sekcji I:
 
 ## 6. J — Render / environment baseline
 
-Status:
+### J1 — Web Service status i Events — PASS
 
-**HOLD — FRESH RECHECK REQUIRED AFTER STATIC MAINTENANCE SITE TOPOLOGY CHANGE.**
+Fresh operator evidence:
+
+- capture: **30.08.2026 01:57 CEST**,
+- Render resource: `gracz-checkers-test`,
+- resource type: `Web Service / Docker / Free`,
+- branch displayed: `feature/homepage-game-center`,
+- current banner: `Suspended by you`,
+- najnowsze zdarzenia widoczne w `Events`:
+  - `Suspended by you` — 29.08.2026 15:37,
+  - `Service suspended` — 29.08.2026 15:37,
+- wcześniejszy zakończony deploy: `3dfb9ab` — `Deploy live` 29.08.2026 02:41,
+- brak widocznego późniejszego resume, deployu, restartu lub rollbacku.
+
+Wniosek:
+
+- normalny aplikacyjny writer pozostaje zatrzymany,
+- statyczna strona maintenance nie wznowiła `gracz-checkers-test`,
+- freeze głównego runtime pozostaje nienaruszony w zakresie potwierdzonym ekranem Events.
+
+Ograniczenie dowodu:
+
+- ekran Events nie potwierdza samodzielnie stanu Auto-Deploy ani braku zmian environment,
+- nie nadaje całej sekcji J statusu PASS bez pozostałych kontroli.
+
+Status J1:
+
+**PASS — MAIN WEB SERVICE STILL SUSPENDED / EVENTS WITHOUT POST-FREEZE DEPLOY OR RESTART.**
+
+Status całej sekcji J:
+
+**HOLD — AUTO-DEPLOY, STATIC-SITE BOUNDARY AND ENVIRONMENT RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
