@@ -222,7 +222,7 @@ ORDER BY c.relname;
 SELECT
   COUNT(*) FILTER (WHERE privilege_type = 'SELECT')::int AS public_select_grants,
   COUNT(*) FILTER (WHERE privilege_type IN ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'))::int AS public_write_or_sensitive_grants
-FROM information_schema.role_table_grants
+FROM information_schema.table_privileges
 WHERE table_schema = 'public'
   AND grantee = 'PUBLIC';
 
