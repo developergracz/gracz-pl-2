@@ -52,10 +52,39 @@ Potwierdzony widok projektu `My project` / środowisko `Production`:
 Klasyfikacja dowodu:
 
 - `E4.0-D1 = PASS — właściwa usługa Render została jednoznacznie zidentyfikowana`,
-- ten dowód **nie potwierdza jeszcze** `Auto-Deploy = Off`, Maintenance Mode, braku aktywnych deployów ani zatrzymania writerów,
+- ten dowód sam w sobie nie potwierdza Maintenance Mode, braku aktywnych deployów ani zatrzymania writerów,
 - żadnej operacji Deploy/Restart/rollback ani zmiany DB/env nie wykonano w ramach D1.
 
-Następna kontrola: **E4.0-D2 — Auto-Deploy freeze**.
+### E4.0-D2 — Auto-Deploy freeze — PASS
+
+Fresh evidence operatora z Render Dashboard, timestamp z ekranu po zapisie: **29.08.2026 15:04 CEST**.
+
+Potwierdzona ścieżka:
+
+`gracz-checkers-test → Settings → Deploy → Auto-Deploy`
+
+Stan przed freeze był widoczny jako:
+
+`Auto-Deploy = On Commit`
+
+Operator zgodnie z runbookiem zmienił ustawienie na:
+
+`Auto-Deploy = Off`
+
+Po `Save changes` wykonano ponowną kontrolę tej samej sekcji. Render nadal wyświetlał:
+
+`Auto-Deploy = Off`
+
+oraz brak niezapisanej zmiany w formularzu (`Save changes` nieaktywne).
+
+Klasyfikacja dowodu:
+
+- `E4.0-D2 = PASS — Auto-Deploy został wyłączony i stan Off został ponownie potwierdzony po zapisie`,
+- w ramach D2 nie uruchamiano `Manual Deploy`, `Restart service` ani `Rollback`,
+- D2 nie dowodzi jeszcze, że po zmianie konfiguracji nie istnieje aktywny/queued deploy — to jest osobna kontrola E4.0-D3 w `Events`,
+- nie zmieniano DB, secretów ani environment.
+
+Następna kontrola: **E4.0-D3 — Events freeze**.
 
 ## 4. Maintenance controls — CZĘŚCIOWO POTWIERDZONE / E4.0 NADAL HOLD
 
@@ -67,16 +96,21 @@ Kontrakt E4.0 wymaga jednocześnie:
 4. potwierdzenia braku równoległego deployu/writera,
 5. zapisania exact source/cutover package SHA.
 
-Aktualnie potwierdzono wyłącznie identyfikację właściwego Web Service (`E4.0-D1`). Nadal brak wystarczającego evidence dla:
+Aktualnie potwierdzono:
 
-- `Auto-Deploy = Off`,
-- aktywnego Maintenance Mode / mutation lock,
-- braku aktywnego deploy/restart/rollback,
+- właściwy Web Service (`E4.0-D1 = PASS`),
+- `Auto-Deploy = Off` (`E4.0-D2 = PASS`).
+
+Nadal brak wystarczającego evidence dla:
+
+- braku aktywnego deploy/restart/rollback/queued deploy po freeze,
+- aktywnego Maintenance Mode / alternatywnego mutation lock,
 - pełnego writer inventory i stanu każdego writera,
+- braku aktywności mutacyjnej writerów,
 - environment freeze,
 - finalnego read-only rechecku.
 
-Dlatego tych punktów nie wolno oznaczyć jako wykonane na podstawie samej deklaracji.
+Dlatego E4.0 pozostaje `INCOMPLETE / HOLD`, a B-01 pozostaje otwarty.
 
 ## 5. Source/cutover SHA
 
@@ -107,7 +141,15 @@ Read-only przegląd repozytorium i przygotowanie dokumentacji pozostają dozwolo
 
 ## 7. Następny wymagany dowód
 
-Następny operacyjny krok to **E4.0-D2 — Auto-Deploy freeze** dla `gracz-checkers-test`.
+Następny operacyjny krok to **E4.0-D3 — Events freeze** dla `gracz-checkers-test`.
+
+Należy potwierdzić w Render `Events`:
+
+- brak deployu `In progress`,
+- brak queued deploy,
+- brak restartu,
+- brak rollbacku,
+- brak aktywnej config-change deployment operation.
 
 E4.0 może zostać oznaczone jako wykonane dopiero po uzyskaniu evidence, że:
 
