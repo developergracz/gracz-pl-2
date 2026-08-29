@@ -26,7 +26,7 @@ Status nadrzędny: **LEVEL A ACHIEVED / LEVEL B NOT YET ACHIEVED / LEVEL C NOT Y
 
 | Krok | Status | Evidence / stan | Następna akcja |
 |---|---|---|---|
-| E4.0 Freeze / Maintenance | `INCOMPLETE / HOLD — IN PROGRESS` | D1 właściwy Web Service = PASS; D2 Auto-Deploy = PASS (`Off` potwierdzone po zapisie); D3–D10 nadal niekompletne | wykonać D3 Events freeze |
+| E4.0 Freeze / Maintenance | `INCOMPLETE / HOLD — IN PROGRESS` | D1 właściwy Web Service = PASS; D2 Auto-Deploy = PASS; D3 Events freeze = PASS; D4–D10 nadal niekompletne | wykonać D4 Public mutation lock / Maintenance Mode |
 | E4.1 Fresh Pre-Mutation Evidence | `BLOCKED BY E4.0` | checklista gotowa | uruchomić dopiero po E4.0 COMPLETE |
 | E4.2 Strict-ACL probes removal | `BLOCKED BY E4.0` | zakres 4 probes zdefiniowany | po E4.1 |
 | E4.3 Keyring v1/v2 | `BLOCKED BY E4.0` | design Gate 14C gotowy | implementacja po E4.2 |
@@ -56,7 +56,7 @@ Status dashboardu: `PASS — SOURCE BASELINE UNCHANGED`, ale nie oznacza to zgod
 
 | # | Obszar | Status dziś | Istniejące evidence | Brakujące evidence / blocker | Owner | Next action |
 |---|---|---|---|---|---|---|
-| 1 | Controlled Change Management | `PARTIAL / HOLD` | Gate 15 contract, E4.0 checklist/log/plans, exact GitHub SHA, D1 service evidence, D2 Auto-Deploy Off | D3–D10: Events freeze, mutation lock, writer freeze, env freeze, final drift review | system/operator owner | kontynuować E4.0 od D3 |
+| 1 | Controlled Change Management | `PARTIAL / HOLD` | Gate 15 contract, E4.0 checklist/log/plans, exact GitHub SHA, D1 service evidence, D2 Auto-Deploy Off, D3 fresh Events no active deployment operation | D4–D10: mutation lock, writer freeze, env freeze, final drift review | system/operator owner | kontynuować E4.0 od D4 |
 | 2 | Database Migration Safety | `PARTIAL / HOLD` | runtime DDL separation 79/79 code-level, migrator plan/ledger design, CI | fresh `--plan`, backup/restore, production apply/verify, exact target ledger | DB/migration owner | E4.1 → E4.5 |
 | 3 | Least-Privilege Database Security | `BLOCKER` | Gate 14B design, DML matrix, verifier design | aktualny runtime/DB principal ma historycznie zbyt szerokie uprawnienia; nowe roles/ACL nie applied | DB/security owner | E4.4 → E4.6 |
 | 4 | Cryptographic Separation and Versioning | `PARTIAL / HOLD` | Gate 11 decryptability, Gate 14C design, migration 015 proposal, rekey runbook | central keyring v1/v2 nie applied, v2 roots nie provisioned, rekey nie wykonany | security/crypto owner | E4.3 → E4.7 |
@@ -77,11 +77,12 @@ Status dashboardu: `PASS — SOURCE BASELINE UNCHANGED`, ale nie oznacza to zgod
 
 Status bieżący:
 
-`OPEN / IN PROGRESS — D1 PASS, D2 PASS`
+`OPEN / IN PROGRESS — D1 PASS, D2 PASS, D3 PASS`
 
 Fresh evidence:
 - D1: właściwy Web Service `gracz-checkers-test` potwierdzony,
-- D2: `Auto-Deploy = Off` potwierdzone po `Save changes` 29.08.2026 15:04 CEST.
+- D2: `Auto-Deploy = Off` potwierdzone po `Save changes` 29.08.2026 15:04 CEST,
+- D3: fresh `Events` 29.08.2026 15:11 CEST nie pokazywało aktywnego/queued deployu, restartu ani rollbacku; najnowszy widoczny deploy był zakończony jako `Deploy live`.
 
 Skutek:
 - Level B nieosiągalny,
@@ -97,7 +98,7 @@ Warunek usunięcia:
 - GitHub/source freeze potwierdzony,
 - final read-only recheck PASS.
 
-Najbliższa brakująca kontrola: `E4.0-D3 — Events freeze`.
+Najbliższa brakująca kontrola: `E4.0-D4 — Public mutation lock / Maintenance Mode`.
 
 ### B-02 — Least-privilege DB controls nie applied
 
@@ -193,9 +194,9 @@ Wymagane jednocześnie:
 
 Jedyną dopuszczalną akcją prowadzącą projekt do przodu jest obecnie:
 
-`P0 / E4.0-D3 — EVENTS FREEZE`
+`P0 / E4.0-D4 — PUBLIC MUTATION LOCK / MAINTENANCE MODE`
 
-Po D3 nadal kontynuujemy D4–D10. E4.0 można zamknąć dopiero po komplecie operational evidence.
+Po D4 nadal kontynuujemy D5–D10. E4.0 można zamknąć dopiero po komplecie operational evidence.
 
 ## 10. Current formal decision
 
@@ -205,7 +206,7 @@ Na dzień 29.08.2026:
 - `LEVEL B = NOT YET ACHIEVED`
 - `LEVEL C = NOT YET ACHIEVED`
 - `ETAP 4 = OPEN`
-- `E4.0 = INCOMPLETE / HOLD — D1 PASS, D2 PASS`
+- `E4.0 = INCOMPLETE / HOLD — D1 PASS, D2 PASS, D3 PASS`
 - `B-01 = OPEN / IN PROGRESS`
 - `E4.1–E4.10 = BLOCKED BY E4.0`
 - `GATE 14 OVERALL = BLOCKED — APPLIED REMEDIATION REQUIRED`
