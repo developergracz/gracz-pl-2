@@ -22,31 +22,15 @@ export class SecureAccountService {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany.");
     this.base = baseService;
     this.pool = new Pool({ connectionString, ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 3 });
-    this.ready = this.#initialize();
+    this.ready = this.#initializeRuntime();
   }
 
-  async #initialize() {
+  async #initializeRuntime() {
     if (this.base.ready) await this.base.ready;
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS password_hash_version SMALLINT NOT NULL DEFAULT 1`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS phone VARCHAR(24)`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS verification_channel VARCHAR(10) NOT NULL DEFAULT 'email'`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS contact_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_registration_codes (
-      user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-      code_hash BYTEA NOT NULL,
-      expires_at TIMESTAMPTZ NOT NULL,
-      attempts SMALLINT NOT NULL DEFAULT 0,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
+    await this.pool.query(`SELECT user_id,password_hash_version,phone,verification_channel,contact_verified FROM gracz_accounts LIMIT 0`);
+    await this.pool.query(`SELECT user_id,code_hash,expires_at,attempts,created_at FROM gracz_registration_codes LIMIT 0`);
+    await this.pool.query(`SELECT token_hash,user_id,expires_at,used_at,created_at FROM gracz_password_reset_tokens LIMIT 0`);
     await this.pool.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE contact_verified=FALSE AND NOT EXISTS (SELECT 1 FROM gracz_registration_codes c WHERE c.user_id=gracz_accounts.user_id)`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
-      token_hash BYTEA PRIMARY KEY,
-      user_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-      expires_at TIMESTAMPTZ NOT NULL,
-      used_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_password_reset_user_idx ON gracz_password_reset_tokens(user_id, created_at DESC)`);
   }
 
   async checkAvailability({ userId, displayName } = {}) {
@@ -274,16 +258,7 @@ async function sendPasswordResetEmail({ to, userId, displayName, code }) {
   const name = String(displayName || "Graczu").trim().slice(0, 40) || "Graczu";
   const login = String(userId || "").trim().slice(0, 32);
   const safeName = escapeHtml(name), safeLogin = escapeHtml(login), safeCode = escapeHtml(code);
-  const text = `Witaj ${name}!
-
-Otrzymaliśmy prośbę o zmianę hasła w serwisie gracz.pl.
-Login: ${login}
-
-Twój 6-cyfrowy kod odzyskiwania: ${code}
-
-Kod jest ważny przez 10 minut. Wpisz go w formularzu odzyskiwania hasła.
-
-Administracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu odzyskiwania. Jeśli to nie Ty prosiłeś o zmianę hasła, zignoruj tę wiadomość.`;
+  const text = `Witaj ${name}!\n\nOtrzymaliśmy prośbę o zmianę hasła w serwisie gracz.pl.\nLogin: ${login}\n\nTwój 6-cyfrowy kod odzyskiwania: ${code}\n\nKod jest ważny przez 10 minut. Wpisz go w formularzu odzyskiwania hasła.\n\nAdministracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu odzyskiwania. Jeśli to nie Ty prosiłeś o zmianę hasła, zignoruj tę wiadomość.`;
   const html = `<!doctype html><html lang="pl"><body style="margin:0;padding:0;background:#050b10;color:#eef5f9;font-family:Verdana,Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050b10;padding:30px 12px"><tr><td align="center"><table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:100%;max-width:620px;border:1px solid #284154;border-radius:18px;background:linear-gradient(180deg,#101c25,#091218);overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.45)"><tr><td style="padding:28px 34px;border-bottom:1px solid #203747"><div style="font-size:31px;font-weight:900;letter-spacing:-2px;color:#f4f8fb">gracz<span style="font-size:17px;color:#ff3448;letter-spacing:-1px">.pl</span></div><div style="margin-top:7px;color:#7f96a6;font-size:11px">GRY ONLINE · SPOŁECZNOŚĆ · FAIR PLAY</div></td></tr><tr><td style="padding:34px"><div style="display:inline-block;padding:6px 11px;border:1px solid #285b43;border-radius:999px;background:#0d281b;color:#64e59d;font-size:11px;font-weight:700">✓ Bezpieczne odzyskiwanie konta</div><h1 style="margin:22px 0 10px;color:#f5f8fa;font-size:30px;line-height:1.2">Witaj <span style="color:#64a1ff">${safeName}</span>&nbsp;!</h1><p style="margin:0 0 18px;color:#b6c4cd;font-size:15px;line-height:1.65">Otrzymaliśmy prośbę o zmianę hasła w serwisie gracz.pl. Użyj poniższego kodu, aby odzyskać dostęp do konta.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:22px 0;border:1px solid #29475f;border-radius:12px;background:#071521"><tr><td style="padding:15px 18px;color:#8fa5b4;font-size:12px">Twój login</td><td align="right" style="padding:15px 18px;color:#79aaff;font-size:20px;font-weight:900;letter-spacing:.02em">${safeLogin}</td></tr></table><div style="padding:25px 18px;border:1px solid #356ecb;border-radius:14px;background:linear-gradient(135deg,#0d2745,#10203a);text-align:center"><div style="margin-bottom:10px;color:#99b7df;font-size:12px;font-weight:700;letter-spacing:.06em">TWÓJ 6-CYFROWY KOD ODZYSKIWANIA</div><div style="color:#ffffff;font-size:38px;font-weight:900;letter-spacing:10px;line-height:1.2">${safeCode}</div><div style="margin-top:12px;color:#8fa9c8;font-size:11px">Kod jest ważny przez 10 minut.</div></div><p style="margin:22px 0 8px;color:#d9e4ea;font-size:13px;font-weight:700">Co zrobić dalej?</p><ol style="margin:8px 0 0;padding-left:21px;color:#aebdc7;font-size:13px;line-height:1.75"><li>Wróć do otwartego formularza gracz.pl.</li><li>Wpisz dokładnie wszystkie 6 cyfr kodu.</li><li>Ustaw i potwierdź nowe hasło.</li><li>Kliknij „Ustaw nowe hasło”.</li></ol><div style="margin-top:22px;padding:16px 18px;border:1px solid #713944;border-radius:10px;background:#271418;color:#ffd0d5;font-family:Verdana,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.7;letter-spacing:.01em">⚠ Jeśli to nie Ty prosiłeś o zmianę hasła, zignoruj tę wiadomość. Kod wygaśnie automatycznie.</div><div style="margin-top:14px;padding:14px 16px;border-left:3px solid #f1ad45;background:#21190e;color:#d8c39f;font-size:11px;line-height:1.55">🔒 Administracja serwisu gracz.pl nigdy nie prosi użytkownika o hasło ani o przekazanie kodu odzyskiwania.</div></td></tr><tr><td style="padding:20px 34px;border-top:1px solid #203747;color:#718794;font-size:10px;line-height:1.55">© 2026 gracz.pl</td></tr></table></td></tr></table></body></html>`;
   const result = await systemMail.send({ to, subject: "gracz.pl — kod odzyskiwania hasła", text, html, purpose: "password-reset" });
   if (!result.sent) throw new AccountError("Nie udało się wysłać kodu odzyskiwania. Spróbuj ponownie później.", "EMAIL_SEND_FAILED");
@@ -320,7 +295,7 @@ async function sendVerificationSms({ to, displayName, code }) {
   if (!response.ok) throw new AccountError("Nie udało się wysłać kodu SMS. Spróbuj ponownie później.", "SMS_SEND_FAILED");
 }
 
-function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]); }
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;", "'": "&#39;" })[ch]); }
 export async function hashPasswordV2(password, salt) { return hashPassword(password, salt, CURRENT_SCRYPT); }
 async function hashPassword(password, salt, params) { return scrypt(password, salt, 64, params); }
 function hashToken(token) { return createHash("sha256").update(token, "utf8").digest(); }
