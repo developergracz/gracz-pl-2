@@ -11,56 +11,13 @@ export class NewsletterAdminService {
   }
 
   async initialize() {
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS newsletter_sources(
-      id BIGSERIAL PRIMARY KEY,
-      code VARCHAR(64) NOT NULL UNIQUE,
-      name VARCHAR(120) NOT NULL,
-      description TEXT,
-      source_type VARCHAR(32) NOT NULL CHECK(source_type IN ('internal','campaign','partner','advertisement','other')),
-      active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
+    await this.pool.query(`SELECT id,code,name,description,source_type,active,created_at,updated_at FROM newsletter_sources LIMIT 0`);
+    await this.pool.query(`SELECT id,subscriber_id,source_id,first_seen_at,campaign_reference,partner_reference,metadata FROM newsletter_subscriber_sources LIMIT 0`);
+    await this.pool.query(`SELECT id,subscriber_id,consent_type,consent_version,action,source,occurred_at,metadata FROM newsletter_consent_history LIMIT 0`);
+    await this.pool.query(`SELECT id,subscriber_id,event_type,source_id,occurred_at,source_hash,user_agent_hash,metadata FROM newsletter_events LIMIT 0`);
     await this.pool.query(`INSERT INTO newsletter_sources(code,name,description,source_type,active)
       VALUES('homepage','Strona główna Gracz.pl','Publiczny formularz listy startowej Gracz.pl','internal',TRUE)
       ON CONFLICT(code) DO NOTHING`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS newsletter_subscriber_sources(
-      id BIGSERIAL PRIMARY KEY,
-      subscriber_id BIGINT NOT NULL REFERENCES gracz_newsletter_subscribers(id) ON DELETE RESTRICT,
-      source_id BIGINT NOT NULL REFERENCES newsletter_sources(id) ON DELETE RESTRICT,
-      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      campaign_reference VARCHAR(128),
-      partner_reference VARCHAR(128),
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-      UNIQUE(subscriber_id,source_id)
-    )`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS newsletter_consent_history(
-      id BIGSERIAL PRIMARY KEY,
-      subscriber_id BIGINT NOT NULL REFERENCES gracz_newsletter_subscribers(id) ON DELETE RESTRICT,
-      consent_type VARCHAR(64) NOT NULL,
-      consent_version VARCHAR(64) NOT NULL,
-      action VARCHAR(24) NOT NULL CHECK(action IN ('granted','confirmed','revoked')),
-      source VARCHAR(64) NOT NULL DEFAULT 'homepage',
-      occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb
-    )`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_consent_subscriber_idx ON newsletter_consent_history(subscriber_id,occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_consent_time_idx ON newsletter_consent_history(occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_consent_type_idx ON newsletter_consent_history(consent_type,action)`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS newsletter_events(
-      id BIGSERIAL PRIMARY KEY,
-      subscriber_id BIGINT REFERENCES gracz_newsletter_subscribers(id) ON DELETE SET NULL,
-      event_type VARCHAR(64) NOT NULL,
-      source_id BIGINT REFERENCES newsletter_sources(id) ON DELETE SET NULL,
-      occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      source_hash CHAR(64),
-      user_agent_hash CHAR(64),
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb
-    )`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_events_time_idx ON newsletter_events(occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_events_subscriber_idx ON newsletter_events(subscriber_id,occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_events_type_time_idx ON newsletter_events(event_type,occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS newsletter_events_source_idx ON newsletter_events(source_id,occurred_at DESC)`);
   }
 
   async dashboard() {
