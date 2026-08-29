@@ -58,7 +58,27 @@ Preferowany mechanizm dla Web Service, jeśli jest dostępny: Maintenance Mode.
 
 Jeśli Maintenance Mode nie jest dostępny, wymagany jest wcześniej zatwierdzony alternatywny mechanizm, który faktycznie uniemożliwia publiczne mutacje.
 
-Nie uznawaj samego komunikatu maintenance za dowód. Potwierdź, że ścieżki zapisujące nie są dostępne dla użytkowników.
+#### Zatwierdzony fallback dla aktualnej instancji Free
+
+Fresh evidence operatora z 29.08.2026 15:25 CEST potwierdziło w `gracz-checkers-test → Settings → Maintenance Mode`, że bieżąca usługa działa na planie `Free`, a Render wyświetla komunikat, że Maintenance Mode jest dostępny wyłącznie dla płatnych instancji.
+
+Dla tej konkretnej konfiguracji zatwierdzonym alternatywnym mechanizmem D4 jest:
+
+`Suspend Web Service`
+
+Warunki użycia fallbacku:
+- D2 musi mieć `Auto-Deploy = Off`,
+- D3 musi mieć brak aktywnego deploy/restart/rollback/queue,
+- zawieszana jest wyłącznie usługa `gracz-checkers-test`; **nie zawieszać PostgreSQL `gracz-pl-database`**,
+- po suspend należy potwierdzić w Render status usługi jako zawieszony/niedostępny,
+- następnie wykonać wyłącznie read-only public validation, że normalna aplikacja nie obsługuje publicznego ruchu,
+- nie wykonywać testowych zapisów,
+- usługa pozostaje zawieszona podczas dalszego freeze, dopóki późniejszy autoryzowany krok nie wymaga jej uruchomienia,
+- D5 nadal musi zinwentaryzować wszystkie inne potencjalne writery; suspend głównego Web Service nie jest dowodem, że nie istnieją inne ścieżki zapisu.
+
+Nie używać `Upgrade` jako części E4.0 tylko po to, aby uzyskać Maintenance Mode; zmiana planu/compute rozszerzałaby zakres freeze i wymagałaby nowego baseline.
+
+Nie uznawaj samego komunikatu maintenance ani samego kliknięcia suspend za pełny dowód. Potwierdź, że publiczna aplikacja nie jest dostępna i że główny publiczny writer nie może przyjąć nowych mutacji.
 
 Minimalnie dotyczy to:
 - rejestracji,
