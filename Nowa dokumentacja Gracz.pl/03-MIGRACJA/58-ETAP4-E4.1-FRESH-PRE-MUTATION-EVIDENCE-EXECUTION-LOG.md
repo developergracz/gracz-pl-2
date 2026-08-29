@@ -355,11 +355,72 @@ Powody:
 
 **Production remains READ-ONLY / NO-MUTATION; no permissions are changed in E4.1.**
 
-## 5. Zakres read-only i następny krok
+## 5. E4.1-E — Fresh Backup / pre-mutation anchor
+
+### 5.1 Provider capability i metoda
+
+Render Free tier nie udostępnia zarządzanych backupów/exportów ani Point-in-Time Recovery dla tej instancji. Zamiast provider backup wykonano pełny logiczny backup PostgreSQL przez lokalny `pg_dump 18.6`.
+
+Backup został wykonany po E4.0 freeze i przed jakąkolwiek dozwoloną mutacją E4.2+.
+
+Production pozostała w trybie NO-MUTATION; `pg_dump` wykonywał odczyt danych i zapisywał artefakt lokalnie.
+
+### 5.2 Fresh backup evidence
+
+Artefakt:
+
+`E4.1-E-gracz-pl-database-pre-mutation-2026-08-29.dump`
+
+Wynik:
+
+- `PG_DUMP_EXIT=0`,
+- format: PostgreSQL custom archive,
+- rozmiar: `1,440,765` bajtów,
+- timestamp: `29.08.2026 23:09:52` (lokalny czas operatora),
+- `pg_restore --list` zakończył się `PG_RESTORE_LIST_EXIT=0`,
+- SHA-256: `87BC0380C8F7EF39E21600E87B80045E4A9C52481C9D4EAE7FB937E98CDC8D8B`.
+
+Checksum został potwierdzony na dwóch lokalnych kopiach:
+
+1. kopia robocza w Downloads,
+2. druga kopia w `Documents\Gracz.pl-E4.1-Backup`.
+
+Obie kopie są bajt-w-bajt zgodne.
+
+Szczegółowy bezpieczny artefakt metadanych:
+
+`61-ETAP4-E4.1-E-FRESH-BACKUP-ANCHOR-2026-08-29.md`
+
+Surowy `.dump` nie jest zapisywany w GitHub, ponieważ zawiera dane produkcyjne.
+
+### 5.3 Retention contract
+
+Obie zweryfikowane lokalne kopie mają zostać zachowane bez zmian przez cały maintenance/cutover oraz rollback window. Nie wolno ich usuwać, nadpisywać ani zastępować przed formalnym końcem wymaganej retencji.
+
+OneDrive nie jest wymaganiem checklisty i nie jest podstawą decyzji E4.1-E. Nie opieramy PASS na niepotwierdzonej synchronizacji chmurowej.
+
+`pg_restore --list = 0` potwierdza czytelność archiwum, ale **nie jest pełnym restore validation**. Faktyczne odtworzenie i walidacja należą do E4.1-F.
+
+### 5.4 Decision
+
+**E4.1-E = PASS — fresh pre-mutation backup anchor created, integrity-checked and retained under explicit retention contract.**
+
+Powody:
+
+- fresh backup powstał po E4.0 freeze,
+- `pg_dump` zakończył się sukcesem,
+- archiwum ma niezerowy, udokumentowany rozmiar,
+- `pg_restore --list` potwierdził czytelność archiwum,
+- SHA-256 został zapisany i potwierdzony dla dwóch kopii,
+- backup jest objęty jawnym retention contract,
+- production nie została zmodyfikowana.
+
+## 6. Zakres read-only i następny krok
 
 E4.1-B = **PASS**.  
 E4.1-C = **PASS**.  
 E4.1-D = **PASS — fresh evidence collected; AS-IS DB security remains BLOCKED**.  
+E4.1-E = **PASS — fresh pre-mutation backup anchor**.  
 E4.1 jako całość pozostaje **IN PROGRESS**.  
 Production V3 pozostaje **NO-GO**.
 
@@ -379,6 +440,6 @@ Do czasu pełnego E4.1 COMPLETE nadal zabronione są:
 
 Następny kanoniczny punkt checklisty:
 
-**E4.1-E — Backup: fresh pre-mutation anchor.**
+**E4.1-F — Restore rehearsal / restore validation.**
 
-Wymagany jest świeży backup/snapshot wykonany po E4.0 i przed pierwszą mutacją; identyfikator/timestamp należy zapisać bez sekretów. Brak świeżego backupu jest warunkiem ABORT dla dalszej ścieżki mutacyjnej.
+Restore destination musi być izolowanym non-production targetem. Restore może mutować wyłącznie ten target. Production pozostaje NO-MUTATION. E4.1-F jest nadal **NOT RUN**.
