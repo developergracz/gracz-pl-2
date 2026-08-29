@@ -32,7 +32,32 @@ W ramach rozpoczęcia E4.0:
 - nie wykonano PostgreSQL DDL/DML/DCL,
 - nie zmieniono secretów ani environment.
 
-## 3. Maintenance controls — NIEPOTWIERDZONE
+## 3. Render operational evidence
+
+### E4.0-D1 — właściwy Web Service — PASS
+
+Evidence operatora z Render Dashboard, timestamp z ekranu: **29.08.2026 11:37 CEST**.
+
+Potwierdzony widok projektu `My project` / środowisko `Production`:
+
+- Web Service resource: `gracz-checkers-test`,
+- Web Service status: `Deployed`,
+- runtime: `Docker`,
+- region: `Frankfurt`,
+- PostgreSQL resource: `gracz-pl-database`,
+- PostgreSQL resource status: `Available`,
+- PostgreSQL runtime/version displayed by Render: `PostgreSQL 18`,
+- database region: `Frankfurt`.
+
+Klasyfikacja dowodu:
+
+- `E4.0-D1 = PASS — właściwa usługa Render została jednoznacznie zidentyfikowana`,
+- ten dowód **nie potwierdza jeszcze** `Auto-Deploy = Off`, Maintenance Mode, braku aktywnych deployów ani zatrzymania writerów,
+- żadnej operacji Deploy/Restart/rollback ani zmiany DB/env nie wykonano w ramach D1.
+
+Następna kontrola: **E4.0-D2 — Auto-Deploy freeze**.
+
+## 4. Maintenance controls — CZĘŚCIOWO POTWIERDZONE / E4.0 NADAL HOLD
 
 Kontrakt E4.0 wymaga jednocześnie:
 
@@ -42,16 +67,18 @@ Kontrakt E4.0 wymaga jednocześnie:
 4. potwierdzenia braku równoległego deployu/writera,
 5. zapisania exact source/cutover package SHA.
 
-W tej sesji brak administracyjnego kanału do Rendera pozwalającego wiarygodnie:
+Aktualnie potwierdzono wyłącznie identyfikację właściwego Web Service (`E4.0-D1`). Nadal brak wystarczającego evidence dla:
 
-- aktywować maintenance,
-- zatrzymać działający writer,
-- zablokować deployment/environment changes,
-- odczytać/zmienić prywatne ustawienia Render i potwierdzić je jako operator.
+- `Auto-Deploy = Off`,
+- aktywnego Maintenance Mode / mutation lock,
+- braku aktywnego deploy/restart/rollback,
+- pełnego writer inventory i stanu każdego writera,
+- environment freeze,
+- finalnego read-only rechecku.
 
 Dlatego tych punktów nie wolno oznaczyć jako wykonane na podstawie samej deklaracji.
 
-## 4. Source/cutover SHA
+## 5. Source/cutover SHA
 
 Obecny zweryfikowany kodowy baseline Gate 14A to:
 
@@ -64,7 +91,7 @@ Nie jest to jeszcze finalny cutover package SHA, ponieważ zgodnie z kontraktem 
 
 Finalny cutover SHA musi zostać zamrożony dopiero po tych kontrolowanych zmianach i pełnym CI.
 
-## 5. Twardy HOLD
+## 6. Twardy HOLD
 
 Do czasu udowodnienia pełnego E4.0:
 
@@ -78,13 +105,17 @@ Do czasu udowodnienia pełnego E4.0:
 
 Read-only przegląd repozytorium i przygotowanie dokumentacji pozostają dozwolone.
 
-## 6. Następny wymagany dowód
+## 7. Następny wymagany dowód
+
+Następny operacyjny krok to **E4.0-D2 — Auto-Deploy freeze** dla `gracz-checkers-test`.
 
 E4.0 może zostać oznaczone jako wykonane dopiero po uzyskaniu evidence, że:
 
 - maintenance jest faktycznie aktywne,
 - normalny mutation writer jest zatrzymany/zablokowany,
 - nie ma równoległego deploymentu/writera,
-- operator zna i zamroził właściwy source/cutover anchor.
+- environment jest zamrożony,
+- operator zna i zamroził właściwy source/cutover anchor,
+- finalny read-only recheck nie wykazuje driftu.
 
 Dopiero wtedy przechodzimy do **E4.1 — Fresh Pre-Mutation Evidence**.
