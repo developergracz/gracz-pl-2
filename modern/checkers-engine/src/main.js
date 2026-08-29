@@ -8,6 +8,7 @@ import { MessageAttachmentService } from "./message-attachments.js";
 import { AuthService } from "./auth.js";
 import { MemoryAuthSessionStore, PostgresAuthSessionStore } from "./auth-sessions.js";
 import { loadConfig } from "./config.js";
+import { assertRuntimeSchema } from "./runtime-schema-check.js";
 import { LobbyService } from "./lobby.js";
 import { createPlatformLobbyHttpHandler } from "./platform-lobby-http.js";
 import { GlobalChatService, createGlobalChatHandler } from "./global-chat.js";
@@ -38,6 +39,7 @@ import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
 
 const config=loadConfig();
+if(config.databaseUrl)await assertRuntimeSchema(config.databaseUrl);
 const turnstileEnabled=Boolean(process.env.TURNSTILE_SITE_KEY&&process.env.TURNSTILE_SECRET_KEY);
 const webRoot=fileURLToPath(new URL("../web",import.meta.url));
 const audit=new AuditService(config.databaseUrl||null);await audit.ready;
