@@ -2,7 +2,7 @@
 
 Data: 29.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status bieżący: **E4.0 INCOMPLETE / HOLD — D1 PASS, D2 PASS, D3 PASS**  
+Status bieżący: **E4.0 INCOMPLETE / HOLD — D1 PASS, D2 PASS, D3 PASS, D4 PASS**  
 Powiązany blocker dashboardu: **B-01 — OPEN / E4.0 niezamknięte operacyjnie**
 
 > Ten dokument synchronizuje wykonanie E4.0 z `56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md`. Nie zastępuje `46`, `47`, `49`, `50` ani `51`. Nie wykonuje żadnej zmiany w Renderze, bazie danych ani sekretach. `PASS` może zostać nadany wyłącznie na podstawie rzeczywistego evidence operacyjnego.
@@ -31,8 +31,8 @@ Brak jednego dowodu = `E4.0 INCOMPLETE / HOLD` i B-01 pozostaje otwarty.
 | E4.0-D1 | Właściwy Render Web Service | `PASS` | nazwa usługi, timestamp, identyfikacja środowiska | system/operator owner | jednoznacznie wskazana właściwa usługa | brak pewności, która usługa jest źródłem ruchu/writera | zakończone |
 | E4.0-D2 | Auto-Deploy freeze | `PASS` | presence-only: `Auto-Deploy = Off` | platform/operator owner | Auto-Deploy Off | jakikolwiek inny stan | zakończone — Off potwierdzone po zapisie |
 | E4.0-D3 | Events freeze | `PASS` | Events: brak deploy/restart/rollback/queued deploy | platform/operator owner | brak aktywnej operacji deploymentowej | deploy/restart/rollback/queue aktywne | zakończone — fresh Events czyste |
-| E4.0-D4 | Public mutation lock | `HOLD` | Maintenance Mode / zatwierdzony alternatywny lock + read-only public validation | application/operator owner | publiczne ścieżki mutacji niedostępne | aplikacja nadal przyjmuje mutacje | sprawdzić Maintenance Mode / mutation lock |
-| E4.0-D5 | Writer inventory | `HOLD` | lista wszystkich writerów + status każdego | DB/operations owner | każdy writer STOPPED lub MUTATIONS BLOCKED | jeden aktywny lub niepotwierdzony writer | nie przechodzić dalej |
+| E4.0-D4 | Public mutation lock | `PASS` | Maintenance Mode / zatwierdzony alternatywny lock + read-only public validation | application/operator owner | publiczne ścieżki mutacji niedostępne | aplikacja nadal przyjmuje mutacje | zakończone — Free fallback Suspend + public validation |
+| E4.0-D5 | Writer inventory | `HOLD` | lista wszystkich writerów + status każdego | DB/operations owner | każdy writer STOPPED lub MUTATIONS BLOCKED | jeden aktywny lub niepotwierdzony writer | zinwentaryzować wszystkie writery |
 | E4.0-D6 | Writer activity verification | `HOLD` | Logs/Events bez aktywności mutacyjnej po freeze | DB/operations owner | brak aktywnego DML path | aktywny job/script/shell/writer | HOLD |
 | E4.0-D7 | Environment freeze | `HOLD` | presence-only: `ENVIRONMENT FROZEN — NO CHANGES` | platform/security owner | brak nieautoryzowanych zmian env | zmiana credentiali/secrets/config | nowy baseline + ponowna ocena |
 | E4.0-D8 | GitHub/source freeze | `PARTIAL` | PR #26 state + branch + exact SHA | source/change owner | PR OPEN/DRAFT/NOT MERGED, SHA zgodny | niezrecenzowana zmiana SHA/merge/deploy | HOLD + baseline review |
@@ -93,8 +93,14 @@ Render → Settings → Maintenance Mode, jeżeli ta kontrola jest dostępna dla
 
 Po aktywacji wykonaj wyłącznie read-only walidację publicznego endpointu. Nie testuj poprzez tworzenie danych.
 
-**PASS:** publiczny ruch mutacyjny jest faktycznie odcięty.  
-**HOLD:** normalny publiczny runtime nadal przyjmuje mutacje.
+**Fresh evidence 29.08.2026:**
+- 15:25 CEST — `Maintenance Mode` było niedostępne dla bieżącej instancji Free; Render wyświetlił informację, że funkcja jest tylko dla płatnych instancji,
+- zastosowano zatwierdzony fallback `Suspend Web Service` wyłącznie dla `gracz-checkers-test`,
+- 15:37 CEST — Render potwierdził `gracz-checkers-test has been suspended`,
+- 15:39 CEST — read-only wejście na publiczny adres `gracz-checkers-test.onrender.com` wyświetliło `This service has been suspended by its owner.` zamiast normalnej aplikacji,
+- podczas walidacji nie wykonano logowania, formularza ani żadnej operacji zapisującej.
+
+**Status:** `PASS` — publiczny Web Service nie przyjmuje normalnego ruchu aplikacyjnego; D5/D6 nadal muszą osobno potwierdzić wszystkie inne potencjalne writery i ich brak aktywności.
 
 ## D5 — Writer inventory
 
@@ -231,13 +237,13 @@ Jeśli choć jeden z D1–D10 nie ma pełnego dowodu:
 | D1 właściwy Web Service | `PASS — fresh operational evidence recorded` |
 | D2 Auto-Deploy | `PASS — Off confirmed after Save changes` |
 | D3 Events | `PASS — no active/queued deploy, restart or rollback visible in fresh Events` |
-| D4 mutation lock | `HOLD — operational proof pending` |
+| D4 mutation lock | `PASS — gracz-checkers-test suspended; public address confirms service suspended` |
 | D5 writer inventory | `HOLD — operational proof pending` |
 | D6 writer activity | `HOLD — operational proof pending` |
 | D7 environment freeze | `HOLD — operational proof pending` |
 | D8 GitHub/source freeze | `PARTIAL / current source snapshot confirmed` |
-| D9 final recheck | `BLOCKED BY D4–D8` |
-| D10 execution log completion | `IN PROGRESS — D1/D2/D3 recorded` |
+| D9 final recheck | `BLOCKED BY D5–D8` |
+| D10 execution log completion | `IN PROGRESS — D1/D2/D3/D4 recorded` |
 | B-01 | `OPEN / IN PROGRESS` |
 | E4.0 | `INCOMPLETE / HOLD` |
 | E4.1 | `BLOCKED BY E4.0` |
