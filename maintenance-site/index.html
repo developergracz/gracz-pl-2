@@ -37,7 +37,10 @@
         var(--bg);
     }
     main {
-      width: min(1080px, 100%);
+      width: min(1180px, 100%);
+      min-height: min(620px, calc(100vh - 36px));
+      display: flex;
+      flex-direction: column;
       border: 1px solid var(--line);
       border-radius: 24px;
       padding: clamp(30px, 4vw, 48px);
@@ -119,7 +122,7 @@
       justify-content: space-between;
       gap: 18px;
       flex-wrap: wrap;
-      margin-top: 30px;
+      margin-top: auto;
       padding-top: 20px;
       border-top: 1px solid var(--line);
       color: var(--muted);
@@ -129,14 +132,14 @@
     .footer-brand > span { color: var(--brand-red); }
     @media (max-width: 700px) {
       body { display: block; padding: 12px; }
-      main { border-radius: 20px; padding: 24px 20px; }
+      main { min-height: auto; border-radius: 20px; padding: 24px 20px; }
       .brand { font-size: 34px; }
       .brand span { font-size: 18px; }
       .grid { grid-template-columns: 1fr; }
     }
     @media (min-width: 701px) and (max-height: 760px) {
       body { padding: 10px; }
-      main { padding: 24px 32px; }
+      main { min-height: auto; padding: 24px 32px; }
       h1 { margin-top: 18px; font-size: clamp(2.3rem, 5vw, 3.35rem); }
       .lead { font-size: 1rem; line-height: 1.45; }
       .grid { margin-top: 18px; }
