@@ -2,7 +2,7 @@
 
 Data: 29.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status E4.1: **IN PROGRESS / READ-ONLY ONLY**  
+Status E4.1: **IN PROGRESS / PRODUCTION READ-ONLY / NO-MUTATION**  
 Production V3: **NO-GO**
 
 ## 1. Frozen source baseline
@@ -109,43 +109,144 @@ Collector jest zaprojektowany jako privacy-safe i read-only:
 
 Zakres Gate 13 obejmuje świeży stan danych i aktywności PostgreSQL: persisted game state, turnieje, auth/session/reset/registration/MFA, newsletter, moderation/social oraz `pg_stat_activity`/`pg_locks`. Nie jest to repo-only schema-lint ani analiza nieużywanych tabel/kolumn/indexów.
 
-### 3.2 Ważne ograniczenie wykonawcze
+### 3.2 Fresh execution — metoda i integralność
 
-Kanoniczny E4.1-C wymaga **fresh wykonania collectora przeciwko bazie `gracz_pl_database` po freeze**. Sama analiza pliku SQL w repozytorium nie może udowodnić aktualnego active-state ani aktualnych competing transactions.
+Fresh collector został wykonany po freeze przeciwko `gracz_pl_database` przez `psql 18.6`.
 
-Dlatego:
+Przed wykonaniem:
 
-- repo-only safety preflight: **PASS**,
-- fresh collector execution: **NOT RUN YET**,
-- E4.1-C final status: **IN PROGRESS / NOT YET PASS**.
+- potwierdzono skuteczne połączenie z właściwą bazą,
+- potwierdzono `transaction_read_only = on`,
+- połączenie kontrolne zakończono `ROLLBACK`,
+- lokalny plik collectora `22-GATE-13-ACTIVE-STATE-INVENTORY.sql` zweryfikowano SHA-256: `09C6EF076AF6644C6AFB53624CE715B741C7CD430D70FC95BC218BCD49A9815B`.
 
-Nie wolno zastępować fresh DB capture historycznym Gate 13 wynikiem. Historyczny baseline pozostaje tylko materiałem porównawczym.
+Fresh run:
 
-### 3.3 Kryteria fresh run
+- rozpoczął transakcję read-only,
+- wykonał wyłącznie agregujące `SELECT`,
+- nie wykonał DDL/DCL/DML,
+- nie ujawnił credential values, sekretów ani PII,
+- zakończył `ROLLBACK`.
 
-Fresh run musi potwierdzić co najmniej:
+Raw fresh result został zachowany jako:
 
-- `readOnly = true`,
-- capture timestamp po E4.0,
-- brak nowej aktywnej canonical rozgrywki,
-- brak aktywnych auth/session/reset/registration states sprzecznych z maintenance contract,
-- brak competing transactions/writerów/locks,
-- legacy/quarantine state zgodny z wcześniejszą klasyfikacją albo różnica formalnie wyjaśniona.
+`59-ETAP4-E4.1-C-GATE13-FRESH-ACTIVE-STATE-RESULT-2026-08-29.txt`
 
-Twardy ABORT: nowa canonical active game, aktywny mutation writer, competing transaction albo fresh state niezgodny z freeze.
+SHA-256 oryginalnego lokalnego pliku wynikowego przed normalizacją kodowania do repozytorium:
 
-## 4. Ograniczenie i następny krok
+`05f3d9634646a1a06fa6fece7f35571029320e58c60044ccc0f12392fbff9236`
 
-E4.1-B pozostaje **PASS**. E4.1-C został rozpoczęty i przeszedł repo-only safety preflight, ale **nie może dostać PASS bez fresh read-only capture z PostgreSQL**.
+### 3.3 Fresh result — active state
+
+#### Checkers
+
+- `active_games = 2`
+- `active_with_any_connected_player = 2`
+- `sessions_total = 2`
+- `updated_last_10m = 0`
+- `invalid_json = 0`
+- `unknown_status = 0`
+
+#### Thousand
+
+- `games_total = 29`
+- `in_progress = 29`
+- `updated_last_10m = 0`
+- `unknown_status = 0`
+- `awaiting_next_round_or_redeal = 0`
+- `game_ended = 0`
+
+#### Tournaments
+
+Wszystkie aktywne liczniki = `0`; `tournaments_total = 0`.
+
+#### Auth / identity workflows
+
+- `sessions_active_runtime_rule = 0`
+- `sessions_unrevoked_unexpired = 0`
+- `sessions_idle_or_expired_not_revoked = 1`
+- `mfa_enabled = 0`
+- `mfa_setup_pending = 0`
+- `registration_codes_active = 0`
+- `reset_tokens_active = 0`
+
+#### Newsletter
+
+- `subscribers_total = 5`
+- `subscribed = 3`
+- `pending_confirmation_total = 2`
+- `pending_confirmation_expired = 2`
+- `pending_confirmation_unexpired = 0`
+- `pending_confirmation_delivery_gap = 0`
+- `unknown_status = 0`
+
+#### Moderation / social
+
+- `chat_reports_total_without_resolution_state = 0`
+- `friend_requests_pending = 2`
+- `moderation_appeals_open = 0`
+- `moderation_appeals_unknown_status = 0`
+- `moderation_decisions_total = 6`
+
+#### PostgreSQL runtime
+
+- `other_active_connections = 0`
+- `other_client_connections = 0`
+- `other_idle_in_transaction = 0`
+- `other_transactions_over_30s = 0`
+- `waiting_locks = 0`
+
+### 3.4 Gate 13 stale legacy state classification
+
+`gracz_checkers`: 2 rows remain classified as active, including 2 with connected-player state; no rows updated within the last 10 minutes.
+
+`gracz_thousand_games`: 29 rows remain `in_progress`; no rows updated within the last 10 minutes.
+
+PostgreSQL runtime evidence shows zero other active/client connections, zero idle-in-transaction sessions, zero transactions over 30 seconds and zero waiting locks.
+
+**Classification:** persisted stale legacy application state; **not evidence of current writer activity**.
+
+**Handling:** preserve unchanged during E4.1; no cleanup, closure, merge, delete or status mutation. Reconcile explicitly before cutover.
+
+Nie używać sformułowania „brak aktywnej rozgrywki”. Fresh evidence potwierdza brak dowodu bieżącej aktywności runtime/writera, ale istnieją persisted application rows oznaczone jako `active` / `in_progress`.
+
+### 3.5 Decision
+
+**E4.1-C = PASS**
+
+Powody:
+
+- fresh Gate 13 wykonano po freeze,
+- collector działał w transakcji read-only i zakończył `ROLLBACK`,
+- brak dowodu aktywnego mutation writera,
+- brak competing transaction,
+- brak `idle in transaction`,
+- brak transakcji >30 s,
+- brak waiting locks,
+- brak świeżej aktualizacji persisted game state w ostatnich 10 minutach,
+- stale Checkers/Thousand state zostało jawnie sklasyfikowane jako persisted stale legacy state do późniejszej reconciliacji, bez mutacji w E4.1.
+
+## 4. Zakres read-only i następny krok
+
+E4.1-B = **PASS**.  
+E4.1-C = **PASS**.  
+E4.1 jako całość pozostaje **IN PROGRESS**.  
+Production V3 pozostaje **NO-GO**.
+
+**Production remains read-only / NO-MUTATION; restore validation may mutate only an isolated non-production restore target.**
 
 Do czasu pełnego E4.1 COMPLETE nadal zabronione są:
 
 - E4.2,
 - migrator apply,
 - provisioning ról,
-- DDL/DCL/DML,
+- DDL/DCL/DML na produkcji,
 - zmiana `DATABASE_URL`,
 - zmiana sekretów,
 - rekey,
 - merge/deploy PR #26,
 - wznowienie `gracz-checkers-test`.
+
+Następny kanoniczny punkt checklisty:
+
+**E4.1-D — Fresh Gate 14 AS-IS security / DB permissions collector**, nadal wyłącznie read-only dla produkcji.
