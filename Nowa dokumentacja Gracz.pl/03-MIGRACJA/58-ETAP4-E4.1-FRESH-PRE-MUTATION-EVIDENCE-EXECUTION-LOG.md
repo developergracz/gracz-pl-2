@@ -89,13 +89,54 @@ Powody:
 - plan nie pobiera produkcyjnego credential i nie łączy się z PostgreSQL,
 - nie wykonano żadnego DDL/DCL/DML.
 
-## 3. Ograniczenie i następny krok
+## 3. E4.1-C — Fresh Gate 13 active-state collector
 
-Ten PASS zamyka wyłącznie **E4.1-B**. Nie oznacza zakończenia całego E4.1 i nie autoryzuje żadnej mutacji.
+### 3.1 Repo-only preflight
 
-Następny obowiązkowy punkt checklisty:
+Zweryfikowano kanoniczną checklistę E4.1 oraz collector:
 
-**E4.1-C — Fresh Gate 13 active-state collector (read-only).**
+- `48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md`,
+- `22-GATE-13-ACTIVE-STATE-INVENTORY.sql`,
+- historyczny wynik odniesienia `23-GATE-13-ACTIVE-STATE-INVENTORY-RESULTS.md`.
+
+Collector jest zaprojektowany jako privacy-safe i read-only:
+
+- rozpoczyna `BEGIN TRANSACTION READ ONLY`,
+- wykonuje wyłącznie agregujące odczyty potwierdzonych tabel AS-IS i widoków/statystyk PostgreSQL,
+- nie wypisuje user_id, e-maili, tokenów, hashy, treści wiadomości ani sekretów,
+- kończy `ROLLBACK`,
+- nie zawiera operacji DDL/DCL/DML.
+
+Zakres Gate 13 obejmuje świeży stan danych i aktywności PostgreSQL: persisted game state, turnieje, auth/session/reset/registration/MFA, newsletter, moderation/social oraz `pg_stat_activity`/`pg_locks`. Nie jest to repo-only schema-lint ani analiza nieużywanych tabel/kolumn/indexów.
+
+### 3.2 Ważne ograniczenie wykonawcze
+
+Kanoniczny E4.1-C wymaga **fresh wykonania collectora przeciwko bazie `gracz_pl_database` po freeze**. Sama analiza pliku SQL w repozytorium nie może udowodnić aktualnego active-state ani aktualnych competing transactions.
+
+Dlatego:
+
+- repo-only safety preflight: **PASS**,
+- fresh collector execution: **NOT RUN YET**,
+- E4.1-C final status: **IN PROGRESS / NOT YET PASS**.
+
+Nie wolno zastępować fresh DB capture historycznym Gate 13 wynikiem. Historyczny baseline pozostaje tylko materiałem porównawczym.
+
+### 3.3 Kryteria fresh run
+
+Fresh run musi potwierdzić co najmniej:
+
+- `readOnly = true`,
+- capture timestamp po E4.0,
+- brak nowej aktywnej canonical rozgrywki,
+- brak aktywnych auth/session/reset/registration states sprzecznych z maintenance contract,
+- brak competing transactions/writerów/locks,
+- legacy/quarantine state zgodny z wcześniejszą klasyfikacją albo różnica formalnie wyjaśniona.
+
+Twardy ABORT: nowa canonical active game, aktywny mutation writer, competing transaction albo fresh state niezgodny z freeze.
+
+## 4. Ograniczenie i następny krok
+
+E4.1-B pozostaje **PASS**. E4.1-C został rozpoczęty i przeszedł repo-only safety preflight, ale **nie może dostać PASS bez fresh read-only capture z PostgreSQL**.
 
 Do czasu pełnego E4.1 COMPLETE nadal zabronione są:
 
