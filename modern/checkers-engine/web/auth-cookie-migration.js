@@ -108,12 +108,12 @@
     const legend = document.createElement("legend"); legend.textContent = "Gdzie chcesz otrzymać kod aktywacyjny?"; legend.style.cssText = "padding:0 6px;font-weight:700";
     const emailLabel = document.createElement("label"); emailLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:6px 0;font-weight:500";
     const emailRadio = document.createElement("input"); emailRadio.type = "radio"; emailRadio.name = "verificationChannel"; emailRadio.value = "email"; emailRadio.checked = true; emailLabel.append(emailRadio, document.createTextNode("Kod na adres e-mail"));
-    const smsLabel = document.createElement("label"); smsLabel.style.cssText = emailLabel.style.cssText;
+    let smsEnabled = false; const smsLabel = document.createElement("label"); smsLabel.hidden = true; smsLabel.style.cssText = emailLabel.style.cssText;
     const smsRadio = document.createElement("input"); smsRadio.type = "radio"; smsRadio.name = "verificationChannel"; smsRadio.value = "sms"; smsLabel.append(smsRadio, document.createTextNode("Kod SMS na numer telefonu"));
     const channelHelp = document.createElement("small"); channelHelp.className = "field-help"; channelHelp.textContent = "Ten sam wybrany kanał będzie mógł służyć później do odzyskiwania hasła.";
     channelField.append(legend, emailLabel, smsLabel, channelHelp); emailField.after(phoneField, channelField);
-    const sync = () => { const registering = registerTab.classList.contains("active"); phoneField.hidden = !registering; channelField.hidden = !registering; phoneInput.required = registering && smsRadio.checked; };
-    emailRadio.addEventListener("change", sync); smsRadio.addEventListener("change", sync); new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] }); sync();
+    const sync = () => { const registering = registerTab.classList.contains("active"); if (!smsEnabled) { emailRadio.checked = true; smsRadio.checked = false; } smsLabel.hidden = !smsEnabled; phoneField.hidden = !registering || !smsEnabled || !smsRadio.checked; channelField.hidden = !registering; phoneInput.required = registering && smsEnabled && smsRadio.checked; };
+    emailRadio.addEventListener("change", sync); smsRadio.addEventListener("change", sync); new MutationObserver(sync).observe(registerTab, { attributes: true, attributeFilter: ["class"] }); sync(); fetch("/auth/sms-config", { headers:{ accept:"application/json" }, cache:"no-store" }).then(response => response.ok ? response.json() : { enabled:false }).then(result => { smsEnabled = result.enabled === true; sync(); }).catch(() => { smsEnabled = false; sync(); });
   }
 
   function installRegistrationDraftPreservation() {
@@ -178,29 +178,128 @@
   function installTermsCheckboxOpen() {
     const terms = document.querySelector("#terms");
     const termsLink = document.querySelector("#terms-link");
-    const registerTab = document.querySelector('[data-mode="register"]');
-    if (!terms || !termsLink || !registerTab) return;
+    if (!terms || !termsLink) return;
 
-    if (!termsAcceptedForRestoredDraft) terms.checked = false;
+    // Użytkownik akceptuje regulamin bezpośrednio w formularzu.
+    // Sam link pozostaje dostępny w nowej karcie i nie blokuje checkboxa.
+    terms.disabled = false;
+    terms.removeAttribute("aria-disabled");
+    termsLink.target = "_blank";
+    termsLink.rel = "noopener";
+  }
 
-    const openTerms = (event) => {
-      if (!registerTab.classList.contains("active")) return;
-      if (termsAcceptedForRestoredDraft && terms.checked) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      terms.checked = false;
-      sessionStorage.setItem(TERMS_PENDING_KEY, localStorage.getItem("gracz-terms-accepted-at") || "");
-      termsLink.target = "_self";
-      termsLink.removeAttribute("rel");
-      termsLink.click();
+  function preventDuplicateRecoveryEmailAutofill() {
+    const form = document.querySelector("#auth-form");
+    const email = form?.elements?.email;
+    const recovery = form?.elements?.recoveryEmail;
+    if (!email || !recovery) return;
+    recovery.setAttribute("autocomplete", "off");
+    const clearCopiedAddress = () => {
+      const primary = String(email.value || "").trim().toLowerCase();
+      const secondary = String(recovery.value || "").trim().toLowerCase();
+      if (primary && secondary === primary && document.activeElement !== recovery) recovery.value = "";
     };
+    email.addEventListener("input", () => setTimeout(clearCopiedAddress, 0));
+    recovery.addEventListener("input", () => setTimeout(clearCopiedAddress, 0));
+    for (const delay of [0, 150, 600]) setTimeout(clearCopiedAddress, delay);
+  }
 
-    terms.addEventListener("click", openTerms, true);
-
-    new MutationObserver(() => {
-      if (!registerTab.classList.contains("active")) return;
-      if (!termsAcceptedForRestoredDraft) terms.checked = false;
-    }).observe(registerTab, { attributes: true, attributeFilter: ["class"] });
+  function installPasswordRecovery() {
+    const trigger = document.querySelector("#forgot-password");
+    const loginInput = document.querySelector('#auth-form [name="userId"]');
+    const pendingKey = "gracz-password-recovery-pending";
+    if (!trigger || !loginInput) return;
+    trigger.addEventListener("click", () => {
+      if (document.querySelector("#password-recovery-overlay")) return;
+      const overlay = document.createElement("div"); overlay.id = "password-recovery-overlay"; overlay.style.cssText = "position:fixed;inset:0;z-index:22000;display:grid;place-items:center;padding:24px;background:rgba(2,7,11,.92);backdrop-filter:blur(9px)";
+      const card = document.createElement("section"); card.style.cssText = "position:relative;width:min(520px,94vw);max-height:calc(100vh - 48px);overflow:auto;padding:32px;border:1px solid #304d68;border-radius:16px;background:linear-gradient(180deg,#101b24,#0a1219);box-shadow:0 30px 90px #000c;color:#eef5f9";
+      const close = document.createElement("button"); close.type = "button"; close.textContent = "×"; close.setAttribute("aria-label", "Zamknij"); close.style.cssText = "position:absolute;right:15px;top:12px;border:0;background:transparent;color:#a9bac6;font-size:30px;cursor:pointer";
+      const title = document.createElement("h2"); title.textContent = "Odzyskaj dostęp do konta"; title.style.cssText = "margin:0 38px 8px 0";
+      const intro = document.createElement("p"); intro.textContent = "Podaj adres e-mail przypisany do konta. Wyślemy na niego 6-cyfrowy kod ważny przez 10 minut."; intro.style.cssText = "color:#9eb0bc;line-height:1.55;font-size:13px";
+      const stepOne = document.createElement("div"); stepOne.style.cssText = "display:grid;gap:12px";
+      const email = document.createElement("input"); email.type = "email"; email.placeholder = "Adres e-mail przypisany do konta"; email.autocomplete = "email"; email.required = true;
+      const requestButton = document.createElement("button"); requestButton.type = "button"; requestButton.textContent = "Wyślij kod odzyskiwania";
+      const stepTwo = document.createElement("div"); stepTwo.hidden = true; stepTwo.style.cssText = "display:grid;gap:12px";
+      const code = document.createElement("input"); code.type = "text"; code.inputMode = "numeric"; code.maxLength = 6; code.placeholder = "6-cyfrowy kod"; code.autocomplete = "one-time-code"; code.addEventListener("input", () => { code.value = code.value.replace(/\D/g, "").slice(0, 6); });
+      const password = document.createElement("input"); password.type = "password"; password.minLength = 14; password.maxLength = 128; password.placeholder = "Nowe hasło — minimum 14 znaków"; password.autocomplete = "new-password";
+      const confirm = document.createElement("input"); confirm.type = "password"; confirm.minLength = 14; confirm.maxLength = 128; confirm.placeholder = "Powtórz nowe hasło"; confirm.autocomplete = "new-password";
+      const resetButton = document.createElement("button"); resetButton.type = "button"; resetButton.textContent = "Ustaw nowe hasło";
+      const message = document.createElement("p"); message.setAttribute("role", "alert"); message.style.cssText = "min-height:20px;margin:4px 0 0;color:#ff8b91;font-size:12px;line-height:1.45";
+      for (const input of [email,code,password,confirm]) input.style.cssText = "box-sizing:border-box;width:100%;padding:12px 13px;border:1px solid #3b5060;border-radius:8px;background:#071017;color:#fff;font:inherit";
+      for (const button of [requestButton,resetButton]) button.style.cssText = "width:100%;padding:13px;border:0;border-radius:8px;background:linear-gradient(180deg,#3f7aee,#2854bc);color:#fff;font-weight:900;cursor:pointer";
+      const passwordField = createPasswordVisibilityField(password);
+      const confirmField = createPasswordVisibilityField(confirm);
+      function createPasswordVisibilityField(input) {
+        const field = document.createElement("div"); field.style.cssText = "position:relative;width:100%";
+        input.style.paddingRight = "72px";
+        const toggle = document.createElement("button"); toggle.type = "button"; toggle.textContent = "Pokaż"; toggle.setAttribute("aria-label", "Pokaż hasło"); toggle.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:6px;border:0;background:transparent;color:#79aaff;font-size:12px;font-weight:800;cursor:pointer";
+        toggle.addEventListener("click", () => {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          toggle.textContent = show ? "Ukryj" : "Pokaż";
+          toggle.setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
+          input.focus();
+        });
+        field.append(input, toggle);
+        return field;
+      }
+      const setBusy = (button, busy, text) => { button.disabled = busy; if (text) button.textContent = text; };
+      requestButton.addEventListener("click", async () => {
+        const address = email.value.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(address)) { message.textContent = "Wpisz prawidłowy adres e-mail."; email.focus(); return; }
+        setBusy(requestButton, true, "Wysyłanie kodu…"); message.textContent = "";
+        try {
+          const response = await fetch("/auth/request-password-reset", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:address, verificationChannel:"email" }) });
+          const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się wysłać kodu.");
+          sessionStorage.setItem(pendingKey, JSON.stringify({ email: address, stage: "code" }));
+          stepOne.hidden = true; stepTwo.hidden = false; message.style.color = "#63dda0"; message.textContent = "Jeżeli adres jest przypisany do Twojego konta, kod został wysłany e-mailem."; code.focus();
+        } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(requestButton, false, "Wyślij kod odzyskiwania"); }
+      });
+      email.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        if (!requestButton.disabled) requestButton.click();
+      });
+      let resetCompleted = false;
+      let recoveredUserId = "";
+      resetButton.addEventListener("click", async () => {
+        if (resetCompleted) { overlay.remove(); if (recoveredUserId) loginInput.value = recoveredUserId; document.querySelector("#auth-password")?.focus(); return; }
+        const newPassword = password.value;
+        if (!/^\d{6}$/.test(code.value)) { message.style.color = "#ff8b91"; message.textContent = "Wpisz dokładnie 6 cyfr kodu."; code.focus(); return; }
+        if (newPassword.length < 14 || !/[A-ZĄĆĘŁŃÓŚŹŻ]/.test(newPassword) || !/[a-ząćęłńóśźż]/.test(newPassword) || !/\d/.test(newPassword)) { message.style.color = "#ff8b91"; message.textContent = "Nowe hasło musi mieć minimum 14 znaków, wielką i małą literę oraz cyfrę."; password.focus(); return; }
+        if (newPassword !== confirm.value) { message.style.color = "#ff8b91"; message.textContent = "Wpisane hasła nie są identyczne."; confirm.focus(); return; }
+        setBusy(resetButton, true, "Zmiana hasła…"); message.textContent = "";
+        try {
+          const response = await fetch("/auth/reset-password", { method:"POST", headers:{"content-type":"application/json","accept":"application/json"}, body:JSON.stringify({ email:email.value.trim().toLowerCase(), verificationChannel:"email", token:code.value, newPassword }) });
+          const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error?.message || "Nie udało się zmienić hasła.");
+          recoveredUserId = String(result.userId || "");
+          sessionStorage.removeItem(pendingKey);
+          message.style.color = "#63dda0"; message.textContent = result.message || "Hasło zostało zmienione."; resetCompleted = true; resetButton.textContent = "Wróć do logowania"; resetButton.disabled = false;
+        } catch (error) { message.style.color = "#ff8b91"; message.textContent = error.message; setBusy(resetButton, false, "Ustaw nowe hasło"); }
+      });
+      for (const input of [code,password,confirm]) {
+        input.addEventListener("keydown", event => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          if (!resetButton.disabled) resetButton.click();
+        });
+      }
+      close.addEventListener("click", () => { sessionStorage.removeItem(pendingKey); overlay.remove(); });
+      stepOne.append(email,requestButton); stepTwo.append(code,passwordField,confirmField,resetButton); card.append(close,title,intro,stepOne,stepTwo,message); overlay.append(card); document.body.append(overlay);
+      let pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem(pendingKey) || "null"); } catch { sessionStorage.removeItem(pendingKey); }
+      if (pending?.stage === "code" && typeof pending.email === "string") {
+        email.value = pending.email;
+        stepOne.hidden = true;
+        stepTwo.hidden = false;
+        message.style.color = "#63dda0";
+        message.textContent = "Wpisz otrzymany 6-cyfrowy kod i ustaw nowe hasło.";
+        code.focus();
+      } else {
+        email.focus();
+      }
+    });
+    if (sessionStorage.getItem(pendingKey)) trigger.click();
   }
 
   function installActivationDialog() {
@@ -215,7 +314,7 @@
       const card = document.createElement("section"); card.style.cssText = "width:min(470px,94vw);padding:32px;text-align:center;border:1px solid #28513d;border-radius:16px;background:#0d171d;color:#edf6f1;box-shadow:0 28px 80px #000b";
       const title = document.createElement("h2"); title.textContent = "Aktywuj nowe konto";
       const text = document.createElement("p"); text.style.cssText = "color:#b9c8c1;line-height:1.55"; text.textContent = "Wysłaliśmy 6-cyfrowy kod na podany adres e-mail. Wpisz go poniżej. Kod jest ważny przez 10 minut.";
-      const input = document.createElement("input"); input.type = "text"; input.inputMode = "numeric"; input.autocomplete = "one-time-code"; input.maxLength = 6; input.placeholder = "000000"; input.style.cssText = "width:210px;max-width:100%;margin:12px auto;padding:14px;text-align:center;font-size:28px;letter-spacing:8px;border:1px solid #35534a;border-radius:9px;background:#081015;color:#fff";
+      const input = document.createElement("input"); input.type = "text"; input.inputMode = "numeric"; input.autocomplete = "one-time-code"; input.maxLength = 6; input.minLength = 6; input.size = 6; input.pattern = "[0-9]{6}"; input.placeholder = "000000"; input.setAttribute("aria-label", "6-cyfrowy kod aktywacyjny"); input.style.cssText = "box-sizing:border-box;width:260px;max-width:100%;margin:12px auto;padding:14px 18px;text-align:center;font-size:30px;line-height:1.2;letter-spacing:5px;border:1px solid #35534a;border-radius:9px;background:#081015;color:#fff;font-variant-numeric:tabular-nums"; input.addEventListener("input", () => { input.value = input.value.replace(/\\D/g, "").slice(0, 6); });
       const message = document.createElement("p"); message.style.cssText = "min-height:20px;color:#ff7a7a;font-size:13px";
       const button = document.createElement("button"); button.type = "button"; button.textContent = "Aktywuj konto"; button.style.cssText = "padding:12px 24px;border:0;border-radius:8px;background:#16c96b;color:#fff;font-weight:900;cursor:pointer";
       const verify = async () => {
@@ -234,6 +333,14 @@
     observer.observe(error, { childList: true, characterData: true, subtree: true });
   }
 
+  function openRequestedAuthMode() {
+    if (location.hash !== "#register") return;
+    const registerTab = document.querySelector('[data-mode="register"]');
+    if (!registerTab) return;
+    registerTab.click();
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
+  }
+
   window.graczAuthReady = ensureSession();
   window.graczGetSession = () => readSession();
 
@@ -244,7 +351,10 @@
     installRegistrationVerificationFields();
     installRegistrationDraftPreservation();
     installTermsCheckboxOpen();
+    preventDuplicateRecoveryEmailAutofill();
+    installPasswordRecovery();
     installActivationDialog();
+    openRequestedAuthMode();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true }); else install();
 })();

@@ -27,7 +27,7 @@ async function register(page, { userId, displayName, email, password }) {
   await page.getByRole("tab", { name: "Nowe konto" }).click();
   await page.locator('[name="userId"]').fill(userId);
   await page.locator('[name="displayName"]').fill(displayName);
-  await page.locator('[name="email"]').fill(email);
+  await page.locator('#auth-form [name="email"]').fill(email);
   await page.locator('[name="password"]').fill(password);
   await page.locator('[name="passwordConfirm"]').fill(password);
 
