@@ -20,8 +20,8 @@ export class RbacService {
     this.memory = new Map(); this.audit = audit; this.ready = this.pool ? this.initialize() : Promise.resolve();
   }
   async initialize() {
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_roles(user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE, role VARCHAR(24) NOT NULL DEFAULT 'player' CHECK(role IN ('player','moderator','administrator','owner')), mfa_required BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_role_history(change_id BIGSERIAL PRIMARY KEY,user_id VARCHAR(32) NOT NULL,old_role VARCHAR(24),new_role VARCHAR(24) NOT NULL,changed_by VARCHAR(32) NOT NULL,changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+    await this.pool.query(`SELECT user_id,role,mfa_required,updated_at FROM gracz_roles LIMIT 0`);
+    await this.pool.query(`SELECT change_id,user_id,old_role,new_role,changed_by,changed_at FROM gracz_role_history LIMIT 0`);
     const bootstrap = String(process.env.GRACZ_OWNER_USER_ID || "").trim().toLowerCase();
     if (bootstrap && /^[a-z0-9._-]{3,32}$/.test(bootstrap)) {
       const result = await this.pool.query(`INSERT INTO gracz_roles(user_id,role,mfa_required,updated_at)

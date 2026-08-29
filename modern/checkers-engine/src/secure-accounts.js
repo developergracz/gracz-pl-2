@@ -22,31 +22,15 @@ export class SecureAccountService {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany.");
     this.base = baseService;
     this.pool = new Pool({ connectionString, ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 3 });
-    this.ready = this.#initialize();
+    this.ready = this.#initializeRuntime();
   }
 
-  async #initialize() {
+  async #initializeRuntime() {
     if (this.base.ready) await this.base.ready;
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS password_hash_version SMALLINT NOT NULL DEFAULT 1`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS phone VARCHAR(24)`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS verification_channel VARCHAR(10) NOT NULL DEFAULT 'email'`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS contact_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_registration_codes (
-      user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-      code_hash BYTEA NOT NULL,
-      expires_at TIMESTAMPTZ NOT NULL,
-      attempts SMALLINT NOT NULL DEFAULT 0,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
+    await this.pool.query(`SELECT user_id,password_hash_version,phone,verification_channel,contact_verified FROM gracz_accounts LIMIT 0`);
+    await this.pool.query(`SELECT user_id,code_hash,expires_at,attempts,created_at FROM gracz_registration_codes LIMIT 0`);
+    await this.pool.query(`SELECT token_hash,user_id,expires_at,used_at,created_at FROM gracz_password_reset_tokens LIMIT 0`);
     await this.pool.query(`UPDATE gracz_accounts SET contact_verified=TRUE WHERE contact_verified=FALSE AND NOT EXISTS (SELECT 1 FROM gracz_registration_codes c WHERE c.user_id=gracz_accounts.user_id)`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_password_reset_tokens (
-      token_hash BYTEA PRIMARY KEY,
-      user_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-      expires_at TIMESTAMPTZ NOT NULL,
-      used_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_password_reset_user_idx ON gracz_password_reset_tokens(user_id, created_at DESC)`);
   }
 
   async checkAvailability({ userId, displayName } = {}) {

@@ -21,22 +21,15 @@ export class PostgresSessionStore {
       connectionTimeoutMillis: 10_000,
     });
 
-    this.ready = this.#initialize();
+    this.ready = this.#verifySchema();
   }
 
-  async #initialize() {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_game_sessions (
-        game_id VARCHAR(128) PRIMARY KEY,
-        state TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    await this.pool.query(`
-      CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
-      ON gracz_game_sessions(updated_at DESC)
-    `);
+  async #verifySchema() {
+    await this.pool.query(
+      `SELECT game_id, state, created_at, updated_at
+       FROM gracz_game_sessions
+       LIMIT 0`,
+    );
   }
 
   async create(session) {
