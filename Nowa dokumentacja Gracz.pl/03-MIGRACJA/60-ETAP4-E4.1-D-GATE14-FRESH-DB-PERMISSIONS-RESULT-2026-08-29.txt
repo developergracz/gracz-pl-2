@@ -1,0 +1,78 @@
+    current_db_role     
+------------------------
+ gracz_pl_database_user
+(1 wiersz)
+
+BEGIN
+   section    |              metric               | value 
+--------------+-----------------------------------+-------
+ A_CONNECTION | current_connection_ssl            |     1
+ A_CONNECTION | password_encryption_scram_sha_256 |     0
+ A_CONNECTION | row_security_on                   |     1
+ A_CONNECTION | server_ssl_enabled                |     1
+ A_CONNECTION | transaction_read_only             |     1
+(5 wierszy)
+
+      section      |         metric          | value 
+-------------------+-------------------------+-------
+ B_ROLE_ATTRIBUTES | direct_role_memberships |     0
+ B_ROLE_ATTRIBUTES | rolbypassrls            |     0
+ B_ROLE_ATTRIBUTES | rolcanlogin             |     1
+ B_ROLE_ATTRIBUTES | rolcreatedb             |     1
+ B_ROLE_ATTRIBUTES | rolcreaterole           |     1
+ B_ROLE_ATTRIBUTES | rolreplication          |     0
+ B_ROLE_ATTRIBUTES | rolsuper                |     0
+(7 wierszy)
+
+           section            |         metric         | value 
+------------------------------+------------------------+-------
+ C_DATABASE_SCHEMA_PRIVILEGES | database_connect       |     1
+ C_DATABASE_SCHEMA_PRIVILEGES | database_create        |     1
+ C_DATABASE_SCHEMA_PRIVILEGES | database_owner_current |     1
+ C_DATABASE_SCHEMA_PRIVILEGES | database_temp          |     1
+ C_DATABASE_SCHEMA_PRIVILEGES | public_schema_create   |     1
+ C_DATABASE_SCHEMA_PRIVILEGES | public_schema_usage    |     1
+(6 wierszy)
+
+      section       |         metric          | value 
+--------------------+-------------------------+-------
+ D_TABLE_PRIVILEGES | public_tables_total     |    28
+ D_TABLE_PRIVILEGES | tables_delete           |    28
+ D_TABLE_PRIVILEGES | tables_insert           |    28
+ D_TABLE_PRIVILEGES | tables_owned_by_current |    28
+ D_TABLE_PRIVILEGES | tables_references       |    28
+ D_TABLE_PRIVILEGES | tables_select           |    28
+ D_TABLE_PRIVILEGES | tables_trigger          |    28
+ D_TABLE_PRIVILEGES | tables_truncate         |    28
+ D_TABLE_PRIVILEGES | tables_update           |    28
+(9 wierszy)
+
+        section        |           metric           | value 
+-----------------------+----------------------------+-------
+ E_SEQUENCE_PRIVILEGES | public_sequences_total     |     8
+ E_SEQUENCE_PRIVILEGES | sequences_owned_by_current |     8
+ E_SEQUENCE_PRIVILEGES | sequences_select           |     8
+ E_SEQUENCE_PRIVILEGES | sequences_update           |     8
+ E_SEQUENCE_PRIVILEGES | sequences_usage            |     8
+(5 wierszy)
+
+     section     |           metric            | value 
+-----------------+-----------------------------+-------
+ F_PUBLIC_GRANTS | public_schema_create_grants |     0
+ F_PUBLIC_GRANTS | public_table_select_grants  |     0
+ F_PUBLIC_GRANTS | public_table_write_grants   |     0
+(3 wiersze)
+
+ section |       metric       | value 
+---------+--------------------+-------
+ G_RLS   | rls_enabled_tables |     0
+ G_RLS   | rls_forced_tables  |     0
+(2 wiersze)
+
+    section    |              metric              | value 
+---------------+----------------------------------+-------
+ H_DEFAULT_ACL | default_acl_public_write_entries |     0
+ H_DEFAULT_ACL | default_acl_rows_current_owner   |     0
+(2 wiersze)
+
+ROLLBACK
