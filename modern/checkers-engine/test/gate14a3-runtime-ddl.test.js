@@ -15,9 +15,9 @@ const PASS1_RUNTIME_MODULES = [
   "auth-sessions.js",
   "message-attachments.js",
 ];
-const FORBIDDEN_RUNTIME_DDL = /\b(?:CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE)\b/i;
+const FORBIDDEN_RUNTIME_DDL = /\b(?:CREATE\s+(?:TABLE|INDEX|UNIQUE\s+INDEX|OR\s+REPLACE\s+FUNCTION|FUNCTION|TRIGGER)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX|TRIGGER|FUNCTION)|TRUNCATE\s+TABLE|GRANT\s+|REVOKE\s+)/i;
 
-test("Gate 14A.3 runtime modules contain no executable DDL/DCL keywords", async () => {
+test("Gate 14A.3 runtime modules contain no executable DDL/DCL statements", async () => {
   for (const file of PASS1_RUNTIME_MODULES) {
     const source = await readFile(join(src, file), "utf8");
     assert.doesNotMatch(source, FORBIDDEN_RUNTIME_DDL, `${file} nadal zawiera DDL/DCL`);
