@@ -37,7 +37,7 @@
         var(--bg);
     }
     main {
-      width: min(940px, 100%);
+      width: min(1000px, 100%);
       min-height: min(680px, calc(100vh - 36px));
       display: flex;
       flex-direction: column;
@@ -139,7 +139,7 @@
     }
     @media (min-width: 701px) and (max-height: 760px) {
       body { padding: 10px; }
-      main { min-height: auto; padding: 24px 32px; }
+      main { min-height: min(480px, calc(100vh - 20px)); padding: 26px 34px; }
       h1 { margin-top: 18px; font-size: clamp(2.3rem, 5vw, 3.35rem); }
       .lead { font-size: 1rem; line-height: 1.45; }
       .grid { margin-top: 18px; }
