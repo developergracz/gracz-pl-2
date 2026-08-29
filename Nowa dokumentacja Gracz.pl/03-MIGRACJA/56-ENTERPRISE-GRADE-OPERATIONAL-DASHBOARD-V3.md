@@ -26,7 +26,7 @@ Status nadrzędny: **LEVEL A ACHIEVED / LEVEL B NOT YET ACHIEVED / LEVEL C NOT Y
 
 | Krok | Status | Evidence / stan | Następna akcja |
 |---|---|---|---|
-| E4.0 Freeze / Maintenance | `INCOMPLETE / HOLD` | checklisty, execution log, closure plan i real-time guide istnieją; brak operacyjnego freeze Render | wykonać i udowodnić freeze Render |
+| E4.0 Freeze / Maintenance | `INCOMPLETE / HOLD — IN PROGRESS` | D1 właściwy Web Service = PASS; D2 Auto-Deploy = PASS (`Off` potwierdzone po zapisie); D3–D10 nadal niekompletne | wykonać D3 Events freeze |
 | E4.1 Fresh Pre-Mutation Evidence | `BLOCKED BY E4.0` | checklista gotowa | uruchomić dopiero po E4.0 COMPLETE |
 | E4.2 Strict-ACL probes removal | `BLOCKED BY E4.0` | zakres 4 probes zdefiniowany | po E4.1 |
 | E4.3 Keyring v1/v2 | `BLOCKED BY E4.0` | design Gate 14C gotowy | implementacja po E4.2 |
@@ -56,7 +56,7 @@ Status dashboardu: `PASS — SOURCE BASELINE UNCHANGED`, ale nie oznacza to zgod
 
 | # | Obszar | Status dziś | Istniejące evidence | Brakujące evidence / blocker | Owner | Next action |
 |---|---|---|---|---|---|---|
-| 1 | Controlled Change Management | `PARTIAL / HOLD` | Gate 15 contract, E4.0 checklist/log/plans, exact GitHub SHA | operacyjny Render freeze, deploy history podczas cutover, final drift review | system/operator owner | zamknąć E4.0 |
+| 1 | Controlled Change Management | `PARTIAL / HOLD` | Gate 15 contract, E4.0 checklist/log/plans, exact GitHub SHA, D1 service evidence, D2 Auto-Deploy Off | D3–D10: Events freeze, mutation lock, writer freeze, env freeze, final drift review | system/operator owner | kontynuować E4.0 od D3 |
 | 2 | Database Migration Safety | `PARTIAL / HOLD` | runtime DDL separation 79/79 code-level, migrator plan/ledger design, CI | fresh `--plan`, backup/restore, production apply/verify, exact target ledger | DB/migration owner | E4.1 → E4.5 |
 | 3 | Least-Privilege Database Security | `BLOCKER` | Gate 14B design, DML matrix, verifier design | aktualny runtime/DB principal ma historycznie zbyt szerokie uprawnienia; nowe roles/ACL nie applied | DB/security owner | E4.4 → E4.6 |
 | 4 | Cryptographic Separation and Versioning | `PARTIAL / HOLD` | Gate 11 decryptability, Gate 14C design, migration 015 proposal, rekey runbook | central keyring v1/v2 nie applied, v2 roots nie provisioned, rekey nie wykonany | security/crypto owner | E4.3 → E4.7 |
@@ -75,6 +75,14 @@ Status dashboardu: `PASS — SOURCE BASELINE UNCHANGED`, ale nie oznacza to zgod
 
 ### B-01 — E4.0 niezamknięte operacyjnie
 
+Status bieżący:
+
+`OPEN / IN PROGRESS — D1 PASS, D2 PASS`
+
+Fresh evidence:
+- D1: właściwy Web Service `gracz-checkers-test` potwierdzony,
+- D2: `Auto-Deploy = Off` potwierdzone po `Save changes` 29.08.2026 15:04 CEST.
+
 Skutek:
 - Level B nieosiągalny,
 - E4.1–E4.10 zablokowane,
@@ -88,6 +96,8 @@ Warunek usunięcia:
 - environment frozen,
 - GitHub/source freeze potwierdzony,
 - final read-only recheck PASS.
+
+Najbliższa brakująca kontrola: `E4.0-D3 — Events freeze`.
 
 ### B-02 — Least-privilege DB controls nie applied
 
@@ -183,15 +193,9 @@ Wymagane jednocześnie:
 
 Jedyną dopuszczalną akcją prowadzącą projekt do przodu jest obecnie:
 
-`P0 / E4.0 — OPERATIONAL FREEZE RENDER`
+`P0 / E4.0-D3 — EVENTS FREEZE`
 
-Po jej wykonaniu i udokumentowaniu:
-
-`E4.0 = COMPLETE`
-
-następnie:
-
-`E4.1 = READY`
+Po D3 nadal kontynuujemy D4–D10. E4.0 można zamknąć dopiero po komplecie operational evidence.
 
 ## 10. Current formal decision
 
@@ -201,7 +205,8 @@ Na dzień 29.08.2026:
 - `LEVEL B = NOT YET ACHIEVED`
 - `LEVEL C = NOT YET ACHIEVED`
 - `ETAP 4 = OPEN`
-- `E4.0 = INCOMPLETE / HOLD`
+- `E4.0 = INCOMPLETE / HOLD — D1 PASS, D2 PASS`
+- `B-01 = OPEN / IN PROGRESS`
 - `E4.1–E4.10 = BLOCKED BY E4.0`
 - `GATE 14 OVERALL = BLOCKED — APPLIED REMEDIATION REQUIRED`
 - `PRODUCTION V3 = NO-GO`
