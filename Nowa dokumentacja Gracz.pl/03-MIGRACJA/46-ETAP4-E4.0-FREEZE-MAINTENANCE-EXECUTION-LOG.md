@@ -110,7 +110,24 @@ Klasyfikacja dowodu:
 - D3 nie potwierdza jeszcze blokady publicznych mutacji ani stanu writerów,
 - nie uruchamiano żadnej operacji z `Manual Deploy`, `Restart service` ani `Rollback`.
 
-Następna kontrola: **E4.0-D4 — Public mutation lock / Maintenance Mode**.
+### E4.0-D4 — Public mutation lock / Free fallback — PASS
+
+Fresh evidence operatora z Render Dashboard oraz publicznej karty przeglądarki:
+
+- **29.08.2026 15:25 CEST** — `Settings → Maintenance Mode` potwierdziło `Maintenance Mode Disabled` oraz komunikat, że Maintenance Mode jest dostępny tylko dla płatnych instancji,
+- jako zatwierdzony fallback dla planu Free użyto wyłącznie `Suspend Web Service` dla `gracz-checkers-test`,
+- dialog potwierdzenia jednoznacznie wskazywał `gracz-checkers-test`; nie dotyczył `gracz-pl-database`,
+- **29.08.2026 15:37 CEST** — Render potwierdził komunikatem `gracz-checkers-test has been suspended`,
+- **29.08.2026 15:39 CEST** — publiczny adres `gracz-checkers-test.onrender.com` zwrócił stronę Render z komunikatem `This service has been suspended by its owner.` zamiast normalnej aplikacji.
+
+Klasyfikacja dowodu:
+
+- `E4.0-D4 = PASS — publiczny runtime został odcięty przez Suspend Web Service, a stan został potwierdzony zewnętrznym read-only wejściem na publiczny adres`,
+- nie wykonywano logowania, formularzy ani żadnej operacji tworzącej dane podczas walidacji,
+- usługa pozostaje zawieszona; nie wykonywać `Resume Web Service` przed jawnie autoryzowanym etapem,
+- D4 potwierdza blokadę publicznych mutacji przez ten Web Service, ale **nie zastępuje D5/D6**: nadal trzeba zinwentaryzować wszystkie potencjalne writery i potwierdzić brak ich aktywności.
+
+Następna kontrola: **E4.0-D5 — Writer inventory**.
 
 ## 4. Maintenance controls — CZĘŚCIOWO POTWIERDZONE / E4.0 NADAL HOLD
 
@@ -126,11 +143,11 @@ Aktualnie potwierdzono:
 
 - właściwy Web Service (`E4.0-D1 = PASS`),
 - `Auto-Deploy = Off` (`E4.0-D2 = PASS`),
-- brak aktywnego deploy/restart/rollback/queued deploy w fresh `Events` (`E4.0-D3 = PASS`).
+- brak aktywnego deploy/restart/rollback/queued deploy w fresh `Events` (`E4.0-D3 = PASS`),
+- publiczny mutation lock przez zawieszenie `gracz-checkers-test`, potwierdzony zewnętrznym read-only wejściem na publiczny adres (`E4.0-D4 = PASS`).
 
 Nadal brak wystarczającego evidence dla:
 
-- aktywnego Maintenance Mode / alternatywnego mutation lock,
 - pełnego writer inventory i stanu każdego writera,
 - braku aktywności mutacyjnej writerów,
 - environment freeze,
@@ -161,19 +178,31 @@ Do czasu udowodnienia pełnego E4.0:
 - nie zmieniać DB ownership/ACL,
 - nie rotować `AUTH_SECRET`,
 - nie ustawiać v2 crypto roots w aktualnym runtime,
-- nie merge'ować/deployować PR #26.
+- nie merge'ować/deployować PR #26,
+- nie wykonywać `Resume Web Service` dla `gracz-checkers-test` przed jawnie autoryzowanym etapem.
 
 Read-only przegląd repozytorium i przygotowanie dokumentacji pozostają dozwolone.
 
 ## 7. Następny wymagany dowód
 
-Następny operacyjny krok to **E4.0-D4 — Public mutation lock / Maintenance Mode** dla `gracz-checkers-test`.
+Następny operacyjny krok to **E4.0-D5 — Writer inventory**.
 
-Należy potwierdzić w Render `Settings → Maintenance Mode`, czy kontrola jest dostępna dla usługi. Jeżeli jest dostępna, mutation lock musi zostać aktywowany zgodnie z runbookiem, a następnie potwierdzony read-only bez tworzenia danych. Jeżeli nie jest dostępna, należy zastosować wyłącznie wcześniej zatwierdzony alternatywny mutation lock.
+Należy zinwentaryzować wszystkie potencjalne ścieżki zapisu do tej samej PostgreSQL, w tym:
+
+- główny Web Service,
+- Background Workers,
+- Cron Jobs,
+- Private Services,
+- webhook consumers,
+- one-off jobs/workflows,
+- operator shells/scripts,
+- inne usługi korzystające z tej samej bazy.
+
+Dla każdego writera wymagany jest stan `STOPPED` albo `MUTATIONS BLOCKED`. Jeden aktywny albo niepotwierdzony writer oznacza `HOLD`.
 
 E4.0 może zostać oznaczone jako wykonane dopiero po uzyskaniu evidence, że:
 
-- maintenance jest faktycznie aktywne,
+- maintenance/mutation lock jest faktycznie aktywny,
 - normalny mutation writer jest zatrzymany/zablokowany,
 - nie ma równoległego deploymentu/writera,
 - environment jest zamrożony,
