@@ -1,0 +1,81 @@
+BEGIN
+  section   |              metric              | value 
+------------+----------------------------------+-------
+ A_CHECKERS | active_games                     |     2
+ A_CHECKERS | active_with_any_connected_player |     2
+ A_CHECKERS | invalid_json                     |     0
+ A_CHECKERS | sessions_total                   |     2
+ A_CHECKERS | terminal_games                   |     0
+ A_CHECKERS | unknown_status                   |     0
+ A_CHECKERS | updated_last_10m                 |     0
+(7 wierszy)
+
+  section   |            metric             | value 
+------------+-------------------------------+-------
+ B_THOUSAND | awaiting_next_round_or_redeal |     0
+ B_THOUSAND | game_ended                    |     0
+ B_THOUSAND | games_total                   |    29
+ B_THOUSAND | in_progress                   |    29
+ B_THOUSAND | unknown_status                |     0
+ B_THOUSAND | updated_last_10m              |     0
+(6 wierszy)
+
+    section    |      metric       | value 
+---------------+-------------------+-------
+ C_TOURNAMENTS | finished          |     0
+ C_TOURNAMENTS | live              |     0
+ C_TOURNAMENTS | open_matches      |     0
+ C_TOURNAMENTS | registration      |     0
+ C_TOURNAMENTS | tournaments_total |     0
+ C_TOURNAMENTS | unknown_status    |     0
+(6 wierszy)
+
+ section |                metric                | value 
+---------+--------------------------------------+-------
+ D_AUTH  | sessions_active_runtime_rule         |     0
+ D_AUTH  | sessions_idle_or_expired_not_revoked |     1
+ D_AUTH  | sessions_total                       |     1
+ D_AUTH  | sessions_unrevoked_unexpired         |     0
+(4 wiersze)
+
+       section        |          metric           | value 
+----------------------+---------------------------+-------
+ E_IDENTITY_WORKFLOWS | mfa_enabled               |     0
+ E_IDENTITY_WORKFLOWS | mfa_rows_total            |     0
+ E_IDENTITY_WORKFLOWS | mfa_setup_pending         |     0
+ E_IDENTITY_WORKFLOWS | registration_codes_active |     0
+ E_IDENTITY_WORKFLOWS | registration_codes_total  |     2
+ E_IDENTITY_WORKFLOWS | reset_tokens_active       |     0
+ E_IDENTITY_WORKFLOWS | reset_tokens_total        |     1
+(7 wierszy)
+
+   section    |              metric               | value 
+--------------+-----------------------------------+-------
+ F_NEWSLETTER | pending_confirmation_delivery_gap |     0
+ F_NEWSLETTER | pending_confirmation_expired      |     2
+ F_NEWSLETTER | pending_confirmation_total        |     2
+ F_NEWSLETTER | pending_confirmation_unexpired    |     0
+ F_NEWSLETTER | subscribed                        |     3
+ F_NEWSLETTER | subscribers_total                 |     5
+ F_NEWSLETTER | unknown_status                    |     0
+(7 wierszy)
+
+       section       |                   metric                    | value 
+---------------------+---------------------------------------------+-------
+ G_MODERATION_SOCIAL | chat_reports_total_without_resolution_state |     0
+ G_MODERATION_SOCIAL | friend_requests_pending                     |     2
+ G_MODERATION_SOCIAL | moderation_appeals_open                     |     0
+ G_MODERATION_SOCIAL | moderation_appeals_unknown_status           |     0
+ G_MODERATION_SOCIAL | moderation_decisions_total                  |     6
+(5 wierszy)
+
+   section    |           metric            | value 
+--------------+-----------------------------+-------
+ H_DB_RUNTIME | other_active_connections    |     0
+ H_DB_RUNTIME | other_client_connections    |     0
+ H_DB_RUNTIME | other_idle_in_transaction   |     0
+ H_DB_RUNTIME | other_transactions_over_30s |     0
+ H_DB_RUNTIME | waiting_locks               |     0
+(5 wierszy)
+
+ROLLBACK
