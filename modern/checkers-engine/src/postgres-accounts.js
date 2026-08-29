@@ -31,39 +31,21 @@ export class PostgresAccountService {
       ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false },
       max: 5,
     });
-    this.ready = this.#initialize();
+    this.ready = this.#verifySchema();
   }
 
-  async #initialize() {
+  async #verifySchema() {
     await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_accounts (
-        user_id VARCHAR(32) PRIMARY KEY,
-        display_name VARCHAR(40) NOT NULL,
-        salt BYTEA NOT NULL,
-        password_hash BYTEA NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
+      SELECT user_id, display_name, salt, password_hash, created_at, email, recovery_email, profile_data
+      FROM gracz_accounts
+      LIMIT 0
     `);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS email VARCHAR(254)`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS recovery_email VARCHAR(254)`);
-    await this.pool.query(`ALTER TABLE gracz_accounts ADD COLUMN IF NOT EXISTS profile_data JSONB NOT NULL DEFAULT '{}'::jsonb`);
     await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_messages (
-        message_id UUID PRIMARY KEY,
-        sender_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-        recipient_id VARCHAR(32) NOT NULL REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,
-        subject VARCHAR(120) NOT NULL,
-        body TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        read_at TIMESTAMPTZ,
-        recipient_archived BOOLEAN NOT NULL DEFAULT FALSE,
-        sender_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-        recipient_deleted BOOLEAN NOT NULL DEFAULT FALSE
-      )
+      SELECT message_id, sender_id, recipient_id, subject, body, created_at, read_at,
+             recipient_archived, sender_deleted, recipient_deleted
+      FROM gracz_messages
+      LIMIT 0
     `);
-    await this.pool.query(`ALTER TABLE gracz_messages ALTER COLUMN subject TYPE TEXT`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_recipient_idx ON gracz_messages(recipient_id, created_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_messages_sender_idx ON gracz_messages(sender_id, created_at DESC)`);
   }
 
   async register({ userId, displayName, password, email = "", recoveryEmail = "", twoFactor = false }) {
