@@ -180,9 +180,39 @@ Status J2:
 
 **PASS — AUTO-DEPLOY OFF / NO CONFIGURATION CHANGE.**
 
+### J3 — Environment głównego Web Service — PARTIAL / SAFE CAPTURE
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:00 CEST**,
+- Render resource: `gracz-checkers-test`,
+- path: `Environment`,
+- banner nadal wskazuje `Suspended by you`,
+- widoczne nazwy zmiennych: `AUTH_SECRET` oraz `DATABASE_URL`,
+- obie wartości pozostają zamaskowane,
+- nie użyto ikon podglądu, kopiowania, `Export` ani `Edit`,
+- nie wykonano żadnej zmiany environment.
+
+Potwierdzony zakres:
+
+- wymagane istniejące zmienne są obecne,
+- żaden sekret nie został ujawniony,
+- freeze pozostaje nienaruszony podczas capture.
+
+Ograniczenie dowodu:
+
+- kadr nie obejmuje całej listy zmiennych,
+- nie można jeszcze potwierdzić braku `MIGRATOR_DATABASE_URL`,
+- nie można jeszcze potwierdzić braku v2 crypto roots,
+- sam kadr nie dowodzi, że wartość `AUTH_SECRET` nie została wcześniej obrócona.
+
+Status J3:
+
+**PARTIAL / HOLD — SAFE MASKED CAPTURE; FULL KEY-NAME LIST STILL REQUIRED.**
+
 Status całej sekcji J:
 
-**HOLD — STATIC-SITE BOUNDARY AND ENVIRONMENT RECHECK STILL REQUIRED.**
+**HOLD — FULL ENVIRONMENT LIST AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
