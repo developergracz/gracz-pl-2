@@ -379,11 +379,13 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - production read-only connection probe = `PASS / IDENTITY OK / SSL ON / READ ONLY`,
 - production row-count reconciliation = `PASS / 28 TABLES / 17,711 ROWS ON BOTH SIDES / 0 DIFFERENCES`,
 - crypto structure inventory = `PASS / 2 ENCRYPTED MESSAGE PAIRS / 3 LEGACY PAIRS / 2 VALID LEGACY-AAD ATTACHMENTS / MFA 0`,
-- legacy crypto decryptability smoke test = `PENDING`,
+- legacy crypto decryptability smoke test = `PENDING FRESH CONFIRMATION`,
+- wcześniejsza Bramka 11 = `PASS / 5 OF 5 MESSAGES / 2 OF 2 ATTACHMENTS / MFA 0 N/A`,
+- ograniczenie fresh confirmation = `RUNTIME SUSPENDED UNDER FREEZE; NO SECRET EXTRACTION OR SERVICE RESUME AUTHORIZED`,
 - disposable DB cleanup = `DEFERRED UNTIL EVIDENCE COMPLETE`,
 - `E4.1 = IN PROGRESS`,
 - `Production V3 = NO-GO`,
 - PR #26 pozostaje `OPEN / DRAFT / NOT MERGED`,
 - produkcja i Render pozostają nienaruszone.
 
-Następny krok: wykonać wyłącznie świeży, privacy-safe crypto decryptability smoke test bez usuwania bazy testowej, bez ujawniania plaintextów lub sekretów i bez zmian produkcyjnych.
+Następny krok: pozostawić fresh crypto decryptability na HOLD, dopóki istnieje zatwierdzona metoda wykorzystująca runtime key material bez kopiowania sekretów poza Render, bez wznawiania normalnego writera i bez naruszania freeze. Wcześniejsza Bramka 11 pozostaje PASS, ale nie jest przedstawiana jako świeże potwierdzenie E4.1-H.
