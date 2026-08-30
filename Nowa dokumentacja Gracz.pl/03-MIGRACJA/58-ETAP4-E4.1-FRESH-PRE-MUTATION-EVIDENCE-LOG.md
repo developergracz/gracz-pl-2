@@ -287,6 +287,34 @@ Status J6a:
 
 **PASS — MAINTENANCE RESOURCE IDENTIFIED AS STATIC / GLOBAL / DEPLOYED.**
 
+### J6b — Static Site identity, domain and Events — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:14 CEST**,
+- resource: `gracz-pl-maintenance`,
+- Render type displayed: `STATIC SITE`,
+- repository: `developergracz/gracz-pl-2`,
+- branch: `main`,
+- custom domain displayed: `gracz.pl`,
+- najnowszy zakończony static deploy:
+  - commit `1fca6b1` — `Deploy live`,
+  - opis: `Zmniejsz dolne wolne miejsce panelu maintenance`,
+  - timestamp: 30.08.2026 01:50 CEST,
+- wcześniejszy static deploy `324c882` również zakończył się jako `Deploy live`,
+- zdarzenia są jawnie przypisane do Static Site oraz uruchomione przez jego Auto-Deploy,
+- nie użyto `Manual Deploy` ani `Rollback`.
+
+Wniosek:
+
+- deploye widoczne na tym ekranie dotyczą wyłącznie statycznej strony maintenance,
+- nie są deployami ani restartami zawieszonego `gracz-checkers-test`,
+- potwierdzony został rozdział zasobu publicznej strony maintenance od głównego Web Service.
+
+Status J6b:
+
+**PASS — STATIC-SITE EVENTS IDENTIFIED / MAIN WEB SERVICE FREEZE NOT AFFECTED.**
+
 Status całej sekcji J:
 
 **HOLD — VALUE CONTINUITY AND STATIC-SITE ENVIRONMENT/BOUNDARY RECHECK STILL REQUIRED.**
