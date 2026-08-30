@@ -360,9 +360,46 @@ Status J6d:
 
 **PASS — NO STATIC-SITE SECRET FILES / NO LINKED ENV GROUPS / NO CREDENTIAL PATH.**
 
+### J6e — Fresh public maintenance route — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:17 CEST**,
+- public address: `gracz.pl`,
+- strona wyświetla komunikat `Trwa modernizacja serwisu`,
+- treść informuje, że właściwa aplikacja pozostaje wyłączona,
+- widok zawiera wyłącznie statyczne informacje maintenance,
+- brak formularza logowania, rejestracji, wiadomości, rozgrywki lub innego interfejsu mutacyjnego,
+- nie wykonano żadnej interakcji poza read-only otwarciem strony.
+
+Wniosek:
+
+- `gracz.pl` serwuje aktualną stronę `gracz-pl-maintenance`,
+- publiczna ścieżka normalnej aplikacji pozostaje odcięta,
+- Static Site nie otwiera widocznej funkcji zapisu do produkcyjnego systemu.
+
+Status J6e:
+
+**PASS — PUBLIC DOMAIN SERVES STATIC MAINTENANCE ONLY / NO MUTATION UI.**
+
+### J6 — Static Site boundary — PASS
+
+Łączny wynik J6a–J6e potwierdza:
+
+- zasób jest Static Site / Global / Deployed,
+- jest odseparowany od projektu Production i głównego Web Service,
+- jego deploye są osobnymi static deployami,
+- nie ma Environment Variables, Secret Files ani Linked Environment Groups,
+- nie ma widocznej ścieżki credentiali do produkcyjnej PostgreSQL,
+- domena `gracz.pl` serwuje wyłącznie stronę maintenance.
+
+Status J6:
+
+**PASS — STATIC MAINTENANCE BOUNDARY VERIFIED.**
+
 Status całej sekcji J:
 
-**HOLD — VALUE CONTINUITY AND FRESH PUBLIC MAINTENANCE ROUTE RECHECK STILL REQUIRED.**
+**HOLD — MAIN WEB SERVICE SECRET/CREDENTIAL VALUE CONTINUITY ATTESTATION STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
