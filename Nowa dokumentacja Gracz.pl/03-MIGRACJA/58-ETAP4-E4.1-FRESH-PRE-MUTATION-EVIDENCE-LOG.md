@@ -315,9 +315,32 @@ Status J6b:
 
 **PASS — STATIC-SITE EVENTS IDENTIFIED / MAIN WEB SERVICE FREEZE NOT AFFECTED.**
 
+### J6c — Static Site Environment Variables — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:15 CEST**,
+- resource: `gracz-pl-maintenance`,
+- Render type displayed: `STATIC SITE`,
+- path: `Environment`,
+- sekcja `Environment Variables` jest pusta,
+- widoczna jest wyłącznie opcja `Add variable`,
+- nie dodano ani nie edytowano żadnej zmiennej.
+
+Wniosek:
+
+- Static Site nie posiada `DATABASE_URL`,
+- nie posiada `AUTH_SECRET`, `MIGRATOR_DATABASE_URL`, kluczy aplikacyjnych ani v2 crypto roots,
+- brak environment-variable credential path do produkcyjnej PostgreSQL,
+- nie potwierdza to jeszcze dolnych sekcji `Secret Files` i `Linked Environment Groups`.
+
+Status J6c:
+
+**PASS — STATIC SITE HAS NO ENVIRONMENT VARIABLES / NO DATABASE CREDENTIAL PATH.**
+
 Status całej sekcji J:
 
-**HOLD — VALUE CONTINUITY AND STATIC-SITE ENVIRONMENT/BOUNDARY RECHECK STILL REQUIRED.**
+**HOLD — VALUE CONTINUITY AND STATIC-SITE SECRET FILES/ENV GROUPS RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
