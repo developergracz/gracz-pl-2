@@ -158,9 +158,31 @@ Status J1:
 
 **PASS — MAIN WEB SERVICE STILL SUSPENDED / EVENTS WITHOUT POST-FREEZE DEPLOY OR RESTART.**
 
+### J2 — Auto-Deploy freeze — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 01:58 CEST**,
+- Render resource: `gracz-checkers-test`,
+- path: `Settings → Deploy`,
+- `Auto-Deploy = Off`,
+- `Pre-Deploy Command` pozostaje puste,
+- Deploy Hook jest obecny, ale zamaskowany; jego wartość nie została ujawniona ani skopiowana,
+- nie edytowano żadnego ustawienia.
+
+Wniosek:
+
+- commity źródłowe nie mogą automatycznie wdrożyć głównego Web Service,
+- PR #26 nie został wdrożony przez Auto-Deploy,
+- freeze pozostaje nienaruszony w zakresie konfiguracji automatycznego wdrażania.
+
+Status J2:
+
+**PASS — AUTO-DEPLOY OFF / NO CONFIGURATION CHANGE.**
+
 Status całej sekcji J:
 
-**HOLD — AUTO-DEPLOY, STATIC-SITE BOUNDARY AND ENVIRONMENT RECHECK STILL REQUIRED.**
+**HOLD — STATIC-SITE BOUNDARY AND ENVIRONMENT RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
