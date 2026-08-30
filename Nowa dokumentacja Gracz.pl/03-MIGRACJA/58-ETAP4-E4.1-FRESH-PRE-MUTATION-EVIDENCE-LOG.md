@@ -397,9 +397,44 @@ Status J6:
 
 **PASS — STATIC MAINTENANCE BOUNDARY VERIFIED.**
 
+### J7 — Operator value-continuity attestation — PASS
+
+Formalne poświadczenie operatora, capture: **30.08.2026 po 02:17 CEST**:
+
+- od zamknięcia E4.0 nie zmieniono żadnej wartości w Environment `gracz-checkers-test`,
+- nie zmieniono `AUTH_SECRET`,
+- nie zmieniono `DATABASE_URL`,
+- nie użyto `Edit`,
+- nie użyto `Export`,
+- nie wykonano operacji mogącej naruszyć freeze.
+
+Klasyfikacja dowodu:
+
+- jest to jawne poświadczenie operatorskie ciągłości wartości,
+- nie jest to odczyt, eksport ani kryptograficzne porównanie sekretów,
+- wartości celowo pozostają nieujawnione,
+- poświadczenie jest zgodne z J1–J6: brak deployu/restartu, Auto-Deploy Off, identyczny inwentarz nazw 7/7 i brak nowej ścieżki credentiali.
+
+Status J7:
+
+**PASS — OPERATOR ATTESTS NO SECRET/CREDENTIAL CHANGE SINCE E4.0.**
+
+### J — Final decision — PASS
+
+Łączny wynik J1–J7 potwierdza:
+
+1. główny Web Service nadal jest zawieszony,
+2. brak późniejszego deployu/restartu/rollbacku,
+3. Auto-Deploy głównego Web Service pozostaje Off,
+4. inwentarz Environment Variables jest identyczny 7/7,
+5. brak `MIGRATOR_DATABASE_URL` i v2 crypto roots,
+6. brak Secret Files i Linked Environment Groups,
+7. operator poświadczył brak rotacji `AUTH_SECRET`, zmiany `DATABASE_URL` i innych wartości,
+8. Static Site nie ma credentiali i serwuje wyłącznie publiczną stronę maintenance.
+
 Status całej sekcji J:
 
-**HOLD — MAIN WEB SERVICE SECRET/CREDENTIAL VALUE CONTINUITY ATTESTATION STILL REQUIRED.**
+**PASS — RENDER / ENVIRONMENT BASELINE VERIFIED / FREEZE INTACT.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
@@ -427,7 +462,7 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 | G — Row-count / integrity reconciliation | `PENDING` |
 | H — Fresh Gate 11 decryptability | `PENDING / READ-ONLY` |
 | I — Gate 14B/C/D package integrity | `PASS` |
-| J — Render / environment baseline | `HOLD — RECHECK REQUIRED` |
+| J — Render / environment baseline | `PASS` |
 | K — Evidence manifest | `PENDING` |
 
 ## 8. Current decision
@@ -442,6 +477,6 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
 ## 9. Następny bezpieczny krok
 
-**Fresh read-only Render/environment recheck dla sekcji J po zmianie topologii maintenance.**
+**Sekcja B — fresh, izolowany migration package plan/checksum verification na exact PR #26 head SHA, bez produkcyjnego `MIGRATOR_DATABASE_URL` i bez apply.**
 
-Dopiero po jego PASS można kontynuować pozostałe dowody E4.1 zgodnie z checklistą. Każda nieautoryzowana zmiana lub aktywny writer oznacza ABORT/HOLD.
+Sekcja J ma status PASS, ale E4.1 pozostaje ACTIVE/HOLD do zakończenia wszystkich pozostałych sekcji. Każda nieautoryzowana zmiana lub aktywny writer oznacza ABORT/HOLD.
