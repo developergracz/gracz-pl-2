@@ -239,6 +239,31 @@ Status J4:
 
 **PASS — NO SECRET FILES / NO LINKED ENVIRONMENT GROUPS / NO CONFIGURATION CHANGE.**
 
+### J5 — Project Production resource inventory — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:05 CEST**,
+- Render project: `My project`,
+- environment: `Production`,
+- `All (2)` / `Services (2)` / `Env Groups (0)`,
+- zasoby projektu:
+  - `gracz-checkers-test` — Docker / Frankfurt — `Suspended by you`,
+  - `gracz-pl-database` — PostgreSQL 18 / Frankfurt — `Available`,
+- nie wykonano żadnej zmiany projektu ani zasobów.
+
+Wniosek:
+
+- inwentarz właściwego projektu Production pozostaje zgodny z `E4.0-D5`,
+- normalny aplikacyjny writer nadal jest zatrzymany,
+- baza pozostaje dostępna jako osobny zasób,
+- nie istnieje linked Environment Group w tym projekcie,
+- statyczna strona maintenance wymaga osobnego sprawdzenia na poziomie workspace/Ungrouped Services.
+
+Status J5:
+
+**PASS — PROJECT PRODUCTION INVENTORY UNCHANGED 2/2 / WRITER STILL SUSPENDED.**
+
 Status całej sekcji J:
 
 **HOLD — VALUE CONTINUITY AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
