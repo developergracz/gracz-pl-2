@@ -217,9 +217,31 @@ Status J3:
 
 **PASS — KEY-NAME INVENTORY UNCHANGED / NO MIGRATOR OR V2 ROOTS / VALUES NOT EXPOSED.**
 
+### J4 — Secret Files i Linked Environment Groups — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:03 CEST**,
+- Render resource: `gracz-checkers-test`,
+- path: `Environment`,
+- sekcja `Secret Files` nie zawiera żadnego istniejącego pliku; widoczna jest wyłącznie opcja `Add file`,
+- sekcja `Linked Environment Groups` pokazuje `No environment groups available to link.`,
+- nie użyto `Add file` ani `New Environment Group`,
+- nie wykonano żadnej zmiany konfiguracji.
+
+Porównanie z `E4.0-D7`:
+
+- brak Secret Files jest niezmieniony,
+- brak Linked Environment Groups jest niezmieniony,
+- nie pojawiła się dodatkowa pośrednia ścieżka dostarczenia credentiali lub sekretów do runtime.
+
+Status J4:
+
+**PASS — NO SECRET FILES / NO LINKED ENVIRONMENT GROUPS / NO CONFIGURATION CHANGE.**
+
 Status całej sekcji J:
 
-**HOLD — SECRET FILES, ENV GROUPS, VALUE CONTINUITY AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
+**HOLD — VALUE CONTINUITY AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
