@@ -338,9 +338,31 @@ Status J6c:
 
 **PASS — STATIC SITE HAS NO ENVIRONMENT VARIABLES / NO DATABASE CREDENTIAL PATH.**
 
+### J6d — Static Site Secret Files i Environment Groups — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:16 CEST**,
+- resource: `gracz-pl-maintenance`,
+- path: `Environment`,
+- sekcja `Secret Files` nie zawiera istniejącego pliku; widoczna jest wyłącznie opcja `Add file`,
+- sekcja `Linked Environment Groups` pokazuje `No environment groups available to link.`,
+- nie użyto `Add file` ani `New Environment Group`,
+- nie wykonano żadnej zmiany konfiguracji.
+
+Wniosek:
+
+- Static Site nie otrzymuje credentiali przez Environment Variables, Secret Files ani Linked Environment Groups,
+- nie ma widocznej ścieżki do produkcyjnej PostgreSQL ani sekretów głównej aplikacji,
+- granica konfiguracji środowiska Static Site jest potwierdzona.
+
+Status J6d:
+
+**PASS — NO STATIC-SITE SECRET FILES / NO LINKED ENV GROUPS / NO CREDENTIAL PATH.**
+
 Status całej sekcji J:
 
-**HOLD — VALUE CONTINUITY AND STATIC-SITE SECRET FILES/ENV GROUPS RECHECK STILL REQUIRED.**
+**HOLD — VALUE CONTINUITY AND FRESH PUBLIC MAINTENANCE ROUTE RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
