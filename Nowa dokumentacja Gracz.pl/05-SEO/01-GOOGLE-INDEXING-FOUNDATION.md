@@ -84,3 +84,26 @@ Nigdy nie dodawać do sitemapy:
 ## 6. Zasada bezpieczeństwa
 
 Ten pakiet nie zmienia bazy danych, Rendera, Cloudflare ani produkcji. Deploy jest celowo wstrzymany, aby nie naruszyć aktywnego E4 freeze i dowodów migracyjnych.
+
+
+## 7. Korekta zewnętrznego podsumowania
+
+Źródłem prawdy pozostaje kod PR #28. Zewnętrzne podsumowanie Copilota zawierało elementy, których PR nie dodaje:
+
+- nie dodano `meta keywords` — Google nie wykorzystuje tego znacznika do rankingu,
+- poprzedni stan wynosił `noindex,follow`, a nie `noindex,nofollow`,
+- sitemap nie zawiera `changefreq` ani `priority`, ponieważ Google je ignoruje,
+- nie dodano `og:image`, ponieważ nie zatwierdzono jeszcze kanonicznego obrazu społecznościowego,
+- JSON-LD obejmuje `WebSite` i `Organization`; nie deklaruje `WebPage`,
+- nie zapisuje się obietnicy indeksacji w 24–72 godziny; crawl może potrwać od kilku dni do kilku tygodni i nie gwarantuje indeksacji.
+
+## 8. Wynik kontroli technicznej PR #28
+
+- dokładnie jeden `title`: PASS,
+- dokładnie jeden meta description: PASS,
+- dokładnie jeden canonical: PASS,
+- meta robots bez `noindex`: PASS,
+- JSON-LD poprawnie parsuje się jako JSON: PASS,
+- `robots.txt` wskazuje kanoniczną sitemapę: PASS,
+- sitemap zawiera wyłącznie `https://gracz.pl/`: PASS,
+- nieopublikowane/prywatne trasy nie trafiły do sitemapy: PASS.
