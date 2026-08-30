@@ -2,7 +2,7 @@
 
 Data rozpoczęcia: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **ACTIVE / READ-ONLY / HOLD BEFORE DB COLLECTORS**  
+Status: **ACTIVE / READ-ONLY / HOLD BEFORE ISOLATED RESTORE VALIDATION**  
 Production V3: **NO-GO**
 
 > Ten dziennik zapisuje wyłącznie bezpieczne dowody E4.1. Nie autoryzuje migratora apply, DDL/DCL/DML, zmian ról/ACL, zmian sekretów, rekey, merge PR #26 ani produkcyjnego deployu.
@@ -77,34 +77,36 @@ Ten PASS nie autoryzuje merge, oznaczenia PR jako ready ani deployu.
 
 ## 4. B — Migration package 001–014 — PASS
 
-Capture: **30.08.2026 08:09:05 UTC / 30.08.2026 10:09:05 CEST**
+Capture pierwotny: **30.08.2026 08:09:05 UTC / 30.08.2026 10:09:05 CEST**  
+Korekta integralności wpisu: **30.08.2026**
 
 Źródło weryfikacji:
 
 - repo: `developergracz/gracz-pl-2`,
 - exact PR #26 head SHA: `cb073bad3050ffc9726e0a1528c2ec4a4808f12e`,
 - katalog: `modern/checkers-engine/src/migrator/migrations/`,
-- GitHub directory inventory: dokładnie 14 plików `*.sql` oraz `README.md`,
-- migracja `015` nie występuje w zatwierdzonym pakiecie `001–014`.
+- exact Git tree: dokładnie 14 plików `*.sql` oraz `README.md`,
+- migracja `015` nie występuje w zatwierdzonym pakiecie `001–014`,
+- `migration-plan.js` exact Git blob: `af1e8e9b4fa63afb2093d2853cc1cd792a8c2ca6`.
 
-### B1 — Nazwy i sekwencja
+### B1 — Nazwy, kolejność i exact blob identity
 
-| Wersja | Plik | SHA-256 |
-|---|---|---|
-| 001 | `001_identity.sql` | `851e5083b6bf5848217103e5d831f027173e4ce7bd5003ffc56a0463eab61773` |
-| 002 | `002_messages.sql` | `035f7844de7c825225cd10776fe1a91738e95c7063b6885451b3a0e57559540b` |
-| 003 | `003_game-sessions.sql` | `3998d74acc4400a2c74a3b3835e736548a0a8c807f92de4146e859d580f1f87f` |
-| 004 | `004_secure-account.sql` | `53d57e9b356242a109a954340ca351424b87869bf15e7a4c1cf7ae3893d863f8` |
-| 005 | `005_auth-sessions.sql` | `651d245d4d924ca354fe672e33e9a4693cf5119fd54cf5a24e11cd12b8abed91` |
-| 006 | `006_message-attachments.sql` | `4d92bb47db7edb63acab14779de2f46796051cecdd261eb3234c93b8180b47ea` |
-| 007 | `007_rbac-mfa.sql` | `30d635903073e525d3e51ab9f467df3a702b5b3bac041e89f4372acca44c5c19` |
-| 008 | `008_audit.sql` | `ce75fa386feee83bcb8cea0ffbede09876b5683911071241446ac92ee96a5417` |
-| 009 | `009_moderation.sql` | `4b3c55cbbdb695034ddc5b286eaa9581135d6e24347fec3934dfee9de2f358ff` |
-| 010 | `010_global-chat-social.sql` | `59821a8ed595d94dbbb7932a7ae4f6b82e83e37cb75887a823ba536ab914f7b7` |
-| 011 | `011_tournaments.sql` | `ae8f1d2bd712523dcec1014258c2f5d9a5ae028268ff611590fda9fa67697231` |
-| 012 | `012_newsletter-core.sql` | `8ff655d6c1a8fa8f7892cd8375217285425d7797e21fb0a1aeafc7e30213349f` |
-| 013 | `013_newsletter-admin.sql` | `6be84fc546f3716df9421e3931965b4fa48ffc377b3871dfe0c89cdcd27c9f71` |
-| 014 | `014_thousand-games.sql` | `f06c1fcb9305e2b4fa93b32e400f760dd91ad5259257c488ce15b8f22dc90b3f` |
+| Wersja | Plik | Git blob SHA | SHA-256 |
+|---|---|---|---|
+| 001 | `001_identity.sql` | `89cd9f33375cb0bb601649b0cd60ae039158aad1` | `2629f626dae07f052b7dc3ac4ce58540bfa7a44da1fd62cf460459afb3a9d0be` |
+| 002 | `002_messages.sql` | `17cda12c3ba3a514b3a7e6152843ee85a3f922b5` | `0bed30e27a090b96351f3bdfcf0ef91606d2f51e14b5693d1b9c98ecd7d0f858` |
+| 003 | `003_game-sessions.sql` | `eaf3b1e6fead2cdbff323cefc411bcc9a16985dc` | `42ce37a6af37c3292a28c96a47684a01d57db4267892b61d424823e8d39e09b8` |
+| 004 | `004_secure-account.sql` | `7ba7aa9e3eff9e29d7d54058df5a7ee3e0ce432e` | `87218c50d44410e0423f8282a118f25f3d358dfe89752319bf246f3607dab0b7` |
+| 005 | `005_auth-sessions.sql` | `e45e50c20c5bafd1426681e0c59080d6ba216ebc` | `79b809b6c392fc9d6cc304b4f98c5b61877d038724c513f5e69eea0a318de33a` |
+| 006 | `006_message-attachments.sql` | `0a4ca1d388398049f08e1b56febe2906afbffd75` | `753a7127739047078fc2dc3783d735c7a3cf2d2a09ed2c42c70b908e12ac2e65` |
+| 007 | `007_rbac-mfa.sql` | `1b0a14c024faf6efa798d823295ac6396ce6911a` | `d5fd5827f5a37c7dd166a0fb5970b35e0a186b981aa2ab699b371676428a50ad` |
+| 008 | `008_audit.sql` | `ea9b63884ae1097750015e86e7a0168d72f3cdbe` | `399bd3a1125f9d6ce5dca5250f1f16548aa7a2fef03ba9915783a23ca3b2b953` |
+| 009 | `009_moderation.sql` | `dfba5cbe47c72a398751b9b605ffd459232bb074` | `cdfdcd412ace8cf02cb13c331f68a621f748f32bb84836266212c55e5594e4b2` |
+| 010 | `010_global-chat-social.sql` | `a0b0fce2e3f2a8412223db163d346aa898d0f206` | `48601b7532b05880457fd8d9aa6e7c05a820a08c9c652a529b378f80d3a202a3` |
+| 011 | `011_tournaments.sql` | `0d03b91bb4800e58ca711e5d90c329c97da9275d` | `8ef4d71acc070865c6afa586cbf7c07e408a5e169fd7ebe0f4c7b22d70c19b34` |
+| 012 | `012_newsletter-core.sql` | `ecad02601b21bae99afaba8e70981158bf98d776` | `2ad0e9496f58aa64a9a055a447214ebf519e15efed2ac1cfd5a7c8439edcb302` |
+| 013 | `013_newsletter-admin.sql` | `641e9d70ccfd3394aa10c329c0aa3a26f0e8e3da` | `bed5834cfc1757dd8c4f2948a91ac15cebe717140ddb801791f8eb4c1b286e23` |
+| 014 | `014_thousand-games.sql` | `dd27b1702b77a5126604c3ef2641b16268749cf6` | `1e9a4d86c0675398f6466000ef8ee22cfb318ad0d14bb3e643e4fba9196c3855` |
 
 Wynik:
 
@@ -114,38 +116,46 @@ Wynik:
 - luka numeracyjna: `NONE`,
 - duplikat wersji: `NONE`,
 - dodatkowy plik SQL: `NONE`,
-- `015`: `ABSENT AS REQUIRED BEFORE E4.3`.
+- `015`: `ABSENT AS REQUIRED BEFORE E4.3`,
+- exact Git blob identity: `15/15 PASS` dla `migration-plan.js` oraz migracji `001–014`.
 
-### B2 — Repo-only plan i niezależny checksum cross-check
+### B2 — Repo-only plan i checksum binding
 
-W izolowanym katalogu roboczym odtworzono wyłącznie pliki pobrane z exact head SHA. Uruchomiono zatwierdzony równoważny wrapper plan mode, który importuje bez zmian exact:
+Prawidłowe SHA-256 w tabeli są zgodne z kanonicznym wynikiem planu zapisanym w:
 
-- `src/migrator/migration-plan.js`,
-- migracje `001–014`.
+`58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-EXECUTION-LOG.md`.
+
+Fresh kontrola exact frozen source potwierdziła:
+
+- katalog i kolejność przez exact Git tree dla SHA `cb073bad3050ffc9726e0a1528c2ec4a4808f12e`,
+- bezpośredni odczyt `migration-plan.js` oraz wszystkich 14 migracji po ich Git blob SHA,
+- brak migracji `015`,
+- zgodność nazw, kolejności, Git blob identity oraz zapisanych SHA-256 z kanonicznym execution logiem.
 
 Warunki bezpieczeństwa:
 
-- `DATABASE_URL` usunięty z procesu,
-- `MIGRATOR_DATABASE_URL` usunięty z procesu,
-- brak importu klienta PostgreSQL w wrapperze,
-- brak połączenia sieciowego z bazą,
-- brak `apply`,
-- brak DDL/DCL/DML,
-- brak zmian GitHub/Render/runtime.
+- nie pobrano `DATABASE_URL`,
+- nie pobrano `MIGRATOR_DATABASE_URL`,
+- nie utworzono połączenia z PostgreSQL,
+- nie uruchomiono `apply`,
+- nie wykonano DDL/DCL/DML,
+- nie zmieniono Git source, Rendera ani runtime.
 
-Wyniki wykonania:
+### B3 — Korekta dokumentacyjna
 
-- exit code: `0`,
-- `PLAN_SEQUENCE_PASS count=14 first=001 last=014`,
-- każdy checksum wypisany przez exact `discoverMigrations()` porównano z niezależnym systemowym `sha256sum`,
-- `CHECKSUM_CROSSCHECK_PASS`,
-- mismatch count: `0`.
+Wcześniejsza wersja tabeli w tym pliku zawierała sumy policzone z odtworzonych kopii tymczasowych, w których narzędzie robocze znormalizowało końcowy znak nowej linii. Rozbieżność wykryto przez porównanie z exact Git blob identity oraz istniejącym kanonicznym execution logiem.
 
-Pełnego `npm run migrate:v3 -- --plan` nie uruchamiano w izolowanej kopii, ponieważ pakiet `pg` nie był lokalnie zainstalowany; zgodnie z checklistą użyto równoważnego plan wrappera, który wykonuje dokładnie repozytoryjne `discoverMigrations()` i kończy się bez dotykania DB.
+Skutek i zakres korekty:
+
+- rozbieżne wartości nie opisywały plików źródłowych frozen SHA,
+- pliki migracji w GitHubie nie zostały zmienione,
+- PR #26 nie został zmieniony ani scalony,
+- Render, produkcyjna baza i sekrety nie zostały dotknięte,
+- błędną tabelę zastąpiono wartościami związanymi z exact blobami zamrożonego SHA.
 
 Status sekcji B:
 
-**PASS — EXACT 001–014 PACKAGE / CONTIGUOUS SEQUENCE / SHA-256 CROSS-CHECK / REPO-ONLY PLAN.**
+**PASS — EXACT 001–014 PACKAGE / CONTIGUOUS SEQUENCE / EXACT GIT BLOBS / SHA-256 BOUND TO CANONICAL PLAN EVIDENCE.**
 
 Ten PASS nie autoryzuje migratora apply, połączenia z produkcją ani migracji `015`.
 
@@ -503,15 +513,34 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 9. nie ustawiono v2 crypto roots,
 10. `AUTH_SECRET` nie został obrócony.
 
-## 7. Pozostałe sekcje E4.1
+## 7. C–E — Reconciliation z kanonicznym execution evidence
+
+Nie wykonuje się ponownie collectorów ani backupu. Istniejące dowody zostały zachowane i są kanoniczne:
+
+| Sekcja | Decyzja | Artefakt |
+|---|---|---|
+| C — Fresh Gate 13 active-state | `PASS` | `59-ETAP4-E4.1-C-GATE13-FRESH-ACTIVE-STATE-RESULT-2026-08-29.txt` — blob `bd72f4c002e70019593cbf794a1f2ba0754a7500` |
+| D — Fresh Gate 14 DB permissions collector | `PASS` | `60-ETAP4-E4.1-D-GATE14-FRESH-DB-PERMISSIONS-RESULT-2026-08-29.txt` — blob `520d002580349755ab827d8a9cdecf016663bbe2` |
+| E — Fresh backup anchor | `PASS` | `61-ETAP4-E4.1-E-FRESH-BACKUP-ANCHOR-2026-08-29.md` — blob `4c4db200e619856b46663ba1c8c77ab77d110831` |
+
+Dodatkowe zastrzeżenia:
+
+- C potwierdził brak bieżącej aktywności writera; zachowany stan `active` / `in_progress` jest sklasyfikowany jako stale legacy state i nie wolno go mutować w E4.1,
+- D potwierdził poprawne zebranie fresh read-only evidence; **AS-IS DB security pozostaje BLOCKED / REMEDIATION REQUIRED**,
+- E potwierdził backup custom archive, checksum oraz retention contract; `pg_restore --list = 0` nie zastępuje pełnego restore validation,
+- nie wykonywano ponownie połączeń z produkcją podczas tej korekty dokumentacyjnej.
+
+Kanonicznym następnym krokiem pozostaje **E4.1-F — restore rehearsal / validation na izolowanym celu non-production**.
+
+## 8. Pozostałe sekcje E4.1
 
 | Sekcja | Status |
 |---|---|
 | A — Source / GitHub baseline | `PASS` |
 | B — Migration package / plan / checksums | `PASS` |
-| C — Fresh Gate 13 active-state | `PENDING / READ-ONLY` |
-| D — Fresh Gate 14 AS-IS security | `PENDING / READ-ONLY` |
-| E — Fresh backup anchor | `PENDING` |
+| C — Fresh Gate 13 active-state | `PASS` |
+| D — Fresh Gate 14 DB permissions evidence | `PASS — AS-IS SECURITY BLOCKED` |
+| E — Fresh backup anchor | `PASS` |
 | F — Restore validation | `PENDING` |
 | G — Row-count / integrity reconciliation | `PENDING` |
 | H — Fresh Gate 11 decryptability | `PENDING / READ-ONLY` |
@@ -519,7 +548,7 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 | J — Render / environment baseline | `PASS` |
 | K — Evidence manifest | `PENDING` |
 
-## 8. Current decision
+## 9. Current decision
 
 - `E4.1 = ACTIVE / HOLD`,
 - `E4.2–E4.10 = BLOCKED`,
@@ -529,8 +558,8 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 - nie uruchomiono migratora apply,
 - nie zmieniono ról, ACL, sekretów ani crypto material.
 
-## 9. Następny bezpieczny krok
+## 10. Następny bezpieczny krok
 
-**Sekcja C — fresh Gate 13 active-state collector w rygorystycznym trybie read-only, bez uruchamiania normalnego runtime writer.**
+**Sekcja F — restore rehearsal / restore validation na izolowanym celu non-production.**
 
-Sekcja J ma status PASS, ale E4.1 pozostaje ACTIVE/HOLD do zakończenia wszystkich pozostałych sekcji. Każda nieautoryzowana zmiana lub aktywny writer oznacza ABORT/HOLD.
+Sekcje B–E, I oraz J mają status PASS, ale E4.1 pozostaje ACTIVE/HOLD do zakończenia F–H i K. Restore może mutować wyłącznie wcześniej zatwierdzony, izolowany cel non-production. Production pozostaje READ-ONLY / NO-MUTATION; każda nieautoryzowana zmiana lub aktywny writer oznacza ABORT/HOLD.
