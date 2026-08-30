@@ -75,25 +75,79 @@ Status sekcji A:
 
 Ten PASS nie autoryzuje merge, oznaczenia PR jako ready ani deployu.
 
-## 4. B — Migration package 001–014
+## 4. B — Migration package 001–014 — PASS
 
-Fresh PR metadata nadal deklaruje:
+Capture: **30.08.2026 08:09:05 UTC / 30.08.2026 10:09:05 CEST**
 
-- contiguous migrations `001–014`,
-- SHA-256 checksums,
-- dedykowany migrator przez `MIGRATOR_DATABASE_URL`,
-- normalny runtime nie uruchamia migratora,
-- migracja `015` pozostaje poza zatwierdzonym baseline do E4.3.
+Źródło weryfikacji:
 
-Niewykonane w bieżącym capture:
+- repo: `developergracz/gracz-pl-2`,
+- exact PR #26 head SHA: `cb073bad3050ffc9726e0a1528c2ec4a4808f12e`,
+- katalog: `modern/checkers-engine/src/migrator/migrations/`,
+- GitHub directory inventory: dokładnie 14 plików `*.sql` oraz `README.md`,
+- migracja `015` nie występuje w zatwierdzonym pakiecie `001–014`.
 
-- fresh checkout exact head SHA,
-- niezależne wyliczenie checksums `001–014`,
-- `npm run migrate:v3 -- --plan` w zatwierdzonym trybie bez produkcyjnego apply.
+### B1 — Nazwy i sekwencja
+
+| Wersja | Plik | SHA-256 |
+|---|---|---|
+| 001 | `001_identity.sql` | `851e5083b6bf5848217103e5d831f027173e4ce7bd5003ffc56a0463eab61773` |
+| 002 | `002_messages.sql` | `035f7844de7c825225cd10776fe1a91738e95c7063b6885451b3a0e57559540b` |
+| 003 | `003_game-sessions.sql` | `3998d74acc4400a2c74a3b3835e736548a0a8c807f92de4146e859d580f1f87f` |
+| 004 | `004_secure-account.sql` | `53d57e9b356242a109a954340ca351424b87869bf15e7a4c1cf7ae3893d863f8` |
+| 005 | `005_auth-sessions.sql` | `651d245d4d924ca354fe672e33e9a4693cf5119fd54cf5a24e11cd12b8abed91` |
+| 006 | `006_message-attachments.sql` | `4d92bb47db7edb63acab14779de2f46796051cecdd261eb3234c93b8180b47ea` |
+| 007 | `007_rbac-mfa.sql` | `30d635903073e525d3e51ab9f467df3a702b5b3bac041e89f4372acca44c5c19` |
+| 008 | `008_audit.sql` | `ce75fa386feee83bcb8cea0ffbede09876b5683911071241446ac92ee96a5417` |
+| 009 | `009_moderation.sql` | `4b3c55cbbdb695034ddc5b286eaa9581135d6e24347fec3934dfee9de2f358ff` |
+| 010 | `010_global-chat-social.sql` | `59821a8ed595d94dbbb7932a7ae4f6b82e83e37cb75887a823ba536ab914f7b7` |
+| 011 | `011_tournaments.sql` | `ae8f1d2bd712523dcec1014258c2f5d9a5ae028268ff611590fda9fa67697231` |
+| 012 | `012_newsletter-core.sql` | `8ff655d6c1a8fa8f7892cd8375217285425d7797e21fb0a1aeafc7e30213349f` |
+| 013 | `013_newsletter-admin.sql` | `6be84fc546f3716df9421e3931965b4fa48ffc377b3871dfe0c89cdcd27c9f71` |
+| 014 | `014_thousand-games.sql` | `f06c1fcb9305e2b4fa93b32e400f760dd91ad5259257c488ce15b8f22dc90b3f` |
+
+Wynik:
+
+- count: `14`,
+- first: `001`,
+- last: `014`,
+- luka numeracyjna: `NONE`,
+- duplikat wersji: `NONE`,
+- dodatkowy plik SQL: `NONE`,
+- `015`: `ABSENT AS REQUIRED BEFORE E4.3`.
+
+### B2 — Repo-only plan i niezależny checksum cross-check
+
+W izolowanym katalogu roboczym odtworzono wyłącznie pliki pobrane z exact head SHA. Uruchomiono zatwierdzony równoważny wrapper plan mode, który importuje bez zmian exact:
+
+- `src/migrator/migration-plan.js`,
+- migracje `001–014`.
+
+Warunki bezpieczeństwa:
+
+- `DATABASE_URL` usunięty z procesu,
+- `MIGRATOR_DATABASE_URL` usunięty z procesu,
+- brak importu klienta PostgreSQL w wrapperze,
+- brak połączenia sieciowego z bazą,
+- brak `apply`,
+- brak DDL/DCL/DML,
+- brak zmian GitHub/Render/runtime.
+
+Wyniki wykonania:
+
+- exit code: `0`,
+- `PLAN_SEQUENCE_PASS count=14 first=001 last=014`,
+- każdy checksum wypisany przez exact `discoverMigrations()` porównano z niezależnym systemowym `sha256sum`,
+- `CHECKSUM_CROSSCHECK_PASS`,
+- mismatch count: `0`.
+
+Pełnego `npm run migrate:v3 -- --plan` nie uruchamiano w izolowanej kopii, ponieważ pakiet `pg` nie był lokalnie zainstalowany; zgodnie z checklistą użyto równoważnego plan wrappera, który wykonuje dokładnie repozytoryjne `discoverMigrations()` i kończy się bez dotykania DB.
 
 Status sekcji B:
 
-**PARTIAL / HOLD — metadata baseline zgodne, fresh plan/checksum execution pending.**
+**PASS — EXACT 001–014 PACKAGE / CONTIGUOUS SEQUENCE / SHA-256 CROSS-CHECK / REPO-ONLY PLAN.**
+
+Ten PASS nie autoryzuje migratora apply, połączenia z produkcją ani migracji `015`.
 
 ## 5. I — Gate 14B / 14C / 14D design package integrity
 
@@ -454,7 +508,7 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 | Sekcja | Status |
 |---|---|
 | A — Source / GitHub baseline | `PASS` |
-| B — Migration package / plan / checksums | `PARTIAL / HOLD` |
+| B — Migration package / plan / checksums | `PASS` |
 | C — Fresh Gate 13 active-state | `PENDING / READ-ONLY` |
 | D — Fresh Gate 14 AS-IS security | `PENDING / READ-ONLY` |
 | E — Fresh backup anchor | `PENDING` |
@@ -477,6 +531,6 @@ Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
 ## 9. Następny bezpieczny krok
 
-**Sekcja B — fresh, izolowany migration package plan/checksum verification na exact PR #26 head SHA, bez produkcyjnego `MIGRATOR_DATABASE_URL` i bez apply.**
+**Sekcja C — fresh Gate 13 active-state collector w rygorystycznym trybie read-only, bez uruchamiania normalnego runtime writer.**
 
 Sekcja J ma status PASS, ale E4.1 pozostaje ACTIVE/HOLD do zakończenia wszystkich pozostałych sekcji. Każda nieautoryzowana zmiana lub aktywny writer oznacza ABORT/HOLD.
