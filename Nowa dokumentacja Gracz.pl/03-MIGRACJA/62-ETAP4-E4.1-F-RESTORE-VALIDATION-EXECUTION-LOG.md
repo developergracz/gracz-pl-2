@@ -2,7 +2,7 @@
 
 Data przygotowania: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **IN PROGRESS / RESTORE PASS / STRUCTURAL, ROW-COUNT AND CRYPTO-STRUCTURE VALIDATION PASS**  
+Status: **IN PROGRESS / RESTORE PASS / STRUCTURAL, RESTORE ROW-COUNT, CRYPTO-STRUCTURE AND PRODUCTION RECONCILIATION PASS**  
 Production V3: **NO-GO**
 
 > Ten dziennik przygotowuje wyłącznie kontrolowane odtworzenie backupu E4.1-E na izolowanym celu non-production. Nie autoryzuje restore do produkcji, połączenia z produkcyjną bazą, migratora apply, DDL/DCL/DML na produkcji, zmian ról/ACL, zmian sekretów, merge PR #26 ani deployu `gracz-checkers-test`.
@@ -306,7 +306,52 @@ Status F6:
 
 **PASS — PRODUCTION TARGET IDENTITY / READ-ONLY / SSL CONFIRMED / NO MUTATION.**
 
-## 13. Kryteria pełnego E4.1-F PASS
+## 13. F7 — fresh production versus restore exact row-count reconciliation
+
+Data wykonania: 31.08.2026  
+Cel: porównać dokładne liczby rekordów wszystkich tabel bieżącej produkcji z izolowanym restore backupu E4.1-E, bez mutacji produkcji i bez ujawniania danych wierszy lub poświadczeń.
+
+Kontrolę produkcji wykonano w pojedynczej transakcji `REPEATABLE READ READ ONLY`, przy aktywnych zabezpieczeniach:
+
+- `default_transaction_read_only=on`,
+- `sslmode=require`,
+- `connect_timeout=15`,
+- uwierzytelnianie wyłącznie przez lokalny `pgpass.conf`,
+- zakończenie transakcji przez `ROLLBACK`.
+
+Wynik zbiorczy:
+
+| Kontrola | Produkcja | Restore |
+|---|---:|---:|
+| tabele objęte porównaniem | 28 | 28 |
+| łączna liczba rekordów | 17,711 | 17,711 |
+| tabele z różnicą | 0 | 0 |
+
+Wynik końcowy polecenia:
+
+`ROW_COUNT_RECONCILIATION_PASS`
+
+Lokalne artefakty evidence:
+
+- `E4.1-G-production-row-counts-20260831.csv`,
+- `E4.1-G-production-vs-restore-row-counts-20260831.csv`,
+- katalog operatora: `C:\Users\user\Documents\Gracz.pl-E4.1-Backup\`.
+
+Pliki zawierają wyłącznie nazwy tabel i liczniki rekordów; nie zawierają danych wierszy, plaintextów, sekretów ani poświadczeń.
+
+Interpretacja:
+
+- wszystkie 28 tabel istnieją po obu stronach,
+- dokładne liczniki wszystkich tabel są zgodne,
+- łączna liczba rekordów jest zgodna,
+- liczba różnic wynosi zero,
+- backup E4.1-E i izolowany restore odpowiadają produkcyjnemu snapshotowi w zakresie dokładnych liczników tabel.
+
+Status F7:
+
+**PASS — 28/28 TABLES RECONCILED / 17,711 ROWS ON BOTH SIDES / ZERO DIFFERENCES / PRODUCTION UNCHANGED.**
+
+## 14. Kryteria pełnego E4.1-F PASS
 
 E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
@@ -321,9 +366,9 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 9. crypto decryptability smoke test bez ujawnienia plaintextów,
 10. braku wpływu na produkcję i zachowania freeze.
 
-## 14. Current decision
+## 15. Current decision
 
-- `E4.1-F = IN PROGRESS / F0–F6 PASS`,
+- `E4.1-F = IN PROGRESS / F0–F7 PASS`,
 - lokalny cel loopback i uwierzytelnianie SCRAM = `PASS`,
 - lokalne poświadczenie = `ROTATED / AUTOMATED / NOT DISCLOSED`,
 - tymczasowa reguła `trust` = `REMOVED / COUNT 0`,
@@ -332,7 +377,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - struktura = `28/28 TABLES / 8 SEQUENCES / 70 INDEXES / 241 CONSTRAINTS`,
 - exact restore row counts = `28 TABLES / 17 NONEMPTY / 17,711 TOTAL ROWS`,
 - production read-only connection probe = `PASS / IDENTITY OK / SSL ON / READ ONLY`,
-- production row-count reconciliation = `PENDING`,
+- production row-count reconciliation = `PASS / 28 TABLES / 17,711 ROWS ON BOTH SIDES / 0 DIFFERENCES`,
 - crypto structure inventory = `PASS / 2 ENCRYPTED MESSAGE PAIRS / 3 LEGACY PAIRS / 2 VALID LEGACY-AAD ATTACHMENTS / MFA 0`,
 - legacy crypto decryptability smoke test = `PENDING`,
 - disposable DB cleanup = `DEFERRED UNTIL EVIDENCE COMPLETE`,
@@ -341,4 +386,4 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - PR #26 pozostaje `OPEN / DRAFT / NOT MERGED`,
 - produkcja i Render pozostają nienaruszone.
 
-Następny krok: wykonać wyłącznie kolejne wymagane kontrole read-only — reconciliation ze źródłem oraz crypto decryptability — bez usuwania bazy testowej i bez zmian produkcyjnych.
+Następny krok: wykonać wyłącznie świeży, privacy-safe crypto decryptability smoke test bez usuwania bazy testowej, bez ujawniania plaintextów lub sekretów i bez zmian produkcyjnych.
