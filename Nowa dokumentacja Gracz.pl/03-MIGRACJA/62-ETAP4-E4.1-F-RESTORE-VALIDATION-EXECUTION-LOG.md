@@ -2,7 +2,7 @@
 
 Data przygotowania: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **PREPARED / NOT RUN / HOLD BEFORE TARGET IDENTITY CONFIRMATION**  
+Status: **IN PROGRESS / F0 TARGET IDENTITY PASS / RESTORE NOT RUN**  
 Production V3: **NO-GO**
 
 > Ten dziennik przygotowuje wyłącznie kontrolowane odtworzenie backupu E4.1-E na izolowanym celu non-production. Nie autoryzuje restore do produkcji, połączenia z produkcyjną bazą, migratora apply, DDL/DCL/DML na produkcji, zmian ról/ACL, zmian sekretów, merge PR #26 ani deployu `gracz-checkers-test`.
@@ -77,31 +77,50 @@ Status F0:
 
 **PASS — REPO-ONLY PREFLIGHT COMPLETE / RESTORE NOT RUN.**
 
-## 5. Następny pojedynczy krok — lokalny read-only identity probe
+## 5. F0 — lokalny read-only identity probe
 
-Na komputerze operatora otworzyć PowerShell i wykonać wyłącznie:
+Data wykonania: 30.08.2026  
+Cel: lokalny PostgreSQL operatora, bez użycia produkcyjnego `DATABASE_URL` ani `MIGRATOR_DATABASE_URL`.
 
-```powershell
-& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' `
-  -h 127.0.0.1 -p 5433 -U postgres -d postgres -W -X `
-  -v ON_ERROR_STOP=1 `
-  -c "BEGIN TRANSACTION READ ONLY; SELECT current_database() AS database_name, inet_server_addr() AS server_address, inet_server_port() AS server_port, version() AS server_version, pg_is_in_recovery() AS in_recovery, current_setting('transaction_read_only') AS transaction_read_only; ROLLBACK;"
-```
+### 5.1. Obsługa incydentu poświadczeń lokalnych
 
-Zasady:
+Pierwsza próba identyfikacji została przerwana po błędnym wprowadzeniu lokalnego poświadczenia. Poświadczenie stało się widoczne w kontekście terminala, dlatego zostało potraktowane jako skompromitowane. Jego literalnej wartości nie zapisano w tym dzienniku ani w repozytorium.
 
-- hasło wpisać wyłącznie w lokalnym promptcie `Password`,
-- nie przesyłać hasła ani connection stringa,
-- przesłać tylko wynik zapytania lub zrzut bez sekretów,
-- na tym kroku nie tworzyć bazy i nie uruchamiać restore.
+Wykonane działania naprawcze:
 
-Oczekiwany dowód przed przejściem dalej:
+- wyłączono zapisywanie bieżącej historii PSReadLine,
+- usunięto utrwalony plik historii PowerShell; końcowy `Test-Path = False`,
+- potwierdzono działające lokalne usługi PostgreSQL 16 i PostgreSQL 18,
+- zidentyfikowano właściwy katalog PostgreSQL 18: `C:\Program Files\PostgreSQL\18\data`,
+- potwierdzono bazowe reguły `pg_hba.conf` z uwierzytelnianiem `scram-sha-256`,
+- przed zmianą utworzono kopię `C:\Program Files\PostgreSQL\18\data\pg_hba.conf.e41-reset-20260830105010.bak` o rozmiarze `5,649` bajtów,
+- zastosowano wyłącznie lokalną, wąską i tymczasową regułę `trust` dla bazy `postgres`, roli `postgres` i adresu `127.0.0.1/32`,
+- ustawiono `password_encryption = 'scram-sha-256'` i obrócono lokalne hasło roli `postgres`,
+- usunięto dokładnie jedną tymczasową regułę `trust`,
+- przeładowano konfigurację PostgreSQL 18; serwer został poprawnie zasygnalizowany,
+- ponowne logowanie z wymuszonym promptem hasła zakończyło się sukcesem.
 
-- `server_address = 127.0.0.1`,
-- `server_port = 5433`,
-- PostgreSQL 18.x,
-- zapytanie kończy się `ROLLBACK`,
-- brak jakiegokolwiek adresu Render.
+Reguła `trust` nie pozostaje aktywna. Zmiany dotyczyły wyłącznie lokalnej instalacji non-production. Render, produkcyjna baza, sekrety produkcyjne i PR #26 nie zostały zmienione.
+
+### 5.2. Wynik identity probe
+
+Zapytanie wykonano w transakcji `READ ONLY`, zakończonej `ROLLBACK`.
+
+| Pole | Wynik |
+|---|---|
+| `database_name` | `postgres` |
+| `server_address` | `127.0.0.1` |
+| `server_port` | `5433` |
+| `server_version` | `18.6` |
+| `in_recovery` | `false` |
+| `transaction_read_only` | `on` |
+| zakończenie transakcji | `ROLLBACK` |
+
+Status F0:
+
+**PASS — LOCAL LOOPBACK TARGET CONFIRMED / SCRAM AUTHENTICATION CONFIRMED / RESTORE NOT RUN.**
+
+Na tym kroku nie utworzono bazy testowej, nie uruchomiono `pg_restore` i nie wykonano restore. Utworzenie nowej disposable database `gracz_restore_e41_20260830` pozostaje osobnym, jawnym krokiem.
 
 ## 6. Kryteria pełnego E4.1-F PASS
 
@@ -120,10 +139,12 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
 ## 7. Current decision
 
-- `E4.1-F = PREPARED / NOT RUN`,
-- `E4.1 = IN PROGRESS / HOLD`,
+- `E4.1-F = IN PROGRESS / F0 TARGET IDENTITY PASS / RESTORE NOT RUN`,
+- lokalne uwierzytelnianie SCRAM po rotacji hasła = `PASS`,
+- tymczasowa reguła `trust` = `REMOVED / CONFIG RELOADED`,
+- `E4.1 = IN PROGRESS / HOLD BEFORE DISPOSABLE DB CREATION`,
 - `Production V3 = NO-GO`,
 - PR #26 pozostaje `OPEN / DRAFT / NOT MERGED`,
 - produkcja pozostaje `READ-ONLY / NO-MUTATION`.
 
-Kolejny krok po pozytywnym identity probe będzie wymagał osobnej, jawnej decyzji dotyczącej utworzenia nowej lokalnej disposable database.
+Kolejny krok wymaga osobnej, jawnej decyzji dotyczącej utworzenia nowej lokalnej disposable database `gracz_restore_e41_20260830`.
