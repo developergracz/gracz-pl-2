@@ -276,7 +276,37 @@ Status F5:
 
 **PASS — CRYPTO STRUCTURE INVENTORY CONFIRMED / NO PLAINTEXT OR SECRET OUTPUT / DECRYPTABILITY STILL PENDING.**
 
-## 12. Kryteria pełnego E4.1-F PASS
+## 12. F6 — bezpieczny production read-only connection probe przed reconciliation
+
+Data wykonania: 31.08.2026  
+Cel: potwierdzić możliwość wykonania fresh row-count reconciliation bez ujawniania poświadczeń i bez mutacji produkcji.
+
+Przed połączeniem:
+
+- zapisano External Database URL wyłącznie lokalnie w standardowym `pgpass.conf`,
+- poświadczenie nie zostało wklejone do czatu, polecenia ani historii PowerShell,
+- schowek został zastąpiony bezpiecznym markerem po lokalnym przetworzeniu URL,
+- połączenie wymusiło `sslmode=require`,
+- session guard wymusił `default_transaction_read_only=on`,
+- czas oczekiwania na połączenie ograniczono do 15 sekund.
+
+Probe zweryfikował bez wypisywania hosta ani credential values:
+
+- `current_database = gracz_pl_database`,
+- `current_user = gracz_pl_database_user`,
+- `transaction_read_only = on`,
+- SSL aktywne,
+- transakcja zakończona `ROLLBACK`.
+
+Wynik końcowy:
+
+`PRODUCTION_READONLY_CONNECTION_PASS`
+
+Status F6:
+
+**PASS — PRODUCTION TARGET IDENTITY / READ-ONLY / SSL CONFIRMED / NO MUTATION.**
+
+## 13. Kryteria pełnego E4.1-F PASS
 
 E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
@@ -291,9 +321,9 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 9. crypto decryptability smoke test bez ujawnienia plaintextów,
 10. braku wpływu na produkcję i zachowania freeze.
 
-## 13. Current decision
+## 14. Current decision
 
-- `E4.1-F = IN PROGRESS / F0–F5 PASS`,
+- `E4.1-F = IN PROGRESS / F0–F6 PASS`,
 - lokalny cel loopback i uwierzytelnianie SCRAM = `PASS`,
 - lokalne poświadczenie = `ROTATED / AUTOMATED / NOT DISCLOSED`,
 - tymczasowa reguła `trust` = `REMOVED / COUNT 0`,
@@ -301,6 +331,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - restore = `PASS / EXIT 0`,
 - struktura = `28/28 TABLES / 8 SEQUENCES / 70 INDEXES / 241 CONSTRAINTS`,
 - exact restore row counts = `28 TABLES / 17 NONEMPTY / 17,711 TOTAL ROWS`,
+- production read-only connection probe = `PASS / IDENTITY OK / SSL ON / READ ONLY`,
 - production row-count reconciliation = `PENDING`,
 - crypto structure inventory = `PASS / 2 ENCRYPTED MESSAGE PAIRS / 3 LEGACY PAIRS / 2 VALID LEGACY-AAD ATTACHMENTS / MFA 0`,
 - legacy crypto decryptability smoke test = `PENDING`,
