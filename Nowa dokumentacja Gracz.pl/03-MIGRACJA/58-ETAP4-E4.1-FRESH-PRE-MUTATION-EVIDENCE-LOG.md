@@ -264,9 +264,32 @@ Status J5:
 
 **PASS — PROJECT PRODUCTION INVENTORY UNCHANGED 2/2 / WRITER STILL SUSPENDED.**
 
+### J6a — Workspace Static Site inventory — PASS
+
+Fresh operator evidence:
+
+- capture: **30.08.2026 02:11 CEST**,
+- Render workspace overview,
+- sekcja `Ungrouped Services`: `Active (1)` / `Suspended (0)` / `All (1)`,
+- jedyny zasób: `gracz-pl-maintenance`,
+- status: `Deployed`,
+- runtime/type: `Static`,
+- region: `Global`,
+- zasób pozostaje poza projektem Production jako Ungrouped Service,
+- nie wykonano żadnej zmiany ani deployu.
+
+Wniosek:
+
+- nowy zasób maintenance jest jednoznacznie zidentyfikowany jako Static Site, nie Web Service/Worker/Cron/Private Service,
+- wymaga jeszcze osobnego sprawdzenia jego Environment oraz pozostałych ścieżek konfiguracji.
+
+Status J6a:
+
+**PASS — MAINTENANCE RESOURCE IDENTIFIED AS STATIC / GLOBAL / DEPLOYED.**
+
 Status całej sekcji J:
 
-**HOLD — VALUE CONTINUITY AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
+**HOLD — VALUE CONTINUITY AND STATIC-SITE ENVIRONMENT/BOUNDARY RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
