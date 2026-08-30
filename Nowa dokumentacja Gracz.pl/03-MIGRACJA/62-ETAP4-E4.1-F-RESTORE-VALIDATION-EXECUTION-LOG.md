@@ -2,7 +2,7 @@
 
 Data przygotowania: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **IN PROGRESS / F1 TARGET DATABASE CREATED / SECURITY HOLD / RESTORE NOT RUN**  
+Status: **IN PROGRESS / RESTORE PASS / STRUCTURAL AND ROW-COUNT VALIDATION PASS**  
 Production V3: **NO-GO**
 
 > Ten dziennik przygotowuje wyłącznie kontrolowane odtworzenie backupu E4.1-E na izolowanym celu non-production. Nie autoryzuje restore do produkcji, połączenia z produkcyjną bazą, migratora apply, DDL/DCL/DML na produkcji, zmian ról/ACL, zmian sekretów, merge PR #26 ani deployu `gracz-checkers-test`.
@@ -18,7 +18,7 @@ Kanoniczny artefakt metadanych:
 - size: `1,440,765` bytes,
 - SHA-256: `87BC0380C8F7EF39E21600E87B80045E4A9C52481C9D4EAE7FB937E98CDC8D8B`,
 - `pg_restore --list`: exit `0`,
-- dwie lokalne kopie objęte retention contract.
+- trzy lokalne kopie objęte retention contract; wszystkie mają identyczny rozmiar i SHA-256.
 
 Sam `pg_restore --list = 0` nie stanowi jeszcze restore validation.
 
@@ -122,52 +122,125 @@ Status F0:
 
 Na tym kroku nie utworzono bazy testowej, nie uruchomiono `pg_restore` i nie wykonano restore. Utworzenie nowej disposable database `gracz_restore_e41_20260830` pozostaje osobnym, jawnym krokiem.
 
-## 6. F1 — utworzenie izolowanej disposable restore database
+## 6. Domknięcie incydentu poświadczeń lokalnych
+
+Po wcześniejszym `SECURITY HOLD` wykonano pełną remediację lokalną bez ponownego ujawniania sekretu:
+
+- wygenerowano nowe losowe poświadczenie lokalnej roli `postgres`,
+- zapisano je wyłącznie w standardowym lokalnym `pgpass.conf`,
+- ACL pliku ograniczono do bieżącego użytkownika Windows oraz `SYSTEM`,
+- usunięto tymczasową regułę `trust` i przeładowano konfigurację,
+- potwierdzono `TRUST_RULE_COUNT=0`,
+- test logowania bez promptu, z `-w` i lokalnym `pgpass.conf`, zakończył się `AUTH_TEST_PASS`,
+- schowek oraz utrwalona historia PowerShell zostały wyczyszczone,
+- wcześniejsze lokalne poświadczenia uznano za wycofane.
+
+Żadnej wartości hasła nie zapisano w repozytorium ani w tym dzienniku. Produkcyjne poświadczenia, Render i PR #26 pozostały bez zmian.
+
+Status remediacji:
+
+**PASS — LOCAL CREDENTIAL ROTATED / SCRAM ACTIVE / TRUST ABSENT / AUTOMATED LOCAL AUTH VERIFIED.**
+
+## 7. F1 — utworzenie i weryfikacja izolowanej disposable restore database
 
 Data wykonania: 30.08.2026  
-Autoryzowany cel: wyłącznie lokalny PostgreSQL `127.0.0.1:5433`.
+Cel: wyłącznie lokalny PostgreSQL `127.0.0.1:5433`.
 
 Wykonano:
 
 - utworzono nową bazę `gracz_restore_e41_20260830` przez lokalne `createdb.exe`,
-- jako maintenance database użyto lokalnej bazy `postgres`,
 - właściciel: `postgres`,
 - kodowanie: `UTF8`,
-- template source: `template0`,
+- źródło: `template0`,
 - `datistemplate = false`,
 - `datallowconn = true`,
-- metadane bazy potwierdzono zapytaniem `READ ONLY`,
-- zapytanie weryfikacyjne zakończono `ROLLBACK`.
-
-Nie wykonano:
-
-- `pg_restore`,
-- restore backupu E4.1-E,
-- migratora apply,
-- połączenia z Renderem lub produkcyjną bazą,
-- użycia `DATABASE_URL`, `MIGRATOR_DATABASE_URL` lub `AUTH_SECRET`,
-- DDL/DCL/DML na produkcji.
-
-### 6.1. Security hold po F1
-
-Próba potwierdzenia pustego stanu bazy została przerwana, gdy lokalne poświadczenie zostało omyłkowo wklejone do widocznego wiersza konsoli. Literalnej wartości nie zapisano w tym dzienniku ani w repozytorium. Poświadczenie należy traktować jako ujawnione.
-
-Kolejne próby rotacji nie zakończyły się zmianą hasła: jedna para nie była zgodna, a następna wartość została omyłkowo dopisana do identyfikatora roli i odrzucona. Operator zdecydował o przerwaniu dalszej rotacji hasła w tej sesji.
-
-Skutek:
-
-- utworzona baza F1 pozostaje lokalna i izolowana,
-- pusty stan `user_tables = 0` nie został jeszcze kanonicznie potwierdzony,
-- F2 restore nie został rozpoczęty,
-- dalsze działania bazodanowe są objęte `SECURITY HOLD`,
-- dozwolona jest wyłącznie kontynuacja dokumentacji repo-only,
-- produkcja, Render, sekrety produkcyjne oraz PR #26 pozostają nienaruszone.
+- przed restore potwierdzono w transakcji `READ ONLY`: `user_tables = 0`,
+- kontrolę zakończono `ROLLBACK`.
 
 Status F1:
 
-**PARTIAL PASS — DISPOSABLE DB CREATED AND METADATA CONFIRMED / EMPTY-STATE CHECK NOT COMPLETED / SECURITY HOLD / RESTORE NOT RUN.**
+**PASS — DISPOSABLE DB CREATED / METADATA CONFIRMED / EMPTY STATE CONFIRMED.**
 
-## 7. Kryteria pełnego E4.1-F PASS
+## 8. F2 — kontrolowany restore świeżego backupu E4.1-E
+
+Źródło restore:
+
+- plik: `E4.1-E-gracz-pl-database-pre-mutation-2026-08-29.dump`,
+- format: PostgreSQL custom archive,
+- rozmiar: `1,440,765` bajtów,
+- SHA-256: `87BC0380C8F7EF39E21600E87B80045E4A9C52481C9D4EAE7FB937E98CDC8D8B`,
+- `pg_restore --list`: `ARCHIVE_LIST_OK`,
+- liczba pozycji TOC: `199`,
+- narzędzie: `pg_restore (PostgreSQL) 18.6`.
+
+Restore wykonano wyłącznie do `gracz_restore_e41_20260830` z opcjami:
+
+- `--host=127.0.0.1`,
+- `--port=5433`,
+- `--username=postgres`,
+- `--no-password`,
+- `--no-owner`,
+- `--no-privileges`,
+- `--exit-on-error`,
+- `--single-transaction`.
+
+Wynik:
+
+- `RESTORE_PASS`,
+- `EXIT_CODE=0`,
+- czas: `0.87 s`,
+- produkcja i Render: bez zmian.
+
+Status F2:
+
+**PASS — CUSTOM ARCHIVE RESTORED TO ISOLATED LOCAL DATABASE / EXIT 0.**
+
+## 9. F3 — read-only structural validation po restore
+
+Walidację wykonano w transakcji `READ ONLY` i zakończono `ROLLBACK`.
+
+| Kontrola | Wynik |
+|---|---:|
+| tabele użytkownika | 28 |
+| sekwencje | 8 |
+| widoki | 2 |
+| widoki materializowane | 0 |
+| indeksy | 70 |
+| constraints | 241 |
+| niepoprawne indeksy | 0 |
+| niezwalidowane constraints | 0 |
+
+Tożsamość celu:
+
+- baza: `gracz_restore_e41_20260830`,
+- użytkownik: `postgres`,
+- adres: `127.0.0.1`,
+- port: `5433`,
+- PostgreSQL: `18.6`,
+- `transaction_read_only = on`.
+
+Status F3:
+
+**PASS — 28/28 TABLES PRESENT / STRUCTURAL OBJECTS PRESENT / NO INVALID INDEXES / NO UNVALIDATED CONSTRAINTS.**
+
+## 10. F4 — dokładne row counts wszystkich tabel restore
+
+W trybie read-only wykonano dokładne `COUNT(*)` dla wszystkich tabel użytkownika.
+
+Wynik zbiorczy:
+
+- `TABLES_CHECKED=28`,
+- `NONEMPTY_TABLES=17`,
+- `TOTAL_ROWS=17711`,
+- błędy zapytań: brak,
+- evidence CSV: `E4.1-F-restore-row-counts-20260830.csv`,
+- lokalizacja operatora: `C:\Users\user\Documents\Gracz.pl-E4.1-Backup\E4.1-F-restore-row-counts-20260830.csv`.
+
+Status F4:
+
+**PASS — EXACT ROW COUNTS COLLECTED FOR 28/28 TABLES / LOCAL EVIDENCE SAVED.**
+
+## 11. Kryteria pełnego E4.1-F PASS
 
 E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
@@ -182,17 +255,22 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 9. crypto decryptability smoke test bez ujawnienia plaintextów,
 10. braku wpływu na produkcję i zachowania freeze.
 
-## 8. Current decision
+## 12. Current decision
 
-- `E4.1-F = IN PROGRESS / F1 PARTIAL PASS / SECURITY HOLD / RESTORE NOT RUN`,
-- F0 local target identity = `PASS`,
-- lokalna disposable database = `CREATED / METADATA CONFIRMED`,
-- empty-state verification = `NOT COMPLETED`,
-- local credential state = `EXPOSED / REMEDIATION DEFERRED BY OPERATOR`,
-- F2 restore = `NOT AUTHORIZED / NOT RUN`,
-- `E4.1 = IN PROGRESS / DOCUMENTATION-ONLY HOLD`,
+- `E4.1-F = IN PROGRESS / F0–F4 PASS`,
+- lokalny cel loopback i uwierzytelnianie SCRAM = `PASS`,
+- lokalne poświadczenie = `ROTATED / AUTOMATED / NOT DISCLOSED`,
+- tymczasowa reguła `trust` = `REMOVED / COUNT 0`,
+- disposable database = `gracz_restore_e41_20260830`,
+- restore = `PASS / EXIT 0`,
+- struktura = `28/28 TABLES / 8 SEQUENCES / 70 INDEXES / 241 CONSTRAINTS`,
+- exact restore row counts = `28 TABLES / 17 NONEMPTY / 17,711 TOTAL ROWS`,
+- production row-count reconciliation = `PENDING`,
+- legacy crypto decryptability smoke test = `PENDING`,
+- disposable DB cleanup = `DEFERRED UNTIL EVIDENCE COMPLETE`,
+- `E4.1 = IN PROGRESS`,
 - `Production V3 = NO-GO`,
 - PR #26 pozostaje `OPEN / DRAFT / NOT MERGED`,
-- produkcja pozostaje `READ-ONLY / NO-MUTATION`.
+- produkcja i Render pozostają nienaruszone.
 
-Następny krok bazodanowy pozostaje zablokowany do czasu osobnej decyzji operatora o bezpiecznym usunięciu ryzyka ujawnionego lokalnego poświadczenia. Do tego czasu można kontynuować wyłącznie pracę repo-only i dokumentacyjną.
+Następny krok: wykonać wyłącznie kolejne wymagane kontrole read-only — reconciliation ze źródłem oraz crypto decryptability — bez usuwania bazy testowej i bez zmian produkcyjnych.
