@@ -2,7 +2,7 @@
 
 Data przygotowania: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **IN PROGRESS / F0 TARGET IDENTITY PASS / RESTORE NOT RUN**  
+Status: **IN PROGRESS / F1 TARGET DATABASE CREATED / SECURITY HOLD / RESTORE NOT RUN**  
 Production V3: **NO-GO**
 
 > Ten dziennik przygotowuje wyłącznie kontrolowane odtworzenie backupu E4.1-E na izolowanym celu non-production. Nie autoryzuje restore do produkcji, połączenia z produkcyjną bazą, migratora apply, DDL/DCL/DML na produkcji, zmian ról/ACL, zmian sekretów, merge PR #26 ani deployu `gracz-checkers-test`.
@@ -122,7 +122,52 @@ Status F0:
 
 Na tym kroku nie utworzono bazy testowej, nie uruchomiono `pg_restore` i nie wykonano restore. Utworzenie nowej disposable database `gracz_restore_e41_20260830` pozostaje osobnym, jawnym krokiem.
 
-## 6. Kryteria pełnego E4.1-F PASS
+## 6. F1 — utworzenie izolowanej disposable restore database
+
+Data wykonania: 30.08.2026  
+Autoryzowany cel: wyłącznie lokalny PostgreSQL `127.0.0.1:5433`.
+
+Wykonano:
+
+- utworzono nową bazę `gracz_restore_e41_20260830` przez lokalne `createdb.exe`,
+- jako maintenance database użyto lokalnej bazy `postgres`,
+- właściciel: `postgres`,
+- kodowanie: `UTF8`,
+- template source: `template0`,
+- `datistemplate = false`,
+- `datallowconn = true`,
+- metadane bazy potwierdzono zapytaniem `READ ONLY`,
+- zapytanie weryfikacyjne zakończono `ROLLBACK`.
+
+Nie wykonano:
+
+- `pg_restore`,
+- restore backupu E4.1-E,
+- migratora apply,
+- połączenia z Renderem lub produkcyjną bazą,
+- użycia `DATABASE_URL`, `MIGRATOR_DATABASE_URL` lub `AUTH_SECRET`,
+- DDL/DCL/DML na produkcji.
+
+### 6.1. Security hold po F1
+
+Próba potwierdzenia pustego stanu bazy została przerwana, gdy lokalne poświadczenie zostało omyłkowo wklejone do widocznego wiersza konsoli. Literalnej wartości nie zapisano w tym dzienniku ani w repozytorium. Poświadczenie należy traktować jako ujawnione.
+
+Kolejne próby rotacji nie zakończyły się zmianą hasła: jedna para nie była zgodna, a następna wartość została omyłkowo dopisana do identyfikatora roli i odrzucona. Operator zdecydował o przerwaniu dalszej rotacji hasła w tej sesji.
+
+Skutek:
+
+- utworzona baza F1 pozostaje lokalna i izolowana,
+- pusty stan `user_tables = 0` nie został jeszcze kanonicznie potwierdzony,
+- F2 restore nie został rozpoczęty,
+- dalsze działania bazodanowe są objęte `SECURITY HOLD`,
+- dozwolona jest wyłącznie kontynuacja dokumentacji repo-only,
+- produkcja, Render, sekrety produkcyjne oraz PR #26 pozostają nienaruszone.
+
+Status F1:
+
+**PARTIAL PASS — DISPOSABLE DB CREATED AND METADATA CONFIRMED / EMPTY-STATE CHECK NOT COMPLETED / SECURITY HOLD / RESTORE NOT RUN.**
+
+## 7. Kryteria pełnego E4.1-F PASS
 
 E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
@@ -137,14 +182,17 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 9. crypto decryptability smoke test bez ujawnienia plaintextów,
 10. braku wpływu na produkcję i zachowania freeze.
 
-## 7. Current decision
+## 8. Current decision
 
-- `E4.1-F = IN PROGRESS / F0 TARGET IDENTITY PASS / RESTORE NOT RUN`,
-- lokalne uwierzytelnianie SCRAM po rotacji hasła = `PASS`,
-- tymczasowa reguła `trust` = `REMOVED / CONFIG RELOADED`,
-- `E4.1 = IN PROGRESS / HOLD BEFORE DISPOSABLE DB CREATION`,
+- `E4.1-F = IN PROGRESS / F1 PARTIAL PASS / SECURITY HOLD / RESTORE NOT RUN`,
+- F0 local target identity = `PASS`,
+- lokalna disposable database = `CREATED / METADATA CONFIRMED`,
+- empty-state verification = `NOT COMPLETED`,
+- local credential state = `EXPOSED / REMEDIATION DEFERRED BY OPERATOR`,
+- F2 restore = `NOT AUTHORIZED / NOT RUN`,
+- `E4.1 = IN PROGRESS / DOCUMENTATION-ONLY HOLD`,
 - `Production V3 = NO-GO`,
 - PR #26 pozostaje `OPEN / DRAFT / NOT MERGED`,
 - produkcja pozostaje `READ-ONLY / NO-MUTATION`.
 
-Kolejny krok wymaga osobnej, jawnej decyzji dotyczącej utworzenia nowej lokalnej disposable database `gracz_restore_e41_20260830`.
+Następny krok bazodanowy pozostaje zablokowany do czasu osobnej decyzji operatora o bezpiecznym usunięciu ryzyka ujawnionego lokalnego poświadczenia. Do tego czasu można kontynuować wyłącznie pracę repo-only i dokumentacyjną.
