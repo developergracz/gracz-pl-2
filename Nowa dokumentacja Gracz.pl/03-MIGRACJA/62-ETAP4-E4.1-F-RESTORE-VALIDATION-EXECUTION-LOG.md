@@ -2,7 +2,7 @@
 
 Data przygotowania: 30.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
-Status: **IN PROGRESS / RESTORE PASS / STRUCTURAL AND ROW-COUNT VALIDATION PASS**  
+Status: **IN PROGRESS / RESTORE PASS / STRUCTURAL, ROW-COUNT AND CRYPTO-STRUCTURE VALIDATION PASS**  
 Production V3: **NO-GO**
 
 > Ten dziennik przygotowuje wyłącznie kontrolowane odtworzenie backupu E4.1-E na izolowanym celu non-production. Nie autoryzuje restore do produkcji, połączenia z produkcyjną bazą, migratora apply, DDL/DCL/DML na produkcji, zmian ról/ACL, zmian sekretów, merge PR #26 ani deployu `gracz-checkers-test`.
@@ -240,7 +240,43 @@ Status F4:
 
 **PASS — EXACT ROW COUNTS COLLECTED FOR 28/28 TABLES / LOCAL EVIDENCE SAVED.**
 
-## 11. Kryteria pełnego E4.1-F PASS
+## 11. F5 — privacy-safe kontrola struktury danych kryptograficznych restore
+
+Data wykonania: 31.08.2026  
+Cel: wyłącznie lokalna baza `gracz_restore_e41_20260830` na `127.0.0.1:5433`.
+
+Kontrolę wykonano w transakcji `REPEATABLE READ READ ONLY`, zakończonej `ROLLBACK`. Polecenie nie odczytywało ani nie wypisywało plaintextów, kluczy, wartości AAD, ciphertextów, haseł ani danych osobowych.
+
+| Kontrola | Wynik |
+|---|---:|
+| wiadomości ogółem | 5 |
+| pary subject/body z envelope `enc:v1` | 2 |
+| rekordy z mieszanym formatem subject/body | 0 |
+| pary legacy/non-prefixed | 3 |
+| załączniki ogółem | 2 |
+| załączniki strukturalnie poprawne (IV/tag/ciphertext) | 2 |
+| załączniki używające legacy AAD | 2 |
+| niepoprawne strukturalnie załączniki | 0 |
+| rekordy MFA | 0 |
+
+Wynik końcowy polecenia:
+
+`CRYPTO_STRUCTURE_CHECK_PASS`
+
+Interpretacja:
+
+- restore zachowuje oczekiwane formaty kryptograficzne i warianty legacy,
+- brak rekordów z mieszanym envelope wiadomości,
+- brak strukturalnie niepoprawnych załączników,
+- trzy rekordy legacy wymagają zachowania zgodności ścieżki odczytu podczas migracji,
+- `MFA = 0` oznacza `N/A` dla danych MFA,
+- kontrola struktury **nie jest testem odszyfrowania** i nie zastępuje świeżego Gate 11 decryptability smoke testu.
+
+Status F5:
+
+**PASS — CRYPTO STRUCTURE INVENTORY CONFIRMED / NO PLAINTEXT OR SECRET OUTPUT / DECRYPTABILITY STILL PENDING.**
+
+## 12. Kryteria pełnego E4.1-F PASS
 
 E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
@@ -255,7 +291,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 9. crypto decryptability smoke test bez ujawnienia plaintextów,
 10. braku wpływu na produkcję i zachowania freeze.
 
-## 12. Current decision
+## 13. Current decision
 
 - `E4.1-F = IN PROGRESS / F0–F4 PASS`,
 - lokalny cel loopback i uwierzytelnianie SCRAM = `PASS`,
@@ -266,6 +302,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - struktura = `28/28 TABLES / 8 SEQUENCES / 70 INDEXES / 241 CONSTRAINTS`,
 - exact restore row counts = `28 TABLES / 17 NONEMPTY / 17,711 TOTAL ROWS`,
 - production row-count reconciliation = `PENDING`,
+- crypto structure inventory = `PASS / 2 ENCRYPTED MESSAGE PAIRS / 3 LEGACY PAIRS / 2 VALID LEGACY-AAD ATTACHMENTS / MFA 0`,
 - legacy crypto decryptability smoke test = `PENDING`,
 - disposable DB cleanup = `DEFERRED UNTIL EVIDENCE COMPLETE`,
 - `E4.1 = IN PROGRESS`,
