@@ -180,39 +180,46 @@ Status J2:
 
 **PASS — AUTO-DEPLOY OFF / NO CONFIGURATION CHANGE.**
 
-### J3 — Environment głównego Web Service — PARTIAL / SAFE CAPTURE
+### J3 — Environment Variables key inventory — PASS
 
 Fresh operator evidence:
 
-- capture: **30.08.2026 02:00 CEST**,
+- captures: **30.08.2026 02:00–02:01 CEST**,
 - Render resource: `gracz-checkers-test`,
 - path: `Environment`,
-- banner nadal wskazuje `Suspended by you`,
-- widoczne nazwy zmiennych: `AUTH_SECRET` oraz `DATABASE_URL`,
-- obie wartości pozostają zamaskowane,
+- banner w pierwszym kadrze nadal wskazuje `Suspended by you`,
+- pełna tabela zawiera dokładnie siedem nazw:
+  - `AUTH_SECRET`,
+  - `DATABASE_URL`,
+  - `EMAIL_FROM`,
+  - `NEWSLETTER_FROM`,
+  - `RESEND_API_KEY`,
+  - `TURNSTILE_SECRET_KEY`,
+  - `TURNSTILE_SITE_KEY`,
+- wszystkie wartości pozostają zamaskowane,
 - nie użyto ikon podglądu, kopiowania, `Export` ani `Edit`,
 - nie wykonano żadnej zmiany environment.
 
-Potwierdzony zakres:
+Porównanie z `E4.0-D7`:
 
-- wymagane istniejące zmienne są obecne,
-- żaden sekret nie został ujawniony,
-- freeze pozostaje nienaruszony podczas capture.
+- lista nazw jest identyczna 7/7,
+- nie dodano `MIGRATOR_DATABASE_URL` do normalnego runtime,
+- nie ma nowej zmiennej będącej v2 crypto root,
+- nie ujawniono żadnego sekretu.
 
 Ograniczenie dowodu:
 
-- kadr nie obejmuje całej listy zmiennych,
-- nie można jeszcze potwierdzić braku `MIGRATOR_DATABASE_URL`,
-- nie można jeszcze potwierdzić braku v2 crypto roots,
-- sam kadr nie dowodzi, że wartość `AUTH_SECRET` nie została wcześniej obrócona.
+- zamaskowane wartości celowo uniemożliwiają potwierdzenie ich bitowej identyczności,
+- sam screenshot nie dowodzi, że wartość `AUTH_SECRET` ani credential w `DATABASE_URL` nie zostały wcześniej zmienione,
+- `Secret Files` i `Linked Environment Groups` wymagają jeszcze osobnego kadru.
 
 Status J3:
 
-**PARTIAL / HOLD — SAFE MASKED CAPTURE; FULL KEY-NAME LIST STILL REQUIRED.**
+**PASS — KEY-NAME INVENTORY UNCHANGED / NO MIGRATOR OR V2 ROOTS / VALUES NOT EXPOSED.**
 
 Status całej sekcji J:
 
-**HOLD — FULL ENVIRONMENT LIST AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
+**HOLD — SECRET FILES, ENV GROUPS, VALUE CONTINUITY AND STATIC-SITE BOUNDARY RECHECK STILL REQUIRED.**
 
 Fresh recheck musi potwierdzić bez ujawniania sekretów:
 
