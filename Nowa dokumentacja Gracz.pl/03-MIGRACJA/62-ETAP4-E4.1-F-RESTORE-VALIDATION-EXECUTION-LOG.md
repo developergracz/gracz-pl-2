@@ -293,7 +293,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 
 ## 13. Current decision
 
-- `E4.1-F = IN PROGRESS / F0–F4 PASS`,
+- `E4.1-F = IN PROGRESS / F0–F5 PASS`,
 - lokalny cel loopback i uwierzytelnianie SCRAM = `PASS`,
 - lokalne poświadczenie = `ROTATED / AUTOMATED / NOT DISCLOSED`,
 - tymczasowa reguła `trust` = `REMOVED / COUNT 0`,
