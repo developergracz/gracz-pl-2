@@ -1054,12 +1054,12 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-010` | P1 | RPO, RTO, backup i disaster recovery | przed production readiness | `PENDING` |
 | `ADR-V3-011` | P1 | trusted proxy i topologia Cloudflare–Render | przed zmianą proxy trust flags | `FRESH EVIDENCE REQUIRED` |
 | [`ADR-V3-012`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | P0 | retencja, privacy deletion i legal hold | przed `REVIEWED DESIGN` | `PROPOSED / REVIEW PENDING` |
-| `ADR-V3-013` | P0 | ownership, checkpoint i rebuild read models | przed `REVIEWED DESIGN` | `PENDING` |
+| [`ADR-V3-013`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | P0 | ownership, checkpoint i privacy-safe rebuild read models | przed `REVIEWED DESIGN` | `PROPOSED / REVIEW PENDING` |
 | `ADR-V3-014` | P1 | API versioning i deprecation | przed pierwszą zmianą niekompatybilną | `PENDING` |
 | `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
 | `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
 
-`ADR-V3-004` został formalnie zaakceptowany 31.08.2026. `ADR-V3-012` ma kompletną treść decyzyjną i oczekuje na formalny review. Do zamknięcia bramki `REVIEWED DESIGN` pozostają dwa otwarte ADR klasy P0: `ADR-V3-012` i `ADR-V3-013`.
+`ADR-V3-004` został formalnie zaakceptowany 31.08.2026. `ADR-V3-012` ma kompletną treść decyzyjną, przeszedł review architektoniczny i oczekuje na formalne zatwierdzenie Privacy/Legal. `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego zamknięcia obu pozostałych pozycji P0.
 
 Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
