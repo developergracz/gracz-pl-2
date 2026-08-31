@@ -469,3 +469,19 @@ EVIDENCE V2 = DESIGN CANONICAL / NOT YET IMPLEMENTED
 EXECUTION = NOT AUTHORIZED
 FREEZE = ACTIVE
 ```
+
+
+## 17. Authorization prerequisite — dokument 69
+
+Warstwa E0 Authorization jest kompletna wyłącznie na podstawie ważnego rekordu zgodnego z:
+
+- `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md`.
+
+Wymagane są rozdzielone decyzje A1–A3. Sam machine JSON, exit code `0`, poprawne odszyfrowanie albo cleanup nie mogą zastąpić brakującej autoryzacji.
+
+```text
+E0 AUTHORIZATION = NOT COLLECTED
+A1-A3 = NOT_AUTHORIZED
+EXECUTION = NOT AUTHORIZED
+FREEZE = ACTIVE
+```
