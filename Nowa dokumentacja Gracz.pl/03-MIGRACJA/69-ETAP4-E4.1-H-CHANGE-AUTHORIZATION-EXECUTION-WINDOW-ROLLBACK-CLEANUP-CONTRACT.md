@@ -526,3 +526,24 @@ A1-A3 = NOT AUTHORIZED
 ```
 
 Akceptacja roli nie jest akceptacją konkretnej operacji.
+
+
+## 25. T-14 evidence gate prerequisite — dokument 73
+
+Bramkę governance przed przygotowaniem continuity change definiuje:
+
+- `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md`.
+
+T-14 PASS:
+
+- nie udziela A1, A2 ani A3,
+- nie autoryzuje backupu, upgrade, restore ani cutover,
+- pozwala wyłącznie przejść do przygotowania wniosku T-10.
+
+HOLD albo NO-GO utrzymuje A2/A3 jako BLOCKED.
+
+```text
+T-14 FORMAL REVIEW = NOT EXECUTED
+CURRENT PROJECTION = HOLD
+A1-A3 = NOT AUTHORIZED
+```
