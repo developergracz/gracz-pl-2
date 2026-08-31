@@ -5,6 +5,9 @@ Data: 31.08.2026
 Priorytet: `P0`  
 Status: **PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE**
 
+Review provenance: [`REV-ADR-V3-012-20260831-01`](00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md#6-review-record--adr-v3-012)  
+Provenance class: **EXTERNAL_RECORDED / REVIEWER IDENTITY NOT RECORDED IN GIT**
+
 > Ten ADR jest decyzją architektoniczną i polityką projektową Gracz.pl V3. Nie stanowi opinii prawnej, nie potwierdza wdrożenia i nie udziela zgody operacyjnej. Ostateczna podstawa prawna, obowiązki informacyjne i okresy wymagają formalnego review właściciela Privacy/Legal przed oznaczeniem ADR jako `ACCEPTED`.
 
 ## 0. Obowiązujący stan
@@ -843,18 +846,35 @@ ADR może otrzymać `ACCEPTED / FINAL`, gdy reviewer potwierdzi:
 - brak sekretów oraz PII w evidence,
 - brak autoryzacji wdrożenia.
 
-## 35. Wynik projektowy
+## 35. Rekord architecture review i provenance
+
+Review record: [`REV-ADR-V3-012-20260831-01`](00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md#6-review-record--adr-v3-012)  
+Review baseline SHA: `c96b893854717d5b75947a0c76fc01bd8cf3ee65`  
+Review type: `EXTERNAL ARCHITECTURE REVIEW / PRIVACY-LEGAL EXCLUDED`  
+Git author: `developergracz`  
+Reviewer role: `External Lead Architect reviewer — architecture scope only`  
+Reviewer identity in Git: `NOT RECORDED`  
+Architecture verdict: `PASS WITH CONDITIONS`  
+Privacy/Legal authority: `PENDING / UNASSIGNED`  
+Provenance class: `EXTERNAL_RECORDED / IDENTITY NOT GIT-VERIFIABLE`
+
+Git nie potwierdza tożsamości ani niezależności reviewera. Werdykt architektoniczny nie jest opinią prawną i nie zastępuje formalnej akceptacji Privacy/Legal.
+
+## 36. Wynik projektowy
 
 ```text
 ADR-V3-012 DESIGN = COMPLETE
 P0 DECISION CONTENT = COMPLETE
+ARCHITECTURE REVIEW = PASS WITH CONDITIONS / EXTERNAL EVIDENCE RECORDED
+REVIEW PROVENANCE = PARTIAL / REVIEWER IDENTITY NOT RECORDED IN GIT
+PRIVACY-LEGAL ACCEPTANCE = PENDING / UNASSIGNED
 FORMAL ACCEPTANCE = PENDING REVIEW
 IMPLEMENTATION = NOT AUTHORIZED
 FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 ```
 
-## 36. Referencje regulacyjne
+## 37. Referencje regulacyjne
 
 - RODO — tekst oficjalny EUR-Lex: `https://eur-lex.europa.eu/eli/reg/2016/679/oj`
 - UODO — określanie okresu przechowywania: `https://uodo.gov.pl/pl/676/4260`
