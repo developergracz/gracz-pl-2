@@ -566,3 +566,11 @@ Utworzono:
 - `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
 
 Wynik F0-F7 oraz historyczny restore anchor są wejściem dowodowym. Nie zastępują BA1-BA3 i nie autoryzują S1 ani S3.
+
+## 24. T-3 final continuity gate — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+F0-F7 i historyczny restore anchor pozostają dowodami wspierającymi. Finalne READY wymaga świeżego łańcucha T-14/T-10/T-7 oraz BA1-BA3 PASS.
