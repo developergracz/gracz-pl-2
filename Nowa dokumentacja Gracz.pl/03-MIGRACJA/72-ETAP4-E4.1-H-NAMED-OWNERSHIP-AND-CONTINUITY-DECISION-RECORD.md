@@ -533,3 +533,11 @@ NAMED OWNERS = PENDING / UNASSIGNED
 BA1 / BA2 / BA3 = NOT AUTHORIZED
 T-10 CURRENT PROJECTION = HOLD
 ```
+
+## 28. T-7 named decision ownership — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+DEC-009-06 i DEC-009-07 są wejściami do formalnego T-7. Dopóki wymagani ownerzy nie osiągną ACTIVE, GO-S1 i GO-S3 pozostają niedostępne.
