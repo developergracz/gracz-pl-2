@@ -22,7 +22,7 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 125 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 126 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
@@ -30,8 +30,8 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 125 plików:
 | `01-ARCHITEKTURA` | 3 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| `09-DECYZJE-ARCHITEKTONICZNE` | 3 |
-| **Łącznie** | **125** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 4 |
+| **Łącznie** | **126** |
 
 ## 3. Status etapów
 
@@ -88,7 +88,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`; delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`; external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Review provenance jest zapisane w `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
 
 ### PostgreSQL
 
@@ -111,9 +111,13 @@ Skonsolidowana architektura systemowa V3 została zmaterializowana i rozwinięta
 01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md
 ```
 
-Trzy ADR klasy P0 zostały zmaterializowane:
+Trzy ADR klasy P0 zostały zmaterializowane, a ich review provenance ma centralny rejestr:
 
 ```text
+REVIEW PROVENANCE = EXTERNAL_RECORDED / REVIEWER IDENTITY NOT RECORDED IN GIT
+ARCHITECTURAL DESIGN TRUST = RECORDED / PROVENANCE PARTIAL
+IMPLEMENTATION CONFIDENCE = NOT ESTABLISHED
+OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
@@ -121,6 +125,7 @@ ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 
 Pliki:
 
+- `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md`.
