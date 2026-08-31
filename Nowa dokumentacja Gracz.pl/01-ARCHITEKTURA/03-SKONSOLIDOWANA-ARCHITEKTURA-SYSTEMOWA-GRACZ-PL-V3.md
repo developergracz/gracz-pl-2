@@ -1045,7 +1045,7 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-001` | P2 | wybór brokera/event bus | przed event-driven deployment | `DEFERRED / PENDING` |
 | `ADR-V3-002` | P2 | wybór shared ephemeral store | przed poziomym skalowaniem realtime/presence | `DEFERRED / PENDING` |
 | `ADR-V3-003` | P1 | SSE, WebSocket lub model hybrydowy | przed pierwszym docelowym realtime slice | `PENDING` |
-| [`ADR-V3-004`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | P0 | egzekwowanie `match_actor_leases` i fencing | przed `REVIEWED DESIGN` | `PROPOSED / REVIEW PENDING` |
+| [`ADR-V3-004`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | P0 | egzekwowanie `match_actor_leases` i fencing | przed `REVIEWED DESIGN` | `ACCEPTED / FINAL` |
 | `ADR-V3-005` | P1 | snapshot vs event log dla klas agregatów | przed implementacją trwałości danej klasy | `PENDING` |
 | `ADR-V3-006` | P2 | storage załączników i skanowanie uploadów | przed migracją binarnego storage | `DEFERRED / PENDING` |
 | `ADR-V3-007` | P2 | frontend stack, routing i state management | przed przebudową frontend shell | `DEFERRED / PENDING` |
@@ -1058,6 +1058,8 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-014` | P1 | API versioning i deprecation | przed pierwszą zmianą niekompatybilną | `PENDING` |
 | `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
 | `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
+
+`ADR-V3-004` został formalnie zaakceptowany 31.08.2026. Do zamknięcia bramki `REVIEWED DESIGN` pozostają dwa ADR klasy P0: `ADR-V3-012` i `ADR-V3-013`.
 
 Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
