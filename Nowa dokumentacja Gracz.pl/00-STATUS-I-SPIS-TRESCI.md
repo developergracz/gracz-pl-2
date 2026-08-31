@@ -22,7 +22,7 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 124 pliki:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 125 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
@@ -30,8 +30,8 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 124 pliki:
 | `01-ARCHITEKTURA` | 3 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| `09-DECYZJE-ARCHITEKTONICZNE` | 2 |
-| **Łącznie** | **124** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 3 |
+| **Łącznie** | **125** |
 
 ## 3. Status etapów
 
@@ -88,7 +88,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` jest `ACCEPTED / FINAL`; bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnej akceptacji dwóch otwartych ADR klasy P0: `ADR-V3-012` i `ADR-V3-013`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` jest `ACCEPTED / FINAL`; `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal; `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Bramka `REVIEWED DESIGN` pozostaje w `HOLD`.
 
 ### PostgreSQL
 
@@ -111,24 +111,26 @@ Skonsolidowana architektura systemowa V3 została zmaterializowana i rozwinięta
 01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md
 ```
 
-Dwa ADR klasy P0 zostały zmaterializowane:
+Trzy ADR klasy P0 zostały zmaterializowane:
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
-ADR-V3-012 = PROPOSED / REVIEW PENDING
-ADR-V3-013 = PENDING
+ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+ADR-V3-013 = PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING
 ```
 
 Pliki:
 
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md`,
-- `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md`.
+- `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md`,
+- `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md`.
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. formalny review i decyzja dla `ADR-V3-012`,
-2. opracowanie `ADR-V3-013` — ownership, checkpointy i rebuild read models,
-3. ponowny review V3 0.2 i decyzja o statusie `REVIEWED DESIGN`.
+1. niezależny review architektoniczny i decyzja dla `ADR-V3-013`,
+2. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
+3. synchronizacja wyników i finalny review V3 0.2,
+4. decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 
