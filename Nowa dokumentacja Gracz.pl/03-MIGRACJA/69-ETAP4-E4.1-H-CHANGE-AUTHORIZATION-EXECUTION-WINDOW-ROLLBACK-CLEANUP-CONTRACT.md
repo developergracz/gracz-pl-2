@@ -502,3 +502,27 @@ A3 = NOT AUTHORIZED
 ```
 
 Dokument 71 nie przyznaje A1, A2 ani A3.
+
+
+## 24. Named ownership prerequisite — dokument 72
+
+Źródłem governance dla nazwanych właścicieli jest:
+
+- `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md`.
+
+A1, A2 ani A3 nie mogą otrzymać APPROVED, jeśli:
+
+- wymagana rola nie ma statusu ACTIVE,
+- brak jawnej akceptacji i mandate verification,
+- operator jest jedynym authorizerem albo reviewerem,
+- conflict register nie ma treatment,
+- krytyczna rola nie ma deputy ani ścieżki eskalacji,
+- ownership albo decyzja wygasły.
+
+```text
+OWNERSHIP CONTRACT = READY
+NAMED OWNERS = PENDING / UNASSIGNED
+A1-A3 = NOT AUTHORIZED
+```
+
+Akceptacja roli nie jest akceptacją konkretnej operacji.
