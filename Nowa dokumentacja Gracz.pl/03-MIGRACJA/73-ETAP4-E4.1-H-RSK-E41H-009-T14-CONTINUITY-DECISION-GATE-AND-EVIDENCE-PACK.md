@@ -583,3 +583,19 @@ Zakres:
 - credential boundary i retention controls,
 - PASS/HOLD/NO-GO,
 - pełna zgodność z freeze do czasu odrębnej zgody.
+
+
+## 30. Następna bramka T-10 — dokument 74
+
+Utworzono zaplanowany artefakt:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+T-14 PASS byłby wyłącznie wejściem do formalnego review T-10. Nie aktywuje BA1.
+
+```text
+T-14 FORMAL REVIEW = NOT EXECUTED
+T-10 GATE DESIGN = READY
+BA1 / BA2 / BA3 = NOT AUTHORIZED
+AUTHORIZED OPERATIONS = NONE
+```
