@@ -607,3 +607,11 @@ Utworzono:
 - `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
 
 Formalny PASS T-14 jest warunkiem wejścia do T-7, ale nie daje GO-S1, GO-S3 ani autoryzacji operacyjnej.
+
+## 32. T-3 final continuity gate — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+Formalny PASS T-14 jest pierwszym elementem chain of gates. Projekt T-14 ani jego projekcja nie zastępują finalnego T-3 review.
