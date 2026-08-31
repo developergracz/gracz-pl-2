@@ -501,3 +501,20 @@ Zakres:
 - brak działań produkcyjnych.
 
 Do czasu osobnej autoryzacji nie wykonywać żadnego backupu, upgrade, restore, cutover ani zmiany Render.
+
+
+## 26. T-14 ownership evidence gate — dokument 73
+
+Utworzono zaplanowany artefakt:
+
+- `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md`.
+
+Dokument 73 wymaga Q5 dla krytycznych ownership i decision records oraz Q4 dla kontroli technicznych. Nominacja bez akceptacji i mandate verification nie spełnia bramki.
+
+```text
+OWNERSHIP CONTRACT = READY
+NAMED OWNERS = PENDING / UNASSIGNED
+T-14 FORMAL GATE = NOT EXECUTED
+CURRENT PROJECTION = HOLD
+AUTHORIZED OPERATIONS = NONE
+```
