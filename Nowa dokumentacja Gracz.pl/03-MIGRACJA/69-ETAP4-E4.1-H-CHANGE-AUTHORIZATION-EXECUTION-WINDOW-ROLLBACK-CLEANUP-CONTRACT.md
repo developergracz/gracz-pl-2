@@ -547,3 +547,25 @@ T-14 FORMAL REVIEW = NOT EXECUTED
 CURRENT PROJECTION = HOLD
 A1-A3 = NOT AUTHORIZED
 ```
+
+
+## 26. Backup/recovery authorization separation — dokument 74
+
+Dla continuity backupu obowiązuje:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+Zgody są niezależne:
+
+- BA1 — jeden produkcyjny read-only backup run,
+- BA2 — jeden isolated restore validation run,
+- BA3 — akceptacja recovery evidence.
+
+BA1–BA3 nie są A1–A3 i nie udzielają zgody na kolektor ani E4.1-H.
+
+```text
+BA1 = NOT AUTHORIZED
+BA2 = NOT AUTHORIZED
+BA3 = NOT AUTHORIZED
+A1-A3 = NOT AUTHORIZED
+```
