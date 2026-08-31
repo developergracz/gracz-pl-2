@@ -585,3 +585,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 READY-FOR-AUTHORIZATION-S1/S3 jest wyłącznie wejściem do dokumentu 77. Do czasu osobnej decyzji A1/A2/A3 obowiązuje `AUTHORIZED OPERATIONS = NONE`.
+
+## 29. Final authorization record — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Dokument 77 implementuje rozdzielenie A1/A2/A3 i dodaje osobny C0 dla S1/S3. Wszystkie lane pozostają NOT AUTHORIZED.
