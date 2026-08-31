@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Aktualny stan po synchronizacji: **125 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 3 pliki w `09-DECYZJE-ARCHITEKTONICZNE/`.
+Aktualny stan po synchronizacji: **126 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 4 pliki w `09-DECYZJE-ARCHITEKTONICZNE/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -29,6 +29,10 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - `ADR-V3-004`: `ACCEPTED / FINAL / NOT IMPLEMENTED`
 - `ADR-V3-012`: `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED`
 - `ADR-V3-013`: `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE`
+- review provenance: `EXTERNAL_RECORDED / REVIEWER IDENTITY NOT RECORDED IN GIT / INDEPENDENCE NOT ASSERTED`
+- architectural design trust: `RECORDED / PROVENANCE PARTIAL`
+- implementation confidence: `NOT ESTABLISHED`
+- operational evidence dla ADR-004/012/013: `NONE`
 - formalne T-gates: `NOT EXECUTED`
 - C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
 - authorized operations: `NONE`
@@ -226,11 +230,12 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 
 | Plik | Krótki opis | Status |
 |---|---|---|
+| [00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md](09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md) | Centralny kontrakt review record, rozdzielenie Git author/reviewer, baseline SHA, findings, corrections, delta review i trzy poziomy zaufania. | `CURRENT / GOVERNANCE CONTROL / EXTERNAL PROVENANCE PARTIAL / FREEZE-SAFE` |
 | [ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | Rozstrzygnięcie egzekwowania lease, fencing token, kontraktu komend, transakcji mutujących i recovery Match Runtime. | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
 | [ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | Kontrakt retencji, usuwania danych, restriction, legal hold, propagacji do read models, backupów i przyszłej platformy Poker. | `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 | [ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | Kontrakt ownershipu, source positions, atomowych checkpointów, generacyjnego rebuild, privacy barrier i per-sink receipts dla read models. | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
 
-**Wniosek dla recenzenta:** `ADR-V3-004` i `ADR-V3-013` są zaakceptowane i finalne na poziomie decyzji architektonicznej. `ADR-V3-012` przeszedł review architektoniczny, lecz wymaga formalnego zatwierdzenia Privacy/Legal. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
+**Wniosek dla recenzenta:** `ADR-V3-004` i `ADR-V3-013` są zaakceptowane i finalne na poziomie decyzji architektonicznej. `ADR-V3-012` przeszedł review architektoniczny, lecz wymaga formalnego zatwierdzenia Privacy/Legal. Centralny review record klasyfikuje obecne review jako `EXTERNAL_RECORDED`; Git nie przechowuje tożsamości reviewerów, dlatego niezależność nie jest deklarowana jako zweryfikowana. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
 
 ---
 
@@ -240,7 +245,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanymi ADR-V3-004 i ADR-V3-013, architektonicznie pozytywnie ocenionym ADR-V3-012 oczekującym na Privacy/Legal governance oraz inwentarzem 125 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanymi ADR-V3-004 i ADR-V3-013, architektonicznie pozytywnie ocenionym ADR-V3-012 oczekującym na Privacy/Legal governance oraz inwentarzem 126 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -280,7 +285,7 @@ Są rollback/ABORT runbooki, ale brak kompletnego severity model, escalation/on-
 
 ## GAP-11 — formalny rejestr ADR — IN PROGRESS / PARTIALLY RESOLVED
 
-Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera trzy powiązane ADR klasy P0. `ADR-V3-004` i `ADR-V3-013` są zaakceptowane, a `ADR-V3-012` oczekuje na zatwierdzenie Privacy/Legal. Materializacja oraz techniczne rozstrzygnięcie P0 są kompletne; luka pozostaje częściowo otwarta do formalnego zamknięcia governance ADR-V3-012 i dalszego backlogu ADR P1/P2.
+Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera trzy powiązane ADR klasy P0 oraz centralny review provenance register. `ADR-V3-004` i `ADR-V3-013` są zaakceptowane, a `ADR-V3-012` oczekuje na zatwierdzenie Privacy/Legal. Materializacja oraz techniczne rozstrzygnięcie P0 są kompletne; luka pozostaje częściowo otwarta do formalnego zamknięcia governance ADR-V3-012 i dalszego backlogu ADR P1/P2.
 
 ## GAP-12 — data governance/privacy — PARTIALLY RESOLVED 31.08.2026
 
@@ -323,4 +328,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 125 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 126 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
