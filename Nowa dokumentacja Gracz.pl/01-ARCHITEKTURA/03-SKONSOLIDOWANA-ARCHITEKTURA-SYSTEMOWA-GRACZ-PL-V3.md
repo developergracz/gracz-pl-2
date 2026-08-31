@@ -1054,12 +1054,12 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-010` | P1 | RPO, RTO, backup i disaster recovery | przed production readiness | `PENDING` |
 | `ADR-V3-011` | P1 | trusted proxy i topologia Cloudflare–Render | przed zmianą proxy trust flags | `FRESH EVIDENCE REQUIRED` |
 | [`ADR-V3-012`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | P0 | retencja, privacy deletion i legal hold | przed `REVIEWED DESIGN` | `PROPOSED / REVIEW PENDING` |
-| [`ADR-V3-013`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | P0 | ownership, checkpoint i privacy-safe rebuild read models | przed `REVIEWED DESIGN` | `PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING` |
+| [`ADR-V3-013`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | P0 | ownership, checkpoint i privacy-safe rebuild read models | przed `REVIEWED DESIGN` | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
 | `ADR-V3-014` | P1 | API versioning i deprecation | przed pierwszą zmianą niekompatybilną | `PENDING` |
 | `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
 | `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
 
-`ADR-V3-004` został formalnie zaakceptowany 31.08.2026. `ADR-V3-012` ma kompletną treść decyzyjną, przeszedł review architektoniczny i oczekuje na formalne zatwierdzenie Privacy/Legal. `ADR-V3-013` przeszedł niezależny review `PASS WITH 2 P1 CONDITIONS`; poprawki P1 i P2 zostały zastosowane, a krótki delta review pozostaje oczekujący. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego zamknięcia obu pozostałych pozycji P0.
+`ADR-V3-004` i `ADR-V3-013` zostały formalnie zaakceptowane na poziomie decyzji architektonicznej i pozostają `NOT IMPLEMENTED`. `ADR-V3-013` przeszedł delta review: `P1-013-01`, `P1-013-02` i P2 są `RESOLVED`, bez nowych P0/P1. `ADR-V3-012` ma kompletną treść decyzyjną i `ARCHITECTURE PASS`, lecz nadal oczekuje na formalne zatwierdzenie Privacy/Legal. Wszystkie trzy P0 są rozstrzygnięte technicznie; bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie do domknięcia governance `ADR-V3-012`.
 
 Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
