@@ -3,14 +3,17 @@
 Data: 31.08.2026  
 Ścieżka docelowa: `Nowa dokumentacja Gracz.pl/09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md`  
 Priorytet: `P0`  
-Status: **PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE**
+Status: **PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE**
 
 > Ten ADR jest decyzją architektoniczną Gracz.pl V3. Nie potwierdza implementacji, nie autoryzuje deploymentu, nie uruchamia rebuildów i nie zmienia produkcji. Wszystkie elementy DDL, kontraktów i procedur są projektem wymagającym osobnej autoryzacji wykonawczej.
 
 ## 0. Obowiązujący stan
 
 ```text
-SOURCE HEAD = c327dad4740f2fcbee385948f9e87f638405ff65
+SOURCE BASELINE = c327dad4740f2fcbee385948f9e87f638405ff65
+INDEPENDENT REVIEW BASELINE = 31447fb70e43a9fac10144b0f0d8168db57498a3
+INDEPENDENT REVIEW = ARCHITECTURE PASS WITH 2 P1 CONDITIONS
+P1 CORRECTIONS = APPLIED / DELTA REVIEW PENDING
 ADR-V3-004 = ACCEPTED / FINAL / NOT IMPLEMENTED
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
 ADR-V3-013 = PROPOSED / REVIEW PENDING / NOT IMPLEMENTED
@@ -373,7 +376,8 @@ CREATE TABLE projection_checkpoints (
     checkpointed_at       TIMESTAMPTZ NOT NULL,
     projector_version     INTEGER NOT NULL,
     checkpoint_version    BIGINT NOT NULL,
-    lease_fencing_token   BIGINT NOT NULL,
+    authority_kind        VARCHAR(24) NOT NULL,
+    authority_epoch       BIGINT NOT NULL,
     PRIMARY KEY (projection_name, generation_id, source_partition)
 );
 ```
@@ -396,11 +400,16 @@ Awaria przed `COMMIT` nie może przesunąć checkpointu. Retry po awarii ma być
 ### 15.3. Single-writer per partycja
 
 - Dla `(projection_name, generation_id, source_partition)` istnieje jeden skuteczny writer.
-- Ownership może wynikać z zatwierdzonego consumer-group assignment albo z trwałego lease.
-- Jeżeli używany jest lease, posiada rosnący fencing token zgodny z zasadami ADR-V3-004.
-- Każdy update checkpointu wykonuje CAS na `checkpoint_version` i weryfikuje `lease_fencing_token`.
+- Consumer-group assignment służy do routingu i przydziału pracy, ale sam w sobie nie jest wystarczającym autorytetem do zatwierdzania zmian po rebalance.
+- Każdy writer otrzymuje trwały, monotoniczny `authority_epoch`, który jest zapisany w durable coordination state i w checkpointcie.
+- Dla DB lease `authority_epoch` jest rosnącym fencing tokenem zgodnym z ADR-V3-004.
+- Dla consumer group adapter musi przekształcić generation/member assignment w trwały epoch albo zapewnić równoważną ochronę, która transakcyjnie uniemożliwia commit starego workera; samo lokalne powiadomienie o revocation nie wystarcza.
+- Rebalance albo przejęcie lease zwiększa lub unieważnia poprzedni epoch przed zatwierdzeniem pierwszego commitu nowego writera.
+- Każdy update checkpointu wykonuje CAS na `checkpoint_version` oraz weryfikuje `authority_kind` i `authority_epoch` w tej samej transakcji co zmiana read modelu i receipts.
 - Worker z utraconym ownershipem nie może zatwierdzić zmiany read modelu ani checkpointu.
 - Przejęcie partycji zaczyna się od ostatniego trwałego checkpointu, nie od stanu pamięci poprzedniego procesu.
+
+Własność ta jest normatywna: technologia może użyć lease, brokera lub innego koordynatora, ale musi dowieść trwałego epoch/fencing albo równoważnego CAS obejmującego commit projekcji. Consumer-group assignment bez tej gwarancji jest `NO-GO`.
 
 ### 15.4. Zewnętrzny sink
 
@@ -466,7 +475,42 @@ CREATE TABLE projection_privacy_barriers (
 
 Wartości `*_cut` są opaque references do autorytatywnych watermarków, a nie kopiami PII lub treści hold.
 
-### 17.2. Kolejność
+### 17.2. Normatywne własności cut/watermark
+
+Format cut pozostaje zależny od źródła, ale każdy `deletion_ledger_cut`, `privacy_event_cut` i `legal_hold_cut` musi być:
+
+- **trwały** — zapisany w autorytatywnym registry/journal i odporny na restart procesu,
+- **porównywalny albo rozstrzygalny** — dla danego źródła można dowieść, czy cut A obejmuje cut B; dla wielu partycji jest to vector cut lub równoważny kompletny zestaw pozycji,
+- **kompletny** — obejmuje wszystkie zatwierdzone wpisy do wskazanych pozycji bez cichych gapów,
+- **odtwarzalny** — źródło pozwala wykonać replay/reconciliation do tego samego cut,
+- **jednoznacznie związany ze źródłem** — zawiera lub wskazuje source identity, partycje, schema/policy version i provenance,
+- **monotoniczny w granicy swojego źródła** — nowszy zatwierdzony cut nie cofa wcześniej objętych wpisów,
+- **audytowalny bez PII** — evidence hash pozwala potwierdzić niezmienność kontraktu.
+
+Sam timestamp, czas wykonania zapytania albo lokalny licznik procesu nie spełnia kontraktu cut.
+
+Znaczenie poszczególnych cutów:
+
+- `deletion_ledger_cut` — trwała pozycja/vector w ledgerze zakończonych i trwających operacji privacy,
+- `privacy_event_cut` — trwała pozycja/vector w strumieniu `delete/restrict/anonymize`,
+- `legal_hold_cut` — wersja/epoch registry hold obejmująca utworzenie, zmianę, release i expiry.
+
+### 17.3. Activation race: validation → privacy mutation → activation
+
+Aktywacja generacji jest serializowana z publikacją privacy mutation przez trwały privacy authority epoch albo równoważny CAS:
+
+1. po walidacji generacja zapisuje `validation_cut`,
+2. pobiera aktualny kandydat `activation_cut`,
+3. przetwarza privacy delta aż jej barrier dominuje `activation_cut`,
+4. wykonuje negative proof i zapisuje wymagane receipts,
+5. activation transaction porównuje privacy authority epoch/cut z wartością używaną do walidacji,
+6. jeżeli nowe delete/restrict/hold zostało zatwierdzone wcześniej, CAS aktywacji nie przechodzi i generacja wraca do privacy catch-up,
+7. jeżeli aktywacja wygrała serializację, każda późniejsza privacy mutation jest kierowana już także do nowej aktywnej generacji normalnym trwałym pipeline’em,
+8. activation record zapisuje dokładny `activation_cut`, authority epoch oraz evidence hash.
+
+Nie istnieje stan, w którym generacja zostaje `ACTIVE` na podstawie samego wcześniejszego `validation_cut`, jeśli autorytatywne źródło privacy przesunęło się przed activation commit.
+
+### 17.4. Kolejność
 
 Privacy event ma pierwszeństwo przed publikacją odpowiadających danych w generacji. W ramach jednej partycji:
 
@@ -482,7 +526,7 @@ apply delete/restrict/anonymize
 
 Checkpoint nie może zostać przesunięty, jeżeli receipt któregokolwiek obowiązkowego sinka pozostaje niepotwierdzony.
 
-### 17.3. Rebuild
+### 17.5. Rebuild
 
 Rebuild otrzymuje deletion ledger oraz privacy events jako wejście, a nie jako późniejszy cleanup. Procedura:
 
@@ -495,7 +539,7 @@ Rebuild otrzymuje deletion ledger oraz privacy events jako wejście, a nie jako 
 7. wykonaj negative proof,
 8. dopiero potem zezwól na `READY`.
 
-### 17.4. Anti-resurrection
+### 17.6. Anti-resurrection
 
 - Snapshot read modelu nie jest privacy source of truth.
 - Stary snapshot nie może ominąć deletion ledger.
@@ -594,7 +638,10 @@ Generacja przeznaczona do natychmiastowego zniszczenia może zamiast mutacji zap
 
 - wynik review `PASS`,
 - jawna decyzja aktywacyjna,
+- privacy catch-up do porównywalnego `activation_cut`,
+- CAS na privacy authority epoch/cut serializujący aktywację z równoległym delete/restrict/hold,
 - atomowa zmiana wskaźnika active generation,
+- zapis exact `activation_cut`, projection authority epoch i evidence hash,
 - zapis audit event bez PII,
 - możliwość natychmiastowego powrotu do poprzedniej generacji, jeżeli nie narusza to privacy.
 
@@ -867,6 +914,8 @@ Brak zatwierdzonego SLO nie może być zamaskowany arbitralnym progiem w kodzie.
 - manifest/schema compatibility,
 - deterministic ordering,
 - privacy transformation,
+- porównywanie/dominacja wielopartycyjnych privacy cuts,
+- odrzucenie timestamp-only watermark,
 - checkpoint state transitions,
 - generation state machine.
 
@@ -876,6 +925,8 @@ Brak zatwierdzonego SLO nie może być zamaskowany arbitralnym progiem w kodzie.
 - rollback wszystkich trzech elementów,
 - duplicate po crash/retry,
 - poison event bez przesunięcia pozycji,
+- stary `authority_epoch` po rebalance nie może zatwierdzić commitu,
+- zmiana danych projekcji i CAS authority/checkpoint są jedną transakcją,
 - wiele partycji bez cross-partition corruption.
 
 ### 33.3. Rebuild
@@ -895,6 +946,9 @@ Brak zatwierdzonego SLO nie może być zamaskowany arbitralnym progiem w kodzie.
 - ledger entry obecny tylko w restore,
 - aktywny hold blokujący purge,
 - delete z niedostępnym search/cache,
+- privacy cut jest trwały, kompletny i odtwarzalny,
+- nowe delete między `validation_cut` i activation powoduje nieudany CAS oraz ponowny catch-up,
+- aktywacja zapisuje cut dominujący wszystkie privacy commits zatwierdzone przed jej commitem,
 - retired generation otrzymuje privacy event,
 - rollback nie może wybrać privacy-stale generation,
 - ranking/search/cache negative proof.
@@ -904,6 +958,7 @@ Brak zatwierdzonego SLO nie może być zamaskowany arbitralnym progiem w kodzie.
 - rebuild vs new domain event,
 - activation vs privacy delete,
 - two projectors same partition,
+- consumer-group rebalance vs commit starego workera,
 - checkpoint lease/fencing conflict,
 - projector version change podczas batcha,
 - generation retirement vs rollback request.
@@ -935,7 +990,8 @@ Pakiet zawiera co najmniej:
 - source HEAD/artifact provenance,
 - projector version i schema version,
 - source cut oraz checkpointy partycji,
-- privacy barrier reference,
+- validation cut, activation cut i privacy barrier reference,
+- dowód durable authority epoch/fencing po rebalance,
 - counts/checksums,
 - listę quarantine/gaps,
 - test report,
@@ -1052,10 +1108,14 @@ ADR może otrzymać `ACCEPTED / FINAL`, gdy reviewer potwierdzi:
 - jednoznaczny owner model,
 - dopuszczalne source modes i zakaz używania cache jako źródła,
 - stabilne ordering/cursor contract,
+- consumer-group assignment jako routing, a nie samodzielny commit authority,
+- trwały authority epoch/fencing lub dowiedziona równoważna ochrona starego workera,
 - atomowość data + receipt + checkpoint,
 - generacyjny, niedestrukcyjny rebuild,
 - activation i retirement gate,
 - deletion ledger oraz privacy events jako input rebuild,
+- trwałe, porównywalne/rozstrzygalne, kompletne i odtwarzalne privacy cuts,
+- activation CAS zamykający race `validation -> privacy mutation -> activation`,
 - brak checkpointu przed durable privacy receipt,
 - protection przed resurrection,
 - per-sink delete receipts dla ranking/search/cache,
@@ -1069,7 +1129,11 @@ ADR może otrzymać `ACCEPTED / FINAL`, gdy reviewer potwierdzi:
 ```text
 ADR-V3-013 DESIGN = COMPLETE
 P0 TECHNICAL DECISION CONTENT = COMPLETE
-FORMAL ARCHITECTURE REVIEW = PENDING
+INDEPENDENT ARCHITECTURE REVIEW = PASS WITH 2 P1 CONDITIONS
+P1-013-01 AUTHORITY AFTER REBALANCE = CORRECTED
+P1-013-02 PRIVACY CUT / ACTIVATION RACE = CORRECTED
+P2 SOURCE BASELINE LABEL = CORRECTED
+DELTA REVIEW = PENDING
 IMPLEMENTATION = NOT AUTHORIZED
 REVIEWED DESIGN GATE = HOLD
 FREEZE = ACTIVE
@@ -1078,10 +1142,8 @@ PRODUCTION / RENDER / SECRETS = UNCHANGED
 
 ## 41. Następny krok
 
-1. niezależny Lead Architect review pełnej treści ADR-V3-013,
-2. klasyfikacja uwag `P0/P1/P2`,
-3. ewentualna korekta dokumentu,
-4. formalna decyzja `ACCEPTED / HOLD / REJECTED`,
-5. równoległe domknięcie Privacy/Legal review ADR-V3-012,
-6. synchronizacja V3, statusu i indeksu,
-7. dopiero po zamknięciu obu bramek — finalny `REVIEWED DESIGN GATE`.
+1. krótki niezależny delta review wyłącznie zmian `P1-013-01`, `P1-013-02` i P2,
+2. formalna decyzja `ACCEPTED / HOLD / REJECTED` dla ADR-V3-013,
+3. równoległe domknięcie Privacy/Legal review ADR-V3-012,
+4. synchronizacja końcowych statusów V3, statusu i indeksu,
+5. dopiero po zamknięciu obu bramek — finalny `REVIEWED DESIGN GATE`.
