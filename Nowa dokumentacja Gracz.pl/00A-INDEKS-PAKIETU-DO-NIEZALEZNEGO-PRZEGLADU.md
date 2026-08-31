@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Aktualny stan po synchronizacji: **121 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 2 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/` i 95 plików w `03-MIGRACJA/`.
+Aktualny stan po synchronizacji: **123 pliki** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 1 plik w `09-DECYZJE-ARCHITEKTONICZNE/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -24,6 +24,9 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - E4.1: `IN PROGRESS / H BLOCKED`
 - E4.1-H: `PENDING / SAFE HOLD`
 - dokumentacja projektowa E4.1-H 62–77: `COMPLETE`
+- skonsolidowana architektura systemowa V3: `0.2 / DESIGN DRAFT / STRUCTURAL AND CONSISTENCY REVIEW PASS`
+- bramka V3 `REVIEWED DESIGN`: `HOLD — 3 P0 ADR OPEN`
+- `ADR-V3-004`: `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED`
 - formalne T-gates: `NOT EXECUTED`
 - C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
 - authorized operations: `NONE`
@@ -53,8 +56,9 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 |---|---|---|---|
 | [01-BAZA-AUDYTU-ARCHITEKTURY.md](01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md) | `01-ARCHITEKTURA/` | Baza dowodowa i punkt wyjścia audytu architektury. | `REFERENCE / ETAP 2 CLOSED` |
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
+| [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `0.2 / DESIGN DRAFT / REVIEWED DESIGN GATE HOLD` |
 
-**Wniosek dla recenzenta:** folder architektury zawiera obecnie tylko 2 dokumenty; pełna architektura całego systemu nie jest jeszcze skonsolidowana w jednym docelowym dokumencie systemowym.
+**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. Status `REVIEWED DESIGN` pozostaje wstrzymany do zamknięcia albo formalnej akceptacji trzech ADR klasy P0: `ADR-V3-004`, `ADR-V3-012` i `ADR-V3-013`.
 
 ---
 
@@ -216,21 +220,31 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 
 ---
 
-# 9. Braki i niespójności do niezależnego przeglądu
+# 9. 09-DECYZJE-ARCHITEKTONICZNE
+
+| Plik | Krótki opis | Status |
+|---|---|---|
+| [ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | Rozstrzygnięcie egzekwowania lease, fencing token, kontraktu komend, transakcji mutujących i recovery Match Runtime. | `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
+
+**Wniosek dla recenzenta:** treść decyzyjna ADR-V3-004 jest kompletna, ale formalna akceptacja pozostaje oczekująca. Dokument nie autoryzuje implementacji ani deploymentu.
+
+---
+
+# 10. Braki i niespójności do niezależnego przeglądu
 
 Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchronizacyjnymi**, nie twierdzeniem, że dana implementacja nie istnieje.
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD i inwentarzem 121 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, ADR-V3-004 i inwentarzem 123 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
-`README.md` rozdziela teraz faktyczną strukturę od planowanych pakietów i rezerwuje przyszłą numerację 04–09 bez konfliktu z istniejącym `03-MIGRACJA`.
+`README.md` rozdziela faktyczną strukturę od planowanych pakietów: `09-DECYZJE-ARCHITEKTONICZNE/` jest aktywny, a numeracja 04–08 pozostaje zarezerwowana bez konfliktu z istniejącym `03-MIGRACJA`.
 
-## GAP-03 — brak skonsolidowanego dokumentu pełnej architektury systemowej V3
+## GAP-03 — skonsolidowany dokument pełnej architektury systemowej V3 — MATERIALIZED / REVIEW HOLD
 
-Istnieje docelowa architektura backendu, ale brak jednego zatwierdzonego dokumentu obejmującego co najmniej: frontend, backend/API, auth/session, PostgreSQL, realtime, lobby/presence, game services, messaging/chat, storage, ranking/turnieje, deployment topology, observability oraz boundaries/ownership.
+Dokument `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md` istnieje w wersji 0.2 i obejmuje wymagane warstwy systemu. Przeglądy strukturalny i spójności zakończyły się `PASS`. Luka materializacyjna jest zamknięta, ale status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia lub formalnej akceptacji trzech ADR klasy P0.
 
 ## GAP-04 — brak osobnej docelowej architektury frontend/UI
 
@@ -260,9 +274,9 @@ Historyczny restore PASS istnieje, lecz Level C wymaga cyklicznych restore rehea
 
 Są rollback/ABORT runbooki, ale brak kompletnego severity model, escalation/on-call ownership, playbooków klas incydentów i tabletop drill evidence.
 
-## GAP-11 — brak formalnego rejestru ADR
+## GAP-11 — formalny rejestr ADR — IN PROGRESS / PARTIALLY RESOLVED
 
-README przewiduje `09-DECYZJE-ARCHITEKTONICZNE`, ale nie istnieje jeszcze centralny ADR register obejmujący m.in. migrator separation, least privilege, keyring, realtime strategy, database namespace/model i game-state architecture.
+Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje, backlog ADR jest zapisany w skonsolidowanej architekturze V3, a `ADR-V3-004` został zmaterializowany. Luka pozostaje częściowo otwarta do czasu utworzenia i powiązania pozostałych ADR, w szczególności P0: `ADR-V3-012` i `ADR-V3-013`.
 
 ## GAP-12 — data governance/privacy nie ma jeszcze dedykowanego pakietu
 
@@ -282,26 +296,27 @@ E4.0 jest operacyjnie zamknięty, a część evidence E4.1 ma PASS. E4.1-H pozos
 
 ---
 
-# 10. Kolejność niezależnego przeglądu pełnej treści
+# 11. Kolejność niezależnego przeglądu pełnej treści
 
 Rekomendowana kolejność bez skracania plików:
 
 1. `README.md` i `00-STATUS-I-SPIS-TRESCI.md` — z uwzględnieniem ich stanu historycznego.
 2. `01-ARCHITEKTURA/*`.
-3. `02-BAZA-DANYCH/00–20`.
-4. `03-MIGRACJA/01–18` + `DDL-V3/*` jako historyczny/preflight nurt.
-5. `03-MIGRACJA/19–25` — Gate 12/13.
-6. `03-MIGRACJA/26–42` — Gate 14 A/B/C/D.
-7. `03-MIGRACJA/43–45` — Gate 15 / zamknięcie ETAPU 3.
-8. `03-MIGRACJA/46–77` — ETAP 4, E4.1, E4.1-H i enterprise readiness.
-9. Na końcu reviewer tworzy listę: `MISSING`, `INCONSISTENT`, `STALE`, `BLOCKER`, `RECOMMENDATION`, z dokładnym wskazaniem pliku/sekcji.
+3. `09-DECYZJE-ARCHITEKTONICZNE/*`.
+4. `02-BAZA-DANYCH/00–20`.
+5. `03-MIGRACJA/01–18` + `DDL-V3/*` jako historyczny/preflight nurt.
+6. `03-MIGRACJA/19–25` — Gate 12/13.
+7. `03-MIGRACJA/26–42` — Gate 14 A/B/C/D.
+8. `03-MIGRACJA/43–45` — Gate 15 / zamknięcie ETAPU 3.
+9. `03-MIGRACJA/46–77` — ETAP 4, E4.1, E4.1-H i enterprise readiness.
+10. Na końcu reviewer tworzy listę: `MISSING`, `INCONSISTENT`, `STALE`, `BLOCKER`, `RECOMMENDATION`, z dokładnym wskazaniem pliku/sekcji.
 
-## 11. Zasada przekazywania pełnej treści
+## 12. Zasada przekazywania pełnej treści
 
 Nie tworzymy skróconych kopii dokumentów. Pełne pliki w repozytorium pozostają źródłem prawdy. Przy przeglądzie w drugim czacie należy przekazywać je kolejno w pełnej treści, zachowując nazwę pliku i kolejność z tego indeksu.
 
 Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na części `PART 1/n`, `PART 2/n` itd., ale **bez usuwania treści i bez parafrazowania**.
 
-## 12. Kryterium kompletności pakietu do review
+## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 121 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — otwarte GAP-03–GAP-15 pozostają planem dalszej dokumentacji i niezależnego przeglądu.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 123 pliki są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
