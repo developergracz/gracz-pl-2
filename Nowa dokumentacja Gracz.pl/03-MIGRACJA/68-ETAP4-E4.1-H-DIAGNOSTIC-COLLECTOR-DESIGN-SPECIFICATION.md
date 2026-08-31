@@ -569,3 +569,11 @@ PRODUCTION V3 = NO-GO
 ```
 
 Dokument zwiększa gotowość projektową, ale nie zmienia statusu operacyjnego.
+
+## 22. Final implementation authorization — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Design kolektora jest wejściem do A1. Implementacja pozostaje NOT REQUESTED / NOT AUTHORIZED do czasu formalnego rekordu.
