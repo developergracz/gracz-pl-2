@@ -349,3 +349,25 @@ RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
 ```
 
 Samo utworzenie planu nie obniża score ryzyka.
+
+
+## 21. Formalny rejestr ownership — dokument 72
+
+Utworzono:
+
+- `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md`.
+
+Dokument 72 ustanawia role `OWN-01`–`OWN-16`, cykl aktywacji, SoD, konflikty, zastępstwa i formalne decyzje dla `RSK-E41H-009`.
+
+Bieżąca ocena:
+
+```text
+OWNERSHIP CONTROL DESIGN = READY
+NAMED OWNER ASSIGNMENT = NOT COMPLETED
+OWNER ACCEPTANCE EVIDENCE = ABSENT
+CONTROL EFFECTIVENESS = NOT DEMONSTRATED
+RSK-E41H-045 = OPEN
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+```
+
+Utworzenie kontraktu nie obniża score żadnego ryzyka.
