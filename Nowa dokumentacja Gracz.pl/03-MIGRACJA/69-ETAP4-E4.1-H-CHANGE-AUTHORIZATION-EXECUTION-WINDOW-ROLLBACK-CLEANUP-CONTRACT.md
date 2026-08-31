@@ -569,3 +569,11 @@ BA2 = NOT AUTHORIZED
 BA3 = NOT AUTHORIZED
 A1-A3 = NOT AUTHORIZED
 ```
+
+## 27. T-7 recommendation and authorization separation — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+Wynik GO-S1 albo GO-S3 jest rekomendacją do późniejszej autoryzacji. Nie uruchamia upgrade, utworzenia bazy, restore, cutover ani A1-A3. Wykonanie pozostaje zależne od dokumentu 77.
