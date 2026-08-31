@@ -777,3 +777,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 T-3 wymaga formalnego GO-S1 albo GO-S3 z T-7. Wynik READY-FOR-AUTHORIZATION nadal nie wykonuje upgrade, migracji ani cutoveru; osobna zgoda należy do dokumentu 77.
+
+## 37. Final authorization chain — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+GO-S1 albo GO-S3 jest rekomendacją, a nie zgodą. C0 i A1-A3 wymagają osobnych rekordów w dokumencie 77.
