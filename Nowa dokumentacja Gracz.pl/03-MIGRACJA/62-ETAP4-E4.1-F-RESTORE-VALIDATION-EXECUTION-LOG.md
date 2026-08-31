@@ -519,3 +519,23 @@ A1-A3 = BLOCKED / NOT AUTHORIZED
 ```
 
 Dokument nie przypisuje nikomu odpowiedzialności bez akceptacji i nie zmienia środowisk ani freeze.
+
+
+## 21. Bramka T-14 i pakiet evidence — dokument 73
+
+Utworzono:
+
+- `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md`.
+
+Dokument definiuje 50 kontroli evidence w sześciu domenach, poziomy jakości Q0–Q5, siedem początkowych gapów, chain of custody oraz algorytm PASS/HOLD/NO-GO.
+
+Bieżący stan:
+
+```text
+T-14 GATE DESIGN = READY
+FORMAL GATE REVIEW = NOT EXECUTED
+CURRENT PROJECTION = HOLD
+AUTHORIZED OPERATIONS = NONE
+```
+
+Projekcja HOLD nie jest formalnym wynikiem bramki i nie zmienia środowisk ani freeze.
