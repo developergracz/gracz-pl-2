@@ -1,161 +1,141 @@
 # Nowa dokumentacja Gracz.pl — status i spis treści
 
-Data: 29.08.2026
+Data aktualizacji: 31.08.2026  
+Repozytorium: `developergracz/gracz-pl-2`  
+Branch: `main`
 
-## Zasada źródła prawdy
-Dokumentacja rozdziela: **POTWIERDZONE**, **WYMAGA WERYFIKACJI ŚRODOWISKA**, **ARCHITEKTURA DOCELOWA** oraz **ARTEFAKTY WYKONAWCZE MIGRACJI**. Bazą analizy kodowej był `origin/main @ db3c15a`; dowody środowiskowe są dokumentowane osobno. Dla bieżącego writer/reader, worker/event/realtime i crypto inventory dodatkowo przeanalizowano aktualny runtime wiring oraz aktywną gałąź Render `feature/homepage-game-center`.
+## 1. Zasada źródła prawdy
 
-## ETAP 1B — mapa PostgreSQL
-**STATUS: ZAMKNIĘTY 28.08.2026.** Mapa kodowa 26/26; rzeczywisty Render: 28 tabel; porównanie i Model Match zakończone.
+Dokumentacja rozdziela:
 
-## ETAP 2 — architektura docelowa i PostgreSQL V3
-**STATUS: ZAMKNIĘTY 28.08.2026.** Backend V3, PostgreSQL V3 Iteracje 1–8, macierz migracji 28/28 i finalny model zakończone.
+- stan potwierdzony dowodami,
+- stan wymagający świeżej weryfikacji środowiska,
+- architekturę docelową,
+- projekty wykonawcze,
+- faktyczne autoryzacje operacyjne.
 
-## ETAP 3 — migracja
-**STATUS: W TRAKCIE — PREFLIGHT / BRAMKA 11 PASS / DDL V3 REVIEW ROZPOCZĘTY.**  
-**DDL V3: REVIEW DOZWOLONY / WYKONANIE PRODUKCYJNE NO-GO.**
+Ukończenie dokumentu nie oznacza udzielenia zgody na wykonanie. Żaden plik dokumentacyjny nie zdejmuje freeze automatycznie.
 
-### Data Quality
-- **DQ-001 — DECISION-READY:** `LEGACY-QUARANTINE`; DML niewykonany.
-- **DQ-002 — DECISION-READY:** 5/5 kont biznesowo potwierdzone jako testowe i sklasyfikowane `LEGACY-IDENTITY / TEST`; MERGE NIE; automatyczny DELETE NIE; DML niewykonany.
+Pełny indeks artefaktów znajduje się w:
 
-### Backup / restore
-- **Bramka 3 — pełny backup: PASS.**
-- **Bramka 4 — restore test: PASS.**
-- Dowód: `03-MIGRACJA/12-BACKUP-I-RESTORE-TEST.md`.
-- Restore wykonano do izolowanej PostgreSQL 18.6; odtworzenie zakończone bez błędu, 28/28 tabel dostępnych.
+- `00A-INDEKS-PAKIETU-DO-NIEZALEZNEGO-PRZEGLADU.md`.
 
-### Writer / Reader inventory
-- `03-MIGRACJA/13-WRITER-READER-INVENTORY.md` — mapa **28/28** tabel produkcyjnych.
-- Repozytoryjne writer/read paths, główne mutujące endpointy, transaction boundaries, cutover risk i V3 owners zostały sklasyfikowane.
-- **Bramka 9 — WARNING:** mapa kodowa jest kompletna, ale do `PASS` pozostaje korelacja aktualnego deployu/procesów/jobów z analizowanym runtime.
-- Szczególne ostrzeżenia: `gracz_game_sessions.version` nie jest używany przez aktualny store jako CAS; tournament lifecycle jest wielostatementowy; newsletter lifecycle analytics są best-effort po core commicie; Chat DB→realtime nie jest atomowy; dwa production-only legacy tables nie mają potwierdzonego current runtime path.
+## 2. Inwentarz bieżący
 
-### Worker / Event / Realtime inventory
-- `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md` — aktualny runtime zmapowany.
-- Potwierdzono process-local SSE dla Warcabów, Tysiąca i Global Chat, direct mail w request path, best-effort newsletter lifecycle analytics, process-local SecurityMonitor, cleanup głównie startup/opportunistic oraz brak Transactional Outbox AS-IS.
-- **Bramka 10 — WARNING:** repo/runtime inventory jest kompletny; do `PASS` pozostaje środowiskowe potwierdzenie braku osobnego Render cron/worker/service/starego writera.
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 121 plików:
 
-### Crypto compatibility — Bramka 11
-- `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md` — zmapowano formaty private-message, attachment i MFA.
-- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md` — wynik końcowy **PASS**.
-- `03-MIGRACJA/17-RUNTIME-CRYPTO-SELFCHECK.md` — runtime self-check **PASS**, cleanup wykonany.
-- Runtime self-check: `readOnlyProbe=true`.
-- Private messages: **5/5 success, 0 failure, PASS**.
-- Attachments: **2/2 success, 0 failure, PASS**.
-- MFA: **0 rekordów, N/A**.
-- Zachowano wyłącznie privacy-safe SHA-256 ciphertextu; plaintext i key material nie zostały zapisane w dokumentacji ani repozytorium.
-- **Bramka 11 — PASS.** Blocker kryptograficzny został zamknięty.
+| Obszar | Liczba plików |
+|---|---:|
+| Dokumenty główne | 3 |
+| `01-ARCHITEKTURA` | 2 |
+| `02-BAZA-DANYCH` | 21 |
+| `03-MIGRACJA` | 95 |
+| **Łącznie** | **121** |
 
-### Cleanup runtime self-checka
-Na aktywnej gałęzi Render `feature/homepage-game-center` usunięto wszystkie tymczasowe elementy diagnostyczne:
-- normalny `start` przywrócony — `c2de7b5630a05a888e69988c09a1e8653907bf36`,
-- tymczasowe `COPY scripts ./scripts` cofnięte — `62e5cb7e259842c060e0e2174f26ad4e1fd0bc00`,
-- runtime self-check usunięty — `e01b40e18442194870f9b465fd0007c12840010c`.
+## 3. Status etapów
 
-### DDL V3 REVIEW
-- `03-MIGRACJA/18-DDL-V3-REVIEW.md` — **REVIEW PASS DO GENEROWANIA SKRYPTÓW / PRODUKCJA NO-GO**.
-- Naming V3: **osobny schema namespace `v3`**.
-- `game_match_events`: `UNIQUE(match_id,sequence_no)` pozostaje; `(match_id,aggregate_version)` jest indeksem nieunikalnym.
-- Fencing: aktualny lease + monotonic token + `game_matches.last_fencing_token`.
-- Outbox: jawny stale-claim reclaim contract.
-- Idempotency: terminalne deterministyczne `failed`; transient failure = rollback/retry, nie terminal failure.
-- Messaging: pierwszy backfill zachowuje istniejący ciphertext; re-encryption jest osobną późniejszą operacją.
-- Statusy domenowe: preferowane `VARCHAR + CHECK`, nie PostgreSQL ENUM.
+| Etap | Status |
+|---|---|
+| ETAP 1B — mapa PostgreSQL | `CLOSED` |
+| ETAP 2 — architektura backendu i PostgreSQL V3 | `CLOSED` |
+| ETAP 3 — preflight i Gate 15 | `CLOSED` |
+| Gate 15 | `GO TO ETAP 4 / PRODUCTION V3 NO-GO` |
+| ETAP 4 | `OPEN` |
+| E4.0 | `OPERATIONALLY COMPLETE / FREEZE ACTIVE` |
+| E4.1 | `IN PROGRESS / H BLOCKED` |
+| E4.1-H | `PENDING / SAFE HOLD` |
+| E4.2–E4.10 | `NOT AUTHORIZED / NOT COMPLETE` |
+| Production V3 | `NO-GO` |
 
-Pierwsze executable drafts utworzone jako **REVIEW ONLY / DO NOT RUN ON PRODUCTION**:
-- `03-MIGRACJA/DDL-V3/00-precheck-readonly.sql` — commit `92f3e948e5c2a2911a206f90d2a8207c283e5101`,
-- `03-MIGRACJA/DDL-V3/01-v3-foundation.sql` — commit `4e9d387b8c95929c417c4f238d00889ae4a907dd`.
+## 4. Potwierdzone dowody E4.1
 
-`00-precheck-readonly.sql` nie wykonuje żadnych mutacji. `01-v3-foundation.sql` jest wyłącznie draftem do review i nie został uruchomiony na Render.
+- frozen source baseline i integralność pakietu migracji: potwierdzone,
+- fresh Gate 13 active-state evidence: `PASS`,
+- fresh Gate 14 DB permissions capture: `PASS`; stan AS-IS nadal wymaga remediation,
+- fresh backup anchor: `PASS`,
+- restore validation: `PASS`,
+- zgodność produkcji z restore: 28/28 tabel, 17 711/17 711 rekordów, 0 różnic,
+- historyczny crypto proof: 5/5 wiadomości czytelnych, w tym 2 rekordy `enc:v1` rzeczywiście odszyfrowane i 3 rekordy legacy czytelne bez deszyfracji; 2/2 załączniki,
+- fresh E4.1-H crypto decryptability: `PENDING / SAFE HOLD`.
 
-### Remediation planning
-Przygotowano reviewowalny komplet:
-- `03-MIGRACJA/09a-dml-precheck-readonly.sql` — readonly snapshot/assertions.
-- `03-MIGRACJA/09b-dq001-remediation.sql` — DQ-001 review-only, obecnie NO-OP.
-- `03-MIGRACJA/09c-dq002-remediation.sql` — DQ-002 review-only, obecnie NO-OP.
-- `03-MIGRACJA/09d-dml-postcheck-readonly.sql` — readonly verify.
-- `03-MIGRACJA/09e-rollback-procedure.md` — STOP/rollback procedure.
-- `03-MIGRACJA/09f-remediation-runbook.md` — kolejność review i warunki dopuszczenia przyszłych mutacji.
+Historyczny wynik crypto nie zastępuje świeżego E4.1-H.
 
-Aktualne 09a–09d nie zmieniają danych; mutujący DML nie został przygotowany ani wykonany. Dla DQ-002 preferowany bezpieczny kierunek to zachowanie historycznych rekordów/provenance i wykluczenie testowych identity z aktywnego backfill V3, zamiast automatycznego DELETE.
+## 5. Obowiązujący status E4.1-H
 
-### Aktualny punkt wznowienia
-**ETAP 3 → DDL V3 REVIEW → przygotować `02-identity-audit-v3.sql` jako review-only executable draft, równolegle domykając pozostałe bramki preflight.**
+```text
+DOCUMENTATION DESIGN 62-77 = COMPLETE
+FORMAL T-GATES = NOT EXECUTED
+C0-S1 / C0-S3 = NOT AUTHORIZED
+A1 / A2 / A3 = NOT AUTHORIZED
+FREEZE RELEASE = NOT AUTHORIZED
+AUTHORIZED OPERATIONS = NONE
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+E4.1-H = PENDING / SAFE HOLD
+FREEZE = ACTIVE
+PRODUCTION / RENDER / SECRETS = UNCHANGED
+PR #26 = OPEN / DRAFT / NOT MERGED
+PRODUCTION V3 = NO-GO
+```
 
-Review DDL może być prowadzone teraz, ponieważ Bramka 11 została zamknięta. Nie oznacza to zgody na wykonanie DDL w produkcji.
+Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się automatycznie dokumentu 78.
 
-### Otwarte bramki krytyczne
-- fresh schema snapshot/diff,
-- deploy/process/job correlation potrzebna do domknięcia bramek 9–10,
-- active-state/cutover assessment,
-- credential rotation/least privilege/secret hygiene,
-- capacity/locking assessment,
-- późniejszy rerun data-quality/reconciliation,
-- rollback/maintenance window i finalny GO/NO-GO.
+## 6. Architektura i baza danych
 
-## Artefakty ETAPU 3 — główne
-- `03-MIGRACJA/01-PREFLIGHT-MIGRACJI.md`
-- `03-MIGRACJA/02-ENVIRONMENT-BASELINE-COLLECTOR.sql`
-- `03-MIGRACJA/02-ENVIRONMENT-BASELINE.md`
-- `03-MIGRACJA/03-DATA-PROFILE-COLLECTOR.sql`
-- `03-MIGRACJA/03-DATA-PROFILE-28-TABLES.md`
-- `03-MIGRACJA/04-PLAN-DDL-MIGRACJI-ITERACJA-2.md`
-- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION-COLLECTOR.sql`
-- `03-MIGRACJA/05-DATA-QUALITY-ORPHAN-COLLISION.md`
-- `03-MIGRACJA/06-BLOCKER-DRILLDOWN-COLLECTOR.sql`
-- `03-MIGRACJA/07-AUDYT-WRITEROW-I-PLAN-NAPRAWY-BLOCKEROW.md`
-- `03-MIGRACJA/08-MACIERZ-DECYZJI-DQ-001-DQ-002.md`
-- `03-MIGRACJA/09-PLAN-DML-REMEDIATION.md`
-- `03-MIGRACJA/09a-dml-precheck-readonly.sql`
-- `03-MIGRACJA/09b-dq001-remediation.sql`
-- `03-MIGRACJA/09c-dq002-remediation.sql`
-- `03-MIGRACJA/09d-dml-postcheck-readonly.sql`
-- `03-MIGRACJA/09e-rollback-procedure.md`
-- `03-MIGRACJA/09f-remediation-runbook.md`
-- `03-MIGRACJA/10-CHECKLISTA-DQ-001-GUEST-ORIGIN.md`
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE-COLLECTOR.sql`
-- `03-MIGRACJA/11-DQ-002-PER-ACCOUNT-EVIDENCE.md`
-- `03-MIGRACJA/12-BACKUP-I-RESTORE-TEST.md`
-- `03-MIGRACJA/13-WRITER-READER-INVENTORY.md`
-- `03-MIGRACJA/14-WORKER-EVENT-REALTIME-INVENTORY.md`
-- `03-MIGRACJA/15-CRYPTO-COMPATIBILITY-INVENTORY.md`
-- `03-MIGRACJA/16-CRYPTO-DECRYPTABILITY-SMOKE-TEST.md`
-- `03-MIGRACJA/17-RUNTIME-CRYPTO-SELFCHECK.md`
-- `03-MIGRACJA/18-DDL-V3-REVIEW.md`
-- `03-MIGRACJA/DDL-V3/00-precheck-readonly.sql`
-- `03-MIGRACJA/DDL-V3/01-v3-foundation.sql`
-- `modern/checkers-engine/scripts/preflight/crypto-decryptability-smoke.mjs`
-
-## Spis dokumentacji — ETAP 2
 ### Architektura
+
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md`
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 
-### PostgreSQL — AS-IS / porównanie
-- `02-BAZA-DANYCH/00-MAPA-POSTGRESQL-STATUS.md`
-- `02-BAZA-DANYCH/01-TOZSAMOSC-I-AUDYT.md`
-- `02-BAZA-DANYCH/02-GRY-WARCABY-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/03-GRY-TYSIAC-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/04-GRY-GOMOKU-AS-IS.md`
-- `02-BAZA-DANYCH/05-WIADOMOSCI-PRYWATNE-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/06-MODERACJA-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/07-GLOBAL-CHAT-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/08-TURNIEJE-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/09-NEWSLETTER-POSTGRESQL-AS-IS.md`
-- `02-BAZA-DANYCH/10-POROWNANIE-POSTGRESQL-REPO-PRODUKCJA.md`
-- `02-BAZA-DANYCH/11-MODEL-MATCH-I-ROZBIEZNOSCI.md`
+Brakuje skonsolidowanego dokumentu pełnej architektury systemowej V3 obejmującego wszystkie warstwy platformy.
 
-### PostgreSQL V3
-- `02-BAZA-DANYCH/12-MODEL-DANYCH-DOCELOWY-POSTGRESQL-V3.md`
-- `02-BAZA-DANYCH/13-POSTGRESQL-V3-ITERACJA-2-GAME-PLATFORM-OUTBOX-IDEMPOTENCY.md`
-- `02-BAZA-DANYCH/14-POSTGRESQL-V3-ITERACJA-3-TOURNAMENT.md`
-- `02-BAZA-DANYCH/15-POSTGRESQL-V3-ITERACJA-4-IDENTITY-ROLE-AUDIT.md`
-- `02-BAZA-DANYCH/16-POSTGRESQL-V3-ITERACJA-5-NEWSLETTER.md`
-- `02-BAZA-DANYCH/17-POSTGRESQL-V3-ITERACJA-6-MESSAGING-CHAT.md`
-- `02-BAZA-DANYCH/18-POSTGRESQL-V3-ITERACJA-7-MODERATION.md`
-- `02-BAZA-DANYCH/19-POSTGRESQL-V3-ITERACJA-8-MACIERZ-MIGRACJI-28-AS-IS-DO-V3.md`
-- `02-BAZA-DANYCH/20-POSTGRESQL-V3-FINAL.md`
+### PostgreSQL
 
-## Reguła dalszej pracy
-Każdy ukończony i zweryfikowany fragment jest zapisywany w `Nowa dokumentacja Gracz.pl/` i odnotowywany tutaj. AS-IS, dowody środowiskowe, architektura docelowa i artefakty migracyjne pozostają rozdzielone.
+Dokumenty `02-BAZA-DANYCH/00–20` obejmują:
+
+- model AS-IS,
+- porównanie repozytorium z produkcją,
+- model match i rozbieżności,
+- docelowy PostgreSQL V3,
+- identity, gry, turnieje, newsletter, messaging/chat i moderację,
+- macierz migracji 28 tabel AS-IS do V3.
+
+ETAP 1B i ETAP 2 pozostają zamknięte.
+
+## 7. Aktualny punkt wznowienia dokumentacji
+
+Najpierw zsynchronizowano dokumenty główne:
+
+1. `00-STATUS-I-SPIS-TRESCI.md`,
+2. `00A-INDEKS-PAKIETU-DO-NIEZALEZNEGO-PRZEGLADU.md`,
+3. `README.md`.
+
+Następny moduł dokumentacyjny:
+
+```text
+01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md
+```
+
+Zakres planowanego dokumentu:
+
+- frontend,
+- backend i API,
+- auth i sesje,
+- PostgreSQL V3,
+- realtime, lobby i reconnect,
+- wspólna platforma gier,
+- wiadomości, chat i powiadomienia,
+- storage,
+- Render, Cloudflare, DNS i granice sieciowe,
+- observability,
+- granice odpowiedzialności i ownership.
+
+Dokument nie został jeszcze utworzony.
+
+## 8. Reguła dalszej pracy
+
+- E4.1-H pozostaje w SAFE HOLD.
+- Nie wykonujemy T-14, T-10, T-7 ani T-3 bez jawnej decyzji i named owners.
+- Nie udzielamy C0/A1/A2/A3 przez samą aktualizację dokumentacji.
+- Nie zmieniamy produkcji, Rendera ani sekretów.
+- Nowe pakiety dokumentacyjne muszą wynikać ze skonsolidowanej architektury systemowej.
+- Każdy ukończony i zweryfikowany dokument jest wersjonowany w Git.
