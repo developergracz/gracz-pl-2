@@ -247,7 +247,7 @@ Plan jest częścią spójnego pakietu:
 5. `67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md` — weryfikacja ograniczeń planu Free i wariantów wykonania,
 6. `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — szczegółowy kontrakt przyszłego kolektora,
 7. `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md` — formalne zgody A1–A3, okno, rollback i cleanup,
-8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3,\n9. `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md` — plan ochrony bazy przed expiry i treatment `RSK-E41H-009`,\n10. `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md` — named ownership, SoD i formalny decision record,\n11. `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md` — bramka T-14 i 50-kontrolny evidence pack.
+8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3,\n9. `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md` — plan ochrony bazy przed expiry i treatment `RSK-E41H-009`,\n10. `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md` — named ownership, SoD i formalny decision record,\n11. `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md` — bramka T-14 i 50-kontrolny evidence pack,\n12. `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md` — bramka T-10, BA1–BA3 i 60 kontroli backup/recovery.
 
 Status pakietu:
 
@@ -314,5 +314,20 @@ Bieżąca projekcja T-14 wynosi HOLD z powodu ownerów, RPO/RTO, option selectio
 T-14 GATE = NOT EXECUTED
 EVIDENCE PACK = INCOMPLETE
 A1-A3 = BLOCKED / NOT AUTHORIZED
+E4.1-H = PENDING / SAFE HOLD
+```
+
+
+## 16. T-10 backup/recovery dependency — dokument 74
+
+Pakiet E4.1-H obejmuje:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+Fresh backup continuity i E4.1-H pozostają rozdzielone. BA3 PASS nie zastępuje świeżego testu deszyfrowania.
+
+```text
+T-10 GATE = NOT EXECUTED
+BA1 / BA2 / BA3 = NOT AUTHORIZED
 E4.1-H = PENDING / SAFE HOLD
 ```
