@@ -28,7 +28,7 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - bramka V3 `REVIEWED DESIGN`: `HOLD — 2 P0 ADR OPEN`
 - `ADR-V3-004`: `ACCEPTED / FINAL / NOT IMPLEMENTED`
 - `ADR-V3-012`: `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED`
-- `ADR-V3-013`: `PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING / NOT IMPLEMENTED`
+- `ADR-V3-013`: `PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING / NOT IMPLEMENTED`
 - formalne T-gates: `NOT EXECUTED`
 - C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
 - authorized operations: `NONE`
@@ -60,7 +60,7 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
 | [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `0.2 / DESIGN DRAFT / REVIEWED DESIGN GATE HOLD` |
 
-**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` został formalnie zaakceptowany. `ADR-V3-012` przeszedł review architektoniczny i oczekuje na formalne zatwierdzenie Privacy/Legal. `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia obu pozostałych pozycji P0.
+**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` został formalnie zaakceptowany. `ADR-V3-012` przeszedł review architektoniczny i oczekuje na formalne zatwierdzenie Privacy/Legal. `ADR-V3-013` przeszedł niezależny review `PASS WITH 2 P1 CONDITIONS`; poprawki P1 i P2 zastosowano, a delta review pozostaje oczekujący. Status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia obu pozostałych pozycji P0.
 
 ---
 
@@ -228,9 +228,9 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 |---|---|---|
 | [ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | Rozstrzygnięcie egzekwowania lease, fencing token, kontraktu komend, transakcji mutujących i recovery Match Runtime. | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
 | [ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | Kontrakt retencji, usuwania danych, restriction, legal hold, propagacji do read models, backupów i przyszłej platformy Poker. | `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
-| [ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | Kontrakt ownershipu, source positions, atomowych checkpointów, generacyjnego rebuild, privacy barrier i per-sink receipts dla read models. | `PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
+| [ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | Kontrakt ownershipu, source positions, atomowych checkpointów, generacyjnego rebuild, privacy barrier i per-sink receipts dla read models. | `PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 
-**Wniosek dla recenzenta:** `ADR-V3-004` jest zaakceptowany i finalny na poziomie decyzji. `ADR-V3-012` przeszedł review architektoniczny, lecz wymaga formalnego zatwierdzenia Privacy/Legal. `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
+**Wniosek dla recenzenta:** `ADR-V3-004` jest zaakceptowany i finalny na poziomie decyzji. `ADR-V3-012` przeszedł review architektoniczny, lecz wymaga formalnego zatwierdzenia Privacy/Legal. `ADR-V3-013` przeszedł niezależny review, a zastosowane poprawki oczekują na krótki delta review. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
 
 ---
 
@@ -240,7 +240,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, architektonicznie pozytywnie ocenionym ADR-V3-012, projektowo kompletnym ADR-V3-013 i inwentarzem 125 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, architektonicznie pozytywnie ocenionym ADR-V3-012, architektonicznie pozytywnie ocenionym ADR-V3-013 z poprawkami P1 oczekującymi na delta review i inwentarzem 125 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -248,7 +248,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-03 — skonsolidowany dokument pełnej architektury systemowej V3 — MATERIALIZED / REVIEW HOLD
 
-Dokument `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md` istnieje w wersji 0.2 i obejmuje wymagane warstwy systemu. Przeglądy strukturalny i spójności zakończyły się `PASS`. Luka materializacyjna jest zamknięta, `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` ma architecture PASS, a `ADR-V3-013` został zmaterializowany. Status `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego zatwierdzenia Privacy/Legal dla `ADR-V3-012` oraz niezależnego review i decyzji dla `ADR-V3-013`.
+Dokument `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md` istnieje w wersji 0.2 i obejmuje wymagane warstwy systemu. Przeglądy strukturalny i spójności zakończyły się `PASS`. Luka materializacyjna jest zamknięta, `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` ma architecture PASS, a `ADR-V3-013` przeszedł review, a poprawki P1 zostały zastosowane. Status `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego zatwierdzenia Privacy/Legal dla `ADR-V3-012` oraz delta review i formalnej decyzji dla `ADR-V3-013`.
 
 ## GAP-04 — brak osobnej docelowej architektury frontend/UI
 
@@ -280,7 +280,7 @@ Są rollback/ABORT runbooki, ale brak kompletnego severity model, escalation/on-
 
 ## GAP-11 — formalny rejestr ADR — IN PROGRESS / PARTIALLY RESOLVED
 
-Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera trzy powiązane ADR klasy P0. `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` oczekuje na zatwierdzenie Privacy/Legal, a `ADR-V3-013` oczekuje na niezależny review architektoniczny. Materializacja P0 jest kompletna; luka pozostaje częściowo otwarta do formalnego zamknięcia review i dalszego backlogu ADR P1/P2.
+Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera trzy powiązane ADR klasy P0. `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` oczekuje na zatwierdzenie Privacy/Legal, a `ADR-V3-013` oczekuje na delta review zastosowanych poprawek P1. Materializacja P0 jest kompletna; luka pozostaje częściowo otwarta do formalnego zamknięcia review i dalszego backlogu ADR P1/P2.
 
 ## GAP-12 — data governance/privacy — PARTIALLY RESOLVED 31.08.2026
 
