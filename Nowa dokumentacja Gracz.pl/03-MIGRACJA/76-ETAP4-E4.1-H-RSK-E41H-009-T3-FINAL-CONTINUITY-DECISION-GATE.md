@@ -806,3 +806,10 @@ Zakres:
 - ważność oraz automatyczne wygaśnięcie zgody,
 - bieżący stan początkowy `NOT AUTHORIZED`.
 
+## 36. Final execution authorization record — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+READY-FOR-AUTHORIZATION-S1/S3 jest wejściem do dokumentu 77. Przy obecnym T-3 NOT EXECUTED wszystkie operacje pozostają zablokowane.
