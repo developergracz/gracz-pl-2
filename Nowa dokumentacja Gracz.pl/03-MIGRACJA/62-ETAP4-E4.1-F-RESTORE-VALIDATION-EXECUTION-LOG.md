@@ -393,3 +393,23 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - produkcja i Render pozostają nienaruszone.
 
 Następny krok: pozostawić fresh crypto decryptability na HOLD, dopóki istnieje zatwierdzona metoda wykorzystująca runtime key material bez kopiowania sekretów poza Render, bez wznawiania normalnego writera i bez naruszania freeze. Wcześniejsza Bramka 11 pozostaje PASS, ale nie jest przedstawiana jako świeże potwierdzenie E4.1-H.
+
+
+## 16. Provider capability i collector design — aktualizacja dokumentacyjna
+
+W ramach kontynuacji dokumentacji E4.1-H utworzono:
+
+- `67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md` — oficjalna ocena ograniczeń Render; bieżący plan Free nie obsługuje Shell/SSH ani One-Off Jobs,
+- `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — projekt samodzielnego kolektora z read-only guard, privacy-safe output oraz rozdzieleniem `decryptSuccess` i `legacyReadable`.
+
+Konsekwencja:
+
+```text
+PROVIDER CAPABILITY = BLOCKED BY CURRENT FREE PLAN
+COLLECTOR DESIGN = READY
+COLLECTOR IMPLEMENTATION = NOT AUTHORIZED
+E4.1-H = PENDING / SAFE HOLD
+FREEZE = ACTIVE
+```
+
+Utworzenie dokumentów 67–68 nie zmieniło produkcji, konfiguracji Render, sekretów, stanu PR #26 ani decyzji Production V3 NO-GO.
