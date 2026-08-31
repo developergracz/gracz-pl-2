@@ -240,7 +240,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, proponowanym ADR-V3-012 i inwentarzem 125 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, architektonicznie pozytywnie ocenionym ADR-V3-012, projektowo kompletnym ADR-V3-013 i inwentarzem 125 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -323,4 +323,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 125 plików jest dostępnych pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 125 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
