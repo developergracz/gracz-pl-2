@@ -321,7 +321,6 @@ CREATE TABLE projection_generations (
     projection_name       VARCHAR(160) NOT NULL,
     schema_version        INTEGER NOT NULL,
     projector_version     INTEGER NOT NULL,
-    source_cut_position   BIGINT,
     privacy_barrier_id    UUID,
     status                VARCHAR(24) NOT NULL,
     started_at            TIMESTAMPTZ NOT NULL,
@@ -330,6 +329,18 @@ CREATE TABLE projection_generations (
     retired_at            TIMESTAMPTZ,
     failure_code          VARCHAR(96),
     manifest_hash         VARCHAR(128) NOT NULL
+);
+```
+
+Source cut jest wielopartycyjny i nie może zostać spłaszczony do jednego niejednoznacznego numeru:
+
+```sql
+CREATE TABLE projection_generation_source_cuts (
+    generation_id         UUID NOT NULL,
+    source_partition      VARCHAR(96) NOT NULL,
+    source_cut_position   BIGINT NOT NULL,
+    captured_at           TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (generation_id, source_partition)
 );
 ```
 
@@ -356,11 +367,13 @@ CREATE TABLE projection_checkpoints (
     source_partition      VARCHAR(96) NOT NULL,
     last_position         BIGINT NOT NULL,
     last_event_id         UUID,
-    last_aggregate_id     UUID,
+    last_aggregate_id     VARCHAR(128),
     last_aggregate_version BIGINT,
     privacy_barrier_id    UUID,
     checkpointed_at       TIMESTAMPTZ NOT NULL,
     projector_version     INTEGER NOT NULL,
+    checkpoint_version    BIGINT NOT NULL,
+    lease_fencing_token   BIGINT NOT NULL,
     PRIMARY KEY (projection_name, generation_id, source_partition)
 );
 ```
@@ -380,7 +393,16 @@ Dla projekcji w PostgreSQL jedna transakcja obejmuje:
 
 Awaria przed `COMMIT` nie może przesunąć checkpointu. Retry po awarii ma być bezpieczny.
 
-### 15.3. Zewnętrzny sink
+### 15.3. Single-writer per partycja
+
+- Dla `(projection_name, generation_id, source_partition)` istnieje jeden skuteczny writer.
+- Ownership może wynikać z zatwierdzonego consumer-group assignment albo z trwałego lease.
+- Jeżeli używany jest lease, posiada rosnący fencing token zgodny z zasadami ADR-V3-004.
+- Każdy update checkpointu wykonuje CAS na `checkpoint_version` i weryfikuje `lease_fencing_token`.
+- Worker z utraconym ownershipem nie może zatwierdzić zmiany read modelu ani checkpointu.
+- Przejęcie partycji zaczyna się od ostatniego trwałego checkpointu, nie od stanu pamięci poprzedniego procesu.
+
+### 15.4. Zewnętrzny sink
 
 Dla search/cache checkpoint jest per sink. Projector nie może ogłosić pełnego sukcesu, dopóki:
 
@@ -425,6 +447,24 @@ Każda generacja musi posiadać privacy barrier, która potwierdza:
 - aktywne legal holds istotne dla projekcji,
 - najwyższą trwałą pozycję privacy events,
 - listę wymaganych projection/sink receipts bez PII.
+
+Logiczny rekord bariery:
+
+```sql
+CREATE TABLE projection_privacy_barriers (
+    privacy_barrier_id    UUID PRIMARY KEY,
+    projection_name       VARCHAR(160) NOT NULL,
+    policy_version        INTEGER NOT NULL,
+    deletion_ledger_cut   VARCHAR(160) NOT NULL,
+    privacy_event_cut     VARCHAR(160) NOT NULL,
+    legal_hold_cut        VARCHAR(160) NOT NULL,
+    captured_at           TIMESTAMPTZ NOT NULL,
+    evidence_hash         VARCHAR(128) NOT NULL,
+    status                VARCHAR(24) NOT NULL
+);
+```
+
+Wartości `*_cut` są opaque references do autorytatywnych watermarków, a nie kopiami PII lub treści hold.
 
 ### 17.2. Kolejność
 
@@ -482,6 +522,15 @@ CREATE TABLE projection_privacy_receipts (
 ```
 
 Tabela nie zawiera e-maila, loginu, display name, IP ani treści. Privacy Orchestrator zapisuje w `privacy_deletion_ledger` wynik bounded contextu dopiero po otrzymaniu wymaganych receipts.
+
+Zbiór wymaganych receipts obejmuje:
+
+- aktywną generację,
+- każdą generację `BUILDING`, `CATCHING_UP`, `VALIDATING` albo `READY`,
+- każdą generację `RETIRED`, która nadal jest dopuszczonym rollback targetem,
+- wszystkie osiągalne cache, search index, CDN/edge i export sinks.
+
+Generacja przeznaczona do natychmiastowego zniszczenia może zamiast mutacji zapisać trwały receipt kontrolowanego zniszczenia. Privacy request nie może być `COMPLETED`, gdy istnieje osiągalna albo rollback-eligible generacja bez receipt.
 
 ## 19. Rebuild — pełna procedura
 
@@ -682,7 +731,7 @@ ADR obowiązuje również przyszły Poker:
 - table lobby, player stats i public leaderboard są read models,
 - order-sensitive rating posiada stabilną sekwencję,
 - anonimowa historia rozdań nie może umożliwiać reidentyfikacji,
-- anti-cheat/collusion evidence jest osobnym zakresem Moderation z jawą retencją i hold,
+- anti-cheat/collusion evidence jest osobnym zakresem Moderation z jawną retencją i hold,
 - rebuild statystyk respektuje deletion ledger i nie przywraca publicznego profilu,
 - ewentualna gra o realne pieniądze pozostaje poza zakresem i wymaga odrębnego programu prawnego oraz finansowego.
 
@@ -1036,4 +1085,3 @@ PRODUCTION / RENDER / SECRETS = UNCHANGED
 5. równoległe domknięcie Privacy/Legal review ADR-V3-012,
 6. synchronizacja V3, statusu i indeksu,
 7. dopiero po zamknięciu obu bramek — finalny `REVIEWED DESIGN GATE`.
-
