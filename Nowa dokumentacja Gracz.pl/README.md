@@ -6,7 +6,7 @@ Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ra
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
 **Ostatnia synchronizacja indeksu:** 31.08.2026  
-**Aktualny inwentarz:** 124 pliki
+**Aktualny inwentarz:** 125 plików
 
 Bieżący status projektu znajduje się w:
 
@@ -48,12 +48,12 @@ Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą 
 
 Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `PENDING / SAFE HOLD`. Freeze jest aktywny, formalne bramki nie zostały wykonane, a C0/A1/A2/A3 nie są autoryzowane.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` z powodu dwóch otwartych ADR klasy P0.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do zakończenia review dwóch pozostałych pozycji P0.
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
-ADR-V3-012 = PROPOSED / REVIEW PENDING
-ADR-V3-013 = PENDING
+ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+ADR-V3-013 = PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING
 ```
 
-Następny krok to formalny review `ADR-V3-012`, a następnie opracowanie `ADR-V3-013`. Implementacja i deployment nie są autoryzowane.
+Następny krok to niezależny review `ADR-V3-013` oraz formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`. Dopiero po zamknięciu obu pozycji można wykonać finalny `REVIEWED DESIGN GATE`. Implementacja i deployment nie są autoryzowane.
