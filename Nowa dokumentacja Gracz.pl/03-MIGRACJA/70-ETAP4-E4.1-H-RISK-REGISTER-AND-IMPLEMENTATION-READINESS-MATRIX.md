@@ -371,3 +371,23 @@ RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
 ```
 
 Utworzenie kontraktu nie obniża score żadnego ryzyka.
+
+
+## 22. T-14 risk decision gate — dokument 73
+
+Utworzono:
+
+- `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md`.
+
+Dokument 73 mapuje `RSK-E41H-009` na 50 kontroli evidence oraz początkowy gap register.
+
+```text
+CONTROL DESIGN = READY
+FORMAL GATE = NOT EXECUTED
+CURRENT EVIDENCE = INCOMPLETE
+CURRENT PROJECTION = HOLD
+RISK SCORE REDUCTION = NONE
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+```
+
+Samo przygotowanie bramki nie stanowi skutecznego treatmentu.
