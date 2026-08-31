@@ -319,6 +319,8 @@ Brak któregokolwiek ownera w oknie wygasza zgodę przed startem.
 
 Ujawnienie sekretu automatycznie odwołuje aktywne zgody i uruchamia incident.
 
+W repozytorium, rekordach review, command manifestach i evidence output bezwzględnie zabronione są pełne Internal/External Database URL, hasła, tokeny, connection stringi oraz niezanonimizowane wartości zmiennych środowiskowych.
+
 ---
 
 ## 15. Domena R — abort, rollback and incident (10 kontroli)
@@ -791,4 +793,3 @@ Po jego utworzeniu:
 - dalszy krok nie jest kolejnym projektem dokumentu,
 - dalszy krok wymaga realnych named owners, formalnych review T-14/T-10/T-7/T-3 i jawnego wniosku autoryzacyjnego,
 - do tego czasu obowiązuje SAFE HOLD i zero operacji.
-
