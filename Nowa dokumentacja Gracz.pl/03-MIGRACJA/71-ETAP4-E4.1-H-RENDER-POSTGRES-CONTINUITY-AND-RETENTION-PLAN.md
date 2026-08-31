@@ -660,3 +660,11 @@ Utworzono:
 - `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
 
 Bramka porównuje S1 in-place paid continuity z S3 controlled migration. S2 pozostaje obowiązkową warstwą ochronną i nie jest samodzielnym wariantem dostępności.
+
+## 28. T-3 final continuity decision gate — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+Bramka finalizuje jedną ścieżkę S1 albo S3, sprawdza aktualny recovery point, czas, provider/billing evidence i przekazuje pakiet do dokumentu 77 bez wykonania operacji.
