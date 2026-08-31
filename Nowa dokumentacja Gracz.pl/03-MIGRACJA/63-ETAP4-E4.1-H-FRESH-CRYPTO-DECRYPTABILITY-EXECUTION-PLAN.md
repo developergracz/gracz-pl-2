@@ -339,3 +339,11 @@ Utworzono:
 - `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
 
 T-7 porównuje S1 i S3, ale nie udziela A1, A2 ani A3. E4.1-H pozostaje PENDING / SAFE HOLD.
+
+## 18. T-3 final continuity dependency — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+T-3 może wyłącznie oznaczyć ścieżkę jako READY-FOR-AUTHORIZATION. Nie udziela A1, A2 ani A3 i nie wykonuje E4.1-H.
