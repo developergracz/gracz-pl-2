@@ -424,3 +424,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 T-3 wymaga zamknięcia lub formalnego disposition wszystkich CRITICAL/HIGH gaps. Sam projekt bramki nie obniża RSK-E41H-009; bieżąca projekcja pozostaje HOLD.
+
+## 26. Final authorization risk gate — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Dokumentacja nie obniża automatycznie RSK-E41H-009. Ryzyko pozostaje OPEN / CRITICAL / TIME-BOUND.
