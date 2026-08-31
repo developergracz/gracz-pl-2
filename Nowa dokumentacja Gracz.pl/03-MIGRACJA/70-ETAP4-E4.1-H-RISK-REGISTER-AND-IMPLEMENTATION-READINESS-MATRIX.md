@@ -408,3 +408,11 @@ CONTROL EFFECTIVENESS = NOT DEMONSTRATED
 RISK SCORE REDUCTION = NONE
 RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
 ```
+
+## 24. T-7 risk decision gate — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+T-7 formalizuje porównanie ryzyka S1 i S3. Sam projekt bramki nie obniża RSK-E41H-009; ryzyko pozostaje OPEN / CRITICAL / TIME-BOUND, a bieżąca projekcja pozostaje HOLD.
