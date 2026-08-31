@@ -474,3 +474,31 @@ NAMED RISK OWNERS = PENDING
 A1-A3 READINESS = BLOCKED
 A1-A3 = NOT AUTHORIZED
 ```
+
+
+## 23. Database continuity prerequisite — dokument 71
+
+Dla ryzyka `RSK-E41H-009` obowiązuje:
+
+- `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md`.
+
+A2 nie może otrzymać APPROVED, jeżeli:
+
+- nie wybrano wariantu ciągłości,
+- nie przypisano named Data owner i Provider/Billing owner,
+- nie zatwierdzono RPO/RTO,
+- nie rozstrzygnięto ochrony danych przed expiry,
+- brakuje świeżego recovery evidence albo formalnej decyzji risk ownera,
+- upgrade planu mógłby niekontrolowanie wznowić aplikację.
+
+A3 nie może otrzymać APPROVED bez zamknięcia tej bramki w A2.
+
+```text
+CONTINUITY PLAN = READY
+CONTINUITY OPTION = PENDING
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+A2 = NOT AUTHORIZED
+A3 = NOT AUTHORIZED
+```
+
+Dokument 71 nie przyznaje A1, A2 ani A3.
