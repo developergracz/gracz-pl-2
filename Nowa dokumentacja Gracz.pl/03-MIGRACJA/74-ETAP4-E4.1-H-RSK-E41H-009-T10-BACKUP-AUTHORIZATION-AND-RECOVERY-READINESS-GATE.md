@@ -735,3 +735,11 @@ Zakres:
 - rollback i downtime acceptance,
 - zależność od BA1–BA3,
 - brak wykonania upgrade lub migracji bez osobnej autoryzacji.
+
+## 37. T-7 paid continuity or migration gate — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+Formalny PASS T-10 oraz BA1-BA3 PASS są wymaganymi wejściami do T-7. Projekt dokumentu 75 nie autoryzuje backupu, restore, płatnego planu ani migracji.
