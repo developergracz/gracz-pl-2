@@ -438,3 +438,30 @@ ROLLBACK/CLEANUP = DESIGN READY / NOT EXECUTED
 ```
 
 Brak zgody A1–A3 jest obowiązującą bramką bezpieczeństwa. Dokument nie zmienił produkcji, Render, sekretów, freeze ani PR #26.
+
+
+## 18. Rejestr ryzyk i gotowość E4.1-H
+
+Utworzono:
+
+- `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md`.
+
+Dokument obejmuje:
+
+- 45 ryzyk provider, implementation, secrets/privacy, DB/isolation, crypto/evidence i governance,
+- role właścicieli ryzyk,
+- osobne macierze A1, A2 i A3,
+- ryzyko czasowe wygaśnięcia bezpłatnej bazy Render,
+- kryteria akceptacji oraz triggery ponownej oceny.
+
+Bieżąca decyzja:
+
+```text
+CRITICAL RISKS = OPEN
+NAMED RISK OWNERS = PENDING
+A1 READINESS = BLOCKED
+A2 READINESS = BLOCKED
+A3 READINESS = BLOCKED
+```
+
+Rejestr nie autoryzuje działania i nie zmienia freeze ani środowisk.
