@@ -331,3 +331,11 @@ T-10 GATE = NOT EXECUTED
 BA1 / BA2 / BA3 = NOT AUTHORIZED
 E4.1-H = PENDING / SAFE HOLD
 ```
+
+## 17. T-7 continuity dependency — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+T-7 porównuje S1 i S3, ale nie udziela A1, A2 ani A3. E4.1-H pozostaje PENDING / SAFE HOLD.
