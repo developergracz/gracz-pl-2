@@ -382,6 +382,7 @@ E4.1-F może otrzymać PASS dopiero po udokumentowaniu:
 - legacy crypto decryptability smoke test = `PENDING FRESH CONFIRMATION`,
 - wcześniejsza Bramka 11 = `PASS / 5 OF 5 MESSAGES / 2 OF 2 ATTACHMENTS / MFA 0 N/A`,
 - ograniczenie fresh confirmation = `RUNTIME SUSPENDED UNDER FREEZE; NO SECRET EXTRACTION OR SERVICE RESUME AUTHORIZED`,
+- zatwierdzony plan wykonawczy E4.1-H = `63-ETAP4-E4.1-H-FRESH-CRYPTO-DECRYPTABILITY-EXECUTION-PLAN.md / PLAN READY / DO NOT EXECUTE`,
 - disposable DB cleanup = `DEFERRED UNTIL EVIDENCE COMPLETE`,
 - `E4.1 = IN PROGRESS`,
 - `Production V3 = NO-GO`,
