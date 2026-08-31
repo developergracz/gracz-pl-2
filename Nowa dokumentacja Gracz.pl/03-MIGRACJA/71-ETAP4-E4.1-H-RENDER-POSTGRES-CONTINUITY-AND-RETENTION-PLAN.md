@@ -652,3 +652,11 @@ BA1 / BA2 / BA3 = NOT AUTHORIZED
 BACKUP EXECUTION = NOT STARTED
 CURRENT PROJECTION = HOLD
 ```
+
+## 27. T-7 paid continuity or migration gate — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+Bramka porównuje S1 in-place paid continuity z S3 controlled migration. S2 pozostaje obowiązkową warstwą ochronną i nie jest samodzielnym wariantem dostępności.
