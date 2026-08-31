@@ -320,3 +320,32 @@ PRODUCTION V3 = NO-GO
 ```
 
 Dokument nie zmienia statusu operacyjnego i nie stanowi zgody na wykonanie kontroli.
+
+
+## 20. Treatment plan dla RSK-E41H-009 — dokument 71
+
+Utworzono:
+
+- `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md`.
+
+Projektowany treatment:
+
+1. świeżo potwierdzić provider expiry i warunki,
+2. przypisać named Data owner, Provider/Billing owner i reviewerów,
+3. zatwierdzić RPO/RTO,
+4. wybrać wariant ciągłości,
+5. jako defense-in-depth autoryzować fresh backup z checksum i isolated restore validation,
+6. preferować autoryzowany upgrade istniejącej bazy; utrzymywać nowy płatny target jako fallback,
+7. nie czekać planowo na expiry ani okres awaryjny po expiry.
+
+Stan kontroli:
+
+```text
+TREATMENT DESIGN = READY
+TREATMENT EXECUTION = NOT AUTHORIZED
+CONTROL EFFECTIVENESS = NOT DEMONSTRATED
+RESIDUAL RISK = NOT ASSESSED
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+```
+
+Samo utworzenie planu nie obniża score ryzyka.
