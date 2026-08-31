@@ -1059,7 +1059,7 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
 | `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
 
-`ADR-V3-004` i `ADR-V3-013` zostały formalnie zaakceptowane na poziomie decyzji architektonicznej i pozostają `NOT IMPLEMENTED`. `ADR-V3-013` przeszedł delta review: `P1-013-01`, `P1-013-02` i P2 są `RESOLVED`, bez nowych P0/P1. `ADR-V3-012` ma kompletną treść decyzyjną i `ARCHITECTURE PASS`, lecz nadal oczekuje na formalne zatwierdzenie Privacy/Legal. Wszystkie trzy P0 są rozstrzygnięte technicznie; bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie do domknięcia governance `ADR-V3-012`.
+`ADR-V3-004` i `ADR-V3-013` zostały zaakceptowane na poziomie decyzji architektonicznej i pozostają `NOT IMPLEMENTED`. `ADR-V3-013` ma zapisany external review oraz delta review: `P1-013-01`, `P1-013-02` i P2 są `RESOLVED`, bez nowych P0/P1. `ADR-V3-012` ma kompletną treść decyzyjną i `ARCHITECTURE PASS`, lecz nadal oczekuje na formalne zatwierdzenie Privacy/Legal. Provenance tych review jest zapisane w [`Architecture Review Provenance Register`](../09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md); Git nie potwierdza tożsamości zewnętrznych reviewerów, dlatego nie deklaruje się ich niezależności jako zweryfikowanej. Wszystkie trzy P0 są rozstrzygnięte technicznie; bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie do domknięcia governance `ADR-V3-012`.
 
 Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
@@ -1082,7 +1082,7 @@ Dokument może przejść z `DESIGN DRAFT` do `REVIEWED DESIGN`, gdy:
 - otwarte decyzje mają identyfikatory ADR,
 - nie ma sekretów ani produkcyjnych connection strings,
 - dokument nie udziela zgody operacyjnej,
-- niezależny reviewer potwierdzi spójność z dokumentami źródłowymi.
+- reviewer ma jawny review/provenance record zawierający baseline SHA, rolę, werdykt, findings, corrections SHA i wynik delta review; niezależność nie jest deklarowana bez weryfikowalnego dowodu.
 
 ## 31. Kryteria akceptacji wdrożenia V3
 
