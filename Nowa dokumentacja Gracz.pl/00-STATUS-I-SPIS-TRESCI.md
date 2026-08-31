@@ -88,7 +88,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` jest `ACCEPTED / FINAL`; `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal; `ADR-V3-013` przeszedł niezależny review `PASS WITH 2 P1 CONDITIONS`; obie poprawki P1 i korekta P2 zostały zastosowane, a delta review pozostaje oczekujący. Bramka `REVIEWED DESIGN` pozostaje w `HOLD`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`; delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
 
 ### PostgreSQL
 
@@ -116,7 +116,7 @@ Trzy ADR klasy P0 zostały zmaterializowane:
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
-ADR-V3-013 = PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING
+ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
 Pliki:
@@ -127,10 +127,9 @@ Pliki:
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. krótki delta review i formalna decyzja dla `ADR-V3-013`,
-2. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
-3. synchronizacja wyników i finalny review V3 0.2,
-4. decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
+1. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
+2. synchronizacja wyniku governance i finalny review V3 0.2,
+3. decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 
