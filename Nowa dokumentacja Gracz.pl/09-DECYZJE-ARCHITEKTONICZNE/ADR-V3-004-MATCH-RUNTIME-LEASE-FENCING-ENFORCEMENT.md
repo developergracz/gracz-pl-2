@@ -4,7 +4,7 @@ Data: 31.08.2026
 Repozytorium: `developergracz/gracz-pl-2`  
 Ścieżka docelowa: `Nowa dokumentacja Gracz.pl/09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md`  
 Priorytet: `P0`  
-Status: **PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE**
+Status: **ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE**
 
 > ADR rozstrzyga sposób egzekwowania wcześniej ustalonego modelu `match_actor_leases` z rosnącym fencing tokenem. Nie wdraża tabel, nie uruchamia Match Runtime, nie zmienia produkcji ani nie udziela zgody implementacyjnej.
 
@@ -12,7 +12,7 @@ Status: **PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE**
 
 ```text
 DOCUMENT V3 0.2 = MATERIALIZED / REVIEW PENDING
-ADR-V3-004 = PROPOSED / P0 REVIEW PENDING
+ADR-V3-004 = ACCEPTED / FINAL
 IMPLEMENTATION = NOT AUTHORIZED
 DEPLOYMENT = NOT AUTHORIZED
 FREEZE = ACTIVE
@@ -733,12 +733,32 @@ ADR może otrzymać `ACCEPTED DESIGN`, gdy reviewer potwierdzi:
 - kompletne testy concurrency i fault injection,
 - brak autoryzacji wdrożenia.
 
-## 31. Wynik projektowy
+## 31. Formalny rekord review
+
+Data review: `31.08.2026`  
+Wynik: `ACCEPTED / FINAL`  
+Zakres: `CORRECT`  
+Spójność: `PASS`  
+Sprzeczności krytyczne: `0`  
+Integracja z V3: `PASS`
+
+Reviewer potwierdził:
+
+- zgodność modelu lease z PostgreSQL V3 i skonsolidowaną architekturą V3,
+- poprawność rosnącego fencing token i CAS/versioning,
+- poprawność kontraktu Match Runtime → API,
+- kompletność stale lease, fencing mismatch i recovery,
+- zgodność z outbox, idempotencją i snapshotami,
+- brak konfliktów z pozostałym rejestrem ADR,
+- brak autoryzacji implementacji lub deploymentu.
+
+## 32. Wynik projektowy po formalnym review
 
 ```text
 ADR-V3-004 DESIGN = COMPLETE
 P0 DECISION CONTENT = COMPLETE
-FORMAL ACCEPTANCE = PENDING REVIEW
+FORMAL ACCEPTANCE = COMPLETE
+ADR-V3-004 = ACCEPTED / FINAL
 IMPLEMENTATION = NOT AUTHORIZED
 FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
