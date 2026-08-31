@@ -465,3 +465,30 @@ A3 READINESS = BLOCKED
 ```
 
 Rejestr nie autoryzuje działania i nie zmienia freeze ani środowisk.
+
+
+## 19. Plan ciągłości i retencji bazy Render
+
+Utworzono:
+
+- `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md`.
+
+Dokument 71 formalizuje treatment dla `RSK-E41H-009`:
+
+- zweryfikowany anchor E4.1-E pozostaje emergency recovery floor,
+- preferowany wzorzec docelowy to autoryzowany fresh backup z restore validation, następnie autoryzowany upgrade istniejącej bazy,
+- nowa płatna baza i restore pozostają fallbackiem,
+- brak działania i oczekiwanie na okres po expiry nie są planem podstawowym,
+- wymagane są named owners, RPO/RTO, billing decision oraz osobne autoryzacje.
+
+Bieżąca decyzja:
+
+```text
+CONTINUITY PLAN = READY
+OPTION SELECTION = PENDING
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+BACKUP / UPGRADE / RESTORE = NOT AUTHORIZED
+FREEZE = ACTIVE
+```
+
+Dokument nie zmienił produkcji, Render, sekretów, freeze ani PR #26.
