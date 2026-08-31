@@ -53,7 +53,7 @@ Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`.
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
-ADR-V3-013 = PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING
+ADR-V3-013 = PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING
 ```
 
-Następny krok to niezależny review `ADR-V3-013` oraz formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`. Dopiero po zamknięciu obu pozycji można wykonać finalny `REVIEWED DESIGN GATE`. Implementacja i deployment nie są autoryzowane.
+Następny krok to krótki delta review `ADR-V3-013` oraz formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`. Dopiero po zamknięciu obu pozycji można wykonać finalny `REVIEWED DESIGN GATE`. Implementacja i deployment nie są autoryzowane.
