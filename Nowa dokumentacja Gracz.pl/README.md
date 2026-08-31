@@ -48,12 +48,12 @@ Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą 
 
 Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `PENDING / SAFE HOLD`. Freeze jest aktywny, formalne bramki nie zostały wykonane, a C0/A1/A2/A3 nie są autoryzowane.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do zakończenia review dwóch pozostałych pozycji P0.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. Wszystkie trzy P0 są rozstrzygnięte technicznie, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance Privacy/Legal dla `ADR-V3-012`.
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
-ADR-V3-013 = PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / DELTA REVIEW PENDING
+ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
-Następny krok to krótki delta review `ADR-V3-013` oraz formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`. Dopiero po zamknięciu obu pozycji można wykonać finalny `REVIEWED DESIGN GATE`. Implementacja i deployment nie są autoryzowane.
+Następny krok to formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`, a następnie finalny `REVIEWED DESIGN GATE` całej V3. Akceptacja ADR-ów nie autoryzuje implementacji ani deploymentu.
