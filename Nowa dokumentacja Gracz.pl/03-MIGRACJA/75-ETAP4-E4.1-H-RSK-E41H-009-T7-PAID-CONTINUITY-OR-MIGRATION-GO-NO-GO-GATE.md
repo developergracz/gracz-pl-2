@@ -770,3 +770,10 @@ Zakres:
 - rozstrzygnięcie `READY FOR AUTHORIZATION / HOLD / NO-GO`,
 - brak wykonania jakiejkolwiek operacji bez dokumentu 77.
 
+## 36. T-3 final continuity decision gate — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+T-3 wymaga formalnego GO-S1 albo GO-S3 z T-7. Wynik READY-FOR-AUTHORIZATION nadal nie wykonuje upgrade, migracji ani cutoveru; osobna zgoda należy do dokumentu 77.
