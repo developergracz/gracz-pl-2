@@ -391,3 +391,20 @@ RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
 ```
 
 Samo przygotowanie bramki nie stanowi skutecznego treatmentu.
+
+
+## 23. T-10 backup/recovery risk gate — dokument 74
+
+Utworzono:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+Dokument obejmuje m.in. source mismatch, credential exposure, load/locks, encryption, failure domains, restore integrity i chain of custody.
+
+```text
+T-10 CONTROL DESIGN = READY
+EVIDENCE CATALOG = 60 CONTROLS
+CONTROL EFFECTIVENESS = NOT DEMONSTRATED
+RISK SCORE REDUCTION = NONE
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+```
