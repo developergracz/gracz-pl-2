@@ -539,3 +539,22 @@ AUTHORIZED OPERATIONS = NONE
 ```
 
 Projekcja HOLD nie jest formalnym wynikiem bramki i nie zmienia środowisk ani freeze.
+
+
+## 22. Bramka T-10 backup/recovery — dokument 74
+
+Utworzono:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+Dokument definiuje osobne zgody BA1–BA3 oraz 60 kontroli dla authorization, source boundary, backup tooling, credential/encryption/retention i recovery readiness.
+
+```text
+T-10 GATE DESIGN = READY
+FORMAL T-10 REVIEW = NOT EXECUTED
+BA1 / BA2 / BA3 = NOT AUTHORIZED
+BACKUP / RESTORE EXECUTION = NOT STARTED
+CURRENT PROJECTION = HOLD
+```
+
+Dokument nie zmienia produkcji, Render, sekretów ani freeze.
