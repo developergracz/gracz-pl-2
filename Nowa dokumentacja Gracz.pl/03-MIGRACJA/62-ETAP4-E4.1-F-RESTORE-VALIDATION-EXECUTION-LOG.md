@@ -413,3 +413,28 @@ FREEZE = ACTIVE
 ```
 
 Utworzenie dokumentów 67–68 nie zmieniło produkcji, konfiguracji Render, sekretów, stanu PR #26 ani decyzji Production V3 NO-GO.
+
+
+## 17. Formalny kontrakt autoryzacji E4.1-H
+
+Utworzono:
+
+- `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md`.
+
+Dokument 69 rozdziela trzy zgody:
+
+- `A1` — przygotowanie implementacji,
+- `A2` — przygotowanie możliwości dostawcy,
+- `A3` — jednorazowe wykonanie E4.1-H.
+
+Bieżący stan:
+
+```text
+A1 = NOT_AUTHORIZED
+A2 = NOT_AUTHORIZED
+A3 = NOT_AUTHORIZED
+CONTROLLED WINDOW = NOT SCHEDULED
+ROLLBACK/CLEANUP = DESIGN READY / NOT EXECUTED
+```
+
+Brak zgody A1–A3 jest obowiązującą bramką bezpieczeństwa. Dokument nie zmienił produkcji, Render, sekretów, freeze ani PR #26.
