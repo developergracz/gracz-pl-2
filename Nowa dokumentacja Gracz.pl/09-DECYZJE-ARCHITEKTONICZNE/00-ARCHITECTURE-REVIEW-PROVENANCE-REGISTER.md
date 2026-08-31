@@ -3,7 +3,7 @@
 Data utworzenia: 31.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Branch: `main`  
-Status: **CURRENT / GOVERNANCE CONTROL / DOCUMENTATION ONLY / FREEZE-SAFE**
+Status: **CURRENT / GOVERNANCE HOLD / P1-GOV-01 CORRECTED / EXTERNAL DELTA REVIEW PENDING / DOCUMENTATION ONLY / FREEZE-SAFE**
 
 > Rejestr dokumentuje provenance przeglądów architektonicznych. Nie zmienia decyzji ADR, nie potwierdza implementacji, nie stanowi dowodu operacyjnego i nie autoryzuje deploymentu. Nie przepisuje historii Git i nie dodaje retrospektywnych ani fikcyjnych trailerów `Reviewed-by` / `Approved-by`.
 
@@ -143,7 +143,7 @@ Review architektoniczny nie stanowi opinii prawnej i nie zamyka konkretnych okre
 | Initial authoring commit | `d050019b6eabc2acbd459985eacc88a45856b2c6` |
 | Reviewer role | External Lead Architect reviewer — role reported outside Git |
 | Reviewer identity in Git | `NOT RECORDED` |
-| Review type | `EXTERNAL FULL ARCHITECTURE REVIEW + EXTERNAL DELTA REVIEW` |
+| Review type | `EXTERNAL FULL ARCHITECTURE REVIEW`; external delta review `PENDING` |
 | Provenance class | `EXTERNAL_RECORDED / IDENTITY NOT GIT-VERIFIABLE` |
 | Review baseline SHA | `31447fb70e43a9fac10144b0f0d8168db57498a3` |
 | Review date | `2026-08-31` |
@@ -151,16 +151,17 @@ Review architektoniczny nie stanowi opinii prawnej i nie zamyka konkretnych okre
 | Findings P0/P1/P2 | `P0=0 / P1=2 / P2=1` |
 | Corrections commit SHA | `edd2861d0bd26435fc166e269510536e50cb2814` |
 | Delta review baseline | `31447fb70e43a9fac10144b0f0d8168db57498a3` |
-| Delta review HEAD | `1525f855ad3d037a1989b0e1c75a9e7adf630431` |
-| Delta review status | `PASS / P1-013-01 RESOLVED / P1-013-02 RESOLVED / P2 RESOLVED / NEW P0-P1 NONE` |
-| Final decision authority | Architecture governance status recorded by repository maintainer; named external approver identity not recorded in Git |
-| Acceptance recording commit | `cc9c04f77ff72d55f32dcebc9eeb49f9a632ce8f` |
-| Final status | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
+| Previously reported delta review HEAD | `1525f855ad3d037a1989b0e1c75a9e7adf630431 / NOT ACCEPTED AS EXTERNAL REVIEW EVIDENCE` |
+| P1/P2 correction state | `APPLIED / INTERNAL READBACK PASS / EXTERNAL VERIFICATION PENDING` |
+| External delta review status | `PENDING` |
+| Final decision authority | `PENDING EXTERNAL DELTA REVIEW`; named external approver identity not recorded in Git |
+| Premature acceptance recording commit | `cc9c04f77ff72d55f32dcebc9eeb49f9a632ce8f / SUPERSEDED BY P1-GOV-01 CORRECTION` |
+| Final status | `PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / EXTERNAL DELTA REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 | Implementation status | `NOT AUTHORIZED / NOT IMPLEMENTED` |
-| Evidence locator | ADR sections 0 and 40 plus this register; originating full and delta review exchanges remain external to Git |
-| Architectural design trust | `REVIEWED / FINDINGS CLOSED / PROVENANCE PARTIAL` |
+| Evidence locator | ADR sections 0 and 40 plus this register; originating full review remains external to Git; external delta review artifact does not yet exist |
+| Architectural design trust | `ARCHITECTURE PASS / CORRECTIONS APPLIED / EXTERNAL VERIFICATION PENDING / PROVENANCE PARTIAL` |
 
-Ten rekord potwierdza zapisany przebieg review i delta review. Nie twierdzi, że zewnętrzny reviewer ma tożsamość lub niezależność potwierdzoną przez GitHub.
+Ten rekord potwierdza pełny external architecture review i zastosowanie korekt. Nie potwierdza jeszcze external delta review, jego wyniku ani finalnej akceptacji.
 
 ## 8. Zasady przyszłych review
 
@@ -168,21 +169,35 @@ Ten rekord potwierdza zapisany przebieg review i delta review. Nie twierdzi, że
 2. Reviewer role i final decision authority są rozdzielone.
 3. Findings otrzymują identyfikatory oraz severity P0/P1/P2.
 4. Corrections mają osobny commit SHA.
-5. Delta review wskazuje baseline, corrections SHA i reviewed HEAD.
+5. Delta review może otrzymać status `PASS` dopiero po zapisaniu baseline, corrections SHA, reviewed HEAD i weryfikowalnego review artifact.
 6. Jeśli reviewer posiada konto GitHub i mandat, review powinno zostać zapisane natywnie w PR lub podpisanym artefakcie.
 7. External review bez tożsamości może pozostać użytecznym dowodem projektowym, lecz jego provenance pozostaje `PARTIAL`.
 8. Żaden review record nie zmienia automatycznie `IMPLEMENTATION`, `DEPLOYMENT`, `PRODUCTION GO` ani freeze.
 
-## 9. Aktualny stan
+## 9. Korekta governance — P1-GOV-01
+
+| Pole | Wartość |
+|---|---|
+| Finding ID | `P1-GOV-01` |
+| Review baseline HEAD | `4bb3eb494f80e8fc06b27b2fe8c0c790138d25ca` |
+| Governance delta verdict | `PASS WITH 1 P1 CORRECTION` |
+| New P0/P1 | `P0=0 / P1=1` |
+| Problem | External delta review zapisano jako `PASS` bez udowodnionego external delta review artifact |
+| Correction | Przedwczesne `PASS / ACCEPTED / FINAL` usunięto; rozdzielono `CORRECTIONS APPLIED / INTERNAL READBACK PASS` od `EXTERNAL DELTA REVIEW PENDING` |
+| Correction status | `APPLIED IN DOCUMENTATION / EXTERNAL DELTA REVIEW STILL PENDING` |
+| Final governance decision | `HOLD UNTIL ACTUAL EXTERNAL DELTA REVIEW` |
+| Correction commits | ADR-V3-013 `0585658b48231a399cdb4cdbd463b02bb3e1e483`; V3 `43a0e62aa79ca8a14ca6eb4bfee351d178ccf286`; status `63f18213b6edd9aab25a021a0e049b2e009bcd9d`; README `aadca4639c0b7bb6404e01fc3323fd6d41c1eed1`; index `476019a4a35fb676997e46baf870383a1d2ad05b`; finalny commit tego rejestru nie jest samoreferencyjny |
+
+## 10. Aktualny stan
 
 ```text
 ADR-V3-004 DESIGN STATUS = ACCEPTED / FINAL
 ADR-V3-012 DESIGN STATUS = ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
-ADR-V3-013 DESIGN STATUS = ACCEPTED / FINAL
-ARCHITECTURAL DESIGN TRUST = RECORDED / EXTERNAL PROVENANCE PARTIAL
+ADR-V3-013 DESIGN STATUS = PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / EXTERNAL DELTA REVIEW PENDING
+ARCHITECTURAL DESIGN TRUST = RECORDED / EXTERNAL PROVENANCE PARTIAL / ADR-V3-013 EXTERNAL VERIFICATION PENDING
 IMPLEMENTATION CONFIDENCE = NOT ESTABLISHED
 OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
-REVIEWED DESIGN GATE = HOLD — ADR-V3-012 PRIVACY/LEGAL GOVERNANCE PENDING
+REVIEWED DESIGN GATE = HOLD — ADR-V3-013 EXTERNAL DELTA REVIEW + ADR-V3-012 PRIVACY/LEGAL GOVERNANCE PENDING
 IMPLEMENTATION = NOT AUTHORIZED
 FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
