@@ -450,3 +450,27 @@ PRODUCTION V3 = NO-GO
 ```
 
 Dokument jest kontraktem przyszłej kontroli. Nie jest zgodą na wykonanie żadnego działania.
+
+
+## 22. Risk governance dependency — dokument 70
+
+Autoryzacja A1, A2 lub A3 wymaga aktualnego przeglądu:
+
+- `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md`.
+
+Warunki minimalne:
+
+- każde ryzyko CRITICAL ma nazwanego ownera,
+- blocker związany z daną autoryzacją ma treatment decision,
+- kontrola użyta do obniżenia score ma evidence i stan EFFECTIVE,
+- time-bound ryzyko bazy zostało formalnie rozstrzygnięte,
+- readiness odpowiedniej warstwy nie ma statusu BLOCKED.
+
+Obecnie:
+
+```text
+CRITICAL RISKS = OPEN
+NAMED RISK OWNERS = PENDING
+A1-A3 READINESS = BLOCKED
+A1-A3 = NOT AUTHORIZED
+```
