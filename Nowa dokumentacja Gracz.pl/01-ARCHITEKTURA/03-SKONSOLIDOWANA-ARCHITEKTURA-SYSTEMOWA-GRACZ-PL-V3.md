@@ -1045,7 +1045,7 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-001` | P2 | wybór brokera/event bus | przed event-driven deployment | `DEFERRED / PENDING` |
 | `ADR-V3-002` | P2 | wybór shared ephemeral store | przed poziomym skalowaniem realtime/presence | `DEFERRED / PENDING` |
 | `ADR-V3-003` | P1 | SSE, WebSocket lub model hybrydowy | przed pierwszym docelowym realtime slice | `PENDING` |
-| `ADR-V3-004` | P0 | egzekwowanie `match_actor_leases` i fencing | przed `REVIEWED DESIGN` | `CONSTRAINED / PENDING DETAILS` |
+| [`ADR-V3-004`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | P0 | egzekwowanie `match_actor_leases` i fencing | przed `REVIEWED DESIGN` | `PROPOSED / REVIEW PENDING` |
 | `ADR-V3-005` | P1 | snapshot vs event log dla klas agregatów | przed implementacją trwałości danej klasy | `PENDING` |
 | `ADR-V3-006` | P2 | storage załączników i skanowanie uploadów | przed migracją binarnego storage | `DEFERRED / PENDING` |
 | `ADR-V3-007` | P2 | frontend stack, routing i state management | przed przebudową frontend shell | `DEFERRED / PENDING` |
