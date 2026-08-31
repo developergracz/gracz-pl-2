@@ -6,7 +6,7 @@ Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ra
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
 **Ostatnia synchronizacja indeksu:** 31.08.2026  
-**Aktualny inwentarz:** 125 plików
+**Aktualny inwentarz:** 126 plików
 
 Bieżący status projektu znajduje się w:
 
@@ -30,7 +30,7 @@ Bieżący status projektu znajduje się w:
 3. `01-ARCHITEKTURA/` — architektura AS-IS, docelowa oraz skonsolidowana V3.
 4. `02-BAZA-DANYCH/` — PostgreSQL AS-IS, porównanie i model V3.
 5. `03-MIGRACJA/` — preflight, Gate 12–15, ETAP 4, evidence i runbooki.
-6. `09-DECYZJE-ARCHITEKTONICZNE/` — przyjęte i proponowane ADR dla V3.
+6. `09-DECYZJE-ARCHITEKTONICZNE/` — przyjęte i proponowane ADR dla V3 oraz centralny rejestr review provenance.
 
 ## Planowane pakiety po konsolidacji architektury
 
@@ -48,7 +48,7 @@ Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą 
 
 Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `PENDING / SAFE HOLD`. Freeze jest aktywny, formalne bramki nie zostały wykonane, a C0/A1/A2/A3 nie są autoryzowane.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. Wszystkie trzy P0 są rozstrzygnięte technicznie, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance Privacy/Legal dla `ADR-V3-012`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. Wszystkie trzy P0 są rozstrzygnięte technicznie, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance Privacy/Legal dla `ADR-V3-012`. Review provenance jest zapisane w `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`; Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git ma poziom provenance `PARTIAL`.
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
