@@ -577,3 +577,11 @@ Utworzono:
 - `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
 
 Wynik GO-S1 albo GO-S3 jest rekomendacją do późniejszej autoryzacji. Nie uruchamia upgrade, utworzenia bazy, restore, cutover ani A1-A3. Wykonanie pozostaje zależne od dokumentu 77.
+
+## 28. T-3 authorization handoff boundary — dokument 76
+
+Utworzono:
+
+- `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
+
+READY-FOR-AUTHORIZATION-S1/S3 jest wyłącznie wejściem do dokumentu 77. Do czasu osobnej decyzji A1/A2/A3 obowiązuje `AUTHORIZED OPERATIONS = NONE`.
