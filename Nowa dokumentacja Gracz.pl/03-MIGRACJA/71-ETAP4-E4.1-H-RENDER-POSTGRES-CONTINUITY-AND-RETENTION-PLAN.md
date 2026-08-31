@@ -635,3 +635,20 @@ CURRENT PROJECTION = HOLD
 OPTION SELECTION = PENDING
 AUTHORIZED OPERATIONS = NONE
 ```
+
+
+## 26. T-10 S2 backup readiness gate — dokument 74
+
+Szczegółowy kontrakt gotowości S2 znajduje się w:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+Dokument rozdziela BA1 backup, BA2 restore validation i BA3 recovery evidence acceptance.
+
+```text
+S2 DESIGN = READY
+T-10 GATE = NOT EXECUTED
+BA1 / BA2 / BA3 = NOT AUTHORIZED
+BACKUP EXECUTION = NOT STARTED
+CURRENT PROJECTION = HOLD
+```
