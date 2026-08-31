@@ -485,3 +485,11 @@ A1-A3 = NOT_AUTHORIZED
 EXECUTION = NOT AUTHORIZED
 FREEZE = ACTIVE
 ```
+
+## 18. Final authorization evidence — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Evidence schema v2 i frozen manifest są wymaganiami A3. Utworzenie kontraktu 77 nie jest evidence wykonania.
