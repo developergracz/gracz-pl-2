@@ -311,3 +311,11 @@ PRODUCTION V3 = NO-GO
 ```
 
 Następny artefakt: szczegółowy operator runbook. Utworzenie runbooka nie autoryzuje wykonania.
+
+## 14. Final authorization governance — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Decyzja architektoniczna jest egzekwowana przez oddzielne C0, A1, A2 i A3. Żadna zgoda nie wynika automatycznie z ADR.
