@@ -448,3 +448,27 @@ PRODUCTION V3 = NO-GO
 ```
 
 Następny artefakt: evidence contract i review checklist. Nie wykonywać runbooka przed formalną autoryzacją.
+
+
+## 11. Governance amendment — dokument 69
+
+Wykonanie kroków R1–R10 podlega dokumentowi:
+
+- `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md`.
+
+Runbook nie może zostać rozpoczęty bez:
+
+- `A1 = APPROVED/CLOSED`,
+- `A2 = APPROVED/CAPABILITY PASS`,
+- niewygasłego `A3 = APPROVED`,
+- exact run/source/script/artifact/command identity,
+- aktywnego controlled window,
+- przypisanych operatora, Abort owner i reviewerów.
+
+Obecnie:
+
+```text
+A1-A3 = NOT_AUTHORIZED
+RUNBOOK = READY / DO NOT EXECUTE
+FREEZE = ACTIVE
+```
