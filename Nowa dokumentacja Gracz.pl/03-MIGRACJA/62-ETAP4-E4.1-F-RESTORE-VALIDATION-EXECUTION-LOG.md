@@ -574,3 +574,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 F0-F7 i historyczny restore anchor pozostają dowodami wspierającymi. Finalne READY wymaga świeżego łańcucha T-14/T-10/T-7 oraz BA1-BA3 PASS.
+
+## 25. Final authorization record — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+F0-F7 i restore anchor są dowodami wspierającymi. Nie autoryzują C0 ani A1-A3; bieżący wynik pozostaje NOT-AUTHORIZED.
