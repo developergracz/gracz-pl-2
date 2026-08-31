@@ -247,7 +247,7 @@ Plan jest częścią spójnego pakietu:
 5. `67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md` — weryfikacja ograniczeń planu Free i wariantów wykonania,
 6. `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — szczegółowy kontrakt przyszłego kolektora,
 7. `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md` — formalne zgody A1–A3, okno, rollback i cleanup,
-8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3,\n9. `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md` — plan ochrony bazy przed expiry i treatment `RSK-E41H-009`.
+8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3,\n9. `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md` — plan ochrony bazy przed expiry i treatment `RSK-E41H-009`,\n10. `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md` — named ownership, SoD i formalny decision record.
 
 Status pakietu:
 
@@ -281,3 +281,22 @@ A2 READINESS = BLOCKED
 A3 READINESS = BLOCKED
 E4.1-H = PENDING / SAFE HOLD
 ```
+
+
+## 14. Named ownership dependency — dokument 72
+
+Pakiet E4.1-H wymaga:
+
+- `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md`.
+
+Bieżący brak aktywnych named owners pozostaje bramką:
+
+```text
+NAMED OWNERS = PENDING / UNASSIGNED
+A1 READINESS = BLOCKED
+A2 READINESS = BLOCKED
+A3 READINESS = BLOCKED
+E4.1-H = PENDING / SAFE HOLD
+```
+
+Dokument 72 nie udziela żadnej autoryzacji.
