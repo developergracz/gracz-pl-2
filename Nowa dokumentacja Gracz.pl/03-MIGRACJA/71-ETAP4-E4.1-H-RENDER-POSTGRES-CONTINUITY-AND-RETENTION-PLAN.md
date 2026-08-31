@@ -599,3 +599,22 @@ PRODUCTION V3 = NO-GO
 ```
 
 Następny krok dokumentacyjny: przypisać named owners i utworzyć formalny Decision Record dla `RSK-E41H-009`. Do czasu odrębnej autoryzacji nie wykonywać backupu, upgrade, restore, tworzenia zasobu, cutover ani żadnej zmiany Render.
+
+
+## 24. Named ownership and decision record — dokument 72
+
+Formalnym rejestrem odpowiedzialności dla planu ciągłości jest:
+
+- `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md`.
+
+Dokument 72 nie wskazuje fikcyjnych właścicieli. Każda rola wymaga nominacji, akceptacji, mandate verification, kontroli konfliktów i aktywacji.
+
+```text
+OWNERSHIP CONTRACT = READY
+NAMED OWNERS = PENDING / UNASSIGNED
+CONTINUITY DECISION RECORD = READY / NOT COMPLETED
+OPTION SELECTION = PENDING
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+```
+
+Do czasu aktywacji wymaganych ownerów i zatwierdzenia decyzji S1/S2/S3 backup, upgrade, restore i cutover pozostają nieautoryzowane.
