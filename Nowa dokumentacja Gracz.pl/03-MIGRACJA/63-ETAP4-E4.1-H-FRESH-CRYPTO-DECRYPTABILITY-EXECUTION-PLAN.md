@@ -234,3 +234,25 @@ PRODUCTION V3 = NO-GO
 Plan jest gotowy, lecz nie jest autoryzacją wykonania.
 
 Następny krok operacyjny może nastąpić wyłącznie po zatwierdzeniu metody spełniającej wszystkie warunki z sekcji 5. Do tego czasu nie wykonywać żadnych kliknięć, deployów, restartów ani operacji na sekretach.
+
+
+## 12. Pakiet dokumentacyjny E4.1-H
+
+Plan jest częścią spójnego pakietu:
+
+1. `63-ETAP4-E4.1-H-FRESH-CRYPTO-DECRYPTABILITY-EXECUTION-PLAN.md` — cel, granice i kryteria,
+2. `64-ETAP4-E4.1-H-CRYPTO-DIAGNOSTIC-ARCHITECTURE-DECISION.md` — wybór wzorca provider-side isolated diagnostic,
+3. `65-ETAP4-E4.1-H-OPERATOR-RUNBOOK.md` — sekwencja operatorska, STOP/ABORT i cleanup,
+4. `66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md` — schema wyniku i niezależny review.
+
+Status pakietu:
+
+```text
+DOCUMENTATION PACKAGE = READY
+PROVIDER CAPABILITY = PENDING
+EXECUTION = NOT AUTHORIZED
+E4.1-H = PENDING / SAFE HOLD
+FREEZE = ACTIVE
+```
+
+Utworzenie pakietu nie zmienia statusu operacyjnego i nie stanowi zgody na wykonanie testu.
