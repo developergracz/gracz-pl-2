@@ -618,3 +618,20 @@ RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
 ```
 
 Do czasu aktywacji wymaganych ownerów i zatwierdzenia decyzji S1/S2/S3 backup, upgrade, restore i cutover pozostają nieautoryzowane.
+
+
+## 25. T-14 continuity decision gate — dokument 73
+
+Weryfikację gotowości planu przed T-10 definiuje:
+
+- `73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md`.
+
+Bramka wymaga fresh provider facts, aktywnych ownerów, zatwierdzonych RPO/RTO, formalnego wyboru opcji, kosztu/change path i review recovery evidence.
+
+```text
+T-14 GATE DESIGN = READY
+T-14 GATE = NOT EXECUTED
+CURRENT PROJECTION = HOLD
+OPTION SELECTION = PENDING
+AUTHORIZED OPERATIONS = NONE
+```
