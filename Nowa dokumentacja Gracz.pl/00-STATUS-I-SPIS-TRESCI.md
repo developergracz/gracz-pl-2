@@ -88,7 +88,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`; external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Review provenance jest zapisane w `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` pozostaje `ACCEPTED / FINAL / NOT IMPLEMENTED`. W `ADR-V3-013` zastosowano korekty P1/P2 i wykonano internal readback, lecz rzeczywisty external delta review pozostaje `PENDING`; przedwczesny zapis `PASS / ACCEPTED / FINAL` został wycofany jako `P1-GOV-01`. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Review provenance jest zapisane w `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` do external delta review `ADR-V3-013` oraz domknięcia governance `ADR-V3-012`.
 
 ### PostgreSQL
 
@@ -120,7 +120,7 @@ IMPLEMENTATION CONFIDENCE = NOT ESTABLISHED
 OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
-ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
+ADR-V3-013 = PROPOSED / ARCHITECTURE PASS / P1 CORRECTIONS APPLIED / EXTERNAL DELTA REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
 Pliki:
@@ -132,9 +132,10 @@ Pliki:
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
-2. synchronizacja wyniku governance i finalny review V3 0.2,
-3. decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
+1. rzeczywisty external delta review korekt `ADR-V3-013`,
+2. po wyniku `PASS` synchronizacja finalnego statusu `ADR-V3-013`,
+3. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
+4. finalny review V3 0.2 i decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 
