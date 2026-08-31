@@ -447,3 +447,25 @@ PRODUCTION V3 = NO-GO
 ```
 
 Następny krok dokumentacyjny: połączyć dokumenty 63–66 z kanonicznym dziennikiem E4.1 i zweryfikować cały łańcuch commitów. Żaden krok operacyjny nie jest autoryzowany.
+
+
+## 16. Amendment — evidence schema v2
+
+Dokument `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` wprowadza dokładniejszy schemat `e4.1-h-evidence-v2`.
+
+Zmiana semantyczna dla wiadomości:
+
+- pole v1 `success` zostaje rozdzielone na `decryptSuccess`, `legacyReadable` i `readSuccess`,
+- `decryptSuccess` obejmuje wyłącznie rekordy `enc:v1`,
+- `legacyReadable` obejmuje rekordy legacy niewymagające odszyfrowania,
+- `readSuccess` potwierdza pełną czytelność aplikacyjną zbioru,
+- nie wolno przedstawiać rekordu legacy jako sukcesu odszyfrowania.
+
+Dla przyszłego wykonania E4.1-H schema v2 ma pierwszeństwo przed przykładem v1 z sekcji 7. Pozostałe zasady bezpieczeństwa, retencji i niezależnego review z niniejszego dokumentu pozostają obowiązujące.
+
+```text
+EVIDENCE V1 = SUPERSEDED FOR FUTURE EXECUTION
+EVIDENCE V2 = DESIGN CANONICAL / NOT YET IMPLEMENTED
+EXECUTION = NOT AUTHORIZED
+FREEZE = ACTIVE
+```
