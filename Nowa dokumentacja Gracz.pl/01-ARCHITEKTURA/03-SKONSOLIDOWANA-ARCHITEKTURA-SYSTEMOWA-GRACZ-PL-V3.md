@@ -3,8 +3,8 @@
 Data: 31.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Ścieżka docelowa: `Nowa dokumentacja Gracz.pl/01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`  
-Wersja: `0.1`  
-Status: **DESIGN DRAFT / NOT DEPLOYED / FREEZE-SAFE**
+Wersja: `0.2`  
+Status: **DESIGN DRAFT / REVIEW PENDING / NOT DEPLOYED / FREEZE-SAFE**
 
 > Ten dokument konsoliduje stan obecny i docelową architekturę Gracz.pl V3. Nie jest dowodem wdrożenia, nie udziela zgody operacyjnej i nie zmienia produkcji, Rendera, Cloudflare, bazy danych ani sekretów.
 
@@ -14,7 +14,7 @@ Status: **DESIGN DRAFT / NOT DEPLOYED / FREEZE-SAFE**
 E4.1-H = PENDING / SAFE HOLD
 FREEZE = ACTIVE
 FORMAL T-GATES = NOT EXECUTED
-C0 / A1 / A2 / A3 = NOT AUTHORIZED
+C0-S1 / C0-S3 / A1 / A2 / A3 = NOT AUTHORIZED
 AUTHORIZED OPERATIONS = NONE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 PR #26 = OPEN / DRAFT / NOT MERGED
@@ -69,7 +69,7 @@ Dokument nie zastępuje szczegółowych projektów bazodanowych, migracyjnych, b
 - wybór płatnego planu providera,
 - uruchomienie E4.1-H,
 - wykonanie bramek T-serii,
-- nadanie zgód C0/A1/A2/A3,
+- nadanie zgód C0-S1/C0-S3/A1/A2/A3,
 - produkcyjny GO.
 
 ## 3. Klasyfikacja twierdzeń i hierarchia dowodów
@@ -445,6 +445,31 @@ API V3 jest warstwą wejściową i orkiestracyjną. Powinno zapewniać:
 
 API nie powinno zawierać reguł gry, bezpośrednich wywołań SQL należących do innego kontekstu ani bezpośrednich skutków ubocznych wymagających retry.
 
+### 14.1. Query API, wersjonowanie i cykl życia kontraktów
+
+`TARGET DESIGN`
+
+Ścieżki odczytowe muszą być jawnie oddzielone od komend. Query API:
+
+- nie mutuje stanu domenowego jako efekt uboczny zwykłego odczytu,
+- korzysta z kanonicznego agregatu albo nazwanej projekcji/read modelu,
+- posiada określonego właściciela danych i schematu odpowiedzi,
+- stosuje stabilną paginację, deterministyczne sortowanie i jawne limity,
+- nie ujawnia pól wewnętrznych, sekretów ani danych bez podstawy autoryzacyjnej,
+- raportuje wersję/świeżość projekcji, gdy eventual consistency ma znaczenie,
+- ma zdefiniowaną semantykę `not found`, `forbidden`, `conflict` i `temporarily unavailable`.
+
+Kontrakt API podlega wersjonowaniu. Zmiana niekompatybilna wymaga:
+
+1. nowej wersji albo kontrolowanego compatibility adaptera,
+2. okresu równoległego wsparcia określonego decyzją,
+3. telemetry użycia starego kontraktu,
+4. komunikatu deprecation,
+5. formalnego kryterium usunięcia,
+6. testu, że aktywny klient nie zależy od usuwanego pola lub endpointu.
+
+Dokładny standard wersjonowania i deprecation jest objęty `ADR-V3-014`.
+
 ## 15. Logowanie, sesje i autoryzacja
 
 `TARGET DESIGN`
@@ -508,6 +533,36 @@ Bezpośredni zapis do tabel innego kontekstu jest zabroniony.
 - publiczny transport wymaga zweryfikowanego TLS,
 - prywatny transport Render wymaga fresh topology evidence.
 
+### 16.3. Read models, projekcje i ranking
+
+`TARGET DESIGN`
+
+Read model jest odbudowywalnym widokiem zoptymalizowanym dla zapytań. Nie może stać się drugim, niekontrolowanym źródłem prawdy.
+
+Każda projekcja musi posiadać:
+
+- nazwany kontekst-właściciela,
+- wskazany event lub dane źródłowe,
+- wersję schematu projekcji,
+- idempotentnego projectora,
+- trwały checkpoint albo równoważny mechanizm wznowienia,
+- jawny model kolejności i obsługi duplikatów,
+- procedurę pełnego rebuild,
+- metrykę lag/freshness,
+- reguły publikacji dopiero po osiągnięciu wymaganej spójności.
+
+Ranking jest projekcją Game Platform, a nie niezależnym writerem wyniku meczu. Wynik meczu pochodzi z kanonicznego Match Runtime; ranking konsumuje zatwierdzony event i może zostać odbudowany bez modyfikowania historii meczów.
+
+Minimalne zabezpieczenia:
+
+- unikalność przetworzenia `event_id`,
+- brak naliczenia punktów na podstawie niezatwierdzonego wyniku,
+- deterministyczny rebuild dla tego samego zakresu zdarzeń,
+- izolacja uszkodzonego eventu bez zatrzymania całego systemu,
+- porównanie sum kontrolnych/liczników po rebuild.
+
+Szczegółowa strategia checkpointów, rebuild i udostępniania projekcji jest objęta `ADR-V3-013`.
+
 ## 17. Match Runtime i platforma gier
 
 ### 17.1. Wspólny kontrakt silnika
@@ -524,15 +579,18 @@ Każdy silnik gry powinien udostępniać logicznie:
 
 ### 17.2. Single writer
 
-Dla pojedynczego `match_id` tylko jeden owner może skutecznie zatwierdzać komendy. Mechanizm musi obejmować:
+Dla pojedynczego `match_id` tylko jeden owner może skutecznie zatwierdzać komendy. PostgreSQL V3 ustala normatywny model `match_actor_leases` z rosnącym fencing tokenem. Mechanizm musi obejmować:
 
-- lease lub równoważny model ownershipu,
-- fencing token lub równoważną ochronę przed starym ownerem,
+- rekord lease przypisany do `match_id`,
+- jednoznaczny `owner_id`,
+- termin ważności i kontrolowane odnowienie lease,
+- monotonically increasing fencing token przy przejęciu ownershipu,
 - `expected_version`,
 - CAS w PostgreSQL,
-- deterministyczny wynik konfliktu.
+- deterministyczny wynik konfliktu,
+- odrzucenie zapisu starego ownera nawet wtedy, gdy jego proces nadal działa.
 
-Konkretny mechanizm distributed ownership pozostaje `DECISION REQUIRED`.
+`ADR-V3-004` nie wybiera ponownie modelu ownershipu. Ma rozstrzygnąć szczegóły egzekwowania ustalonego modelu: atomowe acquire/renew/release, TTL, heartbeat, transakcyjne sprawdzanie fencing tokenu, routing po `match_id`, handoff, zachowanie po timeout oraz testy split-brain.
 
 ### 17.3. Kolejność migracji gier
 
@@ -740,6 +798,33 @@ Architektura musi uwzględniać:
 - least privilege,
 - audyt operacji uprzywilejowanych.
 
+### 23.4. Data Governance & Privacy
+
+`TARGET DESIGN`
+
+Każda klasa danych musi posiadać właściciela, cel przetwarzania, klasyfikację, retencję, podstawę dostępu oraz procedurę usunięcia lub trwałej anonimizacji.
+
+| Klasa | Przykłady | Minimalny kontrakt |
+|---|---|---|
+| Public | nazwa gry, publiczny ranking, jawny profil | integralność, moderacja, kontrola publikacji |
+| Internal | identyfikatory techniczne, konfiguracja niesekretna | dostęp według potrzeby, ograniczona ekspozycja |
+| Personal | konto, e-mail, profil, historia aktywności | purpose limitation, kontrola dostępu, retencja i realizacja praw użytkownika |
+| Sensitive | MFA, security signals, prywatne wiadomości, dane recovery | szyfrowanie, ścisły dostęp, audyt, minimalizacja |
+| Secret | klucze, tokeny, credentiale | wyłącznie secret store; zakaz logowania i utrwalania w dokumentacji |
+
+Normatywne wymagania:
+
+- zbieramy wyłącznie dane potrzebne do jawnego celu,
+- właściciel kontekstu odpowiada za retencję i usunięcie,
+- usunięcie konta nie może przypadkowo niszczyć wymaganych dowodów zgód, audytu lub legal hold,
+- legal/audit hold wstrzymuje wyłącznie dane objęte podstawą i jest rejestrowany,
+- eksport danych nie może ujawniać danych innych użytkowników ani sekretów systemowych,
+- kopie zapasowe mają osobny harmonogram wygaśnięcia i procedurę obsługi usuniętych danych,
+- dane testowe nie używają niezanonimizowanych danych produkcyjnych bez formalnej podstawy,
+- telemetry i logi podlegają tej samej klasyfikacji oraz polityce retencji.
+
+`ADR-V3-012` ustala szczegółowe okresy retencji i legal hold dla każdej klasy danych. Brak ustalonego okresu oznacza `HOLD` dla automatycznego usuwania, a nie retencję bezterminową.
+
 ## 24. Obserwowalność
 
 ### 24.1. Minimalny standard
@@ -778,6 +863,44 @@ Nie logować:
 - pełnych adresów e-mail,
 - Turnstile response tokenów,
 - surowego materiału kryptograficznego.
+
+### 24.4. Incident Response
+
+`TARGET DESIGN`
+
+System musi posiadać klasyfikację incydentów oraz przypisane ścieżki reakcji co najmniej dla:
+
+- naruszenia konta lub sesji,
+- ujawnienia albo podejrzenia ujawnienia sekretu,
+- awarii lub korupcji PostgreSQL,
+- błędu kryptograficznego/decryptability,
+- nieudanego deployu lub migracji,
+- niedostępności Match Runtime/realtime,
+- utraty integralności outboxa lub projekcji,
+- nadużyć, spamu i ataku automatycznego.
+
+Każdy playbook powinien określać detekcję, severity, incident ownera, komunikację, containment, evidence preservation, recovery, kryteria zamknięcia i post-incident review. Działania destrukcyjne lub dotyczące sekretów wymagają osobnej autoryzacji.
+
+### 24.5. Operational Ownership
+
+Każdy komponent krytyczny musi mieć przypisaną co najmniej jedną rolę odpowiedzialną za:
+
+- decyzje architektoniczne,
+- utrzymanie kodu,
+- deploy i rollback,
+- dane i migracje,
+- bezpieczeństwo oraz rotację credentiali,
+- alerty i reakcję na incydent,
+- backup i recovery,
+- akceptację ryzyka.
+
+Minimalny cykl przypisania roli:
+
+```text
+UNASSIGNED -> NOMINATED -> ACCEPTED -> VERIFIED -> ACTIVE
+```
+
+Samo wpisanie nazwy osoby nie ustanawia odpowiedzialności bez jawnej akceptacji i mandatu. Szczegółowy model ownershipu i eskalacji jest objęty `ADR-V3-015`.
 
 ## 25. Model awarii i recovery
 
@@ -865,6 +988,26 @@ Release V3 wymaga:
 - mają plan rollback/forward-fix,
 - nie niszczą danych legacy przed potwierdzonym cutover i retencją.
 
+### 27.4. CI/CD i bezpieczeństwo łańcucha dostaw
+
+`TARGET DESIGN`
+
+Pipeline V3 powinien zapewniać:
+
+- ochronę głównej gałęzi i wymagany review,
+- wymagane testy przed merge,
+- dependency, secret i static analysis scanning,
+- generowanie SBOM dla artefaktu wdrożeniowego,
+- przypięte i weryfikowane wersje zależności oraz akcji CI,
+- minimalne uprawnienia tokenów automatyzacji,
+- brak produkcyjnych sekretów w build logs i artefaktach,
+- identyfikowalność commit -> build -> image -> deployment,
+- niezmienny artefakt promowany między środowiskami,
+- udokumentowaną obsługę podatności krytycznej,
+- rollback do znanego artefaktu bez rebuild z innego kodu.
+
+`ADR-V3-016` ustala konkretne narzędzia, wymagane kontrole, provenance/signing oraz reguły wyjątków. Merge sam w sobie nie oznacza production deploy ani production GO.
+
 ## 28. Droga AS-IS → V3
 
 Referencyjna kolejność implementacyjna:
@@ -889,22 +1032,34 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 
 ## 29. Backlog decyzji architektonicznych
 
-| ADR | Decyzja | Status |
-|---|---|---|
-| `ADR-V3-001` | wybór brokera/event bus | `PENDING` |
-| `ADR-V3-002` | wybór shared ephemeral store | `PENDING` |
-| `ADR-V3-003` | SSE, WebSocket lub model hybrydowy | `PENDING` |
-| `ADR-V3-004` | distributed ownership, lease i fencing Match Runtime | `PENDING` |
-| `ADR-V3-005` | snapshot vs event log dla klas agregatów | `PENDING` |
-| `ADR-V3-006` | storage załączników i skanowanie uploadów | `PENDING` |
-| `ADR-V3-007` | frontend stack, routing i state management | `PENDING` |
-| `ADR-V3-008` | observability stack i retencja telemetry | `PENDING` |
-| `ADR-V3-009` | progi fizycznego podziału deploymentów | `PENDING` |
-| `ADR-V3-010` | RPO, RTO, backup i disaster recovery | `PENDING` |
-| `ADR-V3-011` | trusted proxy i potwierdzona topologia Cloudflare–Render | `PENDING` |
-| `ADR-V3-012` | szczegółowa polityka retencji danych | `PENDING` |
+### 29.1. Znaczenie priorytetów
 
-Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem.
+- `P0` — musi zostać rozstrzygnięte albo formalnie zaakceptowane z właścicielem przed `REVIEWED DESIGN`.
+- `P1` — musi zostać rozstrzygnięte przed rozpoczęciem zależnej implementacji albo przed production readiness, zgodnie z kolumną bramki.
+- `P2` — może zostać odroczone do wersji 0.3, jeżeli granica interfejsu pozostaje stabilna, a odroczenie ma właściciela i kryterium wznowienia.
+
+### 29.2. Rejestr ADR
+
+| ADR | Priorytet | Decyzja | Bramka | Status |
+|---|---:|---|---|---|
+| `ADR-V3-001` | P2 | wybór brokera/event bus | przed event-driven deployment | `DEFERRED / PENDING` |
+| `ADR-V3-002` | P2 | wybór shared ephemeral store | przed poziomym skalowaniem realtime/presence | `DEFERRED / PENDING` |
+| `ADR-V3-003` | P1 | SSE, WebSocket lub model hybrydowy | przed pierwszym docelowym realtime slice | `PENDING` |
+| `ADR-V3-004` | P0 | egzekwowanie `match_actor_leases` i fencing | przed `REVIEWED DESIGN` | `CONSTRAINED / PENDING DETAILS` |
+| `ADR-V3-005` | P1 | snapshot vs event log dla klas agregatów | przed implementacją trwałości danej klasy | `PENDING` |
+| `ADR-V3-006` | P2 | storage załączników i skanowanie uploadów | przed migracją binarnego storage | `DEFERRED / PENDING` |
+| `ADR-V3-007` | P2 | frontend stack, routing i state management | przed przebudową frontend shell | `DEFERRED / PENDING` |
+| `ADR-V3-008` | P1 | observability stack i retencja telemetry | przed production readiness | `PENDING` |
+| `ADR-V3-009` | P2 | progi fizycznego podziału deploymentów | przed wydzieleniem kolejnej usługi | `DEFERRED / PENDING` |
+| `ADR-V3-010` | P1 | RPO, RTO, backup i disaster recovery | przed production readiness | `PENDING` |
+| `ADR-V3-011` | P1 | trusted proxy i topologia Cloudflare–Render | przed zmianą proxy trust flags | `FRESH EVIDENCE REQUIRED` |
+| `ADR-V3-012` | P0 | retencja, privacy deletion i legal hold | przed `REVIEWED DESIGN` | `PENDING` |
+| `ADR-V3-013` | P0 | ownership, checkpoint i rebuild read models | przed `REVIEWED DESIGN` | `PENDING` |
+| `ADR-V3-014` | P1 | API versioning i deprecation | przed pierwszą zmianą niekompatybilną | `PENDING` |
+| `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
+| `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
+
+Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
 ## 30. Kryteria akceptacji dokumentu
 
@@ -914,9 +1069,14 @@ Dokument może przejść z `DESIGN DRAFT` do `REVIEWED DESIGN`, gdy:
 - każde twierdzenie target jest oznaczone jako niewdrożone, jeśli brak fresh proof,
 - wszystkie komponenty mają właściciela odpowiedzialności,
 - wszystkie trwałe dane mają wskazane źródło prawdy,
+- P0 ADR-y są rozstrzygnięte albo formalnie zaakceptowane z właścicielem i terminem,
 - opisano przepływy komend, eventów i reconnect,
+- read models mają ownership, checkpoint i procedurę rebuild,
 - opisano podstawowe tryby awarii,
 - wskazano zależności bezpieczeństwa i obserwowalności,
+- klasy danych mają politykę retencji, privacy deletion i legal hold,
+- zdefiniowano model incident response i operational ownership,
+- zdefiniowano lifecycle API oraz kontrakt CI/CD/supply-chain,
 - otwarte decyzje mają identyfikatory ADR,
 - nie ma sekretów ani produkcyjnych connection strings,
 - dokument nie udziela zgody operacyjnej,
@@ -957,6 +1117,10 @@ Najważniejsze ryzyka do dalszego monitorowania:
 - współdzielenie sekretów między domenami,
 - backup bez zweryfikowanego restore,
 - brak właścicieli ADR, SLO i incydentów,
+- projekcje bez checkpointu, idempotencji lub kontrolowanego rebuild,
+- brak klasyfikacji danych i wykonalnej polityki privacy deletion/legal hold,
+- niekontrolowane zmiany API bez deprecation telemetry,
+- brak identyfikowalności commit-build-artifact-deployment,
 - usunięcie legacy przed potwierdzoną migracją,
 - niekontrolowana retencja wiadomości, chatów i załączników.
 
@@ -974,26 +1138,34 @@ Każda przyszła zmiana tego dokumentu powinna zawierać:
 
 Nie wolno aktualizować etykiety `IMPLEMENTED` lub `PRODUCTION` bez fresh evidence i formalnej decyzji.
 
-## 34. Decyzja wersji 0.1
+## 34. Decyzja wersji 0.2
 
-Wersja `0.1` ustanawia skonsolidowany szkielet architektury Gracz.pl V3 i porządkuje:
+Wersja `0.2` zachowuje fundament 0.1 i dodatkowo wprowadza:
 
-- stan AS-IS,
-- docelowy model logiczny,
-- granice odpowiedzialności,
-- przepływ komend i zdarzeń,
-- model awarii,
-- wymagania bezpieczeństwa i obserwowalności,
-- ścieżkę migracji,
-- backlog decyzji ADR.
+- normatywne doprecyzowanie `match_actor_leases` i fencing,
+- kontrakt read models, projekcji i rankingu,
+- Data Governance & Privacy,
+- Incident Response i Operational Ownership,
+- Query/API lifecycle oraz deprecation,
+- CI/CD i supply-chain security,
+- priorytety P0/P1/P2 oraz bramki dla 16 ADR-ów,
+- precyzyjny status C0-S1/C0-S3/A1/A2/A3.
+
+Wersja 0.2 pozostaje `DESIGN DRAFT / REVIEW PENDING` do czasu ponownego przeglądu. Sam zapis wersji nie nadaje statusu `REVIEWED DESIGN`.
 
 Formalny status po zapisaniu:
 
 ```text
-DOCUMENT V3 0.1 = MATERIALIZED / DESIGN DRAFT
+DOCUMENT V3 0.2 = MATERIALIZED / DESIGN DRAFT / REVIEW PENDING
 IMPLEMENTATION = NOT STARTED BY THIS DOCUMENT
 DEPLOYMENT = NOT AUTHORIZED
 FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 ```
 
+## 35. Historia wersji
+
+| Wersja | Data | Status | Zakres |
+|---|---|---|---|
+| `0.1` | 31.08.2026 | `MATERIALIZED / CONSISTENT DESIGN DRAFT` | pierwsza skonsolidowana mapa AS-IS i TARGET V3 |
+| `0.2` | 31.08.2026 | `MATERIALIZED / REVIEW PENDING` | poprawki po przeglądzie spójności, P0/P1/P2 i rozszerzenia enterprise |
