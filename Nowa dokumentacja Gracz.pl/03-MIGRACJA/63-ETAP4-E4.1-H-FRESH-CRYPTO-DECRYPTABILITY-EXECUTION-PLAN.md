@@ -243,13 +243,17 @@ Plan jest częścią spójnego pakietu:
 1. `63-ETAP4-E4.1-H-FRESH-CRYPTO-DECRYPTABILITY-EXECUTION-PLAN.md` — cel, granice i kryteria,
 2. `64-ETAP4-E4.1-H-CRYPTO-DIAGNOSTIC-ARCHITECTURE-DECISION.md` — wybór wzorca provider-side isolated diagnostic,
 3. `65-ETAP4-E4.1-H-OPERATOR-RUNBOOK.md` — sekwencja operatorska, STOP/ABORT i cleanup,
-4. `66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md` — schema wyniku i niezależny review.
+4. `66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md` — schema wyniku i niezależny review,
+5. `67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md` — weryfikacja ograniczeń planu Free i wariantów wykonania,
+6. `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — szczegółowy kontrakt przyszłego kolektora.
 
 Status pakietu:
 
 ```text
 DOCUMENTATION PACKAGE = READY
-PROVIDER CAPABILITY = PENDING
+PROVIDER CAPABILITY = BLOCKED BY CURRENT FREE PLAN
+COLLECTOR DESIGN = READY
+COLLECTOR IMPLEMENTATION = NOT AUTHORIZED
 EXECUTION = NOT AUTHORIZED
 E4.1-H = PENDING / SAFE HOLD
 FREEZE = ACTIVE
