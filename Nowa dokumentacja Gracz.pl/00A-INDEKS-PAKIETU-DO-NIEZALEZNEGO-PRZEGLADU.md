@@ -1,6 +1,6 @@
 # Gracz.pl — kompletny pakiet dokumentacji do niezależnego przeglądu
 
-Data snapshotu: 29.08.2026  
+Data snapshotu: 31.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Branch: `main`  
 Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl/`**.
@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Stan bazowy przed dodaniem tego indeksu: **99 istniejących artefaktów** w nowej dokumentacji (Markdown, SQL, MJS), w tym 3 skrypty w `03-MIGRACJA/DDL-V3/`. Ten indeks jest dodatkowym artefaktem organizacyjnym.
+Aktualny stan po synchronizacji: **121 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 2 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/` i 95 plików w `03-MIGRACJA/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -20,14 +20,21 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - ETAP 3: `CLOSED`
 - Gate 15: `GO TO ETAP 4 / PRODUCTION V3 NO-GO`
 - ETAP 4: `OPEN`
-- E4.0: `INCOMPLETE / HOLD`
-- E4.1–E4.10: `BLOCKED BY E4.0`
+- E4.0: `OPERATIONALLY COMPLETE / FREEZE ACTIVE`
+- E4.1: `IN PROGRESS / H BLOCKED`
+- E4.1-H: `PENDING / SAFE HOLD`
+- dokumentacja projektowa E4.1-H 62–77: `COMPLETE`
+- formalne T-gates: `NOT EXECUTED`
+- C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
+- authorized operations: `NONE`
+- RSK-E41H-009: `OPEN / CRITICAL / TIME-BOUND`
 - Level A — Enterprise-style engineering: `ACHIEVED`
 - Level B — Production-ready V3: `NOT YET ACHIEVED`
 - Level C — Enterprise-grade production: `NOT YET ACHIEVED`
 - Production V3: `NO-GO`
+- Production / Render / secrets: `UNCHANGED`
 
-**Uwaga:** `00-STATUS-I-SPIS-TRESCI.md` jest historycznie wartościowy, ale jego status ETAPU 3 jest nieaktualny względem dokumentów 43–57. Dla bieżącego statusu źródłem nadrzędnym są dokumenty Gate 15, ETAP 4 i dashboard 56.
+Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacja 62–77 nie udziela autoryzacji i nie zdejmuje freeze.
 
 ---
 
@@ -35,8 +42,8 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 
 | Plik | Lokalizacja | Krótki opis | Status |
 |---|---|---|---|
-| [README.md](README.md) | `Nowa dokumentacja Gracz.pl/README.md` | Zasady prowadzenia nowej dokumentacji i pierwotnie planowana struktura folderów. | `META / PARTIALLY STALE` — planowana struktura nie odpowiada już w pełni faktycznej strukturze i bieżącemu etapowi. |
-| [00-STATUS-I-SPIS-TRESCI.md](00-STATUS-I-SPIS-TRESCI.md) | `Nowa dokumentacja Gracz.pl/00-STATUS-I-SPIS-TRESCI.md` | Historyczny główny status, spis ETAPÓW 1B–3 oraz wcześniejszych artefaktów. | `HISTORICAL / STALE FOR CURRENT STATUS` — zatrzymuje się na ETAPIE 3 w toku. |
+| [README.md](README.md) | `Nowa dokumentacja Gracz.pl/README.md` | Zasady, faktyczna struktura i planowane pakiety dokumentacji. | `CURRENT / SYNCHRONIZED 31.08.2026` |
+| [00-STATUS-I-SPIS-TRESCI.md](00-STATUS-I-SPIS-TRESCI.md) | `Nowa dokumentacja Gracz.pl/00-STATUS-I-SPIS-TRESCI.md` | Bieżący status etapów, E4.1-H i następny punkt dokumentacyjny. | `CURRENT / SYNCHRONIZED 31.08.2026` |
 
 ---
 
@@ -173,19 +180,39 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 
 | Plik | Krótki opis | Status |
 |---|---|---|
-| [46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md](03-MIGRACJA/46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md) | Bieżący execution log freeze/maintenance. Zawiera już E4.0-D1 evidence. | `ACTIVE — E4.0 INCOMPLETE / HOLD; D1 PASS` |
-| [47-ETAP4-E4.0-RENDER-FREEZE-MAINTENANCE-CHECKLIST.md](03-MIGRACJA/47-ETAP4-E4.0-RENDER-FREEZE-MAINTENANCE-CHECKLIST.md) | Checklista freeze Render. | `READY / EXECUTION PENDING` |
-| [48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md](03-MIGRACJA/48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md) | Pełna checklista E4.1. | `BLOCKED UNTIL E4.0 COMPLETE` |
-| [49-ETAP4-E4.0-CLOSURE-EXECUTION-PLAN.md](03-MIGRACJA/49-ETAP4-E4.0-CLOSURE-EXECUTION-PLAN.md) | Plan zamknięcia E4.0. | `READY / PROCEDURAL` |
-| [50-ETAP4-E4.0-OPERATIONAL-CLOSURE-PLAN-RENDER.md](03-MIGRACJA/50-ETAP4-E4.0-OPERATIONAL-CLOSURE-PLAN-RENDER.md) | Operacyjny plan Render krok po kroku. | `READY / PROCEDURAL` |
-| [51-ETAP4-E4.0-REAL-TIME-EXECUTION-GUIDE-RENDER.md](03-MIGRACJA/51-ETAP4-E4.0-REAL-TIME-EXECUTION-GUIDE-RENDER.md) | Real-time guide ekran po ekranie. | `ACTIVE GUIDE / EXECUTION IN PROGRESS` |
-| [52-ROADMAP-V3-TO-PRODUCTION-AND-GAMES.md](03-MIGRACJA/52-ROADMAP-V3-TO-PRODUCTION-AND-GAMES.md) | Roadmap V3 → production → Warcaby/Gomoku/Tysiąc. | `ACTIVE ROADMAP` |
-| [53-ENTERPRISE-GRADE-DEFINITION-V3.md](03-MIGRACJA/53-ENTERPRISE-GRADE-DEFINITION-V3.md) | Formalna definicja Level A/B/C i 14 kryteriów. | `ACTIVE GOVERNANCE REFERENCE` |
-| [54-ENTERPRISE-GRADE-READINESS-CHECKLIST-V3.md](03-MIGRACJA/54-ENTERPRISE-GRADE-READINESS-CHECKLIST-V3.md) | Nadrzędna checklista kwalifikacyjna 14 obszarów. | `ACTIVE / LEVEL B,C NOT YET ACHIEVED` |
-| [55-ENTERPRISE-GRADE-OPERATIONAL-PROOF-PLAN-V3.md](03-MIGRACJA/55-ENTERPRISE-GRADE-OPERATIONAL-PROOF-PLAN-V3.md) | Plan zbierania operational proof dla Level C. | `ACTIVE / P0 = CLOSE E4.0` |
-| [56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md](03-MIGRACJA/56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md) | Nadrzędny dashboard PASS/HOLD/BLOCKER. | `CURRENT STATUS SOURCE — B-01 OPEN` |
-| [57-ETAP4-E4.0-OPERATIONAL-CLOSURE-CHECKLIST-DASHBOARD-EDITION.md](03-MIGRACJA/57-ETAP4-E4.0-OPERATIONAL-CLOSURE-CHECKLIST-DASHBOARD-EDITION.md) | Dashboard Edition kontroli E4.0-D1…D10. | `ACTIVE — E4.0 HOLD UNTIL ALL EVIDENCE` |
-| [58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-LOG.md](03-MIGRACJA/58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-LOG.md) | Bieżący dziennik E4.1: source baseline, integralność pakietu 14B/C/D i re-baseline maintenance. | `ACTIVE / HOLD BEFORE DB COLLECTORS` |
+| [46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md](03-MIGRACJA/46-ETAP4-E4.0-FREEZE-MAINTENANCE-EXECUTION-LOG.md) | Dziennik freeze/maintenance E4.0. | `E4.0 OPERATIONALLY COMPLETE / FREEZE ACTIVE` |
+| [47-ETAP4-E4.0-RENDER-FREEZE-MAINTENANCE-CHECKLIST.md](03-MIGRACJA/47-ETAP4-E4.0-RENDER-FREEZE-MAINTENANCE-CHECKLIST.md) | Checklista freeze Render. | `REFERENCE / FREEZE ACTIVE` |
+| [48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md](03-MIGRACJA/48-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-CHECKLIST.md) | Kanoniczna checklista E4.1. | `E4.1 IN PROGRESS / H PENDING` |
+| [49-ETAP4-E4.0-CLOSURE-EXECUTION-PLAN.md](03-MIGRACJA/49-ETAP4-E4.0-CLOSURE-EXECUTION-PLAN.md) | Plan zamknięcia E4.0. | `HISTORICAL / PROCEDURAL` |
+| [50-ETAP4-E4.0-OPERATIONAL-CLOSURE-PLAN-RENDER.md](03-MIGRACJA/50-ETAP4-E4.0-OPERATIONAL-CLOSURE-PLAN-RENDER.md) | Operacyjny plan Render. | `HISTORICAL / PROCEDURAL` |
+| [51-ETAP4-E4.0-REAL-TIME-EXECUTION-GUIDE-RENDER.md](03-MIGRACJA/51-ETAP4-E4.0-REAL-TIME-EXECUTION-GUIDE-RENDER.md) | Guide wykonawczy E4.0. | `HISTORICAL / REFERENCE` |
+| [52-ROADMAP-V3-TO-PRODUCTION-AND-GAMES.md](03-MIGRACJA/52-ROADMAP-V3-TO-PRODUCTION-AND-GAMES.md) | Roadmap V3 → production → gry. | `ACTIVE ROADMAP / STATUS HEADER PARTIALLY STALE` |
+| [53-ENTERPRISE-GRADE-DEFINITION-V3.md](03-MIGRACJA/53-ENTERPRISE-GRADE-DEFINITION-V3.md) | Definicja Level A/B/C. | `ACTIVE GOVERNANCE REFERENCE` |
+| [54-ENTERPRISE-GRADE-READINESS-CHECKLIST-V3.md](03-MIGRACJA/54-ENTERPRISE-GRADE-READINESS-CHECKLIST-V3.md) | Checklista kwalifikacyjna. | `ACTIVE / LEVEL B,C NOT ACHIEVED` |
+| [55-ENTERPRISE-GRADE-OPERATIONAL-PROOF-PLAN-V3.md](03-MIGRACJA/55-ENTERPRISE-GRADE-OPERATIONAL-PROOF-PLAN-V3.md) | Plan operational proof. | `ACTIVE GOVERNANCE REFERENCE` |
+| [56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md](03-MIGRACJA/56-ENTERPRISE-GRADE-OPERATIONAL-DASHBOARD-V3.md) | Dashboard ETAPU 4. | `REFERENCE / SUPERSEDED FOR E4.1-H BY DOC 77` |
+| [57-ETAP4-E4.0-OPERATIONAL-CLOSURE-CHECKLIST-DASHBOARD-EDITION.md](03-MIGRACJA/57-ETAP4-E4.0-OPERATIONAL-CLOSURE-CHECKLIST-DASHBOARD-EDITION.md) | Closure checklist E4.0. | `E4.0 COMPLETE / REFERENCE` |
+| [58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-LOG.md](03-MIGRACJA/58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-LOG.md) | Pierwszy log baseline E4.1. | `HISTORICAL / REFERENCE` |
+| [58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-EXECUTION-LOG.md](03-MIGRACJA/58-ETAP4-E4.1-FRESH-PRE-MUTATION-EVIDENCE-EXECUTION-LOG.md) | Rozszerzony execution log E4.1 B–E. | `B–E PASS / E4.1 IN PROGRESS` |
+| [59-ETAP4-E4.1-C-GATE13-FRESH-ACTIVE-STATE-RESULT-2026-08-29.txt](03-MIGRACJA/59-ETAP4-E4.1-C-GATE13-FRESH-ACTIVE-STATE-RESULT-2026-08-29.txt) | Privacy-safe fresh Gate 13 result. | `PASS EVIDENCE` |
+| [60-ETAP4-E4.1-D-GATE14-FRESH-DB-PERMISSIONS-RESULT-2026-08-29.txt](03-MIGRACJA/60-ETAP4-E4.1-D-GATE14-FRESH-DB-PERMISSIONS-RESULT-2026-08-29.txt) | Fresh DB permissions result. | `CAPTURE PASS / REMEDIATION REQUIRED` |
+| [61-ETAP4-E4.1-E-FRESH-BACKUP-ANCHOR-2026-08-29.md](03-MIGRACJA/61-ETAP4-E4.1-E-FRESH-BACKUP-ANCHOR-2026-08-29.md) | Fresh backup anchor. | `PASS` |
+| [62-ETAP4-E4.1-F-RESTORE-VALIDATION-EXECUTION-LOG.md](03-MIGRACJA/62-ETAP4-E4.1-F-RESTORE-VALIDATION-EXECUTION-LOG.md) | Restore validation i reconciliation. | `PASS` |
+| [63-ETAP4-E4.1-H-FRESH-CRYPTO-DECRYPTABILITY-EXECUTION-PLAN.md](03-MIGRACJA/63-ETAP4-E4.1-H-FRESH-CRYPTO-DECRYPTABILITY-EXECUTION-PLAN.md) | Plan fresh crypto verification. | `DESIGN COMPLETE / EXECUTION PENDING` |
+| [64-ETAP4-E4.1-H-CRYPTO-DIAGNOSTIC-ARCHITECTURE-DECISION.md](03-MIGRACJA/64-ETAP4-E4.1-H-CRYPTO-DIAGNOSTIC-ARCHITECTURE-DECISION.md) | Decyzja architektoniczna diagnostyki. | `COMPLETE` |
+| [65-ETAP4-E4.1-H-OPERATOR-RUNBOOK.md](03-MIGRACJA/65-ETAP4-E4.1-H-OPERATOR-RUNBOOK.md) | Runbook operatorski. | `READY / NOT EXECUTED` |
+| [66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md](03-MIGRACJA/66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md) | Kontrakt evidence v2. | `READY` |
+| [67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md](03-MIGRACJA/67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md) | Ocena możliwości Render. | `COMPLETE / CURRENT PLAN NOT CAPABLE` |
+| [68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md](03-MIGRACJA/68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md) | Projekt kolektora diagnostycznego. | `DESIGN READY / IMPLEMENTATION NOT AUTHORIZED` |
+| [69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md](03-MIGRACJA/69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md) | Kontrakt A1/A2/A3, okna, rollbacku i cleanupu. | `READY / NO AUTHORIZATION` |
+| [70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md](03-MIGRACJA/70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md) | Rejestr 45 ryzyk i readiness. | `READY / CRITICAL RISKS OPEN` |
+| [71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md](03-MIGRACJA/71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md) | Plan ciągłości i retencji. | `READY / OPTION PENDING` |
+| [72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md](03-MIGRACJA/72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md) | Kontrakt ownership i decyzji. | `READY / NAMED OWNERS UNASSIGNED` |
+| [73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md](03-MIGRACJA/73-ETAP4-E4.1-H-RSK-E41H-009-T14-CONTINUITY-DECISION-GATE-AND-EVIDENCE-PACK.md) | Bramka T-14 i 50 kontroli. | `DESIGN READY / NOT EXECUTED` |
+| [74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md](03-MIGRACJA/74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md) | Bramka T-10 i 60 kontroli. | `DESIGN READY / NOT EXECUTED` |
+| [75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md](03-MIGRACJA/75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md) | Bramka T-7 i 70 kontroli. | `DESIGN READY / NOT EXECUTED` |
+| [76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md](03-MIGRACJA/76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md) | Bramka T-3 i 80 kontroli. | `DESIGN READY / NOT EXECUTED` |
+| [77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md](03-MIGRACJA/77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md) | Końcowy kontrakt autoryzacyjny i 90 kontroli. | `DESIGN COMPLETE / NOT AUTHORIZED / SAFE HOLD` |
 
 ---
 
@@ -193,13 +220,13 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 
 Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchronizacyjnymi**, nie twierdzeniem, że dana implementacja nie istnieje.
 
-## GAP-01 — główny status jest nieaktualny
+## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` nadal opisuje ETAP 3 jako „w trakcie”, podczas gdy Gate 15 zamknął ETAP 3, a ETAP 4 jest otwarty. Wymagane: aktualizacja lub formalne oznaczenie tego pliku jako historycznego i wskazanie dashboardu 56 jako bieżącego source of truth.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD i inwentarzem 121 plików.
 
-## GAP-02 — README ma planowaną, ale niezrealizowaną strukturę folderów
+## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
-`README.md` planuje osobne foldery `03-BEZPIECZENSTWO`, `04-GRY`, `05-KOMUNIKACJA`, `06-INFRASTRUKTURA`, `07-TESTY-I-JAKOSC`, `08-MIGRACJA-I-MODERNIZACJA`, `09-DECYZJE-ARCHITEKTONICZNE`. Aktualnie istnieją `01-ARCHITEKTURA`, `02-BAZA-DANYCH`, `03-MIGRACJA`. Część planowanej treści znajduje się w `03-MIGRACJA`, ale struktura wymaga ujednolicenia.
+`README.md` rozdziela teraz faktyczną strukturę od planowanych pakietów i rezerwuje przyszłą numerację 04–09 bez konfliktu z istniejącym `03-MIGRACJA`.
 
 ## GAP-03 — brak skonsolidowanego dokumentu pełnej architektury systemowej V3
 
@@ -249,9 +276,9 @@ Brakuje jednej formalnej ownership/RACI matrix dla deploy, DB, security, crypto,
 
 Execution log 46 zapisuje niesekretne fakty z D1, ale sam screenshot operatorski pozostaje dowodem konwersacyjnym/operator evidence, a nie wersjonowanym artefaktem dokumentacji. Należy zdecydować, czy obrazy evidence mają być archiwizowane oraz z jaką polityką redakcji sekretów.
 
-## GAP-15 — ETAP 4 jest realnie niewykonany poza pierwszym D1 evidence
+## GAP-15 — ETAP 4 pozostaje wykonawczo niezamknięty
 
-To nie jest brak dokumentu, tylko najważniejsza luka wykonawcza: B-01 pozostaje otwarty, E4.0 jest `INCOMPLETE / HOLD`, a E4.1–E4.10 pozostają zablokowane.
+E4.0 jest operacyjnie zamknięty, a część evidence E4.1 ma PASS. E4.1-H pozostaje `PENDING / SAFE HOLD`; formalne T-gates nie zostały wykonane, C0/A1/A2/A3 nie są autoryzowane, a E4.2–E4.10 pozostają niewykonane.
 
 ---
 
@@ -266,7 +293,7 @@ Rekomendowana kolejność bez skracania plików:
 5. `03-MIGRACJA/19–25` — Gate 12/13.
 6. `03-MIGRACJA/26–42` — Gate 14 A/B/C/D.
 7. `03-MIGRACJA/43–45` — Gate 15 / zamknięcie ETAPU 3.
-8. `03-MIGRACJA/46–57` — aktualny ETAP 4 i enterprise readiness.
+8. `03-MIGRACJA/46–77` — ETAP 4, E4.1, E4.1-H i enterprise readiness.
 9. Na końcu reviewer tworzy listę: `MISSING`, `INCONSISTENT`, `STALE`, `BLOCKER`, `RECOMMENDATION`, z dokładnym wskazaniem pliku/sekcji.
 
 ## 11. Zasada przekazywania pełnej treści
@@ -277,4 +304,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 12. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji** wtedy, gdy wszystkie 99 bazowych artefaktów są dostępne pod powyższymi odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to, że sama dokumentacja systemu jest kompletna merytorycznie — sekcja 9 celowo pokazuje luki, które niezależny przegląd ma potwierdzić, odrzucić lub rozszerzyć.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 121 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — otwarte GAP-03–GAP-15 pozostają planem dalszej dokumentacji i niezależnego przeglądu.
