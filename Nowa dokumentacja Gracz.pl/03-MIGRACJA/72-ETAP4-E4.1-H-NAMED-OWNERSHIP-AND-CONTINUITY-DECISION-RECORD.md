@@ -518,3 +518,18 @@ T-14 FORMAL GATE = NOT EXECUTED
 CURRENT PROJECTION = HOLD
 AUTHORIZED OPERATIONS = NONE
 ```
+
+
+## 27. T-10 BA1–BA3 ownership — dokument 74
+
+Wymagania ownerów dla backup/recovery definiuje:
+
+- `74-ETAP4-E4.1-H-RSK-E41H-009-T10-BACKUP-AUTHORIZATION-AND-RECOVERY-READINESS-GATE.md`.
+
+BA1–BA3 wymagają aktywnych Data/Change/DB/Security/Operator/Evidence/Retention/Abort/Independent Reviewer roles zgodnie ze swoim zakresem.
+
+```text
+NAMED OWNERS = PENDING / UNASSIGNED
+BA1 / BA2 / BA3 = NOT AUTHORIZED
+T-10 CURRENT PROJECTION = HOLD
+```
