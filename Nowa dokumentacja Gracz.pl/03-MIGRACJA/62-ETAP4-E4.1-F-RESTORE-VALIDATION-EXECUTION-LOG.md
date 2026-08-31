@@ -558,3 +558,11 @@ CURRENT PROJECTION = HOLD
 ```
 
 Dokument nie zmienia produkcji, Render, sekretów ani freeze.
+
+## 23. T-7 continuity decision gate — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+Wynik F0-F7 oraz historyczny restore anchor są wejściem dowodowym. Nie zastępują BA1-BA3 i nie autoryzują S1 ani S3.
