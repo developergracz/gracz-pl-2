@@ -472,3 +472,11 @@ A1-A3 = NOT_AUTHORIZED
 RUNBOOK = READY / DO NOT EXECUTE
 FREEZE = ACTIVE
 ```
+
+## 12. Final operator authorization — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Operator może wykonać wyłącznie scope, komendę, artefakt i okno wskazane w ważnym APPROVED. Obecnie AUTHORIZED OPERATIONS = NONE.
