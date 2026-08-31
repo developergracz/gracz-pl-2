@@ -492,3 +492,30 @@ FREEZE = ACTIVE
 ```
 
 Dokument nie zmienił produkcji, Render, sekretów, freeze ani PR #26.
+
+
+## 20. Named ownership i decision governance — dokument 72
+
+Utworzono:
+
+- `72-ETAP4-E4.1-H-NAMED-OWNERSHIP-AND-CONTINUITY-DECISION-RECORD.md`.
+
+Dokument ustanawia:
+
+- 16 ról ownership i review,
+- cykl nominacji, akceptacji, weryfikacji i aktywacji,
+- segregation of duties oraz rejestr konfliktów,
+- zastępstwa, RACI i katalog dziewięciu decyzji,
+- formalny continuity decision record dla `RSK-E41H-009`.
+
+Bieżący stan:
+
+```text
+OWNERSHIP CONTRACT = READY
+NAMED OWNERS = PENDING / UNASSIGNED
+CONTINUITY OPTION = PENDING
+RSK-E41H-009 = OPEN / CRITICAL / TIME-BOUND
+A1-A3 = BLOCKED / NOT AUTHORIZED
+```
+
+Dokument nie przypisuje nikomu odpowiedzialności bez akceptacji i nie zmienia środowisk ani freeze.
