@@ -668,3 +668,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 Bramka finalizuje jedną ścieżkę S1 albo S3, sprawdza aktualny recovery point, czas, provider/billing evidence i przekazuje pakiet do dokumentu 77 bez wykonania operacji.
+
+## 29. Continuity authorization separation — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+C0-S1 i C0-S3 są oddzielone od A1-A3, aby upgrade lub migracja nie zostały ukryte w provider preparation. Oba pozostają NOT AUTHORIZED.
