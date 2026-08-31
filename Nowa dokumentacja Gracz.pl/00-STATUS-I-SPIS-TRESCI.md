@@ -22,15 +22,16 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 121 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 123 pliki:
 
 | Obszar | Liczba plików |
 |---|---:|
 | Dokumenty główne | 3 |
-| `01-ARCHITEKTURA` | 2 |
+| `01-ARCHITEKTURA` | 3 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| **Łącznie** | **121** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 1 |
+| **Łącznie** | **123** |
 
 ## 3. Status etapów
 
@@ -85,8 +86,9 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md`
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
+- `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Brakuje skonsolidowanego dokumentu pełnej architektury systemowej V3 obejmującego wszystkie warstwy platformy.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`, natomiast bramka `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia albo formalnej akceptacji trzech ADR klasy P0: `ADR-V3-004`, `ADR-V3-012` i `ADR-V3-013`.
 
 ### PostgreSQL
 
@@ -103,39 +105,40 @@ ETAP 1B i ETAP 2 pozostają zamknięte.
 
 ## 7. Aktualny punkt wznowienia dokumentacji
 
-Najpierw zsynchronizowano dokumenty główne:
-
-1. `00-STATUS-I-SPIS-TRESCI.md`,
-2. `00A-INDEKS-PAKIETU-DO-NIEZALEZNEGO-PRZEGLADU.md`,
-3. `README.md`.
-
-Następny moduł dokumentacyjny:
+Skonsolidowana architektura systemowa V3 została zmaterializowana i rozwinięta do wersji `0.2 / DESIGN DRAFT`:
 
 ```text
 01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md
 ```
 
-Zakres planowanego dokumentu:
+Pierwszy ADR klasy P0 został opracowany:
 
-- frontend,
-- backend i API,
-- auth i sesje,
-- PostgreSQL V3,
-- realtime, lobby i reconnect,
-- wspólna platforma gier,
-- wiadomości, chat i powiadomienia,
-- storage,
-- Render, Cloudflare, DNS i granice sieciowe,
-- observability,
-- granice odpowiedzialności i ownership.
+```text
+09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md
+```
 
-Dokument nie został jeszcze utworzony.
+Status ADR-V3-004:
+
+```text
+DESIGN CONTENT = COMPLETE
+FORMAL ACCEPTANCE = PENDING REVIEW
+IMPLEMENTATION = NOT AUTHORIZED
+```
+
+Kolejność dalszej pracy dokumentacyjnej:
+
+1. formalny review i decyzja dla `ADR-V3-004`,
+2. opracowanie `ADR-V3-012` — retencja, privacy deletion i legal hold,
+3. opracowanie `ADR-V3-013` — ownership, checkpointy i rebuild read models,
+4. ponowny review V3 0.2 i decyzja o statusie `REVIEWED DESIGN`.
+
+Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 
 ## 8. Reguła dalszej pracy
 
 - E4.1-H pozostaje w SAFE HOLD.
 - Nie wykonujemy T-14, T-10, T-7 ani T-3 bez jawnej decyzji i named owners.
-- Nie udzielamy C0/A1/A2/A3 przez samą aktualizację dokumentacji.
+- Nie udzielamy C0-S1/C0-S3/A1/A2/A3 przez samą aktualizację dokumentacji.
 - Nie zmieniamy produkcji, Rendera ani sekretów.
 - Nowe pakiety dokumentacyjne muszą wynikać ze skonsolidowanej architektury systemowej.
 - Każdy ukończony i zweryfikowany dokument jest wersjonowany w Git.
