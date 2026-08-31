@@ -223,3 +223,11 @@ PRODUCTION V3 = NO-GO
 ```
 
 Ocena wyjaśnia techniczną przyczynę HOLD. Nie zmienia statusu E4.1-H na FAIL i nie stanowi autoryzacji wykonawczej.
+
+## 12. Final provider authorization — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+Capability assessment jest wejściem do A2, lecz nie stanowi A2 APPROVED. Provider preparation pozostaje nieautoryzowane.
