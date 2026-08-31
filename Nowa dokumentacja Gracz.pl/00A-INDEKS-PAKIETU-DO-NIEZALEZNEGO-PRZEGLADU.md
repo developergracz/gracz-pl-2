@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Aktualny stan po synchronizacji: **124 pliki** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 2 pliki w `09-DECYZJE-ARCHITEKTONICZNE/`.
+Aktualny stan po synchronizacji: **125 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 3 pliki w `09-DECYZJE-ARCHITEKTONICZNE/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -27,7 +27,8 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - skonsolidowana architektura systemowa V3: `0.2 / DESIGN DRAFT / STRUCTURAL AND CONSISTENCY REVIEW PASS`
 - bramka V3 `REVIEWED DESIGN`: `HOLD — 2 P0 ADR OPEN`
 - `ADR-V3-004`: `ACCEPTED / FINAL / NOT IMPLEMENTED`
-- `ADR-V3-012`: `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED`
+- `ADR-V3-012`: `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED`
+- `ADR-V3-013`: `PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING / NOT IMPLEMENTED`
 - formalne T-gates: `NOT EXECUTED`
 - C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
 - authorized operations: `NONE`
@@ -59,7 +60,7 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
 | [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `0.2 / DESIGN DRAFT / REVIEWED DESIGN GATE HOLD` |
 
-**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` został formalnie zaakceptowany. Status `REVIEWED DESIGN` pozostaje wstrzymany do zamknięcia albo formalnej akceptacji dwóch otwartych ADR klasy P0: `ADR-V3-012` i `ADR-V3-013`; treść decyzyjna `ADR-V3-012` jest kompletna i oczekuje na formalny review.
+**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` został formalnie zaakceptowany. `ADR-V3-012` przeszedł review architektoniczny i oczekuje na formalne zatwierdzenie Privacy/Legal. `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia obu pozostałych pozycji P0.
 
 ---
 
@@ -226,9 +227,10 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | Plik | Krótki opis | Status |
 |---|---|---|
 | [ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md) | Rozstrzygnięcie egzekwowania lease, fencing token, kontraktu komend, transakcji mutujących i recovery Match Runtime. | `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` |
-| [ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | Kontrakt retencji, usuwania danych, restriction, legal hold, propagacji do read models, backupów i przyszłej platformy Poker. | `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
+| [ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md) | Kontrakt retencji, usuwania danych, restriction, legal hold, propagacji do read models, backupów i przyszłej platformy Poker. | `DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
+| [ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md](09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md) | Kontrakt ownershipu, source positions, atomowych checkpointów, generacyjnego rebuild, privacy barrier i per-sink receipts dla read models. | `PROPOSED / DESIGN COMPLETE / ARCHITECTURE REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 
-**Wniosek dla recenzenta:** `ADR-V3-004` jest zaakceptowany i finalny na poziomie decyzji. Treść decyzyjna `ADR-V3-012` jest kompletna, ale formalny review i akceptacja pozostają oczekujące. `ADR-V3-013` nie został jeszcze zmaterializowany. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
+**Wniosek dla recenzenta:** `ADR-V3-004` jest zaakceptowany i finalny na poziomie decyzji. `ADR-V3-012` przeszedł review architektoniczny, lecz wymaga formalnego zatwierdzenia Privacy/Legal. `ADR-V3-013` ma kompletną treść projektową i oczekuje na niezależny review architektoniczny. Żaden z tych dokumentów nie autoryzuje implementacji ani deploymentu.
 
 ---
 
@@ -238,7 +240,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, proponowanym ADR-V3-012 i inwentarzem 124 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanym ADR-V3-004, proponowanym ADR-V3-012 i inwentarzem 125 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -246,7 +248,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-03 — skonsolidowany dokument pełnej architektury systemowej V3 — MATERIALIZED / REVIEW HOLD
 
-Dokument `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md` istnieje w wersji 0.2 i obejmuje wymagane warstwy systemu. Przeglądy strukturalny i spójności zakończyły się `PASS`. Luka materializacyjna jest zamknięta, `ADR-V3-004` jest zaakceptowany, a status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia lub formalnej akceptacji dwóch otwartych ADR klasy P0: `ADR-V3-012` i `ADR-V3-013`.
+Dokument `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md` istnieje w wersji 0.2 i obejmuje wymagane warstwy systemu. Przeglądy strukturalny i spójności zakończyły się `PASS`. Luka materializacyjna jest zamknięta, `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` ma architecture PASS, a `ADR-V3-013` został zmaterializowany. Status `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego zatwierdzenia Privacy/Legal dla `ADR-V3-012` oraz niezależnego review i decyzji dla `ADR-V3-013`.
 
 ## GAP-04 — brak osobnej docelowej architektury frontend/UI
 
@@ -278,7 +280,7 @@ Są rollback/ABORT runbooki, ale brak kompletnego severity model, escalation/on-
 
 ## GAP-11 — formalny rejestr ADR — IN PROGRESS / PARTIALLY RESOLVED
 
-Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera dwa powiązane ADR. `ADR-V3-004` jest zaakceptowany, a `ADR-V3-012` jest zmaterializowany i oczekuje na formalny review. Luka pozostaje częściowo otwarta do czasu utworzenia i powiązania pozostałych ADR, w szczególności P0: `ADR-V3-013`.
+Folder `09-DECYZJE-ARCHITEKTONICZNE/` istnieje i zawiera trzy powiązane ADR klasy P0. `ADR-V3-004` jest zaakceptowany, `ADR-V3-012` oczekuje na zatwierdzenie Privacy/Legal, a `ADR-V3-013` oczekuje na niezależny review architektoniczny. Materializacja P0 jest kompletna; luka pozostaje częściowo otwarta do formalnego zamknięcia review i dalszego backlogu ADR P1/P2.
 
 ## GAP-12 — data governance/privacy — PARTIALLY RESOLVED 31.08.2026
 
@@ -321,4 +323,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 124 pliki są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 125 plików jest dostępnych pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
