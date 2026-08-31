@@ -599,3 +599,11 @@ T-10 GATE DESIGN = READY
 BA1 / BA2 / BA3 = NOT AUTHORIZED
 AUTHORIZED OPERATIONS = NONE
 ```
+
+## 31. T-7 continuity decision gate — dokument 75
+
+Utworzono:
+
+- `75-ETAP4-E4.1-H-RSK-E41H-009-T7-PAID-CONTINUITY-OR-MIGRATION-GO-NO-GO-GATE.md`.
+
+Formalny PASS T-14 jest warunkiem wejścia do T-7, ale nie daje GO-S1, GO-S3 ani autoryzacji operacyjnej.
