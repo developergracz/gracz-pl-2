@@ -6,6 +6,9 @@ Repozytorium: `developergracz/gracz-pl-2`
 Priorytet: `P0`  
 Status: **ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE**
 
+Review provenance: [`REV-ADR-V3-004-20260831-01`](00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md#5-review-record--adr-v3-004)  
+Provenance class: **EXTERNAL_RECORDED / REVIEWER IDENTITY NOT RECORDED IN GIT**
+
 > ADR rozstrzyga sposób egzekwowania wcześniej ustalonego modelu `match_actor_leases` z rosnącym fencing tokenem. Nie wdraża tabel, nie uruchamia Match Runtime, nie zmienia produkcji ani nie udziela zgody implementacyjnej.
 
 ## 0. Stan operacyjny
@@ -733,16 +736,22 @@ ADR może otrzymać `ACCEPTED DESIGN`, gdy reviewer potwierdzi:
 - kompletne testy concurrency i fault injection,
 - brak autoryzacji wdrożenia.
 
-## 31. Formalny rekord review
+## 31. Formalny rekord review i provenance
 
+Review record: [`REV-ADR-V3-004-20260831-01`](00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md#5-review-record--adr-v3-004)  
 Data review: `31.08.2026`  
-Wynik: `ACCEPTED / FINAL`  
+Review type: `EXTERNAL ARCHITECTURE REVIEW`  
+Git author: `developergracz`  
+Reviewer role: `External Lead Architect reviewer — reported outside Git`  
+Reviewer identity in Git: `NOT RECORDED`  
+Provenance class: `EXTERNAL_RECORDED / IDENTITY NOT GIT-VERIFIABLE`  
+Wynik zapisany: `ACCEPTED / FINAL`  
 Zakres: `CORRECT`  
 Spójność: `PASS`  
 Sprzeczności krytyczne: `0`  
 Integracja z V3: `PASS`
 
-Reviewer potwierdził:
+Zewnętrzny werdykt przekazany poza Git obejmował:
 
 - zgodność modelu lease z PostgreSQL V3 i skonsolidowaną architekturą V3,
 - poprawność rosnącego fencing token i CAS/versioning,
@@ -751,6 +760,8 @@ Reviewer potwierdził:
 - zgodność z outbox, idempotencją i snapshotami,
 - brak konfliktów z pozostałym rejestrem ADR,
 - brak autoryzacji implementacji lub deploymentu.
+
+Git potwierdza autora i commity dokumentu, ale nie potwierdza tożsamości ani organizacyjnej niezależności zewnętrznego reviewera. Status decyzji pozostaje bez zmian; provenance review ma poziom `PARTIAL`.
 
 ## 32. Wynik projektowy po formalnym review
 
