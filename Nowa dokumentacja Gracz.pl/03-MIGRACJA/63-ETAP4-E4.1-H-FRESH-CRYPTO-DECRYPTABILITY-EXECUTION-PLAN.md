@@ -347,3 +347,11 @@ Utworzono:
 - `76-ETAP4-E4.1-H-RSK-E41H-009-T3-FINAL-CONTINUITY-DECISION-GATE.md`.
 
 T-3 może wyłącznie oznaczyć ścieżkę jako READY-FOR-AUTHORIZATION. Nie udziela A1, A2 ani A3 i nie wykonuje E4.1-H.
+
+## 19. Final execution authorization — dokument 77
+
+Utworzono końcowy artefakt sekwencji:
+
+- `77-ETAP4-E4.1-H-EXECUTION-AUTHORIZATION-RECORD-A1-A2-A3.md`.
+
+A3 może później zezwolić na dokładnie jeden run E4.1-H, ale obecny A3 pozostaje NOT REQUESTED / NOT AUTHORIZED.
