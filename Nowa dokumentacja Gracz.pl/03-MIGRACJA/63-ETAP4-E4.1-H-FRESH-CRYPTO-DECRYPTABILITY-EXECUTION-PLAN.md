@@ -245,9 +245,9 @@ Plan jest częścią spójnego pakietu:
 3. `65-ETAP4-E4.1-H-OPERATOR-RUNBOOK.md` — sekwencja operatorska, STOP/ABORT i cleanup,
 4. `66-ETAP4-E4.1-H-EVIDENCE-CONTRACT-AND-REVIEW-CHECKLIST.md` — schema wyniku i niezależny review,
 5. `67-ETAP4-E4.1-H-RENDER-PROVIDER-CAPABILITY-ASSESSMENT.md` — weryfikacja ograniczeń planu Free i wariantów wykonania,
-6 `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — szczegółowy kontrakt przyszłego kolektora.,
+6. `68-ETAP4-E4.1-H-DIAGNOSTIC-COLLECTOR-DESIGN-SPECIFICATION.md` — szczegółowy kontrakt przyszłego kolektora,
 7. `69-ETAP4-E4.1-H-CHANGE-AUTHORIZATION-EXECUTION-WINDOW-ROLLBACK-CLEANUP-CONTRACT.md` — formalne zgody A1–A3, okno, rollback i cleanup,
-8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3.
+8. `70-ETAP4-E4.1-H-RISK-REGISTER-AND-IMPLEMENTATION-READINESS-MATRIX.md` — 45 ryzyk, ownership i macierze gotowości A1–A3,\n9. `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md` — plan ochrony bazy przed expiry i treatment `RSK-E41H-009`.
 
 Status pakietu:
 
@@ -264,3 +264,20 @@ FREEZE = ACTIVE
 ```
 
 Utworzenie pakietu nie zmienia statusu operacyjnego i nie stanowi zgody na wykonanie testu.
+
+
+## 13. Zależność ciągłości bazy — dokument 71
+
+E4.1-H zależy od zachowania dostępnego i odtwarzalnego datasetu. Plan:
+
+- `71-ETAP4-E4.1-H-RENDER-POSTGRES-CONTINUITY-AND-RETENTION-PLAN.md`
+
+ustanawia ścieżkę decyzji przed wskazanym expiry 21.09.2026, lecz nie autoryzuje backupu, upgrade, restore ani cutover.
+
+Dopóki `RSK-E41H-009` jest otwarte:
+
+```text
+A2 READINESS = BLOCKED
+A3 READINESS = BLOCKED
+E4.1-H = PENDING / SAFE HOLD
+```
