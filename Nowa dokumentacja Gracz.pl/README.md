@@ -6,7 +6,7 @@ Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ra
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
 **Ostatnia synchronizacja indeksu:** 31.08.2026  
-**Aktualny inwentarz:** 127 plików
+**Aktualny inwentarz:** 128 plików
 
 Bieżący status projektu znajduje się w:
 
@@ -48,12 +48,14 @@ Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą 
 
 Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `PENDING / SAFE HOLD`. Freeze jest aktywny, formalne bramki nie zostały wykonane, a C0/A1/A2/A3 nie są autoryzowane.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. `ADR-V3-004` i `ADR-V3-013` są zamknięte architektonicznie jako `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review ADR-V3-013 potwierdził oba P1 i P2 jako `RESOLVED`, bez nowych P0/P1; wynik zapisano w osobnym review artifact, a `P1-GOV-01` jest zamknięty. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance Privacy/Legal dla `ADR-V3-012`. Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git zachowuje provenance `PARTIAL`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. `ADR-V3-004` i `ADR-V3-013` są zamknięte architektonicznie jako `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review ADR-V3-013 potwierdził oba P1 i P2 jako `RESOLVED`, bez nowych P0/P1; wynik zapisano w osobnym review artifact, a `P1-GOV-01` jest zamknięty. Pakiet `REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md` jest gotowy do pracy imiennie wyznaczonego właściciela, lecz właściciel pozostaje `UNASSIGNED`, formalny review ma status `NOT EXECUTED`, a pakiet nie stanowi zatwierdzenia. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance Privacy/Legal dla `ADR-V3-012`. Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git zachowuje provenance `PARTIAL`.
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
-ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
+PRIVACY/LEGAL OWNER = UNASSIGNED
+FORMAL PRIVACY-LEGAL REVIEW = NOT EXECUTED
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
-Następny krok to formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`, a następnie finalny `REVIEWED DESIGN GATE` całej V3. Akceptacja ADR-ów nie autoryzuje implementacji ani deploymentu.
+Następny krok to przypisanie imiennego właściciela Privacy/Legal, wykonanie formalnego review według gotowego pakietu `ADR-V3-012`, zapisanie werdyktu w trwałym approval artifact i dopiero potem finalny `REVIEWED DESIGN GATE` całej V3. Akceptacja ADR-ów nie autoryzuje implementacji ani deploymentu.
