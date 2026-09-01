@@ -114,6 +114,11 @@ Ten rekord zachowuje status ADR‑004, ale nie przedstawia commitu autora jako d
 | Document author role | Architecture documentation author / repository maintainer |
 | Git author / commit author | `developergracz` |
 | Authoring commit | `c96b893854717d5b75947a0c76fc01bd8cf3ee65` |
+| Privacy/Legal review pack ID | `REV-ADR-V3-012-20260901-PL-01` |
+| Review pack path | [`REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md`](REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md) |
+| Review pack baseline SHA | `28ff688e57814fc0bca1ce88192d94d021985e5d` |
+| Review pack commit SHA | `a2d04f25ef0faffb248ca789753a0a5f76000b46` |
+| Review pack status | `READY FOR NAMED OWNER REVIEW / NOT APPROVED / FREEZE-SAFE` |
 | Reviewer role | External Lead Architect reviewer — architecture scope only |
 | Reviewer identity in Git | `NOT RECORDED` |
 | Review type | `EXTERNAL ARCHITECTURE REVIEW / PRIVACY-LEGAL EXCLUDED` |
@@ -125,10 +130,12 @@ Ten rekord zachowuje status ADR‑004, ale nie przedstawia commitu autora jako d
 | Corrections commit SHA | `N/A` — no architecture redesign requested |
 | Delta review status | `N/A` |
 | Final decision authority | Named Privacy/Legal owner `PENDING / UNASSIGNED`; architecture reviewer cannot substitute this authority |
+| Formal Privacy/Legal review | `NOT EXECUTED` |
 | Final status | `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 | Implementation status | `NOT AUTHORIZED / NOT IMPLEMENTED` |
-| Evidence locator | ADR criteria and result sections plus this register; originating review exchange remains external to Git |
-| Architectural design trust | `ARCHITECTURE REVIEWED / GOVERNANCE INCOMPLETE / PROVENANCE PARTIAL` |
+| Evidence locator | ADR criteria and result sections, Privacy/Legal review pack and this register; originating architecture-review exchange remains external to Git |
+| Governance synchronization commits | ADR-V3-012 `ce578183a295f09a98f99fb00d30f73bb0281958`; V3 `f3c83d1d0390e22250c3a63b57d105b729d23956`; status `63853597b17ccd985e4e3a7f8d5b37c83d212925`; README `d25ccb729d5c7175c8586acdad6db1726413ee21`; index `2a4e0edf93dbc35fabf4e703de7e06b64846f3d1`; finalny commit tego rejestru nie jest samoreferencyjny |
+| Architectural design trust | `ARCHITECTURE REVIEWED / REVIEW PACK READY / GOVERNANCE INCOMPLETE / PROVENANCE PARTIAL` |
 
 Review architektoniczny nie stanowi opinii prawnej i nie zamyka konkretnych okresów retencji ani podstaw prawnych.
 
@@ -198,7 +205,9 @@ Ten rekord potwierdza zapisany external architecture review i rzeczywisty extern
 
 ```text
 ADR-V3-004 DESIGN STATUS = ACCEPTED / FINAL
-ADR-V3-012 DESIGN STATUS = ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+ADR-V3-012 DESIGN STATUS = ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
+PRIVACY/LEGAL OWNER = UNASSIGNED
+FORMAL PRIVACY-LEGAL REVIEW = NOT EXECUTED
 ADR-V3-013 DESIGN STATUS = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 P1-GOV-01 = CLOSED / VALID EXTERNAL DELTA REVIEW ARTIFACT RECORDED
 ARCHITECTURAL DESIGN TRUST = RECORDED / FINDINGS CLOSED / EXTERNAL PROVENANCE PARTIAL
