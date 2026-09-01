@@ -1,243 +1,365 @@
-# ADR-V3-012 — Privacy/Legal Review Pack
+# ADR-V3-012 — Formalny formularz review i decyzji Privacy/Legal (Dokument nr 2)
 
-Data przygotowania: 01.09.2026  
-Review pack ID: `REV-ADR-V3-012-20260901-PL-01`  
-Decision/document ID: `ADR-V3-012`  
-Repository baseline HEAD: `28ff688e57814fc0bca1ce88192d94d021985e5d`  
-Status: **READY FOR NAMED OWNER REVIEW / NOT APPROVED / FREEZE-SAFE**
+Data przygotowania formularza: 01.09.2026
+Review/decision ID: `REV-ADR-V3-012-20260901-PL-DECISION-01`
+Decision/document ID: `ADR-V3-012`
+Repository evidence baseline HEAD: `e78be355bd08c97f16240400b74c027321a34870`
+Status: **COMPLETED FOR FINAL INDEPENDENT REVIEW / HOLD / OWNER SIGNATURE PENDING / FREEZE-SAFE**
 
-> Ten pakiet jest kontraktem wejścia i zapisu formalnego review Privacy/Legal. Nie jest opinią prawną, nie wyznacza samodzielnie podstaw prawnych, nie zatwierdza okresów retencji i nie autoryzuje implementacji, deploymentu ani operacji produkcyjnych.
+```text
+FINAL PRIVACY/LEGAL VERDICT = HOLD
+REVIEWED DESIGN GATE = HOLD
+IMPLEMENTATION = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+PRODUCTION V3 = NO-GO
+FREEZE = ACTIVE
+```
 
-## 1. Cel
+> Formularz zapisuje aktualny, rzeczywisty stan dokumentacji ADR-V3-012. Nie jest opinią prawną, nie zastępuje kwalifikowanej konsultacji prawnej i nie stanowi finalnego podpisu właściciela. Otwarte warunki pozostają otwarte. Autor/wykonawca aktualizacji dokumentacyjnej nie działa jako niezależny reviewer i nie nadaje statusu `PASS / ACCEPTED / CLOSED`.
 
-Celem review jest podjęcie przez jawnie umocowanego właściciela Privacy/Legal decyzji, czy projektowa polityka ADR-V3-012:
+---
 
-- przypisuje każdemu celowi przetwarzania prawidłową podstawę,
-- utrzymuje dane nie dłużej, niż jest to niezbędne,
-- ma uzasadnione i komunikowalne okresy lub kryteria retencji,
-- prawidłowo rozdziela purge, anonimizację, pseudonimizację i restriction,
-- obsługuje prawa osób, legal hold, backup i restore,
-- uwzględnia użytkowników małoletnich, jeśli mogą korzystać z Gracz.pl,
-- może zostać oznaczona jako `ACCEPTED / FINAL`.
+## 1. Cel i granice formularza
 
-## 2. Granice decyzji
+Formularz:
 
-Review Privacy/Legal:
+- konsoliduje aktualne evidence `PL-E01–PL-E16`;
+- konsoliduje decyzje retencyjne `PL-R01–PL-R09`;
+- konsoliduje kontrole `PL-C01–PL-C20` z uwzględnieniem późniejszych authoritative delta records;
+- zapisuje aktualne zamknięcia i otwarte kanoniczne P1;
+- przygotowuje jeden artefakt do końcowego niezależnego review i późniejszego podpisu Decision Ownera;
+- nie zatwierdza implementacji, deploymentu, produkcji ani operacji na providerach;
+- nie zdejmuje freeze.
 
-- zatwierdza albo odrzuca politykę prawną i governance,
-- nie potwierdza implementacji technicznej,
-- nie zastępuje testów, DPIA ani dokumentacji obowiązków informacyjnych,
-- nie zmienia freeze,
-- nie uruchamia purge, migracji, workerów ani restore,
-- nie może być zapisane jako `PASS` bez nazwanego właściciela, mandatu i trwałego recordu.
+---
 
-## 3. Wymagany reviewer i mandat
+## 2. Role, mandat i provenance
 
 | Pole | Wartość |
 |---|---|
-| Privacy/Legal owner | `UNASSIGNED` |
-| Reviewer name | `PENDING` |
-| Reviewer role | `PENDING` |
-| Organization / engagement basis | `PENDING` |
-| Scope of mandate | `PENDING` |
-| Jurisdiction reviewed | `PENDING` |
-| Conflict-of-interest declaration | `PENDING` |
-| Review date | `PENDING` |
-| Signature / durable approval locator | `PENDING` |
+| Privacy/Legal Decision Owner | **Czesław Socha** |
+| Rola właściciela | Project Owner / Controller Representative / Privacy-Legal Decision Owner |
+| Podstawa mandatu | odpowiedzialność właścicielska i decyzyjna za projekt Gracz.pl; mandat do zatwierdzania polityk privacy, retencji, usuwania, legal hold i data governance |
+| Zakres mandatu | decyzje governance ADR-V3-012 dla Gracz.pl; mandat nie oznacza kwalifikacji radcy prawnego, adwokata, IOD/DPO ani zewnętrznego specjalisty Privacy/Legal |
+| Jurysdykcja i zakres usługi | Polska / Unia Europejska / RODO; Gracz.pl V3 |
+| Autor / wykonawca aktualizacji | ChatGPT 2 — wsparcie dokumentacyjne; bez niezależnej roli review i bez finalnej władzy decyzyjnej |
+| Independent Lead Architect reviewer | `PENDING` |
+| Kwalifikowany Privacy/Legal reviewer, gdy wymagana jest profesjonalna interpretacja | `PENDING / NOT EVIDENCED` |
+| Conflict-of-interest declaration właściciela/reviewera | `PENDING OWNER/REVIEWER STATEMENT` |
+| Formal review date | `PENDING` |
+| Owner signature | `NOT SIGNED` |
+| Durable approval locator | `PENDING — TO BE CREATED ONLY AFTER FINAL REVIEW AND OWNER SIGNATURE` |
 
-Brak któregokolwiek z pól ownera, mandatu lub durable approval locator powoduje wynik `HOLD`, a nie dorozumianą akceptację.
+Brak finalnego review, podpisu lub durable approval locator utrzymuje `HOLD`. Samo nazwanie Decision Ownera nie tworzy `PASS`.
 
-## 4. Oficjalne źródła wejściowe
+---
 
-Źródła zweryfikowane jako dostępne 01.09.2026:
+## 3. Źródła i reguła pierwszeństwa
 
-- RODO — oficjalny tekst EUR-Lex: https://eur-lex.europa.eu/eli/reg/2016/679/oj
-- UODO — „Czy trzeba precyzyjnie określać okres przechowywania danych?”: https://uodo.gov.pl/pl/676/4260
-- UODO — zasada ograniczenia przechowywania i działania po upływie okresu: https://uodo.gov.pl/pl/676/4262
+### 3.1. Źródła projektowe
 
-Minimalny zakres przepisów do oceny obejmuje co najmniej art. 5 ust. 1 lit. e i art. 5 ust. 2 RODO oraz — odpowiednio do procesu — art. 6, 13, 14, 17, 18, 21, 25, 28, 30, 32 i 35 RODO. Lista nie zastępuje ustalenia wszystkich właściwych przepisów polskich, unijnych ani sektorowych.
+- `ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md`;
+- `PL-E01–PL-E16`, w tym `PL-E16-WERSJONOWANY-ZAPIS-DECYZJI-PRIVACY-LEGAL-GRACZ-PL-V3.md`;
+- `PL-R01–PL-R09`;
+- `PL-C01–PL-C20`;
+- `ROPA-GRACZ-PL-V3.md`;
+- kanoniczny rejestr P1;
+- dokumenty `P1-PL-001–009`, w tym późniejsze authoritative delta/closure records;
+- finalny techniczny audyt A–V 3A–3C.
 
-UODO wskazuje, że administrator powinien ustalić termin usuwania albo okresowego przeglądu, powiązać okres z celem i umożliwić osobie ocenę długości przechowywania. Samo ogólne stwierdzenie „tak długo, jak jest to niezbędne” nie wystarcza jako pełny obowiązek informacyjny.
+### 3.2. Pierwszeństwo nowszych rozstrzygnięć
 
-## 5. Wymagany evidence pack przed decyzją
+Jeżeli starszy plik PL-E/PL-R/PL-C zawiera `PENDING`, `HOLD` albo wartość zastąpioną późniejszym rozstrzygnięciem, obowiązuje nowszy, jawnie wskazany authoritative delta/closure record. Nie usuwa to warunków przeniesionych do innego P1.
 
-| ID | Dowód | Status |
+Obowiązujące zamknięcia:
+
+| Blocker | Aktualny status | Authoritative locator |
 |---|---|---|
-| PL-E01 | tożsamość administratora i zakres podmiotów Gracz.pl | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E02 | aktualny rejestr czynności przetwarzania / ROPA | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E03 | mapa celów i podstaw prawnych per proces | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E04 | kategorie osób, w tym decyzja dotycząca małoletnich | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E05 | kategorie danych i klasyfikacja PUBLIC/INTERNAL/PERSONAL/SENSITIVE/EVIDENCE/SECRET | `PARTIAL / ADR DESIGN ONLY` |
-| PL-E06 | odbiorcy, procesorzy, subprocessors i transfery państw trzecich | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E07 | umowy powierzenia i instrukcje usunięcia/zwrotu danych | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E08 | obowiązki informacyjne i privacy notice z okresami/kryteriami | `MISSING / OWNER INPUT REQUIRED` |
-| PL-E09 | analiza prawnie uzasadnionego interesu, jeśli używany | `NOT VERIFIED` |
-| PL-E10 | DPIA screening oraz DPIA, jeśli wymagane | `NOT VERIFIED` |
-| PL-E11 | procedury dostępu, sprostowania, usunięcia, restriction, sprzeciwu i eksportu | `PARTIAL / DESIGN ONLY` |
-| PL-E12 | uzasadnienie każdego okresu retencji i zdarzenia rozpoczynającego clock | `PENDING LEGAL REVIEW` |
-| PL-E13 | katalog wyjątków ustawowych, roszczeń, sporów i legal hold | `PENDING LEGAL REVIEW` |
-| PL-E14 | dokumentacja wieku/zgód opiekuna, jeśli usługa obejmuje małoletnich | `NOT VERIFIED` |
-| PL-E15 | zgodność backupów, restore, processor deletion i deletion ledger | `ARCHITECTURE PASS / OPERATIONAL EVIDENCE NONE` |
-| PL-E16 | wersjonowany decision record z podpisem/approval locator | `MISSING` |
+| `P1-PL-001` | `CLOSED` | `P1-PL-001-SYNCHRONIZACJA-DELTA-REVIEW-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md` |
+| `P1-PL-002` | `CLOSED` | `P1-PL-002-ROZSTRZYGNIECIE-MATERIALNYCH-OKRESOW-RETENCJI-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md` |
+| `P1-PL-004` | `CLOSED` | `P1-PL-004-FINALNY-MODEL-NEWSLETTER-CONSENT-WITHDRAWAL-SUPPRESSION-PROOF-I-ZAMKNIECIE-GRACZ-PL-V3.md` |
+| `P1-PL-005` | `CLOSED` | `P1-PL-005-PELNA-DPIA-MALOLETNI-16-17-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md` |
 
-Evidence pack nie może zawierać sekretów, treści prywatnych wiadomości ani zbędnych danych osobowych.
+---
 
-## 6. Macierz decyzji dla okresów ADR-V3-012
-
-Reviewer ocenia każdy blok jako `APPROVE`, `APPROVE WITH CONDITIONS`, `HOLD` albo `REJECT`.
-
-| ID | Zakres ADR-V3-012 | Wymagana decyzja | Status |
-|---|---|---|---|
-| PL-R01 | konto, profil, account deletion i publiczna widoczność | cel, podstawa, clock, 30 dni/24 h, akcja końcowa | `NOT REVIEWED` |
-| PL-R02 | MFA, credentiale, sesje i tokeny | natychmiastowe revoke/purge, 24 h/30 dni/7 dni | `NOT REVIEWED` |
-| PL-R03 | privacy request evidence i anty-abuse tombstone | podstawa i proporcjonalność 6 lat/24 miesięcy | `NOT REVIEWED` |
-| PL-R04 | game events, snapshoty, replay, turnieje i ranking | 36 miesięcy/90 dni/anonimizacja/bezterminowy anonimowy agregat | `NOT REVIEWED` |
-| PL-R05 | private messaging, załączniki, publiczny chat i social | party-state, 36/12/24 miesięcy, 30 dni grace | `NOT REVIEWED` |
-| PL-R06 | newsletter, consent proof, unsubscribe, analytics i provider telemetry | podstawa 6 lat/24/13 miesięcy i obowiązki informacyjne | `NOT REVIEWED` |
-| PL-R07 | moderation, sankcje, audit i security events | podstawa, roszczenia, 36 miesięcy/6 lat/12 miesięcy | `NOT REVIEWED` |
-| PL-R08 | outbox, idempotency, logs, traces i metryki | minimalizacja oraz 14/30/90 dni/13 miesięcy | `NOT REVIEWED` |
-| PL-R09 | backupy dzienne, tygodniowe, miesięczne i restore environments | 35 dni/12 tygodni/12 miesięcy/7 dni oraz deletion replay | `NOT REVIEWED` |
-
-Dla każdego bloku reviewer zapisuje:
-
-1. cele przetwarzania,
-2. podstawę prawną,
-3. kategorie osób i danych,
-4. uzasadnienie okresu albo kryterium jego ustalenia,
-5. zdarzenie rozpoczynające retention clock,
-6. końcową akcję,
-7. wyjątki i legal hold,
-8. obowiązek informacyjny,
-9. warunki wcześniejszego purge,
-10. ownera przyszłego przeglądu.
-
-## 7. Kontrole obowiązkowe
-
-| ID | Kontrola | Kryterium PASS | Status |
-|---|---|---|---|
-| PL-C01 | purpose limitation | każdy proces ma konkretny, udokumentowany cel | `PENDING` |
-| PL-C02 | lawful basis | każdy cel ma zatwierdzoną podstawę | `PENDING` |
-| PL-C03 | storage limitation | okres/kryterium jest konieczne i proporcjonalne | `PENDING` |
-| PL-C04 | transparency | privacy notice pozwala ustalić długość przechowywania | `PENDING` |
-| PL-C05 | accountability | decyzje i wyjątki mają trwały evidence record | `PENDING` |
-| PL-C06 | data minimization | zakres danych odpowiada celowi | `PENDING` |
-| PL-C07 | deletion/restriction | wyjątki od usunięcia są jawne i obsługują restriction | `PENDING` |
-| PL-C08 | objection/marketing | sprzeciw i unsubscribe zatrzymują właściwe operacje | `PENDING` |
-| PL-C09 | anonymization | brak realnej możliwości reidentyfikacji i mapy zwrotnej | `PENDING` |
-| PL-C10 | pseudonymization | dane nadal traktowane jako osobowe i chronione | `PENDING` |
-| PL-C11 | legal hold | scope, reason, owner, review_at i expires_at są obowiązkowe | `PENDING` |
-| PL-C12 | minors | wiek, zgody i projekt usług mają zatwierdzony model | `PENDING` |
-| PL-C13 | processors | umowy i instrukcje pokrywają retencję, delete i backup | `PENDING` |
-| PL-C14 | transfers | transfery i safeguards są zinwentaryzowane | `PENDING` |
-| PL-C15 | ROPA | okresy/kryteria i środki bezpieczeństwa są zapisane | `PENDING` |
-| PL-C16 | DPIA | screening jest wykonany, a wymagane ryzyka ocenione | `PENDING` |
-| PL-C17 | privacy by design | deletion ledger, receipts i anti-resurrection wspierają decyzję | `ARCHITECTURE PASS` |
-| PL-C18 | backup/restore | natural expiry i replay deletion są zgodne z decyzją prawną | `PENDING LEGAL / DESIGN PASS` |
-| PL-C19 | security/PII evidence | review artifact nie zawiera sekretów ani zbędnego PII | `PASS FOR THIS PACK` |
-| PL-C20 | implementation boundary | review nie autoryzuje implementacji ani deploymentu | `PASS FOR THIS PACK` |
-
-## 8. Legal hold review
-
-Wynik `PASS` wymaga potwierdzenia, że:
-
-- hold ma konkretną podstawę i udokumentowany cel,
-- zakres nie jest szerszy niż konieczny,
-- wskazano ownera oraz rozdział obowiązków,
-- `review_at` i `expires_at` są obowiązkowe,
-- brak ważnego hold nie przedłuża retencji,
-- backup nie jest używany jako ukryte archiwum hold,
-- zwolnienie hold uruchamia ponowną ocenę purge,
-- dostęp i eksport danych objętych hold są audytowane.
-
-## 9. Małoletni i model usługi
-
-Przed decyzją owner musi jawnie ustalić:
-
-- minimalny wiek użytkownika,
-- czy Gracz.pl oferuje usługę bezpośrednio dzieciom,
-- czy i kiedy potrzebna jest zgoda lub autoryzacja opiekuna,
-- jaki jest model age assurance bez nadmiernego zbierania danych,
-- czy profile, chat, wiadomości i matchmaking wymagają dodatkowych ograniczeń,
-- czy wymagany jest odrębny DPIA lub szczególne obowiązki informacyjne.
-
-Brak tej decyzji powoduje `HOLD` dla finalnej akceptacji ADR-V3-012.
-
-## 10. Dozwolone werdykty
-
-| Werdykt | Znaczenie |
-|---|---|
-| `PASS / ACCEPTED` | wszystkie obowiązkowe dowody i kontrole zatwierdzone bez otwartego P0/P1 |
-| `PASS WITH CONDITIONS` | warunki mają ownera, deadline i nie blokują legalności projektu; ADR pozostaje `REVIEW PENDING` do ich zamknięcia |
-| `HOLD` | brak ownera, podstaw, dowodów albo rozstrzygnięcia istotnego ryzyka |
-| `REJECT` | polityka wymaga przeprojektowania lub zawiera niedopuszczalne założenie |
-
-`PASS WITH CONDITIONS` nie nadaje automatycznie statusu `ACCEPTED / FINAL`.
-
-## 11. Formalny decision record
+## 4. Wynik audytu technicznego — osobna warstwa evidence
 
 ```text
-REVIEW PACK ID =
-REV-ADR-V3-012-20260901-PL-01
+TECHNICAL AUDIT A-V 3A-3C = CLOSED / EXTERNAL_RECORDED
+FINAL TECHNICAL P1 = 10
+NEW TECHNICAL P0 = NONE
+DOCUMENTATION OVERCLAIM = NONE FOUND
+DOCUMENT-TO-CODE ACCURACY = ADEQUATE
+ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH
+IMPLEMENTATION CONFIDENCE = MEDIUM
+OPERATIONAL READINESS = PARTIAL / NOT READY
+HORIZONTAL SCALE READINESS = NOT READY
+PRODUCTION V3 = NOT READY
+```
 
-PRIVACY/LEGAL OWNER =
+Dziesięć technicznych P1 stanowi backlog AS-IS/implementacyjny i nie jest liczone jako pięć kanonicznych P1 Privacy/Legal. Audyt techniczny nie autoryzuje implementacji i nie zmienia końcowego `HOLD` ADR-V3-012.
+
+---
+
+## 5. Evidence PL-E01–PL-E16 — aktualny stan
+
+| ID | Zakres | Aktualny status | Warunek / evidence locator |
+|---|---|---|---|
+| `PL-E01` | tożsamość administratora / ownera | `PASS WITH CONDITIONS` | Decision Owner nazwany; pełne dane kontaktowe administratora do publikacji nadal otwarte w `P1-PL-003` |
+| `PL-E02` | ROPA | `PASS WITH CONDITIONS` | ROPA istnieje; wymaga finalnej synchronizacji providerów, transferów i privacy notice |
+| `PL-E03` | cele i podstawy prawne | `PASS WITH CONDITIONS / DECISION LAYER RESOLVED` | `P1-PL-001 = CLOSED`; operational/provider dependencies pozostają osobno |
+| `PL-E04` | kategorie osób | `PASS WITH CONDITIONS` | utrzymać spójność z DPIA i modelem 16–17 |
+| `PL-E05` | małoletni / wiek / zgody | `PASS WITH CONDITIONS / DESIGN-GOVERNANCE RESOLVED` | `P1-PL-005 = CLOSED`; testy i publication sync nadal wymagane |
+| `PL-E06` | klasyfikacja danych | `PASS WITH CONDITIONS` | operacyjne redaction/minimization evidence pozostaje w `P1-PL-009` |
+| `PL-E07` | odbiorcy / procesorzy / transfery | `HOLD` | `P1-PL-006` i `P1-PL-007` pozostają otwarte |
+| `PL-E08` | DPA / instrukcje dla procesorów | `HOLD` | publiczne evidence częściowe; account-specific contract/DPA evidence niekompletne |
+| `PL-E09` | privacy notice | `HOLD / PUBLICATION CANDIDATE ONLY` | `P1-PL-003` otwarte: dane kontaktowe, provider/transfer sync, cookies/local-storage inventory i final publication approval |
+| `PL-E10` | LIA | `PASS WITH CONDITIONS / BASELINE DECISION RESOLVED` | `P1-PL-001 = CLOSED`; safeguards i dowody wykonania pozostają |
+| `PL-E11` | DPIA | `PASS WITH CONDITIONS / FULL DPIA COMPLETED AT DESIGN-GOVERNANCE LEVEL` | `P1-PL-005 = CLOSED`; residual-risk recheck po `P1-PL-006–009` |
+| `PL-E12` | prawa osób | `PASS WITH CONDITIONS` | operacyjne workflow/receipts/negative evidence w `P1-PL-009` |
+| `PL-E13` | uzasadnienia retencji | `PASS WITH CONDITIONS / MATERIAL VALUES RESOLVED` | `P1-PL-002 = CLOSED`; egzekwowanie operacyjne pozostaje |
+| `PL-E14` | legal hold i wyjątki | `PASS WITH CONDITIONS` | projekt kompletny; operational evidence w `P1-PL-008/009` |
+| `PL-E15` | backup / restore / deletion replay | `HOLD` | manual restore evidence istnieje; pełny privacy-safe replay, anti-resurrection, cleanup i recurring DR pozostają w `P1-PL-008` |
+| `PL-E16` | wersjonowany decision record | `PASS FOR RECORD EXISTENCE / FINAL APPROVAL PENDING` | record istnieje; ten formularz nadal nie ma podpisu ani finalnego durable approval locator |
+
+---
+
+## 6. Macierz decyzji PL-R01–PL-R09 — aktualny stan
+
+Nowsze rozstrzygnięcia `P1-PL-001`, `002`, `004` i `005` zastępują historyczne HOLD dotyczące podstaw, materialnych okresów, newslettera i pełnej DPIA. Wszystkie dziewięć bloków pozostaje warunkowych ze względu na otwarte zależności publikacyjne, providerowe lub operacyjne.
+
+| ID | Zakres | Aktualna decyzja | Otwarte warunki |
+|---|---|---|---|
+| `PL-R01` | konto, profil, deletion, widoczność | `APPROVE WITH CONDITIONS` | notice sync i operacyjne delete evidence — `P1-PL-003/009` |
+| `PL-R02` | MFA, credentiale, sesje, tokeny | `APPROVE WITH CONDITIONS` | revoke/purge/secret leakage/restore evidence — `P1-PL-008/009` |
+| `PL-R03` | privacy-request evidence i tombstone | `APPROVE WITH CONDITIONS / RETENTION RESOLVED` | wartości zastąpione przez `P1-PL-002`; wykonanie i minimalizacja — `P1-PL-009` |
+| `PL-R04` | gry, snapshoty, replay, turnieje, ranking | `APPROVE WITH CONDITIONS` | anonimizacja, deletion i testy — `P1-PL-009` |
+| `PL-R05` | wiadomości, załączniki, chat, social | `APPROVE WITH CONDITIONS` | provider/DPA/transfer i operational delete evidence — `P1-PL-006/007/009` |
+| `PL-R06` | newsletter, consent, suppression, telemetry | `APPROVE WITH CONDITIONS / RETENTION + CONSENT RESOLVED` | provider/transfer, notice i test unsubscribe/restore — `P1-PL-003/006/007/009` |
+| `PL-R07` | moderacja, sankcje, audit, security events | `APPROVE WITH CONDITIONS / RETENTION RESOLVED` | redaction/access/operational evidence — `P1-PL-009` |
+| `PL-R08` | outbox, idempotency, logi, traces, metryki | `APPROVE WITH CONDITIONS` | redaction, purge, external provider i negative leakage evidence — `P1-PL-006/007/009` |
+| `PL-R09` | backupy, restore environments, deletion replay | `APPROVE WITH CONDITIONS / DESIGN PASS` | account evidence, replay, anti-resurrection, cleanup i recurring DR — `P1-PL-006/007/008` |
+
+```text
+PL-R TOTAL = 9
+APPROVE = 0
+APPROVE WITH CONDITIONS = 9
+HOLD = 0 AFTER AUTHORITATIVE RETENTION/LAWFUL-BASIS/DPIA DELTAS
+REJECT = 0
+```
+
+Warunkowe decyzje PL-R nie tworzą `PASS / ACCEPTED`, dopóki otwarte P1 pozostają blokujące.
+
+---
+
+## 7. Kontrole PL-C01–PL-C20 — aktualny stan
+
+| ID | Kontrola | Aktualny wynik |
+|---|---|---|
+| `PL-C01` | purpose limitation | `PASS WITH CONDITIONS` |
+| `PL-C02` | lawful basis | `PASS WITH CONDITIONS / P1-PL-001 CLOSED` |
+| `PL-C03` | storage limitation | `PASS WITH CONDITIONS / P1-PL-002 CLOSED` |
+| `PL-C04` | transparency / privacy notice | `HOLD / P1-PL-003 OPEN` |
+| `PL-C05` | accountability / evidence record | `PASS WITH CONDITIONS` |
+| `PL-C06` | data minimization | `PASS WITH CONDITIONS / P1-PL-009 OPEN` |
+| `PL-C07` | deletion / restriction | `PASS WITH CONDITIONS / P1-PL-008/009 OPEN` |
+| `PL-C08` | objection / marketing / withdrawal | `PASS WITH CONDITIONS / P1-PL-004 CLOSED` |
+| `PL-C09` | anonymization | `PASS WITH CONDITIONS / P1-PL-009 OPEN` |
+| `PL-C10` | pseudonymization | `PASS WITH CONDITIONS / P1-PL-009 OPEN` |
+| `PL-C11` | legal hold | `PASS WITH CONDITIONS / P1-PL-008/009 OPEN` |
+| `PL-C12` | minors | `PASS WITH CONDITIONS / P1-PL-005 CLOSED` |
+| `PL-C13` | processors / DPA | `HOLD / P1-PL-006 OPEN` |
+| `PL-C14` | transfers outside EEA | `HOLD / P1-PL-007 OPEN` |
+| `PL-C15` | ROPA | `PASS WITH CONDITIONS / FINAL SYNC OPEN` |
+| `PL-C16` | DPIA | `PASS WITH CONDITIONS / FULL DPIA COMPLETE; RESIDUAL RECHECK OPEN` |
+| `PL-C17` | privacy by design/default | `PASS WITH CONDITIONS / OPERATIONAL EVIDENCE OPEN` |
+| `PL-C18` | backup / restore | `HOLD / P1-PL-008 OPEN` |
+| `PL-C19` | security / PII evidence | `PASS WITH CONDITIONS / P1-PL-009 OPEN` |
+| `PL-C20` | implementation boundary | `PASS` |
+
+```text
+PL-C TOTAL = 20
+PASS = 1
+PASS WITH CONDITIONS = 15
+HOLD = 4
+REJECT = 0
+```
+
+---
+
+## 8. Kanoniczne otwarte warunki P0/P1/P2
+
+### 8.1. Privacy/Legal
+
+```text
+OPEN P0 PRIVACY/LEGAL = 0 KNOWN
+CANONICAL P1 TOTAL = 9
+CANONICAL P1 CLOSED = 4
+CANONICAL P1 OPEN = 5
+```
+
+| ID | Status | Powód pozostawienia otwartego |
+|---|---|---|
+| `P1-PL-003` | `OPEN / PARTIALLY RESOLVED` | privacy notice jest kandydatem, ale nie jest publication-ready |
+| `P1-PL-006` | `OPEN / PARTIALLY RESOLVED` | account-specific provider/processors/DPA evidence nie jest kompletne |
+| `P1-PL-007` | `OPEN / PARTIALLY RESOLVED` | account-specific transfer/remote-access/subprocessor scope nie jest kompletne |
+| `P1-PL-008` | `OPEN` | pełny privacy-safe backup/restore/deletion replay i recurring DR evidence nie istnieją |
+| `P1-PL-009` | `OPEN` | operacyjne privacy/security, redaction, masking i negative leakage evidence nie zostały wykonane |
+
+### 8.2. P2 i backlog techniczny
+
+- nie zidentyfikowano nowego P0 w finalnym audycie technicznym;
+- niższe severity pozostają w odpowiednich backlogach i nie mogą służyć do obejścia pięciu otwartych P1 Privacy/Legal;
+- finalny audyt techniczny utrzymuje dziesięć P1 implementacyjnych; pozostają one poza autoryzacją wykonania.
+
+---
+
+## 9. Formalny decision record — wypełniony stan bieżący
+
+```text
+REVIEW PACK / DECISION ID =
+REV-ADR-V3-012-20260901-PL-DECISION-01
+
+PRIVACY/LEGAL DECISION OWNER =
+Czesław Socha
+
+OWNER ROLE / MANDATE =
+Project Owner / Controller Representative / Privacy-Legal Decision Owner;
+mandat do decyzji governance projektu Gracz.pl, bez deklarowania
+kwalifikacji niezależnego prawnika lub IOD/DPO.
+
+DOCUMENT AUTHOR / EXECUTOR =
+ChatGPT 2 / documentation support / NOT AN INDEPENDENT REVIEWER /
+NO FINAL DECISION AUTHORITY
+
+INDEPENDENT LEAD ARCHITECT REVIEWER =
 PENDING
 
-REVIEWER / ROLE / MANDATE =
-PENDING
+QUALIFIED PRIVACY/LEGAL REVIEW WHERE REQUIRED =
+PENDING / NOT EVIDENCED
 
-REVIEWED REPOSITORY HEAD =
-PENDING
+REVIEWED REPOSITORY EVIDENCE BASELINE HEAD =
+e78be355bd08c97f16240400b74c027321a34870
 
-REVIEW DATE =
+FORM PREPARATION DATE =
+01.09.2026
+
+FORMAL REVIEW DATE =
 PENDING
 
 JURISDICTION / SERVICE SCOPE =
-PENDING
+Poland / European Union / GDPR / Gracz.pl V3
 
 DECISION =
-PENDING
+HOLD
 
 APPROVED RETENTION POLICY VERSION =
-PENDING
+ADR-V3-012 design policy with authoritative retention delta P1-PL-002;
+APPROVED AT GOVERNANCE/DESIGN LEVEL WITH OPEN OPERATIONAL CONDITIONS;
+NOT IMPLEMENTED / NOT OPERATIONALLY VERIFIED AS A WHOLE
 
 APPROVED ROWS / EXCEPTIONS =
-PENDING
+PL-R01–PL-R09 = 9 x APPROVE WITH CONDITIONS;
+material retention values superseded by P1-PL-002;
+exceptions require narrow, purpose-bound, time-bounded legal hold;
+backup is not legal hold;
+earlier purge remains required when purpose ends.
 
-LEGAL BASES / PURPOSES EVIDENCE LOCATOR =
-PENDING
+LEGAL BASES / PURPOSES EVIDENCE LOCATORS =
+P1-PL-001-SYNCHRONIZACJA-DELTA-REVIEW-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md;
+P1-PL-001-ROZSTRZYGNIECIE-PODSTAW-PRAWNYCH-LIA-I-LEGAL-DUTY-GRACZ-PL-V3.md;
+PL-E03-MAPA-CELOW-I-PODSTAW-PRAWNYCH-GRACZ-PL-V3.md;
+PL-E10-LIA-PRAWNIE-UZASADNIONY-INTERES-GRACZ-PL-V3.md;
+ROPA-GRACZ-PL-V3.md.
 
 OPEN CONDITIONS P0/P1/P2 =
-PENDING
+P0 Privacy/Legal = 0 known;
+P1 Privacy/Legal = 5 open: P1-PL-003, 006, 007, 008, 009;
+technical audit P1 = 10 in separate AS-IS implementation/test/operational backlog;
+no lower-severity item may override the blocking P1 or authorize execution.
 
-NEXT REVIEW DATE =
-PENDING
+NEXT REVIEW DATE / TRIGGER =
+No calendar date assigned;
+review after durable closure evidence for P1-PL-003, 006, 007, 008 and 009.
 
 DURABLE APPROVAL LOCATOR =
-PENDING
+PENDING — NO OWNER SIGNATURE / NO FINAL APPROVAL ARTIFACT
+
+FINAL OWNER SIGNATURE =
+NOT YET / DO NOT SIGN AS PASS
 ```
 
-## 12. Bramka finalna ADR-V3-012
+---
 
-ADR-V3-012 może przejść do `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` dopiero, gdy:
+## 10. Uzasadnienie werdyktu `HOLD`
 
-1. named Privacy/Legal owner i mandat są zapisane,
-2. PL-E01–PL-E16 mają rozstrzygnięcie,
-3. PL-R01–PL-R09 mają decyzję oraz uzasadnienie,
-4. PL-C01–PL-C20 są zakończone albo mają formalnie dopuszczalne warunki,
-5. legal hold i model małoletnich są zatwierdzone,
-6. nie istnieje otwarty P0/P1 blokujący,
-7. decision record ma durable approval locator,
-8. provenance register wskazuje właściwy artifact i reviewed HEAD.
+`HOLD` wynika z pięciu materialnych, kanonicznych P1:
 
-## 13. Stan po przygotowaniu pakietu
+1. brak publication-ready privacy notice;
+2. niekompletne account-specific provider/processors/DPA evidence;
+3. niekompletne account-specific transfer evidence;
+4. brak pełnego operacyjnego privacy-safe backup/restore/deletion replay i recurring DR evidence;
+5. brak operacyjnych privacy/security/redaction/masking/negative leakage tests.
+
+Stan częściowo pozytywny nie jest pomijany:
+
+- techniczny audyt A–V jest zamknięty;
+- lawful-basis został zsynchronizowany;
+- materialne okresy retencji zostały rozstrzygnięte;
+- model newsletter consent/withdrawal został zamknięty na poziomie governance;
+- pełna DPIA i model 16–17 zostały zamknięte na poziomie design/governance;
+- publiczne provider/DPA/transfer evidence zostało częściowo zweryfikowane;
+- istnieje manualny izolowany restore `PASS / EXTERNAL_RECORDED`.
+
+Powyższe nie wystarcza do finalnego `PASS / ACCEPTED`, ponieważ otwarte P1 są nadal materialne i blokujące.
+
+---
+
+## 11. Bramka finalna ADR-V3-012
+
+ADR-V3-012 może przejść do `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE` dopiero po łącznym spełnieniu:
+
+1. niezależny review formularza jest zakończony i zapisany;
+2. wszystkie pięć otwartych P1 ma durable closure evidence;
+3. PL-E/PL-R/PL-C oraz privacy notice/ROPA są finalnie zsynchronizowane;
+4. nie istnieje otwarty blokujący P0/P1;
+5. Decision Owner podejmuje jawną decyzję po review;
+6. podpis i durable approval locator są zapisane bez fikcyjnych reviewer metadata;
+7. provenance register wskazuje reviewed HEAD, review artifact i decyzję;
+8. finalny status nadal nie jest utożsamiany z autoryzacją implementacji lub deploymentu.
+
+---
+
+## 12. Pole podpisu — celowo niewykonane
+
+| Pole | Stan |
+|---|---|
+| Decision Owner | Czesław Socha |
+| Final decision | `HOLD` |
+| Owner signature | `NOT SIGNED` |
+| Signature date | `PENDING` |
+| Durable approval locator | `PENDING` |
+| Independent final review | `PENDING` |
+
+Nie należy podpisywać formularza jako `PASS / ACCEPTED`. Pole podpisu pozostaje niewykonane do czasu końcowego niezależnego review i zamknięcia blockerów wymaganych przez obowiązujący gate.
+
+---
+
+## 13. Obowiązujący stan po wypełnieniu Dokumentu nr 2
 
 ```text
-PRIVACY/LEGAL REVIEW PACK = READY
-PRIVACY/LEGAL OWNER = UNASSIGNED
-FORMAL REVIEW = NOT EXECUTED
-ADR-V3-012 = ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+DOCUMENT 2 = COMPLETED FOR FINAL INDEPENDENT REVIEW
+DOCUMENT 2 OWNER SIGNATURE = NOT YET
+
+ADR-V3-012 = ARCHITECTURE PASS / PRIVACY-LEGAL HOLD
+OPEN P0 PRIVACY/LEGAL = 0 KNOWN
+OPEN P1 PRIVACY/LEGAL = 5
+
 REVIEWED DESIGN GATE = HOLD
 IMPLEMENTATION = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+PRODUCTION V3 = NO-GO
 FREEZE = ACTIVE
-PRODUCTION / RENDER / SECRETS = UNCHANGED
+
+PRODUCTION / RENDER / CLOUDFLARE / RESEND / DNS / DATABASE / SECRETS = UNCHANGED
 ```
