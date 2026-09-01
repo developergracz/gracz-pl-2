@@ -1,6 +1,6 @@
 # Nowa dokumentacja Gracz.pl — status i spis treści
 
-Data aktualizacji: 31.08.2026  
+Data aktualizacji: 01.09.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Branch: `main`
 
@@ -22,16 +22,16 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 128 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 129 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
 | Dokumenty główne | 3 |
-| `01-ARCHITEKTURA` | 3 |
+| `01-ARCHITEKTURA` | 4 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
 | `09-DECYZJE-ARCHITEKTONICZNE` | 6 |
-| **Łącznie** | **128** |
+| **Łącznie** | **129** |
 
 ## 3. Status etapów
 
@@ -87,6 +87,9 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md`
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
+- `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md`
+
+Audyt techniczny A–V 3A–3C jest zamknięty technicznie i zapisany w `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md`. Nie znaleziono nowego P0 ani materialnego przedstawiania TARGET jako AS-IS w zweryfikowanym zakresie. Wynik: `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = NOT VERIFIED AS A WHOLE / PRODUCTION V3 NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`. Krótki delta review zapisu dokumentacyjnego pozostaje `PENDING`.
 
 Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`, a pakiet `REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md` jest gotowy do formalnego review. Właściciel Privacy/Legal pozostaje `UNASSIGNED`, formalny review ma status `NOT EXECUTED`, a pakiet nie stanowi zatwierdzenia. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
 
@@ -137,10 +140,11 @@ Pliki:
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. przypisanie imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
-2. uzupełnienie kontroli i dowodów w pakiecie review `ADR-V3-012`,
-3. zapisanie formalnego werdyktu oraz trwałego approval artifact,
-4. synchronizacja wyniku governance i finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
+1. wykonać krótki delta review rekordu zamknięcia audytu A–V 3A–3C,
+2. przypisać imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
+3. uzupełnić kontrole i dowody w pakiecie review `ADR-V3-012`,
+4. zapisać formalny werdykt oraz trwały approval artifact,
+5. zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 

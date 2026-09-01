@@ -1,6 +1,6 @@
 # Gracz.pl — kompletny pakiet dokumentacji do niezależnego przeglądu
 
-Data snapshotu: 31.08.2026  
+Data snapshotu: 01.09.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Branch: `main`  
 Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl/`**.
@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Aktualny stan po synchronizacji: **128 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 3 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 6 plików w `09-DECYZJE-ARCHITEKTONICZNE/`.
+Aktualny stan po synchronizacji: **129 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS i TXT), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 4 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 6 plików w `09-DECYZJE-ARCHITEKTONICZNE/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -17,7 +17,8 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 
 - ETAP 1B: `CLOSED`
 - ETAP 2: `CLOSED`
-- ETAP 3: `CLOSED`
+- ETAP 3 migracji/Gate 15: `CLOSED`
+- audyt techniczny A–V 3A–3C: `CLOSED / DOCUMENTATION DELTA REVIEW PENDING`
 - Gate 15: `GO TO ETAP 4 / PRODUCTION V3 NO-GO`
 - ETAP 4: `OPEN`
 - E4.0: `OPERATIONALLY COMPLETE / FREEZE ACTIVE`
@@ -31,9 +32,13 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - Privacy/Legal owner: `UNASSIGNED`; formal review: `NOT EXECUTED`
 - `ADR-V3-013`: `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE`
 - review provenance: `EXTERNAL_RECORDED / REVIEWER IDENTITY NOT RECORDED IN GIT / INDEPENDENCE NOT ASSERTED`
-- architectural design trust: `RECORDED / PROVENANCE PARTIAL`
-- implementation confidence: `NOT ESTABLISHED`
-- operational evidence dla ADR-004/012/013: `NONE`
+- architectural design trust (A–V): `MEDIUM-HIGH`; review provenance: `PARTIAL`
+- implementation confidence (A–V AS-IS): `MEDIUM`
+- implementation confidence dla niezaimplementowanych decyzji ADR-004/012/013: `NOT ESTABLISHED`
+- operational readiness: `NOT VERIFIED AS A WHOLE / PRODUCTION V3 NOT READY`
+- horizontal scale readiness: `NOT READY`
+- documentation overclaim: `NONE FOUND IN VERIFIED A–V SCOPE`
+- operational evidence dla niezaimplementowanych decyzji ADR-004/012/013: `NONE`
 - formalne T-gates: `NOT EXECUTED`
 - C0-S1 / C0-S3 / A1 / A2 / A3: `NOT AUTHORIZED`
 - authorized operations: `NONE`
@@ -64,8 +69,9 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | [01-BAZA-AUDYTU-ARCHITEKTURY.md](01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md) | `01-ARCHITEKTURA/` | Baza dowodowa i punkt wyjścia audytu architektury. | `REFERENCE / ETAP 2 CLOSED` |
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
 | [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `0.2 / DESIGN DRAFT / REVIEWED DESIGN GATE HOLD` |
+| [04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md](01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md) | `01-ARCHITEKTURA/` | Rekord zamknięcia technicznego audytu A–V 3A–3C: zweryfikowany AS-IS oraz rozdzielone backlogi implementation/test/operational evidence. | `CLOSED / DOCUMENTATION DELTA REVIEW PENDING / NO CODE CHANGE` |
 
-**Wniosek dla recenzenta:** skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. External delta review `ADR-V3-013` zamknął oba P1 i P2 bez nowych P0/P1; werdykt ma osobny review artifact, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` przeszedł review architektoniczny; pakiet `REV-ADR-V3-012-20260901-PL-01` jest gotowy, ale named owner pozostaje `UNASSIGNED`, a formalny review ma status `NOT EXECUTED`. Wszystkie trzy P0 są rozstrzygnięte architektonicznie, lecz status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia governance `ADR-V3-012`.
+**Wniosek dla recenzenta:** audyt techniczny A–V 3A–3C nie znalazł nowego P0 ani materialnego TARGET-as-AS-IS overclaim. Implementacja pozostaje średnio pewna, operacyjnie niezweryfikowana jako całość i niegotowa do skalowania horyzontalnego; pełny backlog znajduje się w dokumencie 04. Skonsolidowana architektura systemowa V3 istnieje w wersji 0.2 i nie ma sprzeczności krytycznych. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. External delta review `ADR-V3-013` zamknął oba P1 i P2 bez nowych P0/P1; werdykt ma osobny review artifact, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` przeszedł review architektoniczny; pakiet `REV-ADR-V3-012-20260901-PL-01` jest gotowy, ale named owner pozostaje `UNASSIGNED`, a formalny review ma status `NOT EXECUTED`. Wszystkie trzy P0 są rozstrzygnięte architektonicznie, lecz status `REVIEWED DESIGN` pozostaje w `HOLD` do zamknięcia governance `ADR-V3-012`.
 
 ---
 
@@ -248,7 +254,7 @@ Poniższe pozycje są **jawnie wskazanymi lukami dokumentacyjnymi lub synchroniz
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanymi ADR-V3-004 i ADR-V3-013, architektonicznie pozytywnie ocenionym ADR-V3-012 oczekującym na Privacy/Legal governance oraz inwentarzem 128 plików.
+`00-STATUS-I-SPIS-TRESCI.md` został zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, V3 0.2, zaakceptowanymi ADR-V3-004 i ADR-V3-013, architektonicznie pozytywnie ocenionym ADR-V3-012 oczekującym na Privacy/Legal governance oraz inwentarzem 129 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -331,4 +337,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 128 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
+Pakiet jest kompletny jako **inwentarz aktualnej nowej dokumentacji**, gdy wszystkie 129 plików są dostępne pod odnośnikami i reviewer otrzymuje ich pełną treść. Nie oznacza to kompletności merytorycznej całego systemu — GAP-03 jest zamknięty materializacyjnie, GAP-11 jest częściowo rozwiązany, a pozostałe otwarte luki nadal stanowią plan dalszej dokumentacji i niezależnego przeglądu.
