@@ -341,7 +341,7 @@ ADR-V3-012 może przejść do `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE`
 | Durable approval locator | `PENDING` |
 | Independent final review | `PENDING` |
 
-Nie należy podpisywać formularza jako `PASS / ACCEPTED`. Pole podpisu pozostaje niewykonane do czasu końcowego niezależnego review i zamknięcia blockerów wymaganych przez obowiązujący gate.
+Decision Owner może podpisać aktualny werdykt `HOLD`, mimo że pięć blockerów P1 pozostaje otwartych; podpis potwierdza stan `HOLD`, a nie `PASS / ACCEPTED`. Późniejsze przejście do `PASS / ACCEPTED` wymaga zamknięcia blockerów i odrębnego finalnego review.
 
 ---
 
