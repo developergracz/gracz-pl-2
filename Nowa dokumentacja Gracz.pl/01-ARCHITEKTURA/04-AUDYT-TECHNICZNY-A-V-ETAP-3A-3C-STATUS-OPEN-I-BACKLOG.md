@@ -64,6 +64,8 @@ FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 ```
 
+`OPERATIONAL READINESS = PARTIAL / NOT READY` uwzględnia istniejący, punktowy dowód izolowanego restore (`PASS / EXIT 0`, `28/28` tabel, `17 711/17 711` rekordów, `0` różnic). Status nie jest `READY`, ponieważ nie potwierdzono cyklicznego programu DR, automatyzacji ani kompletnej gotowości operacyjnej V3.
+
 Końcowe wartości `DOCUMENT-TO-CODE ACCURACY`, `ARCHITECTURAL DESIGN TRUST` oraz `IMPLEMENTATION CONFIDENCE` pozostają do ponownego wydania po finalnym Etapie 3C.
 
 ## 4. Potwierdzone P1
@@ -104,10 +106,15 @@ AES-256-GCM/HKDF/AAD, ACL, parametryzowany SQL i walidacja MIME/magic bytes są 
 
 ```text
 AUDIT LOG = DB-LEVEL TAMPER-RESISTANT
+
+CODE ATTEMPTS:
+REVOKE UPDATE / DELETE / TRUNCATE FROM PUBLIC
+
+RUNTIME EFFECTIVENESS OF REVOKE = NOT VERIFIED
 INDEPENDENT IMMUTABLE EVIDENCE TRAIL = NOT VERIFIED
 ```
 
-Trigger UPDATE/DELETE oraz `REVOKE ... FROM PUBLIC` wzmacniają append-only na poziomie DB. Nie dowodzą separacji table ownera, ochrony przed ALTER/DROP/DISABLE trigger ani istnienia WORM/external immutable sink/cryptographic chaining. Błąd `REVOKE` jest ignorowany przez `.catch(() => {})`.
+Trigger blokujący UPDATE/DELETE jest potwierdzony w kodzie. Kod podejmuje próbę `REVOKE ... FROM PUBLIC`, ale błąd tej operacji jest ignorowany przez `.catch(() => {})`; dlatego skuteczne odebranie praw na rzeczywistej bazie nie jest dowiedzione. Nie potwierdzono także separacji table ownera, ochrony przed ALTER/DROP/DISABLE trigger ani WORM/external immutable sink/cryptographic chaining.
 
 ### R — Backup / Restore
 
