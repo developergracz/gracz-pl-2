@@ -89,7 +89,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 - `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md`
 
-Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; documentation delta review pozostaje `PENDING FINAL READBACK`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
+Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
 
 Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`, a pakiet `REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md` jest gotowy do formalnego review. Właściciel Privacy/Legal pozostaje `UNASSIGNED`, formalny review ma status `NOT EXECUTED`, a pakiet nie stanowi zatwierdzenia. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
 
@@ -140,11 +140,10 @@ Pliki:
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. wykonać krótki documentation delta readback commitu zamykającego audyt A–V i, po pozytywnym wyniku, oznaczyć delta review jako `PASS`,
-2. niezależnie przypisać imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
-3. uzupełnić kontrole i dowody w pakiecie review `ADR-V3-012`,
-4. zapisać formalny werdykt oraz trwały approval artifact,
-5. zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
+1. przypisać imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
+2. uzupełnić kontrole i dowody w pakiecie review `ADR-V3-012`,
+3. zapisać formalny werdykt oraz trwały approval artifact,
+4. zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementation planning pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 

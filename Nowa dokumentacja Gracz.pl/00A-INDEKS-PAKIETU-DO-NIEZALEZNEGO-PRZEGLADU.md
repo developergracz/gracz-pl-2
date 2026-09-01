@@ -18,7 +18,7 @@ Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego 
 - ETAP 1B: `CLOSED`
 - ETAP 2: `CLOSED`
 - ETAP 3 migracji/Gate 15: `CLOSED`
-- audyt techniczny A–V 3A–3C: `CLOSED / DOCUMENTATION DELTA REVIEW PENDING FINAL READBACK`
+- audyt techniczny A–V 3A–3C: `CLOSED / FINAL DELTA REVIEW PASS`
 - Gate 15: `GO TO ETAP 4 / PRODUCTION V3 NO-GO`
 - ETAP 4: `OPEN`
 - E4.0: `OPERATIONALLY COMPLETE / FREEZE ACTIVE`
@@ -69,9 +69,9 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | [01-BAZA-AUDYTU-ARCHITEKTURY.md](01-ARCHITEKTURA/01-BAZA-AUDYTU-ARCHITEKTURY.md) | `01-ARCHITEKTURA/` | Baza dowodowa i punkt wyjścia audytu architektury. | `REFERENCE / ETAP 2 CLOSED` |
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
 | [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `0.2 / DESIGN DRAFT / REVIEWED DESIGN GATE HOLD` |
-| [04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md](01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md) | `01-ARCHITEKTURA/` | Finalny rekord audytu A–V 3A–3C: 10 P1, korekty H/J/N/R, wynik B/U i rozdzielone backlogi. | `CLOSED / DOCUMENTATION DELTA REVIEW PENDING FINAL READBACK / NO CODE CHANGE` |
+| [04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md](01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md) | `01-ARCHITEKTURA/` | Finalny rekord audytu A–V 3A–3C: 10 P1, korekty H/J/N/R, wynik B/U i rozdzielone backlogi. | `CLOSED / FINAL DELTA REVIEW PASS / NO CODE CHANGE` |
 
-**Wniosek dla recenzenta:** audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`, a documentation delta review oczekuje na krótki finalny readback. Nie znaleziono nowego P0 ani materialnego TARGET-as-AS-IS overclaim. Potwierdzono 10 P1, w tym `P1-H-01` tournament concurrency race. `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. Manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`; Git-native independent verification nie jest dostępna, a recurring DR program jest brakujący. `ADR-V3-012` nadal oczekuje na named Privacy/Legal ownera, dlatego `REVIEWED DESIGN` pozostaje `HOLD`.
+**Wniosek dla recenzenta:** audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`, a final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Nie znaleziono nowego P0 ani materialnego TARGET-as-AS-IS overclaim. Potwierdzono 10 P1, w tym `P1-H-01` tournament concurrency race. `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. Manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`; Git-native independent verification nie jest dostępna, a recurring DR program jest brakujący. `ADR-V3-012` nadal oczekuje na named Privacy/Legal ownera, dlatego `REVIEWED DESIGN` pozostaje `HOLD`.
 
 ---
 

@@ -29,7 +29,7 @@ Commit `699001a329f01754edc0a0ca68144e749f4ccfde` przedwcześnie zapisał zamkni
 | independence | nie jest deklarowana jako zweryfikowana |
 | review baseline | `5eaf7eecb794811cc9bcb99f98c6e125151058a8` |
 | technical audit verdict | `CLOSED / EXTERNAL_RECORDED` |
-| documentation delta review | `PENDING FINAL READBACK` |
+| documentation delta review | `PASS / EXTERNAL_RECORDED` |
 | implementation/deployment | `NOT AUTHORIZED` |
 | freeze | `ACTIVE` |
 
@@ -39,7 +39,7 @@ Nie dodaje się fikcyjnego `Reviewed-by` ani `Approved-by`. Zamknięcie dotyczy 
 
 ```text
 TECHNICAL AUDIT A-V 3A-3C = CLOSED
-DOCUMENTATION DELTA REVIEW = PENDING FINAL READBACK
+FINAL DELTA REVIEW = PASS
 
 NEW P0 = NONE
 FINAL P1 = 10
@@ -208,7 +208,7 @@ Backlog jest rejestrem przyszłych prac. Freeze i brak autoryzacji zabraniają o
 
 ```text
 TECHNICAL AUDIT A-V 3A-3C = CLOSED
-DOCUMENTATION DELTA REVIEW = PENDING FINAL READBACK
+FINAL DELTA REVIEW = PASS
 NEW P0 = NONE
 FINAL P1 = 10
 CODE CHANGES = NONE
@@ -220,4 +220,4 @@ FREEZE = ACTIVE
 ```
 
 
-Po tym commicie wymagany jest wyłącznie krótki documentation delta readback. Dopiero jego pozytywny wynik może zmienić `DOCUMENTATION DELTA REVIEW` z `PENDING FINAL READBACK` na `PASS`.
+Końcowy documentation delta readback commitu `e654bc9d320b2fe65a5af1ef37b803f7ebde92e4` zakończył się `PASS`. Etap 3 jest formalnie zamknięty; wynik nie autoryzuje implementacji ani deploymentu.
