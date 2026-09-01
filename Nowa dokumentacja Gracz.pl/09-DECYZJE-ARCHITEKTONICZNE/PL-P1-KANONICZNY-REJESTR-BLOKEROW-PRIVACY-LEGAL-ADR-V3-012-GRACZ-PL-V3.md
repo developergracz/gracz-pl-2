@@ -1,8 +1,8 @@
 # Gracz.pl V3 — Kanoniczny rejestr blokujących P1 Privacy/Legal dla ADR-V3-012
 
 Data utworzenia: 01.09.2026  
-Wersja: `0.1`  
-Status: **OPEN / 9 CANONICAL P1 BLOCKERS / FINAL SIGNATURE BLOCKED / FREEZE-SAFE**  
+Wersja: `0.2`
+Status: **OPEN / 9 CANONICAL P1 TOTAL / 4 CLOSED / 5 OPEN / FINAL VERDICT HOLD / FREEZE-SAFE**
 Powiązany review: `REV-ADR-V3-012-20260901-PL-DECISION-01`  
 Powiązany ADR: `ADR-V3-012 — Data Retention, Privacy Deletion i Legal Hold`  
 Źródło konsolidacyjne: `PL-C01-C20-KONSOLIDACJA-KONTROLI-I-WEJSCIE-DO-FORMALNEJ-DECYZJI-ADR-V3-012.md`
@@ -31,9 +31,10 @@ Zasady:
 ```text
 OPEN P0 PRIVACY/LEGAL = 0 KNOWN
 CANONICAL P1 TOTAL = 9
-CANONICAL P1 OPEN = 9
-CANONICAL P1 CLOSED = 0
-FINAL ADR-V3-012 SIGNATURE = BLOCKED
+CANONICAL P1 OPEN = 5
+CANONICAL P1 CLOSED = 4
+FINAL ADR-V3-012 VERDICT = HOLD
+OWNER SIGNATURE = NOT SIGNED
 REVIEWED DESIGN GATE = HOLD
 IMPLEMENTATION = NOT AUTHORIZED
 DEPLOYMENT = NOT AUTHORIZED
@@ -61,7 +62,9 @@ FREEZE = ACTIVE
 
 **Owner:** Privacy/Legal Decision Owner; profesjonalny reviewer prawny tam, gdzie wymagana jest interpretacja prawa.  
 **Milestone:** przed finalnym podpisem ADR-V3-012.  
-**Status:** `OPEN / BLOCKING`.
+**Status:** `CLOSED / AUTHORITATIVE CLOSURE RECORDED`.
+
+**Authoritative locator:** `P1-PL-001-SYNCHRONIZACJA-DELTA-REVIEW-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md`.
 
 ---
 
@@ -81,7 +84,9 @@ FREEZE = ACTIVE
 
 **Owner:** Privacy/Legal Decision Owner.  
 **Milestone:** przed finalnym podpisem ADR-V3-012.  
-**Status:** `OPEN / BLOCKING`.
+**Status:** `CLOSED / AUTHORITATIVE CLOSURE RECORDED`.
+
+**Authoritative locator:** `P1-PL-002-ROZSTRZYGNIECIE-MATERIALNYCH-OKRESOW-RETENCJI-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md`.
 
 ---
 
@@ -126,7 +131,9 @@ FREEZE = ACTIVE
 
 **Owner:** Privacy/Legal Decision Owner + Newsletter owner.  
 **Milestone:** przed finalnym podpisem ADR-V3-012.  
-**Status:** `OPEN / BLOCKING`.
+**Status:** `CLOSED / AUTHORITATIVE CLOSURE RECORDED`.
+
+**Authoritative locator:** `P1-PL-004-FINALNY-MODEL-NEWSLETTER-CONSENT-WITHDRAWAL-SUPPRESSION-PROOF-I-ZAMKNIECIE-GRACZ-PL-V3.md`.
 
 ---
 
@@ -148,7 +155,9 @@ FREEZE = ACTIVE
 
 **Owner:** Privacy/Legal Decision Owner.  
 **Milestone:** przed finalnym podpisem ADR-V3-012 i bezwzględnie przed produkcyjnym przetwarzaniem wysokiego ryzyka.  
-**Status:** `OPEN / BLOCKING`.
+**Status:** `CLOSED / AUTHORITATIVE CLOSURE RECORDED`.
+
+**Authoritative locator:** `P1-PL-005-PELNA-DPIA-MALOLETNI-16-17-I-FORMALNE-ZAMKNIECIE-GRACZ-PL-V3.md`.
 
 ---
 
@@ -265,15 +274,15 @@ Kontrole `PASS WITH CONDITIONS` dostarczają warunków do `P1-PL-009` tylko wted
 Rekomendowana kolejność review, aby nie powielać pracy:
 
 ```text
-1. P1-PL-001 LAWFUL BASES
-2. P1-PL-002 MATERIAL RETENTION
-3. P1-PL-004 NEWSLETTER CONSENT / SUPPRESSION / PROOF
-4. P1-PL-006 PROVIDERS / PROCESSORS / DPA
-5. P1-PL-007 TRANSFERS
-6. P1-PL-005 FULL DPIA + MINORS
-7. P1-PL-003 PUBLICATION-READY PRIVACY NOTICE
-8. P1-PL-009 OPERATIONAL PRIVACY-CONTROL EVIDENCE
-9. P1-PL-008 BACKUP / RESTORE / DELETION REPLAY EVIDENCE
+1. P1-PL-001 LAWFUL BASES — CLOSED
+2. P1-PL-002 MATERIAL RETENTION — CLOSED
+3. P1-PL-004 NEWSLETTER CONSENT / SUPPRESSION / PROOF — CLOSED
+4. P1-PL-005 FULL DPIA + MINORS — CLOSED
+5. P1-PL-006 PROVIDERS / PROCESSORS / DPA — OPEN
+6. P1-PL-007 TRANSFERS — OPEN
+7. P1-PL-003 PUBLICATION-READY PRIVACY NOTICE — OPEN
+8. P1-PL-009 OPERATIONAL PRIVACY-CONTROL EVIDENCE — OPEN
+9. P1-PL-008 BACKUP / RESTORE / DELETION REPLAY EVIDENCE — OPEN
 ```
 
 Uzasadnienie: notice i pełna DPIA powinny bazować na już ustalonych podstawach, retencji, providerach i transferach. Dowody operacyjne powinny potwierdzać zatwierdzony model, a nie model jeszcze zmieniany.
@@ -294,9 +303,9 @@ Uzasadnienie: notice i pełna DPIA powinny bazować na już ustalonych podstawac
 Do tego czasu:
 
 ```text
-OPEN P1 = 9 CANONICAL / BLOCKING
+OPEN P1 = 5 CANONICAL / BLOCKING
 FINAL VERDICT = HOLD
-SECOND FORMAL DECISION DOCUMENT = DO NOT FINAL-SIGN
+DOCUMENT 2 = COMPLETED FOR FINAL INDEPENDENT REVIEW / OWNER SIGNATURE NOT SIGNED
 REVIEWED DESIGN GATE = HOLD
 IMPLEMENTATION = NOT AUTHORIZED
 DEPLOYMENT = NOT AUTHORIZED

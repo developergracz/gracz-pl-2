@@ -129,8 +129,9 @@ Ten rekord zachowuje status ADR‑004, ale nie przedstawia commitu autora jako d
 | Findings P0/P1/P2 | No P0 redesign issue; formal Privacy/Legal validation remains a governance condition; P1/P2 not numerically classified |
 | Corrections commit SHA | `N/A` — no architecture redesign requested |
 | Delta review status | `N/A` |
-| Final decision authority | Named Privacy/Legal owner `PENDING / UNASSIGNED`; architecture reviewer cannot substitute this authority |
-| Formal Privacy/Legal review | `NOT EXECUTED` |
+| Final decision authority | Czesław Socha — Project Owner / Controller Representative / Privacy-Legal Decision Owner; architecture reviewer cannot substitute this authority |
+| Formal Privacy/Legal decision | `HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW` |
+| Owner signature / durable approval locator | `NOT SIGNED / PENDING` |
 | Final status | `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 | Implementation status | `NOT AUTHORIZED / NOT IMPLEMENTED` |
 | Evidence locator | ADR criteria and result sections, Privacy/Legal review pack and this register; originating architecture-review exchange remains external to Git |
@@ -206,8 +207,10 @@ Ten rekord potwierdza zapisany external architecture review i rzeczywisty extern
 ```text
 ADR-V3-004 DESIGN STATUS = ACCEPTED / FINAL
 ADR-V3-012 DESIGN STATUS = ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
-PRIVACY/LEGAL OWNER = UNASSIGNED
-FORMAL PRIVACY-LEGAL REVIEW = NOT EXECUTED
+PRIVACY/LEGAL DECISION OWNER = CZESLAW SOCHA / NAMED
+FORMAL PRIVACY-LEGAL DECISION = HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW
+OWNER SIGNATURE = NOT SIGNED
+CANONICAL PRIVACY-LEGAL P1 = 9 TOTAL / 4 CLOSED / 5 OPEN
 ADR-V3-013 DESIGN STATUS = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 P1-GOV-01 = CLOSED / VALID EXTERNAL DELTA REVIEW ARTIFACT RECORDED
 ARCHITECTURAL DESIGN TRUST = RECORDED / FINDINGS CLOSED / EXTERNAL PROVENANCE PARTIAL

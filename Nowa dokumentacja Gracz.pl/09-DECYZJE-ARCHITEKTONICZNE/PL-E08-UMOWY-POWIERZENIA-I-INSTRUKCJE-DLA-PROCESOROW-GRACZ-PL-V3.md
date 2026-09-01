@@ -99,11 +99,11 @@ Procesor musi zapewnić techniczną i organizacyjną pomoc umożliwiającą loka
 |---|---|---|---|---|---|---|---|
 | PL-E08-P01 | Render | `PROCESSOR CANDIDATE — TO VERIFY` | `NOT VERIFIED` | `NOT VERIFIED` | `NOT VERIFIED` | `NOT VERIFIED` | `HOLD` |
 | PL-E08-P02 | Cloudflare | `ROLE DEPENDS ON SERVICE — TO VERIFY` | `NOT VERIFIED` | `NOT VERIFIED` | `NOT VERIFIED` | `NOT VERIFIED` | `HOLD` |
-| PL-E08-P03 | provider poczty/newslettera | `NOT SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `NOT APPROVED` |
+| PL-E08-P03 | Resend Email API | `PROCESSOR MODEL PUBLICLY VERIFIED` | `PUBLIC DPA VERIFIED` | `PUBLIC DPA BASELINE VERIFIED` | `PUBLIC SUBPROCESSORS VERIFIED` | `ACCOUNT-EFFECTIVE DPA / ACTIVE DOMAIN / PLAN PENDING` | `INTEGRATED IN CODE / ACCOUNT APPROVAL PENDING` |
 | PL-E08-P04 | object storage / attachment storage | `NOT SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `N/A UNTIL SELECTED` | `NOT APPROVED` |
 | PL-E08-P05 | observability/logging | `NOT SELECTED / MAY BE SELF-HOSTED` | `PENDING` | `PENDING` | `PENDING` | `PENDING` | `NOT APPROVED` |
 | PL-E08-P06 | MFA/SMS provider, jeśli użyty | `NOT CURRENTLY APPROVED` | `PENDING` | `PENDING` | `PENDING` | `PENDING` | `NOT APPROVED` |
-| PL-E08-P07 | anti-abuse/CAPTCHA, jeśli użyty | `PENDING` | `PENDING` | `PENDING` | `PENDING` | `PENDING` | `NOT APPROVED` |
+| PL-E08-P07 | Cloudflare Turnstile | `SERVICE-SPECIFIC PROCESSOR MODEL` | `PUBLIC DPA VERIFIED` | `PUBLIC DPA BASELINE VERIFIED` | `PUBLIC REGISTER VERIFIED / APPLICABILITY OPEN` | `ACCOUNT/WIDGET/EFFECTIVE DPA EVIDENCE PENDING` | `INTEGRATED IN CODE / ACCOUNT APPROVAL PENDING` |
 
 ---
 
@@ -158,7 +158,7 @@ Brak takiego dowodu dla aktywnego providera nie może zostać uznany za `PASS` t
 |---|---|---|---|---|
 | PL-E08-O01 | Zweryfikować rzeczywistą rolę Render oraz DPA/contract terms | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
 | PL-E08-O02 | Zweryfikować dokładny zakres usług Cloudflare i właściwe warunki DPA/transfer | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
-| PL-E08-O03 | Dla przyszłego providera poczty/newslettera wykonać provider approval gate przed użyciem produkcyjnym | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
+| PL-E08-O03 | Dla Resend zebrać account-specific/effective DPA evidence i wykonać provider approval gate przed użyciem produkcyjnym | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
 | PL-E08-O04 | Dla przyszłego object storage wykonać provider approval gate z naciskiem na attachment deletion i backup | P1 Privacy/Legal | Privacy/Legal + Messaging Owner | `OPEN` |
 | PL-E08-O05 | Utworzyć trwały provider-contract register z locatorami umów/DPA | P2 Governance | Privacy/Legal Decision Owner | `OPEN` |
 

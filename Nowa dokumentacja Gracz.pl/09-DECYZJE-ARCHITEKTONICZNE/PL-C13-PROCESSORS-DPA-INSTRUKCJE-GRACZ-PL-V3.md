@@ -36,16 +36,16 @@ Brak materialnego dowodu dla aktywnego providera oznacza `HOLD`.
 
 ### PL-E07 — rejestr odbiorców/procesorów
 
-PL-E07 identyfikuje na poziomie architektury m.in. Render i Cloudflare oraz klasy przyszłych dostawców: e-mail/newsletter, object storage, observability, MFA/SMS i anti-abuse/CAPTCHA.
+PL-E07 identyfikuje na poziomie architektury m.in. Render, Cloudflare Turnstile i Resend oraz klasy nadal przyszłych dostawców: object storage, observability i MFA/SMS.
 
 Stan nie jest jednak finalny:
 
 - Render: rola/DPA/regiony/subprocesorzy/transfery — `TO VERIFY`;
-- Cloudflare: dokładna rola zależna od użytej usługi, DPA/subprocesorzy/transfery — `TO VERIFY`;
-- e-mail/newsletter — provider nie wybrany;
+- Cloudflare Turnstile: `INTEGRATED IN CODE`; dokładna rola per usługa, account/widget approval, DPA/subprocesorzy/transfery — `ACCOUNT EVIDENCE PENDING`;
+- e-mail/newsletter — Resend `INTEGRATED IN CODE`; account approval / executed DPA / aktywna domena i plan — `ACCOUNT EVIDENCE PENDING`;
 - object storage — provider nie wybrany;
 - observability — provider nie wybrany albo może być self-hosted;
-- MFA/SMS i anti-abuse — niezatwierdzone.
+- MFA/SMS — niezatwierdzone; inne przyszłe anti-abuse wymagają osobnego gate.
 
 ### PL-E08 — kontraktowa warstwa procesorów
 
@@ -129,7 +129,7 @@ Nie należy umieszczać w takim rejestrze sekretów ani poufnej treści kontrakt
 |---|---|---|---|---|
 | PL-C13-O01 | zweryfikować legal entity, rolę i DPA/contract Render | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
 | PL-C13-O02 | zweryfikować dokładny scope usług, rolę i DPA/transfer Cloudflare | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
-| PL-C13-O03 | zatwierdzić provider poczty/newslettera przed produkcyjnym użyciem | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
+| PL-C13-O03 | zebrać account-specific evidence Resend i zatwierdzić provider przed produkcyjnym użyciem | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
 | PL-C13-O04 | zatwierdzić object storage załączników przed produkcyjnym użyciem | P1 Privacy/Legal | Privacy/Legal + Messaging Owner | `OPEN` |
 | PL-C13-O05 | zatwierdzić docelowy observability model/provider i zakres PII | P1 Privacy/Security | Privacy/Legal + Security/Ops | `OPEN` |
 | PL-C13-O06 | dla każdego aktywnego providera potwierdzić subprocessors, regiony, transfery, deletion/return, backups i incident terms | P1 Privacy/Legal | Privacy/Legal | `OPEN` |
@@ -148,7 +148,9 @@ PROCESSOR INSTRUCTION BASELINE = DOCUMENTED
 ACTUAL DPA / CONTRACT EVIDENCE = NOT VERIFIED
 RENDER = HOLD PENDING ROLE / DPA / SUBPROCESSORS / REGIONS / TRANSFERS
 CLOUDFLARE = HOLD PENDING SERVICE-SPECIFIC ROLE / DPA / SUBPROCESSORS / TRANSFERS
-FUTURE EMAIL / STORAGE / OBSERVABILITY PROVIDERS = NOT APPROVED
+RESEND EMAIL API = INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING
+CLOUDFLARE TURNSTILE = INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING
+FUTURE STORAGE / OBSERVABILITY PROVIDERS = NOT APPROVED
 UNVERIFIED PROCESSOR MAY ENTER PRODUCTION = NO
 DURABLE CONTRACT LOCATORS = INCOMPLETE
 IMPLEMENTATION / DEPLOYMENT AUTHORIZATION = NO CHANGE

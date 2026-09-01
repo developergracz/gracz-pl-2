@@ -7,7 +7,7 @@ Status: **SUBSTANTIVE NOTICE CONTENT SYNCHRONIZED / PUBLICATION CANDIDATE PREPAR
 Powiązany review: `REV-ADR-V3-012-20260901-PL-DECISION-01`  
 Powiązane evidence/decyzje: `PL-E09`, `P1-PL-001`, `P1-PL-002`, `ROPA-GRACZ-PL-V3.md`, `PL-C14`, `PL-E11`
 
-> Dokument przygotowuje kanoniczną treść privacy notice po zamknięciu lawful-basis i material retention. Nie jest jeszcze wersją do publikacji, ponieważ część informacji zależy od otwartych blockerów provider/DPA, transferów, pełnej DPIA oraz od uzupełnienia danych kontaktowych administratora i faktycznego inventory cookies/local storage. Nie autoryzuje implementacji ani deploymentu.
+> Dokument przygotowuje kanoniczną treść privacy notice po zamknięciu lawful-basis, material retention, newsletter consent oraz pełnej DPIA/modelu 16–17. Nie jest jeszcze wersją do publikacji, ponieważ część informacji zależy od otwartych blockerów provider/DPA, transferów, uzupełnienia danych kontaktowych administratora oraz finalnego runtime/provider-account inventory cookies/local storage. Nie autoryzuje implementacji ani deploymentu.
 
 ---
 
@@ -20,8 +20,7 @@ Nie nadpisuje otwartych informacji wymagających rzeczywistego evidence, w szcze
 - danych kontaktowych administratora;
 - finalnego provider/processors register;
 - DPA i transferów;
-- pełnej DPIA;
-- finalnego cookies/local-storage inventory.
+- finalnego runtime/provider-account cookies/local-storage inventory.
 
 ---
 
@@ -173,7 +172,7 @@ USERS 16–17 = ENHANCED SAFEGUARDS REQUIRED
 MINOR MARKETING PROFILING = NOT APPROVED
 ```
 
-Treść ta może wejść do finalnego notice dopiero po synchronizacji z pełną DPIA `P1-PL-005`. Jeżeli pełna DPIA zmieni safeguards, notice musi zostać odpowiednio zaktualizowane.
+Treść została sprawdzona względem pełnej DPIA i modelu 16–17 zamkniętych w `P1-PL-005`. Jeżeli późniejszy residual-risk review providerów lub testy operacyjne zmienią safeguards, notice musi zostać odpowiednio zaktualizowane.
 
 ---
 
@@ -200,7 +199,7 @@ Privacy notice może już opisywać kategorie odbiorców:
 
 - dostawcy hostingu/runtime/bazy danych;
 - dostawcy edge/DNS/TLS/security;
-- przyszły provider poczty/newslettera, jeśli zostanie zatwierdzony;
+- Resend Email API — zintegrowany w kodzie; account approval / account-specific DPA i transfer evidence pozostają otwarte;
 - przyszły object storage dla załączników, jeśli zostanie zatwierdzony;
 - przyszły observability/logging provider, jeśli zostanie zatwierdzony;
 - odbiorcy wiadomości prywatnych;
@@ -210,7 +209,7 @@ Privacy notice może już opisywać kategorie odbiorców:
 
 Jednak finalny provider list / role / DPA pozostają `HOLD` w `P1-PL-006`.
 
-Obecnie Render i Cloudflare nie są finalnie zatwierdzone jako complete privacy/legal provider record; ich role, DPA, subprocessors, regiony i related evidence wymagają weryfikacji.
+Obecnie Render, Cloudflare Turnstile i Resend nie są finalnie zatwierdzone jako complete privacy/legal provider record. Turnstile i Resend są potwierdzonymi integracjami w kodzie, ale account approval, account-effective DPA, faktyczny product scope, subprocesorzy/transfer applicability i brakujące account evidence wymagają weryfikacji.
 
 ---
 
@@ -240,7 +239,7 @@ Finalna sekcja transferowa privacy notice zostanie uzupełniona dopiero po zamkn
 
 `PL-E09` prawidłowo zabrania publikowania deklaracji „nie używamy cookies” bez faktycznego sprawdzenia stanu technicznego.
 
-Do finalnego release wymagany jest rzeczywisty inventory co najmniej dla:
+Repozytorium potwierdza częściowy inwentarz w `PL-E09`: niezbędny cookie `__Host-gracz_session`, first-party `sessionStorage`/`localStorage` dla sesji/UI/ustawień/formularzy oraz integrację Turnstile. Do finalnego release należy domknąć co najmniej:
 
 - cookies niezbędnych;
 - sesji/auth cookies;
@@ -252,7 +251,7 @@ Do finalnego release wymagany jest rzeczywisty inventory co najmniej dla:
 Na obecnym etapie:
 
 ```text
-COOKIES / LOCAL STORAGE INVENTORY = NOT YET VERIFIED IN THIS CONTROL
+COOKIES / LOCAL STORAGE INVENTORY = PARTIAL / REPO-SCOPE CONFIRMED / RUNTIME + PROVIDER-ACCOUNT SCOPE OPEN
 PUBLICATION CLAIM "NO COOKIES" = NOT ALLOWED
 ```
 
@@ -295,7 +294,7 @@ Finalna publikacja nie może twierdzić, że wszystkie środki zostały operacyj
 | materialne sporne okresy retencji | `RESOLVED BY P1-PL-002` |
 | kategorie danych | `DEFINED` |
 | prawa osób | `DEFINED` |
-| baseline małoletnich 16+ | `DEFINED, DPIA SYNC OPEN` |
+| baseline małoletnich 16+ | `DEFINED / P1-PL-005 CLOSED / RESIDUAL PROVIDER-OPERATIONAL RECHECK REMAINS` |
 | security description | `DEFINED WITHOUT FALSE OPERATIONAL CLAIMS` |
 | newsletter basis + retention layer | `DEFINED, WORKFLOW/PROVIDER OPEN ELSEWHERE` |
 
@@ -307,7 +306,7 @@ Finalna publikacja nie może twierdzić, że wszystkie środki zostały operacyj
 | P1-PL-003-O02 | e-mail privacy / rights contact | owner input | `OPEN / BLOCKING` |
 | P1-PL-003-O03 | finalni providerzy/odbiorcy/role/DPA | `P1-PL-006` | `OPEN / BLOCKING` |
 | P1-PL-003-O04 | finalny transfer model poza EOG | `P1-PL-007` | `OPEN / BLOCKING` |
-| P1-PL-003-O05 | pełna DPIA + minors/provider/transfer residual-risk sync | `P1-PL-005` | `OPEN / BLOCKING` |
+| P1-PL-003-O05 | pełna DPIA + model małoletnich | `P1-PL-005` | `CLOSED`; residual provider/transfer sync pozostaje w `P1-PL-006/007` |
 | P1-PL-003-O06 | cookies/local-storage inventory | technical/privacy evidence | `OPEN / BLOCKING` |
 
 ---
@@ -324,7 +323,7 @@ P1-PL-003 = PARTIALLY RESOLVED / OPEN
 
 BLOCKERS:
 - CONTROLLER CONTACT DETAILS
-- P1-PL-005 FULL DPIA SYNC
+- P1-PL-005 FULL DPIA SYNC — CLOSED
 - P1-PL-006 PROVIDERS / DPA
 - P1-PL-007 TRANSFERS
 - COOKIES / LOCAL STORAGE INVENTORY
@@ -342,7 +341,7 @@ PRODUCTION V3 = NO-GO
 FREEZE = ACTIVE
 ```
 
-P1-PL-003 nie może zostać uczciwie oznaczone jako `CLOSED`, dopóki finalna polityka nie zawiera rzeczywistych danych kontaktowych, finalnego provider/transfer modelu, pełnej DPIA synchronizacji i sprawdzonego cookies/local-storage inventory.
+P1-PL-003 nie może zostać uczciwie oznaczone jako `CLOSED`, dopóki finalna polityka nie zawiera rzeczywistych danych kontaktowych, finalnego provider/transfer modelu oraz domkniętego runtime/provider-account cookies/local-storage inventory. Pełna DPIA i model 16–17 są zamknięte w `P1-PL-005` i nie są ponownie otwierane.
 
 ---
 

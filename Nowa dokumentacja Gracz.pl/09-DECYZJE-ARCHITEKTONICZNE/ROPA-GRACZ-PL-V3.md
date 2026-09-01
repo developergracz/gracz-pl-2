@@ -101,7 +101,7 @@ ROPA obejmuje potencjalnie następujące kategorie osób:
 | Kategorie danych | hashe haseł, identyfikatory sesji, token hashes, MFA secrets, security events, IP/UA tam gdzie niezbędne, timestamps |
 | Klasy | `SECRET`, `SENSITIVE`, `EVIDENCE`, `PERSONAL` |
 | Podstawa | świadczenie i zabezpieczenie usługi: `6(1)(b) PROPOSED`; bezpieczeństwo/nadużycia: `6(1)(f) PROPOSED / LIA REQUIRED`; obowiązki prawne wyłącznie jeśli wskazane — `PENDING` |
-| Odbiorcy / procesorzy | Render/PostgreSQL; Cloudflare w zakresie edge/security telemetry — `TO VERIFY`; ewentualny provider MFA/e-mail — `PENDING PROVIDER SELECTION` |
+| Odbiorcy / procesorzy | Render/PostgreSQL; Cloudflare Turnstile — `INTEGRATED IN CODE / ACCOUNT SCOPE OPEN`; Resend Email API — `INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING`; ewentualny provider MFA — `PENDING PROVIDER SELECTION` |
 | Transfer poza EOG | `TO VERIFY` |
 | Retencja | MFA secrets i aktywne credentiale po zweryfikowanym delete: natychmiast, cel operacyjny 24 h; sesje: 30 dni po expiry/revoke/delete; reset/registration/public token metadata: 7 dni; security events: 12 miesięcy |
 | Akcja końcowa | revoke + purge / cryptographic erase; security events — purge lub anonimowa agregacja |
@@ -152,8 +152,8 @@ ROPA obejmuje potencjalnie następujące kategorie osób:
 | Kategorie danych | e-mail, status subskrypcji, consent event/proof, token metadata, provider delivery telemetry, campaign/lifecycle timestamps |
 | Klasy | `PERSONAL`, `EVIDENCE`, `SECRET` dla tokenów |
 | Podstawa | `6(1)(a) PROPOSED` dla zgody marketingowej/newslettera; proof/defence/anti-abuse może wymagać odrębnej podstawy — `PENDING LEGAL REVIEW` |
-| Odbiorcy / procesorzy | provider poczty/newslettera — `PENDING PROVIDER IDENTIFICATION`; Render/PostgreSQL |
-| Transfer poza EOG | `PENDING PROVIDER / TO VERIFY` |
+| Odbiorcy / procesorzy | Resend Email API — `INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING`; Render/PostgreSQL |
+| Transfer poza EOG | Resend: `CONDITIONAL`; publiczny model DPF + EU SCCs potwierdzony, account activity/effective DPA i faktyczny scope nadal `OPEN` |
 | Retencja | pending confirmation: 30 dni; public token metadata: 7 dni; unsubscribed current record: 24 miesiące; consent proof: projektowo 6 lat; lifecycle analytics: 24 miesiące; provider telemetry: 13 miesięcy |
 | Akcja końcowa | purge lub anonimizacja/minimalizacja; unsubscribe ma natychmiast zatrzymać przyszłe wysyłki marketingowe |
 | Środki bezpieczeństwa | double opt-in / lifecycle evidence zgodnie z zatwierdzonym modelem, tokeny niejawne, minimalizacja telemetry, audyt zdarzeń zgody |
@@ -237,7 +237,7 @@ ROPA obejmuje potencjalnie następujące kategorie osób:
 | Render | hosting/runtime/PostgreSQL/backup zależnie od faktycznej konfiguracji | dane aplikacyjne i techniczne hostowane w usłudze | `TO VERIFY: contract, DPA, region, subprocessors, deletion/backup terms, transfers` |
 | Cloudflare | DNS/TLS/edge/security | adresy IP, nagłówki i ruch edge w zakresie wynikającym z konfiguracji | `TO VERIFY: role, DPA, logs, region/transfers, retention` |
 | GitHub | repozytorium kodu i dokumentacji | co do zasady nie powinien otrzymywać produkcyjnych danych użytkowników; może przechowywać dane developerów/contributors i artefakty projektowe | `BOUNDARY: NO PRODUCTION PII/SECRETS IN REPO; provider terms TO VERIFY if personal data used` |
-| Provider poczty/newslettera | delivery e-mail/newsletter | e-mail, delivery metadata, campaign identifiers | `PENDING PROVIDER SELECTION / DPA / TRANSFER REVIEW` |
+| Resend Email API | delivery e-mail/newsletter | e-mail, delivery metadata, campaign identifiers | `INTEGRATED IN CODE / PUBLIC DPA VERIFIED / ACCOUNT APPROVAL + EFFECTIVE DPA + TRANSFER SCOPE PENDING` |
 | Object storage załączników | załączniki prywatnych wiadomości i metadata | pliki użytkowników i metadane | `PENDING PROVIDER SELECTION / DPA / REGION / RETENTION` |
 | Observability provider | logi/metryki/traces/alerty | techniczne identyfikatory, potencjalnie personal data w ograniczonym zakresie | `PENDING PROVIDER SELECTION / DPA / REDACTION / RETENTION / TRANSFER REVIEW` |
 
@@ -387,7 +387,7 @@ Każda wersja musi mieć: datę, autora/ownera, powód zmiany, powiązanie z dec
 | ROPA-A01 | P1 | uzupełnić publiczne dane kontaktowe administratora do privacy notice | Privacy/Legal Owner |
 | ROPA-A02 | P1 | zweryfikować Render: DPA, region, subprocessors, retention, backup/delete, transfers | Privacy/Legal Owner |
 | ROPA-A03 | P1 | zweryfikować Cloudflare: rola, DPA, logging, subprocessors i transfery | Privacy/Legal Owner |
-| ROPA-A04 | P1 | wskazać i zweryfikować providera poczty/newslettera | Privacy/Legal Owner |
+| ROPA-A04 | P1 | zebrać account-specific evidence i formalnie zatwierdzić Resend jako providera poczty/newslettera | Privacy/Legal Owner |
 | ROPA-A05 | P1 | wskazać i zweryfikować object storage dla załączników, jeśli będzie używany | Architecture + Privacy/Legal |
 | ROPA-A06 | P1 | wskazać i zweryfikować observability provider, jeśli będzie używany | Architecture + Privacy/Legal |
 | ROPA-A07 | P1 | wykonać DPIA screening | Privacy/Legal Owner |

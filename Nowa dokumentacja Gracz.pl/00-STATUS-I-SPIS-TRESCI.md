@@ -22,7 +22,7 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 129 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 188 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
@@ -30,8 +30,8 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 129 plików:
 | `01-ARCHITEKTURA` | 4 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| `09-DECYZJE-ARCHITEKTONICZNE` | 6 |
-| **Łącznie** | **129** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 65 |
+| **Łącznie** | **188** |
 
 ## 3. Status etapów
 
@@ -91,7 +91,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 
 Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`, a pakiet `REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md` jest gotowy do formalnego review. Właściciel Privacy/Legal pozostaje `UNASSIGNED`, formalny review ma status `NOT EXECUTED`, a pakiet nie stanowi zatwierdzenia. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal jest imiennie wskazany jako **Czesław Socha** (`Project Owner / Controller Representative / Privacy-Legal Decision Owner`). Dokument nr 2 zapisuje aktualny werdykt `HOLD`, pięć otwartych P1 oraz `OWNER SIGNATURE = NOT SIGNED`; finalny niezależny review i durable approval locator pozostają `PENDING`. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` z powodu pięciu otwartych P1 Privacy/Legal i braku finalnego podpisu/approval artifact.
 
 ### PostgreSQL
 
@@ -123,8 +123,10 @@ IMPLEMENTATION CONFIDENCE = NOT ESTABLISHED
 OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
-PRIVACY/LEGAL OWNER = UNASSIGNED
-FORMAL PRIVACY-LEGAL REVIEW = NOT EXECUTED
+PRIVACY/LEGAL DECISION OWNER = CZESLAW SOCHA / NAMED
+FORMAL PRIVACY-LEGAL DECISION = HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW
+OWNER SIGNATURE = NOT SIGNED
+CANONICAL PRIVACY-LEGAL P1 = 9 TOTAL / 4 CLOSED / 5 OPEN
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 REVIEWED DESIGN GATE = HOLD
 ```
@@ -140,10 +142,10 @@ Pliki:
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. przypisać imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
-2. uzupełnić kontrole i dowody w pakiecie review `ADR-V3-012`,
-3. zapisać formalny werdykt oraz trwały approval artifact,
-4. zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementation planning pozostaje osobną bramką.
+1. uzupełnić brakujące owner/account-specific evidence dla `P1-PL-003`, `P1-PL-006` i `P1-PL-007`, bez wymyślania brakujących danych;
+2. wykonać późniejsze testy operacyjne/stagingowe wymagane przez `P1-PL-008` i `P1-PL-009`;
+3. wykonać finalny niezależny review Dokumentu nr 2, a podpis Decision Ownera i durable approval locator zapisać w osobnym, jawnym kroku;
+4. po zamknięciu blockerów zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementation planning pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 

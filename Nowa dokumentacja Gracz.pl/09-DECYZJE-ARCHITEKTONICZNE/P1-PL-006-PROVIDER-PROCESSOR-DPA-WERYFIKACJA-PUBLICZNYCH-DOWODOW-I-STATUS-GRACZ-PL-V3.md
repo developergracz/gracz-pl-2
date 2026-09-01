@@ -269,15 +269,15 @@ Customer DPA Cloudflare przewiduje m.in.:
 
 ---
 
-# 4. Providerzy niewybrani
+# 4. Providerzy wybrani technicznie i nadal niewybrani
 
 Dla następujących kategorii nie istnieje obecnie finalny provider approval:
 
-- e-mail/newsletter;
+- e-mail/newsletter — **Resend jest wybrany i zintegrowany w kodzie; account approval / account-specific evidence pozostaje pending**;
 - object storage / attachments;
 - observability/logging;
 - MFA/SMS;
-- anti-abuse/CAPTCHA, jeśli będzie używany odrębny provider.
+- anti-abuse/CAPTCHA — **Cloudflare Turnstile jest wybrany i zintegrowany w kodzie; account/widget approval / account-specific evidence pozostaje pending**.
 
 Decyzja:
 
@@ -296,11 +296,11 @@ Brak wyboru providera nie oznacza automatycznie osobnego P1, jeśli usługa nie 
 |---|---|---|---|---|---|---|
 | Render | Render Services, Inc. | VERIFIED | VERIFIED | VERIFIED AT PUBLIC DOC LEVEL | `OPEN` | `APPROVED WITH CONDITIONS / P1 OPEN` |
 | Cloudflare | Cloudflare, Inc. | VERIFIED | VERIFIED | VERIFIED AT PUBLIC DOC LEVEL | `OPEN` | `APPROVED WITH CONDITIONS / P1 OPEN` |
-| e-mail/newsletter | not selected | N/A | N/A | N/A | N/A | `NOT APPROVED / NO PRODUCTION DATA` |
+| e-mail/newsletter — Resend | Plus Five Five, Inc. (Resend) | VERIFIED IN CODE | VERIFIED PUBLICLY | VERIFIED AT PUBLIC DOC LEVEL | `OPEN` | `INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING` |
 | object storage | not selected | N/A | N/A | N/A | N/A | `NOT APPROVED / NO PRODUCTION DATA` |
 | observability | not selected / may be self-hosted | N/A | N/A | N/A | N/A | `NOT APPROVED / NO PRODUCTION DATA` |
 | MFA/SMS | not approved | N/A | N/A | N/A | N/A | `NOT APPROVED / NO PRODUCTION DATA` |
-| anti-abuse/CAPTCHA | not selected | N/A | N/A | N/A | N/A | `NOT APPROVED / NO PRODUCTION DATA` |
+| anti-abuse/CAPTCHA — Cloudflare Turnstile | Cloudflare, Inc. | VERIFIED IN CODE | VERIFIED PUBLICLY | VERIFIED AT PUBLIC DOC LEVEL | `OPEN` | `INTEGRATED IN CODE / ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING` |
 
 ---
 

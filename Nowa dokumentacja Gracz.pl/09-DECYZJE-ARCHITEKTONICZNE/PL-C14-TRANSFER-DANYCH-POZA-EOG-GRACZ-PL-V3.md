@@ -21,7 +21,7 @@ REASON:
 - provider-specific transfer status is not yet verified;
 - Render regions / subprocessors / remote access / transfer mechanism = TO VERIFY;
 - Cloudflare service scope / subprocessors / remote access / transfer mechanism = TO VERIFY;
-- future e-mail/newsletter, object-storage, observability, MFA/SMS and anti-abuse providers are not yet approved;
+- Resend i Cloudflare Turnstile są zintegrowane w kodzie, lecz account-specific transfer/approval evidence pozostaje otwarte; przyszłe object-storage, observability i MFA/SMS nie są zatwierdzone;
 - actual DPA / processor contract evidence is not fully verified;
 - privacy notice cannot yet describe a final transfer model;
 - full DPIA remains required before production.
@@ -83,11 +83,11 @@ Brak materialnego elementu oznacza `HOLD` dla danego providera albo danej konfig
 |---|---|---|---|---|
 | Render | `TO VERIFY` | `TO VERIFY` | `NOT VERIFIED` | `HOLD` |
 | Cloudflare | `TO VERIFY PER SERVICE` | `TO VERIFY` | `NOT VERIFIED` | `HOLD` |
-| provider e-mail/newsletter | `NOT SELECTED` | `PENDING` | `PENDING` | `NOT APPROVED` |
+| Resend Email API | `USA / GLOBAL SUBPROCESSORS` | `DPF + EU SCCs PUBLICLY VERIFIED` | `ACCOUNT ACTIVITY / EFFECTIVE DPA PENDING` | `INTEGRATED IN CODE / TRANSFER CONDITIONAL / HOLD` |
 | object storage | `NOT SELECTED` | `PENDING` | `PENDING` | `NOT APPROVED` |
 | observability/logging | `NOT SELECTED / MAY BE SELF-HOSTED` | `PENDING` | `PENDING` | `NOT APPROVED` |
 | MFA/SMS provider | `NOT CURRENTLY APPROVED` | `PENDING` | `PENDING` | `NOT APPROVED` |
-| anti-abuse/CAPTCHA | `PENDING` | `PENDING` | `PENDING` | `NOT APPROVED` |
+| Cloudflare Turnstile | `GLOBAL / SERVICE-DEPENDENT` | `DPF + EU SCCs PUBLICLY VERIFIED` | `ACCOUNT/WIDGET SCOPE PENDING` | `INTEGRATED IN CODE / TRANSFER CONDITIONAL / HOLD` |
 
 Ta tabela jest governance inventory. Nie zatwierdza technicznie ani prawnie żadnego providera.
 
@@ -182,7 +182,7 @@ DPIA screening już ustalił, że pełna DPIA jest wymagana przed produkcją; PL
 |---|---|---|---|---|
 | PL-C14-O01 | zweryfikować Render: legal entity, regiony, subprocessors, remote access, DPA i transfer mechanism | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
 | PL-C14-O02 | zweryfikować Cloudflare per faktycznie używana usługa: rola, subprocessors, remote access, DPA i transfer mechanism | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
-| PL-C14-O03 | każdy przyszły e-mail/newsletter/storage/observability/MFA/anti-abuse provider przechodzi provider approval gate przed produkcją | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
+| PL-C14-O03 | Resend i Turnstile wymagają account-specific approval; każdy przyszły storage/observability/MFA/anti-abuse provider przechodzi provider approval gate przed produkcją | P1 Privacy/Legal | Privacy/Legal + Technical Owner | `OPEN` |
 | PL-C14-O04 | utworzyć durable provider/transfer evidence register z locatorami | P2 Governance | Privacy/Legal Decision Owner | `OPEN` |
 | PL-C14-O05 | zsynchronizować finalne transfery z ROPA i privacy notice | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |
 | PL-C14-O06 | uwzględnić ocenę providerów/transferów i ryzyka rezydualnego w pełnej DPIA | P1 Privacy/Legal | Privacy/Legal Decision Owner | `OPEN` |

@@ -153,11 +153,11 @@ Jeżeli transfer opiera się na SCC, należy wykonać i zachować odpowiednią o
 |---|---|---|---|---|
 | Render | DPF + EU SCCs wg DPA | includes USA / multi-provider | `OPEN` | `PASS AT PUBLIC-EVIDENCE LAYER / OPEN ACCOUNT LAYER` |
 | Cloudflare | DPF + EU SCCs wg DPA | global / service-dependent | `OPEN` | `PASS AT PUBLIC-EVIDENCE LAYER / OPEN ACCOUNT LAYER` |
-| e-mail/newsletter | provider not selected | unknown | n/a | `NOT APPROVED` |
+| e-mail/newsletter — Resend | DPF + EU SCCs wg publicznego DPA | USA / global subprocessors | `OPEN — account activity/effective DPA` | `INTEGRATED IN CODE / TRANSFER CONDITIONAL / ACCOUNT EVIDENCE PENDING` |
 | object storage | provider not selected | unknown | n/a | `NOT APPROVED` |
 | observability | provider/model not selected | unknown | n/a | `NOT APPROVED` |
 | MFA/SMS | not approved | unknown | n/a | `NOT APPROVED` |
-| anti-abuse/CAPTCHA | not approved | unknown | n/a | `NOT APPROVED` |
+| anti-abuse/CAPTCHA — Cloudflare Turnstile | DPF + EU SCCs wg publicznego DPA | global / service-dependent | `OPEN — widget/account scope` | `INTEGRATED IN CODE / TRANSFER CONDITIONAL / ACCOUNT EVIDENCE PENDING` |
 
 Providerzy przyszli nie blokują oceny konkretnego transferu, dopóki nie wchodzą do zakresu produkcyjnego V3. Każdy z nich wymaga osobnego provider/transfer gate przed użyciem.
 

@@ -209,7 +209,9 @@ FINAL PRIVACY NOTICE / ROPA SYNC = NOT PERFORMED
 
 Line references odnoszą się do source baseline wskazanego w nagłówku. W tym commicie nie są zmieniane.
 
-## 8.1. Resend nadal opisany jako provider niewybrany lub przyszły
+## 8.1. Resend — miejsca zsynchronizowane w DOC-04/DOC-05
+
+Poniższa tabela zachowuje historyczny wykaz rozbieżności wykrytych przed finalną synchronizacją. Wskazane istniejące dokumenty zostały zaktualizowane tak, aby rozdzielały `INTEGRATED IN CODE` od `ACCOUNT APPROVAL OR ACCOUNT-SPECIFIC EVIDENCE PENDING`. Tabela nie jest już listą prac do wykonania.
 
 | Plik | Miejsce | Nieaktualny element | Wymagana późniejsza korekta |
 |---|---|---|---|
@@ -225,9 +227,9 @@ Line references odnoszą się do source baseline wskazanego w nagłówku. W tym 
 
 `P1-PL-004...`, sekcja 12, stwierdza jedynie, że ten konkretny dokument nie wybiera dostawcy; jest to historyczna granica zakresu, a nie dowód aktualnego braku wyboru. Nie wymaga korekty sensu, tylko ewentualnego odnośnika do późniejszego wyboru Resend.
 
-## 8.2. Cloudflare przedstawiony pośrednio jako wyłącznie przyszły anti-abuse/CAPTCHA
+## 8.2. Cloudflare Turnstile — miejsca zsynchronizowane w DOC-04/DOC-05
 
-Nie znaleziono bezpośredniego twierdzenia `Cloudflare = future-only`. Znaleziono jednak wpisy, które nadal traktują anti-abuse/CAPTCHA jako niewybrany albo czysto przyszły provider, mimo że Turnstile jest zintegrowany w kodzie:
+Nie znaleziono bezpośredniego twierdzenia `Cloudflare = future-only`. Historycznie znalezione wpisy zostały zsynchronizowane: Turnstile jest oznaczony jako integracja istniejąca w kodzie, a account/widget approval i account-specific evidence nadal pozostają otwarte.
 
 | Plik | Miejsce | Nieaktualny element | Wymagana późniejsza korekta |
 |---|---|---|---|

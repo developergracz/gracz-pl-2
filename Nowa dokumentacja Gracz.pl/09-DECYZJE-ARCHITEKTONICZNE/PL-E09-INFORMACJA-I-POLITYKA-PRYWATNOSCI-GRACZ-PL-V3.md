@@ -82,7 +82,7 @@ Poniższe podstawy są zgodne z bieżącą mapą PL-E03, ale pozostają przedmio
 | audit i bezpieczeństwo działań uprzywilejowanych | art. 6 ust. 1 lit. f RODO lub lit. c wyłącznie przy wskazanym obowiązku | `PROPOSED / LIA OR LEGAL DUTY REQUIRED` |
 | backup/restore i ciągłość usługi | art. 6 ust. 1 lit. b i/lub f zależnie od procesu | `PENDING FINAL REVIEW` |
 
-Pełny `PASS` wymaga zakończenia LIA, DPIA screening i weryfikacji każdej podstawy prawnej per proces.
+Lawful-basis/LIA, material retention, newsletter consent oraz pełna DPIA/model 16–17 zostały rozstrzygnięte w authoritative records `P1-PL-001`, `002`, `004` i `005`. Pełny `PASS` nadal wymaga ich finalnej publikacyjnej synchronizacji oraz zamknięcia otwartych danych kontaktowych, providerów/transferów i dowodów operacyjnych.
 
 ---
 
@@ -92,12 +92,12 @@ Dane mogą być ujawniane wyłącznie odbiorcom lub dostawcom niezbędnym do kon
 
 ### 5.1. Dostawcy infrastruktury — status bieżący
 
-- **Render** — kandydat na procesora dla hostingu/runtime/PostgreSQL; rola, DPA, regiony, subprocesorzy i transfery: `TO VERIFY`;
-- **Cloudflare** — edge/DNS/TLS/security; dokładna rola i zakres: `TO VERIFY`;
-- provider poczty/newslettera: `PENDING PROVIDER SELECTION`;
+- **Render** — hosting/runtime/PostgreSQL; region `Frankfurt` potwierdzony dla wskazanych zasobów, a account-effective DPA, plan, subprocesorzy i pełna ścieżka processing/support nadal wymagają evidence;
+- **Cloudflare Turnstile** — `INTEGRATED IN CODE`; account/widget approval, aktywny product scope, account-effective DPA i transfer review: `PENDING`;
+- **Resend Email API** — `INTEGRATED IN CODE`; publiczny DPA i publiczny model transferu są udokumentowane, a aktywne konto/domena/plan, account-effective DPA i faktyczna aktywność: `PENDING`;
 - object storage załączników: `PENDING PROVIDER SELECTION`;
 - observability/logging: `PENDING PROVIDER MODEL`;
-- ewentualni dostawcy MFA/SMS/anti-abuse: `NOT APPROVED / PENDING`.
+- ewentualni inni dostawcy MFA/SMS/anti-abuse: `NOT APPROVED / PENDING`.
 
 Nazwa dostawcy w projekcie nie oznacza automatycznego zatwierdzenia go jako procesora.
 
@@ -225,15 +225,22 @@ Na obecnym etapie dokumentacja nie ustanawia systemu podejmującego wobec użytk
 
 ## 12. Cookies / local storage / podobne technologie
 
-Status: `PENDING SEPARATE INVENTORY`.
+Status: `PARTIAL / REPOSITORY-SCOPE INVENTORY CONFIRMED / PROVIDER-ACCOUNT SCOPE OPEN`.
 
-Przed publikacją polityki należy przygotować faktyczny inwentarz:
+Inwentarz potwierdzony bezpośrednio w aktualnym kodzie nowoczesnego frontendu i backendu:
 
-- cookies niezbędnych;
-- session/local storage;
-- Cloudflare/edge cookies lub challenge data;
-- analytics/marketing cookies, jeśli kiedykolwiek zostaną użyte;
-- podstawy prawnej i mechanizmu zgody, jeśli wymagany.
+| Mechanizm | Typ / cel | Stan potwierdzony w repo | Otwarte przed publikacją |
+|---|---|---|---|
+| `__Host-gracz_session` | niezbędny cookie sesyjny auth/guest | `HttpOnly`, `Secure`; `SameSite=Strict` dla auth i `SameSite=Lax` dla guest/lobby; `Max-Age` odpowiednio 3600/1800 s | ujednolicić opis dwóch flow i potwierdzić zachowanie runtime |
+| `gracz-session` | `sessionStorage`; stan sesji/UI użytkownika | używany przez lobby, gry, wiadomości i ustawienia | potwierdzić minimalizację zawartości i spójność cookie-only migration |
+| `gracz-room-options:*`, `thousand-entered-game` | `sessionStorage`; ustawienia pokoju i nawigacja gry | używane w UI gier/lobby | potwierdzić cleanup/expiry |
+| `gracz-registration-terms-pending`, `gracz-password-recovery-pending` | `sessionStorage`; krótkotrwały stan formularzy | używane w flow terms/recovery; recovery może obejmować e-mail | potwierdzić timeout/cleanup i minimalizację |
+| `gracz-newsletter-pending` | `localStorage`; stan oczekującego zapisu | używany w flow newslettera | potwierdzić expiry/cleanup i zgodność z retencją |
+| `gracz-player-settings-v1`, `gracz-avatar-v1`, `gracz-terms-accepted-at` | `localStorage`; ustawienia UI, avatar, znacznik akceptacji | używane w pierwszostronnym frontendzie | opisać expiry/cleanup oraz odróżnić preference od evidence zgody |
+| Cloudflare Turnstile | challenge/security signals; nie jest automatycznie tożsame z cookie | Siteverify, token challenge, remote IP i hostname są potwierdzone w kodzie | account/widget features, provider-side storage/cookies i retencja wymagają account evidence |
+| analytics/marketing cookies | brak potwierdzonego użycia w przejrzanym first-party modern frontend scope | `NOT FOUND IN REVIEWED REPO SCOPE` | nie stanowi gwarancji dla providerów ani przyszłych funkcji; wymaga finalnego runtime/account review |
+
+Podstawa prawna, informacja i mechanizm zgody muszą zostać dobrane do finalnego zakresu; samo istnienie storage nie przesądza, czy zgoda jest wymagana.
 
 Nie wolno opublikować deklaracji „nie używamy cookies”, dopóki stan techniczny nie zostanie zweryfikowany.
 
@@ -253,12 +260,12 @@ Historia wersji powinna być trwała i możliwa do powiązania z odpowiednią we
 |---|---|---|---|
 | PL-E09-O01 | uzupełnić adres kontaktowy administratora | P1 Privacy/Legal | `OPEN` |
 | PL-E09-O02 | ustanowić e-mail privacy/contact | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O03 | zakończyć LIA dla procesów 6(1)(f) | P1 Privacy/Legal | `OPEN` |
+| PL-E09-O03 | zakończyć LIA dla procesów 6(1)(f) | P1 Privacy/Legal | `CLOSED / P1-PL-001` |
 | PL-E09-O04 | zweryfikować i zatwierdzić providerów, DPA i transfery | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O05 | zatwierdzić okresy retencji PL-R01–PL-R09 | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O06 | wykonać DPIA screening | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O07 | zatwierdzić model newsletter/consent | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O08 | wykonać cookies/local-storage inventory | P1 Privacy/Legal/Technical | `OPEN` |
+| PL-E09-O05 | zatwierdzić okresy retencji PL-R01–PL-R09 | P1 Privacy/Legal | `CLOSED / P1-PL-002` |
+| PL-E09-O06 | wykonać pełną DPIA i model 16–17 | P1 Privacy/Legal | `CLOSED / P1-PL-005` |
+| PL-E09-O07 | zatwierdzić model newsletter/consent | P1 Privacy/Legal | `CLOSED / P1-PL-004` |
+| PL-E09-O08 | dokończyć cookies/local-storage inventory o runtime/provider-account evidence | P1 Privacy/Legal/Technical | `PARTIAL / OPEN UNDER P1-PL-003` |
 | PL-E09-O09 | potwierdzić procedury praw osób PL-E12 | P1 Privacy/Legal | `OPEN` |
 | PL-E09-O10 | wykonać finalny legal/content review wersji publikacyjnej | P1 Privacy/Legal | `OPEN` |
 
