@@ -4,7 +4,7 @@ Data przygotowania formularza: 01.09.2026
 Review/decision ID: `REV-ADR-V3-012-20260901-PL-DECISION-01`
 Decision/document ID: `ADR-V3-012`
 Repository evidence baseline HEAD: `e78be355bd08c97f16240400b74c027321a34870`
-Status: **COMPLETED FOR FINAL INDEPENDENT REVIEW / HOLD / OWNER SIGNATURE PENDING / FREEZE-SAFE**
+Status: **HOLD DECISION SIGNED BY OWNER / INDEPENDENT PRIVACY-LEGAL REVIEW PENDING / FREEZE-SAFE**
 
 ```text
 FINAL PRIVACY/LEGAL VERDICT = HOLD
@@ -15,7 +15,7 @@ PRODUCTION V3 = NO-GO
 FREEZE = ACTIVE
 ```
 
-> Formularz zapisuje aktualny, rzeczywisty stan dokumentacji ADR-V3-012. Nie jest opinią prawną, nie zastępuje kwalifikowanej konsultacji prawnej i nie stanowi finalnego podpisu właściciela. Otwarte warunki pozostają otwarte. Autor/wykonawca aktualizacji dokumentacyjnej nie działa jako niezależny reviewer i nie nadaje statusu `PASS / ACCEPTED / CLOSED`.
+> Formularz zapisuje aktualny, rzeczywisty stan dokumentacji ADR-V3-012. Nie jest opinią prawną i nie zastępuje kwalifikowanej konsultacji prawnej. Właściciel podpisał decyzję `HOLD`; podpis nie nadaje statusu `PASS / ACCEPTED` i nie zamyka pięciu otwartych P1. Autor/wykonawca aktualizacji dokumentacyjnej nie działa jako niezależny reviewer.
 
 ---
 
@@ -27,7 +27,7 @@ Formularz:
 - konsoliduje decyzje retencyjne `PL-R01–PL-R09`;
 - konsoliduje kontrole `PL-C01–PL-C20` z uwzględnieniem późniejszych authoritative delta records;
 - zapisuje aktualne zamknięcia i otwarte kanoniczne P1;
-- przygotowuje jeden artefakt do końcowego niezależnego review i późniejszego podpisu Decision Ownera;
+- utrwala podpisaną decyzję właściciela `HOLD` i pozostaje wejściem do późniejszego niezależnego review Privacy/Legal;
 - nie zatwierdza implementacji, deploymentu, produkcji ani operacji na providerach;
 - nie zdejmuje freeze.
 
@@ -46,11 +46,13 @@ Formularz:
 | Independent Lead Architect reviewer | `PENDING` |
 | Kwalifikowany Privacy/Legal reviewer, gdy wymagana jest profesjonalna interpretacja | `PENDING / NOT EVIDENCED` |
 | Conflict-of-interest declaration właściciela/reviewera | `PENDING OWNER/REVIEWER STATEMENT` |
-| Formal review date | `PENDING` |
-| Owner signature | `NOT SIGNED` |
-| Durable approval locator | `PENDING — TO BE CREATED ONLY AFTER FINAL REVIEW AND OWNER SIGNATURE` |
+| Formal independent Privacy/Legal review date | `PENDING` |
+| Owner signature | `SIGNED — handwritten signature recorded in PDF; not a cryptographic certificate signature` |
+| Signature date | `01.09.2026` |
+| Durable approval/signature locator | [`ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`](ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf) |
+| Signed PDF SHA-256 | `a4da50f16aa7e3bdd8b7cc1d17635a285451825a248ab30a7357080fddb54621` |
 
-Brak finalnego review, podpisu lub durable approval locator utrzymuje `HOLD`. Samo nazwanie Decision Ownera nie tworzy `PASS`.
+Pięć otwartych P1 oraz brak finalnego niezależnego Privacy/Legal review utrzymują `HOLD`. Podpis właściciela potwierdza decyzję `HOLD`; nie tworzy `PASS`.
 
 ---
 
@@ -282,11 +284,11 @@ NEXT REVIEW DATE / TRIGGER =
 No calendar date assigned;
 review after durable closure evidence for P1-PL-003, 006, 007, 008 and 009.
 
-DURABLE APPROVAL LOCATOR =
-PENDING — NO OWNER SIGNATURE / NO FINAL APPROVAL ARTIFACT
+DURABLE APPROVAL / SIGNATURE LOCATOR =
+ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf
 
 FINAL OWNER SIGNATURE =
-NOT YET / DO NOT SIGN AS PASS
+SIGNED 01.09.2026 / HOLD DECISION ONLY / NOT PASS
 ```
 
 ---
@@ -330,15 +332,15 @@ ADR-V3-012 może przejść do `ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE`
 
 ---
 
-## 12. Pole podpisu — celowo niewykonane
+## 12. Pole podpisu — wykonane dla decyzji `HOLD`
 
 | Pole | Stan |
 |---|---|
 | Decision Owner | Czesław Socha |
 | Final decision | `HOLD` |
-| Owner signature | `NOT SIGNED` |
-| Signature date | `PENDING` |
-| Durable approval locator | `PENDING` |
+| Owner signature | `SIGNED — handwritten signature in attached PDF` |
+| Signature date | `01.09.2026` |
+| Durable approval locator | [`ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`](ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf) |
 | Independent final review | `PENDING` |
 
 Decision Owner może podpisać aktualny werdykt `HOLD`, mimo że pięć blockerów P1 pozostaje otwartych; podpis potwierdza stan `HOLD`, a nie `PASS / ACCEPTED`. Późniejsze przejście do `PASS / ACCEPTED` wymaga zamknięcia blockerów i odrębnego finalnego review.
@@ -348,8 +350,9 @@ Decision Owner może podpisać aktualny werdykt `HOLD`, mimo że pięć blocker�
 ## 13. Obowiązujący stan po wypełnieniu Dokumentu nr 2
 
 ```text
-DOCUMENT 2 = COMPLETED FOR FINAL INDEPENDENT REVIEW
-DOCUMENT 2 OWNER SIGNATURE = NOT YET
+DOCUMENT 2 = HOLD DECISION SIGNED / READY FOR LATER INDEPENDENT PRIVACY-LEGAL REVIEW
+DOCUMENT 2 OWNER SIGNATURE = SIGNED 01.09.2026
+DURABLE SIGNATURE LOCATOR = ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf
 
 ADR-V3-012 = ARCHITECTURE PASS / PRIVACY-LEGAL HOLD
 OPEN P0 PRIVACY/LEGAL = 0 KNOWN

@@ -22,7 +22,7 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 188 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 189 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
@@ -30,8 +30,8 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 188 plików:
 | `01-ARCHITEKTURA` | 4 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| `09-DECYZJE-ARCHITEKTONICZNE` | 65 |
-| **Łącznie** | **188** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 66 |
+| **Łącznie** | **189** |
 
 ## 3. Status etapów
 
@@ -46,6 +46,11 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 188 plików:
 | E4.1 | `IN PROGRESS / H BLOCKED` |
 | E4.1-H | `PENDING / SAFE HOLD` |
 | E4.2–E4.10 | `NOT AUTHORIZED / NOT COMPLETE` |
+| Dokumentacja Gracz.pl V3 | `COMPLETE / CLOSED` |
+| Final documentation closure review | `PASS` |
+| Architektura V3 | `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION` |
+| Reviewed Design Gate | `HOLD — 5 PRIVACY/LEGAL P1 OPEN` |
+| Implementacja | `NOT AUTHORIZED` |
 | Production V3 | `NO-GO` |
 
 ## 4. Potwierdzone dowody E4.1
@@ -91,7 +96,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 
 Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal jest imiennie wskazany jako **Czesław Socha** (`Project Owner / Controller Representative / Privacy-Legal Decision Owner`). Dokument nr 2 zapisuje aktualny werdykt `HOLD`, pięć otwartych P1 oraz `OWNER SIGNATURE = NOT SIGNED`; finalny niezależny review i durable approval locator pozostają `PENDING`. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` z powodu pięciu otwartych P1 Privacy/Legal i braku finalnego podpisu/approval artifact.
+Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`, a audyt techniczny A–V utrwalił 10 P1 jako jawny backlog. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal, **Czesław Socha**, podpisał 01.09.2026 decyzję `HOLD`; trwały locator to `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. PDF zawiera podpis odręczny, bez kryptograficznego podpisu certyfikatowego. Pięć P1 Privacy/Legal i niezależny review pozostają otwarte, dlatego bramka `REVIEWED DESIGN` nadal ma `HOLD`. Finalność architektury i zamknięcie dokumentacji nie autoryzują implementacji ani produkcji.
 
 ### PostgreSQL
 
@@ -106,9 +111,9 @@ Dokumenty `02-BAZA-DANYCH/00–20` obejmują:
 
 ETAP 1B i ETAP 2 pozostają zamknięte.
 
-## 7. Aktualny punkt wznowienia dokumentacji
+## 7. Zamknięcie dokumentacji i punkt rozpoczęcia implementacji
 
-Skonsolidowana architektura systemowa V3 została zmaterializowana i rozwinięta do wersji `0.2 / DESIGN DRAFT`:
+Skonsolidowana architektura systemowa V3 została sfinalizowana jako wersja `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`:
 
 ```text
 01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md
@@ -124,8 +129,8 @@ OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
 PRIVACY/LEGAL DECISION OWNER = CZESLAW SOCHA / NAMED
-FORMAL PRIVACY-LEGAL DECISION = HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW
-OWNER SIGNATURE = NOT SIGNED
+FORMAL PRIVACY-LEGAL DECISION = HOLD / OWNER-SIGNED 01.09.2026 / 5 P1 OPEN
+OWNER SIGNATURE = SIGNED / DURABLE PDF LOCATOR RECORDED
 CANONICAL PRIVACY-LEGAL P1 = 9 TOTAL / 4 CLOSED / 5 OPEN
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 REVIEWED DESIGN GATE = HOLD
@@ -140,14 +145,27 @@ Pliki:
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`.
 
-Kolejność dalszej pracy dokumentacyjnej:
+Obowiązująca granica po zamknięciu dokumentacji:
 
-1. uzupełnić brakujące owner/account-specific evidence dla `P1-PL-003`, `P1-PL-006` i `P1-PL-007`, bez wymyślania brakujących danych;
-2. wykonać późniejsze testy operacyjne/stagingowe wymagane przez `P1-PL-008` i `P1-PL-009`;
-3. wykonać finalny niezależny review Dokumentu nr 2, a podpis Decision Ownera i durable approval locator zapisać w osobnym, jawnym kroku;
-4. po zamknięciu blockerów zsynchronizować wynik governance i wykonać finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementation planning pozostaje osobną bramką.
+1. dokumentacja V3 jest `COMPLETE / CLOSED`, a final documentation closure review ma `PASS`;
+2. implementację można planować na bazie architektury 1.0, lecz jej wykonanie wymaga osobnej autoryzacji i respektowania bramek obszarowych;
+3. 10 technicznych P1 przechodzi do implementation/test/operational backlog;
+4. pięć Privacy/Legal P1 pozostaje otwartych i blokuje `REVIEWED DESIGN` oraz produkcję, nie zamknięcie pakietu dokumentacyjnego;
+5. ETAP 4, E4.1-H, E4.2–E4.10, DR, monitoring i skalowanie pozostają wykonawczym lub produkcyjnym backlogiem.
 
-Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
+```text
+DOCUMENTATION GRACZ.PL V3 = COMPLETE / CLOSED
+FINAL DOCUMENTATION CLOSURE REVIEW = PASS
+ARCHITECTURE V3 = 1.0 / FINAL / READY FOR IMPLEMENTATION
+READY FOR IMPLEMENTATION = YES — SEPARATE AUTHORIZATION REQUIRED
+OPEN TECHNICAL P1 = 10
+OPEN PRIVACY/LEGAL P1 = 5
+ETAP 4 = OPEN / EXECUTION BACKLOG
+IMPLEMENTATION = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+PRODUCTION V3 = NO-GO
+FREEZE = ACTIVE
+```
 
 ## 8. Reguła dalszej pracy
 

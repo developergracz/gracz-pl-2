@@ -3,8 +3,8 @@
 Data: 31.08.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Ścieżka docelowa: `Nowa dokumentacja Gracz.pl/01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`  
-Wersja: `0.2`  
-Status: **DESIGN DRAFT / REVIEW PENDING / NOT DEPLOYED / FREEZE-SAFE**
+Wersja: `1.0`
+Status: **ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION / IMPLEMENTATION NOT AUTHORIZED / NOT DEPLOYED / FREEZE-SAFE**
 
 > Ten dokument konsoliduje stan obecny i docelową architekturę Gracz.pl V3. Nie jest dowodem wdrożenia, nie udziela zgody operacyjnej i nie zmienia produkcji, Rendera, Cloudflare, bazy danych ani sekretów.
 
@@ -19,6 +19,7 @@ AUTHORIZED OPERATIONS = NONE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 PR #26 = OPEN / DRAFT / NOT MERGED
 PRODUCTION V3 = NO-GO
+READY FOR IMPLEMENTATION = YES — DESIGN BASELINE ONLY / SEPARATE AUTHORIZATION REQUIRED
 ```
 
 Utworzenie i przegląd tego dokumentu są pracą dokumentacyjną. Nie stanowią obejścia żadnej blokady ani autoryzacji.
@@ -1059,7 +1060,7 @@ Każdy krok musi posiadać własne kryteria wejścia, wyjścia, rollback i dowó
 | `ADR-V3-015` | P1 | operational ownership i incident escalation | przed production readiness | `PENDING` |
 | `ADR-V3-016` | P1 | CI/CD provenance i supply-chain controls | przed production readiness | `PENDING` |
 
-`ADR-V3-004` i `ADR-V3-013` pozostają `ACCEPTED / FINAL / NOT IMPLEMENTED`. External delta review `ADR-V3-013`, zapisany w [`REV-ADR-V3-013-20260831-01-DELTA-01`](../09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md), potwierdził `P1-013-01 = RESOLVED`, `P1-013-02 = RESOLVED`, `P2 = RESOLVED` i `NEW P0/P1 = NONE`; `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma kompletną treść decyzyjną i `ARCHITECTURE PASS`. Pakiet [`REV-ADR-V3-012-20260901-PL-01`](../09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md) jest gotowy do review przez imiennie wyznaczonego właściciela Privacy/Legal, ale właściciel pozostaje `UNASSIGNED`, a formalny review ma status `NOT EXECUTED`. Provenance review jest zapisane w [`Architecture Review Provenance Register`](../09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md); Git nie potwierdza tożsamości zewnętrznych reviewerów, dlatego nie deklaruje się ich niezależności jako zweryfikowanej. Wszystkie trzy P0 są rozstrzygnięte po stronie architektonicznej, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance `ADR-V3-012`.
+`ADR-V3-004` i `ADR-V3-013` pozostają `ACCEPTED / FINAL / NOT IMPLEMENTED`. External delta review `ADR-V3-013`, zapisany w [`REV-ADR-V3-013-20260831-01-DELTA-01`](../09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md), potwierdził `P1-013-01 = RESOLVED`, `P1-013-02 = RESOLVED`, `P2 = RESOLVED` i `NEW P0/P1 = NONE`; `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma kompletną treść decyzyjną i `ARCHITECTURE PASS`. Decision Ownerem Privacy/Legal jest **Czesław Socha**; podpisał 01.09.2026 decyzję `HOLD`, zapisaną w [`ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`](../09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf). Pięć kanonicznych P1 pozostaje otwartych, a niezależny review Privacy/Legal nie został zastąpiony podpisem właściciela. Provenance review jest zapisane w [`Architecture Review Provenance Register`](../09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md); Git nie potwierdza tożsamości zewnętrznych reviewerów, dlatego nie deklaruje się ich niezależności jako zweryfikowanej. Wszystkie trzy P0 są rozstrzygnięte po stronie architektonicznej, ale bramka `REVIEWED DESIGN` pozostaje w `HOLD` do formalnego domknięcia governance `ADR-V3-012`.
 
 Status `PENDING` nie jest błędem dokumentu. Oznacza jawnie kontrolowaną decyzję, której nie wolno zastępować założeniem. Status `DEFERRED` jest dozwolony tylko z zachowaną bramką i kryterium wznowienia.
 
@@ -1140,7 +1141,7 @@ Każda przyszła zmiana tego dokumentu powinna zawierać:
 
 Nie wolno aktualizować etykiety `IMPLEMENTED` lub `PRODUCTION` bez fresh evidence i formalnej decyzji.
 
-## 34. Decyzja wersji 0.2
+## 34. Decyzja wersji 1.0
 
 Wersja `0.2` zachowuje fundament 0.1 i dodatkowo wprowadza:
 
@@ -1153,15 +1154,20 @@ Wersja `0.2` zachowuje fundament 0.1 i dodatkowo wprowadza:
 - priorytety P0/P1/P2 oraz bramki dla 16 ADR-ów,
 - precyzyjny status C0-S1/C0-S3/A1/A2/A3.
 
-Wersja 0.2 pozostaje `DESIGN DRAFT / REVIEW PENDING` do czasu ponownego przeglądu. Sam zapis wersji nie nadaje statusu `REVIEWED DESIGN`.
+Po przeglądach strukturalnym, spójnościowym i technicznym A–V dokument stanowi finalny baseline architektury V3. Otwarte P1 są jawnie sklasyfikowane jako backlog zależnej implementacji, testów, operacji lub governance; nie są ukryte ani uznane za wykonane. Finalność dokumentu nie zmienia bramki `REVIEWED DESIGN`, która pozostaje w `HOLD` z powodu pięciu otwartych P1 Privacy/Legal.
 
 Formalny status po zapisaniu:
 
 ```text
-DOCUMENT V3 0.2 = MATERIALIZED / DESIGN DRAFT / REVIEW PENDING
-IMPLEMENTATION = NOT STARTED BY THIS DOCUMENT
+DOCUMENT V3 1.0 = ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION
+READY FOR IMPLEMENTATION = YES — SUBJECT TO PER-AREA GATES AND SEPARATE AUTHORIZATION
+IMPLEMENTATION = NOT AUTHORIZED BY THIS DOCUMENT
 DEPLOYMENT = NOT AUTHORIZED
 FREEZE = ACTIVE
+REVIEWED DESIGN GATE = HOLD
+OPEN TECHNICAL P1 = 10
+OPEN PRIVACY/LEGAL P1 = 5
+PRODUCTION V3 = NO-GO
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 ```
 
@@ -1171,3 +1177,4 @@ PRODUCTION / RENDER / SECRETS = UNCHANGED
 |---|---|---|---|
 | `0.1` | 31.08.2026 | `MATERIALIZED / CONSISTENT DESIGN DRAFT` | pierwsza skonsolidowana mapa AS-IS i TARGET V3 |
 | `0.2` | 31.08.2026 | `MATERIALIZED / REVIEW PENDING` | poprawki po przeglądzie spójności, P0/P1/P2 i rozszerzenia enterprise |
+| `1.0` | 01.09.2026 | `ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION / REVIEWED DESIGN GATE HOLD` | finalny baseline projektowy; podpisana decyzja Privacy/Legal `HOLD`; otwarte P1 zachowane jako jawne bramki wykonawcze i produkcyjne |

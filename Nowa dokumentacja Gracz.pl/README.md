@@ -6,7 +6,7 @@ Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ra
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
 **Ostatnia synchronizacja indeksu:** 01.09.2026  
-**Aktualny inwentarz:** 188 plików
+**Aktualny inwentarz:** 189 plików
 
 Bieżący status projektu znajduje się w:
 
@@ -50,16 +50,16 @@ Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `
 
 Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Rekord `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md` utrwala finalne 10 P1, wyniki B/U, korekty H/J/N/R oraz rozdzielone backlogi. Obowiązuje: `NEW P0 = NONE`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. Nie wykonano zmian kodu.
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przeglądy strukturalny i spójności zakończyły się `PASS`. `ADR-V3-004` i `ADR-V3-013` są zamknięte architektonicznie jako `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review ADR-V3-013 potwierdził oba P1 i P2 jako `RESOLVED`, bez nowych P0/P1; wynik zapisano w osobnym review artifact, a `P1-GOV-01` jest zamknięty. Dla `ADR-V3-012` imiennym Decision Ownerem Privacy/Legal jest **Czesław Socha**. Dokument nr 2 jest wypełniony z werdyktem `HOLD`, stanem `9 P1 TOTAL / 4 CLOSED / 5 OPEN` i oczekuje na finalny niezależny review; podpis właściciela oraz durable approval locator pozostają niewykonane. Bramka `REVIEWED DESIGN` pozostaje w `HOLD`. Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git zachowuje provenance `PARTIAL`.
+Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`. `ADR-V3-004` i `ADR-V3-013` są zamknięte architektonicznie jako `ACCEPTED / FINAL / NOT IMPLEMENTED`. Dla `ADR-V3-012` imiennym Decision Ownerem Privacy/Legal jest **Czesław Socha**. Dokument nr 2 zachowuje werdykt `HOLD`, stan `9 P1 TOTAL / 4 CLOSED / 5 OPEN` i został podpisany przez właściciela 01.09.2026. Durable locator: `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. Podpis jest odręczny w PDF, a nie kryptograficznym podpisem certyfikatowym. Niezależny review Privacy/Legal nadal jest `PENDING`, więc bramka `REVIEWED DESIGN` pozostaje w `HOLD`. Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git zachowuje provenance `PARTIAL`.
 
 ```text
 ADR-V3-004 = ACCEPTED / FINAL
 ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
 PRIVACY/LEGAL DECISION OWNER = CZESLAW SOCHA / NAMED
-FORMAL PRIVACY-LEGAL DECISION = HOLD / DOCUMENT 2 READY FOR FINAL INDEPENDENT REVIEW
-OWNER SIGNATURE = NOT SIGNED
+FORMAL PRIVACY-LEGAL DECISION = HOLD / OWNER-SIGNED 01.09.2026 / 5 P1 OPEN
+OWNER SIGNATURE = SIGNED / DURABLE PDF LOCATOR RECORDED
 CANONICAL PRIVACY-LEGAL P1 = 9 TOTAL / 4 CLOSED / 5 OPEN
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
-Następny realny blocker nie jest techniczny: należy uzupełnić brakujące dane publikacyjne/providerowe, wykonać późniejsze dowody operacyjne dla pięciu otwartych P1, zakończyć niezależny review Dokumentu nr 2 i dopiero po jawnej decyzji właściciela zapisać trwały approval artifact. Dopiero potem można przeprowadzić finalny `REVIEWED DESIGN GATE` całej V3. Zamknięcie audytu ani akceptacja ADR-ów nie autoryzują implementation planning, implementacji lub deploymentu.
+Dokumentacja Gracz.pl V3 jest `COMPLETE / CLOSED`, final documentation closure review ma `PASS`, a architektura 1.0 jest gotowym baseline do implementation planning. 10 technicznych P1 oraz pięć Privacy/Legal P1 pozostają jawnym backlogiem. Otwarte P1 Privacy/Legal blokują `REVIEWED DESIGN` i produkcję, nie kompletność pakietu dokumentacyjnego. `READY FOR IMPLEMENTATION = YES` oznacza gotowość projektu architektury; nie udziela autoryzacji implementacji, migracji ani deploymentu. `PRODUCTION V3 = NO-GO`, `FREEZE = ACTIVE`.

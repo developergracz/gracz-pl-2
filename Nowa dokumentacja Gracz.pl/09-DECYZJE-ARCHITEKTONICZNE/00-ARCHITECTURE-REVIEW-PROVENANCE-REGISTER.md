@@ -118,7 +118,7 @@ Ten rekord zachowuje status ADR‑004, ale nie przedstawia commitu autora jako d
 | Review pack path | [`REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md`](REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md) |
 | Review pack baseline SHA | `28ff688e57814fc0bca1ce88192d94d021985e5d` |
 | Review pack commit SHA | `a2d04f25ef0faffb248ca789753a0a5f76000b46` |
-| Review pack status | `READY FOR NAMED OWNER REVIEW / NOT APPROVED / FREEZE-SAFE` |
+| Review pack status | `HOLD DECISION SIGNED / INDEPENDENT PRIVACY-LEGAL REVIEW PENDING / FREEZE-SAFE` |
 | Reviewer role | External Lead Architect reviewer — architecture scope only |
 | Reviewer identity in Git | `NOT RECORDED` |
 | Review type | `EXTERNAL ARCHITECTURE REVIEW / PRIVACY-LEGAL EXCLUDED` |
@@ -130,9 +130,11 @@ Ten rekord zachowuje status ADR‑004, ale nie przedstawia commitu autora jako d
 | Corrections commit SHA | `N/A` — no architecture redesign requested |
 | Delta review status | `N/A` |
 | Final decision authority | Czesław Socha — Project Owner / Controller Representative / Privacy-Legal Decision Owner; architecture reviewer cannot substitute this authority |
-| Formal Privacy/Legal decision | `HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW` |
-| Owner signature / durable approval locator | `NOT SIGNED / PENDING` |
-| Final status | `PROPOSED / REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
+| Formal Privacy/Legal decision | `HOLD / OWNER-SIGNED 01.09.2026 / 5 P1 OPEN` |
+| Owner signature / durable approval locator | `SIGNED / ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf` |
+| Signature evidence class | `HANDWRITTEN SIGNATURE IN PDF / PDF HAS NO CRYPTOGRAPHIC CERTIFICATE SIGNATURE` |
+| Signed PDF SHA-256 | `a4da50f16aa7e3bdd8b7cc1d17635a285451825a248ab30a7357080fddb54621` |
+| Final status | `ARCHITECTURE PASS / PRIVACY-LEGAL HOLD SIGNED / INDEPENDENT REVIEW PENDING / NOT IMPLEMENTED / FREEZE-SAFE` |
 | Implementation status | `NOT AUTHORIZED / NOT IMPLEMENTED` |
 | Evidence locator | ADR criteria and result sections, Privacy/Legal review pack and this register; originating architecture-review exchange remains external to Git |
 | Governance synchronization commits | ADR-V3-012 `ce578183a295f09a98f99fb00d30f73bb0281958`; V3 `f3c83d1d0390e22250c3a63b57d105b729d23956`; status `63853597b17ccd985e4e3a7f8d5b37c83d212925`; README `d25ccb729d5c7175c8586acdad6db1726413ee21`; index `2a4e0edf93dbc35fabf4e703de7e06b64846f3d1`; finalny commit tego rejestru nie jest samoreferencyjny |
@@ -208,8 +210,9 @@ Ten rekord potwierdza zapisany external architecture review i rzeczywisty extern
 ADR-V3-004 DESIGN STATUS = ACCEPTED / FINAL
 ADR-V3-012 DESIGN STATUS = ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
 PRIVACY/LEGAL DECISION OWNER = CZESLAW SOCHA / NAMED
-FORMAL PRIVACY-LEGAL DECISION = HOLD / DOCUMENT 2 COMPLETED FOR FINAL INDEPENDENT REVIEW
-OWNER SIGNATURE = NOT SIGNED
+FORMAL PRIVACY-LEGAL DECISION = HOLD / OWNER-SIGNED 01.09.2026 / 5 P1 OPEN
+OWNER SIGNATURE = SIGNED / HANDWRITTEN PDF ARTIFACT / NOT CRYPTOGRAPHICALLY CERTIFIED
+DURABLE SIGNATURE LOCATOR = ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf
 CANONICAL PRIVACY-LEGAL P1 = 9 TOTAL / 4 CLOSED / 5 OPEN
 ADR-V3-013 DESIGN STATUS = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 P1-GOV-01 = CLOSED / VALID EXTERNAL DELTA REVIEW ARTIFACT RECORDED
@@ -221,3 +224,23 @@ IMPLEMENTATION = NOT AUTHORIZED
 FREEZE = ACTIVE
 PRODUCTION / RENDER / SECRETS = UNCHANGED
 ```
+
+## 11. Final documentation closure review — V3
+
+| Pole | Wartość |
+|---|---|
+| Review type | `FINAL DOCUMENTATION CLOSURE READBACK / NOT AN INDEPENDENT PRIVACY-LEGAL REVIEW` |
+| Repository baseline | `2b5abbe8ed1246c6202da05cc260e96289237e7e` |
+| Review date | `2026-09-01` |
+| Reviewer role | Repository documentation executor and readback reviewer |
+| Reviewer identity in Git | `NOT RECORDED` |
+| Signed decision artifact | `ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf` |
+| Artifact SHA-256 | `a4da50f16aa7e3bdd8b7cc1d17635a285451825a248ab30a7357080fddb54621` |
+| Signature evidence | `HANDWRITTEN OWNER SIGNATURE + DATE IN PDF / NO CRYPTOGRAPHIC CERTIFICATE SIGNATURE` |
+| Document decision | `HOLD / OWNER-SIGNED / 5 PRIVACY-LEGAL P1 OPEN` |
+| Architecture result | `V3 1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION` |
+| Closure verdict | `PASS FOR DOCUMENTATION COMPLETENESS` |
+| Explicit exclusions | `REVIEWED DESIGN GATE, PRIVACY-LEGAL ACCEPTANCE, IMPLEMENTATION AUTHORIZATION, DEPLOYMENT AND PRODUCTION GO` |
+| Recording commit | `THIS DOCUMENTATION-ONLY COMMIT / NOT SELF-REFERENTIAL` |
+
+Ten readback potwierdza kompletność i spójność pakietu dokumentacyjnego. Nie jest niezależnym review Privacy/Legal i nie zmienia decyzji `HOLD`, otwartych P1, freeze ani autoryzacji wykonawczych.
