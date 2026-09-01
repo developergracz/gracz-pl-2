@@ -22,7 +22,7 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 127 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 128 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
@@ -30,8 +30,8 @@ Katalog `Nowa dokumentacja Gracz.pl/` zawiera 127 plików:
 | `01-ARCHITEKTURA` | 3 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
-| `09-DECYZJE-ARCHITEKTONICZNE` | 5 |
-| **Łącznie** | **127** |
+| `09-DECYZJE-ARCHITEKTONICZNE` | 6 |
+| **Łącznie** | **128** |
 
 ## 3. Status etapów
 
@@ -88,7 +88,7 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 
-Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS` i oczekuje na formalne zatwierdzenie Privacy/Legal. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
+Skonsolidowana architektura systemowa V3 istnieje w wersji `0.2 / DESIGN DRAFT`. Przegląd strukturalny i spójności zakończył się `PASS`. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. Rzeczywisty external delta review `ADR-V3-013` potwierdził rozwiązanie obu P1 i P2 bez nowych P0/P1; werdykt zapisano w `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`, a `P1-GOV-01` jest zamknięty. `ADR-V3-012` ma `ARCHITECTURE PASS`, a pakiet `REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md` jest gotowy do formalnego review. Właściciel Privacy/Legal pozostaje `UNASSIGNED`, formalny review ma status `NOT EXECUTED`, a pakiet nie stanowi zatwierdzenia. Review provenance jest zapisane w centralnym rejestrze; tożsamości zewnętrznych reviewerów nie są zapisane w Git, więc ich niezależność nie jest deklarowana jako zweryfikowana. Bramka `REVIEWED DESIGN` pozostaje w `HOLD` wyłącznie z powodu otwartego governance `ADR-V3-012`.
 
 ### PostgreSQL
 
@@ -119,8 +119,11 @@ ARCHITECTURAL DESIGN TRUST = RECORDED / PROVENANCE PARTIAL
 IMPLEMENTATION CONFIDENCE = NOT ESTABLISHED
 OPERATIONAL EVIDENCE = NONE FOR THESE ADR DECISIONS
 ADR-V3-004 = ACCEPTED / FINAL
-ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / PRIVACY-LEGAL REVIEW PENDING
+ADR-V3-012 = DESIGN COMPLETE / ARCHITECTURE PASS / REVIEW PACK READY / PRIVACY-LEGAL REVIEW PENDING
+PRIVACY/LEGAL OWNER = UNASSIGNED
+FORMAL PRIVACY-LEGAL REVIEW = NOT EXECUTED
 ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
+REVIEWED DESIGN GATE = HOLD
 ```
 
 Pliki:
@@ -128,14 +131,16 @@ Pliki:
 - `09-DECYZJE-ARCHITEKTONICZNE/00-ARCHITECTURE-REVIEW-PROVENANCE-REGISTER.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-004-MATCH-RUNTIME-LEASE-FENCING-ENFORCEMENT.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DATA-RETENTION-PRIVACY-DELETION-LEGAL-HOLD.md`,
+- `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-012-PRIVACY-LEGAL-REVIEW-PACK.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-013-READ-MODEL-OWNERSHIP-CHECKPOINT-REBUILD.md`,
 - `09-DECYZJE-ARCHITEKTONICZNE/REV-ADR-V3-013-20260831-01-EXTERNAL-DELTA-REVIEW.md`.
 
 Kolejność dalszej pracy dokumentacyjnej:
 
-1. formalne zatwierdzenie Privacy/Legal dla `ADR-V3-012`,
-2. synchronizacja wyniku governance `ADR-V3-012`,
-3. finalny review V3 0.2 i decyzja o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
+1. przypisanie imiennego właściciela Privacy/Legal wraz z mandatem decyzyjnym,
+2. uzupełnienie kontroli i dowodów w pakiecie review `ADR-V3-012`,
+3. zapisanie formalnego werdyktu oraz trwałego approval artifact,
+4. synchronizacja wyniku governance i finalny review V3 0.2 przed decyzją o statusie `REVIEWED DESIGN`; implementacja pozostaje osobną bramką.
 
 Żaden z tych kroków nie autoryzuje implementacji ani wdrożenia.
 
