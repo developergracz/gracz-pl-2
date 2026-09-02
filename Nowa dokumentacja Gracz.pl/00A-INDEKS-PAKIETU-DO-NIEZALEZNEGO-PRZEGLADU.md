@@ -9,7 +9,7 @@ Zakres: **cała nowa dokumentacja znajdująca się w `Nowa dokumentacja Gracz.pl
 
 Ten indeks nie zastępuje dokumentów i nie streszcza ich treści. Każda pozycja prowadzi do pełnego pliku źródłowego w repozytorium. Dla niezależnego przeglądu należy czytać pliki w pełnej treści.
 
-Aktualny stan po synchronizacji: **189 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS, TXT i PDF), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 4 pliki w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 66 plików w `09-DECYZJE-ARCHITEKTONICZNE/`.
+Aktualny stan po synchronizacji: **190 plików** w `Nowa dokumentacja Gracz.pl/` (Markdown, SQL, MJS, TXT i PDF), łącznie z tym indeksem. Inwentarz obejmuje 3 dokumenty główne, 5 plików w `01-ARCHITEKTURA/`, 21 plików w `02-BAZA-DANYCH/`, 95 plików w `03-MIGRACJA/` i 66 plików w `09-DECYZJE-ARCHITEKTONICZNE/`.
 
 Starsza dokumentacja poza `Nowa dokumentacja Gracz.pl/` jest poza zakresem tego pakietu, zgodnie z zasadą zapisaną w `README.md`, że nowej dokumentacji nie należy mieszać ze starszą. Kod źródłowy i artefakty CI są dowodami referencyjnymi, ale nie są kopiowane do tego pakietu.
 
@@ -72,6 +72,7 @@ Bieżący szczegółowy status E4.1-H znajduje się w dokumencie 77. Dokumentacj
 | [02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md](01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md) | `01-ARCHITEKTURA/` | Docelowa architektura backendu V3. | `TARGET DESIGN / ETAP 2 CLOSED` |
 | [03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md](01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md) | `01-ARCHITEKTURA/` | Skonsolidowana architektura całej platformy V3: AS-IS, TARGET, boundaries, przepływy, awarie, skalowanie i backlog ADR. | `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION / REVIEWED DESIGN GATE HOLD` |
 | [04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md](01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md) | `01-ARCHITEKTURA/` | Finalny rekord audytu A–V 3A–3C: 10 P1, korekty H/J/N/R, wynik B/U i rozdzielone backlogi. | `CLOSED / FINAL DELTA REVIEW PASS / NO CODE CHANGE` |
+| [05-AUDYT-DOKUMENTACJI-GRACZ-PL.md](01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md) | `01-ARCHITEKTURA/` | Końcowy audyt dokumentacji Claude’a, ograniczenia provenance podpisu oraz opinia architektoniczna. | `PASS WITH CONDITIONS / EXTERNAL_RECORDED / NO NEW P0-P1` |
 
 **Wniosek dla recenzenta:** audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`, a final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Potwierdzono 10 P1. Dokumentacja V3 jest `COMPLETE / CLOSED`, a architektura 1.0 jest finalnym baseline gotowym do implementation planning. Decision Owner Privacy/Legal podpisał 01.09.2026 decyzję `HOLD`; durable locator znajduje się w tym pakiecie. Pięć P1 i niezależny Privacy/Legal review pozostają otwarte, dlatego `REVIEWED DESIGN` pozostaje `HOLD`, implementacja nie jest autoryzowana, a produkcja ma `NO-GO`.
 
@@ -316,7 +317,7 @@ Poniższe pozycje są jawnym backlogiem dalszego uszczegóławiania, implementac
 
 ## GAP-01 — główny status był nieaktualny — RESOLVED 31.08.2026
 
-`00-STATUS-I-SPIS-TRESCI.md` jest zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, architekturą V3 1.0, zaakceptowanymi ADR-V3-004 i ADR-V3-013, podpisaną decyzją `HOLD` dla ADR-V3-012 oraz inwentarzem 189 plików.
+`00-STATUS-I-SPIS-TRESCI.md` jest zsynchronizowany z ETAPEM 4, E4.1-H SAFE HOLD, architekturą V3 1.0, zaakceptowanymi ADR-V3-004 i ADR-V3-013, podpisaną decyzją `HOLD` dla ADR-V3-012, końcowym audytem dokumentacji oraz inwentarzem 190 plików.
 
 ## GAP-02 — README zawierał kolizyjną strukturę — RESOLVED 31.08.2026
 
@@ -399,4 +400,4 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 
 ## 13. Kryterium kompletności pakietu do review
 
-Pakiet jest kompletny jako finalny baseline dokumentacji V3, gdy wszystkie 189 plików są dostępne w repozytorium, statusy AS-IS/TARGET/backlog są jawne, a podpisany Dokument nr 2 ma trwały locator. Warunki te są spełnione. Otwarte pozycje w sekcji 10 pozostają kontrolowanym backlogiem wykonawczym, testowym, operacyjnym lub governance i nie są przedstawiane jako wykonane.
+Pakiet jest kompletny jako finalny baseline dokumentacji V3, gdy wszystkie 190 plików są dostępne w repozytorium, statusy AS-IS/TARGET/backlog są jawne, podpisany Dokument nr 2 ma trwały locator, a końcowy audyt dokumentacji jest utrwalony. Warunki te są spełnione. Otwarte pozycje w sekcji 10 pozostają kontrolowanym backlogiem wykonawczym, testowym, operacyjnym lub governance i nie są przedstawiane jako wykonane.

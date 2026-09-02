@@ -22,16 +22,16 @@ Pełny indeks artefaktów znajduje się w:
 
 ## 2. Inwentarz bieżący
 
-Katalog `Nowa dokumentacja Gracz.pl/` zawiera 189 plików:
+Katalog `Nowa dokumentacja Gracz.pl/` zawiera 190 plików:
 
 | Obszar | Liczba plików |
 |---|---:|
 | Dokumenty główne | 3 |
-| `01-ARCHITEKTURA` | 4 |
+| `01-ARCHITEKTURA` | 5 |
 | `02-BAZA-DANYCH` | 21 |
 | `03-MIGRACJA` | 95 |
 | `09-DECYZJE-ARCHITEKTONICZNE` | 66 |
-| **Łącznie** | **189** |
+| **Łącznie** | **190** |
 
 ## 3. Status etapów
 
@@ -93,8 +93,11 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/02-ARCHITEKTURA-DOCELOWA-BACKEND-V3.md`
 - `01-ARCHITEKTURA/03-SKONSOLIDOWANA-ARCHITEKTURA-SYSTEMOWA-GRACZ-PL-V3.md`
 - `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md`
+- `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md`
 
 Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
+
+Końcowy audyt dokumentacji jest utrwalony w `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md` ze statusem `PASS WITH CONDITIONS / EXTERNAL_RECORDED`. Potwierdza kompletność i implementowalność architektury bez potrzeby przeprojektowania, nie zmieniając 10 technicznych P1, pięciu Privacy/Legal P1, `IMPLEMENTATION = NOT AUTHORIZED`, freeze ani `PRODUCTION V3 = NO-GO`.
 
 Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`, a audyt techniczny A–V utrwalił 10 P1 jako jawny backlog. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal, **Czesław Socha**, podpisał 01.09.2026 decyzję `HOLD`; trwały locator to `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. PDF zawiera podpis odręczny, bez kryptograficznego podpisu certyfikatowego. Pięć P1 Privacy/Legal i niezależny review pozostają otwarte, dlatego bramka `REVIEWED DESIGN` nadal ma `HOLD`. Finalność architektury i zamknięcie dokumentacji nie autoryzują implementacji ani produkcji.
 

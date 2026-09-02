@@ -6,7 +6,7 @@ Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ra
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
 **Ostatnia synchronizacja indeksu:** 01.09.2026  
-**Aktualny inwentarz:** 189 plików
+**Aktualny inwentarz:** 190 plików
 
 Bieżący status projektu znajduje się w:
 
@@ -27,7 +27,7 @@ Bieżący status projektu znajduje się w:
 
 1. `00-STATUS-I-SPIS-TRESCI.md` — bieżący status i punkt wznowienia.
 2. `00A-INDEKS-PAKIETU-DO-NIEZALEZNEGO-PRZEGLADU.md` — pełny indeks dokumentów.
-3. `01-ARCHITEKTURA/` — architektura AS-IS, docelowa, skonsolidowana V3 oraz rekord zamknięcia audytu technicznego A–V 3A–3C.
+3. `01-ARCHITEKTURA/` — architektura AS-IS, docelowa, skonsolidowana V3, rekord zamknięcia audytu technicznego A–V 3A–3C oraz końcowy audyt dokumentacji Gracz.pl.
 4. `02-BAZA-DANYCH/` — PostgreSQL AS-IS, porównanie i model V3.
 5. `03-MIGRACJA/` — preflight, Gate 12–15, ETAP 4, evidence i runbooki.
 6. `09-DECYZJE-ARCHITEKTONICZNE/` — przyjęte i proponowane ADR dla V3 oraz centralny rejestr review provenance.
@@ -49,6 +49,8 @@ Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą 
 Sekwencja E4.1-H 62–77 jest zamknięta projektowo, ale operacyjnie pozostaje `PENDING / SAFE HOLD`. Freeze jest aktywny, formalne bramki nie zostały wykonane, a C0/A1/A2/A3 nie są autoryzowane.
 
 Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Rekord `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md` utrwala finalne 10 P1, wyniki B/U, korekty H/J/N/R oraz rozdzielone backlogi. Obowiązuje: `NEW P0 = NONE`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. Nie wykonano zmian kodu.
+
+Końcowy audyt dokumentacji Claude’a i następująca po nim opinia architektoniczna są zapisane w `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md`. Werdykt: `PASS WITH CONDITIONS / EXTERNAL_RECORDED`, bez nowych P0/P1 i bez potrzeby przeprojektowania V3. Audyt nie autoryzuje implementacji ani produkcji.
 
 Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`. `ADR-V3-004` i `ADR-V3-013` są zamknięte architektonicznie jako `ACCEPTED / FINAL / NOT IMPLEMENTED`. Dla `ADR-V3-012` imiennym Decision Ownerem Privacy/Legal jest **Czesław Socha**. Dokument nr 2 zachowuje werdykt `HOLD`, stan `9 P1 TOTAL / 4 CLOSED / 5 OPEN` i został podpisany przez właściciela 01.09.2026. Durable locator: `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. Podpis jest odręczny w PDF, a nie kryptograficznym podpisem certyfikatowym. Niezależny review Privacy/Legal nadal jest `PENDING`, więc bramka `REVIEWED DESIGN` pozostaje w `HOLD`. Git author i reviewer role są rozdzielone, a zewnętrzne review bez tożsamości w Git zachowuje provenance `PARTIAL`.
 
