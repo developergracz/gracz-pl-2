@@ -35,7 +35,7 @@ backup_started_epoch="$started_epoch"
 DATABASE_URL="$DR_SOURCE_DATABASE_URL" \
 BACKUP_DIR="$BACKUP_DIR" \
 BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
-  "$SCRIPT_DIR/backup-postgres.sh" >/dev/null
+  bash "$SCRIPT_DIR/backup-postgres.sh" >/dev/null
 
 backup_finished_epoch="$(date -u +%s)"
 mapfile -t backups < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'gracz-*.dump.enc' -print)
@@ -46,7 +46,7 @@ backup_sha256="$(sha256sum "$backup" | awk '{print $1}')"
 restore_started_epoch="$(date -u +%s)"
 RESTORE_DATABASE_URL="$DR_RESTORE_DATABASE_URL" \
 BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" \
-  "$SCRIPT_DIR/test-restore-postgres.sh" "$backup" >/dev/null
+  bash "$SCRIPT_DIR/test-restore-postgres.sh" "$backup" >/dev/null
 restore_finished_epoch="$(date -u +%s)"
 finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
