@@ -23,11 +23,35 @@ async function request(url, { playerId, body } = {}) {
   return { status: response.status, body: await response.json() };
 }
 
+class ReadBarrierStore {
+  constructor(store, gameId) {
+    this.store = store;
+    this.gameId = gameId;
+    this.waitingReads = 0;
+    this.releaseReads = null;
+    this.readGate = new Promise((resolve) => { this.releaseReads = resolve; });
+  }
+
+  async create(session) { return this.store.create(session); }
+  async getVersioned(gameId) { return this.store.getVersioned(gameId); }
+  async save(session, expectedVersion) { return this.store.save(session, expectedVersion); }
+
+  async get(gameId) {
+    const session = await this.store.get(gameId);
+    if (gameId !== this.gameId) return session;
+    this.waitingReads += 1;
+    if (this.waitingReads === 2) this.releaseReads();
+    await this.readGate;
+    return session;
+  }
+}
+
 test("P1-C-01 real PostgreSQL concurrent HTTP mutations yield one winner and one 409", { skip: !databaseUrl }, async () => {
   const store = new PostgresSessionStore(databaseUrl);
   const gameId = `p1c01_http_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const barrierStore = new ReadBarrierStore(store, gameId);
   try {
-    await withServer(store, async (baseUrl) => {
+    await withServer(barrierStore, async (baseUrl) => {
       const created = await request(`${baseUrl}/games`, {
         playerId: "alice",
         body: { gameId, whitePlayerId: "alice", blackPlayerId: "bob" },
