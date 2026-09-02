@@ -5,8 +5,10 @@ on:
     paths:
       - "modern/checkers-engine/src/health.js"
       - "modern/checkers-engine/src/postgres-session-store.js"
+      - "modern/checkers-engine/src/main.js"
       - "modern/checkers-engine/test/p1-aud3-07-readiness.test.js"
       - "modern/checkers-engine/test/p1-aud3-07-postgres-readiness.test.js"
+      - "modern/checkers-engine/test/p1-aud3-07-runtime-wiring.test.js"
       - ".github/workflows/p1-aud3-07-readiness.yml"
 
 permissions:
@@ -43,6 +45,6 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: Syntax checks
-        run: node --check src/health.js && node --check src/postgres-session-store.js
-      - name: Readiness tests
-        run: node --test test/p1-aud3-07-readiness.test.js test/p1-aud3-07-postgres-readiness.test.js
+        run: node --check src/health.js && node --check src/postgres-session-store.js && node --check src/main.js
+      - name: Readiness and runtime wiring tests
+        run: node --test test/p1-aud3-07-readiness.test.js test/p1-aud3-07-postgres-readiness.test.js test/p1-aud3-07-runtime-wiring.test.js
