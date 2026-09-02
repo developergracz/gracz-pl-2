@@ -15,16 +15,16 @@ export function createGomokuHttpHandler({ service, auth, authSessions = null } =
       const match = url.pathname.match(/^\/gomoku\/games\/([a-zA-Z0-9_-]{1,128})(?:\/(moves))?$/);
       if (!match) return sendJson(response, 404, { error: { code: "GOMOKU_ROUTE_NOT_FOUND", message: "Nie znaleziono endpointu Gomoku." } });
       const [, gameId, action] = match;
-      if (request.method === "GET" && !action) return sendJson(response, 200, service.view(gameId, user.userId));
+      if (request.method === "GET" && !action) return sendJson(response, 200, await service.view(gameId, user.userId));
       if (request.method === "POST" && action === "moves") {
         const body = await readJson(request);
-        return sendJson(response, 200, service.move(gameId, user.userId, body));
+        return sendJson(response, 200, await service.move(gameId, user.userId, body));
       }
       return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
     } catch (error) {
       if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
       if (error instanceof GomokuError) {
-        const status = error.code === "GAME_NOT_FOUND" ? 404 : ["OUT_OF_TURN", "FIELD_OCCUPIED", "GAME_FINISHED"].includes(error.code) ? 409 : error.code === "PLAYER_NOT_IN_GAME" ? 403 : 400;
+        const status = Number.isInteger(error.status) ? error.status : error.code === "GAME_NOT_FOUND" ? 404 : ["OUT_OF_TURN", "FIELD_OCCUPIED", "GAME_FINISHED", "GOMOKU_CONCURRENCY_CONFLICT"].includes(error.code) ? 409 : error.code === "PLAYER_NOT_IN_GAME" ? 403 : 400;
         return sendJson(response, status, errorBody(error));
       }
       if (Number.isInteger(error?.status)) return sendJson(response, error.status, errorBody(error));
