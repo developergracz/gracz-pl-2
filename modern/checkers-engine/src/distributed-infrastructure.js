@@ -6,6 +6,7 @@ import { clientSource } from "./traffic-guard.js";
 
 const { Client, Pool } = pg;
 const REALTIME_CHANNEL = "gracz_checkers_realtime";
+const RATE_LIMIT_SCHEMA_LOCK = 1937202601;
 
 export class DistributedRateLimitError extends Error {
   constructor(retryAfterSeconds, scope = "request") {
@@ -37,18 +38,25 @@ export class PostgresDistributedTrafficGuard {
   }
 
   async #initialize() {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_shared_rate_limits (
-        key_hash CHAR(64) PRIMARY KEY,
-        count INTEGER NOT NULL,
-        reset_at BIGINT NOT NULL,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    await this.pool.query(`
-      CREATE INDEX IF NOT EXISTS gracz_shared_rate_limits_reset_idx
-      ON gracz_shared_rate_limits(reset_at)
-    `);
+    const client = await this.pool.connect();
+    try {
+      await client.query("SELECT pg_advisory_lock($1)", [RATE_LIMIT_SCHEMA_LOCK]);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gracz_shared_rate_limits (
+          key_hash CHAR(64) PRIMARY KEY,
+          count INTEGER NOT NULL,
+          reset_at BIGINT NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS gracz_shared_rate_limits_reset_idx
+        ON gracz_shared_rate_limits(reset_at)
+      `);
+    } finally {
+      await client.query("SELECT pg_advisory_unlock($1)", [RATE_LIMIT_SCHEMA_LOCK]).catch(() => {});
+      client.release();
+    }
   }
 
   async assertAllowed(request) {
