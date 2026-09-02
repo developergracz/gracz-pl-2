@@ -35,3 +35,22 @@ test("P1-C-01 PostgreSQL CAS permits one winner, preserves newer state and suppo
     await store.close();
   }
 });
+
+test("P1-C-01 PostgreSQL CAS keeps version stable for an exact idempotent no-op save", { skip: !databaseUrl }, async () => {
+  const store = new PostgresSessionStore(databaseUrl);
+  const gameId = `p1c01_noop_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    const created = await store.create(createGameSession({ gameId, whitePlayerId: "alice", blackPlayerId: "bob" }));
+    const before = await store.getVersioned(gameId);
+    assert.equal(before.version, 1);
+
+    const saved = await store.save(created, 1);
+    const after = await store.getVersioned(gameId);
+    assert.equal(after.version, 1);
+    assert.equal(saved.gameId, gameId);
+    assert.equal(after.session.events.length, before.session.events.length);
+  } finally {
+    await store.pool.query("DELETE FROM gracz_game_sessions WHERE game_id = $1", [gameId]).catch(() => {});
+    await store.close();
+  }
+});
