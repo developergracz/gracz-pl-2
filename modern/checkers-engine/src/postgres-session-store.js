@@ -5,6 +5,7 @@ import { SessionNotFoundError } from "./store.js";
 
 const { Pool } = pg;
 const SESSION_VERSION = Symbol("gracz.session.version");
+const INIT_LOCK_ID = 731_004_201;
 
 export class SessionConcurrencyConflictError extends Error {
   constructor(gameId, expectedVersion) {
@@ -35,23 +36,30 @@ export class PostgresSessionStore {
   }
 
   async #initialize() {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_game_sessions (
-        game_id VARCHAR(128) PRIMARY KEY,
-        state TEXT NOT NULL,
-        version INTEGER NOT NULL DEFAULT 1,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    await this.pool.query(`
-      ALTER TABLE gracz_game_sessions
-      ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1
-    `);
-    await this.pool.query(`
-      CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
-      ON gracz_game_sessions(updated_at DESC)
-    `);
+    const client = await this.pool.connect();
+    try {
+      await client.query("SELECT pg_advisory_lock($1)", [INIT_LOCK_ID]);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gracz_game_sessions (
+          game_id VARCHAR(128) PRIMARY KEY,
+          state TEXT NOT NULL,
+          version INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        ALTER TABLE gracz_game_sessions
+        ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
+        ON gracz_game_sessions(updated_at DESC)
+      `);
+    } finally {
+      await client.query("SELECT pg_advisory_unlock($1)", [INIT_LOCK_ID]).catch(() => {});
+      client.release();
+    }
   }
 
   async create(session) {
