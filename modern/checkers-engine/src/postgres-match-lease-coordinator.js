@@ -4,6 +4,7 @@ import pg from "pg";
 import { MatchRuntimeError } from "./match-runtime.js";
 
 const { Pool } = pg;
+const INIT_LOCK_ID = 731_004_202;
 
 export class PostgresMatchLeaseCoordinator {
   constructor(connectionString, { ownerId = `runtime-${randomUUID()}`, leaseMs = 15_000 } = {}) {
@@ -26,15 +27,22 @@ export class PostgresMatchLeaseCoordinator {
   }
 
   async #initialize() {
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS match_actor_leases (
-      game_type VARCHAR(64) NOT NULL,
-      match_id VARCHAR(128) NOT NULL,
-      owner_id VARCHAR(128) NOT NULL,
-      fencing_token BIGINT NOT NULL,
-      lease_expires_at TIMESTAMPTZ NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY(game_type, match_id)
-    )`);
+    const client = await this.pool.connect();
+    try {
+      await client.query("SELECT pg_advisory_lock($1)", [INIT_LOCK_ID]);
+      await client.query(`CREATE TABLE IF NOT EXISTS match_actor_leases (
+        game_type VARCHAR(64) NOT NULL,
+        match_id VARCHAR(128) NOT NULL,
+        owner_id VARCHAR(128) NOT NULL,
+        fencing_token BIGINT NOT NULL,
+        lease_expires_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY(game_type, match_id)
+      )`);
+    } finally {
+      await client.query("SELECT pg_advisory_unlock($1)", [INIT_LOCK_ID]).catch(() => {});
+      client.release();
+    }
   }
 
   async withOwnership({ gameType, matchId }, operation) {
