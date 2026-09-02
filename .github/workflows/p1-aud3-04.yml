@@ -5,7 +5,10 @@ on:
     paths:
       - "modern/checkers-engine/src/postgres-gomoku-service.js"
       - "modern/checkers-engine/src/gomoku-http.js"
+      - "modern/checkers-engine/src/main.js"
+      - "modern/checkers-engine/src/lobby.js"
       - "modern/checkers-engine/test/p1-aud3-04-gomoku-postgres.test.js"
+      - "modern/checkers-engine/test/p1-aud3-04-runtime-wiring.test.js"
       - ".github/workflows/p1-aud3-04.yml"
 
 permissions:
@@ -42,6 +45,6 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: Syntax checks
-        run: node --check src/postgres-gomoku-service.js && node --check src/gomoku-http.js
-      - name: Gomoku durability concurrency recovery tests
-        run: node --test test/p1-aud3-04-gomoku-postgres.test.js
+        run: node --check src/postgres-gomoku-service.js && node --check src/gomoku-http.js && node --check src/main.js && node --check src/lobby.js
+      - name: Gomoku durability concurrency recovery and wiring tests
+        run: node --test test/p1-aud3-04-gomoku-postgres.test.js test/p1-aud3-04-runtime-wiring.test.js
