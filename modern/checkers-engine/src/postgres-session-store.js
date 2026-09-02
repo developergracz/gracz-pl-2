@@ -4,6 +4,16 @@ import { deserializeSession, serializeSession } from "./session.js";
 import { SessionNotFoundError } from "./store.js";
 
 const { Pool } = pg;
+const SESSION_VERSION = Symbol("gracz.session.version");
+
+export class SessionConcurrencyConflictError extends Error {
+  constructor(gameId, expectedVersion) {
+    super(`Konflikt zapisu sesji ${gameId}: oczekiwana wersja ${expectedVersion} jest nieaktualna.`);
+    this.name = "SessionConcurrencyConflictError";
+    this.code = "SESSION_CONCURRENCY_CONFLICT";
+    this.status = 409;
+  }
+}
 
 export class PostgresSessionStore {
   constructor(connectionString) {
@@ -29,9 +39,14 @@ export class PostgresSessionStore {
       CREATE TABLE IF NOT EXISTS gracz_game_sessions (
         game_id VARCHAR(128) PRIMARY KEY,
         state TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
+    `);
+    await this.pool.query(`
+      ALTER TABLE gracz_game_sessions
+      ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1
     `);
     await this.pool.query(`
       CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
@@ -43,11 +58,13 @@ export class PostgresSessionStore {
     await this.ready;
     assertGameId(session?.gameId);
     try {
-      await this.pool.query(
-        `INSERT INTO gracz_game_sessions (game_id, state)
-         VALUES ($1, $2)`,
+      const { rows } = await this.pool.query(
+        `INSERT INTO gracz_game_sessions (game_id, state, version)
+         VALUES ($1, $2, 1)
+         RETURNING version`,
         [session.gameId, serializeSession(session)],
       );
+      tagVersion(session, rows[0].version);
     } catch (error) {
       if (error?.code === "23505") {
         const duplicate = new Error(`Sesja ${session.gameId} już istnieje.`);
@@ -59,32 +76,67 @@ export class PostgresSessionStore {
     return session;
   }
 
-  async get(gameId) {
+  async getVersioned(gameId) {
     await this.ready;
     assertGameId(gameId);
     const { rows } = await this.pool.query(
-      `SELECT state FROM gracz_game_sessions WHERE game_id = $1`,
+      `SELECT state, version FROM gracz_game_sessions WHERE game_id = $1`,
       [gameId],
     );
     if (!rows[0]) throw new SessionNotFoundError(gameId);
-    return deserializeSession(rows[0].state);
+    const session = deserializeSession(rows[0].state);
+    const version = Number(rows[0].version);
+    tagVersion(session, version);
+    return { session, version };
   }
 
-  async save(session) {
+  async get(gameId) {
+    return (await this.getVersioned(gameId)).session;
+  }
+
+  async save(session, expectedVersion = session?.[SESSION_VERSION]) {
     await this.ready;
     assertGameId(session?.gameId);
-    await this.pool.query(
-      `INSERT INTO gracz_game_sessions (game_id, state)
-       VALUES ($1, $2)
-       ON CONFLICT (game_id)
-       DO UPDATE SET state = EXCLUDED.state, updated_at = NOW()`,
-      [session.gameId, serializeSession(session)],
+    assertVersion(expectedVersion);
+
+    const { rows } = await this.pool.query(
+      `UPDATE gracz_game_sessions
+       SET state = $2, version = version + 1, updated_at = NOW()
+       WHERE game_id = $1 AND version = $3
+       RETURNING version`,
+      [session.gameId, serializeSession(session), expectedVersion],
     );
+
+    if (!rows[0]) {
+      const exists = await this.pool.query(
+        `SELECT 1 FROM gracz_game_sessions WHERE game_id = $1`,
+        [session.gameId],
+      );
+      if (!exists.rows[0]) throw new SessionNotFoundError(session.gameId);
+      throw new SessionConcurrencyConflictError(session.gameId, expectedVersion);
+    }
+
+    tagVersion(session, Number(rows[0].version));
     return session;
   }
 
   async close() {
     await this.pool.end();
+  }
+}
+
+function tagVersion(session, version) {
+  Object.defineProperty(session, SESSION_VERSION, {
+    value: version,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+}
+
+function assertVersion(version) {
+  if (!Number.isInteger(version) || version < 1) {
+    throw new TypeError("Oczekiwana wersja sesji jest wymagana dla zapisu CAS.");
   }
 }
 
