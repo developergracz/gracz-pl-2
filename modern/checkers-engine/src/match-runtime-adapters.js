@@ -9,8 +9,8 @@ import {
 } from "./session.js";
 import { CommonMatchRuntime, MatchRuntimeError, assertExpectedVersion } from "./match-runtime.js";
 
-export function createLegacyMatchRuntime({ checkersStore, thousandService, gomokuService } = {}) {
-  const runtime = new CommonMatchRuntime();
+export function createLegacyMatchRuntime({ checkersStore, thousandService, gomokuService, ownershipCoordinator = null } = {}) {
+  const runtime = new CommonMatchRuntime({ ownershipCoordinator });
   if (checkersStore) runtime.register("checkers", new CheckersMatchAdapter({ store: checkersStore }));
   if (thousandService) runtime.register("thousand", new ThousandMatchAdapter({ service: thousandService }));
   if (gomokuService) runtime.register("gomoku", new GomokuMatchAdapter({ service: gomokuService }));
@@ -42,8 +42,8 @@ export class CheckersMatchAdapter {
       if (![session.players.white.id, session.players.black.id].includes(command.actorUserId)) {
         throw new MatchRuntimeError("Twórca meczu musi być jego uczestnikiem.", "MATCH_ACTOR_NOT_PLAYER", 403);
       }
-      await this.store.create(session);
-      return checkersResult(session, command.actorUserId);
+      const saved = await this.store.create(session);
+      return checkersResult(saved ?? session, command.actorUserId);
     }
 
     const session = await this.store.get(command.matchId);
@@ -55,32 +55,32 @@ export class CheckersMatchAdapter {
         requestId: command.payload.requestId ?? command.commandId,
         move: command.payload.move,
       });
-      await this.store.save(result.session);
-      return { ...checkersResult(result.session, command.actorUserId), duplicate: result.duplicate };
+      const saved = await this.store.save(result.session);
+      return { ...checkersResult(saved ?? result.session, command.actorUserId), duplicate: result.duplicate };
     }
 
     if (command.commandType === "match.action") {
       const next = submitGameAction(session, { playerId: command.actorUserId, action: command.payload.action });
-      await this.store.save(next);
-      return checkersResult(next, command.actorUserId);
+      const saved = await this.store.save(next);
+      return checkersResult(saved ?? next, command.actorUserId);
     }
 
     if (command.commandType === "match.chat") {
       const next = sendChatMessage(session, { playerId: command.actorUserId, text: command.payload.text });
-      await this.store.save(next);
-      return checkersResult(next, command.actorUserId);
+      const saved = await this.store.save(next);
+      return checkersResult(saved ?? next, command.actorUserId);
     }
 
     if (command.commandType === "match.disconnect") {
       const next = disconnectPlayer(session, command.actorUserId);
-      await this.store.save(next);
-      return checkersResult(next, command.actorUserId);
+      const saved = await this.store.save(next);
+      return checkersResult(saved ?? next, command.actorUserId);
     }
 
     if (command.commandType === "match.reconnect") {
       const result = reconnectPlayer(session, command.actorUserId);
-      await this.store.save(result.session);
-      return { version: sessionVersion(result.session), view: result.snapshot };
+      const saved = await this.store.save(result.session);
+      return { version: sessionVersion(saved ?? result.session), view: getSessionSnapshot(saved ?? result.session, command.actorUserId) };
     }
 
     throw unsupported("checkers", command.commandType);
