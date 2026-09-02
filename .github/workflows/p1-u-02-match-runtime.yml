@@ -5,7 +5,9 @@ on:
     paths:
       - "modern/checkers-engine/src/match-runtime.js"
       - "modern/checkers-engine/src/match-runtime-adapters.js"
+      - "modern/checkers-engine/src/postgres-match-lease-coordinator.js"
       - "modern/checkers-engine/test/match-runtime.test.js"
+      - "modern/checkers-engine/test/p1-u-02-postgres-ownership.test.js"
       - "modern/checkers-engine/package.json"
       - ".github/workflows/p1-u-02-match-runtime.yml"
 
@@ -20,6 +22,22 @@ jobs:
   contract-and-adapters:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      P1_U_02_DATABASE_URL: postgresql://gracz:gracz_test@localhost:5432/gracz_test
     defaults:
       run:
         working-directory: modern/checkers-engine
@@ -32,5 +50,5 @@ jobs:
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: Static syntax checks
         run: npm run check
-      - name: Common Match Runtime contract tests
-        run: node --test test/match-runtime.test.js
+      - name: Common Match Runtime contract and PostgreSQL ownership tests
+        run: node --test test/match-runtime.test.js test/p1-u-02-postgres-ownership.test.js
