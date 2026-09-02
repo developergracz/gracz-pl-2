@@ -79,7 +79,7 @@ export class PostgresSessionStore {
       }
       throw error;
     }
-    return session;
+    return withVersion(session, 1);
   }
 
   async getVersioned(gameId) {
@@ -103,21 +103,26 @@ export class PostgresSessionStore {
     await this.ready;
     assertGameId(session?.gameId);
     assertVersion(expectedVersion);
+    const serialized = serializeSession(session);
 
     const { rows } = await this.pool.query(
       `UPDATE gracz_game_sessions
        SET state = $2, version = version + 1, updated_at = NOW()
-       WHERE game_id = $1 AND version = $3
+       WHERE game_id = $1 AND version = $3 AND state IS DISTINCT FROM $2
        RETURNING version`,
-      [session.gameId, serializeSession(session), expectedVersion],
+      [session.gameId, serialized, expectedVersion],
     );
 
     if (!rows[0]) {
-      const exists = await this.pool.query(
-        `SELECT 1 FROM gracz_game_sessions WHERE game_id = $1`,
+      const current = await this.pool.query(
+        `SELECT state, version FROM gracz_game_sessions WHERE game_id = $1`,
         [session.gameId],
       );
-      if (!exists.rows[0]) throw new SessionNotFoundError(session.gameId);
+      if (!current.rows[0]) throw new SessionNotFoundError(session.gameId);
+      const currentVersion = Number(current.rows[0].version);
+      if (currentVersion === expectedVersion && current.rows[0].state === serialized) {
+        return withVersion(session, currentVersion);
+      }
       throw new SessionConcurrencyConflictError(session.gameId, expectedVersion);
     }
 
