@@ -11,7 +11,11 @@ export class CommonMatchRuntime {
   #adapters = new Map();
   #queues = new Map();
 
-  constructor({ adapters = {} } = {}) {
+  constructor({ adapters = {}, ownershipCoordinator = null } = {}) {
+    if (ownershipCoordinator && typeof ownershipCoordinator.withOwnership !== "function") {
+      throw new TypeError("ownershipCoordinator musi implementować withOwnership().");
+    }
+    this.ownershipCoordinator = ownershipCoordinator;
     for (const [gameType, adapter] of Object.entries(adapters)) this.register(gameType, adapter);
   }
 
@@ -32,8 +36,15 @@ export class CommonMatchRuntime {
     const command = normalizeCommand(input);
     const adapter = this.#adapter(command.gameType);
     return this.#serialize(command.gameType, command.matchId, async () => {
-      const result = await adapter.execute(command);
-      return normalizeResult(command, result);
+      const run = async (ownership = null) => {
+        const result = await adapter.execute(command, ownership);
+        return normalizeResult(command, result, ownership);
+      };
+      if (!this.ownershipCoordinator) return run();
+      return this.ownershipCoordinator.withOwnership(
+        { gameType: command.gameType, matchId: command.matchId },
+        run,
+      );
     });
   }
 
@@ -126,7 +137,7 @@ function normalizeCommand(input) {
   });
 }
 
-function normalizeResult(command, result) {
+function normalizeResult(command, result, ownership = null) {
   if (!result || typeof result !== "object") {
     throw new MatchRuntimeError("Adapter nie zwrócił wyniku komendy.", "MATCH_INVALID_ADAPTER_RESULT", 500);
   }
@@ -142,8 +153,21 @@ function normalizeResult(command, result) {
     version,
     duplicate: result.duplicate === true,
     view: result.view === undefined ? null : structuredClone(result.view),
-    metadata: result.metadata === undefined ? null : structuredClone(result.metadata),
+    metadata: mergeMetadata(result.metadata, ownership),
   });
+}
+
+function mergeMetadata(metadata, ownership) {
+  const base = metadata === undefined || metadata === null ? {} : structuredClone(metadata);
+  if (!ownership) return Object.keys(base).length ? base : null;
+  return {
+    ...base,
+    ownership: {
+      ownerId: ownership.ownerId,
+      fencingToken: ownership.fencingToken,
+      leaseExpiresAt: ownership.leaseExpiresAt,
+    },
+  };
 }
 
 function normalizeViewResult(gameType, matchId, result) {
