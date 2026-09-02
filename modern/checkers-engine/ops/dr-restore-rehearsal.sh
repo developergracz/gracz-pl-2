@@ -59,7 +59,26 @@ restore_public_tables="$(psql "$DR_RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atq
 
 row_reconciliation="not-requested"
 if [[ "${STRICT_ROWS,,}" == "true" ]]; then
-  counts_sql='CREATE OR REPLACE FUNCTION pg_temp.gracz_table_counts() RETURNS TABLE(table_name text,row_count bigint) LANGUAGE plpgsql AS $$ DECLARE r record; BEGIN FOR r IN SELECT schemaname,tablename FROM pg_tables WHERE schemaname=''public'' ORDER BY tablename LOOP RETURN QUERY EXECUTE format(''SELECT %L, count(*)::bigint FROM %I.%I'',r.schemaname||''.''||r.tablename,r.schemaname,r.tablename); END LOOP; END $$; SELECT * FROM pg_temp.gracz_table_counts() ORDER BY table_name;'
+  counts_sql="$(cat <<'SQL'
+CREATE OR REPLACE FUNCTION pg_temp.gracz_table_counts()
+RETURNS TABLE(table_name text,row_count bigint)
+LANGUAGE plpgsql
+AS $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT schemaname,tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename LOOP
+    RETURN QUERY EXECUTE format(
+      'SELECT %L, count(*)::bigint FROM %I.%I',
+      r.schemaname||'.'||r.tablename,
+      r.schemaname,
+      r.tablename
+    );
+  END LOOP;
+END
+$$;
+SELECT * FROM pg_temp.gracz_table_counts() ORDER BY table_name;
+SQL
+)"
   psql "$DR_SOURCE_DATABASE_URL" -v ON_ERROR_STOP=1 -qAt -F '|' -c "$counts_sql" > "$WORKDIR/source-counts.txt"
   psql "$DR_RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -qAt -F '|' -c "$counts_sql" > "$WORKDIR/restore-counts.txt"
   if ! diff -u "$WORKDIR/source-counts.txt" "$WORKDIR/restore-counts.txt" >/dev/null; then
