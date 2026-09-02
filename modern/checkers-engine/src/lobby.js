@@ -50,7 +50,7 @@ export class LobbyService{
       if(room.gameType==="thousand"){
         if(!this.thousandService)throw new LobbyError("Silnik Tysiąca nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");room.gameId=`thousand-${room.roomId}`;await this.thousandService.createGame({gameId:room.gameId,players:room.seats.map(seat=>({userId:seat.id,displayName:seat.name}))});
       }else if(room.gameType==="gomoku"){
-        if(!this.gomokuService)throw new LobbyError("Silnik Gomoku nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");room.gameId=`gomoku-${room.roomId}`;this.gomokuService.createGame({gameId:room.gameId,players:room.seats.map(seat=>({userId:seat.id,displayName:seat.name}))});
+        if(!this.gomokuService)throw new LobbyError("Silnik Gomoku nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");room.gameId=`gomoku-${room.roomId}`;await this.gomokuService.createGame({gameId:room.gameId,players:room.seats.map(seat=>({userId:seat.id,displayName:seat.name}))});
       }else{
         room.gameId=`game-${room.roomId}`;await this.sessionStore.create(createGameSession({gameId:room.gameId,whitePlayerId:room.seats[0].id,blackPlayerId:room.seats[1].id}));
       }
