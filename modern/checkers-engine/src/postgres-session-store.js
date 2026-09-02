@@ -58,13 +58,11 @@ export class PostgresSessionStore {
     await this.ready;
     assertGameId(session?.gameId);
     try {
-      const { rows } = await this.pool.query(
+      await this.pool.query(
         `INSERT INTO gracz_game_sessions (game_id, state, version)
-         VALUES ($1, $2, 1)
-         RETURNING version`,
+         VALUES ($1, $2, 1)`,
         [session.gameId, serializeSession(session)],
       );
-      tagVersion(session, rows[0].version);
     } catch (error) {
       if (error?.code === "23505") {
         const duplicate = new Error(`Sesja ${session.gameId} już istnieje.`);
@@ -84,9 +82,8 @@ export class PostgresSessionStore {
       [gameId],
     );
     if (!rows[0]) throw new SessionNotFoundError(gameId);
-    const session = deserializeSession(rows[0].state);
     const version = Number(rows[0].version);
-    tagVersion(session, version);
+    const session = withVersion(deserializeSession(rows[0].state), version);
     return { session, version };
   }
 
@@ -116,8 +113,7 @@ export class PostgresSessionStore {
       throw new SessionConcurrencyConflictError(session.gameId, expectedVersion);
     }
 
-    tagVersion(session, Number(rows[0].version));
-    return session;
+    return withVersion(session, Number(rows[0].version));
   }
 
   async close() {
@@ -125,13 +121,8 @@ export class PostgresSessionStore {
   }
 }
 
-function tagVersion(session, version) {
-  Object.defineProperty(session, SESSION_VERSION, {
-    value: version,
-    writable: true,
-    configurable: true,
-    enumerable: true,
-  });
+function withVersion(session, version) {
+  return Object.freeze({ ...session, [SESSION_VERSION]: version });
 }
 
 function assertVersion(version) {
