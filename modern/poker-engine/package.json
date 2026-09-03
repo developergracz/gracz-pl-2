@@ -7,7 +7,7 @@
   "exports": "./src/index.js",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/domain/card.js && node --check src/domain/deck.js && node --check src/domain/random-source.js"
+    "check": "node --check src/index.js && node --check src/domain/card.js && node --check src/domain/deck.js && node --check src/domain/random-source.js && node --check src/domain/hand-evaluator.js"
   },
   "engines": {
     "node": ">=24"

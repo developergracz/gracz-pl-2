@@ -22,3 +22,10 @@ export {
   assertRandomSource,
   nextBoundedInt,
 } from "./domain/random-source.js";
+
+export {
+  HAND_CATEGORIES,
+  HandEvaluationError,
+  compareEvaluations,
+  evaluateHoldemHand,
+} from "./domain/hand-evaluator.js";
