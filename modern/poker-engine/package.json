@@ -1,0 +1,15 @@
+{
+  "name": "@gracz/poker-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure poker domain foundation for Gracz.pl AI Poker Academy",
+  "exports": "./src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/index.js && node --check src/domain/card.js && node --check src/domain/deck.js && node --check src/domain/random-source.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
