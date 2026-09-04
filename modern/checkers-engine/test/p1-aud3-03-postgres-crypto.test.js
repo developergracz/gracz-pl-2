@@ -47,6 +47,20 @@ test("P1-AUD3-03 real PostgreSQL dual-read/single-write persistence and restart"
     assert.equal(carolInbox.messages.find(m => m.messageId === currentMessage.messageId)?.body, "current body");
     assert.equal(events.length, beforeCurrentRead, "dedicated decrypt must not use legacy fallback");
 
+    const originalLegacyMessageKey = currentMessages.legacyMessageKey;
+    let nonAuthMessageLegacyReads = 0;
+    Object.defineProperty(currentMessages, "legacyMessageKey", { configurable: true, get() { nonAuthMessageLegacyReads += 1; return originalLegacyMessageKey; } });
+    const [messageIv,,messageCiphertext] = rawCurrent.subject.slice("enc:v1:".length).split(".");
+    const malformedSubject = `enc:v1:${messageIv}.AA.${messageCiphertext}`;
+    await currentMessages.pool.query("UPDATE gracz_messages SET subject=$2 WHERE message_id=$1", [currentMessage.messageId, malformedSubject]);
+    await assert.rejects(
+      () => currentMessages.listPrivateMessages(USERS[2], "inbox"),
+      error => error instanceof TypeError && error.code === "ERR_CRYPTO_INVALID_AUTH_TAG",
+    );
+    assert.equal(nonAuthMessageLegacyReads, 0, "message setup error must not access legacy key");
+    await currentMessages.pool.query("UPDATE gracz_messages SET subject=$2 WHERE message_id=$1", [currentMessage.messageId, rawCurrent.subject]);
+    Object.defineProperty(currentMessages, "legacyMessageKey", { configurable: true, writable: true, value: originalLegacyMessageKey });
+
     const bobInbox = await currentMessages.listPrivateMessages(USERS[1], "inbox");
     assert.equal(bobInbox.messages.find(m => m.messageId === legacyMessage.messageId)?.subject, "legacy subject");
     assert.ok(events.some(event => event.eventType === "crypto.legacy_decrypt" && event.metadata?.domain === "messages"));
@@ -73,6 +87,19 @@ test("P1-AUD3-03 real PostgreSQL dual-read/single-write persistence and restart"
     const beforeAttachmentRead = events.length;
     assert.equal((await currentAttachments.get(USERS[2], currentMessage.messageId)).data, PNG.toString("base64"));
     assert.equal(events.length, beforeAttachmentRead, "dedicated attachment decrypt must not use legacy fallback");
+
+    const originalLegacyAttachmentKey = currentAttachments.legacyKey;
+    let nonAuthAttachmentLegacyReads = 0;
+    Object.defineProperty(currentAttachments, "legacyKey", { configurable: true, get() { nonAuthAttachmentLegacyReads += 1; return originalLegacyAttachmentKey; } });
+    await currentAttachments.pool.query("UPDATE gracz_message_attachments SET auth_tag=$2 WHERE message_id=$1", [currentMessage.messageId, Buffer.alloc(1)]);
+    await assert.rejects(
+      () => currentAttachments.get(USERS[2], currentMessage.messageId),
+      error => error instanceof TypeError && error.code === "ERR_CRYPTO_INVALID_AUTH_TAG",
+    );
+    assert.equal(nonAuthAttachmentLegacyReads, 0, "attachment setup error must not access legacy key");
+    await currentAttachments.pool.query("UPDATE gracz_message_attachments SET auth_tag=$2 WHERE message_id=$1", [currentMessage.messageId, rawAttachment.auth_tag]);
+    Object.defineProperty(currentAttachments, "legacyKey", { configurable: true, writable: true, value: originalLegacyAttachmentKey });
+
     assert.equal((await currentAttachments.get(USERS[1], legacyMessage.messageId)).data, PNG.toString("base64"));
     assert.ok(events.some(event => event.eventType === "crypto.legacy_decrypt" && event.metadata?.domain === "attachments"));
 
@@ -105,7 +132,21 @@ test("P1-AUD3-03 real PostgreSQL dual-read/single-write persistence and restart"
 
     const newMfaCreated = await currentMfa.begin(USERS[2]);
     const newMfaRecord = await currentMfa.getRecord(USERS[2]);
+    const beforeNewMfaRead = events.length;
     assert.equal(currentMfa.decrypt(newMfaRecord, USERS[2]), newMfaCreated.secret);
+    assert.equal(events.length, beforeNewMfaRead, "dedicated MFA decrypt must not use legacy fallback");
+
+    const originalLegacyMfaKey = currentMfa.legacyKey;
+    let nonAuthMfaLegacyReads = 0;
+    Object.defineProperty(currentMfa, "legacyKey", { configurable: true, get() { nonAuthMfaLegacyReads += 1; return originalLegacyMfaKey; } });
+    const malformedMfaRecord = { ...newMfaRecord, tag: Buffer.alloc(1) };
+    assert.throws(
+      () => currentMfa.decrypt(malformedMfaRecord, USERS[2]),
+      error => error instanceof TypeError && error.code === "ERR_CRYPTO_INVALID_AUTH_TAG",
+    );
+    assert.equal(nonAuthMfaLegacyReads, 0, "MFA setup error must not access legacy key");
+    Object.defineProperty(currentMfa, "legacyKey", { configurable: true, writable: true, value: originalLegacyMfaKey });
+
     const authOnlyMfa = new MfaService(null, { encryptionSecret: AUTH, legacyEncryptionSecret: null });
     assert.throws(() => authOnlyMfa.decrypt(newMfaRecord, USERS[2]), /MFA_DECRYPT_FAILED|odszyfrować/);
     await authOnlyMfa.close();

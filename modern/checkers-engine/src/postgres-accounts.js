@@ -15,6 +15,13 @@ const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
 const MESSAGE_PREFIX = "enc:v1:";
 
+class CryptoAuthenticationError extends Error {
+  constructor(cause) {
+    super("Authenticated decryption failed.", { cause });
+    this.name = "CryptoAuthenticationError";
+  }
+}
+
 export class PostgresAccountService {
   constructor(connectionString, encryptionSecret, { legacyEncryptionSecret = process.env.AUTH_SECRET || null, audit = null } = {}) {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany dla PostgreSQL.");
@@ -258,9 +265,10 @@ export class PostgresAccountService {
   }
 
   #messageCrypto() {
+    const service = this;
     return {
       primaryKey: this.messageKey,
-      legacyKey: this.legacyMessageKey,
+      get legacyKey() { return service.legacyMessageKey; },
       onLegacyDecrypt: () => emitLegacySignal(this.audit, "messages"),
     };
   }
@@ -322,7 +330,7 @@ function encryptMessageText(value, key, messageId, field) {
   const tag = cipher.getAuthTag();
   return `${MESSAGE_PREFIX}${iv.toString("base64url")}.${tag.toString("base64url")}.${ciphertext.toString("base64url")}`;
 }
-function decryptMessageText(value, { primaryKey, legacyKey = null, onLegacyDecrypt = null }, messageId, field) {
+function decryptMessageText(value, crypto, messageId, field) {
   const text = String(value ?? "");
   if (!text.startsWith(MESSAGE_PREFIX)) return text;
   const payload = text.slice(MESSAGE_PREFIX.length);
@@ -332,16 +340,27 @@ function decryptMessageText(value, { primaryKey, legacyKey = null, onLegacyDecry
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivPart, "base64url"));
     decipher.setAAD(Buffer.from(`${messageId}:${field}`, "utf8"));
     decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
-    return Buffer.concat([decipher.update(Buffer.from(cipherPart, "base64url")), decipher.final()]).toString("utf8");
+    const clear = decipher.update(Buffer.from(cipherPart, "base64url"));
+    let final;
+    try { final = decipher.final(); }
+    catch (cause) { throw new CryptoAuthenticationError(cause); }
+    return Buffer.concat([clear, final]).toString("utf8");
   };
-  try { return decryptWith(primaryKey); }
-  catch {
-    if (legacyKey) {
-      try { const clear = decryptWith(legacyKey); onLegacyDecrypt?.(); return clear; }
-      catch {}
-    }
-    return "[Nie można odszyfrować tej wiadomości]";
+  try { return decryptWith(crypto.primaryKey); }
+  catch (error) {
+    if (!(error instanceof CryptoAuthenticationError)) throw error;
   }
+  const legacyKey = crypto.legacyKey;
+  if (legacyKey) {
+    try {
+      const clear = decryptWith(legacyKey);
+      crypto.onLegacyDecrypt?.();
+      return clear;
+    } catch (error) {
+      if (!(error instanceof CryptoAuthenticationError)) throw error;
+    }
+  }
+  return "[Nie można odszyfrować tej wiadomości]";
 }
 
 async function hashPassword(password, salt) { return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }); }

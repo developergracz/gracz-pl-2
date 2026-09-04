@@ -55,6 +55,37 @@ test("MFA dual-read czyta legacy AUTH_SECRET dopiero po authenticated failure i 
   await legacyWriter.close(); await current.close();
 });
 
+test("MFA setup/non-auth error nie uruchamia legacy fallback i dedicated success emituje zero legacy events", async () => {
+  const events = [];
+  const audit = { record(event) { events.push(event); return Promise.resolve(event); } };
+  const writer = new MfaService(null, { encryptionSecret: MFA, legacyEncryptionSecret: null });
+  const id = "aud303setup";
+  const created = await writer.begin(id);
+  const record = await writer.getRecord(id);
+  const reader = new MfaService(null, { encryptionSecret: MFA, legacyEncryptionSecret: AUTH, audit });
+  assert.equal(reader.decrypt(record, id), created.secret);
+  assert.equal(events.length, 0, "dedicated decrypt must emit zero legacy events");
+
+  const realLegacyKey = reader.legacyKey;
+  let legacyKeyReads = 0;
+  Object.defineProperty(reader, "legacyKey", {
+    configurable: true,
+    get() { legacyKeyReads += 1; return realLegacyKey; },
+  });
+  const malformed = { ...record, tag: Buffer.alloc(1) };
+  let error;
+  try { reader.decrypt(malformed, id); } catch (caught) { error = caught; }
+  assert.equal(error instanceof TypeError, true);
+  assert.equal(error?.code, "ERR_CRYPTO_INVALID_AUTH_TAG");
+  assert.equal(legacyKeyReads, 0, "setup error must not access legacy key");
+  assert.equal(events.length, 0, "setup error must emit zero legacy events");
+  const serialized = String(error?.message ?? "");
+  assert.equal(serialized.includes(created.secret), false);
+  assert.equal(serialized.includes(AUTH), false);
+  assert.equal(serialized.includes(record.ciphertext.toString("base64")), false);
+  await writer.close(); await reader.close();
+});
+
 test("MFA both keys fail safely bez ujawnienia materiału kryptograficznego", async () => {
   const writer = new MfaService(null, { encryptionSecret: MFA, legacyEncryptionSecret: null });
   const id = "aud303wrong";
