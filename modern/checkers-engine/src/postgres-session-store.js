@@ -4,6 +4,17 @@ import { deserializeSession, serializeSession } from "./session.js";
 import { SessionNotFoundError } from "./store.js";
 
 const { Pool } = pg;
+const SESSION_VERSION = Symbol("gracz.session.version");
+const INIT_LOCK_ID = 731_004_201;
+
+export class SessionConcurrencyConflictError extends Error {
+  constructor(gameId, expectedVersion) {
+    super(`Konflikt zapisu sesji ${gameId}: oczekiwana wersja ${expectedVersion} jest nieaktualna.`);
+    this.name = "SessionConcurrencyConflictError";
+    this.code = "SESSION_CONCURRENCY_CONFLICT";
+    this.status = 409;
+  }
+}
 
 export class PostgresSessionStore {
   constructor(connectionString) {
@@ -25,18 +36,40 @@ export class PostgresSessionStore {
   }
 
   async #initialize() {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS gracz_game_sessions (
-        game_id VARCHAR(128) PRIMARY KEY,
-        state TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    await this.pool.query(`
-      CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
-      ON gracz_game_sessions(updated_at DESC)
-    `);
+    const client = await this.pool.connect();
+    let initializationError;
+    try {
+      await client.query("SELECT pg_advisory_lock($1)", [INIT_LOCK_ID]);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gracz_game_sessions (
+          game_id VARCHAR(128) PRIMARY KEY,
+          state TEXT NOT NULL,
+          version INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        ALTER TABLE gracz_game_sessions
+        ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
+        ON gracz_game_sessions(updated_at DESC)
+      `);
+    } catch (error) {
+      initializationError = error;
+      throw error;
+    } finally {
+      let unlockError;
+      try {
+        await client.query("SELECT pg_advisory_unlock($1)", [INIT_LOCK_ID]);
+      } catch (error) {
+        unlockError = error;
+      }
+      client.release(unlockError);
+      if (!initializationError && unlockError) throw unlockError;
+    }
   }
 
   async create(session) {
@@ -44,8 +77,8 @@ export class PostgresSessionStore {
     assertGameId(session?.gameId);
     try {
       await this.pool.query(
-        `INSERT INTO gracz_game_sessions (game_id, state)
-         VALUES ($1, $2)`,
+        `INSERT INTO gracz_game_sessions (game_id, state, version)
+         VALUES ($1, $2, 1)`,
         [session.gameId, serializeSession(session)],
       );
     } catch (error) {
@@ -56,35 +89,68 @@ export class PostgresSessionStore {
       }
       throw error;
     }
-    return session;
+    return withVersion(session, 1);
   }
 
-  async get(gameId) {
+  async getVersioned(gameId) {
     await this.ready;
     assertGameId(gameId);
     const { rows } = await this.pool.query(
-      `SELECT state FROM gracz_game_sessions WHERE game_id = $1`,
+      `SELECT state, version FROM gracz_game_sessions WHERE game_id = $1`,
       [gameId],
     );
     if (!rows[0]) throw new SessionNotFoundError(gameId);
-    return deserializeSession(rows[0].state);
+    const version = Number(rows[0].version);
+    const session = withVersion(deserializeSession(rows[0].state), version);
+    return { session, version };
   }
 
-  async save(session) {
+  async get(gameId) {
+    return (await this.getVersioned(gameId)).session;
+  }
+
+  async save(session, expectedVersion = session?.[SESSION_VERSION]) {
     await this.ready;
     assertGameId(session?.gameId);
-    await this.pool.query(
-      `INSERT INTO gracz_game_sessions (game_id, state)
-       VALUES ($1, $2)
-       ON CONFLICT (game_id)
-       DO UPDATE SET state = EXCLUDED.state, updated_at = NOW()`,
-      [session.gameId, serializeSession(session)],
+    assertVersion(expectedVersion);
+    const serialized = serializeSession(session);
+
+    const { rows } = await this.pool.query(
+      `UPDATE gracz_game_sessions
+       SET state = $2, version = version + 1, updated_at = NOW()
+       WHERE game_id = $1 AND version = $3 AND state IS DISTINCT FROM $2
+       RETURNING version`,
+      [session.gameId, serialized, expectedVersion],
     );
-    return session;
+
+    if (!rows[0]) {
+      const current = await this.pool.query(
+        `SELECT state, version FROM gracz_game_sessions WHERE game_id = $1`,
+        [session.gameId],
+      );
+      if (!current.rows[0]) throw new SessionNotFoundError(session.gameId);
+      const currentVersion = Number(current.rows[0].version);
+      if (currentVersion === expectedVersion && current.rows[0].state === serialized) {
+        return withVersion(session, currentVersion);
+      }
+      throw new SessionConcurrencyConflictError(session.gameId, expectedVersion);
+    }
+
+    return withVersion(session, Number(rows[0].version));
   }
 
   async close() {
     await this.pool.end();
+  }
+}
+
+function withVersion(session, version) {
+  return Object.freeze({ ...session, [SESSION_VERSION]: version });
+}
+
+function assertVersion(version) {
+  if (!Number.isInteger(version) || version < 1) {
+    throw new TypeError("Oczekiwana wersja sesji jest wymagana dla zapisu CAS.");
   }
 }
 
