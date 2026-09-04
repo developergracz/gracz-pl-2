@@ -37,6 +37,7 @@ export class PostgresSessionStore {
 
   async #initialize() {
     const client = await this.pool.connect();
+    let initializationError;
     try {
       await client.query("SELECT pg_advisory_lock($1)", [INIT_LOCK_ID]);
       await client.query(`
@@ -56,9 +57,18 @@ export class PostgresSessionStore {
         CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
         ON gracz_game_sessions(updated_at DESC)
       `);
+    } catch (error) {
+      initializationError = error;
+      throw error;
     } finally {
-      await client.query("SELECT pg_advisory_unlock($1)", [INIT_LOCK_ID]).catch(() => {});
-      client.release();
+      let unlockError;
+      try {
+        await client.query("SELECT pg_advisory_unlock($1)", [INIT_LOCK_ID]);
+      } catch (error) {
+        unlockError = error;
+      }
+      client.release(unlockError);
+      if (!initializationError && unlockError) throw unlockError;
     }
   }
 
