@@ -2,10 +2,14 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, ti
 import pg from "pg";
 const { Pool } = pg;
 
+class CryptoAuthenticationError extends Error {
+  constructor(cause){super("Authenticated decryption failed.",{cause});this.name="CryptoAuthenticationError";}
+}
+
 export class MfaService {
-  constructor(databaseUrl=null,{encryptionSecret=process.env.MFA_ENCRYPTION_KEY||process.env.AUTH_SECRET||"",audit=null}={}){
-    if(String(encryptionSecret).length<32)throw new TypeError("MFA_ENCRYPTION_KEY/AUTH_SECRET musi mieć co najmniej 32 znaki.");
-    this.key=Buffer.from(hkdfSync("sha256",Buffer.from(String(encryptionSecret)),Buffer.from("gracz.pl/mfa/v1"),Buffer.from("totp-secret-encryption"),32));this.audit=audit;
+  constructor(databaseUrl=null,{encryptionSecret=process.env.MFA_ENCRYPTION_KEY||"",legacyEncryptionSecret=process.env.AUTH_SECRET||null,audit=null}={}){
+    assertSecret(encryptionSecret,"MFA_ENCRYPTION_KEY");if(legacyEncryptionSecret!==null)assertSecret(legacyEncryptionSecret,"Legacy AUTH_SECRET");
+    this.key=deriveKey(String(encryptionSecret));this.legacyKey=legacyEncryptionSecret&&legacyEncryptionSecret!==encryptionSecret?deriveKey(String(legacyEncryptionSecret)):null;this.audit=audit;
     this.pool=databaseUrl?new Pool({connectionString:databaseUrl,ssl:databaseUrl.includes("localhost")||databaseUrl.includes("127.0.0.1")?false:{rejectUnauthorized:false},max:2}):null;this.memory=new Map();this.ready=this.pool?this.initialize():Promise.resolve();
   }
   async initialize(){await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_mfa(user_id VARCHAR(32) PRIMARY KEY REFERENCES gracz_accounts(user_id) ON DELETE CASCADE,kind VARCHAR(16) NOT NULL DEFAULT 'totp',secret_iv BYTEA NOT NULL,secret_tag BYTEA NOT NULL,secret_ciphertext BYTEA NOT NULL,enabled BOOLEAN NOT NULL DEFAULT FALSE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),verified_at TIMESTAMPTZ)`);}
@@ -17,11 +21,15 @@ export class MfaService {
   async isEnabled(userId){return Boolean((await this.getRecord(normalizeId(userId)))?.enabled);}
   async getRecord(id){if(!this.pool)return this.memory.get(id)||null;await this.ready;const{rows}=await this.pool.query(`SELECT secret_iv AS iv,secret_tag AS tag,secret_ciphertext AS ciphertext,enabled FROM gracz_mfa WHERE user_id=$1`,[id]);return rows[0]||null;}
   encrypt(secret,id){const iv=randomBytes(12),cipher=createCipheriv("aes-256-gcm",this.key,iv);cipher.setAAD(Buffer.from(id));const ciphertext=Buffer.concat([cipher.update(secret,"utf8"),cipher.final()]);return{iv,tag:cipher.getAuthTag(),ciphertext};}
-  decrypt(record,id){const decipher=createDecipheriv("aes-256-gcm",this.key,record.iv);decipher.setAAD(Buffer.from(id));decipher.setAuthTag(record.tag);return Buffer.concat([decipher.update(record.ciphertext),decipher.final()]).toString("utf8");}
+  decrypt(record,id){try{return decryptWithKey(record,id,this.key);}catch(error){if(!(error instanceof CryptoAuthenticationError))throw error;}if(this.legacyKey){try{const clear=decryptWithKey(record,id,this.legacyKey);this.#legacySignal();return clear;}catch(error){if(!(error instanceof CryptoAuthenticationError))throw error;}}throw Object.assign(new Error("Nie można odszyfrować konfiguracji MFA."),{code:"MFA_DECRYPT_FAILED",status:500});}
+  #legacySignal(){const event={eventType:"crypto.legacy_decrypt",outcome:"success",metadata:{domain:"mfa"}};if(typeof this.audit?.record==="function")Promise.resolve(this.audit.record(event)).catch(()=>{});else console.info("[security] crypto.legacy_decrypt",{domain:"mfa"});}
   async close(){if(this.pool)await this.pool.end();}
 }
 
 export function verifyTotp(secret,code,{time=Date.now(),window=1}={}){const clean=String(code||"").trim();if(!/^\d{6}$/.test(clean))return false;const key=base32Decode(secret),counter=Math.floor(time/1000/30);for(let drift=-window;drift<=window;drift++){const expected=totp(key,counter+drift);const a=Buffer.from(clean),b=Buffer.from(expected);if(a.length===b.length&&timingSafeEqual(a,b))return true;}return false;}
+function assertSecret(value,name){if(typeof value!=="string"||Buffer.byteLength(value,"utf8")<32)throw new TypeError(`${name} musi mieć co najmniej 32 bajty.`);}
+function deriveKey(secret){return Buffer.from(hkdfSync("sha256",Buffer.from(secret),Buffer.from("gracz.pl/mfa/v1"),Buffer.from("totp-secret-encryption"),32));}
+function decryptWithKey(record,id,key){const decipher=createDecipheriv("aes-256-gcm",key,record.iv);decipher.setAAD(Buffer.from(id));decipher.setAuthTag(record.tag);const clear=decipher.update(record.ciphertext);let final;try{final=decipher.final();}catch(cause){throw new CryptoAuthenticationError(cause);}return Buffer.concat([clear,final]).toString("utf8");}
 function totp(key,counter){const buf=Buffer.alloc(8);buf.writeBigUInt64BE(BigInt(counter));const h=createHmac("sha1",key).update(buf).digest(),offset=h[h.length-1]&15;const value=((h[offset]&127)<<24)|(h[offset+1]<<16)|(h[offset+2]<<8)|h[offset+3];return String(value%1_000_000).padStart(6,"0");}
 const ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32Encode(buffer){let bits="";for(const byte of buffer)bits+=byte.toString(2).padStart(8,"0");let out="";for(let i=0;i<bits.length;i+=5)out+=ALPHABET[parseInt(bits.slice(i,i+5).padEnd(5,"0"),2)];return out;}

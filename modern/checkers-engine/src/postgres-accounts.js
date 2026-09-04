@@ -15,17 +15,21 @@ const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
 const MESSAGE_PREFIX = "enc:v1:";
 
+class CryptoAuthenticationError extends Error {
+  constructor(cause) {
+    super("Authenticated decryption failed.", { cause });
+    this.name = "CryptoAuthenticationError";
+  }
+}
+
 export class PostgresAccountService {
-  constructor(connectionString, encryptionSecret) {
+  constructor(connectionString, encryptionSecret, { legacyEncryptionSecret = process.env.AUTH_SECRET || null, audit = null } = {}) {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany dla PostgreSQL.");
-    if (typeof encryptionSecret !== "string" || encryptionSecret.length < 32) throw new TypeError("Sekret szyfrowania wiadomości musi mieć co najmniej 32 znaki.");
-    this.messageKey = Buffer.from(hkdfSync(
-      "sha256",
-      Buffer.from(encryptionSecret, "utf8"),
-      Buffer.from("gracz.pl/messages/v1", "utf8"),
-      Buffer.from("private-message-encryption", "utf8"),
-      32,
-    ));
+    assertSecret(encryptionSecret, "Sekret szyfrowania wiadomości");
+    if (legacyEncryptionSecret !== null) assertSecret(legacyEncryptionSecret, "Legacy AUTH_SECRET");
+    this.messageKey = deriveMessageKey(encryptionSecret);
+    this.legacyMessageKey = legacyEncryptionSecret && legacyEncryptionSecret !== encryptionSecret ? deriveMessageKey(legacyEncryptionSecret) : null;
+    this.audit = audit;
     this.pool = new Pool({
       connectionString,
       ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false },
@@ -235,7 +239,7 @@ export class PostgresAccountService {
        RETURNING message_id, sender_id, recipient_id, subject, body, created_at, read_at`,
       [messageId, sender, recipient, encryptedSubject, encryptedBody],
     );
-    return messageRow(rows[0], { senderName: null, recipientName: target.display_name }, this.messageKey);
+    return messageRow(rows[0], { senderName: null, recipientName: target.display_name }, this.#messageCrypto());
   }
 
   async listPrivateMessages(userId, folder = "inbox") {
@@ -257,7 +261,16 @@ export class PostgresAccountService {
       [id],
     );
     const unread = await this.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_messages WHERE recipient_id=$1 AND recipient_deleted=FALSE AND read_at IS NULL`, [id]);
-    return { folder: safeFolder, unreadCount: unread.rows[0]?.count ?? 0, messages: rows.map((row) => messageRow(row, {}, this.messageKey)) };
+    return { folder: safeFolder, unreadCount: unread.rows[0]?.count ?? 0, messages: rows.map((row) => messageRow(row, {}, this.#messageCrypto())) };
+  }
+
+  #messageCrypto() {
+    const service = this;
+    return {
+      primaryKey: this.messageKey,
+      get legacyKey() { return service.legacyMessageKey; },
+      onLegacyDecrypt: () => emitLegacySignal(this.audit, "messages"),
+    };
   }
 
   async updatePrivateMessage(userId, messageId, action) {
@@ -300,6 +313,15 @@ const BLOCKED_PASSWORDS = new Set([
   "graczpl", "gracz.pl", "test123456", "testtest", "socharomario2010", "socharomario2010@"
 ]);
 
+function emitLegacySignal(audit, domain) {
+  const event = { eventType: "crypto.legacy_decrypt", outcome: "success", metadata: { domain } };
+  if (typeof audit?.record === "function") Promise.resolve(audit.record(event)).catch(() => {});
+  else console.info("[security] crypto.legacy_decrypt", { domain });
+}
+function assertSecret(value, label) { if (typeof value !== "string" || Buffer.byteLength(value, "utf8") < 32) throw new TypeError(`${label} musi mieć co najmniej 32 bajty.`); }
+function deriveMessageKey(secret) {
+  return Buffer.from(hkdfSync("sha256", Buffer.from(secret, "utf8"), Buffer.from("gracz.pl/messages/v1", "utf8"), Buffer.from("private-message-encryption", "utf8"), 32));
+}
 function encryptMessageText(value, key, messageId, field) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -308,24 +330,37 @@ function encryptMessageText(value, key, messageId, field) {
   const tag = cipher.getAuthTag();
   return `${MESSAGE_PREFIX}${iv.toString("base64url")}.${tag.toString("base64url")}.${ciphertext.toString("base64url")}`;
 }
-
-function decryptMessageText(value, key, messageId, field) {
+function decryptMessageText(value, crypto, messageId, field) {
   const text = String(value ?? "");
   if (!text.startsWith(MESSAGE_PREFIX)) return text;
-  try {
-    const payload = text.slice(MESSAGE_PREFIX.length);
-    const [ivPart, tagPart, cipherPart] = payload.split(".");
-    if (!ivPart || !tagPart || cipherPart === undefined) throw new Error("invalid encrypted payload");
+  const payload = text.slice(MESSAGE_PREFIX.length);
+  const [ivPart, tagPart, cipherPart] = payload.split(".");
+  if (!ivPart || !tagPart || cipherPart === undefined) return "[Nie można odszyfrować tej wiadomości]";
+  const decryptWith = (key) => {
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivPart, "base64url"));
     decipher.setAAD(Buffer.from(`${messageId}:${field}`, "utf8"));
     decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
-    return Buffer.concat([
-      decipher.update(Buffer.from(cipherPart, "base64url")),
-      decipher.final(),
-    ]).toString("utf8");
-  } catch {
-    return "[Nie można odszyfrować tej wiadomości]";
+    const clear = decipher.update(Buffer.from(cipherPart, "base64url"));
+    let final;
+    try { final = decipher.final(); }
+    catch (cause) { throw new CryptoAuthenticationError(cause); }
+    return Buffer.concat([clear, final]).toString("utf8");
+  };
+  try { return decryptWith(crypto.primaryKey); }
+  catch (error) {
+    if (!(error instanceof CryptoAuthenticationError)) throw error;
   }
+  const legacyKey = crypto.legacyKey;
+  if (legacyKey) {
+    try {
+      const clear = decryptWith(legacyKey);
+      crypto.onLegacyDecrypt?.();
+      return clear;
+    } catch (error) {
+      if (!(error instanceof CryptoAuthenticationError)) throw error;
+    }
+  }
+  return "[Nie można odszyfrować tej wiadomości]";
 }
 
 async function hashPassword(password, salt) { return scrypt(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }); }
@@ -362,9 +397,9 @@ function sanitizeProfile(input) {
 function publicProfile(row) {
   return Object.freeze({ userId: row.user_id, displayName: row.display_name, email: row.email ?? "", recoveryEmail: row.recovery_email ?? "", createdAt: row.created_at, ...defaultProfile(), ...(row.profile_data ?? {}) });
 }
-function messageRow(row, names = {}, messageKey = null) {
+function messageRow(row, names = {}, crypto = null) {
   const messageId = row.message_id;
-  const subject = messageKey ? decryptMessageText(row.subject, messageKey, messageId, "subject") : row.subject;
-  const body = messageKey ? decryptMessageText(row.body, messageKey, messageId, "body") : row.body;
+  const subject = crypto ? decryptMessageText(row.subject, crypto, messageId, "subject") : row.subject;
+  const body = crypto ? decryptMessageText(row.body, crypto, messageId, "body") : row.body;
   return Object.freeze({ messageId, senderId: row.sender_id, senderName: row.sender_name ?? names.senderName ?? row.sender_id, recipientId: row.recipient_id, recipientName: row.recipient_name ?? names.recipientName ?? row.recipient_id, subject, body, createdAt: row.created_at, readAt: row.read_at });
 }
