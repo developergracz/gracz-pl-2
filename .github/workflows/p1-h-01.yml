@@ -1,0 +1,50 @@
+name: P1-H-01 Tournament Concurrency
+
+on:
+  pull_request:
+    paths:
+      - "modern/checkers-engine/src/tournaments.js"
+      - "modern/checkers-engine/test/p1-h-01-tournament-concurrency.test.js"
+      - ".github/workflows/p1-h-01.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p1-h-01-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      P1_H_01_DATABASE_URL: postgresql://gracz:gracz_test@localhost:5432/gracz_test
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: Tournament syntax check
+        run: node --check src/tournaments.js
+      - name: P1-H-01 PostgreSQL concurrency tests
+        run: node --test test/p1-h-01-tournament-concurrency.test.js

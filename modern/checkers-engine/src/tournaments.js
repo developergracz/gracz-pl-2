@@ -65,6 +65,7 @@ export class TournamentService {
         completed_at TIMESTAMPTZ NULL
       );
       CREATE INDEX IF NOT EXISTS gracz_tournament_matches_idx ON gracz_tournament_matches(tournament_id, round, board);
+      CREATE UNIQUE INDEX IF NOT EXISTS gracz_tournament_round_board_uq ON gracz_tournament_matches(tournament_id, round, board);
     `);
   }
 
@@ -140,35 +141,68 @@ export class TournamentService {
     const pairings=createPairings(detail.players,[],1,t.format); await this.insertMatches(id,pairings); return this.detail(user,id);
   }
 
-  async insertMatches(id,matches){
-    for(const m of matches) await this.pool.query(`INSERT INTO gracz_tournament_matches(match_id,tournament_id,round,board,white_id,white_name,black_id,black_name,result,status,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,[m.matchId,id,m.round,m.board,m.whiteId,m.whiteName,m.blackId,m.blackName,m.result,m.status,m.completedAt]);
+  async insertMatches(id,matches,db=this.pool){
+    for(const m of matches) await db.query(`INSERT INTO gracz_tournament_matches(match_id,tournament_id,round,board,white_id,white_name,black_id,black_name,result,status,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (tournament_id,round,board) DO NOTHING`,[m.matchId,id,m.round,m.board,m.whiteId,m.whiteName,m.blackId,m.blackName,m.result,m.status,m.completedAt]);
   }
 
   async report(user,id,matchId,result){
     if(!RESULTS.has(result)) throw tournamentError("Nieprawidłowy wynik.","INVALID_RESULT",400);
-    const detail=await this.detail(user,id); const t=detail.tournament; const match=detail.matches.find(m=>m.matchId===matchId);
-    if(!match) throw tournamentError("Nie znaleziono pary turniejowej.","MATCH_NOT_FOUND",404);
-    if(t.ownerId!==user.userId && match.whiteId!==user.userId && match.blackId!==user.userId) throw tournamentError("Nie możesz zgłosić wyniku tej partii.","MATCH_FORBIDDEN",403);
-    if(match.status==="completed") throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
-    if(!this.pool){match.result=result;match.status="completed";match.completedAt=new Date().toISOString();applyResult(this.memory.get(id).players,match,result);await this.advanceMemory(user,id);return this.detail(user,id);}
-    await this.pool.query(`UPDATE gracz_tournament_matches SET result=$3,status='completed',reported_by=$4,completed_at=NOW() WHERE tournament_id=$1 AND match_id=$2 AND status<>'completed'`,[id,matchId,result,user.userId]);
-    await this.recomputeStandings(id); await this.advanceDatabase(id); return this.detail(user,id);
+    if(!this.pool){
+      const detail=await this.detail(user,id); const t=detail.tournament; const match=detail.matches.find(m=>m.matchId===matchId);
+      if(!match) throw tournamentError("Nie znaleziono pary turniejowej.","MATCH_NOT_FOUND",404);
+      if(t.ownerId!==user.userId && match.whiteId!==user.userId && match.blackId!==user.userId) throw tournamentError("Nie możesz zgłosić wyniku tej partii.","MATCH_FORBIDDEN",403);
+      if(match.status==="completed") throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
+      match.result=result;match.status="completed";match.completedAt=new Date().toISOString();applyResult(this.memory.get(id).players,match,result);await this.advanceMemory(user,id);return this.detail(user,id);
+    }
+
+    const client=await this.pool.connect();
+    try{
+      await client.query("BEGIN");
+      const tournament=(await client.query(`SELECT owner_id FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+      if(!tournament) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      const match=(await client.query(`SELECT match_id,white_id,black_id,status FROM gracz_tournament_matches WHERE tournament_id=$1 AND match_id=$2 FOR UPDATE`,[id,matchId])).rows[0];
+      if(!match) throw tournamentError("Nie znaleziono pary turniejowej.","MATCH_NOT_FOUND",404);
+      if(tournament.owner_id!==user.userId && match.white_id!==user.userId && match.black_id!==user.userId) throw tournamentError("Nie możesz zgłosić wyniku tej partii.","MATCH_FORBIDDEN",403);
+      if(match.status==="completed") throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
+      const updated=await client.query(`UPDATE gracz_tournament_matches SET result=$3,status='completed',reported_by=$4,completed_at=NOW() WHERE tournament_id=$1 AND match_id=$2 AND status<>'completed' RETURNING match_id`,[id,matchId,result,user.userId]);
+      if(updated.rowCount!==1) throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
+      await this.recomputeStandings(id,client);
+      await this.advanceDatabase(id,client);
+      await client.query("COMMIT");
+    }catch(error){
+      await client.query("ROLLBACK").catch(()=>{});
+      throw error;
+    }finally{client.release();}
+    return this.detail(user,id);
   }
 
-  async recomputeStandings(id){
-    const matches=await this.pool.query(`SELECT white_id,black_id,result FROM gracz_tournament_matches WHERE tournament_id=$1 AND status='completed'`,[id]);
-    const players=await this.pool.query(`SELECT user_id FROM gracz_tournament_players WHERE tournament_id=$1`,[id]); const scores=new Map(players.rows.map(p=>[p.user_id,{points:0,wins:0,draws:0,losses:0}]));
+  async recomputeStandings(id,db=this.pool){
+    const matches=await db.query(`SELECT white_id,black_id,result FROM gracz_tournament_matches WHERE tournament_id=$1 AND status='completed'`,[id]);
+    const players=await db.query(`SELECT user_id FROM gracz_tournament_players WHERE tournament_id=$1`,[id]); const scores=new Map(players.rows.map(p=>[p.user_id,{points:0,wins:0,draws:0,losses:0}]));
     for(const m of matches.rows){if(!m.white_id||!m.black_id)continue;const w=scores.get(m.white_id),b=scores.get(m.black_id);if(!w||!b)continue;if(m.result==="1-0"){w.points+=1;w.wins++;b.losses++;}else if(m.result==="0-1"){b.points+=1;b.wins++;w.losses++;}else{w.points+=.5;b.points+=.5;w.draws++;b.draws++;}}
-    for(const [uid,s] of scores) await this.pool.query(`UPDATE gracz_tournament_players SET points=$3,wins=$4,draws=$5,losses=$6 WHERE tournament_id=$1 AND user_id=$2`,[id,uid,s.points,s.wins,s.draws,s.losses]);
-    const standings=await this.pool.query(`SELECT user_id,points FROM gracz_tournament_players WHERE tournament_id=$1`,[id]); const pointMap=new Map(standings.rows.map(r=>[r.user_id,Number(r.points)])); const bh=new Map([...pointMap.keys()].map(k=>[k,0])); for(const m of matches.rows){if(m.white_id&&m.black_id){bh.set(m.white_id,(bh.get(m.white_id)||0)+(pointMap.get(m.black_id)||0));bh.set(m.black_id,(bh.get(m.black_id)||0)+(pointMap.get(m.white_id)||0));}} for(const [uid,v] of bh) await this.pool.query(`UPDATE gracz_tournament_players SET buchholz=$3 WHERE tournament_id=$1 AND user_id=$2`,[id,uid,v]);
+    for(const [uid,s] of scores) await db.query(`UPDATE gracz_tournament_players SET points=$3,wins=$4,draws=$5,losses=$6 WHERE tournament_id=$1 AND user_id=$2`,[id,uid,s.points,s.wins,s.draws,s.losses]);
+    const standings=await db.query(`SELECT user_id,points FROM gracz_tournament_players WHERE tournament_id=$1`,[id]); const pointMap=new Map(standings.rows.map(r=>[r.user_id,Number(r.points)])); const bh=new Map([...pointMap.keys()].map(k=>[k,0])); for(const m of matches.rows){if(m.white_id&&m.black_id){bh.set(m.white_id,(bh.get(m.white_id)||0)+(pointMap.get(m.black_id)||0));bh.set(m.black_id,(bh.get(m.black_id)||0)+(pointMap.get(m.white_id)||0));}} for(const [uid,v] of bh) await db.query(`UPDATE gracz_tournament_players SET buchholz=$3 WHERE tournament_id=$1 AND user_id=$2`,[id,uid,v]);
   }
 
-  async advanceDatabase(id){
-    const t=(await this.pool.query(`SELECT format,rounds,current_round FROM gracz_tournaments WHERE tournament_id=$1`,[id])).rows[0]; const open=(await this.pool.query(`SELECT COUNT(*)::int c FROM gracz_tournament_matches WHERE tournament_id=$1 AND round=$2 AND status<>'completed'`,[id,t.current_round])).rows[0].c; if(open>0)return;
-    const players=(await this.pool.query(`SELECT user_id,display_name,seed,points,wins,draws,losses,buchholz,status,joined_at FROM gracz_tournament_players WHERE tournament_id=$1 ORDER BY points DESC,buchholz DESC,wins DESC,seed`,[id])).rows.map(mapPlayer);
-    if(t.format==="knockout"){const current=(await this.pool.query(`SELECT white_id,white_name,black_id,black_name,result FROM gracz_tournament_matches WHERE tournament_id=$1 AND round=$2 ORDER BY board`,[id,t.current_round])).rows;const winners=current.map(m=>m.result==="1-0"?{userId:m.white_id,displayName:m.white_name}:m.result==="0-1"?{userId:m.black_id,displayName:m.black_name}:null).filter(Boolean);if(winners.length<=1){await this.pool.query(`UPDATE gracz_tournaments SET status='finished',finished_at=NOW() WHERE tournament_id=$1`,[id]);return;}const next=t.current_round+1;await this.pool.query(`UPDATE gracz_tournaments SET current_round=$2 WHERE tournament_id=$1`,[id,next]);await this.insertMatches(id,createPairings(winners,[],next,"knockout"));return;}
-    if(t.current_round>=t.rounds){await this.pool.query(`UPDATE gracz_tournaments SET status='finished',finished_at=NOW() WHERE tournament_id=$1`,[id]);return;}
-    const previous=(await this.pool.query(`SELECT white_id,black_id FROM gracz_tournament_matches WHERE tournament_id=$1`,[id])).rows; const next=t.current_round+1; await this.pool.query(`UPDATE gracz_tournaments SET current_round=$2 WHERE tournament_id=$1`,[id,next]); await this.insertMatches(id,createPairings(players,previous,next,t.format));
+  async advanceDatabase(id,db=this.pool){
+    const t=(await db.query(`SELECT format,rounds,current_round,status FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+    if(!t||t.status!=="live")return;
+    const open=(await db.query(`SELECT COUNT(*)::int c FROM gracz_tournament_matches WHERE tournament_id=$1 AND round=$2 AND status<>'completed'`,[id,t.current_round])).rows[0].c; if(open>0)return;
+    const players=(await db.query(`SELECT user_id,display_name,seed,points,wins,draws,losses,buchholz,status,joined_at FROM gracz_tournament_players WHERE tournament_id=$1 ORDER BY points DESC,buchholz DESC,wins DESC,seed`,[id])).rows.map(mapPlayer);
+    if(t.format==="knockout"){
+      const current=(await db.query(`SELECT white_id,white_name,black_id,black_name,result FROM gracz_tournament_matches WHERE tournament_id=$1 AND round=$2 ORDER BY board`,[id,t.current_round])).rows;
+      const winners=current.map(m=>m.result==="1-0"?{userId:m.white_id,displayName:m.white_name}:m.result==="0-1"?{userId:m.black_id,displayName:m.black_name}:null).filter(Boolean);
+      if(winners.length<=1){await db.query(`UPDATE gracz_tournaments SET status='finished',finished_at=NOW() WHERE tournament_id=$1 AND status='live'`,[id]);return;}
+      const next=t.current_round+1;
+      const advanced=await db.query(`UPDATE gracz_tournaments SET current_round=$2 WHERE tournament_id=$1 AND status='live' AND current_round=$3 RETURNING tournament_id`,[id,next,t.current_round]);
+      if(advanced.rowCount===1)await this.insertMatches(id,createPairings(winners,[],next,"knockout"),db);
+      return;
+    }
+    if(t.current_round>=t.rounds){await db.query(`UPDATE gracz_tournaments SET status='finished',finished_at=NOW() WHERE tournament_id=$1 AND status='live'`,[id]);return;}
+    const previous=(await db.query(`SELECT white_id,black_id FROM gracz_tournament_matches WHERE tournament_id=$1`,[id])).rows;
+    const next=t.current_round+1;
+    const advanced=await db.query(`UPDATE gracz_tournaments SET current_round=$2 WHERE tournament_id=$1 AND status='live' AND current_round=$3 RETURNING tournament_id`,[id,next,t.current_round]);
+    if(advanced.rowCount===1)await this.insertMatches(id,createPairings(players,previous,next,t.format),db);
   }
 
   async advanceMemory(user,id){const d=this.memory.get(id),t=d.tournament;if(d.matches.some(m=>m.round===t.currentRound&&m.status!=="completed"))return;if(t.format==="knockout"){const winners=d.matches.filter(m=>m.round===t.currentRound).map(m=>m.result==="1-0"?d.players.find(p=>p.userId===m.whiteId):m.result==="0-1"?d.players.find(p=>p.userId===m.blackId):null).filter(Boolean);if(winners.length<=1){t.status="finished";t.finishedAt=new Date().toISOString();return;}t.currentRound++;d.matches.push(...createPairings(winners,[],t.currentRound,"knockout"));return;}if(t.currentRound>=t.rounds){t.status="finished";t.finishedAt=new Date().toISOString();return;}t.currentRound++;d.matches.push(...createPairings(sortStandings(d.players),d.matches,t.currentRound,t.format));}
@@ -182,7 +216,7 @@ export function createTournamentHandler({service,auth,authSessions}){
 function createPairings(players,previous,round,format){const list=[...players];if(format!=="knockout")list.sort((a,b)=>(Number(b.points)||0)-(Number(a.points)||0)||(Number(b.buchholz)||0)-(Number(a.buchholz)||0)||(a.seed||0)-(b.seed||0));const played=new Set(previous.map(m=>[m.white_id||m.whiteId,m.black_id||m.blackId].sort().join("|")));const out=[];let board=1;while(list.length>1){const a=list.shift();let idx=format==="knockout"?0:list.findIndex(b=>!played.has([a.userId,b.userId].sort().join("|")));if(idx<0)idx=0;const b=list.splice(idx,1)[0];const swap=round%2===0;out.push({matchId:randomUUID(),round,board:board++,whiteId:swap?b.userId:a.userId,whiteName:swap?b.displayName:a.displayName,blackId:swap?a.userId:b.userId,blackName:swap?a.displayName:b.displayName,result:null,status:"scheduled",completedAt:null});}if(list.length){const a=list[0];out.push({matchId:randomUUID(),round,board:board++,whiteId:a.userId,whiteName:a.displayName,blackId:null,blackName:"BYE",result:"1-0",status:"completed",completedAt:new Date().toISOString()});}return out;}
 function applyResult(players,m,result){const w=players.find(p=>p.userId===m.whiteId),b=players.find(p=>p.userId===m.blackId);if(!w||!b)return;if(result==="1-0"){w.points+=1;w.wins++;b.losses++;}else if(result==="0-1"){b.points+=1;b.wins++;w.losses++;}else{w.points+=.5;b.points+=.5;w.draws++;b.draws++;}}
 function sortStandings(p){return [...p].sort((a,b)=>Number(b.points)-Number(a.points)||Number(b.buchholz)-Number(a.buchholz)||b.wins-a.wins||a.seed-b.seed);}
-function filterList(rows,q){const status=q.status;const game=q.game;const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(!game||game==="all"||t.game===game)&&(!mine||t.joined)&&( !text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
+function filterList(rows,q){const status=q.status;const game=q.game;const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(!game||game==="all"||t.game===game)&&(!mine||t.joined)&&(!text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
 function mapTournament(r){return{tournamentId:r.tournament_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description,game:r.game,format:r.format,status:r.status,visibility:r.visibility,maxPlayers:r.max_players,rounds:r.rounds,timeControl:r.time_control,rated:Boolean(r.rated),startsAt:r.starts_at,currentRound:r.current_round,createdAt:r.created_at,finishedAt:r.finished_at,playerCount:Number(r.player_count||0),joined:Boolean(r.joined)};}
 function mapPlayer(r){return{userId:r.user_id,displayName:r.display_name,seed:r.seed,points:Number(r.points),wins:r.wins,draws:r.draws,losses:r.losses,buchholz:Number(r.buchholz),status:r.status,joinedAt:r.joined_at};}
 function mapMatch(r){return{matchId:r.match_id,round:r.round,board:r.board,whiteId:r.white_id,whiteName:r.white_name,blackId:r.black_id,blackName:r.black_name,result:r.result,status:r.status,createdAt:r.created_at,completedAt:r.completed_at};}
