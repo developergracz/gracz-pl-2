@@ -26,8 +26,8 @@ pgTest("P1-U-02 Checkers reference path executes through common Match Runtime", 
       repository: store,
       engine: createCheckersMatchRuntimeAdapter(),
       ownerId: "checkers-reference",
-      publish: async ({ state, eventType, version }) => {
-        publications.push({ eventType, version, gameId: state.gameId });
+      publish: async ({ matchId, eventType, version }) => {
+        publications.push({ eventType, version, gameId: matchId });
       },
     });
 
@@ -47,6 +47,7 @@ pgTest("P1-U-02 Checkers reference path executes through common Match Runtime", 
     assert.equal(result.version, 2);
     assert.equal(result.snapshot.gameId, gameId);
     assert.equal(result.snapshot.lastEventSequence, 2);
+    assert.equal("state" in result, false);
     assert.deepEqual(publications, [{ eventType: "game.updated", version: 2, gameId }]);
 
     const persisted = await store.getVersioned(gameId);
