@@ -11,6 +11,16 @@ on:
       - modern/checkers-engine/src/main.js
       - modern/checkers-engine/test/p1-aud3-01-shared-infrastructure.test.js
       - .github/workflows/p1-aud3-01-p6.yml
+  push:
+    branches:
+      - fix/p1-aud3-01-shared-rate-limit-realtime-resync-p6
+    paths:
+      - modern/checkers-engine/src/distributed-infrastructure.js
+      - modern/checkers-engine/src/traffic-guard.js
+      - modern/checkers-engine/src/server.js
+      - modern/checkers-engine/src/main.js
+      - modern/checkers-engine/test/p1-aud3-01-shared-infrastructure.test.js
+      - .github/workflows/p1-aud3-01-p6.yml
 
 permissions:
   contents: read
