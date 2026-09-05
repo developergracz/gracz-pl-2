@@ -32,7 +32,7 @@ export class MatchRuntimeIdempotencyConflictError extends Error {
 export class MatchRuntime {
   #ownership = new Map();
 
-  constructor({ repository, engine, ownerId = randomUUID() } = {}) {
+  constructor({ repository, engine, ownerId = randomUUID(), publish = null } = {}) {
     if (!repository
       || typeof repository.loadMatchRuntime !== "function"
       || typeof repository.claimMatchOwnership !== "function"
@@ -42,10 +42,12 @@ export class MatchRuntime {
     if (!engine || typeof engine.applyCommand !== "function") {
       throw new TypeError("Adapter silnika Match Runtime musi implementować applyCommand().");
     }
+    if (publish !== null && typeof publish !== "function") throw new TypeError("publish musi być funkcją albo null.");
     assertToken(ownerId, "ownerId");
     this.repository = repository;
     this.engine = engine;
     this.ownerId = ownerId;
+    this.publish = publish;
   }
 
   async load(matchId, viewerId = null) {
@@ -85,6 +87,15 @@ export class MatchRuntime {
       commandHash,
       execute: async (state) => this.engine.applyCommand({ state, command }),
     });
+
+    if (!committed.replayed && this.publish) {
+      const eventType = typeof this.engine.eventType === "function" ? this.engine.eventType(command) : "match.updated";
+      try {
+        await this.publish({ matchId, state: committed.state, version: committed.version, command, eventType });
+      } catch {
+        // Persistence is authoritative. Publication is deliberately non-authoritative.
+      }
+    }
 
     return {
       matchId,
