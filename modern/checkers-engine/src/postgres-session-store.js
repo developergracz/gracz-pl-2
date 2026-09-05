@@ -2,6 +2,11 @@ import pg from "pg";
 
 import { deserializeSession, serializeSession } from "./session.js";
 import { SessionNotFoundError } from "./store.js";
+import {
+  MatchRuntimeIdempotencyConflictError,
+  MatchRuntimeOwnershipError,
+  MatchRuntimeVersionConflictError,
+} from "./match-runtime.js";
 
 const { Pool } = pg;
 const SESSION_VERSION = Symbol("gracz.session.version");
@@ -57,6 +62,31 @@ export class PostgresSessionStore {
       await client.query(`
         CREATE INDEX IF NOT EXISTS gracz_game_sessions_updated_idx
         ON gracz_game_sessions(updated_at DESC)
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gracz_match_runtime_ownership (
+          match_id VARCHAR(128) PRIMARY KEY REFERENCES gracz_game_sessions(game_id) ON DELETE CASCADE,
+          owner_id VARCHAR(128) NOT NULL,
+          ownership_epoch BIGINT NOT NULL CHECK (ownership_epoch > 0),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS gracz_match_runtime_commands (
+          match_id VARCHAR(128) NOT NULL REFERENCES gracz_game_sessions(game_id) ON DELETE CASCADE,
+          idempotency_key VARCHAR(128) NOT NULL,
+          command_hash CHAR(64) NOT NULL,
+          expected_version INTEGER NOT NULL,
+          result_version INTEGER NOT NULL,
+          ownership_epoch BIGINT NOT NULL,
+          result_state TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (match_id, idempotency_key)
+        )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS gracz_match_runtime_commands_created_idx
+        ON gracz_match_runtime_commands(created_at DESC)
       `);
     } catch (error) {
       initializationError = error;
@@ -169,6 +199,136 @@ export class PostgresSessionStore {
     return withVersion(session, Number(rows[0].version));
   }
 
+  async loadMatchRuntime(matchId) {
+    await this.ready;
+    assertGameId(matchId);
+    const { rows } = await this.pool.query(
+      `SELECT s.state, s.version, o.ownership_epoch
+       FROM gracz_game_sessions s
+       LEFT JOIN gracz_match_runtime_ownership o ON o.match_id = s.game_id
+       WHERE s.game_id = $1`,
+      [matchId],
+    );
+    if (!rows[0]) throw new SessionNotFoundError(matchId);
+    return {
+      state: deserializeSession(rows[0].state),
+      version: Number(rows[0].version),
+      ownershipEpoch: rows[0].ownership_epoch == null ? 0 : Number(rows[0].ownership_epoch),
+    };
+  }
+
+  async claimMatchOwnership(matchId, ownerId) {
+    await this.ready;
+    assertGameId(matchId);
+    assertRuntimeToken(ownerId, "ownerId");
+    const { rows } = await this.pool.query(
+      `INSERT INTO gracz_match_runtime_ownership(match_id, owner_id, ownership_epoch)
+       SELECT game_id, $2, 1 FROM gracz_game_sessions WHERE game_id = $1
+       ON CONFLICT (match_id)
+       DO UPDATE SET
+         owner_id = EXCLUDED.owner_id,
+         ownership_epoch = gracz_match_runtime_ownership.ownership_epoch + 1,
+         updated_at = NOW()
+       RETURNING ownership_epoch`,
+      [matchId, ownerId],
+    );
+    if (!rows[0]) throw new SessionNotFoundError(matchId);
+    return { ownershipEpoch: Number(rows[0].ownership_epoch) };
+  }
+
+  async executeMatchRuntimeCommand({
+    matchId,
+    ownerId,
+    ownershipEpoch,
+    expectedVersion,
+    idempotencyKey,
+    commandHash,
+    execute,
+  }) {
+    await this.ready;
+    assertGameId(matchId);
+    assertRuntimeToken(ownerId, "ownerId");
+    assertRuntimeToken(idempotencyKey, "idempotencyKey");
+    assertHash(commandHash);
+    assertEpoch(ownershipEpoch);
+    assertVersion(expectedVersion);
+    if (typeof execute !== "function") throw new TypeError("execute musi być funkcją.");
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const sessionResult = await client.query(
+        `SELECT state, version FROM gracz_game_sessions WHERE game_id = $1 FOR UPDATE`,
+        [matchId],
+      );
+      if (!sessionResult.rows[0]) throw new SessionNotFoundError(matchId);
+
+      const ownershipResult = await client.query(
+        `SELECT owner_id, ownership_epoch
+         FROM gracz_match_runtime_ownership
+         WHERE match_id = $1
+         FOR UPDATE`,
+        [matchId],
+      );
+      const ownership = ownershipResult.rows[0];
+      if (!ownership
+        || ownership.owner_id !== ownerId
+        || Number(ownership.ownership_epoch) !== ownershipEpoch) {
+        throw new MatchRuntimeOwnershipError(matchId, ownershipEpoch);
+      }
+
+      const replay = await client.query(
+        `SELECT command_hash, result_state, result_version
+         FROM gracz_match_runtime_commands
+         WHERE match_id = $1 AND idempotency_key = $2`,
+        [matchId, idempotencyKey],
+      );
+      if (replay.rows[0]) {
+        if (replay.rows[0].command_hash !== commandHash) {
+          throw new MatchRuntimeIdempotencyConflictError(matchId, idempotencyKey);
+        }
+        await client.query("COMMIT");
+        return {
+          state: deserializeSession(replay.rows[0].result_state),
+          version: Number(replay.rows[0].result_version),
+          replayed: true,
+        };
+      }
+
+      const currentVersion = Number(sessionResult.rows[0].version);
+      if (currentVersion !== expectedVersion) {
+        throw new MatchRuntimeVersionConflictError(matchId, expectedVersion, currentVersion);
+      }
+
+      const currentState = deserializeSession(sessionResult.rows[0].state);
+      const nextState = await execute(currentState);
+      if (!nextState || nextState.gameId !== matchId) throw new TypeError("Silnik zwrócił nieprawidłowy stan meczu.");
+      const serialized = serializeSession(nextState);
+      const nextVersion = currentVersion + 1;
+
+      await client.query(
+        `UPDATE gracz_game_sessions
+         SET state = $2, version = $3, updated_at = NOW()
+         WHERE game_id = $1`,
+        [matchId, serialized, nextVersion],
+      );
+      await client.query(
+        `INSERT INTO gracz_match_runtime_commands(
+           match_id, idempotency_key, command_hash, expected_version,
+           result_version, ownership_epoch, result_state
+         ) VALUES($1, $2, $3, $4, $5, $6, $7)`,
+        [matchId, idempotencyKey, commandHash, expectedVersion, nextVersion, ownershipEpoch, serialized],
+      );
+      await client.query("COMMIT");
+      return { state: deserializeSession(serialized), version: nextVersion, replayed: false };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async close() {
     await this.pool.end();
   }
@@ -254,6 +414,18 @@ function assertVersion(version) {
   if (!Number.isInteger(version) || version < 1) {
     throw new TypeError("Oczekiwana wersja sesji jest wymagana dla zapisu CAS.");
   }
+}
+
+function assertEpoch(value) {
+  if (!Number.isSafeInteger(value) || value < 1) throw new TypeError("Nieprawidłowy ownershipEpoch.");
+}
+
+function assertRuntimeToken(value, name) {
+  if (typeof value !== "string" || value.length < 1 || value.length > 128) throw new TypeError(`Nieprawidłowy ${name}.`);
+}
+
+function assertHash(value) {
+  if (typeof value !== "string" || !/^[0-9a-f]{64}$/.test(value)) throw new TypeError("Nieprawidłowy commandHash.");
 }
 
 function assertGameId(gameId) {
