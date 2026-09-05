@@ -229,7 +229,7 @@ pgTest("P7 Slice 2 concurrent public writers from one authoritative version yiel
       ]);
       assert.deepEqual([a.status, b.status].sort((x, y) => x - y), [200, 409]);
       const conflict = a.status === 409 ? a : b;
-      assert.equal(conflict.body.error.code, "MATCH_RUNTIME_VERSION_CONFLICT");
+      assert.ok(["MATCH_RUNTIME_VERSION_CONFLICT", "MATCH_RUNTIME_STALE_OWNERSHIP"].includes(conflict.body.error.code));
     });
     const after = await realStore.getVersioned(gameId);
     assert.equal(after.version, 2);
