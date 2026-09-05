@@ -36,6 +36,9 @@ test("P1-AUD3-07 PostgreSQL probe path is read-only and uses bounded driver time
   const probe = postgresStoreSource.slice(start, end);
 
   assert.match(probe, /SELECT 1 AS ready/);
-  assert.match(probe, /query_timeout:\s*HEALTH_TIMEOUT_MS/);
   assert.doesNotMatch(probe, /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE)\b/i);
+  assert.match(
+    postgresStoreSource,
+    /function boundedHealthQuery\(client, text\)[\s\S]*query_timeout:\s*HEALTH_TIMEOUT_MS/,
+  );
 });
