@@ -19,6 +19,10 @@ import { LobbyError } from "./lobby.js";
 import { AccountError } from "./accounts.js";
 import { LoginRateLimiter, RateLimitError } from "./rate-limit.js";
 import { TrafficGuard, TrafficLimitError, clientSource } from "./traffic-guard.js";
+import {
+  DistributedRateLimitError,
+  SharedInfrastructureUnavailableError,
+} from "./distributed-infrastructure.js";
 import { AdaptiveBotDefense, ChallengeRequiredError, ChallengeFailedError } from "./adaptive-bot-defense.js";
 
 const SESSION_COOKIE = "__Host-gracz_session";
@@ -34,6 +38,8 @@ export function createGameHttpServer({
   webRoot = null,
   loginRateLimiter = new LoginRateLimiter(),
   trafficGuard = new TrafficGuard(),
+  sharedTrafficGuard = null,
+  sharedRequestGuardExternally = false,
   botDefense = new AdaptiveBotDefense(),
   logger = { error() {} },
   realtime = new RealtimeHub(),
@@ -42,15 +48,16 @@ export function createGameHttpServer({
   return createServer(async (request, response) => {
     try {
       trafficGuard.assertAllowed(request);
-      await route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter, trafficGuard, botDefense);
+      if (sharedTrafficGuard && !sharedRequestGuardExternally) await sharedTrafficGuard.assertAllowed(request);
+      await route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter, trafficGuard, sharedTrafficGuard, botDefense);
     } catch (error) {
       logger.error(error);
       sendError(response, error);
     }
-  }).on("close", () => realtime.close());
+  }).on("close", () => { void realtime.close(); });
 }
 
-async function route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter, trafficGuard, botDefense) {
+async function route(request, response, store, realtime, auth, authSessions, accounts, messageAttachments, lobby, webRoot, loginRateLimiter, trafficGuard, sharedTrafficGuard, botDefense) {
   const url = new URL(request.url, "http://localhost");
   assertSameOriginMutation(request);
   if (request.method === "GET" && url.pathname === "/health") return sendJson(response, 200, { status: "ok" });
@@ -89,7 +96,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   if (request.method === "POST" && url.pathname === "/auth/register" && auth && accounts) {
     const body = await readJson(request);
     const source = clientSource(request);
-    trafficGuard.assertRegistrationAttempt({ request, accountId: body.userId });
+    await assertRegistrationLimits(trafficGuard, sharedTrafficGuard, { request, accountId: body.userId });
     await botDefense.verifyIfRequired({ source, accountId: body.userId, endpoint: "register", token: body.challengeToken });
     try {
       const account = await accounts.register(body);
@@ -105,7 +112,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   if (request.method === "POST" && url.pathname === "/auth/login" && auth && accounts) {
     const credentials = await readJson(request);
     const source = clientSource(request);
-    trafficGuard.assertCredentialAttempt({ request, accountId: credentials.userId, endpoint: "login" });
+    await assertCredentialLimits(trafficGuard, sharedTrafficGuard, { request, accountId: credentials.userId, endpoint: "login" });
     const rateKey = `${source}:${String(credentials.userId).toLowerCase()}`;
     loginRateLimiter.assertAllowed(rateKey);
     await botDefense.verifyIfRequired({ source, accountId: credentials.userId, endpoint: "login", token: credentials.challengeToken });
@@ -137,7 +144,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
 
   if (request.method === "GET" && url.pathname === "/auth/me" && auth) {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "session" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "session" });
     return sendJson(response, 200, { user: { userId: user.userId, displayName: user.displayName } });
   }
 
@@ -155,7 +162,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     const body = await readJson(request);
     const source = clientSource(request);
     const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
-    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset-request" });
+    await assertCredentialLimits(trafficGuard, sharedTrafficGuard, { request, accountId: recoveryId, endpoint: "reset-request" });
     const rateKey = `${source}:reset-request:${recoveryId}`;
     loginRateLimiter.assertAllowed(rateKey);
     await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset-request", token: body.challengeToken });
@@ -175,7 +182,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     const body = await readJson(request);
     const source = clientSource(request);
     const recoveryId = String(body.email ?? body.userId ?? "").trim().toLowerCase();
-    trafficGuard.assertCredentialAttempt({ request, accountId: recoveryId, endpoint: "reset" });
+    await assertCredentialLimits(trafficGuard, sharedTrafficGuard, { request, accountId: recoveryId, endpoint: "reset" });
     const rateKey = `${source}:reset:${recoveryId}`;
     loginRateLimiter.assertAllowed(rateKey);
     await botDefense.verifyIfRequired({ source, accountId: recoveryId, endpoint: "reset", token: body.challengeToken });
@@ -203,7 +210,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
 
   if (accounts && auth && url.pathname === "/account/profile") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "profile" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "profile" });
     if (request.method === "GET") return sendJson(response, 200, { profile: await accounts.getProfile(user.userId) });
     if (request.method === "PUT") {
       const profile = await accounts.updateProfile(user.userId, await readJson(request));
@@ -217,13 +224,13 @@ async function route(request, response, store, realtime, auth, authSessions, acc
 
   if (accounts && auth && url.pathname === "/players/search" && request.method === "GET") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "search" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "search" });
     return sendJson(response, 200, { players: await accounts.searchPlayers(user.userId, url.searchParams.get("q") ?? "") });
   }
 
   if (accounts && auth && url.pathname === "/messages") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "message" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "message" });
     if (request.method === "GET") {
       const result = await accounts.listPrivateMessages(user.userId, url.searchParams.get("folder") ?? "inbox");
       if (messageAttachments && result.messages?.length) {
@@ -239,7 +246,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const attachmentMatch = messageAttachments && accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})\/attachment$/i);
   if (attachmentMatch) {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "attachment" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "attachment" });
     if (request.method === "POST") return sendJson(response, 201, { attachment: await messageAttachments.save(user.userId, attachmentMatch[1], await readJson(request, 1_500_000)) });
     if (request.method === "GET") return sendJson(response, 200, { attachment: await messageAttachments.get(user.userId, attachmentMatch[1]) });
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
@@ -248,7 +255,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const privateMessageMatch = accounts && auth && url.pathname.match(/^\/messages\/([0-9a-f-]{36})$/i);
   if (privateMessageMatch) {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "message" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "message" });
     if (request.method === "PATCH") return sendJson(response, 200, await accounts.updatePrivateMessage(user.userId, privateMessageMatch[1], (await readJson(request)).action));
     if (request.method === "DELETE") return sendJson(response, 200, await accounts.deletePrivateMessage(user.userId, privateMessageMatch[1]));
     return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
@@ -256,13 +263,13 @@ async function route(request, response, store, realtime, auth, authSessions, acc
 
   if (lobby && url.pathname === "/lobby/state" && request.method === "GET") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "lobby" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "lobby" });
     lobby.touchUser(user);
     return sendJson(response, 200, { rooms: lobby.listRooms(), players: lobby.listPlayers(), invitations: lobby.listInvitations(user.userId) });
   }
   if (lobby && url.pathname === "/lobby/invitations" && request.method === "POST") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "invitation" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "invitation" });
     lobby.touchUser(user);
     const body = await readJson(request);
     return sendJson(response, 201, lobby.createInvitation({ fromId: user.userId, fromName: user.displayName, toId: body.toId, roomId: body.roomId }));
@@ -270,13 +277,13 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const invitationMatch = lobby && url.pathname.match(/^\/lobby\/invitations\/([a-zA-Z0-9_-]{1,128})\/respond$/);
   if (invitationMatch && request.method === "POST") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "invitation" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "invitation" });
     const body = await readJson(request);
     return sendJson(response, 200, await lobby.respondInvitation({ invitationId: invitationMatch[1], userId: user.userId, userName: user.displayName, accept: body.accept === true }));
   }
   if (lobby && url.pathname === "/lobby/rooms") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "room" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "room" });
     lobby.touchUser(user);
     if (request.method === "GET") return sendJson(response, 200, { rooms: lobby.listRooms() });
     if (request.method === "POST") {
@@ -293,7 +300,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   const lobbyMatch = lobby && url.pathname.match(/^\/lobby\/rooms\/([a-zA-Z0-9_-]{1,128})\/join$/);
   if (lobbyMatch && request.method === "POST") {
     const user = await trustedUser(request, auth, authSessions);
-    trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "room" });
+    await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "room" });
     lobby.touchUser(user);
     return sendJson(response, 200, await lobby.joinRoom({ roomId: lobbyMatch[1], playerId: user.userId, playerName: user.displayName }));
   }
@@ -302,7 +309,7 @@ async function route(request, response, store, realtime, auth, authSessions, acc
     const body = await readJson(request);
     if (auth) {
       const user = await trustedUser(request, auth, authSessions);
-      trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: "game" });
+      await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: "game" });
       if (body.whitePlayerId !== user.userId) throw new HttpError("Nie możesz utworzyć partii w imieniu innego gracza.", "FORBIDDEN", 403);
     }
     const session = createGameSession(body); await store.create(session);
@@ -312,21 +319,36 @@ async function route(request, response, store, realtime, auth, authSessions, acc
   if (!match) return sendJson(response, 404, { error: { code: "NOT_FOUND", message: "Nie znaleziono endpointu." } });
   const [, gameId, action] = match;
   const user = await trustedUser(request, auth, authSessions);
-  trafficGuard.assertAccountAllowed({ request, userId: user.userId, action: action === "chat" ? "chat" : action === "moves" ? "move" : "game" });
+  await assertAccountLimits(trafficGuard, sharedTrafficGuard, { request, userId: user.userId, action: action === "chat" ? "chat" : action === "moves" ? "move" : "game" });
   const playerId = user.userId;
   let session = await store.get(gameId);
   if (request.method === "GET" && action === "events") { realtime.subscribe(session, playerId, response); return; }
   if (request.method === "GET" && !action) return sendJson(response, 200, getSessionSnapshot(session, playerId));
   if (request.method === "POST" && action === "moves") {
     const body = await readJson(request); const result = submitMove(session, { playerId, requestId: body.requestId, move: body.move });
-    await store.save(result.session); realtime.publish(result.session, "game.updated");
+    await store.save(result.session); void realtime.publish(result.session, "game.updated");
     return sendJson(response, 200, { duplicate: result.duplicate, eventSequence: result.event.sequence, snapshot: getSessionSnapshot(result.session, playerId) });
   }
-  if (request.method === "POST" && action === "chat") { session = sendChatMessage(session, { playerId, text: (await readJson(request)).text }); await store.save(session); realtime.publish(session, "chat.message"); return sendJson(response, 201, getSessionSnapshot(session, playerId)); }
-  if (request.method === "POST" && action === "actions") { session = submitGameAction(session, { playerId, action: (await readJson(request)).action }); await store.save(session); realtime.publish(session, "game.action"); return sendJson(response, 200, getSessionSnapshot(session, playerId)); }
-  if (request.method === "POST" && action === "disconnect") { session = disconnectPlayer(session, playerId); await store.save(session); realtime.publish(session, "player.disconnected"); return sendJson(response, 200, { disconnected: true }); }
-  if (request.method === "POST" && action === "reconnect") { const result = reconnectPlayer(session, playerId); await store.save(result.session); realtime.publish(result.session, "player.reconnected"); return sendJson(response, 200, result.snapshot); }
+  if (request.method === "POST" && action === "chat") { session = sendChatMessage(session, { playerId, text: (await readJson(request)).text }); await store.save(session); void realtime.publish(session, "chat.message"); return sendJson(response, 201, getSessionSnapshot(session, playerId)); }
+  if (request.method === "POST" && action === "actions") { session = submitGameAction(session, { playerId, action: (await readJson(request)).action }); await store.save(session); void realtime.publish(session, "game.action"); return sendJson(response, 200, getSessionSnapshot(session, playerId)); }
+  if (request.method === "POST" && action === "disconnect") { session = disconnectPlayer(session, playerId); await store.save(session); void realtime.publish(session, "player.disconnected"); return sendJson(response, 200, { disconnected: true }); }
+  if (request.method === "POST" && action === "reconnect") { const result = reconnectPlayer(session, playerId); await store.save(result.session); void realtime.publish(result.session, "player.reconnected"); return sendJson(response, 200, result.snapshot); }
   return sendJson(response, 405, { error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." } });
+}
+
+async function assertAccountLimits(localGuard, sharedGuard, input) {
+  localGuard.assertAccountAllowed(input);
+  if (sharedGuard) await sharedGuard.assertAccountAllowed(input);
+}
+
+async function assertCredentialLimits(localGuard, sharedGuard, input) {
+  localGuard.assertCredentialAttempt(input);
+  if (sharedGuard) await sharedGuard.assertCredentialAttempt(input);
+}
+
+async function assertRegistrationLimits(localGuard, sharedGuard, input) {
+  localGuard.assertRegistrationAttempt(input);
+  if (sharedGuard) await sharedGuard.assertRegistrationAttempt(input);
 }
 
 async function establishSession(response, auth, authSessions, user) {
@@ -411,9 +433,12 @@ function sendError(response, error) {
   if (error instanceof AuthError) return sendJson(response, 401, errorBody(error));
   if (error instanceof ChallengeRequiredError) return sendJson(response, 403, { error: { code: error.code, message: error.message, challenge: { provider: "turnstile", siteKey: error.siteKey, reason: error.reason } } });
   if (error instanceof ChallengeFailedError) return sendJson(response, 403, errorBody(error));
-  if (error instanceof TrafficLimitError || error instanceof RateLimitError) {
+  if (error instanceof TrafficLimitError || error instanceof RateLimitError || error instanceof DistributedRateLimitError) {
     response.setHeader("Retry-After", String(error.retryAfterSeconds || 1));
     return sendJson(response, 429, errorBody(error));
+  }
+  if (error instanceof SharedInfrastructureUnavailableError) {
+    return sendJson(response, 503, { error: { code: error.code, message: error.message } });
   }
   if (error instanceof AccountError) return sendJson(response, error.code === "ACCOUNT_EXISTS" ? 409 : ["ACCOUNT_NOT_FOUND","MESSAGE_NOT_FOUND"].includes(error.code) ? 404 : error.code === "MESSAGES_DISABLED" ? 403 : 400, errorBody(error));
   if (error instanceof LobbyError) return sendJson(response, error.code === "ROOM_NOT_FOUND" || error.code === "INVITATION_NOT_FOUND" ? 404 : 409, errorBody(error));

@@ -1,0 +1,113 @@
+name: P1-AUD3-01 Distributed Infrastructure
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - modern/checkers-engine/src/distributed-infrastructure.js
+      - modern/checkers-engine/src/production-rate-limit.js
+      - modern/checkers-engine/src/traffic-guard.js
+      - modern/checkers-engine/src/server.js
+      - modern/checkers-engine/src/main.js
+      - modern/checkers-engine/test/p1-aud3-01-shared-infrastructure.test.js
+      - modern/checkers-engine/test/p1-aud3-01-runtime-contract.test.js
+      - modern/checkers-engine/test/p1-aud3-01-p6-f01.test.js
+      - .github/workflows/p1-aud3-01-p6.yml
+  push:
+    branches:
+      - fix/p1-aud3-01-shared-rate-limit-realtime-resync-p6
+    paths:
+      - modern/checkers-engine/src/distributed-infrastructure.js
+      - modern/checkers-engine/src/production-rate-limit.js
+      - modern/checkers-engine/src/traffic-guard.js
+      - modern/checkers-engine/src/server.js
+      - modern/checkers-engine/src/main.js
+      - modern/checkers-engine/test/p1-aud3-01-shared-infrastructure.test.js
+      - modern/checkers-engine/test/p1-aud3-01-runtime-contract.test.js
+      - modern/checkers-engine/test/p1-aud3-01-p6-f01.test.js
+      - .github/workflows/p1-aud3-01-p6.yml
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  distributed-infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      P1_AUD3_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_01_REQUIRE_POSTGRES: "1"
+      P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_03_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_04_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_07_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_07_REQUIRE_POSTGRES: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: P6 source syntax
+        run: node --check src/distributed-infrastructure.js && node --check src/production-rate-limit.js && node --check src/server.js && node --check src/main.js
+      - name: P6 shared infrastructure
+        run: node --test test/p1-aud3-01-shared-infrastructure.test.js test/p1-aud3-01-runtime-contract.test.js test/p1-aud3-01-p6-f01.test.js
+      - name: P4 Checkers conflict regression
+        run: node --test test/p1-c-01-http-conflict.test.js
+      - name: P4 Checkers PostgreSQL CAS regression
+        run: node --test test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js
+      - name: P3 crypto regressions
+        run: node --test test/p1-aud3-03-crypto-key-separation.test.js test/p1-aud3-03-postgres-crypto.test.js
+      - name: P4 durability regressions
+        run: node --test test/p1-aud3-04-gomoku-postgres.test.js test/p1-aud3-04-gomoku-http-concurrency.test.js
+      - name: P5 readiness regressions
+        run: node --test test/p1-aud3-07-readiness.test.js test/p1-aud3-07-postgres-readiness.test.js test/p1-aud3-07-runtime-wiring.test.js
+      - name: Full Node test suite
+        run: npm test
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser Checkers and Gomoku
+        run: npm run test:browser
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
