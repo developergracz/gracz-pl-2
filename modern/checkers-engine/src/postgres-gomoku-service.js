@@ -6,14 +6,15 @@ import {
   assertGomokuSize,
   createGomokuState,
   gomokuPlayerView,
-  hasGomokuRequest,
   normalizeGomokuPlayers,
+  resolveGomokuIdempotentMove,
   sameGomokuPlayers,
   transitionGomokuMove,
 } from "./gomoku-service.js";
 
 const { Pool } = pg;
 const TABLE = "gracz_gomoku_games";
+const TEST_BEFORE_CAS = Symbol("P1-AUD3-04 before-CAS test seam");
 const REQUIRED_COLUMNS = Object.freeze({
   game_id: new Set(["character varying", "text"]),
   state: new Set(["jsonb"]),
@@ -38,17 +39,25 @@ export class GomokuPersistenceError extends GomokuError {
   }
 }
 
+export function postgresGomokuTestOptions(beforeCas) {
+  if (typeof beforeCas !== "function") throw new TypeError("Testowy hook beforeCas musi być funkcją.");
+  return { [TEST_BEFORE_CAS]: beforeCas };
+}
+
 export class PostgresGomokuService {
-  constructor(connectionString, { idGenerator = randomUUID, size = 15, beforeCas = null } = {}) {
+  constructor(connectionString, options = {}) {
     if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany dla trwałego Gomoku.");
+    if (!options || typeof options !== "object") throw new TypeError("Opcje PostgresGomokuService muszą być obiektem.");
+    if (Object.prototype.hasOwnProperty.call(options, "beforeCas")) throw new TypeError("beforeCas jest dostępny wyłącznie przez jawny seam testowy.");
+    const { idGenerator = randomUUID, size = 15 } = options;
+    const beforeCas = options[TEST_BEFORE_CAS] ?? null;
     assertGomokuSize(size);
-    if (beforeCas !== null && typeof beforeCas !== "function") throw new TypeError("beforeCas musi być funkcją.");
     this.idGenerator = idGenerator;
     this.size = size;
     this.beforeCas = beforeCas;
     this.pool = new Pool({
       connectionString,
-      ssl: isLocal(connectionString) ? false : { rejectUnauthorized: false },
+      ssl: isLocal(connectionString) ? false : { rejectUnauthorized: true },
       max: 4,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
@@ -132,7 +141,7 @@ export class PostgresGomokuService {
     if (result.rowCount === 1) return gomokuPlayerView(next, userId);
 
     const latest = await this.#load(gameId);
-    if (hasGomokuRequest(latest, userId, input?.requestId ?? null)) return gomokuPlayerView(latest, userId);
+    if (resolveGomokuIdempotentMove(latest, userId, input)) return gomokuPlayerView(latest, userId);
     throw new GomokuConcurrencyConflictError(gameId, current.revision);
   }
 
@@ -154,22 +163,80 @@ export class PostgresGomokuService {
 }
 
 function decodeState(row) {
-  const game = typeof row.state === "string" ? JSON.parse(row.state) : structuredClone(row.state);
-  const revision = Number(row.revision);
-  const valid = game && typeof game === "object"
-    && game.gameId === row.game_id
-    && Number.isInteger(revision) && revision >= 0
-    && game.revision === revision
-    && Number.isInteger(game.createdAt) && game.createdAt > 0
-    && Number.isInteger(game.updatedAt) && game.updatedAt >= game.createdAt
-    && Array.isArray(game.moves)
-    && game.players?.black && game.players?.white;
-  if (!valid) throw new GomokuPersistenceError("Trwały stan Gomoku jest niespójny.", "GOMOKU_STATE_INVALID");
-  assertGomokuSize(game.size);
-  normalizeGomokuPlayers([game.players.black, game.players.white]);
-  return game;
+  try {
+    const game = typeof row.state === "string" ? JSON.parse(row.state) : structuredClone(row.state);
+    const revision = Number(row.revision);
+    if (!game || typeof game !== "object" || Array.isArray(game)) throw stateError();
+    if (game.gameId !== row.game_id) throw stateError();
+    assertGameId(game.gameId);
+    assertGomokuSize(game.size);
+    if (!Number.isInteger(revision) || revision < 0 || game.revision !== revision) throw stateError();
+    if (!Number.isInteger(game.createdAt) || game.createdAt <= 0 || !Number.isInteger(game.updatedAt) || game.updatedAt < game.createdAt) throw stateError();
+    if (new Date(row.created_at).getTime() !== game.createdAt || new Date(row.updated_at).getTime() !== game.updatedAt) throw stateError();
+    if (!isCanonicalPlayer(game.players?.black) || !isCanonicalPlayer(game.players?.white)) throw stateError();
+    const normalizedPlayers = normalizeGomokuPlayers([game.players.black, game.players.white]);
+    if (normalizedPlayers[0].userId !== game.players.black.userId || normalizedPlayers[0].displayName !== game.players.black.displayName) throw stateError();
+    if (normalizedPlayers[1].userId !== game.players.white.userId || normalizedPlayers[1].displayName !== game.players.white.displayName) throw stateError();
+    if (!["black", "white"].includes(game.turn)) throw stateError();
+    if (!["active", "finished", "draw"].includes(game.status)) throw stateError();
+    if (![null, "black", "white"].includes(game.winner)) throw stateError();
+    if (!Array.isArray(game.moves) || game.moves.length !== revision || game.moves.length > game.size * game.size) throw stateError();
+
+    const occupied = new Set();
+    const requests = new Set();
+    let expectedColor = "black";
+    for (let index = 0; index < game.moves.length; index += 1) {
+      const move = game.moves[index];
+      if (!move || typeof move !== "object" || Array.isArray(move)) throw stateError();
+      if (!Number.isInteger(move.row) || !Number.isInteger(move.column) || move.row < 0 || move.column < 0 || move.row >= game.size || move.column >= game.size) throw stateError();
+      if (move.color !== expectedColor) throw stateError();
+      const expectedUserId = game.players[move.color].userId;
+      if (typeof move.userId !== "string" || move.userId !== expectedUserId) throw stateError();
+      if (move.requestId !== null && (typeof move.requestId !== "string" || move.requestId.length < 1 || move.requestId.length > 128)) throw stateError();
+      if (move.sequence !== index + 1) throw stateError();
+      const coordinate = `${move.row}:${move.column}`;
+      if (occupied.has(coordinate)) throw stateError();
+      occupied.add(coordinate);
+      if (move.requestId !== null) {
+        const requestKey = `${move.userId}\0${move.requestId}`;
+        if (requests.has(requestKey)) throw stateError();
+        requests.add(requestKey);
+      }
+      expectedColor = expectedColor === "black" ? "white" : "black";
+    }
+
+    const lastMove = game.moves.at(-1) || null;
+    if (game.status === "active") {
+      if (game.winner !== null || game.turn !== expectedColor) throw stateError();
+    } else if (game.status === "draw") {
+      if (game.winner !== null || game.moves.length !== game.size * game.size || !lastMove || game.turn !== lastMove.color) throw stateError();
+    } else if (!lastMove || game.winner !== lastMove.color || game.turn !== game.winner) {
+      throw stateError();
+    }
+    return game;
+  } catch (error) {
+    if (error instanceof GomokuPersistenceError && error.code === "GOMOKU_STATE_INVALID") throw error;
+    throw stateError(error);
+  }
 }
 
+function isCanonicalPlayer(player) {
+  return Boolean(player)
+    && typeof player === "object"
+    && !Array.isArray(player)
+    && typeof player.userId === "string"
+    && player.userId.length >= 1
+    && player.userId.length <= 128
+    && player.userId === player.userId.trim()
+    && typeof player.displayName === "string"
+    && player.displayName.length >= 1
+    && player.displayName.length <= 128
+    && player.displayName === player.displayName.trim()
+    && player.displayName === player.displayName.normalize("NFC");
+}
+function stateError(cause = null) {
+  return new GomokuPersistenceError("Trwały stan Gomoku jest niespójny.", "GOMOKU_STATE_INVALID", cause);
+}
 function schemaError(cause = null) {
   return new GomokuPersistenceError("Schemat PostgreSQL dla Gomoku jest brakujący lub niezgodny.", "GOMOKU_SCHEMA_INVALID", cause);
 }

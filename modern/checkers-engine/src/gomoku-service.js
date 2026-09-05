@@ -4,6 +4,14 @@ export class GomokuError extends Error {
   constructor(message, code = "GOMOKU_ERROR") { super(message); this.name = "GomokuError"; this.code = code; }
 }
 
+export class GomokuIdempotencyConflictError extends GomokuError {
+  constructor() {
+    super("Identyfikator żądania został już użyty dla innego ruchu.", "GOMOKU_IDEMPOTENCY_CONFLICT");
+    this.name = "GomokuIdempotencyConflictError";
+    this.status = 409;
+  }
+}
+
 export function assertGomokuSize(size) {
   if (!Number.isInteger(size) || size < 5 || size > 25) throw new TypeError("Rozmiar planszy Gomoku musi wynosić od 5 do 25 pól.");
   return size;
@@ -49,15 +57,28 @@ export function gomokuPlayerView(game, userId) {
   return structuredClone({ ...game, color, canMove: game.status === "active" && game.turn === color });
 }
 
+export function findGomokuRequest(game, userId, requestId) {
+  if (!requestId || !Array.isArray(game?.moves)) return null;
+  return game.moves.find((move) => move.requestId === requestId && move.userId === userId) || null;
+}
+
 export function hasGomokuRequest(game, userId, requestId) {
-  return Boolean(requestId) && Array.isArray(game?.moves) && game.moves.some((move) => move.requestId === requestId && move.userId === userId);
+  return Boolean(findGomokuRequest(game, userId, requestId));
+}
+
+export function resolveGomokuIdempotentMove(game, userId, { row, column, requestId = null } = {}) {
+  if (requestId === null) return null;
+  if (typeof requestId !== "string" || requestId.length < 1 || requestId.length > 128) throw new GomokuError("Identyfikator żądania jest nieprawidłowy.", "INVALID_REQUEST_ID");
+  const existing = findGomokuRequest(game, userId, requestId);
+  if (!existing) return null;
+  if (existing.row === row && existing.column === column) return existing;
+  throw new GomokuIdempotencyConflictError();
 }
 
 export function transitionGomokuMove(game, userId, { row, column, requestId = null } = {}, now = Date.now()) {
   const color = gomokuColorFor(game, userId);
   if (!color) throw new GomokuError("Gracz nie należy do tej partii.", "PLAYER_NOT_IN_GAME");
-  if (requestId !== null && (typeof requestId !== "string" || requestId.length < 1 || requestId.length > 128)) throw new GomokuError("Identyfikator żądania jest nieprawidłowy.", "INVALID_REQUEST_ID");
-  if (hasGomokuRequest(game, userId, requestId)) return game;
+  if (resolveGomokuIdempotentMove(game, userId, { row, column, requestId })) return game;
   if (game.status !== "active") throw new GomokuError("Partia została już zakończona.", "GAME_FINISHED");
   if (game.turn !== color) throw new GomokuError("Teraz trwa ruch przeciwnika.", "OUT_OF_TURN");
   if (!Number.isInteger(row) || !Number.isInteger(column) || row < 0 || column < 0 || row >= game.size || column >= game.size) throw new GomokuError("Wybrane pole jest nieprawidłowe.", "INVALID_MOVE");

@@ -6,7 +6,7 @@ import pg from "pg";
 
 import { AuthService } from "../src/auth.js";
 import { createGomokuHttpHandler } from "../src/gomoku-http.js";
-import { PostgresGomokuService } from "../src/postgres-gomoku-service.js";
+import { PostgresGomokuService, postgresGomokuTestOptions } from "../src/postgres-gomoku-service.js";
 
 const { Pool } = pg;
 const databaseUrl = process.env.P1_AUD3_04_DATABASE_URL;
@@ -37,15 +37,16 @@ after(async () => {
   await admin.end();
 });
 
-test("P1-AUD3-04 durable HTTP GET/move and requestId retry remain stable", { skip: !databaseUrl }, async () => {
+test("P1-AUD3-04 durable HTTP binds idempotency to exact payload and scopes requestId by user", { skip: !databaseUrl }, async () => {
   const fixture = await httpFixture();
   try {
     const alice = fixture.token("alice", "Alicja");
+    const bob = fixture.token("bob", "Robert");
     let result = await request(fixture, `/gomoku/games/${fixture.gameId}`, alice);
     assert.equal(result.status, 200);
     assert.equal(result.body.revision, 0);
 
-    const options = { method: "POST", body: JSON.stringify({ row: 7, column: 7, requestId: "http-stable-1" }) };
+    const options = { method: "POST", body: JSON.stringify({ row: 7, column: 7, requestId: "http-shared-id" }) };
     result = await request(fixture, `/gomoku/games/${fixture.gameId}/moves`, alice, options);
     assert.equal(result.status, 200);
     assert.equal(result.body.revision, 1);
@@ -55,7 +56,23 @@ test("P1-AUD3-04 durable HTTP GET/move and requestId retry remain stable", { ski
     assert.equal(retry.status, 200);
     assert.equal(retry.body.revision, 1);
     assert.equal(retry.body.moves.length, 1);
-    assert.equal(retry.body.moves[0].requestId, "http-stable-1");
+
+    const conflictingRetry = await request(fixture, `/gomoku/games/${fixture.gameId}/moves`, alice, {
+      method: "POST",
+      body: JSON.stringify({ row: 7, column: 8, requestId: "http-shared-id" }),
+    });
+    assert.equal(conflictingRetry.status, 409);
+    assert.equal(conflictingRetry.body.error.code, "GOMOKU_IDEMPOTENCY_CONFLICT");
+
+    const bobMove = await request(fixture, `/gomoku/games/${fixture.gameId}/moves`, bob, {
+      method: "POST",
+      body: JSON.stringify({ row: 7, column: 8, requestId: "http-shared-id" }),
+    });
+    assert.equal(bobMove.status, 200);
+    assert.equal(bobMove.body.revision, 2);
+    assert.equal(bobMove.body.moves.length, 2);
+    assert.equal(bobMove.body.moves[1].userId, "bob");
+    assert.equal(bobMove.body.moves[1].requestId, "http-shared-id");
   } finally {
     await fixture.close();
   }
@@ -100,7 +117,8 @@ test("P1-AUD3-04 durable HTTP maps stale CAS to stable 409 without overwriting w
 async function httpFixture({ beforeCas = null } = {}) {
   const gameId = `p1aud304http_${randomUUID()}`;
   const auth = new AuthService({ secret });
-  const service = new PostgresGomokuService(databaseUrl, { beforeCas });
+  const options = beforeCas ? postgresGomokuTestOptions(beforeCas) : undefined;
+  const service = new PostgresGomokuService(databaseUrl, options);
   await service.ready;
   await service.createGame({ gameId, players: [{ userId: "alice", displayName: "Alicja" }, { userId: "bob", displayName: "Robert" }] });
   const handler = createGomokuHttpHandler({ service, auth });
