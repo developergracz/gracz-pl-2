@@ -41,6 +41,7 @@ jobs:
     env:
       P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
       P1_AUD3_03_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_04_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
     defaults:
       run:
         working-directory: modern/checkers-engine
@@ -52,13 +53,17 @@ jobs:
       - name: Install dependencies without lifecycle scripts
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: Static syntax checks
-        run: npm run check && node --check src/postgres-accounts.js
+        run: npm run check && node --check src/postgres-accounts.js && node --check src/postgres-gomoku-service.js
       - name: P1-AUD3-03 config contract tests
         run: node --test test/config.test.js
       - name: P1-AUD3-03 crypto key separation tests
         run: node --test test/p1-aud3-03-crypto-key-separation.test.js
       - name: P1-AUD3-03 PostgreSQL crypto persistence tests
         run: node --test test/p1-aud3-03-postgres-crypto.test.js
+      - name: P1-AUD3-04 PostgreSQL durability and concurrency tests
+        run: node --test test/p1-aud3-04-gomoku-postgres.test.js
+      - name: P1-AUD3-04 HTTP conflict tests
+        run: node --test test/p1-aud3-04-gomoku-http-concurrency.test.js
       - name: Unit and integration tests
         run: npm test
       - name: Production dependency audit
