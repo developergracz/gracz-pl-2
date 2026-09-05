@@ -78,10 +78,15 @@ export function createGameHttpServer(options = {}) {
         viewerId: playerId,
       });
 
+      const eventSequence = result.snapshot.lastEventSequence;
+      const snapshot = result.replayed
+        ? getSessionSnapshot((await store.loadMatchRuntime(gameId)).state, playerId)
+        : result.snapshot;
+
       return sendJson(response, 200, {
         duplicate: result.replayed,
-        eventSequence: result.snapshot.lastEventSequence,
-        snapshot: result.snapshot,
+        eventSequence,
+        snapshot,
       });
     } catch (error) {
       logger.error(error);
