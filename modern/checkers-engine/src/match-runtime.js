@@ -91,9 +91,9 @@ export class MatchRuntime {
     if (!committed.replayed && this.publish) {
       const eventType = typeof this.engine.eventType === "function" ? this.engine.eventType(command) : "match.updated";
       try {
-        await this.publish({ matchId, state: committed.state, version: committed.version, command, eventType });
+        await this.publish({ matchId, version: committed.version, eventType });
       } catch {
-        // Persistence is authoritative. Publication is deliberately non-authoritative.
+        // Persistence is authoritative. Publication is deliberately non-authoritative and signal-only.
       }
     }
 
@@ -103,7 +103,6 @@ export class MatchRuntime {
       ownershipEpoch: epoch,
       replayed: committed.replayed === true,
       snapshot: this.#project(committed.state, viewerId),
-      state: committed.state,
     };
   }
 
