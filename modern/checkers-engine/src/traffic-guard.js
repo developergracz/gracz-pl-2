@@ -21,7 +21,7 @@ export class TrafficGuard {
   assertAllowed(request) {
     const method = String(request.method || "GET").toUpperCase();
     const path = safePath(request.url);
-    if (path === "/health") return;
+    if (path === "/health" || path === "/health/live" || path === "/health/ready") return;
 
     const source = clientSource(request);
     this.#consume(`global:${source}`, 600, 60_000, "global");
