@@ -74,43 +74,22 @@ export class PostgresSessionStore {
   }
 
   async healthCheck() {
-    await this.ready;
-
-    let acquisitionTimedOut = false;
-    let timer;
-
-    const acquisition = this.pool.connect().then(
-      (client) => {
-        if (!acquisitionTimedOut) return client;
-        client.release(true);
-        return null;
-      },
-      (error) => {
-        if (acquisitionTimedOut) return null;
-        throw error;
-      },
+    const deadlineAt = Date.now() + HEALTH_TIMEOUT_MS;
+    await waitForHealthDeadline(
+      this.ready,
+      deadlineAt,
+      "PostgreSQL readiness initialization timed out.",
     );
 
-    const deadline = new Promise((resolve) => {
-      timer = setTimeout(() => {
-        acquisitionTimedOut = true;
-        resolve(null);
-      }, HEALTH_TIMEOUT_MS);
-      timer.unref?.();
-    });
-
-    const client = await Promise.race([acquisition, deadline]);
-    clearTimeout(timer);
-
-    if (!client) {
-      const error = new Error("PostgreSQL readiness client acquisition timed out.");
-      error.code = "DEPENDENCY_UNAVAILABLE";
-      throw error;
-    }
+    const client = await acquireHealthClient(this.pool, deadlineAt);
 
     let destroyClient = false;
     try {
-      const { rows } = await boundedHealthQuery(client, "SELECT 1 AS ready");
+      const { rows } = await boundedHealthQuery(
+        client,
+        "SELECT 1 AS ready",
+        remainingHealthBudget(deadlineAt),
+      );
       if (Number(rows?.[0]?.ready) !== 1) {
         throw new Error("PostgreSQL readiness query returned an unexpected result.");
       }
@@ -195,8 +174,76 @@ export class PostgresSessionStore {
   }
 }
 
-function boundedHealthQuery(client, text) {
-  return client.query({ text, query_timeout: HEALTH_TIMEOUT_MS });
+async function waitForHealthDeadline(work, deadlineAt, timeoutMessage) {
+  const timeoutMs = remainingHealthBudget(deadlineAt);
+  if (timeoutMs <= 0) throw dependencyUnavailable(timeoutMessage);
+
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(dependencyUnavailable(timeoutMessage)), timeoutMs);
+    timer.unref?.();
+  });
+
+  try {
+    await Promise.race([work, deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function acquireHealthClient(pool, deadlineAt) {
+  const timeoutMs = remainingHealthBudget(deadlineAt);
+  if (timeoutMs <= 0) {
+    throw dependencyUnavailable("PostgreSQL readiness client acquisition timed out.");
+  }
+
+  let acquisitionTimedOut = false;
+  let timer;
+
+  const acquisition = pool.connect().then(
+    (client) => {
+      if (!acquisitionTimedOut) return client;
+      client.release(true);
+      return null;
+    },
+    (error) => {
+      if (acquisitionTimedOut) return null;
+      throw error;
+    },
+  );
+
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      acquisitionTimedOut = true;
+      resolve(null);
+    }, timeoutMs);
+    timer.unref?.();
+  });
+
+  const client = await Promise.race([acquisition, deadline]);
+  clearTimeout(timer);
+
+  if (!client) {
+    throw dependencyUnavailable("PostgreSQL readiness client acquisition timed out.");
+  }
+  return client;
+}
+
+function boundedHealthQuery(client, text, timeoutMs) {
+  if (timeoutMs <= 0) {
+    return Promise.reject(dependencyUnavailable("PostgreSQL readiness query timed out."));
+  }
+  return client.query({ text, query_timeout: timeoutMs });
+}
+
+function remainingHealthBudget(deadlineAt) {
+  return Math.max(0, deadlineAt - Date.now());
+}
+
+function dependencyUnavailable(message) {
+  const error = new Error(message);
+  error.code = "DEPENDENCY_UNAVAILABLE";
+  return error;
 }
 
 function withVersion(session, version) {
