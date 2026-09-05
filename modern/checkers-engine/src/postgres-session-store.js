@@ -72,6 +72,13 @@ export class PostgresSessionStore {
     }
   }
 
+  async healthCheck() {
+    await this.ready;
+    const started = Date.now();
+    await this.pool.query("SELECT 1");
+    return { ok: true, dependency: "postgresql", latencyMs: Date.now() - started };
+  }
+
   async create(session) {
     await this.ready;
     assertGameId(session?.gameId);
