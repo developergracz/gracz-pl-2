@@ -1,0 +1,64 @@
+name: P1-AUD3-07 Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "modern/checkers-engine/src/health.js"
+      - "modern/checkers-engine/src/postgres-session-store.js"
+      - "modern/checkers-engine/src/main.js"
+      - "modern/checkers-engine/test/p1-aud3-07-readiness.test.js"
+      - "modern/checkers-engine/test/p1-aud3-07-postgres-readiness.test.js"
+      - "modern/checkers-engine/test/p1-aud3-07-runtime-wiring.test.js"
+      - ".github/workflows/p1-aud3-07-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      P1_AUD3_07_DATABASE_URL: postgresql://gracz@127.0.0.1:5432/gracz_test
+      P1_AUD3_07_REQUIRE_POSTGRES: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+
+      - name: Verify dedicated PostgreSQL gate is configured
+        run: node -e 'if (!process.env.P1_AUD3_07_DATABASE_URL || process.env.P1_AUD3_07_REQUIRE_POSTGRES !== "1") process.exit(1)'
+
+      - name: P1-AUD3-07 HTTP liveness/readiness contract
+        run: node --test test/p1-aud3-07-readiness.test.js
+
+      - name: P1-AUD3-07 real PostgreSQL dependency health
+        run: node --test test/p1-aud3-07-postgres-readiness.test.js
+
+      - name: P1-AUD3-07 runtime wiring and read-only probe boundary
+        run: node --test test/p1-aud3-07-runtime-wiring.test.js

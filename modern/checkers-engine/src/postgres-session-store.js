@@ -6,6 +6,7 @@ import { SessionNotFoundError } from "./store.js";
 const { Pool } = pg;
 const SESSION_VERSION = Symbol("gracz.session.version");
 const INIT_LOCK_ID = 731_004_201;
+const HEALTH_TIMEOUT_MS = 1_000;
 
 export class SessionConcurrencyConflictError extends Error {
   constructor(gameId, expectedVersion) {
@@ -69,6 +70,56 @@ export class PostgresSessionStore {
       }
       client.release(unlockError);
       if (!initializationError && unlockError) throw unlockError;
+    }
+  }
+
+  async healthCheck() {
+    await this.ready;
+
+    let acquisitionTimedOut = false;
+    let timer;
+
+    const acquisition = this.pool.connect().then(
+      (client) => {
+        if (!acquisitionTimedOut) return client;
+        client.release(true);
+        return null;
+      },
+      (error) => {
+        if (acquisitionTimedOut) return null;
+        throw error;
+      },
+    );
+
+    const deadline = new Promise((resolve) => {
+      timer = setTimeout(() => {
+        acquisitionTimedOut = true;
+        resolve(null);
+      }, HEALTH_TIMEOUT_MS);
+      timer.unref?.();
+    });
+
+    const client = await Promise.race([acquisition, deadline]);
+    clearTimeout(timer);
+
+    if (!client) {
+      const error = new Error("PostgreSQL readiness client acquisition timed out.");
+      error.code = "DEPENDENCY_UNAVAILABLE";
+      throw error;
+    }
+
+    let destroyClient = false;
+    try {
+      const { rows } = await boundedHealthQuery(client, "SELECT 1 AS ready");
+      if (Number(rows?.[0]?.ready) !== 1) {
+        throw new Error("PostgreSQL readiness query returned an unexpected result.");
+      }
+      return { ok: true, dependency: "postgresql" };
+    } catch (error) {
+      destroyClient = true;
+      throw error;
+    } finally {
+      client.release(destroyClient);
     }
   }
 
@@ -142,6 +193,10 @@ export class PostgresSessionStore {
   async close() {
     await this.pool.end();
   }
+}
+
+function boundedHealthQuery(client, text) {
+  return client.query({ text, query_timeout: HEALTH_TIMEOUT_MS });
 }
 
 function withVersion(session, version) {
