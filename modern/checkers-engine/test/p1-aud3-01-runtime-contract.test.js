@@ -15,20 +15,18 @@ const mainSource = await readFile(new URL("../src/main.js", import.meta.url), "u
 const serverSource = await readFile(new URL("../src/server.js", import.meta.url), "utf8");
 const distributedSource = await readFile(new URL("../src/distributed-infrastructure.js", import.meta.url), "utf8");
 
-test("P1-AUD3-01 runtime evaluates P5 health before shared request enforcement", () => {
+test("P1-AUD3-01 runtime evaluates P5 health before the production request limiter composition", () => {
   const health = mainSource.indexOf("handleHealthRequest(request,response,{store})");
-  const shared = mainSource.indexOf("distributedTraffic.assertAllowed(request)");
+  const requestGate = mainSource.indexOf("await enforceRequest(request)");
   assert.ok(health >= 0);
-  assert.ok(shared > health);
+  assert.ok(requestGate > health);
+  assert.match(mainSource, /trafficGuard:routedTrafficGuard/);
   assert.match(mainSource, /sharedTrafficGuard:distributedTraffic/);
-  assert.match(mainSource, /sharedRequestGuardExternally:Boolean\(distributedTraffic\)/);
+  assert.match(mainSource, /sharedRequestGuardExternally:true/);
 });
 
-test("P1-AUD3-01 outer shared limiter preserves Retry-After for 429", () => {
-  assert.match(
-    mainSource,
-    /error\?\.status===429[\s\S]*response\.setHeader\("Retry-After",String\(Math\.max\(1,Math\.ceil\(error\.retryAfterSeconds\)\)\)\)/,
-  );
+test("P1-AUD3-01 outer request errors delegate to the tested production error mapper", () => {
+  assert.match(mainSource, /sendProductionRequestError\(response,error\)/);
 });
 
 test("P1-AUD3-01 process guard remains first and shared account/credential enforcement follows it", () => {
