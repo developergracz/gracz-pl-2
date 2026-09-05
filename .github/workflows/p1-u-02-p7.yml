@@ -9,6 +9,7 @@ on:
       - modern/checkers-engine/src/checkers-match-runtime-adapter.js
       - modern/checkers-engine/src/postgres-session-store.js
       - modern/checkers-engine/test/p1-u-02-match-runtime-postgres.test.js
+      - modern/checkers-engine/test/p1-u-02-checkers-runtime.test.js
       - .github/workflows/p1-u-02-p7.yml
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - modern/checkers-engine/src/checkers-match-runtime-adapter.js
       - modern/checkers-engine/src/postgres-session-store.js
       - modern/checkers-engine/test/p1-u-02-match-runtime-postgres.test.js
+      - modern/checkers-engine/test/p1-u-02-checkers-runtime.test.js
       - .github/workflows/p1-u-02-p7.yml
 
 permissions:
@@ -65,7 +67,7 @@ jobs:
       - name: P7 syntax
         run: node --check src/match-runtime.js && node --check src/checkers-match-runtime-adapter.js && node --check src/postgres-session-store.js
       - name: P7 focused real PostgreSQL tests
-        run: node --test test/p1-u-02-match-runtime-postgres.test.js
+        run: node --test test/p1-u-02-match-runtime-postgres.test.js test/p1-u-02-checkers-runtime.test.js
       - name: Existing Checkers CAS regression
         run: node --test test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js test/p1-c-01-http-conflict.test.js
       - name: P6 distributed infrastructure regression
