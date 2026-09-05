@@ -39,8 +39,8 @@ export class MatchRuntime {
       || typeof repository.executeMatchRuntimeCommand !== "function") {
       throw new TypeError("Repozytorium Match Runtime nie implementuje wymaganego kontraktu.");
     }
-    if (!engine || typeof engine.applyCommand !== "function") {
-      throw new TypeError("Adapter silnika Match Runtime musi implementować applyCommand().");
+    if (!engine || typeof engine.applyCommand !== "function" || typeof engine.project !== "function") {
+      throw new TypeError("Adapter silnika Match Runtime musi implementować applyCommand() oraz project().");
     }
     if (publish !== null && typeof publish !== "function") throw new TypeError("publish musi być funkcją albo null.");
     assertToken(ownerId, "ownerId");
@@ -107,7 +107,7 @@ export class MatchRuntime {
   }
 
   #project(state, viewerId) {
-    return typeof this.engine.project === "function" ? this.engine.project(state, viewerId) : structuredClone(state);
+    return this.engine.project(state, viewerId);
   }
 }
 
