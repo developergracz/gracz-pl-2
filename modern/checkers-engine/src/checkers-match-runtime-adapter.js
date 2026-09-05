@@ -14,5 +14,8 @@ export function createCheckersMatchRuntimeAdapter() {
     project(state, viewerId) {
       return getSessionSnapshot(state, viewerId);
     },
+    eventType(command) {
+      return command?.type === "move" ? "game.updated" : "match.updated";
+    },
   };
 }
