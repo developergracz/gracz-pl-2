@@ -8,10 +8,13 @@ on:
       - modern/checkers-engine/src/match-runtime.js
       - modern/checkers-engine/src/checkers-match-runtime-adapter.js
       - modern/checkers-engine/src/postgres-session-store.js
+      - modern/checkers-engine/src/server-p7.js
+      - modern/checkers-engine/src/main.js
       - modern/checkers-engine/test/p1-u-02-match-runtime-postgres.test.js
       - modern/checkers-engine/test/p1-u-02-checkers-runtime.test.js
       - modern/checkers-engine/test/p1-u-02-p7-f01-privacy.test.js
       - modern/checkers-engine/test/p1-u-02-p7-f02-projection-contract.test.js
+      - modern/checkers-engine/test/p1-u-02-slice2-checkers-http.test.js
       - .github/workflows/p1-u-02-p7.yml
   push:
     branches:
@@ -20,10 +23,13 @@ on:
       - modern/checkers-engine/src/match-runtime.js
       - modern/checkers-engine/src/checkers-match-runtime-adapter.js
       - modern/checkers-engine/src/postgres-session-store.js
+      - modern/checkers-engine/src/server-p7.js
+      - modern/checkers-engine/src/main.js
       - modern/checkers-engine/test/p1-u-02-match-runtime-postgres.test.js
       - modern/checkers-engine/test/p1-u-02-checkers-runtime.test.js
       - modern/checkers-engine/test/p1-u-02-p7-f01-privacy.test.js
       - modern/checkers-engine/test/p1-u-02-p7-f02-projection-contract.test.js
+      - modern/checkers-engine/test/p1-u-02-slice2-checkers-http.test.js
       - .github/workflows/p1-u-02-p7.yml
 
 permissions:
@@ -69,13 +75,15 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: P7 syntax
-        run: node --check src/match-runtime.js && node --check src/checkers-match-runtime-adapter.js && node --check src/postgres-session-store.js
+        run: node --check src/match-runtime.js && node --check src/checkers-match-runtime-adapter.js && node --check src/postgres-session-store.js && node --check src/server-p7.js && node --check src/main.js
       - name: P7 focused real PostgreSQL tests
-        run: node --test test/p1-u-02-match-runtime-postgres.test.js test/p1-u-02-checkers-runtime.test.js test/p1-u-02-p7-f01-privacy.test.js test/p1-u-02-p7-f02-projection-contract.test.js
+        run: node --test test/p1-u-02-match-runtime-postgres.test.js test/p1-u-02-checkers-runtime.test.js test/p1-u-02-p7-f01-privacy.test.js test/p1-u-02-p7-f02-projection-contract.test.js test/p1-u-02-slice2-checkers-http.test.js
       - name: Existing Checkers CAS regression
-        run: node --test test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js test/p1-c-01-http-conflict.test.js
+        run: node --test test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js test/p1-c-01-http-conflict.test.js test/p1-c-01-http-success-regression.test.js
       - name: P6 distributed infrastructure regression
         run: node --test test/p1-aud3-01-shared-infrastructure.test.js test/p1-aud3-01-runtime-contract.test.js test/p1-aud3-01-p6-f01.test.js
+      - name: P5 readiness regression
+        run: node --test test/p1-aud3-07-readiness.test.js test/p1-aud3-07-postgres-readiness.test.js test/p1-aud3-07-runtime-wiring.test.js
       - name: Full Node test suite
         run: npm test
       - name: Production dependency audit
