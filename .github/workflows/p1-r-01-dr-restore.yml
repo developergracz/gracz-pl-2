@@ -1,0 +1,141 @@
+name: P1-R-01 DR Restore Rehearsal
+
+on:
+  pull_request:
+    paths:
+      - "modern/checkers-engine/ops/backup-postgres.sh"
+      - "modern/checkers-engine/ops/test-restore-postgres.sh"
+      - "modern/checkers-engine/ops/dr-restore-rehearsal.sh"
+      - "modern/checkers-engine/ops/DR-RESTORE-RUNBOOK.md"
+      - ".github/workflows/p1-r-01-dr-restore.yml"
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p1-r-01-dr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-rehearsal:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create disposable source and restore databases
+        run: |
+          createdb -h 127.0.0.1 -U postgres gracz_dr_source
+          createdb -h 127.0.0.1 -U postgres gracz_dr_restore
+          psql -h 127.0.0.1 -U postgres -d gracz_dr_source -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE TABLE gracz_accounts(id BIGINT PRIMARY KEY, login TEXT NOT NULL);
+          CREATE TABLE gracz_newsletter_subscribers(id BIGINT PRIMARY KEY, email TEXT NOT NULL);
+          INSERT INTO gracz_accounts VALUES (1,'alice'),(2,'bob'),(3,'carol');
+          INSERT INTO gracz_newsletter_subscribers VALUES (1,'a@example.test'),(2,'b@example.test');
+          SQL
+      - name: Run encrypted backup and strict restore reconciliation
+        env:
+          DR_SOURCE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_dr_source
+          DR_RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_dr_restore
+          BACKUP_ENCRYPTION_KEY: ci-only-p1-r-01-not-a-secret
+          DR_EVIDENCE_DIR: ./dr-evidence
+          DR_STRICT_ROW_RECONCILIATION: "true"
+          DR_RTO_TARGET_SECONDS: "300"
+          DR_RPO_REHEARSAL_TARGET_SECONDS: "600"
+        run: bash ops/dr-restore-rehearsal.sh
+      - name: Verify fail-closed same-database guard
+        env:
+          DR_SOURCE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_dr_source
+          DR_RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_dr_source
+          BACKUP_ENCRYPTION_KEY: ci-only-p1-r-01-not-a-secret
+        run: |
+          set +e
+          bash ops/dr-restore-rehearsal.sh >/tmp/dr-same-db.log 2>&1
+          code=$?
+          set -e
+          test "$code" -eq 3
+          grep -q "source and restore database identities are the same" /tmp/dr-same-db.log
+      - name: Validate evidence
+        run: |
+          test "$(find dr-evidence -type f -name 'dr-restore-*.json' | wc -l)" -eq 1
+          grep -q '"status": "pass"' dr-evidence/dr-restore-*.json
+          grep -q '"strict_row_reconciliation": "pass"' dr-evidence/dr-restore-*.json
+          grep -q '"source_mutated": false' dr-evidence/dr-restore-*.json
+      - name: Upload synthetic DR evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-r-01-synthetic-dr-evidence
+          path: modern/checkers-engine/dr-evidence/*.json
+          retention-days: 14
+          if-no-files-found: error
+
+  recurring-rehearsal:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      DR_SOURCE_DATABASE_URL: ${{ secrets.DR_SOURCE_DATABASE_URL }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.DR_BACKUP_ENCRYPTION_KEY }}
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail closed if DR secrets are not provisioned
+        run: |
+          test -n "$DR_SOURCE_DATABASE_URL" || { echo "::error::DR_SOURCE_DATABASE_URL is not provisioned"; exit 1; }
+          test -n "$BACKUP_ENCRYPTION_KEY" || { echo "::error::DR_BACKUP_ENCRYPTION_KEY is not provisioned"; exit 1; }
+      - name: Create disposable restore database
+        run: createdb -h 127.0.0.1 -U postgres gracz_dr_restore
+      - name: Run recurring production-source restore rehearsal
+        env:
+          DR_RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_dr_restore
+          DR_EVIDENCE_DIR: ./dr-evidence
+          DR_STRICT_ROW_RECONCILIATION: "false"
+          DR_RTO_TARGET_SECONDS: "1800"
+          DR_RPO_REHEARSAL_TARGET_SECONDS: "3600"
+        run: bash ops/dr-restore-rehearsal.sh
+      - name: Upload DR evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-r-01-dr-evidence-${{ github.run_id }}
+          path: modern/checkers-engine/dr-evidence/*.json
+          retention-days: 90
+          if-no-files-found: error
