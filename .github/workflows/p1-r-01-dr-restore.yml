@@ -1,0 +1,214 @@
+name: P1-R-01 DR Restore Program
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "modern/checkers-engine/ops/backup-postgres.sh"
+      - "modern/checkers-engine/ops/test-restore-postgres.sh"
+      - "modern/checkers-engine/ops/dr-restore-rehearsal.sh"
+      - "modern/checkers-engine/ops/test-dr-restore-program.sh"
+      - "modern/checkers-engine/ops/DR-RESTORE-RUNBOOK.md"
+      - ".github/workflows/p1-r-01-dr-restore.yml"
+  push:
+    branches:
+      - fix/p1-r-01-recurring-dr-restore-resync
+    paths:
+      - "modern/checkers-engine/ops/backup-postgres.sh"
+      - "modern/checkers-engine/ops/test-restore-postgres.sh"
+      - "modern/checkers-engine/ops/dr-restore-rehearsal.sh"
+      - "modern/checkers-engine/ops/test-dr-restore-program.sh"
+      - "modern/checkers-engine/ops/DR-RESTORE-RUNBOOK.md"
+      - ".github/workflows/p1-r-01-dr-restore.yml"
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: p1-r-01-dr-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-dr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      source-postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      restore-postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      P1_R_01_SOURCE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      P1_R_01_RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5433/postgres
+      P1_R_01_REQUIRE_POSTGRES: "1"
+      PGPASSWORD: postgres
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - name: P1-R-01 shell syntax
+        run: bash -n ops/backup-postgres.sh ops/test-restore-postgres.sh ops/dr-restore-rehearsal.sh ops/test-dr-restore-program.sh
+      - name: Verify real PostgreSQL gate is mandatory and isolated
+        run: |
+          test "$P1_R_01_REQUIRE_POSTGRES" = "1"
+          psql "$P1_R_01_SOURCE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atqc "SELECT version();" >/dev/null
+          psql "$P1_R_01_RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atqc "SELECT version();" >/dev/null
+          source_id="$(psql "$P1_R_01_SOURCE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atqc "SELECT system_identifier::text FROM pg_control_system();")"
+          restore_id="$(psql "$P1_R_01_RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atqc "SELECT system_identifier::text FROM pg_control_system();")"
+          test -n "$source_id" && test -n "$restore_id" && test "$source_id" != "$restore_id"
+      - name: Focused fail-closed DR tests on real PostgreSQL
+        run: bash ops/test-dr-restore-program.sh
+      - name: Generate recurring synthetic DR evidence
+        run: |
+          export BACKUP_ENCRYPTION_KEY="$(openssl rand -base64 32 | tr -d '\n')"
+          createdb -h 127.0.0.1 -p 5432 -U postgres p1r01_evidence_source
+          createdb -h 127.0.0.1 -p 5433 -U postgres p1r01_evidence_restore
+          psql "$P1_R_01_RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE p1r01_evidence_restore IS 'gracz-dr-disposable';" >/dev/null
+          psql postgresql://postgres:postgres@127.0.0.1:5432/p1r01_evidence_source -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
+          CREATE TABLE gracz_accounts(id BIGINT PRIMARY KEY, login TEXT NOT NULL);
+          CREATE TABLE gracz_newsletter_subscribers(id BIGINT PRIMARY KEY, email TEXT NOT NULL);
+          CREATE TABLE gracz_game_sessions(game_id TEXT PRIMARY KEY, state JSONB NOT NULL, version INTEGER NOT NULL);
+          INSERT INTO gracz_accounts VALUES (1,'alice'),(2,'bob'),(3,'carol');
+          INSERT INTO gracz_newsletter_subscribers VALUES (1,'a@example.test'),(2,'b@example.test');
+          INSERT INTO gracz_game_sessions VALUES ('g1','{}',1),('g2','{}',2);
+          SQL
+          DR_SOURCE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/p1r01_evidence_source \
+          DR_RESTORE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/p1r01_evidence_restore \
+          DR_EXPECTED_TABLES=gracz_accounts,gracz_newsletter_subscribers,gracz_game_sessions \
+          DR_EVIDENCE_DIR=./dr-evidence DR_STRICT_ROW_RECONCILIATION=true \
+          DR_RTO_TARGET_SECONDS=300 DR_RPO_REHEARSAL_TARGET_SECONDS=600 \
+          BACKUP_ENCRYPTION_KEY="$BACKUP_ENCRYPTION_KEY" bash ops/dr-restore-rehearsal.sh
+      - name: Validate recurring evidence contract
+        run: |
+          test "$(find dr-evidence -type f -name 'dr-restore-*.json' | wc -l)" -eq 1
+          python3 - <<'PY'
+          import glob,json
+          p=glob.glob('dr-evidence/dr-restore-*.json')[0]
+          v=json.load(open(p))
+          assert v['status']=='pass'
+          assert v['backup']['artifact_encrypted'] is True
+          assert v['backup']['plaintext_dump_retained'] is False
+          assert v['backup']['checksum_verified'] is True
+          assert v['backup']['decryptability_verified'] is True
+          assert v['identity']['distinct'] is True
+          assert v['identity']['cluster_distinct'] is True
+          assert v['identity']['restore_isolated'] is True
+          assert v['reconciliation']['status']=='pass'
+          assert v['reconciliation']['source_row_counts']==v['reconciliation']['target_row_counts']
+          PY
+      - name: Upload synthetic DR evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-r-01-synthetic-dr-evidence-${{ github.run_id }}
+          path: modern/checkers-engine/dr-evidence/*.json
+          retention-days: 30
+          if-no-files-found: error
+
+  regression:
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_01_REQUIRE_POSTGRES: "1"
+      P1_AUD3_03_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_04_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_07_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_AUD3_07_REQUIRE_POSTGRES: "1"
+      P1_U_02_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_02_REQUIRE_POSTGRES: "1"
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: Application syntax
+        run: npm run check && node --check src/postgres-accounts.js && node --check src/postgres-gomoku-service.js && node --check src/match-runtime.js && node --check src/server-p7.js
+      - name: Checkers CAS concurrency and 409 regression
+        run: node --test test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js test/p1-c-01-http-conflict.test.js test/p1-c-01-http-success-regression.test.js
+      - name: Gomoku PostgreSQL regression
+        run: node --test test/p1-aud3-04-gomoku-postgres.test.js test/p1-aud3-04-gomoku-http-concurrency.test.js
+      - name: P5 readiness regression
+        run: node --test test/p1-aud3-07-readiness.test.js test/p1-aud3-07-postgres-readiness.test.js test/p1-aud3-07-runtime-wiring.test.js
+      - name: P6 distributed infrastructure regression
+        run: node --test test/p1-aud3-01-shared-infrastructure.test.js test/p1-aud3-01-runtime-contract.test.js test/p1-aud3-01-p6-f01.test.js
+      - name: P7 MatchRuntime regression
+        run: node --test test/p1-u-02-match-runtime-postgres.test.js test/p1-u-02-checkers-runtime.test.js test/p1-u-02-p7-f01-privacy.test.js test/p1-u-02-p7-f02-projection-contract.test.js test/p1-u-02-p7-f03-current-replay.test.js test/p1-u-02-slice2-checkers-http.test.js
+      - name: Full Node test suite
+        run: npm test
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser Checkers and Gomoku
+        run: npm run test:browser
+
+  gitleaks:
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codeql:
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
