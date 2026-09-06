@@ -1,6 +1,6 @@
 # Nowa dokumentacja Gracz.pl — status i spis treści
 
-Data aktualizacji: 01.09.2026  
+Data aktualizacji: 06.09.2026  
 Repozytorium: `developergracz/gracz-pl-2`  
 Branch: `main`
 
@@ -19,6 +19,56 @@ Ukończenie dokumentu nie oznacza udzielenia zgody na wykonanie. Żaden plik dok
 Pełny indeks artefaktów znajduje się w:
 
 - `00A-INDEKS-PAKIETU-DO-NIEZALEZNEGO-PRZEGLADU.md`.
+
+## 1A. Checkpoint techniczny po P7 i P1-R-01 — 06.09.2026
+
+Niniejszy checkpoint zapisuje zweryfikowany stan techniczny po domknięciu P7 / P1-U-02 oraz P1-R-01. W zakresie poniższych pozycji ma pierwszeństwo przed wcześniejszymi historycznymi licznikami i opisami backlogu z 01.09.2026. Nie zmienia statusów produkcyjnych, freeze ani bramek Privacy/Legal.
+
+### P7 / P1-U-02
+
+```text
+STATUS = MERGED / CLOSED
+PR = #40
+MERGE COMMIT = f88070b0f1d13a3ef353a46714f456c452876872
+FINAL IMPLEMENTATION HEAD = 5b70c2d95fc937f0b516b7fafbce22bb8f59f432
+FINAL TREE = 81da9ee04a15fea2ea329d9e19e61cf9f6b438e6
+AUDITS = Lead PASS / ChatGPT-2 independent PASS / Claude final PASS
+DEPLOYMENT = NO
+PRODUCTION MIGRATION = NO
+PRODUCTION DB CHANGE = NO
+```
+
+### P1-R-01 — recurring PostgreSQL DR restore program
+
+```text
+STATUS = MERGED / CLOSED
+PR = #41
+FINAL IMPLEMENTATION HEAD = 535eaac04522c53f1ee8506881a70461cfabc22a
+FINAL IMPLEMENTATION TREE = 6f3b73c0525b1157d764a358127af8afa32c4d41
+MERGE COMMIT = b276c92342203eb6c2e591b30219219b8ab7cf10
+AUDITS = Lead PASS / Claude independent final PASS
+FINAL CI = PASS
+REAL POSTGRESQL DR = PASS
+GITLEAKS = PASS
+CODEQL = PASS
+DEPLOYMENT = NO
+PRODUCTION RESTORE = NO
+PRODUCTION MIGRATION = NO
+PRODUCTION DB CHANGE = NO
+RENDER / ENV / DNS / CLOUDFLARE = UNCHANGED
+```
+
+PR `#35` pozostaje historycznym/stale reference only. Nie jest finalną ani scaloną implementacją P1-R-01. Finalna implementacja P1-R-01 została scalona przez PR `#41`.
+
+### Obowiązujący baseline po checkpoint
+
+```text
+CURRENT MAIN = b276c92342203eb6c2e591b30219219b8ab7cf10
+CURRENT TREE = 6f3b73c0525b1157d764a358127af8afa32c4d41
+NEXT CONTROLLED PHASE = P8 PREPARATION
+P8 IMPLEMENTATION = NOT STARTED
+MERGE / DEPLOYMENT / PRODUCTION ACTIONS FOR P8 = NOT AUTHORIZED
+```
 
 ## 2. Inwentarz bieżący
 
@@ -95,11 +145,11 @@ Dokument 77 kończy projekt dokumentacyjny sekwencji 62–77. Nie tworzy się au
 - `01-ARCHITEKTURA/04-AUDYT-TECHNICZNY-A-V-ETAP-3A-3C-ZAMKNIECIE-I-BACKLOG.md`
 - `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md`
 
-Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane; manualny izolowany restore ma `PASS / EXTERNAL_RECORDED`, bez Git-native independent verification i bez cyklicznego programu DR.
+Audyt techniczny A–V 3A–3C jest `CLOSED / EXTERNAL_RECORDED`; final documentation delta review ma `PASS / EXTERNAL_RECORDED`. Finalny wynik audytu z 01.09.2026: `NEW P0 = NONE`, `FINAL P1 = 10`, `DOCUMENTATION OVERCLAIM = NONE FOUND`, `DOCUMENT-TO-CODE ACCURACY = ADEQUATE`, `ARCHITECTURAL DESIGN TRUST = MEDIUM-HIGH`, `IMPLEMENTATION CONFIDENCE = MEDIUM`, `OPERATIONAL READINESS = PARTIAL / NOT READY`, `HORIZONTAL SCALE READINESS = NOT READY`, `PRODUCTION V3 = NOT READY`. H/J/N/R są skonsolidowane. Historyczny audyt odnotowywał manualny izolowany restore bez cyklicznego programu DR; stan ten został później zaktualizowany przez P1-R-01, zamknięty w PR #41 zgodnie z checkpointem 1A.
 
-Końcowy audyt dokumentacji jest utrwalony w `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md` ze statusem `PASS WITH CONDITIONS / EXTERNAL_RECORDED`. Potwierdza kompletność i implementowalność architektury bez potrzeby przeprojektowania, nie zmieniając 10 technicznych P1, pięciu Privacy/Legal P1, `IMPLEMENTATION = NOT AUTHORIZED`, freeze ani `PRODUCTION V3 = NO-GO`.
+Końcowy audyt dokumentacji jest utrwalony w `01-ARCHITEKTURA/05-AUDYT-DOKUMENTACJI-GRACZ-PL.md` ze statusem `PASS WITH CONDITIONS / EXTERNAL_RECORDED`. Potwierdza kompletność i implementowalność architektury bez potrzeby przeprojektowania. Historyczny licznik 10 technicznych P1 oraz pięć Privacy/Legal P1 pozostają elementem stanu audytowego z 01.09.2026; aktualny status wykonania technicznych pozycji należy czytać łącznie z checkpointem 1A. `IMPLEMENTATION = NOT AUTHORIZED`, freeze i `PRODUCTION V3 = NO-GO` pozostają bez zmian.
 
-Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`, a audyt techniczny A–V utrwalił 10 P1 jako jawny backlog. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal, **Czesław Socha**, podpisał 01.09.2026 decyzję `HOLD`; trwały locator to `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. PDF zawiera podpis odręczny, bez kryptograficznego podpisu certyfikatowego. Pięć P1 Privacy/Legal i niezależny review pozostają otwarte, dlatego bramka `REVIEWED DESIGN` nadal ma `HOLD`. Finalność architektury i zamknięcie dokumentacji nie autoryzują implementacji ani produkcji.
+Skonsolidowana architektura systemowa V3 ma wersję `1.0 / ARCHITECTURE DESIGN FINAL / READY FOR IMPLEMENTATION`. Przeglądy strukturalny i spójności zakończyły się `PASS`, a audyt techniczny A–V utrwalił 10 P1 jako jawny backlog audytowy. `ADR-V3-004` i `ADR-V3-013` są `ACCEPTED / FINAL / NOT IMPLEMENTED`. `ADR-V3-012` ma `ARCHITECTURE PASS`. Decision Owner Privacy/Legal, **Czesław Socha**, podpisał 01.09.2026 decyzję `HOLD`; trwały locator to `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-012-DOCUMENT-2-HOLD-SIGNED-CZESLAW-SOCHA-2026-09-01.pdf`. PDF zawiera podpis odręczny, bez kryptograficznego podpisu certyfikatowego. Pięć P1 Privacy/Legal i niezależny review pozostają otwarte, dlatego bramka `REVIEWED DESIGN` nadal ma `HOLD`. Finalność architektury i zamknięcie dokumentacji nie autoryzują implementacji ani produkcji.
 
 ### PostgreSQL
 
@@ -152,16 +202,17 @@ Obowiązująca granica po zamknięciu dokumentacji:
 
 1. dokumentacja V3 jest `COMPLETE / CLOSED`, a final documentation closure review ma `PASS`;
 2. implementację można planować na bazie architektury 1.0, lecz jej wykonanie wymaga osobnej autoryzacji i respektowania bramek obszarowych;
-3. 10 technicznych P1 przechodzi do implementation/test/operational backlog;
+3. audytowy baseline 10 technicznych P1 z 01.09.2026 przeszedł do implementation/test/operational backlog; późniejsze zamknięcia, w tym P7 / P1-U-02 i P1-R-01, są rejestrowane w checkpointach statusowych;
 4. pięć Privacy/Legal P1 pozostaje otwartych i blokuje `REVIEWED DESIGN` oraz produkcję, nie zamknięcie pakietu dokumentacyjnego;
-5. ETAP 4, E4.1-H, E4.2–E4.10, DR, monitoring i skalowanie pozostają wykonawczym lub produkcyjnym backlogiem.
+5. ETAP 4, E4.1-H, E4.2–E4.10, monitoring i skalowanie pozostają wykonawczym lub produkcyjnym backlogiem; recurring PostgreSQL DR w zakresie P1-R-01 ma status `MERGED / CLOSED`, bez wykonania produkcyjnego restore.
 
 ```text
 DOCUMENTATION GRACZ.PL V3 = COMPLETE / CLOSED
 FINAL DOCUMENTATION CLOSURE REVIEW = PASS
 ARCHITECTURE V3 = 1.0 / FINAL / READY FOR IMPLEMENTATION
 READY FOR IMPLEMENTATION = YES — SEPARATE AUTHORIZATION REQUIRED
-OPEN TECHNICAL P1 = 10
+TECHNICAL P1 AUDIT BASELINE 01.09.2026 = 10
+CURRENT TECHNICAL P1 EXECUTION STATUS = SEE CHECKPOINT 1A
 OPEN PRIVACY/LEGAL P1 = 5
 ETAP 4 = OPEN / EXECUTION BACKLOG
 IMPLEMENTATION = NOT AUTHORIZED
@@ -176,5 +227,6 @@ FREEZE = ACTIVE
 - Nie wykonujemy T-14, T-10, T-7 ani T-3 bez jawnej decyzji i named owners.
 - Nie udzielamy C0-S1/C0-S3/A1/A2/A3 przez samą aktualizację dokumentacji.
 - Nie zmieniamy produkcji, Rendera ani sekretów.
+- Następna kontrolowana faza po tym checkpointcie to `P8 PREPARATION`; implementacja P8 nie została rozpoczęta i wymaga osobnego mandatu.
 - Nowe pakiety dokumentacyjne muszą wynikać ze skonsolidowanej architektury systemowej.
 - Każdy ukończony i zweryfikowany dokument jest wersjonowany w Git.
