@@ -37,7 +37,7 @@ import { createGomokuHttpHandler } from "./gomoku-http.js";
 import { PostgresDistributedTrafficGuard, PostgresRealtimeHub } from "./distributed-infrastructure.js";
 import { TrafficGuard } from "./traffic-guard.js";
 import { createProductionRateLimitComposition, sendProductionRequestError } from "./production-rate-limit.js";
-import { createGameHttpServer } from "./server.js";
+import { createGameHttpServer } from "./server-p7.js";
 import { FileSessionStore } from "./store.js";
 import { PostgresSessionStore } from "./postgres-session-store.js";
 import { handleHealthRequest } from "./health.js";
