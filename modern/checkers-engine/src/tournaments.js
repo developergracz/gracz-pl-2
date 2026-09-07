@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import pg from "pg";
+import { requireGameType } from "./game-types.js";
 
 const { Pool } = pg;
-const GAMES = new Set(["warcaby", "gomoku", "szachy"]);
 const FORMATS = new Set(["swiss", "knockout", "round_robin"]);
 const RESULTS = new Set(["1-0", "0-1", "1/2-1/2"]);
 
@@ -74,7 +74,7 @@ export class TournamentService {
   validateCreate(input = {}) {
     const title = this.cleanText(input.title, 80);
     if (title.length < 3) throw tournamentError("Podaj nazwę turnieju (minimum 3 znaki).", "TOURNAMENT_TITLE", 400);
-    const game = GAMES.has(input.game) ? input.game : "warcaby";
+    const game = requireGameType(input.game, { capability: "tournaments" });
     const format = FORMATS.has(input.format) ? input.format : "swiss";
     const maxPlayers = Math.max(4, Math.min(128, Number(input.maxPlayers) || 16));
     const rounds = Math.max(1, Math.min(15, Number(input.rounds) || Math.ceil(Math.log2(maxPlayers)) + 1));
@@ -97,7 +97,7 @@ export class TournamentService {
 
   async list(user, query = {}) {
     if (!this.pool) {
-      let rows = [...this.memory.values()].map((x) => ({ ...x.tournament, playerCount:x.players.length, joined:x.players.some((p)=>p.userId===user.userId) }));
+      let rows = [...this.memory.values()].map((x) => normalizeTournament({ ...x.tournament, playerCount:x.players.length, joined:x.players.some((p)=>p.userId===user.userId) }));
       return filterList(rows, query);
     }
     const { rows } = await this.pool.query(`SELECT t.*, COUNT(p.user_id)::int AS player_count, BOOL_OR(p.user_id=$1) AS joined FROM gracz_tournaments t LEFT JOIN gracz_tournament_players p ON p.tournament_id=t.tournament_id GROUP BY t.tournament_id ORDER BY CASE t.status WHEN 'live' THEN 0 WHEN 'registration' THEN 1 ELSE 2 END, COALESCE(t.starts_at,t.created_at) ASC LIMIT 200`, [user.userId]);
@@ -107,7 +107,7 @@ export class TournamentService {
   async detail(user, id) {
     if (!this.pool) {
       const data=this.memory.get(id); if(!data) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
-      return { tournament:{...data.tournament,playerCount:data.players.length,joined:data.players.some(p=>p.userId===user.userId)}, players:sortStandings(data.players), matches:data.matches };
+      return { tournament:normalizeTournament({...data.tournament,playerCount:data.players.length,joined:data.players.some(p=>p.userId===user.userId)}), players:sortStandings(data.players), matches:data.matches };
     }
     const t = await this.pool.query(`SELECT t.*, COUNT(p.user_id)::int AS player_count, BOOL_OR(p.user_id=$2) AS joined FROM gracz_tournaments t LEFT JOIN gracz_tournament_players p ON p.tournament_id=t.tournament_id WHERE t.tournament_id=$1 GROUP BY t.tournament_id`, [id,user.userId]);
     if(!t.rows[0]) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
@@ -216,8 +216,9 @@ export function createTournamentHandler({service,auth,authSessions}){
 function createPairings(players,previous,round,format){const list=[...players];if(format!=="knockout")list.sort((a,b)=>(Number(b.points)||0)-(Number(a.points)||0)||(Number(b.buchholz)||0)-(Number(a.buchholz)||0)||(a.seed||0)-(b.seed||0));const played=new Set(previous.map(m=>[m.white_id||m.whiteId,m.black_id||m.blackId].sort().join("|")));const out=[];let board=1;while(list.length>1){const a=list.shift();let idx=format==="knockout"?0:list.findIndex(b=>!played.has([a.userId,b.userId].sort().join("|")));if(idx<0)idx=0;const b=list.splice(idx,1)[0];const swap=round%2===0;out.push({matchId:randomUUID(),round,board:board++,whiteId:swap?b.userId:a.userId,whiteName:swap?b.displayName:a.displayName,blackId:swap?a.userId:b.userId,blackName:swap?a.displayName:b.displayName,result:null,status:"scheduled",completedAt:null});}if(list.length){const a=list[0];out.push({matchId:randomUUID(),round,board:board++,whiteId:a.userId,whiteName:a.displayName,blackId:null,blackName:"BYE",result:"1-0",status:"completed",completedAt:new Date().toISOString()});}return out;}
 function applyResult(players,m,result){const w=players.find(p=>p.userId===m.whiteId),b=players.find(p=>p.userId===m.blackId);if(!w||!b)return;if(result==="1-0"){w.points+=1;w.wins++;b.losses++;}else if(result==="0-1"){b.points+=1;b.wins++;w.losses++;}else{w.points+=.5;b.points+=.5;w.draws++;b.draws++;}}
 function sortStandings(p){return [...p].sort((a,b)=>Number(b.points)-Number(a.points)||Number(b.buchholz)-Number(a.buchholz)||b.wins-a.wins||a.seed-b.seed);}
-function filterList(rows,q){const status=q.status;const game=q.game;const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(!game||game==="all"||t.game===game)&&(!mine||t.joined)&&(!text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
-function mapTournament(r){return{tournamentId:r.tournament_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description,game:r.game,format:r.format,status:r.status,visibility:r.visibility,maxPlayers:r.max_players,rounds:r.rounds,timeControl:r.time_control,rated:Boolean(r.rated),startsAt:r.starts_at,currentRound:r.current_round,createdAt:r.created_at,finishedAt:r.finished_at,playerCount:Number(r.player_count||0),joined:Boolean(r.joined)};}
+function filterList(rows,q){const status=q.status;const hasGame=Object.hasOwn(q,"game");const game=hasGame?(q.game==="all"?"all":requireGameType(q.game,{capability:"tournaments"})):"all";const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(game==="all"||t.game===game)&&(!mine||t.joined)&&(!text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
+function normalizeTournament(tournament){return{...tournament,game:requireGameType(tournament.game,{capability:"tournaments"})};}
+function mapTournament(r){return normalizeTournament({tournamentId:r.tournament_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description,game:r.game,format:r.format,status:r.status,visibility:r.visibility,maxPlayers:r.max_players,rounds:r.rounds,timeControl:r.time_control,rated:Boolean(r.rated),startsAt:r.starts_at,currentRound:r.current_round,createdAt:r.created_at,finishedAt:r.finished_at,playerCount:Number(r.player_count||0),joined:Boolean(r.joined)});}
 function mapPlayer(r){return{userId:r.user_id,displayName:r.display_name,seed:r.seed,points:Number(r.points),wins:r.wins,draws:r.draws,losses:r.losses,buchholz:Number(r.buchholz),status:r.status,joinedAt:r.joined_at};}
 function mapMatch(r){return{matchId:r.match_id,round:r.round,board:r.board,whiteId:r.white_id,whiteName:r.white_name,blackId:r.black_id,blackName:r.black_name,result:r.result,status:r.status,createdAt:r.created_at,completedAt:r.completed_at};}
 async function trustedUser(request,auth,authSessions){const cookies=Object.fromEntries(String(request.headers.cookie||"").split(";").map(part=>{const i=part.indexOf("=");return i>0?[part.slice(0,i).trim(),decodeURIComponent(part.slice(i+1).trim())]:["",""];}).filter(([k])=>k));const token=cookies["__Host-gracz_session"]||(String(request.headers.authorization||"").startsWith("Bearer ")?String(request.headers.authorization).slice(7):null);if(!token||token==="cookie")throw tournamentError("Zaloguj się, aby korzystać z turniejów.","UNAUTHENTICATED",401);const user=auth.verify(token);if(authSessions&&user.tokenId&&await authSessions.has(user.tokenId))await authSessions.assertActive(user);return{userId:user.userId,displayName:user.displayName,tokenId:user.tokenId};}
