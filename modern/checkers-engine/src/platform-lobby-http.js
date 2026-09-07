@@ -32,7 +32,7 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
         ownerId:user.userId,
         ownerName:user.displayName,
         roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
-        gameType:body.gameType||'checkers',
+        gameType:Object.hasOwn(body,'gameType')?body.gameType:undefined,
         maxPlayers:body.maxPlayers??null,
       });
       return sendJson(response,201,room);
