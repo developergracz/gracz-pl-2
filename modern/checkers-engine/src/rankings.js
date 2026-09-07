@@ -1,8 +1,8 @@
 import pg from "pg";
+import { requireGameType } from "./game-types.js";
 
 const { Pool } = pg;
 const PERIODS = new Map([["7d",7],["30d",30],["90d",90],["season",180],["all",null]]);
-const GAMES = new Set(["all","checkers","thousand"]);
 
 export class RankingService {
   constructor(databaseUrl = null) {
@@ -11,7 +11,7 @@ export class RankingService {
   }
 
   async leaderboard({ period="all", limit=100, query="", minGames=0, game="all" }={}) {
-    const selectedGame=GAMES.has(game)?game:"all";
+    const selectedGame=rankingGame(game);
     if (!this.pool) return { rankings:[], summary:summary([],0), generatedAt:new Date().toISOString(), period, game:selectedGame };
     const days = PERIODS.has(period) ? PERIODS.get(period) : null;
     const events=[];
@@ -101,7 +101,7 @@ export function createRankingHandler({service,auth,authSessions}){
   return async function handle(request,response){
     const url=new URL(request.url,'http://localhost');if(!url.pathname.startsWith('/rankings'))return false;
     try{
-      const user=await trustedUser(request,auth,authSessions);const period=url.searchParams.get('period')||'all';const query=url.searchParams.get('q')||'';const minGames=Number(url.searchParams.get('minGames')||0);const game=url.searchParams.get('game')||'all';
+      const user=await trustedUser(request,auth,authSessions);const period=url.searchParams.get('period')||'all';const query=url.searchParams.get('q')||'';const minGames=Number(url.searchParams.get('minGames')||0);const gameParam=url.searchParams.get('game');const game=gameParam===null?'all':gameParam;
       if(request.method==='GET'&&url.pathname==='/rankings')return json(response,200,await service.leaderboard({period,query,minGames,game,limit:Number(url.searchParams.get('limit')||100)}));
       if(request.method==='GET'&&url.pathname==='/rankings/me')return json(response,200,await service.player(user.userId,{period,game}));
       return json(response,404,{error:{code:'RANKING_NOT_FOUND',message:'Nie znaleziono funkcji rankingu.'}});
@@ -109,6 +109,7 @@ export function createRankingHandler({service,auth,authSessions}){
   }
 }
 
+function rankingGame(value){if(value==="all")return"all";return requireGameType(value,{capability:"rankings"})}
 function parseJson(value){if(value&&typeof value==='object')return value;try{return JSON.parse(value)}catch{return null}}
 function summary(list,games){return{players:list.length,games,highestRating:list[0]?.rating||1200,averageRating:list.length?Math.round(list.reduce((n,x)=>n+x.rating,0)/list.length):1200}}
 function tierFor(r){if(r>=2200)return'Arcymistrz';if(r>=2000)return'Mistrz';if(r>=1800)return'Diament';if(r>=1600)return'Platyna';if(r>=1400)return'Złoto';if(r>=1200)return'Srebro';return'Brąz'}
