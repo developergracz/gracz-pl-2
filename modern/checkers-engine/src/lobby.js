@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { GameTypeError, requireGameDefinition } from "./game-types.js";
+import { requireGameDefinition } from "./game-types.js";
 import { createGameSession } from "./session.js";
 
 export class LobbyError extends Error{constructor(message,code){super(message);this.name="LobbyError";this.code=code}}
@@ -61,6 +61,6 @@ export class LobbyService{
 
 function publicRoom(room){const seats=room.seats.map(seat=>seat?{id:seat.id,name:normalizeDisplayName(seat.name)}:null);return structuredClone({roomId:room.roomId,roomName:room.roomName,gameType:room.gameType,gameLabel:room.gameLabel,maxPlayers:room.maxPlayers,filledSeats:seats.filter(Boolean).length,status:room.status,seats,white:room.gameType==="checkers"?seats[0]:null,black:room.gameType==="checkers"?seats[1]:null,gameId:room.gameId})}
 function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.max;const value=requested===null||requested===undefined?config.default:Number(requested);if(!Number.isInteger(value)||value<config.min||value>config.max)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
-function gameConfig(gameType){try{return requireGameDefinition(gameType,{capability:"lobby"})}catch(error){if(error instanceof GameTypeError)throw new LobbyError("Nieobsługiwany typ gry.","INVALID_GAME_TYPE");throw error}}
+function gameConfig(gameType){return requireGameDefinition(gameType,{capability:"lobby"})}
 function normalizeDisplayName(value){if(typeof value!=="string")return value;if(value.localeCompare("Czeslaw","pl",{sensitivity:"base"})===0)return"Czesław";return value.normalize("NFC")}
 function requireText(value,field){if(typeof value!=="string"||value.length<1||value.length>128)throw new LobbyError(`Pole ${field} jest nieprawidłowe.`,"INVALID_ROOM")}
