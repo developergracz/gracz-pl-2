@@ -28,6 +28,8 @@ The purpose is to answer, for every important requirement:
 
 This matrix does **not** replace source code, tests, PRs, audit reports, detailed architecture documents or the Evidence Register. It cross-links them.
 
+Historical P1 exact evidence for PR #29/#30/#36/#37/#38/#39 is canonically reconstructed in `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` and should be used instead of generic `historical closed` wording.
+
 ---
 
 ## 2. Status vocabulary
@@ -67,7 +69,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 | ID | Requirement | Source / rationale | Implementation | Data / API boundary | Tests / verification | Evidence | Status / gap |
 |---|---|---|---|---|---|---|---|
 | RT-ARCH-001 | Authoritative match state must survive process restart | P7 / architecture master | `src/postgres-session-store.js`, `src/match-runtime.js` | `gracz_game_sessions` | P7 PostgreSQL runtime tests, restart/replay coverage | PR #40; HEAD `5b70c2d...`; TREE `81da9ee0...`; Lead PASS / GPT-2 PASS / Claude PASS | `MERGED / CLOSED`; production deployment not claimed |
-| RT-ARCH-002 | Concurrent writers must not both commit the same logical version | P1-C-01 + P7 | PostgreSQL version/CAS in session store and MatchRuntime | `gracz_game_sessions.version`; Checkers move path | Checkers CAS/concurrency tests; P7 runtime tests | PR #29 historical closure; PR #40 final MatchRuntime evidence | `CLOSED` for defined Checkers/P7 scope; full-project re-audit still required |
+| RT-ARCH-002 | Concurrent writers must not both commit the same logical version | P1-C-01 + P7 | PostgreSQL version/CAS in session store and MatchRuntime | `gracz_game_sessions.version`; Checkers move path | Checkers CAS/concurrency tests; P7 runtime tests | TOM 17: PR #29 HEAD `f2167bf3...`, TREE `b08662e9...`, merge `c81b7819...`, exact-head CI GREEN; PR #40 final MatchRuntime evidence | `CLOSED` for defined Checkers/P7 scope; historical PR #29 final audit-report provenance is partial; full-project re-audit still required |
 | RT-ARCH-003 | Stale process ownership must fail closed | P7 | `claimMatchOwnership`, `ownershipEpoch` fencing | `gracz_match_runtime_ownership` | P7 ownership/fencing tests | PR #40; Claude final PASS | `MERGED / CLOSED` |
 | RT-ARCH-004 | Duplicate mutation retry must be durable and idempotent | P7 | command hash + idempotency record | `gracz_match_runtime_commands`; Checkers move API | P7 idempotency/replay tests | PR #40; exact implementation evidence in current main | `MERGED / CLOSED` |
 | RT-ARCH-005 | Realtime must be non-authoritative and emitted only after persistence | Architecture + P7 | MatchRuntime publication after successful persistence; PostgreSQL signal hub | Checkers realtime / `LISTEN/NOTIFY` | P7 replay/publication tests; regression CI | PR #40; P8 regression CI also covers P7 `19/19` | `MERGED / CLOSED` for P7 path |
@@ -82,9 +84,9 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 |---|---|---|---|---|---|---|
 | RT-CHK-001 | Legal move rules are server-authoritative | `src/index.js` Checkers engine | game state / move API | `test/checkers-engine.test.js` and regressions | repeated P7/P8 regressions | `CURRENT-MAIN VERIFIED` |
 | RT-CHK-002 | Forced captures and multi-capture sequence must be enforced by engine | Checkers engine move generation/transition | move command | Checkers engine suite | P8 focused Checkers regression `26/26 PASS` on P8 HEAD | `CURRENT-MAIN VERIFIED`; final product rules should remain versioned |
-| RT-CHK-003 | Concurrent Checkers mutation must conflict rather than overwrite | PostgreSQL CAS / MatchRuntime | `POST /games/:id/moves` | P1-C-01 + P7 HTTP/runtime tests | PR #29 closure + PR #40 closure | `CLOSED` for defined path |
+| RT-CHK-003 | Concurrent Checkers mutation must conflict rather than overwrite | PostgreSQL CAS / MatchRuntime | `POST /games/:id/moves` | P1-C-01 + P7 HTTP/runtime tests | TOM 17 PR #29 exact HEAD/TREE/merge/CI + PR #40 closure | `CLOSED` for defined path |
 | RT-CHK-004 | Duplicate move request must not repeat mutation | MatchRuntime durable idempotency | `gracz_match_runtime_commands` | P7 replay tests | PR #40 | `CLOSED` |
-| RT-CHK-005 | Failed/stale mutation must not publish realtime state | persistence-before-signal contract | Checkers realtime | P1-C-01 / P7 negative tests | historical closure + P7 | `CLOSED` for defined move path |
+| RT-CHK-005 | Failed/stale mutation must not publish realtime state | persistence-before-signal contract | Checkers realtime | P1-C-01 / P7 negative tests | TOM 17 PR #29 exact evidence + P7 | `CLOSED` for defined move path |
 | RT-CHK-006 | Checkers remains compatibility anchor during shared-runtime evolution | architecture governance | engine + adapter + HTTP | regression suites | P8 exact-head CI includes Checkers regression and browser journey | `ONGOING INVARIANT` |
 
 ---
@@ -93,11 +95,11 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Implementation | Data/API | Test evidence | Audit/evidence | Status / gap |
 |---|---|---|---|---|---|---|
-| RT-GOM-001 | Gomoku authoritative state must be durable in PostgreSQL when DB is configured | `src/postgres-gomoku-service.js` | `gracz_gomoku_games` | PostgreSQL durability tests | PR #37 historical closed track | `CLOSED` for durability scope |
-| RT-GOM-002 | Gomoku schema mismatch must fail closed | `#verifySchema()` in PostgreSQL service | required table/columns/PK | PostgreSQL schema tests | PR #37 / current-main source | `CLOSED` for defined scope |
-| RT-GOM-003 | Concurrent Gomoku move must use revision CAS | `UPDATE ... WHERE revision=?` | `gracz_gomoku_games.revision` | `p1-aud3-04-gomoku-http-concurrency.test.js`, PostgreSQL tests | PR #37; P8 CI Gomoku `24/24 PASS` | `CLOSED` for current service |
-| RT-GOM-004 | Duplicate requestId may resolve as idempotent replay, not duplicate move | `resolveGomokuIdempotentMove()` | move API / state history | Gomoku service + concurrency tests | PR #37 / regression CI | `CURRENT-MAIN VERIFIED` |
-| RT-GOM-005 | Corrupt persisted Gomoku state must be rejected | `decodeState()` validation | DB read boundary | PostgreSQL validation tests | current-main implementation | `CURRENT-MAIN VERIFIED` |
+| RT-GOM-001 | Gomoku authoritative state must be durable in PostgreSQL when DB is configured | `src/postgres-gomoku-service.js` | `gracz_gomoku_games` | PostgreSQL durability tests | TOM 17 PR #37 actual final HEAD `5d155fd...`, TREE `2e7ad8c...`, merge `d002027...`, exact-head CI GREEN | `CLOSED` for durability scope |
+| RT-GOM-002 | Gomoku schema mismatch must fail closed | `#verifySchema()` in PostgreSQL service | required table/columns/PK | PostgreSQL schema tests | TOM 17 PR #37 + current-main source | `CLOSED` for defined scope |
+| RT-GOM-003 | Concurrent Gomoku move must use revision CAS | `UPDATE ... WHERE revision=?` | `gracz_gomoku_games.revision` | `p1-aud3-04-gomoku-http-concurrency.test.js`, PostgreSQL tests | TOM 17 PR #37; P8 CI Gomoku `24/24 PASS` | `CLOSED` for current service |
+| RT-GOM-004 | Duplicate requestId may resolve as idempotent replay, not duplicate move | `resolveGomokuIdempotentMove()` | move API / state history | Gomoku service + concurrency tests | TOM 17 PR #37 / regression CI | `CURRENT-MAIN VERIFIED` |
+| RT-GOM-005 | Corrupt persisted Gomoku state must be rejected | `decodeState()` validation | DB read boundary | PostgreSQL validation tests | current-main implementation + TOM 17 PR #37 final closure commit | `CURRENT-MAIN VERIFIED` |
 | RT-GOM-006 | Gomoku should eventually align with common MatchRuntime where justified | architecture target | not yet fully migrated | n/a | Games Master | `PLANNED / NOT AUTHORIZED` |
 
 ---
@@ -137,7 +139,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 | RT-AUTH-003 | Password reset must revoke prior active sessions | account recovery/auth handler | auth sessions + reset tokens | recovery tests where present | `CURRENT-MAIN VERIFIED`; traceability to exact tests should be expanded in later coverage matrix |
 | RT-AUTH-004 | Registration/recovery secrets/codes must be hashed at rest | secure account flows | `gracz_registration_codes`, `gracz_password_reset_tokens` | security/account tests | `CURRENT-MAIN VERIFIED` |
 | RT-AUTH-005 | Sensitive privileged operations require RBAC and MFA policy | `rbac-service.js`, `mfa-service.js`, privileged wrapper | `gracz_roles`, `gracz_mfa`, admin API | existing security tests | `PARTIAL / FULL AUDIT REQUIRED`; historical P1-B-01 remains open backlog for reassessment |
-| RT-AUTH-006 | MFA secret material must be encrypted with separate key domain | `mfa-service.js` AES-256-GCM + HKDF | `gracz_mfa` | crypto/security tests | crypto separation track PR #36 historical closure | `CLOSED` for defined key-separation scope; production key lifecycle still not AS-BUILT |
+| RT-AUTH-006 | MFA secret material must be encrypted with separate key domain | `mfa-service.js` AES-256-GCM + HKDF | `gracz_mfa` | crypto/security tests | TOM 17 PR #36: HEAD `bbb48464...`, TREE `43ead9cc...`, exact-head CI GREEN; independently audited earlier head + corrective finding preserved in PR body | `CLOSED` for defined key-separation scope; production key lifecycle still not AS-BUILT |
 
 ---
 
@@ -145,9 +147,9 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Implementation | Data boundary | Tests/evidence | Status / gap |
 |---|---|---|---|---|---|
-| RT-MSG-001 | Private message subject/body must be encrypted at rest | `postgres-accounts.js` message crypto | `gracz_messages.subject/body` | messaging/crypto tests | crypto separation closure + current-main source | `CURRENT-MAIN VERIFIED` |
-| RT-MSG-002 | Message encryption key domain must be separate from auth/MFA | dedicated message key derivation | ENV/key domain | crypto separation work | PR #36 historical closed track | `CLOSED` for defined scope |
-| RT-MSG-003 | Attachment binary must be validated and encrypted | `message-attachments.js` | `gracz_message_attachments` | attachment tests | current-main source | `CURRENT-MAIN VERIFIED` |
+| RT-MSG-001 | Private message subject/body must be encrypted at rest | `postgres-accounts.js` message crypto | `gracz_messages.subject/body` | messaging/crypto tests | TOM 17 PR #36 + current-main source | `CURRENT-MAIN VERIFIED` |
+| RT-MSG-002 | Message encryption key domain must be separate from auth/MFA | dedicated message key derivation | ENV/key domain | crypto separation work | TOM 17 PR #36 exact HEAD/TREE/merge/CI | `CLOSED` for defined scope |
+| RT-MSG-003 | Attachment binary must be validated and encrypted | `message-attachments.js` | `gracz_message_attachments` | attachment tests | current-main source + TOM 17 PR #36 | `CURRENT-MAIN VERIFIED` |
 | RT-MSG-004 | Only authorized sender/recipient may access message attachment | attachment service authorization checks | attachment read/write API | attachment/account tests | current-main | `CURRENT-MAIN VERIFIED`; future privacy audit should explicitly negative-test all role/user combinations |
 | RT-MSG-005 | Message deletion semantics must avoid unintended immediate destruction for the other participant | sender/recipient deletion flags | `gracz_messages` | account/message tests | current-main | `CURRENT-MAIN VERIFIED`; retention/legal policy still open |
 
@@ -170,10 +172,10 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Implementation | Data/API | Evidence | Status / gap |
 |---|---|---|---|---|---|
-| RT-INF-001 | Distributed request limiting must work across instances | `PostgresDistributedTrafficGuard` | `gracz_shared_rate_limits` | shared-infra tests / closed technical track | PR #39 historical closure | `CLOSED` for defined scope |
-| RT-INF-002 | Failure of required shared guard must fail closed rather than silently disable protection | shared infrastructure unavailable error path | request boundary | shared-infra tests | PR #39/current-main | `CLOSED` for defined scope |
-| RT-INF-003 | Realtime event channel must carry only bounded, allowed event types/signals | `PostgresRealtimeHub` allowlist + payload-size check | PostgreSQL `LISTEN/NOTIFY` | shared-infra tests | PR #39/current-main | `CURRENT-MAIN VERIFIED` |
-| RT-INF-004 | Realtime consumer must reload authoritative state from PostgreSQL | hub notification handler | `gracz_game_sessions` | integration tests | current-main | `CURRENT-MAIN VERIFIED` |
+| RT-INF-001 | Distributed request limiting must work across instances | `PostgresDistributedTrafficGuard` | `gracz_shared_rate_limits` | TOM 17 PR #39: final HEAD `c4669ea...`, TREE `3b6dbca...`, dedicated run `33962992847` + regressions GREEN; merge records Lead PASS + independent Claude audit | `CLOSED` for defined scope |
+| RT-INF-002 | Failure of required shared guard must fail closed rather than silently disable protection | shared infrastructure unavailable error path | request boundary | TOM 17 PR #39 P6-F01 correction + exact-head CI | `CLOSED` for defined scope |
+| RT-INF-003 | Realtime event channel must carry only bounded, allowed event types/signals | `PostgresRealtimeHub` allowlist + payload-size check | PostgreSQL `LISTEN/NOTIFY` | TOM 17 PR #39 + current-main | `CURRENT-MAIN VERIFIED` |
+| RT-INF-004 | Realtime consumer must reload authoritative state from PostgreSQL | hub notification handler | `gracz_game_sessions` | integration tests / TOM 17 PR #39 | `CURRENT-MAIN VERIFIED` |
 
 ---
 
@@ -181,7 +183,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Implementation | Data/API | Evidence | Status / gap |
 |---|---|---|---|---|---|
-| RT-TUR-001 | Concurrent tournament state transitions must not race into inconsistent results | tournament concurrency implementation | tournament tables/API | dedicated P1-H-01 concurrency test | PR #30 historical closure; P8 regression tournament concurrency `2/2 PASS` | `CLOSED` for defined scope |
+| RT-TUR-001 | Concurrent tournament state transitions must not race into inconsistent results | tournament concurrency implementation | tournament tables/API | TOM 17 PR #30: HEAD `08419e82...`, TREE `83ea7215...`, merge `2445434c...`, dedicated exact-head run `33885568581` SUCCESS; P8 regression tournament concurrency `2/2 PASS` | `CLOSED` for defined scope; historical independent audit artifact not retained in PR timeline |
 | RT-TUR-002 | Game-type selection must become canonical and fail closed | P8 registry integration | lobby/rankings/tournaments | P8 contract tests | PR #43 | `IMPLEMENTED / AUDIT PENDING` |
 | RT-RNK-001 | Ranking game selector must not silently convert unknown game to aggregate `all` | P8 rankings change | rankings API | P8 ranking tests | PR #43 | `IMPLEMENTED / AUDIT PENDING` |
 | RT-LOB-001 | Player identity joining/creating rooms must be server-derived from session | lobby handlers | lobby API | lobby/API tests | current-main | `CURRENT-MAIN VERIFIED` |
@@ -193,7 +195,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Implementation | Evidence | Status / gap |
 |---|---|---|---|---|
-| RT-DB-001 | Critical game/session state must use durable PostgreSQL path in configured environment | session/Gomoku/Thousand PostgreSQL services | code baseline + PostgreSQL tests | `CURRENT-MAIN VERIFIED` |
+| RT-DB-001 | Critical game/session state must use durable PostgreSQL path in configured environment | session/Gomoku/Thousand PostgreSQL services | code baseline + PostgreSQL tests + TOM 17 for Checkers/Gomoku historical durability tracks | `CURRENT-MAIN VERIFIED` |
 | RT-DB-002 | Restore rehearsal must use isolated target, never production source | P1-R-01 DR scripts/workflow | PR #41; HEAD `535eaac...`; TREE `6f3b73c...`; CI `34053197756` | `MERGED / CLOSED`; production restore not claimed |
 | RT-DB-003 | Backup stream must be encrypted and validated before restore | P1-R-01 | CI + DR evidence | `MERGED / CLOSED` |
 | RT-DB-004 | Source/target DB and cluster identity must be checked fail-closed | P1-R-01 | real isolated PostgreSQL regression | `MERGED / CLOSED` |
@@ -207,11 +209,11 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 
 | ID | Requirement | Evidence | Status |
 |---|---|---|---|
-| RT-QA-001 | Major cross-cutting work must have focused tests plus regressions | P8 CI run `34147638975`: focused P8 + Checkers + Gomoku + Thousand + tournament + P5/P6/P7 + full suite | `VERIFIED FOR P8 HEAD` |
-| RT-QA-002 | Final implementation evidence must be tied to exact HEAD | P8 run references exact `d7220f57...` | `VERIFIED FOR P8` |
-| RT-QA-003 | Security-sensitive work should include CodeQL/gitleaks/dependency audit | P8 run: CodeQL PASS, gitleaks PASS, npm audit 0 vulnerabilities | `VERIFIED FOR P8 HEAD` |
+| RT-QA-001 | Major cross-cutting work must have focused tests plus regressions | P8 CI run `34147638975`: focused P8 + Checkers + Gomoku + Thousand + tournament + P5/P6/P7 + full suite; TOM 17 backfills exact-head CI for P1 #29/#30/#36/#37/#38/#39 | `VERIFIED FOR RECORDED HEADS` |
+| RT-QA-002 | Final implementation evidence must be tied to exact HEAD | P8 run references exact `d7220f57...`; TOM 17 ties six historical P1 tracks to exact final PR HEAD/TREE/merge | `VERIFIED FOR P8 + BACKFILLED HISTORICAL P1 SET` |
+| RT-QA-003 | Security-sensitive work should include CodeQL/gitleaks/dependency audit | P8 run: CodeQL PASS, gitleaks PASS, npm audit 0 vulnerabilities; TOM 17 preserves corresponding historical evidence where available | `VERIFIED FOR P8; HISTORICAL EVIDENCE CLASSIFIED` |
 | RT-QA-004 | Browser journeys should validate user-visible critical paths | P8 CI: Checkers browser PASS, Gomoku browser PASS | `VERIFIED FOR P8 HEAD`; mobile/accessibility broader evidence incomplete |
-| RT-QA-005 | Green CI does not replace independent audit | governance / CI master | Claude P8 audit still pending despite green CI | `GOVERNANCE INVARIANT` |
+| RT-QA-005 | Green CI does not replace independent audit | governance / CI master | Claude P8 audit still pending despite green CI; TOM 17 separately marks historical audit-report gaps | `GOVERNANCE INVARIANT` |
 
 ---
 
@@ -222,7 +224,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 | RT-UX-001 | Critical flows must work on desktop and mobile, portrait and landscape | requirements exist; browser tests cover selected desktop journeys | `PARTIAL`; full responsive/mobile matrix not yet complete |
 | RT-UX-002 | Accessibility must be evaluated explicitly | Product/UX Master requires keyboard/focus/contrast/screen-reader review | `NOT VERIFIED` |
 | RT-SEO-001 | SEO metadata state must distinguish prepared/merged/deployed/indexable | SEO history and separate draft work exist | `PARTIAL`; release-gate verification required |
-| RT-OPS-001 | Health and readiness must be distinct | `src/health.js` `/health`, `/health/live`, `/health/ready` | `CURRENT-MAIN VERIFIED` |
+| RT-OPS-001 | Health and readiness must be distinct | `src/health.js` `/health`, `/health/live`, `/health/ready`; TOM 17 PR #38 HEAD `6e49cde...`, TREE `d1b0a054...`, dedicated run `33952985147` SUCCESS | `CURRENT-MAIN VERIFIED` |
 | RT-OPS-002 | Deployment, rollback, topology and post-deploy evidence must be captured before production AS-BUILT | Operations Master / AS-BUILT checklist | `PLANNED / NOT PRODUCTION VERIFIED` |
 | RT-OPS-003 | Production topology must not be inferred from design docs | governance rule | no final production AS-BUILT claim | `GOVERNANCE INVARIANT` |
 
@@ -235,7 +237,7 @@ A design document alone cannot prove implementation. A green CI run alone cannot
 | RT-GOV-001 | Owner authorizes merge/deploy/production separately from technical PASS | governance docs and work-item history | `ACTIVE GOVERNANCE RULE` |
 | RT-GOV-002 | Historical Privacy/Legal HOLD must not be silently converted to PASS | Privacy/Legal Master | `OPEN / PRESERVED` |
 | RT-GOV-003 | AI audit evidence is technical review, not legal opinion or formal certification | Governance Master | `ACTIVE GOVERNANCE RULE` |
-| RT-GOV-004 | Every `PASS/CLOSED/MERGED/DEPLOYED` claim must point to evidence | Evidence Register + this matrix | `ACTIVE DOCUMENTATION RULE` |
+| RT-GOV-004 | Every `PASS/CLOSED/MERGED/DEPLOYED` claim must point to evidence | Evidence Register + this matrix + TOM 17 historical P1 backfill | `ACTIVE DOCUMENTATION RULE` |
 | RT-GOV-005 | P8 cannot merge until independent audit and Owner+Lead final authorization | PR #43 state / Implementation Register | `PENDING CLAUDE AUDIT` |
 
 ---
@@ -265,7 +267,7 @@ The following gaps are intentionally open and must not be represented as closed:
 2. **P8 merge authorization and merge** are not complete.
 3. **P1-B-01 / RBAC-MFA negative-path depth** must be reassessed in the post-P8 full-project audit.
 4. **Full-project audit** has not started.
-5. **Historical P1 evidence backfill** for PR #29/#30/#36/#37/#38/#39 is less detailed than P7/P8/DR and should be expanded in TOM 17.
+5. **Historical P1 exact repository evidence backfill is complete** for PR #29/#30/#36/#37/#38/#39, but independent-audit report provenance is not uniformly preserved; TOM 17 explicitly records partial/gap classifications, especially PR #30 and PR #38.
 6. **Mobile/responsive/accessibility** evidence is incomplete.
 7. **Production topology/configuration/deployment** are not final AS-BUILT.
 8. **Retention/deletion/legal-hold policy** is not fully closed across all data domains.
@@ -291,7 +293,8 @@ This matrix is updated whenever any of the following occurs:
 - audit finding created or closed,
 - PR merged,
 - production deployment executed,
-- production verification changes an AS-BUILT claim.
+- production verification changes an AS-BUILT claim,
+- stronger historical evidence is recovered and supersedes a prior provenance classification.
 
 Every row should evolve from left to right:
 
@@ -315,8 +318,9 @@ Missing links remain explicit gaps rather than assumptions.
 ## 21. Current conclusion
 
 ```text
-TRACEABILITY MATRIX = BASELINE CREATED
+TRACEABILITY MATRIX = BASELINE CREATED / HISTORICAL P1 BACKFILL LINKED
 CURRENT-MAIN BASELINE = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
+HISTORICAL P1 PR #29/#30/#36/#37/#38/#39 = EXACT REPOSITORY EVIDENCE BACKFILLED
 P7 = CLOSED FOR DEFINED SCOPE
 P1-R-01 = CLOSED FOR DEFINED SCOPE
 P8 = IMPLEMENTED / LEAD PASS / CLAUDE AUDIT PENDING / NOT MERGED
