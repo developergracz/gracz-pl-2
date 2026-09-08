@@ -45,7 +45,7 @@
 
       <section class="filters">
         <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Szukaj po nazwie lub organizatorze…"></label>
-        <select id="game-filter"><option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option><option value="szachy">Szachy</option></select>
+        <select id="game-filter"><option value="all">Wszystkie gry</option><option value="checkers">Warcaby</option><option value="gomoku">Gomoku</option><option value="thousand">Tysiąc</option></select>
         <select id="format-filter"><option value="all">Wszystkie formaty</option><option value="swiss">Szwajcarski</option><option value="knockout">Pucharowy</option><option value="round_robin">Każdy z każdym</option></select>
         <button id="refresh" type="button" title="Odśwież">↻</button>
       </section>
@@ -59,7 +59,7 @@
       <header><div><p class="eyebrow">NOWY TURNIEJ</p><h2>Utwórz turniej</h2><p>Skonfiguruj zasady, format i termin wydarzenia.</p></div><button class="x" value="cancel">×</button></header>
       <div class="form-grid">
         <label class="wide">Nazwa turnieju<input id="ct-title" maxlength="80" required placeholder="np. Niedzielny Puchar Gracz.pl"></label>
-        <label>Gra<select id="ct-game"><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option><option value="szachy">Szachy</option></select></label>
+        <label>Gra<select id="ct-game"><option value="checkers">Warcaby</option><option value="gomoku">Gomoku</option><option value="thousand">Tysiąc</option></select></label>
         <label>System<select id="ct-format"><option value="swiss">Szwajcarski</option><option value="knockout">Pucharowy / knockout</option><option value="round_robin">Każdy z każdym</option></select></label>
         <label>Maks. graczy<select id="ct-max"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></label>
         <label>Liczba rund<input id="ct-rounds" type="number" min="1" max="15" value="5"></label>
