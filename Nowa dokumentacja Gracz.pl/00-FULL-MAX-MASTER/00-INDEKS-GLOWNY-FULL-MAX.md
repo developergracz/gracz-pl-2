@@ -43,10 +43,11 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - `00-FULL-MAX-MASTER/01-EVIDENCE-REGISTER.md`
 - `00-FULL-MAX-MASTER/04-IMPLEMENTATION-AUDIT-REGISTER.md`
 
-### TOM 1 — ARCHITEKTURA SYSTEMOWA
+### TOM 1 — ARCHITEKTURA SYSTEMOWA / API
 
 - `00-FULL-MAX-MASTER/02-ARCHITEKTURA-MASTER.md`
 - `00-FULL-MAX-MASTER/12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
+- `00-FULL-MAX-MASTER/13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
 - architektura logiczna i fizyczna,
 - granice zaufania,
 - frontend/API/realtime,
@@ -56,7 +57,8 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - background jobs,
 - storage i cache,
 - observability,
-- infrastruktura i deployment model.
+- infrastruktura i deployment model,
+- katalog endpointów i kontraktów HTTP.
 
 ### TOM 2 — DATA / POSTGRESQL
 
@@ -186,6 +188,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - FairPlay MAX = PRE-DESIGN ONLY,
 - GFPE-0 + GFPE-1 = rozpoczęte jako PRE-DESIGN,
 - szczegółowy tom `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md` = BASELINE CREATED na `main @ ad073919...`,
+- `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md` = BASELINE CREATED; current-main i pending-P8 są rozdzielone,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -228,5 +231,6 @@ Aktualnie utworzone są:
 - `10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
 - `11-FINAL-AS-BUILT-CHECKLIST.md`
 - `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
+- `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
 
 Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
