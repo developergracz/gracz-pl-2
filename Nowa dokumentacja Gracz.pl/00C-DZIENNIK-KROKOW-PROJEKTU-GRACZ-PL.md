@@ -388,6 +388,53 @@ Production change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / ARCHITECTURE DECISION REGISTER
+
+Na zweryfikowanym baseline:
+
+`main @ ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+TREE:
+
+`04f72af50f6fad2ba01bf7eaa6b4d856267d517b`
+
+utworzono:
+
+`00-FULL-MAX-MASTER/16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
+
+Rejestr zawiera **26 nadrzędnych decyzji architektonicznych** z jawnymi statusami `ACTIVE`, `ACTIVE / PARTIAL IMPLEMENTATION`, `IMPLEMENTED / AUDIT PENDING` oraz `PLANNED / NOT AUTHORIZED`.
+
+Zakres ADR obejmuje m.in.:
+
+- modular monolith i bounded contexts,
+- PostgreSQL jako durable authority,
+- realtime jako signal-only/non-authoritative,
+- CAS/version/revision/fencing,
+- shared MatchRuntime,
+- ownershipEpoch i durable idempotency,
+- persistence-before-publication,
+- viewer-safe projections,
+- rozdzielenie game engine od runtime policy,
+- P8 canonical game identifiers jako pending decision implementation,
+- crypto domain separation,
+- RBAC/MFA,
+- append-only audit,
+- szyfrowanie wiadomości i załączników,
+- distributed rate limiting,
+- isolated fail-closed DR,
+- exact-head evidence i rozdzielanie design/implementation/merge/production,
+- gate full-project audit przed GFPE implementation,
+- przyszłe zasady GFPE/FairPlay MAX,
+- osobną Owner authorization dla działań produkcyjnych.
+
+Dokument zawiera również obszary wymagające późniejszej klasyfikacji lub decyzji, m.in. `server.js` vs `server-p7.js`, file/memory paths, stopień migracji Gomoku/Tysiąca do MatchRuntime, target transactional outbox/broker oraz produkcyjny AS-BUILT.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
