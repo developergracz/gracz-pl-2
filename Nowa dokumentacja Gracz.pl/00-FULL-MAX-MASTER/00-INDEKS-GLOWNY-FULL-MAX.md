@@ -44,6 +44,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - `00-FULL-MAX-MASTER/04-IMPLEMENTATION-AUDIT-REGISTER.md`
 - `00-FULL-MAX-MASTER/15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
 - `00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
+- `00-FULL-MAX-MASTER/18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
 
 ### TOM 1 — ARCHITEKTURA SYSTEMOWA / API / ADR
 
@@ -199,6 +200,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - `15-REQUIREMENTS-TRACEABILITY-MATRIX.md` = BASELINE CREATED; wymagania są połączone z komponentami, data/API boundaries, testami, CI/audytami, statusami i jawnymi evidence gaps,
 - `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md` = BASELINE CREATED; 26 nadrzędnych decyzji ADR z rozdzieleniem ACTIVE, PARTIAL, AUDIT PENDING i PLANNED/NOT AUTHORIZED,
 - `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` = BACKFILL COMPLETE dla PR #29/#30/#36/#37/#38/#39; exact HEAD/TREE/merge/CI utrwalone, audit provenance sklasyfikowane bez dopisywania nieistniejących raportów,
+- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` = BASELINE CREATED; centralny lifecycle finding → Lead triage → correction mandate → exact fix evidence → re-audit → closure,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -211,8 +213,9 @@ Po każdym istotnym kroku aktualizowane są co najmniej:
 4. `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`, jeśli zmienił się requirement, implementation, test, audit lub evidence link,
 5. `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`, jeśli pojawia się, zmienia lub zostaje zastąpiona materialna decyzja architektoniczna,
 6. `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`, jeśli odnaleziony zostanie lepszy historyczny dowód dla objętych nim P1,
-7. odpowiedni tom domenowy,
-8. historia MASTER, gdy krok zmienia stan projektu.
+7. `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`, gdy powstaje, zmienia status lub zostaje zamknięty finding/incydent,
+8. odpowiedni tom domenowy,
+9. historia MASTER, gdy krok zmienia stan projektu.
 
 ## 6. Finalny warunek FULL MAX DOCUMENTATION
 
@@ -249,5 +252,6 @@ Aktualnie utworzone są:
 - `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
 - `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
 - `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
+- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
 
 Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
