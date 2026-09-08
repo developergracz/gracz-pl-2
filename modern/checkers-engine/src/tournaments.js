@@ -5,6 +5,7 @@ import { requireGameType } from "./game-types.js";
 const { Pool } = pg;
 const FORMATS = new Set(["swiss", "knockout", "round_robin"]);
 const RESULTS = new Set(["1-0", "0-1", "1/2-1/2"]);
+const LEGACY_UNSUPPORTED_TOURNAMENT_GAMES = new Set(["szachy"]);
 
 export class TournamentService {
   constructor(databaseUrl = null) {
@@ -118,11 +119,12 @@ export class TournamentService {
 
   async join(user,id){
     const detail=await this.detail(user,id); const t=detail.tournament;
+    assertTournamentGameSupported(t);
     if(t.status!=="registration") throw tournamentError("Zapisy do tego turnieju są zamknięte.","REGISTRATION_CLOSED",409);
     if(t.joined) return {ok:true};
     if(t.playerCount>=t.maxPlayers) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
     if(!this.pool){const d=this.memory.get(id);d.players.push({userId:user.userId,displayName:user.displayName,seed:d.players.length+1,points:0,wins:0,draws:0,losses:0,buchholz:0,status:"active",joinedAt:new Date().toISOString()});return{ok:true};}
-    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,(SELECT COALESCE(MAX(seed),0)+1 FROM gracz_tournament_players WHERE tournament_id=$1)) ON CONFLICT DO NOTHING`,[id,user.userId,user.displayName]); return{ok:true};
+    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,(SELECT COALESCE(MAX(seed),0)+1 FROM gracz_tournament_players WHERE tournament_id=$1)) ON CONFLICT DO NOTHING`,[id,user.userId]); return{ok:true};
   }
 
   async leave(user,id){
@@ -134,6 +136,7 @@ export class TournamentService {
   async start(user,id){
     const detail=await this.detail(user,id); const t=detail.tournament;
     if(t.ownerId!==user.userId) throw tournamentError("Tylko organizator może rozpocząć turniej.","TOURNAMENT_FORBIDDEN",403);
+    assertTournamentGameSupported(t);
     if(t.status!=="registration") throw tournamentError("Turniej został już rozpoczęty.","TOURNAMENT_STARTED",409);
     if(detail.players.length<2) throw tournamentError("Do rozpoczęcia potrzebnych jest co najmniej 2 graczy.","NOT_ENOUGH_PLAYERS",409);
     if(!this.pool){const d=this.memory.get(id);d.tournament.status="live";d.tournament.currentRound=1;d.matches=createPairings(d.players,[],1,t.format);return this.detail(user,id);}
@@ -151,6 +154,7 @@ export class TournamentService {
       const detail=await this.detail(user,id); const t=detail.tournament; const match=detail.matches.find(m=>m.matchId===matchId);
       if(!match) throw tournamentError("Nie znaleziono pary turniejowej.","MATCH_NOT_FOUND",404);
       if(t.ownerId!==user.userId && match.whiteId!==user.userId && match.blackId!==user.userId) throw tournamentError("Nie możesz zgłosić wyniku tej partii.","MATCH_FORBIDDEN",403);
+      assertTournamentGameSupported(t);
       if(match.status==="completed") throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
       match.result=result;match.status="completed";match.completedAt=new Date().toISOString();applyResult(this.memory.get(id).players,match,result);await this.advanceMemory(user,id);return this.detail(user,id);
     }
@@ -158,11 +162,12 @@ export class TournamentService {
     const client=await this.pool.connect();
     try{
       await client.query("BEGIN");
-      const tournament=(await client.query(`SELECT owner_id FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+      const tournament=(await client.query(`SELECT owner_id,game FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
       if(!tournament) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
       const match=(await client.query(`SELECT match_id,white_id,black_id,status FROM gracz_tournament_matches WHERE tournament_id=$1 AND match_id=$2 FOR UPDATE`,[id,matchId])).rows[0];
       if(!match) throw tournamentError("Nie znaleziono pary turniejowej.","MATCH_NOT_FOUND",404);
       if(tournament.owner_id!==user.userId && match.white_id!==user.userId && match.black_id!==user.userId) throw tournamentError("Nie możesz zgłosić wyniku tej partii.","MATCH_FORBIDDEN",403);
+      assertTournamentGameValueSupported(tournament.game);
       if(match.status==="completed") throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
       const updated=await client.query(`UPDATE gracz_tournament_matches SET result=$3,status='completed',reported_by=$4,completed_at=NOW() WHERE tournament_id=$1 AND match_id=$2 AND status<>'completed' RETURNING match_id`,[id,matchId,result,user.userId]);
       if(updated.rowCount!==1) throw tournamentError("Wynik tej partii został już zapisany.","MATCH_COMPLETED",409);
@@ -217,7 +222,13 @@ function createPairings(players,previous,round,format){const list=[...players];i
 function applyResult(players,m,result){const w=players.find(p=>p.userId===m.whiteId),b=players.find(p=>p.userId===m.blackId);if(!w||!b)return;if(result==="1-0"){w.points+=1;w.wins++;b.losses++;}else if(result==="0-1"){b.points+=1;b.wins++;w.losses++;}else{w.points+=.5;b.points+=.5;w.draws++;b.draws++;}}
 function sortStandings(p){return [...p].sort((a,b)=>Number(b.points)-Number(a.points)||Number(b.buchholz)-Number(a.buchholz)||b.wins-a.wins||a.seed-b.seed);}
 function filterList(rows,q){const status=q.status;const hasGame=Object.hasOwn(q,"game");const game=hasGame?(q.game==="all"?"all":requireGameType(q.game,{capability:"tournaments"})):"all";const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(game==="all"||t.game===game)&&(!mine||t.joined)&&(!text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
-function normalizeTournament(tournament){return{...tournament,game:requireGameType(tournament.game,{capability:"tournaments"})};}
+function normalizeTournament(tournament){
+  try{return{...tournament,game:requireGameType(tournament.game,{capability:"tournaments"}),gameSupported:true,legacyGame:null}}
+  catch(error){const legacyGame=legacyUnsupportedGame(tournament.game);if(legacyGame&&error?.code==="INVALID_GAME_TYPE")return{...tournament,game:null,gameSupported:false,legacyGame};throw error}
+}
+function legacyUnsupportedGame(value){if(typeof value!=="string")return null;const normalized=value.trim().toLowerCase();return LEGACY_UNSUPPORTED_TOURNAMENT_GAMES.has(normalized)?normalized:null}
+function assertTournamentGameSupported(tournament){if(tournament?.gameSupported===false)throw tournamentError("Historyczny typ gry tego turnieju nie jest już obsługiwany.","TOURNAMENT_GAME_UNSUPPORTED",409)}
+function assertTournamentGameValueSupported(value){const legacyGame=legacyUnsupportedGame(value);if(legacyGame)throw tournamentError("Historyczny typ gry tego turnieju nie jest już obsługiwany.","TOURNAMENT_GAME_UNSUPPORTED",409);requireGameType(value,{capability:"tournaments"})}
 function mapTournament(r){return normalizeTournament({tournamentId:r.tournament_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description,game:r.game,format:r.format,status:r.status,visibility:r.visibility,maxPlayers:r.max_players,rounds:r.rounds,timeControl:r.time_control,rated:Boolean(r.rated),startsAt:r.starts_at,currentRound:r.current_round,createdAt:r.created_at,finishedAt:r.finished_at,playerCount:Number(r.player_count||0),joined:Boolean(r.joined)});}
 function mapPlayer(r){return{userId:r.user_id,displayName:r.display_name,seed:r.seed,points:Number(r.points),wins:r.wins,draws:r.draws,losses:r.losses,buchholz:Number(r.buchholz),status:r.status,joinedAt:r.joined_at};}
 function mapMatch(r){return{matchId:r.match_id,round:r.round,board:r.board,whiteId:r.white_id,whiteName:r.white_name,blackId:r.black_id,blackName:r.black_name,result:r.result,status:r.status,createdAt:r.created_at,completedAt:r.completed_at};}
