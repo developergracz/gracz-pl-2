@@ -23,6 +23,30 @@ Każdy wpis powinien wskazywać w miarę możliwości:
 
 ## 2. Zweryfikowane dowody główne
 
+### EVID-HIST-P1-001 — historical technical P1 backfill
+
+- source document: `00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
+- status: `BACKFILL COMPLETE FOR REPOSITORY-AVAILABLE EVIDENCE`
+- scope: PR `#29`, `#30`, `#36`, `#37`, `#38`, `#39`
+- exact final HEAD/TREE: `RECORDED`
+- exact merge commit/TREE: `RECORDED`
+- exact-head PR-triggered workflow runs: `RECORDED`
+- audit provenance quality: `CLASSIFIED PER PR`
+- production deployment evidence: `NONE CLAIMED`
+
+Canonical reconstructed records:
+
+| PR | Work item | Final HEAD | Final TREE | Merge | Exact-head CI | Audit provenance |
+|---:|---|---|---|---|---|---|
+| #29 | P1-C-01 / P1-AUD3-02 | `f2167bf3bcab0247ae6e865a67c9afbf93f55efc` | `b08662e95962539bdd5bbb1dc7458e9d6f6b77a2` | `c81b7819b5a9e994b1bdc04a304288fca030fdcd` | runs `33880837982`, `33880837696`, `33880837643` = SUCCESS | reconstructed/partial; final commit references Claude startup conditions, final review report not retained in PR timeline |
+| #30 | P1-H-01 | `08419e823cb771d22862a9e14d99a87bc75adcfb` | `83ea72156d4946a41a42c95e5bbde374506c76cf` | `2445434c85ac838a88747906dfce77f78764b901` | runs `33885568448`, `33885568583`, `33885568596`, `33885568581` = SUCCESS | audit artifact gap in GitHub PR timeline |
+| #36 | P1-AUD3-03 | `bbb48464f164a9c0687a65e5b660f447e069c189` | `43ead9cc3c54023c18d27236f1f41c21a81b22ee` | `05989fa219cc92a299a3f3a193f3dfda5762bbca` | runs `33909692336`, `33909692327`, `33909692352` = SUCCESS | direct-partial; PR body records independently audited earlier head + corrective finding |
+| #37 | P1-AUD3-04 | `5d155fd058343355346fbb2b6637881ca3b73b66` | `2e7ad8c027ece18ffe1da175221274a1ee6a4255` | `d002027114a7ef28ec02436e39798b70267e8502` | runs `33944042420`, `33944042417`, `33944042416` = SUCCESS | direct-partial; merge records audited commit history; final commit closes audit conditions |
+| #38 | P1-AUD3-07 / P5 | `6e49cde56cf7e9ef4c1b74ca3fe0735485a91103` | `d1b0a05480e098a576cba518f1a11c5f2ad0d943` | `8d520a5c2fea80b458e0adcf59468c9d6921c985` | runs `33952985186`, `33952985175`, `33952985147`, `33952985162` = SUCCESS | reconstructed; strong CI/final evidence, independent report not retained in PR timeline |
+| #39 | P1-AUD3-01 / P6 | `c4669ea81bc2d0404f95d75a17a793a065ed725a` | `3b6dbca54ff33e06691ecbe002bdc96f0215f151` | `c5c34aabe4fcd04b087e25161778798146030c9b` | runs `33962992679`, `33962992739`, `33962992733`, `33962992668`, `33962992847` = SUCCESS | DIRECT — merge records Owner-authorized merge after Lead PASS and independent Claude audit |
+
+Historical work-item closure remains preserved. Audit provenance gaps do not imply that an audit did not occur; they mean the final report is not directly retained in the current GitHub PR timeline and must not be invented.
+
 ### EVID-P7-001 — P7 / P1-U-02 closure
 
 - status: `CLOSED`
@@ -127,6 +151,8 @@ Exact PR #43 HEAD checks recorded as successful:
 - `EVID-OPS-*` — production/operations evidence
 - `EVID-GFPE-*` — FairPlay MAX evidence
 
+Historical evidence-quality qualifiers may additionally use `DIRECT`, `DIRECT-PARTIAL`, `RECONSTRUCTED`, and `GAP` as defined in TOM 17.
+
 ## 5. Open evidence gaps
 
 At 08.09.2026:
@@ -137,5 +163,6 @@ At 08.09.2026:
 4. FairPlay MAX protocol has no frozen cryptographic specification yet.
 5. FairPlay MAX has no implementation/test/audit evidence yet.
 6. Production V3 remains outside this evidence set as a completed deployment.
+7. Historical independent-audit reports are not uniformly preserved in GitHub PR timelines; TOM 17 classifies the exact provenance quality, with the most material repository artifact gaps currently documented for PR #30 and PR #38.
 
-These gaps are intentional and must not be represented as PASS.
+These gaps are intentional and must not be represented as PASS beyond the scope supported by preserved evidence.
