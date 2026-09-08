@@ -45,6 +45,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - `00-FULL-MAX-MASTER/15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
 - `00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
 - `00-FULL-MAX-MASTER/18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
+- `00-FULL-MAX-MASTER/45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
 
 ### TOM 1 — ARCHITEKTURA SYSTEMOWA / API / ADR
 
@@ -69,6 +70,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 - `00-FULL-MAX-MASTER/05-DATA-POSTGRESQL-MASTER.md`
 - `00-FULL-MAX-MASTER/14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
+- `00-FULL-MAX-MASTER/24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
 - AS-IS,
 - V3 target model,
 - migracje,
@@ -80,9 +82,11 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - backup i restore,
 - pełny current-main katalog tabel/struktur PostgreSQL i ich właścicieli danych.
 
-### TOM 3 — SECURITY
+### TOM 3 — SECURITY / CONFIG / AUTHORIZATION
 
 - `00-FULL-MAX-MASTER/03-SECURITY-AND-TRUST-MASTER.md`
+- `00-FULL-MAX-MASTER/19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
+- `00-FULL-MAX-MASTER/21-AUTHORIZATION-PERMISSION-MATRIX.md`
 - auth,
 - session security,
 - RBAC/MFA,
@@ -92,7 +96,9 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - abuse prevention,
 - supply chain,
 - vulnerability management,
-- incident response.
+- incident response,
+- environment/configuration contracts,
+- role/permission/MFA matrix.
 
 ### TOM 4 — GAMES / MATCH RUNTIME
 
@@ -111,9 +117,11 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 ### TOM 5 — FAIRPLAY MAX / GFPE
 
 - `04-FAIRPLAY-MAX/00-GFPE-0-GFPE-1-PRE-DESIGN-WYMAGANIA-I-THREAT-MODEL.md`
+- `04-FAIRPLAY-MAX/01-GFPE-2-CRYPTOGRAPHIC-PROTOCOL-DRAFT.md`
+- `04-FAIRPLAY-MAX/02-GFPE-TEST-AND-VALIDATION-PLAN-DRAFT.md`
 - requirements,
 - threat model,
-- cryptographic protocol,
+- cryptographic protocol draft,
 - deterministic shuffle,
 - commitments,
 - Verify Hand,
@@ -192,15 +200,22 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - P8 / P1-U-01 = implementation complete / PR #43 open / independent Claude audit pending,
 - P8 merge = NOT AUTHORIZED,
 - production/deploy = NOT AUTHORIZED,
-- FairPlay MAX = PRE-DESIGN ONLY,
-- GFPE-0 + GFPE-1 = rozpoczęte jako PRE-DESIGN,
 - szczegółowy tom `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md` = BASELINE CREATED na `main @ ad073919...`,
 - `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md` = BASELINE CREATED; current-main i pending-P8 są rozdzielone,
 - `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md` = BASELINE CREATED; 30 zweryfikowanych current-main tabel/struktur PostgreSQL wraz z concurrency, privacy, retention i audit observations,
-- `15-REQUIREMENTS-TRACEABILITY-MATRIX.md` = BASELINE CREATED; wymagania są połączone z komponentami, data/API boundaries, testami, CI/audytami, statusami i jawnymi evidence gaps,
-- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md` = BASELINE CREATED; 26 nadrzędnych decyzji ADR z rozdzieleniem ACTIVE, PARTIAL, AUDIT PENDING i PLANNED/NOT AUTHORIZED,
-- `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` = BACKFILL COMPLETE dla PR #29/#30/#36/#37/#38/#39; exact HEAD/TREE/merge/CI utrwalone, audit provenance sklasyfikowane bez dopisywania nieistniejących raportów,
-- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` = BASELINE CREATED; centralny lifecycle finding → Lead triage → correction mandate → exact fix evidence → re-audit → closure,
+- `15-REQUIREMENTS-TRACEABILITY-MATRIX.md` = BASELINE CREATED,
+- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md` = BASELINE CREATED; 26 nadrzędnych decyzji ADR,
+- `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` = BACKFILL COMPLETE dla PR #29/#30/#36/#37/#38/#39,
+- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` = BASELINE CREATED,
+- `19-ENVIRONMENT-CONFIGURATION-CATALOG.md` = BASELINE CREATED; bez wartości sekretów, z fail-closed/fallback gaps,
+- `21-AUTHORIZATION-PERMISSION-MATRIX.md` = BASELINE CREATED; role/MFA/permissions i negative-path audit matrix,
+- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md` = BASELINE CREATED; CAS/revision/fencing/idempotency/transactions z jawnymi race gaps,
+- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md` = PREPARED; wykonanie pełnego audytu pozostaje HOLD do formalnego zamknięcia P8,
+- GFPE-0 Requirements = PRE-DESIGN COMPLETE,
+- GFPE-1 Threat Model = PRE-DESIGN COMPLETE,
+- GFPE-2 Cryptographic Protocol = DRAFT CREATED / NOT FROZEN,
+- GFPE Test & Validation Plan = DRAFT CREATED / NOT EXECUTED,
+- GFPE implementation = NOT AUTHORIZED,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -232,7 +247,7 @@ Pakiet może zostać oznaczony `FINAL / AS-BUILT` dopiero gdy:
 
 ## 7. Wykonane tomy startowe FULL MAX — 08.09.2026
 
-Aktualnie utworzone są:
+Aktualnie utworzone są m.in.:
 
 - `00-INDEKS-GLOWNY-FULL-MAX.md`
 - `01-EVIDENCE-REGISTER.md`
@@ -253,5 +268,11 @@ Aktualnie utworzone są:
 - `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
 - `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
 - `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
+- `19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
+- `21-AUTHORIZATION-PERMISSION-MATRIX.md`
+- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
+- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
+- `04-FAIRPLAY-MAX/01-GFPE-2-CRYPTOGRAPHIC-PROTOCOL-DRAFT.md`
+- `04-FAIRPLAY-MAX/02-GFPE-TEST-AND-VALIDATION-PLAN-DRAFT.md`
 
 Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
