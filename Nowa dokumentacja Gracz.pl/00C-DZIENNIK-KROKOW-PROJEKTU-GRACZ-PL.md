@@ -242,6 +242,58 @@ Production change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / FULL API & CONTRACT CATALOG
+
+Na baseline:
+
+`main @ ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+TREE:
+
+`04f72af50f6fad2ba01bf7eaa6b4d856267d517b`
+
+zweryfikowano rzeczywiste handlery i kontrakty m.in.:
+
+- `server.js`,
+- `server-p7.js`,
+- `platform-lobby-http.js`,
+- `gomoku-http.js`,
+- `gomoku-service.js`,
+- `postgres-gomoku-service.js`,
+- `thousand-http.js`,
+- `thousand-service.js`,
+- `tournaments.js`,
+- `rankings.js`,
+- `global-chat.js`,
+- `newsletter.js`,
+- `newsletter-admin-handler.js`,
+- `admin-security-handler.js`,
+- `health.js`.
+
+Utworzono:
+
+`00-FULL-MAX-MASTER/13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
+
+Dokument kataloguje endpointy, auth, request/response semantics, błędy, concurrency/idempotency, PostgreSQL, realtime, privacy/projection i test references.
+
+Jawnie rozdzielono:
+
+- `CURRENT MAIN`,
+- `P8 / PR #43 PENDING DELTA`.
+
+Zapisano m.in. różnice:
+
+- Checkers moves = P7 MatchRuntime/CAS/idempotency,
+- Gomoku = własny PostgreSQL revision CAS + requestId,
+- Thousand = własny revision/expectedRevision i obecny game-local RNG,
+- P8 canonical game type contract nie jest jeszcze częścią `main`.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
