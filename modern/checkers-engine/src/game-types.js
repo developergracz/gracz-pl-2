@@ -25,6 +25,42 @@ const DEFINITIONS = [
   },
 ];
 
+export function validateGameTypeDefinitions(definitions) {
+  if (!Array.isArray(definitions) || definitions.length === 0) {
+    throw new TypeError("Rejestr typów gier musi zawierać co najmniej jedną definicję.");
+  }
+
+  const canonicalOwners = new Map();
+  for (const definition of definitions) {
+    const id = registryToken(definition?.id, "canonical game id");
+    if (canonicalOwners.has(id)) throw new TypeError(`Duplikat canonical game id: ${id}`);
+    canonicalOwners.set(id, id);
+  }
+
+  const claims = new Map(canonicalOwners);
+  for (const definition of definitions) {
+    const id = registryToken(definition.id, "canonical game id");
+    if (!Array.isArray(definition.aliases)) throw new TypeError(`Aliases dla ${id} muszą być tablicą.`);
+    for (const rawAlias of definition.aliases) {
+      const alias = registryToken(rawAlias, `alias for ${id}`);
+      if (alias === id) throw new TypeError(`Alias ${alias} nie może powielać własnego canonical id.`);
+      const existingOwner = claims.get(alias);
+      if (existingOwner && existingOwner !== id) {
+        throw new TypeError(`Kolizja typu gry: ${alias} należy już do ${existingOwner}.`);
+      }
+      claims.set(alias, id);
+    }
+  }
+  return true;
+}
+
+function registryToken(value, label) {
+  if (typeof value !== "string" || value.length < 1 || value !== value.trim() || value !== value.toLowerCase() || !/^[a-z0-9_-]+$/.test(value)) {
+    throw new TypeError(`Nieprawidłowy ${label}.`);
+  }
+  return value;
+}
+
 function freezeDefinition(definition) {
   return Object.freeze({
     ...definition,
@@ -33,6 +69,8 @@ function freezeDefinition(definition) {
     capabilities: Object.freeze({ ...definition.capabilities }),
   });
 }
+
+validateGameTypeDefinitions(DEFINITIONS);
 
 export const GAME_DEFINITIONS = Object.freeze(
   Object.fromEntries(DEFINITIONS.map((definition) => {
