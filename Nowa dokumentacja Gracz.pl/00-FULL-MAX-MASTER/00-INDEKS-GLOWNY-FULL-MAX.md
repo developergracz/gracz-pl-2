@@ -89,6 +89,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 - `00-FULL-MAX-MASTER/03-SECURITY-AND-TRUST-MASTER.md`
 - `00-FULL-MAX-MASTER/19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
+- `00-FULL-MAX-MASTER/20-SECRET-KEY-LIFECYCLE-REGISTER.md`
 - `00-FULL-MAX-MASTER/21-AUTHORIZATION-PERMISSION-MATRIX.md`
 - `00-FULL-MAX-MASTER/31-THREAT-CONTROL-TEST-MATRIX.md`
 - auth,
@@ -96,6 +97,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - RBAC/MFA,
 - secrets,
 - crypto separation,
+- key lifecycle / rotation / revocation,
 - rate limiting,
 - abuse prevention,
 - threat → control → test evidence,
@@ -215,6 +217,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` = BACKFILL COMPLETE dla PR #29/#30/#36/#37/#38/#39,
 - `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` = BASELINE CREATED,
 - `19-ENVIRONMENT-CONFIGURATION-CATALOG.md` = BASELINE CREATED,
+- `20-SECRET-KEY-LIFECYCLE-REGISTER.md` = BASELINE CREATED; current-main secrets/credentials, domain separation, legacy decrypt, rotation/revocation gaps and future GFPE key lifecycle mapped without secret values,
 - `21-AUTHORIZATION-PERMISSION-MATRIX.md` = BASELINE CREATED,
 - `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md` = BASELINE CREATED,
 - `31-THREAT-CONTROL-TEST-MATRIX.md` = BASELINE CREATED; current controls and explicit gaps mapped to threats/tests, GFPE rows remain PLANNED,
@@ -238,9 +241,10 @@ Po każdym istotnym kroku aktualizowane są co najmniej:
 5. `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`, jeśli pojawia się, zmienia lub zostaje zastąpiona materialna decyzja architektoniczna,
 6. `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`, jeśli odnaleziony zostanie lepszy historyczny dowód dla objętych nim P1,
 7. `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`, gdy powstaje, zmienia status lub zostaje zamknięty finding/incydent,
-8. `31-THREAT-CONTROL-TEST-MATRIX.md`, gdy zmienia się zagrożenie, kontrola, test lub residual gap,
-9. odpowiedni tom domenowy,
-10. historia MASTER, gdy krok zmienia stan projektu.
+8. `20-SECRET-KEY-LIFECYCLE-REGISTER.md`, gdy zmienia się secret/key domain, rotation, revocation lub legacy-read policy,
+9. `31-THREAT-CONTROL-TEST-MATRIX.md`, gdy zmienia się zagrożenie, kontrola, test lub residual gap,
+10. odpowiedni tom domenowy,
+11. historia MASTER, gdy krok zmienia stan projektu.
 
 ## 6. Finalny warunek FULL MAX DOCUMENTATION
 
@@ -279,6 +283,7 @@ Aktualnie utworzone są m.in.:
 - `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
 - `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
 - `19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
+- `20-SECRET-KEY-LIFECYCLE-REGISTER.md`
 - `21-AUTHORIZATION-PERMISSION-MATRIX.md`
 - `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
 - `31-THREAT-CONTROL-TEST-MATRIX.md`
