@@ -124,7 +124,7 @@ export class TournamentService {
     if(t.joined) return {ok:true};
     if(t.playerCount>=t.maxPlayers) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
     if(!this.pool){const d=this.memory.get(id);d.players.push({userId:user.userId,displayName:user.displayName,seed:d.players.length+1,points:0,wins:0,draws:0,losses:0,buchholz:0,status:"active",joinedAt:new Date().toISOString()});return{ok:true};}
-    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,(SELECT COALESCE(MAX(seed),0)+1 FROM gracz_tournament_players WHERE tournament_id=$1)) ON CONFLICT DO NOTHING`,[id,user.userId]); return{ok:true};
+    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,(SELECT COALESCE(MAX(seed),0)+1 FROM gracz_tournament_players WHERE tournament_id=$1)) ON CONFLICT DO NOTHING`,[id,user.userId,user.displayName]); return{ok:true};
   }
 
   async leave(user,id){
