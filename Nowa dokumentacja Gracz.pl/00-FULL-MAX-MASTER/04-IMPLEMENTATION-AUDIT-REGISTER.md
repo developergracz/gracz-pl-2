@@ -35,8 +35,8 @@ Every material finding/correction lifecycle is maintained canonically in `18-FIN
 | P7 / P1-U-02 | shared MatchRuntime foundation | #40 | HEAD `5b70c2d95fc937f0b516b7fafbce22bb8f59f432` / TREE `81da9ee04a15fea2ea329d9e19e61cf9f6b438e6` | Lead PASS / ChatGPT-2 PASS / Claude PASS; P7-F01/F02/F03 CLOSED | MERGED / CLOSED, merge `f88070b0f1d13a3ef353a46714f456c452876872` | NO deploy/migration |
 | P1-R-01 | recurring PostgreSQL DR restore | #41 | HEAD `535eaac04522c53f1ee8506881a70461cfabc22a` / TREE `6f3b73c0525b1157d764a358127af8afa32c4d41` | Lead PASS / Claude PASS / CI PASS | MERGED / CLOSED, merge `b276c92342203eb6c2e591b30219219b8ab7cf10` | NO production restore/migration |
 | docs checkpoint | post P7/DR documentation | #42 | docs commit `43a9dd7ff111b46107af1e7f6ebdb056c345ebb7` | Lead PASS | MERGED, main `ad0739190fe2f9d1657b2b77c8b5f8e825830c08` | docs only |
-| P8 / P1-U-01 | canonical game type dictionary | #43 | HEAD `d7220f57d60779584048cc5c695d40dbb948b9cb` / TREE `4cbb8504036d26ed2e257f52a475968f5d4cd827` | Lead PASS / Claude independent audit PENDING; no `P8-AUD-Fxx` yet | OPEN / NOT MERGED / NOT CLOSED | NO |
-| P1-B-01 | RBAC/MFA tests / auth hardening backlog | TBD | not established here | must be reassessed in full audit | OPEN BACKLOG | NO |
+| P8 / P1-U-01 | canonical game type dictionary | #43 | HEAD `d7220f57d60779584048cc5c695d40dbb948b9cb` / TREE `4cbb8504036d26ed2e257f52a475968f5d4cd827` | Lead PASS / exact-head CI PASS / Claude independent audit PENDING; audit package READY; no `P8-AUD-Fxx` yet | OPEN / NOT MERGED / NOT CLOSED | NO |
+| P1-B-01 | RBAC/MFA tests / auth hardening backlog | TBD | not established here | must be reassessed in full audit using TOM 21/31/45/46 | OPEN BACKLOG | NO |
 
 Historical stale PRs `#31–#35` remain non-final references unless explicitly documented otherwise.
 
@@ -49,6 +49,8 @@ BASE MAIN = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
 HEAD = d7220f57d60779584048cc5c695d40dbb948b9cb
 TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
 LEAD REVIEW = PASS
+EXACT-HEAD CI = PASS
+CLAUDE AUDIT PACKAGE = READY
 INDEPENDENT CLAUDE AUDIT = PENDING
 P8-AUD-Fxx = NONE YET
 MERGE AUTHORIZATION = NO
@@ -56,18 +58,31 @@ MERGE = NO
 DEPLOY = NO
 ```
 
-Claude must independently audit exact PR #43 before any merge decision. Any finding first enters TOM 18.
+Canonical Claude handoff:
+
+`00-FULL-MAX-MASTER/P8-CLAUDE-INDEPENDENT-AUDIT-PACKAGE.md`
+
+Canonical post-audit decision flow:
+
+`00-FULL-MAX-MASTER/P8-POST-AUDIT-DECISION-TEMPLATE.md`
+
+Claude must independently audit exact PR #43 before any merge decision. Any finding first enters TOM 18, and Lead independently verifies every finding before correction or merge decisions.
 
 ## 4. Post-P8 full-project audit gate
 
-The audit execution plan now exists as:
+Prepared inputs:
 
-`00-FULL-MAX-MASTER/45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`.
+- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md` — what must be audited,
+- `46-FULL-AUDIT-EVIDENCE-MANIFEST.md` — where primary evidence is located,
+- `31-THREAT-CONTROL-TEST-MATRIX.md` — threat → control → test → gap map,
+- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` — canonical `FULL-AUD-Fxxx` lifecycle.
 
 Status:
 
 ```text
 FULL AUDIT PLAN = PREPARED
+FULL AUDIT EVIDENCE MANIFEST = PREPARED
+THREAT/CONTROL/TEST MATRIX = PREPARED
 FULL AUDIT EXECUTION = HOLD UNTIL P8 CLOSED
 POST-P8 MAIN HEAD/TREE = NOT YET ESTABLISHED
 ```
