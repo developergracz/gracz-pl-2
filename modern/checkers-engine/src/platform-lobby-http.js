@@ -38,7 +38,7 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
       return sendJson(response,201,room);
     }catch(error){
       if(error instanceof AuthError) return sendJson(response,401,errorBody(error));
-      const status=['INVALID_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
+      const status=['INVALID_GAME_TYPE','UNSUPPORTED_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
       return sendJson(response,status,errorBody(error));
     }
   };
