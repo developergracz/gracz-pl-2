@@ -44,11 +44,12 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - `00-FULL-MAX-MASTER/04-IMPLEMENTATION-AUDIT-REGISTER.md`
 - `00-FULL-MAX-MASTER/15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
 
-### TOM 1 — ARCHITEKTURA SYSTEMOWA / API
+### TOM 1 — ARCHITEKTURA SYSTEMOWA / API / ADR
 
 - `00-FULL-MAX-MASTER/02-ARCHITEKTURA-MASTER.md`
 - `00-FULL-MAX-MASTER/12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
 - `00-FULL-MAX-MASTER/13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
+- `00-FULL-MAX-MASTER/16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
 - architektura logiczna i fizyczna,
 - granice zaufania,
 - frontend/API/realtime,
@@ -59,7 +60,8 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - storage i cache,
 - observability,
 - infrastruktura i deployment model,
-- katalog endpointów i kontraktów HTTP.
+- katalog endpointów i kontraktów HTTP,
+- nadrzędny rejestr decyzji architektonicznych ADR wraz z ich statusem, uzasadnieniem i konsekwencjami.
 
 ### TOM 2 — DATA / POSTGRESQL
 
@@ -194,6 +196,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md` = BASELINE CREATED; current-main i pending-P8 są rozdzielone,
 - `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md` = BASELINE CREATED; 30 zweryfikowanych current-main tabel/struktur PostgreSQL wraz z concurrency, privacy, retention i audit observations,
 - `15-REQUIREMENTS-TRACEABILITY-MATRIX.md` = BASELINE CREATED; wymagania są połączone z komponentami, data/API boundaries, testami, CI/audytami, statusami i jawnymi evidence gaps,
+- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md` = BASELINE CREATED; 26 nadrzędnych decyzji ADR z rozdzieleniem ACTIVE, PARTIAL, AUDIT PENDING i PLANNED/NOT AUTHORIZED,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -204,8 +207,9 @@ Po każdym istotnym kroku aktualizowane są co najmniej:
 2. `01-EVIDENCE-REGISTER.md`, jeśli powstał nowy dowód,
 3. `04-IMPLEMENTATION-AUDIT-REGISTER.md`, jeśli zmienił się status implementacji/audytu,
 4. `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`, jeśli zmienił się requirement, implementation, test, audit lub evidence link,
-5. odpowiedni tom domenowy,
-6. historia MASTER, gdy krok zmienia stan projektu.
+5. `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`, jeśli pojawia się, zmienia lub zostaje zastąpiona materialna decyzja architektoniczna,
+6. odpowiedni tom domenowy,
+7. historia MASTER, gdy krok zmienia stan projektu.
 
 ## 6. Finalny warunek FULL MAX DOCUMENTATION
 
@@ -240,5 +244,6 @@ Aktualnie utworzone są:
 - `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
 - `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
 - `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
+- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
 
 Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
