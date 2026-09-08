@@ -91,9 +91,18 @@ export class TournamentService {
       this.memory.set(item.tournamentId, { tournament: item, players: [{ userId:user.userId, displayName:user.displayName, seed:1, points:0, wins:0, draws:0, losses:0, buchholz:0, status:"active", joinedAt:new Date().toISOString() }], matches: [] });
       return item;
     }
-    await this.pool.query(`INSERT INTO gracz_tournaments(tournament_id,owner_id,owner_name,title,description,game,format,visibility,max_players,rounds,time_control,rated,starts_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [item.tournamentId,item.ownerId,item.ownerName,item.title,item.description,item.game,item.format,item.visibility,item.maxPlayers,item.rounds,item.timeControl,item.rated,item.startsAt]);
-    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,1)`, [item.tournamentId,user.userId,user.displayName]);
-    return item;
+
+    const client=await this.pool.connect();
+    try{
+      await client.query("BEGIN");
+      await client.query(`INSERT INTO gracz_tournaments(tournament_id,owner_id,owner_name,title,description,game,format,visibility,max_players,rounds,time_control,rated,starts_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [item.tournamentId,item.ownerId,item.ownerName,item.title,item.description,item.game,item.format,item.visibility,item.maxPlayers,item.rounds,item.timeControl,item.rated,item.startsAt]);
+      await client.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,1)`, [item.tournamentId,user.userId,user.displayName]);
+      await client.query("COMMIT");
+      return item;
+    }catch(error){
+      await client.query("ROLLBACK").catch(()=>{});
+      throw error;
+    }finally{client.release();}
   }
 
   async list(user, query = {}) {
@@ -127,7 +136,7 @@ export class TournamentService {
       if(d.players.length>=t.maxPlayers) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
       const nextSeed=d.players.reduce((max,player)=>Math.max(max,Number(player.seed)||0),0)+1;
       d.players.push({userId:user.userId,displayName:user.displayName,seed:nextSeed,points:0,wins:0,draws:0,losses:0,buchholz:0,status:"active",joinedAt:new Date().toISOString()});
-      return {ok:true};
+      return{ok:true};
     }
 
     const client=await this.pool.connect();
