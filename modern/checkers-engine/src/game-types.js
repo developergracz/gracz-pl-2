@@ -45,7 +45,7 @@ export function validateGameTypeDefinitions(definitions) {
       const alias = registryToken(rawAlias, `alias for ${id}`);
       if (alias === id) throw new TypeError(`Alias ${alias} nie może powielać własnego canonical id.`);
       const existingOwner = claims.get(alias);
-      if (existingOwner && existingOwner !== id) {
+      if (existingOwner) {
         throw new TypeError(`Kolizja typu gry: ${alias} należy już do ${existingOwner}.`);
       }
       claims.set(alias, id);

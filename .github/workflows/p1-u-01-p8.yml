@@ -14,6 +14,7 @@ on:
       - modern/checkers-engine/web/tournaments.html
       - modern/checkers-engine/e2e/tournaments.browser.mjs
       - modern/checkers-engine/test/p1-u-01-game-types-p8.test.js
+      - modern/checkers-engine/test/p8-tournament-hardening.test.js
       - modern/checkers-engine/package.json
       - .github/workflows/p1-u-01-p8.yml
   pull_request:
@@ -28,6 +29,7 @@ on:
       - modern/checkers-engine/web/tournaments.html
       - modern/checkers-engine/e2e/tournaments.browser.mjs
       - modern/checkers-engine/test/p1-u-01-game-types-p8.test.js
+      - modern/checkers-engine/test/p8-tournament-hardening.test.js
       - modern/checkers-engine/package.json
       - .github/workflows/p1-u-01-p8.yml
 
@@ -76,9 +78,11 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-fund --no-audit
       - name: P8 syntax and static checks
-        run: npm run check && node --check test/p1-u-01-game-types-p8.test.js
+        run: npm run check && node --check test/p1-u-01-game-types-p8.test.js && node --check test/p8-tournament-hardening.test.js
       - name: P8 focused canonical game type contract
         run: node --test test/p1-u-01-game-types-p8.test.js
+      - name: P8 tournament concurrency and legacy hardening
+        run: node --test test/p8-tournament-hardening.test.js
       - name: Checkers regression
         run: node --test test/checkers-engine.test.js test/p1-c-01-postgres-cas.test.js test/p1-c-01-concurrent-http-postgres.test.js test/p1-c-01-http-conflict.test.js test/p1-c-01-http-success-regression.test.js
       - name: Gomoku regression

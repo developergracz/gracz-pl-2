@@ -118,13 +118,39 @@ export class TournamentService {
   }
 
   async join(user,id){
-    const detail=await this.detail(user,id); const t=detail.tournament;
-    assertTournamentGameSupported(t);
-    if(t.status!=="registration") throw tournamentError("Zapisy do tego turnieju są zamknięte.","REGISTRATION_CLOSED",409);
-    if(t.joined) return {ok:true};
-    if(t.playerCount>=t.maxPlayers) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
-    if(!this.pool){const d=this.memory.get(id);d.players.push({userId:user.userId,displayName:user.displayName,seed:d.players.length+1,points:0,wins:0,draws:0,losses:0,buchholz:0,status:"active",joinedAt:new Date().toISOString()});return{ok:true};}
-    await this.pool.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,(SELECT COALESCE(MAX(seed),0)+1 FROM gracz_tournament_players WHERE tournament_id=$1)) ON CONFLICT DO NOTHING`,[id,user.userId,user.displayName]); return{ok:true};
+    if(!this.pool){
+      const d=this.memory.get(id); if(!d) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      const t=normalizeTournament({...d.tournament,playerCount:d.players.length,joined:d.players.some(p=>p.userId===user.userId)});
+      assertTournamentGameSupported(t);
+      if(t.status!=="registration") throw tournamentError("Zapisy do tego turnieju są zamknięte.","REGISTRATION_CLOSED",409);
+      if(t.joined) return {ok:true};
+      if(d.players.length>=t.maxPlayers) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
+      const nextSeed=d.players.reduce((max,player)=>Math.max(max,Number(player.seed)||0),0)+1;
+      d.players.push({userId:user.userId,displayName:user.displayName,seed:nextSeed,points:0,wins:0,draws:0,losses:0,buchholz:0,status:"active",joinedAt:new Date().toISOString()});
+      return {ok:true};
+    }
+
+    const client=await this.pool.connect();
+    try{
+      await client.query("BEGIN");
+      const tournament=(await client.query(`SELECT game,status,max_players FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+      if(!tournament) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      assertTournamentGameValueSupported(tournament.game);
+      if(tournament.status!=="registration") throw tournamentError("Zapisy do tego turnieju są zamknięte.","REGISTRATION_CLOSED",409);
+
+      const existing=(await client.query(`SELECT seed FROM gracz_tournament_players WHERE tournament_id=$1 AND user_id=$2`,[id,user.userId])).rows[0];
+      if(existing){await client.query("COMMIT");return{ok:true};}
+
+      const stats=(await client.query(`SELECT COUNT(*)::int AS player_count,COALESCE(MAX(seed),0)::int AS max_seed FROM gracz_tournament_players WHERE tournament_id=$1`,[id])).rows[0];
+      if(Number(stats.player_count)>=Number(tournament.max_players)) throw tournamentError("Brak wolnych miejsc.","TOURNAMENT_FULL",409);
+      const nextSeed=Number(stats.max_seed)+1;
+      await client.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,$4)`,[id,user.userId,user.displayName,nextSeed]);
+      await client.query("COMMIT");
+      return {ok:true};
+    }catch(error){
+      await client.query("ROLLBACK").catch(()=>{});
+      throw error;
+    }finally{client.release();}
   }
 
   async leave(user,id){
