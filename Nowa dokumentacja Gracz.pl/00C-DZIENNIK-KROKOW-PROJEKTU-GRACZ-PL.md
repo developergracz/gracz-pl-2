@@ -435,6 +435,72 @@ Production change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / HISTORICAL EVIDENCE BACKFILL P1
+
+Utworzono:
+
+`00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
+
+Zakres: PR #29, #30, #36, #37, #38, #39.
+
+Dla każdego odtworzono w miarę dostępnego evidence:
+
+- base,
+- final PR HEAD,
+- final TREE,
+- merge commit,
+- exact-head CI,
+- audit provenance quality.
+
+Jawnie skorygowano historyczną rozbieżność PR #37: wcześniejszy checkpoint `af3a9ec...` zapisany w body nie jest faktycznym finalnym merged head; finalnym HEAD był `5d155fd058343355346fbb2b6637881ca3b73b66`, TREE `2e7ad8c027ece18ffe1da175221274a1ee6a4255`.
+
+Audit provenance sklasyfikowano jako `DIRECT`, `DIRECT-PARTIAL`, `RECONSTRUCTED` lub `GAP`, bez dopisywania nieistniejących raportów.
+
+Merge = `NOT AUTHORIZED` dla bieżącej gałęzi dokumentacyjnej.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / FINDINGS-CORRECTIONS-REMEDIATION REGISTER
+
+Utworzono:
+
+`00-FULL-MAX-MASTER/18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
+
+Cel: centralny lifecycle:
+
+`FINDING → LEAD TRIAGE → DECISION → CORRECTION MANDATE → IMPLEMENTATION → SHA/TREE → TESTS → RE-AUDIT → CLOSURE`.
+
+Zdefiniowano:
+
+- statusy findingów i korekt,
+- severity model,
+- merge-blocking jako osobne pole,
+- namespaces `P8-AUD-Fxx`, `FULL-AUD-Fxxx`, `LEAD-Fxxx`, `GFPE-AUD-Fxxx`, `GFPE-MATH-Fxxx`, `OPS-Fxxx`, `PRIV-Fxxx`, `HIST-*`, `INC-*`,
+- minimalny record każdego findingu,
+- regułę Lead verification przed wydaniem mandatu GPT-2,
+- wymagania correction mandate,
+- closure checklist,
+- osobne intake contracts dla P8, full-project audit i GFPE.
+
+Zasilono historyczne przykłady:
+
+- `P6-F01 = CLOSED`,
+- `P7-F01 = CLOSED`,
+- `P7-F02 = CLOSED`,
+- `P7-F03 = CLOSED`,
+- `HIST-PR36-FINDING-01 = CLOSED` — documentation-assigned backfill ID,
+- `INC-P5-GOV-001 = CLOSED`.
+
+P8 ma obecnie `P8-AUD-Fxx = NONE YET`, ponieważ Claude audit nadal jest PENDING.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
