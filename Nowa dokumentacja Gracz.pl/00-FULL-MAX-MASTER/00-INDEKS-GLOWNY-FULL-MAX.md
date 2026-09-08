@@ -4,294 +4,211 @@
 **Repository:** `developergracz/gracz-pl-2`  
 **Documentation branch:** `docs/master-history-gracz-pl-2026-09-08`  
 **Production authorization:** NONE  
-**Merge authorization:** NONE  
+**Merge authorization:** NONE
 
 ## 1. Cel
 
-Ten pakiet ma być nadrzędną, dowodową dokumentacją całego portalu Gracz.pl — od stanu historycznego i odbudowy systemu, przez architekturę V3, implementację technicznych P1, audyty, testy, PostgreSQL, DR, bezpieczeństwo, MatchRuntime, gry, FairPlay MAX, operacje produkcyjne, aż do finalnego AS-BUILT.
+Ten pakiet jest nadrzędną, dowodową dokumentacją Gracz.pl: historia, target design, rzeczywisty AS-IS kodu, bezpieczeństwo, dane, testy, audyty, operacje, FairPlay MAX i przyszły finalny AS-BUILT.
 
-Dokumentacja ma odróżniać bezwzględnie:
+Dokumentacja bezwzględnie rozdziela:
 
-- stan historyczny,
-- projekt docelowy,
-- kod zaimplementowany,
-- kod zmergowany,
-- testy wykonane,
-- audyty niezależne,
-- działania produkcyjne,
-- elementy planowane lub niewykonane.
+- historyczny stan projektu,
+- target design,
+- current-main AS-IS,
+- pending PR delta,
+- test evidence,
+- independent audit evidence,
+- merge state,
+- production state.
 
-Żaden dokument nie autoryzuje merge, deployu, migracji, zmian Render/ENV/DNS/Cloudflare ani działań produkcyjnych.
+Żaden dokument nie autoryzuje merge, deployu, migracji, Render/ENV/DNS/Cloudflare ani produkcji.
 
 ## 2. Źródła prawdy
 
-1. Aktualny kod i historia Git w `developergracz/gracz-pl-2`.
-2. Zweryfikowane PR, commit SHA, TREE SHA i GitHub Actions.
-3. `Nowa dokumentacja Gracz.pl/` wraz z ADR, audytami i checkpointami.
-4. Niezależne raporty audytowe, gdy zostaną utrwalone.
-5. Jawne decyzje Owner + Lead.
+1. aktualny kod i historia Git,
+2. exact PR/commit SHA/TREE i GitHub Actions,
+3. MASTER docs + V3 docs,
+4. zachowane raporty audytowe,
+5. jawne decyzje Owner + Lead,
+6. fresh production evidence dla twierdzeń produkcyjnych.
 
-W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie starszy opis statusowy.
+W przypadku sprzeczności wygrywa najświeższy dowód o najwyższej jakości dla danego rodzaju twierdzenia.
 
-## 3. Struktura docelowa
+## 3. MASTER — governance / evidence / audit control
 
-### TOM 0 — GOVERNANCE / HISTORIA / EVIDENCE / AUDIT CONTROL
+- `00-INDEKS-GLOWNY-FULL-MAX.md`
+- `01-EVIDENCE-REGISTER.md`
+- `04-IMPLEMENTATION-AUDIT-REGISTER.md`
+- `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
+- `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
+- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
+- `P8-CLAUDE-INDEPENDENT-AUDIT-PACKAGE.md`
+- `P8-POST-AUDIT-DECISION-TEMPLATE.md`
+- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
+- `46-FULL-AUDIT-EVIDENCE-MANIFEST.md`
+- `47-ARCHITECTURE-DRIFT-AUDIT-TEMPLATE.md`
 
-- `00B-MASTER-HISTORIA-PROJEKTU-GRACZ-PL.md`
-- `00C-DZIENNIK-KROKOW-PROJEKTU-GRACZ-PL.md`
-- `00-FULL-MAX-MASTER/00-INDEKS-GLOWNY-FULL-MAX.md`
-- `00-FULL-MAX-MASTER/01-EVIDENCE-REGISTER.md`
-- `00-FULL-MAX-MASTER/04-IMPLEMENTATION-AUDIT-REGISTER.md`
-- `00-FULL-MAX-MASTER/15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
-- `00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
-- `00-FULL-MAX-MASTER/18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
-- `00-FULL-MAX-MASTER/P8-CLAUDE-INDEPENDENT-AUDIT-PACKAGE.md`
-- `00-FULL-MAX-MASTER/P8-POST-AUDIT-DECISION-TEMPLATE.md`
-- `00-FULL-MAX-MASTER/45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
-- `00-FULL-MAX-MASTER/46-FULL-AUDIT-EVIDENCE-MANIFEST.md`
+Project history/log surfaces:
 
-### TOM 1 — ARCHITEKTURA SYSTEMOWA / API / ADR
+- `../00B-MASTER-HISTORIA-PROJEKTU-GRACZ-PL.md`
+- `../00C-DZIENNIK-KROKOW-PROJEKTU-GRACZ-PL.md`
 
-- `00-FULL-MAX-MASTER/02-ARCHITEKTURA-MASTER.md`
-- `00-FULL-MAX-MASTER/12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
-- `00-FULL-MAX-MASTER/13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
-- `00-FULL-MAX-MASTER/16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
-- architektura logiczna i fizyczna,
-- granice zaufania,
-- frontend/API/realtime,
-- MatchRuntime,
-- silniki gier,
-- PostgreSQL,
-- background jobs,
-- storage i cache,
-- observability,
-- infrastruktura i deployment model,
-- katalog endpointów i kontraktów HTTP,
-- nadrzędny rejestr decyzji architektonicznych ADR wraz z ich statusem, uzasadnieniem i konsekwencjami.
+## 4. Architecture / API / decisions
 
-### TOM 2 — DATA / POSTGRESQL
+- `02-ARCHITEKTURA-MASTER.md`
+- `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
+- `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
+- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
+- `22-ERROR-FAILURE-CONTRACT-CATALOG.md`
+- `25-STATE-MACHINE-CATALOG.md`
+- `39-TECHNICAL-DEBT-LEGACY-DEAD-CODE-REGISTER.md`
+- `47-ARCHITECTURE-DRIFT-AUDIT-TEMPLATE.md`
 
-- `00-FULL-MAX-MASTER/05-DATA-POSTGRESQL-MASTER.md`
-- `00-FULL-MAX-MASTER/14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
-- `00-FULL-MAX-MASTER/24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
-- AS-IS,
-- V3 target model,
-- migracje,
-- constraints,
-- indeksy,
-- concurrency,
-- ownership,
-- retention,
-- backup i restore,
-- pełny current-main katalog tabel/struktur PostgreSQL i ich właścicieli danych.
+Historical architecture V3 remains preserved under `01-ARCHITEKTURA/`; its 31.08.2026 AS-IS claims are historical where later P5/P6/P7/DR evidence supersedes them.
 
-### TOM 3 — SECURITY / CONFIG / AUTHORIZATION / THREAT TRACEABILITY
+## 5. Data / PostgreSQL / concurrency
 
-- `00-FULL-MAX-MASTER/03-SECURITY-AND-TRUST-MASTER.md`
-- `00-FULL-MAX-MASTER/19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
-- `00-FULL-MAX-MASTER/20-SECRET-KEY-LIFECYCLE-REGISTER.md`
-- `00-FULL-MAX-MASTER/21-AUTHORIZATION-PERMISSION-MATRIX.md`
-- `00-FULL-MAX-MASTER/31-THREAT-CONTROL-TEST-MATRIX.md`
-- auth,
-- session security,
-- RBAC/MFA,
-- secrets,
-- crypto separation,
-- key lifecycle / rotation / revocation,
-- rate limiting,
-- abuse prevention,
-- threat → control → test evidence,
-- supply chain,
-- vulnerability management,
-- incident response,
-- environment/configuration contracts,
-- role/permission/MFA matrix.
+- `05-DATA-POSTGRESQL-MASTER.md`
+- `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
+- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
 
-### TOM 4 — GAMES / MATCH RUNTIME
+Verified current-main catalog currently documents 30 PostgreSQL tables/structures plus non-table realtime/ranking behavior.
 
-- `00-FULL-MAX-MASTER/08-GAMES-MATCHRUNTIME-MASTER.md`
-- Checkers,
-- Gomoku,
-- Thousand,
-- shared MatchRuntime,
-- idempotency,
-- CAS,
-- ownershipEpoch,
-- restart recovery,
-- projections,
-- realtime signaling.
+## 6. Security / configuration / authorization / threats
 
-### TOM 5 — FAIRPLAY MAX / GFPE
+- `03-SECURITY-AND-TRUST-MASTER.md`
+- `19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
+- `20-SECRET-KEY-LIFECYCLE-REGISTER.md`
+- `21-AUTHORIZATION-PERMISSION-MATRIX.md`
+- `22-ERROR-FAILURE-CONTRACT-CATALOG.md`
+- `31-THREAT-CONTROL-TEST-MATRIX.md`
 
-- `04-FAIRPLAY-MAX/00-GFPE-0-GFPE-1-PRE-DESIGN-WYMAGANIA-I-THREAT-MODEL.md`
-- `04-FAIRPLAY-MAX/01-GFPE-2-CRYPTOGRAPHIC-PROTOCOL-DRAFT.md`
-- `04-FAIRPLAY-MAX/02-GFPE-TEST-AND-VALIDATION-PLAN-DRAFT.md`
-- requirements,
-- threat model,
-- cryptographic protocol draft,
-- deterministic shuffle,
-- commitments,
-- Verify Hand,
-- ledger,
-- key management,
-- adapters Tysiąc/Poker/Blackjack/Wojna,
-- test laboratory.
+These catalogs cover environment contracts, secrets/key domains, RBAC/MFA, failure semantics, threat-control-test traceability and explicit security gaps without storing secret values.
 
-### TOM 6 — CI / TEST / QUALITY
+## 7. Games / MatchRuntime
 
-- `00-FULL-MAX-MASTER/06-CI-TEST-QUALITY-MASTER.md`
-- unit,
-- integration,
-- PostgreSQL,
-- concurrency,
-- browser,
-- fault injection,
-- property tests,
-- fuzz,
-- security gates,
-- CodeQL,
-- gitleaks,
-- dependency audit.
+- `08-GAMES-MATCHRUNTIME-MASTER.md`
+- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
+- `25-STATE-MACHINE-CATALOG.md`
 
-### TOM 7 — OPERATIONS / DR / OBSERVABILITY
+Current distinction:
 
-- `00-FULL-MAX-MASTER/07-OPERATIONS-DR-OBSERVABILITY-MASTER.md`
-- health/readiness,
-- logging,
-- metrics,
-- tracing,
-- alerting,
-- SLO,
-- backup,
-- restore drills,
-- RPO/RTO,
-- incident runbooks,
-- rollback.
+- Checkers = common MatchRuntime/P7,
+- Gomoku = separate revision CAS/requestId path,
+- Tysiąc = separate revision/expectedRevision path,
+- P8 canonical game-type dictionary = PR #43 pending independent audit / not current main.
 
-### TOM 8 — PRODUCT / UX / SEO / DOMAINS
+## 8. FairPlay MAX / GFPE
 
-- `00-FULL-MAX-MASTER/09-PRODUCT-UX-SEO-DOMAINS-MASTER.md`
-- homepage,
-- auth UX,
-- profiles,
-- rooms/players,
-- messaging,
-- mobile/responsive,
-- accessibility,
-- SEO,
-- domains/DNS/Cloudflare,
-- maintenance mode.
+- `../04-FAIRPLAY-MAX/00-GFPE-0-GFPE-1-PRE-DESIGN-WYMAGANIA-I-THREAT-MODEL.md`
+- `../04-FAIRPLAY-MAX/01-GFPE-2-CRYPTOGRAPHIC-PROTOCOL-DRAFT.md`
+- `../04-FAIRPLAY-MAX/02-GFPE-TEST-AND-VALIDATION-PLAN-DRAFT.md`
 
-### TOM 9 — PRIVACY / LEGAL / GOVERNANCE
+Status:
 
-- `00-FULL-MAX-MASTER/10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
-- retention,
-- deletion,
-- legal hold,
-- privacy decisions,
-- audit provenance,
-- Owner authorizations,
-- release governance.
-
-### TOM 10 — FINAL AS-BUILT
-
-- `00-FULL-MAX-MASTER/11-FINAL-AS-BUILT-CHECKLIST.md`
-
-Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeniu i weryfikacji produkcyjnej.
-
-## 4. Aktualny checkpoint — 08.09.2026
-
-- dokumentacja V3 istnieje i pozostaje bazą historyczno-architektoniczną,
-- P7 / P1-U-02 = CLOSED,
-- P1-R-01 recurring PostgreSQL DR = CLOSED,
-- P8 / P1-U-01 = implementation complete / PR #43 open / independent Claude audit pending,
-- P8 merge = NOT AUTHORIZED,
-- production/deploy = NOT AUTHORIZED,
-- `P8-CLAUDE-INDEPENDENT-AUDIT-PACKAGE.md` = READY; exact PR identity, 7-file scope, A–N audit contract, finding format and verdict vocabulary prepared,
-- `P8-POST-AUDIT-DECISION-TEMPLATE.md` = READY; deterministic PASS / PASS WITH FINDINGS / FAIL paths prepared,
-- szczegółowy tom `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md` = BASELINE CREATED na `main @ ad073919...`,
-- `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md` = BASELINE CREATED; current-main i pending-P8 są rozdzielone,
-- `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md` = BASELINE CREATED; 30 zweryfikowanych current-main tabel/struktur PostgreSQL,
-- `15-REQUIREMENTS-TRACEABILITY-MATRIX.md` = BASELINE CREATED,
-- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md` = BASELINE CREATED; 26 nadrzędnych decyzji ADR,
-- `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md` = BACKFILL COMPLETE dla PR #29/#30/#36/#37/#38/#39,
-- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md` = BASELINE CREATED,
-- `19-ENVIRONMENT-CONFIGURATION-CATALOG.md` = BASELINE CREATED,
-- `20-SECRET-KEY-LIFECYCLE-REGISTER.md` = BASELINE CREATED; current-main secrets/credentials, domain separation, legacy decrypt, rotation/revocation gaps and future GFPE key lifecycle mapped without secret values,
-- `21-AUTHORIZATION-PERMISSION-MATRIX.md` = BASELINE CREATED,
-- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md` = BASELINE CREATED,
-- `31-THREAT-CONTROL-TEST-MATRIX.md` = BASELINE CREATED; current controls and explicit gaps mapped to threats/tests, GFPE rows remain PLANNED,
-- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md` = PREPARED; full audit execution HOLD until formal P8 closure,
-- `46-FULL-AUDIT-EVIDENCE-MANIFEST.md` = PREPARED; source/test/PR/doc navigation map for post-P8 audit,
 - GFPE-0 Requirements = PRE-DESIGN COMPLETE,
 - GFPE-1 Threat Model = PRE-DESIGN COMPLETE,
 - GFPE-2 Cryptographic Protocol = DRAFT CREATED / NOT FROZEN,
 - GFPE Test & Validation Plan = DRAFT CREATED / NOT EXECUTED,
 - GFPE implementation = NOT AUTHORIZED,
-- pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
+- production use = NO.
 
-## 5. Reguła aktualizacji
+## 9. CI / quality / operations / privacy / product
 
-Po każdym istotnym kroku aktualizowane są co najmniej:
-
-1. `00C-DZIENNIK-KROKOW-PROJEKTU-GRACZ-PL.md`,
-2. `01-EVIDENCE-REGISTER.md`, jeśli powstał nowy dowód,
-3. `04-IMPLEMENTATION-AUDIT-REGISTER.md`, jeśli zmienił się status implementacji/audytu,
-4. `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`, jeśli zmienił się requirement, implementation, test, audit lub evidence link,
-5. `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`, jeśli pojawia się, zmienia lub zostaje zastąpiona materialna decyzja architektoniczna,
-6. `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`, jeśli odnaleziony zostanie lepszy historyczny dowód dla objętych nim P1,
-7. `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`, gdy powstaje, zmienia status lub zostaje zamknięty finding/incydent,
-8. `20-SECRET-KEY-LIFECYCLE-REGISTER.md`, gdy zmienia się secret/key domain, rotation, revocation lub legacy-read policy,
-9. `31-THREAT-CONTROL-TEST-MATRIX.md`, gdy zmienia się zagrożenie, kontrola, test lub residual gap,
-10. odpowiedni tom domenowy,
-11. historia MASTER, gdy krok zmienia stan projektu.
-
-## 6. Finalny warunek FULL MAX DOCUMENTATION
-
-Pakiet może zostać oznaczony `FINAL / AS-BUILT` dopiero gdy:
-
-- zakończono pełny audyt całego projektu,
-- wszystkie blocking findings zostały zamknięte,
-- finalny main jest jednoznacznie wskazany SHA/TREE,
-- test evidence jest kompletny,
-- operacje produkcyjne są udokumentowane,
-- konfiguracja produkcyjna została zweryfikowana,
-- FairPlay MAX i gry są opisane zgodnie z faktycznym stanem,
-- rozbieżności `design vs implementation vs production` są jawnie rozstrzygnięte.
-
-## 7. Wykonane tomy startowe FULL MAX — 08.09.2026
-
-Aktualnie utworzone są m.in.:
-
-- `00-INDEKS-GLOWNY-FULL-MAX.md`
-- `01-EVIDENCE-REGISTER.md`
-- `02-ARCHITEKTURA-MASTER.md`
-- `03-SECURITY-AND-TRUST-MASTER.md`
-- `04-IMPLEMENTATION-AUDIT-REGISTER.md`
-- `05-DATA-POSTGRESQL-MASTER.md`
 - `06-CI-TEST-QUALITY-MASTER.md`
 - `07-OPERATIONS-DR-OBSERVABILITY-MASTER.md`
-- `08-GAMES-MATCHRUNTIME-MASTER.md`
 - `09-PRODUCT-UX-SEO-DOMAINS-MASTER.md`
 - `10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
 - `11-FINAL-AS-BUILT-CHECKLIST.md`
-- `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
-- `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
-- `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
-- `15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
-- `16-ARCHITECTURE-DECISION-REGISTER-ADR-MASTER.md`
-- `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`
-- `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`
-- `19-ENVIRONMENT-CONFIGURATION-CATALOG.md`
-- `20-SECRET-KEY-LIFECYCLE-REGISTER.md`
-- `21-AUTHORIZATION-PERMISSION-MATRIX.md`
-- `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
-- `31-THREAT-CONTROL-TEST-MATRIX.md`
-- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
-- `46-FULL-AUDIT-EVIDENCE-MANIFEST.md`
-- `P8-CLAUDE-INDEPENDENT-AUDIT-PACKAGE.md`
-- `P8-POST-AUDIT-DECISION-TEMPLATE.md`
-- `04-FAIRPLAY-MAX/01-GFPE-2-CRYPTOGRAPHIC-PROTOCOL-DRAFT.md`
-- `04-FAIRPLAY-MAX/02-GFPE-TEST-AND-VALIDATION-PLAN-DRAFT.md`
 
-Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
+## 10. Current checkpoint — 08.09.2026
+
+### Closed / established
+
+- P7 / P1-U-02 = CLOSED,
+- P1-R-01 DR = CLOSED,
+- historical P1 evidence backfill = complete for specified PRs,
+- FULL MAX component/API/data/traceability/ADR/findings baselines created,
+- TOM 19 environment catalog = created,
+- TOM 20 secret/key lifecycle = created,
+- TOM 21 authorization matrix = created,
+- TOM 22 error/failure catalog = created,
+- TOM 24 concurrency/invariants = created,
+- TOM 25 state-machine catalog = created,
+- TOM 31 threat/control/test matrix = created,
+- TOM 39 technical-debt/legacy register = created,
+- TOM 45 full-audit plan = prepared,
+- TOM 46 full-audit evidence manifest = prepared,
+- TOM 47 architecture-drift template = prepared.
+
+### P8
+
+```text
+PR = #43
+BASE MAIN = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
+HEAD = d7220f57d60779584048cc5c695d40dbb948b9cb
+TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
+LEAD = PASS
+CLAUDE AUDIT = PENDING
+MERGE = NOT AUTHORIZED
+DEPLOY = NO
+```
+
+### Full-project audit
+
+`PREPARED / HOLD UNTIL P8 FORMALLY CLOSED`.
+
+Claude will receive current code, historical V3 design, current FULL MAX AS-IS, evidence manifest, threat/error/state/concurrency/debt catalogs and architecture-drift template.
+
+## 11. Important current gaps intentionally preserved
+
+- P8 independent audit pending,
+- P1-B-01 reassessment pending,
+- Gomoku/Tysiąc not migrated to common MatchRuntime,
+- Tysiąc current RNG is not GFPE/FairPlay MAX,
+- no universal transactional outbox,
+- legacy crypto read path remains bounded compatibility requiring retirement plan,
+- audit salt fallback requires full-audit decision,
+- complete keyId/key-ring model remains future hardening,
+- final retention/legal-hold matrix incomplete,
+- final SBOM/supply-chain register incomplete,
+- final mobile/accessibility acceptance evidence incomplete,
+- final production topology/configuration/RPO/RTO AS-BUILT absent,
+- GFPE implementation absent by design.
+
+## 12. Update rules
+
+After material work, update as applicable:
+
+1. project journal,
+2. Evidence Register,
+3. Implementation/Audit Register,
+4. Requirements Traceability Matrix,
+5. ADR Register,
+6. Findings/Remediation Register,
+7. TOM 20 for secret/key lifecycle changes,
+8. TOM 22 for public/internal failure contract changes,
+9. TOM 24 for concurrency invariant changes,
+10. TOM 25 for lifecycle/state changes,
+11. TOM 31 for threat/control/test changes,
+12. TOM 39 for debt/legacy changes,
+13. architecture-drift output after full audit,
+14. appropriate domain tom.
+
+## 13. Final FULL MAX condition
+
+`FINAL / AS-BUILT` may be declared only after:
+
+- full-project audit complete,
+- all blocking findings closed,
+- final main exact SHA/TREE established,
+- test/audit evidence complete,
+- authorized production deployment evidence exists,
+- production configuration/topology verified,
+- architecture drift resolved/documented,
+- FairPlay MAX status described exactly as implemented,
+- design vs implementation vs production differences explicitly resolved.
+
+Until then:
+
+`FULL MAX MASTER DOCUMENTATION = LIVING / NOT FROZEN`.
