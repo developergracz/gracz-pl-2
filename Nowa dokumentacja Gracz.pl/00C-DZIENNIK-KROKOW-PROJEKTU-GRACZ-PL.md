@@ -506,3 +506,53 @@ Production change = `NO`.
 Najbliższy oczekiwany wpis:
 
 `P8 / PR #43 — CLAUDE INDEPENDENT AUDIT RESULT`
+
+---
+
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / SECRET & KEY LIFECYCLE REGISTER
+
+Na current-main baseline:
+
+`ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+utworzono:
+
+`00-FULL-MAX-MASTER/20-SECRET-KEY-LIFECYCLE-REGISTER.md`
+
+Zweryfikowano i opisano bez wartości sekretów:
+
+- `AUTH_SECRET`,
+- `MESSAGE_ENCRYPTION_KEY`,
+- `ATTACHMENT_ENCRYPTION_KEY`,
+- `MFA_ENCRYPTION_KEY`,
+- `AUDIT_HASH_SALT`,
+- `BACKUP_ENCRYPTION_KEY`,
+- `DATABASE_URL`,
+- `RESEND_API_KEY`,
+- `TURNSTILE_SECRET_KEY`,
+- secret-like security webhook configuration,
+- przyszłe GFPE signing/seed-encryption/keyId domains.
+
+Jawnie utrwalono m.in.:
+
+- aktywną separację kluczy wiadomości/załączników/MFA od `AUTH_SECRET`,
+- legacy decrypt przez dawny `AUTH_SECRET` jako compatibility bridge wymagający bounded retirement,
+- brak pełnego current-main `keyId` modelu dla długowiecznych ciphertextów,
+- `AUDIT_HASH_SALT` fallback do `AUTH_SECRET`/empty jako `AUDIT REQUIRED / POTENTIAL REMEDIATION CANDIDATE`,
+- semantykę backup key: Base64 validation do 32 bajtów, ale OpenSSL używa wartości ENV jako PBKDF2 passphrase input,
+- wymagania rotation/revocation/compromise evidence,
+- przyszły GFPE key lifecycle jako `PLANNED / NOT IMPLEMENTED`.
+
+Nie wykonano rotacji sekretów, re-encryption, migracji ani zmian produkcyjnych.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
+# NEXT ENTRY
+
+Najbliższy oczekiwany wpis nadal:
+
+`P8 / PR #43 — CLAUDE INDEPENDENT AUDIT RESULT`
