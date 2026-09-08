@@ -57,7 +57,7 @@ jobs:
       run:
         working-directory: modern/checkers-engine
     env:
-      P1_U_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_01_DATABASE_URL: postgresql://gracz:gracz_test@localhost:5432/gracz_test
       P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
       P1_H_01_DATABASE_URL: postgresql://gracz:gracz_test@localhost:5432/gracz_test
       P1_AUD3_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
