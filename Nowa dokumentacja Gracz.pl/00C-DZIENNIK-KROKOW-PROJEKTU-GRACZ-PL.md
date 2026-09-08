@@ -294,6 +294,54 @@ Production change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / POSTGRESQL DATA CATALOG
+
+Na baseline:
+
+`main @ ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+TREE:
+
+`04f72af50f6fad2ba01bf7eaa6b4d856267d517b`
+
+przeprowadzono current-main readback aktywnych implementacji PostgreSQL, w tym:
+
+- Checkers / P7 MatchRuntime persistence,
+- Gomoku durable CAS,
+- Tysiąc revision CAS,
+- accounts/auth/recovery/private messages,
+- encrypted message attachments,
+- RBAC/MFA/audit/moderation,
+- tournaments,
+- global chat/community,
+- newsletter/consent/analytics,
+- distributed shared rate limiting,
+- computed rankings i PostgreSQL LISTEN/NOTIFY realtime jako struktury nietabelowe.
+
+Utworzono:
+
+`00-FULL-MAX-MASTER/14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
+
+Końcowy verified inventory = **30 current-main tabel/struktur PostgreSQL**. Ostatnim wykrytym podczas finalnego readback elementem była `gracz_shared_rate_limits`, dlatego robocza liczba 29 została skorygowana przed utrwaleniem dokumentu.
+
+Dokument zawiera:
+
+- kolumny, PK/FK/indeksy i constraints,
+- owner/consumer danych,
+- CAS/idempotency/fencing matrix,
+- sensitive-data matrix,
+- potwierdzone mechanizmy retencji/deletion,
+- referential-integrity audit observations,
+- backup/DR boundary,
+- jawne rozdzielenie current-main od P8 pending delta,
+- GFPE database structures wyłącznie jako `PLANNED / NOT IMPLEMENTED`.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production DB change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
