@@ -20,6 +20,8 @@ No status implies another status automatically.
 
 Historical audit-provenance quality is separately classified in `17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`; a historical `CLOSED` status is not rewritten into a stronger audit claim than repository evidence supports.
 
+Every material finding/correction lifecycle is maintained canonically in `18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`. This register records work-item state; TOM 18 records finding-level triage, correction and closure.
+
 ## 2. Technical work register
 
 | Work item | Scope | PR | Final/known implementation | Audit state / evidence quality | Merge/closure | Production |
@@ -30,10 +32,10 @@ Historical audit-provenance quality is separately classified in `17-HISTORICAL-E
 | P1-AUD3-04 | Gomoku durability/concurrency/recovery | #37 | actual final merged HEAD `5d155fd058343355346fbb2b6637881ca3b73b66` / TREE `2e7ad8c027ece18ffe1da175221274a1ee6a4255`; earlier body checkpoint `af3a9ec...` is superseded by final closure commit | merge records preservation of full audited commit history; final commit closes audit conditions; exact final-head CI GREEN (`DIRECT-PARTIAL`) | MERGED / CLOSED, merge `d002027114a7ef28ec02436e39798b70267e8502` | no production migration/deploy claim |
 | P1-AUD3-07 / P5 | liveness/readiness PostgreSQL health | #38 | HEAD `6e49cde56cf7e9ef4c1b74ca3fe0735485a91103` / TREE `d1b0a05480e098a576cba518f1a11c5f2ad0d943` | strong final evidence + exact-head CI GREEN; independent report not retained in PR timeline (`RECONSTRUCTED`) | MERGED / CLOSED, merge `8d520a5c2fea80b458e0adcf59468c9d6921c985` | no deploy/migration claim |
 | P1-AUD3-01 / P6 | shared rate limiting + realtime backplane | #39 | HEAD `c4669ea81bc2d0404f95d75a17a793a065ed725a` / TREE `3b6dbca54ff33e06691ecbe002bdc96f0215f151` | Lead finding P6-F01 fixed; exact-head CI GREEN; merge message explicitly records Lead PASS + independent Claude audit (`DIRECT`) | MERGED / CLOSED, merge `c5c34aabe4fcd04b087e25161778798146030c9b` | NO deploy/migration |
-| P7 / P1-U-02 | shared MatchRuntime foundation | #40 | HEAD `5b70c2d95fc937f0b516b7fafbce22bb8f59f432` / TREE `81da9ee04a15fea2ea329d9e19e61cf9f6b438e6` | Lead PASS / ChatGPT-2 PASS / Claude PASS | MERGED / CLOSED, merge `f88070b0f1d13a3ef353a46714f456c452876872` | NO deploy/migration |
+| P7 / P1-U-02 | shared MatchRuntime foundation | #40 | HEAD `5b70c2d95fc937f0b516b7fafbce22bb8f59f432` / TREE `81da9ee04a15fea2ea329d9e19e61cf9f6b438e6` | Lead PASS / ChatGPT-2 PASS / Claude PASS; P7-F01/F02/F03 CLOSED | MERGED / CLOSED, merge `f88070b0f1d13a3ef353a46714f456c452876872` | NO deploy/migration |
 | P1-R-01 | recurring PostgreSQL DR restore | #41 | HEAD `535eaac04522c53f1ee8506881a70461cfabc22a` / TREE `6f3b73c0525b1157d764a358127af8afa32c4d41` | Lead PASS / Claude PASS / CI PASS | MERGED / CLOSED, merge `b276c92342203eb6c2e591b30219219b8ab7cf10` | NO production restore/migration |
 | docs checkpoint | post P7/DR documentation | #42 | docs commit `43a9dd7ff111b46107af1e7f6ebdb056c345ebb7` | Lead PASS | MERGED, main `ad0739190fe2f9d1657b2b77c8b5f8e825830c08` | docs only |
-| P8 / P1-U-01 | canonical game type dictionary | #43 | HEAD `d7220f57d60779584048cc5c695d40dbb948b9cb` / TREE `4cbb8504036d26ed2e257f52a475968f5d4cd827` | Lead PASS / Claude independent audit PENDING | OPEN / NOT MERGED / NOT CLOSED | NO |
+| P8 / P1-U-01 | canonical game type dictionary | #43 | HEAD `d7220f57d60779584048cc5c695d40dbb948b9cb` / TREE `4cbb8504036d26ed2e257f52a475968f5d4cd827` | Lead PASS / Claude independent audit PENDING; no `P8-AUD-Fxx` created yet | OPEN / NOT MERGED / NOT CLOSED | NO |
 | P1-B-01 | RBAC/MFA tests / auth hardening backlog | TBD | not established here | must be reassessed in full audit | OPEN BACKLOG | NO |
 
 Historical stale PRs `#31–#35` must not be treated as final implementations unless an exact work-item record explicitly says otherwise. In particular PR #35 is not the final P1-R-01 implementation.
@@ -41,6 +43,10 @@ Historical stale PRs `#31–#35` must not be treated as final implementations un
 Canonical exact historical evidence for PR #29/#30/#36/#37/#38/#39 is maintained in:
 
 `00-FULL-MAX-MASTER/17-HISTORICAL-EVIDENCE-BACKFILL-P1.md`.
+
+Canonical finding/correction lifecycle is maintained in:
+
+`00-FULL-MAX-MASTER/18-FINDINGS-CORRECTIONS-REMEDIATION-REGISTER.md`.
 
 ## 3. P8 audit register
 
@@ -54,6 +60,7 @@ HEAD = d7220f57d60779584048cc5c695d40dbb948b9cb
 TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
 LEAD REVIEW = PASS
 INDEPENDENT CLAUDE AUDIT = PENDING
+P8-AUD-Fxx = NONE YET
 MERGE AUTHORIZATION = NO
 MERGE = NO
 DEPLOY = NO
@@ -68,6 +75,8 @@ Accepted final Claude verdict vocabulary:
 - `P8 / P1-U-01 — PASS`
 - `P8 / P1-U-01 — PASS WITH NON-BLOCKING FINDINGS`
 - `P8 / P1-U-01 — FAIL — CORRECTION REQUIRED`
+
+Any finding from this audit must first enter TOM 18 before a correction mandate is created.
 
 ## 4. Post-P8 full-project audit gate
 
@@ -92,7 +101,7 @@ After P8 is formally merged/closed, the next major quality gate is a full curren
 - production-readiness assumptions,
 - technical debt and stale paths.
 
-No FairPlay MAX implementation should begin before this full-project audit and controlled remediation produce a clean foundation.
+Full-project findings use the `FULL-AUD-Fxxx` namespace in TOM 18. No FairPlay MAX implementation should begin before this full-project audit and controlled remediation produce a clean foundation.
 
 ## 5. FairPlay MAX register
 
@@ -109,6 +118,8 @@ No FairPlay MAX implementation should begin before this full-project audit and c
 | statistical campaign review | NOT STARTED | Gemini |
 | Lead final verification | NOT STARTED | Lead |
 | Tysiąc integration | NOT AUTHORIZED | only after GFPE core acceptance |
+
+GFPE audit findings will be tracked as `GFPE-AUD-Fxxx`; mathematical/statistical findings as `GFPE-MATH-Fxxx` in TOM 18.
 
 ## 6. Role model
 
