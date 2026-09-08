@@ -202,6 +202,46 @@ Production change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / architektura komponentowa
+
+Na gałęzi `docs/master-history-gracz-pl-2026-09-08` zweryfikowano rzeczywisty układ runtime względem:
+
+`main @ ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+TREE:
+
+`04f72af50f6fad2ba01bf7eaa6b4d856267d517b`
+
+Zweryfikowano m.in.:
+
+- `modern/checkers-engine/package.json`,
+- pełne drzewo `modern/checkers-engine/`,
+- `src/main.js`,
+- `src/match-runtime.js`,
+- `src/index.js`,
+- warstwy auth/RBAC/MFA/security/audit,
+- Lobby, Rankings, Tournaments,
+- Gomoku,
+- Tysiąc,
+- PostgreSQL persistence,
+- distributed traffic/realtime,
+- DR/ops,
+- web UI oraz test surfaces.
+
+Utworzono:
+
+`00-FULL-MAX-MASTER/12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
+
+Dokument opisuje odpowiedzialności komponentów, trust boundaries, source-of-truth matrix, test architecture, istniejące mocne strony oraz obszary obowiązkowe do pełnego audytu po P8.
+
+P8 / PR #43 nie został uznany za część `main`; jego stan nadal pozostaje `OPEN / AUDIT PENDING`.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
