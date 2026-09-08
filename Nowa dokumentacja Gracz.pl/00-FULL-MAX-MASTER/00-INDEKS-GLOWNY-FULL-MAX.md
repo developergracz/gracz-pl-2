@@ -63,6 +63,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 ### TOM 2 — DATA / POSTGRESQL
 
 - `00-FULL-MAX-MASTER/05-DATA-POSTGRESQL-MASTER.md`
+- `00-FULL-MAX-MASTER/14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
 - AS-IS,
 - V3 target model,
 - migracje,
@@ -71,7 +72,8 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - concurrency,
 - ownership,
 - retention,
-- backup i restore.
+- backup i restore,
+- pełny current-main katalog tabel/struktur PostgreSQL i ich właścicieli danych.
 
 ### TOM 3 — SECURITY
 
@@ -189,6 +191,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - GFPE-0 + GFPE-1 = rozpoczęte jako PRE-DESIGN,
 - szczegółowy tom `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md` = BASELINE CREATED na `main @ ad073919...`,
 - `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md` = BASELINE CREATED; current-main i pending-P8 są rozdzielone,
+- `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md` = BASELINE CREATED; 30 zweryfikowanych current-main tabel/struktur PostgreSQL wraz z concurrency, privacy, retention i audit observations,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -232,5 +235,6 @@ Aktualnie utworzone są:
 - `11-FINAL-AS-BUILT-CHECKLIST.md`
 - `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
 - `13-API-I-KONTRAKTY-SYSTEMU-MASTER.md`
+- `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
 
 Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
