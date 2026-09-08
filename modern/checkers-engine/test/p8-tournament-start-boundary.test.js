@@ -56,6 +56,13 @@ function wrapConnectPauseAfter(pool, matcher) {
   return { reached: reached.promise, release: release.resolve };
 }
 
+function capture(promise) {
+  return promise.then(
+    (value) => ({ status: "fulfilled", value }),
+    (reason) => ({ status: "rejected", reason }),
+  );
+}
+
 test("P8 memory membership boundary serializes join/start and leave/start", async () => {
   {
     const service = new TournamentService(null);
@@ -79,9 +86,11 @@ test("P8 memory membership boundary serializes join/start and leave/start", asyn
     await service.join(p2, tournament.tournamentId);
 
     const startPromise = service.start(owner, tournament.tournamentId);
-    const joinPromise = service.join(p3, tournament.tournamentId);
+    const joinResult = capture(service.join(p3, tournament.tournamentId));
     await startPromise;
-    await assert.rejects(joinPromise, (error) => error.code === "REGISTRATION_CLOSED");
+    const outcome = await joinResult;
+    assert.equal(outcome.status, "rejected");
+    assert.equal(outcome.reason.code, "REGISTRATION_CLOSED");
     const detail = await service.detail(owner, tournament.tournamentId);
     assert.equal(detail.players.some((player) => player.userId === p3.userId), false);
   }
@@ -109,9 +118,11 @@ test("P8 memory membership boundary serializes join/start and leave/start", asyn
     await service.join(p3, tournament.tournamentId);
 
     const startPromise = service.start(owner, tournament.tournamentId);
-    const leavePromise = service.leave(p3, tournament.tournamentId);
+    const leaveResult = capture(service.leave(p3, tournament.tournamentId));
     await startPromise;
-    await assert.rejects(leavePromise, (error) => error.code === "TOURNAMENT_STARTED");
+    const outcome = await leaveResult;
+    assert.equal(outcome.status, "rejected");
+    assert.equal(outcome.reason.code, "TOURNAMENT_STARTED");
     const detail = await service.detail(owner, tournament.tournamentId);
     assert.equal(detail.players.some((player) => player.userId === p3.userId), true);
     assert.equal(playerAppearsInRound(detail.matches, p3.userId), true);
@@ -244,13 +255,16 @@ test("P8 PostgreSQL: start wins membership lock and late join/leave fail closed"
 
     const startPromise = startService.start(owner, tournamentId);
     await enteredInsert.promise;
-    const joinPromise = mutationService.join({ userId: "late", displayName: "Late" }, tournamentId);
-    const leavePromise = mutationService.leave(p3, tournamentId);
+    const joinResult = capture(mutationService.join({ userId: "late", displayName: "Late" }, tournamentId));
+    const leaveResult = capture(mutationService.leave(p3, tournamentId));
     releaseInsert.resolve();
 
     await startPromise;
-    await assert.rejects(joinPromise, (error) => error.code === "REGISTRATION_CLOSED");
-    await assert.rejects(leavePromise, (error) => error.code === "TOURNAMENT_STARTED");
+    const [joinOutcome, leaveOutcome] = await Promise.all([joinResult, leaveResult]);
+    assert.equal(joinOutcome.status, "rejected");
+    assert.equal(joinOutcome.reason.code, "REGISTRATION_CLOSED");
+    assert.equal(leaveOutcome.status, "rejected");
+    assert.equal(leaveOutcome.reason.code, "TOURNAMENT_STARTED");
     const detail = await startService.detail(owner, tournamentId);
     assert.equal(detail.players.some((player) => player.userId === p3.userId), true);
     assert.equal(playerAppearsInRound(detail.matches, p3.userId), true);
