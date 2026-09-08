@@ -45,6 +45,8 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 1 — ARCHITEKTURA SYSTEMOWA
 
+- `00-FULL-MAX-MASTER/02-ARCHITEKTURA-MASTER.md`
+- `00-FULL-MAX-MASTER/12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
 - architektura logiczna i fizyczna,
 - granice zaufania,
 - frontend/API/realtime,
@@ -58,6 +60,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 2 — DATA / POSTGRESQL
 
+- `00-FULL-MAX-MASTER/05-DATA-POSTGRESQL-MASTER.md`
 - AS-IS,
 - V3 target model,
 - migracje,
@@ -70,6 +73,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 3 — SECURITY
 
+- `00-FULL-MAX-MASTER/03-SECURITY-AND-TRUST-MASTER.md`
 - auth,
 - session security,
 - RBAC/MFA,
@@ -83,6 +87,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 4 — GAMES / MATCH RUNTIME
 
+- `00-FULL-MAX-MASTER/08-GAMES-MATCHRUNTIME-MASTER.md`
 - Checkers,
 - Gomoku,
 - Thousand,
@@ -96,6 +101,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 5 — FAIRPLAY MAX / GFPE
 
+- `04-FAIRPLAY-MAX/00-GFPE-0-GFPE-1-PRE-DESIGN-WYMAGANIA-I-THREAT-MODEL.md`
 - requirements,
 - threat model,
 - cryptographic protocol,
@@ -109,6 +115,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 6 — CI / TEST / QUALITY
 
+- `00-FULL-MAX-MASTER/06-CI-TEST-QUALITY-MASTER.md`
 - unit,
 - integration,
 - PostgreSQL,
@@ -124,6 +131,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 7 — OPERATIONS / DR / OBSERVABILITY
 
+- `00-FULL-MAX-MASTER/07-OPERATIONS-DR-OBSERVABILITY-MASTER.md`
 - health/readiness,
 - logging,
 - metrics,
@@ -138,6 +146,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 8 — PRODUCT / UX / SEO / DOMAINS
 
+- `00-FULL-MAX-MASTER/09-PRODUCT-UX-SEO-DOMAINS-MASTER.md`
 - homepage,
 - auth UX,
 - profiles,
@@ -151,6 +160,7 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 
 ### TOM 9 — PRIVACY / LEGAL / GOVERNANCE
 
+- `00-FULL-MAX-MASTER/10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
 - retention,
 - deletion,
 - legal hold,
@@ -160,6 +170,8 @@ W przypadku sprzeczności wygrywa najnowszy dowód o najwyższej jakości, nie s
 - release governance.
 
 ### TOM 10 — FINAL AS-BUILT
+
+- `00-FULL-MAX-MASTER/11-FINAL-AS-BUILT-CHECKLIST.md`
 
 Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeniu i weryfikacji produkcyjnej.
 
@@ -173,6 +185,7 @@ Tworzony dopiero po finalnym pełnym audycie, korektach, zatwierdzonym wdrożeni
 - production/deploy = NOT AUTHORIZED,
 - FairPlay MAX = PRE-DESIGN ONLY,
 - GFPE-0 + GFPE-1 = rozpoczęte jako PRE-DESIGN,
+- szczegółowy tom `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md` = BASELINE CREATED na `main @ ad073919...`,
 - pełny projektowy audyt całego Gracz.pl ma nastąpić po formalnym zamknięciu P8.
 
 ## 5. Reguła aktualizacji
@@ -197,3 +210,23 @@ Pakiet może zostać oznaczony `FINAL / AS-BUILT` dopiero gdy:
 - konfiguracja produkcyjna została zweryfikowana,
 - FairPlay MAX i gry są opisane zgodnie z faktycznym stanem,
 - rozbieżności `design vs implementation vs production` są jawnie rozstrzygnięte.
+
+## 7. Wykonane tomy startowe FULL MAX — 08.09.2026
+
+Aktualnie utworzone są:
+
+- `00-INDEKS-GLOWNY-FULL-MAX.md`
+- `01-EVIDENCE-REGISTER.md`
+- `02-ARCHITEKTURA-MASTER.md`
+- `03-SECURITY-AND-TRUST-MASTER.md`
+- `04-IMPLEMENTATION-AUDIT-REGISTER.md`
+- `05-DATA-POSTGRESQL-MASTER.md`
+- `06-CI-TEST-QUALITY-MASTER.md`
+- `07-OPERATIONS-DR-OBSERVABILITY-MASTER.md`
+- `08-GAMES-MATCHRUNTIME-MASTER.md`
+- `09-PRODUCT-UX-SEO-DOMAINS-MASTER.md`
+- `10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
+- `11-FINAL-AS-BUILT-CHECKLIST.md`
+- `12-ARCHITEKTURA-KOMPONENT-PO-KOMPONENCIE.md`
+
+Status całego pakietu pozostaje `LIVING DOCUMENTATION / NOT FROZEN`.
