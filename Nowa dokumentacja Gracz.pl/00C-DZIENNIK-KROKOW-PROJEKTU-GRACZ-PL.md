@@ -342,6 +342,52 @@ Production DB change = `NO`.
 
 ---
 
+## 2026-09-08 — FULL MAX MASTER DOCUMENTATION / REQUIREMENTS TRACEABILITY MATRIX
+
+Na zweryfikowanym baseline:
+
+`main @ ad0739190fe2f9d1657b2b77c8b5f8e825830c08`
+
+TREE:
+
+`04f72af50f6fad2ba01bf7eaa6b4d856267d517b`
+
+utworzono:
+
+`00-FULL-MAX-MASTER/15-REQUIREMENTS-TRACEABILITY-MATRIX.md`
+
+Cel dokumentu: połączyć w jednym miejscu pełny łańcuch:
+
+`REQUIREMENT → DESIGN/DECISION → IMPLEMENTATION → DATA/API → TEST → CI → LEAD REVIEW → INDEPENDENT AUDIT → MERGE → PRODUCTION EVIDENCE`.
+
+Macierz obejmuje m.in.:
+
+- shared MatchRuntime,
+- Checkers,
+- Gomoku,
+- Tysiąc,
+- P8 canonical game types,
+- Auth/Session/Accounts,
+- private messages/attachments,
+- RBAC/MFA/Audit/Moderation,
+- shared rate limiting/realtime,
+- tournaments/rankings/lobby,
+- PostgreSQL/DR,
+- CI/quality,
+- product/UX/SEO/operations,
+- privacy/legal/governance,
+- FairPlay MAX / GFPE pre-design.
+
+Każdy requirement otrzymał status typu `CLOSED`, `CURRENT-MAIN VERIFIED`, `IMPLEMENTED / AUDIT PENDING`, `PARTIAL`, `PLANNED / NOT AUTHORIZED` lub `NOT VERIFIED`. Brakujące dowody są jawnie zapisane zamiast zastępowane założeniem.
+
+Najważniejsze otwarte evidence gaps zapisane w TOM 15 obejmują m.in. P8 Claude audit, P1-B-01 reassessment, historyczny evidence backfill P1, mobile/accessibility, produkcyjny AS-BUILT, retention/legal-hold, final Tysiąc rulesVersion oraz przyszły GFPE-2 i jego test/audit evidence.
+
+Merge = `NOT AUTHORIZED`.
+Deploy = `NO`.
+Production change = `NO`.
+
+---
+
 # NEXT ENTRY
 
 Najbliższy oczekiwany wpis:
