@@ -146,7 +146,7 @@ export class TournamentService {
       const nextSeed=Number(stats.max_seed)+1;
       await client.query(`INSERT INTO gracz_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,$4)`,[id,user.userId,user.displayName,nextSeed]);
       await client.query("COMMIT");
-      return {ok:true};
+      return{ok:true};
     }catch(error){
       await client.query("ROLLBACK").catch(()=>{});
       throw error;
@@ -154,20 +154,65 @@ export class TournamentService {
   }
 
   async leave(user,id){
-    const detail=await this.detail(user,id); if(detail.tournament.ownerId===user.userId) throw tournamentError("Organizator nie może opuścić własnego turnieju.","OWNER_CANNOT_LEAVE",409); if(detail.tournament.status!=="registration") throw tournamentError("Nie można wycofać się po rozpoczęciu turnieju.","TOURNAMENT_STARTED",409);
-    if(!this.pool){const d=this.memory.get(id);d.players=d.players.filter(p=>p.userId!==user.userId);return{ok:true};}
-    await this.pool.query(`DELETE FROM gracz_tournament_players WHERE tournament_id=$1 AND user_id=$2`,[id,user.userId]);return{ok:true};
+    if(!this.pool){
+      const d=this.memory.get(id); if(!d) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      if(d.tournament.ownerId===user.userId) throw tournamentError("Organizator nie może opuścić własnego turnieju.","OWNER_CANNOT_LEAVE",409);
+      if(d.tournament.status!=="registration") throw tournamentError("Nie można wycofać się po rozpoczęciu turnieju.","TOURNAMENT_STARTED",409);
+      d.players=d.players.filter(p=>p.userId!==user.userId);
+      return{ok:true};
+    }
+
+    const client=await this.pool.connect();
+    try{
+      await client.query("BEGIN");
+      const tournament=(await client.query(`SELECT owner_id,status FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+      if(!tournament) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      if(tournament.owner_id===user.userId) throw tournamentError("Organizator nie może opuścić własnego turnieju.","OWNER_CANNOT_LEAVE",409);
+      if(tournament.status!=="registration") throw tournamentError("Nie można wycofać się po rozpoczęciu turnieju.","TOURNAMENT_STARTED",409);
+      await client.query(`DELETE FROM gracz_tournament_players WHERE tournament_id=$1 AND user_id=$2`,[id,user.userId]);
+      await client.query("COMMIT");
+      return{ok:true};
+    }catch(error){
+      await client.query("ROLLBACK").catch(()=>{});
+      throw error;
+    }finally{client.release();}
   }
 
   async start(user,id){
-    const detail=await this.detail(user,id); const t=detail.tournament;
-    if(t.ownerId!==user.userId) throw tournamentError("Tylko organizator może rozpocząć turniej.","TOURNAMENT_FORBIDDEN",403);
-    assertTournamentGameSupported(t);
-    if(t.status!=="registration") throw tournamentError("Turniej został już rozpoczęty.","TOURNAMENT_STARTED",409);
-    if(detail.players.length<2) throw tournamentError("Do rozpoczęcia potrzebnych jest co najmniej 2 graczy.","NOT_ENOUGH_PLAYERS",409);
-    if(!this.pool){const d=this.memory.get(id);d.tournament.status="live";d.tournament.currentRound=1;d.matches=createPairings(d.players,[],1,t.format);return this.detail(user,id);}
-    await this.pool.query(`UPDATE gracz_tournaments SET status='live',current_round=1 WHERE tournament_id=$1`,[id]);
-    const pairings=createPairings(detail.players,[],1,t.format); await this.insertMatches(id,pairings); return this.detail(user,id);
+    if(!this.pool){
+      const d=this.memory.get(id); if(!d) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      const t=normalizeTournament({...d.tournament,playerCount:d.players.length,joined:d.players.some(p=>p.userId===user.userId)});
+      if(t.ownerId!==user.userId) throw tournamentError("Tylko organizator może rozpocząć turniej.","TOURNAMENT_FORBIDDEN",403);
+      assertTournamentGameSupported(t);
+      if(t.status!=="registration") throw tournamentError("Turniej został już rozpoczęty.","TOURNAMENT_STARTED",409);
+      const players=sortStandings(d.players);
+      if(players.length<2) throw tournamentError("Do rozpoczęcia potrzebnych jest co najmniej 2 graczy.","NOT_ENOUGH_PLAYERS",409);
+      const pairings=createPairings(players,[],1,t.format);
+      d.tournament.status="live";
+      d.tournament.currentRound=1;
+      d.matches=pairings;
+      return this.detail(user,id);
+    }
+
+    const client=await this.pool.connect();
+    try{
+      await client.query("BEGIN");
+      const tournament=(await client.query(`SELECT owner_id,game,status,format FROM gracz_tournaments WHERE tournament_id=$1 FOR UPDATE`,[id])).rows[0];
+      if(!tournament) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
+      if(tournament.owner_id!==user.userId) throw tournamentError("Tylko organizator może rozpocząć turniej.","TOURNAMENT_FORBIDDEN",403);
+      assertTournamentGameValueSupported(tournament.game);
+      if(tournament.status!=="registration") throw tournamentError("Turniej został już rozpoczęty.","TOURNAMENT_STARTED",409);
+      const players=(await client.query(`SELECT user_id,display_name,seed,points,wins,draws,losses,buchholz,status,joined_at FROM gracz_tournament_players WHERE tournament_id=$1 ORDER BY points DESC,buchholz DESC,wins DESC,seed ASC`,[id])).rows.map(mapPlayer);
+      if(players.length<2) throw tournamentError("Do rozpoczęcia potrzebnych jest co najmniej 2 graczy.","NOT_ENOUGH_PLAYERS",409);
+      const pairings=createPairings(players,[],1,tournament.format);
+      await client.query(`UPDATE gracz_tournaments SET status='live',current_round=1 WHERE tournament_id=$1`,[id]);
+      await this.insertMatches(id,pairings,client);
+      await client.query("COMMIT");
+    }catch(error){
+      await client.query("ROLLBACK").catch(()=>{});
+      throw error;
+    }finally{client.release();}
+    return this.detail(user,id);
   }
 
   async insertMatches(id,matches,db=this.pool){
