@@ -82,6 +82,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(!pool||typeof pool.connect!=='function'||typeof pool.query!=='function') throw new TypeError('Współdzielona pula PostgreSQL jest wymagana dla rozproszonego Global Chat.');
     this.pool=pool;
     this.logger=logger;
+    this.listenerBackendPid=null;
     this.ready=this.#initialize();
   }
 
@@ -128,6 +129,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
   }
 
   subscribe(response,user){
+    if(!this.#listener) throw realtimeUnavailable();
     this.touch(user);
     response.writeHead(200,{"content-type":"text/event-stream; charset=utf-8","cache-control":"no-store, no-transform",connection:"keep-alive","x-accel-buffering":"no"});
     response.write(`event: connected\ndata: ${JSON.stringify({online:this.online()})}\n\n`);
@@ -191,6 +193,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
       await client.query({text:`LISTEN ${REALTIME_CHANNEL}`,query_timeout:QUERY_TIMEOUT_MS});
       if(this.#closing){client.release();return}
       this.#listener=client;
+      this.listenerBackendPid=client.processID??null;
     }catch(error){
       if(client) try{client.release(true)}catch{}
       if(!this.#closing) this.#scheduleReconnect();
@@ -202,7 +205,9 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(error) this.#log(error);
     if(this.#listener===client){
       this.#listener=null;
+      this.listenerBackendPid=null;
       try{client.release(true)}catch{}
+      this.#recycleSubscribers();
     }
     if(!this.#closing) this.#scheduleReconnect();
   }
@@ -267,6 +272,11 @@ export class DistributedGlobalChatService extends GlobalChatService {
     }
   }
 
+  #recycleSubscribers(){
+    for(const client of this.subscribers)try{client.response.end()}catch{}
+    this.subscribers.clear();
+  }
+
   #cleanupPresence(now){
     const cutoff=now-PRESENCE_TTL_MS;
     for(const [id,item] of this.presence) if(item.seenAt<cutoff) this.presence.delete(id);
@@ -279,9 +289,8 @@ export class DistributedGlobalChatService extends GlobalChatService {
     this.#closing=true;
     if(this.#reconnectTimer) clearTimeout(this.#reconnectTimer);
     this.#reconnectTimer=null;
-    for(const client of this.subscribers) try{client.response.end()}catch{}
-    this.subscribers.clear();
-    const listener=this.#listener;this.#listener=null;
+    this.#recycleSubscribers();
+    const listener=this.#listener;this.#listener=null;this.listenerBackendPid=null;
     if(listener) try{listener.release(true)}catch{}
   }
 }
@@ -314,5 +323,6 @@ function parseSignal(raw){
   return {kind:'entity',event:signal.event,entityId:signal.entityId};
 }
 
+function realtimeUnavailable(){const error=new Error('Realtime Global Chat jest chwilowo niedostępny.');error.code='GLOBAL_CHAT_REALTIME_UNAVAILABLE';error.status=503;return error}
 function mapMessage(row){return{messageId:row.message_id,userId:row.user_id,displayName:row.display_name,body:row.body,replyTo:row.reply_to,topicId:row.topic_id||null,topicTitle:row.topic_title||null,topicCategory:row.topic_category||null,reactions:row.reactions||{},createdAt:row.created_at,editedAt:row.edited_at,deleted:Boolean(row.deleted)}}
 function validUuid(value){return/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''))}
