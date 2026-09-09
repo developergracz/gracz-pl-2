@@ -1,70 +1,80 @@
-# GRACZ.PL — P8 / P1-U-01 — CLAUDE INDEPENDENT AUDIT PACKAGE
+# GRACZ.PL — P8 / P1-U-01 — FINAL CANONICAL AUDIT PACKAGE AND RESULT
 
-**Status:** READY FOR INDEPENDENT AUDIT / NO MERGE AUTHORIZATION  
+**Status:** FINAL AUDIT COMPLETE / TECHNICAL CLOSURE ACHIEVED / MERGE-READY / MERGE NOT AUTHORIZED  
+**Checkpoint:** 2026-09-09  
 **Repository:** `developergracz/gracz-pl-2`  
 **PR:** `#43`  
 **Work item:** `P8 / P1-U-01`  
 **Base main:** `ad0739190fe2f9d1657b2b77c8b5f8e825830c08`  
-**P8 final HEAD:** `d7220f57d60779584048cc5c695d40dbb948b9cb`  
-**P8 final TREE:** `4cbb8504036d26ed2e257f52a475968f5d4cd827`  
-**PR state at package creation:** `OPEN / NOT MERGED / mergeable`  
-**Lead review:** `PASS`  
-**Independent Claude audit:** `PENDING`  
+**Base TREE:** `04f72af50f6fad2ba01bf7eaa6b4d856267d517b`  
+**Final audited HEAD:** `c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`  
+**Final audited TREE:** `0ba0abce0993c145164b20f2881f118e0b71124d`  
+**PR state:** `OPEN / NOT MERGED / MERGEABLE`  
+**Commits:** `25`  
+**Changed files:** `13`  
 **Merge / deploy / production authorization:** `NONE`
 
 ---
 
-## 1. Purpose
+## 1. Purpose and supersession
 
-This package is the canonical handoff for Claude's independent final audit of P8 / P1-U-01.
+This file supersedes the earlier P8 handoff package that referenced historical HEAD `d7220f57d60779584048cc5c695d40dbb948b9cb`, 8 commits and 7 changed files.
 
-Claude must audit the **actual PR #43 diff and surrounding code**, not only this summary. This package defines the required identity, scope, invariants, evidence, audit questions and output contract.
+That earlier package remains part of repository history and is not rewritten as if it had audited the later corrected snapshots.
 
-A green CI result does not replace independent audit. A Claude PASS does not authorize merge. Owner + Lead authorization remains a separate gate.
+This current package records the final exact P8 snapshot, correction history, independent audit chain, exact-head CI evidence, remaining non-blocking hardening item and Lead closure decision.
+
+A PASS does not authorize merge.
 
 ---
 
-## 2. Exact PR identity
+## 2. Exact final identity
 
 ```text
 REPOSITORY = developergracz/gracz-pl-2
 PR = #43
 TITLE = P1-U-01: canonical game type dictionary — READY FOR INDEPENDENT AUDIT
-BASE = main
+BASE BRANCH = main
 BASE SHA = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
+BASE TREE = 04f72af50f6fad2ba01bf7eaa6b4d856267d517b
 HEAD BRANCH = fix/p1-u-01-canonical-game-types-p8
-HEAD SHA = d7220f57d60779584048cc5c695d40dbb948b9cb
-TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
-COMMITS = 8
-CHANGED FILES = 7
+FINAL HEAD = c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f
+FINAL TREE = 0ba0abce0993c145164b20f2881f118e0b71124d
+COMMITS = 25
+CHANGED FILES = 13
+PR OPEN = YES
 MERGED = NO
 ```
 
-Claude must stop and report an identity mismatch if the PR HEAD being audited is not exactly the HEAD above, unless Lead provides an explicit superseding audit package.
+This closure is valid only for that exact HEAD/TREE.
 
 ---
 
-## 3. Changed files — exact P8 surface
+## 3. Exact changed-file surface
 
-PR #43 changes exactly:
+PR #43 currently changes exactly:
 
 1. `.github/workflows/p1-u-01-p8.yml`
-2. `modern/checkers-engine/src/game-types.js`
-3. `modern/checkers-engine/src/lobby.js`
-4. `modern/checkers-engine/src/platform-lobby-http.js`
-5. `modern/checkers-engine/src/rankings.js`
-6. `modern/checkers-engine/src/tournaments.js`
-7. `modern/checkers-engine/test/p1-u-01-game-types-p8.test.js`
+2. `modern/checkers-engine/e2e/tournaments.browser.mjs`
+3. `modern/checkers-engine/package.json`
+4. `modern/checkers-engine/src/game-types.js`
+5. `modern/checkers-engine/src/lobby.js`
+6. `modern/checkers-engine/src/platform-lobby-http.js`
+7. `modern/checkers-engine/src/rankings.js`
+8. `modern/checkers-engine/src/tournaments.js`
+9. `modern/checkers-engine/test/p1-u-01-game-types-p8.test.js`
+10. `modern/checkers-engine/test/p8-tournament-hardening.test.js`
+11. `modern/checkers-engine/test/p8-tournament-start-boundary.test.js`
+12. `modern/checkers-engine/web/tournaments.html`
+13. `modern/checkers-engine/web/tournaments.js`
 
-Claude must inspect all seven files plus relevant unchanged surrounding code they call into.
+This corrects the final Claude report's incidental statement that Lobby/Rankings integration files were unchanged; they are part of the final PR diff and were independently verified by Lead.
 
 ---
 
-## 4. Intended P8 contract
+## 4. Canonical game identity contract
 
-P8 establishes one canonical game-type vocabulary for the currently implemented runtime.
-
-Canonical internal IDs:
+Final canonical IDs:
 
 - `checkers`
 - `gomoku`
@@ -74,335 +84,364 @@ Compatibility alias:
 
 - `warcaby -> checkers`
 
-Required principles:
+Non-canonical values include:
 
-- unknown identifiers fail closed,
-- malformed/empty identifiers fail closed,
-- aliases normalize to one canonical identity,
-- `all` is a rankings selector, not a game identity,
-- module capabilities are enforced centrally,
-- unsupported capability use fails closed,
-- `gomoku` is not ranking-capable in the current registry,
-- new tournament writes use canonical identities,
-- legacy tournament rows containing `warcaby` remain readable as `checkers` without production data migration,
-- invalid identifiers must not silently default to `checkers`, `warcaby`, `all` or another valid value,
-- no production migration is part of P8.
-
----
-
-## 5. Registry contract to verify
-
-`src/game-types.js` defines the canonical registry and normalization boundary.
-
-Expected definitions:
-
-### checkers
-
-- id: `checkers`
-- label: `Warcaby`
-- aliases: `warcaby`
-- implemented: true
-- players: 2 / 2 / default 2
-- capabilities: lobby=true, rankings=true, tournaments=true
-
-### gomoku
-
-- id: `gomoku`
-- aliases: none
-- implemented: true
-- players: 2 / 2 / default 2
-- capabilities: lobby=true, rankings=false, tournaments=true
-
-### thousand
-
-- id: `thousand`
-- aliases: none
-- implemented: true
-- players: min 2 / max 4 / default 3
-- capabilities: lobby=true, rankings=true, tournaments=true
-
-Required functions/classes:
-
-- `GAME_DEFINITIONS`
-- `CANONICAL_GAME_TYPES`
-- `GameTypeError`
-- `normalizeGameType()`
-- `isCanonicalGameType()`
-- `getGameDefinition()`
-- `requireGameType()`
-- `requireGameDefinition()`
-
-Expected error semantics:
-
-- invalid unknown/malformed identity -> `INVALID_GAME_TYPE`, HTTP-oriented status 400,
-- valid game but unsupported module capability -> `UNSUPPORTED_GAME_TYPE`, status 400.
-
-Audit immutability/freeze semantics as well as normalization behavior.
-
----
-
-## 6. Integration invariants
-
-### Lobby
-
-Claude must verify:
-
-- create-room normalizes alias before storing room identity,
-- duplicate/waiting-room matching compares canonical identity,
-- seat-count logic uses canonical game definition,
-- explicit invalid input is not masked by defaults,
-- `warcaby` and `checkers` cannot create two separate logical identities for the same game,
-- HTTP handler preserves intended default behavior only when the field is genuinely omitted, not when explicit invalid input is supplied.
-
-### Rankings
-
-Claude must verify:
-
-- `all` remains aggregate selector and is not passed through as a game identity,
-- `warcaby` normalizes to `checkers`,
-- invalid filters fail closed,
-- `gomoku` correctly fails as unsupported ranking game under current capability model,
-- no historical permissive fallback converts invalid game input to `all`.
-
-### Tournaments
-
-Claude must verify:
-
-- new writes normalize `warcaby` to `checkers`,
-- new invalid game values fail closed,
-- missing game input does not silently become a valid tournament game,
-- new persistence uses canonical game identity,
-- legacy persisted `warcaby` rows remain unchanged at rest but project as `checkers` on read,
-- list/detail/filter behavior remains consistent across legacy and canonical rows,
-- no unintended production data migration is required by this implementation,
-- concurrency behavior from P1-H-01 is not weakened.
-
----
-
-## 7. Negative cases that must be inspected
-
-The P8 tests explicitly exercise invalid inputs including:
-
+- `warcaby`
 - `szachy`
-- `poker`
-- `blackjack`
-- `war`
-- `tysiac`
-- `draughts`
-- empty string
-- whitespace-only string
-- `null`
-- `undefined`
-- number
-- object
+- `all`
 
-Claude should additionally reason about:
+`all` remains a Rankings-only aggregate selector.
 
-- mixed case,
-- leading/trailing whitespace,
-- unexpected Unicode/lookalike strings where relevant,
-- future aliases colliding with canonical IDs,
-- future duplicate aliases,
-- unsupported capability names,
-- mutation attempts against exported registry objects.
+`CANONICAL_GAME_TYPES` is a frozen ARRAY. A separate private `CANONICAL_SET` is used for membership checks.
 
-If a future-hardening issue is non-blocking, classify it accordingly instead of conflating it with a current correctness defect.
+Registry validation fails closed for duplicate canonical IDs, self-aliases, alias/canonical collisions, aliases claimed more than once including inside one definition, and malformed registry tokens.
 
 ---
 
-## 8. Exact-head CI evidence
+## 5. Legacy compatibility contract
 
-Final P8 CI run recorded for exact HEAD:
+Historical `warcaby` is read as canonical `checkers` without rewriting the stored historical value through a migration.
 
-`34147638975 = SUCCESS`
+Historical `szachy` remains explicitly unsupported legacy data:
 
-The P8 workflow includes:
+```text
+game = null
+gameSupported = false
+legacyGame = szachy
+```
+
+The stored DB value remains `szachy`.
+
+Active Tournament actions fail closed with:
+
+`TOURNAMENT_GAME_UNSUPPORTED / 409`.
+
+Unknown arbitrary garbage does not automatically receive the dedicated historical `szachy` compatibility projection.
+
+---
+
+## 6. P8 correction history — preserved chronology
+
+The P8 audit chain was iterative. Intermediate failures remain historical evidence and are not rewritten as PASS.
+
+### Original P8 findings
+
+The following were discovered and later corrected/closed:
+
+- `P8-AUD-F01` through `P8-AUD-F05`,
+- `P8-GPT2-F01` — concurrent JOIN overbooking / duplicate current seed risk,
+- `P8-GPT2-F02` — duplicate alias within one registry definition,
+- `P8-GPT2-F03` — missing explicit historical unsupported START/REPORT regression coverage.
+
+### Historical snapshot `589ef546...`
+
+HEAD:
+
+`589ef54609071474b55b40578690bde55822ff65`
+
+A historical Gemini PASS against this earlier stage was not sufficient for closure because Lead found factual reporting errors around START/LEAVE locking at that snapshot. The historical result is retained as evidence and is not projected onto later heads.
+
+### START / membership atomicity finding
+
+`P8-LEAD-F01 / P8-GPT2-FINAL-F01`
+
+Root issue:
+
+Tournament START was not fully serialized with membership finalization and initial round materialization was not sufficiently bounded as one authoritative transaction.
+
+Production correction snapshot:
+
+`5cf8fae9b8028cfbf6216fcd163a58e2825901a8`
+
+This corrected JOIN / LEAVE / START production behavior and added boundary tests.
+
+Historical P8 workflow run:
+
+`34289959902`
+
+The first boundary cases passed, while one expected-rejection test failed because the test attached its rejection handler too late, causing the expected rejection to be reported as unhandled. Lead determined the production correction was sound; the failure was in the test harness.
+
+Test-only correction snapshot:
+
+HEAD:
+
+`f3b782c3f0112239a4787fabed8f037425a2268b`
+
+TREE:
+
+`17f49f52dfc4388dca5fc79c5e6ae8e9d08182fd`
+
+Production logic was unchanged from `5cf8...`.
+
+Final exact-head CI at `f3b782...` was green:
+
+- P8 `34290089821`,
+- P1-H-01 `34290089760`,
+- Security Gate `34290089824`,
+- CheckersEngine `34290089818`,
+- Greetings `34290089815`.
+
+### CREATE atomicity blocker
+
+ChatGPT-2 then discovered:
+
+`P8-GPT2-CLOSURE-F01 — Tournament creation is not atomic with creation of the mandatory owner membership`.
+
+ChatGPT-2 source severity: HIGH / merge blocking YES.
+
+Lead independently accepted the defect and reclassified final severity to:
+
+`MEDIUM / MERGE BLOCKING = YES`.
+
+The defect pre-existed in base main but remained incompatible with the P8 closure condition of zero known merge-blocking technical findings.
+
+Correction commit:
+
+`a58440924408b8c47800bfc726e6f7831bdd3733`
+
+Final proof/test commit:
+
+`c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`
+
+---
+
+## 7. Final PostgreSQL CREATE invariant
+
+Final `TournamentService.create()` uses one checked-out PostgreSQL client and one transaction:
+
+```text
+BEGIN
+INSERT gracz_tournaments
+INSERT gracz_tournament_players owner seed=1
+COMMIT
+```
+
+On failure:
+
+```text
+ROLLBACK
+```
+
+Always:
+
+```text
+client.release()
+```
+
+Both writes occur on the same transaction client.
+
+This closes `P8-GPT2-CLOSURE-F01`.
+
+---
+
+## 8. Final real-PostgreSQL CREATE evidence
+
+`p8-tournament-start-boundary.test.js` includes three final CREATE tests:
+
+1. external observer cannot see tournament or owner between parent INSERT and owner INSERT/COMMIT,
+2. concurrent JOIN cannot claim mandatory owner seed 1,
+3. forced mandatory owner-membership insertion failure rolls back both tournament and player state.
+
+The first and third tests use deterministic SQL-level control points and independent observer connections.
+
+The CREATE-vs-JOIN test has one known test-quality limitation recorded separately as `P8-GPT2-ULTIMATE-F01`.
+
+---
+
+## 9. Membership / START / REPORT transaction invariants
+
+### JOIN
+
+PostgreSQL JOIN serializes through parent tournament `SELECT ... FOR UPDATE`, then performs status/membership/capacity/seed checks and INSERT under the same transaction.
+
+`MAX(current seed)+1` protects concurrent current joins but is not claimed to be globally monotonic or never reused after a highest-seed player leaves.
+
+### LEAVE
+
+LEAVE uses the same parent tournament lock, revalidates status/owner constraints and performs DELETE in the same transaction.
+
+### START
+
+START locks the parent tournament row first. The roster SELECT itself does NOT use `FOR UPDATE`; authoritative serialization comes from JOIN/LEAVE/START all obeying the same parent-row lock discipline.
+
+Within the same transaction START performs:
+
+- owner/game/status validation,
+- current-roster read,
+- pairing generation,
+- `status='live'`,
+- `current_round=1`,
+- all initial match insertion,
+- COMMIT.
+
+### REPORT / advance
+
+REPORT locks tournament before match, updates result/standings and calls `advanceDatabase` on the same transaction client before COMMIT.
+
+Final deadlock conclusion is bounded as:
+
+`NO FEASIBLE DEADLOCK CYCLE FOUND IN CURRENT AUDITED PATHS`.
+
+---
+
+## 10. Final exact-head CI
+
+For final HEAD:
+
+`c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`
+
+all required PR-triggered workflows are `SUCCESS`:
+
+```text
+34291690126 — P1-U-01 Canonical Game Types P8 — SUCCESS
+34291690070 — P1-H-01 Tournament Concurrency — SUCCESS
+34291690134 — Security Gate — SUCCESS
+34291690072 — CheckersEngine — SUCCESS
+34291690139 — Greetings — SUCCESS
+```
+
+The authoritative P8 run includes successful:
 
 - syntax/static checks,
-- focused P8 canonical-game contract tests,
-- Checkers regression,
-- Gomoku regression,
-- Thousand regression,
-- tournament concurrency regression,
-- P5 readiness regression,
-- P6 distributed infrastructure regression,
-- P7 MatchRuntime regression,
-- full Node test suite,
+- canonical P8 contract,
+- Tournament concurrency and legacy hardening,
+- Tournament start/membership boundary serialization including atomic CREATE tests,
+- Checkers/Gomoku/Thousand regressions,
+- Tournament concurrency regression,
+- P5/P6/P7 regressions,
+- full Node suite,
 - production dependency audit,
-- browser Checkers/Gomoku,
-- isolated P1-R-01 DR regression,
+- Browser Checkers/Gomoku/Tournaments,
+- P1-R-01 DR regression,
 - gitleaks,
 - CodeQL.
 
-Recorded focused results from the final evidence set:
-
-- P8 focused: `8/8 PASS`
-- Checkers focused regression: `26/26 PASS`
-- Gomoku focused: `24/24 PASS`
-- Thousand focused: `20/20 PASS`
-- tournament concurrency: `2/2 PASS`
-- P5 readiness: `14/14 PASS`
-- P6: `23/23 PASS`
-- P7: `19/19 PASS`
-- full Node suite: `229/229 PASS`
-- npm audit: `0 vulnerabilities`
-- browser Checkers: PASS
-- browser Gomoku: PASS
-- isolated real PostgreSQL DR regression: PASS
-- gitleaks: PASS
-- CodeQL: PASS
-
-Claude must assess whether the tests prove the intended contract and whether meaningful negative or integration cases remain uncovered.
+The final PR adds no new external runtime dependency.
 
 ---
 
-# 9. Required independent audit — sections A–N
+## 11. Final supplemental Gemini audit
 
-Claude must return a structured report covering all sections below.
+Verdict:
 
-## A. Identity / scope integrity
+`P8 / P1-U-01 GEMINI ULTIMATE CLOSURE AUDIT — PASS`
 
-Verify exact BASE/HEAD/TREE, changed-file scope, absence of hidden migration/deployment effects and whether the diff matches the stated P8 work item.
+Lead accepted its technical PASS but corrected factual report details, including frozen array vs Set, real `gracz_*` table names, exact legacy error contract, START roster locking description, package.json change, transaction wording for reads and bounded deadlock wording.
 
-## B. Canonical registry design
-
-Review registry data model, immutability, normalization, alias handling, capability model, future extension safety and error semantics.
-
-## C. Fail-closed validation
-
-Check all paths for silent fallback, coercion, default masking, malformed inputs and ambiguous identities.
-
-## D. Lobby integration
-
-Review room creation, duplicate room behavior, canonical storage, player-count resolution, HTTP request parsing and downstream dispatch compatibility.
-
-## E. Rankings integration
-
-Review `all`, alias normalization, unsupported capability rejection, invalid inputs and compatibility with existing ranking behavior.
-
-## F. Tournament integration
-
-Review canonical writes, legacy reads, filtering, detail/list projections, missing/invalid game handling and interaction with existing tournament concurrency logic.
-
-## G. Backward compatibility / persisted data
-
-Review whether existing `warcaby` tournament records remain safely readable without migration and whether any current-main data path can become ambiguous or inaccessible.
-
-## H. API / error contract
-
-Review status/error behavior and whether callers receive stable, non-confusing errors without leaking internal state.
-
-## I. Concurrency / state consistency regressions
-
-Confirm P8 does not weaken prior CAS, transaction, idempotency, P1-H-01, P7 or other state-integrity guarantees.
-
-## J. Tests / CI adequacy
-
-Review focused tests, regression breadth, missing edge cases, exact-head evidence and workflow configuration.
-
-## K. Security / privacy / supply chain
-
-Look for injection/coercion issues, unsafe logs, secret exposure, privilege implications, dependency changes, workflow-permission expansion or other security regressions.
-
-## L. Architecture / documentation alignment
-
-Assess whether P8 matches current architecture and the stated single canonical game identity principle without falsely claiming capabilities that do not exist.
-
-## M. Maintainability / future games
-
-Assess whether the registry is reasonably extensible for future games without creating hidden coupling or duplicated dictionaries. Do not require premature Poker/FairPlay implementation.
-
-## N. Final findings and verdict
-
-Provide complete findings table and final verdict using the exact vocabulary below.
+No new production blocker resulted from those reporting corrections.
 
 ---
 
-## 10. Finding format
+## 12. Final ChatGPT-2 audit
 
-Every finding must receive an ID:
+Verdict:
 
-`P8-AUD-F01`, `P8-AUD-F02`, ...
+`P8 / P1-U-01 CHATGPT-2 ULTIMATE CLOSURE AUDIT — PASS WITH NON-BLOCKING FINDINGS`
 
-Each finding must contain:
+Finding:
+
+`P8-GPT2-ULTIMATE-F01`
+
+Final Lead classification:
 
 ```text
-ID:
-TITLE:
-SEVERITY: CRITICAL | HIGH | MEDIUM | LOW | INFO
-MERGE BLOCKING: YES | NO
-LOCATION: exact file/function/line or precise scope
-IMPACT:
-EVIDENCE:
-REPRODUCTION / REASONING:
-REQUIRED CORRECTION:
-REGRESSION RISK:
-TEST REQUIRED:
+FACTUALLY VALID = YES
+SEVERITY = LOW
+MERGE BLOCKING = NO
+PRODUCTION DEFECT = NO
+TEST HARDENING = YES
 ```
 
-Do not create a finding solely because a future feature is not implemented when it is explicitly outside P8 scope.
+Reason:
 
-Do not silently downgrade a correctness/security issue because CI is green.
+The CREATE-vs-JOIN regression launches JOIN and releases CREATE without a second deterministic JOIN-side signal proving JOIN reached its SQL statement while CREATE was paused. This reduces the precision of that individual race test but does not invalidate production correctness because atomic CREATE visibility is independently and deterministically proven, and PostgreSQL READ COMMITTED cannot expose the uncommitted parent row without the owner row.
+
+No P8 re-audit is required solely for this optional hardening item.
 
 ---
 
-## 11. Allowed final verdicts — exact wording
+## 13. Final Claude canonical audit
 
-Claude must end with exactly one of:
+Verdict:
 
-```text
-P8 / P1-U-01 — PASS
-```
+`P8 / P1-U-01 FINAL CLAUDE CANONICAL AUDIT — PASS WITH NON-BLOCKING FINDINGS`
 
-or
+Claude independently confirmed:
 
-```text
-P8 / P1-U-01 — PASS WITH NON-BLOCKING FINDINGS
-```
+- all prior merge-blocking P8 findings closed,
+- canonical registry and historical compatibility valid,
+- atomic CREATE valid,
+- JOIN/LEAVE/START serialization valid,
+- initial-round visibility atomic,
+- REPORT/advance transaction boundary valid,
+- ChatGPT-2 LOW finding factually valid but non-blocking,
+- zero newly discovered merge-blocking technical findings.
 
-or
+### Claude report evidence-gap closure
 
-```text
-P8 / P1-U-01 — FAIL — CORRECTION REQUIRED
-```
+Claude marked exact GitHub Actions runs as an evidence gap because of his own access limitation. Lead independently accessed the GitHub Actions run data and verified all exact-head run IDs and required job/step conclusions as SUCCESS.
 
-If identity mismatch prevents a valid audit, do not issue PASS; report the mismatch explicitly.
+Therefore this evidence gap is closed at Lead verification level.
 
----
+### Claude report corrections
 
-## 12. Governance after Claude response
+Claude's claim that `lobby.js`, `platform-lobby-http.js` and `rankings.js` were unchanged was incorrect. All three are in the 13-file PR diff and their P8 changes were independently inspected by Lead.
 
-Claude's report is not executed automatically.
+Claude also stated he had not fully reviewed every line of `e2e/tournaments.browser.mjs`. Lead independently reviewed the real Playwright test; it opens the active Tournament UI, checks canonical filter/create values, filters Checkers, creates tournaments through UI and verifies historical unsupported rendering with no browser errors.
 
-Required sequence:
-
-```text
-CLAUDE REPORT
-  -> TOM 18 finding registration
-  -> LEAD independent verification of every finding
-  -> correction decision if needed
-  -> bounded GPT-2 implementation mandate if authorized
-  -> tests / exact-head CI
-  -> re-audit if required
-  -> Lead final verification
-  -> separate Owner + Lead merge authorization
-```
-
-No merge, auto-merge, deploy, migration, production database change, Render change, ENV change, DNS change or Cloudflare change is authorized by this package.
+These are report-quality corrections, not production findings.
 
 ---
 
-## 13. Current gate
+## 14. Final finding status
+
+Closed for P8 defined scope:
+
+- `P8-AUD-F01` through `P8-AUD-F05`,
+- `P8-GPT2-F01`,
+- `P8-GPT2-F02`,
+- `P8-GPT2-F03`,
+- `P8-LEAD-F01`,
+- `P8-GPT2-FINAL-F01`,
+- `P8-GPT2-CLOSURE-F01`.
+
+Known residual non-blocking item:
+
+- `P8-GPT2-ULTIMATE-F01` — LOW / TEST HARDENING / NON-BLOCKING / NO PRODUCTION DEFECT.
 
 ```text
-P8 IMPLEMENTATION = COMPLETE ON CONTROLLED BRANCH
-LEAD REVIEW = PASS
-EXACT-HEAD CI = PASS
-CLAUDE INDEPENDENT AUDIT = PENDING
-P8-AUD-Fxx = NONE YET
+KNOWN MERGE-BLOCKING TECHNICAL FINDINGS = 0
+KNOWN NON-BLOCKING FINDINGS = 1
+```
+
+---
+
+## 15. Lead final closure state
+
+```text
+P8 TECHNICAL CLOSURE = ACHIEVED
+P8 EXACT-HEAD CI = PASS
+GEMINI FINAL = PASS
+CHATGPT-2 FINAL = PASS WITH NON-BLOCKING FINDINGS
+CLAUDE FINAL CANONICAL = PASS WITH NON-BLOCKING FINDINGS
+LEAD FINAL VERIFICATION = PASS
+P8 STATUS = MERGE-READY
 MERGE AUTHORIZATION = NO
 MERGE = NO
 DEPLOY = NO
+PRODUCTION CHANGE = NO
 ```
 
-This file is the canonical single-message handoff for the independent P8 audit.
+---
+
+## 16. Next gate
+
+The next repository-code action is a separate Owner merge authorization for exact PR #43 / HEAD `c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`.
+
+If HEAD changes, this merge-readiness record must be re-evaluated.
+
+After a future authorized merge and exact new-main verification, begin the separate:
+
+`ADVANCED SCALABILITY AUDIT`.
+
+No merge or deployment is authorized by this document.
