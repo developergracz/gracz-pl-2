@@ -17,13 +17,14 @@ export class GomokuRealtimeHub {
     this.service=service;
     this.pool=pool;
     this.logger=logger;
+    this.listenerBackendPid=null;
     this.ready=pool?this.#connectListener().catch(error=>{this.#log(error)}):Promise.resolve();
   }
 
   async subscribe(gameId,userId,response){
     assertGameId(gameId);
     if(!userId) throw new TypeError("Identyfikator gracza Gomoku jest wymagany dla realtime.");
-    if(this.pool) await this.ready;
+    if(this.pool) await this.#ensureListener();
     const snapshot=await this.service.view(gameId,userId);
     const revision=revisionOf(snapshot);
     const subscription={userId,response,lastRevision:revision};
@@ -74,6 +75,11 @@ export class GomokuRealtimeHub {
     }
   }
 
+  async #ensureListener(){
+    try{await this.#connectListener()}catch(error){this.#log(error);throw realtimeUnavailable(error)}
+    if(!this.#listener) throw realtimeUnavailable();
+  }
+
   #connectListener(){
     if(this.#closing||this.#listener) return Promise.resolve();
     if(this.#connectPromise) return this.#connectPromise;
@@ -94,6 +100,7 @@ export class GomokuRealtimeHub {
       await client.query({text:`LISTEN ${REALTIME_CHANNEL}`,query_timeout:QUERY_TIMEOUT_MS});
       if(this.#closing){client.release(true);return}
       this.#listener=client;
+      this.listenerBackendPid=client.processID??null;
     }catch(error){
       if(client) try{client.release(true)}catch{}
       if(!this.#closing) this.#scheduleReconnect();
@@ -105,7 +112,9 @@ export class GomokuRealtimeHub {
     if(error) this.#log(error);
     if(this.#listener===client){
       this.#listener=null;
+      this.listenerBackendPid=null;
       try{client.release(true)}catch{}
+      this.#recycleSubscribers();
     }
     if(!this.#closing) this.#scheduleReconnect();
   }
@@ -141,18 +150,21 @@ export class GomokuRealtimeHub {
     }));
   }
 
+  #recycleSubscribers(){
+    for(const subscribers of this.#subscribers.values())for(const {response} of subscribers)try{response.end()}catch{}
+    this.#subscribers.clear();
+  }
+
   #log(error){try{this.logger?.error?.(error)}catch{}}
 
   close(){
     this.#closing=true;
     if(this.#reconnectTimer) clearTimeout(this.#reconnectTimer);
     this.#reconnectTimer=null;
-    for(const subscribers of this.#subscribers.values()){
-      for(const {response} of subscribers) try{response.end()}catch{}
-    }
-    this.#subscribers.clear();
+    this.#recycleSubscribers();
     const listener=this.#listener;
     this.#listener=null;
+    this.listenerBackendPid=null;
     if(listener){
       listener.query?.({text:"UNLISTEN *",query_timeout:500}).catch?.(()=>{});
       try{listener.release(true)}catch{}
@@ -161,6 +173,7 @@ export class GomokuRealtimeHub {
 }
 
 function revisionOf(view){const revision=Number(view?.revision);if(!Number.isInteger(revision)||revision<0)throw new TypeError("Nieprawidłowa rewizja widoku Gomoku.");return revision}
+function realtimeUnavailable(cause=null){const error=new Error("Realtime Gomoku jest chwilowo niedostępny.");error.code="GOMOKU_REALTIME_UNAVAILABLE";error.status=503;if(cause)error.cause=cause;return error}
 function parseNotification(rawPayload){
   if(Buffer.byteLength(String(rawPayload??""),"utf8")>MAX_NOTIFICATION_BYTES) return null;
   let event;
