@@ -305,37 +305,47 @@ pgTest("P1-AUD3-01 publish on A reaches B after authoritative re-read with playe
   }
 });
 
-pgTest("P1-AUD3-01 malformed notifications are ignored and listener reconnects without duplicate delivery", async () => {
+pgTest("P1-AUD3-01 malformed notifications are ignored and listener recovery recycles stale SSE without duplicate delivery", async () => {
   const adminPool = new Pool({ connectionString: databaseUrl });
   const store = new PostgresSessionStore(databaseUrl);
   const hubA = new PostgresRealtimeHub(databaseUrl);
   const hubB = new PostgresRealtimeHub(databaseUrl);
   const gameId = `p6-reconnect-${Date.now()}`;
-  const response = new CaptureResponse();
+  const staleResponse = new CaptureResponse();
+  const recoveredResponse = new CaptureResponse();
   try {
     await Promise.all([store.ready, hubA.ready, hubB.ready]);
     const session = await store.create(createGameSession({ gameId, whitePlayerId: "white-a", blackPlayerId: "black-b" }));
-    hubB.subscribe(session, "white-a", response);
-    const initialChunks = response.chunks.length;
+    hubB.subscribe(session, "white-a", staleResponse);
+    const initialChunks = staleResponse.chunks.length;
 
     await adminPool.query("SELECT pg_notify($1, $2)", [REALTIME_CHANNEL, "not-json"]);
     await new Promise((resolve) => setTimeout(resolve, 150));
-    assert.equal(response.chunks.length, initialChunks);
+    assert.equal(staleResponse.chunks.length, initialChunks);
 
     const oldPid = hubB.listenerBackendPid;
     assert.ok(Number.isInteger(oldPid));
     await adminPool.query("SELECT pg_terminate_backend($1)", [oldPid]);
+    await waitFor(() => staleResponse.ended === true);
     const newPid = await waitFor(() => hubB.listenerBackendPid && hubB.listenerBackendPid !== oldPid ? hubB.listenerBackendPid : null);
     assert.notEqual(newPid, oldPid);
 
-    const updated = sendChatMessage(session, { playerId: "black-b", text: "after-reconnect" });
+    // C4 recovery deliberately recycles the stale stream. A fresh browser SSE
+    // connection receives an authoritative snapshot and resumes live delivery.
+    const authoritativeBeforeUpdate = await store.get(gameId);
+    hubB.subscribe(authoritativeBeforeUpdate, "white-a", recoveredResponse);
+    assert.ok(recoveredResponse.chunks.some((chunk) => chunk.includes("event: game.snapshot")));
+
+    const updated = sendChatMessage(authoritativeBeforeUpdate, { playerId: "black-b", text: "after-reconnect" });
     const saved = await store.save(updated);
     assert.equal(await hubA.publish(saved, "chat.message"), true);
-    await waitForChunk(response, (chunk) => chunk.includes("after-reconnect"));
+    await waitForChunk(recoveredResponse, (chunk) => chunk.includes("after-reconnect"));
     await new Promise((resolve) => setTimeout(resolve, 250));
-    assert.equal(response.chunks.filter((chunk) => chunk.includes("after-reconnect")).length, 1);
+    assert.equal(recoveredResponse.chunks.filter((chunk) => chunk.includes("after-reconnect")).length, 1);
+    assert.equal(staleResponse.chunks.filter((chunk) => chunk.includes("after-reconnect")).length, 0);
   } finally {
-    response.end();
+    staleResponse.end();
+    recoveredResponse.end();
     await Promise.all([hubA.close(), hubB.close(), hubB.close()]);
     await store.close();
     await adminPool.query("DELETE FROM gracz_game_sessions WHERE game_id = $1", [gameId]).catch(() => {});
