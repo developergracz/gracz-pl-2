@@ -1,18 +1,29 @@
 import { randomUUID } from "node:crypto";
 import { requireGameDefinition } from "./game-types.js";
 import { createGameSession } from "./session.js";
+import { ensureLobbyGameInTransaction } from "./lobby-game-transaction.js";
 
 const LOBBY_INIT_LOCK_ID = 731_004_202;
 const PRESENCE_ACTIVE_MS = 45_000;
+const TEST_AFTER_GAME_ENSURED = Symbol("Wave A lobby after-game-ensured test seam");
 
 export class LobbyError extends Error{constructor(message,code){super(message);this.name="LobbyError";this.code=code}}
 
+export function lobbyTestOptions(afterGameEnsured){
+  if(typeof afterGameEnsured!=="function")throw new TypeError("Testowy hook afterGameEnsured musi być funkcją.");
+  return{[TEST_AFTER_GAME_ENSURED]:afterGameEnsured};
+}
+
 export class LobbyService{
   #rooms=new Map();#presence=new Map();#invitations=new Map();
-  constructor({sessionStore,thousandService=null,gomokuService=null,idGenerator=randomUUID,pool=null}){
+  constructor(options={}){
+    if(!options||typeof options!=="object")throw new TypeError("Opcje Lobby muszą być obiektem.");
+    if(Object.prototype.hasOwnProperty.call(options,"afterGameEnsured"))throw new TypeError("afterGameEnsured jest dostępny wyłącznie przez jawny seam testowy.");
+    const{sessionStore,thousandService=null,gomokuService=null,idGenerator=randomUUID,pool=null}=options;
     if(!sessionStore)throw new TypeError("Magazyn sesji jest wymagany.");
     if(pool&&(typeof pool.query!=="function"||typeof pool.connect!=="function"))throw new TypeError("Pula PostgreSQL lobby jest nieprawidłowa.");
-    this.sessionStore=sessionStore;this.thousandService=thousandService;this.gomokuService=gomokuService;this.idGenerator=idGenerator;this.pool=pool;
+    const afterGameEnsured=options[TEST_AFTER_GAME_ENSURED]??null;
+    this.sessionStore=sessionStore;this.thousandService=thousandService;this.gomokuService=gomokuService;this.idGenerator=idGenerator;this.pool=pool;this.afterGameEnsured=afterGameEnsured;
     this.ready=this.pool?this.#initializeDatabase():Promise.resolve();
   }
 
@@ -229,9 +240,22 @@ export class LobbyService{
     const room=result.rows[0]?databaseRoom(result.rows[0]):null;
     if(!room)throw new LobbyError("Pokój nie istnieje.","ROOM_NOT_FOUND");if(room.status!=="waiting")throw new LobbyError("Pokój nie oczekuje na gracza.","ROOM_NOT_JOINABLE");if(room.seats.some(seat=>seat?.id===playerId))throw new LobbyError("Ten gracz już siedzi przy tym stole.","DUPLICATE_PLAYER");
     const freeSeat=room.seats.findIndex(seat=>seat===null);if(freeSeat<0)throw new LobbyError("Przy tym stole nie ma wolnych miejsc.","ROOM_FULL");room.seats[freeSeat]={id:playerId,name:normalizeDisplayName(playerName)};
-    if(room.seats.every(Boolean)){room.status="playing";await this.#startGame(room)}
+    if(room.seats.every(Boolean)){room.status="playing";await this.#startGameDatabase(room,client)}
     await client.query(`UPDATE gracz_lobby_rooms SET seats=$2::jsonb,status=$3,game_id=$4,updated_at=NOW() WHERE room_id=$1`,[room.roomId,JSON.stringify(room.seats),room.status,room.gameId]);
     return publicRoom(room);
+  }
+
+  async #startGameDatabase(room,client){
+    if(room.gameType==="thousand"&&!this.thousandService)throw new LobbyError("Silnik Tysiąca nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");
+    if(room.gameType==="gomoku"&&!this.gomokuService)throw new LobbyError("Silnik Gomoku nie jest dostępny.","GAME_SERVICE_UNAVAILABLE");
+    try{
+      room.gameId=await ensureLobbyGameInTransaction({client,room,thousandService:this.thousandService,gomokuService:this.gomokuService});
+    }catch(error){
+      if(error?.code==="LOBBY_GAME_IDENTITY_CONFLICT")throw new LobbyError(error.message,"GAME_IDENTITY_CONFLICT");
+      if(error?.code==="GAME_SERVICE_UNAVAILABLE")throw new LobbyError(error.message,"GAME_SERVICE_UNAVAILABLE");
+      throw error;
+    }
+    if(this.afterGameEnsured)await this.afterGameEnsured({room:publicRoom(room),client});
   }
 
   async #startGame(room){
