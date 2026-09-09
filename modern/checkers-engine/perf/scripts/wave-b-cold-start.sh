@@ -5,6 +5,7 @@ REPLICAS="${WAVE_B_REPLICAS:-1}"
 RUN_ID="${WAVE_B_RUN_ID:-cold-start-r${REPLICAS}}"
 BASE_PORT="${WAVE_B_BASE_PORT:-3400}"
 REPORT_DIR="perf/k6/reports";mkdir -p "$REPORT_DIR"
+WAVE_B_ALLOW_SCHEMA_BOOTSTRAP=1 node perf/scripts/wave-b-gomoku-bootstrap.mjs
 pids=();ready=0
 cleanup(){ for pid in "${pids[@]:-}";do kill "$pid" 2>/dev/null||true;done;for pid in "${pids[@]:-}";do wait "$pid" 2>/dev/null||true;done; }
 trap cleanup EXIT
