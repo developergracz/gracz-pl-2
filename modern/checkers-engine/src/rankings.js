@@ -76,7 +76,7 @@ export class RankingService {
     };
   }
 
-  async #periodLeaderboard({selectedGame,limit,query,minGames,period,days}){
+  async #periodBase({selectedGame,days}){
     const params=[days];let where=`completed_at >= NOW()-($1::int * INTERVAL '1 day')`;
     if(selectedGame!=="all"){params.push(selectedGame);where+=` AND game_type=$${params.length}`;}
     params.push(MAX_RANKING_PERIOD_EVENTS+1);
@@ -88,17 +88,64 @@ export class RankingService {
       const accounts=await this.pool.query(`SELECT user_id,display_name,profile_data FROM gracz_accounts WHERE user_id=ANY($1::text[])`,[ids]);
       for(const a of accounts.rows)names.set(a.user_id,{displayName:a.display_name,profile:a.profile_data||{}});
     }
-    let list=[...stats.values()].map(x=>decorateStat(x,names.get(x.userId))).filter(x=>x.games>=Math.max(0,Number(minGames)||0));
-    const q=String(query||"").trim().toLocaleLowerCase('pl');if(q)list=list.filter(x=>`${x.displayName} ${x.userId}`.toLocaleLowerCase('pl').includes(q));
-    list.sort((a,b)=>b.rating-a.rating||b.wins-a.wins||a.losses-b.losses||String(a.displayName).localeCompare(String(b.displayName),'pl'));
-    list=list.map((x,index)=>({...x,rank:index+1}));
-    const safeLimit=Math.max(10,Math.min(500,Number(limit)||100));
-    return {rankings:list.slice(0,safeLimit),summary:summary(list,rows.length),generatedAt:new Date().toISOString(),period,game:selectedGame};
+    const list=[...stats.values()].map(x=>decorateStat(x,names.get(x.userId)));
+    list.sort((a,b)=>b.rating-a.rating||b.wins-a.wins||a.losses-b.losses||String(a.displayName).localeCompare(String(b.displayName),'pl')||String(a.userId).localeCompare(String(b.userId),'pl'));
+    return{list,games:rows.length};
   }
 
-  async player(userId, options={}) {
-    const result=await this.leaderboard({...options,limit:500});
-    return { player:result.rankings.find(x=>x.userId===userId)||null, summary:result.summary, period:result.period, game:result.game };
+  async #periodLeaderboard({selectedGame,limit,query,minGames,period,days}){
+    const base=await this.#periodBase({selectedGame,days});
+    let list=base.list.filter(x=>x.games>=Math.max(0,Number(minGames)||0));
+    const q=String(query||"").trim().toLocaleLowerCase('pl');if(q)list=list.filter(x=>`${x.displayName} ${x.userId}`.toLocaleLowerCase('pl').includes(q));
+    list=list.map((x,index)=>({...x,rank:index+1}));
+    const safeLimit=Math.max(10,Math.min(500,Number(limit)||100));
+    return {rankings:list.slice(0,safeLimit),summary:summary(list,base.games),generatedAt:new Date().toISOString(),period,game:selectedGame};
+  }
+
+  async player(userId, {period="all",game="all"}={}) {
+    const selectedGame=rankingGame(game),safePeriod=PERIODS.has(period)?period:"all";
+    if(!this.pool)return{player:null,summary:summary([],0),period:safePeriod,game:selectedGame};
+    await this.ready;
+    const catchup=await catchUpRankingMaterialization(this.pool);
+    if(catchup.backlog)throw rankingBusyError();
+    if(safePeriod==="all")return this.#materializedPlayer(userId,{selectedGame,period:safePeriod});
+    const base=await this.#periodBase({selectedGame,days:PERIODS.get(safePeriod)});
+    const ranked=base.list.map((x,index)=>({...x,rank:index+1}));
+    return{player:ranked.find(x=>x.userId===userId)||null,summary:summary(ranked,base.games),period:safePeriod,game:selectedGame};
+  }
+
+  async #materializedPlayer(userId,{selectedGame,period}){
+    const {rows}=await this.pool.query(`
+      WITH target AS (
+        SELECT m.user_id,m.games,m.wins,m.draws,m.losses,m.streak,m.best_streak,m.last_played,m.rating,m.peak_rating,m.checkers_games,m.thousand_games,
+               COALESCE(a.display_name,m.user_id) AS display_name,COALESCE(a.profile_data->>'country','') AS country
+        FROM gracz_ranking_materialized m
+        LEFT JOIN gracz_accounts a ON a.user_id=m.user_id
+        WHERE m.scope=$1 AND m.user_id=$2
+      )
+      SELECT t.*,
+             1+(
+               SELECT COUNT(*)::bigint
+               FROM gracz_ranking_materialized m
+               LEFT JOIN gracz_accounts a ON a.user_id=m.user_id
+               WHERE m.scope=$1 AND (
+                 m.rating>t.rating OR
+                 (m.rating=t.rating AND m.wins>t.wins) OR
+                 (m.rating=t.rating AND m.wins=t.wins AND m.losses<t.losses) OR
+                 (m.rating=t.rating AND m.wins=t.wins AND m.losses=t.losses AND COALESCE(a.display_name,m.user_id)<t.display_name) OR
+                 (m.rating=t.rating AND m.wins=t.wins AND m.losses=t.losses AND COALESCE(a.display_name,m.user_id)=t.display_name AND m.user_id<t.user_id)
+               )
+             ) AS rank
+      FROM target t
+    `,[selectedGame,userId]);
+    const aggregate=await this.pool.query(`SELECT COUNT(*)::int AS players,COALESCE(MAX(rating),1200)::int AS highest_rating,COALESCE(ROUND(AVG(rating)),1200)::int AS average_rating FROM gracz_ranking_materialized WHERE scope=$1`,[selectedGame]);
+    const totals=await this.pool.query(`SELECT games FROM gracz_ranking_totals WHERE scope=$1`,[selectedGame]);
+    const a=aggregate.rows[0]||{};
+    return{
+      player:rows[0]?mapMaterialized(rows[0]):null,
+      summary:{players:Number(a.players||0),games:Number(totals.rows[0]?.games||0),highestRating:Number(a.highest_rating||1200),averageRating:Number(a.average_rating||1200)},
+      period,game:selectedGame,
+    };
   }
 
   async close(){if(this.pool)await this.pool.end()}
