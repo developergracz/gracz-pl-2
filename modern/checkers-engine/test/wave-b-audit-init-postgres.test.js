@@ -85,3 +85,5 @@ test("AuditService schema transaction rolls back all new DDL on initialization f
     await backing.end();
   }
 });
+
+await import("./wave-b-b1-c13-metric-accounting.test.js");
