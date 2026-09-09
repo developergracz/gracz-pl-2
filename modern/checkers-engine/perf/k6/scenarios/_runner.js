@@ -28,7 +28,7 @@ function gameFor(key){const list=DATA[key]||[];return list.length?list[(__VU-1)%
 function logicalVuSlot(vu){return(Math.max(1,Number(vu)||1)-1)%Math.max(1,cfg.vus)}
 function writerFor(key){const list=DATA[key]||[];return list.length>0&&logicalVuSlot(__VU)<list.length&&__ITER%20===0}
 function acceptedWrite(res){return Boolean(res&&res.status>=200&&res.status<300)}
-function recordGameAccepted(res,counter){if(steady()&&acceptedWrite(res))counter.add(1)}
+function recordGameAccepted(res,counter){if(acceptedWrite(res))counter.add(1)}
 function httpBaseline(){const paths=['/','/lobby.html','/players.html','/global-chat.html'];rawGet(paths[(__VU+__ITER)%paths.length])}
 function authenticatedBrowse(){const u=user();rawGet('/auth/me',u);if(__ITER%3===0)rawGet('/lobby/state',u)}
 function lobbyLoad(){const u=user();if(__ITER%8===0)rawPost('/lobby/rooms',{roomName:`wb-${RUN_ID}-${u.userId}-${__ITER}`,gameType:'checkers'},u);else rawGet('/lobby/state',u)}
