@@ -7,6 +7,8 @@ const PRESENCE_REFRESH_MS=15_000;
 const MAX_NOTIFICATION_BYTES=768;
 const QUERY_TIMEOUT_MS=1_500;
 const RECONNECT_DELAY_MS=250;
+const SSE_RETRY_MIN_MS=900;
+const SSE_RETRY_MAX_MS=1900;
 const RECOVERY_MESSAGE_LIMIT=150;
 const RECOVERY_BUFFER_LIMIT=256;
 const SIGNAL_EVENTS=new Set(['message.created','message.updated','message.deleted','topic.created']);
@@ -166,6 +168,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(!this.#listener) throw realtimeUnavailable();
     this.touch(user);
     response.writeHead(200,{"content-type":"text/event-stream; charset=utf-8","cache-control":"no-store, no-transform",connection:"keep-alive","x-accel-buffering":"no"});
+    response.write(`retry: ${sseRetryMs()}\n\n`);
     const client={response,userId:user.userId,recovering:true,buffer:[]};
     this.subscribers.add(client);
     const ping=setInterval(()=>{
@@ -196,6 +199,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
       else client.response.write(encodeSse('message.created',{message:mapMessage(row),online:this.online()}));
     }
     client.response.write(encodeSse('connected',{online:this.online(),reconciled:true}));
+    client.response.write(encodeSse('topic.created',{reconciled:true}));
     client.recovering=false;
     const pending=client.buffer.splice(0);
     for(const data of pending){
@@ -387,6 +391,7 @@ function parseSignal(raw){
   return {kind:'entity',event:signal.event,entityId:signal.entityId};
 }
 
+function sseRetryMs(){return SSE_RETRY_MIN_MS+Math.floor(Math.random()*(SSE_RETRY_MAX_MS-SSE_RETRY_MIN_MS+1))}
 function encodeSse(event,payload){return`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`}
 function semanticChatError(message,code){const error=new Error(message);error.code=code;error.status=429;return error}
 function realtimeUnavailable(){const error=new Error('Realtime Global Chat jest chwilowo niedostępny.');error.code='GLOBAL_CHAT_REALTIME_UNAVAILABLE';error.status=503;return error}
