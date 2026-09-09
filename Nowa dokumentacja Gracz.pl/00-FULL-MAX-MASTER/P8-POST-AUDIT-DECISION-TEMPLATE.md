@@ -1,221 +1,236 @@
-# GRACZ.PL — P8 / P1-U-01 — POST-AUDIT DECISION TEMPLATE
+# GRACZ.PL — P8 / P1-U-01 — POST-AUDIT DECISION RECORD
 
-**Status:** READY FOR USE AFTER CLAUDE REPORT  
-**Purpose:** deterministic Lead/Owner decision path after independent P8 audit  
+**Status:** EXECUTED / TECHNICAL CLOSURE ACHIEVED / MERGE-READY / MERGE NOT AUTHORIZED  
+**Decision checkpoint:** 2026-09-09  
 **Repository:** `developergracz/gracz-pl-2`  
 **PR:** `#43`  
-**Expected audited HEAD:** `d7220f57d60779584048cc5c695d40dbb948b9cb`  
-**Merge / deploy authorization:** NONE
+**Work item:** `P8 / P1-U-01`  
+**Base:** `ad0739190fe2f9d1657b2b77c8b5f8e825830c08`  
+**Audited HEAD:** `c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`  
+**Audited TREE:** `0ba0abce0993c145164b20f2881f118e0b71124d`  
+**PR state at decision:** `OPEN / NOT MERGED / MERGEABLE`  
+**Commits:** `25`  
+**Changed files:** `13`  
+**Merge / deploy / production authorization:** `NONE`
 
 ---
 
-## 1. Non-negotiable rule
+## 1. Governance rule
 
-Claude's verdict is an independent technical input, not an automatic merge command.
+An auditor PASS is evidence, not a merge command. The decision chain for P8 is:
 
-Required sequence:
+`AUDITOR REPORTS -> LEAD VERIFICATION -> DOCUMENTATION SYNC -> MERGE-READINESS -> SEPARATE OWNER AUTHORIZATION -> POSSIBLE MERGE -> NEW MAIN VERIFICATION`
 
-`CLAUDE -> TOM 18 REGISTRATION -> LEAD VERIFICATION -> CORRECTION/NO-CORRECTION DECISION -> OWNER+LEAD MERGE GATE`
-
-No code correction is authorized merely because Claude reports a finding.
+No merge, auto-merge, deploy, migration, production database change, Render change, ENV change, DNS change or Cloudflare change is authorized by this record.
 
 ---
 
-## 2. Identity gate
+## 2. Exact identity gate
 
-Before using the audit result, verify:
+The final closure decision applies only to:
 
 ```text
-AUDITED REPOSITORY = developergracz/gracz-pl-2
-AUDITED PR = #43
-AUDITED BASE = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
-AUDITED HEAD = d7220f57d60779584048cc5c695d40dbb948b9cb
-AUDITED TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
+REPOSITORY = developergracz/gracz-pl-2
+PR = #43
+BASE = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
+HEAD = c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f
+TREE = 0ba0abce0993c145164b20f2881f118e0b71124d
+COMMITS = 25
+CHANGED FILES = 13
+PR = OPEN
+MERGED = NO
 ```
 
-If any identity differs, status becomes:
-
-`AUDIT NOT APPLICABLE TO AUTHORIZED P8 SNAPSHOT — RECHECK REQUIRED`.
-
-Do not merge from a mismatched audit.
+Any later change to HEAD/TREE invalidates this exact-snapshot merge-readiness determination until re-evaluated.
 
 ---
 
-# 3. PATH A — CLAUDE VERDICT: PASS
+## 3. Final independent audit evidence
 
-If Claude ends exactly:
+### Gemini
 
-`P8 / P1-U-01 — PASS`
+Final verdict on the exact final snapshot:
 
-perform:
+`P8 / P1-U-01 GEMINI ULTIMATE CLOSURE AUDIT — PASS`
 
-1. store the complete report as audit evidence,
-2. verify that no hidden findings/conditions exist in the body,
-3. Lead independently checks the audited HEAD, diff and final CI evidence,
-4. register audit result in Evidence Register and Implementation/Audit Register,
-5. update TOM 18 with `NO P8 FINDINGS` rather than inventing finding IDs,
-6. verify PR #43 remains on exact audited HEAD,
-7. verify required CI/checks still pass for that head,
-8. issue a separate Lead recommendation:
-   `P8 TECHNICAL MERGE READINESS = PASS`,
-9. request/record explicit Owner merge authorization,
-10. only after Owner + Lead authorization may the exact PR be merged,
-11. after merge, capture exact merge SHA/TREE and new main,
-12. run/check required post-merge validation,
-13. mark P8 `MERGED / CLOSED` only after those gates complete.
+Lead accepted the technical PASS while correcting report wording/inaccuracies, including:
 
-A Claude PASS by itself does **not** equal `MERGE AUTHORIZED`.
+- `CANONICAL_GAME_TYPES` is a frozen array; private `CANONICAL_SET` is a Set,
+- real Tournament tables are `gracz_*`, not generic pseudo-table names,
+- START roster SELECT itself is not `FOR UPDATE`; serialization is provided by the parent tournament-row lock discipline,
+- historical `szachy` active actions use `TOURNAMENT_GAME_UNSUPPORTED / 409`,
+- `package.json` changed for test/static integration; the correct dependency statement is `NO NEW EXTERNAL RUNTIME DEPENDENCIES`,
+- read-only DB operations need not use transactional rollback/finally,
+- deadlock conclusion is bounded to `NO FEASIBLE DEADLOCK CYCLE FOUND IN CURRENT AUDITED PATHS`.
 
----
+These were reporting corrections, not new production defects.
 
-# 4. PATH B — PASS WITH NON-BLOCKING FINDINGS
+### ChatGPT-2
 
-If Claude ends exactly:
+Final verdict:
 
-`P8 / P1-U-01 — PASS WITH NON-BLOCKING FINDINGS`
+`P8 / P1-U-01 CHATGPT-2 ULTIMATE CLOSURE AUDIT — PASS WITH NON-BLOCKING FINDINGS`
 
-perform:
+One finding was recorded:
 
-1. register every finding in TOM 18 as `P8-AUD-Fxx`,
-2. preserve Claude's original severity and merge-blocking classification,
-3. Lead verifies every finding independently,
-4. for each finding assign Lead decision:
-   - `ACCEPTED`,
-   - `REJECTED`,
-   - `SEVERITY CHANGED`,
-   - `DUPLICATE`,
-   - `DEFERRED`,
-   - `NEEDS EVIDENCE`,
-   - `RISK ACCEPTED` only with explicit rationale,
-5. confirm that no accepted finding is actually merge-blocking,
-6. decide whether non-blocking correction is:
-   - required before merge,
-   - permitted after merge as bounded backlog,
-   - documentation-only,
-7. if any correction changes the P8 HEAD, Claude's audit no longer automatically covers the new head; determine whether focused re-audit is required,
-8. only after Lead final readiness decision may Owner be asked for merge authorization.
+`P8-GPT2-ULTIMATE-F01`
 
-If Lead reclassifies any accepted issue as blocking, follow PATH C.
-
----
-
-# 5. PATH C — FAIL / CORRECTION REQUIRED
-
-If Claude ends exactly:
-
-`P8 / P1-U-01 — FAIL — CORRECTION REQUIRED`
-
-perform:
-
-1. `MERGE = HOLD`,
-2. register every finding in TOM 18,
-3. Lead verifies each finding against exact code/evidence,
-4. reject unsupported findings with explicit rationale; do not implement them blindly,
-5. group accepted blocking findings into the smallest safe correction scope,
-6. Lead writes a bounded correction mandate for GPT-2,
-7. correction branch must preserve P8 scope and start from the authorized P8 lineage/base chosen by Lead,
-8. no unrelated refactor, feature expansion, migration or production change,
-9. implementation engineer reports exact branch/HEAD/TREE/diff/tests,
-10. run focused P8 tests plus all affected regressions and security gates,
-11. Lead reviews exact corrected head,
-12. required independent re-audit is performed on the corrected head,
-13. repeat until all blocking findings are closed,
-14. only then return to PATH A or B merge-readiness procedure.
-
----
-
-# 6. Finding decision worksheet
-
-For each `P8-AUD-Fxx`:
+Classification after Lead verification:
 
 ```text
-FINDING ID:
-CLAUDE SEVERITY:
-CLAUDE MERGE BLOCKING:
-CLAUDE LOCATION:
-CLAUDE CLAIM:
+FACTUALLY VALID = YES
+SEVERITY = LOW
+MERGE BLOCKING = NO
+PRODUCTION DEFECT = NO
+TEST HARDENING = YES
+CORRECTION REQUIRED BEFORE P8 MERGE = NO
+```
 
-LEAD EVIDENCE CHECK:
-LEAD DECISION:
-LEAD FINAL SEVERITY:
-LEAD MERGE BLOCKING:
-ROOT CAUSE:
-CORRECTION REQUIRED: YES/NO
-CORRECTION SCOPE:
-TESTS REQUIRED:
-RE-AUDIT REQUIRED: YES/NO
-RESIDUAL RISK:
-TOM 18 STATUS:
+The finding concerns only the lack of a deterministic JOIN-side barrier in one CREATE-vs-JOIN race test. Production correctness is independently established by the atomic CREATE transaction, PostgreSQL MVCC semantics and the separate deterministic external-visibility test.
+
+### Claude — canonical final auditor
+
+Final verdict:
+
+`P8 / P1-U-01 FINAL CLAUDE CANONICAL AUDIT — PASS WITH NON-BLOCKING FINDINGS`
+
+Claude independently confirmed:
+
+- all prior P8 blockers are closed,
+- atomic CREATE is correct,
+- JOIN/LEAVE/START parent-row serialization is correct,
+- initial round visibility is atomic,
+- REPORT/advance remains one transaction,
+- the ChatGPT-2 LOW finding is factually valid and non-blocking,
+- no feasible deadlock cycle was found in current audited paths,
+- no new merge-blocking technical finding was found.
+
+Claude had an evidence gap for direct GitHub Actions run access. Lead independently closed that gap using exact-head GitHub workflow evidence.
+
+Claude also incorrectly stated that `lobby.js`, `platform-lobby-http.js` and `rankings.js` were unchanged. They are changed in PR #43 and were independently verified by Lead as correct P8 integration changes. Claude did not fully review every browser E2E line; Lead independently reviewed the actual Playwright test and confirmed canonical create/filter behavior and historical unsupported rendering.
+
+---
+
+## 4. Final exact-head CI evidence
+
+All required PR-triggered workflows for final HEAD `c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f` are `SUCCESS`:
+
+```text
+34291690126 — P1-U-01 Canonical Game Types P8 — SUCCESS
+34291690070 — P1-H-01 Tournament Concurrency — SUCCESS
+34291690134 — Security Gate — SUCCESS
+34291690072 — CheckersEngine — SUCCESS
+34291690139 — Greetings — SUCCESS
+```
+
+The authoritative P8 workflow includes successful:
+
+- syntax/static checks,
+- canonical game-type contract,
+- Tournament concurrency and legacy hardening,
+- Tournament start/membership boundary serialization including atomic CREATE tests,
+- Checkers regression,
+- Gomoku regression,
+- Thousand regression,
+- Tournament concurrency regression,
+- P5 readiness,
+- P6 distributed infrastructure,
+- P7 MatchRuntime,
+- full Node suite,
+- production dependency audit,
+- Browser Checkers/Gomoku/Tournaments,
+- P1-R-01 DR regression,
+- gitleaks,
+- CodeQL.
+
+P1-H-01 real PostgreSQL concurrency, Security Gate and CheckersEngine exact-head jobs are also green.
+
+---
+
+## 5. Final finding state
+
+All previously merge-blocking P8 findings are technically closed for the exact audited snapshot, including:
+
+- `P8-AUD-F01` through `P8-AUD-F05`,
+- `P8-GPT2-F01` through `P8-GPT2-F03`,
+- `P8-LEAD-F01`,
+- `P8-GPT2-FINAL-F01`,
+- `P8-GPT2-CLOSURE-F01`.
+
+Residual known item:
+
+- `P8-GPT2-ULTIMATE-F01` — `LOW / NON-BLOCKING / TEST-HARDENING / NO PRODUCTION DEFECT`.
+
+```text
+KNOWN MERGE-BLOCKING TECHNICAL FINDINGS = 0
+KNOWN NON-BLOCKING FINDINGS = 1
 ```
 
 ---
 
-# 7. Merge-readiness checklist
+## 6. Lead final technical decision
 
-Before Lead may recommend merge, all must be true:
+```text
+P8 TECHNICAL CLOSURE = ACHIEVED
+P8 DOCUMENTATION CLOSURE = SYNCHRONIZED AT 2026-09-09 CHECKPOINT
+P8 TECHNICAL MERGE READINESS = PASS
+P8 STATUS = MERGE-READY
+MERGE AUTHORIZATION = NO
+MERGE = NO
+DEPLOY = NO
+PRODUCTION MIGRATION = NO
+PRODUCTION DATABASE CHANGE = NO
+```
 
-- [ ] Claude audit applies to exact intended snapshot or corrected snapshot,
-- [ ] all audit findings are in TOM 18,
-- [ ] Lead has verified every finding,
-- [ ] zero accepted blocking findings remain open,
-- [ ] exact-head CI is green,
-- [ ] P8 focused tests pass,
-- [ ] Checkers regression passes,
-- [ ] Gomoku regression passes,
-- [ ] Thousand regression passes,
-- [ ] tournament concurrency regression passes,
-- [ ] P5/P6/P7 regressions pass,
-- [ ] browser regression passes,
-- [ ] DR regression passes where required,
-- [ ] npm audit/security gates pass,
-- [ ] gitleaks passes,
-- [ ] CodeQL passes,
-- [ ] diff remains inside authorized P8 scope,
-- [ ] no migration/deploy/production changes were introduced,
-- [ ] Owner authorization is still separate and pending until explicitly given.
+This decision is exact-snapshot scoped. It does not authorize a repository mutation outside this documentation branch.
 
 ---
 
-# 8. Post-merge capture
+## 7. Owner gate
 
-If Owner + Lead later authorize merge and it occurs, record:
+The next repository-code action requires a new, separate and explicit Owner authorization for merge of PR #43.
+
+No wording in any Gemini, ChatGPT-2, Claude or Lead report substitutes for that Owner authorization.
+
+If Owner later authorizes merge, merge must be guarded by expected final HEAD:
+
+`c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f`
+
+If PR HEAD has moved, STOP and re-evaluate before merge.
+
+---
+
+## 8. Required post-merge capture — not yet executed
+
+After a future separately authorized merge, record:
 
 ```text
 PR #43 MERGE TIME:
 FINAL PR HEAD:
 FINAL PR TREE:
 MERGE COMMIT SHA:
-MERGED MAIN SHA:
-MERGED MAIN TREE:
+NEW MAIN SHA:
+NEW MAIN TREE:
 GITHUB MERGE STATUS:
 POST-MERGE CHECKS:
 DEPLOY = NO unless separately authorized
 PRODUCTION MIGRATION = NO unless separately authorized
 ```
 
-Then update:
-
-- Evidence Register,
-- Implementation/Audit Register,
-- Requirements Traceability Matrix,
-- Findings/Remediation Register,
-- ADR if architecture state changed,
-- append-only project journal,
-- FULL MAX index/checkpoint.
+Do not mark P8 `MERGED` until these fields are captured from actual GitHub evidence.
 
 ---
 
-# 9. Next gate after P8 closure
+## 9. Next technical stage after P8 merge
 
-Only after formal P8 closure:
+After an authorized merge and exact new-main verification, the next major stage is:
 
-`FULL PROJECT TECHNICAL AUDIT`
+`ADVANCED SCALABILITY AUDIT`
 
-using:
+This audit precedes the later full-project audit and should measure/verify actual scale boundaries rather than assume Redis, Kafka, Kubernetes or WebSockets are automatically required.
 
-- `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`,
-- `46-FULL-AUDIT-EVIDENCE-MANIFEST.md`,
-- `31-THREAT-CONTROL-TEST-MATRIX.md`,
-- TOM 18 for all `FULL-AUD-Fxxx` findings.
+The intended sequence is:
 
-FairPlay MAX implementation remains unauthorized until the full-project audit and controlled remediation establish a clean foundation.
+`P8 MERGE -> NEW MAIN VERIFICATION -> ADVANCED SCALABILITY AUDIT -> BOUNDED CORRECTIONS IF REQUIRED -> FULL PROJECT AUDIT -> FINAL AS-BUILT -> FAIRPLAY MAX / GFPE RESUME`
+
+FairPlay MAX implementation remains unauthorized at this checkpoint.
