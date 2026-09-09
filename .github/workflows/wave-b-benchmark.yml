@@ -46,10 +46,6 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
       WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
-      AUTH_SECRET: wave-b-r1-auth-93f81a45c2d74e7ba9f01cdef2345678
-      MESSAGE_ENCRYPTION_KEY: wave-b-r1-message-61d207b9a83c4f58be10d23456789abc
-      ATTACHMENT_ENCRYPTION_KEY: wave-b-r1-attachment-15ac902e7b3d4f689e01c2345678abcd
-      MFA_ENCRYPTION_KEY: wave-b-r1-mfa-47be913c6d2a4058af01c23456789def
       POSTGRES_POOL_BUDGET: '64'
       WAVE_B_SEED: '20260909'
     steps:
@@ -57,6 +53,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Generate isolated benchmark secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "MESSAGE_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "ATTACHMENT_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "MFA_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
       - name: Install application dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: Install benchmark tools
@@ -92,7 +96,8 @@ jobs:
       - name: Focused production correction tests
         run: node --test test/wave-b-correction-round-1.test.js test/wave-b-audit-init-postgres.test.js
       - name: Initialize phase status
-        run: : > perf/k6/reports/phase-status.txt
+        run: |
+          : > perf/k6/reports/phase-status.txt
       - name: Intentional failure-propagation control
         if: ${{ inputs.failure_control == true }}
         continue-on-error: true
