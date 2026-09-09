@@ -3,7 +3,7 @@ import { AuthError } from './auth.js';
 
 const SESSION_COOKIE='__Host-gracz_session';
 
-export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}){
+export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null,trafficGuard=null,sharedTrafficGuard=null}={}){
   if(!lobby) throw new TypeError('Lobby jest wymagane.');
   if(!auth) throw new TypeError('Uwierzytelnianie jest wymagane.');
   return async function platformLobbyHttpHandler(request,response){
@@ -17,33 +17,76 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
         const token=auth.issueGuest({...user,ttlSeconds:1800});
         response.setHeader('Set-Cookie',`${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=1800; HttpOnly; Secure; SameSite=Lax`);
         return sendJson(response,201,{token:'cookie',user:{...user,guest:true},expiresIn:1800});
-      }catch(error){
-        return sendJson(response,Number.isInteger(error?.status)?error.status:400,errorBody(error));
-      }
+      }catch(error){return sendJson(response,Number.isInteger(error?.status)?error.status:400,errorBody(error))}
     }
 
-    if(request.method!=='POST'||url.pathname!=='/lobby/rooms') return false;
+    if(!url.pathname.startsWith('/lobby/')) return false;
     try{
       assertSameOriginMutation(request);
       const user=await trustedUser(request,auth,authSessions);
-      await lobby.touchUser(user);
-      const body=await readJson(request);
-      const room=await lobby.createRoom({
-        ownerId:user.userId,
-        ownerName:user.displayName,
-        roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
-        gameType:Object.hasOwn(body,'gameType')?body.gameType:undefined,
-        maxPlayers:body.maxPlayers??null,
-      });
-      return sendJson(response,201,room);
+
+      if(request.method==='GET'&&url.pathname==='/lobby/state'){
+        await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'lobby'});
+        await lobby.touchUser(user);
+        const[rooms,players,invitations]=await Promise.all([lobby.listRooms(),lobby.listPlayers(),lobby.listInvitations(user.userId)]);
+        return sendJson(response,200,{rooms,players,invitations});
+      }
+
+      if(url.pathname==='/lobby/rooms'){
+        await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'room'});
+        await lobby.touchUser(user);
+        if(request.method==='GET') return sendJson(response,200,{rooms:await lobby.listRooms()});
+        if(request.method==='POST'){
+          const body=await readJson(request);
+          const room=await lobby.createRoom({
+            ownerId:user.userId,
+            ownerName:user.displayName,
+            roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
+            gameType:Object.hasOwn(body,'gameType')?body.gameType:undefined,
+            maxPlayers:body.maxPlayers??null,
+          });
+          return sendJson(response,201,room);
+        }
+        return false;
+      }
+
+      if(request.method==='POST'&&url.pathname==='/lobby/invitations'){
+        await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'invitation'});
+        await lobby.touchUser(user);
+        const body=await readJson(request);
+        const invitation=await lobby.createInvitation({fromId:user.userId,fromName:user.displayName,toId:body.toId,roomId:body.roomId});
+        return sendJson(response,201,invitation);
+      }
+
+      const invitationMatch=url.pathname.match(/^\/lobby\/invitations\/([a-zA-Z0-9_-]{1,128})\/respond$/);
+      if(invitationMatch&&request.method==='POST'){
+        await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'invitation'});
+        const body=await readJson(request);
+        return sendJson(response,200,await lobby.respondInvitation({invitationId:invitationMatch[1],userId:user.userId,userName:user.displayName,accept:body.accept===true}));
+      }
+
+      const joinMatch=url.pathname.match(/^\/lobby\/rooms\/([a-zA-Z0-9_-]{1,128})\/join$/);
+      if(joinMatch&&request.method==='POST'){
+        await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'room'});
+        await lobby.touchUser(user);
+        return sendJson(response,200,await lobby.joinRoom({roomId:joinMatch[1],playerId:user.userId,playerName:user.displayName}));
+      }
+
+      return false;
     }catch(error){
       if(error instanceof AuthError) return sendJson(response,401,errorBody(error));
-      const status=['INVALID_GAME_TYPE','UNSUPPORTED_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
+      const status=Number.isInteger(error?.status)?error.status
+        :['ROOM_NOT_FOUND','INVITATION_NOT_FOUND'].includes(error?.code)?404
+        :['INVALID_GAME_TYPE','UNSUPPORTED_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
       return sendJson(response,status,errorBody(error));
     }
   };
 }
 
+async function assertAccountLimits(localGuard,sharedGuard,input){
+  if(localGuard?.assertAccountAllowed) localGuard.assertAccountAllowed(input);
+  if(sharedGuard?.assertAccountAllowed) await sharedGuard.assertAccountAllowed(input);
+}
 async function trustedUser(request,auth,authSessions){
   const token=parseCookies(request.headers.cookie)[SESSION_COOKIE]||bearerToken(request);
   if(!token||token==='cookie') throw new AuthError('Brak aktywnej sesji logowania.');
@@ -63,11 +106,9 @@ function parseCookies(header){
   }
   return result;
 }
-function bearerToken(request){
-  const value=String(request.headers.authorization??'');
-  return value.startsWith('Bearer ')?value.slice(7).trim()||null:null;
-}
+function bearerToken(request){const value=String(request.headers.authorization??'');return value.startsWith('Bearer ')?value.slice(7).trim()||null:null}
 function assertSameOriginMutation(request){
+  if(!['POST','PUT','PATCH','DELETE'].includes(request.method)) return;
   if(request.headers['sec-fetch-site']==='cross-site') throw httpError('Żądanie z obcej strony zostało zablokowane.','CROSS_SITE_REQUEST',403);
   const origin=request.headers.origin; if(!origin) return;
   let originHost; try{originHost=new URL(origin).host}catch{throw httpError('Nieprawidłowe źródło żądania.','CROSS_SITE_REQUEST',403)}
