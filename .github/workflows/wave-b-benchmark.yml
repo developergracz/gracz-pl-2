@@ -53,6 +53,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Initialize evidence status
+        run: |
+          mkdir -p perf/k6/reports
+          : > perf/k6/reports/phase-status.txt
       - name: Generate isolated masked benchmark secrets
         shell: bash
         run: |
@@ -63,22 +67,36 @@ jobs:
             echo "$name=$value" >> "$GITHUB_ENV"
           done
       - name: Install application dependencies
+        id: deps
+        continue-on-error: true
         run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Install benchmark tools
+      - name: Setup k6
+        id: k6setup
+        continue-on-error: true
+        uses: grafana/setup-k6-action@v1
+      - name: Verify benchmark tools
+        id: tools
+        continue-on-error: true
         run: |
           set -euo pipefail
-          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update -o Acquire::Retries=3
-          sudo apt-get install -y ca-certificates gnupg postgresql-client iproute2
-          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
-          echo 'deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main' | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update -o Acquire::Retries=3
-          sudo apt-get install -y k6
+          command -v k6
+          command -v psql
+          command -v ss
           k6 version
           psql "$DATABASE_URL" -Atc 'SELECT version(); SHOW max_connections; SHOW shared_buffers; SHOW superuser_reserved_connections;'
-      - name: Validate correction harness syntax
+      - name: Record bootstrap status
+        if: always()
         run: |
-          mkdir -p perf/k6/reports
+          if [[ "${{ steps.deps.outcome }}" == success && "${{ steps.k6setup.outcome }}" == success && "${{ steps.tools.outcome }}" == success ]]; then
+            echo 'bootstrap-tools=PASS' >> perf/k6/reports/phase-status.txt
+          else
+            echo 'bootstrap-tools=FAIL:TOOL_SETUP' >> perf/k6/reports/phase-status.txt
+          fi
+      - name: Validate correction harness syntax
+        id: syntax
+        if: ${{ steps.deps.outcome == 'success' && steps.k6setup.outcome == 'success' && steps.tools.outcome == 'success' }}
+        continue-on-error: true
+        run: |
           chmod +x perf/scripts/*.sh
           bash -n perf/scripts/wave-b-runner.sh
           bash -n perf/scripts/wave-b-sse-runner.sh
@@ -96,21 +114,27 @@ jobs:
           node --check perf/scripts/wave-b-summarize.mjs
           node --check perf/k6/scenarios/_runner.js
           npm run check
-      - name: Focused production correction tests
-        run: node --test test/wave-b-correction-round-1.test.js test/wave-b-audit-init-postgres.test.js
-      - name: Initialize phase status
+      - name: Record syntax status
         if: always()
         run: |
-          mkdir -p perf/k6/reports
-          : > perf/k6/reports/phase-status.txt
+          if [[ "${{ steps.syntax.outcome }}" == success ]]; then echo 'harness-syntax=PASS' >> perf/k6/reports/phase-status.txt; else echo 'harness-syntax=FAIL:VALIDATION' >> perf/k6/reports/phase-status.txt; fi
+      - name: Focused production correction tests
+        id: focused
+        if: ${{ steps.syntax.outcome == 'success' }}
+        continue-on-error: true
+        run: node --test test/wave-b-correction-round-1.test.js test/wave-b-audit-init-postgres.test.js
+      - name: Record focused tests status
+        if: always()
+        run: |
+          if [[ "${{ steps.focused.outcome }}" == success ]]; then echo 'focused-production-tests=PASS' >> perf/k6/reports/phase-status.txt; else echo 'focused-production-tests=FAIL:REGRESSION' >> perf/k6/reports/phase-status.txt; fi
       - name: Intentional failure-propagation control
-        if: ${{ inputs.failure_control == true }}
+        if: ${{ inputs.failure_control == true && steps.focused.outcome == 'success' }}
         continue-on-error: true
         run: |
           echo 'intentional-failure-control=FAIL:97' >> perf/k6/reports/phase-status.txt
           exit 97
       - name: Multi-replica cold-start validation 1/2/4
-        if: ${{ inputs.failure_control != true }}
+        if: ${{ inputs.failure_control != true && steps.focused.outcome == 'success' }}
         continue-on-error: true
         run: |
           set +e
@@ -125,7 +149,7 @@ jobs:
           done
           exit $overall
       - name: B2 PostgreSQL connection-budget gate
-        if: ${{ inputs.failure_control != true }}
+        if: ${{ inputs.failure_control != true && steps.focused.outcome == 'success' }}
         continue-on-error: true
         run: |
           set +e
@@ -139,7 +163,7 @@ jobs:
           done
           exit 0
       - name: B1 full steady-state 100/250/500/1000 VUs
-        if: ${{ inputs.failure_control != true }}
+        if: ${{ inputs.failure_control != true && steps.focused.outcome == 'success' }}
         continue-on-error: true
         run: |
           set +e
@@ -154,7 +178,7 @@ jobs:
           done
           exit $overall
       - name: WA-06 retention and repeated-cardinality proof
-        if: ${{ inputs.failure_control != true }}
+        if: ${{ inputs.failure_control != true && steps.focused.outcome == 'success' }}
         continue-on-error: true
         run: |
           set +e
@@ -163,6 +187,13 @@ jobs:
           rc=$?
           if [[ $rc -eq 0 ]]; then echo 'wa06-cardinality-10000=PASS' >> perf/k6/reports/phase-status.txt; else echo "wa06-cardinality-10000=FAIL:$rc" >> perf/k6/reports/phase-status.txt; fi
           exit $rc
+      - name: Mark prerequisite-limited mandatory phases
+        if: ${{ always() && inputs.failure_control != true && steps.focused.outcome != 'success' }}
+        run: |
+          echo 'cold-start=NOT_EXECUTED:PREREQUISITE_FAILURE' >> perf/k6/reports/phase-status.txt
+          echo 'b2-budget=NOT_EXECUTED:PREREQUISITE_FAILURE' >> perf/k6/reports/phase-status.txt
+          echo 'b1=NOT_EXECUTED:PREREQUISITE_FAILURE' >> perf/k6/reports/phase-status.txt
+          echo 'wa06=NOT_EXECUTED:PREREQUISITE_FAILURE' >> perf/k6/reports/phase-status.txt
       - name: Mark non-Round-1 phases not executed
         if: ${{ always() && inputs.failure_control != true }}
         run: |
