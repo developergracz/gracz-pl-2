@@ -1,16 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import pg from "pg";
 import { AuthService } from "../src/auth.js";
-import { withPostgresStartupSchemaLock } from "../src/postgres-startup-schema-lock.js";
+import {
+  acquirePostgresStartupSchemaLock,
+  POSTGRES_STARTUP_SCHEMA_LOCK_CLASS,
+  POSTGRES_STARTUP_SCHEMA_LOCK_OBJECT,
+  POSTGRES_STARTUP_SCHEMA_LOCK_TIMEOUT_CODE,
+  withPostgresStartupSchemaLock,
+} from "../src/postgres-startup-schema-lock.js";
 import { WAVE_B_GUEST_TTL_SECONDS } from "../perf/scripts/wave-b-auth-policy.mjs";
 import { createWaveBSeedPlatform } from "../perf/scripts/wave-b-seed-platform.mjs";
 
 const require = createRequire(import.meta.url);
 const budget = require("../src/postgres-pool-budget.cjs");
-const { Pool } = pg;
+const { secureSslConfig } = require("../src/postgres-ssl-policy.cjs");
+const { Pool, Client } = pg;
 
 const environment = { POSTGRES_POOL_BUDGET: "64" };
 const databaseUrl = process.env.WAVE_B_TEST_DATABASE_URL || process.env.DATABASE_URL || "";
@@ -107,6 +115,40 @@ test("Wave B connection budget accepts topology only when measured max_connectio
   assert.ok(four.operationalHeadroom >= 32);
 });
 
+test("C11-AG1 canonical PostgreSQL TLS policy is strict for external connections", () => {
+  assert.equal(secureSslConfig("postgresql://u:p@127.0.0.1:5432/db", {}), false);
+  assert.equal(secureSslConfig("postgresql://u:p@localhost:5432/db", {}), false);
+  assert.equal(secureSslConfig("postgresql://u:p@dpg-gracz-private:5432/db", {}), false);
+
+  assert.deepEqual(
+    secureSslConfig("postgresql://u:p@db.example.com:5432/db", {}),
+    { rejectUnauthorized: true },
+  );
+
+  const pem = "-----BEGIN CERTIFICATE-----\nC11-AG1 TEST CA\n-----END CERTIFICATE-----";
+  const configured = secureSslConfig(
+    "postgresql://u:p@db.example.com:5432/db",
+    { DATABASE_SSL_CA_BASE64: Buffer.from(pem, "utf8").toString("base64") },
+  );
+  assert.equal(configured.rejectUnauthorized, true);
+  assert.equal(configured.ca, pem);
+
+  assert.throws(
+    () => secureSslConfig(
+      "postgresql://u:p@db.example.com:5432/db",
+      { DATABASE_SSL_CA_BASE64: "%%%not-base64%%%" },
+    ),
+    /DATABASE_SSL_CA_BASE64/,
+  );
+  assert.throws(
+    () => secureSslConfig(
+      "postgresql://u:p@db.example.com:5432/db",
+      { DATABASE_SSL_CA_BASE64: Buffer.from("not a certificate", "utf8").toString("base64") },
+    ),
+    /certyfikatu CA/,
+  );
+});
+
 test("C11-S2 startup schema lock serializes concurrent PostgreSQL initialization", postgresTest, async () => {
   let firstEntered;
   const entered = new Promise((resolve) => { firstEntered = resolve; });
@@ -128,6 +170,51 @@ test("C11-S2 startup schema lock serializes concurrent PostgreSQL initialization
   assert.equal(secondEntered, true);
 });
 
+test("C11-AG1 startup schema lock wait is bounded and fail-closed", postgresTest, async () => {
+  const holder = await acquirePostgresStartupSchemaLock(databaseUrl, { timeoutMs: 5_000 });
+  let protectedWorkEntered = false;
+  const startedAt = Date.now();
+  try {
+    await assert.rejects(
+      withPostgresStartupSchemaLock(
+        databaseUrl,
+        async () => { protectedWorkEntered = true; },
+        { timeoutMs: 150 },
+      ),
+      (error) => error?.code === POSTGRES_STARTUP_SCHEMA_LOCK_TIMEOUT_CODE && error?.timeoutMs === 150,
+    );
+    assert.equal(protectedWorkEntered, false);
+    assert.ok(Date.now() - startedAt < 5_000);
+  } finally {
+    await holder.release();
+  }
+
+  let retryEntered = false;
+  await withPostgresStartupSchemaLock(
+    databaseUrl,
+    async () => { retryEntered = true; },
+    { timeoutMs: 1_000 },
+  );
+  assert.equal(retryEntered, true);
+});
+
+test("C11-AG1 PostgreSQL session disappearance releases startup lock ownership", postgresTest, async () => {
+  const holder = new Client({
+    connectionString: databaseUrl,
+    ssl: secureSslConfig(databaseUrl),
+    connectionTimeoutMillis: 5_000,
+  });
+  await holder.connect();
+  await holder.query(
+    "SELECT pg_advisory_lock($1::int, $2::int)",
+    [POSTGRES_STARTUP_SCHEMA_LOCK_CLASS, POSTGRES_STARTUP_SCHEMA_LOCK_OBJECT],
+  );
+  await holder.end();
+
+  const acquired = await acquirePostgresStartupSchemaLock(databaseUrl, { timeoutMs: 1_000 });
+  await acquired.release();
+});
+
 test("C11-S2 startup schema lock releases on failure and permits retry", postgresTest, async () => {
   await assert.rejects(
     withPostgresStartupSchemaLock(databaseUrl, async () => {
@@ -139,6 +226,37 @@ test("C11-S2 startup schema lock releases on failure and permits retry", postgre
   let retried = false;
   await withPostgresStartupSchemaLock(databaseUrl, async () => { retried = true; });
   assert.equal(retried, true);
+});
+
+test("C11-AG1 canonical application launch paths use src/start.js", async () => {
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.match(packageJson.scripts.start, /src\/start\.js/);
+  assert.doesNotMatch(packageJson.scripts.start, /src\/main\.js/);
+
+  const startSource = await readFile(new URL("../src/start.js", import.meta.url), "utf8");
+  assert.match(startSource, /withPostgresStartupSchemaLock/);
+  assert.match(startSource, /import\("\.\/main\.js"\)/);
+
+  const lockSource = await readFile(new URL("../src/postgres-startup-schema-lock.js", import.meta.url), "utf8");
+  assert.match(lockSource, /ssl:\s*secureSslConfig\(connectionString\)/);
+  assert.doesNotMatch(lockSource, /rejectUnauthorized:\s*false/);
+
+  for (const path of [
+    "../perf/scripts/wave-b-cold-start.sh",
+    "../perf/scripts/wave-b-runner.sh",
+  ]) {
+    const source = await readFile(new URL(path, import.meta.url), "utf8");
+    assert.match(source, /src\/start\.js/);
+    assert.doesNotMatch(source, /src\/main\.js/);
+  }
+
+  const workflow = await readFile(
+    new URL("../../../.github/workflows/wave-b-benchmark.yml", import.meta.url),
+    "utf8",
+  );
+  assert.match(workflow, /wave-b-cold-start\.sh/);
+  assert.match(workflow, /wave-b-runner\.sh/);
+  assert.doesNotMatch(workflow, /src\/main\.js/);
 });
 
 test("C11-S2 benchmark guest token policy stays inside production one-hour maximum", () => {
