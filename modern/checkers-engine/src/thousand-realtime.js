@@ -2,6 +2,8 @@ const REALTIME_CHANNEL='gracz_thousand_realtime';
 const MAX_NOTIFICATION_BYTES=1024;
 const RECONNECT_DELAY_MS=250;
 const QUERY_TIMEOUT_MS=1500;
+const SSE_RETRY_MIN_MS=900;
+const SSE_RETRY_MAX_MS=1900;
 const ALLOWED_EVENT_TYPES=new Set(['thousand.updated','thousand.round-started']);
 
 export class ThousandRealtimeHub {
@@ -23,8 +25,9 @@ export class ThousandRealtimeHub {
 
   async subscribe(gameId,userId,response){
     assertGameId(gameId);
-    if(this.pool) await this.#ensureListener();
+    const listener=this.pool?await this.#ensureListener():null;
     const snapshot=await this.service.getView(gameId,userId);
+    if(this.pool&&(!listener||this.#listener!==listener)) throw realtimeUnavailable();
     const revision=revisionOf(snapshot);
     const subscription={userId,response,lastRevision:revision};
     const subscribers=this.#subscribers.get(gameId)??new Set();
@@ -37,6 +40,7 @@ export class ThousandRealtimeHub {
       connection:'keep-alive',
       'x-accel-buffering':'no',
     });
+    response.write(`retry: ${sseRetryMs()}\n\n`);
     response.write(encodeEvent('thousand.snapshot',snapshot));
 
     const keepAlive=setInterval(()=>{
@@ -78,6 +82,7 @@ export class ThousandRealtimeHub {
   async #ensureListener(){
     try{await this.#connectListener()}catch(error){this.#log(error);throw realtimeUnavailable(error)}
     if(!this.#listener) throw realtimeUnavailable();
+    return this.#listener;
   }
 
   #connectListener(){
@@ -172,6 +177,7 @@ export class ThousandRealtimeHub {
   }
 }
 
+function sseRetryMs(){return SSE_RETRY_MIN_MS+Math.floor(Math.random()*(SSE_RETRY_MAX_MS-SSE_RETRY_MIN_MS+1))}
 function revisionOf(view){const revision=Number(view?.revision);if(!Number.isInteger(revision)||revision<0)throw new TypeError('Nieprawidłowa rewizja widoku Tysiąca.');return revision}
 function realtimeUnavailable(cause=null){const error=new Error('Realtime Tysiąca jest chwilowo niedostępny.');error.code='THOUSAND_REALTIME_UNAVAILABLE';error.status=503;if(cause)error.cause=cause;return error}
 function parseNotification(rawPayload){
