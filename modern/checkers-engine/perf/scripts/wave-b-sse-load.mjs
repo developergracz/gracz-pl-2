@@ -23,15 +23,15 @@ function route(index){
 async function consume(index){let reconnectAttempt=0,lastDisconnectAt=null,nativeRetry=1000,first=true;
   while(Date.now()<deadline){
     const spec=route(index),attemptStart=performance.now(),bucket=String(Math.floor((Date.now()-(deadline-seconds*1000))/1000));metrics.attempts++;metrics.attemptsBySecond[bucket]=(metrics.attemptsBySecond[bucket]||0)+1;if(!first)metrics.reconnects++;
-    const controller=new AbortController(),remaining=Math.max(1,deadline-Date.now()),timer=setTimeout(()=>controller.abort(),remaining);timer.unref?.();
+    const controller=new AbortController(),remaining=Math.max(1,deadline-Date.now()),timer=setTimeout(()=>controller.abort(),remaining);timer.unref?.();let wasActive=false;
     try{
       const response=await fetch(spec.url,{headers:{authorization:`Bearer ${spec.token}`,accept:'text/event-stream','user-agent':'gracz-wave-b-sse/1.0'},signal:controller.signal});
       if(!response.ok||!response.body)throw new Error(`HTTP ${response.status}`);
-      const established=performance.now()-attemptStart;metrics.establishmentMs.push(established);if(lastDisconnectAt!==null)metrics.reconnectMs.push(Date.now()-lastDisconnectAt);metrics.successfulConnections++;metrics.active++;metrics.maxActive=Math.max(metrics.maxActive,metrics.active);reconnectAttempt=0;
+      const established=performance.now()-attemptStart;metrics.establishmentMs.push(established);if(lastDisconnectAt!==null)metrics.reconnectMs.push(Date.now()-lastDisconnectAt);metrics.successfulConnections++;metrics.active++;wasActive=true;metrics.maxActive=Math.max(metrics.maxActive,metrics.active);reconnectAttempt=0;
       const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
       while(Date.now()<deadline){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});let boundary;while((boundary=buffer.indexOf('\n\n'))>=0){const block=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);for(const line of block.split('\n'))if(line.startsWith('retry:')){const v=Number(line.slice(6).trim());if(Number.isFinite(v)&&v>=0){nativeRetry=v;metrics.retryValues.push(v)}}if(block.includes('event: gomoku.snapshot')||block.includes('event: thousand.snapshot')||block.includes('event: connected'))metrics.snapshots++;}}
     }catch(error){if(Date.now()<deadline&&error?.name!=='AbortError')metrics.failedConnections++;}
-    finally{clearTimeout(timer);if(metrics.active>0)metrics.active--;lastDisconnectAt=Date.now();metrics.disconnects++;}
+    finally{clearTimeout(timer);if(wasActive){metrics.active--;metrics.disconnects++;lastDisconnectAt=Date.now();}}
     if(Date.now()>=deadline)break;
     let delay;if(spec.mode==='gomoku'){const base=500*(2**Math.min(reconnectAttempt,4)),jitter=Math.floor(Math.random()*500);delay=Math.min(10000,base+jitter);reconnectAttempt++;}else delay=nativeRetry;
     await sleep(Math.min(delay,Math.max(0,deadline-Date.now())));first=false;
