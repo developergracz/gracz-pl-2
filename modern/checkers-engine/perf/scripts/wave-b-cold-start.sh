@@ -11,7 +11,7 @@ cleanup(){ for pid in "${pids[@]:-}";do kill "$pid" 2>/dev/null||true;done;for p
 trap cleanup EXIT
 for ((i=0;i<REPLICAS;i++));do
   port=$((BASE_PORT+i));obs="$REPORT_DIR/${RUN_ID}-obs-${i}.jsonl"
-  PORT="$port" HOST=127.0.0.1 NODE_ENV=test WAVE_B_OBS_FILE="$obs" node --require ./perf/scripts/wave-b-observability-preload.cjs --require ./src/pg-secure-preload.cjs src/main.js >"$REPORT_DIR/${RUN_ID}-app-${i}.log" 2>&1 & pids+=("$!")
+  PORT="$port" HOST=127.0.0.1 NODE_ENV=test WAVE_B_OBS_FILE="$obs" node --require ./perf/scripts/wave-b-observability-preload.cjs --require ./src/pg-secure-preload.cjs src/start.js >"$REPORT_DIR/${RUN_ID}-app-${i}.log" 2>&1 & pids+=("$!")
 done
 for ((i=0;i<REPLICAS;i++));do
   port=$((BASE_PORT+i));ok=0

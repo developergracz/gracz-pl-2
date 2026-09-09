@@ -1,0 +1,1 @@
+export const WAVE_B_GUEST_TTL_SECONDS = 3600;
