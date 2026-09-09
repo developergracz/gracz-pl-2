@@ -7,6 +7,8 @@ const PRESENCE_REFRESH_MS=15_000;
 const MAX_NOTIFICATION_BYTES=768;
 const QUERY_TIMEOUT_MS=1_500;
 const RECONNECT_DELAY_MS=250;
+const RECOVERY_MESSAGE_LIMIT=150;
+const RECOVERY_BUFFER_LIMIT=256;
 const SIGNAL_EVENTS=new Set(['message.created','message.updated','message.deleted','topic.created']);
 
 const SCHEMA_SQL=`
@@ -132,8 +134,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(!this.#listener) throw realtimeUnavailable();
     this.touch(user);
     response.writeHead(200,{"content-type":"text/event-stream; charset=utf-8","cache-control":"no-store, no-transform",connection:"keep-alive","x-accel-buffering":"no"});
-    response.write(`event: connected\ndata: ${JSON.stringify({online:this.online()})}\n\n`);
-    const client={response,userId:user.userId};
+    const client={response,userId:user.userId,recovering:true,buffer:[]};
     this.subscribers.add(client);
     const ping=setInterval(()=>{
       this.touch(user);
@@ -142,6 +143,33 @@ export class DistributedGlobalChatService extends GlobalChatService {
     ping.unref?.();
     const close=()=>{clearInterval(ping);this.subscribers.delete(client)};
     response.on('close',close);response.on('finish',close);
+    void this.#recoverSubscriber(client).catch(error=>{
+      this.#log(error);
+      try{response.end()}catch{}
+    });
+  }
+
+  async #recoverSubscriber(client){
+    const {rows}=await this.pool.query({
+      text:`SELECT m.message_id,m.user_id,m.display_name,m.body,m.reply_to,m.topic_id,m.reactions,m.created_at,m.edited_at,m.deleted,t.title AS topic_title,t.category AS topic_category
+            FROM gracz_global_chat m
+            LEFT JOIN gracz_chat_topics t ON t.topic_id=m.topic_id
+            ORDER BY m.created_at DESC,m.message_id DESC
+            LIMIT $1`,
+      values:[RECOVERY_MESSAGE_LIMIT],query_timeout:QUERY_TIMEOUT_MS,
+    });
+    if(!this.subscribers.has(client)||client.response.writableEnded)return;
+    for(const row of rows.reverse()){
+      if(row.deleted)client.response.write(encodeSse('message.deleted',{messageId:row.message_id}));
+      else client.response.write(encodeSse('message.created',{message:mapMessage(row),online:this.online()}));
+    }
+    client.response.write(encodeSse('connected',{online:this.online(),reconciled:true}));
+    client.recovering=false;
+    const pending=client.buffer.splice(0);
+    for(const data of pending){
+      if(client.response.writableEnded)break;
+      client.response.write(data);
+    }
   }
 
   broadcast(event,payload){
@@ -265,9 +293,13 @@ export class DistributedGlobalChatService extends GlobalChatService {
   }
 
   #broadcastLocal(event,payload){
-    const data=`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+    const data=encodeSse(event,payload);
     for(const client of this.subscribers){
       if(client.response.writableEnded){this.subscribers.delete(client);continue}
+      if(client.recovering){
+        if(client.buffer.length>=RECOVERY_BUFFER_LIMIT){try{client.response.end()}catch{};this.subscribers.delete(client);continue}
+        client.buffer.push(data);continue;
+      }
       try{client.response.write(data)}catch{this.subscribers.delete(client)}
     }
   }
@@ -323,6 +355,7 @@ function parseSignal(raw){
   return {kind:'entity',event:signal.event,entityId:signal.entityId};
 }
 
+function encodeSse(event,payload){return`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`}
 function realtimeUnavailable(){const error=new Error('Realtime Global Chat jest chwilowo niedostępny.');error.code='GLOBAL_CHAT_REALTIME_UNAVAILABLE';error.status=503;return error}
 function mapMessage(row){return{messageId:row.message_id,userId:row.user_id,displayName:row.display_name,body:row.body,replyTo:row.reply_to,topicId:row.topic_id||null,topicTitle:row.topic_title||null,topicCategory:row.topic_category||null,reactions:row.reactions||{},createdAt:row.created_at,editedAt:row.edited_at,deleted:Boolean(row.deleted)}}
 function validUuid(value){return/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''))}
