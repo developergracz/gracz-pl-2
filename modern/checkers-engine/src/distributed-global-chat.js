@@ -41,6 +41,30 @@ const SCHEMA_SQL=`
   CREATE INDEX IF NOT EXISTS gracz_global_chat_user_idx ON gracz_global_chat(user_id,created_at DESC);
   CREATE INDEX IF NOT EXISTS gracz_global_chat_topic_idx ON gracz_global_chat(topic_id,created_at DESC);
 
+  CREATE OR REPLACE FUNCTION gracz_enforce_global_chat_admission() RETURNS TRIGGER AS $$
+  DECLARE recent_count INTEGER; recent_body TEXT;
+  BEGIN
+    PERFORM pg_advisory_xact_lock(hashtextextended('global-chat-admission:'||NEW.user_id,0));
+    SELECT COUNT(*)::int INTO recent_count
+      FROM gracz_global_chat
+      WHERE user_id=NEW.user_id AND created_at>NOW()-INTERVAL '10 seconds';
+    IF recent_count>=5 THEN
+      RAISE EXCEPTION USING ERRCODE='P0001', MESSAGE='CHAT_RATE_LIMIT';
+    END IF;
+    SELECT body INTO recent_body
+      FROM gracz_global_chat
+      WHERE user_id=NEW.user_id AND created_at>NOW()-INTERVAL '10 seconds'
+      ORDER BY created_at DESC,message_id DESC LIMIT 1;
+    IF recent_body IS NOT NULL AND recent_body=NEW.body THEN
+      RAISE EXCEPTION USING ERRCODE='P0001', MESSAGE='CHAT_DUPLICATE';
+    END IF;
+    RETURN NEW;
+  END; $$ LANGUAGE plpgsql;
+  DROP TRIGGER IF EXISTS gracz_global_chat_admission ON gracz_global_chat;
+  CREATE TRIGGER gracz_global_chat_admission
+    BEFORE INSERT ON gracz_global_chat
+    FOR EACH ROW EXECUTE FUNCTION gracz_enforce_global_chat_admission();
+
   CREATE TABLE IF NOT EXISTS gracz_chat_friends (
     relation_id UUID PRIMARY KEY,
     requester_id TEXT NOT NULL,
@@ -108,6 +132,14 @@ export class DistributedGlobalChatService extends GlobalChatService {
     });
     for(const row of rows) this.presence.set(row.user_id,{userId:row.user_id,displayName:row.display_name,seenAt:new Date(row.seen_at).getTime()});
     await this.#connectListener();
+  }
+
+  async send(user,input={}){
+    try{return await super.send(user,input)}catch(error){
+      if(error?.code==='P0001'&&error?.message==='CHAT_RATE_LIMIT')throw semanticChatError('Wysyłasz wiadomości zbyt szybko. Odczekaj chwilę.','CHAT_RATE_LIMIT');
+      if(error?.code==='P0001'&&error?.message==='CHAT_DUPLICATE')throw semanticChatError('Nie wysyłaj tej samej wiadomości kilka razy.','CHAT_DUPLICATE');
+      throw error;
+    }
   }
 
   touch(user){
@@ -356,6 +388,7 @@ function parseSignal(raw){
 }
 
 function encodeSse(event,payload){return`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`}
+function semanticChatError(message,code){const error=new Error(message);error.code=code;error.status=429;return error}
 function realtimeUnavailable(){const error=new Error('Realtime Global Chat jest chwilowo niedostępny.');error.code='GLOBAL_CHAT_REALTIME_UNAVAILABLE';error.status=503;return error}
 function mapMessage(row){return{messageId:row.message_id,userId:row.user_id,displayName:row.display_name,body:row.body,replyTo:row.reply_to,topicId:row.topic_id||null,topicTitle:row.topic_title||null,topicCategory:row.topic_category||null,reactions:row.reactions||{},createdAt:row.created_at,editedAt:row.edited_at,deleted:Boolean(row.deleted)}}
 function validUuid(value){return/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''))}
