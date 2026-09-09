@@ -3,17 +3,16 @@ import pg from "pg";
 const { Pool } = pg;
 
 const SECRET_KEYS = /password|token|secret|authorization|cookie|body|message|content|api[-_]?key/i;
+const AUDIT_SCHEMA_LOCK_CLASS = 1_000_006_007;
+const AUDIT_SCHEMA_LOCK_OBJECT = 1;
 
-export class AuditService {
-  constructor(databaseUrl = null, { hashSalt = process.env.AUDIT_HASH_SALT || process.env.AUTH_SECRET || "" } = {}) {
-    this.pool = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 2 }) : null;
-    this.memory = [];
-    this.hashSalt = String(hashSalt);
-    this.ready = this.pool ? this.initialize() : Promise.resolve();
-  }
-
-  async initialize() {
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_audit_log(
+export async function initializeAuditSchema(pool) {
+  if (!pool || typeof pool.connect !== "function") throw new TypeError("Pula PostgreSQL jest wymagana do inicjalizacji audytu.");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock($1::int, $2::int)", [AUDIT_SCHEMA_LOCK_CLASS, AUDIT_SCHEMA_LOCK_OBJECT]);
+    await client.query(`CREATE TABLE IF NOT EXISTS gracz_audit_log(
       event_id UUID PRIMARY KEY,
       occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       actor_id VARCHAR(128),
@@ -25,19 +24,38 @@ export class AuditService {
       user_agent_hash CHAR(64),
       metadata JSONB NOT NULL DEFAULT '{}'::jsonb
     )`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_time_idx ON gracz_audit_log(occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_actor_idx ON gracz_audit_log(actor_id,occurred_at DESC)`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_type_idx ON gracz_audit_log(event_type,occurred_at DESC)`);
-    await this.pool.query(`
+    await client.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_time_idx ON gracz_audit_log(occurred_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_actor_idx ON gracz_audit_log(actor_id,occurred_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS gracz_audit_log_type_idx ON gracz_audit_log(event_type,occurred_at DESC)`);
+    await client.query(`
       CREATE OR REPLACE FUNCTION gracz_audit_log_immutable() RETURNS trigger AS $$
       BEGIN
         RAISE EXCEPTION 'gracz_audit_log is append-only';
       END;
       $$ LANGUAGE plpgsql;
     `);
-    await this.pool.query(`DROP TRIGGER IF EXISTS gracz_audit_log_block_mutation ON gracz_audit_log`);
-    await this.pool.query(`CREATE TRIGGER gracz_audit_log_block_mutation BEFORE UPDATE OR DELETE ON gracz_audit_log FOR EACH ROW EXECUTE FUNCTION gracz_audit_log_immutable()`);
-    await this.pool.query(`REVOKE UPDATE, DELETE, TRUNCATE ON gracz_audit_log FROM PUBLIC`).catch(() => {});
+    await client.query(`DROP TRIGGER IF EXISTS gracz_audit_log_block_mutation ON gracz_audit_log`);
+    await client.query(`CREATE TRIGGER gracz_audit_log_block_mutation BEFORE UPDATE OR DELETE ON gracz_audit_log FOR EACH ROW EXECUTE FUNCTION gracz_audit_log_immutable()`);
+    await client.query(`REVOKE UPDATE, DELETE, TRUNCATE ON gracz_audit_log FROM PUBLIC`).catch(() => {});
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export class AuditService {
+  constructor(databaseUrl = null, { hashSalt = process.env.AUDIT_HASH_SALT || process.env.AUTH_SECRET || "" } = {}) {
+    this.pool = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 2 }) : null;
+    this.memory = [];
+    this.hashSalt = String(hashSalt);
+    this.ready = this.pool ? this.initialize() : Promise.resolve();
+  }
+
+  async initialize() {
+    await initializeAuditSchema(this.pool);
   }
 
   fingerprint(value) {

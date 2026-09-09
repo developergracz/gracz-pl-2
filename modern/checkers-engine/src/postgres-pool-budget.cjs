@@ -25,10 +25,18 @@ const POSTGRES_POOL_PROFILE = Object.freeze([
   Object.freeze({ id: "gomoku", file: "postgres-gomoku-service.js", max: 4, dedicatedListen: 0 }),
 ]);
 
-function parsePositiveInteger(value, name) {
+function parsePositiveInteger(value, name, maximum = 1_000_000) {
   const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 1024) {
-    throw new TypeError(`${name} musi być liczbą całkowitą od 1 do 1024.`);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) {
+    throw new TypeError(`${name} musi być dodatnią liczbą całkowitą nie większą niż ${maximum}.`);
+  }
+  return parsed;
+}
+
+function parseNonNegativeInteger(value, name, maximum = 1_000_000) {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > maximum) {
+    throw new TypeError(`${name} musi być nieujemną liczbą całkowitą nie większą niż ${maximum}.`);
   }
   return parsed;
 }
@@ -45,6 +53,7 @@ function configuredPoolBudget(environment = process.env) {
   return parsePositiveInteger(
     environment.POSTGRES_POOL_BUDGET ?? DEFAULT_POSTGRES_POOL_BUDGET,
     "POSTGRES_POOL_BUDGET",
+    1024,
   );
 }
 
@@ -64,6 +73,58 @@ function validateConfiguredPoolBudget(environment = process.env, profile = POSTG
   return Object.freeze({ budget, aggregateMax, dedicatedListen });
 }
 
+function connectionBudgetPlan({
+  replicaCount,
+  maxConnections,
+  reservedConnections = 0,
+  operationalHeadroom = null,
+  environment = process.env,
+  profile = POSTGRES_POOL_PROFILE,
+} = {}) {
+  const replicas = parsePositiveInteger(replicaCount, "POSTGRES_REPLICA_COUNT", 10_000);
+  const max = parsePositiveInteger(maxConnections, "POSTGRES_MAX_CONNECTIONS", 1_000_000);
+  const reserved = parseNonNegativeInteger(reservedConnections, "POSTGRES_RESERVED_CONNECTIONS", max);
+  const configured = validateConfiguredPoolBudget(environment, profile);
+  const dedicatedListenPerReplica = aggregateDedicatedListen(profile);
+  const ordinaryPoolMaxPerReplica = aggregatePoolMax(profile) - dedicatedListenPerReplica;
+  const dedicatedListenReservations = dedicatedListenPerReplica * replicas;
+  const minimumHeadroom = Math.max(10, Math.ceil(max * 0.10));
+  const headroom = operationalHeadroom === null || operationalHeadroom === undefined
+    ? minimumHeadroom
+    : Math.max(minimumHeadroom, parseNonNegativeInteger(operationalHeadroom, "POSTGRES_OPERATIONAL_HEADROOM", max));
+  const safeOrdinaryQueryConnectionBudget = Math.max(0, max - reserved - dedicatedListenReservations - headroom);
+  const configuredOrdinaryEnvelope = ordinaryPoolMaxPerReplica * replicas;
+  const configuredTotalApplicationEnvelope = aggregatePoolMax(profile) * replicas;
+  const safe = configuredOrdinaryEnvelope <= safeOrdinaryQueryConnectionBudget;
+  return Object.freeze({
+    replicaCount: replicas,
+    maxConnections: max,
+    reservedConnections: reserved,
+    operationalHeadroom: headroom,
+    configuredPoolBudgetPerReplica: configured.budget,
+    profilePoolMaxPerReplica: configured.aggregateMax,
+    ordinaryPoolMaxPerReplica,
+    dedicatedListenPerReplica,
+    dedicatedListenReservations,
+    safeOrdinaryQueryConnectionBudget,
+    configuredOrdinaryEnvelope,
+    configuredTotalApplicationEnvelope,
+    safe,
+    formula: `${configuredOrdinaryEnvelope} <= ${max} - ${reserved} - ${dedicatedListenReservations} - ${headroom} = ${safeOrdinaryQueryConnectionBudget}`,
+  });
+}
+
+function validateClusterConnectionBudget(input = {}) {
+  const plan = connectionBudgetPlan(input);
+  if (!plan.safe) {
+    const error = new TypeError(`Niebezpieczna topologia PostgreSQL: ${plan.formula}.`);
+    error.code = "POSTGRES_CLUSTER_CONNECTION_BUDGET_EXCEEDED";
+    error.plan = plan;
+    throw error;
+  }
+  return plan;
+}
+
 module.exports = Object.freeze({
   DEFAULT_POSTGRES_POOL_MAX,
   DEFAULT_POSTGRES_POOL_BUDGET,
@@ -72,4 +133,6 @@ module.exports = Object.freeze({
   aggregateDedicatedListen,
   configuredPoolBudget,
   validateConfiguredPoolBudget,
+  connectionBudgetPlan,
+  validateClusterConnectionBudget,
 });
