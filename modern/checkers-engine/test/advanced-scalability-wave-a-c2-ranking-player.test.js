@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 
+import {PostgresSessionStore} from '../src/postgres-session-store.js';
 import {RankingService} from '../src/rankings.js';
 
 const databaseUrl=process.env.P1_C_01_DATABASE_URL||process.env.DATABASE_URL;
@@ -17,8 +18,15 @@ test('Wave A C2 contract: personal ranking no longer delegates to leaderboard(li
 test('Wave A C2 PostgreSQL: valid player below top 500 remains directly retrievable',{skip:!databaseUrl},async()=>{
   const prefix=unique('wa_c2');
   const target=`${prefix}_target`;
-  const service=new RankingService(databaseUrl);
+  const store=new PostgresSessionStore(databaseUrl);
+  let service;
   try{
+    // RankingService installs a trigger on the authoritative Checkers table.
+    // The production runtime initializes the session store first; mirror that
+    // real dependency ordering instead of weakening RankingService fail-closed
+    // schema behavior for an isolated test fixture.
+    await store.ready;
+    service=new RankingService(databaseUrl);
     await service.ready;
     const rows=[];
     for(let index=0;index<600;index+=1){
@@ -47,7 +55,8 @@ test('Wave A C2 PostgreSQL: valid player below top 500 remains directly retrieva
     assert.equal(result.player.userId,target);
     assert.ok(result.player.rank>500,`expected rank > 500, received ${result.player.rank}`);
   }finally{
-    await service.pool?.query('DELETE FROM gracz_ranking_materialized WHERE user_id LIKE $1',[`${prefix}%`]).catch(()=>{});
-    await service.close();
+    const pool=service?.pool??store.pool;
+    await pool.query('DELETE FROM gracz_ranking_materialized WHERE user_id LIKE $1',[`${prefix}%`]).catch(()=>{});
+    await Promise.allSettled([service?.close(),store.close()]);
   }
 });
