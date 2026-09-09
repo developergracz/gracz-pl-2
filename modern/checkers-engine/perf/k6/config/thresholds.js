@@ -5,9 +5,4 @@ export const thresholds = {
   wave_b_normal_command_ms: ['p(95)<300', 'p(99)<750'],
   wave_b_complex_read_ms: ['p(95)<500', 'p(99)<1000'],
 };
-
-export const classes = Object.freeze({
-  FAST: 'fast',
-  NORMAL: 'normal',
-  COMPLEX: 'complex',
-});
+export const classes=Object.freeze({FAST:'fast',NORMAL:'normal',COMPLEX:'complex'});

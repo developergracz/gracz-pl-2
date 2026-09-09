@@ -7,7 +7,7 @@ INTERVAL="${WAVE_B_APP_SAMPLE_INTERVAL:-1}"
 PORTS="${WAVE_B_APP_PORTS:-3000}"
 OUT="perf/k6/reports/${RUN_ID}-application.csv"
 mkdir -p "$(dirname "$OUT")"
-echo 'ts,pid,cpu_percent,rss_kb,established_tcp' > "$OUT"
+echo 'ts,pid,cpu_percent,rss_kb,established_tcp,process_state' > "$OUT"
 end=$(( $(date +%s) + DURATION ))
 while [[ $(date +%s) -lt $end ]]; do
   ts=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)
@@ -16,11 +16,11 @@ while [[ $(date +%s) -lt $end ]]; do
   for i in "${!pids[@]}"; do
     pid="${pids[$i]}"; port="${ports[$i]:-${ports[0]}}"
     if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-      read -r cpu rss < <(ps -p "$pid" -o %cpu=,rss= | awk '{print $1,$2}')
+      read -r cpu rss state < <(ps -p "$pid" -o %cpu=,rss=,stat= | awk '{print $1,$2,$3}')
       sockets=$(ss -Htan state established "( sport = :$port )" 2>/dev/null | wc -l | tr -d ' ')
-      echo "$ts,$pid,${cpu:-0},${rss:-0},${sockets:-0}" >> "$OUT"
+      echo "$ts,$pid,${cpu:-0},${rss:-0},${sockets:-0},${state:-unknown}" >> "$OUT"
     else
-      echo "$ts,$pid,PROCESS_DEAD,0,0" >> "$OUT"
+      echo "$ts,$pid,0,0,0,PROCESS_DEAD" >> "$OUT"
     fi
   done
   sleep "$INTERVAL"
