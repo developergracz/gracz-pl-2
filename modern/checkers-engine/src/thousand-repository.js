@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { ensureRankingSchema, installThousandRankingTrigger, RANKING_SCHEMA_LOCK } from './ranking-materialization.js';
 const { Pool } = pg;
 const THOUSAND_SCHEMA_LOCK=1_000_003_003;
 
@@ -65,6 +66,9 @@ export class PostgresThousandRepository {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
+      await client.query('SELECT pg_advisory_xact_lock($1)',[RANKING_SCHEMA_LOCK]);
+      await ensureRankingSchema(client);
+      await installThousandRankingTrigger(client);
       await client.query('COMMIT');
     }catch(error){
       await client.query('ROLLBACK').catch(()=>{});
