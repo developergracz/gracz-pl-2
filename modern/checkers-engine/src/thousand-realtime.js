@@ -1,12 +1,28 @@
+const REALTIME_CHANNEL='gracz_thousand_realtime';
+const MAX_NOTIFICATION_BYTES=1024;
+const RECONNECT_DELAY_MS=250;
+const QUERY_TIMEOUT_MS=1500;
+const ALLOWED_EVENT_TYPES=new Set(['thousand.updated','thousand.round-started']);
+
 export class ThousandRealtimeHub {
   #subscribers=new Map();
+  #listener=null;
+  #closing=false;
+  #reconnectTimer=null;
+  #connectPromise=null;
 
-  constructor({service}){
+  constructor({service,pool=service?.repository?.pool??null,logger={error(){}}}={}){
     if(!service) throw new TypeError('Serwis Tysiąca jest wymagany dla realtime.');
+    if(pool&&(typeof pool.connect!=='function'||typeof pool.query!=='function')) throw new TypeError('Pula PostgreSQL realtime Tysiąca ma nieprawidłowy kontrakt.');
     this.service=service;
+    this.pool=pool;
+    this.logger=logger;
+    this.ready=pool?this.#connectListener().catch(error=>{this.#log(error)}):Promise.resolve();
   }
 
   async subscribe(gameId,userId,response){
+    assertGameId(gameId);
+    if(this.pool) await this.ready;
     const subscription={userId,response};
     const subscribers=this.#subscribers.get(gameId)??new Set();
     subscribers.add(subscription);
@@ -35,21 +51,119 @@ export class ThousandRealtimeHub {
   }
 
   async publish(gameId,type='thousand.updated'){
+    if(!isGameId(gameId)||!ALLOWED_EVENT_TYPES.has(type)) return false;
+    if(!this.pool){
+      await this.#fanOut(gameId,type);
+      return true;
+    }
+
+    const payload=JSON.stringify({gameId,type});
+    if(Buffer.byteLength(payload,'utf8')>MAX_NOTIFICATION_BYTES) return false;
+    try{
+      await this.pool.query({
+        text:'SELECT pg_notify($1, $2)',
+        values:[REALTIME_CHANNEL,payload],
+        query_timeout:QUERY_TIMEOUT_MS,
+      });
+      return true;
+    }catch(error){
+      this.#log(error);
+      return false;
+    }
+  }
+
+  #connectListener(){
+    if(this.#closing||this.#listener) return Promise.resolve();
+    if(this.#connectPromise) return this.#connectPromise;
+    this.#connectPromise=this.#openListener().finally(()=>{this.#connectPromise=null});
+    return this.#connectPromise;
+  }
+
+  async #openListener(){
+    let client;
+    try{
+      client=await this.pool.connect();
+      if(this.#closing){client.release(true);return}
+      client.on('notification',notification=>{
+        if(notification.channel===REALTIME_CHANNEL) void this.#handleNotification(notification.payload);
+      });
+      client.on('error',error=>this.#listenerLost(client,error));
+      client.on('end',()=>this.#listenerLost(client));
+      await client.query({text:`LISTEN ${REALTIME_CHANNEL}`,query_timeout:QUERY_TIMEOUT_MS});
+      if(this.#closing){client.release(true);return}
+      this.#listener=client;
+    }catch(error){
+      if(client) try{client.release(true)}catch{}
+      if(!this.#closing) this.#scheduleReconnect();
+      throw error;
+    }
+  }
+
+  #listenerLost(client,error=null){
+    if(error) this.#log(error);
+    if(this.#listener===client){
+      this.#listener=null;
+      try{client.release(true)}catch{}
+    }
+    if(!this.#closing) this.#scheduleReconnect();
+  }
+
+  #scheduleReconnect(){
+    if(this.#closing||this.#reconnectTimer) return;
+    this.#reconnectTimer=setTimeout(()=>{
+      this.#reconnectTimer=null;
+      this.ready=this.#connectListener().catch(error=>{this.#log(error)});
+    },RECONNECT_DELAY_MS);
+    this.#reconnectTimer.unref?.();
+  }
+
+  async #handleNotification(rawPayload){
+    const event=parseNotification(rawPayload);
+    if(!event) return;
+    await this.#fanOut(event.gameId,event.type);
+  }
+
+  async #fanOut(gameId,type){
     const subscribers=[...(this.#subscribers.get(gameId)??[])];
     await Promise.allSettled(subscribers.map(async subscriber=>{
       try{
         const view=await this.service.getView(gameId,subscriber.userId);
         subscriber.response.write(encodeEvent(type,view));
-      }catch{
-        subscriber.response.end();
+      }catch(error){
+        if(this.pool) this.#log(error);
+        try{subscriber.response.end()}catch{}
       }
     }));
   }
 
+  #log(error){
+    try{this.logger?.error?.(error)}catch{}
+  }
+
   close(){
-    for(const subscribers of this.#subscribers.values()) for(const {response} of subscribers) response.end();
+    this.#closing=true;
+    if(this.#reconnectTimer) clearTimeout(this.#reconnectTimer);
+    this.#reconnectTimer=null;
+
+    for(const subscribers of this.#subscribers.values()){
+      for(const {response} of subscribers) try{response.end()}catch{}
+    }
     this.#subscribers.clear();
+
+    const listener=this.#listener;
+    this.#listener=null;
+    if(listener) try{listener.release(true)}catch{}
   }
 }
 
+function parseNotification(rawPayload){
+  if(Buffer.byteLength(String(rawPayload??''),'utf8')>MAX_NOTIFICATION_BYTES) return null;
+  let event;
+  try{event=JSON.parse(String(rawPayload??'{}'))}catch{return null}
+  if(!isGameId(event?.gameId)||!ALLOWED_EVENT_TYPES.has(event?.type)) return null;
+  return {gameId:event.gameId,type:event.type};
+}
+
+function assertGameId(gameId){if(!isGameId(gameId)) throw new TypeError('Nieprawidłowy identyfikator gry Tysiąc dla realtime.')}
+function isGameId(gameId){return /^[a-zA-Z0-9_-]{8,96}$/.test(String(gameId??''))}
 function encodeEvent(type,data){return `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`}
