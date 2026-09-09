@@ -17,46 +17,53 @@ test('Wave A C2 contract: personal ranking no longer delegates to leaderboard(li
   assert.match(source,/SELECT COUNT\(\*\)::bigint/);
 });
 
-test('Wave A C2 PostgreSQL: valid player below top 500 remains directly retrievable',{skip:!databaseUrl},async()=>{
-  const prefix=unique('wa_c2');
-  const target=`${prefix}_target`;
+test('Wave A C2 PostgreSQL: exact personal lookup returns ranks 500, 501 and 10,000',{skip:!databaseUrl},async()=>{
+  const prefix=unique('wa_c2_exact');
   const store=new PostgresSessionStore(databaseUrl);
   const accounts=new PostgresAccountService(databaseUrl,TEST_MESSAGE_KEY,{legacyEncryptionSecret:null});
   let service;
   try{
-    // Production main initializes the authoritative Checkers store and accounts
-    // before RankingService. Mirror that exact dependency ordering so the
-    // ranking query can safely LEFT JOIN gracz_accounts without weakening its
-    // production contract for an isolated test fixture.
+    // Production initializes the authoritative Checkers store and accounts before
+    // RankingService. Mirror that dependency ordering without weakening the
+    // production LEFT JOIN contract used by personal ranking lookup.
     await Promise.all([store.ready,accounts.ready]);
     service=new RankingService(databaseUrl);
     await service.ready;
-    const rows=[];
-    for(let index=0;index<600;index+=1){
-      rows.push({userId:`${prefix}_ahead_${String(index).padStart(4,'0')}`,rating:2000+Math.floor(index/100),wins:100-index%10,losses:index%5});
-    }
-    rows.push({userId:target,rating:1000,wins:0,losses:20});
-    for(let offset=0;offset<rows.length;offset+=200){
-      const batch=rows.slice(offset,offset+200),params=[];
-      const values=batch.map((row,index)=>{
-        const base=index*5;
-        params.push(row.userId,row.rating,row.wins,row.losses,'all');
-        return `($${base+1},1,$${base+3},0,$${base+4},0,0,$${base+2},$${base+2},0,0,$${base+5})`;
-      }).join(',');
-      await service.pool.query(`
-        INSERT INTO gracz_ranking_materialized(user_id,games,wins,draws,losses,streak,best_streak,rating,peak_rating,checkers_games,thousand_games,scope)
-        VALUES ${values}
-        ON CONFLICT(scope,user_id) DO UPDATE SET
-          games=EXCLUDED.games,wins=EXCLUDED.wins,draws=EXCLUDED.draws,losses=EXCLUDED.losses,
-          streak=EXCLUDED.streak,best_streak=EXCLUDED.best_streak,rating=EXCLUDED.rating,peak_rating=EXCLUDED.peak_rating,
-          checkers_games=EXCLUDED.checkers_games,thousand_games=EXCLUDED.thousand_games
-      `,params);
-    }
 
-    const result=await service.player(target,{period:'all',game:'all'});
-    assert.ok(result.player,'ranked player must not disappear beyond the first 500 rows');
-    assert.equal(result.player.userId,target);
-    assert.ok(result.player.rank>500,`expected rank > 500, received ${result.player.rank}`);
+    // Use unique, near-INT_MAX ratings so unrelated ordinary ranking fixtures
+    // cannot move these deterministic positions. Rating itself is the complete
+    // ordering discriminator, so account/display-name tie-breaks are irrelevant.
+    await service.pool.query(`
+      INSERT INTO gracz_ranking_materialized(
+        scope,user_id,games,wins,draws,losses,streak,best_streak,
+        rating,peak_rating,checkers_games,thousand_games
+      )
+      SELECT
+        'all',
+        $1 || '_rank_' || LPAD(position::text,5,'0'),
+        20,10,0,10,0,0,
+        2147000000-position,
+        2147000000-position,
+        10,10
+      FROM generate_series(1,10000) AS generated(position)
+      ON CONFLICT(scope,user_id) DO UPDATE SET
+        games=EXCLUDED.games,wins=EXCLUDED.wins,draws=EXCLUDED.draws,losses=EXCLUDED.losses,
+        streak=EXCLUDED.streak,best_streak=EXCLUDED.best_streak,rating=EXCLUDED.rating,
+        peak_rating=EXCLUDED.peak_rating,checkers_games=EXCLUDED.checkers_games,
+        thousand_games=EXCLUDED.thousand_games
+    `,[prefix]);
+
+    // Guard against a regression that silently reintroduces a top-N scan.
+    service.leaderboard=async()=>{throw new Error('C2 exact lookup must not delegate to leaderboard')};
+
+    for(const expectedRank of[500,501,10000]){
+      const userId=`${prefix}_rank_${String(expectedRank).padStart(5,'0')}`;
+      const result=await service.player(userId,{period:'all',game:'all'});
+      assert.ok(result.player,`rank ${expectedRank} player must be directly retrievable`);
+      assert.equal(result.player.userId,userId);
+      assert.equal(result.player.rank,expectedRank);
+      assert.equal(result.player.rating,2147000000-expectedRank);
+    }
   }finally{
     const pool=service?.pool??store.pool;
     await pool.query('DELETE FROM gracz_ranking_materialized WHERE user_id LIKE $1',[`${prefix}%`]).catch(()=>{});
