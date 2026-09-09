@@ -4,24 +4,24 @@
 **Repository:** `developergracz/gracz-pl-2`  
 **Documentation branch:** `docs/master-history-gracz-pl-2026-09-08`  
 **Production authorization:** NONE  
-**Merge authorization:** NONE
+**Deploy authorization:** NONE
 
 ## 1. Cel
 
-Ten pakiet jest nadrzędną, dowodową dokumentacją Gracz.pl: historia, target design, rzeczywisty AS-IS kodu, bezpieczeństwo, dane, testy, audyty, operacje, FairPlay MAX i przyszły finalny AS-BUILT.
+Ten pakiet jest nadrzędną, dowodową dokumentacją Gracz.pl: historia, target design, rzeczywisty AS-IS kodu, bezpieczeństwo, dane, testy, audyty, operacje, FairPlay MAX, Advanced Scalability i przyszły finalny AS-BUILT.
 
 Dokumentacja bezwzględnie rozdziela:
 
 - historyczny stan projektu,
 - target design,
 - current-main AS-IS,
-- pending PR delta,
+- pending branch/PR delta,
 - test evidence,
 - independent audit evidence,
 - merge state,
 - production state.
 
-Żaden dokument nie autoryzuje merge, deployu, migracji, Render/ENV/DNS/Cloudflare ani produkcji.
+Żaden dokument nie autoryzuje merge, deployu, migracji, Render/ENV/DNS/Cloudflare ani produkcji, chyba że osobny jawny mandat Ownera mówi inaczej.
 
 ## 2. Źródła prawdy
 
@@ -47,6 +47,8 @@ W przypadku sprzeczności wygrywa najświeższy dowód o najwyższej jakości dl
 - `45-FULL-AUDIT-PLAN-AND-CHECKLIST.md`
 - `46-FULL-AUDIT-EVIDENCE-MANIFEST.md`
 - `47-ARCHITECTURE-DRIFT-AUDIT-TEMPLATE.md`
+- `48-ADVANCED-SCALABILITY-CANONICAL-FINDINGS-REGISTER.md`
+- `49-ADVANCED-SCALABILITY-WAVE-A-CORRECTION-MANDATE.md`
 
 Project history/log surfaces:
 
@@ -63,16 +65,18 @@ Project history/log surfaces:
 - `25-STATE-MACHINE-CATALOG.md`
 - `39-TECHNICAL-DEBT-LEGACY-DEAD-CODE-REGISTER.md`
 - `47-ARCHITECTURE-DRIFT-AUDIT-TEMPLATE.md`
+- `48-ADVANCED-SCALABILITY-CANONICAL-FINDINGS-REGISTER.md`
 
-Historical architecture V3 remains preserved under `01-ARCHITEKTURA/`; its 31.08.2026 AS-IS claims are historical where later P5/P6/P7/DR evidence supersedes them.
+Historical architecture V3 remains preserved under `01-ARCHITEKTURA/`; historical AS-IS claims are superseded where later P5/P6/P7/P8 and Advanced Scalability evidence proves a newer state.
 
 ## 5. Data / PostgreSQL / concurrency
 
 - `05-DATA-POSTGRESQL-MASTER.md`
 - `14-POSTGRESQL-DATA-CATALOG-TABELA-PO-TABELI.md`
 - `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
+- `48-ADVANCED-SCALABILITY-CANONICAL-FINDINGS-REGISTER.md`
 
-Verified current-main catalog currently documents 30 PostgreSQL tables/structures plus non-table realtime/ranking behavior.
+Current Advanced Scalability evidence identifies 19 independent production PostgreSQL pools with a code-derived theoretical per-replica pool ceiling of 76 connections. This is a configuration ceiling, not measured steady-state usage. Production PostgreSQL `max_connections` and operational reserve remain UNKNOWN until environment evidence is collected.
 
 ## 6. Security / configuration / authorization / threats
 
@@ -85,18 +89,23 @@ Verified current-main catalog currently documents 30 PostgreSQL tables/structure
 
 These catalogs cover environment contracts, secrets/key domains, RBAC/MFA, failure semantics, threat-control-test traceability and explicit security gaps without storing secret values.
 
+Advanced Scalability currently preserves the PostgreSQL distributed limiter as a valid fail-closed cross-node security control; replacement by Redis/local async counters is NOT authorized without benchmark evidence.
+
 ## 7. Games / MatchRuntime
 
 - `08-GAMES-MATCHRUNTIME-MASTER.md`
 - `24-CONCURRENCY-AND-INVARIANTS-MATRIX.md`
 - `25-STATE-MACHINE-CATALOG.md`
+- `48-ADVANCED-SCALABILITY-CANONICAL-FINDINGS-REGISTER.md`
 
 Current distinction:
 
-- Checkers = common MatchRuntime/P7,
-- Gomoku = separate revision CAS/requestId path,
-- Tysiąc = separate revision/expectedRevision path,
-- P8 canonical game-type dictionary = PR #43 pending independent audit / not current main.
+- Checkers = common MatchRuntime/P7 with PostgreSQL ownership fencing/idempotency and PG LISTEN/NOTIFY signal path,
+- Gomoku = separate revision CAS/requestId path; correctness strong, current online UI polls every 1200 ms,
+- Tysiąc = separate revision/expectedRevision path; durable state strong, realtime currently process-local and not multi-node complete,
+- Lobby rooms/presence/invitations = process-local and not multi-node complete,
+- Global Chat messages = durable in PostgreSQL, but realtime/presence currently process-local,
+- P8 canonical game-type dictionary = MERGED / TECHNICALLY CLOSED.
 
 ## 8. FairPlay MAX / GFPE
 
@@ -120,60 +129,91 @@ Status:
 - `09-PRODUCT-UX-SEO-DOMAINS-MASTER.md`
 - `10-PRIVACY-LEGAL-GOVERNANCE-MASTER.md`
 - `11-FINAL-AS-BUILT-CHECKLIST.md`
+- `49-ADVANCED-SCALABILITY-WAVE-A-CORRECTION-MANDATE.md`
 
-## 10. Current checkpoint — 08.09.2026
+## 10. Current checkpoint — 09.09.2026
 
-### Closed / established
-
-- P7 / P1-U-02 = CLOSED,
-- P1-R-01 DR = CLOSED,
-- historical P1 evidence backfill = complete for specified PRs,
-- FULL MAX component/API/data/traceability/ADR/findings baselines created,
-- TOM 19 environment catalog = created,
-- TOM 20 secret/key lifecycle = created,
-- TOM 21 authorization matrix = created,
-- TOM 22 error/failure catalog = created,
-- TOM 24 concurrency/invariants = created,
-- TOM 25 state-machine catalog = created,
-- TOM 31 threat/control/test matrix = created,
-- TOM 39 technical-debt/legacy register = created,
-- TOM 45 full-audit plan = prepared,
-- TOM 46 full-audit evidence manifest = prepared,
-- TOM 47 architecture-drift template = prepared.
-
-### P8
+### P8 / P1-U-01
 
 ```text
-PR = #43
-BASE MAIN = ad0739190fe2f9d1657b2b77c8b5f8e825830c08
-HEAD = d7220f57d60779584048cc5c695d40dbb948b9cb
-TREE = 4cbb8504036d26ed2e257f52a475968f5d4cd827
-LEAD = PASS
-CLAUDE AUDIT = PENDING
-MERGE = NOT AUTHORIZED
+PR #43 = MERGED
+FINAL AUDITED P8 HEAD = c69fbcd582ee056ef7b5c0c3fdb0f9eb3042f47f
+FINAL AUDITED P8 TREE = 0ba0abce0993c145164b20f2881f118e0b71124d
+MERGE COMMIT / CURRENT MAIN = 06186b4120054d177c0d3d66517edcf2de3ff857
+CURRENT MAIN TREE = 0ba0abce0993c145164b20f2881f118e0b71124d
+P8 TECHNICAL CLOSURE = ACHIEVED
+POST-MERGE CHECKERSENGINE = PASS
+POST-MERGE SECURITY GATE = PASS
 DEPLOY = NO
+PRODUCTION CHANGE = NO
+```
+
+### Advanced Scalability
+
+Audit target:
+
+```text
+MAIN = 06186b4120054d177c0d3d66517edcf2de3ff857
+TREE = 0ba0abce0993c145164b20f2881f118e0b71124d
+```
+
+Audit state:
+
+```text
+LEAD DEEP SCALABILITY AUDIT = MATERIAL FINDINGS / FAIL GATE
+GEMINI DEEP AUDIT = USEFUL, BUT FINAL PASS VERDICT REJECTED AFTER LEAD VERIFICATION
+CHATGPT-2 DEEP AUDIT = FAIL — CORRECTION REQUIRED
+LEAD VERIFICATION OF CHATGPT-2 = ACCEPTED WITH SEVERITY / PRIORITY ADJUSTMENTS
+CANONICAL FINDINGS REGISTER = CREATED (TOM 48)
+WAVE A CORRECTION MANDATE = CREATED (TOM 49)
+CLAUDE FINAL CLOSURE AUDIT = DEFERRED UNTIL CORRECTIONS + CI + BENCHMARK
+NUMERIC CAPACITY = UNKNOWN
+ADVANCED SCALABILITY GATE = OPEN / HOLD
+```
+
+Canonical program:
+
+```text
+Wave A: horizontal correctness / multi-node operations
+-> Wave B: pre-benchmark hot paths + security/session/static/tournament correctness + observability
+-> k6 + custom SSE/multi-node benchmark, 1 -> 2 -> 4 replicas
+-> Wave C only where measurement justifies architecture changes
+-> Claude FINAL ADVANCED SCALABILITY CLOSURE AUDIT
+-> Lead final verification
+-> scalability gate decision
 ```
 
 ### Full-project audit
 
-`PREPARED / HOLD UNTIL P8 FORMALLY CLOSED`.
-
-Claude will receive current code, historical V3 design, current FULL MAX AS-IS, evidence manifest, threat/error/state/concurrency/debt catalogs and architecture-drift template.
+`HOLD UNTIL ADVANCED SCALABILITY PROGRAM REACHES CLOSURE GATE`.
 
 ## 11. Important current gaps intentionally preserved
 
-- P8 independent audit pending,
-- P1-B-01 reassessment pending,
-- Gomoku/Tysiąc not migrated to common MatchRuntime,
-- Tysiąc current RNG is not GFPE/FairPlay MAX,
+- Advanced Scalability findings remain OPEN until correction/test/audit closure,
+- process-local Lobby state is not horizontally functional,
+- Tysiąc realtime is not cross-node,
+- Global Chat realtime/presence are not cross-node,
+- MatchRuntime stale ownership is safely fenced but bounded recovery/routing is incomplete,
+- PostgreSQL aggregate connection budget is not yet centrally governed,
+- SSE admission/backpressure/drain contract incomplete,
+- readiness does not yet cover all globally critical dependencies,
+- runtime DDL/startup model needs multi-replica hardening,
+- SecurityMonitor high-RPS complexity requires correction before serious benchmark,
+- auth-session touch write amplification remains,
+- static asset path is not optimized for serious public scale,
+- Tournament list filtering after generic LIMIT 200 is a dataset-scale correctness defect,
+- SSE authorization lifetime/revocation contract incomplete,
+- PostgreSQL distributed limiter requires benchmark before any replacement decision,
+- ranking all-time replay is not a long-term scale-ready read model,
+- Gomoku polling cost requires benchmark-driven decision,
 - no universal transactional outbox,
-- legacy crypto read path remains bounded compatibility requiring retirement plan,
-- audit salt fallback requires full-audit decision,
+- Tysiąc current RNG is not GFPE/FairPlay MAX,
 - complete keyId/key-ring model remains future hardening,
 - final retention/legal-hold matrix incomplete,
 - final SBOM/supply-chain register incomplete,
 - final mobile/accessibility acceptance evidence incomplete,
 - final production topology/configuration/RPO/RTO AS-BUILT absent,
+- numeric capacity remains UNKNOWN until controlled load testing,
 - GFPE implementation absent by design.
 
 ## 12. Update rules
@@ -186,23 +226,26 @@ After material work, update as applicable:
 4. Requirements Traceability Matrix,
 5. ADR Register,
 6. Findings/Remediation Register,
-7. TOM 20 for secret/key lifecycle changes,
-8. TOM 22 for public/internal failure contract changes,
-9. TOM 24 for concurrency invariant changes,
-10. TOM 25 for lifecycle/state changes,
-11. TOM 31 for threat/control/test changes,
-12. TOM 39 for debt/legacy changes,
-13. architecture-drift output after full audit,
-14. appropriate domain tom.
+7. Advanced Scalability Canonical Findings Register,
+8. Wave correction package/evidence,
+9. TOM 20 for secret/key lifecycle changes,
+10. TOM 22 for public/internal failure contract changes,
+11. TOM 24 for concurrency invariant changes,
+12. TOM 25 for lifecycle/state changes,
+13. TOM 31 for threat/control/test changes,
+14. TOM 39 for debt/legacy changes,
+15. architecture-drift output after full audit,
+16. appropriate domain tom.
 
 ## 13. Final FULL MAX condition
 
 `FINAL / AS-BUILT` may be declared only after:
 
+- Advanced Scalability closure,
 - full-project audit complete,
 - all blocking findings closed,
 - final main exact SHA/TREE established,
-- test/audit evidence complete,
+- test/audit/benchmark evidence complete,
 - authorized production deployment evidence exists,
 - production configuration/topology verified,
 - architecture drift resolved/documented,
