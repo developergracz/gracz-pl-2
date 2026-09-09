@@ -26,9 +26,9 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
     try{
       assertSameOriginMutation(request);
       const user=await trustedUser(request,auth,authSessions);
-      lobby.touchUser(user);
+      await lobby.touchUser(user);
       const body=await readJson(request);
-      const room=lobby.createRoom({
+      const room=await lobby.createRoom({
         ownerId:user.userId,
         ownerName:user.displayName,
         roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
