@@ -25,7 +25,8 @@ export class GomokuRealtimeHub {
     if(!userId) throw new TypeError("Identyfikator gracza Gomoku jest wymagany dla realtime.");
     if(this.pool) await this.ready;
     const snapshot=await this.service.view(gameId,userId);
-    const subscription={userId,response};
+    const revision=revisionOf(snapshot);
+    const subscription={userId,response,lastRevision:revision};
     const subscribers=this.#subscribers.get(gameId)??new Set();
     subscribers.add(subscription);
     this.#subscribers.set(gameId,subscribers);
@@ -129,6 +130,9 @@ export class GomokuRealtimeHub {
     await Promise.allSettled(subscribers.map(async subscriber=>{
       try{
         const view=await this.service.view(gameId,subscriber.userId);
+        const revision=revisionOf(view);
+        if(revision<=subscriber.lastRevision)return;
+        subscriber.lastRevision=revision;
         subscriber.response.write(encodeEvent(type,view));
       }catch(error){
         this.#log(error);
@@ -156,6 +160,7 @@ export class GomokuRealtimeHub {
   }
 }
 
+function revisionOf(view){const revision=Number(view?.revision);if(!Number.isInteger(revision)||revision<0)throw new TypeError("Nieprawidłowa rewizja widoku Gomoku.");return revision}
 function parseNotification(rawPayload){
   if(Buffer.byteLength(String(rawPayload??""),"utf8")>MAX_NOTIFICATION_BYTES) return null;
   let event;
