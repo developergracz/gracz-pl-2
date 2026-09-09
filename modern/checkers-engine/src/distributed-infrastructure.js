@@ -270,6 +270,7 @@ export class PostgresRealtimeHub {
 
   subscribe(session, playerId, response) {
     assertGameId(session?.gameId);
+    if (!this.#listener) throw new SharedInfrastructureUnavailableError();
     const key = session.gameId;
     const subscription = { playerId, response };
     const subscribers = this.#subscribers.get(key) ?? new Set();
@@ -354,6 +355,7 @@ export class PostgresRealtimeHub {
       this.#listener = null;
       this.listenerBackendPid = null;
       try { client.release(true); } catch {}
+      this.#recycleSubscribers();
     }
     if (!this.#closing) this.#scheduleReconnect();
   }
@@ -403,16 +405,21 @@ export class PostgresRealtimeHub {
     }
   }
 
+  #recycleSubscribers() {
+    for (const subscribers of this.#subscribers.values()) {
+      for (const { response } of subscribers) {
+        try { response.end(); } catch {}
+      }
+    }
+    this.#subscribers.clear();
+  }
+
   close() {
     if (this.#closePromise) return this.#closePromise;
     this.#closing = true;
     if (this.#reconnectTimer) clearTimeout(this.#reconnectTimer);
     this.#reconnectTimer = null;
-
-    for (const subscribers of this.#subscribers.values()) {
-      for (const { response } of subscribers) response.end();
-    }
-    this.#subscribers.clear();
+    this.#recycleSubscribers();
 
     this.#closePromise = (async () => {
       const listener = this.#listener;
