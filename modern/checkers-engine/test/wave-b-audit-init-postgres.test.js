@@ -87,3 +87,5 @@ test("AuditService schema transaction rolls back all new DDL on initialization f
 });
 
 await import("./wave-b-b1-c13-metric-accounting.test.js");
+await import("./wave-b-b1-c14-per-game-write-counters.test.js");
+await import("./wave-b-b1-c14-control.test.js");
