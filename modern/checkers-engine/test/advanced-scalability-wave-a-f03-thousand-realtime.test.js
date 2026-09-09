@@ -134,7 +134,11 @@ test('AS-CAN-F03 PostgreSQL: Node A publishes committed revision to subscriber o
     assert.ok(update);
     assert.equal(update.viewerIndex,1);
     assert.equal(update.state.hands['player-1'][0].hidden,true);
-    assert.equal(update.state.hands['player-2'][0].hidden,false);
+    const ownCard=update.state.hands['player-2'][0];
+    assert.notEqual(ownCard.hidden,true);
+    assert.equal(typeof ownCard.id,'string');
+    assert.equal(typeof ownCard.suit,'string');
+    assert.equal(typeof ownCard.rank,'string');
   }finally{
     hubA.close();hubB.close();
     await repoA.pool.query('DELETE FROM gracz_thousand_games WHERE game_id=$1',[gameId]).catch(()=>{});
