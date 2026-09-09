@@ -10,13 +10,18 @@ async function runnerSource() {
   return readFile(runnerPath, "utf8");
 }
 
-async function extractedFunction(name, endName, context = {}) {
+async function functionSlice(name, endName) {
   const source = await runnerSource();
   const start = source.indexOf(`function ${name}(`);
   const end = source.indexOf(`\nfunction ${endName}(`, start);
   assert.ok(start >= 0 && end > start, `${name} must remain directly testable`);
+  return source.slice(start, end);
+}
+
+async function extractedFunction(name, endName, context = {}) {
+  const source = await functionSlice(name, endName);
   const sandbox = vm.createContext(context);
-  vm.runInContext(`${source.slice(start, end)};this.fn=${name};`, sandbox);
+  vm.runInContext(`${source};this.fn=${name};`, sandbox);
   return sandbox.fn;
 }
 
@@ -38,26 +43,34 @@ test("B1-C14 accepts only real HTTP 2xx write responses", async () => {
   assert.equal(acceptedWrite(null), false);
 });
 
-test("B1-C14 Checkers accepted write increments only the Checkers counter", async () => {
-  const source = await runnerSource();
+test("B1-C14 recordGameAccepted increments only the supplied game counter", async () => {
+  const acceptedWrite = (res) => Boolean(res && res.status >= 200 && res.status < 300);
+  const recordGameAccepted = await extractedFunction("recordGameAccepted", "httpBaseline", { acceptedWrite });
+  const checkers = { count: 0, add(n) { this.count += n; } };
+  const gomoku = { count: 0, add(n) { this.count += n; } };
+  recordGameAccepted({ status: 200 }, checkers);
+  assert.equal(checkers.count, 1);
+  assert.equal(gomoku.count, 0);
+  for (const status of [409, 429, 500, 503, 0]) recordGameAccepted({ status }, checkers);
+  assert.equal(checkers.count, 1);
+});
+
+test("B1-C14 Checkers write path uses only the Checkers accepted counter", async () => {
+  const source = await functionSlice("checkersActivity", "gomokuActivity");
   assert.match(source, /recordGameAccepted\(res,checkersAccepted\)/);
-  assert.doesNotMatch(source, /checkersActivity\(\)[\s\S]*recordGameAccepted\(res,gomokuAccepted\)/);
-  assert.doesNotMatch(source, /checkersActivity\(\)[\s\S]*recordGameAccepted\(res,thousandAccepted\)/);
+  assert.doesNotMatch(source, /gomokuAccepted|thousandAccepted/);
 });
 
-test("B1-C14 Gomoku accepted write increments only the Gomoku counter", async () => {
-  const source = await runnerSource();
+test("B1-C14 Gomoku write path uses only the Gomoku accepted counter", async () => {
+  const source = await functionSlice("gomokuActivity", "thousandActivity");
   assert.match(source, /recordGameAccepted\(res,gomokuAccepted\)/);
+  assert.doesNotMatch(source, /checkersAccepted|thousandAccepted/);
 });
 
-test("B1-C14 Thousand accepted write increments only the Thousand counter", async () => {
-  const source = await runnerSource();
+test("B1-C14 Thousand write path uses only the Thousand accepted counter", async () => {
+  const source = await functionSlice("thousandActivity", "globalChat");
   assert.match(source, /recordGameAccepted\(res,thousandAccepted\)/);
-});
-
-test("B1-C14 rejected, 429, 5xx and timeout responses cannot increment per-game accepted counters", async () => {
-  const acceptedWrite = await extractedFunction("acceptedWrite", "recordGameAccepted");
-  for (const status of [409, 429, 500, 503, 0]) assert.equal(acceptedWrite({ status }), false);
+  assert.doesNotMatch(source, /checkersAccepted|gomokuAccepted/);
 });
 
 test("B1-C14 generic accepted accounting remains independent and intact", async () => {
@@ -70,7 +83,7 @@ test("B1-C14 generic accepted accounting remains independent and intact", async 
 });
 
 test("B1-C14 writer selection remains bounded to one logical writer slot per seeded game", async () => {
-  const source = await runnerSource();
+  const source = await functionSlice("writerFor", "acceptedWrite");
   assert.match(source, /logicalVuSlot\(__VU\)<list\.length/);
   assert.match(source, /__ITER%20===0/);
 });
