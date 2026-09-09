@@ -7,8 +7,10 @@ import { PostgresSessionStore } from "../src/postgres-session-store.js";
 import { PostgresThousandRepository } from "../src/thousand-repository.js";
 import { ThousandGameService } from "../src/thousand-service.js";
 import { PostgresGomokuService } from "../src/postgres-gomoku-service.js";
+import { ensureGomokuPostgresTestSchema } from "./helpers/gomoku-postgres-schema.js";
 
 const databaseUrl=process.env.P1_C_01_DATABASE_URL||process.env.DATABASE_URL;
+if(databaseUrl)await ensureGomokuPostgresTestSchema(databaseUrl);
 
 function unique(label){return `asc6_${label}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`}
 function roomIds(prefix){let n=0;return()=>`${prefix}_room_${++n}`}
