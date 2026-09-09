@@ -12,9 +12,11 @@ import {ThousandRealtimeHub} from '../src/thousand-realtime.js';
 import {PostgresGomokuService} from '../src/postgres-gomoku-service.js';
 import {GomokuRealtimeHub} from '../src/gomoku-realtime.js';
 import {DistributedGlobalChatService} from '../src/distributed-global-chat.js';
+import {ensureGomokuPostgresTestSchema} from './helpers/gomoku-postgres-schema.js';
 
 const {Pool}=pg;
 const databaseUrl=process.env.P1_C_01_DATABASE_URL||process.env.DATABASE_URL;
+if(databaseUrl)await ensureGomokuPostgresTestSchema(databaseUrl);
 function unique(prefix){return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`.toLowerCase()}
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 async function waitFor(predicate,{timeout=6_000,label='condition'}={}){const deadline=Date.now()+timeout;while(Date.now()<deadline){if(await predicate())return;await sleep(25)}throw new Error(`Timed out waiting for ${label}`)}
