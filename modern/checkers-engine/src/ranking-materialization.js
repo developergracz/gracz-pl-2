@@ -1,11 +1,15 @@
 export const RANKING_SCHEMA_LOCK=1_000_005_005;
 export const RANKING_BACKFILL_LOCK=1_000_005_006;
 export const RANKING_MATERIALIZER_LOCK=1_000_005_007;
+export const RANKING_CAPTURE_LOCK=1_000_005_008;
+export const RANKING_BASELINE_VERSION=1;
 export const MAX_RANKING_PERIOD_EVENTS=50_000;
 export const MAX_RANKING_CATCHUP_EVENTS=2_000;
 
 const VALID_GAME_TYPES=new Set(['checkers','thousand']);
 const SCOPES=new Set(['all','checkers','thousand']);
+const BASELINE_READ_BATCH=1_000;
+const BASELINE_WRITE_BATCH=500;
 
 export async function ensureRankingSchema(client){
   await client.query(`
@@ -49,10 +53,12 @@ export async function ensureRankingSchema(client){
     CREATE TABLE IF NOT EXISTS gracz_ranking_state(
       state_id SMALLINT PRIMARY KEY CHECK(state_id=1),
       legacy_backfill_complete BOOLEAN NOT NULL DEFAULT FALSE,
+      legacy_backfill_version INTEGER NOT NULL DEFAULT 0,
       last_event_id BIGINT NOT NULL DEFAULT 0,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     ALTER TABLE gracz_ranking_state ADD COLUMN IF NOT EXISTS last_event_id BIGINT NOT NULL DEFAULT 0;
+    ALTER TABLE gracz_ranking_state ADD COLUMN IF NOT EXISTS legacy_backfill_version INTEGER NOT NULL DEFAULT 0;
     INSERT INTO gracz_ranking_state(state_id) VALUES(1) ON CONFLICT(state_id) DO NOTHING;
   `);
 }
@@ -81,6 +87,7 @@ export async function installCheckersRankingTrigger(client){
       white_id:=s->'players'->'white'->>'id'; black_id:=s->'players'->'black'->>'id'; winner:=s->'game'->>'winner';
       IF white_id IS NULL OR black_id IS NULL OR white_id=black_id THEN RETURN NEW; END IF;
       IF status='won' AND winner NOT IN ('white','black') THEN RETURN NEW; END IF;
+      PERFORM pg_advisory_xact_lock_shared(${RANKING_CAPTURE_LOCK});
       INSERT INTO gracz_ranking_events(game_type,game_id,completed_at,payload)
       VALUES('checkers',NEW.game_id,NEW.updated_at,jsonb_build_object(
         'players',jsonb_build_array(white_id,black_id),
@@ -109,6 +116,7 @@ export async function installThousandRankingTrigger(client,{ifTableExists=false}
       winner_text:=NEW.state->>'winnerIndex';
       IF winner_text IS NULL OR winner_text !~ '^[0-2]$' THEN RETURN NEW; END IF;
       IF NEW.players->0->>'userId' IS NULL OR NEW.players->1->>'userId' IS NULL OR NEW.players->2->>'userId' IS NULL THEN RETURN NEW; END IF;
+      PERFORM pg_advisory_xact_lock_shared(${RANKING_CAPTURE_LOCK});
       INSERT INTO gracz_ranking_events(game_type,game_id,completed_at,payload)
       VALUES('thousand',NEW.game_id,NEW.updated_at,jsonb_build_object(
         'players',jsonb_build_array(NEW.players->0->>'userId',NEW.players->1->>'userId',NEW.players->2->>'userId'),
@@ -125,46 +133,114 @@ export async function installThousandRankingTrigger(client,{ifTableExists=false}
 }
 
 export async function backfillLegacyRankingHistory(pool){
-  const client=await pool.connect();let lockHeld=false;
+  const client=await pool.connect();let backfillLockHeld=false,materializerLockHeld=false,captureLockHeld=false;
   try{
-    await client.query('SELECT pg_advisory_lock($1)',[RANKING_BACKFILL_LOCK]);lockHeld=true;
-    const state=await client.query('SELECT legacy_backfill_complete FROM gracz_ranking_state WHERE state_id=1');
-    if(state.rows[0]?.legacy_backfill_complete) return {backfilled:0,complete:true};
-    let inserted=0;
-    const checkers=await client.query(`
-      INSERT INTO gracz_ranking_events(game_type,game_id,completed_at,payload)
-      SELECT 'checkers',game_id,updated_at,jsonb_build_object(
-        'players',jsonb_build_array(state::jsonb->'players'->'white'->>'id',state::jsonb->'players'->'black'->>'id'),
-        'winnerIndex',CASE WHEN state::jsonb->'game'->>'status'='draw' THEN NULL WHEN state::jsonb->'game'->>'winner'='white' THEN 0 ELSE 1 END,
-        'draw',state::jsonb->'game'->>'status'='draw')
-      FROM gracz_game_sessions
-      WHERE (state::jsonb->'game'->>'status') IN ('won','draw')
-        AND state::jsonb->'players'->'white'->>'id' IS NOT NULL
-        AND state::jsonb->'players'->'black'->>'id' IS NOT NULL
-        AND (state::jsonb->'game'->>'status'='draw' OR state::jsonb->'game'->>'winner' IN ('white','black'))
-      ON CONFLICT(game_type,game_id) DO NOTHING
-    `);inserted+=checkers.rowCount??0;
+    await client.query('SELECT pg_advisory_lock($1)',[RANKING_BACKFILL_LOCK]);backfillLockHeld=true;
+    const state=await client.query('SELECT legacy_backfill_complete,legacy_backfill_version FROM gracz_ranking_state WHERE state_id=1');
+    if(Number(state.rows[0]?.legacy_backfill_version||0)>=RANKING_BASELINE_VERSION)return{backfilled:0,complete:true,rebuilt:false};
 
-    const thousandExists=Boolean((await client.query(`SELECT to_regclass('public.gracz_thousand_games') AS table_name`)).rows[0]?.table_name);
-    if(thousandExists){
-      await installThousandRankingTrigger(client);
-      const thousand=await client.query(`
+    await client.query('SELECT pg_advisory_lock($1)',[RANKING_MATERIALIZER_LOCK]);materializerLockHeld=true;
+    await client.query('BEGIN');
+    try{
+      let inserted=0;
+      const checkers=await client.query(`
         INSERT INTO gracz_ranking_events(game_type,game_id,completed_at,payload)
-        SELECT 'thousand',game_id,updated_at,jsonb_build_object(
-          'players',jsonb_build_array(players->0->>'userId',players->1->>'userId',players->2->>'userId'),
-          'winnerIndex',(state->>'winnerIndex')::int,'draw',false)
-        FROM gracz_thousand_games
-        WHERE state->>'status'='game-ended' AND jsonb_typeof(players)='array' AND jsonb_array_length(players)=3
-          AND state->>'winnerIndex' ~ '^[0-2]$'
-          AND players->0->>'userId' IS NOT NULL AND players->1->>'userId' IS NOT NULL AND players->2->>'userId' IS NOT NULL
+        SELECT 'checkers',game_id,updated_at,jsonb_build_object(
+          'players',jsonb_build_array(state::jsonb->'players'->'white'->>'id',state::jsonb->'players'->'black'->>'id'),
+          'winnerIndex',CASE WHEN state::jsonb->'game'->>'status'='draw' THEN NULL WHEN state::jsonb->'game'->>'winner'='white' THEN 0 ELSE 1 END,
+          'draw',state::jsonb->'game'->>'status'='draw')
+        FROM gracz_game_sessions
+        WHERE (state::jsonb->'game'->>'status') IN ('won','draw')
+          AND state::jsonb->'players'->'white'->>'id' IS NOT NULL
+          AND state::jsonb->'players'->'black'->>'id' IS NOT NULL
+          AND (state::jsonb->'game'->>'status'='draw' OR state::jsonb->'game'->>'winner' IN ('white','black'))
         ON CONFLICT(game_type,game_id) DO NOTHING
-      `);inserted+=thousand.rowCount??0;
-    }
-    await client.query(`UPDATE gracz_ranking_state SET legacy_backfill_complete=TRUE,updated_at=NOW() WHERE state_id=1`);
-    return {backfilled:inserted,complete:true};
+      `);inserted+=checkers.rowCount??0;
+
+      const thousandExists=Boolean((await client.query(`SELECT to_regclass('public.gracz_thousand_games') AS table_name`)).rows[0]?.table_name);
+      if(thousandExists){
+        await installThousandRankingTrigger(client);
+        const thousand=await client.query(`
+          INSERT INTO gracz_ranking_events(game_type,game_id,completed_at,payload)
+          SELECT 'thousand',game_id,updated_at,jsonb_build_object(
+            'players',jsonb_build_array(players->0->>'userId',players->1->>'userId',players->2->>'userId'),
+            'winnerIndex',(state->>'winnerIndex')::int,'draw',false)
+          FROM gracz_thousand_games
+          WHERE state->>'status'='game-ended' AND jsonb_typeof(players)='array' AND jsonb_array_length(players)=3
+            AND state->>'winnerIndex' ~ '^[0-2]$'
+            AND players->0->>'userId' IS NOT NULL AND players->1->>'userId' IS NOT NULL AND players->2->>'userId' IS NOT NULL
+          ON CONFLICT(game_type,game_id) DO NOTHING
+        `);inserted+=thousand.rowCount??0;
+      }
+
+      await client.query('SELECT pg_advisory_lock($1)',[RANKING_CAPTURE_LOCK]);captureLockHeld=true;
+      const boundary=await client.query('SELECT COALESCE(MAX(event_id),0)::bigint AS max_event_id FROM gracz_ranking_events');
+      const baselineMaxEventId=Number(boundary.rows[0]?.max_event_id||0);
+      await client.query('SELECT pg_advisory_unlock($1)',[RANKING_CAPTURE_LOCK]);captureLockHeld=false;
+
+      const rebuilt=await rebuildRankingBaseline(client,{maxEventId:baselineMaxEventId});
+      await client.query(`UPDATE gracz_ranking_state SET legacy_backfill_complete=TRUE,legacy_backfill_version=$2,last_event_id=$3,updated_at=NOW() WHERE state_id=$1`,[1,RANKING_BASELINE_VERSION,baselineMaxEventId]);
+      await client.query('COMMIT');
+      return{backfilled:inserted,complete:true,rebuilt:true,baselineMaxEventId,events:rebuilt.events};
+    }catch(error){await client.query('ROLLBACK').catch(()=>{});throw error}
   }finally{
-    if(lockHeld) await client.query('SELECT pg_advisory_unlock($1)',[RANKING_BACKFILL_LOCK]).catch(()=>{});
+    if(captureLockHeld)await client.query('SELECT pg_advisory_unlock($1)',[RANKING_CAPTURE_LOCK]).catch(()=>{});
+    if(materializerLockHeld)await client.query('SELECT pg_advisory_unlock($1)',[RANKING_MATERIALIZER_LOCK]).catch(()=>{});
+    if(backfillLockHeld)await client.query('SELECT pg_advisory_unlock($1)',[RANKING_BACKFILL_LOCK]).catch(()=>{});
     client.release();
+  }
+}
+
+export async function rebuildRankingBaseline(client,{maxEventId}){
+  if(!Number.isInteger(maxEventId)||maxEventId<0)throw new TypeError('Granica bazowej materializacji rankingu jest nieprawidłowa.');
+  const stats={all:new Map(),checkers:new Map(),thousand:new Map()};
+  const totals={all:0,checkers:0,thousand:0};
+  let cursor=null,events=0;
+  while(true){
+    const params=[maxEventId];
+    let after='';
+    if(cursor){
+      params.push(cursor.completedAt,cursor.gameType,cursor.gameId,cursor.eventId);
+      after=` AND (completed_at,game_type,game_id,event_id)>($2::timestamptz,$3::text,$4::varchar,$5::bigint)`;
+    }
+    params.push(BASELINE_READ_BATCH);
+    const limitParam=`$${params.length}`;
+    const page=await client.query(`
+      SELECT event_id,game_type,game_id,completed_at,payload
+      FROM gracz_ranking_events
+      WHERE event_id<=$1${after}
+      ORDER BY completed_at ASC,game_type ASC,game_id ASC,event_id ASC
+      LIMIT ${limitParam}
+    `,params);
+    if(!page.rows.length)break;
+    for(const row of page.rows){
+      const event=eventFromLedgerRow(row);
+      applyNormalizedEvent(event,stats.all);
+      applyNormalizedEvent(event,stats[event.gameType]);
+      totals.all+=1;totals[event.gameType]+=1;events+=1;
+    }
+    const last=page.rows.at(-1);
+    cursor={completedAt:last.completed_at,gameType:last.game_type,gameId:last.game_id,eventId:Number(last.event_id)};
+    if(page.rows.length<BASELINE_READ_BATCH)break;
+  }
+
+  await client.query('DELETE FROM gracz_ranking_materialized');
+  await client.query('DELETE FROM gracz_ranking_totals');
+  for(const scope of SCOPES)await writeMaterializedBaseline(client,scope,stats[scope]);
+  await client.query(`INSERT INTO gracz_ranking_totals(scope,games) VALUES('all',$1),('checkers',$2),('thousand',$3)`,[totals.all,totals.checkers,totals.thousand]);
+  return{events,players:stats.all.size,totals};
+}
+
+async function writeMaterializedBaseline(client,scope,stats){
+  const rows=[...stats.values()];
+  for(let offset=0;offset<rows.length;offset+=BASELINE_WRITE_BATCH){
+    const batch=rows.slice(offset,offset+BASELINE_WRITE_BATCH),params=[];
+    const values=batch.map((stat,index)=>{
+      const base=index*13;
+      params.push(scope,stat.userId,stat.games,stat.wins,stat.draws,stat.losses,stat.streak,stat.bestStreak,stat.lastPlayed,stat.rating,stat.peakRating,stat.checkersGames,stat.thousandGames);
+      return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7},$${base+8},$${base+9},$${base+10},$${base+11},$${base+12},$${base+13})`;
+    }).join(',');
+    await client.query(`INSERT INTO gracz_ranking_materialized(scope,user_id,games,wins,draws,losses,streak,best_streak,last_played,rating,peak_rating,checkers_games,thousand_games) VALUES ${values}`,params);
   }
 }
 
