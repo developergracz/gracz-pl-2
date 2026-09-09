@@ -6,6 +6,7 @@ import pg from "pg";
 import { AuthService } from "../src/auth.js";
 import { withPostgresStartupSchemaLock } from "../src/postgres-startup-schema-lock.js";
 import { WAVE_B_GUEST_TTL_SECONDS } from "../perf/scripts/wave-b-auth-policy.mjs";
+import { createWaveBSeedPlatform } from "../perf/scripts/wave-b-seed-platform.mjs";
 
 const require = createRequire(import.meta.url);
 const budget = require("../src/postgres-pool-budget.cjs");
@@ -160,4 +161,48 @@ test("C11-S2 clean PostgreSQL bootstrap supports 2 and 4 concurrent startup proc
   await runColdStart(4, 4540, "c11-s2-focused-r4");
 
   await runColdStart(4, 4560, "c11-s2-focused-r4-repeat");
+});
+
+test("C11-S2 benchmark setup can create more than the HTTP room-admission limit through canonical LobbyService", { ...postgresTest, timeout: 120_000 }, async () => {
+  const platform = await createWaveBSeedPlatform(databaseUrl);
+  const prefix = `c11s2-${Date.now()}`;
+  try {
+    for (let index = 0; index < 21; index += 1) {
+      const ownerId = `c11owner${String(index).padStart(2, "0")}`;
+      const playerId = `c11player${String(index).padStart(2, "0")}`;
+      const room = await platform.lobby.createRoom({
+        ownerId,
+        ownerName: `Owner ${index}`,
+        roomName: `${prefix}-${index}`,
+        gameType: "checkers",
+        maxPlayers: 2,
+      });
+      const playing = await platform.lobby.joinRoom({
+        roomId: room.roomId,
+        playerId,
+        playerName: `Player ${index}`,
+      });
+      assert.equal(playing.status, "playing");
+      assert.ok(playing.gameId);
+    }
+  } finally {
+    await platform.close();
+  }
+
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false },
+    max: 1,
+  });
+  try {
+    const rooms = await pool.query("SELECT count(*)::int AS count FROM gracz_lobby_rooms WHERE room_name LIKE $1", [`${prefix}%`]);
+    const games = await pool.query(
+      "SELECT count(*)::int AS count FROM gracz_game_sessions WHERE game_id IN (SELECT game_id FROM gracz_lobby_rooms WHERE room_name LIKE $1)",
+      [`${prefix}%`],
+    );
+    assert.equal(rooms.rows[0].count, 21);
+    assert.equal(games.rows[0].count, 21);
+  } finally {
+    await pool.end();
+  }
 });
