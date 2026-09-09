@@ -1,6 +1,6 @@
-import {readdir,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,readdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-const dir=resolve('perf/k6/reports');const files=await readdir(dir).catch(()=>[]);const rows=[];
+const dir=resolve('perf/k6/reports');await mkdir(dir,{recursive:true});const files=await readdir(dir).catch(()=>[]);const rows=[];
 async function json(name){try{return JSON.parse(await readFile(resolve(dir,name),'utf8'))}catch{return null}}
 async function csvStats(name){try{const lines=(await readFile(resolve(dir,name),'utf8')).trim().split('\n').slice(1);let maxCpu=0,maxRss=0,maxTcp=0;for(const line of lines){const p=line.split(',');if(p[2]==='PROCESS_DEAD')continue;maxCpu=Math.max(maxCpu,Number(p[2])||0);maxRss=Math.max(maxRss,Number(p[3])||0);maxTcp=Math.max(maxTcp,Number(p[4])||0)}return{maxCpu,maxRssKb:maxRss,maxTcp}}catch{return{}}}
 async function pgStats(name){try{const lines=(await readFile(resolve(dir,name),'utf8')).trim().split('\n').slice(1);let maxConn=0,maxWaiting=0,maxLocks=0,deadlocks=0;for(const line of lines){const p=line.split(',');maxConn=Math.max(maxConn,Number(p[1])||0);maxWaiting=Math.max(maxWaiting,Number(p[4])||0);maxLocks=Math.max(maxLocks,Number(p[6])||0);deadlocks=Math.max(deadlocks,Number(p[9])||0)}return{maxConn,maxWaiting,maxLocks,deadlocks}}catch{return{}}}
