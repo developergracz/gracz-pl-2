@@ -37,7 +37,7 @@ class FakePgBus{
 }
 
 class FakePgClient extends EventEmitter{
-  constructor(bus){super();this.bus=bus;this.released=false}
+  constructor(bus){super();this.bus=bus;this.released=false;this.processID=1001}
   async query(config){
     const text=typeof config==='string'?config:config.text;
     if(text===`LISTEN ${CHANNEL}`){this.bus.listeners.add(this);return {rowCount:null,rows:[]}}
@@ -70,9 +70,9 @@ function players(prefix='f03'){
 
 test('AS-CAN-F03: PostgreSQL signal contains only gameId/type and each subscriber is re-projected',async()=>{
   const bus=new FakePgBus();
-  const views=[];
-  const serviceA={repository:{pool:bus.createPool()},async getView(gameId,userId){return {gameId,viewer:userId}}};
-  const serviceB={repository:{pool:bus.createPool()},async getView(gameId,userId){views.push(userId);return {gameId,viewer:userId,projection:`only-${userId}`}}};
+  const views=[];let revision=1;
+  const serviceA={repository:{pool:bus.createPool()},async getView(gameId,userId){return {gameId,viewer:userId,revision}}};
+  const serviceB={repository:{pool:bus.createPool()},async getView(gameId,userId){views.push(userId);return {gameId,viewer:userId,projection:`only-${userId}`,revision}}};
   const hubA=new ThousandRealtimeHub({service:serviceA});
   const hubB=new ThousandRealtimeHub({service:serviceB});
   await Promise.all([hubA.ready,hubB.ready]);
@@ -82,6 +82,7 @@ test('AS-CAN-F03: PostgreSQL signal contains only gameId/type and each subscribe
   await hubB.subscribe(gameId,'alice',alice);
   await hubB.subscribe(gameId,'bob',bob);
   views.length=0;
+  revision=2;
 
   assert.equal(await hubA.publish(gameId,'thousand.updated'),true);
   await waitFor(()=>dataEvents(alice,'thousand.updated').length===1&&dataEvents(bob,'thousand.updated').length===1);
@@ -91,13 +92,15 @@ test('AS-CAN-F03: PostgreSQL signal contains only gameId/type and each subscribe
   assert.deepEqual(views.sort(),['alice','bob']);
   assert.equal(dataEvents(alice,'thousand.updated')[0].projection,'only-alice');
   assert.equal(dataEvents(bob,'thousand.updated')[0].projection,'only-bob');
+  assert.equal(dataEvents(alice,'thousand.updated')[0].revision,2);
+  assert.equal(dataEvents(bob,'thousand.updated')[0].revision,2);
 
   hubA.close();hubB.close();
 });
 
 test('AS-CAN-F03: invalid event type is rejected before PostgreSQL notification',async()=>{
   const bus=new FakePgBus();
-  const service={repository:{pool:bus.createPool()},async getView(){return {}}};
+  const service={repository:{pool:bus.createPool()},async getView(){return {revision:1}}};
   const hub=new ThousandRealtimeHub({service});await hub.ready;
   assert.equal(await hub.publish('game_f03_invalid','thousand.raw-state'),false);
   assert.equal(bus.notifications.length,0);
@@ -128,12 +131,13 @@ test('AS-CAN-F03 PostgreSQL: Node A publishes committed revision to subscriber o
 
     await waitFor(()=>dataEvents(response,'thousand.updated').some(event=>event.revision===2));
     const update=dataEvents(response,'thousand.updated').find(event=>event.revision===2);
+    assert.ok(update);
     assert.equal(update.viewerIndex,1);
-    assert.equal(update.gameId,gameId);
-    assert.equal(Object.hasOwn(update,'rawState'),false);
+    assert.equal(update.state.hands['player-1'][0].hidden,true);
+    assert.equal(update.state.hands['player-2'][0].hidden,false);
   }finally{
-    await repoA.pool.query('DELETE FROM gracz_thousand_games WHERE game_id=$1',[gameId]).catch(()=>{});
     hubA.close();hubB.close();
-    await Promise.allSettled([serviceA.close(),serviceB.close()]);
+    await repoA.pool.query('DELETE FROM gracz_thousand_games WHERE game_id=$1',[gameId]).catch(()=>{});
+    await Promise.allSettled([repoA.close(),repoB.close()]);
   }
 });
