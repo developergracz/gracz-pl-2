@@ -26,15 +26,19 @@ BASE_URLS=$(printf 'http://127.0.0.1:%s,' "${ports[@]}");BASE_URLS=${BASE_URLS%,
 USER_COUNT="${WAVE_B_USER_COUNT:-$(( VUS + 500 ))}";if (( USER_COUNT < 1200 ));then USER_COUNT=1200;fi
 WAVE_B_USER_COUNT="$USER_COUNT" WAVE_B_GAME_COUNT="${WAVE_B_GAME_COUNT:-20}" node perf/scripts/wave-b-seed.mjs
 bash perf/scripts/wave-b-env-snapshot.sh
+node perf/scripts/wave-b-listener-headroom.mjs || true
 SAMPLE_SECONDS="${WAVE_B_SAMPLE_SECONDS:-60}"
 WAVE_B_PG_SAMPLE_SECONDS="$SAMPLE_SECONDS" bash perf/scripts/wave-b-postgres-sample.sh & pg_sampler=$!
 WAVE_B_PIDS_FILE="$PIDS_FILE" WAVE_B_APP_PORTS="$(IFS=,;echo "${ports[*]}")" WAVE_B_APP_SAMPLE_SECONDS="$SAMPLE_SECONDS" bash perf/scripts/wave-b-app-sample.sh & app_sampler=$!
 set +e
 WAVE_B_VUS="$VUS" WAVE_B_SCENARIO="$SCENARIO" k6 run "perf/k6/scenarios/${WAVE_B_SCENARIO_FILE:-10-mixed-platform.js}" --summary-export "$REPORT_DIR/${RUN_ID}-k6-summary-export.json"
 k6_status=$?
-set -e
-wait "$pg_sampler" || true;wait "$app_sampler" || true
+wait "$pg_sampler";pg_sampler_status=$?
+wait "$app_sampler";app_sampler_status=$?
 node perf/scripts/wave-b-correctness-check.mjs
-psql "$DATABASE_URL" -At -F',' -c "SELECT now(),count(*) FILTER(WHERE state='active'),count(*) FILTER(WHERE state='idle'),count(*) FILTER(WHERE wait_event IS NOT NULL) FROM pg_stat_activity WHERE datname=current_database();" > "$REPORT_DIR/${RUN_ID}-pg-final.txt"
-printf '{"runId":"%s","head":"%s","tree":"%s","replicas":%s,"vus":%s,"scenario":"%s","baseUrls":"%s","k6Exit":%s}\n' "$RUN_ID" "$(git rev-parse HEAD)" "$(git rev-parse HEAD^{tree})" "$REPLICAS" "$VUS" "$SCENARIO" "$BASE_URLS" "$k6_status" > "$REPORT_DIR/${RUN_ID}-record.json"
+correctness_status=$?
+set -e
+psql "$DATABASE_URL" -At -F',' -c "SELECT now(),count(*) FILTER(WHERE state='active'),count(*) FILTER(WHERE state='idle'),count(*) FILTER(WHERE wait_event IS NOT NULL) FROM pg_stat_activity WHERE datname=current_database();" > "$REPORT_DIR/${RUN_ID}-pg-final.txt" || true
+printf '{"runId":"%s","head":"%s","tree":"%s","replicas":%s,"vus":%s,"scenario":"%s","baseUrls":"%s","k6Exit":%s,"correctnessExit":%s,"pgSamplerExit":%s,"appSamplerExit":%s}\n' "$RUN_ID" "$(git rev-parse HEAD)" "$(git rev-parse HEAD^{tree})" "$REPLICAS" "$VUS" "$SCENARIO" "$BASE_URLS" "$k6_status" "$correctness_status" "$pg_sampler_status" "$app_sampler_status" > "$REPORT_DIR/${RUN_ID}-record.json"
+if (( correctness_status != 0 ));then exit 2;fi
 exit "$k6_status"
