@@ -119,9 +119,7 @@ export class PostgresDistributedTrafficGuard {
     if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/chat$/.test(path)) checks.push([`game-chat:${source}`, 30, 15_000, "game-chat"]);
     if (method === "POST" && /^\/games\/[a-zA-Z0-9_-]{1,128}\/moves$/.test(path)) checks.push([`moves:${source}`, 120, 60_000, "moves"]);
 
-    for (const [key, limit, windowMs, scope] of checks) {
-      await this.consume(key, { limit, windowMs, scope });
-    }
+    await this.consumeMany(checks);
   }
 
   async assertAccountAllowed({ request, userId, action = "api" }) {
@@ -130,62 +128,92 @@ export class PostgresDistributedTrafficGuard {
     if (!account) return;
     const path = safePath(request.url);
     const method = String(request.method || "GET").toUpperCase();
-    await this.consume(`account-global:${account}`, { limit: 900, windowMs: 60_000, scope: "global-account" });
-    await this.consume(`account-endpoint:${account}:${method}:${endpointClass(path)}`, {
-      limit: accountEndpointLimit(method, path),
-      windowMs: 60_000,
-      scope: "endpoint-account",
-    });
-    await this.consume(`pair:${source}:${account}:${action}`, { limit: pairLimit(action), windowMs: 60_000, scope: "ip-account-pair" });
+    await this.consumeMany([
+      [`account-global:${account}`, 900, 60_000, "global-account"],
+      [`account-endpoint:${account}:${method}:${endpointClass(path)}`, accountEndpointLimit(method, path), 60_000, "endpoint-account"],
+      [`pair:${source}:${account}:${action}`, pairLimit(action), 60_000, "ip-account-pair"],
+    ]);
   }
 
   async assertCredentialAttempt({ request, accountId, endpoint = "login" }) {
     const source = clientSource(request);
     const account = normalizeKey(accountId) || "unknown";
-    await this.consume(`credential-account:${account}:${endpoint}`, { limit: 12, windowMs: 15 * 60_000, scope: "credential-account" });
-    await this.consume(`credential-pair:${source}:${account}:${endpoint}`, { limit: 6, windowMs: 15 * 60_000, scope: "credential-pair" });
-    await this.consume(`spray:${source}:${endpoint}`, { limit: 30, windowMs: 15 * 60_000, scope: "password-spraying" });
+    await this.consumeMany([
+      [`credential-account:${account}:${endpoint}`, 12, 15 * 60_000, "credential-account"],
+      [`credential-pair:${source}:${account}:${endpoint}`, 6, 15 * 60_000, "credential-pair"],
+      [`spray:${source}:${endpoint}`, 30, 15 * 60_000, "password-spraying"],
+    ]);
   }
 
   async assertRegistrationAttempt({ request, accountId = "" }) {
     const source = clientSource(request);
     const account = normalizeKey(accountId) || "unknown";
-    await this.consume(`registration-ip:${source}`, { limit: 5, windowMs: 30 * 60_000, scope: "mass-registration-ip" });
-    await this.consume(`registration-pair:${source}:${account}`, { limit: 3, windowMs: 30 * 60_000, scope: "mass-registration-pair" });
+    await this.consumeMany([
+      [`registration-ip:${source}`, 5, 30 * 60_000, "mass-registration-ip"],
+      [`registration-pair:${source}:${account}`, 3, 30 * 60_000, "mass-registration-pair"],
+    ]);
   }
 
   async consume(key, { limit, windowMs, scope = "request" }) {
-    if (typeof key !== "string" || !key) throw new TypeError("Klucz limitera jest wymagany.");
-    if (!Number.isInteger(limit) || limit < 1) throw new TypeError("Limit musi być dodatnią liczbą całkowitą.");
-    if (!Number.isInteger(windowMs) || windowMs < 1000) throw new TypeError("Okno limitera musi mieć co najmniej 1 s.");
+    const [result] = await this.consumeMany([[key, limit, windowMs, scope]]);
+    return result;
+  }
+
+  async consumeMany(checks) {
+    if (!Array.isArray(checks) || checks.length === 0) return [];
+    const normalized = checks.map((check, index) => normalizeRateCheck(check, index));
+    const hashes = normalized.map((check) => hashKey(check.key));
+    if (new Set(hashes).size !== hashes.length) throw new TypeError("Zakresy limitera muszą mieć unikalne klucze.");
 
     await waitForPromise(this.ready, OPERATION_TIMEOUT_MS);
     const now = this.clock();
-    const resetAt = now + windowMs;
     const deadlineAt = Date.now() + OPERATION_TIMEOUT_MS;
     let client;
     let destroyClient = false;
     try {
       client = await acquireClient(this.pool, deadlineAt);
       const { rows } = await queryBounded(client, `
-        INSERT INTO gracz_shared_rate_limits AS current (key_hash, count, reset_at, updated_at)
-        VALUES ($1, 1, $2, NOW())
-        ON CONFLICT (key_hash)
-        DO UPDATE SET
-          count = CASE WHEN current.reset_at <= $3 THEN 1 ELSE current.count + 1 END,
-          reset_at = CASE WHEN current.reset_at <= $3 THEN $2 ELSE current.reset_at END,
-          updated_at = NOW()
-        RETURNING count, reset_at
-      `, [hashKey(key), resetAt, now], deadlineAt);
+        WITH input AS (
+          SELECT key_hash, reset_at, limit_value, scope, ordinal
+          FROM UNNEST($1::text[], $2::bigint[], $3::integer[], $4::text[], $5::integer[])
+            AS x(key_hash, reset_at, limit_value, scope, ordinal)
+        ), upserted AS (
+          INSERT INTO gracz_shared_rate_limits AS current (key_hash, count, reset_at, updated_at)
+          SELECT key_hash, 1, reset_at, NOW()
+          FROM input
+          ORDER BY key_hash
+          ON CONFLICT (key_hash)
+          DO UPDATE SET
+            count = CASE WHEN current.reset_at <= $6 THEN 1 ELSE current.count + 1 END,
+            reset_at = CASE WHEN current.reset_at <= $6 THEN EXCLUDED.reset_at ELSE current.reset_at END,
+            updated_at = NOW()
+          RETURNING key_hash, count, reset_at
+        )
+        SELECT i.ordinal, i.limit_value, i.scope, u.count, u.reset_at
+        FROM input i
+        JOIN upserted u ON u.key_hash::text = i.key_hash
+        ORDER BY i.ordinal
+      `, [
+        hashes,
+        normalized.map((check) => now + check.windowMs),
+        normalized.map((check) => check.limit),
+        normalized.map((check) => check.scope),
+        normalized.map((_, index) => index),
+        now,
+      ], deadlineAt);
 
-      const count = Number(rows[0].count);
-      const persistedResetAt = Number(rows[0].reset_at);
       this.operations += 1;
       if (this.operations % 500 === 0) void this.#cleanup(now);
-      if (count > limit) {
-        throw new DistributedRateLimitError(Math.max(1, Math.ceil((persistedResetAt - now) / 1000)), scope);
+
+      const exceeded = rows.find((row) => Number(row.count) > Number(row.limit_value));
+      if (exceeded) {
+        const persistedResetAt = Number(exceeded.reset_at);
+        throw new DistributedRateLimitError(
+          Math.max(1, Math.ceil((persistedResetAt - now) / 1000)),
+          exceeded.scope,
+        );
       }
-      return { count, resetAt: persistedResetAt };
+      return rows.map((row) => ({ count: Number(row.count), resetAt: Number(row.reset_at) }));
     } catch (error) {
       if (error instanceof DistributedRateLimitError) throw error;
       destroyClient = true;
@@ -207,7 +235,7 @@ export class PostgresDistributedTrafficGuard {
         deadlineAt,
       );
     } catch {
-      // Best-effort cleanup only; enforcement remains fail-closed in consume().
+      // Best-effort cleanup only; enforcement remains fail-closed in consumeMany().
     } finally {
       client?.release();
     }
@@ -476,6 +504,15 @@ function sharedUnavailable(error = null) {
 
 function hashKey(key) {
   return createHash("sha256").update(key).digest("hex");
+}
+
+function normalizeRateCheck(check, index) {
+  if (!Array.isArray(check) || check.length < 3) throw new TypeError(`Nieprawidłowy zakres limitera #${index + 1}.`);
+  const [key, limit, windowMs, scope = "request"] = check;
+  if (typeof key !== "string" || !key) throw new TypeError("Klucz limitera jest wymagany.");
+  if (!Number.isInteger(limit) || limit < 1) throw new TypeError("Limit musi być dodatnią liczbą całkowitą.");
+  if (!Number.isInteger(windowMs) || windowMs < 1000) throw new TypeError("Okno limitera musi mieć co najmniej 1 s.");
+  return { key, limit, windowMs, scope: String(scope || "request").slice(0, 80) };
 }
 
 function endpointLimit(method, path) {
