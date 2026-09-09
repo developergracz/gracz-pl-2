@@ -73,6 +73,10 @@ test("B3-C01 SSE runner keeps proxy trust benchmark-local and uses canonical sta
 });
 
 test("B3-C01 focused 500 SSE establishment control and STOP gate", { skip: process.env.GITHUB_ACTIONS !== "true", timeout: 240_000 }, async () => {
+  // The existing correction-round-1 test file performs destructive PostgreSQL schema reset/cold-start
+  // checks in a sibling node:test worker. Keep this benchmark-only control outside that reset window.
+  await new Promise((resolve) => setTimeout(resolve, 8_000));
+
   const runId = `b3-c01-control-500-${process.env.GITHUB_RUN_ID || Date.now()}`;
   const result = await run("bash", ["perf/scripts/wave-b-sse-runner.sh"], {
     env: {
@@ -84,6 +88,16 @@ test("B3-C01 focused 500 SSE establishment control and STOP gate", { skip: proce
     },
     timeoutMs: 220_000,
   });
+
+  await writeFile(`perf/k6/reports/${runId}-runner-diagnostic.json`, JSON.stringify({
+    runId,
+    runnerExit: result.code,
+    signal: result.signal || null,
+    stdoutTail: result.stdout.slice(-12000),
+    stderrTail: result.stderr.slice(-12000),
+  }, null, 2));
+  assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`);
+
   const reportPath = `perf/k6/reports/${runId}-sse.json`;
   const recordPath = `perf/k6/reports/${runId}-record.json`;
   const metrics = JSON.parse(await readFile(reportPath, "utf8"));
@@ -103,7 +117,6 @@ test("B3-C01 focused 500 SSE establishment control and STOP gate", { skip: proce
   };
   await writeFile(`perf/k6/reports/${runId}-control-gate.json`, JSON.stringify(control, null, 2));
 
-  assert.equal(result.code, 0, `${result.stdout}\n${result.stderr}`);
   assert.equal(record.sseExit, 0);
   assert.equal(record.pgSamplerExit, 0);
   assert.equal(record.appSamplerExit, 0);
