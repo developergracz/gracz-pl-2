@@ -24,8 +24,9 @@ export class GomokuRealtimeHub {
   async subscribe(gameId,userId,response){
     assertGameId(gameId);
     if(!userId) throw new TypeError("Identyfikator gracza Gomoku jest wymagany dla realtime.");
-    if(this.pool) await this.#ensureListener();
+    const listener=this.pool?await this.#ensureListener():null;
     const snapshot=await this.service.view(gameId,userId);
+    if(this.pool&&(!listener||this.#listener!==listener)) throw realtimeUnavailable();
     const revision=revisionOf(snapshot);
     const subscription={userId,response,lastRevision:revision};
     const subscribers=this.#subscribers.get(gameId)??new Set();
@@ -78,6 +79,7 @@ export class GomokuRealtimeHub {
   async #ensureListener(){
     try{await this.#connectListener()}catch(error){this.#log(error);throw realtimeUnavailable(error)}
     if(!this.#listener) throw realtimeUnavailable();
+    return this.#listener;
   }
 
   #connectListener(){
