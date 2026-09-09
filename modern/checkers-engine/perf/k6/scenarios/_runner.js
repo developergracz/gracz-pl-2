@@ -17,7 +17,8 @@ function urls(){return String(__ENV.BASE_URLS||DATA.baseUrls?.join(',')||'http:/
 function baseUrl(salt=0){const list=urls();return list[((__VU-1)+__ITER+salt)%list.length]}
 function user(index=(__VU-1)){return DATA.users[index%DATA.users.length]}
 function mappedUser(userId){return DATA.users.find(item=>item.userId===userId)||user()}
-function authHeaders(u){return{authorization:`Bearer ${u.token}`,accept:'application/json','user-agent':'gracz-wave-b-k6/2.0'}}
+function syntheticClientIp(){const index=(Math.max(1,Number(__VU)||1)-1)%65024;return `198.18.${Math.floor(index/254)}.${index%254+1}`}
+function authHeaders(u){return{authorization:`Bearer ${u.token}`,accept:'application/json','user-agent':'gracz-wave-b-k6/2.0','x-forwarded-for':syntheticClientIp()}}
 function jsonHeaders(u){return{...authHeaders(u),'content-type':'application/json'}}
 function classify(res,kind,write=false){if(!steady())return res.status>=200&&res.status<400;if(write)writeAttempts.add(1);else readOps.add(1);operations.add(1);const ok=res.status>=200&&res.status<400;if(res.status===409)expected409.add(1);if(res.status===429)expected429.add(1);const timeout=res.status===0;timeoutRate.add(timeout);server5xx.add(res.status>=500);unexpectedError.add(!(ok||res.status===409||res.status===429));httpMs.add(res.timings.duration);if(kind===classes.FAST)fastRead.add(res.timings.duration);else if(kind===classes.NORMAL)normalCommand.add(res.timings.duration);else complexRead.add(res.timings.duration);if(write&&ok)writeAccepted.add(1);return ok||res.status===409||res.status===429}
 function rawGet(path,u=user(),kind=classes.FAST){const res=http.get(`${baseUrl()}${path}`,{headers:authHeaders(u),tags:{wave_b_class:kind}});classify(res,kind,false);return res}
