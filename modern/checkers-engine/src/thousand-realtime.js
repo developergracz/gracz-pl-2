@@ -23,7 +23,9 @@ export class ThousandRealtimeHub {
   async subscribe(gameId,userId,response){
     assertGameId(gameId);
     if(this.pool) await this.ready;
-    const subscription={userId,response};
+    const snapshot=await this.service.getView(gameId,userId);
+    const revision=revisionOf(snapshot);
+    const subscription={userId,response,lastRevision:revision};
     const subscribers=this.#subscribers.get(gameId)??new Set();
     subscribers.add(subscription);
     this.#subscribers.set(gameId,subscribers);
@@ -34,7 +36,7 @@ export class ThousandRealtimeHub {
       connection:'keep-alive',
       'x-accel-buffering':'no',
     });
-    response.write(encodeEvent('thousand.snapshot',await this.service.getView(gameId,userId)));
+    response.write(encodeEvent('thousand.snapshot',snapshot));
 
     const keepAlive=setInterval(()=>{
       try{response.write(': keep-alive\n\n')}catch{response.end()}
@@ -128,6 +130,9 @@ export class ThousandRealtimeHub {
     await Promise.allSettled(subscribers.map(async subscriber=>{
       try{
         const view=await this.service.getView(gameId,subscriber.userId);
+        const revision=revisionOf(view);
+        if(revision<=subscriber.lastRevision)return;
+        subscriber.lastRevision=revision;
         subscriber.response.write(encodeEvent(type,view));
       }catch(error){
         if(this.pool) this.#log(error);
@@ -156,6 +161,7 @@ export class ThousandRealtimeHub {
   }
 }
 
+function revisionOf(view){const revision=Number(view?.revision);if(!Number.isInteger(revision)||revision<0)throw new TypeError('Nieprawidłowa rewizja widoku Tysiąca.');return revision}
 function parseNotification(rawPayload){
   if(Buffer.byteLength(String(rawPayload??''),'utf8')>MAX_NOTIFICATION_BYTES) return null;
   let event;
