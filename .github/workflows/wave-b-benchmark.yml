@@ -1,0 +1,162 @@
+name: Advanced Scalability Wave B Benchmark
+
+on:
+  push:
+    branches:
+      - perf/advanced-scalability-wave-b
+    paths:
+      - 'modern/checkers-engine/perf/**'
+      - '.github/workflows/wave-b-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      AUTH_SECRET: wave-b-test-only-auth-secret-20260909-0123456789abcdef
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: modern/checkers-engine/package-lock.json
+
+      - name: Install application dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install benchmark tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates gnupg postgresql-client iproute2
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo 'deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main' | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+          k6 version
+          psql "$DATABASE_URL" -Atc 'SELECT version(); SHOW max_connections;'
+
+      - name: Validate Wave B harness syntax
+        run: |
+          chmod +x perf/scripts/*.sh
+          bash -n perf/scripts/wave-b-runner.sh
+          bash -n perf/scripts/wave-b-sse-runner.sh
+          bash -n perf/scripts/wave-b-env-snapshot.sh
+          bash -n perf/scripts/wave-b-postgres-sample.sh
+          bash -n perf/scripts/wave-b-app-sample.sh
+          node --check perf/scripts/wave-b-seed.mjs
+          node --check perf/scripts/wave-b-sse-load.mjs
+          node --check perf/scripts/wave-b-correctness-check.mjs
+          node --check perf/scripts/wave-b-security-cardinality.mjs
+          node --check perf/scripts/wave-b-listener-headroom.mjs
+          node --check perf/scripts/wave-b-summarize.mjs
+          node --check perf/k6/scenarios/_runner.js
+
+      - name: B1 single-replica mixed calibration 100/250/500/1000 VUs
+        run: |
+          set +e
+          reset_db(){ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null; }
+          : > perf/k6/reports/phase-status.txt
+          for vus in 100 250 500 1000; do
+            reset_db
+            run="b1-r1-v${vus}"
+            WAVE_B_RUN_ID="$run" WAVE_B_REPLICAS=1 WAVE_B_VUS="$vus" WAVE_B_GAME_COUNT=20 WAVE_B_WARMUP=5s WAVE_B_STEADY=20s WAVE_B_COOLDOWN=5s WAVE_B_SAMPLE_SECONDS=35 bash perf/scripts/wave-b-runner.sh
+            echo "$run=$?" >> perf/k6/reports/phase-status.txt
+          done
+          exit 0
+
+      - name: B2 horizontal scaling calibration 1x250 / 2x500 / 4x1000
+        run: |
+          set +e
+          reset_db(){ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null; }
+          for pair in '1 250' '2 500' '4 1000'; do
+            set -- $pair; replicas=$1; vus=$2
+            reset_db
+            run="b2-r${replicas}-v${vus}"
+            WAVE_B_RUN_ID="$run" WAVE_B_REPLICAS="$replicas" WAVE_B_VUS="$vus" WAVE_B_GAME_COUNT=20 WAVE_B_WARMUP=5s WAVE_B_STEADY=20s WAVE_B_COOLDOWN=5s WAVE_B_SAMPLE_SECONDS=35 bash perf/scripts/wave-b-runner.sh
+            echo "$run=$?" >> perf/k6/reports/phase-status.txt
+          done
+          exit 0
+
+      - name: B3 SSE capacity calibration 100/500/1000 Global Chat
+        run: |
+          set +e
+          reset_db(){ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null; }
+          for conns in 100 500 1000; do
+            reset_db
+            run="b3-chat-c${conns}"
+            WAVE_B_RUN_ID="$run" WAVE_B_REPLICAS=1 WAVE_B_SSE_KIND=global-chat WAVE_B_SSE_CONNECTIONS="$conns" WAVE_B_SSE_SECONDS=15 WAVE_B_SSE_CONNECT_RATE=200 bash perf/scripts/wave-b-sse-runner.sh
+            echo "$run=$?" >> perf/k6/reports/phase-status.txt
+          done
+          exit 0
+
+      - name: B5 reconnect storm calibration Gomoku and Tysiac
+        run: |
+          set +e
+          reset_db(){ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null; }
+          for kind in gomoku thousand; do
+            reset_db
+            run="b5-${kind}-storm-c500"
+            WAVE_B_RUN_ID="$run" WAVE_B_REPLICAS=1 WAVE_B_SSE_KIND="$kind" WAVE_B_SSE_CONNECTIONS=500 WAVE_B_SSE_SECONDS=20 WAVE_B_SSE_CONNECT_RATE=200 WAVE_B_STORM=1 WAVE_B_STORM_AFTER=7 bash perf/scripts/wave-b-sse-runner.sh
+            echo "$run=$?" >> perf/k6/reports/phase-status.txt
+          done
+          exit 0
+
+      - name: WA-06 high-cardinality SecurityMonitor calibration
+        run: |
+          set +e
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null
+          WAVE_B_RUN_ID=wa06-cardinality-10000 WAVE_B_CARDINALITY=10000 WAVE_B_CARDINALITY_CONCURRENCY=25 node perf/scripts/wave-b-security-cardinality.mjs
+          echo "wa06-cardinality-10000=$?" >> perf/k6/reports/phase-status.txt
+          exit 0
+
+      - name: B9 short soak calibration
+        run: |
+          set +e
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null
+          WAVE_B_RUN_ID=b9-ci-soak-r1-v250 WAVE_B_REPLICAS=1 WAVE_B_VUS=250 WAVE_B_GAME_COUNT=20 WAVE_B_WARMUP=10s WAVE_B_STEADY=5m WAVE_B_COOLDOWN=10s WAVE_B_SAMPLE_SECONDS=330 bash perf/scripts/wave-b-runner.sh
+          echo "b9-ci-soak-r1-v250=$?" >> perf/k6/reports/phase-status.txt
+          exit 0
+
+      - name: Summarize calibration evidence
+        if: always()
+        run: |
+          node perf/scripts/wave-b-summarize.mjs || true
+          echo '--- PHASE STATUS ---'
+          cat perf/k6/reports/phase-status.txt || true
+          echo '--- FINAL PG SNAPSHOT ---'
+          psql "$DATABASE_URL" -Atc "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database();" || true
+
+      - name: Upload Wave B calibration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave-b-ci-calibration-${{ github.sha }}
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
