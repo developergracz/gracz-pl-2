@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 
+import {PostgresAccountService} from '../src/postgres-accounts.js';
 import {PostgresSessionStore} from '../src/postgres-session-store.js';
 import {RankingService} from '../src/rankings.js';
 
 const databaseUrl=process.env.P1_C_01_DATABASE_URL||process.env.DATABASE_URL;
+const TEST_MESSAGE_KEY='wave-a-c2-ranking-test-message-key-2026';
 function unique(prefix){return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`.toLowerCase()}
 
 test('Wave A C2 contract: personal ranking no longer delegates to leaderboard(limit:500)',async()=>{
@@ -19,13 +21,14 @@ test('Wave A C2 PostgreSQL: valid player below top 500 remains directly retrieva
   const prefix=unique('wa_c2');
   const target=`${prefix}_target`;
   const store=new PostgresSessionStore(databaseUrl);
+  const accounts=new PostgresAccountService(databaseUrl,TEST_MESSAGE_KEY,{legacyEncryptionSecret:null});
   let service;
   try{
-    // RankingService installs a trigger on the authoritative Checkers table.
-    // The production runtime initializes the session store first; mirror that
-    // real dependency ordering instead of weakening RankingService fail-closed
-    // schema behavior for an isolated test fixture.
-    await store.ready;
+    // Production main initializes the authoritative Checkers store and accounts
+    // before RankingService. Mirror that exact dependency ordering so the
+    // ranking query can safely LEFT JOIN gracz_accounts without weakening its
+    // production contract for an isolated test fixture.
+    await Promise.all([store.ready,accounts.ready]);
     service=new RankingService(databaseUrl);
     await service.ready;
     const rows=[];
@@ -57,6 +60,6 @@ test('Wave A C2 PostgreSQL: valid player below top 500 remains directly retrieva
   }finally{
     const pool=service?.pool??store.pool;
     await pool.query('DELETE FROM gracz_ranking_materialized WHERE user_id LIKE $1',[`${prefix}%`]).catch(()=>{});
-    await Promise.allSettled([service?.close(),store.close()]);
+    await Promise.allSettled([service?.close(),accounts.close(),store.close()]);
   }
 });
