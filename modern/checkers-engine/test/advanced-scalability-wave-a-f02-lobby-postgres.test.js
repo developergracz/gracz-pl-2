@@ -44,19 +44,19 @@ test("AS-CAN-F02 PostgreSQL: invitation created on Node A can be accepted on Nod
 }));
 
 test("AS-CAN-F02 PostgreSQL: concurrent final-seat join across nodes has one winner",{skip:!databaseUrl},async()=>withStore("finalseat",async({prefix,store})=>{
-  const starts=[];const thousandService={async createGame(input){starts.push(structuredClone(input));return{gameId:input.gameId,revision:1}}};
-  const a=makeLobby(store,{prefix:`${prefix}_a`,thousandService}),b=makeLobby(store,{prefix:`${prefix}_b`,thousandService});await Promise.all([a.ready,b.ready]);
-  const room=await a.createRoom({ownerId:`${prefix}_owner`,ownerName:"Alicja",roomName:"Race",gameType:"thousand",maxPlayers:3});
-  await a.joinRoom({roomId:room.roomId,playerId:`${prefix}_p2`,playerName:"P2"});
+  const a=makeLobby(store,{prefix:`${prefix}_a`}),b=makeLobby(store,{prefix:`${prefix}_b`});await Promise.all([a.ready,b.ready]);
+  const room=await a.createRoom({ownerId:`${prefix}_owner`,ownerName:"Alicja",roomName:"Race",gameType:"checkers"});
   const outcomes=await Promise.allSettled([
-    a.joinRoom({roomId:room.roomId,playerId:`${prefix}_p3`,playerName:"P3"}),
-    b.joinRoom({roomId:room.roomId,playerId:`${prefix}_p4`,playerName:"P4"}),
+    a.joinRoom({roomId:room.roomId,playerId:`${prefix}_p2`,playerName:"P2"}),
+    b.joinRoom({roomId:room.roomId,playerId:`${prefix}_p3`,playerName:"P3"}),
   ]);
   assert.equal(outcomes.filter(item=>item.status==="fulfilled").length,1);
   assert.equal(outcomes.filter(item=>item.status==="rejected").length,1);
   assert.match(outcomes.find(item=>item.status==="rejected").reason?.code||"",/ROOM_NOT_JOINABLE|ROOM_FULL/);
   const current=(await b.listRooms()).find(item=>item.roomId===room.roomId);
-  assert.equal(current.status,"playing");assert.equal(current.filledSeats,3);assert.equal(starts.length,1);
+  assert.equal(current.status,"playing");assert.equal(current.filledSeats,2);
+  const gameCount=await store.pool.query(`SELECT COUNT(*)::int AS count FROM gracz_game_sessions WHERE game_id=$1`,[current.gameId]);
+  assert.equal(gameCount.rows[0].count,1);
 }));
 
 test("AS-CAN-F02 PostgreSQL: duplicate same-user join across nodes cannot consume two seats",{skip:!databaseUrl},async()=>withStore("duplicate",async({prefix,store})=>{
