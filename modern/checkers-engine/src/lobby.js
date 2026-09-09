@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { requireGameDefinition } from "./game-types.js";
 import { createGameSession } from "./session.js";
-
-const GAME_CONFIG=Object.freeze({checkers:Object.freeze({maxPlayers:2,minPlayers:2,label:"Warcaby"}),gomoku:Object.freeze({maxPlayers:2,minPlayers:2,label:"Gomoku"}),thousand:Object.freeze({maxPlayers:4,minPlayers:2,defaultPlayers:3,label:"Tysiąc"})});
 
 export class LobbyError extends Error{constructor(message,code){super(message);this.name="LobbyError";this.code=code}}
 
@@ -15,8 +14,8 @@ export class LobbyService{
 
   createRoom({ownerId,ownerName,roomName="Nowy pokój",gameType="checkers",maxPlayers=null}){
     requireText(ownerId,"ownerId");requireText(ownerName,"ownerName");requireText(roomName,"roomName");
-    const config=gameConfig(gameType);const seatCount=resolveSeatCount(gameType,maxPlayers,config);
-    const ownedWaiting=[...this.#rooms.values()].filter(room=>room.gameType===gameType&&room.seats[0]?.id===ownerId&&room.status==="waiting");
+    const config=gameConfig(gameType);const canonicalGameType=config.id;const seatCount=resolveSeatCount(canonicalGameType,maxPlayers,config.players);
+    const ownedWaiting=[...this.#rooms.values()].filter(room=>room.gameType===canonicalGameType&&room.seats[0]?.id===ownerId&&room.status==="waiting");
     const exact=ownedWaiting.find(room=>room.maxPlayers===seatCount);if(exact)return publicRoom(exact);
     for(const oldRoom of ownedWaiting){
       const filled=oldRoom.seats.filter(Boolean).length;
@@ -25,7 +24,7 @@ export class LobbyService{
       for(const[id,inv]of this.#invitations)if(inv.roomId===oldRoom.roomId)this.#invitations.delete(id);
     }
     const seats=Array(seatCount).fill(null);seats[0]={id:ownerId,name:normalizeDisplayName(ownerName)};
-    const room={roomId:this.idGenerator(),roomName,gameType,gameLabel:config.label,maxPlayers:seatCount,status:"waiting",seats,gameId:null};this.#rooms.set(room.roomId,room);return publicRoom(room)
+    const room={roomId:this.idGenerator(),roomName,gameType:canonicalGameType,gameLabel:config.label,maxPlayers:seatCount,status:"waiting",seats,gameId:null};this.#rooms.set(room.roomId,room);return publicRoom(room)
   }
 
   createInvitation({fromId,fromName,toId,roomId}){
@@ -61,7 +60,7 @@ export class LobbyService{
 }
 
 function publicRoom(room){const seats=room.seats.map(seat=>seat?{id:seat.id,name:normalizeDisplayName(seat.name)}:null);return structuredClone({roomId:room.roomId,roomName:room.roomName,gameType:room.gameType,gameLabel:room.gameLabel,maxPlayers:room.maxPlayers,filledSeats:seats.filter(Boolean).length,status:room.status,seats,white:room.gameType==="checkers"?seats[0]:null,black:room.gameType==="checkers"?seats[1]:null,gameId:room.gameId})}
-function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.maxPlayers;const value=requested===null||requested===undefined?config.defaultPlayers:Number(requested);if(!Number.isInteger(value)||value<config.minPlayers||value>config.maxPlayers)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
-function gameConfig(gameType){const config=GAME_CONFIG[gameType];if(!config)throw new LobbyError("Nieobsługiwany typ gry.","INVALID_GAME_TYPE");return config}
+function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.max;const value=requested===null||requested===undefined?config.default:Number(requested);if(!Number.isInteger(value)||value<config.min||value>config.max)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
+function gameConfig(gameType){return requireGameDefinition(gameType,{capability:"lobby"})}
 function normalizeDisplayName(value){if(typeof value!=="string")return value;if(value.localeCompare("Czeslaw","pl",{sensitivity:"base"})===0)return"Czesław";return value.normalize("NFC")}
 function requireText(value,field){if(typeof value!=="string"||value.length<1||value.length>128)throw new LobbyError(`Pole ${field} jest nieprawidłowe.`,"INVALID_ROOM")}

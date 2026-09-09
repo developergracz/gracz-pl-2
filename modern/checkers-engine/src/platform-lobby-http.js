@@ -32,13 +32,13 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null}={}
         ownerId:user.userId,
         ownerName:user.displayName,
         roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
-        gameType:body.gameType||'checkers',
+        gameType:Object.hasOwn(body,'gameType')?body.gameType:undefined,
         maxPlayers:body.maxPlayers??null,
       });
       return sendJson(response,201,room);
     }catch(error){
       if(error instanceof AuthError) return sendJson(response,401,errorBody(error));
-      const status=['INVALID_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
+      const status=['INVALID_GAME_TYPE','UNSUPPORTED_GAME_TYPE','INVALID_ROOM'].includes(error?.code)?400:409;
       return sendJson(response,status,errorBody(error));
     }
   };
