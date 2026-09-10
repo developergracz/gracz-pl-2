@@ -1,10 +1,8 @@
 import { createHash, randomBytes, randomInt, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import pg from "pg";
 import { AccountError } from "./accounts.js";
 import { SecureMailService } from "./secure-mail-service.js";
 
-const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
 const HASH_VERSION = 2;
 const LEGACY_SCRYPT = Object.freeze({ N: 16_384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
@@ -17,11 +15,14 @@ const COMMON_PASSWORDS = new Set([
 const systemMail = new SecureMailService();
 
 export class SecureAccountService {
-  constructor(baseService, connectionString) {
+  constructor(baseService) {
     if (!baseService) throw new TypeError("Bazowy serwis kont jest wymagany.");
-    if (typeof connectionString !== "string" || !connectionString.trim()) throw new TypeError("DATABASE_URL jest wymagany.");
+    if (!baseService.pool || typeof baseService.pool.query !== "function" || typeof baseService.pool.connect !== "function") {
+      throw new TypeError("Bazowy serwis kont musi udostępniać kanoniczną pulę PostgreSQL.");
+    }
     this.base = baseService;
-    this.pool = new Pool({ connectionString, ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 3 });
+    this.pool = baseService.pool;
+    this.closePromise = null;
     this.ready = this.#initialize();
   }
 
@@ -250,7 +251,13 @@ export class SecureAccountService {
   listPrivateMessages(...args) { return this.base.listPrivateMessages(...args); }
   updatePrivateMessage(...args) { return this.base.updatePrivateMessage(...args); }
   deletePrivateMessage(...args) { return this.base.deletePrivateMessage(...args); }
-  async close() { await Promise.allSettled([typeof this.base.close === "function" ? this.base.close() : Promise.resolve(), this.pool.end()]); }
+  close() {
+    if (this.closePromise) return this.closePromise;
+    this.closePromise = Promise.resolve().then(() => (
+      typeof this.base.close === "function" ? this.base.close() : undefined
+    ));
+    return this.closePromise;
+  }
 }
 
 async function sendPasswordResetSms({ to, displayName, code }) {
