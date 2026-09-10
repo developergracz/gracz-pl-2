@@ -10,12 +10,14 @@ import { PostgresAccountService } from "../src/postgres-accounts.js";
 import { SecureAccountService } from "../src/secure-accounts.js";
 import { createGameHttpServer } from "../src/server.js";
 import { MemorySessionStore } from "../src/store.js";
-import {
+import poolBudget from "../src/postgres-pool-budget.cjs";
+
+const {
   POSTGRES_RESOURCE_PROFILE,
   aggregatePoolMax,
   connectionBudgetPlan,
   configuredPoolBudget,
-} from "../src/postgres-pool-budget.cjs";
+} = poolBudget;
 
 const DATABASE_URL = process.env.B1_C33_DATABASE_URL || "";
 const MESSAGE_SECRET = "b1-c33-message-encryption-secret-material-2026";
