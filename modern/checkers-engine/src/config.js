@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import poolBudget from "./postgres-pool-budget.cjs";
 
-const { validateConfiguredPoolBudget } = poolBudget;
+const { resolvePostgresReplicaCount, validateConfiguredPoolBudget } = poolBudget;
 
 export function loadConfig(environment=process.env){
   const port=Number(environment.PORT??3000);if(!Number.isInteger(port)||port<1||port>65535)throw new TypeError("PORT musi być liczbą całkowitą od 1 do 65535.");
@@ -14,7 +14,8 @@ export function loadConfig(environment=process.env){
   const mfaEncryptionKey=dedicatedSecret(environment.MFA_ENCRYPTION_KEY,"MFA_ENCRYPTION_KEY",production);
   assertSeparatedEncryptionKeys(authSecret,{MESSAGE_ENCRYPTION_KEY:messageEncryptionKey,ATTACHMENT_ENCRYPTION_KEY:attachmentEncryptionKey,MFA_ENCRYPTION_KEY:mfaEncryptionKey});
   const postgresPoolBudget=validateConfiguredPoolBudget(environment);
-  return Object.freeze({host:environment.HOST||"0.0.0.0",port,dataDirectory:resolve(environment.DATA_DIR||"data"),authSecret,databaseUrl,nodeEnv,messageEncryptionKey,attachmentEncryptionKey,mfaEncryptionKey,postgresPoolBudget});
+  const postgresReplicaCount=databaseUrl?resolvePostgresReplicaCount(environment,{databaseUrl,nodeEnv}):null;
+  return Object.freeze({host:environment.HOST||"0.0.0.0",port,dataDirectory:resolve(environment.DATA_DIR||"data"),authSecret,databaseUrl,nodeEnv,messageEncryptionKey,attachmentEncryptionKey,mfaEncryptionKey,postgresPoolBudget,postgresReplicaCount});
 }
 function requiredSecret(value,name){if(typeof value!=="string"||Buffer.byteLength(value,"utf8")<32)throw new TypeError(`${name} musi mieć co najmniej 32 bajty.`);return value;}
 function dedicatedSecret(value,name,required){
