@@ -25,7 +25,6 @@ const POSTGRES_RESOURCE_PROFILE = Object.freeze({
       embeddedPersistentListeners: [{ id: "checkers-realtime-listen", count: 1 }],
     }),
     frozenEntry({ id: "accounts", owner: "PostgresAccountService", file: "postgres-accounts.js", max: 5, mainConstructor: "new PostgresAccountService(config.databaseUrl" }),
-    frozenEntry({ id: "message-attachments", owner: "MessageAttachmentService", file: "message-attachments.js", max: 3, mainConstructor: "new MessageAttachmentService(config.databaseUrl" }),
     frozenEntry({ id: "rbac", owner: "RbacService", file: "rbac-service.js", max: 2, mainConstructor: "new RbacService(config.databaseUrl||null" }),
     frozenEntry({ id: "mfa", owner: "MfaService", file: "mfa-service.js", max: 2, mainConstructor: "new MfaService(config.databaseUrl||null" }),
     frozenEntry({ id: "tournaments", owner: "TournamentService", file: "tournaments.js", max: DEFAULT_POSTGRES_POOL_MAX, mainConstructor: "new TournamentService(config.databaseUrl||null)", usesDefaultPoolMax: true }),

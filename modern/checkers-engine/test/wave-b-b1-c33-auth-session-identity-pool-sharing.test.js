@@ -54,21 +54,21 @@ test("B1-C33 static borrower contract removes the AuthSession physical PostgreSQ
   assert.ok(accountReadyIndex >= 0 && authSessionIndex > accountReadyIndex, "AuthSession initialization must remain after PostgresAccountService.ready");
   assert.doesNotMatch(main, /new PostgresAuthSessionStore\(config\.databaseUrl\)/);
 
-  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 16);
+  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 15);
   assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "auth-sessions"), false);
-  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "message-attachments"), true);
-  assert.equal(aggregatePoolMax(), 53);
-  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 53);
+  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "message-attachments"), false);
+  assert.equal(aggregatePoolMax(), 50);
+  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 50);
   assert.throws(
-    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "52" }),
+    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "49" }),
     (error) => error?.code === "POSTGRES_POOL_BUDGET_EXCEEDED",
   );
 
   const expected = [
-    [1, 55, true],
-    [2, 110, false],
-    [3, 165, false],
-    [4, 220, false],
+    [1, 52, true],
+    [2, 104, false],
+    [3, 156, false],
+    [4, 208, false],
   ];
   for (const [replicaCount, startupEnvelope, safe] of expected) {
     const plan = connectionBudgetPlan({
@@ -78,10 +78,10 @@ test("B1-C33 static borrower contract removes the AuthSession physical PostgreSQ
       superuserReservedConnections: 3,
       environment: { POSTGRES_POOL_BUDGET: "64" },
     });
-    assert.equal(plan.poolMaxPerReplica, 53);
+    assert.equal(plan.poolMaxPerReplica, 50);
     assert.equal(plan.externalDedicatedPerReplica, 1);
     assert.equal(plan.startupOverlapPerReplica, 1);
-    assert.equal(plan.steadyEnvelope, replicaCount * 54);
+    assert.equal(plan.steadyEnvelope, replicaCount * 51);
     assert.equal(plan.startupEnvelope, startupEnvelope);
     assert.equal(plan.safeApplicationCapacity, 87);
     assert.equal(plan.safe, safe);
