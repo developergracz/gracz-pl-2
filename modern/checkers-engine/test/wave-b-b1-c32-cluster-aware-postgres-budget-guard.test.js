@@ -395,6 +395,32 @@ test("B1-C32 live PostgreSQL capacity snapshot uses the same single startup Clie
       assert.equal(lock.capacity.reservedConnectionsSupported, false);
       assert.equal(lock.capacity.reservedConnections, 0);
     }
+
+    console.log("[B1-C32 capacity]", JSON.stringify({
+      serverVersionNum: lock.capacity.serverVersionNum,
+      maxConnections: lock.capacity.maxConnections,
+      reservedConnections: lock.capacity.reservedConnections,
+      reservedConnectionsSupported: lock.capacity.reservedConnectionsSupported,
+      superuserReservedConnections: lock.capacity.superuserReservedConnections,
+    }));
+    console.log("[B1-C32 current-topology]", JSON.stringify([1, 2, 3, 4].map((replicaCount) => {
+      const plan = connectionBudgetPlan({
+        replicaCount,
+        maxConnections: lock.capacity.maxConnections,
+        reservedConnections: lock.capacity.reservedConnections,
+        superuserReservedConnections: lock.capacity.superuserReservedConnections,
+        environment: { POSTGRES_POOL_BUDGET: "64" },
+      });
+      return {
+        replicaCount,
+        steadyEnvelope: plan.steadyEnvelope,
+        startupEnvelope: plan.startupEnvelope,
+        serverReservedConnections: plan.serverReservedConnections,
+        operationalHeadroom: plan.operationalHeadroom,
+        safeApplicationCapacity: plan.safeApplicationCapacity,
+        safe: plan.safe,
+      };
+    })));
   } finally {
     await lock?.release().catch(() => {});
     pg.Client = OriginalClient;
