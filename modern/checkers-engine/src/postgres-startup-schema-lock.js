@@ -29,6 +29,64 @@ function startupLockTimeoutError(timeoutMs, cause) {
   return error;
 }
 
+function capacitySnapshotError(message) {
+  const error = new TypeError(message);
+  error.code = "POSTGRES_CAPACITY_SNAPSHOT_INCOMPLETE";
+  return error;
+}
+
+function parseCapacityInteger(value, name, { minimum = 0 } = {}) {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < minimum) {
+    throw capacitySnapshotError(`Nieprawidłowa wartość PostgreSQL ${name}.`);
+  }
+  return parsed;
+}
+
+export async function readPostgresServerCapacity(client) {
+  if (!client || typeof client.query !== "function") {
+    throw capacitySnapshotError("Aktywny klient PostgreSQL jest wymagany do odczytu pojemności.");
+  }
+  const { rows } = await client.query(`
+    SELECT
+      current_setting('server_version_num')::integer AS server_version_num,
+      current_setting('max_connections')::integer AS max_connections,
+      current_setting('superuser_reserved_connections')::integer AS superuser_reserved_connections,
+      current_setting('reserved_connections', true) AS reserved_connections,
+      pg_backend_pid()::integer AS backend_pid
+  `);
+  const row = rows?.[0];
+  if (!row) throw capacitySnapshotError("PostgreSQL nie zwrócił danych pojemności.");
+
+  const serverVersionNum = parseCapacityInteger(row.server_version_num, "server_version_num", { minimum: 1 });
+  const maxConnections = parseCapacityInteger(row.max_connections, "max_connections", { minimum: 1 });
+  const superuserReservedConnections = parseCapacityInteger(
+    row.superuser_reserved_connections,
+    "superuser_reserved_connections",
+  );
+
+  const reservedSupported = serverVersionNum >= 160000;
+  if (reservedSupported && (row.reserved_connections === null || row.reserved_connections === undefined || row.reserved_connections === "")) {
+    throw capacitySnapshotError("PostgreSQL 16+ nie zwrócił reserved_connections.");
+  }
+  const reservedConnections = reservedSupported
+    ? parseCapacityInteger(row.reserved_connections, "reserved_connections")
+    : 0;
+
+  if (reservedConnections + superuserReservedConnections >= maxConnections) {
+    throw capacitySnapshotError("Rezerwy PostgreSQL nie pozostawiają zwykłych slotów aplikacyjnych.");
+  }
+
+  return Object.freeze({
+    serverVersionNum,
+    maxConnections,
+    reservedConnections,
+    reservedConnectionsSupported: reservedSupported,
+    superuserReservedConnections,
+    backendPid: parseCapacityInteger(row.backend_pid, "backend_pid", { minimum: 1 }),
+  });
+}
+
 export async function acquirePostgresStartupSchemaLock(
   connectionString,
   { timeoutMs = DEFAULT_POSTGRES_STARTUP_SCHEMA_LOCK_TIMEOUT_MS } = {},
@@ -54,14 +112,19 @@ export async function acquirePostgresStartupSchemaLock(
       "SELECT pg_advisory_lock($1::int, $2::int)",
       [POSTGRES_STARTUP_SCHEMA_LOCK_CLASS, POSTGRES_STARTUP_SCHEMA_LOCK_OBJECT],
     );
+    const capacity = await readPostgresServerCapacity(client);
+    client.__graczStartupCapacity = capacity;
   } catch (error) {
     await client.end().catch(() => {});
     if (error?.code === "55P03") throw startupLockTimeoutError(boundedTimeoutMs, error);
     throw error;
   }
 
+  const capacity = client.__graczStartupCapacity;
+  delete client.__graczStartupCapacity;
   let released = false;
   return Object.freeze({
+    capacity,
     async release() {
       if (released) return;
       released = true;
