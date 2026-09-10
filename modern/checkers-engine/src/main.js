@@ -72,7 +72,7 @@ const tournaments=new TournamentService(config.databaseUrl||null);await tourname
 const rankings=new RankingService(config.databaseUrl||null);await rankings.ready;const rankingHandler=createRankingHandler({service:rankings,auth,authSessions});
 const newsletter=new NewsletterService(config.databaseUrl||null,{mail});await newsletter.ready;
 const newsletterAdmin=new NewsletterAdminService(config.databaseUrl||null);await newsletterAdmin.ready;
-const newsletterLifecycle=new NewsletterLifecycleRecorder(config.databaseUrl||null);
+const newsletterLifecycle=new NewsletterLifecycleRecorder(newsletterAdmin.pool);
 const newsletterWithAnalytics=withNewsletterLifecycleAnalytics(newsletter,newsletterLifecycle);
 const newsletterHandler=createNewsletterHandler(newsletterWithAnalytics,{security,monitor});
 const newsletterAdminHandler=createNewsletterAdminHandler({service:newsletterAdmin,auth,authSessions,rbac,mfa,audit,security});
