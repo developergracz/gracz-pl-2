@@ -4,6 +4,8 @@ import test from "node:test";
 import pg from "pg";
 
 import { PostgresAccountService } from "../src/postgres-accounts.js";
+import { withAccountModeration } from "../src/moderation-service.js";
+import { withPrivilegedMfaAuth } from "../src/privileged-auth-wrapper.js";
 
 const DATABASE_URL = process.env.B1_C31_DATABASE_URL || "";
 const MESSAGE_SECRET = "b1-c31-message-encryption-secret-material-2026";
@@ -81,6 +83,17 @@ test("B1-C31 real PostgreSQL canonical identity pool ownership, correctness, con
     await secured.ready;
     assert.equal(baseReadyCompleted, true, "SecureAccount schema initialization must wait for base.ready");
 
+    const moderatedAccounts = withAccountModeration(secured, {
+      audit: null,
+      async enforce({ value }) { return value; },
+    });
+    const composedAccounts = withPrivilegedMfaAuth(moderatedAccounts, {
+      rbac: { async getRole() { return "player"; } },
+      mfa: { async isEnabled() { return false; }, async verify() {} },
+      audit: null,
+    });
+    assert.equal(composedAccounts.pool, base.pool, "main-like account wrapper chain must preserve canonical pool identity");
+
     await base.pool.query("DELETE FROM gracz_password_reset_tokens WHERE user_id=$1", [USER_ID]).catch(() => {});
     await base.pool.query("DELETE FROM gracz_registration_codes WHERE user_id=$1", [USER_ID]).catch(() => {});
     await base.pool.query("DELETE FROM gracz_messages WHERE sender_id=$1 OR recipient_id=$1", [USER_ID]).catch(() => {});
@@ -151,8 +164,9 @@ test("B1-C31 real PostgreSQL canonical identity pool ownership, correctness, con
     );
 
     assert.deepEqual(
-      await secured.authenticate({ userId: USER_ID, password: PASSWORD_1 }),
+      await composedAccounts.authenticate({ userId: USER_ID, password: PASSWORD_1 }),
       { userId: USER_ID, displayName: DISPLAY_NAME },
+      "main-like wrapper composition must preserve successful authentication",
     );
     await assert.rejects(
       () => secured.authenticate({ userId: USER_ID, password: "C31-Wrong-Password!2026" }),
