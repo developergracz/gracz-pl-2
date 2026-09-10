@@ -88,8 +88,7 @@ export class LobbyService{
       this.#presence.set(userId,{userId,displayName:normalized,seenAt:Date.now()});
       return{rooms:this.listRooms(),players:this.listPlayers(),invitations:this.listInvitations(userId)};
     }
-    await this.#touchUserDatabase({userId,displayName:normalized});
-    return this.#readStateDatabase(userId);
+    return this.#readStateDatabase({userId,displayName:normalized});
   }
 
   touchUser({userId,displayName}){
@@ -105,15 +104,25 @@ export class LobbyService{
     await queryable.query(`DELETE FROM gracz_lobby_presence WHERE seen_at < NOW()-INTERVAL '5 minutes'`);
   }
 
-  async #readStateDatabase(userId){
+  async #readStateDatabase({userId,displayName}){
     await this.ready;
     const{rows}=await this.pool.query(`
-      WITH rooms AS (
+      WITH touched AS (
+        INSERT INTO gracz_lobby_presence(user_id,display_name,seen_at)
+        VALUES($1,$2,NOW())
+        ON CONFLICT(user_id) DO UPDATE
+          SET display_name=EXCLUDED.display_name,seen_at=NOW()
+        RETURNING user_id,display_name,seen_at
+      ), rooms AS (
         SELECT * FROM gracz_lobby_rooms ORDER BY updated_at DESC,created_at DESC LIMIT 500
-      ), active_presence AS (
+      ), other_active_presence AS (
         SELECT user_id,display_name,seen_at FROM gracz_lobby_presence
-        WHERE seen_at>=NOW()-INTERVAL '45 seconds'
-        ORDER BY seen_at DESC LIMIT 500
+        WHERE user_id<>$1 AND seen_at>=NOW()-INTERVAL '45 seconds'
+        ORDER BY seen_at DESC LIMIT 499
+      ), active_presence AS (
+        SELECT user_id,display_name,seen_at FROM touched
+        UNION ALL
+        SELECT user_id,display_name,seen_at FROM other_active_presence
       ), player_rooms AS (
         SELECT * FROM gracz_lobby_rooms
         WHERE status IN ('waiting','playing')
@@ -125,10 +134,10 @@ export class LobbyService{
       )
       SELECT
         COALESCE((SELECT jsonb_agg(to_jsonb(room_row) ORDER BY room_row.updated_at DESC,room_row.created_at DESC) FROM rooms room_row),'[]'::jsonb) AS rooms,
-        COALESCE((SELECT jsonb_agg(to_jsonb(presence_row) ORDER BY presence_row.seen_at DESC) FROM active_presence presence_row),'[]'::jsonb) AS presence,
+        COALESCE((SELECT jsonb_agg(to_jsonb(presence_row) ORDER BY presence_row.seen_at DESC,presence_row.user_id ASC) FROM active_presence presence_row),'[]'::jsonb) AS presence,
         COALESCE((SELECT jsonb_agg(to_jsonb(player_room_row) ORDER BY player_room_row.updated_at DESC) FROM player_rooms player_room_row),'[]'::jsonb) AS player_rooms,
         COALESCE((SELECT jsonb_agg(to_jsonb(invitation_row) ORDER BY invitation_row.created_at ASC) FROM invitations invitation_row),'[]'::jsonb) AS invitations
-    `,[userId]);
+    `,[userId,displayName]);
     const stateRow=rows[0];
     if(!stateRow)throw new Error("PostgreSQL lobby nie zwrócił stanu.");
     const roomRows=requireRowArray(stateRow.rooms,"rooms");
