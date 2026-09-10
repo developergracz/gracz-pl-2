@@ -54,21 +54,21 @@ test("B1-C33 static borrower contract removes the AuthSession physical PostgreSQ
   assert.ok(accountReadyIndex >= 0 && authSessionIndex > accountReadyIndex, "AuthSession initialization must remain after PostgresAccountService.ready");
   assert.doesNotMatch(main, /new PostgresAuthSessionStore\(config\.databaseUrl\)/);
 
-  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 15);
+  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 14);
   assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "auth-sessions"), false);
   assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "message-attachments"), false);
-  assert.equal(aggregatePoolMax(), 50);
-  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 50);
+  assert.equal(aggregatePoolMax(), 48);
+  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 48);
   assert.throws(
-    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "49" }),
+    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "47" }),
     (error) => error?.code === "POSTGRES_POOL_BUDGET_EXCEEDED",
   );
 
   const expected = [
-    [1, 52, true],
-    [2, 104, false],
-    [3, 156, false],
-    [4, 208, false],
+    [1, 50, true],
+    [2, 100, false],
+    [3, 150, false],
+    [4, 200, false],
   ];
   for (const [replicaCount, startupEnvelope, safe] of expected) {
     const plan = connectionBudgetPlan({
@@ -78,10 +78,10 @@ test("B1-C33 static borrower contract removes the AuthSession physical PostgreSQ
       superuserReservedConnections: 3,
       environment: { POSTGRES_POOL_BUDGET: "64" },
     });
-    assert.equal(plan.poolMaxPerReplica, 50);
+    assert.equal(plan.poolMaxPerReplica, 48);
     assert.equal(plan.externalDedicatedPerReplica, 1);
     assert.equal(plan.startupOverlapPerReplica, 1);
-    assert.equal(plan.steadyEnvelope, replicaCount * 51);
+    assert.equal(plan.steadyEnvelope, replicaCount * 49);
     assert.equal(plan.startupEnvelope, startupEnvelope);
     assert.equal(plan.safeApplicationCapacity, 87);
     assert.equal(plan.safe, safe);
