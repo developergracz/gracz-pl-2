@@ -1,8 +1,8 @@
-name: B1-C28 Single 100 VU Post-C25 Verification Control
+name: B1-C28 Single 100 VU Post-C27 Verification Control
 
 on:
   push:
-    branches: [verify/b1-c28-post-c25-100vu]
+    branches: [verify/b1-c28-post-c27-100vu]
     paths: ['.github/b1-c28-control-trigger.txt']
 
 permissions:
@@ -18,10 +18,10 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: gracz_b1_c26
+          POSTGRES_DB: gracz_b1_c28
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U postgres -d gracz_b1_c26"
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c28"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -29,8 +29,8 @@ jobs:
       run:
         working-directory: modern/checkers-engine
     env:
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c26
-      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c26
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c28
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c28
       POSTGRES_POOL_BUDGET: '64'
       WAVE_B_SEED: '20260909'
       WAVE_B_RUN_ID: b1-c28-r1-v100
@@ -55,7 +55,7 @@ jobs:
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Exact C25 identity and frozen-profile gate
+      - name: Exact C27 identity and frozen-profile gate
         run: |
           set -euo pipefail
           BASE=b599260d6d7ae33087cb0b53c7c4a3777f8b1f8f
@@ -154,7 +154,7 @@ jobs:
           source_branch=fix/wave-b-b1-c27-global-chat-presence-single-acquisition
           source_head=b599260d6d7ae33087cb0b53c7c4a3777f8b1f8f
           source_tree=ed17ab7ba469bc4d68a9aabd5c1a7e003a47ab83
-          verification_branch=verify/b1-c28-post-c25-100vu
+          verification_branch=verify/b1-c28-post-c27-100vu
           run_id=${WAVE_B_RUN_ID}
           replicas=${WAVE_B_REPLICAS}
           vus=${WAVE_B_VUS}
