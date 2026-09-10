@@ -92,11 +92,9 @@ export class LobbyService{
     const client=await this.pool.connect();
     try{
       await this.#touchUserDatabase({userId,displayName:normalized},client);
-      const[rooms,players,invitations]=await Promise.all([
-        this.#listRoomsDatabase(client),
-        this.#listPlayersDatabase(client),
-        this.#listInvitationsDatabase(userId,client),
-      ]);
+      const rooms=await this.#listRoomsDatabase(client);
+      const players=await this.#listPlayersDatabase(client);
+      const invitations=await this.#listInvitationsDatabase(userId,client);
       return{rooms,players,invitations};
     }finally{client.release()}
   }
@@ -132,10 +130,11 @@ export class LobbyService{
 
   async #listPlayersDatabase(queryable=this.pool){
     await this.ready;
-    const[presenceResult,roomResult]=await Promise.all([
-      queryable.query(`SELECT user_id,display_name,seen_at FROM gracz_lobby_presence WHERE seen_at>=NOW()-INTERVAL '45 seconds' ORDER BY seen_at DESC LIMIT 500`),
-      queryable.query(`SELECT * FROM gracz_lobby_rooms WHERE status IN ('waiting','playing') ORDER BY updated_at DESC LIMIT 500`),
-    ]);
+    const presenceSql=`SELECT user_id,display_name,seen_at FROM gracz_lobby_presence WHERE seen_at>=NOW()-INTERVAL '45 seconds' ORDER BY seen_at DESC LIMIT 500`;
+    const roomsSql=`SELECT * FROM gracz_lobby_rooms WHERE status IN ('waiting','playing') ORDER BY updated_at DESC LIMIT 500`;
+    const[presenceResult,roomResult]=queryable===this.pool
+      ?await Promise.all([queryable.query(presenceSql),queryable.query(roomsSql)])
+      :[await queryable.query(presenceSql),await queryable.query(roomsSql)];
     const rooms=roomResult.rows.map(databaseRoom);
     return presenceResult.rows.map(row=>{
       const presence={userId:row.user_id,displayName:row.display_name,seenAt:new Date(row.seen_at).getTime()};
