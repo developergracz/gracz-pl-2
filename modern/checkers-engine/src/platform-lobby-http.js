@@ -27,9 +27,8 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null,tra
 
       if(request.method==='GET'&&url.pathname==='/lobby/state'){
         await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'lobby'});
-        await lobby.touchUser(user);
-        const[rooms,players,invitations]=await Promise.all([lobby.listRooms(),lobby.listPlayers(),lobby.listInvitations(user.userId)]);
-        return sendJson(response,200,{rooms,players,invitations});
+        if(typeof lobby.readState!=='function') throw new TypeError('Lobby readState jest wymagane dla /lobby/state.');
+        return sendJson(response,200,await lobby.readState(user));
       }
 
       if(url.pathname==='/lobby/rooms'){
