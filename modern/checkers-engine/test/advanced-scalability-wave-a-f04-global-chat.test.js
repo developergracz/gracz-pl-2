@@ -32,6 +32,12 @@ class FakePool{
   async query(config,values){
     const text=typeof config==='string'?config:config.text;
     const params=typeof config==='string'?(values??[]):(config.values??[]);
+    if(text.includes('INSERT INTO gracz_global_chat_presence')&&text.includes('pg_notify')){
+      const row={user_id:params[0],display_name:params[1],seen_at:new Date()};this.bus.presence.set(params[0],row);
+      const payload=params[3];this.bus.notifications.push(payload);
+      queueMicrotask(()=>{for(const listener of [...this.bus.listeners]) listener.emit('notification',{channel:CHANNEL,payload})});
+      return {rowCount:1,rows:[{}]};
+    }
     if(text.includes('pg_notify')){
       const payload=params[1];this.bus.notifications.push(payload);
       queueMicrotask(()=>{for(const listener of [...this.bus.listeners]) listener.emit('notification',{channel:CHANNEL,payload})});
