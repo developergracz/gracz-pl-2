@@ -69,11 +69,13 @@ test("AS-CAN-F07 dynamic API remains fail-closed while static assets remain loca
   assert.equal(localCalls, 2);
 });
 
-test("AS-CAN-F07 source contract removes sequential per-scope database loop", async () => {
+test("AS-CAN-F07 source contract keeps one authoritative batched path without a sequential per-scope database loop", async () => {
   const distributed = await readFile(new URL("../src/distributed-infrastructure.js", import.meta.url), "utf8");
   const production = await readFile(new URL("../src/production-rate-limit.js", import.meta.url), "utf8");
   assert.match(distributed, /consumeMany\(checks\)/);
-  assert.match(distributed, /UNNEST\(\$1::text\[\], \$2::bigint\[\]/);
+  assert.match(distributed, /MAX_BATCH_REQUESTS\s*=\s*64/);
+  assert.match(distributed, /UNNEST\(\$1::text\[\]\)/);
+  assert.match(distributed, /FOR UPDATE/);
   assert.doesNotMatch(distributed, /for \(const \[key, limit, windowMs, scope\] of checks\)/);
   assert.match(production, /STATIC_ASSET_PATH/);
   assert.match(production, /requiresSharedLimiter\(request\)/);
