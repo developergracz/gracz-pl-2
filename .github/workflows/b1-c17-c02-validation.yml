@@ -1,0 +1,84 @@
+name: B1-C17-C02 Focused Correctness Validation
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c17-c02-checkers-durability-attribution
+    paths:
+      - '.github/workflows/b1-c17-c02-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip actions]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_02_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_02_REQUIRE_POSTGRES: '1'
+      AUTH_SECRET: b1-c17-c02-focused-validation-secret-at-least-32-bytes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: Static validation
+        run: |
+          node --check perf/k6/scenarios/_runner.js
+          node --check test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
+          npm run check
+      - name: C02 deterministic replay attribution
+        run: node --test test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
+      - name: Checkers session and PostgreSQL CAS regressions
+        run: >-
+          node --test
+          test/session.test.js
+          test/p1-c-01-postgres-cas.test.js
+          test/p1-c-01-concurrent-http-postgres.test.js
+          test/p1-c-01-http-conflict.test.js
+          test/p1-c-01-http-success-regression.test.js
+          test/p1-c-01-http-versioned-store.test.js
+      - name: Checkers runtime and MatchRuntime PostgreSQL regressions
+        run: >-
+          node --test
+          test/p1-u-02-checkers-runtime.test.js
+          test/p1-u-02-slice2-checkers-http.test.js
+          test/p1-u-02-match-runtime-postgres.test.js
+      - name: C13 and C14 metric durability regressions
+        run: >-
+          node --test
+          test/wave-b-b1-c13-metric-accounting.test.js
+          test/wave-b-b1-c14-per-game-write-counters.test.js
+      - name: C17-C01 lobby freeze regression
+        run: node --test test/wave-b-b1-c17-lobby-state-client-reuse.test.js
+      - name: TrafficGuard C16 and shared infrastructure regressions
+        run: >-
+          node --test
+          test/wave-b-b1-c16-traffic-guard-coalescing.test.js
+          test/advanced-scalability-wave-a-f07-rate-limit-hot-path.test.js
+          test/p1-aud3-01-shared-infrastructure.test.js
+      - name: Security regressions
+        run: node --test test/security-foundation.test.js test/persistence-security.test.js
