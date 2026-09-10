@@ -112,9 +112,9 @@ pgTest('B1-C22 short GlobalChat SQL remains on shared pool with pre-C22 acquisit
     const user={userId:`${prefix}_user`,displayName:'C22 User'};
 
     await chat.list(user,{limit:20});
-    await waitFor(()=>meter.count>=4);
+    await waitFor(()=>meter.count>=2);
     await new Promise(resolve=>setTimeout(resolve,60));
-    assert.equal(meter.count,4,'first list must remain list SELECT + presence UPSERT + NOTIFY + listener-triggered presence reread on shared pool');
+    assert.equal(meter.count,2,'post-C27 first list must remain history SELECT plus one combined presence UPSERT+NOTIFY acquisition, with no same-origin reread');
 
     meter.reset();
     await chat.list(user,{limit:20});
