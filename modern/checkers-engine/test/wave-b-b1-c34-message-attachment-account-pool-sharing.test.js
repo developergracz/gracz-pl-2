@@ -62,23 +62,23 @@ test("B1-C34 static borrower contract removes MessageAttachment physical Postgre
   assert.ok(accountReadyIndex >= 0 && attachmentIndex > accountReadyIndex, "MessageAttachment initialization must remain after PostgresAccountService.ready");
   assert.doesNotMatch(main, /new MessageAttachmentService\(config\.databaseUrl,/);
 
-  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 15);
+  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 14);
   assert.equal(POSTGRES_RESOURCE_PROFILE.pools.some((entry) => entry.id === "message-attachments"), false);
-  assert.equal(aggregatePoolMax(), 50);
+  assert.equal(aggregatePoolMax(), 48);
   assert.equal(aggregateEmbeddedPersistentListeners(), 3);
   assert.equal(aggregateExternalPersistentClients(), 1);
   assert.equal(aggregateStartupTemporaryClients(), 1);
-  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 50);
+  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 48);
   assert.throws(
-    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "49" }),
+    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "47" }),
     (error) => error?.code === "POSTGRES_POOL_BUDGET_EXCEEDED",
   );
 
   const expected = [
-    [1, 51, 52, true],
-    [2, 102, 104, false],
-    [3, 153, 156, false],
-    [4, 204, 208, false],
+    [1, 49, 50, true],
+    [2, 98, 100, false],
+    [3, 147, 150, false],
+    [4, 196, 200, false],
   ];
   for (const [replicaCount, steadyEnvelope, startupEnvelope, safe] of expected) {
     const plan = connectionBudgetPlan({
@@ -88,7 +88,7 @@ test("B1-C34 static borrower contract removes MessageAttachment physical Postgre
       superuserReservedConnections: 3,
       environment: { POSTGRES_POOL_BUDGET: "64" },
     });
-    assert.equal(plan.poolMaxPerReplica, 50);
+    assert.equal(plan.poolMaxPerReplica, 48);
     assert.equal(plan.externalDedicatedPerReplica, 1);
     assert.equal(plan.startupOverlapPerReplica, 1);
     assert.equal(plan.steadyEnvelope, steadyEnvelope);
