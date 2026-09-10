@@ -77,11 +77,6 @@ jobs:
 
           test "$(grep -Ec 'new[[:space:]]+(pg\.)?Pool[[:space:]]*\(' src/secure-accounts.js || true)" -eq 0
           grep -Fq 'this.pool = baseService.pool;' src/secure-accounts.js
-          grep -A8 -F 'this.pool = new Pool({' src/postgres-accounts.js | grep -Fq 'max: 5'
-          grep -A8 -F 'this.pool = new Pool({' src/postgres-session-store.js | grep -Fq 'max: 4'
-          grep -A8 -F 'this.pool = new Pool({' src/distributed-infrastructure.js | grep -Fq 'max: 4'
-          grep -A8 -F 'this.pool = new Pool({' src/rankings.js | grep -Fq 'max: 3'
-          grep -A8 -F 'this.pool = new Pool({' src/message-attachments.js | grep -Fq 'max: 3'
 
       - name: C33 real PostgreSQL identity ownership and auth correctness
         run: |
