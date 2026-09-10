@@ -152,7 +152,7 @@ export async function withPostgresStartupSchemaLock(connectionString, work, opti
   if (typeof work !== "function") throw new TypeError("Funkcja inicjalizacji PostgreSQL jest wymagana.");
   const lock = await acquirePostgresStartupSchemaLock(connectionString, options);
   try {
-    return await work();
+    return await work(Object.freeze({ capacity: lock.capacity }));
   } finally {
     await lock.release();
   }
