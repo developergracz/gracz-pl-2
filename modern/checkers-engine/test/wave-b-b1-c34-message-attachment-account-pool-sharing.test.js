@@ -122,7 +122,7 @@ test("B1-C34 real PostgreSQL shared account pool preserves attachment semantics 
     assert.equal(Number(pg.Pool.graczAllocatedPoolMax ?? 0), allocatedAfterBase, "MessageAttachmentService must allocate no second pool");
 
     await base.pool.query("DELETE FROM gracz_auth_sessions WHERE user_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
-    await base.pool.query("DELETE FROM gracz_messages WHERE sender_id = ANY($1::text[]) OR recipient_id = ANY($1::text[])", [[USER_A,USER_B,USER_C],[USER_A,USER_B,USER_C]]);
+    await base.pool.query("DELETE FROM gracz_messages WHERE sender_id = ANY($1::text[]) OR recipient_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
     await base.pool.query("DELETE FROM gracz_accounts WHERE user_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
 
     await base.register({ userId: USER_A, displayName: "C34 Alicja", password: PASSWORD });
@@ -224,7 +224,7 @@ test("B1-C34 real PostgreSQL shared account pool preserves attachment semantics 
     assert.equal((await messageAttachments.get(USER_B,message.messageId)).data,PNG.toString("base64"));
 
     await base.pool.query("DELETE FROM gracz_auth_sessions WHERE user_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
-    await base.pool.query("DELETE FROM gracz_messages WHERE sender_id = ANY($1::text[]) OR recipient_id = ANY($1::text[])", [[USER_A,USER_B,USER_C],[USER_A,USER_B,USER_C]]);
+    await base.pool.query("DELETE FROM gracz_messages WHERE sender_id = ANY($1::text[]) OR recipient_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
     await base.pool.query("DELETE FROM gracz_accounts WHERE user_id = ANY($1::text[])", [[USER_A,USER_B,USER_C]]);
     await new Promise(resolve=>setTimeout(resolve,20));
 
