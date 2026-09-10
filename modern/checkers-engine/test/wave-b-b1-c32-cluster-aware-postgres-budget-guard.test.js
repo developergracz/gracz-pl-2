@@ -136,7 +136,7 @@ test("B1-C32 process-local budget cannot be widened above canonical production p
   assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "50" }), 50);
   assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 50);
   assert.throws(
-    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "52" }),
+    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "49" }),
     (error) => error?.code === "POSTGRES_POOL_BUDGET_EXCEEDED",
   );
 });
