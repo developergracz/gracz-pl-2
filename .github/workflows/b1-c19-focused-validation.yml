@@ -70,8 +70,6 @@ jobs:
           grep -q 'const MAX_QUEUE_DEPTH = 512;' src/distributed-infrastructure.js
           grep -q 'const OPERATION_TIMEOUT_MS = 1_500;' src/distributed-infrastructure.js
           grep -q 'body?.duplicate===false' perf/k6/scenarios/_runner.js
-          ! grep -q 'wave-b-runner.sh' ../../.github/workflows/b1-c19-focused-validation.yml
-          ! grep -q 'WAVE_B_VUS' ../../.github/workflows/b1-c19-focused-validation.yml
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: Reset isolated PostgreSQL database
