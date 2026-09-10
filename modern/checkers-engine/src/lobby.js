@@ -81,6 +81,26 @@ export class LobbyService{
     }
   }
 
+  async readState({userId,displayName}){
+    requireText(userId,"userId");requireText(displayName,"displayName");
+    const normalized=normalizeDisplayName(displayName);
+    if(!this.pool){
+      this.#presence.set(userId,{userId,displayName:normalized,seenAt:Date.now()});
+      return{rooms:this.listRooms(),players:this.listPlayers(),invitations:this.listInvitations(userId)};
+    }
+    await this.ready;
+    const client=await this.pool.connect();
+    try{
+      await this.#touchUserDatabase({userId,displayName:normalized},client);
+      const[rooms,players,invitations]=await Promise.all([
+        this.#listRoomsDatabase(client),
+        this.#listPlayersDatabase(client),
+        this.#listInvitationsDatabase(userId,client),
+      ]);
+      return{rooms,players,invitations};
+    }finally{client.release()}
+  }
+
   touchUser({userId,displayName}){
     requireText(userId,"userId");requireText(displayName,"displayName");
     const normalized=normalizeDisplayName(displayName);
@@ -88,10 +108,10 @@ export class LobbyService{
     return this.#touchUserDatabase({userId,displayName:normalized});
   }
 
-  async #touchUserDatabase({userId,displayName}){
+  async #touchUserDatabase({userId,displayName},queryable=this.pool){
     await this.ready;
-    await this.pool.query(`INSERT INTO gracz_lobby_presence(user_id,display_name,seen_at) VALUES($1,$2,NOW()) ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,seen_at=NOW()`,[userId,displayName]);
-    await this.pool.query(`DELETE FROM gracz_lobby_presence WHERE seen_at < NOW()-INTERVAL '5 minutes'`);
+    await queryable.query(`INSERT INTO gracz_lobby_presence(user_id,display_name,seen_at) VALUES($1,$2,NOW()) ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,seen_at=NOW()`,[userId,displayName]);
+    await queryable.query(`DELETE FROM gracz_lobby_presence WHERE seen_at < NOW()-INTERVAL '5 minutes'`);
   }
 
   listRooms(){
@@ -99,9 +119,9 @@ export class LobbyService{
     return this.#listRoomsDatabase();
   }
 
-  async #listRoomsDatabase(){
+  async #listRoomsDatabase(queryable=this.pool){
     await this.ready;
-    const{rows}=await this.pool.query(`SELECT * FROM gracz_lobby_rooms ORDER BY updated_at DESC,created_at DESC LIMIT 500`);
+    const{rows}=await queryable.query(`SELECT * FROM gracz_lobby_rooms ORDER BY updated_at DESC,created_at DESC LIMIT 500`);
     return rows.map(row=>publicRoom(databaseRoom(row)));
   }
 
@@ -110,11 +130,11 @@ export class LobbyService{
     return this.#listPlayersDatabase();
   }
 
-  async #listPlayersDatabase(){
+  async #listPlayersDatabase(queryable=this.pool){
     await this.ready;
     const[presenceResult,roomResult]=await Promise.all([
-      this.pool.query(`SELECT user_id,display_name,seen_at FROM gracz_lobby_presence WHERE seen_at>=NOW()-INTERVAL '45 seconds' ORDER BY seen_at DESC LIMIT 500`),
-      this.pool.query(`SELECT * FROM gracz_lobby_rooms WHERE status IN ('waiting','playing') ORDER BY updated_at DESC LIMIT 500`),
+      queryable.query(`SELECT user_id,display_name,seen_at FROM gracz_lobby_presence WHERE seen_at>=NOW()-INTERVAL '45 seconds' ORDER BY seen_at DESC LIMIT 500`),
+      queryable.query(`SELECT * FROM gracz_lobby_rooms WHERE status IN ('waiting','playing') ORDER BY updated_at DESC LIMIT 500`),
     ]);
     const rooms=roomResult.rows.map(databaseRoom);
     return presenceResult.rows.map(row=>{
@@ -129,9 +149,9 @@ export class LobbyService{
     return this.#listInvitationsDatabase(userId);
   }
 
-  async #listInvitationsDatabase(userId){
+  async #listInvitationsDatabase(userId,queryable=this.pool){
     await this.ready;
-    const{rows}=await this.pool.query(`SELECT * FROM gracz_lobby_invitations WHERE to_id=$1 AND status='pending' ORDER BY created_at ASC LIMIT 200`,[userId]);
+    const{rows}=await queryable.query(`SELECT * FROM gracz_lobby_invitations WHERE to_id=$1 AND status='pending' ORDER BY created_at ASC LIMIT 200`,[userId]);
     return rows.map(databaseInvitation);
   }
 
