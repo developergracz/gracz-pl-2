@@ -11,6 +11,10 @@ const OPERATION_TIMEOUT_MS = 1_500;
 const INIT_TIMEOUT_MS = 3_000;
 const RECONNECT_DELAY_MS = 250;
 const MAX_NOTIFICATION_BYTES = 1024;
+const MAX_BATCH_REQUESTS = 64;
+const MAX_BATCH_KEYS = 256;
+const MAX_BATCH_WAIT_MS = 4;
+const MAX_QUEUE_DEPTH = 512;
 const ALLOWED_EVENT_TYPES = new Set([
   "game.snapshot",
   "game.updated",
@@ -51,6 +55,14 @@ export class PostgresDistributedTrafficGuard {
       connectionTimeoutMillis: OPERATION_TIMEOUT_MS,
     });
     this.operations = 0;
+    this.logicalOperations = 0;
+    this.cleanupCycles = 0;
+    this.batchQueue = [];
+    this.batchTimer = null;
+    this.batchKickScheduled = false;
+    this.batchFlushPromise = null;
+    this.batchClosed = false;
+    this.nextBatchOrdinal = 0;
     this.ready = this.#initialize();
   }
 
@@ -164,60 +176,225 @@ export class PostgresDistributedTrafficGuard {
     const normalized = checks.map((check, index) => normalizeRateCheck(check, index));
     const hashes = normalized.map((check) => hashKey(check.key));
     if (new Set(hashes).size !== hashes.length) throw new TypeError("Zakresy limitera muszą mieć unikalne klucze.");
+    if (normalized.length > MAX_BATCH_KEYS) throw sharedUnavailable();
 
     await waitForPromise(this.ready, OPERATION_TIMEOUT_MS);
+    if (this.batchClosed) throw sharedUnavailable();
+
     const now = this.clock();
     const deadlineAt = Date.now() + OPERATION_TIMEOUT_MS;
+    return new Promise((resolve, reject) => {
+      if (this.batchClosed || this.batchQueue.length >= MAX_QUEUE_DEPTH) {
+        reject(sharedUnavailable());
+        return;
+      }
+      this.batchQueue.push({
+        ordinal: this.nextBatchOrdinal++,
+        normalized,
+        hashes,
+        now,
+        deadlineAt,
+        resolve,
+        reject,
+      });
+      this.#scheduleBatchFlush();
+    });
+  }
+
+  #scheduleBatchFlush() {
+    if (this.batchClosed || this.batchFlushPromise || this.batchQueue.length === 0) return;
+    if (this.batchQueue.length >= MAX_BATCH_REQUESTS) {
+      if (this.batchTimer) clearTimeout(this.batchTimer);
+      this.batchTimer = null;
+      if (!this.batchKickScheduled) {
+        this.batchKickScheduled = true;
+        queueMicrotask(() => {
+          this.batchKickScheduled = false;
+          this.#startBatchFlush();
+        });
+      }
+      return;
+    }
+    if (this.batchTimer || this.batchKickScheduled) return;
+    this.batchTimer = setTimeout(() => {
+      this.batchTimer = null;
+      this.#startBatchFlush();
+    }, MAX_BATCH_WAIT_MS);
+    this.batchTimer.unref?.();
+  }
+
+  #startBatchFlush() {
+    if (this.batchClosed || this.batchFlushPromise || this.batchQueue.length === 0) return;
+    if (this.batchTimer) clearTimeout(this.batchTimer);
+    this.batchTimer = null;
+    this.batchFlushPromise = this.#drainBatches()
+      .finally(() => {
+        this.batchFlushPromise = null;
+        this.#scheduleBatchFlush();
+      });
+  }
+
+  async #drainBatches() {
+    while (!this.batchClosed && this.batchQueue.length > 0) {
+      const batch = this.#takeBatch();
+      if (batch.length === 0) continue;
+      await this.#executeBatch(batch);
+    }
+  }
+
+  #takeBatch() {
+    const batch = [];
+    const keys = new Set();
+    while (this.batchQueue.length > 0 && batch.length < MAX_BATCH_REQUESTS) {
+      const item = this.batchQueue[0];
+      if (remaining(item.deadlineAt) <= 0) {
+        this.batchQueue.shift();
+        item.reject(sharedUnavailable());
+        continue;
+      }
+      const additions = item.hashes.filter((hash) => !keys.has(hash));
+      if (batch.length > 0 && keys.size + additions.length > MAX_BATCH_KEYS) break;
+      this.batchQueue.shift();
+      batch.push(item);
+      for (const hash of additions) keys.add(hash);
+    }
+    return batch;
+  }
+
+  async #executeBatch(batch) {
+    batch.sort((a, b) => a.ordinal - b.ordinal);
+    const keys = [...new Set(batch.flatMap((item) => item.hashes))].sort();
+    if (keys.length === 0 || keys.length > MAX_BATCH_KEYS) {
+      const error = sharedUnavailable();
+      for (const item of batch) item.reject(error);
+      return;
+    }
+
+    const deadlineAt = Math.min(...batch.map((item) => item.deadlineAt));
     let client;
+    let transactionOpen = false;
     let destroyClient = false;
     try {
       client = await acquireClient(this.pool, deadlineAt);
-      const { rows } = await queryBounded(client, `
+      await queryBounded(client, "BEGIN", [], deadlineAt);
+      transactionOpen = true;
+
+      await queryBounded(client, `
+        INSERT INTO gracz_shared_rate_limits(key_hash, count, reset_at, updated_at)
+        SELECT key_hash::char(64), 0, 0, NOW()
+        FROM UNNEST($1::text[]) AS x(key_hash)
+        ORDER BY key_hash
+        ON CONFLICT (key_hash) DO NOTHING
+      `, [keys], deadlineAt);
+
+      const locked = await queryBounded(client, `
+        SELECT key_hash::text AS key_hash, count, reset_at
+        FROM gracz_shared_rate_limits
+        WHERE key_hash::text = ANY($1::text[])
+        ORDER BY key_hash
+        FOR UPDATE
+      `, [keys], deadlineAt);
+
+      if (!Array.isArray(locked.rows) || locked.rows.length !== keys.length) {
+        throw new Error("Malformed shared rate-limit batch state.");
+      }
+
+      const state = new Map();
+      for (const row of locked.rows) {
+        const keyHash = String(row.key_hash || "").trim();
+        const count = Number(row.count);
+        const resetAt = Number(row.reset_at);
+        if (!keys.includes(keyHash) || !Number.isInteger(count) || count < 0 || !Number.isFinite(resetAt)) {
+          throw new Error("Malformed shared rate-limit batch row.");
+        }
+        if (state.has(keyHash)) throw new Error("Duplicate shared rate-limit batch row.");
+        state.set(keyHash, { count, resetAt });
+      }
+      if (state.size !== keys.length) throw new Error("Incomplete shared rate-limit batch state.");
+
+      const decisions = [];
+      for (const item of batch) {
+        const result = [];
+        let exceeded = null;
+        for (let index = 0; index < item.normalized.length; index += 1) {
+          const check = item.normalized[index];
+          const keyHash = item.hashes[index];
+          const current = state.get(keyHash);
+          if (!current) throw new Error("Missing shared rate-limit batch mapping.");
+          if (current.resetAt <= item.now) {
+            current.count = 1;
+            current.resetAt = item.now + check.windowMs;
+          } else {
+            current.count += 1;
+          }
+          result.push({ count: current.count, resetAt: current.resetAt });
+          if (!exceeded && current.count > check.limit) {
+            exceeded = {
+              retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - item.now) / 1000)),
+              scope: check.scope,
+            };
+          }
+        }
+        decisions.push({ item, result, exceeded });
+      }
+
+      if (remaining(deadlineAt) <= 0) throw sharedUnavailable();
+      const updateKeys = keys;
+      const updateCounts = updateKeys.map((keyHash) => state.get(keyHash)?.count);
+      const updateResets = updateKeys.map((keyHash) => state.get(keyHash)?.resetAt);
+      if (updateCounts.some((value) => !Number.isInteger(value) || value < 0)
+        || updateResets.some((value) => !Number.isFinite(value))) {
+        throw new Error("Invalid shared rate-limit batch update state.");
+      }
+
+      const updated = await queryBounded(client, `
         WITH input AS (
-          SELECT key_hash, reset_at, limit_value, scope, ordinal
-          FROM UNNEST($1::text[], $2::bigint[], $3::integer[], $4::text[], $5::integer[])
-            AS x(key_hash, reset_at, limit_value, scope, ordinal)
-        ), upserted AS (
-          INSERT INTO gracz_shared_rate_limits AS current (key_hash, count, reset_at, updated_at)
-          SELECT key_hash, 1, reset_at, NOW()
-          FROM input
-          ORDER BY key_hash
-          ON CONFLICT (key_hash)
-          DO UPDATE SET
-            count = CASE WHEN current.reset_at <= $6 THEN 1 ELSE current.count + 1 END,
-            reset_at = CASE WHEN current.reset_at <= $6 THEN EXCLUDED.reset_at ELSE current.reset_at END,
-            updated_at = NOW()
-          RETURNING key_hash, count, reset_at
+          SELECT key_hash, count_value, reset_value
+          FROM UNNEST($1::text[], $2::integer[], $3::bigint[])
+            AS x(key_hash, count_value, reset_value)
         )
-        SELECT i.ordinal, i.limit_value, i.scope, u.count, u.reset_at
-        FROM input i
-        JOIN upserted u ON u.key_hash::text = i.key_hash
-        ORDER BY i.ordinal
-      `, [
-        hashes,
-        normalized.map((check) => now + check.windowMs),
-        normalized.map((check) => check.limit),
-        normalized.map((check) => check.scope),
-        normalized.map((_, index) => index),
-        now,
-      ], deadlineAt);
+        UPDATE gracz_shared_rate_limits AS current
+        SET count = input.count_value,
+            reset_at = input.reset_value,
+            updated_at = NOW()
+        FROM input
+        WHERE current.key_hash::text = input.key_hash
+      `, [updateKeys, updateCounts, updateResets], deadlineAt);
+      if (Number(updated.rowCount) !== updateKeys.length) {
+        throw new Error("Incomplete shared rate-limit batch update.");
+      }
+
+      await queryBounded(client, "COMMIT", [], deadlineAt);
+      transactionOpen = false;
 
       this.operations += 1;
-      if (this.operations % 500 === 0) void this.#cleanup(now);
-
-      const exceeded = rows.find((row) => Number(row.count) > Number(row.limit_value));
-      if (exceeded) {
-        const persistedResetAt = Number(exceeded.reset_at);
-        throw new DistributedRateLimitError(
-          Math.max(1, Math.ceil((persistedResetAt - now) / 1000)),
-          exceeded.scope,
-        );
+      this.logicalOperations += batch.length;
+      const cleanupCycle = Math.floor(this.logicalOperations / 500);
+      if (cleanupCycle > this.cleanupCycles) {
+        this.cleanupCycles = cleanupCycle;
+        void this.#cleanup(batch.at(-1)?.now ?? this.clock());
       }
-      return rows.map((row) => ({ count: Number(row.count), resetAt: Number(row.reset_at) }));
+
+      for (const decision of decisions) {
+        if (decision.exceeded) {
+          decision.item.reject(new DistributedRateLimitError(
+            decision.exceeded.retryAfterSeconds,
+            decision.exceeded.scope,
+          ));
+        } else {
+          decision.item.resolve(decision.result);
+        }
+      }
     } catch (error) {
-      if (error instanceof DistributedRateLimitError) throw error;
       destroyClient = true;
-      throw sharedUnavailable(error);
+      if (client && transactionOpen) {
+        await client.query({
+          text: "ROLLBACK",
+          query_timeout: Math.max(1, remaining(deadlineAt)),
+        }).catch(() => {});
+      }
+      const unavailable = sharedUnavailable(error);
+      for (const item of batch) item.reject(unavailable);
     } finally {
       if (client) client.release(destroyClient);
     }
@@ -242,6 +419,13 @@ export class PostgresDistributedTrafficGuard {
   }
 
   async close() {
+    this.batchClosed = true;
+    if (this.batchTimer) clearTimeout(this.batchTimer);
+    this.batchTimer = null;
+    this.batchKickScheduled = false;
+    const unavailable = sharedUnavailable();
+    for (const item of this.batchQueue.splice(0)) item.reject(unavailable);
+    if (this.batchFlushPromise) await this.batchFlushPromise.catch(() => {});
     await this.pool.end();
   }
 }

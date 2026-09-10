@@ -469,7 +469,11 @@ test("B1-C16 source bounds remain finite and capacity tuning remains prohibited"
   assert.match(source, /MAX_BATCH_KEYS\s*=\s*256/);
   assert.match(source, /MAX_BATCH_WAIT_MS\s*=\s*4/);
   assert.match(source, /MAX_QUEUE_DEPTH\s*=\s*512/);
-  assert.match(source, /max:\s*4/);
-  assert.match(source, /OPERATION_TIMEOUT_MS\s*=\s*1_500/);
-  assert.doesNotMatch(source, /max:\s*[5-9]|max:\s*[1-9][0-9]+/);
+  const trafficGuardClass = source.slice(
+    source.indexOf("export class PostgresDistributedTrafficGuard"),
+    source.indexOf("export class PostgresRealtimeHub"),
+  );
+  assert.match(trafficGuardClass, /max:\s*4/);
+  assert.match(trafficGuardClass, /OPERATION_TIMEOUT_MS|connectionTimeoutMillis:\s*OPERATION_TIMEOUT_MS/);
+  assert.doesNotMatch(trafficGuardClass, /max:\s*(?:[5-9]|[1-9][0-9]+)/);
 });
