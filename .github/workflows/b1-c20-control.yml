@@ -1,0 +1,174 @@
+name: B1-C20 Single 100 VU Verification Control
+
+on:
+  push:
+    branches:
+      - verify/b1-c20-post-c19-100vu
+    paths:
+      - '.github/b1-c20-control-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c20
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c20"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c20
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c20
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+      WAVE_B_RUN_ID: b1-c20-r1-v100
+      WAVE_B_REPLICAS: '1'
+      WAVE_B_VUS: '100'
+      WAVE_B_SCENARIO: mixed-platform
+      WAVE_B_GAME_COUNT: '50'
+      WAVE_B_WARMUP_SECONDS: '120'
+      WAVE_B_STEADY_SECONDS: '300'
+      WAVE_B_COOLDOWN_SECONDS: '120'
+      WAVE_B_THINK_SECONDS: '0.05'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: B1-C20 exact preflight identity and freeze gate
+        run: |
+          set -euo pipefail
+          BASE=9413b0ebd6c0507b6f4987d8fc589771ce29e612
+          TREE=2f9cf937be8ac8a8d7f237fe03984d93c62a373f
+          SOURCE=fix/wave-b-b1-c19-lobby-state-single-acquisition
+          git fetch origin "refs/heads/${SOURCE}:refs/remotes/origin/b1-c20-authorized-source"
+          test "$(git rev-parse refs/remotes/origin/b1-c20-authorized-source)" = "$BASE"
+          test "$(git rev-parse ${BASE}^{tree})" = "$TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^(\.github/b1-c20/|\.github/workflows/b1-c20-control\.yml$|\.github/b1-c20-control-trigger\.txt$)' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine
+          test ! -e ../../.github/workflows/b1-c19-focused-validation.yml
+          grep -q 'max: 4' src/postgres-session-store.js
+          grep -q 'connectionTimeoutMillis: 10_000' src/postgres-session-store.js
+          grep -q 'const MAX_BATCH_REQUESTS = 64;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_KEYS = 256;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_WAIT_MS = 4;' src/distributed-infrastructure.js
+          grep -q 'const MAX_QUEUE_DEPTH = 512;' src/distributed-infrastructure.js
+          grep -q 'const OPERATION_TIMEOUT_MS = 1_500;' src/distributed-infrastructure.js
+          grep -Fq 'body?.duplicate===false' perf/k6/scenarios/_runner.js
+          grep -Fq "wave_b_fast_read_ms: ['p(95)<200', 'p(99)<500']" perf/k6/config/thresholds.js
+          grep -Fq "wave_b_normal_command_ms: ['p(95)<300', 'p(99)<750']" perf/k6/config/thresholds.js
+          grep -Fq "wave_b_complex_read_ms: ['p(95)<500', 'p(99)<1000']" perf/k6/config/thresholds.js
+          grep -Fq "const weighted=[[20,httpBaseline],[15,authenticatedBrowse],[15,lobbyLoad],[15,checkersActivity],[10,gomokuActivity],[5,thousandActivity],[10,globalChat],[5,rankings],[5,miscellaneous]];" perf/k6/scenarios/_runner.js
+          node --check ../../.github/b1-c20/b1-c20-steady-preload.cjs
+          python3 -m py_compile ../../.github/b1-c20/b1-c20-summary.py
+          bash -n ../../.github/b1-c20/bin/node
+          bash -n ../../.github/b1-c20/bin/k6
+
+      - name: Generate isolated masked benchmark secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify benchmark tools
+        run: |
+          set -euo pipefail
+          command -v node
+          command -v k6
+          command -v psql
+          k6 version
+          psql "$DATABASE_URL" -Atc 'SELECT version(); SHOW max_connections; SHOW shared_buffers; SHOW superuser_reserved_connections;'
+
+      - name: Execute exactly one frozen B1 100 VU control
+        id: control
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          chmod +x ../../.github/b1-c20/bin/node ../../.github/b1-c20/bin/k6
+          REAL_NODE="$(command -v node)"
+          REAL_K6="$(command -v k6)"
+          set +e
+          PATH="$GITHUB_WORKSPACE/.github/b1-c20/bin:$PATH" \
+          B1_C20_REAL_NODE="$REAL_NODE" \
+          B1_C20_REAL_K6="$REAL_K6" \
+          bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > perf/k6/reports/b1-c20-control-exit.txt
+          echo "runner_exit=$rc" >> "$GITHUB_OUTPUT"
+          echo "B1-C20 workload runner exit: $rc"
+          exit "$rc"
+
+      - name: Build B1-C20 evidence summary
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 ../../.github/b1-c20/b1-c20-summary.py
+          cat perf/k6/reports/B1-C20-EVIDENCE.md
+
+      - name: Upload B1-C20 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c20-100vu-${{ github.sha }}-${{ github.run_id }}
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Final truthful B1-C20 gate
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          p=pathlib.Path('perf/k6/reports/B1-C20-EVIDENCE.json')
+          if not p.exists():
+              print('B1-C20 FAIL: evidence summary missing')
+              sys.exit(1)
+          data=json.loads(p.read_text())
+          exit_path=pathlib.Path('perf/k6/reports/b1-c20-control-exit.txt')
+          runner_exit=int(exit_path.read_text().strip()) if exit_path.exists() else 999
+          failures=[]
+          if not data.get('workload',{}).get('completed'): failures.append('WORKLOAD_NOT_COMPLETED')
+          if not data.get('correctness',{}).get('pass'): failures.append('CORRECTNESS')
+          if not data.get('latency',{}).get('allClassesPass'): failures.append('SLO')
+          if runner_exit != 0: failures.append(f'RUNNER_EXIT_{runner_exit}')
+          if not data.get('pools',{}).get('sharedStore'): failures.append('STORE_POOL_TELEMETRY')
+          if not data.get('pools',{}).get('trafficGuard'): failures.append('TRAFFICGUARD_TELEMETRY')
+          if failures:
+              print('B1-C20 FINAL GATE FAIL:', ','.join(failures))
+              sys.exit(1)
+          print('B1-C20 FINAL GATE PASS')
+          PY
