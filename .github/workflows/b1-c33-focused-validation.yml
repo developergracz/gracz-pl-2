@@ -70,7 +70,8 @@ jobs:
 
           test "$(grep -Ec 'new[[:space:]]+(pg\.)?(Pool|Client)[[:space:]]*\(' src/auth-sessions.js || true)" -eq 0
           test "$(grep -Ec 'this\.pool\.end[[:space:]]*\(' src/auth-sessions.js || true)" -eq 0
-          test "$(grep -Ec 'from[[:space:]]+["'\''']pg["'\''']' src/auth-sessions.js || true)" -eq 0
+          ! grep -Fq 'from "pg"' src/auth-sessions.js
+          ! grep -Fq "from 'pg'" src/auth-sessions.js
           grep -Fq 'this.pool=pool;' src/auth-sessions.js
           grep -Fq 'new PostgresAuthSessionStore(baseAccounts.pool)' src/main.js
 
