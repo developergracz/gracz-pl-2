@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -54,6 +54,7 @@ jobs:
           set -euo pipefail
           git cat-file -e 1661798e26741181bae0138c2e5f2d78b4dc9031^{commit}
           test "$(git show -s --format=%T 1661798e26741181bae0138c2e5f2d78b4dc9031)" = "b626e7196a6e6044f7728b1cd33af75e872b4d90"
+          git merge-base --is-ancestor 1661798e26741181bae0138c2e5f2d78b4dc9031 HEAD
           git diff --exit-code 1661798e26741181bae0138c2e5f2d78b4dc9031 -- src/distributed-infrastructure.js
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
