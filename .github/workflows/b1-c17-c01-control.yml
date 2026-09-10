@@ -1,0 +1,138 @@
+name: B1-C17-C01 Single 100 VU Verification Control
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c17-c01-short-acquisition-state-read
+    paths:
+      - '.github/workflows/b1-c17-c01-control.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  b1-c17-c01-100vu-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c17_c01_control
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c17_c01_control"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c17_c01_control
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c17_c01_control
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+      WAVE_B_RUN_ID: b1-c17-c01-r1-v100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify authorized C17-C01 implementation identity and frozen invariants
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse 4cde41a1e45e9e7faf0ec7beecc69e335e6a74e6^{tree})" = "60167a84218e7a7d216e3a49ec7e2ba58fc47ec9"
+          git merge-base --is-ancestor 4cde41a1e45e9e7faf0ec7beecc69e335e6a74e6 HEAD
+          git diff --exit-code 4cde41a1e45e9e7faf0ec7beecc69e335e6a74e6 HEAD -- \
+            src/lobby.js \
+            src/platform-lobby-http.js \
+            test/wave-b-b1-c17-lobby-state-client-reuse.test.js
+          git diff --exit-code 854047d1a483c1ca8c3d9f9cee6d928b45582ae7 HEAD -- \
+            src/postgres-session-store.js \
+            src/distributed-infrastructure.js
+          grep -q 'max: 4' src/postgres-session-store.js
+          grep -q 'connectionTimeoutMillis: 10_000' src/postgres-session-store.js
+          grep -q 'const MAX_BATCH_REQUESTS = 64;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_KEYS = 256;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_WAIT_MS = 4;' src/distributed-infrastructure.js
+          grep -q 'const MAX_QUEUE_DEPTH = 512;' src/distributed-infrastructure.js
+          grep -q 'const OPERATION_TIMEOUT_MS = 1_500;' src/distributed-infrastructure.js
+          grep -q 'async #readStateDatabase(userId)' src/lobby.js
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+      - name: Generate isolated masked control secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+      - name: Static control preflight
+        run: |
+          set -euo pipefail
+          command -v k6
+          command -v psql
+          node --check src/lobby.js
+          node --check src/platform-lobby-http.js
+          node --check perf/scripts/b1-c17-c01-control-summary.mjs
+          node --test --test-concurrency=1 \
+            test/wave-b-b1-c17-lobby-state-client-reuse.test.js \
+            test/wave-b-b1-c16-traffic-guard-coalescing.test.js \
+            test/wave-b-b1-c13-metric-accounting.test.js \
+            test/wave-b-b1-c14-per-game-write-counters.test.js
+      - name: Reset isolated PostgreSQL control database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+      - name: Run exactly one B1-C17-C01 100 VU control
+        id: control
+        continue-on-error: true
+        run: |
+          set +e
+          WAVE_B_REPLICAS=1 \
+          WAVE_B_VUS=100 \
+          WAVE_B_SCENARIO=mixed-platform \
+          WAVE_B_GAME_COUNT=50 \
+          WAVE_B_WARMUP_SECONDS=120 \
+          WAVE_B_STEADY_SECONDS=300 \
+          WAVE_B_COOLDOWN_SECONDS=120 \
+          WAVE_B_THINK_SECONDS=0.05 \
+          bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          echo "$rc" > perf/k6/reports/b1-c17-c01-control-exit.txt
+          exit "$rc"
+      - name: Generate C17-C01 control evidence summary
+        if: always()
+        run: |
+          set +e
+          node perf/scripts/wave-b-summarize.mjs
+          node perf/scripts/b1-c17-c01-control-summary.mjs
+          echo '--- CORRECTNESS ---'
+          cat perf/k6/reports/b1-c17-c01-r1-v100-correctness.json 2>/dev/null || true
+          echo '--- RECORD ---'
+          cat perf/k6/reports/b1-c17-c01-r1-v100-record.json 2>/dev/null || true
+      - name: Upload B1-C17-C01 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c17-c01-100vu-${{ github.sha }}-${{ github.run_id }}
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Final truthful control gate
+        if: always()
+        run: |
+          if [[ "${{ steps.control.outcome }}" == "success" ]]; then
+            echo 'B1-C17-C01 single 100 VU control completed with runner PASS.'
+            exit 0
+          fi
+          echo 'B1-C17-C01 single 100 VU control completed with runner FAIL; evidence preserved.'
+          exit 1
