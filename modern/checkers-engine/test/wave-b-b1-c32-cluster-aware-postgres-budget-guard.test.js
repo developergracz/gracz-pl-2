@@ -83,10 +83,10 @@ function classSegment(source, owner) {
   return next === -1 ? source.slice(start) : source.slice(start, start + match[0].length + next);
 }
 
-test("B1-C32 canonical profile models actual post-C34 production ownership without double-counting listeners", () => {
-  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 15);
-  assert.equal(aggregatePoolMax(), 50);
-  assert.equal(DEFAULT_POSTGRES_POOL_BUDGET, 50);
+test("B1-C32 canonical profile models actual post-C35 production ownership without double-counting listeners", () => {
+  assert.equal(POSTGRES_RESOURCE_PROFILE.pools.length, 14);
+  assert.equal(aggregatePoolMax(), 48);
+  assert.equal(DEFAULT_POSTGRES_POOL_BUDGET, 48);
   assert.equal(aggregateEmbeddedPersistentListeners(), 3);
   assert.equal(aggregateExternalPersistentClients(), 1);
   assert.equal(aggregateStartupTemporaryClients(), 1);
@@ -96,6 +96,7 @@ test("B1-C32 canonical profile models actual post-C34 production ownership witho
   assert.equal(ids.includes("secure-accounts"), false);
   assert.equal(ids.includes("auth-sessions"), false);
   assert.equal(ids.includes("message-attachments"), false);
+  assert.equal(ids.includes("newsletter-lifecycle"), false);
   assert.equal(ids.includes("global-chat"), false);
 
   assert.deepEqual(
@@ -123,20 +124,20 @@ test("B1-C32 canonical profile models actual post-C34 production ownership witho
     superuserReservedConnections: 3,
     environment: { POSTGRES_POOL_BUDGET: "64" },
   });
-  assert.equal(plan.poolMaxPerReplica, 50);
+  assert.equal(plan.poolMaxPerReplica, 48);
   assert.equal(plan.externalDedicatedPerReplica, 1);
-  assert.equal(plan.steadyEnvelope, 51);
+  assert.equal(plan.steadyEnvelope, 49);
   assert.equal(plan.startupOverlapPerReplica, 1);
-  assert.equal(plan.startupEnvelope, 52);
+  assert.equal(plan.startupEnvelope, 50);
   assert.equal(plan.embeddedPersistentListenersPerReplica, 3);
 });
 
 test("B1-C32 process-local budget cannot be widened above canonical production pool max", () => {
-  assert.equal(configuredPoolBudget({}), 50);
-  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "50" }), 50);
-  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 50);
+  assert.equal(configuredPoolBudget({}), 48);
+  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "48" }), 48);
+  assert.equal(configuredPoolBudget({ POSTGRES_POOL_BUDGET: "64" }), 48);
   assert.throws(
-    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "49" }),
+    () => configuredPoolBudget({ POSTGRES_POOL_BUDGET: "47" }),
     (error) => error?.code === "POSTGRES_POOL_BUDGET_EXCEEDED",
   );
 });
@@ -220,8 +221,8 @@ test("B1-C32 cluster formula rejects unsafe current multi-replica topology", () 
   const one = validateClusterConnectionBudget({ ...fixture, replicaCount: 1 });
   assert.equal(one.safe, true);
   assert.equal(one.safeApplicationCapacity, 87);
-  assert.equal(one.steadyEnvelope, 51);
-  assert.equal(one.startupEnvelope, 52);
+  assert.equal(one.steadyEnvelope, 49);
+  assert.equal(one.startupEnvelope, 50);
 
   for (const replicas of [2, 3, 4]) {
     assert.throws(
@@ -349,8 +350,8 @@ test("B1-C32 loadConfig enforces explicit replica count only for PostgreSQL-back
 
   const config = loadConfig(productionEnvironment());
   assert.equal(config.postgresReplicaCount, 1);
-  assert.equal(config.postgresPoolBudget.aggregateMax, 50);
-  assert.equal(config.postgresPoolBudget.budget, 50);
+  assert.equal(config.postgresPoolBudget.aggregateMax, 48);
+  assert.equal(config.postgresPoolBudget.budget, 48);
   assert.equal(config.postgresPoolBudget.requestedBudget, 64);
 
   const noDatabase = loadConfig({
@@ -359,16 +360,17 @@ test("B1-C32 loadConfig enforces explicit replica count only for PostgreSQL-back
   assert.equal(noDatabase.postgresReplicaCount, null);
 });
 
-test("B1-C32 pg-secure-preload preserves TLS and rejects hidden process allocation beyond canonical 50", () => {
+test("B1-C32 pg-secure-preload preserves TLS and rejects hidden process allocation beyond canonical 48", () => {
   const preload = fileURLToPath(new URL("../src/pg-secure-preload.cjs", import.meta.url));
 
   const allocationScript = String.raw`
     const pg = require("pg");
-    if (pg.Pool.graczPoolBudget.aggregateMax !== 50) process.exit(21);
-    if (pg.Pool.graczPoolBudget.budget !== 50) process.exit(22);
+    if (pg.Pool.graczPoolBudget.aggregateMax !== 48) process.exit(21);
+    if (pg.Pool.graczPoolBudget.budget !== 48) process.exit(22);
     const pools = [];
-    for (let i = 0; i < 10; i += 1) pools.push(new pg.Pool({ max: 5 }));
-    if (pg.Pool.graczAllocatedPoolMax !== 50) process.exit(23);
+    for (let i = 0; i < 9; i += 1) pools.push(new pg.Pool({ max: 5 }));
+    pools.push(new pg.Pool({ max: 3 }));
+    if (pg.Pool.graczAllocatedPoolMax !== 48) process.exit(23);
     try {
       new pg.Pool({ max: 1 });
       process.exit(24);
@@ -515,7 +517,7 @@ test("B1-C32 unsafe real-PostgreSQL topology is rejected before main initializat
     (error) => {
       assert.equal(error?.code, "POSTGRES_CLUSTER_CONNECTION_BUDGET_EXCEEDED");
       assert.equal(error?.plan?.replicaCount, 2);
-      assert.equal(error?.plan?.poolMaxPerReplica, 50);
+      assert.equal(error?.plan?.poolMaxPerReplica, 48);
       assert.equal(error?.plan?.externalDedicatedPerReplica, 1);
       assert.equal(error?.plan?.startupOverlapPerReplica, 1);
       return true;
