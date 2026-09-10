@@ -1,0 +1,187 @@
+name: B1-C26 Single 100 VU Post-C25 Verification Control
+
+on:
+  push:
+    branches: [verify/b1-c26-post-c25-100vu]
+    paths: ['.github/b1-c26-control-trigger.txt']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c26
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c26"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c26
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c26
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+      WAVE_B_RUN_ID: b1-c26-r1-v100
+      WAVE_B_REPLICAS: '1'
+      WAVE_B_VUS: '100'
+      WAVE_B_SCENARIO: mixed-platform
+      WAVE_B_GAME_COUNT: '50'
+      WAVE_B_WARMUP_SECONDS: '120'
+      WAVE_B_STEADY_SECONDS: '300'
+      WAVE_B_COOLDOWN_SECONDS: '120'
+      WAVE_B_THINK_SECONDS: '0.05'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Exact C25 identity and frozen-profile gate
+        run: |
+          set -euo pipefail
+          BASE=1d4963e192ee8539c1a670621e68696438be4ed4
+          TREE=de48f917248e95932f05df59c700903aed7183b5
+          SOURCE=fix/wave-b-b1-c25-lobby-room-single-acquisition
+          git fetch origin "refs/heads/${SOURCE}:refs/remotes/origin/b1-c26-authorized-source"
+          test "$(git rev-parse refs/remotes/origin/b1-c26-authorized-source)" = "$BASE"
+          test "$(git rev-parse ${BASE}^{tree})" = "$TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^(\.github/b1-c26/|\.github/workflows/b1-c26-control\.yml$|\.github/b1-c26-control-trigger\.txt$)' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine
+          grep -q 'max: 4' src/postgres-session-store.js
+          grep -q 'connectionTimeoutMillis: 10_000' src/postgres-session-store.js
+          grep -Fq 'client=this.#listenerClientFactory();' src/distributed-global-chat.js
+          grep -Fq 'await client.connect();' src/distributed-global-chat.js
+          grep -q 'const MAX_BATCH_REQUESTS = 64;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_KEYS = 256;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_WAIT_MS = 4;' src/distributed-infrastructure.js
+          grep -q 'const MAX_QUEUE_DEPTH = 512;' src/distributed-infrastructure.js
+          grep -q 'const OPERATION_TIMEOUT_MS = 1_500;' src/distributed-infrastructure.js
+          grep -Fq 'body?.duplicate===false' perf/k6/scenarios/_runner.js
+          grep -Fq "wave_b_fast_read_ms: ['p(95)<200', 'p(99)<500']" perf/k6/config/thresholds.js
+          grep -Fq "wave_b_normal_command_ms: ['p(95)<300', 'p(99)<750']" perf/k6/config/thresholds.js
+          grep -Fq "wave_b_complex_read_ms: ['p(95)<500', 'p(99)<1000']" perf/k6/config/thresholds.js
+          grep -Fq "const weighted=[[20,httpBaseline],[15,authenticatedBrowse],[15,lobbyLoad],[15,checkersActivity],[10,gomokuActivity],[5,thousandActivity],[10,globalChat],[5,rankings],[5,miscellaneous]];" perf/k6/scenarios/_runner.js
+          grep -Fq 'createRoomForActiveUser' src/platform-lobby-http.js
+          grep -Fq 'return this.#createRoomForActiveUserDatabase(prepared);' src/lobby.js
+          node --check ../../.github/b1-c26/b1-c20-steady-preload.cjs
+          node --check ../../.github/b1-c26/b1-c26-listener-observer.cjs
+          bash -n ../../.github/b1-c26/bin/node
+          bash -n ../../.github/b1-c26/bin/k6
+          test "$WAVE_B_REPLICAS" = '1'
+          test "$WAVE_B_VUS" = '100'
+          test "$WAVE_B_SCENARIO" = 'mixed-platform'
+          test "$WAVE_B_GAME_COUNT" = '50'
+          test "$WAVE_B_WARMUP_SECONDS" = '120'
+          test "$WAVE_B_STEADY_SECONDS" = '300'
+          test "$WAVE_B_COOLDOWN_SECONDS" = '120'
+          test "$WAVE_B_THINK_SECONDS" = '0.05'
+
+      - name: Generate isolated masked benchmark secrets
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify benchmark tools
+        run: |
+          set -euo pipefail
+          command -v node
+          command -v k6
+          command -v psql
+          k6 version
+          psql "$DATABASE_URL" -Atc 'SELECT version(); SHOW max_connections; SHOW shared_buffers; SHOW superuser_reserved_connections;'
+
+      - name: Execute exactly one frozen B1 100 VU control
+        id: control
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          chmod +x ../../.github/b1-c26/bin/node ../../.github/b1-c26/bin/k6
+          REAL_NODE="$(command -v node)"
+          REAL_K6="$(command -v k6)"
+          set +e
+          PATH="$GITHUB_WORKSPACE/.github/b1-c26/bin:$PATH" \
+          B1_C26_REAL_NODE="$REAL_NODE" \
+          B1_C26_REAL_K6="$REAL_K6" \
+          bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > perf/k6/reports/b1-c26-control-exit.txt
+          echo "B1-C26 workload runner exit: $rc"
+          exit "$rc"
+
+      - name: Add verification manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          git rev-parse HEAD > perf/k6/reports/b1-c26-control-head.txt
+          git rev-parse HEAD^{tree} > perf/k6/reports/b1-c26-control-tree.txt
+          cat > perf/k6/reports/B1-C26-MANIFEST.txt <<EOF
+          source_branch=fix/wave-b-b1-c25-lobby-room-single-acquisition
+          source_head=1d4963e192ee8539c1a670621e68696438be4ed4
+          source_tree=de48f917248e95932f05df59c700903aed7183b5
+          verification_branch=verify/b1-c26-post-c25-100vu
+          run_id=${WAVE_B_RUN_ID}
+          replicas=${WAVE_B_REPLICAS}
+          vus=${WAVE_B_VUS}
+          scenario=${WAVE_B_SCENARIO}
+          games=${WAVE_B_GAME_COUNT}
+          warmup=${WAVE_B_WARMUP_SECONDS}
+          steady=${WAVE_B_STEADY_SECONDS}
+          cooldown=${WAVE_B_COOLDOWN_SECONDS}
+          think=${WAVE_B_THINK_SECONDS}
+          EOF
+
+      - name: Upload canonical B1-C26 raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c26-100vu-${{ github.sha }}-${{ github.run_id }}
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Evidence completeness gate
+        if: always()
+        run: |
+          set -euo pipefail
+          R=perf/k6/reports
+          test -s "$R/${WAVE_B_RUN_ID}-record.json"
+          test -s "$R/${WAVE_B_RUN_ID}-correctness.json"
+          test -s "$R/${WAVE_B_RUN_ID}-b1-c20-k6-window.json"
+          test -s "$R/${WAVE_B_RUN_ID}-b1-c20-steady-telemetry.json"
+          test -s "$R/${WAVE_B_RUN_ID}-b1-c26-listener-observer.json"
+          test -s "$R/${WAVE_B_RUN_ID}-application.csv"
+          test -s "$R/${WAVE_B_RUN_ID}-postgres.csv"
+          test -s "$R/${WAVE_B_RUN_ID}-host.csv"
+          test -s "$R/${WAVE_B_RUN_ID}-k6-summary-export.json"
+          test -s "$R/B1-C26-MANIFEST.txt"
