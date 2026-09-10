@@ -198,11 +198,19 @@ export class LobbyService{
     return rows.map(databaseInvitation);
   }
 
+  createRoomForActiveUser(input){
+    const prepared=prepareRoomInput(input);
+    if(!this.pool){
+      this.#presence.set(prepared.ownerId,{userId:prepared.ownerId,displayName:normalizeDisplayName(prepared.ownerName),seenAt:Date.now()});
+      return this.createRoom(input);
+    }
+    return this.#createRoomForActiveUserDatabase(prepared);
+  }
+
   createRoom(input){
-    const{ownerId,ownerName,roomName="Nowy pokój",gameType="checkers",maxPlayers=null}=input;
-    requireText(ownerId,"ownerId");requireText(ownerName,"ownerName");requireText(roomName,"roomName");
-    const config=gameConfig(gameType);const canonicalGameType=config.id;const seatCount=resolveSeatCount(canonicalGameType,maxPlayers,config.players);
-    if(this.pool)return this.#createRoomDatabase({ownerId,ownerName,roomName,config,canonicalGameType,seatCount});
+    const prepared=prepareRoomInput(input);
+    const{ownerId,ownerName,roomName,config,canonicalGameType,seatCount}=prepared;
+    if(this.pool)return this.#createRoomDatabase(prepared);
     const ownedWaiting=[...this.#rooms.values()].filter(room=>room.gameType===canonicalGameType&&room.seats[0]?.id===ownerId&&room.status==="waiting");
     const exact=ownedWaiting.find(room=>room.maxPlayers===seatCount);if(exact)return publicRoom(exact);
     for(const oldRoom of ownedWaiting){
@@ -215,9 +223,22 @@ export class LobbyService{
     const room={roomId:this.idGenerator(),roomName,gameType:canonicalGameType,gameLabel:config.label,maxPlayers:seatCount,status:"waiting",seats,gameId:null};this.#rooms.set(room.roomId,room);return publicRoom(room)
   }
 
-  async #createRoomDatabase({ownerId,ownerName,roomName,config,canonicalGameType,seatCount}){
+  async #createRoomForActiveUserDatabase(prepared){
     await this.ready;
     const client=await this.pool.connect();
+    try{
+      await this.#touchUserDatabase({userId:prepared.ownerId,displayName:normalizeDisplayName(prepared.ownerName)},client);
+      return await this.#createRoomDatabaseWithClient(prepared,client);
+    }finally{client.release()}
+  }
+
+  async #createRoomDatabase(prepared){
+    await this.ready;
+    const client=await this.pool.connect();
+    try{return await this.#createRoomDatabaseWithClient(prepared,client)}finally{client.release()}
+  }
+
+  async #createRoomDatabaseWithClient({ownerId,ownerName,roomName,config,canonicalGameType,seatCount},client){
     try{
       await client.query("BEGIN");
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",[`lobby-owner:${ownerId}:${canonicalGameType}`]);
@@ -234,7 +255,7 @@ export class LobbyService{
       const roomId=this.idGenerator();const seats=Array(seatCount).fill(null);seats[0]={id:ownerId,name:normalizeDisplayName(ownerName)};
       const result=await client.query(`INSERT INTO gracz_lobby_rooms(room_id,room_name,game_type,game_label,max_players,status,seats,game_id,owner_id,owner_name) VALUES($1,$2,$3,$4,$5,'waiting',$6::jsonb,NULL,$7,$8) RETURNING *`,[roomId,roomName,canonicalGameType,config.label,seatCount,JSON.stringify(seats),ownerId,normalizeDisplayName(ownerName)]);
       await client.query("COMMIT");return publicRoom(databaseRoom(result.rows[0]));
-    }catch(error){await client.query("ROLLBACK").catch(()=>{});throw error}finally{client.release()}
+    }catch(error){await client.query("ROLLBACK").catch(()=>{});throw error}
   }
 
   createInvitation(input){
@@ -341,5 +362,6 @@ function publicRoom(room){const seats=room.seats.map(seat=>seat?{id:seat.id,name
 function requireRowArray(value,field){if(!Array.isArray(value))throw new Error(`PostgreSQL lobby zwrócił nieprawidłowe pole ${field}.`);return value}
 function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.max;const value=requested===null||requested===undefined?config.default:Number(requested);if(!Number.isInteger(value)||value<config.min||value>config.max)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
 function gameConfig(gameType){return requireGameDefinition(gameType,{capability:"lobby"})}
+function prepareRoomInput(input={}){const{ownerId,ownerName,roomName="Nowy pokój",gameType="checkers",maxPlayers=null}=input;requireText(ownerId,"ownerId");requireText(ownerName,"ownerName");requireText(roomName,"roomName");const config=gameConfig(gameType);const canonicalGameType=config.id;const seatCount=resolveSeatCount(canonicalGameType,maxPlayers,config.players);return{ownerId,ownerName,roomName,config,canonicalGameType,seatCount}}
 function normalizeDisplayName(value){if(typeof value!=="string")return value;if(value.localeCompare("Czeslaw","pl",{sensitivity:"base"})===0)return"Czesław";return value.normalize("NFC")}
 function requireText(value,field){if(typeof value!=="string"||value.length<1||value.length>128)throw new LobbyError(`Pole ${field} jest nieprawidłowe.`,"INVALID_ROOM")}
