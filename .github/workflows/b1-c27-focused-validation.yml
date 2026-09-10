@@ -92,11 +92,11 @@ jobs:
 
       - name: C25 and C19 acquisition regressions
         run: |
-          node --test             test/wave-b-b1-c25-lobby-room-single-acquisition.test.js             test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+          node --test --test-concurrency=1             test/wave-b-b1-c25-lobby-room-single-acquisition.test.js             test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
 
       - name: SessionStore CAS MatchRuntime and C02 regressions
         run: |
-          node --test             test/p1-c-01-postgres-cas.test.js             test/p1-u-02-match-runtime-postgres.test.js             test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
+          node --test --test-concurrency=1             test/p1-c-01-postgres-cas.test.js             test/p1-u-02-match-runtime-postgres.test.js             test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
 
       - name: TrafficGuard frozen regression
         run: node --test test/wave-b-b1-c16-traffic-guard-coalescing.test.js
