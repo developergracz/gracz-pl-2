@@ -1,0 +1,59 @@
+name: B1-C17 Focused Validation
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c17-store-pool-contention
+    paths:
+      - '.github/workflows/b1-c17-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: gracz_test
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_C_01_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_02_DATABASE_URL: postgresql://gracz:gracz_test@127.0.0.1:5432/gracz_test
+      P1_U_02_REQUIRE_POSTGRES: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: Static validation
+        run: npm run check
+      - name: B1-C17 focused client-reuse tests
+        run: node --test test/wave-b-b1-c17-lobby-state-client-reuse.test.js
+      - name: Lobby PostgreSQL and atomic-start regressions
+        run: node --test test/advanced-scalability-wave-a-f02-lobby-postgres.test.js test/advanced-scalability-wave-a-c6-lobby-atomic-start.test.js
+      - name: CAS ownership idempotency PostgreSQL regressions
+        run: node --test test/p1-c-01-postgres-cas.test.js test/p1-u-02-match-runtime-postgres.test.js
+      - name: Wave B metric durability diagnostic regressions
+        run: node --test test/wave-b-b1-c13-metric-accounting.test.js test/wave-b-b1-c14-per-game-write-counters.test.js test/wave-b-b1-c15-diagnostics.test.js
+      - name: TrafficGuard and shared-infrastructure regressions
+        run: node --test test/wave-b-b1-c16-traffic-guard-coalescing.test.js test/advanced-scalability-wave-a-f07-rate-limit-hot-path.test.js test/p1-aud3-01-shared-infrastructure.test.js
+      - name: Security regressions
+        run: node --test test/security-foundation.test.js
