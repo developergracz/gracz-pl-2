@@ -54,7 +54,7 @@ jobs:
           git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/src/postgres-session-store.js
           git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/src/distributed-infrastructure.js
           git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/perf
-          grep -Eq 'max:[[:space:]]*4,' modern/checkers-engine/src/postgres-session-store.js
+          grep -Eq 'max:[[:space:]]*4,' src/postgres-session-store.js
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: B1-C22 dedicated listener isolation
