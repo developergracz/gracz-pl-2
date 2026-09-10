@@ -1,0 +1,71 @@
+name: B1-C21 Focused Store Pool Attribution
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c21-store-pool-exact-attribution
+    paths:
+      - modern/checkers-engine/test/b1-c21-store-pool-attribution.test.js
+
+permissions:
+  contents: read
+
+jobs:
+  focused-attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c21
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c21"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_b1_c21
+      P1_C_01_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_b1_c21
+      P1_U_02_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_b1_c21
+      P1_U_02_REQUIRE_POSTGRES: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Exact C19 ancestry and diagnostic-only diff gate
+        run: |
+          set -euo pipefail
+          BASE=9413b0ebd6c0507b6f4987d8fc589771ce29e612
+          TREE=2f9cf937be8ac8a8d7f237fe03984d93c62a373f
+          test "$(git rev-parse ${BASE}^{tree})" = "$TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^(.github/workflows/b1-c21-focused-attribution.yml|modern/checkers-engine/test/b1-c21-store-pool-attribution.test.js)$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/src
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: B1-C21 deterministic acquisition attribution
+        run: node --test test/b1-c21-store-pool-attribution.test.js
+      - name: C19 lobby single-acquisition regression
+        run: node --test test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+      - name: LobbyService PostgreSQL regression
+        run: node --test test/advanced-scalability-wave-a-f02-lobby-postgres.test.js
+      - name: Distributed GlobalChat PostgreSQL regression
+        run: node --test test/advanced-scalability-wave-a-f04-global-chat.test.js
+      - name: PostgresSessionStore CAS regression
+        run: node --test test/p1-c-01-postgres-cas.test.js
+      - name: MatchRuntime PostgreSQL persistence regression
+        run: node --test test/p1-u-02-match-runtime-postgres.test.js
+      - name: C02 Checkers durability/accounting regression
+        run: node --test test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
