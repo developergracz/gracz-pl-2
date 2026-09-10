@@ -33,11 +33,14 @@ export function createPlatformLobbyHttpHandler({lobby,auth,authSessions=null,tra
 
       if(url.pathname==='/lobby/rooms'){
         await assertAccountLimits(trafficGuard,sharedTrafficGuard,{request,userId:user.userId,action:'room'});
-        await lobby.touchUser(user);
-        if(request.method==='GET') return sendJson(response,200,{rooms:await lobby.listRooms()});
+        if(request.method==='GET'){
+          await lobby.touchUser(user);
+          return sendJson(response,200,{rooms:await lobby.listRooms()});
+        }
         if(request.method==='POST'){
           const body=await readJson(request);
-          const room=await lobby.createRoom({
+          if(typeof lobby.createRoomForActiveUser!=='function') throw new TypeError('Lobby createRoomForActiveUser jest wymagane dla POST /lobby/rooms.');
+          const room=await lobby.createRoomForActiveUser({
             ownerId:user.userId,
             ownerName:user.displayName,
             roomName:String(body.roomName||'Nowy pokój').trim().slice(0,128)||'Nowy pokój',
