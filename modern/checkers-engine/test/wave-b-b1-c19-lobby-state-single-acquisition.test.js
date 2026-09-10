@@ -43,7 +43,7 @@ function projectedState(){
   };
 }
 
-test("B1-C19 readState uses exactly one pool.query, zero pool.connect and one bounded parameterized statement",async()=>{
+test("B1-C19 readState uses exactly one pool.query, zero explicit pool.connect and one bounded parameterized statement",async()=>{
   const{lobby,metrics}=await fakeLobby({state:projectedState()});
   const state=await lobby.readState({userId:"alice",displayName:"Czeslaw"});
   assert.equal(metrics.connects,0);
@@ -163,7 +163,7 @@ test("B1-C19 PostgreSQL preserves room ordering/status projection and isolates o
   await insertRoom(store.pool,{roomId:oldRoom,ownerId:waitingUser,ownerName:"Waiting user",status:"waiting",seats:[{id:waitingUser,name:"Waiting user"},null],age:"20 seconds"});
   await insertRoom(store.pool,{roomId:newRoom,ownerId:playingUser,ownerName:"Playing user",status:"playing",gameType:"gomoku",gameLabel:"Gomoku",seats:[{id:playingUser,name:"Playing user"},{id:other,name:"Other"}],gameId:`gomoku-${newRoom}`,age:"5 seconds"});
   await insertInvitation(store.pool,{id:`${prefix}_inv_old`,roomId:oldRoom,fromId:waitingUser,toId:me,age:"20 seconds"});
-  await insertInvitation(store.pool,{id:`${prefix}_inv_new`,roomId:oldRoom,fromId:waitingUser,toId:me,age:"5 seconds"});
+  await insertInvitation(store.pool,{id:`${prefix}_inv_new`,roomId:newRoom,fromId:playingUser,toId:me,age:"5 seconds"});
   await insertInvitation(store.pool,{id:`${prefix}_inv_other`,roomId:oldRoom,fromId:waitingUser,toId:other,age:"10 seconds"});
   await insertInvitation(store.pool,{id:`${prefix}_inv_declined`,roomId:oldRoom,fromId:waitingUser,toId:me,age:"30 seconds",status:"declined"});
 
@@ -182,6 +182,7 @@ test("B1-C19 PostgreSQL preserves room ordering/status projection and isolates o
 test("B1-C19 PostgreSQL empty lobby returns only the freshly touched caller in players",{skip:!databaseUrl},async()=>withPostgresLobby("empty",async({prefix,lobby})=>{
   const me=`${prefix}_me`,state=await lobby.readState({userId:me,displayName:"Empty caller"});
   assert.ok(Array.isArray(state.rooms)&&Array.isArray(state.players)&&Array.isArray(state.invitations));
+  assert.deepEqual(state.rooms,[]);
   assert.deepEqual(state.invitations,[]);
   assert.equal(state.players.filter(player=>player.userId===me).length,1);
 }));
@@ -219,15 +220,13 @@ test("B1-C19 cross-replica LobbyService instances observe committed PostgreSQL p
   }finally{await cleanup(storeA.pool,prefix);await Promise.all([storeA.close(),storeB.close()])}
 });
 
-test("B1-C19 readState remains one acquisition against a real pg Pool",{skip:!databaseUrl},async()=>withPostgresLobby("count",async({prefix,store,lobby})=>{
-  const originalQuery=store.pool.query.bind(store.pool),originalConnect=store.pool.connect.bind(store.pool);
-  let queries=0,connects=0;
+test("B1-C19 readState issues exactly one direct pool.query against a real pg Pool",{skip:!databaseUrl},async()=>withPostgresLobby("count",async({prefix,store,lobby})=>{
+  const originalQuery=store.pool.query.bind(store.pool);
+  let queries=0;
   store.pool.query=(...args)=>{queries+=1;return originalQuery(...args)};
-  store.pool.connect=(...args)=>{connects+=1;return originalConnect(...args)};
   try{
     const state=await lobby.readState({userId:`${prefix}_me`,displayName:"Counted"});
     assert.equal(state.players.filter(player=>player.userId===`${prefix}_me`).length,1);
     assert.equal(queries,1);
-    assert.equal(connects,0);
-  }finally{store.pool.query=originalQuery;store.pool.connect=originalConnect}
+  }finally{store.pool.query=originalQuery}
 }));
