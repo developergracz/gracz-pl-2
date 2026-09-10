@@ -3,127 +3,182 @@ import test from "node:test";
 
 import { AuthService } from "../src/auth.js";
 import { LobbyService } from "../src/lobby.js";
+import { PostgresSessionStore } from "../src/postgres-session-store.js";
 import { createPlatformLobbyHttpHandler } from "../src/platform-lobby-http.js";
 
-function createPool({ failWhen = null } = {}) {
-  const metrics = {
-    connects: 0,
-    releases: 0,
-    poolQueries: 0,
-    queries: [],
-  };
+const databaseUrl=process.env.P1_C_01_DATABASE_URL||process.env.DATABASE_URL;
 
-  const client = {
-    async query(text, params) {
-      const sql = typeof text === "string" ? text : String(text?.text ?? "");
-      metrics.queries.push({ sql, params });
-      if (failWhen?.test(sql)) throw new Error("forced query failure");
-      return { rows: [] };
-    },
-    release() {
-      metrics.releases += 1;
-    },
-  };
+function emptyState(){return{rooms:[],presence:[],player_rooms:[],invitations:[]}}
 
-  const pool = {
-    async connect() {
-      metrics.connects += 1;
-      return client;
-    },
-    async query() {
-      metrics.poolQueries += 1;
-      throw new Error("readState must not use pool.query after acquiring its request-local client");
+function createPool({state=emptyState(),failWhen=null}={}){
+  const metrics={connects:0,releases:0,poolQueries:[]};
+  const client={
+    async query(){return{rows:[]}},
+    release(){metrics.releases+=1},
+  };
+  const pool={
+    async connect(){metrics.connects+=1;return client},
+    async query(text,params){
+      const sql=typeof text==="string"?text:String(text?.text??"");
+      metrics.poolQueries.push({sql,params});
+      if(failWhen?.test(sql))throw new Error("forced query failure");
+      if(/WITH rooms AS/.test(sql))return{rows:[state]};
+      return{rows:[]};
     },
   };
+  return{pool,metrics,reset(){metrics.connects=0;metrics.releases=0;metrics.poolQueries.length=0}};
+}
 
-  return {
-    pool,
-    metrics,
-    reset() {
-      metrics.connects = 0;
-      metrics.releases = 0;
-      metrics.poolQueries = 0;
-      metrics.queries.length = 0;
-    },
+function memorySessionStore(){return{async create(){}}}
+
+function makeState(){
+  const now="2026-09-10T08:00:00.000Z";
+  return{
+    rooms:[
+      {room_id:"waiting-room",room_name:"Waiting",game_type:"checkers",game_label:"Warcaby",max_players:2,status:"waiting",seats:[{id:"alice",name:"Alicja"},null],game_id:null,owner_id:"alice",owner_name:"Alicja",created_at:now,updated_at:now},
+      {room_id:"playing-room",room_name:"Playing",game_type:"gomoku",game_label:"Gomoku",max_players:2,status:"playing",seats:[{id:"bob",name:"Robert"},{id:"dave",name:"Dawid"}],game_id:"gomoku-playing-room",owner_id:"bob",owner_name:"Robert",created_at:now,updated_at:now},
+    ],
+    presence:[
+      {user_id:"alice",display_name:"Alicja",seen_at:now},
+      {user_id:"bob",display_name:"Robert",seen_at:now},
+      {user_id:"carol",display_name:"Karolina",seen_at:now},
+    ],
+    player_rooms:[
+      {room_id:"waiting-room",room_name:"Waiting",game_type:"checkers",game_label:"Warcaby",max_players:2,status:"waiting",seats:[{id:"alice",name:"Alicja"},null],game_id:null,owner_id:"alice",owner_name:"Alicja",created_at:now,updated_at:now},
+      {room_id:"playing-room",room_name:"Playing",game_type:"gomoku",game_label:"Gomoku",max_players:2,status:"playing",seats:[{id:"bob",name:"Robert"},{id:"dave",name:"Dawid"}],game_id:"gomoku-playing-room",owner_id:"bob",owner_name:"Robert",created_at:now,updated_at:now},
+    ],
+    invitations:[
+      {invitation_id:"inv-a",status:"pending",room_id:"waiting-room",room_name:"Waiting",game_type:"checkers",game_label:"Warcaby",from_id:"owner",from_name:"Czeslaw",to_id:"alice",created_at:now},
+    ],
   };
 }
 
-function memorySessionStore() {
-  return { async create() {} };
+async function readyFixture(options){
+  const fixture=createPool(options);
+  const lobby=new LobbyService({sessionStore:memorySessionStore(),pool:fixture.pool});
+  await lobby.ready;
+  fixture.reset();
+  return{fixture,lobby};
 }
 
-test("B1-C17 /lobby/state database read uses one pool acquisition for the six existing queries", async () => {
-  const fixture = createPool();
-  const lobby = new LobbyService({ sessionStore: memorySessionStore(), pool: fixture.pool });
-  await lobby.ready;
-  fixture.reset();
-
-  const state = await lobby.readState({ userId: "alice", displayName: "Alicja" });
-
-  assert.deepEqual(state, { rooms: [], players: [], invitations: [] });
-  assert.equal(fixture.metrics.connects, 1, "one logical state read must acquire exactly one client");
-  assert.equal(fixture.metrics.releases, 1, "request-local client must be released exactly once");
-  assert.equal(fixture.metrics.poolQueries, 0, "all state queries must use the acquired client");
-  assert.equal(fixture.metrics.queries.length, 6, "SQL semantics stay at the existing six statements");
-  assert.equal(fixture.metrics.queries.some(({ sql }) => /^\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(sql)), false,
-    "read-only aggregation must not add a transaction");
-
-  const sql = fixture.metrics.queries.map(({ sql: text }) => text).join("\n");
-  assert.match(sql, /INSERT INTO gracz_lobby_presence/);
-  assert.match(sql, /DELETE FROM gracz_lobby_presence/);
-  assert.match(sql, /SELECT \* FROM gracz_lobby_rooms ORDER BY updated_at/);
-  assert.match(sql, /SELECT user_id,display_name,seen_at FROM gracz_lobby_presence/);
-  assert.match(sql, /SELECT \* FROM gracz_lobby_rooms WHERE status IN/);
-  assert.match(sql, /SELECT \* FROM gracz_lobby_invitations WHERE to_id=\$1/);
+test("B1-C17-C01 /lobby/state uses three short pool.query operations and no request-long client",async()=>{
+  const{fixture,lobby}=await readyFixture();
+  const state=await lobby.readState({userId:"alice",displayName:"Alicja"});
+  assert.deepEqual(state,{rooms:[],players:[],invitations:[]});
+  assert.equal(fixture.metrics.connects,0,"readState must not manually acquire a client");
+  assert.equal(fixture.metrics.releases,0,"readState must not own a request-long client");
+  assert.equal(fixture.metrics.poolQueries.length,3,"touch + stale cleanup + one consolidated read");
+  const sql=fixture.metrics.poolQueries.map(item=>item.sql).join("\n");
+  assert.match(sql,/INSERT INTO gracz_lobby_presence/);
+  assert.match(sql,/DELETE FROM gracz_lobby_presence/);
+  assert.equal(fixture.metrics.poolQueries.filter(item=>/WITH rooms AS/.test(item.sql)).length,1);
+  assert.equal(fixture.metrics.poolQueries.some(item=>/^\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(item.sql)),false);
 });
 
-test("B1-C17 request-local lobby client is released exactly once when a state query fails", async () => {
-  const fixture = createPool({ failWhen: /SELECT \* FROM gracz_lobby_rooms ORDER BY updated_at/ });
-  const lobby = new LobbyService({ sessionStore: memorySessionStore(), pool: fixture.pool });
-  await lobby.ready;
-  fixture.reset();
-
-  await assert.rejects(
-    () => lobby.readState({ userId: "alice", displayName: "Alicja" }),
-    /forced query failure/,
-  );
-
-  assert.equal(fixture.metrics.connects, 1);
-  assert.equal(fixture.metrics.releases, 1);
-  assert.equal(fixture.metrics.poolQueries, 0);
+test("B1-C17-C01 consolidated read preserves rooms, players, statuses and invitations",async()=>{
+  const{fixture,lobby}=await readyFixture({state:makeState()});
+  const state=await lobby.readState({userId:"alice",displayName:"Czeslaw"});
+  assert.equal(state.rooms.length,2);
+  assert.deepEqual(state.rooms[0],{
+    roomId:"waiting-room",roomName:"Waiting",gameType:"checkers",gameLabel:"Warcaby",maxPlayers:2,filledSeats:1,status:"waiting",
+    seats:[{id:"alice",name:"Alicja"},null],white:{id:"alice",name:"Alicja"},black:null,gameId:null,
+  });
+  assert.deepEqual(state.players.map(({userId,status,roomId})=>({userId,status,roomId})),[
+    {userId:"alice",status:"przy stole",roomId:"waiting-room"},
+    {userId:"bob",status:"w grze",roomId:"playing-room"},
+    {userId:"carol",status:"dostępny",roomId:null},
+  ]);
+  assert.equal(state.invitations.length,1);
+  assert.equal(state.invitations[0].toId,"alice");
+  assert.equal(state.invitations[0].fromName,"Czesław");
+  const consolidated=fixture.metrics.poolQueries.find(item=>/WITH rooms AS/.test(item.sql));
+  assert.ok(consolidated);
+  assert.deepEqual(consolidated.params,["alice"]);
+  assert.match(consolidated.sql,/WHERE to_id=\$1 AND status='pending'/);
+  assert.match(consolidated.sql,/seen_at>=NOW\(\)-INTERVAL '45 seconds'/);
+  assert.match(consolidated.sql,/LIMIT 500/);
+  assert.match(consolidated.sql,/LIMIT 200/);
 });
 
-test("B1-C17 GET /lobby/state routes through LobbyService.readState instead of six public calls", async () => {
-  const auth = new AuthService({ secret: "b1-c17-test-secret-with-at-least-32-characters" });
-  const token = auth.issue({ userId: "alice", displayName: "Alicja" });
-  let readStateCalls = 0;
-  const forbidden = () => { throw new Error("legacy lobby state path must not be called"); };
-  const lobby = {
-    async readState(user) {
-      readStateCalls += 1;
-      assert.equal(user.userId, "alice");
-      return { rooms: [], players: [], invitations: [] };
-    },
-    touchUser: forbidden,
-    listRooms: forbidden,
-    listPlayers: forbidden,
-    listInvitations: forbidden,
-  };
-  const handler = createPlatformLobbyHttpHandler({ lobby, auth });
-  const response = {
-    statusCode: null,
-    body: null,
-    writeHead(statusCode) { this.statusCode = statusCode; },
-    end(body) { this.body = body; },
-  };
-  const request = {
-    method: "GET",
-    url: "/lobby/state",
-    headers: { authorization: `Bearer ${token}` },
-  };
+test("B1-C17-C01 touch failure fails closed before cleanup/read",async()=>{
+  const{fixture,lobby}=await readyFixture({failWhen:/INSERT INTO gracz_lobby_presence/});
+  await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
+  assert.equal(fixture.metrics.poolQueries.length,1);
+});
 
-  assert.equal(await handler(request, response), true);
-  assert.equal(readStateCalls, 1);
-  assert.equal(response.statusCode, 200);
-  assert.deepEqual(JSON.parse(response.body), { rooms: [], players: [], invitations: [] });
+test("B1-C17-C01 stale cleanup failure fails closed before consolidated read",async()=>{
+  const{fixture,lobby}=await readyFixture({failWhen:/DELETE FROM gracz_lobby_presence/});
+  await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
+  assert.equal(fixture.metrics.poolQueries.length,2);
+  assert.equal(fixture.metrics.poolQueries.some(item=>/WITH rooms AS/.test(item.sql)),false);
+});
+
+test("B1-C17-C01 consolidated read failure returns no partial lobby state",async()=>{
+  const{fixture,lobby}=await readyFixture({failWhen:/WITH rooms AS/});
+  await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
+  assert.equal(fixture.metrics.poolQueries.length,3);
+});
+
+test("B1-C17-C01 malformed consolidated datasets fail closed instead of becoming empty arrays",async()=>{
+  const{lobby}=await readyFixture({state:{rooms:null,presence:[],player_rooms:[],invitations:[]}});
+  await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/nieprawidłowe pole rooms/);
+});
+
+test("B1-C17-C01 GET /lobby/state keeps routing and response contract",async()=>{
+  const auth=new AuthService({secret:"b1-c17-c01-test-secret-with-at-least-32-characters"});
+  const token=auth.issue({userId:"alice",displayName:"Alicja"});
+  let readStateCalls=0;
+  const forbidden=()=>{throw new Error("legacy lobby state path must not be called")};
+  const lobby={
+    async readState(user){readStateCalls+=1;assert.equal(user.userId,"alice");return{rooms:[],players:[],invitations:[]}},
+    touchUser:forbidden,listRooms:forbidden,listPlayers:forbidden,listInvitations:forbidden,
+  };
+  const handler=createPlatformLobbyHttpHandler({lobby,auth});
+  const response={statusCode:null,body:null,writeHead(statusCode){this.statusCode=statusCode},end(body){this.body=body}};
+  const request={method:"GET",url:"/lobby/state",headers:{authorization:`Bearer ${token}`}};
+  assert.equal(await handler(request,response),true);
+  assert.equal(readStateCalls,1);
+  assert.equal(response.statusCode,200);
+  assert.deepEqual(JSON.parse(response.body),{rooms:[],players:[],invitations:[]});
+});
+
+function uniquePrefix(label){return `c17c01_${label}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`}
+function ids(prefix){let n=0;return()=>`${prefix}_${++n}`}
+async function cleanup(pool,prefix){
+  await pool.query(`DELETE FROM gracz_lobby_invitations WHERE room_id LIKE $1 OR from_id LIKE $1 OR to_id LIKE $1`,[`${prefix}%`]).catch(()=>{});
+  await pool.query(`DELETE FROM gracz_lobby_rooms WHERE room_id LIKE $1 OR owner_id LIKE $1`,[`${prefix}%`]).catch(()=>{});
+  await pool.query(`DELETE FROM gracz_lobby_presence WHERE user_id LIKE $1`,[`${prefix}%`]).catch(()=>{});
+  await pool.query(`DELETE FROM gracz_game_sessions WHERE game_id LIKE $1`,[`game-${prefix}%`]).catch(()=>{});
+}
+
+test("B1-C17-C01 PostgreSQL cross-node readState preserves visibility, active presence and invitation isolation",{skip:!databaseUrl},async()=>{
+  const prefix=uniquePrefix("pg");
+  const store=new PostgresSessionStore(databaseUrl);
+  try{
+    await store.ready;await cleanup(store.pool,prefix);
+    const a=new LobbyService({sessionStore:store,pool:store.pool,idGenerator:ids(`${prefix}_a`)});
+    const b=new LobbyService({sessionStore:store,pool:store.pool,idGenerator:ids(`${prefix}_b`)});
+    await Promise.all([a.ready,b.ready]);
+    const owner=`${prefix}_owner`,bob=`${prefix}_bob`,carol=`${prefix}_carol`;
+    await Promise.all([
+      a.touchUser({userId:owner,displayName:"Alicja"}),
+      b.touchUser({userId:bob,displayName:"Robert"}),
+      b.touchUser({userId:carol,displayName:"Karolina"}),
+    ]);
+    const room=await a.createRoom({ownerId:owner,ownerName:"Alicja",roomName:"Shared C17-C01",gameType:"checkers"});
+    const bobInvite=await a.createInvitation({fromId:owner,fromName:"Alicja",toId:bob,roomId:room.roomId});
+    await a.createInvitation({fromId:owner,fromName:"Alicja",toId:carol,roomId:room.roomId});
+
+    const bobState=await b.readState({userId:bob,displayName:"Robert"});
+    assert.ok(bobState.rooms.some(item=>item.roomId===room.roomId));
+    assert.ok(bobState.players.some(item=>item.userId===bob&&item.status==="dostępny"));
+    assert.deepEqual(bobState.invitations.map(item=>item.invitationId),[bobInvite.invitationId]);
+    assert.ok(bobState.invitations.every(item=>item.toId===bob));
+
+    await store.pool.query(`UPDATE gracz_lobby_presence SET seen_at=NOW()-INTERVAL '1 minute' WHERE user_id=$1`,[bob]);
+    const ownerState=await a.readState({userId:owner,displayName:"Alicja"});
+    assert.equal(ownerState.players.some(item=>item.userId===bob),false);
+  }finally{
+    await cleanup(store.pool,prefix);await store.close();
+  }
 });
