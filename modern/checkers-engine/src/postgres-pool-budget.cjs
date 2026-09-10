@@ -31,7 +31,6 @@ const POSTGRES_RESOURCE_PROFILE = Object.freeze({
     frozenEntry({ id: "rankings", owner: "RankingService", file: "rankings.js", max: 3, mainConstructor: "new RankingService(config.databaseUrl||null)" }),
     frozenEntry({ id: "newsletter", owner: "NewsletterService", file: "newsletter.js", max: 3, mainConstructor: "new NewsletterService(config.databaseUrl||null" }),
     frozenEntry({ id: "newsletter-admin", owner: "NewsletterAdminService", file: "newsletter-admin-service.js", max: 3, mainConstructor: "new NewsletterAdminService(config.databaseUrl||null)" }),
-    frozenEntry({ id: "newsletter-lifecycle", owner: "NewsletterLifecycleRecorder", file: "newsletter-lifecycle-recorder.js", max: 2, mainConstructor: "new NewsletterLifecycleRecorder(config.databaseUrl||null)" }),
     frozenEntry({
       id: "thousand",
       owner: "PostgresThousandRepository",
