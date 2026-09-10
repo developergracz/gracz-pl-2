@@ -103,12 +103,16 @@ export class DistributedGlobalChatService extends GlobalChatService {
   #closing=false;
   #reconnectTimer=null;
   #connectPromise=null;
+  #retirePromise=Promise.resolve();
   #presenceWrites=new Map();
+  #listenerClientFactory;
 
-  constructor({pool,logger={error(){}}}={}){
+  constructor({pool,listenerClientFactory=null,logger={error(){}}}={}){
     super(null);
     if(!pool||typeof pool.connect!=='function'||typeof pool.query!=='function') throw new TypeError('Współdzielona pula PostgreSQL jest wymagana dla rozproszonego Global Chat.');
+    if(listenerClientFactory!==null&&typeof listenerClientFactory!=='function') throw new TypeError('Fabryka dedykowanego klienta PostgreSQL musi być funkcją.');
     this.pool=pool;
+    this.#listenerClientFactory=listenerClientFactory??dedicatedListenerClientFactory(pool);
     this.logger=logger;
     this.listenerBackendPid=null;
     this.ready=this.#initialize();
@@ -240,26 +244,28 @@ export class DistributedGlobalChatService extends GlobalChatService {
   #connectListener(){
     if(this.#closing||this.#listener) return Promise.resolve();
     if(this.#connectPromise) return this.#connectPromise;
-    this.#connectPromise=this.#openListener().finally(()=>{this.#connectPromise=null});
+    this.#connectPromise=this.#retirePromise.then(()=>this.#openListener()).finally(()=>{this.#connectPromise=null});
     return this.#connectPromise;
   }
 
   async #openListener(){
     let client;
     try{
-      client=await this.pool.connect();
-      if(this.#closing){client.release();return}
+      client=this.#listenerClientFactory();
+      assertDedicatedListenerClient(client);
       client.on('notification',notification=>{
         if(notification.channel===REALTIME_CHANNEL) void this.#handleNotification(notification.payload);
       });
       client.on('error',error=>this.#listenerLost(client,error));
       client.on('end',()=>this.#listenerLost(client));
+      await client.connect();
+      if(this.#closing){await closeDedicatedListener(client);return}
       await client.query({text:`LISTEN ${REALTIME_CHANNEL}`,query_timeout:QUERY_TIMEOUT_MS});
-      if(this.#closing){client.release();return}
+      if(this.#closing){await closeDedicatedListener(client);return}
       this.#listener=client;
       this.listenerBackendPid=client.processID??null;
     }catch(error){
-      if(client) try{client.release(true)}catch{}
+      if(client) await closeDedicatedListener(client);
       if(!this.#closing) this.#scheduleReconnect();
       throw error;
     }
@@ -270,7 +276,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(this.#listener===client){
       this.#listener=null;
       this.listenerBackendPid=null;
-      try{client.release(true)}catch{}
+      this.#retirePromise=this.#retirePromise.then(()=>closeDedicatedListener(client));
       this.#recycleSubscribers();
     }
     if(!this.#closing) this.#scheduleReconnect();
@@ -359,8 +365,28 @@ export class DistributedGlobalChatService extends GlobalChatService {
     this.#reconnectTimer=null;
     this.#recycleSubscribers();
     const listener=this.#listener;this.#listener=null;this.listenerBackendPid=null;
-    if(listener) try{listener.release(true)}catch{}
+    if(listener) this.#retirePromise=this.#retirePromise.then(()=>closeDedicatedListener(listener));
+    await Promise.allSettled([this.#connectPromise,this.#retirePromise].filter(Boolean));
   }
+}
+
+function dedicatedListenerClientFactory(pool){
+  if(typeof pool?.Client!=='function'||!pool?.options||typeof pool.options!=='object'){
+    throw new TypeError('Dedykowany klient PostgreSQL dla Global Chat wymaga pg.Pool albo jawnej listenerClientFactory.');
+  }
+  const Client=pool.Client;
+  const options={...pool.options};
+  return()=>new Client(options);
+}
+
+function assertDedicatedListenerClient(client){
+  if(!client||typeof client.connect!=='function'||typeof client.query!=='function'||typeof client.end!=='function'||typeof client.on!=='function'){
+    throw new TypeError('Dedykowany klient PostgreSQL Global Chat ma nieprawidłowy kontrakt.');
+  }
+}
+
+async function closeDedicatedListener(client){
+  try{await client.end()}catch{}
 }
 
 function signalFor(event,payload){
