@@ -282,6 +282,8 @@ function validateClusterConnectionBudget(input = {}) {
   return plan;
 }
 
+const DEFAULT_POSTGRES_POOL_BUDGET = aggregatePoolMax(POSTGRES_RESOURCE_PROFILE);
+
 function validateStartupClusterConnectionBudget({
   environment = process.env,
   capacity,
@@ -309,6 +311,7 @@ function validateStartupClusterConnectionBudget({
 
 module.exports = Object.freeze({
   DEFAULT_POSTGRES_POOL_MAX,
+  DEFAULT_POSTGRES_POOL_BUDGET,
   MAX_POSTGRES_REPLICA_COUNT,
   POSTGRES_RESOURCE_PROFILE,
   POSTGRES_POOL_PROFILE,
