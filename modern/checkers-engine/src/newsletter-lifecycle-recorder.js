@@ -1,9 +1,6 @@
-import pg from "pg";
-const { Pool } = pg;
-
 export class NewsletterLifecycleRecorder {
-  constructor(databaseUrl = null) {
-    this.pool = databaseUrl ? new Pool({ connectionString: databaseUrl, ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1") ? false : { rejectUnauthorized: false }, max: 2 }) : null;
+  constructor(pool = null) {
+    this.pool = pool;
   }
 
   async captureSubscribe(emailNormalized, sourceCode = "homepage") {
@@ -132,7 +129,5 @@ export class NewsletterLifecycleRecorder {
     );
   }
 
-  async close() {
-    if (this.pool) await this.pool.end();
-  }
+  async close() {}
 }
