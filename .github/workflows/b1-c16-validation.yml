@@ -1,0 +1,114 @@
+name: B1-C16 Pre-Control Validation
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c16-traffic-guard-coalescing
+    paths:
+      - 'modern/checkers-engine/src/distributed-infrastructure.js'
+      - 'modern/checkers-engine/test/wave-b-b1-c16-traffic-guard-coalescing.test.js'
+      - 'modern/checkers-engine/perf/scripts/b1-c16-apply.py'
+      - 'modern/checkers-engine/perf/scripts/b1-c16-fix-test.py'
+      - '.github/workflows/b1-c16-validation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  pre-control-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c16
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c16"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c16
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c16
+      P1_AUD3_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c16
+      P1_AUD3_01_REQUIRE_POSTGRES: '1'
+      B1_C16_REQUIRE_POSTGRES: '1'
+      POSTGRES_POOL_BUDGET: '64'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify authorized ancestry and untouched production base
+        run: |
+          set -euo pipefail
+          git cat-file -e 1661798e26741181bae0138c2e5f2d78b4dc9031^{commit}
+          test "$(git show -s --format=%T 1661798e26741181bae0138c2e5f2d78b4dc9031)" = "b626e7196a6e6044f7728b1cd33af75e872b4d90"
+          git diff --exit-code 1661798e26741181bae0138c2e5f2d78b4dc9031 -- src/distributed-infrastructure.js
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Apply bounded B1-C16 implementation in validation workspace
+        run: |
+          set -euo pipefail
+          python3 perf/scripts/b1-c16-apply.py
+          python3 perf/scripts/b1-c16-fix-test.py
+          git diff -- src/distributed-infrastructure.js test/wave-b-b1-c16-traffic-guard-coalescing.test.js
+      - name: Static validation
+        run: |
+          set -euo pipefail
+          node --check src/distributed-infrastructure.js
+          node --check test/wave-b-b1-c16-traffic-guard-coalescing.test.js
+          npm run check
+          grep -q 'const MAX_BATCH_REQUESTS = 64;' src/distributed-infrastructure.js
+          grep -q 'const MAX_BATCH_WAIT_MS = 4;' src/distributed-infrastructure.js
+          grep -q 'connectionTimeoutMillis: OPERATION_TIMEOUT_MS' src/distributed-infrastructure.js
+      - name: Focused B1-C16 security and concurrency validation
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 \
+            test/wave-b-b1-c16-traffic-guard-coalescing.test.js \
+            test/advanced-scalability-wave-a-f07-rate-limit-hot-path.test.js \
+            test/p1-aud3-01-shared-infrastructure.test.js \
+            test/traffic-guard.test.js \
+            test/security-foundation.test.js \
+            test/persistence-security.test.js \
+            test/wave-b-b1-c13-metric-accounting.test.js \
+            test/wave-b-b1-c14-per-game-write-counters.test.js \
+            test/wave-b-b1-c15-diagnostics.test.js
+      - name: Verify no prohibited capacity or timeout tuning
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('src/distributed-infrastructure.js').read_text()
+          guard=s[s.index('export class PostgresDistributedTrafficGuard'):s.index('export class PostgresRealtimeHub')]
+          assert 'max: 4' in guard
+          assert 'connectionTimeoutMillis: OPERATION_TIMEOUT_MS' in guard
+          assert 'const OPERATION_TIMEOUT_MS = 1_500;' in s
+          assert 'MAX_BATCH_REQUESTS = 64' in s
+          assert 'MAX_BATCH_KEYS = 256' in s
+          assert 'MAX_BATCH_WAIT_MS = 4' in s
+          assert 'MAX_QUEUE_DEPTH = 512' in s
+          PY
+      - name: Commit validated implementation without starting another workflow
+        run: |
+          set -euo pipefail
+          git config user.name developergracz
+          git config user.email '64929957+developergracz@users.noreply.github.com'
+          git add src/distributed-infrastructure.js test/wave-b-b1-c16-traffic-guard-coalescing.test.js
+          if git diff --cached --quiet; then
+            echo 'No implementation delta to commit.'
+            exit 0
+          fi
+          git commit -m 'B1-C16: implement bounded TrafficGuard coalescing [skip actions]'
+          git push origin HEAD:fix/wave-b-b1-c16-traffic-guard-coalescing
