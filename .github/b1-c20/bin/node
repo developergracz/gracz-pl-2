@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${B1_C20_REAL_NODE:?B1_C20_REAL_NODE required}"
+args=()
+inserted=0
+for arg in "$@"; do
+  if [[ "$inserted" -eq 0 && "$arg" == "src/start.js" ]]; then
+    args+=(--require ../../.github/b1-c20/b1-c20-steady-preload.cjs)
+    inserted=1
+  fi
+  args+=("$arg")
+done
+exec "$B1_C20_REAL_NODE" "${args[@]}"
