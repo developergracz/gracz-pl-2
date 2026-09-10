@@ -283,7 +283,19 @@ test("B1-C32 exact steady and startup capacity boundaries are fail-closed only a
 });
 
 test("B1-C32 replica-count contract rejects malformed values and production omission", () => {
-  for (const value of ["0", "-1", "1.5", "NaN", "abc", String(MAX_POSTGRES_REPLICA_COUNT + 1)]) {
+  for (const value of [
+    0,
+    -1,
+    1.5,
+    Number.NaN,
+    MAX_POSTGRES_REPLICA_COUNT + 1,
+    "0",
+    "-1",
+    "1.5",
+    "NaN",
+    "abc",
+    String(MAX_POSTGRES_REPLICA_COUNT + 1),
+  ]) {
     assert.throws(
       () => resolvePostgresReplicaCount({
         NODE_ENV: "production",
