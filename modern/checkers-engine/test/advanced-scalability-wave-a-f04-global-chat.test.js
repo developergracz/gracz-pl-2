@@ -22,7 +22,12 @@ class FakeBus{
 }
 
 class FakePool{
-  constructor(bus){this.bus=bus}
+  constructor(bus){
+    this.bus=bus;
+    const boundBus=bus;
+    this.Client=class extends FakeClient{constructor(){super(boundBus)}};
+    this.options={};
+  }
   async connect(){return new FakeClient(this.bus)}
   async query(config,values){
     const text=typeof config==='string'?config:config.text;
@@ -51,13 +56,15 @@ class FakePool{
 }
 
 class FakeClient extends EventEmitter{
-  constructor(bus){super();this.bus=bus;this.listening=false}
+  constructor(bus){super();this.bus=bus;this.listening=false;this.closed=false;this.processID=101}
+  async connect(){return this}
   async query(config){
     const text=typeof config==='string'?config:config.text;
     if(text===`LISTEN ${CHANNEL}`){this.listening=true;this.bus.listeners.add(this)}
     return {rowCount:0,rows:[]};
   }
   release(){if(this.listening)this.bus.listeners.delete(this)}
+  async end(){this.closed=true;if(this.listening)this.bus.listeners.delete(this)}
 }
 
 function events(response,type){
