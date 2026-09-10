@@ -1,0 +1,256 @@
+name: B1-C36 Canonical 100 VU Post-C35 Revalidation
+
+on:
+  push:
+    branches:
+      - perf/wave-b-b1-c36-100vu-post-c35-revalidation
+    paths:
+      - '.github/workflows/b1-c36-100vu-revalidation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  b1-c36-100vu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C32_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C35_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+
+    steps:
+      - name: Checkout exact C36 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Initialize C36 evidence
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          : > perf/k6/reports/phase-status.txt
+
+      - name: Generate isolated masked benchmark secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        id: deps
+        continue-on-error: true
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install k6
+        id: k6setup
+        continue-on-error: true
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify tools and PostgreSQL fixture
+        id: tools
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          command -v k6
+          command -v psql
+          command -v ss
+          k6 version
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW max_connections;')" = "100"
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW superuser_reserved_connections;')" = "3"
+          psql "$DATABASE_URL" -Atc "SELECT version(); SHOW max_connections; SHOW reserved_connections; SHOW superuser_reserved_connections;"             | tee perf/k6/reports/b1-c36-post-c35-v100-postgres-fixture.txt
+
+      - name: Exact C35 source identity and C36-only scope
+        id: identity
+        if: ${{ steps.deps.outcome == 'success' && steps.k6setup.outcome == 'success' && steps.tools.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BASE=5fd64365b965af89355fc7a3cdc931d53b7c31e7
+          BASE_TREE=04ebe352ad0fe5288a08c370e7dd7df8f8d8c23f
+          test "$(git rev-parse ${BASE}^{tree})" = "$BASE_TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^\.github/workflows/b1-c36-100vu-revalidation\.yml$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/src
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/test
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/perf
+          git diff --exit-code "$BASE" HEAD -- .github/workflows/wave-b-benchmark.yml
+          {
+            echo "repository=developergracz/gracz-pl-2"
+            echo "source_branch=fix/wave-b-b1-c35-newsletter-lifecycle-admin-pool-sharing"
+            echo "source_head=$BASE"
+            echo "source_tree=$BASE_TREE"
+            echo "c36_branch=perf/wave-b-b1-c36-100vu-post-c35-revalidation"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+            echo "ahead=$(git rev-list --count ${BASE}..HEAD)"
+            echo "behind=$(git rev-list --count HEAD..${BASE})"
+          } | tee perf/k6/reports/b1-c36-post-c35-v100-identity.txt
+
+      - name: C32 canonical cluster-budget regression
+        id: c32
+        if: ${{ steps.identity.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/wave-b-b1-c32-cluster-aware-postgres-budget-guard.test.js             2>&1 | tee perf/k6/reports/b1-c36-post-c35-v100-c32.log
+
+      - name: C35 newsletter lifecycle ownership regression
+        id: c35
+        if: ${{ steps.identity.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/wave-b-b1-c35-newsletter-lifecycle-admin-pool-sharing.test.js             2>&1 | tee perf/k6/reports/b1-c36-post-c35-v100-c35.log
+
+      - name: Canonical one-replica connection envelope proof
+        id: envelope
+        if: ${{ steps.c32.outcome == 'success' && steps.c35.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          node <<'NODE' | tee perf/k6/reports/b1-c36-post-c35-v100-envelope.json
+          const b = require('./src/postgres-pool-budget.cjs');
+          const one = b.connectionBudgetPlan({
+            replicaCount: 1,
+            maxConnections: 100,
+            reservedConnections: 0,
+            superuserReservedConnections: 3,
+            operationalHeadroom: 10,
+            environment: { POSTGRES_POOL_BUDGET: '64' }
+          });
+          const two = b.connectionBudgetPlan({
+            replicaCount: 2,
+            maxConnections: 100,
+            reservedConnections: 0,
+            superuserReservedConnections: 3,
+            operationalHeadroom: 10,
+            environment: { POSTGRES_POOL_BUDGET: '64' }
+          });
+          if (b.aggregatePoolMax() !== 48) process.exit(41);
+          if (one.steadyEnvelope !== 49 || one.startupEnvelope !== 50 || one.safeApplicationCapacity !== 87 || !one.safe) process.exit(42);
+          if (two.steadyEnvelope !== 98 || two.startupEnvelope !== 100 || two.safe) process.exit(43);
+          console.log(JSON.stringify({
+            aggregatePoolMax: b.aggregatePoolMax(),
+            oneReplica: {
+              steady: one.steadyEnvelope,
+              startup: one.startupEnvelope,
+              safeApplicationCapacity: one.safeApplicationCapacity,
+              safe: one.safe
+            },
+            twoReplicasKnownUnsafe: {
+              steady: two.steadyEnvelope,
+              startup: two.startupEnvelope,
+              safeApplicationCapacity: two.safeApplicationCapacity,
+              safe: two.safe
+            }
+          }, null, 2));
+          NODE
+
+      - name: Record pre-run gate status
+        if: always()
+        run: |
+          {
+            echo "bootstrap-deps=${{ steps.deps.outcome }}"
+            echo "bootstrap-k6=${{ steps.k6setup.outcome }}"
+            echo "bootstrap-tools=${{ steps.tools.outcome }}"
+            echo "identity=${{ steps.identity.outcome }}"
+            echo "c32=${{ steps.c32.outcome }}"
+            echo "c35=${{ steps.c35.outcome }}"
+            echo "envelope=${{ steps.envelope.outcome }}"
+          } >> perf/k6/reports/phase-status.txt
+
+      - name: Reset isolated benchmark database
+        id: reset
+        if: ${{ steps.identity.outcome == 'success' && steps.c32.outcome == 'success' && steps.c35.outcome == 'success' && steps.envelope.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'             | tee perf/k6/reports/b1-c36-post-c35-v100-reset.log
+
+      - name: Execute exactly one canonical B1 100 VU run
+        id: load
+        if: ${{ steps.reset.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set +e
+          WAVE_B_RUN_ID=b1-c36-post-c35-v100           WAVE_B_REPLICAS=1           WAVE_B_VUS=100           WAVE_B_GAME_COUNT=50           WAVE_B_WARMUP_SECONDS=120           WAVE_B_STEADY_SECONDS=300           WAVE_B_COOLDOWN_SECONDS=120           WAVE_B_THINK_SECONDS=0.05           WAVE_B_SEED=20260909           bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          if [[ "$rc" -eq 0 ]]; then
+            echo "b1-c36-post-c35-v100=PASS" >> perf/k6/reports/phase-status.txt
+          else
+            echo "b1-c36-post-c35-v100=FAIL:$rc" >> perf/k6/reports/phase-status.txt
+          fi
+          exit "$rc"
+
+      - name: Mark load not executed when prerequisite failed
+        if: ${{ always() && steps.load.outcome == 'skipped' }}
+        run: echo 'b1-c36-post-c35-v100=NOT_EXECUTED:PREREQUISITE_FAILURE' >> perf/k6/reports/phase-status.txt
+
+      - name: Summarize C36 evidence
+        if: always()
+        run: |
+          node perf/scripts/wave-b-summarize.mjs || true
+          echo '--- C36 PHASE STATUS ---'
+          cat perf/k6/reports/phase-status.txt || true
+          echo '--- C36 REPORT FILES ---'
+          find perf/k6/reports -maxdepth 1 -type f -printf '%f\n' | sort || true
+
+      - name: Upload complete C36 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c36-post-c35-v100-${{ github.sha }}-${{ github.run_id }}
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Final C36 truthful gate
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.deps.outcome }}" != "success" ||                 "${{ steps.k6setup.outcome }}" != "success" ||                 "${{ steps.tools.outcome }}" != "success" ||                 "${{ steps.identity.outcome }}" != "success" ||                 "${{ steps.c32.outcome }}" != "success" ||                 "${{ steps.c35.outcome }}" != "success" ||                 "${{ steps.envelope.outcome }}" != "success" ||                 "${{ steps.reset.outcome }}" != "success" ]]; then
+            echo "B1-C36 ENVIRONMENT / HARNESS FAILURE"
+            exit 90
+          fi
+          if [[ "${{ steps.load.outcome }}" != "success" ]]; then
+            echo "B1-C36 valid 100 VU run returned FAIL; preserving evidence without rerun."
+            exit 91
+          fi
+          echo "B1-C36 100 VU canonical run PASS"
