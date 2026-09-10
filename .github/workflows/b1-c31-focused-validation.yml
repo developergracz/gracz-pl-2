@@ -1,0 +1,98 @@
+name: B1-C31 Focused Identity Pool Validation
+
+on:
+  push:
+    branches: [fix/wave-b-b1-c31-secureaccounts-identity-pool-sharing]
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c31
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c31"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      B1_C31_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c31
+      P1_AUD3_03_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c31
+      POSTGRES_POOL_BUDGET: '64'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Exact C27 source ancestry and C31 scope
+        run: |
+          set -euo pipefail
+          BASE=b599260d6d7ae33087cb0b53c7c4a3777f8b1f8f
+          TREE=ed17ab7ba469bc4d68a9aabd5c1a7e003a47ab83
+          SOURCE=fix/wave-b-b1-c27-global-chat-presence-single-acquisition
+          git fetch origin "refs/heads/${SOURCE}:refs/remotes/origin/b1-c31-authorized-source"
+          test "$(git rev-parse refs/remotes/origin/b1-c31-authorized-source)" = "$BASE"
+          test "$(git rev-parse ${BASE}^{tree})" = "$TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^(modern/checkers-engine/src/secure-accounts\.js|modern/checkers-engine/src/main\.js|modern/checkers-engine/test/wave-b-b1-c31-secureaccounts-identity-pool-sharing\.test\.js|\.github/workflows/b1-c31-focused-validation\.yml)$' || true)"
+          test -z "$unexpected"
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Static C31 ownership and freeze proof
+        run: |
+          set -euo pipefail
+          node --check src/secure-accounts.js
+          node --check src/main.js
+          node --check test/wave-b-b1-c31-secureaccounts-identity-pool-sharing.test.js
+          ! grep -Eq 'new[[:space:]]+(pg\.)?Pool[[:space:]]*\(' src/secure-accounts.js
+          ! grep -Eq 'new[[:space:]]+(pg\.)?Client[[:space:]]*\(' src/secure-accounts.js
+          ! grep -Eq 'this\.pool\.end[[:space:]]*\(' src/secure-accounts.js
+          ! grep -Eq 'from[[:space:]]+["'\'' ]pg["'\'']' src/secure-accounts.js
+          grep -Fq 'this.pool = baseService.pool;' src/secure-accounts.js
+          grep -Fq 'new SecureAccountService(baseAccounts)' src/main.js
+          grep -A8 -F 'this.pool = new Pool({' src/postgres-accounts.js | grep -Fq 'max: 5'
+          grep -A8 -F 'this.pool = new Pool({' src/postgres-session-store.js | grep -Fq 'max: 4'
+          grep -Fq 'id: "secure-accounts", file: "secure-accounts.js", max: 3' src/postgres-pool-budget.cjs
+          BASE=b599260d6d7ae33087cb0b53c7c4a3777f8b1f8f
+          git diff --exit-code "$BASE" HEAD --             modern/checkers-engine/src/postgres-session-store.js             modern/checkers-engine/src/distributed-infrastructure.js             modern/checkers-engine/src/distributed-global-chat.js             modern/checkers-engine/src/rankings.js             modern/checkers-engine/src/ranking-materialization.js             modern/checkers-engine/src/postgres-pool-budget.cjs             modern/checkers-engine/src/pg-secure-preload.cjs             modern/checkers-engine/perf
+
+      - name: C31 real PostgreSQL ownership correctness and shutdown
+        run: |
+          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/wave-b-b1-c31-secureaccounts-identity-pool-sharing.test.js
+
+      - name: Existing account and auth regressions
+        run: |
+          node --test --test-concurrency=1             test/accounts.test.js             test/auth-lobby.test.js             test/auth-session-registry.test.js
+
+      - name: PostgreSQL account encryption regression
+        run: |
+          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/p1-aud3-03-postgres-crypto.test.js
+
+      - name: Final no-load and scope gate
+        run: |
+          set -euo pipefail
+          BASE=b599260d6d7ae33087cb0b53c7c4a3777f8b1f8f
+          git diff --exit-code "$BASE" HEAD -- modern/checkers-engine/perf
+          test "$(grep -c 'new SecureAccountService(baseAccounts)' src/main.js)" -eq 1
+          test "$(grep -Ec 'new[[:space:]]+(pg\.)?Pool[[:space:]]*\(' src/secure-accounts.js || true)" -eq 0
