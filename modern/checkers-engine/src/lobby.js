@@ -88,15 +88,8 @@ export class LobbyService{
       this.#presence.set(userId,{userId,displayName:normalized,seenAt:Date.now()});
       return{rooms:this.listRooms(),players:this.listPlayers(),invitations:this.listInvitations(userId)};
     }
-    await this.ready;
-    const client=await this.pool.connect();
-    try{
-      await this.#touchUserDatabase({userId,displayName:normalized},client);
-      const rooms=await this.#listRoomsDatabase(client);
-      const players=await this.#listPlayersDatabase(client);
-      const invitations=await this.#listInvitationsDatabase(userId,client);
-      return{rooms,players,invitations};
-    }finally{client.release()}
+    await this.#touchUserDatabase({userId,displayName:normalized});
+    return this.#readStateDatabase(userId);
   }
 
   touchUser({userId,displayName}){
@@ -110,6 +103,48 @@ export class LobbyService{
     await this.ready;
     await queryable.query(`INSERT INTO gracz_lobby_presence(user_id,display_name,seen_at) VALUES($1,$2,NOW()) ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,seen_at=NOW()`,[userId,displayName]);
     await queryable.query(`DELETE FROM gracz_lobby_presence WHERE seen_at < NOW()-INTERVAL '5 minutes'`);
+  }
+
+  async #readStateDatabase(userId){
+    await this.ready;
+    const{rows}=await this.pool.query(`
+      WITH rooms AS (
+        SELECT * FROM gracz_lobby_rooms ORDER BY updated_at DESC,created_at DESC LIMIT 500
+      ), active_presence AS (
+        SELECT user_id,display_name,seen_at FROM gracz_lobby_presence
+        WHERE seen_at>=NOW()-INTERVAL '45 seconds'
+        ORDER BY seen_at DESC LIMIT 500
+      ), player_rooms AS (
+        SELECT * FROM gracz_lobby_rooms
+        WHERE status IN ('waiting','playing')
+        ORDER BY updated_at DESC LIMIT 500
+      ), invitations AS (
+        SELECT * FROM gracz_lobby_invitations
+        WHERE to_id=$1 AND status='pending'
+        ORDER BY created_at ASC LIMIT 200
+      )
+      SELECT
+        COALESCE((SELECT jsonb_agg(to_jsonb(room_row) ORDER BY room_row.updated_at DESC,room_row.created_at DESC) FROM rooms room_row),'[]'::jsonb) AS rooms,
+        COALESCE((SELECT jsonb_agg(to_jsonb(presence_row) ORDER BY presence_row.seen_at DESC) FROM active_presence presence_row),'[]'::jsonb) AS presence,
+        COALESCE((SELECT jsonb_agg(to_jsonb(player_room_row) ORDER BY player_room_row.updated_at DESC) FROM player_rooms player_room_row),'[]'::jsonb) AS player_rooms,
+        COALESCE((SELECT jsonb_agg(to_jsonb(invitation_row) ORDER BY invitation_row.created_at ASC) FROM invitations invitation_row),'[]'::jsonb) AS invitations
+    `,[userId]);
+    const stateRow=rows[0];
+    if(!stateRow)throw new Error("PostgreSQL lobby nie zwrócił stanu.");
+    const roomRows=requireRowArray(stateRow.rooms,"rooms");
+    const presenceRows=requireRowArray(stateRow.presence,"presence");
+    const playerRoomRows=requireRowArray(stateRow.player_rooms,"player_rooms");
+    const invitationRows=requireRowArray(stateRow.invitations,"invitations");
+    const rooms=roomRows.map(row=>publicRoom(databaseRoom(row)));
+    const playerRooms=playerRoomRows.map(databaseRoom);
+    const roomByPlayerId=new Map();
+    for(const room of playerRooms)for(const seat of room.seats)if(seat&&!roomByPlayerId.has(seat.id))roomByPlayerId.set(seat.id,room);
+    const players=presenceRows.map(row=>{
+      const presence={userId:row.user_id,displayName:row.display_name,seenAt:new Date(row.seen_at).getTime()};
+      return playerProjection(presence,roomByPlayerId.get(presence.userId));
+    });
+    const invitations=invitationRows.map(databaseInvitation);
+    return{rooms,players,invitations};
   }
 
   listRooms(){
@@ -294,6 +329,7 @@ function databaseRoom(row){const seats=Array.isArray(row.seats)?row.seats:JSON.p
 function databaseInvitation(row){return{invitationId:row.invitation_id,status:row.status,roomId:row.room_id,roomName:row.room_name,gameType:row.game_type,gameLabel:row.game_label,fromId:row.from_id,fromName:normalizeDisplayName(row.from_name),toId:row.to_id,createdAt:new Date(row.created_at).getTime()}}
 function playerProjection(presence,room){return{userId:presence.userId,displayName:normalizeDisplayName(presence.displayName),status:room?.status==="playing"?"w grze":room?.status==="waiting"?"przy stole":"dostępny",roomId:room?.roomId??null,roomName:room?.roomName??null,gameType:room?.gameType??null}}
 function publicRoom(room){const seats=room.seats.map(seat=>seat?{id:seat.id,name:normalizeDisplayName(seat.name)}:null);return structuredClone({roomId:room.roomId,roomName:room.roomName,gameType:room.gameType,gameLabel:room.gameLabel,maxPlayers:room.maxPlayers,filledSeats:seats.filter(Boolean).length,status:room.status,seats,white:room.gameType==="checkers"?seats[0]:null,black:room.gameType==="checkers"?seats[1]:null,gameId:room.gameId})}
+function requireRowArray(value,field){if(!Array.isArray(value))throw new Error(`PostgreSQL lobby zwrócił nieprawidłowe pole ${field}.`);return value}
 function resolveSeatCount(gameType,requested,config){if(gameType!=="thousand")return config.max;const value=requested===null||requested===undefined?config.default:Number(requested);if(!Number.isInteger(value)||value<config.min||value>config.max)throw new LobbyError("Tysiąc obsługuje stoły dla 2, 3 lub 4 graczy.","INVALID_ROOM");return value}
 function gameConfig(gameType){return requireGameDefinition(gameType,{capability:"lobby"})}
 function normalizeDisplayName(value){if(typeof value!=="string")return value;if(value.localeCompare("Czeslaw","pl",{sensitivity:"base"})===0)return"Czesław";return value.normalize("NFC")}
