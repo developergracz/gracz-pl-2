@@ -45,7 +45,7 @@ test("B1-C14 accepts only real HTTP 2xx write responses", async () => {
 
 test("B1-C14 recordGameAccepted increments only the supplied game counter", async () => {
   const acceptedWrite = (res) => Boolean(res && res.status >= 200 && res.status < 300);
-  const recordGameAccepted = await extractedFunction("recordGameAccepted", "httpBaseline", { acceptedWrite });
+  const recordGameAccepted = await extractedFunction("recordGameAccepted", "recordCheckersAccepted", { acceptedWrite });
   const checkers = { count: 0, add(n) { this.count += n; } };
   const gomoku = { count: 0, add(n) { this.count += n; } };
   recordGameAccepted({ status: 200 }, checkers);
@@ -55,9 +55,23 @@ test("B1-C14 recordGameAccepted increments only the supplied game counter", asyn
   assert.equal(checkers.count, 1);
 });
 
-test("B1-C14 Checkers write path uses only the Checkers accepted counter", async () => {
+test("B1-C14 Checkers accepted counter increments only for newly applied 2xx mutations", async () => {
+  const acceptedWrite = (res) => Boolean(res && res.status >= 200 && res.status < 300);
+  const payload = (res) => res.body;
+  const checkersAccepted = { count: 0, add(n) { this.count += n; } };
+  const recordCheckersAccepted = await extractedFunction("recordCheckersAccepted", "httpBaseline", { acceptedWrite, payload, checkersAccepted });
+  recordCheckersAccepted({ status: 200, body: { duplicate: false } });
+  assert.equal(checkersAccepted.count, 1);
+  recordCheckersAccepted({ status: 200, body: { duplicate: true } });
+  recordCheckersAccepted({ status: 200, body: {} });
+  recordCheckersAccepted({ status: 409, body: { duplicate: false } });
+  assert.equal(checkersAccepted.count, 1);
+});
+
+test("B1-C14 Checkers write path uses only the Checkers new-mutation accepted counter", async () => {
   const source = await functionSlice("checkersActivity", "gomokuActivity");
-  assert.match(source, /recordGameAccepted\(res,checkersAccepted\)/);
+  assert.match(source, /recordCheckersAccepted\(res\)/);
+  assert.doesNotMatch(source, /recordGameAccepted\(res,checkersAccepted\)/);
   assert.doesNotMatch(source, /gomokuAccepted|thousandAccepted/);
 });
 
