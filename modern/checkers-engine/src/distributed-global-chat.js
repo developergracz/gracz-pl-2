@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { GlobalChatService } from './global-chat.js';
 
 const REALTIME_CHANNEL='gracz_global_chat_realtime';
@@ -106,13 +107,15 @@ export class DistributedGlobalChatService extends GlobalChatService {
   #retirePromise=Promise.resolve();
   #presenceWrites=new Map();
   #listenerClientFactory;
+  #originId;
 
-  constructor({pool,listenerClientFactory=null,logger={error(){}}}={}){
+  constructor({pool,listenerClientFactory=null,logger={error(){}},originId=null}={}){
     super(null);
     if(!pool||typeof pool.connect!=='function'||typeof pool.query!=='function') throw new TypeError('Współdzielona pula PostgreSQL jest wymagana dla rozproszonego Global Chat.');
     if(listenerClientFactory!==null&&typeof listenerClientFactory!=='function') throw new TypeError('Fabryka dedykowanego klienta PostgreSQL musi być funkcją.');
     this.pool=pool;
     this.#listenerClientFactory=listenerClientFactory??dedicatedListenerClientFactory(pool);
+    this.#originId=normalizeOriginId(originId??randomUUID());
     this.logger=logger;
     this.listenerBackendPid=null;
     this.ready=this.#initialize();
@@ -223,12 +226,22 @@ export class DistributedGlobalChatService extends GlobalChatService {
   }
 
   async #persistPresence(user){
+    const userId=String(user.userId).slice(0,128);
+    const displayName=String(user.displayName).slice(0,80);
+    const payload=JSON.stringify({kind:'presence',userId,originId:this.#originId});
+    if(Buffer.byteLength(payload,'utf8')>MAX_NOTIFICATION_BYTES) throw new Error('Global Chat realtime signal is too large.');
     await this.pool.query({
-      text:`INSERT INTO gracz_global_chat_presence(user_id,display_name,seen_at) VALUES($1,$2,NOW()) ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,seen_at=NOW()`,
-      values:[String(user.userId).slice(0,128),String(user.displayName).slice(0,80)],
+      text:`WITH persisted AS (
+              INSERT INTO gracz_global_chat_presence(user_id,display_name,seen_at)
+              VALUES($1,$2,NOW())
+              ON CONFLICT(user_id) DO UPDATE
+                SET display_name=EXCLUDED.display_name,seen_at=NOW()
+              RETURNING user_id
+            )
+            SELECT pg_notify($3,$4) FROM persisted`,
+      values:[userId,displayName,REALTIME_CHANNEL,payload],
       query_timeout:QUERY_TIMEOUT_MS,
     });
-    await this.#notify({kind:'presence',userId:String(user.userId).slice(0,128)});
   }
 
   async #notify(signal){
@@ -296,7 +309,7 @@ export class DistributedGlobalChatService extends GlobalChatService {
     if(!signal) return;
     try{
       if(signal.kind==='presence'){
-        await this.#refreshPresence(signal.userId);
+        if(signal.originId!==this.#originId) await this.#refreshPresence(signal.userId);
         this.#broadcastLocal('presence.updated',{online:this.online()});
         return;
       }
@@ -411,12 +424,15 @@ function parseSignal(raw){
   let signal;try{signal=JSON.parse(text)}catch{return null}
   if(signal?.kind==='presence'){
     const userId=String(signal.userId??'');
-    return userId&&userId.length<=128?{kind:'presence',userId}:null;
+    const originId=validOriginId(signal.originId)?String(signal.originId):null;
+    return userId&&userId.length<=128?{kind:'presence',userId,originId}:null;
   }
   if(signal?.kind!=='entity'||!SIGNAL_EVENTS.has(signal.event)||!validUuid(signal.entityId)) return null;
   return {kind:'entity',event:signal.event,entityId:signal.entityId};
 }
 
+function validOriginId(value){return typeof value==='string'&&value.length>0&&value.length<=64&&/^[A-Za-z0-9._:-]+$/.test(value)}
+function normalizeOriginId(value){const id=String(value??'');if(!validOriginId(id))throw new TypeError('Identyfikator instancji Global Chat ma nieprawidłowy format.');return id}
 function sseRetryMs(){return SSE_RETRY_MIN_MS+Math.floor(Math.random()*(SSE_RETRY_MAX_MS-SSE_RETRY_MIN_MS+1))}
 function encodeSse(event,payload){return`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`}
 function semanticChatError(message,code){const error=new Error(message);error.code=code;error.status=429;return error}
