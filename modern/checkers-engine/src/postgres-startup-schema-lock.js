@@ -102,6 +102,7 @@ export async function acquirePostgresStartupSchemaLock(
     connectionTimeoutMillis: 10_000,
   });
 
+  let capacity = null;
   try {
     await client.connect();
     await client.query(
@@ -112,16 +113,13 @@ export async function acquirePostgresStartupSchemaLock(
       "SELECT pg_advisory_lock($1::int, $2::int)",
       [POSTGRES_STARTUP_SCHEMA_LOCK_CLASS, POSTGRES_STARTUP_SCHEMA_LOCK_OBJECT],
     );
-    const capacity = await readPostgresServerCapacity(client);
-    client.__graczStartupCapacity = capacity;
+    capacity = await readPostgresServerCapacity(client);
   } catch (error) {
     await client.end().catch(() => {});
     if (error?.code === "55P03") throw startupLockTimeoutError(boundedTimeoutMs, error);
     throw error;
   }
 
-  const capacity = client.__graczStartupCapacity;
-  delete client.__graczStartupCapacity;
   let released = false;
   return Object.freeze({
     capacity,
