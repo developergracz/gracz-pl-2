@@ -7,6 +7,7 @@ on:
     paths:
       - 'modern/checkers-engine/src/distributed-infrastructure.js'
       - 'modern/checkers-engine/test/wave-b-b1-c16-traffic-guard-coalescing.test.js'
+      - 'modern/checkers-engine/test/advanced-scalability-wave-a-f07-rate-limit-hot-path.test.js'
       - 'modern/checkers-engine/perf/scripts/b1-c16-apply.py'
       - 'modern/checkers-engine/perf/scripts/b1-c16-fix-test.py'
       - '.github/workflows/b1-c16-validation.yml'
