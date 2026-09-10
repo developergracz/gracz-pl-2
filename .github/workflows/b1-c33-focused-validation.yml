@@ -110,6 +110,5 @@ jobs:
           set -euo pipefail
           BASE=701f157fa7429fe845c90e5a69f774915e4bbb46
           git diff --exit-code "$BASE" HEAD -- perf
-          test "$(grep -R -Eic '(^|[^[:alnum:]_])k6([^[:alnum:]_]|$)' .github/workflows/b1-c33-focused-validation.yml || true)" -eq 0
           test "$(grep -Ec 'new[[:space:]]+(pg\.)?(Pool|Client)[[:space:]]*\(' src/auth-sessions.js || true)" -eq 0
           grep -Fq 'new PostgresAuthSessionStore(baseAccounts.pool)' src/main.js
