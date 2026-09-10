@@ -22,7 +22,7 @@ function createPool({state=emptyState(),failWhen=null}={}){
       const sql=typeof text==="string"?text:String(text?.text??"");
       metrics.poolQueries.push({sql,params});
       if(failWhen?.test(sql))throw new Error("forced query failure");
-      if(/WITH rooms AS/.test(sql))return{rows:[state]};
+      if(/WITH touched AS/.test(sql))return{rows:[state]};
       return{rows:[]};
     },
   };
@@ -61,21 +61,21 @@ async function readyFixture(options){
   return{fixture,lobby};
 }
 
-test("B1-C17-C01 /lobby/state uses three short pool.query operations and no request-long client",async()=>{
+test("B1-C17 safety / C19 /lobby/state uses one short pool.query and no request-long client",async()=>{
   const{fixture,lobby}=await readyFixture();
   const state=await lobby.readState({userId:"alice",displayName:"Alicja"});
   assert.deepEqual(state,{rooms:[],players:[],invitations:[]});
   assert.equal(fixture.metrics.connects,0,"readState must not manually acquire a client");
   assert.equal(fixture.metrics.releases,0,"readState must not own a request-long client");
-  assert.equal(fixture.metrics.poolQueries.length,3,"touch + stale cleanup + one consolidated read");
-  const sql=fixture.metrics.poolQueries.map(item=>item.sql).join("\n");
+  assert.equal(fixture.metrics.poolQueries.length,1,"C19 collapses touch + read into one statement");
+  const sql=fixture.metrics.poolQueries[0].sql;
+  assert.match(sql,/WITH touched AS/);
   assert.match(sql,/INSERT INTO gracz_lobby_presence/);
-  assert.match(sql,/DELETE FROM gracz_lobby_presence/);
-  assert.equal(fixture.metrics.poolQueries.filter(item=>/WITH rooms AS/.test(item.sql)).length,1);
-  assert.equal(fixture.metrics.poolQueries.some(item=>/^\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(item.sql)),false);
+  assert.doesNotMatch(sql,/DELETE FROM gracz_lobby_presence/);
+  assert.equal(/^\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(sql),false);
 });
 
-test("B1-C17-C01 consolidated read preserves rooms, players, statuses and invitations",async()=>{
+test("B1-C17/C19 consolidated read preserves rooms, players, statuses and invitations",async()=>{
   const{fixture,lobby}=await readyFixture({state:makeState()});
   const state=await lobby.readState({userId:"alice",displayName:"Czeslaw"});
   assert.equal(state.rooms.length,2);
@@ -91,35 +91,36 @@ test("B1-C17-C01 consolidated read preserves rooms, players, statuses and invita
   assert.equal(state.invitations.length,1);
   assert.equal(state.invitations[0].toId,"alice");
   assert.equal(state.invitations[0].fromName,"Czesław");
-  const consolidated=fixture.metrics.poolQueries.find(item=>/WITH rooms AS/.test(item.sql));
+  const consolidated=fixture.metrics.poolQueries.find(item=>/WITH touched AS/.test(item.sql));
   assert.ok(consolidated);
-  assert.deepEqual(consolidated.params,["alice"]);
+  assert.deepEqual(consolidated.params,["alice","Czesław"]);
   assert.match(consolidated.sql,/WHERE to_id=\$1 AND status='pending'/);
   assert.match(consolidated.sql,/seen_at>=NOW\(\)-INTERVAL '45 seconds'/);
   assert.match(consolidated.sql,/LIMIT 500/);
   assert.match(consolidated.sql,/LIMIT 200/);
 });
 
-test("B1-C17-C01 touch failure fails closed before cleanup/read",async()=>{
-  const{fixture,lobby}=await readyFixture({failWhen:/INSERT INTO gracz_lobby_presence/});
+test("B1-C17 fail-closed invariant survives C19 single-statement failure",async()=>{
+  const{fixture,lobby}=await readyFixture({failWhen:/WITH touched AS/});
   await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
   assert.equal(fixture.metrics.poolQueries.length,1);
 });
 
-test("B1-C17-C01 stale cleanup failure fails closed before consolidated read",async()=>{
-  const{fixture,lobby}=await readyFixture({failWhen:/DELETE FROM gracz_lobby_presence/});
-  await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
-  assert.equal(fixture.metrics.poolQueries.length,2);
-  assert.equal(fixture.metrics.poolQueries.some(item=>/WITH rooms AS/.test(item.sql)),false);
+test("B1-C17-C01 per-read stale cleanup is superseded without reintroducing a held client",async()=>{
+  const{fixture,lobby}=await readyFixture();
+  await lobby.readState({userId:"alice",displayName:"Alicja"});
+  assert.equal(fixture.metrics.poolQueries.length,1);
+  assert.equal(fixture.metrics.poolQueries.some(item=>/DELETE FROM gracz_lobby_presence/.test(item.sql)),false);
+  assert.equal(fixture.metrics.connects,0);
 });
 
-test("B1-C17-C01 consolidated read failure returns no partial lobby state",async()=>{
-  const{fixture,lobby}=await readyFixture({failWhen:/WITH rooms AS/});
+test("B1-C17/C19 single read failure returns no partial lobby state",async()=>{
+  const{fixture,lobby}=await readyFixture({failWhen:/WITH touched AS/});
   await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/forced query failure/);
-  assert.equal(fixture.metrics.poolQueries.length,3);
+  assert.equal(fixture.metrics.poolQueries.length,1);
 });
 
-test("B1-C17-C01 malformed consolidated datasets fail closed instead of becoming empty arrays",async()=>{
+test("B1-C17/C19 malformed consolidated datasets fail closed instead of becoming empty arrays",async()=>{
   const{lobby}=await readyFixture({state:{rooms:null,presence:[],player_rooms:[],invitations:[]}});
   await assert.rejects(()=>lobby.readState({userId:"alice",displayName:"Alicja"}),/nieprawidłowe pole rooms/);
 });
