@@ -1,0 +1,108 @@
+name: B1-C27 Focused GlobalChat Presence Validation
+
+on:
+  push:
+    branches: [fix/wave-b-b1-c27-global-chat-presence-single-acquisition]
+    paths: ['.github/workflows/b1-c27-focused-validation.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_b1_c27
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_b1_c27"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c27
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c27
+      P1_U_02_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c27
+      P1_U_02_REQUIRE_POSTGRES: '1'
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_b1_c27
+      POSTGRES_POOL_BUDGET: '64'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Exact C25 identity, ancestry, scope and baseline gate
+        run: |
+          set -euo pipefail
+          BASE=1d4963e192ee8539c1a670621e68696438be4ed4
+          TREE=de48f917248e95932f05df59c700903aed7183b5
+          SOURCE=fix/wave-b-b1-c25-lobby-room-single-acquisition
+          git fetch origin "refs/heads/${SOURCE}:refs/remotes/origin/b1-c27-authorized-source"
+          test "$(git rev-parse refs/remotes/origin/b1-c27-authorized-source)" = "$BASE"
+          test "$(git rev-parse ${BASE}^{tree})" = "$TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^(modern/checkers-engine/src/distributed-global-chat\.js|modern/checkers-engine/test/advanced-scalability-wave-a-f04-global-chat\.test\.js|modern/checkers-engine/test/wave-b-b1-c22-global-chat-listen-isolation\.test\.js|modern/checkers-engine/test/wave-b-b1-c27-global-chat-presence-single-acquisition\.test\.js|\.github/workflows/b1-c27-focused-validation\.yml)$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD --             modern/checkers-engine/src/lobby.js             modern/checkers-engine/src/platform-lobby-http.js             modern/checkers-engine/src/postgres-session-store.js             modern/checkers-engine/src/rankings.js             modern/checkers-engine/src/ranking-materialization.js             modern/checkers-engine/src/distributed-infrastructure.js             modern/checkers-engine/perf
+          git show "$BASE:modern/checkers-engine/src/distributed-global-chat.js" > /tmp/b1-c27-pre.js
+          grep -Fq "INSERT INTO gracz_global_chat_presence(user_id,display_name,seen_at)" /tmp/b1-c27-pre.js
+          grep -Fq "await this.#notify({kind:'presence'" /tmp/b1-c27-pre.js
+          grep -Fq "await this.#refreshPresence(signal.userId)" /tmp/b1-c27-pre.js
+          grep -q "max: 4," src/postgres-session-store.js
+          grep -q "idleTimeoutMillis: 30_000," src/postgres-session-store.js
+          grep -q "connectionTimeoutMillis: 10_000," src/postgres-session-store.js
+          grep -Fq "body?.duplicate===false" perf/k6/scenarios/_runner.js
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Static C27 architecture
+        run: |
+          set -euo pipefail
+          node --check src/distributed-global-chat.js
+          node --check test/wave-b-b1-c27-global-chat-presence-single-acquisition.test.js
+          node --check test/wave-b-b1-c22-global-chat-listen-isolation.test.js
+          node --check test/advanced-scalability-wave-a-f04-global-chat.test.js
+          grep -Fq "WITH persisted AS (" src/distributed-global-chat.js
+          grep -Fq 'SELECT pg_notify($3,$4) FROM persisted' src/distributed-global-chat.js
+          grep -Fq "if(signal.originId!==this.#originId) await this.#refreshPresence(signal.userId)" src/distributed-global-chat.js
+          grep -Fq "const PRESENCE_REFRESH_MS=15_000;" src/distributed-global-chat.js
+          grep -Fq "const PRESENCE_TTL_MS=90_000;" src/distributed-global-chat.js
+          grep -Fq "const MAX_NOTIFICATION_BYTES=768;" src/distributed-global-chat.js
+          grep -Fq "client=this.#listenerClientFactory();" src/distributed-global-chat.js
+          grep -Fq "await client.connect();" src/distributed-global-chat.js
+
+      - name: C27 and GlobalChat PostgreSQL regressions
+        run: |
+          node --test             test/wave-b-b1-c27-global-chat-presence-single-acquisition.test.js             test/wave-b-b1-c22-global-chat-listen-isolation.test.js             test/advanced-scalability-wave-a-f04-global-chat.test.js
+
+      - name: C25 and C19 acquisition regressions
+        run: |
+          node --test             test/wave-b-b1-c25-lobby-room-single-acquisition.test.js             test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+
+      - name: SessionStore CAS MatchRuntime and C02 regressions
+        run: |
+          node --test             test/p1-c-01-postgres-cas.test.js             test/p1-u-02-match-runtime-postgres.test.js             test/wave-b-b1-c17-c02-checkers-durability-attribution.test.js
+
+      - name: TrafficGuard frozen regression
+        run: node --test test/wave-b-b1-c16-traffic-guard-coalescing.test.js
+
+      - name: Final forbidden-diff and no-load gate
+        run: |
+          set -euo pipefail
+          BASE=1d4963e192ee8539c1a670621e68696438be4ed4
+          git diff --exit-code "$BASE" HEAD --             modern/checkers-engine/src/lobby.js             modern/checkers-engine/src/platform-lobby-http.js             modern/checkers-engine/src/postgres-session-store.js             modern/checkers-engine/src/rankings.js             modern/checkers-engine/src/ranking-materialization.js             modern/checkers-engine/src/distributed-infrastructure.js             modern/checkers-engine/perf
