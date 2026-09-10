@@ -186,7 +186,7 @@ test("B1-C32 canonical profile remains visibly aligned with production pool-owne
   const checkersInfra = await readFile(new URL("../src/distributed-infrastructure.js", import.meta.url), "utf8");
   const thousandRealtime = await readFile(new URL("../src/thousand-realtime.js", import.meta.url), "utf8");
   const gomokuRealtime = await readFile(new URL("../src/gomoku-realtime.js", import.meta.url), "utf8");
-  assert.match(classSegment(checkersInfra, "PostgresRealtimeHub"), /this\.pool\.connect\(\)/);
+  assert.match(classSegment(checkersInfra, "PostgresRealtimeHub"), /acquireClient\(this\.pool,/);
   assert.match(thousandRealtime, /this\.pool\.connect\(\)/);
   assert.match(gomokuRealtime, /this\.pool\.connect\(\)/);
 });
