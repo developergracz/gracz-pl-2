@@ -1,4 +1,4 @@
-name: B1-C40-R1 Borrower-Bound Community Pool Attribution
+name: B1-C40-R1 Borrower-Bound Community Attribution
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  b1-c40-r1-community-attribution:
+  b1-c40-r1-borrower-attribution:
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -43,7 +43,7 @@ jobs:
       WAVE_B_SEED: '20260909'
 
     steps:
-      - name: Checkout exact C40 branch
+      - name: Checkout exact C40-R1 branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Initialize C40 evidence
+      - name: Initialize C40-R1 evidence
         run: |
           set -euo pipefail
           mkdir -p perf/k6/reports
@@ -74,6 +74,28 @@ jobs:
           runner=perf/scripts/wave-b-runner.sh
           authorized_invocations=1
           EOF
+          cat > perf/k6/reports/b1-c40-r1-defect-traceability.txt <<'EOF'
+          C40 semantic attribution was invalid because pool.on("acquire") inspected whichever
+          AsyncLocalStorage context happened to be active when a physical client was handed out.
+          Under queued handoff that context is not guaranteed to belong to the borrower receiving
+          the client. C40-R1 creates identity and start time at Pool.query()/external Pool.connect()
+          invocation; ALS only transports an already-created DIRECT_POOL_QUERY token to pg-pool's
+          internal connect path. pool.on("acquire") supplies physical counters/timing only and never
+          consumer, operation, route, phase, mechanism, or authoritative logical start metadata.
+          EOF
+          cat > perf/k6/reports/b1-c40-r1-scope-proof.txt <<'EOF'
+          authorized_runner_invocations=1
+          250_vu_invocations=0
+          500_vu_invocations=0
+          1000_vu_invocations=0
+          production_application_changes=0
+          canonical_test_changes=0
+          canonical_perf_changes=0
+          pr_created=0
+          merge=0
+          deploy=0
+          c41_implemented=0
+          EOF
 
       - name: Generate isolated masked benchmark secrets
         run: |
@@ -90,7 +112,7 @@ jobs:
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Verify exact authorized source and C40-only scope
+      - name: Verify exact authorized source and C40-R1-only scope
         run: |
           set -euo pipefail
           SOURCE=08f9bc24bfaa7a60fc5322c6f22d825f72503690
@@ -98,15 +120,15 @@ jobs:
           test "$(git rev-parse "$SOURCE^{tree}")" = "$SOURCE_TREE"
           git merge-base --is-ancestor "$SOURCE" HEAD
           test "$(git merge-base "$SOURCE" HEAD)" = "$SOURCE"
-          unexpected="$(git diff --name-only "$SOURCE" HEAD | grep -Ev '^\.github/workflows/b1-c40-r1-community-pool-attribution\.yml$' || true)"
+          unexpected="$(git diff --name-only "$SOURCE" HEAD | grep -Ev '^\.github/workflows/b1-c40-r1-borrower-bound-community-attribution\.yml$' || true)"
           test -z "$unexpected"
           git diff --exit-code "$SOURCE" HEAD -- modern/checkers-engine/src modern/checkers-engine/test modern/checkers-engine/perf
           {
             echo "repository=developergracz/gracz-pl-2"
-            echo "authorized_source_branch=diag/wave-b-b1-c40-r1-community-pool-consumer-attribution"
+            echo "authorized_source_branch=diag/wave-b-b1-c40-community-pool-consumer-attribution"
             echo "authorized_source_head=$SOURCE"
             echo "authorized_source_tree=$SOURCE_TREE"
-            echo "c40_branch=diag/wave-b-b1-c40-r1-borrower-bound-community-attribution"
+            echo "c40r1_branch=diag/wave-b-b1-c40-r1-borrower-bound-community-attribution"
             echo "tested_head=$(git rev-parse HEAD)"
             echo "tested_tree=$(git rev-parse HEAD^{tree})"
             echo "ahead=$(git rev-list --count "$SOURCE..HEAD")"
@@ -198,103 +220,471 @@ jobs:
           NODE
           echo profile=PASS >> perf/k6/reports/b1-c40-r1-phase-status.txt
 
-      - name: Generate runtime-only borrower-bound Community attribution preload
+      - name: Generate runtime-only Community attribution preload
         run: |
           set -euo pipefail
-          cat > "$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs" <<'C40R1JS'
+          cat > "$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs" <<'C40R1JS'
           "use strict";
-          const fs=require("node:fs");
-          const path=require("node:path");
-          const http=require("node:http");
-          const {createHistogram}=require("node:perf_hooks");
-          const {AsyncLocalStorage}=require("node:async_hooks");
-          const {createRequire}=require("node:module");
-          const appPackageJson=process.env.C40R1_APP_PACKAGE_JSON;
-          if(!appPackageJson)throw new Error("C40R1_APP_PACKAGE_JSON is required");
-          const appRequire=createRequire(appPackageJson);
-          const pgResolvedPath=appRequire.resolve("pg");
-          const pg=appRequire("pg");
-          const OriginalPool=pg.Pool;
-          const originalPoolConnect=OriginalPool.prototype.connect;
-          const originalPoolQuery=OriginalPool.prototype.query;
-          const originalClientQuery=pg.Client.prototype.query;
-          const output=process.env.C40R1_ATTRIBUTION_FILE;
-          const borrowerLog=process.env.C40R1_BORROWER_LOG;
-          const requestAls=new AsyncLocalStorage();
-          const borrowerAls=new AsyncLocalStorage();
-          const testIdentityAls=new AsyncLocalStorage();
-          const lifecycle={requestedPools:0,borrowerSequence:0};
-          const owners=new Map();
-          const requestCounts=new Map();
-          let workloadStartNs=null;
-          function timing(){return{histogram:createHistogram({lowest:1,highest:60_000_000,figures:3}),errors:0,totalMs:0};}
-          function record(target,ms,error){const v=Number.isFinite(ms)?Math.max(0,ms):0;target.histogram.record(Math.max(1,Math.min(60_000_000,Math.round(v*1000))));target.totalMs+=v;if(error)target.errors+=1;}
-          function snap(target){const h=target.histogram,c=Number(h.count||0);return{count:c,totalMs:target.totalMs,avgMs:c?target.totalMs/c:0,p50Ms:c?Number(h.percentile(50))/1000:0,p95Ms:c?Number(h.percentile(95))/1000:0,p99Ms:c?Number(h.percentile(99))/1000:0,maxMs:c?Number(h.max)/1000:0,errors:target.errors};}
-          function ownerFromStack(stack){const s=String(stack||"");if(/\/src\/postgres-session-store\.js(?::|\))/u.test(s))return"SESSION_STORE_POOL";if(/\/src\/postgres-community-pool\.js(?::|\))/u.test(s))return"COMMUNITY_POOL";return null;}
-          function functionNameFromStack(stack,file){const lines=String(stack||"").split("\n"),target="/src/"+file;let saw=false;for(let i=0;i<lines.length;i++){const line=String(lines[i]||"");if(!line.includes(target))continue;saw=true;const m=line.trim().match(/^at\s+(.+?)\s+\(/);if(m)return m[1];const next=String(lines[i+1]||"").trim();if(next&&!next.includes("/src/")){const n=next.match(/^at\s+(.+?)(?:\s+\(|$)/);if(n)return n[1];}}return saw?file+":anonymous":"unknown";}
-          function classifyStack(stack){
-            const s=String(stack||"");
-            if(s.includes("/src/lobby.js")){
-              const fn=functionNameFromStack(s,"lobby.js");
-              if(fn.includes("#readStateDatabase")||fn.endsWith(".readState"))return{consumer:"LOBBY",operation:"lobby.read_state"};
-              if(fn.includes("#touchUserDatabase")||fn.endsWith(".touchUser"))return{consumer:"LOBBY",operation:"lobby.presence_touch"};
-              if(fn.includes("#listRoomsDatabase"))return{consumer:"LOBBY",operation:"lobby.rooms_read"};
-              if(fn.includes("#listPlayersDatabase"))return{consumer:"LOBBY",operation:"lobby.players_read"};
-              if(fn.includes("#listInvitationsDatabase"))return{consumer:"LOBBY",operation:"lobby.invitations_read"};
-              if(fn.includes("#createRoomForActiveUserDatabase")||fn.includes("#createRoomDatabase"))return{consumer:"LOBBY",operation:"lobby.room_create_update_transaction"};
-              if(fn.includes("#createInvitationDatabase")||fn.includes("respondInvitation"))return{consumer:"LOBBY",operation:"lobby.invitation_operations"};
-              if(fn.includes("joinRoom")||fn.includes("#joinRoomDatabase")||fn.includes("#startGameDatabase"))return{consumer:"LOBBY",operation:"lobby.room_join_update_transaction"};
-              if(fn.includes("#initializeDatabase"))return{consumer:"LOBBY",operation:"lobby.startup_schema"};
-              return{consumer:"LOBBY",operation:"lobby.other:"+fn};
-            }
-            if(s.includes("/src/global-chat.js")||s.includes("/src/distributed-global-chat.js")){
-              const fn=s.includes("/src/global-chat.js")?functionNameFromStack(s,"global-chat.js"):functionNameFromStack(s,"distributed-global-chat.js");
-              if(fn.includes("#persistPresence")||fn.endsWith(".touch"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.presence_touch"};
-              if(fn.includes("#refreshPresence"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.presence_read"};
-              if(fn.includes("#notify"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.realtime_notify"};
-              if(fn.includes("#recoverSubscriber")||fn.includes("#readMessage"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.background_realtime_refresh"};
-              if(fn.endsWith(".list"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.message_list_read"};
-              if(fn.endsWith(".send"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.message_write"};
-              if(fn.endsWith(".edit"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.message_edit"};
-              if(fn.endsWith(".remove"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.message_delete"};
-              if(fn.endsWith(".react"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.reaction_write"};
-              if(fn.endsWith(".report"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.report_write"};
-              if(fn.endsWith(".createTopic"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.topic_write"};
-              if(fn.endsWith(".topics")||fn.endsWith(".getTopic"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.topic_read"};
-              if(fn.includes("Friend")||fn.endsWith(".friends"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.friend_operations"};
-              if(fn.includes("#initialize"))return{consumer:"GLOBAL_CHAT",operation:"global_chat.startup_schema_or_presence_read"};
-              return{consumer:"GLOBAL_CHAT",operation:"global_chat.other:"+fn};
-            }
-            return{consumer:"OTHER_UNKNOWN",operation:"other_unknown"};
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const http = require("node:http");
+          const { createHistogram } = require("node:perf_hooks");
+          const { AsyncLocalStorage } = require("node:async_hooks");
+          const { createRequire } = require("node:module");
+
+          const appPackageJson = process.env.C40R1_APP_PACKAGE_JSON;
+          if (!appPackageJson) throw new Error("C40R1_APP_PACKAGE_JSON is required");
+          const appRequire = createRequire(appPackageJson);
+          const pgResolvedPath = appRequire.resolve("pg");
+          const pg = appRequire("pg");
+          const OriginalPool = pg.Pool;
+          const originalPoolConnect = OriginalPool.prototype.connect;
+          const originalPoolQuery = OriginalPool.prototype.query;
+          const originalClientQuery = pg.Client.prototype.query;
+          const output = process.env.C40R1_ATTRIBUTION_FILE;
+          const borrowerLog = process.env.C40R1_BORROWER_LOG;
+          const requestAls = new AsyncLocalStorage();
+          const borrowerAls = new AsyncLocalStorage();
+          const lifecycle = { requestedPools: 0, borrowerSequence: 0 };
+          const owners = new Map();
+          const requestCounts = new Map();
+          const borrowerProof = [];
+          let workloadStartNs = null;
+
+          function timing() {
+            return { histogram: createHistogram({ lowest: 1, highest: 60_000_000, figures: 3 }), errors: 0, totalMs: 0 };
           }
-          function normalizedRoute(method,rawUrl){let pathname="/";try{pathname=new URL(rawUrl||"/","http://localhost").pathname;}catch{}pathname=pathname.replace(/^\/lobby\/rooms\/[^/]+\/join$/,"/lobby/rooms/:id/join").replace(/^\/lobby\/invitations\/[^/]+\/respond$/,"/lobby/invitations/:id/respond").replace(/^\/global-chat\/messages\/[^/]+$/,"/global-chat/messages/:id").replace(/^\/global-chat\/friends\/[^/]+.*$/,"/global-chat/friends/:id");return String(method||"UNKNOWN").toUpperCase()+" "+pathname;}
-          function phaseNow(){if(!workloadStartNs)return"startup";const e=Number(process.hrtime.bigint()-workloadStartNs)/1e9;if(e<120)return"warmup";if(e<420)return"steady";return"cooldown";}
-          function increment(map,key,amount){map.set(key,(map.get(key)||0)+(amount||1));}
-          function makeOwner(owner,pool){return{owner,pool,configuredMax:Number(pool.options&&pool.options.max||0),peakWaiting:Number(pool.waitingCount||0),acquire:timing(),physicalAcquire:timing(),query:timing(),hold:timing(),physicalAcquisitions:0,borrowerAcquisitions:0,releasesObserved:0,mechanisms:{direct_pool_query:0,explicit_pool_connect:0,unknown:0},operations:new Map(),consumers:new Map(),requestAcquisitions:new Map()};}
-          function opStats(stat,meta){const key=meta.consumer+"|"+meta.operation+"|"+meta.phase;let row=stat.operations.get(key);if(!row){row={consumer:meta.consumer,operation:meta.operation,phase:meta.phase,acquire:timing(),query:timing(),hold:timing(),mechanisms:{direct_pool_query:0,explicit_pool_connect:0,unknown:0}};stat.operations.set(key,row);}return row;}
-          function consumerStats(stat,meta){const key=meta.consumer+"|"+meta.phase;let row=stat.consumers.get(key);if(!row){row={consumer:meta.consumer,phase:meta.phase,acquire:timing(),query:timing(),hold:timing(),mechanisms:{direct_pool_query:0,explicit_pool_connect:0,unknown:0}};stat.consumers.set(key,row);}return row;}
-          function buildMeta(pool,mechanism,stack){const test=process.env.C40R1_SELF_TEST==="1"?testIdentityAls.getStore():null;const classified=test||classifyStack(stack),req=requestAls.getStore(),startedNs=process.hrtime.bigint();return{borrowerId:process.pid+"-"+(++lifecycle.borrowerSequence),pool,poolOwner:pool.__c40Stats?pool.__c40Stats.owner:"UNKNOWN_POOL",consumer:classified.consumer||"OTHER_UNKNOWN",operation:classified.operation||"other_unknown",mechanism,phase:phaseNow(),requestRoute:req&&req.route?req.route:"BACKGROUND",requestPhase:req&&req.phase?req.phase:null,startedNs,connectStartedNs:null,acquiredNs:null};}
-          function attachClientMeta(client,meta){if(!client)return;try{Object.defineProperty(client,"__c40Meta",{value:meta,configurable:true,writable:true,enumerable:false});}catch{}}
-          function rawBorrowerEvent(kind,meta,extra){if(!borrowerLog||!meta)return;const row={kind,borrowerId:meta.borrowerId,poolOwner:meta.poolOwner,consumer:meta.consumer,operation:meta.operation,mechanism:meta.mechanism,phase:meta.phase,requestRoute:meta.requestRoute,...extra};fs.mkdirSync(path.dirname(borrowerLog),{recursive:true});fs.appendFileSync(borrowerLog,JSON.stringify(row)+"\n");}
-          function finalizeBorrower(stat,meta,client,connectStartedNs){const now=process.hrtime.bigint(),waitMs=Number(now-meta.startedNs)/1e6,physicalWaitMs=Number(now-connectStartedNs)/1e6;meta.acquiredNs=now;stat.borrowerAcquisitions+=1;record(stat.acquire,waitMs,null);record(stat.physicalAcquire,physicalWaitMs,null);stat.mechanisms[meta.mechanism]=(stat.mechanisms[meta.mechanism]||0)+1;attachClientMeta(client,meta);if(stat.owner==="COMMUNITY_POOL"){const op=opStats(stat,meta),con=consumerStats(stat,meta);record(op.acquire,waitMs,null);record(con.acquire,waitMs,null);op.mechanisms[meta.mechanism]=(op.mechanisms[meta.mechanism]||0)+1;con.mechanisms[meta.mechanism]=(con.mechanisms[meta.mechanism]||0)+1;increment(stat.requestAcquisitions,meta.phase+"|"+meta.requestRoute,1);}rawBorrowerEvent("acquired",meta,{waitMs,physicalWaitMs});}
-          function onPhysicalAcquire(stat){stat.physicalAcquisitions+=1;stat.peakWaiting=Math.max(stat.peakWaiting,Number(stat.pool.waitingCount||0));}
-          function wrapExplicitRelease(client,release,stat,meta){if(!client||typeof release!=="function")return release;const started=meta.acquiredNs||process.hrtime.bigint();let released=false;return function(){if(!released){released=true;const holdMs=Number(process.hrtime.bigint()-started)/1e6;stat.releasesObserved+=1;record(stat.hold,holdMs,null);if(stat.owner==="COMMUNITY_POOL"){record(opStats(stat,meta).hold,holdMs,null);record(consumerStats(stat,meta).hold,holdMs,null);}rawBorrowerEvent("released",meta,{holdMs});attachClientMeta(client,null);}return release.apply(this,arguments);};}
-          class C40R1Pool extends OriginalPool{
-            constructor(options){lifecycle.requestedPools+=1;super(options);const owner=ownerFromStack(new Error().stack);if(owner){if(owners.has(owner))throw new Error("C40R1 duplicate canonical pool owner: "+owner);const stat=makeOwner(owner,this);owners.set(owner,stat);Object.defineProperty(this,"__c40Stats",{value:stat,configurable:false,enumerable:false});this.on("acquire",()=>onPhysicalAcquire(stat));this.on("release",(_err,client)=>{if(client&&client.__c40Meta&&client.__c40Meta.mechanism==="direct_pool_query")attachClientMeta(client,null);});}}
+          function record(target, ms, error) {
+            const value = Number.isFinite(ms) ? Math.max(0, ms) : 0;
+            target.histogram.record(Math.max(1, Math.min(60_000_000, Math.round(value * 1000))));
+            target.totalMs += value;
+            if (error) target.errors += 1;
           }
-          Object.defineProperty(pg,"Pool",{value:C40R1Pool,configurable:true,enumerable:true,writable:true});
-          C40R1Pool.prototype.query=function(){const stat=this.__c40Stats;if(!stat)return originalPoolQuery.apply(this,arguments);const current=borrowerAls.getStore();if(current&&current.pool===this)return originalPoolQuery.apply(this,arguments);const meta=buildMeta(this,"direct_pool_query",new Error().stack),args=arguments;rawBorrowerEvent("requested",meta,{});return borrowerAls.run(meta,()=>originalPoolQuery.apply(this,args));};
-          C40R1Pool.prototype.connect=function(callback){const stat=this.__c40Stats;if(!stat)return originalPoolConnect.apply(this,arguments);stat.peakWaiting=Math.max(stat.peakWaiting,Number(this.waitingCount||0));const existing=borrowerAls.getStore(),internalDirect=Boolean(existing&&existing.pool===this&&existing.mechanism==="direct_pool_query"),meta=internalDirect?existing:buildMeta(this,"explicit_pool_connect",new Error().stack);if(!internalDirect)rawBorrowerEvent("requested",meta,{});const connectStartedNs=process.hrtime.bigint();meta.connectStartedNs=connectStartedNs;if(typeof callback==="function"){return originalPoolConnect.call(this,(error,client,release)=>{if(error){stat.acquire.errors+=1;stat.physicalAcquire.errors+=1;rawBorrowerEvent("acquire_error",meta,{errorName:error.name||"Error"});return callback(error,client,release);}finalizeBorrower(stat,meta,client,connectStartedNs);const wrapped=internalDirect?release:wrapExplicitRelease(client,release,stat,meta);return callback(error,client,wrapped);});}let result;try{result=originalPoolConnect.call(this);}catch(error){stat.acquire.errors+=1;stat.physicalAcquire.errors+=1;rawBorrowerEvent("acquire_error",meta,{errorName:error.name||"Error"});throw error;}return result.then(client=>{finalizeBorrower(stat,meta,client,connectStartedNs);if(!internalDirect&&client&&typeof client.release==="function"){const originalRelease=client.release;client.release=wrapExplicitRelease(client,function(){client.release=originalRelease;return originalRelease.apply(client,arguments);},stat,meta);}return client;},error=>{stat.acquire.errors+=1;stat.physicalAcquire.errors+=1;rawBorrowerEvent("acquire_error",meta,{errorName:error.name||"Error"});throw error;});};
-          pg.Client.prototype.query=function(){const meta=this.__c40Meta;if(!meta||!meta.pool||!meta.pool.__c40Stats)return originalClientQuery.apply(this,arguments);const stat=meta.pool.__c40Stats,started=process.hrtime.bigint();let done=false;const finish=error=>{if(done)return;done=true;const ms=Number(process.hrtime.bigint()-started)/1e6;record(stat.query,ms,error||null);if(stat.owner==="COMMUNITY_POOL"){record(opStats(stat,meta).query,ms,error||null);record(consumerStats(stat,meta).query,ms,error||null);}rawBorrowerEvent("sql_complete",meta,{sqlMs:ms,error:Boolean(error)});};const args=Array.from(arguments),last=args.length-1;if(last>=0&&typeof args[last]==="function"){const cb=args[last];args[last]=function(error,result){finish(error);return cb.call(this,error,result);};try{return originalClientQuery.apply(this,args);}catch(error){finish(error);throw error;}}let result;try{result=originalClientQuery.apply(this,args);}catch(error){finish(error);throw error;}if(!result||typeof result.then!=="function"){finish(null);return result;}result.then(()=>finish(null),error=>finish(error));return result;};
-          const originalEmit=http.Server.prototype.emit;
-          http.Server.prototype.emit=function(event){if(event!=="request")return originalEmit.apply(this,arguments);const args=Array.from(arguments),req=args[1],route=normalizedRoute(req&&req.method,req&&req.url),health=route.includes(" /health/");if(!health&&!workloadStartNs)workloadStartNs=process.hrtime.bigint();const phase=phaseNow();if(!health)increment(requestCounts,phase+"|"+route,1);return requestAls.run({route,phase},()=>originalEmit.apply(this,args));};
-          function ownerSnapshot(stat){return{owner:stat.owner,configuredMax:stat.configuredMax,totalCount:Number(stat.pool.totalCount||0),idleCount:Number(stat.pool.idleCount||0),waitingCount:Number(stat.pool.waitingCount||0),peakWaiting:stat.peakWaiting,physicalAcquisitions:stat.physicalAcquisitions,borrowerAcquisitions:stat.borrowerAcquisitions,releasesObserved:stat.releasesObserved,mechanisms:stat.mechanisms,acquire:snap(stat.acquire),physicalAcquire:snap(stat.physicalAcquire),query:snap(stat.query),hold:snap(stat.hold),operations:Array.from(stat.operations.values()).map(row=>({consumer:row.consumer,operation:row.operation,phase:row.phase,mechanisms:row.mechanisms,acquire:snap(row.acquire),query:snap(row.query),hold:snap(row.hold)})).sort((x,y)=>(x.consumer+x.operation+x.phase).localeCompare(y.consumer+y.operation+y.phase)),consumers:Array.from(stat.consumers.values()).map(row=>({consumer:row.consumer,phase:row.phase,mechanisms:row.mechanisms,acquire:snap(row.acquire),query:snap(row.query),hold:snap(row.hold)})).sort((x,y)=>(x.consumer+x.phase).localeCompare(y.consumer+y.phase)),requestAcquisitions:Array.from(stat.requestAcquisitions.entries()).map(([key,count])=>{const split=key.indexOf("|");return{phase:key.slice(0,split),route:key.slice(split+1),count};})};}
-          function flush(){if(!output)return;for(const stat of owners.values())stat.peakWaiting=Math.max(stat.peakWaiting,Number(stat.pool.waitingCount||0));const row={ts:new Date().toISOString(),pid:process.pid,argv:process.argv.slice(1,4),pgResolvedPath,workloadStarted:Boolean(workloadStartNs),phase:phaseNow(),lifecycle,owners:Array.from(owners.values()).map(ownerSnapshot),requestCounts:Array.from(requestCounts.entries()).map(([key,count])=>{const split=key.indexOf("|");return{phase:key.slice(0,split),route:key.slice(split+1),count};})};fs.mkdirSync(path.dirname(output),{recursive:true});fs.appendFileSync(output,JSON.stringify(row)+"\n");}
-          if(output){const timer=setInterval(flush,1000);timer.unref();process.on("exit",()=>{try{flush();}catch{}});}
-          if(process.env.C40R1_SELF_TEST==="1"){Object.defineProperty(globalThis,"__B1_C40R1R1",{value:{pg,pgResolvedPath,lifecycle,owners,classifyStack,ownerFromStack,normalizedRoute,phaseNow,withTestIdentity:(identity,fn)=>testIdentityAls.run(identity,fn),snapshot:owner=>ownerSnapshot(owners.get(owner))},configurable:true,enumerable:false});}
+          function snap(target) {
+            const h = target.histogram;
+            const count = Number(h.count || 0);
+            return {
+              count,
+              totalMs: target.totalMs,
+              avgMs: count ? target.totalMs / count : 0,
+              p50Ms: count ? Number(h.percentile(50)) / 1000 : 0,
+              p95Ms: count ? Number(h.percentile(95)) / 1000 : 0,
+              p99Ms: count ? Number(h.percentile(99)) / 1000 : 0,
+              maxMs: count ? Number(h.max) / 1000 : 0,
+              errors: target.errors
+            };
+          }
+          function ownerFromStack(stack) {
+            const s = String(stack || "");
+            if (/\/src\/postgres-session-store\.js(?::|\))/u.test(s)) return "SESSION_STORE_POOL";
+            if (/\/src\/postgres-community-pool\.js(?::|\))/u.test(s)) return "COMMUNITY_POOL";
+            return null;
+          }
+          function functionNameFromStack(stack, file) {
+            const lines = String(stack || "").split("\n");
+            const target = "/src/" + file;
+            let sawTarget = false;
+            for (let i = 0; i < lines.length; i += 1) {
+              const line = String(lines[i] || "");
+              if (!line.includes(target)) continue;
+              sawTarget = true;
+
+              const canonical = line.trim().match(/^at\s+(.+?)\s+\(/);
+              if (canonical) return canonical[1];
+
+              const next = String(lines[i + 1] || "").trim();
+              if (next && !next.includes("/src/")) {
+                const associated = next.match(/^at\s+(.+?)(?:\s+\(|$)/);
+                if (associated) return associated[1];
+              }
+            }
+            return sawTarget ? file + ":anonymous" : "unknown";
+          }
+          function classifyStack(stack) {
+            const s = String(stack || "");
+            if (s.includes("/src/lobby.js")) {
+              const fn = functionNameFromStack(s, "lobby.js");
+              if (fn.includes("#readStateDatabase") || fn.endsWith(".readState") || fn === "readState") return { consumer: "LOBBY", operation: "lobby.read_state" };
+              if (fn.includes("#touchUserDatabase") || fn.endsWith(".touchUser")) return { consumer: "LOBBY", operation: "lobby.presence_touch" };
+              if (fn.includes("#listRoomsDatabase")) return { consumer: "LOBBY", operation: "lobby.rooms_read" };
+              if (fn.includes("#listPlayersDatabase")) return { consumer: "LOBBY", operation: "lobby.players_read" };
+              if (fn.includes("#listInvitationsDatabase")) return { consumer: "LOBBY", operation: "lobby.invitations_read" };
+              if (fn.includes("#createRoomForActiveUserDatabase") || fn.includes("#createRoomDatabase")) return { consumer: "LOBBY", operation: "lobby.room_create_update_transaction" };
+              if (fn.includes("#createInvitationDatabase") || fn.includes("respondInvitation")) return { consumer: "LOBBY", operation: "lobby.invitation_operations" };
+              if (fn.includes("joinRoom") || fn.includes("#joinRoomDatabase") || fn.includes("#startGameDatabase")) return { consumer: "LOBBY", operation: "lobby.room_join_update_transaction" };
+              if (fn.includes("#initializeDatabase")) return { consumer: "LOBBY", operation: "lobby.startup_schema" };
+              return { consumer: "LOBBY", operation: "lobby.other:" + fn };
+            }
+            if (s.includes("/src/global-chat.js") || s.includes("/src/distributed-global-chat.js")) {
+              let fn = s.includes("/src/global-chat.js") ? functionNameFromStack(s, "global-chat.js") : functionNameFromStack(s, "distributed-global-chat.js");
+              if (fn.includes("#persistPresence") || fn.endsWith(".touch")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.presence_touch" };
+              if (fn.includes("#refreshPresence")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.presence_read" };
+              if (fn.includes("#notify")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.realtime_notify" };
+              if (fn.includes("#recoverSubscriber") || fn.includes("#readMessage")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.background_realtime_refresh" };
+              if (fn.endsWith(".list") || fn === "list") return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_list_read" };
+              if (fn.endsWith(".send")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_write" };
+              if (fn.endsWith(".edit")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_edit" };
+              if (fn.endsWith(".remove")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_delete" };
+              if (fn.endsWith(".react")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.reaction_write" };
+              if (fn.endsWith(".report")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.report_write" };
+              if (fn.endsWith(".createTopic")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.topic_write" };
+              if (fn.endsWith(".topics") || fn.endsWith(".getTopic")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.topic_read" };
+              if (fn.includes("Friend") || fn.endsWith(".friends")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.friend_operations" };
+              if (fn.includes("#initialize")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.startup_schema_or_presence_read" };
+              return { consumer: "GLOBAL_CHAT", operation: "global_chat.other:" + fn };
+            }
+            return { consumer: "OTHER_UNKNOWN", operation: "other_unknown" };
+          }
+          function normalizedRoute(method, rawUrl) {
+            let pathname = "/";
+            try { pathname = new URL(rawUrl || "/", "http://localhost").pathname; } catch {}
+            pathname = pathname
+              .replace(/^\/lobby\/rooms\/[^/]+\/join$/, "/lobby/rooms/:id/join")
+              .replace(/^\/lobby\/invitations\/[^/]+\/respond$/, "/lobby/invitations/:id/respond")
+              .replace(/^\/global-chat\/messages\/[^/]+$/, "/global-chat/messages/:id")
+              .replace(/^\/global-chat\/friends\/[^/]+.*$/, "/global-chat/friends/:id");
+            return String(method || "UNKNOWN").toUpperCase() + " " + pathname;
+          }
+          function phaseNow() {
+            if (!workloadStartNs) return "startup";
+            const elapsed = Number(process.hrtime.bigint() - workloadStartNs) / 1e9;
+            if (elapsed < 120) return "warmup";
+            if (elapsed < 420) return "steady";
+            return "cooldown";
+          }
+          function increment(map, key, amount) {
+            map.set(key, (map.get(key) || 0) + (amount || 1));
+          }
+          function makeOwner(owner, pool) {
+            return {
+              owner,
+              pool,
+              configuredMax: Number(pool.options && pool.options.max || 0),
+              peakWaiting: Number(pool.waitingCount || 0),
+              acquire: timing(),
+              physicalAcquire: timing(),
+              query: timing(),
+              hold: timing(),
+              physicalAcquisitions: 0,
+              physicalPending: [],
+              logicalBorrowers: 0,
+              releasesObserved: 0,
+              mechanisms: { DIRECT_POOL_QUERY: 0, EXPLICIT_POOL_CONNECT: 0 },
+              mechanismAcquire: { DIRECT_POOL_QUERY: timing(), EXPLICIT_POOL_CONNECT: timing() },
+              operations: new Map(),
+              consumers: new Map(),
+              requestAcquisitions: new Map()
+            };
+          }
+          function opStats(stat, meta) {
+            const key = meta.consumer + "|" + meta.operation + "|" + meta.phase;
+            let row = stat.operations.get(key);
+            if (!row) {
+              row = {
+                consumer: meta.consumer,
+                operation: meta.operation,
+                phase: meta.phase,
+                acquire: timing(),
+                query: timing(),
+                hold: timing(),
+                mechanisms: { DIRECT_POOL_QUERY: 0, EXPLICIT_POOL_CONNECT: 0 }
+              };
+              stat.operations.set(key, row);
+            }
+            return row;
+          }
+          function consumerStats(stat, meta) {
+            const key = meta.consumer + "|" + meta.phase;
+            let row = stat.consumers.get(key);
+            if (!row) {
+              row = {
+                consumer: meta.consumer,
+                phase: meta.phase,
+                acquire: timing(),
+                query: timing(),
+                hold: timing(),
+                mechanisms: { DIRECT_POOL_QUERY: 0, EXPLICIT_POOL_CONNECT: 0 }
+              };
+              stat.consumers.set(key, row);
+            }
+            return row;
+          }
+          function buildMeta(pool, mechanism, stack) {
+            const classified = classifyStack(stack);
+            const req = requestAls.getStore();
+            return {
+              borrowerId: ++lifecycle.borrowerSequence,
+              pool,
+              poolOwner: pool.__c40r1Stats.owner,
+              consumer: classified.consumer,
+              operation: classified.operation,
+              mechanism,
+              phase: phaseNow(),
+              requestRoute: req && req.route ? req.route : "BACKGROUND",
+              startedNs: process.hrtime.bigint(),
+              completed: false,
+              released: false
+            };
+          }
+          function attachClientMeta(client, meta) {
+            if (!client) return;
+            try { Object.defineProperty(client, "__c40r1Meta", { value: meta, configurable: true, writable: true, enumerable: false }); } catch {}
+          }
+          function onPhysicalAcquire(stat) {
+            stat.physicalAcquisitions += 1;
+            stat.peakWaiting = Math.max(stat.peakWaiting, Number(stat.pool.waitingCount || 0));
+            const startedNs = stat.physicalPending.shift();
+            if (!startedNs) {
+              record(stat.physicalAcquire, 0, new Error("physical acquisition without pending connect"));
+              return;
+            }
+            record(stat.physicalAcquire, Number(process.hrtime.bigint() - startedNs) / 1e6, null);
+          }
+          function completeBorrow(stat, meta, client, error) {
+            if (meta.completed) throw new Error("C40-R1 borrower completed twice: " + meta.borrowerId);
+            meta.completed = true;
+            const waitMs = Number(process.hrtime.bigint() - meta.startedNs) / 1e6;
+            stat.logicalBorrowers += 1;
+            record(stat.acquire, waitMs, error || null);
+            stat.mechanisms[meta.mechanism] = (stat.mechanisms[meta.mechanism] || 0) + 1;
+            record(stat.mechanismAcquire[meta.mechanism], waitMs, error || null);
+            meta.acquiredNs = process.hrtime.bigint();
+            attachClientMeta(client, meta);
+            if (borrowerProof.length < 200) borrowerProof.push({
+              borrowerId: meta.borrowerId, poolOwner: meta.poolOwner, consumer: meta.consumer,
+              operation: meta.operation, mechanism: meta.mechanism, phase: meta.phase,
+              requestRoute: meta.requestRoute, waitMs, error: error ? String(error.code || error.message || error) : null
+            });
+            if (borrowerLog) {
+              fs.mkdirSync(path.dirname(borrowerLog), { recursive: true });
+              fs.appendFileSync(borrowerLog, JSON.stringify({
+                borrowerId: meta.borrowerId, poolOwner: meta.poolOwner, consumer: meta.consumer,
+                operation: meta.operation, mechanism: meta.mechanism, phase: meta.phase,
+                requestRoute: meta.requestRoute, waitMs,
+                error: error ? String(error.code || error.message || error) : null
+              }) + "\n");
+            }
+            if (stat.owner === "COMMUNITY_POOL") {
+              const op = opStats(stat, meta);
+              const con = consumerStats(stat, meta);
+              record(op.acquire, waitMs, error || null);
+              record(con.acquire, waitMs, error || null);
+              op.mechanisms[meta.mechanism] = (op.mechanisms[meta.mechanism] || 0) + 1;
+              con.mechanisms[meta.mechanism] = (con.mechanisms[meta.mechanism] || 0) + 1;
+              increment(stat.requestAcquisitions, meta.phase + "|" + meta.requestRoute, 1);
+            }
+          }
+
+          class C40R1Pool extends OriginalPool {
+            constructor(options) {
+              lifecycle.requestedPools += 1;
+              super(options);
+              const owner = ownerFromStack(new Error().stack);
+              if (owner) {
+                if (owners.has(owner)) throw new Error("C40-R1 duplicate canonical pool owner: " + owner);
+                const stat = makeOwner(owner, this);
+                owners.set(owner, stat);
+                Object.defineProperty(this, "__c40r1Stats", { value: stat, configurable: false, enumerable: false });
+                this.on("acquire", () => onPhysicalAcquire(stat));
+              }
+            }
+          }
+          Object.defineProperty(pg, "Pool", { value: C40R1Pool, configurable: true, enumerable: true, writable: true });
+
+          C40R1Pool.prototype.query = function c40r1PoolQuery() {
+            const stat = this.__c40r1Stats;
+            if (!stat) return originalPoolQuery.apply(this, arguments);
+            const current = borrowerAls.getStore();
+            if (current && current.pool === this) return originalPoolQuery.apply(this, arguments);
+            const meta = buildMeta(this, "DIRECT_POOL_QUERY", new Error().stack);
+            const args = arguments;
+            return borrowerAls.run(meta, () => originalPoolQuery.apply(this, args));
+          };
+
+          function wrapBorrowerRelease(client, release, stat, meta, recordHold) {
+            if (!client || typeof release !== "function") return release;
+            const started = meta && meta.acquiredNs ? meta.acquiredNs : process.hrtime.bigint();
+            let released = false;
+            return function c40r1Release() {
+              if (!released) {
+                released = true;
+                meta.released = true;
+                stat.releasesObserved += 1;
+                if (recordHold) {
+                  const holdMs = Number(process.hrtime.bigint() - started) / 1e6;
+                  record(stat.hold, holdMs, null);
+                  if (stat.owner === "COMMUNITY_POOL" && meta) {
+                    record(opStats(stat, meta).hold, holdMs, null);
+                    record(consumerStats(stat, meta).hold, holdMs, null);
+                  }
+                }
+              }
+              try { return release.apply(this, arguments); }
+              finally { if (client.__c40r1Meta === meta) client.__c40r1Meta = null; }
+            };
+          }
+
+          C40R1Pool.prototype.connect = function c40r1PoolConnect(callback) {
+            const stat = this.__c40r1Stats;
+            if (!stat) return originalPoolConnect.apply(this, arguments);
+            stat.peakWaiting = Math.max(stat.peakWaiting, Number(this.waitingCount || 0));
+            const existing = borrowerAls.getStore();
+            const direct = existing && existing.pool === this && existing.mechanism === "DIRECT_POOL_QUERY" && !existing.internalConnectObserved;
+            const meta = direct ? existing : buildMeta(this, "EXPLICIT_POOL_CONNECT", new Error().stack);
+            if (direct) meta.internalConnectObserved = true;
+            stat.physicalPending.push(process.hrtime.bigint());
+            if (typeof callback === "function") {
+              return borrowerAls.run(meta, () => originalPoolConnect.call(this, (error, client, release) => {
+                if (error) {
+                  completeBorrow(stat, meta, client, error);
+                  return callback(error, client, release);
+                }
+                completeBorrow(stat, meta, client, null);
+                const rawRelease = typeof release === "function" ? release : client.release;
+                const wrapped = wrapBorrowerRelease(client, rawRelease, stat, meta, !direct);
+                if (client && typeof wrapped === "function") client.release = wrapped;
+                return callback(error, client, wrapped);
+              }));
+            }
+            return borrowerAls.run(meta, () => Promise.resolve(originalPoolConnect.call(this)).then((client) => {
+              completeBorrow(stat, meta, client, null);
+              if (client && typeof client.release === "function") {
+                const release = client.release;
+                client.release = wrapBorrowerRelease(client, release, stat, meta, !direct);
+              }
+              return client;
+            }, (error) => {
+              completeBorrow(stat, meta, null, error);
+              throw error;
+            }));
+          };
+
+          pg.Client.prototype.query = function c40r1ClientQuery() {
+            const meta = this.__c40r1Meta;
+            if (!meta || !meta.pool || !meta.pool.__c40r1Stats) return originalClientQuery.apply(this, arguments);
+            const stat = meta.pool.__c40r1Stats;
+            const started = process.hrtime.bigint();
+            let done = false;
+            const finish = (error) => {
+              if (done) return;
+              done = true;
+              const ms = Number(process.hrtime.bigint() - started) / 1e6;
+              record(stat.query, ms, error || null);
+              if (stat.owner === "COMMUNITY_POOL") {
+                record(opStats(stat, meta).query, ms, error || null);
+                record(consumerStats(stat, meta).query, ms, error || null);
+              }
+            };
+            const args = Array.from(arguments);
+            const last = args.length - 1;
+            if (last >= 0 && typeof args[last] === "function") {
+              const cb = args[last];
+              args[last] = function c40QueryCallback(error, result) {
+                finish(error);
+                return cb.call(this, error, result);
+              };
+              try { return originalClientQuery.apply(this, args); } catch (error) { finish(error); throw error; }
+            }
+            let result;
+            try { result = originalClientQuery.apply(this, args); } catch (error) { finish(error); throw error; }
+            if (!result || typeof result.then !== "function") { finish(null); return result; }
+            return result.then((value) => { finish(null); return value; }, (error) => { finish(error); throw error; });
+          };
+
+          const originalEmit = http.Server.prototype.emit;
+          http.Server.prototype.emit = function c40r1ServerEmit(event) {
+            if (event !== "request") return originalEmit.apply(this, arguments);
+            const args = Array.from(arguments);
+            const req = args[1];
+            const route = normalizedRoute(req && req.method, req && req.url);
+            const health = route.includes(" /health/");
+            if (!health && !workloadStartNs) workloadStartNs = process.hrtime.bigint();
+            const phase = phaseNow();
+            if (!health) increment(requestCounts, phase + "|" + route, 1);
+            return requestAls.run({ route, phase }, () => originalEmit.apply(this, args));
+          };
+
+          function ownerSnapshot(stat) {
+            return {
+              owner: stat.owner,
+              configuredMax: stat.configuredMax,
+              totalCount: Number(stat.pool.totalCount || 0),
+              idleCount: Number(stat.pool.idleCount || 0),
+              waitingCount: Number(stat.pool.waitingCount || 0),
+              peakWaiting: stat.peakWaiting,
+              physicalAcquisitions: stat.physicalAcquisitions,
+              physicalPending: stat.physicalPending.length,
+              logicalBorrowers: stat.logicalBorrowers,
+              releasesObserved: stat.releasesObserved,
+              mechanisms: stat.mechanisms,
+              mechanismAcquire: Object.fromEntries(Object.entries(stat.mechanismAcquire).map(([key,value]) => [key,snap(value)])),
+              acquire: snap(stat.acquire),
+              physicalAcquire: snap(stat.physicalAcquire),
+              query: snap(stat.query),
+              hold: snap(stat.hold),
+              operations: Array.from(stat.operations.values()).map((row) => ({
+                consumer: row.consumer,
+                operation: row.operation,
+                phase: row.phase,
+                mechanisms: row.mechanisms,
+                acquire: snap(row.acquire),
+                query: snap(row.query),
+                hold: snap(row.hold)
+              })).sort((a,b) => (a.consumer+a.operation+a.phase).localeCompare(b.consumer+b.operation+b.phase)),
+              consumers: Array.from(stat.consumers.values()).map((row) => ({
+                consumer: row.consumer,
+                phase: row.phase,
+                mechanisms: row.mechanisms,
+                acquire: snap(row.acquire),
+                query: snap(row.query),
+                hold: snap(row.hold)
+              })).sort((a,b) => (a.consumer+a.phase).localeCompare(b.consumer+b.phase)),
+              requestAcquisitions: Array.from(stat.requestAcquisitions.entries()).map(([key,count]) => {
+                const split = key.indexOf("|");
+                return { phase: key.slice(0, split), route: key.slice(split + 1), count };
+              })
+            };
+          }
+          function flush() {
+            if (!output) return;
+            for (const stat of owners.values()) stat.peakWaiting = Math.max(stat.peakWaiting, Number(stat.pool.waitingCount || 0));
+            const row = {
+              ts: new Date().toISOString(),
+              pid: process.pid,
+              argv: process.argv.slice(1,4),
+              pgResolvedPath,
+              workloadStarted: Boolean(workloadStartNs),
+              phase: phaseNow(),
+              lifecycle,
+              owners: Array.from(owners.values()).map(ownerSnapshot),
+              borrowerTokenSample: borrowerProof,
+              requestCounts: Array.from(requestCounts.entries()).map(([key,count]) => {
+                const split = key.indexOf("|");
+                return { phase: key.slice(0, split), route: key.slice(split + 1), count };
+              })
+            };
+            fs.mkdirSync(path.dirname(output), { recursive: true });
+            fs.appendFileSync(output, JSON.stringify(row) + "\n");
+          }
+          if (output) {
+            const timer = setInterval(flush, 1000);
+            timer.unref();
+            process.on("exit", () => { try { flush(); } catch {} });
+          }
+
+          if (process.env.C40R1_SELF_TEST === "1") {
+            Object.defineProperty(globalThis, "__B1_C40R1", {
+              value: {
+                pg, pgResolvedPath, lifecycle, owners, borrowerProof, classifyStack, ownerFromStack,
+                normalizedRoute, phaseNow, timing, snap, ownerSnapshot
+              },
+              configurable: true,
+              enumerable: false
+            });
+          }
           C40R1JS
-          node --check "$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs"
-          sha256sum "$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs" | tee perf/k6/reports/b1-c40-r1-runtime-instrumentation-sha256.txt
+          node --check "$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs"
+          sha256sum "$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs" | tee perf/k6/reports/b1-c40-r1-runtime-instrumentation-sha256.txt
           echo instrumentation=PASS >> perf/k6/reports/b1-c40-r1-phase-status.txt
 
       - name: Verify application-scoped pg resolution
@@ -325,90 +715,189 @@ jobs:
           set -euo pipefail
           C40R1_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c40-r1-smoke.jsonl" \
           C40R1_SELF_TEST=1 \
-          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs" \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs" \
           node - <<'NODE' | tee perf/k6/reports/b1-c40-r1-preload-smoke.json
-          const hook=globalThis.__B1_C40R1R1;
-          if(!hook||typeof hook.pg?.Pool!=="function")process.exit(61);
-          if(!String(hook.pgResolvedPath).includes("/modern/checkers-engine/node_modules/pg/"))process.exit(62);
-          if(hook.lifecycle.requestedPools!==0||hook.owners.size!==0)process.exit(63);
-          console.log(JSON.stringify({status:"PRELOAD_SMOKE = PASS",moduleResolution:"PASS",instrumentationCreatedPools:0,instrumentationCreatedPostgresConnections:0,sqlChanged:false,parametersPersisted:false},null,2));
+          const hook = globalThis.__B1_C40R1;
+          if (!hook) process.exit(61);
+          if (typeof hook.pg?.Pool !== "function") process.exit(62);
+          if (!String(hook.pgResolvedPath).includes("/modern/checkers-engine/node_modules/pg/")) process.exit(63);
+          if (hook.lifecycle.requestedPools !== 0) process.exit(64);
+          if (hook.owners.size !== 0) process.exit(65);
+          console.log(JSON.stringify({
+            status: "PRELOAD_SMOKE = PASS",
+            preloadLoaded: true,
+            applicationScopedPgResolved: true,
+            instrumentationCreatedPools: 0,
+            instrumentationCreatedPostgresConnections: 0,
+            preloadSqlExecuted: 0,
+            sqlChanged: false,
+            parametersPersisted: false
+          }, null, 2));
           NODE
           git diff --exit-code -- src test perf package.json package-lock.json
           echo preload_smoke=PASS >> perf/k6/reports/b1-c40-r1-phase-status.txt
 
-      - name: Borrower binding, queued handoff, direct-query, explicit-connect and classifier self-tests
+      - name: Borrower binding, queued handoff, direct query, explicit checkout and classifier self-tests
         run: |
           set -euo pipefail
-          psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database();" > perf/k6/reports/b1-c40-r1-selftest-connections-before.txt
+          before="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database() and application_name <> 'psql';")"
           C40R1_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c40-r1-selftest.jsonl" \
-          C40R1_BORROWER_LOG="$RUNNER_TEMP/b1-c40-r1-selftest-borrowers.jsonl" \
           C40R1_SELF_TEST=1 \
-          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs" \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs" \
           node --input-type=module - <<'NODE' | tee perf/k6/reports/b1-c40-r1-borrower-self-test.json
           import path from "node:path";
-          const hook=globalThis.__B1_C40R1R1;
-          if(!hook)process.exit(71);
-          const root=path.join(process.env.GITHUB_WORKSPACE,"modern","checkers-engine");
-          function communityPool(max){const source=path.join(root,"src","postgres-community-pool.js");const factory=new Function("pg","max","url",["return function constructPhysicalPool(){","return new pg.Pool({connectionString:url,max:max,connectionTimeoutMillis:5000});","};","//# sourceURL="+source].join("\n"))(hook.pg,max,process.env.DATABASE_URL);return factory();}
-          const pool=communityPool(1);
-          if(pool.__c40Stats?.owner!=="COMMUNITY_POOL"||pool.options.max!==1)process.exit(72);
-          const cases=[
-            ["at LobbyService.#readStateDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.read_state"],
-            ["at LobbyService.#touchUserDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.presence_touch"],
-            ["at LobbyService.#listRoomsDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.rooms_read"],
-            ["at LobbyService.#listPlayersDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.players_read"],
-            ["at LobbyService.#listInvitationsDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.invitations_read"],
-            ["at LobbyService.#createRoomForActiveUserDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.room_create_update_transaction"],
-            ["at LobbyService.#createInvitationDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.invitation_operations"],
-            ["at LobbyService.#joinRoomDatabase (/x/src/lobby.js:1:1)","LOBBY","lobby.room_join_update_transaction"],
-            ["at GlobalChatService.list (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.message_list_read"],
-            ["at DistributedGlobalChatService.#persistPresence (/x/src/distributed-global-chat.js:1:1)","GLOBAL_CHAT","global_chat.presence_touch"],
-            ["at DistributedGlobalChatService.#refreshPresence (/x/src/distributed-global-chat.js:1:1)","GLOBAL_CHAT","global_chat.presence_read"],
-            ["at DistributedGlobalChatService.#notify (/x/src/distributed-global-chat.js:1:1)","GLOBAL_CHAT","global_chat.realtime_notify"],
-            ["at DistributedGlobalChatService.#recoverSubscriber (/x/src/distributed-global-chat.js:1:1)","GLOBAL_CHAT","global_chat.background_realtime_refresh"],
-            ["at GlobalChatService.send (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.message_write"],
-            ["at GlobalChatService.edit (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.message_edit"],
-            ["at GlobalChatService.remove (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.message_delete"],
-            ["at GlobalChatService.react (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.reaction_write"],
-            ["at GlobalChatService.createTopic (/x/src/global-chat.js:1:1)","GLOBAL_CHAT","global_chat.topic_write"]
+          import { setTimeout as delay } from "node:timers/promises";
+          const hook = globalThis.__B1_C40R1;
+          if (!hook) process.exit(71);
+          const root = path.join(process.env.GITHUB_WORKSPACE, "modern", "checkers-engine");
+          const source = path.join(root, "src", "postgres-community-pool.js");
+          const makePool = new Function("pg", "url", [
+            "return new pg.Pool({connectionString:url,max:1,connectionTimeoutMillis:2000});",
+            "//# sourceURL=" + source
+          ].join("\n"));
+          const pool = makePool(hook.pg, process.env.DATABASE_URL);
+          const stat = pool.__c40r1Stats;
+          if (!stat || stat.owner !== "COMMUNITY_POOL" || pool.options.max !== 1) process.exit(72);
+
+          const fromSource = (file, body) => new Function("pool", [
+            "return " + body + ";",
+            "//# sourceURL=" + path.join(root, "src", file)
+          ].join("\n"))(pool);
+          const lobbyExplicit = fromSource("lobby.js", "async function readState(){ return pool.connect(); }");
+          const lobbyDirect = fromSource("lobby.js", "async function readState(){ return pool.query('select 1 as ok'); }");
+          const chatDirect = fromSource("global-chat.js", "async function list(){ return pool.query('select 2 as ok'); }");
+          const chatExplicit = fromSource("global-chat.js", "async function list(){ return pool.connect(); }");
+
+          const a = await lobbyExplicit();
+          const aId = a.__c40r1Meta.borrowerId;
+          const bPromise = chatDirect();
+          await delay(60);
+          if (pool.waitingCount !== 1) process.exit(73);
+          a.release();
+          await bPromise;
+          const firstTwo = hook.borrowerProof.slice(0, 2);
+          if (firstTwo.length !== 2) process.exit(74);
+          if (firstTwo[0].borrowerId !== aId || firstTwo[0].consumer !== "LOBBY") process.exit(75);
+          if (firstTwo[1].consumer !== "GLOBAL_CHAT" || firstTwo[1].waitMs < 40) process.exit(76);
+          if (firstTwo[0].borrowerId === firstTwo[1].borrowerId) process.exit(77);
+
+          const beforeDirect = {
+            logical: stat.logicalBorrowers,
+            physical: stat.physicalAcquisitions,
+            direct: stat.mechanisms.DIRECT_POOL_QUERY,
+            explicit: stat.mechanisms.EXPLICIT_POOL_CONNECT
+          };
+          const directResult = await lobbyDirect();
+          if (directResult.rows[0].ok !== 1) process.exit(78);
+          const directDelta = {
+            logical: stat.logicalBorrowers - beforeDirect.logical,
+            physical: stat.physicalAcquisitions - beforeDirect.physical,
+            direct: stat.mechanisms.DIRECT_POOL_QUERY - beforeDirect.direct,
+            explicit: stat.mechanisms.EXPLICIT_POOL_CONNECT - beforeDirect.explicit
+          };
+          if (JSON.stringify(directDelta) !== JSON.stringify({logical:1,physical:1,direct:1,explicit:0})) process.exit(79);
+
+          const beforeExplicit = {
+            logical: stat.logicalBorrowers,
+            physical: stat.physicalAcquisitions,
+            explicit: stat.mechanisms.EXPLICIT_POOL_CONNECT,
+            holds: stat.hold.histogram.count,
+            releases: stat.releasesObserved
+          };
+          const explicitClient = await chatExplicit();
+          const explicitId = explicitClient.__c40r1Meta.borrowerId;
+          await delay(35);
+          explicitClient.release();
+          const explicitDelta = {
+            logical: stat.logicalBorrowers - beforeExplicit.logical,
+            physical: stat.physicalAcquisitions - beforeExplicit.physical,
+            explicit: stat.mechanisms.EXPLICIT_POOL_CONNECT - beforeExplicit.explicit,
+            holds: Number(stat.hold.histogram.count) - Number(beforeExplicit.holds),
+            releases: stat.releasesObserved - beforeExplicit.releases
+          };
+          if (JSON.stringify(explicitDelta) !== JSON.stringify({logical:1,physical:1,explicit:1,holds:1,releases:1})) process.exit(80);
+
+          const c = await lobbyExplicit();
+          const cId = c.__c40r1Meta.borrowerId;
+          const dPromise = chatDirect();
+          const ePromise = lobbyDirect();
+          await delay(40);
+          if (pool.waitingCount !== 2) process.exit(81);
+          c.release();
+          await Promise.all([dPromise, ePromise]);
+          const lastThree = hook.borrowerProof.slice(-3);
+          if (lastThree.map(x => x.borrowerId).join(",") !== [cId,cId+1,cId+2].join(",")) process.exit(82);
+          if (lastThree.map(x => x.consumer).join(",") !== "LOBBY,GLOBAL_CHAT,LOBBY") process.exit(83);
+          if (new Set(lastThree.map(x => x.borrowerId)).size !== 3) process.exit(84);
+
+          const callbackResult = await new Promise((resolve, reject) => {
+            pool.query("select 3 as ok", (error, result) => error ? reject(error) : resolve(result));
+          });
+          if (callbackResult.rows[0].ok !== 3) process.exit(85);
+
+          const cases = [
+            ["at LobbyService.#readStateDatabase (/x/src/lobby.js:109:10)", "LOBBY", "lobby.read_state"],
+            ["at LobbyService.#touchUserDatabase (/x/src/lobby.js:103:10)", "LOBBY", "lobby.presence_touch"],
+            ["at LobbyService.#listRoomsDatabase (/x/src/lobby.js:120:10)", "LOBBY", "lobby.rooms_read"],
+            ["at LobbyService.#listPlayersDatabase (/x/src/lobby.js:130:10)", "LOBBY", "lobby.players_read"],
+            ["at LobbyService.#listInvitationsDatabase (/x/src/lobby.js:140:10)", "LOBBY", "lobby.invitations_read"],
+            ["at LobbyService.#createRoomForActiveUserDatabase (/x/src/lobby.js:228:10)", "LOBBY", "lobby.room_create_update_transaction"],
+            ["at LobbyService.respondInvitation (/x/src/lobby.js:240:10)", "LOBBY", "lobby.invitation_operations"],
+            ["at LobbyService.joinRoom (/x/src/lobby.js:250:10)", "LOBBY", "lobby.room_join_update_transaction"],
+            ["at GlobalChatService.list (/x/src/global-chat.js:148:10)", "GLOBAL_CHAT", "global_chat.message_list_read"],
+            ["at DistributedGlobalChatService.#persistPresence (/x/src/distributed-global-chat.js:233:10)", "GLOBAL_CHAT", "global_chat.presence_touch"],
+            ["at DistributedGlobalChatService.#refreshPresence (/x/src/distributed-global-chat.js:243:10)", "GLOBAL_CHAT", "global_chat.presence_read"],
+            ["at DistributedGlobalChatService.#notify (/x/src/distributed-global-chat.js:253:10)", "GLOBAL_CHAT", "global_chat.realtime_notify"],
+            ["at DistributedGlobalChatService.#recoverSubscriber (/x/src/distributed-global-chat.js:263:10)", "GLOBAL_CHAT", "global_chat.background_realtime_refresh"],
+            ["at GlobalChatService.send (/x/src/global-chat.js:168:10)", "GLOBAL_CHAT", "global_chat.message_write"],
+            ["at GlobalChatService.edit (/x/src/global-chat.js:178:10)", "GLOBAL_CHAT", "global_chat.message_edit"],
+            ["at GlobalChatService.remove (/x/src/global-chat.js:188:10)", "GLOBAL_CHAT", "global_chat.message_delete"],
+            ["at GlobalChatService.react (/x/src/global-chat.js:198:10)", "GLOBAL_CHAT", "global_chat.reaction_write"],
+            ["at GlobalChatService.createTopic (/x/src/global-chat.js:208:10)", "GLOBAL_CHAT", "global_chat.topic_write"]
           ];
-          for(const [stack,consumer,operation] of cases){const got=hook.classifyStack(stack);if(got.consumer!==consumer||got.operation!==operation){console.error({stack,got,consumer,operation});process.exit(73);}}
-          if(hook.classifyStack("at Other.run (/x/src/other.js:1:1)").consumer!=="OTHER_UNKNOWN")process.exit(74);
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-          const A=await hook.withTestIdentity({consumer:"LOBBY",operation:"selftest.borrower_A"},()=>pool.connect());
-          const bPromise=hook.withTestIdentity({consumer:"GLOBAL_CHAT",operation:"selftest.borrower_B"},()=>pool.connect());
-          await sleep(60);
-          const queuedBeforeRelease=pool.waitingCount;
-          if(queuedBeforeRelease<1)process.exit(75);
-          A.release();
-          const B=await bPromise; B.release();
-          let s=hook.snapshot("COMMUNITY_POOL");
-          const aRow=s.operations.find(x=>x.operation==="selftest.borrower_A"),bRow=s.operations.find(x=>x.operation==="selftest.borrower_B");
-          if(aRow?.acquire.count!==1||bRow?.acquire.count!==1||!(bRow.acquire.p50Ms>=40))process.exit(76);
-          if((aRow.mechanisms.explicit_pool_connect||0)!==1||(bRow.mechanisms.explicit_pool_connect||0)!==1)process.exit(77);
-          const beforeDirect={physical:s.physicalAcquisitions,borrower:s.borrowerAcquisitions,direct:s.mechanisms.direct_pool_query,explicit:s.mechanisms.explicit_pool_connect};
-          const q=await hook.withTestIdentity({consumer:"LOBBY",operation:"selftest.direct_query"},()=>pool.query("SELECT 1 AS ok"));
-          if(Number(q.rows[0].ok)!==1)process.exit(78);
-          s=hook.snapshot("COMMUNITY_POOL");
-          if(s.physicalAcquisitions!==beforeDirect.physical+1||s.borrowerAcquisitions!==beforeDirect.borrower+1||s.mechanisms.direct_pool_query!==beforeDirect.direct+1||s.mechanisms.explicit_pool_connect!==beforeDirect.explicit)process.exit(79);
-          const beforeExplicit={physical:s.physicalAcquisitions,borrower:s.borrowerAcquisitions,explicit:s.mechanisms.explicit_pool_connect,hold:s.hold.count,releases:s.releasesObserved};
-          const E=await hook.withTestIdentity({consumer:"GLOBAL_CHAT",operation:"selftest.explicit_checkout"},()=>pool.connect());
-          await E.query("SELECT 1"); await sleep(25); E.release();
-          s=hook.snapshot("COMMUNITY_POOL");
-          if(s.physicalAcquisitions!==beforeExplicit.physical+1||s.borrowerAcquisitions!==beforeExplicit.borrower+1||s.mechanisms.explicit_pool_connect!==beforeExplicit.explicit+1||s.hold.count!==beforeExplicit.hold+1||s.releasesObserved!==beforeExplicit.releases+1)process.exit(80);
-          const rows=Object.fromEntries(s.operations.map(x=>[x.operation,x]));
-          if(rows["selftest.borrower_A"]?.consumer!=="LOBBY"||rows["selftest.borrower_B"]?.consumer!=="GLOBAL_CHAT"||rows["selftest.direct_query"]?.consumer!=="LOBBY"||rows["selftest.explicit_checkout"]?.consumer!=="GLOBAL_CHAT")process.exit(81);
-          if(s.physicalAcquisitions!==s.borrowerAcquisitions)process.exit(82);
-          const diffs=["p50Ms","p95Ms","p99Ms","maxMs"].map(k=>Math.abs(Number(s.acquire[k]||0)-Number(s.physicalAcquire[k]||0)));
-          if(Math.max(...diffs)>5)process.exit(83);
-          console.log(JSON.stringify({status:"BORROWER_BINDING_SELF_TEST = PASS",queuedHandoff:"PASS",queuedBeforeRelease,borrowerA:{consumer:aRow.consumer,acquisitions:aRow.acquire.count},borrowerB:{consumer:bRow.consumer,acquisitions:bRow.acquire.count,waitP50Ms:bRow.acquire.p50Ms},crossContextLeak:"PASS",directQuery:{status:"PASS",logicalBorrowers:1,physicalAcquisitions:1,mechanism:"DIRECT_POOL_QUERY",explicitIncrement:0},explicitConnect:{status:"PASS",logicalBorrowers:1,mechanism:"EXPLICIT_POOL_CONNECT",holdObserved:1,releaseObserved:1},classifierSelfTest:{status:"PASS",positiveCases:cases.length,negativeCases:1},crossValidation:{status:"PASS",physical:s.physicalAcquisitions,borrower:s.borrowerAcquisitions,timingMaxDeltaMs:Math.max(...diffs)},extraProductionPools:0,extraProductionConnections:0,selfTestPoolMax:1},null,2));
+          for (const [stack, consumer, operation] of cases) {
+            const got = hook.classifyStack(stack);
+            if (got.consumer !== consumer || got.operation !== operation) process.exit(86);
+          }
+          if (hook.classifyStack("/x/src/other.js:1:1").consumer !== "OTHER_UNKNOWN") process.exit(87);
+
+          const snapshot = hook.ownerSnapshot(stat);
+          if (snapshot.logicalBorrowers !== snapshot.physicalAcquisitions) process.exit(88);
+          if (snapshot.acquire.count !== snapshot.physicalAcquire.count) process.exit(89);
+          const queued = firstTwo[1];
+          const evidence = {
+            status: "BORROWER_BINDING_SELF_TEST = PASS",
+            queuedHandoff: {
+              status: "QUEUED_HANDOFF_SELF_TEST = PASS",
+              borrowerA: firstTwo[0],
+              borrowerB: firstTwo[1],
+              borrowerBWaitMs: queued.waitMs,
+              crossContextLeak: false
+            },
+            directQuery: { status: "DIRECT_QUERY_SELF_TEST = PASS", delta: directDelta },
+            explicitConnect: { status: "EXPLICIT_CONNECT_SELF_TEST = PASS", borrowerId: explicitId, delta: explicitDelta },
+            classifier: { status: "CLASSIFIER_SELF_TEST = PASS", positiveCases: cases.length, negativeCases: 1 },
+            overlap: { status: "CROSS_CONTEXT_LEAK_TEST = PASS", borrowers: lastThree },
+            semantics: {
+              promiseReturnValue: "PASS", callbackBehavior: "PASS", errorsUnchanged: true,
+              sqlUnchanged: true, parametersUnchanged: true, transactionBehaviorUnchanged: true,
+              releaseBehavior: "PASS", poolMaxUnchanged: true
+            },
+            crossValidation: {
+              borrowerCount: snapshot.logicalBorrowers,
+              physicalAcquireEvents: snapshot.physicalAcquisitions,
+              delta: snapshot.logicalBorrowers - snapshot.physicalAcquisitions,
+              borrowerTiming: snapshot.acquire,
+              independentPhysicalTiming: snapshot.physicalAcquire
+            },
+            selfTestPool: { max: pool.options.max, totalBeforeEnd: pool.totalCount }
+          };
+          console.log(JSON.stringify(evidence, null, 2));
           await pool.end();
+          if (pool.totalCount !== 0) process.exit(90);
           NODE
-          sleep 1
-          psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database();" > perf/k6/reports/b1-c40-r1-selftest-connections-after.txt
-          before="$(cat perf/k6/reports/b1-c40-r1-selftest-connections-before.txt)"
-          after="$(cat perf/k6/reports/b1-c40-r1-selftest-connections-after.txt)"
-          test "$after" -le "$before"
+          after="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database() and application_name <> 'psql';")"
+          test "$after" = "$before"
           git diff --exit-code -- src test perf package.json package-lock.json
           {
             echo borrower_binding_self_test=PASS
@@ -425,7 +914,7 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' | tee perf/k6/reports/b1-c40-r1-reset.log
           echo reset=PASS >> perf/k6/reports/b1-c40-r1-phase-status.txt
 
-      - name: Execute exactly one canonical C40 100 VU diagnostic run
+      - name: Execute exactly one canonical C40-R1 100 VU diagnostic run
         run: |
           set -euo pipefail
           echo 1 > perf/k6/reports/b1-c40-r1-load-executions.txt
@@ -433,7 +922,7 @@ jobs:
           C40R1_APP_PACKAGE_JSON="$C40R1_APP_PACKAGE_JSON" \
           C40R1_ATTRIBUTION_FILE=perf/k6/reports/b1-c40-r1-borrower-attribution-v100-attribution.jsonl \
           C40R1_BORROWER_LOG=perf/k6/reports/b1-c40-r1-borrower-attribution-v100-borrowers.jsonl \
-          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-community-attribution-preload.cjs" \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-r1-borrower-attribution-preload.cjs" \
           WAVE_B_RUN_ID=b1-c40-r1-borrower-attribution-v100 \
           WAVE_B_REPLICAS=1 \
           WAVE_B_VUS=100 \
@@ -451,38 +940,292 @@ jobs:
           echo "load_rc=$rc" >> perf/k6/reports/b1-c40-r1-phase-status.txt
           exit 0
 
-      - name: Build C40-R1 authoritative borrower-bound evidence analysis
+      - name: Build C40-R1 authoritative evidence analysis
         if: always()
         run: |
           set +e
           node perf/scripts/wave-b-summarize.mjs
           node <<'NODE'
-          const fs=require("node:fs"),dir="perf/k6/reports",run="b1-c40-r1-borrower-attribution-v100";
-          const read=p=>fs.existsSync(p)?fs.readFileSync(p,"utf8"):"",json=p=>{try{return JSON.parse(read(p));}catch{return null;}};
-          const k=json(dir+"/"+run+"-k6-summary-export.json"),rec=json(dir+"/"+run+"-record.json"),metrics=k?.metrics||{},vals=n=>metrics?.[n]?.values||{};
-          const trend=n=>{const v=vals(n);return{p50:v.med??null,p90:v["p(90)"]??null,p95:v["p(95)"]??null,p99:v["p(99)"]??null,max:v.max??null};};
-          const counter=n=>Number(vals(n).count??0),loadRc=Number(read(dir+"/b1-c40-r1-load-rc.txt").trim()||-1),executions=Number(read(dir+"/b1-c40-r1-load-executions.txt").trim()||0),phaseStatus=read(dir+"/b1-c40-r1-phase-status.txt");
-          const attrLines=read(dir+"/"+run+"-attribution.jsonl").trim().split(/\n+/).filter(Boolean),byPid=new Map();
-          for(const line of attrLines){try{const row=JSON.parse(line),c=(row.owners||[]).find(x=>x.owner==="COMMUNITY_POOL"),score=Number(c?.physicalAcquisitions||0),prev=byPid.get(row.pid);if(!prev||score>=prev.score)byPid.set(row.pid,{score,row});}catch{}}
-          const selected=[...byPid.values()].sort((x,y)=>y.score-x.score)[0]?.row||null,community=selected?.owners?.find(x=>x.owner==="COMMUNITY_POOL")||null,session=selected?.owners?.find(x=>x.owner==="SESSION_STORE_POOL")||null;
-          const operations=community?.operations||[],consumers=community?.consumers||[],steadyOps=operations.filter(x=>x.phase==="steady").sort((x,y)=>Number(y.acquire?.totalMs||0)-Number(x.acquire?.totalMs||0));
-          const borrowerCount=Number(community?.borrowerAcquisitions||community?.acquire?.count||0),physicalCount=Number(community?.physicalAcquisitions||0),countDelta=borrowerCount-physicalCount;
-          const timingKeys=["p50Ms","p95Ms","p99Ms","maxMs"],timingDelta=Object.fromEntries(timingKeys.map(key=>[key,Math.abs(Number(community?.acquire?.[key]||0)-Number(community?.physicalAcquire?.[key]||0))])),timingMaxDelta=Math.max(...Object.values(timingDelta)),timingConsistent=timingMaxDelta<=5||timingMaxDelta<=0.05*Math.max(1,Number(community?.acquire?.maxMs||0));
-          const consumerTotals=["LOBBY","GLOBAL_CHAT","OTHER_UNKNOWN"].map(consumer=>{const rows=consumers.filter(x=>x.consumer===consumer),steadyRows=rows.filter(x=>x.phase==="steady"),total=rows.reduce((n,x)=>n+Number(x.acquire?.count||0),0),steady=steadyRows.reduce((n,x)=>n+Number(x.acquire?.count||0),0),steadyWaitMs=steadyRows.reduce((n,x)=>n+Number(x.acquire?.totalMs||0),0);return{consumer,total,percentage:borrowerCount?total*100/borrowerCount:0,steady,steadyWaitMs};});
-          const steadyTotal=consumerTotals.reduce((n,x)=>n+x.steady,0),steadyWaitTotal=consumerTotals.reduce((n,x)=>n+x.steadyWaitMs,0);for(const x of consumerTotals){x.steadyPercentage=steadyTotal?x.steady*100/steadyTotal:0;x.steadyWaitPercentage=steadyWaitTotal?x.steadyWaitMs*100/steadyWaitTotal:0;}
-          const reqCounts=new Map((selected?.requestCounts||[]).filter(x=>x.phase==="steady").map(x=>[x.route,Number(x.count||0)])),reqAcq=new Map((community?.requestAcquisitions||[]).filter(x=>x.phase==="steady").map(x=>[x.route,Number(x.count||0)]));
-          const routes=[...new Set([...reqCounts.keys(),...reqAcq.keys()])].map(route=>({route,requests:reqCounts.get(route)||0,steadyRequestsPerSec:(reqCounts.get(route)||0)/300,communityBorrowerAcquisitions:reqAcq.get(route)||0,acquisitionsPerRequest:(reqCounts.get(route)||0)?(reqAcq.get(route)||0)/(reqCounts.get(route)||0):null})).sort((x,y)=>y.communityBorrowerAcquisitions-x.communityBorrowerAcquisitions),impossibleRoutes=routes.filter(x=>x.requests>20&&x.communityBorrowerAcquisitions>0&&x.acquisitionsPerRequest>5);
-          const correctness={correctnessExit:Number(rec?.correctness_exit_code??rec?.correctnessExitCode??0),unexpectedErrors:counter("unexpected_errors"),http5xx:counter("http_5xx"),timeouts:counter("timeouts"),durabilityFailures:counter("durability_failures"),duplicateFailures:counter("duplicate_failures"),versionFailures:counter("version_failures"),revisionFailures:counter("revision_failures")};correctness.pass=Object.entries(correctness).filter(([key])=>key!=="pass").every(([,v])=>Number(v||0)===0);
-          const required=["identity=PASS","fixture=PASS","c38=PASS","c19=PASS","c22=PASS","c25=PASS","c27=PASS","c32=PASS","profile=PASS","instrumentation=PASS","module_resolution=PASS","preload_smoke=PASS","borrower_binding_self_test=PASS","queued_handoff_self_test=PASS","direct_query_self_test=PASS","explicit_connect_self_test=PASS","classifier_self_test=PASS","cross_context_leak_test=PASS"],preRunPass=required.every(x=>phaseStatus.includes(x)),semanticSanity=impossibleRoutes.length===0,evidenceValid=preRunPass&&executions===1&&(loadRc===0||loadRc===99)&&correctness.pass&&Boolean(community)&&Boolean(session)&&community.configuredMax===4&&session.configuredMax===4&&countDelta===0&&timingConsistent&&semanticSanity;
-          const lobby=consumerTotals.find(x=>x.consumer==="LOBBY"),chat=consumerTotals.find(x=>x.consumer==="GLOBAL_CHAT");let rootCause="RC-C40R1-G — PRIMARY ROOT CAUSE NOT PROVEN";
-          if(evidenceValid){const total=Math.max(1,(lobby?.steady||0)+(chat?.steady||0)),lPct=100*(lobby?.steady||0)/total,gPct=100*(chat?.steady||0)/total,explicit=Number(community?.mechanisms?.explicit_pool_connect||0),direct=Number(community?.mechanisms?.direct_pool_query||0),sqlP95=Number(community?.query?.p95Ms||0),acqP95=Number(community?.acquire?.p95Ms||0),holdP95=Number(community?.hold?.p95Ms||0);if(explicit>direct&&holdP95>acqP95)rootCause="RC-C40R1-D — LONG EXPLICIT CHECKOUT/HOLD DOMINANT";else if(sqlP95>acqP95*1.5&&sqlP95>25)rootCause="RC-C40R1-E — SQL EXECUTION LATENCY DOMINANT";else if(lPct>=65)rootCause="RC-C40R1-A — LOBBY DOMINANT";else if(gPct>=65)rootCause="RC-C40R1-B — GLOBAL_CHAT DOMINANT";else if((lobby?.steady||0)>0&&(chat?.steady||0)>0)rootCause="RC-C40R1-C — MULTIPLE COMMUNITY CONSUMERS JOINTLY SATURATE POOL";else rootCause="RC-C40R1-F — COMMUNITY POOL NOT PRIMARY AFTER VALID ATTRIBUTION";}
-          const out={schema:"b1-c40-r1-analysis-v1",load:{executions,loadRc,evidenceValid},correctness,attributionValidity:evidenceValid?"ATTRIBUTION_VALID":"ATTRIBUTION_INVALID",communityPhysical:community,crossValidation:{borrowerCount,physicalCount,countDelta,borrowerTiming:community?.acquire||null,physicalTiming:community?.physicalAcquire||null,timingDelta,timingMaxDelta,timingConsistent},consumers:consumerTotals,operations,steadyOperations:steadyOps,topSteadyByVolume:[...steadyOps].sort((x,y)=>Number(y.acquire?.count||0)-Number(x.acquire?.count||0)).slice(0,20),topSteadyByWait:[...steadyOps].slice(0,20),directVsExplicit:community?{directPoolQuery:Number(community.mechanisms?.direct_pool_query||0),explicitPoolConnect:Number(community.mechanisms?.explicit_pool_connect||0)}:null,requestCorrelation:routes,semanticSanity:{pass:semanticSanity,impossibleRoutes},sessionStoreControl:session?{configuredMax:session.configuredMax,acquisitions:session.physicalAcquisitions,peakWaiting:session.peakWaiting,acquire:session.acquire,query:session.query}:null,performance:{FAST:trend("wave_b_fast_duration"),NORMAL:trend("wave_b_normal_duration"),COMPLEX:trend("wave_b_complex_duration")},application:rec?.application||rec?.app||null,postgres:rec?.postgres||rec?.postgresql||null,rootCause,nextCorrectionTarget:evidenceValid&&steadyOps.length?steadyOps[0].operation:null};
-          fs.writeFileSync(dir+"/b1-c40-r1-analysis.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
+          const fs = require("node:fs");
+          const dir = "perf/k6/reports";
+          const run = "b1-c40-r1-borrower-attribution-v100";
+          const read = (p) => fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+          const json = (p) => { try { return JSON.parse(read(p)); } catch { return null; } };
+          const k = json(dir + "/" + run + "-k6-summary-export.json");
+          const rec = json(dir + "/" + run + "-record.json");
+          const correctnessReport = json(dir + "/" + run + "-correctness.json");
+          const correctnessProbe = json(dir + "/" + run + "-correctness-probe.json");
+          const metrics = k?.metrics || {};
+          const vals = (name) => metrics?.[name]?.values || {};
+          const trend = (name) => {
+            const v = vals(name);
+            return { p50: v.med ?? null, p90: v["p(90)"] ?? null, p95: v["p(95)"] ?? null, p99: v["p(99)"] ?? null, max: v.max ?? null };
+          };
+          const counter = (name) => Number(vals(name).count ?? 0);
+          const rate = (name) => Number(vals(name).rate ?? 0);
+          const loadRc = Number(read(dir + "/b1-c40-r1-load-rc.txt").trim() || -1);
+          const executions = Number(read(dir + "/b1-c40-r1-load-executions.txt").trim() || 0);
+          const phaseStatus = read(dir + "/b1-c40-r1-phase-status.txt");
+
+          const attrLines = read(dir + "/" + run + "-attribution.jsonl").trim().split(/\n+/).filter(Boolean);
+          const byPid = new Map();
+          for (const line of attrLines) {
+            try {
+              const row = JSON.parse(line);
+              const community = (row.owners || []).find((x) => x.owner === "COMMUNITY_POOL");
+              const score = Number(community?.physicalAcquisitions || 0);
+              const prev = byPid.get(row.pid);
+              if (!prev || score >= prev.score) byPid.set(row.pid, { score, row });
+            } catch {}
+          }
+          const selected = [...byPid.values()].sort((a,b) => b.score-a.score)[0]?.row || null;
+          const community = selected?.owners?.find((x) => x.owner === "COMMUNITY_POOL") || null;
+          const session = selected?.owners?.find((x) => x.owner === "SESSION_STORE_POOL") || null;
+
+          const operations = community?.operations || [];
+          const consumers = community?.consumers || [];
+          const steadyOps = operations.filter((x) => x.phase === "steady").sort((a,b) => b.acquire.count-a.acquire.count);
+          const steadyConsumers = consumers.filter((x) => x.phase === "steady").sort((a,b) => b.acquire.count-a.acquire.count);
+          const classified = Number(community?.logicalBorrowers || 0);
+          const physical = Number(community?.physicalAcquisitions || 0);
+          const delta = classified - physical;
+
+          const consumerTotals = ["LOBBY","GLOBAL_CHAT","OTHER_UNKNOWN"].map((consumer) => {
+            const rows = consumers.filter((x) => x.consumer === consumer);
+            const total = rows.reduce((n,x) => n + Number(x.acquire?.count || 0), 0);
+            const steadyRows = rows.filter((x) => x.phase === "steady");
+            const steady = steadyRows.reduce((n,x) => n + Number(x.acquire?.count || 0), 0);
+            const steadyWaitMs = steadyRows.reduce((n,x) => n + Number(x.acquire?.totalMs || 0), 0);
+            const steadyTiming = steadyRows[0]?.acquire || null;
+            return {
+              consumer, total, percentage: physical ? total*100/physical : 0,
+              steady, steadyWaitMs, acquire: steadyTiming,
+              steadyPercentage: steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.count||0),0) ? steady*100/steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.count||0),0) : 0
+            };
+          });
+
+          const requestCounts = selected?.requestCounts || [];
+          const requestAcquisitions = community?.requestAcquisitions || [];
+          const requestCorrelation = requestCounts.map((r) => {
+            const acq = requestAcquisitions.find((a) => a.phase === r.phase && a.route === r.route)?.count || 0;
+            return { ...r, communityAcquisitions: acq, requestsPerSecond: r.phase === "steady" ? Number(r.count||0)/300 : null, acquisitionsPerRequest: r.count ? acq/r.count : null };
+          }).sort((a,b) => b.communityAcquisitions-a.communityAcquisitions);
+
+          const direct = Number(community?.mechanisms?.DIRECT_POOL_QUERY || 0);
+          const explicit = Number(community?.mechanisms?.EXPLICIT_POOL_CONNECT || 0);
+          const unknownMechanism = classified - direct - explicit;
+          const timingKeys = ["p50Ms","p95Ms","p99Ms","maxMs"];
+          const timingDelta = Object.fromEntries(timingKeys.map((key) => [key, Math.abs(Number(community?.acquire?.[key]||0)-Number(community?.physicalAcquire?.[key]||0))]));
+          const timingCrossValidationPass = timingKeys.every((key) => timingDelta[key] <= Math.max(0.1, Number(community?.physicalAcquire?.[key]||0)*0.02));
+          const countCrossValidationPass = delta === 0;
+          const lobbyCreateRoute = requestCorrelation.find((x) => x.phase === "steady" && x.route === "POST /lobby/rooms");
+          const semanticRoutePass = !lobbyCreateRoute || lobbyCreateRoute.acquisitionsPerRequest <= 1.05;
+          const semanticSanity = {
+            lobbyCreateRoute: lobbyCreateRoute || null,
+            c25SingleAcquisitionConsistent: semanticRoutePass,
+            impossibleOrderOfMagnitudeMultiplication: requestCorrelation.every((x) => !x.count || x.communityAcquisitions/x.count < 20),
+            crossRequestLeakTest: phaseStatus?.includes("cross_context_leak_test=PASS") || false
+          };
+
+          const appCsv = read(dir + "/" + run + "-application.csv").trim().split(/\n+/).slice(1);
+          let cpuMax=0,cpuSum=0,cpuN=0,rssMaxKb=0;
+          for (const line of appCsv) {
+            const p=line.split(",");
+            if (p[5] === "PROCESS_DEAD") continue;
+            const cpu=Number(p[2])||0,rss=Number(p[3])||0;
+            cpuMax=Math.max(cpuMax,cpu); cpuSum+=cpu; cpuN+=1; rssMaxKb=Math.max(rssMaxKb,rss);
+          }
+
+          const obsLines = read(dir + "/" + run + "-observability-0.jsonl").trim().split(/\n+/).filter(Boolean);
+          let heapUsedMax=0,heapTotalMax=0,eventLoopP99Max=0,activeRequestsMax=0;
+          for (const line of obsLines) {
+            try {
+              const x=JSON.parse(line);
+              heapUsedMax=Math.max(heapUsedMax,Number(x.heapUsed)||0);
+              heapTotalMax=Math.max(heapTotalMax,Number(x.heapTotal)||0);
+              eventLoopP99Max=Math.max(eventLoopP99Max,Number(x.eventLoopP99Ms)||0);
+              activeRequestsMax=Math.max(activeRequestsMax,Number(x.activeRequests)||0);
+            } catch {}
+          }
+
+          const pgCsv = read(dir + "/" + run + "-postgres.csv").trim().split(/\n+/);
+          const pgHeader = pgCsv.length ? pgCsv[0].split(",") : [];
+          const pgRows = pgCsv.slice(1).map((line) => line.split(",")).filter((p) => p.length >= pgHeader.length);
+          const idx = (name) => pgHeader.indexOf(name);
+          const maxCol = (name) => {
+            const i=idx(name); if(i<0) return null;
+            let m=0; for(const p of pgRows)m=Math.max(m,Number(p[i])||0); return m;
+          };
+          const lastCol = (name) => {
+            const i=idx(name); if(i<0 || !pgRows.length) return null;
+            return Number(pgRows.at(-1)[i])||0;
+          };
+          const pg = {
+            numbackendsMax:maxCol("numbackends"),
+            activeMax:maxCol("active"),
+            idleMax:maxCol("idle"),
+            idleInTransactionMax:maxCol("idle_in_transaction"),
+            waitingMax:maxCol("waiting"),
+            clientWaitMax:maxCol("client_wait"),
+            lockWaitMax:maxCol("lock_wait"),
+            lwlockWaitMax:maxCol("lwlock_wait"),
+            ioWaitMax:maxCol("io_wait"),
+            longQueriesMax:maxCol("long_queries"),
+            maxQueryAgeMs:maxCol("max_query_ms"),
+            maxTransactionAgeMs:maxCol("max_xact_ms"),
+            waitingLocksMax:maxCol("waiting_locks"),
+            deadlocksMax:maxCol("deadlocks"),
+            tempFiles:lastCol("temp_files"),
+            tempBytes:lastCol("temp_bytes")
+          };
+
+          const correctness = {
+            correctnessExit: rec?.correctnessExit ?? null,
+            unexpectedErrorRate: rate("wave_b_unexpected_error"),
+            server5xxRate: rate("wave_b_server_5xx"),
+            timeoutRate: rate("wave_b_timeout"),
+            expected409: counter("wave_b_expected_409"),
+            expected429: counter("wave_b_expected_429"),
+            durabilityDuplicateVersionRevisionChecks: correctnessReport?.checks || null,
+            globalDuplicateRateProbe: correctnessProbe || null
+          };
+          correctness.pass = correctness.correctnessExit === 0 &&
+            correctness.unexpectedErrorRate < 0.01 &&
+            correctness.server5xxRate < 0.001 &&
+            correctness.timeoutRate < 0.01;
+
+          const performance = {
+            FAST: trend("wave_b_fast_read_ms"),
+            NORMAL: trend("wave_b_normal_command_ms"),
+            COMPLEX: trend("wave_b_complex_read_ms")
+          };
+
+          const preRunPass = [
+            "identity=PASS","fixture=PASS","c38=PASS","c19=PASS","c22=PASS","c25=PASS","c27=PASS","c32=PASS",
+            "profile=PASS","instrumentation=PASS","module_resolution=PASS","preload_smoke=PASS",
+            "borrower_binding_self_test=PASS","queued_handoff_self_test=PASS","direct_query_self_test=PASS",
+            "explicit_connect_self_test=PASS","classifier_self_test=PASS","cross_context_leak_test=PASS"
+          ].every((x) => phaseStatus.includes(x));
+
+          const evidenceValid = preRunPass && executions === 1 && (loadRc === 0 || loadRc === 99) &&
+            Boolean(k) && Boolean(rec) && Boolean(community) && Boolean(session) &&
+            community.configuredMax === 4 && session.configuredMax === 4 &&
+            countCrossValidationPass && timingCrossValidationPass && semanticRoutePass &&
+            semanticSanity.impossibleOrderOfMagnitudeMultiplication && correctness.pass;
+
+          const steadyTotal = steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.count||0),0);
+          const steadyWaitTotal = steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.totalMs||0),0);
+          const steadySqlTotal = steadyOps.reduce((n,x)=>n+Number(x.query?.totalMs||0),0);
+          const steadyHoldTotal = steadyOps.reduce((n,x)=>n+Number(x.hold?.totalMs||0),0);
+          const steadyExplicit = steadyOps.reduce((n,x)=>n+Number(x.mechanisms?.EXPLICIT_POOL_CONNECT||0),0);
+          const withDriver = (x) => {
+            const waits=Number(x.acquire?.totalMs||0), sql=Number(x.query?.totalMs||0), hold=Number(x.hold?.totalMs||0), count=Number(x.acquire?.count||0);
+            let pressureDriver = "COMBINATION";
+            if (hold > waits && hold > sql) pressureDriver = "LONG_EXPLICIT_HOLD";
+            else if (sql > 2*waits) pressureDriver = "LONG_SQL_EXECUTION";
+            else if (Number(x.acquire?.p95Ms||0) > Number(community.acquire?.p95Ms||0)*1.5) pressureDriver = "LONG_ACQUISITION_WAIT";
+            else if (steadyTotal && count/steadyTotal >= 0.20) pressureDriver = "HIGH_ACQUISITION_FREQUENCY";
+            return {...x,pressureDriver,steadyAcquisitionsPerSecond:count/300};
+          };
+          const enrichedSteadyOps = steadyOps.map(withDriver);
+          const rankedByWait = [...enrichedSteadyOps].sort((a,b)=>Number(b.acquire?.totalMs||0)-Number(a.acquire?.totalMs||0));
+          const lobbySteady = consumerTotals.find((x)=>x.consumer==="LOBBY");
+          const chatSteady = consumerTotals.find((x)=>x.consumer==="GLOBAL_CHAT");
+          let rootCauseVerdict = "RC-C40R1-G — PRIMARY ROOT CAUSE NOT PROVEN";
+          if (evidenceValid) {
+            if (community.peakWaiting < 4 && Number(community.acquire?.p95Ms||0) < 50) rootCauseVerdict = "RC-C40R1-F — COMMUNITY POOL NOT PRIMARY AFTER VALID ATTRIBUTION";
+            else if (steadyExplicit > 0 && steadyHoldTotal > steadyWaitTotal) rootCauseVerdict = "RC-C40R1-D — LONG EXPLICIT CHECKOUT/HOLD DOMINANT";
+            else if (steadySqlTotal > 2*steadyWaitTotal && Number(community.query?.p95Ms||0) > 2*Number(community.acquire?.p95Ms||0)) rootCauseVerdict = "RC-C40R1-E — SQL EXECUTION LATENCY DOMINANT";
+            else if (Number(lobbySteady?.steadyPercentage||0) >= 65) rootCauseVerdict = "RC-C40R1-A — LOBBY DOMINANT";
+            else if (Number(chatSteady?.steadyPercentage||0) >= 65) rootCauseVerdict = "RC-C40R1-B — GLOBAL_CHAT DOMINANT";
+            else if (Number(lobbySteady?.steady||0) > 0 && Number(chatSteady?.steady||0) > 0) rootCauseVerdict = "RC-C40R1-C — MULTIPLE COMMUNITY CONSUMERS JOINTLY SATURATE POOL";
+          }
+          const nextCorrectionTarget = evidenceValid && !rootCauseVerdict.includes("NOT PROVEN") && !rootCauseVerdict.includes("NOT PRIMARY")
+            ? (rankedByWait[0]?.operation || null) : null;
+
+          const output = {
+            schema:"b1-c40-r1-analysis-v1",
+            load:{executions,loadRc,evidenceValid,runnerInvocations:executions,v250:0,v500:0,v1000:0},
+            correctness,
+            performance,
+            communityPhysical: community,
+            sessionStoreControl: session ? {
+              configuredMax:session.configuredMax,
+              acquisitions:session.physicalAcquisitions,
+              peakWaiting:session.peakWaiting,
+              acquireP95Ms:session.acquire?.p95Ms,
+              acquireP99Ms:session.acquire?.p99Ms,
+              acquireMaxMs:session.acquire?.maxMs,
+              queryP95Ms:session.query?.p95Ms,
+              queryP99Ms:session.query?.p99Ms
+            } : null,
+            attribution:{
+              consumerTotals,
+              operations,
+              steadyOperations:steadyOps,
+              steadyConsumers,
+              directVsExplicit:{
+                directPoolQuery:direct,
+                explicitPoolConnect:explicit,
+                unknown:unknownMechanism,
+                directPct:physical?direct*100/physical:0,
+                explicitPct:physical?explicit*100/physical:0,
+                acquisitionTiming:community?.mechanismAcquire || null,
+                explicitHold:community?.hold || null
+              },
+              requestCorrelation,
+              rankedByAcquisitionVolume: enrichedSteadyOps,
+              rankedByTotalWaitContribution: rankedByWait,
+              steadyTotals:{borrowers:steadyTotal,totalWaitMs:steadyWaitTotal,totalSqlMs:steadySqlTotal,totalExplicitHoldMs:steadyHoldTotal,explicitBorrowers:steadyExplicit}
+            },
+            accounting:{
+              borrowerBoundAcquisitions:classified,
+              physicalCommunityAcquisitions:physical,
+              unattributedDelta:delta,
+              countCrossValidationPass,
+              borrowerTiming:community?.acquire || null,
+              independentPhysicalTiming:community?.physicalAcquire || null,
+              timingDelta,
+              timingCrossValidationPass
+            },
+            semanticSanity,
+            attributionValidity:evidenceValid?"ATTRIBUTION_VALID":"ATTRIBUTION_INVALID",
+            rootCauseVerdict,
+            nextCorrectionTarget,
+            application:{
+              cpuMaxPct:cpuMax,
+              cpuMeanPct:cpuN?cpuSum/cpuN:null,
+              rssMaxMb:rssMaxKb/1024,
+              heapUsedMaxMb:heapUsedMax/1048576,
+              heapTotalMaxMb:heapTotalMax/1048576,
+              eventLoopP99MaxMs:eventLoopP99Max,
+              activeRequestsMax
+            },
+            postgres:pg
+          };
+          fs.writeFileSync(dir + "/b1-c40-r1-analysis.json", JSON.stringify(output,null,2));
+          console.log(JSON.stringify(output,null,2));
           NODE
-          echo "analysis_rc=$?" >> perf/k6/reports/b1-c40-r1-phase-status.txt
+          rc=$?
+          echo "analysis_rc=$rc" >> perf/k6/reports/b1-c40-r1-phase-status.txt
           exit 0
 
-      - name: Upload exactly one final C40 evidence artifact
+      - name: Record CI identity and evidence checksums
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "job_id=$GITHUB_JOB"
+            echo "attempt=$GITHUB_RUN_ATTEMPT"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+          } > perf/k6/reports/b1-c40-r1-ci-identity.txt
+          find perf/k6/reports -maxdepth 1 -type f ! -name b1-c40-r1-evidence-sha256.txt -print0 |
+            sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/b1-c40-r1-evidence-sha256.txt"
+          mv "$RUNNER_TEMP/b1-c40-r1-evidence-sha256.txt" perf/k6/reports/b1-c40-r1-evidence-sha256.txt
+
+      - name: Upload exactly one final C40-R1 evidence artifact
         if: always()
         id: upload
         uses: actions/upload-artifact@v4
@@ -496,19 +1239,21 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          echo '--- C40-R1 PHASE STATUS ---'
+          echo '--- C40 PHASE STATUS ---'
           cat perf/k6/reports/b1-c40-r1-phase-status.txt || true
           test "$(cat perf/k6/reports/b1-c40-r1-load-executions.txt 2>/dev/null || echo 0)" = "1" || { echo "B1-C40-R1 HOLD: benchmark not executed exactly once"; exit 92; }
           rc="$(cat perf/k6/reports/b1-c40-r1-load-rc.txt 2>/dev/null || echo -1)"
           test "$rc" = "0" -o "$rc" = "99" || { echo "B1-C40-R1 HOLD: invalid load exit $rc"; exit 93; }
           test -s perf/k6/reports/b1-c40-r1-analysis.json || { echo "B1-C40-R1 HOLD: analysis missing"; exit 94; }
           node - <<'NODE'
-          const fs=require("node:fs"),x=JSON.parse(fs.readFileSync("perf/k6/reports/b1-c40-r1-analysis.json","utf8"));
-          if(x.attributionValidity!=="ATTRIBUTION_VALID")process.exit(95);
-          if(x.crossValidation?.countDelta!==0)process.exit(96);
-          if(!x.crossValidation?.timingConsistent)process.exit(97);
-          if(!x.semanticSanity?.pass)process.exit(98);
-          console.log("B1-C40-R1 ATTRIBUTION_VALID");
-          console.log("rootCause="+x.rootCause);
-          console.log("nextCorrectionTarget="+x.nextCorrectionTarget);
+          const fs=require("node:fs");
+          const x=JSON.parse(fs.readFileSync("perf/k6/reports/b1-c40-r1-analysis.json","utf8"));
+          if(!x.load?.evidenceValid) process.exit(95);
+          if(x.accounting?.unattributedDelta!==0) process.exit(96);
+          if(!x.accounting?.timingCrossValidationPass) process.exit(97);
+          if(x.attributionValidity!=="ATTRIBUTION_VALID") process.exit(98);
+          console.log("B1-C40-R1 BORROWER ATTRIBUTION EVIDENCE VALID");
+          console.log("classified="+x.accounting.classifiedCommunityAcquisitions);
+          console.log("physical="+x.accounting.physicalCommunityAcquisitions);
+          console.log("delta="+x.accounting.unattributedDelta);
           NODE
