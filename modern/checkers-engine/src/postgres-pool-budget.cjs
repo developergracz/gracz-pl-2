@@ -15,6 +15,7 @@ const POSTGRES_RESOURCE_PROFILE = Object.freeze({
     frozenEntry({ id: "audit", owner: "AuditService", file: "audit-service.js", max: 2, mainConstructor: "new AuditService(config.databaseUrl||null)" }),
     frozenEntry({ id: "moderation", owner: "ModerationService", file: "moderation-service.js", max: 2, mainConstructor: "new ModerationService(config.databaseUrl||null" }),
     frozenEntry({ id: "checkers-store", owner: "PostgresSessionStore", file: "postgres-session-store.js", max: 4, mainConstructor: "new PostgresSessionStore(config.databaseUrl)" }),
+    frozenEntry({ id: "community", owner: "PostgresCommunityPool", file: "postgres-community-pool.js", max: 4, mainConstructor: "new PostgresCommunityPool(config.databaseUrl)" }),
     frozenEntry({ id: "shared-traffic-guard", owner: "PostgresDistributedTrafficGuard", file: "distributed-infrastructure.js", max: 4, mainConstructor: "new PostgresDistributedTrafficGuard(config.databaseUrl)" }),
     frozenEntry({
       id: "checkers-realtime",
@@ -54,7 +55,7 @@ const POSTGRES_RESOURCE_PROFILE = Object.freeze({
       owner: "DistributedGlobalChatService",
       file: "distributed-global-chat.js",
       count: 1,
-      mainConstructor: "new DistributedGlobalChatService({pool:store.pool",
+      mainConstructor: "new DistributedGlobalChatService({pool:community.pool",
     }),
   ]),
   startupTemporaryClients: Object.freeze([
