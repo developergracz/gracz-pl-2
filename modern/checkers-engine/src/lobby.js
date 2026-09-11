@@ -123,10 +123,6 @@ export class LobbyService{
         SELECT user_id,display_name,seen_at FROM touched
         UNION ALL
         SELECT user_id,display_name,seen_at FROM other_active_presence
-      ), player_rooms AS (
-        SELECT * FROM gracz_lobby_rooms
-        WHERE status IN ('waiting','playing')
-        ORDER BY updated_at DESC LIMIT 500
       ), invitations AS (
         SELECT * FROM gracz_lobby_invitations
         WHERE to_id=$1 AND status='pending'
@@ -135,19 +131,18 @@ export class LobbyService{
       SELECT
         COALESCE((SELECT jsonb_agg(to_jsonb(room_row) ORDER BY room_row.updated_at DESC,room_row.created_at DESC) FROM rooms room_row),'[]'::jsonb) AS rooms,
         COALESCE((SELECT jsonb_agg(to_jsonb(presence_row) ORDER BY presence_row.seen_at DESC,presence_row.user_id ASC) FROM active_presence presence_row),'[]'::jsonb) AS presence,
-        COALESCE((SELECT jsonb_agg(to_jsonb(player_room_row) ORDER BY player_room_row.updated_at DESC) FROM player_rooms player_room_row),'[]'::jsonb) AS player_rooms,
         COALESCE((SELECT jsonb_agg(to_jsonb(invitation_row) ORDER BY invitation_row.created_at ASC) FROM invitations invitation_row),'[]'::jsonb) AS invitations
     `,[userId,displayName]);
     const stateRow=rows[0];
     if(!stateRow)throw new Error("PostgreSQL lobby nie zwrócił stanu.");
     const roomRows=requireRowArray(stateRow.rooms,"rooms");
     const presenceRows=requireRowArray(stateRow.presence,"presence");
-    const playerRoomRows=requireRowArray(stateRow.player_rooms,"player_rooms");
+    if(Object.prototype.hasOwnProperty.call(stateRow,"player_rooms")&&!Array.isArray(stateRow.player_rooms))throw new Error("PostgreSQL lobby zwrócił nieprawidłowe pole player_rooms.");
     const invitationRows=requireRowArray(stateRow.invitations,"invitations");
-    const rooms=roomRows.map(row=>publicRoom(databaseRoom(row)));
-    const playerRooms=playerRoomRows.map(databaseRoom);
+    const internalRooms=roomRows.map(databaseRoom);
+    const rooms=internalRooms.map(publicRoom);
     const roomByPlayerId=new Map();
-    for(const room of playerRooms)for(const seat of room.seats)if(seat&&!roomByPlayerId.has(seat.id))roomByPlayerId.set(seat.id,room);
+    for(const room of internalRooms)for(const seat of room.seats)if(seat&&!roomByPlayerId.has(seat.id))roomByPlayerId.set(seat.id,room);
     const players=presenceRows.map(row=>{
       const presence={userId:row.user_id,displayName:row.display_name,seenAt:new Date(row.seen_at).getTime()};
       return playerProjection(presence,roomByPlayerId.get(presence.userId));
