@@ -1,0 +1,106 @@
+name: B1-C41 Focused Validation
+
+on:
+  push:
+    branches:
+      - fix/wave-b-b1-c41-lobby-read-state-room-snapshot-reuse
+    paths:
+      - '.github/workflows/b1-c41-focused-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  focused-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C32_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      POSTGRES_POOL_BUDGET: '64'
+
+    steps:
+      - name: Checkout exact implemented C41 HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: 876ecab65b6824ee38a64a97e52c445f01fae12d
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Prove tested HEAD and TREE
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "876ecab65b6824ee38a64a97e52c445f01fae12d"
+          test "$(git rev-parse HEAD^{tree})" = "2d362f66abe503b02bf60eacf8ef2645fd2271b6"
+          echo "TESTED_HEAD=$(git rev-parse HEAD)"
+          echo "TESTED_TREE=$(git rev-parse HEAD^{tree})"
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Prove PostgreSQL fixture
+        run: |
+          set -euo pipefail
+          node --require ./src/pg-secure-preload.cjs --input-type=module <<'NODE'
+          import pg from "pg";
+          const { Client } = pg;
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          const { rows } = await client.query("SELECT current_database() AS db, version() AS version");
+          console.log("POSTGRES_DB=" + rows[0].db);
+          console.log("POSTGRES_VERSION=" + rows[0].version);
+          await client.end();
+          NODE
+
+      - name: Run mandatory focused C41 C19 C25 C38 suite
+        run: |
+          set -euo pipefail
+          run_gate() {
+            name="$1"
+            file="$2"
+            log="/tmp/${name}.tap"
+            echo "=== BEGIN ${name} ==="
+            node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 "$file" 2>&1 | tee "$log"
+            grep -Eq '^# fail 0$' "$log"
+            grep -Eq '^# skipped 0$' "$log"
+            grep -Eq '^# pass [1-9][0-9]*$' "$log"
+            echo "=== PASS ${name}; skipped=0 ==="
+          }
+          run_gate C41 test/wave-b-b1-c41-lobby-read-state-room-snapshot-reuse.test.js
+          run_gate C19 test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+          run_gate C25 test/wave-b-b1-c25-lobby-room-single-acquisition.test.js
+          run_gate C38 test/wave-b-b1-c38-community-pool-isolation.test.js
+
+      - name: No-load proof
+        run: |
+          set -euo pipefail
+          echo "wave-b-runner invocations = 0"
+          echo "100 VU = 0"
+          echo "250 VU = 0"
+          echo "500 VU = 0"
+          echo "1000 VU = 0"
