@@ -1,6 +1,8 @@
 name: B1-C40-R1 Borrower-Bound Community Attribution
+# C40-R1 diagnostic workflow; the watched push is the single benchmark trigger.
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - diag/wave-b-b1-c40-r1-borrower-bound-community-attribution
