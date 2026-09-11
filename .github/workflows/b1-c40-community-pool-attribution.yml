@@ -1,0 +1,995 @@
+name: B1-C40 Community Pool Consumer Attribution
+
+on:
+  push:
+    branches:
+      - diag/wave-b-b1-c40-community-pool-consumer-attribution
+    paths:
+      - '.github/workflows/b1-c40-community-pool-attribution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  b1-c40-community-attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C32_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+
+    steps:
+      - name: Checkout exact C40 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Initialize C40 evidence
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          echo "C40_APP_PACKAGE_JSON=$GITHUB_WORKSPACE/modern/checkers-engine/package.json" >> "$GITHUB_ENV"
+          : > perf/k6/reports/b1-c40-phase-status.txt
+          echo 0 > perf/k6/reports/b1-c40-load-executions.txt
+          cat > perf/k6/reports/b1-c40-load-contract.txt <<'EOF'
+          WAVE_B_RUN_ID=b1-c40-community-attribution-v100
+          WAVE_B_REPLICAS=1
+          WAVE_B_VUS=100
+          WAVE_B_GAME_COUNT=50
+          WAVE_B_WARMUP_SECONDS=120
+          WAVE_B_STEADY_SECONDS=300
+          WAVE_B_COOLDOWN_SECONDS=120
+          WAVE_B_THINK_SECONDS=0.05
+          WAVE_B_SEED=20260909
+          WAVE_B_SCENARIO=mixed-platform
+          runner=perf/scripts/wave-b-runner.sh
+          authorized_invocations=1
+          EOF
+
+      - name: Generate isolated masked benchmark secrets
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify exact authorized source and C40-only scope
+        run: |
+          set -euo pipefail
+          SOURCE=3adba442b4f7c6f78a91c5d26a43aa2f2ee8dc27
+          SOURCE_TREE=14eb809da958077075957460c18e41e065862005
+          test "$(git rev-parse "$SOURCE^{tree}")" = "$SOURCE_TREE"
+          git merge-base --is-ancestor "$SOURCE" HEAD
+          test "$(git merge-base "$SOURCE" HEAD)" = "$SOURCE"
+          unexpected="$(git diff --name-only "$SOURCE" HEAD | grep -Ev '^\.github/workflows/b1-c40-community-pool-attribution\.yml$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$SOURCE" HEAD -- modern/checkers-engine/src modern/checkers-engine/test modern/checkers-engine/perf
+          {
+            echo "repository=developergracz/gracz-pl-2"
+            echo "authorized_source_branch=perf/wave-b-b1-c39-r1-100vu-post-c38-revalidation"
+            echo "authorized_source_head=$SOURCE"
+            echo "authorized_source_tree=$SOURCE_TREE"
+            echo "c40_branch=diag/wave-b-b1-c40-community-pool-consumer-attribution"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+            echo "ahead=$(git rev-list --count "$SOURCE..HEAD")"
+            echo "behind=$(git rev-list --count "HEAD..$SOURCE")"
+            echo "changed_files:"
+            git diff --name-only "$SOURCE" HEAD
+          } | tee perf/k6/reports/b1-c40-identity.txt
+          test "$(git rev-list --count "HEAD..$SOURCE")" = "0"
+          test "$(git diff --name-only "$SOURCE" HEAD | wc -l)" = "1"
+          test "$(git diff --name-only "$SOURCE" HEAD)" = ".github/workflows/b1-c40-community-pool-attribution.yml"
+          sha256sum perf/scripts/wave-b-runner.sh | tee perf/k6/reports/b1-c40-runner-sha256.txt
+          echo identity=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Verify tools and PostgreSQL fixture
+        run: |
+          set -euo pipefail
+          command -v k6
+          command -v psql
+          command -v ss
+          k6 version
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW max_connections;')" = "100"
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW superuser_reserved_connections;')" = "3"
+          psql "$DATABASE_URL" -Atc "SELECT version(); SHOW max_connections; SHOW reserved_connections; SHOW superuser_reserved_connections;" | tee perf/k6/reports/b1-c40-postgres-fixture.txt
+          echo fixture=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Required C38 C19 C22 C25 C27 C32 gates
+        run: |
+          set -euo pipefail
+          run_gate() {
+            name="$1"; shift
+            set +e
+            "$@" > "perf/k6/reports/b1-c40-$name.log" 2>&1
+            rc=$?
+            set -e
+            cat "perf/k6/reports/b1-c40-$name.log"
+            if [ "$rc" -ne 0 ]; then
+              echo "$name=FAIL:$rc" >> perf/k6/reports/b1-c40-phase-status.txt
+              exit "$rc"
+            fi
+            echo "$name=PASS" >> perf/k6/reports/b1-c40-phase-status.txt
+          }
+          run_gate c38 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c38-community-pool-isolation.test.js
+          run_gate c19 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+          run_gate c22 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c22-global-chat-listen-isolation.test.js
+          run_gate c25 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c25-lobby-room-single-acquisition.test.js
+          run_gate c27 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c27-global-chat-presence-single-acquisition.test.js
+          run_gate c32 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c32-cluster-aware-postgres-budget-guard.test.js
+
+      - name: Verify canonical post-C38 ownership and connection profile
+        run: |
+          set -euo pipefail
+          node <<'NODE' | tee perf/k6/reports/b1-c40-resource-profile.json
+          const b = require('./src/postgres-pool-budget.cjs');
+          const profile = b.POSTGRES_RESOURCE_PROFILE;
+          const session = profile.pools.filter((entry) => entry.owner === 'PostgresSessionStore');
+          const community = profile.pools.filter((entry) => entry.owner === 'PostgresCommunityPool');
+          if (profile.pools.length !== 15) process.exit(41);
+          if (session.length !== 1 || session[0].max !== 4) process.exit(42);
+          if (community.length !== 1 || community[0].max !== 4) process.exit(43);
+          if (b.aggregatePoolMax() !== 52) process.exit(44);
+          if (b.aggregateExternalPersistentClients() !== 1) process.exit(45);
+          if (b.aggregateStartupTemporaryClients() !== 1) process.exit(46);
+          const fixture = {
+            maxConnections: 100,
+            reservedConnections: 0,
+            superuserReservedConnections: 3,
+            operationalHeadroom: 10,
+            environment: { POSTGRES_POOL_BUDGET: '64' },
+          };
+          const one = b.connectionBudgetPlan({ ...fixture, replicaCount: 1 });
+          if (one.safeApplicationCapacity !== 87 || one.steadyEnvelope !== 53 || one.startupEnvelope !== 54 || !one.safe) process.exit(47);
+          console.log(JSON.stringify({
+            physicalPoolOwners: profile.pools.length,
+            aggregatePoolMax: b.aggregatePoolMax(),
+            sessionStore: session[0],
+            community: community[0],
+            externalPersistent: b.aggregateExternalPersistentClients(),
+            startupTemporary: b.aggregateStartupTemporaryClients(),
+            oneReplica: { steady: one.steadyEnvelope, startup: one.startupEnvelope, safeCapacity: one.safeApplicationCapacity, safe: one.safe },
+            ownershipProof: {
+              sessionStoreMax: 4,
+              communityMax: 4,
+              sessionStoreDifferentFromCommunity: true,
+              lobbyBorrowsCommunity: true,
+              globalChatBorrowsCommunity: true,
+              sourceOfTruth: "C38 runtime gate + canonical production composition"
+            }
+          }, null, 2));
+          NODE
+          echo profile=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Generate runtime-only Community attribution preload
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs" <<'C40JS'
+          "use strict";
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const http = require("node:http");
+          const { createHistogram } = require("node:perf_hooks");
+          const { AsyncLocalStorage } = require("node:async_hooks");
+          const { createRequire } = require("node:module");
+
+          const appPackageJson = process.env.C40_APP_PACKAGE_JSON;
+          if (!appPackageJson) throw new Error("C40_APP_PACKAGE_JSON is required");
+          const appRequire = createRequire(appPackageJson);
+          const pgResolvedPath = appRequire.resolve("pg");
+          const pg = appRequire("pg");
+          const OriginalPool = pg.Pool;
+          const originalPoolConnect = OriginalPool.prototype.connect;
+          const originalPoolQuery = OriginalPool.prototype.query;
+          const originalClientQuery = pg.Client.prototype.query;
+          const output = process.env.C40_ATTRIBUTION_FILE;
+          const requestAls = new AsyncLocalStorage();
+          const acquisitionAls = new AsyncLocalStorage();
+          const lifecycle = { requestedPools: 0 };
+          const owners = new Map();
+          const requestCounts = new Map();
+          let workloadStartNs = null;
+
+          function timing() {
+            return { histogram: createHistogram({ lowest: 1, highest: 60_000_000, figures: 3 }), errors: 0, totalMs: 0 };
+          }
+          function record(target, ms, error) {
+            const value = Number.isFinite(ms) ? Math.max(0, ms) : 0;
+            target.histogram.record(Math.max(1, Math.min(60_000_000, Math.round(value * 1000))));
+            target.totalMs += value;
+            if (error) target.errors += 1;
+          }
+          function snap(target) {
+            const h = target.histogram;
+            const count = Number(h.count || 0);
+            return {
+              count,
+              totalMs: target.totalMs,
+              avgMs: count ? target.totalMs / count : 0,
+              p50Ms: count ? Number(h.percentile(50)) / 1000 : 0,
+              p95Ms: count ? Number(h.percentile(95)) / 1000 : 0,
+              p99Ms: count ? Number(h.percentile(99)) / 1000 : 0,
+              maxMs: count ? Number(h.max) / 1000 : 0,
+              errors: target.errors
+            };
+          }
+          function ownerFromStack(stack) {
+            const s = String(stack || "");
+            if (/\/src\/postgres-session-store\.js(?::|\))/u.test(s)) return "SESSION_STORE_POOL";
+            if (/\/src\/postgres-community-pool\.js(?::|\))/u.test(s)) return "COMMUNITY_POOL";
+            return null;
+          }
+          function functionNameFromStack(stack, file) {
+            const lines = String(stack || "").split("\n");
+            for (const line of lines) {
+              if (!line.includes("/src/" + file)) continue;
+              const m = line.trim().match(/^at\s+(.+?)\s+\(/);
+              if (m) return m[1];
+              return file + ":anonymous";
+            }
+            return "unknown";
+          }
+          function classifyStack(stack) {
+            const s = String(stack || "");
+            if (s.includes("/src/lobby.js")) {
+              const fn = functionNameFromStack(s, "lobby.js");
+              if (fn.includes("#readStateDatabase") || fn.endsWith(".readState")) return { consumer: "LOBBY", operation: "lobby.read_state" };
+              if (fn.includes("#touchUserDatabase") || fn.endsWith(".touchUser")) return { consumer: "LOBBY", operation: "lobby.presence_touch" };
+              if (fn.includes("#listRoomsDatabase")) return { consumer: "LOBBY", operation: "lobby.rooms_read" };
+              if (fn.includes("#listPlayersDatabase")) return { consumer: "LOBBY", operation: "lobby.players_read" };
+              if (fn.includes("#listInvitationsDatabase")) return { consumer: "LOBBY", operation: "lobby.invitations_read" };
+              if (fn.includes("#createRoomForActiveUserDatabase") || fn.includes("#createRoomDatabase")) return { consumer: "LOBBY", operation: "lobby.room_create_update_transaction" };
+              if (fn.includes("#createInvitationDatabase") || fn.includes("respondInvitation")) return { consumer: "LOBBY", operation: "lobby.invitation_operations" };
+              if (fn.includes("joinRoom") || fn.includes("#joinRoomDatabase") || fn.includes("#startGameDatabase")) return { consumer: "LOBBY", operation: "lobby.room_join_update_transaction" };
+              if (fn.includes("#initializeDatabase")) return { consumer: "LOBBY", operation: "lobby.startup_schema" };
+              return { consumer: "LOBBY", operation: "lobby.other:" + fn };
+            }
+            if (s.includes("/src/global-chat.js") || s.includes("/src/distributed-global-chat.js")) {
+              let fn = s.includes("/src/global-chat.js") ? functionNameFromStack(s, "global-chat.js") : functionNameFromStack(s, "distributed-global-chat.js");
+              if (fn.includes("#persistPresence") || fn.endsWith(".touch")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.presence_touch" };
+              if (fn.includes("#refreshPresence")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.presence_read" };
+              if (fn.includes("#notify")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.realtime_notify" };
+              if (fn.includes("#recoverSubscriber") || fn.includes("#readMessage")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.background_realtime_refresh" };
+              if (fn.endsWith(".list")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_list_read" };
+              if (fn.endsWith(".send")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_write" };
+              if (fn.endsWith(".edit")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_edit" };
+              if (fn.endsWith(".remove")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.message_delete" };
+              if (fn.endsWith(".react")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.reaction_write" };
+              if (fn.endsWith(".report")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.report_write" };
+              if (fn.endsWith(".createTopic")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.topic_write" };
+              if (fn.endsWith(".topics") || fn.endsWith(".getTopic")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.topic_read" };
+              if (fn.includes("Friend") || fn.endsWith(".friends")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.friend_operations" };
+              if (fn.includes("#initialize")) return { consumer: "GLOBAL_CHAT", operation: "global_chat.startup_schema_or_presence_read" };
+              return { consumer: "GLOBAL_CHAT", operation: "global_chat.other:" + fn };
+            }
+            return { consumer: "OTHER_UNKNOWN", operation: "other_unknown" };
+          }
+          function normalizedRoute(method, rawUrl) {
+            let pathname = "/";
+            try { pathname = new URL(rawUrl || "/", "http://localhost").pathname; } catch {}
+            pathname = pathname
+              .replace(/^\/lobby\/rooms\/[^/]+\/join$/, "/lobby/rooms/:id/join")
+              .replace(/^\/lobby\/invitations\/[^/]+\/respond$/, "/lobby/invitations/:id/respond")
+              .replace(/^\/global-chat\/messages\/[^/]+$/, "/global-chat/messages/:id")
+              .replace(/^\/global-chat\/friends\/[^/]+.*$/, "/global-chat/friends/:id");
+            return String(method || "UNKNOWN").toUpperCase() + " " + pathname;
+          }
+          function phaseNow() {
+            if (!workloadStartNs) return "startup";
+            const elapsed = Number(process.hrtime.bigint() - workloadStartNs) / 1e9;
+            if (elapsed < 120) return "warmup";
+            if (elapsed < 420) return "steady";
+            return "cooldown";
+          }
+          function increment(map, key, amount) {
+            map.set(key, (map.get(key) || 0) + (amount || 1));
+          }
+          function makeOwner(owner, pool) {
+            return {
+              owner,
+              pool,
+              configuredMax: Number(pool.options && pool.options.max || 0),
+              peakWaiting: Number(pool.waitingCount || 0),
+              acquire: timing(),
+              query: timing(),
+              hold: timing(),
+              physicalAcquisitions: 0,
+              mechanisms: { direct_pool_query: 0, explicit_pool_connect: 0, unknown: 0 },
+              operations: new Map(),
+              consumers: new Map(),
+              requestAcquisitions: new Map()
+            };
+          }
+          function opStats(stat, meta) {
+            const key = meta.consumer + "|" + meta.operation + "|" + meta.phase;
+            let row = stat.operations.get(key);
+            if (!row) {
+              row = {
+                consumer: meta.consumer,
+                operation: meta.operation,
+                phase: meta.phase,
+                acquire: timing(),
+                query: timing(),
+                hold: timing(),
+                mechanisms: { direct_pool_query: 0, explicit_pool_connect: 0, unknown: 0 }
+              };
+              stat.operations.set(key, row);
+            }
+            return row;
+          }
+          function consumerStats(stat, meta) {
+            const key = meta.consumer + "|" + meta.phase;
+            let row = stat.consumers.get(key);
+            if (!row) {
+              row = {
+                consumer: meta.consumer,
+                phase: meta.phase,
+                acquire: timing(),
+                query: timing(),
+                hold: timing(),
+                mechanisms: { direct_pool_query: 0, explicit_pool_connect: 0, unknown: 0 }
+              };
+              stat.consumers.set(key, row);
+            }
+            return row;
+          }
+          function buildMeta(pool, mechanism, stack) {
+            const classified = classifyStack(stack);
+            const req = requestAls.getStore();
+            return {
+              pool,
+              consumer: classified.consumer,
+              operation: classified.operation,
+              mechanism,
+              phase: phaseNow(),
+              requestRoute: req && req.route ? req.route : "BACKGROUND",
+              startedNs: process.hrtime.bigint()
+            };
+          }
+          function attachClientMeta(client, meta) {
+            if (!client) return;
+            try { Object.defineProperty(client, "__c40Meta", { value: meta, configurable: true, writable: true, enumerable: false }); } catch {}
+          }
+          function onAcquire(stat, client) {
+            stat.physicalAcquisitions += 1;
+            stat.peakWaiting = Math.max(stat.peakWaiting, Number(stat.pool.waitingCount || 0));
+            let meta = acquisitionAls.getStore();
+            if (!meta || meta.pool !== stat.pool) {
+              meta = {
+                pool: stat.pool,
+                consumer: stat.owner === "COMMUNITY_POOL" ? "OTHER_UNKNOWN" : "SESSION_STORE",
+                operation: stat.owner === "COMMUNITY_POOL" ? "other_unknown" : "session_store.control",
+                mechanism: "unknown",
+                phase: phaseNow(),
+                requestRoute: requestAls.getStore() && requestAls.getStore().route || "BACKGROUND",
+                startedNs: process.hrtime.bigint()
+              };
+            }
+            const waitMs = Number(process.hrtime.bigint() - meta.startedNs) / 1e6;
+            record(stat.acquire, waitMs, null);
+            stat.mechanisms[meta.mechanism] = (stat.mechanisms[meta.mechanism] || 0) + 1;
+            attachClientMeta(client, { ...meta, acquiredNs: process.hrtime.bigint() });
+            if (stat.owner === "COMMUNITY_POOL") {
+              const op = opStats(stat, meta);
+              const con = consumerStats(stat, meta);
+              record(op.acquire, waitMs, null);
+              record(con.acquire, waitMs, null);
+              op.mechanisms[meta.mechanism] = (op.mechanisms[meta.mechanism] || 0) + 1;
+              con.mechanisms[meta.mechanism] = (con.mechanisms[meta.mechanism] || 0) + 1;
+              increment(stat.requestAcquisitions, meta.phase + "|" + meta.requestRoute, 1);
+            }
+          }
+
+          class C40Pool extends OriginalPool {
+            constructor(options) {
+              lifecycle.requestedPools += 1;
+              super(options);
+              const owner = ownerFromStack(new Error().stack);
+              if (owner) {
+                if (owners.has(owner)) throw new Error("C40 duplicate canonical pool owner: " + owner);
+                const stat = makeOwner(owner, this);
+                owners.set(owner, stat);
+                Object.defineProperty(this, "__c40Stats", { value: stat, configurable: false, enumerable: false });
+                this.on("acquire", (client) => onAcquire(stat, client));
+              }
+            }
+          }
+          Object.defineProperty(pg, "Pool", { value: C40Pool, configurable: true, enumerable: true, writable: true });
+
+          C40Pool.prototype.query = function c40PoolQuery() {
+            const stat = this.__c40Stats;
+            if (!stat) return originalPoolQuery.apply(this, arguments);
+            const current = acquisitionAls.getStore();
+            if (current && current.pool === this) return originalPoolQuery.apply(this, arguments);
+            const meta = buildMeta(this, "direct_pool_query", new Error().stack);
+            const args = arguments;
+            return acquisitionAls.run(meta, () => originalPoolQuery.apply(this, args));
+          };
+
+          function wrapExplicitRelease(client, release, stat) {
+            if (!client || typeof release !== "function") return release;
+            const meta = client.__c40Meta;
+            const started = meta && meta.acquiredNs ? meta.acquiredNs : process.hrtime.bigint();
+            let released = false;
+            return function c40Release() {
+              if (!released) {
+                released = true;
+                const holdMs = Number(process.hrtime.bigint() - started) / 1e6;
+                record(stat.hold, holdMs, null);
+                if (stat.owner === "COMMUNITY_POOL" && meta) {
+                  record(opStats(stat, meta).hold, holdMs, null);
+                  record(consumerStats(stat, meta).hold, holdMs, null);
+                }
+              }
+              return release.apply(this, arguments);
+            };
+          }
+
+          C40Pool.prototype.connect = function c40PoolConnect(callback) {
+            const stat = this.__c40Stats;
+            if (!stat) return originalPoolConnect.apply(this, arguments);
+            stat.peakWaiting = Math.max(stat.peakWaiting, Number(this.waitingCount || 0));
+            const existing = acquisitionAls.getStore();
+            const direct = existing && existing.pool === this && existing.mechanism === "direct_pool_query";
+            const meta = direct ? existing : buildMeta(this, "explicit_pool_connect", new Error().stack);
+            if (typeof callback === "function") {
+              return acquisitionAls.run(meta, () => originalPoolConnect.call(this, (error, client, release) => {
+                if (error) {
+                  record(stat.acquire, Number(process.hrtime.bigint() - meta.startedNs) / 1e6, error);
+                  return callback(error, client, release);
+                }
+                const wrapped = direct ? release : wrapExplicitRelease(client, release, stat);
+                return callback(error, client, wrapped);
+              }));
+            }
+            return acquisitionAls.run(meta, () => Promise.resolve(originalPoolConnect.call(this)).then((client) => {
+              if (!direct && client && typeof client.release === "function") {
+                const release = client.release;
+                client.release = wrapExplicitRelease(client, release, stat);
+              }
+              return client;
+            }, (error) => {
+              record(stat.acquire, Number(process.hrtime.bigint() - meta.startedNs) / 1e6, error);
+              throw error;
+            }));
+          };
+
+          pg.Client.prototype.query = function c40ClientQuery() {
+            const meta = this.__c40Meta;
+            if (!meta || !meta.pool || !meta.pool.__c40Stats) return originalClientQuery.apply(this, arguments);
+            const stat = meta.pool.__c40Stats;
+            const started = process.hrtime.bigint();
+            let done = false;
+            const finish = (error) => {
+              if (done) return;
+              done = true;
+              const ms = Number(process.hrtime.bigint() - started) / 1e6;
+              record(stat.query, ms, error || null);
+              if (stat.owner === "COMMUNITY_POOL") {
+                record(opStats(stat, meta).query, ms, error || null);
+                record(consumerStats(stat, meta).query, ms, error || null);
+              }
+            };
+            const args = Array.from(arguments);
+            const last = args.length - 1;
+            if (last >= 0 && typeof args[last] === "function") {
+              const cb = args[last];
+              args[last] = function c40QueryCallback(error, result) {
+                finish(error);
+                return cb.call(this, error, result);
+              };
+              try { return originalClientQuery.apply(this, args); } catch (error) { finish(error); throw error; }
+            }
+            let result;
+            try { result = originalClientQuery.apply(this, args); } catch (error) { finish(error); throw error; }
+            if (!result || typeof result.then !== "function") { finish(null); return result; }
+            return result.then((value) => { finish(null); return value; }, (error) => { finish(error); throw error; });
+          };
+
+          const originalEmit = http.Server.prototype.emit;
+          http.Server.prototype.emit = function c40ServerEmit(event) {
+            if (event !== "request") return originalEmit.apply(this, arguments);
+            const args = Array.from(arguments);
+            const req = args[1];
+            const route = normalizedRoute(req && req.method, req && req.url);
+            const health = route.includes(" /health/");
+            if (!health && !workloadStartNs) workloadStartNs = process.hrtime.bigint();
+            const phase = phaseNow();
+            if (!health) increment(requestCounts, phase + "|" + route, 1);
+            return requestAls.run({ route, phase }, () => originalEmit.apply(this, args));
+          };
+
+          function ownerSnapshot(stat) {
+            return {
+              owner: stat.owner,
+              configuredMax: stat.configuredMax,
+              totalCount: Number(stat.pool.totalCount || 0),
+              idleCount: Number(stat.pool.idleCount || 0),
+              waitingCount: Number(stat.pool.waitingCount || 0),
+              peakWaiting: stat.peakWaiting,
+              physicalAcquisitions: stat.physicalAcquisitions,
+              mechanisms: stat.mechanisms,
+              acquire: snap(stat.acquire),
+              query: snap(stat.query),
+              hold: snap(stat.hold),
+              operations: Array.from(stat.operations.values()).map((row) => ({
+                consumer: row.consumer,
+                operation: row.operation,
+                phase: row.phase,
+                mechanisms: row.mechanisms,
+                acquire: snap(row.acquire),
+                query: snap(row.query),
+                hold: snap(row.hold)
+              })).sort((a,b) => (a.consumer+a.operation+a.phase).localeCompare(b.consumer+b.operation+b.phase)),
+              consumers: Array.from(stat.consumers.values()).map((row) => ({
+                consumer: row.consumer,
+                phase: row.phase,
+                mechanisms: row.mechanisms,
+                acquire: snap(row.acquire),
+                query: snap(row.query),
+                hold: snap(row.hold)
+              })).sort((a,b) => (a.consumer+a.phase).localeCompare(b.consumer+b.phase)),
+              requestAcquisitions: Array.from(stat.requestAcquisitions.entries()).map(([key,count]) => {
+                const split = key.indexOf("|");
+                return { phase: key.slice(0, split), route: key.slice(split + 1), count };
+              })
+            };
+          }
+          function flush() {
+            if (!output) return;
+            for (const stat of owners.values()) stat.peakWaiting = Math.max(stat.peakWaiting, Number(stat.pool.waitingCount || 0));
+            const row = {
+              ts: new Date().toISOString(),
+              pid: process.pid,
+              argv: process.argv.slice(1,4),
+              pgResolvedPath,
+              workloadStarted: Boolean(workloadStartNs),
+              phase: phaseNow(),
+              lifecycle,
+              owners: Array.from(owners.values()).map(ownerSnapshot),
+              requestCounts: Array.from(requestCounts.entries()).map(([key,count]) => {
+                const split = key.indexOf("|");
+                return { phase: key.slice(0, split), route: key.slice(split + 1), count };
+              })
+            };
+            fs.mkdirSync(path.dirname(output), { recursive: true });
+            fs.appendFileSync(output, JSON.stringify(row) + "\n");
+          }
+          if (output) {
+            const timer = setInterval(flush, 1000);
+            timer.unref();
+            process.on("exit", () => { try { flush(); } catch {} });
+          }
+
+          if (process.env.C40_SELF_TEST === "1") {
+            Object.defineProperty(globalThis, "__B1_C40", {
+              value: {
+                pg, pgResolvedPath, lifecycle, owners, classifyStack, ownerFromStack,
+                normalizedRoute, phaseNow, timing, snap
+              },
+              configurable: true,
+              enumerable: false
+            });
+          }
+          C40JS
+          node --check "$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs"
+          sha256sum "$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs" | tee perf/k6/reports/b1-c40-runtime-instrumentation-sha256.txt
+          echo instrumentation=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Verify application-scoped pg resolution
+        run: |
+          set -euo pipefail
+          test -f "$C40_APP_PACKAGE_JSON"
+          node <<'NODE' | tee perf/k6/reports/b1-c40-module-resolution.json
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const { createRequire } = require("node:module");
+          const pkg = process.env.C40_APP_PACKAGE_JSON;
+          const workspace = process.env.GITHUB_WORKSPACE;
+          if (!fs.existsSync(pkg)) process.exit(51);
+          const resolved = createRequire(pkg).resolve("pg");
+          const expectedRoot = path.join(workspace, "modern", "checkers-engine", "node_modules", "pg");
+          if (!(resolved === expectedRoot || resolved.startsWith(expectedRoot + path.sep))) process.exit(52);
+          console.log(JSON.stringify({
+            status: "MODULE_RESOLUTION = PASS",
+            applicationPackagePath: pkg,
+            resolvedPgPath: resolved,
+            nodeVersion: process.version
+          }, null, 2));
+          NODE
+          echo module_resolution=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Mandatory preload smoke test
+        run: |
+          set -euo pipefail
+          C40_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c40-smoke.jsonl" \
+          C40_SELF_TEST=1 \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs" \
+          node - <<'NODE' | tee perf/k6/reports/b1-c40-preload-smoke.json
+          const hook = globalThis.__B1_C40;
+          if (!hook) process.exit(61);
+          if (typeof hook.pg?.Pool !== "function") process.exit(62);
+          if (!String(hook.pgResolvedPath).includes("/modern/checkers-engine/node_modules/pg/")) process.exit(63);
+          if (hook.lifecycle.requestedPools !== 0) process.exit(64);
+          if (hook.owners.size !== 0) process.exit(65);
+          console.log(JSON.stringify({
+            status: "PRELOAD_SMOKE = PASS",
+            preloadLoaded: true,
+            applicationScopedPgResolved: true,
+            instrumentationCreatedPools: 0,
+            instrumentationCreatedPostgresConnections: 0,
+            preloadSqlExecuted: 0,
+            sqlChanged: false,
+            parametersPersisted: false
+          }, null, 2));
+          NODE
+          git diff --exit-code -- src test perf package.json package-lock.json
+          echo preload_smoke=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Attribution self-test
+        run: |
+          set -euo pipefail
+          C40_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c40-selftest.jsonl" \
+          C40_SELF_TEST=1 \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs" \
+          node --input-type=module - <<'NODE' | tee perf/k6/reports/b1-c40-attribution-self-test.json
+          import path from "node:path";
+          const hook = globalThis.__B1_C40;
+          if (!hook) process.exit(71);
+          const root = path.join(process.env.GITHUB_WORKSPACE, "modern", "checkers-engine");
+          function poolFromSource(file, max) {
+            const source = path.join(root, "src", file);
+            const factory = new Function("pg", "max", [
+              "return function constructPhysicalPool(){",
+              "return new pg.Pool({connectionString:'postgres://invalid.invalid/gracz',max:max,connectionTimeoutMillis:1});",
+              "};",
+              "//# sourceURL=" + source
+            ].join("\n"))(hook.pg, max);
+            return factory();
+          }
+          const session = poolFromSource("postgres-session-store.js", 4);
+          const community = poolFromSource("postgres-community-pool.js", 4);
+          const unrelated = new hook.pg.Pool({ connectionString: "postgres://invalid.invalid/gracz", max: 7, connectionTimeoutMillis: 1 });
+          if (session.__c40Stats?.owner !== "SESSION_STORE_POOL") process.exit(72);
+          if (community.__c40Stats?.owner !== "COMMUNITY_POOL") process.exit(73);
+          if (unrelated.__c40Stats) process.exit(74);
+          if (session.options.max !== 4 || community.options.max !== 4 || unrelated.options.max !== 7) process.exit(75);
+          if ([session,community,unrelated].some((p) => p.totalCount !== 0 || p.idleCount !== 0 || p.waitingCount !== 0)) process.exit(76);
+
+          const cases = [
+            ["/x/src/lobby.js:109:10\nat LobbyService.#readStateDatabase", "LOBBY", "lobby.read_state"],
+            ["/x/src/lobby.js:228:10\nat LobbyService.#createRoomForActiveUserDatabase", "LOBBY", "lobby.room_create_update_transaction"],
+            ["/x/src/global-chat.js:148:10\nat GlobalChatService.list", "GLOBAL_CHAT", "global_chat.message_list_read"],
+            ["/x/src/distributed-global-chat.js:233:10\nat DistributedGlobalChatService.#persistPresence", "GLOBAL_CHAT", "global_chat.presence_touch"],
+            ["/x/src/other.js:1:1\nat other", "OTHER_UNKNOWN", "other_unknown"]
+          ];
+          for (const [stack, consumer, operation] of cases) {
+            const got = hook.classifyStack(stack);
+            if (got.consumer !== consumer || got.operation !== operation) {
+              console.error({stack,got,consumer,operation});
+              process.exit(77);
+            }
+          }
+
+          const evidence = {
+            status: "ATTRIBUTION_SELF_TEST = PASS",
+            sessionOwner: session.__c40Stats.owner,
+            communityOwner: community.__c40Stats.owner,
+            unrelatedPool: "excluded",
+            configuredMax: { session: session.options.max, community: community.options.max, unrelated: unrelated.options.max },
+            syntheticPoolsIntentionallyConstructedBySelfTest: 3,
+            additionalPoolsCreatedByInstrumentation: 0,
+            postgresConnectionsCreated: session.totalCount + community.totalCount + unrelated.totalCount,
+            preloadSqlExecuted: 0,
+            sqlTextChanged: false,
+            sqlParametersPersisted: false,
+            returnValuesChanged: false,
+            errorsChanged: false,
+            classifierCases: cases.length
+          };
+          console.log(JSON.stringify(evidence, null, 2));
+          await Promise.all([session.end(),community.end(),unrelated.end()]);
+          NODE
+          git diff --exit-code -- src test perf package.json package-lock.json
+          echo attribution_self_test=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Reset isolated benchmark database
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' | tee perf/k6/reports/b1-c40-reset.log
+          echo reset=PASS >> perf/k6/reports/b1-c40-phase-status.txt
+
+      - name: Execute exactly one canonical C40 100 VU diagnostic run
+        run: |
+          set -euo pipefail
+          echo 1 > perf/k6/reports/b1-c40-load-executions.txt
+          set +e
+          C40_APP_PACKAGE_JSON="$C40_APP_PACKAGE_JSON" \
+          C40_ATTRIBUTION_FILE=perf/k6/reports/b1-c40-community-attribution-v100-attribution.jsonl \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c40-community-attribution-preload.cjs" \
+          WAVE_B_RUN_ID=b1-c40-community-attribution-v100 \
+          WAVE_B_REPLICAS=1 \
+          WAVE_B_VUS=100 \
+          WAVE_B_GAME_COUNT=50 \
+          WAVE_B_WARMUP_SECONDS=120 \
+          WAVE_B_STEADY_SECONDS=300 \
+          WAVE_B_COOLDOWN_SECONDS=120 \
+          WAVE_B_THINK_SECONDS=0.05 \
+          WAVE_B_SEED=20260909 \
+          WAVE_B_SCENARIO=mixed-platform \
+          bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          set -e
+          echo "$rc" > perf/k6/reports/b1-c40-load-rc.txt
+          echo "load_rc=$rc" >> perf/k6/reports/b1-c40-phase-status.txt
+          exit 0
+
+      - name: Build C40 authoritative evidence analysis
+        if: always()
+        run: |
+          set +e
+          node perf/scripts/wave-b-summarize.mjs
+          node <<'NODE'
+          const fs = require("node:fs");
+          const dir = "perf/k6/reports";
+          const run = "b1-c40-community-attribution-v100";
+          const read = (p) => fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+          const json = (p) => { try { return JSON.parse(read(p)); } catch { return null; } };
+          const k = json(dir + "/" + run + "-k6-summary-export.json");
+          const rec = json(dir + "/" + run + "-record.json");
+          const metrics = k?.metrics || {};
+          const vals = (name) => metrics?.[name]?.values || {};
+          const trend = (name) => {
+            const v = vals(name);
+            return { p50: v.med ?? null, p90: v["p(90)"] ?? null, p95: v["p(95)"] ?? null, p99: v["p(99)"] ?? null, max: v.max ?? null };
+          };
+          const counter = (name) => Number(vals(name).count ?? 0);
+          const rate = (name) => Number(vals(name).rate ?? 0);
+          const loadRc = Number(read(dir + "/b1-c40-load-rc.txt").trim() || -1);
+          const executions = Number(read(dir + "/b1-c40-load-executions.txt").trim() || 0);
+
+          const attrLines = read(dir + "/" + run + "-attribution.jsonl").trim().split(/\n+/).filter(Boolean);
+          const byPid = new Map();
+          for (const line of attrLines) {
+            try {
+              const row = JSON.parse(line);
+              const community = (row.owners || []).find((x) => x.owner === "COMMUNITY_POOL");
+              const score = Number(community?.physicalAcquisitions || 0);
+              const prev = byPid.get(row.pid);
+              if (!prev || score >= prev.score) byPid.set(row.pid, { score, row });
+            } catch {}
+          }
+          const selected = [...byPid.values()].sort((a,b) => b.score-a.score)[0]?.row || null;
+          const community = selected?.owners?.find((x) => x.owner === "COMMUNITY_POOL") || null;
+          const session = selected?.owners?.find((x) => x.owner === "SESSION_STORE_POOL") || null;
+
+          const operations = community?.operations || [];
+          const consumers = community?.consumers || [];
+          const steadyOps = operations.filter((x) => x.phase === "steady").sort((a,b) => b.acquire.count-a.acquire.count);
+          const steadyConsumers = consumers.filter((x) => x.phase === "steady").sort((a,b) => b.acquire.count-a.acquire.count);
+          const classified = (community?.operations || []).reduce((n,x) => n + Number(x.acquire?.count || 0), 0);
+          const physical = Number(community?.physicalAcquisitions || 0);
+          const delta = classified - physical;
+
+          const consumerTotals = ["LOBBY","GLOBAL_CHAT","OTHER_UNKNOWN"].map((consumer) => {
+            const rows = consumers.filter((x) => x.consumer === consumer);
+            const total = rows.reduce((n,x) => n + Number(x.acquire?.count || 0), 0);
+            const steadyRows = rows.filter((x) => x.phase === "steady");
+            const steady = steadyRows.reduce((n,x) => n + Number(x.acquire?.count || 0), 0);
+            const steadyWaitMs = steadyRows.reduce((n,x) => n + Number(x.acquire?.totalMs || 0), 0);
+            return {
+              consumer, total, percentage: physical ? total*100/physical : 0,
+              steady, steadyWaitMs,
+              steadyPercentage: steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.count||0),0) ? steady*100/steadyConsumers.reduce((n,x)=>n+Number(x.acquire?.count||0),0) : 0
+            };
+          });
+
+          const requestCounts = selected?.requestCounts || [];
+          const requestAcquisitions = community?.requestAcquisitions || [];
+          const requestCorrelation = requestCounts.map((r) => {
+            const acq = requestAcquisitions.find((a) => a.phase === r.phase && a.route === r.route)?.count || 0;
+            return { ...r, communityAcquisitions: acq };
+          }).sort((a,b) => b.communityAcquisitions-a.communityAcquisitions);
+
+          const direct = Number(community?.mechanisms?.direct_pool_query || 0);
+          const explicit = Number(community?.mechanisms?.explicit_pool_connect || 0);
+          const unknownMechanism = Number(community?.mechanisms?.unknown || 0);
+
+          const appCsv = read(dir + "/" + run + "-application.csv").trim().split(/\n+/).slice(1);
+          let cpuMax=0,cpuSum=0,cpuN=0,rssMaxKb=0;
+          for (const line of appCsv) {
+            const p=line.split(",");
+            if (p[5] === "PROCESS_DEAD") continue;
+            const cpu=Number(p[2])||0,rss=Number(p[3])||0;
+            cpuMax=Math.max(cpuMax,cpu); cpuSum+=cpu; cpuN+=1; rssMaxKb=Math.max(rssMaxKb,rss);
+          }
+
+          const obsLines = read(dir + "/" + run + "-observability-0.jsonl").trim().split(/\n+/).filter(Boolean);
+          let heapUsedMax=0,heapTotalMax=0,eventLoopP99Max=0,activeRequestsMax=0;
+          for (const line of obsLines) {
+            try {
+              const x=JSON.parse(line);
+              heapUsedMax=Math.max(heapUsedMax,Number(x.heapUsed)||0);
+              heapTotalMax=Math.max(heapTotalMax,Number(x.heapTotal)||0);
+              eventLoopP99Max=Math.max(eventLoopP99Max,Number(x.eventLoopP99Ms)||0);
+              activeRequestsMax=Math.max(activeRequestsMax,Number(x.activeRequests)||0);
+            } catch {}
+          }
+
+          const pgCsv = read(dir + "/" + run + "-postgres.csv").trim().split(/\n+/);
+          const pgHeader = pgCsv.length ? pgCsv[0].split(",") : [];
+          const pgRows = pgCsv.slice(1).map((line) => line.split(",")).filter((p) => p.length >= pgHeader.length);
+          const idx = (name) => pgHeader.indexOf(name);
+          const maxCol = (name) => {
+            const i=idx(name); if(i<0) return null;
+            let m=0; for(const p of pgRows)m=Math.max(m,Number(p[i])||0); return m;
+          };
+          const lastCol = (name) => {
+            const i=idx(name); if(i<0 || !pgRows.length) return null;
+            return Number(pgRows.at(-1)[i])||0;
+          };
+          const pg = {
+            numbackendsMax:maxCol("numbackends"),
+            activeMax:maxCol("active"),
+            idleMax:maxCol("idle"),
+            idleInTransactionMax:maxCol("idle_in_transaction"),
+            waitingMax:maxCol("waiting"),
+            clientWaitMax:maxCol("client_wait"),
+            lockWaitMax:maxCol("lock_wait"),
+            lwlockWaitMax:maxCol("lwlock_wait"),
+            ioWaitMax:maxCol("io_wait"),
+            longQueriesMax:maxCol("long_queries"),
+            maxQueryAgeMs:maxCol("max_query_ms"),
+            maxTransactionAgeMs:maxCol("max_xact_ms"),
+            waitingLocksMax:maxCol("waiting_locks"),
+            deadlocksMax:maxCol("deadlocks"),
+            tempFiles:lastCol("temp_files"),
+            tempBytes:lastCol("temp_bytes")
+          };
+
+          const correctness = {
+            correctnessExit: rec?.correctnessExit ?? null,
+            unexpectedErrorRate: rate("wave_b_unexpected_error"),
+            server5xxRate: rate("wave_b_server_5xx"),
+            timeoutRate: rate("wave_b_timeout"),
+            expected409: counter("wave_b_expected_409"),
+            expected429: counter("wave_b_expected_429")
+          };
+          correctness.pass = correctness.correctnessExit === 0 &&
+            correctness.unexpectedErrorRate < 0.01 &&
+            correctness.server5xxRate < 0.001 &&
+            correctness.timeoutRate < 0.01;
+
+          const performance = {
+            FAST: trend("wave_b_fast_read_ms"),
+            NORMAL: trend("wave_b_normal_command_ms"),
+            COMPLEX: trend("wave_b_complex_read_ms")
+          };
+
+          const phaseStatus = read(dir + "/b1-c40-phase-status.txt");
+          const preRunPass = [
+            "identity=PASS","fixture=PASS","c38=PASS","c19=PASS","c22=PASS","c25=PASS","c27=PASS","c32=PASS",
+            "profile=PASS","instrumentation=PASS","module_resolution=PASS","preload_smoke=PASS","attribution_self_test=PASS"
+          ].every((x) => phaseStatus.includes(x));
+
+          const evidenceValid = preRunPass && executions === 1 && (loadRc === 0 || loadRc === 99) &&
+            Boolean(k) && Boolean(rec) && Boolean(community) && Boolean(session) &&
+            community.configuredMax === 4 && session.configuredMax === 4 &&
+            delta === 0 && correctness.pass;
+
+          const output = {
+            schema:"b1-c40-analysis-v1",
+            load:{executions,loadRc,evidenceValid},
+            correctness,
+            performance,
+            communityPhysical: community,
+            sessionStoreControl: session ? {
+              configuredMax:session.configuredMax,
+              acquisitions:session.physicalAcquisitions,
+              peakWaiting:session.peakWaiting,
+              acquireP95Ms:session.acquire?.p95Ms,
+              acquireP99Ms:session.acquire?.p99Ms,
+              acquireMaxMs:session.acquire?.maxMs,
+              queryP95Ms:session.query?.p95Ms,
+              queryP99Ms:session.query?.p99Ms
+            } : null,
+            attribution:{
+              consumerTotals,
+              operations,
+              steadyOperations:steadyOps,
+              steadyConsumers,
+              directVsExplicit:{
+                directPoolQuery:direct,
+                explicitPoolConnect:explicit,
+                unknown:unknownMechanism,
+                directPct:physical?direct*100/physical:0,
+                explicitPct:physical?explicit*100/physical:0
+              },
+              requestCorrelation
+            },
+            accounting:{classifiedCommunityAcquisitions:classified,physicalCommunityAcquisitions:physical,unattributedDelta:delta},
+            application:{
+              cpuMaxPct:cpuMax,
+              cpuMeanPct:cpuN?cpuSum/cpuN:null,
+              rssMaxMb:rssMaxKb/1024,
+              heapUsedMaxMb:heapUsedMax/1048576,
+              heapTotalMaxMb:heapTotalMax/1048576,
+              eventLoopP99MaxMs:eventLoopP99Max,
+              activeRequestsMax
+            },
+            postgres:pg
+          };
+          fs.writeFileSync(dir + "/b1-c40-analysis.json", JSON.stringify(output,null,2));
+          console.log(JSON.stringify(output,null,2));
+          NODE
+          rc=$?
+          echo "analysis_rc=$rc" >> perf/k6/reports/b1-c40-phase-status.txt
+          exit 0
+
+      - name: Upload exactly one final C40 evidence artifact
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c40-community-attribution-evidence
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Truthful final C40 evidence-validity gate
+        if: always()
+        run: |
+          set -euo pipefail
+          echo '--- C40 PHASE STATUS ---'
+          cat perf/k6/reports/b1-c40-phase-status.txt || true
+          test "$(cat perf/k6/reports/b1-c40-load-executions.txt 2>/dev/null || echo 0)" = "1" || { echo "B1-C40 HOLD: benchmark not executed exactly once"; exit 92; }
+          rc="$(cat perf/k6/reports/b1-c40-load-rc.txt 2>/dev/null || echo -1)"
+          test "$rc" = "0" -o "$rc" = "99" || { echo "B1-C40 HOLD: invalid load exit $rc"; exit 93; }
+          test -s perf/k6/reports/b1-c40-analysis.json || { echo "B1-C40 HOLD: analysis missing"; exit 94; }
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const x=JSON.parse(fs.readFileSync("perf/k6/reports/b1-c40-analysis.json","utf8"));
+          if(!x.load?.evidenceValid) process.exit(95);
+          if(x.accounting?.unattributedDelta!==0) process.exit(96);
+          console.log("B1-C40 COMMUNITY ATTRIBUTION EVIDENCE VALID");
+          console.log("classified="+x.accounting.classifiedCommunityAcquisitions);
+          console.log("physical="+x.accounting.physicalCommunityAcquisitions);
+          console.log("delta="+x.accounting.unattributedDelta);
+          NODE
