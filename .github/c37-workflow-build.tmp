@@ -1,0 +1,153 @@
+
+name: B1-C37 SessionStore Shared-Pool Attribution
+
+on:
+  push:
+    branches:
+      - diag/wave-b-b1-c37-sessionstore-shared-pool-attribution
+    paths:
+      - '.github/workflows/b1-c37-sessionstore-attribution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  b1-c37-attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C32_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+
+    steps:
+      - name: Checkout exact C37 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Initialize C37 evidence
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          : > perf/k6/reports/b1-c37-phase-status.txt
+
+      - name: Generate isolated masked benchmark secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        id: deps
+        continue-on-error: true
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install k6
+        id: k6setup
+        continue-on-error: true
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify tools and PostgreSQL fixture
+        id: tools
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          command -v k6
+          command -v psql
+          command -v ss
+          k6 version
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW max_connections;')" = "100"
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW superuser_reserved_connections;')" = "3"
+          psql "$DATABASE_URL" -Atc "SELECT version(); SHOW max_connections; SHOW reserved_connections; SHOW superuser_reserved_connections;" \
+            | tee perf/k6/reports/b1-c37-postgres-fixture.txt
+
+      - name: Exact C36 source identity and C37-only scope
+        id: identity
+        if: ${{ steps.deps.outcome == 'success' && steps.k6setup.outcome == 'success' && steps.tools.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          BASE=9e927327cd7708b61775826b03b99ab2e5712a3d
+          BASE_TREE=04ebe352ad0fe5288a08c370e7dd7df8f8d8c23f
+          test "$(git rev-parse ${BASE}^{tree})" = "$BASE_TREE"
+          git merge-base --is-ancestor "$BASE" HEAD
+          unexpected="$(git diff --name-only "$BASE" HEAD | grep -Ev '^\.github/workflows/b1-c37-sessionstore-attribution\.yml$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$BASE" HEAD -- src
+          git diff --exit-code "$BASE" HEAD -- test
+          git diff --exit-code "$BASE" HEAD -- perf
+          git diff --exit-code "$BASE" HEAD -- .github/workflows/wave-b-benchmark.yml
+          {
+            echo "repository=developergracz/gracz-pl-2"
+            echo "source_branch=perf/wave-b-b1-c36-100vu-post-c35-revalidation"
+            echo "source_head=$BASE"
+            echo "source_tree=$BASE_TREE"
+            echo "c37_branch=diag/wave-b-b1-c37-sessionstore-shared-pool-attribution"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+            echo "merge_base=$(git merge-base "$BASE" HEAD)"
+            echo "ahead=$(git rev-list --count ${BASE}..HEAD)"
+            echo "behind=$(git rev-list --count HEAD..${BASE})"
+          } | tee perf/k6/reports/b1-c37-identity.txt
+
+      - name: Static shared-pool consumer inventory
+        id: inventory
+        if: ${{ steps.identity.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          {
+            echo '=== DIRECT store.pool REFERENCES ACROSS PRODUCTION src ==='
+            grep -RIn --include='*.js' 'store\.pool' src || true
+            echo
+            echo '=== PHYSICAL OWNER: PostgresSessionStore ==='
+            grep -nE 'this\.pool = new Pool|this\.pool\.(query|connect)|acquireHealthClient\(this\.pool' src/postgres-session-store.js || true
+            echo
+            echo '=== BORROWER: LobbyService ==='
+            grep -nE 'this\.pool=pool|this\.pool\.(query|connect)|queryable\.query|client\.query' src/lobby.js || true
+            echo
+            echo '=== BORROWER: DistributedGlobalChatService ==='
+            grep -nE 'this\.pool=pool|this\.pool\.(query|connect)|client=this\.#listenerClientFactory|LISTEN ' src/distributed-global-chat.js || true
+            echo
+            echo '=== CHECKERS SERVER DIRECT ==='
+            grep -nE 'store\.pool\.query|gracz_match_runtime_commands' src/server-p7.js || true
+            echo
+            echo '=== PRODUCTION COMPOSITION ==='
+            grep -nE 'PostgresSessionStore|DistributedGlobalChatService|LobbyService|pool:store\.pool|pool:config\.databaseUrl\?store\.pool' src/main.js || true
+          } | tee perf/k6/reports/b1-c37-static-consumer-inventory.txt
+
+      - name: C32 connection-budget regression
+        id: c
