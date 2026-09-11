@@ -1,0 +1,626 @@
+name: B1-C43 Audit / Security Shared Pool Borrower Attribution
+
+on:
+  push:
+    branches:
+      - diag/wave-b-b1-c43-audit-security-pool-attribution
+    paths:
+      - '.github/workflows/b1-c43-audit-security-pool-attribution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  b1-c43-audit-security-attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_wave_b
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_wave_b"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: modern/checkers-engine
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      WAVE_B_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      B1_C32_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      P1_C_01_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/gracz_wave_b
+      POSTGRES_POOL_BUDGET: '64'
+      WAVE_B_SEED: '20260909'
+
+    steps:
+      - name: Checkout exact C43 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Initialize C43 evidence
+        run: |
+          set -euo pipefail
+          mkdir -p perf/k6/reports
+          echo "C43_APP_PACKAGE_JSON=$GITHUB_WORKSPACE/modern/checkers-engine/package.json" >> "$GITHUB_ENV"
+          : > perf/k6/reports/b1-c43-phase-status.txt
+          echo 0 > perf/k6/reports/b1-c43-load-executions.txt
+          cat > perf/k6/reports/b1-c43-load-contract.txt <<'EOF'
+          WAVE_B_RUN_ID=b1-c43-audit-pool-attribution-v100
+          WAVE_B_REPLICAS=1
+          WAVE_B_VUS=100
+          WAVE_B_GAME_COUNT=50
+          WAVE_B_WARMUP_SECONDS=120
+          WAVE_B_STEADY_SECONDS=300
+          WAVE_B_COOLDOWN_SECONDS=120
+          WAVE_B_THINK_SECONDS=0.05
+          WAVE_B_SEED=20260909
+          WAVE_B_SCENARIO=mixed-platform
+          runner=perf/scripts/wave-b-runner.sh
+          authorized_invocations=1
+          EOF
+          cat > perf/k6/reports/b1-c43-defect-traceability.txt <<'EOF'
+          C40 semantic attribution was invalid because pool.on("acquire") inspected whichever
+          AsyncLocalStorage context happened to be active when a physical client was handed out.
+          Under queued handoff that context is not guaranteed to belong to the borrower receiving
+          the client. C43 creates identity and start time at Pool.query()/external Pool.connect()
+          invocation; ALS only transports an already-created DIRECT_POOL_QUERY token to pg-pool's
+          internal connect path. pool.on("acquire") supplies physical counters/timing only and never
+          consumer, operation, route, phase, mechanism, or authoritative logical start metadata.
+          EOF
+          cat > perf/k6/reports/b1-c43-scope-proof.txt <<'EOF'
+          authorized_runner_invocations=1
+          250_vu_invocations=0
+          500_vu_invocations=0
+          1000_vu_invocations=0
+          production_application_changes=0
+          canonical_test_changes=0
+          canonical_perf_changes=0
+          pr_created=0
+          merge=0
+          deploy=0
+          c41_implemented=0
+          EOF
+
+      - name: Generate isolated masked benchmark secrets
+        run: |
+          set -euo pipefail
+          for name in AUTH_SECRET MESSAGE_ENCRYPTION_KEY ATTACHMENT_ENCRYPTION_KEY MFA_ENCRYPTION_KEY; do
+            value="$(openssl rand -hex 32)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Install application dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify exact authorized source and C43-only scope
+        run: |
+          set -euo pipefail
+          SOURCE=c3cb4a13b4a33c45cfe0d15e9bc5895b1e7f6fda
+          SOURCE_TREE=2d362f66abe503b02bf60eacf8ef2645fd2271b6
+          test "$(git rev-parse "$SOURCE^{tree}")" = "$SOURCE_TREE"
+          git merge-base --is-ancestor "$SOURCE" HEAD
+          test "$(git merge-base "$SOURCE" HEAD)" = "$SOURCE"
+          unexpected="$(git diff --name-only "$SOURCE" HEAD | grep -Ev '^\.github/workflows/b1-c43-borrower-bound-community-attribution\.yml$' || true)"
+          test -z "$unexpected"
+          git diff --exit-code "$SOURCE" HEAD -- modern/checkers-engine/src modern/checkers-engine/test modern/checkers-engine/perf
+          {
+            echo "repository=developergracz/gracz-pl-2"
+            echo "authorized_source_branch=perf/wave-b-b1-c42-100vu-post-c41-revalidation"
+            echo "authorized_source_head=$SOURCE"
+            echo "authorized_source_tree=$SOURCE_TREE"
+            echo "c40r1_branch=diag/wave-b-b1-c43-audit-security-pool-attribution"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+            echo "ahead=$(git rev-list --count "$SOURCE..HEAD")"
+            echo "behind=$(git rev-list --count "HEAD..$SOURCE")"
+            echo "changed_files:"
+            git diff --name-only "$SOURCE" HEAD
+          } | tee perf/k6/reports/b1-c43-identity.txt
+          test "$(git rev-list --count "HEAD..$SOURCE")" = "0"
+          test "$(git diff --name-only "$SOURCE" HEAD | wc -l)" = "1"
+          test "$(git diff --name-only "$SOURCE" HEAD)" = ".github/workflows/b1-c43-audit-security-pool-attribution.yml"
+          sha256sum perf/scripts/wave-b-runner.sh | tee perf/k6/reports/b1-c43-runner-sha256.txt
+          echo identity=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Verify tools and PostgreSQL fixture
+        run: |
+          set -euo pipefail
+          command -v k6
+          command -v psql
+          command -v ss
+          k6 version
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW max_connections;')" = "100"
+          test "$(psql "$DATABASE_URL" -Atc 'SHOW superuser_reserved_connections;')" = "3"
+          psql "$DATABASE_URL" -Atc "SELECT version(); SHOW max_connections; SHOW reserved_connections; SHOW superuser_reserved_connections;" | tee perf/k6/reports/b1-c43-postgres-fixture.txt
+          echo fixture=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Required C38 C19 C22 C25 C27 C32 gates
+        run: |
+          set -euo pipefail
+          run_gate() {
+            name="$1"; shift
+            set +e
+            "$@" > "perf/k6/reports/b1-c43-$name.log" 2>&1
+            rc=$?
+            set -e
+            cat "perf/k6/reports/b1-c43-$name.log"
+            if [ "$rc" -ne 0 ]; then
+              echo "$name=FAIL:$rc" >> perf/k6/reports/b1-c43-phase-status.txt
+              exit "$rc"
+            fi
+            echo "$name=PASS" >> perf/k6/reports/b1-c43-phase-status.txt
+          }
+          run_gate c38 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c38-community-pool-isolation.test.js
+          run_gate c41 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c41-lobby-read-state-room-snapshot-reuse.test.js
+          run_gate c19 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c19-lobby-state-single-acquisition.test.js
+          run_gate c22 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c22-global-chat-listen-isolation.test.js
+          run_gate c25 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c25-lobby-room-single-acquisition.test.js
+          run_gate c27 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c27-global-chat-presence-single-acquisition.test.js
+          run_gate c32 node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1 test/wave-b-b1-c32-cluster-aware-postgres-budget-guard.test.js
+
+      - name: Verify canonical post-C41 Audit / Security ownership and connection profile
+        run: |
+          set -euo pipefail
+          node <<'NODE' | tee perf/k6/reports/b1-c43-resource-profile.json
+          const b = require('./src/postgres-pool-budget.cjs');
+          const profile = b.POSTGRES_RESOURCE_PROFILE;
+          const audit = profile.pools.filter((entry) => entry.owner === 'AuditService');
+          const community = profile.pools.filter((entry) => entry.owner === 'PostgresCommunityPool');
+          const session = profile.pools.filter((entry) => entry.owner === 'PostgresSessionStore');
+          if (profile.pools.length !== 15) process.exit(41);
+          if (audit.length !== 1 || audit[0].max !== 2) process.exit(42);
+          if (community.length !== 1 || community[0].max !== 4) process.exit(43);
+          if (session.length !== 1 || session[0].max !== 4) process.exit(44);
+          if (b.aggregatePoolMax() !== 52) process.exit(45);
+          if (b.aggregateExternalPersistentClients() !== 1) process.exit(46);
+          if (b.aggregateStartupTemporaryClients() !== 1) process.exit(47);
+          const one = b.connectionBudgetPlan({
+            replicaCount: 1, maxConnections: 100, reservedConnections: 0,
+            superuserReservedConnections: 3, operationalHeadroom: 10,
+            environment: { POSTGRES_POOL_BUDGET: '64' }
+          });
+          if (one.safeApplicationCapacity !== 87 || one.steadyEnvelope !== 53 || one.startupEnvelope !== 54 || !one.safe) process.exit(48);
+          console.log(JSON.stringify({
+            physicalPoolOwners: profile.pools.length,
+            aggregatePoolMax: b.aggregatePoolMax(),
+            audit: audit[0], community: community[0], sessionStore: session[0],
+            externalPersistent: b.aggregateExternalPersistentClients(),
+            startupTemporary: b.aggregateStartupTemporaryClients(),
+            oneReplica: { steady: one.steadyEnvelope, startup: one.startupEnvelope, safeCapacity: one.safeApplicationCapacity, safe: one.safe },
+            ownershipProof: { auditServiceOwnsPoolMax2: true, securityMonitorReceivesAuditPool: true }
+          }, null, 2));
+          NODE
+          grep -F 'const monitor=new SecurityMonitor({audit});' src/main.js
+          grep -F 'pool=audit?.pool??null' src/security-monitor.js
+          grep -F 'max: 2' src/audit-service.js
+          echo profile=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Generate runtime-only Audit / Security attribution preload
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs" <<'C43JS'
+          "use strict";
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const http = require("node:http");
+          const { createHistogram } = require("node:perf_hooks");
+          const { AsyncLocalStorage } = require("node:async_hooks");
+          const { createRequire } = require("node:module");
+
+          const appPackageJson = process.env.C43_APP_PACKAGE_JSON;
+          if (!appPackageJson) throw new Error("C43_APP_PACKAGE_JSON is required");
+          const appRequire = createRequire(appPackageJson);
+          const pgResolvedPath = appRequire.resolve("pg");
+          const pg = appRequire("pg");
+          const OriginalPool = pg.Pool;
+          const originalPoolConnect = OriginalPool.prototype.connect;
+          const originalPoolQuery = OriginalPool.prototype.query;
+          const originalClientQuery = pg.Client.prototype.query;
+          const output = process.env.C43_ATTRIBUTION_FILE;
+          const borrowerLog = process.env.C43_BORROWER_LOG;
+          const requestAls = new AsyncLocalStorage();
+          const borrowerAls = new AsyncLocalStorage();
+          const lifecycle = { requestedPools: 0, borrowerSequence: 0, requestSequence: 0 };
+          const owners = new Map();
+          const borrowerProof = [];
+          const responseCounts = new Map();
+          const securityPgRequestIds = new Map();
+          let workloadStartNs = null;
+
+          function timing() { return { histogram: createHistogram({ lowest: 1, highest: 60_000_000, figures: 3 }), errors: 0, totalMs: 0 }; }
+          function record(target, ms, error) {
+            const value = Number.isFinite(ms) ? Math.max(0, ms) : 0;
+            target.histogram.record(Math.max(1, Math.min(60_000_000, Math.round(value * 1000))));
+            target.totalMs += value; if (error) target.errors += 1;
+          }
+          function snap(target) {
+            const h=target.histogram,count=Number(h.count||0);
+            return {count,totalMs:target.totalMs,avgMs:count?target.totalMs/count:0,
+              p50Ms:count?Number(h.percentile(50))/1000:0,p95Ms:count?Number(h.percentile(95))/1000:0,
+              p99Ms:count?Number(h.percentile(99))/1000:0,maxMs:count?Number(h.max)/1000:0,errors:target.errors};
+          }
+          function increment(map,key,n=1){map.set(key,(map.get(key)||0)+n);}
+          function phaseNow(){
+            if(!workloadStartNs)return "startup";
+            const elapsed=Number(process.hrtime.bigint()-workloadStartNs)/1e9;
+            if(elapsed<120)return "warmup";if(elapsed<420)return "steady";return "cooldown";
+          }
+          function normalizedRoute(method,rawUrl){
+            let pathname="/";try{pathname=new URL(rawUrl||"/","http://localhost").pathname;}catch{}
+            pathname=pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/ig,":id");
+            return String(method||"UNKNOWN").toUpperCase()+" "+pathname;
+          }
+          function ownerFromStack(stack){
+            const s=String(stack||"");
+            if(/\/src\/audit-service\.js(?::|\))/u.test(s))return "AUDIT_POOL";
+            return null;
+          }
+          function sqlParts(args){
+            const a=Array.from(args||[]);let text="",values=[];
+            if(typeof a[0]==="string"){text=a[0];if(Array.isArray(a[1]))values=a[1];}
+            else if(a[0]&&typeof a[0]==="object"){text=String(a[0].text||"");if(Array.isArray(a[0].values))values=a[0].values;}
+            return {text:String(text),values};
+          }
+          function sourceCallSite(stack){
+            for(const raw of String(stack||"").split("\n")){
+              const m=raw.match(/at\s+(?:(.+?)\s+\()?(.+\/src\/[^:()]+\.js):(\d+):(\d+)\)?/);
+              if(!m)continue;const file=m[2];if(file.endsWith("/audit-service.js"))continue;
+              let snippet="";try{const src=fs.readFileSync(file,"utf8").split(/\r?\n/),line=Math.max(1,Number(m[3]));snippet=src.slice(Math.max(0,line-5),Math.min(src.length,line+4)).join(" ").replace(/\s+/g," ").slice(0,1200);}catch{}
+              return {functionName:m[1]||"anonymous",file:path.basename(file),line:Number(m[3]),snippet};
+            }
+            return {functionName:"unknown",file:"unknown",line:0,snippet:""};
+          }
+          function criticalClass(stack,category,ctx){
+            const s=String(stack||"");if(s.includes("secureLogger"))return "DETACHED_LOGGER";
+            if(ctx&&ctx.responseFinished)return "DETACHED_POST_RESPONSE";
+            if(category==="AUDIT_SCHEMA_OR_STARTUP")return "BACKGROUND";
+            const site=sourceCallSite(stack);
+            if(ctx&&ctx.route&&ctx.route!=="BACKGROUND"&&/await\s+[^;]{0,240}\.record\s*\(/i.test(site.snippet))return "AWAITED_REQUEST_PATH";
+            if(!ctx||!ctx.route||ctx.route==="BACKGROUND")return "BACKGROUND";
+            return "UNKNOWN";
+          }
+          function classifyBorrow(args,stack,mechanism){
+            const p=sqlParts(args),q=p.text.replace(/\s+/g," ").trim().toLowerCase(),ctx=requestAls.getStore()||null;
+            let category="UNKNOWN",eventType=null;
+            if(q.includes("insert into gracz_audit_log")){category="AUDIT_RECORD_INSERT";eventType=p.values.length>2?String(p.values[2]??"unknown"):"unknown";}
+            else if(q.includes("insert into gracz_security_monitor_buckets"))category="SECURITY_MONITOR_BUCKET_UPSERT";
+            else if(q.includes("select coalesce(sum(count),0)")&&q.includes("gracz_security_monitor_buckets"))category="SECURITY_MONITOR_BUCKET_SUM";
+            else if(q.includes("delete from gracz_security_monitor_buckets"))category="SECURITY_MONITOR_CLEANUP_BUCKETS";
+            else if(q.includes("delete from gracz_security_monitor_alerts"))category="SECURITY_MONITOR_CLEANUP_ALERTS";
+            else if(q.includes("insert into gracz_security_monitor_alerts"))category="SECURITY_MONITOR_ALERT_CLAIM";
+            else if(q==="begin"||q==="commit"||q==="rollback"||q.includes("pg_advisory_xact_lock")||q.includes("create table")||q.includes("create index")||q.includes("create trigger")||q.includes("drop trigger")||q.includes("create or replace function")||q.includes("revoke "))category="AUDIT_SCHEMA_OR_STARTUP";
+            else if(mechanism==="EXPLICIT_POOL_CONNECT"&&(String(stack).includes("initializeAuditSchema")||String(stack).includes("SecurityMonitor.#initialize")))category="AUDIT_SCHEMA_OR_STARTUP";
+            else if(String(stack).includes("/src/audit-service.js")||String(stack).includes("/src/security-monitor.js"))category="OTHER_KNOWN";
+            const site=sourceCallSite(stack);
+            return {category,eventType,critical:criticalClass(stack,category,ctx),requestId:ctx?.requestId||null,
+              route:ctx?.route||"BACKGROUND",status:ctx?.status??null,responseFinished:Boolean(ctx?.responseFinished),
+              callerSource:site.file+":"+site.line,callerFunction:site.functionName,mechanism};
+          }
+          function makeOwner(owner,pool){
+            return {owner,pool,configuredMax:Number(pool.options?.max||0),peakWaiting:Number(pool.waitingCount||0),
+              acquire:timing(),physicalAcquire:timing(),query:timing(),hold:timing(),physicalAcquisitions:0,physicalPending:[],
+              logicalBorrowers:0,releasesObserved:0,mechanisms:{DIRECT_POOL_QUERY:0,EXPLICIT_POOL_CONNECT:0},
+              categories:new Map(),eventTypes:new Map(),securityRoutes:new Map(),critical:new Map()};
+          }
+          function bucket(map,key,base){let row=map.get(key);if(!row){row={...base,acquire:timing(),query:timing(),hold:timing()};map.set(key,row);}return row;}
+          function categoryRow(stat,meta){return bucket(stat.categories,meta.category+"|"+meta.phase,{category:meta.category,phase:meta.phase,count:0});}
+          function eventRow(stat,meta){return bucket(stat.eventTypes,String(meta.eventType||"unknown")+"|"+meta.critical+"|"+meta.callerSource+"|"+meta.callerFunction,{eventType:String(meta.eventType||"unknown"),critical:meta.critical,callerSource:meta.callerSource,callerFunction:meta.callerFunction,invocations:0,acquisitions:0});}
+          function securityRow(stat,meta){return bucket(stat.securityRoutes,String(meta.status)+"|"+meta.route+"|"+meta.category,{status:meta.status,route:meta.route,category:meta.category,acquisitions:0});}
+          function criticalRow(stat,meta){return bucket(stat.critical,meta.critical,{critical:meta.critical,acquisitions:0});}
+          function buildMeta(pool,mechanism,stack,args){
+            const c=classifyBorrow(args,stack,mechanism);
+            return {borrowerId:++lifecycle.borrowerSequence,pool,poolOwner:pool.__c43Stats.owner,...c,phase:phaseNow(),startedNs:process.hrtime.bigint(),completed:false,released:false};
+          }
+          function onPhysicalAcquire(stat){
+            stat.physicalAcquisitions+=1;stat.peakWaiting=Math.max(stat.peakWaiting,Number(stat.pool.waitingCount||0));
+            const started=stat.physicalPending.shift();if(!started){record(stat.physicalAcquire,0,new Error("physical acquisition without pending connect"));return;}
+            record(stat.physicalAcquire,Number(process.hrtime.bigint()-started)/1e6,null);
+          }
+          function attachClientMeta(client,meta){if(client){try{Object.defineProperty(client,"__c43Meta",{value:meta,configurable:true,writable:true});}catch{}}}
+          function completeBorrow(stat,meta,client,error){
+            if(meta.completed)throw new Error("C43 borrower completed twice");meta.completed=true;
+            const waitMs=Number(process.hrtime.bigint()-meta.startedNs)/1e6;stat.logicalBorrowers+=1;record(stat.acquire,waitMs,error||null);
+            stat.mechanisms[meta.mechanism]=(stat.mechanisms[meta.mechanism]||0)+1;meta.acquiredNs=process.hrtime.bigint();attachClientMeta(client,meta);
+            const cr=categoryRow(stat,meta);cr.count+=1;record(cr.acquire,waitMs,error||null);
+            const kr=criticalRow(stat,meta);kr.acquisitions+=1;record(kr.acquire,waitMs,error||null);
+            if(meta.category==="AUDIT_RECORD_INSERT"){const er=eventRow(stat,meta);er.invocations+=1;er.acquisitions+=1;record(er.acquire,waitMs,error||null);}
+            if(meta.category.startsWith("SECURITY_MONITOR_")){
+              const sr=securityRow(stat,meta);sr.acquisitions+=1;record(sr.acquire,waitMs,error||null);
+              if(meta.requestId){const key=String(meta.status)+"|"+meta.route;let set=securityPgRequestIds.get(key);if(!set){set=new Set();securityPgRequestIds.set(key,set);}set.add(meta.requestId);}
+            }
+            const proof={borrowerId:meta.borrowerId,category:meta.category,eventType:meta.eventType,critical:meta.critical,route:meta.route,status:meta.status,mechanism:meta.mechanism,waitMs,callerSource:meta.callerSource,callerFunction:meta.callerFunction};
+            if(borrowerProof.length<300)borrowerProof.push(proof);
+            if(borrowerLog){fs.mkdirSync(path.dirname(borrowerLog),{recursive:true});fs.appendFileSync(borrowerLog,JSON.stringify(proof)+"\n");}
+          }
+          class C43Pool extends OriginalPool{
+            constructor(options){lifecycle.requestedPools+=1;super(options);const owner=ownerFromStack(new Error().stack);if(owner){if(owners.has(owner))throw new Error("C43 duplicate audit pool owner");const stat=makeOwner(owner,this);owners.set(owner,stat);Object.defineProperty(this,"__c43Stats",{value:stat,configurable:false});this.on("acquire",()=>onPhysicalAcquire(stat));}}
+          }
+          Object.defineProperty(pg,"Pool",{value:C43Pool,configurable:true,enumerable:true,writable:true});
+          C43Pool.prototype.query=function(){
+            const stat=this.__c43Stats;if(!stat)return originalPoolQuery.apply(this,arguments);
+            const current=borrowerAls.getStore();if(current&&current.pool===this)return originalPoolQuery.apply(this,arguments);
+            const meta=buildMeta(this,"DIRECT_POOL_QUERY",new Error().stack,arguments),args=arguments;
+            return borrowerAls.run(meta,()=>originalPoolQuery.apply(this,args));
+          };
+          function wrapRelease(client,release,stat,meta,recordHold){
+            if(!client||typeof release!=="function")return release;const started=meta.acquiredNs||process.hrtime.bigint();let released=false;
+            return function(){if(!released){released=true;meta.released=true;stat.releasesObserved+=1;if(recordHold){const ms=Number(process.hrtime.bigint()-started)/1e6;record(stat.hold,ms,null);record(categoryRow(stat,meta).hold,ms,null);record(criticalRow(stat,meta).hold,ms,null);}}try{return release.apply(this,arguments);}finally{if(client.__c43Meta===meta)client.__c43Meta=null;}};
+          }
+          C43Pool.prototype.connect=function(callback){
+            const stat=this.__c43Stats;if(!stat)return originalPoolConnect.apply(this,arguments);
+            stat.peakWaiting=Math.max(stat.peakWaiting,Number(this.waitingCount||0));const existing=borrowerAls.getStore();
+            const direct=existing&&existing.pool===this&&existing.mechanism==="DIRECT_POOL_QUERY"&&!existing.internalConnectObserved;
+            const meta=direct?existing:buildMeta(this,"EXPLICIT_POOL_CONNECT",new Error().stack,[]);
+            if(direct)meta.internalConnectObserved=true;stat.physicalPending.push(process.hrtime.bigint());
+            if(typeof callback==="function")return borrowerAls.run(meta,()=>originalPoolConnect.call(this,(error,client,release)=>{completeBorrow(stat,meta,client,error||null);if(error)return callback(error,client,release);const raw=typeof release==="function"?release:client.release,wrapped=wrapRelease(client,raw,stat,meta,!direct);if(client&&typeof wrapped==="function")client.release=wrapped;return callback(error,client,wrapped);}));
+            return borrowerAls.run(meta,()=>Promise.resolve(originalPoolConnect.call(this)).then(client=>{completeBorrow(stat,meta,client,null);if(client&&typeof client.release==="function")client.release=wrapRelease(client,client.release,stat,meta,!direct);return client;},error=>{completeBorrow(stat,meta,null,error);throw error;}));
+          };
+          pg.Client.prototype.query=function(){
+            const meta=this.__c43Meta;if(!meta||!meta.pool||!meta.pool.__c43Stats)return originalClientQuery.apply(this,arguments);
+            const stat=meta.pool.__c43Stats,started=process.hrtime.bigint();let done=false;
+            const finish=error=>{if(done)return;done=true;const ms=Number(process.hrtime.bigint()-started)/1e6;record(stat.query,ms,error||null);record(categoryRow(stat,meta).query,ms,error||null);record(criticalRow(stat,meta).query,ms,error||null);if(meta.category==="AUDIT_RECORD_INSERT")record(eventRow(stat,meta).query,ms,error||null);if(meta.category.startsWith("SECURITY_MONITOR_"))record(securityRow(stat,meta).query,ms,error||null);};
+            const args=Array.from(arguments),last=args.length-1;
+            if(last>=0&&typeof args[last]==="function"){const cb=args[last];args[last]=function(error,result){finish(error);return cb.call(this,error,result);};try{return originalClientQuery.apply(this,args);}catch(error){finish(error);throw error;}}
+            let result;try{result=originalClientQuery.apply(this,args);}catch(error){finish(error);throw error;}
+            if(!result||typeof result.then!=="function"){finish(null);return result;}return result.then(v=>{finish(null);return v;},e=>{finish(e);throw e;});
+          };
+          const originalServerEmit=http.Server.prototype.emit;
+          http.Server.prototype.emit=function(event){
+            if(event!=="request")return originalServerEmit.apply(this,arguments);
+            const args=Array.from(arguments),req=args[1],res=args[2],route=normalizedRoute(req&&req.method,req&&req.url),health=route.includes(" /health/");
+            if(!health&&!workloadStartNs)workloadStartNs=process.hrtime.bigint();
+            const ctx={requestId:++lifecycle.requestSequence,route,phase:phaseNow(),status:null,responseFinished:false};
+            try{Object.defineProperty(res,"__c43RequestContext",{value:ctx,configurable:true});}catch{}
+            return requestAls.run(ctx,()=>originalServerEmit.apply(this,args));
+          };
+          const originalResponseEmit=http.ServerResponse.prototype.emit;
+          http.ServerResponse.prototype.emit=function(event){
+            const ctx=this.__c43RequestContext;if(event!=="finish"||!ctx)return originalResponseEmit.apply(this,arguments);
+            ctx.status=Number(this.statusCode||0);ctx.responseFinished=true;
+            if(ctx.status===401||ctx.status===403||ctx.status===429||ctx.status>=500)increment(responseCounts,String(ctx.status)+"|"+ctx.route,1);
+            const args=arguments;return requestAls.run(ctx,()=>originalResponseEmit.apply(this,args));
+          };
+          function serializeRow(row){const out={...row};delete out.acquire;delete out.query;delete out.hold;return {...out,acquire:snap(row.acquire),query:snap(row.query),hold:snap(row.hold)};}
+          function ownerSnapshot(stat){
+            const unknown=[...stat.categories.values()].filter(x=>x.category==="UNKNOWN").reduce((n,x)=>n+x.count,0);
+            return {owner:stat.owner,configuredMax:stat.configuredMax,totalCount:Number(stat.pool.totalCount||0),idleCount:Number(stat.pool.idleCount||0),waitingCount:Number(stat.pool.waitingCount||0),peakWaiting:stat.peakWaiting,physicalAcquisitions:stat.physicalAcquisitions,physicalPending:stat.physicalPending.length,logicalBorrowers:stat.logicalBorrowers,releasesObserved:stat.releasesObserved,mechanisms:stat.mechanisms,acquire:snap(stat.acquire),physicalAcquire:snap(stat.physicalAcquire),query:snap(stat.query),hold:snap(stat.hold),unknown,categories:[...stat.categories.values()].map(serializeRow),eventTypes:[...stat.eventTypes.values()].map(serializeRow),securityRoutes:[...stat.securityRoutes.values()].map(serializeRow),critical:[...stat.critical.values()].map(serializeRow)};
+          }
+          function responseSnapshot(){return [...responseCounts.entries()].map(([key,observations])=>{const i=key.indexOf("|"),status=Number(key.slice(0,i)),route=key.slice(i+1),pgSet=securityPgRequestIds.get(key);return {status,route,observations,enteredPostgresRequests:pgSet?pgSet.size:0};});}
+          function flush(){if(!output)return;for(const stat of owners.values())stat.peakWaiting=Math.max(stat.peakWaiting,Number(stat.pool.waitingCount||0));const row={ts:new Date().toISOString(),pid:process.pid,phase:phaseNow(),lifecycle,owners:[...owners.values()].map(ownerSnapshot),borrowerTokenSample:borrowerProof,responseObservations:responseSnapshot()};fs.mkdirSync(path.dirname(output),{recursive:true});fs.appendFileSync(output,JSON.stringify(row)+"\n");}
+          if(output){const timer=setInterval(flush,1000);timer.unref();process.on("exit",()=>{try{flush();}catch{}});}
+          if(process.env.C43_SELF_TEST==="1")Object.defineProperty(globalThis,"__B1_C43",{value:{pg,pgResolvedPath,lifecycle,owners,borrowerProof,classifyBorrow,ownerFromStack,ownerSnapshot,responseSnapshot,requestAls},configurable:true});
+          C43JS
+          node --check "$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs"
+          sha256sum "$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs" | tee perf/k6/reports/b1-c43-runtime-instrumentation-sha256.txt
+          echo instrumentation=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Verify application-scoped pg resolution
+        run: |
+          set -euo pipefail
+          test -f "$C43_APP_PACKAGE_JSON"
+          node <<'NODE' | tee perf/k6/reports/b1-c43-module-resolution.json
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const { createRequire } = require("node:module");
+          const pkg = process.env.C43_APP_PACKAGE_JSON;
+          const workspace = process.env.GITHUB_WORKSPACE;
+          if (!fs.existsSync(pkg)) process.exit(51);
+          const resolved = createRequire(pkg).resolve("pg");
+          const expectedRoot = path.join(workspace, "modern", "checkers-engine", "node_modules", "pg");
+          if (!(resolved === expectedRoot || resolved.startsWith(expectedRoot + path.sep))) process.exit(52);
+          console.log(JSON.stringify({
+            status: "MODULE_RESOLUTION = PASS",
+            applicationPackagePath: pkg,
+            resolvedPgPath: resolved,
+            nodeVersion: process.version
+          }, null, 2));
+          NODE
+          echo module_resolution=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Mandatory preload smoke test
+        run: |
+          set -euo pipefail
+          C43_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c43-smoke.jsonl" \
+          C43_SELF_TEST=1 \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs" \
+          node - <<'NODE' | tee perf/k6/reports/b1-c43-preload-smoke.json
+          const hook = globalThis.__B1_C43;
+          if (!hook) process.exit(61);
+          if (typeof hook.pg?.Pool !== "function") process.exit(62);
+          if (!String(hook.pgResolvedPath).includes("/modern/checkers-engine/node_modules/pg/")) process.exit(63);
+          if (hook.lifecycle.requestedPools !== 0) process.exit(64);
+          if (hook.owners.size !== 0) process.exit(65);
+          console.log(JSON.stringify({
+            status: "PRELOAD_SMOKE = PASS",
+            preloadLoaded: true,
+            applicationScopedPgResolved: true,
+            instrumentationCreatedPools: 0,
+            instrumentationCreatedPostgresConnections: 0,
+            preloadSqlExecuted: 0,
+            sqlChanged: false,
+            parametersPersisted: false
+          }, null, 2));
+          NODE
+          git diff --exit-code -- src test perf package.json package-lock.json
+          echo preload_smoke=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: C43 borrower binding and classifier self-tests A-H
+        run: |
+          set -euo pipefail
+          before="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database() and application_name <> 'psql';")"
+          C43_ATTRIBUTION_FILE="$RUNNER_TEMP/b1-c43-selftest.jsonl"           C43_SELF_TEST=1           NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs"           node --input-type=module - <<'NODE' | tee perf/k6/reports/b1-c43-borrower-self-test.json
+          import path from "node:path";
+          import { setTimeout as delay } from "node:timers/promises";
+          const hook=globalThis.__B1_C43;if(!hook)process.exit(71);
+          const root=path.join(process.env.GITHUB_WORKSPACE,"modern","checkers-engine"),source=path.join(root,"src","audit-service.js");
+          const makePool=new Function("pg","url",["return new pg.Pool({connectionString:url,max:1,connectionTimeoutMillis:2000});","//# sourceURL="+source].join("\n"));
+          const pool=makePool(hook.pg,process.env.DATABASE_URL),stat=pool.__c43Stats;if(!stat||stat.owner!=="AUDIT_POOL"||pool.options.max!==1)process.exit(72);
+          const explicit=new Function("pool",["return async function initializeAuditSchema(){ return pool.connect(); };","//# sourceURL="+source].join("\n"))(pool);
+          const a=await explicit(),aId=a.__c43Meta.borrowerId;
+          const securitySource=path.join(root,"src","security-monitor.js");
+          const makeDirect=new Function("pool","sql","values",["return function securityBorrow(){ return pool.query(sql,values); };","//# sourceURL="+securitySource].join("\n"));
+          const upsertSql="INSERT INTO gracz_security_monitor_buckets(bucket_start,metric,source_id,count) VALUES($1,$2,$3,1) ON CONFLICT(bucket_start,metric,source_id) DO UPDATE SET count=gracz_security_monitor_buckets.count+1";
+          const bFn=makeDirect(pool,upsertSql,[new Date().toISOString(),"http.auth-failure","abcdef0123456789"]);
+          const bPromise=bFn();await delay(60);if(pool.waitingCount!==1)process.exit(73);a.release();await bPromise;
+          const firstTwo=hook.borrowerProof.slice(0,2);if(firstTwo.length!==2||firstTwo[0].borrowerId!==aId)process.exit(74);
+          if(firstTwo[1].category!=="SECURITY_MONITOR_BUCKET_UPSERT"||firstTwo[1].waitMs<40)process.exit(75);if(firstTwo[0].borrowerId===firstTwo[1].borrowerId)process.exit(76);
+          const beforeDirect={logical:stat.logicalBorrowers,physical:stat.physicalAcquisitions};await bFn();
+          const directDelta={logical:stat.logicalBorrowers-beforeDirect.logical,physical:stat.physicalAcquisitions-beforeDirect.physical};if(directDelta.logical!==1||directDelta.physical!==1)process.exit(77);
+          const beforeExplicit={logical:stat.logicalBorrowers,physical:stat.physicalAcquisitions,holds:Number(stat.hold.histogram.count)};
+          const c=await explicit();await c.query("select 1");await delay(20);c.release();
+          const explicitDelta={logical:stat.logicalBorrowers-beforeExplicit.logical,physical:stat.physicalAcquisitions-beforeExplicit.physical,holds:Number(stat.hold.histogram.count)-beforeExplicit.holds};if(explicitDelta.logical!==1||explicitDelta.physical!==1||explicitDelta.holds!==1)process.exit(78);
+          const auditInsert=hook.classifyBorrow(["INSERT INTO gracz_audit_log(event_id,actor_id,event_type,outcome,target_type,target_id,source_hash,user_agent_hash,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)",["id",null,"http.error","failure",null,null,null,null,"{}"]],"at AuditService.record ("+source+":1:1)","DIRECT_POOL_QUERY");
+          if(auditInsert.category!=="AUDIT_RECORD_INSERT"||auditInsert.eventType!=="http.error")process.exit(79);
+          const upsert=hook.classifyBorrow([upsertSql,[]],"at SecurityMonitor.#recordDistributed ("+securitySource+":1:1)","DIRECT_POOL_QUERY");
+          const sum=hook.classifyBorrow(["SELECT COALESCE(SUM(count),0)::bigint AS count FROM gracz_security_monitor_buckets WHERE metric=$1",[]],"at SecurityMonitor.#recordDistributed ("+securitySource+":1:1)","DIRECT_POOL_QUERY");
+          if(upsert.category!=="SECURITY_MONITOR_BUCKET_UPSERT"||sum.category!=="SECURITY_MONITOR_BUCKET_SUM")process.exit(80);
+          const c2=await explicit(),p1=bFn(),p2=bFn();await delay(35);if(pool.waitingCount!==2)process.exit(81);c2.release();await Promise.all([p1,p2]);
+          const lastThree=hook.borrowerProof.slice(-3);if(new Set(lastThree.map(x=>x.borrowerId)).size!==3)process.exit(82);
+          const snap=hook.ownerSnapshot(stat);if(snap.logicalBorrowers!==snap.physicalAcquisitions)process.exit(83);if(snap.acquire.count!==snap.physicalAcquire.count)process.exit(84);if(snap.unknown!==0)process.exit(85);
+          console.log(JSON.stringify({A_borrower_token_waiting_caller:"PASS",B_max1_queued_handoff:"PASS",C_direct_pool_query_exactly_once:"PASS",D_explicit_connect_exactly_once:"PASS",E_audit_record_insert_classifier:"PASS",F_security_upsert_sum_classifier:"PASS",G_no_cross_context_borrower_leakage:"PASS",H_physical_cross_validation:"PASS",queuedBorrowers:firstTwo,directDelta,explicitDelta,auditInsert,securityClassifiers:{upsert,sum},crossValidation:{borrower:snap.logicalBorrowers,physical:snap.physicalAcquisitions,delta:snap.logicalBorrowers-snap.physicalAcquisitions}},null,2));
+          await pool.end();
+          NODE
+          after="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname=current_database() and application_name <> 'psql';")"
+          test "$after" = "$before"
+          git diff --exit-code -- src test perf package.json package-lock.json
+          {
+            echo borrower_binding_self_test=PASS
+            echo queued_handoff_self_test=PASS
+            echo direct_query_self_test=PASS
+            echo explicit_connect_self_test=PASS
+            echo audit_classifier_self_test=PASS
+            echo security_classifier_self_test=PASS
+            echo cross_context_leak_test=PASS
+            echo physical_cross_validation_self_test=PASS
+          } >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Reset isolated benchmark database
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' | tee perf/k6/reports/b1-c43-reset.log
+          echo reset=PASS >> perf/k6/reports/b1-c43-phase-status.txt
+
+      - name: Execute exactly one canonical C43 100 VU diagnostic run
+        run: |
+          set -euo pipefail
+          echo 1 > perf/k6/reports/b1-c43-load-executions.txt
+          set +e
+          C43_APP_PACKAGE_JSON="$C43_APP_PACKAGE_JSON" \
+          C43_ATTRIBUTION_FILE=perf/k6/reports/b1-c43-audit-pool-attribution-v100-attribution.jsonl \
+          C43_BORROWER_LOG=perf/k6/reports/b1-c43-audit-pool-attribution-v100-borrowers.jsonl \
+          NODE_OPTIONS="--require=$RUNNER_TEMP/b1-c43-audit-attribution-preload.cjs" \
+          WAVE_B_RUN_ID=b1-c43-audit-pool-attribution-v100 \
+          WAVE_B_REPLICAS=1 \
+          WAVE_B_VUS=100 \
+          WAVE_B_GAME_COUNT=50 \
+          WAVE_B_WARMUP_SECONDS=120 \
+          WAVE_B_STEADY_SECONDS=300 \
+          WAVE_B_COOLDOWN_SECONDS=120 \
+          WAVE_B_THINK_SECONDS=0.05 \
+          WAVE_B_SEED=20260909 \
+          WAVE_B_SCENARIO=mixed-platform \
+          bash perf/scripts/wave-b-runner.sh
+          rc=$?
+          set -e
+          echo "$rc" > perf/k6/reports/b1-c43-load-rc.txt
+          echo "load_rc=$rc" >> perf/k6/reports/b1-c43-phase-status.txt
+          exit 0
+
+      - name: Build C43 authoritative evidence analysis
+        if: always()
+        run: |
+          set +e
+          node perf/scripts/wave-b-summarize.mjs
+          node <<'NODE'
+          const fs=require("node:fs"),dir="perf/k6/reports",run="b1-c43-audit-pool-attribution-v100";
+          const read=p=>fs.existsSync(p)?fs.readFileSync(p,"utf8"):"",json=p=>{try{return JSON.parse(read(p))}catch{return null}};
+          const k=json(dir+"/"+run+"-k6-summary-export.json")||json(dir+"/"+run+"-summary.json"),rec=json(dir+"/"+run+"-record.json"),corr=json(dir+"/"+run+"-correctness.json");
+          const metrics=k?.metrics||{},vals=n=>metrics?.[n]?.values||metrics?.[n]||{},trend=n=>{const v=vals(n);return{p50:v.med??null,p90:v["p(90)"]??null,p95:v["p(95)"]??null,p99:v["p(99)"]??null,max:v.max??null}},counter=n=>Number(vals(n).count??0),rate=n=>Number(vals(n).rate??vals(n).value??0),trueCount=n=>Number(vals(n).passes??0);
+          const executions=Number(read(dir+"/b1-c43-load-executions.txt").trim()||0),loadRc=Number(read(dir+"/b1-c43-load-rc.txt").trim()||-1),phase=read(dir+"/b1-c43-phase-status.txt");
+          const lines=read(dir+"/"+run+"-attribution.jsonl").trim().split(/\n+/).filter(Boolean);let selected=null,score=-1;
+          for(const line of lines){try{const x=JSON.parse(line),a=(x.owners||[]).find(o=>o.owner==="AUDIT_POOL"),s=Number(a?.physicalAcquisitions||0);if(s>=score){score=s;selected=x}}catch{}}
+          const audit=selected?.owners?.find(o=>o.owner==="AUDIT_POOL")||null,categories=(audit?.categories||[]).filter(x=>x.phase==="steady"),eventTypes=[...(audit?.eventTypes||[])].sort((a,b)=>Number(b.acquisitions||0)-Number(a.acquisitions||0)),securityRoutes=[...(audit?.securityRoutes||[])].sort((a,b)=>Number(b.acquisitions||0)-Number(a.acquisitions||0)),critical=[...(audit?.critical||[])].sort((a,b)=>Number(b.acquisitions||0)-Number(a.acquisitions||0));
+          const physical=Number(audit?.physicalAcquisitions||0),logical=Number(audit?.logicalBorrowers||0),delta=logical-physical,unknown=Number(audit?.unknown||0),categoryTotals={};for(const x of audit?.categories||[])categoryTotals[x.category]=(categoryTotals[x.category]||0)+Number(x.count||0);
+          const auditRecord=Number(categoryTotals.AUDIT_RECORD_INSERT||0),securityTotal=Object.entries(categoryTotals).filter(([k])=>k.startsWith("SECURITY_MONITOR_")).reduce((n,[,v])=>n+Number(v||0),0),detached=critical.filter(x=>x.critical==="DETACHED_POST_RESPONSE"||x.critical==="DETACHED_LOGGER").reduce((n,x)=>n+Number(x.acquisitions||0),0),awaited=critical.filter(x=>x.critical==="AWAITED_REQUEST_PATH").reduce((n,x)=>n+Number(x.acquisitions||0),0);
+          const correctness={correctnessExit:rec?.correctnessExit??null,unexpectedResponses:trueCount("wave_b_unexpected_error"),http5xx:trueCount("wave_b_server_5xx"),timeouts:trueCount("wave_b_timeout"),applicationCorrectnessFailures:Array.isArray(corr?.checks)?corr.checks.filter(x=>x?.pass!==true).length:(corr?.pass===true?0:null)};
+          correctness.pass=correctness.correctnessExit===0&&correctness.unexpectedResponses===0&&correctness.http5xx===0&&correctness.timeouts===0&&correctness.applicationCorrectnessFailures===0;
+          const performance={FAST:trend("wave_b_fast_read_ms"),NORMAL:trend("wave_b_normal_command_ms"),COMPLEX:trend("wave_b_complex_read_ms")},throughput={totalOperations:counter("wave_b_operations"),operationsPerSec:rate("wave_b_operations"),httpRequests:counter("http_reqs"),httpRequestsPerSec:rate("http_reqs"),durationSeconds:Number(k?.state?.testRunDurationMs||0)/1000};
+          const preRun=["identity=PASS","fixture=PASS","c38=PASS","c41=PASS","c19=PASS","c22=PASS","c25=PASS","c27=PASS","c32=PASS","profile=PASS","instrumentation=PASS","module_resolution=PASS","preload_smoke=PASS","borrower_binding_self_test=PASS","queued_handoff_self_test=PASS","direct_query_self_test=PASS","explicit_connect_self_test=PASS","audit_classifier_self_test=PASS","security_classifier_self_test=PASS","cross_context_leak_test=PASS","physical_cross_validation_self_test=PASS"].every(x=>phase.includes(x));
+          const timingKeys=["p50Ms","p95Ms","p99Ms","maxMs"],timingDelta=Object.fromEntries(timingKeys.map(key=>[key,Math.abs(Number(audit?.acquire?.[key]||0)-Number(audit?.physicalAcquire?.[key]||0))])),timingPass=timingKeys.every(key=>timingDelta[key]<=Math.max(0.2,Number(audit?.physicalAcquire?.[key]||0)*0.03));
+          const evidenceValid=preRun&&executions===1&&(loadRc===0||loadRc===99)&&!!k&&!!rec&&!!audit&&audit.configuredMax===2&&delta===0&&unknown===0&&timingPass&&correctness.pass;
+          let root="RC-C43-F — PRIMARY ROOT CAUSE NOT PROVEN";
+          if(evidenceValid&&physical>0){if(auditRecord/physical>=0.65&&awaited/physical>=0.35)root="RC-C43-A — AUDIT RECORD WRITES DOMINATE SHARED AUDIT POOL AND REQUEST CRITICAL PATH";else if(securityTotal/physical>=0.65)root="RC-C43-B — SECURITY MONITOR DISTRIBUTED METRICS DOMINATE SHARED AUDIT POOL";else if(detached/physical>=0.65)root="RC-C43-C — DETACHED / POST-RESPONSE AUDIT TRAFFIC DOMINATES PHYSICAL POOL";else if(auditRecord/physical>=0.20&&securityTotal/physical>=0.20)root="RC-C43-D — MULTIPLE AUDIT / SECURITY CONSUMERS JOINTLY SATURATE POOL";}
+          const rankedCategories=[...(audit?.categories||[])].sort((a,b)=>Number(b.acquire?.totalMs||0)-Number(a.acquire?.totalMs||0)),topEvent=eventTypes[0]||null,topCategory=rankedCategories[0]||null;let nextCorrectionTarget=null;
+          if(evidenceValid){if(topCategory?.category==="AUDIT_RECORD_INSERT"&&topEvent)nextCorrectionTarget="AuditService.record eventType="+topEvent.eventType+" at "+topEvent.callerSource+" ("+topEvent.critical+")";else if(topCategory)nextCorrectionTarget=topCategory.category;}
+          const responseObservations=selected?.responseObservations||[],statusSummary={};for(const r of responseObservations){const key=String(r.status),z=statusSummary[key]||(statusSummary[key]={observations:0,enteredPostgresRequests:0});z.observations+=Number(r.observations||0);z.enteredPostgresRequests+=Number(r.enteredPostgresRequests||0);}
+          const output={schema:"b1-c43-analysis-v1",load:{executions,loadRc,evidenceValid,runnerInvocations:executions,v250:0,v500:0,v1000:0},auditPhysical:audit,logicalBorrowerAttribution:{categoryTotals,categories,critical,unknown},auditEventTypes:eventTypes,securityMonitor:{statusSummary,routes:securityRoutes,responseObservations},accounting:{borrowerBoundAcquisitions:logical,independentPhysicalAcquisitions:physical,delta,timingDelta,timingCrossValidationPass:timingPass},correctness,performance,throughput,rootCauseVerdict:root,nextCorrectionTarget,attributionValidity:evidenceValid?"ATTRIBUTION_VALID":"ATTRIBUTION_INVALID"};
+          fs.writeFileSync(dir+"/b1-c43-analysis.json",JSON.stringify(output,null,2));console.log(JSON.stringify(output,null,2));
+          NODE
+          rc=$?
+          echo "analysis_rc=$rc" >> perf/k6/reports/b1-c43-phase-status.txt
+          exit 0
+
+      - name: Record CI identity and evidence checksums
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "job_id=$GITHUB_JOB"
+            echo "attempt=$GITHUB_RUN_ATTEMPT"
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "tested_tree=$(git rev-parse HEAD^{tree})"
+          } > perf/k6/reports/b1-c43-ci-identity.txt
+          find perf/k6/reports -maxdepth 1 -type f ! -name b1-c43-evidence-sha256.txt -print0 |
+            sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/b1-c43-evidence-sha256.txt"
+          mv "$RUNNER_TEMP/b1-c43-evidence-sha256.txt" perf/k6/reports/b1-c43-evidence-sha256.txt
+
+      - name: Upload exactly one final C43 evidence artifact
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-c43-borrower-attribution-evidence
+          path: modern/checkers-engine/perf/k6/reports/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Truthful final C43 evidence-validity gate
+        if: always()
+        run: |
+          set -euo pipefail
+          echo '--- C43 PHASE STATUS ---'
+          cat perf/k6/reports/b1-c43-phase-status.txt || true
+          test "$(cat perf/k6/reports/b1-c43-load-executions.txt 2>/dev/null || echo 0)" = "1" || { echo "B1-C43 HOLD: benchmark not executed exactly once"; exit 92; }
+          rc="$(cat perf/k6/reports/b1-c43-load-rc.txt 2>/dev/null || echo -1)"
+          test "$rc" = "0" -o "$rc" = "99" || { echo "B1-C43 HOLD: invalid load exit $rc"; exit 93; }
+          test -s perf/k6/reports/b1-c43-analysis.json || { echo "B1-C43 HOLD: analysis missing"; exit 94; }
+          node - <<'NODE'
+          const fs=require("node:fs"),x=JSON.parse(fs.readFileSync("perf/k6/reports/b1-c43-analysis.json","utf8"));
+          if(!x.load?.evidenceValid)process.exit(95);
+          if(x.accounting?.delta!==0)process.exit(96);
+          if(!x.accounting?.timingCrossValidationPass)process.exit(97);
+          if(x.logicalBorrowerAttribution?.unknown!==0)process.exit(98);
+          if(x.attributionValidity!=="ATTRIBUTION_VALID")process.exit(99);
+          console.log("B1-C43 ATTRIBUTION_VALID");console.log(x.rootCauseVerdict);console.log("NEXT_CORRECTION_TARGET="+x.nextCorrectionTarget);
+          NODE
