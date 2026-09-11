@@ -176,7 +176,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/advanced-scalability-wave-a-c6-lobby-atomic-start.test.js             test/advanced-scalability-wave-a-f02-lobby-postgres.test.js             test/advanced-scalability-wave-a-f04-global-chat.test.js             test/auth-lobby.test.js             test/wave-b-b1-c17-lobby-state-client-reuse.test.js             2>&1 | tee perf/k6/reports/b1-c38-related.log
+          node --require ./src/pg-secure-preload.cjs --test --test-concurrency=1             test/advanced-scalability-wave-a-c5-global-chat-admission.test.js             test/advanced-scalability-wave-a-f02-lobby-postgres.test.js             test/auth-lobby.test.js             test/wave-b-b1-c17-lobby-state-client-reuse.test.js             2>&1 | tee perf/k6/reports/b1-c38-related.log
 
       - name: Verify canonical post-C38 connection profile
         id: profile
