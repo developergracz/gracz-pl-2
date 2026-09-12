@@ -1,0 +1,20 @@
+{
+  "name": "gracz-pl-cloudflare-migration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cf:whoami": "wrangler whoami",
+    "cf:types": "wrangler types",
+    "cf:check": "wrangler check",
+    "cf:dev": "wrangler dev",
+    "cf:dry-run": "wrangler deploy --dry-run",
+    "cf:deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "wrangler": "latest"
+  }
+}
