@@ -25,6 +25,7 @@ This manifest records the intended files and design status. It is not an impleme
 11. `10-TESTING-SECURITY-AND-OPERATIONS.md` — testing, threat model, incidents, observability and operations.
 12. `11-ACCEPTANCE-MATRIX.md` — requirement-to-test/gate mapping.
 13. `12-RESUME-RUNBOOK.md` — exact future-session resume protocol.
+14. `13-DOCUMENTATION-MANIFEST.md` — this package inventory, baseline and implementation-status record.
 
 Parent locator:
 `../README.md`
