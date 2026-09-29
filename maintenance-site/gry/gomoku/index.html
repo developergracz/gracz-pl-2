@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>Gomoku — zasady gry, plansza 15×15 i strategia | gracz.pl</title>
+  <meta name="description" content="Gomoku na gracz.pl: plansza 15×15, zasady pięciu w linii, ruchy kamieni, strategie, błędy początkujących, warianty i przygotowywana gra online.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#050706">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="canonical" href="https://gracz.pl/gry/gomoku/">
+  <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/gomoku/">
+  <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry/gomoku/">
+  <link rel="alternate" hreflang="x-default" href="https://gracz.pl/gry/gomoku/">
+
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:site_name" content="gracz.pl">
+  <meta property="og:title" content="Gomoku — strategiczna gra pięciu w linii">
+  <meta property="og:description" content="Poznaj Gomoku: plansza 15×15, zasady, podstawy strategii, błędy początkujących i warianty gry.">
+  <meta property="og:url" content="https://gracz.pl/gry/gomoku/">
+  <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Gomoku — zasady gry i strategia | gracz.pl">
+  <meta name="twitter:description" content="Plansza 15×15, pięć w linii, strategie, warianty i przygotowywana gra online.">
+  <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/gomoku.css">
+  <script src="/assets/gomoku.js" defer></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://gracz.pl/#website",
+        "url": "https://gracz.pl/",
+        "name": "gracz.pl",
+        "inLanguage": "pl-PL"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://gracz.pl/gry/gomoku/#webpage",
+        "url": "https://gracz.pl/gry/gomoku/",
+        "name": "Gomoku — zasady gry, plansza 15×15 i strategia",
+        "description": "Gomoku na gracz.pl: plansza 15×15, zasady pięciu w linii, ruchy kamieni, strategie, błędy początkujących, warianty i przygotowywana gra online.",
+        "isPartOf": {"@id": "https://gracz.pl/#website"},
+        "inLanguage": "pl-PL"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://gracz.pl/gry/gomoku/#breadcrumb",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "Start", "item": "https://gracz.pl/"},
+          {"@type": "ListItem", "position": 2, "name": "Gry", "item": "https://gracz.pl/gry/"},
+          {"@type": "ListItem", "position": 3, "name": "Gomoku", "item": "https://gracz.pl/gry/gomoku/"}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link is-active" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry-karciane/#poker-treningowy">Poker treningowy</a></li>
+                <li><a href="/gry/#tysiac">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/" aria-current="page">Gomoku</a></li>
+              </ul>
+            </li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry-karciane/#poker-treningowy">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry-karciane/#tysiac">Tysiąc</a></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link community-trigger menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj"><svg aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="tresc" class="page-shell" tabindex="-1">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li><a href="/gry/">Gry</a></li>
+        <li aria-current="page">Gomoku</li>
+      </ol>
+    </nav>
+
+    <div class="page-grid">
+      <div class="main-column">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="board-visual">
+            <div class="gomoku-board-wrap" role="img" aria-label="Plansza Gomoku 15 na 15 z przykładowym układem czarnych i białych kamieni">
+              <div class="gomoku-board">
+              <span class="stone stone--white gx6 gy4" aria-hidden="true"></span>
+              <span class="stone stone--black gx8 gy4" aria-hidden="true"></span>
+              <span class="stone stone--black gx7 gy5" aria-hidden="true"></span>
+              <span class="stone stone--white gx9 gy5" aria-hidden="true"></span>
+              <span class="stone stone--white gx5 gy6" aria-hidden="true"></span>
+              <span class="stone stone--black gx6 gy6" aria-hidden="true"></span>
+              <span class="stone stone--black gx8 gy6" aria-hidden="true"></span>
+              <span class="stone stone--white gx10 gy6" aria-hidden="true"></span>
+              <span class="stone stone--white gx6 gy7" aria-hidden="true"></span>
+              <span class="stone stone--black gx7 gy7" aria-hidden="true"></span>
+              <span class="stone stone--white gx8 gy7" aria-hidden="true"></span>
+              <span class="stone stone--black gx9 gy7" aria-hidden="true"></span>
+              <span class="stone stone--black gx5 gy8" aria-hidden="true"></span>
+              <span class="stone stone--white gx7 gy8" aria-hidden="true"></span>
+              <span class="stone stone--black gx8 gy8" aria-hidden="true"></span>
+              <span class="stone stone--white gx10 gy8" aria-hidden="true"></span>
+              <span class="stone stone--white gx6 gy9" aria-hidden="true"></span>
+              <span class="stone stone--black gx7 gy9" aria-hidden="true"></span>
+              <span class="stone stone--black gx9 gy9" aria-hidden="true"></span>
+              <span class="stone stone--black gx8 gy10" aria-hidden="true"></span>
+              <span class="stone stone--white gx10 gy10" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-copy">
+            <h1 id="hero-title">Gomoku</h1>
+            <p class="hero-kicker">Strategiczna gra pięciu w linii</p>
+            <p class="hero-lead">Gomoku to prosta w zasadach, ale bardzo wymagająca gra strategiczna. Dwóch graczy naprzemiennie układa kamienie na przecięciach planszy, próbując jako pierwsi stworzyć nieprzerwaną linię pięciu własnych kamieni.</p>
+
+            <ul class="facts" aria-label="Informacje o grze">
+              <li><span class="fact-icon">●○</span><strong>2 graczy</strong></li>
+              <li><span class="fact-icon">▦</span><strong>Plansza 15×15</strong></li>
+              <li><span class="fact-icon">◆</span><strong>Gra strategiczna</strong></li>
+              <li><span class="fact-icon">◷</span><strong>Średni czas gry<br>5–20 minut</strong></li>
+            </ul>
+
+            <div class="hero-actions">
+              <button class="cta-primary" type="button" data-modal="play">
+                <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+                <span>Zagraj online<small>w przygotowaniu</small></span>
+              </button>
+              <a class="cta-secondary" href="#zasady">Zasady gry <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section id="zasady" class="rules-grid" aria-label="Najważniejsze zasady Gomoku">
+          <article class="rule-card"><span class="rule-icon">◎</span><div><h2>1. Cel gry</h2><p>Ułóż jako pierwszy pięć własnych kamieni w jednej nieprzerwanej linii: poziomo, pionowo albo po skosie.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">▦</span><div><h2>2. Plansza</h2><p>Gra odbywa się na planszy 15×15. Kamienie umieszcza się na wolnych przecięciach linii.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">●</span><div><h2>3. Ruch gracza</h2><p>Gracze wykonują ruchy na zmianę. W swojej turze gracz dokłada jeden kamień swojego koloru.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">↔</span><div><h2>4. Kamienie nie poruszają się</h2><p>Po położeniu kamień pozostaje na swoim miejscu do końca partii. Nie można go przesuwać ani zdejmować.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">✦</span><div><h2>5. Pięć w linii</h2><p>Wygrywa gracz, który jako pierwszy utworzy linię pięciu własnych kamieni w dozwolonym kierunku.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">⚑</span><div><h2>6. Zakończenie partii</h2><p>Partia kończy się natychmiast po utworzeniu zwycięskiej linii albo remisem, gdy nie da się już wykonać ruchu bez zwycięstwa.</p></div></article>
+        </section>
+
+        <section class="info-grid" aria-label="Strategia, błędy i warianty">
+          <article class="info-card info-card--green">
+            <h2><span>💡</span> Strategia i wskazówki</h2>
+            <ul class="check-list">
+              <li>Walcz o środek planszy</li>
+              <li>Twórz dwa zagrożenia jednocześnie</li>
+              <li>Blokuj otwarte czwórki przeciwnika</li>
+              <li>Buduj elastyczne układy trójek</li>
+              <li>Analizuj kilka odpowiedzi do przodu</li>
+            </ul>
+          </article>
+
+          <article class="info-card info-card--red">
+            <h2><span>⚠</span> Najczęstsze błędy początkujących</h2>
+            <ul class="x-list">
+              <li>Ignorowanie zagrożeń przeciwnika</li>
+              <li>Granie wyłącznie ofensywnie</li>
+              <li>Budowanie linii tylko w jednym kierunku</li>
+              <li>Oddawanie środka planszy</li>
+              <li>Zbyt późne blokowanie otwartych układów</li>
+            </ul>
+          </article>
+
+          <article class="info-card" id="warianty">
+            <h2><span>⚙</span> Warianty gry</h2>
+            <ul class="variant-list">
+              <li>Klasyczne Gomoku 15×15</li>
+              <li>Freestyle Gomoku</li>
+              <li>Renju</li>
+              <li>Gomoku 13×13</li>
+              <li>Gomoku 19×19</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="details-card" aria-labelledby="dokladne-zasady">
+          <h2 id="dokladne-zasady">Dokładne zasady i przebieg partii</h2>
+          <div class="details-columns">
+            <div>
+              <h3>Pierwszy ruch</h3>
+              <p>Partię rozpoczyna gracz grający czarnymi kamieniami. Następnie gracze wykonują po jednym ruchu na zmianę, dokładając kamień na dowolnym wolnym przecięciu.</p>
+            </div>
+            <div>
+              <h3>Budowanie zagrożeń</h3>
+              <p>Najważniejsze układy to trójki i czwórki, zwłaszcza takie, które mają wolne pola z obu stron. Dobre zagranie często tworzy jednocześnie kilka możliwych dróg do zwycięstwa.</p>
+            </div>
+            <div>
+              <h3>Jak wygrać</h3>
+              <p>Wygrywa pierwszy gracz, który zbuduje pięć własnych kamieni w jednej ciągłej linii. Dokładne ograniczenia zależą od wybranego wariantu i będą wskazane w interfejsie gry.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column" aria-label="Informacje dodatkowe">
+        <section class="online-card">
+          <p class="status-pill"><span></span>W przygotowaniu</p>
+          <h2>Graj w Gomoku online</h2>
+          <p>Już wkrótce zagrasz w Gomoku na gracz.pl — z innymi graczami, w rankingach i turniejach.</p>
+
+          <button class="side-action side-action--gold" type="button" data-modal="multiplayer">
+            <span class="side-emoji">👥</span><span><strong>Rozgrywka multiplayer</strong><small>Graj z innymi graczami</small></span><b>›</b>
+          </button>
+          <button class="side-action side-action--green" type="button" data-modal="rankings">
+            <span class="side-emoji">🏆</span><span><strong>Rankingi i statystyki</strong><small>Śledź swoje postępy</small></span><b>›</b>
+          </button>
+          <a class="side-action side-action--red" href="#warianty">
+            <span class="side-emoji">⚙</span><span><strong>Różne warianty gry</strong><small>Klasyczne i dodatkowe tryby</small></span><b>›</b>
+          </a>
+          <a class="side-action side-action--green" href="/poradniki/">
+            <span class="side-emoji">🎓</span><span><strong>Nauka i poradniki</strong><small>Zostań lepszym graczem</small></span><b>›</b>
+          </a>
+        </section>
+
+        <section class="related-card">
+          <h2>Zobacz także</h2>
+          <a class="related-game" href="/gry/warcaby/">
+            <span class="related-thumb related-thumb--checkers">●</span>
+            <span><strong>Warcaby</strong><small>Gra logiczna</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry-karciane/#poker-treningowy">
+            <span class="related-thumb related-thumb--cards">♠</span>
+            <span><strong>Poker</strong><small>Gra karciana</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry/#tysiac">
+            <span class="related-thumb related-thumb--cards">♥</span>
+            <span><strong>Tysiąc</strong><small>Gra karciana</small></span><b>›</b>
+          </a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/">gracz<span>.pl</span></a>
+        <p>Gry. Wiedza. Społeczność.</p>
+      </div>
+
+      <nav class="footer-col" aria-labelledby="f-nav">
+        <h2 id="f-nav">Nawigacja</h2>
+        <ul>
+          <li><a href="/">Start</a></li>
+          <li><a href="/gry/">Gry</a></li>
+          <li><a href="/gry-karciane/">Gry karciane</a></li>
+          <li><a href="/poradniki/">Poradniki</a></li>
+          <li><button type="button" data-modal="community">Społeczność</button></li>
+          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-labelledby="f-pop">
+        <h2 id="f-pop">Popularne działy</h2>
+        <ul>
+          <li><a href="/gry-karciane/#poker-treningowy">Poker treningowy</a></li>
+          <li><a href="/gry/#tysiac">Tysiąc</a></li>
+          <li><a href="/gry/warcaby/">Warcaby</a></li>
+          <li><a href="/gry/gomoku/">Gomoku</a></li>
+          <li><a href="/poradniki/">Poradniki</a></li>
+          <li><button type="button" data-modal="updates">Aktualności</button></li>
+        </ul>
+      </nav>
+
+      <div class="footer-news">
+        <h2>Bądź na bieżąco</h2>
+        <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
+        <form data-newsletter novalidate>
+          <label class="sr-only" for="news-email">Twój adres e-mail</label>
+          <input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off">
+          <button type="submit">Zapisz się</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p>
+      <div class="footer-links">
+        <button type="button" data-modal="privacy">Polityka prywatności</button>
+        <button type="button" data-modal="terms">Regulamin</button>
+        <button type="button" data-modal="contact">Kontakt</button>
+      </div>
+    </div>
+  </footer>
+
+  <dialog class="modal" id="modal" aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-box">
+      <button class="modal-x" type="button" data-close aria-label="Zamknij"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      <span class="modal-logo">gracz<span>.pl</span></span>
+      <h2 id="modal-title">Informacja</h2>
+      <p id="modal-text"></p>
+      <button class="modal-ok" type="button" data-close>Rozumiem</button>
+    </div>
+  </dialog>
+</body>
+</html>
