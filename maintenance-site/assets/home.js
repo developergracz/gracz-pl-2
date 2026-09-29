@@ -36,6 +36,11 @@
       text: 'Możliwość zapisania się na informacje o nowych funkcjach gracz.pl uruchomimy w kolejnym etapie.',
       button: 'Rozumiem'
     },
+    updates: {
+      title: 'Aktualności są w przygotowaniu',
+      text: 'Sekcję aktualności uruchomimy wraz z kolejnymi publicznymi funkcjami gracz.pl.',
+      button: 'Rozumiem'
+    },
     privacy: {
       title: 'Polityka prywatności',
       text: 'Polityka prywatności jest przygotowywana.',

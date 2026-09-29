@@ -1336,36 +1336,39 @@ main:focus { outline: none; }
 .ref-login     { left: 72.5%; top: .45%; width: 10.2%; height: 3.7%; }
 .ref-register  { left: 83.7%; top: .45%; width: 11.3%; height: 3.7%; }
 
-/* Main CTAs. */
-.ref-next        { left: 10.5%; top: 40.25%; width: 21.2%; height: 3.2%; }
-.ref-tile-games  { left: 5.5%;  top: 77.65%; width: 19.2%; height: 2.75%; }
-.ref-tile-cards  { left: 29.1%; top: 77.65%; width: 18.9%; height: 2.75%; }
-.ref-tile-guides { left: 51.3%; top: 77.65%; width: 19.1%; height: 2.75%; }
-.ref-tile-about  { left: 72.7%; top: 77.65%; width: 20.3%; height: 2.75%; }
+/* Main CTAs / cards.
+   The full four lower cards are clickable so every visible CTA area is active. */
+.ref-next        { left: 10.0%; top: 39.5%;  width: 22.5%; height: 4.0%; }
+.ref-tile-games  { left: 3.8%;  top: 63.0%;  width: 22.8%; height: 19.8%; }
+.ref-tile-cards  { left: 27.4%; top: 63.0%;  width: 22.4%; height: 19.8%; }
+.ref-tile-guides { left: 50.5%; top: 63.0%;  width: 22.3%; height: 19.8%; }
+.ref-tile-about  { left: 73.4%; top: 63.0%;  width: 22.6%; height: 19.8%; }
 
-/* Footer navigation column. */
-.ref-footer-start     { left: 27.3%; top: 85.55%; width: 5.5%; height: 1.25%; }
-.ref-footer-games     { left: 27.3%; top: 86.75%; width: 5.5%; height: 1.25%; }
-.ref-footer-cards     { left: 27.3%; top: 87.95%; width: 9.5%; height: 1.25%; }
-.ref-footer-guides    { left: 27.3%; top: 89.15%; width: 7.0%; height: 1.25%; }
-.ref-footer-community { left: 27.3%; top: 90.35%; width: 8.4%; height: 1.25%; }
-.ref-footer-about     { left: 27.3%; top: 91.55%; width: 7.5%; height: 1.25%; }
+/* Footer — mapped to the actual lower section of the approved 1122×1402 image. */
+.ref-footer-brand     { left: 4.0%;  top: 86.0%; width: 14.8%; height: 5.0%; }
+.ref-footer-start     { left: 27.7%; top: 87.2%; width: 7.8%;  height: 1.7%; }
+.ref-footer-games     { left: 27.7%; top: 88.6%; width: 7.8%;  height: 1.7%; }
+.ref-footer-cards     { left: 27.7%; top: 90.0%; width: 10.8%; height: 1.7%; }
+.ref-footer-guides    { left: 27.7%; top: 91.4%; width: 8.8%;  height: 1.7%; }
+.ref-footer-community { left: 27.7%; top: 92.8%; width: 10.0%; height: 1.7%; }
+.ref-footer-about     { left: 27.7%; top: 94.2%; width: 9.0%;  height: 1.7%; }
 
-.ref-pop-poker    { left: 44.1%; top: 85.55%; width: 11.2%; height: 1.25%; }
-.ref-pop-thousand { left: 44.1%; top: 86.75%; width: 6.3%;  height: 1.25%; }
-.ref-pop-checkers { left: 44.1%; top: 87.95%; width: 7.0%;  height: 1.25%; }
-.ref-pop-gomoku   { left: 44.1%; top: 89.15%; width: 7.0%;  height: 1.25%; }
-.ref-pop-guides   { left: 44.1%; top: 90.35%; width: 7.0%;  height: 1.25%; }
+.ref-pop-poker    { left: 44.8%; top: 87.2%; width: 12.5%; height: 1.7%; }
+.ref-pop-thousand { left: 44.8%; top: 88.6%; width: 8.0%;  height: 1.7%; }
+.ref-pop-checkers { left: 44.8%; top: 90.0%; width: 8.0%;  height: 1.7%; }
+.ref-pop-gomoku   { left: 44.8%; top: 91.4%; width: 8.0%;  height: 1.7%; }
+.ref-pop-guides   { left: 44.8%; top: 92.8%; width: 8.5%;  height: 1.7%; }
+.ref-pop-updates  { left: 44.8%; top: 94.2%; width: 8.8%;  height: 1.7%; }
 
 /* Newsletter + legal + social. */
-.ref-newsletter { left: 67.0%; top: 88.25%; width: 27.2%; height: 3.0%; }
+.ref-newsletter { left: 67.7%; top: 89.5%; width: 28.0%; height: 3.6%; }
 
-.ref-privacy  { left: 61.5%; top: 94.65%; width: 9.2%; height: 1.9%; }
-.ref-terms    { left: 71.0%; top: 94.65%; width: 6.2%; height: 1.9%; }
-.ref-contact  { left: 78.0%; top: 94.65%; width: 5.2%; height: 1.9%; }
-.ref-facebook { left: 85.4%; top: 94.45%; width: 3.2%; height: 2.2%; border-radius: 50%; }
-.ref-youtube  { left: 89.0%; top: 94.45%; width: 3.2%; height: 2.2%; border-radius: 50%; }
-.ref-discord  { left: 92.5%; top: 94.45%; width: 3.4%; height: 2.2%; border-radius: 50%; }
+.ref-privacy  { left: 62.5%; top: 96.5%; width: 10.0%; height: 2.2%; }
+.ref-terms    { left: 73.3%; top: 96.5%; width: 6.6%;  height: 2.2%; }
+.ref-contact  { left: 80.0%; top: 96.5%; width: 5.3%;  height: 2.2%; }
+.ref-facebook { left: 87.0%; top: 96.2%; width: 3.2%;  height: 2.5%; border-radius: 50%; }
+.ref-youtube  { left: 90.4%; top: 96.2%; width: 3.2%;  height: 2.5%; border-radius: 50%; }
+.ref-discord  { left: 93.7%; top: 96.2%; width: 3.5%;  height: 2.5%; border-radius: 50%; }
 
 @media (min-width: 1024px) {
   body { background: #050706; }
