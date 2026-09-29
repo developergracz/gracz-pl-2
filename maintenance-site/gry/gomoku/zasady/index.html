@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zasady Gomoku 15×15 — pięć w linii, ruchy i zwycięstwo | gracz.pl</title>
+  <meta name="description" content="Szczegółowe zasady Gomoku na gracz.pl: plansza 15×15, czarne zaczynają, jeden kamień na turę, co najmniej pięć w linii, remis i legalne ruchy.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#050706">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://gracz.pl/gry/gomoku/zasady/">
+  <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/gomoku/zasady/">
+  <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry/gomoku/zasady/">
+  <link rel="alternate" hreflang="x-default" href="https://gracz.pl/gry/gomoku/zasady/">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:site_name" content="gracz.pl">
+  <meta property="og:title" content="Zasady Gomoku 15×15">
+  <meta property="og:description" content="Kompletny przewodnik po podstawowym wariancie Gomoku używanym na gracz.pl.">
+  <meta property="og:url" content="https://gracz.pl/gry/gomoku/zasady/">
+  <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Zasady Gomoku 15×15 | gracz.pl">
+  <meta name="twitter:description" content="Czarne zaczynają, jeden kamień na turę, co najmniej pięć w linii i remis przy pełnej planszy.">
+  <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/rules.css">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
+      {"@type":"WebPage","@id":"https://gracz.pl/gry/gomoku/zasady/#webpage","url":"https://gracz.pl/gry/gomoku/zasady/","name":"Zasady Gomoku 15×15","description":"Szczegółowe zasady Gomoku w podstawowym wariancie gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
+        {"@type":"ListItem","position":2,"name":"Gry","item":"https://gracz.pl/gry/"},
+        {"@type":"ListItem","position":3,"name":"Gomoku","item":"https://gracz.pl/gry/gomoku/"},
+        {"@type":"ListItem","position":4,"name":"Zasady gry","item":"https://gracz.pl/gry/gomoku/zasady/"}
+      ]}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#tresc">Przejdź do zasad</a>
+  <header class="rules-header">
+    <div class="rules-header__inner">
+      <a class="rules-logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+      <nav class="rules-nav" aria-label="Główna nawigacja">
+        <ul>
+          <li><a href="/">Start</a></li>
+          <li><a href="/gry/">Gry</a></li>
+          <li><a href="/gry-karciane/">Gry karciane</a></li>
+          <li><a href="/poradniki/">Poradniki</a></li>
+          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="tresc" class="rules-shell">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li><a href="/gry/">Gry</a></li>
+        <li><a href="/gry/gomoku/">Gomoku</a></li>
+        <li aria-current="page">Zasady gry</li>
+      </ol>
+    </nav>
+
+    <section class="rules-hero">
+      <div>
+        <p class="rules-kicker">Gomoku • zasady szczegółowe</p>
+        <h1>Zasady Gomoku 15×15</h1>
+        <p class="rules-lead">Gomoku jest proste do rozpoczęcia: gracze na zmianę dokładają po jednym kamieniu. Głębia gry zaczyna się przy budowaniu zagrożeń, ale same reguły są bardzo czytelne. Poniżej znajdziesz pełny opis wariantu podstawowego gracz.pl.</p>
+        <p class="rules-note"><strong>Ważne:</strong> ten opis odpowiada obecnemu silnikowi Gomoku gracz.pl — bez ograniczeń Renju i z wygraną przy linii pięciu lub większej liczby kamieni.</p>
+      </div>
+      <aside class="quick-card" aria-label="Gomoku w skrócie">
+        <h2>W skrócie</h2>
+        <dl>
+          <div><dt>Gracze</dt><dd>2</dd></div>
+          <div><dt>Plansza</dt><dd>15×15</dd></div>
+          <div><dt>Pierwszy ruch</dt><dd>Czarne</dd></div>
+          <div><dt>Ruch</dt><dd>1 kamień</dd></div>
+          <div><dt>Wygrana</dt><dd>5 lub więcej</dd></div>
+        </dl>
+      </aside>
+    </section>
+
+    <div class="rules-layout">
+      <aside class="rules-toc" aria-label="Spis zasad">
+        <h2>Na tej stronie</h2>
+        <ol>
+          <li><a href="#cel">Cel gry</a></li>
+          <li><a href="#plansza">Plansza i start</a></li>
+          <li><a href="#ruch">Legalny ruch</a></li>
+          <li><a href="#wygrana">Linia zwycięska</a></li>
+          <li><a href="#remis">Remis</a></li>
+          <li><a href="#warianty">Wariant podstawowy</a></li>
+          <li><a href="#faq">Najczęstsze pytania</a></li>
+        </ol>
+        <a class="back-game" href="/gry/gomoku/">← Wróć do Gomoku</a>
+      </aside>
+
+      <div class="rules-content">
+        <section class="rule-section" id="cel">
+          <h2><span class="rule-number">1</span>Cel gry</h2>
+          <p>Celem jest utworzenie własnymi kamieniami <strong>nieprzerwanej linii co najmniej pięciu kamieni</strong>. Linia może przebiegać poziomo, pionowo albo po jednej z dwóch przekątnych.</p>
+          <div class="rule-grid">
+            <article class="mini-rule"><h3>Poziomo</h3><p>Pięć lub więcej kamieni jednego koloru w tym samym rzędzie.</p></article>
+            <article class="mini-rule"><h3>Pionowo</h3><p>Pięć lub więcej kamieni jednego koloru w tej samej kolumnie.</p></article>
+            <article class="mini-rule"><h3>Skos ↘</h3><p>Ciąg kamieni na przekątnej biegnącej z lewego górnego do prawego dolnego rogu.</p></article>
+            <article class="mini-rule"><h3>Skos ↗</h3><p>Ciąg kamieni na przekątnej biegnącej z lewego dolnego do prawego górnego rogu.</p></article>
+          </div>
+        </section>
+
+        <section class="rule-section" id="plansza">
+          <h2><span class="rule-number">2</span>Plansza i rozpoczęcie partii</h2>
+          <p>Podstawowa plansza gracz.pl ma rozmiar <strong>15×15</strong>. Kamienie umieszcza się na wolnych punktach siatki planszy.</p>
+          <ul>
+            <li>W partii bierze udział dokładnie dwóch graczy.</li>
+            <li>Jeden gracz używa czarnych kamieni, drugi białych.</li>
+            <li><strong>Czarne wykonują pierwszy ruch.</strong></li>
+            <li>Potem gracze wykonują ruchy naprzemiennie.</li>
+            <li>Na początku wszystkie miejsca na planszy są wolne.</li>
+          </ul>
+        </section>
+
+        <section class="rule-section" id="ruch">
+          <h2><span class="rule-number">3</span>Jak wygląda legalny ruch</h2>
+          <p>W swojej turze gracz wybiera <strong>jedno wolne miejsce</strong> i umieszcza na nim jeden kamień swojego koloru. Po zatwierdzeniu ruchu kolej przechodzi na przeciwnika.</p>
+          <ul>
+            <li>Nie można postawić kamienia na miejscu już zajętym.</li>
+            <li>Kamieni nie przesuwa się po planszy po ich położeniu.</li>
+            <li>Kamieni nie zbija się i nie usuwa w trakcie normalnej partii.</li>
+            <li>Nie ma obowiązku grania w pobliżu wcześniejszych ruchów — legalne jest każde wolne miejsce.</li>
+          </ul>
+          <div class="rule-callout"><strong>Ruch jest prosty:</strong> jeden gracz = jeden nowy kamień = koniec tury, o ile ruch nie zakończył partii zwycięstwem.</div>
+        </section>
+
+        <section class="rule-section" id="wygrana">
+          <h2><span class="rule-number">4</span>Kiedy powstaje zwycięska linia</h2>
+          <p>Po każdym ruchu system sprawdza cztery kierunki przechodzące przez właśnie położony kamień: poziom, pion oraz dwie przekątne. Jeżeli w którymkolwiek kierunku znajduje się <strong>co najmniej pięć połączonych kamieni tego samego koloru</strong>, partia natychmiast się kończy.</p>
+          <div class="rule-table-wrap">
+            <table class="rule-table">
+              <thead><tr><th>Układ</th><th>Wariant gracz.pl</th></tr></thead>
+              <tbody>
+                <tr><td>5 kamieni w linii</td><td>Wygrana</td></tr>
+                <tr><td>6 lub więcej kamieni w linii</td><td>Wygrana</td></tr>
+                <tr><td>4 kamienie w linii</td><td>Gra trwa</td></tr>
+                <tr><td>5 kamieni z przerwą</td><td>Gra trwa — linia musi być ciągła</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="rule-callout rule-callout--gold"><strong>Nadlinia liczy się jako zwycięstwo.</strong> Jeżeli ruch tworzy ciąg sześciu lub większej liczby kamieni, warunek „co najmniej pięć” również jest spełniony.</div>
+        </section>
+
+        <section class="rule-section" id="remis">
+          <h2><span class="rule-number">5</span>Remis</h2>
+          <p>Jeżeli wszystkie miejsca na planszy zostaną zajęte i żaden gracz nie utworzy zwycięskiej linii, partia kończy się <strong>remisem</strong>.</p>
+          <p>W podstawowym silniku Gomoku nie ma dodatkowego remisu za powtarzanie pozycji, ponieważ kamienie nie są przesuwane ani zdejmowane — liczba zajętych miejsc stale rośnie.</p>
+        </section>
+
+        <section class="rule-section" id="warianty">
+          <h2><span class="rule-number">6</span>Wariant podstawowy gracz.pl a inne odmiany</h2>
+          <p>Gomoku występuje w kilku odmianach. Ta strona opisuje <strong>podstawowy wariant używany przez obecny silnik gracz.pl</strong>.</p>
+          <ul>
+            <li>Brak zakazanych układów dla czarnych.</li>
+            <li>Brak zasad Renju ograniczających podwójne trójki, podwójne czwórki lub nadlinie.</li>
+            <li>Linia sześciu lub większej liczby kamieni jest zwycięska.</li>
+            <li>Standardowa prezentacja portalu wykorzystuje planszę 15×15.</li>
+          </ul>
+          <div class="rule-callout rule-callout--red"><strong>Renju to osobny wariant.</strong> Jeżeli w przyszłości zostanie udostępniony, otrzyma własny zestaw reguł i ograniczeń. Nie należy mieszać tych zasad z podstawowym Gomoku.</div>
+        </section>
+
+        <section class="rule-section faq" id="faq">
+          <h2><span class="rule-number">7</span>Najczęstsze pytania</h2>
+          <details><summary>Kto zaczyna partię?</summary><p>Czarne. Po ich ruchu gracze wykonują ruchy naprzemiennie.</p></details>
+          <details><summary>Czy sześć kamieni w linii wygrywa?</summary><p>Tak. Podstawowy wariant gracz.pl uznaje linię co najmniej pięciu kamieni, więc sześć, siedem lub więcej również kończy partię zwycięstwem.</p></details>
+          <details><summary>Czy można postawić kamień na brzegu planszy?</summary><p>Tak. Każde wolne miejsce planszy jest legalne.</p></details>
+          <details><summary>Czy kamienie można przesuwać albo zbijać?</summary><p>Nie. Raz położony kamień pozostaje na swoim miejscu do końca partii.</p></details>
+          <details><summary>Czy w podstawowym Gomoku obowiązują zakazy Renju?</summary><p>Nie. Obecny wariant podstawowy gracz.pl nie stosuje zakazanych ruchów Renju.</p></details>
+        </section>
+      </div>
+    </div>
+
+    <section class="rules-bottom" aria-label="Dalsza nawigacja">
+      <div class="rules-bottom__text"><strong>Znasz już zasady?</strong><span>Wróć do podstrony Gomoku albo poznaj zasady Warcabów.</span></div>
+      <div class="rules-bottom__actions">
+        <a class="button button--gold" href="/gry/gomoku/">Wróć do Gomoku</a>
+        <a class="button button--outline" href="/gry/warcaby/zasady/">Zasady Warcabów</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rules-footer">
+    <div class="rules-footer__inner">
+      <span>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</span>
+      <nav aria-label="Stopka"><a href="/gry/">Gry</a><a href="/poradniki/">Poradniki</a><a href="/o-gracz-pl/">O gracz.pl</a></nav>
+    </div>
+  </footer>
+</body>
+</html>
