@@ -36,7 +36,8 @@
       toggle.addEventListener('click',function(e){
         e.stopPropagation();
         var hoverMode=!mobile.matches && window.matchMedia('(hover:hover)').matches;
-        var open=hoverMode?true:!item.classList.contains('is-open');
+        var pointerActivation=e.detail>0;
+        var open=(hoverMode && pointerActivation)?true:!item.classList.contains('is-open');
         closeMenus(item);
         setMenu(item,open);
       });
