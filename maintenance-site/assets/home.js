@@ -76,7 +76,7 @@
   var body = document.body;
   var header = document.querySelector('.site-header');
   var burger = document.querySelector('.burger');
-  var mobileQuery = window.matchMedia('(max-width: 1023px)');
+  var mobileQuery = window.matchMedia('(max-width: 1179px)');
 
   /* ---------- Dropdown menus ---------- */
 
@@ -126,8 +126,10 @@
       }
     });
 
-    // Close when focus leaves the menu entirely.
+    // Close when focus leaves the menu entirely (desktop only: in the mobile
+    // accordion, collapsing on mousedown would shift the item being tapped).
     item.addEventListener('focusout', function (event) {
+      if (mobileQuery.matches) return;
       if (!item.contains(event.relatedTarget)) setMenu(item, false);
     });
 
@@ -271,48 +273,5 @@
       openModal('newsletter', newsForm.querySelector('button'));
     });
   }
-
-  /* ---------- Exact-reference desktop dropdowns ---------- */
-
-  var refMenus = Array.prototype.slice.call(document.querySelectorAll('[data-ref-menu]'));
-
-  function closeRefMenus(except) {
-    refMenus.forEach(function (item) {
-      if (item === except) return;
-      var toggle = item.querySelector('[data-ref-toggle]');
-      var popover = item.querySelector('.ref-popover');
-      if (!toggle || !popover) return;
-      toggle.setAttribute('aria-expanded', 'false');
-      popover.hidden = true;
-    });
-  }
-
-  refMenus.forEach(function (item) {
-    var toggle = item.querySelector('[data-ref-toggle]');
-    var popover = item.querySelector('.ref-popover');
-    if (!toggle || !popover) return;
-
-    toggle.addEventListener('click', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      var opening = popover.hidden;
-      closeRefMenus(item);
-      popover.hidden = !opening;
-      toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
-    });
-
-    item.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !popover.hidden) {
-        popover.hidden = true;
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.focus();
-        event.preventDefault();
-      }
-    });
-  });
-
-  document.addEventListener('click', function (event) {
-    if (!event.target.closest('[data-ref-menu]')) closeRefMenus();
-  });
 
 })();

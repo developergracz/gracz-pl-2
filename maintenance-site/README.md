@@ -6,6 +6,7 @@ Cel: wyświetlać prostą stronę informacyjną pod `gracz.pl` bez uruchamiania 
 
 - tylko statyczne pliki HTML/CSS/JS (bez builda, bez frameworków),
 - strona główna: `index.html` + `assets/home.css` + `assets/home.js`; lokalne fonty i grafiki w `assets/`,
+- strona główna odwzorowuje 1:1 zatwierdzony layout (`LAYOUT_REFERENCYJNY_APPROVED.png`, 1122 px) jako semantyczny HTML/CSS — na desktopie (≥ 1180 px) wymiary są skalowane jednostką `--u` = szerokość okna / 1122; grafiki dekoracyjne (`next-devices.webp`, `tile-*.webp`, `icon-*.webp`) są wycięte z zatwierdzonego layoutu,
 - JavaScript wyłącznie do interakcji UI (menu, dropdowny, modal informacyjny) — bez żądań sieciowych i bez zapisu danych,
 - funkcje bez backendu (logowanie, rejestracja, społeczność, wyszukiwarka, newsletter, social media, dokumenty prawne) pokazują wyłącznie komunikat „w przygotowaniu”,
 - pole newslettera nigdy nie wysyła adresu (JS blokuje submit, a CSP `form-action 'none'` blokuje wysyłkę także bez JS),
