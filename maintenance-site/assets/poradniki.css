@@ -117,3 +117,28 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .guides-scene--image::before{display:none}
 .guides-scene-image{display:block;width:100%;height:100%;object-fit:cover;border-radius:20px}
 @media(max-width:560px){.guides-scene-image{width:100%;height:100%;object-fit:cover}}
+
+/* Poradniki P3 audit fixes D-01..D-04 */
+.hero-copy h1,.hero-kicker{text-wrap:balance}
+
+@media(max-width:560px){
+  .guide-actions{display:grid;grid-template-columns:1fr}
+  .guide-link{width:100%}
+}
+
+.related-thumb--about{
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(244,198,95,.16),transparent 42%),
+    linear-gradient(145deg,#11140f,#050706);
+}
+.about-mark{
+  font-family:var(--display);
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:-.05em;
+  color:#f3f0e7;
+  text-shadow:0 2px 8px rgba(0,0,0,.55);
+}
+.about-mark span{color:#f21a34}
