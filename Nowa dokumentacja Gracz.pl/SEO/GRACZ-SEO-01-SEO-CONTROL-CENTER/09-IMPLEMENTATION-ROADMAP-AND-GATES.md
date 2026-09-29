@@ -1,6 +1,6 @@
 # GRACZ-SEO-01 — Implementation Roadmap and Gates
 
-Status: `CANONICAL EXECUTION PLAN / NOT STARTED`
+Status: `CANONICAL EXECUTION PLAN / SEO-00 CLOSED / SEO-01a NEXT`
 
 ## 1. Rule
 
@@ -44,7 +44,24 @@ PASS only if implementation locations and boundaries are evidence-backed.
 
 No DDL or production changes.
 
+### Closure record — 2026-09-29
+
+`SEO-00 = CLOSED / PASS`
+
+Evidence: `SEO-00-AS-IS-INVENTORY.md`.
+
+AC-0001 through AC-0008 are closed as PASS. The live production baseline was directly verified, including HTTPS enforcement, www→apex redirect, real 404 behavior, absence of robots.txt/sitemap.xml, current `noindex,follow`, public support-file exposure and the production static-site boundary.
+
 ## 3. Phase SEO-01 — Domain Foundation and Page Registry
+
+### Entry split
+
+Implementation begins as `SEO-01a`, a runtime-independent, no-database slice. Durable PostgreSQL persistence is deferred to `SEO-01b` until an approved migration mechanism and runtime owner exist.
+
+Mandatory SEO-01a safety boundary:
+
+`NO CHANGES UNDER maintenance-site/**`
+
 
 ### Goal
 Implement domain types and read-only registry without affecting public output.
@@ -298,11 +315,14 @@ Use additional specialist review only for high-risk areas such as robots-wide ch
 
 ## 17. Current resume point
 
-As of this design document:
+As of 2026-09-29:
 
-`SEO CONTROL CENTER IMPLEMENTATION = NOT STARTED`
+`SEO-00 = CLOSED / PASS`
+`SEO-01a = READY AFTER OWNER-AUTHORIZED IMPLEMENTATION MANDATE`
+`SEO-01b = HOLD UNTIL APPROVED MIGRATOR / RUNTIME OWNERSHIP`
+`SEO-02+ = HOLD UNTIL LONG-TERM RUNTIME OWNER DECISION`
 
-The first future executable step is:
-`SEO-00 — Discovery and Baseline`
+The next executable engineering step is:
+`SEO-01a — Domain Foundation and File-backed Page Registry`
 
-Do not skip SEO-00 even if parts of the site are already known from older chats; current repository evidence must be refreshed.
+Before coding, refresh repository identity and verify the SEO-01a branch scope still excludes `maintenance-site/`.
