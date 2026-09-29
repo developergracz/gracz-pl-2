@@ -83,3 +83,5 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .guide-book::before{left:5px}.guide-book::after{right:5px}
 .guide-card{position:absolute;right:10px;bottom:7px;display:grid;place-items:center;width:27px;height:37px;border:1px solid rgba(65,40,20,.5);border-radius:4px;background:#f7efe1;color:#15110d;font:800 11px/1 Georgia,serif;box-shadow:0 3px 6px rgba(0,0,0,.4)}
 .guide-card--one{transform:rotate(-10deg) translateX(-15px)}.guide-card--two{color:#a20f17;transform:rotate(9deg)}
+
+.game-badge{align-self:flex-start}
