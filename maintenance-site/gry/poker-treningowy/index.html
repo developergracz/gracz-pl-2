@@ -84,7 +84,7 @@
               <ul class="dropdown" id="menu-gry">
                 <li><a href="/gry/">Wszystkie gry</a></li>
                 <li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li>
-                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
                 <li><a href="/gry/warcaby/">Warcaby</a></li>
                 <li><a href="/gry/gomoku/">Gomoku</a></li>
               </ul>
@@ -96,7 +96,7 @@
                 <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
                 <li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li>
                 <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
-                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
               </ul>
             </li>
             <li><a class="nav-link" href="/poradniki/">Poradniki</a></li>
@@ -137,14 +137,19 @@
           <div class="board-visual">
             <div class="card-table-scene poker-scene" role="img" aria-label="Stół Texas Hold’em z kartami wspólnymi, kartami własnymi i żetonami treningowymi">
               <div class="score-board"><span>Tryb</span><strong>Texas Hold’em</strong></div>
-              <div class="marriage-badges" aria-hidden="true"><span>♠</span><span class="red">♥</span><span>♣</span><span class="red">♦</span></div>
-              <div class="card-fan" aria-hidden="true">
-                <span class="playing-card c1"><b class="rank">A</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
-                <span class="playing-card red c2"><b class="rank">K</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
-                <span class="playing-card c3"><b class="rank">Q</b><b class="suit">♣</b><b class="big-suit">♣</b></span>
-                <span class="playing-card red c4"><b class="rank">J</b><b class="suit">♦</b><b class="big-suit">♦</b></span>
-                <span class="playing-card c5"><b class="rank">10</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+              <div class="dealer-button" aria-hidden="true">D</div>
+              <div class="community-cards" aria-hidden="true">
+                <span class="playing-card board-card red"><b class="rank">A</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
+                <span class="playing-card board-card"><b class="rank">10</b><b class="suit">♣</b><b class="big-suit">♣</b></span>
+                <span class="playing-card board-card"><b class="rank">7</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+                <span class="playing-card board-card red"><b class="rank">Q</b><b class="suit">♦</b><b class="big-suit">♦</b></span>
+                <span class="playing-card board-card"><b class="rank">2</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
               </div>
+              <div class="hole-cards" aria-hidden="true">
+                <span class="playing-card hole-card"><b class="rank">A</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+                <span class="playing-card hole-card red"><b class="rank">K</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
+              </div>
+              <div class="training-chips" aria-hidden="true"><i></i><i></i><i></i></div>
               <span class="table-caption">Preflop • Flop • Turn • River • Showdown</span>
             </div>
           </div>
@@ -164,7 +169,7 @@
             <div class="hero-actions">
               <button class="cta-primary" type="button" data-modal="play">
                 <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
-                <span>Zagraj treningowo<small>w przygotowaniu</small></span>
+                <span>Trenuj grę<small>w przygotowaniu</small></span>
               </button>
               <a class="cta-secondary" href="/gry/poker-treningowy/zasady/">Zasady gry <span aria-hidden="true">→</span></a>
             </div>
@@ -272,7 +277,7 @@
     <div class="footer-inner">
       <div class="footer-brand"><a class="footer-logo" href="/">gracz<span>.pl</span></a><p>Gry. Wiedza. Społeczność.</p></div>
       <nav class="footer-col" aria-labelledby="f-nav"><h2 id="f-nav">Nawigacja</h2><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/">Gry karciane</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="community">Społeczność</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
-      <nav class="footer-col" aria-labelledby="f-pop"><h2 id="f-pop">Popularne działy</h2><ul><li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li><li><a href="/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="/gry/warcaby/">Warcaby</a></li><li><a href="/gry/gomoku/">Gomoku</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="updates">Aktualności</button></li></ul></nav>
+      <nav class="footer-col" aria-labelledby="f-pop"><h2 id="f-pop">Popularne działy</h2><ul><li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li><li><a href="/gry/tysiac/">Tysiąc</a></li><li><a href="/gry/warcaby/">Warcaby</a></li><li><a href="/gry/gomoku/">Gomoku</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="updates">Aktualności</button></li></ul></nav>
       <div class="footer-news"><h2>Bądź na bieżąco</h2><p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p><form data-newsletter novalidate><label class="sr-only" for="news-email">Twój adres e-mail</label><input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off"><button type="submit">Zapisz się</button></form></div>
     </div>
     <div class="footer-bottom"><p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p><div class="footer-links"><button type="button" data-modal="privacy">Polityka prywatności</button><button type="button" data-modal="terms">Regulamin</button><button type="button" data-modal="contact">Kontakt</button></div></div>
