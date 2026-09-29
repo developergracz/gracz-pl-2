@@ -74,3 +74,12 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 @media(max-width:820px){.facts li:nth-child(2n){border-right:0}}
 
 @media(max-width:400px){.game-actions{display:grid;grid-template-columns:1fr}.game-link{width:100%}}
+
+/* Gry karciane audit polish */
+.side-emoji--red{color:#ff6767}.side-emoji--black{color:#f4c65f}
+.related-thumb--guides{background:linear-gradient(145deg,#2b180b,#0e1711)}
+.guide-book{position:absolute;left:8px;top:8px;width:42px;height:40px;border:1px solid rgba(244,198,95,.62);border-radius:5px;background:linear-gradient(90deg,#e8d4a3 0 47%,#b58a45 48% 52%,#ead9ad 53% 100%);box-shadow:0 3px 7px rgba(0,0,0,.45)}
+.guide-book::before,.guide-book::after{content:"";position:absolute;top:9px;width:13px;height:2px;background:rgba(70,46,22,.55);box-shadow:0 6px 0 rgba(70,46,22,.45),0 12px 0 rgba(70,46,22,.35)}
+.guide-book::before{left:5px}.guide-book::after{right:5px}
+.guide-card{position:absolute;right:10px;bottom:7px;display:grid;place-items:center;width:27px;height:37px;border:1px solid rgba(65,40,20,.5);border-radius:4px;background:#f7efe1;color:#15110d;font:800 11px/1 Georgia,serif;box-shadow:0 3px 6px rgba(0,0,0,.4)}
+.guide-card--one{transform:rotate(-10deg) translateX(-15px)}.guide-card--two{color:#a20f17;transform:rotate(9deg)}
