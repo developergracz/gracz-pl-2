@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Warcaby — zasady gry, plansza 8×8 i podstawy strategii | gracz.pl</title>
-  <meta name="description" content="Poznaj zasady Warcabów na planszy 8×8: ustawienie pionków, ruchy, obowiązkowe bicie, wielokrotne bicia, damkę, zakończenie partii i podstawy strategii.">
+  <title>Warcaby — zasady gry, plansza 8×8 i strategia | gracz.pl</title>
+  <meta name="description" content="Warcaby na gracz.pl: plansza 8×8, zasady, obowiązkowe bicie, wielokrotne bicia, damka, strategia i przygotowywana rozgrywka online.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -16,24 +16,26 @@
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/warcaby/">
   <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry/warcaby/">
   <link rel="alternate" hreflang="x-default" href="https://gracz.pl/gry/warcaby/">
-  <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/game.css">
 
   <meta property="og:type" content="article">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="gracz.pl">
-  <meta property="og:title" content="Warcaby — zasady gry, plansza 8×8 i podstawy strategii">
-  <meta property="og:description" content="Rozbudowany poradnik do Warcabów: plansza 8×8, ruchy, bicie, damka, koniec partii i podstawy strategii.">
+  <meta property="og:title" content="Warcaby — klasyczna gra logiczna, zasady i strategia">
+  <meta property="og:description" content="Poznaj zasady Warcabów 8×8, obowiązkowe bicie, damkę, strategię i przygotowywaną wersję online gracz.pl.">
   <meta property="og:url" content="https://gracz.pl/gry/warcaby/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta property="og:image:alt" content="gracz.pl — Warcaby i gry online">
-
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Warcaby — zasady gry, plansza 8×8 i podstawy strategii">
-  <meta name="twitter:description" content="Poznaj zasady Warcabów: ustawienie, ruch, bicie, damka, koniec partii i podstawy strategii.">
+  <meta name="twitter:title" content="Warcaby — zasady gry i strategia | gracz.pl">
+  <meta name="twitter:description" content="Plansza 8×8, zasady, bicie, damka, strategia i przygotowywana rozgrywka online.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/img/warcaby-board.webp" as="image" type="image/webp">
+  <link rel="stylesheet" href="/assets/warcaby.css">
+  <script src="/assets/warcaby.js" defer></script>
 
   <script type="application/ld+json">
   {
@@ -50,8 +52,8 @@
         "@type": "WebPage",
         "@id": "https://gracz.pl/gry/warcaby/#webpage",
         "url": "https://gracz.pl/gry/warcaby/",
-        "name": "Warcaby — zasady gry, plansza 8×8 i podstawy strategii",
-        "description": "Poznaj zasady Warcabów na planszy 8×8: ustawienie pionków, ruchy, obowiązkowe bicie, wielokrotne bicia, damkę, zakończenie partii i podstawy strategii.",
+        "name": "Warcaby — zasady gry, plansza 8×8 i strategia",
+        "description": "Warcaby na gracz.pl: plansza 8×8, zasady, obowiązkowe bicie, wielokrotne bicia, damka, strategia i przygotowywana rozgrywka online.",
         "isPartOf": {"@id": "https://gracz.pl/#website"},
         "inLanguage": "pl-PL"
       },
@@ -59,7 +61,7 @@
         "@type": "BreadcrumbList",
         "@id": "https://gracz.pl/gry/warcaby/#breadcrumb",
         "itemListElement": [
-          {"@type": "ListItem", "position": 1, "name": "gracz.pl", "item": "https://gracz.pl/"},
+          {"@type": "ListItem", "position": 1, "name": "Start", "item": "https://gracz.pl/"},
           {"@type": "ListItem", "position": 2, "name": "Gry", "item": "https://gracz.pl/gry/"},
           {"@type": "ListItem", "position": 3, "name": "Warcaby", "item": "https://gracz.pl/gry/warcaby/"}
         ]
@@ -69,245 +71,225 @@
   </script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
 
-  <div class="shell">
-    <div class="panel">
-      <header class="site-header">
-        <a class="brand" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-        <nav class="site-nav" aria-label="Główna nawigacja">
-          <ul>
-            <li><a href="/">Start</a></li>
-            <li><a href="/gry/" aria-current="page">Gry</a></li>
-            <li><a href="/gry-karciane/">Gry karciane</a></li>
-            <li><a href="/poradniki/">Poradniki</a></li>
-            <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
-          </ul>
-        </nav>
-      </header>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
 
-      <main id="tresc">
-        <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
-          <ol>
-            <li><a href="/">gracz.pl</a></li>
-            <li><a href="/gry/">Gry</a></li>
-            <li aria-current="page">Warcaby</li>
-          </ol>
-        </nav>
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
 
-        <p class="status">WARCABY • GRA W PRZYGOTOWANIU</p>
-
-        <h1>Warcaby — zasady gry, plansza i podstawy strategii</h1>
-        <p class="lead">Warcaby to klasyczna gra logiczna dla dwóch osób. Zasady można poznać w kilka minut, ale dobra gra wymaga planowania, liczenia wariantów, kontroli przekątnych i przewidywania wymuszonych bić. Poniżej znajdziesz kompletny przewodnik po wariancie 64-polowym na planszy 8×8.</p>
-
-        <div class="game-hero">
-          <section class="game-summary" aria-labelledby="warcaby-w-skrocie">
-            <h2 id="warcaby-w-skrocie">Warcaby w skrócie</h2>
-            <p>Dwóch graczy rozpoczyna partię z 12 pionkami. Gra odbywa się wyłącznie na ciemnych polach. Celem jest zbicie wszystkich bierek przeciwnika albo zablokowanie ich tak, aby rywal nie mógł wykonać prawidłowego ruchu.</p>
-            <p>W opisywanym wariancie białe zaczynają. Zwykły pion porusza się po przekątnej do przodu, natomiast bicie może wykonywać zarówno do przodu, jak i do tyłu. Jeżeli bicie jest dostępne, trzeba je wykonać.</p>
-
-            <div class="quick-facts" aria-label="Najważniejsze informacje">
-              <div class="quick-fact"><strong>Plansza</strong><span>8 × 8 pól</span></div>
-              <div class="quick-fact"><strong>Gracze</strong><span>2 osoby</span></div>
-              <div class="quick-fact"><strong>Pionki</strong><span>12 na gracza</span></div>
-              <div class="quick-fact"><strong>Pierwszy ruch</strong><span>Białe / jasne</span></div>
-              <div class="quick-fact"><strong>Bicie</strong><span>Obowiązkowe</span></div>
-              <div class="quick-fact"><strong>Cel</strong><span>Zbić lub zablokować rywala</span></div>
-            </div>
-          </section>
-
-          <figure class="board-card">
-            <div class="board-wrap">
-              <div class="checkers-board" role="img" aria-label="Przykładowe początkowe ustawienie 12 ciemnych i 12 jasnych pionków na planszy 8 na 8">
-              <span class="checker checker--dark x1 y0" aria-hidden="true"></span>
-              <span class="checker checker--dark x3 y0" aria-hidden="true"></span>
-              <span class="checker checker--dark x5 y0" aria-hidden="true"></span>
-              <span class="checker checker--dark x7 y0" aria-hidden="true"></span>
-              <span class="checker checker--dark x0 y1" aria-hidden="true"></span>
-              <span class="checker checker--dark x2 y1" aria-hidden="true"></span>
-              <span class="checker checker--dark x4 y1" aria-hidden="true"></span>
-              <span class="checker checker--dark x6 y1" aria-hidden="true"></span>
-              <span class="checker checker--dark x1 y2" aria-hidden="true"></span>
-              <span class="checker checker--dark x3 y2" aria-hidden="true"></span>
-              <span class="checker checker--dark x5 y2" aria-hidden="true"></span>
-              <span class="checker checker--dark x7 y2" aria-hidden="true"></span>
-              <span class="checker checker--light x0 y5" aria-hidden="true"></span>
-              <span class="checker checker--light x2 y5" aria-hidden="true"></span>
-              <span class="checker checker--light x4 y5" aria-hidden="true"></span>
-              <span class="checker checker--light x6 y5" aria-hidden="true"></span>
-              <span class="checker checker--light x1 y6" aria-hidden="true"></span>
-              <span class="checker checker--light x3 y6" aria-hidden="true"></span>
-              <span class="checker checker--light x5 y6" aria-hidden="true"></span>
-              <span class="checker checker--light x7 y6" aria-hidden="true"></span>
-              <span class="checker checker--light x0 y7" aria-hidden="true"></span>
-              <span class="checker checker--light x2 y7" aria-hidden="true"></span>
-              <span class="checker checker--light x4 y7" aria-hidden="true"></span>
-              <span class="checker checker--light x6 y7" aria-hidden="true"></span>
-              </div>
-            </div>
-            <figcaption>Przykładowe ustawienie początkowe na warcabnicy 8×8. Pionki stoją wyłącznie na ciemnych polach, po 12 po każdej stronie.</figcaption>
-          </figure>
-        </div>
-
-        <aside class="variant-note">
-          <p><strong>Jaki wariant opisujemy?</strong> Ta podstrona opisuje warcaby klasyczne 64-polowe na planszy 8×8, z obowiązkowym biciem, biciem pionem do przodu i do tyłu, maksymalnym biciem oraz „latającą” damką poruszającą się po przekątnych na dowolną odległość. Przed uruchomieniem gry online w gracz.pl dokładny zestaw reguł zostanie jeszcze wskazany w interfejsie gry.</p>
-        </aside>
-
-        <nav class="game-toc" aria-label="Spis treści">
-          <strong>Na tej stronie:</strong>
-          <ul>
-            <li><a href="#ustawienie">Plansza i ustawienie</a></li>
-            <li><a href="#ruch">Ruch pionka</a></li>
-            <li><a href="#bicie">Bicie</a></li>
-            <li><a href="#damka">Damka</a></li>
-            <li><a href="#koniec">Koniec partii</a></li>
-            <li><a href="#strategia">Podstawy strategii</a></li>
-          </ul>
-        </nav>
-
-        <section class="rules-section" aria-labelledby="zasady-title">
-          <h2 id="zasady-title">Dokładne zasady gry</h2>
-          <div class="rule-grid">
-            <article class="rule-card" id="ustawienie">
-              <h3>1. Plansza i ustawienie</h3>
-              <p>Warcabnica ma 64 pola ułożone w 8 rzędach i 8 kolumnach. Gra toczy się tylko na ciemnych polach. Każdy gracz ma 12 pionków, ustawionych na trzech najbliższych mu rzędach. Dwa środkowe rzędy pozostają na początku puste.</p>
-            </article>
-
-            <article class="rule-card rule-card--green" id="ruch">
-              <h3>2. Ruch zwykłego pionka</h3>
-              <p>Jeżeli nie ma obowiązkowego bicia, pion przesuwa się o jedno wolne pole po przekątnej do przodu. Gracze wykonują ruchy na zmianę, a pierwszy ruch należy do białych.</p>
-            </article>
-
-            <article class="rule-card rule-card--green" id="bicie">
-              <h3>3. Bicie jest obowiązkowe</h3>
-              <p>Pion bije przez przeskoczenie bierki przeciwnika stojącej po przekątnej, jeżeli bezpośrednio za nią znajduje się wolne pole. Pion może bić zarówno do przodu, jak i do tyłu.</p>
-              <ul>
-                <li>Jeżeli istnieje bicie, zwykły ruch bez bicia nie jest dozwolony.</li>
-                <li>Jeżeli po pierwszym skoku można bić dalej, trzeba kontynuować tym samym pionkiem.</li>
-                <li>Jeżeli dostępnych jest kilka wariantów, należy wybrać bicie pozwalające zbić największą liczbę bierek.</li>
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link is-active" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry-karciane/#poker-treningowy">Poker treningowy</a></li>
+                <li><a href="/gry/#tysiac">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/" aria-current="page">Warcaby</a></li>
+                <li><a href="/gry/#gomoku">Gomoku</a></li>
               </ul>
-            </article>
-
-            <article class="rule-card" id="damka">
-              <h3>4. Awans na damkę</h3>
-              <p>Pion, który osiągnie i zatrzyma się na ostatnim rzędzie po stronie przeciwnika, zostaje damką. Damka może przesuwać się po przekątnej do przodu i do tyłu przez dowolną liczbę wolnych pól.</p>
-              <p>Podczas bicia damka może przeskoczyć bierkę przeciwnika znajdującą się na jej przekątnej i wylądować na jednym z wolnych pól za zbitą bierką, a następnie kontynuować kolejne bicie, jeżeli jest ono możliwe.</p>
-            </article>
-
-            <article class="rule-card" id="maksymalne-bicie">
-              <h3>5. Wielokrotne i maksymalne bicie</h3>
-              <p>Seria skoków w jednej turze jest jednym ruchem. Nie wolno w tej samej serii przeskoczyć drugi raz tej samej bierki przeciwnika. Jeżeli kilka dróg bicia pozwala zbić różną liczbę bierek, obowiązkowa jest droga z największą liczbą zbić.</p>
-            </article>
-
-            <article class="rule-card rule-card--green" id="koniec">
-              <h3>6. Jak kończy się partia</h3>
-              <p>Wygrywa gracz, który zbije wszystkie bierki przeciwnika albo zablokuje je w taki sposób, że przeciwnik nie ma żadnego prawidłowego ruchu. W określonych końcówkach możliwy jest również remis.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="rules-section" aria-labelledby="tura-title">
-          <h2 id="tura-title">Jak wygląda tura — krok po kroku</h2>
-          <div class="steps">
-            <div class="step"><strong>Najpierw sprawdź, czy możesz bić.</strong><p>Obowiązek bicia ma pierwszeństwo przed zwykłym ruchem.</p></div>
-            <div class="step"><strong>Jeżeli bicia nie ma, wykonaj zwykły ruch.</strong><p>Przesuń jeden pionek o jedno pole po przekątnej do przodu na wolne ciemne pole.</p></div>
-            <div class="step"><strong>Jeżeli bijesz, sprawdź możliwość dalszego skoku.</strong><p>Wielokrotne bicie trzeba kontynuować, dopóki ta sama bierka ma legalne kolejne bicie.</p></div>
-            <div class="step"><strong>Kontroluj linię promocji.</strong><p>Dotarcie pionem do ostatniego rzędu może zmienić go w damkę i znacznie zwiększyć jego zasięg.</p></div>
-          </div>
-        </section>
-
-        <section class="strategy-section" id="strategia" aria-labelledby="strategia-title">
-          <h2 id="strategia-title">Podstawy strategii dla początkujących</h2>
-          <div class="strategy-grid">
-            <article class="strategy-card">
-              <h3>Nie oddawaj pionków za darmo</h3>
-              <p>Przed każdym ruchem sprawdź, czy po przesunięciu pionka przeciwnik nie otrzyma wymuszonego bicia. Jeden nieuważny ruch może otworzyć serię kilku skoków.</p>
-            </article>
-            <article class="strategy-card strategy-card--green">
-              <h3>Myśl o wymuszonych odpowiedziach</h3>
-              <p>Najsilniejsze ruchy często nie polegają na natychmiastowym biciu, ale na ustawieniu pozycji tak, aby przeciwnik musiał wejść na niekorzystne pole.</p>
-            </article>
-            <article class="strategy-card strategy-card--green">
-              <h3>Chroń drogę do damki</h3>
-              <p>Awans na damkę daje dużą przewagę ruchliwości. Warto tworzyć bezpieczne ścieżki do ostatniego rzędu i jednocześnie blokować takie ścieżki przeciwnikowi.</p>
-            </article>
-            <article class="strategy-card">
-              <h3>Patrz kilka ruchów naprzód</h3>
-              <p>Przy każdej wymianie policz nie tylko pierwsze bicie, lecz także pozycję po całej sekwencji. W warcabach bardzo często liczy się końcowe ustawienie po wymuszonych ruchach.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="strategy-section" aria-labelledby="bledy-title">
-          <h2 id="bledy-title">Najczęstsze błędy początkujących</h2>
-          <div class="strategy-grid">
-            <article class="strategy-card">
-              <h3>Pomijanie obowiązkowego bicia</h3>
-              <p>Jeżeli bicie jest dostępne, nie można wykonać zwykłego ruchu. To jedna z najważniejszych zasad, o której początkujący często zapominają.</p>
-            </article>
-            <article class="strategy-card strategy-card--green">
-              <h3>Przerywanie wielokrotnego bicia</h3>
-              <p>Po pierwszym zbiciu trzeba sprawdzić, czy ta sama bierka może bić dalej. Jeżeli tak, ruch jeszcze się nie kończy.</p>
-            </article>
-            <article class="strategy-card strategy-card--green">
-              <h3>Otwieranie własnego zaplecza zbyt wcześnie</h3>
-              <p>Zbyt szybkie ruszenie wszystkich tylnych pionków może ułatwić przeciwnikowi dojście do damki.</p>
-            </article>
-            <article class="strategy-card">
-              <h3>Patrzenie tylko na jeden ruch</h3>
-              <p>Warcaby nagradzają planowanie. Przed ruchem warto przewidzieć odpowiedź przeciwnika oraz własny kolejny ruch po ewentualnym biciu.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="block block--green block--wide" aria-labelledby="warcaby-gracz-pl">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">●</span>
-            <h2 id="warcaby-gracz-pl">Warcaby w gracz.pl</h2>
-          </div>
-          <p>Wersję online rozwijamy jako prostą i czytelną rozgrywkę multiplayer. Docelowo przy samej grze chcemy udostępnić zasady, podpowiedzi dla początkujących oraz wygodny interfejs planszy na komputerach i urządzeniach mobilnych.</p>
-          <p class="tag">W przygotowaniu</p>
-        </section>
-
-        <section class="related" aria-labelledby="related-title">
-          <h2 id="related-title">Przejdź dalej</h2>
-          <ul>
-            <li>
-              <a class="cta" href="/gry/">
-                <span class="cta-title">Wszystkie gry <span aria-hidden="true">→</span></span>
-                <span class="cta-text">Poker treningowy, Tysiąc, Warcaby i Gomoku.</span>
-              </a>
             </li>
-            <li>
-              <a class="cta" href="/poradniki/">
-                <span class="cta-title">Poradniki <span aria-hidden="true">→</span></span>
-                <span class="cta-text">Zasady, podstawy strategii i wiedza dla graczy.</span>
-              </a>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry-karciane/#poker-treningowy">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry-karciane/#tysiac">Tysiąc</a></li>
+              </ul>
             </li>
-            <li>
-              <a class="cta" href="/o-gracz-pl/">
-                <span class="cta-title">O gracz.pl <span aria-hidden="true">→</span></span>
-                <span class="cta-text">Zobacz, jaki portal dla graczy budujemy.</span>
-              </a>
+            <li><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link community-trigger menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
             </li>
-          </ul>
-        </section>
-      </main>
-
-      <footer class="site-footer">
-        <div class="footer-brand">gracz<span>.pl</span></div>
-        <p class="footer-tagline">Gry. Wiedza. Społeczność.</p>
-        <nav class="footer-nav" aria-label="Stopka">
-          <ul>
-            <li><a href="/gry/">Gry</a></li>
-            <li><a href="/gry-karciane/">Gry karciane</a></li>
-            <li><a href="/poradniki/">Poradniki</a></li>
-            <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+            <li><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
           </ul>
         </nav>
-        <p class="copyright">© 2026 gracz<span>.pl</span></p>
-      </footer>
+
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj"><svg aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
+      </div>
     </div>
-  </div>
+  </header>
+
+  <main id="tresc" class="page-shell" tabindex="-1">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li><a href="/gry/">Gry</a></li>
+        <li aria-current="page">Warcaby</li>
+      </ol>
+    </nav>
+
+    <div class="page-grid">
+      <div class="main-column">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="board-visual" aria-hidden="true">
+            <img src="/assets/img/warcaby-board.webp" width="530" height="425" alt="">
+          </div>
+
+          <div class="hero-copy">
+            <h1 id="hero-title">Warcaby</h1>
+            <p class="hero-kicker">Klasyczna gra logiczna dla każdego</p>
+            <p class="hero-lead">Warcaby to jedna z najbardziej znanych gier planszowych. Proste zasady, a jednocześnie duża głębia strategiczna sprawiają, że to świetna rozgrywka zarówno dla początkujących, jak i zaawansowanych graczy.</p>
+
+            <ul class="facts" aria-label="Informacje o grze">
+              <li><span class="fact-icon">♟</span><strong>2 graczy</strong></li>
+              <li><span class="fact-icon">▥</span><strong>Gra logiczna</strong></li>
+              <li><span class="fact-icon">♟</span><strong>Dla każdego wieku</strong></li>
+              <li><span class="fact-icon">◷</span><strong>Średni czas gry<br>10–30 minut</strong></li>
+            </ul>
+
+            <div class="hero-actions">
+              <button class="cta-primary" type="button" data-modal="play">
+                <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+                <span>Zagraj online<small>w przygotowaniu</small></span>
+              </button>
+              <a class="cta-secondary" href="#zasady">Zasady gry <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section id="zasady" class="rules-grid" aria-label="Najważniejsze zasady Warcabów">
+          <article class="rule-card"><span class="rule-icon">◎</span><div><h2>1. Cel gry</h2><p>Celem gry w Warcaby jest zbicie wszystkich pionków przeciwnika lub zablokowanie możliwości jego ruchu.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">▦</span><div><h2>2. Plansza i ustawienie</h2><p>Gra toczy się na planszy 8×8. Na początku każdy z graczy ma 12 pionków ustawionych na ciemnych polach trzech pierwszych rzędów.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">♟</span><div><h2>3. Ruch pionka</h2><p>Pionek porusza się o jedno pole po skosie do przodu na sąsiednie ciemne pole.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">⚔</span><div><h2>4. Bicie pionków</h2><p>Bicie jest obowiązkowe. Pionek zbija, skacząc po skosie przez pionka przeciwnika na puste pole. Możliwe jest wielokrotne bicie w jednej turze.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">♛</span><div><h2>5. Damka</h2><p>Gdy pionek dojdzie do ostatniego rzędu przeciwnika, zamienia się w damkę. Damka może poruszać się po skosie na większą odległość.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">⚑</span><div><h2>6. Zakończenie gry</h2><p>Wygrywa gracz, który zbije wszystkie pionki przeciwnika lub zablokuje mu wszystkie możliwe ruchy.</p></div></article>
+        </section>
+
+        <section class="info-grid" aria-label="Strategia, błędy i warianty">
+          <article class="info-card info-card--green">
+            <h2><span>💡</span> Strategia i wskazówki</h2>
+            <ul class="check-list">
+              <li>Kontroluj środek planszy</li>
+              <li>Planuj kilka ruchów do przodu</li>
+              <li>Unikaj niepotrzebnych wymian</li>
+              <li>Zwracaj uwagę na możliwość bicia</li>
+              <li>Chroń swoje damki</li>
+            </ul>
+          </article>
+
+          <article class="info-card info-card--red">
+            <h2><span>⚠</span> Najczęstsze błędy początkujących</h2>
+            <ul class="x-list">
+              <li>Brak kontroli środka planszy</li>
+              <li>Niepilnowanie możliwości bicia</li>
+              <li>Zbyt szybkie wychodzenie pionkami na damki</li>
+              <li>Pozostawianie pionków bez obrony</li>
+              <li>Brak planowania kolejnych ruchów</li>
+            </ul>
+          </article>
+
+          <article class="info-card" id="warianty">
+            <h2><span>⚙</span> Warianty gry</h2>
+            <ul class="variant-list">
+              <li>Klasyczne warcaby 8×8</li>
+              <li>Warcaby międzynarodowe 10×10</li>
+              <li>Warcaby brazylijskie</li>
+              <li>Warcaby rosyjskie</li>
+              <li>Warcaby na punkty — w przygotowaniu</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="details-card" aria-labelledby="dokladne-zasady">
+          <h2 id="dokladne-zasady">Dokładne zasady i przebieg partii</h2>
+          <div class="details-columns">
+            <div>
+              <h3>Obowiązkowe bicie</h3>
+              <p>Jeżeli gracz ma możliwość bicia, musi je wykonać. Po pierwszym zbiciu należy sprawdzić, czy ta sama bierka może wykonać kolejne bicie — jeżeli tak, ruch jest kontynuowany.</p>
+            </div>
+            <div>
+              <h3>Droga do damki</h3>
+              <p>Pionek, który dotrze do ostatniego rzędu po stronie przeciwnika, awansuje na damkę. Damka porusza się po przekątnych i daje znacznie większą swobodę w ataku oraz obronie.</p>
+            </div>
+            <div>
+              <h3>Jak wygrać</h3>
+              <p>Partia kończy się zwycięstwem, gdy przeciwnik straci wszystkie bierki albo nie może wykonać żadnego prawidłowego ruchu. W niektórych końcówkach możliwy jest remis.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column" aria-label="Informacje dodatkowe">
+        <section class="online-card">
+          <p class="status-pill"><span></span>W przygotowaniu</p>
+          <h2>Graj w Warcaby online</h2>
+          <p>Już wkrótce zagrasz w Warcaby na gracz.pl — z innymi graczami, w rankingach i turniejach.</p>
+
+          <button class="side-action side-action--gold" type="button" data-modal="multiplayer">
+            <span class="side-emoji">👥</span><span><strong>Rozgrywka multiplayer</strong><small>Gra z prawdziwymi graczami</small></span><b>›</b>
+          </button>
+          <button class="side-action side-action--green" type="button" data-modal="rankings">
+            <span class="side-emoji">🏆</span><span><strong>Rankingi i statystyki</strong><small>Śledź swoje postępy</small></span><b>›</b>
+          </button>
+          <a class="side-action side-action--red" href="#warianty">
+            <span class="side-emoji">⚙</span><span><strong>Różne warianty gry</strong><small>Klasyczne i dodatkowe tryby</small></span><b>›</b>
+          </a>
+          <a class="side-action side-action--green" href="/poradniki/">
+            <span class="side-emoji">🎓</span><span><strong>Nauka i poradniki</strong><small>Zostań lepszym graczem</small></span><b>›</b>
+          </a>
+        </section>
+
+        <section class="related-card">
+          <h2>Zobacz także</h2>
+          <a class="related-game" href="/gry-karciane/#poker-treningowy">
+            <img src="/assets/img/tile-cards.webp" alt="" width="130" height="72" loading="lazy">
+            <span><strong>Poker</strong><small>Gra karciana</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry/#tysiac">
+            <img src="/assets/img/tile-games.webp" alt="" width="130" height="72" loading="lazy">
+            <span><strong>Tysiąc</strong><small>Gra karciana</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry/#gomoku">
+            <img src="/assets/img/tile-about.webp" alt="" width="130" height="72" loading="lazy">
+            <span><strong>Gomoku</strong><small>Gra logiczna</small></span><b>›</b>
+          </a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <dialog class="modal" id="modal" aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-box">
+      <button class="modal-x" type="button" data-close aria-label="Zamknij"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      <span class="modal-logo">gracz<span>.pl</span></span>
+      <h2 id="modal-title">Informacja</h2>
+      <p id="modal-text"></p>
+      <button class="modal-ok" type="button" data-close>Rozumiem</button>
+    </div>
+  </dialog>
 </body>
 </html>
