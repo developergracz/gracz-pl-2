@@ -28,6 +28,7 @@ This manifest records the intended files and design status. It is not an impleme
 14. `13-DOCUMENTATION-MANIFEST.md` — this package inventory, baseline and implementation-status record.
 15. `14-PUBLIC-SITE-ARCHITECTURE-AND-URL-MAP.md` — 48 candidate public URLs with intent, H1, metadata, link targets and rollout waves.
 16. `15-SEO-CONTENT-ROLLOUT-AND-INTERNAL-LINKING.md` — staged publishing, canary, internal-link graph and content-quality gates.
+17. `SEO-00-AS-IS-INVENTORY.md` — closed discovery/baseline evidence, production boundary, risks and SEO-01a entry conditions.
 
 Parent locator:
 `../README.md`
@@ -54,7 +55,13 @@ Parent locator:
 `ADMIN UI = NOT CREATED`  
 `SCHEDULED JOBS = NOT CREATED`  
 `PRODUCTION CHANGES = NONE FROM THIS PACKAGE`  
-`NEXT EXECUTABLE PHASE = SEO-00 DISCOVERY AND BASELINE`
+`SEO-00 DISCOVERY AND BASELINE = CLOSED / PASS`  
+`NEXT EXECUTABLE PHASE = SEO-01a DOMAIN FOUNDATION + FILE-BACKED PAGE REGISTRY`  
+`SEO-01a CODING = REQUIRES SEPARATE OWNER-AUTHORIZED MANDATE`  
+`SEO-01a DATABASE/DDL = FORBIDDEN`  
+`SEO-01a maintenance-site/** CHANGES = FORBIDDEN`  
+`SEO-01b POSTGRES PERSISTENCE = DEFERRED`  
+`SEO-02+ RUNTIME OWNER DECISION = REQUIRED BEFORE START`  
 `PUBLIC SEO URL MAP = 48 CANDIDATES / DESIGN ONLY / NOT PUBLISHED`
 
 ## Merge note
