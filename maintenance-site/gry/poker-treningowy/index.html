@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>Poker treningowy — Texas Hold’em, zasady i nauka | gracz.pl</title>
+  <meta name="description" content="Poker treningowy na gracz.pl: Texas Hold’em bez prawdziwych pieniędzy, 2–6 graczy, blindy, preflop, flop, turn, river, układy pokerowe i trening decyzji.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#050706">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="canonical" href="https://gracz.pl/gry/poker-treningowy/">
+  <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/poker-treningowy/">
+  <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry/poker-treningowy/">
+  <link rel="alternate" hreflang="x-default" href="https://gracz.pl/gry/poker-treningowy/">
+
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:site_name" content="gracz.pl">
+  <meta property="og:title" content="Poker treningowy — Texas Hold’em do nauki i ćwiczeń">
+  <meta property="og:description" content="Poznaj Texas Hold’em: blindy, pozycje, rundy licytacji, pięć kart wspólnych, układy pokerowe i showdown — wyłącznie na żetonach treningowych.">
+  <meta property="og:url" content="https://gracz.pl/gry/poker-treningowy/">
+  <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Poker treningowy — zasady Texas Hold’em | gracz.pl">
+  <meta name="twitter:description" content="Blindy, preflop, flop, turn, river, układy kart i showdown w treningowym Texas Hold’em.">
+  <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/poker-treningowy.css">
+  <script src="/assets/poker-treningowy.js" defer></script>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
+      {"@type":"WebPage","@id":"https://gracz.pl/gry/poker-treningowy/#webpage","url":"https://gracz.pl/gry/poker-treningowy/","name":"Poker treningowy — Texas Hold’em, zasady i nauka","description":"Poker treningowy na gracz.pl: Texas Hold’em bez prawdziwych pieniędzy, 2–6 graczy, blindy, preflop, flop, turn, river, układy pokerowe i trening decyzji.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
+        {"@type":"ListItem","position":2,"name":"Gry","item":"https://gracz.pl/gry/"},
+        {"@type":"ListItem","position":3,"name":"Poker treningowy","item":"https://gracz.pl/gry/poker-treningowy/"}
+      ]}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link is-active" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/">Gomoku</a></li>
+              </ul>
+            </li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link community-trigger menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj"><svg aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="tresc" class="page-shell" tabindex="-1">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li><a href="/gry/">Gry</a></li>
+        <li aria-current="page">Poker treningowy</li>
+      </ol>
+    </nav>
+
+    <div class="page-grid">
+      <div class="main-column">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="board-visual">
+            <div class="card-table-scene poker-scene" role="img" aria-label="Stół Texas Hold’em z kartami wspólnymi, kartami własnymi i żetonami treningowymi">
+              <div class="score-board"><span>Tryb</span><strong>Texas Hold’em</strong></div>
+              <div class="marriage-badges" aria-hidden="true"><span>♠</span><span class="red">♥</span><span>♣</span><span class="red">♦</span></div>
+              <div class="card-fan" aria-hidden="true">
+                <span class="playing-card c1"><b class="rank">A</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+                <span class="playing-card red c2"><b class="rank">K</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
+                <span class="playing-card c3"><b class="rank">Q</b><b class="suit">♣</b><b class="big-suit">♣</b></span>
+                <span class="playing-card red c4"><b class="rank">J</b><b class="suit">♦</b><b class="big-suit">♦</b></span>
+                <span class="playing-card c5"><b class="rank">10</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+              </div>
+              <span class="table-caption">Preflop • Flop • Turn • River • Showdown</span>
+            </div>
+          </div>
+
+          <div class="hero-copy">
+            <h1 id="hero-title">Poker treningowy</h1>
+            <p class="hero-kicker">Texas Hold’em do nauki, ćwiczeń i analizy decyzji</p>
+            <p class="hero-lead">Poker treningowy gracz.pl to edukacyjny Texas Hold’em bez prawdziwych pieniędzy. Grasz wyłącznie na żetonach treningowych bez wartości pieniężnej, poznajesz zasady, układy kart, pozycje i przebieg rozdania.</p>
+
+            <ul class="facts" aria-label="Informacje o grze">
+              <li><span class="fact-icon">♠</span><strong>2–6 graczy</strong></li>
+              <li><span class="fact-icon">52</span><strong>52 karty</strong></li>
+              <li><span class="fact-icon">◎</span><strong>Blindy</strong></li>
+              <li><span class="fact-icon">5</span><strong>5 kart wspólnych</strong></li>
+            </ul>
+
+            <div class="hero-actions">
+              <button class="cta-primary" type="button" data-modal="play">
+                <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+                <span>Zagraj treningowo<small>w przygotowaniu</small></span>
+              </button>
+              <a class="cta-secondary" href="/gry/poker-treningowy/zasady/">Zasady gry <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section class="rules-grid" aria-label="Najważniejsze elementy Texas Hold’em">
+          <article class="rule-card"><span class="rule-icon">2</span><div><h2>1. Karty własne</h2><p>Każdy gracz otrzymuje dwie zakryte karty. Łączy je z kartami wspólnymi, aby zbudować najlepszy układ pięciokartowy.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">SB</span><div><h2>2. Blindy</h2><p>Przed rozdaniem dwóch graczy wnosi small blind i big blind, co uruchamia akcję i tworzy pulę.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">PF</span><div><h2>3. Preflop</h2><p>Pierwsza runda decyzji odbywa się po rozdaniu kart własnych: fold, call lub raise.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">3</span><div><h2>4. Flop</h2><p>Na stół trafiają trzy pierwsze karty wspólne, po czym rozpoczyna się kolejna runda licytacji.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">T/R</span><div><h2>5. Turn i river</h2><p>Czwarta i piąta karta wspólna pojawiają się osobno, a po każdej następuje runda decyzji.</p></div></article>
+          <article class="rule-card"><span class="rule-icon">★</span><div><h2>6. Showdown</h2><p>Jeśli po riverze pozostaje więcej niż jeden gracz, wygrywa najlepszy pięciokartowy układ pokerowy.</p></div></article>
+        </section>
+
+        <section class="info-grid" aria-label="Strategia, błędy i warianty">
+          <article class="info-card info-card--green">
+            <h2><span>💡</span> Strategia i nauka</h2>
+            <ul class="check-list">
+              <li>Zwracaj uwagę na pozycję przy stole</li>
+              <li>Rozróżniaj silne i słabe ręce startowe</li>
+              <li>Kontroluj wielkość puli i efektywny stack</li>
+              <li>Ćwicz decyzje fold, call i raise</li>
+              <li>Analizuj rozdania po zakończeniu sesji</li>
+            </ul>
+          </article>
+
+          <article class="info-card info-card--red">
+            <h2><span>⚠</span> Najczęstsze błędy</h2>
+            <ul class="x-list">
+              <li>Granie zbyt wielu rąk startowych</li>
+              <li>Ignorowanie pozycji</li>
+              <li>Sprawdzanie bez planu na kolejne ulice</li>
+              <li>Przecenianie pojedynczej pary</li>
+              <li>Brak kontroli nad wielkością zakładu</li>
+            </ul>
+          </article>
+
+          <article class="info-card" id="warianty">
+            <h2><span>⚙</span> Tryb gracz.pl</h2>
+            <ul class="variant-list">
+              <li>Texas Hold’em No-Limit</li>
+              <li>Heads-up i stoły 2–6 graczy</li>
+              <li>Żetony wyłącznie treningowe</li>
+              <li>Brak wpłat i wypłat</li>
+              <li>Kierunek edukacyjny / Poker Academy</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="details-card" aria-labelledby="jak-wyglada-partia">
+          <h2 id="jak-wyglada-partia">Jak wygląda rozdanie Texas Hold’em?</h2>
+          <div class="details-columns">
+            <div><h3>Start i preflop</h3><p>Po wniesieniu blindów każdy gracz dostaje dwie karty własne. Pierwsza runda decyzji zaczyna się od gracza siedzącego za big blindem.</p></div>
+            <div><h3>Flop, turn i river</h3><p>Na stole pojawia się łącznie pięć kart wspólnych: trzy na flopie, jedna na turnie i jedna na riverze. Po każdej ulicy może odbyć się licytacja.</p></div>
+            <div><h3>Wygrana puli</h3><p>Pulę można wygrać, gdy wszyscy przeciwnicy spasują, albo na showdownie, posiadając najlepszy układ pięciu kart z siedmiu dostępnych.</p></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column" aria-label="Informacje dodatkowe">
+        <section class="online-card">
+          <p class="status-pill"><span></span>W przygotowaniu</p>
+          <h2>Trenuj Texas Hold’em</h2>
+          <p>Przygotowujemy edukacyjną rozgrywkę pokerową z żetonami treningowymi, stołami 2–6 graczy, historią rozdań i narzędziami do nauki. Bez prawdziwych pieniędzy i bez wypłat.</p>
+
+          <button class="side-action side-action--gold" type="button" data-modal="multiplayer">
+            <span class="side-emoji">👥</span><span><strong>Stoły treningowe</strong><small>2–6 graczy</small></span><b>›</b>
+          </button>
+          <button class="side-action side-action--green" type="button" data-modal="rankings">
+            <span class="side-emoji">📊</span><span><strong>Historia i statystyki</strong><small>Analiza sesji i rozdań</small></span><b>›</b>
+          </button>
+          <a class="side-action side-action--red" href="#warianty">
+            <span class="side-emoji">⚙</span><span><strong>Tryby treningowe</strong><small>Heads-up i 2–6 graczy</small></span><b>›</b>
+          </a>
+          <a class="side-action side-action--green" href="/poradniki/">
+            <span class="side-emoji">🎓</span><span><strong>Poker Academy</strong><small>Zasady, układy i decyzje</small></span><b>›</b>
+          </a>
+        </section>
+
+        <section class="related-card">
+          <h2>Zobacz także</h2>
+          <a class="related-game" href="/gry/tysiac/">
+            <span class="related-thumb related-thumb--tysiac" aria-hidden="true">
+              <i class="score-note">120<br>90</i><i class="tysiac-card tc1">10♠</i><i class="tysiac-card tc2">K♥</i><i class="tysiac-card tc3">Q♣</i><i class="tysiac-card tc4">A♦</i>
+            </span>
+            <span><strong>Tysiąc</strong><small>Gra karciana</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry/warcaby/">
+            <span class="related-mini-checkers" aria-hidden="true"><i class="dark a"></i><i class="light b"></i><i class="dark c"></i><i class="light d"></i><i class="dark e"></i></span>
+            <span><strong>Warcaby</strong><small>Gra logiczna</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/gry/gomoku/">
+            <span class="related-mini-gomoku" aria-hidden="true">
+              <i class="mini-stone mini-stone--black g1"></i><i class="mini-stone mini-stone--white g2"></i><i class="mini-stone mini-stone--black g3"></i><i class="mini-stone mini-stone--white g4"></i><i class="mini-stone mini-stone--black g5"></i><i class="mini-stone mini-stone--white g6"></i>
+            </span>
+            <span><strong>Gomoku</strong><small>Gra logiczna</small></span><b>›</b>
+          </a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><a class="footer-logo" href="/">gracz<span>.pl</span></a><p>Gry. Wiedza. Społeczność.</p></div>
+      <nav class="footer-col" aria-labelledby="f-nav"><h2 id="f-nav">Nawigacja</h2><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/">Gry karciane</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="community">Społeczność</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
+      <nav class="footer-col" aria-labelledby="f-pop"><h2 id="f-pop">Popularne działy</h2><ul><li><a href="/gry/poker-treningowy/" aria-current="page">Poker treningowy</a></li><li><a href="/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="/gry/warcaby/">Warcaby</a></li><li><a href="/gry/gomoku/">Gomoku</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="updates">Aktualności</button></li></ul></nav>
+      <div class="footer-news"><h2>Bądź na bieżąco</h2><p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p><form data-newsletter novalidate><label class="sr-only" for="news-email">Twój adres e-mail</label><input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off"><button type="submit">Zapisz się</button></form></div>
+    </div>
+    <div class="footer-bottom"><p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p><div class="footer-links"><button type="button" data-modal="privacy">Polityka prywatności</button><button type="button" data-modal="terms">Regulamin</button><button type="button" data-modal="contact">Kontakt</button></div></div>
+  </footer>
+
+  <dialog class="modal" id="modal" aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-box">
+      <button class="modal-x" type="button" data-close aria-label="Zamknij"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      <span class="modal-logo">gracz<span>.pl</span></span>
+      <h2 id="modal-title">Informacja</h2>
+      <p id="modal-text"></p>
+      <button class="modal-ok" type="button" data-close>Rozumiem</button>
+    </div>
+  </dialog>
+</body>
+</html>
