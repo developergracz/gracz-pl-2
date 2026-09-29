@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Gry karciane na gracz.pl — Poker treningowy i Tysiąc</title>
-  <meta name="description" content="Gry karciane rozwijane w gracz.pl: poker treningowy bez prawdziwych pieniędzy, planowana Poker Academy i Tysiąc.">
+  <title>Gry karciane online — Poker treningowy i Tysiąc | gracz.pl</title>
+  <meta name="description" content="Gry karciane na gracz.pl: Poker treningowy, Tysiąc i Poker Academy. Poznaj zasady, ucz się i przechodź do szczegółowych podstron gier.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -16,175 +16,248 @@
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry-karciane/">
   <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry-karciane/">
   <link rel="alternate" hreflang="x-default" href="https://gracz.pl/gry-karciane/">
-  <link rel="stylesheet" href="/site.css">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="gracz.pl">
   <meta property="og:title" content="Gry karciane na gracz.pl — Poker treningowy i Tysiąc">
-  <meta property="og:description" content="Gry karciane rozwijane w gracz.pl: poker treningowy bez prawdziwych pieniędzy, planowana Poker Academy i Tysiąc.">
+  <meta property="og:description" content="Poker treningowy, Tysiąc i Poker Academy w jednym dziale gier karcianych gracz.pl.">
   <meta property="og:url" content="https://gracz.pl/gry-karciane/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta property="og:image:secure_url" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="gracz.pl — portal gracza i gry online">
-
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Gry karciane na gracz.pl — Poker treningowy i Tysiąc">
-  <meta name="twitter:description" content="Gry karciane rozwijane w gracz.pl: poker treningowy bez prawdziwych pieniędzy, planowana Poker Academy i Tysiąc.">
+  <meta name="twitter:title" content="Gry karciane na gracz.pl">
+  <meta name="twitter:description" content="Poker treningowy, Tysiąc i Poker Academy — dział gier karcianych gracz.pl.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta name="twitter:image:alt" content="gracz.pl — portal gracza i gry online">
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/gry-karciane.css">
+  <script src="/assets/gry-karciane.js" defer></script>
 
   <script type="application/ld+json">
   {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://gracz.pl/#website",
-        "url": "https://gracz.pl/",
-        "name": "gracz.pl",
-        "inLanguage": "pl-PL",
-        "publisher": {
-          "@id": "https://gracz.pl/#organization"
-        }
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://gracz.pl/#organization",
-        "name": "gracz.pl",
-        "url": "https://gracz.pl/"
-      },
-      {
-        "@type": "WebPage",
-        "@id": "https://gracz.pl/gry-karciane/#webpage",
-        "url": "https://gracz.pl/gry-karciane/",
-        "name": "Gry karciane na gracz.pl — Poker treningowy i Tysiąc",
-        "description": "Gry karciane rozwijane w gracz.pl: poker treningowy bez prawdziwych pieniędzy, planowana Poker Academy i Tysiąc.",
-        "isPartOf": {
-          "@id": "https://gracz.pl/#website"
-        },
-        "inLanguage": "pl-PL"
-      }
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
+      {"@type":"WebPage","@id":"https://gracz.pl/gry-karciane/#webpage","url":"https://gracz.pl/gry-karciane/","name":"Gry karciane na gracz.pl","description":"Poker treningowy, Tysiąc i Poker Academy w dziale gier karcianych gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
+        {"@type":"ListItem","position":2,"name":"Gry karciane","item":"https://gracz.pl/gry-karciane/"}
+      ]}
     ]
   }
   </script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+  </svg>
+
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
 
-  <div class="shell">
-  <div class="panel">
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="gracz.pl — strona główna">gracz<span>.PL</span></a>
-      <nav class="site-nav" aria-label="Główna nawigacja">
-        <ul>
-          <li><a href="/">Start</a></li>
-          <li><a href="/gry/">Gry</a></li>
-          <li><a href="/gry-karciane/" aria-current="page">Gry karciane</a></li>
-          <li><a href="/poradniki/">Poradniki</a></li>
-          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
-        </ul>
-      </nav>
-    </header>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
 
-    <main id="tresc">
-      <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
-        <ol>
-          <li><a href="/">gracz.pl</a></li>
-          <li aria-current="page">Gry karciane</li>
-        </ol>
-      </nav>
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
 
-      <p class="status">gracz.pl • SERWIS W ROZWOJU</p>
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/">Gomoku</a></li>
+              </ul>
+            </li>
+            <li class="has-menu">
+              <a class="nav-link is-active" href="/gry-karciane/" aria-current="page">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link community-trigger menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
+          </ul>
+        </nav>
 
-      <h1>Gry karciane na gracz<span>.pl</span></h1>
-      <p class="lead">Gry karciane mają być jednym z najważniejszych kierunków rozwoju gracz.pl. Łączą proste zasady wejścia z możliwością ciągłego doskonalenia umiejętności, dlatego chcemy tworzyć zarówno rozgrywkę, jak i materiały pomagające ją lepiej zrozumieć.</p>
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj"><svg aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
+      </div>
+    </div>
+  </header>
 
-      <div class="blocks">
-        <section class="block" aria-labelledby="poker-treningowy">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♠</span>
-            <h2 id="poker-treningowy">Poker treningowy</h2>
+  <main id="tresc" class="page-shell" tabindex="-1">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li aria-current="page">Gry karciane</li>
+      </ol>
+    </nav>
+
+    <div class="page-grid">
+      <div class="main-column">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="board-visual">
+            <div class="card-games-scene" role="img" aria-label="Stół karciany z wachlarzem kart i żetonami">
+              <div class="category-title"><span>Dział</span><strong>Gry karciane</strong></div>
+              <div class="category-deck" aria-hidden="true">
+                <span class="category-card a"><b>A♠</b><em>♠</em></span>
+                <span class="category-card red b"><b>K♥</b><em>♥</em></span>
+                <span class="category-card c"><b>Q♣</b><em>♣</em></span>
+                <span class="category-card red d"><b>J♦</b><em>♦</em></span>
+                <span class="category-card e"><b>10♠</b><em>♠</em></span>
+              </div>
+              <div class="category-chips" aria-hidden="true"><i></i><i></i><i></i></div>
+              <span class="category-caption">Poker • Tysiąc • nauka • zasady</span>
+            </div>
           </div>
-          <p>Poker treningowy to tryb nauki i ćwiczenia rozgrywki. Docelowo ma pozwalać na spokojne poznawanie zasad, układów kart i przebiegu rozdania oraz na trenowanie decyzji przy stole.</p>
-          <p class="note"><strong>Bez prawdziwych pieniędzy.</strong> Poker w gracz.pl rozwijamy jako poker treningowy o kierunku edukacyjnym, oparty na żetonach treningowych bez wartości pieniężnej. Nie jest to gra na pieniądze — nie obejmuje wpłat, zakładów, wypłat ani nagród.</p>
-          <p class="tag">W przygotowaniu</p>
-          <a class="detail-link" href="/gry/poker-treningowy/">Poznaj Poker treningowy i zasady gry <span aria-hidden="true">→</span></a>
+
+          <div class="hero-copy">
+            <h1 id="hero-title">Gry karciane</h1>
+            <p class="hero-kicker">Poker treningowy, Tysiąc i Poker Academy</p>
+            <p class="hero-lead">Jedno miejsce dla gier karcianych na gracz.pl. Rozwijamy rozgrywkę, szczegółowe zasady i materiały edukacyjne — od treningowego Texas Hold’em po klasycznego Tysiąca.</p>
+
+            <ul class="facts" aria-label="Najważniejsze informacje">
+              <li><span class="fact-icon">♠</span><strong>Poker</strong></li>
+              <li><span class="fact-icon">24</span><strong>Tysiąc</strong></li>
+              <li><span class="fact-icon">A</span><strong>Academy</strong></li>
+              <li><span class="fact-icon">+</span><strong>Kolejne gry</strong></li>
+            </ul>
+
+            <div class="hero-actions">
+              <a class="cta-primary" href="/gry/poker-treningowy/">
+                <span class="play-circle">♠</span>
+                <span>Poker treningowy<small>poznaj grę</small></span>
+              </a>
+              <a class="cta-secondary" href="/gry/tysiac/">Tysiąc →</a>
+            </div>
+          </div>
         </section>
 
-        <section class="block block--green" aria-labelledby="poker-academy">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♦</span>
-            <h2 id="poker-academy">Poker Academy</h2>
-          </div>
-          <p>Poker Academy to planowany kierunek edukacyjny gracz.pl. Chcemy gromadzić w nim materiały wyjaśniające zasady gry, starszeństwo układów, przebieg kolejnych rund oraz podstawy myślenia strategicznego — tak, aby nauka i poker treningowy wzajemnie się uzupełniały.</p>
-          <p class="tag">W planach</p>
-        </section>
+        <div class="game-showcase">
+          <article class="game-card" id="poker-treningowy">
+            <span class="game-badge">W przygotowaniu</span>
+            <h2>Poker treningowy</h2>
+            <p>Edukacyjny Texas Hold’em bez prawdziwych pieniędzy. Nauka pozycji, blindów, przebiegu rozdania, układów kart i decyzji przy stole na żetonach treningowych bez wartości pieniężnej.</p>
+            <div class="game-actions">
+              <a class="game-link" href="/gry/poker-treningowy/">Podstrona gry →</a>
+              <a class="game-link game-link--green" href="/gry/poker-treningowy/zasady/">Zasady gry →</a>
+            </div>
+          </article>
 
-        <section class="block block--red" aria-labelledby="tysiac">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♥</span>
-            <h2 id="tysiac">Tysiąc</h2>
-          </div>
-          <p>Tysiąc to klasyczna gra karciana z licytacją, meldunkami i liczeniem punktów do tysiąca. Rozwijamy wersję online, która ma oddawać emocje wspólnej gry przy stole i pozostać czytelna zarówno dla początkujących, jak i doświadczonych graczy.</p>
-          <p class="tag">W przygotowaniu</p>
-          <a class="detail-link" href="/gry/tysiac/">Poznaj Tysiąca i zasady gry <span aria-hidden="true">→</span></a>
-        </section>
+          <article class="game-card game-card--green" id="tysiac">
+            <span class="game-badge">W przygotowaniu</span>
+            <h2>Tysiąc</h2>
+            <p>Klasyczna gra karciana oparta na licytacji, meldunkach i zdobywaniu punktów. Osobna podstrona prowadzi przez zasady, przebieg rozdania i podstawowe warianty gry.</p>
+            <div class="game-actions">
+              <a class="game-link" href="/gry/tysiac/">Podstrona gry →</a>
+              <a class="game-link game-link--green" href="/gry/tysiac/zasady/">Zasady gry →</a>
+            </div>
+          </article>
+        </div>
 
-        <section class="block" aria-labelledby="wiecej-gier">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♣</span>
-            <h2 id="wiecej-gier">Więcej gier karcianych</h2>
+        <section class="category-info" id="poker-academy" aria-labelledby="academy-title">
+          <h2 id="academy-title">Poker Academy i rozwój działu</h2>
+          <div class="category-info-grid">
+            <div>
+              <h3>Poker Academy</h3>
+              <p>Planowany obszar edukacyjny z materiałami o układach, pozycjach, rundach licytacji i analizie decyzji.</p>
+            </div>
+            <div>
+              <h3>Bez prawdziwych pieniędzy</h3>
+              <p>Poker treningowy jest projektowany do nauki i ćwiczeń na żetonach treningowych — bez wpłat, wypłat i nagród pieniężnych.</p>
+            </div>
+            <div>
+              <h3>Kolejne gry</h3>
+              <p>Dział będzie rozszerzany etapami o kolejne dopracowane gry karciane oraz ich przejrzyste zasady.</p>
+            </div>
           </div>
-          <p>Obszar gier karcianych będziemy poszerzać etapami. Kolejne tytuły pojawią się dopiero wtedy, gdy będą dopracowane — o nowościach będziemy informować na stronach gracz.pl.</p>
-          <p class="tag">W planach</p>
         </section>
       </div>
 
-      <section class="related" aria-labelledby="related-title">
-        <h2 id="related-title">Przejdź dalej</h2>
-        <ul>
-          <li>
-            <a class="cta" href="/gry/">
-              <span class="cta-title">Wszystkie gry <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Poker treningowy, Tysiąc, Warcaby i Gomoku.</span>
-            </a>
-          </li>
-          <li>
-            <a class="cta" href="/poradniki/">
-              <span class="cta-title">Poradniki <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Zasady i materiały edukacyjne do gier.</span>
-            </a>
-          </li>
-          <li>
-            <a class="cta" href="/o-gracz-pl/">
-              <span class="cta-title">O gracz.pl <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Jaki portal dla graczy budujemy.</span>
-            </a>
-          </li>
-        </ul>
-      </section>
-    </main>
+      <aside class="side-column" aria-label="Dział gier karcianych">
+        <section class="online-card">
+          <p class="status-pill"><span></span> DZIAŁ W ROZWOJU</p>
+          <h2>Gry karciane</h2>
+          <p>Przejdź bezpośrednio do najważniejszych części działu.</p>
 
-    <footer class="site-footer">
-      <div class="footer-brand">gracz<span>.PL</span></div>
-      <p class="footer-tagline">Portal dla graczy — w rozwoju.</p>
-      <nav class="footer-nav" aria-label="Stopka">
-        <ul>
-            <li><a href="/gry/">Gry</a></li>
-            <li><a href="/gry-karciane/">Gry karciane</a></li>
-            <li><a href="/poradniki/">Poradniki</a></li>
-            <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
-        </ul>
-      </nav>
-      <p class="copyright">© 2026 gracz<span>.pl</span></p>
-    </footer>
-  </div>
-  </div>
+          <a class="side-action side-action--green" href="/gry/poker-treningowy/">
+            <span class="side-emoji">♠</span><span><strong>Poker treningowy</strong><small>Texas Hold’em do nauki</small></span><b>›</b>
+          </a>
+          <a class="side-action" href="/gry/tysiac/">
+            <span class="side-emoji">♥</span><span><strong>Tysiąc</strong><small>licytacja i meldunki</small></span><b>›</b>
+          </a>
+          <a class="side-action" href="#poker-academy">
+            <span class="side-emoji">♦</span><span><strong>Poker Academy</strong><small>kierunek edukacyjny</small></span><b>›</b>
+          </a>
+          <a class="side-action" href="/gry/">
+            <span class="side-emoji">♣</span><span><strong>Wszystkie gry</strong><small>pełny katalog gracz.pl</small></span><b>›</b>
+          </a>
+        </section>
+
+        <section class="related-card" aria-labelledby="related-title">
+          <h2 id="related-title">Zobacz także</h2>
+          <a class="related-game" href="/gry/warcaby/"><span class="related-mini-checkers" aria-hidden="true"><i class="dark a"></i><i class="light b"></i><i class="dark c"></i><i class="light d"></i><i class="dark e"></i></span><span><strong>Warcaby</strong><small>Klasyczna gra planszowa</small></span><b>›</b></a>
+          <a class="related-game" href="/gry/gomoku/"><span class="related-mini-gomoku" aria-hidden="true"><i class="mini-stone mini-stone--black g1"></i><i class="mini-stone mini-stone--white g2"></i><i class="mini-stone mini-stone--black g3"></i><i class="mini-stone mini-stone--white g4"></i><i class="mini-stone mini-stone--black g5"></i><i class="mini-stone mini-stone--white g6"></i></span><span><strong>Gomoku</strong><small>Pięć w rzędzie</small></span><b>›</b></a>
+          <a class="related-game" href="/poradniki/"><span class="related-thumb related-thumb--tysiac" aria-hidden="true"><i class="score-note">ABC</i></span><span><strong>Poradniki</strong><small>Zasady i materiały</small></span><b>›</b></a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><a class="footer-logo" href="/">gracz<span>.pl</span></a><p>Gry. Wiedza. Społeczność.</p></div>
+      <nav class="footer-col" aria-labelledby="f-nav"><h2 id="f-nav">Nawigacja</h2><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/" aria-current="page">Gry karciane</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="community">Społeczność</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
+      <nav class="footer-col" aria-labelledby="f-pop"><h2 id="f-pop">Popularne działy</h2><ul><li><a href="/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="/gry/tysiac/">Tysiąc</a></li><li><a href="/gry/warcaby/">Warcaby</a></li><li><a href="/gry/gomoku/">Gomoku</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button type="button" data-modal="updates">Aktualności</button></li></ul></nav>
+      <div class="footer-news"><h2>Bądź na bieżąco</h2><p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p><form data-newsletter novalidate><label class="sr-only" for="news-email">Twój adres e-mail</label><input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off"><button type="submit">Zapisz się</button></form></div>
+    </div>
+    <div class="footer-bottom"><p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p><div class="footer-links"><button type="button" data-modal="privacy">Polityka prywatności</button><button type="button" data-modal="terms">Regulamin</button><button type="button" data-modal="contact">Kontakt</button></div></div>
+  </footer>
+
+  <dialog class="modal" id="modal" aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-box">
+      <button class="modal-x" type="button" data-close aria-label="Zamknij"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      <span class="modal-logo">gracz<span>.pl</span></span>
+      <h2 id="modal-title">Informacja</h2>
+      <p id="modal-text"></p>
+      <button class="modal-ok" type="button" data-close>Rozumiem</button>
+    </div>
+  </dialog>
 </body>
 </html>
