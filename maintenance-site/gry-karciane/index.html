@@ -92,7 +92,7 @@
               <a class="nav-link is-active" href="/gry-karciane/" aria-current="page">Gry karciane</a>
               <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
               <ul class="dropdown" id="menu-karty">
-                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry-karciane/" aria-current="page">Wszystkie gry karciane</a></li>
                 <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
                 <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
                 <li><a href="/gry/tysiac/">Tysiąc</a></li>
@@ -153,10 +153,10 @@
             <p class="hero-lead">Jedno miejsce dla gier karcianych na gracz.pl. Rozwijamy rozgrywkę, szczegółowe zasady i materiały edukacyjne — od treningowego Texas Hold’em po klasycznego Tysiąca.</p>
 
             <ul class="facts" aria-label="Najważniejsze informacje">
-              <li><span class="fact-icon">♠</span><strong>Poker</strong></li>
-              <li><span class="fact-icon">24</span><strong>Tysiąc</strong></li>
-              <li><span class="fact-icon">A</span><strong>Academy</strong></li>
-              <li><span class="fact-icon">+</span><strong>Kolejne gry</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">♠</span><strong>Poker treningowy</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">24</span><strong>24 karty w Tysiącu</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">A</span><strong>Poker Academy</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">+</span><strong>Kolejne gry</strong></li>
             </ul>
 
             <div class="hero-actions">
@@ -212,29 +212,29 @@
 
       <aside class="side-column" aria-label="Dział gier karcianych">
         <section class="online-card">
-          <p class="status-pill"><span></span> DZIAŁ W ROZWOJU</p>
+          <p class="status-pill"><span></span> W przygotowaniu</p>
           <h2>Gry karciane</h2>
           <p>Przejdź bezpośrednio do najważniejszych części działu.</p>
 
           <a class="side-action side-action--green" href="/gry/poker-treningowy/">
-            <span class="side-emoji">♠</span><span><strong>Poker treningowy</strong><small>Texas Hold’em do nauki</small></span><b>›</b>
+            <span class="side-emoji side-emoji--black">♠</span><span><strong>Poker treningowy</strong><small>Texas Hold’em do nauki</small></span><b>›</b>
           </a>
           <a class="side-action" href="/gry/tysiac/">
-            <span class="side-emoji">♥</span><span><strong>Tysiąc</strong><small>licytacja i meldunki</small></span><b>›</b>
+            <span class="side-emoji side-emoji--red">♥</span><span><strong>Tysiąc</strong><small>licytacja i meldunki</small></span><b>›</b>
           </a>
           <a class="side-action" href="#poker-academy">
-            <span class="side-emoji">♦</span><span><strong>Poker Academy</strong><small>kierunek edukacyjny</small></span><b>›</b>
+            <span class="side-emoji side-emoji--red">♦</span><span><strong>Poker Academy</strong><small>kierunek edukacyjny</small></span><b>›</b>
           </a>
           <a class="side-action" href="/gry/">
-            <span class="side-emoji">♣</span><span><strong>Wszystkie gry</strong><small>pełny katalog gracz.pl</small></span><b>›</b>
+            <span class="side-emoji side-emoji--black">♣</span><span><strong>Wszystkie gry</strong><small>pełny katalog gracz.pl</small></span><b>›</b>
           </a>
         </section>
 
         <section class="related-card" aria-labelledby="related-title">
           <h2 id="related-title">Zobacz także</h2>
-          <a class="related-game" href="/gry/warcaby/"><span class="related-mini-checkers" aria-hidden="true"><i class="dark a"></i><i class="light b"></i><i class="dark c"></i><i class="light d"></i><i class="dark e"></i></span><span><strong>Warcaby</strong><small>Klasyczna gra planszowa</small></span><b>›</b></a>
+          <a class="related-game" href="/gry/warcaby/"><span class="related-mini-checkers" aria-hidden="true"><i class="dark a"></i><i class="light b"></i><i class="dark c"></i><i class="light d"></i><i class="dark e"></i></span><span><strong>Warcaby</strong><small>Gra logiczna</small></span><b>›</b></a>
           <a class="related-game" href="/gry/gomoku/"><span class="related-mini-gomoku" aria-hidden="true"><i class="mini-stone mini-stone--black g1"></i><i class="mini-stone mini-stone--white g2"></i><i class="mini-stone mini-stone--black g3"></i><i class="mini-stone mini-stone--white g4"></i><i class="mini-stone mini-stone--black g5"></i><i class="mini-stone mini-stone--white g6"></i></span><span><strong>Gomoku</strong><small>Pięć w rzędzie</small></span><b>›</b></a>
-          <a class="related-game" href="/poradniki/"><span class="related-thumb related-thumb--tysiac" aria-hidden="true"><i class="score-note">ABC</i></span><span><strong>Poradniki</strong><small>Zasady i materiały</small></span><b>›</b></a>
+          <a class="related-game" href="/poradniki/"><span class="related-thumb related-thumb--guides" aria-hidden="true"><i class="guide-book"></i><i class="guide-card guide-card--one">A♠</i><i class="guide-card guide-card--two">K♥</i></span><span><strong>Poradniki</strong><small>Zasady i materiały</small></span><b>›</b></a>
         </section>
       </aside>
     </div>
