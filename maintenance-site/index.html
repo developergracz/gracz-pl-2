@@ -16,7 +16,6 @@
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/">
   <link rel="alternate" hreflang="pl" href="https://gracz.pl/">
   <link rel="alternate" hreflang="x-default" href="https://gracz.pl/">
-  <link rel="preload" as="image" href="approved-maintenance.webp" type="image/webp" fetchpriority="high">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
@@ -110,12 +109,11 @@
       min-height: 100vh;
       color: var(--text);
       background:
-        linear-gradient(180deg, rgba(0, 5, 4, .28), rgba(0, 7, 5, .7) 42%, #050706 100%),
-        image-set(
-          url("approved-maintenance.webp") type("image/webp"),
-          url("approved-maintenance.png") type("image/png")
-        ) center top / cover fixed no-repeat,
-        #050706;
+        radial-gradient(circle at 12% 8%, rgba(221, 123, 31, .28), transparent 24%),
+        radial-gradient(circle at 88% 13%, rgba(255, 177, 66, .2), transparent 22%),
+        radial-gradient(circle at 52% 30%, rgba(16, 91, 65, .34), transparent 32%),
+        radial-gradient(circle at 18% 72%, rgba(111, 34, 20, .2), transparent 28%),
+        linear-gradient(180deg, #110d08 0%, #07100d 44%, #050706 100%);
       overflow-x: hidden;
     }
 
@@ -330,7 +328,9 @@
       position: relative;
       min-height: 290px;
       display: grid;
-      place-items: end center;
+      grid-template-columns: minmax(0, 1fr) 98px;
+      gap: 12px;
+      align-items: end;
     }
 
     .laptop {
@@ -395,17 +395,14 @@
     }
 
     .phone {
-      position: absolute;
-      right: 1%;
-      bottom: 5px;
-      width: 112px;
-      min-height: 210px;
-      padding: 9px;
+      position: relative;
+      width: 98px;
+      min-height: 202px;
+      padding: 8px;
       border: 2px solid #262b28;
-      border-radius: 21px;
+      border-radius: 20px;
       background: #090b0a;
       box-shadow: 0 22px 32px rgba(0, 0, 0, .55);
-      transform: rotate(4deg);
     }
 
     .phone .screen {
@@ -683,7 +680,7 @@
       .next-layout { grid-template-columns: 1fr; }
       .device-stage { min-height: 250px; }
       .laptop { width: min(100%, 430px); }
-      .phone { right: 4%; }
+      .phone { width: 94px; }
       .site-footer { grid-template-columns: 1fr; }
       .footer-nav { justify-content: flex-start; }
     }
@@ -708,10 +705,12 @@
       .explore { padding: 18px 15px; }
       .next-card { min-height: auto; }
       .next-card h1 { font-size: clamp(2.35rem, 13vw, 3.55rem); }
-      .device-stage { min-height: 220px; }
+      .device-stage {
+        min-height: 220px;
+        grid-template-columns: minmax(0, 1fr);
+      }
       .screen { min-height: 170px; }
-      .phone { width: 92px; min-height: 174px; }
-      .phone .screen { min-height: 154px; }
+      .phone { display: none; }
       .explore-grid { grid-template-columns: 1fr; }
       .explore-card { min-height: 190px; }
     }
@@ -762,9 +761,9 @@
           <div class="device-stage" aria-hidden="true">
             <div class="laptop">
               <div class="screen">
-                <div class="screen-brand">gracz<span>.pl</span></div>
+                <div class="screen-brand">gracz<span>.PL</span></div>
                 <div class="game-grid">
-                  <div class="game-tile"><strong>Poker</strong><small>treningowy</small></div>
+                  <div class="game-tile"><strong>Poker</strong><small>w przygotowaniu</small></div>
                   <div class="game-tile"><strong>Tysiąc</strong><small>w przygotowaniu</small></div>
                   <div class="game-tile"><strong>Warcaby</strong><small>w przygotowaniu</small></div>
                   <div class="game-tile"><strong>Gomoku</strong><small>w przygotowaniu</small></div>
@@ -773,7 +772,7 @@
             </div>
             <div class="phone">
               <div class="screen">
-                <div class="screen-brand">gracz<span>.pl</span></div>
+                <div class="screen-brand">gracz<span>.PL</span></div>
                 <div class="game-grid">
                   <div class="game-tile"><strong>Poker</strong></div>
                   <div class="game-tile"><strong>Tysiąc</strong></div>
@@ -841,7 +840,7 @@
         <article class="explore-card">
           <div class="explore-icon" aria-hidden="true">🂡</div>
           <h3>Gry karciane</h3>
-          <p>Poker treningowy, Tysiąc i kierunek rozwoju kolejnych gier karcianych w gracz.pl.</p>
+          <p>Poznaj kierunek rozwoju Pokera treningowego, Tysiąca oraz przyszłych gier karcianych w gracz.pl.</p>
           <a class="explore-link" href="/gry-karciane/">Poznaj gry karciane <span aria-hidden="true">→</span></a>
         </article>
 
