@@ -498,14 +498,43 @@
       line-height: 1.45;
     }
 
-    .thanks {
-      margin: 20px 0 0;
-      padding-top: 16px;
+    .closing {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      padding-top: 18px;
       border-top: 1px solid rgba(244, 198, 95, .34);
-      color: var(--gold);
       text-align: center;
+    }
+
+    .thanks {
+      margin: 0;
+      color: var(--gold);
       font-size: .95rem;
     }
+
+    .soon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .24em;
+    }
+
+    .soon::before,
+    .soon::after {
+      content: "";
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+    }
+
+    .soon::after { transform: scaleX(-1); }
 
     .explore {
       margin-top: 18px;
@@ -634,7 +663,6 @@
       gap: 8px;
     }
 
-    .footer-brand .brand { font-size: 2rem; }
     .footer-brand small { color: #afb7b2; }
 
     .footer-nav {
@@ -819,7 +847,6 @@
           </div>
         </div>
 
-        <p class="thanks">Dziękujemy za cierpliwość — wrócimy z kolejnymi publicznymi funkcjami etapami.</p>
       </aside>
     </section>
 
@@ -872,6 +899,11 @@
         <a href="/poradniki/">Poradniki</a>
         <a href="/o-gracz-pl/">O gracz.pl</a>
       </nav>
+
+      <div class="closing" aria-label="Informacja końcowa">
+        <p class="thanks">Dziękujemy za cierpliwość.</p>
+        <div class="soon" aria-label="Wkrótce wracamy">WKRÓTCE WRACAMY</div>
+      </div>
 
       <div class="copyright">© 2026 gracz.pl — serwis rozwijany etapami.</div>
     </footer>
