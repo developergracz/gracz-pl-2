@@ -28,6 +28,8 @@ That README defines:
 - module boundaries,
 - implementation sequence,
 - quality gates,
+- 48-page candidate public SEO architecture,
+- staged content/internal-link rollout,
 - resume protocol for future sessions.
 
 ## Core rule
