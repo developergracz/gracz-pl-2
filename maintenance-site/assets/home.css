@@ -1214,3 +1214,177 @@ main:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+
+/* =========================================================
+   Exact approved desktop reference
+   The approved generated layout is the visual surface on desktop.
+   Interactive hotspots keep navigation/buttons functional.
+   Existing semantic implementation remains the mobile layout.
+   ========================================================= */
+
+.reference-desktop {
+  display: none;
+  position: relative;
+  width: 100%;
+  margin: 0;
+  background: #050706;
+  line-height: 0;
+}
+
+.reference-visual {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.ref-hotspot,
+.ref-menu {
+  position: absolute;
+  z-index: 20;
+}
+
+.ref-hotspot {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.ref-hotspot:hover {
+  background: rgba(255, 206, 103, .055);
+}
+
+.ref-hotspot:focus-visible,
+.ref-menu-trigger:focus-visible {
+  outline: 2px solid #ffe0a0;
+  outline-offset: 2px;
+  background: rgba(255, 206, 103, .08);
+}
+
+.ref-menu > .ref-menu-trigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ref-popover {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  min-width: 220px;
+  padding: 9px;
+  border: 1px solid rgba(240, 195, 92, .66);
+  border-radius: 14px;
+  background: rgba(5, 10, 8, .98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .66), 0 0 24px rgba(240, 195, 92, .12);
+  line-height: 1.25;
+}
+
+.ref-popover[hidden] { display: none; }
+
+.ref-popover a,
+.ref-popover button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #f2f2ee;
+  font-family: var(--sans);
+  font-size: .88rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ref-popover a:hover,
+.ref-popover button:hover,
+.ref-popover a:focus-visible,
+.ref-popover button:focus-visible {
+  background: rgba(240, 195, 92, .12);
+  color: #ffe2a0;
+}
+
+/* Header hotspots — percentages map directly to the 1122×1402 approved reference. */
+.ref-logo      { left: 5.0%;  top: .45%; width: 11.9%; height: 3.7%; }
+.ref-start     { left: 18.6%; top: .45%; width: 5.2%;  height: 3.7%; }
+.ref-games     { left: 24.2%; top: .45%; width: 5.3%;  height: 3.7%; }
+.ref-cards     { left: 29.5%; top: .45%; width: 9.4%;  height: 3.7%; }
+.ref-guides    { left: 39.7%; top: .45%; width: 7.2%;  height: 3.7%; }
+.ref-community { left: 47.4%; top: .45%; width: 10.3%; height: 3.7%; }
+.ref-about     { left: 58.4%; top: .45%; width: 7.5%;  height: 3.7%; }
+.ref-search    { left: 67.3%; top: .45%; width: 4.7%;  height: 3.7%; }
+.ref-login     { left: 72.5%; top: .45%; width: 10.2%; height: 3.7%; }
+.ref-register  { left: 83.7%; top: .45%; width: 11.3%; height: 3.7%; }
+
+/* Main CTAs. */
+.ref-next        { left: 10.5%; top: 40.25%; width: 21.2%; height: 3.2%; }
+.ref-tile-games  { left: 5.5%;  top: 77.65%; width: 19.2%; height: 2.75%; }
+.ref-tile-cards  { left: 29.1%; top: 77.65%; width: 18.9%; height: 2.75%; }
+.ref-tile-guides { left: 51.3%; top: 77.65%; width: 19.1%; height: 2.75%; }
+.ref-tile-about  { left: 72.7%; top: 77.65%; width: 20.3%; height: 2.75%; }
+
+/* Footer navigation column. */
+.ref-footer-start     { left: 27.3%; top: 85.55%; width: 5.5%; height: 1.25%; }
+.ref-footer-games     { left: 27.3%; top: 86.75%; width: 5.5%; height: 1.25%; }
+.ref-footer-cards     { left: 27.3%; top: 87.95%; width: 9.5%; height: 1.25%; }
+.ref-footer-guides    { left: 27.3%; top: 89.15%; width: 7.0%; height: 1.25%; }
+.ref-footer-community { left: 27.3%; top: 90.35%; width: 8.4%; height: 1.25%; }
+.ref-footer-about     { left: 27.3%; top: 91.55%; width: 7.5%; height: 1.25%; }
+
+.ref-pop-poker    { left: 44.1%; top: 85.55%; width: 11.2%; height: 1.25%; }
+.ref-pop-thousand { left: 44.1%; top: 86.75%; width: 6.3%;  height: 1.25%; }
+.ref-pop-checkers { left: 44.1%; top: 87.95%; width: 7.0%;  height: 1.25%; }
+.ref-pop-gomoku   { left: 44.1%; top: 89.15%; width: 7.0%;  height: 1.25%; }
+.ref-pop-guides   { left: 44.1%; top: 90.35%; width: 7.0%;  height: 1.25%; }
+
+/* Newsletter + legal + social. */
+.ref-newsletter { left: 67.0%; top: 88.25%; width: 27.2%; height: 3.0%; }
+
+.ref-privacy  { left: 61.5%; top: 94.65%; width: 9.2%; height: 1.9%; }
+.ref-terms    { left: 71.0%; top: 94.65%; width: 6.2%; height: 1.9%; }
+.ref-contact  { left: 78.0%; top: 94.65%; width: 5.2%; height: 1.9%; }
+.ref-facebook { left: 85.4%; top: 94.45%; width: 3.2%; height: 2.2%; border-radius: 50%; }
+.ref-youtube  { left: 89.0%; top: 94.45%; width: 3.2%; height: 2.2%; border-radius: 50%; }
+.ref-discord  { left: 92.5%; top: 94.45%; width: 3.4%; height: 2.2%; border-radius: 50%; }
+
+@media (min-width: 1024px) {
+  body { background: #050706; }
+
+  .reference-desktop { display: block; }
+
+  /* Desktop visual is the exact approved reference. Keep the semantic,
+     responsive implementation for tablet/mobile only. */
+  .site-header,
+  .stage,
+  .site-footer {
+    display: none !important;
+  }
+
+  .skip-link {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .reference-desktop { display: none !important; }
+}
