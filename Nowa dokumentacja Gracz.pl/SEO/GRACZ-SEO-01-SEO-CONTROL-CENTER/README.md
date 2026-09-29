@@ -47,6 +47,8 @@ Read these files in order:
 10. `10-TESTING-SECURITY-AND-OPERATIONS.md`
 11. `11-ACCEPTANCE-MATRIX.md`
 12. `12-RESUME-RUNBOOK.md`
+13. `14-PUBLIC-SITE-ARCHITECTURE-AND-URL-MAP.md`
+14. `15-SEO-CONTENT-ROLLOUT-AND-INTERNAL-LINKING.md`
 
 ## 4. System boundary
 
@@ -116,7 +118,16 @@ The system is successful when it can answer, with evidence:
 
 GRACZ-SEO-01 does not promise position #1 for `gracz` or any other query. Search results depend on factors outside the system, including competition, authority, links, demand, content quality, user behavior and search-engine changes.
 
-## 9. Resume rule
+## 9. Public-page SEO backlog
+
+The first concrete candidate public architecture is frozen in:
+
+- `14-PUBLIC-SITE-ARCHITECTURE-AND-URL-MAP.md` — 48 candidate public URLs with intent, H1, title, description, links and rollout wave.
+- `15-SEO-CONTENT-ROLLOUT-AND-INTERNAL-LINKING.md` — publication workflow, cluster graph, canary strategy and W1–W4 rollout gates.
+
+These URLs are candidates, not automatic publication instructions. Keyword demand must be validated and product-state gates must be respected.
+
+## 10. Resume rule
 
 A future implementation session must begin with `12-RESUME-RUNBOOK.md`, verify repository identity and current status, and then continue only the first non-closed phase from `09-IMPLEMENTATION-ROADMAP-AND-GATES.md`.
 
