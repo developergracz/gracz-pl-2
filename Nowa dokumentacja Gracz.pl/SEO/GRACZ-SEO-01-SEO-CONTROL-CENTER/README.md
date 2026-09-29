@@ -49,6 +49,7 @@ Read these files in order:
 12. `12-RESUME-RUNBOOK.md`
 13. `14-PUBLIC-SITE-ARCHITECTURE-AND-URL-MAP.md`
 14. `15-SEO-CONTENT-ROLLOUT-AND-INTERNAL-LINKING.md`
+15. `SEO-00-AS-IS-INVENTORY.md` — closed SEO-00 evidence, production baseline, implementation boundaries and SEO-01a entry conditions.
 
 ## 4. System boundary
 
@@ -127,7 +128,17 @@ The first concrete candidate public architecture is frozen in:
 
 These URLs are candidates, not automatic publication instructions. Keyword demand must be validated and product-state gates must be respected.
 
-## 10. Resume rule
+## 10. Current execution state
+
+`SEO-00 DISCOVERY AND BASELINE = CLOSED / PASS`
+
+The durable closure record is `SEO-00-AS-IS-INVENTORY.md`.
+
+The next implementation phase is the isolated `SEO-01a — Domain Foundation and File-backed Page Registry`, but coding requires a separate Owner-authorized implementation mandate. SEO-01a must not modify `maintenance-site/`, must not use PostgreSQL/DDL and must not deploy production.
+
+Long-term runtime ownership is intentionally deferred and must be resolved before SEO-02+.
+
+## 11. Resume rule
 
 A future implementation session must begin with `12-RESUME-RUNBOOK.md`, verify repository identity and current status, and then continue only the first non-closed phase from `09-IMPLEMENTATION-ROADMAP-AND-GATES.md`.
 
