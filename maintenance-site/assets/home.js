@@ -266,4 +266,48 @@
       openModal('newsletter', newsForm.querySelector('button'));
     });
   }
+
+  /* ---------- Exact-reference desktop dropdowns ---------- */
+
+  var refMenus = Array.prototype.slice.call(document.querySelectorAll('[data-ref-menu]'));
+
+  function closeRefMenus(except) {
+    refMenus.forEach(function (item) {
+      if (item === except) return;
+      var toggle = item.querySelector('[data-ref-toggle]');
+      var popover = item.querySelector('.ref-popover');
+      if (!toggle || !popover) return;
+      toggle.setAttribute('aria-expanded', 'false');
+      popover.hidden = true;
+    });
+  }
+
+  refMenus.forEach(function (item) {
+    var toggle = item.querySelector('[data-ref-toggle]');
+    var popover = item.querySelector('.ref-popover');
+    if (!toggle || !popover) return;
+
+    toggle.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      var opening = popover.hidden;
+      closeRefMenus(item);
+      popover.hidden = !opening;
+      toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+
+    item.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !popover.hidden) {
+        popover.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.focus();
+        event.preventDefault();
+      }
+    });
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('[data-ref-menu]')) closeRefMenus();
+  });
+
 })();
