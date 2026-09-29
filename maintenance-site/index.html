@@ -3,12 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="gracz.pl — trwa modernizacja serwisu.">
-  <meta name="robots" content="noindex,follow">
-  <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+
+  <title>Gracz.pl — portal gracza, gry online i karciane</title>
+  <meta name="description" content="Gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#050706">
   <meta name="color-scheme" content="dark">
-  <title>gracz.pl — trwa modernizacja</title>
+
+  <link rel="canonical" href="https://gracz.pl/">
+  <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/">
+  <link rel="alternate" hreflang="pl" href="https://gracz.pl/">
+  <link rel="alternate" hreflang="x-default" href="https://gracz.pl/">
+  <link rel="preload" as="image" href="approved-maintenance.webp" type="image/webp" fetchpriority="high">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:site_name" content="Gracz.pl">
+  <meta property="og:title" content="Gracz.pl — portal gracza, gry online i karciane">
+  <meta property="og:description" content="Polski portal dla graczy w rozwoju: gry online i karciane, poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.">
+  <meta property="og:url" content="https://gracz.pl/">
+  <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta property="og:image:secure_url" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Gracz.pl — portal gracza i gry online">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Gracz.pl — portal gracza, gry online i karciane">
+  <meta name="twitter:description" content="Polski portal dla graczy w rozwoju: gry online i karciane, multiplayer, rankingi i społeczność.">
+  <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta name="twitter:image:alt" content="Gracz.pl — portal gracza i gry online">
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://gracz.pl/#website",
+        "url": "https://gracz.pl/",
+        "name": "Gracz.pl",
+        "alternateName": ["Gracz", "gracz.pl"],
+        "description": "Polski portal dla graczy w rozwoju: gry online i karciane, multiplayer, rankingi i społeczność.",
+        "inLanguage": "pl-PL",
+        "publisher": {"@id": "https://gracz.pl/#organization"}
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://gracz.pl/#organization",
+        "name": "Gracz.pl",
+        "url": "https://gracz.pl/"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://gracz.pl/#webpage",
+        "url": "https://gracz.pl/",
+        "name": "Gracz.pl — portal gracza, gry online i karciane",
+        "description": "Gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.",
+        "isPartOf": {"@id": "https://gracz.pl/#website"},
+        "about": {"@id": "https://gracz.pl/#organization"},
+        "primaryImageOfPage": {"@id": "https://gracz.pl/#primaryimage"},
+        "inLanguage": "pl-PL"
+      },
+      {
+        "@type": "ImageObject",
+        "@id": "https://gracz.pl/#primaryimage",
+        "url": "https://gracz.pl/og-gracz-pl.jpg",
+        "contentUrl": "https://gracz.pl/og-gracz-pl.jpg",
+        "width": 1200,
+        "height": 630,
+        "caption": "Gracz.pl — portal gracza i gry online"
+      }
+    ]
+  }
+  </script>
+
   <style>
     :root {
       color-scheme: dark;
@@ -40,6 +114,7 @@
       background: #050706;
     }
 
+    .desktop-view picture,
     .desktop-view img {
       display: block;
       width: auto;
@@ -47,6 +122,9 @@
       max-width: 100vw;
       max-height: 100vh;
       max-height: 100dvh;
+    }
+
+    .desktop-view img {
       object-fit: contain;
     }
 
@@ -58,7 +136,10 @@
         overflow-y: auto;
         background:
           linear-gradient(180deg, rgba(1, 5, 4, .58), rgba(2, 7, 5, .96)),
-          url("approved-maintenance.png") center / cover fixed no-repeat,
+          image-set(
+            url("approved-maintenance.webp") type("image/webp"),
+            url("approved-maintenance.png") type("image/png")
+          ) center / cover fixed no-repeat,
           #050706;
       }
 
@@ -268,42 +349,45 @@
   </style>
 </head>
 <body>
-  <main class="desktop-view">
-    <img src="approved-maintenance.png" width="1672" height="847" alt="gracz.pl — trwa modernizacja serwisu">
+  <main class="desktop-view" aria-label="Gracz.pl — portal gracza i gry online">
+    <picture>
+      <source srcset="approved-maintenance.webp" type="image/webp">
+      <img src="approved-maintenance.png" width="1672" height="847" fetchpriority="high" decoding="async" alt="Gracz.pl — polski portal dla graczy; trwa modernizacja serwisu">
+    </picture>
   </main>
 
-  <main class="mobile-view" aria-label="gracz.pl — trwa modernizacja serwisu">
+  <main class="mobile-view" aria-labelledby="page-title">
     <section class="mobile-panel">
       <div class="topbar">
         <div class="brand" aria-label="gracz.pl">gracz<span>.PL</span></div>
         <div class="status">Trwa modernizacja serwisu</div>
       </div>
 
-      <h1>gracz<span>.pl</span> wraca w nowej odsłonie.</h1>
-      <p class="lead">Tworzymy nową odsłonę gracz.pl — rozwijamy gry online, dopracowujemy rozgrywkę i budujemy mocny fundament pod funkcje społecznościowe. Wracamy wkrótce z bardziej gamingowym, nowocześniejszym serwisem.</p>
+      <h1 id="page-title"><span>Gracz.pl</span> — portal gracza i gry online.</h1>
+      <p class="lead">Budujemy nową odsłonę Gracz.pl jako polski portal dla graczy. Rozwijamy gry online i karciane — m.in. poker treningowy, Tysiąc, warcaby i Gomoku — a także multiplayer, rankingi, turnieje i funkcje społecznościowe. Wracamy z nowocześniejszym i bezpieczniejszym serwisem.</p>
 
-      <section class="features" aria-label="Zakres modernizacji">
+      <section class="features" aria-label="Co powstaje w Gracz.pl">
         <article class="feature">
           <div class="feature-icon" aria-hidden="true">🔒</div>
           <div>
             <h2>Bezpieczeństwo</h2>
-            <p>Porządkujemy architekturę, uprawnienia i proces wdrożeniowy.</p>
+            <p>Porządkujemy architekturę, uprawnienia i proces wdrożeniowy, aby Gracz.pl miał stabilny fundament.</p>
           </div>
         </article>
 
         <article class="feature">
           <div class="feature-icon" aria-hidden="true">♠</div>
           <div>
-            <h2>Gry online</h2>
-            <p>Przygotowujemy stabilny fundament dla rozgrywek i funkcji społecznościowych.</p>
+            <h2>Gry online i karciane</h2>
+            <p>Rozwijamy rozgrywki dla graczy: poker treningowy, Tysiąc, warcaby, Gomoku i multiplayer.</p>
           </div>
         </article>
 
         <article class="feature">
           <div class="feature-icon" aria-hidden="true">▣</div>
           <div>
-            <h2>Nowy gracz.pl</h2>
-            <p>Odświeżamy serwis tak, aby był wygodny na komputerach i urządzeniach mobilnych.</p>
+            <h2>Społeczność graczy</h2>
+            <p>Przygotowujemy rankingi, turnieje i funkcje społecznościowe dostępne na komputerach oraz urządzeniach mobilnych.</p>
           </div>
         </article>
       </section>
@@ -311,7 +395,7 @@
       <footer class="footer">
         <p class="thanks">Dziękujemy za cierpliwość.</p>
         <div class="soon">WKRÓTCE WRACAMY</div>
-        <div class="copyright">© gracz<span>.pl</span></div>
+        <div class="copyright">© Gracz<span>.pl</span></div>
       </footer>
     </section>
   </main>
