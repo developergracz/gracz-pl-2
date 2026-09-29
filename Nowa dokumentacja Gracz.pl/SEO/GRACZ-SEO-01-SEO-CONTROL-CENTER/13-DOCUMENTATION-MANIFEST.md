@@ -26,6 +26,8 @@ This manifest records the intended files and design status. It is not an impleme
 12. `11-ACCEPTANCE-MATRIX.md` — requirement-to-test/gate mapping.
 13. `12-RESUME-RUNBOOK.md` — exact future-session resume protocol.
 14. `13-DOCUMENTATION-MANIFEST.md` — this package inventory, baseline and implementation-status record.
+15. `14-PUBLIC-SITE-ARCHITECTURE-AND-URL-MAP.md` — 48 candidate public URLs with intent, H1, metadata, link targets and rollout waves.
+16. `15-SEO-CONTENT-ROLLOUT-AND-INTERNAL-LINKING.md` — staged publishing, canary, internal-link graph and content-quality gates.
 
 Parent locator:
 `../README.md`
@@ -53,6 +55,7 @@ Parent locator:
 `SCHEDULED JOBS = NOT CREATED`  
 `PRODUCTION CHANGES = NONE FROM THIS PACKAGE`  
 `NEXT EXECUTABLE PHASE = SEO-00 DISCOVERY AND BASELINE`
+`PUBLIC SEO URL MAP = 48 CANDIDATES / DESIGN ONLY / NOT PUBLISHED`
 
 ## Merge note
 
