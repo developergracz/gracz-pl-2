@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'maintenance-site/og-gracz-pl.jpg.b64'
+      - 'maintenance-site/approved-maintenance.png'
+      - '.github/workflows/publish-og-image.yml'
 
 permissions:
   contents: write
@@ -14,8 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode JPEG
-        run: base64 -d maintenance-site/og-gracz-pl.jpg.b64 > maintenance-site/og-gracz-pl.jpg
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+      - name: Build 1200x630 Open Graph JPEG
+        run: |
+          convert maintenance-site/approved-maintenance.png \
+            -auto-orient \
+            -resize '1200x630^' \
+            -gravity center \
+            -extent 1200x630 \
+            -strip \
+            -quality 88 \
+            maintenance-site/og-gracz-pl.jpg
+          identify maintenance-site/og-gracz-pl.jpg
       - name: Commit generated JPEG
         run: |
           git config user.name "github-actions[bot]"
