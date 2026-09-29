@@ -4,9 +4,11 @@ Cel: wyświetlać prostą stronę informacyjną pod `gracz.pl` bez uruchamiania 
 
 ## Właściwości bezpieczeństwa
 
-- tylko statyczny `index.html`,
-- brak JavaScriptu,
-- brak formularzy,
+- tylko statyczne pliki HTML/CSS/JS (bez builda, bez frameworków),
+- strona główna: `index.html` + `assets/home.css` + `assets/home.js`; lokalne fonty i grafiki w `assets/`,
+- JavaScript wyłącznie do interakcji UI (menu, dropdowny, modal informacyjny) — bez żądań sieciowych i bez zapisu danych,
+- funkcje bez backendu (logowanie, rejestracja, społeczność, wyszukiwarka, newsletter, social media, dokumenty prawne) pokazują wyłącznie komunikat „w przygotowaniu”,
+- pole newslettera nigdy nie wysyła adresu (JS blokuje submit, a CSP `form-action 'none'` blokuje wysyłkę także bez JS),
 - brak API,
 - brak zmiennych środowiskowych,
 - brak `DATABASE_URL`,
