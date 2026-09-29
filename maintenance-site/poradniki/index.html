@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <title>Poradniki do gier — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl</title>
-  <meta name="description" content="Poradniki gracz.pl w przygotowaniu: planowane zasady i materiały edukacyjne do Pokera, Tysiąca, Warcabów i Gomoku.">
+  <meta name="description" content="Poradniki gracz.pl: zasady, nauka i materiały do Pokera treningowego, Tysiąca, Warcabów i Gomoku. Przejdź do szczegółowych zasad każdej gry.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -16,201 +16,270 @@
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/poradniki/">
   <link rel="alternate" hreflang="pl" href="https://gracz.pl/poradniki/">
   <link rel="alternate" hreflang="x-default" href="https://gracz.pl/poradniki/">
-  <link rel="stylesheet" href="/site.css">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="gracz.pl">
-  <meta property="og:title" content="Poradniki do gier — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl">
-  <meta property="og:description" content="Poradniki gracz.pl w przygotowaniu: planowane zasady i materiały edukacyjne do Pokera, Tysiąca, Warcabów i Gomoku.">
+  <meta property="og:title" content="Poradniki do gier — Poker, Tysiąc, Warcaby i Gomoku">
+  <meta property="og:description" content="Zasady, materiały edukacyjne i poradniki do gier rozwijanych na gracz.pl.">
   <meta property="og:url" content="https://gracz.pl/poradniki/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta property="og:image:secure_url" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="gracz.pl — portal gracza i gry online">
-
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Poradniki do gier — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl">
-  <meta name="twitter:description" content="Poradniki gracz.pl w przygotowaniu: planowane zasady i materiały edukacyjne do Pokera, Tysiąca, Warcabów i Gomoku.">
+  <meta name="twitter:title" content="Poradniki do gier | gracz.pl">
+  <meta name="twitter:description" content="Poker, Tysiąc, Warcaby i Gomoku — zasady i materiały edukacyjne na gracz.pl.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta name="twitter:image:alt" content="gracz.pl — portal gracza i gry online">
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/poradniki.css">
+  <script src="/assets/poradniki.js" defer></script>
 
   <script type="application/ld+json">
   {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://gracz.pl/#website",
-        "url": "https://gracz.pl/",
-        "name": "gracz.pl",
-        "inLanguage": "pl-PL",
-        "publisher": {
-          "@id": "https://gracz.pl/#organization"
-        }
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://gracz.pl/#organization",
-        "name": "gracz.pl",
-        "url": "https://gracz.pl/"
-      },
-      {
-        "@type": "WebPage",
-        "@id": "https://gracz.pl/poradniki/#webpage",
-        "url": "https://gracz.pl/poradniki/",
-        "name": "Poradniki do gier — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl",
-        "description": "Poradniki gracz.pl w przygotowaniu: planowane zasady i materiały edukacyjne do Pokera, Tysiąca, Warcabów i Gomoku.",
-        "isPartOf": {
-          "@id": "https://gracz.pl/#website"
-        },
-        "inLanguage": "pl-PL"
-      }
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
+      {"@type":"CollectionPage","@id":"https://gracz.pl/poradniki/#webpage","url":"https://gracz.pl/poradniki/","name":"Poradniki do gier","description":"Zasady, nauka i materiały do Pokera treningowego, Tysiąca, Warcabów i Gomoku.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
+        {"@type":"ListItem","position":2,"name":"Poradniki","item":"https://gracz.pl/poradniki/"}
+      ]}
     ]
   }
   </script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+  </svg>
+
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
 
-  <div class="shell">
-  <div class="panel">
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="gracz.pl — strona główna">gracz<span>.PL</span></a>
-      <nav class="site-nav" aria-label="Główna nawigacja">
-        <ul>
-          <li><a href="/">Start</a></li>
-          <li><a href="/gry/">Gry</a></li>
-          <li><a href="/gry-karciane/">Gry karciane</a></li>
-          <li><a href="/poradniki/" aria-current="page">Poradniki</a></li>
-          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
-        </ul>
-      </nav>
-    </header>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
 
-    <main id="tresc">
-      <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
-        <ol>
-          <li><a href="/">gracz.pl</a></li>
-          <li aria-current="page">Poradniki</li>
-        </ol>
-      </nav>
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
 
-      <p class="status">gracz.pl • SERWIS W ROZWOJU</p>
-
-      <h1>Poradniki do gier</h1>
-      <p class="lead">Dobra rozgrywka zaczyna się od zrozumienia zasad. W sekcji poradników gracz.pl chcemy gromadzić przejrzyste materiały dla początkujących oraz osób, które chcą uporządkować swoją wiedzę i rozwijać umiejętności.</p>
-
-      <div class="blocks">
-        <section class="block" aria-labelledby="poker">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♠</span>
-            <h2 id="poker">Poker</h2>
-          </div>
-          <p>Materiały o pokerze przygotowujemy w ujęciu edukacyjnym, bez gry na pieniądze. Planujemy omówić m.in.:</p>
-          <ul>
-            <li>układy kart i ich starszeństwo,</li>
-            <li>przebieg rozdania i kolejne rundy,</li>
-            <li>podstawy pozycji przy stole i podejmowania decyzji.</li>
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/">Gomoku</a></li>
+              </ul>
+            </li>
+            <li class="has-menu">
+              <a class="nav-link" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+              </ul>
+            </li>
+            <li><a class="nav-link is-active" href="/poradniki/" aria-current="page">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link community-trigger menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
           </ul>
-          <p class="tag">Materiały w przygotowaniu</p>
+        </nav>
+
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj"><svg aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="tresc" class="page-shell" tabindex="-1">
+    <nav class="breadcrumb" aria-label="Ścieżka nawigacji">
+      <ol>
+        <li><a href="/">Start</a></li>
+        <li aria-current="page">Poradniki</li>
+      </ol>
+    </nav>
+
+    <div class="page-grid">
+      <div class="main-column">
+        <section class="hero-card" aria-labelledby="hero-title">
+          <div class="board-visual">
+            <div class="guides-scene" role="img" aria-label="Otwarta książka poradnikowa z kartami do gry">
+              <div class="guides-label"><span>Dział</span><strong>Poradniki</strong></div>
+              <div class="guides-book" aria-hidden="true">
+                <span class="page left"></span><span class="page right"></span>
+                <i class="guides-line l1"></i><i class="guides-line l2"></i><i class="guides-line l3"></i>
+                <i class="guides-line r1"></i><i class="guides-line r2"></i><i class="guides-line r3"></i>
+                <span class="guides-card guides-card--one">A♠</span>
+                <span class="guides-card guides-card--two">K♥</span>
+              </div>
+              <span class="guides-caption">Zasady • nauka • strategia • praktyka</span>
+            </div>
+          </div>
+
+          <div class="hero-copy">
+            <h1 id="hero-title">Poradniki do gier</h1>
+            <p class="hero-kicker">Zrozum zasady. Graj świadomie.</p>
+            <p class="hero-lead">Dobra rozgrywka zaczyna się od zrozumienia zasad. W jednym miejscu zbieramy przejrzyste materiały do Pokera treningowego, Tysiąca, Warcabów i Gomoku — dla początkujących i graczy, którzy chcą uporządkować wiedzę.</p>
+
+            <ul class="facts" aria-label="Zakres poradników">
+              <li><span class="fact-icon" aria-hidden="true">♠</span><strong>Poker</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">♥</span><strong>Tysiąc</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">●</span><strong>Warcaby</strong></li>
+              <li><span class="fact-icon" aria-hidden="true">✕</span><strong>Gomoku</strong></li>
+            </ul>
+
+            <div class="hero-actions">
+              <a class="cta-primary" href="/gry/poker-treningowy/zasady/">
+                <span class="play-circle">♠</span>
+                <span>Zasady Pokera<small>Texas Hold’em</small></span>
+              </a>
+              <a class="cta-secondary" href="/gry/tysiac/zasady/">Zasady Tysiąca →</a>
+            </div>
+          </div>
         </section>
 
-        <section class="block block--red" aria-labelledby="tysiac">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">♥</span>
-            <h2 id="tysiac">Tysiąc</h2>
-          </div>
-          <p>Poradniki do Tysiąca mają pomóc zarówno w nauce gry, jak i w uporządkowaniu zasad, które często różnią się w zależności od stołu. Planujemy omówić m.in.:</p>
-          <ul>
-            <li>licytację i musik,</li>
-            <li>meldunki i ich wartość,</li>
-            <li>liczenie punktów i popularne warianty zasad.</li>
-          </ul>
-          <p class="tag">Materiały w przygotowaniu</p>
-        </section>
+        <div class="guide-grid">
+          <article class="guide-card-box" id="poker">
+            <span class="guide-badge">Materiały dostępne</span>
+            <h2>Poker treningowy</h2>
+            <p>Materiały o pokerze przygotowujemy w ujęciu edukacyjnym, bez gry na prawdziwe pieniądze. Najważniejsze podstawy Texas Hold’em są już opisane w osobnej sekcji zasad.</p>
+            <ul>
+              <li>układy kart i ich starszeństwo,</li>
+              <li>preflop, flop, turn i river,</li>
+              <li>pozycje, blindy i showdown.</li>
+            </ul>
+            <div class="guide-actions">
+              <a class="guide-link guide-link--green" href="/gry/poker-treningowy/zasady/">Zasady gry →</a>
+              <a class="guide-link" href="/gry/poker-treningowy/">Podstrona Pokera →</a>
+            </div>
+          </article>
 
-        <section class="block block--green" aria-labelledby="warcaby">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">●</span>
-            <h2 id="warcaby">Warcaby</h2>
-          </div>
-          <p>W warcabach liczy się myślenie kilka ruchów do przodu. Planujemy omówić m.in.:</p>
-          <ul>
-            <li>zasady ruchu i obowiązkowe bicie,</li>
-            <li>promocję pionka na damkę,</li>
-            <li>podstawowe motywy taktyczne.</li>
-          </ul>
-          <p class="tag">Materiały w przygotowaniu</p>
-        </section>
+          <article class="guide-card-box guide-card-box--red" id="tysiac">
+            <span class="guide-badge">Materiały dostępne</span>
+            <h2>Tysiąc</h2>
+            <p>Poradniki do Tysiąca pomagają uporządkować zasady gry i przygotować się do rozgrywki online.</p>
+            <ul>
+              <li>licytacja i musik,</li>
+              <li>meldunki i ich wartość,</li>
+              <li>liczenie punktów i przebieg partii.</li>
+            </ul>
+            <div class="guide-actions">
+              <a class="guide-link guide-link--green" href="/gry/tysiac/zasady/">Zasady gry →</a>
+              <a class="guide-link" href="/gry/tysiac/">Podstrona Tysiąca →</a>
+            </div>
+          </article>
 
-        <section class="block" aria-labelledby="gomoku">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">✕</span>
-            <h2 id="gomoku">Gomoku</h2>
-          </div>
-          <p>Gomoku ma proste zasady, ale wymaga dobrego czytania planszy. Planujemy omówić m.in.:</p>
-          <ul>
-            <li>cel gry i zasady ułożenia pięciu w linii,</li>
-            <li>budowanie zagrożeń i wymuszanie ruchów,</li>
-            <li>podstawy obrony.</li>
-          </ul>
-          <p class="tag">Materiały w przygotowaniu</p>
-        </section>
+          <article class="guide-card-box guide-card-box--green" id="warcaby">
+            <span class="guide-badge">Materiały dostępne</span>
+            <h2>Warcaby</h2>
+            <p>W warcabach liczy się planowanie kilku ruchów naprzód. Sekcja zasad prowadzi od podstaw do najważniejszych elementów rozgrywki.</p>
+            <ul>
+              <li>ruch pionków i obowiązkowe bicie,</li>
+              <li>wielokrotne bicie,</li>
+              <li>promocja pionka na damkę.</li>
+            </ul>
+            <div class="guide-actions">
+              <a class="guide-link guide-link--green" href="/gry/warcaby/zasady/">Zasady gry →</a>
+              <a class="guide-link" href="/gry/warcaby/">Podstrona Warcabów →</a>
+            </div>
+          </article>
 
-        <section class="block block--green block--wide" aria-labelledby="jakosc-tresci">
-          <div class="block-head">
-            <span class="block-icon" aria-hidden="true">◆</span>
-            <h2 id="jakosc-tresci">Jak przygotowujemy poradniki</h2>
+          <article class="guide-card-box" id="gomoku">
+            <span class="guide-badge">Materiały dostępne</span>
+            <h2>Gomoku</h2>
+            <p>Gomoku ma proste wejście, ale wymaga dobrego czytania planszy. Zasady i materiały pomagają szybko zrozumieć cel oraz podstawowe mechanizmy gry.</p>
+            <ul>
+              <li>pięć kamieni w jednej linii,</li>
+              <li>budowanie zagrożeń,</li>
+              <li>podstawy obrony i blokowania.</li>
+            </ul>
+            <div class="guide-actions">
+              <a class="guide-link guide-link--green" href="/gry/gomoku/zasady/">Zasady gry →</a>
+              <a class="guide-link" href="/gry/gomoku/">Podstrona Gomoku →</a>
+            </div>
+          </article>
+        </div>
+
+        <section class="guide-quality" aria-labelledby="quality-title">
+          <h2 id="quality-title">Jak przygotowujemy poradniki</h2>
+          <div class="guide-quality-grid">
+            <div><h3>Przejrzyście</h3><p>Najpierw podstawy, potem kolejne elementy gry — bez niepotrzebnego komplikowania zasad.</p></div>
+            <div><h3>Rzetelnie</h3><p>Materiały publikujemy dopiero po sprawdzeniu zasad i spójności z działającą wersją gry.</p></div>
+            <div><h3>Praktycznie</h3><p>Łączymy zasady z przykładami i wskazówkami, które można wykorzystać podczas rozgrywki.</p></div>
           </div>
-          <p>Stawiamy na jakość, a nie na liczbę tekstów. Poradniki mają być rzetelne, napisane zrozumiałym językiem i aktualizowane, gdy zmieniają się zasady lub funkcje serwisu.</p>
-          <p>Materiały będziemy publikować stopniowo — dopiero wtedy, gdy będą gotowe i sprawdzone.</p>
         </section>
       </div>
 
-      <section class="related" aria-labelledby="related-title">
-        <h2 id="related-title">Przejdź dalej</h2>
-        <ul>
-          <li>
-            <a class="cta" href="/gry/">
-              <span class="cta-title">Gry <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Gry rozwijane w gracz.pl.</span>
-            </a>
-          </li>
-          <li>
-            <a class="cta" href="/gry-karciane/">
-              <span class="cta-title">Gry karciane <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Poker treningowy, Poker Academy i Tysiąc.</span>
-            </a>
-          </li>
-          <li>
-            <a class="cta" href="/o-gracz-pl/">
-              <span class="cta-title">O gracz.pl <span aria-hidden="true">→</span></span>
-              <span class="cta-text">Jaki portal dla graczy budujemy.</span>
-            </a>
-          </li>
-        </ul>
-      </section>
-    </main>
+      <aside class="side-column" aria-label="Najważniejsze poradniki">
+        <section class="online-card">
+          <p class="status-pill"><span></span> Poradniki online</p>
+          <h2>Wybierz grę</h2>
+          <p>Przejdź bezpośrednio do zasad i materiałów dla wybranego tytułu.</p>
 
-    <footer class="site-footer">
-      <div class="footer-brand">gracz<span>.PL</span></div>
-      <p class="footer-tagline">Portal dla graczy — w rozwoju.</p>
-      <nav class="footer-nav" aria-label="Stopka">
-        <ul>
-            <li><a href="/gry/">Gry</a></li>
-            <li><a href="/gry-karciane/">Gry karciane</a></li>
-            <li><a href="/poradniki/">Poradniki</a></li>
-            <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
-        </ul>
-      </nav>
-      <p class="copyright">© 2026 gracz<span>.pl</span></p>
-    </footer>
-  </div>
-  </div>
+          <a class="side-action side-action--green" href="/gry/poker-treningowy/zasady/"><span class="side-emoji side-emoji--gold">♠</span><span><strong>Poker</strong><small>Texas Hold’em</small></span><b>›</b></a>
+          <a class="side-action side-action--red" href="/gry/tysiac/zasady/"><span class="side-emoji side-emoji--red">♥</span><span><strong>Tysiąc</strong><small>licytacja i meldunki</small></span><b>›</b></a>
+          <a class="side-action side-action--green" href="/gry/warcaby/zasady/"><span class="side-emoji side-emoji--green">●</span><span><strong>Warcaby</strong><small>bicie i damka</small></span><b>›</b></a>
+          <a class="side-action" href="/gry/gomoku/zasady/"><span class="side-emoji side-emoji--gold">✕</span><span><strong>Gomoku</strong><small>pięć w rzędzie</small></span><b>›</b></a>
+        </section>
+
+        <section class="related-card" aria-labelledby="related-title">
+          <h2 id="related-title">Zobacz także</h2>
+          <a class="related-game" href="/gry-karciane/"><span class="related-thumb related-thumb--poker" aria-hidden="true"><i class="poker-chip poker-chip--one"></i><i class="poker-card poker-card--a">A♠</i><i class="poker-card poker-card--k">K♥</i><i class="poker-chip poker-chip--two"></i></span><span><strong>Gry karciane</strong><small>Poker i Tysiąc</small></span><b>›</b></a>
+          <a class="related-game" href="/gry/"><span class="related-mini-checkers" aria-hidden="true"><i class="dark a"></i><i class="light b"></i><i class="dark c"></i><i class="light d"></i><i class="dark e"></i></span><span><strong>Wszystkie gry</strong><small>Pełny katalog</small></span><b>›</b></a>
+          <a class="related-game" href="/o-gracz-pl/"><span class="related-thumb related-thumb--guides" aria-hidden="true"><i class="guide-book"></i><i class="guide-card guide-card--one">A♠</i><i class="guide-card guide-card--two">K♥</i></span><span><strong>O gracz.pl</strong><small>Poznaj projekt</small></span><b>›</b></a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><a class="footer-logo" href="/">gracz<span>.pl</span></a><p>Gry. Wiedza. Społeczność.</p></div>
+      <nav class="footer-col" aria-labelledby="f-nav"><h2 id="f-nav">Nawigacja</h2><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/">Gry karciane</a></li><li><a href="/poradniki/" aria-current="page">Poradniki</a></li><li><button type="button" data-modal="community">Społeczność</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
+      <nav class="footer-col" aria-labelledby="f-pop"><h2 id="f-pop">Popularne działy</h2><ul><li><a href="/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="/gry/tysiac/">Tysiąc</a></li><li><a href="/gry/warcaby/">Warcaby</a></li><li><a href="/gry/gomoku/">Gomoku</a></li><li><a href="/poradniki/" aria-current="page">Poradniki</a></li><li><button type="button" data-modal="updates">Aktualności</button></li></ul></nav>
+      <div class="footer-news"><h2>Bądź na bieżąco</h2><p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p><form data-newsletter novalidate><label class="sr-only" for="news-email">Twój adres e-mail</label><input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off"><button type="submit">Zapisz się</button></form></div>
+    </div>
+    <div class="footer-bottom"><p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p><div class="footer-links"><button type="button" data-modal="privacy">Polityka prywatności</button><button type="button" data-modal="terms">Regulamin</button><button type="button" data-modal="contact">Kontakt</button></div></div>
+  </footer>
+
+  <dialog class="modal" id="modal" aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-box">
+      <button class="modal-x" type="button" data-close aria-label="Zamknij"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+      <span class="modal-logo">gracz<span>.pl</span></span>
+      <h2 id="modal-title">Informacja</h2>
+      <p id="modal-text"></p>
+      <button class="modal-ok" type="button" data-close>Rozumiem</button>
+    </div>
+  </dialog>
 </body>
 </html>
