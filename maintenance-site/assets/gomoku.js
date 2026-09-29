@@ -37,7 +37,8 @@
     Array.prototype.forEach.call(toggles,function(toggle){
       toggle.addEventListener('click',function(e){
         e.stopPropagation();
-        var open=!item.classList.contains('is-open');
+        var hoverMode=!mobile.matches && window.matchMedia('(hover:hover)').matches;
+        var open=hoverMode?true:!item.classList.contains('is-open');
         closeMenus(item);
         setMenu(item,open);
       });
@@ -97,7 +98,11 @@
 
   function onClosed(){
     body.classList.remove('modal-open');
-    if(lastTrigger && document.contains(lastTrigger))lastTrigger.focus();
+    if(lastTrigger && document.contains(lastTrigger)){
+      var hiddenPanelTrigger=mobile.matches && lastTrigger.closest && lastTrigger.closest('#menu-panel') && !header.classList.contains('menu-open');
+      if(hiddenPanelTrigger && burger)burger.focus();
+      else lastTrigger.focus();
+    }
     lastTrigger=null;
   }
 
