@@ -1,6 +1,6 @@
 # GRACZ.PL SEO HOMEPAGE R1 — AUDIT MANIFEST
 
-Status: READY FOR INDEPENDENT REVIEW  
+Status: READY FOR INDEPENDENT RE-REVIEW (Correction R1: M-01 single `<main>`, M-02 semantic content parity)  
 Date: 2026-09-29  
 Repository: `developergracz/gracz-pl-2`  
 Branch: `seo/gracz-pl-homepage-r1-20260929`  
@@ -33,16 +33,22 @@ Existing/generated assets used by R1:
 - `alternateName` values `Gracz` and `gracz.pl` for the WebSite entity,
 - crawlable `robots.txt`,
 - one-URL XML sitemap with accurate `lastmod`,
-- visible, user-facing mobile copy describing Gracz.pl and planned product scope,
+- one canonical semantic content block (single `<main>`, one H1, three H2) describing Gracz.pl and planned product scope, visible in every presentation,
 - no SEO-only hidden text and no keyword-stuffing block.
 
 ## Performance / rendering controls
 
-- the approved desktop artwork remains visually unchanged,
+- the approved desktop artwork remains visually unchanged: the first viewport is pixel-identical to the approved rendering at 1440x900, 844x390 landscape and 390x844 portrait,
+- one semantic `<main>` holds both presentations as non-landmark `div` containers: `.artwork` (desktop/landscape first screen) and `.content` (canonical H1/H2 content),
+- desktop and landscape show the canonical content directly below the artwork (page scrolls); portrait (≤820px) hides only the decorative artwork container and shows the same content over the artwork background,
 - WebP is preferred with PNG fallback,
 - hero image is preloaded and marked high fetch priority,
 - explicit image dimensions remain present to limit layout shift,
 - no JavaScript, API calls, forms, database access, environment variables, or production runtime activation.
+
+## Security note
+
+`<meta http-equiv="Content-Security-Policy">` is ignored by browsers for `frame-ancestors`; the meta directive is **not** effective clickjacking protection. Effective protection requires an HTTP response header (`Content-Security-Policy: frame-ancestors 'none'` and/or `X-Frame-Options: DENY`) at the static host. That header change is out of R1 scope and is not claimed here.
 
 ## Safety / freeze invariants
 
@@ -58,7 +64,7 @@ This R1 must not:
 ## Independent review gates
 
 Reviewer should verify:
-1. HTML syntax and one primary H1 in the mobile-first rendered document.
+1. HTML syntax, exactly one `<main>`, exactly one H1, and H1/H2 content reachable in desktop, landscape and portrait presentations.
 2. Title/description are factual and not misleading about features still in development.
 3. `robots` permits indexing and conflicts with no other noindex directive.
 4. canonical/hreflang all resolve to the intended HTTPS homepage.
