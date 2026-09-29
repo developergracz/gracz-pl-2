@@ -129,9 +129,9 @@ a:focus-visible {
 }
 
 .brand {
-  font-size: clamp(1.9rem, 7vw, 2.4rem);
-  font-weight: 900;
-  letter-spacing: -0.07em;
+  font-size: clamp(1.9rem, 4vw, 2.55rem);
+  font-weight: 950;
+  letter-spacing: -.075em;
   line-height: .9;
   color: #fff;
   text-decoration: none;
