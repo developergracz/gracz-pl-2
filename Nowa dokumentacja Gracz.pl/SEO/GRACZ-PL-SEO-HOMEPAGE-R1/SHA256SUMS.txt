@@ -1,0 +1,4 @@
+829a8c1887be22552170da87bd3ebc331758d8b872856a41a15a83d639842de2  maintenance-site/index.html
+7a4f3766c79e8488c6703d6c8a6712b39c67cb3e5d12155950d996035cedf924  maintenance-site/robots.txt
+c2833960452c97b08aa03c8d8e55a9590a1966a2d18583c9eaccc9207013704c  maintenance-site/sitemap.xml
+5e7a5dd6f2d62387e45f23be8cae80b0a424db74b3655c684f3e7640c02f1109  Nowa dokumentacja Gracz.pl/SEO/GRACZ-PL-SEO-HOMEPAGE-R1/AUDIT-MANIFEST.md
