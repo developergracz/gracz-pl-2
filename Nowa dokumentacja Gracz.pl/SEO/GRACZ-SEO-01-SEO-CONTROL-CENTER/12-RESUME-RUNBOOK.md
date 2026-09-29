@@ -22,7 +22,8 @@ Use this intent:
 6. `09-IMPLEMENTATION-ROADMAP-AND-GATES.md`
 7. `10-TESTING-SECURITY-AND-OPERATIONS.md`
 8. `11-ACCEPTANCE-MATRIX.md`
-9. this file.
+9. `SEO-00-AS-IS-INVENTORY.md` when resuming implementation after the initial discovery phase,
+10. this file.
 
 Do not read only the last chat summary.
 
@@ -195,15 +196,20 @@ Each extension requires its own scope review.
 
 ## 17. Current canonical resume state
 
-At creation of this package:
+Current canonical state after SEO-00 closure on 2026-09-29:
 
 `GRACZ-SEO-01 DESIGN = DOCUMENTED`  
-`GRACZ-SEO-01 IMPLEMENTATION = NOT STARTED`  
-`CURRENT IMPLEMENTATION PHASE = SEO-00 DISCOVERY AND BASELINE`  
+`SEO-00 DISCOVERY AND BASELINE = CLOSED / PASS`  
+`CURRENT IMPLEMENTATION PHASE = SEO-01a DOMAIN FOUNDATION + FILE-BACKED PAGE REGISTRY`  
+`SEO-01a CODING AUTHORIZATION = REQUIRES SEPARATE OWNER MANDATE`  
+`SEO-01a DATABASE/DDL = FORBIDDEN`  
+`SEO-01a maintenance-site/** CHANGES = FORBIDDEN`  
+`SEO-01b POSTGRES PERSISTENCE = DEFERRED`  
+`SEO-02+ RUNTIME OWNER DECISION = REQUIRED BEFORE START`  
 `PRODUCTION DEPLOYMENT = NOT AUTHORIZED BY THIS PACKAGE`  
 `SEARCH CONSOLE CONNECTION = NOT ESTABLISHED BY THIS PACKAGE`
 
-Future sessions MUST replace these statements with fresh repository evidence once implementation begins.
+Before implementation, read `SEO-00-AS-IS-INVENTORY.md` and refresh all repository/PR identities. Do not infer that the 2026-09-29 production baseline is still current.
 
 ## 18. Minimal resume output
 
