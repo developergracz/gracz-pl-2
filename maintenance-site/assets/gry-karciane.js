@@ -7,8 +7,6 @@
     register:{title:'Rejestracja nie jest jeszcze aktywna',text:'Możliwość zakładania kont zostanie uruchomiona po zakończeniu przygotowania systemu użytkowników gracz.pl.',button:'Rozumiem'},
     community:{title:'Funkcje społecznościowe są w przygotowaniu',text:'Profil gracza, turnieje i funkcje społecznościowe zostaną uruchomione w kolejnych etapach.',button:'Rozumiem'},
     rankings:{title:'Rankingi i statystyki są w przygotowaniu',text:'Rankingi, historia wyników i statystyki graczy pojawią się wraz z uruchamianiem kolejnych funkcji gracz.pl.',button:'Rozumiem'},
-    multiplayer:{title:'Rozgrywka online jest w przygotowaniu',text:'Tryby rozgrywki online będą uruchamiane etapami wraz z kolejnymi grami karcianymi.',button:'Rozumiem'},
-    play:{title:'Gry karciane są rozwijane',text:'Poker treningowy, Tysiąc i kolejne gry karciane będą uruchamiane etapami na gracz.pl.',button:'Rozumiem'},
     updates:{title:'Aktualności są w przygotowaniu',text:'Sekcję aktualności uruchomimy wraz z kolejnymi publicznymi funkcjami gracz.pl.',button:'Rozumiem'},
     newsletter:{title:'Newsletter jest w przygotowaniu',text:'Możliwość zapisania się na informacje o nowych funkcjach gracz.pl uruchomimy w kolejnym etapie.',button:'Rozumiem'},
     privacy:{title:'Polityka prywatności',text:'Polityka prywatności jest przygotowywana.',button:'Rozumiem'},
@@ -37,7 +35,8 @@
     Array.prototype.forEach.call(toggles,function(toggle){
       toggle.addEventListener('click',function(e){
         e.stopPropagation();
-        var open=!item.classList.contains('is-open');
+        var hoverMode=!mobile.matches && window.matchMedia('(hover:hover)').matches;
+        var open=hoverMode?true:!item.classList.contains('is-open');
         closeMenus(item);
         setMenu(item,open);
       });
@@ -97,7 +96,11 @@
 
   function onClosed(){
     body.classList.remove('modal-open');
-    if(lastTrigger && document.contains(lastTrigger))lastTrigger.focus();
+    if(lastTrigger && document.contains(lastTrigger)){
+      var hiddenPanelTrigger=mobile.matches && lastTrigger.closest && lastTrigger.closest('#menu-panel') && !header.classList.contains('menu-open');
+      if(hiddenPanelTrigger && burger)burger.focus();
+      else lastTrigger.focus();
+    }
     lastTrigger=null;
   }
 
