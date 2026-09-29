@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Gracz.pl — portal gracza, gry online i karciane</title>
-  <meta name="description" content="Gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.">
+  <title>gracz.pl — portal gracza, gry online i karciane</title>
+  <meta name="description" content="gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -20,8 +20,8 @@
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
-  <meta property="og:site_name" content="Gracz.pl">
-  <meta property="og:title" content="Gracz.pl — portal gracza, gry online i karciane">
+  <meta property="og:site_name" content="gracz.pl">
+  <meta property="og:title" content="gracz.pl — portal gracza, gry online i karciane">
   <meta property="og:description" content="Polski portal dla graczy w rozwoju: gry online i karciane, poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.">
   <meta property="og:url" content="https://gracz.pl/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
@@ -29,13 +29,13 @@
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Gracz.pl — portal gracza i gry online">
+  <meta property="og:image:alt" content="gracz.pl — portal gracza i gry online">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Gracz.pl — portal gracza, gry online i karciane">
+  <meta name="twitter:title" content="gracz.pl — portal gracza, gry online i karciane">
   <meta name="twitter:description" content="Polski portal dla graczy w rozwoju: gry online i karciane, multiplayer, rankingi i społeczność.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta name="twitter:image:alt" content="Gracz.pl — portal gracza i gry online">
+  <meta name="twitter:image:alt" content="gracz.pl — portal gracza i gry online">
 
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'">
 
@@ -47,7 +47,7 @@
         "@type": "WebSite",
         "@id": "https://gracz.pl/#website",
         "url": "https://gracz.pl/",
-        "name": "Gracz.pl",
+        "name": "gracz.pl",
         "alternateName": ["Gracz", "gracz.pl"],
         "description": "Polski portal dla graczy w rozwoju: gry online i karciane, multiplayer, rankingi i społeczność.",
         "inLanguage": "pl-PL",
@@ -56,15 +56,15 @@
       {
         "@type": "Organization",
         "@id": "https://gracz.pl/#organization",
-        "name": "Gracz.pl",
+        "name": "gracz.pl",
         "url": "https://gracz.pl/"
       },
       {
         "@type": "WebPage",
         "@id": "https://gracz.pl/#webpage",
         "url": "https://gracz.pl/",
-        "name": "Gracz.pl — portal gracza, gry online i karciane",
-        "description": "Gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.",
+        "name": "gracz.pl — portal gracza, gry online i karciane",
+        "description": "gracz.pl — polski portal dla graczy w rozwoju. Gry online i karciane: poker treningowy, Tysiąc, warcaby, Gomoku, multiplayer, rankingi i społeczność.",
         "isPartOf": {"@id": "https://gracz.pl/#website"},
         "about": {"@id": "https://gracz.pl/#organization"},
         "primaryImageOfPage": {"@id": "https://gracz.pl/#primaryimage"},
@@ -77,7 +77,7 @@
         "contentUrl": "https://gracz.pl/og-gracz-pl.jpg",
         "width": 1200,
         "height": 630,
-        "caption": "Gracz.pl — portal gracza i gry online"
+        "caption": "gracz.pl — portal gracza i gry online"
       }
     ]
   }
@@ -310,8 +310,102 @@
       font-weight: 800;
     }
 
+    /* "Poznaj gracz.pl" — crawlable links to the public information pages. */
+    .explore { margin-top: 20px; }
+
+    .explore h2 {
+      margin: 4px 0 10px;
+      font-size: clamp(1.6rem, 7vw, 2.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      color: #fff;
+    }
+
+    .explore h2 span { color: #ff0d32; }
+
+    .explore-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 11px;
+      margin-top: 18px;
+    }
+
+    .explore-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px 15px 14px;
+      border-radius: 17px;
+      border: 1px solid rgba(255, 192, 73, .45);
+      background: rgba(22, 17, 9, .72);
+      transition: border-color .15s ease, background-color .15s ease;
+    }
+
+    .explore-card:nth-child(2) {
+      border-color: rgba(57, 226, 154, .48);
+      background: rgba(4, 34, 27, .72);
+    }
+
+    .explore-card:nth-child(3) {
+      border-color: rgba(255, 72, 56, .5);
+      background: rgba(46, 10, 8, .72);
+    }
+
+    .explore-card:hover { border-color: rgba(255, 190, 76, .9); }
+
+    .explore-card:focus-within {
+      outline: 2px solid #f4c65f;
+      outline-offset: 3px;
+    }
+
+    .explore-card h3 {
+      margin: 0;
+      color: #ffe7aa;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .explore-card p {
+      margin: 0;
+      flex: 1;
+      color: #e4e4e4;
+      font-size: .89rem;
+      line-height: 1.45;
+    }
+
+    .explore-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      color: #f4c65f;
+      font-size: .92rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    /* Whole card is clickable through the single real anchor. */
+    .explore-link::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 17px;
+    }
+
+    .explore-link:focus { outline: none; }
+
+    .explore-card:hover .explore-link,
+    .explore-link:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+
     @media (max-width: 820px) {
       .features { grid-template-columns: minmax(0, 1fr); }
+      .explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .explore-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     @media (max-width: 820px) and (orientation: portrait) {
@@ -366,7 +460,7 @@
     <div class="artwork">
       <picture>
         <source srcset="approved-maintenance.webp" type="image/webp">
-        <img src="approved-maintenance.png" width="1672" height="847" fetchpriority="high" decoding="async" alt="Gracz.pl — polski portal dla graczy; trwa modernizacja serwisu">
+        <img src="approved-maintenance.png" width="1672" height="847" fetchpriority="high" decoding="async" alt="gracz.pl — polski portal dla graczy; trwa modernizacja serwisu">
       </picture>
     </div>
 
@@ -377,15 +471,15 @@
           <div class="status">Trwa modernizacja serwisu</div>
         </div>
 
-        <h1 id="page-title"><span>Gracz.pl</span> — portal gracza i gry online.</h1>
-        <p class="lead">Budujemy nową odsłonę Gracz.pl jako polski portal dla graczy. Rozwijamy gry online i karciane — m.in. poker treningowy, Tysiąc, warcaby i Gomoku — a także multiplayer, rankingi, turnieje i funkcje społecznościowe. Wracamy z nowocześniejszym i bezpieczniejszym serwisem.</p>
+        <h1 id="page-title"><span>gracz.pl</span> — portal gracza i gry online.</h1>
+        <p class="lead">Budujemy nową odsłonę gracz.pl jako polski portal dla graczy. Rozwijamy gry online i karciane — m.in. poker treningowy, Tysiąc, warcaby i Gomoku — a także multiplayer, rankingi, turnieje i funkcje społecznościowe. Wracamy z nowocześniejszym i bezpieczniejszym serwisem.</p>
 
-        <section class="features" aria-label="Co powstaje w Gracz.pl">
+        <section class="features" aria-label="Co powstaje w gracz.pl">
           <article class="feature">
             <div class="feature-icon" aria-hidden="true">🔒</div>
             <div>
               <h2>Bezpieczeństwo</h2>
-              <p>Porządkujemy architekturę, uprawnienia i proces wdrożeniowy, aby Gracz.pl miał stabilny fundament.</p>
+              <p>Porządkujemy architekturę, uprawnienia i proces wdrożeniowy, aby gracz.pl miał stabilny fundament.</p>
             </div>
           </article>
 
@@ -409,8 +503,39 @@
         <footer class="footer">
           <p class="thanks">Dziękujemy za cierpliwość.</p>
           <div class="soon">WKRÓTCE WRACAMY</div>
-          <div class="copyright">© Gracz<span>.pl</span></div>
+          <div class="copyright">© gracz<span>.pl</span></div>
         </footer>
+      </section>
+
+      <section class="panel explore" aria-labelledby="poznaj-gracz-pl">
+        <h2 id="poznaj-gracz-pl">Poznaj gracz<span>.pl</span></h2>
+        <p class="lead">gracz.pl rozwijamy jako miejsce dla osób, które lubią grać, poznawać nowe gry i rywalizować z innymi. Zobacz, jakie obszary serwisu przygotowujemy.</p>
+
+        <div class="explore-grid">
+          <article class="explore-card">
+            <h3>Gry</h3>
+            <p>Poker treningowy, Tysiąc, Warcaby, Gomoku i kolejne rozgrywki rozwijane z myślą o graczach.</p>
+            <a class="explore-link" href="/gry/">Zobacz gry <span aria-hidden="true">→</span></a>
+          </article>
+
+          <article class="explore-card">
+            <h3>Gry karciane</h3>
+            <p>Poznaj kierunek rozwoju Pokera treningowego, Tysiąca oraz przyszłych gier karcianych w gracz.pl.</p>
+            <a class="explore-link" href="/gry-karciane/">Poznaj gry karciane <span aria-hidden="true">→</span></a>
+          </article>
+
+          <article class="explore-card">
+            <h3>Poradniki</h3>
+            <p>Zasady, podstawy strategii i materiały dla osób, które chcą lepiej poznać swoje ulubione gry.</p>
+            <a class="explore-link" href="/poradniki/">Przejdź do poradników <span aria-hidden="true">→</span></a>
+          </article>
+
+          <article class="explore-card">
+            <h3>O gracz.pl</h3>
+            <p>Dowiedz się, jaki portal dla graczy budujemy oraz jakie gry i funkcje chcemy rozwijać.</p>
+            <a class="explore-link" href="/o-gracz-pl/">Poznaj gracz.pl <span aria-hidden="true">→</span></a>
+          </article>
+        </div>
       </section>
     </div>
   </main>
