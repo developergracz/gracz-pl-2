@@ -8,7 +8,12 @@
     community:{title:'Funkcje społecznościowe są w przygotowaniu',text:'Profil gracza, turnieje i funkcje społecznościowe zostaną uruchomione w kolejnych etapach.',button:'Rozumiem'},
     rankings:{title:'Rankingi i statystyki są w przygotowaniu',text:'Rankingi, historia wyników i statystyki Tysiąca pojawią się wraz z uruchomieniem rozgrywki online.',button:'Rozumiem'},
     multiplayer:{title:'Multiplayer jest w przygotowaniu',text:'Rozgrywka z innymi graczami zostanie uruchomiona po zakończeniu prac nad Tysiącem online.',button:'Rozumiem'},
-    play:{title:'Tysiąc online jest w przygotowaniu',text:'Gra online nie jest jeszcze aktywna. Ta strona przedstawia Tysiąca, jego zasady i przygotowywany kierunek rozwoju gry online na gracz.pl.',button:'Rozumiem'}
+    play:{title:'Tysiąc online jest w przygotowaniu',text:'Gra online nie jest jeszcze aktywna. Ta podstrona przedstawia Tysiąca, jego zasady i przygotowywany kierunek rozwoju gry online na gracz.pl.',button:'Rozumiem'},
+    updates:{title:'Aktualności są w przygotowaniu',text:'Sekcję aktualności uruchomimy wraz z kolejnymi publicznymi funkcjami gracz.pl.',button:'Rozumiem'},
+    newsletter:{title:'Newsletter jest w przygotowaniu',text:'Możliwość zapisania się na informacje o nowych funkcjach gracz.pl uruchomimy w kolejnym etapie.',button:'Rozumiem'},
+    privacy:{title:'Polityka prywatności',text:'Polityka prywatności jest przygotowywana.',button:'Rozumiem'},
+    terms:{title:'Regulamin',text:'Regulamin serwisu jest przygotowywany.',button:'Rozumiem'},
+    contact:{title:'Kontakt',text:'Sekcja kontaktowa zostanie udostępniona wraz z kolejnym etapem serwisu.',button:'Rozumiem'}
   };
 
   var body=document.body;
@@ -37,11 +42,14 @@
         setMenu(item,open);
       });
     });
+
     item.addEventListener('mouseenter',function(){
       if(!mobile.matches && window.matchMedia('(hover:hover)').matches){
-        closeMenus(item);setMenu(item,true);
+        closeMenus(item);
+        setMenu(item,true);
       }
     });
+
     item.addEventListener('mouseleave',function(){
       if(!mobile.matches && window.matchMedia('(hover:hover)').matches)setMenu(item,false);
     });
@@ -57,8 +65,14 @@
     burger.setAttribute('aria-label',open?'Zamknij menu':'Otwórz menu');
     if(!open)closeMenus();
   }
-  burger.addEventListener('click',function(){setPanel(!header.classList.contains('menu-open'));});
-  mobile.addEventListener('change',function(){setPanel(false);});
+
+  burger.addEventListener('click',function(){
+    setPanel(!header.classList.contains('menu-open'));
+  });
+
+  mobile.addEventListener('change',function(){
+    setPanel(false);
+  });
 
   var modal=document.getElementById('modal');
   var modalTitle=document.getElementById('modal-title');
@@ -70,38 +84,66 @@
     var msg=MESSAGES[key];
     if(!msg)return;
     lastTrigger=trigger||document.activeElement;
-    closeMenus();setPanel(false);
+    closeMenus();
+    setPanel(false);
     modalTitle.textContent=msg.title;
     modalText.textContent=msg.text;
     modalOk.textContent=msg.button;
-    if(typeof modal.showModal==='function')modal.showModal();else modal.setAttribute('open','');
+    if(typeof modal.showModal==='function')modal.showModal();
+    else modal.setAttribute('open','');
     body.classList.add('modal-open');
     modalOk.focus();
   }
+
   function onClosed(){
     body.classList.remove('modal-open');
     if(lastTrigger && document.contains(lastTrigger))lastTrigger.focus();
     lastTrigger=null;
   }
+
   function closeModal(){
     if(typeof modal.close==='function' && modal.open)modal.close();
-    else{modal.removeAttribute('open');onClosed();}
+    else{
+      modal.removeAttribute('open');
+      onClosed();
+    }
   }
 
   modal.addEventListener('close',onClosed);
-  modal.addEventListener('cancel',function(e){e.preventDefault();closeModal();});
-  modal.addEventListener('click',function(e){if(e.target===modal||e.target.closest('[data-close]'))closeModal();});
+  modal.addEventListener('cancel',function(e){
+    e.preventDefault();
+    closeModal();
+  });
+  modal.addEventListener('click',function(e){
+    if(e.target===modal || e.target.closest('[data-close]'))closeModal();
+  });
+
   document.addEventListener('click',function(e){
     var trigger=e.target.closest('[data-modal]');
     if(!trigger)return;
     e.preventDefault();
     openModal(trigger.getAttribute('data-modal'),trigger);
   });
+
+  var newsletter=document.querySelector('[data-newsletter]');
+  if(newsletter){
+    newsletter.addEventListener('submit',function(e){
+      e.preventDefault();
+      openModal('newsletter',newsletter.querySelector('button'));
+    });
+  }
+
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape' && !modal.open){
       var openItem=menuItems.filter(function(i){return i.classList.contains('is-open');})[0];
-      if(openItem){setMenu(openItem,false);var t=toggleOf(openItem);if(t)t.focus();}
-      else if(header.classList.contains('menu-open')){setPanel(false);burger.focus();}
+      if(openItem){
+        setMenu(openItem,false);
+        var t=toggleOf(openItem);
+        if(t)t.focus();
+      }else if(header.classList.contains('menu-open')){
+        setPanel(false);
+        burger.focus();
+      }
     }
   });
 })();
