@@ -1,0 +1,21 @@
+.related-image{
+  display:block;
+  flex:0 0 98px;
+  width:98px;
+  height:56px;
+  border:1px solid rgba(255,207,112,.45);
+  border-radius:10px;
+  overflow:hidden;
+  background-image:url("/assets/related-thumbnails-v2.webp");
+  background-repeat:no-repeat;
+  background-size:400% 200%;
+  box-shadow:inset 0 0 14px rgba(0,0,0,.28),0 4px 10px rgba(0,0,0,.28);
+}
+.related-image--poker{background-position:0% 0%}
+.related-image--tysiac{background-position:33.333% 0%}
+.related-image--warcaby{background-position:66.667% 0%}
+.related-image--gomoku{background-position:100% 0%}
+.related-image--gry-karciane{background-position:0% 100%}
+.related-image--poradniki{background-position:33.333% 100%}
+.related-image--gry{background-position:66.667% 100%}
+.related-image--o-gracz-pl{background-position:100% 100%}
