@@ -277,3 +277,22 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .meld-grid>div{padding:13px 10px}
   .priority-list li{grid-template-columns:38px 1fr}
 }
+
+/* Tysiąc FULL MAX R4 — expanded editorial guide */
+.guide-topic--expanded{padding-top:12px}
+.round-timeline{list-style:none;margin:20px 0 0;padding:0;border-top:1px solid rgba(255,255,255,.07)}
+.round-timeline li{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.round-timeline>li>span{color:#e8c96e;font:800 13px/1.5 var(--display)}
+.round-timeline strong{display:block;margin-bottom:4px;color:#fff}.round-timeline p{margin:0;color:#d6d2ca;line-height:1.58}
+.strategy-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:22px 0;border-top:1px solid rgba(244,198,95,.18);border-bottom:1px solid rgba(244,198,95,.18)}
+.strategy-levels section{padding:20px 22px}.strategy-levels section+section{border-left:1px solid rgba(255,255,255,.07)}
+.strategy-levels section>span{display:block;margin-bottom:7px;color:#8cecc0;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.strategy-levels h4{margin:0 0 11px;color:#fff;font-size:17px}.strategy-levels ul{margin:0;padding-left:18px}.strategy-levels li{margin:7px 0;color:#d8d4cc;line-height:1.5;font-size:14px}
+.mistake-list{margin-top:18px;border-top:1px solid rgba(255,255,255,.07)}
+.mistake-list>div{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:17px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.mistake-list>div>span{color:#ff8578;font:800 13px/1.5 var(--display)}.mistake-list p{margin:0;color:#d7d3cb;line-height:1.58}
+.variant-compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:20px;border-top:1px solid rgba(244,198,95,.18);border-bottom:1px solid rgba(244,198,95,.18)}
+.variant-compare section{padding:20px 22px}.variant-compare section+section{border-left:1px solid rgba(255,255,255,.07)}
+.variant-compare span{display:block;margin-bottom:8px;color:#e9c96d;font-size:12px;font-weight:800}.variant-compare h4{margin:0 0 8px;color:#fff;font-size:18px}.variant-compare p{margin:0;color:#d7d3cb;font-size:14px;line-height:1.62}
+.faq-list{margin-top:17px;border-top:1px solid rgba(244,198,95,.18)}
+.faq-list details{border-bottom:1px solid rgba(255,255,255,.08)}.faq-list summary{cursor:pointer;padding:15px 0;color:#f3eee4;font-weight:800;list-style:none}.faq-list summary::-webkit-details-marker{display:none}.faq-list summary::after{content:"+";float:right;color:var(--gold);font-size:20px;font-weight:400}.faq-list details[open] summary::after{content:"−"}.faq-list details p{margin:0;padding:0 30px 16px 0;color:#d7d3cb;line-height:1.6}
