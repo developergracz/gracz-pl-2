@@ -172,77 +172,124 @@
           </div>
         </section>
 
-        <section class="play-guide" aria-labelledby="jak-grac-tysiac">
-          <div class="flow-kicker" aria-hidden="true">
-            <span>01</span><i></i><span>06</span>
+        <section class="detailed-guide" aria-labelledby="guide-title">
+          <div class="guide-heading">
+            <p class="section-eyebrow">Pełny przewodnik po rozgrywce</p>
+            <h2 id="guide-title">Jak grać w Tysiąca — krok po kroku</h2>
+            <p>Tysiąc łączy licytację, ocenę siły ręki, zarządzanie musikem, meldunki i obowiązek prawidłowego rozgrywania lew. Poniżej znajdziesz pełny opis najważniejszych zasad wariantu używanego na gracz.pl — od wartości kart aż do końcowego wyniku.</p>
           </div>
-          <div class="section-intro">
-            <p class="section-eyebrow">Podstawy rozgrywki</p>
-            <h2 id="jak-grac-tysiac">Jak grać w Tysiąca?</h2>
-            <p>Sześć najważniejszych etapów prowadzi od rozdania kart do końcowego wyniku. Układ pozostaje szybki do przeskanowania, ale bez sześciu osobnych ciężkich kart.</p>
-          </div>
-          <ol class="steps-grid">
-            <li><span class="step-number">01</span><div><h3>Talia</h3><p>Gra używa 24 kart: 9, walet, dama, król, 10 i as w każdym z czterech kolorów.</p></div></li>
-            <li><span class="step-number">02</span><div><h3>Licytacja</h3><p>Oferty zaczynają się od 100 punktów, rosną co najmniej o 10 i wyłaniają rozgrywającego.</p></div></li>
-            <li><span class="step-number">03</span><div><h3>Musik</h3><p>Zwycięzca licytacji bierze musik, a następnie wyrównuje liczbę kart zgodnie z wybranym wariantem 2, 3 lub 4 graczy.</p></div></li>
-            <li><span class="step-number">04</span><div><h3>Meldunki</h3><p>Król i dama tego samego koloru pozwalają zgłosić meldunek i ustanowić kolor atutowy.</p></div></li>
-            <li><span class="step-number">05</span><div><h3>Lewy i atut</h3><p>Gracze dokładają do koloru, używają atutu przy braku koloru i przebijają, gdy mogą zgodnie z regułami.</p></div></li>
-            <li><span class="step-number">06</span><div><h3>Punktacja</h3><p>Rozgrywający realizuje zadeklarowany kontrakt, a cała partia prowadzi do osiągnięcia 1000 punktów.</p></div></li>
-          </ol>
-        </section>
 
-        <section class="knowledge-section" aria-labelledby="wiedza-tysiac">
-          <div class="knowledge-heading">
-            <p class="section-eyebrow">Przewaga przy stole</p>
-            <h2 id="wiedza-tysiac">Strategia, błędy i warianty</h2>
-            <p>Najważniejsze elementy, które pomagają przejść od znajomości zasad do świadomej gry.</p>
-          </div>
-          <div class="knowledge-strip" aria-label="Strategia, błędy i warianty">
-          <article class="knowledge-block knowledge-block--green">
-            <h2><span>💡</span> Strategia i wskazówki</h2>
-            <ul class="check-list">
-              <li>Licytuj na podstawie realnej siły ręki</li>
-              <li>Kontroluj asy, dziesiątki i kolory meldunków</li>
-              <li>Planuj, kiedy ustanowić atut</li>
-              <li>Pamiętaj, które wysokie karty już zeszły</li>
-              <li>Dopasuj ryzyko kontraktu do aktualnego wyniku</li>
-            </ul>
-          </article>
+          <div class="guide-layout">
+            <nav class="guide-toc" aria-label="Na tej stronie">
+              <strong>Na tej stronie</strong>
+              <ol>
+                <li><a href="#talia-wartosci">Talia i wartości kart</a></li>
+                <li><a href="#rozdanie-musik">Rozdanie i musik</a></li>
+                <li><a href="#licytacja-tysiac">Licytacja</a></li>
+                <li><a href="#kontrakt-tysiac">Musik i kontrakt</a></li>
+                <li><a href="#meldunki-atut">Meldunki i atut</a></li>
+                <li><a href="#rozgrywanie-lew">Rozgrywanie lew</a></li>
+                <li><a href="#punktacja-koniec">Punktacja i koniec gry</a></li>
+              </ol>
+              <a class="guide-full-link" href="/gry/tysiac/zasady/">Otwórz pełne zasady <span aria-hidden="true">→</span></a>
+            </nav>
 
-          <article class="knowledge-block knowledge-block--red">
-            <h2><span>⚠</span> Najczęstsze błędy</h2>
-            <ul class="x-list">
-              <li>Zbyt wysoka licytacja bez pokrycia</li>
-              <li>Oddawanie asów i dziesiątek bez planu</li>
-              <li>Przeoczenie obowiązku przebicia</li>
-              <li>Zbyt wczesne ujawnienie atutu</li>
-              <li>Brak kontroli nad punktami kontraktu</li>
-            </ul>
-          </article>
+            <div class="guide-content">
+              <article class="guide-topic" id="talia-wartosci">
+                <header><span class="topic-number">1</span><div><p class="topic-kicker">Podstawa gry</p><h3>Talia i wartości kart</h3></div></header>
+                <p>Tysiąc używa talii <strong>24 kart</strong>. W każdym z czterech kolorów występują: 9, walet, dama, król, 10 i as. Karty mają jednocześnie określoną kolejność starszeństwa i wartość punktową, dlatego wysoka karta nie zawsze oznacza tylko przewagę w lewie — asy i dziesiątki są również głównym źródłem punktów.</p>
+                <div class="guide-table-wrap">
+                  <table class="guide-table">
+                    <thead><tr><th>Karta</th><th>Punkty</th><th>Starszeństwo</th></tr></thead>
+                    <tbody>
+                      <tr><td>9</td><td>0</td><td>najniższa</td></tr>
+                      <tr><td>Walet (J)</td><td>2</td><td>wyżej od 9</td></tr>
+                      <tr><td>Dama (Q)</td><td>3</td><td>wyżej od waleta</td></tr>
+                      <tr><td>Król (K)</td><td>4</td><td>wyżej od damy</td></tr>
+                      <tr><td>10</td><td>10</td><td>wyżej od króla</td></tr>
+                      <tr><td>As (A)</td><td>11</td><td>najwyższa</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p class="guide-note"><strong>Ważne:</strong> wszystkie karty w talii mają łącznie 120 punktów. Dodatkowe punkty można zdobywać z meldunków.</p>
+              </article>
 
-          <article class="knowledge-block" id="warianty">
-            <h2><span>⚙</span> Warianty gracz.pl</h2>
-            <ul class="variant-list">
-              <li>Pojedynek — 2 graczy</li>
-              <li>Klasyczny — 3 graczy</li>
-              <li>Stół — 4 graczy</li>
-              <li>Cel standardowy: 1000 punktów</li>
-              <li>Talia: 24 karty</li>
-            </ul>
-          </article>
-        </section>
+              <article class="guide-topic" id="rozdanie-musik">
+                <header><span class="topic-number">2</span><div><p class="topic-kicker">Przygotowanie rozdania</p><h3>Rozdanie i musik</h3></div></header>
+                <p>Liczba kart na ręce i wielkość musiku zależą od liczby uczestników. Musik pozostaje poza rękami graczy do zakończenia licytacji i trafia do zwycięzcy aukcji, który następnie wyrównuje liczbę kart zgodnie z wybranym wariantem.</p>
+                <div class="guide-table-wrap">
+                  <table class="guide-table">
+                    <thead><tr><th>Graczy</th><th>Na start</th><th>Musik</th><th>Po rozdzieleniu musiku</th></tr></thead>
+                    <tbody>
+                      <tr><td>2</td><td>11 kart</td><td>2 karty</td><td>rozgrywający odrzuca 2 karty; każdy ma 11</td></tr>
+                      <tr><td>3</td><td>7 kart</td><td>3 karty</td><td>rozgrywający przekazuje po 1 karcie każdemu przeciwnikowi; każdy ma 8</td></tr>
+                      <tr><td>4</td><td>5 kart</td><td>4 karty</td><td>rozgrywający przekazuje po 1 karcie każdemu z 3 przeciwników; każdy ma 6</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>Pierwszy licytuje gracz znajdujący się po rozdającym. Po zakończonym rozdaniu rola rozdającego przechodzi na kolejnego gracza.</p>
+              </article>
 
+              <article class="guide-topic" id="licytacja-tysiac">
+                <header><span class="topic-number">3</span><div><p class="topic-kicker">Walcz o prawo do kontraktu</p><h3>Licytacja</h3></div></header>
+                <p>Gracze kolejno składają ofertę albo pasują. Oferta musi być liczbą całkowitą od <strong>100 do 360 punktów</strong> i wielokrotnością 10. Pierwsza oferta może wynosić co najmniej 100, a każda następna musi przebić aktualną o co najmniej 10 punktów.</p>
+                <ul class="guide-list">
+                  <li>Gracz, który spasował, nie wraca już do licytacji w tym rozdaniu.</li>
+                  <li>Gdy po złożeniu ofert pozostaje tylko jeden aktywny gracz, zostaje rozgrywającym i bierze musik.</li>
+                  <li>Jeżeli licytacja zakończy się bez żadnej oferty, rozdanie jest anulowane i rozpoczyna się nowe.</li>
+                  <li>Wysoka oferta zwiększa potencjalną zdobycz, ale też ryzyko utraty punktów, jeśli kontrakt nie zostanie wykonany.</li>
+                </ul>
+              </article>
 
-        </section>
+              <article class="guide-topic" id="kontrakt-tysiac">
+                <header><span class="topic-number">4</span><div><p class="topic-kicker">Decyzja rozgrywającego</p><h3>Musik i deklaracja kontraktu</h3></div></header>
+                <p>Zwycięzca licytacji bierze musik i wykonuje czynności wymagane przez wariant liczby graczy: przy dwóch graczach odrzuca dwie karty, a przy trzech lub czterech przekazuje po jednej karcie każdemu przeciwnikowi.</p>
+                <p>Następnie deklaruje <strong>kontrakt</strong>. Jego wartość nie może być niższa niż wygrana oferta, musi mieścić się w przedziale 100–360 i być wielokrotnością 10. Od tej chwili rozgrywający bierze odpowiedzialność za wynik: na końcu rozdania musi zebrać co najmniej tyle punktów, ile zadeklarował.</p>
+                <div class="guide-highlight"><strong>Praktyczna zasada:</strong><span>musik może znacząco wzmocnić rękę, ale deklaracja powinna nadal opierać się na realnej liczbie lew, wysokich kart i możliwych meldunków.</span></div>
+              </article>
 
-        <section class="game-flow" aria-labelledby="jak-wyglada-partia">
-          <div class="game-flow-heading">
-            <p class="section-eyebrow">Przebieg partii</p>
-          <h2 id="jak-wyglada-partia">Jak wygląda partia Tysiąca?</h2><p>Od pierwszej oferty do końcowego podliczenia punktów — trzy etapy, które porządkują całą rozgrywkę.</p></div>
-          <div class="details-columns">
-            <div><span class="flow-number">01</span><h3>Licytacja i kontrakt</h3><p>Gracze kolejno podbijają ofertę lub pasują. Zwycięzca licytacji bierze musik, porządkuje rękę i deklaruje kontrakt nie niższy od wygranej oferty.</p></div>
-            <div><span class="flow-number">02</span><h3>Meldunki i atut</h3><p>Wyjście królem lub damą przy posiadaniu pary tego samego koloru może zgłosić meldunek. Meldunek dodaje punkty i ustala atut.</p></div>
-            <div><span class="flow-number">03</span><h3>Lewy i wynik</h3><p>Po rozegraniu wszystkich kart podliczane są punkty. Rozgrywający zyskuje lub traci wartość kontraktu, a przeciwnicy dopisują swoje punkty zgodnie z zasadami wariantu.</p></div>
+              <article class="guide-topic" id="meldunki-atut">
+                <header><span class="topic-number">5</span><div><p class="topic-kicker">Dodatkowe punkty i przewaga</p><h3>Meldunki i ustanowienie atutu</h3></div></header>
+                <p>Meldunek tworzy <strong>król i dama tego samego koloru</strong>. Można go zgłosić, gdy gracz wychodzi do nowej lewy królem albo damą i w chwili zagrania posiada także drugą kartę z tej pary. Po zgłoszeniu kolor meldunku staje się aktualnym atutem.</p>
+                <div class="meld-grid" aria-label="Wartości meldunków">
+                  <div><span>♠</span><strong>Pik</strong><b>40 pkt</b></div>
+                  <div><span>♣</span><strong>Trefl</strong><b>60 pkt</b></div>
+                  <div><span class="red-suit">♦</span><strong>Karo</strong><b>80 pkt</b></div>
+                  <div><span class="red-suit">♥</span><strong>Kier</strong><b>100 pkt</b></div>
+                </div>
+                <ul class="guide-list">
+                  <li>Każdy konkretny meldunek danego koloru może zostać zgłoszony przez gracza tylko raz w rozdaniu.</li>
+                  <li>Zgłoszony kolor natychmiast staje się aktualnym atutem.</li>
+                  <li>W podstawowym wariancie gracz.pl nie trzeba wcześniej zdobyć lewy, aby móc zameldować.</li>
+                </ul>
+              </article>
+
+              <article class="guide-topic" id="rozgrywanie-lew">
+                <header><span class="topic-number">6</span><div><p class="topic-kicker">Najważniejsza mechanika przy stole</p><h3>Rozgrywanie lew</h3></div></header>
+                <p>Po zadeklarowaniu kontraktu rozgrywający wychodzi do pierwszej lewy. Każdy gracz wykłada po jednej karcie. W Tysiącu bardzo ważny jest obowiązek dokładania do koloru i przebijania, dlatego kolejność zagrań ma bezpośredni wpływ na wynik rozdania.</p>
+                <ol class="priority-list">
+                  <li><span>01</span><p><strong>Dołóż do koloru.</strong> Jeżeli masz kartę w kolorze wyjścia, musisz zagrać kartę tego koloru.</p></li>
+                  <li><span>02</span><p><strong>Przebij, jeśli możesz.</strong> Jeżeli w wymaganym kolorze możesz przebić aktualnie wygrywającą kartę, masz obowiązek to zrobić.</p></li>
+                  <li><span>03</span><p><strong>Użyj atutu.</strong> Jeśli nie masz koloru wyjścia, ale istnieje aktualny atut i masz kartę atutową, musisz zagrać atut.</p></li>
+                  <li><span>04</span><p><strong>Dowolna karta dopiero na końcu.</strong> Gdy nie masz ani koloru wyjścia, ani atutu, możesz zagrać dowolną kartę.</p></li>
+                </ol>
+                <p class="guide-note"><strong>Atut ma pierwszeństwo:</strong> karta atutowa pokonuje karty innych kolorów. Jeżeli w lewie pojawi się kilka atutów, decyduje ich normalne starszeństwo. Zwycięzca lewy wychodzi do następnej.</p>
+              </article>
+
+              <article class="guide-topic" id="punktacja-koniec">
+                <header><span class="topic-number">7</span><div><p class="topic-kicker">Rozliczenie rozdania</p><h3>Punktacja i koniec gry</h3></div></header>
+                <p>Punkty w rozdaniu pochodzą z kart zdobytych w lewach oraz z meldunków. Rozgrywający jest rozliczany inaczej niż pozostali gracze, ponieważ wcześniej zobowiązał się do wykonania konkretnego kontraktu.</p>
+                <div class="score-rules">
+                  <div><span class="score-label">Rozgrywający</span><p>Jeżeli zdobędzie co najmniej wartość swojego kontraktu, otrzymuje do wyniku <strong>dokładnie wartość kontraktu</strong>. Jeżeli kontraktu nie zrealizuje, jego wartość jest odejmowana od wyniku.</p></div>
+                  <div><span class="score-label">Pozostali gracze</span><p>Przeciwnicy dopisują punkty zdobyte w rozdaniu, zaokrąglone do najbliższej dziesiątki.</p></div>
+                  <div><span class="score-label">Koniec gry</span><p>Standardowym celem jest <strong>1000 punktów</strong>. Po rozdaniu system sprawdza, czy ktoś osiągnął lub przekroczył próg. Jeśli zrobi to więcej niż jeden gracz, wyżej sklasyfikowany jest gracz z większym wynikiem.</p></div>
+                </div>
+                <div class="guide-end">
+                  <div><p class="section-eyebrow">Chcesz przejść jeszcze głębiej?</p><h4>Pełna dokumentacja zasad</h4><p>Na osobnej podstronie znajdziesz kompletny regulamin wariantu gracz.pl, razem z FAQ i wszystkimi szczegółami technicznymi.</p></div>
+                  <a href="/gry/tysiac/zasady/">Zobacz pełne zasady <span aria-hidden="true">→</span></a>
+                </div>
+              </article>
+            </div>
           </div>
         </section>
       </div>
