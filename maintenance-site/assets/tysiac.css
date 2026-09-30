@@ -136,3 +136,48 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .knowledge-strip{margin-top:22px}
   .status-card-lite{padding:16px}
 }
+
+
+/* Tysiąc editorial sequence R2 — richer open-flow layout, no card framing */
+.flow-kicker{display:flex;align-items:center;gap:14px;margin:0 0 18px;color:rgba(244,198,95,.72);font:800 11px/1 var(--display);letter-spacing:.14em}
+.flow-kicker i{display:block;width:92px;height:1px;background:linear-gradient(90deg,rgba(244,198,95,.75),rgba(244,198,95,.08))}
+.play-guide{position:relative;padding-top:34px}
+.play-guide::before{content:"";position:absolute;left:0;top:-1px;width:120px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);box-shadow:0 0 12px rgba(244,198,95,.22)}
+.section-intro{max-width:820px;margin-bottom:24px}
+.section-intro h2{font-size:30px}
+.section-intro>p:last-child{max-width:720px;font-size:15px}
+.steps-grid{counter-reset:step}
+.steps-grid li{position:relative;min-height:132px;padding-top:24px;padding-bottom:24px}
+.step-number{font-size:22px;color:rgba(244,198,95,.88)}
+.steps-grid h3{font-size:19px}
+.steps-grid p{max-width:470px}
+
+.knowledge-section{margin-top:34px;padding:34px 0 30px;border-top:1px solid rgba(244,198,95,.24);border-bottom:1px solid rgba(244,198,95,.16)}
+.knowledge-heading{max-width:760px;margin-bottom:24px}
+.knowledge-heading h2{margin:0;color:var(--gold2);font:800 28px/1.18 var(--display)}
+.knowledge-heading>p:last-child{margin:9px 0 0;color:#d7d3ca;line-height:1.6}
+.knowledge-section .knowledge-strip{margin:0;padding:0;border:0}
+.knowledge-block{padding-top:8px;padding-bottom:8px}
+.knowledge-block h2{font-size:18px;margin-bottom:12px}
+
+.game-flow{position:relative;margin-top:36px;padding-top:34px}
+.game-flow::before{content:"";position:absolute;left:0;top:-1px;width:120px;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.game-flow-heading{max-width:760px;margin-bottom:22px}
+.game-flow-heading h2{font-size:28px}
+.game-flow-heading>p:last-child{margin:9px 0 0;color:#d7d3ca;line-height:1.6}
+.game-flow .details-columns{position:relative;margin-top:0}
+.flow-number{display:block;margin-bottom:12px;color:rgba(244,198,95,.78);font:800 13px/1 var(--display);letter-spacing:.12em}
+.game-flow .details-columns>div{min-height:164px}
+.game-flow .details-columns h3{font-size:18px;margin-bottom:9px}
+
+@media(max-width:820px){
+  .section-intro h2,.knowledge-heading h2,.game-flow-heading h2{font-size:26px}
+  .steps-grid li{min-height:0}
+  .knowledge-section{padding:28px 0 24px}
+  .game-flow .details-columns>div{min-height:0}
+}
+@media(max-width:560px){
+  .flow-kicker{margin-bottom:14px}
+  .flow-kicker i{width:64px}
+  .section-intro h2,.knowledge-heading h2,.game-flow-heading h2{font-size:23px}
+}
