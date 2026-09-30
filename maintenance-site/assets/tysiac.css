@@ -296,3 +296,14 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .variant-compare span{display:block;margin-bottom:8px;color:#e9c96d;font-size:12px;font-weight:800}.variant-compare h4{margin:0 0 8px;color:#fff;font-size:18px}.variant-compare p{margin:0;color:#d7d3cb;font-size:14px;line-height:1.62}
 .faq-list{margin-top:17px;border-top:1px solid rgba(244,198,95,.18)}
 .faq-list details{border-bottom:1px solid rgba(255,255,255,.08)}.faq-list summary{cursor:pointer;padding:15px 0;color:#f3eee4;font-weight:800;list-style:none}.faq-list summary::-webkit-details-marker{display:none}.faq-list summary::after{content:"+";float:right;color:var(--gold);font-size:20px;font-weight:400}.faq-list details[open] summary::after{content:"−"}.faq-list details p{margin:0;padding:0 30px 16px 0;color:#d7d3cb;line-height:1.6}
+
+.glossary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px;border-top:1px solid rgba(255,255,255,.07)}
+.glossary>div{display:grid;grid-template-columns:130px 1fr;gap:16px;padding:15px 18px 15px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.glossary>div:nth-child(even){padding-left:20px;border-left:1px solid rgba(255,255,255,.07)}
+.glossary dt{color:#f0cf75;font-weight:800}.glossary dd{margin:0;color:#d6d2ca;font-size:14px;line-height:1.5}
+.ultimate-cta{display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center;margin-top:30px;padding:24px 0;border-top:1px solid rgba(244,198,95,.25);border-bottom:1px solid rgba(244,198,95,.18)}
+.ultimate-cta h4{margin:0 0 6px;color:#fff;font:800 22px/1.2 var(--display)}.ultimate-cta p:not(.section-eyebrow){margin:0;color:#cec9c0;line-height:1.55}
+.ultimate-actions{display:flex;gap:10px}.ultimate-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 17px;border:1px solid rgba(244,198,95,.5);border-radius:999px;color:#ffe19a;font-weight:800}.ultimate-actions a:last-child{border-color:rgba(41,226,147,.45);color:#9af3c8}
+@media(max-width:980px){.strategy-levels,.variant-compare{grid-template-columns:1fr}.strategy-levels section+section,.variant-compare section+section{border-left:0;border-top:1px solid rgba(255,255,255,.07)}}
+@media(max-width:820px){.glossary{grid-template-columns:1fr}.glossary>div:nth-child(even){padding-left:0;border-left:0}.ultimate-cta{grid-template-columns:1fr}.ultimate-actions{flex-wrap:wrap}}
+@media(max-width:560px){.round-timeline li,.mistake-list>div{grid-template-columns:40px 1fr}.glossary>div{grid-template-columns:1fr;gap:5px}.ultimate-actions{display:grid;grid-template-columns:1fr;width:100%}}
