@@ -63,3 +63,76 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .burger .burger-close{display:none}.site-header.menu-open .burger-open{display:none}.site-header.menu-open .burger-close{display:block}
 @media(max-width:1180px){.nav-link{position:relative}}
 @media(max-width:820px){.facts li:nth-child(2n){border-right:0}}
+
+
+/* Tysiąc layout pilot R1 — lighter editorial hierarchy */
+.play-guide{margin-top:28px;padding:30px 0 24px;border-top:1px solid rgba(244,198,95,.28);border-bottom:1px solid rgba(244,198,95,.18)}
+.section-intro{max-width:760px;margin-bottom:18px}
+.section-eyebrow{margin:0 0 6px;color:var(--gold);font:800 12px/1.2 var(--display);letter-spacing:.12em;text-transform:uppercase}
+.section-intro h2,.game-flow>h2{margin:0;color:var(--gold2);font:800 26px/1.15 var(--display)}
+.section-intro>p:last-child{margin:10px 0 0;color:#d7d3ca;line-height:1.6}
+.steps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));list-style:none;margin:0;padding:0;border-top:1px solid rgba(255,255,255,.07)}
+.steps-grid li{display:grid;grid-template-columns:58px 1fr;gap:16px;padding:20px 22px 20px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.steps-grid li:nth-child(odd){padding-right:28px}
+.steps-grid li:nth-child(even){padding-left:28px;border-left:1px solid rgba(244,198,95,.14)}
+.step-number{color:rgba(244,198,95,.78);font:800 15px/1 var(--display);letter-spacing:.06em;padding-top:4px}
+.steps-grid h3{margin:0 0 6px;font:800 18px/1.25 var(--display);color:#fff}
+.steps-grid p{margin:0;color:#d8d5cd;font-size:14px;line-height:1.55}
+
+.knowledge-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:28px;padding:22px 0;border-top:1px solid rgba(244,198,95,.18);border-bottom:1px solid rgba(244,198,95,.18)}
+.knowledge-block{padding:4px 24px}
+.knowledge-block+ .knowledge-block{border-left:1px solid rgba(255,255,255,.08)}
+.knowledge-block:first-child{padding-left:0}.knowledge-block:last-child{padding-right:0}
+.knowledge-block h2{margin:0 0 10px;font-size:17px;color:#f4efe5}
+.knowledge-block--green h2{color:#72efb6}.knowledge-block--red h2{color:#ff8c7f}
+.knowledge-block ul{list-style:none;margin:0;padding:0}
+.knowledge-block li{position:relative;margin:6px 0;padding-left:22px;color:#d7d3ca;font-size:14px;line-height:1.45}
+.knowledge-block--green li::before{content:"✓";position:absolute;left:0;color:#29e293;font-weight:900}
+.knowledge-block--red li::before{content:"✕";position:absolute;left:0;color:#ff6656;font-weight:900}
+.knowledge-block .variant-list li::before{content:"•";position:absolute;left:3px;color:var(--gold);font-weight:900}
+
+.game-flow{margin-top:30px;padding:28px 0 4px;border-top:1px solid rgba(244,198,95,.28)}
+.game-flow .details-columns{margin-top:16px;gap:0}
+.game-flow .details-columns>div{padding:4px 24px;background:none;border:0;border-radius:0}
+.game-flow .details-columns>div:first-child{padding-left:0}
+.game-flow .details-columns>div:last-child{padding-right:0}
+.game-flow .details-columns>div+div{border-left:1px solid rgba(255,255,255,.08)}
+.game-flow .details-columns h3{color:#fff;font-size:17px}
+.game-flow .details-columns p{font-size:14px;line-height:1.6;color:#d7d3ca}
+
+.side-column--pilot{gap:18px}
+.status-card-lite{padding:4px 2px 22px;border-bottom:1px solid rgba(244,198,95,.22)}
+.status-card-lite h2{margin:0 0 8px;color:var(--gold2);font-size:24px}
+.status-card-lite>p:not(.status-pill){margin:0;color:#ddd;line-height:1.55}
+.status-links{display:grid;gap:0;margin-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.status-links a{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);font-weight:700;color:#f2eee5}
+.status-links a:hover{color:var(--gold2)}
+
+.related-card--pilot{padding:18px 0 0;border:0;background:none;box-shadow:none;border-radius:0}
+.related-card--pilot>h2{padding-bottom:8px;border-bottom:1px solid rgba(244,198,95,.18)}
+.related-card--pilot .related-game{margin-top:0;padding:11px 0;border:0;border-bottom:1px solid rgba(255,255,255,.08);border-radius:0;background:none}
+.related-card--pilot .related-game:hover{transform:none;background:rgba(255,255,255,.025)}
+
+@media(max-width:1180px){
+  .side-column--pilot{grid-template-columns:1fr 1fr}
+  .status-card-lite{padding:18px;border:1px solid rgba(244,198,95,.22);border-radius:14px;background:rgba(4,9,7,.45)}
+  .related-card--pilot{padding-top:18px}
+}
+@media(max-width:820px){
+  .steps-grid{grid-template-columns:1fr}
+  .steps-grid li,.steps-grid li:nth-child(odd),.steps-grid li:nth-child(even){padding:18px 0;border-left:0}
+  .knowledge-strip{grid-template-columns:1fr;padding:6px 0}
+  .knowledge-block,.knowledge-block:first-child,.knowledge-block:last-child{padding:18px 0}
+  .knowledge-block+ .knowledge-block{border-left:0;border-top:1px solid rgba(255,255,255,.08)}
+  .game-flow .details-columns{grid-template-columns:1fr}
+  .game-flow .details-columns>div,.game-flow .details-columns>div:first-child,.game-flow .details-columns>div:last-child{padding:16px 0}
+  .game-flow .details-columns>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08)}
+  .side-column--pilot{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .play-guide{margin-top:22px;padding:24px 0 18px}
+  .section-intro h2,.game-flow>h2{font-size:23px}
+  .steps-grid li{grid-template-columns:44px 1fr}
+  .knowledge-strip{margin-top:22px}
+  .status-card-lite{padding:16px}
+}
