@@ -144,3 +144,18 @@
     32px 0 0 #e6e4dc,
     0 2px 4px rgba(0,0,0,.3);
 }
+
+
+/* Approved Poker related thumbnail */
+.related-image--poker{
+  background-image:url("/assets/related-poker-approved.webp");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-color:#07110c;
+}
+.related-image--poker::before,
+.related-image--poker::after{
+  display:none;
+  content:none;
+}
