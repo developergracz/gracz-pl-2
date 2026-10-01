@@ -535,7 +535,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   background:rgba(255,255,255,.04)!important;
 }
 
-/* Poradniki R12 — crop artwork frame lines only */
+/* Poradniki R13 — asymmetric crop: remove side frames, preserve bottom caption */
 .poradniki-hero-r7__scene{
   border:0!important;
   outline:0!important;
@@ -551,12 +551,12 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 }
 .poradniki-hero-r7__image{
   display:block!important;
-  width:118%!important;
-  height:118%!important;
+  width:116%!important;
+  height:104%!important;
   max-width:none!important;
   object-fit:cover!important;
   object-position:50% 50%!important;
-  margin:-9% 0 0 -9%!important;
+  margin:-1.5% 0 0 -8%!important;
   transform:none!important;
   border:0!important;
   outline:0!important;
