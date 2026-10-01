@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { AuthService } from "../src/auth.js";
 import { createGomokuHttpHandler } from "../src/gomoku-http.js";
+import { GomokuRealtimeHub } from "../src/gomoku-realtime.js";
 import { GomokuService } from "../src/gomoku-service.js";
 import { LobbyService } from "../src/lobby.js";
 import { createGameHttpServer } from "../src/server.js";
@@ -14,10 +15,11 @@ const { chromium } = require("playwright");
 const store = new MemorySessionStore();
 const auth = new AuthService({ secret: "gomoku-browser-test-secret-with-more-than-32-characters" });
 const gomoku = new GomokuService();
+const gomokuRealtime = new GomokuRealtimeHub({ service: gomoku });
 const lobby = new LobbyService({ sessionStore: store, gomokuService: gomoku, idGenerator: () => "browser-gomoku-room" });
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
 const server = createGameHttpServer({ store, auth, lobby, webRoot });
-const gomokuHandler = createGomokuHttpHandler({ service: gomoku, auth });
+const gomokuHandler = createGomokuHttpHandler({ service: gomoku, auth, realtime: gomokuRealtime });
 const baseHandler = server.listeners("request")[0];
 server.removeAllListeners("request");
 server.on("request", async (request, response) => {
@@ -79,8 +81,9 @@ try {
   await bobPage.getByText("Wygrały czarne!", { exact: true }).waitFor({ state: "visible", timeout: 5000 });
   assert.equal(await alicePage.locator(".stone").count(), 9);
   assert.equal(await bobPage.locator(".stone").count(), 9);
-  console.log("Gomoku browser journey passed: chooser → table → two players → synchronized win");
+  console.log("Gomoku browser journey passed: chooser → table → two players → SSE synchronized win");
 } finally {
+  gomokuRealtime.close();
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
 }

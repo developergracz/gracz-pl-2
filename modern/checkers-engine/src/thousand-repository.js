@@ -1,5 +1,7 @@
 import pg from 'pg';
+import { ensureRankingSchema, installThousandRankingTrigger, RANKING_SCHEMA_LOCK } from './ranking-materialization.js';
 const { Pool } = pg;
+const THOUSAND_SCHEMA_LOCK=1_000_003_003;
 
 export class ThousandConcurrencyError extends Error {
   constructor(message='Stan gry został już zmieniony przez inną operację.') {
@@ -52,14 +54,28 @@ export class PostgresThousandRepository {
     this.ready=this.initialize();
   }
   async initialize(){
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS gracz_thousand_games(
-      game_id VARCHAR(96) PRIMARY KEY,
-      players JSONB NOT NULL,
-      state JSONB NOT NULL,
-      revision BIGINT NOT NULL DEFAULT 1,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
+    const client=await this.pool.connect();
+    try{
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock($1)',[THOUSAND_SCHEMA_LOCK]);
+      await client.query(`CREATE TABLE IF NOT EXISTS gracz_thousand_games(
+        game_id VARCHAR(96) PRIMARY KEY,
+        players JSONB NOT NULL,
+        state JSONB NOT NULL,
+        revision BIGINT NOT NULL DEFAULT 1,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+      await client.query('SELECT pg_advisory_xact_lock($1)',[RANKING_SCHEMA_LOCK]);
+      await ensureRankingSchema(client);
+      await installThousandRankingTrigger(client);
+      await client.query('COMMIT');
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      throw error;
+    }finally{
+      client.release();
+    }
   }
   async create(record){
     await this.ready;

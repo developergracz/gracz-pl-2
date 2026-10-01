@@ -74,19 +74,26 @@ export class MatchRuntime {
     assertToken(idempotencyKey, "idempotencyKey");
     if (!command || typeof command !== "object" || Array.isArray(command)) throw new TypeError("Polecenie Match Runtime musi być obiektem.");
 
-    const epoch = ownershipEpoch ?? this.#ownership.get(matchId) ?? await this.claimOwnership(matchId);
+    const explicitOwnership = ownershipEpoch !== null;
+    let epoch = ownershipEpoch ?? this.#ownership.get(matchId) ?? await this.claimOwnership(matchId);
     assertEpoch(epoch);
     const commandHash = hashCommand(command);
 
-    const committed = await this.repository.executeMatchRuntimeCommand({
-      matchId,
-      ownerId: this.ownerId,
-      ownershipEpoch: epoch,
-      expectedVersion,
-      idempotencyKey,
-      commandHash,
-      execute: async (state) => this.engine.applyCommand({ state, command }),
-    });
+    let committed;
+    try {
+      committed = await this.#executeWithEpoch({ matchId, expectedVersion, idempotencyKey, command, commandHash, epoch });
+    } catch (error) {
+      if (explicitOwnership || error?.code !== "MATCH_RUNTIME_STALE_OWNERSHIP") throw error;
+
+      // Only invalidate the epoch that actually failed. A concurrent local reclaim may
+      // already have installed a newer epoch while this request was awaiting PostgreSQL.
+      if (this.#ownership.get(matchId) === epoch) this.#ownership.delete(matchId);
+
+      // Bounded recovery: one reclaim and one retry only. Idempotency/version inputs are
+      // unchanged, so a retry cannot silently become a different authoritative command.
+      epoch = await this.claimOwnership(matchId);
+      committed = await this.#executeWithEpoch({ matchId, expectedVersion, idempotencyKey, command, commandHash, epoch });
+    }
 
     if (!committed.replayed && this.publish) {
       const eventType = typeof this.engine.eventType === "function" ? this.engine.eventType(command) : "match.updated";
@@ -104,6 +111,18 @@ export class MatchRuntime {
       replayed: committed.replayed === true,
       snapshot: this.#project(committed.state, viewerId),
     };
+  }
+
+  async #executeWithEpoch({ matchId, expectedVersion, idempotencyKey, command, commandHash, epoch }) {
+    return this.repository.executeMatchRuntimeCommand({
+      matchId,
+      ownerId: this.ownerId,
+      ownershipEpoch: epoch,
+      expectedVersion,
+      idempotencyKey,
+      commandHash,
+      execute: async (state) => this.engine.applyCommand({ state, command }),
+    });
   }
 
   #project(state, viewerId) {
