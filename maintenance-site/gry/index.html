@@ -25,7 +25,7 @@
   <meta name="twitter:title" content="Gry online | gracz.pl">
   <meta name="twitter:description" content="Poker treningowy, Tysiąc, Warcaby i Gomoku.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/gry.css">
@@ -112,101 +112,129 @@
   <main id="tresc" class="page-shell" tabindex="-1">
     <nav class="breadcrumb" aria-label="Ścieżka nawigacji"><ol><li><a href="/">Start</a></li><li aria-current="page">Gry</li></ol></nav>
 
-    <div class="page-grid">
-      <div class="main-column">
-        <section class="hero-card" aria-labelledby="hero-title">
-          <div class="board-visual">
-            <div class="games-hub-scene games-hub-scene--image">
-              <img class="games-hub-image" src="/assets/gry-hero-approved-v3.webp" width="600" height="600" alt="gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
-            </div>
+    <div class="game-hub-r2">
+      <section class="hub-hero-r2" aria-labelledby="hero-title">
+        <div class="hub-visual-r2">
+          <div class="games-hub-scene games-hub-scene--image">
+            <img class="games-hub-image" src="/assets/gry-hero-approved-v3.webp" width="600" height="600" alt="gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
           </div>
-
-          <div class="hero-copy">
-            <h1 id="hero-title">Gry na gracz.pl</h1>
-            <p class="hero-kicker">Cztery tytuły. Jeden rozwijany ekosystem.</p>
-            <p class="hero-lead">W jednym miejscu łączymy gry karciane i logiczne. Każda ma własną podstronę, szczegółowe zasady i przestrzeń do dalszego rozwoju — od treningowego Texas Hold’em po klasyczne Warcaby i Gomoku.</p>
-            <ul class="facts" aria-label="Główne gry">
-              <li><span class="fact-icon" aria-hidden="true">♠</span><strong>Poker</strong></li>
-              <li><span class="fact-icon" aria-hidden="true">♥</span><strong>Tysiąc</strong></li>
-              <li><span class="fact-icon" aria-hidden="true">●</span><strong>Warcaby</strong></li>
-              <li><span class="fact-icon" aria-hidden="true">✕</span><strong>Gomoku</strong></li>
-            </ul>
-            <div class="hero-actions">
-              <a class="cta-primary" href="/gry/poker-treningowy/"><span class="play-circle">♠</span><span>Poker treningowy<small>poznaj grę</small></span></a>
-              <a class="cta-secondary" href="/gry/tysiac/">Zobacz Tysiąca →</a>
-            </div>
-          </div>
-        </section>
-
-        <div class="game-showcase">
-          <article class="game-card game-card--gold" id="poker">
-            <span class="game-badge">W przygotowaniu</span>
-            <div class="game-icon">♠</div>
-            <h2>Poker treningowy</h2>
-            <p>Edukacyjny Texas Hold’em bez prawdziwych pieniędzy. Nauka układów kart, pozycji, blindów i przebiegu rozdania na żetonach treningowych.</p>
-            <div class="game-actions"><a class="game-link" href="/gry/poker-treningowy/">Podstrona gry →</a><a class="game-link game-link--green" href="/gry/poker-treningowy/zasady/">Zasady gry →</a></div>
-          </article>
-
-          <article class="game-card game-card--red" id="tysiac">
-            <span class="game-badge">W przygotowaniu</span>
-            <div class="game-icon">♥</div>
-            <h2>Tysiąc</h2>
-            <p>Klasyczna gra karciana oparta na licytacji, meldunkach i zdobywaniu punktów. Osobna sekcja prowadzi przez zasady i przebieg partii.</p>
-            <div class="game-actions"><a class="game-link" href="/gry/tysiac/">Podstrona gry →</a><a class="game-link game-link--green" href="/gry/tysiac/zasady/">Zasady gry →</a></div>
-          </article>
-
-          <article class="game-card game-card--green" id="warcaby">
-            <span class="game-badge">W przygotowaniu</span>
-            <div class="game-icon">●</div>
-            <h2>Warcaby</h2>
-            <p>Klasyczna gra logiczna dla dwóch osób. Obowiązkowe bicie, wielokrotne skoki i droga pionka do damki na planszy 8×8.</p>
-            <div class="game-actions"><a class="game-link" href="/gry/warcaby/">Podstrona gry →</a><a class="game-link game-link--green" href="/gry/warcaby/zasady/">Zasady gry →</a></div>
-          </article>
-
-          <article class="game-card game-card--amber" id="gomoku">
-            <span class="game-badge">W przygotowaniu</span>
-            <div class="game-icon">✕</div>
-            <h2>Gomoku</h2>
-            <p>Strategiczna gra pięć w rzędzie. Proste reguły łączą się z planowaniem, atakiem i obroną na dużej planszy.</p>
-            <div class="game-actions"><a class="game-link" href="/gry/gomoku/">Podstrona gry →</a><a class="game-link game-link--green" href="/gry/gomoku/zasady/">Zasady gry →</a></div>
-          </article>
         </div>
 
-        <section class="category-info" aria-labelledby="ecosystem-title">
-          <h2 id="ecosystem-title">Jeden portal, różne rodzaje gier</h2>
-          <div class="category-info-grid">
-            <div><h3>Gry karciane</h3><p>Poker treningowy i Tysiąc tworzą pierwszy filar działu karcianego, rozwijanego wraz z materiałami edukacyjnymi i Poker Academy.</p></div>
-            <div><h3>Gry logiczne</h3><p>Warcaby i Gomoku uzupełniają portal o klasyczne gry strategiczne z prostymi zasadami i dużą głębią rozgrywki.</p></div>
+        <div class="hub-quiz-r2" data-game-hub-quiz>
+          <p class="section-eyebrow">Game Hub gracz.pl</p>
+          <h1 id="hero-title">Znajdź swoją grę</h1>
+          <p class="hub-lead-r2">Nie przeglądaj katalogu. Powiedz, ile masz czasu, z kim chcesz grać i czy wolisz karty czy planszę — hub wskaże najbliższe dopasowanie spośród czterech gier gracz.pl.</p>
+
+          <div class="quiz-progress" aria-hidden="true"><span data-quiz-progress></span></div>
+
+          <fieldset class="quiz-step">
+            <legend>1. Ile masz czasu?</legend>
+            <div class="quiz-options" role="group" aria-label="Dostępny czas">
+              <button type="button" data-quiz-key="time" data-quiz-value="short" aria-pressed="false">Krótka sesja</button>
+              <button type="button" data-quiz-key="time" data-quiz-value="medium" aria-pressed="false">Mam trochę czasu</button>
+              <button type="button" data-quiz-key="time" data-quiz-value="long" aria-pressed="false">Dłuższa rozgrywka</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="quiz-step">
+            <legend>2. Z kim chcesz grać?</legend>
+            <div class="quiz-options" role="group" aria-label="Towarzystwo do gry">
+              <button type="button" data-quiz-key="company" data-quiz-value="solo" aria-pressed="false">Sam / trening</button>
+              <button type="button" data-quiz-key="company" data-quiz-value="duo" aria-pressed="false">Z jedną osobą</button>
+              <button type="button" data-quiz-key="company" data-quiz-value="group" aria-pressed="false">W większej grupie</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="quiz-step">
+            <legend>3. Co wolisz?</legend>
+            <div class="quiz-options" role="group" aria-label="Rodzaj gry">
+              <button type="button" data-quiz-key="medium" data-quiz-value="cards" aria-pressed="false">Karty</button>
+              <button type="button" data-quiz-key="medium" data-quiz-value="board" aria-pressed="false">Planszę</button>
+            </div>
+          </fieldset>
+
+          <div class="hub-recommendation" data-quiz-result aria-live="polite">
+            <span class="recommendation-label">Twoja rekomendacja</span>
+            <h2>Odpowiedz na trzy pytania</h2>
+            <p>Wynik będzie oparty wyłącznie na czterech grach obecnych w katalogu gracz.pl.</p>
           </div>
-        </section>
+          <button class="quiz-reset" type="button" data-quiz-reset>Wyczyść wybór</button>
+        </div>
+      </section>
 
-        <section class="games-strip" aria-label="Powiązane działy">
-          <a href="/gry-karciane/"><strong>Gry karciane</strong><span>Poker, Tysiąc i Poker Academy.</span><em>Otwórz dział →</em></a>
-          <a href="/poradniki/"><strong>Poradniki</strong><span>Zasady i materiały do wszystkich głównych gier.</span><em>Czytaj poradniki →</em></a>
-          <a href="/o-gracz-pl/"><strong>O gracz.pl</strong><span>Poznaj kierunek rozwoju całego portalu.</span><em>Zobacz projekt →</em></a>
-        </section>
-      </div>
+      <nav class="games-max-nav" aria-label="Sekcje Game Hub">
+        <a href="#gry-dzis">4 gry</a>
+        <a href="#porownaj-gry">Porównaj</a>
+        <a href="#platforma-live">Platforma</a>
+        <a href="#zobacz-takze">Zobacz także</a>
+      </nav>
 
-      <aside class="side-column" aria-label="Szybki dostęp do gier">
-        <section class="online-card">
-          <p class="status-pill"><span></span> gry w rozwoju</p>
-          <h2>Szybki wybór gry</h2>
-          <p>Przejdź bezpośrednio do wybranego tytułu albo otwórz jego zasady.</p>
-          <a class="side-action" href="/gry/poker-treningowy/"><span class="side-emoji side-emoji--gold">♠</span><span><strong>Poker</strong><small>Texas Hold’em</small></span><b>›</b></a>
-          <a class="side-action side-action--red" href="/gry/tysiac/"><span class="side-emoji side-emoji--red">♥</span><span><strong>Tysiąc</strong><small>gra karciana</small></span><b>›</b></a>
-          <a class="side-action side-action--green" href="/gry/warcaby/"><span class="side-emoji side-emoji--green">●</span><span><strong>Warcaby</strong><small>plansza 8×8</small></span><b>›</b></a>
-          <a class="side-action" href="/gry/gomoku/"><span class="side-emoji side-emoji--gold">✕</span><span><strong>Gomoku</strong><small>pięć w rzędzie</small></span><b>›</b></a>
-        </section>
-        <section class="related-card">
-          <h2>Zobacz także</h2>
-          <a class="related-game" href="/gry-karciane/">
-            <span class="related-image related-image--gry-karciane" aria-hidden="true"></span>
-            <span><strong>Gry karciane</strong><small>Poker i Tysiąc</small></span><b>›</b></a>
-          <a class="related-game" href="/poradniki/">
-            <span class="related-image related-image--poradniki" aria-hidden="true"></span>
-            <span><strong>Poradniki</strong><small>Zasady i nauka</small></span><b>›</b></a>
-        </section>
-      </aside>
+      <section class="hub-section-r2" id="gry-dzis" aria-labelledby="games-title">
+        <div class="max-heading">
+          <p class="section-eyebrow">Cztery gry. Cztery różne sposoby myślenia.</p>
+          <h2 id="games-title">Wybierz grę i przejdź od razu do niej</h2>
+          <p>To jedyny główny rząd kart na tej stronie. Każda gra ma własną podstronę i osobne zasady.</p>
+        </div>
+        <div class="hub-game-row">
+          <article class="hub-game-card hub-game-card--poker">
+            <span class="hub-game-icon" aria-hidden="true">♠</span>
+            <div><span class="game-badge">W przygotowaniu</span><h3>Poker treningowy</h3><p>Texas Hold’em bez prawdziwych pieniędzy. 2–6 graczy, blindy, rundy licytacji i trening decyzji.</p></div>
+            <div class="hub-card-actions"><a href="/gry/poker-treningowy/">Otwórz grę →</a><a href="/gry/poker-treningowy/zasady/">Zasady</a></div>
+          </article>
+          <article class="hub-game-card hub-game-card--tysiac">
+            <span class="hub-game-icon" aria-hidden="true">♥</span>
+            <div><span class="game-badge">W przygotowaniu</span><h3>Tysiąc</h3><p>Gra dla 2–4 osób: licytacja, musik, meldunki, atut, lewy i wyścig do 1000 punktów.</p></div>
+            <div class="hub-card-actions"><a href="/gry/tysiac/">Otwórz grę →</a><a href="/gry/tysiac/zasady/">Zasady</a></div>
+          </article>
+          <article class="hub-game-card hub-game-card--warcaby">
+            <span class="hub-game-icon" aria-hidden="true">●</span>
+            <div><span class="game-badge">W przygotowaniu</span><h3>Warcaby</h3><p>Gra logiczna dla 2 osób. Obowiązkowe bicie, wielokrotne skoki i droga pionka do damki.</p></div>
+            <div class="hub-card-actions"><a href="/gry/warcaby/">Otwórz grę →</a><a href="/gry/warcaby/zasady/">Zasady</a></div>
+          </article>
+          <article class="hub-game-card hub-game-card--gomoku">
+            <span class="hub-game-icon" aria-hidden="true">✕</span>
+            <div><span class="game-badge">W przygotowaniu</span><h3>Gomoku</h3><p>Strategiczna gra dla 2 osób na planszy 15×15. Buduj linię pięciu i blokuj groźby przeciwnika.</p></div>
+            <div class="hub-card-actions"><a href="/gry/gomoku/">Otwórz grę →</a><a href="/gry/gomoku/zasady/">Zasady</a></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="hub-section-r2 compare-r2" id="porownaj-gry" aria-labelledby="compare-title" data-game-compare>
+        <div class="max-heading">
+          <p class="section-eyebrow">Porównywarka gier</p>
+          <h2 id="compare-title">Zestaw dwie gry obok siebie</h2>
+          <p>Pokazujemy tylko dane zapisane w zweryfikowanym katalogu. Jeśli czas gry nie jest ustalony na obecnej podstronie, zobaczysz „brak ustalonego czasu”.</p>
+        </div>
+        <div class="compare-controls">
+          <label>Pierwsza gra<select data-compare-a aria-label="Pierwsza gra"></select></label>
+          <span aria-hidden="true">vs</span>
+          <label>Druga gra<select data-compare-b aria-label="Druga gra"></select></label>
+        </div>
+        <div class="compare-result-r2" data-compare-result aria-live="polite">
+          <p>Wybierz dwie różne gry.</p>
+        </div>
+      </section>
+
+      <section class="hub-section-r2 live-hub-r2" id="platforma-live" aria-labelledby="live-title">
+        <div class="live-status-dot" aria-hidden="true"></div>
+        <div>
+          <p class="section-eyebrow">Żywy hub — stan przed uruchomieniem</p>
+          <h2 id="live-title">Zbieramy pierwszych graczy</h2>
+          <p>Nie pokazujemy sztucznych liczników aktywnych osób, fikcyjnych pokoi, rankingów ani turniejów. Gdy platforma zostanie uruchomiona i dane będą rzeczywiste, to miejsce stanie się panelem bieżącej aktywności.</p>
+        </div>
+        <div class="live-future-grid" aria-label="Funkcje planowane po uruchomieniu">
+          <span>Otwarte pokoje<small>po uruchomieniu</small></span>
+          <span>Turnieje<small>po bramkach platformy</small></span>
+          <span>Ranking tygodnia<small>gdy będą wiarygodne dane</small></span>
+          <span>Twoja ścieżka<small>po uruchomieniu kont</small></span>
+        </div>
+      </section>
+
+      <section class="hub-related-r2" id="zobacz-takze" aria-label="Zobacz także">
+        <a href="/gry-karciane/"><strong>Gry karciane</strong><span>Poker, Tysiąc i materiały edukacyjne.</span><em>Otwórz dział →</em></a>
+        <a href="/poradniki/"><strong>Poradniki</strong><span>Zasady, nauka i rozwijane przewodniki.</span><em>Czytaj →</em></a>
+        <a href="/o-gracz-pl/"><strong>O gracz.pl</strong><span>Poznaj kierunek rozwoju całej platformy.</span><em>Zobacz projekt →</em></a>
+      </section>
     </div>
   </main>
 

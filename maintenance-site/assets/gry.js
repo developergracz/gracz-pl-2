@@ -150,4 +150,157 @@
       }
     }
   });
+
+
+  var hubQuiz=document.querySelector('[data-game-hub-quiz]');
+  var compareRoot=document.querySelector('[data-game-compare]');
+  if(hubQuiz || compareRoot){
+    fetch('/assets/games-hub-data.json',{credentials:'same-origin'})
+      .then(function(response){
+        if(!response.ok)throw new Error('catalog');
+        return response.json();
+      })
+      .then(function(catalog){
+        var games=Array.isArray(catalog.games)?catalog.games:[];
+        if(hubQuiz)initHubQuiz(games);
+        if(compareRoot)initCompare(games);
+      })
+      .catch(function(){
+        if(hubQuiz){
+          var result=hubQuiz.querySelector('[data-quiz-result]');
+          if(result)result.innerHTML='<span class="recommendation-label">Twoja rekomendacja</span><h2>Katalog jest chwilowo niedostępny</h2><p>Możesz nadal otworzyć jedną z czterech gier poniżej.</p>';
+        }
+      });
+  }
+
+  function initHubQuiz(games){
+    var state={time:null,company:null,medium:null};
+    var result=hubQuiz.querySelector('[data-quiz-result]');
+    var progress=hubQuiz.querySelector('[data-quiz-progress]');
+
+    function answeredCount(){
+      return Object.keys(state).filter(function(key){return state[key];}).length;
+    }
+
+    function scoreGame(game){
+      var score=0;
+      if(state.time && game.quiz && Array.isArray(game.quiz.time) && game.quiz.time.indexOf(state.time)!==-1)score+=1;
+      if(state.company && game.quiz && Array.isArray(game.quiz.company) && game.quiz.company.indexOf(state.company)!==-1)score+=2;
+      if(state.medium && game.quiz && game.quiz.medium===state.medium)score+=3;
+      return score;
+    }
+
+    function reasonFor(game){
+      var parts=[];
+      if(state.medium && game.quiz.medium===state.medium)parts.push(game.medium.toLowerCase());
+      if(state.company && game.quiz.company.indexOf(state.company)!==-1)parts.push('pasuje do wybranego sposobu grania');
+      if(state.time && game.quiz.time.indexOf(state.time)!==-1)parts.push('pasuje do wybranego czasu sesji');
+      if(!parts.length)return 'To najbliższe dopasowanie spośród obecnych czterech gier.';
+      return 'Dopasowanie: '+parts.join(', ')+'.';
+    }
+
+    function render(){
+      var answered=answeredCount();
+      progress.style.width=String(answered/3*100)+'%';
+      if(!answered){
+        result.innerHTML='<span class="recommendation-label">Twoja rekomendacja</span><h2>Odpowiedz na trzy pytania</h2><p>Wynik będzie oparty wyłącznie na czterech grach obecnych w katalogu gracz.pl.</p>';
+        return;
+      }
+
+      var ranked=games.map(function(game,index){
+        return {game:game,score:scoreGame(game),index:index};
+      }).sort(function(a,b){
+        if(b.score!==a.score)return b.score-a.score;
+        return a.index-b.index;
+      });
+
+      var primary=ranked[0] && ranked[0].game;
+      if(!primary)return;
+      var alternatives=ranked.slice(1,3).map(function(item){return item.game.name;});
+
+      var html='<span class="recommendation-label">Twoja rekomendacja</span>';
+      html+='<h2>'+primary.icon+' '+primary.name+'</h2>';
+      html+='<p>'+reasonFor(primary)+'</p>';
+      if(alternatives.length)html+='<ul><li>Alternatywy: '+alternatives.join(' • ')+'</li></ul>';
+      html+='<a href="'+primary.url+'">Otwórz '+primary.name+' →</a>';
+      result.innerHTML=html;
+    }
+
+    hubQuiz.addEventListener('click',function(e){
+      var option=e.target.closest('[data-quiz-key]');
+      if(option){
+        var key=option.getAttribute('data-quiz-key');
+        var value=option.getAttribute('data-quiz-value');
+        state[key]=state[key]===value?null:value;
+        Array.prototype.forEach.call(hubQuiz.querySelectorAll('[data-quiz-key="'+key+'"]'),function(btn){
+          var active=btn===option && state[key]===value;
+          btn.setAttribute('aria-pressed',active?'true':'false');
+        });
+        render();
+        return;
+      }
+
+      if(e.target.closest('[data-quiz-reset]')){
+        state={time:null,company:null,medium:null};
+        Array.prototype.forEach.call(hubQuiz.querySelectorAll('[data-quiz-key]'),function(btn){
+          btn.setAttribute('aria-pressed','false');
+        });
+        render();
+      }
+    });
+  }
+
+  function initCompare(games){
+    var selectA=compareRoot.querySelector('[data-compare-a]');
+    var selectB=compareRoot.querySelector('[data-compare-b]');
+    var result=compareRoot.querySelector('[data-compare-result]');
+
+    function addOptions(select){
+      games.forEach(function(game){
+        var option=document.createElement('option');
+        option.value=game.id;
+        option.textContent=game.name;
+        select.appendChild(option);
+      });
+    }
+
+    addOptions(selectA);
+    addOptions(selectB);
+    if(games.length>1)selectB.selectedIndex=1;
+
+    function gameById(id){
+      return games.filter(function(game){return game.id===id;})[0]||null;
+    }
+
+    function safeTime(game){
+      return game.verifiedTime || 'brak ustalonego czasu';
+    }
+
+    function renderCompare(){
+      var a=gameById(selectA.value);
+      var b=gameById(selectB.value);
+      if(!a || !b || a.id===b.id){
+        result.innerHTML='<p>Wybierz dwie różne gry.</p>';
+        return;
+      }
+      var rows=[
+        ['Liczba graczy',a.players,b.players],
+        ['Rodzaj',a.medium,b.medium],
+        ['Informacja',a.information,b.information],
+        ['Czas',safeTime(a),safeTime(b)],
+        ['Mechaniki',a.mechanics.join(', '),b.mechanics.join(', ')]
+      ];
+      var html='<table class="compare-table-r2"><thead><tr><th>Cecha</th><th>'+a.name+'</th><th>'+b.name+'</th></tr></thead><tbody>';
+      rows.forEach(function(row){
+        html+='<tr><th>'+row[0]+'</th><td>'+row[1]+'</td><td>'+row[2]+'</td></tr>';
+      });
+      html+='</tbody></table>';
+      result.innerHTML=html;
+    }
+
+    selectA.addEventListener('change',renderCompare);
+    selectB.addEventListener('change',renderCompare);
+    renderCompare();
+  }
+
 })();
