@@ -198,7 +198,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 
 
 /* Game Hub R3.1 — horizontal quiz layout */
-@media(min-width:901px){
+@media(min-width:721px){
   .hub-quiz-r3{
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -250,7 +250,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
     justify-self:start;
   }
 }
-@media(min-width:901px) and (max-width:1180px){
+@media(min-width:721px) and (max-width:1180px){
   .hub-quiz-r3{column-gap:18px}
   .hub-quiz-r3 .quiz-step+.quiz-step{padding-left:18px}
   .hub-quiz-r3 .quiz-options button{flex-basis:100%}
