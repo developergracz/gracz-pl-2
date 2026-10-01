@@ -535,7 +535,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   background:rgba(255,255,255,.04)!important;
 }
 
-/* Poradniki R11 — remove visible outer frames without cutting the artwork */
+/* Poradniki R12 — crop artwork frame lines only */
 .poradniki-hero-r7__scene{
   border:0!important;
   outline:0!important;
@@ -551,13 +551,13 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 }
 .poradniki-hero-r7__image{
   display:block!important;
-  width:109%!important;
-  height:109%!important;
+  width:118%!important;
+  height:118%!important;
   max-width:none!important;
   object-fit:cover!important;
-  object-position:52% 50%!important;
+  object-position:50% 50%!important;
+  margin:-9% 0 0 -9%!important;
   transform:none!important;
-  margin:-4.5% 0 0 -4.5%!important;
   border:0!important;
   outline:0!important;
   box-shadow:none!important;
