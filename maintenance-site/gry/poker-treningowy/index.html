@@ -177,96 +177,167 @@
           </div>
         </section>
 
-        <section class="rules-grid" aria-label="Najważniejsze elementy Texas Hold’em">
-          <article class="rule-card"><span class="rule-icon">2</span><div><h2>1. Karty własne</h2><p>Każdy gracz otrzymuje dwie zakryte karty. Łączy je z kartami wspólnymi, aby zbudować najlepszy układ pięciokartowy.</p></div></article>
-          <article class="rule-card"><span class="rule-icon">SB</span><div><h2>2. Blindy</h2><p>Przed rozdaniem dwóch graczy wnosi small blind i big blind, co uruchamia akcję i tworzy pulę.</p></div></article>
-          <article class="rule-card"><span class="rule-icon">PF</span><div><h2>3. Preflop</h2><p>Pierwsza runda decyzji odbywa się po rozdaniu kart własnych: fold, call lub raise.</p></div></article>
-          <article class="rule-card"><span class="rule-icon">3</span><div><h2>4. Flop</h2><p>Na stół trafiają trzy pierwsze karty wspólne, po czym rozpoczyna się kolejna runda licytacji.</p></div></article>
-          <article class="rule-card"><span class="rule-icon">T/R</span><div><h2>5. Turn i river</h2><p>Czwarta i piąta karta wspólna pojawiają się osobno, a po każdej następuje runda decyzji.</p></div></article>
-          <article class="rule-card"><span class="rule-icon">★</span><div><h2>6. Showdown</h2><p>Jeśli po riverze pozostaje więcej niż jeden gracz, wygrywa najlepszy pięciokartowy układ pokerowy.</p></div></article>
+
+        <nav class="poker-section-nav" aria-label="Sekcje Pokera treningowego">
+          <a href="#poker-5-minut">Poker w 5 minut</a>
+          <a href="#przebieg-rozdania">Rozdanie</a>
+          <a href="#ranking-ukladow">Układy</a>
+          <a href="#pozycje-poker">Pozycje</a>
+          <a href="#trener-decyzji">Trener</a>
+          <a href="#pot-odds">Pot odds</a>
+          <a href="#strategia-poker">Strategia</a>
+        </nav>
+
+        <section class="poker-quick" id="poker-5-minut" aria-labelledby="poker-quick-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Poker w 5 minut</p>
+            <h2 id="poker-quick-title">Najpierw zrozum logikę rozdania</h2>
+            <p>Texas Hold’em jest prosty w strukturze: dwie karty własne, do pięciu wspólnych i cztery rundy decyzji. Nie musisz używać obu kart własnych — liczy się najlepszy układ pięciu kart z siedmiu dostępnych.</p>
+          </div>
+          <ol class="poker-flow">
+            <li><span>01</span><strong>Blindy</strong><p>Small blind i big blind tworzą początkową pulę.</p></li>
+            <li><span>02</span><strong>2 karty własne</strong><p>Każdy gracz otrzymuje dwie zakryte karty.</p></li>
+            <li><span>03</span><strong>Preflop</strong><p>Pierwsza runda: fold, call lub raise.</p></li>
+            <li><span>04</span><strong>Flop</strong><p>Na stół trafiają trzy karty wspólne.</p></li>
+            <li><span>05</span><strong>Turn</strong><p>Czwarta karta wspólna i kolejna runda decyzji.</p></li>
+            <li><span>06</span><strong>River</strong><p>Piąta karta wspólna i ostatnia runda decyzji.</p></li>
+            <li><span>07</span><strong>Showdown</strong><p>Najlepszy pięciokartowy układ wygrywa pulę.</p></li>
+          </ol>
         </section>
 
-        <section class="info-grid" aria-label="Strategia, błędy i warianty">
-          <article class="info-card info-card--green">
-            <h2><span>💡</span> Strategia i nauka</h2>
-            <ul class="check-list">
-              <li>Zwracaj uwagę na pozycję przy stole</li>
-              <li>Rozróżniaj silne i słabe ręce startowe</li>
-              <li>Kontroluj wielkość puli i efektywny stack</li>
-              <li>Ćwicz decyzje fold, call i raise</li>
-              <li>Analizuj rozdania po zakończeniu sesji</li>
-            </ul>
-          </article>
-
-          <article class="info-card info-card--red">
-            <h2><span>⚠</span> Najczęstsze błędy</h2>
-            <ul class="x-list">
-              <li>Granie zbyt wielu rąk startowych</li>
-              <li>Ignorowanie pozycji</li>
-              <li>Sprawdzanie bez planu na kolejne ulice</li>
-              <li>Przecenianie pojedynczej pary</li>
-              <li>Brak kontroli nad wielkością zakładu</li>
-            </ul>
-          </article>
-
-          <article class="info-card" id="warianty">
-            <h2><span>⚙</span> Tryb gracz.pl</h2>
-            <ul class="variant-list">
-              <li>Texas Hold’em No-Limit</li>
-              <li>Heads-up i stoły 2–6 graczy</li>
-              <li>Żetony wyłącznie treningowe</li>
-              <li>Brak wpłat i wypłat</li>
-              <li>Kierunek edukacyjny / Poker Academy</li>
-            </ul>
-          </article>
+        <section class="poker-scene-section" id="przebieg-rozdania" aria-labelledby="deal-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Zasady krok po kroku</p>
+            <h2 id="deal-title">Jak przebiega rozdanie Texas Hold’em?</h2>
+            <p>Każda ulica zmienia ilość informacji dostępnej graczom. Poniższa sekwencja pokazuje pełny przebieg bez ciężkiej siatki kart.</p>
+          </div>
+          <ol class="street-timeline">
+            <li><span>PF</span><div><h3>Preflop</h3><p>Po wniesieniu blindów każdy otrzymuje dwie karty. Akcja zaczyna się od gracza za big blindem.</p></div></li>
+            <li><span>F</span><div><h3>Flop</h3><p>Trzy pierwsze karty wspólne trafiają na stół i rozpoczyna się druga runda licytacji.</p></div></li>
+            <li><span>T</span><div><h3>Turn</h3><p>Pojawia się czwarta karta wspólna, po której gracze ponownie podejmują decyzje.</p></div></li>
+            <li><span>R</span><div><h3>River</h3><p>Piąta karta wspólna zamyka układ stołu i poprzedza ostatnią rundę licytacji.</p></div></li>
+            <li><span>★</span><div><h3>Showdown</h3><p>Jeśli zostało co najmniej dwóch graczy, porównuje się najlepsze pięć kart każdego z nich. Identyczny układ oznacza podział puli.</p></div></li>
+          </ol>
+          <a class="inline-rules-link" href="/gry/poker-treningowy/zasady/">Otwórz pełne zasady Texas Hold’em <span aria-hidden="true">→</span></a>
         </section>
 
-        <section class="details-card" aria-labelledby="jak-wyglada-partia">
-          <h2 id="jak-wyglada-partia">Jak wygląda rozdanie Texas Hold’em?</h2>
-          <div class="details-columns">
-            <div><h3>Start i preflop</h3><p>Po wniesieniu blindów każdy gracz dostaje dwie karty własne. Pierwsza runda decyzji zaczyna się od gracza siedzącego za big blindem.</p></div>
-            <div><h3>Flop, turn i river</h3><p>Na stole pojawia się łącznie pięć kart wspólnych: trzy na flopie, jedna na turnie i jedna na riverze. Po każdej ulicy może odbyć się licytacja.</p></div>
-            <div><h3>Wygrana puli</h3><p>Pulę można wygrać, gdy wszyscy przeciwnicy spasują, albo na showdownie, posiadając najlepszy układ pięciu kart z siedmiu dostępnych.</p></div>
+        <section class="poker-scene-section" id="ranking-ukladow" aria-labelledby="hands-ranking-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Od najmocniejszego do najsłabszego</p>
+            <h2 id="hands-ranking-title">Ranking układów pokerowych</h2>
+            <p>Końcowy wynik zawsze opiera się na najlepszym pięciokartowym układzie.</p>
+          </div>
+          <ol class="hand-ranking">
+            <li><b>01</b><strong>Poker królewski</strong><span>A-K-Q-J-10 w jednym kolorze</span></li>
+            <li><b>02</b><strong>Poker</strong><span>Pięć kolejnych kart w jednym kolorze</span></li>
+            <li><b>03</b><strong>Kareta</strong><span>Cztery karty tej samej wartości</span></li>
+            <li><b>04</b><strong>Full</strong><span>Trójka i para jednocześnie</span></li>
+            <li><b>05</b><strong>Kolor</strong><span>Pięć kart jednego koloru</span></li>
+            <li><b>06</b><strong>Strit</strong><span>Pięć kolejnych wartości</span></li>
+            <li><b>07</b><strong>Trójka</strong><span>Trzy karty tej samej wartości</span></li>
+            <li><b>08</b><strong>Dwie pary</strong><span>Dwie różne pary</span></li>
+            <li><b>09</b><strong>Para</strong><span>Dwie karty tej samej wartości</span></li>
+            <li><b>10</b><strong>Wysoka karta</strong><span>Gdy nie powstał żaden wyższy układ</span></li>
+          </ol>
+          <p class="poker-note"><strong>Ważne:</strong> as może być niski w stricie A-2-3-4-5. Kolory kart nie mają między sobą starszeństwa.</p>
+        </section>
+
+        <section class="poker-scene-section" id="pozycje-poker" aria-labelledby="positions-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Czytaj stół</p>
+            <h2 id="positions-title">Pozycje, button i blindy</h2>
+            <p>Pozycja określa kolejność działania. Button przesuwa się po każdym rozdaniu, a dwie kolejne pozycje wnoszą small blind i big blind.</p>
+          </div>
+          <div class="position-strip">
+            <div><span>BTN</span><strong>Button</strong><p>Pozycja rozdającego; po flopie zwykle działa późno.</p></div>
+            <div><span>SB</span><strong>Small Blind</strong><p>Mniejszy obowiązkowy wkład przed rozdaniem.</p></div>
+            <div><span>BB</span><strong>Big Blind</strong><p>Większy obowiązkowy wkład, względem którego wyrównuje się akcję preflop.</p></div>
+            <div><span>HU</span><strong>Heads-up</strong><p>Button jest small blindem i działa pierwszy przed flopem; big blind pierwszy po flopie.</p></div>
+          </div>
+        </section>
+
+        <section class="poker-lab" id="trener-decyzji" aria-labelledby="trainer-title" data-poker-trainer>
+          <div class="scene-heading">
+            <p class="section-eyebrow">Poker Academy — moduł edukacyjny</p>
+            <h2 id="trainer-title">Trener legalnych decyzji</h2>
+            <p>To nie jest jeszcze gra. Trener sprawdza wyłącznie, które akcje są legalne w podanej sytuacji zgodnie z zasadami Texas Hold’em.</p>
+          </div>
+          <div class="trainer-scenario">
+            <div>
+              <p class="trainer-label">Sytuacja treningowa</p>
+              <p>Jesteś na flopie. Przeciwnik przed Tobą postawił zakład. Masz wystarczający stack, aby kontynuować.</p>
+            </div>
+            <div class="trainer-actions" role="group" aria-label="Wybierz akcję">
+              <button type="button" data-poker-action="check">Check</button>
+              <button type="button" data-poker-action="fold">Fold</button>
+              <button type="button" data-poker-action="call">Call</button>
+              <button type="button" data-poker-action="raise">Raise</button>
+            </div>
+            <p class="trainer-feedback" data-poker-feedback aria-live="polite">Wybierz akcję i sprawdź, czy jest legalna.</p>
+          </div>
+        </section>
+
+        <section class="poker-lab" id="pot-odds" aria-labelledby="pot-odds-title" data-pot-odds>
+          <div class="scene-heading">
+            <p class="section-eyebrow">Narzędzie treningowe</p>
+            <h2 id="pot-odds-title">Kalkulator pot odds</h2>
+            <p>Kalkulator nie mówi, czy masz zagrać. Pokazuje tylko matematyczny próg udziału w puli potrzebny do wyrównania zakładu.</p>
+          </div>
+          <div class="pot-odds-grid">
+            <label>Pula przed Twoim callem<input type="number" min="0" step="1" value="100" data-pot></label>
+            <label>Kwota do sprawdzenia<input type="number" min="1" step="1" value="25" data-call></label>
+            <button type="button" data-pot-calc>Oblicz</button>
+          </div>
+          <div class="pot-odds-result" data-pot-result aria-live="polite">
+            <strong>Próg pojawi się tutaj.</strong>
+            <span>Wzór: call ÷ (pula + call).</span>
+          </div>
+        </section>
+
+        <section class="poker-scene-section" id="strategia-poker" aria-labelledby="strategy-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Nauka zamiast zgadywania</p>
+            <h2 id="strategy-title">Strategia, błędy i tryb gracz.pl</h2>
+          </div>
+          <div class="editorial-triad">
+            <section><span>01</span><h3>Na co patrzeć</h3><ul><li>pozycja przy stole,</li><li>siła i struktura ręki,</li><li>wielkość puli i efektywny stack,</li><li>akcja przeciwników na poprzednich ulicach.</li></ul></section>
+            <section><span>02</span><h3>Najczęstsze błędy</h3><ul><li>granie zbyt wielu rąk,</li><li>ignorowanie pozycji,</li><li>sprawdzanie bez planu,</li><li>przecenianie jednej pary,</li><li>brak kontroli wielkości zakładu.</li></ul></section>
+            <section><span>03</span><h3>Tryb gracz.pl</h3><ul><li>No-Limit Texas Hold’em,</li><li>heads-up i 2–6 graczy,</li><li>wyłącznie żetony treningowe,</li><li>bez wpłat, wypłat i nagród pieniężnych,</li><li>kierunek edukacyjny Poker Academy.</li></ul></section>
+          </div>
+        </section>
+
+        <section class="poker-scene-section" aria-labelledby="glossary-title">
+          <div class="scene-heading"><p class="section-eyebrow">Szybkie odniesienie</p><h2 id="glossary-title">Słownik Texas Hold’em</h2></div>
+          <dl class="poker-glossary">
+            <div><dt>Blindy</dt><dd>Obowiązkowe wkłady SB i BB przed rozdaniem.</dd></div>
+            <div><dt>Board</dt><dd>Karty wspólne na stole.</dd></div>
+            <div><dt>Call</dt><dd>Wyrównanie aktualnego zakładu.</dd></div>
+            <div><dt>Check</dt><dd>Przekazanie akcji bez dokładania żetonów, gdy nie ma zakładu do sprawdzenia.</dd></div>
+            <div><dt>Fold</dt><dd>Rezygnacja z dalszego udziału w rozdaniu.</dd></div>
+            <div><dt>Raise</dt><dd>Podbicie istniejącego zakładu.</dd></div>
+            <div><dt>Showdown</dt><dd>Porównanie układów po zakończeniu ostatniej rundy licytacji.</dd></div>
+            <div><dt>Stack</dt><dd>Liczba żetonów treningowych, którymi dysponuje gracz.</dd></div>
+          </dl>
+        </section>
+
+        <section class="poker-faq" aria-labelledby="poker-faq-title">
+          <div class="scene-heading"><p class="section-eyebrow">Najczęstsze pytania</p><h2 id="poker-faq-title">FAQ</h2></div>
+          <details><summary>Czy Poker treningowy jest grą na pieniądze?</summary><p>Nie. Tryb gracz.pl jest projektowany jako edukacyjny i korzysta wyłącznie z żetonów treningowych bez wartości pieniężnej.</p></details>
+          <details><summary>Czy muszę użyć obu kart własnych?</summary><p>Nie. Tworzysz najlepszy układ pięciu kart z siedmiu dostępnych: dwóch własnych i pięciu wspólnych.</p></details>
+          <details><summary>Czy mogę zrobić check po zakładzie przeciwnika?</summary><p>Nie. Gdy jest zakład do sprawdzenia, dostępne są odpowiednio fold, call lub legalny raise.</p></details>
+          <details><summary>Czy pik jest wyższy od kier?</summary><p>Nie. Kolory nie mają starszeństwa w Texas Hold’em.</p></details>
+          <details><summary>Co się dzieje przy identycznym układzie?</summary><p>Jeżeli najlepsze pięć kart jest identyczne, pula jest dzielona możliwie równo.</p></details>
+        </section>
+
+        <section class="poker-related" aria-labelledby="poker-related-title">
+          <div class="scene-heading"><p class="section-eyebrow">Zobacz także</p><h2 id="poker-related-title">Inne gry na gracz.pl</h2></div>
+          <div class="related-strip">
+            <a href="/gry/tysiac/"><span class="related-image related-image--tysiac" aria-hidden="true"></span><strong>Tysiąc</strong><small>Licytacja, meldunki i lewy</small></a>
+            <a href="/gry/warcaby/"><span class="related-image related-image--warcaby" aria-hidden="true"></span><strong>Warcaby</strong><small>Klasyczna gra logiczna</small></a>
+            <a href="/gry/gomoku/"><span class="related-image related-image--gomoku" aria-hidden="true"></span><strong>Gomoku</strong><small>Pięć w rzędzie</small></a>
           </div>
         </section>
       </div>
-
-      <aside class="side-column" aria-label="Informacje dodatkowe">
-        <section class="online-card">
-          <p class="status-pill"><span></span>W przygotowaniu</p>
-          <h2>Trenuj Texas Hold’em</h2>
-          <p>Przygotowujemy edukacyjną rozgrywkę pokerową z żetonami treningowymi, stołami 2–6 graczy, historią rozdań i narzędziami do nauki. Bez prawdziwych pieniędzy i bez wypłat.</p>
-
-          <button class="side-action side-action--gold" type="button" data-modal="multiplayer">
-            <span class="side-emoji">👥</span><span><strong>Stoły treningowe</strong><small>2–6 graczy</small></span><b>›</b>
-          </button>
-          <button class="side-action side-action--green" type="button" data-modal="rankings">
-            <span class="side-emoji">📊</span><span><strong>Historia i statystyki</strong><small>Analiza sesji i rozdań</small></span><b>›</b>
-          </button>
-          <a class="side-action side-action--red" href="#warianty">
-            <span class="side-emoji">⚙</span><span><strong>Tryby treningowe</strong><small>Heads-up i 2–6 graczy</small></span><b>›</b>
-          </a>
-          <a class="side-action side-action--green" href="/poradniki/">
-            <span class="side-emoji">🎓</span><span><strong>Poker Academy</strong><small>Zasady, układy i decyzje</small></span><b>›</b>
-          </a>
-        </section>
-
-        <section class="related-card">
-          <h2>Zobacz także</h2>
-          <a class="related-game" href="/gry/tysiac/">
-            <span class="related-image related-image--tysiac" aria-hidden="true"></span>
-            <span><strong>Tysiąc</strong><small>Gra karciana</small></span><b>›</b>
-          </a>
-          <a class="related-game" href="/gry/warcaby/">
-            <span class="related-image related-image--warcaby" aria-hidden="true"></span>
-            <span><strong>Warcaby</strong><small>Gra logiczna</small></span><b>›</b>
-          </a>
-          <a class="related-game" href="/gry/gomoku/">
-            <span class="related-image related-image--gomoku" aria-hidden="true"></span>
-            <span><strong>Gomoku</strong><small>Gra logiczna</small></span><b>›</b>
-          </a>
-        </section>
-      </aside>
     </div>
   </main>
 
