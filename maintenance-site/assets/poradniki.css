@@ -143,14 +143,19 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 }
 .about-mark span{color:#f21a34}
 
+/* Poradniki — canonical Hero copied from /gry/tysiac/ */
+.hero-card{display:grid;grid-template-columns:46% 54%;min-height:390px;border-radius:18px;overflow:hidden}.board-visual{min-height:390px;position:relative;display:grid;place-items:center;padding:22px;background:radial-gradient(circle at 40% 45%,rgba(120,61,15,.32),transparent 58%),rgba(3,5,4,.72);overflow:hidden}.board-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 72%,rgba(2,8,6,.5));pointer-events:none}
+.hero-copy{padding:24px 26px 22px;display:flex;flex-direction:column;justify-content:center}.hero-copy h1{margin:0;font-family:var(--display);font-size:52px;line-height:1;color:#f6d98d}.hero-kicker{margin:4px 0 10px;font-family:var(--display);font-size:24px;font-weight:700;color:#f0c35d}.hero-lead{margin:0;color:#eee;font-size:16px;line-height:1.45}.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;list-style:none;margin:18px 0 14px;padding:0}.facts li{text-align:center;border-right:1px solid rgba(244,198,95,.2);font-size:14px}.facts li:last-child{border-right:0}.fact-icon{display:block;margin:auto auto 6px;color:var(--gold);font-size:30px;line-height:1}.facts strong{font-weight:500}.hero-actions{display:grid;grid-template-columns:1.15fr .9fr;gap:24px;align-items:center}.cta-primary,.cta-secondary{min-height:56px;border-radius:999px;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer}.cta-primary{border:0;background:linear-gradient(180deg,#ffe59b,#f3ae32);color:#241503;box-shadow:0 0 20px rgba(255,188,66,.28)}.cta-primary small{display:block;font-size:13px;font-weight:700}.play-circle{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#070907;color:#fff}.play-circle svg{width:21px;height:21px}.cta-secondary{border:1px solid #00d98a;background:rgba(0,20,14,.35);color:#fff}.cta-primary:hover,.cta-secondary:hover{filter:brightness(1.08)}
 
-/* Poradniki — Tysiąc hero structure/colors + frameless page R1 */
-.head-icon,
-.head-btn--outline{
-  border:0!important;
-}
+.card-table-scene{position:relative;z-index:1;width:min(100%,500px);aspect-ratio:1.08;border:1px solid rgba(244,198,95,.72);border-radius:20px;background:radial-gradient(circle at 50% 44%,rgba(49,108,71,.92),rgba(10,49,33,.95) 58%,#092719 100%);box-shadow:0 22px 42px rgba(0,0,0,.45),0 0 24px rgba(255,176,44,.16),inset 0 0 60px rgba(0,0,0,.28);overflow:hidden}
+.card-table-scene::before{display:none;content:none}
+.card-fan{position:absolute;left:50%;top:47%;width:230px;height:190px;transform:translate(-50%,-50%)}
+.playing-card{position:absolute;left:50%;bottom:8px;width:86px;height:128px;border:1px solid rgba(45,28,16,.55);border-radius:9px;background:linear-gradient(155deg,#fffaf0,#e9dcc5);box-shadow:0 10px 22px rgba(0,0,0,.38);transform-origin:50% 100%;color:#14110d;font-family:Georgia,"Times New Roman",serif}
+.playing-card .rank{position:absolute;left:8px;top:6px;font-size:20px;font-weight:700;line-height:1}.playing-card .suit{position:absolute;left:9px;top:28px;font-size:18px;line-height:1}.playing-card .big-suit{position:absolute;inset:0;display:grid;place-items:center;font-size:42px}.playing-card.red{color:#b3111c}.c1{transform:translateX(-50%) rotate(-26deg) translateX(-52px)}.c2{transform:translateX(-50%) rotate(-13deg) translateX(-26px)}.c3{transform:translateX(-50%) rotate(0)}.c4{transform:translateX(-50%) rotate(13deg) translateX(26px)}.c5{transform:translateX(-50%) rotate(26deg) translateX(52px)}
+.score-board{position:absolute;left:18px;top:18px;min-width:108px;padding:10px 12px;border:1px solid rgba(244,198,95,.48);border-radius:11px;background:rgba(7,12,9,.76);box-shadow:0 8px 18px rgba(0,0,0,.3)}.score-board span{display:block;color:#c9c5bb;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.score-board strong{display:block;margin-top:2px;color:#ffe29a;font:800 24px/1 var(--display)}
+.marriage-badges{position:absolute;right:18px;top:18px;display:grid;grid-template-columns:repeat(2,34px);gap:6px}.marriage-badges span{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(244,198,95,.35);border-radius:9px;background:rgba(5,8,6,.7);font-size:20px}.marriage-badges .red{color:#ff5656}.table-caption{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);white-space:nowrap;padding:7px 12px;border:1px solid rgba(244,198,95,.34);border-radius:999px;background:rgba(5,9,7,.72);font-size:12px;font-weight:800;color:#e9dfc6}
 
-/* Hero: same frameless emerald/teal system as Tysiąc */
+/* Tysiąc Hero R6 — frameless emerald/teal premium surface */
 .hero-card{
   border:0!important;
   background:
@@ -161,21 +166,53 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
     0 22px 54px rgba(0,0,0,.34),
     inset 0 1px 0 rgba(255,255,255,.025)!important;
 }
+
 .board-visual{
   background:
     radial-gradient(circle at 42% 45%,rgba(22,111,77,.20),transparent 56%),
     linear-gradient(145deg,rgba(5,28,20,.88),rgba(5,16,14,.72))!important;
 }
-.guides-scene,
-.guides-scene--image{
+
+.card-table-scene{
   border:0!important;
   box-shadow:
     0 18px 34px rgba(0,0,0,.38),
     inset 0 0 60px rgba(0,0,0,.24)!important;
 }
-.guides-scene::before{
-  display:none!important;
+
+.cta-secondary{
+  border:0!important;
+  background:
+    linear-gradient(180deg,rgba(8,56,45,.88),rgba(5,35,30,.92))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 6px 16px rgba(0,0,0,.22);
 }
+
+.cta-secondary:hover,
+.cta-secondary:focus-visible{
+  background:
+    linear-gradient(180deg,rgba(11,72,57,.96),rgba(6,43,35,.96))!important;
+  outline:none;
+}
+
+
+
+/* Tysiąc UI R7 — filled status badge + clean rules CTA */
+.status-pill{
+  border:0!important;
+  background:linear-gradient(135deg,#0d3b34 0%,#105047 100%)!important;
+  color:#f4fff9;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 6px 16px rgba(0,0,0,.16);
+}
+
+.status-pill span{
+  background:#19f2a2!important;
+  box-shadow:0 0 11px rgba(25,242,162,.5)!important;
+}
+
 .cta-secondary{
   border:0!important;
   gap:0!important;
@@ -185,6 +222,7 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
     inset 0 1px 0 rgba(255,255,255,.04),
     0 8px 20px rgba(0,0,0,.22)!important;
 }
+
 .cta-secondary:hover,
 .cta-secondary:focus-visible{
   background:linear-gradient(135deg,#106756 0%,#14836e 100%)!important;
@@ -194,538 +232,23 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
     0 10px 24px rgba(0,0,0,.24)!important;
 }
 
-/* Right sidebar — keep content, remove frames */
-.online-card,
-.related-card{
-  border:0!important;
-  box-shadow:none!important;
-}
-.status-pill{
-  border:0!important;
-  background:linear-gradient(135deg,#0d3b34 0%,#105047 100%)!important;
-  color:#f4fff9!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.04),
-    0 6px 16px rgba(0,0,0,.16)!important;
-}
-.side-action,
-.side-action--green,
-.side-action--red,
-.related-game{
-  border:0!important;
-  box-shadow:none!important;
-}
-.related-thumb,
-.related-mini-gomoku,
-.related-mini-checkers,
-.related-image{
-  border:0!important;
-  outline:0!important;
-  box-shadow:none!important;
-}
 
-/* Main content — all visible frames removed */
-.guide-card-box,
-.guide-card-box--red,
-.guide-card-box--green,
-.guide-quality,
-.guide-quality-grid>div,
-.rule-card,
-.info-card,
-.details-card,
-.details-columns>div{
-  border:0!important;
-  box-shadow:none!important;
+/* Preserve frameless Poradniki sidebar/content */
+.head-icon,.head-btn--outline,.online-card,.related-card,.status-pill,
+.side-action,.side-action--green,.side-action--red,.related-game,
+.related-thumb,.related-mini-gomoku,.related-mini-checkers,
+.guide-card-box,.guide-card-box--red,.guide-card-box--green,
+.guide-quality,.guide-quality-grid>div,.guide-badge,.guide-link{
+  border:0!important;outline:0!important
 }
-.guide-card-box{
-  background:
-    radial-gradient(circle at 12% 8%,rgba(244,198,95,.05),transparent 34%),
-    linear-gradient(145deg,rgba(8,18,14,.96),rgba(3,9,7,.98))!important;
-}
-.guide-card-box--red{
-  background:
-    radial-gradient(circle at 12% 8%,rgba(255,83,83,.045),transparent 34%),
-    linear-gradient(145deg,rgba(16,14,12,.96),rgba(5,8,7,.98))!important;
-}
-.guide-card-box--green{
-  background:
-    radial-gradient(circle at 12% 8%,rgba(25,242,162,.055),transparent 34%),
-    linear-gradient(145deg,rgba(5,26,21,.96),rgba(3,10,8,.98))!important;
-}
-.guide-badge{
-  border:0!important;
-  background:rgba(244,198,95,.10)!important;
-  box-shadow:none!important;
+.online-card,.related-card,.related-game,.guide-card-box,.guide-quality,.guide-quality-grid>div{
+  box-shadow:none!important
 }
 .guide-link{
-  border:0!important;
   background:linear-gradient(180deg,rgba(255,229,155,.98),rgba(243,174,50,.96))!important;
-  color:#241503!important;
-  box-shadow:0 8px 18px rgba(0,0,0,.16)!important;
+  color:#241503!important
 }
 .guide-link--green{
   background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
-  color:#fff!important;
+  color:#fff!important
 }
-.guide-quality{
-  background:
-    radial-gradient(circle at 12% 0%,rgba(244,198,95,.05),transparent 36%),
-    linear-gradient(145deg,rgba(7,17,13,.96),rgba(3,9,7,.98))!important;
-}
-.guide-quality-grid>div{
-  background:transparent!important;
-}
-
-/* Preserve spacing/structure while removing framed look */
-.guide-card-box,
-.guide-quality,
-.online-card,
-.related-card{
-  border-radius:20px!important;
-}
-
-
-/* Poradniki R2 — exact Tysiąc hero geometry/character */
-.hero-card{
-  display:grid!important;
-  grid-template-columns:46% 54%!important;
-  min-height:390px!important;
-  border:0!important;
-  border-radius:18px!important;
-  overflow:hidden!important;
-  background:
-    radial-gradient(circle at 18% 32%,rgba(20,101,76,.22),transparent 34%),
-    radial-gradient(circle at 78% 18%,rgba(13,91,94,.16),transparent 30%),
-    linear-gradient(135deg,#07140f 0%,#082019 42%,#07191a 72%,#050b09 100%)!important;
-  box-shadow:
-    0 22px 54px rgba(0,0,0,.34),
-    inset 0 1px 0 rgba(255,255,255,.025)!important;
-}
-.board-visual{
-  min-height:390px!important;
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  padding:22px!important;
-  overflow:hidden!important;
-  background:
-    radial-gradient(circle at 42% 45%,rgba(22,111,77,.20),transparent 56%),
-    linear-gradient(145deg,rgba(5,28,20,.88),rgba(5,16,14,.72))!important;
-}
-.board-visual::after{
-  content:""!important;
-  position:absolute!important;
-  inset:0!important;
-  background:linear-gradient(90deg,transparent 72%,rgba(2,8,6,.5))!important;
-  pointer-events:none!important;
-}
-.card-table-scene,
-.guides-table-scene{
-  position:relative!important;
-  z-index:1!important;
-  width:min(100%,500px)!important;
-  aspect-ratio:1.08!important;
-  border:0!important;
-  border-radius:20px!important;
-  background:
-    radial-gradient(circle at 50% 44%,rgba(49,108,71,.92),rgba(10,49,33,.95) 58%,#092719 100%)!important;
-  box-shadow:
-    0 18px 34px rgba(0,0,0,.38),
-    inset 0 0 60px rgba(0,0,0,.24)!important;
-  overflow:hidden!important;
-}
-.guides-table-image{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  display:block;
-  object-fit:cover;
-  object-position:center;
-  opacity:.97;
-}
-.guides-table-scene::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    linear-gradient(180deg,rgba(2,14,10,.08),rgba(2,10,8,.16)),
-    radial-gradient(circle at 50% 50%,transparent 45%,rgba(0,0,0,.14) 100%);
-  pointer-events:none;
-}
-.score-board{
-  position:absolute!important;
-  z-index:3!important;
-  left:20px!important;
-  top:20px!important;
-  padding:10px 12px!important;
-  border:1px solid rgba(244,198,95,.55)!important;
-  border-radius:11px!important;
-  background:rgba(5,9,7,.78)!important;
-  box-shadow:none!important;
-}
-.score-board span{
-  display:block!important;
-  color:#cfc8b8!important;
-  font-size:11px!important;
-  text-transform:uppercase!important;
-  letter-spacing:.08em!important;
-}
-.score-board strong{
-  display:block!important;
-  margin-top:2px!important;
-  color:#ffe29a!important;
-  font:800 20px/1.1 var(--display)!important;
-}
-.marriage-badges{
-  position:absolute!important;
-  z-index:3!important;
-  right:18px!important;
-  top:18px!important;
-  display:grid!important;
-  grid-template-columns:repeat(2,40px)!important;
-  gap:7px!important;
-}
-.marriage-badges span{
-  width:40px!important;
-  height:40px!important;
-  display:grid!important;
-  place-items:center!important;
-  border:1px solid rgba(244,198,95,.45)!important;
-  border-radius:9px!important;
-  background:rgba(4,26,21,.80)!important;
-  color:#f4f0e7!important;
-  font:800 21px/1 Georgia,serif!important;
-}
-.marriage-badges .red{color:#ff4248!important}
-.table-caption{
-  position:absolute!important;
-  z-index:3!important;
-  left:50%!important;
-  bottom:18px!important;
-  transform:translateX(-50%)!important;
-  white-space:nowrap!important;
-  padding:7px 12px!important;
-  border:1px solid rgba(244,198,95,.34)!important;
-  border-radius:999px!important;
-  background:rgba(5,9,7,.72)!important;
-  font-size:12px!important;
-  font-weight:800!important;
-  color:#e9dfc6!important;
-}
-
-.hero-copy{
-  padding:24px 26px 22px!important;
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-}
-.hero-copy h1{
-  margin:0!important;
-  font-family:var(--display)!important;
-  font-size:52px!important;
-  line-height:1!important;
-  color:#f6d98d!important;
-}
-.hero-kicker{
-  margin:4px 0 10px!important;
-  font-family:var(--display)!important;
-  font-size:24px!important;
-  font-weight:700!important;
-  color:#f0c35d!important;
-}
-.hero-lead{
-  margin:0!important;
-  color:#eee!important;
-  font-size:16px!important;
-  line-height:1.45!important;
-}
-.facts{
-  display:grid!important;
-  grid-template-columns:repeat(4,1fr)!important;
-  gap:8px!important;
-  list-style:none!important;
-  margin:18px 0 14px!important;
-  padding:0!important;
-}
-.facts li{
-  text-align:center!important;
-  border-right:1px solid rgba(244,198,95,.2)!important;
-  font-size:14px!important;
-}
-.facts li:last-child{border-right:0!important}
-.fact-icon{
-  display:block!important;
-  margin:auto auto 6px!important;
-  color:var(--gold)!important;
-  font-size:30px!important;
-  line-height:1!important;
-}
-.facts strong{font-weight:500!important}
-.hero-actions{
-  display:grid!important;
-  grid-template-columns:1.15fr .9fr!important;
-  gap:24px!important;
-  align-items:center!important;
-}
-.cta-primary,
-.cta-secondary{
-  min-height:56px!important;
-  border-radius:999px!important;
-  font-weight:800!important;
-  font-size:19px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:14px!important;
-  cursor:pointer!important;
-}
-.cta-primary{
-  border:0!important;
-  background:linear-gradient(180deg,#ffe59b,#f3ae32)!important;
-  color:#241503!important;
-  box-shadow:0 0 20px rgba(255,188,66,.28)!important;
-}
-.cta-primary small{
-  display:block!important;
-  font-size:13px!important;
-  font-weight:700!important;
-}
-.play-circle{
-  display:grid!important;
-  place-items:center!important;
-  width:42px!important;
-  height:42px!important;
-  border-radius:50%!important;
-  background:#070907!important;
-  color:#fff!important;
-}
-.play-circle svg{width:21px!important;height:21px!important}
-.cta-secondary{
-  border:0!important;
-  gap:0!important;
-  background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
-  color:#fff!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.04),
-    0 8px 20px rgba(0,0,0,.22)!important;
-}
-
-@media(max-width:820px){
-  .hero-card{grid-template-columns:1fr!important}
-  .board-visual{min-height:300px!important;padding:18px!important}
-  .hero-copy{padding:24px!important}
-  .facts{grid-template-columns:repeat(2,1fr)!important}
-  .facts li:nth-child(2n){border-right:0!important}
-  .hero-actions{grid-template-columns:1fr!important}
-}
-@media(max-width:560px){
-  .hero-copy h1{font-size:42px!important}
-  .hero-kicker{font-size:21px!important}
-  .hero-lead{font-size:16px!important}
-  .score-board{transform:scale(.88);transform-origin:top left}
-  .marriage-badges{transform:scale(.88);transform-origin:top right}
-}
-
-
-/* Poradniki R3 — exact Gry karciane / Tysiąc hero geometry */
-.hero-card{
-  display:grid!important;
-  grid-template-columns:46% 54%!important;
-  min-height:390px!important;
-  border:0!important;
-  border-radius:18px!important;
-  overflow:hidden!important;
-  background:
-    radial-gradient(circle at 18% 32%,rgba(20,101,76,.22),transparent 34%),
-    radial-gradient(circle at 78% 18%,rgba(13,91,94,.16),transparent 30%),
-    linear-gradient(135deg,#07140f 0%,#082019 42%,#07191a 72%,#050b09 100%)!important;
-  box-shadow:
-    0 22px 54px rgba(0,0,0,.34),
-    inset 0 1px 0 rgba(255,255,255,.025)!important;
-}
-.board-visual{
-  min-height:390px!important;
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  padding:22px!important;
-  overflow:hidden!important;
-  background:
-    radial-gradient(circle at 42% 45%,rgba(22,111,77,.20),transparent 56%),
-    linear-gradient(145deg,rgba(5,28,20,.88),rgba(5,16,14,.72))!important;
-}
-.board-visual::after{
-  content:""!important;
-  position:absolute!important;
-  inset:0!important;
-  background:linear-gradient(90deg,transparent 72%,rgba(2,8,6,.5))!important;
-  pointer-events:none!important;
-}
-.category-hero-scene{
-  position:relative!important;
-  z-index:1!important;
-  width:min(100%,500px)!important;
-  aspect-ratio:638/523!important;
-  border:0!important;
-  border-radius:20px!important;
-  overflow:hidden!important;
-  background:#07513e!important;
-  box-shadow:none!important;
-}
-.category-hero-image{
-  display:block!important;
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  object-position:center!important;
-  background:#07513e!important;
-}
-.hero-copy{
-  padding:24px 26px 22px!important;
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-}
-.hero-copy h1{
-  margin:0!important;
-  font-family:var(--display)!important;
-  font-size:52px!important;
-  line-height:1!important;
-  color:#f6d98d!important;
-}
-.hero-kicker{
-  margin:4px 0 10px!important;
-  font-family:var(--display)!important;
-  font-size:24px!important;
-  font-weight:700!important;
-  color:#f0c35d!important;
-}
-.hero-lead{
-  margin:0!important;
-  color:#eee!important;
-  font-size:16px!important;
-  line-height:1.45!important;
-}
-.facts{
-  display:grid!important;
-  grid-template-columns:repeat(4,1fr)!important;
-  gap:8px!important;
-  list-style:none!important;
-  margin:18px 0 14px!important;
-  padding:0!important;
-}
-.facts li{
-  text-align:center!important;
-  border-right:1px solid rgba(244,198,95,.2)!important;
-  font-size:14px!important;
-}
-.facts li:last-child{border-right:0!important}
-.fact-icon{
-  display:block!important;
-  margin:auto auto 6px!important;
-  color:var(--gold)!important;
-  font-size:30px!important;
-  line-height:1!important;
-}
-.facts strong{font-weight:500!important}
-.hero-actions{
-  display:grid!important;
-  grid-template-columns:1.15fr .9fr!important;
-  gap:24px!important;
-  align-items:center!important;
-}
-.cta-primary,.cta-secondary{
-  min-height:56px!important;
-  border-radius:999px!important;
-  font-weight:800!important;
-  font-size:19px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:14px!important;
-  cursor:pointer!important;
-}
-.cta-primary{
-  border:0!important;
-  background:linear-gradient(180deg,#ffe59b,#f3ae32)!important;
-  color:#241503!important;
-  box-shadow:0 0 20px rgba(255,188,66,.28)!important;
-}
-.cta-primary small{
-  display:block!important;
-  font-size:13px!important;
-  font-weight:700!important;
-}
-.play-circle{
-  display:grid!important;
-  place-items:center!important;
-  width:42px!important;
-  height:42px!important;
-  border-radius:50%!important;
-  background:#070907!important;
-  color:#fff!important;
-}
-.play-circle svg{width:21px!important;height:21px!important}
-.cta-secondary{
-  border:0!important;
-  gap:0!important;
-  background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
-  color:#fff!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.04),
-    0 8px 20px rgba(0,0,0,.22)!important;
-}
-.cta-primary:hover,.cta-secondary:hover{filter:brightness(1.08)!important}
-
-@media(max-width:820px){
-  .hero-card{grid-template-columns:1fr!important}
-  .board-visual{min-height:300px!important;padding:18px!important}
-  .hero-copy{padding:24px!important}
-  .facts{grid-template-columns:repeat(2,1fr)!important}
-  .hero-actions{grid-template-columns:1fr!important}
-}
-
-
-/* Poradniki R4 — literal Tysiąc hero copy */
-.hero-card{display:grid!important;grid-template-columns:46% 54%!important;min-height:390px!important;border:0!important;border-radius:18px!important;overflow:hidden!important;background:radial-gradient(circle at 18% 32%,rgba(20,101,76,.22),transparent 34%),radial-gradient(circle at 78% 18%,rgba(13,91,94,.16),transparent 30%),linear-gradient(135deg,#07140f 0%,#082019 42%,#07191a 72%,#050b09 100%)!important;box-shadow:0 22px 54px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.025)!important}
-.board-visual{min-height:390px!important;position:relative!important;display:grid!important;place-items:center!important;padding:22px!important;background:radial-gradient(circle at 42% 45%,rgba(22,111,77,.20),transparent 56%),linear-gradient(145deg,rgba(5,28,20,.88),rgba(5,16,14,.72))!important;overflow:hidden!important}
-.board-visual::after{content:""!important;position:absolute!important;inset:0!important;background:linear-gradient(90deg,transparent 72%,rgba(2,8,6,.5))!important;pointer-events:none!important}
-.card-table-scene{position:relative!important;z-index:1!important;width:min(100%,500px)!important;aspect-ratio:1.08!important;border:0!important;border-radius:20px!important;background:radial-gradient(circle at 50% 44%,rgba(49,108,71,.92),rgba(10,49,33,.95) 58%,#092719 100%)!important;box-shadow:0 18px 34px rgba(0,0,0,.38),inset 0 0 60px rgba(0,0,0,.24)!important;overflow:hidden!important}
-.card-table-scene::before{display:none!important;content:none!important}
-.card-fan{position:absolute!important;left:50%!important;top:47%!important;width:230px!important;height:190px!important;transform:translate(-50%,-50%)!important}
-.playing-card{position:absolute!important;left:50%!important;bottom:8px!important;width:86px!important;height:128px!important;border:1px solid rgba(45,28,16,.55)!important;border-radius:9px!important;background:linear-gradient(155deg,#fffaf0,#e9dcc5)!important;box-shadow:0 10px 22px rgba(0,0,0,.38)!important;transform-origin:50% 100%!important;color:#14110d!important;font-family:Georgia,"Times New Roman",serif!important}
-.playing-card .rank{position:absolute!important;left:8px!important;top:6px!important;font-size:20px!important;font-weight:700!important;line-height:1!important}
-.playing-card .suit{position:absolute!important;left:9px!important;top:28px!important;font-size:18px!important;line-height:1!important}
-.playing-card .big-suit{position:absolute!important;inset:0!important;display:grid!important;place-items:center!important;font-size:42px!important}
-.playing-card.red{color:#b3111c!important}
-.c1{transform:translateX(-50%) rotate(-26deg) translateX(-52px)!important}
-.c2{transform:translateX(-50%) rotate(-13deg) translateX(-26px)!important}
-.c3{transform:translateX(-50%) rotate(0)!important}
-.c4{transform:translateX(-50%) rotate(13deg) translateX(26px)!important}
-.c5{transform:translateX(-50%) rotate(26deg) translateX(52px)!important}
-.score-board{position:absolute!important;left:18px!important;top:18px!important;min-width:108px!important;padding:10px 12px!important;border:1px solid rgba(244,198,95,.48)!important;border-radius:11px!important;background:rgba(7,12,9,.76)!important;box-shadow:0 8px 18px rgba(0,0,0,.3)!important;z-index:3!important}
-.score-board span{display:block!important;color:#c9c5bb!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.08em!important}
-.score-board strong{display:block!important;margin-top:2px!important;color:#ffe29a!important;font:800 24px/1 var(--display)!important}
-.marriage-badges{position:absolute!important;right:18px!important;top:18px!important;display:grid!important;grid-template-columns:repeat(2,34px)!important;gap:6px!important;z-index:3!important}
-.marriage-badges span{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;border:1px solid rgba(244,198,95,.35)!important;border-radius:9px!important;background:rgba(5,8,6,.7)!important;font-size:20px!important}
-.marriage-badges .red{color:#ff5656!important}
-.table-caption{position:absolute!important;left:50%!important;bottom:18px!important;transform:translateX(-50%)!important;white-space:nowrap!important;padding:7px 12px!important;border:1px solid rgba(244,198,95,.34)!important;border-radius:999px!important;background:rgba(5,9,7,.72)!important;font-size:12px!important;font-weight:800!important;color:#e9dfc6!important;z-index:3!important}
-.hero-copy{padding:24px 26px 22px!important;display:flex!important;flex-direction:column!important;justify-content:center!important}
-.hero-copy h1{margin:0!important;font-family:var(--display)!important;font-size:52px!important;line-height:1!important;color:#f6d98d!important}
-.hero-kicker{margin:4px 0 10px!important;font-family:var(--display)!important;font-size:24px!important;font-weight:700!important;color:#f0c35d!important}
-.hero-lead{margin:0!important;color:#eee!important;font-size:16px!important;line-height:1.45!important}
-.facts{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:8px!important;list-style:none!important;margin:18px 0 14px!important;padding:0!important}
-.facts li{text-align:center!important;border-right:1px solid rgba(244,198,95,.2)!important;font-size:14px!important}
-.facts li:last-child{border-right:0!important}
-.fact-icon{display:block!important;margin:auto auto 6px!important;color:var(--gold)!important;font-size:30px!important;line-height:1!important}
-.facts strong{font-weight:500!important}
-.hero-actions{display:grid!important;grid-template-columns:1.15fr .9fr!important;gap:24px!important;align-items:center!important}
-.cta-primary,.cta-secondary{min-height:56px!important;border-radius:999px!important;font-weight:800!important;font-size:19px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:14px!important;cursor:pointer!important}
-.cta-primary{border:0!important;background:linear-gradient(180deg,#ffe59b,#f3ae32)!important;color:#241503!important;box-shadow:0 0 20px rgba(255,188,66,.28)!important}
-.cta-primary small{display:block!important;font-size:13px!important;font-weight:700!important}
-.play-circle{display:grid!important;place-items:center!important;width:42px!important;height:42px!important;border-radius:50%!important;background:#070907!important;color:#fff!important}
-.play-circle svg{width:21px!important;height:21px!important}
-.cta-secondary{border:0!important;gap:0!important;background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.22)!important}
-@media(max-width:820px){.hero-card{grid-template-columns:1fr!important}.board-visual{min-height:300px!important;padding:18px!important}.hero-copy{padding:24px!important}.facts{grid-template-columns:repeat(2,1fr)!important}.hero-actions{grid-template-columns:1fr!important}}
-@media(max-width:560px){.card-fan{transform:translate(-50%,-50%) scale(.82)!important}.score-board{transform:scale(.88)!important;transform-origin:top left!important}.marriage-badges{transform:scale(.88)!important;transform-origin:top right!important}}
