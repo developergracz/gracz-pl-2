@@ -19,3 +19,128 @@
 .related-image--poradniki{background-position:33.333% 100%}
 .related-image--gry{background-position:66.667% 100%}
 .related-image--o-gracz-pl{background-position:100% 100%}
+
+
+/* Premium related thumbnails R1 — Poker / Warcaby / Gomoku */
+.related-image--poker,
+.related-image--warcaby,
+.related-image--gomoku{
+  position:relative;
+  isolation:isolate;
+  background-image:none;
+  background-color:#07110c;
+  box-shadow:
+    inset 0 0 18px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 4px 10px rgba(0,0,0,.28);
+}
+
+/* Poker: two cards + chip accents */
+.related-image--poker{
+  background:
+    radial-gradient(circle at 82% 22%,rgba(244,198,95,.16),transparent 30%),
+    linear-gradient(145deg,#0d2419,#07100c 62%,#120d06);
+}
+.related-image--poker::before,
+.related-image--poker::after{
+  content:"";
+  position:absolute;
+}
+.related-image--poker::before{
+  left:24px;
+  top:9px;
+  width:28px;
+  height:38px;
+  border:1px solid rgba(56,35,16,.55);
+  border-radius:4px;
+  background:
+    linear-gradient(145deg,#fffaf0,#eadbc2);
+  box-shadow:
+    16px 5px 0 -1px #f3e6d2,
+    16px 5px 0 0 rgba(56,35,16,.42);
+  transform:rotate(-10deg);
+}
+.related-image--poker::after{
+  right:12px;
+  bottom:9px;
+  width:14px;
+  height:7px;
+  border-radius:50%;
+  background:#b71926;
+  box-shadow:
+    -7px -4px 0 #1c1d1a,
+    -15px 1px 0 #d6a52e,
+    0 -8px 0 #8c1420;
+}
+
+/* Warcaby: clean board fragment + two premium pieces */
+.related-image--warcaby{
+  background:
+    linear-gradient(rgba(5,10,7,.18),rgba(5,10,7,.18)),
+    conic-gradient(from 90deg,#d2a65c 25%,#4a2b1b 0 50%,#d2a65c 0 75%,#4a2b1b 0)
+      0 0/22px 22px;
+}
+.related-image--warcaby::before,
+.related-image--warcaby::after{
+  content:"";
+  position:absolute;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.18),
+    0 3px 5px rgba(0,0,0,.48);
+}
+.related-image--warcaby::before{
+  left:24px;
+  top:10px;
+  background:radial-gradient(circle at 35% 30%,#555 0 17%,#171717 50%,#020202 100%);
+  border:1px solid #050505;
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.15),
+    0 3px 5px rgba(0,0,0,.48),
+    43px 22px 0 -1px #171717;
+}
+.related-image--warcaby::after{
+  left:45px;
+  bottom:8px;
+  background:radial-gradient(circle at 35% 30%,#fff0b8 0 18%,#dfbd63 50%,#91631b 100%);
+  border:1px solid #754b13;
+}
+
+/* Gomoku: board grid + near-five formation */
+.related-image--gomoku{
+  background:
+    linear-gradient(rgba(72,45,20,.18),rgba(72,45,20,.18)),
+    repeating-linear-gradient(0deg,transparent 0 13px,rgba(87,54,26,.72) 13px 14px),
+    repeating-linear-gradient(90deg,transparent 0 13px,rgba(87,54,26,.72) 13px 14px),
+    linear-gradient(145deg,#d5aa69,#b88243);
+}
+.related-image--gomoku::before,
+.related-image--gomoku::after{
+  content:"";
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  box-shadow:0 2px 4px rgba(0,0,0,.38);
+}
+.related-image--gomoku::before{
+  left:20px;
+  top:15px;
+  background:radial-gradient(circle at 35% 30%,#565656 0 16%,#191919 48%,#030303 100%);
+  box-shadow:
+    16px 0 0 #0d0d0d,
+    32px 0 0 #0d0d0d,
+    48px 0 0 #0d0d0d,
+    0 2px 4px rgba(0,0,0,.38);
+}
+.related-image--gomoku::after{
+  left:36px;
+  top:31px;
+  background:radial-gradient(circle at 35% 30%,#fff 0 18%,#e9e7df 54%,#a9a79f 100%);
+  box-shadow:
+    16px 0 0 #e6e4dc,
+    32px 0 0 #e6e4dc,
+    0 2px 4px rgba(0,0,0,.3);
+}
