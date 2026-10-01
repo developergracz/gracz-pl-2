@@ -44,7 +44,8 @@
       {"@type":"WebPage","@id":"https://gracz.pl/gry-karciane/#webpage","url":"https://gracz.pl/gry-karciane/","name":"Gry karciane na gracz.pl","description":"Poker treningowy, Tysiąc i Poker Academy w dziale gier karcianych gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
       {"@type":"BreadcrumbList","itemListElement":[
         {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
-        {"@type":"ListItem","position":2,"name":"Gry karciane","item":"https://gracz.pl/gry-karciane/"}
+        {"@type":"ListItem","position":2,"name":"Gry","item":"https://gracz.pl/gry/"},
+        {"@type":"ListItem","position":3,"name":"Gry karciane","item":"https://gracz.pl/gry-karciane/"}
       ]}
     ]
   }
@@ -59,6 +60,13 @@
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 26 16" preserveAspectRatio="none"><path d="M1 8h23.500M17.500 1.500L24.500 8l-7 6.500" fill="none" stroke="currentColor" stroke-width="2.100" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-spade" viewBox="3.8 1.8 16.4 19.9" preserveAspectRatio="none"><path d="M12 1.8C9.2 6.3 3.8 9.4 3.8 14c0 2.5 1.9 4.3 4.3 4.3 1.3 0 2.4-.5 3.1-1.5-.1 2-.8 3.6-2.2 4.9h6c-1.400-1.300-2.100-2.900-2.200-4.900.7 1 1.800 1.500 3.100 1.500 2.400 0 4.300-1.800 4.300-4.300 0-4.600-5.400-7.700-8.200-12.200z" fill="currentColor"/></symbol>
+    <symbol id="i-club" viewBox="2.5 2.7 19 19.1" preserveAspectRatio="none"><circle cx="12" cy="7.1" r="4.4" fill="currentColor"/><circle cx="6.9" cy="14" r="4.4" fill="currentColor"/><circle cx="17.1" cy="14" r="4.4" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 11.500c0 4-.9 7.200-2.600 10.300h5.200c-1.700-3.100-2.600-6.300-2.600-10.300z" fill="currentColor"/></symbol>
+    <symbol id="i-diamond" viewBox="4.5 1.5 15 21" preserveAspectRatio="none"><path d="M12 1.500l7.500 10.500L12 22.500 4.500 12z" fill="currentColor"/></symbol>
+    <symbol id="i-heart" viewBox="3.2 4 17.6 17.5" preserveAspectRatio="none"><path d="M12 21.500S3.200 15.700 3.200 9.300c0-3.100 2.300-5.300 5-5.300 1.600 0 2.900.8 3.800 2.100C12.900 4.800 14.200 4 15.800 4c2.700 0 5 2.200 5 5.300 0 6.400-8.800 12.200-8.800 12.200z" fill="currentColor"/></symbol>
+    <symbol id="i-book" viewBox="0 0 36 28" preserveAspectRatio="none"><path d="M.8 6C4 1.6 11 .8 17.1 4.2v21.4C11.600 22.800 4.400 22.700.8 25.200z" fill="currentColor"/><path d="M35.2 6C32 1.6 25 .8 18.9 4.200v21.400c5.500-2.800 12.700-2.900 16.300-.4z" fill="currentColor"/></symbol>
+    <symbol id="i-cap" viewBox="1 3 26 19" preserveAspectRatio="none"><path d="M14 3L1 9.600 14 16.200 24.500 10.900V17H27V9.600z" fill="currentColor"/><path d="M6.500 13.700v4.300c0 1.800 3.400 4 7.500 4s7.500-2.200 7.500-4v-4.300L14 17.700z" fill="currentColor"/></symbol>
   </svg>
 
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
@@ -80,7 +88,7 @@
           <ul class="nav-list">
             <li><a class="nav-link" href="/">Start</a></li>
             <li class="has-menu">
-              <a class="nav-link is-active" href="/gry/" aria-current="page">Gry</a>
+              <a class="nav-link is-active" href="/gry/">Gry</a>
               <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
               <ul class="dropdown" id="menu-gry">
                 <li><a href="/gry/">Wszystkie gry</a></li>
@@ -132,47 +140,53 @@
       </ol>
     </nav>
 
-    <section class="cards-hero-exact" aria-labelledby="hero-title">
-      <div class="cards-hero-visual cards-hero-visual--image">
-        <img
-          class="cards-hero-reference-image"
-          src="/assets/gry-karciane-hero-reference.webp"
-          width="638"
-          height="523"
-          alt="Gry karciane — karty i żetony"
-        >
-      </div>
-
-      <div class="cards-hero-copy">
-        <h1 id="hero-title">Gry karciane</h1>
-        <p class="cards-hero-kicker">Poker treningowy, Tysiąc i Poker Academy</p>
-        <p class="cards-hero-lead">Gry karciane na gracz.pl to poker treningowy, klasyczny Tysiąc oraz materiały edukacyjne Poker Academy. Poznaj zasady, ćwicz, rozwijaj umiejętności i odkrywaj świat gier karcianych w jednym miejscu.</p>
-
-        <ul class="cards-hero-facts" aria-label="Najważniejsze informacje">
-          <li><div class="fact-top"><span class="fact-symbol">♠</span><span class="fact-number">1</span></div><strong>Poker</strong><small>gra treningowa</small></li>
-          <li><div class="fact-top"><span class="fact-symbol">♣</span><span class="fact-number">1</span></div><strong>Tysiąc</strong><small>klasyczna gra</small></li>
-          <li><div class="fact-top"><span class="fact-symbol">▮▮</span><span class="fact-number">100+</span></div><strong>Poradniki</strong><small>zasady i strategie</small></li>
-          <li><div class="fact-top"><span class="fact-symbol fact-cap">◆</span><span class="fact-number">1</span></div><strong>Poker Academy</strong><small>nauka i rozwój</small></li>
-        </ul>
-
-        <div class="cards-hero-actions">
-          <a class="cards-cta-primary" href="/gry/">
-            <span class="cards-play"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
-            <span><strong>Zobacz gry</strong><small>karciane na gracz.pl</small></span>
-          </a>
-          <a class="cards-cta-secondary" href="/poradniki/">Poradniki <span aria-hidden="true">→</span></a>
+    <div class="cards-hero-wrap">
+      <section class="cards-hero" aria-labelledby="hero-title">
+        <div class="cards-hero__stage">
+          <div class="cards-hero__card">
+            <img class="cards-hero__art" src="/assets/gry-karciane-hero-art.webp" width="644" height="526" fetchpriority="high" decoding="async" alt="Wachlarz kart A♠, K♥, Q♦, J♣ i 10♦ oraz żetony pokerowe na zielonym stole">
+            <p class="cards-hero__label" aria-hidden="true"><span>Dział</span><strong>Gry karciane</strong></p>
+            <ul class="cards-hero__suits" aria-hidden="true">
+              <li><svg class="suit-white"><use href="#i-spade"/></svg></li>
+              <li><svg class="suit-white"><use href="#i-club"/></svg></li>
+              <li><svg class="suit-red"><use href="#i-diamond"/></svg></li>
+              <li><svg class="suit-red"><use href="#i-heart"/></svg></li>
+            </ul>
+            <p class="cards-hero__caption" aria-hidden="true">Poker • Tysiąc • nauka • rozwój</p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <nav class="cards-hero-nav" aria-label="Sekcje działu Gry karciane">
-      <a href="#przeglad">Przegląd</a>
-      <a href="#poker-treningowy">Poker treningowy</a>
-      <a href="#tysiac">Tysiąc</a>
-      <a href="#poker-academy">Poker Academy</a>
-      <a href="#nauka">Nauka</a>
-      <a href="#rozwoj">Rozwój</a>
-    </nav>
+        <div class="cards-hero__copy">
+          <h1 id="hero-title">Gry karciane</h1>
+          <p class="cards-hero__kicker">Poker treningowy, Tysiąc i Poker Academy</p>
+          <p class="cards-hero__lead">Gry karciane na gracz.pl to poker treningowy, klasyczny Tysiąc<br class="br-d"> oraz materiały edukacyjne Poker Academy. Poznaj zasady, ćwicz,<br class="br-d"> rozwijaj umiejętności i odkrywaj świat gier karcianych w jednym miejscu.</p>
+
+          <ul class="cards-hero__stats" aria-label="Najważniejsze informacje">
+            <li><span class="stat-top"><svg class="stat-icon stat-icon--spade"><use href="#i-spade"/></svg><span class="stat-num">1</span></span><strong>Poker</strong><small>gra treningowa</small></li>
+            <li><span class="stat-top"><svg class="stat-icon stat-icon--club"><use href="#i-club"/></svg><span class="stat-num">1</span></span><strong>Tysiąc</strong><small>klasyczna gra</small></li>
+            <li><span class="stat-top"><svg class="stat-icon stat-icon--book"><use href="#i-book"/></svg><span class="stat-num">100+</span></span><strong>Poradniki</strong><small>zasady i strategie</small></li>
+            <li><span class="stat-top"><svg class="stat-icon stat-icon--cap"><use href="#i-cap"/></svg><span class="stat-num">1</span></span><strong>Poker Academy</strong><small>nauka i rozwój</small></li>
+          </ul>
+
+          <div class="cards-hero__actions">
+            <a class="cards-cta cards-cta--primary" href="/gry/">
+              <span class="cards-cta__play"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+              <span class="cards-cta__text"><strong>Zobacz gry</strong><small>karciane na gracz.pl</small></span>
+            </a>
+            <a class="cards-cta cards-cta--secondary" href="/poradniki/">Poradniki <svg class="cards-cta__arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+        </div>
+      </section>
+
+      <nav class="cards-hero-nav" aria-label="Sekcje działu Gry karciane">
+        <a href="#przeglad">Przegląd</a>
+        <a href="#poker-treningowy">Poker treningowy</a>
+        <a href="#tysiac">Tysiąc</a>
+        <a href="#poker-academy">Poker Academy</a>
+        <a href="#nauka">Nauka</a>
+        <a href="#rozwoj">Rozwój</a>
+      </nav>
+    </div>
 
     <div class="page-grid">
       <div class="main-column">
