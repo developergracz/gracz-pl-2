@@ -1,0 +1,92 @@
+/* Unified subpage hero R1 — visual parity with Tysiąc */
+.hero-card,
+.hub-hero-r2{
+  border:0!important;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(25,242,162,.08),transparent 34%),
+    linear-gradient(135deg,rgba(7,74,60,.96),rgba(5,48,40,.97) 58%,rgba(4,37,31,.98))!important;
+  box-shadow:none!important;
+  border-radius:18px!important;
+  overflow:hidden;
+}
+
+.hero-card .board-visual{
+  background:
+    radial-gradient(circle at 44% 42%,rgba(25,242,162,.10),transparent 54%),
+    linear-gradient(145deg,rgba(8,68,55,.9),rgba(4,42,34,.96))!important;
+}
+
+.hero-card .board-visual::after{
+  background:linear-gradient(90deg,transparent 68%,rgba(2,31,25,.28))!important;
+}
+
+.hero-card .hero-copy{
+  background:linear-gradient(135deg,rgba(6,58,48,.22),rgba(4,39,33,.08));
+}
+
+.hero-card .hero-copy h1,
+.hub-hero-r2 h1{
+  color:#f7dc98!important;
+}
+
+.hero-card .hero-kicker,
+.hub-hero-r2 .section-eyebrow{
+  color:#f0c96a!important;
+}
+
+.hero-card .cta-secondary{
+  border:0!important;
+  background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.22)!important;
+}
+
+.hero-card .cta-secondary:hover,
+.hero-card .cta-secondary:focus-visible{
+  background:linear-gradient(135deg,#106756 0%,#14836e 100%)!important;
+  outline:none;
+  box-shadow:0 0 0 3px rgba(20,131,110,.12),0 10px 24px rgba(0,0,0,.24)!important;
+}
+
+.hero-card .status-pill{
+  border:0!important;
+  background:linear-gradient(135deg,#0d3b34 0%,#105047 100%)!important;
+  color:#f4fff9!important;
+}
+
+/* Game Hub has a different internal structure; keep its UX, match Tysiąc's hero surface. */
+.hub-hero-r2{
+  padding:0!important;
+}
+
+.hub-hero-r2 .hub-quiz-r2,
+.hub-hero-r2 .hub-quiz-r3{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+.hub-hero-r2 .quiz-options button,
+.hub-hero-r2 .quiz-reset{
+  border-color:rgba(25,242,162,.22)!important;
+}
+
+.hub-hero-r2 .hub-recommendation{
+  border-color:rgba(25,242,162,.18)!important;
+  background:rgba(3,34,28,.44)!important;
+}
+
+/* Related thumbnails: same frameless presentation used on the Tysiąc subpage. */
+.related-image,
+.related-image--poker,
+.related-image--tysiac,
+.related-image--warcaby,
+.related-image--gomoku,
+.related-image--gry-karciane,
+.related-image--poradniki,
+.related-image--gry,
+.related-image--o-gracz-pl{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
