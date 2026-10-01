@@ -172,6 +172,24 @@
           </div>
         </section>
 
+
+        <section class="quick-start" aria-labelledby="quick-title">
+          <div class="quick-start__intro">
+            <p class="section-eyebrow">Tysiąc w 5 minut</p>
+            <h2 id="quick-title">Zrozum grę zanim wejdziesz w szczegóły</h2>
+            <p>Siedem kroków wystarczy, żeby złapać logikę Tysiąca. Później możesz zejść niżej do pełnego przewodnika, przykładów i trenerów.</p>
+          </div>
+          <ol class="quick-flow">
+            <li><span>01</span><strong>24 karty</strong><p>9, walet, dama, król, 10 i as w czterech kolorach.</p></li>
+            <li><span>02</span><strong>Licytacja</strong><p>Oferty zaczynają się od 100 i rosną co najmniej o 10.</p></li>
+            <li><span>03</span><strong>Musik</strong><p>Zwycięzca licytacji przejmuje musik i porządkuje rękę.</p></li>
+            <li><span>04</span><strong>Kontrakt</strong><p>Rozgrywający deklaruje wynik, który musi później wykonać.</p></li>
+            <li><span>05</span><strong>Meldunki</strong><p>Król i dama tego samego koloru dają premię i ustanawiają atut.</p></li>
+            <li><span>06</span><strong>Lewy</strong><p>Dokładasz do koloru, przebijasz gdy musisz i korzystasz z atutu.</p></li>
+            <li><span>07</span><strong>1000 punktów</strong><p>Rozdania są rozliczane aż ktoś osiągnie lub przekroczy cel gry.</p></li>
+          </ol>
+        </section>
+
         <section class="detailed-guide" aria-labelledby="guide-title">
           <div class="guide-heading">
             <p class="section-eyebrow">Pełny przewodnik po rozgrywce</p>
@@ -368,6 +386,81 @@
             </div>
           </div>
         </section>
+
+        <section class="academy-lab" aria-labelledby="academy-lab-title">
+          <div class="academy-lab__intro">
+            <p class="section-eyebrow">Tysiąc Academy</p>
+            <h2 id="academy-lab-title">Przećwicz decyzje, zanim zagrasz</h2>
+            <p>Te moduły są edukacyjne. Nie zmieniają oficjalnych zasad wariantu gracz.pl — pokazują, jak stosować je w praktycznych sytuacjach.</p>
+          </div>
+
+          <section class="hand-examples" aria-labelledby="hands-title">
+            <div class="subsection-heading">
+              <span>01</span><div><h3 id="hands-title">Przykładowe ręce</h3><p>Trzy typowe sytuacje pokazujące, dlaczego sama liczba wysokich kart nie wystarcza do oceny siły ręki.</p></div>
+            </div>
+            <div class="hand-grid">
+              <article><span class="hand-label hand-label--safe">Stabilna</span><h4>A♠ 10♠ K♠ Q♠ A♦ 10♣ 9♥</h4><p>Dwa bardzo wysokie źródła punktów i meldunek pik. Ręka daje podstawę do aktywnej licytacji, ale nadal trzeba uwzględnić musik i układ przeciwników.</p></article>
+              <article><span class="hand-label">Nierówna</span><h4>A♥ 10♦ K♣ J♣ 9♠ 9♦ Q♠</h4><p>Są wartościowe karty, ale brak gotowego meldunku i słabsza kontrola kolorów. To ręka, przy której łatwo przecenić pojedyncze atuty.</p></article>
+              <article><span class="hand-label hand-label--risk">Ryzykowna</span><h4>K♥ Q♥ K♦ Q♦ 9♣ J♠ 9♦</h4><p>Dwa możliwe meldunki wyglądają imponująco, ale mało asów i dziesiątek oznacza większą zależność od przebiegu lew.</p></article>
+            </div>
+          </section>
+
+          <section class="trainer-section" aria-labelledby="bid-trainer-title" data-bid-trainer>
+            <div class="subsection-heading">
+              <span>02</span><div><h3 id="bid-trainer-title">Trener licytacji</h3><p>Wybierz decyzję dla pokazanej ręki i porównaj ją z komentarzem szkoleniowym.</p></div>
+            </div>
+            <div class="trainer-stage">
+              <div>
+                <p class="trainer-label">Ręka treningowa</p>
+                <p class="trainer-hand">A♠ · 10♠ · K♠ · Q♠ · A♦ · J♣ · 9♥</p>
+                <p class="trainer-context">Stół 3-osobowy. Licytacja jest na poziomie 110. Masz meldunek pik i dwa asy.</p>
+              </div>
+              <div class="trainer-options" role="group" aria-label="Wybierz decyzję licytacyjną">
+                <button type="button" data-bid-choice="pass">Pas</button>
+                <button type="button" data-bid-choice="120">120</button>
+                <button type="button" data-bid-choice="140">140</button>
+              </div>
+              <p class="trainer-feedback" data-bid-feedback aria-live="polite">Wybierz jedną z decyzji.</p>
+            </div>
+          </section>
+
+          <section class="trainer-section" aria-labelledby="play-trainer-title" data-play-trainer>
+            <div class="subsection-heading">
+              <span>03</span><div><h3 id="play-trainer-title">Trener „co musisz zagrać?”</h3><p>Ćwiczenie obowiązku koloru i przebijania.</p></div>
+            </div>
+            <div class="trainer-stage">
+              <div>
+                <p class="trainer-label">Sytuacja</p>
+                <p class="trainer-context">Kolor wyjścia: ♣. Aktualnie wygrywa K♣. Atut: ♥. Twoja ręka zawiera A♣, 9♣, 10♥ i J♦.</p>
+              </div>
+              <div class="trainer-options" role="group" aria-label="Wybierz kartę do zagrania">
+                <button type="button" data-play-choice="ac">A♣</button>
+                <button type="button" data-play-choice="9c">9♣</button>
+                <button type="button" data-play-choice="10h">10♥</button>
+                <button type="button" data-play-choice="jd">J♦</button>
+              </div>
+              <p class="trainer-feedback" data-play-feedback aria-live="polite">Wybierz kartę.</p>
+            </div>
+          </section>
+
+          <section class="calculator-section" aria-labelledby="calc-title" data-score-calculator>
+            <div class="subsection-heading">
+              <span>04</span><div><h3 id="calc-title">Kalkulator punktów rozdania</h3><p>Szybkie przeliczenie wyniku według zasad opisanych na stronie.</p></div>
+            </div>
+            <div class="calculator-grid">
+              <label>Punkty z kart<input type="number" min="0" max="120" step="1" value="80" data-card-points></label>
+              <label>Punkty z meldunków<input type="number" min="0" max="280" step="10" value="40" data-meld-points></label>
+              <label>Kontrakt<input type="number" min="100" max="360" step="10" value="120" data-contract></label>
+              <label class="calculator-role"><input type="checkbox" checked data-is-declarer> Jestem rozgrywającym</label>
+              <button type="button" class="calculator-button" data-calc>Oblicz wynik</button>
+            </div>
+            <div class="calculator-result" data-calc-result aria-live="polite">
+              <strong>Wynik pojawi się tutaj.</strong>
+              <span>Dla rozgrywającego liczy się wykonanie kontraktu; dla przeciwnika punkty są zaokrąglane do najbliższej dziesiątki.</span>
+            </div>
+          </section>
+        </section>
+
       </div>
 
       <aside class="side-column side-column--pilot" aria-label="Informacje dodatkowe">
