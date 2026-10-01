@@ -1,0 +1,122 @@
+{
+  "version": "R2",
+  "updated": "2026-10-01",
+  "games": [
+    {
+      "id": "poker",
+      "name": "Poker treningowy",
+      "icon": "♠",
+      "url": "/gry/poker-treningowy/",
+      "rulesUrl": "/gry/poker-treningowy/zasady/",
+      "medium": "Karty",
+      "players": "2–6",
+      "information": "Częściowo ukryta",
+      "mechanics": [
+        "pozycja",
+        "blindy",
+        "rundy licytacji",
+        "układy pokerowe"
+      ],
+      "verifiedTime": null,
+      "status": "W przygotowaniu",
+      "quiz": {
+        "time": [
+          "short",
+          "medium",
+          "long"
+        ],
+        "company": [
+          "duo",
+          "group"
+        ],
+        "medium": "cards"
+      }
+    },
+    {
+      "id": "tysiac",
+      "name": "Tysiąc",
+      "icon": "♥",
+      "url": "/gry/tysiac/",
+      "rulesUrl": "/gry/tysiac/zasady/",
+      "medium": "Karty",
+      "players": "2–4",
+      "information": "Częściowo ukryta",
+      "mechanics": [
+        "licytacja",
+        "musik",
+        "meldunki",
+        "atut",
+        "lewy"
+      ],
+      "verifiedTime": null,
+      "status": "W przygotowaniu",
+      "quiz": {
+        "time": [
+          "medium",
+          "long"
+        ],
+        "company": [
+          "duo",
+          "group"
+        ],
+        "medium": "cards"
+      }
+    },
+    {
+      "id": "warcaby",
+      "name": "Warcaby",
+      "icon": "●",
+      "url": "/gry/warcaby/",
+      "rulesUrl": "/gry/warcaby/zasady/",
+      "medium": "Plansza",
+      "players": "2",
+      "information": "Pełna",
+      "mechanics": [
+        "ruch pionków",
+        "obowiązkowe bicie",
+        "wielokrotne skoki",
+        "damka"
+      ],
+      "verifiedTime": "10–30 minut",
+      "status": "W przygotowaniu",
+      "quiz": {
+        "time": [
+          "short",
+          "medium"
+        ],
+        "company": [
+          "duo"
+        ],
+        "medium": "board"
+      }
+    },
+    {
+      "id": "gomoku",
+      "name": "Gomoku",
+      "icon": "✕",
+      "url": "/gry/gomoku/",
+      "rulesUrl": "/gry/gomoku/zasady/",
+      "medium": "Plansza",
+      "players": "2",
+      "information": "Pełna",
+      "mechanics": [
+        "budowanie linii",
+        "blokowanie",
+        "groźby",
+        "pięć w rzędzie"
+      ],
+      "verifiedTime": "5–20 minut",
+      "status": "W przygotowaniu",
+      "quiz": {
+        "time": [
+          "short",
+          "medium"
+        ],
+        "company": [
+          "duo"
+        ],
+        "medium": "board"
+      }
+    }
+  ]
+}
