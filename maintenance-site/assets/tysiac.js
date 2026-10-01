@@ -152,4 +152,81 @@
       }
     }
   });
+
+
+  var bidTrainer=document.querySelector('[data-bid-trainer]');
+  if(bidTrainer){
+    var bidFeedback=bidTrainer.querySelector('[data-bid-feedback]');
+    bidTrainer.addEventListener('click',function(e){
+      var button=e.target.closest('[data-bid-choice]');
+      if(!button)return;
+      Array.prototype.forEach.call(bidTrainer.querySelectorAll('[data-bid-choice]'),function(b){b.classList.remove('is-correct','is-wrong');});
+      var choice=button.getAttribute('data-bid-choice');
+      if(choice==='120'){
+        button.classList.add('is-correct');
+        bidFeedback.innerHTML='<strong>Rozsądna decyzja treningowa.</strong> Masz dwa asy i meldunek pik, więc niewielkie podbicie do 120 ma logiczne uzasadnienie. To komentarz edukacyjny, nie automatyczna recepta dla każdej partii.';
+      }else if(choice==='140'){
+        button.classList.add('is-wrong');
+        bidFeedback.innerHTML='<strong>To już agresywna licytacja.</strong> Ręka ma potencjał, ale 140 przed zobaczeniem musiku zwiększa ryzyko. W praktyce trzeba uwzględnić wynik partii i zachowanie przeciwników.';
+      }else{
+        button.classList.add('is-wrong');
+        bidFeedback.innerHTML='<strong>Pas jest bardzo zachowawczy.</strong> Przy dwóch asach i gotowym meldunku pik ręka ma wyraźny potencjał do dalszej licytacji.';
+      }
+    });
+  }
+
+  var playTrainer=document.querySelector('[data-play-trainer]');
+  if(playTrainer){
+    var playFeedback=playTrainer.querySelector('[data-play-feedback]');
+    playTrainer.addEventListener('click',function(e){
+      var button=e.target.closest('[data-play-choice]');
+      if(!button)return;
+      Array.prototype.forEach.call(playTrainer.querySelectorAll('[data-play-choice]'),function(b){b.classList.remove('is-correct','is-wrong');});
+      var choice=button.getAttribute('data-play-choice');
+      if(choice==='ac'){
+        button.classList.add('is-correct');
+        playFeedback.innerHTML='<strong>Poprawnie: A♣.</strong> Masz kolor wyjścia, więc musisz zagrać trefl. Ponieważ możesz przebić aktualnie wygrywającego K♣ asem, obowiązek przebicia wskazuje A♣.';
+      }else{
+        button.classList.add('is-wrong');
+        playFeedback.innerHTML='<strong>Nie w tej sytuacji.</strong> Masz trefle i wśród nich kartę, która przebija K♣. Dlatego zgodnie z opisanym wariantem musisz zagrać A♣.';
+      }
+    });
+  }
+
+  var calculator=document.querySelector('[data-score-calculator]');
+  if(calculator){
+    var cardInput=calculator.querySelector('[data-card-points]');
+    var meldInput=calculator.querySelector('[data-meld-points]');
+    var contractInput=calculator.querySelector('[data-contract]');
+    var declarerInput=calculator.querySelector('[data-is-declarer]');
+    var calcButton=calculator.querySelector('[data-calc]');
+    var calcResult=calculator.querySelector('[data-calc-result]');
+
+    function clampNumber(value,min,max){
+      var n=Number(value);
+      if(!Number.isFinite(n))n=min;
+      return Math.min(max,Math.max(min,n));
+    }
+
+    calcButton.addEventListener('click',function(){
+      var cards=clampNumber(cardInput.value,0,120);
+      var melds=clampNumber(meldInput.value,0,280);
+      var contract=clampNumber(contractInput.value,100,360);
+      var total=cards+melds;
+      var declarer=declarerInput.checked;
+      var score;
+      var title;
+
+      if(declarer){
+        var made=total>=contract;
+        score=made?contract:-contract;
+        title=made?'Kontrakt wykonany':'Kontrakt niewykonany';
+        calcResult.innerHTML='<strong>'+title+': '+(score>0?'+':'')+score+' pkt do wyniku</strong><span>Zdobyte w rozdaniu: '+total+' pkt. Zadeklarowany kontrakt: '+contract+' pkt.</span>';
+      }else{
+        score=Math.round(total/10)*10;
+        calcResult.innerHTML='<strong>Wynik przeciwnika: '+score+' pkt</strong><span>Zdobyte w rozdaniu: '+total+' pkt, zaokrąglone do najbliższej dziesiątki.</span>';
+      }
+    });
+  }
+
 })();
