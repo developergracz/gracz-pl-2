@@ -209,9 +209,19 @@
     }
 
     calcButton.addEventListener('click',function(){
-      var cards=clampNumber(cardInput.value,0,120);
-      var melds=clampNumber(meldInput.value,0,280);
-      var contract=clampNumber(contractInput.value,100,360);
+      var cards=Math.round(clampNumber(cardInput.value,0,120));
+      var melds=Math.round(clampNumber(meldInput.value,0,280));
+      var contract=Math.round(clampNumber(contractInput.value,100,360));
+      cardInput.value=String(cards);
+      meldInput.value=String(melds);
+      contractInput.value=String(contract);
+
+      if(contract%10!==0){
+        calcResult.innerHTML='<strong>Kontrakt musi być wielokrotnością 10.</strong><span>W wariancie gracz.pl prawidłowy kontrakt mieści się w przedziale 100–360 i ma wartości takie jak 120, 130, 140 itd.</span>';
+        contractInput.focus();
+        return;
+      }
+
       var total=cards+melds;
       var declarer=declarerInput.checked;
       var score;
