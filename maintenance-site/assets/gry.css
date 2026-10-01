@@ -111,3 +111,28 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .games-hub-scene--image::before{display:none}
 .games-hub-image{display:block;width:100%;height:100%;object-fit:cover;border-radius:20px}
 @media(max-width:560px){.games-hub-image{width:100%;height:100%;object-fit:cover}}
+
+
+/* Gry FULL MAX R1 */
+.games-max-nav{position:sticky;top:80px;z-index:35;display:flex;gap:6px;overflow-x:auto;margin:16px 0 0;padding:8px;border:1px solid rgba(244,198,95,.18);border-radius:999px;background:rgba(4,7,5,.92);backdrop-filter:blur(10px);scrollbar-width:none}
+.games-max-nav::-webkit-scrollbar{display:none}.games-max-nav a{flex:none;padding:9px 14px;border-radius:999px;color:#d8d4cb;font-size:13px;font-weight:800}.games-max-nav a:hover,.games-max-nav a:focus-visible{background:rgba(244,198,95,.08);color:#ffe19a}
+
+.games-finder,.catalog-intro,.games-comparison,.mechanics-map,.learning-paths,.product-status{scroll-margin-top:150px;margin-top:30px;padding-top:30px;border-top:1px solid rgba(244,198,95,.22)}
+.max-heading{max-width:900px;margin-bottom:22px}.max-heading h2{margin:0;color:var(--gold2);font:800 30px/1.15 var(--display)}.max-heading>p:last-child{margin:10px 0 0;color:#d8d4cb;font-size:15px;line-height:1.68}
+
+.finder-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);gap:24px;align-items:start}.finder-controls{display:grid;gap:18px}.finder-controls fieldset{margin:0;padding:0;border:0}.finder-controls legend{margin-bottom:9px;color:#f4d47d;font-weight:800}.finder-controls fieldset button,.finder-reset{min-height:42px;margin:0 8px 8px 0;padding:0 16px;border:1px solid rgba(244,198,95,.36);border-radius:999px;background:rgba(244,198,95,.035);color:#e9e4da;font-weight:800;cursor:pointer}.finder-controls button:hover,.finder-controls button:focus-visible,.finder-controls button.is-active{background:rgba(244,198,95,.1);border-color:rgba(244,198,95,.7);color:#ffe29a}.finder-reset{border-color:rgba(41,226,147,.36);color:#98efc7}
+.finder-result{min-height:230px;padding:22px;border-left:3px solid #29e293;background:linear-gradient(90deg,rgba(41,226,147,.08),transparent)}.finder-label{display:block;color:#8decc0;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.finder-result h3{margin:8px 0;color:#fff;font-size:24px}.finder-result p{margin:0;color:#d5d1c8;line-height:1.6}.finder-result ul{margin:14px 0 0;padding-left:18px}.finder-result li{margin:7px 0;color:#ddd8cf}.finder-result a{display:inline-flex;margin-top:16px;color:#ffe19a;font-weight:800}
+
+.catalog-intro{padding-bottom:4px}
+
+.comparison-wrap{overflow-x:auto;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}.comparison-table{width:100%;min-width:820px;border-collapse:collapse}.comparison-table th,.comparison-table td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:top}.comparison-table thead th{color:#e8c96f;font-size:12px;text-transform:uppercase;letter-spacing:.06em}.comparison-table tbody th{color:#fff;font-size:15px}.comparison-table td{color:#d5d1c8;font-size:14px;line-height:1.55}.comparison-table tr:last-child th,.comparison-table tr:last-child td{border-bottom:0}
+
+.mechanics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}.mechanics-grid article{display:grid;grid-template-columns:48px 1fr;gap:0 14px;padding:22px}.mechanics-grid article:nth-child(even){border-left:1px solid rgba(255,255,255,.07)}.mechanics-grid article:nth-child(n+3){border-top:1px solid rgba(255,255,255,.07)}.mechanics-grid article>span{grid-row:1/3;font-size:28px;color:#f4c65f}.mechanics-grid h3{margin:0 0 8px;color:#fff}.mechanics-grid ul{margin:0;padding-left:18px}.mechanics-grid li{margin:6px 0;color:#d3cfc6;line-height:1.5}
+
+.path-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}.path-grid>div{padding:20px 18px}.path-grid>div+div{border-left:1px solid rgba(255,255,255,.07)}.path-grid span{display:block;color:#c9a849;font:800 12px/1 var(--display)}.path-grid strong{display:block;margin:8px 0 6px;color:#fff;font-size:17px}.path-grid p{margin:0;color:#cbc7be;font-size:13px;line-height:1.55}
+
+.status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.status-grid a{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:17px 18px;border:1px solid rgba(244,198,95,.22);border-radius:14px;background:rgba(6,10,8,.75)}.status-grid strong{color:#fff}.status-grid span{color:#cfcac1;font-size:13px}.status-grid em{grid-row:1/3;grid-column:2;align-self:center;color:#f4c65f;font-style:normal;font-weight:800}.status-grid a:hover{border-color:rgba(244,198,95,.5);background:rgba(244,198,95,.04)}
+
+@media(max-width:1180px){.games-max-nav{top:66px}}
+@media(max-width:900px){.finder-grid{grid-template-columns:1fr}.mechanics-grid,.status-grid{grid-template-columns:1fr}.mechanics-grid article:nth-child(even){border-left:0}.mechanics-grid article+article{border-top:1px solid rgba(255,255,255,.07)}.path-grid{grid-template-columns:1fr 1fr}.path-grid>div:nth-child(3){border-left:0;border-top:1px solid rgba(255,255,255,.07)}.path-grid>div:nth-child(4){border-top:1px solid rgba(255,255,255,.07)}}
+@media(max-width:560px){.max-heading h2{font-size:24px}.path-grid{grid-template-columns:1fr}.path-grid>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.07)}.status-grid a{grid-template-columns:1fr}.status-grid em{grid-column:1;grid-row:auto}.finder-result{min-height:0}.finder-controls fieldset button{width:100%;margin-right:0}}
