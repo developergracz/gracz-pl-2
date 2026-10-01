@@ -454,3 +454,78 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .cards-fan{transform:translate(-50%,-48%) scale(.62)}
   .cards-hero-caption{font-size:11px}
 }
+
+
+/* REFERENCE LOCK R2 — corrections against Owner screenshot */
+.cards-hero-exact{
+  grid-template-columns:43% 57%;
+  min-height:500px;
+}
+.cards-hero-visual{
+  min-height:500px;
+  margin:18px 0 18px 18px;
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 50% 47%,rgba(42,168,104,.62),transparent 48%),
+    radial-gradient(circle at 26% 67%,rgba(249,193,72,.16),transparent 20%),
+    radial-gradient(circle at 73% 80%,rgba(249,193,72,.14),transparent 20%),
+    linear-gradient(145deg,#0c684e 0%,#07513e 52%,#06392f 100%);
+}
+.cards-hero-label{top:24px;left:26px;min-width:180px;padding:12px 16px}
+.cards-hero-label strong{font-size:22px}
+.cards-suits{top:22px;right:22px;grid-template-columns:repeat(2,44px);gap:8px}
+.suit-box{width:44px;height:44px;font-size:24px}
+
+.cards-fan{
+  top:57%;
+  width:405px;
+  height:275px;
+}
+.hero-playing-card{
+  width:126px;
+  height:194px;
+  border-radius:13px;
+}
+.hero-playing-card b{top:10px;left:12px;font-size:31px}
+.hero-playing-card i{font-size:78px}
+.hc-a{transform:translateX(-50%) rotate(-24deg) translateX(-103px)}
+.hc-k{transform:translateX(-50%) rotate(-12deg) translateX(-52px)}
+.hc-q{transform:translateX(-50%) rotate(-2deg)}
+.hc-j{transform:translateX(-50%) rotate(11deg) translateX(52px)}
+.hc-10{transform:translateX(-50%) rotate(24deg) translateX(103px)}
+
+.cards-chip-stack i,.cards-chip{width:73px;height:21px}
+.chips-red{left:48px;bottom:91px}
+.chips-green{left:112px;bottom:65px}
+.chips-dark{left:176px;bottom:58px}
+.loose-red{left:77px;bottom:44px}
+.loose-green{left:151px;bottom:38px}
+.cards-hero-caption{bottom:16px;font-size:13px;padding:8px 16px}
+
+.cards-hero-copy{padding:42px 42px 34px 38px}
+.cards-hero-copy h1{font-size:clamp(60px,5.15vw,78px);line-height:.94}
+.cards-hero-kicker{margin:12px 0 17px;font-size:clamp(25px,2.15vw,32px)}
+.cards-hero-lead{font-size:18px;line-height:1.5;max-width:800px}
+.cards-hero-facts{margin:24px 0 20px}
+.cards-hero-facts li{padding:0 16px}
+.fact-symbol{font-size:31px}
+.fact-number{font-size:33px}
+.cards-hero-facts strong{font-size:16px}
+.cards-hero-facts small{font-size:14px}
+.cards-hero-actions{grid-template-columns:1.15fr .92fr;gap:26px}
+.cards-cta-primary,.cards-cta-secondary{min-height:68px}
+.cards-cta-primary strong{font-size:23px}
+.cards-cta-primary small{font-size:14px}
+.cards-cta-secondary{font-size:21px}
+.cards-hero-nav{min-height:64px;margin-top:14px;gap:46px;padding:0 28px}
+.cards-hero-nav a{font-size:14px}
+
+/* exact desktop proportions of approved visual */
+@media(min-width:1181px){
+  .page-shell{width:min(1480px,calc(100% - 72px))}
+}
+
+@media(max-width:1180px){
+  .cards-hero-exact{grid-template-columns:1fr}
+  .cards-hero-visual{min-height:470px}
+}
