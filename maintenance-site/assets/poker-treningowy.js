@@ -152,4 +152,50 @@
       }
     }
   });
+
+
+  var trainer=document.querySelector('[data-poker-trainer]');
+  if(trainer){
+    var feedback=trainer.querySelector('[data-poker-feedback]');
+    trainer.addEventListener('click',function(e){
+      var button=e.target.closest('[data-poker-action]');
+      if(!button)return;
+      Array.prototype.forEach.call(trainer.querySelectorAll('[data-poker-action]'),function(b){b.classList.remove('is-legal','is-illegal');});
+      var action=button.getAttribute('data-poker-action');
+      if(action==='check'){
+        button.classList.add('is-illegal');
+        feedback.innerHTML='<strong>Check nie jest legalny.</strong> Przed Tobą jest już zakład, więc nie możesz przekazać akcji bez wyrównania.';
+      }else{
+        button.classList.add('is-legal');
+        if(action==='fold')feedback.innerHTML='<strong>Fold jest legalny.</strong> Możesz zrezygnować z dalszego udziału w rozdaniu.';
+        if(action==='call')feedback.innerHTML='<strong>Call jest legalny.</strong> Wyrównujesz aktualny zakład przeciwnika.';
+        if(action==='raise')feedback.innerHTML='<strong>Raise może być legalny.</strong> Podbijasz istniejący zakład, o ile spełniasz minimalne wymagania legalnego podbicia i masz wystarczający stack.';
+      }
+    });
+  }
+
+  var potOdds=document.querySelector('[data-pot-odds]');
+  if(potOdds){
+    var potInput=potOdds.querySelector('[data-pot]');
+    var callInput=potOdds.querySelector('[data-call]');
+    var result=potOdds.querySelector('[data-pot-result]');
+    var calc=potOdds.querySelector('[data-pot-calc]');
+
+    function numeric(value,min){
+      var n=Number(value);
+      if(!Number.isFinite(n))n=min;
+      return Math.max(min,n);
+    }
+
+    calc.addEventListener('click',function(){
+      var pot=numeric(potInput.value,0);
+      var call=numeric(callInput.value,1);
+      potInput.value=String(pot);
+      callInput.value=String(call);
+      var finalPot=pot+call;
+      var threshold=(call/finalPot)*100;
+      result.innerHTML='<strong>Wymagany udział: '+threshold.toFixed(1)+'%</strong><span>Sprawdzasz '+call+' do puli, która po Twoim callu wyniesie '+finalPot+'. To próg matematyczny, a nie rekomendacja strategiczna.</span>';
+    });
+  }
+
 })();
