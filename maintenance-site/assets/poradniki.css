@@ -640,3 +640,123 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .poradniki-hero-r7__label-overlay{left:38px!important;top:36px!important}
   .poradniki-hero-r7__caption-overlay{bottom:18px!important;font-size:11px!important}
 }
+
+
+/* Poradniki R16 — fix duplicated label + unify page with teal palette */
+html{
+  background:#041713!important;
+}
+body{
+  background:
+    radial-gradient(circle at 18% 8%,rgba(16,104,91,.16),transparent 30%),
+    radial-gradient(circle at 82% 16%,rgba(9,87,92,.13),transparent 26%),
+    linear-gradient(180deg,#03110e 0%,#041814 42%,#05211c 100%)!important;
+}
+body::before{
+  background:
+    radial-gradient(circle at 16% 10%,rgba(18,120,102,.16),transparent 30%),
+    radial-gradient(circle at 84% 20%,rgba(8,92,104,.12),transparent 27%),
+    linear-gradient(180deg,#03110e 0%,#041914 46%,#05231e 100%)!important;
+  filter:none!important;
+}
+body::after{
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.10) 40%,rgba(0,0,0,.20))!important;
+}
+.page-shell{
+  background:transparent!important;
+}
+.page-grid{
+  background:transparent!important;
+}
+
+/* Cover the old baked-in label completely, then draw one clean label */
+.poradniki-hero-r7__label-overlay{
+  position:absolute!important;
+  z-index:4!important;
+  left:42px!important;
+  top:34px!important;
+  width:198px!important;
+  min-width:198px!important;
+  min-height:76px!important;
+  padding:13px 18px 12px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  background:#06241a!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.poradniki-hero-r7__label-overlay::before,
+.poradniki-hero-r7__label-overlay::after{
+  display:none!important;
+  content:none!important;
+}
+.poradniki-hero-r7__label-overlay small{
+  display:block!important;
+  margin:0 0 4px!important;
+  color:#d9d4c8!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:.065em!important;
+}
+.poradniki-hero-r7__label-overlay strong{
+  display:block!important;
+  margin:0!important;
+  color:#ffe08a!important;
+  font-family:var(--display)!important;
+  font-size:24px!important;
+  line-height:1!important;
+  font-weight:800!important;
+}
+
+/* Frameless lower caption, kept readable */
+.poradniki-hero-r7__caption-overlay{
+  background:#06241a!important;
+  padding:4px 10px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* Make the content surfaces harmonize with the new page background */
+.page-shell .guide-card-box,
+.page-shell .guide-card-box--red,
+.page-shell .guide-card-box--green{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(20,118,100,.08),transparent 34%),
+    linear-gradient(145deg,rgba(6,31,25,.96),rgba(4,17,14,.98))!important;
+}
+.page-shell .online-card,
+.page-shell .related-card{
+  background:
+    radial-gradient(circle at 14% 0%,rgba(18,105,91,.07),transparent 36%),
+    linear-gradient(145deg,rgba(6,28,23,.95),rgba(3,14,12,.98))!important;
+}
+.page-shell .side-action,
+.page-shell .side-action--green,
+.page-shell .side-action--red,
+.page-shell .related-game{
+  background:rgba(13,73,63,.16)!important;
+}
+.page-shell .guide-quality-grid>div{
+  background:
+    radial-gradient(circle at 0 0,rgba(20,118,100,.08),transparent 44%),
+    rgba(6,28,23,.74)!important;
+}
+
+@media(max-width:560px){
+  .poradniki-hero-r7__label-overlay{
+    left:34px!important;
+    top:30px!important;
+    width:178px!important;
+    min-width:178px!important;
+    min-height:68px!important;
+    padding:11px 15px!important;
+  }
+  .poradniki-hero-r7__label-overlay strong{font-size:21px!important}
+}
