@@ -508,3 +508,29 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .page-shell .guide-quality{padding-top:24px}
   .page-shell .guide-quality h2{font-size:26px}
 }
+
+
+/* Poradniki R9 — frameless header search/login */
+.site-header .head-icon.head-search,
+.site-header .head-icon.head-search-mobile,
+.site-header .head-btn.head-btn--outline{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+.site-header .head-icon.head-search,
+.site-header .head-icon.head-search-mobile,
+.site-header .head-btn.head-btn--outline{
+  background:transparent!important;
+}
+.site-header .head-icon.head-search:hover,
+.site-header .head-icon.head-search-mobile:hover,
+.site-header .head-btn.head-btn--outline:hover,
+.site-header .head-icon.head-search:focus-visible,
+.site-header .head-icon.head-search-mobile:focus-visible,
+.site-header .head-btn.head-btn--outline:focus-visible{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:rgba(255,255,255,.04)!important;
+}
