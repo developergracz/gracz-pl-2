@@ -172,6 +172,105 @@
           </div>
         </section>
 
+
+        <nav class="tysiac-section-nav" aria-label="Sekcje Tysiąca">
+          <a href="#tysiac-5-minut">Tysiąc w 5 minut</a>
+          <a href="#wariant-graczy">2 / 3 / 4 graczy</a>
+          <a href="#meldunki-lab">Meldunki</a>
+          <a href="#legalny-ruch">Legalny ruch</a>
+          <a href="#kalkulator-tysiac">Kalkulator</a>
+          <a href="#strategia-tysiac">Strategia</a>
+          <a href="#faq-tysiac">FAQ</a>
+        </nav>
+
+        <section class="ux-scene quick-scene" id="tysiac-5-minut" aria-labelledby="quick-scene-title">
+          <div class="ux-heading">
+            <p class="section-eyebrow">Tysiąc w 5 minut</p>
+            <h2 id="quick-scene-title">Zrozum całą grę w siedmiu krokach</h2>
+            <p>Najpierw szybki obraz rozgrywki, potem pełny przewodnik. Ta sekcja nie zastępuje zasad — pomaga zobaczyć ich kolejność.</p>
+          </div>
+          <ol class="quick-sequence">
+            <li><span>01</span><strong>24 karty</strong><p>9, walet, dama, król, 10 i as w czterech kolorach.</p></li>
+            <li><span>02</span><strong>Licytacja</strong><p>Oferty zaczynają się od 100 i rosną co najmniej o 10.</p></li>
+            <li><span>03</span><strong>Musik</strong><p>Zwycięzca licytacji przejmuje dodatkowe karty.</p></li>
+            <li><span>04</span><strong>Kontrakt</strong><p>Rozgrywający deklaruje wynik, który chce wykonać.</p></li>
+            <li><span>05</span><strong>Meldunki</strong><p>Król i dama jednego koloru dają premię i ustawiają atut.</p></li>
+            <li><span>06</span><strong>Lewy</strong><p>Dokładasz do koloru i przebijasz zgodnie z regułami.</p></li>
+            <li><span>07</span><strong>1000 punktów</strong><p>Rozdania są rozliczane aż do osiągnięcia celu gry.</p></li>
+          </ol>
+        </section>
+
+        <section class="ux-scene player-variant-lab" id="wariant-graczy" aria-labelledby="variant-title" data-player-variant>
+          <div class="ux-heading">
+            <p class="section-eyebrow">Rozdanie zależne od liczby graczy</p>
+            <h2 id="variant-title">Wybierz wariant 2, 3 lub 4 graczy</h2>
+            <p>Przełącznik pokazuje wyłącznie różnice w rozdaniu i musiku opisane w zasadach gracz.pl.</p>
+          </div>
+          <div class="variant-controls" role="group" aria-label="Liczba graczy">
+            <button type="button" data-players="2">2 graczy</button>
+            <button type="button" class="is-active" data-players="3">3 graczy</button>
+            <button type="button" data-players="4">4 graczy</button>
+          </div>
+          <div class="variant-display" aria-live="polite">
+            <div><span>Na start</span><strong data-variant-hand>7 kart</strong></div>
+            <div><span>Musik</span><strong data-variant-talon>3 karty</strong></div>
+            <div><span>Po musiku</span><strong data-variant-after>po 8 kart</strong></div>
+            <p data-variant-note>Rozgrywający przekazuje po 1 karcie każdemu przeciwnikowi.</p>
+          </div>
+        </section>
+
+        <section class="ux-scene marriage-lab" id="meldunki-lab" aria-labelledby="meld-lab-title" data-marriage-lab>
+          <div class="ux-heading">
+            <p class="section-eyebrow">Meldunki i atut</p>
+            <h2 id="meld-lab-title">Kliknij kolor i sprawdź wartość meldunku</h2>
+            <p>Meldunek tworzy król i dama tego samego koloru. Jego zgłoszenie ustanawia ten kolor aktualnym atutem.</p>
+          </div>
+          <div class="marriage-buttons" role="group" aria-label="Wybierz kolor meldunku">
+            <button type="button" data-marriage="spades" aria-pressed="false"><span>♠</span><strong>Pik</strong><small>40 pkt</small></button>
+            <button type="button" data-marriage="clubs" aria-pressed="false"><span>♣</span><strong>Trefl</strong><small>60 pkt</small></button>
+            <button type="button" data-marriage="diamonds" aria-pressed="false"><span class="red-suit">♦</span><strong>Karo</strong><small>80 pkt</small></button>
+            <button type="button" data-marriage="hearts" aria-pressed="false"><span class="red-suit">♥</span><strong>Kier</strong><small>100 pkt</small></button>
+          </div>
+          <p class="marriage-result" data-marriage-result aria-live="polite">Wybierz meldunek, aby zobaczyć podsumowanie.</p>
+        </section>
+
+        <section class="ux-scene legal-move-lab" id="legalny-ruch" aria-labelledby="legal-title" data-legal-trainer>
+          <div class="ux-heading">
+            <p class="section-eyebrow">Czy ten ruch jest legalny?</p>
+            <h2 id="legal-title">Krótki test obowiązku koloru i przebijania</h2>
+            <p>To moduł edukacyjny, nie pełna partia. Pokazuje jedną, jasno opisaną sytuację z zasad.</p>
+          </div>
+          <div class="legal-scenario">
+            <p><strong>Sytuacja:</strong> kolor wyjścia to ♣. Aktualnie wygrywa K♣. Masz A♣, 9♣, 10♥ i J♦. Atutem jest ♥.</p>
+            <div class="legal-actions" role="group" aria-label="Wybierz kartę">
+              <button type="button" data-card-choice="ac">A♣</button>
+              <button type="button" data-card-choice="9c">9♣</button>
+              <button type="button" data-card-choice="10h">10♥</button>
+              <button type="button" data-card-choice="jd">J♦</button>
+            </div>
+            <p class="legal-feedback" data-legal-feedback aria-live="polite">Wybierz kartę.</p>
+          </div>
+        </section>
+
+        <section class="ux-scene score-lab" id="kalkulator-tysiac" aria-labelledby="score-lab-title" data-score-lab>
+          <div class="ux-heading">
+            <p class="section-eyebrow">Kalkulator punktów</p>
+            <h2 id="score-lab-title">Sprawdź wynik rozdania</h2>
+            <p>Kalkulator wykonuje tylko prostą arytmetykę opisaną na stronie: punkty z kart + meldunki, a dla rozgrywającego porównanie z kontraktem.</p>
+          </div>
+          <div class="score-inputs">
+            <label>Punkty z kart<input type="number" min="0" max="120" step="1" value="80" data-score-cards></label>
+            <label>Punkty z meldunków<input type="number" min="0" max="280" step="10" value="40" data-score-marriages></label>
+            <label>Kontrakt<input type="number" min="100" max="360" step="10" value="120" data-score-contract></label>
+            <label class="score-role"><input type="checkbox" checked data-score-declarer> Rozgrywający</label>
+            <button type="button" data-score-calc>Oblicz wynik</button>
+          </div>
+          <div class="score-output" data-score-output aria-live="polite">
+            <strong>Wynik pojawi się tutaj.</strong>
+            <span>Kontrakt musi mieścić się w zakresie 100–360 i być wielokrotnością 10.</span>
+          </div>
+        </section>
+
         <section class="detailed-guide" aria-labelledby="guide-title">
           <div class="guide-heading">
             <p class="section-eyebrow">Pełny przewodnik po rozgrywce</p>
