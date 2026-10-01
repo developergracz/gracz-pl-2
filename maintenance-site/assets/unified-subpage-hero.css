@@ -1,82 +1,313 @@
-/* Unified subpage hero R1 — visual parity with Tysiąc */
+/* Approved subpage Hero R2 — visual system frozen from Tysiąc */
 .hero-card,
-.hub-hero-r2{
+.hub-approved-hero{
+  display:grid!important;
+  grid-template-columns:46% 54%!important;
+  min-height:438px!important;
   border:0!important;
-  background:
-    radial-gradient(circle at 18% 18%,rgba(25,242,162,.08),transparent 34%),
-    linear-gradient(135deg,rgba(7,74,60,.96),rgba(5,48,40,.97) 58%,rgba(4,37,31,.98))!important;
-  box-shadow:none!important;
   border-radius:18px!important;
-  overflow:hidden;
-}
-
-.hero-card .board-visual{
+  overflow:hidden!important;
   background:
-    radial-gradient(circle at 44% 42%,rgba(25,242,162,.10),transparent 54%),
-    linear-gradient(145deg,rgba(8,68,55,.9),rgba(4,42,34,.96))!important;
+    radial-gradient(circle at 14% 18%,rgba(34,255,178,.10),transparent 34%),
+    linear-gradient(110deg,#063e33 0%,#074f40 42%,#043a32 100%)!important;
+  box-shadow:none!important;
 }
 
-.hero-card .board-visual::after{
-  background:linear-gradient(90deg,transparent 68%,rgba(2,31,25,.28))!important;
+.hero-card .board-visual,
+.hub-approved-hero .board-visual{
+  position:relative;
+  min-height:438px!important;
+  display:grid;
+  place-items:center;
+  padding:24px!important;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 45% 45%,rgba(31,222,147,.16),transparent 53%),
+    linear-gradient(145deg,#07533f 0%,#073d32 62%,#052f28 100%)!important;
 }
 
-.hero-card .hero-copy{
-  background:linear-gradient(135deg,rgba(6,58,48,.22),rgba(4,39,33,.08));
+.hero-card .board-visual::after,
+.hub-approved-hero .board-visual::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 72%,rgba(2,25,21,.22)),
+    radial-gradient(circle at 50% 50%,transparent 52%,rgba(1,18,14,.20) 100%)!important;
+}
+
+.hero-card .hero-copy,
+.hub-approved-hero .hero-copy{
+  position:relative;
+  z-index:1;
+  padding:34px 32px 30px!important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:
+    radial-gradient(circle at 12% 12%,rgba(28,208,143,.08),transparent 34%),
+    linear-gradient(135deg,rgba(5,70,58,.48),rgba(3,43,37,.20))!important;
 }
 
 .hero-card .hero-copy h1,
-.hub-hero-r2 h1{
-  color:#f7dc98!important;
+.hub-approved-hero .hero-copy h1{
+  margin:0!important;
+  font-family:var(--display)!important;
+  font-size:clamp(46px,4.5vw,68px)!important;
+  line-height:.98!important;
+  letter-spacing:-.035em;
+  color:#f7d991!important;
 }
 
 .hero-card .hero-kicker,
-.hub-hero-r2 .section-eyebrow{
-  color:#f0c96a!important;
+.hub-approved-hero .hero-kicker{
+  margin:8px 0 14px!important;
+  font-family:var(--display)!important;
+  font-size:clamp(21px,2vw,29px)!important;
+  line-height:1.12!important;
+  font-weight:800!important;
+  color:#f4c45f!important;
 }
 
-.hero-card .cta-secondary{
-  border:0!important;
-  background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
-  color:#fff!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 20px rgba(0,0,0,.22)!important;
+.hero-card .hero-lead,
+.hub-approved-hero .hero-lead{
+  margin:0!important;
+  max-width:760px;
+  color:#f4f5f2!important;
+  font-size:16px!important;
+  line-height:1.52!important;
 }
 
-.hero-card .cta-secondary:hover,
-.hero-card .cta-secondary:focus-visible{
-  background:linear-gradient(135deg,#106756 0%,#14836e 100%)!important;
-  outline:none;
-  box-shadow:0 0 0 3px rgba(20,131,110,.12),0 10px 24px rgba(0,0,0,.24)!important;
-}
-
-.hero-card .status-pill{
-  border:0!important;
-  background:linear-gradient(135deg,#0d3b34 0%,#105047 100%)!important;
-  color:#f4fff9!important;
-}
-
-/* Game Hub has a different internal structure; keep its UX, match Tysiąc's hero surface. */
-.hub-hero-r2{
+.hero-card .facts,
+.hub-approved-hero .facts{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:0!important;
+  margin:22px 0 18px!important;
   padding:0!important;
+  list-style:none!important;
 }
 
-.hub-hero-r2 .hub-quiz-r2,
-.hub-hero-r2 .hub-quiz-r3{
+.hero-card .facts li,
+.hub-approved-hero .facts li{
+  min-height:72px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:0 10px;
+  text-align:center;
+  border-right:1px solid rgba(244,198,95,.20)!important;
+}
+
+.hero-card .facts li:last-child,
+.hub-approved-hero .facts li:last-child{border-right:0!important}
+
+.hero-card .fact-icon,
+.hub-approved-hero .fact-icon{
+  display:block;
+  margin:0 0 7px!important;
+  color:#f4c45f!important;
+  font-size:30px!important;
+  line-height:1!important;
+}
+
+.hero-card .facts strong,
+.hub-approved-hero .facts strong{
+  font-size:14px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:#fff!important;
+}
+
+.hero-card .hero-actions,
+.hub-approved-hero .hero-actions{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.12fr) minmax(0,.9fr)!important;
+  gap:20px!important;
+  align-items:stretch!important;
+}
+
+.hero-card .cta-primary,
+.hero-card .cta-secondary,
+.hub-approved-hero .cta-primary,
+.hub-approved-hero .cta-secondary{
+  min-height:62px!important;
+  border-radius:999px!important;
   border:0!important;
-  background:transparent!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  padding:9px 22px!important;
+  font-size:20px!important;
+  font-weight:800!important;
+  line-height:1.05!important;
+  text-align:center!important;
+  cursor:pointer;
+}
+
+.hero-card .cta-primary,
+.hub-approved-hero .cta-primary{
+  background:linear-gradient(180deg,#ffe49a 0%,#f7b638 100%)!important;
+  color:#211400!important;
+  box-shadow:0 10px 24px rgba(247,182,56,.18)!important;
+}
+
+.hero-card .cta-primary small,
+.hub-approved-hero .cta-primary small{
+  display:block!important;
+  margin-top:4px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+}
+
+.hero-card .play-circle,
+.hub-approved-hero .play-circle{
+  flex:0 0 44px!important;
+  width:44px!important;
+  height:44px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#050706!important;
+  color:#fff!important;
+}
+
+.hero-card .cta-secondary,
+.hub-approved-hero .cta-secondary{
+  background:linear-gradient(135deg,#075f50 0%,#0c7764 100%)!important;
+  color:#fff!important;
   box-shadow:none!important;
 }
 
-.hub-hero-r2 .quiz-options button,
-.hub-hero-r2 .quiz-reset{
-  border-color:rgba(25,242,162,.22)!important;
+.hero-card .cta-primary:hover,
+.hero-card .cta-secondary:hover,
+.hub-approved-hero .cta-primary:hover,
+.hub-approved-hero .cta-secondary:hover{filter:brightness(1.06)}
+
+.hero-visual-label,
+.hero-visual-badge,
+.hero-visual-caption{
+  position:absolute;
+  z-index:5;
 }
 
-.hub-hero-r2 .hub-recommendation{
-  border-color:rgba(25,242,162,.18)!important;
-  background:rgba(3,34,28,.44)!important;
+.hero-visual-label{
+  top:20px;
+  left:20px;
+  min-width:150px;
+  padding:10px 14px;
+  border:1px solid rgba(244,198,95,.62);
+  border-radius:12px;
+  background:rgba(4,27,22,.78);
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
 }
 
-/* Related thumbnails: same frameless presentation used on the Tysiąc subpage. */
+.hero-visual-label small{
+  display:block;
+  margin-bottom:2px;
+  color:#e9e5dc;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.hero-visual-label strong{
+  display:block;
+  color:#f7d991;
+  font:800 19px/1.1 var(--display);
+}
+
+.hero-visual-badge{
+  top:20px;
+  right:20px;
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(244,198,95,.44);
+  border-radius:50%;
+  background:#f5efe0;
+  color:#10120f;
+  font:800 20px/1 var(--display);
+  box-shadow:0 8px 18px rgba(0,0,0,.22);
+}
+
+.hero-visual-caption{
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  max-width:calc(100% - 48px);
+  padding:7px 14px;
+  border:1px solid rgba(244,198,95,.42);
+  border-radius:999px;
+  background:rgba(3,19,15,.78);
+  color:#f5ead0;
+  font-size:12px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.hero-card .board-scene,
+.hero-card .gomoku-board-wrap,
+.hero-card .card-games-scene,
+.hero-card .guides-scene,
+.hero-card .about-scene,
+.hero-card .card-table-scene,
+.hub-approved-hero .hub-approved-visual{
+  z-index:2!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+.hero-card .board-scene,
+.hero-card .gomoku-board-wrap,
+.hero-card .card-games-scene,
+.hero-card .card-table-scene{
+  width:min(100%,520px)!important;
+}
+
+.hero-card .guides-scene--image,
+.hero-card .about-scene--image,
+.hub-approved-hero .hub-approved-visual{
+  width:100%;
+  height:100%;
+  min-height:390px;
+  border-radius:18px;
+  overflow:hidden;
+  background:#06382e;
+}
+
+.hero-card .guides-scene-image,
+.hero-card .about-scene-image,
+.hub-approved-hero .hub-approved-visual img{
+  width:100%!important;
+  height:100%!important;
+  min-height:390px!important;
+  object-fit:cover!important;
+  border-radius:18px!important;
+}
+
+.hub-approved-hero .hub-approved-visual img{
+  object-position:center;
+}
+
+.hub-quiz-panel-r4{
+  margin:18px 0 0;
+}
+
+.hub-quiz-panel-r4 .hub-quiz-r2,
+.hub-quiz-panel-r4 .hub-quiz-r3{
+  border:1px solid rgba(244,198,95,.20)!important;
+  border-radius:18px!important;
+  background:rgba(3,17,13,.74)!important;
+  box-shadow:none!important;
+}
+
 .related-image,
 .related-image--poker,
 .related-image--tysiac,
@@ -89,4 +320,25 @@
   border:0!important;
   outline:0!important;
   box-shadow:none!important;
+}
+
+@media(max-width:1050px){
+  .hero-card,
+  .hub-approved-hero{grid-template-columns:1fr!important}
+  .hero-card .board-visual,
+  .hub-approved-hero .board-visual{min-height:390px!important}
+}
+
+@media(max-width:720px){
+  .hero-card .hero-copy,
+  .hub-approved-hero .hero-copy{padding:26px 20px!important}
+  .hero-card .facts,
+  .hub-approved-hero .facts{grid-template-columns:repeat(2,minmax(0,1fr))!important;row-gap:16px!important}
+  .hero-card .facts li:nth-child(2),
+  .hub-approved-hero .facts li:nth-child(2){border-right:0!important}
+  .hero-card .hero-actions,
+  .hub-approved-hero .hero-actions{grid-template-columns:1fr!important;gap:12px!important}
+  .hero-visual-label{top:14px;left:14px}
+  .hero-visual-badge{top:14px;right:14px}
+  .hero-visual-caption{bottom:14px;font-size:11px}
 }
