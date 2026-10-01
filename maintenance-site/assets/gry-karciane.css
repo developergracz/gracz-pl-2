@@ -745,3 +745,53 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   .facts{grid-template-columns:repeat(2,1fr)}
   .hero-actions{grid-template-columns:1fr}
 }
+
+
+/* Gry karciane R2 — full hero thumbnail + frameless sidebar/header like Tysiąc */
+.category-hero-scene{
+  aspect-ratio:638/523!important;
+  width:min(100%,500px)!important;
+  background:#07513e!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.category-hero-image{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#07513e;
+}
+
+/* Header controls — frameless like Tysiąc */
+.head-icon{
+  border:0!important;
+}
+.head-btn--outline{
+  border:0!important;
+}
+
+/* Right sidebar — remove all visible frames */
+.online-card,
+.related-card{
+  border:0!important;
+  box-shadow:none!important;
+}
+.status-pill{
+  border:0!important;
+}
+.side-action,
+.side-action--green,
+.side-action--red,
+.related-game{
+  border:0!important;
+  box-shadow:none!important;
+}
+.related-thumb,
+.related-mini-gomoku,
+.related-mini-checkers,
+.related-image{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
