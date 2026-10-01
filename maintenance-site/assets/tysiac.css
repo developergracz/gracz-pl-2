@@ -382,3 +382,38 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
     linear-gradient(180deg,rgba(11,72,57,.96),rgba(6,43,35,.96))!important;
   outline:none;
 }
+
+
+/* Tysiąc UI R7 — filled status badge + clean rules CTA */
+.status-pill{
+  border:0!important;
+  background:linear-gradient(135deg,#0d3b34 0%,#105047 100%)!important;
+  color:#f4fff9;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 6px 16px rgba(0,0,0,.16);
+}
+
+.status-pill span{
+  background:#19f2a2!important;
+  box-shadow:0 0 11px rgba(25,242,162,.5)!important;
+}
+
+.cta-secondary{
+  border:0!important;
+  gap:0!important;
+  background:linear-gradient(135deg,#0d5a4d 0%,#117462 100%)!important;
+  color:#fff!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 8px 20px rgba(0,0,0,.22)!important;
+}
+
+.cta-secondary:hover,
+.cta-secondary:focus-visible{
+  background:linear-gradient(135deg,#106756 0%,#14836e 100%)!important;
+  outline:none;
+  box-shadow:
+    0 0 0 3px rgba(20,131,110,.12),
+    0 10px 24px rgba(0,0,0,.24)!important;
+}
