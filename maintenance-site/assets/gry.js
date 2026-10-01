@@ -150,4 +150,69 @@
       }
     }
   });
+
+
+  var finder=document.querySelector('[data-game-finder]');
+  if(finder){
+    var state={info:null,mechanic:null,focus:null};
+    var result=finder.querySelector('[data-finder-result]');
+    var profiles=[
+      {name:'Poker treningowy',href:'/gry/poker-treningowy/',tags:{info:'hidden',mechanic:'cards',focus:'calculation'},why:'Niepełna informacja, pozycja i decyzje przy ryzyku sprawiają, że poker pasuje do osób lubiących analizować możliwe scenariusze.'},
+      {name:'Tysiąc',href:'/gry/tysiac/',tags:{info:'hidden',mechanic:'cards',focus:'calculation'},why:'Licytacja, kontrakt, meldunki i liczenie punktów łączą ocenę ręki z planowaniem kolejnych lew.'},
+      {name:'Warcaby',href:'/gry/warcaby/',tags:{info:'open',mechanic:'board',focus:'tactics'},why:'Cała pozycja jest jawna, a kluczowe są wymuszone bicia, sekwencje skoków i ocena skutków kolejnych ruchów.'},
+      {name:'Gomoku',href:'/gry/gomoku/',tags:{info:'open',mechanic:'board',focus:'tactics'},why:'Jawna plansza, budowanie gróźb i blokowanie przeciwnika premiują planowanie przestrzenne i przewidywanie odpowiedzi.'}
+    ];
+
+    function score(profile){
+      var points=0;
+      Object.keys(state).forEach(function(key){
+        if(state[key] && profile.tags[key]===state[key])points+=1;
+      });
+      return points;
+    }
+
+    function renderFinder(){
+      var chosen=Object.keys(state).filter(function(k){return state[k];}).length;
+      if(!chosen){
+        result.innerHTML='<h3>Zaznacz preferencje</h3><p>Po wyborze cech pokażemy pasujące gry i wyjaśnimy, dlaczego.</p>';
+        return;
+      }
+      var ranked=profiles.map(function(p){return {profile:p,score:score(p)};}).sort(function(a,b){return b.score-a.score;});
+      var top=ranked[0].score;
+      var matches=ranked.filter(function(item){return item.score===top;});
+      var html='<h3>'+(matches.length===1?'Najbliższe dopasowanie':'Pasujące gry')+'</h3><ul>';
+      matches.forEach(function(item){
+        html+='<li><strong>'+item.profile.name+'</strong> — '+item.profile.why+'</li>';
+      });
+      html+='</ul>';
+      if(matches.length===1)html+='<a href="'+matches[0].profile.href+'">Otwórz '+matches[0].profile.name+' →</a>';
+      result.innerHTML=html;
+    }
+
+    finder.addEventListener('click',function(e){
+      var option=e.target.closest('[data-filter-key]');
+      if(option){
+        var key=option.getAttribute('data-filter-key');
+        var value=option.getAttribute('data-filter-value');
+        state[key]=(state[key]===value)?null:value;
+        Array.prototype.forEach.call(finder.querySelectorAll('[data-filter-key="'+key+'"]'),function(btn){
+          btn.classList.toggle('is-active',btn===option && state[key]===value);
+          btn.setAttribute('aria-pressed',btn===option && state[key]===value?'true':'false');
+        });
+        renderFinder();
+        return;
+      }
+      if(e.target.closest('[data-finder-reset]')){
+        state={info:null,mechanic:null,focus:null};
+        Array.prototype.forEach.call(finder.querySelectorAll('[data-filter-key]'),function(btn){
+          btn.classList.remove('is-active');
+          btn.setAttribute('aria-pressed','false');
+        });
+        renderFinder();
+      }
+    });
+
+    Array.prototype.forEach.call(finder.querySelectorAll('[data-filter-key]'),function(btn){btn.setAttribute('aria-pressed','false');});
+  }
+
 })();
