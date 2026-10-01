@@ -760,3 +760,93 @@ body::after{
   }
   .poradniki-hero-r7__label-overlay strong{font-size:21px!important}
 }
+
+
+/* Poradniki R17 — show full book artwork, no crop/masks */
+.poradniki-hero-r7__scene{
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 50% 46%,rgba(31,116,94,.24),transparent 58%),
+    #06241a!important;
+  padding:18px!important;
+}
+.poradniki-hero-r7__scene::before,
+.poradniki-hero-r7__scene::after{
+  display:none!important;
+  content:none!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+.poradniki-hero-r7__image{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:0!important;
+  transform:none!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+.poradniki-hero-r7__label-overlay{
+  position:absolute!important;
+  z-index:5!important;
+  left:18px!important;
+  top:18px!important;
+  width:auto!important;
+  min-width:150px!important;
+  min-height:0!important;
+  padding:8px 12px 9px!important;
+  background:rgba(6,36,26,.92)!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+.poradniki-hero-r7__label-overlay small{
+  display:block!important;
+  margin:0 0 2px!important;
+  color:#d9d4c8!important;
+  font-size:10px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:.06em!important;
+}
+.poradniki-hero-r7__label-overlay strong{
+  display:block!important;
+  margin:0!important;
+  color:#ffe08a!important;
+  font-family:var(--display)!important;
+  font-size:18px!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+}
+.poradniki-hero-r7__caption-overlay{
+  position:absolute!important;
+  z-index:5!important;
+  left:50%!important;
+  bottom:10px!important;
+  transform:translateX(-50%)!important;
+  width:max-content!important;
+  max-width:88%!important;
+  padding:4px 10px!important;
+  background:rgba(6,36,26,.88)!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:999px!important;
+  box-shadow:none!important;
+  color:#eee9db!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+}
