@@ -534,3 +534,29 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   box-shadow:none!important;
   background:rgba(255,255,255,.04)!important;
 }
+
+
+/* Poradniki R10 — remove frames baked into the hero artwork */
+.poradniki-hero-r7__scene{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  overflow:hidden!important;
+}
+.poradniki-hero-r7__scene::before,
+.poradniki-hero-r7__scene::after{
+  display:none!important;
+  content:none!important;
+}
+.poradniki-hero-r7__image{
+  width:124%!important;
+  height:124%!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  transform:scale(1.02)!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
