@@ -166,3 +166,26 @@
   border:0;
   box-shadow:inset 0 0 14px rgba(0,0,0,.28),0 4px 10px rgba(0,0,0,.28);
 }
+
+
+/* Related thumbnails R2 — truly frameless */
+.related-image,
+.related-image--poker,
+.related-image--warcaby,
+.related-image--gomoku{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+
+/* Approved Poker asset contains its own gold edge; crop it away without changing the image file. */
+.related-image--poker{
+  background-size:120% auto!important;
+  background-position:center!important;
+}
+
+/* Keep only the artwork shape, not a framed-card look. */
+.related-image--warcaby,
+.related-image--gomoku{
+  box-shadow:none!important;
+}
