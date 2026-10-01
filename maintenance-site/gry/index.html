@@ -138,6 +138,58 @@
           </div>
         </section>
 
+        <nav class="games-max-nav" aria-label="Sekcje katalogu gier">
+          <a href="#wybor-gry">Dopasuj grę</a>
+          <a href="#katalog">4 gry</a>
+          <a href="#porownanie">Porównanie</a>
+          <a href="#mechaniki">Mechaniki</a>
+          <a href="#nauka">Ścieżki nauki</a>
+          <a href="#status-gier">Status</a>
+        </nav>
+
+        <section class="games-finder" id="wybor-gry" aria-labelledby="finder-title" data-game-finder>
+          <div class="max-heading">
+            <p class="section-eyebrow">Moduł wyboru gry</p>
+            <h2 id="finder-title">Jaki typ rozgrywki najbardziej Ci odpowiada?</h2>
+            <p>Wybierz cechy, które lubisz. Moduł nie ocenia, która gra jest „lepsza” — pokazuje, która z czterech gier gracz.pl najlepiej pasuje do wskazanego stylu.</p>
+          </div>
+          <div class="finder-grid">
+            <div class="finder-controls">
+              <fieldset>
+                <legend>1. Rodzaj informacji</legend>
+                <button type="button" data-filter-key="info" data-filter-value="hidden">Lubię ukrytą informację</button>
+                <button type="button" data-filter-key="info" data-filter-value="open">Wolę pełną informację na planszy</button>
+              </fieldset>
+              <fieldset>
+                <legend>2. Główna mechanika</legend>
+                <button type="button" data-filter-key="mechanic" data-filter-value="cards">Karty i decyzje</button>
+                <button type="button" data-filter-key="mechanic" data-filter-value="board">Plansza i pozycja</button>
+              </fieldset>
+              <fieldset>
+                <legend>3. Co ma dawać największą satysfakcję?</legend>
+                <button type="button" data-filter-key="focus" data-filter-value="calculation">Obliczanie i ocena ryzyka</button>
+                <button type="button" data-filter-key="focus" data-filter-value="tactics">Taktyka i przewidywanie ruchów</button>
+              </fieldset>
+              <button class="finder-reset" type="button" data-finder-reset>Wyczyść wybór</button>
+            </div>
+            <div class="finder-result" aria-live="polite">
+              <span class="finder-label">Dopasowanie</span>
+              <div data-finder-result>
+                <h3>Zaznacz preferencje</h3>
+                <p>Po wyborze cech pokażemy pasujące gry i wyjaśnimy, dlaczego.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="catalog-intro" id="katalog" aria-labelledby="catalog-title">
+          <div class="max-heading">
+            <p class="section-eyebrow">Katalog gracz.pl</p>
+            <h2 id="catalog-title">Cztery różne systemy podejmowania decyzji</h2>
+            <p>Poker i Tysiąc opierają część decyzji na informacji ukrytej i kartach. Warcaby oraz Gomoku pokazują całą pozycję na planszy, ale wymagają przewidywania konsekwencji kolejnych ruchów.</p>
+          </div>
+        </section>
+
         <div class="game-showcase">
           <article class="game-card game-card--gold" id="poker">
             <span class="game-badge">W przygotowaniu</span>
@@ -171,6 +223,66 @@
             <div class="game-actions"><a class="game-link" href="/gry/gomoku/">Podstrona gry →</a><a class="game-link game-link--green" href="/gry/gomoku/zasady/">Zasady gry →</a></div>
           </article>
         </div>
+
+        <section class="games-comparison" id="porownanie" aria-labelledby="comparison-title">
+          <div class="max-heading">
+            <p class="section-eyebrow">Porównanie bez skrótów</p>
+            <h2 id="comparison-title">Czym naprawdę różnią się te gry?</h2>
+            <p>Jedna tabela pokazuje podstawową strukturę decyzji: typ gry, informację, kluczową mechanikę i drogę do wygranej.</p>
+          </div>
+          <div class="comparison-wrap">
+            <table class="comparison-table">
+              <thead><tr><th>Gra</th><th>Typ</th><th>Informacja</th><th>Kluczowa mechanika</th><th>Główny cel</th></tr></thead>
+              <tbody>
+                <tr><th>Poker treningowy</th><td>karciana</td><td>częściowo ukryta</td><td>zakresy rąk, pozycja, decyzje bettingowe</td><td>podejmować poprawne decyzje przy niepełnej informacji</td></tr>
+                <tr><th>Tysiąc</th><td>karciana</td><td>częściowo ukryta</td><td>licytacja, meldunki, atut, lewy</td><td>budować wynik przez kontrakty i zdobyte punkty</td></tr>
+                <tr><th>Warcaby</th><td>planszowa logiczna</td><td>pełna</td><td>ruch, obowiązkowe bicie, wielokrotne skoki</td><td>uzyskać przewagę materialną i pozycyjną</td></tr>
+                <tr><th>Gomoku</th><td>planszowa logiczna</td><td>pełna</td><td>budowanie linii, blokowanie, tworzenie gróźb</td><td>ułożyć pięć znaków w rzędzie</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="mechanics-map" id="mechaniki" aria-labelledby="mechanics-title">
+          <div class="max-heading">
+            <p class="section-eyebrow">Mapa mechanik</p>
+            <h2 id="mechanics-title">Czego uczysz się, grając w każdą z nich?</h2>
+          </div>
+          <div class="mechanics-grid">
+            <article><span>♠</span><h3>Poker</h3><ul><li>ocena siły ręki w kontekście</li><li>pozycja i kolejność decyzji</li><li>zarządzanie ryzykiem</li><li>czytanie zakresów, nie pojedynczych kart</li></ul></article>
+            <article><span>♥</span><h3>Tysiąc</h3><ul><li>wycena ręki przed licytacją</li><li>planowanie kontraktu</li><li>meldunki i kontrola atutu</li><li>liczenie punktów i przewidywanie lew</li></ul></article>
+            <article><span>●</span><h3>Warcaby</h3><ul><li>taktyka wymuszonych bić</li><li>sekwencje wielokrotnych skoków</li><li>tempo i struktura pionków</li><li>plan dojścia do damki</li></ul></article>
+            <article><span>✕</span><h3>Gomoku</h3><ul><li>rozpoznawanie gróźb</li><li>atak i obrona jednym ruchem</li><li>kontrola kluczowych pól</li><li>budowanie wielokierunkowych układów</li></ul></article>
+          </div>
+        </section>
+
+        <section class="learning-paths" id="nauka" aria-labelledby="learning-title">
+          <div class="max-heading">
+            <p class="section-eyebrow">Ścieżki nauki</p>
+            <h2 id="learning-title">Od zasad do świadomej gry</h2>
+            <p>Każda gra może być poznawana warstwowo. Najpierw reguły, potem powtarzalne sytuacje, a dopiero później strategia.</p>
+          </div>
+          <div class="path-grid">
+            <div><span>01</span><strong>Zasady</strong><p>Naucz się legalnych ruchów, kolejności faz i warunków zakończenia.</p></div>
+            <div><span>02</span><strong>Wzorce</strong><p>Rozpoznawaj typowe pozycje, układy kart i powtarzalne decyzje.</p></div>
+            <div><span>03</span><strong>Plan</strong><p>Przestań reagować wyłącznie na ostatni ruch. Buduj decyzję kilka kroków naprzód.</p></div>
+            <div><span>04</span><strong>Analiza</strong><p>Porównuj decyzję z alternatywami i ucz się z rozdania albo pozycji.</p></div>
+          </div>
+        </section>
+
+        <section class="product-status" id="status-gier" aria-labelledby="status-title">
+          <div class="max-heading">
+            <p class="section-eyebrow">Stan projektu</p>
+            <h2 id="status-title">Co jest dostępne na gracz.pl już teraz?</h2>
+            <p>Podstrony, zasady i materiały edukacyjne są rozwijane niezależnie od właściwej rozgrywki online. Przy każdym tytule status funkcji jest oznaczany bezpośrednio na stronie.</p>
+          </div>
+          <div class="status-grid">
+            <a href="/gry/poker-treningowy/"><strong>Poker treningowy</strong><span>podstrona edukacyjna i zasady</span><em>Otwórz →</em></a>
+            <a href="/gry/tysiac/"><strong>Tysiąc</strong><span>FULL MAX przewodnik i moduły edukacyjne</span><em>Otwórz →</em></a>
+            <a href="/gry/warcaby/"><strong>Warcaby</strong><span>podstrona gry i zasady</span><em>Otwórz →</em></a>
+            <a href="/gry/gomoku/"><strong>Gomoku</strong><span>podstrona gry i zasady</span><em>Otwórz →</em></a>
+          </div>
+        </section>
 
         <section class="category-info" aria-labelledby="ecosystem-title">
           <h2 id="ecosystem-title">Jeden portal, różne rodzaje gier</h2>
