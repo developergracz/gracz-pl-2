@@ -166,10 +166,39 @@
     try{window.localStorage.setItem(key,JSON.stringify(value));}catch(e){}
   }
 
-  var learningState=safeRead(STORAGE_KEY,{poker:0,tysiac:0,warcaby:0,gomoku:0});
-  ['poker','tysiac','warcaby','gomoku'].forEach(function(k){
-    if(typeof learningState[k]!=='number')learningState[k]=0;
-  });
+  // Stored data is untrusted: validate type AND shape after JSON.parse (null / number / string / [null] must never break the page).
+  var GAME_KEYS=['poker','tysiac','warcaby','gomoku'];
+  function isPlainObject(value){return value!==null && typeof value==='object' && !Array.isArray(value);}
+
+  function normalizeProgress(raw){
+    var out={poker:0,tysiac:0,warcaby:0,gomoku:0};
+    if(isPlainObject(raw)){
+      GAME_KEYS.forEach(function(k){
+        var n=Number(raw[k]);
+        out[k]=Number.isFinite(n)?Math.max(0,Math.min(100,Math.round(n))):0;
+      });
+    }
+    return out;
+  }
+
+  function normalizeBookmarks(raw){
+    var out=[],seen={};
+    if(!Array.isArray(raw))return out;
+    raw.forEach(function(item){
+      if(!isPlainObject(item))return;
+      var id=typeof item.id==='string'?item.id.slice(0,80):'';
+      var title=typeof item.title==='string'?item.title.trim().slice(0,160):'';
+      var href=typeof item.href==='string'?item.href:'';
+      if(!id||!title||seen[id])return;
+      // same-origin absolute paths or in-page anchors only
+      if(!/^\/(?!\/)\S*$/.test(href) && !/^#[A-Za-z0-9_-]+$/.test(href))href='#poradnik-tygodnia';
+      seen[id]=true;
+      out.push({id:id,title:title,href:href});
+    });
+    return out.slice(0,50);
+  }
+
+  var learningState=normalizeProgress(safeRead(STORAGE_KEY,null));
 
   function renderProgress(){
     var total=0;
@@ -191,7 +220,8 @@
 
   var lastGuide=document.querySelector('[data-last-guide]');
   var lastGuideValue=safeRead(LAST_KEY,'');
-  if(lastGuide && lastGuideValue)lastGuide.textContent=lastGuideValue;
+  if(typeof lastGuideValue!=='string')lastGuideValue='';
+  if(lastGuide && lastGuideValue)lastGuide.textContent=lastGuideValue.slice(0,160);
 
   document.addEventListener('click',function(e){
     var guide=e.target.closest('[data-track-guide]');
@@ -286,8 +316,7 @@
     });
   }
 
-  var bookmarks=safeRead(BOOKMARK_KEY,[]);
-  if(!Array.isArray(bookmarks))bookmarks=[];
+  var bookmarks=normalizeBookmarks(safeRead(BOOKMARK_KEY,[]));
   var savedList=document.querySelector('[data-saved-list]');
 
   function renderBookmarks(){

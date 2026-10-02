@@ -1,6 +1,9 @@
 (function(){
   'use strict';
 
+  // Progress integrity helpers (assets/academy-progress.js); safe no-op fallback keeps the page working without them.
+  var GA=window.GraczAcademy||{passMark:function(n){return Math.ceil(n*2/3);},refresh:function(){},mark:function(){},explore:function(){},status:function(){}};
+
   var MESSAGES={
     search:{title:'Wyszukiwarka jest w przygotowaniu',text:'Wyszukiwanie w serwisie zostanie uruchomione wraz z kolejnymi funkcjami gracz.pl.',button:'Zamknij'},
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.',button:'Rozumiem'},
@@ -250,6 +253,7 @@
         var rounded=Math.round(total/10)*10;
         scoreOutput.innerHTML='<strong>Wynik przeciwnika: '+rounded+' pkt</strong><span>Zdobyte w rozdaniu: '+total+' pkt, zaokrąglone do najbliższej dziesiątki.</span>';
       }
+      completeTysiacModule('punktacja');
     });
   }
 
@@ -305,6 +309,7 @@
       var first=TYSIAC_MODULES.filter(function(k){return !tysiacAcademyState[k];})[0];
       next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz powtarzać dowolny moduł.';
     }
+    GA.refresh();
   }
   function completeTysiacModule(key){
     if(TYSIAC_MODULES.indexOf(key)<0)return;
@@ -321,9 +326,6 @@
   }
 
   document.addEventListener('click',function(e){
-    var tracked=e.target.closest('[data-track-tysiac]');
-    if(tracked)completeTysiacModule(tracked.getAttribute('data-track-tysiac'));
-
     var moduleButton=e.target.closest('[data-tysiac-module]');
     if(moduleButton){
       var key=moduleButton.getAttribute('data-tysiac-module');
@@ -347,26 +349,17 @@
     });
   }
 
-  // Existing interactive labs count toward the Academy path.
-  if(variantLab){
-    variantLab.addEventListener('click',function(e){
-      if(e.target.closest('[data-players]'))completeTysiacModule('zasady');
-    });
-  }
-  if(marriageLab){
-    marriageLab.addEventListener('click',function(e){
-      if(e.target.closest('[data-marriage]'))completeTysiacModule('meldunki');
-    });
-  }
+  // Progress integrity: a module counts only after a real exercise (never a roadmap link or scrolling).
+  GA.explore({root:variantLab,items:'[data-players]',attr:'data-players',isDone:function(){return tysiacAcademyState.zasady;},done:function(){completeTysiacModule('zasady');}});
+  GA.explore({root:marriageLab,items:'[data-marriage]',attr:'data-marriage',isDone:function(){return tysiacAcademyState.meldunki;},done:function(){completeTysiacModule('meldunki');}});
   if(legalTrainer){
     legalTrainer.addEventListener('click',function(e){
-      if(e.target.closest('[data-card-choice]'))completeTysiacModule('ruch');
+      var choice=e.target.closest('[data-card-choice]');
+      if(choice && choice.getAttribute('data-card-choice')==='ac')completeTysiacModule('ruch');
     });
+    GA.status(legalTrainer,function(){return tysiacAcademyState.ruch?'Krok zaliczony.':'Zaliczenie kroku: wybierz poprawną kartę.';});
   }
-  if(scoreLab){
-    var academyScoreButton=scoreLab.querySelector('[data-score-calc]');
-    if(academyScoreButton)academyScoreButton.addEventListener('click',function(){completeTysiacModule('punktacja');});
-  }
+  if(scoreLab)GA.status(scoreLab,function(){return tysiacAcademyState.punktacja?'Krok zaliczony.':'Zaliczenie kroku: policz wynik dla poprawnych liczb (kontrakt 100–360, wielokrotność 10).';});
 
   var biddingScenarios=[
     {
@@ -441,8 +434,13 @@
       if(ok){bidScore++;bidScoreEl.textContent=bidScore;}
       bidFeedbackEl.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;
       bidNext.disabled=false;
-      completeTysiacModule('licytacja');
+      if(bidIndex===biddingScenarios.length-1){
+        var need=GA.passMark(biddingScenarios.length);
+        if(bidScore>=need)completeTysiacModule('licytacja');
+        else bidFeedbackEl.textContent+=' Wynik sesji: '+bidScore+' / '+biddingScenarios.length+' — do zaliczenia kroku potrzeba co najmniej '+need+'. Zacznij od początku.';
+      }
     });
+    GA.status(biddingLab,function(){return tysiacAcademyState.licytacja?'Krok zaliczony.':'Zaliczenie kroku: ukończ sesję z wynikiem co najmniej '+GA.passMark(biddingScenarios.length)+' z '+biddingScenarios.length+'.';});
     bidNext.addEventListener('click',function(){
       if(bidIndex<biddingScenarios.length-1){bidIndex++;renderBid();}
       else{bidFeedbackEl.textContent='Sesja zakończona. Wynik: '+bidScore+' / '+biddingScenarios.length+'.';bidNext.disabled=true;}

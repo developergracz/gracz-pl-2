@@ -1,6 +1,9 @@
 (function(){
   'use strict';
 
+  // Progress integrity helpers (assets/academy-progress.js); safe no-op fallback keeps the page working without them.
+  var GA=window.GraczAcademy||{passMark:function(n){return Math.ceil(n*2/3);},refresh:function(){},mark:function(){},explore:function(){},status:function(){}};
+
   var MESSAGES={
     search:{title:'Wyszukiwarka jest w przygotowaniu',text:'Wyszukiwanie w serwisie zostanie uruchomione wraz z kolejnymi funkcjami gracz.pl.',button:'Zamknij'},
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.',button:'Rozumiem'},
@@ -188,6 +191,9 @@
     }
 
     calc.addEventListener('click',function(){
+      var validInput=String(potInput.value).trim()!=='' && String(callInput.value).trim()!=='' &&
+        Number.isFinite(Number(potInput.value)) && Number.isFinite(Number(callInput.value)) &&
+        Number(potInput.value)>=0 && Number(callInput.value)>=1;
       var pot=numeric(potInput.value,0);
       var call=numeric(callInput.value,1);
       potInput.value=String(pot);
@@ -195,6 +201,7 @@
       var finalPot=pot+call;
       var threshold=(call/finalPot)*100;
       result.innerHTML='<strong>Wymagany udział: '+threshold.toFixed(1)+'%</strong><span>Sprawdzasz '+call+' do puli, która po Twoim callu wyniesie '+finalPot+'. To próg matematyczny, a nie rekomendacja strategiczna.</span>';
+      if(validInput)completeModule('matematyka');
     });
   }
 
@@ -245,6 +252,7 @@
       var first=MODULES.filter(function(k){return !academyState[k];})[0];
       next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz wracać do dowolnego modułu.';
     }
+    GA.refresh();
   }
   function completeModule(key){
     if(MODULES.indexOf(key)<0)return;
@@ -252,12 +260,20 @@
     writeAcademy(academyState);
     renderAcademy();
   }
+  function toggleModule(key){
+    if(MODULES.indexOf(key)<0)return;
+    academyState[key]=!academyState[key];
+    writeAcademy(academyState);
+    renderAcademy();
+  }
   renderAcademy();
 
-  document.addEventListener('click',function(e){
-    var tracked=e.target.closest('[data-track-module]');
-    if(tracked)completeModule(tracked.getAttribute('data-track-module'));
+  // Reading-only steps have no exercise: the learner confirms them explicitly.
+  [['przebieg-rozdania','zasady','Zasady'],['ranking-ukladow','uklady','Układy'],['pozycje-poker','pozycja','Pozycja']].forEach(function(step){
+    GA.mark({sectionId:step[0],key:step[1],label:step[2],isDone:function(){return academyState[step[1]];},toggle:function(){toggleModule(step[1]);}});
+  });
 
+  document.addEventListener('click',function(e){
     var moduleButton=e.target.closest('[data-academy-module]');
     if(moduleButton){
       var key=moduleButton.getAttribute('data-academy-module');
@@ -282,16 +298,9 @@
     });
   }
 
-  // Completing interactions also completes their academy modules.
-  if(trainer){
-    trainer.addEventListener('click',function(e){
-      if(e.target.closest('[data-poker-action]'))completeModule('decyzje');
-    });
-  }
-  if(potOdds){
-    var academyCalc=potOdds.querySelector('[data-pot-calc]');
-    if(academyCalc)academyCalc.addEventListener('click',function(){completeModule('matematyka');});
-  }
+  // Progress integrity: only real exercises count (legality trainer is practice-only; the arena session,
+  // a valid pot-odds calculation and the quiz complete modules).
+  if(potOdds)GA.status(potOdds,function(){return academyState.matematyka?'Krok zaliczony.':'Zaliczenie kroku: policz próg dla poprawnych liczb (pula ≥ 0, call ≥ 1).';});
 
   var arenaScenarios=[
     {
@@ -377,8 +386,13 @@
       });
       feedbackEl.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;
       nextBtn.disabled=false;
-      completeModule('decyzje');
+      if(arenaIndex===arenaScenarios.length-1){
+        var need=GA.passMark(arenaScenarios.length);
+        if(arenaScore>=need)completeModule('decyzje');
+        else feedbackEl.textContent+=' Wynik sesji: '+arenaScore+' / '+arenaScenarios.length+' — do zaliczenia kroku potrzeba co najmniej '+need+'. Rozpocznij od nowa.';
+      }
     });
+    GA.status(arena,function(){return academyState.decyzje?'Krok zaliczony.':'Zaliczenie kroku: ukończ sesję z wynikiem co najmniej '+GA.passMark(arenaScenarios.length)+' z '+arenaScenarios.length+'.';});
 
     nextBtn.addEventListener('click',function(){
       if(arenaIndex<arenaScenarios.length-1){arenaIndex++;renderArena();}
