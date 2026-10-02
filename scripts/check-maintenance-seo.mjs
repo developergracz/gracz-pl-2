@@ -162,12 +162,17 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r2'), `${rel}: legal/contact trigger exists but legal-links.js R2 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r3'), `${rel}: legal/contact trigger exists but legal-links.js R3 is missing`);
   }
 }
 
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
+const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
+const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
+requireCheck(legalLinksJs.includes('/regulamin/#prywatnosc'), "contact modal: privacy information link missing");
+requireCheck(contactCss.includes('resize:none'), "contact modal: message textarea must not be resizable");
+requireCheck(contactCss.includes('overflow-y:auto'), "contact modal: message textarea internal scrolling missing");
 
 if (failures.length) {
   console.error("SEO GATE: FAIL");
