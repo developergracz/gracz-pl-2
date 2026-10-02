@@ -93,7 +93,14 @@ createServer(async (req, res) => {
 
     const raw = await response.text().catch(() => "");
     if (!response.ok) {
-      console.error("[contact] provider rejected", { requestId, status: response.status });
+      let providerError = {};
+      try { providerError = raw ? JSON.parse(raw) : {}; } catch {}
+      console.error("[contact] provider rejected", {
+        requestId,
+        status: response.status,
+        name: typeof providerError?.name === "string" ? providerError.name.slice(0, 80) : null,
+        message: typeof providerError?.message === "string" ? providerError.message.slice(0, 300) : null,
+      });
       return json(res, 502, { error: { code: "MAIL_DELIVERY_FAILED", message: "Nie udało się wysłać wiadomości. Spróbuj ponownie później." } });
     }
 
