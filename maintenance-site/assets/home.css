@@ -1275,6 +1275,6 @@ main:focus { outline: none; }
   }
 
   .next-panel{
-    width:calc(604 * var(--u))!important;
+    width:calc(605 * var(--u))!important;
   }
 }
