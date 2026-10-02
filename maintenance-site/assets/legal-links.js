@@ -154,12 +154,7 @@
         form.reset();
         count.textContent='0 / 4000';
       }catch(error){
-        setStatus('Bezpośrednia wysyłka jest chwilowo niedostępna. Możesz wysłać tę samą wiadomość przez swój program pocztowy.','error');
-        var subject='[gracz.pl] '+payload.category+' — '+payload.subject;
-        var bodyText='Imię i nazwisko: '+payload.name+'\nE-mail: '+payload.email+'\nKategoria: '+payload.category+'\nStrona: '+payload.page+'\n\nWiadomość:\n'+payload.message;
-        window.setTimeout(function(){
-          window.location.href='mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(bodyText);
-        },350);
+        setStatus('Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.','error');
       }finally{
         submit.disabled=false;
         submit.textContent='Wyślij wiadomość';
