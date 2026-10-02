@@ -1,0 +1,105 @@
+/* Global Sticky Right Rails R1
+   Desktop right-side navigation follows the reading position.
+   Sticky elements remain constrained by their layout parent and stop before the footer. */
+
+main [id]{
+  scroll-margin-top:110px;
+}
+
+@media (min-width:1181px){
+  .side-column,
+  .academy-side-column,
+  .poker-side-panel,
+  .warcaby-side-panel,
+  .gomoku-side-panel,
+  .side-column--pilot{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+  }
+
+  .side-column::-webkit-scrollbar,
+  .academy-side-column::-webkit-scrollbar,
+  .poker-side-panel::-webkit-scrollbar,
+  .warcaby-side-panel::-webkit-scrollbar,
+  .gomoku-side-panel::-webkit-scrollbar,
+  .side-column--pilot::-webkit-scrollbar{width:6px}
+
+  .side-column::-webkit-scrollbar-thumb,
+  .academy-side-column::-webkit-scrollbar-thumb,
+  .poker-side-panel::-webkit-scrollbar-thumb,
+  .warcaby-side-panel::-webkit-scrollbar-thumb,
+  .gomoku-side-panel::-webkit-scrollbar-thumb,
+  .side-column--pilot::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
+  }
+}
+
+@media (min-width:1321px){
+  .rules-side-panel{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+  }
+  .rules-side-panel::-webkit-scrollbar{width:6px}
+  .rules-side-panel::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
+  }
+}
+
+@media (min-width:901px){
+  .rules-toc{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+}
+
+@media (max-width:1180px){
+  .side-column,
+  .academy-side-column,
+  .poker-side-panel,
+  .warcaby-side-panel,
+  .gomoku-side-panel,
+  .side-column--pilot{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
+
+@media (max-width:1320px){
+  .rules-side-panel{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
+
+@media (max-width:900px){
+  .rules-toc{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
