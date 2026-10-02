@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Gomoku — zasady gry, plansza 15×15 i strategia | gracz.pl</title>
-  <meta name="description" content="Gomoku na gracz.pl: plansza 15×15, zasady pięciu w linii, ruchy kamieni, strategie, błędy początkujących, warianty i przygotowywana gra online.">
+  <title>Gomoku Academy — pięć w linii, trening i strategia | gracz.pl</title>
+  <meta name="description" content="Gomoku Academy gracz.pl: plansza 15×15, pięć w linii, trening zagrożeń, atak i obrona, legalne ruchy, strategia, quiz i zapis postępu nauki.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="theme-color" content="#050706">
+  <meta name="theme-color" content="#041713">
   <meta name="color-scheme" content="dark">
 
   <link rel="canonical" href="https://gracz.pl/gry/gomoku/">
@@ -34,8 +34,8 @@
 
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/gomoku.css?v=poradniki-teal-r16">
-  <script src="/assets/gomoku.js" defer></script>
+  <link rel="stylesheet" href="/assets/gomoku.css?v=academy-premium-max-r1">
+  <script src="/assets/gomoku.js?v=academy-premium-max-r1" defer></script>
 
   <script type="application/ld+json">
   {
@@ -56,6 +56,17 @@
         "description": "Gomoku na gracz.pl: plansza 15×15, zasady pięciu w linii, ruchy kamieni, strategie, błędy początkujących, warianty i przygotowywana gra online.",
         "isPartOf": {"@id": "https://gracz.pl/#website"},
         "inLanguage": "pl-PL"
+      },
+      {
+        "@type": "LearningResource",
+        "@id": "https://gracz.pl/gry/gomoku/#academy",
+        "name": "Gomoku Academy gracz.pl",
+        "url": "https://gracz.pl/gry/gomoku/",
+        "learningResourceType": ["Tutorial","InteractiveResource"],
+        "educationalUse": "practice",
+        "isAccessibleForFree": true,
+        "inLanguage": "pl-PL",
+        "about": {"@type":"Thing","name":"Gomoku 15×15"}
       },
       {
         "@type": "BreadcrumbList",
@@ -98,9 +109,9 @@
       <div class="menu-panel" id="menu-panel">
         <nav class="main-nav" aria-label="Główna nawigacja">
           <ul class="nav-list">
-            <li><a class="nav-link is-active" href="/">Start</a></li>
+            <li><a class="nav-link" href="/">Start</a></li>
             <li class="has-menu">
-              <a class="nav-link" href="/gry/">Gry</a>
+              <a class="nav-link is-active" href="/gry/">Gry</a>
               <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg aria-hidden="true"><use href="#i-chevron"/></svg></button>
               <ul class="dropdown" id="menu-gry">
                 <li><a href="/gry/">Wszystkie gry</a></li>
@@ -187,8 +198,8 @@
           </div>
 
           <div class="hero-copy">
-            <h1 id="hero-title">Gomoku</h1>
-            <p class="hero-kicker">Strategiczna gra pięciu w linii</p>
+            <h1 id="hero-title">Gomoku Academy <span>gracz.pl</span></h1>
+            <p class="hero-kicker">Zagrożenia, atak i obrona — nauka pięciu w linii krok po kroku</p>
             <p class="hero-lead">Gomoku to prosta w zasadach, ale bardzo wymagająca gra strategiczna. Dwóch graczy naprzemiennie układa kamienie na przecięciach planszy, próbując jako pierwsi stworzyć nieprzerwaną linię pięciu własnych kamieni.</p>
 
             <ul class="facts" aria-label="Informacje o grze">
@@ -199,12 +210,164 @@
             </ul>
 
             <div class="hero-actions">
-              <button class="cta-primary" type="button" data-modal="play">
+              <button class="cta-primary" type="button" data-scroll-gomoku-academy>
                 <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
-                <span>Zagraj online<small>w przygotowaniu</small></span>
+                <span>Wejdź do Akademii<small>interaktywny trening na stronie</small></span>
               </button>
               <a class="cta-secondary" href="/gry/gomoku/zasady/">Zasady gry</a>
             </div>
+          </div>
+        </section>
+
+
+        <section class="gomoku-academy" id="gomoku-academy" aria-labelledby="gomoku-academy-title">
+          <div class="gomoku-academy__intro">
+            <span class="academy-label">Gomoku Academy · Centrum treningowe</span>
+            <h2 id="gomoku-academy-title">Od pierwszego kamienia do świadomego ataku</h2>
+            <p>Przejdź sześć modułów: podstawy, zagrożenia, atak i obrona, legalny ruch, strategię oraz quiz. Postęp zapisuje się lokalnie w tej przeglądarce.</p>
+            <div class="gomoku-academy__actions">
+              <a href="#gomoku-path">Rozpocznij ścieżkę</a>
+              <a href="/gry/gomoku/zasady/">Pełne zasady Gomoku</a>
+            </div>
+          </div>
+          <div class="gomoku-progress" aria-live="polite">
+            <div class="gomoku-progress__ring" data-gomoku-ring><strong data-gomoku-percent>0%</strong><span>postępu</span></div>
+            <div class="gomoku-progress__meta">
+              <span>Ukończone moduły</span>
+              <strong><b data-gomoku-done>0</b> / 6</strong>
+              <progress max="6" value="0" data-gomoku-progress>0 z 6</progress>
+            </div>
+          </div>
+          <div class="gomoku-module-strip" aria-label="Moduły Gomoku Academy">
+            <button type="button" data-gomoku-module="podstawy"><span>01</span><strong>Podstawy</strong><small>15×15 i ruch</small></button>
+            <button type="button" data-gomoku-module="zagrozenia"><span>02</span><strong>Zagrożenia</strong><small>trójki i czwórki</small></button>
+            <button type="button" data-gomoku-module="atak"><span>03</span><strong>Atak / obrona</strong><small>wybór priorytetu</small></button>
+            <button type="button" data-gomoku-module="ruch"><span>04</span><strong>Legalny ruch</strong><small>wolne przecięcie</small></button>
+            <button type="button" data-gomoku-module="strategia"><span>05</span><strong>Strategia</strong><small>centrum i tempo</small></button>
+            <button type="button" data-gomoku-module="quiz"><span>06</span><strong>Quiz</strong><small>sprawdź wiedzę</small></button>
+          </div>
+          <div class="gomoku-academy__footer">
+            <span data-gomoku-next aria-live="polite">Najpierw: poznaj podstawy ruchu.</span>
+            <button type="button" data-gomoku-reset>Wyzeruj postęp</button>
+          </div>
+        </section>
+
+        <nav class="gomoku-section-nav" aria-label="Sekcje Gomoku Academy" data-gomoku-section-nav>
+          <a href="#gomoku-academy">Academy</a>
+          <a href="#gomoku-path">Ścieżka</a>
+          <a href="#threat-lab">Zagrożenia</a>
+          <a href="#attack-defense">Atak / obrona</a>
+          <a href="#legal-move-lab">Legalny ruch</a>
+          <a href="#quiz-gomoku">Quiz</a>
+          <a href="#zasady">Zasady</a>
+        </nav>
+
+        <section class="gomoku-path" id="gomoku-path" aria-labelledby="gomoku-path-title">
+          <div class="academy-heading">
+            <p class="academy-eyebrow">Ścieżka Gomoku Academy</p>
+            <h2 id="gomoku-path-title">Sześć etapów od ruchu do taktyki</h2>
+            <p>Każdy etap prowadzi do konkretnego materiału lub ćwiczenia. Możesz przechodzić ścieżkę po kolei albo wracać do wybranego modułu.</p>
+          </div>
+          <div class="gomoku-path-grid">
+            <a href="#zasady" data-track-gomoku="podstawy"><span>01</span><div><strong>Podstawy 15×15</strong><small>jeden kamień na turę i cel gry</small></div><b>→</b></a>
+            <a href="#threat-lab" data-track-gomoku="zagrozenia"><span>02</span><div><strong>Zagrożenia</strong><small>rozpoznaj trójkę, czwórkę i piątkę</small></div><b>→</b></a>
+            <a href="#attack-defense" data-track-gomoku="atak"><span>03</span><div><strong>Atak i obrona</strong><small>wybierz ruch o najwyższym priorytecie</small></div><b>→</b></a>
+            <a href="#legal-move-lab" data-track-gomoku="ruch"><span>04</span><div><strong>Legalny ruch</strong><small>kamień tylko na wolnym przecięciu</small></div><b>→</b></a>
+            <a href="#strategia-gomoku" data-track-gomoku="strategia"><span>05</span><div><strong>Strategia</strong><small>centrum, dwa kierunki i tempo</small></div><b>→</b></a>
+            <a href="#quiz-gomoku" data-track-gomoku="quiz"><span>06</span><div><strong>Quiz końcowy</strong><small>5 pytań kontrolnych</small></div><b>→</b></a>
+          </div>
+        </section>
+
+        <section class="threat-lab" id="threat-lab" aria-labelledby="threat-lab-title" data-threat-lab>
+          <div class="academy-heading">
+            <p class="academy-eyebrow">Laboratorium zagrożeń</p>
+            <h2 id="threat-lab-title">Rozpoznaj siłę układu</h2>
+            <p>Wybierz typ układu i zobacz, dlaczego czwórka jest pilniejsza od zwykłej trójki, a pięć w linii kończy partię.</p>
+          </div>
+          <div class="threat-layout">
+            <div class="threat-board" aria-hidden="true">
+              <span class="threat-stone ts1"></span><span class="threat-stone ts2"></span><span class="threat-stone ts3"></span><span class="threat-stone ts4"></span>
+              <span class="threat-open to1"></span><span class="threat-open to2"></span>
+            </div>
+            <div class="threat-controls" role="group" aria-label="Typ zagrożenia">
+              <button type="button" data-threat="trojka">Trójka</button>
+              <button type="button" data-threat="czworka">Czwórka</button>
+              <button type="button" data-threat="piatka">Piątka</button>
+              <button type="button" data-threat="nadlinia">6+ kamieni</button>
+            </div>
+            <div class="threat-result" data-threat-result aria-live="polite">
+              <strong>Wybierz układ.</strong>
+              <span>Wyjaśnienie pojawi się tutaj.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="attack-defense" id="attack-defense" aria-labelledby="attack-defense-title" data-attack-defense>
+          <div class="academy-heading">
+            <p class="academy-eyebrow">Trener decyzji</p>
+            <h2 id="attack-defense-title">Atakować czy bronić?</h2>
+            <p>Trzy krótkie sytuacje uczą priorytetu: własna natychmiastowa wygrana, obrona przed wygraną przeciwnika i budowanie podwójnego zagrożenia.</p>
+          </div>
+          <div class="decision-layout">
+            <div class="decision-card">
+              <div class="decision-top"><span>Scenariusz <b data-decision-index>1</b> / 3</span><span data-decision-topic>Natychmiastowa wygrana</span></div>
+              <h3 data-decision-title>Masz cztery kamienie w linii i wolne pole na końcu</h3>
+              <p data-decision-text>Co powinieneś zrobić w pierwszej kolejności?</p>
+              <div class="decision-actions" data-decision-actions></div>
+              <div class="decision-feedback" data-decision-feedback aria-live="polite">Wybierz odpowiedź.</div>
+            </div>
+            <aside class="decision-score">
+              <span>Sesja treningowa</span>
+              <strong><b data-decision-score>0</b> / 3</strong>
+              <p>Poprawne decyzje w tej sesji.</p>
+              <button type="button" data-decision-next disabled>Następna sytuacja</button>
+              <button type="button" data-decision-restart>Od początku</button>
+            </aside>
+          </div>
+        </section>
+
+        <section class="legal-move-lab" id="legal-move-lab" aria-labelledby="legal-move-title" data-legal-move>
+          <div class="academy-heading">
+            <p class="academy-eyebrow">Legalny ruch</p>
+            <h2 id="legal-move-title">Gdzie wolno położyć kamień?</h2>
+            <p>W podstawowym Gomoku gracz.pl ruch polega na położeniu jednego kamienia na dowolnym wolnym przecięciu planszy.</p>
+          </div>
+          <div class="legal-grid">
+            <button type="button" data-legal-choice="wolne"><span class="legal-dot legal-dot--empty"></span><strong>Wolne przecięcie</strong><small>Czy ten ruch jest legalny?</small></button>
+            <button type="button" data-legal-choice="zajete"><span class="legal-dot legal-dot--black"></span><strong>Zajęte przecięcie</strong><small>Czy możesz położyć tu drugi kamień?</small></button>
+            <button type="button" data-legal-choice="przesun"><span class="legal-dot legal-dot--white"></span><strong>Przesunięcie kamienia</strong><small>Czy wolno ruszyć wcześniej położony kamień?</small></button>
+          </div>
+          <div class="legal-feedback" data-legal-feedback aria-live="polite">Kliknij jeden z przykładów.</div>
+        </section>
+
+        <section class="gomoku-quiz" id="quiz-gomoku" aria-labelledby="gomoku-quiz-title">
+          <div class="academy-heading">
+            <p class="academy-eyebrow">Test wiedzy</p>
+            <h2 id="gomoku-quiz-title">5 pytań kontrolnych</h2>
+            <p>Wynik 4/5 lub 5/5 zalicza moduł Quiz w panelu Gomoku Academy.</p>
+          </div>
+          <form class="gomoku-quiz-form" data-gomoku-quiz>
+            <fieldset data-answer="b"><legend><span>01</span> Kto zaczyna partię w podstawowym wariancie gracz.pl?</legend><label><input type="radio" name="gq1" value="a"> Białe</label><label><input type="radio" name="gq1" value="b"> Czarne</label><label><input type="radio" name="gq1" value="c"> Losowo</label></fieldset>
+            <fieldset data-answer="c"><legend><span>02</span> Ile kamieni dokładasz w swojej turze?</legend><label><input type="radio" name="gq2" value="a"> Dowolną liczbę</label><label><input type="radio" name="gq2" value="b"> Dwa</label><label><input type="radio" name="gq2" value="c"> Jeden</label></fieldset>
+            <fieldset data-answer="a"><legend><span>03</span> Czy sześć kamieni w jednej ciągłej linii wygrywa?</legend><label><input type="radio" name="gq3" value="a"> Tak</label><label><input type="radio" name="gq3" value="b"> Nie</label><label><input type="radio" name="gq3" value="c"> Tylko białymi</label></fieldset>
+            <fieldset data-answer="b"><legend><span>04</span> Co robisz z kamieniem po jego położeniu?</legend><label><input type="radio" name="gq4" value="a"> Możesz go przesunąć później</label><label><input type="radio" name="gq4" value="b"> Pozostaje na miejscu do końca partii</label><label><input type="radio" name="gq4" value="c"> Zdejmujesz po trzech turach</label></fieldset>
+            <fieldset data-answer="c"><legend><span>05</span> Które kierunki mogą tworzyć zwycięską linię?</legend><label><input type="radio" name="gq5" value="a"> Tylko poziomo</label><label><input type="radio" name="gq5" value="b"> Poziomo i pionowo</label><label><input type="radio" name="gq5" value="c"> Poziomo, pionowo i po obu przekątnych</label></fieldset>
+            <div class="gomoku-quiz-submit">
+              <button type="submit">Sprawdź wynik</button>
+              <div data-gomoku-quiz-result aria-live="polite"><strong>Wynik pojawi się tutaj.</strong><span>Odpowiedz na wszystkie pytania.</span></div>
+            </div>
+          </form>
+        </section>
+
+        <section class="gomoku-bridge" aria-labelledby="gomoku-bridge-title">
+          <div>
+            <span class="academy-eyebrow">Wiedza + praktyka</span>
+            <h2 id="gomoku-bridge-title">Gomoku Academy i pełne zasady</h2>
+            <p>Akademia pomaga rozpoznawać zagrożenia i priorytety. Pełny regulamin opisuje dokładnie wariant Gomoku 15×15 używany na gracz.pl.</p>
+          </div>
+          <div class="gomoku-bridge__actions">
+            <a href="/gry/gomoku/zasady/">Pełne zasady Gomoku</a>
+            <a href="/poradniki/">Centrum Poradników</a>
           </div>
         </section>
 
@@ -217,7 +380,7 @@
           <article class="rule-card"><span class="rule-icon">⚑</span><div><h2>6. Zakończenie partii</h2><p>Partia kończy się natychmiast po utworzeniu zwycięskiej linii albo remisem, gdy nie da się już wykonać ruchu bez zwycięstwa.</p></div></article>
         </section>
 
-        <section class="info-grid" aria-label="Strategia, błędy i warianty">
+        <section class="info-grid" id="strategia-gomoku" aria-label="Strategia, błędy i warianty">
           <article class="info-card info-card--green">
             <h2><span>💡</span> Strategia i wskazówki</h2>
             <ul class="check-list">
@@ -272,20 +435,24 @@
       </div>
 
       <aside class="side-column gomoku-side-panel" aria-label="Panel Gomoku">
-        <section class="gomoku-side-card gomoku-side-card--status">
-          <p class="gomoku-side-eyebrow">Gomoku</p>
-          <h2>Strategiczna gra 15×15</h2>
-          <p>Gra dla dwóch osób, w której liczy się budowanie pięciu kamieni w jednej linii, tworzenie zagrożeń i szybkie blokowanie przeciwnika.</p>
-          <div class="gomoku-side-status"><span aria-hidden="true"></span>Tryb online w przygotowaniu</div>
-          <a class="gomoku-side-primary" href="#zasady">Zasady gry</a>
+        <section class="gomoku-side-card gomoku-side-academy" aria-labelledby="gomoku-side-academy-title">
+          <p class="gomoku-side-eyebrow">Gomoku Academy</p>
+          <h2 id="gomoku-side-academy-title">Twój postęp</h2>
+          <div class="gomoku-side-progress"><strong data-gomoku-side-percent>0%</strong><span><b data-gomoku-side-done>0</b>/6 modułów</span></div>
+          <progress max="6" value="0" data-gomoku-side-bar>0 z 6</progress>
+          <a class="gomoku-side-primary" href="#gomoku-path">Kontynuuj naukę</a>
         </section>
 
         <nav class="gomoku-side-card gomoku-side-nav" aria-label="Na tej stronie">
           <p class="gomoku-side-eyebrow">Na tej stronie</p>
-          <a href="#zasady"><span>01</span><strong>Cel i podstawy gry</strong></a>
-          <a href="#warianty"><span>02</span><strong>Warianty Gomoku</strong></a>
-          <a href="#dokladne-zasady"><span>03</span><strong>Dokładne zasady</strong></a>
-          <a href="/poradniki/"><span>04</span><strong>Nauka i poradniki</strong></a>
+          <a href="#gomoku-academy"><span>01</span><strong>Academy</strong></a>
+          <a href="#gomoku-path"><span>02</span><strong>Ścieżka nauki</strong></a>
+          <a href="#threat-lab"><span>03</span><strong>Zagrożenia</strong></a>
+          <a href="#attack-defense"><span>04</span><strong>Atak / obrona</strong></a>
+          <a href="#legal-move-lab"><span>05</span><strong>Legalny ruch</strong></a>
+          <a href="#quiz-gomoku"><span>06</span><strong>Quiz</strong></a>
+          <a href="#zasady"><span>07</span><strong>Zasady i podstawy</strong></a>
+          <a href="#strategia-gomoku"><span>08</span><strong>Strategia</strong></a>
         </nav>
 
         <section class="gomoku-side-card gomoku-side-online" aria-labelledby="gomoku-online-title">
