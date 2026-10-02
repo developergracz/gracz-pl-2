@@ -25,10 +25,11 @@
   <meta name="twitter:title" content="Zasady Gomoku 15×15 | gracz.pl">
   <meta name="twitter:description" content="Czarne zaczynają, jeden kamień na turę, co najmniej pięć w linii i remis przy pełnej planszy.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=gomoku-premium-architecture-r4">
+  <link rel="stylesheet" href="/assets/rules.css?v=rules-global-qa-r1">
+  <script src="/assets/rules.js?v=rules-global-qa-r1" defer></script>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -77,7 +78,7 @@
       <ol>
         <li><a href="/">Start</a></li>
         <li><a href="/gry/">Gry</a></li>
-        <li><a href="/gry/gomoku/">Gomoku</a></li>
+        <li><a href="/gry/gomoku/" aria-current="page">Gomoku</a></li>
         <li aria-current="page">Zasady gry</li>
       </ol>
     </nav>
@@ -243,7 +244,7 @@
           <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
           <li><a href="/gry/tysiac/">Tysiąc</a></li>
           <li><a href="/gry/warcaby/">Warcaby</a></li>
-          <li><a href="/gry/gomoku/">Gomoku</a></li>
+          <li><a href="/gry/gomoku/" aria-current="page">Gomoku</a></li>
           <li><a href="/poradniki/">Poradniki</a></li>
           <li><button type="button" data-modal="updates">Aktualności</button></li>
         </ul>
@@ -269,5 +270,15 @@
       </div>
     </div>
   </footer>
+
+  <dialog class="rules-modal" id="rules-modal" aria-labelledby="rules-modal-title" aria-describedby="rules-modal-text">
+    <div class="rules-modal__box">
+      <button class="rules-modal__x" type="button" data-rules-close aria-label="Zamknij">×</button>
+      <span class="rules-modal__logo">gracz<span>.pl</span></span>
+      <h2 id="rules-modal-title">Informacja</h2>
+      <p id="rules-modal-text"></p>
+      <button class="rules-modal__ok" type="button" data-rules-close>Rozumiem</button>
+    </div>
+  </dialog>
 </body>
 </html>

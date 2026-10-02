@@ -2448,3 +2448,270 @@ body::after{
   .tysiac-rules-page .tysiac-quick-card{padding:20px!important}
   .tysiac-rules-page .rule-section{padding:24px 20px!important}
 }
+
+
+/* Rules module GLOBAL QA R1 */
+/* Shared geometry and visual tokens for all four rule pages. */
+.poker-rules-page,
+.tysiac-rules-page,
+.warcaby-rules-page,
+.gomoku-rules-page{
+  --rules-teal:#0f6e5a;
+  --rules-teal-2:#63ddc3;
+  --rules-panel-1:rgba(7,38,31,.95);
+  --rules-panel-2:rgba(3,22,18,.98);
+}
+.poker-rules-page .rules-shell,
+.tysiac-rules-page .rules-shell,
+.warcaby-rules-page .rules-shell,
+.gomoku-rules-page .rules-shell{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+.poker-rules-page .rules-header__inner,
+.tysiac-rules-page .rules-header__inner,
+.warcaby-rules-page .rules-header__inner,
+.gomoku-rules-page .rules-header__inner{
+  width:min(1510px,calc(100% - 48px))!important;
+}
+
+/* Consistent right-side architecture for the simpler Poker/Warcaby layouts. */
+.poker-rules-page .rules-layout,
+.warcaby-rules-page .rules-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 250px!important;
+  gap:20px!important;
+  align-items:start!important;
+}
+.poker-rules-page .rules-content,
+.warcaby-rules-page .rules-content{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+.poker-rules-page .rules-toc,
+.warcaby-rules-page .rules-toc{
+  grid-column:2!important;
+  grid-row:1!important;
+  position:sticky!important;
+  top:92px!important;
+  border:0!important;
+  border-left:1px solid rgba(95,218,185,.17)!important;
+  background:linear-gradient(90deg,rgba(7,48,39,.32),rgba(4,27,22,.06) 76%,transparent)!important;
+  box-shadow:none!important;
+}
+
+/* Remove leftover gold framing and convert separators to subtle teal. */
+.poker-rules-page .quick-card,
+.tysiac-rules-page .quick-card,
+.warcaby-rules-page .quick-card,
+.gomoku-rules-page .quick-card,
+.poker-rules-page .rule-section,
+.tysiac-rules-page .rule-section,
+.warcaby-rules-page .rule-section,
+.gomoku-rules-page .rule-section,
+.poker-rules-page .rules-side-card,
+.tysiac-rules-page .rules-side-card,
+.warcaby-rules-page .rules-side-card,
+.gomoku-rules-page .rules-side-card,
+.poker-rules-page .mini-rule,
+.tysiac-rules-page .mini-rule,
+.warcaby-rules-page .mini-rule,
+.gomoku-rules-page .mini-rule,
+.poker-rules-page .rule-table-wrap,
+.tysiac-rules-page .rule-table-wrap,
+.warcaby-rules-page .rule-table-wrap,
+.gomoku-rules-page .rule-table-wrap,
+.poker-rules-page .faq details,
+.tysiac-rules-page .faq details,
+.warcaby-rules-page .faq details,
+.gomoku-rules-page .faq details{
+  border:0!important;
+}
+.poker-rules-page .rule-number,
+.tysiac-rules-page .rule-number,
+.warcaby-rules-page .rule-number,
+.gomoku-rules-page .rule-number{
+  border:0!important;
+  background:rgba(83,209,175,.10)!important;
+  box-shadow:inset 0 0 0 1px rgba(83,209,175,.12)!important;
+  color:#80e5cb!important;
+}
+.poker-rules-page .rule-table th,
+.tysiac-rules-page .rule-table th,
+.warcaby-rules-page .rule-table th,
+.gomoku-rules-page .rule-table th{
+  background:rgba(31,108,87,.18)!important;
+}
+.poker-rules-page .rule-table th,
+.poker-rules-page .rule-table td,
+.tysiac-rules-page .rule-table th,
+.tysiac-rules-page .rule-table td,
+.warcaby-rules-page .rule-table th,
+.warcaby-rules-page .rule-table td,
+.gomoku-rules-page .rule-table th,
+.gomoku-rules-page .rule-table td{
+  border-color:rgba(97,213,183,.075)!important;
+}
+
+/* Active section state in either navigation architecture. */
+.rules-toc a,
+.rules-side-nav a{
+  transition:color .16s ease,background .16s ease,transform .16s ease;
+}
+.rules-toc a.is-current{
+  color:#8cebd3!important;
+  font-weight:800;
+}
+.rules-toc li:has(a.is-current){
+  color:#62d9bd!important;
+}
+.rules-side-nav a.is-current{
+  border-radius:10px;
+  background:linear-gradient(90deg,rgba(99,221,195,.09),transparent);
+  transform:translateX(2px);
+}
+.rules-side-nav a.is-current strong{color:#ffe3a0!important}
+.rules-side-nav a.is-current span{
+  background:rgba(99,221,195,.15)!important;
+  color:#9aefdc!important;
+}
+
+/* Keyboard and touch QA. */
+.rules-head-search:focus-visible,
+.rules-head-btn:focus-visible,
+.rules-toc a:focus-visible,
+.rules-side-nav a:focus-visible,
+.rules-side-related a:focus-visible,
+.rules-primary-action:focus-visible,
+.rules-secondary-action:focus-visible,
+.rules-bottom a:focus-visible,
+.footer-col a:focus-visible,
+.footer-col button:focus-visible,
+.footer-links button:focus-visible,
+.footer-news input:focus-visible,
+.footer-news button:focus-visible,
+.rules-modal button:focus-visible{
+  outline:2px solid #78e4ca!important;
+  outline-offset:3px!important;
+}
+.rules-side-nav a,
+.rules-toc a,
+.rules-bottom a{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Shared dialog for header/footer actions. */
+.rules-modal{
+  width:min(520px,calc(100% - 28px));
+  padding:0;
+  border:0;
+  border-radius:20px;
+  background:transparent;
+  color:#fff;
+}
+.rules-modal::backdrop{
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(5px);
+}
+.rules-modal__box{
+  position:relative;
+  padding:30px;
+  border:0;
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 0 0,rgba(36,161,129,.13),transparent 38%),
+    linear-gradient(145deg,#082d25,#041813);
+  box-shadow:0 28px 80px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.035);
+}
+.rules-modal__x{
+  position:absolute;
+  right:14px;
+  top:12px;
+  width:38px;
+  height:38px;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.05);
+  color:#c9d6d1;
+  font-size:24px;
+  cursor:pointer;
+}
+.rules-modal__logo{
+  display:block;
+  color:#fff;
+  font:800 26px/1 var(--display);
+  letter-spacing:-.04em;
+}
+.rules-modal__logo span{color:#f21a34}
+.rules-modal h2{
+  margin:22px 0 9px;
+  color:#f4dda0;
+  font:800 25px/1.15 var(--display);
+}
+.rules-modal p{margin:0;color:#c7d5cf;line-height:1.65}
+.rules-modal__ok{
+  min-height:44px;
+  margin-top:22px;
+  padding:0 20px;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(135deg,#0e6c59,#128871);
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+body.rules-modal-open{overflow:hidden}
+
+/* Header/footer parity. */
+.poker-rules-page .rules-header,
+.tysiac-rules-page .rules-header,
+.warcaby-rules-page .rules-header,
+.gomoku-rules-page .rules-header,
+.poker-rules-page .site-footer,
+.tysiac-rules-page .site-footer,
+.warcaby-rules-page .site-footer,
+.gomoku-rules-page .site-footer{
+  border:0!important;
+}
+.rules-nav a[aria-current="page"]{color:#f4d98e;font-weight:800}
+
+/* Responsive QA. */
+@media(max-width:1180px){
+  .poker-rules-page .rules-shell,
+  .tysiac-rules-page .rules-shell,
+  .warcaby-rules-page .rules-shell,
+  .gomoku-rules-page .rules-shell{
+    width:min(1120px,calc(100% - 32px))!important;
+  }
+}
+@media(max-width:900px){
+  .poker-rules-page .rules-layout,
+  .warcaby-rules-page .rules-layout{
+    grid-template-columns:1fr!important;
+  }
+  .poker-rules-page .rules-content,
+  .warcaby-rules-page .rules-content{
+    grid-column:1!important;
+    grid-row:1!important;
+  }
+  .poker-rules-page .rules-toc,
+  .warcaby-rules-page .rules-toc{
+    grid-column:1!important;
+    grid-row:2!important;
+    position:static!important;
+    border-left:0!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(7,42,34,.78),rgba(4,24,20,.78))!important;
+  }
+}
+@media(max-width:620px){
+  .poker-rules-page .rules-shell,
+  .tysiac-rules-page .rules-shell,
+  .warcaby-rules-page .rules-shell,
+  .gomoku-rules-page .rules-shell{
+    width:calc(100% - 20px)!important;
+  }
+  .rules-modal__box{padding:26px 20px}
+}
+@media(prefers-reduced-motion:reduce){
+  .rules-toc a,.rules-side-nav a{transition:none!important}
+}
