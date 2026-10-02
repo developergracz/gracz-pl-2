@@ -263,13 +263,13 @@
       var key=moduleButton.getAttribute('data-academy-module');
       var map={zasady:'#przebieg-rozdania',uklady:'#ranking-ukladow',pozycja:'#pozycje-poker',decyzje:'#arena-decyzji',matematyka:'#pot-odds',quiz:'#quiz-poker'};
       var target=document.querySelector(map[key]);
-      if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+      if(target)academyScrollTo(target);
     }
 
     var academyScroll=e.target.closest('[data-scroll-academy]');
     if(academyScroll){
       var academy=document.getElementById('poker-academy');
-      if(academy)academy.scrollIntoView({behavior:'smooth',block:'start'});
+      if(academy)academyScrollTo(academy);
     }
   });
 
@@ -445,6 +445,88 @@
       setPokerCurrent(ids[0]);
     },{rootMargin:'-110px 0px -64% 0px',threshold:[0,.01,.2]});
     pokerSideTargets.forEach(function(x){pokerObserver.observe(x.target);});
+  }
+
+
+
+  /* Poker Academy QA & visual polish R3 */
+  function academyScrollTo(target){
+    if(!target)return;
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+
+  // Replace direct smooth-scroll behavior on Academy controls with one reduced-motion-aware helper.
+  document.addEventListener('click',function(e){
+    var moduleButton=e.target.closest('[data-academy-module]');
+    if(moduleButton){
+      e.preventDefault();
+      var key=moduleButton.getAttribute('data-academy-module');
+      var map={zasady:'#przebieg-rozdania',uklady:'#ranking-ukladow',pozycja:'#pozycje-poker',decyzje:'#arena-decyzji',matematyka:'#pot-odds',quiz:'#quiz-poker'};
+      academyScrollTo(document.querySelector(map[key]));
+    }
+    var academyButton=e.target.closest('[data-scroll-academy]');
+    if(academyButton){
+      e.preventDefault();
+      academyScrollTo(document.getElementById('poker-academy'));
+    }
+  });
+
+  // Keep visual and accessible completion state synchronized.
+  function syncAcademyPressedState(){
+    document.querySelectorAll('[data-academy-module]').forEach(function(btn){
+      var key=btn.getAttribute('data-academy-module');
+      btn.setAttribute('aria-pressed',academyState[key]?'true':'false');
+      var title=btn.querySelector('strong');
+      if(title){
+        btn.setAttribute('aria-label',title.textContent+(academyState[key]?' — ukończone':' — nieukończone'));
+      }
+    });
+  }
+  syncAcademyPressedState();
+
+  // Wrap existing renderer so later progress changes also update aria-pressed.
+  var renderAcademyBase=renderAcademy;
+  renderAcademy=function(){
+    renderAcademyBase();
+    syncAcademyPressedState();
+  };
+  renderAcademy();
+
+  // Highlight the current chapter in both the sticky top navigation and right-side menu.
+  var topLinks=Array.prototype.slice.call(document.querySelectorAll('[data-poker-section-nav] a[href^="#"]'));
+  var allChapterLinks=topLinks.concat(pokerSideLinks||[]);
+  var chapterMap={};
+  allChapterLinks.forEach(function(link){
+    var selector=link.getAttribute('href');
+    if(!selector)return;
+    var target=document.querySelector(selector);
+    if(target)chapterMap[target.id]=target;
+  });
+  var chapterTargets=Object.keys(chapterMap).map(function(id){return chapterMap[id];});
+
+  function setCurrentChapter(id){
+    allChapterLinks.forEach(function(link){
+      var current=link.getAttribute('href')==='#'+id;
+      link.classList.toggle('is-current',current);
+      if(current)link.setAttribute('aria-current','location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  if(chapterTargets.length && 'IntersectionObserver' in window){
+    var activeChapters={};
+    var chapterObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting)activeChapters[entry.target.id]=entry.boundingClientRect.top;
+        else delete activeChapters[entry.target.id];
+      });
+      var ids=Object.keys(activeChapters);
+      if(!ids.length)return;
+      ids.sort(function(a,b){return Math.abs(activeChapters[a])-Math.abs(activeChapters[b]);});
+      setCurrentChapter(ids[0]);
+    },{rootMargin:'-128px 0px -62% 0px',threshold:[0,.01,.2]});
+    chapterTargets.forEach(function(target){chapterObserver.observe(target);});
   }
 
 })();
