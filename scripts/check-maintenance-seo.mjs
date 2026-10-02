@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 
 const root = "maintenance-site";
 const failures = [];
@@ -130,6 +131,27 @@ for (const url of ["https://gracz.pl/", "https://gracz.pl/gry/"]) {
 requireCheck(new Set(sitemapUrls).size === sitemapUrls.length, "sitemap contains duplicate URLs");
 requireCheck(fs.existsSync(`${root}/favicon-192.png`), "favicon-192.png missing");
 
+const allHtmlPages = [];
+const collectHtml = (dir) => {
+  for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectHtml(full);
+    else if (entry.isFile() && entry.name.endsWith(".html")) allHtmlPages.push(full);
+  }
+};
+collectHtml(root);
+
+for (const file of allHtmlPages) {
+  const html = fs.readFileSync(file, "utf8");
+  const rel = path.relative(root, file).replaceAll("\\", "/");
+  const icon = (html.match(/<link\b[^>]*rel="icon"[^>]*href="\/favicon-192\.png\?v=card-r1"[^>]*>/gi) || []).length;
+  const shortcut = (html.match(/<link\b[^>]*rel="shortcut icon"[^>]*href="\/favicon-192\.png\?v=card-r1"[^>]*>/gi) || []).length;
+  const apple = (html.match(/<link\b[^>]*rel="apple-touch-icon"[^>]*href="\/favicon-192\.png\?v=card-r1"[^>]*>/gi) || []).length;
+  requireCheck(icon === 1, `${rel}: expected exactly one browser favicon link, got ${icon}`);
+  requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
+  requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
+}
+
 if (failures.length) {
   console.error("SEO GATE: FAIL");
   for (const failure of failures) console.error(`- ${failure}`);
@@ -142,3 +164,4 @@ console.log(`games title: ${gamesMeta.title.length} chars; description: ${gamesM
 console.log(`games H1: ${gamesMeta.h1}`);
 console.log(`games schema: ${[...gamesLd.types].sort().join(", ")}`);
 console.log(`sitemap URLs: ${sitemapUrls.length}`);
+console.log(`favicon-covered HTML pages: ${allHtmlPages.length}`);
