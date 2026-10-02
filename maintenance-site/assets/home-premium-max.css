@@ -2501,7 +2501,7 @@ body.homepage-premium-max::after{
 
 .community-premium__status small{
   margin-top:5px;
-  color:#788e84;
+  color:#9db3a9;
   font-size:11px;
   line-height:1.45;
 }
@@ -2558,7 +2558,7 @@ body.homepage-premium-max::after{
 
 .community-premium__primary b,
 .community-premium__secondary b{
-  color:#f1d48b;
+  color:#fde9b0;
   font-size:17px;
 }
 
@@ -2975,7 +2975,7 @@ body.homepage-premium-max::after{
 
 .home-academy-progress__overall em{
   font-style:normal;
-  color:#71877d;
+  color:#9db3a9;
 }
 
 .home-academy-progress__games{
@@ -3257,7 +3257,7 @@ body.homepage-premium-max::after{
 
 .ai-poker-premium__status small{
   margin-top:5px;
-  color:#788e84;
+  color:#9db3a9;
   font-size:11px;
   line-height:1.5;
 }
