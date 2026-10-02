@@ -4324,3 +4324,137 @@ body.homepage-premium-max::after{
     font-size:17px;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — HERO WHY R18 */
+/* Compact value proposition placed directly below the three hero shortcuts. */
+.home-hero-why{
+  margin-top:10px;
+  padding:14px;
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 0 0,rgba(61,203,163,.055),transparent 44%),
+    rgba(2,15,12,.48);
+  box-shadow:inset 0 0 0 1px rgba(99,221,195,.035);
+}
+
+.home-hero-why__head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  padding:0 2px 11px;
+}
+
+.home-hero-why__head small,
+.home-hero-why__head strong{
+  display:block;
+}
+
+.home-hero-why__head small{
+  color:#62ddc2;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+.home-hero-why__head strong{
+  margin-top:4px;
+  color:#e8d493;
+  font:800 14px/1.18 var(--font-display,Montserrat,sans-serif);
+}
+
+.home-hero-why__head>a{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#9eae77;
+  font-size:8.5px;
+  font-weight:800;
+}
+
+.home-hero-why__head>a span{
+  color:#d7b75f;
+  font-size:12px;
+}
+
+.home-hero-why__grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+
+.home-hero-why__item{
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  min-width:0;
+  min-height:62px;
+  padding:9px 10px;
+  border-radius:11px;
+  background:rgba(6,35,28,.5);
+  box-shadow:inset 0 0 0 1px rgba(99,221,195,.028);
+}
+
+.home-hero-why__item>span{
+  width:32px;
+  height:32px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(99,221,195,.06);
+  color:#d9bb68;
+}
+
+.home-hero-why__item svg{
+  width:18px;
+  height:18px;
+}
+
+.home-hero-why__item strong,
+.home-hero-why__item small{
+  display:block;
+}
+
+.home-hero-why__item strong{
+  color:#dfe9e4;
+  font-size:9.5px;
+  line-height:1.2;
+}
+
+.home-hero-why__item small{
+  margin-top:3px;
+  color:#6f847a;
+  font-size:8px;
+  line-height:1.35;
+}
+
+/* Deliberately static on hover: no jumping icons or cards. */
+.home-hero-why__item:hover{
+  background:rgba(8,46,36,.58);
+}
+
+.home-hero-why__head>a:focus-visible,
+.home-hero-why__item:focus-within{
+  outline:2px solid #78e4ca;
+  outline-offset:2px;
+}
+
+@media(max-width:760px){
+  .home-hero-why__head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .home-hero-why__grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:560px){
+  .home-hero-why{
+    padding:12px;
+  }
+}
