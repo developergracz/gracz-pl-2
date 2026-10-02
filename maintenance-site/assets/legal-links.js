@@ -7,12 +7,23 @@
   var lastTrigger=null;
 
   function ensureStyles(){
-    if(document.querySelector('link[data-contact-modal-style]'))return;
-    var link=document.createElement('link');
-    link.rel='stylesheet';
-    link.href='/assets/contact-modal.css?v=r2';
-    link.setAttribute('data-contact-modal-style','');
-    document.head.appendChild(link);
+    var existing=document.querySelector('link[data-contact-modal-style]');
+    if(existing){
+      if(existing.sheet)return Promise.resolve();
+      return new Promise(function(resolve){
+        existing.addEventListener('load',resolve,{once:true});
+        existing.addEventListener('error',resolve,{once:true});
+      });
+    }
+    return new Promise(function(resolve){
+      var link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='/assets/contact-modal.css?v=r3';
+      link.setAttribute('data-contact-modal-style','');
+      link.addEventListener('load',resolve,{once:true});
+      link.addEventListener('error',resolve,{once:true});
+      document.head.appendChild(link);
+    });
   }
 
   function modalMarkup(){
@@ -44,7 +55,6 @@
 
   function ensureDialog(){
     if(dialog)return dialog;
-    ensureStyles();
     dialog=document.createElement('dialog');
     dialog.className='contact-modal';
     dialog.id='contact-modal';
@@ -159,8 +169,9 @@
     return dialog;
   }
 
-  function openContact(trigger){
+  async function openContact(trigger){
     lastTrigger=trigger||document.activeElement;
+    await ensureStyles();
     var target=ensureDialog();
     if(typeof target.showModal==='function')target.showModal();
     else target.setAttribute('open','');
