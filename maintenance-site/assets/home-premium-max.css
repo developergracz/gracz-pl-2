@@ -1958,3 +1958,52 @@ body.homepage-premium-max::after{
     font-size:34px!important;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — COMPACT WIDTH R9 */
+/* Keep the homepage visually focused on wide desktop screens. */
+.homepage-premium-max .header-inner{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+
+.homepage-premium-max .home-hero-premium__shell{
+  width:min(1340px,calc(100% - 48px))!important;
+}
+
+.homepage-premium-max .discover-inner,
+.homepage-premium-max .footer-grid,
+.homepage-premium-max .footer-bottom{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+
+@media(min-width:1180px) and (max-width:1439px){
+  .homepage-premium-max .header-inner,
+  .homepage-premium-max .home-hero-premium__shell,
+  .homepage-premium-max .discover-inner,
+  .homepage-premium-max .footer-grid,
+  .homepage-premium-max .footer-bottom{
+    width:calc(100% - 40px)!important;
+  }
+}
+
+@media(max-width:1179px){
+  .homepage-premium-max .header-inner,
+  .homepage-premium-max .home-hero-premium__shell,
+  .homepage-premium-max .discover-inner,
+  .homepage-premium-max .footer-grid,
+  .homepage-premium-max .footer-bottom{
+    width:calc(100% - 32px)!important;
+  }
+}
+
+@media(max-width:560px){
+  .homepage-premium-max .header-inner,
+  .homepage-premium-max .home-hero-premium__shell,
+  .homepage-premium-max .discover-inner{
+    width:calc(100% - 20px)!important;
+  }
+  .homepage-premium-max .footer-grid,
+  .homepage-premium-max .footer-bottom{
+    width:calc(100% - 32px)!important;
+  }
+}
