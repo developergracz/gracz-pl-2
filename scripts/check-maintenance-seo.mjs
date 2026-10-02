@@ -58,6 +58,7 @@ const validateBasePage = ({html, label, canonical, requireTitleTerms = [], requi
 
 const home = read("index.html");
 const games = read("gry/index.html");
+const regulation = read("regulamin/index.html");
 const robots = read("robots.txt");
 const sitemap = read("sitemap.xml");
 
@@ -86,6 +87,16 @@ const homeLd = parseLdTypes(home, "homepage");
 for (const type of ["WebSite", "Organization", "WebPage", "ImageObject", "ItemList"]) {
   requireCheck(homeLd.types.has(type), `homepage: schema type missing: ${type}`);
 }
+
+const regulationMeta = validateBasePage({
+  html: regulation,
+  label: "regulation",
+  canonical: "https://gracz.pl/regulamin/",
+  requireTitleTerms: ["Regulamin", "gracz.pl"],
+  requireH1Terms: ["Regulamin", "gracz.pl"]
+});
+requireCheck(regulation.includes('href="/assets/legal.css?v=reg-r1"'), "regulation: legal stylesheet missing");
+requireCheck(regulation.includes('src="/assets/legal.js?v=reg-r1"'), "regulation: legal script missing");
 
 const gamesMeta = validateBasePage({
   html: games,
@@ -125,7 +136,7 @@ requireCheck(/Allow:\s*\//i.test(robots), "robots.txt missing Allow: /");
 requireCheck(/Sitemap:\s*https:\/\/gracz\.pl\/sitemap\.xml/i.test(robots), "robots.txt missing canonical sitemap URL");
 
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-for (const url of ["https://gracz.pl/", "https://gracz.pl/gry/"]) {
+for (const url of ["https://gracz.pl/", "https://gracz.pl/gry/", "https://gracz.pl/regulamin/"]) {
   requireCheck(sitemapUrls.includes(url), `sitemap missing ${url}`);
 }
 requireCheck(new Set(sitemapUrls).size === sitemapUrls.length, "sitemap contains duplicate URLs");
@@ -150,6 +161,9 @@ for (const file of allHtmlPages) {
   requireCheck(icon === 1, `${rel}: expected exactly one browser favicon link, got ${icon}`);
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
+  if (/data-modal="terms"/i.test(html)) {
+    requireCheck(html.includes('/assets/legal-links.js?v=r1'), `${rel}: terms trigger exists but legal-links.js is missing`);
+  }
 }
 
 if (failures.length) {
@@ -161,6 +175,7 @@ if (failures.length) {
 console.log("SEO GATE: PASS");
 console.log(`homepage title: ${homeMeta.title.length} chars; description: ${homeMeta.description.length} chars`);
 console.log(`games title: ${gamesMeta.title.length} chars; description: ${gamesMeta.description.length} chars`);
+console.log(`regulation title: ${regulationMeta.title.length} chars; description: ${regulationMeta.description.length} chars`);
 console.log(`games H1: ${gamesMeta.h1}`);
 console.log(`games schema: ${[...gamesLd.types].sort().join(", ")}`);
 console.log(`sitemap URLs: ${sitemapUrls.length}`);
