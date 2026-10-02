@@ -1280,3 +1280,21 @@ main:focus { outline: none; }
     width:calc(606 * var(--u));
   }
 }
+
+
+/* HOME R7 — pixel-align adjacent vertical frame lines */
+@media (min-width:1180px){
+  /*
+    Measured from the supplied crop: the upper status-frame edge sits ~4 CSS px
+    to the right of the lower NEXT-frame edge. Move only the status panel's
+    left edge left by 4px, while preserving its right edge and content position.
+  */
+  .status-panel{
+    margin-left:-4px!important;
+    width:calc(100% + 4px)!important;
+    padding-left:calc(24 * var(--u) + 4px)!important;
+  }
+  .next-panel{
+    width:calc(606 * var(--u))!important;
+  }
+}
