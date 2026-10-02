@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css">
+  <link rel="stylesheet" href="/assets/rules.css?v=tysiac-premium-r1">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -57,23 +57,41 @@
   <main id="tresc" class="rules-shell">
     <nav class="breadcrumb" aria-label="Ścieżka nawigacji"><ol><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry/tysiac/">Tysiąc</a></li><li aria-current="page">Zasady gry</li></ol></nav>
 
-    <section class="rules-hero">
-      <div>
-        <p class="rules-kicker">Tysiąc • zasady szczegółowe</p>
-        <h1>Zasady gry w Tysiąca</h1>
-        <p class="rules-lead">Poniżej opisany jest wariant zgodny z obecnym silnikiem Tysiąca gracz.pl. Obejmuje grę dla 2–4 osób, talię 24 kart, licytację, musik, kontrakt, meldunki, atuty, zdobywanie lew oraz punktację do 1000.</p>
-        <p class="rules-note"><strong>Ważne:</strong> Tysiąc ma wiele domowych odmian. Na gracz.pl obowiązuje konkretny zestaw reguł opisany na tej stronie, tak aby interfejs i silnik gry działały jednoznacznie.</p>
+    <section class="rules-hero rules-hero--premium" aria-labelledby="rules-hero-title">
+      <div class="rules-hero__visual">
+        <div class="rules-card-scene" role="img" aria-label="Stół do gry w Tysiąca z wachlarzem kart, meldunkami i celem 1000 punktów">
+          <div class="rules-score-board"><span>Cel gry</span><strong>1000 pkt</strong></div>
+          <div class="rules-marriage-badges" aria-hidden="true"><span>♠</span><span>♣</span><span class="red">♦</span><span class="red">♥</span></div>
+          <div class="rules-card-fan" aria-hidden="true">
+            <span class="rules-playing-card rc1"><b class="rank">9</b><b class="suit">♣</b><b class="big-suit">♣</b></span>
+            <span class="rules-playing-card red rc2"><b class="rank">Q</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
+            <span class="rules-playing-card red rc3"><b class="rank">K</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
+            <span class="rules-playing-card rc4"><b class="rank">10</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
+            <span class="rules-playing-card red rc5"><b class="rank">A</b><b class="suit">♦</b><b class="big-suit">♦</b></span>
+          </div>
+          <span class="rules-table-caption">Licytacja • meldunki • atuty • lewy</span>
+        </div>
       </div>
-      <aside class="quick-card" aria-label="Tysiąc w skrócie">
-        <h2>W skrócie</h2>
-        <dl>
-          <div><dt>Gracze</dt><dd>2–4</dd></div>
-          <div><dt>Talia</dt><dd>24 karty</dd></div>
-          <div><dt>Licytacja</dt><dd>100–360</dd></div>
-          <div><dt>Krok licytacji</dt><dd>10 pkt</dd></div>
-          <div><dt>Cel gry</dt><dd>1000 pkt</dd></div>
-        </dl>
-      </aside>
+
+      <div class="rules-hero__copy">
+        <p class="rules-kicker">Tysiąc • zasady szczegółowe</p>
+        <h1 id="rules-hero-title">Zasady gry w Tysiąca</h1>
+        <p class="rules-lead">Pełny, uporządkowany przewodnik po wariancie Tysiąca używanym na gracz.pl: od talii 24 kart i licytacji, przez musik i meldunki, aż po rozgrywanie lew i punktację do 1000.</p>
+
+        <ul class="rules-facts" aria-label="Najważniejsze informacje o zasadach">
+          <li><span>♣</span><strong>2–4 graczy</strong></li>
+          <li><span>24</span><strong>24 karty</strong></li>
+          <li><span>↗</span><strong>100–360</strong></li>
+          <li><span>1000</span><strong>Cel gry</strong></li>
+        </ul>
+
+        <p class="rules-note"><strong>Ważne:</strong> Tysiąc ma wiele domowych odmian. Na gracz.pl obowiązuje jeden, spójny zestaw reguł opisany na tej stronie, aby interfejs i silnik gry działały jednoznacznie.</p>
+
+        <div class="rules-hero__actions">
+          <a class="rules-primary-action" href="#talia">Czytaj zasady</a>
+          <a class="rules-secondary-action" href="/gry/tysiac/">Wróć do gry</a>
+        </div>
+      </div>
     </section>
 
     <div class="rules-layout">
