@@ -850,3 +850,23 @@ body::after{
   font-weight:800!important;
   white-space:nowrap!important;
 }
+
+
+/* Poradniki R18 — remove duplicate HTML overlays; keep one original artwork label/caption */
+.poradniki-hero-r7__label-overlay,
+.poradniki-hero-r7__caption-overlay{
+  display:none!important;
+}
+.poradniki-hero-r7__scene{
+  padding:12px!important;
+}
+.poradniki-hero-r7__image{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:0!important;
+  transform:none!important;
+}
