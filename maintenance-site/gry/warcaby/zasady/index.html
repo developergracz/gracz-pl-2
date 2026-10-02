@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=poradniki-teal-r16">
+  <link rel="stylesheet" href="/assets/rules.css?v=unified-footer-r1">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -205,10 +205,55 @@
     </section>
   </main>
 
-  <footer class="rules-footer">
-    <div class="rules-footer__inner">
-      <span>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</span>
-      <nav aria-label="Stopka"><a href="/gry/">Gry</a><a href="/poradniki/">Poradniki</a><a href="/o-gracz-pl/">O gracz.pl</a></nav>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/">gracz<span>.pl</span></a>
+        <p>Gry. Wiedza. Społeczność.</p>
+      </div>
+
+      <nav class="footer-col" aria-labelledby="f-nav">
+        <h2 id="f-nav">Nawigacja</h2>
+        <ul>
+          <li><a href="/">Start</a></li>
+          <li><a href="/gry/">Gry</a></li>
+          <li><a href="/gry-karciane/">Gry karciane</a></li>
+          <li><a href="/poradniki/">Poradniki</a></li>
+          <li><button type="button" data-modal="community">Społeczność</button></li>
+          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-labelledby="f-pop">
+        <h2 id="f-pop">Popularne gry</h2>
+        <ul>
+          <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+          <li><a href="/gry/tysiac/">Tysiąc</a></li>
+          <li><a href="/gry/warcaby/">Warcaby</a></li>
+          <li><a href="/gry/gomoku/">Gomoku</a></li>
+          <li><a href="/poradniki/">Poradniki</a></li>
+          <li><button type="button" data-modal="updates">Aktualności</button></li>
+        </ul>
+      </nav>
+
+      <div class="footer-news">
+        <h2>Bądź na bieżąco</h2>
+        <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
+        <form data-newsletter novalidate>
+          <label class="sr-only" for="footer-news-email">Twój adres e-mail</label>
+          <input id="footer-news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off">
+          <button type="submit">Zapisz się</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p>
+      <div class="footer-links">
+        <button type="button" data-modal="privacy">Polityka prywatności</button>
+        <button type="button" data-modal="terms">Regulamin</button>
+        <button type="button" data-modal="contact">Kontakt</button>
+      </div>
     </div>
   </footer>
 </body>
