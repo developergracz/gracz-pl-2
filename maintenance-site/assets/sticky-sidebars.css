@@ -1,0 +1,186 @@
+/* Global Sticky Right Rails R4
+   Keeps the R1 sticky/nested-scroll behavior, adds document-scroll synchronization and mobile access.
+   Desktop rails auto-scroll with the page; smaller layouts expose the same links from a floating menu. */
+
+main [id]{
+  scroll-margin-top:110px;
+}
+
+@media (min-width:1181px){
+  .side-column,
+  .academy-side-column,
+  .poker-side-panel,
+  .warcaby-side-panel,
+  .gomoku-side-panel,
+  .side-column--pilot{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
+  }
+
+  .side-column::-webkit-scrollbar,
+  .academy-side-column::-webkit-scrollbar,
+  .poker-side-panel::-webkit-scrollbar,
+  .warcaby-side-panel::-webkit-scrollbar,
+  .gomoku-side-panel::-webkit-scrollbar,
+  .side-column--pilot::-webkit-scrollbar{width:6px}
+
+  .side-column::-webkit-scrollbar-thumb,
+  .academy-side-column::-webkit-scrollbar-thumb,
+  .poker-side-panel::-webkit-scrollbar-thumb,
+  .warcaby-side-panel::-webkit-scrollbar-thumb,
+  .gomoku-side-panel::-webkit-scrollbar-thumb,
+  .side-column--pilot::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
+  }
+}
+
+@media (min-width:1321px){
+  .rules-side-panel{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
+  }
+
+  .rules-side-panel::-webkit-scrollbar{width:6px}
+  .rules-side-panel::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
+  }
+
+  /* Gomoku rules has older page-specific static overrides.
+     Keep this final selector stronger than those rules. */
+  .gomoku-rules-page .gomoku-rules-side-panel{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    height:auto!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-gutter:stable;
+  }
+}
+
+@media (min-width:901px){
+  .rules-toc{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
+  }
+}
+
+@media (max-width:1180px){
+  .side-column,
+  .academy-side-column,
+  .poker-side-panel,
+  .warcaby-side-panel,
+  .gomoku-side-panel,
+  .side-column--pilot{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
+
+@media (max-width:1320px){
+  .rules-side-panel,
+  .gomoku-rules-page .gomoku-rules-side-panel{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
+
+@media (max-width:900px){
+  .rules-toc{
+    position:static!important;
+    top:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
+
+
+/* Cross-browser mobile/tablet access */
+.sticky-mobile-nav-toggle{
+  display:none;
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:260;
+  min-height:48px;
+  padding:0 18px;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(135deg,#0d6d59,#128b72);
+  color:#fff;
+  font:800 14px/1.1 Arial,sans-serif;
+  box-shadow:0 12px 34px rgba(0,0,0,.38);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.sticky-mobile-nav-toggle.is-enabled{display:flex;align-items:center;gap:8px}
+.sticky-mobile-nav-toggle:focus-visible{outline:2px solid #91f0d9;outline-offset:3px}
+.sticky-mobile-nav-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:300;
+  background:rgba(0,0,0,.58);
+}
+.sticky-mobile-nav-overlay.is-open{display:block}
+.sticky-mobile-nav-sheet{
+  position:absolute;
+  right:10px;
+  bottom:10px;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  left:10px;
+  max-height:72vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:18px;
+  border-radius:20px;
+  background:linear-gradient(145deg,#082d25,#041813);
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+}
+.sticky-mobile-nav-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.sticky-mobile-nav-title{margin:0;color:#f4d994;font:800 18px/1.2 Arial,sans-serif}
+.sticky-mobile-nav-close{
+  width:42px;height:42px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.07);color:#fff;font-size:26px;line-height:1;cursor:pointer
+}
+.sticky-mobile-nav-links{display:grid;gap:6px}
+.sticky-mobile-nav-links a{
+  display:flex;align-items:center;min-height:44px;padding:10px 12px;border-radius:12px;
+  color:#e8f2ee;font:700 14px/1.35 Arial,sans-serif;text-decoration:none;
+  background:rgba(255,255,255,.025)
+}
+.sticky-mobile-nav-links a.is-current{color:#ffe3a0;background:rgba(99,221,195,.12)}
+.sticky-mobile-nav-links a:focus-visible{outline:2px solid #91f0d9;outline-offset:2px}

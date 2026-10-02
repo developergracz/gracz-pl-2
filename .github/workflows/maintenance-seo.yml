@@ -1,0 +1,33 @@
+name: Maintenance SEO Gate
+
+on:
+  pull_request:
+    paths:
+      - "maintenance-site/**"
+      - "scripts/check-maintenance-seo.mjs"
+      - ".github/workflows/maintenance-seo.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "maintenance-site/**"
+      - "scripts/check-maintenance-seo.mjs"
+      - ".github/workflows/maintenance-seo.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  seo:
+    name: Validate site SEO
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run SEO gate
+        run: node scripts/check-maintenance-seo.mjs

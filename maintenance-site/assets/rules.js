@@ -73,12 +73,29 @@
     if(target && targets.indexOf(target)<0)targets.push(target);
   });
 
+  function keepCurrentLinkVisible(link){
+    var rail=link && link.closest('.rules-side-panel,.rules-toc');
+    if(!rail || rail.scrollHeight<=rail.clientHeight)return;
+    var railRect=rail.getBoundingClientRect();
+    var linkRect=link.getBoundingClientRect();
+    var pad=12;
+    if(linkRect.top<railRect.top+pad){
+      rail.scrollTop-=railRect.top+pad-linkRect.top;
+    }else if(linkRect.bottom>railRect.bottom-pad){
+      rail.scrollTop+=linkRect.bottom-(railRect.bottom-pad);
+    }
+  }
+
   function setCurrent(id){
     navLinks.forEach(function(link){
       var current=link.getAttribute('href')==='#'+id;
       link.classList.toggle('is-current',current);
-      if(current)link.setAttribute('aria-current','location');
-      else link.removeAttribute('aria-current');
+      if(current){
+        link.setAttribute('aria-current','location');
+        keepCurrentLinkVisible(link);
+      }else{
+        link.removeAttribute('aria-current');
+      }
     });
   }
 

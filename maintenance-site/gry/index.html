@@ -3,13 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Gry online — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl</title>
-  <meta name="description" content="Gry na gracz.pl: Poker treningowy, Tysiąc, Warcaby i Gomoku. Poznaj gry, ich zasady i przejdź do szczegółowych podstron.">
+  <title>Gry online: Poker, Tysiąc, Warcaby i Gomoku | gracz.pl</title>
+  <meta name="description" content="Gry online na gracz.pl: Poker Academy, Tysiąc, Warcaby i Gomoku. Porównaj gry, poznaj zasady, poradniki i wybierz własną ścieżkę Academy.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="theme-color" content="#050706">
   <meta name="color-scheme" content="dark">
+  <meta name="application-name" content="gracz.pl">
+
   <link rel="canonical" href="https://gracz.pl/gry/">
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/">
   <link rel="alternate" hreflang="pl" href="https://gracz.pl/gry/">
@@ -17,34 +19,128 @@
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="gracz.pl">
-  <meta property="og:title" content="Gry online — Poker, Tysiąc, Warcaby i Gomoku | gracz.pl">
-  <meta property="og:description" content="Poznaj gry rozwijane na gracz.pl — Poker treningowy, Tysiąc, Warcaby i Gomoku.">
+  <meta property="og:title" content="Gry online: Poker, Tysiąc, Warcaby i Gomoku | gracz.pl">
+  <meta property="og:description" content="Poker Academy, Tysiąc, Warcaby i Gomoku na gracz.pl. Porównaj gry, poznaj zasady i przejdź do własnej ścieżki Academy.">
   <meta property="og:url" content="https://gracz.pl/gry/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta property="og:image:secure_url" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="gracz.pl — gry, Academy i wiedza dla graczy">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Gry online | gracz.pl">
-  <meta name="twitter:description" content="Poker treningowy, Tysiąc, Warcaby i Gomoku.">
+  <meta name="twitter:title" content="Gry online: Poker, Tysiąc, Warcaby i Gomoku | gracz.pl">
+  <meta name="twitter:description" content="Porównaj Poker Academy, Tysiąca, Warcaby i Gomoku oraz poznaj zasady i poradniki na gracz.pl.">
   <meta name="twitter:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta name="twitter:image:alt" content="gracz.pl — gry, Academy i wiedza dla graczy">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/gry-hero-approved-v4.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="/assets/gry.css?v=corr-r1">
   <script src="/assets/gry.js?v=r3-2-horizontal" defer></script>
   <script type="application/ld+json">
   {
-    "@context":"https://schema.org",
-    "@graph":[
-      {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
-      {"@type":"CollectionPage","@id":"https://gracz.pl/gry/#webpage","url":"https://gracz.pl/gry/","name":"Gry online na gracz.pl","description":"Poker treningowy, Tysiąc, Warcaby i Gomoku.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
-      {"@type":"BreadcrumbList","itemListElement":[
-        {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
-        {"@type":"ListItem","position":2,"name":"Gry","item":"https://gracz.pl/gry/"}
-      ]}
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://gracz.pl/#website",
+        "url": "https://gracz.pl/",
+        "name": "gracz.pl",
+        "alternateName": ["Gracz", "Gracz.pl"],
+        "inLanguage": "pl-PL",
+        "publisher": {"@id": "https://gracz.pl/#organization"}
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://gracz.pl/#organization",
+        "name": "gracz.pl",
+        "alternateName": "Gracz",
+        "url": "https://gracz.pl/",
+        "logo": {"@id": "https://gracz.pl/#logo"}
+      },
+      {
+        "@type": "ImageObject",
+        "@id": "https://gracz.pl/#logo",
+        "url": "https://gracz.pl/favicon-192.png",
+        "contentUrl": "https://gracz.pl/favicon-192.png",
+        "width": 192,
+        "height": 192,
+        "caption": "gracz.pl"
+      },
+      {
+        "@type": "ImageObject",
+        "@id": "https://gracz.pl/gry/#primaryimage",
+        "url": "https://gracz.pl/assets/gry-hero-approved-v4.webp",
+        "contentUrl": "https://gracz.pl/assets/gry-hero-approved-v4.webp",
+        "width": 550,
+        "height": 550,
+        "caption": "Gry online na gracz.pl — Poker, Tysiąc, Warcaby i Gomoku"
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://gracz.pl/gry/#webpage",
+        "url": "https://gracz.pl/gry/",
+        "name": "Gry online: Poker, Tysiąc, Warcaby i Gomoku | gracz.pl",
+        "description": "Gry online na gracz.pl: Poker Academy, Tysiąc, Warcaby i Gomoku. Porównaj gry, poznaj zasady, poradniki i wybierz własną ścieżkę Academy.",
+        "isPartOf": {"@id": "https://gracz.pl/#website"},
+        "about": {"@id": "https://gracz.pl/#organization"},
+        "publisher": {"@id": "https://gracz.pl/#organization"},
+        "primaryImageOfPage": {"@id": "https://gracz.pl/gry/#primaryimage"},
+        "breadcrumb": {"@id": "https://gracz.pl/gry/#breadcrumb"},
+        "mainEntity": {"@id": "https://gracz.pl/gry/#itemlist"},
+        "inLanguage": "pl-PL"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://gracz.pl/gry/#breadcrumb",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "Start", "item": "https://gracz.pl/"},
+          {"@type": "ListItem", "position": 2, "name": "Gry", "item": "https://gracz.pl/gry/"}
+        ]
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://gracz.pl/gry/#itemlist",
+        "name": "Gry i Academy na gracz.pl",
+        "numberOfItems": 4,
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Poker Academy — Texas Hold’em",
+            "url": "https://gracz.pl/gry/poker-treningowy/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Tysiąc Academy",
+            "url": "https://gracz.pl/gry/tysiac/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Warcaby Academy",
+            "url": "https://gracz.pl/gry/warcaby/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "Gomoku Academy",
+            "url": "https://gracz.pl/gry/gomoku/"
+          }
+        ]
+      }
     ]
   }
   </script>
-  <link rel="stylesheet" href="/assets/related-thumbnails.css?v=category-tiles-r3">
-  <link rel="stylesheet" href="/assets/unified-subpage-hero.css?v=r2">
+  <link rel="stylesheet" href="/assets/sticky-sidebars.css?v=r4">
+  <script src="/assets/sticky-sidebars.js?v=r6" defer></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
+  <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
+  <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
 </head>
 <body>
   <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -119,15 +215,15 @@
       <section class="hero-card games-hero-r4" aria-labelledby="hero-title">
         <div class="board-visual games-hero-visual-r4">
           <div class="games-hero-image-frame-r4" role="img" aria-label="Gry gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
-            <img src="/assets/gry-hero-approved-v4.webp" width="550" height="550" alt="Gry gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
+            <img src="/assets/gry-hero-approved-v4.webp" width="550" height="550" fetchpriority="high" alt="Gry online na gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
             <span class="games-hero-label-r4" aria-hidden="true">GRY</span>
           </div>
         </div>
 
         <div class="hero-copy">
-          <h1 id="hero-title">Gry</h1>
-          <p class="hero-kicker">Znajdź swoją grę na gracz.pl</p>
-          <p class="hero-lead">W dziale Gry na gracz.pl znajdziesz klasyczne gry karciane, takie jak Poker i Tysiąc, oraz popularne gry logiczne, jak Warcaby i Gomoku. Poznaj zasady, sprawdź poradniki i odkryj grę, która najbardziej Ci odpowiada.</p>
+          <h1 id="hero-title">Gry online</h1>
+          <p class="hero-kicker">Poker, Tysiąc, Warcaby i Gomoku na gracz.pl</p>
+          <p class="hero-lead">W dziale Gry online na gracz.pl znajdziesz Poker Academy i Tysiąca oraz gry logiczne — Warcaby i Gomoku. Porównaj tytuły, poznaj zasady, otwórz poradniki i wybierz ścieżkę Academy dopasowaną do swojego stylu gry.</p>
 
           <ul class="facts" aria-label="Informacje o dziale Gry">
             <li><span class="fact-icon">♣</span><strong>4 gry</strong></li>
@@ -414,7 +510,6 @@
         </div>
       </section>
 
-
       <section class="hub-section-r2 choose-guide-r3" id="jak-wybrac" aria-labelledby="choose-title">
         <div class="max-heading">
           <p class="section-eyebrow">Jak wybrać grę?</p>
@@ -443,7 +538,6 @@
           <span>Twoja ścieżka<small>po uruchomieniu kont</small></span>
         </div>
       </section>
-
 
         </div>
       </div>
