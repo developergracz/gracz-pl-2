@@ -170,6 +170,26 @@ body.contact-modal-open{overflow:hidden}
 }
 @media(prefers-reduced-motion:reduce){.contact-modal[open]{animation:none}}
 
+/* R4 — turquoise scrollbar for the contact modal */
+.contact-modal__panel{
+  scrollbar-width:thin;
+  scrollbar-color:#65d8d1 rgba(255,255,255,.06);
+}
+.contact-modal__panel::-webkit-scrollbar{width:10px}
+.contact-modal__panel::-webkit-scrollbar-track{
+  background:rgba(255,255,255,.05);
+  border-radius:999px;
+}
+.contact-modal__panel::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#8fe7e2,#4fc7c0);
+  border:2px solid rgba(9,31,29,.9);
+  border-radius:999px;
+}
+.contact-modal__panel::-webkit-scrollbar-thumb:hover{
+  background:#9cf0eb;
+}
+
+
 .contact-form__privacy a{
   color:#ffe3a0;
   font-weight:700;
