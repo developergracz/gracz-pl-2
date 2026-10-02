@@ -2835,6 +2835,13 @@ body.homepage-premium-max::after{
   outline-offset:3px!important;
 }
 
+/* R20 — the Academy tile link fills an overflow:hidden card, which clipped its outset focus ring.
+   Draw the ring INSIDE the card instead (never clipped, no layout shift). */
+.homepage-premium-max .academy-tile__link:focus-visible{
+  border-radius:inherit;
+  outline-offset:-6px!important;
+}
+
 /* Avoid cramped desktop header between tablet and wide desktop. */
 @media(min-width:1180px) and (max-width:1439px){
   .homepage-premium-max .site-header .home-header-logo{
