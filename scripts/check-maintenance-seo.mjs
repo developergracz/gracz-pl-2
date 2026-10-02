@@ -161,10 +161,13 @@ for (const file of allHtmlPages) {
   requireCheck(icon === 1, `${rel}: expected exactly one browser favicon link, got ${icon}`);
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
-  if (/data-modal="terms"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r1'), `${rel}: terms trigger exists but legal-links.js is missing`);
+  if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
+    requireCheck(html.includes('/assets/legal-links.js?v=r2'), `${rel}: legal/contact trigger exists but legal-links.js R2 is missing`);
   }
 }
+
+requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
 
 if (failures.length) {
   console.error("SEO GATE: FAIL");
@@ -180,3 +183,4 @@ console.log(`games H1: ${gamesMeta.h1}`);
 console.log(`games schema: ${[...gamesLd.types].sort().join(", ")}`);
 console.log(`sitemap URLs: ${sitemapUrls.length}`);
 console.log(`favicon-covered HTML pages: ${allHtmlPages.length}`);
+
