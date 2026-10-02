@@ -870,3 +870,49 @@ body::after{
   margin:0!important;
   transform:none!important;
 }
+
+
+/* Poradniki R19 — simplified card actions */
+.page-shell .guide-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  margin-top:auto!important;
+  padding-top:20px!important;
+}
+.page-shell .guide-link{
+  min-height:46px!important;
+  padding:0 20px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#ffe59b,#f3ae32)!important;
+  color:#241503!important;
+  font-weight:800!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.16)!important;
+}
+.page-shell .guide-text-link{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:40px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#55d9c1!important;
+  font-weight:800!important;
+  text-decoration:none!important;
+  box-shadow:none!important;
+  transition:color .18s ease,transform .18s ease!important;
+}
+.page-shell .guide-text-link:hover,
+.page-shell .guide-text-link:focus-visible{
+  color:#8ce8d7!important;
+  transform:translateX(2px)!important;
+  outline:none!important;
+}
+@media(max-width:560px){
+  .page-shell .guide-actions{
+    align-items:flex-start!important;
+    flex-direction:column!important;
+    gap:10px!important;
+  }
+}
