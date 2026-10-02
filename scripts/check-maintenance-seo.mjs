@@ -95,7 +95,7 @@ const regulationMeta = validateBasePage({
   requireTitleTerms: ["Regulamin", "gracz.pl"],
   requireH1Terms: ["Regulamin", "gracz.pl"]
 });
-requireCheck(regulation.includes('href="/assets/legal.css?v=reg-r3"'), "regulation: legal stylesheet missing");
+requireCheck(regulation.includes('href="/assets/legal.css?v=reg-r4"'), "regulation: legal stylesheet missing");
 requireCheck(regulation.includes('src="/assets/legal.js?v=reg-r2"'), "regulation: legal script missing");
 
 const gamesMeta = validateBasePage({
