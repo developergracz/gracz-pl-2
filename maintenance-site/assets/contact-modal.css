@@ -169,3 +169,16 @@ body.contact-modal-open{overflow:hidden}
   .contact-form__submit{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.contact-modal[open]{animation:none}}
+
+.contact-form__privacy a{
+  color:#ffe3a0;
+  font-weight:700;
+  text-decoration:underline;
+  text-decoration-color:rgba(240,191,85,.75);
+  text-underline-offset:3px;
+}
+.contact-form__privacy a:hover,
+.contact-form__privacy a:focus-visible{
+  color:#f0bf55;
+  text-decoration-color:#f0bf55;
+}
