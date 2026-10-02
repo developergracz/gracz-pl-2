@@ -4458,3 +4458,222 @@ body.homepage-premium-max::after{
     padding:12px;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — FINAL POLISH R19 */
+/* One calm interaction language across the finished homepage. */
+.homepage-premium-max .tile,
+.homepage-premium-max .academy-tile,
+.homepage-premium-max .home-hub-card,
+.homepage-premium-max .knowledge-card,
+.homepage-premium-max .home-progress-game,
+.homepage-premium-max .popular-card,
+.homepage-premium-max .home-update-card,
+.homepage-premium-max .home-hero-premium__primary,
+.homepage-premium-max .home-hero-premium__secondary{
+  transition:background .18s ease,box-shadow .18s ease,color .18s ease,filter .18s ease!important;
+}
+
+.homepage-premium-max .tile:hover,
+.homepage-premium-max .tile:focus-visible,
+.homepage-premium-max .academy-tile:hover,
+.homepage-premium-max .academy-tile:focus-visible,
+.homepage-premium-max .home-hub-card:hover,
+.homepage-premium-max .home-hub-card:focus-visible,
+.homepage-premium-max .knowledge-card:hover,
+.homepage-premium-max .knowledge-card:focus-visible,
+.homepage-premium-max .home-progress-game:hover,
+.homepage-premium-max .home-progress-game:focus-visible,
+.homepage-premium-max .popular-card:hover,
+.homepage-premium-max .popular-card:focus-visible,
+.homepage-premium-max .home-update-card:hover,
+.homepage-premium-max .home-update-card:focus-visible,
+.homepage-premium-max .home-hero-premium__primary:hover,
+.homepage-premium-max .home-hero-premium__primary:focus-visible,
+.homepage-premium-max .home-hero-premium__secondary:hover,
+.homepage-premium-max .home-hero-premium__secondary:focus-visible{
+  transform:none!important;
+}
+
+.homepage-premium-max .academy-tile:hover .academy-tile__cta b,
+.homepage-premium-max .academy-tile:focus-visible .academy-tile__cta b{
+  transform:none!important;
+}
+
+/* Premium static hover: brighter surface, never jumping UI. */
+.homepage-premium-max .academy-tile:hover,
+.homepage-premium-max .home-hub-card:hover,
+.homepage-premium-max .knowledge-card:hover,
+.homepage-premium-max .home-progress-game:hover{
+  box-shadow:0 14px 30px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025)!important;
+  filter:brightness(1.035);
+}
+
+/* Keep the long homepage compact and visually rhythmic. */
+.homepage-premium-max .home-hero-premium{
+  padding-bottom:12px!important;
+}
+
+.homepage-premium-max .home-hero-premium--dense .home-hero-premium__copy{
+  padding:30px 20px 22px 8px!important;
+}
+
+.homepage-premium-max .home-hero-premium__hub{
+  padding:18px!important;
+}
+
+.homepage-premium-max .home-academy-progress{
+  margin-top:10px;
+  padding-top:12px;
+  padding-bottom:10px;
+}
+
+.homepage-premium-max .academy-showcase{
+  padding-top:18px!important;
+  padding-bottom:42px!important;
+}
+
+.homepage-premium-max .ai-poker-premium{
+  padding-top:0!important;
+  padding-bottom:42px!important;
+}
+
+.homepage-premium-max .knowledge-premium{
+  padding-top:0!important;
+  padding-bottom:42px!important;
+}
+
+.homepage-premium-max .popular-premium{
+  padding-top:0!important;
+  padding-bottom:42px!important;
+}
+
+.homepage-premium-max .community-premium{
+  padding-top:0!important;
+  padding-bottom:44px!important;
+}
+
+.homepage-premium-max .updates-premium{
+  padding-top:0!important;
+  padding-bottom:42px!important;
+}
+
+/* Every major block uses the same desktop and mobile page geometry. */
+.homepage-premium-max .academy-showcase__inner,
+.homepage-premium-max .ai-poker-premium__inner,
+.homepage-premium-max .knowledge-premium__inner,
+.homepage-premium-max .popular-premium__inner,
+.homepage-premium-max .community-premium__inner,
+.homepage-premium-max .updates-premium__inner{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+
+#academy,
+#ai-poker-academy,
+#centrum-wiedzy,
+#popularne-teraz,
+#spolecznosc-next,
+#co-nowego{
+  scroll-margin-top:92px;
+}
+
+/* Reduce repeated-card bulk while preserving hierarchy. */
+.homepage-premium-max .popular-card{
+  min-height:138px;
+}
+
+.homepage-premium-max .popular-card--featured{
+  min-height:288px;
+}
+
+.homepage-premium-max .home-update-card{
+  min-height:170px;
+}
+
+.homepage-premium-max .community-feature{
+  min-height:138px;
+}
+
+/* Flagship section receives a subtle premium emphasis without a frame. */
+.homepage-premium-max .ai-poker-premium__copy,
+.homepage-premium-max .ai-poker-premium__console{
+  background:
+    radial-gradient(circle at 0 0,rgba(58,196,158,.095),transparent 36%),
+    radial-gradient(circle at 100% 0,rgba(226,189,101,.035),transparent 35%),
+    linear-gradient(145deg,rgba(7,37,30,.975),rgba(3,17,14,.995));
+}
+
+/* Footer should follow naturally after the final editorial block. */
+.homepage-premium-max .site-footer{
+  margin-top:0!important;
+}
+
+/* Consistent keyboard treatment for all prominent homepage actions. */
+.homepage-premium-max .home-hub-card:focus-visible,
+.homepage-premium-max .home-progress-game:focus-visible,
+.homepage-premium-max .popular-card:focus-visible,
+.homepage-premium-max .home-update-card:focus-visible,
+.homepage-premium-max .ai-poker-premium__primary:focus-visible,
+.homepage-premium-max .ai-poker-premium__secondary:focus-visible,
+.homepage-premium-max .popular-premium__all:focus-visible,
+.homepage-premium-max .updates-premium__all:focus-visible,
+.homepage-premium-max .home-hero-why__head>a:focus-visible{
+  outline:2px solid #78e4ca!important;
+  outline-offset:3px!important;
+}
+
+@media(max-width:1179px){
+  .homepage-premium-max .home-hero-premium--dense .home-hero-premium__copy{
+    padding:28px 0 12px!important;
+  }
+
+  .homepage-premium-max .academy-showcase__inner,
+  .homepage-premium-max .ai-poker-premium__inner,
+  .homepage-premium-max .knowledge-premium__inner,
+  .homepage-premium-max .popular-premium__inner,
+  .homepage-premium-max .community-premium__inner,
+  .homepage-premium-max .updates-premium__inner{
+    width:calc(100% - 32px)!important;
+  }
+}
+
+@media(max-width:760px){
+  .homepage-premium-max .academy-showcase,
+  .homepage-premium-max .ai-poker-premium,
+  .homepage-premium-max .knowledge-premium,
+  .homepage-premium-max .popular-premium,
+  .homepage-premium-max .community-premium,
+  .homepage-premium-max .updates-premium{
+    padding-bottom:34px!important;
+  }
+
+  .homepage-premium-max .popular-card,
+  .homepage-premium-max .popular-card--featured,
+  .homepage-premium-max .home-update-card,
+  .homepage-premium-max .community-feature{
+    min-height:0!important;
+  }
+}
+
+@media(max-width:560px){
+  .homepage-premium-max .home-hero-premium__hub{
+    padding:14px!important;
+  }
+
+  .homepage-premium-max .academy-showcase__inner,
+  .homepage-premium-max .ai-poker-premium__inner,
+  .homepage-premium-max .knowledge-premium__inner,
+  .homepage-premium-max .popular-premium__inner,
+  .homepage-premium-max .community-premium__inner,
+  .homepage-premium-max .updates-premium__inner{
+    width:calc(100% - 20px)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .homepage-premium-max *,
+  .homepage-premium-max *::before,
+  .homepage-premium-max *::after{
+    scroll-behavior:auto!important;
+  }
+}
