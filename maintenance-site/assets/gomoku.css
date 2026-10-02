@@ -52,3 +52,17 @@ linear-gradient(135deg,#d5c38e,#bca86f);border:3px solid #2d2412;box-shadow:inse
 .burger .burger-close{display:none}.site-header.menu-open .burger-open{display:none}.site-header.menu-open .burger-close{display:block}
 @media(max-width:1180px){.nav-link{position:relative}}
 @media(max-width:820px){.facts li:nth-child(2n){border-right:0}}
+
+
+/* Gomoku R3 — frameless right rail and top navigation */
+.site-header{border-bottom:0}
+.head-icon,.head-btn--outline,.dropdown{border:0}
+.side-column .online-card,
+.side-column .related-card,
+.side-column .side-action,
+.side-column .related-game,
+.side-column .related-thumb,
+.side-column .related-mini-board,
+.side-column .status-pill{border:0!important}
+.side-column .online-card,
+.side-column .related-card{box-shadow:none}
