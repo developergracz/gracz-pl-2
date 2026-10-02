@@ -1145,3 +1145,342 @@ body::after{
     border-radius:20px!important;
   }
 }
+
+
+/* Warcaby rules premium architecture R1 */
+.warcaby-rules-page .rules-shell{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+.warcaby-rules-page .rules-header__inner{
+  width:min(1510px,calc(100% - 48px))!important;
+}
+
+/* Hero: separate premium content field + right summary rail, no gold frame. */
+.warcaby-rules-page .rules-hero{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 310px!important;
+  gap:18px!important;
+  padding:0!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.warcaby-rules-page .rules-hero>div{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:338px;
+  padding:30px 32px;
+  border:0!important;
+  border-radius:20px;
+  background:
+    linear-gradient(90deg,rgba(5,57,47,.98) 0%,rgba(5,55,46,.96) 48%,rgba(4,49,41,.80) 66%,rgba(3,34,29,.56) 100%),
+    url("/assets/img/warcaby-board.webp") right center/58% auto no-repeat,
+    linear-gradient(135deg,#083a30 0%,#0b4a3c 50%,#06271f 100%);
+  box-shadow:0 20px 44px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.warcaby-rules-page .rules-hero>div::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 9% 10%,rgba(72,215,177,.08),transparent 34%),
+    linear-gradient(90deg,transparent 55%,rgba(0,0,0,.12));
+  pointer-events:none;
+}
+.warcaby-rules-page .rules-kicker{
+  color:#f0c85f!important;
+}
+.warcaby-rules-page .rules-hero h1{
+  max-width:650px;
+  color:#f6dfa2!important;
+  font-size:clamp(42px,4.7vw,64px)!important;
+  letter-spacing:-.035em;
+}
+.warcaby-rules-page .rules-lead{
+  max-width:760px;
+  color:#edf4f0!important;
+  line-height:1.58;
+}
+.warcaby-rules-page .rules-note{
+  position:relative;
+  max-width:900px;
+  margin-top:16px!important;
+  padding:13px 15px 13px 50px!important;
+  border:0!important;
+  border-left:0!important;
+  border-radius:12px!important;
+  background:linear-gradient(90deg,rgba(9,91,72,.82),rgba(7,63,52,.72))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+  color:#e6f2ed!important;
+}
+.warcaby-rules-page .rules-note::before{
+  content:"i";
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:rgba(92,225,190,.16);
+  color:#8ce9d1;
+  font-weight:900;
+}
+.warcaby-rules-page .rules-note strong{color:#fff1c4!important}
+
+/* Right summary panel in the same teal family as the page. */
+.warcaby-rules-page .quick-card{
+  align-self:stretch!important;
+  padding:23px 20px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(41,175,141,.13),transparent 38%),
+    linear-gradient(155deg,rgba(7,49,39,.98),rgba(3,26,22,.99))!important;
+  box-shadow:0 20px 44px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.warcaby-rules-page .quick-card h2{
+  margin:0 0 14px!important;
+  color:#f5d98e!important;
+  font:800 21px/1.2 var(--display);
+}
+.warcaby-rules-page .quick-card dl{margin:0!important}
+.warcaby-rules-page .quick-card div{
+  display:grid!important;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-height:55px;
+  padding:8px 0!important;
+  border:0!important;
+  position:relative;
+}
+.warcaby-rules-page .quick-card div+div::after{
+  content:"";
+  position:absolute;
+  left:50px;
+  right:0;
+  top:0;
+  height:1px;
+  background:linear-gradient(90deg,rgba(100,220,190,.10),rgba(100,220,190,.04),transparent);
+}
+.warcaby-rules-page .quick-card div::before{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  background:linear-gradient(145deg,rgba(20,123,96,.72),rgba(7,78,63,.78));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+  color:#78e1c4;
+  font-size:19px;
+  font-weight:900;
+}
+.warcaby-rules-page .quick-card div:nth-of-type(1)::before{content:"●●";font-size:11px;letter-spacing:-3px}
+.warcaby-rules-page .quick-card div:nth-of-type(2)::before{content:"▦"}
+.warcaby-rules-page .quick-card div:nth-of-type(3)::before{content:"◉"}
+.warcaby-rules-page .quick-card div:nth-of-type(4)::before{content:"▶";font-size:16px}
+.warcaby-rules-page .quick-card div:nth-of-type(5)::before{content:"◎"}
+.warcaby-rules-page .quick-card dt{
+  color:#b8c9c2!important;
+  font-size:14px;
+}
+.warcaby-rules-page .quick-card dd{
+  color:#fff!important;
+  font-weight:800!important;
+}
+
+/* Architecture below hero: clean teal navigation rail + frameless content panels. */
+.warcaby-rules-page .rules-layout{
+  grid-template-columns:250px minmax(0,1fr)!important;
+  gap:20px!important;
+  margin-top:18px!important;
+}
+.warcaby-rules-page .rules-toc{
+  position:sticky;
+  top:92px;
+  padding:20px 18px!important;
+  border:0!important;
+  border-left:1px solid rgba(78,210,174,.20)!important;
+  border-radius:0!important;
+  background:
+    linear-gradient(90deg,rgba(7,48,39,.34),rgba(4,27,22,.08) 74%,transparent)!important;
+  box-shadow:none!important;
+}
+.warcaby-rules-page .rules-toc h2{
+  color:#f2cf70!important;
+  font-size:15px!important;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.warcaby-rules-page .rules-toc ol{
+  padding-left:20px!important;
+}
+.warcaby-rules-page .rules-toc li{
+  color:#759187!important;
+}
+.warcaby-rules-page .rules-toc a{
+  color:#bdccc6!important;
+}
+.warcaby-rules-page .rules-toc a:hover{
+  color:#78e2c5!important;
+}
+.warcaby-rules-page .back-game{
+  justify-content:flex-start!important;
+  margin-top:18px!important;
+  padding:10px 0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#64dcc0!important;
+}
+
+/* Remove gold frames from ALL rule content on this page. */
+.warcaby-rules-page .rules-content{
+  gap:16px!important;
+}
+.warcaby-rules-page .rule-section{
+  padding:28px 30px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 5% 0%,rgba(37,155,126,.07),transparent 34%),
+    linear-gradient(145deg,rgba(7,38,31,.94),rgba(3,22,18,.98))!important;
+  box-shadow:0 16px 36px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+.warcaby-rules-page .rule-section h2{
+  color:#f3d88f!important;
+  font-size:27px!important;
+}
+.warcaby-rules-page .rule-section p,
+.warcaby-rules-page .rule-section li{
+  color:#d4dfda!important;
+}
+.warcaby-rules-page .rule-number{
+  border:0!important;
+  background:rgba(244,198,95,.09)!important;
+  box-shadow:inset 0 0 0 1px rgba(244,198,95,.14)!important;
+  color:#edcf7a!important;
+}
+.warcaby-rules-page .rule-callout,
+.warcaby-rules-page .rule-callout--gold,
+.warcaby-rules-page .rule-callout--red{
+  border:0!important;
+  border-left:3px solid rgba(81,220,181,.72)!important;
+  background:linear-gradient(90deg,rgba(8,74,59,.48),rgba(7,39,32,.28))!important;
+  box-shadow:none!important;
+}
+.warcaby-rules-page .rule-callout--red{
+  border-left-color:rgba(236,102,94,.72)!important;
+  background:linear-gradient(90deg,rgba(94,31,28,.34),rgba(31,20,17,.20))!important;
+}
+.warcaby-rules-page .rule-callout strong,
+.warcaby-rules-page .rule-callout--gold strong{
+  color:#f4dfa8!important;
+}
+.warcaby-rules-page .mini-rule{
+  border:0!important;
+  background:rgba(5,28,23,.70)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+.warcaby-rules-page .rule-table-wrap{
+  border:0!important;
+  border-radius:14px!important;
+  background:rgba(4,27,22,.72)!important;
+}
+.warcaby-rules-page .rule-table th{
+  background:rgba(24,92,73,.20)!important;
+  color:#efd589!important;
+}
+.warcaby-rules-page .rule-table th,
+.warcaby-rules-page .rule-table td{
+  border-color:rgba(94,208,177,.08)!important;
+}
+.warcaby-rules-page .faq details{
+  border:0!important;
+  background:rgba(5,29,23,.62)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+
+/* Bottom navigation and footer: no remaining gold frame. */
+.warcaby-rules-page .rules-bottom{
+  border:0!important;
+  background:linear-gradient(135deg,rgba(7,45,36,.92),rgba(4,25,21,.95))!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.14)!important;
+}
+.warcaby-rules-page .button--gold,
+.warcaby-rules-page .button--outline{
+  border:0!important;
+  background:linear-gradient(135deg,#0d6957,#11876f)!important;
+  color:#fff!important;
+}
+.warcaby-rules-page .site-footer{
+  border-top:0!important;
+  background:linear-gradient(180deg,rgba(3,17,14,.95),rgba(2,10,8,.98))!important;
+}
+.warcaby-rules-page .footer-bottom{
+  border-color:rgba(89,205,174,.08)!important;
+}
+.warcaby-rules-page .footer-news input{
+  border:0!important;
+  box-shadow:inset 0 0 0 1px rgba(90,211,177,.10)!important;
+}
+.warcaby-rules-page .footer-news form button{
+  background:linear-gradient(135deg,#0e6c59,#128871)!important;
+  color:#fff!important;
+}
+
+@media(max-width:1000px){
+  .warcaby-rules-page .rules-hero{
+    grid-template-columns:1fr!important;
+  }
+  .warcaby-rules-page .rules-hero>div{
+    min-height:320px;
+  }
+  .warcaby-rules-page .quick-card{
+    min-height:auto!important;
+  }
+}
+@media(max-width:900px){
+  .warcaby-rules-page .rules-layout{
+    grid-template-columns:1fr!important;
+  }
+  .warcaby-rules-page .rules-toc{
+    position:static!important;
+    border-left:0!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(7,42,34,.78),rgba(4,24,20,.78))!important;
+  }
+}
+@media(max-width:620px){
+  .warcaby-rules-page .rules-shell{
+    width:calc(100% - 20px)!important;
+  }
+  .warcaby-rules-page .rules-hero>div{
+    min-height:auto;
+    padding:24px 20px!important;
+    background:
+      linear-gradient(90deg,rgba(5,57,47,.98),rgba(5,55,46,.92)),
+      url("/assets/img/warcaby-board.webp") right center/cover no-repeat!important;
+  }
+  .warcaby-rules-page .rules-hero h1{
+    font-size:42px!important;
+  }
+  .warcaby-rules-page .rules-lead{
+    font-size:15px!important;
+  }
+  .warcaby-rules-page .quick-card{
+    padding:20px!important;
+  }
+  .warcaby-rules-page .rule-section{
+    padding:24px 20px!important;
+  }
+}
