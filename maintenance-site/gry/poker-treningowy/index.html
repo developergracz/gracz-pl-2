@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <title>Poker treningowy — Texas Hold’em, zasady i nauka | gracz.pl</title>
-  <meta name="description" content="Poker treningowy na gracz.pl: Texas Hold’em bez prawdziwych pieniędzy, 2–6 graczy, blindy, preflop, flop, turn, river, układy pokerowe i trening decyzji.">
+  <meta name="description" content="Poker Academy gracz.pl: treningowy Texas Hold’em bez prawdziwych pieniędzy, ścieżki nauki, układy kart, pozycje, blindy, pot odds, quizy i interaktywny trening decyzji.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="theme-color" content="#050706">
+  <meta name="theme-color" content="#041713">
   <meta name="color-scheme" content="dark">
 
   <link rel="canonical" href="https://gracz.pl/gry/poker-treningowy/">
@@ -33,15 +33,16 @@
 
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/poker-treningowy.css?v=poradniki-teal-r16">
-  <script src="/assets/poker-treningowy.js" defer></script>
+  <link rel="stylesheet" href="/assets/poker-treningowy.css?v=academy-premium-max-r1">
+  <script src="/assets/poker-treningowy.js?v=academy-premium-max-r1" defer></script>
 
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
     "@graph":[
       {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
-      {"@type":"WebPage","@id":"https://gracz.pl/gry/poker-treningowy/#webpage","url":"https://gracz.pl/gry/poker-treningowy/","name":"Poker treningowy — Texas Hold’em, zasady i nauka","description":"Poker treningowy na gracz.pl: Texas Hold’em bez prawdziwych pieniędzy, 2–6 graczy, blindy, preflop, flop, turn, river, układy pokerowe i trening decyzji.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"WebPage","@id":"https://gracz.pl/gry/poker-treningowy/#webpage","url":"https://gracz.pl/gry/poker-treningowy/","name":"Poker treningowy — Texas Hold’em, zasady i nauka","description":"Poker Academy gracz.pl: treningowy Texas Hold’em bez prawdziwych pieniędzy, ścieżki nauki, układy kart, pozycje, blindy, pot odds, quizy i interaktywny trening decyzji.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL"},
+      {"@type":"LearningResource","@id":"https://gracz.pl/gry/poker-treningowy/#academy","name":"Poker Academy gracz.pl","url":"https://gracz.pl/gry/poker-treningowy/","learningResourceType":["Tutorial","InteractiveResource"],"educationalUse":"practice","inLanguage":"pl-PL","isAccessibleForFree":true,"about":{"@type":"Thing","name":"Texas Hold’em"}},
       {"@type":"BreadcrumbList","itemListElement":[
         {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
         {"@type":"ListItem","position":2,"name":"Gry","item":"https://gracz.pl/gry/"},
@@ -157,8 +158,8 @@
           </div>
 
           <div class="hero-copy">
-            <h1 id="hero-title">Poker treningowy</h1>
-            <p class="hero-kicker">Texas Hold’em do nauki, ćwiczeń i analizy decyzji</p>
+            <h1 id="hero-title">Poker Academy <span>gracz.pl</span></h1>
+            <p class="hero-kicker">Texas Hold’em do nauki, ćwiczeń i analizy decyzji — krok po kroku</p>
             <p class="hero-lead">Poker treningowy gracz.pl to edukacyjny Texas Hold’em bez prawdziwych pieniędzy. Grasz wyłącznie na żetonach treningowych bez wartości pieniężnej, poznajesz zasady, układy kart, pozycje i przebieg rozdania.</p>
 
             <ul class="facts" aria-label="Informacje o grze">
@@ -169,9 +170,9 @@
             </ul>
 
             <div class="hero-actions">
-              <button class="cta-primary" type="button" data-modal="play">
+              <button class="cta-primary" type="button" data-scroll-academy>
                 <span class="play-circle"><svg aria-hidden="true"><use href="#i-play"/></svg></span>
-                <span>Trenuj grę<small>w przygotowaniu</small></span>
+                <span>Wejdź do Akademii<small>interaktywna nauka na stronie</small></span>
               </button>
               <a class="cta-secondary" href="/gry/poker-treningowy/zasady/">Zasady gry</a>
             </div>
@@ -179,14 +180,66 @@
         </section>
 
 
+        <section class="academy-cockpit" id="poker-academy" aria-labelledby="academy-cockpit-title">
+          <div class="academy-cockpit__intro">
+            <span class="academy-label">Poker Academy · Centrum treningowe</span>
+            <h2 id="academy-cockpit-title">Nie tylko czytaj zasady. Ucz się podejmować decyzje.</h2>
+            <p>Akademia łączy teorię, krótkie ćwiczenia i analizę. Postęp zapisuje się lokalnie w tej przeglądarce — bez logowania i bez gry na prawdziwe pieniądze.</p>
+            <div class="academy-cockpit__actions">
+              <a href="#academy-path">Rozpocznij ścieżkę</a>
+              <a href="/poradniki/#poker-academy">Centrum Poradników</a>
+            </div>
+          </div>
+          <div class="academy-progress" aria-live="polite">
+            <div class="academy-progress__ring" data-academy-ring><strong data-academy-percent>0%</strong><span>postępu</span></div>
+            <div class="academy-progress__meta">
+              <span>Ukończone moduły</span>
+              <strong><b data-academy-done>0</b> / 6</strong>
+              <progress max="6" value="0" data-academy-progress>0 z 6</progress>
+            </div>
+          </div>
+          <div class="academy-module-strip" aria-label="Moduły Poker Academy">
+            <button type="button" data-academy-module="zasady"><span>01</span><strong>Zasady</strong><small>fundament</small></button>
+            <button type="button" data-academy-module="uklady"><span>02</span><strong>Układy</strong><small>ranking kart</small></button>
+            <button type="button" data-academy-module="pozycja"><span>03</span><strong>Pozycja</strong><small>kolejność decyzji</small></button>
+            <button type="button" data-academy-module="decyzje"><span>04</span><strong>Decyzje</strong><small>trening sytuacyjny</small></button>
+            <button type="button" data-academy-module="matematyka"><span>05</span><strong>Matematyka</strong><small>pot odds</small></button>
+            <button type="button" data-academy-module="quiz"><span>06</span><strong>Quiz</strong><small>sprawdź wiedzę</small></button>
+          </div>
+          <div class="academy-cockpit__footer">
+            <span data-academy-next>Najpierw: poznaj przebieg rozdania i układy.</span>
+            <button type="button" data-academy-reset>Wyzeruj postęp</button>
+          </div>
+        </section>
+
+        <section class="academy-path" id="academy-path" aria-labelledby="academy-path-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Ścieżka Poker Academy</p>
+            <h2 id="academy-path-title">Sześć kroków od podstaw do świadomej decyzji</h2>
+            <p>Każdy etap ma konkretny cel. Nie musisz przechodzić wszystkiego naraz — możesz wrócić dokładnie tam, gdzie skończyłeś.</p>
+          </div>
+          <div class="academy-path-grid">
+            <a href="#przebieg-rozdania" data-track-module="zasady"><span>01</span><div><strong>Fundament rozdania</strong><small>Preflop, flop, turn, river, showdown</small></div><b>→</b></a>
+            <a href="#ranking-ukladow" data-track-module="uklady"><span>02</span><div><strong>Ranking układów</strong><small>Od wysokiej karty do pokera królewskiego</small></div><b>→</b></a>
+            <a href="#pozycje-poker" data-track-module="pozycja"><span>03</span><div><strong>Pozycja przy stole</strong><small>BTN, SB, BB i kolejność działania</small></div><b>→</b></a>
+            <a href="#arena-decyzji" data-track-module="decyzje"><span>04</span><div><strong>Arena decyzji</strong><small>Scenariusze „co możesz zrobić?”</small></div><b>→</b></a>
+            <a href="#pot-odds" data-track-module="matematyka"><span>05</span><div><strong>Matematyka puli</strong><small>Próg pot odds bez rekomendacji zagrania</small></div><b>→</b></a>
+            <a href="#quiz-poker" data-track-module="quiz"><span>06</span><div><strong>Test wiedzy</strong><small>5 pytań i natychmiastowy wynik</small></div><b>→</b></a>
+          </div>
+        </section>
+
         <nav class="poker-section-nav" aria-label="Sekcje Pokera treningowego">
+          <a href="#poker-academy">Academy</a>
+          <a href="#academy-path">Ścieżka</a>
           <a href="#poker-5-minut">Poker w 5 minut</a>
           <a href="#przebieg-rozdania">Rozdanie</a>
           <a href="#ranking-ukladow">Układy</a>
           <a href="#pozycje-poker">Pozycje</a>
           <a href="#trener-decyzji">Trener</a>
+          <a href="#arena-decyzji">Arena</a>
           <a href="#pot-odds">Pot odds</a>
           <a href="#strategia-poker">Strategia</a>
+          <a href="#quiz-poker">Quiz</a>
         </nav>
 
         <section class="poker-quick" id="poker-5-minut" aria-labelledby="poker-quick-title">
@@ -219,7 +272,7 @@
             <li><span>R</span><div><h3>River</h3><p>Piąta karta wspólna zamyka układ stołu i poprzedza ostatnią rundę licytacji.</p></div></li>
             <li><span>★</span><div><h3>Showdown</h3><p>Jeśli zostało co najmniej dwóch graczy, porównuje się najlepsze pięć kart każdego z nich. Identyczny układ oznacza podział puli.</p></div></li>
           </ol>
-          <a class="inline-rules-link" href="/gry/poker-treningowy/zasady/">Otwórz pełne zasady Texas Hold’em <span aria-hidden="true">→</span></a>
+          <a class="inline-rules-link" href="/gry/poker-treningowy/zasady/" data-track-module="zasady">Otwórz pełne zasady Texas Hold’em <span aria-hidden="true">→</span></a>
         </section>
 
         <section class="poker-scene-section" id="ranking-ukladow" aria-labelledby="hands-ranking-title">
@@ -278,6 +331,32 @@
           </div>
         </section>
 
+
+        <section class="decision-arena" id="arena-decyzji" aria-labelledby="decision-arena-title" data-decision-arena>
+          <div class="scene-heading">
+            <p class="section-eyebrow">Poker Academy · Arena decyzji</p>
+            <h2 id="decision-arena-title">Podejmij decyzję i zobacz wyjaśnienie</h2>
+            <p>To edukacyjne scenariusze reguł i logiki gry — bez stawiania prawdziwych pieniędzy i bez rekomendacji hazardowych.</p>
+          </div>
+          <div class="arena-layout">
+            <div class="arena-stage">
+              <div class="arena-stage__top"><span>Scenariusz <b data-arena-index>1</b> / 3</span><span data-arena-topic>Legalność akcji</span></div>
+              <div class="arena-cards" aria-hidden="true" data-arena-cards></div>
+              <h3 data-arena-title>Przeciwnik zagrał bet na flopie</h3>
+              <p data-arena-text>Masz wystarczający stack. Która akcja NIE jest teraz legalna?</p>
+              <div class="arena-actions" data-arena-actions></div>
+              <div class="arena-feedback" data-arena-feedback aria-live="polite">Wybierz odpowiedź.</div>
+            </div>
+            <aside class="arena-score">
+              <span class="arena-score__label">Sesja treningowa</span>
+              <strong><b data-arena-score>0</b> / 3</strong>
+              <p>Poprawne odpowiedzi w tej sesji.</p>
+              <button type="button" data-arena-next disabled>Następny scenariusz</button>
+              <button type="button" data-arena-restart>Rozpocznij od nowa</button>
+            </aside>
+          </div>
+        </section>
+
         <section class="poker-lab" id="pot-odds" aria-labelledby="pot-odds-title" data-pot-odds>
           <div class="scene-heading">
             <p class="section-eyebrow">Narzędzie treningowe</p>
@@ -304,6 +383,38 @@
             <section><span>01</span><h3>Na co patrzeć</h3><ul><li>pozycja przy stole,</li><li>siła i struktura ręki,</li><li>wielkość puli i efektywny stack,</li><li>akcja przeciwników na poprzednich ulicach.</li></ul></section>
             <section><span>02</span><h3>Najczęstsze błędy</h3><ul><li>granie zbyt wielu rąk,</li><li>ignorowanie pozycji,</li><li>sprawdzanie bez planu,</li><li>przecenianie jednej pary,</li><li>brak kontroli wielkości zakładu.</li></ul></section>
             <section><span>03</span><h3>Tryb gracz.pl</h3><ul><li>No-Limit Texas Hold’em,</li><li>heads-up i 2–6 graczy,</li><li>wyłącznie żetony treningowe,</li><li>bez wpłat, wypłat i nagród pieniężnych,</li><li>kierunek edukacyjny Poker Academy.</li></ul></section>
+          </div>
+        </section>
+
+
+        <section class="poker-quiz" id="quiz-poker" aria-labelledby="poker-quiz-title">
+          <div class="scene-heading">
+            <p class="section-eyebrow">Poker Academy · Test wiedzy</p>
+            <h2 id="poker-quiz-title">5 pytań kontrolnych</h2>
+            <p>Po ukończeniu testu moduł „Quiz” zostanie zapisany jako ukończony w lokalnym panelu postępu.</p>
+          </div>
+          <form class="poker-quiz-form" data-poker-quiz>
+            <fieldset data-answer="b"><legend><span>01</span> Ile kart własnych otrzymuje gracz w Texas Hold’em?</legend><label><input type="radio" name="pq1" value="a"> 1</label><label><input type="radio" name="pq1" value="b"> 2</label><label><input type="radio" name="pq1" value="c"> 5</label></fieldset>
+            <fieldset data-answer="c"><legend><span>02</span> Która ulica pojawia się po turnie?</legend><label><input type="radio" name="pq2" value="a"> Preflop</label><label><input type="radio" name="pq2" value="b"> Flop</label><label><input type="radio" name="pq2" value="c"> River</label></fieldset>
+            <fieldset data-answer="a"><legend><span>03</span> Czy można zrobić check, gdy przed Tobą jest zakład do sprawdzenia?</legend><label><input type="radio" name="pq3" value="a"> Nie</label><label><input type="radio" name="pq3" value="b"> Zawsze tak</label><label><input type="radio" name="pq3" value="c"> Tylko na riverze</label></fieldset>
+            <fieldset data-answer="b"><legend><span>04</span> Ile kart liczy końcowy układ pokerowy?</legend><label><input type="radio" name="pq4" value="a"> 4</label><label><input type="radio" name="pq4" value="b"> 5</label><label><input type="radio" name="pq4" value="c"> 7</label></fieldset>
+            <fieldset data-answer="c"><legend><span>05</span> Czy kolory kart mają starszeństwo w Texas Hold’em?</legend><label><input type="radio" name="pq5" value="a"> Tak, pik jest najwyższy</label><label><input type="radio" name="pq5" value="b"> Tak, kier jest najwyższy</label><label><input type="radio" name="pq5" value="c"> Nie</label></fieldset>
+            <div class="poker-quiz-submit">
+              <button type="submit">Sprawdź wynik</button>
+              <div data-poker-quiz-result aria-live="polite"><strong>Wynik pojawi się tutaj.</strong><span>Odpowiedz na wszystkie pytania.</span></div>
+            </div>
+          </form>
+        </section>
+
+        <section class="academy-bridge" aria-labelledby="academy-bridge-title">
+          <div>
+            <span class="section-eyebrow">Połącz naukę</span>
+            <h2 id="academy-bridge-title">Poker Academy + Centrum Poradników</h2>
+            <p>Akademia służy do ćwiczeń i interakcji. Centrum Poradników porządkuje materiały, pojęcia i ścieżki dla wszystkich gier gracz.pl.</p>
+          </div>
+          <div class="academy-bridge__actions">
+            <a href="/poradniki/#poker-academy">Otwórz Poker Academy w Poradnikach</a>
+            <a href="/gry/poker-treningowy/zasady/">Pełne zasady Texas Hold’em</a>
           </div>
         </section>
 
@@ -341,6 +452,15 @@
       </div>
 
       <aside class="poker-side-panel" aria-label="Panel Pokera treningowego">
+
+        <section class="poker-side-card academy-side-progress" aria-labelledby="academy-side-title">
+          <p class="poker-side-eyebrow">Poker Academy</p>
+          <h2 id="academy-side-title">Twój postęp</h2>
+          <div class="academy-side-progress__row"><strong data-academy-side-percent>0%</strong><span><b data-academy-side-done>0</b>/6 modułów</span></div>
+          <progress max="6" value="0" data-academy-side-bar>0 z 6</progress>
+          <a href="#academy-path">Kontynuuj ścieżkę</a>
+        </section>
+
         <section class="poker-side-card poker-side-card--status">
           <p class="poker-side-eyebrow">Poker treningowy</p>
           <h2>Texas Hold’em</h2>
@@ -351,13 +471,16 @@
 
         <nav class="poker-side-card poker-side-nav" aria-label="Na tej stronie">
           <p class="poker-side-eyebrow">Na tej stronie</p>
+          <a href="#poker-academy"><span>00</span><strong>Poker Academy</strong></a>
           <a href="#poker-5-minut"><span>01</span><strong>Poker w 5 minut</strong></a>
           <a href="#przebieg-rozdania"><span>02</span><strong>Przebieg rozdania</strong></a>
           <a href="#ranking-ukladow"><span>03</span><strong>Układy pokerowe</strong></a>
           <a href="#pozycje-poker"><span>04</span><strong>Pozycje i blindy</strong></a>
           <a href="#trener-decyzji"><span>05</span><strong>Trener decyzji</strong></a>
-          <a href="#pot-odds"><span>06</span><strong>Pot odds</strong></a>
-          <a href="#strategia-poker"><span>07</span><strong>Strategia</strong></a>
+          <a href="#arena-decyzji"><span>06</span><strong>Arena decyzji</strong></a>
+          <a href="#pot-odds"><span>07</span><strong>Pot odds</strong></a>
+          <a href="#strategia-poker"><span>08</span><strong>Strategia</strong></a>
+          <a href="#quiz-poker"><span>09</span><strong>Quiz Academy</strong></a>
         </nav>
 
         <section class="poker-side-card poker-side-related" aria-labelledby="poker-side-related-title">

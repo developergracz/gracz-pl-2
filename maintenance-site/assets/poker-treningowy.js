@@ -198,4 +198,253 @@
     });
   }
 
+
+
+  /* POKER ACADEMY PREMIUM MAX R1 */
+  var ACADEMY_KEY='graczPokerAcademyProgressV1';
+  var MODULES=['zasady','uklady','pozycja','decyzje','matematyka','quiz'];
+
+  function readAcademy(){
+    try{
+      var raw=window.localStorage.getItem(ACADEMY_KEY);
+      var data=raw?JSON.parse(raw):{};
+      MODULES.forEach(function(k){data[k]=!!data[k];});
+      return data;
+    }catch(e){
+      return {zasady:false,uklady:false,pozycja:false,decyzje:false,matematyka:false,quiz:false};
+    }
+  }
+  function writeAcademy(state){
+    try{window.localStorage.setItem(ACADEMY_KEY,JSON.stringify(state));}catch(e){}
+  }
+  var academyState=readAcademy();
+
+  function renderAcademy(){
+    var done=MODULES.filter(function(k){return academyState[k];}).length;
+    var pct=Math.round((done/MODULES.length)*100);
+    var percent=document.querySelector('[data-academy-percent]');
+    var count=document.querySelector('[data-academy-done]');
+    var progress=document.querySelector('[data-academy-progress]');
+    var sidePercent=document.querySelector('[data-academy-side-percent]');
+    var sideDone=document.querySelector('[data-academy-side-done]');
+    var sideBar=document.querySelector('[data-academy-side-bar]');
+    var ring=document.querySelector('[data-academy-ring]');
+    if(percent)percent.textContent=pct+'%';
+    if(count)count.textContent=done;
+    if(progress)progress.value=done;
+    if(sidePercent)sidePercent.textContent=pct+'%';
+    if(sideDone)sideDone.textContent=done;
+    if(sideBar)sideBar.value=done;
+    if(ring)ring.style.setProperty('--academy-pct',pct+'%');
+    document.querySelectorAll('[data-academy-module]').forEach(function(btn){
+      btn.classList.toggle('is-done',!!academyState[btn.getAttribute('data-academy-module')]);
+    });
+    var next=document.querySelector('[data-academy-next]');
+    if(next){
+      var labels={zasady:'Przebieg rozdania',uklady:'Ranking układów',pozycja:'Pozycje i blindy',decyzje:'Arena decyzji',matematyka:'Pot odds',quiz:'Quiz końcowy'};
+      var first=MODULES.filter(function(k){return !academyState[k];})[0];
+      next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz wracać do dowolnego modułu.';
+    }
+  }
+  function completeModule(key){
+    if(MODULES.indexOf(key)<0)return;
+    academyState[key]=true;
+    writeAcademy(academyState);
+    renderAcademy();
+  }
+  renderAcademy();
+
+  document.addEventListener('click',function(e){
+    var tracked=e.target.closest('[data-track-module]');
+    if(tracked)completeModule(tracked.getAttribute('data-track-module'));
+
+    var moduleButton=e.target.closest('[data-academy-module]');
+    if(moduleButton){
+      var key=moduleButton.getAttribute('data-academy-module');
+      var map={zasady:'#przebieg-rozdania',uklady:'#ranking-ukladow',pozycja:'#pozycje-poker',decyzje:'#arena-decyzji',matematyka:'#pot-odds',quiz:'#quiz-poker'};
+      var target=document.querySelector(map[key]);
+      if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    var academyScroll=e.target.closest('[data-scroll-academy]');
+    if(academyScroll){
+      var academy=document.getElementById('poker-academy');
+      if(academy)academy.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+
+  var academyReset=document.querySelector('[data-academy-reset]');
+  if(academyReset){
+    academyReset.addEventListener('click',function(){
+      academyState={zasady:false,uklady:false,pozycja:false,decyzje:false,matematyka:false,quiz:false};
+      writeAcademy(academyState);
+      renderAcademy();
+    });
+  }
+
+  // Completing interactions also completes their academy modules.
+  if(trainer){
+    trainer.addEventListener('click',function(e){
+      if(e.target.closest('[data-poker-action]'))completeModule('decyzje');
+    });
+  }
+  if(potOdds){
+    var academyCalc=potOdds.querySelector('[data-pot-calc]');
+    if(academyCalc)academyCalc.addEventListener('click',function(){completeModule('matematyka');});
+  }
+
+  var arenaScenarios=[
+    {
+      topic:'Legalność akcji',
+      title:'Przeciwnik zagrał bet na flopie',
+      text:'Masz wystarczający stack. Która akcja NIE jest teraz legalna?',
+      cards:[['A','♠',0],['K','♥',1],['Q','♦',1]],
+      actions:['Check','Fold','Call','Raise'],
+      correct:'Check',
+      explain:'Check nie jest legalny, ponieważ przed Tobą jest już zakład. Możesz spasować, wyrównać albo — przy spełnieniu warunków — podbić.'
+    },
+    {
+      topic:'Budowanie układu',
+      title:'Masz A♠ K♥, a board to A♥ 10♣ 7♠ Q♦ 2♠',
+      text:'Jaki podstawowy układ tworzysz z najlepszych pięciu kart?',
+      cards:[['A','♠',0],['K','♥',1],['A','♥',1],['Q','♦',1],['10','♣',0]],
+      actions:['Para asów','Dwie pary','Strit','Kolor'],
+      correct:'Para asów',
+      explain:'Masz parę asów. Do strita brakuje waleta, a pięciu kart jednego koloru nie ma.'
+    },
+    {
+      topic:'Pozycja',
+      title:'Button przesuwa się po rozdaniu',
+      text:'Która pozycja jest bezpośrednio po lewej stronie buttona i wnosi mniejszy obowiązkowy blind?',
+      cards:[['BTN','',0],['SB','',0],['BB','',0]],
+      actions:['Small Blind','Big Blind','UTG','Cutoff'],
+      correct:'Small Blind',
+      explain:'Small Blind znajduje się bezpośrednio po lewej stronie buttona i wnosi mniejszy obowiązkowy wkład.'
+    }
+  ];
+  var arena=document.querySelector('[data-decision-arena]');
+  if(arena){
+    var arenaIndex=0,arenaScore=0,arenaLocked=false;
+    var idxEl=arena.querySelector('[data-arena-index]');
+    var topicEl=arena.querySelector('[data-arena-topic]');
+    var titleEl=arena.querySelector('[data-arena-title]');
+    var textEl=arena.querySelector('[data-arena-text]');
+    var cardsEl=arena.querySelector('[data-arena-cards]');
+    var actionsEl=arena.querySelector('[data-arena-actions]');
+    var feedbackEl=arena.querySelector('[data-arena-feedback]');
+    var scoreEl=arena.querySelector('[data-arena-score]');
+    var nextBtn=arena.querySelector('[data-arena-next]');
+    var restartBtn=arena.querySelector('[data-arena-restart]');
+
+    function renderArena(){
+      var s=arenaScenarios[arenaIndex];
+      arenaLocked=false;
+      idxEl.textContent=arenaIndex+1;
+      topicEl.textContent=s.topic;
+      titleEl.textContent=s.title;
+      textEl.textContent=s.text;
+      cardsEl.innerHTML='';
+      s.cards.forEach(function(card){
+        var el=document.createElement('span');
+        el.className='arena-card'+(card[2]?' red':'');
+        el.textContent=card[0]+card[1];
+        cardsEl.appendChild(el);
+      });
+      actionsEl.innerHTML='';
+      s.actions.forEach(function(action){
+        var btn=document.createElement('button');
+        btn.type='button';
+        btn.textContent=action;
+        btn.setAttribute('data-arena-choice',action);
+        actionsEl.appendChild(btn);
+      });
+      feedbackEl.textContent='Wybierz odpowiedź.';
+      nextBtn.disabled=true;
+      nextBtn.textContent=arenaIndex===arenaScenarios.length-1?'Zakończ sesję':'Następny scenariusz';
+    }
+    renderArena();
+
+    actionsEl.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-arena-choice]');
+      if(!btn||arenaLocked)return;
+      arenaLocked=true;
+      var s=arenaScenarios[arenaIndex];
+      var ok=btn.getAttribute('data-arena-choice')===s.correct;
+      btn.classList.add(ok?'is-correct':'is-wrong');
+      if(ok){arenaScore++;scoreEl.textContent=arenaScore;}
+      Array.prototype.forEach.call(actionsEl.querySelectorAll('button'),function(b){
+        if(b.getAttribute('data-arena-choice')===s.correct)b.classList.add('is-correct');
+      });
+      feedbackEl.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;
+      nextBtn.disabled=false;
+      completeModule('decyzje');
+    });
+
+    nextBtn.addEventListener('click',function(){
+      if(arenaIndex<arenaScenarios.length-1){arenaIndex++;renderArena();}
+      else{
+        feedbackEl.textContent='Sesja zakończona. Wynik: '+arenaScore+' / '+arenaScenarios.length+'. Możesz rozpocząć ponownie.';
+        nextBtn.disabled=true;
+      }
+    });
+    restartBtn.addEventListener('click',function(){arenaIndex=0;arenaScore=0;scoreEl.textContent='0';renderArena();});
+  }
+
+  var pokerQuiz=document.querySelector('[data-poker-quiz]');
+  if(pokerQuiz){
+    pokerQuiz.addEventListener('submit',function(e){
+      e.preventDefault();
+      var fields=Array.prototype.slice.call(pokerQuiz.querySelectorAll('fieldset[data-answer]'));
+      var answered=0,score=0;
+      fields.forEach(function(field){
+        field.classList.remove('is-correct','is-wrong');
+        var checked=field.querySelector('input:checked');
+        if(!checked)return;
+        answered++;
+        var ok=checked.value===field.getAttribute('data-answer');
+        if(ok)score++;
+        field.classList.add(ok?'is-correct':'is-wrong');
+      });
+      var result=pokerQuiz.querySelector('[data-poker-quiz-result]');
+      var strong=result.querySelector('strong');
+      var span=result.querySelector('span');
+      if(answered<fields.length){
+        strong.textContent='Odpowiedz na wszystkie pytania.';
+        span.textContent='Brakuje '+(fields.length-answered)+' odpowiedzi.';
+        return;
+      }
+      strong.textContent='Wynik: '+score+' / '+fields.length;
+      span.textContent=score===fields.length?'Świetnie — fundamenty masz opanowane.':score>=3?'Dobry wynik. Sprawdź pytania oznaczone na czerwono.':'Warto wrócić do ścieżki Academy i spróbować ponownie.';
+      if(score>=4)completeModule('quiz');
+    });
+  }
+
+  // Side navigation scroll spy.
+  var pokerSideLinks=Array.prototype.slice.call(document.querySelectorAll('.poker-side-nav a[href^="#"]'));
+  var pokerSideTargets=pokerSideLinks.map(function(link){
+    var target=document.querySelector(link.getAttribute('href'));
+    return {link:link,target:target};
+  }).filter(function(x){return x.target;});
+  function setPokerCurrent(id){
+    pokerSideTargets.forEach(function(x){
+      var current=x.target.id===id;
+      x.link.classList.toggle('is-current',current);
+      if(current)x.link.setAttribute('aria-current','location');else x.link.removeAttribute('aria-current');
+    });
+  }
+  if(pokerSideTargets.length && 'IntersectionObserver' in window){
+    var visible={};
+    var pokerObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting)visible[entry.target.id]=entry.boundingClientRect.top;
+        else delete visible[entry.target.id];
+      });
+      var ids=Object.keys(visible);
+      if(!ids.length)return;
+      ids.sort(function(a,b){return Math.abs(visible[a])-Math.abs(visible[b]);});
+      setPokerCurrent(ids[0]);
+    },{rootMargin:'-110px 0px -64% 0px',threshold:[0,.01,.2]});
+    pokerSideTargets.forEach(function(x){pokerObserver.observe(x.target);});
+  }
+
 })();
