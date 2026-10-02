@@ -858,7 +858,7 @@ body::after{
   border-top:0!important;
   position:relative;
 }
-.poker-rules-page .quick-card div + div::before{
+.poker-rules-page .quick-card div + div::after{
   content:"";
   position:absolute;
   top:0;
