@@ -1,6 +1,6 @@
-/* Global Sticky Right Rails R3
-   Restores the proven R1 nested-scroll behavior and hardens Gomoku rules.
-   Desktop side rails stay visible while the page scrolls; long rails can scroll internally. */
+/* Global Sticky Right Rails R4
+   Keeps the R1 sticky/nested-scroll behavior, adds document-scroll synchronization and mobile access.
+   Desktop rails auto-scroll with the page; smaller layouts expose the same links from a floating menu. */
 
 main [id]{
   scroll-margin-top:110px;
@@ -125,3 +125,62 @@ main [id]{
     overflow:visible!important;
   }
 }
+
+
+/* Cross-browser mobile/tablet access */
+.sticky-mobile-nav-toggle{
+  display:none;
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:260;
+  min-height:48px;
+  padding:0 18px;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(135deg,#0d6d59,#128b72);
+  color:#fff;
+  font:800 14px/1.1 Arial,sans-serif;
+  box-shadow:0 12px 34px rgba(0,0,0,.38);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.sticky-mobile-nav-toggle.is-enabled{display:flex;align-items:center;gap:8px}
+.sticky-mobile-nav-toggle:focus-visible{outline:2px solid #91f0d9;outline-offset:3px}
+.sticky-mobile-nav-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:300;
+  background:rgba(0,0,0,.58);
+}
+.sticky-mobile-nav-overlay.is-open{display:block}
+.sticky-mobile-nav-sheet{
+  position:absolute;
+  right:10px;
+  bottom:10px;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  left:10px;
+  max-height:72vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:18px;
+  border-radius:20px;
+  background:linear-gradient(145deg,#082d25,#041813);
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+}
+.sticky-mobile-nav-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.sticky-mobile-nav-title{margin:0;color:#f4d994;font:800 18px/1.2 Arial,sans-serif}
+.sticky-mobile-nav-close{
+  width:42px;height:42px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.07);color:#fff;font-size:26px;line-height:1;cursor:pointer
+}
+.sticky-mobile-nav-links{display:grid;gap:6px}
+.sticky-mobile-nav-links a{
+  display:flex;align-items:center;min-height:44px;padding:10px 12px;border-radius:12px;
+  color:#e8f2ee;font:700 14px/1.35 Arial,sans-serif;text-decoration:none;
+  background:rgba(255,255,255,.025)
+}
+.sticky-mobile-nav-links a.is-current{color:#ffe3a0;background:rgba(99,221,195,.12)}
+.sticky-mobile-nav-links a:focus-visible{outline:2px solid #91f0d9;outline-offset:2px}
