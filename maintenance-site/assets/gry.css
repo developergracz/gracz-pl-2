@@ -1130,4 +1130,36 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 .menu-panel{
   border-bottom:0!important;
 }
-\n\n/* Gry hero — label only; existing thumbnail stays unchanged */\n.games-hero-label-r4{\n  position:absolute;\n  z-index:3;\n  left:0;\n  top:18px;\n  min-width:132px;\n  padding:10px 24px 11px 20px;\n  border:1px solid rgba(206,169,79,.72);\n  border-left:0;\n  border-radius:0 16px 16px 0;\n  background:rgba(3,35,27,.94);\n  color:#f0c96b;\n  font-family:var(--display);\n  font-size:34px;\n  line-height:1;\n  font-weight:800;\n  letter-spacing:.01em;\n  text-shadow:0 1px 0 rgba(255,255,255,.16),0 2px 6px rgba(0,0,0,.36);\n  box-shadow:0 6px 14px rgba(0,0,0,.18);\n  pointer-events:none;\n}\n@media(max-width:560px){\n  .games-hero-label-r4{\n    top:14px;\n    min-width:104px;\n    padding:8px 18px 9px 16px;\n    font-size:27px;\n    border-radius:0 13px 13px 0;\n  }\n}\n
+
+
+/* Gry hero — label only; existing thumbnail stays unchanged */
+.games-hero-label-r4{
+  position:absolute;
+  z-index:3;
+  left:0;
+  top:18px;
+  min-width:132px;
+  padding:10px 24px 11px 20px;
+  border:1px solid rgba(206,169,79,.72);
+  border-left:0;
+  border-radius:0 16px 16px 0;
+  background:rgba(3,35,27,.94);
+  color:#f0c96b;
+  font-family:var(--display);
+  font-size:34px;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.01em;
+  text-shadow:0 1px 0 rgba(255,255,255,.16),0 2px 6px rgba(0,0,0,.36);
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+  pointer-events:none;
+}
+@media(max-width:560px){
+  .games-hero-label-r4{
+    top:14px;
+    min-width:104px;
+    padding:8px 18px 9px 16px;
+    font-size:27px;
+    border-radius:0 13px 13px 0;
+  }
+}
