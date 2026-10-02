@@ -63,3 +63,35 @@ a{color:inherit}.skip-link{position:fixed;left:18px;top:12px;z-index:999;transfo
     font-size:32px!important;
   }
 }
+
+/* R4 — title brand colors + homepage-style yellow return CTA */
+.legal-hero h1 .legal-domain{
+  color:#fff!important;
+  white-space:nowrap;
+}
+.legal-hero h1 .legal-domain__suffix{
+  color:#f21a34!important;
+}
+.legal-actions .button--return{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  padding:0 26px;
+  border:0!important;
+  border-radius:999px;
+  background:linear-gradient(180deg,#ffd978 0%,#efb84e 100%)!important;
+  color:#111!important;
+  font:800 12px Montserrat,sans-serif;
+  text-decoration:none;
+  box-shadow:0 10px 26px rgba(239,184,78,.28),inset 0 1px 0 rgba(255,255,255,.55)!important;
+  cursor:pointer;
+  transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+}
+.legal-actions .button--return:hover,
+.legal-actions .button--return:focus-visible{
+  color:#111!important;
+  transform:translateY(-2px);
+  filter:brightness(1.04);
+  box-shadow:0 14px 30px rgba(239,184,78,.34),inset 0 1px 0 rgba(255,255,255,.65)!important;
+}
