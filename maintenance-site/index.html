@@ -43,7 +43,7 @@
   <link rel="preload" href="/assets/img/hero-bg.webp" as="image" type="image/webp">
   <link rel="preload" href="/assets/img/next-devices.webp" as="image" type="image/webp">
   <link rel="stylesheet" href="/assets/home.css?v=hero-frame-align-r10">
-  <link rel="stylesheet" href="/assets/home-premium-max.css?v=hero-premium-r2">
+  <link rel="stylesheet" href="/assets/home-premium-max.css?v=academy-showcase-r3">
   <script src="/assets/home.js" defer></script>
 
   <script type="application/ld+json">
@@ -256,54 +256,124 @@
       </div>
     </section>
 
-    <section class="discover" aria-labelledby="discover-title">
-      <div class="discover-inner">
-        <span class="ornament ornament--wide" aria-hidden="true"><i></i><b></b><i></i></span>
-        <h2 id="discover-title" class="discover-title">Poznaj <span class="brand-word">gracz<span>.pl</span></span></h2>
-        <p class="discover-lead">Gry online, rozgrywka, wiedza i społeczność. Zobacz, co dla Ciebie przygotowujemy<br class="br-d"> w&nbsp;nowej odsłonie gracz.pl.</p>
+    <section class="discover academy-showcase" id="academy" aria-labelledby="academy-showcase-title">
+      <div class="discover-inner academy-showcase__inner">
+        <header class="academy-showcase__header">
+          <p class="academy-showcase__eyebrow"><span aria-hidden="true"></span>Graj i ucz się</p>
+          <h2 id="academy-showcase-title">Cztery gry. Cztery Academy. Jeden <span>gracz.pl</span></h2>
+          <p>Każda gra ma własną ścieżkę nauki, interaktywne ćwiczenia, quizy i pełne zasady. Wybierz tytuł i rozwijaj umiejętności we wspólnym interfejsie Premium.</p>
+        </header>
 
-        <ul class="tiles">
-          <li>
-            <a class="tile" href="/gry/">
-              <img class="tile-art" src="/assets/img/tile-games.webp" width="488" height="230" alt="" loading="lazy">
-              <span class="tile-body">
-                <span class="tile-title"><svg aria-hidden="true"><use href="#i-gamepad"/></svg>Gry</span>
-                <span class="tile-desc">Poker treningowy, Tysiąc,<br class="br-d"> Warcaby, Gomoku i&nbsp;kolejne<br class="br-d"> gry online.</span>
-                <span class="tile-cta">Zobacz gry <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
-              </span>
+        <div class="academy-showcase__grid">
+          <article class="academy-tile academy-tile--poker">
+            <a class="academy-tile__link" href="/gry/poker-treningowy/" aria-label="Wejdź do Poker Academy">
+              <div class="academy-tile__visual academy-tile__visual--poker" aria-hidden="true">
+                <span class="academy-tile__badge">Poker Academy</span>
+                <div class="academy-poker-table">
+                  <span class="academy-card academy-card--a"><b>A</b><i>♠</i></span>
+                  <span class="academy-card academy-card--k"><b>K</b><i>♥</i></span>
+                  <span class="academy-chip academy-chip--1"></span>
+                  <span class="academy-chip academy-chip--2"></span>
+                  <span class="academy-chip academy-chip--3"></span>
+                </div>
+                <span class="academy-tile__visual-caption">Texas Hold’em · decyzje · układy</span>
+              </div>
+              <div class="academy-tile__body">
+                <span class="academy-tile__number">01</span>
+                <h3>Poker Academy</h3>
+                <p>Ucz się Texas Hold’em bez prawdziwych pieniędzy. Poznaj układy kart, pozycje, przebieg rozdania i analizę decyzji.</p>
+                <ul aria-label="Moduły Poker Academy">
+                  <li>Układy kart</li>
+                  <li>Pozycje</li>
+                  <li>Trener decyzji</li>
+                </ul>
+                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
+              </div>
             </a>
-          </li>
-          <li>
-            <a class="tile" href="/gry-karciane/">
-              <img class="tile-art" src="/assets/img/tile-cards.webp" width="474" height="230" alt="" loading="lazy">
-              <span class="tile-body">
-                <span class="tile-title"><svg aria-hidden="true"><use href="#i-cards"/></svg>Gry karciane</span>
-                <span class="tile-desc">Poker treningowy, Tysiąc<br class="br-d"> i&nbsp;kolejne gry karciane<br class="br-d"> dla każdego.</span>
-                <span class="tile-cta">Poznaj gry karciane <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
-              </span>
+          </article>
+
+          <article class="academy-tile academy-tile--tysiac">
+            <a class="academy-tile__link" href="/gry/tysiac/" aria-label="Wejdź do Tysiąc Academy">
+              <div class="academy-tile__visual academy-tile__visual--tysiac" aria-hidden="true">
+                <span class="academy-tile__badge">Tysiąc Academy</span>
+                <div class="academy-tysiac-scene">
+                  <span class="academy-score"><small>Cel</small><strong>1000</strong></span>
+                  <span class="academy-card academy-card--q"><b>Q</b><i>♥</i></span>
+                  <span class="academy-card academy-card--king"><b>K</b><i>♥</i></span>
+                </div>
+                <span class="academy-tile__visual-caption">Licytacja · meldunki · punktacja</span>
+              </div>
+              <div class="academy-tile__body">
+                <span class="academy-tile__number">02</span>
+                <h3>Tysiąc Academy</h3>
+                <p>Przejdź przez licytację, meldunki, kontrakt i punktację. Nauka prowadzi od podstaw do świadomego planowania rozdania.</p>
+                <ul aria-label="Moduły Tysiąc Academy">
+                  <li>Licytacja</li>
+                  <li>Meldunki</li>
+                  <li>Kalkulator</li>
+                </ul>
+                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
+              </div>
             </a>
-          </li>
-          <li>
-            <a class="tile" href="/poradniki/">
-              <img class="tile-art" src="/assets/img/tile-guides.webp" width="474" height="230" alt="" loading="lazy">
-              <span class="tile-body">
-                <span class="tile-title"><svg aria-hidden="true"><use href="#i-cap"/></svg>Poradniki</span>
-                <span class="tile-desc">Zasady gier, podstawy strategii,<br class="br-d"> materiały edukacyjne<br class="br-d"> i&nbsp;praktyczne wskazówki.</span>
-                <span class="tile-cta">Przejdź do poradników <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
-              </span>
+          </article>
+
+          <article class="academy-tile academy-tile--warcaby">
+            <a class="academy-tile__link" href="/gry/warcaby/" aria-label="Wejdź do Warcaby Academy">
+              <div class="academy-tile__visual academy-tile__visual--warcaby" aria-hidden="true">
+                <span class="academy-tile__badge">Warcaby Academy</span>
+                <div class="academy-checkers-board">
+                  <i class="acp acp--light acp1"></i><i class="acp acp--dark acp2"></i><i class="acp acp--light acp3"></i><i class="acp acp--dark acp4"></i>
+                </div>
+                <span class="academy-tile__visual-caption">Bicie · seria bić · damka</span>
+              </div>
+              <div class="academy-tile__body">
+                <span class="academy-tile__number">03</span>
+                <h3>Warcaby Academy</h3>
+                <p>Ćwicz obowiązkowe bicie, wielokrotne skoki i grę damką. Interaktywny trening pomaga zrozumieć legalne decyzje.</p>
+                <ul aria-label="Moduły Warcaby Academy">
+                  <li>Obowiązkowe bicie</li>
+                  <li>Seria bić</li>
+                  <li>Damka</li>
+                </ul>
+                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
+              </div>
             </a>
-          </li>
-          <li>
-            <a class="tile" href="/o-gracz-pl/">
-              <img class="tile-art" src="/assets/img/tile-about.webp" width="488" height="230" alt="" loading="lazy">
-              <span class="tile-body">
-                <span class="tile-title"><svg aria-hidden="true"><use href="#i-people"/></svg>O gracz.pl</span>
-                <span class="tile-desc">Zobacz, jaki portal dla graczy<br class="br-d"> budujemy i&nbsp;jakie są nasze<br class="br-d"> plany na przyszłość.</span>
-                <span class="tile-cta">Poznaj gracz.pl <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
-              </span>
+          </article>
+
+          <article class="academy-tile academy-tile--gomoku">
+            <a class="academy-tile__link" href="/gry/gomoku/" aria-label="Wejdź do Gomoku Academy">
+              <div class="academy-tile__visual academy-tile__visual--gomoku" aria-hidden="true">
+                <span class="academy-tile__badge">Gomoku Academy</span>
+                <div class="academy-gomoku-board">
+                  <i class="ags ags--b ag1"></i><i class="ags ags--w ag2"></i><i class="ags ags--b ag3"></i><i class="ags ags--w ag4"></i><i class="ags ags--b ag5"></i><i class="ags ags--b ag6"></i>
+                </div>
+                <span class="academy-tile__visual-caption">Zagrożenia · atak · obrona</span>
+              </div>
+              <div class="academy-tile__body">
+                <span class="academy-tile__number">04</span>
+                <h3>Gomoku Academy</h3>
+                <p>Rozpoznawaj trójki i czwórki, ucz się priorytetu ataku i obrony oraz budowania pięciu kamieni w jednej linii.</p>
+                <ul aria-label="Moduły Gomoku Academy">
+                  <li>Zagrożenia</li>
+                  <li>Atak / obrona</li>
+                  <li>Legalny ruch</li>
+                </ul>
+                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
+              </div>
             </a>
-          </li>
-        </ul>
+          </article>
+        </div>
+
+        <div class="academy-showcase__footer">
+          <div>
+            <strong>Nie wiesz, od czego zacząć?</strong>
+            <span>Przejdź do centrum gier albo otwórz Poradniki i wybierz ścieżkę według tematu.</span>
+          </div>
+          <div class="academy-showcase__footer-actions">
+            <a href="/gry/">Wszystkie gry <span aria-hidden="true">→</span></a>
+            <a href="/poradniki/">Centrum Poradników <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
       </div>
     </section>
   </main>
