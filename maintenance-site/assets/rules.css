@@ -827,3 +827,61 @@ body::after{
 .page-grid{
   background:transparent!important;
 }
+
+
+/* Poker rules hero — frameless premium R2 */
+.poker-rules-page .rules-hero{
+  border:0!important;
+  outline:0!important;
+  box-shadow:0 24px 54px rgba(0,0,0,.24)!important;
+  background:
+    radial-gradient(circle at 78% 18%,rgba(244,198,95,.055),transparent 28%),
+    radial-gradient(circle at 12% 88%,rgba(34,192,151,.08),transparent 34%),
+    linear-gradient(135deg,#08251f 0%,#0a3028 48%,#071c18 100%)!important;
+}
+.poker-rules-page .rules-hero::before,
+.poker-rules-page .rules-hero::after{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+.poker-rules-page .quick-card{
+  border:0!important;
+  outline:0!important;
+  background:
+    linear-gradient(180deg,rgba(4,20,17,.92),rgba(5,31,25,.86))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 14px 28px rgba(0,0,0,.18)!important;
+}
+.poker-rules-page .quick-card div{
+  border-top:0!important;
+  position:relative;
+}
+.poker-rules-page .quick-card div + div::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,214,181,.12),transparent);
+}
+.poker-rules-page .rules-note{
+  border:0!important;
+  border-left:0!important;
+  outline:0!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(90deg,rgba(9,67,54,.82),rgba(7,48,40,.72))!important;
+  box-shadow:none!important;
+  color:#e5f1ec!important;
+}
+.poker-rules-page .rules-note strong{
+  color:#f4d98c!important;
+}
+@media(max-width:620px){
+  .poker-rules-page .rules-hero{
+    border-radius:20px!important;
+  }
+}
