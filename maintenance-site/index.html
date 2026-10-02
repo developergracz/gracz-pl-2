@@ -41,7 +41,7 @@
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/home.css?v=hero-frame-align-r10">
-  <link rel="stylesheet" href="/assets/home-premium-max.css?v=final-qa-r13">
+  <link rel="stylesheet" href="/assets/home-premium-max.css?v=hero-progress-r14">
   <script src="/assets/home.js" defer></script>
 
   <script type="application/ld+json">
@@ -264,6 +264,51 @@
             <a href="/poradniki/"><svg aria-hidden="true"><use href="#i-cap"/></svg><span><strong>Poradniki</strong><small>Zasady, wiedza i materiały</small></span></a>
             <button type="button" data-modal="next"><svg aria-hidden="true"><use href="#i-people"/></svg><span><strong>gracz.NEXT</strong><small>Profil, rankingi i multiplayer</small></span></button>
           </div>
+        </div>
+      </div>
+
+      <div class="home-academy-progress" aria-labelledby="home-academy-progress-title" data-home-academy-progress>
+        <div class="home-academy-progress__head">
+          <div>
+            <small>Twój panel nauki</small>
+            <strong id="home-academy-progress-title">Twój postęp Academy</strong>
+          </div>
+          <div class="home-academy-progress__overall" aria-live="polite">
+            <span><b data-home-academy-total>0%</b> łącznie</span>
+            <em data-home-academy-summary>Rozpocznij pierwszą ścieżkę Academy</em>
+          </div>
+        </div>
+
+        <div class="home-academy-progress__games">
+          <a class="home-progress-game" href="/gry/poker-treningowy/" data-home-progress-game="poker">
+            <span class="home-progress-game__name"><i aria-hidden="true">♠</i><strong>Poker</strong></span>
+            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
+            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
+          </a>
+
+          <a class="home-progress-game" href="/gry/tysiac/" data-home-progress-game="tysiac">
+            <span class="home-progress-game__name"><i class="is-red" aria-hidden="true">♥</i><strong>Tysiąc</strong></span>
+            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
+            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
+          </a>
+
+          <a class="home-progress-game" href="/gry/warcaby/" data-home-progress-game="warcaby">
+            <span class="home-progress-game__name"><i aria-hidden="true">▦</i><strong>Warcaby</strong></span>
+            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
+            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
+          </a>
+
+          <a class="home-progress-game" href="/gry/gomoku/" data-home-progress-game="gomoku">
+            <span class="home-progress-game__name"><i aria-hidden="true">●</i><strong>Gomoku</strong></span>
+            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
+            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
+          </a>
+        </div>
+
+        <div class="home-academy-progress__status" aria-label="Status platformy">
+          <span><i class="is-live" aria-hidden="true"></i><strong>4 Academy aktywne</strong></span>
+          <span><i aria-hidden="true"></i><strong>Poradniki dostępne</strong></span>
+          <span><i class="is-future" aria-hidden="true"></i><strong>Multiplayer w rozwoju</strong></span>
         </div>
       </div>
     </section>
