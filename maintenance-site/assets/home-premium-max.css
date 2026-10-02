@@ -2007,3 +2007,30 @@ body.homepage-premium-max::after{
     width:calc(100% - 32px)!important;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — HERO / NEXT SECTION GAP FIX R10 */
+/* Remove legacy fixed hero height from home.css and pull the next section closer. */
+.homepage-premium-max .home-hero-premium{
+  height:auto!important;
+  min-height:0!important;
+  padding-bottom:18px!important;
+}
+
+.homepage-premium-max .home-hero-premium__shell{
+  min-height:0!important;
+}
+
+.homepage-premium-max .academy-showcase{
+  margin-top:0!important;
+  padding-top:24px!important;
+}
+
+@media(max-width:760px){
+  .homepage-premium-max .home-hero-premium{
+    padding-bottom:12px!important;
+  }
+  .homepage-premium-max .academy-showcase{
+    padding-top:18px!important;
+  }
+}
