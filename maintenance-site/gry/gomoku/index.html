@@ -34,7 +34,7 @@
 
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/gomoku.css?v=header-frameless-r1">
+  <link rel="stylesheet" href="/assets/gomoku.css?v=sidebar-poker-style-r1">
   <script src="/assets/gomoku.js" defer></script>
 
   <script type="application/ld+json">
@@ -271,40 +271,36 @@
         </section>
       </div>
 
-      <aside class="side-column" aria-label="Informacje dodatkowe">
-        <section class="online-card">
-          <p class="status-pill"><span></span>W przygotowaniu</p>
-          <h2>Graj w Gomoku online</h2>
-          <p>Już wkrótce zagrasz w Gomoku na gracz.pl — z innymi graczami, w rankingach i turniejach.</p>
-
-          <button class="side-action side-action--gold" type="button" data-modal="multiplayer">
-            <span class="side-emoji">👥</span><span><strong>Rozgrywka multiplayer</strong><small>Graj z innymi graczami</small></span><b>›</b>
-          </button>
-          <button class="side-action side-action--green" type="button" data-modal="rankings">
-            <span class="side-emoji">🏆</span><span><strong>Rankingi i statystyki</strong><small>Śledź swoje postępy</small></span><b>›</b>
-          </button>
-          <a class="side-action side-action--red" href="#warianty">
-            <span class="side-emoji">⚙</span><span><strong>Różne warianty gry</strong><small>Klasyczne i dodatkowe tryby</small></span><b>›</b>
-          </a>
-          <a class="side-action side-action--green" href="/poradniki/">
-            <span class="side-emoji">🎓</span><span><strong>Nauka i poradniki</strong><small>Zostań lepszym graczem</small></span><b>›</b>
-          </a>
+      <aside class="side-column gomoku-side-panel" aria-label="Panel Gomoku">
+        <section class="gomoku-side-card gomoku-side-card--status">
+          <p class="gomoku-side-eyebrow">Gomoku</p>
+          <h2>Strategiczna gra 15×15</h2>
+          <p>Gra dla dwóch osób, w której liczy się budowanie pięciu kamieni w jednej linii, tworzenie zagrożeń i szybkie blokowanie przeciwnika.</p>
+          <div class="gomoku-side-status"><span aria-hidden="true"></span>Tryb online w przygotowaniu</div>
+          <a class="gomoku-side-primary" href="#zasady">Zasady gry</a>
         </section>
 
-        <section class="related-card">
-          <h2>Zobacz także</h2>
-          <a class="related-game" href="/gry/warcaby/">
-            <span class="related-image related-image--warcaby" aria-hidden="true"></span>
-            <span><strong>Warcaby</strong><small>Gra logiczna</small></span><b>›</b>
-          </a>
-          <a class="related-game" href="/gry/poker-treningowy/">
-            <span class="related-image related-image--poker" aria-hidden="true"></span>
-            <span><strong>Poker</strong><small>Gra karciana</small></span><b>›</b>
-          </a>
-          <a class="related-game" href="/gry/tysiac/">
-            <span class="related-image related-image--tysiac" aria-hidden="true"></span>
-            <span><strong>Tysiąc</strong><small>Gra karciana</small></span><b>›</b>
-          </a>
+        <nav class="gomoku-side-card gomoku-side-nav" aria-label="Na tej stronie">
+          <p class="gomoku-side-eyebrow">Na tej stronie</p>
+          <a href="#zasady"><span>01</span><strong>Cel i podstawy gry</strong></a>
+          <a href="#warianty"><span>02</span><strong>Warianty Gomoku</strong></a>
+          <a href="#dokladne-zasady"><span>03</span><strong>Dokładne zasady</strong></a>
+          <a href="/poradniki/"><span>04</span><strong>Nauka i poradniki</strong></a>
+        </nav>
+
+        <section class="gomoku-side-card gomoku-side-online" aria-labelledby="gomoku-online-title">
+          <p class="gomoku-side-eyebrow">Gomoku online</p>
+          <h2 id="gomoku-online-title">Funkcje gracza</h2>
+          <button type="button" data-modal="multiplayer"><span>👥</span><span><strong>Rozgrywka multiplayer</strong><small>Gra z innymi graczami</small></span></button>
+          <button type="button" data-modal="rankings"><span>🏆</span><span><strong>Rankingi i statystyki</strong><small>Śledź swoje postępy</small></span></button>
+        </section>
+
+        <section class="gomoku-side-card gomoku-side-related" aria-labelledby="gomoku-side-related-title">
+          <p class="gomoku-side-eyebrow">Zobacz także</p>
+          <h2 id="gomoku-side-related-title">Inne gry</h2>
+          <a href="/gry/poker-treningowy/"><span class="related-image related-image--poker" aria-hidden="true"></span><span><strong>Poker</strong><small>Texas Hold’em do nauki</small></span></a>
+          <a href="/gry/tysiac/"><span class="related-image related-image--tysiac" aria-hidden="true"></span><span><strong>Tysiąc</strong><small>Licytacja i meldunki</small></span></a>
+          <a href="/gry/warcaby/"><span class="related-image related-image--warcaby" aria-hidden="true"></span><span><strong>Warcaby</strong><small>Klasyczna gra logiczna</small></span></a>
         </section>
       </aside>
     </div>
