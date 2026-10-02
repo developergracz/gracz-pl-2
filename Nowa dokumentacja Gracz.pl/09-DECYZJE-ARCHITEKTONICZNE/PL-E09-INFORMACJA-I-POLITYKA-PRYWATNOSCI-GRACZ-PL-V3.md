@@ -18,15 +18,15 @@ Powiązany review pack: `REV-ADR-V3-012-20260901-PL-01`
 
 Administratorem danych osobowych w projekcie Gracz.pl jest:
 
-**Czesław Socha — osoba fizyczna prowadząca projekt Gracz.pl we własnym imieniu.**
+**Czesław Socha — osoba prywatna prowadząca projekt Gracz.pl we własnym imieniu.**
 
-Dane kontaktowe administratora do wersji publikacyjnej:
+Dane kontaktowe administratora:
 
-- adres korespondencyjny: `PENDING`;
-- e-mail do spraw prywatności i praw osób: `PENDING`;
-- inne kanały kontaktu: `PENDING`.
+- adres korespondencyjny: **ul. Żabia 3, 41-403 Chełm Śląski**;
+- e-mail do spraw prywatności i praw osób: **czsocha@wp.pl**;
+- inne kanały kontaktu: brak odrębnego kanału na obecnym etapie.
 
-Do czasu uzupełnienia danych kontaktowych dokument nie może zostać uznany za gotową informację publikacyjną.
+Dane kontaktowe wymagające owner input zostały uzupełnione. Dokument nadal nie jest wersją publikacyjną z uwagi na otwarte warunki dotyczące providerów, transferów, cookies/local storage oraz finalnego review.
 
 ---
 
@@ -82,7 +82,7 @@ Poniższe podstawy są zgodne z bieżącą mapą PL-E03, ale pozostają przedmio
 | audit i bezpieczeństwo działań uprzywilejowanych | art. 6 ust. 1 lit. f RODO lub lit. c wyłącznie przy wskazanym obowiązku | `PROPOSED / LIA OR LEGAL DUTY REQUIRED` |
 | backup/restore i ciągłość usługi | art. 6 ust. 1 lit. b i/lub f zależnie od procesu | `PENDING FINAL REVIEW` |
 
-Lawful-basis/LIA, material retention, newsletter consent oraz pełna DPIA/model 16–17 zostały rozstrzygnięte w authoritative records `P1-PL-001`, `002`, `004` i `005`. Pełny `PASS` nadal wymaga ich finalnej publikacyjnej synchronizacji oraz zamknięcia otwartych danych kontaktowych, providerów/transferów i dowodów operacyjnych.
+Lawful-basis/LIA, material retention, newsletter consent oraz pełna DPIA/model 16–17 zostały rozstrzygnięte w authoritative records `P1-PL-001`, `002`, `004` i `005`. Pełny `PASS` nadal wymaga ich finalnej publikacyjnej synchronizacji oraz zamknięcia otwartych providerów/transferów i dowodów operacyjnych.
 
 ---
 
@@ -258,8 +258,8 @@ Historia wersji powinna być trwała i możliwa do powiązania z odpowiednią we
 
 | ID | Warunek | Severity | Status |
 |---|---|---|---|
-| PL-E09-O01 | uzupełnić adres kontaktowy administratora | P1 Privacy/Legal | `OPEN` |
-| PL-E09-O02 | ustanowić e-mail privacy/contact | P1 Privacy/Legal | `OPEN` |
+| PL-E09-O01 | uzupełnić adres kontaktowy administratora | P1 Privacy/Legal | `CLOSED / PROVIDED 2026-10-02` |
+| PL-E09-O02 | ustanowić e-mail privacy/contact | P1 Privacy/Legal | `CLOSED / PROVIDED 2026-10-02` |
 | PL-E09-O03 | zakończyć LIA dla procesów 6(1)(f) | P1 Privacy/Legal | `CLOSED / P1-PL-001` |
 | PL-E09-O04 | zweryfikować i zatwierdzić providerów, DPA i transfery | P1 Privacy/Legal | `OPEN` |
 | PL-E09-O05 | zatwierdzić okresy retencji PL-R01–PL-R09 | P1 Privacy/Legal | `CLOSED / P1-PL-002` |
@@ -278,7 +278,7 @@ PL-E09 = PASS WITH CONDITIONS
 
 PRIVACY NOTICE DRAFT = VERSIONED
 ADMINISTRATOR = IDENTIFIED
-CONTACT DATA = INCOMPLETE
+CONTACT DATA = COMPLETE FOR CURRENT OWNER INPUT
 PURPOSES / BASES = MAPPED BUT NOT FINAL
 RECIPIENTS / PROCESSORS = MAPPED BUT PROVIDER VERIFICATION OPEN
 TRANSFERS = TO VERIFY
