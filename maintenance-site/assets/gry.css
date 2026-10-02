@@ -1036,8 +1036,9 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
 
 @media(min-width:1181px){
   .games-side-column-r4{
-    position:sticky;
-    top:96px;
+    position:static;
+    top:auto;
+    align-self:start;
   }
 }
 @media(max-width:1180px){
