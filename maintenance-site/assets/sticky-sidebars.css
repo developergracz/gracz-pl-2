@@ -1,6 +1,6 @@
-/* Global Sticky Right Rails R1
-   Desktop right-side navigation follows the reading position.
-   Sticky elements remain constrained by their layout parent and stop before the footer. */
+/* Global Sticky Right Rails R2
+   One document scrollbar only: desktop side rails stay visible with position:sticky,
+   but never create their own independent scroll area. */
 
 main [id]{
   scroll-margin-top:110px;
@@ -16,29 +16,9 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:calc(100vh - 116px);
-    overflow-y:auto;
-    overflow-x:hidden;
-    overscroll-behavior:contain;
-    scrollbar-width:thin;
-    scrollbar-color:rgba(99,221,195,.34) transparent;
-  }
-
-  .side-column::-webkit-scrollbar,
-  .academy-side-column::-webkit-scrollbar,
-  .poker-side-panel::-webkit-scrollbar,
-  .warcaby-side-panel::-webkit-scrollbar,
-  .gomoku-side-panel::-webkit-scrollbar,
-  .side-column--pilot::-webkit-scrollbar{width:6px}
-
-  .side-column::-webkit-scrollbar-thumb,
-  .academy-side-column::-webkit-scrollbar-thumb,
-  .poker-side-panel::-webkit-scrollbar-thumb,
-  .warcaby-side-panel::-webkit-scrollbar-thumb,
-  .gomoku-side-panel::-webkit-scrollbar-thumb,
-  .side-column--pilot::-webkit-scrollbar-thumb{
-    border-radius:999px;
-    background:rgba(99,221,195,.30);
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
   }
 }
 
@@ -47,17 +27,9 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:calc(100vh - 116px);
-    overflow-y:auto;
-    overflow-x:hidden;
-    overscroll-behavior:contain;
-    scrollbar-width:thin;
-    scrollbar-color:rgba(99,221,195,.34) transparent;
-  }
-  .rules-side-panel::-webkit-scrollbar{width:6px}
-  .rules-side-panel::-webkit-scrollbar-thumb{
-    border-radius:999px;
-    background:rgba(99,221,195,.30);
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
   }
 }
 
@@ -66,9 +38,9 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:calc(100vh - 116px);
-    overflow-y:auto;
-    overscroll-behavior:contain;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
   }
 }
 
