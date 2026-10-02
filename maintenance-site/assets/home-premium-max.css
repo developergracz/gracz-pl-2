@@ -1886,3 +1886,17 @@ body.homepage-premium-max::after{
     min-height:108px;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — HEADER NO BRAND R6 */
+.homepage-premium-max .site-header .main-nav{
+  margin-left:0!important;
+}
+.homepage-premium-max .site-header .menu-panel{
+  flex:1 1 auto;
+}
+@media(max-width:1179px){
+  .homepage-premium-max .site-header .search-btn--mobile{
+    margin-left:auto;
+  }
+}
