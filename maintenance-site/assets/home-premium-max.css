@@ -1923,3 +1923,38 @@ body.homepage-premium-max::after{
     margin-left:0!important;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — FORCE HEADER LOGO R8 */
+.homepage-premium-max .site-header .home-header-logo{
+  display:inline-flex!important;
+  align-items:center!important;
+  flex:0 0 auto!important;
+  min-width:max-content!important;
+  margin:0 38px 0 0!important;
+  padding:0!important;
+  position:relative!important;
+  z-index:20!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#fff!important;
+  font-family:var(--display,Montserrat,sans-serif)!important;
+  font-size:42px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  letter-spacing:-.055em!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+}
+.homepage-premium-max .site-header .home-header-logo span{
+  color:#f21a34!important;
+}
+.homepage-premium-max .site-header .main-nav{
+  margin-left:0!important;
+}
+@media(max-width:1179px){
+  .homepage-premium-max .site-header .home-header-logo{
+    margin-right:auto!important;
+    font-size:34px!important;
+  }
+}
