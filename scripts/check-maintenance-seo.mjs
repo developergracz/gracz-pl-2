@@ -162,7 +162,11 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r3'), `${rel}: legal/contact trigger exists but legal-links.js R3 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r4'), `${rel}: legal/contact trigger exists but legal-links.js R4 is missing`);
+  }
+  if (/data-modal="contact"/i.test(html)) {
+    requireCheck(html.includes('/assets/contact-modal.css?v=r3'), `${rel}: contact modal CSS R3 must be preloaded to prevent flash`);
+    requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
   }
 }
 
@@ -173,6 +177,10 @@ const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js")
 requireCheck(legalLinksJs.includes('/regulamin/#prywatnosc'), "contact modal: privacy information link missing");
 requireCheck(contactCss.includes('resize:none'), "contact modal: message textarea must not be resizable");
 requireCheck(contactCss.includes('overflow-y:auto'), "contact modal: message textarea internal scrolling missing");
+requireCheck(contactCss.includes('width:min(680px'), "contact modal: compact desktop width missing");
+requireCheck(contactCss.includes('height:120px'), "contact modal: compact textarea height missing");
+requireCheck(contactCss.includes('position:sticky'), "contact modal: sticky action bar missing");
+requireCheck(legalLinksJs.includes('await ensureStyles()'), "contact modal: must wait for stylesheet before opening");
 
 if (failures.length) {
   console.error("SEO GATE: FAIL");
