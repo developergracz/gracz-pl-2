@@ -248,3 +248,177 @@ linear-gradient(135deg,#d5c38e,#bca86f);border:3px solid #2d2412;box-shadow:inse
 .site-header .menu-panel{
   border-bottom:0!important;
 }
+
+
+/* Gomoku sidebar — Poker premium style R1 */
+.gomoku-side-panel{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:16px!important;
+  min-width:0;
+  position:static;
+}
+.gomoku-side-card{
+  padding:20px;
+  border:0!important;
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 0 0,rgba(25,132,105,.10),transparent 42%),
+    linear-gradient(145deg,rgba(7,35,28,.96),rgba(4,18,15,.98));
+  box-shadow:0 16px 34px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.gomoku-side-card h2{
+  margin:0 0 8px;
+  color:#f5dc95;
+  font-family:var(--display);
+  font-size:22px;
+}
+.gomoku-side-card p{
+  margin:0;
+  color:#d5dbd6;
+  line-height:1.55;
+}
+.gomoku-side-eyebrow{
+  margin:0 0 6px!important;
+  color:#58d9b8!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.gomoku-side-status{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:16px 0 14px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(10,72,58,.42);
+  color:#eefaf5;
+  font-size:13px;
+  font-weight:800;
+}
+.gomoku-side-status span{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#1cf0a3;
+  box-shadow:0 0 10px rgba(28,240,163,.55);
+}
+.gomoku-side-primary{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:46px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#0e6555,#12816d);
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 8px 18px rgba(0,0,0,.16);
+}
+.gomoku-side-primary:hover{filter:brightness(1.06)}
+.gomoku-side-nav{
+  padding-top:18px;
+  padding-bottom:18px;
+}
+.gomoku-side-nav>a{
+  display:grid;
+  grid-template-columns:34px 1fr;
+  align-items:center;
+  gap:10px;
+  padding:11px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.gomoku-side-nav>a:first-of-type{border-top:0}
+.gomoku-side-nav span{
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  background:rgba(244,198,95,.10);
+  color:#e8c86f;
+  font-size:11px;
+  font-weight:800;
+}
+.gomoku-side-nav strong{
+  color:#f0f3f0;
+  font-size:14px;
+}
+.gomoku-side-nav a:hover strong{color:#ffe09a}
+.gomoku-side-online button{
+  width:100%;
+  display:grid;
+  grid-template-columns:36px 1fr;
+  gap:10px;
+  align-items:center;
+  padding:12px 0;
+  border:0;
+  border-top:1px solid rgba(255,255,255,.07);
+  background:transparent;
+  color:#fff;
+  text-align:left;
+  cursor:pointer;
+}
+.gomoku-side-online button:first-of-type{margin-top:4px}
+.gomoku-side-online button>span:first-child{
+  font-size:22px;
+}
+.gomoku-side-online strong{
+  display:block;
+  color:#fff;
+  font-size:14px;
+}
+.gomoku-side-online small{
+  display:block;
+  margin-top:3px;
+  color:#aebbb5;
+  font-size:12px;
+}
+.gomoku-side-online button:hover strong{color:#ffe09a}
+.gomoku-side-related>a{
+  display:grid;
+  grid-template-columns:88px 1fr;
+  gap:12px;
+  align-items:center;
+  padding:12px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.gomoku-side-related>a:first-of-type{margin-top:4px}
+.gomoku-side-related .related-image{
+  width:88px;
+  height:52px;
+  border:0!important;
+  border-radius:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.18)!important;
+}
+.gomoku-side-related strong{
+  display:block;
+  color:#fff;
+  font-size:14px;
+}
+.gomoku-side-related small{
+  display:block;
+  margin-top:3px;
+  color:#aebbb5;
+  font-size:12px;
+}
+.gomoku-side-related a:hover strong{color:#ffe09a}
+
+@media(min-width:1181px){
+  .gomoku-side-panel{
+    position:sticky;
+    top:96px;
+  }
+}
+@media(max-width:1180px){
+  .gomoku-side-panel{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+@media(max-width:820px){
+  .gomoku-side-panel{
+    grid-template-columns:1fr!important;
+  }
+}
