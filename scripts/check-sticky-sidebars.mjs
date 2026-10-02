@@ -19,7 +19,7 @@ const expected=[
 
 const railRe=/<aside\b[^>]*class="[^"]*(?:side-column|poker-side-panel|warcaby-side-panel|gomoku-side-panel|rules-side-panel|rules-toc)[^"]*"/i;
 const cssNeedle='/assets/sticky-sidebars.css?v=r4';
-const jsNeedle='/assets/sticky-sidebars.js?v=r5';
+const jsNeedle='/assets/sticky-sidebars.js?v=r6';
 const failures=[];
 const discovered=[];
 

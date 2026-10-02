@@ -20,11 +20,58 @@
   function pageY(){return window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0}
   function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 
+  function isSideBySide(rail){
+    if(!rail||!rail.parentElement)return false;
+    var parent=rail.parentElement;
+    var railRect=rail.getBoundingClientRect();
+    var parentRect=parent.getBoundingClientRect();
+    if(!railRect.width||!parentRect.width)return false;
+
+    var style=window.getComputedStyle?window.getComputedStyle(parent):null;
+    var display=style&&style.display?style.display:'';
+    var ratio=railRect.width/parentRect.width;
+
+    if(display.indexOf('grid')!==-1){
+      var cols=style.gridTemplateColumns||'';
+      if(cols&&cols!=='none'&&ratio<0.78)return true;
+    }
+
+    var siblings=parent.children||[];
+    for(var i=0;i<siblings.length;i++){
+      var sibling=siblings[i];
+      if(sibling===rail)continue;
+      var r=sibling.getBoundingClientRect();
+      if(!r.width||!r.height)continue;
+      var horizontal=(r.right<=railRect.left+4)||(r.left>=railRect.right-4);
+      var verticalOverlap=Math.min(r.bottom,railRect.bottom)-Math.max(r.top,railRect.top);
+      if(horizontal&&verticalOverlap>20)return true;
+    }
+    return false;
+  }
+
+  function applyRailMode(rail){
+    var active=isSideBySide(rail);
+    if(active){
+      rail.style.setProperty('position','sticky','important');
+      rail.style.setProperty('top','96px','important');
+      rail.style.setProperty('align-self','start','important');
+      rail.style.setProperty('max-height','calc(100vh - 116px)','important');
+      rail.style.setProperty('overflow-y','auto','important');
+      rail.style.setProperty('overflow-x','hidden','important');
+      rail.style.setProperty('overscroll-behavior','contain','important');
+    }else{
+      rail.style.setProperty('position','static','important');
+      rail.style.setProperty('top','auto','important');
+      rail.style.setProperty('max-height','none','important');
+      rail.style.setProperty('overflow','visible','important');
+      rail.style.removeProperty('align-self');
+      rail.scrollTop=0;
+    }
+    return active;
+  }
+
   function enabled(rail){
-    var width=vw();
-    if(rail.classList.contains('rules-side-panel'))return width>=1321;
-    if(rail.classList.contains('rules-toc'))return width>=901;
-    return width>=1181;
+    return isSideBySide(rail);
   }
 
   function documentProgress(){
@@ -41,7 +88,7 @@
   }
 
   function syncRail(rail){
-    if(!enabled(rail)){rail.scrollTop=0;return}
+    if(!applyRailMode(rail))return;
     var maxScroll=Math.max(0,rail.scrollHeight-rail.clientHeight);
     if(maxScroll<2){rail.scrollTop=0;return}
     rail.scrollTop=Math.round(documentProgress()*maxScroll);
