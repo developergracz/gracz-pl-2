@@ -1480,3 +1480,337 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   }
   .cards-academy-roadmap>div:nth-child(2)::after{display:block}
 }
+
+
+/* Gry karciane APPROVED PREMIUM COMPOSITION R3 */
+.cards-showcase-r3{
+  margin-top:24px;
+}
+.cards-showcase-heading{
+  position:relative;
+  margin-bottom:18px;
+  padding-right:18px;
+}
+.cards-showcase-kicker{
+  display:block;
+  margin-bottom:8px;
+  color:#e8e2d8;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.01em;
+}
+.cards-showcase-heading h2{
+  max-width:1060px;
+  margin:0;
+  color:#f7f2e8;
+  font:800 clamp(30px,3.3vw,44px)/1.05 var(--display);
+  letter-spacing:-.035em;
+}
+.cards-showcase-heading h2 span{
+  color:#f0cb72;
+}
+.cards-showcase-heading p{
+  max-width:1040px;
+  margin:12px 0 0;
+  color:#d4dad6;
+  font-size:15px;
+  line-height:1.58;
+}
+
+.cards-showcase-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.cards-showcase-card{
+  position:relative;
+  min-height:276px;
+  overflow:hidden;
+  border:1px solid rgba(244,198,95,.30);
+  border-radius:20px;
+  background-color:#07110d;
+  box-shadow:0 22px 44px rgba(0,0,0,.25);
+  isolation:isolate;
+}
+.cards-showcase-card--poker{
+  background:
+    linear-gradient(90deg,rgba(4,10,8,.98) 0%,rgba(4,10,8,.94) 38%,rgba(4,10,8,.56) 62%,rgba(4,10,8,.16) 100%),
+    url("/assets/related-poker-approved.webp") right center/62% 100% no-repeat,
+    linear-gradient(145deg,#0a1711,#050b08);
+}
+.cards-showcase-card--tysiac{
+  border-color:rgba(37,212,164,.32);
+  background:
+    linear-gradient(90deg,rgba(3,17,13,.98) 0%,rgba(3,17,13,.92) 38%,rgba(3,17,13,.50) 62%,rgba(3,17,13,.14) 100%),
+    url("/assets/img/tile-cards.webp") right center/64% 100% no-repeat,
+    linear-gradient(145deg,#073025,#03100c);
+}
+.cards-showcase-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 88% 18%,rgba(255,195,79,.16),transparent 20%),
+    linear-gradient(180deg,rgba(255,255,255,.015),transparent 28%);
+}
+.cards-showcase-card--tysiac::after{
+  background:
+    radial-gradient(circle at 88% 18%,rgba(58,218,166,.14),transparent 22%),
+    linear-gradient(180deg,rgba(255,255,255,.015),transparent 28%);
+}
+.cards-showcase-card__shade{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(0deg,rgba(2,8,6,.34),transparent 34%);
+}
+.cards-showcase-card__content{
+  position:relative;
+  z-index:2;
+  width:62%;
+  min-height:276px;
+  padding:22px 20px 20px;
+  display:flex;
+  flex-direction:column;
+}
+.cards-showcase-status{
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:14px;
+  padding:7px 12px;
+  border:1px solid rgba(40,213,163,.48);
+  border-radius:999px;
+  background:rgba(5,58,46,.48);
+  color:#7de8cd;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.cards-showcase-status i{
+  width:8px;
+  height:8px;
+  border:2px solid #f4c65f;
+  border-radius:50%;
+  box-shadow:0 0 10px rgba(244,198,95,.35);
+}
+.cards-showcase-card h3{
+  margin:0 0 10px;
+  color:#f2cf79;
+  font:800 clamp(28px,2.3vw,38px)/1.04 var(--display);
+  letter-spacing:-.03em;
+}
+.cards-showcase-card p{
+  max-width:500px;
+  margin:0;
+  color:#efeee8;
+  font-size:14px;
+  line-height:1.56;
+  text-shadow:0 2px 12px rgba(0,0,0,.38);
+}
+.cards-showcase-actions{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:auto;
+  padding-top:18px;
+}
+.cards-showcase-actions a{
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:800;
+}
+.cards-showcase-primary{
+  padding:0 21px;
+  background:linear-gradient(180deg,#ffe39b,#ecb23b);
+  color:#211403;
+  box-shadow:0 10px 22px rgba(0,0,0,.20),0 0 18px rgba(244,185,61,.10);
+}
+.cards-showcase-primary span{
+  font-size:17px;
+}
+.cards-showcase-secondary{
+  padding:0 18px;
+  border:1px solid rgba(35,220,171,.52);
+  background:rgba(2,26,20,.54);
+  color:#65e3c6;
+}
+.cards-showcase-doc{
+  font-size:17px;
+  line-height:1;
+}
+.cards-showcase-actions a:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.05);
+}
+
+/* Poker Academy — approved lower premium band */
+.cards-academy-r3{
+  position:relative;
+  margin-top:16px;
+  padding:24px 22px 20px;
+  overflow:hidden;
+  border:1px solid rgba(244,198,95,.24);
+  border-radius:20px;
+  background:
+    linear-gradient(90deg,rgba(3,12,9,.98) 0%,rgba(3,12,9,.96) 42%,rgba(3,12,9,.62) 68%,rgba(3,12,9,.28) 100%),
+    url("/assets/gry-karciane-hero-reference.webp") right center/58% 115% no-repeat,
+    linear-gradient(145deg,#07130e,#040a07);
+  box-shadow:0 22px 46px rgba(0,0,0,.22);
+}
+.cards-academy-r3::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 86% 22%,rgba(244,184,62,.14),transparent 24%),
+    radial-gradient(circle at 72% 80%,rgba(25,198,149,.09),transparent 26%);
+}
+.cards-academy-r3__intro{
+  position:relative;
+  z-index:2;
+  max-width:820px;
+}
+.cards-academy-r3__kicker{
+  display:block;
+  margin-bottom:6px;
+  color:#e1ba55;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.17em;
+  text-transform:uppercase;
+}
+.cards-academy-r3__intro h2{
+  margin:0;
+  color:#f0cb72;
+  font:800 clamp(28px,2.8vw,38px)/1.06 var(--display);
+  letter-spacing:-.03em;
+}
+.cards-academy-r3__intro p{
+  margin:8px 0 0;
+  color:#edf0ed;
+  font-size:13px;
+  line-height:1.55;
+}
+.cards-academy-r3__grid{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-top:18px;
+}
+.cards-academy-r3__card{
+  min-height:128px;
+  display:grid;
+  grid-template-columns:48px 1fr 32px;
+  gap:12px;
+  align-items:start;
+  padding:16px 14px;
+  border:1px solid rgba(244,198,95,.28);
+  border-radius:15px;
+  background:
+    linear-gradient(145deg,rgba(17,20,15,.88),rgba(5,12,9,.88));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+}
+.cards-academy-r3__card--teal{
+  border-color:rgba(36,220,169,.30);
+  background:
+    linear-gradient(145deg,rgba(4,37,29,.88),rgba(4,14,11,.90));
+}
+.cards-academy-r3__icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:rgba(244,198,95,.07);
+  color:#f4c65f;
+  font-size:20px;
+  font-weight:800;
+}
+.cards-academy-r3__card--teal .cards-academy-r3__icon{
+  background:rgba(41,224,171,.07);
+  color:#58dfbd;
+}
+.cards-academy-r3__card h3{
+  margin:0 0 6px;
+  color:#f4efe4;
+  font:800 16px/1.2 var(--display);
+}
+.cards-academy-r3__card p{
+  margin:0;
+  color:#cdd5d0;
+  font-size:11px;
+  line-height:1.48;
+}
+.cards-academy-r3__card>a{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(244,198,95,.30);
+  border-radius:50%;
+  color:#f4c65f;
+  font-weight:900;
+  background:rgba(244,198,95,.04);
+}
+.cards-academy-r3__card--teal>a{
+  border-color:rgba(44,219,169,.30);
+  color:#56debc;
+}
+.cards-academy-r3__card>a:hover{
+  background:rgba(244,198,95,.09);
+  transform:translateX(1px);
+}
+
+/* keep the right rail visually intact and prevent older lower-section styles from leaking in */
+.cards-showcase-r3 .game-card,
+.cards-showcase-r3 .category-info,
+.cards-showcase-r3 .category-info-grid{
+  all:unset;
+}
+
+@media(max-width:1050px){
+  .cards-showcase-grid{grid-template-columns:1fr}
+  .cards-showcase-card__content{width:68%}
+  .cards-academy-r3__grid{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .cards-showcase-heading h2{font-size:32px}
+  .cards-showcase-card{
+    min-height:360px;
+    background-position:center top!important;
+    background-size:100% 58%!important;
+  }
+  .cards-showcase-card__content{
+    width:100%;
+    min-height:360px;
+    padding:190px 18px 18px;
+    background:linear-gradient(180deg,transparent 0 44%,rgba(3,10,8,.98) 60% 100%);
+  }
+  .cards-showcase-actions{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+  }
+  .cards-academy-r3{
+    padding:22px 18px 18px;
+    background:
+      linear-gradient(180deg,rgba(3,12,9,.95),rgba(3,12,9,.98)),
+      url("/assets/gry-karciane-hero-reference.webp") center/cover no-repeat;
+  }
+}
