@@ -18,7 +18,7 @@
     return new Promise(function(resolve){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/contact-modal.css?v=r3';
+      link.href='/assets/contact-modal.css?v=r4';
       link.setAttribute('data-contact-modal-style','');
       link.addEventListener('load',resolve,{once:true});
       link.addEventListener('error',resolve,{once:true});
@@ -43,11 +43,11 @@
           '<div class="contact-field"><label for="contact-subject">Temat</label><input id="contact-subject" name="subject" type="text" maxlength="120" placeholder="Krótko opisz sprawę" required></div>'+
         '</div>'+
         '<div class="contact-field"><label for="contact-message">Wiadomość</label><textarea id="contact-message" name="message" minlength="10" maxlength="4000" placeholder="Napisz, w czym możemy pomóc…" required></textarea><div class="contact-field__meta"><span>Minimum 10 znaków</span><span data-contact-count>0 / 4000</span></div></div>'+
-        '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam, że podane dane mogą zostać wykorzystane wyłącznie do obsługi mojego zgłoszenia i odpowiedzi na wiadomość.</span></label>'+
+        '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam zapoznanie się z <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Polityką prywatności</a> i przyjmuję do wiadomości zasady przetwarzania danych w celu obsługi zgłoszenia.</span></label>'+
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
-        '<p class="contact-form__privacy"><strong>Dane osobowe:</strong> administratorem danych jest Czesław Socha. Dane z formularza służą do obsługi zgłoszenia i udzielenia odpowiedzi. <a href="/regulamin/#prywatnosc" target="_blank" rel="noopener">Regulamin i informacje o prywatności</a>.</p>'+
+        '<p class="contact-form__privacy"><strong>Dane osobowe:</strong> administratorem danych jest Czesław Socha. Dane z formularza służą do obsługi zgłoszenia i udzielenia odpowiedzi. <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Szczegóły w Polityce prywatności</a>.</p>'+
         '<p class="contact-form__privacy"><strong>Bezpieczeństwo:</strong> nie podawaj w wiadomości haseł, numerów dokumentów, danych kart ani innych sekretów.</p>'+
       '</form>'+
     '</div>';
@@ -189,6 +189,13 @@
   }
 
   document.addEventListener('click',function(event){
+    var privacy=event.target.closest('[data-modal="privacy"]');
+    if(privacy){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.location.assign('/polityka-prywatnosci/');
+      return;
+    }
     var terms=event.target.closest('[data-modal="terms"]');
     if(terms){
       event.preventDefault();
