@@ -150,4 +150,179 @@
       }
     }
   });
+
+  /* Poradniki FULL MAX R2 */
+  var STORAGE_KEY='graczPoradnikiProgressV2';
+  var BOOKMARK_KEY='graczPoradnikiBookmarksV1';
+  var LAST_KEY='graczPoradnikiLastGuideV1';
+
+  function safeRead(key,fallback){
+    try{
+      var raw=window.localStorage.getItem(key);
+      return raw?JSON.parse(raw):fallback;
+    }catch(e){return fallback;}
+  }
+  function safeWrite(key,value){
+    try{window.localStorage.setItem(key,JSON.stringify(value));}catch(e){}
+  }
+
+  var learningState=safeRead(STORAGE_KEY,{poker:0,tysiac:0,warcaby:0,gomoku:0});
+  ['poker','tysiac','warcaby','gomoku'].forEach(function(k){
+    if(typeof learningState[k]!=='number')learningState[k]=0;
+  });
+
+  function renderProgress(){
+    var total=0;
+    ['poker','tysiac','warcaby','gomoku'].forEach(function(k){
+      var value=Math.max(0,Math.min(100,learningState[k]||0));
+      total+=value;
+      var bar=document.querySelector('[data-progress-bar="'+k+'"]');
+      var label=document.querySelector('[data-progress-value="'+k+'"]');
+      if(bar)bar.value=value;
+      if(label)label.textContent=value+'%';
+    });
+    var overall=Math.round(total/4);
+    var overallBar=document.querySelector('[data-overall-bar]');
+    var overallLabel=document.querySelector('[data-overall-progress]');
+    if(overallBar)overallBar.value=overall;
+    if(overallLabel)overallLabel.textContent=overall+'%';
+  }
+  renderProgress();
+
+  var lastGuide=document.querySelector('[data-last-guide]');
+  var lastGuideValue=safeRead(LAST_KEY,'');
+  if(lastGuide && lastGuideValue)lastGuide.textContent=lastGuideValue;
+
+  document.addEventListener('click',function(e){
+    var guide=e.target.closest('[data-track-guide]');
+    if(guide){
+      var title=guide.getAttribute('data-track-guide');
+      safeWrite(LAST_KEY,title);
+      if(lastGuide)lastGuide.textContent=title;
+    }
+  });
+
+  var resetProgress=document.querySelector('[data-reset-progress]');
+  if(resetProgress){
+    resetProgress.addEventListener('click',function(){
+      learningState={poker:0,tysiac:0,warcaby:0,gomoku:0};
+      safeWrite(STORAGE_KEY,learningState);
+      renderProgress();
+    });
+  }
+
+  var finder=document.querySelector('[data-guide-finder]');
+  var finderResult=document.querySelector('[data-guide-result]');
+  var finderLink=document.querySelector('[data-guide-result-link]');
+  var recommendationMap={
+    poker:{name:'Poker treningowy',href:'/gry/poker-treningowy/zasady/',rules:'Zacznij od przebiegu rozdania, układów i blindów.',strategy:'Przejdź do pozycji przy stole i porządkowania decyzji.',mistakes:'Skup się na selekcji rąk i unikaniu gry bez planu.'},
+    tysiac:{name:'Tysiąc',href:'/gry/tysiac/zasady/',rules:'Zacznij od licytacji, musiku, meldunków i punktacji.',strategy:'Uporządkuj plan punktowy przed licytacją i prowadzeniem koloru.',mistakes:'Sprawdź ryzyko zbyt wysokiej deklaracji i gry bez liczenia punktów.'},
+    warcaby:{name:'Warcaby',href:'/gry/warcaby/zasady/',rules:'Najpierw ruch pionków, obowiązkowe bicie i damka.',strategy:'Ćwicz czytanie sekwencji kilku ruchów i wymuszeń.',mistakes:'Najczęściej kosztuje patrzenie tylko na jeden ruch do przodu.'},
+    gomoku:{name:'Gomoku',href:'/gry/gomoku/zasady/',rules:'Zacznij od celu pięciu kamieni i legalnego ruchu.',strategy:'Ucz się otwartych linii, podwójnych zagrożeń i blokowania.',mistakes:'Najczęstszy błąd to reakcja dopiero po zbudowaniu podwójnej groźby.'}
+  };
+  if(finder){
+    finder.addEventListener('submit',function(e){
+      e.preventDefault();
+      var data=new FormData(finder);
+      var game=data.get('game');
+      var goal=data.get('goal');
+      var level=data.get('level');
+      var rec=recommendationMap[game]||recommendationMap.poker;
+      var levelLabel=level==='start'?'poziom startowy':level==='medium'?'poziom średni':'poziom zaawansowany';
+      var advice=rec[goal]||rec.rules;
+      var strong=finderResult&&finderResult.querySelector('strong');
+      var p=finderResult&&finderResult.querySelector('p');
+      if(strong)strong.textContent=rec.name+' — '+levelLabel;
+      if(p)p.textContent=advice;
+      if(finderLink){finderLink.href=rec.href;finderLink.textContent='Otwórz rekomendowany materiał';finderLink.setAttribute('data-track-guide',rec.name+' — rekomendacja');}
+    });
+  }
+
+  var liveQuiz=document.querySelector('[data-live-quiz]');
+  if(liveQuiz){
+    liveQuiz.addEventListener('submit',function(e){
+      e.preventDefault();
+      var fields=Array.prototype.slice.call(liveQuiz.querySelectorAll('[data-quiz-question]'));
+      var answered=0,score=0;
+      fields.forEach(function(field){
+        field.classList.remove('is-correct','is-wrong');
+        var checked=field.querySelector('input:checked');
+        if(!checked)return;
+        answered++;
+        var correct=checked.value===field.getAttribute('data-answer');
+        field.classList.add(correct?'is-correct':'is-wrong');
+        if(correct){
+          score++;
+          var game=field.getAttribute('data-quiz-question');
+          learningState[game]=Math.max(learningState[game]||0,25);
+        }
+      });
+      var result=liveQuiz.querySelector('[data-quiz-result]');
+      var strong=result&&result.querySelector('strong');
+      var span=result&&result.querySelector('span');
+      if(answered<fields.length){
+        if(strong)strong.textContent='Odpowiedz na wszystkie pytania.';
+        if(span)span.textContent='Brakuje '+(fields.length-answered)+' odpowiedzi.';
+        return;
+      }
+      safeWrite(STORAGE_KEY,learningState);
+      renderProgress();
+      if(strong)strong.textContent='Wynik: '+score+' / '+fields.length;
+      if(span)span.textContent=score===4?'Świetnie — fundamenty masz opanowane.':score>=2?'Dobry start. Wróć do pytań oznaczonych na czerwono.':'Warto wrócić do podstaw i spróbować ponownie.';
+    });
+  }
+
+  var bookmarks=safeRead(BOOKMARK_KEY,[]);
+  if(!Array.isArray(bookmarks))bookmarks=[];
+  var savedList=document.querySelector('[data-saved-list]');
+
+  function renderBookmarks(){
+    if(!savedList)return;
+    savedList.innerHTML='';
+    if(!bookmarks.length){
+      var empty=document.createElement('span');
+      empty.className='saved-empty';
+      empty.textContent='Nie masz jeszcze zapisanych materiałów.';
+      savedList.appendChild(empty);
+    }else{
+      bookmarks.forEach(function(item){
+        var row=document.createElement('div');
+        row.className='saved-item';
+        var title=document.createElement('strong');
+        title.textContent=item.title;
+        var remove=document.createElement('button');
+        remove.type='button';
+        remove.textContent='Usuń';
+        remove.setAttribute('data-remove-bookmark',item.id);
+        row.appendChild(title);
+        row.appendChild(remove);
+        savedList.appendChild(row);
+      });
+    }
+    document.querySelectorAll('[data-bookmark]').forEach(function(btn){
+      var exists=bookmarks.some(function(x){return x.id===btn.getAttribute('data-bookmark');});
+      btn.classList.toggle('is-saved',exists);
+      btn.textContent=exists?'Zapisano ✓':'Zapisz na później';
+    });
+  }
+  renderBookmarks();
+
+  document.addEventListener('click',function(e){
+    var save=e.target.closest('[data-bookmark]');
+    if(save){
+      var id=save.getAttribute('data-bookmark');
+      var title=save.getAttribute('data-bookmark-title')||'Zapisany materiał';
+      var idx=bookmarks.findIndex(function(x){return x.id===id;});
+      if(idx>=0)bookmarks.splice(idx,1);else bookmarks.push({id:id,title:title});
+      safeWrite(BOOKMARK_KEY,bookmarks);
+      renderBookmarks();
+    }
+    var remove=e.target.closest('[data-remove-bookmark]');
+    if(remove){
+      var rid=remove.getAttribute('data-remove-bookmark');
+      bookmarks=bookmarks.filter(function(x){return x.id!==rid;});
+      safeWrite(BOOKMARK_KEY,bookmarks);
+      renderBookmarks();
+    }
+  });
 })();

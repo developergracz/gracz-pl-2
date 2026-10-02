@@ -33,8 +33,8 @@
 
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/poradniki.css?v=premium-max-r1">
-  <script src="/assets/poradniki.js" defer></script>
+  <link rel="stylesheet" href="/assets/poradniki.css?v=full-max-r2">
+  <script src="/assets/poradniki.js?v=full-max-r2" defer></script>
 
   <script type="application/ld+json">
   {
@@ -182,6 +182,91 @@
           </div>
         </section>
 
+
+        <section class="learning-dashboard" id="twoj-postep" aria-labelledby="learning-dashboard-title">
+          <div class="learning-dashboard__hero">
+            <div>
+              <span class="section-eyebrow">Twój panel nauki</span>
+              <h2 id="learning-dashboard-title">Ucz się jak na platformie premium</h2>
+              <p>Postęp jest zapisywany lokalnie w tej przeglądarce. Ukończ quizy i wracaj do materiałów bez szukania od początku.</p>
+            </div>
+            <div class="overall-progress" aria-live="polite">
+              <div class="overall-progress__number"><strong data-overall-progress>0%</strong><span>ukończono</span></div>
+              <progress data-overall-bar max="100" value="0">0%</progress>
+            </div>
+          </div>
+
+          <div class="game-progress-grid">
+            <article data-progress-card="poker">
+              <div class="game-progress-card__head"><span class="learning-icon">♠</span><div><strong>Poker</strong><small>Texas Hold’em</small></div><b data-progress-value="poker">0%</b></div>
+              <progress max="100" value="0" data-progress-bar="poker">0%</progress>
+              <a href="/gry/poker-treningowy/zasady/" data-track-guide="Poker — zasady">Kontynuuj naukę</a>
+            </article>
+            <article data-progress-card="tysiac">
+              <div class="game-progress-card__head"><span class="learning-icon learning-icon--red">♥</span><div><strong>Tysiąc</strong><small>licytacja i meldunki</small></div><b data-progress-value="tysiac">0%</b></div>
+              <progress max="100" value="0" data-progress-bar="tysiac">0%</progress>
+              <a href="/gry/tysiac/zasady/" data-track-guide="Tysiąc — zasady">Kontynuuj naukę</a>
+            </article>
+            <article data-progress-card="warcaby">
+              <div class="game-progress-card__head"><span class="learning-icon">●</span><div><strong>Warcaby</strong><small>bicie i damka</small></div><b data-progress-value="warcaby">0%</b></div>
+              <progress max="100" value="0" data-progress-bar="warcaby">0%</progress>
+              <a href="/gry/warcaby/zasady/" data-track-guide="Warcaby — zasady">Kontynuuj naukę</a>
+            </article>
+            <article data-progress-card="gomoku">
+              <div class="game-progress-card__head"><span class="learning-icon">✕</span><div><strong>Gomoku</strong><small>atak i obrona</small></div><b data-progress-value="gomoku">0%</b></div>
+              <progress max="100" value="0" data-progress-bar="gomoku">0%</progress>
+              <a href="/gry/gomoku/zasady/" data-track-guide="Gomoku — zasady">Kontynuuj naukę</a>
+            </article>
+          </div>
+
+          <div class="learning-dashboard__bottom">
+            <div class="last-guide">
+              <span>Ostatnio otwierane</span>
+              <strong data-last-guide>Jeszcze nic — wybierz pierwszy materiał.</strong>
+            </div>
+            <button type="button" class="reset-progress" data-reset-progress>Wyzeruj lokalny postęp</button>
+          </div>
+        </section>
+
+        <section class="guide-finder" id="dobierz-poradnik" aria-labelledby="guide-finder-title">
+          <div class="guide-finder__copy">
+            <span class="section-eyebrow">Co mam teraz przeczytać?</span>
+            <h2 id="guide-finder-title">Dobierz materiał w 10 sekund</h2>
+            <p>Wskaż grę, poziom i cel. Dostaniesz konkretną rekomendację zamiast kolejnej długiej listy.</p>
+          </div>
+          <form class="guide-finder__form" data-guide-finder>
+            <label>Gra
+              <select name="game">
+                <option value="poker">Poker</option>
+                <option value="tysiac">Tysiąc</option>
+                <option value="warcaby">Warcaby</option>
+                <option value="gomoku">Gomoku</option>
+              </select>
+            </label>
+            <label>Poziom
+              <select name="level">
+                <option value="start">Zaczynam</option>
+                <option value="medium">Znam podstawy</option>
+                <option value="advanced">Chcę grać świadomiej</option>
+              </select>
+            </label>
+            <label>Cel
+              <select name="goal">
+                <option value="rules">Zrozumieć zasady</option>
+                <option value="strategy">Poprawić strategię</option>
+                <option value="mistakes">Unikać błędów</option>
+              </select>
+            </label>
+            <button type="submit">Dobierz poradnik</button>
+          </form>
+          <div class="guide-finder__result" data-guide-result aria-live="polite">
+            <span>Rekomendacja</span>
+            <strong>Wybierz ustawienia i kliknij „Dobierz poradnik”.</strong>
+            <p>Podpowiedź pojawi się tutaj.</p>
+            <a href="#sciezki-nauki" data-guide-result-link>Zobacz ścieżki nauki</a>
+          </div>
+        </section>
+
         <section class="learning-paths" id="sciezki-nauki" aria-labelledby="learning-paths-title">
           <header class="premium-section-head">
             <div>
@@ -325,6 +410,59 @@
           </article>
         </div>
 
+
+        <section class="micro-learning" id="5-minut" aria-labelledby="micro-learning-title">
+          <header class="premium-section-head">
+            <div>
+              <span class="section-eyebrow">Poradniki w 5 minut</span>
+              <h2 id="micro-learning-title">Jedna rzecz. Pięć minut. Konkretna poprawa.</h2>
+            </div>
+            <p>Krótkie materiały do szybkiego przypomnienia przed grą.</p>
+          </header>
+          <div class="micro-learning-grid">
+            <a href="/gry/poker-treningowy/zasady/" data-track-guide="Poker — 5 minut"><span class="micro-time">5 min</span><b>♠</b><h3>Układy pokerowe bez zgadywania</h3><p>Od wysokiej karty do pokera królewskiego.</p><small>Poziom: podstawowy</small></a>
+            <a href="/gry/tysiac/zasady/" data-track-guide="Tysiąc — 5 minut"><span class="micro-time">5 min</span><b>♥</b><h3>Meldunki i ich wartość</h3><p>Szybkie uporządkowanie kolorów i punktów.</p><small>Poziom: podstawowy</small></a>
+            <a href="/gry/warcaby/zasady/" data-track-guide="Warcaby — 5 minut"><span class="micro-time">5 min</span><b>●</b><h3>Obowiązkowe bicie</h3><p>Kiedy musisz bić i jak czytać sekwencję.</p><small>Poziom: podstawowy</small></a>
+            <a href="/gry/gomoku/zasady/" data-track-guide="Gomoku — 5 minut"><span class="micro-time">5 min</span><b>✕</b><h3>Otwarte linie i blokowanie</h3><p>Najprostszy sposób na lepszą obronę.</p><small>Poziom: podstawowy</small></a>
+          </div>
+        </section>
+
+        <section class="weekly-spotlight" id="poradnik-tygodnia" aria-labelledby="weekly-title">
+          <div class="weekly-spotlight__main">
+            <span class="section-eyebrow">Poradnik tygodnia</span>
+            <span class="weekly-kicker">Poker · Fundament decyzji</span>
+            <h2 id="weekly-title">Dlaczego pozycja przy stole zmienia wartość tej samej ręki?</h2>
+            <p>Im później podejmujesz decyzję, tym więcej informacji masz o ruchach innych graczy. To jedna z najważniejszych idei Texas Hold’em i fundament dalszej nauki.</p>
+            <div class="weekly-actions">
+              <a href="/gry/poker-treningowy/zasady/" data-track-guide="Poradnik tygodnia — pozycja w pokerze">Czytaj materiał</a>
+              <button type="button" data-bookmark="weekly-poker" data-bookmark-title="Pozycja przy stole w Pokerze">Zapisz na później</button>
+            </div>
+          </div>
+          <div class="weekly-spotlight__stat">
+            <strong>01</strong><span>temat tygodnia</span>
+            <div></div>
+            <strong>5–8</strong><span>minut nauki</span>
+            <div></div>
+            <strong>START</strong><span>poziom wejścia</span>
+          </div>
+        </section>
+
+        <section class="mistakes-lab" id="bledy" aria-labelledby="mistakes-title">
+          <header class="premium-section-head">
+            <div>
+              <span class="section-eyebrow">Najczęstsze błędy</span>
+              <h2 id="mistakes-title">Nie ucz się tylko „co robić”. Zobacz też czego unikać.</h2>
+            </div>
+            <p>Krótka lista decyzji, które najczęściej psują grę początkującym.</p>
+          </header>
+          <div class="mistakes-grid">
+            <article><span>♠</span><h3>Poker</h3><strong>Granie zbyt wielu rąk</strong><p>Więcej rozdań nie oznacza więcej dobrych decyzji. Selekcja rąk startowych ogranicza kosztowne sytuacje.</p><a href="/gry/poker-treningowy/zasady/">Wróć do podstaw</a></article>
+            <article><span>♥</span><h3>Tysiąc</h3><strong>Licytowanie bez planu punktowego</strong><p>Deklaracja powinna wynikać z realnej siły ręki, meldunków i ryzyka, a nie z samej chęci przejęcia musiku.</p><a href="/gry/tysiac/zasady/">Sprawdź zasady</a></article>
+            <article><span>●</span><h3>Warcaby</h3><strong>Patrzenie tylko na jeden ruch</strong><p>Obowiązkowe bicie może wymusić sekwencję kilku ruchów. Warto sprawdzić odpowiedź przeciwnika przed ruchem.</p><a href="/gry/warcaby/zasady/">Sprawdź bicie</a></article>
+            <article><span>✕</span><h3>Gomoku</h3><strong>Reagowanie o ruch za późno</strong><p>Nie każdą groźbę da się zatrzymać jednym blokiem. Najgroźniejsze są układy tworzące dwa cele naraz.</p><a href="/gry/gomoku/zasady/">Sprawdź obronę</a></article>
+          </div>
+        </section>
+
         <section class="academy-hub" id="poker-academy" aria-labelledby="academy-hub-title">
           <div class="academy-hub__copy">
             <span class="section-eyebrow">Poker Academy</span>
@@ -361,19 +499,44 @@
           </div>
         </section>
 
-        <section class="knowledge-check" id="sprawdz-wiedze" aria-labelledby="knowledge-check-title">
+
+        <section class="knowledge-check knowledge-check--live" id="sprawdz-wiedze" aria-labelledby="knowledge-check-title">
           <div class="knowledge-check__intro">
-            <span class="section-eyebrow">Sprawdź swoją wiedzę</span>
-            <h2 id="knowledge-check-title">Krótki test po przeczytaniu zasad</h2>
-            <p>Quizy będą drugim krokiem po poradniku: kilka pytań, natychmiastowa informacja zwrotna i wskazanie materiału, do którego warto wrócić.</p>
-            <button type="button" data-modal="updates">Quizy — w przygotowaniu</button>
+            <span class="section-eyebrow">Interaktywny quiz</span>
+            <h2 id="knowledge-check-title">Sprawdź, czy fundamenty już siedzą</h2>
+            <p>Cztery pytania — po jednym z każdej gry. Wynik zapisujemy lokalnie i wykorzystujemy w panelu postępu.</p>
+            <div class="quiz-badges"><span>4 pytania</span><span>natychmiastowy wynik</span><span>bez logowania</span></div>
           </div>
-          <div class="knowledge-check__cards">
-            <div><span>♠</span><strong>Poker</strong><small>układy, blindy, rundy</small></div>
-            <div><span>♥</span><strong>Tysiąc</strong><small>licytacja, meldunki, punkty</small></div>
-            <div><span>●</span><strong>Warcaby</strong><small>bicie, damka, zakończenie</small></div>
-            <div><span>✕</span><strong>Gomoku</strong><small>linie, atak, obrona</small></div>
-          </div>
+          <form class="live-quiz" data-live-quiz>
+            <fieldset data-quiz-question="poker" data-answer="b">
+              <legend><span>01 · Poker</span>Co następuje po flopie w Texas Hold’em?</legend>
+              <label><input type="radio" name="q1" value="a"> Showdown</label>
+              <label><input type="radio" name="q1" value="b"> Turn</label>
+              <label><input type="radio" name="q1" value="c"> Preflop</label>
+            </fieldset>
+            <fieldset data-quiz-question="tysiac" data-answer="c">
+              <legend><span>02 · Tysiąc</span>Z czym związany jest meldunek?</legend>
+              <label><input type="radio" name="q2" value="a"> Z dowolną parą kart</label>
+              <label><input type="radio" name="q2" value="b"> Z trzema kartami jednego koloru</label>
+              <label><input type="radio" name="q2" value="c"> Z królem i damą tego samego koloru</label>
+            </fieldset>
+            <fieldset data-quiz-question="warcaby" data-answer="a">
+              <legend><span>03 · Warcaby</span>Co jest kluczowe, gdy na planszy dostępne jest obowiązkowe bicie?</legend>
+              <label><input type="radio" name="q3" value="a"> Trzeba wykonać bicie zgodnie z zasadami</label>
+              <label><input type="radio" name="q3" value="b"> Można zawsze wybrać zwykły ruch</label>
+              <label><input type="radio" name="q3" value="c"> Partia od razu się kończy</label>
+            </fieldset>
+            <fieldset data-quiz-question="gomoku" data-answer="b">
+              <legend><span>04 · Gomoku</span>Jaki jest podstawowy cel w Gomoku?</legend>
+              <label><input type="radio" name="q4" value="a"> Zająć wszystkie rogi planszy</label>
+              <label><input type="radio" name="q4" value="b"> Ułożyć pięć kamieni w jednej linii</label>
+              <label><input type="radio" name="q4" value="c"> Zbić wszystkie kamienie przeciwnika</label>
+            </fieldset>
+            <div class="quiz-submit-row">
+              <button type="submit">Sprawdź wynik</button>
+              <div class="quiz-result" data-quiz-result aria-live="polite"><strong>Twój wynik pojawi się tutaj.</strong><span>Odpowiedz na wszystkie cztery pytania.</span></div>
+            </div>
+          </form>
         </section>
 
         <section class="glossary-section" id="slownik" aria-labelledby="glossary-title">
@@ -392,6 +555,18 @@
             <div><dt>Linia otwarta</dt><dd>Układ w Gomoku, który pozostawia możliwość dalszego rozbudowania zagrożenia.</dd></div>
             <div><dt>Tempo</dt><dd>Przewaga wynikająca z wykonania ruchu, który jednocześnie rozwija plan i wymusza odpowiedź.</dd></div>
           </dl>
+        </section>
+
+
+        <section class="saved-learning" id="zapisane" aria-labelledby="saved-learning-title">
+          <div>
+            <span class="section-eyebrow">Twoja półka</span>
+            <h2 id="saved-learning-title">Zapisane na później</h2>
+            <p>Materiały zapisane przyciskiem „Zapisz na później” są przechowywane lokalnie w tej przeglądarce.</p>
+          </div>
+          <div class="saved-learning__list" data-saved-list>
+            <span class="saved-empty">Nie masz jeszcze zapisanych materiałów.</span>
+          </div>
         </section>
 
         <section class="guide-faq" id="faq" aria-labelledby="guide-faq-title">
@@ -424,13 +599,16 @@
           <span class="section-eyebrow">Centrum wiedzy</span>
           <h2 id="knowledge-side-nav-title">Na tej stronie</h2>
           <a href="#centrum-wiedzy"><span>01</span><strong>Start</strong></a>
-          <a href="#sciezki-nauki"><span>02</span><strong>Ścieżki nauki</strong></a>
-          <a href="#polecane"><span>03</span><strong>Polecane</strong></a>
-          <a href="#biblioteka-gier"><span>04</span><strong>Gry</strong></a>
-          <a href="#poker-academy"><span>05</span><strong>Poker Academy</strong></a>
-          <a href="#tematy"><span>06</span><strong>Tematy</strong></a>
-          <a href="#slownik"><span>07</span><strong>Słownik</strong></a>
-          <a href="#faq"><span>08</span><strong>FAQ</strong></a>
+          <a href="#twoj-postep"><span>02</span><strong>Twój postęp</strong></a>
+          <a href="#dobierz-poradnik"><span>03</span><strong>Dobierz poradnik</strong></a>
+          <a href="#sciezki-nauki"><span>04</span><strong>Ścieżki nauki</strong></a>
+          <a href="#polecane"><span>05</span><strong>Polecane</strong></a>
+          <a href="#biblioteka-gier"><span>06</span><strong>Gry</strong></a>
+          <a href="#poker-academy"><span>07</span><strong>Poker Academy</strong></a>
+          <a href="#tematy"><span>08</span><strong>Tematy</strong></a>
+          <a href="#sprawdz-wiedze"><span>09</span><strong>Quiz</strong></a>
+          <a href="#slownik"><span>10</span><strong>Słownik</strong></a>
+          <a href="#faq"><span>11</span><strong>FAQ</strong></a>
         </section>
 
         <section class="online-card">
