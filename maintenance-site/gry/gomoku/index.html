@@ -82,8 +82,9 @@
   </script>
   <link rel="stylesheet" href="/assets/related-thumbnails.css?v=frameless-r2">
   <link rel="stylesheet" href="/assets/unified-subpage-hero.css?v=r2">
+  <link rel="stylesheet" href="/assets/academy-global-qa.css?v=r1">
 </head>
-<body>
+<body class="academy-game-page gomoku-academy-page">
   <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -235,7 +236,7 @@
             <div class="gomoku-progress__meta">
               <span>Ukończone moduły</span>
               <strong><b data-gomoku-done>0</b> / 6</strong>
-              <progress max="6" value="0" data-gomoku-progress>0 z 6</progress>
+              <progress max="6" value="0" data-gomoku-progress aria-label="Postęp Gomoku Academy">0 z 6</progress>
             </div>
           </div>
           <div class="gomoku-module-strip" aria-label="Moduły Gomoku Academy">
@@ -434,7 +435,7 @@
         </section>
       </div>
 
-      <aside class="side-column gomoku-side-panel" aria-label="Panel Gomoku">
+      <aside class="side-column academy-side-column gomoku-side-panel" aria-label="Panel Gomoku">
         <section class="gomoku-side-card gomoku-side-academy" aria-labelledby="gomoku-side-academy-title">
           <p class="gomoku-side-eyebrow">Gomoku Academy</p>
           <h2 id="gomoku-side-academy-title">Twój postęp</h2>
@@ -498,7 +499,7 @@
           <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
           <li><a href="/gry/tysiac/">Tysiąc</a></li>
           <li><a href="/gry/warcaby/">Warcaby</a></li>
-          <li><a href="/gry/gomoku/">Gomoku</a></li>
+          <li><a href="/gry/gomoku/" aria-current="page">Gomoku</a></li>
           <li><a href="/poradniki/">Poradniki</a></li>
           <li><button type="button" data-modal="updates">Aktualności</button></li>
         </ul>
@@ -509,7 +510,7 @@
         <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
         <form data-newsletter novalidate>
           <label class="sr-only" for="news-email">Twój adres e-mail</label>
-          <input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off">
+          <input id="news-email" type="email" placeholder="Twój adres e-mail" autocomplete="email">
           <button type="submit">Zapisz się</button>
         </form>
       </div>
