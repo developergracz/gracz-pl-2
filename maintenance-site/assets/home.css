@@ -1264,3 +1264,19 @@ main:focus { outline: none; }
 .site-header .menu-panel{
   border-bottom:0!important;
 }
+
+
+/* HOME R2 — align shared hero frame edge behind phone */
+@media (min-width:1180px){
+  /*
+    The NEXT panel ends higher than the status panel. Their adjacent gold edges
+    were separated by the 14u grid gap, so the visible edge appeared to jump
+    sideways behind the phone. Pull only the status frame into that gap and
+    compensate its width/padding so the outer right edge and content stay put.
+  */
+  .status-panel{
+    margin-left:calc(-14 * var(--u));
+    width:calc(404 * var(--u));
+    padding-left:calc(38 * var(--u));
+  }
+}
