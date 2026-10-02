@@ -1,0 +1,288 @@
+/* HOMEPAGE PREMIUM MAX — FOUNDATION R1
+   Step 1: visual system alignment with the Premium Academy subpages.
+   Structure/content intentionally preserved. */
+
+.homepage-premium-max{
+  --hp-bg:#041713;
+  --hp-bg-deep:#03110e;
+  --hp-panel:#071f1a;
+  --hp-panel-2:#041511;
+  --hp-teal:#63ddc3;
+  --hp-teal-deep:#0d6957;
+  --hp-teal-strong:#128871;
+  --hp-gold:#f3d994;
+  --hp-text:#edf3ef;
+  --hp-muted:#aebdb6;
+}
+
+html{background:var(--hp-bg)!important}
+
+body.homepage-premium-max{
+  background:
+    radial-gradient(circle at 18% 8%,rgba(16,104,91,.16),transparent 30%),
+    radial-gradient(circle at 82% 16%,rgba(9,87,92,.13),transparent 26%),
+    linear-gradient(180deg,#03110e 0%,#041814 42%,#05211c 100%)!important;
+}
+
+body.homepage-premium-max::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(circle at 16% 10%,rgba(18,120,102,.16),transparent 30%),
+    radial-gradient(circle at 84% 20%,rgba(8,92,104,.12),transparent 27%),
+    linear-gradient(180deg,#03110e 0%,#041914 46%,#05231e 100%);
+  pointer-events:none;
+}
+
+body.homepage-premium-max::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.10) 40%,rgba(0,0,0,.20));
+  pointer-events:none;
+}
+
+/* Header — same frameless premium language as the Academy pages. */
+.homepage-premium-max .site-header{
+  border:0!important;
+  background:rgba(3,17,14,.90)!important;
+  backdrop-filter:blur(14px);
+  box-shadow:0 10px 28px rgba(0,0,0,.12);
+}
+
+.homepage-premium-max .header-inner{
+  width:min(1510px,calc(100% - 48px))!important;
+}
+
+.homepage-premium-max .icon-btn,
+.homepage-premium-max .btn--head,
+.homepage-premium-max .dropdown,
+.homepage-premium-max .menu-panel,
+.homepage-premium-max .soon{
+  border:0!important;
+}
+
+.homepage-premium-max .dropdown{
+  background:linear-gradient(145deg,rgba(7,38,31,.98),rgba(3,18,15,.99))!important;
+  box-shadow:0 18px 40px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+.homepage-premium-max .nav-link.is-active{
+  color:var(--hp-gold)!important;
+}
+
+/* Hero — preserve exact layout, replace old framed look with premium surfaces. */
+.homepage-premium-max .hero{
+  background:transparent!important;
+}
+
+.homepage-premium-max .hero-grid{
+  width:min(1510px,calc(100% - 48px))!important;
+}
+
+.homepage-premium-max .panel,
+.homepage-premium-max .status-panel,
+.homepage-premium-max .next-panel{
+  border:0!important;
+  outline:0!important;
+  background:
+    radial-gradient(circle at 0 0,rgba(49,176,143,.10),transparent 34%),
+    linear-gradient(145deg,rgba(7,38,31,.97),rgba(3,18,15,.995))!important;
+  box-shadow:0 24px 56px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+.homepage-premium-max .hero-title,
+.homepage-premium-max .next-title,
+.homepage-premium-max .discover-title{
+  color:var(--hp-gold)!important;
+  letter-spacing:-.035em;
+}
+
+.homepage-premium-max .hero-sub,
+.homepage-premium-max .hero-lead,
+.homepage-premium-max .next-lead,
+.homepage-premium-max .discover-lead{
+  color:#d9e3de!important;
+}
+
+.homepage-premium-max .pill-live{
+  border:0!important;
+  background:rgba(18,111,89,.28)!important;
+  color:#c9f3e7!important;
+  box-shadow:inset 0 0 0 1px rgba(99,221,195,.09)!important;
+}
+
+.homepage-premium-max .pill-live .dot{
+  background:#2ce3ac!important;
+  box-shadow:0 0 12px rgba(44,227,172,.5)!important;
+}
+
+/* Status rows — frameless, lighter, closer to Academy modules. */
+.homepage-premium-max .status-card{
+  border:0!important;
+  border-radius:16px!important;
+  background:
+    linear-gradient(90deg,rgba(10,72,58,.36),rgba(4,28,23,.60))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+.homepage-premium-max .status-card:hover{
+  background:
+    linear-gradient(90deg,rgba(13,91,72,.48),rgba(4,31,25,.66))!important;
+  transform:translateY(-1px);
+}
+
+.homepage-premium-max .status-title{
+  color:#f3dda0!important;
+}
+
+.homepage-premium-max .status-desc{
+  color:#b9c9c1!important;
+}
+
+.homepage-premium-max .next-brand span,
+.homepage-premium-max .brand-word span{
+  color:#f21a34!important;
+}
+
+/* Buttons — teal system, gold reserved as typography/accent. */
+.homepage-premium-max .btn--outline,
+.homepage-premium-max .btn--gold,
+.homepage-premium-max .btn--next,
+.homepage-premium-max .btn--news,
+.homepage-premium-max .modal-ok{
+  border:0!important;
+  background:linear-gradient(135deg,var(--hp-teal-deep),var(--hp-teal-strong))!important;
+  color:#fff!important;
+  box-shadow:0 10px 22px rgba(0,0,0,.16)!important;
+}
+
+.homepage-premium-max .btn--outline:hover,
+.homepage-premium-max .btn--gold:hover,
+.homepage-premium-max .btn--next:hover,
+.homepage-premium-max .btn--news:hover{
+  filter:brightness(1.06);
+}
+
+/* Discover section — one visual language with Poradniki and Academy. */
+.homepage-premium-max .discover{
+  background:transparent!important;
+}
+
+.homepage-premium-max .discover-inner{
+  width:min(1360px,calc(100% - 64px))!important;
+}
+
+.homepage-premium-max .tile{
+  border:0!important;
+  border-radius:20px!important;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 0 0,rgba(37,155,126,.08),transparent 36%),
+    linear-gradient(145deg,rgba(7,38,31,.95),rgba(3,18,15,.99))!important;
+  box-shadow:0 18px 40px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+
+.homepage-premium-max .tile:hover{
+  transform:translateY(-3px);
+  box-shadow:0 24px 52px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+.homepage-premium-max .tile-title{
+  color:#f2dda2!important;
+}
+
+.homepage-premium-max .tile-desc{
+  color:#b8c8c0!important;
+}
+
+.homepage-premium-max .tile-cta{
+  color:var(--hp-teal)!important;
+}
+
+/* Footer parity with premium subpages. */
+.homepage-premium-max .site-footer{
+  border:0!important;
+  background:linear-gradient(180deg,rgba(3,17,14,.95),rgba(2,10,8,.98))!important;
+}
+
+.homepage-premium-max .footer-grid,
+.homepage-premium-max .footer-bottom{
+  width:min(1360px,calc(100% - 64px))!important;
+}
+
+.homepage-premium-max .footer-title{
+  color:var(--hp-gold)!important;
+}
+
+.homepage-premium-max .footer-news input{
+  border:0!important;
+  box-shadow:inset 0 0 0 1px rgba(99,221,195,.10)!important;
+  background:#061712!important;
+}
+
+.homepage-premium-max .footer-bottom{
+  border:0!important;
+}
+
+.homepage-premium-max .social-btn{
+  border:0!important;
+  background:rgba(99,221,195,.07)!important;
+}
+
+/* Modal parity. */
+.homepage-premium-max .modal-box{
+  border:0!important;
+  background:
+    radial-gradient(circle at 0 0,rgba(36,161,129,.12),transparent 38%),
+    linear-gradient(145deg,#082d25,#041813)!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+
+.homepage-premium-max .modal-x{
+  border:0!important;
+  background:rgba(255,255,255,.05)!important;
+}
+
+/* Focus + responsive parity. */
+.homepage-premium-max a:focus-visible,
+.homepage-premium-max button:focus-visible,
+.homepage-premium-max input:focus-visible{
+  outline:2px solid #78e4ca!important;
+  outline-offset:3px!important;
+}
+
+@media(max-width:1180px){
+  .homepage-premium-max .header-inner,
+  .homepage-premium-max .hero-grid{
+    width:min(1120px,calc(100% - 32px))!important;
+  }
+
+  .homepage-premium-max .menu-panel{
+    background:rgba(3,17,14,.98)!important;
+  }
+
+  .homepage-premium-max .discover-inner,
+  .homepage-premium-max .footer-grid,
+  .homepage-premium-max .footer-bottom{
+    width:calc(100% - 32px)!important;
+  }
+}
+
+@media(max-width:560px){
+  .homepage-premium-max .header-inner,
+  .homepage-premium-max .hero-grid,
+  .homepage-premium-max .discover-inner{
+    width:calc(100% - 20px)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .homepage-premium-max *{
+    transition:none!important;
+    scroll-behavior:auto!important;
+  }
+}
