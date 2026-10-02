@@ -274,4 +274,104 @@
     });
   }
 
+
+
+  /* ---------- Homepage Academy progress ---------- */
+  var HOME_ACADEMY_CONFIG = {
+    poker: {
+      key: 'graczPokerAcademyProgressV1',
+      modules: ['zasady','uklady','pozycja','decyzje','matematyka','quiz']
+    },
+    tysiac: {
+      key: 'graczTysiacAcademyProgressV1',
+      modules: ['zasady','licytacja','meldunki','ruch','punktacja','quiz']
+    },
+    warcaby: {
+      key: 'graczWarcabyAcademyProgressV1',
+      modules: ['podstawy','bicie','seria','damka','strategia','quiz']
+    },
+    gomoku: {
+      key: 'graczGomokuAcademyProgressV1',
+      modules: ['podstawy','zagrozenia','atak','ruch','strategia','quiz']
+    }
+  };
+
+  function readHomeAcademyProgress(config) {
+    try {
+      var raw = window.localStorage.getItem(config.key);
+      var data = raw ? JSON.parse(raw) : {};
+      var done = config.modules.filter(function (module) { return !!data[module]; }).length;
+      return {
+        done: done,
+        total: config.modules.length,
+        pct: Math.round((done / config.modules.length) * 100)
+      };
+    } catch (error) {
+      return { done: 0, total: config.modules.length, pct: 0 };
+    }
+  }
+
+  function renderHomeAcademyProgress() {
+    var panel = document.querySelector('[data-home-academy-progress]');
+    if (!panel) return;
+
+    var sum = 0;
+    var started = 0;
+    var completed = 0;
+
+    Object.keys(HOME_ACADEMY_CONFIG).forEach(function (name) {
+      var progress = readHomeAcademyProgress(HOME_ACADEMY_CONFIG[name]);
+      var card = panel.querySelector('[data-home-progress-game="' + name + '"]');
+      if (!card) return;
+
+      var value = card.querySelector('[data-home-progress-value]');
+      var fill = card.querySelector('[data-home-progress-fill]');
+      var action = card.querySelector('[data-home-progress-action]');
+
+      if (value) value.textContent = progress.pct + '%';
+      if (fill) fill.style.width = progress.pct + '%';
+      if (action) {
+        action.textContent = progress.pct >= 100 ? 'Powtórz' : (progress.pct > 0 ? 'Kontynuuj' : 'Rozpocznij');
+      }
+
+      card.classList.toggle('is-started', progress.pct > 0);
+      card.classList.toggle('is-complete', progress.pct >= 100);
+      card.setAttribute('aria-label',
+        (card.querySelector('.home-progress-game__name strong') || {}).textContent +
+        ': ' + progress.pct + ' procent. ' +
+        (progress.pct >= 100 ? 'Ścieżka ukończona.' : (progress.pct > 0 ? 'Kontynuuj naukę.' : 'Rozpocznij naukę.'))
+      );
+
+      sum += progress.pct;
+      if (progress.pct > 0) started++;
+      if (progress.pct >= 100) completed++;
+    });
+
+    var totalPct = Math.round(sum / 4);
+    var total = panel.querySelector('[data-home-academy-total]');
+    var summary = panel.querySelector('[data-home-academy-summary]');
+    if (total) total.textContent = totalPct + '%';
+
+    if (summary) {
+      if (completed === 4) {
+        summary.textContent = 'Wszystkie ścieżki ukończone — możesz wracać do ćwiczeń';
+      } else if (started === 0) {
+        summary.textContent = 'Rozpocznij pierwszą ścieżkę Academy';
+      } else if (completed > 0) {
+        summary.textContent = completed + ' z 4 ścieżek ukończonych';
+      } else {
+        summary.textContent = 'Masz rozpoczęte ' + started + ' z 4 ścieżek';
+      }
+    }
+  }
+
+  renderHomeAcademyProgress();
+
+  window.addEventListener('storage', function (event) {
+    var keys = Object.keys(HOME_ACADEMY_CONFIG).map(function (name) {
+      return HOME_ACADEMY_CONFIG[name].key;
+    });
+    if (keys.indexOf(event.key) !== -1) renderHomeAcademyProgress();
+  });
+
 })();
