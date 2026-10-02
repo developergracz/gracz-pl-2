@@ -1065,8 +1065,8 @@ body::after{
   min-width:0;
 }
 .gomoku-rules-page .gomoku-rules-side-panel{
-  position:sticky;
-  top:92px;
+  position:static;
+  top:auto;
   align-self:start;
 }
 .gomoku-rules-page .rules-side-card{
