@@ -993,3 +993,155 @@ body::after{
   .footer-news form{flex-direction:column}
   .footer-news form button{width:100%}
 }
+
+
+/* Gomoku rules premium architecture R2 */
+.gomoku-rules-page .rules-shell{
+  width:min(1360px,calc(100% - 64px))!important;
+}
+.gomoku-rules-page .rules-header__inner{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+.gomoku-rules-page .rules-nav{
+  margin-left:auto;
+}
+.gomoku-rules-page .rules-header-actions{
+  flex:0 0 auto;
+}
+
+/* Frameless upper section */
+.gomoku-rules-page .gomoku-rules-hero{
+  grid-template-columns:1fr!important;
+  gap:0!important;
+  padding:34px 36px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:24px!important;
+  background:
+    radial-gradient(circle at 82% 10%,rgba(43,190,151,.11),transparent 28%),
+    radial-gradient(circle at 10% 92%,rgba(23,121,100,.12),transparent 35%),
+    linear-gradient(135deg,#08271f 0%,#0a3a30 52%,#061f1a 100%)!important;
+  box-shadow:0 22px 48px rgba(0,0,0,.24)!important;
+}
+.gomoku-rules-page .gomoku-rules-hero::before,
+.gomoku-rules-page .gomoku-rules-hero::after{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+.gomoku-rules-page .gomoku-rules-hero .rules-kicker{
+  color:#66d9bc!important;
+}
+.gomoku-rules-page .gomoku-rules-hero h1{
+  color:#f4d994!important;
+}
+.gomoku-rules-page .gomoku-rules-hero .rules-lead{
+  max-width:900px;
+  color:#edf4f0!important;
+}
+.gomoku-rules-page .gomoku-rules-hero .rules-note{
+  max-width:980px;
+  border:0!important;
+  border-left:0!important;
+  border-radius:14px!important;
+  background:linear-gradient(90deg,rgba(7,78,62,.82),rgba(7,54,45,.72))!important;
+  box-shadow:none!important;
+  color:#e4f1ec!important;
+}
+.gomoku-rules-page .gomoku-rules-hero .rules-note strong{
+  color:#f3d98d!important;
+}
+
+/* Main architecture: balanced 1360px canvas + premium right rail */
+.gomoku-rules-page .gomoku-rules-page-grid{
+  grid-template-columns:minmax(0,1fr) 300px!important;
+  gap:20px!important;
+}
+.gomoku-rules-page .gomoku-rules-content-layout{
+  display:block!important;
+  margin-top:18px;
+}
+.gomoku-rules-page .gomoku-rules-content-layout .rules-content{
+  min-width:0;
+}
+.gomoku-rules-page .gomoku-rules-side-panel{
+  position:sticky;
+  top:92px;
+  align-self:start;
+}
+.gomoku-rules-page .rules-side-card{
+  border:0!important;
+  outline:0!important;
+  background:
+    radial-gradient(circle at 0 0,rgba(28,156,126,.10),transparent 38%),
+    linear-gradient(145deg,rgba(6,39,31,.97),rgba(3,22,18,.98))!important;
+  box-shadow:0 16px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.gomoku-rules-page .rules-side-eyebrow{
+  color:#63d8bb!important;
+}
+.gomoku-rules-page .rules-side-card h2{
+  color:#f4d994!important;
+}
+.gomoku-rules-page .rules-side-primary{
+  background:linear-gradient(135deg,#0d6a57,#118a70)!important;
+  box-shadow:0 10px 20px rgba(0,0,0,.16)!important;
+}
+.gomoku-rules-page .rules-side-facts div,
+.gomoku-rules-page .rules-side-nav>a,
+.gomoku-rules-page .rules-side-related>a{
+  border-color:rgba(116,219,191,.09)!important;
+}
+.gomoku-rules-page .rules-side-nav span{
+  background:rgba(72,198,163,.11)!important;
+  color:#77e0c4!important;
+}
+.gomoku-rules-page .rules-side-related>a:nth-of-type(2) .rules-side-thumb{
+  background:linear-gradient(145deg,#4a161b,#28100f)!important;
+  color:#ff777f!important;
+}
+
+/* Prevent lower content from looking wider than the rest of the site */
+.gomoku-rules-page .rule-section,
+.gomoku-rules-page .rules-bottom{
+  max-width:100%;
+}
+.gomoku-rules-page .rules-bottom{
+  border:0!important;
+  background:linear-gradient(135deg,rgba(7,42,34,.92),rgba(4,24,20,.94))!important;
+  box-shadow:0 14px 28px rgba(0,0,0,.14)!important;
+}
+
+@media(max-width:1180px){
+  .gomoku-rules-page .rules-shell{
+    width:min(1120px,calc(100% - 32px))!important;
+  }
+  .gomoku-rules-page .gomoku-rules-page-grid{
+    grid-template-columns:1fr!important;
+  }
+  .gomoku-rules-page .gomoku-rules-side-panel{
+    position:static;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .gomoku-rules-page .rules-side-related{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:760px){
+  .gomoku-rules-page .gomoku-rules-side-panel{
+    grid-template-columns:1fr!important;
+  }
+  .gomoku-rules-page .rules-side-related{
+    grid-column:auto;
+  }
+}
+@media(max-width:620px){
+  .gomoku-rules-page .rules-shell{
+    width:calc(100% - 20px)!important;
+  }
+  .gomoku-rules-page .gomoku-rules-hero{
+    padding:24px 20px!important;
+    border-radius:20px!important;
+  }
+}
