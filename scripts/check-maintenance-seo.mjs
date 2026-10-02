@@ -36,7 +36,7 @@ const validateBasePage = ({html, label, canonical, requireTitleTerms = [], requi
   const description = html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1]?.trim() ?? "";
   const foundCanonical = html.match(/<link\s+rel="canonical"\s+href="([^"]+)"/i)?.[1]?.trim() ?? "";
   const h1Matches = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
-  const h1 = h1Matches[0]?.[1]?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ?? "";
+  const h1 = h1Matches[0]?.[1]?.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() ?? "";
 
   requireCheck(title.length >= 30 && title.length <= 60, `${label}: title length must be 30-60 (got ${title.length})`);
   requireCheck(description.length >= 120 && description.length <= 160, `${label}: description length must be 120-160 (got ${description.length})`);
@@ -95,7 +95,7 @@ const regulationMeta = validateBasePage({
   requireTitleTerms: ["Regulamin", "gracz.pl"],
   requireH1Terms: ["Regulamin", "gracz.pl"]
 });
-requireCheck(regulation.includes('href="/assets/legal.css?v=reg-r3"'), "regulation: legal stylesheet missing");
+requireCheck(regulation.includes('href="/assets/legal.css?v=reg-r5"'), "regulation: legal stylesheet missing");
 requireCheck(regulation.includes('src="/assets/legal.js?v=reg-r2"'), "regulation: legal script missing");
 
 const gamesMeta = validateBasePage({
