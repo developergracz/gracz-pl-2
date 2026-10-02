@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=tysiac-premium-r2">
+  <link rel="stylesheet" href="/assets/rules.css?v=tysiac-premium-r3">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -46,11 +46,21 @@
   </script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  </svg>
   <a class="skip-link" href="#tresc">Przejdź do zasad</a>
   <header class="rules-header">
     <div class="rules-header__inner">
       <a class="rules-logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
       <nav class="rules-nav" aria-label="Główna nawigacja"><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/">Gry karciane</a></li><li><a href="/poradniki/">Poradniki</a></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
+      <div class="rules-header-actions" aria-label="Konto i wyszukiwanie">
+        <button class="rules-head-search" type="button" aria-label="Szukaj">
+          <svg aria-hidden="true"><use href="#i-search"/></svg>
+        </button>
+        <button class="rules-head-btn rules-head-btn--outline" type="button">Zaloguj się</button>
+        <button class="rules-head-btn rules-head-btn--gold" type="button">Załóż konto</button>
+      </div>
     </div>
   </header>
 
