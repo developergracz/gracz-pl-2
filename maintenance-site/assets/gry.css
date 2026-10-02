@@ -1106,3 +1106,27 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   box-shadow:none!important;
   background:transparent!important;
 }
+
+
+/* GRY R6 — force frameless header */
+.site-header,
+.header-inner,
+.menu-panel{
+  border:0!important;
+}
+.head-icon,
+.head-btn,
+.head-btn--outline,
+.head-btn--gold,
+.dropdown{
+  border:0!important;
+  outline:0!important;
+}
+.head-icon,
+.head-btn--outline{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.menu-panel{
+  border-bottom:0!important;
+}
