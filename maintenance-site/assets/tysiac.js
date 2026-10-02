@@ -253,4 +253,262 @@
     });
   }
 
+
+
+  /* TYSIAC ACADEMY PREMIUM MAX R1 */
+  var TYSIAC_ACADEMY_KEY='graczTysiacAcademyProgressV1';
+  var TYSIAC_MODULES=['zasady','licytacja','meldunki','ruch','punktacja','quiz'];
+
+  function readTysiacAcademy(){
+    try{
+      var raw=window.localStorage.getItem(TYSIAC_ACADEMY_KEY);
+      var data=raw?JSON.parse(raw):{};
+      TYSIAC_MODULES.forEach(function(k){data[k]=!!data[k];});
+      return data;
+    }catch(e){
+      return {zasady:false,licytacja:false,meldunki:false,ruch:false,punktacja:false,quiz:false};
+    }
+  }
+  function writeTysiacAcademy(state){
+    try{window.localStorage.setItem(TYSIAC_ACADEMY_KEY,JSON.stringify(state));}catch(e){}
+  }
+  var tysiacAcademyState=readTysiacAcademy();
+
+  function renderTysiacAcademy(){
+    var done=TYSIAC_MODULES.filter(function(k){return tysiacAcademyState[k];}).length;
+    var pct=Math.round((done/TYSIAC_MODULES.length)*100);
+    var percent=document.querySelector('[data-tysiac-percent]');
+    var count=document.querySelector('[data-tysiac-done]');
+    var progress=document.querySelector('[data-tysiac-progress]');
+    var sidePercent=document.querySelector('[data-tysiac-side-percent]');
+    var sideDone=document.querySelector('[data-tysiac-side-done]');
+    var sideBar=document.querySelector('[data-tysiac-side-bar]');
+    var ring=document.querySelector('[data-tysiac-ring]');
+    if(percent)percent.textContent=pct+'%';
+    if(count)count.textContent=done;
+    if(progress)progress.value=done;
+    if(sidePercent)sidePercent.textContent=pct+'%';
+    if(sideDone)sideDone.textContent=done;
+    if(sideBar)sideBar.value=done;
+    if(ring)ring.style.setProperty('--tysiac-pct',pct+'%');
+
+    document.querySelectorAll('[data-tysiac-module]').forEach(function(btn){
+      var key=btn.getAttribute('data-tysiac-module');
+      var complete=!!tysiacAcademyState[key];
+      btn.classList.toggle('is-done',complete);
+      btn.setAttribute('aria-pressed',complete?'true':'false');
+    });
+
+    var next=document.querySelector('[data-tysiac-next]');
+    if(next){
+      var labels={zasady:'Fundament gry',licytacja:'Trener licytacji',meldunki:'Meldunki i atut',ruch:'Legalny ruch',punktacja:'Kalkulator punktów',quiz:'Quiz końcowy'};
+      var first=TYSIAC_MODULES.filter(function(k){return !tysiacAcademyState[k];})[0];
+      next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz powtarzać dowolny moduł.';
+    }
+  }
+  function completeTysiacModule(key){
+    if(TYSIAC_MODULES.indexOf(key)<0)return;
+    tysiacAcademyState[key]=true;
+    writeTysiacAcademy(tysiacAcademyState);
+    renderTysiacAcademy();
+  }
+  renderTysiacAcademy();
+
+  function tysiacScroll(target){
+    if(!target)return;
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+
+  document.addEventListener('click',function(e){
+    var tracked=e.target.closest('[data-track-tysiac]');
+    if(tracked)completeTysiacModule(tracked.getAttribute('data-track-tysiac'));
+
+    var moduleButton=e.target.closest('[data-tysiac-module]');
+    if(moduleButton){
+      var key=moduleButton.getAttribute('data-tysiac-module');
+      var map={zasady:'#tysiac-5-minut',licytacja:'#trener-licytacji',meldunki:'#meldunki-lab',ruch:'#legalny-ruch',punktacja:'#kalkulator-tysiac',quiz:'#quiz-tysiac'};
+      tysiacScroll(document.querySelector(map[key]));
+    }
+
+    var academyButton=e.target.closest('[data-scroll-tysiac-academy]');
+    if(academyButton){
+      e.preventDefault();
+      tysiacScroll(document.getElementById('tysiac-academy'));
+    }
+  });
+
+  var tysiacReset=document.querySelector('[data-tysiac-reset]');
+  if(tysiacReset){
+    tysiacReset.addEventListener('click',function(){
+      tysiacAcademyState={zasady:false,licytacja:false,meldunki:false,ruch:false,punktacja:false,quiz:false};
+      writeTysiacAcademy(tysiacAcademyState);
+      renderTysiacAcademy();
+    });
+  }
+
+  // Existing interactive labs count toward the Academy path.
+  if(variantLab){
+    variantLab.addEventListener('click',function(e){
+      if(e.target.closest('[data-players]'))completeTysiacModule('zasady');
+    });
+  }
+  if(marriageLab){
+    marriageLab.addEventListener('click',function(e){
+      if(e.target.closest('[data-marriage]'))completeTysiacModule('meldunki');
+    });
+  }
+  if(legalTrainer){
+    legalTrainer.addEventListener('click',function(e){
+      if(e.target.closest('[data-card-choice]'))completeTysiacModule('ruch');
+    });
+  }
+  if(scoreLab){
+    var academyScoreButton=scoreLab.querySelector('[data-score-calc]');
+    if(academyScoreButton)academyScoreButton.addEventListener('click',function(){completeTysiacModule('punktacja');});
+  }
+
+  var biddingScenarios=[
+    {
+      topic:'Minimalne przebicie',
+      title:'Aktualna oferta wynosi 120',
+      text:'Jaka jest najmniejsza legalna kolejna oferta?',
+      actions:['120','125','130','140'],
+      correct:'130',
+      explain:'Każda kolejna oferta musi przebić aktualną co najmniej o 10 punktów i być wielokrotnością 10.'
+    },
+    {
+      topic:'Górna granica',
+      title:'Aktualna oferta wynosi 350',
+      text:'Która z tych ofert jest jeszcze legalna?',
+      actions:['355','360','370','400'],
+      correct:'360',
+      explain:'W wariancie gracz.pl maksymalna oferta to 360 punktów, a oferty są wielokrotnościami 10.'
+    },
+    {
+      topic:'Pas',
+      title:'Wcześniej spasowałeś',
+      text:'Czy możesz wrócić do licytacji w tym samym rozdaniu?',
+      actions:['Tak','Nie'],
+      correct:'Nie',
+      explain:'Pas wyłącza gracza z dalszej licytacji w tym rozdaniu.'
+    }
+  ];
+  var biddingLab=document.querySelector('[data-bidding-lab]');
+  if(biddingLab){
+    var bidIndex=0,bidScore=0,bidLocked=false;
+    var bidIndexEl=biddingLab.querySelector('[data-bid-index]');
+    var bidTopicEl=biddingLab.querySelector('[data-bid-topic]');
+    var bidTitleEl=biddingLab.querySelector('[data-bid-title]');
+    var bidTextEl=biddingLab.querySelector('[data-bid-text]');
+    var bidActionsEl=biddingLab.querySelector('[data-bid-actions]');
+    var bidFeedbackEl=biddingLab.querySelector('[data-bid-feedback]');
+    var bidScoreEl=biddingLab.querySelector('[data-bid-score]');
+    var bidNext=biddingLab.querySelector('[data-bid-next]');
+    var bidRestart=biddingLab.querySelector('[data-bid-restart]');
+
+    function renderBid(){
+      var s=biddingScenarios[bidIndex];
+      bidLocked=false;
+      bidIndexEl.textContent=bidIndex+1;
+      bidTopicEl.textContent=s.topic;
+      bidTitleEl.textContent=s.title;
+      bidTextEl.textContent=s.text;
+      bidActionsEl.innerHTML='';
+      s.actions.forEach(function(action){
+        var b=document.createElement('button');
+        b.type='button';
+        b.textContent=action;
+        b.setAttribute('data-bid-choice',action);
+        bidActionsEl.appendChild(b);
+      });
+      bidFeedbackEl.textContent='Wybierz odpowiedź.';
+      bidNext.disabled=true;
+      bidNext.textContent=bidIndex===biddingScenarios.length-1?'Zakończ sesję':'Następny scenariusz';
+    }
+    renderBid();
+
+    bidActionsEl.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-bid-choice]');
+      if(!btn||bidLocked)return;
+      bidLocked=true;
+      var s=biddingScenarios[bidIndex];
+      var ok=btn.getAttribute('data-bid-choice')===s.correct;
+      btn.classList.add(ok?'is-correct':'is-wrong');
+      Array.prototype.forEach.call(bidActionsEl.querySelectorAll('button'),function(b){
+        if(b.getAttribute('data-bid-choice')===s.correct)b.classList.add('is-correct');
+      });
+      if(ok){bidScore++;bidScoreEl.textContent=bidScore;}
+      bidFeedbackEl.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;
+      bidNext.disabled=false;
+      completeTysiacModule('licytacja');
+    });
+    bidNext.addEventListener('click',function(){
+      if(bidIndex<biddingScenarios.length-1){bidIndex++;renderBid();}
+      else{bidFeedbackEl.textContent='Sesja zakończona. Wynik: '+bidScore+' / '+biddingScenarios.length+'.';bidNext.disabled=true;}
+    });
+    bidRestart.addEventListener('click',function(){bidIndex=0;bidScore=0;bidScoreEl.textContent='0';renderBid();});
+  }
+
+  var tysiacQuiz=document.querySelector('[data-tysiac-quiz]');
+  if(tysiacQuiz){
+    tysiacQuiz.addEventListener('submit',function(e){
+      e.preventDefault();
+      var fields=Array.prototype.slice.call(tysiacQuiz.querySelectorAll('fieldset[data-answer]'));
+      var answered=0,score=0;
+      fields.forEach(function(field){
+        field.classList.remove('is-correct','is-wrong');
+        var checked=field.querySelector('input:checked');
+        if(!checked)return;
+        answered++;
+        var ok=checked.value===field.getAttribute('data-answer');
+        if(ok)score++;
+        field.classList.add(ok?'is-correct':'is-wrong');
+      });
+      var result=tysiacQuiz.querySelector('[data-tysiac-quiz-result]');
+      var strong=result.querySelector('strong');
+      var span=result.querySelector('span');
+      if(answered<fields.length){
+        strong.textContent='Odpowiedz na wszystkie pytania.';
+        span.textContent='Brakuje '+(fields.length-answered)+' odpowiedzi.';
+        return;
+      }
+      strong.textContent='Wynik: '+score+' / '+fields.length;
+      span.textContent=score===5?'Świetnie — fundamenty Tysiąca masz opanowane.':score>=3?'Dobry wynik. Wróć do pytań oznaczonych na czerwono.':'Warto wrócić do ścieżki Academy i spróbować ponownie.';
+      if(score>=4)completeTysiacModule('quiz');
+    });
+  }
+
+  // Highlight current chapter in top and side navigation.
+  var topTysiacLinks=Array.prototype.slice.call(document.querySelectorAll('[data-tysiac-section-nav] a[href^="#"]'));
+  var sideTysiacLinks=Array.prototype.slice.call(document.querySelectorAll('.tysiac-side-nav a[href^="#"]'));
+  var allTysiacLinks=topTysiacLinks.concat(sideTysiacLinks);
+  var targetMap={};
+  allTysiacLinks.forEach(function(link){
+    var target=document.querySelector(link.getAttribute('href'));
+    if(target)targetMap[target.id]=target;
+  });
+  var targetList=Object.keys(targetMap).map(function(id){return targetMap[id];});
+  function setTysiacCurrent(id){
+    allTysiacLinks.forEach(function(link){
+      var current=link.getAttribute('href')==='#'+id;
+      link.classList.toggle('is-current',current);
+      if(current)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');
+    });
+  }
+  if(targetList.length && 'IntersectionObserver' in window){
+    var visibleTysiac={};
+    var tysiacObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting)visibleTysiac[entry.target.id]=entry.boundingClientRect.top;
+        else delete visibleTysiac[entry.target.id];
+      });
+      var ids=Object.keys(visibleTysiac);
+      if(!ids.length)return;
+      ids.sort(function(a,b){return Math.abs(visibleTysiac[a])-Math.abs(visibleTysiac[b]);});
+      setTysiacCurrent(ids[0]);
+    },{rootMargin:'-120px 0px -64% 0px',threshold:[0,.01,.2]});
+    targetList.forEach(function(target){tysiacObserver.observe(target);});
+  }
+
 })();
