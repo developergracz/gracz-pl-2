@@ -450,3 +450,31 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}.sprite{p
   }
   .details-columns>div{padding:26px 20px!important}
 }
+
+
+/* Global Header Frameless R1 */
+.site-header,
+.rules-header{
+  border:0!important;
+  border-bottom:0!important;
+}
+.site-header .head-icon,
+.site-header .head-btn,
+.site-header .head-btn--outline,
+.site-header .head-btn--gold,
+.site-header .icon-btn,
+.site-header .search-btn,
+.site-header .btn--head,
+.site-header .btn--outline,
+.site-header .dropdown,
+.site-header .menu-panel,
+.site-header .soon,
+.rules-header .rules-head-search,
+.rules-header .rules-head-btn,
+.rules-header .rules-head-btn--outline,
+.rules-header .rules-head-btn--gold{
+  border:0!important;
+}
+.site-header .menu-panel{
+  border-bottom:0!important;
+}
