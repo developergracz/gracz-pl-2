@@ -7,7 +7,7 @@ Status: **SUBSTANTIVE NOTICE CONTENT SYNCHRONIZED / PUBLICATION CANDIDATE PREPAR
 Powiązany review: `REV-ADR-V3-012-20260901-PL-DECISION-01`  
 Powiązane evidence/decyzje: `PL-E09`, `P1-PL-001`, `P1-PL-002`, `ROPA-GRACZ-PL-V3.md`, `PL-C14`, `PL-E11`
 
-> Dokument przygotowuje kanoniczną treść privacy notice po zamknięciu lawful-basis, material retention, newsletter consent oraz pełnej DPIA/modelu 16–17. Nie jest jeszcze wersją do publikacji, ponieważ część informacji zależy od otwartych blockerów provider/DPA, transferów, uzupełnienia danych kontaktowych administratora oraz finalnego runtime/provider-account inventory cookies/local storage. Nie autoryzuje implementacji ani deploymentu.
+> Dokument przygotowuje kanoniczną treść privacy notice po zamknięciu lawful-basis, material retention, newsletter consent oraz pełnej DPIA/modelu 16–17. Nie jest jeszcze wersją do publikacji, ponieważ część informacji zależy od otwartych blockerów provider/DPA, transferów oraz finalnego runtime/provider-account inventory cookies/local storage. Nie autoryzuje implementacji ani deploymentu.
 
 ---
 
@@ -17,7 +17,6 @@ Dla treści obowiązku informacyjnego po decyzjach `P1-PL-001` i `P1-PL-002` nin
 
 Nie nadpisuje otwartych informacji wymagających rzeczywistego evidence, w szczególności:
 
-- danych kontaktowych administratora;
 - finalnego provider/processors register;
 - DPA i transferów;
 - finalnego runtime/provider-account cookies/local-storage inventory.
@@ -30,14 +29,14 @@ Nie nadpisuje otwartych informacji wymagających rzeczywistego evidence, w szcze
 
 Administratorem danych osobowych w Gracz.pl jest:
 
-**Czesław Socha — osoba fizyczna prowadząca projekt Gracz.pl we własnym imieniu.**
+**Czesław Socha — osoba prywatna prowadząca projekt Gracz.pl we własnym imieniu.**
 
-Do wersji publikacyjnej wymagane jest jeszcze wpisanie:
+Dane kontaktowe administratora:
 
-- adresu korespondencyjnego administratora;
-- działającego adresu e-mail do spraw prywatności i realizacji praw osób.
+- adres korespondencyjny: **ul. Żabia 3, 41-403 Chełm Śląski**;
+- e-mail do spraw prywatności i realizacji praw osób: **czsocha@wp.pl**.
 
-Brak tych danych blokuje publikację finalnej wersji.
+Dane kontaktowe wymagające owner input zostały uzupełnione. Finalna publikacja nadal zależy od pozostałych blockerów provider/DPA, transferów i finalnego inventory cookies/local storage.
 
 ## 2.2. Zakres przetwarzania
 
@@ -156,7 +155,7 @@ W zakresie przewidzianym przez RODO osoba może mieć prawo do:
 - wycofania zgody bez wpływu na zgodność wcześniejszego przetwarzania opartego na zgodzie;
 - wniesienia skargi do właściwego organu nadzorczego.
 
-Kanał kontaktu do wykonania praw musi zostać wpisany przed publikacją finalnej wersji.
+Żądania dotyczące praw osób można kierować na adres **czsocha@wp.pl** lub korespondencyjnie na adres administratora wskazany w sekcji 2.1.
 
 ---
 
@@ -302,8 +301,8 @@ Finalna publikacja nie może twierdzić, że wszystkie środki zostały operacyj
 
 | ID | Element | Zależność | Status |
 |---|---|---|---|
-| P1-PL-003-O01 | adres korespondencyjny administratora | owner input | `OPEN / BLOCKING` |
-| P1-PL-003-O02 | e-mail privacy / rights contact | owner input | `OPEN / BLOCKING` |
+| P1-PL-003-O01 | adres korespondencyjny administratora | owner input | `CLOSED / PROVIDED 2026-10-02` |
+| P1-PL-003-O02 | e-mail privacy / rights contact | owner input | `CLOSED / PROVIDED 2026-10-02` |
 | P1-PL-003-O03 | finalni providerzy/odbiorcy/role/DPA | `P1-PL-006` | `OPEN / BLOCKING` |
 | P1-PL-003-O04 | finalny transfer model poza EOG | `P1-PL-007` | `OPEN / BLOCKING` |
 | P1-PL-003-O05 | pełna DPIA + model małoletnich | `P1-PL-005` | `CLOSED`; residual provider/transfer sync pozostaje w `P1-PL-006/007` |
@@ -322,7 +321,6 @@ P1-PL-003 FINAL PUBLICATION READY = NO
 P1-PL-003 = PARTIALLY RESOLVED / OPEN
 
 BLOCKERS:
-- CONTROLLER CONTACT DETAILS
 - P1-PL-005 FULL DPIA SYNC — CLOSED
 - P1-PL-006 PROVIDERS / DPA
 - P1-PL-007 TRANSFERS
@@ -341,7 +339,7 @@ PRODUCTION V3 = NO-GO
 FREEZE = ACTIVE
 ```
 
-P1-PL-003 nie może zostać uczciwie oznaczone jako `CLOSED`, dopóki finalna polityka nie zawiera rzeczywistych danych kontaktowych, finalnego provider/transfer modelu oraz domkniętego runtime/provider-account cookies/local-storage inventory. Pełna DPIA i model 16–17 są zamknięte w `P1-PL-005` i nie są ponownie otwierane.
+P1-PL-003 nie może zostać uczciwie oznaczone jako `CLOSED`, dopóki finalna polityka nie zawiera finalnego provider/transfer modelu oraz domkniętego runtime/provider-account cookies/local-storage inventory. Pełna DPIA i model 16–17 są zamknięte w `P1-PL-005` i nie są ponownie otwierane.
 
 ---
 
