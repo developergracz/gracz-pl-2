@@ -8,7 +8,7 @@
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="theme-color" content="#050706">
+  <meta name="theme-color" content="#041713">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://gracz.pl/gry/gomoku/zasady/">
   <link rel="alternate" hreflang="pl-PL" href="https://gracz.pl/gry/gomoku/zasady/">
@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=gomoku-scroll-menu-r3">
+  <link rel="stylesheet" href="/assets/rules.css?v=gomoku-premium-architecture-r4">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -85,12 +85,22 @@
     <div class="rules-page-grid gomoku-rules-page-grid">
       <div class="rules-main-column">
         <section class="rules-hero gomoku-rules-hero">
-          <div>
+          <div class="gomoku-rules-hero__main">
             <p class="rules-kicker">Gomoku • zasady szczegółowe</p>
             <h1>Zasady Gomoku 15×15</h1>
             <p class="rules-lead">Gomoku jest proste do rozpoczęcia: gracze na zmianę dokładają po jednym kamieniu. Głębia gry zaczyna się przy budowaniu zagrożeń, ale same reguły są bardzo czytelne. Poniżej znajdziesz pełny opis wariantu podstawowego gracz.pl.</p>
             <p class="rules-note"><strong>Ważne:</strong> ten opis odpowiada obecnemu silnikowi Gomoku gracz.pl — bez ograniczeń Renju i z wygraną przy linii pięciu lub większej liczby kamieni.</p>
           </div>
+          <aside class="quick-card gomoku-quick-card" aria-label="Gomoku w skrócie">
+            <h2>W skrócie</h2>
+            <dl>
+              <div><dt>Gracze</dt><dd>2</dd></div>
+              <div><dt>Plansza</dt><dd>15×15</dd></div>
+              <div><dt>Pierwszy ruch</dt><dd>Czarne</dd></div>
+              <div><dt>Ruch</dt><dd>1 kamień</dd></div>
+              <div><dt>Wygrana</dt><dd>5+</dd></div>
+            </dl>
+          </aside>
         </section>
 
         <div class="rules-layout gomoku-rules-content-layout">
@@ -186,19 +196,6 @@
       </div>
 
       <aside class="rules-side-panel gomoku-rules-side-panel" aria-label="Panel zasad Gomoku">
-        <section class="rules-side-card rules-side-card--summary">
-          <p class="rules-side-eyebrow">Gomoku</p>
-          <h2>Zasady w skrócie</h2>
-          <dl class="rules-side-facts">
-            <div><dt>Gracze</dt><dd>2</dd></div>
-            <div><dt>Plansza</dt><dd>15×15</dd></div>
-            <div><dt>Pierwszy ruch</dt><dd>Czarne</dd></div>
-            <div><dt>Ruch</dt><dd>1 kamień</dd></div>
-            <div><dt>Wygrana</dt><dd>5+</dd></div>
-          </dl>
-          <a class="rules-side-primary" href="/gry/gomoku/">Przejdź do gry</a>
-        </section>
-
         <nav class="rules-side-card rules-side-nav" aria-label="Szybka nawigacja po zasadach Gomoku">
           <p class="rules-side-eyebrow">Na tej stronie</p>
           <a href="#cel"><span>01</span><strong>Cel gry</strong></a>
