@@ -1,0 +1,35 @@
+name: Sticky Sidebars Gate
+
+on:
+  pull_request:
+    paths:
+      - "maintenance-site/**"
+      - "scripts/check-sticky-sidebars.mjs"
+      - ".github/workflows/sticky-sidebars.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "maintenance-site/**"
+      - "scripts/check-sticky-sidebars.mjs"
+      - ".github/workflows/sticky-sidebars.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Validate all right-side menus
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check sidebar script syntax
+        run: node --check maintenance-site/assets/sticky-sidebars.js
+      - name: Check right-rail coverage
+        run: node scripts/check-sticky-sidebars.mjs
