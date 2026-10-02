@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   seo:
-    name: Validate homepage SEO
+    name: Validate site SEO
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
