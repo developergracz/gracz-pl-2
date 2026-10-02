@@ -1266,30 +1266,15 @@ main:focus { outline: none; }
 }
 
 
-/* HOME R8 — deterministic shared vertical frame axis */
+/* HOME R9 — final vertical frame alignment */
 @media (min-width:1180px){
-  /*
-    Grid geometry:
-    left column = 601u
-    gap         = 14u
-    original status left = 615u
-
-    Shared frame axis = 606u.
-    Therefore the status panel moves left by exactly 9u,
-    while its width and left padding grow by the same 9u
-    so its right edge and internal content remain unchanged.
-  */
-  .hero-grid{
-    --shared-frame-x:calc(606 * var(--u));
+  .status-panel{
+    margin-left:0!important;
+    width:auto!important;
+    padding-left:calc(24 * var(--u))!important;
   }
 
   .next-panel{
-    width:var(--shared-frame-x)!important;
-  }
-
-  .status-panel{
-    margin-left:calc(-9 * var(--u))!important;
-    width:calc(399 * var(--u))!important;
-    padding-left:calc(33 * var(--u))!important;
+    width:calc(604 * var(--u))!important;
   }
 }
