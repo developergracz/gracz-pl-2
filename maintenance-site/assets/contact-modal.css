@@ -22,12 +22,12 @@
   max-height:min(820px,calc(100dvh - 28px));
   overflow:auto;
   padding:30px 32px 28px;
-  border:1px solid rgba(240,191,85,.48);
+  border:0;
   border-radius:24px;
   background:
-    radial-gradient(circle at 85% 0,rgba(25,116,87,.20),transparent 38%),
-    linear-gradient(160deg,#0c1713 0%,#07100d 55%,#050605 100%);
-  box-shadow:0 30px 90px rgba(0,0,0,.72),0 0 30px rgba(240,191,85,.12);
+    radial-gradient(circle at 86% 0,rgba(31,158,151,.24),transparent 40%),
+    linear-gradient(160deg,#123732 0%,#0d2926 55%,#091f1d 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.58);
 }
 .contact-modal__close{
   position:absolute;
@@ -88,9 +88,9 @@
 }
 .contact-field input,.contact-field select,.contact-field textarea{
   width:100%;
-  border:1px solid rgba(227,174,76,.28);
+  border:1px solid rgba(111,211,205,.28);
   border-radius:12px;
-  background:rgba(3,8,6,.72);
+  background:rgba(33,92,88,.34);
   color:#f3f1ec;
   font:400 14px/1.45 OpenSans,Arial,sans-serif;
   outline:none;
@@ -101,9 +101,9 @@
 .contact-field select{color-scheme:dark}
 .contact-field input::placeholder,.contact-field textarea::placeholder{color:#76817c}
 .contact-field input:focus,.contact-field select:focus,.contact-field textarea:focus{
-  border-color:#f0bf55;
-  background:rgba(8,16,13,.92);
-  box-shadow:0 0 0 3px rgba(240,191,85,.11),0 0 18px rgba(240,191,85,.08);
+  border-color:#78d8d1;
+  background:rgba(42,108,103,.44);
+  box-shadow:0 0 0 3px rgba(120,216,209,.12),0 0 18px rgba(120,216,209,.08);
 }
 .contact-field [aria-invalid="true"]{border-color:#e85b68!important;box-shadow:0 0 0 3px rgba(232,91,104,.10)!important}
 .contact-field__meta{display:flex;justify-content:space-between;gap:10px;color:#7f8d87;font-size:11px}
@@ -247,7 +247,7 @@ body.contact-modal-open{overflow:hidden}
   z-index:4;
   margin-top:1px;
   padding:10px 0 2px;
-  background:linear-gradient(180deg,rgba(7,16,13,0),#07100d 34%,#07100d 100%);
+  background:linear-gradient(180deg,rgba(13,41,38,0),#0d2926 34%,#0d2926 100%);
 }
 .contact-form__submit{
   min-height:44px!important;
