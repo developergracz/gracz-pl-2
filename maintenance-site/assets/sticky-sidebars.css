@@ -1,6 +1,6 @@
-/* Global Sticky Right Rails R2
-   One document scrollbar only: desktop side rails stay visible with position:sticky,
-   but never create their own independent scroll area. */
+/* Global Sticky Right Rails R3
+   Restores the proven R1 nested-scroll behavior and hardens Gomoku rules.
+   Desktop side rails stay visible while the page scrolls; long rails can scroll internally. */
 
 main [id]{
   scroll-margin-top:110px;
@@ -16,9 +16,30 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:none!important;
-    overflow:visible!important;
-    overscroll-behavior:auto!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
+  }
+
+  .side-column::-webkit-scrollbar,
+  .academy-side-column::-webkit-scrollbar,
+  .poker-side-panel::-webkit-scrollbar,
+  .warcaby-side-panel::-webkit-scrollbar,
+  .gomoku-side-panel::-webkit-scrollbar,
+  .side-column--pilot::-webkit-scrollbar{width:6px}
+
+  .side-column::-webkit-scrollbar-thumb,
+  .academy-side-column::-webkit-scrollbar-thumb,
+  .poker-side-panel::-webkit-scrollbar-thumb,
+  .warcaby-side-panel::-webkit-scrollbar-thumb,
+  .gomoku-side-panel::-webkit-scrollbar-thumb,
+  .side-column--pilot::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
   }
 }
 
@@ -27,9 +48,33 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:none!important;
-    overflow:visible!important;
-    overscroll-behavior:auto!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
+  }
+
+  .rules-side-panel::-webkit-scrollbar{width:6px}
+  .rules-side-panel::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(99,221,195,.30);
+  }
+
+  /* Gomoku rules has older page-specific static overrides.
+     Keep this final selector stronger than those rules. */
+  .gomoku-rules-page .gomoku-rules-side-panel{
+    position:sticky!important;
+    top:96px!important;
+    align-self:start!important;
+    height:auto!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-gutter:stable;
   }
 }
 
@@ -38,9 +83,13 @@ main [id]{
     position:sticky!important;
     top:96px!important;
     align-self:start!important;
-    max-height:none!important;
-    overflow:visible!important;
-    overscroll-behavior:auto!important;
+    max-height:calc(100vh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(99,221,195,.34) transparent;
+    scrollbar-gutter:stable;
   }
 }
 
@@ -59,7 +108,8 @@ main [id]{
 }
 
 @media (max-width:1320px){
-  .rules-side-panel{
+  .rules-side-panel,
+  .gomoku-rules-page .gomoku-rules-side-panel{
     position:static!important;
     top:auto!important;
     max-height:none!important;
