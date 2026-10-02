@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "maintenance-site/**"
+      - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
       - ".github/workflows/maintenance-seo.yml"
   push:
@@ -11,6 +12,7 @@ on:
       - main
     paths:
       - "maintenance-site/**"
+      - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
       - ".github/workflows/maintenance-seo.yml"
 
@@ -29,5 +31,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Check contact scripts
+        run: |
+          node --check maintenance-site/assets/legal-links.js
+          node --check contact-api/server.mjs
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
