@@ -300,3 +300,44 @@ a{color:inherit}.skip-link{position:fixed;left:18px;top:12px;z-index:999;transfo
     margin-left:0;
   }
 }
+
+
+/* Privacy R1 — responsive data tables */
+.legal-table-wrap{
+  width:100%;
+  overflow-x:auto;
+  margin:16px 0 18px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.018);
+}
+.legal-table{
+  width:100%;
+  min-width:680px;
+  border-collapse:collapse;
+  font-size:12px;
+  line-height:1.55;
+}
+.legal-table th,
+.legal-table td{
+  padding:13px 14px;
+  border-bottom:1px solid var(--line);
+  border-right:1px solid rgba(255,255,255,.055);
+  text-align:left;
+  vertical-align:top;
+}
+.legal-table th:last-child,
+.legal-table td:last-child{border-right:0}
+.legal-table tr:last-child td{border-bottom:0}
+.legal-table th{
+  background:rgba(110,226,194,.07);
+  color:#f3f1ec;
+  font-family:Montserrat,Arial,sans-serif;
+  font-weight:800;
+}
+.legal-table td{color:#b7c4be}
+.legal-table td strong{color:#f2f5f3}
+@media(max-width:640px){
+  .legal-table{min-width:620px}
+  .legal-table th,.legal-table td{padding:11px 12px}
+}
