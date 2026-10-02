@@ -770,3 +770,24 @@ body::after{
 .site-header .menu-panel{
   border-bottom:0!important;
 }
+
+
+/* GLOBAL SUBPAGE BACKGROUND — match Poradniki R1 */
+html,
+body{background:#050706!important}
+body::before{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-2!important;
+  background:url("/assets/img/hero-bg.webp") center/cover no-repeat!important;
+  filter:saturate(1.25) brightness(.9)!important;
+}
+body::after{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-1!important;
+  background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.22) 34%,rgba(0,0,0,.4))!important;
+  pointer-events:none!important;
+}
