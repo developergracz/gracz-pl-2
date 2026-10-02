@@ -166,6 +166,9 @@ for (const file of allHtmlPages) {
   }
 }
 
+requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
+
 if (failures.length) {
   console.error("SEO GATE: FAIL");
   for (const failure of failures) console.error(`- ${failure}`);
@@ -181,5 +184,3 @@ console.log(`games schema: ${[...gamesLd.types].sort().join(", ")}`);
 console.log(`sitemap URLs: ${sitemapUrls.length}`);
 console.log(`favicon-covered HTML pages: ${allHtmlPages.length}`);
 
-requireCheck(existsSync(resolve(siteRoot, "assets/contact-modal.css")), "contact modal stylesheet missing");
-requireCheck(existsSync(resolve(siteRoot, "assets/legal-links.js")), "legal-links.js missing");
