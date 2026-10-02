@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/gry.css?v=premium-games-r1">
+  <link rel="stylesheet" href="/assets/gry.css?v=hero-sidebar-r4">
   <script src="/assets/gry.js?v=r3-2-horizontal" defer></script>
   <script type="application/ld+json">
   {
@@ -113,20 +113,13 @@
   <main id="tresc" class="page-shell" tabindex="-1">
     <nav class="breadcrumb" aria-label="Ścieżka nawigacji"><ol><li><a href="/">Start</a></li><li aria-current="page">Gry</li></ol></nav>
 
-    <div class="game-hub-r2">
-      <section class="hero-card" aria-labelledby="hero-title">
-        <div class="board-visual">
-          <div class="card-table-scene" role="img" aria-label="Gry gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
-            <div class="score-board"><span>Dział</span><strong>GRY</strong></div>
-            <div class="marriage-badges" aria-hidden="true"><span>♠</span><span>♣</span><span class="red">♦</span><span class="red">♥</span></div>
-            <div class="card-fan" aria-hidden="true">
-              <span class="playing-card c1"><b class="rank">9</b><b class="suit">♣</b><b class="big-suit">♣</b></span>
-              <span class="playing-card red c2"><b class="rank">Q</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
-              <span class="playing-card red c3"><b class="rank">K</b><b class="suit">♥</b><b class="big-suit">♥</b></span>
-              <span class="playing-card c4"><b class="rank">10</b><b class="suit">♠</b><b class="big-suit">♠</b></span>
-              <span class="playing-card red c5"><b class="rank">A</b><b class="suit">♦</b><b class="big-suit">♦</b></span>
-            </div>
-            <span class="table-caption">Poker • Tysiąc • Warcaby • Gomoku</span>
+    <div class="page-grid games-page-grid-r4">
+      <div class="main-column">
+        <div class="game-hub-r2">
+      <section class="hero-card games-hero-r4" aria-labelledby="hero-title">
+        <div class="board-visual games-hero-visual-r4">
+          <div class="games-hero-image-frame-r4" role="img" aria-label="Gry gracz.pl — Poker, Tysiąc, Warcaby i Gomoku">
+            <img src="/assets/gry-hero-approved-v3.webp" width="1024" height="1024" alt="Gry gracz.pl — karty i elementy gier logicznych">
           </div>
         </div>
 
@@ -446,11 +439,50 @@
         </div>
       </section>
 
-      <section class="hub-related-r2" id="zobacz-takze" aria-label="Zobacz także">
-        <a href="/gry-karciane/"><strong>Gry karciane</strong><span>Poker, Tysiąc i materiały edukacyjne.</span><em>Otwórz dział →</em></a>
-        <a href="/poradniki/"><strong>Poradniki</strong><span>Zasady, nauka i rozwijane przewodniki.</span><em>Czytaj →</em></a>
-        <a href="/o-gracz-pl/"><strong>O gracz.pl</strong><span>Poznaj kierunek rozwoju całej platformy.</span><em>Zobacz projekt →</em></a>
-      </section>
+
+        </div>
+      </div>
+
+      <aside class="side-column games-side-column-r4" aria-label="Nawigacja działu Gry">
+        <section class="online-card games-nav-card-r4">
+          <p class="status-pill"><span></span> W przygotowaniu</p>
+          <h2>Gry</h2>
+          <p>Przejdź bezpośrednio do najważniejszych gier i części katalogu gracz.pl.</p>
+
+          <a class="side-action side-action--green" href="/gry/poker-treningowy/">
+            <span class="side-emoji side-emoji--gold">♠</span>
+            <span><strong>Poker treningowy</strong><small>Texas Hold’em do nauki</small></span><b>›</b>
+          </a>
+          <a class="side-action side-action--red" href="/gry/tysiac/">
+            <span class="side-emoji side-emoji--red">♥</span>
+            <span><strong>Tysiąc</strong><small>licytacja i meldunki</small></span><b>›</b>
+          </a>
+          <a class="side-action side-action--green" href="/gry/warcaby/">
+            <span class="side-emoji side-emoji--green">●</span>
+            <span><strong>Warcaby</strong><small>taktyczna gra planszowa</small></span><b>›</b>
+          </a>
+          <a class="side-action" href="/gry/gomoku/">
+            <span class="side-emoji side-emoji--gold">✕</span>
+            <span><strong>Gomoku</strong><small>pięć w jednej linii</small></span><b>›</b>
+          </a>
+        </section>
+
+        <section class="related-card games-related-card-r4" aria-labelledby="games-related-title">
+          <h2 id="games-related-title">Zobacz także</h2>
+          <a class="related-game" href="/gry-karciane/">
+            <span class="related-image related-image--gry-karciane" aria-hidden="true"></span>
+            <span><strong>Gry karciane</strong><small>Poker i Tysiąc</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/poradniki/">
+            <span class="related-image related-image--poradniki" aria-hidden="true"></span>
+            <span><strong>Poradniki</strong><small>Zasady i materiały</small></span><b>›</b>
+          </a>
+          <a class="related-game" href="/o-gracz-pl/">
+            <span class="related-image related-image--o-gracz-pl" aria-hidden="true"></span>
+            <span><strong>O gracz.pl</strong><small>Poznaj projekt</small></span><b>›</b>
+          </a>
+        </section>
+      </aside>
     </div>
   </main>
 
