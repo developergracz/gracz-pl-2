@@ -916,3 +916,143 @@ body::after{
     gap:10px!important;
   }
 }
+
+
+/* Poradniki R20 — brighter professional teal system */
+html{
+  background:#08241f!important;
+}
+body{
+  background:
+    radial-gradient(circle at 18% 8%,rgba(29,142,120,.22),transparent 31%),
+    radial-gradient(circle at 82% 16%,rgba(20,112,125,.18),transparent 28%),
+    linear-gradient(180deg,#08231e 0%,#0a2d27 38%,#0c352e 100%)!important;
+}
+body::before{
+  background:
+    radial-gradient(circle at 16% 10%,rgba(34,154,129,.18),transparent 32%),
+    radial-gradient(circle at 84% 18%,rgba(19,120,130,.15),transparent 28%),
+    linear-gradient(180deg,#08231e 0%,#0a2e28 46%,#0c372f 100%)!important;
+  filter:none!important;
+}
+body::after{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),rgba(0,0,0,.045) 38%,rgba(0,0,0,.11))!important;
+}
+
+/* main page breathing room and cleaner contrast */
+.page-shell{
+  background:transparent!important;
+}
+.breadcrumb{
+  opacity:.96;
+}
+
+/* Hero: lift the whole surface without losing premium depth */
+.poradniki-hero-r7{
+  background:
+    radial-gradient(circle at 18% 32%,rgba(35,145,121,.25),transparent 34%),
+    radial-gradient(circle at 78% 18%,rgba(20,118,128,.20),transparent 30%),
+    linear-gradient(135deg,#0b2d27 0%,#0d3a32 44%,#0a312f 72%,#08241f 100%)!important;
+  box-shadow:0 20px 46px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+.poradniki-hero-r7__visual{
+  background:
+    radial-gradient(circle at 42% 45%,rgba(44,158,128,.24),transparent 58%),
+    linear-gradient(145deg,rgba(9,49,40,.92),rgba(8,38,34,.84))!important;
+}
+.poradniki-hero-r7__scene{
+  background:
+    radial-gradient(circle at 50% 46%,rgba(47,157,128,.23),transparent 58%),
+    #0a3a30!important;
+}
+.poradniki-hero-r7__copy h1{
+  color:#ffe39b!important;
+}
+.poradniki-hero-r7__kicker{
+  color:#f5cb70!important;
+}
+.poradniki-hero-r7__lead{
+  color:#f3f4f1!important;
+}
+.poradniki-hero-r7__facts strong{
+  color:#f4f3ee!important;
+}
+
+/* Lower cards: brighter teal surfaces, softer shadows */
+.page-shell .guide-card-box,
+.page-shell .guide-card-box--red,
+.page-shell .guide-card-box--green{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(48,160,132,.11),transparent 35%),
+    linear-gradient(145deg,rgba(12,56,47,.95),rgba(8,39,33,.98))!important;
+  box-shadow:0 16px 36px rgba(0,0,0,.16)!important;
+}
+.page-shell .guide-card-box:hover{
+  box-shadow:0 20px 42px rgba(0,0,0,.20)!important;
+}
+.page-shell .guide-card-box h2{
+  color:#ffe19a!important;
+}
+.page-shell .guide-card-box p,
+.page-shell .guide-card-box ul{
+  color:#eceeea!important;
+}
+.page-shell .guide-badge{
+  background:rgba(244,198,95,.14)!important;
+  color:#ffe7a7!important;
+}
+
+/* Sidebar: brighter and more integrated */
+.page-shell .online-card,
+.page-shell .related-card{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(40,150,125,.10),transparent 38%),
+    linear-gradient(145deg,rgba(11,51,43,.94),rgba(7,34,29,.98))!important;
+}
+.page-shell .side-action,
+.page-shell .side-action--green,
+.page-shell .side-action--red,
+.page-shell .related-game{
+  background:rgba(33,120,102,.14)!important;
+}
+.page-shell .side-action:hover,
+.page-shell .related-game:hover{
+  background:rgba(41,145,122,.22)!important;
+}
+
+/* Quality section */
+.page-shell .guide-quality-grid>div{
+  background:
+    radial-gradient(circle at 0 0,rgba(47,158,131,.10),transparent 44%),
+    rgba(11,52,44,.78)!important;
+}
+.page-shell .guide-quality-grid h3{
+  color:#f6e5b8!important;
+}
+.page-shell .guide-quality-grid p{
+  color:#e0e3df!important;
+}
+
+/* Header: keep premium black, but visually connect to page */
+.site-header{
+  background:rgba(3,12,10,.94)!important;
+  border-bottom-color:rgba(244,198,95,.30)!important;
+}
+
+/* Slightly more polished buttons */
+.poradniki-hero-r7__primary,
+.page-shell .guide-link{
+  box-shadow:0 8px 18px rgba(116,78,12,.18)!important;
+}
+.poradniki-hero-r7__secondary{
+  background:linear-gradient(135deg,#12816d 0%,#16927b 100%)!important;
+  box-shadow:0 8px 18px rgba(4,40,34,.20)!important;
+}
+.page-shell .guide-text-link{
+  color:#6fe0cd!important;
+}
+.page-shell .guide-text-link:hover,
+.page-shell .guide-text-link:focus-visible{
+  color:#9cebdc!important;
+}
