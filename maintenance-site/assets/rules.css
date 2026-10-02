@@ -1496,7 +1496,7 @@ body::after{
 /* Hero = large content field + dedicated right summary field. */
 .gomoku-rules-page .gomoku-rules-hero{
   display:grid!important;
-  grid-template-columns:minmax(0,1fr) 310px!important;
+  grid-template-columns:minmax(0,1fr)!important;
   gap:18px!important;
   padding:0!important;
   border:0!important;
@@ -1703,9 +1703,13 @@ body::after{
 .gomoku-rules-page .gomoku-rules-side-panel{
   position:static!important;
   display:flex!important;
-  flex-direction:column;
+  flex-direction:column!important;
   gap:16px;
   align-self:start;
+}
+.gomoku-rules-page .gomoku-side-summary{
+  width:100%;
+  margin:0!important;
 }
 .gomoku-rules-page .rules-side-card{
   border:0!important;
@@ -1763,10 +1767,9 @@ body::after{
     grid-template-columns:1fr!important;
   }
   .gomoku-rules-page .gomoku-rules-side-panel{
-    display:grid!important;
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    display:flex!important;
+    flex-direction:column!important;
   }
-  .gomoku-rules-page .rules-side-related{grid-column:1/-1}
 }
 @media(max-width:1000px){
   .gomoku-rules-page .gomoku-rules-hero{
@@ -1776,9 +1779,9 @@ body::after{
 }
 @media(max-width:760px){
   .gomoku-rules-page .gomoku-rules-side-panel{
-    grid-template-columns:1fr!important;
+    display:flex!important;
+    flex-direction:column!important;
   }
-  .gomoku-rules-page .rules-side-related{grid-column:auto}
 }
 @media(max-width:620px){
   .gomoku-rules-page .rules-shell{width:calc(100% - 20px)!important}
