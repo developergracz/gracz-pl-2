@@ -199,6 +199,18 @@
       var title=guide.getAttribute('data-track-guide');
       safeWrite(LAST_KEY,title);
       if(lastGuide)lastGuide.textContent=title;
+
+      var href=(guide.getAttribute('href')||'').toLowerCase();
+      var game='';
+      if(href.indexOf('poker')>=0)game='poker';
+      else if(href.indexOf('tysiac')>=0)game='tysiac';
+      else if(href.indexOf('warcaby')>=0)game='warcaby';
+      else if(href.indexOf('gomoku')>=0)game='gomoku';
+      if(game){
+        learningState[game]=Math.max(learningState[game]||0,10);
+        safeWrite(STORAGE_KEY,learningState);
+        renderProgress();
+      }
     }
   });
 
@@ -207,6 +219,8 @@
     resetProgress.addEventListener('click',function(){
       learningState={poker:0,tysiac:0,warcaby:0,gomoku:0};
       safeWrite(STORAGE_KEY,learningState);
+      try{window.localStorage.removeItem(LAST_KEY);}catch(e){}
+      if(lastGuide)lastGuide.textContent='Jeszcze nic — wybierz pierwszy materiał.';
       renderProgress();
     });
   }
@@ -288,8 +302,10 @@
       bookmarks.forEach(function(item){
         var row=document.createElement('div');
         row.className='saved-item';
-        var title=document.createElement('strong');
+        var title=document.createElement('a');
+        title.href=item.href||'#poradnik-tygodnia';
         title.textContent=item.title;
+        title.setAttribute('data-track-guide',item.title);
         var remove=document.createElement('button');
         remove.type='button';
         remove.textContent='Usuń';
@@ -312,8 +328,9 @@
     if(save){
       var id=save.getAttribute('data-bookmark');
       var title=save.getAttribute('data-bookmark-title')||'Zapisany materiał';
+      var href=save.getAttribute('data-bookmark-href')||'#poradnik-tygodnia';
       var idx=bookmarks.findIndex(function(x){return x.id===id;});
-      if(idx>=0)bookmarks.splice(idx,1);else bookmarks.push({id:id,title:title});
+      if(idx>=0)bookmarks.splice(idx,1);else bookmarks.push({id:id,title:title,href:href});
       safeWrite(BOOKMARK_KEY,bookmarks);
       renderBookmarks();
     }
@@ -325,4 +342,39 @@
       renderBookmarks();
     }
   });
+
+
+  /* Premium side navigation: highlight the section currently being read. */
+  var sideLinks=Array.prototype.slice.call(document.querySelectorAll('.knowledge-side-nav a[href^="#"]'));
+  var sideTargets=sideLinks.map(function(link){
+    var id=link.getAttribute('href').slice(1);
+    return {link:link,target:document.getElementById(id)};
+  }).filter(function(item){return item.target;});
+
+  function setCurrentSideLink(id){
+    sideTargets.forEach(function(item){
+      var current=item.target.id===id;
+      item.link.classList.toggle('is-current',current);
+      if(current)item.link.setAttribute('aria-current','location');
+      else item.link.removeAttribute('aria-current');
+    });
+  }
+
+  if(sideTargets.length){
+    setCurrentSideLink(sideTargets[0].target.id);
+    if('IntersectionObserver' in window){
+      var visibleSections={};
+      var observer=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting)visibleSections[entry.target.id]=entry.boundingClientRect.top;
+          else delete visibleSections[entry.target.id];
+        });
+        var ids=Object.keys(visibleSections);
+        if(!ids.length)return;
+        ids.sort(function(a,b){return Math.abs(visibleSections[a])-Math.abs(visibleSections[b]);});
+        setCurrentSideLink(ids[0]);
+      },{rootMargin:'-96px 0px -62% 0px',threshold:[0,.01,.2]});
+      sideTargets.forEach(function(item){observer.observe(item.target);});
+    }
+  }
 })();
