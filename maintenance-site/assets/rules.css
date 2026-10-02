@@ -885,3 +885,25 @@ body::after{
     border-radius:20px!important;
   }
 }
+
+
+/* Poker rules page width + header parity R3 */
+.poker-rules-page .rules-shell{
+  width:min(1360px,calc(100% - 64px))!important;
+}
+.poker-rules-page .rules-header__inner{
+  width:min(1510px,calc(100% - 48px));
+}
+.poker-rules-page .rules-header-actions{
+  flex:0 0 auto;
+}
+@media(max-width:1180px){
+  .poker-rules-page .rules-shell{
+    width:min(1120px,calc(100% - 32px))!important;
+  }
+}
+@media(max-width:620px){
+  .poker-rules-page .rules-shell{
+    width:calc(100% - 20px)!important;
+  }
+}
