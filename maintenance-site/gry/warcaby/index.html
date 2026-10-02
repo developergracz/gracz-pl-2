@@ -81,8 +81,9 @@
   </script>
   <link rel="stylesheet" href="/assets/related-thumbnails.css?v=frameless-r2">
   <link rel="stylesheet" href="/assets/unified-subpage-hero.css?v=r2">
+  <link rel="stylesheet" href="/assets/academy-global-qa.css?v=r1">
 </head>
-<body>
+<body class="academy-game-page warcaby-academy-page">
   <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -238,7 +239,7 @@
             <div class="warcaby-progress__meta">
               <span>Ukończone moduły</span>
               <strong><b data-warcaby-done>0</b> / 6</strong>
-              <progress max="6" value="0" data-warcaby-progress>0 z 6</progress>
+              <progress max="6" value="0" data-warcaby-progress aria-label="Postęp Warcaby Academy">0 z 6</progress>
             </div>
           </div>
           <div class="warcaby-module-strip" aria-label="Moduły Warcaby Academy">
@@ -447,7 +448,7 @@
         </section>
       </div>
 
-      <aside class="side-column warcaby-side-panel" aria-label="Panel Warcabów">
+      <aside class="side-column academy-side-column warcaby-side-panel" aria-label="Panel Warcabów">
         <section class="warcaby-side-card warcaby-side-academy" aria-labelledby="warcaby-side-academy-title">
           <p class="warcaby-side-eyebrow">Warcaby Academy</p>
           <h2 id="warcaby-side-academy-title">Twój postęp</h2>
@@ -522,7 +523,7 @@
         <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
         <form data-newsletter novalidate>
           <label class="sr-only" for="warcaby-news-email">Twój adres e-mail</label>
-          <input id="warcaby-news-email" type="email" placeholder="Twój adres e-mail" autocomplete="off">
+          <input id="warcaby-news-email" type="email" placeholder="Twój adres e-mail" autocomplete="email">
           <button type="submit">Zapisz się</button>
         </form>
       </div>
