@@ -29,7 +29,7 @@
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/poradniki.css">
-  <link rel="stylesheet" href="/assets/o-gracz-pl.css">
+  <link rel="stylesheet" href="/assets/o-gracz-pl.css?v=premium-r2">
   <script src="/assets/o-gracz-pl.js" defer></script>
   <script type="application/ld+json">
   {
@@ -145,47 +145,94 @@
           </div>
         </section>
 
-        <div class="about-grid">
-          <article class="about-card">
-            <span class="about-kicker">Fundament</span>
-            <h2>Gry są centrum gracz.pl</h2>
-            <p>Rozwijamy Poker treningowy, Tysiąca, Warcaby i Gomoku. Każdy tytuł ma własną podstronę, zasady i przestrzeń do dalszej rozbudowy. Docelowo chcemy łączyć prostą dostępność z pełnoprawną rozgrywką online.</p>
-            <ul><li>gry karciane i planszowe,</li><li>rozgrywka treningowa i multiplayer,</li><li>wersje dopasowane do komputerów i urządzeń mobilnych.</li></ul>
-          </article>
+        <section class="about-premium-pillars" aria-labelledby="pillars-title">
+          <div class="about-section-heading">
+            <span class="about-eyebrow">Poznaj gracz.pl</span>
+            <h2 id="pillars-title">Trzy filary jednego ekosystemu</h2>
+            <p>Rozgrywka, wiedza i społeczność są projektowane jako jedna spójna przestrzeń — bez przypadkowych dodatków i bez rozpraszania użytkownika.</p>
+          </div>
 
-          <article class="about-card about-card--green">
-            <span class="about-kicker">Wiedza</span>
-            <h2>Gra i nauka w jednym miejscu</h2>
-            <p>Portal ma pomagać nie tylko rozpocząć rozgrywkę, ale też zrozumieć zasady i rozwijać umiejętności. Dlatego powstają szczegółowe poradniki oraz Poker Academy — edukacyjna część projektu bez gry na prawdziwe pieniądze.</p>
-            <ul><li>czytelne zasady każdej gry,</li><li>materiały dla początkujących i bardziej zaawansowanych,</li><li>nauka strategii krok po kroku.</li></ul>
-          </article>
+          <div class="about-premium-grid">
+            <article class="about-premium-card about-premium-card--games">
+              <span class="about-premium-icon" aria-hidden="true">♠</span>
+              <span class="about-kicker">Fundament</span>
+              <h3>Gry online</h3>
+              <p>Klasyczne i nowoczesne gry karciane oraz logiczne w jednym miejscu. Każdy tytuł otrzymuje własne zasady, materiały i przestrzeń do dalszego rozwoju.</p>
+              <a href="/gry/">Odkryj gry <span aria-hidden="true">→</span></a>
+            </article>
 
-          <article class="about-card about-card--red">
-            <span class="about-kicker">Społeczność</span>
-            <h2>Portal tworzony wokół graczy</h2>
-            <p>W kolejnych etapach chcemy rozwijać profile graczy, rankingi, turnieje i funkcje społecznościowe. Celem jest miejsce, do którego można wracać nie tylko po samą grę, ale również po rywalizację, wiedzę i kontakt z innymi.</p>
-          </article>
+            <article class="about-premium-card about-premium-card--knowledge">
+              <span class="about-premium-icon" aria-hidden="true">▤</span>
+              <span class="about-kicker">Wiedza</span>
+              <h3>Poradniki</h3>
+              <p>Zasady, strategie i praktyczne wskazówki prowadzą od pierwszej partii do świadomej gry. Wiedza ma być podana jasno, bez zbędnego komplikowania.</p>
+              <a href="/poradniki/">Przeglądaj poradniki <span aria-hidden="true">→</span></a>
+            </article>
 
-          <article class="about-card">
-            <span class="about-kicker">Jakość</span>
-            <h2>Dlaczego budujemy od fundamentów</h2>
-            <p>Zamiast uruchamiać przypadkowe funkcje, porządkujemy architekturę, bezpieczeństwo i proces wdrożeniowy. Każdy kolejny element ma być spójny z całością i gotowy do dalszego rozwoju bez konieczności przebudowy portalu od zera.</p>
-          </article>
-        </div>
-
-        <section class="about-roadmap" aria-labelledby="roadmap-title">
-          <h2 id="roadmap-title">Jak rozwijamy gracz.pl</h2>
-          <div class="roadmap-grid">
-            <div class="roadmap-step"><b>1</b><h3>Fundament i gry</h3><p>Budowa stabilnej bazy serwisu oraz głównych podstron gier i zasad.</p></div>
-            <div class="roadmap-step"><b>2</b><h3>Wiedza i ekosystem</h3><p>Poradniki, Poker Academy, konta użytkowników, rankingi i narzędzia dla graczy.</p></div>
-            <div class="roadmap-step"><b>3</b><h3>Społeczność i rozwój</h3><p>Multiplayer, turnieje, funkcje społecznościowe i kolejne gry rozwijane w jednym ekosystemie.</p></div>
+            <article class="about-premium-card about-premium-card--community">
+              <span class="about-premium-icon" aria-hidden="true">●●●</span>
+              <span class="about-kicker">Społeczność</span>
+              <h3>Społeczność graczy</h3>
+              <p>Profile, rankingi, turnieje i funkcje społecznościowe będą rozwijane etapami, aby gracz.pl było miejscem, do którego warto regularnie wracać.</p>
+              <button type="button" data-modal="community">Poznaj kierunek rozwoju <span aria-hidden="true">→</span></button>
+            </article>
           </div>
         </section>
 
-        <section class="about-links" aria-label="Najważniejsze działy gracz.pl">
-          <a class="about-link" href="/gry/"><strong>Gry</strong><span>Zobacz wszystkie rozwijane tytuły.</span><em>Przejdź do gier →</em></a>
-          <a class="about-link" href="/gry-karciane/"><strong>Gry karciane</strong><span>Poker treningowy, Tysiąc i Poker Academy.</span><em>Otwórz dział →</em></a>
-          <a class="about-link" href="/poradniki/"><strong>Poradniki</strong><span>Zasady, nauka i materiały edukacyjne.</span><em>Czytaj poradniki →</em></a>
+        <section class="about-vision-premium" aria-labelledby="vision-title">
+          <div class="about-vision-copy">
+            <span class="about-eyebrow">Nasza wizja</span>
+            <h2 id="vision-title">Dlaczego gracz.pl?</h2>
+            <p>Gra to coś więcej niż pojedyncza rozgrywka. To rywalizacja, nauka, strategia i ludzie. Dlatego budujemy portal, który łączy klasyczne gry z nowoczesnym interfejsem, rzetelną wiedzą i funkcjami społecznościowymi.</p>
+            <a class="about-inline-link" href="/gry/">Poznaj rozwijane gry <span aria-hidden="true">→</span></a>
+          </div>
+          <ul class="about-vision-points">
+            <li><span aria-hidden="true">◎</span><strong>Rozwijamy pasję do gier</strong><small>Każda sekcja ma konkretny cel i naturalne miejsce w portalu.</small></li>
+            <li><span aria-hidden="true">▤</span><strong>Dostarczamy rzetelną wiedzę</strong><small>Zasady i poradniki są częścią produktu, a nie dodatkiem na końcu strony.</small></li>
+            <li><span aria-hidden="true">●●</span><strong>Budujemy aktywną społeczność</strong><small>Funkcje społecznościowe będą uruchamiane razem z rzeczywistą aktywnością użytkowników.</small></li>
+            <li><span aria-hidden="true">◇</span><strong>Łączymy tradycję z nowoczesnością</strong><small>Znane gry otrzymują współczesny interfejs i spójne doświadczenie na gracz.pl.</small></li>
+          </ul>
+        </section>
+
+        <section class="about-roadmap-premium" aria-labelledby="roadmap-title">
+          <div class="about-section-heading about-section-heading--compact">
+            <span class="about-eyebrow">Co rozwijamy</span>
+            <h2 id="roadmap-title">Nasza roadmapa</h2>
+            <p>Portal powstaje etapami — od stabilnego fundamentu, przez kolejne gry i poradniki, po rozgrywkę sieciową i funkcje społecznościowe.</p>
+          </div>
+          <ol class="about-roadmap-line">
+            <li class="is-current"><span>01</span><strong>Obecnie</strong><small>Podstawowe gry, zasady i poradniki</small></li>
+            <li><span>02</span><strong>Wkrótce</strong><small>Kolejne rozwinięcia gier i materiałów</small></li>
+            <li><span>03</span><strong>Kolejne etapy</strong><small>Profile, rankingi i funkcje społecznościowe</small></li>
+            <li><span>04</span><strong>W przyszłości</strong><small>Multiplayer, turnieje i szerszy ekosystem</small></li>
+          </ol>
+        </section>
+
+        <section class="about-metrics-premium" aria-labelledby="metrics-title">
+          <div class="about-metrics-intro">
+            <span class="about-eyebrow">gracz.pl w skrócie</span>
+            <h2 id="metrics-title">Portal rozwijany z myślą o skali</h2>
+          </div>
+          <div class="about-metrics-grid">
+            <div><span aria-hidden="true">♠</span><strong>4</strong><small>główne gry w obecnym katalogu</small></div>
+            <div><span aria-hidden="true">▤</span><strong>4</strong><small>rozbudowane sekcje zasad</small></div>
+            <div><span aria-hidden="true">◎</span><strong>1</strong><small>spójny ekosystem gracz.pl</small></div>
+            <div><span aria-hidden="true">↗</span><strong>Etapowo</strong><small>kolejne funkcje i tytuły</small></div>
+          </div>
+        </section>
+
+        <section class="about-final-cta" aria-label="Dołącz do świata gracz.pl">
+          <div>
+            <span class="about-eyebrow">Gry • wiedza • społeczność</span>
+            <h2>Dołącz do świata graczy</h2>
+            <p>Odkrywaj gry, poznawaj zasady i śledź rozwój gracz.pl.</p>
+          </div>
+          <div class="about-final-actions">
+            <a class="about-final-primary" href="/gry/">Zobacz gry <span aria-hidden="true">→</span></a>
+            <a href="/poradniki/">Przeglądaj poradniki <span aria-hidden="true">→</span></a>
+            <button type="button" data-modal="community">Społeczność <span aria-hidden="true">→</span></button>
+          </div>
+        </section>
         </section>
       </div>
 
@@ -211,6 +258,14 @@
           <a class="related-game" href="/gry/">
             <span class="related-image related-image--gry" aria-hidden="true"></span>
             <span><strong>Wszystkie gry</strong><small>Pełny katalog</small></span><b>›</b></a>
+        </section>
+
+        <section class="about-faq" aria-labelledby="faq-title">
+          <h2 id="faq-title">Najczęściej zadawane pytania</h2>
+          <details><summary>Czy korzystanie z gracz.pl będzie bezpłatne?</summary><p>Podstawowe informacje, zasady i materiały są projektowane jako łatwo dostępna część portalu. Szczegóły dotyczące przyszłych usług będą publikowane wraz z ich uruchomieniem.</p></details>
+          <details><summary>Jakie gry znajdę na portalu?</summary><p>Obecnie rozwijane są Poker treningowy, Tysiąc, Warcaby i Gomoku, a katalog może być rozszerzany w kolejnych etapach.</p></details>
+          <details><summary>Czy pojawi się multiplayer?</summary><p>Rozgrywka sieciowa jest częścią kierunku rozwoju. Zostanie udostępniona wtedy, gdy odpowiednie funkcje będą gotowe produkcyjnie.</p></details>
+          <details><summary>Gdzie znajdę zasady gier?</summary><p>Każda rozwijana gra ma własną podstronę oraz dedykowaną sekcję zasad i materiałów edukacyjnych.</p></details>
         </section>
       </aside>
     </div>
