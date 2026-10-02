@@ -171,7 +171,7 @@
 @media(max-width:820px){
   .academy-game-page .hero-actions{grid-template-columns:1fr!important;gap:12px!important}
   .academy-game-page .academy-side-column{grid-template-columns:1fr!important}
-  .academy-game-page main section[id]{scroll-margin-top:112px}
+  .academy-game-page main section[id]{scroll-margin-top:128px}
 }
 
 @media(max-width:560px){

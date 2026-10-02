@@ -861,7 +861,7 @@ body::after{
   .warcaby-bridge{grid-template-columns:1fr}
 }
 @media(max-width:820px){
-  #warcaby-academy,#warcaby-path,#trener-bicia,#multi-capture,#damka-lab,#quiz-warcaby,#strategia-warcaby{scroll-margin-top:112px}
+  #warcaby-academy,#warcaby-path,#trener-bicia,#multi-capture,#damka-lab,#quiz-warcaby,#strategia-warcaby{scroll-margin-top:128px}
   .hero-actions{grid-template-columns:1fr!important;gap:12px!important}
   .warcaby-academy{grid-template-columns:1fr}
   .warcaby-module-strip{grid-template-columns:1fr 1fr}

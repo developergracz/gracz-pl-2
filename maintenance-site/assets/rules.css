@@ -860,15 +860,7 @@ body::after{
   border-top:0!important;
   position:relative;
 }
-.poker-rules-page .quick-card div + div::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(99,214,181,.12),transparent);
-}
+/* R20 — legacy hairline separator on ::before removed: it out-specified the icon ::before (rows 2-5 icons overlapped labels); the ::after separator below is the single source. */
 .poker-rules-page .rules-note{
   border:0!important;
   border-left:0!important;
@@ -2717,3 +2709,76 @@ body.rules-modal-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .rules-toc a,.rules-side-nav a{transition:none!important}
 }
+
+/* ==========================================================================
+   R20 — rules pages: shared 1360px rhythm + compact, non-pinned phone header
+   (final override layer; earlier R-layers above are left untouched)
+   ========================================================================== */
+@media(min-width:1181px){
+  .poker-rules-page .rules-header__inner,
+  .tysiac-rules-page .rules-header__inner,
+  .warcaby-rules-page .rules-header__inner,
+  .gomoku-rules-page .rules-header__inner,
+  .poker-rules-page .rules-shell,
+  .tysiac-rules-page .rules-shell,
+  .warcaby-rules-page .rules-shell,
+  .gomoku-rules-page .rules-shell,
+  .poker-rules-page .rules-footer__inner,
+  .tysiac-rules-page .rules-footer__inner,
+  .warcaby-rules-page .rules-footer__inner,
+  .gomoku-rules-page .rules-footer__inner{
+    width:min(1360px,calc(100% - 64px))!important;
+  }
+}
+@media(min-width:1181px) and (max-width:1360px){
+  .rules-header__inner{gap:20px!important}
+  .rules-nav ul{gap:18px!important}
+  .rules-header-actions{gap:12px!important;margin-left:12px!important}
+}
+
+@media(max-width:640px){
+  /* Reading pages must not lose ~26% of a phone screen to a pinned header, and #tresc must never land under it. */
+  .rules-header{position:static!important}
+  .rules-header__inner{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    gap:4px 8px!important;
+    align-items:center;
+    min-height:0!important;
+    padding:6px 0 4px!important;
+  }
+  /* page-class selectors: earlier layers set min(1510px,…)!important with the same specificity class */
+  .poker-rules-page .rules-header__inner,
+  .tysiac-rules-page .rules-header__inner,
+  .warcaby-rules-page .rules-header__inner,
+  .gomoku-rules-page .rules-header__inner{
+    width:calc(100% - 20px)!important;
+  }
+  .rules-logo{grid-column:1;grid-row:1;font-size:26px!important;line-height:1.1}
+  .rules-header-actions{display:contents!important}
+  .rules-head-search{grid-column:2;grid-row:1;justify-self:end;width:40px!important;height:40px!important}
+  .rules-head-btn--outline{grid-column:1;grid-row:2}
+  .rules-head-btn--gold{grid-column:2;grid-row:2}
+  .rules-head-btn{width:100%!important;height:40px!important;padding:0 10px!important;font-size:13px!important}
+  .rules-nav{
+    grid-column:1/-1;
+    grid-row:3;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+  .rules-nav ul{
+    display:flex!important;
+    justify-content:space-between;
+    gap:0!important;
+    font-size:13px!important;
+  }
+  .rules-nav a{display:block;padding:7px 2px;font-size:13px!important;line-height:1.2}
+  .rule-section{scroll-margin-top:14px!important}
+}
+
+/* R20 — .rules-content kept the rounded-corner clip via overflow:hidden, which made it a scroll container and
+   swallowed the scroll-margin of its FIRST section (anchor jump landed under the sticky header).
+   overflow:clip paints identically but is not a scroll container. */
+.rules-content{overflow:clip!important}

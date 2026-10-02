@@ -1896,3 +1896,9 @@ body::after{
 
 /* R20 — header fits the shared 1360px rhythm at the 1181px desktop breakpoint (no overshoot) */
 @media(min-width:1181px) and (max-width:1360px){.header-inner{gap:20px}.nav-list{gap:22px}.header-actions{gap:12px}}
+
+/* R20 — every in-page anchor target clears the sticky header (80px desktop / 66px <=1180px) */
+.page-shell [id]{scroll-margin-top:96px}
+@media(max-width:1180px){
+  .page-shell [id]{scroll-margin-top:82px}
+}
