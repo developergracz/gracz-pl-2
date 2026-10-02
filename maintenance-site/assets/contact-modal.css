@@ -97,7 +97,7 @@
   transition:border-color .16s,box-shadow .16s,background .16s;
 }
 .contact-field input,.contact-field select{min-height:46px;padding:0 13px}
-.contact-field textarea{min-height:150px;resize:vertical;padding:12px 13px}
+.contact-field textarea{height:170px;min-height:170px;max-height:170px;resize:none;overflow-y:auto;overscroll-behavior:contain;padding:12px 13px;scrollbar-width:thin;scrollbar-color:#f0bf55 rgba(255,255,255,.05)}
 .contact-field select{color-scheme:dark}
 .contact-field input::placeholder,.contact-field textarea::placeholder{color:#76817c}
 .contact-field input:focus,.contact-field select:focus,.contact-field textarea:focus{
@@ -169,3 +169,21 @@ body.contact-modal-open{overflow:hidden}
   .contact-form__submit{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.contact-modal[open]{animation:none}}
+
+.contact-form__privacy a{
+  color:#ffe3a0;
+  font-weight:700;
+  text-decoration:underline;
+  text-decoration-color:rgba(240,191,85,.75);
+  text-underline-offset:3px;
+}
+.contact-form__privacy a:hover,
+.contact-form__privacy a:focus-visible{
+  color:#f0bf55;
+  text-decoration-color:#f0bf55;
+}
+
+.contact-field textarea::-webkit-scrollbar{width:10px}
+.contact-field textarea::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:999px}
+.contact-field textarea::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ffe3a0,#f0bf55);border:2px solid rgba(3,8,6,.72);border-radius:999px}
+.contact-field textarea::-webkit-scrollbar-thumb:hover{background:#ffe3a0}
