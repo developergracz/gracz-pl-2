@@ -43,7 +43,7 @@ const validateBasePage = ({html, label, canonical, requireTitleTerms = [], requi
   requireCheck(foundCanonical === canonical, `${label}: canonical must be ${canonical}`);
   requireCheck(/name="robots"[^>]*content="[^"]*index,follow/i.test(html), `${label}: robots must be index,follow`);
   requireCheck(h1Matches.length === 1, `${label}: must have exactly one H1 (got ${h1Matches.length})`);
-  requireCheck(/rel="icon"[^>]*href="\/favicon-192\.png"/i.test(html), `${label}: favicon link missing`);
+  requireCheck(/rel="icon"[^>]*href="\/favicon-192\.png(?:\?v=card-r1)?"/i.test(html), `${label}: favicon link missing`);
   requireCheck(!/SearchAction/.test(html), `${label}: deprecated SearchAction must not be present`);
 
   for (const term of requireTitleTerms) {
