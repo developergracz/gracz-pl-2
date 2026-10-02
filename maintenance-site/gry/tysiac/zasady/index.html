@@ -28,7 +28,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=tysiac-premium-r1">
+  <link rel="stylesheet" href="/assets/rules.css?v=tysiac-premium-r2">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -56,6 +56,9 @@
 
   <main id="tresc" class="rules-shell">
     <nav class="breadcrumb" aria-label="Ścieżka nawigacji"><ol><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry/tysiac/">Tysiąc</a></li><li aria-current="page">Zasady gry</li></ol></nav>
+
+    <div class="rules-page-grid">
+      <div class="rules-main-column">
 
     <section class="rules-hero rules-hero--premium" aria-labelledby="rules-hero-title">
       <div class="rules-hero__visual">
@@ -223,6 +226,43 @@
         <a class="button button--outline" href="/gry/">Wszystkie gry</a>
       </div>
     </section>
+      </div>
+
+      <aside class="rules-side-panel" aria-label="Panel zasad Tysiąca">
+        <section class="rules-side-card rules-side-card--summary">
+          <p class="rules-side-eyebrow">Tysiąc</p>
+          <h2>Zasady w skrócie</h2>
+          <dl class="rules-side-facts">
+            <div><dt>Gracze</dt><dd>2–4</dd></div>
+            <div><dt>Talia</dt><dd>24 karty</dd></div>
+            <div><dt>Licytacja</dt><dd>100–360</dd></div>
+            <div><dt>Krok</dt><dd>10 pkt</dd></div>
+            <div><dt>Cel</dt><dd>1000 pkt</dd></div>
+          </dl>
+          <a class="rules-side-primary" href="/gry/tysiac/">Przejdź do gry</a>
+        </section>
+
+        <nav class="rules-side-card rules-side-nav" aria-label="Szybka nawigacja po zasadach">
+          <p class="rules-side-eyebrow">Na tej stronie</p>
+          <a href="#talia"><span>01</span><strong>Talia i wartości</strong></a>
+          <a href="#rozdanie"><span>02</span><strong>Rozdanie i musik</strong></a>
+          <a href="#licytacja"><span>03</span><strong>Licytacja</strong></a>
+          <a href="#kontrakt"><span>04</span><strong>Kontrakt</strong></a>
+          <a href="#meldunki"><span>05</span><strong>Meldunki i atut</strong></a>
+          <a href="#lewy"><span>06</span><strong>Rozgrywanie lew</strong></a>
+          <a href="#punktacja"><span>07</span><strong>Punktacja</strong></a>
+          <a href="#faq"><span>08</span><strong>FAQ</strong></a>
+        </nav>
+
+        <section class="rules-side-card rules-side-related" aria-labelledby="rules-side-related-title">
+          <p class="rules-side-eyebrow">Zobacz także</p>
+          <h2 id="rules-side-related-title">Inne gry</h2>
+          <a href="/gry/poker-treningowy/"><span class="rules-side-thumb rules-side-thumb--poker" aria-hidden="true">♠</span><span><strong>Poker</strong><small>Texas Hold’em treningowy</small></span></a>
+          <a href="/gry/warcaby/"><span class="rules-side-thumb rules-side-thumb--warcaby" aria-hidden="true">●</span><span><strong>Warcaby</strong><small>Klasyczna gra logiczna</small></span></a>
+          <a href="/gry/gomoku/"><span class="rules-side-thumb rules-side-thumb--gomoku" aria-hidden="true">●</span><span><strong>Gomoku</strong><small>Pięć w rzędzie</small></span></a>
+        </section>
+      </aside>
+    </div>
   </main>
 
   <footer class="rules-footer">
