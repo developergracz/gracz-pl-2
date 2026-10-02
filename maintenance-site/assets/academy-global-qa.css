@@ -183,3 +183,46 @@
 @media(prefers-reduced-motion:reduce){
   .academy-game-page *{scroll-behavior:auto!important}
 }
+
+/* R20 — Academy progress integrity: explicit "mark as done" step and exercise hints */
+.academy-hint{
+  margin:12px 0 0!important;
+  color:#b9d3ca!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+}
+.academy-mark{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px 16px;
+  margin:14px 0 6px;
+  padding:12px 16px;
+  border-radius:14px;
+  background:rgba(8,48,40,.55);
+}
+.academy-mark__btn{
+  min-height:44px;
+  padding:0 18px;
+  border:1px solid rgba(120,228,202,.55);
+  border-radius:999px;
+  background:rgba(10,78,63,.55);
+  color:#e6faf3;
+  font:800 14px/1.2 var(--sans,"Open Sans",system-ui,sans-serif);
+  cursor:pointer;
+}
+.academy-mark__btn:hover{background:rgba(14,102,83,.7)}
+.academy-mark__btn[aria-pressed="true"]{
+  border-color:rgba(120,228,202,.9);
+  background:rgba(18,126,102,.78);
+  color:#fff;
+}
+.academy-mark__btn:focus-visible{
+  outline:2px solid #78e4ca!important;
+  outline-offset:3px!important;
+}
+.academy-mark__note{
+  color:#b9d3ca;
+  font-size:13px;
+  line-height:1.5;
+}

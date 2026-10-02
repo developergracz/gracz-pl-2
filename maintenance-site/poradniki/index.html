@@ -187,45 +187,46 @@
         <section class="learning-dashboard" id="twoj-postep" aria-labelledby="learning-dashboard-title">
           <div class="learning-dashboard__hero">
             <div>
-              <span class="section-eyebrow">Twój panel nauki</span>
+              <span class="section-eyebrow">Twój licznik materiałów</span>
               <h2 id="learning-dashboard-title">Ucz się jak na platformie premium</h2>
-              <p>Postęp jest zapisywany lokalnie w tej przeglądarce. Ukończ quizy i wracaj do materiałów bez szukania od początku.</p>
+              <p>Ten licznik pokazuje, które materiały z Centrum poradników już otworzyłeś i jak poszedł quiz poniżej. Jest zapisywany lokalnie w tej przeglądarce i jest osobny od postępu Academy (ćwiczenia i quizy końcowe) — ten znajdziesz na stronie głównej i na stronach Academy.</p>
             </div>
             <div class="overall-progress" aria-live="polite">
-              <div class="overall-progress__number"><strong data-overall-progress>0%</strong><span>ukończono</span></div>
-              <progress data-overall-bar max="100" value="0">0%</progress>
+              <div class="overall-progress__number"><strong data-overall-progress>0%</strong><span>poznane materiały</span></div>
+              <progress data-overall-bar max="100" value="0" aria-label="Poznane materiały — łącznie">0%</progress>
             </div>
           </div>
 
           <div class="game-progress-grid">
             <article data-progress-card="poker">
               <div class="game-progress-card__head"><span class="learning-icon">♠</span><div><strong>Poker</strong><small>Texas Hold’em</small></div><b data-progress-value="poker">0%</b></div>
-              <progress max="100" value="0" data-progress-bar="poker">0%</progress>
-              <a href="/gry/poker-treningowy/zasady/" data-track-guide="Poker — zasady">Kontynuuj naukę</a>
+              <progress max="100" value="0" data-progress-bar="poker" aria-label="Poker — poznane materiały">0%</progress>
+              <a href="/gry/poker-treningowy/zasady/" data-track-guide="Poker — zasady">Otwórz zasady</a>
             </article>
             <article data-progress-card="tysiac">
               <div class="game-progress-card__head"><span class="learning-icon learning-icon--red">♥</span><div><strong>Tysiąc</strong><small>licytacja i meldunki</small></div><b data-progress-value="tysiac">0%</b></div>
-              <progress max="100" value="0" data-progress-bar="tysiac">0%</progress>
-              <a href="/gry/tysiac/zasady/" data-track-guide="Tysiąc — zasady">Kontynuuj naukę</a>
+              <progress max="100" value="0" data-progress-bar="tysiac" aria-label="Tysiąc — poznane materiały">0%</progress>
+              <a href="/gry/tysiac/zasady/" data-track-guide="Tysiąc — zasady">Otwórz zasady</a>
             </article>
             <article data-progress-card="warcaby">
               <div class="game-progress-card__head"><span class="learning-icon">●</span><div><strong>Warcaby</strong><small>bicie i damka</small></div><b data-progress-value="warcaby">0%</b></div>
-              <progress max="100" value="0" data-progress-bar="warcaby">0%</progress>
-              <a href="/gry/warcaby/zasady/" data-track-guide="Warcaby — zasady">Kontynuuj naukę</a>
+              <progress max="100" value="0" data-progress-bar="warcaby" aria-label="Warcaby — poznane materiały">0%</progress>
+              <a href="/gry/warcaby/zasady/" data-track-guide="Warcaby — zasady">Otwórz zasady</a>
             </article>
             <article data-progress-card="gomoku">
               <div class="game-progress-card__head"><span class="learning-icon">✕</span><div><strong>Gomoku</strong><small>atak i obrona</small></div><b data-progress-value="gomoku">0%</b></div>
-              <progress max="100" value="0" data-progress-bar="gomoku">0%</progress>
-              <a href="/gry/gomoku/zasady/" data-track-guide="Gomoku — zasady">Kontynuuj naukę</a>
+              <progress max="100" value="0" data-progress-bar="gomoku" aria-label="Gomoku — poznane materiały">0%</progress>
+              <a href="/gry/gomoku/zasady/" data-track-guide="Gomoku — zasady">Otwórz zasady</a>
             </article>
           </div>
+          <p class="learning-note">Postęp ćwiczeń Academy liczony jest osobno: <a href="/gry/poker-treningowy/#poker-academy">Poker Academy</a>, <a href="/gry/tysiac/#tysiac-academy">Tysiąc Academy</a>, <a href="/gry/warcaby/#warcaby-academy">Warcaby Academy</a>, <a href="/gry/gomoku/#gomoku-academy">Gomoku Academy</a>. Wyzerowanie licznika materiałów go nie zmienia.</p>
 
           <div class="learning-dashboard__bottom">
             <div class="last-guide">
               <span>Ostatnio otwierane</span>
               <strong data-last-guide>Jeszcze nic — wybierz pierwszy materiał.</strong>
             </div>
-            <button type="button" class="reset-progress" data-reset-progress>Wyzeruj lokalny postęp</button>
+            <button type="button" class="reset-progress" data-reset-progress>Wyzeruj licznik materiałów</button>
           </div>
         </section>
 
@@ -505,7 +506,7 @@
           <div class="knowledge-check__intro">
             <span class="section-eyebrow">Interaktywny quiz</span>
             <h2 id="knowledge-check-title">Sprawdź, czy fundamenty już siedzą</h2>
-            <p>Cztery pytania — po jednym z każdej gry. Wynik zapisujemy lokalnie i wykorzystujemy w panelu postępu.</p>
+            <p>Cztery pytania — po jednym z każdej gry. Wynik zapisujemy lokalnie i wykorzystujemy w liczniku materiałów.</p>
             <div class="quiz-badges"><span>4 pytania</span><span>natychmiastowy wynik</span><span>bez logowania</span></div>
           </div>
           <form class="live-quiz" data-live-quiz>
@@ -600,7 +601,7 @@
           <span class="section-eyebrow">Centrum wiedzy</span>
           <h2 id="knowledge-side-nav-title">Na tej stronie</h2>
           <a href="#centrum-wiedzy"><span>01</span><strong>Start</strong></a>
-          <a href="#twoj-postep"><span>02</span><strong>Twój postęp</strong></a>
+          <a href="#twoj-postep"><span>02</span><strong>Twoje materiały</strong></a>
           <a href="#dobierz-poradnik"><span>03</span><strong>Dobierz poradnik</strong></a>
           <a href="#sciezki-nauki"><span>04</span><strong>Ścieżki nauki</strong></a>
           <a href="#polecane"><span>05</span><strong>Polecane</strong></a>

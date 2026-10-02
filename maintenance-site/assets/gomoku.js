@@ -1,6 +1,9 @@
 (function(){
   'use strict';
 
+  // Progress integrity helpers (assets/academy-progress.js); safe no-op fallback keeps the page working without them.
+  var GA=window.GraczAcademy||{passMark:function(n){return Math.ceil(n*2/3);},refresh:function(){},mark:function(){},explore:function(){},status:function(){}};
+
   var MESSAGES={
     search:{title:'Wyszukiwarka jest w przygotowaniu',text:'Wyszukiwanie w serwisie zostanie uruchomione wraz z kolejnymi funkcjami gracz.pl.',button:'Zamknij'},
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.',button:'Rozumiem'},
@@ -185,10 +188,15 @@
     var next=document.querySelector('[data-gomoku-next]');
     var first=GOMOKU_MODULES.filter(function(k){return !gomokuState[k];})[0];
     if(next)next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz powtarzać dowolny moduł.';
+    GA.refresh();
   }
   function completeGomoku(key){
     if(GOMOKU_MODULES.indexOf(key)<0)return;
     gomokuState[key]=true;saveGomokuProgress(gomokuState);renderGomokuProgress();
+  }
+  function toggleGomoku(key){
+    if(GOMOKU_MODULES.indexOf(key)<0)return;
+    gomokuState[key]=!gomokuState[key];saveGomokuProgress(gomokuState);renderGomokuProgress();
   }
   function gomokuScroll(target){
     if(!target)return;
@@ -200,8 +208,6 @@
   document.addEventListener('click',function(e){
     var hero=e.target.closest('[data-scroll-gomoku-academy]');
     if(hero){e.preventDefault();gomokuScroll(document.getElementById('gomoku-academy'));}
-    var tracked=e.target.closest('[data-track-gomoku]');
-    if(tracked)completeGomoku(tracked.getAttribute('data-track-gomoku'));
     var moduleBtn=e.target.closest('[data-gomoku-module]');
     if(moduleBtn){
       var key=moduleBtn.getAttribute('data-gomoku-module');
@@ -232,8 +238,8 @@
       Array.prototype.forEach.call(threat.querySelectorAll('[data-threat]'),function(b){b.classList.toggle('is-active',b===btn);});
       var d=threatInfo[btn.getAttribute('data-threat')];
       result.innerHTML='<strong>'+d[0]+'</strong><span>'+d[1]+'</span>';
-      completeGomoku('zagrozenia');
     });
+    GA.explore({root:threat,items:'[data-threat]',attr:'data-threat',isDone:function(){return gomokuState.zagrozenia;},done:function(){completeGomoku('zagrozenia');}});
   }
 
   var scenarios=[
@@ -265,8 +271,14 @@
       btn.classList.add(ok?'is-correct':'is-wrong');
       Array.prototype.forEach.call(actions.querySelectorAll('button'),function(b){if(b.getAttribute('data-decision-choice')===s.correct)b.classList.add('is-correct');});
       if(ok){ds++;score.textContent=ds;}
-      feedback.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;next.disabled=false;completeGomoku('atak');
+      feedback.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;next.disabled=false;
+      if(di===scenarios.length-1){
+        var need=GA.passMark(scenarios.length);
+        if(ds>=need)completeGomoku('atak');
+        else feedback.textContent+=' Wynik sesji: '+ds+' / '+scenarios.length+' — do zaliczenia kroku potrzeba co najmniej '+need+'. Zacznij od początku.';
+      }
     });
+    GA.status(decision,function(){return gomokuState.atak?'Krok zaliczony.':'Zaliczenie kroku: ukończ sesję z wynikiem co najmniej '+GA.passMark(scenarios.length)+' z '+scenarios.length+'.';});
     next.addEventListener('click',function(){
       if(di<scenarios.length-1){di++;renderDecision();}
       else{feedback.textContent='Sesja zakończona. Wynik: '+ds+' / '+scenarios.length+'.';next.disabled=true;}
@@ -288,25 +300,13 @@
         przesun:'Nie. Raz położony kamień pozostaje na swoim miejscu do końca partii.'
       };
       feedbackLegal.textContent=messages[key];
-      completeGomoku('ruch');
     });
+    GA.explore({root:legal,items:'[data-legal-choice]',attr:'data-legal-choice',isDone:function(){return gomokuState.ruch;},done:function(){completeGomoku('ruch');}});
   }
 
-  var strategy=document.getElementById('strategia-gomoku');
-  if(strategy && 'IntersectionObserver' in window){
-    var strategyObserver=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){if(entry.isIntersecting){completeGomoku('strategia');strategyObserver.disconnect();}});
-    },{threshold:.35});
-    strategyObserver.observe(strategy);
-  }
-
-  var basics=document.getElementById('zasady');
-  if(basics && 'IntersectionObserver' in window){
-    var basicsObserver=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){if(entry.isIntersecting){completeGomoku('podstawy');basicsObserver.disconnect();}});
-    },{threshold:.3});
-    basicsObserver.observe(basics);
-  }
+  // Reading-only steps have no exercise: scrolling past never completes them; the learner confirms explicitly.
+  GA.mark({sectionId:'zasady',key:'podstawy',label:'Podstawy',isDone:function(){return gomokuState.podstawy;},toggle:function(){toggleGomoku('podstawy');}});
+  GA.mark({sectionId:'strategia-gomoku',key:'strategia',label:'Strategia',isDone:function(){return gomokuState.strategia;},toggle:function(){toggleGomoku('strategia');}});
 
   var quiz=document.querySelector('[data-gomoku-quiz]');
   if(quiz){

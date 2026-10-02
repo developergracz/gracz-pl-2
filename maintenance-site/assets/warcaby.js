@@ -1,6 +1,9 @@
 (function(){
   'use strict';
 
+  // Progress integrity helpers (assets/academy-progress.js); safe no-op fallback keeps the page working without them.
+  var GA=window.GraczAcademy||{passMark:function(n){return Math.ceil(n*2/3);},refresh:function(){},mark:function(){},explore:function(){},status:function(){}};
+
   var MESSAGES={
     search:{title:'Wyszukiwarka jest w przygotowaniu',text:'Wyszukiwanie w serwisie zostanie uruchomione wraz z kolejnymi funkcjami gracz.pl.',button:'Zamknij'},
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.',button:'Rozumiem'},
@@ -155,10 +158,17 @@
     var next=document.querySelector('[data-warcaby-next]');
     var first=WARCABY_MODULES.filter(function(k){return !warcabyState[k];})[0];
     if(next)next.textContent=first?'Następny krok: '+labels[first]:'Ścieżka ukończona — możesz powtarzać dowolny moduł.';
+    GA.refresh();
   }
   function completeWarcaby(key){
     if(WARCABY_MODULES.indexOf(key)<0)return;
     warcabyState[key]=true;
+    saveWarcabyProgress(warcabyState);
+    renderWarcabyProgress();
+  }
+  function toggleWarcaby(key){
+    if(WARCABY_MODULES.indexOf(key)<0)return;
+    warcabyState[key]=!warcabyState[key];
     saveWarcabyProgress(warcabyState);
     renderWarcabyProgress();
   }
@@ -172,9 +182,6 @@
   document.addEventListener('click',function(e){
     var hero=e.target.closest('[data-scroll-warcaby-academy]');
     if(hero){e.preventDefault();warcabyScroll(document.getElementById('warcaby-academy'));}
-
-    var tracked=e.target.closest('[data-track-warcaby]');
-    if(tracked)completeWarcaby(tracked.getAttribute('data-track-warcaby'));
 
     var moduleBtn=e.target.closest('[data-warcaby-module]');
     if(moduleBtn){
@@ -224,8 +231,14 @@
       Array.prototype.forEach.call(actions.querySelectorAll('button'),function(b){if(b.getAttribute('data-capture-choice')===s.correct)b.classList.add('is-correct');});
       if(ok){cs++;score.textContent=cs;}
       feedback.textContent=(ok?'Dobrze. ':'Nie tym razem. ')+s.explain;
-      next.disabled=false;completeWarcaby('bicie');
+      next.disabled=false;
+      if(ci===captureScenarios.length-1){
+        var need=GA.passMark(captureScenarios.length);
+        if(cs>=need)completeWarcaby('bicie');
+        else feedback.textContent+=' Wynik sesji: '+cs+' / '+captureScenarios.length+' — do zaliczenia kroku potrzeba co najmniej '+need+'. Zacznij od początku.';
+      }
     });
+    GA.status(trainer,function(){return warcabyState.bicie?'Krok zaliczony.':'Zaliczenie kroku: ukończ sesję z wynikiem co najmniej '+GA.passMark(captureScenarios.length)+' z '+captureScenarios.length+'.';});
     next.addEventListener('click',function(){
       if(ci<captureScenarios.length-1){ci++;renderCapture();}
       else{feedback.textContent='Sesja zakończona. Wynik: '+cs+' / '+captureScenarios.length+'.';next.disabled=true;}
@@ -257,6 +270,7 @@
       else{completeWarcaby('seria');textSeq.textContent='Moduł ukończony: sekwencję bicia prowadzisz tą samą bierką do końca.';}
     });
     resetSeq.addEventListener('click',function(){sequenceStep=1;renderSequence();});
+    GA.status(seq,function(){return warcabyState.seria?'Krok zaliczony.':'Zaliczenie kroku: przejdź wszystkie trzy kroki sekwencji bicia.';});
   }
 
   var damka=document.querySelector('[data-damka-lab]');
@@ -273,16 +287,8 @@
       Array.prototype.forEach.call(damka.querySelectorAll('[data-damka]'),function(b){b.classList.toggle('is-active',b===btn);});
       var d=info[btn.getAttribute('data-damka')];
       result.innerHTML='<strong>'+d[0]+'</strong><span>'+d[1]+'</span>';
-      completeWarcaby('damka');
     });
-  }
-
-  var strategy=document.getElementById('strategia-warcaby');
-  if(strategy && 'IntersectionObserver' in window){
-    var strategyObserver=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){if(entry.isIntersecting){completeWarcaby('strategia');strategyObserver.disconnect();}});
-    },{threshold:.35});
-    strategyObserver.observe(strategy);
+    GA.explore({root:damka,items:'[data-damka]',attr:'data-damka',isDone:function(){return warcabyState.damka;},done:function(){completeWarcaby('damka');}});
   }
 
   var quiz=document.querySelector('[data-warcaby-quiz]');
@@ -306,14 +312,9 @@
     });
   }
 
-  // Visiting the basics section confirms the first learning module.
-  var basics=document.getElementById('zasady');
-  if(basics && 'IntersectionObserver' in window){
-    var basicsObserver=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){if(entry.isIntersecting){completeWarcaby('podstawy');basicsObserver.disconnect();}});
-    },{threshold:.3});
-    basicsObserver.observe(basics);
-  }
+  // Reading-only steps have no exercise: scrolling past never completes them; the learner confirms explicitly.
+  GA.mark({sectionId:'zasady',key:'podstawy',label:'Podstawy',isDone:function(){return warcabyState.podstawy;},toggle:function(){toggleWarcaby('podstawy');}});
+  GA.mark({sectionId:'strategia-warcaby',key:'strategia',label:'Strategia',isDone:function(){return warcabyState.strategia;},toggle:function(){toggleWarcaby('strategia');}});
 
   var topLinks=Array.prototype.slice.call(document.querySelectorAll('[data-warcaby-section-nav] a[href^="#"]'));
   var sideLinks=Array.prototype.slice.call(document.querySelectorAll('.warcaby-side-nav a[href^="#"]'));
