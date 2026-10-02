@@ -1277,6 +1277,6 @@ main:focus { outline: none; }
     padding-left:calc(24 * var(--u))!important;
   }
   .next-panel{
-    width:calc(610 * var(--u));
+    width:calc(606 * var(--u));
   }
 }
