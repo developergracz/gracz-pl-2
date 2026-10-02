@@ -2757,3 +2757,147 @@ body.homepage-premium-max::after{
     padding:14px;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — FINAL QA R13 */
+/* Final spacing, overflow, accessibility and responsive hardening. */
+.homepage-premium-max{
+  overflow-x:clip;
+}
+
+.homepage-premium-max main{
+  min-width:0;
+}
+
+.homepage-premium-max .academy-showcase{
+  padding-bottom:50px!important;
+}
+
+.homepage-premium-max .knowledge-premium{
+  padding-top:10px!important;
+  padding-bottom:52px!important;
+}
+
+.homepage-premium-max .community-premium{
+  padding-top:6px!important;
+  padding-bottom:58px!important;
+}
+
+.homepage-premium-max .academy-showcase__inner,
+.homepage-premium-max .knowledge-premium__inner,
+.homepage-premium-max .community-premium__inner{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+
+.homepage-premium-max .home-hero-premium__copy,
+.homepage-premium-max .home-hero-premium__hub,
+.homepage-premium-max .academy-tile,
+.homepage-premium-max .academy-tile__body,
+.homepage-premium-max .knowledge-premium__intro,
+.homepage-premium-max .knowledge-premium__library,
+.homepage-premium-max .community-premium__copy,
+.homepage-premium-max .community-premium__roadmap,
+.homepage-premium-max .community-feature{
+  min-width:0;
+}
+
+.homepage-premium-max h1,
+.homepage-premium-max h2,
+.homepage-premium-max h3,
+.homepage-premium-max strong,
+.homepage-premium-max small{
+  overflow-wrap:break-word;
+}
+
+/* Fifth roadmap item spans the row so the 5-card layout does not leave a visual hole. */
+.homepage-premium-max .community-premium__roadmap>.community-feature:nth-of-type(5){
+  grid-column:1/-1;
+  min-height:122px;
+}
+
+/* One interaction contract across the complete homepage. */
+.homepage-premium-max .academy-tile__link,
+.homepage-premium-max .knowledge-card,
+.homepage-premium-max .knowledge-premium__finder>a,
+.homepage-premium-max .community-premium__primary,
+.homepage-premium-max .community-premium__secondary,
+.homepage-premium-max .community-premium__next-card>a{
+  touch-action:manipulation;
+}
+
+.homepage-premium-max .academy-tile__link:focus-visible,
+.homepage-premium-max .knowledge-card:focus-visible,
+.homepage-premium-max .knowledge-premium__finder>a:focus-visible,
+.homepage-premium-max .community-premium__primary:focus-visible,
+.homepage-premium-max .community-premium__secondary:focus-visible,
+.homepage-premium-max .community-premium__next-card>a:focus-visible{
+  outline:2px solid #78e4ca!important;
+  outline-offset:3px!important;
+}
+
+/* Avoid cramped desktop header between tablet and wide desktop. */
+@media(min-width:1180px) and (max-width:1439px){
+  .homepage-premium-max .site-header .home-header-logo{
+    margin-right:24px!important;
+    font-size:36px!important;
+  }
+  .homepage-premium-max .site-header .nav-list{
+    gap:18px!important;
+  }
+  .homepage-premium-max .site-header .header-actions{
+    gap:10px!important;
+  }
+  .homepage-premium-max .site-header .btn--head{
+    width:auto!important;
+    min-width:92px!important;
+    padding-inline:14px!important;
+  }
+}
+
+/* Tablet/mobile: all premium sections share the same page gutters. */
+@media(max-width:1179px){
+  .homepage-premium-max .academy-showcase__inner,
+  .homepage-premium-max .knowledge-premium__inner,
+  .homepage-premium-max .community-premium__inner{
+    width:calc(100% - 32px)!important;
+  }
+}
+
+@media(max-width:760px){
+  .homepage-premium-max .academy-showcase{
+    padding-bottom:38px!important;
+  }
+  .homepage-premium-max .knowledge-premium{
+    padding-top:4px!important;
+    padding-bottom:40px!important;
+  }
+  .homepage-premium-max .community-premium{
+    padding-top:2px!important;
+    padding-bottom:46px!important;
+  }
+  .homepage-premium-max .community-premium__roadmap>.community-feature:nth-of-type(5){
+    grid-column:1;
+    min-height:0;
+  }
+}
+
+@media(max-width:560px){
+  .homepage-premium-max .academy-showcase__inner,
+  .homepage-premium-max .knowledge-premium__inner,
+  .homepage-premium-max .community-premium__inner{
+    width:calc(100% - 20px)!important;
+  }
+}
+
+/* Respect reduced-motion preference in every new Premium section. */
+@media(prefers-reduced-motion:reduce){
+  .homepage-premium-max .academy-tile,
+  .homepage-premium-max .academy-tile__cta b,
+  .homepage-premium-max .knowledge-card,
+  .homepage-premium-max .home-hub-card,
+  .homepage-premium-max .home-hero-premium__primary,
+  .homepage-premium-max .home-hero-premium__secondary{
+    transition:none!important;
+    transform:none!important;
+  }
+}
