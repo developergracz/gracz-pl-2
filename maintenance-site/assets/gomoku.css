@@ -422,3 +422,24 @@ linear-gradient(135deg,#d5c38e,#bca86f);border:3px solid #2d2412;box-shadow:inse
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* GLOBAL SUBPAGE BACKGROUND — match Poradniki R1 */
+html,
+body{background:#050706!important}
+body::before{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-2!important;
+  background:url("/assets/img/hero-bg.webp") center/cover no-repeat!important;
+  filter:saturate(1.25) brightness(.9)!important;
+}
+body::after{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-1!important;
+  background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.22) 34%,rgba(0,0,0,.4))!important;
+  pointer-events:none!important;
+}
