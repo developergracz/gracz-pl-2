@@ -557,3 +557,38 @@
     flex-direction:column;
   }
 }
+
+
+/* O gracz.pl PREMIUM R2 imagery polish */
+.about-premium-card--games{
+  background:
+    linear-gradient(90deg,rgba(4,13,10,.98) 0 58%,rgba(4,13,10,.72) 78%,rgba(4,13,10,.38) 100%),
+    url("/assets/img/tile-games.webp") right 18px center/42% auto no-repeat!important;
+}
+.about-premium-card--knowledge{
+  background:
+    linear-gradient(90deg,rgba(4,13,10,.98) 0 58%,rgba(4,13,10,.72) 78%,rgba(4,13,10,.38) 100%),
+    url("/assets/img/tile-guides.webp") right 18px center/42% auto no-repeat!important;
+}
+.about-premium-card--community{
+  background:
+    linear-gradient(90deg,rgba(4,13,10,.98) 0 58%,rgba(4,13,10,.72) 78%,rgba(4,13,10,.38) 100%),
+    url("/assets/img/tile-about.webp") right 18px center/42% auto no-repeat!important;
+}
+.about-premium-card h3,
+.about-premium-card p,
+.about-premium-card a,
+.about-premium-card button,
+.about-premium-card .about-kicker,
+.about-premium-card .about-premium-icon{
+  position:relative;
+  z-index:1;
+}
+@media(max-width:980px){
+  .about-premium-card--games,
+  .about-premium-card--knowledge,
+  .about-premium-card--community{
+    background:
+      linear-gradient(90deg,rgba(4,13,10,.98) 0 68%,rgba(4,13,10,.64) 88%,rgba(4,13,10,.28) 100%)!important;
+  }
+}
