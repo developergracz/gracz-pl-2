@@ -142,7 +142,10 @@
         var target=document.querySelector(href);
         if(target){
           e.preventDefault();
-          if(target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'start'});
+          if(target.scrollIntoView){
+            try{target.scrollIntoView({behavior:'smooth',block:'start'});}
+            catch(err){target.scrollIntoView(true);}
+          }
         }
       }
       shut();
@@ -185,7 +188,7 @@
   }
 
   buildMobile();
-  window.addEventListener('scroll',requestSync,{passive:true});
+  window.addEventListener('scroll',requestSync,false);
   window.addEventListener('resize',requestSync);
   window.addEventListener('orientationchange',requestSync);
   window.addEventListener('load',requestSync);
