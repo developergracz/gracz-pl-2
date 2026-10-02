@@ -27,20 +27,24 @@
     return width>=1181;
   }
 
+  function documentProgress(){
+    var doc=document.documentElement;
+    var body=document.body;
+    var full=Math.max(
+      doc?doc.scrollHeight:0,
+      body?body.scrollHeight:0,
+      doc?doc.offsetHeight:0,
+      body?body.offsetHeight:0
+    );
+    var maxPage=Math.max(1,full-vh());
+    return clamp(pageY()/maxPage,0,1);
+  }
+
   function syncRail(rail){
     if(!enabled(rail)){rail.scrollTop=0;return}
     var maxScroll=Math.max(0,rail.scrollHeight-rail.clientHeight);
     if(maxScroll<2){rail.scrollTop=0;return}
-
-    var scope=rail.parentElement||document.documentElement;
-    var rect=scope.getBoundingClientRect();
-    var scopeTop=pageY()+rect.top;
-    var stickyTop=96;
-    var usable=Math.max(1,vh()-stickyTop-20);
-    var start=scopeTop-stickyTop;
-    var finish=Math.max(start+1,scopeTop+scope.scrollHeight-usable);
-    var progress=clamp((pageY()-start)/(finish-start),0,1);
-    rail.scrollTop=Math.round(progress*maxScroll);
+    rail.scrollTop=Math.round(documentProgress()*maxScroll);
   }
 
   var primary=null;
