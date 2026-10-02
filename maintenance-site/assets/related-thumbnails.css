@@ -189,3 +189,34 @@
 .related-image--gomoku{
   box-shadow:none!important;
 }
+
+
+/* Related thumbnails R3 — approved category tiles */
+.related-image--gry-karciane{
+  background-image:url("/assets/img/tile-cards.webp")!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-color:#07110c!important;
+}
+.related-image--poradniki{
+  background-image:url("/assets/img/tile-guides.webp")!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-color:#07110c!important;
+}
+.related-image--gry{
+  background-image:url("/assets/img/tile-games.webp")!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-color:#07110c!important;
+}
+.related-image--o-gracz-pl{
+  background-image:url("/assets/img/tile-about.webp")!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-color:#07110c!important;
+}
