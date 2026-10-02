@@ -912,12 +912,12 @@ body::after{
   box-shadow:none!important;
   transition:color .18s ease,transform .18s ease!important;
 }
-.page-shell .guide-text-link:hover,
-.page-shell .guide-text-link:focus-visible{
+.page-shell .guide-text-link:hover{
   color:#8ce8d7!important;
   transform:translateX(2px)!important;
   outline:none!important;
 }
+/* R20 — focus never moves the element (hover-only nudge) */
 @media(max-width:560px){
   .page-shell .guide-actions{
     align-items:flex-start!important;
