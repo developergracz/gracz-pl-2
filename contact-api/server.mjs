@@ -85,7 +85,7 @@ createServer(async (req, res) => {
       body: JSON.stringify({
         from: EMAIL_FROM,
         to: [CONTACT_TO],
-        subject: "[gracz.pl] " + payload.category + " — " + payload.subject,
+        subject: "gracz.pl " + payload.category + " — " + payload.subject,
         text,
       }),
       signal: AbortSignal.timeout(10_000),
