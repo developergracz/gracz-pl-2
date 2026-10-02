@@ -1900,3 +1900,26 @@ body.homepage-premium-max::after{
     margin-left:auto;
   }
 }
+
+
+/* HOMEPAGE PREMIUM MAX — HEADER LOGO RESTORE / HERO BRAND REMOVE R7 */
+.homepage-premium-max .site-header .main-nav{
+  margin-left:calc(38 * var(--u))!important;
+}
+
+.homepage-premium-max .site-header .menu-panel{
+  flex:1 1 auto;
+}
+
+.home-hero-premium--dense .home-hero-premium__title{
+  padding-top:2px;
+}
+
+@media(max-width:1179px){
+  .homepage-premium-max .site-header .search-btn--mobile{
+    margin-left:auto;
+  }
+  .homepage-premium-max .site-header .main-nav{
+    margin-left:0!important;
+  }
+}
