@@ -43,7 +43,7 @@
   <link rel="preload" href="/assets/img/hero-bg.webp" as="image" type="image/webp">
   <link rel="preload" href="/assets/img/next-devices.webp" as="image" type="image/webp">
   <link rel="stylesheet" href="/assets/home.css?v=hero-frame-align-r10">
-  <link rel="stylesheet" href="/assets/home-premium-max.css?v=r1">
+  <link rel="stylesheet" href="/assets/home-premium-max.css?v=hero-premium-r2">
   <script src="/assets/home.js" defer></script>
 
   <script type="application/ld+json">
@@ -191,67 +191,68 @@
   </header>
 
   <main id="tresc" tabindex="-1">
-    <section class="hero" aria-label="gracz.pl w nowej odsłonie">
-      <div class="hero-grid">
+    <section class="hero home-hero-premium" aria-labelledby="hero-title">
+      <div class="hero-grid home-hero-premium__grid">
+        <div class="home-hero-premium__copy">
+          <p class="home-hero-premium__eyebrow"><span aria-hidden="true"></span>Portal gracza · Premium Experience</p>
+          <h1 id="hero-title" class="home-hero-premium__title">
+            <span class="home-hero-premium__brand">gracz<span>.pl</span></span>
+            <span>Graj. Ucz się. Rywalizuj.</span>
+          </h1>
+          <p class="home-hero-premium__lead">Jedno miejsce dla gier, nauki i społeczności graczy. Poker Academy, Tysiąc Academy, Warcaby Academy i Gomoku Academy łączą zasady, interaktywny trening i rozwój umiejętności w jednym spójnym serwisie.</p>
 
-        <article class="panel status-panel" aria-labelledby="hero-title">
-          <p class="pill-live"><span class="dot" aria-hidden="true"></span>Trwa modernizacja serwisu</p>
-          <h1 id="hero-title" class="hero-title"><span class="hero-logo">gracz<span>.pl</span></span> <span class="hero-sub">wraca w&nbsp;nowej odsłonie.</span></h1>
-          <p class="hero-lead">Tworzymy nową odsłonę gracz.pl — rozwijamy gry online,<br class="br-d"> dopracowujemy rozgrywkę i&nbsp;budujemy portal dla graczy.<br class="br-d"> Wracamy z&nbsp;bardziej gamingowym, nowoczesnym serwisem.</p>
+          <div class="home-hero-premium__actions">
+            <a class="home-hero-premium__primary" href="/gry/">
+              <svg aria-hidden="true"><use href="#i-gamepad"/></svg>
+              <span>Zobacz gry<small>4 główne tytuły i Academy</small></span>
+            </a>
+            <a class="home-hero-premium__secondary" href="/poradniki/">
+              <svg aria-hidden="true"><use href="#i-cap"/></svg>
+              <span>Poznaj Academy<small>nauka i poradniki krok po kroku</small></span>
+            </a>
+          </div>
 
-          <ul class="status-list">
-            <li>
-              <a class="status-card status-card--gold" href="/o-gracz-pl/">
-                <img src="/assets/img/icon-shield.webp" width="160" height="160" alt="">
-                <span class="status-text">
-                  <span class="status-title">Bezpieczeństwo</span>
-                  <span class="status-desc">Porządkujemy architekturę,<br class="br-d"> uprawnienia i&nbsp;proces wdrożeniowy.</span>
-                </span>
-              </a>
-            </li>
-            <li>
-              <a class="status-card status-card--green" href="/gry/">
-                <img src="/assets/img/icon-chips.webp" width="160" height="160" alt="">
-                <span class="status-text">
-                  <span class="status-title">Gry online</span>
-                  <span class="status-desc">Przygotowujemy stabilny fundament<br class="br-d"> dla rozgrywek i&nbsp;funkcji społecznościowych.</span>
-                </span>
-              </a>
-            </li>
-            <li>
-              <a class="status-card status-card--red" href="/o-gracz-pl/">
-                <img src="/assets/img/icon-devices.webp" width="160" height="160" alt="">
-                <span class="status-text">
-                  <span class="status-title">Nowy gracz.pl</span>
-                  <span class="status-desc">Odświeżamy serwis tak, aby był wygodny<br class="br-d"> na komputerach i&nbsp;urządzeniach mobilnych.</span>
-                </span>
-              </a>
-            </li>
+          <ul class="home-hero-premium__features" aria-label="Najważniejsze elementy gracz.pl">
+            <li><strong>4</strong><span>gry główne</span></li>
+            <li><strong>Academy</strong><span>interaktywna nauka</span></li>
+            <li><strong>Poradniki</strong><span>zasady i wiedza</span></li>
+            <li><strong>Multiplayer</strong><span>w przygotowaniu</span></li>
           </ul>
+        </div>
 
-          <div class="status-foot">
-            <p class="thanks">Dziękujemy za cierpliwość.</p>
-            <p class="soon-line" aria-hidden="true"><span class="ornament"><i></i><b></b><i></i></span>Wkrótce wracamy</p>
+        <div class="home-hero-premium__visual" aria-label="Główne gry gracz.pl">
+          <div class="home-hero-premium__glow" aria-hidden="true"></div>
+          <div class="home-hero-premium__center" aria-hidden="true">
+            <span class="home-hero-premium__center-logo">gracz<span>.pl</span></span>
+            <small>Play · Learn · Compete</small>
           </div>
-        </article>
 
-        <article class="panel next-panel" aria-labelledby="next-title">
-          <div class="next-copy">
-            <p class="next-brand" aria-hidden="true">gracz<span>.NEXT</span></p>
-            <h2 id="next-title" class="next-title"><span class="sr-only">gracz.NEXT — </span><span class="next-title-a">Nowa generacja</span> <span class="next-title-b">rozgrywki online</span></h2>
-            <p class="next-lead">Jedna platforma, wiele gier,<br class="br-d"> wspólny profil gracza<br class="br-d"> i&nbsp;nowoczesne funkcje<br class="br-d"> społecznościowe.</p>
-            <ul class="perks">
-              <li><svg aria-hidden="true"><use href="#i-gamepad"/></svg>Różne gry w jednym miejscu</li>
-              <li><svg aria-hidden="true"><use href="#i-people"/></svg>Rozgrywka multiplayer</li>
-              <li><svg aria-hidden="true"><use href="#i-bars"/></svg>Rankingi i statystyki</li>
-              <li><svg aria-hidden="true"><use href="#i-cap"/></svg>Poradniki i wiedza</li>
-              <li><svg aria-hidden="true"><use href="#i-shield"/></svg>Bezpieczne i stabilne środowisko</li>
-            </ul>
-            <button class="btn btn--outline btn--next" type="button" data-modal="next">Zobacz gracz next <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
-          </div>
-          <img class="next-devices" src="/assets/img/next-devices.webp" width="846" height="984" alt="Podgląd gracz.NEXT na laptopie i telefonie: Poker, Tysiąc, Warcaby i Gomoku" fetchpriority="high">
-        </article>
+          <a class="home-game-card home-game-card--poker" href="/gry/poker-treningowy/">
+            <span class="home-game-card__art" aria-hidden="true"><b>A</b><i>♠</i></span>
+            <span class="home-game-card__copy"><small>Academy</small><strong>Poker</strong><em>Texas Hold’em · decyzje · układy</em></span>
+            <span class="home-game-card__arrow" aria-hidden="true">→</span>
+          </a>
 
+          <a class="home-game-card home-game-card--tysiac" href="/gry/tysiac/">
+            <span class="home-game-card__art home-game-card__art--red" aria-hidden="true"><b>K</b><i>♥</i></span>
+            <span class="home-game-card__copy"><small>Academy</small><strong>Tysiąc</strong><em>licytacja · meldunki · strategia</em></span>
+            <span class="home-game-card__arrow" aria-hidden="true">→</span>
+          </a>
+
+          <a class="home-game-card home-game-card--warcaby" href="/gry/warcaby/">
+            <span class="home-game-card__board home-game-card__board--checkers" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="home-game-card__copy"><small>Academy</small><strong>Warcaby</strong><em>bicie · damka · taktyka</em></span>
+            <span class="home-game-card__arrow" aria-hidden="true">→</span>
+          </a>
+
+          <a class="home-game-card home-game-card--gomoku" href="/gry/gomoku/">
+            <span class="home-game-card__board home-game-card__board--gomoku" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="home-game-card__copy"><small>Academy</small><strong>Gomoku</strong><em>5 w linii · atak · obrona</em></span>
+            <span class="home-game-card__arrow" aria-hidden="true">→</span>
+          </a>
+
+          <p class="home-hero-premium__status"><span aria-hidden="true"></span>Nowy gracz.pl jest rozwijany etapami</p>
+        </div>
       </div>
     </section>
 
