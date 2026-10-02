@@ -10,7 +10,7 @@
     if(document.querySelector('link[data-contact-modal-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/contact-modal.css?v=r1';
+    link.href='/assets/contact-modal.css?v=r2';
     link.setAttribute('data-contact-modal-style','');
     document.head.appendChild(link);
   }
