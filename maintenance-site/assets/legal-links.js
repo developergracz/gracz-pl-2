@@ -36,6 +36,7 @@
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
+        '<p class="contact-form__privacy"><strong>Dane osobowe:</strong> administratorem danych jest Czesław Socha. Dane z formularza służą do obsługi zgłoszenia i udzielenia odpowiedzi. <a href="/regulamin/#prywatnosc" target="_blank" rel="noopener">Regulamin i informacje o prywatności</a>.</p>'+
         '<p class="contact-form__privacy"><strong>Bezpieczeństwo:</strong> nie podawaj w wiadomości haseł, numerów dokumentów, danych kart ani innych sekretów.</p>'+
       '</form>'+
     '</div>';
