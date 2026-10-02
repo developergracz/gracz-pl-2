@@ -791,3 +791,39 @@ body::after{
   background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.22) 34%,rgba(0,0,0,.4))!important;
   pointer-events:none!important;
 }
+
+
+/* GLOBAL SUBPAGE TEAL BACKGROUND — exact Poradniki R16 */
+html{
+  background:#041713!important;
+}
+body{
+  background:
+    radial-gradient(circle at 18% 8%,rgba(16,104,91,.16),transparent 30%),
+    radial-gradient(circle at 82% 16%,rgba(9,87,92,.13),transparent 26%),
+    linear-gradient(180deg,#03110e 0%,#041814 42%,#05211c 100%)!important;
+}
+body::before{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-2!important;
+  background:
+    radial-gradient(circle at 16% 10%,rgba(18,120,102,.16),transparent 30%),
+    radial-gradient(circle at 84% 20%,rgba(8,92,104,.12),transparent 27%),
+    linear-gradient(180deg,#03110e 0%,#041914 46%,#05231e 100%)!important;
+  filter:none!important;
+}
+body::after{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-1!important;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.10) 40%,rgba(0,0,0,.20))!important;
+  pointer-events:none!important;
+}
+.page-shell,
+.page-grid{
+  background:transparent!important;
+}
