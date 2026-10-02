@@ -2112,3 +2112,339 @@ body::after{
   .poker-rules-page .quick-card{padding:20px!important}
   .poker-rules-page .rule-section{padding:24px 20px!important}
 }
+
+
+/* Tysiac rules premium architecture R4 */
+.tysiac-rules-page .rules-shell{
+  width:min(1360px,calc(100% - 48px))!important;
+}
+.tysiac-rules-page .rules-header__inner{
+  width:min(1510px,calc(100% - 48px))!important;
+}
+.tysiac-rules-page .rules-page-grid{
+  grid-template-columns:minmax(0,1fr) 300px!important;
+  gap:20px!important;
+}
+
+/* Hero: unified premium teal architecture. */
+.tysiac-rules-page .tysiac-rules-hero{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 310px!important;
+  gap:18px!important;
+  padding:0!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.tysiac-rules-page .tysiac-rules-hero__main{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:338px;
+  padding:30px 32px;
+  border:0!important;
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 82% 12%,rgba(244,198,95,.055),transparent 28%),
+    linear-gradient(90deg,rgba(5,57,47,.98) 0%,rgba(5,55,46,.96) 53%,rgba(4,47,39,.86) 100%);
+  box-shadow:0 20px 44px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.tysiac-rules-page .tysiac-rules-hero__main::before{
+  content:"K♥";
+  position:absolute;
+  right:120px;
+  top:72px;
+  z-index:-2;
+  display:grid;
+  place-items:center;
+  width:112px;
+  height:158px;
+  border-radius:12px;
+  background:linear-gradient(155deg,rgba(255,250,239,.92),rgba(224,213,190,.90));
+  color:#b51425;
+  font:800 32px/1 Georgia,serif;
+  box-shadow:
+    68px 22px 0 -2px rgba(230,220,201,.88),
+    132px 42px 0 -4px rgba(227,217,198,.72),
+    0 18px 42px rgba(0,0,0,.22);
+  transform:rotate(-9deg);
+  opacity:.15;
+}
+.tysiac-rules-page .tysiac-rules-hero__main::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:linear-gradient(90deg,rgba(5,57,47,.98) 0%,rgba(5,55,46,.92) 54%,rgba(5,49,41,.48) 82%,rgba(4,40,33,.20) 100%);
+}
+.tysiac-rules-page .rules-kicker{color:#efc960!important}
+.tysiac-rules-page .rules-hero h1{
+  max-width:700px;
+  color:#f6dfa2!important;
+  font-size:clamp(42px,4.7vw,64px)!important;
+  letter-spacing:-.035em;
+}
+.tysiac-rules-page .rules-lead{
+  max-width:780px;
+  color:#edf4f0!important;
+  line-height:1.58;
+}
+.tysiac-rules-page .rules-facts{
+  margin-top:20px!important;
+  border:0!important;
+  background:transparent!important;
+}
+.tysiac-rules-page .rules-facts li{
+  border-color:rgba(97,215,184,.09)!important;
+}
+.tysiac-rules-page .rules-facts span{color:#75e1c5!important}
+.tysiac-rules-page .rules-note{
+  position:relative;
+  max-width:920px;
+  margin-top:16px!important;
+  padding:13px 15px 13px 50px!important;
+  border:0!important;
+  border-left:0!important;
+  border-radius:12px!important;
+  background:linear-gradient(90deg,rgba(9,91,72,.82),rgba(7,63,52,.72))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+  color:#e6f2ed!important;
+}
+.tysiac-rules-page .rules-note::before{
+  content:"i";
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:rgba(92,225,190,.16);
+  color:#8ce9d1;
+  font-weight:900;
+}
+.tysiac-rules-page .rules-note strong{color:#fff1c4!important}
+.tysiac-rules-page .rules-primary-action,
+.tysiac-rules-page .rules-secondary-action{
+  border:0!important;
+  background:linear-gradient(135deg,#0d6957,#11876f)!important;
+  color:#fff!important;
+  box-shadow:0 10px 22px rgba(0,0,0,.15)!important;
+}
+
+/* Right summary field. */
+.tysiac-rules-page .tysiac-quick-card{
+  align-self:stretch!important;
+  padding:23px 20px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(41,175,141,.13),transparent 38%),
+    linear-gradient(155deg,rgba(7,49,39,.98),rgba(3,26,22,.99))!important;
+  box-shadow:0 20px 44px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.tysiac-rules-page .tysiac-quick-card h2{
+  margin:0 0 14px!important;
+  color:#f5d98e!important;
+  font:800 21px/1.2 var(--display);
+}
+.tysiac-rules-page .tysiac-quick-card div{
+  display:grid!important;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-height:55px;
+  padding:8px 0!important;
+  border:0!important;
+  position:relative;
+}
+.tysiac-rules-page .tysiac-quick-card div+div::after{
+  content:"";
+  position:absolute;
+  left:50px;
+  right:0;
+  top:0;
+  height:1px;
+  background:linear-gradient(90deg,rgba(100,220,190,.10),rgba(100,220,190,.04),transparent);
+}
+.tysiac-rules-page .tysiac-quick-card div::before{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  background:linear-gradient(145deg,rgba(20,123,96,.72),rgba(7,78,63,.78));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+  color:#78e1c4;
+  font-size:18px;
+  font-weight:900;
+}
+.tysiac-rules-page .tysiac-quick-card div:nth-of-type(1)::before{content:"●●";font-size:10px;letter-spacing:-2px}
+.tysiac-rules-page .tysiac-quick-card div:nth-of-type(2)::before{content:"24";font-size:13px}
+.tysiac-rules-page .tysiac-quick-card div:nth-of-type(3)::before{content:"↗"}
+.tysiac-rules-page .tysiac-quick-card div:nth-of-type(4)::before{content:"+10";font-size:12px}
+.tysiac-rules-page .tysiac-quick-card div:nth-of-type(5)::before{content:"★"}
+.tysiac-rules-page .tysiac-quick-card dt{color:#b8c9c2!important;font-size:14px}
+.tysiac-rules-page .tysiac-quick-card dd{color:#fff!important;font-weight:800!important}
+
+/* Content becomes a single premium reading column; side rail is the only navigation. */
+.tysiac-rules-page .rules-layout{
+  display:block!important;
+  margin-top:18px!important;
+}
+.tysiac-rules-page .rules-content{
+  gap:16px!important;
+}
+.tysiac-rules-page .rule-section{
+  padding:28px 30px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 5% 0%,rgba(37,155,126,.07),transparent 34%),
+    linear-gradient(145deg,rgba(7,38,31,.94),rgba(3,22,18,.98))!important;
+  box-shadow:0 16px 36px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+.tysiac-rules-page .rule-section h2{color:#f3d88f!important;font-size:27px!important}
+.tysiac-rules-page .rule-section p,
+.tysiac-rules-page .rule-section li{color:#d4dfda!important}
+.tysiac-rules-page .rule-number{
+  border:0!important;
+  background:rgba(244,198,95,.09)!important;
+  box-shadow:inset 0 0 0 1px rgba(244,198,95,.14)!important;
+  color:#edcf7a!important;
+}
+.tysiac-rules-page .rule-callout,
+.tysiac-rules-page .rule-callout--gold,
+.tysiac-rules-page .rule-callout--red{
+  border:0!important;
+  border-left:3px solid rgba(81,220,181,.72)!important;
+  background:linear-gradient(90deg,rgba(8,74,59,.48),rgba(7,39,32,.28))!important;
+  box-shadow:none!important;
+}
+.tysiac-rules-page .rule-callout--red{
+  border-left-color:rgba(236,102,94,.72)!important;
+  background:linear-gradient(90deg,rgba(94,31,28,.34),rgba(31,20,17,.20))!important;
+}
+.tysiac-rules-page .rule-callout strong,
+.tysiac-rules-page .rule-callout--gold strong{color:#f4dfa8!important}
+.tysiac-rules-page .rule-table-wrap{
+  border:0!important;
+  border-radius:14px!important;
+  background:rgba(4,27,22,.72)!important;
+}
+.tysiac-rules-page .rule-table th{
+  background:rgba(24,92,73,.20)!important;
+  color:#efd589!important;
+}
+.tysiac-rules-page .rule-table th,
+.tysiac-rules-page .rule-table td{border-color:rgba(94,208,177,.08)!important}
+.tysiac-rules-page .faq details{
+  border:0!important;
+  background:rgba(5,29,23,.62)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+
+/* Right rail: one source of navigation + related games. */
+.tysiac-rules-page .rules-side-panel{
+  position:static!important;
+  display:flex!important;
+  flex-direction:column;
+  gap:16px;
+  align-self:start;
+}
+.tysiac-rules-page .rules-side-card{
+  border:0!important;
+  outline:0!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 0 0,rgba(28,156,126,.10),transparent 38%),
+    linear-gradient(145deg,rgba(6,39,31,.97),rgba(3,22,18,.98))!important;
+  box-shadow:0 16px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.tysiac-rules-page .rules-side-eyebrow{color:#63d8bb!important}
+.tysiac-rules-page .rules-side-card h2{color:#f4d994!important}
+.tysiac-rules-page .rules-side-nav>a,
+.tysiac-rules-page .rules-side-related>a{border-color:rgba(116,219,191,.09)!important}
+.tysiac-rules-page .rules-side-nav span{
+  background:rgba(72,198,163,.11)!important;
+  color:#77e0c4!important;
+}
+.tysiac-rules-page .rules-side-related>a:first-of-type .rules-side-thumb{
+  background:radial-gradient(circle at 50% 42%,rgba(18,111,76,.85),rgba(4,38,27,.98))!important;
+}
+.tysiac-rules-page .rules-side-related>a:nth-of-type(2) .rules-side-thumb{
+  background:conic-gradient(#d9b06c 25%,#4d2d1f 0 50%,#d9b06c 0 75%,#4d2d1f 0) 0 0/22px 22px!important;
+}
+.tysiac-rules-page .rules-side-related>a:nth-of-type(3) .rules-side-thumb{
+  background-color:#c89d5b!important;
+  background-image:
+    repeating-linear-gradient(to right,transparent 0 12px,rgba(63,40,20,.72) 12px 13px),
+    repeating-linear-gradient(to bottom,transparent 0 12px,rgba(63,40,20,.72) 12px 13px)!important;
+}
+
+/* Bottom + footer without gold framing. */
+.tysiac-rules-page .rules-bottom{
+  border:0!important;
+  background:linear-gradient(135deg,rgba(7,45,36,.92),rgba(4,25,21,.95))!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.14)!important;
+}
+.tysiac-rules-page .button--gold,
+.tysiac-rules-page .button--outline{
+  border:0!important;
+  background:linear-gradient(135deg,#0d6957,#11876f)!important;
+  color:#fff!important;
+}
+.tysiac-rules-page .site-footer{
+  border-top:0!important;
+  background:linear-gradient(180deg,rgba(3,17,14,.95),rgba(2,10,8,.98))!important;
+}
+.tysiac-rules-page .footer-bottom{border-color:rgba(89,205,174,.08)!important}
+.tysiac-rules-page .footer-news input{
+  border:0!important;
+  box-shadow:inset 0 0 0 1px rgba(90,211,177,.10)!important;
+}
+.tysiac-rules-page .footer-news form button{
+  background:linear-gradient(135deg,#0e6c59,#128871)!important;
+  color:#fff!important;
+}
+
+@media(max-width:1180px){
+  .tysiac-rules-page .rules-shell{
+    width:min(1120px,calc(100% - 32px))!important;
+  }
+  .tysiac-rules-page .rules-page-grid{
+    grid-template-columns:1fr!important;
+  }
+  .tysiac-rules-page .rules-side-panel{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .tysiac-rules-page .rules-side-related{grid-column:1/-1}
+}
+@media(max-width:1000px){
+  .tysiac-rules-page .tysiac-rules-hero{
+    grid-template-columns:1fr!important;
+  }
+  .tysiac-rules-page .tysiac-rules-hero__main{min-height:320px}
+}
+@media(max-width:760px){
+  .tysiac-rules-page .rules-side-panel{grid-template-columns:1fr!important}
+  .tysiac-rules-page .rules-side-related{grid-column:auto}
+}
+@media(max-width:620px){
+  .tysiac-rules-page .rules-shell{width:calc(100% - 20px)!important}
+  .tysiac-rules-page .tysiac-rules-hero__main{
+    min-height:auto;
+    padding:24px 20px!important;
+  }
+  .tysiac-rules-page .rules-hero h1{font-size:42px!important}
+  .tysiac-rules-page .rules-lead{font-size:15px!important}
+  .tysiac-rules-page .tysiac-quick-card{padding:20px!important}
+  .tysiac-rules-page .rule-section{padding:24px 20px!important}
+}
