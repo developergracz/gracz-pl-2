@@ -809,8 +809,11 @@
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
       '<div class="gracz-search__head">'+
-        '<div><span class="gracz-search__brand">gracz<span>.pl</span></span><p>'+(page?'Wyniki wyszukiwania R3':'Inteligentna wyszukiwarka R3')+'</p></div>'+
-        (page?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>':'<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
+        '<div class="gracz-search__head-copy"><span class="gracz-search__brand">gracz<span>.pl</span></span><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
+        '<div class="gracz-search__head-actions">'+
+          '<a class="gracz-search__learn-more" href="/wyszukiwarka/">Poznaj zalety naszej wyszukiwarki</a>'+
+          (page?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>':'<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
+        '</div>'+
       '</div>'+
       '<h1 class="sr-only">'+(page?'Wyniki wyszukiwania gracz.pl':'Wyszukiwarka gracz.pl')+'</h1>'+
       '<div class="gracz-search__box">'+
