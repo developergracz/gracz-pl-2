@@ -118,6 +118,8 @@
   var adaptiveViewportBound=false;
   var adaptiveViewportFrame=0;
   var activePanelResize=null;
+  var forumDialog=null;
+  var forumDialogLastTrigger=null;
 
   function viewportMetrics(){
     var vv=window.visualViewport;
@@ -1131,6 +1133,41 @@
     }
   }
 
+  function ensureForumDialog(){
+    if(forumDialog)return forumDialog;
+    forumDialog=document.createElement('dialog');
+    forumDialog.className='gracz-search-forum-dialog';
+    forumDialog.setAttribute('aria-labelledby','gracz-search-forum-title');
+    forumDialog.innerHTML='<div class="gracz-search-forum-dialog__panel">'+
+      '<span class="gracz-search-forum-dialog__eyebrow">gracz.pl Community</span>'+
+      '<h2 id="gracz-search-forum-title">Forum gracz.pl jest w trakcie budowy</h2>'+
+      '<p>Budujemy profesjonalne forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl. Uruchomimy je po zakończeniu prac integracyjnych.</p>'+
+      '<button type="button" class="gracz-search-forum-dialog__close" data-search-forum-close>Rozumiem</button>'+
+    '</div>';
+    document.body.appendChild(forumDialog);
+    forumDialog.addEventListener('click',function(event){
+      if(event.target===forumDialog||event.target.closest('[data-search-forum-close]'))forumDialog.close();
+    });
+    forumDialog.addEventListener('close',function(){
+      if(forumDialogLastTrigger&&document.contains(forumDialogLastTrigger)){
+        try{forumDialogLastTrigger.focus();}catch(_){}
+      }
+      forumDialogLastTrigger=null;
+    });
+    return forumDialog;
+  }
+
+  function openForumDialog(trigger){
+    var dialog=ensureForumDialog();
+    forumDialogLastTrigger=trigger||document.activeElement;
+    if(typeof dialog.showModal==='function')dialog.showModal();
+    else dialog.setAttribute('open','');
+    window.setTimeout(function(){
+      var close=dialog.querySelector('[data-search-forum-close]');
+      if(close){try{close.focus({preventScroll:true});}catch(_){try{close.focus();}catch(__){}}}
+    },0);
+  }
+
   function bindContext(ctx){
     ctx.input.addEventListener('input',function(){
       ctx.query=ctx.input.value.trim();
@@ -1186,6 +1223,13 @@
 
       if(event.target.closest('[data-search-clear-history]')){
         clearRecent();render(ctx);ctx.input.focus();return;
+      }
+
+      var forumTrigger=event.target.closest('[data-search-forum]');
+      if(forumTrigger){
+        event.preventDefault();
+        openForumDialog(forumTrigger);
+        return;
       }
 
       var resultsWindowButton=event.target.closest('[data-search-results-window]');
@@ -1277,6 +1321,7 @@
             '<span>Społeczność <em>wkrótce</em></span>'+
           '</div>'+
         '</div>'+
+        '<div class="gracz-search__portal-nav-item"><button type="button" data-search-forum aria-haspopup="dialog">Forum</button></div>'+
         '<a href="/o-gracz-pl/">O gracz.pl</a>'+
       '</nav>'+
       '<div class="gracz-search__head">'+
