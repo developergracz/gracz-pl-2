@@ -1043,6 +1043,7 @@
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
       '<nav class="gracz-search__portal-nav" aria-label="Główna nawigacja gracz.pl">'+
+        '<a class="gracz-search__portal-logo" href="/" aria-label="gracz.pl — strona główna"><span>gracz</span><b>.pl</b></a>'+
         '<a class="is-active" href="/">Start</a>'+
         '<div class="gracz-search__portal-nav-item">'+
           '<a href="/gry/">Gry <span aria-hidden="true">⌄</span></a>'+
@@ -1076,7 +1077,7 @@
         '<a href="/o-gracz-pl/">O gracz.pl</a>'+
       '</nav>'+
       '<div class="gracz-search__head">'+
-        '<div class="gracz-search__head-copy"><span class="gracz-search__brand">gracz<span>.pl</span></span><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
+        '<div class="gracz-search__head-copy"><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
         '<div class="gracz-search__head-actions">'+
           '<a class="gracz-search__learn-more" href="/wyszukiwarka/">Poznaj zalety naszej wyszukiwarki</a>'+
           (page
