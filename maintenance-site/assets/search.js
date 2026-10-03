@@ -294,7 +294,7 @@
   function panelResizeBounds(){
     var m=viewportMetrics();
     var gutter=Math.max(8,m.gutter);
-    var maxHeight=Math.max(360,m.height-(2*gutter));
+    var maxHeight=Math.max(240,m.height-(2*gutter));
     var minHeight=Math.min(500,maxHeight);
     return {metrics:m,gutter:gutter,minHeight:minHeight,maxHeight:maxHeight};
   }
@@ -1418,7 +1418,10 @@
     if(typeof ctx.root.showModal==='function')ctx.root.showModal();
     else ctx.root.setAttribute('open','');
     document.body.classList.add('gracz-search-open');
-    window.setTimeout(function(){ctx.input.focus();},0);
+    window.setTimeout(function(){
+      if(ctx.panel)updateResizeAria(ctx,ctx.panel.getBoundingClientRect().height);
+      ctx.input.focus();
+    },0);
   }
 
   function closeModal(){
