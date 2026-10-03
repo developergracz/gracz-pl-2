@@ -186,6 +186,18 @@
     if(ctx.zoomOut)ctx.zoomOut.disabled=value===ZOOM_LEVELS[0];
     if(ctx.zoomIn)ctx.zoomIn.disabled=value===ZOOM_LEVELS[ZOOM_LEVELS.length-1];
     if(ctx.zoomGroup)ctx.zoomGroup.setAttribute('aria-label','Powiększenie widoku wyszukiwarki: '+String(value)+'%');
+    if(ctx.zoomReset)ctx.zoomReset.hidden=value===100;
+    if(ctx.zoomSelector){
+      ctx.zoomSelector.setAttribute('aria-label','Aktualne powiększenie '+String(value)+'%. Wybierz poziom powiększenia');
+      ctx.zoomSelector.setAttribute('title','Wybierz poziom powiększenia');
+    }
+    if(ctx.zoomOptions){
+      ctx.zoomOptions.forEach(function(option){
+        var selected=parseInt(option.getAttribute('data-search-zoom-level')||'0',10)===value;
+        option.classList.toggle('is-active',selected);
+        option.setAttribute('aria-pressed',selected?'true':'false');
+      });
+    }
     if(persist!==false)persistZoom(value);
   }
 
@@ -818,6 +830,12 @@
         changeZoom(ctx,1);return;
       }
 
+      var zoomLevel=event.target.closest('[data-search-zoom-level]');
+      if(zoomLevel){
+        var level=parseInt(zoomLevel.getAttribute('data-search-zoom-level')||'100',10);
+        applyZoom(ctx,level,true);return;
+      }
+
       if(event.target.closest('[data-search-zoom-reset]')){
         applyZoom(ctx,100,true);return;
       }
@@ -866,9 +884,18 @@
           '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
           '<div class="gracz-search__zoom" data-search-zoom-group role="group" aria-label="Powiększenie widoku wyszukiwarki: 100%">'+
             '<button type="button" data-search-zoom-out aria-label="Pomniejsz widok wyszukiwarki" title="Pomniejsz widok">A−</button>'+
-            '<button type="button" class="gracz-search__zoom-value" data-search-zoom-reset aria-label="Przywróć standardowy rozmiar" title="Przywróć 100%"><span data-search-zoom-value>100%</span></button>'+
+            '<div class="gracz-search__zoom-selector">'+
+              '<button type="button" class="gracz-search__zoom-value" data-search-zoom-selector aria-haspopup="true" aria-label="Aktualne powiększenie 100%. Wybierz poziom powiększenia" title="Wybierz poziom powiększenia"><span data-search-zoom-value>100%</span><span class="gracz-search__zoom-caret" aria-hidden="true">⌄</span></button>'+
+              '<div class="gracz-search__zoom-menu" role="menu" aria-label="Poziomy powiększenia">'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="100" aria-pressed="true">100%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="115" aria-pressed="false">115%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="130" aria-pressed="false">130%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="145" aria-pressed="false">145%</button>'+
+              '</div>'+
+            '</div>'+
             '<button type="button" data-search-zoom-in aria-label="Powiększ widok wyszukiwarki" title="Powiększ widok">A+</button>'+
           '</div>'+
+          '<button type="button" class="gracz-search__zoom-reset-note" data-search-zoom-reset hidden>Przywróć 100%</button>'+
         '</div>'+
       '</div>'+
       '<div class="gracz-search__quick" aria-label="Popularne wyszukiwania">'+
@@ -931,6 +958,9 @@
     ctx.zoomOut=root.querySelector('[data-search-zoom-out]');
     ctx.zoomIn=root.querySelector('[data-search-zoom-in]');
     ctx.zoomValue=root.querySelector('[data-search-zoom-value]');
+    ctx.zoomSelector=root.querySelector('[data-search-zoom-selector]');
+    ctx.zoomReset=root.querySelector('[data-search-zoom-reset]');
+    ctx.zoomOptions=Array.prototype.slice.call(root.querySelectorAll('[data-search-zoom-level]'));
     ctx.zoom=readZoom();
     ctx.input.value=ctx.query;
     ctx.input.setAttribute('aria-controls','gracz-search-results');
