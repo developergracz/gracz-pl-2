@@ -80,11 +80,21 @@ body.gracz-search-open{overflow:hidden}
 .gracz-search__box input{
   width:100%;
   min-width:0;
-  border:0;
-  outline:0;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  -webkit-appearance:none;
+  appearance:none;
   background:transparent;
   color:#fff;
   font:600 18px/1.2 OpenSans,Arial,sans-serif;
+}
+.gracz-search__box input:focus,
+.gracz-search__box input:focus-visible,
+.gracz-search__box input:active{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
 }
 .gracz-search__box input::placeholder{color:#839a94}
 .gracz-search__box input::-webkit-search-cancel-button{display:none}
