@@ -6,6 +6,7 @@
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.'},
     register:{title:'Rejestracja nie jest jeszcze aktywna',text:'Możliwość zakładania kont zostanie uruchomiona po zakończeniu przygotowania systemu użytkowników gracz.pl.'},
     community:{title:'Funkcje społecznościowe są w przygotowaniu',text:'Profil gracza, turnieje i pozostałe funkcje społecznościowe zostaną uruchomione w kolejnych etapach.'},
+    forum:{title:'Forum gracz.pl jest w trakcie budowy',text:'Budujemy profesjonalne forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl. Uruchomimy je po zakończeniu prac integracyjnych.'},
     updates:{title:'Aktualności są w przygotowaniu',text:'Sekcję aktualności uruchomimy wraz z kolejnymi publicznymi funkcjami gracz.pl.'},
     newsletter:{title:'Newsletter jest w przygotowaniu',text:'Możliwość zapisania się na informacje o nowych funkcjach gracz.pl uruchomimy w kolejnym etapie.'},
     privacy:{title:'Polityka prywatności',text:'Polityka prywatności jest przygotowywana.'},
