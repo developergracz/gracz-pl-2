@@ -168,6 +168,15 @@ for (const file of allHtmlPages) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r5'), `${rel}: contact modal CSS R5 must be preloaded to prevent flash`);
     requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
   }
+  if (/\/zasady\/index\.html$/i.test(rel)) {
+    requireCheck(html.includes('href="/"'), `${rel}: top navigation Start action missing`);
+    requireCheck(html.includes('href="/gry/"'), `${rel}: top navigation Gry action missing`);
+    requireCheck(html.includes('href="/gry-karciane/"'), `${rel}: top navigation Gry karciane action missing`);
+    requireCheck(html.includes('href="/poradniki/"'), `${rel}: top navigation Poradniki action missing`);
+    requireCheck(html.includes('data-modal="community"'), `${rel}: top navigation Społeczność action missing`);
+    requireCheck(html.includes('data-modal="forum"'), `${rel}: top navigation Forum action missing`);
+    requireCheck(html.includes('href="/o-gracz-pl/"'), `${rel}: top navigation O gracz.pl action missing`);
+  }
 }
 
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
