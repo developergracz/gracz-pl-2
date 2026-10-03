@@ -5,8 +5,9 @@
 Nowa, profesjonalna dokumentacja techniczna projektu **Gracz.pl**, tworzona w ramach audytu, modernizacji i przygotowania architektury V3.
 
 **Rozpoczęcie zapisu repozytoryjnego:** 28.08.2026  
-**Ostatnia synchronizacja indeksu:** 01.09.2026  
-**Aktualny inwentarz:** 190 plików
+**Ostatnia pełna synchronizacja historycznego indeksu V3:** 01.09.2026  
+**Historyczny inwentarz snapshotu:** 190 plików  
+**Nowszy addendum:** SEARCH R4 — 03.10.2026
 
 Bieżący status projektu znajduje się w:
 
@@ -31,6 +32,7 @@ Bieżący status projektu znajduje się w:
 4. `02-BAZA-DANYCH/` — PostgreSQL AS-IS, porównanie i model V3.
 5. `03-MIGRACJA/` — preflight, Gate 12–15, ETAP 4, evidence i runbooki.
 6. `09-DECYZJE-ARCHITEKTONICZNE/` — przyjęte i proponowane ADR dla V3 oraz centralny rejestr review provenance.
+7. `10-AI-I-WYSZUKIWANIE/` — aktywny pakiet projektowy SEARCH R4, RAG, AI Player Assistant i My Trainer.
 
 ## Planowane pakiety po konsolidacji architektury
 
@@ -42,7 +44,7 @@ Numeracja przyszłych folderów nie może kolidować z istniejącym `03-MIGRACJA
 7. `07-INFRASTRUKTURA/` — Render, Cloudflare, deployment i środowiska.
 8. `08-TESTY-I-JAKOSC/` — testy, QA, kryteria odbioru i operacyjne dowody jakości.
 
-Pakiety AI i marketplace nie są obecnie częścią faktycznej struktury. Mogą zostać dodane dopiero po udokumentowanej decyzji architektonicznej.
+Pakiet AI SEARCH R4 został dodany 03.10.2026 po zmaterializowaniu `ADR-V3-014-SEARCH-R4-HYBRID-AI-RAG-PLAYER-ASSISTANT.md`. Ma status `DESIGN COMPLETE / IMPLEMENTATION NOT STARTED / NOT DEPLOYED`. Marketplace pozostaje poza faktyczną strukturą do czasu osobnej decyzji architektonicznej.
 
 ## Bieżący punkt dokumentacyjny
 
@@ -65,3 +67,22 @@ ADR-V3-013 = ACCEPTED / FINAL / NOT IMPLEMENTED / FREEZE-SAFE
 ```
 
 Dokumentacja Gracz.pl V3 jest `COMPLETE / CLOSED`, final documentation closure review ma `PASS`, a architektura 1.0 jest gotowym baseline do implementation planning. 10 technicznych P1 oraz pięć Privacy/Legal P1 pozostają jawnym backlogiem. Otwarte P1 Privacy/Legal blokują `REVIEWED DESIGN` i produkcję, nie kompletność pakietu dokumentacyjnego. `READY FOR IMPLEMENTATION = YES` oznacza gotowość projektu architektury; nie udziela autoryzacji implementacji, migracji ani deploymentu. `PRODUCTION V3 = NO-GO`, `FREEZE = ACTIVE`.
+
+
+## SEARCH R4 — addendum 03.10.2026
+
+Pakiet:
+
+`10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/`
+
+zawiera kompletny baseline projektowy: architekturę, kontrakt RAG/retrieval, kanoniczne źródła i indeksowanie, Player Context, Learning Graph, API i model danych, security/privacy threat model, SLO i koszt, UI/UX/accessibility, roadmap/testy/gates oraz provider abstraction.
+
+```text
+ADR-V3-014 = PROPOSED / DESIGN BASELINE
+SEARCH R4 DOCUMENTATION = COMPLETE
+SEARCH R4 IMPLEMENTATION = NOT STARTED
+MODEL PROVIDER = NOT SELECTED
+SEMANTIC STORE = NOT SELECTED
+AI API KEY = NOT CONFIGURED
+DEPLOYMENT = NOT AUTHORIZED
+```
