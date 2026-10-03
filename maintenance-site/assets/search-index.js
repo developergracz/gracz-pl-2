@@ -214,5 +214,5 @@
   ].forEach(function(x){section('/polityka-prywatnosci/',x[0],x[1],'informacje','Prywatność','',('rodo prywatność dane '+x[1]),null,73);});
 
   window.GRACZ_SEARCH_INDEX=items;
-  window.GRACZ_SEARCH_INDEX_VERSION='R2-MAX-2026-10-03';
+  window.GRACZ_SEARCH_INDEX_VERSION='R3-SMART-2026-10-03';
 })();
