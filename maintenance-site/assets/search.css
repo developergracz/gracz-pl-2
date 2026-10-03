@@ -1747,3 +1747,166 @@ body.gracz-results-window-open{overflow:hidden}
     display:none;
   }
 }
+
+
+/* SEARCH R3 EXTENDED ZOOM + FULL VIEWPORT MODE */
+[data-search-zoom="160"]{
+  --sz-input:26px;
+  --sz-title:22px;
+  --sz-body:17px;
+  --sz-small:14px;
+  --sz-tiny:12.5px;
+  --sz-head:14px;
+  --sz-result-min:96px;
+}
+[data-search-zoom="175"]{
+  --sz-input:28px;
+  --sz-title:24px;
+  --sz-body:18.5px;
+  --sz-small:15px;
+  --sz-tiny:13px;
+  --sz-head:15px;
+  --sz-result-min:106px;
+}
+[data-search-zoom="160"] .gracz-search__result,
+[data-search-zoom="175"] .gracz-search__result{
+  grid-template-columns:50px minmax(0,1fr) 34px;
+  gap:16px;
+}
+[data-search-zoom="160"] .gracz-search__result-desc,
+[data-search-zoom="175"] .gracz-search__result-desc{
+  white-space:normal;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+[data-search-zoom="160"] .gracz-search__result-icon{
+  width:48px;
+  height:48px;
+  font-size:17px;
+}
+[data-search-zoom="175"] .gracz-search__result-icon{
+  width:52px;
+  height:52px;
+  font-size:18px;
+}
+
+/* Scale the whole search panel progressively toward the browser viewport */
+@media(min-width:721px){
+  dialog.gracz-search[data-search-zoom="145"] .gracz-search__panel{
+    width:min(1080px,calc(100vw - 28px));
+    height:calc(100dvh - 30px);
+    max-height:calc(100dvh - 30px);
+    margin:10px auto 0;
+  }
+  dialog.gracz-search[data-search-zoom="160"] .gracz-search__panel{
+    width:min(1220px,calc(100vw - 18px));
+    height:calc(100dvh - 18px);
+    max-height:calc(100dvh - 18px);
+    margin:6px auto 0;
+    border-radius:18px;
+  }
+  dialog.gracz-search[data-search-zoom="175"] .gracz-search__panel{
+    width:100vw;
+    height:100dvh;
+    max-height:100dvh;
+    margin:0;
+    border-radius:0;
+  }
+}
+
+.gracz-search__maximize{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:34px;
+  padding:0 12px;
+  border:1px solid rgba(86,200,193,.24);
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(86,200,193,.12),rgba(42,126,120,.07));
+  color:#b8f0eb;
+  font:800 9px/1.2 OpenSans,Arial,sans-serif;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:.14s ease;
+}
+.gracz-search__maximize span{
+  font-size:14px;
+  line-height:1;
+}
+.gracz-search__maximize:hover,
+.gracz-search__maximize:focus-visible{
+  border-color:rgba(86,200,193,.5);
+  background:rgba(86,200,193,.17);
+  color:#fff;
+  outline:0;
+}
+.gracz-search__maximize[aria-pressed="true"]{
+  background:#56c8c1;
+  border-color:#56c8c1;
+  color:#06211e;
+}
+
+/* One-click full browser-window search mode */
+dialog.gracz-search.is-search-fullscreen .gracz-search__panel{
+  display:flex;
+  flex-direction:column;
+  width:100vw!important;
+  height:100dvh!important;
+  max-width:100vw!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  border-radius:0!important;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__head,
+dialog.gracz-search.is-search-fullscreen .gracz-search__box,
+dialog.gracz-search.is-search-fullscreen .gracz-search__quick,
+dialog.gracz-search.is-search-fullscreen .gracz-search__commands,
+dialog.gracz-search.is-search-fullscreen .gracz-search__recent,
+dialog.gracz-search.is-search-fullscreen .gracz-search__suggestions,
+dialog.gracz-search.is-search-fullscreen .gracz-search__smart,
+dialog.gracz-search.is-search-fullscreen .gracz-search__scope-wrap,
+dialog.gracz-search.is-search-fullscreen .gracz-search__filters,
+dialog.gracz-search.is-search-fullscreen .gracz-search__results-window-bar,
+dialog.gracz-search.is-search-fullscreen .gracz-search__meta,
+dialog.gracz-search.is-search-fullscreen .gracz-search__actions-row,
+dialog.gracz-search.is-search-fullscreen .gracz-search__foot{
+  flex:0 0 auto;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__results{
+  flex:1 1 auto;
+  min-height:120px!important;
+  max-height:none!important;
+  overflow:auto!important;
+}
+
+/* Extended zoom menu remains usable with all six levels */
+.gracz-search__zoom-menu{
+  min-width:292px;
+}
+[data-search-zoom="160"] .gracz-search__zoom-value,
+[data-search-zoom="175"] .gracz-search__zoom-value{
+  border-color:rgba(86,200,193,.42);
+  color:#c8fffa;
+}
+@media(max-width:860px){
+  .gracz-search__maximize{
+    min-width:36px;
+    padding:0 9px;
+    font-size:0;
+  }
+  .gracz-search__maximize span{
+    font-size:16px;
+  }
+}
+@media(max-width:720px){
+  .gracz-search__maximize{
+    display:none;
+  }
+  .gracz-search__zoom-menu{
+    min-width:248px;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    flex-wrap:wrap;
+  }
+}
