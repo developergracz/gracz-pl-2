@@ -1,56 +1,15 @@
 (function(){
   'use strict';
 
-  if (window.GraczSearch) return;
+  if(window.GraczSearch)return;
 
-  var ITEMS = [
-    {title:'gracz.pl — strona główna',url:'/',category:'informacje',type:'Start',description:'Gry online, Academy, wiedza i rozwijana społeczność graczy.',keywords:'gracz portal start strona glowna gry online academy wiedza spolecznosc',priority:100},
-    {title:'Gry online',url:'/gry/',category:'gry',type:'Gry',description:'Poker, Tysiąc, Warcaby i Gomoku w jednym miejscu.',keywords:'gry wszystkie gry online poker tysiac warcaby gomoku',priority:98},
-    {title:'Gry karciane',url:'/gry-karciane/',category:'gry',type:'Gry karciane',description:'Poker treningowy, Tysiąc i materiały do nauki gier karcianych.',keywords:'gry karciane karty poker tysiac texas holdem',priority:96},
+  var INDEX=(window.GRACZ_SEARCH_INDEX||[]).slice();
+  var RECENT_KEY='graczSearchRecentR2';
+  var MAX_RECENT=8;
+  var MODAL_LIMIT=14;
+  var PAGE_LIMIT=60;
 
-    {title:'Poker Academy',url:'/gry/poker-treningowy/',category:'academy',type:'Academy',description:'Texas Hold’em: zasady, pozycje, układy, pot odds, quizy i trening decyzji.',keywords:'poker academy texas holdem hold em karty pozycja blindy pot odds quiz strategia',priority:100},
-    {title:'Zasady Texas Hold’em',url:'/gry/poker-treningowy/zasady/',category:'zasady',type:'Zasady',description:'Blindy, preflop, flop, turn, river, showdown, all-in i pule boczne.',keywords:'poker texas holdem zasady preflop flop turn river showdown all in blindy',priority:98},
-    {title:'Ranking układów pokerowych',url:'/gry/poker-treningowy/#ranking-ukladow',category:'academy',type:'Poker',description:'Poznaj kolejność układów w Texas Hold’em.',keywords:'poker układy uklady ranking royal flush kareta full kolor strit para',priority:90},
-    {title:'Pozycje, button i blindy',url:'/gry/poker-treningowy/#pozycje-poker',category:'academy',type:'Poker',description:'Jak pozycja przy stole wpływa na decyzje w pokerze.',keywords:'poker pozycja button dealer small blind big blind blindy',priority:88},
-    {title:'Kalkulator pot odds',url:'/gry/poker-treningowy/#pot-odds',category:'academy',type:'Poker',description:'Ćwicz ocenę opłacalności sprawdzenia na podstawie pot odds.',keywords:'poker pot odds matematyka szanse pula call kalkulator',priority:88},
-    {title:'Trener decyzji pokerowych',url:'/gry/poker-treningowy/#arena-decyzji',category:'academy',type:'Poker',description:'Podejmij decyzję i zobacz wyjaśnienie.',keywords:'poker trening decyzja fold call raise check trener',priority:86},
-
-    {title:'Tysiąc Academy',url:'/gry/tysiac/',category:'academy',type:'Academy',description:'Licytacja, musik, meldunki, atuty, punktacja, quiz i trening decyzji.',keywords:'tysiac 1000 academy karty licytacja musik meldunki atut punktacja',priority:100},
-    {title:'Zasady gry w Tysiąca',url:'/gry/tysiac/zasady/',category:'zasady',type:'Zasady',description:'Talia 24 kart, licytacja 100–360, musik, meldunki, atuty i punktacja.',keywords:'tysiac 1000 zasady talia 24 licytacja musik meldunki atuty punktacja',priority:98},
-    {title:'Licytacja w Tysiącu',url:'/gry/tysiac/#licytacja-tysiac',category:'academy',type:'Tysiąc',description:'Zasady licytacji i podejmowanie świadomych decyzji.',keywords:'tysiac licytacja kontrakt 100 120 360 przebicie',priority:88},
-    {title:'Meldunki i atut w Tysiącu',url:'/gry/tysiac/#meldunki-atut',category:'academy',type:'Tysiąc',description:'Wartości meldunków i ustanawianie atutu.',keywords:'tysiac meldunek meldunki atut dama krol pik kier karo trefl',priority:88},
-    {title:'Punktacja w Tysiącu',url:'/gry/tysiac/#punktacja-koniec',category:'academy',type:'Tysiąc',description:'Jak liczyć wynik rozdania i zakończenie gry.',keywords:'tysiac punktacja punkty wynik 1000 beczka',priority:86},
-
-    {title:'Warcaby Academy',url:'/gry/warcaby/',category:'academy',type:'Academy',description:'Ruchy, obowiązkowe bicie, wielokrotne bicie, damka i strategia.',keywords:'warcaby academy plansza 8x8 bicie damka pionki strategia',priority:100},
-    {title:'Zasady gry w Warcaby 8×8',url:'/gry/warcaby/zasady/',category:'zasady',type:'Zasady',description:'Ustawienie pionków, ruch, bicie, damka, zwycięstwo i remis.',keywords:'warcaby zasady 8x8 pionki ruch bicie damka remis',priority:98},
-    {title:'Bicie w Warcabach',url:'/gry/warcaby/zasady/#bicie',category:'zasady',type:'Warcaby',description:'Obowiązkowe bicie pionków przeciwnika.',keywords:'warcaby bicie obowiązkowe skok pionek',priority:87},
-    {title:'Wielokrotne bicie',url:'/gry/warcaby/zasady/#wielokrotne',category:'zasady',type:'Warcaby',description:'Kiedy jedna tura obejmuje kilka kolejnych bić.',keywords:'warcaby wielokrotne bicie seria skoki',priority:86},
-    {title:'Damka — ruch i bicie',url:'/gry/warcaby/zasady/#damka',category:'zasady',type:'Warcaby',description:'Awans pionka oraz zasady ruchu i bicia damką.',keywords:'warcaby damka awans ruch bicie',priority:86},
-
-    {title:'Gomoku Academy',url:'/gry/gomoku/',category:'academy',type:'Academy',description:'Plansza 15×15, pięć w linii, atak, obrona, strategia i quiz.',keywords:'gomoku academy 15x15 pięć w linii piec kamienie atak obrona strategia',priority:100},
-    {title:'Zasady Gomoku 15×15',url:'/gry/gomoku/zasady/',category:'zasady',type:'Zasady',description:'Czarne zaczynają, jeden kamień na turę i zwycięskie pięć w linii.',keywords:'gomoku zasady 15x15 czarne zaczynają kamien ruch pięć w linii remis',priority:98},
-    {title:'Atakować czy bronić w Gomoku?',url:'/gry/gomoku/#attack-defense',category:'academy',type:'Gomoku',description:'Trening rozpoznawania sytuacji ataku i obrony.',keywords:'gomoku atak obrona zagrozenie strategia trening',priority:87},
-    {title:'Legalny ruch w Gomoku',url:'/gry/gomoku/#legal-move-lab',category:'academy',type:'Gomoku',description:'Sprawdź, gdzie wolno położyć kamień.',keywords:'gomoku legalny ruch kamien pole plansza',priority:85},
-
-    {title:'Poradniki',url:'/poradniki/',category:'poradniki',type:'Poradniki',description:'Centrum wiedzy: Poker, Tysiąc, Warcaby i Gomoku.',keywords:'poradnik poradniki wiedza nauka strategia poker tysiac warcaby gomoku',priority:96},
-    {title:'Ścieżki nauki',url:'/poradniki/#sciezki-nauki',category:'poradniki',type:'Poradniki',description:'Od podstaw do świadomej gry — uporządkowane ścieżki nauki.',keywords:'poradniki nauka ścieżka sciezka podstawy zaawansowane',priority:86},
-    {title:'Najczęstsze błędy graczy',url:'/poradniki/#bledy',category:'poradniki',type:'Poradniki',description:'Ucz się nie tylko co robić, ale też czego unikać.',keywords:'poradniki błędy bledy graczy strategia nauka',priority:82},
-    {title:'Słownik pojęć',url:'/poradniki/#slownik',category:'poradniki',type:'Poradniki',description:'Najważniejsze pojęcia związane z grami i nauką.',keywords:'slownik słownik pojęcia pojecia terminologia',priority:80},
-
-    {title:'O gracz.pl',url:'/o-gracz-pl/',category:'informacje',type:'Informacje',description:'Poznaj ideę i kierunek rozwoju portalu gracz.pl.',keywords:'o gracz pl informacje portal projekt misja rozwój rozwoj',priority:88},
-    {title:'Regulamin serwisu',url:'/regulamin/',category:'informacje',type:'Dokument',description:'Zasady korzystania z gracz.pl, kont, gier, społeczności i fair play.',keywords:'regulamin zasady serwis prawo konto fair play reklamacje moderacja',priority:86},
-    {title:'Konto i rejestracja — Regulamin',url:'/regulamin/#konto',category:'informacje',type:'Regulamin',description:'Zasady dotyczące kont użytkowników i rejestracji.',keywords:'regulamin konto rejestracja login haslo hasło',priority:77},
-    {title:'Fair play, boty i automatyzacja',url:'/regulamin/#fair-play',category:'informacje',type:'Regulamin',description:'Zasady fair play i niedozwolonej automatyzacji.',keywords:'fair play bot boty automat automatyzacja oszustwa',priority:76},
-    {title:'Reklamacje i zgłoszenia',url:'/regulamin/#reklamacje',category:'informacje',type:'Regulamin',description:'Informacje o reklamacjach i obsłudze zgłoszeń.',keywords:'reklamacja reklamacje zgłoszenie zgloszenie problem',priority:75},
-
-    {title:'Polityka prywatności',url:'/polityka-prywatnosci/',category:'informacje',type:'Prywatność',description:'RODO, dane osobowe, cookies, localStorage, Render, Resend i bezpieczeństwo.',keywords:'polityka prywatności prywatnosc rodo dane osobowe cookies localstorage render resend bezpieczeństwo',priority:92},
-    {title:'Formularz kontaktowy i dane osobowe',url:'/polityka-prywatnosci/#kontakt',category:'informacje',type:'Prywatność',description:'Jak przetwarzane są dane przesłane przez formularz kontaktowy.',keywords:'rodo prywatność formularz kontakt dane email wiadomość resend render',priority:84},
-    {title:'Cookies i localStorage',url:'/polityka-prywatnosci/#cookies',category:'informacje',type:'Prywatność',description:'Informacje o pamięci przeglądarki i technologiach podobnych.',keywords:'cookies ciasteczka localstorage sessionstorage pamięć przeglądarki',priority:82},
-    {title:'Prawa użytkownika — RODO',url:'/polityka-prywatnosci/#prawa',category:'informacje',type:'Prywatność',description:'Dostęp, sprostowanie, usunięcie, ograniczenie, sprzeciw i przenoszenie danych.',keywords:'rodo prawa dostęp dostep usunięcie usuniecie sprostowanie sprzeciw przenoszenie',priority:82},
-    {title:'Kontakt w sprawach RODO',url:'/polityka-prywatnosci/#kontakt-rodo',category:'informacje',type:'Prywatność',description:'Kanał kontaktowy w sprawach prywatności i ochrony danych.',keywords:'rodo kontakt prywatność prywatnosc dane administrator email',priority:80}
-  ];
-
-  var FILTERS = [
+  var FILTERS=[
     {key:'all',label:'Wszystko'},
     {key:'gry',label:'Gry'},
     {key:'academy',label:'Academy'},
@@ -59,25 +18,63 @@
     {key:'informacje',label:'Informacje'}
   ];
 
-  var SYNONYMS = {
+  var COMMANDS={
+    '@poker':{scope:'poker',label:'Poker'},
+    '@tysiac':{scope:'tysiac',label:'Tysiąc'},
+    '@1000':{scope:'tysiac',label:'Tysiąc'},
+    '@warcaby':{scope:'warcaby',label:'Warcaby'},
+    '@gomoku':{scope:'gomoku',label:'Gomoku'},
+    '@gry':{filter:'gry',label:'Gry'},
+    '@academy':{filter:'academy',label:'Academy'},
+    '@zasady':{filter:'zasady',label:'Zasady'},
+    '@poradniki':{filter:'poradniki',label:'Poradniki'},
+    '@rodo':{filter:'informacje',inject:'rodo',label:'RODO'},
+    '@regulamin':{filter:'informacje',inject:'regulamin',label:'Regulamin'}
+  };
+
+  var SYNONYMS={
     'poker':['texas','holdem','hold em','karty'],
     'texas':['poker','holdem'],
     'holdem':['poker','texas'],
+    'hold':['poker','texas'],
     'tysiac':['1000','tysiąc'],
     '1000':['tysiac','tysiąc'],
     'warcaby':['checkers','damka','pionki'],
+    'checkers':['warcaby'],
     'gomoku':['piec w linii','pięć w linii','kamienie'],
     'rodo':['prywatnosc','prywatność','dane osobowe'],
     'prywatnosc':['rodo','dane osobowe','cookies'],
+    'cookies':['ciasteczka','localstorage','prywatnosc'],
     'login':['konto','logowanie'],
     'logowanie':['konto','login'],
     'konto':['rejestracja','login','logowanie'],
-    'zasady':['regulamin','jak grac','jak grać'],
+    'zasady':['jak grac','jak grać','reguły','reguly'],
     'poradnik':['poradniki','nauka','strategia'],
-    'academy':['nauka','trening','quiz']
+    'poradniki':['poradnik','nauka','strategia'],
+    'academy':['nauka','trening','quiz'],
+    'meldunek':['meldunki','atut'],
+    'meldunki':['meldunek','atut'],
+    'damka':['warcaby','awans'],
+    'pot':['odds','poker','matematyka']
   };
 
-  var state={dialog:null,input:null,results:null,status:null,filter:'all',query:'',active:-1,lastTrigger:null};
+  var STOPWORDS={
+    'a':1,'aby':1,'albo':1,'ale':1,'bo':1,'by':1,'czy':1,'co':1,'do':1,'dla':1,'gdzie':1,'i':1,
+    'jak':1,'jaka':1,'jakie':1,'kiedy':1,'ktory':1,'która':1,'ktore':1,'na':1,'o':1,'od':1,'po':1,
+    'się':1,'sie':1,'to':1,'w':1,'we':1,'z':1,'za':1,'ze':1,'że':1,'jest':1,'są':1,'sa':1,'mogę':1,'moge':1
+  };
+
+  var CANONICAL=[
+    'poker','texas','holdem','tysiac','warcaby','gomoku','academy','zasady','poradniki','rodo','regulamin',
+    'prywatnosc','cookies','localstorage','meldunki','licytacja','musik','atut','punktacja','bicie','damka',
+    'showdown','preflop','flop','turn','river','blindy','pozycje','ranking','uklady','strategia','quiz',
+    'konto','rejestracja','logowanie','reklamacje','bezpieczenstwo','kontakt'
+  ];
+
+  var modalCtx=null;
+  var pageCtx=null;
+  var lastTrigger=null;
+  var urlTimer=null;
 
   function normalize(value){
     return String(value||'')
@@ -85,7 +82,7 @@
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g,'')
       .replace(/ł/g,'l')
-      .replace(/[^a-z0-9\s-]/g,' ')
+      .replace(/[^a-z0-9@\s-]/g,' ')
       .replace(/\s+/g,' ')
       .trim();
   }
@@ -96,8 +93,42 @@
     });
   }
 
-  function tokens(value){
-    return normalize(value).split(' ').filter(function(t){return t.length>1;});
+  function rawTokens(value){
+    return normalize(value).split(' ').filter(Boolean);
+  }
+
+  function meaningfulTokens(value){
+    return rawTokens(value).filter(function(t){
+      return t.charAt(0)==='@'||(t.length>1&&!STOPWORDS[t]);
+    });
+  }
+
+  function unique(list){
+    var out=[];
+    list.forEach(function(x){if(x&&out.indexOf(x)===-1)out.push(x);});
+    return out;
+  }
+
+  function safeStorageGet(){
+    try{
+      var raw=window.localStorage.getItem(RECENT_KEY);
+      var data=raw?JSON.parse(raw):[];
+      return Array.isArray(data)?data.filter(function(x){return typeof x==='string';}).slice(0,MAX_RECENT):[];
+    }catch(_){return [];}
+  }
+
+  function saveRecent(query){
+    query=String(query||'').trim();
+    if(query.length<2)return;
+    try{
+      var list=safeStorageGet().filter(function(x){return normalize(x)!==normalize(query);});
+      list.unshift(query);
+      window.localStorage.setItem(RECENT_KEY,JSON.stringify(list.slice(0,MAX_RECENT)));
+    }catch(_){}
+  }
+
+  function clearRecent(){
+    try{window.localStorage.removeItem(RECENT_KEY);}catch(_){}
   }
 
   function levenshtein(a,b){
@@ -122,76 +153,205 @@
 
   function fuzzyTokenMatch(q,word){
     if(!q||!word)return false;
-    if(word.indexOf(q)===0||q.indexOf(word)===0)return true;
+    if(word===q||word.indexOf(q)===0||q.indexOf(word)===0)return true;
     if(q.length<4||word.length<4)return false;
-    var max=q.length>=7?2:1;
+    var max=q.length>=8?2:1;
     if(Math.abs(q.length-word.length)>max)return false;
     return levenshtein(q,word)<=max;
   }
 
-  function expandedTokens(query){
-    var base=tokens(query);
+  function parseQuery(raw){
+    var tokens=rawTokens(raw);
+    var scope='';
+    var forcedFilter='';
+    var injected=[];
+    var clean=[];
+
+    tokens.forEach(function(t){
+      if(COMMANDS[t]){
+        if(COMMANDS[t].scope)scope=COMMANDS[t].scope;
+        if(COMMANDS[t].filter)forcedFilter=COMMANDS[t].filter;
+        if(COMMANDS[t].inject)injected.push(COMMANDS[t].inject);
+      }else clean.push(t);
+    });
+
+    return {
+      raw:String(raw||'').trim(),
+      clean:unique(clean.concat(injected)).join(' '),
+      scope:scope,
+      forcedFilter:forcedFilter,
+      commands:tokens.filter(function(t){return !!COMMANDS[t];})
+    };
+  }
+
+  function expandTokens(query){
+    var base=meaningfulTokens(query);
     var out=base.slice();
     base.forEach(function(t){
       (SYNONYMS[t]||[]).forEach(function(s){
-        tokens(s).forEach(function(x){if(out.indexOf(x)===-1)out.push(x);});
+        meaningfulTokens(s).forEach(function(x){if(out.indexOf(x)===-1)out.push(x);});
       });
     });
     return out;
   }
 
-  function scoreItem(item,query){
+  INDEX.forEach(function(item){
+    item._title=normalize(item.title);
+    item._desc=normalize(item.description);
+    item._keys=normalize(item.keywords);
+    item._game=normalize(item.game);
+    item._hay=(item._title+' '+item._desc+' '+item._keys+' '+item._game).trim();
+    item._words=unique(item._hay.split(' ').filter(function(x){return x.length>1;}));
+  });
+
+  var DICTIONARY=(function(){
+    var words=CANONICAL.slice();
+    INDEX.forEach(function(item){
+      item._words.forEach(function(w){
+        if(w.length>=4&&words.indexOf(w)===-1)words.push(w);
+      });
+    });
+    return words;
+  })();
+
+  function nearestWord(token){
+    if(token.length<4||STOPWORDS[token])return token;
+    if(DICTIONARY.indexOf(token)!==-1)return token;
+    var best=token,bestDist=99;
+    DICTIONARY.forEach(function(w){
+      if(Math.abs(w.length-token.length)>2)return;
+      var d=levenshtein(token,w);
+      if(d<bestDist){bestDist=d;best=w;}
+    });
+    var limit=token.length>=8?2:1;
+    return bestDist<=limit?best:token;
+  }
+
+  function suggestionFor(raw){
+    var parsed=parseQuery(raw);
+    if(!parsed.clean)return '';
+    var changed=false;
+    var corrected=rawTokens(parsed.clean).map(function(t){
+      var next=nearestWord(t);
+      if(next!==t)changed=true;
+      return next;
+    });
+    return changed?corrected.join(' '):'';
+  }
+
+  function scoreItem(item,query,scope){
     var q=normalize(query);
-    if(!q)return item.priority||0;
+    var qTokens=expandTokens(q);
+    if(!qTokens.length)return (item.priority||0)+(scope&&item._game===scope?35:0);
 
-    var title=normalize(item.title);
-    var desc=normalize(item.description);
-    var keys=normalize(item.keywords);
-    var hay=title+' '+desc+' '+keys;
-    var qTokens=expandedTokens(query);
-    var hayWords=hay.split(' ');
-    var score=0;
-    var matched=0;
-
-    if(title===q)score+=180;
-    else if(title.indexOf(q)===0)score+=120;
-    else if(title.indexOf(q)!==-1)score+=90;
-    if(keys.indexOf(q)!==-1)score+=55;
-    if(desc.indexOf(q)!==-1)score+=32;
+    var score=0,matched=0;
+    if(item._title===q)score+=220;
+    else if(item._title.indexOf(q)===0)score+=145;
+    else if(item._title.indexOf(q)!==-1)score+=105;
+    if(item._keys.indexOf(q)!==-1)score+=62;
+    if(item._desc.indexOf(q)!==-1)score+=36;
 
     qTokens.forEach(function(t){
       var local=0;
-      if(title.split(' ').indexOf(t)!==-1)local=Math.max(local,38);
-      if(title.indexOf(t)!==-1)local=Math.max(local,30);
-      if(keys.split(' ').indexOf(t)!==-1)local=Math.max(local,24);
-      if(keys.indexOf(t)!==-1)local=Math.max(local,18);
-      if(desc.indexOf(t)!==-1)local=Math.max(local,12);
-
+      if(item._title.split(' ').indexOf(t)!==-1)local=Math.max(local,44);
+      if(item._title.indexOf(t)!==-1)local=Math.max(local,34);
+      if(item._keys.split(' ').indexOf(t)!==-1)local=Math.max(local,27);
+      if(item._keys.indexOf(t)!==-1)local=Math.max(local,21);
+      if(item._desc.indexOf(t)!==-1)local=Math.max(local,14);
+      if(item._game===t)local=Math.max(local,42);
       if(!local){
-        for(var i=0;i<hayWords.length;i++){
-          if(fuzzyTokenMatch(t,hayWords[i])){local=8;break;}
+        for(var i=0;i<item._words.length;i++){
+          if(fuzzyTokenMatch(t,item._words[i])){local=9;break;}
         }
       }
       if(local){matched++;score+=local;}
     });
 
-    if(qTokens.length&&matched===qTokens.length)score+=32;
-    if(!matched&&title.indexOf(q)===-1&&keys.indexOf(q)===-1&&desc.indexOf(q)===-1)return -1;
-    score+=(item.priority||0)*0.18;
+    if(qTokens.length&&matched===qTokens.length)score+=38;
+    if(!matched&&item._title.indexOf(q)===-1&&item._keys.indexOf(q)===-1&&item._desc.indexOf(q)===-1)return -1;
+    if(scope&&item._game===scope)score+=55;
+    score+=(item.priority||0)*0.2;
     return score;
   }
 
+  function contextScope(){
+    var p=window.location.pathname;
+    if(p.indexOf('/gry/poker-treningowy/')===0)return {key:'poker',label:'Poker'};
+    if(p.indexOf('/gry/tysiac/')===0)return {key:'tysiac',label:'Tysiąc'};
+    if(p.indexOf('/gry/warcaby/')===0)return {key:'warcaby',label:'Warcaby'};
+    if(p.indexOf('/gry/gomoku/')===0)return {key:'gomoku',label:'Gomoku'};
+    return null;
+  }
+
+  function effectiveFilter(ctx,parsed){
+    return parsed.forcedFilter||ctx.filter||'all';
+  }
+
+  function effectiveScope(ctx,parsed){
+    return parsed.scope||ctx.scope||'';
+  }
+
+  function categoryAllowed(item,filter){
+    if(filter==='all')return true;
+    if(filter==='gry')return item.category==='gry'||item.category==='academy';
+    return item.category===filter;
+  }
+
+  function compute(ctx,ignoreFilter){
+    var parsed=parseQuery(ctx.query);
+    var filter=ignoreFilter?'all':effectiveFilter(ctx,parsed);
+    var scope=effectiveScope(ctx,parsed);
+    var q=parsed.clean;
+    var rows=INDEX.map(function(item){
+      return {item:item,score:scoreItem(item,q,scope)};
+    }).filter(function(row){
+      if(row.score<0)return false;
+      if(scope&&row.item.game&&normalize(row.item.game)!==scope)return false;
+      if(!categoryAllowed(row.item,filter))return false;
+      return true;
+    });
+
+    rows.sort(function(a,b){
+      if(ctx.sort==='title')return a.item.title.localeCompare(b.item.title,'pl');
+      if(b.score!==a.score)return b.score-a.score;
+      return (b.item.priority||0)-(a.item.priority||0);
+    });
+
+    return {rows:rows,parsed:parsed,scope:scope,filter:filter,query:q};
+  }
+
+  function categoryCounts(ctx){
+    var base=compute(ctx,true).rows;
+    var counts={all:base.length,gry:0,academy:0,zasady:0,poradniki:0,informacje:0};
+    base.forEach(function(row){
+      var c=row.item.category;
+      if(counts[c]!==undefined)counts[c]++;
+      if(c==='academy')counts.gry++;
+      else if(c==='gry')counts.gry++;
+    });
+    return counts;
+  }
+
   function categoryLabel(key){
-    var found=FILTERS.filter(function(f){return f.key===key;})[0];
-    return found?found.label:key;
+    var f=FILTERS.filter(function(x){return x.key===key;})[0];
+    return f?f.label:key;
+  }
+
+  function iconFor(item){
+    if(item.category==='academy')return 'A';
+    if(item.category==='zasady')return '§';
+    if(item.category==='poradniki')return '?';
+    if(item.category==='gry')return '♠';
+    if(item.type==='Prywatność')return 'R';
+    if(item.type==='Regulamin'||item.type==='Dokument')return 'D';
+    return 'i';
   }
 
   function highlight(text,query){
-    var safe=escapeHtml(text);
-    var qs=tokens(query).sort(function(a,b){return b.length-a.length;});
-    if(!qs.length)return safe;
     var raw=String(text||'');
     var norm=normalize(raw);
+    var qs=meaningfulTokens(query).filter(function(x){return x.charAt(0)!=='@';}).sort(function(a,b){return b.length-a.length;});
+    if(!qs.length)return escapeHtml(raw);
     var spans=[];
     qs.forEach(function(q){
       var from=0,idx;
@@ -200,7 +360,7 @@
         from=idx+q.length;
       }
     });
-    if(!spans.length)return safe;
+    if(!spans.length)return escapeHtml(raw);
     spans.sort(function(a,b){return a[0]-b[0]||b[1]-a[1];});
     var merged=[];
     spans.forEach(function(s){
@@ -212,203 +372,388 @@
       out+=escapeHtml(raw.slice(last,s[0]))+'<mark>'+escapeHtml(raw.slice(s[0],s[1]))+'</mark>';
       last=s[1];
     });
-    out+=escapeHtml(raw.slice(last));
-    return out;
+    return out+escapeHtml(raw.slice(last));
   }
 
-  function getResults(){
-    var q=state.query;
-    var list=ITEMS.filter(function(item){
-      return state.filter==='all'||item.category===state.filter||(state.filter==='gry'&&item.category==='academy');
-    }).map(function(item){
-      return {item:item,score:scoreItem(item,q)};
-    }).filter(function(x){return x.score>=0;});
-
-    list.sort(function(a,b){
-      if(b.score!==a.score)return b.score-a.score;
-      return (b.item.priority||0)-(a.item.priority||0);
-    });
-    return list.slice(0,q?10:8);
+  function searchUrl(ctx){
+    var params=new URLSearchParams();
+    if(ctx.query)params.set('q',ctx.query);
+    if(ctx.filter&&ctx.filter!=='all')params.set('filter',ctx.filter);
+    if(ctx.scope)params.set('scope',ctx.scope);
+    if(ctx.sort&&ctx.sort!=='relevance')params.set('sort',ctx.sort);
+    var q=params.toString();
+    return '/szukaj/'+(q?'?'+q:'');
   }
 
-  function renderFilters(){
-    var holder=state.dialog.querySelector('[data-search-filters]');
-    holder.innerHTML=FILTERS.map(function(f){
-      return '<button type="button" class="gracz-search__filter'+(state.filter===f.key?' is-active':'')+'" data-search-filter="'+f.key+'" aria-pressed="'+(state.filter===f.key?'true':'false')+'">'+f.label+'</button>';
+  function renderFilters(ctx){
+    var counts=categoryCounts(ctx);
+    ctx.filters.innerHTML=FILTERS.map(function(f){
+      var active=ctx.filter===f.key;
+      return '<button type="button" class="gracz-search__filter'+(active?' is-active':'')+'" data-search-filter="'+f.key+'" aria-pressed="'+(active?'true':'false')+'">'+
+        '<span>'+f.label+'</span><b>'+String(counts[f.key]||0)+'</b>'+
+      '</button>';
     }).join('');
   }
 
-  function render(){
-    var results=getResults();
-    state.active=-1;
-    renderFilters();
-
-    if(!state.query){
-      state.status.textContent='Popularne miejsca w gracz.pl';
-    }else{
-      state.status.textContent=results.length?('Znaleziono '+results.length+(results.length===1?' wynik':' wyników')):'Brak wyników';
+  function renderScope(ctx){
+    if(!ctx.scopeWrap)return;
+    var contextual=contextScope();
+    var buttons=[];
+    if(contextual){
+      buttons.push('<button type="button" class="gracz-search__scope'+(ctx.scope===contextual.key?' is-active':'')+'" data-search-scope="'+contextual.key+'" aria-pressed="'+(ctx.scope===contextual.key?'true':'false')+'">Tylko '+escapeHtml(contextual.label)+'</button>');
     }
+    if(ctx.scope){
+      var labels={poker:'Poker',tysiac:'Tysiąc',warcaby:'Warcaby',gomoku:'Gomoku'};
+      if(!contextual||contextual.key!==ctx.scope){
+        buttons.push('<button type="button" class="gracz-search__scope is-active" data-search-scope="'+ctx.scope+'" aria-pressed="true">Tylko '+escapeHtml(labels[ctx.scope]||ctx.scope)+'</button>');
+      }
+      buttons.push('<button type="button" class="gracz-search__scope-clear" data-search-scope-clear>Wyczyść zakres</button>');
+    }
+    ctx.scopeWrap.innerHTML=buttons.join('');
+    ctx.scopeWrap.hidden=!buttons.length;
+  }
 
-    if(!results.length){
-      state.results.innerHTML='<div class="gracz-search__empty"><strong>Nie znaleźliśmy pasującej treści.</strong><span>Spróbuj krótszej frazy, innej nazwy gry albo wybierz inny filtr.</span></div>';
+  function renderRecent(ctx){
+    if(!ctx.recent)return;
+    var list=safeStorageGet();
+    if(ctx.query||!list.length){
+      ctx.recent.hidden=true;
+      ctx.recent.innerHTML='';
       return;
     }
-
-    state.results.innerHTML=results.map(function(x,index){
-      var item=x.item;
-      return '<a class="gracz-search__result" href="'+escapeHtml(item.url)+'" data-search-result data-index="'+index+'">'+
-        '<span class="gracz-search__result-icon" aria-hidden="true">'+iconFor(item.category)+'</span>'+
-        '<span class="gracz-search__result-main">'+
-          '<span class="gracz-search__result-top"><strong>'+highlight(item.title,state.query)+'</strong><em>'+escapeHtml(item.type||categoryLabel(item.category))+'</em></span>'+
-          '<span class="gracz-search__result-desc">'+highlight(item.description,state.query)+'</span>'+
-          '<span class="gracz-search__result-url">'+escapeHtml(item.url)+'</span>'+
-        '</span>'+
-        '<span class="gracz-search__result-arrow" aria-hidden="true">→</span>'+
-      '</a>';
-    }).join('');
+    ctx.recent.hidden=false;
+    ctx.recent.innerHTML='<div class="gracz-search__recent-head"><strong>Ostatnie wyszukiwania</strong><button type="button" data-search-clear-history>Wyczyść historię</button></div>'+
+      '<div class="gracz-search__recent-list">'+list.map(function(q){
+        return '<button type="button" data-search-query="'+escapeHtml(q)+'"><span>↺</span>'+escapeHtml(q)+'</button>';
+      }).join('')+'</div>';
   }
 
-  function iconFor(category){
-    if(category==='academy')return 'A';
-    if(category==='zasady')return '§';
-    if(category==='poradniki')return '?';
-    if(category==='gry')return '♠';
-    return 'i';
+  function renderSuggestions(ctx,result){
+    if(!ctx.suggestions)return;
+    if(!ctx.query){
+      ctx.suggestions.hidden=true;
+      ctx.suggestions.innerHTML='';
+      return;
+    }
+    var correction=suggestionFor(ctx.query);
+    var top=result.rows.slice(0,4);
+    var parts=[];
+    if(correction&&normalize(correction)!==normalize(parseQuery(ctx.query).clean)){
+      parts.push('<button type="button" class="gracz-search__correction" data-search-query="'+escapeHtml(correction)+'"><span>Czy chodziło Ci o:</span> <strong>'+escapeHtml(correction)+'</strong></button>');
+    }
+    if(top.length){
+      parts.push('<div class="gracz-search__suggestion-row"><span>Podpowiedzi:</span>'+top.map(function(row){
+        return '<button type="button" data-search-query="'+escapeHtml(row.item.title)+'">'+highlight(row.item.title,ctx.query)+'</button>';
+      }).join('')+'</div>');
+    }
+    ctx.suggestions.innerHTML=parts.join('');
+    ctx.suggestions.hidden=!parts.length;
   }
 
-  function setActive(index){
-    var nodes=Array.prototype.slice.call(state.results.querySelectorAll('[data-search-result]'));
-    if(!nodes.length){state.active=-1;return;}
+  function resultMarkup(row,index,query,best){
+    var item=row.item;
+    var game=item.game?('<span class="gracz-search__game">'+escapeHtml(item.game==='tysiac'?'Tysiąc':item.game.charAt(0).toUpperCase()+item.game.slice(1))+'</span>'):'';
+    return '<a class="gracz-search__result'+(best?' is-best':'')+'" href="'+escapeHtml(item.url)+'" data-search-result data-index="'+index+'" role="option" id="gracz-search-result-'+index+'">'+
+      '<span class="gracz-search__result-icon" aria-hidden="true">'+iconFor(item)+'</span>'+
+      '<span class="gracz-search__result-main">'+
+        '<span class="gracz-search__result-top"><strong>'+highlight(item.title,query)+'</strong><em>'+escapeHtml(item.type||categoryLabel(item.category))+'</em>'+game+(best?'<small>Najlepsze dopasowanie</small>':'')+'</span>'+
+        '<span class="gracz-search__result-desc">'+highlight(item.description,query)+'</span>'+
+        '<span class="gracz-search__result-url">'+escapeHtml(item.url)+'</span>'+
+      '</span>'+
+      '<span class="gracz-search__result-arrow" aria-hidden="true">→</span>'+
+    '</a>';
+  }
+
+  function render(ctx){
+    var result=compute(ctx,false);
+    var rows=result.rows;
+    var limit=ctx.mode==='page'?PAGE_LIMIT:MODAL_LIMIT;
+    var shown=rows.slice(0,limit);
+    ctx.active=-1;
+
+    renderFilters(ctx);
+    renderScope(ctx);
+    renderRecent(ctx);
+    renderSuggestions(ctx,result);
+
+    if(!ctx.query)ctx.status.textContent=ctx.scope?'Popularne treści w wybranym zakresie':'Popularne miejsca w gracz.pl';
+    else ctx.status.textContent=rows.length?('Znaleziono '+rows.length+(rows.length===1?' wynik':' wyników')):'Brak wyników';
+
+    if(ctx.commandInfo){
+      var parsed=result.parsed;
+      if(parsed.commands.length){
+        ctx.commandInfo.hidden=false;
+        ctx.commandInfo.textContent='Aktywne skróty: '+parsed.commands.join(', ');
+      }else{
+        ctx.commandInfo.hidden=true;
+        ctx.commandInfo.textContent='';
+      }
+    }
+
+    if(!shown.length){
+      var correction=suggestionFor(ctx.query);
+      ctx.results.innerHTML='<div class="gracz-search__empty">'+
+        '<strong>Nie znaleźliśmy pasującej treści.</strong>'+
+        '<span>Spróbuj krótszej frazy, nazwy gry, filtra lub komendy np. <b>@poker</b>.</span>'+
+        (correction?'<button type="button" data-search-query="'+escapeHtml(correction)+'">Szukaj: '+escapeHtml(correction)+'</button>':'')+
+      '</div>';
+    }else{
+      ctx.results.innerHTML=shown.map(function(row,index){
+        return resultMarkup(row,index,ctx.query,!!ctx.query&&index===0);
+      }).join('');
+    }
+
+    if(ctx.more){
+      if(ctx.mode==='modal'&&ctx.query&&rows.length){
+        ctx.more.hidden=false;
+        ctx.more.href=searchUrl(ctx);
+        ctx.more.textContent=rows.length>limit?'Pokaż wszystkie '+rows.length+' wyników':'Otwórz pełną stronę wyników';
+      }else ctx.more.hidden=true;
+    }
+
+    if(ctx.sortWrap){
+      ctx.sortWrap.hidden=ctx.mode!=='page';
+      if(ctx.sortSelect)ctx.sortSelect.value=ctx.sort;
+    }
+
+    if(ctx.mode==='page')scheduleUrlUpdate(ctx);
+  }
+
+  function setActive(ctx,index){
+    var nodes=Array.prototype.slice.call(ctx.results.querySelectorAll('[data-search-result]'));
+    if(!nodes.length){ctx.active=-1;ctx.input.removeAttribute('aria-activedescendant');return;}
     if(index<0)index=nodes.length-1;
     if(index>=nodes.length)index=0;
-    state.active=index;
-    nodes.forEach(function(node,i){
-      node.classList.toggle('is-active',i===index);
-      if(i===index)node.scrollIntoView({block:'nearest'});
-    });
+    ctx.active=index;
+    nodes.forEach(function(node,i){node.classList.toggle('is-active',i===index);});
+    var current=nodes[index];
+    ctx.input.setAttribute('aria-activedescendant',current.id);
+    current.scrollIntoView({block:'nearest'});
   }
 
-  function createDialog(){
-    if(state.dialog)return state.dialog;
-    var dialog=document.createElement('dialog');
-    dialog.className='gracz-search';
-    dialog.setAttribute('aria-labelledby','gracz-search-title');
-    dialog.innerHTML=
-      '<div class="gracz-search__panel">'+
-        '<div class="gracz-search__head">'+
-          '<div><span class="gracz-search__brand">gracz<span>.pl</span></span><p>Zaawansowana wyszukiwarka portalu</p></div>'+
-          '<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>'+
-        '</div>'+
-        '<h2 id="gracz-search-title" class="sr-only">Wyszukiwarka gracz.pl</h2>'+
-        '<div class="gracz-search__box">'+
-          '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>'+
-          '<input type="search" data-search-input autocomplete="off" spellcheck="false" placeholder="Szukaj gry, zasad, Academy, poradnika…" aria-label="Szukaj w gracz.pl">'+
-          '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
-        '</div>'+
-        '<div class="gracz-search__quick" aria-label="Popularne wyszukiwania">'+
-          '<span>Popularne:</span>'+
-          '<button type="button" data-search-query="poker">Poker</button>'+
-          '<button type="button" data-search-query="tysiąc">Tysiąc</button>'+
-          '<button type="button" data-search-query="warcaby">Warcaby</button>'+
-          '<button type="button" data-search-query="gomoku">Gomoku</button>'+
-          '<button type="button" data-search-query="zasady">Zasady</button>'+
-          '<button type="button" data-search-query="RODO">RODO</button>'+
-        '</div>'+
-        '<div class="gracz-search__filters" data-search-filters aria-label="Filtry wyszukiwarki"></div>'+
-        '<div class="gracz-search__meta"><span data-search-status aria-live="polite"></span><span class="gracz-search__hint"><kbd>↑</kbd><kbd>↓</kbd> wybór <kbd>Enter</kbd> otwórz <kbd>Esc</kbd> zamknij</span></div>'+
-        '<div class="gracz-search__results" data-search-results role="listbox" aria-label="Wyniki wyszukiwania"></div>'+
-        '<div class="gracz-search__foot"><span>Wyszukiwanie działa lokalnie w gracz.pl — wpisywana fraza nie jest wysyłana do zewnętrznej wyszukiwarki.</span><strong>Ctrl K</strong></div>'+
-      '</div>';
-    document.body.appendChild(dialog);
-    state.dialog=dialog;
-    state.input=dialog.querySelector('[data-search-input]');
-    state.results=dialog.querySelector('[data-search-results]');
-    state.status=dialog.querySelector('[data-search-status]');
+  function setQuery(ctx,value){
+    ctx.query=String(value||'').trim();
+    ctx.input.value=ctx.query;
+    render(ctx);
+    ctx.input.focus();
+  }
 
-    state.input.addEventListener('input',function(){
-      state.query=state.input.value.trim();
-      render();
+  function scheduleUrlUpdate(ctx){
+    if(urlTimer)window.clearTimeout(urlTimer);
+    urlTimer=window.setTimeout(function(){
+      try{window.history.replaceState(null,'',searchUrl(ctx));}catch(_){}
+    },120);
+  }
+
+  function copySearchLink(ctx,button){
+    var url=window.location.origin+searchUrl(ctx);
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        var old=button.textContent;
+        button.textContent='Skopiowano';
+        window.setTimeout(function(){button.textContent=old;},1200);
+      }).catch(function(){});
+    }
+  }
+
+  function bindContext(ctx){
+    ctx.input.addEventListener('input',function(){
+      ctx.query=ctx.input.value.trim();
+      render(ctx);
     });
 
-    dialog.addEventListener('click',function(event){
-      var filter=event.target.closest('[data-search-filter]');
-      if(filter){
-        state.filter=filter.getAttribute('data-search-filter')||'all';
-        render();
-        state.input.focus();
-        return;
-      }
-      var q=event.target.closest('[data-search-query]');
-      if(q){
-        state.query=q.getAttribute('data-search-query')||'';
-        state.input.value=state.query;
-        render();
-        state.input.focus();
-        return;
-      }
-      if(event.target.closest('[data-search-clear]')){
-        state.query='';
-        state.input.value='';
-        render();
-        state.input.focus();
-        return;
-      }
-      if(event.target===dialog||event.target.closest('[data-search-close]'))close();
-    });
-
-    dialog.addEventListener('cancel',function(event){
-      event.preventDefault();
-      close();
-    });
-
-    dialog.addEventListener('close',function(){
-      document.body.classList.remove('gracz-search-open');
-      if(state.lastTrigger&&document.contains(state.lastTrigger)){
-        try{state.lastTrigger.focus();}catch(_){}
-      }
-      state.lastTrigger=null;
-    });
-
-    dialog.addEventListener('keydown',function(event){
-      if(event.key==='ArrowDown'){
-        event.preventDefault();
-        setActive(state.active+1);
-      }else if(event.key==='ArrowUp'){
-        event.preventDefault();
-        setActive(state.active-1);
-      }else if(event.key==='Enter'&&state.active>=0){
-        var active=state.results.querySelector('[data-index="'+state.active+'"]');
+    ctx.input.addEventListener('keydown',function(event){
+      if(event.key==='ArrowDown'){event.preventDefault();setActive(ctx,ctx.active+1);}
+      else if(event.key==='ArrowUp'){event.preventDefault();setActive(ctx,ctx.active-1);}
+      else if(event.key==='Enter'){
+        var active=ctx.results.querySelector('[data-index="'+ctx.active+'"]');
         if(active){
           event.preventDefault();
+          saveRecent(ctx.query);
           window.location.assign(active.href);
+        }else{
+          var first=ctx.results.querySelector('[data-search-result]');
+          if(first&&ctx.query){
+            event.preventDefault();
+            saveRecent(ctx.query);
+            window.location.assign(first.href);
+          }
         }
       }
     });
 
-    render();
-    return dialog;
+    ctx.root.addEventListener('click',function(event){
+      var filter=event.target.closest('[data-search-filter]');
+      if(filter){
+        ctx.filter=filter.getAttribute('data-search-filter')||'all';
+        render(ctx);ctx.input.focus();return;
+      }
+
+      var q=event.target.closest('[data-search-query]');
+      if(q){
+        setQuery(ctx,q.getAttribute('data-search-query')||'');return;
+      }
+
+      var scope=event.target.closest('[data-search-scope]');
+      if(scope){
+        var key=scope.getAttribute('data-search-scope')||'';
+        ctx.scope=ctx.scope===key?'':key;
+        render(ctx);ctx.input.focus();return;
+      }
+
+      if(event.target.closest('[data-search-scope-clear]')){
+        ctx.scope='';render(ctx);ctx.input.focus();return;
+      }
+
+      if(event.target.closest('[data-search-clear]')){
+        setQuery(ctx,'');return;
+      }
+
+      if(event.target.closest('[data-search-clear-history]')){
+        clearRecent();render(ctx);ctx.input.focus();return;
+      }
+
+      var result=event.target.closest('[data-search-result]');
+      if(result)saveRecent(ctx.query);
+
+      var copy=event.target.closest('[data-search-copy]');
+      if(copy){copySearchLink(ctx,copy);return;}
+
+      if(ctx.mode==='modal'&&(event.target===ctx.root||event.target.closest('[data-search-close]')))closeModal();
+    });
+
+    if(ctx.sortSelect){
+      ctx.sortSelect.addEventListener('change',function(){
+        ctx.sort=ctx.sortSelect.value||'relevance';
+        render(ctx);
+      });
+    }
+
+    if(ctx.mode==='modal'){
+      ctx.root.addEventListener('cancel',function(event){event.preventDefault();closeModal();});
+      ctx.root.addEventListener('close',function(){
+        document.body.classList.remove('gracz-search-open');
+        if(lastTrigger&&document.contains(lastTrigger)){try{lastTrigger.focus();}catch(_){}}
+        lastTrigger=null;
+      });
+    }
   }
 
-  function open(trigger){
-    state.lastTrigger=trigger||document.activeElement;
-    var dialog=createDialog();
-    state.filter='all';
-    state.query='';
-    state.input.value='';
-    render();
-    if(typeof dialog.showModal==='function')dialog.showModal();
-    else dialog.setAttribute('open','');
+  function shellMarkup(mode){
+    var page=mode==='page';
+    return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
+      '<div class="gracz-search__head">'+
+        '<div><span class="gracz-search__brand">gracz<span>.pl</span></span><p>'+(page?'Wyniki wyszukiwania':'Zaawansowana wyszukiwarka portalu')+'</p></div>'+
+        (page?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>':'<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
+      '</div>'+
+      '<h1 class="sr-only">'+(page?'Wyniki wyszukiwania gracz.pl':'Wyszukiwarka gracz.pl')+'</h1>'+
+      '<div class="gracz-search__box">'+
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>'+
+        '<input type="search" data-search-input autocomplete="off" spellcheck="false" placeholder="Szukaj gry, zasad, Academy, poradnika…" aria-label="Szukaj w gracz.pl" aria-autocomplete="list">'+
+        '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
+      '</div>'+
+      '<div class="gracz-search__quick" aria-label="Popularne wyszukiwania">'+
+        '<span>Popularne:</span>'+
+        '<button type="button" data-search-query="poker">Poker</button>'+
+        '<button type="button" data-search-query="tysiąc">Tysiąc</button>'+
+        '<button type="button" data-search-query="warcaby">Warcaby</button>'+
+        '<button type="button" data-search-query="gomoku">Gomoku</button>'+
+        '<button type="button" data-search-query="zasady">Zasady</button>'+
+        '<button type="button" data-search-query="RODO">RODO</button>'+
+      '</div>'+
+      '<div class="gracz-search__commands"><span>Skróty:</span><button type="button" data-search-query="@poker ">@poker</button><button type="button" data-search-query="@zasady ">@zasady</button><button type="button" data-search-query="@academy ">@academy</button><button type="button" data-search-query="@rodo ">@rodo</button></div>'+
+      '<div class="gracz-search__recent" data-search-recent hidden></div>'+
+      '<div class="gracz-search__suggestions" data-search-suggestions hidden></div>'+
+      '<div class="gracz-search__scope-wrap" data-search-scope-wrap hidden></div>'+
+      '<div class="gracz-search__filters" data-search-filters aria-label="Filtry wyszukiwarki"></div>'+
+      '<div class="gracz-search__meta">'+
+        '<span data-search-status aria-live="polite"></span>'+
+        '<span data-search-command-info hidden></span>'+
+        (page?'<span class="gracz-search__sort" data-search-sort-wrap><label for="gracz-search-sort">Sortuj</label><select id="gracz-search-sort" data-search-sort><option value="relevance">Trafność</option><option value="title">A–Z</option></select></span>':'<span class="gracz-search__hint"><kbd>↑</kbd><kbd>↓</kbd> wybór <kbd>Enter</kbd> otwórz <kbd>Esc</kbd> zamknij</span>')+
+      '</div>'+
+      '<div class="gracz-search__results" data-search-results role="listbox" aria-label="Wyniki wyszukiwania"></div>'+
+      '<div class="gracz-search__actions-row">'+
+        '<a class="gracz-search__more" data-search-more href="/szukaj/" hidden></a>'+
+        (page?'<button type="button" class="gracz-search__copy" data-search-copy>Skopiuj link do wyników</button>':'')+
+      '</div>'+
+      '<div class="gracz-search__foot"><span>Wyszukiwanie działa lokalnie w gracz.pl. Fraza nie jest wysyłana do zewnętrznej wyszukiwarki.</span><strong>Ctrl K</strong></div>'+
+    '</div>';
+  }
+
+  function contextFromRoot(root,mode){
+    var params=mode==='page'?new URLSearchParams(window.location.search):new URLSearchParams();
+    var ctx={
+      root:root,
+      mode:mode,
+      query:mode==='page'?(params.get('q')||''):'',
+      filter:mode==='page'?(params.get('filter')||'all'):'all',
+      scope:mode==='page'?(params.get('scope')||''):'',
+      sort:mode==='page'?(params.get('sort')||'relevance'):'relevance',
+      active:-1
+    };
+    if(!FILTERS.some(function(f){return f.key===ctx.filter;}))ctx.filter='all';
+    if(['','poker','tysiac','warcaby','gomoku'].indexOf(ctx.scope)===-1)ctx.scope='';
+    if(['relevance','title'].indexOf(ctx.sort)===-1)ctx.sort='relevance';
+
+    ctx.input=root.querySelector('[data-search-input]');
+    ctx.results=root.querySelector('[data-search-results]');
+    ctx.status=root.querySelector('[data-search-status]');
+    ctx.filters=root.querySelector('[data-search-filters]');
+    ctx.recent=root.querySelector('[data-search-recent]');
+    ctx.suggestions=root.querySelector('[data-search-suggestions]');
+    ctx.scopeWrap=root.querySelector('[data-search-scope-wrap]');
+    ctx.commandInfo=root.querySelector('[data-search-command-info]');
+    ctx.more=root.querySelector('[data-search-more]');
+    ctx.sortWrap=root.querySelector('[data-search-sort-wrap]');
+    ctx.sortSelect=root.querySelector('[data-search-sort]');
+    ctx.input.value=ctx.query;
+    ctx.input.setAttribute('aria-controls','gracz-search-results');
+    ctx.results.id='gracz-search-results';
+    bindContext(ctx);
+    render(ctx);
+    return ctx;
+  }
+
+  function createModal(){
+    if(modalCtx)return modalCtx;
+    var dialog=document.createElement('dialog');
+    dialog.className='gracz-search';
+    dialog.innerHTML=shellMarkup('modal');
+    document.body.appendChild(dialog);
+    modalCtx=contextFromRoot(dialog,'modal');
+    return modalCtx;
+  }
+
+  function openModal(trigger,preset){
+    lastTrigger=trigger||document.activeElement;
+    var ctx=createModal();
+    ctx.filter='all';
+    ctx.scope='';
+    ctx.sort='relevance';
+    ctx.query=String(preset||'');
+    ctx.input.value=ctx.query;
+    render(ctx);
+    if(typeof ctx.root.showModal==='function')ctx.root.showModal();
+    else ctx.root.setAttribute('open','');
     document.body.classList.add('gracz-search-open');
-    window.setTimeout(function(){state.input.focus();},0);
+    window.setTimeout(function(){ctx.input.focus();},0);
   }
 
-  function close(){
-    if(!state.dialog)return;
-    if(typeof state.dialog.close==='function'&&state.dialog.open)state.dialog.close();
+  function closeModal(){
+    if(!modalCtx)return;
+    if(typeof modalCtx.root.close==='function'&&modalCtx.root.open)modalCtx.root.close();
     else{
-      state.dialog.removeAttribute('open');
+      modalCtx.root.removeAttribute('open');
       document.body.classList.remove('gracz-search-open');
     }
+  }
+
+  function initPage(){
+    var root=document.querySelector('[data-search-page-root]');
+    if(!root)return;
+    root.innerHTML=shellMarkup('page');
+    pageCtx=contextFromRoot(root,'page');
+    window.setTimeout(function(){pageCtx.input.focus();},0);
   }
 
   document.addEventListener('click',function(event){
@@ -416,7 +761,7 @@
     if(!trigger)return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    open(trigger);
+    openModal(trigger,trigger.getAttribute('data-search-preset')||'');
   },true);
 
   document.addEventListener('keydown',function(event){
@@ -424,14 +769,22 @@
     var typing=target&&(/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)||target.isContentEditable);
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
       event.preventDefault();
-      if(state.dialog&&state.dialog.open)close(); else open(target);
+      if(modalCtx&&modalCtx.root.open)closeModal();else openModal(target,'');
       return;
     }
-    if(!typing&&event.key==='/'&&!(state.dialog&&state.dialog.open)){
+    if(!typing&&event.key==='/'&&!(modalCtx&&modalCtx.root.open)){
       event.preventDefault();
-      open(target);
+      openModal(target,'');
     }
   },true);
 
-  window.GraczSearch={open:open,close:close};
+  initPage();
+
+  window.GraczSearch={
+    open:openModal,
+    close:closeModal,
+    search:function(query){openModal(null,query||'');},
+    indexSize:INDEX.length,
+    version:window.GRACZ_SEARCH_INDEX_VERSION||'R2-MAX'
+  };
 })();
