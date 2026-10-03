@@ -108,6 +108,34 @@ MERGE = NOT AUTHORIZED
 DEPLOYMENT = NOT AUTHORIZED
 ```
 
+## 1C. Checkpoint SEARCH R3 — 03.10.2026
+
+Publiczna wyszukiwarka została rozbudowana z SEARCH R2 MAX do `SEARCH R3 SMART` i wdrożona do gracz.pl.
+
+Zakres R3:
+
+- lokalne rozpoznawanie pytań w języku naturalnym,
+- intent detection,
+- rozpoznawanie kontekstu gry,
+- concept-aware ranking,
+- karta najlepszego źródła,
+- zachowanie pełnego fallbacku R2,
+- brak zewnętrznego AI i brak kosztu inference,
+- poprawka race condition podczas ładowania wyszukiwarki.
+
+Evidence:
+
+`10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R3-IMPLEMENTATION-RECORD.md`
+
+```text
+SEARCH R3 SMART = IMPLEMENTED / DEPLOYED
+RENDER DEPLOY = LIVE
+R2 CORE = PRESERVED
+EXTERNAL AI = NOT USED
+AI API KEY = NOT REQUIRED
+R4 IMPLEMENTATION = NOT STARTED
+```
+
 ## 2. Inwentarz bieżący
 
 Katalog `Nowa dokumentacja Gracz.pl/` zawiera 190 plików:
