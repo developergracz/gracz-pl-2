@@ -12,7 +12,7 @@
     if(!document.querySelector('link[data-gracz-search-style]')){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/search.css?v=r18';
+      link.href='/assets/search.css?v=r19';
       link.setAttribute('data-gracz-search-style','');
       document.head.appendChild(link);
     }
@@ -20,7 +20,7 @@
     function loadEngine(){
       if(window.GraczSearch||document.querySelector('script[data-gracz-search-script]'))return;
       var engine=document.createElement('script');
-      engine.src='/assets/search.js?v=r12';
+      engine.src='/assets/search.js?v=r13';
       engine.async=false;
       engine.setAttribute('data-gracz-search-script','');
       document.head.appendChild(engine);
