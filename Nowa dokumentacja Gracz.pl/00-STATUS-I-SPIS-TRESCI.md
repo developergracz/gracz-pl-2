@@ -93,6 +93,21 @@ PRODUCTION CHANGE CAUSED BY DOCUMENTATION = NONE
 
 Pakiet jest dokumentacją docelową i nie zmienia statusów E4.1-H, freeze, Privacy/Legal ani wcześniejszych bramek V3. Rozpoczęcie kodowania R4 wymaga osobnej autoryzacji oraz przejścia gate'ów opisanych w dokumencie `09-IMPLEMENTATION-ROADMAP-TESTS-ACCEPTANCE-GATES.md`.
 
+### SEARCH R4 execution readiness
+
+03.10.2026 dodano pełny schemat kontrolowanego wykonania: `11-EXECUTION-CONTROL-PLAN.md`, gotowy mandat `R4.1 Corpus Foundation` dla Codexa, `13-INDEPENDENT-AUDIT-PROTOCOL.md` dla Claude oraz aktywny `14-R4-STATUS-TRACKER.md`.
+
+```text
+R4.0 DOCUMENTATION GATE = PASS
+R4.1 = READY / NOT STARTED
+PRIMARY IMPLEMENTER = CODEX
+PRIMARY INDEPENDENT AUDITOR = CLAUDE
+LEAD / CONTROL TOWER = CHATGPT
+OPTIONAL ESCALATION = FACTORY
+MERGE = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+```
+
 ## 2. Inwentarz bieżący
 
 Katalog `Nowa dokumentacja Gracz.pl/` zawiera 190 plików:
