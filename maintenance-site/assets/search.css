@@ -2688,12 +2688,14 @@ dialog.gracz-search[data-search-device="phone"] .gracz-search__results-resizer{
   }
 }
 
-dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav{
-  min-height:62px;
-}
-dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav>a,
-dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>a,
-dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
-  min-height:54px;
-  font-size:clamp(17.5px,1.12vw,20px);
+@media (min-width:881px){
+  dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav{
+    min-height:62px;
+  }
+  dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav>a,
+  dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>a,
+  dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
+    min-height:54px;
+    font-size:clamp(17.5px,1.12vw,20px);
+  }
 }
