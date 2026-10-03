@@ -12,7 +12,7 @@
     if(!document.querySelector('link[data-gracz-search-style]')){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/search.css?v=r11';
+      link.href='/assets/search.css?v=r12';
       link.setAttribute('data-gracz-search-style','');
       document.head.appendChild(link);
     }
