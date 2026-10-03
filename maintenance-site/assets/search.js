@@ -189,7 +189,7 @@
     if(ctx.zoomReset)ctx.zoomReset.hidden=value===100;
     if(ctx.zoomSelector){
       ctx.zoomSelector.setAttribute('aria-label','Aktualne powiększenie '+String(value)+'%. Wybierz poziom powiększenia');
-      ctx.zoomSelector.setAttribute('title','Wybierz poziom powiększenia');
+      ctx.zoomSelector.removeAttribute('title');
     }
     if(ctx.zoomOptions){
       ctx.zoomOptions.forEach(function(option){
@@ -885,7 +885,8 @@
           '<div class="gracz-search__zoom" data-search-zoom-group role="group" aria-label="Powiększenie widoku wyszukiwarki: 100%">'+
             '<button type="button" data-search-zoom-out aria-label="Pomniejsz widok wyszukiwarki" title="Pomniejsz widok">A−</button>'+
             '<div class="gracz-search__zoom-selector">'+
-              '<button type="button" class="gracz-search__zoom-value" data-search-zoom-selector aria-haspopup="true" aria-label="Aktualne powiększenie 100%. Wybierz poziom powiększenia" title="Wybierz poziom powiększenia"><span data-search-zoom-value>100%</span><span class="gracz-search__zoom-caret" aria-hidden="true">⌄</span></button>'+
+              '<button type="button" class="gracz-search__zoom-value" data-search-zoom-selector aria-haspopup="true" aria-label="Aktualne powiększenie 100%. Wybierz poziom powiększenia"><span data-search-zoom-value>100%</span><span class="gracz-search__zoom-caret" aria-hidden="true">⌄</span></button>'+
+              '<span class="gracz-search__zoom-tooltip" role="tooltip" aria-hidden="true">Wybierz poziom powiększenia</span>'+
               '<div class="gracz-search__zoom-menu" role="menu" aria-label="Poziomy powiększenia">'+
                 '<button type="button" role="menuitemradio" data-search-zoom-level="100" aria-checked="true">100%</button>'+
                 '<button type="button" role="menuitemradio" data-search-zoom-level="115" aria-checked="false">115%</button>'+
