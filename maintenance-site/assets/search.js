@@ -5,6 +5,8 @@
 
   var INDEX=(window.GRACZ_SEARCH_INDEX||[]).slice();
   var RECENT_KEY='graczSearchRecentR2';
+  var ZOOM_KEY='graczSearchZoomR3';
+  var ZOOM_LEVELS=[100,115,130,145];
   var MAX_RECENT=8;
   var MODAL_LIMIT=14;
   var PAGE_LIMIT=60;
@@ -163,6 +165,35 @@
 
   function clearRecent(){
     try{window.localStorage.removeItem(RECENT_KEY);}catch(_){}
+  }
+
+  function readZoom(){
+    try{
+      var value=parseInt(window.localStorage.getItem(ZOOM_KEY)||'100',10);
+      return ZOOM_LEVELS.indexOf(value)!==-1?value:100;
+    }catch(_){return 100;}
+  }
+
+  function persistZoom(value){
+    try{window.localStorage.setItem(ZOOM_KEY,String(value));}catch(_){}
+  }
+
+  function applyZoom(ctx,value,persist){
+    if(ZOOM_LEVELS.indexOf(value)===-1)value=100;
+    ctx.zoom=value;
+    ctx.root.setAttribute('data-search-zoom',String(value));
+    if(ctx.zoomValue)ctx.zoomValue.textContent=String(value)+'%';
+    if(ctx.zoomOut)ctx.zoomOut.disabled=value===ZOOM_LEVELS[0];
+    if(ctx.zoomIn)ctx.zoomIn.disabled=value===ZOOM_LEVELS[ZOOM_LEVELS.length-1];
+    if(ctx.zoomGroup)ctx.zoomGroup.setAttribute('aria-label','Powiększenie widoku wyszukiwarki: '+String(value)+'%');
+    if(persist!==false)persistZoom(value);
+  }
+
+  function changeZoom(ctx,direction){
+    var current=ZOOM_LEVELS.indexOf(ctx.zoom||100);
+    if(current<0)current=0;
+    var next=Math.max(0,Math.min(ZOOM_LEVELS.length-1,current+direction));
+    applyZoom(ctx,ZOOM_LEVELS[next],true);
   }
 
   function levenshtein(a,b){
@@ -779,6 +810,18 @@
         clearRecent();render(ctx);ctx.input.focus();return;
       }
 
+      if(event.target.closest('[data-search-zoom-out]')){
+        changeZoom(ctx,-1);return;
+      }
+
+      if(event.target.closest('[data-search-zoom-in]')){
+        changeZoom(ctx,1);return;
+      }
+
+      if(event.target.closest('[data-search-zoom-reset]')){
+        applyZoom(ctx,100,true);return;
+      }
+
       var result=event.target.closest('[data-search-result]');
       if(result)saveRecent(ctx.query);
 
@@ -819,7 +862,14 @@
       '<div class="gracz-search__box">'+
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>'+
         '<input type="search" data-search-input autocomplete="off" spellcheck="false" placeholder="Szukaj lub wpisz całe pytanie…" aria-label="Szukaj w gracz.pl" aria-autocomplete="list">'+
-        '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
+        '<div class="gracz-search__field-actions">'+
+          '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
+          '<div class="gracz-search__zoom" data-search-zoom-group role="group" aria-label="Powiększenie widoku wyszukiwarki: 100%">'+
+            '<button type="button" data-search-zoom-out aria-label="Pomniejsz widok wyszukiwarki" title="Pomniejsz widok">A−</button>'+
+            '<button type="button" class="gracz-search__zoom-value" data-search-zoom-reset aria-label="Przywróć standardowy rozmiar" title="Przywróć 100%"><span data-search-zoom-value>100%</span></button>'+
+            '<button type="button" data-search-zoom-in aria-label="Powiększ widok wyszukiwarki" title="Powiększ widok">A+</button>'+
+          '</div>'+
+        '</div>'+
       '</div>'+
       '<div class="gracz-search__quick" aria-label="Popularne wyszukiwania">'+
         '<span>Popularne:</span>'+
@@ -877,9 +927,15 @@
     ctx.more=root.querySelector('[data-search-more]');
     ctx.sortWrap=root.querySelector('[data-search-sort-wrap]');
     ctx.sortSelect=root.querySelector('[data-search-sort]');
+    ctx.zoomGroup=root.querySelector('[data-search-zoom-group]');
+    ctx.zoomOut=root.querySelector('[data-search-zoom-out]');
+    ctx.zoomIn=root.querySelector('[data-search-zoom-in]');
+    ctx.zoomValue=root.querySelector('[data-search-zoom-value]');
+    ctx.zoom=readZoom();
     ctx.input.value=ctx.query;
     ctx.input.setAttribute('aria-controls','gracz-search-results');
     ctx.results.id='gracz-search-results';
+    applyZoom(ctx,ctx.zoom,false);
     bindContext(ctx);
     render(ctx);
     return ctx;
