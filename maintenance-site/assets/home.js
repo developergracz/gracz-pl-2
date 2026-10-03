@@ -11,6 +11,11 @@
       text: 'Pracujemy nad profilem gracza, rankingami, turniejami i funkcjami społecznościowymi. Udostępnimy je w kolejnych etapach rozwoju gracz.pl.',
       button: 'Rozumiem'
     },
+    forum: {
+      title: 'Forum gracz.pl jest w trakcie budowy',
+      text: 'Budujemy profesjonalne forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl. Uruchomimy je po zakończeniu prac integracyjnych.',
+      button: 'Rozumiem'
+    },
     search: {
       title: 'Wyszukiwarka jest w przygotowaniu',
       text: 'Wyszukiwanie w serwisie zostanie uruchomione wraz z kolejnymi funkcjami gracz.pl.',

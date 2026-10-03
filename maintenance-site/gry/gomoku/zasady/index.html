@@ -34,8 +34,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self' https://gracz-contact-api.onrender.com; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/rules.css?v=corr-r1">
-  <script src="/assets/rules.js?v=sticky-sync-r2" defer></script>
+  <link rel="stylesheet" href="/assets/rules.css?v=forum-nav-r1">
+  <script src="/assets/rules.js?v=forum-r1" defer></script>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -73,7 +73,7 @@
           <li><a href="/gry/">Gry</a></li>
           <li><a href="/gry-karciane/">Gry karciane</a></li>
           <li><a href="/poradniki/">Poradniki</a></li>
-          <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+          <li><button class="rules-nav__dialog" type="button" data-modal="forum" aria-haspopup="dialog">Forum</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li>
         </ul>
       </nav>
       <div class="rules-header-actions" aria-label="Konto i wyszukiwanie">
