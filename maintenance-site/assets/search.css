@@ -1,4 +1,4 @@
-.gracz-search{
+@font-face{font-family:Montserrat;src:url('/assets/fonts/montserrat-latin.woff2') format('woff2');font-display:swap}\n@font-face{font-family:OpenSans;src:url('/assets/fonts/opensans-latin.woff2') format('woff2');font-display:swap}\n.gracz-search{
   width:100vw;
   height:100dvh;
   max-width:none;
