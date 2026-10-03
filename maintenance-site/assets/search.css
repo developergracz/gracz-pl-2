@@ -2506,25 +2506,101 @@ dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-w
   .gracz-search-forum-dialog h2{font-size:23px}
 }
 
+/* SEARCH R3 RESULTS PANE — draggable top bar expands only the results area upward */
+.gracz-search__results-pane{
+  position:relative;
+  z-index:7;
+  display:flex;
+  flex:1 1 auto;
+  min-height:120px;
+  flex-direction:column;
+}
+.gracz-search__results-pane .gracz-search__results{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+.gracz-search__results-resizer{
+  flex:0 0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 14px 1px 28px;
+  cursor:ns-resize;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  outline:0;
+}
+.gracz-search__results-resizer span{
+  display:block;
+  width:118px;
+  height:5px;
+  border-radius:999px;
+  background:#56c8c1;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10),0 0 13px rgba(86,200,193,.28);
+  transition:width .14s ease,height .14s ease,box-shadow .14s ease;
+}
+.gracz-search__results-resizer:hover span,
+.gracz-search__results-resizer:focus-visible span,
+dialog.gracz-search.is-search-results-resizing .gracz-search__results-resizer span{
+  width:142px;
+  height:6px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.16),0 0 18px rgba(86,200,193,.46);
+}
+.gracz-search__results-resizer:focus-visible{
+  outline:2px solid rgba(86,200,193,.56);
+  outline-offset:-2px;
+  border-radius:999px;
+}
+dialog.gracz-search[data-search-results-resized="true"] .gracz-search__results-pane{
+  flex:0 0 var(--search-results-pane-height)!important;
+  height:var(--search-results-pane-height)!important;
+  margin-top:calc(-1 * var(--search-results-grow))!important;
+  background:
+    linear-gradient(180deg,rgba(8,28,25,.985),rgba(5,16,15,.99));
+  box-shadow:0 -18px 34px rgba(0,0,0,.28);
+}
+dialog.gracz-search.is-search-results-resizing,
+body.gracz-search-results-resizing{
+  cursor:ns-resize!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+.gracz-search-page__panel .gracz-search__results-pane{
+  display:block;
+  min-height:0;
+}
+.gracz-search-page__panel .gracz-search__results-resizer{
+  display:none!important;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__results-resizer,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__results-resizer{
+  display:none!important;
+}
+@media(max-width:720px){
+  .gracz-search__results-pane{
+    min-height:0;
+  }
+}
 
-/* SEARCH R3 FORUM CTA — distinct blue button in the portal navigation */
+/* SEARCH R3 FORUM CTA — exact scrollbar teal, typography inherited from nav */
 .gracz-search__portal-nav-item>button.gracz-search__forum-button{
   min-height:36px;
   margin:6px 5px;
   padding:0 17px;
-  border:1px solid rgba(105,180,255,.78);
+  border:1px solid #56c8c1;
   border-radius:999px;
-  background:linear-gradient(180deg,#2f91ff 0%,#176ed8 100%);
-  color:#fff;
-  font-weight:800;
-  box-shadow:0 7px 18px rgba(23,110,216,.24),inset 0 1px 0 rgba(255,255,255,.2);
+  background:#56c8c1;
+  color:#041b18;
+  box-shadow:0 7px 18px rgba(86,200,193,.22),inset 0 1px 0 rgba(255,255,255,.18);
 }
 .gracz-search__portal-nav-item>button.gracz-search__forum-button:hover,
 .gracz-search__portal-nav-item>button.gracz-search__forum-button:focus-visible{
-  border-color:#9bcfff;
-  background:linear-gradient(180deg,#45a1ff 0%,#237be5 100%);
-  color:#fff;
-  box-shadow:0 9px 24px rgba(35,123,229,.34),0 0 0 2px rgba(90,168,255,.15);
+  border-color:#56c8c1;
+  background:#56c8c1;
+  color:#041b18;
+  box-shadow:0 9px 24px rgba(86,200,193,.32),0 0 0 2px rgba(86,200,193,.14);
   outline:0;
 }
 @media(max-width:720px){
@@ -2532,6 +2608,5 @@ dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-w
     min-height:32px;
     margin:5px 3px;
     padding:0 13px;
-    font-size:14px;
   }
 }
