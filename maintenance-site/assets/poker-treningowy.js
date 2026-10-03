@@ -9,6 +9,7 @@
     login:{title:'Logowanie nie jest jeszcze aktywne',text:'System kont użytkowników jest obecnie przygotowywany. Logowanie udostępnimy w kolejnym etapie rozwoju gracz.pl.',button:'Rozumiem'},
     register:{title:'Rejestracja nie jest jeszcze aktywna',text:'Możliwość zakładania kont zostanie uruchomiona po zakończeniu przygotowania systemu użytkowników gracz.pl.',button:'Rozumiem'},
     community:{title:'Funkcje społecznościowe są w przygotowaniu',text:'Profil gracza, turnieje i funkcje społecznościowe zostaną uruchomione w kolejnych etapach.',button:'Rozumiem'},
+    forum:{title:'Forum gracz.pl jest w trakcie budowy',text:'Budujemy profesjonalne forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl. Uruchomimy je po zakończeniu prac integracyjnych.',button:'Rozumiem'},
     rankings:{title:'Historia i statystyki są w przygotowaniu',text:'Historia rozdań, statystyki sesji i narzędzia analizy pojawią się wraz z uruchomieniem stołów treningowych.',button:'Rozumiem'},
     multiplayer:{title:'Stoły treningowe są w przygotowaniu',text:'Stoły treningowe Texas Hold’em dla 2–6 graczy zostaną uruchomione po zakończeniu prac nad trybem edukacyjnym.',button:'Rozumiem'},
     play:{title:'Poker treningowy jest w przygotowaniu',text:'Tryb treningowy nie jest jeszcze aktywny. Ta podstrona przedstawia zasady Texas Hold’em oraz planowany edukacyjny tryb gry na żetonach bez wartości pieniężnej.',button:'Rozumiem'},
