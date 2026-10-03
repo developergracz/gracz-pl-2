@@ -1365,3 +1365,52 @@ dialog.gracz-search .gracz-search__panel{
     display:none!important;
   }
 }
+
+
+/* SEARCH R3 CUSTOM ZOOM TOOLTIP — replace native browser tooltip */
+.gracz-search__zoom-tooltip{
+  position:absolute;
+  right:50%;
+  bottom:calc(100% + 8px);
+  z-index:45;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:27px;
+  padding:0 11px;
+  border:0;
+  border-radius:999px;
+  background:#56c8c1;
+  color:#06211e;
+  box-shadow:0 8px 22px rgba(0,0,0,.24),0 0 0 1px rgba(255,255,255,.05) inset;
+  font:800 9px/1 OpenSans,Arial,sans-serif;
+  white-space:nowrap;
+  opacity:0;
+  visibility:hidden;
+  transform:translate(50%,4px);
+  pointer-events:none;
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.gracz-search__zoom-selector:hover .gracz-search__zoom-tooltip,
+.gracz-search__zoom-selector:focus-within .gracz-search__zoom-tooltip{
+  opacity:1;
+  visibility:visible;
+  transform:translate(50%,0);
+}
+.gracz-search__zoom-tooltip::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:100%;
+  width:0;
+  height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-top:5px solid #56c8c1;
+  transform:translateX(-50%);
+}
+@media(max-width:720px){
+  .gracz-search__zoom-tooltip{
+    display:none;
+  }
+}
