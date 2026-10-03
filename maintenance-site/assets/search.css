@@ -1019,3 +1019,83 @@ dialog.gracz-search .gracz-search__panel{
     padding:5px 22px 6px;
   }
 }
+
+
+/* SEARCH R3 BENEFITS CTA — tagline and learn-more action */
+.gracz-search__head-copy{
+  min-width:0;
+  flex:1 1 auto;
+}
+.gracz-search__head-copy p{
+  max-width:560px;
+  margin:5px 0 0;
+  color:#8ea8a1;
+  font-size:10px;
+  line-height:1.4;
+  letter-spacing:.02em;
+  text-transform:none;
+}
+.gracz-search__head-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin-left:auto;
+  flex:0 0 auto;
+}
+.gracz-search__learn-more{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 12px;
+  border:1px solid rgba(111,211,205,.24);
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(78,181,173,.12),rgba(35,107,101,.07));
+  color:#aee8e2;
+  font:800 9px/1.2 OpenSans,Arial,sans-serif;
+  text-decoration:none;
+  white-space:nowrap;
+  transition:.16s ease;
+}
+.gracz-search__learn-more:hover,
+.gracz-search__learn-more:focus-visible{
+  border-color:rgba(111,211,205,.48);
+  background:rgba(111,211,205,.14);
+  color:#fff;
+  outline:0;
+}
+.gracz-search__head-actions .gracz-search__home{
+  margin-left:0;
+}
+@media(max-width:860px){
+  .gracz-search__head{
+    align-items:center;
+  }
+  .gracz-search__head-copy p{
+    max-width:420px;
+  }
+  .gracz-search__learn-more{
+    max-width:180px;
+    white-space:normal;
+    text-align:center;
+    padding:6px 10px;
+  }
+}
+@media(max-width:720px){
+  .gracz-search__head{
+    align-items:flex-start;
+    gap:10px;
+  }
+  .gracz-search__head-copy p{
+    max-width:none;
+    font-size:9px;
+    line-height:1.3;
+  }
+  .gracz-search__head-actions{
+    gap:6px;
+  }
+  .gracz-search__learn-more{
+    display:none;
+  }
+}
