@@ -6,6 +6,26 @@
   var dialog=null;
   var lastTrigger=null;
 
+  function loadPortalSearch(){
+    if(!document.querySelector('[data-modal="search"],[data-gracz-search]'))return;
+
+    if(!document.querySelector('link[data-gracz-search-style]')){
+      var link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='/assets/search.css?v=r1';
+      link.setAttribute('data-gracz-search-style','');
+      document.head.appendChild(link);
+    }
+
+    if(!document.querySelector('script[data-gracz-search-script]')){
+      var script=document.createElement('script');
+      script.src='/assets/search.js?v=r1';
+      script.defer=true;
+      script.setAttribute('data-gracz-search-script','');
+      document.head.appendChild(script);
+    }
+  }
+
   function ensureStyles(){
     var existing=document.querySelector('link[data-contact-modal-style]');
     if(existing){
@@ -187,6 +207,8 @@
       lastTrigger=null;
     }
   }
+
+  loadPortalSearch();
 
   document.addEventListener('click',function(event){
     var privacy=event.target.closest('[data-modal="privacy"]');
