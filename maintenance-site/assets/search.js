@@ -6,7 +6,7 @@
   var INDEX=(window.GRACZ_SEARCH_INDEX||[]).slice();
   var RECENT_KEY='graczSearchRecentR2';
   var ZOOM_KEY='graczSearchZoomR3';
-  var ZOOM_LEVELS=[100,115,130,145];
+  var ZOOM_LEVELS=[100,115,130,145,160,175];
   var RESULTS_ZOOM_KEY='graczSearchResultsZoomR3';
   var RESULTS_ZOOM_LEVELS=[85,100,115,130,145];
   var MAX_RECENT=8;
@@ -202,6 +202,11 @@
         option.setAttribute('aria-checked',selected?'true':'false');
       });
     }
+    if(ctx.maximizeButton){
+      var isFullscreen=ctx.root.classList.contains('is-search-fullscreen');
+      ctx.maximizeButton.setAttribute('aria-pressed',isFullscreen?'true':'false');
+      ctx.maximizeButton.innerHTML=isFullscreen?'<span aria-hidden="true">↙</span> Przywróć':'<span aria-hidden="true">⛶</span> Powiększ';
+    }
     if(persist!==false)persistZoom(value);
   }
 
@@ -210,6 +215,20 @@
     if(current<0)current=0;
     var next=Math.max(0,Math.min(ZOOM_LEVELS.length-1,current+direction));
     applyZoom(ctx,ZOOM_LEVELS[next],true);
+  }
+
+  function setSearchFullscreen(ctx,enabled){
+    if(!ctx||ctx.mode!=='modal')return;
+    ctx.root.classList.toggle('is-search-fullscreen',!!enabled);
+    if(ctx.maximizeButton){
+      ctx.maximizeButton.setAttribute('aria-pressed',enabled?'true':'false');
+      ctx.maximizeButton.innerHTML=enabled?'<span aria-hidden="true">↙</span> Przywróć':'<span aria-hidden="true">⛶</span> Powiększ';
+      ctx.maximizeButton.setAttribute('aria-label',enabled?'Przywróć standardowy rozmiar wyszukiwarki':'Powiększ wyszukiwarkę do rozmiaru okna przeglądarki');
+    }
+  }
+
+  function toggleSearchFullscreen(ctx){
+    setSearchFullscreen(ctx,!ctx.root.classList.contains('is-search-fullscreen'));
   }
 
   function readResultsZoom(){
@@ -972,6 +991,10 @@
         openResultsWindow(ctx,resultsWindowButton);return;
       }
 
+      if(event.target.closest('[data-search-fullscreen]')){
+        toggleSearchFullscreen(ctx);return;
+      }
+
       if(event.target.closest('[data-search-zoom-out]')){
         changeZoom(ctx,-1);return;
       }
@@ -1023,7 +1046,9 @@
         '<div class="gracz-search__head-copy"><span class="gracz-search__brand">gracz<span>.pl</span></span><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
         '<div class="gracz-search__head-actions">'+
           '<a class="gracz-search__learn-more" href="/wyszukiwarka/">Poznaj zalety naszej wyszukiwarki</a>'+
-          (page?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>':'<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
+          (page
+            ?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>'
+            :'<button type="button" class="gracz-search__maximize" data-search-fullscreen aria-pressed="false" aria-label="Powiększ wyszukiwarkę do rozmiaru okna przeglądarki"><span aria-hidden="true">⛶</span> Powiększ</button><button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
         '</div>'+
       '</div>'+
       '<h1 class="sr-only">'+(page?'Wyniki wyszukiwania gracz.pl':'Wyszukiwarka gracz.pl')+'</h1>'+
@@ -1042,6 +1067,8 @@
                 '<button type="button" role="menuitemradio" data-search-zoom-level="115" aria-checked="false">115%</button>'+
                 '<button type="button" role="menuitemradio" data-search-zoom-level="130" aria-checked="false">130%</button>'+
                 '<button type="button" role="menuitemradio" data-search-zoom-level="145" aria-checked="false">145%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="160" aria-checked="false">160%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="175" aria-checked="false">175%</button>'+
               '</div>'+
             '</div>'+
             '<button type="button" data-search-zoom-in aria-label="Powiększ widok wyszukiwarki" title="Powiększ widok">A+</button>'+
@@ -1114,6 +1141,7 @@
     ctx.zoomSelector=root.querySelector('[data-search-zoom-selector]');
     ctx.zoomReset=root.querySelector('[data-search-zoom-reset]');
     ctx.zoomOptions=Array.prototype.slice.call(root.querySelectorAll('[data-search-zoom-level]'));
+    ctx.maximizeButton=root.querySelector('[data-search-fullscreen]');
     ctx.zoom=readZoom();
     ctx.input.value=ctx.query;
     ctx.input.setAttribute('aria-controls','gracz-search-results');
@@ -1142,6 +1170,7 @@
     ctx.sort='relevance';
     ctx.query=String(preset||'');
     ctx.input.value=ctx.query;
+    setSearchFullscreen(ctx,false);
     render(ctx);
     if(typeof ctx.root.showModal==='function')ctx.root.showModal();
     else ctx.root.setAttribute('open','');
