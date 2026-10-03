@@ -8,7 +8,7 @@ R4 jest wdrażane etapowo. Żaden kolejny etap nie rozpoczyna się tylko dlatego
 
 ## 2. Fazy
 
-### R4.0 — Documentation Gate
+### R4.0 — Documentation Gate — PASS 03.10.2026
 
 Zakres:
 
@@ -329,8 +329,9 @@ DONE wymaga:
 ## 10. Status początkowy
 
 ```text
-R4.0 DOCUMENTATION = TARGETED BY THIS PACKAGE
-R4.1-R4.10 = NOT STARTED
+R4.0 DOCUMENTATION = PASS / COMPLETE
+R4.1 = READY / NOT STARTED
+R4.2-R4.10 = NOT STARTED
 CODE IMPLEMENTATION = NOT STARTED
 PROVIDER PROCUREMENT = NOT STARTED
 PRODUCTION = NOT AUTHORIZED
