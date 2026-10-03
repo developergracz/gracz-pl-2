@@ -1370,13 +1370,14 @@ dialog.gracz-search .gracz-search__panel{
 /* SEARCH R3 CUSTOM ZOOM TOOLTIP — replace native browser tooltip */
 .gracz-search__zoom-tooltip{
   position:absolute;
-  right:50%;
+  right:-4px;
   bottom:calc(100% + 10px);
   z-index:45;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   min-height:38px;
+  max-width:min(260px,calc(100vw - 48px));
   padding:0 18px;
   border:0;
   border-radius:999px;
@@ -1388,26 +1389,25 @@ dialog.gracz-search .gracz-search__panel{
   white-space:nowrap;
   opacity:0;
   visibility:hidden;
-  transform:translate(50%,5px);
+  transform:translateY(5px);
   pointer-events:none;
   transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
 }
 .gracz-search__zoom-value:hover + .gracz-search__zoom-tooltip{
   opacity:1;
   visibility:visible;
-  transform:translate(50%,0);
+  transform:translateY(0);
 }
 .gracz-search__zoom-tooltip::after{
   content:"";
   position:absolute;
-  left:50%;
+  right:17px;
   top:100%;
   width:0;
   height:0;
   border-left:5px solid transparent;
   border-right:5px solid transparent;
   border-top:5px solid #56c8c1;
-  transform:translateX(-50%);
 }
 @media(max-width:720px){
   .gracz-search__zoom-tooltip{
