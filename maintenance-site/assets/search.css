@@ -2448,88 +2448,6 @@ dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-w
 }
 
 
-/* SEARCH R3 TOP-EDGE RESIZE — visible premium grab rail */
-dialog.gracz-search .gracz-search__resize-handle{
-  position:absolute;
-  z-index:999;
-  top:0;
-  left:0;
-  right:0;
-  height:18px;
-  display:flex;
-  align-items:flex-start;
-  justify-content:center;
-  cursor:ns-resize;
-  touch-action:none;
-  user-select:none;
-  -webkit-user-select:none;
-  outline:0;
-  background:
-    linear-gradient(90deg,
-      rgba(86,200,193,0) 0%,
-      rgba(86,200,193,.24) 20%,
-      rgba(114,216,209,.62) 50%,
-      rgba(86,200,193,.24) 80%,
-      rgba(86,200,193,0) 100%) top center/100% 2px no-repeat;
-}
-dialog.gracz-search .gracz-search__resize-handle span{
-  display:block;
-  width:104px;
-  height:5px;
-  margin-top:4px;
-  border-radius:999px;
-  background:#72d8d1;
-  border:1px solid rgba(220,255,252,.34);
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,.28),
-    0 0 14px rgba(86,200,193,.34),
-    0 2px 8px rgba(0,0,0,.38);
-  opacity:.92;
-  transition:width .14s ease,height .14s ease,opacity .14s ease,background .14s ease,box-shadow .14s ease;
-}
-dialog.gracz-search .gracz-search__resize-handle:hover span,
-dialog.gracz-search .gracz-search__resize-handle:focus-visible span,
-dialog.gracz-search.is-search-resizing .gracz-search__resize-handle span{
-  width:124px;
-  height:6px;
-  opacity:1;
-  background:#9af2ec;
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,.28),
-    0 0 22px rgba(86,200,193,.58),
-    0 3px 10px rgba(0,0,0,.42);
-}
-dialog.gracz-search .gracz-search__resize-handle:focus-visible{
-  outline:2px solid rgba(114,216,209,.72);
-  outline-offset:-2px;
-  border-radius:10px 10px 0 0;
-}
-dialog.gracz-search[data-search-user-resized="true"] .gracz-search__panel{
-  height:var(--search-user-height)!important;
-  max-height:var(--search-user-height)!important;
-  margin:var(--search-user-top) auto 0!important;
-}
-dialog.gracz-search[data-search-user-resized="true"] .gracz-search__results{
-  flex:1 1 auto!important;
-  min-height:150px!important;
-  max-height:none!important;
-}
-dialog.gracz-search.is-search-resizing,
-body.gracz-search-resizing{
-  cursor:ns-resize!important;
-  user-select:none!important;
-  -webkit-user-select:none!important;
-}
-dialog.gracz-search.is-search-resizing .gracz-search__panel{
-  transition:none!important;
-}
-dialog.gracz-search.is-search-fullscreen .gracz-search__resize-handle,
-dialog.gracz-search[data-search-device="mobile"] .gracz-search__resize-handle,
-dialog.gracz-search[data-search-device="phone"] .gracz-search__resize-handle{
-  display:none!important;
-}
-
-
 /* Forum coming-soon dialog — isolated from Search R3 ranking and layout logic */
 .gracz-search-forum-dialog{
   width:min(560px,calc(100% - 28px));
@@ -2586,4 +2504,34 @@ dialog.gracz-search[data-search-device="phone"] .gracz-search__resize-handle{
 @media(max-width:620px){
   .gracz-search-forum-dialog__panel{padding:24px 20px 22px}
   .gracz-search-forum-dialog h2{font-size:23px}
+}
+
+
+/* SEARCH R3 FORUM CTA — distinct blue button in the portal navigation */
+.gracz-search__portal-nav-item>button.gracz-search__forum-button{
+  min-height:36px;
+  margin:6px 5px;
+  padding:0 17px;
+  border:1px solid rgba(105,180,255,.78);
+  border-radius:999px;
+  background:linear-gradient(180deg,#2f91ff 0%,#176ed8 100%);
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 7px 18px rgba(23,110,216,.24),inset 0 1px 0 rgba(255,255,255,.2);
+}
+.gracz-search__portal-nav-item>button.gracz-search__forum-button:hover,
+.gracz-search__portal-nav-item>button.gracz-search__forum-button:focus-visible{
+  border-color:#9bcfff;
+  background:linear-gradient(180deg,#45a1ff 0%,#237be5 100%);
+  color:#fff;
+  box-shadow:0 9px 24px rgba(35,123,229,.34),0 0 0 2px rgba(90,168,255,.15);
+  outline:0;
+}
+@media(max-width:720px){
+  .gracz-search__portal-nav-item>button.gracz-search__forum-button{
+    min-height:32px;
+    margin:5px 3px;
+    padding:0 13px;
+    font-size:14px;
+  }
 }
