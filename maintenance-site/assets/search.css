@@ -1910,3 +1910,172 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__results{
     flex-wrap:wrap;
   }
 }
+
+
+/* SEARCH R3 PORTAL NAVIGATION — mirrors homepage menu without search icon */
+.gracz-search__portal-nav{
+  position:relative;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  flex:0 0 auto;
+  min-height:46px;
+  margin:0;
+  padding:0 18px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  background:rgba(3,17,15,.68);
+}
+.gracz-search__portal-nav>a,
+.gracz-search__portal-nav-item>a,
+.gracz-search__portal-nav-item>button{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:45px;
+  padding:0 13px;
+  border:0;
+  background:transparent;
+  color:#d3ddd9;
+  font:800 11px/1 OpenSans,Arial,sans-serif;
+  text-decoration:none;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:color .14s ease,background .14s ease;
+}
+.gracz-search__portal-nav>a:hover,
+.gracz-search__portal-nav>a:focus-visible,
+.gracz-search__portal-nav-item>a:hover,
+.gracz-search__portal-nav-item>a:focus-visible,
+.gracz-search__portal-nav-item>button:hover,
+.gracz-search__portal-nav-item>button:focus-visible{
+  background:rgba(86,200,193,.055);
+  color:#fff;
+  outline:0;
+}
+.gracz-search__portal-nav>a.is-active{
+  color:#e2c875;
+}
+.gracz-search__portal-nav>a.is-active::after{
+  content:"";
+  position:absolute;
+  left:13px;
+  right:13px;
+  bottom:0;
+  height:2px;
+  border-radius:999px 999px 0 0;
+  background:linear-gradient(90deg,#dfbd58,#f0d784);
+  box-shadow:0 0 12px rgba(224,190,87,.26);
+}
+.gracz-search__portal-nav-item{
+  position:relative;
+}
+.gracz-search__portal-nav-item>a span,
+.gracz-search__portal-nav-item>button span{
+  color:#8ca39d;
+  font-size:13px;
+  transform:translateY(-1px);
+}
+.gracz-search__portal-dropdown{
+  position:absolute;
+  left:0;
+  top:calc(100% - 2px);
+  z-index:80;
+  display:grid;
+  min-width:190px;
+  padding:7px;
+  border:1px solid rgba(86,200,193,.16);
+  border-radius:12px;
+  background:rgba(5,26,23,.985);
+  box-shadow:0 18px 42px rgba(0,0,0,.48);
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(-5px);
+  pointer-events:none;
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.gracz-search__portal-nav-item:hover .gracz-search__portal-dropdown,
+.gracz-search__portal-nav-item:focus-within .gracz-search__portal-dropdown{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.gracz-search__portal-dropdown>a,
+.gracz-search__portal-dropdown>span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:0 10px;
+  border-radius:8px;
+  color:#b6c7c2;
+  font:700 10px/1.25 OpenSans,Arial,sans-serif;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.gracz-search__portal-dropdown>a:hover,
+.gracz-search__portal-dropdown>a:focus-visible{
+  background:rgba(86,200,193,.09);
+  color:#fff;
+  outline:0;
+}
+.gracz-search__portal-dropdown--community>span{
+  justify-content:space-between;
+  color:#91a59f;
+}
+.gracz-search__portal-dropdown em{
+  color:#d6bc69;
+  font:800 8px/1 OpenSans,Arial,sans-serif;
+  font-style:normal;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav{
+  min-height:52px;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav>a,
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>a,
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
+  min-height:51px;
+  font-size:12px;
+}
+@media(max-width:880px){
+  .gracz-search__portal-nav{
+    justify-content:flex-start;
+    overflow-x:auto;
+    overflow-y:visible;
+    padding:0 10px;
+    scrollbar-width:none;
+  }
+  .gracz-search__portal-nav::-webkit-scrollbar{display:none}
+  .gracz-search__portal-nav>a,
+  .gracz-search__portal-nav-item>a,
+  .gracz-search__portal-nav-item>button{
+    padding-left:10px;
+    padding-right:10px;
+    font-size:10px;
+  }
+}
+@media(max-width:720px){
+  .gracz-search__portal-nav{
+    min-height:42px;
+    padding:0 8px;
+  }
+  .gracz-search__portal-nav>a,
+  .gracz-search__portal-nav-item>a,
+  .gracz-search__portal-nav-item>button{
+    min-height:41px;
+    font-size:9px;
+  }
+  .gracz-search__portal-dropdown{
+    display:none;
+  }
+  .gracz-search__portal-nav-item>a span,
+  .gracz-search__portal-nav-item>button span{
+    display:none;
+  }
+}
