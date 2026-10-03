@@ -195,7 +195,7 @@
       ctx.zoomOptions.forEach(function(option){
         var selected=parseInt(option.getAttribute('data-search-zoom-level')||'0',10)===value;
         option.classList.toggle('is-active',selected);
-        option.setAttribute('aria-pressed',selected?'true':'false');
+        option.setAttribute('aria-checked',selected?'true':'false');
       });
     }
     if(persist!==false)persistZoom(value);
@@ -887,10 +887,10 @@
             '<div class="gracz-search__zoom-selector">'+
               '<button type="button" class="gracz-search__zoom-value" data-search-zoom-selector aria-haspopup="true" aria-label="Aktualne powiększenie 100%. Wybierz poziom powiększenia" title="Wybierz poziom powiększenia"><span data-search-zoom-value>100%</span><span class="gracz-search__zoom-caret" aria-hidden="true">⌄</span></button>'+
               '<div class="gracz-search__zoom-menu" role="menu" aria-label="Poziomy powiększenia">'+
-                '<button type="button" role="menuitemradio" data-search-zoom-level="100" aria-pressed="true">100%</button>'+
-                '<button type="button" role="menuitemradio" data-search-zoom-level="115" aria-pressed="false">115%</button>'+
-                '<button type="button" role="menuitemradio" data-search-zoom-level="130" aria-pressed="false">130%</button>'+
-                '<button type="button" role="menuitemradio" data-search-zoom-level="145" aria-pressed="false">145%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="100" aria-checked="true">100%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="115" aria-checked="false">115%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="130" aria-checked="false">130%</button>'+
+                '<button type="button" role="menuitemradio" data-search-zoom-level="145" aria-checked="false">145%</button>'+
               '</div>'+
             '</div>'+
             '<button type="button" data-search-zoom-in aria-label="Powiększ widok wyszukiwarki" title="Powiększ widok">A+</button>'+
