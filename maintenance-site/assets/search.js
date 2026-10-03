@@ -117,7 +117,6 @@
   var urlTimer=null;
   var adaptiveViewportBound=false;
   var adaptiveViewportFrame=0;
-  var activePanelResize=null;
   var forumDialog=null;
   var forumDialogLastTrigger=null;
 
@@ -146,7 +145,6 @@
     ctx.root.style.setProperty('--search-vw',m.width+'px');
     ctx.root.style.setProperty('--search-vh',m.height+'px');
     ctx.root.style.setProperty('--search-gutter',m.gutter+'px');
-    if(ctx.userPanelSize)applyUserPanelSize(ctx);
   }
 
   function refreshAdaptiveViewport(){
@@ -286,152 +284,6 @@
     setSearchFullscreen(ctx,!ctx.root.classList.contains('is-search-fullscreen'));
   }
 
-
-  function panelResizeAvailable(ctx){
-    if(!ctx||ctx.mode!=='modal'||!ctx.panel||!ctx.resizeHandle)return false;
-    var m=viewportMetrics();
-    return m.device==='tablet'||m.device==='desktop'||m.device==='wide';
-  }
-
-  function panelResizeBounds(){
-    var m=viewportMetrics();
-    var gutter=Math.max(8,m.gutter);
-    var maxHeight=Math.max(240,m.height-(2*gutter));
-    var minHeight=Math.min(500,maxHeight);
-    return {metrics:m,gutter:gutter,minHeight:minHeight,maxHeight:maxHeight};
-  }
-
-  function updateResizeAria(ctx,height){
-    if(!ctx||!ctx.resizeHandle)return;
-    var b=panelResizeBounds();
-    ctx.resizeHandle.setAttribute('aria-valuemin',String(Math.round(b.minHeight)));
-    ctx.resizeHandle.setAttribute('aria-valuemax',String(Math.round(b.maxHeight)));
-    ctx.resizeHandle.setAttribute('aria-valuenow',String(Math.round(height||ctx.panel.getBoundingClientRect().height)));
-  }
-
-  function applyUserPanelSize(ctx){
-    if(!ctx||!ctx.userPanelSize)return;
-    if(!panelResizeAvailable(ctx)||ctx.root.classList.contains('is-search-fullscreen')){
-      ctx.root.removeAttribute('data-search-user-resized');
-      return;
-    }
-    var b=panelResizeBounds();
-    var height=Math.max(b.minHeight,Math.min(b.maxHeight,ctx.userPanelSize.height));
-    var top=Math.max(b.gutter,Math.min(ctx.userPanelSize.top,b.metrics.height-b.gutter-height));
-    if(top+height>b.metrics.height-b.gutter){
-      top=Math.max(b.gutter,b.metrics.height-b.gutter-height);
-    }
-    ctx.userPanelSize={top:top,height:height};
-    ctx.root.style.setProperty('--search-user-top',Math.round(top)+'px');
-    ctx.root.style.setProperty('--search-user-height',Math.round(height)+'px');
-    ctx.root.setAttribute('data-search-user-resized','true');
-    updateResizeAria(ctx,height);
-  }
-
-  function resetUserPanelSize(ctx){
-    if(!ctx)return;
-    ctx.userPanelSize=null;
-    ctx.root.removeAttribute('data-search-user-resized');
-    ctx.root.style.removeProperty('--search-user-top');
-    ctx.root.style.removeProperty('--search-user-height');
-    if(ctx.panel)updateResizeAria(ctx,ctx.panel.getBoundingClientRect().height);
-  }
-
-  function resizePanelBy(ctx,delta){
-    if(!panelResizeAvailable(ctx)||ctx.root.classList.contains('is-search-fullscreen'))return;
-    var b=panelResizeBounds();
-    var rect=ctx.panel.getBoundingClientRect();
-    var base=ctx.userPanelSize||{top:rect.top,height:rect.height};
-    var bottom=base.top+base.height;
-    var height=Math.max(b.minHeight,Math.min(b.maxHeight,base.height+delta));
-    var top=bottom-height;
-    if(top<b.gutter){
-      top=b.gutter;
-      height=Math.min(b.maxHeight,bottom-top);
-    }
-    ctx.userPanelSize={top:top,height:height};
-    applyUserPanelSize(ctx);
-  }
-
-  function maximizeUserPanelSize(ctx){
-    if(!panelResizeAvailable(ctx)||ctx.root.classList.contains('is-search-fullscreen'))return;
-    var b=panelResizeBounds();
-    ctx.userPanelSize={top:b.gutter,height:b.maxHeight};
-    applyUserPanelSize(ctx);
-  }
-
-  function bindPanelResize(ctx){
-    if(!ctx||!ctx.resizeHandle||ctx.resizeHandle.__graczResizeBound)return;
-    ctx.resizeHandle.__graczResizeBound=true;
-
-    ctx.resizeHandle.addEventListener('pointerdown',function(event){
-      if(event.button!==0||!panelResizeAvailable(ctx)||ctx.root.classList.contains('is-search-fullscreen'))return;
-      event.preventDefault();
-      var rect=ctx.panel.getBoundingClientRect();
-      var b=panelResizeBounds();
-      var startY=event.clientY;
-      var startTop=rect.top;
-      var startHeight=rect.height;
-      var bottom=startTop+startHeight;
-      activePanelResize={ctx:ctx,pointerId:event.pointerId,startY:startY,startTop:startTop,startHeight:startHeight,bottom:bottom};
-      ctx.root.classList.add('is-search-resizing');
-      document.body.classList.add('gracz-search-resizing');
-      try{ctx.resizeHandle.setPointerCapture(event.pointerId);}catch(_){}
-    });
-
-    ctx.resizeHandle.addEventListener('pointermove',function(event){
-      if(!activePanelResize||activePanelResize.ctx!==ctx||activePanelResize.pointerId!==event.pointerId)return;
-      event.preventDefault();
-      var s=activePanelResize;
-      var b=panelResizeBounds();
-      var delta=s.startY-event.clientY;
-      var height=Math.max(b.minHeight,Math.min(b.maxHeight,s.startHeight+delta));
-      var top=s.bottom-height;
-      if(top<b.gutter){
-        top=b.gutter;
-        height=Math.max(b.minHeight,Math.min(b.maxHeight,s.bottom-top));
-      }
-      ctx.userPanelSize={top:top,height:height};
-      applyUserPanelSize(ctx);
-    });
-
-    function finishPanelResize(event){
-      if(!activePanelResize||activePanelResize.ctx!==ctx)return;
-      if(event&&event.pointerId!==undefined&&activePanelResize.pointerId!==event.pointerId)return;
-      try{ctx.resizeHandle.releasePointerCapture(activePanelResize.pointerId);}catch(_){}
-      activePanelResize=null;
-      ctx.root.classList.remove('is-search-resizing');
-      document.body.classList.remove('gracz-search-resizing');
-    }
-    ctx.resizeHandle.addEventListener('pointerup',finishPanelResize);
-    ctx.resizeHandle.addEventListener('pointercancel',finishPanelResize);
-    ctx.resizeHandle.addEventListener('lostpointercapture',finishPanelResize);
-
-    ctx.resizeHandle.addEventListener('dblclick',function(event){
-      if(!panelResizeAvailable(ctx))return;
-      event.preventDefault();
-      maximizeUserPanelSize(ctx);
-    });
-
-    ctx.resizeHandle.addEventListener('keydown',function(event){
-      if(!panelResizeAvailable(ctx)||ctx.root.classList.contains('is-search-fullscreen'))return;
-      if(event.key==='ArrowUp'){
-        event.preventDefault();
-        resizePanelBy(ctx,event.shiftKey?80:40);
-      }else if(event.key==='ArrowDown'){
-        event.preventDefault();
-        resizePanelBy(ctx,event.shiftKey?-80:-40);
-      }else if(event.key==='Home'){
-        event.preventDefault();
-        maximizeUserPanelSize(ctx);
-      }else if(event.key==='End'){
-        event.preventDefault();
-        resetUserPanelSize(ctx);
-      }
-    });
-
-    updateResizeAria(ctx,ctx.panel.getBoundingClientRect().height);
-  }
 
   function readResultsZoom(){
     try{
@@ -1288,7 +1140,6 @@
   function shellMarkup(mode){
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
-      (page?'':'<div class="gracz-search__resize-handle" data-search-resize-handle role="separator" aria-orientation="horizontal" aria-label="Zmień wysokość okna wyszukiwarki. Przeciągnij górną krawędź, użyj strzałek lub kliknij dwa razy, aby powiększyć do maksimum." tabindex="0"><span aria-hidden="true"></span></div>')+
       '<nav class="gracz-search__portal-nav" aria-label="Główna nawigacja gracz.pl">'+
         '<a class="gracz-search__portal-logo" href="/" aria-label="gracz.pl — strona główna"><span>gracz</span><b>.pl</b></a>'+
         '<a class="is-active" href="/">Start</a>'+
@@ -1321,7 +1172,7 @@
             '<span>Społeczność <em>wkrótce</em></span>'+
           '</div>'+
         '</div>'+
-        '<div class="gracz-search__portal-nav-item"><button type="button" data-search-forum aria-haspopup="dialog">Forum</button></div>'+
+        '<div class="gracz-search__portal-nav-item"><button class="gracz-search__forum-button" type="button" data-search-forum aria-haspopup="dialog">Forum</button></div>'+
         '<a href="/o-gracz-pl/">O gracz.pl</a>'+
       '</nav>'+
       '<div class="gracz-search__head">'+
@@ -1425,7 +1276,6 @@
     ctx.zoomOptions=Array.prototype.slice.call(root.querySelectorAll('[data-search-zoom-level]'));
     ctx.maximizeButton=root.querySelector('[data-search-fullscreen]');
     ctx.panel=root.querySelector('.gracz-search__panel');
-    ctx.resizeHandle=root.querySelector('[data-search-resize-handle]');
     ctx.zoom=readZoom();
     bindAdaptiveViewport();
     applyAdaptiveViewport(ctx);
@@ -1433,7 +1283,6 @@
     ctx.input.setAttribute('aria-controls','gracz-search-results');
     ctx.results.id='gracz-search-results';
     applyZoom(ctx,ctx.zoom,false);
-    bindPanelResize(ctx);
     bindContext(ctx);
     render(ctx);
     return ctx;
@@ -1464,7 +1313,6 @@
     else ctx.root.setAttribute('open','');
     document.body.classList.add('gracz-search-open');
     window.setTimeout(function(){
-      if(ctx.panel)updateResizeAria(ctx,ctx.panel.getBoundingClientRect().height);
       ctx.input.focus();
     },0);
   }
