@@ -8,7 +8,7 @@ Status pakietu: **DESIGN COMPLETE / IMPLEMENTATION NOT STARTED / NOT DEPLOYED**
 
 Ten katalog definiuje pełny projekt SEARCH R4 — hybrydowej wyszukiwarki AI, warstwy RAG oraz osobistego trenera Academy.
 
-SEARCH R4 **nie zastępuje** SEARCH R2 MAX. R2 pozostaje szybkim, lokalnym i niezależnym od providera fundamentem. R4 dodaje inteligencję tylko tam, gdzie klasyczne wyszukiwanie nie wystarcza.
+SEARCH R4 **nie zastępuje** działającej wyszukiwarki. Aktualnym publicznym baseline jest SEARCH R3 SMART, zbudowany nad R2 MAX. R2 pozostaje szybkim, lokalnym fallback core, a R3 dodaje lokalne rozumienie intencji i kontekstu. R4 dołoży semantic retrieval, RAG i AI tylko tam, gdzie obecny silnik nie wystarcza.
 
 ## Dokumenty
 
@@ -34,7 +34,7 @@ ADR nadrzędny:
 ## Status prawdy
 
 ```text
-R2 MAX = IMPLEMENTED / LIVE
+R3 SMART = IMPLEMENTED / LIVE (R2 preserved as fallback core)
 R4 DESIGN = COMPLETE
 R4.0 DOCUMENTATION GATE = PASS
 R4.1 IMPLEMENTATION = READY / NOT STARTED
