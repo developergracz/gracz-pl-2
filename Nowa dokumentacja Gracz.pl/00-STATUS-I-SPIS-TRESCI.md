@@ -70,6 +70,29 @@ P8 IMPLEMENTATION = NOT STARTED
 MERGE / DEPLOYMENT / PRODUCTION ACTIONS FOR P8 = NOT AUTHORIZED
 ```
 
+## 1B. Checkpoint SEARCH R4 — 03.10.2026
+
+Dodano projektowy pakiet `GRACZ.PL SEARCH R4` oraz nadrzędny ADR:
+
+- `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-014-SEARCH-R4-HYBRID-AI-RAG-PLAYER-ASSISTANT.md`,
+- `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/`.
+
+Status:
+
+```text
+SEARCH R2 MAX = IMPLEMENTED / LIVE
+SEARCH R4 DOCUMENTATION = COMPLETE
+ADR-V3-014 = PROPOSED / DESIGN BASELINE
+R4 IMPLEMENTATION = NOT STARTED
+R4 MODEL PROVIDER = NOT SELECTED
+R4 SEMANTIC STORE = NOT SELECTED
+R4 API KEY = NOT CONFIGURED
+R4 DEPLOYMENT = NOT AUTHORIZED
+PRODUCTION CHANGE CAUSED BY DOCUMENTATION = NONE
+```
+
+Pakiet jest dokumentacją docelową i nie zmienia statusów E4.1-H, freeze, Privacy/Legal ani wcześniejszych bramek V3. Rozpoczęcie kodowania R4 wymaga osobnej autoryzacji oraz przejścia gate'ów opisanych w dokumencie `09-IMPLEMENTATION-ROADMAP-TESTS-ACCEPTANCE-GATES.md`.
+
 ## 2. Inwentarz bieżący
 
 Katalog `Nowa dokumentacja Gracz.pl/` zawiera 190 plików:
