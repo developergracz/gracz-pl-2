@@ -2448,14 +2448,14 @@ dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-w
 }
 
 
-/* SEARCH R3 TOP-EDGE RESIZE — user controlled vertical workspace */
+/* SEARCH R3 TOP-EDGE RESIZE — visible premium grab rail */
 dialog.gracz-search .gracz-search__resize-handle{
   position:absolute;
-  z-index:60;
+  z-index:999;
   top:0;
-  left:14px;
-  right:14px;
-  height:13px;
+  left:0;
+  right:0;
+  height:18px;
   display:flex;
   align-items:flex-start;
   justify-content:center;
@@ -2464,24 +2464,40 @@ dialog.gracz-search .gracz-search__resize-handle{
   user-select:none;
   -webkit-user-select:none;
   outline:0;
+  background:
+    linear-gradient(90deg,
+      rgba(86,200,193,0) 0%,
+      rgba(86,200,193,.24) 20%,
+      rgba(114,216,209,.62) 50%,
+      rgba(86,200,193,.24) 80%,
+      rgba(86,200,193,0) 100%) top center/100% 2px no-repeat;
 }
 dialog.gracz-search .gracz-search__resize-handle span{
   display:block;
-  width:72px;
-  height:3px;
-  margin-top:3px;
+  width:104px;
+  height:5px;
+  margin-top:4px;
   border-radius:999px;
-  background:rgba(126,224,217,.30);
-  box-shadow:0 0 0 1px rgba(0,0,0,.18),0 0 12px rgba(86,200,193,.08);
-  opacity:.55;
-  transition:opacity .14s ease,background .14s ease,box-shadow .14s ease;
+  background:#72d8d1;
+  border:1px solid rgba(220,255,252,.34);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.28),
+    0 0 14px rgba(86,200,193,.34),
+    0 2px 8px rgba(0,0,0,.38);
+  opacity:.92;
+  transition:width .14s ease,height .14s ease,opacity .14s ease,background .14s ease,box-shadow .14s ease;
 }
 dialog.gracz-search .gracz-search__resize-handle:hover span,
 dialog.gracz-search .gracz-search__resize-handle:focus-visible span,
 dialog.gracz-search.is-search-resizing .gracz-search__resize-handle span{
+  width:124px;
+  height:6px;
   opacity:1;
-  background:#72d8d1;
-  box-shadow:0 0 0 1px rgba(0,0,0,.22),0 0 16px rgba(86,200,193,.34);
+  background:#9af2ec;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.28),
+    0 0 22px rgba(86,200,193,.58),
+    0 3px 10px rgba(0,0,0,.42);
 }
 dialog.gracz-search .gracz-search__resize-handle:focus-visible{
   outline:2px solid rgba(114,216,209,.72);
