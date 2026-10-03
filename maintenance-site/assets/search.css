@@ -2141,3 +2141,308 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
     padding-right:8px;
   }
 }
+
+
+/* SEARCH R3 ADAPTIVE VIEWPORT MODULE — browser/device aware sizing */
+dialog.gracz-search{
+  box-sizing:border-box;
+  width:var(--search-vw,100vw)!important;
+  height:var(--search-vh,100dvh)!important;
+  max-width:var(--search-vw,100vw)!important;
+  max-height:var(--search-vh,100dvh)!important;
+  inset:0 auto auto 0!important;
+  overflow:hidden!important;
+}
+dialog.gracz-search .gracz-search__panel{
+  box-sizing:border-box;
+  width:min(980px,calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px))))!important;
+  height:min(720px,calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px))))!important;
+  max-width:calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px)))!important;
+  max-height:calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px)))!important;
+  margin:var(--search-gutter,16px) auto!important;
+  overflow-x:hidden!important;
+}
+dialog.gracz-search .gracz-search__panel>*{
+  min-width:0;
+  max-width:100%;
+}
+dialog.gracz-search .gracz-search__head{
+  align-items:center;
+  flex-wrap:wrap;
+}
+dialog.gracz-search .gracz-search__head-copy{
+  flex:1 1 360px;
+  min-width:0;
+}
+dialog.gracz-search .gracz-search__head-actions{
+  flex:0 1 auto;
+  min-width:0;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+dialog.gracz-search .gracz-search__box{
+  width:auto;
+  max-width:calc(100% - 48px);
+}
+dialog.gracz-search .gracz-search__field-actions{
+  max-width:100%;
+}
+dialog.gracz-search .gracz-search__portal-nav{
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:visible;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:none;
+}
+dialog.gracz-search .gracz-search__portal-nav::-webkit-scrollbar{
+  display:none;
+}
+
+/* Full-window mode keeps safe gutters instead of overflowing beyond the viewport */
+dialog.gracz-search.is-search-fullscreen .gracz-search__panel{
+  width:calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px)))!important;
+  height:calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px)))!important;
+  max-width:calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px)))!important;
+  max-height:calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px)))!important;
+  margin:var(--search-gutter,16px) auto!important;
+  border-radius:clamp(0px,var(--search-gutter,16px),18px)!important;
+  overflow-x:hidden!important;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__head{
+  display:grid;
+  grid-template-columns:minmax(260px,1fr) auto;
+  align-items:center;
+  column-gap:16px;
+  row-gap:8px;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__head-actions{
+  max-width:100%;
+  flex-wrap:wrap;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__box{
+  max-width:calc(100% - 36px);
+  margin-left:18px;
+  margin-right:18px;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__quick,
+dialog.gracz-search.is-search-fullscreen .gracz-search__commands,
+dialog.gracz-search.is-search-fullscreen .gracz-search__recent,
+dialog.gracz-search.is-search-fullscreen .gracz-search__suggestions,
+dialog.gracz-search.is-search-fullscreen .gracz-search__smart,
+dialog.gracz-search.is-search-fullscreen .gracz-search__scope-wrap,
+dialog.gracz-search.is-search-fullscreen .gracz-search__filters,
+dialog.gracz-search.is-search-fullscreen .gracz-search__results-window-bar,
+dialog.gracz-search.is-search-fullscreen .gracz-search__meta,
+dialog.gracz-search.is-search-fullscreen .gracz-search__actions-row{
+  margin-left:18px;
+  margin-right:18px;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__results{
+  margin-left:18px!important;
+  margin-right:6px!important;
+  padding-right:12px!important;
+}
+
+/* Wide desktop */
+dialog.gracz-search[data-search-device="wide"] .gracz-search__panel:not(.noop){
+  --adaptive-content-pad:24px;
+}
+dialog.gracz-search[data-search-device="wide"].is-search-fullscreen .gracz-search__head,
+dialog.gracz-search[data-search-device="desktop"].is-search-fullscreen .gracz-search__head{
+  padding-left:24px;
+  padding-right:24px;
+}
+
+/* Tablet */
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__panel{
+  border-radius:18px;
+}
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__head{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:9px;
+  padding:14px 18px 9px;
+}
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__head-actions{
+  justify-content:flex-start;
+  margin-left:0;
+}
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__box{
+  max-width:calc(100% - 28px);
+  margin-left:14px;
+  margin-right:14px;
+}
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__quick,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__commands,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__recent,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__suggestions,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__smart,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__scope-wrap,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__filters,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__results-window-bar,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__meta,
+dialog.gracz-search[data-search-device="tablet"] .gracz-search__actions-row{
+  margin-left:14px;
+  margin-right:14px;
+}
+
+/* Mobile and phones */
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__panel,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__panel{
+  width:var(--search-vw,100vw)!important;
+  height:var(--search-vh,100dvh)!important;
+  max-width:var(--search-vw,100vw)!important;
+  max-height:var(--search-vh,100dvh)!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__head,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__head{
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  align-items:start;
+  gap:8px;
+  padding:11px 12px 8px;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__head-actions,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__head-actions{
+  margin-left:0;
+  max-width:100%;
+  justify-content:flex-end;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__learn-more,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__learn-more{
+  display:none!important;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__box,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__box{
+  max-width:calc(100% - 20px);
+  margin-left:10px;
+  margin-right:10px;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__quick,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__commands,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__recent,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__suggestions,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__smart,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__scope-wrap,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__filters,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__results-window-bar,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__meta,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__actions-row,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__quick,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__commands,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__recent,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__suggestions,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__smart,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__scope-wrap,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__filters,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__results-window-bar,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__meta,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__actions-row{
+  margin-left:10px;
+  margin-right:10px;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__results,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__results{
+  margin-left:10px!important;
+  margin-right:2px!important;
+  padding-right:8px!important;
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__portal-nav,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__portal-nav{
+  min-height:48px;
+  padding-left:max(8px,env(safe-area-inset-left));
+  padding-right:max(8px,env(safe-area-inset-right));
+}
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__portal-logo,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__portal-logo{
+  position:sticky;
+  left:0;
+  z-index:2;
+  background:rgba(3,17,15,.96)!important;
+}
+
+/* Very narrow phones */
+dialog.gracz-search[data-search-device="phone"] .gracz-search__head{
+  grid-template-columns:1fr auto!important;
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__head-copy p{
+  font-size:9px!important;
+  line-height:1.25;
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__maximize{
+  display:none!important;
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__close{
+  width:38px;
+  height:38px;
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__box{
+  grid-template-columns:22px minmax(0,1fr) auto!important;
+  gap:8px;
+  min-height:52px;
+  padding-left:12px;
+  padding-right:8px;
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__zoom-menu{
+  right:0;
+  min-width:min(248px,calc(var(--search-vw,100vw) - 20px));
+}
+dialog.gracz-search[data-search-device="phone"] .gracz-search__results-window-bar button{
+  width:100%;
+}
+
+/* Short browser windows and landscape phones/tablets */
+dialog.gracz-search[data-search-height="short"] .gracz-search__head,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__head{
+  padding-top:8px;
+  padding-bottom:6px;
+}
+dialog.gracz-search[data-search-height="short"] .gracz-search__portal-nav,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__portal-nav{
+  min-height:44px;
+}
+dialog.gracz-search[data-search-height="short"] .gracz-search__portal-nav>a,
+dialog.gracz-search[data-search-height="short"] .gracz-search__portal-nav-item>a,
+dialog.gracz-search[data-search-height="short"] .gracz-search__portal-nav-item>button,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__portal-nav>a,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__portal-nav-item>a,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__portal-nav-item>button{
+  min-height:43px;
+}
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__quick,
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__commands{
+  display:none;
+}
+dialog.gracz-search[data-search-height="very-short"] .gracz-search__recent{
+  max-height:76px;
+  overflow:auto;
+}
+
+/* The standalone results window uses the same live viewport metrics */
+dialog.gracz-search-results-window{
+  width:var(--search-vw,100vw)!important;
+  height:var(--search-vh,100dvh)!important;
+  max-width:var(--search-vw,100vw)!important;
+  max-height:var(--search-vh,100dvh)!important;
+  inset:0 auto auto 0!important;
+}
+dialog.gracz-search-results-window .gracz-results-window__panel{
+  width:min(1040px,calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px))))!important;
+  height:calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px)))!important;
+  max-width:calc(var(--search-vw,100vw) - (2 * var(--search-gutter,16px)))!important;
+  max-height:calc(var(--search-vh,100dvh) - (2 * var(--search-gutter,16px)))!important;
+  margin:var(--search-gutter,16px) auto!important;
+  box-sizing:border-box;
+}
+dialog.gracz-search-results-window[data-search-device="phone"] .gracz-results-window__panel,
+dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-window__panel{
+  width:var(--search-vw,100vw)!important;
+  height:var(--search-vh,100dvh)!important;
+  max-width:var(--search-vw,100vw)!important;
+  max-height:var(--search-vh,100dvh)!important;
+  margin:0!important;
+  border-radius:0!important;
+}
