@@ -22,6 +22,10 @@ SEARCH R4 **nie zastępuje** SEARCH R2 MAX. R2 pozostaje szybkim, lokalnym i nie
 8. `08-UI-UX-ACCESSIBILITY-SPEC.md` — interfejs trzech trybów i zachowanie desktop/mobile.
 9. `09-IMPLEMENTATION-ROADMAP-TESTS-ACCEPTANCE-GATES.md` — fazy wdrożenia, testy, kryteria odbioru i bramki.
 10. `10-PROVIDER-ABSTRACTION-AND-COST-MODEL.md` — kontrakt providerów, strategie modeli i neutralny model kosztowy.
+11. `11-EXECUTION-CONTROL-PLAN.md` — pełny model pracy Owner → Lead → Codex → Claude → Lead gate → merge.
+12. `12-R4.1-CORPUS-FOUNDATION-IMPLEMENTATION-MANDATE.md` — gotowy mandat startowy dla Codexa.
+13. `13-INDEPENDENT-AUDIT-PROTOCOL.md` — rygorystyczny kontrakt audytu Claude i re-audytu.
+14. `14-R4-STATUS-TRACKER.md` — aktywny rejestr wykonania R4.0–R4.10.
 
 ADR nadrzędny:
 
@@ -32,7 +36,8 @@ ADR nadrzędny:
 ```text
 R2 MAX = IMPLEMENTED / LIVE
 R4 DESIGN = COMPLETE
-R4 IMPLEMENTATION = NOT STARTED
+R4.0 DOCUMENTATION GATE = PASS
+R4.1 IMPLEMENTATION = READY / NOT STARTED
 R4 MODEL PROVIDER = NOT SELECTED
 R4 SEMANTIC STORE = NOT SELECTED
 R4 API KEY = NOT CONFIGURED
@@ -42,3 +47,26 @@ R4 PRODUCTION DEPLOYMENT = NOT AUTHORIZED
 ## Zasada wdrożeniowa
 
 Dokumentacja jest gotowym baseline do implementacji. Nie stanowi zgody na zakup usług, konfigurację sekretów, uruchomienie zewnętrznego modelu ani wdrożenie produkcyjne.
+
+
+## Schemat wykonawczy
+
+Obowiązujący przepływ dla etapów R4:
+
+```text
+Owner authorization
+→ Lead mandate
+→ Codex implementation
+→ evidence pack
+→ CI/tests
+→ Claude independent audit
+→ correction/re-audit if needed
+→ Lead final gate
+→ Owner merge authorization
+→ merge
+→ post-merge verification
+→ status update
+→ next stage
+```
+
+Aktualny następny krok: `R4.1 Corpus Foundation`. Gotowy mandat znajduje się w `12-R4.1-CORPUS-FOUNDATION-IMPLEMENTATION-MANDATE.md`.
