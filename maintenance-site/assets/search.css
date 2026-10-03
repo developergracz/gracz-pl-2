@@ -964,3 +964,58 @@ dialog.gracz-search .gracz-search__panel{
   border:0!important;
   outline:0!important;
 }
+
+
+/* SEARCH R3 VIEWPORT BOTTOM FIT — keep footer fully visible */
+@media(min-width:721px){
+  dialog.gracz-search .gracz-search__panel{
+    height:min(680px,calc(100dvh - 54px));
+    max-height:calc(100dvh - 54px);
+    margin:12px auto 0;
+  }
+  dialog.gracz-search .gracz-search__results{
+    min-height:90px;
+  }
+  dialog.gracz-search .gracz-search__foot{
+    min-height:34px;
+    padding-top:6px;
+    padding-bottom:7px;
+  }
+}
+@media(max-height:820px) and (min-width:721px){
+  dialog.gracz-search .gracz-search__panel{
+    height:calc(100dvh - 42px);
+    max-height:calc(100dvh - 42px);
+    margin:8px auto 0;
+  }
+  dialog.gracz-search .gracz-search__head{
+    padding-top:11px;
+    padding-bottom:6px;
+  }
+  dialog.gracz-search .gracz-search__quick{
+    margin-top:6px;
+  }
+  dialog.gracz-search .gracz-search__commands{
+    margin-top:3px;
+  }
+  dialog.gracz-search .gracz-search__recent{
+    margin-top:7px;
+    padding-top:8px;
+    padding-bottom:8px;
+  }
+  dialog.gracz-search .gracz-search__filters{
+    margin-top:5px;
+  }
+  dialog.gracz-search .gracz-search__meta{
+    min-height:30px;
+  }
+  dialog.gracz-search .gracz-search__result{
+    min-height:62px;
+    padding-top:7px;
+    padding-bottom:7px;
+  }
+  dialog.gracz-search .gracz-search__foot{
+    min-height:32px;
+    padding:5px 22px 6px;
+  }
+}
