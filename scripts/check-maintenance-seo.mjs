@@ -162,7 +162,7 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r30'), `${rel}: legal/contact trigger exists but legal-links.js R30 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r31'), `${rel}: legal/contact trigger exists but legal-links.js R31 is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r5'), `${rel}: contact modal CSS R5 must be preloaded to prevent flash`);
@@ -193,6 +193,10 @@ requireCheck(legalLinksJs.includes('await ensureStyles()'), "contact modal: must
 requireCheck(contactCss.includes('#56c8c1'), "forum nav: shared teal color #56c8c1 missing");
 const searchCss = fs.readFileSync(path.resolve(root, "assets/search.css"), "utf8");
 requireCheck(searchCss.includes('SEARCH R3 NAV HOVER DROPDOWN FIX'), "search nav: desktop hover dropdown clipping fix missing");
+requireCheck(searchCss.includes('SEARCH R3 NAV SCALE R1'), "search nav: enlarged navigation scale missing");
+requireCheck(searchCss.includes('min-width:220px'), "search nav: enlarged dropdown width missing");
+requireCheck(searchCss.includes('font:700 12.5px/1.28'), "search nav: enlarged dropdown typography missing");
+
 requireCheck(searchCss.includes('overflow:visible!important'), "search nav: desktop overflow escape missing");
 
 
