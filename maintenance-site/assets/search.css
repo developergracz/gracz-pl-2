@@ -1371,28 +1371,28 @@ dialog.gracz-search .gracz-search__panel{
 .gracz-search__zoom-tooltip{
   position:absolute;
   right:50%;
-  bottom:calc(100% + 8px);
+  bottom:calc(100% + 10px);
   z-index:45;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-height:27px;
-  padding:0 11px;
+  min-height:38px;
+  padding:0 18px;
   border:0;
   border-radius:999px;
   background:#56c8c1;
   color:#06211e;
-  box-shadow:0 8px 22px rgba(0,0,0,.24),0 0 0 1px rgba(255,255,255,.05) inset;
-  font:800 9px/1 OpenSans,Arial,sans-serif;
+  box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.08) inset;
+  font:900 11px/1.15 OpenSans,Arial,sans-serif;
+  letter-spacing:.01em;
   white-space:nowrap;
   opacity:0;
   visibility:hidden;
-  transform:translate(50%,4px);
+  transform:translate(50%,5px);
   pointer-events:none;
   transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
 }
-.gracz-search__zoom-selector:hover .gracz-search__zoom-tooltip,
-.gracz-search__zoom-selector:focus-within .gracz-search__zoom-tooltip{
+.gracz-search__zoom-value:hover + .gracz-search__zoom-tooltip{
   opacity:1;
   visibility:visible;
   transform:translate(50%,0);
