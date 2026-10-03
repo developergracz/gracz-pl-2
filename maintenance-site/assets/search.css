@@ -2446,3 +2446,69 @@ dialog.gracz-search-results-window[data-search-device="mobile"] .gracz-results-w
   margin:0!important;
   border-radius:0!important;
 }
+
+
+/* SEARCH R3 TOP-EDGE RESIZE — user controlled vertical workspace */
+dialog.gracz-search .gracz-search__resize-handle{
+  position:absolute;
+  z-index:60;
+  top:0;
+  left:14px;
+  right:14px;
+  height:13px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  cursor:ns-resize;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  outline:0;
+}
+dialog.gracz-search .gracz-search__resize-handle span{
+  display:block;
+  width:72px;
+  height:3px;
+  margin-top:3px;
+  border-radius:999px;
+  background:rgba(126,224,217,.30);
+  box-shadow:0 0 0 1px rgba(0,0,0,.18),0 0 12px rgba(86,200,193,.08);
+  opacity:.55;
+  transition:opacity .14s ease,background .14s ease,box-shadow .14s ease;
+}
+dialog.gracz-search .gracz-search__resize-handle:hover span,
+dialog.gracz-search .gracz-search__resize-handle:focus-visible span,
+dialog.gracz-search.is-search-resizing .gracz-search__resize-handle span{
+  opacity:1;
+  background:#72d8d1;
+  box-shadow:0 0 0 1px rgba(0,0,0,.22),0 0 16px rgba(86,200,193,.34);
+}
+dialog.gracz-search .gracz-search__resize-handle:focus-visible{
+  outline:2px solid rgba(114,216,209,.72);
+  outline-offset:-2px;
+  border-radius:10px 10px 0 0;
+}
+dialog.gracz-search[data-search-user-resized="true"] .gracz-search__panel{
+  height:var(--search-user-height)!important;
+  max-height:var(--search-user-height)!important;
+  margin:var(--search-user-top) auto 0!important;
+}
+dialog.gracz-search[data-search-user-resized="true"] .gracz-search__results{
+  flex:1 1 auto!important;
+  min-height:150px!important;
+  max-height:none!important;
+}
+dialog.gracz-search.is-search-resizing,
+body.gracz-search-resizing{
+  cursor:ns-resize!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+dialog.gracz-search.is-search-resizing .gracz-search__panel{
+  transition:none!important;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__resize-handle,
+dialog.gracz-search[data-search-device="mobile"] .gracz-search__resize-handle,
+dialog.gracz-search[data-search-device="phone"] .gracz-search__resize-handle{
+  display:none!important;
+}
