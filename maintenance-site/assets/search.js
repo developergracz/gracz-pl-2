@@ -71,6 +71,40 @@
     'konto','rejestracja','logowanie','reklamacje','bezpieczenstwo','kontakt'
   ];
 
+  var SEARCH_VERSION='R3-SMART-2026-10-03';
+
+  var INTENT_RULES=[
+    {key:'rules',label:'Zasady',signals:['zasady','jak grac','jak sie gra','czy mozna','czy musze','kiedy mozna','legalny ruch','reguly','wygrana','remis']},
+    {key:'learn',label:'Nauka',signals:['academy','poradnik','poradniki','strategia','trening','cwiczenie','cwiczyc','quiz','nauczyc','nauka']},
+    {key:'privacy',label:'Prywatność',signals:['rodo','prywatnosc','dane osobowe','cookies','localstorage','administrator danych']},
+    {key:'account',label:'Konto',signals:['konto','rejestracja','zalogowac','logowanie','login','haslo']},
+    {key:'support',label:'Pomoc',signals:['kontakt','reklamacja','zgloszenie','problem techniczny']}
+  ];
+
+  var GAME_SIGNALS={
+    poker:['poker','texas','holdem','hold em','preflop','flop','turn','river','showdown','blindy','pot odds','button'],
+    tysiac:['tysiac','1000','musik','meldunek','meldunki','licytacja','kontrakt','atut'],
+    warcaby:['warcaby','checkers','damka','pionki','wielokrotne bicie'],
+    gomoku:['gomoku','piec w linii','kamien','kamienie','czarne zaczynaja']
+  };
+
+  var SMART_CONCEPTS=[
+    {key:'poker-hands',game:'poker',signals:['uklad kart','uklady pokerowe','ranking ukladow','kareta','full','strit','kolor'],targets:['uklady','ranking','kareta','full','kolor','strit']},
+    {key:'poker-position',game:'poker',signals:['pozycja','button','dealer','blindy','small blind','big blind'],targets:['pozycje','button','blindy']},
+    {key:'poker-pot-odds',game:'poker',signals:['pot odds','szanse puli','oplacalnosc call','matematyka pokera'],targets:['pot odds','matematyka','szanse','kalkulator']},
+    {key:'poker-rounds',game:'poker',signals:['preflop','flop','turn','river','rundy licytacji'],targets:['preflop','flop','turn','river','rundy']},
+    {key:'tysiac-bidding',game:'tysiac',signals:['licytacja','licytowac','kontrakt','ile licytowac'],targets:['licytacja','kontrakt','przebicie']},
+    {key:'tysiac-melds',game:'tysiac',signals:['meldunek','meldunki','krol i dama','krol dama','para krol dama','atut'],targets:['meldunki','meldunek','atut','dama','krol']},
+    {key:'tysiac-musik',game:'tysiac',signals:['musik','talon','dobieranie kart'],targets:['musik','rozdanie','kontrakt']},
+    {key:'tysiac-score',game:'tysiac',signals:['punktacja','punkty','ile punktow','wynik rozdania'],targets:['punktacja','punkty','wynik']},
+    {key:'checkers-capture',game:'warcaby',signals:['bicie','musze bic','obowiazkowe bicie','bic pionek'],targets:['bicie','obowiazkowe','skok']},
+    {key:'checkers-multi',game:'warcaby',signals:['wielokrotne bicie','kilka bic','seria bic'],targets:['wielokrotne','bicie','seria','skoki']},
+    {key:'checkers-king',game:'warcaby',signals:['damka','awans pionka'],targets:['damka','awans','ruch']},
+    {key:'gomoku-win',game:'gomoku',signals:['piec w linii','jak wygrac','wygrana','zwycieska linia'],targets:['wygrana','piec w linii','linia']},
+    {key:'gomoku-move',game:'gomoku',signals:['legalny ruch','gdzie polozyc kamien','kamien na planszy'],targets:['legalny ruch','kamien','pole','plansza']},
+    {key:'gomoku-tactics',game:'gomoku',signals:['atak czy obrona','atakowac','bronic','zagrozenie'],targets:['atak','obrona','zagrozenie','strategia']}
+  ];
+
   var modalCtx=null;
   var pageCtx=null;
   var lastTrigger=null;
@@ -239,10 +273,101 @@
     return changed?corrected.join(' '):'';
   }
 
-  function scoreItem(item,query,scope){
+  function phraseHit(hay,phrase){
+    var p=normalize(phrase);
+    return p&&hay.indexOf(p)!==-1;
+  }
+
+  function detectIntent(query){
+    var q=normalize(query);
+    var best={key:'navigation',label:'Wyszukiwanie',score:0};
+    INTENT_RULES.forEach(function(rule){
+      var score=0;
+      rule.signals.forEach(function(signal){
+        if(phraseHit(q,signal))score+=normalize(signal).indexOf(' ')!==-1?3:1;
+      });
+      if(score>best.score)best={key:rule.key,label:rule.label,score:score};
+    });
+    return best;
+  }
+
+  function detectGame(query){
+    var q=normalize(query);
+    var best={key:'',label:'',score:0};
+    Object.keys(GAME_SIGNALS).forEach(function(game){
+      var score=0;
+      GAME_SIGNALS[game].forEach(function(signal,index){
+        if(phraseHit(q,signal))score+=index<4?3:1;
+      });
+      if(score>best.score){
+        best={
+          key:game,
+          label:game==='tysiac'?'Tysiąc':game.charAt(0).toUpperCase()+game.slice(1),
+          score:score
+        };
+      }
+    });
+    return best;
+  }
+
+  function detectConcepts(query){
+    var q=normalize(query);
+    return SMART_CONCEPTS.filter(function(concept){
+      return concept.signals.some(function(signal){return phraseHit(q,signal);});
+    });
+  }
+
+  function smartAnalysis(query){
+    var raw=String(query||'').trim();
+    var q=normalize(raw);
+    var starters=['jak ','czy ','kiedy ','gdzie ','dlaczego ','co ','ile ','ktory ','ktora ','mam ','musze ','moge '];
+    var natural=raw.indexOf('?')!==-1||rawTokens(raw).length>=4||starters.some(function(s){return q.indexOf(s)===0;});
+    return {
+      intent:detectIntent(raw),
+      game:detectGame(raw),
+      concepts:detectConcepts(raw),
+      natural:natural
+    };
+  }
+
+  function smartBoost(item,analysis){
+    var score=0;
+    if(analysis.game.key&&item._game===analysis.game.key)score+=46;
+
+    if(analysis.intent.key==='rules'){
+      if(item.category==='zasady')score+=48;
+      else if(item.category==='academy')score+=10;
+    }else if(analysis.intent.key==='learn'){
+      if(item.category==='academy')score+=38;
+      if(item.category==='poradniki')score+=30;
+    }else if(analysis.intent.key==='privacy'){
+      if(item.type==='Prywatność'||item._hay.indexOf('rodo')!==-1||item._hay.indexOf('prywatnosc')!==-1)score+=55;
+    }else if(analysis.intent.key==='account'){
+      if(item._hay.indexOf('konto')!==-1||item._hay.indexOf('rejestracja')!==-1||item._hay.indexOf('logowanie')!==-1)score+=46;
+    }else if(analysis.intent.key==='support'){
+      if(item._hay.indexOf('kontakt')!==-1||item._hay.indexOf('reklamac')!==-1||item._hay.indexOf('zgloszen')!==-1)score+=42;
+    }
+
+    analysis.concepts.forEach(function(concept){
+      if(concept.game&&item._game&&concept.game!==item._game)return;
+      var hits=0;
+      concept.targets.forEach(function(target){
+        if(phraseHit(item._hay,target))hits++;
+      });
+      if(hits)score+=Math.min(72,28+(hits*14));
+    });
+
+    if(analysis.natural){
+      if(item.category==='zasady')score+=10;
+      if(item.type==='Prywatność'||item.type==='Regulamin')score+=8;
+    }
+    return score;
+  }
+
+  function scoreItem(item,query,scope,analysis){
     var q=normalize(query);
     var qTokens=expandTokens(q);
-    if(!qTokens.length)return (item.priority||0)+(scope&&item._game===scope?35:0);
+    if(!qTokens.length)return (item.priority||0)+(scope&&item._game===scope?35:0)+smartBoost(item,analysis||smartAnalysis(query));
 
     var score=0,matched=0;
     if(item._title===q)score+=220;
@@ -268,8 +393,10 @@
     });
 
     if(qTokens.length&&matched===qTokens.length)score+=38;
-    if(!matched&&item._title.indexOf(q)===-1&&item._keys.indexOf(q)===-1&&item._desc.indexOf(q)===-1)return -1;
+    var smart=smartBoost(item,analysis||smartAnalysis(query));
+    if(!matched&&item._title.indexOf(q)===-1&&item._keys.indexOf(q)===-1&&item._desc.indexOf(q)===-1&&smart<=0)return -1;
     if(scope&&item._game===scope)score+=55;
+    score+=smart;
     score+=(item.priority||0)*0.2;
     return score;
   }
@@ -302,8 +429,9 @@
     var filter=ignoreFilter?'all':effectiveFilter(ctx,parsed);
     var scope=effectiveScope(ctx,parsed);
     var q=parsed.clean;
+    var analysis=smartAnalysis(q||ctx.query);
     var rows=INDEX.map(function(item){
-      return {item:item,score:scoreItem(item,q,scope)};
+      return {item:item,score:scoreItem(item,q,scope,analysis)};
     }).filter(function(row){
       if(row.score<0)return false;
       if(scope&&row.item.game&&normalize(row.item.game)!==scope)return false;
@@ -317,7 +445,7 @@
       return (b.item.priority||0)-(a.item.priority||0);
     });
 
-    return {rows:rows,parsed:parsed,scope:scope,filter:filter,query:q};
+    return {rows:rows,parsed:parsed,scope:scope,filter:filter,query:q,analysis:analysis};
   }
 
   function categoryCounts(ctx){
@@ -450,6 +578,43 @@
     ctx.suggestions.hidden=!parts.length;
   }
 
+  function renderSmart(ctx,result){
+    if(!ctx.smart)return;
+    var analysis=result.analysis;
+    if(!ctx.query||!analysis){
+      ctx.smart.hidden=true;
+      ctx.smart.innerHTML='';
+      return;
+    }
+
+    var labels=[];
+    if(analysis.game.key)labels.push(analysis.game.label);
+    if(analysis.intent.key!=='navigation')labels.push(analysis.intent.label);
+    if(analysis.concepts.length)labels.push('kontekst tematyczny');
+
+    var top=result.rows[0];
+    var showCard=analysis.natural&&top&&top.score>=45;
+    if(!labels.length&&!showCard){
+      ctx.smart.hidden=true;
+      ctx.smart.innerHTML='';
+      return;
+    }
+
+    var html='<div class="gracz-search__smart-meta"><span class="gracz-search__smart-badge">R3 Smart</span>'+
+      '<span>'+(labels.length?('Rozpoznano: '+escapeHtml(labels.join(' · '))):'Zapytanie w języku naturalnym')+'</span>'+
+      '<strong>lokalnie · bez zewnętrznego AI</strong></div>';
+
+    if(showCard){
+      html+='<div class="gracz-search__smart-card">'+
+        '<div><span>Najlepsze źródło w gracz.pl</span><strong>'+escapeHtml(top.item.title)+'</strong><p>'+escapeHtml(top.item.description)+'</p></div>'+
+        '<a href="'+escapeHtml(top.item.url)+'" data-search-smart-open>Otwórz źródło <span aria-hidden="true">→</span></a>'+
+      '</div>';
+    }
+
+    ctx.smart.innerHTML=html;
+    ctx.smart.hidden=false;
+  }
+
   function resultMarkup(row,index,query,best){
     var item=row.item;
     var game=item.game?('<span class="gracz-search__game">'+escapeHtml(item.game==='tysiac'?'Tysiąc':item.game.charAt(0).toUpperCase()+item.game.slice(1))+'</span>'):'';
@@ -475,6 +640,7 @@
     renderScope(ctx);
     renderRecent(ctx);
     renderSuggestions(ctx,result);
+    renderSmart(ctx,result);
 
     if(!ctx.query)ctx.status.textContent=ctx.scope?'Popularne treści w wybranym zakresie':'Popularne miejsca w gracz.pl';
     else ctx.status.textContent=rows.length?('Znaleziono '+rows.length+(rows.length===1?' wynik':' wyników')):'Brak wyników';
@@ -643,13 +809,13 @@
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
       '<div class="gracz-search__head">'+
-        '<div><span class="gracz-search__brand">gracz<span>.pl</span></span><p>'+(page?'Wyniki wyszukiwania':'Zaawansowana wyszukiwarka portalu')+'</p></div>'+
+        '<div><span class="gracz-search__brand">gracz<span>.pl</span></span><p>'+(page?'Wyniki wyszukiwania R3':'Inteligentna wyszukiwarka R3')+'</p></div>'+
         (page?'<a class="gracz-search__home" href="/">Wróć do serwisu</a>':'<button type="button" class="gracz-search__close" data-search-close aria-label="Zamknij wyszukiwarkę">×</button>')+
       '</div>'+
       '<h1 class="sr-only">'+(page?'Wyniki wyszukiwania gracz.pl':'Wyszukiwarka gracz.pl')+'</h1>'+
       '<div class="gracz-search__box">'+
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>'+
-        '<input type="search" data-search-input autocomplete="off" spellcheck="false" placeholder="Szukaj gry, zasad, Academy, poradnika…" aria-label="Szukaj w gracz.pl" aria-autocomplete="list">'+
+        '<input type="search" data-search-input autocomplete="off" spellcheck="false" placeholder="Szukaj lub wpisz całe pytanie…" aria-label="Szukaj w gracz.pl" aria-autocomplete="list">'+
         '<button type="button" class="gracz-search__clear" data-search-clear aria-label="Wyczyść wyszukiwanie">Wyczyść</button>'+
       '</div>'+
       '<div class="gracz-search__quick" aria-label="Popularne wyszukiwania">'+
@@ -664,6 +830,7 @@
       '<div class="gracz-search__commands"><span>Skróty:</span><button type="button" data-search-query="@poker ">@poker</button><button type="button" data-search-query="@zasady ">@zasady</button><button type="button" data-search-query="@academy ">@academy</button><button type="button" data-search-query="@rodo ">@rodo</button></div>'+
       '<div class="gracz-search__recent" data-search-recent hidden></div>'+
       '<div class="gracz-search__suggestions" data-search-suggestions hidden></div>'+
+      '<div class="gracz-search__smart" data-search-smart hidden></div>'+
       '<div class="gracz-search__scope-wrap" data-search-scope-wrap hidden></div>'+
       '<div class="gracz-search__filters" data-search-filters aria-label="Filtry wyszukiwarki"></div>'+
       '<div class="gracz-search__meta">'+
@@ -676,7 +843,7 @@
         '<a class="gracz-search__more" data-search-more href="/szukaj/" hidden></a>'+
         (page?'<button type="button" class="gracz-search__copy" data-search-copy>Skopiuj link do wyników</button>':'')+
       '</div>'+
-      '<div class="gracz-search__foot"><span>Wyszukiwanie działa lokalnie w gracz.pl. Fraza nie jest wysyłana do zewnętrznej wyszukiwarki.</span><strong>Ctrl K</strong></div>'+
+      '<div class="gracz-search__foot"><span>SEARCH R3 działa lokalnie w gracz.pl. Rozumie pytania, intencję i kontekst bez wysyłania frazy do zewnętrznego AI.</span><strong>R3 · Ctrl K</strong></div>'+
     '</div>';
   }
 
@@ -701,6 +868,7 @@
     ctx.filters=root.querySelector('[data-search-filters]');
     ctx.recent=root.querySelector('[data-search-recent]');
     ctx.suggestions=root.querySelector('[data-search-suggestions]');
+    ctx.smart=root.querySelector('[data-search-smart]');
     ctx.scopeWrap=root.querySelector('[data-search-scope-wrap]');
     ctx.commandInfo=root.querySelector('[data-search-command-info]');
     ctx.more=root.querySelector('[data-search-more]');
@@ -785,6 +953,6 @@
     close:closeModal,
     search:function(query){openModal(null,query||'');},
     indexSize:INDEX.length,
-    version:window.GRACZ_SEARCH_INDEX_VERSION||'R2-MAX'
+    version:SEARCH_VERSION
   };
 })();
