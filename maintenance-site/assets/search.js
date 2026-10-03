@@ -1042,6 +1042,39 @@
   function shellMarkup(mode){
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
+      '<nav class="gracz-search__portal-nav" aria-label="Główna nawigacja gracz.pl">'+
+        '<a class="is-active" href="/">Start</a>'+
+        '<div class="gracz-search__portal-nav-item">'+
+          '<a href="/gry/">Gry <span aria-hidden="true">⌄</span></a>'+
+          '<div class="gracz-search__portal-dropdown">'+
+            '<a href="/gry/">Wszystkie gry</a>'+
+            '<a href="/gry/poker-treningowy/">Poker treningowy</a>'+
+            '<a href="/gry/tysiac/">Tysiąc</a>'+
+            '<a href="/gry/warcaby/">Warcaby</a>'+
+            '<a href="/gry/gomoku/">Gomoku</a>'+
+          '</div>'+
+        '</div>'+
+        '<div class="gracz-search__portal-nav-item">'+
+          '<a href="/gry-karciane/">Gry karciane <span aria-hidden="true">⌄</span></a>'+
+          '<div class="gracz-search__portal-dropdown">'+
+            '<a href="/gry-karciane/">Gry karciane</a>'+
+            '<a href="/gry/poker-treningowy/">Poker treningowy</a>'+
+            '<a href="/gry-karciane/#poker-academy">Poker Academy</a>'+
+            '<a href="/gry/tysiac/">Tysiąc</a>'+
+          '</div>'+
+        '</div>'+
+        '<a href="/poradniki/">Poradniki</a>'+
+        '<div class="gracz-search__portal-nav-item">'+
+          '<button type="button" aria-haspopup="true">Społeczność <span aria-hidden="true">⌄</span></button>'+
+          '<div class="gracz-search__portal-dropdown gracz-search__portal-dropdown--community">'+
+            '<span>Profil gracza <em>wkrótce</em></span>'+
+            '<span>Rankingi <em>wkrótce</em></span>'+
+            '<span>Turnieje <em>wkrótce</em></span>'+
+            '<span>Społeczność <em>wkrótce</em></span>'+
+          '</div>'+
+        '</div>'+
+        '<a href="/o-gracz-pl/">O gracz.pl</a>'+
+      '</nav>'+
       '<div class="gracz-search__head">'+
         '<div class="gracz-search__head-copy"><span class="gracz-search__brand">gracz<span>.pl</span></span><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
         '<div class="gracz-search__head-actions">'+
