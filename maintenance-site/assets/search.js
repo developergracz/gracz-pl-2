@@ -7,6 +7,8 @@
   var RECENT_KEY='graczSearchRecentR2';
   var ZOOM_KEY='graczSearchZoomR3';
   var ZOOM_LEVELS=[100,115,130,145];
+  var RESULTS_ZOOM_KEY='graczSearchResultsZoomR3';
+  var RESULTS_ZOOM_LEVELS=[85,100,115,130,145];
   var MAX_RECENT=8;
   var MODAL_LIMIT=14;
   var PAGE_LIMIT=60;
@@ -109,6 +111,8 @@
 
   var modalCtx=null;
   var pageCtx=null;
+  var resultsWindowCtx=null;
+  var resultsWindowLastTrigger=null;
   var lastTrigger=null;
   var urlTimer=null;
 
@@ -206,6 +210,35 @@
     if(current<0)current=0;
     var next=Math.max(0,Math.min(ZOOM_LEVELS.length-1,current+direction));
     applyZoom(ctx,ZOOM_LEVELS[next],true);
+  }
+
+  function readResultsZoom(){
+    try{
+      var value=parseInt(window.localStorage.getItem(RESULTS_ZOOM_KEY)||'100',10);
+      return RESULTS_ZOOM_LEVELS.indexOf(value)!==-1?value:100;
+    }catch(_){return 100;}
+  }
+
+  function persistResultsZoom(value){
+    try{window.localStorage.setItem(RESULTS_ZOOM_KEY,String(value));}catch(_){}
+  }
+
+  function applyResultsZoom(ctx,value,persist){
+    if(RESULTS_ZOOM_LEVELS.indexOf(value)===-1)value=100;
+    ctx.zoom=value;
+    ctx.root.setAttribute('data-results-zoom',String(value));
+    if(ctx.zoomValue)ctx.zoomValue.textContent=String(value)+'%';
+    if(ctx.zoomOut)ctx.zoomOut.disabled=value===RESULTS_ZOOM_LEVELS[0];
+    if(ctx.zoomIn)ctx.zoomIn.disabled=value===RESULTS_ZOOM_LEVELS[RESULTS_ZOOM_LEVELS.length-1];
+    if(ctx.zoomGroup)ctx.zoomGroup.setAttribute('aria-label','Powiększenie okna wyników: '+String(value)+'%');
+    if(persist!==false)persistResultsZoom(value);
+  }
+
+  function changeResultsZoom(ctx,direction){
+    var current=RESULTS_ZOOM_LEVELS.indexOf(ctx.zoom||100);
+    if(current<0)current=1;
+    var next=Math.max(0,Math.min(RESULTS_ZOOM_LEVELS.length-1,current+direction));
+    applyResultsZoom(ctx,RESULTS_ZOOM_LEVELS[next],true);
   }
 
   function levenshtein(a,b){
@@ -658,10 +691,11 @@
     ctx.smart.hidden=false;
   }
 
-  function resultMarkup(row,index,query,best){
+  function resultMarkup(row,index,query,best,idPrefix){
     var item=row.item;
     var game=item.game?('<span class="gracz-search__game">'+escapeHtml(item.game==='tysiac'?'Tysiąc':item.game.charAt(0).toUpperCase()+item.game.slice(1))+'</span>'):'';
-    return '<a class="gracz-search__result'+(best?' is-best':'')+'" href="'+escapeHtml(item.url)+'" data-search-result data-index="'+index+'" role="option" id="gracz-search-result-'+index+'">'+
+    idPrefix=idPrefix||'gracz-search-result-';
+    return '<a class="gracz-search__result'+(best?' is-best':'')+'" href="'+escapeHtml(item.url)+'" data-search-result data-index="'+index+'" role="option" id="'+idPrefix+index+'">'+
       '<span class="gracz-search__result-icon" aria-hidden="true">'+iconFor(item)+'</span>'+
       '<span class="gracz-search__result-main">'+
         '<span class="gracz-search__result-top"><strong>'+highlight(item.title,query)+'</strong><em>'+escapeHtml(item.type||categoryLabel(item.category))+'</em>'+game+(best?'<small>Najlepsze dopasowanie</small>':'')+'</span>'+
@@ -684,6 +718,11 @@
     renderRecent(ctx);
     renderSuggestions(ctx,result);
     renderSmart(ctx,result);
+
+    if(ctx.resultsWindowButton){
+      ctx.resultsWindowButton.hidden=!rows.length;
+      ctx.resultsWindowButton.textContent=rows.length?('Pokaż wyniki w nowym oknie · '+rows.length):'Pokaż wyniki w nowym oknie';
+    }
 
     if(!ctx.query)ctx.status.textContent=ctx.scope?'Popularne treści w wybranym zakresie':'Popularne miejsca w gracz.pl';
     else ctx.status.textContent=rows.length?('Znaleziono '+rows.length+(rows.length===1?' wynik':' wyników')):'Brak wyników';
@@ -765,6 +804,112 @@
     }
   }
 
+  function resultsWindowMarkup(){
+    return '<div class="gracz-results-window__panel">'+
+      '<header class="gracz-results-window__nav">'+
+        '<div class="gracz-results-window__brand"><span class="gracz-search__brand">gracz<span>.pl</span></span><div><strong>Wyniki wyszukiwania</strong><small>Tylko wyniki · bez pozostałych elementów wyszukiwarki</small></div></div>'+
+        '<div class="gracz-results-window__zoom" data-results-zoom-group role="group" aria-label="Powiększenie okna wyników: 100%">'+
+          '<button type="button" data-results-zoom-out aria-label="Zmniejsz wyniki">A−</button>'+
+          '<span data-results-zoom-value>100%</span>'+
+          '<button type="button" data-results-zoom-in aria-label="Powiększ wyniki">A+</button>'+
+        '</div>'+
+        '<button type="button" class="gracz-results-window__close" data-results-window-close aria-label="Zamknij okno wyników"><span aria-hidden="true">×</span>Zamknij</button>'+
+      '</header>'+
+      '<div class="gracz-results-window__summary">'+
+        '<div><span>Aktualne wyszukiwanie</span><strong data-results-window-title></strong></div>'+
+        '<b data-results-window-count></b>'+
+      '</div>'+
+      '<div class="gracz-search__results gracz-results-window__list" data-results-window-list role="listbox" aria-label="Wyniki wyszukiwania w osobnym oknie"></div>'+
+      '<footer class="gracz-results-window__foot"><span>Możesz zmniejszyć lub powiększyć tylko to okno wyników.</span><strong>Esc · zamknij</strong></footer>'+
+    '</div>';
+  }
+
+  function createResultsWindow(){
+    if(resultsWindowCtx)return resultsWindowCtx;
+    var dialog=document.createElement('dialog');
+    dialog.className='gracz-search-results-window';
+    dialog.innerHTML=resultsWindowMarkup();
+    document.body.appendChild(dialog);
+
+    var ctx={
+      root:dialog,
+      list:dialog.querySelector('[data-results-window-list]'),
+      title:dialog.querySelector('[data-results-window-title]'),
+      count:dialog.querySelector('[data-results-window-count]'),
+      zoomGroup:dialog.querySelector('[data-results-zoom-group]'),
+      zoomOut:dialog.querySelector('[data-results-zoom-out]'),
+      zoomIn:dialog.querySelector('[data-results-zoom-in]'),
+      zoomValue:dialog.querySelector('[data-results-zoom-value]'),
+      zoom:readResultsZoom(),
+      query:''
+    };
+
+    applyResultsZoom(ctx,ctx.zoom,false);
+
+    dialog.addEventListener('click',function(event){
+      if(event.target===dialog||event.target.closest('[data-results-window-close]')){
+        closeResultsWindow();return;
+      }
+      if(event.target.closest('[data-results-zoom-out]')){
+        changeResultsZoom(ctx,-1);return;
+      }
+      if(event.target.closest('[data-results-zoom-in]')){
+        changeResultsZoom(ctx,1);return;
+      }
+      var result=event.target.closest('[data-search-result]');
+      if(result&&ctx.query)saveRecent(ctx.query);
+    });
+
+    dialog.addEventListener('cancel',function(event){
+      event.preventDefault();
+      closeResultsWindow();
+    });
+
+    dialog.addEventListener('close',function(){
+      document.body.classList.remove('gracz-results-window-open');
+      if(resultsWindowLastTrigger&&document.contains(resultsWindowLastTrigger)){
+        try{resultsWindowLastTrigger.focus();}catch(_){}
+      }
+      resultsWindowLastTrigger=null;
+    });
+
+    resultsWindowCtx=ctx;
+    return ctx;
+  }
+
+  function openResultsWindow(sourceCtx,trigger){
+    var result=compute(sourceCtx,false);
+    var rows=result.rows.slice(0,PAGE_LIMIT);
+    if(!rows.length)return;
+
+    var ctx=createResultsWindow();
+    resultsWindowLastTrigger=trigger||document.activeElement;
+    ctx.query=sourceCtx.query||'';
+    ctx.title.textContent=ctx.query?('„'+ctx.query+'”'):(sourceCtx.scope?'Popularne wyniki w wybranym zakresie':'Popularne miejsca w gracz.pl');
+    ctx.count.textContent=String(result.rows.length)+(result.rows.length===1?' wynik':' wyników');
+    ctx.list.innerHTML=rows.map(function(row,index){
+      return resultMarkup(row,index,sourceCtx.query,!!sourceCtx.query&&index===0,'gracz-search-window-result-');
+    }).join('');
+    applyResultsZoom(ctx,readResultsZoom(),false);
+
+    if(typeof ctx.root.showModal==='function')ctx.root.showModal();
+    else ctx.root.setAttribute('open','');
+    document.body.classList.add('gracz-results-window-open');
+    window.setTimeout(function(){
+      var first=ctx.list.querySelector('[data-search-result]');
+      if(first){try{first.focus({preventScroll:true});}catch(_){try{first.focus();}catch(__){}}}
+    },0);
+  }
+
+  function closeResultsWindow(){
+    if(!resultsWindowCtx)return;
+    if(typeof resultsWindowCtx.root.close==='function'&&resultsWindowCtx.root.open)resultsWindowCtx.root.close();
+    else{
+      resultsWindowCtx.root.removeAttribute('open');
+      document.body.classList.remove('gracz-results-window-open');
+    }
+  }
+
   function bindContext(ctx){
     ctx.input.addEventListener('input',function(){
       ctx.query=ctx.input.value.trim();
@@ -820,6 +965,11 @@
 
       if(event.target.closest('[data-search-clear-history]')){
         clearRecent();render(ctx);ctx.input.focus();return;
+      }
+
+      var resultsWindowButton=event.target.closest('[data-search-results-window]');
+      if(resultsWindowButton){
+        openResultsWindow(ctx,resultsWindowButton);return;
       }
 
       if(event.target.closest('[data-search-zoom-out]')){
@@ -914,6 +1064,7 @@
       '<div class="gracz-search__smart" data-search-smart hidden></div>'+
       '<div class="gracz-search__scope-wrap" data-search-scope-wrap hidden></div>'+
       '<div class="gracz-search__filters" data-search-filters aria-label="Filtry wyszukiwarki"></div>'+
+      '<div class="gracz-search__results-window-bar"><button type="button" data-search-results-window hidden>Pokaż wyniki w nowym oknie</button></div>'+
       '<div class="gracz-search__meta">'+
         '<span data-search-status aria-live="polite"></span>'+
         '<span data-search-command-info hidden></span>'+
@@ -952,6 +1103,7 @@
     ctx.smart=root.querySelector('[data-search-smart]');
     ctx.scopeWrap=root.querySelector('[data-search-scope-wrap]');
     ctx.commandInfo=root.querySelector('[data-search-command-info]');
+    ctx.resultsWindowButton=root.querySelector('[data-search-results-window]');
     ctx.more=root.querySelector('[data-search-more]');
     ctx.sortWrap=root.querySelector('[data-search-sort-wrap]');
     ctx.sortSelect=root.querySelector('[data-search-sort]');
@@ -1027,7 +1179,9 @@
     var typing=target&&(/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)||target.isContentEditable);
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
       event.preventDefault();
-      if(modalCtx&&modalCtx.root.open)closeModal();else openModal(target,'');
+      if(resultsWindowCtx&&resultsWindowCtx.root.open)closeResultsWindow();
+      else if(modalCtx&&modalCtx.root.open)closeModal();
+      else openModal(target,'');
       return;
     }
     if(!typing&&event.key==='/'&&!(modalCtx&&modalCtx.root.open)){
