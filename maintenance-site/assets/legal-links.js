@@ -12,7 +12,7 @@
     if(!document.querySelector('link[data-gracz-search-style]')){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/search.css?v=r21';
+      link.href='/assets/search.css?v=responsive-forum-r2';
       link.setAttribute('data-gracz-search-style','');
       document.head.appendChild(link);
     }
@@ -20,7 +20,7 @@
     function loadEngine(){
       if(window.GraczSearch||document.querySelector('script[data-gracz-search-script]'))return;
       var engine=document.createElement('script');
-      engine.src='/assets/search.js?v=r14';
+      engine.src='/assets/search.js?v=responsive-forum-r2';
       engine.async=false;
       engine.setAttribute('data-gracz-search-script','');
       document.head.appendChild(engine);
