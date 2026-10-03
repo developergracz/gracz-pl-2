@@ -937,3 +937,30 @@ body.gracz-search-open{overflow:hidden}
   .gracz-search__actions-row{margin:0 14px}
   .gracz-search__foot{padding:8px 14px 10px}
 }
+
+
+/* SEARCH R3 DIALOG FRAME HARDENING — remove native white dialog frame */
+dialog.gracz-search,
+dialog.gracz-search[open],
+dialog.gracz-search:focus,
+dialog.gracz-search:focus-visible{
+  border:0!important;
+  border-width:0!important;
+  border-style:none!important;
+  border-color:transparent!important;
+  outline:0!important;
+  outline-offset:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  padding:0!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+}
+dialog.gracz-search[open]::backdrop{
+  background:rgba(0,5,4,.78);
+  backdrop-filter:blur(12px);
+}
+dialog.gracz-search .gracz-search__panel{
+  border:0!important;
+  outline:0!important;
+}
