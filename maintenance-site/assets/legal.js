@@ -4,6 +4,53 @@
   var toc=document.querySelector('.legal-toc');
   var toggle=document.querySelector('[data-toc-toggle]');
   var printButton=document.querySelector('[data-print]');
+  var forumTrigger=document.querySelector('[data-forum-coming-soon]');
+  var forumDialog=null;
+  var forumLastTrigger=null;
+
+  function ensureForumDialog(){
+    if(forumDialog)return forumDialog;
+    forumDialog=document.createElement('dialog');
+    forumDialog.className='legal-forum-dialog';
+    forumDialog.setAttribute('aria-labelledby','legal-forum-dialog-title');
+
+    var box=document.createElement('div');
+    box.className='legal-forum-dialog__box';
+
+    var kicker=document.createElement('span');
+    kicker.className='legal-forum-dialog__kicker';
+    kicker.textContent='gracz.pl Community';
+
+    var title=document.createElement('h2');
+    title.id='legal-forum-dialog-title';
+    title.textContent='Forum gracz.pl jest w trakcie budowy';
+
+    var textNode=document.createElement('p');
+    textNode.textContent='Budujemy profesjonalne forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl. Uruchomimy je po zakończeniu prac integracyjnych.';
+
+    var close=document.createElement('button');
+    close.type='button';
+    close.className='legal-forum-dialog__close';
+    close.textContent='Rozumiem';
+    close.addEventListener('click',function(){forumDialog.close();});
+
+    box.appendChild(kicker);
+    box.appendChild(title);
+    box.appendChild(textNode);
+    box.appendChild(close);
+    forumDialog.appendChild(box);
+    document.body.appendChild(forumDialog);
+
+    forumDialog.addEventListener('click',function(event){
+      if(event.target===forumDialog)forumDialog.close();
+    });
+    forumDialog.addEventListener('close',function(){
+      document.body.classList.remove('legal-forum-dialog-open');
+      if(forumLastTrigger&&document.contains(forumLastTrigger))forumLastTrigger.focus();
+      forumLastTrigger=null;
+    });
+    return forumDialog;
+  }
   var links=Array.prototype.slice.call(document.querySelectorAll('.legal-toc a[href^="#"]'));
   var sections=links.map(function(link){
     return document.querySelector(link.getAttribute('href'));
@@ -24,6 +71,18 @@
       }
     });
   });
+
+  if(forumTrigger){
+    forumTrigger.addEventListener('click',function(){
+      forumLastTrigger=forumTrigger;
+      var dialog=ensureForumDialog();
+      document.body.classList.add('legal-forum-dialog-open');
+      if(typeof dialog.showModal==='function')dialog.showModal();
+      else dialog.setAttribute('open','');
+      var close=dialog.querySelector('.legal-forum-dialog__close');
+      if(close)close.focus();
+    });
+  }
 
   if(printButton){
     printButton.addEventListener('click',function(){
