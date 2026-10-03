@@ -1,0 +1,86 @@
+# 14 — SEARCH R4 Execution Status Tracker
+
+Data utworzenia: 03.10.2026  
+Status: **ACTIVE CONTROL RECORD**
+
+## 1. Current state
+
+```text
+R2 MAX = LIVE
+R4 DOCUMENTATION = COMPLETE
+R4.0 DOCUMENTATION GATE = PASS
+R4.1 CORPUS FOUNDATION = READY / NOT STARTED
+R4.2 SEMANTIC RETRIEVAL = NOT STARTED
+R4.3 INTENT ROUTER = NOT STARTED
+R4.4 GROUNDED ASK AI = NOT STARTED
+R4.5 SECURITY/PRIVACY HARDENING = NOT STARTED
+R4.6 LEARNING GRAPH = NOT STARTED
+R4.7 PLAYER CONTEXT = NOT STARTED
+R4.8 MY TRAINER = NOT STARTED
+R4.9 OBSERVABILITY/COST = NOT STARTED
+R4.10 PRODUCTION READINESS = NOT STARTED
+
+PRIMARY IMPLEMENTER = CODEX
+PRIMARY INDEPENDENT AUDITOR = CLAUDE
+LEAD ARCHITECT / CONTROL TOWER = CHATGPT
+OPTIONAL ESCALATION = FACTORY
+
+MODEL PROVIDER = NOT SELECTED
+SEMANTIC STORE = NOT SELECTED
+AI API KEY = NOT CONFIGURED
+MERGE AUTHORIZATION = NONE FOR R4.1
+DEPLOYMENT AUTHORIZATION = NONE
+```
+
+## 2. Stage table
+
+| Stage | Implementer | PR | Implementation | Independent audit | Lead gate | Merge | Deploy |
+|---|---|---|---|---|---|---|---|
+| R4.0 Documentation | ChatGPT | n/a | COMPLETE | n/a | PASS | merged docs | no |
+| R4.1 Corpus Foundation | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.2 Semantic Retrieval | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.3 Intent Router | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.4 Grounded Ask AI | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.5 Security/Privacy | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.6 Learning Graph | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.7 Player Context | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.8 My Trainer | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.9 Observability/Cost | Codex | TBD | NOT STARTED | NOT STARTED | NOT STARTED | NO | NO |
+| R4.10 Prod Readiness | n/a | TBD | n/a | REQUIRED | REQUIRED | n/a | NO |
+
+## 3. Update rule
+
+Po każdym materialnym zdarzeniu należy zaktualizować:
+
+- stage status,
+- branch,
+- PR,
+- HEAD SHA,
+- auditor verdict,
+- findings counts,
+- merge SHA,
+- post-merge verification,
+- next authorized action.
+
+## 4. R4.1 next action
+
+```text
+NEXT ACTION = HAND R4.1 MANDATE TO CODEX
+WHEN = CODEX AVAILABLE
+MANDATE = 12-R4.1-CORPUS-FOUNDATION-IMPLEMENTATION-MANDATE.md
+MERGE = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+```
+
+## 5. Stop rule
+
+Nie przechodzimy do R4.2, dopóki:
+
+```text
+R4.1 IMPLEMENTATION = COMPLETE
+R4.1 CLAUDE AUDIT = PASS
+R4.1 LEAD GATE = PASS
+R4.1 OWNER MERGE AUTHORIZATION = YES
+R4.1 MERGE = COMPLETE
+R4.1 POST-MERGE VERIFY = PASS
+```
