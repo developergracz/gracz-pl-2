@@ -2641,3 +2641,59 @@ dialog.gracz-search[data-search-device="phone"] .gracz-search__results-resizer{
     pointer-events:auto;
   }
 }
+
+
+/* SEARCH R3 NAV SCALE R1 — slightly larger desktop navigation and dropdowns */
+@media (min-width:881px){
+  .gracz-search__portal-nav{
+    min-height:62px;
+    gap:5px;
+  }
+  .gracz-search__portal-nav>a,
+  .gracz-search__portal-nav-item>a,
+  .gracz-search__portal-nav-item>button{
+    min-height:54px;
+    padding-left:15px;
+    padding-right:15px;
+    font-size:clamp(17.5px,1.12vw,20px);
+    font-weight:500;
+  }
+  .gracz-search__portal-nav-item>a span,
+  .gracz-search__portal-nav-item>button span{
+    font-size:14px;
+  }
+  .gracz-search__portal-nav>a.gracz-search__portal-logo{
+    min-height:62px;
+    font-size:30px;
+  }
+  .gracz-search__portal-dropdown{
+    min-width:220px;
+    padding:10px;
+    border-radius:14px;
+  }
+  .gracz-search__portal-dropdown>a,
+  .gracz-search__portal-dropdown>span{
+    min-height:40px;
+    padding:0 13px;
+    border-radius:9px;
+    font:700 12.5px/1.28 OpenSans,Arial,sans-serif;
+  }
+  .gracz-search__portal-dropdown em{
+    font-size:9.5px;
+  }
+  .gracz-search__portal-nav-item>button.gracz-search__forum-button{
+    min-height:40px;
+    padding-left:18px;
+    padding-right:18px;
+  }
+}
+
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav{
+  min-height:62px;
+}
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav>a,
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>a,
+dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
+  min-height:54px;
+  font-size:clamp(17.5px,1.12vw,20px);
+}
