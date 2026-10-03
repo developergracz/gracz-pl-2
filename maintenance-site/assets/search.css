@@ -2610,3 +2610,34 @@ dialog.gracz-search[data-search-device="phone"] .gracz-search__results-resizer{
     padding:0 13px;
   }
 }
+
+
+/* SEARCH R3 NAV HOVER DROPDOWN FIX — desktop pointer devices */
+@media (hover:hover) and (pointer:fine) and (min-width:881px){
+  .gracz-search__portal-nav,
+  .gracz-search-page__panel .gracz-search__portal-nav,
+  dialog.gracz-search[data-search-device="wide"] .gracz-search__portal-nav,
+  dialog.gracz-search[data-search-device="desktop"] .gracz-search__portal-nav{
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+  }
+
+  .gracz-search__portal-nav-item{
+    z-index:70;
+  }
+  .gracz-search__portal-nav-item:hover,
+  .gracz-search__portal-nav-item:focus-within{
+    z-index:220;
+  }
+  .gracz-search__portal-dropdown{
+    z-index:240!important;
+  }
+  .gracz-search__portal-nav-item:hover .gracz-search__portal-dropdown,
+  .gracz-search__portal-nav-item:focus-within .gracz-search__portal-dropdown{
+    display:grid;
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+}
