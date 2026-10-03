@@ -401,3 +401,38 @@ Dla bardzo długich plików dopuszczalne jest techniczne dzielenie transmisji na
 ## 13. Kryterium kompletności pakietu do review
 
 Pakiet jest kompletny jako finalny baseline dokumentacji V3, gdy wszystkie 190 plików są dostępne w repozytorium, statusy AS-IS/TARGET/backlog są jawne, podpisany Dokument nr 2 ma trwały locator, a końcowy audyt dokumentacji jest utrwalony. Warunki te są spełnione. Otwarte pozycje w sekcji 10 pozostają kontrolowanym backlogiem wykonawczym, testowym, operacyjnym lub governance i nie są przedstawiane jako wykonane.
+
+
+---
+
+# ADDENDUM — SEARCH R4 — 03.10.2026
+
+Ten addendum rozszerza historyczny snapshot 190 plików z 01.09.2026. Nie przepisuje historycznego licznika; rejestruje nowy pakiet utworzony później.
+
+## ADR
+
+- `09-DECYZJE-ARCHITEKTONICZNE/ADR-V3-014-SEARCH-R4-HYBRID-AI-RAG-PLAYER-ASSISTANT.md` — `PROPOSED / DESIGN BASELINE / IMPLEMENTATION NOT STARTED`.
+
+## Pakiet SEARCH R4
+
+1. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/README.md`
+2. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/01-ARCHITEKTURA-SYSTEMOWA-SEARCH-R4.md`
+3. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/02-AI-ROUTER-RAG-RETRIEVAL-CONTRACT.md`
+4. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/03-KANONICZNE-ZRODLA-CHUNKING-INDEXING.md`
+5. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/04-PLAYER-CONTEXT-LEARNING-GRAPH-I-MY-TRAINER.md`
+6. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/05-API-DATA-MODEL-EVENTS.md`
+7. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/06-SECURITY-PRIVACY-SAFETY-THREAT-MODEL.md`
+8. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/07-OBSERVABILITY-SLO-COST-CONTROLS-RUNBOOK.md`
+9. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/08-UI-UX-ACCESSIBILITY-SPEC.md`
+10. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/09-IMPLEMENTATION-ROADMAP-TESTS-ACCEPTANCE-GATES.md`
+11. `10-AI-I-WYSZUKIWANIE/GRACZ-PL-SEARCH-R4/10-PROVIDER-ABSTRACTION-AND-COST-MODEL.md`
+
+## Status addendum
+
+```text
+SEARCH R4 DOCUMENTATION = COMPLETE
+IMPLEMENTATION = NOT STARTED
+PROVIDER = NOT SELECTED
+AI PURCHASE = NOT AUTHORIZED
+DEPLOYMENT = NOT AUTHORIZED
+```
