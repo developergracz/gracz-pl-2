@@ -1253,3 +1253,115 @@ dialog.gracz-search .gracz-search__panel{
     height:28px;
   }
 }
+
+
+/* SEARCH R3 ZOOM DROPDOWN — hover levels and conditional cyan reset */
+.gracz-search__zoom-selector{
+  position:relative;
+}
+.gracz-search__zoom-selector .gracz-search__zoom-value{
+  gap:4px;
+}
+.gracz-search__zoom-caret{
+  color:#56c8c1;
+  font-size:10px;
+  line-height:1;
+  transform:translateY(-1px);
+}
+.gracz-search__zoom-menu{
+  position:absolute;
+  right:-34px;
+  top:calc(100% + 6px);
+  z-index:40;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:5px;
+  border:1px solid rgba(86,200,193,.24);
+  border-radius:10px;
+  background:rgba(5,27,24,.97);
+  box-shadow:0 12px 30px rgba(0,0,0,.38);
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(-4px);
+  pointer-events:none;
+  transition:opacity .13s ease,transform .13s ease,visibility .13s ease;
+}
+.gracz-search__zoom-selector:hover .gracz-search__zoom-menu,
+.gracz-search__zoom-selector:focus-within .gracz-search__zoom-menu{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.gracz-search__zoom-menu button{
+  min-width:44px;
+  height:28px;
+  padding:0 7px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#9fbab4;
+  font:800 9px/1 OpenSans,Arial,sans-serif;
+  cursor:pointer;
+}
+.gracz-search__zoom-menu button:hover,
+.gracz-search__zoom-menu button:focus-visible{
+  border:0;
+  outline:0;
+  background:rgba(86,200,193,.13);
+  color:#fff;
+}
+.gracz-search__zoom-menu button.is-active{
+  background:#56c8c1;
+  color:#06211e;
+}
+.gracz-search__zoom-reset-note{
+  min-height:20px;
+  padding:0;
+  border:0!important;
+  outline:0;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#56c8c1;
+  font:800 9px/1.1 OpenSans,Arial,sans-serif;
+  cursor:pointer;
+  text-decoration:none;
+}
+.gracz-search__zoom-reset-note[hidden]{
+  display:none!important;
+}
+.gracz-search__zoom-reset-note:hover,
+.gracz-search__zoom-reset-note:focus-visible{
+  border:0!important;
+  outline:0;
+  background:transparent!important;
+  color:#8ce8e1;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+[data-search-zoom="100"] .gracz-search__zoom-value{
+  cursor:default;
+}
+[data-search-zoom="115"] .gracz-search__zoom-value,
+[data-search-zoom="130"] .gracz-search__zoom-value,
+[data-search-zoom="145"] .gracz-search__zoom-value{
+  border-color:rgba(86,200,193,.42);
+  color:#c8fffa;
+}
+@media(max-width:720px){
+  .gracz-search__zoom-menu{
+    right:-31px;
+    top:calc(100% + 5px);
+    gap:2px;
+    padding:4px;
+  }
+  .gracz-search__zoom-menu button{
+    min-width:39px;
+    height:30px;
+    padding:0 5px;
+  }
+  .gracz-search__zoom-reset-note{
+    display:none!important;
+  }
+}
