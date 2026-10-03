@@ -1934,13 +1934,17 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__results{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:7px;
-  min-height:45px;
-  padding:0 13px;
+  gap:8px;
+  min-height:48px;
+  padding:0 14px;
   border:0;
   background:transparent;
-  color:#d3ddd9;
-  font:800 11px/1 OpenSans,Arial,sans-serif;
+  color:#f1efea;
+  font-family:OpenSans,"Open Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:clamp(16px,1.05vw,18.75px);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:-.005em;
   text-decoration:none;
   white-space:nowrap;
   cursor:pointer;
@@ -2041,7 +2045,8 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav>a,
 dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>a,
 dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
   min-height:51px;
-  font-size:12px;
+  font-size:clamp(16px,1.05vw,18.75px);
+  font-weight:500;
 }
 @media(max-width:880px){
   .gracz-search__portal-nav{
@@ -2055,9 +2060,10 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
   .gracz-search__portal-nav>a,
   .gracz-search__portal-nav-item>a,
   .gracz-search__portal-nav-item>button{
-    padding-left:10px;
-    padding-right:10px;
-    font-size:10px;
+    padding-left:12px;
+    padding-right:12px;
+    font-size:16px;
+    font-weight:500;
   }
 }
 @media(max-width:720px){
@@ -2068,8 +2074,9 @@ dialog.gracz-search.is-search-fullscreen .gracz-search__portal-nav-item>button{
   .gracz-search__portal-nav>a,
   .gracz-search__portal-nav-item>a,
   .gracz-search__portal-nav-item>button{
-    min-height:41px;
-    font-size:9px;
+    min-height:48px;
+    font-size:16px;
+    font-weight:500;
   }
   .gracz-search__portal-dropdown{
     display:none;
