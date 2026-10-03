@@ -119,6 +119,7 @@
   var adaptiveViewportFrame=0;
   var forumDialog=null;
   var forumDialogLastTrigger=null;
+  var activeResultsResize=null;
 
   function viewportMetrics(){
     var vv=window.visualViewport;
@@ -145,6 +146,7 @@
     ctx.root.style.setProperty('--search-vw',m.width+'px');
     ctx.root.style.setProperty('--search-vh',m.height+'px');
     ctx.root.style.setProperty('--search-gutter',m.gutter+'px');
+    if(ctx.resultsGrow)resetResultsPaneSize(ctx);
   }
 
   function refreshAdaptiveViewport(){
@@ -166,6 +168,118 @@
       window.visualViewport.addEventListener('resize',refreshAdaptiveViewport,{passive:true});
       window.visualViewport.addEventListener('scroll',refreshAdaptiveViewport,{passive:true});
     }
+  }
+
+  function resultsResizeAvailable(ctx){
+    if(!ctx||ctx.mode!=='modal'||!ctx.resultsPane||!ctx.resultsResizer||!ctx.panel)return false;
+    var m=viewportMetrics();
+    return m.device==='tablet'||m.device==='desktop'||m.device==='wide';
+  }
+
+  function resultsResizeState(ctx){
+    var current=Math.max(0,Number(ctx.resultsGrow)||0);
+    var paneRect=ctx.resultsPane.getBoundingClientRect();
+    var panelRect=ctx.panel.getBoundingClientRect();
+    var baseHeight=Math.max(120,paneRect.height-current);
+    var originalTop=paneRect.top+current;
+    var minTop=panelRect.top+72;
+    var maxGrow=Math.max(0,Math.floor(originalTop-minTop));
+    return {current:current,baseHeight:baseHeight,maxGrow:maxGrow};
+  }
+
+  function applyResultsPaneGrow(ctx,grow,state){
+    if(!resultsResizeAvailable(ctx))return;
+    state=state||resultsResizeState(ctx);
+    grow=Math.max(0,Math.min(state.maxGrow,Number(grow)||0));
+    ctx.resultsGrow=grow;
+    ctx.root.style.setProperty('--search-results-grow',Math.round(grow)+'px');
+    ctx.root.style.setProperty('--search-results-pane-height',Math.round(state.baseHeight+grow)+'px');
+    if(grow>0)ctx.root.setAttribute('data-search-results-resized','true');
+    else ctx.root.removeAttribute('data-search-results-resized');
+    if(ctx.resultsResizer){
+      ctx.resultsResizer.setAttribute('aria-valuemin','0');
+      ctx.resultsResizer.setAttribute('aria-valuemax',String(Math.round(state.maxGrow)));
+      ctx.resultsResizer.setAttribute('aria-valuenow',String(Math.round(grow)));
+    }
+  }
+
+  function resetResultsPaneSize(ctx){
+    if(!ctx)return;
+    ctx.resultsGrow=0;
+    ctx.root.removeAttribute('data-search-results-resized');
+    ctx.root.style.removeProperty('--search-results-grow');
+    ctx.root.style.removeProperty('--search-results-pane-height');
+    if(ctx.resultsResizer){
+      ctx.resultsResizer.setAttribute('aria-valuenow','0');
+    }
+  }
+
+  function bindResultsPaneResize(ctx){
+    if(!ctx||!ctx.resultsResizer||ctx.resultsResizer.__graczResultsResizeBound)return;
+    ctx.resultsResizer.__graczResultsResizeBound=true;
+
+    ctx.resultsResizer.addEventListener('pointerdown',function(event){
+      if(event.button!==0||!resultsResizeAvailable(ctx))return;
+      event.preventDefault();
+      var state=resultsResizeState(ctx);
+      activeResultsResize={
+        ctx:ctx,
+        pointerId:event.pointerId,
+        startY:event.clientY,
+        startGrow:state.current,
+        state:state
+      };
+      ctx.root.classList.add('is-search-results-resizing');
+      document.body.classList.add('gracz-search-results-resizing');
+      try{ctx.resultsResizer.setPointerCapture(event.pointerId);}catch(_){}
+    });
+
+    ctx.resultsResizer.addEventListener('pointermove',function(event){
+      if(!activeResultsResize||activeResultsResize.ctx!==ctx||activeResultsResize.pointerId!==event.pointerId)return;
+      event.preventDefault();
+      var s=activeResultsResize;
+      var grow=s.startGrow+(s.startY-event.clientY);
+      applyResultsPaneGrow(ctx,grow,s.state);
+    });
+
+    function finish(event){
+      if(!activeResultsResize||activeResultsResize.ctx!==ctx)return;
+      if(event&&event.pointerId!==undefined&&activeResultsResize.pointerId!==event.pointerId)return;
+      try{ctx.resultsResizer.releasePointerCapture(activeResultsResize.pointerId);}catch(_){}
+      activeResultsResize=null;
+      ctx.root.classList.remove('is-search-results-resizing');
+      document.body.classList.remove('gracz-search-results-resizing');
+    }
+
+    ctx.resultsResizer.addEventListener('pointerup',finish);
+    ctx.resultsResizer.addEventListener('pointercancel',finish);
+    ctx.resultsResizer.addEventListener('lostpointercapture',finish);
+
+    ctx.resultsResizer.addEventListener('dblclick',function(event){
+      if(!resultsResizeAvailable(ctx))return;
+      event.preventDefault();
+      var state=resultsResizeState(ctx);
+      if(state.current>0)resetResultsPaneSize(ctx);
+      else applyResultsPaneGrow(ctx,state.maxGrow,state);
+    });
+
+    ctx.resultsResizer.addEventListener('keydown',function(event){
+      if(!resultsResizeAvailable(ctx))return;
+      var state=resultsResizeState(ctx);
+      if(event.key==='ArrowUp'){
+        event.preventDefault();
+        applyResultsPaneGrow(ctx,state.current+(event.shiftKey?80:40),state);
+      }else if(event.key==='ArrowDown'){
+        event.preventDefault();
+        applyResultsPaneGrow(ctx,state.current-(event.shiftKey?80:40),state);
+      }else if(event.key==='Home'){
+        event.preventDefault();
+        applyResultsPaneGrow(ctx,state.maxGrow,state);
+      }else if(event.key==='End'){
+        event.preventDefault();
+        resetResultsPaneSize(ctx);
+      }
+    });
   }
 
   function normalize(value){
@@ -1090,6 +1204,7 @@
       }
 
       if(event.target.closest('[data-search-fullscreen]')){
+        resetResultsPaneSize(ctx);
         toggleSearchFullscreen(ctx);return;
       }
 
@@ -1230,10 +1345,13 @@
         '<span data-search-command-info hidden></span>'+
         (page?'<span class="gracz-search__sort" data-search-sort-wrap><label for="gracz-search-sort">Sortuj</label><select id="gracz-search-sort" data-search-sort><option value="relevance">Trafność</option><option value="title">A–Z</option></select></span>':'<span class="gracz-search__hint"><kbd>↑</kbd><kbd>↓</kbd> wybór <kbd>Enter</kbd> otwórz <kbd>Esc</kbd> zamknij</span>')+
       '</div>'+
-      '<div class="gracz-search__results" data-search-results role="listbox" aria-label="Wyniki wyszukiwania"></div>'+
-      '<div class="gracz-search__actions-row">'+
-        '<a class="gracz-search__more" data-search-more href="/szukaj/" hidden></a>'+
-        (page?'<button type="button" class="gracz-search__copy" data-search-copy>Skopiuj link do wyników</button>':'')+
+      '<div class="gracz-search__results-pane" data-search-results-pane>'+
+        (page?'':'<div class="gracz-search__results-resizer" data-search-results-resizer role="separator" aria-orientation="horizontal" aria-label="Zmień wysokość pola wyników. Przeciągnij listewkę w górę, aby powiększyć wyniki." aria-valuemin="0" aria-valuenow="0" tabindex="0"><span aria-hidden="true"></span></div>')+
+        '<div class="gracz-search__results" data-search-results role="listbox" aria-label="Wyniki wyszukiwania"></div>'+
+        '<div class="gracz-search__actions-row">'+
+          '<a class="gracz-search__more" data-search-more href="/szukaj/" hidden></a>'+
+          (page?'<button type="button" class="gracz-search__copy" data-search-copy>Skopiuj link do wyników</button>':'')+
+        '</div>'+
       '</div>'+
       '<div class="gracz-search__foot"><span>SEARCH R3 działa lokalnie w gracz.pl. Rozumie pytania, intencję i kontekst bez wysyłania frazy do zewnętrznego AI.</span><strong>R3 · Ctrl K</strong></div>'+
     '</div>';
@@ -1276,6 +1394,9 @@
     ctx.zoomOptions=Array.prototype.slice.call(root.querySelectorAll('[data-search-zoom-level]'));
     ctx.maximizeButton=root.querySelector('[data-search-fullscreen]');
     ctx.panel=root.querySelector('.gracz-search__panel');
+    ctx.resultsPane=root.querySelector('[data-search-results-pane]');
+    ctx.resultsResizer=root.querySelector('[data-search-results-resizer]');
+    ctx.resultsGrow=0;
     ctx.zoom=readZoom();
     bindAdaptiveViewport();
     applyAdaptiveViewport(ctx);
@@ -1283,6 +1404,7 @@
     ctx.input.setAttribute('aria-controls','gracz-search-results');
     ctx.results.id='gracz-search-results';
     applyZoom(ctx,ctx.zoom,false);
+    bindResultsPaneResize(ctx);
     bindContext(ctx);
     render(ctx);
     return ctx;
@@ -1307,6 +1429,7 @@
     ctx.query=String(preset||'');
     ctx.input.value=ctx.query;
     applyAdaptiveViewport(ctx);
+    resetResultsPaneSize(ctx);
     setSearchFullscreen(ctx,false);
     render(ctx);
     if(typeof ctx.root.showModal==='function')ctx.root.showModal();

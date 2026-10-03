@@ -95,7 +95,7 @@ const regulationMeta = validateBasePage({
   requireTitleTerms: ["Regulamin", "gracz.pl"],
   requireH1Terms: ["Regulamin", "gracz.pl"]
 });
-requireCheck(regulation.includes('href="/assets/legal.css?v=forum-r1"'), "regulation: legal stylesheet missing");
+requireCheck(regulation.includes('href="/assets/legal.css?v=forum-teal-r3"'), "regulation: legal stylesheet missing");
 requireCheck(regulation.includes('src="/assets/legal.js?v=forum-r1"'), "regulation: legal script missing");
 
 const gamesMeta = validateBasePage({
@@ -162,10 +162,10 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r28'), `${rel}: legal/contact trigger exists but legal-links.js R28 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r29'), `${rel}: legal/contact trigger exists but legal-links.js R29 is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/contact-modal.css?v=r4'), `${rel}: contact modal CSS R4 must be preloaded to prevent flash`);
+    requireCheck(html.includes('/assets/contact-modal.css?v=r5'), `${rel}: contact modal CSS R5 must be preloaded to prevent flash`);
     requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
   }
 }
@@ -181,6 +181,7 @@ requireCheck(contactCss.includes('width:min(680px'), "contact modal: compact des
 requireCheck(contactCss.includes('height:120px'), "contact modal: compact textarea height missing");
 requireCheck(contactCss.includes('position:sticky'), "contact modal: sticky action bar missing");
 requireCheck(legalLinksJs.includes('await ensureStyles()'), "contact modal: must wait for stylesheet before opening");
+requireCheck(contactCss.includes('#56c8c1'), "forum nav: shared teal color #56c8c1 missing");
 
 if (failures.length) {
   console.error("SEO GATE: FAIL");

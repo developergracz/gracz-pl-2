@@ -296,3 +296,31 @@ body.contact-modal-open{overflow:hidden}
     max-height:108px!important;
   }
 }
+
+
+/* GLOBAL FORUM NAV CTA — exact SEARCH R3 scrollbar teal */
+.forum-trigger,
+.rules-nav__dialog[data-modal="forum"]{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:34px!important;
+  height:34px!important;
+  padding:0 14px!important;
+  border:1px solid #56c8c1!important;
+  border-radius:999px!important;
+  background:#56c8c1!important;
+  color:#041b18!important;
+  box-shadow:0 6px 16px rgba(86,200,193,.20),inset 0 1px 0 rgba(255,255,255,.16);
+  cursor:pointer;
+}
+.forum-trigger:hover,
+.forum-trigger:focus-visible,
+.rules-nav__dialog[data-modal="forum"]:hover,
+.rules-nav__dialog[data-modal="forum"]:focus-visible{
+  border-color:#56c8c1!important;
+  background:#56c8c1!important;
+  color:#041b18!important;
+  box-shadow:0 8px 20px rgba(86,200,193,.30),0 0 0 2px rgba(86,200,193,.13);
+  outline:0;
+}

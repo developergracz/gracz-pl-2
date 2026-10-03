@@ -19,7 +19,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; script-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/search-info.css?v=r1">
+  <link rel="stylesheet" href="/assets/search-info.css?v=r2">
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
@@ -43,10 +43,16 @@
       <nav class="nav" aria-label="Nawigacja">
         <a href="/gry/">Gry</a>
         <a href="/poradniki/">Poradniki</a>
+        <button class="forum-info-button" type="button" popovertarget="forum-info-popover">Forum</button>
         <a class="primary" href="/szukaj/">Otwórz wyszukiwarkę</a>
       </nav>
     </div>
   </header>
+
+  <div class="forum-info-popover" id="forum-info-popover" popover>
+    <h2>Forum gracz.pl jest w trakcie budowy</h2>
+    <p>Budujemy forum połączone z kontem gracza, wyszukiwarką i całym ekosystemem gracz.pl.</p>
+  </div>
 
   <main>
     <section class="hero">

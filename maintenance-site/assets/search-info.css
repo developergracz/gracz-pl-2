@@ -98,3 +98,38 @@ rgba(255,255,255,.012)}
   .footer__in nav{width:100%;margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* Forum button — same exact teal as the SEARCH R3 results scrollbar */
+.nav .forum-info-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:9px 12px;
+  border:1px solid #56c8c1;
+  border-radius:999px;
+  background:#56c8c1;
+  color:#041b18;
+  font:800 11px/1 OpenSans,Arial,sans-serif;
+  cursor:pointer;
+}
+.nav .forum-info-button:hover,
+.nav .forum-info-button:focus-visible{
+  border-color:#56c8c1;
+  background:#56c8c1;
+  color:#041b18;
+  outline:0;
+  box-shadow:0 0 0 2px rgba(86,200,193,.14);
+}
+.forum-info-popover{
+  width:min(520px,calc(100% - 28px));
+  padding:24px;
+  border:1px solid rgba(86,200,193,.34);
+  border-radius:20px;
+  background:linear-gradient(145deg,#0b2b24,#061713);
+  color:#eef5f1;
+  box-shadow:0 28px 80px rgba(0,0,0,.52);
+}
+.forum-info-popover::backdrop{background:rgba(0,5,4,.70);backdrop-filter:blur(8px)}
+.forum-info-popover h2{margin:0;color:#dffaf7;font:800 24px/1.2 Montserrat,Arial,sans-serif}
+.forum-info-popover p{margin:12px 0 0;color:#b9ccc6;font-size:13px;line-height:1.6}

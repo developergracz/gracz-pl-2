@@ -345,15 +345,32 @@ a{color:inherit}.skip-link{position:fixed;left:18px;top:12px;z-index:999;transfo
 
 /* Forum coming-soon control in legal navigation */
 .legal-nav__forum{
-  border:0;
-  background:none;
-  color:#dfe7e3;
-  padding:28px 0 24px;
-  font:800 12px/1 Montserrat,sans-serif;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 14px;
+  border:1px solid #56c8c1;
+  border-radius:999px;
+  background:#56c8c1;
+  color:#041b18;
+  font-family:OpenSans,Arial,sans-serif;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:-.005em;
+  line-height:1;
+  white-space:nowrap;
   cursor:pointer;
+  box-shadow:0 6px 16px rgba(86,200,193,.20),inset 0 1px 0 rgba(255,255,255,.16);
 }
 .legal-nav__forum:hover,
-.legal-nav__forum:focus-visible{color:var(--gold)}
+.legal-nav__forum:focus-visible{
+  color:#041b18;
+  background:#56c8c1;
+  border-color:#56c8c1;
+  outline:0;
+  box-shadow:0 8px 20px rgba(86,200,193,.30),0 0 0 2px rgba(86,200,193,.13);
+}
 .legal-forum-dialog{
   width:min(560px,calc(100% - 28px));
   padding:0;
