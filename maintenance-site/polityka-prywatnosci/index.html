@@ -40,7 +40,7 @@
     "@context":"https://schema.org",
     "@graph":[
       {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
-      {"@type":"WebPage","@id":"https://gracz.pl/polityka-prywatnosci/#webpage","url":"https://gracz.pl/polityka-prywatnosci/","name":"Polityka prywatności gracz.pl","description":"Informacja o przetwarzaniu danych osobowych w gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL","dateModified":"2026-10-02"},
+      {"@type":"WebPage","@id":"https://gracz.pl/polityka-prywatnosci/#webpage","url":"https://gracz.pl/polityka-prywatnosci/","name":"Polityka prywatności gracz.pl","description":"Informacja o przetwarzaniu danych osobowych w gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL","dateModified":"2026-10-04"},
       {"@type":"BreadcrumbList","itemListElement":[
         {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
         {"@type":"ListItem","position":2,"name":"Polityka prywatności","item":"https://gracz.pl/polityka-prywatnosci/"}
@@ -62,7 +62,7 @@
         <button class="legal-nav__forum" type="button" data-forum-coming-soon aria-haspopup="dialog">Forum</button>
         <a href="/szukaj/">Szukaj</a>
       </nav>
-      <span class="legal-badge">RODO • wersja 1.0</span>
+      <span class="legal-badge">RODO • wersja 1.1</span>
     </div>
   </header>
 
@@ -74,7 +74,7 @@
       <h1 id="privacy-title">Polityka prywatności <span class="legal-domain">gracz<span class="legal-domain__suffix">.pl</span></span></h1>
       <p class="lead">Ten dokument wyjaśnia, jakie dane osobowe są lub mogą być przetwarzane w gracz.pl, w jakich celach, na jakich podstawach prawnych, przez jaki czas, komu mogą być powierzane oraz z jakich praw może skorzystać użytkownik.</p>
       <div class="meta-row" aria-label="Metadane dokumentu">
-        <span class="meta-pill"><strong>Wersja:</strong> 1.0 / R1</span>
+        <span class="meta-pill"><strong>Wersja:</strong> 1.1 / R2</span>
         <span class="meta-pill"><strong>Obowiązuje od:</strong> 2 października 2026</span>
         <span class="meta-pill"><strong>Zakres:</strong> gracz.pl i powiązane moduły</span>
         <span class="meta-pill"><strong>Język:</strong> polski</span>
@@ -186,6 +186,7 @@
                 <tr><td>moderacja i ochrona społeczności — po uruchomieniu</td><td>art. 6 ust. 1 lit. f RODO, a dla elementów będących częścią usługi także lit. b w odpowiednim zakresie</td></tr>
                 <tr><td>prywatne wiadomości i funkcje społecznościowe — po uruchomieniu</td><td>art. 6 ust. 1 lit. b RODO</td></tr>
                 <tr><td>newsletter i komunikacja marketingowa — po uruchomieniu</td><td>art. 6 ust. 1 lit. a RODO — zgoda</td></tr>
+                <tr><td>pomiar ruchu i korzystania z serwisu przy użyciu Google Analytics 4</td><td>art. 6 ust. 1 lit. a RODO — zgoda; narzędzie analityczne jest uruchamiane dopiero po wyborze użytkownika</td></tr>
                 <tr><td>realizacja praw osób, obsługa żądań RODO</td><td>art. 6 ust. 1 lit. c RODO w związku z obowiązkami administratora</td></tr>
                 <tr><td>audyt, kontrola dostępu i działania uprzywilejowane</td><td>art. 6 ust. 1 lit. f RODO</td></tr>
                 <tr><td>backup, odtwarzanie i ciągłość działania</td><td>podstawa właściwa dla danych źródłowych oraz art. 6 ust. 1 lit. f RODO w zakresie ciągłości i bezpieczeństwa</td></tr>
@@ -217,6 +218,7 @@
               <tbody>
                 <tr><td><strong>Render Services, Inc.</strong></td><td>hosting i runtime serwisu / backendu</td><td>infrastruktura aplikacji, techniczne logi i obsługa żądań; obecny web service formularza działa w regionie Frankfurt</td></tr>
                 <tr><td><strong>Plus Five Five, Inc. (Resend)</strong></td><td>dostawca wysyłki e-mail</td><td>przekazanie wiadomości z formularza do skrzynki administratora oraz techniczne dane doręczenia</td></tr>
+                <tr><td><strong>Google Ireland Limited — Google Analytics 4</strong></td><td>analityka ruchu uruchamiana po zgodzie</td><td>informacje o korzystaniu z serwisu, urządzeniu i przeglądarce oraz identyfikatory analityczne w zakresie wynikającym z konfiguracji GA4 i wyboru użytkownika</td></tr>
                 <tr><td><strong>dostawca poczty administratora</strong></td><td>odbiór i przechowywanie korespondencji</td><td>wiadomości przesłane do skrzynki e-mail administratora</td></tr>
                 <tr><td><strong>inni użytkownicy</strong></td><td>odbiorcy funkcji publicznych — po ich uruchomieniu</td><td>wyłącznie dane jawnie przeznaczone do publikacji, np. nazwa gracza, ranking lub publiczny wpis</td></tr>
                 <tr><td><strong>organy publiczne</strong></td><td>odbiorca na podstawie prawa</td><td>wyłącznie gdy istnieje prawnie skuteczny obowiązek lub żądanie</td></tr>
@@ -236,7 +238,8 @@
         <section class="legal-section" id="cookies">
           <div class="legal-section__top"><span class="section-num">10</span><div><h2>Cookies, localStorage i podobne technologie</h2></div></div>
           <p>gracz.pl może korzystać z technologii pamięci przeglądarki w zakresie niezbędnym do działania funkcji. Aktualna publiczna wersja wykorzystuje m.in. <strong>localStorage</strong> do lokalnego zapisu postępu Academy, do przechowania na urządzeniu użytkownika listy ostatnich fraz wpisanych w wewnętrznej wyszukiwarce oraz do zapamiętania wybranego poziomu powiększenia interfejsu wyszukiwarki oraz osobnego okna wyników. Historia wyszukiwania nie jest w tym modelu wysyłana do zewnętrznego dostawcy wyszukiwarki i może zostać wyczyszczona bezpośrednio w interfejsie wyszukiwarki albo przez usunięcie danych witryny w przeglądarce. Infrastruktura hostingowa może również przetwarzać techniczne identyfikatory i logi związane z obsługą żądań oraz bezpieczeństwem.</p>
-          <p>Na obecnym etapie publiczna wersja gracz.pl nie uruchamia własnych cookies analitycznych ani reklamowych opisanych jako aktywne narzędzia śledzące. Jeżeli w przyszłości zostaną wdrożone technologie analityczne, reklamowe lub inne niewymagane do działania serwisu, mechanizm zgody zostanie wprowadzony przed ich uruchomieniem w zakresie wymaganym przez prawo.</p>
+          <p>Publiczna wersja gracz.pl korzysta z <strong>Google Analytics 4</strong> (identyfikator pomiaru G-1TJMKDNQR8) wyłącznie po wyrażeniu zgody na analitykę. Przed dokonaniem wyboru oraz po odrzuceniu analityki sygnał <code>analytics_storage</code> pozostaje ustawiony na <code>denied</code>, a biblioteka Google Analytics nie jest ładowana przez gracz.pl. Po wyrażeniu zgody sygnał jest aktualizowany do <code>granted</code> i uruchamiany jest pomiar ruchu. Zgody reklamowe pozostają wyłączone w tym module.</p>
+          <p>Wybór dotyczący analityki jest zapamiętywany lokalnie na urządzeniu w <strong>localStorage</strong> oraz w first-party cookie <code>gracz_cookie_consent</code> przez maksymalnie 180 dni, aby nie pytać o tę samą decyzję przy każdym wejściu. Użytkownik może w dowolnym momencie ponownie otworzyć „Ustawienia cookies” i zmienić wybór. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
           <h3>Jak usunąć dane lokalne</h3>
           <p>Użytkownik może usunąć localStorage i inne dane witryny w ustawieniach swojej przeglądarki. Usunięcie lokalnego postępu może spowodować utratę zapisanych wyników Academy na danym urządzeniu.</p>
         </section>
@@ -250,6 +253,8 @@
               <tbody>
                 <tr><td>korespondencja z formularza kontaktowego</td><td>do zakończenia sprawy, a następnie przez okres potrzebny do udokumentowania kontaktu lub ochrony roszczeń; usuwana wcześniej, gdy dalsze przechowywanie nie jest potrzebne</td></tr>
                 <tr><td>techniczne logi aplikacyjne</td><td>co do zasady do 30 dni</td></tr>
+                <tr><td>wybór zgody na analitykę zapisany lokalnie</td><td>maksymalnie 180 dni lub do wcześniejszej zmiany/usunięcia danych witryny przez użytkownika</td></tr>
+                <tr><td>dane Google Analytics 4</td><td>zgodnie z ustawieniami retencji skonfigurowanymi dla usługi GA4 oraz zasadami Google; okres może zostać zmieniony w konfiguracji usługi</td></tr>
                 <tr><td>logi bezpieczeństwa</td><td>co do zasady do 90 dni, chyba że konkretny incydent wymaga dłuższego zabezpieczenia materiału</td></tr>
                 <tr><td>evidence realizacji praw RODO</td><td>maksymalnie 36 miesięcy od zakończenia obsługi żądania, w minimalnym zakresie</td></tr>
                 <tr><td>aktywne konto i profil — po uruchomieniu</td><td>przez okres aktywności konta; po skutecznym żądaniu usunięcia do 30 dni w aktywnych systemach</td></tr>
@@ -347,7 +352,7 @@
           <div class="legal-section__top"><span class="section-num">20</span><div><h2>Zmiany Polityki i wersjonowanie</h2></div></div>
           <p>Polityka może być aktualizowana w szczególności z powodu zmian funkcjonalności, dostawców, infrastruktury, technologii przechowywania, modelu bezpieczeństwa lub przepisów prawa. Aktualna wersja jest publikowana pod stałym adresem <strong>gracz.pl/polityka-prywatnosci/</strong>.</p>
           <p>W przypadku istotnej zmiany dotyczącej osób posiadających konto informacja o zmianie może zostać przekazana również w interfejsie konta lub e-mailem, jeżeli będzie to właściwe dla charakteru zmiany.</p>
-          <div class="callout"><strong>Historia publikacji:</strong> wersja 1.0 / R1 — 2 października 2026 r. Pierwsza rozbudowana polityka prywatności dla aktualnej architektury gracz.pl, uwzględniająca formularz kontaktowy, Render, Resend, localStorage i projektowy model funkcji konta.</div>
+          <div class="callout"><strong>Historia publikacji:</strong> wersja 1.1 / R2 — 4 października 2026 r. Aktualizacja o własny moduł zgód gracz.pl i Google Analytics 4 uruchamiane dopiero po zgodzie. Wersja 1.0 / R1 — 2 października 2026 r. Pierwsza rozbudowana polityka prywatności dla aktualnej architektury gracz.pl.</div>
         </section>
 
         <section class="legal-section" id="kontakt-rodo">
