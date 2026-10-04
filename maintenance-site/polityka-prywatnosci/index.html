@@ -75,7 +75,7 @@
       <p class="lead">Ten dokument wyjaśnia, jakie dane osobowe są lub mogą być przetwarzane w gracz.pl, w jakich celach, na jakich podstawach prawnych, przez jaki czas, komu mogą być powierzane oraz z jakich praw może skorzystać użytkownik.</p>
       <div class="meta-row" aria-label="Metadane dokumentu">
         <span class="meta-pill"><strong>Wersja:</strong> 1.1 / R2</span>
-        <span class="meta-pill"><strong>Obowiązuje od:</strong> 2 października 2026</span>
+        <span class="meta-pill"><strong>Obowiązuje od:</strong> 4 października 2026</span>
         <span class="meta-pill"><strong>Zakres:</strong> gracz.pl i powiązane moduły</span>
         <span class="meta-pill"><strong>Język:</strong> polski</span>
       </div>
@@ -133,7 +133,8 @@
             <li>publiczne strony informacyjne, zasady gier i poradniki;</li>
             <li>moduły Academy i lokalny zapis postępu w pamięci przeglądarki;</li>
             <li>formularz kontaktowy wysyłający wiadomości do administratora;</li>
-            <li>hosting, logi techniczne i mechanizmy bezpieczeństwa infrastruktury.</li>
+            <li>hosting, logi techniczne i mechanizmy bezpieczeństwa infrastruktury;</li>
+            <li>Google Analytics 4 — wyłącznie po zgodzie użytkownika na analitykę.</li>
           </ul>
           <h3>Funkcje rozwijane lub planowane</h3>
           <p>Konta, profile, multiplayer, rankingi, turnieje, prywatne wiadomości, czat i funkcje społecznościowe będą objęte niniejszą Polityką od chwili ich uruchomienia. Jeżeli ich wdrożenie zmieni zakres przetwarzania, Polityka zostanie zaktualizowana przed lub najpóźniej przy uruchomieniu danej funkcji.</p>
@@ -230,16 +231,17 @@
 
         <section class="legal-section" id="transfery">
           <div class="legal-section__top"><span class="section-num">09</span><div><h2>Przekazywanie danych poza Europejski Obszar Gospodarczy</h2></div></div>
-          <p>Niektóre podmioty technologiczne lub ich podwykonawcy mogą mieć siedzibę albo infrastrukturę poza Europejskim Obszarem Gospodarczym. Dotyczy to w szczególności części ekosystemu dostawców usług chmurowych i e-mail.</p>
-          <p>Jeżeli przetwarzanie wiąże się z przekazaniem danych do państwa trzeciego, administrator korzysta z mechanizmów przewidzianych w rozdziale V RODO, odpowiednio do konkretnego transferu — np. decyzji stwierdzającej odpowiedni stopień ochrony lub standardowych klauzul umownych. Resend w swoim DPA przewiduje standardowe klauzule umowne dla transferów poza EOG oraz wskazuje EU–U.S. Data Privacy Framework jako mechanizm dodatkowy.</p>
+          <p>Niektóre podmioty technologiczne lub ich podwykonawcy mogą mieć siedzibę albo infrastrukturę poza Europejskim Obszarem Gospodarczym. Dotyczy to w szczególności części ekosystemu dostawców usług chmurowych, e-mail oraz analityki internetowej, w tym usług Google.</p>
+          <p>Jeżeli przetwarzanie wiąże się z przekazaniem danych do państwa trzeciego, administrator korzysta z mechanizmów przewidzianych w rozdziale V RODO, odpowiednio do konkretnego transferu — np. decyzji stwierdzającej odpowiedni stopień ochrony lub standardowych klauzul umownych. Dotyczy to również sytuacji, w których dane przetwarzane w związku z Google Analytics mogą być obsługiwane poza EOG zgodnie z mechanizmami i warunkami stosowanymi przez Google. Resend w swoim DPA przewiduje standardowe klauzule umowne dla transferów poza EOG oraz wskazuje EU–U.S. Data Privacy Framework jako mechanizm dodatkowy.</p>
           <div class="callout">Informacje o konkretnych zabezpieczeniach transferu można uzyskać, kontaktując się z administratorem na adres <a href="mailto:czsocha@wp.pl">czsocha@wp.pl</a>.</div>
         </section>
 
         <section class="legal-section" id="cookies">
           <div class="legal-section__top"><span class="section-num">10</span><div><h2>Cookies, localStorage i podobne technologie</h2></div></div>
           <p>gracz.pl może korzystać z technologii pamięci przeglądarki w zakresie niezbędnym do działania funkcji. Aktualna publiczna wersja wykorzystuje m.in. <strong>localStorage</strong> do lokalnego zapisu postępu Academy, do przechowania na urządzeniu użytkownika listy ostatnich fraz wpisanych w wewnętrznej wyszukiwarce oraz do zapamiętania wybranego poziomu powiększenia interfejsu wyszukiwarki oraz osobnego okna wyników. Historia wyszukiwania nie jest w tym modelu wysyłana do zewnętrznego dostawcy wyszukiwarki i może zostać wyczyszczona bezpośrednio w interfejsie wyszukiwarki albo przez usunięcie danych witryny w przeglądarce. Infrastruktura hostingowa może również przetwarzać techniczne identyfikatory i logi związane z obsługą żądań oraz bezpieczeństwem.</p>
-          <p>Publiczna wersja gracz.pl korzysta z <strong>Google Analytics 4</strong> (identyfikator pomiaru G-1TJMKDNQR8) wyłącznie po wyrażeniu zgody na analitykę. Przed dokonaniem wyboru oraz po odrzuceniu analityki sygnał <code>analytics_storage</code> pozostaje ustawiony na <code>denied</code>, a biblioteka Google Analytics nie jest ładowana przez gracz.pl. Po wyrażeniu zgody sygnał jest aktualizowany do <code>granted</code> i uruchamiany jest pomiar ruchu. Zgody reklamowe pozostają wyłączone w tym module.</p>
-          <p>Wybór dotyczący analityki jest zapamiętywany lokalnie na urządzeniu w <strong>localStorage</strong> oraz w first-party cookie <code>gracz_cookie_consent</code> przez maksymalnie 180 dni, aby nie pytać o tę samą decyzję przy każdym wejściu. Użytkownik może w dowolnym momencie ponownie otworzyć „Ustawienia cookies” i zmienić wybór. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
+          <p>Publiczna wersja gracz.pl korzysta z <strong>Google Analytics 4</strong> (identyfikator pomiaru G-1TJMKDNQR8) wyłącznie po wyrażeniu zgody na analitykę. Przed dokonaniem wyboru oraz po odrzuceniu analityki sygnał <code>analytics_storage</code> pozostaje ustawiony na <code>denied</code>. Na nowej stronie bez zgody biblioteka Google Analytics nie jest ładowana przez gracz.pl. Po wyrażeniu zgody sygnał jest aktualizowany do <code>granted</code> i uruchamiany jest pomiar ruchu. Zgody reklamowe pozostają wyłączone w tym module.</p>
+          <p>Wybór dotyczący analityki jest zapamiętywany lokalnie na urządzeniu w <strong>localStorage</strong> oraz w first-party cookie <code>gracz_cookie_consent</code> przez maksymalnie 180 dni, aby nie pytać o tę samą decyzję przy każdym wejściu. Termin ważności jest sprawdzany również dla danych zapisanych w localStorage. Użytkownik może w dowolnym momencie ponownie otworzyć „Ustawienia cookies” i zmienić wybór. Przy wycofaniu wcześniej udzielonej zgody moduł ustawia analitykę na <code>denied</code>, usuwa dostępne dla strony first-party cookies GA o nazwach <code>_ga</code> i <code>_ga_*</code> oraz przeładowuje stronę, aby kolejny dokument nie uruchamiał Google Analytics. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
+          <p>Po zgodzie Google Analytics może utworzyć first-party cookies, w szczególności <code>_ga</code> oraz cookie strumienia w formacie <code>_ga_*</code>. Ich czas życia zależy od konfiguracji Google Analytics i może być dłuższy niż 180 dni; niezależnie od tego decyzja użytkownika o zgodzie w gracz.pl wygasa maksymalnie po 180 dniach i wtedy wymaga ponownego wyboru.</p>
           <h3>Jak usunąć dane lokalne</h3>
           <p>Użytkownik może usunąć localStorage i inne dane witryny w ustawieniach swojej przeglądarki. Usunięcie lokalnego postępu może spowodować utratę zapisanych wyników Academy na danym urządzeniu.</p>
         </section>
@@ -300,7 +302,7 @@
         <section class="legal-section" id="sprzeciw">
           <div class="legal-section__top"><span class="section-num">14</span><div><h2>Sprzeciw i wycofanie zgody</h2></div></div>
           <p>Jeżeli dane są przetwarzane na podstawie prawnie uzasadnionego interesu, użytkownik może wnieść sprzeciw z przyczyn związanych z jego szczególną sytuacją. Administrator zaprzestanie takiego przetwarzania, chyba że wykaże istnienie ważnych prawnie uzasadnionych podstaw nadrzędnych wobec interesów, praw i wolności użytkownika albo podstaw do ustalenia, dochodzenia lub obrony roszczeń.</p>
-          <p>Jeżeli w przyszłości użytkownik wyrazi zgodę na newsletter lub inną komunikację marketingową, będzie mógł ją wycofać w dowolnym momencie. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
+          <p>Zgodę na analitykę można wycofać w dowolnym momencie przez przycisk „Cookies” dostępny w interfejsie serwisu. Po wycofaniu gracz.pl aktualizuje stan zgody, usuwa dostępne first-party cookies Google Analytics i przeładowuje stronę, aby na kolejnym dokumencie biblioteka GA nie była uruchamiana. Jeżeli w przyszłości użytkownik wyrazi zgodę na newsletter lub inną komunikację marketingową, również będzie mógł ją wycofać w dowolnym momencie. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
         </section>
 
         <section class="legal-section" id="skarga">
