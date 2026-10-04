@@ -25,7 +25,12 @@
   let currentChoice = null;
   let currentExpiresAt = 0;
   let lastFocused = null;
+  let dialogDismissible = false;
   const inertState = new Map();
+  const syncChannel = (() => {
+    try { return typeof BroadcastChannel === 'function' ? new BroadcastChannel('gracz_cookie_consent_sync_v1') : null; }
+    catch (_) { return null; }
+  })();
 
   function isAllowedChoice(value) {
     return value === 'analytics' || value === 'denied';
@@ -35,7 +40,10 @@
     if (!raw || typeof raw !== 'object') return null;
     if (!isAllowedChoice(raw.value)) return null;
     const expiresAt = Number(raw.expiresAt);
-    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
+    const now = Date.now();
+    const MAX_CLOCK_SKEW_MS = 300000;
+    if (!Number.isFinite(expiresAt) || expiresAt <= now) return null;
+    if (expiresAt > now + CONSENT_TTL_MS + MAX_CLOCK_SKEW_MS) return null;
     return { value: raw.value, expiresAt };
   }
 
@@ -108,6 +116,7 @@
         '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax; Secure';
     } catch (_) {}
 
+    try { syncChannel && syncChannel.postMessage(record); } catch (_) {}
     return record;
   }
 
@@ -306,6 +315,13 @@
     }
 
     function showDialog(fromSettings) {
+      if (!overlay.hidden) {
+        const focusables = focusableElements(overlay);
+        const target = focusables.includes(document.activeElement) ? document.activeElement : focusables[0];
+        if (target) target.focus();
+        return;
+      }
+
       const saved = readChoice();
       if (saved) {
         currentChoice = saved.value;
@@ -316,7 +332,8 @@
       lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : settingsButton;
       overlay.hidden = false;
       document.documentElement.classList.add('gcc-open');
-      close.hidden = !fromSettings && !currentChoice;
+      dialogDismissible = Boolean(fromSettings || currentChoice);
+      close.hidden = !dialogDismissible;
       setBackgroundInert(overlay);
 
       const initial = currentChoice ? close : overlay.querySelector('[data-gcc-reject]');
@@ -343,17 +360,17 @@
     overlay.querySelector('[data-gcc-save]').addEventListener('click', () => finish(toggle.checked ? 'analytics' : 'denied'));
 
     close.addEventListener('click', () => {
-      if (currentChoice) hideDialog(true);
+      if (dialogDismissible) hideDialog(true);
     });
 
     overlay.addEventListener('click', (e) => {
-      if (e.target === overlay && currentChoice) hideDialog(true);
+      if (e.target === overlay && dialogDismissible) hideDialog(true);
     });
 
     document.addEventListener('keydown', (e) => {
       if (overlay.hidden) return;
 
-      if (e.key === 'Escape' && currentChoice) {
+      if (e.key === 'Escape' && dialogDismissible) {
         e.preventDefault();
         hideDialog(true);
         return;
@@ -377,23 +394,35 @@
       }
     });
 
+    function applyExternalRecord(record) {
+      const normalized = normalizeRecord(record);
+      if (!normalized) return;
+
+      const previous = currentChoice;
+      currentChoice = normalized.value;
+      currentExpiresAt = normalized.expiresAt;
+
+      if (normalized.value === 'denied' && (previous === 'analytics' || gaStarted)) {
+        withdrawAnalyticsAndReload();
+        return;
+      }
+
+      applyChoice(normalized.value);
+      toggle.checked = normalized.value === 'analytics';
+      if (!overlay.hidden) hideDialog(true);
+    }
+
     window.addEventListener('storage', (event) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
       const record = parseLocalRecord(event.newValue);
-      if (!record) return;
-
-      const previous = currentChoice;
-      currentChoice = record.value;
-      currentExpiresAt = record.expiresAt;
-
-      if (record.value === 'denied' && (previous === 'analytics' || gaStarted)) {
-        withdrawAnalyticsAndReload();
-      } else if (record.value === 'analytics') {
-        applyChoice('analytics');
-      } else {
-        applyChoice('denied');
-      }
+      if (record) applyExternalRecord(record);
     });
+
+    if (syncChannel) {
+      syncChannel.addEventListener('message', (event) => {
+        applyExternalRecord(event.data);
+      });
+    }
 
     window.GraczCookieConsent = {
       open: () => showDialog(true),
