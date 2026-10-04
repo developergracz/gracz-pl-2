@@ -6,6 +6,8 @@
   --gcc-muted: #b9cbc6;
   --gcc-accent: #155f91;
   --gcc-accent-2: #1f6f9f;
+  --gcc-switch-on: #2f96c9;
+  --gcc-focus: #8bdcff;
 }
 
 html.gcc-open { overflow: hidden; }
@@ -112,10 +114,10 @@ html.gcc-open { overflow: hidden; }
   background: #fff;
   transition: .2s ease;
 }
-.gcc-row--toggle input:checked + .gcc-switch { background: var(--gcc-accent); }
+.gcc-row--toggle input:checked + .gcc-switch { background: var(--gcc-switch-on); }
 .gcc-row--toggle input:checked + .gcc-switch::after { transform: translateX(22px); }
 .gcc-row--toggle input:focus-visible + .gcc-switch {
-  outline: 3px solid rgba(73,163,223,.45);
+  outline: 3px solid var(--gcc-focus);
   outline-offset: 3px;
 }
 .gcc-links { margin: 8px 0 20px; }
@@ -169,7 +171,7 @@ html.gcc-open { overflow: hidden; }
 .gcc-settings-button:focus-visible,
 .gcc-btn:focus-visible,
 .gcc-close:focus-visible {
-  outline: 3px solid rgba(73,163,223,.55);
+  outline: 3px solid var(--gcc-focus);
   outline-offset: 3px;
 }
 
