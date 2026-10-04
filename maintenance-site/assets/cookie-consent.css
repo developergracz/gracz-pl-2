@@ -4,8 +4,8 @@
   --gcc-border: rgba(103, 232, 209, .22);
   --gcc-text: #f3fbf8;
   --gcc-muted: #b9cbc6;
-  --gcc-accent: #2f89c8;
-  --gcc-accent-2: #49a3df;
+  --gcc-accent: #155f91;
+  --gcc-accent-2: #1f6f9f;
 }
 
 html.gcc-open { overflow: hidden; }
@@ -98,7 +98,7 @@ html.gcc-open { overflow: hidden; }
   width: 50px;
   height: 28px;
   border-radius: 999px;
-  background: #5a6663;
+  background: #7f8b87;
   transition: .2s ease;
 }
 .gcc-switch::after {
