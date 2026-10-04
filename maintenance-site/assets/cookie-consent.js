@@ -158,6 +158,7 @@
   function startGA() {
     if (gaStarted || currentChoice !== 'analytics') return;
 
+    window['ga-disable-' + MEASUREMENT_ID] = false;
     gaStarted = true;
     const token = ++gaLoadToken;
     const script = document.createElement('script');
@@ -187,11 +188,13 @@
       updateConsent(true);
       startGA();
     } else {
+      window['ga-disable-' + MEASUREMENT_ID] = true;
       updateConsent(false);
     }
   }
 
   function withdrawAnalyticsAndReload() {
+    window['ga-disable-' + MEASUREMENT_ID] = true;
     updateConsent(false);
     invalidatePendingGA();
     clearGACookies();
