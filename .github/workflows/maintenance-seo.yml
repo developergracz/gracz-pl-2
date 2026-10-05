@@ -35,5 +35,7 @@ jobs:
         run: |
           node --check maintenance-site/assets/legal-links.js
           node --check contact-api/server.mjs
+      - name: Run contact API regression tests
+        run: npm --prefix contact-api test
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
