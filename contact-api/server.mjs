@@ -158,11 +158,13 @@ createServer(async (req, res) => {
     enforceTemporaryBlock(ip);
     enforceIpRate(req);
 
-    const idempotencyKey = validateIdempotencyKey(req.headers["x-idempotency-key"]);
-
     const body = await readJson(req, 16_384);
     const payload = validateBasics(body);
     const requestFingerprint = submissionFingerprint(payload);
+    const rawIdempotencyKey = req.headers["x-idempotency-key"];
+    const idempotencyKey = rawIdempotencyKey
+      ? validateIdempotencyKey(rawIdempotencyKey)
+      : "legacy-" + requestFingerprint.slice(0, 32);
 
     const replay = getIdempotentReplay(ip, idempotencyKey, requestFingerprint);
     if (replay) {
@@ -176,7 +178,9 @@ createServer(async (req, res) => {
       return json(res, 200, fake);
     }
 
-    enforceFormTiming(payload.startedAt);
+    if (payload.startedAt > 0) {
+      enforceFormTiming(payload.startedAt);
+    }
 
     if (
       sameProtectedMailbox(payload.email, CONTACT_TO_ADDRESS) ||
@@ -1158,6 +1162,7 @@ function normalizePage(value) {
 }
 
 function parseStartedAt(value) {
+  if (value == null || value === "") return 0;
   if (typeof value !== "number" || !Number.isFinite(value)) {
     bad("Odśwież formularz i spróbuj ponownie.", "FORM_TIMING_INVALID");
   }
