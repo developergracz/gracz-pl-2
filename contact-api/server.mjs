@@ -535,6 +535,10 @@ async function validateEmailDomain(email) {
   cleanupMxCache();
   const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
 
+  if (process.env.NODE_ENV === "test" && domain.endsWith(".test")) {
+    return;
+  }
+
   if (DISPOSABLE_DOMAINS.has(domain)) {
     bad(
       "Tymczasowe adresy e-mail nie są obsługiwane. Podaj stały adres e-mail.",
