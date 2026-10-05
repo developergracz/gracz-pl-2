@@ -149,26 +149,6 @@ html.gcc-open { overflow: hidden; }
   color: #d9ebe6;
   border-color: rgba(255,255,255,.2);
 }
-.gcc-settings-button {
-  position: fixed;
-  left: max(14px, env(safe-area-inset-left));
-  bottom: max(14px, env(safe-area-inset-bottom));
-  z-index: 2147482000;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 42px;
-  padding: 9px 12px;
-  border: 1px solid rgba(124,235,214,.28);
-  border-radius: 999px;
-  background: rgba(4,23,19,.94);
-  color: #fff;
-  box-shadow: 0 8px 28px rgba(0,0,0,.35);
-  cursor: pointer;
-  font: 700 13px/1 "Open Sans", Arial, sans-serif;
-}
-.gcc-settings-button:hover { border-color: rgba(124,235,214,.58); }
-.gcc-settings-button:focus-visible,
 .gcc-btn:focus-visible,
 .gcc-close:focus-visible {
   outline: 3px solid var(--gcc-focus);
@@ -184,8 +164,6 @@ html.gcc-open { overflow: hidden; }
     padding: 20px 16px;
   }
   .gcc-actions { grid-template-columns: 1fr; }
-  .gcc-settings-label { display: none; }
-  .gcc-settings-button { width: 44px; justify-content: center; padding: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
