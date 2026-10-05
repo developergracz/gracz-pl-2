@@ -248,19 +248,27 @@
     let settingsButton = null;
 
     function ensureFooterSettingsButton() {
-      const container = document.querySelector(
-        'footer .legal, .site-footer .legal, .footer-bottom .legal, footer .footer-links, .footer-bottom .footer-links'
+      let container = document.querySelector(
+        'footer .legal, .site-footer .legal, .footer-bottom .legal, footer .footer-links, .footer-bottom .footer-links, .legal-footer__bottom nav, footer nav[aria-label="Stopka"]'
       );
-      if (!container) return null;
 
-      const existing = container.querySelector('[data-gcc-settings]');
+      const existing = document.querySelector('[data-gcc-settings]');
       if (existing) return existing;
 
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'link-btn';
+      button.className = 'link-btn gcc-footer-settings';
       button.setAttribute('data-gcc-settings', '');
       button.textContent = 'Ustawienia cookies';
+
+      if (!container) {
+        const fallback = document.createElement('div');
+        fallback.className = 'gcc-inline-settings';
+        fallback.setAttribute('aria-label', 'Ustawienia prywatności');
+        fallback.appendChild(button);
+        document.body.appendChild(fallback);
+        return button;
+      }
 
       if (container.tagName === 'UL' || container.tagName === 'OL') {
         const item = document.createElement('li');
