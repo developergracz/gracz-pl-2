@@ -511,7 +511,8 @@ function isValidDomain(domain) {
 }
 
 async function validateEmailDomain(email) {
-  const domain = email.split("@").pop().toLowerCase();
+  cleanupMxCache();
+  const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
 
   if (DISPOSABLE_DOMAINS.has(domain)) {
     bad(
@@ -531,7 +532,7 @@ async function validateEmailDomain(email) {
   const now = Date.now();
   const cached = mxCache.get(domain);
 
-  if (cached && now - cached.checkedAt < MX_CACHE_MS) {
+  if (cached && now - cached.checkedAt < cached.ttlMs) {
     if (!cached.valid) {
       bad(
         "Domena tego adresu e-mail nie obsługuje poczty. Sprawdź adres.",
@@ -541,32 +542,41 @@ async function validateEmailDomain(email) {
     return;
   }
 
-  let mx = [];
-
+  let mx;
   try {
-    mx = await Promise.race([
-      resolveMx(domain),
-      timeoutReject(2500, "MX_TIMEOUT"),
-    ]);
+    mx = await withTimeout(resolveMx(domain), 2500, "MX_TIMEOUT");
   } catch (error) {
-    if (error?.message === "MX_TIMEOUT") {
-      const timeout = new Error(
-        "Nie udało się teraz zweryfikować domeny e-mail. Spróbuj ponownie za chwilę."
+    const code = String(error?.code || error?.message || "");
+
+    if (code === "ENOTFOUND" || code === "ENODATA" || code === "NXDOMAIN") {
+      boundedSet(
+        mxCache,
+        domain,
+        { valid: false, checkedAt: now, ttlMs: 30 * 60 * 1000 },
+        MAX_MX_CACHE
       );
-      timeout.code = "EMAIL_DOMAIN_CHECK_TIMEOUT";
-      timeout.status = 503;
-      throw timeout;
+      bad(
+        "Domena tego adresu e-mail nie obsługuje poczty. Sprawdź adres.",
+        "EMAIL_DOMAIN_NO_MX"
+      );
     }
 
-    mxCache.set(domain, { valid: false, checkedAt: now });
-    bad(
-      "Domena tego adresu e-mail nie obsługuje poczty. Sprawdź adres.",
-      "EMAIL_DOMAIN_NO_MX"
+    const transient = new Error(
+      "Nie udało się teraz zweryfikować domeny e-mail. Spróbuj ponownie za chwilę."
     );
+    transient.code =
+      code === "MX_TIMEOUT" ? "EMAIL_DOMAIN_CHECK_TIMEOUT" : "EMAIL_DOMAIN_CHECK_TEMPORARY";
+    transient.status = 503;
+    throw transient;
   }
 
   const valid = Array.isArray(mx) && mx.some((entry) => entry?.exchange);
-  mxCache.set(domain, { valid, checkedAt: now });
+  boundedSet(
+    mxCache,
+    domain,
+    { valid, checkedAt: now, ttlMs: valid ? MX_CACHE_MS : 30 * 60 * 1000 },
+    MAX_MX_CACHE
+  );
 
   if (!valid) {
     bad(
@@ -576,10 +586,24 @@ async function validateEmailDomain(email) {
   }
 }
 
-function timeoutReject(ms, marker) {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(marker)), ms);
+function cleanupMxCache() {
+  const now = Date.now();
+  for (const [key, entry] of mxCache) {
+    if (now - entry.checkedAt >= entry.ttlMs) mxCache.delete(key);
+  }
+}
+
+function withTimeout(promise, ms, marker) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(marker);
+      error.code = marker;
+      reject(error);
+    }, ms);
   });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 function enforceFormTiming(startedAt) {
