@@ -143,13 +143,15 @@ createServer(async (req, res) => {
     enforceIpRate(req);
 
     const idempotencyKey = validateIdempotencyKey(req.headers["x-idempotency-key"]);
-    const replay = getIdempotentReplay(ip, idempotencyKey);
-    if (replay) {
-      return json(res, replay.status, replay.body);
-    }
 
     const body = await readJson(req, 16_384);
     const payload = validateBasics(body);
+    const requestFingerprint = submissionFingerprint(payload);
+
+    const replay = getIdempotentReplay(ip, idempotencyKey, requestFingerprint);
+    if (replay) {
+      return json(res, replay.status, replay.body);
+    }
 
     if (payload.website) {
       registerAbuseStrike(ip, "honeypot");
@@ -195,7 +197,7 @@ createServer(async (req, res) => {
       });
     }
 
-    reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey);
+    reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
 
     const text = [
       "Nowa wiadomość z formularza kontaktowego gracz.pl",
@@ -217,6 +219,7 @@ createServer(async (req, res) => {
       headers: {
         authorization: "Bearer " + RESEND_API_KEY,
         "content-type": "application/json",
+        "Idempotency-Key": "contact/" + idempotencyKey,
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
@@ -269,7 +272,7 @@ createServer(async (req, res) => {
     recordProviderSuccess();
 
     const successBody = { ok: true, id: requestId };
-    rememberIdempotentResult(ip, idempotencyKey, 200, successBody);
+    rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, successBody);
     reservedIdempotencyKey = null;
 
     console.log("[contact] sent", {
