@@ -262,7 +262,9 @@ createServer(async (req, res) => {
     if (!response.ok) {
       releaseIdempotency(reservedIdempotencyKey);
       reservedIdempotencyKey = null;
-      recordProviderFailure();
+      if (response.status === 408 || response.status === 429 || response.status >= 500) {
+        recordProviderFailure();
+      }
       let providerError = {};
       try {
         providerError = raw ? JSON.parse(raw) : {};
@@ -695,7 +697,7 @@ function enforceFormTiming(startedAt) {
 
 function enforceSpamRules(payload) {
   const combined = (payload.subject + "\n" + payload.message).toLowerCase();
-  const urlMatches = combined.match(/(?:https?:\/\/|www\.)/g) || [];
+  const urlMatches = combined.match(/\b(?:https?:\/\/|www\.)[^\s<>"']+/gi) || [];
 
   if (urlMatches.length > 3) {
     const error = new Error(
@@ -706,7 +708,7 @@ function enforceSpamRules(payload) {
     throw error;
   }
 
-  if (/(.)\1{19,}/u.test(combined)) {
+  if (/([^\s.\-_=])\1{19,}/u.test(combined)) {
     const error = new Error(
       "Wiadomość zawiera nietypowo długie powtórzenia znaków."
     );
@@ -1100,6 +1102,33 @@ function requiredMultiline(value, field, max) {
 
 function stripSingleLineControls(value) {
   return value.replace(/[\u0000-\u001F\u007F]/g, "");
+}
+
+function extractMailbox(value) {
+  const raw = String(value || "").trim();
+  const angle = raw.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>$/);
+  const candidate = angle ? angle[1] : raw;
+  const at = candidate.lastIndexOf("@");
+  if (at <= 0 || at !== candidate.indexOf("@")) return "";
+
+  const local = candidate.slice(0, at);
+  const asciiDomain = domainToASCII(candidate.slice(at + 1));
+  if (!asciiDomain) return "";
+
+  const normalized = local + "@" + asciiDomain.toLowerCase();
+  return isValidEmailSyntax(normalized) ? normalized : "";
+}
+
+function protectedMailboxKey(email) {
+  const at = email.lastIndexOf("@");
+  if (at <= 0) return email.toLowerCase();
+  const local = email.slice(0, at).toLowerCase().split("+", 1)[0];
+  const domain = email.slice(at + 1).toLowerCase();
+  return local + "@" + domain;
+}
+
+function sameProtectedMailbox(candidate, protectedAddress) {
+  return protectedMailboxKey(candidate) === protectedMailboxKey(protectedAddress);
 }
 
 function normalizeEmail(value) {
