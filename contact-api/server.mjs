@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
+import { isIP } from "node:net";
+import { domainToASCII } from "node:url";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -10,8 +12,12 @@ const CONTACT_TO = String(process.env.CONTACT_TO || "").trim().toLowerCase();
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
 const TURNSTILE_ENABLED = Boolean(TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY);
-const RISK_CHALLENGE_THRESHOLD = Number(process.env.RISK_CHALLENGE_THRESHOLD || 55);
-const RISK_BLOCK_THRESHOLD = Number(process.env.RISK_BLOCK_THRESHOLD || 85);
+const RISK_CHALLENGE_THRESHOLD = readRiskThreshold("RISK_CHALLENGE_THRESHOLD", 55);
+const RISK_BLOCK_THRESHOLD = readRiskThreshold("RISK_BLOCK_THRESHOLD", 85);
+
+if (RISK_CHALLENGE_THRESHOLD >= RISK_BLOCK_THRESHOLD) {
+  throw new Error("RISK_CHALLENGE_THRESHOLD must be lower than RISK_BLOCK_THRESHOLD");
+}
 
 const ALLOWED_ORIGINS = new Set([
   "https://gracz.pl",
@@ -79,6 +85,12 @@ const ABUSE_STRIKE_LIMIT = 3;
 const PROVIDER_FAILURE_WINDOW_MS = 5 * 60 * 1000;
 const PROVIDER_FAILURE_LIMIT = 5;
 const PROVIDER_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
+const MAX_IP_BUCKETS = 5000;
+const MAX_EMAIL_BUCKETS = 5000;
+const MAX_DUPLICATES = 5000;
+const MAX_IDEMPOTENCY = 5000;
+const MAX_ABUSE_STRIKES = 5000;
+const MAX_MX_CACHE = 2000;
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
