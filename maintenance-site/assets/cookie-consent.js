@@ -245,12 +245,25 @@
   function ensureUi() {
     if (document.getElementById('gracz-cookie-consent')) return;
 
-    const settingsButton = document.createElement('button');
-    settingsButton.type = 'button';
-    settingsButton.className = 'gcc-settings-button';
-    settingsButton.setAttribute('aria-label', 'Ustawienia cookies');
-    settingsButton.innerHTML = '<span aria-hidden="true">🍪</span><span class="gcc-settings-label">Cookies</span>';
-    document.body.appendChild(settingsButton);
+    let settingsButton = null;
+
+    function ensureFooterSettingsButton() {
+      const legalList = document.querySelector('footer .legal, .site-footer .legal, .footer-bottom .legal');
+      if (!legalList) return null;
+
+      const existing = legalList.querySelector('[data-gcc-settings]');
+      if (existing) return existing;
+
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'link-btn';
+      button.setAttribute('data-gcc-settings', '');
+      button.textContent = 'Ustawienia cookies';
+      item.appendChild(button);
+      legalList.appendChild(item);
+      return button;
+    }
 
     const overlay = document.createElement('div');
     overlay.id = 'gracz-cookie-consent';
@@ -299,6 +312,7 @@
       </section>`;
 
     document.body.appendChild(overlay);
+    settingsButton = ensureFooterSettingsButton();
 
     const toggle = overlay.querySelector('#gcc-analytics-toggle');
     const close = overlay.querySelector('.gcc-close');
@@ -310,7 +324,9 @@
 
       if (restoreFocus) {
         const target = lastFocused && lastFocused.isConnected ? lastFocused : settingsButton;
-        setTimeout(() => target.focus(), 0);
+        if (target && typeof target.focus === 'function') {
+          setTimeout(() => target.focus(), 0);
+        }
       }
     }
 
@@ -354,7 +370,9 @@
       hideDialog(true);
     }
 
-    settingsButton.addEventListener('click', () => showDialog(true));
+    if (settingsButton) {
+      settingsButton.addEventListener('click', () => showDialog(true));
+    }
     overlay.querySelector('[data-gcc-reject]').addEventListener('click', () => finish('denied'));
     overlay.querySelector('[data-gcc-accept]').addEventListener('click', () => finish('analytics'));
     overlay.querySelector('[data-gcc-save]').addEventListener('click', () => finish(toggle.checked ? 'analytics' : 'denied'));
