@@ -121,6 +121,13 @@ createServer(async (req, res) => {
     enforceSpamRules(payload);
     enforceDuplicate(payload);
 
+    if (payload.email === CONTACT_TO) {
+      bad(
+        "Podaj adres e-mail inny niż administracyjny adres kontaktowy gracz.pl.",
+        "ADMIN_EMAIL_NOT_ALLOWED"
+      );
+    }
+
     if (!RESEND_API_KEY || !CONTACT_TO || !EMAIL_FROM) {
       return json(res, 503, {
         error: {
@@ -128,13 +135,6 @@ createServer(async (req, res) => {
           message: "Kanał wysyłki wiadomości nie jest jeszcze skonfigurowany.",
         },
       });
-    }
-
-    if (payload.email === CONTACT_TO) {
-      bad(
-        "Podaj adres e-mail inny niż administracyjny adres kontaktowy gracz.pl.",
-        "ADMIN_EMAIL_NOT_ALLOWED"
-      );
     }
 
     const text = [
@@ -245,7 +245,6 @@ function setCors(res, origin) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
   res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
 }
 
