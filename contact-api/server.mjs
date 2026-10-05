@@ -327,10 +327,18 @@ function setCors(res, origin) {
 }
 
 function clientIp(req) {
-  return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
-    .split(",")[0]
-    .trim()
-    .slice(0, 80);
+  const forwarded = String(req.headers["x-forwarded-for"] || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  for (let index = forwarded.length - 1; index >= 0; index -= 1) {
+    const candidate = forwarded[index].replace(/^\[|\]$/g, "");
+    if (isIP(candidate)) return candidate;
+  }
+
+  const remote = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+  return isIP(remote) ? remote : "unknown";
 }
 
 function enforceIpRate(req) {
