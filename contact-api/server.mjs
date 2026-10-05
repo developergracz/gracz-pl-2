@@ -571,7 +571,7 @@ async function validateEmailDomain(email) {
 
   let mx;
   try {
-    mx = await withTimeout(resolveMx(domain), 2500, "MX_TIMEOUT");
+    mx = await resolveMxBounded(domain);
   } catch (error) {
     const code = String(error?.code || error?.message || "");
 
@@ -611,6 +611,24 @@ async function validateEmailDomain(email) {
       "EMAIL_DOMAIN_NO_MX"
     );
   }
+}
+
+async function resolveMxBounded(domain) {
+  const existing = mxInFlight.get(domain);
+  if (existing) return withTimeout(existing, 2500, "MX_TIMEOUT");
+
+  if (mxInFlight.size >= MAX_MX_IN_FLIGHT) {
+    const error = new Error(
+      "Weryfikacja domen e-mail jest chwilowo przeciążona. Spróbuj ponownie za chwilę."
+    );
+    error.code = "EMAIL_DOMAIN_CHECK_BUSY";
+    error.status = 503;
+    throw error;
+  }
+
+  const lookup = resolveMx(domain).finally(() => mxInFlight.delete(domain));
+  mxInFlight.set(domain, lookup);
+  return withTimeout(lookup, 2500, "MX_TIMEOUT");
 }
 
 function cleanupMxCache() {
