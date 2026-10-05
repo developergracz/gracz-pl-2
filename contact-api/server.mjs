@@ -7,6 +7,9 @@ import { domainToASCII } from "node:url";
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
 const RESEND_API_KEY = String(process.env.RESEND_API_KEY || "").trim();
+const RESEND_ENDPOINT = String(
+  process.env.RESEND_ENDPOINT || "https://api.resend.com/emails"
+).trim();
 const EMAIL_FROM = String(process.env.EMAIL_FROM || "Gracz.pl <kontakt@gracz.pl>").trim();
 const CONTACT_TO = String(process.env.CONTACT_TO || "").trim().toLowerCase();
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
@@ -161,6 +164,14 @@ createServer(async (req, res) => {
     }
 
     enforceFormTiming(payload.startedAt);
+
+    if (payload.email.toLowerCase() === CONTACT_TO.toLowerCase()) {
+      bad(
+        "Podaj adres e-mail inny niż administracyjny adres kontaktowy gracz.pl.",
+        "ADMIN_EMAIL_NOT_ALLOWED"
+      );
+    }
+
     await validateEmailDomain(payload.email);
     enforceEmailRate(payload.email);
     enforceSpamRules(payload);
@@ -180,13 +191,6 @@ createServer(async (req, res) => {
     }
 
     ensureProviderCircuitClosed();
-
-    if (payload.email === CONTACT_TO) {
-      bad(
-        "Podaj adres e-mail inny niż administracyjny adres kontaktowy gracz.pl.",
-        "ADMIN_EMAIL_NOT_ALLOWED"
-      );
-    }
 
     if (!RESEND_API_KEY || !CONTACT_TO || !EMAIL_FROM) {
       return json(res, 503, {
@@ -216,7 +220,7 @@ createServer(async (req, res) => {
 
     let response;
     try {
-      response = await fetch("https://api.resend.com/emails", {
+      response = await fetch(RESEND_ENDPOINT, {
         method: "POST",
         headers: {
           authorization: "Bearer " + RESEND_API_KEY,
@@ -255,9 +259,9 @@ createServer(async (req, res) => {
           typeof providerError?.name === "string"
             ? providerError.name.slice(0, 80)
             : null,
-        message:
-          typeof providerError?.message === "string"
-            ? providerError.message.slice(0, 300)
+        providerCode:
+          typeof providerError?.name === "string"
+            ? providerError.name.slice(0, 80)
             : null,
       });
 
