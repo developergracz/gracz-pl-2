@@ -248,20 +248,27 @@
     let settingsButton = null;
 
     function ensureFooterSettingsButton() {
-      const legalList = document.querySelector('footer .legal, .site-footer .legal, .footer-bottom .legal');
-      if (!legalList) return null;
+      const container = document.querySelector(
+        'footer .legal, .site-footer .legal, .footer-bottom .legal, footer .footer-links, .footer-bottom .footer-links'
+      );
+      if (!container) return null;
 
-      const existing = legalList.querySelector('[data-gcc-settings]');
+      const existing = container.querySelector('[data-gcc-settings]');
       if (existing) return existing;
 
-      const item = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'link-btn';
       button.setAttribute('data-gcc-settings', '');
       button.textContent = 'Ustawienia cookies';
-      item.appendChild(button);
-      legalList.appendChild(item);
+
+      if (container.tagName === 'UL' || container.tagName === 'OL') {
+        const item = document.createElement('li');
+        item.appendChild(button);
+        container.appendChild(item);
+      } else {
+        container.appendChild(button);
+      }
       return button;
     }
 
