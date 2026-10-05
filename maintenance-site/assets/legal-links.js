@@ -5,6 +5,7 @@
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
   var lastTrigger=null;
+  var contactOpenedAt=0;
 
   function loadPortalSearch(){
     if(!document.querySelector('[data-modal="search"],[data-gracz-search]'))return;
@@ -171,7 +172,8 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
-        page:location.href
+        page:location.href,
+        startedAt:contactOpenedAt
       };
 
       try{
@@ -184,12 +186,20 @@
         });
         var body={};
         try{body=await response.json();}catch(_){}
-        if(!response.ok)throw new Error(body&&body.error&&body.error.message?body.error.message:'Nie udało się wysłać wiadomości.');
+        if(!response.ok){
+          var safeMessage=body&&body.error&&typeof body.error.message==='string'?body.error.message:'Nie udało się wysłać wiadomości.';
+          var requestError=new Error(safeMessage);
+          requestError.isContactApiError=true;
+          throw requestError;
+        }
         setStatus('Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.','success');
         form.reset();
         count.textContent='0 / 4000';
       }catch(error){
-        setStatus('Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.','error');
+        var message=error&&error.isContactApiError&&error.message
+          ? error.message
+          : 'Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.';
+        setStatus(message,'error');
       }finally{
         submit.disabled=false;
         submit.textContent='Wyślij wiadomość';
@@ -201,6 +211,7 @@
 
   async function openContact(trigger){
     lastTrigger=trigger||document.activeElement;
+    contactOpenedAt=Date.now();
     await ensureStyles();
     var target=ensureDialog();
     if(typeof target.showModal==='function')target.showModal();
