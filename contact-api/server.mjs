@@ -367,7 +367,8 @@ function rateLimit(store, key, windowMs, max, message) {
   const current = store.get(key);
 
   if (!current || now - current.startedAt >= windowMs) {
-    store.set(key, { startedAt: now, count: 1 });
+    const cap = store === ipBuckets ? MAX_IP_BUCKETS : MAX_EMAIL_BUCKETS;
+    boundedSet(store, key, { startedAt: now, count: 1 }, cap);
     return;
   }
 
@@ -773,7 +774,12 @@ function registerAbuseStrike(ip, reason) {
   const current = abuseStrikes.get(key);
 
   if (!current || now - current.startedAt >= ABUSE_STRIKE_WINDOW_MS) {
-    abuseStrikes.set(key, { startedAt: now, count: 1, blockedUntil: 0 });
+    boundedSet(
+      abuseStrikes,
+      key,
+      { startedAt: now, count: 1, blockedUntil: 0 },
+      MAX_ABUSE_STRIKES
+    );
     return;
   }
 
@@ -790,6 +796,7 @@ function registerAbuseStrike(ip, reason) {
 }
 
 function enforceTemporaryBlock(ip) {
+  cleanupAbuseStrikes();
   const key = hashValue(ip);
   const current = abuseStrikes.get(key);
   if (!current) return;
@@ -804,6 +811,17 @@ function enforceTemporaryBlock(ip) {
 
   if (now - current.startedAt >= ABUSE_STRIKE_WINDOW_MS) {
     abuseStrikes.delete(key);
+  }
+}
+
+function cleanupAbuseStrikes() {
+  const now = Date.now();
+  for (const [key, value] of abuseStrikes) {
+    const expiresAt = Math.max(
+      value.startedAt + ABUSE_STRIKE_WINDOW_MS,
+      value.blockedUntil || 0
+    );
+    if (expiresAt <= now) abuseStrikes.delete(key);
   }
 }
 
@@ -953,7 +971,12 @@ function enforceDuplicate(payload) {
 
 function rememberDuplicate(payload) {
   cleanupDuplicates();
-  duplicateSubmissions.set(duplicateKey(payload), Date.now());
+  boundedSet(
+    duplicateSubmissions,
+    duplicateKey(payload),
+    Date.now(),
+    MAX_DUPLICATES
+  );
 }
 
 function cleanupDuplicates() {
@@ -963,6 +986,14 @@ function cleanupDuplicates() {
       duplicateSubmissions.delete(key);
     }
   }
+}
+
+function boundedSet(map, key, value, maxEntries) {
+  if (!map.has(key) && map.size >= maxEntries) {
+    const oldestKey = map.keys().next().value;
+    if (oldestKey !== undefined) map.delete(oldestKey);
+  }
+  map.set(key, value);
 }
 
 function hashValue(value) {
