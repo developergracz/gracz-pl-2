@@ -389,11 +389,12 @@ function cleanupBuckets(store, windowMs) {
 }
 
 async function readJson(req, maxBytes) {
-  if (
-    !String(req.headers["content-type"] || "")
-      .toLowerCase()
-      .startsWith("application/json")
-  ) {
+  const contentType = String(req.headers["content-type"] || "")
+    .split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+
+  if (contentType !== "application/json") {
     const error = new Error("Wymagany jest format JSON.");
     error.code = "INVALID_CONTENT_TYPE";
     error.status = 415;
@@ -427,17 +428,21 @@ async function readJson(req, maxBytes) {
 }
 
 function validateBasics(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    bad("Nieprawidłowe dane formularza.", "INVALID_PAYLOAD");
+  }
+
   const payload = {
-    name: clean(input?.name, 80),
-    email: clean(input?.email, 254).toLowerCase(),
-    category: clean(input?.category, 60),
-    subject: clean(input?.subject, 120),
-    message: cleanMultiline(input?.message, 4000),
-    website: clean(input?.website, 120),
-    page: clean(input?.page, 500),
-    acknowledgement: input?.acknowledgement === true,
-    startedAt: Number(input?.startedAt || 0),
-    turnstileToken: clean(input?.turnstileToken, 2048),
+    name: requiredString(input.name, "name", 80),
+    email: normalizeEmail(requiredString(input.email, "email", 254)),
+    category: requiredString(input.category, "category", 60),
+    subject: requiredString(input.subject, "subject", 120),
+    message: requiredMultiline(input.message, "message", 4000),
+    website: optionalString(input.website, "website", 120),
+    page: normalizePage(optionalString(input.page, "page", 500)),
+    acknowledgement: input.acknowledgement === true,
+    startedAt: parseStartedAt(input.startedAt),
+    turnstileToken: optionalString(input.turnstileToken, "turnstileToken", 2048),
   };
 
   if (payload.name.length < 2) {
@@ -472,14 +477,13 @@ function validateBasics(input) {
 
 function isValidEmailSyntax(email) {
   if (!email || email.length > 254) return false;
-  if (/[
-]/.test(email)) return false;
+  if (email.includes("\r") || email.includes("\n")) return false;
 
-  const match = /^([^\s@]+)@([^\s@]+)$/.exec(email);
-  if (!match) return false;
+  const at = email.lastIndexOf("@");
+  if (at <= 0 || at !== email.indexOf("@")) return false;
 
-  const local = match[1];
-  const domain = match[2];
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
 
   if (local.length > 64) return false;
   if (local.startsWith(".") || local.endsWith(".") || local.includes("..")) {
@@ -941,18 +945,68 @@ function hashValue(value) {
   return createHash("sha256").update(String(value)).digest("hex");
 }
 
-function clean(value, max) {
-  return String(value || "")
-    .replace(/[\u0000-\u001F\u007F]/g, "")
-    .trim()
-    .slice(0, max);
+function requiredString(value, field, max) {
+  if (typeof value !== "string") {
+    bad("Nieprawidłowy typ pola " + field + ".", "INVALID_FIELD_TYPE");
+  }
+  if (value.length > max) {
+    bad("Pole " + field + " jest zbyt długie.", "FIELD_TOO_LONG");
+  }
+  return stripSingleLineControls(value).trim();
 }
 
-function cleanMultiline(value, max) {
-  return String(value || "")
+function optionalString(value, field, max) {
+  if (value == null || value === "") return "";
+  return requiredString(value, field, max);
+}
+
+function requiredMultiline(value, field, max) {
+  if (typeof value !== "string") {
+    bad("Nieprawidłowy typ pola " + field + ".", "INVALID_FIELD_TYPE");
+  }
+  if (value.length > max) {
+    bad("Pole " + field + " jest zbyt długie.", "FIELD_TOO_LONG");
+  }
+  return value
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .trim()
-    .slice(0, max);
+    .trim();
+}
+
+function stripSingleLineControls(value) {
+  return value.replace(/[\u0000-\u001F\u007F]/g, "");
+}
+
+function normalizeEmail(value) {
+  if (value.includes("\r") || value.includes("\n")) {
+    bad("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL");
+  }
+  const at = value.lastIndexOf("@");
+  if (at <= 0) return value.trim();
+
+  const local = value.slice(0, at);
+  const rawDomain = value.slice(at + 1);
+  const asciiDomain = domainToASCII(rawDomain);
+  if (!asciiDomain) return value.trim();
+
+  return local + "@" + asciiDomain.toLowerCase();
+}
+
+function normalizePage(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (!ALLOWED_ORIGINS.has(url.origin)) return "";
+    return url.origin + url.pathname;
+  } catch {
+    return "";
+  }
+}
+
+function parseStartedAt(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    bad("Odśwież formularz i spróbuj ponownie.", "FORM_TIMING_INVALID");
+  }
+  return value;
 }
 
 function bad(message, code) {
