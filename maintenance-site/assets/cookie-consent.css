@@ -169,3 +169,29 @@ html.gcc-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .gcc-switch, .gcc-switch::after { transition: none; }
 }
+
+
+.gcc-footer-settings {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.gcc-footer-settings:hover { text-decoration: underline; }
+.gcc-footer-settings:focus-visible {
+  outline: 3px solid var(--gcc-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.gcc-inline-settings {
+  display: flex;
+  justify-content: center;
+  padding: 14px 18px 18px;
+  color: #b9cbc6;
+  font: 600 13px/1.4 "Open Sans", Arial, sans-serif;
+  background: #041713;
+}
