@@ -7,6 +7,7 @@
   var lastTrigger=null;
   var contactOpenedAt=0;
   var contactRequestKey='';
+  var contactSending=false;
 
   function newRequestKey(){
     try{
@@ -156,6 +157,7 @@
 
     form.addEventListener('submit',async function(event){
       event.preventDefault();
+      if(contactSending)return;
       setStatus('');
       var fields=['name','email','category','subject','message','acknowledgement'];
       var valid=true;
@@ -174,6 +176,7 @@
       }
 
       var submit=form.querySelector('.contact-form__submit');
+      contactSending=true;
       submit.disabled=true;
       submit.textContent='Wysyłanie…';
 
@@ -190,16 +193,25 @@
       };
 
       try{
-        var response=await fetch(CONTACT_API,{
-          method:'POST',
-          headers:{
-            'content-type':'application/json',
-            'x-idempotency-key':contactRequestKey||newRequestKey()
-          },
-          body:JSON.stringify(payload),
-          mode:'cors',
-          credentials:'omit'
-        });
+        if(!contactRequestKey)contactRequestKey=newRequestKey();
+        var controller=new AbortController();
+        var timeout=window.setTimeout(function(){controller.abort();},12000);
+        var response;
+        try{
+          response=await fetch(CONTACT_API,{
+            method:'POST',
+            headers:{
+              'content-type':'application/json',
+              'x-idempotency-key':contactRequestKey
+            },
+            body:JSON.stringify(payload),
+            mode:'cors',
+            credentials:'omit',
+            signal:controller.signal
+          });
+        }finally{
+          window.clearTimeout(timeout);
+        }
         var body={};
         try{body=await response.json();}catch(_){}
         if(!response.ok){
@@ -219,6 +231,7 @@
           : 'Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.';
         setStatus(message,'error');
       }finally{
+        contactSending=false;
         submit.disabled=false;
         submit.textContent='Wyślij wiadomość';
       }
@@ -229,8 +242,10 @@
 
   async function openContact(trigger){
     lastTrigger=trigger||document.activeElement;
-    contactOpenedAt=Date.now();
-    contactRequestKey=newRequestKey();
+    if(!contactSending){
+      contactOpenedAt=Date.now();
+      contactRequestKey=newRequestKey();
+    }
     await ensureStyles();
     var target=ensureDialog();
     if(typeof target.showModal==='function')target.showModal();
