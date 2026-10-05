@@ -214,22 +214,28 @@ createServer(async (req, res) => {
       "ID zgłoszenia: " + requestId,
     ].join("\n");
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + RESEND_API_KEY,
-        "content-type": "application/json",
-        "Idempotency-Key": "contact/" + idempotencyKey,
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [CONTACT_TO],
-        reply_to: payload.email,
-        subject: "gracz.pl " + payload.category + " — " + payload.subject,
-        text,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    let response;
+    try {
+      response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + RESEND_API_KEY,
+          "content-type": "application/json",
+          "Idempotency-Key": "contact/" + idempotencyKey,
+        },
+        body: JSON.stringify({
+          from: EMAIL_FROM,
+          to: [CONTACT_TO],
+          reply_to: payload.email,
+          subject: "gracz.pl " + payload.category + " — " + payload.subject,
+          text,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (error) {
+      recordProviderFailure();
+      throw error;
+    }
 
     const raw = await response.text().catch(() => "");
 
@@ -314,6 +320,16 @@ createServer(async (req, res) => {
     configured: Boolean(RESEND_API_KEY && CONTACT_TO && EMAIL_FROM),
   });
 });
+
+function readRiskThreshold(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    throw new Error(name + " must be a finite number between 0 and 100");
+  }
+  return value;
+}
 
 function setCors(res, origin) {
   res.setHeader("Access-Control-Allow-Origin", origin);
@@ -943,8 +959,14 @@ function recordProviderFailure() {
 }
 
 function recordProviderSuccess() {
-  providerCircuit.failures = [];
-  providerCircuit.openUntil = 0;
+  const now = Date.now();
+  providerCircuit.failures = providerCircuit.failures.filter(
+    (time) => now - time < PROVIDER_FAILURE_WINDOW_MS
+  );
+  if (providerCircuit.openUntil <= now) {
+    providerCircuit.failures = [];
+    providerCircuit.openUntil = 0;
+  }
 }
 
 function duplicateKey(payload) {
