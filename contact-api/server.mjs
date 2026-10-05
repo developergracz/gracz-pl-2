@@ -67,6 +67,7 @@ const duplicateSubmissions = new Map();
 const idempotencyCache = new Map();
 const abuseStrikes = new Map();
 const mxCache = new Map();
+const mxInFlight = new Map();
 
 const providerCircuit = {
   failures: [],
@@ -94,6 +95,7 @@ const MAX_DUPLICATES = 5000;
 const MAX_IDEMPOTENCY = 5000;
 const MAX_ABUSE_STRIKES = 5000;
 const MAX_MX_CACHE = 2000;
+const MAX_MX_IN_FLIGHT = 50;
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
