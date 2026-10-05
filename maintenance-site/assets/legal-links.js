@@ -6,6 +6,19 @@
   var dialog=null;
   var lastTrigger=null;
   var contactOpenedAt=0;
+  var contactRequestKey='';
+
+  function newRequestKey(){
+    try{
+      if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+      if(window.crypto&&typeof window.crypto.getRandomValues==='function'){
+        var bytes=new Uint8Array(24);
+        window.crypto.getRandomValues(bytes);
+        return Array.prototype.map.call(bytes,function(value){return value.toString(16).padStart(2,'0');}).join('');
+      }
+    }catch(_){}
+    return 'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+  }
 
   function loadPortalSearch(){
     if(!document.querySelector('[data-modal="search"],[data-gracz-search]'))return;
@@ -179,7 +192,10 @@
       try{
         var response=await fetch(CONTACT_API,{
           method:'POST',
-          headers:{'content-type':'application/json'},
+          headers:{
+            'content-type':'application/json',
+            'x-idempotency-key':contactRequestKey||newRequestKey()
+          },
           body:JSON.stringify(payload),
           mode:'cors',
           credentials:'omit'
@@ -195,6 +211,8 @@
         setStatus('Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.','success');
         form.reset();
         count.textContent='0 / 4000';
+        contactOpenedAt=Date.now();
+        contactRequestKey=newRequestKey();
       }catch(error){
         var message=error&&error.isContactApiError&&error.message
           ? error.message
@@ -212,6 +230,7 @@
   async function openContact(trigger){
     lastTrigger=trigger||document.activeElement;
     contactOpenedAt=Date.now();
+    contactRequestKey=newRequestKey();
     await ensureStyles();
     var target=ensureDialog();
     if(typeof target.showModal==='function')target.showModal();
