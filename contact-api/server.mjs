@@ -7,6 +7,11 @@ const HOST = process.env.HOST || "0.0.0.0";
 const RESEND_API_KEY = String(process.env.RESEND_API_KEY || "").trim();
 const EMAIL_FROM = String(process.env.EMAIL_FROM || "Gracz.pl <kontakt@gracz.pl>").trim();
 const CONTACT_TO = String(process.env.CONTACT_TO || "").trim().toLowerCase();
+const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
+const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
+const TURNSTILE_ENABLED = Boolean(TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY);
+const RISK_CHALLENGE_THRESHOLD = Number(process.env.RISK_CHALLENGE_THRESHOLD || 55);
+const RISK_BLOCK_THRESHOLD = Number(process.env.RISK_BLOCK_THRESHOLD || 85);
 
 const ALLOWED_ORIGINS = new Set([
   "https://gracz.pl",
@@ -50,7 +55,14 @@ const DOMAIN_TYPOS = new Map([
 const ipBuckets = new Map();
 const emailBuckets = new Map();
 const duplicateSubmissions = new Map();
+const idempotencyCache = new Map();
+const abuseStrikes = new Map();
 const mxCache = new Map();
+
+const providerCircuit = {
+  failures: [],
+  openUntil: 0,
+};
 
 const IP_WINDOW_MS = 15 * 60 * 1000;
 const IP_MAX_PER_WINDOW = 5;
@@ -60,6 +72,13 @@ const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 const MIN_FORM_TIME_MS = 2500;
 const MAX_FORM_AGE_MS = 2 * 60 * 60 * 1000;
 const MX_CACHE_MS = 6 * 60 * 60 * 1000;
+const IDEMPOTENCY_TTL_MS = 10 * 60 * 1000;
+const ABUSE_STRIKE_WINDOW_MS = 60 * 60 * 1000;
+const ABUSE_BLOCK_MS = 60 * 60 * 1000;
+const ABUSE_STRIKE_LIMIT = 3;
+const PROVIDER_FAILURE_WINDOW_MS = 5 * 60 * 1000;
+const PROVIDER_FAILURE_LIMIT = 5;
+const PROVIDER_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
@@ -93,7 +112,7 @@ createServer(async (req, res) => {
       res.writeHead(204, {
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, X-Idempotency-Key",
         "Access-Control-Max-Age": "600",
         "Vary": "Origin",
       });
@@ -106,13 +125,24 @@ createServer(async (req, res) => {
       });
     }
 
+    const ip = clientIp(req) || "unknown";
+    enforceTemporaryBlock(ip);
     enforceIpRate(req);
+
+    const idempotencyKey = validateIdempotencyKey(req.headers["x-idempotency-key"]);
+    const replay = getIdempotentReplay(ip, idempotencyKey);
+    if (replay) {
+      return json(res, replay.status, replay.body);
+    }
 
     const body = await readJson(req, 16_384);
     const payload = validateBasics(body);
 
     if (payload.website) {
-      return json(res, 200, { ok: true, id: requestId });
+      registerAbuseStrike(ip, "honeypot");
+      const fake = { ok: true, id: requestId };
+      rememberIdempotentResult(ip, idempotencyKey, 200, fake);
+      return json(res, 200, fake);
     }
 
     enforceFormTiming(payload.startedAt);
@@ -120,6 +150,21 @@ createServer(async (req, res) => {
     enforceEmailRate(payload.email);
     enforceSpamRules(payload);
     enforceDuplicate(payload);
+
+    const risk = calculateRisk(req, payload);
+    if (risk.score >= RISK_BLOCK_THRESHOLD) {
+      registerAbuseStrike(ip, "risk-block");
+      const error = new Error("Nie udało się zweryfikować zgłoszenia. Spróbuj ponownie później.");
+      error.code = "RISK_BLOCKED";
+      error.status = 429;
+      throw error;
+    }
+
+    if (TURNSTILE_ENABLED && risk.score >= RISK_CHALLENGE_THRESHOLD) {
+      await verifyTurnstile(payload.turnstileToken, ip);
+    }
+
+    ensureProviderCircuitClosed();
 
     if (payload.email === CONTACT_TO) {
       bad(
@@ -171,6 +216,7 @@ createServer(async (req, res) => {
     const raw = await response.text().catch(() => "");
 
     if (!response.ok) {
+      recordProviderFailure();
       let providerError = {};
       try {
         providerError = raw ? JSON.parse(raw) : {};
@@ -203,15 +249,21 @@ createServer(async (req, res) => {
     } catch {}
 
     rememberDuplicate(payload);
+    recordProviderSuccess();
+
+    const successBody = { ok: true, id: requestId };
+    rememberIdempotentResult(ip, idempotencyKey, 200, successBody);
 
     console.log("[contact] sent", {
       requestId,
       providerId: result.id || null,
       category: payload.category,
       emailHash: hashValue(payload.email).slice(0, 12),
+      riskScore: risk.score,
+      riskSignals: risk.signals,
     });
 
-    return json(res, 200, { ok: true, id: requestId });
+    return json(res, 200, successBody);
   } catch (error) {
     const status = Number.isInteger(error?.status) ? error.status : 500;
 
@@ -351,6 +403,7 @@ function validateBasics(input) {
     page: clean(input?.page, 500),
     acknowledgement: input?.acknowledgement === true,
     startedAt: Number(input?.startedAt || 0),
+    turnstileToken: clean(input?.turnstileToken, 2048),
   };
 
   if (payload.name.length < 2) {
@@ -549,6 +602,210 @@ function uniqueWordRatio(text) {
   const words = text.match(/[\p{L}\p{N}]{2,}/gu) || [];
   if (words.length < 10) return 1;
   return new Set(words).size / words.length;
+}
+
+
+function validateIdempotencyKey(value) {
+  const key = String(value || "").trim();
+  if (!/^[a-zA-Z0-9._:-]{16,128}$/.test(key)) {
+    bad("Odśwież formularz i spróbuj ponownie.", "INVALID_IDEMPOTENCY_KEY");
+  }
+  return key;
+}
+
+function idempotencyStorageKey(ip, key) {
+  return hashValue(ip + "\n" + key);
+}
+
+function getIdempotentReplay(ip, key) {
+  cleanupIdempotency();
+  const entry = idempotencyCache.get(idempotencyStorageKey(ip, key));
+  if (!entry) return null;
+  if (entry.state === "done") return { status: entry.status, body: entry.body };
+
+  const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
+  error.code = "REQUEST_IN_PROGRESS";
+  error.status = 409;
+  throw error;
+}
+
+function rememberIdempotentResult(ip, key, status, body) {
+  cleanupIdempotency();
+  idempotencyCache.set(idempotencyStorageKey(ip, key), {
+    state: "done",
+    status,
+    body,
+    createdAt: Date.now(),
+  });
+}
+
+function cleanupIdempotency() {
+  const now = Date.now();
+  for (const [key, entry] of idempotencyCache) {
+    if (now - entry.createdAt >= IDEMPOTENCY_TTL_MS) idempotencyCache.delete(key);
+  }
+}
+
+function registerAbuseStrike(ip, reason) {
+  const now = Date.now();
+  const key = hashValue(ip);
+  const current = abuseStrikes.get(key);
+
+  if (!current || now - current.startedAt >= ABUSE_STRIKE_WINDOW_MS) {
+    abuseStrikes.set(key, { startedAt: now, count: 1, blockedUntil: 0 });
+    return;
+  }
+
+  current.count += 1;
+  if (current.count >= ABUSE_STRIKE_LIMIT) {
+    current.blockedUntil = now + ABUSE_BLOCK_MS;
+  }
+
+  console.warn("[contact] abuse signal", {
+    ipHash: key.slice(0, 12),
+    reason,
+    count: current.count,
+  });
+}
+
+function enforceTemporaryBlock(ip) {
+  const key = hashValue(ip);
+  const current = abuseStrikes.get(key);
+  if (!current) return;
+
+  const now = Date.now();
+  if (current.blockedUntil > now) {
+    const error = new Error("Zbyt wiele podejrzanych prób. Spróbuj ponownie później.");
+    error.code = "TEMPORARILY_BLOCKED";
+    error.status = 429;
+    throw error;
+  }
+
+  if (now - current.startedAt >= ABUSE_STRIKE_WINDOW_MS) {
+    abuseStrikes.delete(key);
+  }
+}
+
+function calculateRisk(req, payload) {
+  let score = 0;
+  const signals = [];
+  const age = Date.now() - payload.startedAt;
+  const combined = (payload.subject + "\n" + payload.message).toLowerCase();
+  const urls = combined.match(/(?:https?:\/\/|www\.)/g) || [];
+  const ua = String(req.headers["user-agent"] || "");
+  const forwarded = String(req.headers["x-forwarded-for"] || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!ua || ua.length < 8) {
+    score += 25;
+    signals.push("missing-user-agent");
+  }
+  if (age < 5000) {
+    score += 15;
+    signals.push("fast-submit");
+  }
+  if (urls.length === 1) {
+    score += 8;
+    signals.push("one-url");
+  } else if (urls.length === 2) {
+    score += 18;
+    signals.push("two-urls");
+  } else if (urls.length >= 3) {
+    score += 30;
+    signals.push("three-urls");
+  }
+  if (forwarded.length > 3) {
+    score += 12;
+    signals.push("long-proxy-chain");
+  }
+  if (payload.message.length > 2500) {
+    score += 8;
+    signals.push("very-long-message");
+  }
+  if (uppercaseRatio(payload.subject + " " + payload.message) > 0.7) {
+    score += 10;
+    signals.push("high-uppercase");
+  }
+
+  return { score: Math.min(score, 100), signals };
+}
+
+function uppercaseRatio(text) {
+  const letters = String(text).match(/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/g) || [];
+  if (letters.length < 20) return 0;
+  const upper = letters.filter((ch) => ch === ch.toUpperCase() && ch !== ch.toLowerCase());
+  return upper.length / letters.length;
+}
+
+async function verifyTurnstile(token, ip) {
+  if (!token) {
+    const error = new Error("Wymagana jest dodatkowa weryfikacja antybotowa.");
+    error.code = "CHALLENGE_REQUIRED";
+    error.status = 428;
+    throw error;
+  }
+
+  const body = new URLSearchParams({
+    secret: TURNSTILE_SECRET_KEY,
+    response: token,
+    remoteip: ip,
+  });
+
+  let response;
+  try {
+    response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    const error = new Error("Weryfikacja antybotowa jest chwilowo niedostępna.");
+    error.code = "CHALLENGE_UNAVAILABLE";
+    error.status = 503;
+    throw error;
+  }
+
+  let result = {};
+  try {
+    result = await response.json();
+  } catch {}
+
+  if (!response.ok || result?.success !== true) {
+    const error = new Error("Nie udało się potwierdzić weryfikacji antybotowej.");
+    error.code = "CHALLENGE_FAILED";
+    error.status = 403;
+    throw error;
+  }
+}
+
+function ensureProviderCircuitClosed() {
+  const now = Date.now();
+  if (providerCircuit.openUntil > now) {
+    const error = new Error("Kanał wysyłki jest chwilowo przeciążony. Spróbuj ponownie za kilka minut.");
+    error.code = "MAIL_CIRCUIT_OPEN";
+    error.status = 503;
+    throw error;
+  }
+}
+
+function recordProviderFailure() {
+  const now = Date.now();
+  providerCircuit.failures = providerCircuit.failures.filter(
+    (time) => now - time < PROVIDER_FAILURE_WINDOW_MS
+  );
+  providerCircuit.failures.push(now);
+
+  if (providerCircuit.failures.length >= PROVIDER_FAILURE_LIMIT) {
+    providerCircuit.openUntil = now + PROVIDER_CIRCUIT_OPEN_MS;
+  }
+}
+
+function recordProviderSuccess() {
+  providerCircuit.failures = [];
+  providerCircuit.openUntil = 0;
 }
 
 function duplicateKey(payload) {
