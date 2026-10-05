@@ -127,6 +127,13 @@
       count.textContent=String(message.value.length)+' / 4000';
     });
 
+    form.addEventListener('input',function(event){
+      var field=event.target;
+      if(field&&field.matches&&field.matches('input,select,textarea')){
+        field.setAttribute('aria-invalid','false');
+      }
+    });
+
     dialog.addEventListener('click',function(event){
       if(event.target===dialog||event.target.closest('[data-contact-close]'))closeContact();
     });
@@ -214,10 +221,11 @@
         }
         var body={};
         try{body=await response.json();}catch(_){}
-        if(!response.ok){
+        if(!response.ok||body.ok!==true){
           var safeMessage=body&&body.error&&typeof body.error.message==='string'?body.error.message:'Nie udało się wysłać wiadomości.';
           var requestError=new Error(safeMessage);
           requestError.isContactApiError=true;
+          requestError.code=body&&body.error&&body.error.code?String(body.error.code):'';
           throw requestError;
         }
         setStatus('Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.','success');
@@ -230,6 +238,13 @@
           ? error.message
           : 'Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.';
         setStatus(message,'error');
+        var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
+        if(error&&emailCodes.indexOf(error.code)!==-1){
+          form.elements.email.setAttribute('aria-invalid','true');
+          form.elements.email.focus();
+        }else{
+          submit.focus();
+        }
       }finally{
         contactSending=false;
         submit.disabled=false;
