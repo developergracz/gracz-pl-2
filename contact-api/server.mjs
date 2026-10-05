@@ -82,6 +82,7 @@ const PROVIDER_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
+  let reservedIdempotencyKey = null;
 
   try {
     const url = new URL(req.url, "http://localhost");
@@ -182,6 +183,8 @@ createServer(async (req, res) => {
       });
     }
 
+    reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey);
+
     const text = [
       "Nowa wiadomość z formularza kontaktowego gracz.pl",
       "",
@@ -216,6 +219,8 @@ createServer(async (req, res) => {
     const raw = await response.text().catch(() => "");
 
     if (!response.ok) {
+      releaseIdempotency(reservedIdempotencyKey);
+      reservedIdempotencyKey = null;
       recordProviderFailure();
       let providerError = {};
       try {
@@ -253,6 +258,7 @@ createServer(async (req, res) => {
 
     const successBody = { ok: true, id: requestId };
     rememberIdempotentResult(ip, idempotencyKey, 200, successBody);
+    reservedIdempotencyKey = null;
 
     console.log("[contact] sent", {
       requestId,
@@ -265,6 +271,11 @@ createServer(async (req, res) => {
 
     return json(res, 200, successBody);
   } catch (error) {
+    if (reservedIdempotencyKey) {
+      releaseIdempotency(reservedIdempotencyKey);
+      reservedIdempotencyKey = null;
+    }
+
     const status = Number.isInteger(error?.status) ? error.status : 500;
 
     if (status >= 500) {
@@ -627,6 +638,31 @@ function getIdempotentReplay(ip, key) {
   error.code = "REQUEST_IN_PROGRESS";
   error.status = 409;
   throw error;
+}
+
+function reserveIdempotency(ip, key) {
+  cleanupIdempotency();
+  const storageKey = idempotencyStorageKey(ip, key);
+  const existing = idempotencyCache.get(storageKey);
+
+  if (existing) {
+    if (existing.state === "done") return storageKey;
+
+    const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
+    error.code = "REQUEST_IN_PROGRESS";
+    error.status = 409;
+    throw error;
+  }
+
+  idempotencyCache.set(storageKey, {
+    state: "pending",
+    createdAt: Date.now(),
+  });
+  return storageKey;
+}
+
+function releaseIdempotency(storageKey) {
+  if (storageKey) idempotencyCache.delete(storageKey);
 }
 
 function rememberIdempotentResult(ip, key, status, body) {
