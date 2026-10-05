@@ -11,7 +11,16 @@ const RESEND_ENDPOINT = String(
   process.env.RESEND_ENDPOINT || "https://api.resend.com/emails"
 ).trim();
 const EMAIL_FROM = String(process.env.EMAIL_FROM || "Gracz.pl <kontakt@gracz.pl>").trim();
-const CONTACT_TO = String(process.env.CONTACT_TO || "").trim().toLowerCase();
+const CONTACT_TO = String(process.env.CONTACT_TO || "").trim();
+const EMAIL_FROM_ADDRESS = extractMailbox(EMAIL_FROM);
+const CONTACT_TO_ADDRESS = extractMailbox(CONTACT_TO);
+
+if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
+  throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
+}
+if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
+  throw new Error("EMAIL_FROM and CONTACT_TO must use different mailbox addresses");
+}
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
 const TURNSTILE_ENABLED = Boolean(TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY);
@@ -107,7 +116,9 @@ createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/health") {
       return json(res, 200, {
         status: "ok",
-        mailConfigured: Boolean(RESEND_API_KEY && CONTACT_TO && EMAIL_FROM),
+        mailConfigured: Boolean(
+          RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
+        ),
       });
     }
 
@@ -167,9 +178,12 @@ createServer(async (req, res) => {
 
     enforceFormTiming(payload.startedAt);
 
-    if (payload.email.toLowerCase() === CONTACT_TO.toLowerCase()) {
+    if (
+      sameProtectedMailbox(payload.email, CONTACT_TO_ADDRESS) ||
+      sameProtectedMailbox(payload.email, EMAIL_FROM_ADDRESS)
+    ) {
       bad(
-        "Podaj adres e-mail inny niż administracyjny adres kontaktowy gracz.pl.",
+        "Podaj adres e-mail inny niż administracyjny lub techniczny adres gracz.pl.",
         "ADMIN_EMAIL_NOT_ALLOWED"
       );
     }
@@ -194,7 +208,7 @@ createServer(async (req, res) => {
 
     ensureProviderCircuitClosed();
 
-    if (!RESEND_API_KEY || !CONTACT_TO || !EMAIL_FROM) {
+    if (!RESEND_API_KEY || !CONTACT_TO_ADDRESS || !EMAIL_FROM_ADDRESS) {
       return json(res, 503, {
         error: {
           code: "MAIL_NOT_CONFIGURED",
@@ -231,7 +245,7 @@ createServer(async (req, res) => {
         },
         body: JSON.stringify({
           from: EMAIL_FROM,
-          to: [CONTACT_TO],
+          to: [CONTACT_TO_ADDRESS],
           reply_to: payload.email,
           subject: "gracz.pl " + payload.category + " — " + payload.subject,
           text,
@@ -323,7 +337,9 @@ createServer(async (req, res) => {
 }).listen(PORT, HOST, () => {
   console.log("gracz.pl contact API listening", {
     port: PORT,
-    configured: Boolean(RESEND_API_KEY && CONTACT_TO && EMAIL_FROM),
+    configured: Boolean(
+      RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
+    ),
   });
 });
 
