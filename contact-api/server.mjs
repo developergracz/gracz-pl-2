@@ -156,7 +156,7 @@ createServer(async (req, res) => {
     if (payload.website) {
       registerAbuseStrike(ip, "honeypot");
       const fake = { ok: true, id: requestId };
-      rememberIdempotentResult(ip, idempotencyKey, 200, fake);
+      rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, fake);
       return json(res, 200, fake);
     }
 
