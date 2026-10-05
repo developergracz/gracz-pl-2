@@ -349,6 +349,11 @@ function setCors(res, origin) {
 }
 
 function clientIp(req) {
+  const cloudflare = String(req.headers["cf-connecting-ip"] || "")
+    .trim()
+    .replace(/^\[|\]$/g, "");
+  if (isIP(cloudflare)) return cloudflare;
+
   const forwarded = String(req.headers["x-forwarded-for"] || "")
     .split(",")
     .map((part) => part.trim())
