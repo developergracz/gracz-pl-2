@@ -245,12 +245,40 @@
   function ensureUi() {
     if (document.getElementById('gracz-cookie-consent')) return;
 
-    const settingsButton = document.createElement('button');
-    settingsButton.type = 'button';
-    settingsButton.className = 'gcc-settings-button';
-    settingsButton.setAttribute('aria-label', 'Ustawienia cookies');
-    settingsButton.innerHTML = '<span aria-hidden="true">🍪</span><span class="gcc-settings-label">Cookies</span>';
-    document.body.appendChild(settingsButton);
+    let settingsButton = null;
+
+    function ensureFooterSettingsButton() {
+      let container = document.querySelector(
+        'footer .legal, .site-footer .legal, .footer-bottom .legal, footer .footer-links, .footer-bottom .footer-links, .legal-footer__bottom nav, footer nav[aria-label="Stopka"]'
+      );
+
+      const existing = document.querySelector('[data-gcc-settings]');
+      if (existing) return existing;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'link-btn gcc-footer-settings';
+      button.setAttribute('data-gcc-settings', '');
+      button.textContent = 'Ustawienia cookies';
+
+      if (!container) {
+        const fallback = document.createElement('div');
+        fallback.className = 'gcc-inline-settings';
+        fallback.setAttribute('aria-label', 'Ustawienia prywatności');
+        fallback.appendChild(button);
+        document.body.appendChild(fallback);
+        return button;
+      }
+
+      if (container.tagName === 'UL' || container.tagName === 'OL') {
+        const item = document.createElement('li');
+        item.appendChild(button);
+        container.appendChild(item);
+      } else {
+        container.appendChild(button);
+      }
+      return button;
+    }
 
     const overlay = document.createElement('div');
     overlay.id = 'gracz-cookie-consent';
@@ -299,6 +327,7 @@
       </section>`;
 
     document.body.appendChild(overlay);
+    settingsButton = ensureFooterSettingsButton();
 
     const toggle = overlay.querySelector('#gcc-analytics-toggle');
     const close = overlay.querySelector('.gcc-close');
@@ -310,7 +339,9 @@
 
       if (restoreFocus) {
         const target = lastFocused && lastFocused.isConnected ? lastFocused : settingsButton;
-        setTimeout(() => target.focus(), 0);
+        if (target && typeof target.focus === 'function') {
+          setTimeout(() => target.focus(), 0);
+        }
       }
     }
 
@@ -354,7 +385,9 @@
       hideDialog(true);
     }
 
-    settingsButton.addEventListener('click', () => showDialog(true));
+    if (settingsButton) {
+      settingsButton.addEventListener('click', () => showDialog(true));
+    }
     overlay.querySelector('[data-gcc-reject]').addEventListener('click', () => finish('denied'));
     overlay.querySelector('[data-gcc-accept]').addEventListener('click', () => finish('analytics'));
     overlay.querySelector('[data-gcc-save]').addEventListener('click', () => finish(toggle.checked ? 'analytics' : 'denied'));
