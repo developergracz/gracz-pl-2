@@ -643,11 +643,33 @@ function idempotencyStorageKey(ip, key) {
   return hashValue(ip + "\n" + key);
 }
 
-function getIdempotentReplay(ip, key) {
+function submissionFingerprint(payload) {
+  return hashValue([
+    payload.name,
+    payload.email,
+    payload.category,
+    payload.subject,
+    payload.message,
+    payload.page,
+    String(payload.acknowledgement),
+  ].join("\n"));
+}
+
+function getIdempotentReplay(ip, key, fingerprint) {
   cleanupIdempotency();
   const entry = idempotencyCache.get(idempotencyStorageKey(ip, key));
   if (!entry) return null;
-  if (entry.state === "done") return { status: entry.status, body: entry.body };
+
+  if (entry.fingerprint !== fingerprint) {
+    const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
+    error.code = "IDEMPOTENCY_CONFLICT";
+    error.status = 409;
+    throw error;
+  }
+
+  if (entry.state === "done") {
+    return { status: entry.status, body: entry.body };
+  }
 
   const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
   error.code = "REQUEST_IN_PROGRESS";
@@ -655,24 +677,35 @@ function getIdempotentReplay(ip, key) {
   throw error;
 }
 
-function reserveIdempotency(ip, key) {
+function reserveIdempotency(ip, key, fingerprint) {
   cleanupIdempotency();
   const storageKey = idempotencyStorageKey(ip, key);
   const existing = idempotencyCache.get(storageKey);
 
   if (existing) {
-    if (existing.state === "done") return storageKey;
+    if (existing.fingerprint !== fingerprint) {
+      const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
+      error.code = "IDEMPOTENCY_CONFLICT";
+      error.status = 409;
+      throw error;
+    }
 
-    const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
-    error.code = "REQUEST_IN_PROGRESS";
+    const error = new Error(
+      existing.state === "done"
+        ? "Ta wiadomość została już przetworzona."
+        : "Ta wiadomość jest już przetwarzana. Poczekaj chwilę."
+    );
+    error.code = existing.state === "done" ? "ALREADY_PROCESSED" : "REQUEST_IN_PROGRESS";
     error.status = 409;
     throw error;
   }
 
-  idempotencyCache.set(storageKey, {
+  boundedSet(idempotencyCache, storageKey, {
     state: "pending",
+    fingerprint,
     createdAt: Date.now(),
-  });
+  }, MAX_IDEMPOTENCY);
+
   return storageKey;
 }
 
@@ -680,14 +713,15 @@ function releaseIdempotency(storageKey) {
   if (storageKey) idempotencyCache.delete(storageKey);
 }
 
-function rememberIdempotentResult(ip, key, status, body) {
+function rememberIdempotentResult(ip, key, fingerprint, status, body) {
   cleanupIdempotency();
-  idempotencyCache.set(idempotencyStorageKey(ip, key), {
+  boundedSet(idempotencyCache, idempotencyStorageKey(ip, key), {
     state: "done",
+    fingerprint,
     status,
     body,
     createdAt: Date.now(),
-  });
+  }, MAX_IDEMPOTENCY);
 }
 
 function cleanupIdempotency() {
