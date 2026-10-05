@@ -47,12 +47,14 @@ function makePayload(overrides = {}) {
 }
 
 function request(url, payload, key, extraHeaders = {}) {
+  const octet = 10 + Array.from(key).reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 200;
   return fetch(url, {
     method: "POST",
     headers: {
       origin: "https://gracz.pl",
       "content-type": "application/json",
       "x-idempotency-key": key,
+      "x-forwarded-for": "198.51.100." + octet,
       ...extraHeaders,
     },
     body: JSON.stringify(payload),
