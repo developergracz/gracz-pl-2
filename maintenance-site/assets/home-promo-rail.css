@@ -257,3 +257,72 @@
   .home-feature-strip.is-hiding{transition:none}
   .home-feature-strip__hide{transition:none}
 }
+
+
+/* FINAL R3 OVERRIDE — mini blue rectangular hide/show controls */
+.home-feature-strip .home-feature-strip__hide{
+  position:absolute !important;
+  right:6px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  width:56px !important;
+  height:25px !important;
+  min-width:56px !important;
+  min-height:25px !important;
+  padding:0 8px !important;
+  border:1px solid #78bfe8 !important;
+  border-radius:6px !important;
+  background:#9edcff !important;
+  background-image:none !important;
+  color:#0b4668 !important;
+  box-shadow:0 3px 8px rgba(20,79,112,.20) !important;
+  opacity:1 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font:800 8px/1 "Montserrat",Arial,sans-serif !important;
+  letter-spacing:.04em !important;
+}
+.home-feature-strip .home-feature-strip__hide:hover,
+.home-feature-strip .home-feature-strip__hide:focus-visible{
+  background:#b7e6ff !important;
+  border-color:#5daedb !important;
+  color:#083b58 !important;
+  transform:translateY(-50%) translateY(-1px) !important;
+}
+.home-feature-strip .home-feature-strip__hide-label{
+  color:inherit !important;
+  font:800 8px/1 "Montserrat",Arial,sans-serif !important;
+  letter-spacing:.04em !important;
+}
+.home-feature-restore{
+  border:1px solid #78bfe8 !important;
+  border-radius:6px !important;
+  background:#9edcff !important;
+  background-image:none !important;
+  color:#0b4668 !important;
+  box-shadow:0 3px 8px rgba(20,79,112,.20) !important;
+  opacity:1 !important;
+  padding:7px 10px !important;
+  font:800 8px/1 "Montserrat",Arial,sans-serif !important;
+  letter-spacing:.04em !important;
+}
+.home-feature-restore:hover,
+.home-feature-restore:focus-visible{
+  background:#b7e6ff !important;
+  border-color:#5daedb !important;
+  color:#083b58 !important;
+}
+@media(max-width:980px){
+  .home-feature-strip .home-feature-strip__hide{
+    position:static !important;
+    transform:none !important;
+    width:56px !important;
+    height:25px !important;
+    justify-self:end !important;
+  }
+  .home-feature-strip .home-feature-strip__hide:hover,
+  .home-feature-strip .home-feature-strip__hide:focus-visible{
+    transform:none !important;
+  }
+}
