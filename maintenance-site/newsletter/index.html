@@ -29,24 +29,129 @@ body{
     radial-gradient(circle at 86% 14%,rgba(70,135,210,.08),transparent 28%),
     linear-gradient(180deg,#041713 0%,#061d19 42%,#041713 100%);
 }
-.top{
-  min-height:92px;
+.logo{font-size:30px;font-weight:900;letter-spacing:-1px;color:#fff;text-decoration:none;white-space:nowrap}
+.logo span{color:var(--red)}
+.nl-header{
+  position:relative;
+  z-index:100;
+  border-bottom:1px solid rgba(86,200,193,.14);
+  background:rgba(3,18,15,.96);
+}
+.nl-header__inner{
+  width:min(1500px,calc(100% - 28px));
+  min-height:78px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+.nl-nav{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+}
+.nl-nav__item{position:relative}
+.nl-nav__link{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  min-height:42px;
+  padding:0 9px;
+  color:#d7e6e3;
+  text-decoration:none;
+  white-space:nowrap;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.nl-nav__link:hover,
+.nl-nav__item:hover>.nl-nav__link{color:#fff;background:rgba(86,200,193,.07)}
+.nl-nav__link--static{user-select:none}
+.nl-nav__link--forum{
+  color:#0b3732;
+  background:#56c8c1;
+  padding:0 14px;
+}
+.nl-nav__link--forum:hover{color:#072c28;background:#69d3cc}
+.nl-chevron{font-size:13px;color:#7fc9c2;transform:translateY(-1px)}
+.nl-dropdown{
+  position:absolute;
+  left:0;
+  top:calc(100% - 3px);
+  min-width:205px;
+  padding:7px;
+  border:1px solid rgba(86,200,193,.16);
+  border-radius:12px;
+  background:#09261f;
+  box-shadow:0 16px 38px rgba(0,0,0,.34);
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(7px);
+  transition:.15s ease;
+}
+.nl-nav__item:hover .nl-dropdown,
+.nl-nav__item:focus-within .nl-dropdown{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+}
+.nl-dropdown a,
+.nl-dropdown span{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 34px;
-  border-bottom:1px solid rgba(86,200,193,.16);
-  background:rgba(3,18,15,.88);
-  backdrop-filter:blur(10px);
+  gap:10px;
+  padding:10px 11px;
+  border-radius:8px;
+  color:#c7dbd7;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:700;
 }
-.logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff;text-decoration:none}
-.logo span{color:var(--red)}
-.topnote{
-  font-size:11px;
+.nl-dropdown a:hover{background:rgba(86,200,193,.09);color:#fff}
+.nl-dropdown em{
+  color:#6f958e;
+  font-size:9px;
+  font-style:normal;
   font-weight:800;
-  letter-spacing:.08em;
-  color:#8ccbc5;
-  text-transform:uppercase;
+}
+.nl-actions{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.nl-search{
+  width:38px;height:38px;
+  display:grid;place-items:center;
+  border:1px solid rgba(86,200,193,.16);
+  border-radius:10px;
+  color:#c7dfda;
+  text-decoration:none;
+  font-size:24px;
+  line-height:1;
+}
+.nl-search:hover{background:rgba(86,200,193,.07);color:#fff}
+.nl-btn{
+  width:auto;
+  min-height:38px;
+  margin:0;
+  padding:0 14px;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:800;
+  cursor:default;
+  opacity:1;
+}
+.nl-btn--outline{
+  border:1px solid rgba(130,194,186,.34);
+  background:transparent;
+  color:#d7e7e4;
+}
+.nl-btn--primary{
+  border:1px solid #56c8c1;
+  background:#56c8c1;
+  color:#082f2a;
 }
 .wrap{
   width:min(1180px,calc(100% - 36px));
@@ -191,7 +296,7 @@ input{
   outline:none;
 }
 input::placeholder{color:#78958f}
-button{
+.formbox button{
   width:100%;
   margin-top:10px;
   min-height:46px;
@@ -236,15 +341,28 @@ button{
   color:#62827c;
   text-align:right;
 }
+@media(max-width:1200px){
+  .nl-header__inner{gap:12px}
+  .nl-nav__link{padding:0 6px;font-size:12px}
+  .nl-btn{padding:0 10px}
+}
+@media(max-width:1020px){
+  .nl-header__inner{flex-wrap:wrap;padding:8px 0}
+  .nl-nav{order:3;width:100%;justify-content:flex-start}
+}
 @media(max-width:900px){
   .hero-inner{grid-template-columns:1fr}
   .info{border-right:0;border-bottom:1px solid var(--line);padding:34px 28px}
   .side{padding:28px}
 }
 @media(max-width:680px){
-  .top{min-height:76px;padding:0 18px}
-  .logo{font-size:28px}
-  .topnote{display:none}
+  .nl-header__inner{width:min(100% - 20px,1500px);min-height:72px;gap:12px;flex-wrap:wrap;padding:10px 0}
+  .logo{font-size:27px}
+  .nl-nav{order:3;width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:2px}
+  .nl-nav__link{font-size:12px;padding:0 8px}
+  .nl-actions{margin-left:auto}
+  .nl-btn{padding:0 10px;font-size:11px}
+  .nl-dropdown{display:none}
   .wrap{width:min(100% - 20px,1180px);margin:18px auto 28px}
   .hero{border-radius:18px}
   .info{padding:26px 20px}
@@ -258,9 +376,56 @@ button{
 </style>
 </head>
 <body>
-<header class="top">
-  <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-  <div class="topnote">Newsletter gracz.pl · informacje bez spamu</div>
+<header class="nl-header">
+  <div class="nl-header__inner">
+    <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+
+    <nav class="nl-nav" aria-label="Główna nawigacja">
+      <a class="nl-nav__link" href="/">Start</a>
+
+      <div class="nl-nav__item">
+        <a class="nl-nav__link" href="/gry/">Gry <span class="nl-chevron">⌄</span></a>
+        <div class="nl-dropdown">
+          <a href="/gry/">Wszystkie gry</a>
+          <a href="/gry/poker-treningowy/">Poker treningowy</a>
+          <a href="/gry/tysiac/">Tysiąc</a>
+          <a href="/gry/warcaby/">Warcaby</a>
+          <a href="/gry/gomoku/">Gomoku</a>
+        </div>
+      </div>
+
+      <div class="nl-nav__item">
+        <a class="nl-nav__link" href="/gry-karciane/">Gry karciane <span class="nl-chevron">⌄</span></a>
+        <div class="nl-dropdown">
+          <a href="/gry-karciane/">Gry karciane</a>
+          <a href="/gry/poker-treningowy/">Poker treningowy</a>
+          <a href="/gry-karciane/#poker-academy">Poker Academy</a>
+          <a href="/gry/tysiac/">Tysiąc</a>
+        </div>
+      </div>
+
+      <a class="nl-nav__link" href="/poradniki/">Poradniki</a>
+
+      <div class="nl-nav__item">
+        <span class="nl-nav__link nl-nav__link--static">Społeczność <span class="nl-chevron">⌄</span></span>
+        <div class="nl-dropdown">
+          <span>Profil gracza <em>wkrótce</em></span>
+          <span>Rankingi <em>wkrótce</em></span>
+          <span>Turnieje <em>wkrótce</em></span>
+          <span>Społeczność <em>wkrótce</em></span>
+        </div>
+      </div>
+
+      <span class="nl-nav__link nl-nav__link--forum" title="Forum — w trakcie budowy">Forum</span>
+      <a class="nl-nav__link" href="/o-gracz-pl/">O gracz.pl</a>
+    </nav>
+
+    <div class="nl-actions">
+      <a class="nl-search" href="/szukaj/" aria-label="Szukaj w serwisie" title="Szukaj">⌕</a>
+      <button class="nl-btn nl-btn--outline" type="button" title="Logowanie — wkrótce">Zaloguj się</button>
+      <button class="nl-btn nl-btn--primary" type="button" title="Rejestracja — wkrótce">Załóż konto</button>
+    </div>
+  </div>
 </header>
 
 <main class="wrap">
