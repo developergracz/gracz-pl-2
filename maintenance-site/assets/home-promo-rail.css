@@ -240,26 +240,25 @@
 .home-feature-strip[hidden]{display:none!important}
 .home-feature-restore{
   position:fixed;
-  right:12px;
-  bottom:12px;
+  right:10px;
+  top:92px;
   z-index:35;
-  border:1px solid rgba(86,200,193,.16);
-  border-radius:999px;
-  background:rgba(7,26,23,.78);
-  color:#789c95;
-  box-shadow:0 8px 24px rgba(0,0,0,.18);
-  padding:8px 11px;
-  font:800 8px/1 "Montserrat",Arial,sans-serif;
-  letter-spacing:.05em;
+  border:1px solid rgba(139,196,229,.62);
+  border-radius:7px;
+  background:linear-gradient(180deg,#dff3ff,#cdeafa);
+  color:#15506f;
+  box-shadow:0 4px 12px rgba(19,72,101,.16);
+  padding:7px 10px;
+  font:800 7.8px/1 "Montserrat",Arial,sans-serif;
+  letter-spacing:.06em;
   cursor:pointer;
-  backdrop-filter:blur(8px);
-  opacity:.78;
+  opacity:.96;
 }
 .home-feature-restore:hover,
 .home-feature-restore:focus-visible{
-  color:#bfe2dc;
-  border-color:rgba(86,200,193,.32);
-  opacity:1;
+  color:#0f4560;
+  filter:brightness(1.03);
+  box-shadow:0 6px 14px rgba(19,72,101,.22);
 }
 @media(max-width:980px){
   .home-feature-strip__inner{padding-right:0}
