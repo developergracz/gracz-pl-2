@@ -561,6 +561,57 @@ input::placeholder{color:#78958f}
   .footerbar{align-items:flex-start;flex-direction:column}
   .preview-note{text-align:left}
 }
+
+/* R2 — newsletter bez ramek */
+.hero,
+.feature,
+.promise div,
+.side-card,
+.eyebrow,
+.nl-header,
+.nl-dropdown,
+.nl-search,
+.nl-btn,
+input,
+.formbox input,
+.nl-footer,
+.nl-footer__bottom,
+.nl-footer__form input,
+.nl-footer__social button,
+.preview-dialog,
+.site-header,
+.dropdown,
+.search-btn,
+.btn--outline{
+  border:none !important;
+}
+
+.hero,
+.feature,
+.promise div,
+.side-card,
+.nl-dropdown,
+.preview-dialog{
+  box-shadow:none !important;
+}
+
+.info{
+  border-right:none !important;
+  border-bottom:none !important;
+}
+
+.security{
+  border-top:none !important;
+}
+
+.nl-footer__bottom{
+  border-top:none !important;
+}
+
+@media(max-width:900px){
+  .info{border-bottom:none !important}
+}
+
 </style>
 <link rel="stylesheet" href="/assets/newsletter-home-header-1to1.css?v=r1">
 <script src="/assets/newsletter-home-header-1to1.js?v=r1" defer></script>
