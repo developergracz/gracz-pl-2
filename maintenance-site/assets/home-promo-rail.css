@@ -177,3 +177,99 @@
 @media(prefers-reduced-motion:reduce){
   .home-feature-card{transition:none}
 }
+
+
+/* kontrola UKRYJ — prawa krawędź pasa */
+.home-feature-strip__inner{
+  position:relative;
+  padding-right:82px;
+}
+.home-feature-strip__hide{
+  position:absolute;
+  right:0;
+  top:0;
+  bottom:0;
+  width:72px;
+  border:1px solid rgba(86,200,193,.16);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(10,38,33,.94),rgba(7,26,23,.98));
+  color:#9ec1bb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  cursor:pointer;
+  transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease;
+}
+.home-feature-strip__hide span{
+  width:25px;
+  height:25px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(158,193,187,.35);
+  color:#c9ded9;
+  font:400 18px/1 Arial,sans-serif;
+}
+.home-feature-strip__hide b{
+  font:800 8.5px/1 "Montserrat",Arial,sans-serif;
+  letter-spacing:.09em;
+}
+.home-feature-strip__hide:hover,
+.home-feature-strip__hide:focus-visible{
+  color:#fff;
+  background:linear-gradient(145deg,rgba(13,48,42,.98),rgba(8,31,27,.98));
+  border-color:rgba(86,200,193,.36);
+  transform:translateY(-1px);
+}
+.home-feature-strip.is-hiding{
+  opacity:0;
+  transform:translateY(-7px);
+  max-height:0;
+  padding-top:0;
+  overflow:hidden;
+  transition:opacity .22s ease,transform .22s ease,max-height .26s ease,padding .26s ease;
+}
+.home-feature-strip[hidden]{display:none!important}
+.home-feature-restore{
+  position:fixed;
+  right:14px;
+  bottom:14px;
+  z-index:35;
+  border:1px solid rgba(86,200,193,.3);
+  border-radius:999px;
+  background:rgba(7,26,23,.94);
+  color:#bfe1dc;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+  padding:9px 12px;
+  font:800 9px/1 "Montserrat",Arial,sans-serif;
+  letter-spacing:.05em;
+  cursor:pointer;
+}
+.home-feature-restore:hover,
+.home-feature-restore:focus-visible{
+  color:#fff;
+  border-color:rgba(86,200,193,.55);
+}
+@media(max-width:980px){
+  .home-feature-strip__inner{padding-right:0}
+  .home-feature-strip__hide{
+    position:static;
+    width:auto;
+    min-height:44px;
+    grid-column:1/-1;
+    flex-direction:row;
+    gap:7px;
+  }
+  .home-feature-strip__hide span{
+    width:20px;height:20px;font-size:15px;
+  }
+}
+@media(max-width:700px){
+  .home-feature-strip__hide{grid-column:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-feature-strip.is-hiding{transition:none}
+  .home-feature-strip__hide{transition:none}
+}
