@@ -6,45 +6,336 @@
 <title>Newsletter gracz.pl — bądź na bieżąco</title>
 <meta name="robots" content="noindex,nofollow">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#edf4f3;font-family:Arial,Helvetica,sans-serif;color:#17342f}
-.top{background:linear-gradient(135deg,#071a17,#0d302a);padding:22px 26px;color:#fff}
-.logo{font-size:30px;font-weight:900}.logo span{color:#e54848}
-.wrap{max-width:760px;margin:36px auto;padding:0 14px}
-.card{background:#fff;border-radius:20px;padding:30px;box-shadow:0 16px 46px rgba(7,26,23,.13)}
-.badge{display:inline-block;padding:6px 9px;border-radius:999px;background:#e9f8f6;color:#0c655b;font-size:11px;font-weight:800}
-h1{font-size:30px;color:#0b5f56;margin:14px 0 10px}p{line-height:1.65;color:#4d6963}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
-.item{border:1px solid #dce9e6;border-radius:11px;padding:13px;background:#f8fbfb;font-size:12px;line-height:1.45}
-.item strong{display:block;margin-bottom:4px;color:#21443d}
-.formbox{margin-top:22px;padding:18px;background:#eef8f6;border-radius:13px}
-input{width:100%;padding:12px 13px;border:1px solid #cfe0dc;border-radius:10px;font:inherit}
-button{margin-top:10px;border:0;border-radius:10px;padding:12px 16px;background:#56c8c1;color:#082f2a;font-weight:900;cursor:not-allowed;opacity:.72}
-.note{margin-top:10px;font-size:11px;color:#748a86}
-.links{margin-top:18px;font-size:12px}.links a{color:#0b7065}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.card{padding:22px}}
+*{box-sizing:border-box}
+:root{
+  --bg:#041713;
+  --bg2:#07231e;
+  --panel:#0a2d27;
+  --panel2:#0d3730;
+  --line:rgba(92,206,196,.18);
+  --teal:#56c8c1;
+  --teal2:#8ce6df;
+  --blue:#9edcff;
+  --text:#f5fbfa;
+  --muted:#9dbab4;
+  --red:#e54848;
+}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 16% 10%,rgba(86,200,193,.10),transparent 30%),
+    radial-gradient(circle at 86% 14%,rgba(70,135,210,.08),transparent 28%),
+    linear-gradient(180deg,#041713 0%,#061d19 42%,#041713 100%);
+}
+.top{
+  min-height:92px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 34px;
+  border-bottom:1px solid rgba(86,200,193,.16);
+  background:rgba(3,18,15,.88);
+  backdrop-filter:blur(10px);
+}
+.logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff;text-decoration:none}
+.logo span{color:var(--red)}
+.topnote{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  color:#8ccbc5;
+  text-transform:uppercase;
+}
+.wrap{
+  width:min(1180px,calc(100% - 36px));
+  margin:34px auto 48px;
+}
+.hero{
+  border:1px solid var(--line);
+  border-radius:24px;
+  overflow:hidden;
+  background:
+    linear-gradient(135deg,rgba(14,54,47,.96),rgba(7,31,27,.98)),
+    var(--panel);
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+.hero-inner{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);
+  min-height:520px;
+}
+.info{
+  padding:46px 46px 42px;
+  border-right:1px solid var(--line);
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(86,200,193,.10);
+  border:1px solid rgba(86,200,193,.18);
+  color:#86dcd5;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px rgba(86,200,193,.55)}
+h1{
+  margin:22px 0 14px;
+  font-size:clamp(38px,5vw,64px);
+  line-height:1.02;
+  letter-spacing:-1.8px;
+  max-width:720px;
+}
+.lead{
+  margin:0;
+  max-width:760px;
+  color:#b9cfca;
+  font-size:18px;
+  line-height:1.65;
+}
+.feature-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:30px 0 24px;
+}
+.feature{
+  min-height:126px;
+  padding:18px 17px;
+  border:1px solid rgba(86,200,193,.15);
+  border-radius:15px;
+  background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));
+}
+.feature .icon{
+  width:34px;height:34px;
+  display:grid;place-items:center;
+  margin-bottom:14px;
+  border-radius:10px;
+  background:rgba(86,200,193,.11);
+  color:var(--teal2);
+  font-size:17px;
+  font-weight:900;
+}
+.feature strong{display:block;font-size:14px;margin-bottom:6px}
+.feature span{display:block;color:#94afa9;font-size:12px;line-height:1.5}
+.promise{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.promise div{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:12px 14px;
+  border-radius:12px;
+  background:rgba(4,23,19,.40);
+  border:1px solid rgba(86,200,193,.10);
+  color:#a9c2bd;
+  font-size:12px;
+  line-height:1.45;
+}
+.promise b{color:#d9eeea}
+.check{color:var(--teal);font-weight:900}
+.side{
+  padding:36px 32px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:
+    radial-gradient(circle at 50% 10%,rgba(86,200,193,.12),transparent 36%),
+    linear-gradient(180deg,rgba(7,34,29,.96),rgba(5,25,22,.98));
+}
+.side-card{
+  border:1px solid rgba(86,200,193,.20);
+  border-radius:18px;
+  padding:24px;
+  background:rgba(4,23,19,.68);
+  box-shadow:0 16px 36px rgba(0,0,0,.18);
+}
+.side-label{
+  color:#7bd7cf;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.side h2{
+  margin:10px 0 10px;
+  font-size:27px;
+  line-height:1.15;
+}
+.side p{
+  color:#9fb9b3;
+  font-size:13px;
+  line-height:1.6;
+  margin:0 0 18px;
+}
+.formbox{margin-top:8px}
+input{
+  width:100%;
+  height:48px;
+  padding:0 14px;
+  border:1px solid rgba(126,181,174,.26);
+  border-radius:11px;
+  background:#0b2521;
+  color:#dfeeea;
+  font:inherit;
+  outline:none;
+}
+input::placeholder{color:#78958f}
+button{
+  width:100%;
+  margin-top:10px;
+  min-height:46px;
+  border:0;
+  border-radius:11px;
+  padding:12px 16px;
+  background:linear-gradient(180deg,#65d4cc,#4fbdb6);
+  color:#062f2a;
+  font-size:13px;
+  font-weight:900;
+  cursor:not-allowed;
+  opacity:.74;
+}
+.note{
+  margin-top:11px;
+  color:#708c86;
+  font-size:10.5px;
+  line-height:1.45;
+}
+.security{
+  margin-top:16px;
+  padding-top:15px;
+  border-top:1px solid rgba(86,200,193,.10);
+  color:#7e9c96;
+  font-size:11px;
+  line-height:1.55;
+}
+.security strong{color:#a9c7c1}
+.footerbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  padding:18px 4px 0;
+  color:#78958f;
+  font-size:11px;
+}
+.links{display:flex;gap:16px;flex-wrap:wrap}
+.links a{color:#8fdad3;text-decoration:none}
+.links a:hover{text-decoration:underline}
+.preview-note{
+  color:#62827c;
+  text-align:right;
+}
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr}
+  .info{border-right:0;border-bottom:1px solid var(--line);padding:34px 28px}
+  .side{padding:28px}
+}
+@media(max-width:680px){
+  .top{min-height:76px;padding:0 18px}
+  .logo{font-size:28px}
+  .topnote{display:none}
+  .wrap{width:min(100% - 20px,1180px);margin:18px auto 28px}
+  .hero{border-radius:18px}
+  .info{padding:26px 20px}
+  .feature-grid,.promise{grid-template-columns:1fr}
+  h1{font-size:38px}
+  .lead{font-size:15px}
+  .side{padding:20px}
+  .footerbar{align-items:flex-start;flex-direction:column}
+  .preview-note{text-align:left}
+}
 </style>
 </head>
 <body>
-<header class="top"><div class="logo">gracz<span>.pl</span></div></header>
+<header class="top">
+  <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+  <div class="topnote">Newsletter gracz.pl · informacje bez spamu</div>
+</header>
+
 <main class="wrap">
-<section class="card">
-<span class="badge">PODGLĄD NEWSLETTERA R1</span>
-<h1>Bądź bliżej gracz.pl</h1>
-<p>Newsletter będzie miejscem na najważniejsze informacje o nowych grach, Academy, poradnikach i rozwoju serwisu. Bez agresywnego marketingu i z możliwością rezygnacji w każdej chwili.</p>
-<div class="grid">
-  <div class="item"><strong>Nowe gry</strong>Premiery i nowe moduły gracz.pl.</div>
-  <div class="item"><strong>Poradniki</strong>Najciekawsze treści i Academy.</div>
-  <div class="item"><strong>Rozwój serwisu</strong>Najważniejsze aktualizacje produktu.</div>
-</div>
-<div class="formbox">
-  <strong>Moduł zapisu — podgląd</strong>
-  <p style="font-size:13px">W wersji produkcyjnej zapis będzie używał double opt-in i osobnej zgody newsletterowej.</p>
-  <input type="email" placeholder="Twój adres e-mail" disabled>
-  <button type="button" disabled>Zapisz mnie do newslettera</button>
-  <div class="note">Na tej bocznej gałęzi formularz jest celowo nieaktywny — nie zapisuje żadnych danych.</div>
-</div>
-<div class="links"><a href="/">← Wróć na stronę startową</a> · <a href="/szukaj/">Wypróbuj wyszukiwarkę</a></div>
-</section>
+  <section class="hero" aria-labelledby="newsletter-title">
+    <div class="hero-inner">
+      <div class="info">
+        <span class="eyebrow"><i aria-hidden="true"></i> Newsletter gracz.pl</span>
+        <h1 id="newsletter-title">Bądź bliżej tego, co powstaje w gracz.pl</h1>
+        <p class="lead">
+          Jedno miejsce na najważniejsze informacje o nowych grach, Academy, poradnikach,
+          funkcjach serwisu i kolejnych etapach rozwoju gracz.pl. Bez agresywnego marketingu,
+          bez codziennego spamu i z możliwością rezygnacji w każdej chwili.
+        </p>
+
+        <div class="feature-grid" aria-label="Co znajdziesz w newsletterze">
+          <article class="feature">
+            <div class="icon" aria-hidden="true">♟</div>
+            <strong>Nowe gry i moduły</strong>
+            <span>Informacje o premierach, nowych trybach i funkcjach rozwijanych w gracz.pl.</span>
+          </article>
+          <article class="feature">
+            <div class="icon" aria-hidden="true">A</div>
+            <strong>Academy i poradniki</strong>
+            <span>Najciekawsze materiały edukacyjne, zasady gier i nowe treści Academy.</span>
+          </article>
+          <article class="feature">
+            <div class="icon" aria-hidden="true">↗</div>
+            <strong>Rozwój serwisu</strong>
+            <span>Najważniejsze aktualizacje produktu, społeczności i kolejnych funkcji portalu.</span>
+          </article>
+        </div>
+
+        <div class="promise">
+          <div><span class="check">✓</span><span><b>Kontrola po Twojej stronie.</b><br>Możesz zrezygnować z newslettera w dowolnym momencie.</span></div>
+          <div><span class="check">✓</span><span><b>Bez zbędnych wiadomości.</b><br>Wysyłamy tylko informacje związane z gracz.pl i jego rozwojem.</span></div>
+          <div><span class="check">✓</span><span><b>Bezpieczeństwo zapisu.</b><br>W wersji produkcyjnej zapis będzie potwierdzany metodą double opt-in.</span></div>
+          <div><span class="check">✓</span><span><b>Szacunek do prywatności.</b><br>Newsletter będzie korzystał z osobnej zgody marketingowej i jasnych zasad rezygnacji.</span></div>
+        </div>
+      </div>
+
+      <aside class="side" aria-label="Zapis do newslettera">
+        <div class="side-card">
+          <div class="side-label">Dołącz do newslettera</div>
+          <h2>Najważniejsze informacje prosto na e-mail</h2>
+          <p>
+            Podaj adres e-mail. Po uruchomieniu wersji produkcyjnej otrzymasz wiadomość
+            z bezpiecznym linkiem potwierdzającym zapis.
+          </p>
+
+          <div class="formbox">
+            <input type="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" disabled>
+            <button type="button" disabled>Zapisz mnie do newslettera</button>
+            <div class="note">
+              Podgląd techniczny: formularz na tej bocznej gałęzi jest celowo nieaktywny
+              i nie zapisuje żadnych danych.
+            </div>
+          </div>
+
+          <div class="security">
+            <strong>Bezpieczny zapis</strong><br>
+            Planowana wersja produkcyjna: double opt-in, osobna zgoda newsletterowa,
+            możliwość rezygnacji oraz link do zarządzania subskrypcją.
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div class="footerbar">
+    <div class="links">
+      <a href="/">← Wróć na stronę startową</a>
+      <a href="/szukaj/">Wypróbuj wyszukiwarkę</a>
+    </div>
+    <div class="preview-note">Podgląd projektu newslettera — boczna gałąź, bez zapisu danych</div>
+  </div>
 </main>
 </body>
 </html>
