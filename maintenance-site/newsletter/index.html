@@ -562,59 +562,109 @@ input::placeholder{color:#78958f}
   .preview-note{text-align:left}
 }
 </style>
+<link rel="stylesheet" href="/assets/newsletter-home-header-1to1.css?v=r1">
+<script src="/assets/newsletter-home-header-1to1.js?v=r1" defer></script>
 </head>
 <body>
-<header class="nl-header">
-  <div class="nl-header__inner">
-    <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe6a1"/>
+        <stop offset=".5" stop-color="#f2c052"/>
+        <stop offset="1" stop-color="#c98b25"/>
+      </linearGradient>
+    </defs>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h14.5M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-gamepad" viewBox="0 0 32 32"><path d="M9.5 8h13c4.3 0 6.8 3.6 7.6 9.4.6 4.3-.9 7.1-3.4 7.1-2.1 0-3.3-1.8-4.7-3.8-.6-.9-1.4-1.3-2.6-1.3h-6.8c-1.2 0-2 .4-2.6 1.3-1.4 2-2.6 3.8-4.7 3.8-2.5 0-4-2.8-3.4-7.1C2.7 11.6 5.2 8 9.5 8z" fill="url(#g-gold)"/><path d="M10 12.3v5.4M7.3 15h5.4" stroke="#241807" stroke-width="2" stroke-linecap="round"/><circle cx="21.2" cy="13.2" r="1.5" fill="#241807"/><circle cx="24.2" cy="16.2" r="1.5" fill="#241807"/></symbol>
+    <symbol id="i-people" viewBox="0 0 32 32"><circle cx="16" cy="9.5" r="4.2" fill="url(#g-gold)"/><circle cx="7.5" cy="12" r="3.2" fill="url(#g-gold)" opacity=".85"/><circle cx="24.5" cy="12" r="3.2" fill="url(#g-gold)" opacity=".85"/><path d="M8.5 26c.4-5.4 3.3-8.5 7.5-8.5s7.1 3.1 7.5 8.5z" fill="url(#g-gold)"/><path d="M1.5 25c.3-4.3 2.5-6.8 5.8-6.8 1.1 0 2.1.3 2.9.8-1.5 1.6-2.4 3.6-2.7 6z" fill="url(#g-gold)" opacity=".85"/><path d="M30.5 25c-.3-4.3-2.5-6.8-5.8-6.8-1.1 0-2.1.3-2.9.8 1.5 1.6 2.4 3.6 2.7 6z" fill="url(#g-gold)" opacity=".85"/></symbol>
+    <symbol id="i-bars" viewBox="0 0 32 32"><rect x="4" y="15" width="5" height="13" rx="1" fill="url(#g-gold)"/><rect x="11" y="9" width="5" height="19" rx="1" fill="url(#g-gold)"/><rect x="18" y="4" width="5" height="24" rx="1" fill="url(#g-gold)"/><rect x="25" y="12" width="5" height="16" rx="1" fill="url(#g-gold)"/></symbol>
+    <symbol id="i-cap" viewBox="0 0 32 32"><path d="M16 5L1.5 12 16 19l14.5-7z" fill="url(#g-gold)"/><path d="M7 15.5v6c2.2 2.4 5.3 3.6 9 3.6s6.8-1.2 9-3.6v-6L16 20z" fill="url(#g-gold)"/><path d="M28 13v8" stroke="#f2c052" stroke-width="1.6" stroke-linecap="round"/><circle cx="28" cy="22" r="1.5" fill="#f2c052"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 32 32"><path d="M16 2.5l11.5 4.2v8.5c0 7.2-4.8 12.4-11.5 14.3C9.3 27.6 4.5 22.4 4.5 15.2V6.7z" fill="url(#g-gold)"/><path d="M16 9.5v13M11 14.5c1.5 1.8 3.2 2.6 5 2.6s3.5-.8 5-2.6" fill="none" stroke="#241807" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 32 32"><rect x="3.5" y="7" width="13" height="19" rx="2" transform="rotate(-12 10 16.5)" fill="none" stroke="url(#g-gold)" stroke-width="2.2"/><rect x="13.5" y="5" width="14" height="20" rx="2" transform="rotate(8 20.5 15)" fill="none" stroke="url(#g-gold)" stroke-width="2.2"/><path d="M20.8 10.8c1.5 1.9 3.2 3.2 3.2 4.8 0 1-.8 1.8-1.8 1.8-.6 0-1-.2-1.3-.6l.5 2.4h-2.3l.5-2.4c-.3.4-.8.6-1.3.6-1 0-1.8-.8-1.8-1.8 0-1.6 1.7-2.9 3.2-4.8z" fill="url(#g-gold)" transform="rotate(8 20.5 15)"/></symbol>
+    <symbol id="i-facebook" viewBox="0 0 24 24"><path d="M12 2a10 10 0 00-1.6 19.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0012 2z" fill="currentColor"/></symbol>
+    <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M22.5 7.2a2.8 2.8 0 00-2-2C18.8 4.7 12 4.7 12 4.7s-6.8 0-8.5.5a2.8 2.8 0 00-2 2A29 29 0 001 12a29 29 0 00.5 4.8 2.8 2.8 0 002 2c1.7.5 8.5.5 8.5.5s6.8 0 8.5-.5a2.8 2.8 0 002-2A29 29 0 0023 12a29 29 0 00-.5-4.8zM9.8 15.1V8.9l5.6 3.1z" fill="currentColor"/></symbol>
+    <symbol id="i-discord" viewBox="0 0 24 24"><path d="M19.6 5.3A17 17 0 0015.4 4l-.5 1.1a15.7 15.7 0 00-5.8 0L8.6 4a17 17 0 00-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 005.2 2.6l1.1-1.8a11 11 0 01-1.7-.8l.4-.3a12.2 12.2 0 0011.4 0l.4.3a11 11 0 01-1.7.8l1.1 1.8a17 17 0 005.2-2.6c.4-4.4-.7-8.3-3.1-11.7zM8.7 14.7c-1 0-1.9-.9-1.9-2.1s.8-2.1 1.9-2.1 1.9.9 1.9 2.1-.8 2.1-1.9 2.1zm6.6 0c-1 0-1.9-.9-1.9-2.1s.8-2.1 1.9-2.1 1.9.9 1.9 2.1-.8 2.1-1.9 2.1z" fill="currentColor"/></symbol>
+  </svg>
 
-    <nav class="nl-nav" aria-label="Główna nawigacja">
-      <a class="nl-nav__link" href="/">Start</a>
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
 
-      <div class="nl-nav__item">
-        <a class="nl-nav__link" href="/gry/">Gry <span class="nl-chevron">⌄</span></a>
-        <div class="nl-dropdown">
-          <a href="/gry/">Wszystkie gry</a>
-          <a href="/gry/poker-treningowy/">Poker treningowy</a>
-          <a href="/gry/tysiac/">Tysiąc</a>
-          <a href="/gry/warcaby/">Warcaby</a>
-          <a href="/gry/gomoku/">Gomoku</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo home-header-logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+
+      <button class="icon-btn search-btn search-btn--mobile" type="button" data-modal="search" aria-label="Szukaj w serwisie">
+        <svg aria-hidden="true"><use href="#i-search"/></svg>
+      </button>
+      <button class="icon-btn burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="burger-close" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li class="nav-item"><a class="nav-link is-active" href="/" aria-current="page">Start</a></li>
+
+            <li class="nav-item has-menu">
+              <a class="nav-link" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń menu Gry">
+                <svg aria-hidden="true"><use href="#i-chevron"/></svg>
+              </button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/">Gomoku</a></li>
+              </ul>
+            </li>
+
+            <li class="nav-item has-menu">
+              <a class="nav-link" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karciane" aria-label="Rozwiń menu Gry karciane">
+                <svg aria-hidden="true"><use href="#i-chevron"/></svg>
+              </button>
+              <ul class="dropdown" id="menu-karciane">
+                <li><a href="/gry-karciane/">Gry karciane</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+              </ul>
+            </li>
+
+            <li class="nav-item"><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+
+            <li class="nav-item has-menu">
+              <button class="nav-link menu-toggle menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-spolecznosc">
+                Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg>
+              </button>
+              <ul class="dropdown" id="menu-spolecznosc">
+                <li><button type="button" data-modal="community">Profil gracza <span class="soon">wkrótce</span></button></li>
+                <li><button type="button" data-modal="community">Rankingi <span class="soon">wkrótce</span></button></li>
+                <li><button type="button" data-modal="community">Turnieje <span class="soon">wkrótce</span></button></li>
+                <li><button type="button" data-modal="community">Społeczność <span class="soon">wkrótce</span></button></li>
+              </ul>
+            </li>
+
+            <li class="nav-item"><button class="nav-link forum-trigger" type="button" data-modal="forum" aria-haspopup="dialog">Forum</button></li>
+            <li class="nav-item"><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <button class="icon-btn search-btn search-btn--desktop" type="button" data-modal="search" aria-label="Szukaj w serwisie">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+          </button>
+          <button class="btn btn--outline btn--head" type="button" data-modal="login">Zaloguj się</button>
+          <button class="btn btn--gold btn--head" type="button" data-modal="register">Załóż konto</button>
         </div>
       </div>
-
-      <div class="nl-nav__item">
-        <a class="nl-nav__link" href="/gry-karciane/">Gry karciane <span class="nl-chevron">⌄</span></a>
-        <div class="nl-dropdown">
-          <a href="/gry-karciane/">Gry karciane</a>
-          <a href="/gry/poker-treningowy/">Poker treningowy</a>
-          <a href="/gry-karciane/#poker-academy">Poker Academy</a>
-          <a href="/gry/tysiac/">Tysiąc</a>
-        </div>
-      </div>
-
-      <a class="nl-nav__link" href="/poradniki/">Poradniki</a>
-
-      <div class="nl-nav__item">
-        <span class="nl-nav__link nl-nav__link--static">Społeczność <span class="nl-chevron">⌄</span></span>
-        <div class="nl-dropdown">
-          <span>Profil gracza <em>wkrótce</em></span>
-          <span>Rankingi <em>wkrótce</em></span>
-          <span>Turnieje <em>wkrótce</em></span>
-          <span>Społeczność <em>wkrótce</em></span>
-        </div>
-      </div>
-
-      <span class="nl-nav__link nl-nav__link--forum" title="Forum — w trakcie budowy">Forum</span>
-      <a class="nl-nav__link" href="/o-gracz-pl/">O gracz.pl</a>
-    </nav>
-
-    <div class="nl-actions">
-      <a class="nl-search" href="/szukaj/" aria-label="Szukaj w serwisie" title="Szukaj">⌕</a>
-      <button class="nl-btn nl-btn--outline" type="button" title="Logowanie — wkrótce">Zaloguj się</button>
-      <button class="nl-btn nl-btn--primary" type="button" title="Rejestracja — wkrótce">Załóż konto</button>
     </div>
-  </div>
-</header>
+  </header>
 
 <main class="wrap">
   <section class="hero" aria-labelledby="newsletter-title">
