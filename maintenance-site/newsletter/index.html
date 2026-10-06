@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Newsletter gracz.pl — bądź na bieżąco</title>
 <meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="/assets/contact-modal.css?v=r5" data-contact-modal-style>
+<script src="/assets/legal-links.js?v=r31" defer></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -341,6 +343,164 @@ input::placeholder{color:#78958f}
   color:#62827c;
   text-align:right;
 }
+.nl-footer{
+  margin-top:34px;
+  border-top:1px solid rgba(86,200,193,.14);
+  background:linear-gradient(180deg,rgba(3,18,15,.98),rgba(2,13,11,1));
+}
+.nl-footer__grid{
+  width:min(1180px,calc(100% - 36px));
+  margin:0 auto;
+  padding:38px 0 32px;
+  display:grid;
+  grid-template-columns:1.2fr .85fr .95fr 1.25fr;
+  gap:36px;
+}
+.nl-footer__brand .logo{font-size:30px}
+.nl-footer__brand p{
+  margin:10px 0 0;
+  color:#789891;
+  font-size:13px;
+}
+.nl-footer__title{
+  margin:0 0 14px;
+  color:#e9f5f2;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.nl-footer__col ul{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:9px;
+}
+.nl-footer__col a,
+.nl-footer__linkbtn{
+  border:0;
+  padding:0;
+  margin:0;
+  min-height:0;
+  width:auto;
+  background:none;
+  color:#90aaa4;
+  font:600 12px/1.4 Arial,Helvetica,sans-serif;
+  text-decoration:none;
+  cursor:pointer;
+  opacity:1;
+}
+.nl-footer__col a:hover,
+.nl-footer__linkbtn:hover{color:#d9ece8}
+.nl-footer__news p{
+  margin:0 0 12px;
+  color:#8ba59f;
+  font-size:12px;
+  line-height:1.55;
+}
+.nl-footer__form{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+}
+.nl-footer__form input{
+  height:40px;
+  border-radius:9px;
+  background:#09241f;
+  border:1px solid rgba(86,200,193,.16);
+  color:#dbece8;
+  padding:0 12px;
+}
+.nl-footer__form button{
+  width:auto;
+  min-height:40px;
+  margin:0;
+  padding:0 14px;
+  border:0;
+  border-radius:9px;
+  background:#56c8c1;
+  color:#072f2a;
+  font-size:11px;
+  font-weight:900;
+  cursor:not-allowed;
+  opacity:.72;
+}
+.nl-footer__note{
+  display:block;
+  margin-top:8px;
+  color:#5f7d77;
+  font-size:9.5px;
+  line-height:1.45;
+}
+.nl-footer__bottom{
+  width:min(1180px,calc(100% - 36px));
+  margin:0 auto;
+  min-height:66px;
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:24px;
+  align-items:center;
+  border-top:1px solid rgba(86,200,193,.10);
+}
+.nl-footer__copy{
+  margin:0;
+  color:#607d77;
+  font-size:11px;
+}
+.nl-footer__legal,
+.nl-footer__social{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.nl-footer__legal button{
+  border:0;
+  padding:0;
+  margin:0;
+  min-height:0;
+  width:auto;
+  background:none;
+  color:#7e9d97;
+  font:600 11px/1 Arial,Helvetica,sans-serif;
+  cursor:pointer;
+  opacity:1;
+}
+.nl-footer__legal button:hover{color:#cce5e0}
+.nl-footer__social button{
+  width:30px;
+  height:30px;
+  min-height:30px;
+  margin:0;
+  padding:0;
+  border:1px solid rgba(86,200,193,.16);
+  border-radius:8px;
+  background:rgba(86,200,193,.05);
+  color:#91cfc8;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  opacity:1;
+}
+.nl-footer__social button:hover{
+  border-color:rgba(86,200,193,.32);
+  background:rgba(86,200,193,.09);
+  color:#d4f0ec;
+}
+@media(max-width:900px){
+  .nl-footer__grid{grid-template-columns:1fr 1fr}
+  .nl-footer__bottom{grid-template-columns:1fr;gap:12px;padding:18px 0}
+}
+@media(max-width:620px){
+  .nl-footer__grid{grid-template-columns:1fr;gap:24px;padding:30px 0}
+  .nl-footer__form{grid-template-columns:1fr}
+  .nl-footer__form button{width:100%}
+  .nl-footer__legal{flex-wrap:wrap}
+}
+
 @media(max-width:1200px){
   .nl-header__inner{gap:10px}
   .nl-nav__link{padding:0 6px;font-size:13px}
@@ -502,5 +662,64 @@ input::placeholder{color:#78958f}
     <div class="preview-note">Podgląd projektu newslettera — boczna gałąź, bez zapisu danych</div>
   </div>
 </main>
+
+<footer class="nl-footer">
+  <div class="nl-footer__grid">
+    <div class="nl-footer__brand">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+      <p>Gry. Wiedza. Społeczność.</p>
+    </div>
+
+    <nav class="nl-footer__col" aria-labelledby="nl-f-nav">
+      <h2 id="nl-f-nav" class="nl-footer__title">Nawigacja</h2>
+      <ul>
+        <li><a href="/">Start</a></li>
+        <li><a href="/gry/">Gry</a></li>
+        <li><a href="/gry-karciane/">Gry karciane</a></li>
+        <li><a href="/poradniki/">Poradniki</a></li>
+        <li><button type="button" class="nl-footer__linkbtn" data-modal="community">Społeczność</button></li>
+        <li><a href="/o-gracz-pl/">O gracz.pl</a></li>
+      </ul>
+    </nav>
+
+    <nav class="nl-footer__col" aria-labelledby="nl-f-popular">
+      <h2 id="nl-f-popular" class="nl-footer__title">Popularne działy</h2>
+      <ul>
+        <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+        <li><a href="/gry/tysiac/">Tysiąc</a></li>
+        <li><a href="/gry/warcaby/">Warcaby</a></li>
+        <li><a href="/gry/gomoku/">Gomoku</a></li>
+        <li><a href="/poradniki/">Poradniki</a></li>
+        <li><button type="button" class="nl-footer__linkbtn" data-modal="updates">Aktualności</button></li>
+      </ul>
+    </nav>
+
+    <div class="nl-footer__col nl-footer__news">
+      <h2 class="nl-footer__title">Bądź na bieżąco</h2>
+      <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
+      <div class="nl-footer__form">
+        <input type="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" disabled>
+        <button type="button" disabled>Zapisz się</button>
+      </div>
+      <small class="nl-footer__note">Podgląd — formularz nie zapisuje danych na tej bocznej gałęzi.</small>
+    </div>
+  </div>
+
+  <div class="nl-footer__bottom">
+    <p class="nl-footer__copy">© 2026 gracz.pl — Wszelkie prawa zastrzeżone.</p>
+
+    <ul class="nl-footer__legal">
+      <li><button type="button" data-modal="privacy">Polityka prywatności</button></li>
+      <li><button type="button" data-modal="terms">Regulamin</button></li>
+      <li><button type="button" data-modal="contact">Kontakt</button></li>
+    </ul>
+
+    <ul class="nl-footer__social" aria-label="Media społecznościowe">
+      <li><button type="button" data-modal="social-facebook" aria-label="gracz.pl na Facebooku">f</button></li>
+      <li><button type="button" data-modal="social-youtube" aria-label="gracz.pl na YouTube">▶</button></li>
+      <li><button type="button" data-modal="social-discord" aria-label="gracz.pl na Discordzie">D</button></li>
+    </ul>
+  </div>
+</footer>
 </body>
 </html>
