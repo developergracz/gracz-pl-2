@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="stylesheet" href="/assets/contact-modal.css?v=r5" data-contact-modal-style>
 <script src="/assets/legal-links.js?v=r31" defer></script>
+<script src="/assets/newsletter-preview.js?v=r1" defer></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -31,7 +32,7 @@ body{
     radial-gradient(circle at 86% 14%,rgba(70,135,210,.08),transparent 28%),
     linear-gradient(180deg,#041713 0%,#061d19 42%,#041713 100%);
 }
-.logo{font-size:28px;font-weight:900;letter-spacing:-1px;color:#fff;text-decoration:none;white-space:nowrap}
+.logo{font-size:33px;font-weight:900;letter-spacing:-1px;color:#fff;text-decoration:none;white-space:nowrap}
 .logo span{color:var(--red)}
 .nl-header{
   position:relative;
@@ -40,8 +41,8 @@ body{
   background:rgba(3,18,15,.96);
 }
 .nl-header__inner{
-  width:min(1180px,calc(100% - 36px));
-  min-height:78px;
+  width:min(995px,calc(100% - 40px));
+  min-height:64px;
   margin:0 auto;
   display:flex;
   align-items:center;
@@ -52,7 +53,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:4px;
+  gap:24px;
   min-width:0;
 }
 .nl-nav__item{position:relative}
@@ -61,14 +62,14 @@ body{
   display:flex;
   align-items:center;
   gap:4px;
-  min-height:42px;
-  padding:0 10px;
+  min-height:64px;
+  padding:0;
   color:#d7e6e3;
   text-decoration:none;
   white-space:nowrap;
   border-radius:8px;
-  font-size:14px;
-  font-weight:700;
+  font-size:12.5px;
+  font-weight:500;
   cursor:pointer;
 }
 .nl-nav__link:hover,
@@ -77,7 +78,7 @@ body{
 .nl-nav__link--forum{
   color:#0b3732;
   background:#56c8c1;
-  padding:0 14px;
+  padding:0 13px;
 }
 .nl-nav__link--forum:hover{color:#072c28;background:#69d3cc}
 .nl-chevron{font-size:13px;color:#7fc9c2;transform:translateY(-1px)}
@@ -194,7 +195,7 @@ body{
 .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px rgba(86,200,193,.55)}
 h1{
   margin:22px 0 14px;
-  font-size:clamp(38px,5vw,64px);
+  font-size:clamp(36px,4.2vw,52px);
   line-height:1.02;
   letter-spacing:-1.8px;
   max-width:720px;
@@ -203,7 +204,7 @@ h1{
   margin:0;
   max-width:760px;
   color:#b9cfca;
-  font-size:18px;
+  font-size:15px;
   line-height:1.65;
 }
 .feature-grid{
@@ -276,12 +277,12 @@ h1{
 }
 .side h2{
   margin:10px 0 10px;
-  font-size:27px;
+  font-size:23px;
   line-height:1.15;
 }
 .side p{
   color:#9fb9b3;
-  font-size:13px;
+  font-size:13.5px;
   line-height:1.6;
   margin:0 0 18px;
 }
@@ -349,14 +350,15 @@ input::placeholder{color:#78958f}
   background:linear-gradient(180deg,rgba(3,18,15,.98),rgba(2,13,11,1));
 }
 .nl-footer__grid{
-  width:min(1180px,calc(100% - 36px));
+  width:min(1029px,calc(100% - 40px));
   margin:0 auto;
-  padding:38px 0 32px;
+  min-height:158px;
+  padding:21px 0 18px;
   display:grid;
-  grid-template-columns:1.2fr .85fr .95fr 1.25fr;
-  gap:36px;
+  grid-template-columns:267fr 192fr 259fr 311fr;
+  gap:0;
 }
-.nl-footer__brand .logo{font-size:30px}
+.nl-footer__brand .logo{font-size:34px}
 .nl-footer__brand p{
   margin:10px 0 0;
   color:#789891;
@@ -365,8 +367,8 @@ input::placeholder{color:#78958f}
 .nl-footer__title{
   margin:0 0 14px;
   color:#e9f5f2;
-  font-size:12px;
-  font-weight:900;
+  font-size:11.5px;
+  font-weight:700;
   letter-spacing:.06em;
   text-transform:uppercase;
 }
@@ -386,7 +388,7 @@ input::placeholder{color:#78958f}
   width:auto;
   background:none;
   color:#90aaa4;
-  font:600 12px/1.4 Arial,Helvetica,sans-serif;
+  font:500 12px/1.45 Arial,Helvetica,sans-serif;
   text-decoration:none;
   cursor:pointer;
   opacity:1;
@@ -396,7 +398,7 @@ input::placeholder{color:#78958f}
 .nl-footer__news p{
   margin:0 0 12px;
   color:#8ba59f;
-  font-size:12px;
+  font-size:11.5px;
   line-height:1.55;
 }
 .nl-footer__form{
@@ -405,7 +407,7 @@ input::placeholder{color:#78958f}
   gap:8px;
 }
 .nl-footer__form input{
-  height:40px;
+  height:33px;
   border-radius:9px;
   background:#09241f;
   border:1px solid rgba(86,200,193,.16);
@@ -414,15 +416,15 @@ input::placeholder{color:#78958f}
 }
 .nl-footer__form button{
   width:auto;
-  min-height:40px;
+  min-height:33px;
   margin:0;
   padding:0 14px;
   border:0;
   border-radius:9px;
   background:#56c8c1;
   color:#072f2a;
-  font-size:11px;
-  font-weight:900;
+  font-size:12.5px;
+  font-weight:700;
   cursor:not-allowed;
   opacity:.72;
 }
@@ -434,9 +436,9 @@ input::placeholder{color:#78958f}
   line-height:1.45;
 }
 .nl-footer__bottom{
-  width:min(1180px,calc(100% - 36px));
+  width:min(1029px,calc(100% - 40px));
   margin:0 auto;
-  min-height:66px;
+  min-height:64px;
   display:grid;
   grid-template-columns:1fr auto auto;
   gap:24px;
@@ -471,9 +473,9 @@ input::placeholder{color:#78958f}
 }
 .nl-footer__legal button:hover{color:#cce5e0}
 .nl-footer__social button{
-  width:30px;
-  height:30px;
-  min-height:30px;
+  width:19px;
+  height:19px;
+  min-height:19px;
   margin:0;
   padding:0;
   border:1px solid rgba(86,200,193,.16);
@@ -489,6 +491,32 @@ input::placeholder{color:#78958f}
   border-color:rgba(86,200,193,.32);
   background:rgba(86,200,193,.09);
   color:#d4f0ec;
+}
+.nl-footer__social svg{width:100%;height:100%}
+.preview-dialog{
+  width:min(420px,calc(100% - 30px));
+  border:1px solid rgba(86,200,193,.24);
+  border-radius:16px;
+  padding:0;
+  background:#08231e;
+  color:#eaf6f3;
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+}
+.preview-dialog::backdrop{background:rgba(0,0,0,.68)}
+.preview-dialog__box{padding:26px;text-align:center}
+.preview-dialog h2{margin:0 0 10px;font-size:20px}
+.preview-dialog p{margin:0;color:#9eb8b2;font-size:13px;line-height:1.55}
+.preview-dialog button{
+  margin-top:18px;
+  width:auto;
+  min-height:36px;
+  padding:0 18px;
+  border:0;
+  border-radius:9px;
+  background:#56c8c1;
+  color:#062f2a;
+  font-weight:900;
+  cursor:pointer;
 }
 @media(max-width:900px){
   .nl-footer__grid{grid-template-columns:1fr 1fr}
@@ -636,12 +664,13 @@ input::placeholder{color:#78958f}
           </p>
 
           <div class="formbox">
-            <input type="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" disabled>
-            <button type="button" disabled>Zapisz mnie do newslettera</button>
-            <div class="note">
-              Podgląd techniczny: formularz na tej bocznej gałęzi jest celowo nieaktywny
-              i nie zapisuje żadnych danych.
-            </div>
+            <form class="preview-newsletter-form" data-preview-newsletter-form novalidate>
+              <input type="email" name="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
+              <button type="submit">Zapisz mnie do newslettera</button>
+              <div class="note" data-preview-newsletter-status>
+                Podgląd techniczny — możesz przetestować formularz. Żadne dane nie są wysyłane ani zapisywane.
+              </div>
+            </form>
           </div>
 
           <div class="security">
@@ -697,11 +726,11 @@ input::placeholder{color:#78958f}
     <div class="nl-footer__col nl-footer__news">
       <h2 class="nl-footer__title">Bądź na bieżąco</h2>
       <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
-      <div class="nl-footer__form">
-        <input type="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" disabled>
-        <button type="button" disabled>Zapisz się</button>
-      </div>
-      <small class="nl-footer__note">Podgląd — formularz nie zapisuje danych na tej bocznej gałęzi.</small>
+      <form class="nl-footer__form" data-footer-newsletter novalidate>
+        <input type="email" name="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
+        <button type="submit">Zapisz się</button>
+      </form>
+      <small class="nl-footer__note">Podgląd — formularz przenosi do głównego modułu zapisu; dane nie są wysyłane.</small>
     </div>
   </div>
 
@@ -715,11 +744,25 @@ input::placeholder{color:#78958f}
     </ul>
 
     <ul class="nl-footer__social" aria-label="Media społecznościowe">
-      <li><button type="button" data-modal="social-facebook" aria-label="gracz.pl na Facebooku">f</button></li>
-      <li><button type="button" data-modal="social-youtube" aria-label="gracz.pl na YouTube">▶</button></li>
-      <li><button type="button" data-modal="social-discord" aria-label="gracz.pl na Discordzie">D</button></li>
+      <li><button type="button" data-social-preview="Facebook" aria-label="gracz.pl na Facebooku">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-1.6 19.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0 0 12 2z" fill="currentColor"/></svg>
+      </button></li>
+      <li><button type="button" data-social-preview="YouTube" aria-label="gracz.pl na YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.5 7.2a2.8 2.8 0 0 0-2-2C18.8 4.7 12 4.7 12 4.7s-6.8 0-8.5.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.8 2.8 2.8 0 0 0 2 2c1.7.5 8.5.5 8.5.5s6.8 0 8.5-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.8zM9.8 15.1V8.9l5.6 3.1z" fill="currentColor"/></svg>
+      </button></li>
+      <li><button type="button" data-social-preview="Discord" aria-label="gracz.pl na Discordzie">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A17 17 0 0 0 15.4 4l-.5 1.1a15.7 15.7 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3a11 11 0 0 1-1.7.8l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7zM8.7 14.7c-1 0-1.9-.9-1.9-2.1s.8-2.1 1.9-2.1 1.9.9 1.9 2.1-.8 2.1-1.9 2.1zm6.6 0c-1 0-1.9-.9-1.9-2.1s.8-2.1 1.9-2.1 1.9.9 1.9 2.1-.8 2.1-1.9 2.1z" fill="currentColor"/></svg>
+      </button></li>
     </ul>
   </div>
 </footer>
+
+<dialog class="preview-dialog" data-preview-dialog>
+  <div class="preview-dialog__box">
+    <h2 data-preview-dialog-title>Informacja</h2>
+    <p data-preview-dialog-text></p>
+    <button type="button" data-preview-dialog-close>Rozumiem</button>
+  </div>
+</dialog>
 </body>
 </html>
