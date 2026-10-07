@@ -112,7 +112,7 @@ export function createNewsletterManager({
 
     await sendEmail({
       to: cleanEmail,
-      subject: "gracz.pl Newsletter — potwierdź zapis",
+      subject: "♦️ gracz.pl Newsletter — potwierdź zapis",
       text: buildConfirmText(confirmUrl),
       html: buildConfirmHtml(confirmUrl),
       idempotencyKey: "newsletter-confirm/" + hashShort(tokenData.jti),
@@ -586,7 +586,7 @@ export function createNewsletterManager({
 
     return sendEmail({
       to: data.email,
-      subject: "gracz.pl Newsletter — witamy!",
+      subject: "♦️ gracz.pl Newsletter — witamy!",
       text: buildWelcomeText(unsubscribeUrl),
       html: buildWelcomeHtml(unsubscribeUrl),
       idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
