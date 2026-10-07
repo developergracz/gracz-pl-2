@@ -84,11 +84,6 @@ export function createNewsletterManager({
           unsubscribed: false,
           segments: [{ id: resources.segmentId }],
           topics: [{ id: resources.topicId, subscription: "opt_in" }],
-          properties: {
-            newsletter_consent_version: data.consentVersion,
-            newsletter_source: data.source,
-            newsletter_confirmed_at: new Date().toISOString(),
-          },
         },
         expected: [201],
       });
@@ -99,11 +94,6 @@ export function createNewsletterManager({
           first_name: names.firstName || undefined,
           last_name: names.lastName || undefined,
           unsubscribed: false,
-          properties: {
-            newsletter_consent_version: data.consentVersion,
-            newsletter_source: data.source,
-            newsletter_confirmed_at: new Date().toISOString(),
-          },
         },
         expected: [200],
       });
