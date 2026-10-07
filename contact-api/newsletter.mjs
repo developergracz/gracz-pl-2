@@ -173,6 +173,30 @@ export function createNewsletterManager({
     }
 
     if (ledgerContact?.current_state === "subscribed" && providerActive) {
+      // The first-party confirmation may have committed successfully while
+      // the final Resend contact-property patch failed. Repair that drift
+      // without sending another welcome email or appending a duplicate
+      // consent event.
+      if (ledgerConfirmedAt > providerConfirmedAt) {
+        await api("/contacts/" + encodeURIComponent(data.email), {
+          method: "PATCH",
+          body: {
+            unsubscribed: false,
+            properties: {
+              [CONFIRMED_AT_KEY]: ledgerConfirmedAt,
+              [CONSENT_VERSION_KEY]:
+                ledgerContact.consent_version || data.consentVersion,
+            },
+          },
+          expected: [200],
+        });
+
+        return {
+          state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
+          recipient: maskEmail(data.email),
+        };
+      }
+
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
