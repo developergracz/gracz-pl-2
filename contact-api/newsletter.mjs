@@ -161,6 +161,38 @@ export function createNewsletterManager({
       providerState.inSegment &&
       providerState.topicSubscription === "opt_in";
 
+    // Cutover safety for R1-R3 subscribers that predate the durable consent
+    // ledger. Their provider-side confirmed timestamp is the only durable
+    // proof available until they complete a fresh R4 DOI flow.
+    const legacyProviderConfirmed =
+      providerConfirmedAt > 0 && ledgerConfirmedAt === 0;
+
+    // Replaying an old DOI while the legacy provider subscription is still
+    // active must be a no-op rather than creating a duplicate welcome or
+    // manufacturing a new ledger confirmation from an old token.
+    if (
+      legacyProviderConfirmed &&
+      providerActive &&
+      data.iat <= providerConfirmedAt
+    ) {
+      return {
+        state: "already_subscribed",
+        recipient: maskEmail(data.email),
+      };
+    }
+
+    // If that legacy subscriber later used Resend's hosted unsubscribe, the
+    // provider becomes inactive even though no first-party ledger row exists.
+    // An old DOI token must stay stale; only a freshly issued token whose iat
+    // is newer than the provider confirmation may intentionally resubscribe.
+    if (
+      legacyProviderConfirmed &&
+      !providerActive &&
+      data.iat <= providerConfirmedAt
+    ) {
+      staleConfirmation();
+    }
+
     // Hybrid rule: Resend owns the operational subscription state.
     // The first-party store is audit evidence, not a second delivery engine.
     if (providerActive && ledgerContact?.current_state === "subscribed") {
@@ -208,8 +240,8 @@ export function createNewsletterManager({
       providerUnsubscribedAt
     );
     if (
-      ledgerContact?.current_state === "subscribed" &&
       !providerActive &&
+      lastFirstPartyStateAt > 0 &&
       data.iat <= lastFirstPartyStateAt
     ) {
       staleConfirmation();
