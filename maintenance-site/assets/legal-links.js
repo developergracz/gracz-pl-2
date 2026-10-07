@@ -94,6 +94,7 @@
         '</div>'+
         '<div class="contact-field"><label for="contact-message">Wiadomość</label><textarea id="contact-message" name="message" minlength="10" maxlength="4000" placeholder="Napisz, w czym możemy pomóc…" required></textarea><div class="contact-field__meta"><span>Minimum 10 znaków</span><span data-contact-count>0 / 4000</span></div></div>'+
         '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam zapoznanie się z <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Polityką prywatności</a> i przyjmuję do wiadomości zasady przetwarzania danych w celu obsługi zgłoszenia.</span></label>'+
+        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
@@ -195,6 +196,7 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
+        newsletter:Boolean(form.elements.newsletter&&form.elements.newsletter.checked),
         page:location.href,
         startedAt:contactOpenedAt
       };
@@ -228,7 +230,13 @@
           requestError.code=body&&body.error&&body.error.code?String(body.error.code):'';
           throw requestError;
         }
-        setStatus('Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.','success');
+        var successMessage='Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.';
+        if(body.newsletter==='confirmation_sent'){
+          successMessage+=' Newsletter: wysłaliśmy osobny e-mail z linkiem potwierdzającym zapis.';
+        }else if(payload.newsletter&&body.newsletter==='temporarily_unavailable'){
+          successMessage+=' Wiadomość kontaktowa dotarła poprawnie, ale potwierdzenie newslettera nie mogło zostać teraz wysłane.';
+        }
+        setStatus(successMessage,'success');
         form.reset();
         count.textContent='0 / 4000';
         contactOpenedAt=Date.now();
