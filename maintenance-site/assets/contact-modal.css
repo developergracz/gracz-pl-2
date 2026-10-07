@@ -324,3 +324,18 @@ body.contact-modal-open{overflow:hidden}
   box-shadow:0 8px 20px rgba(86,200,193,.30),0 0 0 2px rgba(86,200,193,.13);
   outline:0;
 }
+
+
+.contact-form__newsletter{
+  border-color:rgba(86,200,193,.32)!important;
+  background:linear-gradient(180deg,rgba(17,79,74,.38),rgba(10,58,54,.30))!important;
+}
+.contact-form__newsletter strong{
+  display:block;
+  margin-bottom:3px;
+  color:#86eee7;
+  font-family:Montserrat,Arial,sans-serif;
+  font-size:12px;
+}
+.contact-form__newsletter input{accent-color:#56c8c1!important}
+.contact-form__newsletter a{color:#8ff0e9!important}
