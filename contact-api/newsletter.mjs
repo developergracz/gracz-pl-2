@@ -300,6 +300,190 @@ export function createNewsletterManager({
     };
   }
 
+  function consentSubjectHash(email) {
+    return createHmac("sha256", consentHashKey)
+      .update(validateMailbox(email), "utf8")
+      .digest("hex");
+  }
+
+  function deterministicConsentEventId(namespace, seed) {
+    const bytes = createHash("sha256")
+      .update("gracz-newsletter-consent:", "utf8")
+      .update(String(namespace || ""), "utf8")
+      .update(":", "utf8")
+      .update(String(seed || ""), "utf8")
+      .digest()
+      .subarray(0, 16);
+
+    bytes[6] = (bytes[6] & 0x0f) | 0x50;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = bytes.toString("hex");
+    return [
+      hex.slice(0, 8),
+      hex.slice(8, 12),
+      hex.slice(12, 16),
+      hex.slice(16, 20),
+      hex.slice(20),
+    ].join("-");
+  }
+
+  async function recordOptInRequested(data) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("request", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+      consentVersion: data.consentVersion,
+    });
+
+    const existing = await consentStore.getConsentEvent(eventId);
+    if (existing) return existing;
+
+    return consentStore.appendConsentEvent({
+      eventId,
+      emailHash,
+      eventType: "opt_in_requested",
+      consentVersion: data.consentVersion,
+      source: data.source || "unknown",
+      occurredAt: new Date(data.iat),
+      correlationId: eventId,
+      metadata: {
+        tokenIssuedAt: data.iat,
+      },
+    });
+  }
+
+  async function recordProviderSync(
+    data,
+    { confirmedAt, providerContactId = null }
+  ) {
+    const emailHash = consentSubjectHash(data.email);
+    const occurredAt = new Date(
+      Number.isFinite(Number(confirmedAt)) && Number(confirmedAt) > 0
+        ? Number(confirmedAt)
+        : Date.now()
+    );
+    const eventId = deterministicConsentEventId(
+      "provider-sync",
+      emailHash + ":" + occurredAt.getTime()
+    );
+
+    await consentStore.ensureContact({
+      emailHash,
+      consentVersion: data.consentVersion,
+    });
+
+    const existing = await consentStore.getConsentEvent(eventId);
+    if (!existing) {
+      await consentStore.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType: "provider_sync",
+        consentVersion: data.consentVersion,
+        source: "resend_provider_sync",
+        occurredAt,
+        correlationId: eventId,
+        providerRef: providerContactId,
+        metadata: {
+          reason: "provider_confirmed_before_first_party_ledger",
+        },
+      });
+    }
+
+    return consentStore.upsertContact({
+      emailHash,
+      providerContactId,
+      currentState: "subscribed",
+      consentVersion: data.consentVersion,
+      confirmedAt: occurredAt,
+    });
+  }
+
+  async function recordConfirmedConsent(
+    data,
+    { wasPreviouslyConfirmed, providerContactId = null }
+  ) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("confirm", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+      consentVersion: data.consentVersion,
+    });
+
+    const existingEvent = await consentStore.getConsentEvent(eventId);
+    const occurredAt = existingEvent?.occurred_at
+      ? new Date(existingEvent.occurred_at)
+      : new Date();
+    const eventType =
+      existingEvent?.event_type ||
+      (wasPreviouslyConfirmed ? "resubscribe" : "opt_in_confirmed");
+
+    if (!existingEvent) {
+      await consentStore.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType,
+        consentVersion: data.consentVersion,
+        source: data.source || "confirm_link",
+        occurredAt,
+        correlationId: eventId,
+        providerRef: providerContactId,
+        metadata: {
+          tokenIssuedAt: data.iat,
+        },
+      });
+    }
+
+    return consentStore.upsertContact({
+      emailHash,
+      providerContactId,
+      currentState: "subscribed",
+      consentVersion: data.consentVersion,
+      confirmedAt: occurredAt,
+    });
+  }
+
+  async function recordUnsubscribedConsent(
+    data,
+    { providerContactId = null } = {}
+  ) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("unsubscribe", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+    });
+
+    const existingEvent = await consentStore.getConsentEvent(eventId);
+    const occurredAt = existingEvent?.occurred_at
+      ? new Date(existingEvent.occurred_at)
+      : new Date();
+
+    if (!existingEvent) {
+      await consentStore.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType: "unsubscribe",
+        source: "newsletter_unsubscribe_link",
+        occurredAt,
+        correlationId: eventId,
+        providerRef: providerContactId,
+        metadata: {
+          tokenIssuedAt: data.iat,
+        },
+      });
+    }
+
+    return consentStore.upsertContact({
+      emailHash,
+      providerContactId,
+      currentState: "unsubscribed",
+      unsubscribedAt: occurredAt,
+    });
+  }
+
   async function ensureResources() {
     if (!resourcesPromise) {
       resourcesPromise = (async () => {
