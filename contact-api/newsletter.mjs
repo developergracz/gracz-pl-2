@@ -117,6 +117,8 @@ export function createNewsletterManager({
     const data = decrypt(token, "confirm");
     const resources = await ensureResources();
 
+    const emailHash = consentSubjectHash(data.email);
+    const ledgerContact = await consentStore.getContact(emailHash);
     const existing = await getContact(data.email);
     const names = splitName(data.name);
     const confirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
@@ -142,6 +144,13 @@ export function createNewsletterManager({
       providerState.topicSubscription === "opt_in";
 
     if (consentActive && providerActive) {
+      if (ledgerContact?.current_state !== "subscribed") {
+        await recordProviderSync(data, {
+          confirmedAt,
+          providerContactId: existing?.id || null,
+        });
+      }
+
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
@@ -159,9 +168,10 @@ export function createNewsletterManager({
     const consentVersionProperties = {
       [CONSENT_VERSION_KEY]: data.consentVersion,
     };
+    let providerContactId = existing?.id || null;
 
     if (!existing) {
-      await api("/contacts", {
+      const createdContact = await api("/contacts", {
         method: "POST",
         body: {
           email: data.email,
@@ -174,6 +184,7 @@ export function createNewsletterManager({
         },
         expected: [201],
       });
+      providerContactId = createdContact?.id || null;
     } else {
       await api("/contacts/" + encodeURIComponent(data.email), {
         method: "PATCH",
@@ -220,9 +231,15 @@ export function createNewsletterManager({
       entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
     });
 
-    // Commit our consent proof last. If any provider mutation or welcome
-    // delivery fails before this point, retrying the same token repairs the
-    // incomplete state instead of incorrectly returning already_subscribed.
+    // Commit gracz.pl's first-party consent proof before mirroring the
+    // confirmation timestamp back to Resend. If the provider-side property
+    // update fails, retrying the same token repairs that external drift
+    // without duplicating the append-only consent event.
+    await recordConfirmedConsent(data, {
+      wasPreviouslyConfirmed,
+      providerContactId,
+    });
+
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
       body: {
@@ -272,6 +289,10 @@ export function createNewsletterManager({
         { method: "DELETE", expected: [200, 404] }
       );
     }
+
+    await recordUnsubscribedConsent(data, {
+      providerContactId: existing?.id || null,
+    });
 
     return {
       state: "unsubscribed",
@@ -605,6 +626,7 @@ export function createNewsletterManager({
 
   return {
     enabled,
+    consentLedgerConfigured: consentStoreConfigured,
     requestOptIn,
     confirm,
     unsubscribe,
