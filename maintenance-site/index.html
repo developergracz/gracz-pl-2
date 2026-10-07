@@ -1032,9 +1032,9 @@
       <div class="footer-col footer-news">
         <h2 id="f-news" class="footer-title">Bądź na bieżąco</h2>
         <p>Nowości, informacje o starcie serwisu<br class="br-d"> i&nbsp;zapowiedzi nowych funkcji.</p>
-        <form class="news-form" data-newsletter aria-labelledby="f-news" novalidate>
+        <form class="news-form" action="/newsletter/" method="get" aria-labelledby="f-news">
           <label class="sr-only" for="news-email">Twój adres e-mail</label>
-          <input id="news-email" type="email" autocomplete="email" placeholder="Twój adres e-mail">
+          <input id="news-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="Twój adres e-mail" required>
           <button class="btn btn--gold btn--news" type="submit">Zapisz się</button>
         </form>
       </div>
