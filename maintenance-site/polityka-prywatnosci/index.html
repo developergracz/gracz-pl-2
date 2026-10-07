@@ -40,7 +40,7 @@
     "@context":"https://schema.org",
     "@graph":[
       {"@type":"WebSite","@id":"https://gracz.pl/#website","url":"https://gracz.pl/","name":"gracz.pl","inLanguage":"pl-PL"},
-      {"@type":"WebPage","@id":"https://gracz.pl/polityka-prywatnosci/#webpage","url":"https://gracz.pl/polityka-prywatnosci/","name":"Polityka prywatności gracz.pl","description":"Informacja o przetwarzaniu danych osobowych w gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL","dateModified":"2026-10-04"},
+      {"@type":"WebPage","@id":"https://gracz.pl/polityka-prywatnosci/#webpage","url":"https://gracz.pl/polityka-prywatnosci/","name":"Polityka prywatności gracz.pl","description":"Informacja o przetwarzaniu danych osobowych w gracz.pl.","isPartOf":{"@id":"https://gracz.pl/#website"},"inLanguage":"pl-PL","dateModified":"2026-10-07"},
       {"@type":"BreadcrumbList","itemListElement":[
         {"@type":"ListItem","position":1,"name":"Start","item":"https://gracz.pl/"},
         {"@type":"ListItem","position":2,"name":"Polityka prywatności","item":"https://gracz.pl/polityka-prywatnosci/"}
@@ -62,7 +62,7 @@
         <button class="legal-nav__forum" type="button" data-forum-coming-soon aria-haspopup="dialog">Forum</button>
         <a href="/szukaj/">Szukaj</a>
       </nav>
-      <span class="legal-badge">RODO • wersja 1.1</span>
+      <span class="legal-badge">RODO • wersja 1.2</span>
     </div>
   </header>
 
@@ -74,8 +74,8 @@
       <h1 id="privacy-title">Polityka prywatności <span class="legal-domain">gracz<span class="legal-domain__suffix">.pl</span></span></h1>
       <p class="lead">Ten dokument wyjaśnia, jakie dane osobowe są lub mogą być przetwarzane w gracz.pl, w jakich celach, na jakich podstawach prawnych, przez jaki czas, komu mogą być powierzane oraz z jakich praw może skorzystać użytkownik.</p>
       <div class="meta-row" aria-label="Metadane dokumentu">
-        <span class="meta-pill"><strong>Wersja:</strong> 1.1 / R2</span>
-        <span class="meta-pill"><strong>Obowiązuje od:</strong> 4 października 2026</span>
+        <span class="meta-pill"><strong>Wersja:</strong> 1.2 / R3</span>
+        <span class="meta-pill"><strong>Obowiązuje od:</strong> 7 października 2026</span>
         <span class="meta-pill"><strong>Zakres:</strong> gracz.pl i powiązane moduły</span>
         <span class="meta-pill"><strong>Język:</strong> polski</span>
       </div>
@@ -150,7 +150,7 @@
             <li><strong>dane uwierzytelniania</strong> — hashe haseł, metadane sesji i tokenów, dane recovery/MFA w zakresie niezbędnym do zabezpieczenia konta;</li>
             <li><strong>dane gier</strong> — identyfikatory meczów, ruchy, zdarzenia, wyniki, ranking, historia turnieju i dane potrzebne do integralności rozgrywki;</li>
             <li><strong>dane społecznościowe</strong> — publiczne wpisy, reakcje, relacje, zgłoszenia i dane moderacyjne, po uruchomieniu tych funkcji;</li>
-            <li><strong>dane newslettera</strong> — adres e-mail i dowód udzielenia albo wycofania zgody, jeśli newsletter zostanie uruchomiony.</li>
+            <li><strong>dane newslettera</strong> — adres e-mail, opcjonalne imię, stan subskrypcji oraz techniczny dowód potwierdzenia albo wycofania zgody.</li>
           </ul>
           <div class="callout">gracz.pl nie wymaga obecnie jako standardowych pól numeru PESEL, numeru dokumentu tożsamości, danych kart płatniczych, dokładnej lokalizacji GPS, danych zdrowotnych ani innych szczególnych kategorii danych. Użytkownik nie powinien przesyłać takich informacji w formularzu kontaktowym.</div>
         </section>
@@ -166,6 +166,12 @@
             <li>art. 6 ust. 1 lit. c RODO — gdy zgłoszenie dotyczy wykonania obowiązku prawnego administratora, np. realizacji praw wynikających z RODO.</li>
           </ul>
           <p>Obowiązkowe zaznaczenie potwierdzenia w formularzu służy wykazaniu, że użytkownik zapoznał się z zasadami obsługi zgłoszenia. <strong>Nie jest ono zgodą marketingową</strong> i nie stanowi podstawy do wysyłania reklam.</p>
+
+          <h3 id="newsletter">Newsletter gracz.pl i double opt-in</h3>
+          <p>Newsletter jest funkcją dobrowolną i niezależną od formularza kontaktowego. Użytkownik może zaznaczyć osobną, niewymaganą zgodę marketingową w formularzu kontaktowym albo skorzystać z formularza na stronie <a href="/newsletter/">Newsletter gracz.pl</a>. Brak zgody na newsletter nie wpływa na możliwość wysłania zgłoszenia ani korzystania z innych funkcji serwisu.</p>
+          <p>gracz.pl stosuje <strong>double opt-in</strong>. Po zgłoszeniu chęci zapisu system wysyła wiadomość z szyfrowanym, ograniczonym czasowo linkiem. Samo podanie adresu lub otwarcie wiadomości nie aktywuje subskrypcji. Dopiero świadome kliknięcie przycisku potwierdzenia na stronie gracz.pl powoduje aktywację adresu w newsletterze.</p>
+          <p>Po potwierdzeniu adres jest obsługiwany w Resend jako kontakt przypisany do dedykowanego segmentu newsletterowego i tematu subskrypcji ustawionego na <code>opt-in</code>. Przy wycofaniu zgody temat jest ustawiany na <code>opt-out</code>, a adres jest usuwany z segmentu newsletterowego. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
+          <p>Podstawą prawną newslettera jest art. 6 ust. 1 lit. a RODO — zgoda. Link potwierdzający pozostaje ważny maksymalnie 30 dni. Użytkownik może zrezygnować z newslettera w każdym czasie przez link wypisania dostępny w wiadomościach newsletterowych lub przez mechanizm zarządzania subskrypcją udostępniony dla danego maila.</p>
         </section>
 
         <section class="legal-section" id="academy">
@@ -186,7 +192,7 @@
                 <tr><td>bezpieczeństwo, anti-abuse, integralność gry, przeciwdziałanie spamowi i oszustwom</td><td>art. 6 ust. 1 lit. f RODO</td></tr>
                 <tr><td>moderacja i ochrona społeczności — po uruchomieniu</td><td>art. 6 ust. 1 lit. f RODO, a dla elementów będących częścią usługi także lit. b w odpowiednim zakresie</td></tr>
                 <tr><td>prywatne wiadomości i funkcje społecznościowe — po uruchomieniu</td><td>art. 6 ust. 1 lit. b RODO</td></tr>
-                <tr><td>newsletter i komunikacja marketingowa — po uruchomieniu</td><td>art. 6 ust. 1 lit. a RODO — zgoda</td></tr>
+                <tr><td>newsletter gracz.pl i komunikacja marketingowa</td><td>art. 6 ust. 1 lit. a RODO — odrębna, dobrowolna zgoda potwierdzana metodą double opt-in</td></tr>
                 <tr><td>pomiar ruchu i korzystania z serwisu przy użyciu Google Analytics 4</td><td>art. 6 ust. 1 lit. a RODO — zgoda; narzędzie analityczne jest uruchamiane dopiero po wyborze użytkownika</td></tr>
                 <tr><td>realizacja praw osób, obsługa żądań RODO</td><td>art. 6 ust. 1 lit. c RODO w związku z obowiązkami administratora</td></tr>
                 <tr><td>audyt, kontrola dostępu i działania uprzywilejowane</td><td>art. 6 ust. 1 lit. f RODO</td></tr>
@@ -218,7 +224,7 @@
               <thead><tr><th>Dostawca / kategoria</th><th>Rola w gracz.pl</th><th>Zakres</th></tr></thead>
               <tbody>
                 <tr><td><strong>Render Services, Inc.</strong></td><td>hosting i runtime serwisu / backendu</td><td>infrastruktura aplikacji, techniczne logi i obsługa żądań; obecny web service formularza działa w regionie Frankfurt</td></tr>
-                <tr><td><strong>Plus Five Five, Inc. (Resend)</strong></td><td>dostawca wysyłki e-mail</td><td>przekazanie wiadomości z formularza do skrzynki administratora oraz techniczne dane doręczenia</td></tr>
+                <tr><td><strong>Plus Five Five, Inc. (Resend)</strong></td><td>dostawca wysyłki e-mail i obsługi list newsletterowych</td><td>przekazanie wiadomości z formularza, wysyłka potwierdzeń double opt-in i newslettera oraz obsługa kontaktów, segmentu i stanu tematu subskrypcji</td></tr>
                 <tr><td><strong>Google Ireland Limited — Google Analytics 4</strong></td><td>analityka ruchu uruchamiana po zgodzie</td><td>informacje o korzystaniu z serwisu, urządzeniu i przeglądarce oraz identyfikatory analityczne w zakresie wynikającym z konfiguracji GA4 i wyboru użytkownika</td></tr>
                 <tr><td><strong>dostawca poczty administratora</strong></td><td>odbiór i przechowywanie korespondencji</td><td>wiadomości przesłane do skrzynki e-mail administratora</td></tr>
                 <tr><td><strong>inni użytkownicy</strong></td><td>odbiorcy funkcji publicznych — po ich uruchomieniu</td><td>wyłącznie dane jawnie przeznaczone do publikacji, np. nazwa gracza, ranking lub publiczny wpis</td></tr>
@@ -267,8 +273,8 @@
                 <tr><td>prywatne wiadomości — po uruchomieniu</td><td>do 36 miesięcy; po usunięciu przez obie strony do 30 dni okresu technicznego</td></tr>
                 <tr><td>publiczny chat — po uruchomieniu</td><td>do 12 miesięcy; zdarzenia edycji/usunięcia do 24 miesięcy</td></tr>
                 <tr><td>dane moderacyjne i odwołania</td><td>do 36 miesięcy</td></tr>
-                <tr><td>newsletter pending</td><td>do 30 dni</td></tr>
-                <tr><td>dowód zgody newsletterowej</td><td>maksymalnie do 36 miesięcy od wycofania lub zakończenia cyklu zgody</td></tr>
+                <tr><td>niepotwierdzony zapis newslettera / ważność linku double opt-in</td><td>do 30 dni; przed potwierdzeniem adres nie jest aktywowany w segmencie newsletterowym Resend</td></tr>
+                <tr><td>stan subskrypcji i techniczny dowód zgody newsletterowej</td><td>przez okres aktywnej subskrypcji, a niezbędny materiał dowodowy maksymalnie do 36 miesięcy od wycofania lub zakończenia cyklu zgody</td></tr>
                 <tr><td>rekord wypisania / suppression</td><td>maksymalnie do 24 miesięcy</td></tr>
                 <tr><td>backup dzienny / tygodniowy / miesięczny — po wdrożeniu pełnego modelu</td><td>odpowiednio do 35 dni / 12 tygodni / 12 miesięcy</td></tr>
               </tbody>
@@ -302,7 +308,7 @@
         <section class="legal-section" id="sprzeciw">
           <div class="legal-section__top"><span class="section-num">14</span><div><h2>Sprzeciw i wycofanie zgody</h2></div></div>
           <p>Jeżeli dane są przetwarzane na podstawie prawnie uzasadnionego interesu, użytkownik może wnieść sprzeciw z przyczyn związanych z jego szczególną sytuacją. Administrator zaprzestanie takiego przetwarzania, chyba że wykaże istnienie ważnych prawnie uzasadnionych podstaw nadrzędnych wobec interesów, praw i wolności użytkownika albo podstaw do ustalenia, dochodzenia lub obrony roszczeń.</p>
-          <p>Zgodę na analitykę można wycofać w dowolnym momencie przez przycisk „Cookies” dostępny w interfejsie serwisu. Po wycofaniu gracz.pl aktualizuje stan zgody, usuwa dostępne first-party cookies Google Analytics i przeładowuje stronę, aby na kolejnym dokumencie biblioteka GA nie była uruchamiana. Jeżeli w przyszłości użytkownik wyrazi zgodę na newsletter lub inną komunikację marketingową, również będzie mógł ją wycofać w dowolnym momencie. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
+          <p>Zgodę na analitykę można wycofać w dowolnym momencie przez przycisk „Cookies” dostępny w interfejsie serwisu. Po wycofaniu gracz.pl aktualizuje stan zgody, usuwa dostępne first-party cookies Google Analytics i przeładowuje stronę, aby na kolejnym dokumencie biblioteka GA nie była uruchamiana. Zgodę na newsletter można wycofać w dowolnym momencie przez link wypisania umieszczony w wiadomości lub mechanizm zarządzania subskrypcją. Wycofanie zgody nie wpływa na zgodność z prawem przetwarzania wykonanego przed jej wycofaniem.</p>
         </section>
 
         <section class="legal-section" id="skarga">
@@ -354,7 +360,7 @@
           <div class="legal-section__top"><span class="section-num">20</span><div><h2>Zmiany Polityki i wersjonowanie</h2></div></div>
           <p>Polityka może być aktualizowana w szczególności z powodu zmian funkcjonalności, dostawców, infrastruktury, technologii przechowywania, modelu bezpieczeństwa lub przepisów prawa. Aktualna wersja jest publikowana pod stałym adresem <strong>gracz.pl/polityka-prywatnosci/</strong>.</p>
           <p>W przypadku istotnej zmiany dotyczącej osób posiadających konto informacja o zmianie może zostać przekazana również w interfejsie konta lub e-mailem, jeżeli będzie to właściwe dla charakteru zmiany.</p>
-          <div class="callout"><strong>Historia publikacji:</strong> wersja 1.1 / R2 — 4 października 2026 r. Aktualizacja o własny moduł zgód gracz.pl i Google Analytics 4 uruchamiane dopiero po zgodzie. Wersja 1.0 / R1 — 2 października 2026 r. Pierwsza rozbudowana polityka prywatności dla aktualnej architektury gracz.pl.</div>
+          <div class="callout"><strong>Historia publikacji:</strong> wersja 1.2 / R2 — 4 października 2026 r. Aktualizacja o własny moduł zgód gracz.pl i Google Analytics 4 uruchamiane dopiero po zgodzie. Wersja 1.0 / R1 — 2 października 2026 r. Pierwsza rozbudowana polityka prywatności dla aktualnej architektury gracz.pl.</div>
         </section>
 
         <section class="legal-section" id="kontakt-rodo">

@@ -1,0 +1,30 @@
+@font-face{font-family:OpenSans;src:url('/assets/fonts/opensans-latin.woff2') format('woff2');font-display:swap}
+@font-face{font-family:Montserrat;src:url('/assets/fonts/montserrat-latin.woff2') format('woff2');font-display:swap}
+:root{color-scheme:dark;--bg:#041310;--panel:#0a2621;--panel2:#10362f;--line:#1a554b;--text:#f3f7f4;--muted:#9eb3ad;--teal:#56c8c1;--gold:#f0bf55;--red:#f21a34}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#041310;color:var(--text);font-family:OpenSans,Arial,sans-serif}
+body{background:radial-gradient(circle at 20% 0,rgba(86,200,193,.14),transparent 34rem),linear-gradient(180deg,#071b17,#03100d)}
+a{color:inherit}
+.nl-topbar{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 max(20px,calc((100vw - 1120px)/2));border-bottom:1px solid rgba(86,200,193,.18);background:rgba(3,15,13,.9)}
+.nl-logo{font:800 31px/1 Montserrat,Arial,sans-serif;letter-spacing:-1.4px;text-decoration:none;color:#fff}.nl-logo span{color:var(--red)}
+.nl-back{font:700 12px/1 Montserrat,Arial,sans-serif;text-decoration:none;border:1px solid #315e56;border-radius:999px;padding:11px 15px;color:#cde2dd}
+.nl-shell{width:min(1120px,100%);margin:0 auto;padding:44px 20px 56px}
+.nl-card{border:1px solid rgba(86,200,193,.2);border-radius:26px;overflow:hidden;background:linear-gradient(160deg,#0c2d27,#071d19 62%,#061713);box-shadow:0 30px 90px rgba(0,0,0,.4)}
+.nl-hero{padding:46px 48px 32px;border-bottom:1px solid rgba(86,200,193,.15)}
+.nl-kicker{color:#75e1d8;font:800 11px/1.2 Montserrat,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.nl-hero h1{margin:10px 0 12px;font:800 clamp(34px,6vw,62px)/1 Montserrat,Arial,sans-serif;letter-spacing:-2.4px}
+.nl-hero p{max-width:760px;margin:0;color:#bfd0cb;font-size:16px;line-height:1.7}
+.nl-badges{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px}.nl-badges span{border:1px solid #2a6056;border-radius:999px;padding:7px 10px;color:#aee0d8;font-size:11px;font-weight:700}
+.nl-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:28px 48px 0}.nl-benefits article{padding:20px;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.025)}.nl-benefits article>span{color:#67d8cf;font:800 11px Montserrat,Arial,sans-serif}.nl-benefits h2{margin:7px 0 6px;font:800 17px Montserrat,Arial,sans-serif}.nl-benefits p{margin:0;color:#8fa59f;font-size:12px;line-height:1.55}
+.nl-panel{margin:28px 48px;padding:26px;border:1px solid rgba(86,200,193,.26);border-radius:18px;background:linear-gradient(180deg,rgba(20,75,66,.56),rgba(8,42,36,.72))}
+.nl-panel h2{margin:0 0 7px;font:800 24px Montserrat,Arial,sans-serif}.nl-muted{margin:0 0 20px;color:var(--muted);font-size:13px;line-height:1.6}
+.nl-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}.nl-row label{display:grid;gap:7px;color:#e6efec;font-size:12px;font-weight:700}.nl-row label span{color:#718982;font-weight:400}
+input[type=text],input[type=email]{width:100%;height:46px;border:1px solid #376c62;border-radius:11px;background:#092b25;color:#fff;padding:0 13px;font:14px OpenSans,Arial,sans-serif;outline:none}input:focus{border-color:#67d8cf;box-shadow:0 0 0 3px rgba(86,200,193,.12)}
+.nl-consent{display:flex;align-items:flex-start;gap:11px;margin-top:16px;padding:14px;border:1px solid rgba(86,200,193,.18);border-radius:12px;background:rgba(255,255,255,.025);color:#b9cbc6;font-size:12px;line-height:1.55}.nl-consent input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--teal);flex:0 0 auto}.nl-consent a{color:#8debe4}.nl-hp{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.nl-status{min-height:20px;margin:12px 0 0;color:#93e5d8;font-size:12px}.nl-status.is-error{color:#ff8d98}
+.nl-primary{min-height:47px;margin-top:8px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,#75e5de,#45beb6);color:#041d19;font:800 12px Montserrat,Arial,sans-serif;cursor:pointer}.nl-primary:disabled{opacity:.55;cursor:wait}
+.nl-action{text-align:center;padding:38px 28px}.nl-action__icon{width:58px;height:58px;margin:0 auto 15px;border-radius:50%;display:grid;place-items:center;background:rgba(86,200,193,.12);border:1px solid #39796e;font-size:25px}.nl-action .nl-kicker{margin-bottom:8px}.nl-action h2{font-size:27px}
+.nl-trust{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 48px 34px}.nl-trust div{padding:17px 18px;border-radius:13px;background:#061a16;border:1px dashed #2b514a}.nl-trust strong{display:block;color:#dceae6;font-size:12px;margin-bottom:5px}.nl-trust span{color:#778f88;font-size:11px;line-height:1.55}
+.nl-footer{width:min(1120px,100%);margin:0 auto;padding:0 20px 34px;display:flex;justify-content:space-between;gap:20px;color:#688078;font-size:11px}.nl-footer nav{display:flex;gap:14px;flex-wrap:wrap}.nl-footer a{text-decoration:none}
+@media(max-width:720px){.nl-shell{padding:20px 12px 35px}.nl-card{border-radius:18px}.nl-hero{padding:30px 20px 24px}.nl-benefits{grid-template-columns:1fr;padding:20px 20px 0}.nl-panel{margin:20px;padding:20px}.nl-row{grid-template-columns:1fr}.nl-trust{grid-template-columns:1fr;padding:0 20px 24px}.nl-footer{flex-direction:column}.nl-topbar{padding:0 16px}.nl-back{font-size:10px}.nl-logo{font-size:27px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}

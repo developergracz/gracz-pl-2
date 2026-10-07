@@ -4,6 +4,7 @@ import { resolveMx } from "node:dns/promises";
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
+import { createNewsletterManager } from "./newsletter.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -16,7 +17,16 @@ const CONTACT_TO = String(process.env.CONTACT_TO || "").trim();
 const EMAIL_FROM_ADDRESS = extractMailbox(EMAIL_FROM);
 const CONTACT_TO_ADDRESS = extractMailbox(CONTACT_TO);
 const CONTACT_REPLY_SECRET = String(process.env.CONTACT_REPLY_SECRET || "").trim();
-const NEWSLETTER_URL = String(process.env.NEWSLETTER_URL || "").trim();
+const NEWSLETTER_URL = String(
+  process.env.NEWSLETTER_URL || "https://gracz.pl/newsletter/"
+).trim();
+const NEWSLETTER_SECRET = String(process.env.NEWSLETTER_SECRET || "").trim();
+const NEWSLETTER_RESEND_API_KEY = String(
+  process.env.NEWSLETTER_RESEND_API_KEY || ""
+).trim();
+const RESEND_API_BASE = String(
+  process.env.RESEND_API_BASE || "https://api.resend.com"
+).trim();
 
 if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
@@ -29,6 +39,16 @@ const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
   ownerAddress: CONTACT_TO_ADDRESS,
   newsletterUrl: NEWSLETTER_URL,
+});
+
+const newsletter = createNewsletterManager({
+  secret: NEWSLETTER_SECRET,
+  resendApiKey: NEWSLETTER_RESEND_API_KEY,
+  resendApiBase: RESEND_API_BASE,
+  emailEndpoint: RESEND_ENDPOINT,
+  emailFrom: EMAIL_FROM,
+  replyTo: CONTACT_TO_ADDRESS,
+  baseUrl: NEWSLETTER_URL,
 });
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
@@ -82,6 +102,8 @@ const DOMAIN_TYPOS = new Map([
 
 const ipBuckets = new Map();
 const replyIpBuckets = new Map();
+const newsletterIpBuckets = new Map();
+const newsletterEmailBuckets = new Map();
 const emailBuckets = new Map();
 const duplicateSubmissions = new Map();
 const idempotencyCache = new Map();
@@ -131,11 +153,16 @@ createServer(async (req, res) => {
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
         premiumReplyConfigured: premiumReply.enabled,
+        newsletterConfigured: newsletter.enabled,
       });
     }
 
     if (url.pathname === "/reply-context" || url.pathname === "/reply") {
       return await handlePremiumReplyRequest(req, res, url, requestId);
+    }
+
+    if (url.pathname.startsWith("/newsletter/")) {
+      return await handleNewsletterRequest(req, res, url, requestId);
     }
 
     if (url.pathname !== "/contact") {
@@ -307,7 +334,30 @@ createServer(async (req, res) => {
     rememberDuplicate(payload);
     recordProviderSuccess();
 
-    const successBody = { ok: true, id: requestId };
+    let newsletterState = "not_requested";
+    if (payload.newsletter) {
+      try {
+        await newsletter.requestOptIn({
+          email: payload.email,
+          name: payload.name,
+          source: "contact_form",
+        });
+        newsletterState = "confirmation_sent";
+      } catch (newsletterError) {
+        newsletterState = "temporarily_unavailable";
+        console.error("[newsletter] opt-in request failed", {
+          requestId,
+          code: newsletterError?.code || "NEWSLETTER_ERROR",
+          emailHash: hashValue(payload.email).slice(0, 12),
+        });
+      }
+    }
+
+    const successBody = {
+      ok: true,
+      id: requestId,
+      newsletter: newsletterState,
+    };
     rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, successBody);
     reservedIdempotencyKey = null;
 
@@ -351,8 +401,125 @@ createServer(async (req, res) => {
       RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
     ),
     premiumReplyConfigured: premiumReply.enabled,
+    newsletterConfigured: newsletter.enabled,
   });
 });
+
+async function handleNewsletterRequest(req, res, url, requestId) {
+  const origin = String(req.headers.origin || "");
+  if (!ALLOWED_ORIGINS.has(origin)) {
+    return json(res, 403, {
+      error: { code: "ORIGIN_NOT_ALLOWED", message: "Niedozwolone źródło żądania." },
+    });
+  }
+
+  setCors(res, origin);
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "600",
+      "Vary": "Origin",
+    });
+    return res.end();
+  }
+
+  if (req.method !== "POST") {
+    return json(res, 405, {
+      error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." },
+    });
+  }
+
+  if (!newsletter.enabled) {
+    return json(res, 503, {
+      error: {
+        code: "NEWSLETTER_NOT_CONFIGURED",
+        message: "Newsletter jest chwilowo niedostępny.",
+      },
+    });
+  }
+
+  const ip = clientIp(req) || "unknown";
+  rateLimit(
+    newsletterIpBuckets,
+    hashValue(ip),
+    15 * 60 * 1000,
+    15,
+    "Za dużo prób obsługi newslettera. Spróbuj ponownie później."
+  );
+
+  const body = await readJson(req, 8_192);
+
+  if (url.pathname === "/newsletter/subscribe") {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      bad("Nieprawidłowe dane formularza.", "INVALID_PAYLOAD");
+    }
+
+    const email = normalizeEmail(requiredString(body.email, "email", 254));
+    const name = optionalString(body.name, "name", 80);
+    const website = optionalString(body.website, "website", 120);
+    const startedAt = parseStartedAt(body.startedAt);
+
+    if (!isValidEmailSyntax(email)) {
+      bad("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL");
+    }
+    if (body.consent !== true) {
+      bad("Zgoda na newsletter jest wymagana.", "NEWSLETTER_CONSENT_REQUIRED");
+    }
+    if (website) {
+      return json(res, 200, { ok: true, state: "confirmation_sent" });
+    }
+    if (startedAt > 0) enforceFormTiming(startedAt);
+
+    await validateEmailDomain(email);
+    rateLimit(
+      newsletterEmailBuckets,
+      hashValue(email),
+      60 * 60 * 1000,
+      4,
+      "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
+    );
+
+    await newsletter.requestOptIn({
+      email,
+      name,
+      source: "newsletter_page",
+    });
+
+    console.log("[newsletter] confirmation requested", {
+      requestId,
+      emailHash: hashValue(email).slice(0, 12),
+    });
+
+    return json(res, 200, { ok: true, state: "confirmation_sent" });
+  }
+
+  const token = typeof body?.token === "string" ? body.token : "";
+
+  if (url.pathname === "/newsletter/confirm") {
+    const result = await newsletter.confirm(token);
+    console.log("[newsletter] confirmed", {
+      requestId,
+      recipient: result.recipient,
+    });
+    return json(res, 200, { ok: true, state: result.state });
+  }
+
+  if (url.pathname === "/newsletter/unsubscribe") {
+    const result = await newsletter.unsubscribe(token);
+    console.log("[newsletter] unsubscribed", {
+      requestId,
+      recipient: result.recipient,
+    });
+    return json(res, 200, { ok: true, state: result.state });
+  }
+
+  return json(res, 404, {
+    error: { code: "NOT_FOUND", message: "Nie znaleziono zasobu." },
+  });
+}
 
 async function handlePremiumReplyRequest(req, res, url, requestId) {
   const origin = String(req.headers.origin || "");
@@ -620,6 +787,7 @@ function validateBasics(input) {
     acknowledgement: input.acknowledgement === true,
     startedAt: parseStartedAt(input.startedAt),
     turnstileToken: optionalString(input.turnstileToken, "turnstileToken", 2048),
+    newsletter: input.newsletter === true,
   };
 
   if (payload.name.length < 2) {
