@@ -428,7 +428,7 @@ function buildReplyText(data, message) {
 function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
   const button = replyUrl
     ? `<tr><td style="padding:22px 32px 8px"><a href="${escapeAttribute(replyUrl)}" style="display:inline-block;background:#16d4c2;color:#041216;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Odpowiedz przez gracz.pl →</a></td></tr>
-<tr><td style="padding:0 32px 18px;color:#8ca5ad;font-size:12px;line-height:1.5">Bezpieczny link jest ważny 7 dni i prowadzi do panelu odpowiedzi gracz.pl.</td></tr>`
+<tr><td style="padding:0 32px 18px;color:#8ca5ad;font-size:12px;line-height:1.5">Bezpieczny link jest ważny 7 dni i prowadzi do panelu odpowiedzi ${brandLogoHtml({ compact: true, onDark: true })}.</td></tr>`
     : `<tr><td style="padding:18px 32px;color:#f0b95a;font-size:13px">Moduł odpowiedzi premium nie jest jeszcze aktywny.</td></tr>`;
 
   return `<!doctype html>
@@ -445,7 +445,7 @@ function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
 <td style="padding:13px 16px;font-size:11px;color:#718883">Numer sprawy<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${escapeHtml(requestId)}</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Status<strong style="display:block;padding-top:4px;color:#0d665c;font-size:12px">NOWE</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Priorytet<strong style="display:block;padding-top:4px;color:#915a09;font-size:12px">STANDARD</strong></td>
-<td style="padding:13px 16px;font-size:11px;color:#718883">Kanał<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">Formularz gracz.pl</strong></td>
+<td style="padding:13px 16px;font-size:11px;color:#718883">Kanał<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${brandifyEmailText("Formularz gracz.pl")}</strong></td>
 </tr></table>
 </td></tr>
 <tr><td style="padding:28px 32px 12px">
@@ -468,7 +468,7 @@ function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
 ${button}
 <tr><td style="padding:10px 32px 24px">${buildNewsletterEmailSection(newsletterUrl)}</td></tr>
 <tr><td style="padding:18px 32px 28px;border-top:1px solid #173943;color:#6f8b92;font-size:12px;line-height:1.6">
-gracz.pl · panel kontaktowy<br>Nie odpowiadaj przez przekazywanie tego bezpiecznego linku osobom trzecim.
+${brandLogoHtml({ compact: true, onDark: true })} · panel kontaktowy<br>Nie odpowiadaj przez przekazywanie tego bezpiecznego linku osobom trzecim.
 </td></tr>
 </table>
 </td></tr></table>
@@ -491,11 +491,11 @@ function buildReplyHtml(data, message, newsletterUrl) {
 <td style="padding:13px 16px;font-size:11px;color:#718883">Numer sprawy<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${escapeHtml(data.requestId)}</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Status<strong style="display:block;padding-top:4px;color:#0d665c;font-size:12px">ODPOWIEDŹ UDZIELONA</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Priorytet<strong style="display:block;padding-top:4px;color:#915a09;font-size:12px">STANDARD</strong></td>
-<td style="padding:13px 16px;font-size:11px;color:#718883">Obsługa<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">Zespół gracz.pl</strong></td>
+<td style="padding:13px 16px;font-size:11px;color:#718883">Obsługa<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${brandifyEmailText("Zespół gracz.pl")}</strong></td>
 </tr></table>
 </td></tr>
 <tr><td style="padding:34px 34px 12px">
-<div style="display:inline-block;background:#12313a;color:#63e6d6;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800">ODPOWIEDŹ GRACZ.PL</div>
+<div style="display:inline-block;background:#12313a;color:#63e6d6;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800">ODPOWIEDŹ ${brandLogoHtml({ compact: true, onDark: true })}</div>
 <h1 style="margin:16px 0 10px;color:#ffffff;font-size:28px;line-height:1.25">Dziękujemy za kontakt</h1>
 <p style="margin:0;color:#9ab2b8;font-size:15px;line-height:1.7">Odpowiadamy na Twoje zgłoszenie dotyczące: <strong style="color:#dff6f3">${escapeHtml(data.subject)}</strong></p>
 </td></tr>
@@ -514,9 +514,9 @@ function buildReplyHtml(data, message, newsletterUrl) {
 <a href="https://gracz.pl/" style="display:inline-block;background:#16d4c2;color:#041216;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Przejdź do gracz.pl →</a>
 </td></tr>
 <tr><td style="padding:22px 34px 30px;border-top:1px solid #173943">
-<div style="color:#d8e8ea;font-size:14px;font-weight:700">Pozdrawiamy<br>gracz.pl</div>
+<div style="color:#d8e8ea;font-size:14px;font-weight:700">Pozdrawiamy<br>${brandLogoHtml({ onDark: true })}</div>
 <div style="margin-top:14px;color:#708b92;font-size:11px;line-height:1.7">
-Otrzymujesz tę wiadomość, ponieważ wcześniej skontaktowałeś się z gracz.pl przez formularz kontaktowy.<br>
+Otrzymujesz tę wiadomość, ponieważ wcześniej skontaktowałeś się z ${brandLogoHtml({ compact: true, onDark: true })} przez formularz kontaktowy.<br>
 <a href="https://gracz.pl/polityka-prywatnosci/" style="color:#69cfc4">Polityka prywatności</a> ·
 <a href="https://gracz.pl/regulamin/" style="color:#69cfc4">Regulamin</a>
 </div>
@@ -532,7 +532,7 @@ function buildNewsletterEmailSection(newsletterUrl) {
     ? '<div style="padding-top:14px"><a href="' + escapeAttribute(url) + '" style="display:inline-block;background:#56c8c1;color:#08312b;text-decoration:none;padding:12px 17px;border-radius:9px;font-size:13px;font-weight:800">Zapisz się do newslettera gracz.pl</a></div><div style="padding-top:7px;color:#718a85;font-size:11px;line-height:1.5">Zapis prowadzi do osobnego procesu double opt-in.</div>'
     : '<div style="padding-top:14px"><span style="display:inline-block;background:#ffffff;border:1px solid #d5e8e4;color:#0f6d62;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800">ZAPISY — MODUŁ W PRZYGOTOWANIU</span></div><div style="padding-top:7px;color:#718a85;font-size:11px;line-height:1.5">Newsletter jest dobrowolny. Aktywny zapis pojawi się po uruchomieniu bezpiecznego double opt-in.</div>';
 
-  return '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #cfe9e4;border-radius:14px"><tr><td style="padding:18px 18px 8px"><div style="font-size:10px;font-weight:800;color:#2c8379;letter-spacing:.8px">NEWSLETTER GRACZ.PL</div><div style="font-size:18px;font-weight:800;color:#0d5a52;padding-top:4px">Chcesz być bliżej gracz.pl?</div><div style="font-size:13px;line-height:1.55;color:#496660;padding-top:6px">Nowe gry, poradniki i najważniejsze aktualizacje serwisu — bez zbędnego spamu.</div></td></tr><tr><td style="padding:8px 18px 4px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="33.33%" style="padding-right:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Nowe gry</strong><br>Premiery i nowe moduły.</div></td><td width="33.33%" style="padding:0 4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Poradniki</strong><br>Materiały i Academy.</div></td><td width="33.33%" style="padding-left:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Rozwój serwisu</strong><br>Ważne aktualizacje.</div></td></tr></table></td></tr><tr><td style="padding:8px 18px 18px">' + action + '</td></tr></table>';
+  return '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #cfe9e4;border-radius:14px"><tr><td style="padding:18px 18px 8px"><div style="font-size:10px;font-weight:800;color:#2c8379;letter-spacing:.8px">NEWSLETTER ' + brandLogoHtml({ compact: true }) + '</div><div style="font-size:18px;font-weight:800;color:#0d5a52;padding-top:4px">Chcesz być bliżej ' + brandLogoHtml({ compact: true }) + '?</div><div style="font-size:13px;line-height:1.55;color:#496660;padding-top:6px">Nowe gry, poradniki i najważniejsze aktualizacje serwisu — bez zbędnego spamu.</div></td></tr><tr><td style="padding:8px 18px 4px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="33.33%" style="padding-right:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Nowe gry</strong><br>Premiery i nowe moduły.</div></td><td width="33.33%" style="padding:0 4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Poradniki</strong><br>Materiały i Academy.</div></td><td width="33.33%" style="padding-left:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Rozwój serwisu</strong><br>Ważne aktualizacje.</div></td></tr></table></td></tr><tr><td style="padding:8px 18px 18px">' + action + '</td></tr></table>';
 }
 
 function normalizeNewsletterUrl(value) {
@@ -544,6 +544,32 @@ function normalizeNewsletterUrl(value) {
   } catch {
     return "";
   }
+}
+
+function brandLogoHtml({ compact = false, onDark = false } = {}) {
+  const fontSize = compact ? "11px" : "13px";
+  const padding = onDark ? "0" : compact ? "2px 5px" : "3px 7px";
+  const background = onDark ? "transparent" : "#071f1a";
+  const radius = onDark ? "0" : "5px";
+  return (
+    '<span style="display:inline-block;vertical-align:baseline;background:' +
+    background +
+    ';border-radius:' +
+    radius +
+    ';padding:' +
+    padding +
+    ';font-size:' +
+    fontSize +
+    ';line-height:1;font-weight:900;letter-spacing:-.25px;white-space:nowrap">' +
+    '<span style="color:#ffffff">gracz</span><span style="color:#f0505d">.pl</span></span>'
+  );
+}
+
+function brandifyEmailText(value, { onDark = false } = {}) {
+  return escapeHtml(value).replace(
+    /gracz\.pl/gi,
+    brandLogoHtml({ compact: true, onDark })
+  );
 }
 
 function nl2br(value) {
