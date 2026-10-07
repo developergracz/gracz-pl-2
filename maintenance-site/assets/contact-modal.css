@@ -370,3 +370,53 @@ body.contact-modal-open{overflow:hidden}
   background:#102823!important;
   color:#789891!important;
 }
+
+
+/* R8 — search-style contact modal proportions */
+.contact-modal{
+  width:min(900px,calc(100vw - 40px))!important;
+  max-height:min(780px,calc(100dvh - 32px))!important;
+}
+.contact-modal__panel{
+  max-height:min(780px,calc(100dvh - 32px))!important;
+  padding:24px 28px 20px!important;
+  border-radius:22px!important;
+}
+.contact-form__row{
+  gap:14px!important;
+}
+.contact-field textarea{
+  height:132px!important;
+  min-height:132px!important;
+  max-height:132px!important;
+}
+.contact-form__actions{
+  padding-top:11px!important;
+  padding-bottom:4px!important;
+}
+@media(max-height:760px) and (min-width:641px){
+  .contact-modal{
+    max-height:calc(100dvh - 22px)!important;
+  }
+  .contact-modal__panel{
+    max-height:calc(100dvh - 22px)!important;
+    padding-top:18px!important;
+    padding-bottom:16px!important;
+  }
+  .contact-modal__brand{margin-bottom:5px!important}
+  .contact-modal__intro{margin-bottom:10px!important}
+  .contact-field textarea{
+    height:104px!important;
+    min-height:104px!important;
+    max-height:104px!important;
+  }
+}
+@media(max-width:640px){
+  .contact-modal{
+    width:min(96vw,900px)!important;
+    max-height:calc(100dvh - 18px)!important;
+  }
+  .contact-modal__panel{
+    max-height:calc(100dvh - 18px)!important;
+  }
+}
