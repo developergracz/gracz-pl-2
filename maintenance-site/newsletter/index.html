@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Newsletter gracz.pl — nowe gry, poradniki i rozwój serwisu</title>
+  <meta name="description" content="Dobrowolny newsletter gracz.pl: nowe gry, poradniki i najważniejsze informacje o rozwoju serwisu. Zapis z bezpiecznym double opt-in.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#071a17">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://gracz.pl/newsletter/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="gracz.pl">
+  <meta property="og:title" content="Newsletter gracz.pl">
+  <meta property="og:description" content="Nowe gry, poradniki i rozwój gracz.pl — dobrowolny newsletter z double opt-in.">
+  <meta property="og:url" content="https://gracz.pl/newsletter/">
+  <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self'; font-src 'self'; connect-src https://gracz-contact-api.onrender.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/newsletter-full-max-r1.css?v=r1">
+  <script src="/assets/newsletter-full-max-r1.js?v=r1" defer></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
+  <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
+  <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
+</head>
+<body>
+  <header class="nl-topbar">
+    <a class="nl-logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+    <a class="nl-back" href="/">Wróć do gracz.pl</a>
+  </header>
+
+  <main class="nl-shell">
+    <section class="nl-card" aria-labelledby="nl-title">
+      <div class="nl-hero">
+        <div class="nl-kicker">GRACZ.PL · FULL MAX PREMIUM</div>
+        <h1 id="nl-title">Newsletter gracz.pl</h1>
+        <p>Najważniejsze informacje o nowych grach, poradnikach i rozwoju serwisu — bez zbędnego spamu, z pełną kontrolą nad subskrypcją.</p>
+        <div class="nl-badges" aria-label="Cechy newslettera">
+          <span>Double opt-in</span>
+          <span>Dobrowolny</span>
+          <span>Wypisanie w każdej chwili</span>
+        </div>
+      </div>
+
+      <div class="nl-benefits">
+        <article><span>01</span><h2>Nowe gry</h2><p>Premiery, nowe tryby i rozwój modułów gracz.pl.</p></article>
+        <article><span>02</span><h2>Poradniki</h2><p>Najciekawsze materiały, zasady i treści Academy.</p></article>
+        <article><span>03</span><h2>Rozwój serwisu</h2><p>Najważniejsze aktualizacje i nowe funkcje.</p></article>
+      </div>
+
+      <section id="nl-subscribe-panel" class="nl-panel">
+        <h2>Zapisz się</h2>
+        <p class="nl-muted">Po wysłaniu formularza otrzymasz osobny e-mail. Subskrypcja zacznie działać dopiero po kliknięciu potwierdzenia.</p>
+        <form id="nl-form" novalidate>
+          <div class="nl-row">
+            <label>Imię <span>(opcjonalnie)</span>
+              <input name="name" type="text" maxlength="80" autocomplete="name" placeholder="Jan Kowalski">
+            </label>
+            <label>Adres e-mail
+              <input name="email" type="email" maxlength="254" autocomplete="email" placeholder="jan@example.pl" required>
+            </label>
+          </div>
+          <label class="nl-consent">
+            <input name="consent" type="checkbox" required>
+            <span>Chcę otrzymywać newsletter gracz.pl dotyczący nowych gier, poradników i rozwoju serwisu. Zgoda jest dobrowolna i mogę ją wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter">Polityka prywatności</a>.</span>
+          </label>
+          <div class="nl-hp" aria-hidden="true"><label>WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+          <p id="nl-status" class="nl-status" role="status" aria-live="polite"></p>
+          <button id="nl-submit" class="nl-primary" type="submit">Wyślij link potwierdzający</button>
+        </form>
+      </section>
+
+      <section id="nl-action-panel" class="nl-panel nl-action" hidden>
+        <div class="nl-action__icon" aria-hidden="true">✉</div>
+        <div id="nl-action-kicker" class="nl-kicker">BEZPIECZNY LINK</div>
+        <h2 id="nl-action-title">Potwierdź operację</h2>
+        <p id="nl-action-copy" class="nl-muted"></p>
+        <p id="nl-action-status" class="nl-status" role="status" aria-live="polite"></p>
+        <button id="nl-action-button" class="nl-primary" type="button">Potwierdź</button>
+      </section>
+
+      <section class="nl-trust">
+        <div>
+          <strong>Bez automatycznego zapisu</strong>
+          <span>Samo zaznaczenie checkboxa nie wystarcza. Potwierdzenie e-mail jest obowiązkowe.</span>
+        </div>
+        <div>
+          <strong>Kontrola użytkownika</strong>
+          <span>Rezygnacja z newslettera nie wpływa na konto, formularz kontaktowy ani inne funkcje gracz.pl.</span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="nl-footer">
+    <span>© 2026 gracz.pl</span>
+    <nav>
+      <a href="/polityka-prywatnosci/">Polityka prywatności</a>
+      <a href="/regulamin/">Regulamin</a>
+      <a href="/">Start</a>
+    </nav>
+  </footer>
+</body>
+</html>
