@@ -1364,7 +1364,7 @@ function buildConfirmHtml(url) {
     noticeBody:
       "Samo otrzymanie tej wiadomości nie aktywuje subskrypcji. Zapis nastąpi dopiero po kliknięciu przycisku i potwierdzeniu na stronie gracz.pl.",
     footerHtml:
-      'Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
+      'Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · ' + brandHomeLinkHtml(),
   });
 }
 
@@ -1405,7 +1405,7 @@ function buildWelcomeHtml(unsubscribeUrl) {
     footerHtml:
       'Nie chcesz już otrzymywać Newslettera? <a href="' +
       escapeHtml(unsubscribeUrl) +
-      '" style="color:#89ddd6;text-decoration:none;font-weight:700">Wypisz się</a>.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
+      '" style="color:#89ddd6;text-decoration:none;font-weight:700">Wypisz się</a>.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · ' + brandHomeLinkHtml(),
   });
 }
 
@@ -1436,7 +1436,7 @@ function premiumEmailShell({
         escapeHtml(featureName) +
         '</div>' +
         '<div style="padding-top:7px;font-size:12px;line-height:1.55;color:#9db8b1">' +
-        escapeHtml(featureBody) +
+        brandifyEmailText(featureBody) +
         '</div></td></tr></table></td>'
     )
     .join("");
@@ -1471,9 +1471,9 @@ function premiumEmailShell({
 </td></tr>
 
 <tr><td style="padding:38px 38px 22px">
-<div style="font-size:12px;line-height:1.3;color:#159f94;font-weight:800;letter-spacing:.08em">GRACZ.PL NEWSLETTER</div>
-<h1 style="margin:9px 0 13px;font-size:30px;line-height:1.15;color:#0b3b34;font-weight:900;letter-spacing:-.7px">${escapeHtml(title)}</h1>
-<p style="margin:0;font-size:15px;line-height:1.75;color:#4e6862">${escapeHtml(lead)}</p>
+<div style="font-size:12px;line-height:1.3;color:#159f94;font-weight:800;letter-spacing:.08em">${brandLogoHtml({ compact: true })}<span style="padding-left:6px">NEWSLETTER</span></div>
+<h1 style="margin:9px 0 13px;font-size:30px;line-height:1.15;color:#0b3b34;font-weight:900;letter-spacing:-.7px">${brandifyEmailText(title)}</h1>
+<p style="margin:0;font-size:15px;line-height:1.75;color:#4e6862">${brandifyEmailText(lead)}</p>
 </td></tr>
 
 <tr><td align="center" style="padding:7px 38px 31px">
@@ -1482,11 +1482,11 @@ function premiumEmailShell({
 <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;padding:15px 30px;color:#052d27;text-decoration:none;font-size:14px;line-height:1;font-weight:900">${escapeHtml(buttonText)}</a>
 </td></tr>
 </table>
-<div style="padding-top:11px;font-size:10px;line-height:1.5;color:#879b96">Przycisk prowadzi wyłącznie do bezpiecznej strony gracz.pl.</div>
+<div style="padding-top:11px;font-size:10px;line-height:1.5;color:#879b96">Przycisk prowadzi wyłącznie do bezpiecznej strony ${brandLogoHtml({ compact: true })}.</div>
 </td></tr>
 
 <tr><td style="padding:0 31px 7px">
-<div style="padding:0 7px 9px;font-size:11px;color:#54736c;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(featureTitle)}</div>
+<div style="padding:0 7px 9px;font-size:11px;color:#54736c;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${brandifyEmailText(featureTitle)}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#071f1a;border-radius:18px;padding:7px">
 <tr>${featureCells}</tr>
 </table>
@@ -1496,7 +1496,7 @@ function premiumEmailShell({
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #c9ece8;border-radius:15px">
 <tr><td style="padding:18px 19px">
 <div style="font-size:12px;line-height:1.3;color:#0b4d45;font-weight:900">${escapeHtml(noticeTitle)}</div>
-<div style="padding-top:6px;font-size:12px;line-height:1.65;color:#56706a">${escapeHtml(noticeBody)}</div>
+<div style="padding-top:6px;font-size:12px;line-height:1.65;color:#56706a">${brandifyEmailText(noticeBody)}</div>
 </td></tr>
 </table>
 </td></tr>
@@ -1505,7 +1505,7 @@ function premiumEmailShell({
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
 <tr>
 <td style="font-size:10px;line-height:1.7;color:#8aa49e">${footerHtml}</td>
-<td align="right" valign="bottom" style="font-size:10px;line-height:1.5;color:#55726b;white-space:nowrap">© 2026 gracz.pl</td>
+<td align="right" valign="bottom" style="font-size:10px;line-height:1.5;color:#55726b;white-space:nowrap">© 2026 ${brandLogoHtml({ compact: true, onDark: true })}</td>
 </tr>
 </table>
 </td></tr>
@@ -1515,6 +1515,37 @@ function premiumEmailShell({
 </table>
 </body>
 </html>`;
+}
+
+function brandLogoHtml({ compact = false, onDark = false } = {}) {
+  const fontSize = compact ? "11px" : "13px";
+  const padding = onDark ? "0" : compact ? "2px 5px" : "3px 7px";
+  const background = onDark ? "transparent" : "#071f1a";
+  const radius = onDark ? "0" : "5px";
+  return (
+    '<span style="display:inline-block;vertical-align:baseline;background:' +
+    background +
+    ';border-radius:' +
+    radius +
+    ';padding:' +
+    padding +
+    ';font-size:' +
+    fontSize +
+    ';line-height:1;font-weight:900;letter-spacing:-.25px;white-space:nowrap">' +
+    '<span style="color:#ffffff">gracz</span><span style="color:#ef4555">.pl</span></span>'
+  );
+}
+
+function brandifyEmailText(value) {
+  return escapeHtml(value).replace(/gracz\.pl/gi, brandLogoHtml({ compact: true }));
+}
+
+function brandHomeLinkHtml() {
+  return (
+    '<a href="https://gracz.pl/" style="text-decoration:none">' +
+    brandLogoHtml({ compact: true, onDark: true }) +
+    "</a>"
+  );
 }
 
 function escapeHtml(value) {
