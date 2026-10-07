@@ -440,7 +440,7 @@ test("hybrid newsletter lifecycle uses Resend operational state and first-party 
 
   assert.equal(provider.contacts.size, 0, "contact must not exist before double opt-in");
   assert.equal(provider.emails.length, 1);
-  assert.match(provider.emails[0].body.subject, /gracz\.pl Newsletter — potwierdź zapis/);
+  assert.match(provider.emails[0].body.subject, /^♦️ gracz\.pl Newsletter — potwierdź zapis$/);
   assert.match(provider.emails[0].body.html, /FULL MAX PREMIUM/);
   assert.match(provider.emails[0].body.html, /DOUBLE OPT-IN/);
   assert.match(
@@ -492,7 +492,7 @@ test("hybrid newsletter lifecycle uses Resend operational state and first-party 
   assert.equal(documented.properties[CONFIRMED_AT_KEY].type, "number");
 
   assert.equal(provider.emails.length, 2);
-  assert.match(provider.emails[1].body.subject, /gracz\.pl Newsletter — witamy!/);
+  assert.match(provider.emails[1].body.subject, /^♦️ gracz\.pl Newsletter — witamy!$/);
   assert.match(provider.emails[1].body.html, /FULL MAX PREMIUM/);
   const firstUnsubscribeToken = extractToken(provider.emails[1], "unsubscribe");
 

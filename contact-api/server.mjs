@@ -431,7 +431,7 @@ createServer(async (req, res) => {
           from: EMAIL_FROM,
           to: [CONTACT_TO_ADDRESS],
           reply_to: payload.email,
-          subject: "gracz.pl " + payload.category + " — " + payload.subject,
+          subject: "♦️ gracz.pl " + payload.category + " — " + payload.subject,
           text: adminDelivery.text,
           html: adminDelivery.html,
         }),

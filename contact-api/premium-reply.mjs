@@ -156,7 +156,7 @@ export function createPremiumReplyManager({
       requestId: data.requestId,
       to: data.email,
       replyTo: ownerAddress,
-      subject: "Odp: gracz.pl — " + data.subject,
+      subject: "♦️ Odp: gracz.pl — " + data.subject,
       text: buildReplyText(data, cleanMessage),
       html: buildReplyHtml(data, cleanMessage, newsletterUrl),
       providerIdempotencyKey:

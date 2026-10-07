@@ -202,7 +202,7 @@ test("contact API security regression suite", async (t) => {
     const delivery = deliveries.at(-1);
     assert.equal(delivery.body.to[0], "jan@example.test");
     assert.equal(delivery.body.reply_to, "admin@gracz.pl");
-    assert.match(delivery.body.subject, /^Odp: gracz\.pl — Test formularza$/);
+    assert.match(delivery.body.subject, /^♦️ Odp: gracz\.pl — Test formularza$/);
     assert.match(delivery.body.html, /ODPOWIEDŹ/);
     assert.match(
       delivery.body.html,
