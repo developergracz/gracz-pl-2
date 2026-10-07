@@ -9,6 +9,7 @@ import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
 import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-store.mjs";
+import { createMemoryNewsletterConsentStore } from "./persistence/memory-newsletter-consent-store.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -67,6 +68,18 @@ const premiumReply = createPremiumReplyManager({
   tokenStore: replyTokenStore,
 });
 
+const useTestNewsletterConsentStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.NEWSLETTER_CONSENT_TEST_MEMORY_STORE === "1";
+
+const newsletterConsentStore = useTestNewsletterConsentStore
+  ? createMemoryNewsletterConsentStore()
+  : persistence?.newsletter || null;
+
+const NEWSLETTER_CONSENT_HASH_SECRET = String(
+  process.env.NEWSLETTER_CONSENT_HASH_SECRET || NEWSLETTER_SECRET
+).trim();
+
 const newsletter = createNewsletterManager({
   secret: NEWSLETTER_SECRET,
   resendApiKey: NEWSLETTER_RESEND_API_KEY,
@@ -75,6 +88,8 @@ const newsletter = createNewsletterManager({
   emailFrom: EMAIL_FROM,
   replyTo: CONTACT_TO_ADDRESS,
   baseUrl: NEWSLETTER_URL,
+  consentStore: newsletterConsentStore,
+  consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
 });
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
@@ -182,6 +197,7 @@ createServer(async (req, res) => {
         premiumReplyDurableState: premiumReply.durableStateConfigured,
         contactIdempotencyConfigured: Boolean(contactIdempotencyStore),
         newsletterConfigured: newsletter.enabled,
+        newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
     }
 
