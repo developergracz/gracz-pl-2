@@ -7,3 +7,22 @@ services:
     autoDeployTrigger: off
     buildCommand: echo "Static maintenance site - no build step"
     staticPublishPath: .
+    headers:
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' https://*.google-analytics.com https://*.analytics.google.com; font-src 'self'; connect-src 'self' https://gracz-contact-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'self'; frame-ancestors 'none'"
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()"

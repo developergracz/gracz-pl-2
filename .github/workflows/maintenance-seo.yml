@@ -37,3 +37,5 @@ jobs:
           node --check contact-api/server.mjs
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
+      - name: Run security headers and CSP gate
+        run: node scripts/check-security-headers.mjs
