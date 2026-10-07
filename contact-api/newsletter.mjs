@@ -116,13 +116,16 @@ export function createNewsletterManager({
     const resources = await ensureResources();
 
     const emailHash = consentSubjectHash(data.email);
-    const ledgerContact = await consentStore.getContact(emailHash);
+    let ledgerContact = await consentStore.getContact(emailHash);
     const existing = await getContact(data.email);
     const names = splitName(data.name);
-    const confirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
-    const unsubscribedAt = contactPropertyNumber(existing, UNSUBSCRIBED_AT_KEY);
+    const providerConfirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
+    const providerUnsubscribedAt = contactPropertyNumber(
+      existing,
+      UNSUBSCRIBED_AT_KEY
+    );
 
-    if (unsubscribedAt >= data.iat) {
+    if (providerUnsubscribedAt >= data.iat) {
       staleConfirmation();
     }
 
@@ -133,21 +136,35 @@ export function createNewsletterManager({
           topicSubscription: "opt_out",
         };
 
-    const wasPreviouslyConfirmed = confirmedAt > 0;
-    const consentActive = confirmedAt > 0 && confirmedAt > unsubscribedAt;
     const providerActive =
       Boolean(existing) &&
       existing.unsubscribed !== true &&
       providerState.inSegment &&
       providerState.topicSubscription === "opt_in";
 
-    if (consentActive && providerActive) {
-      if (ledgerContact?.current_state !== "subscribed") {
-        await recordProviderSync(data, {
-          confirmedAt,
-          providerContactId: existing?.id || null,
-        });
-      }
+    const ledgerConfirmedAt = timestampMs(ledgerContact?.confirmed_at);
+    const ledgerUnsubscribedAt = timestampMs(ledgerContact?.unsubscribed_at);
+
+    if (
+      ledgerContact?.current_state === "unsubscribed" &&
+      ledgerUnsubscribedAt >= data.iat
+    ) {
+      staleConfirmation();
+    }
+
+    // Bootstrap a pre-R4 active subscriber into the first-party ledger only
+    // when Resend contains durable confirmation proof and the provider state
+    // is still fully active.
+    if (
+      (!ledgerContact || ledgerContact.current_state === "pending") &&
+      providerActive &&
+      providerConfirmedAt > 0 &&
+      providerConfirmedAt > providerUnsubscribedAt
+    ) {
+      ledgerContact = await recordProviderSync(data, {
+        confirmedAt: providerConfirmedAt,
+        providerContactId: existing?.id || null,
+      });
 
       return {
         state: "already_subscribed",
@@ -155,13 +172,31 @@ export function createNewsletterManager({
       };
     }
 
-    // If the contact had a confirmed subscription but provider state is now
-    // inactive, only a confirmation token issued after that confirmation may
-    // reactivate it. This protects old/replayed links after provider-side
-    // unsubscribe or partial state changes.
-    if (consentActive && !providerActive && data.iat <= confirmedAt) {
+    if (ledgerContact?.current_state === "subscribed" && providerActive) {
+      return {
+        state: "already_subscribed",
+        recipient: maskEmail(data.email),
+      };
+    }
+
+    const lastConfirmedAt = Math.max(
+      ledgerConfirmedAt,
+      providerConfirmedAt
+    );
+
+    // If first-party consent exists but provider delivery state became
+    // inactive, an old confirmation token cannot silently reactivate it.
+    // Only a newly issued double-opt-in token may repair that drift.
+    if (
+      ledgerContact?.current_state === "subscribed" &&
+      !providerActive &&
+      data.iat <= lastConfirmedAt
+    ) {
       staleConfirmation();
     }
+
+    const wasPreviouslyConfirmed =
+      ledgerConfirmedAt > 0 || providerConfirmedAt > 0;
 
     const consentVersionProperties = {
       [CONSENT_VERSION_KEY]: data.consentVersion,
