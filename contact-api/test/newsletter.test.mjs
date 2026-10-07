@@ -739,16 +739,217 @@ test("hybrid confirmation fails closed if consent commit loses to unsubscribe", 
   );
 
   assert.equal(
-    provider.memberships.get("race-off@example.test").has("segment-1"),
+    provider.contacts.has("race-off@example.test"),
     false,
-    "failed consent commit must remove newsletter segment membership"
-  );
-  assert.equal(
-    provider.topicStates.get("race-off@example.test").get("topic-1"),
-    "opt_out",
-    "failed consent commit must force newsletter topic opt-out"
+    "failed durable consent commit must happen before any provider activation"
   );
 });
+
+test("hybrid delayed compensation cannot disable a newer successful confirmation", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectWithdrawalAfterActivation = false;
+  let injected = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    upsertContact: (...args) => backingStore.upsertContact(...args),
+    async getContact(emailHash) {
+      if (
+        injectWithdrawalAfterActivation &&
+        !injected &&
+        provider.topicStates.get("delayed-comp@example.test")?.get("topic-1") === "opt_in"
+      ) {
+        injected = true;
+        const current = await backingStore.getContact(emailHash);
+        await backingStore.upsertContact({
+          emailHash,
+          providerContactId: current?.provider_contact_id || null,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+      }
+      return backingStore.getContact(emailHash);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "delayed-comp@example.test",
+    name: "Delayed Compensation",
+    source: "newsletter_page",
+  });
+  const tokenA = extractToken(provider.emails[0], "confirm");
+  injectWithdrawalAfterActivation = true;
+
+  let tokenB = "";
+  provider.behavior.beforeTopicOptOut = async () => {
+    await manager.requestOptIn({
+      email: "delayed-comp@example.test",
+      name: "Delayed Compensation",
+      source: "newsletter_page",
+    });
+    tokenB = extractToken(provider.emails.at(-1), "confirm");
+    const resultB = await manager.confirm(tokenB);
+    assert.equal(resultB.state, "resubscribed");
+  };
+
+  await assert.rejects(
+    () => manager.confirm(tokenA),
+    (error) =>
+      error?.code === "NEWSLETTER_CONFIRMATION_STALE" ||
+      error?.code === "NEWSLETTER_CONSENT_CONFLICT"
+  );
+
+  assert.ok(tokenB, "newer confirmation must run during delayed compensation");
+  const ledger = await backingStore.getContact(
+    consentEmailHash("delayed-comp@example.test")
+  );
+  assert.equal(ledger.current_state, "subscribed");
+  assert.equal(
+    provider.memberships.get("delayed-comp@example.test").has("segment-1"),
+    true,
+    "older compensation must not remove the newer subscription"
+  );
+  assert.equal(
+    provider.topicStates.get("delayed-comp@example.test").get("topic-1"),
+    "opt_in",
+    "older compensation must restore provider topic when a newer DOI wins"
+  );
+});
+
+test("hybrid welcome failure cannot leave provider active without durable consent", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "welcome-failure@example.test",
+    name: "Welcome Failure",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+
+  provider.behavior.welcomeEmail503Remaining = 4;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) => error?.code === "NEWSLETTER_MAIL_FAILED"
+  );
+
+  const ledger = await provider.consentStore.getContact(
+    consentEmailHash("welcome-failure@example.test")
+  );
+  assert.equal(
+    ledger.current_state,
+    "subscribed",
+    "durable consent must exist before provider activation and welcome delivery"
+  );
+  assert.equal(
+    provider.memberships.get("welcome-failure@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("welcome-failure@example.test").get("topic-1"),
+    "opt_in"
+  );
+
+  const retried = await manager.confirm(token);
+  assert.equal(retried.state, "subscribed");
+  assert.equal(
+    provider.emails.filter((email) => /Newsletter — witamy!/i.test(email.body.subject)).length,
+    1,
+    "deterministic replay must deliver exactly one welcome"
+  );
+});
+
+test("hybrid exhausted provider-off compensation persists and recovers an obligation", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectWithdrawalAfterActivation = false;
+  let injected = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    upsertContact: (...args) => backingStore.upsertContact(...args),
+    async getContact(emailHash) {
+      if (
+        injectWithdrawalAfterActivation &&
+        !injected &&
+        provider.topicStates.get("recover-off@example.test")?.get("topic-1") === "opt_in"
+      ) {
+        injected = true;
+        const current = await backingStore.getContact(emailHash);
+        await backingStore.upsertContact({
+          emailHash,
+          providerContactId: current?.provider_contact_id || null,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+      }
+      return backingStore.getContact(emailHash);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "recover-off@example.test",
+    name: "Recover Off",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+
+  injectWithdrawalAfterActivation = true;
+  provider.behavior.topicOptOut503Remaining = 4;
+  provider.behavior.segmentDelete503Remaining = 4;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) => error?.code === "NEWSLETTER_PROVIDER_FAILED"
+  );
+
+  let ledger = await backingStore.getContact(
+    consentEmailHash("recover-off@example.test")
+  );
+  assert.equal(ledger.current_state, "unsubscribed");
+  assert.ok(
+    ledger.provider_blocked_at,
+    "failed provider-off operation must persist a recovery obligation"
+  );
+
+  await manager.requestOptIn({
+    email: "recover-off@example.test",
+    name: "Recover Off",
+    source: "newsletter_page",
+  });
+
+  ledger = await backingStore.getContact(
+    consentEmailHash("recover-off@example.test")
+  );
+  assert.equal(
+    ledger.provider_blocked_at,
+    null,
+    "next newsletter interaction must recover and clear the provider-off obligation"
+  );
+  assert.equal(
+    provider.memberships.get("recover-off@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("recover-off@example.test").get("topic-1"),
+    "opt_out"
+  );
+});
+
 
 test("newsletter R3 repairs partial activation without duplicate welcome", async (t) => {
   const provider = await createProvider(t);
