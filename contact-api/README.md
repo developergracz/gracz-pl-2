@@ -129,3 +129,44 @@ After deployment:
 6. verify plain-text fallback exists;
 7. click Reply in the recipient mailbox and confirm it targets `CONTACT_TO`;
 8. reuse the original secure link and confirm the API rejects the second send.
+
+
+## Newsletter FULL MAX PREMIUM R1
+
+Newsletter uses a separate consent from contact-form processing and requires double opt-in.
+
+### Production flow
+
+1. User checks the optional Newsletter box in the contact form or uses `/newsletter/`.
+2. Backend sends a confirmation email. No active Resend newsletter contact is created yet.
+3. The confirmation token is AES-256-GCM encrypted and carried in the URL fragment (`#confirm=`).
+4. The landing page removes the fragment from browser history and requires an explicit button click.
+5. After confirmation, backend ensures:
+   - Segment: `gracz.pl Newsletter`
+   - public Topic: `Newsletter gracz.pl`
+   - Topic default: `opt_out`
+6. The confirmed contact is added to the Segment and set to Topic `opt_in`.
+7. A FULL MAX PREMIUM welcome email contains an unsubscribe token.
+8. Unsubscribe changes Topic to `opt_out` and removes the contact from the newsletter Segment.
+
+### Required environment variables
+
+- `NEWSLETTER_SECRET` — independent random secret, minimum 32 characters.
+- `NEWSLETTER_RESEND_API_KEY` — separate Resend API key with permissions required for Contacts, Segments, Topics and confirmation/welcome email sending.
+- `NEWSLETTER_URL=https://gracz.pl/newsletter/`
+- `RESEND_API_BASE=https://api.resend.com`
+
+Do not reuse a send-only contact-form key if it lacks Contacts/Segments/Topics permissions.
+
+### Privacy and security
+
+- Newsletter consent is optional and never required to send a contact message.
+- A failed newsletter request never causes an already-valid contact message to fail.
+- No active marketing contact exists before confirmation.
+- Confirmation link lifetime: 30 days.
+- Confirmation and unsubscribe tokens are encrypted/authenticated.
+- Tokens are placed in URL fragments and are not sent to the static server in the request URL.
+- Confirmation is not automatic on page load, protecting against mail-link scanners.
+- Newsletter endpoint has separate IP and email rate limits, honeypot and form-timing checks.
+- Server logs use request IDs and hashed email identifiers rather than raw subscriber addresses.
+- Broadcasts should target the dedicated Segment and Topic so opt-out state is respected.
