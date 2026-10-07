@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <title>Odpowiedz przez gracz.pl</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
+  <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
+  <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
+  <link rel="stylesheet" href="/assets/contact-reply-premium.css?v=r1">
+  <script src="/assets/contact-reply-premium.js?v=r1" defer></script>
+</head>
+<body>
+  <main class="reply-shell">
+    <section class="reply-card" aria-labelledby="reply-title">
+      <header class="reply-card__header">
+        <a class="brand" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+        <div class="reply-badge"><i aria-hidden="true"></i> Bezpieczna odpowiedź premium</div>
+      </header>
+
+      <div class="reply-card__body">
+        <p class="eyebrow">GRACZ.PL · KONTAKT</p>
+        <h1 id="reply-title">Odpowiedz użytkownikowi</h1>
+        <p class="lead">Wiadomość zostanie wysłana przez oficjalny kanał gracz.pl jako profesjonalny e-mail HTML z wersją tekstową.</p>
+
+        <div id="reply-loading" class="state state--loading" role="status">Weryfikuję bezpieczny link…</div>
+        <div id="reply-error" class="state state--error" role="alert" hidden></div>
+
+        <section id="reply-panel" hidden>
+          <dl class="ticket">
+            <div><dt>Odbiorca</dt><dd id="reply-recipient">—</dd></div>
+            <div><dt>Kategoria</dt><dd id="reply-category">—</dd></div>
+            <div><dt>Temat</dt><dd id="reply-subject">—</dd></div>
+            <div><dt>ID zgłoszenia</dt><dd id="reply-id">—</dd></div>
+          </dl>
+
+          <div class="previous-message">
+            <span>Wcześniejsza wiadomość użytkownika</span>
+            <p id="reply-excerpt"></p>
+          </div>
+
+          <form id="reply-form" novalidate>
+            <label for="reply-message">Treść odpowiedzi</label>
+            <textarea id="reply-message" name="message" maxlength="5000" required
+              placeholder="Napisz odpowiedź, którą użytkownik otrzyma w markowym e-mailu gracz.pl."></textarea>
+            <div class="reply-form__meta">
+              <span id="reply-count">0 / 5000</span>
+              <span>Bez załączników · bez HTML od użytkownika · bezpieczne kodowanie</span>
+            </div>
+
+            <div id="reply-status" class="reply-status" role="status" aria-live="polite"></div>
+
+            <div class="actions">
+              <a class="button button--ghost" href="/">Anuluj</a>
+              <button id="reply-submit" class="button button--primary" type="submit">
+                Wyślij odpowiedź premium
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section id="reply-success" class="success" hidden aria-live="polite">
+          <div class="success__icon" aria-hidden="true">✓</div>
+          <h2>Odpowiedź wysłana</h2>
+          <p>Użytkownik otrzymał markową wiadomość gracz.pl. Ten bezpieczny link został zużyty.</p>
+          <a class="button button--primary" href="/">Wróć do gracz.pl</a>
+        </section>
+      </div>
+
+      <footer class="reply-card__footer">
+        <span>gracz.pl · Gry. Wiedza. Społeczność.</span>
+        <span>Token jest szyfrowany, ograniczony czasowo i nie jest zapisywany w przeglądarce.</span>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

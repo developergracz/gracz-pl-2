@@ -34,7 +34,9 @@ jobs:
       - name: Check contact scripts
         run: |
           node --check maintenance-site/assets/legal-links.js
+          node --check maintenance-site/assets/contact-reply-premium.js
           node --check contact-api/server.mjs
+          node --check contact-api/premium-reply.mjs
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run SEO gate

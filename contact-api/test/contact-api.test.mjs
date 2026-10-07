@@ -61,6 +61,18 @@ function request(url, payload, key, extraHeaders = {}) {
   });
 }
 
+function premiumRequest(url, payload, ip = "203.0.113.210") {
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      origin: "https://gracz.pl",
+      "content-type": "application/json",
+      "x-forwarded-for": ip,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 test("contact API security regression suite", async (t) => {
   const providerPort = await getFreePort();
   const apiPort = await getFreePort();
@@ -97,6 +109,7 @@ test("contact API security regression suite", async (t) => {
       RESEND_ENDPOINT: "http://127.0.0.1:" + providerPort + "/emails",
       EMAIL_FROM: "Gracz.pl <kontakt@gracz.pl>",
       CONTACT_TO: "admin@gracz.pl",
+      CONTACT_REPLY_SECRET: "test-" + "x".repeat(40),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -117,8 +130,11 @@ test("contact API security regression suite", async (t) => {
 
   await waitFor("http://127.0.0.1:" + apiPort + "/health");
   const endpoint = "http://127.0.0.1:" + apiPort + "/contact";
+  const replyContextEndpoint = "http://127.0.0.1:" + apiPort + "/reply-context";
+  const replyEndpoint = "http://127.0.0.1:" + apiPort + "/reply";
+  let premiumToken = "";
 
-  await t.test("valid request sends once and sets Reply-To plus provider idempotency", async () => {
+  await t.test("valid request sends premium admin mail with encrypted reply link", async () => {
     const key = "valid-request-key-0001";
     const response = await request(endpoint, makePayload(), key);
     assert.equal(response.status, 200, stderr);
@@ -127,6 +143,73 @@ test("contact API security regression suite", async (t) => {
     assert.equal(deliveries[0].body.reply_to, "jan@example.test");
     assert.equal(deliveries[0].body.to[0], "admin@gracz.pl");
     assert.equal(deliveries[0].headers["idempotency-key"], "contact/" + key);
+    assert.match(deliveries[0].body.html, /Odpowiedz przez gracz\.pl/);
+    assert.match(deliveries[0].body.html, /gracz<span[^>]*>\.pl<\/span>/);
+
+    const tokenMatch = deliveries[0].body.html.match(
+      /https:\/\/gracz\.pl\/kontakt\/odpowiedz\/#token=([A-Za-z0-9._-]+)/
+    );
+    assert.ok(tokenMatch);
+    premiumToken = tokenMatch[1];
+    assert.ok(premiumToken.startsWith("v1."));
+    assert.equal(premiumToken.includes("jan@example.test"), false);
+  });
+
+  await t.test("premium reply context is masked and tamper resistant", async () => {
+    const contextResponse = await premiumRequest(
+      replyContextEndpoint,
+      { token: premiumToken },
+      "203.0.113.211"
+    );
+    assert.equal(contextResponse.status, 200);
+    const contextBody = await contextResponse.json();
+    assert.equal(contextBody.ok, true);
+    assert.equal(contextBody.context.recipient, "j***@example.test");
+    assert.equal(contextBody.context.subject, "Test formularza");
+
+    const last = premiumToken.slice(-1);
+    const tampered = premiumToken.slice(0, -1) + (last === "A" ? "B" : "A");
+    const tamperedResponse = await premiumRequest(
+      replyContextEndpoint,
+      { token: tampered },
+      "203.0.113.212"
+    );
+    assert.equal(tamperedResponse.status, 400);
+    const tamperedBody = await tamperedResponse.json();
+    assert.equal(tamperedBody.error.code, "INVALID_REPLY_TOKEN");
+  });
+
+  await t.test("premium reply sends branded escaped HTML once with owner Reply-To", async () => {
+    const before = providerCalls;
+    const replyMessage = "Dziękujemy <script>alert('x')</script> za kontakt.";
+    const response = await premiumRequest(
+      replyEndpoint,
+      { token: premiumToken, message: replyMessage },
+      "203.0.113.213"
+    );
+    assert.equal(response.status, 200, stderr);
+    assert.equal(providerCalls, before + 1);
+
+    const delivery = deliveries.at(-1);
+    assert.equal(delivery.body.to[0], "jan@example.test");
+    assert.equal(delivery.body.reply_to, "admin@gracz.pl");
+    assert.match(delivery.body.subject, /^Odp: gracz\.pl — Test formularza$/);
+    assert.match(delivery.body.html, /ODPOWIEDŹ GRACZ\.PL/);
+    assert.equal(delivery.body.html.includes("<script>"), false);
+    assert.ok(delivery.body.html.includes("&lt;script&gt;"));
+    assert.ok(delivery.body.text.includes(replyMessage));
+    assert.match(delivery.headers["idempotency-key"], /^contact-reply\/[a-f0-9]{40}$/);
+
+    const countAfterSend = providerCalls;
+    const replay = await premiumRequest(
+      replyEndpoint,
+      { token: premiumToken, message: "Druga próba" },
+      "203.0.113.214"
+    );
+    assert.equal(replay.status, 409);
+    const replayBody = await replay.json();
+    assert.equal(replayBody.error.code, "REPLY_TOKEN_USED");
+    assert.equal(providerCalls, countAfterSend);
   });
 
   await t.test("same key + same payload replays without a second provider call", async () => {
