@@ -100,6 +100,7 @@ export function createNewsletterManager({
           topicSubscription: "opt_out",
         };
 
+    const wasPreviouslyConfirmed = confirmedAt > 0;
     const consentActive = confirmedAt > 0 && confirmedAt > unsubscribedAt;
     const providerActive =
       Boolean(existing) &&
@@ -202,7 +203,7 @@ export function createNewsletterManager({
     });
 
     return {
-      state: consentActive ? "resubscribed" : "subscribed",
+      state: wasPreviouslyConfirmed ? "resubscribed" : "subscribed",
       recipient: maskEmail(data.email),
     };
   }
