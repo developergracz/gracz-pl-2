@@ -248,6 +248,21 @@ export function createPersistenceRepositories(database) {
   };
 
   const idempotency = {
+    async get({ scope, keyHash }) {
+      const normalizedScope = String(scope || "").trim().slice(0, 80);
+      if (!normalizedScope) throw new TypeError("scope is required");
+
+      const result = await database.query(
+        `SELECT scope, key_hash, fingerprint, state, response_status,
+                response_body, expires_at, created_at, updated_at
+         FROM idempotency_keys
+         WHERE scope = $1 AND key_hash = $2`,
+        [normalizedScope, assertHash(keyHash, "keyHash")]
+      );
+
+      return result.rows[0] || null;
+    },
+
     async reserve({
       scope,
       keyHash,
@@ -270,9 +285,10 @@ export function createPersistenceRepositories(database) {
             response_body = NULL,
             expires_at = EXCLUDED.expires_at,
             updated_at = now()
-        WHERE idempotency_keys.expires_at <= now()
+        WHERE idempotency_keys.state = 'done'
+          AND idempotency_keys.expires_at <= now()
         RETURNING scope, key_hash, fingerprint, state, response_status,
-                  response_body, expires_at`,
+                  response_body, expires_at, created_at, updated_at`,
         [normalizedScope, key, fp, expiresAt]
       );
 
@@ -282,7 +298,7 @@ export function createPersistenceRepositories(database) {
 
       const existing = await database.query(
         `SELECT scope, key_hash, fingerprint, state, response_status,
-                response_body, expires_at
+                response_body, expires_at, created_at, updated_at
          FROM idempotency_keys
          WHERE scope = $1 AND key_hash = $2`,
         [normalizedScope, key]

@@ -247,3 +247,51 @@ If `CONTACT_REPLY_SECRET` is configured but no durable token store is available,
 If the database fails while a Premium Reply token is being issued or claimed, the secure reply operation fails closed.
 
 A special in-memory store exists only for the isolated Node regression test process and is enabled solely with `NODE_ENV=test` plus `PREMIUM_REPLY_TEST_MEMORY_STORE=1`. It is not a production fallback.
+
+
+## R4.3 durable contact idempotency
+
+R4.3 moves the contact-form idempotency guarantee out of process memory and into PostgreSQL.
+
+### Production behavior
+
+- Client idempotency keys are never stored raw in PostgreSQL; gracz.pl stores a SHA-256 hash.
+- The request fingerprint is persisted with the idempotency record.
+- Completed safe responses are stored as replay data.
+- A completed request can be replayed after API restart without sending a second provider email.
+- Concurrent requests using the same key cannot both reserve the provider delivery.
+- A reused key with a different request fingerprint is rejected with an idempotency conflict.
+- Explicit pre-delivery failures may release the reservation so the same request can be retried.
+- Network failures and other ambiguous provider outcomes keep the durable record in `inflight` state rather than silently allowing another delivery.
+- Expired `inflight` records are not automatically recycled. This is intentional fail-closed behavior until later reconciliation tooling exists.
+- Expired `done` records may be recycled after the configured idempotency retention window.
+- The idempotency key is no longer coupled to the visitor IP address, so a legitimate retry remains stable if the network address changes.
+
+### Failure semantics
+
+If durable contact idempotency is unavailable, the contact submission path returns `CONTACT_IDEMPOTENCY_NOT_CONFIGURED` instead of falling back to the former in-memory map.
+
+After the provider request has started, ambiguous failures do not delete the durable reservation. This prevents a restart or retry from causing an untracked duplicate send.
+
+If the provider explicitly rejects the request with a retry-safe 4xx response other than HTTP 408, the reservation may be released.
+
+### Test-only adapter
+
+The normal Node regression suite uses an explicit in-memory adapter only when both conditions are true:
+
+- `NODE_ENV=test`
+- `CONTACT_IDEMPOTENCY_TEST_MEMORY_STORE=1`
+
+This adapter is not available as a production fallback.
+
+### Production acceptance test
+
+After deployment with PostgreSQL enabled:
+
+1. submit a valid contact form request and keep its idempotency key;
+2. verify the first request is delivered once;
+3. repeat the same request with the same key and confirm the stored 200 response is replayed without a second provider call;
+4. restart the API and repeat the same request again;
+5. confirm the response is still replayed from PostgreSQL;
+6. use the same key with a changed payload and confirm `IDEMPOTENCY_CONFLICT`;
+7. verify a concurrent same-key pair reaches the mail provider at most once.
