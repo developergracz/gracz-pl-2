@@ -165,7 +165,7 @@ for (const file of allHtmlPages) {
     requireCheck(html.includes('/assets/legal-links.js?v=r33'), `${rel}: legal/contact trigger exists but legal-links.js R33 is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    requireCheck(/\/assets\/contact-modal\.css\?v=r(?:6|8)/.test(html), `${rel}: contact modal CSS must be preloaded to prevent flash`);
+    requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
     requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
   }
   if (/\/zasady\/index\.html$/i.test(rel)) {
