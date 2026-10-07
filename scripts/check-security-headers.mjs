@@ -17,7 +17,7 @@ const htmlFiles = walk(ROOT).filter(file => file.endsWith('.html'));
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8');
   const rel = path.relative(process.cwd(), file).replaceAll('\\', '/');
-  const match = html.match(/<meta\s+http-equiv=["']Content-Security-Policy["']\s+content=["']([^"']+)["']/i);
+  const match = html.match(/<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i);
 
   if (!match) {
     errors.push(`${rel}: missing CSP meta tag`);
