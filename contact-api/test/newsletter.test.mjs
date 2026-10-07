@@ -90,6 +90,26 @@ async function createProvider(t) {
     return value;
   }
 
+  // Nested contact routes (/contacts/{contact}/segments|topics) are served
+  // for the durable contact id only. The first real unsubscribe failed with
+  // 422 validation_error on PATCH /contacts/{contact}/topics, so the double
+  // pins the id-addressed contract instead of tolerating e-mail identifiers.
+  function resolveNestedContactEmail(res, identifier) {
+    const value = decodeURIComponent(String(identifier || ""));
+    for (const [email, contact] of contacts.entries()) {
+      if (contact?.id === value) return email;
+    }
+    if (value.includes("@")) {
+      send(res, 422, {
+        name: "validation_error",
+        message: "Nested contact routes require the contact id.",
+      });
+    } else {
+      send(res, 404, { name: "not_found", message: "Contact not found." });
+    }
+    return null;
+  }
+
   const behavior = {
     contactGet429Remaining: 0,
     contactGet503Remaining: 0,
@@ -97,9 +117,13 @@ async function createProvider(t) {
     failFinalConfirmPatchStatus: 0,
     welcomeEmail503Remaining: 0,
     topicOptOut503Remaining: 0,
+    topicOptOut422Remaining: 0,
     segmentDelete503Remaining: 0,
+    segmentDelete422Remaining: 0,
     beforeTopicOptOut: null,
   };
+
+  const requests = [];
 
   const stats = {
     contactGetAttempts: 0,
@@ -127,6 +151,11 @@ async function createProvider(t) {
   const provider = createServer(async (req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
     const method = req.method || "GET";
+    const logged = { method, path: url.pathname, status: 0, body: undefined };
+    requests.push(logged);
+    res.on("finish", () => {
+      logged.status = res.statusCode;
+    });
 
     if (url.pathname === "/emails" && method === "POST") {
       const body = await readBody(req);
@@ -229,7 +258,8 @@ async function createProvider(t) {
 
     const segmentsListMatch = url.pathname.match(/^\/contacts\/([^/]+)\/segments$/);
     if (segmentsListMatch && method === "GET") {
-      const email = resolveContactEmail(segmentsListMatch[1]);
+      const email = resolveNestedContactEmail(res, segmentsListMatch[1]);
+      if (!email) return;
       const ids = memberships.get(email) || new Set();
       return send(res, 200, {
         object: "list",
@@ -242,7 +272,8 @@ async function createProvider(t) {
       /^\/contacts\/([^/]+)\/segments\/([^/]+)$/
     );
     if (segmentMatch) {
-      const email = resolveContactEmail(segmentMatch[1]);
+      const email = resolveNestedContactEmail(res, segmentMatch[1]);
+      if (!email) return;
       const segmentId = decodeURIComponent(segmentMatch[2]);
       const set = memberships.get(email) || new Set();
       memberships.set(email, set);
@@ -257,6 +288,13 @@ async function createProvider(t) {
       }
       if (method === "DELETE") {
         stats.contactMutations += 1;
+        if (behavior.segmentDelete422Remaining > 0) {
+          behavior.segmentDelete422Remaining -= 1;
+          return send(res, 422, {
+            name: "validation_error",
+            message: "forced segment delete validation failure",
+          });
+        }
         if (behavior.segmentDelete503Remaining > 0) {
           behavior.segmentDelete503Remaining -= 1;
           return send(res, 503, {
@@ -276,7 +314,8 @@ async function createProvider(t) {
 
     const topicMatch = url.pathname.match(/^\/contacts\/([^/]+)\/topics$/);
     if (topicMatch && method === "GET") {
-      const email = resolveContactEmail(topicMatch[1]);
+      const email = resolveNestedContactEmail(res, topicMatch[1]);
+      if (!email) return;
       const states = topicStates.get(email) || new Map();
       return send(res, 200, {
         object: "list",
@@ -291,11 +330,34 @@ async function createProvider(t) {
     }
     if (topicMatch && method === "PATCH") {
       stats.contactMutations += 1;
-      const email = resolveContactEmail(topicMatch[1]);
+      const email = resolveNestedContactEmail(res, topicMatch[1]);
+      if (!email) return;
       const body = await readBody(req);
-      const isOptOut = (body.topics || []).some(
-        (item) => item.subscription === "opt_out"
-      );
+      logged.body = body;
+      // The documented Resend cURL examples and official SDKs send the bare
+      // array of topic updates, not a {topics: [...]} wrapper.
+      const validUpdates =
+        Array.isArray(body) &&
+        body.length > 0 &&
+        body.every(
+          (item) =>
+            typeof item?.id === "string" &&
+            (item.subscription === "opt_in" || item.subscription === "opt_out")
+        );
+      if (!validUpdates) {
+        return send(res, 422, {
+          name: "validation_error",
+          message: "Expected an array of topic subscription updates.",
+        });
+      }
+      const isOptOut = body.some((item) => item.subscription === "opt_out");
+      if (isOptOut && behavior.topicOptOut422Remaining > 0) {
+        behavior.topicOptOut422Remaining -= 1;
+        return send(res, 422, {
+          name: "validation_error",
+          message: "forced topic opt-out validation failure",
+        });
+      }
       if (isOptOut && behavior.topicOptOut503Remaining > 0) {
         behavior.topicOptOut503Remaining -= 1;
         return send(res, 503, {
@@ -310,13 +372,13 @@ async function createProvider(t) {
       }
       const states = topicStates.get(email) || new Map();
       topicStates.set(email, states);
-      for (const item of body.topics || []) {
+      for (const item of body) {
         states.set(item.id, item.subscription);
       }
       return send(res, 200, {
         object: "contact_topics",
         contact_id: contacts.get(email)?.id || "contact-1",
-        topics: body.topics || [],
+        topics: body,
       });
     }
 
@@ -404,6 +466,7 @@ async function createProvider(t) {
     topicStates,
     behavior,
     stats,
+    requests,
     providerContact,
     hostedUnsubscribe,
   };
@@ -1115,4 +1178,237 @@ test("newsletter R3 retries provider timeout and succeeds", async (t) => {
   assert.equal(result.state, "subscribed");
   assert.ok(provider.stats.contactGetAttempts >= 2);
   assert.equal(provider.emails.length, 2);
+});
+
+function nestedContactRequests(provider) {
+  return provider.requests.filter((request) =>
+    /^\/contacts\/[^/]+\/(segments|topics)/.test(request.path)
+  );
+}
+
+function assertNestedRoutesUseContactId(
+  provider,
+  contactId,
+  { injectedFailures = 0 } = {}
+) {
+  const nested = nestedContactRequests(provider);
+  assert.ok(nested.length > 0, "expected nested contact route traffic");
+  for (const request of nested) {
+    assert.ok(
+      request.path.startsWith("/contacts/" + contactId + "/"),
+      request.method + " " + request.path + " must address the contact by id"
+    );
+  }
+  assert.equal(
+    nested.filter((request) => request.status === 422).length,
+    injectedFailures,
+    "only deliberately injected 422 responses are allowed"
+  );
+  for (const request of nested.filter((item) => item.path.endsWith("/topics"))) {
+    if (request.method === "PATCH") {
+      assert.ok(Array.isArray(request.body), "topics PATCH must send a bare array");
+    }
+  }
+}
+
+async function subscribeFixture(t, email) {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({ email, name: "Wire Contract", source: "newsletter_page" });
+  const confirmed = await manager.confirm(extractToken(provider.emails[0], "confirm"));
+  assert.equal(confirmed.state, "subscribed");
+
+  return {
+    provider,
+    manager,
+    contact: provider.contacts.get(email),
+    unsubscribeToken: extractToken(provider.emails[1], "unsubscribe"),
+    emailHash: consentEmailHash(email),
+  };
+}
+
+test("unsubscribe addresses Resend by contact id with a bare topics array (production 422)", async (t) => {
+  const email = "prod-422@example.test";
+  const { provider, manager, contact, unsubscribeToken, emailHash } =
+    await subscribeFixture(t, email);
+  provider.requests.length = 0;
+
+  const result = await manager.unsubscribe(unsubscribeToken);
+  assert.equal(result.state, "unsubscribed");
+
+  assertNestedRoutesUseContactId(provider, contact.id);
+  const topicPatch = provider.requests.find(
+    (request) => request.method === "PATCH" && request.path.endsWith("/topics")
+  );
+  assert.deepEqual(topicPatch.body, [{ id: "topic-1", subscription: "opt_out" }]);
+  assert.equal(topicPatch.status, 200);
+  const segmentDelete = provider.requests.find(
+    (request) => request.method === "DELETE"
+  );
+  assert.equal(
+    segmentDelete.path,
+    "/contacts/" + contact.id + "/segments/segment-1"
+  );
+  assert.equal(segmentDelete.status, 200);
+
+  assert.equal(provider.memberships.get(email).has("segment-1"), false);
+  assert.equal(provider.topicStates.get(email).get("topic-1"), "opt_out");
+  const ledger = await provider.consentStore.getContact(emailHash);
+  assert.equal(ledger.current_state, "unsubscribed");
+});
+
+for (const failure of [
+  {
+    name: "topic opt-out",
+    arm: (provider) => {
+      provider.behavior.topicOptOut422Remaining = 1;
+    },
+    operation: "PATCH /contacts/{contact}/topics",
+    topicAfterFailure: "opt_in",
+    inSegmentAfterFailure: true,
+  },
+  {
+    name: "segment removal",
+    arm: (provider) => {
+      provider.behavior.segmentDelete422Remaining = 1;
+    },
+    operation: "DELETE /contacts/{contact}/segments/{segment}",
+    topicAfterFailure: "opt_out",
+    inSegmentAfterFailure: true,
+  },
+]) {
+  test(
+    "unsubscribe fails closed on provider 422 during " +
+      failure.name +
+      " and the same token completes on retry",
+    async (t) => {
+      const email = "partial-" + failure.name.replace(/\W+/g, "-") + "@example.test";
+      const { provider, manager, contact, unsubscribeToken, emailHash } =
+        await subscribeFixture(t, email);
+      failure.arm(provider);
+
+      await assert.rejects(
+        () => manager.unsubscribe(unsubscribeToken),
+        (error) =>
+          error?.code === "NEWSLETTER_PROVIDER_FAILED" &&
+          error.providerStatus === 422 &&
+          error.providerName === "validation_error" &&
+          error.providerOperation === failure.operation
+      );
+
+      // Partial provider state: the audit timestamp landed, marketing did not
+      // fully stop, and no durable "unsubscribed" evidence was committed.
+      assert.ok(Number(contact.properties[UNSUBSCRIBED_AT_KEY]) > 0);
+      assert.equal(
+        provider.topicStates.get(email).get("topic-1"),
+        failure.topicAfterFailure
+      );
+      assert.equal(
+        provider.memberships.get(email).has("segment-1"),
+        failure.inSegmentAfterFailure
+      );
+      let ledger = await provider.consentStore.getContact(emailHash);
+      assert.equal(ledger.current_state, "subscribed");
+      let events = await provider.consentStore.listConsentEvents(emailHash);
+      assert.equal(events.filter((event) => event.event_type === "unsubscribe").length, 0);
+
+      const retried = await manager.unsubscribe(unsubscribeToken);
+      assert.equal(retried.state, "unsubscribed");
+      assert.equal(provider.topicStates.get(email).get("topic-1"), "opt_out");
+      assert.equal(provider.memberships.get(email).has("segment-1"), false);
+      ledger = await provider.consentStore.getContact(emailHash);
+      assert.equal(ledger.current_state, "unsubscribed");
+
+      const replayed = await manager.unsubscribe(unsubscribeToken);
+      assert.equal(replayed.state, "unsubscribed");
+      events = await provider.consentStore.listConsentEvents(emailHash);
+      assert.equal(
+        events.filter((event) => event.event_type === "unsubscribe").length,
+        1,
+        "retrying the same token must stay idempotent"
+      );
+      assertNestedRoutesUseContactId(provider, contact.id, { injectedFailures: 1 });
+    }
+  );
+}
+
+test("re-activation of an existing provider contact addresses nested routes by contact id", async (t) => {
+  const email = "reactivate@example.test";
+  const { provider, manager, contact } = await subscribeFixture(t, email);
+
+  provider.hostedUnsubscribe(email);
+  provider.requests.length = 0;
+  await manager.requestOptIn({ email, name: "Wire Contract", source: "newsletter_page" });
+  const resubscribed = await manager.confirm(
+    extractToken(provider.emails.at(-1), "confirm")
+  );
+
+  assert.equal(resubscribed.state, "resubscribed");
+  assert.equal(provider.memberships.get(email).has("segment-1"), true);
+  assert.equal(provider.topicStates.get(email).get("topic-1"), "opt_in");
+  assertNestedRoutesUseContactId(provider, contact.id);
+  assert.ok(
+    nestedContactRequests(provider).some(
+      (request) => request.method === "POST" && request.path.includes("/segments/")
+    ),
+    "segment re-add must run through the id-addressed route"
+  );
+  assert.ok(
+    nestedContactRequests(provider).some(
+      (request) =>
+        request.method === "PATCH" &&
+        request.path.endsWith("/topics") &&
+        request.body?.[0]?.subscription === "opt_in"
+    ),
+    "topic opt-in must run through the id-addressed route"
+  );
+});
+
+test("provider-off recovery obligation addresses nested routes by contact id", async (t) => {
+  const email = "recover-by-id@example.test";
+  const { provider, manager, contact, emailHash } = await subscribeFixture(t, email);
+
+  const current = await provider.consentStore.getContact(emailHash);
+  await provider.consentStore.upsertContact({
+    emailHash,
+    providerContactId: contact.id,
+    currentState: "unsubscribed",
+    unsubscribedAt: new Date(Date.now() + 5),
+    providerBlockedAt: new Date(),
+    expectedStateVersion: current.state_version,
+  });
+  provider.requests.length = 0;
+
+  await manager.requestOptIn({ email, name: "Wire Contract", source: "newsletter_page" });
+
+  const ledger = await provider.consentStore.getContact(emailHash);
+  assert.equal(ledger.provider_blocked_at, null);
+  assert.equal(provider.memberships.get(email).has("segment-1"), false);
+  assert.equal(provider.topicStates.get(email).get("topic-1"), "opt_out");
+  assertNestedRoutesUseContactId(provider, contact.id);
+});
+
+test("provider-on recovery for a newer subscription addresses nested routes by contact id", async (t) => {
+  const email = "keep-on-by-id@example.test";
+  const { provider, manager, contact, emailHash } = await subscribeFixture(t, email);
+
+  provider.hostedUnsubscribe(email);
+  const current = await provider.consentStore.getContact(emailHash);
+  await provider.consentStore.upsertContact({
+    emailHash,
+    providerContactId: contact.id,
+    currentState: "subscribed",
+    providerBlockedAt: new Date(),
+    expectedStateVersion: current.state_version,
+  });
+  provider.requests.length = 0;
+
+  await manager.requestOptIn({ email, name: "Wire Contract", source: "newsletter_page" });
+
+  const ledger = await provider.consentStore.getContact(emailHash);
+  assert.equal(ledger.provider_blocked_at, null);
+  assert.equal(provider.memberships.get(email).has("segment-1"), true);
+  assert.equal(provider.topicStates.get(email).get("topic-1"), "opt_in");
+  assertNestedRoutesUseContactId(provider, contact.id);
 });
