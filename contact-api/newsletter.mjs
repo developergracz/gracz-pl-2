@@ -1141,6 +1141,14 @@ function contactPropertyNumber(contact, key) {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
+function timestampMs(value) {
+  if (!value) return 0;
+  const time = value instanceof Date
+    ? value.getTime()
+    : new Date(value).getTime();
+  return Number.isFinite(time) && time > 0 ? time : 0;
+}
+
 function staleConfirmation() {
   const error = new Error(
     "Ten link nie może ponownie aktywować newslettera. Poproś o nowy link zapisu."
