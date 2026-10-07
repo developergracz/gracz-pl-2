@@ -77,7 +77,7 @@ const newsletterConsentStore = useTestNewsletterConsentStore
   : persistence?.newsletter || null;
 
 const NEWSLETTER_CONSENT_HASH_SECRET = String(
-  process.env.NEWSLETTER_CONSENT_HASH_SECRET || NEWSLETTER_SECRET
+  process.env.NEWSLETTER_CONSENT_HASH_SECRET || ""
 ).trim();
 
 const newsletter = createNewsletterManager({
