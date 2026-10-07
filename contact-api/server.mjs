@@ -16,6 +16,7 @@ const CONTACT_TO = String(process.env.CONTACT_TO || "").trim();
 const EMAIL_FROM_ADDRESS = extractMailbox(EMAIL_FROM);
 const CONTACT_TO_ADDRESS = extractMailbox(CONTACT_TO);
 const CONTACT_REPLY_SECRET = String(process.env.CONTACT_REPLY_SECRET || "").trim();
+const NEWSLETTER_URL = String(process.env.NEWSLETTER_URL || "").trim();
 
 if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
@@ -27,6 +28,7 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
   ownerAddress: CONTACT_TO_ADDRESS,
+  newsletterUrl: NEWSLETTER_URL,
 });
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
