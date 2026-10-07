@@ -145,6 +145,9 @@ test("contact API security regression suite", async (t) => {
     assert.equal(deliveries[0].headers["idempotency-key"], "contact/" + key);
     assert.match(deliveries[0].body.html, /Odpowiedz przez gracz\.pl/);
     assert.match(deliveries[0].body.html, /gracz<span[^>]*>\.pl<\/span>/);
+    assert.match(deliveries[0].body.html, /FULL MAX PREMIUM/);
+    assert.match(deliveries[0].body.html, /NEWSLETTER GRACZ\.PL/);
+    assert.match(deliveries[0].body.html, /ZAPISY — MODUŁ W PRZYGOTOWANIU/);
 
     const tokenMatch = deliveries[0].body.html.match(
       /https:\/\/gracz\.pl\/kontakt\/odpowiedz\/#token=([A-Za-z0-9._-]+)/
@@ -195,6 +198,9 @@ test("contact API security regression suite", async (t) => {
     assert.equal(delivery.body.reply_to, "admin@gracz.pl");
     assert.match(delivery.body.subject, /^Odp: gracz\.pl — Test formularza$/);
     assert.match(delivery.body.html, /ODPOWIEDŹ GRACZ\.PL/);
+    assert.match(delivery.body.html, /FULL MAX PREMIUM/);
+    assert.match(delivery.body.html, /NEWSLETTER GRACZ\.PL/);
+    assert.match(delivery.body.html, /ZAPISY — MODUŁ W PRZYGOTOWANIU/);
     assert.equal(delivery.body.html.includes("<script>"), false);
     assert.ok(delivery.body.html.includes("&lt;script&gt;"));
     assert.ok(delivery.body.text.includes(replyMessage));
