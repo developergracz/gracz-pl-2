@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import net from "node:net";
 import { createNewsletterManager } from "../newsletter.mjs";
+import { createMemoryNewsletterConsentStore } from "../persistence/memory-newsletter-consent-store.mjs";
 
 const CONFIRMED_AT_KEY = "gracz_newsletter_confirmed_at";
 const UNSUBSCRIBED_AT_KEY = "gracz_newsletter_unsubscribed_at";
@@ -352,6 +353,8 @@ async function createProvider(t) {
 }
 
 function createManager(provider, options = {}) {
+  provider.consentStore ||= createMemoryNewsletterConsentStore();
+
   return createNewsletterManager({
     secret: "test-" + "n".repeat(40),
     resendApiKey: "test-key",
@@ -360,6 +363,8 @@ function createManager(provider, options = {}) {
     emailFrom: "gracz.pl <kontakt@gracz.pl>",
     replyTo: "admin@gracz.pl",
     baseUrl: "https://gracz.pl/newsletter/",
+    consentStore: provider.consentStore,
+    consentHashSecret: "test-consent-" + "h".repeat(40),
     ...options,
   });
 }
