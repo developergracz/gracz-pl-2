@@ -10,6 +10,8 @@ const TOKEN_VERSION = "n1";
 const CONFIRM_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const UNSUBSCRIBE_TTL_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 const MAX_TOKEN_LENGTH = 12_000;
+const PROVIDER_MAX_ATTEMPTS = 4;
+const PROVIDER_RETRY_BASE_MS = 350;
 const CONFIRMED_AT_KEY = "gracz_newsletter_confirmed_at";
 const UNSUBSCRIBED_AT_KEY = "gracz_newsletter_unsubscribed_at";
 const CONSENT_VERSION_KEY = "gracz_newsletter_consent_version";
@@ -225,10 +227,14 @@ export function createNewsletterManager({
               visibility: "public",
             },
           }),
-          ensureContactProperty(CONFIRMED_AT_KEY, "number", 0),
-          ensureContactProperty(UNSUBSCRIBED_AT_KEY, "number", 0),
-          ensureContactProperty(CONSENT_VERSION_KEY, "string", "none"),
         ]);
+
+        await ensureContactProperties([
+          { key: CONFIRMED_AT_KEY, type: "number", fallbackValue: 0 },
+          { key: UNSUBSCRIBED_AT_KEY, type: "number", fallbackValue: 0 },
+          { key: CONSENT_VERSION_KEY, type: "string", fallbackValue: "none" },
+        ]);
+
         return { segmentId, topicId };
       })().catch((error) => {
         resourcesPromise = null;
@@ -264,39 +270,34 @@ export function createNewsletterManager({
     }
   }
 
-  async function ensureContactProperty(key, type, fallbackValue) {
+  async function ensureContactProperties(definitions) {
     const listed = await api("/contact-properties?limit=100", {
       method: "GET",
       expected: [200],
     });
-    const found = Array.isArray(listed?.data)
-      ? listed.data.find((item) => item?.key === key && item?.id)
-      : null;
-    if (found) return found.id;
+    const existingKeys = new Set(
+      Array.isArray(listed?.data)
+        ? listed.data.filter((item) => item?.key).map((item) => item.key)
+        : []
+    );
 
-    try {
-      const created = await api("/contact-properties", {
-        method: "POST",
-        body: {
-          key,
-          type,
-          fallback_value: fallbackValue,
-        },
-        expected: [201],
-      });
-      if (!created?.id) throw providerError("NEWSLETTER_PROPERTY_INVALID");
-      return created.id;
-    } catch (error) {
-      if (error?.status !== 409) throw error;
-      const retry = await api("/contact-properties?limit=100", {
-        method: "GET",
-        expected: [200],
-      });
-      const retryFound = Array.isArray(retry?.data)
-        ? retry.data.find((item) => item?.key === key && item?.id)
-        : null;
-      if (!retryFound) throw error;
-      return retryFound.id;
+    for (const definition of definitions) {
+      if (existingKeys.has(definition.key)) continue;
+      try {
+        await api("/contact-properties", {
+          method: "POST",
+          body: {
+            key: definition.key,
+            type: definition.type,
+            fallback_value: definition.fallbackValue,
+          },
+          expected: [201],
+        });
+        existingKeys.add(definition.key);
+      } catch (error) {
+        if (error?.status !== 409) throw error;
+        existingKeys.add(definition.key);
+      }
     }
   }
 
@@ -313,58 +314,82 @@ export function createNewsletterManager({
   }
 
   async function sendEmail({ to, subject, text, html, idempotencyKey }) {
-    const response = await fetch(normalizedEmailEndpoint, {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + apiKey,
-        "content-type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-        "User-Agent": "gracz.pl-newsletter/1.0",
-      },
-      body: JSON.stringify({
-        from: emailFrom,
-        to: [to],
-        reply_to: replyTo,
-        subject,
-        text,
-        html,
-      }),
-      signal: AbortSignal.timeout(10_000),
+    const payload = JSON.stringify({
+      from: emailFrom,
+      to: [to],
+      reply_to: replyTo,
+      subject,
+      text,
+      html,
     });
 
-    const raw = await response.text().catch(() => "");
-    if (!response.ok) {
+    for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
+      const response = await fetch(normalizedEmailEndpoint, {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + apiKey,
+          "content-type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+          "User-Agent": "gracz.pl-newsletter/1.0",
+        },
+        body: payload,
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      const raw = await response.text().catch(() => "");
+      if (response.ok) {
+        try {
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      }
+
+      if (isRetryableProviderStatus(response.status) && attempt < PROVIDER_MAX_ATTEMPTS) {
+        await sleep(providerRetryDelayMs(response, attempt));
+        continue;
+      }
+
       throw providerError("NEWSLETTER_MAIL_FAILED", response.status, raw);
     }
 
-    try {
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
+    throw providerError("NEWSLETTER_MAIL_FAILED", 502);
   }
 
   async function api(path, { method, body, expected }) {
-    const response = await fetch(normalizedBase + path, {
-      method,
-      headers: {
-        authorization: "Bearer " + apiKey,
-        "content-type": "application/json",
-        "User-Agent": "gracz.pl-newsletter/1.0",
-      },
-      body: body === undefined ? undefined : JSON.stringify(removeUndefined(body)),
-      signal: AbortSignal.timeout(10_000),
-    });
+    const payload =
+      body === undefined ? undefined : JSON.stringify(removeUndefined(body));
 
-    const raw = await response.text().catch(() => "");
-    if (!expected.includes(response.status)) {
+    for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
+      const response = await fetch(normalizedBase + path, {
+        method,
+        headers: {
+          authorization: "Bearer " + apiKey,
+          "content-type": "application/json",
+          "User-Agent": "gracz.pl-newsletter/1.0",
+        },
+        body: payload,
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      const raw = await response.text().catch(() => "");
+      if (expected.includes(response.status)) {
+        try {
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      }
+
+      if (isRetryableProviderStatus(response.status) && attempt < PROVIDER_MAX_ATTEMPTS) {
+        await sleep(providerRetryDelayMs(response, attempt));
+        continue;
+      }
+
       throw providerError("NEWSLETTER_PROVIDER_FAILED", response.status, raw);
     }
-    try {
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
+
+    throw providerError("NEWSLETTER_PROVIDER_FAILED", 502);
   }
 
   function encrypt(payload) {
@@ -522,6 +547,29 @@ function hashShort(value) {
 function maskEmail(email) {
   const [local, domain] = String(email).split("@");
   return local && domain ? local.slice(0, 1) + "***@" + domain : "ukryty adres";
+}
+
+function isRetryableProviderStatus(status) {
+  return status === 429 || (status >= 500 && status <= 599);
+}
+
+function providerRetryDelayMs(response, attempt) {
+  const retryAfter = String(response?.headers?.get?.("retry-after") || "").trim();
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(Math.max(Math.ceil(seconds * 1000), 100), 5_000);
+    }
+    const retryAt = Date.parse(retryAfter);
+    if (Number.isFinite(retryAt)) {
+      return Math.min(Math.max(retryAt - Date.now(), 100), 5_000);
+    }
+  }
+  return Math.min(PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1), 3_000);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function removeUndefined(value) {
