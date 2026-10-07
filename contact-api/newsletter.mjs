@@ -146,6 +146,7 @@ export function createNewsletterManager({
       v: 1,
       purpose: "unsubscribe",
       jti: randomUUID(),
+      iat: Date.now(),
       exp: Date.now() + UNSUBSCRIBE_TTL_MS,
       email: data.email,
     });
@@ -436,6 +437,7 @@ function validateTokenPayload(data, purpose) {
   if (!Number.isFinite(data.iat) || !Number.isFinite(data.exp)) invalidToken();
   if (data.iat > Date.now() + 60_000) invalidToken();
   if (purpose === "confirm" && data.exp - data.iat > CONFIRM_TTL_MS + 60_000) invalidToken();
+  if (purpose === "unsubscribe" && data.exp - data.iat > UNSUBSCRIBE_TTL_MS + 60_000) invalidToken();
   if (data.exp <= Date.now()) {
     const error = new Error("Link newslettera wygasł.");
     error.code = "NEWSLETTER_TOKEN_EXPIRED";
