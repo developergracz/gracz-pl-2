@@ -68,7 +68,7 @@
     return new Promise(function(resolve){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/contact-modal.css?v=r7';
+      link.href='/assets/contact-modal.css?v=r8';
       link.setAttribute('data-contact-modal-style','');
       link.addEventListener('load',resolve,{once:true});
       link.addEventListener('error',resolve,{once:true});
