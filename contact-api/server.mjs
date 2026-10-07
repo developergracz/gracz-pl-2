@@ -5,6 +5,9 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createNewsletterManager } from "./newsletter.mjs";
+import { createDatabase } from "./persistence/database.mjs";
+import { createPersistenceRepositories } from "./persistence/repositories.mjs";
+import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -35,10 +38,24 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must use different mailbox addresses");
 }
 
+const database = createDatabase();
+const persistence = database.enabled
+  ? createPersistenceRepositories(database)
+  : null;
+
+const useTestReplyStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.PREMIUM_REPLY_TEST_MEMORY_STORE === "1";
+
+const replyTokenStore = useTestReplyStore
+  ? createMemoryReplyTokenStore()
+  : persistence?.replyTokens || null;
+
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
   ownerAddress: CONTACT_TO_ADDRESS,
   newsletterUrl: NEWSLETTER_URL,
+  tokenStore: replyTokenStore,
 });
 
 const newsletter = createNewsletterManager({
