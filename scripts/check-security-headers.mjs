@@ -44,7 +44,13 @@ for (const file of htmlFiles) {
     html.includes('data-contact-modal-style') ||
     html.includes('/assets/contact-modal.css');
 
-  if (hasContactUi && !policy.includes(CONTACT_API)) {
+  const connectDirective = policy
+    .split(';')
+    .map(part => part.trim())
+    .find(part => part === 'connect-src' || part.startsWith('connect-src '));
+  const connectSources = connectDirective ? connectDirective.split(/\s+/).slice(1) : [];
+
+  if (hasContactUi && !connectSources.some(source => source === CONTACT_API)) {
     errors.push(`${rel}: contact UI present but CSP connect-src does not allow ${CONTACT_API}`);
   }
 
@@ -74,8 +80,18 @@ if (!renderYaml.includes('name: Content-Security-Policy')) {
 if (!renderYaml.includes("frame-ancestors 'none'")) {
   errors.push("maintenance-site/render.yaml: response CSP must include frame-ancestors 'none'");
 }
-if (!renderYaml.includes(CONTACT_API)) {
-  errors.push('maintenance-site/render.yaml: response CSP missing contact API in connect-src');
+const renderCspMatch = renderYaml.match(/name: Content-Security-Policy\s+value: "([^"]+)"/);
+if (!renderCspMatch) {
+  errors.push('maintenance-site/render.yaml: unable to parse Content-Security-Policy header value');
+} else {
+  const renderConnectDirective = renderCspMatch[1]
+    .split(';')
+    .map(part => part.trim())
+    .find(part => part === 'connect-src' || part.startsWith('connect-src '));
+  const renderConnectSources = renderConnectDirective ? renderConnectDirective.split(/\s+/).slice(1) : [];
+  if (!renderConnectSources.some(source => source === CONTACT_API)) {
+    errors.push('maintenance-site/render.yaml: response CSP missing exact contact API source in connect-src');
+  }
 }
 
 if (errors.length) {
