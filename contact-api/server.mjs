@@ -162,7 +162,21 @@ createServer(async (req, res) => {
     }
 
     if (url.pathname.startsWith("/newsletter/")) {
-      return await handleNewsletterRequest(req, res, url, requestId);
+      try {
+        return await handleNewsletterRequest(req, res, url, requestId);
+      } catch (error) {
+        if (error?.providerOperation) {
+          console.error("[newsletter] provider failure", {
+            requestId,
+            code: error?.code || "NEWSLETTER_PROVIDER_FAILED",
+            operation: error.providerOperation,
+            providerStatus: error.providerStatus ?? null,
+            providerName: error.providerName || null,
+            providerRequestId: error.providerRequestId || null,
+          });
+        }
+        throw error;
+      }
     }
 
     if (url.pathname !== "/contact") {

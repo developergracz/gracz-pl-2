@@ -105,13 +105,21 @@
     actionButton.disabled=true;
     setStatus(actionStatus,actionMode==='confirm'?'Aktywuję newsletter…':'Wycofuję zgodę…',false);
     try{
-      await post(actionMode==='confirm'?'/newsletter/confirm':'/newsletter/unsubscribe',{token:actionToken});
+      var result=await post(actionMode==='confirm'?'/newsletter/confirm':'/newsletter/unsubscribe',{token:actionToken});
       actionToken='';
       actionButton.hidden=true;
       if(actionMode==='confirm'){
         actionTitle.textContent='Newsletter aktywny';
-        actionCopy.textContent='Zapis został potwierdzony. Na Twój adres wysłaliśmy wiadomość powitalną FULL MAX PREMIUM.';
-        setStatus(actionStatus,'Gotowe — subskrypcja jest aktywna.',false);
+        if(result.state==='already_subscribed'){
+          actionCopy.textContent='Ten adres ma już aktywną subskrypcję Newslettera gracz.pl.';
+          setStatus(actionStatus,'Gotowe — subskrypcja była już aktywna.',false);
+        }else if(result.state==='resubscribed'){
+          actionCopy.textContent='Subskrypcja została ponownie aktywowana. Na Twój adres wysłaliśmy wiadomość powitalną FULL MAX PREMIUM.';
+          setStatus(actionStatus,'Gotowe — subskrypcja została ponownie aktywowana.',false);
+        }else{
+          actionCopy.textContent='Zapis został potwierdzony. Na Twój adres wysłaliśmy wiadomość powitalną FULL MAX PREMIUM.';
+          setStatus(actionStatus,'Gotowe — subskrypcja jest aktywna.',false);
+        }
       }else{
         actionTitle.textContent='Subskrypcja wyłączona';
         actionCopy.textContent='Adres został wypisany z newslettera gracz.pl.';

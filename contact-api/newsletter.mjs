@@ -2,6 +2,7 @@ import {
   createCipheriv,
   createDecipheriv,
   createHash,
+  createHmac,
   randomBytes,
   randomUUID,
 } from "node:crypto";
@@ -26,12 +27,17 @@ export function createNewsletterManager({
   baseUrl = "https://gracz.pl/newsletter/",
   segmentName = "gracz.pl Newsletter",
   topicName = "Newsletter gracz.pl",
+  providerTimeoutMs = 10_000,
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
   const normalizedBase = String(resendApiBase || "").replace(/\/$/, "");
   const normalizedEmailEndpoint = String(emailEndpoint || "").trim();
   const normalizedBaseUrl = ensureHttpsPageUrl(baseUrl);
+  const requestTimeoutMs =
+    Number.isFinite(providerTimeoutMs) && providerTimeoutMs > 0
+      ? Math.max(25, Math.min(Math.floor(providerTimeoutMs), 30_000))
+      : 10_000;
   const enabled = normalizedSecret.length >= 32 && Boolean(apiKey && normalizedBaseUrl);
   const key = normalizedSecret.length >= 32
     ? createHash("sha256").update(normalizedSecret, "utf8").digest()
@@ -80,34 +86,44 @@ export function createNewsletterManager({
 
     const existing = await getContact(data.email);
     const names = splitName(data.name);
-    const confirmedAt = Number(existing?.properties?.[CONFIRMED_AT_KEY] || 0);
-    const unsubscribedAt = Number(existing?.properties?.[UNSUBSCRIBED_AT_KEY] || 0);
+    const confirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
+    const unsubscribedAt = contactPropertyNumber(existing, UNSUBSCRIBED_AT_KEY);
 
     if (unsubscribedAt >= data.iat) {
-      const error = new Error(
-        "Ten link został unieważniony przez późniejsze wypisanie. Poproś o nowy link zapisu."
-      );
-      error.code = "NEWSLETTER_CONFIRMATION_STALE";
-      error.status = 409;
-      throw error;
+      staleConfirmation();
     }
 
-    if (confirmedAt > 0 && confirmedAt > unsubscribedAt) {
+    const providerState = existing
+      ? await getContactProviderState(data.email, resources)
+      : {
+          inSegment: false,
+          topicSubscription: "opt_out",
+        };
+
+    const wasPreviouslyConfirmed = confirmedAt > 0;
+    const consentActive = confirmedAt > 0 && confirmedAt > unsubscribedAt;
+    const providerActive =
+      Boolean(existing) &&
+      existing.unsubscribed !== true &&
+      providerState.inSegment &&
+      providerState.topicSubscription === "opt_in";
+
+    if (consentActive && providerActive) {
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
       };
     }
 
-    if (confirmedAt >= data.iat) {
-      return {
-        state: "subscribed",
-        recipient: maskEmail(data.email),
-      };
+    // If the contact had a confirmed subscription but provider state is now
+    // inactive, only a confirmation token issued after that confirmation may
+    // reactivate it. This protects old/replayed links after provider-side
+    // unsubscribe or partial state changes.
+    if (consentActive && !providerActive && data.iat <= confirmedAt) {
+      staleConfirmation();
     }
 
-    const consentProperties = {
-      [CONFIRMED_AT_KEY]: Date.now(),
+    const consentVersionProperties = {
       [CONSENT_VERSION_KEY]: data.consentVersion,
     };
 
@@ -121,7 +137,7 @@ export function createNewsletterManager({
           unsubscribed: false,
           segments: [{ id: resources.segmentId }],
           topics: [{ id: resources.topicId, subscription: "opt_in" }],
-          properties: consentProperties,
+          properties: consentVersionProperties,
         },
         expected: [201],
       });
@@ -132,34 +148,34 @@ export function createNewsletterManager({
           first_name: names.firstName || undefined,
           last_name: names.lastName || undefined,
           unsubscribed: false,
-          properties: consentProperties,
+          properties: consentVersionProperties,
         },
         expected: [200],
       });
 
-      await api(
-        "/contacts/" + encodeURIComponent(data.email) +
-          "/segments/" + encodeURIComponent(resources.segmentId),
-        { method: "POST", expected: [200, 201, 409] }
-      );
+      if (!providerState.inSegment) {
+        await api(
+          "/contacts/" + encodeURIComponent(data.email) +
+            "/segments/" + encodeURIComponent(resources.segmentId),
+          { method: "POST", expected: [200, 201, 409] }
+        );
+      }
 
-      await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
-        method: "PATCH",
-        body: {
-          topics: [{ id: resources.topicId, subscription: "opt_in" }],
-        },
-        expected: [200],
-      });
+      if (providerState.topicSubscription !== "opt_in") {
+        await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
+          method: "PATCH",
+          body: {
+            topics: [{ id: resources.topicId, subscription: "opt_in" }],
+          },
+          expected: [200],
+        });
+      }
     }
 
-    const unsubscribeToken = encrypt({
-      v: 1,
-      purpose: "unsubscribe",
-      jti: randomUUID(),
-      iat: Date.now(),
-      exp: Date.now() + UNSUBSCRIBE_TTL_MS,
-      email: data.email,
-    });
+    // The unsubscribe link must be byte-for-byte deterministic for a given
+    // confirmation token. This guarantees that Resend retries using the same
+    // Idempotency-Key also use the same message body.
+    const unsubscribeToken = deterministicUnsubscribeToken(data);
     const unsubscribeUrl = normalizedBaseUrl + "#unsubscribe=" + unsubscribeToken;
 
     await sendEmail({
@@ -171,8 +187,23 @@ export function createNewsletterManager({
       entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
     });
 
+    // Commit our consent proof last. If any provider mutation or welcome
+    // delivery fails before this point, retrying the same token repairs the
+    // incomplete state instead of incorrectly returning already_subscribed.
+    await api("/contacts/" + encodeURIComponent(data.email), {
+      method: "PATCH",
+      body: {
+        unsubscribed: false,
+        properties: {
+          [CONFIRMED_AT_KEY]: Date.now(),
+          [CONSENT_VERSION_KEY]: data.consentVersion,
+        },
+      },
+      expected: [200],
+    });
+
     return {
-      state: "subscribed",
+      state: wasPreviouslyConfirmed ? "resubscribed" : "subscribed",
       recipient: maskEmail(data.email),
     };
   }
@@ -322,6 +353,35 @@ export function createNewsletterManager({
     }
   }
 
+  async function getContactProviderState(email, resources) {
+    const encoded = encodeURIComponent(email);
+    const [segmentsResult, topicsResult] = await Promise.all([
+      api("/contacts/" + encoded + "/segments?limit=100", {
+        method: "GET",
+        expected: [200],
+      }),
+      api("/contacts/" + encoded + "/topics?limit=100", {
+        method: "GET",
+        expected: [200],
+      }),
+    ]);
+
+    const inSegment =
+      Array.isArray(segmentsResult?.data) &&
+      segmentsResult.data.some((item) => item?.id === resources.segmentId);
+
+    const topic =
+      Array.isArray(topicsResult?.data)
+        ? topicsResult.data.find((item) => item?.id === resources.topicId)
+        : null;
+
+    return {
+      inSegment,
+      topicSubscription:
+        topic?.subscription === "opt_in" ? "opt_in" : "opt_out",
+    };
+  }
+
   async function sendEmail({ to, subject, text, html, idempotencyKey, entityRef }) {
     const payload = JSON.stringify({
       from: emailFrom,
@@ -334,19 +394,32 @@ export function createNewsletterManager({
         "X-Entity-Ref-ID": entityRef || idempotencyKey,
       },
     });
+    const operation = "POST /emails";
 
     for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
-      const response = await fetch(normalizedEmailEndpoint, {
-        method: "POST",
-        headers: {
-          authorization: "Bearer " + apiKey,
-          "content-type": "application/json",
-          "Idempotency-Key": idempotencyKey,
-          "User-Agent": "gracz.pl-newsletter/1.0",
-        },
-        body: payload,
-        signal: AbortSignal.timeout(10_000),
-      });
+      let response;
+      try {
+        response = await fetch(normalizedEmailEndpoint, {
+          method: "POST",
+          headers: {
+            authorization: "Bearer " + apiKey,
+            "content-type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+            "User-Agent": "gracz.pl-newsletter/1.0",
+          },
+          body: payload,
+          signal: AbortSignal.timeout(requestTimeoutMs),
+        });
+      } catch (cause) {
+        if (attempt < PROVIDER_MAX_ATTEMPTS) {
+          await sleep(networkRetryDelayMs(attempt));
+          continue;
+        }
+        throw providerError("NEWSLETTER_MAIL_FAILED", 502, {
+          operation,
+          providerName: cleanProviderErrorName(cause?.name),
+        });
+      }
 
       const raw = await response.text().catch(() => "");
       if (response.ok) {
@@ -362,27 +435,44 @@ export function createNewsletterManager({
         continue;
       }
 
-      throw providerError("NEWSLETTER_MAIL_FAILED", response.status, raw);
+      throw providerError("NEWSLETTER_MAIL_FAILED", response.status, {
+        operation,
+        providerName: providerErrorName(raw),
+        providerRequestId: providerRequestId(response),
+      });
     }
 
-    throw providerError("NEWSLETTER_MAIL_FAILED", 502);
+    throw providerError("NEWSLETTER_MAIL_FAILED", 502, { operation });
   }
 
   async function api(path, { method, body, expected }) {
     const payload =
       body === undefined ? undefined : JSON.stringify(removeUndefined(body));
+    const operation = providerOperation(method, path);
 
     for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
-      const response = await fetch(normalizedBase + path, {
-        method,
-        headers: {
-          authorization: "Bearer " + apiKey,
-          "content-type": "application/json",
-          "User-Agent": "gracz.pl-newsletter/1.0",
-        },
-        body: payload,
-        signal: AbortSignal.timeout(10_000),
-      });
+      let response;
+      try {
+        response = await fetch(normalizedBase + path, {
+          method,
+          headers: {
+            authorization: "Bearer " + apiKey,
+            "content-type": "application/json",
+            "User-Agent": "gracz.pl-newsletter/1.0",
+          },
+          body: payload,
+          signal: AbortSignal.timeout(requestTimeoutMs),
+        });
+      } catch (cause) {
+        if (attempt < PROVIDER_MAX_ATTEMPTS) {
+          await sleep(networkRetryDelayMs(attempt));
+          continue;
+        }
+        throw providerError("NEWSLETTER_PROVIDER_FAILED", 502, {
+          operation,
+          providerName: cleanProviderErrorName(cause?.name),
+        });
+      }
 
       const raw = await response.text().catch(() => "");
       if (expected.includes(response.status)) {
@@ -398,14 +488,37 @@ export function createNewsletterManager({
         continue;
       }
 
-      throw providerError("NEWSLETTER_PROVIDER_FAILED", response.status, raw);
+      throw providerError("NEWSLETTER_PROVIDER_FAILED", response.status, {
+        operation,
+        providerName: providerErrorName(raw),
+        providerRequestId: providerRequestId(response),
+      });
     }
 
-    throw providerError("NEWSLETTER_PROVIDER_FAILED", 502);
+    throw providerError("NEWSLETTER_PROVIDER_FAILED", 502, { operation });
   }
 
   function encrypt(payload) {
-    const iv = randomBytes(12);
+    return encryptWithIv(payload, randomBytes(12));
+  }
+
+  function deterministicUnsubscribeToken(confirmData) {
+    const payload = {
+      v: 1,
+      purpose: "unsubscribe",
+      jti: "u-" + confirmData.jti,
+      iat: confirmData.iat,
+      exp: confirmData.iat + UNSUBSCRIBE_TTL_MS,
+      email: confirmData.email,
+    };
+    const iv = createHmac("sha256", key)
+      .update("newsletter-unsubscribe:" + confirmData.jti, "utf8")
+      .digest()
+      .subarray(0, 12);
+    return encryptWithIv(payload, iv);
+  }
+
+  function encryptWithIv(payload, iv) {
     const cipher = createCipheriv("aes-256-gcm", key, iv);
     const ciphertext = Buffer.concat([
       cipher.update(Buffer.from(JSON.stringify(payload), "utf8")),
@@ -505,6 +618,33 @@ function validateMailbox(value) {
   return local + "@" + domain.toLowerCase();
 }
 
+function contactPropertyValue(contact, key) {
+  const raw = contact?.properties?.[key];
+  if (
+    raw &&
+    typeof raw === "object" &&
+    !Array.isArray(raw) &&
+    Object.prototype.hasOwnProperty.call(raw, "value")
+  ) {
+    return raw.value;
+  }
+  return raw;
+}
+
+function contactPropertyNumber(contact, key) {
+  const value = Number(contactPropertyValue(contact, key) ?? 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function staleConfirmation() {
+  const error = new Error(
+    "Ten link nie może ponownie aktywować newslettera. Poproś o nowy link zapisu."
+  );
+  error.code = "NEWSLETTER_CONFIRMATION_STALE";
+  error.status = 409;
+  throw error;
+}
+
 function invalidEmail() {
   const error = new Error("Podaj prawidłowy adres e-mail.");
   error.code = "INVALID_EMAIL";
@@ -519,12 +659,69 @@ function invalidToken() {
   throw error;
 }
 
-function providerError(code, status = 502) {
+function providerError(code, status = 502, details = {}) {
   const error = new Error("Usługa newslettera jest chwilowo niedostępna.");
   error.code = code;
   error.status = Number.isInteger(status) ? status : 502;
   if (error.status < 400) error.status = 502;
+  error.providerOperation = cleanProviderOperation(details.operation);
+  error.providerStatus = Number.isInteger(status) ? status : null;
+  error.providerName = cleanProviderErrorName(details.providerName);
+  error.providerRequestId = cleanProviderRequestId(details.providerRequestId);
   return error;
+}
+
+function providerOperation(method, path) {
+  const verb = String(method || "").toUpperCase();
+  const value = String(path || "");
+  if (/^\/contacts\/[^/]+\/segments\/[^/?]+/.test(value)) {
+    return verb + " /contacts/{contact}/segments/{segment}";
+  }
+  if (/^\/contacts\/[^/]+\/segments(?:\?|$)/.test(value)) {
+    return verb + " /contacts/{contact}/segments";
+  }
+  if (/^\/contacts\/[^/]+\/topics(?:\?|$)/.test(value)) {
+    return verb + " /contacts/{contact}/topics";
+  }
+  if (/^\/contacts\/[^/?]+/.test(value)) {
+    return verb + " /contacts/{contact}";
+  }
+  if (/^\/contacts(?:\?|$)/.test(value)) return verb + " /contacts";
+  if (/^\/segments(?:\?|$)/.test(value)) return verb + " /segments";
+  if (/^\/topics(?:\?|$)/.test(value)) return verb + " /topics";
+  if (/^\/contact-properties(?:\?|$)/.test(value)) {
+    return verb + " /contact-properties";
+  }
+  return verb + " /provider";
+}
+
+function providerErrorName(raw) {
+  try {
+    const parsed = raw ? JSON.parse(raw) : {};
+    return cleanProviderErrorName(parsed?.name || parsed?.code);
+  } catch {
+    return "";
+  }
+}
+
+function providerRequestId(response) {
+  return cleanProviderRequestId(
+    response?.headers?.get?.("x-request-id") ||
+      response?.headers?.get?.("x-resend-request-id") ||
+      response?.headers?.get?.("request-id")
+  );
+}
+
+function cleanProviderOperation(value) {
+  return String(value || "").replace(/[\r\n]/g, "").slice(0, 120);
+}
+
+function cleanProviderErrorName(value) {
+  return String(value || "").replace(/[^a-zA-Z0-9_.:-]/g, "").slice(0, 80);
+}
+
+function cleanProviderRequestId(value) {
+  return String(value || "").replace(/[^a-zA-Z0-9_.:-]/g, "").slice(0, 120);
 }
 
 function cleanShort(value, max) {
@@ -577,6 +774,10 @@ function providerRetryDelayMs(response, attempt) {
       return Math.min(Math.max(retryAt - Date.now(), 100), 5_000);
     }
   }
+  return Math.min(PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1), 3_000);
+}
+
+function networkRetryDelayMs(attempt) {
   return Math.min(PROVIDER_RETRY_BASE_MS * 2 ** (attempt - 1), 3_000);
 }
 
