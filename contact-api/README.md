@@ -405,3 +405,26 @@ An old token cannot reactivate a subscription after first-party unsubscribe or a
 - first-party unsubscribe repairs provider drift;
 - legacy active provider proof imports exactly once;
 - existing stale-token, resubscribe, retry and partial-activation tests remain green.
+
+
+### Controlled reconciliation runner
+
+R4.5 does not expose reconciliation through a public HTTP endpoint.
+
+An operator may reconcile exactly one mailbox per invocation using the dedicated CLI runner:
+
+```bash
+NEWSLETTER_RECONCILE_ENABLED=1 npm run reconcile:newsletter -- user@example.com
+```
+
+Safety properties:
+
+- the runner requires the explicit `NEWSLETTER_RECONCILE_ENABLED=1` guard;
+- it requires durable PostgreSQL persistence and the normal Newsletter/Resend secrets;
+- it processes one mailbox only;
+- it prints only the masked recipient and reconciliation state;
+- it does not create a public route and is not a background worker;
+- provider-side inactive/withdrawn state is durably blocked in first-party state until a fresh double opt-in succeeds;
+- accidental provider reactivation while a durable provider block exists is forced back to non-marketing state.
+
+This runner is an operational recovery/reconciliation tool, not a campaign sender.
