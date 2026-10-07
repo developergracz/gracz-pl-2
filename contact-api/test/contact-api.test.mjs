@@ -148,7 +148,11 @@ test("contact API security regression suite", async (t) => {
     assert.match(deliveries[0].body.html, /Odpowiedz przez gracz\.pl/);
     assert.match(deliveries[0].body.html, /gracz<span[^>]*>\.pl<\/span>/);
     assert.match(deliveries[0].body.html, /FULL MAX PREMIUM/);
-    assert.match(deliveries[0].body.html, /NEWSLETTER GRACZ\.PL/);
+    assert.match(deliveries[0].body.html, /NEWSLETTER/);
+    assert.match(
+      deliveries[0].body.html,
+      /color:#ffffff">gracz<\/span><span style="color:#f0505d">\.pl<\/span>/
+    );
     assert.match(deliveries[0].body.html, /Zapisz się do newslettera gracz\.pl/);
 
     const tokenMatch = deliveries[0].body.html.match(
@@ -199,9 +203,17 @@ test("contact API security regression suite", async (t) => {
     assert.equal(delivery.body.to[0], "jan@example.test");
     assert.equal(delivery.body.reply_to, "admin@gracz.pl");
     assert.match(delivery.body.subject, /^Odp: gracz\.pl — Test formularza$/);
-    assert.match(delivery.body.html, /ODPOWIEDŹ GRACZ\.PL/);
+    assert.match(delivery.body.html, /ODPOWIEDŹ/);
+    assert.match(
+      delivery.body.html,
+      /color:#ffffff">gracz<\/span><span style="color:#f0505d">\.pl<\/span>/
+    );
     assert.match(delivery.body.html, /FULL MAX PREMIUM/);
-    assert.match(delivery.body.html, /NEWSLETTER GRACZ\.PL/);
+    assert.match(delivery.body.html, /NEWSLETTER/);
+    assert.match(
+      delivery.body.html,
+      /color:#ffffff">gracz<\/span><span style="color:#f0505d">\.pl<\/span>/
+    );
     assert.match(delivery.body.html, /Zapisz się do newslettera gracz\.pl/);
     assert.equal(delivery.body.html.includes("<script>"), false);
     assert.ok(delivery.body.html.includes("&lt;script&gt;"));
