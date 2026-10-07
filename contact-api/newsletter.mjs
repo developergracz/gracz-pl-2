@@ -10,6 +10,9 @@ const TOKEN_VERSION = "n1";
 const CONFIRM_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const UNSUBSCRIBE_TTL_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 const MAX_TOKEN_LENGTH = 12_000;
+const CONFIRMED_AT_KEY = "gracz_newsletter_confirmed_at";
+const UNSUBSCRIBED_AT_KEY = "gracz_newsletter_unsubscribed_at";
+const CONSENT_VERSION_KEY = "gracz_newsletter_consent_version";
 
 export function createNewsletterManager({
   secret,
@@ -46,6 +49,7 @@ export function createNewsletterManager({
       v: 1,
       purpose: "confirm",
       jti: randomUUID(),
+      iat: Date.now(),
       exp: Date.now() + CONFIRM_TTL_MS,
       email: cleanEmail,
       name: cleanName,
@@ -355,7 +359,9 @@ function validateTokenPayload(data, purpose) {
   if (data.v !== 1 || data.purpose !== purpose) invalidToken();
   if (typeof data.jti !== "string" || data.jti.length < 8 || data.jti.length > 80) invalidToken();
   validateMailbox(data.email);
-  if (!Number.isFinite(data.exp)) invalidToken();
+  if (!Number.isFinite(data.iat) || !Number.isFinite(data.exp)) invalidToken();
+  if (data.iat > Date.now() + 60_000) invalidToken();
+  if (purpose === "confirm" && data.exp - data.iat > CONFIRM_TTL_MS + 60_000) invalidToken();
   if (data.exp <= Date.now()) {
     const error = new Error("Link newslettera wygasł.");
     error.code = "NEWSLETTER_TOKEN_EXPIRED";
