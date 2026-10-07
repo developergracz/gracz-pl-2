@@ -299,7 +299,7 @@ createServer(async (req, res) => {
 
     reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
 
-    if (premiumReply.enabled) {
+    if (premiumReply.enabled && persistence) {
       const created = await persistence.contactCases.create({
         requestId,
         senderHash: hashValue(payload.email),
@@ -338,7 +338,7 @@ createServer(async (req, res) => {
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {
-      if (premiumReply.enabled) {
+      if (premiumReply.enabled && persistence) {
         try {
           await persistence.contactCases.markDeliveryFailed(
             requestId,
@@ -368,7 +368,7 @@ createServer(async (req, res) => {
         providerError = raw ? JSON.parse(raw) : {};
       } catch {}
 
-      if (premiumReply.enabled) {
+      if (premiumReply.enabled && persistence) {
         try {
           await persistence.contactCases.markDeliveryFailed(
             requestId,
@@ -408,7 +408,7 @@ createServer(async (req, res) => {
       result = raw ? JSON.parse(raw) : {};
     } catch {}
 
-    if (premiumReply.enabled) {
+    if (premiumReply.enabled && persistence) {
       const marked = await persistence.contactCases.markDelivered(
         requestId,
         result.id || null
