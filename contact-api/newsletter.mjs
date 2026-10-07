@@ -149,7 +149,10 @@ export function createNewsletterManager({
     }
 
     const providerState = existing
-      ? await getContactProviderState(data.email, resources)
+      ? await getContactProviderState(
+          providerContactRef(existing, data.email),
+          resources
+        )
       : {
           inSegment: false,
           topicSubscription: "opt_out",
@@ -279,6 +282,8 @@ export function createNewsletterManager({
       });
       providerContactId = createdContact?.id || null;
     } else {
+      const contactRef = providerContactRef(existing, data.email);
+
       await api("/contacts/" + encodeURIComponent(data.email), {
         method: "PATCH",
         body: {
@@ -292,20 +297,14 @@ export function createNewsletterManager({
 
       if (!providerState.inSegment) {
         await api(
-          "/contacts/" + encodeURIComponent(data.email) +
+          "/contacts/" + contactRef +
             "/segments/" + encodeURIComponent(resources.segmentId),
           { method: "POST", expected: [200, 201, 409] }
         );
       }
 
       if (providerState.topicSubscription !== "opt_in") {
-        await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
-          method: "PATCH",
-          body: {
-            topics: [{ id: resources.topicId, subscription: "opt_in" }],
-          },
-          expected: [200],
-        });
+        await updateContactTopic(contactRef, resources.topicId, "opt_in");
       }
     }
 
@@ -352,7 +351,7 @@ export function createNewsletterManager({
     const existing = await getContact(data.email);
 
     if (existing) {
-      const contactRef = encodeURIComponent(existing.id || data.email);
+      const contactRef = providerContactRef(existing, data.email);
 
       await api("/contacts/" + contactRef, {
         method: "PATCH",
@@ -364,13 +363,7 @@ export function createNewsletterManager({
         expected: [200],
       });
 
-      await api("/contacts/" + contactRef + "/topics", {
-        method: "PATCH",
-        body: {
-          topics: [{ id: resources.topicId, subscription: "opt_out" }],
-        },
-        expected: [200],
-      });
+      await updateContactTopic(contactRef, resources.topicId, "opt_out");
 
       await api(
         "/contacts/" + contactRef +
@@ -614,43 +607,38 @@ export function createNewsletterManager({
       return;
     }
 
+    const contactRef = providerContactRef(current, email);
+
     await api("/contacts/" + encoded, {
       method: "PATCH",
       body: { unsubscribed: false },
       expected: [200],
     });
     await api(
-      "/contacts/" + encoded + "/segments/" + encodeURIComponent(resources.segmentId),
+      "/contacts/" + contactRef + "/segments/" + encodeURIComponent(resources.segmentId),
       { method: "POST", expected: [200, 201, 409] }
     );
-    await api("/contacts/" + encoded + "/topics", {
-      method: "PATCH",
-      body: {
-        topics: [{ id: resources.topicId, subscription: "opt_in" }],
-      },
-      expected: [200],
-    });
+    await updateContactTopic(contactRef, resources.topicId, "opt_in");
   }
 
   async function forceProviderNewsletterOff(email, resources) {
-    const encoded = encodeURIComponent(email);
+    // A contact the provider does not know has nothing to switch off. A failed
+    // lookup propagates so the caller persists a recoverable obligation.
+    const contact = await getContact(email);
+    if (!contact) return;
+
+    const contactRef = providerContactRef(contact, email);
     let firstError = null;
 
     try {
-      await api("/contacts/" + encoded + "/topics", {
-        method: "PATCH",
-        body: {
-          topics: [{ id: resources.topicId, subscription: "opt_out" }],
-        },
-        expected: [200, 404],
-      });
+      await updateContactTopic(contactRef, resources.topicId, "opt_out", [200, 404]);
     } catch (error) {
       firstError = error;
     }
 
     try {
       await api(
-        "/contacts/" + encoded +
+        "/contacts/" + contactRef +
           "/segments/" + encodeURIComponent(resources.segmentId),
         { method: "DELETE", expected: [200, 404] }
       );
@@ -659,6 +647,23 @@ export function createNewsletterManager({
     }
 
     if (firstError) throw firstError;
+  }
+
+  // Nested contact routes (/segments, /topics) address the contact by its
+  // durable Resend id. The e-mail stays only as a fallback for a contact
+  // payload that unexpectedly carries no id.
+  function providerContactRef(contact, email) {
+    return encodeURIComponent(contact?.id || email);
+  }
+
+  // PATCH /contacts/{contact}/topics takes the bare array of updates as its
+  // body, exactly as in Resend's documented cURL examples and official SDKs.
+  async function updateContactTopic(contactRef, topicId, subscription, expected = [200]) {
+    return api("/contacts/" + contactRef + "/topics", {
+      method: "PATCH",
+      body: [{ id: topicId, subscription }],
+      expected,
+    });
   }
 
   async function markProviderOffRequired(email) {
@@ -886,14 +891,13 @@ export function createNewsletterManager({
     }
   }
 
-  async function getContactProviderState(email, resources) {
-    const encoded = encodeURIComponent(email);
+  async function getContactProviderState(contactRef, resources) {
     const [segmentsResult, topicsResult] = await Promise.all([
-      api("/contacts/" + encoded + "/segments?limit=100", {
+      api("/contacts/" + contactRef + "/segments?limit=100", {
         method: "GET",
         expected: [200],
       }),
-      api("/contacts/" + encoded + "/topics?limit=100", {
+      api("/contacts/" + contactRef + "/topics?limit=100", {
         method: "GET",
         expected: [200],
       }),
