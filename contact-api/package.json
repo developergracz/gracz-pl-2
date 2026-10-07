@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check test/contact-api.test.mjs",
+    "check": "node --check server.mjs && node --check premium-reply.mjs && node --check newsletter.mjs && node --check test/contact-api.test.mjs && node --check test/newsletter.test.mjs",
     "test": "node --test test/*.test.mjs"
   }
 }
