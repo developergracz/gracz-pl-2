@@ -612,6 +612,108 @@ test("hybrid newsletter keeps Resend operational state and no reconciliation eng
   );
 });
 
+test("hybrid concurrent fresh confirmations keep provider active safely", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const originalToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(originalToken);
+
+  provider.hostedUnsubscribe("concurrent@example.test");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshA = extractToken(provider.emails[2], "confirm");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshB = extractToken(provider.emails[3], "confirm");
+
+  const results = await Promise.all([
+    manager.confirm(freshA),
+    manager.confirm(freshB),
+  ]);
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((entry) => entry.state === "resubscribed"));
+  assert.equal(
+    provider.memberships.get("concurrent@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("concurrent@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
+test("hybrid confirmation fails closed if consent commit loses to unsubscribe", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectUnsubscribeRace = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    getContact: (...args) => backingStore.getContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    async upsertContact(args) {
+      if (injectUnsubscribeRace && args.currentState === "subscribed") {
+        injectUnsubscribeRace = false;
+        const current = await backingStore.getContact(args.emailHash);
+        await backingStore.upsertContact({
+          emailHash: args.emailHash,
+          providerContactId: args.providerContactId,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+        return null;
+      }
+      return backingStore.upsertContact(args);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "race-off@example.test",
+    name: "Race Off",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+  injectUnsubscribeRace = true;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) =>
+      error?.code === "NEWSLETTER_CONFIRMATION_STALE" ||
+      error?.code === "NEWSLETTER_CONSENT_CONFLICT"
+  );
+
+  assert.equal(
+    provider.memberships.get("race-off@example.test").has("segment-1"),
+    false,
+    "failed consent commit must remove newsletter segment membership"
+  );
+  assert.equal(
+    provider.topicStates.get("race-off@example.test").get("topic-1"),
+    "opt_out",
+    "failed consent commit must force newsletter topic opt-out"
+  );
+});
+
 test("newsletter R3 repairs partial activation without duplicate welcome", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);
