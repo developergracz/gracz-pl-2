@@ -324,3 +324,177 @@ body.contact-modal-open{overflow:hidden}
   box-shadow:0 8px 20px rgba(86,200,193,.30),0 0 0 2px rgba(86,200,193,.13);
   outline:0;
 }
+
+
+/* FULL MAX PREMIUM CONTACT + NEWSLETTER FLOW R1 */
+.contact-modal--full-max{
+  width:min(760px,calc(100% - 30px))!important;
+  max-height:min(800px,calc(100dvh - 32px))!important;
+}
+.contact-modal--full-max .contact-modal__panel{
+  max-height:min(800px,calc(100dvh - 32px))!important;
+}
+.contact-flow-view[hidden]{display:none!important}
+.contact-casebar{
+  display:grid;
+  grid-template-columns:1.35fr .8fr .85fr .8fr;
+  margin:0 0 14px;
+  border-radius:12px;
+  overflow:hidden;
+  background:rgba(255,255,255,.035);
+}
+.contact-casebar>div{padding:10px 11px;min-width:0}
+.contact-casebar span{
+  display:block;
+  margin-bottom:4px;
+  color:#78938d;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.contact-casebar strong{display:block;color:#d9ebe7;font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.contact-chip{display:inline-flex!important;width:auto!important;padding:4px 7px;border-radius:999px;font-size:9px!important}
+.contact-chip--teal{background:rgba(86,200,193,.13);color:#82ddd5!important}
+.contact-chip--gold{background:rgba(240,191,85,.12);color:#f2c86b!important}
+
+.contact-newsletter-card{
+  display:grid;
+  grid-template-columns:42px 1fr;
+  gap:12px;
+  margin:2px 0 3px;
+  padding:14px;
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(86,200,193,.105),rgba(255,255,255,.025));
+}
+.contact-newsletter-card__icon{
+  width:42px;height:42px;
+  display:grid;place-items:center;
+  border-radius:11px;
+  background:rgba(86,200,193,.14);
+  color:#83e2da;
+  font-size:20px;
+}
+.contact-newsletter-card__kicker{margin:0 0 4px;color:#6fd8d0;font-size:9px;font-weight:900;letter-spacing:.08em}
+.contact-newsletter-card h3{margin:0 0 5px;color:#ecf6f4;font:800 16px/1.2 Montserrat,Arial,sans-serif}
+.contact-newsletter-card p{margin:0;color:#91aaa4;font-size:10.5px;line-height:1.5}
+.contact-newsletter-card__benefits{display:flex;gap:7px 13px;flex-wrap:wrap;margin:9px 0;color:#86aaa3;font-size:9.5px;font-weight:700}
+.contact-newsletter-card__button{
+  min-height:36px;
+  padding:0 14px;
+  border:0;
+  border-radius:9px;
+  background:#56c8c1;
+  color:#052e29;
+  font:900 10.5px/1 Montserrat,Arial,sans-serif;
+  cursor:pointer;
+}
+.contact-newsletter-card__button:hover{filter:brightness(1.05)}
+.contact-preview-note{
+  margin:0;
+  padding:9px 11px;
+  border-radius:9px;
+  background:rgba(105,161,218,.08);
+  color:#8da9bd;
+  font-size:9.5px;
+  line-height:1.45;
+}
+.contact-preview-note strong{color:#a9cce4}
+
+/* e-mail FULL MAX PREMIUM preview */
+.contact-email-preview{
+  margin:-22px -24px -20px;
+  background:#edf4f3;
+  color:#17342f;
+  min-height:520px;
+}
+.email-preview__top{
+  display:flex;justify-content:space-between;gap:16px;align-items:flex-start;
+  padding:24px 28px 20px;
+  background:#071a17;color:#fff;
+}
+.email-preview__logo{display:block;font-size:29px;font-weight:900;letter-spacing:-1px}
+.email-preview__logo span{color:#e54848}
+.email-preview__top p{margin:6px 0 0;color:#a8c6c0;font-size:10.5px}
+.email-preview__badge{padding:6px 9px;border-radius:999px;background:#123b34;color:#bce4de;font-size:9px;font-weight:800}
+.email-preview__casebar{display:grid;grid-template-columns:1.4fr .8fr .8fr .9fr;background:#f4faf9}
+.email-preview__casebar>div{padding:12px 14px}
+.email-preview__casebar span{display:block;color:#718883;font-size:9px}
+.email-preview__casebar strong{display:block;margin-top:4px;color:#16342f;font-size:10.5px}
+.email-preview__status{display:inline-block!important;width:auto;padding:4px 7px;border-radius:999px;background:#dff4f0;color:#0d665c!important;font-size:9px!important}
+.email-preview__priority{display:inline-block!important;width:auto;padding:4px 7px;border-radius:999px;background:#fff1df;color:#915a09!important;font-size:9px!important}
+.email-preview__content{padding:24px 28px 26px;font-size:12.5px;line-height:1.65}
+.email-preview__hello{font-size:17px;margin:0 0 7px}
+.email-preview__content>p{color:#49645f}
+.email-preview__answer{margin:16px 0;padding:16px 17px;border-radius:11px;background:#f8fbfb;box-shadow:inset 4px 0 0 #56c8c1}
+.email-preview__answer>span{display:block;color:#0f5d55;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.email-preview__answer>strong{display:block;margin:5px 0;color:#0d5a52;font-size:14px}
+.email-preview__answer p{margin:0;color:#49645f}
+.email-preview__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.email-preview__grid>div{padding:12px;border-radius:9px;background:#f7faf9}
+.email-preview__grid span{display:block;color:#718883;font-size:9px;text-transform:uppercase}
+.email-preview__grid strong{display:block;margin-top:4px;color:#24453f;font-size:10.5px;overflow-wrap:anywhere}
+.email-preview__newsletter{margin:16px 0;padding:17px 18px;border-radius:12px;background:linear-gradient(135deg,#e9f8f6,#f8fcfb)}
+.email-preview__newsletter-kicker{color:#0b7065;font-size:9px;font-weight:900;letter-spacing:.06em}
+.email-preview__newsletter h3{margin:5px 0 5px;color:#0b6158;font-size:16px}
+.email-preview__newsletter p{margin:0 0 11px;color:#4e6964;font-size:11.5px}
+.email-preview__newsletter button{
+  min-height:38px;padding:0 15px;border:0;border-radius:9px;background:#56c8c1;color:#082f2a;font-weight:900;cursor:pointer
+}
+.email-preview__newsletter small{display:block;margin-top:9px;color:#78908b;font-size:9.5px}
+.email-preview__security{padding:11px 12px;border-radius:9px;background:#fbfcfc;color:#6f8580;font-size:10px}
+.email-preview__actions{display:flex;gap:8px;margin-top:15px}
+.email-preview__actions button{min-height:38px;padding:0 14px;border:0;border-radius:9px;font-weight:800;cursor:pointer}
+.email-preview__back{background:#e4f0ee;color:#17342f}
+.email-preview__close{background:#071a17;color:#fff}
+.email-preview__test{margin:12px 0 0!important;color:#8da09c!important;font-size:9px!important}
+
+/* newsletter consent */
+.contact-newsletter-consent{padding-right:4px}
+.contact-newsletter-consent h2,.contact-newsletter-thanks h2{padding-right:45px}
+.newsletter-consent-form{display:grid;gap:11px;margin-top:15px}
+.contact-newsletter-consent .optional{color:#6e8b85;font-size:9px;text-transform:uppercase}
+.newsletter-consent-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.newsletter-consent-benefits>div{padding:11px;border-radius:10px;background:rgba(86,200,193,.055)}
+.newsletter-consent-benefits strong{display:block;color:#a8ddd7;font-size:10.5px}
+.newsletter-consent-benefits span{display:block;margin-top:3px;color:#789891;font-size:9.5px}
+.newsletter-consent-check{margin:0!important}
+.newsletter-consent-status{min-height:18px;margin:0;color:#8ca59f;font-size:10.5px}
+.newsletter-consent-status.is-error{color:#ff9da5}
+.newsletter-consent-status.is-success{color:#7fe0c7}
+.newsletter-consent-actions{display:flex;gap:9px;justify-content:flex-end}
+.newsletter-consent-actions button{min-height:42px;padding:0 15px;border:0;border-radius:9px;font-weight:900;cursor:pointer}
+.newsletter-consent-back{background:rgba(255,255,255,.06);color:#b6c8c4}
+.newsletter-consent-confirm{background:#56c8c1;color:#062f2a}
+.newsletter-consent-note{margin:0;color:#708c86;font-size:9.5px;line-height:1.45}
+
+/* thank you */
+.contact-newsletter-thanks{text-align:left;padding:6px 4px 4px}
+.newsletter-thanks__icon{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:rgba(86,200,193,.15);color:#76e0d6;font-size:29px;font-weight:900;margin-bottom:14px}
+.contact-newsletter-thanks h2{margin-bottom:8px!important}
+.newsletter-thanks__grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0}
+.newsletter-thanks__grid>div{padding:12px;border-radius:10px;background:rgba(255,255,255,.035)}
+.newsletter-thanks__grid span{display:block;color:#708d87;font-size:9px;text-transform:uppercase}
+.newsletter-thanks__grid strong{display:block;margin-top:4px;color:#c6dfda;font-size:10.5px;overflow-wrap:anywhere}
+.newsletter-thanks__benefits{padding:15px;border-radius:12px;background:rgba(86,200,193,.06)}
+.newsletter-thanks__benefits h3{margin:0 0 9px;color:#9fe0d9;font-size:14px}
+.newsletter-thanks__benefits>div{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.newsletter-thanks__benefits span{padding:10px;border-radius:9px;background:rgba(255,255,255,.035);color:#789891;font-size:9.5px;line-height:1.4}
+.newsletter-thanks__benefits strong{display:block;color:#b9d6d0;margin-bottom:3px}
+.newsletter-thanks__next{margin-top:13px;padding:12px;border-radius:10px;background:rgba(86,200,193,.07);color:#8fa8a2;font-size:10.5px;line-height:1.5}
+.newsletter-thanks__next strong{color:#a9ddd7}
+.newsletter-thanks__actions{display:flex;gap:9px;margin-top:15px}
+.newsletter-thanks__actions button{min-height:40px;padding:0 14px;border:0;border-radius:9px;font-weight:900;cursor:pointer}
+.newsletter-thanks__actions button:first-child{background:#56c8c1;color:#062f2a}
+.newsletter-thanks__actions button:last-child{background:rgba(255,255,255,.06);color:#c5d5d1}
+
+@media(max-width:680px){
+  .contact-casebar,.email-preview__casebar{grid-template-columns:1fr 1fr}
+  .contact-newsletter-card{grid-template-columns:1fr}
+  .contact-newsletter-card__icon{display:none}
+  .contact-email-preview{margin:-18px -15px -15px}
+  .email-preview__top,.email-preview__content{padding-left:17px;padding-right:17px}
+  .email-preview__grid,.newsletter-thanks__grid{grid-template-columns:1fr}
+  .newsletter-consent-benefits,.newsletter-thanks__benefits>div{grid-template-columns:1fr}
+  .newsletter-consent-actions,.newsletter-thanks__actions,.email-preview__actions{flex-direction:column}
+  .newsletter-consent-actions button,.newsletter-thanks__actions button,.email-preview__actions button{width:100%}
+}
