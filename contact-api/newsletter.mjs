@@ -133,7 +133,7 @@ export function createNewsletterManager({
       await api(
         "/contacts/" + encodeURIComponent(data.email) +
           "/segments/" + encodeURIComponent(resources.segmentId),
-        { method: "POST", expected: [200, 409] }
+        { method: "POST", expected: [200, 201, 409] }
       );
 
       await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {

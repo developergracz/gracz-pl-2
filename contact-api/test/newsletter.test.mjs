@@ -159,7 +159,7 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
       memberships.set(email, set);
       if (method === "POST") {
         set.add(segmentId);
-        return send(res, 200, { object: "contact_segment", id: segmentId });
+        return send(res, 201, { object: "contact_segment", id: segmentId });
       }
       if (method === "DELETE") {
         set.delete(segmentId);
