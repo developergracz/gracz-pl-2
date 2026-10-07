@@ -614,6 +614,7 @@ input,
 
 </style>
 <link rel="stylesheet" href="/assets/newsletter-home-header-1to1.css?v=r1">
+<link rel="stylesheet" href="/assets/newsletter-full-max-premium-r1.css?v=r1">
 <script src="/assets/newsletter-home-header-1to1.js?v=r1" defer></script>
 </head>
 <body>
@@ -717,7 +718,7 @@ input,
     </div>
   </header>
 
-<main class="wrap">
+<main class="wrap" id="tresc">
   <section class="hero" aria-labelledby="newsletter-title">
     <div class="hero-inner">
       <div class="info">
@@ -760,24 +761,64 @@ input,
           <div class="side-label">Dołącz do newslettera</div>
           <h2>Najważniejsze informacje prosto na e-mail</h2>
           <p>
-            Podaj adres e-mail. Po uruchomieniu wersji produkcyjnej otrzymasz wiadomość
-            z bezpiecznym linkiem potwierdzającym zapis.
+            Podaj adres e-mail i opcjonalny nick. Zapis działa w modelu double opt-in — aktywacja następuje dopiero po potwierdzeniu wiadomości e-mail.
           </p>
 
-          <div class="formbox">
-            <form class="preview-newsletter-form" data-preview-newsletter-form novalidate>
-              <input type="email" name="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
-              <button type="submit">Zapisz mnie do newslettera</button>
-              <div class="note" data-preview-newsletter-status>
-                Podgląd techniczny — możesz przetestować formularz. Żadne dane nie są wysyłane ani zapisywane.
+          <div class="signup-flow" aria-label="Proces zapisu">
+            <div class="signup-step is-active"><span>1</span><b>Dane</b></div>
+            <div class="signup-step"><span>2</span><b>Potwierdzenie</b></div>
+            <div class="signup-step"><span>3</span><b>Gotowe</b></div>
+          </div>
+
+          <div class="formbox" id="zapis">
+            <form class="premium-newsletter-form" data-preview-newsletter-form novalidate>
+              <div class="field-group">
+                <label for="newsletter-email">Adres e-mail <span aria-hidden="true">*</span></label>
+                <input id="newsletter-email" type="email" name="email" autocomplete="email" maxlength="254" placeholder="np. gracz@example.com" required>
+                <small>Na ten adres wyślemy link potwierdzający zapis.</small>
               </div>
+
+              <div class="field-group">
+                <label for="newsletter-nick">Nick <em>opcjonalnie</em></label>
+                <input id="newsletter-nick" type="text" name="preferredNick" autocomplete="nickname" minlength="3" maxlength="24" pattern="[A-Za-z0-9_.-]{3,24}" placeholder="Twój nick w gracz.pl">
+                <small>3–24 znaki: litery, cyfry, podkreślenie, kropka lub myślnik.</small>
+              </div>
+
+              <label class="consent-row">
+                <input type="checkbox" name="consent" value="yes" required>
+                <span class="consent-box" aria-hidden="true">✓</span>
+                <span>Chcę otrzymywać newsletter gracz.pl dotyczący nowych gier, Academy, poradników i rozwoju serwisu. <b>Wymagane.</b></span>
+              </label>
+
+              <label class="consent-row">
+                <input type="checkbox" name="legal" value="yes" required>
+                <span class="consent-box" aria-hidden="true">✓</span>
+                <span>Zapoznałem(-am) się z <button type="button" class="inline-legal" data-modal="privacy">Polityką prywatności</button> i <button type="button" class="inline-legal" data-modal="terms">Regulaminem</button>. <b>Wymagane.</b></span>
+              </label>
+
+              <div class="bot-field" aria-hidden="true">
+                <label for="newsletter-website">Strona internetowa</label>
+                <input id="newsletter-website" type="text" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <button class="premium-submit" type="submit" data-newsletter-submit>
+                <span class="premium-submit__label">Zapisz mnie do newslettera</span>
+                <span class="premium-submit__wait" aria-hidden="true">Przygotowuję zapis…</span>
+              </button>
+
+              <div class="newsletter-status" data-preview-newsletter-status role="status" aria-live="polite">
+                <strong>Bezpieczny double opt-in.</strong>
+                Po wysłaniu formularza otrzymasz wiadomość z linkiem potwierdzającym. Samo wpisanie adresu nie aktywuje subskrypcji.
+              </div>
+
+              <button class="resend-link" type="button" data-preview-resend hidden>Nie dostałem wiadomości — wyślij ponownie</button>
             </form>
           </div>
 
-          <div class="security">
-            <strong>Bezpieczny zapis</strong><br>
-            Planowana wersja produkcyjna: double opt-in, osobna zgoda newsletterowa,
-            możliwość rezygnacji oraz link do zarządzania subskrypcją.
+          <div class="security premium-security">
+            <div><span aria-hidden="true">✓</span><p><strong>Double opt-in</strong><br>Subskrypcja zostaje aktywowana dopiero po potwierdzeniu z wiadomości e-mail.</p></div>
+            <div><span aria-hidden="true">✓</span><p><strong>Możliwość rezygnacji</strong><br>Każda wiadomość będzie zawierać bezpieczny link do wypisania się.</p></div>
+            <div><span aria-hidden="true">✓</span><p><strong>Osobna zgoda newsletterowa</strong><br>Zgoda na newsletter jest oddzielona od innych funkcji serwisu.</p></div>
           </div>
         </div>
       </aside>
@@ -789,7 +830,7 @@ input,
       <a href="/">← Wróć na stronę startową</a>
       <a href="/szukaj/">Wypróbuj wyszukiwarkę</a>
     </div>
-    <div class="preview-note">Podgląd projektu newslettera — boczna gałąź, bez zapisu danych</div>
+    <div class="preview-note">NEWSLETTER FULL MAX PREMIUM R1 — boczna gałąź testowa</div>
   </div>
 </main>
 
@@ -828,10 +869,10 @@ input,
       <h2 class="nl-footer__title">Bądź na bieżąco</h2>
       <p>Nowości, informacje o starcie serwisu i zapowiedzi nowych funkcji.</p>
       <form class="nl-footer__form" data-footer-newsletter novalidate>
-        <input type="email" name="email" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
+        <input type="email" name="email" autocomplete="email" maxlength="254" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
         <button type="submit">Zapisz się</button>
       </form>
-      <small class="nl-footer__note">Podgląd — formularz przenosi do głównego modułu zapisu; dane nie są wysyłane.</small>
+      <small class="nl-footer__note">Po kliknięciu przejdziesz do bezpiecznego formularza double opt-in powyżej.</small>
     </div>
   </div>
 
