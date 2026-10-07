@@ -209,8 +209,17 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   assert.equal(requested.state, "confirmation_sent");
   assert.equal(contacts.size, 0, "contact must not exist before double opt-in");
   assert.equal(emails.length, 1);
-  assert.match(emails[0].body.subject, /Potwierdź zapis/);
+  assert.match(emails[0].body.subject, /gracz\.pl Newsletter — potwierdź zapis/);
+  assert.match(emails[0].body.html, /FULL MAX PREMIUM/);
   assert.match(emails[0].body.html, /DOUBLE OPT-IN/);
+  assert.match(emails[0].body.html, /Potwierdź swój zapis/);
+  assert.match(emails[0].body.html, /Nowe gry/);
+  assert.match(emails[0].body.html, /Poradniki/);
+  assert.match(emails[0].body.html, /Rozwój serwisu/);
+  assert.match(
+    emails[0].body.headers["X-Entity-Ref-ID"],
+    /^gracz-newsletter-confirm-[a-f0-9]{40}$/
+  );
   assert.equal(emails[0].body.html.includes("jan@example.test"), false);
 
   const confirmMatch = emails[0].body.html.match(
@@ -263,8 +272,12 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_in");
 
   assert.equal(emails.length, 2);
-  assert.match(emails[1].body.subject, /Witamy w newsletterze/);
+  assert.match(emails[1].body.subject, /gracz\.pl Newsletter — witamy!/);
   assert.match(emails[1].body.html, /FULL MAX PREMIUM/);
+  assert.match(
+    emails[1].body.headers["X-Entity-Ref-ID"],
+    /^gracz-newsletter-welcome-[a-f0-9]{40}$/
+  );
 
   const unsubscribeMatch = emails[1].body.html.match(
     /https:\/\/gracz\.pl\/newsletter\/#unsubscribe=([A-Za-z0-9._-]+)/
