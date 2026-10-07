@@ -21,6 +21,8 @@ export function createMemoryNewsletterConsentStore() {
       consent_version: consentVersion,
       confirmed_at: null,
       unsubscribed_at: null,
+      provider_blocked_at: null,
+      state_version: 0,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -39,6 +41,9 @@ export function createMemoryNewsletterConsentStore() {
     consentVersion = null,
     confirmedAt = null,
     unsubscribedAt = null,
+    providerBlockedAt = null,
+    clearProviderBlock = false,
+    expectedStateVersion = null,
   }) {
     const existing = contacts.get(emailHash) || {
       email_hash: emailHash,
@@ -47,15 +52,38 @@ export function createMemoryNewsletterConsentStore() {
       consent_version: null,
       confirmed_at: null,
       unsubscribed_at: null,
+      provider_blocked_at: null,
+      state_version: 0,
       created_at: new Date(),
       updated_at: new Date(),
     };
 
+    if (
+      expectedStateVersion !== null &&
+      expectedStateVersion !== undefined &&
+      existing.state_version !== Number(expectedStateVersion)
+    ) {
+      return null;
+    }
+
+    const existed = contacts.has(emailHash);
     if (providerContactId) existing.provider_contact_id = providerContactId;
     existing.current_state = currentState;
     if (consentVersion) existing.consent_version = consentVersion;
     if (confirmedAt) existing.confirmed_at = new Date(confirmedAt);
     if (unsubscribedAt) existing.unsubscribed_at = new Date(unsubscribedAt);
+    if (clearProviderBlock) {
+      existing.provider_blocked_at = null;
+    } else if (providerBlockedAt) {
+      const next = new Date(providerBlockedAt);
+      const current = existing.provider_blocked_at
+        ? new Date(existing.provider_blocked_at)
+        : null;
+      if (!current || next.getTime() > current.getTime()) {
+        existing.provider_blocked_at = next;
+      }
+    }
+    if (existed) existing.state_version += 1;
     existing.updated_at = new Date();
 
     contacts.set(emailHash, existing);

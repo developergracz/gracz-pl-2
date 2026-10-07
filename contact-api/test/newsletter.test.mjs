@@ -567,6 +567,235 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.ok(thirdUnsubscribeToken.startsWith("n1."));
 });
 
+test("R4.5 reconciliation never silently reactivates provider opt-out", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "reconcile@example.test",
+    name: "Reconcile Test",
+    source: "newsletter_page",
+  });
+  const confirmToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(confirmToken);
+
+  provider.hostedUnsubscribe("reconcile@example.test");
+
+  const result = await manager.reconcile("reconcile@example.test");
+  assert.equal(result.state, "fresh_confirmation_required");
+  assert.equal(
+    provider.memberships.get("reconcile@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("reconcile@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  const emailHash = consentEmailHash("reconcile@example.test");
+  let contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.ok(contact.provider_blocked_at);
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter(
+      (event) =>
+        event.event_type === "provider_sync" &&
+        event.metadata?.outcome === "provider_inactive"
+    ).length,
+    1
+  );
+
+  // Provider state must not be able to silently erase the durable block.
+  provider.contacts.get("reconcile@example.test").unsubscribed = false;
+  provider.memberships.get("reconcile@example.test").add("segment-1");
+  provider.topicStates.get("reconcile@example.test").set("topic-1", "opt_in");
+
+  const repaired = await manager.reconcile("reconcile@example.test");
+  assert.equal(repaired.state, "fresh_confirmation_required");
+  assert.equal(
+    provider.memberships.get("reconcile@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("reconcile@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  await assert.rejects(
+    () => manager.confirm(confirmToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+
+  await manager.requestOptIn({
+    email: "reconcile@example.test",
+    name: "Reconcile Test",
+    source: "newsletter_page",
+  });
+  const freshToken = extractToken(provider.emails[2], "confirm");
+  const reactivated = await manager.confirm(freshToken);
+  assert.equal(reactivated.state, "resubscribed");
+
+  contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(contact.provider_blocked_at, null);
+});
+
+test("R4.5 concurrent fresh confirmations cannot re-enable a provider block race", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const originalToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(originalToken);
+
+  provider.hostedUnsubscribe("concurrent@example.test");
+  const blocked = await manager.reconcile("concurrent@example.test");
+  assert.equal(blocked.state, "fresh_confirmation_required");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshA = extractToken(provider.emails[2], "confirm");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshB = extractToken(provider.emails[3], "confirm");
+
+  const results = await Promise.all([
+    manager.confirm(freshA),
+    manager.confirm(freshB),
+  ]);
+  assert.equal(results.length, 2);
+  assert.ok(results.every((entry) => entry.state === "resubscribed"));
+
+  const emailHash = consentEmailHash("concurrent@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(contact.provider_blocked_at, null);
+  assert.equal(
+    provider.memberships.get("concurrent@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("concurrent@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
+test("R4.5 reconciliation repairs provider drift for first-party unsubscribe", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "off@example.test",
+    name: "Off Test",
+    source: "newsletter_page",
+  });
+  const confirmToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(confirmToken);
+  const unsubscribeToken = extractToken(provider.emails[1], "unsubscribe");
+  await manager.unsubscribe(unsubscribeToken);
+
+  provider.contacts.get("off@example.test").unsubscribed = false;
+  provider.memberships.get("off@example.test").add("segment-1");
+  provider.topicStates.get("off@example.test").set("topic-1", "opt_in");
+
+  const repaired = await manager.reconcile("off@example.test");
+  assert.equal(repaired.state, "repaired_unsubscribed");
+  assert.equal(
+    provider.memberships.get("off@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("off@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  const repeated = await manager.reconcile("off@example.test");
+  assert.equal(repeated.state, "in_sync");
+
+  const emailHash = consentEmailHash("off@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "unsubscribed");
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter(
+      (event) =>
+        event.event_type === "provider_sync" &&
+        event.metadata?.outcome === "repaired_unsubscribed"
+    ).length,
+    1
+  );
+});
+
+test("R4.5 reconciliation imports legacy active provider proof once", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "legacy@example.test",
+    name: "Legacy Test",
+    source: "newsletter_page",
+  });
+
+  const first = await manager.reconcile("legacy@example.test");
+  assert.equal(first.state, "in_sync");
+  assert.equal(provider.segments.length, 1);
+  assert.equal(provider.topics.length, 1);
+
+  const confirmedAt = Date.now() - 60_000;
+  provider.contacts.set("legacy@example.test", {
+    object: "contact",
+    id: "legacy-contact-1",
+    email: "legacy@example.test",
+    first_name: "Legacy",
+    last_name: "Test",
+    unsubscribed: false,
+    properties: {
+      [CONFIRMED_AT_KEY]: confirmedAt,
+      [UNSUBSCRIBED_AT_KEY]: 0,
+      gracz_newsletter_consent_version: "newsletter-r1-2026-10-07",
+    },
+  });
+  provider.memberships.set(
+    "legacy@example.test",
+    new Set(["segment-1"])
+  );
+  provider.topicStates.set(
+    "legacy@example.test",
+    new Map([["topic-1", "opt_in"]])
+  );
+
+  const imported = await manager.reconcile("legacy@example.test");
+  assert.equal(imported.state, "imported_subscribed");
+
+  const repeated = await manager.reconcile("legacy@example.test");
+  assert.equal(repeated.state, "in_sync");
+
+  const emailHash = consentEmailHash("legacy@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(new Date(contact.confirmed_at).getTime(), confirmedAt);
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter((event) => event.event_type === "provider_sync").length,
+    1
+  );
+});
+
 test("newsletter R3 repairs partial activation without duplicate welcome", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);

@@ -372,7 +372,8 @@ export function createPersistenceRepositories(database) {
             ),
             updated_at = now()
         RETURNING email_hash, provider_contact_id, current_state,
-                  consent_version, confirmed_at, unsubscribed_at`,
+                  consent_version, confirmed_at, unsubscribed_at,
+                  provider_blocked_at, state_version`,
         [
           assertHash(emailHash, "emailHash"),
           consentVersion ? String(consentVersion).slice(0, 120) : null,
@@ -385,6 +386,7 @@ export function createPersistenceRepositories(database) {
       const result = await database.query(
         `SELECT email_hash, provider_contact_id, current_state,
                 consent_version, confirmed_at, unsubscribed_at,
+                provider_blocked_at, state_version,
                 created_at, updated_at
          FROM newsletter_contacts
          WHERE email_hash = $1`,
@@ -400,12 +402,23 @@ export function createPersistenceRepositories(database) {
       consentVersion = null,
       confirmedAt = null,
       unsubscribedAt = null,
+      providerBlockedAt = null,
+      clearProviderBlock = false,
+      expectedStateVersion = null,
     }) {
+      let expectedVersion = null;
+      if (expectedStateVersion !== null && expectedStateVersion !== undefined) {
+        expectedVersion = Number(expectedStateVersion);
+        if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
+          throw new TypeError("expectedStateVersion must be a non-negative integer");
+        }
+      }
+
       const result = await database.query(
         `INSERT INTO newsletter_contacts(
           email_hash, provider_contact_id, current_state, consent_version,
-          confirmed_at, unsubscribed_at
-        ) VALUES ($1, $2, $3, $4, $5, $6)
+          confirmed_at, unsubscribed_at, provider_blocked_at, state_version
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
         ON CONFLICT (email_hash) DO UPDATE
         SET provider_contact_id = COALESCE(
               EXCLUDED.provider_contact_id,
@@ -424,9 +437,26 @@ export function createPersistenceRepositories(database) {
               EXCLUDED.unsubscribed_at,
               newsletter_contacts.unsubscribed_at
             ),
+            provider_blocked_at = CASE
+              WHEN $8::boolean THEN NULL
+              WHEN EXCLUDED.provider_blocked_at IS NOT NULL THEN
+                CASE
+                  WHEN newsletter_contacts.provider_blocked_at IS NULL
+                    THEN EXCLUDED.provider_blocked_at
+                  ELSE GREATEST(
+                    newsletter_contacts.provider_blocked_at,
+                    EXCLUDED.provider_blocked_at
+                  )
+                END
+              ELSE newsletter_contacts.provider_blocked_at
+            END,
+            state_version = newsletter_contacts.state_version + 1,
             updated_at = now()
+        WHERE $9::bigint IS NULL
+           OR newsletter_contacts.state_version = $9
         RETURNING email_hash, provider_contact_id, current_state,
-                  consent_version, confirmed_at, unsubscribed_at`,
+                  consent_version, confirmed_at, unsubscribed_at,
+                  provider_blocked_at, state_version`,
         [
           assertHash(emailHash, "emailHash"),
           providerContactId ? String(providerContactId).slice(0, 200) : null,
@@ -434,9 +464,12 @@ export function createPersistenceRepositories(database) {
           consentVersion ? String(consentVersion).slice(0, 120) : null,
           confirmedAt,
           unsubscribedAt,
+          providerBlockedAt,
+          Boolean(clearProviderBlock),
+          expectedVersion,
         ]
       );
-      return result.rows[0];
+      return result.rows[0] || null;
     },
 
     async appendConsentEvent({
