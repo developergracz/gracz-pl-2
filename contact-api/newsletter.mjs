@@ -299,7 +299,7 @@ export function createNewsletterManager({
       }
 
       if (providerState.topicSubscription !== "opt_in") {
-        await api("/contacts/" + contactRef + "/topics", {
+        await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
           method: "PATCH",
           body: {
             topics: [{ id: resources.topicId, subscription: "opt_in" }],
@@ -364,7 +364,7 @@ export function createNewsletterManager({
         expected: [200],
       });
 
-      await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
+      await api("/contacts/" + contactRef + "/topics", {
         method: "PATCH",
         body: {
           topics: [{ id: resources.topicId, subscription: "opt_out" }],
