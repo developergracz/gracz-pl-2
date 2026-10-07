@@ -299,7 +299,7 @@ After deployment with PostgreSQL enabled:
 
 ## R4.4 first-party newsletter consent ledger
 
-R4.4 makes gracz.pl the durable source of truth for newsletter consent history while keeping Resend as the delivery and marketing execution layer.
+R4.4 keeps a durable first-party audit trail of newsletter consent while Resend remains the operational delivery and subscription-state layer.
 
 ### Stored first-party state
 
@@ -314,7 +314,7 @@ The append-only event history records:
 - `provider_sync`
 - later provider-delivery events reserved by the schema
 
-The operational contact row stores the current state and confirmation/unsubscribe timestamps for reconciliation.
+The operational contact row stores the last first-party consent state and confirmation/unsubscribe timestamps as audit/safety evidence.
 
 ### Required secret
 
@@ -331,7 +331,7 @@ The newsletter manager is not considered fully configured unless the durable con
 - unsubscribe appends `unsubscribe`;
 - replaying the same encrypted confirmation or unsubscribe token does not append a duplicate event because event IDs are deterministic per token JTI;
 - a pre-R4 subscriber already active in Resend can be imported as `provider_sync` without fabricating an original consent event;
-- provider-side state remains secondary and will be reconciled against first-party state in R4.5.
+- provider-side state is the operational marketing state; the first-party ledger is retained as consent evidence and replay protection.
 
 ### Privacy properties
 
@@ -355,57 +355,45 @@ The newsletter manager is not considered fully configured unless the durable con
 
 ### Fail-closed rule
 
-If the first-party consent ledger or its hashing secret is unavailable, newsletter subscription operations do not silently continue using Resend as the sole consent source of truth.
+If the first-party consent ledger or its hashing secret is unavailable, gracz.pl fails closed because it cannot record the required consent evidence.
 
 The existing test-only memory adapter is available only to automated tests. It is not a production fallback.
 
 
-## R4.5 newsletter reconciliation
+## FINAL newsletter architecture — hybrid
 
-R4.5 reconciles gracz.pl's first-party consent state with Resend without allowing provider drift to silently reactivate a subscriber.
+The newsletter scope is now frozen. Gracz.pl does **not** maintain a second newsletter delivery/state engine.
 
-### Authority model
+### Responsibility split
 
-- The first-party PostgreSQL consent ledger is authoritative for consent history.
-- Resend remains the delivery and marketing execution layer.
-- Legacy Resend confirmation properties may be imported only when there is durable provider confirmation proof and the provider subscription is still fully active.
-- A provider-side opt-out or inactive state never causes automatic reactivation.
-- Reactivation after an inactive provider state requires a newly issued double-opt-in confirmation token.
+**Resend is authoritative for operational marketing state:**
 
-### Reconciliation outcomes
+- contact existence;
+- Segment membership;
+- Topic `opt_in` / `opt_out`;
+- global provider unsubscribe state;
+- delivery of confirmation, welcome and future newsletter messages;
+- provider suppression/delivery handling.
 
-The internal newsletter manager can return:
+**Gracz.pl keeps only the first-party control and audit layer:**
 
-- `in_sync`
-- `imported_subscribed`
-- `repaired_unsubscribed`
-- `repaired_pending`
-- `fresh_confirmation_required`
-- `unknown_subject`
+- branded newsletter form and endpoints;
+- encrypted double-opt-in / unsubscribe links;
+- append-only consent evidence keyed by HMAC subject identifier;
+- last confirmation/unsubscribe timestamps used to prevent stale-token replay;
+- consent version and minimal provider reference.
 
-The reconciliation routine is intentionally not exposed as a public unauthenticated HTTP endpoint in R4.5.
+### Removed complexity
 
-### Safe repair rules
+The R4.5 reconciliation engine is no longer part of the runtime contract. There is no public or internal `newsletter.reconcile()` state machine trying to make PostgreSQL a second provider.
 
-- First-party `unsubscribed` + provider still opted in: force Topic `opt_out` and remove the newsletter Segment membership.
-- First-party `pending` + provider active without durable legacy confirmation proof: force provider state back to non-marketing state.
-- First-party `subscribed` + provider inactive: do not opt in automatically; record the observed drift and require fresh double opt-in.
-- First-party `pending` + provider active with durable legacy confirmation proof: import as `provider_sync` once.
-- Reconciliation observations use deterministic append-only `provider_sync` events so repeated checks do not create duplicate audit entries.
+A provider-hosted unsubscribe therefore stays authoritative. An old confirmation token cannot silently reactivate it; the visitor must request a fresh double-opt-in link. A fresh confirmed opt-in may intentionally reactivate the provider subscription.
 
-### Confirmation-token safety
+### Why this is the final model
 
-Confirmation now evaluates first-party `confirmed_at` and `unsubscribed_at` timestamps before provider properties. Provider timestamps remain only a legacy/recovery signal.
+This keeps the useful work already completed — form, premium e-mails, double opt-in, unsubscribe, audit evidence, security and tests — while avoiding a custom Mailchimp-like subsystem.
 
-An old token cannot reactivate a subscription after first-party unsubscribe or after a provider-side inactive transition. A token issued after the last confirmed/unsubscribed state may complete an explicit resubscription.
-
-### R4.5 acceptance tests
-
-- provider-hosted unsubscribe is not silently reactivated;
-- first-party unsubscribe repairs provider drift;
-- legacy active provider proof imports exactly once;
-- existing stale-token, resubscribe, retry and partial-activation tests remain green.
-
+The newsletter is considered feature-complete after CI and independent audit. Further work should be limited to bug fixes, provider migration, legal-copy updates or future campaign UI explicitly requested by the owner.
 
 ## R4.6 modular HTTP routes
 
@@ -443,7 +431,7 @@ R4.6 is intentionally structural:
 - CSP/security headers remain unchanged;
 - rate limits remain unchanged;
 - Premium Reply provider idempotency remains unchanged;
-- Newsletter double opt-in and first-party consent behavior remain unchanged.
+- Newsletter remains hybrid: Resend owns operational subscription state; gracz.pl keeps first-party consent evidence and stale-token protection.
 
 Existing contact/newsletter/Premium Reply regression tests are the compatibility gate for this extraction.
 
