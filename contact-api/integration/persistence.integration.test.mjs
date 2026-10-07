@@ -26,9 +26,14 @@ test(
       firstMigration.applied.includes("001_persistent_state.sql") ||
         firstMigration.skipped.includes("001_persistent_state.sql")
     );
+    assert.ok(
+      firstMigration.applied.includes("003_newsletter_state_version.sql") ||
+        firstMigration.skipped.includes("003_newsletter_state_version.sql")
+    );
 
     const secondMigration = await applyMigrations(database);
     assert.ok(secondMigration.skipped.includes("001_persistent_state.sql"));
+    assert.ok(secondMigration.skipped.includes("003_newsletter_state_version.sql"));
 
     await database.query(
       `TRUNCATE TABLE
@@ -199,6 +204,41 @@ test(
           ),
         /append-only/
       );
+    });
+
+    await t.test("newsletter projection CAS prevents stale consent overwrite", async () => {
+      const emailHash = hash("newsletter-race@example.test");
+      const initial = await repositories.newsletter.upsertContact({
+        emailHash,
+        currentState: "pending",
+        consentVersion: "newsletter-r4-test",
+      });
+      assert.equal(initial.state_version, "0");
+
+      const snapshotA = await repositories.newsletter.getContact(emailHash);
+      const snapshotB = await repositories.newsletter.getContact(emailHash);
+
+      const withdrawnAt = new Date();
+      const withdrawn = await repositories.newsletter.upsertContact({
+        emailHash,
+        currentState: "unsubscribed",
+        unsubscribedAt: withdrawnAt,
+        expectedStateVersion: Number(snapshotA.state_version),
+      });
+      assert.equal(withdrawn.current_state, "unsubscribed");
+      assert.equal(Number(withdrawn.state_version), 1);
+
+      const staleProviderSync = await repositories.newsletter.upsertContact({
+        emailHash,
+        currentState: "subscribed",
+        confirmedAt: new Date(withdrawnAt.getTime() - 1000),
+        expectedStateVersion: Number(snapshotB.state_version),
+      });
+      assert.equal(staleProviderSync, null);
+
+      const latest = await repositories.newsletter.getContact(emailHash);
+      assert.equal(latest.current_state, "unsubscribed");
+      assert.equal(Number(latest.state_version), 1);
     });
   }
 );
