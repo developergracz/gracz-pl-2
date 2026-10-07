@@ -3,11 +3,23 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import net from "node:net";
+import { createHash, createHmac } from "node:crypto";
 import { createNewsletterManager } from "../newsletter.mjs";
 import { createMemoryNewsletterConsentStore } from "../persistence/memory-newsletter-consent-store.mjs";
 
 const CONFIRMED_AT_KEY = "gracz_newsletter_confirmed_at";
 const UNSUBSCRIBED_AT_KEY = "gracz_newsletter_unsubscribed_at";
+const CONSENT_HASH_SECRET = "test-consent-" + "h".repeat(40);
+
+function consentEmailHash(email) {
+  const key = createHash("sha256")
+    .update("newsletter-consent-subject:", "utf8")
+    .update(CONSENT_HASH_SECRET, "utf8")
+    .digest();
+  return createHmac("sha256", key)
+    .update(String(email).trim(), "utf8")
+    .digest("hex");
+}
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -364,7 +376,7 @@ function createManager(provider, options = {}) {
     replyTo: "admin@gracz.pl",
     baseUrl: "https://gracz.pl/newsletter/",
     consentStore: provider.consentStore,
-    consentHashSecret: "test-consent-" + "h".repeat(40),
+    consentHashSecret: CONSENT_HASH_SECRET,
     ...options,
   });
 }
@@ -380,6 +392,16 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   });
 
   assert.equal(requested.state, "confirmation_sent");
+
+  const consentHash = consentEmailHash("jan@example.test");
+  const pendingLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(pendingLedgerContact.current_state, "pending");
+  let consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.deepEqual(
+    consentEvents.map((event) => event.event_type),
+    ["opt_in_requested"]
+  );
+
   assert.equal(provider.contacts.size, 0, "contact must not exist before double opt-in");
   assert.equal(provider.emails.length, 1);
   assert.match(provider.emails[0].body.subject, /gracz\.pl Newsletter — potwierdź zapis/);
@@ -417,6 +439,15 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.memberships.get("jan@example.test").has("segment-1"), true);
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_in");
 
+  const confirmedLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(confirmedLedgerContact.current_state, "subscribed");
+  assert.ok(confirmedLedgerContact.confirmed_at);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.deepEqual(
+    consentEvents.map((event) => event.event_type),
+    ["opt_in_requested", "opt_in_confirmed"]
+  );
+
   const documented = provider.providerContact(contact);
   assert.equal(
     documented.properties[CONFIRMED_AT_KEY].value,
@@ -434,6 +465,11 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(repeated.state, "already_subscribed");
   assert.equal(provider.stats.contactMutations, mutationsBeforeReplay);
   assert.equal(provider.emails.length, 2);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "opt_in_confirmed").length,
+    1
+  );
 
   await manager.requestOptIn({
     email: "jan@example.test",
@@ -455,6 +491,15 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_out");
   assert.ok(Number(contact.properties[UNSUBSCRIBED_AT_KEY]) > 0);
 
+  const unsubscribedLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(unsubscribedLedgerContact.current_state, "unsubscribed");
+  assert.ok(unsubscribedLedgerContact.unsubscribed_at);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "unsubscribe").length,
+    1
+  );
+
   await assert.rejects(
     () => manager.confirm(secondConfirmToken),
     (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
@@ -472,6 +517,13 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_in");
   assert.equal(contact.unsubscribed, false);
   assert.equal(provider.emails.length, 5);
+
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "resubscribe").length,
+    1
+  );
+
   const thirdUnsubscribeToken = extractToken(provider.emails[4], "unsubscribe");
 
   const confirmedAtAfterResubscribe = Number(contact.properties[CONFIRMED_AT_KEY]);
@@ -504,6 +556,13 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(secondOff.state, "unsubscribed");
   assert.equal(provider.memberships.get("jan@example.test").has("segment-1"), false);
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_out");
+
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "unsubscribe").length,
+    2,
+    "reusing the same unsubscribe token must not append a duplicate event"
+  );
 
   assert.ok(thirdUnsubscribeToken.startsWith("n1."));
 });
