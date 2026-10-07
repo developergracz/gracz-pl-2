@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
+import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -30,10 +31,15 @@ test(
       firstMigration.applied.includes("003_newsletter_state_version.sql") ||
         firstMigration.skipped.includes("003_newsletter_state_version.sql")
     );
+    assert.ok(
+      firstMigration.applied.includes("004_contact_data_encryption.sql") ||
+        firstMigration.skipped.includes("004_contact_data_encryption.sql")
+    );
 
     const secondMigration = await applyMigrations(database);
     assert.ok(secondMigration.skipped.includes("001_persistent_state.sql"));
     assert.ok(secondMigration.skipped.includes("003_newsletter_state_version.sql"));
+    assert.ok(secondMigration.skipped.includes("004_contact_data_encryption.sql"));
 
     await database.query(
       `TRUNCATE TABLE
@@ -48,16 +54,44 @@ test(
     const repositories = createPersistenceRepositories(database);
     const requestId = randomUUID();
     const senderHash = hash("jan@example.test");
+    const contactCrypto = createContactDataCrypto({
+      secret: "integration-" + "k".repeat(64),
+    });
 
     assert.equal(
       await repositories.contactCases.create({
         requestId,
         senderHash,
         category: "Pytanie ogólne",
-        subject: "Persistence integration test",
-        sourcePath: "/kontakt",
+        subjectCiphertext: contactCrypto.encrypt("Persistence integration test", {
+          aad: "contact-case:" + requestId + ":subject",
+        }),
+        sourcePathCiphertext: contactCrypto.encrypt("/kontakt", {
+          aad: "contact-case:" + requestId + ":source",
+        }),
       }),
       true
+    );
+
+    const storedContactCase = await database.query(
+      `SELECT subject, source_path, subject_ciphertext, source_path_ciphertext
+       FROM contact_cases
+       WHERE request_id = $1`,
+      [requestId]
+    );
+    assert.equal(storedContactCase.rows[0].subject, "[encrypted]");
+    assert.equal(storedContactCase.rows[0].source_path, "");
+    assert.equal(
+      contactCrypto.decrypt(storedContactCase.rows[0].subject_ciphertext, {
+        aad: "contact-case:" + requestId + ":subject",
+      }),
+      "Persistence integration test"
+    );
+    assert.equal(
+      contactCrypto.decrypt(storedContactCase.rows[0].source_path_ciphertext, {
+        aad: "contact-case:" + requestId + ":source",
+      }),
+      "/kontakt"
     );
 
     await t.test("reply-token claim is atomic", async () => {
