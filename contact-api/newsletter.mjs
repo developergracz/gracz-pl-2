@@ -172,6 +172,16 @@ export function createNewsletterManager({
     const existing = await getContact(data.email);
 
     if (existing) {
+      await api("/contacts/" + encodeURIComponent(data.email), {
+        method: "PATCH",
+        body: {
+          properties: {
+            [UNSUBSCRIBED_AT_KEY]: Date.now(),
+          },
+        },
+        expected: [200],
+      });
+
       await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
         method: "PATCH",
         body: {
@@ -214,6 +224,9 @@ export function createNewsletterManager({
               visibility: "public",
             },
           }),
+          ensureContactProperty(CONFIRMED_AT_KEY, "number", 0),
+          ensureContactProperty(UNSUBSCRIBED_AT_KEY, "number", 0),
+          ensureContactProperty(CONSENT_VERSION_KEY, "string", "none"),
         ]);
         return { segmentId, topicId };
       })().catch((error) => {
@@ -244,6 +257,42 @@ export function createNewsletterManager({
       const retry = await api(listPath, { method: "GET", expected: [200] });
       const retryFound = Array.isArray(retry?.data)
         ? retry.data.find((item) => item?.name === name && item?.id)
+        : null;
+      if (!retryFound) throw error;
+      return retryFound.id;
+    }
+  }
+
+  async function ensureContactProperty(key, type, fallbackValue) {
+    const listed = await api("/contact-properties?limit=100", {
+      method: "GET",
+      expected: [200],
+    });
+    const found = Array.isArray(listed?.data)
+      ? listed.data.find((item) => item?.key === key && item?.id)
+      : null;
+    if (found) return found.id;
+
+    try {
+      const created = await api("/contact-properties", {
+        method: "POST",
+        body: {
+          key,
+          type,
+          fallback_value: fallbackValue,
+        },
+        expected: [201],
+      });
+      if (!created?.id) throw providerError("NEWSLETTER_PROPERTY_INVALID");
+      return created.id;
+    } catch (error) {
+      if (error?.status !== 409) throw error;
+      const retry = await api("/contact-properties?limit=100", {
+        method: "GET",
+        expected: [200],
+      });
+      const retryFound = Array.isArray(retry?.data)
+        ? retry.data.find((item) => item?.key === key && item?.id)
         : null;
       if (!retryFound) throw error;
       return retryFound.id;
