@@ -36,6 +36,7 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   const contactProperties = [];
   const memberships = new Map();
   const topicStates = new Map();
+  let contactGetAttempts = 0;
 
   const provider = createServer(async (req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
@@ -95,6 +96,20 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
 
     const contactMatch = url.pathname.match(/^\/contacts\/([^/]+)$/);
     if (contactMatch && method === "GET") {
+      contactGetAttempts += 1;
+      if (contactGetAttempts === 1) {
+        res.writeHead(429, {
+          "content-type": "application/json",
+          "retry-after": "0.01",
+        });
+        return res.end(
+          JSON.stringify({
+            name: "rate_limit_exceeded",
+            message: "Too many requests.",
+            statusCode: 429,
+          })
+        );
+      }
       const email = decodeURIComponent(contactMatch[1]);
       const contact = contacts.get(email);
       return contact
@@ -217,6 +232,7 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
 
   const confirmed = await manager.confirm(confirmToken);
   assert.equal(confirmed.state, "subscribed");
+  assert.ok(contactGetAttempts >= 2, "429 response must be retried automatically");
   assert.equal(segments.length, 1);
   assert.equal(segments[0].name, "gracz.pl Newsletter");
   assert.equal(topics.length, 1);
