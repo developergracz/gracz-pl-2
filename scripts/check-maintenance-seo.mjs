@@ -162,7 +162,7 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r35'), `${rel}: legal/contact trigger exists but legal-links.js R35 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r36'), `${rel}: legal/contact trigger exists but legal-links.js R36 is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
@@ -182,8 +182,13 @@ for (const file of allHtmlPages) {
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/footer-newsletter.css")), "footer-newsletter.css missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/account-access-premium.css")), "account premium stylesheet missing");
+const accountAccessCss = fs.readFileSync(path.resolve(root, "assets/account-access-premium.css"), "utf8");
 const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
 const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
+requireCheck(legalLinksJs.includes("account-access-premium.css?v=r2"), "account modal R2 stylesheet loader missing");
+requireCheck(accountAccessCss.includes("max-height:calc(100dvh - 28px)"), "account modal: desktop viewport height guard missing");
+requireCheck(accountAccessCss.includes("@media (max-height:850px) and (min-width:641px)"), "account modal: compact-height desktop mode missing");
 requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r1"), "live footer newsletter stylesheet loader missing");
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
