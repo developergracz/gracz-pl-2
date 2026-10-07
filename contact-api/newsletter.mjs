@@ -352,7 +352,9 @@ export function createNewsletterManager({
     const existing = await getContact(data.email);
 
     if (existing) {
-      await api("/contacts/" + encodeURIComponent(data.email), {
+      const contactRef = encodeURIComponent(existing.id || data.email);
+
+      await api("/contacts/" + contactRef, {
         method: "PATCH",
         body: {
           properties: {
@@ -362,7 +364,7 @@ export function createNewsletterManager({
         expected: [200],
       });
 
-      await api("/contacts/" + encodeURIComponent(data.email) + "/topics", {
+      await api("/contacts/" + contactRef + "/topics", {
         method: "PATCH",
         body: {
           topics: [{ id: resources.topicId, subscription: "opt_out" }],
@@ -371,7 +373,7 @@ export function createNewsletterManager({
       });
 
       await api(
-        "/contacts/" + encodeURIComponent(data.email) +
+        "/contacts/" + contactRef +
           "/segments/" + encodeURIComponent(resources.segmentId),
         { method: "DELETE", expected: [200, 404] }
       );
