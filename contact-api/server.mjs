@@ -8,6 +8,7 @@ import { createNewsletterManager } from "./newsletter.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
+import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-store.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -50,6 +51,14 @@ const useTestReplyStore =
 const replyTokenStore = useTestReplyStore
   ? createMemoryReplyTokenStore()
   : persistence?.replyTokens || null;
+
+const useTestContactIdempotencyStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.CONTACT_IDEMPOTENCY_TEST_MEMORY_STORE === "1";
+
+const contactIdempotencyStore = useTestContactIdempotencyStore
+  ? createMemoryIdempotencyStore()
+  : persistence?.idempotency || null;
 
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
@@ -123,7 +132,6 @@ const newsletterIpBuckets = new Map();
 const newsletterEmailBuckets = new Map();
 const emailBuckets = new Map();
 const duplicateSubmissions = new Map();
-const idempotencyCache = new Map();
 const abuseStrikes = new Map();
 const mxCache = new Map();
 const mxInFlight = new Map();
@@ -151,14 +159,14 @@ const PROVIDER_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
 const MAX_IP_BUCKETS = 5000;
 const MAX_EMAIL_BUCKETS = 5000;
 const MAX_DUPLICATES = 5000;
-const MAX_IDEMPOTENCY = 5000;
 const MAX_ABUSE_STRIKES = 5000;
 const MAX_MX_CACHE = 2000;
 const MAX_MX_IN_FLIGHT = 50;
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
-  let reservedIdempotencyKey = null;
+  let reservedIdempotency = null;
+  let providerAttempted = false;
 
   try {
     const url = new URL(req.url, "http://localhost");
@@ -172,6 +180,7 @@ createServer(async (req, res) => {
         persistenceConfigured: database.enabled,
         premiumReplyConfigured: premiumReply.enabled,
         premiumReplyDurableState: premiumReply.durableStateConfigured,
+        contactIdempotencyConfigured: Boolean(contactIdempotencyStore),
         newsletterConfigured: newsletter.enabled,
       });
     }
