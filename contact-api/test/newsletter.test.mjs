@@ -648,6 +648,83 @@ test("hybrid newsletter keeps Resend operational state and no reconciliation eng
   );
 });
 
+test("hybrid cutover protects legacy subscribers without ledger rows", async (t) => {
+  const provider = await createProvider(t);
+  const legacyStore = createMemoryNewsletterConsentStore();
+  const legacyManager = createManager(provider, { consentStore: legacyStore });
+
+  await legacyManager.requestOptIn({
+    email: "legacy@example.test",
+    name: "Legacy Subscriber",
+    source: "newsletter_page",
+  });
+  const legacyToken = extractToken(provider.emails[0], "confirm");
+  const initial = await legacyManager.confirm(legacyToken);
+  assert.equal(initial.state, "subscribed");
+
+  const welcomeCount = provider.emails.filter((email) =>
+    /Newsletter — witamy!/i.test(String(email.body.subject || ""))
+  ).length;
+  assert.equal(welcomeCount, 1);
+
+  // Simulate an R1-R3 subscriber at R4 cutover: provider state/properties
+  // exist, but the new first-party consent ledger is empty.
+  const cutoverStore = createMemoryNewsletterConsentStore();
+  const cutoverManager = createManager(provider, { consentStore: cutoverStore });
+
+  const replayWhileActive = await cutoverManager.confirm(legacyToken);
+  assert.equal(
+    replayWhileActive.state,
+    "already_subscribed",
+    "old legacy DOI must be a no-op while provider subscription is active"
+  );
+  assert.equal(
+    provider.emails.filter((email) =>
+      /Newsletter — witamy!/i.test(String(email.body.subject || ""))
+    ).length,
+    1,
+    "legacy replay must not send a duplicate welcome"
+  );
+
+  provider.hostedUnsubscribe("legacy@example.test");
+
+  await assert.rejects(
+    () => cutoverManager.confirm(legacyToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+  assert.equal(
+    provider.memberships.get("legacy@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("legacy@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  // Only a freshly-issued DOI after the provider confirmation timestamp may
+  // intentionally resubscribe the legacy address.
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  await cutoverManager.requestOptIn({
+    email: "legacy@example.test",
+    name: "Legacy Subscriber",
+    source: "newsletter_page",
+  });
+  const freshToken = extractToken(provider.emails.at(-1), "confirm");
+  const resubscribed = await cutoverManager.confirm(freshToken);
+  assert.equal(resubscribed.state, "resubscribed");
+
+  const ledger = await cutoverStore.getContact(consentEmailHash("legacy@example.test"));
+  assert.equal(ledger.current_state, "subscribed");
+  assert.equal(
+    provider.memberships.get("legacy@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("legacy@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
 test("hybrid concurrent fresh confirmations keep provider active safely", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);
