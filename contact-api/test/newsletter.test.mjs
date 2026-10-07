@@ -89,6 +89,7 @@ async function createProvider(t) {
     welcomeEmail503Remaining: 0,
     topicOptOut503Remaining: 0,
     segmentDelete503Remaining: 0,
+    beforeTopicOptOut: null,
   };
 
   const stats = {
@@ -283,15 +284,20 @@ async function createProvider(t) {
       stats.contactMutations += 1;
       const email = decodeURIComponent(topicMatch[1]);
       const body = await readBody(req);
-      if (
-        (body.topics || []).some((item) => item.subscription === "opt_out") &&
-        behavior.topicOptOut503Remaining > 0
-      ) {
+      const isOptOut = (body.topics || []).some(
+        (item) => item.subscription === "opt_out"
+      );
+      if (isOptOut && behavior.topicOptOut503Remaining > 0) {
         behavior.topicOptOut503Remaining -= 1;
         return send(res, 503, {
           name: "provider_unavailable",
           message: "forced topic opt-out failure",
         });
+      }
+      if (isOptOut && typeof behavior.beforeTopicOptOut === "function") {
+        const hook = behavior.beforeTopicOptOut;
+        behavior.beforeTopicOptOut = null;
+        await hook();
       }
       const states = topicStates.get(email) || new Map();
       topicStates.set(email, states);
