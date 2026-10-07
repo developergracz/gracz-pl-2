@@ -106,3 +106,106 @@ textarea::placeholder{color:#5f7b82}
   .actions{flex-direction:column-reverse}
   .button{width:100%}
 }
+
+
+/* COSMETIC R2 — calmer premium reply experience */
+.reply-shell{padding:30px 18px}
+.reply-card{
+  border:0;
+  border-radius:26px;
+  background:
+    radial-gradient(circle at 88% 0,rgba(24,215,196,.07),transparent 24rem),
+    linear-gradient(180deg,rgba(13,34,42,.99),rgba(7,24,30,.99));
+  box-shadow:0 34px 90px rgba(0,0,0,.34);
+}
+.reply-card__header{
+  padding:25px 32px;
+  border-bottom:0;
+  background:rgba(4,16,22,.58);
+}
+.reply-badge{
+  border:0;
+  background:rgba(24,215,196,.09);
+  padding:9px 13px;
+}
+.reply-card__body{padding:44px 36px 42px}
+.lead{font-size:15.5px;color:#94adb3}
+.state{
+  position:relative;
+  border:0;
+  padding:17px 18px 17px 48px;
+  background:rgba(24,215,196,.055);
+  color:#b5d9d5;
+}
+.state--loading::before{
+  content:"";
+  position:absolute;
+  left:18px;
+  top:50%;
+  width:16px;
+  height:16px;
+  margin-top:-8px;
+  border:2px solid rgba(99,234,220,.22);
+  border-top-color:var(--turq2);
+  border-radius:50%;
+  animation:reply-spin .8s linear infinite;
+}
+@keyframes reply-spin{to{transform:rotate(360deg)}}
+.state--error{
+  padding-left:18px;
+  background:rgba(239,79,93,.075);
+  color:#ffc1c7;
+}
+.ticket{
+  border:0;
+  background:rgba(14,39,48,.50);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.ticket div{border-bottom:0}
+.ticket div:nth-child(odd){border-right:0}
+.ticket div+div{box-shadow:inset 1px 0 0 rgba(255,255,255,.035)}
+.previous-message{
+  border-left:0;
+  border-radius:13px;
+  background:rgba(5,24,30,.78);
+  box-shadow:inset 3px 0 0 rgba(24,215,196,.32);
+}
+textarea{
+  resize:none;
+  border:0;
+  border-radius:14px;
+  background:#061a20;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.055);
+}
+textarea:focus{
+  border-color:transparent;
+  box-shadow:inset 0 0 0 1px rgba(24,215,196,.42),0 0 0 4px rgba(24,215,196,.08);
+}
+.button{
+  min-height:48px;
+  border:0;
+  border-radius:12px;
+  transition:transform .16s ease,filter .16s ease,background .16s ease;
+}
+.button--primary{
+  background:linear-gradient(180deg,#67e4d7,#35c8b8);
+  box-shadow:0 11px 26px rgba(24,215,196,.14);
+}
+.button--primary:hover:not(:disabled){transform:translateY(-1px)}
+.button--ghost{
+  border:0;
+  color:#bdd0d4;
+  background:rgba(255,255,255,.045);
+}
+.success__icon{border:0}
+.reply-card__footer{
+  border-top:0;
+  background:rgba(5,21,27,.72);
+  padding:19px 32px;
+}
+@media (max-width:680px){
+  .reply-card__header{padding:20px}
+  .reply-card__body{padding:28px 20px}
+  .ticket div+div{box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+  textarea{min-height:210px}
+}
