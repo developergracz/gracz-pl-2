@@ -251,15 +251,39 @@ createServer(async (req, res) => {
       ? validateIdempotencyKey(rawIdempotencyKey)
       : "legacy-" + requestFingerprint.slice(0, 32);
 
-    const replay = getIdempotentReplay(ip, idempotencyKey, requestFingerprint);
+    const replay = await getContactIdempotentReplay(
+      idempotencyKey,
+      requestFingerprint
+    );
     if (replay) {
       return json(res, replay.status, replay.body);
     }
 
     if (payload.website) {
       registerAbuseStrike(ip, "honeypot");
+      const reservation = await reserveContactIdempotency(
+        idempotencyKey,
+        requestFingerprint
+      );
+      if (reservation.replay) {
+        return json(res, reservation.replay.status, reservation.replay.body);
+      }
+
+      reservedIdempotency = reservation.reservation;
       const fake = { ok: true, id: requestId };
-      rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, fake);
+      try {
+        const completed = await completeContactIdempotency(
+          reservedIdempotency,
+          200,
+          fake
+        );
+        if (completed) reservedIdempotency = null;
+      } catch (persistenceError) {
+        console.error("[contact] honeypot idempotency commit failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
       return json(res, 200, fake);
     }
 
@@ -306,7 +330,14 @@ createServer(async (req, res) => {
       });
     }
 
-    reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
+    const reservation = await reserveContactIdempotency(
+      idempotencyKey,
+      requestFingerprint
+    );
+    if (reservation.replay) {
+      return json(res, reservation.replay.status, reservation.replay.body);
+    }
+    reservedIdempotency = reservation.reservation;
 
     if (premiumReply.enabled && persistence) {
       const created = await persistence.contactCases.create({
@@ -328,6 +359,7 @@ createServer(async (req, res) => {
     const adminDelivery = await premiumReply.createAdminDelivery(payload, requestId);
 
     let response;
+    providerAttempted = true;
     try {
       response = await fetch(RESEND_ENDPOINT, {
         method: "POST",
@@ -367,8 +399,21 @@ createServer(async (req, res) => {
     const raw = await response.text().catch(() => "");
 
     if (!response.ok) {
-      releaseIdempotency(reservedIdempotencyKey);
-      reservedIdempotencyKey = null;
+      if (
+        reservedIdempotency &&
+        isExplicitProviderFailureSafeToRetry(response.status)
+      ) {
+        try {
+          await releaseContactIdempotency(reservedIdempotency);
+          reservedIdempotency = null;
+        } catch (persistenceError) {
+          console.error("[contact] idempotency release failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
+
       if (response.status === 408 || response.status === 429 || response.status >= 500) {
         recordProviderFailure();
       }
@@ -464,8 +509,28 @@ createServer(async (req, res) => {
       id: requestId,
       newsletter: newsletterState,
     };
-    rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, successBody);
-    reservedIdempotencyKey = null;
+    if (reservedIdempotency) {
+      try {
+        const completed = await completeContactIdempotency(
+          reservedIdempotency,
+          200,
+          successBody
+        );
+        if (completed) {
+          reservedIdempotency = null;
+        } else {
+          console.error("[contact] durable idempotency completion missing", {
+            requestId,
+            code: "IDEMPOTENCY_COMPLETION_MISSING",
+          });
+        }
+      } catch (persistenceError) {
+        console.error("[contact] durable idempotency completion failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
+    }
 
     console.log("[contact] sent", {
       requestId,
@@ -478,9 +543,16 @@ createServer(async (req, res) => {
 
     return json(res, 200, successBody);
   } catch (error) {
-    if (reservedIdempotencyKey) {
-      releaseIdempotency(reservedIdempotencyKey);
-      reservedIdempotencyKey = null;
+    if (reservedIdempotency && !providerAttempted) {
+      try {
+        await releaseContactIdempotency(reservedIdempotency);
+        reservedIdempotency = null;
+      } catch (persistenceError) {
+        console.error("[contact] durable idempotency release failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
     }
 
     const status = Number.isInteger(error?.status) ? error.status : 500;
