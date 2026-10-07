@@ -86,6 +86,9 @@ async function createProvider(t) {
     contactGet503Remaining: 0,
     contactGetDelayMs: 0,
     failFinalConfirmPatchStatus: 0,
+    welcomeEmail503Remaining: 0,
+    topicOptOut503Remaining: 0,
+    segmentDelete503Remaining: 0,
   };
 
   const stats = {
@@ -117,6 +120,16 @@ async function createProvider(t) {
 
     if (url.pathname === "/emails" && method === "POST") {
       const body = await readBody(req);
+      if (
+        /Newsletter — witamy!/i.test(String(body.subject || "")) &&
+        behavior.welcomeEmail503Remaining > 0
+      ) {
+        behavior.welcomeEmail503Remaining -= 1;
+        return send(res, 503, {
+          name: "provider_unavailable",
+          message: "forced welcome failure",
+        });
+      }
       const key = String(req.headers["idempotency-key"] || "");
       const serialized = JSON.stringify(body);
       const existing = emailIdempotency.get(key);
@@ -234,6 +247,13 @@ async function createProvider(t) {
       }
       if (method === "DELETE") {
         stats.contactMutations += 1;
+        if (behavior.segmentDelete503Remaining > 0) {
+          behavior.segmentDelete503Remaining -= 1;
+          return send(res, 503, {
+            name: "provider_unavailable",
+            message: "forced segment delete failure",
+          });
+        }
         set.delete(segmentId);
         return send(res, 200, {
           object: "contact_segment",
@@ -263,6 +283,16 @@ async function createProvider(t) {
       stats.contactMutations += 1;
       const email = decodeURIComponent(topicMatch[1]);
       const body = await readBody(req);
+      if (
+        (body.topics || []).some((item) => item.subscription === "opt_out") &&
+        behavior.topicOptOut503Remaining > 0
+      ) {
+        behavior.topicOptOut503Remaining -= 1;
+        return send(res, 503, {
+          name: "provider_unavailable",
+          message: "forced topic opt-out failure",
+        });
+      }
       const states = topicStates.get(email) || new Map();
       topicStates.set(email, states);
       for (const item of body.topics || []) {
