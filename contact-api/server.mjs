@@ -1249,6 +1249,18 @@ function validateIdempotencyKey(value) {
   return key;
 }
 
+function submissionFingerprint(payload) {
+  return hashValue([
+    payload.name,
+    payload.email,
+    payload.category,
+    payload.subject,
+    payload.message,
+    payload.page,
+    String(payload.acknowledgement),
+  ].join("\n"));
+}
+
 function contactIdempotencyKeyHash(key) {
   return hashValue("contact\n" + String(key || ""));
 }
