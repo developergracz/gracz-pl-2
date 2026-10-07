@@ -169,7 +169,9 @@ createServer(async (req, res) => {
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
+        persistenceConfigured: database.enabled,
         premiumReplyConfigured: premiumReply.enabled,
+        premiumReplyDurableState: premiumReply.durableStateConfigured,
         newsletterConfigured: newsletter.enabled,
       });
     }
@@ -297,7 +299,24 @@ createServer(async (req, res) => {
 
     reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
 
-    const adminDelivery = premiumReply.createAdminDelivery(payload, requestId);
+    if (premiumReply.enabled) {
+      const created = await persistence.contactCases.create({
+        requestId,
+        senderHash: hashValue(payload.email),
+        category: payload.category,
+        subject: payload.subject,
+        sourcePath: payload.page,
+      });
+
+      if (!created) {
+        const error = new Error("Nie udało się utworzyć trwałego rekordu zgłoszenia.");
+        error.code = "CONTACT_CASE_PERSISTENCE_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
+
+    const adminDelivery = await premiumReply.createAdminDelivery(payload, requestId);
 
     let response;
     try {
@@ -319,6 +338,19 @@ createServer(async (req, res) => {
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {
+      if (premiumReply.enabled) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            error?.code || "MAIL_PROVIDER_NETWORK_ERROR"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
       recordProviderFailure();
       throw error;
     }
@@ -335,6 +367,20 @@ createServer(async (req, res) => {
       try {
         providerError = raw ? JSON.parse(raw) : {};
       } catch {}
+
+      if (premiumReply.enabled) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            "MAIL_DELIVERY_FAILED"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
 
       console.error("[contact] provider rejected", {
         requestId,
@@ -361,6 +407,19 @@ createServer(async (req, res) => {
     try {
       result = raw ? JSON.parse(raw) : {};
     } catch {}
+
+    if (premiumReply.enabled) {
+      const marked = await persistence.contactCases.markDelivered(
+        requestId,
+        result.id || null
+      );
+      if (!marked) {
+        const error = new Error("Nie udało się zatwierdzić trwałego rekordu zgłoszenia.");
+        error.code = "CONTACT_CASE_COMMIT_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
 
     rememberDuplicate(payload);
     recordProviderSuccess();
