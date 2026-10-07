@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="stylesheet" href="/assets/contact-modal.css?v=r5" data-contact-modal-style>
 <script src="/assets/legal-links.js?v=r31" defer></script>
-<script src="/assets/newsletter-preview.js?v=full-max-r1" defer></script>
+<script src="/assets/newsletter-preview.js?v=full-max-r2" defer></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -737,7 +737,7 @@ input,
 
 </style>
 <link rel="stylesheet" href="/assets/newsletter-home-header-1to1.css?v=r1">
-<link rel="stylesheet" href="/assets/newsletter-full-max-premium-r1.css?v=r1">
+<link rel="stylesheet" href="/assets/newsletter-full-max-premium-r1.css?v=r2">
 <script src="/assets/newsletter-home-header-1to1.js?v=r1" defer></script>
 </head>
 <body>
@@ -897,14 +897,22 @@ input,
             <form class="premium-newsletter-form" data-preview-newsletter-form novalidate>
               <div class="field-group">
                 <label for="newsletter-email">Adres e-mail <span aria-hidden="true">*</span></label>
-                <input id="newsletter-email" type="email" name="email" autocomplete="email" maxlength="254" placeholder="np. gracz@example.com" required>
-                <small>Na ten adres wyślemy link potwierdzający zapis.</small>
+                <input id="newsletter-email" type="email" name="email" autocomplete="email" maxlength="254" placeholder="np. gracz@example.com" required aria-describedby="newsletter-email-help newsletter-email-error">
+                <small id="newsletter-email-help">Na ten adres wyślemy link potwierdzający zapis.</small>
+                <div class="field-error" id="newsletter-email-error" data-error-for="email" role="alert" aria-live="polite" hidden>
+                  <span class="field-error__icon" aria-hidden="true">!</span>
+                  <span class="field-error__text"></span>
+                </div>
               </div>
 
               <div class="field-group">
                 <label for="newsletter-nick">Nick <em>opcjonalnie</em></label>
-                <input id="newsletter-nick" type="text" name="preferredNick" autocomplete="nickname" minlength="3" maxlength="24" pattern="[A-Za-z0-9_.-]{3,24}" placeholder="Twój nick w gracz.pl">
-                <small>3–24 znaki: litery, cyfry, podkreślenie, kropka lub myślnik.</small>
+                <input id="newsletter-nick" type="text" name="preferredNick" autocomplete="nickname" minlength="3" maxlength="24" pattern="[A-Za-z0-9_.-]{3,24}" placeholder="Twój nick w gracz.pl" aria-describedby="newsletter-nick-help newsletter-nick-error">
+                <small id="newsletter-nick-help">3–24 znaki: litery, cyfry, podkreślenie, kropka lub myślnik.</small>
+                <div class="field-error" id="newsletter-nick-error" data-error-for="preferredNick" role="alert" aria-live="polite" hidden>
+                  <span class="field-error__icon" aria-hidden="true">!</span>
+                  <span class="field-error__text"></span>
+                </div>
               </div>
 
               <label class="consent-row">
@@ -995,7 +1003,7 @@ input,
         <input type="email" name="email" autocomplete="email" maxlength="254" placeholder="Twój adres e-mail" aria-label="Twój adres e-mail" required>
         <button type="submit">Zapisz się</button>
       </form>
-      <small class="nl-footer__note">Po kliknięciu przejdziesz do bezpiecznego formularza double opt-in powyżej.</small>
+      <small class="nl-footer__note" data-footer-newsletter-status aria-live="polite">Po kliknięciu przejdziesz do bezpiecznego formularza double opt-in powyżej.</small>
     </div>
   </div>
 
