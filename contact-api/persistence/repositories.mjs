@@ -77,83 +77,173 @@ export function createPersistenceRepositories(database) {
       expiresAt,
       providerIdempotencyKey,
     }) {
-      const result = await database.query(
-        `INSERT INTO reply_tokens(
-          jti_hash, request_id, expires_at, provider_idempotency_key
-        ) VALUES ($1, $2, $3, $4)
-        ON CONFLICT (jti_hash) DO NOTHING
-        RETURNING jti_hash`,
-        [
-          assertHash(jtiHash, "jtiHash"),
-          requestId,
-          expiresAt,
-          String(providerIdempotencyKey || "").slice(0, 200),
-        ]
-      );
-      return result.rowCount === 1;
+      const hash = assertHash(jtiHash, "jtiHash");
+      return database.transaction(async (client) => {
+        const result = await client.query(
+          `INSERT INTO reply_tokens(
+            jti_hash, request_id, expires_at, provider_idempotency_key
+          ) VALUES ($1, $2, $3, $4)
+          ON CONFLICT (jti_hash) DO NOTHING
+          RETURNING jti_hash`,
+          [
+            hash,
+            requestId,
+            expiresAt,
+            String(providerIdempotencyKey || "").slice(0, 200),
+          ]
+        );
+
+        if (result.rowCount !== 1) return false;
+
+        const parent = await client.query(
+          `UPDATE contact_cases
+           SET reply_status = 'available', updated_at = now()
+           WHERE request_id = $1
+           RETURNING request_id`,
+          [requestId]
+        );
+
+        if (parent.rowCount !== 1) {
+          throw new Error("Premium Reply token requires an existing contact case.");
+        }
+
+        return true;
+      });
     },
 
-    async claim(jtiHash) {
+    async claim(jtiHash, messageHash, { leaseMs = 30_000 } = {}) {
       const hash = assertHash(jtiHash, "jtiHash");
+      const message = assertHash(messageHash, "messageHash");
+      const normalizedLeaseMs = Math.max(
+        5_000,
+        Math.min(120_000, Number(leaseMs) || 30_000)
+      );
+
       const claimed = await database.query(
         `UPDATE reply_tokens
-         SET state = 'inflight', updated_at = now()
+         SET state = 'inflight',
+             message_hash = COALESCE(message_hash, $2),
+             claim_expires_at = now() + ($3::bigint * interval '1 millisecond'),
+             last_error_code = NULL,
+             updated_at = now()
          WHERE jti_hash = $1
-           AND state = 'issued'
            AND expires_at > now()
+           AND (message_hash IS NULL OR message_hash = $2)
+           AND (
+             state = 'issued'
+             OR (
+               state = 'inflight'
+               AND claim_expires_at IS NOT NULL
+               AND claim_expires_at <= now()
+               AND message_hash = $2
+             )
+           )
          RETURNING jti_hash, request_id, state, expires_at,
-                   provider_idempotency_key`,
-        [hash]
+                   provider_idempotency_key, message_hash, claim_expires_at`,
+        [hash, message, normalizedLeaseMs]
       );
 
       if (claimed.rowCount === 1) {
-        return { claimed: true, token: claimed.rows[0] };
+        return { claimed: true, token: claimed.rows[0], messageConflict: false };
       }
 
       await database.query(
         `UPDATE reply_tokens
-         SET state = 'expired', updated_at = now()
+         SET state = 'expired',
+             claim_expires_at = NULL,
+             updated_at = now()
          WHERE jti_hash = $1
-           AND state = 'issued'
+           AND state <> 'used'
            AND expires_at <= now()`,
         [hash]
       );
 
       const current = await database.query(
         `SELECT jti_hash, request_id, state, expires_at,
-                provider_idempotency_key, used_at
+                provider_idempotency_key, message_hash, claim_expires_at,
+                provider_message_id, last_error_code, used_at
          FROM reply_tokens
          WHERE jti_hash = $1`,
         [hash]
       );
 
+      const token = current.rows[0] || null;
       return {
         claimed: false,
-        token: current.rows[0] || null,
+        token,
+        messageConflict: Boolean(
+          token?.message_hash && token.message_hash !== message
+        ),
       };
     },
 
-    async markUsed(jtiHash) {
-      const result = await database.query(
-        `UPDATE reply_tokens
-         SET state = 'used', used_at = now(), updated_at = now()
-         WHERE jti_hash = $1 AND state = 'inflight'
-         RETURNING jti_hash`,
-        [assertHash(jtiHash, "jtiHash")]
-      );
-      return result.rowCount === 1;
+    async markUsed(jtiHash, messageHash, providerMessageId = null) {
+      const hash = assertHash(jtiHash, "jtiHash");
+      const message = assertHash(messageHash, "messageHash");
+
+      return database.transaction(async (client) => {
+        const result = await client.query(
+          `UPDATE reply_tokens
+           SET state = 'used',
+               used_at = now(),
+               claim_expires_at = NULL,
+               provider_message_id = $3,
+               last_error_code = NULL,
+               updated_at = now()
+           WHERE jti_hash = $1
+             AND state = 'inflight'
+             AND message_hash = $2
+           RETURNING request_id`,
+          [
+            hash,
+            message,
+            String(providerMessageId || "").slice(0, 200) || null,
+          ]
+        );
+
+        if (result.rowCount !== 1) return false;
+
+        await client.query(
+          `UPDATE contact_cases
+           SET reply_status = 'sent', updated_at = now()
+           WHERE request_id = $1`,
+          [result.rows[0].request_id]
+        );
+
+        return true;
+      });
     },
 
-    async release(jtiHash) {
+    async release(jtiHash, messageHash, errorCode = null) {
       const result = await database.query(
         `UPDATE reply_tokens
          SET state = CASE WHEN expires_at > now() THEN 'issued' ELSE 'expired' END,
+             claim_expires_at = NULL,
+             last_error_code = $3,
              updated_at = now()
-         WHERE jti_hash = $1 AND state = 'inflight'
+         WHERE jti_hash = $1
+           AND state = 'inflight'
+           AND message_hash = $2
          RETURNING state`,
-        [assertHash(jtiHash, "jtiHash")]
+        [
+          assertHash(jtiHash, "jtiHash"),
+          assertHash(messageHash, "messageHash"),
+          String(errorCode || "").slice(0, 120) || null,
+        ]
       );
       return result.rows[0]?.state || null;
+    },
+
+    async get(jtiHash) {
+      const result = await database.query(
+        `SELECT jti_hash, request_id, state, expires_at,
+                provider_idempotency_key, message_hash, claim_expires_at,
+                provider_message_id, last_error_code, used_at
+         FROM reply_tokens
+         WHERE jti_hash = $1`,
+        [assertHash(jtiHash, "jtiHash")]
+      );
+      return result.rows[0] || null;
     },
   };
 
