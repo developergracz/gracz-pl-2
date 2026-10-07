@@ -5,6 +5,7 @@ import { createPremiumReplyManager } from "../premium-reply.mjs";
 import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
+import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -40,12 +41,19 @@ function manager(store) {
 }
 
 async function createCase(repositories, requestId, email = "jan@example.test") {
+  const contactCrypto = createContactDataCrypto({
+    secret: "integration-" + "k".repeat(64),
+  });
   const created = await repositories.contactCases.create({
     requestId,
     senderHash: hash(email),
     category: "Pytanie ogólne",
-    subject: "Trwała odpowiedź Premium",
-    sourcePath: "https://gracz.pl/",
+    subjectCiphertext: contactCrypto.encrypt("Trwała odpowiedź Premium", {
+      aad: "contact-case:" + requestId + ":subject",
+    }),
+    sourcePathCiphertext: contactCrypto.encrypt("https://gracz.pl/", {
+      aad: "contact-case:" + requestId + ":source",
+    }),
   });
   assert.equal(created, true);
 }
