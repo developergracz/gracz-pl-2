@@ -52,7 +52,7 @@
     subscribePanel.hidden=true;
     actionPanel.hidden=false;
     if(mode==='confirm'){
-      actionKicker.textContent='DOUBLE OPT-IN';
+      actionKicker.textContent='POTWIERDZENIE E-MAIL';
       actionTitle.textContent='Potwierdź zapis do newslettera';
       actionCopy.textContent='Kliknij przycisk poniżej, aby aktywować newsletter gracz.pl. Samo otwarcie linku nie zapisuje adresu.';
       actionButton.textContent='Potwierdź zapis';
@@ -117,7 +117,7 @@
           actionCopy.textContent='Subskrypcja została ponownie aktywowana. Na Twój adres wysłaliśmy wiadomość powitalną FULL MAX PREMIUM.';
           setStatus(actionStatus,'Gotowe — subskrypcja została ponownie aktywowana.',false);
         }else{
-          actionCopy.textContent='Zapis został potwierdzony. Na Twój adres wysłaliśmy wiadomość powitalną FULL MAX PREMIUM.';
+          actionCopy.textContent='Zapis został potwierdzony. Na Twój adres wysłaliśmy wiadomość powitalną gracz.pl.';
           setStatus(actionStatus,'Gotowe — subskrypcja jest aktywna.',false);
         }
       }else{
