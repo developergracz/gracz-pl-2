@@ -64,14 +64,12 @@ Do not merge or deploy this branch solely because CI is green. Before production
 
 The API is compatible with an upstream WAF/reverse proxy. A future edge layer should restrict direct backend access at infrastructure level rather than trusting a browser-supplied secret header.
 
-
 ## Render client IP trust model
 
 - Use `X-Forwarded-For` for the client IP on Render.
 - Treat the first valid address as the real client address, per Render's documented behavior.
 - Do not trust `CF-Connecting-IP` directly in application code.
 - The public `.onrender.com` endpoint remains reachable, so Origin/CORS is not an authentication boundary.
-
 
 ## GRACZ.PL PREMIUM MAIL RESPONSE R1
 
@@ -130,7 +128,6 @@ After deployment:
 7. click Reply in the recipient mailbox and confirm it targets `CONTACT_TO`;
 8. reuse the original secure link and confirm the API rejects the second send.
 
-
 ## Newsletter FULL MAX PREMIUM R1
 
 Newsletter uses a separate consent from contact-form processing and requires double opt-in.
@@ -170,3 +167,283 @@ Do not reuse a send-only contact-form key if it lacks Contacts/Segments/Topics p
 - Newsletter endpoint has separate IP and email rate limits, honeypot and form-timing checks.
 - Server logs use request IDs and hashed email identifiers rather than raw subscriber addresses.
 - Broadcasts should target the dedicated Segment and Topic so opt-out state is respected.
+
+## R4.1 durable persistence foundation
+
+R4.1 introduces the PostgreSQL foundation required by the Contact + Premium Reply + Newsletter R4 architecture.
+
+### Scope
+
+- PostgreSQL connection wrapper with explicit transactions.
+- Ordered, checksummed SQL migrations protected by a PostgreSQL advisory lock.
+- Durable tables for:
+  - contact cases,
+  - one-time Premium Reply token state,
+  - critical idempotency,
+  - newsletter operational state,
+  - append-only first-party newsletter consent events.
+- Repository primitives with atomic reply-token claim and idempotency reservation.
+- PostgreSQL integration tests executed in GitHub Actions against a real PostgreSQL service.
+- Append-only protection for the consent-event ledger enforced inside PostgreSQL.
+
+### Production variables
+
+- `DATABASE_URL` — required before any R4 critical flow is switched to durable persistence.
+- `DB_POOL_MAX` — optional, default 10.
+- `DB_IDLE_TIMEOUT_MS` — optional, default 30000.
+- `DB_CONNECT_TIMEOUT_MS` — optional, default 5000.
+
+The PostgreSQL driver does not override TLS settings from the provider connection string. Use the Render-provided connection URL and its TLS parameters.
+
+### Commands
+
+- `npm run migrate` — apply pending checksummed migrations.
+- `npm run test:persistence` — run PostgreSQL integration tests.
+
+### Fail-closed rule
+
+Critical R4 guarantees must never silently fall back to process-memory Maps when PostgreSQL is unavailable. The persistence layer returns `PERSISTENCE_NOT_CONFIGURED` when no database is configured.
+
+**R4.1 does not yet switch the live contact, Premium Reply or newsletter flows to PostgreSQL.** That wiring belongs to the next staged PRs so existing production behavior remains unchanged until each durable path is independently tested and audited.
+
+
+## R4.2 durable Premium Reply
+
+R4.2 removes the production one-time-send guarantee from process memory and moves Premium Reply token state into PostgreSQL.
+
+### Production behavior
+
+- A Premium Reply link is issued only after its hashed JTI has been stored durably.
+- The raw encrypted token is never stored in PostgreSQL.
+- The database stores only the SHA-256 JTI hash plus lifecycle metadata.
+- Reply claims are atomic across processes and instances.
+- A used token remains used after process restart.
+- Concurrent requests cannot both reserve the same token.
+- The first reply body fingerprint is persisted. A retry may resend only the exact same normalized body, preventing a changed payload from reusing the same provider idempotency key after an ambiguous provider failure.
+- Provider delivery continues to use the deterministic `contact-reply/<hash>` idempotency key.
+- Failed provider attempts release the durable claim but retain the message fingerprint.
+- Successful provider delivery transitions the token to `used` and marks the parent contact case reply status as `sent`.
+- No production fallback to an in-memory token registry exists.
+
+### Deployment order
+
+1. Provision PostgreSQL and set `DATABASE_URL`.
+2. Run `npm --prefix contact-api run migrate`.
+3. Verify migration `002_durable_premium_reply.sql` is applied.
+4. Deploy the API.
+5. Confirm `/health` reports:
+   - `persistenceConfigured: true`
+   - `premiumReplyConfigured: true`
+   - `premiumReplyDurableState: true`
+6. Run a real contact-form acceptance test.
+7. Send one Premium Reply.
+8. Restart the API process.
+9. Reuse the original link and verify it is rejected as already used.
+
+### Failure semantics
+
+If `CONTACT_REPLY_SECRET` is configured but no durable token store is available, Premium Reply is disabled instead of silently falling back to memory. Contact delivery can still operate, but no Premium Reply link is issued.
+
+If the database fails while a Premium Reply token is being issued or claimed, the secure reply operation fails closed.
+
+A special in-memory store exists only for the isolated Node regression test process and is enabled solely with `NODE_ENV=test` plus `PREMIUM_REPLY_TEST_MEMORY_STORE=1`. It is not a production fallback.
+
+
+## R4.3 durable contact idempotency
+
+R4.3 moves the contact-form idempotency guarantee out of process memory and into PostgreSQL.
+
+### Production behavior
+
+- Client idempotency keys are never stored raw in PostgreSQL; gracz.pl stores a SHA-256 hash.
+- The request fingerprint is persisted with the idempotency record.
+- Completed safe responses are stored as replay data.
+- A completed request can be replayed after API restart without sending a second provider email.
+- Concurrent requests using the same key cannot both reserve the provider delivery.
+- A reused key with a different request fingerprint is rejected with an idempotency conflict.
+- Explicit pre-delivery failures may release the reservation so the same request can be retried.
+- Network failures and other ambiguous provider outcomes keep the durable record in `inflight` state rather than silently allowing another delivery.
+- Expired `inflight` records are not automatically recycled. This is intentional fail-closed behavior until later reconciliation tooling exists.
+- Expired `done` records may be recycled after the configured idempotency retention window.
+- The idempotency key is no longer coupled to the visitor IP address, so a legitimate retry remains stable if the network address changes.
+
+### Failure semantics
+
+If durable contact idempotency is unavailable, the contact submission path returns `CONTACT_IDEMPOTENCY_NOT_CONFIGURED` instead of falling back to the former in-memory map.
+
+After the provider request has started, ambiguous failures do not delete the durable reservation. This prevents a restart or retry from causing an untracked duplicate send.
+
+If the provider explicitly rejects the request with a retry-safe 4xx response other than HTTP 408, the reservation may be released.
+
+### Test-only adapter
+
+The normal Node regression suite uses an explicit in-memory adapter only when both conditions are true:
+
+- `NODE_ENV=test`
+- `CONTACT_IDEMPOTENCY_TEST_MEMORY_STORE=1`
+
+This adapter is not available as a production fallback.
+
+### Production acceptance test
+
+After deployment with PostgreSQL enabled:
+
+1. submit a valid contact form request and keep its idempotency key;
+2. verify the first request is delivered once;
+3. repeat the same request with the same key and confirm the stored 200 response is replayed without a second provider call;
+4. restart the API and repeat the same request again;
+5. confirm the response is still replayed from PostgreSQL;
+6. use the same key with a changed payload and confirm `IDEMPOTENCY_CONFLICT`;
+7. verify a concurrent same-key pair reaches the mail provider at most once.
+
+
+## R4.4 first-party newsletter consent ledger
+
+R4.4 keeps a durable first-party audit trail of newsletter consent while Resend remains the operational delivery and subscription-state layer.
+
+### Stored first-party state
+
+For each newsletter subject, PostgreSQL stores only a keyed one-way HMAC identifier derived from the normalized email address. The raw email address is not stored in the consent ledger.
+
+The append-only event history records:
+
+- `opt_in_requested`
+- `opt_in_confirmed`
+- `unsubscribe`
+- `resubscribe`
+- `provider_sync`
+- later provider-delivery events reserved by the schema
+
+The operational contact row stores the last first-party consent state and confirmation/unsubscribe timestamps as audit/safety evidence.
+
+### Required secret
+
+- `NEWSLETTER_CONSENT_HASH_SECRET` — independent random secret, minimum 32 characters.
+
+Do not reuse `NEWSLETTER_SECRET`, `RESEND_API_KEY` or `NEWSLETTER_RESEND_API_KEY`.
+
+The newsletter manager is not considered fully configured unless the durable consent store and this independent hashing secret are present.
+
+### Event semantics
+
+- requesting double opt-in appends an `opt_in_requested` event before the confirmation email is sent;
+- successful confirmation appends `opt_in_confirmed` or `resubscribe`;
+- unsubscribe appends `unsubscribe`;
+- replaying the same encrypted confirmation or unsubscribe token does not append a duplicate event because event IDs are deterministic per token JTI;
+- a pre-R4 subscriber already active in Resend can be imported as `provider_sync` without fabricating an original consent event;
+- provider-side state is the operational marketing state; the first-party ledger is retained as consent evidence and replay protection.
+
+### Privacy properties
+
+- no raw email address in the first-party consent ledger;
+- subject identifier uses HMAC-SHA-256 with a dedicated secret, not plain SHA-256;
+- no raw confirmation or unsubscribe token is persisted;
+- append-only protection remains enforced by PostgreSQL against UPDATE and DELETE.
+
+### Deployment order
+
+1. provision PostgreSQL and apply all migrations;
+2. create a new independent `NEWSLETTER_CONSENT_HASH_SECRET`;
+3. configure it in the API environment;
+4. deploy the R4.4 code;
+5. verify `/health` reports:
+   - `persistenceConfigured: true`
+   - `newsletterConfigured: true`
+   - `newsletterConsentLedger: true`
+6. run double-opt-in, unsubscribe and resubscribe acceptance tests;
+7. verify the ledger contains the expected ordered events without duplicate events after token replay.
+
+### Fail-closed rule
+
+If the first-party consent ledger or its hashing secret is unavailable, gracz.pl fails closed because it cannot record the required consent evidence.
+
+The existing test-only memory adapter is available only to automated tests. It is not a production fallback.
+
+
+## FINAL newsletter architecture — hybrid
+
+The newsletter scope is now frozen. Gracz.pl does **not** maintain a second newsletter delivery/state engine.
+
+### Responsibility split
+
+**Resend is authoritative for operational marketing state:**
+
+- contact existence;
+- Segment membership;
+- Topic `opt_in` / `opt_out`;
+- global provider unsubscribe state;
+- delivery of confirmation, welcome and future newsletter messages;
+- provider suppression/delivery handling.
+
+**Gracz.pl keeps only the first-party control and audit layer:**
+
+- branded newsletter form and endpoints;
+- encrypted double-opt-in / unsubscribe links;
+- append-only consent evidence keyed by HMAC subject identifier;
+- last confirmation/unsubscribe timestamps used to prevent stale-token replay;
+- consent version and minimal provider reference.
+
+### Removed complexity
+
+The R4.5 reconciliation engine is no longer part of the runtime contract. There is no public or internal `newsletter.reconcile()` state machine trying to make PostgreSQL a second provider.
+
+A provider-hosted unsubscribe therefore stays authoritative. An old confirmation token cannot silently reactivate it; the visitor must request a fresh double-opt-in link. A fresh confirmed opt-in may intentionally reactivate the provider subscription.
+
+### Why this is the final model
+
+This keeps the useful work already completed — form, premium e-mails, double opt-in, unsubscribe, audit evidence, security and tests — while avoiding a custom Mailchimp-like subsystem.
+
+The newsletter is considered feature-complete after CI and independent audit. Further work should be limited to bug fixes, provider migration, legal-copy updates or future campaign UI explicitly requested by the owner.
+
+## R4.6 modular HTTP routes
+
+R4.6 starts the modular-monolith split without changing the public API contract.
+
+### Extracted boundaries
+
+The HTTP orchestration for the two non-contact domains has been moved out of `server.mjs`:
+
+- `routes/newsletter-route.mjs`
+- `routes/premium-reply-route.mjs`
+
+The main server now composes these route handlers with explicit dependencies instead of embedding their complete request/response flows inline.
+
+### Why this shape
+
+The route modules receive only the capabilities they need:
+
+- domain manager;
+- origin policy;
+- rate-limit stores and helpers;
+- request parsing / validation helpers;
+- provider circuit-breaker hooks;
+- delivery configuration;
+- logger/fetch boundary.
+
+This avoids hidden global imports inside the route modules and makes later extraction of anti-abuse, provider, security, observability and shared HTTP layers safer.
+
+### No behavior change
+
+R4.6 is intentionally structural:
+
+- endpoint paths remain unchanged;
+- CORS behavior remains unchanged;
+- CSP/security headers remain unchanged;
+- rate limits remain unchanged;
+- Premium Reply provider idempotency remains unchanged;
+- Newsletter remains hybrid: Resend owns operational subscription state; gracz.pl keeps first-party consent evidence and stale-token protection.
+
+Existing contact/newsletter/Premium Reply regression tests are the compatibility gate for this extraction.
+
+### Next modularization slices
+
+The remaining large `server.mjs` concerns are intentionally left for smaller follow-up extractions:
+
+- contact route/service;
+- anti-abuse and rate-limit engine;
+- shared HTTP helpers;
+- security/input validation;
+- provider/Resend adapter;
+- observability/logging.
+
+The objective is a modular monolith, not microservices.

@@ -5,6 +5,13 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createNewsletterManager } from "./newsletter.mjs";
+import { createDatabase } from "./persistence/database.mjs";
+import { createPersistenceRepositories } from "./persistence/repositories.mjs";
+import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
+import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-store.mjs";
+import { createMemoryNewsletterConsentStore } from "./persistence/memory-newsletter-consent-store.mjs";
+import { createNewsletterRoute } from "./routes/newsletter-route.mjs";
+import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -35,11 +42,45 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must use different mailbox addresses");
 }
 
+const database = createDatabase();
+const persistence = database.enabled
+  ? createPersistenceRepositories(database)
+  : null;
+
+const useTestReplyStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.PREMIUM_REPLY_TEST_MEMORY_STORE === "1";
+
+const replyTokenStore = useTestReplyStore
+  ? createMemoryReplyTokenStore()
+  : persistence?.replyTokens || null;
+
+const useTestContactIdempotencyStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.CONTACT_IDEMPOTENCY_TEST_MEMORY_STORE === "1";
+
+const contactIdempotencyStore = useTestContactIdempotencyStore
+  ? createMemoryIdempotencyStore()
+  : persistence?.idempotency || null;
+
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
   ownerAddress: CONTACT_TO_ADDRESS,
   newsletterUrl: NEWSLETTER_URL,
+  tokenStore: replyTokenStore,
 });
+
+const useTestNewsletterConsentStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.NEWSLETTER_CONSENT_TEST_MEMORY_STORE === "1";
+
+const newsletterConsentStore = useTestNewsletterConsentStore
+  ? createMemoryNewsletterConsentStore()
+  : persistence?.newsletter || null;
+
+const NEWSLETTER_CONSENT_HASH_SECRET = String(
+  process.env.NEWSLETTER_CONSENT_HASH_SECRET || ""
+).trim();
 
 const newsletter = createNewsletterManager({
   secret: NEWSLETTER_SECRET,
@@ -49,6 +90,8 @@ const newsletter = createNewsletterManager({
   emailFrom: EMAIL_FROM,
   replyTo: CONTACT_TO_ADDRESS,
   baseUrl: NEWSLETTER_URL,
+  consentStore: newsletterConsentStore,
+  consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
 });
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
@@ -106,7 +149,6 @@ const newsletterIpBuckets = new Map();
 const newsletterEmailBuckets = new Map();
 const emailBuckets = new Map();
 const duplicateSubmissions = new Map();
-const idempotencyCache = new Map();
 const abuseStrikes = new Map();
 const mxCache = new Map();
 const mxInFlight = new Map();
@@ -134,14 +176,55 @@ const PROVIDER_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
 const MAX_IP_BUCKETS = 5000;
 const MAX_EMAIL_BUCKETS = 5000;
 const MAX_DUPLICATES = 5000;
-const MAX_IDEMPOTENCY = 5000;
 const MAX_ABUSE_STRIKES = 5000;
 const MAX_MX_CACHE = 2000;
 const MAX_MX_IN_FLIGHT = 50;
 
+const handleNewsletterRequest = createNewsletterRoute({
+  allowedOrigins: ALLOWED_ORIGINS,
+  newsletter,
+  newsletterIpBuckets,
+  newsletterEmailBuckets,
+  rateLimit,
+  hashValue,
+  clientIp,
+  readJson,
+  json,
+  setCors,
+  bad,
+  normalizeEmail,
+  requiredString,
+  optionalString,
+  parseStartedAt,
+  isValidEmailSyntax,
+  enforceFormTiming,
+  validateEmailDomain,
+});
+
+const handlePremiumReplyRequest = createPremiumReplyRoute({
+  allowedOrigins: ALLOWED_ORIGINS,
+  premiumReply,
+  replyIpBuckets,
+  rateLimit,
+  hashValue,
+  clientIp,
+  readJson,
+  json,
+  setCors,
+  resendApiKey: RESEND_API_KEY,
+  resendEndpoint: RESEND_ENDPOINT,
+  emailFrom: EMAIL_FROM,
+  emailFromAddress: EMAIL_FROM_ADDRESS,
+  contactToAddress: CONTACT_TO_ADDRESS,
+  ensureProviderCircuitClosed,
+  recordProviderFailure,
+  recordProviderSuccess,
+});
+
 createServer(async (req, res) => {
   const requestId = randomUUID();
-  let reservedIdempotencyKey = null;
+  let reservedIdempotency = null;
+  let providerAttempted = false;
 
   try {
     const url = new URL(req.url, "http://localhost");
@@ -152,8 +235,12 @@ createServer(async (req, res) => {
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
+        persistenceConfigured: database.enabled,
         premiumReplyConfigured: premiumReply.enabled,
+        premiumReplyDurableState: premiumReply.durableStateConfigured,
+        contactIdempotencyConfigured: Boolean(contactIdempotencyStore),
         newsletterConfigured: newsletter.enabled,
+        newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
     }
 
@@ -223,15 +310,39 @@ createServer(async (req, res) => {
       ? validateIdempotencyKey(rawIdempotencyKey)
       : "legacy-" + requestFingerprint.slice(0, 32);
 
-    const replay = getIdempotentReplay(ip, idempotencyKey, requestFingerprint);
+    const replay = await getContactIdempotentReplay(
+      idempotencyKey,
+      requestFingerprint
+    );
     if (replay) {
       return json(res, replay.status, replay.body);
     }
 
     if (payload.website) {
       registerAbuseStrike(ip, "honeypot");
+      const reservation = await reserveContactIdempotency(
+        idempotencyKey,
+        requestFingerprint
+      );
+      if (reservation.replay) {
+        return json(res, reservation.replay.status, reservation.replay.body);
+      }
+
+      reservedIdempotency = reservation.reservation;
       const fake = { ok: true, id: requestId };
-      rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, fake);
+      try {
+        const completed = await completeContactIdempotency(
+          reservedIdempotency,
+          200,
+          fake
+        );
+        if (completed) reservedIdempotency = null;
+      } catch (persistenceError) {
+        console.error("[contact] honeypot idempotency commit failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
       return json(res, 200, fake);
     }
 
@@ -278,11 +389,36 @@ createServer(async (req, res) => {
       });
     }
 
-    reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
+    const reservation = await reserveContactIdempotency(
+      idempotencyKey,
+      requestFingerprint
+    );
+    if (reservation.replay) {
+      return json(res, reservation.replay.status, reservation.replay.body);
+    }
+    reservedIdempotency = reservation.reservation;
 
-    const adminDelivery = premiumReply.createAdminDelivery(payload, requestId);
+    if (premiumReply.enabled && persistence) {
+      const created = await persistence.contactCases.create({
+        requestId,
+        senderHash: hashValue(payload.email),
+        category: payload.category,
+        subject: payload.subject,
+        sourcePath: payload.page,
+      });
+
+      if (!created) {
+        const error = new Error("Nie udało się utworzyć trwałego rekordu zgłoszenia.");
+        error.code = "CONTACT_CASE_PERSISTENCE_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
+
+    const adminDelivery = await premiumReply.createAdminDelivery(payload, requestId);
 
     let response;
+    providerAttempted = true;
     try {
       response = await fetch(RESEND_ENDPOINT, {
         method: "POST",
@@ -302,6 +438,19 @@ createServer(async (req, res) => {
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {
+      if (premiumReply.enabled && persistence) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            error?.code || "MAIL_PROVIDER_NETWORK_ERROR"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
       recordProviderFailure();
       throw error;
     }
@@ -309,8 +458,21 @@ createServer(async (req, res) => {
     const raw = await response.text().catch(() => "");
 
     if (!response.ok) {
-      releaseIdempotency(reservedIdempotencyKey);
-      reservedIdempotencyKey = null;
+      if (
+        reservedIdempotency &&
+        isExplicitProviderFailureSafeToRetry(response.status)
+      ) {
+        try {
+          await releaseContactIdempotency(reservedIdempotency);
+          reservedIdempotency = null;
+        } catch (persistenceError) {
+          console.error("[contact] idempotency release failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
+
       if (response.status === 408 || response.status === 429 || response.status >= 500) {
         recordProviderFailure();
       }
@@ -318,6 +480,20 @@ createServer(async (req, res) => {
       try {
         providerError = raw ? JSON.parse(raw) : {};
       } catch {}
+
+      if (premiumReply.enabled && persistence) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            "MAIL_DELIVERY_FAILED"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
 
       console.error("[contact] provider rejected", {
         requestId,
@@ -344,6 +520,26 @@ createServer(async (req, res) => {
     try {
       result = raw ? JSON.parse(raw) : {};
     } catch {}
+
+    if (premiumReply.enabled && persistence) {
+      try {
+        const marked = await persistence.contactCases.markDelivered(
+          requestId,
+          result.id || null
+        );
+        if (!marked) {
+          console.error("[contact] durable delivery status missing", {
+            requestId,
+            code: "CONTACT_CASE_NOT_FOUND",
+          });
+        }
+      } catch (persistenceError) {
+        console.error("[contact] durable delivery status update failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
+    }
 
     rememberDuplicate(payload);
     recordProviderSuccess();
@@ -372,8 +568,28 @@ createServer(async (req, res) => {
       id: requestId,
       newsletter: newsletterState,
     };
-    rememberIdempotentResult(ip, idempotencyKey, requestFingerprint, 200, successBody);
-    reservedIdempotencyKey = null;
+    if (reservedIdempotency) {
+      try {
+        const completed = await completeContactIdempotency(
+          reservedIdempotency,
+          200,
+          successBody
+        );
+        if (completed) {
+          reservedIdempotency = null;
+        } else {
+          console.error("[contact] durable idempotency completion missing", {
+            requestId,
+            code: "IDEMPOTENCY_COMPLETION_MISSING",
+          });
+        }
+      } catch (persistenceError) {
+        console.error("[contact] durable idempotency completion failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
+    }
 
     console.log("[contact] sent", {
       requestId,
@@ -386,9 +602,16 @@ createServer(async (req, res) => {
 
     return json(res, 200, successBody);
   } catch (error) {
-    if (reservedIdempotencyKey) {
-      releaseIdempotency(reservedIdempotencyKey);
-      reservedIdempotencyKey = null;
+    if (reservedIdempotency && !providerAttempted) {
+      try {
+        await releaseContactIdempotency(reservedIdempotency);
+        reservedIdempotency = null;
+      } catch (persistenceError) {
+        console.error("[contact] durable idempotency release failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
     }
 
     const status = Number.isInteger(error?.status) ? error.status : 500;
@@ -418,247 +641,6 @@ createServer(async (req, res) => {
     newsletterConfigured: newsletter.enabled,
   });
 });
-
-async function handleNewsletterRequest(req, res, url, requestId) {
-  const origin = String(req.headers.origin || "");
-  if (!ALLOWED_ORIGINS.has(origin)) {
-    return json(res, 403, {
-      error: { code: "ORIGIN_NOT_ALLOWED", message: "Niedozwolone źródło żądania." },
-    });
-  }
-
-  setCors(res, origin);
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Max-Age": "600",
-      "Vary": "Origin",
-    });
-    return res.end();
-  }
-
-  if (req.method !== "POST") {
-    return json(res, 405, {
-      error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." },
-    });
-  }
-
-  if (!newsletter.enabled) {
-    return json(res, 503, {
-      error: {
-        code: "NEWSLETTER_NOT_CONFIGURED",
-        message: "Newsletter jest chwilowo niedostępny.",
-      },
-    });
-  }
-
-  const ip = clientIp(req) || "unknown";
-  rateLimit(
-    newsletterIpBuckets,
-    hashValue(ip),
-    15 * 60 * 1000,
-    15,
-    "Za dużo prób obsługi newslettera. Spróbuj ponownie później."
-  );
-
-  const body = await readJson(req, 8_192);
-
-  if (url.pathname === "/newsletter/subscribe") {
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      bad("Nieprawidłowe dane formularza.", "INVALID_PAYLOAD");
-    }
-
-    const email = normalizeEmail(requiredString(body.email, "email", 254));
-    const name = optionalString(body.name, "name", 80);
-    const website = optionalString(body.website, "website", 120);
-    const startedAt = parseStartedAt(body.startedAt);
-
-    if (!isValidEmailSyntax(email)) {
-      bad("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL");
-    }
-    if (body.consent !== true) {
-      bad("Zgoda na newsletter jest wymagana.", "NEWSLETTER_CONSENT_REQUIRED");
-    }
-    if (website) {
-      return json(res, 200, { ok: true, state: "confirmation_sent" });
-    }
-    if (startedAt > 0) enforceFormTiming(startedAt);
-
-    await validateEmailDomain(email);
-    rateLimit(
-      newsletterEmailBuckets,
-      hashValue(email),
-      60 * 60 * 1000,
-      4,
-      "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
-    );
-
-    await newsletter.requestOptIn({
-      email,
-      name,
-      source: "newsletter_page",
-    });
-
-    console.log("[newsletter] confirmation requested", {
-      requestId,
-      emailHash: hashValue(email).slice(0, 12),
-    });
-
-    return json(res, 200, { ok: true, state: "confirmation_sent" });
-  }
-
-  const token = typeof body?.token === "string" ? body.token : "";
-
-  if (url.pathname === "/newsletter/confirm") {
-    const result = await newsletter.confirm(token);
-    console.log("[newsletter] confirmed", {
-      requestId,
-      recipient: result.recipient,
-    });
-    return json(res, 200, { ok: true, state: result.state });
-  }
-
-  if (url.pathname === "/newsletter/unsubscribe") {
-    const result = await newsletter.unsubscribe(token);
-    console.log("[newsletter] unsubscribed", {
-      requestId,
-      recipient: result.recipient,
-    });
-    return json(res, 200, { ok: true, state: result.state });
-  }
-
-  return json(res, 404, {
-    error: { code: "NOT_FOUND", message: "Nie znaleziono zasobu." },
-  });
-}
-
-async function handlePremiumReplyRequest(req, res, url, requestId) {
-  const origin = String(req.headers.origin || "");
-  if (!ALLOWED_ORIGINS.has(origin)) {
-    return json(res, 403, {
-      error: { code: "ORIGIN_NOT_ALLOWED", message: "Niedozwolone źródło żądania." },
-    });
-  }
-
-  setCors(res, origin);
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Max-Age": "600",
-      "Vary": "Origin",
-    });
-    return res.end();
-  }
-
-  if (req.method !== "POST") {
-    return json(res, 405, {
-      error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." },
-    });
-  }
-
-  const ip = clientIp(req) || "unknown";
-  rateLimit(
-    replyIpBuckets,
-    hashValue(ip),
-    15 * 60 * 1000,
-    20,
-    "Za dużo prób użycia panelu odpowiedzi. Spróbuj ponownie później."
-  );
-
-  const body = await readJson(req, 16_384);
-  const token = typeof body.token === "string" ? body.token : "";
-
-  if (url.pathname === "/reply-context") {
-    const context = premiumReply.getPublicContext(token);
-    return json(res, 200, { ok: true, context });
-  }
-
-  if (!RESEND_API_KEY || !EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
-    return json(res, 503, {
-      error: {
-        code: "MAIL_NOT_CONFIGURED",
-        message: "Kanał wysyłki wiadomości nie jest skonfigurowany.",
-      },
-    });
-  }
-
-  ensureProviderCircuitClosed();
-
-  const delivery = premiumReply.prepareReply(token, body.message);
-  let response;
-
-  try {
-    response = await fetch(RESEND_ENDPOINT, {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + RESEND_API_KEY,
-        "content-type": "application/json",
-        "Idempotency-Key": premiumReply.providerIdempotencyKey(delivery.jti),
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [delivery.to],
-        reply_to: delivery.replyTo,
-        subject: delivery.subject,
-        text: delivery.text,
-        html: delivery.html,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch (error) {
-    premiumReply.releaseReply(delivery.tokenKey);
-    recordProviderFailure();
-    throw error;
-  }
-
-  const raw = await response.text().catch(() => "");
-
-  if (!response.ok) {
-    premiumReply.releaseReply(delivery.tokenKey);
-    if (response.status === 408 || response.status === 429 || response.status >= 500) {
-      recordProviderFailure();
-    }
-
-    console.error("[contact-reply] provider rejected", {
-      requestId,
-      status: response.status,
-      contactRequestId: delivery.requestId,
-    });
-
-    return json(res, 502, {
-      error: {
-        code: "MAIL_DELIVERY_FAILED",
-        message: "Nie udało się wysłać odpowiedzi. Spróbuj ponownie później.",
-      },
-    });
-  }
-
-  let result = {};
-  try {
-    result = raw ? JSON.parse(raw) : {};
-  } catch {}
-
-  premiumReply.markReplySent(delivery.tokenKey);
-  recordProviderSuccess();
-
-  console.log("[contact-reply] sent", {
-    requestId,
-    contactRequestId: delivery.requestId,
-    providerId: result.id || null,
-    recipientHash: hashValue(delivery.to).slice(0, 12),
-  });
-
-  return json(res, 200, {
-    ok: true,
-    id: delivery.requestId,
-  });
-}
 
 function readRiskThreshold(name, fallback) {
   const raw = process.env[name];
@@ -1056,10 +1038,6 @@ function validateIdempotencyKey(value) {
   return key;
 }
 
-function idempotencyStorageKey(ip, key) {
-  return hashValue(ip + "\n" + key);
-}
-
 function submissionFingerprint(payload) {
   return hashValue([
     payload.name,
@@ -1072,80 +1050,144 @@ function submissionFingerprint(payload) {
   ].join("\n"));
 }
 
-function getIdempotentReplay(ip, key, fingerprint) {
-  cleanupIdempotency();
-  const entry = idempotencyCache.get(idempotencyStorageKey(ip, key));
-  if (!entry) return null;
+function contactIdempotencyKeyHash(key) {
+  return hashValue("contact\n" + String(key || ""));
+}
 
-  if (entry.fingerprint !== fingerprint) {
-    const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
+function requireContactIdempotencyStore() {
+  if (contactIdempotencyStore) return contactIdempotencyStore;
+
+  const error = new Error(
+    "Trwała idempotencja formularza kontaktowego nie jest skonfigurowana."
+  );
+  error.code = "CONTACT_IDEMPOTENCY_NOT_CONFIGURED";
+  error.status = 503;
+  throw error;
+}
+
+async function getContactIdempotentReplay(key, fingerprint) {
+  const store = requireContactIdempotencyStore();
+  const record = await store.get({
+    scope: "contact",
+    keyHash: contactIdempotencyKeyHash(key),
+  });
+
+  return interpretContactIdempotencyRecord(record, fingerprint);
+}
+
+async function reserveContactIdempotency(key, fingerprint) {
+  const store = requireContactIdempotencyStore();
+  const keyHash = contactIdempotencyKeyHash(key);
+  const result = await store.reserve({
+    scope: "contact",
+    keyHash,
+    fingerprint,
+    expiresAt: new Date(Date.now() + IDEMPOTENCY_TTL_MS),
+  });
+
+  if (result?.reserved) {
+    return {
+      reservation: {
+        scope: "contact",
+        keyHash,
+        fingerprint,
+      },
+      replay: null,
+    };
+  }
+
+  const replay = interpretContactIdempotencyRecord(
+    result?.record || null,
+    fingerprint
+  );
+
+  if (replay) {
+    return { reservation: null, replay };
+  }
+
+  const error = new Error(
+    "Nie udało się bezpiecznie zarezerwować wysyłki wiadomości."
+  );
+  error.code = "IDEMPOTENCY_RESERVATION_FAILED";
+  error.status = 503;
+  throw error;
+}
+
+function interpretContactIdempotencyRecord(record, fingerprint) {
+  if (!record) return null;
+
+  if (record.fingerprint !== fingerprint) {
+    const error = new Error(
+      "Ten identyfikator wysyłki został już użyty dla innej wiadomości."
+    );
     error.code = "IDEMPOTENCY_CONFLICT";
     error.status = 409;
     throw error;
   }
 
-  if (entry.state === "done") {
-    return { status: entry.status, body: entry.body };
-  }
-
-  const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
-  error.code = "REQUEST_IN_PROGRESS";
-  error.status = 409;
-  throw error;
-}
-
-function reserveIdempotency(ip, key, fingerprint) {
-  cleanupIdempotency();
-  const storageKey = idempotencyStorageKey(ip, key);
-  const existing = idempotencyCache.get(storageKey);
-
-  if (existing) {
-    if (existing.fingerprint !== fingerprint) {
-      const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
-      error.code = "IDEMPOTENCY_CONFLICT";
-      error.status = 409;
+  if (record.state === "done") {
+    const status = Number(record.response_status);
+    if (!Number.isInteger(status) || status < 100 || status > 599) {
+      const error = new Error(
+        "Trwały rekord idempotencji ma nieprawidłowy stan odpowiedzi."
+      );
+      error.code = "IDEMPOTENCY_STATE_INVALID";
+      error.status = 503;
       throw error;
     }
 
+    return {
+      status,
+      body: record.response_body ?? { ok: true },
+    };
+  }
+
+  if (record.state === "inflight") {
     const error = new Error(
-      existing.state === "done"
-        ? "Ta wiadomość została już przetworzona."
-        : "Ta wiadomość jest już przetwarzana. Poczekaj chwilę."
+      "Ta wiadomość jest już przetwarzana. Poczekaj chwilę."
     );
-    error.code = existing.state === "done" ? "ALREADY_PROCESSED" : "REQUEST_IN_PROGRESS";
+    error.code = "REQUEST_IN_PROGRESS";
     error.status = 409;
     throw error;
   }
 
-  boundedSet(idempotencyCache, storageKey, {
-    state: "pending",
-    fingerprint,
-    createdAt: Date.now(),
-  }, MAX_IDEMPOTENCY);
-
-  return storageKey;
+  const error = new Error(
+    "Trwały rekord idempotencji ma nieobsługiwany stan."
+  );
+  error.code = "IDEMPOTENCY_STATE_INVALID";
+  error.status = 503;
+  throw error;
 }
 
-function releaseIdempotency(storageKey) {
-  if (storageKey) idempotencyCache.delete(storageKey);
-}
-
-function rememberIdempotentResult(ip, key, fingerprint, status, body) {
-  cleanupIdempotency();
-  boundedSet(idempotencyCache, idempotencyStorageKey(ip, key), {
-    state: "done",
-    fingerprint,
+async function completeContactIdempotency(reservation, status, body) {
+  if (!reservation) return false;
+  const store = requireContactIdempotencyStore();
+  return store.complete({
+    scope: reservation.scope,
+    keyHash: reservation.keyHash,
+    fingerprint: reservation.fingerprint,
     status,
     body,
-    createdAt: Date.now(),
-  }, MAX_IDEMPOTENCY);
+  });
 }
 
-function cleanupIdempotency() {
-  const now = Date.now();
-  for (const [key, entry] of idempotencyCache) {
-    if (now - entry.createdAt >= IDEMPOTENCY_TTL_MS) idempotencyCache.delete(key);
-  }
+async function releaseContactIdempotency(reservation) {
+  if (!reservation) return false;
+  const store = requireContactIdempotencyStore();
+  return store.release({
+    scope: reservation.scope,
+    keyHash: reservation.keyHash,
+    fingerprint: reservation.fingerprint,
+  });
+}
+
+function isExplicitProviderFailureSafeToRetry(status) {
+  return (
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408
+  );
 }
 
 function registerAbuseStrike(ip, reason) {

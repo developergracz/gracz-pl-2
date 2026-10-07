@@ -17,21 +17,39 @@ export function createPremiumReplyManager({
   baseUrl = "https://gracz.pl/kontakt/odpowiedz/",
   ownerAddress,
   newsletterUrl = "",
+  tokenStore = null,
+  claimLeaseMs = 30_000,
 }) {
   const normalizedSecret = String(secret || "").trim();
-  const enabled = normalizedSecret.length >= 32;
-  const key = enabled
+  const secretConfigured = normalizedSecret.length >= 32;
+  const storeConfigured = Boolean(
+    tokenStore &&
+      typeof tokenStore.issue === "function" &&
+      typeof tokenStore.claim === "function" &&
+      typeof tokenStore.markUsed === "function" &&
+      typeof tokenStore.release === "function"
+  );
+  const enabled = secretConfigured && storeConfigured;
+  const key = secretConfigured
     ? createHash("sha256").update(normalizedSecret, "utf8").digest()
     : null;
-  const usedTokens = new Map();
+  const normalizedClaimLeaseMs = Math.max(
+    5_000,
+    Math.min(120_000, Number(claimLeaseMs) || 30_000)
+  );
 
-  if (normalizedSecret && !enabled) {
+  if (normalizedSecret && !secretConfigured) {
     throw new Error("CONTACT_REPLY_SECRET must contain at least 32 characters");
   }
 
-  function createAdminDelivery(payload, requestId) {
-    const token = enabled
-      ? encrypt({
+  async function createAdminDelivery(payload, requestId) {
+    let token = null;
+
+    if (enabled) {
+      let issued = false;
+
+      for (let attempt = 0; attempt < 3 && !issued; attempt += 1) {
+        const data = {
           v: 1,
           jti: randomUUID(),
           exp: Date.now() + TOKEN_TTL_MS,
@@ -41,8 +59,29 @@ export function createPremiumReplyManager({
           category: payload.category,
           subject: payload.subject,
           excerpt: payload.message.slice(0, 1200),
-        })
-      : null;
+        };
+        const tokenKey = hashTokenJti(data.jti);
+        const idempotencyKey = providerIdempotencyKey(data.jti);
+
+        issued = await tokenStore.issue({
+          jtiHash: tokenKey,
+          requestId,
+          expiresAt: new Date(data.exp),
+          providerIdempotencyKey: idempotencyKey,
+        });
+
+        if (issued) token = encrypt(data);
+      }
+
+      if (!token) {
+        const error = new Error(
+          "Nie udało się bezpiecznie utworzyć linku odpowiedzi."
+        );
+        error.code = "REPLY_TOKEN_ISSUE_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
 
     const replyUrl = token ? baseUrl + "#token=" + token : null;
     const text = [
@@ -85,31 +124,34 @@ export function createPremiumReplyManager({
     };
   }
 
-  function prepareReply(token, message) {
-    cleanupUsedTokens();
-    const data = decrypt(token);
-    const cleanMessage = validateReplyMessage(message);
-    const tokenKey = createHash("sha256").update(data.jti).digest("hex");
-
-    if (usedTokens.has(tokenKey)) {
-      const error = new Error("Ta odpowiedź została już wysłana.");
-      error.code = "REPLY_TOKEN_USED";
-      error.status = 409;
+  async function prepareReply(token, message) {
+    if (!enabled) {
+      const error = new Error(
+        "Moduł odpowiedzi premium nie ma aktywnego trwałego magazynu stanu."
+      );
+      error.code = "REPLY_NOT_CONFIGURED";
+      error.status = 503;
       throw error;
     }
 
-    if (usedTokens.size >= MAX_USED_TOKENS) {
-      const oldestKey = usedTokens.keys().next().value;
-      if (oldestKey !== undefined) usedTokens.delete(oldestKey);
-    }
+    const data = decrypt(token);
+    const cleanMessage = validateReplyMessage(message);
+    const tokenKey = hashTokenJti(data.jti);
+    const messageHash = createHash("sha256")
+      .update(cleanMessage, "utf8")
+      .digest("hex");
 
-    usedTokens.set(tokenKey, {
-      state: "inflight",
-      expiresAt: data.exp,
+    const claim = await tokenStore.claim(tokenKey, messageHash, {
+      leaseMs: normalizedClaimLeaseMs,
     });
+
+    if (!claim?.claimed) {
+      rejectUnavailableClaim(claim);
+    }
 
     return {
       tokenKey,
+      messageHash,
       jti: data.jti,
       requestId: data.requestId,
       to: data.email,
@@ -117,25 +159,47 @@ export function createPremiumReplyManager({
       subject: "Odp: gracz.pl — " + data.subject,
       text: buildReplyText(data, cleanMessage),
       html: buildReplyHtml(data, cleanMessage, newsletterUrl),
+      providerIdempotencyKey:
+        claim.token?.provider_idempotency_key ||
+        providerIdempotencyKey(data.jti),
     };
   }
 
-  function markReplySent(tokenKey) {
-    const current = usedTokens.get(tokenKey);
-    if (current) current.state = "done";
+  async function markReplySent(tokenKey, messageHash, providerMessageId = null) {
+    const committed = await tokenStore.markUsed(
+      tokenKey,
+      messageHash,
+      providerMessageId
+    );
+
+    if (!committed) {
+      const error = new Error(
+        "Wysłano wiadomość, ale nie udało się zatwierdzić trwałego stanu odpowiedzi."
+      );
+      error.code = "REPLY_STATE_COMMIT_FAILED";
+      error.status = 503;
+      throw error;
+    }
   }
 
-  function releaseReply(tokenKey) {
-    const current = usedTokens.get(tokenKey);
-    if (current?.state === "inflight") usedTokens.delete(tokenKey);
+  async function releaseReply(tokenKey, messageHash, errorCode = null) {
+    if (!enabled) return null;
+    return tokenStore.release(tokenKey, messageHash, errorCode);
   }
 
   function providerIdempotencyKey(jti) {
-    return "contact-reply/" + createHash("sha256").update(jti).digest("hex").slice(0, 40);
+    return (
+      "contact-reply/" +
+      createHash("sha256").update(String(jti), "utf8").digest("hex").slice(0, 40)
+    );
+  }
+
+  function hashTokenJti(jti) {
+    return createHash("sha256").update(String(jti), "utf8").digest("hex");
   }
 
   function encrypt(payload) {
-    if (!enabled) return null;
+    if (!secretConfigured) return null;
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);
     const plaintext = Buffer.from(JSON.stringify(payload), "utf8");
@@ -150,7 +214,7 @@ export function createPremiumReplyManager({
   }
 
   function decrypt(token) {
-    if (!enabled) {
+    if (!secretConfigured) {
       const error = new Error("Moduł odpowiedzi premium nie jest skonfigurowany.");
       error.code = "REPLY_NOT_CONFIGURED";
       error.status = 503;
@@ -168,9 +232,9 @@ export function createPremiumReplyManager({
     }
 
     try {
-      const iv = Buffer.from(parts[1], "base64url");
-      const tag = Buffer.from(parts[2], "base64url");
-      const ciphertext = Buffer.from(parts[3], "base64url");
+      const iv = decodeCanonicalBase64Url(parts[1]);
+      const tag = decodeCanonicalBase64Url(parts[2]);
+      const ciphertext = decodeCanonicalBase64Url(parts[3]);
       if (iv.length !== 12 || tag.length !== 16 || ciphertext.length < 16) {
         invalidToken();
       }
@@ -190,15 +254,10 @@ export function createPremiumReplyManager({
     }
   }
 
-  function cleanupUsedTokens() {
-    const now = Date.now();
-    for (const [tokenKey, entry] of usedTokens) {
-      if (entry.expiresAt <= now) usedTokens.delete(tokenKey);
-    }
-  }
-
   return {
     enabled,
+    secretConfigured,
+    durableStateConfigured: storeConfigured,
     createAdminDelivery,
     getPublicContext,
     prepareReply,
@@ -206,6 +265,74 @@ export function createPremiumReplyManager({
     releaseReply,
     providerIdempotencyKey,
   };
+}
+
+function rejectUnavailableClaim(claim) {
+  const state = claim?.token?.state;
+
+  if (state === "used") {
+    const error = new Error("Ta odpowiedź została już wysłana.");
+    error.code = "REPLY_TOKEN_USED";
+    error.status = 409;
+    throw error;
+  }
+
+  if (state === "expired") {
+    const error = new Error("Link do odpowiedzi wygasł.");
+    error.code = "REPLY_TOKEN_EXPIRED";
+    error.status = 410;
+    throw error;
+  }
+
+  if (claim?.messageConflict) {
+    const error = new Error(
+      "Po rozpoczęciu wysyłki treść odpowiedzi jest zablokowana. Ponów wysyłkę tej samej wiadomości."
+    );
+    error.code = "REPLY_TOKEN_MESSAGE_CONFLICT";
+    error.status = 409;
+    throw error;
+  }
+
+  if (state === "inflight") {
+    const error = new Error(
+      "Wysyłka tej odpowiedzi już trwa. Spróbuj ponownie za chwilę."
+    );
+    error.code = "REPLY_TOKEN_IN_PROGRESS";
+    error.status = 409;
+    throw error;
+  }
+
+  if (!claim?.token) {
+    const error = new Error(
+      "Ten link nie ma aktywnego rekordu trwałego stanu i nie może zostać użyty."
+    );
+    error.code = "REPLY_TOKEN_NOT_ISSUED";
+    error.status = 410;
+    throw error;
+  }
+
+  const error = new Error(
+    "Nie udało się bezpiecznie zarezerwować tej odpowiedzi."
+  );
+  error.code = "REPLY_STATE_UNAVAILABLE";
+  error.status = 503;
+  throw error;
+}
+
+function decodeCanonicalBase64Url(value) {
+  if (
+    typeof value !== "string" ||
+    !value ||
+    !/^[A-Za-z0-9_-]+$/.test(value)
+  ) {
+    invalidToken();
+  }
+
+  const decoded = Buffer.from(value, "base64url");
+  if (decoded.toString("base64url") !== value) {
+    invalidToken();
+  }
+  return decoded;
 }
 
 function validateTokenPayload(data) {
@@ -301,7 +428,7 @@ function buildReplyText(data, message) {
 function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
   const button = replyUrl
     ? `<tr><td style="padding:22px 32px 8px"><a href="${escapeAttribute(replyUrl)}" style="display:inline-block;background:#16d4c2;color:#041216;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Odpowiedz przez gracz.pl →</a></td></tr>
-<tr><td style="padding:0 32px 18px;color:#8ca5ad;font-size:12px;line-height:1.5">Bezpieczny link jest ważny 7 dni i prowadzi do panelu odpowiedzi gracz.pl.</td></tr>`
+<tr><td style="padding:0 32px 18px;color:#8ca5ad;font-size:12px;line-height:1.5">Bezpieczny link jest ważny 7 dni i prowadzi do panelu odpowiedzi ${brandLogoHtml({ compact: true, onDark: true })}.</td></tr>`
     : `<tr><td style="padding:18px 32px;color:#f0b95a;font-size:13px">Moduł odpowiedzi premium nie jest jeszcze aktywny.</td></tr>`;
 
   return `<!doctype html>
@@ -318,7 +445,7 @@ function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
 <td style="padding:13px 16px;font-size:11px;color:#718883">Numer sprawy<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${escapeHtml(requestId)}</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Status<strong style="display:block;padding-top:4px;color:#0d665c;font-size:12px">NOWE</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Priorytet<strong style="display:block;padding-top:4px;color:#915a09;font-size:12px">STANDARD</strong></td>
-<td style="padding:13px 16px;font-size:11px;color:#718883">Kanał<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">Formularz gracz.pl</strong></td>
+<td style="padding:13px 16px;font-size:11px;color:#718883">Kanał<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${brandifyEmailText("Formularz gracz.pl")}</strong></td>
 </tr></table>
 </td></tr>
 <tr><td style="padding:28px 32px 12px">
@@ -341,7 +468,7 @@ function buildAdminHtml({ payload, requestId, replyUrl, newsletterUrl }) {
 ${button}
 <tr><td style="padding:10px 32px 24px">${buildNewsletterEmailSection(newsletterUrl)}</td></tr>
 <tr><td style="padding:18px 32px 28px;border-top:1px solid #173943;color:#6f8b92;font-size:12px;line-height:1.6">
-gracz.pl · panel kontaktowy<br>Nie odpowiadaj przez przekazywanie tego bezpiecznego linku osobom trzecim.
+${brandLogoHtml({ compact: true, onDark: true })} · panel kontaktowy<br>Nie odpowiadaj przez przekazywanie tego bezpiecznego linku osobom trzecim.
 </td></tr>
 </table>
 </td></tr></table>
@@ -364,11 +491,11 @@ function buildReplyHtml(data, message, newsletterUrl) {
 <td style="padding:13px 16px;font-size:11px;color:#718883">Numer sprawy<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${escapeHtml(data.requestId)}</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Status<strong style="display:block;padding-top:4px;color:#0d665c;font-size:12px">ODPOWIEDŹ UDZIELONA</strong></td>
 <td style="padding:13px 16px;font-size:11px;color:#718883">Priorytet<strong style="display:block;padding-top:4px;color:#915a09;font-size:12px">STANDARD</strong></td>
-<td style="padding:13px 16px;font-size:11px;color:#718883">Obsługa<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">Zespół gracz.pl</strong></td>
+<td style="padding:13px 16px;font-size:11px;color:#718883">Obsługa<strong style="display:block;padding-top:4px;color:#16342f;font-size:12px">${brandifyEmailText("Zespół gracz.pl")}</strong></td>
 </tr></table>
 </td></tr>
 <tr><td style="padding:34px 34px 12px">
-<div style="display:inline-block;background:#12313a;color:#63e6d6;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800">ODPOWIEDŹ GRACZ.PL</div>
+<div style="display:inline-block;background:#12313a;color:#63e6d6;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800">ODPOWIEDŹ ${brandLogoHtml({ compact: true, onDark: true })}</div>
 <h1 style="margin:16px 0 10px;color:#ffffff;font-size:28px;line-height:1.25">Dziękujemy za kontakt</h1>
 <p style="margin:0;color:#9ab2b8;font-size:15px;line-height:1.7">Odpowiadamy na Twoje zgłoszenie dotyczące: <strong style="color:#dff6f3">${escapeHtml(data.subject)}</strong></p>
 </td></tr>
@@ -387,9 +514,9 @@ function buildReplyHtml(data, message, newsletterUrl) {
 <a href="https://gracz.pl/" style="display:inline-block;background:#16d4c2;color:#041216;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Przejdź do gracz.pl →</a>
 </td></tr>
 <tr><td style="padding:22px 34px 30px;border-top:1px solid #173943">
-<div style="color:#d8e8ea;font-size:14px;font-weight:700">Pozdrawiamy<br>gracz.pl</div>
+<div style="color:#d8e8ea;font-size:14px;font-weight:700">Pozdrawiamy<br>${brandLogoHtml({ onDark: true })}</div>
 <div style="margin-top:14px;color:#708b92;font-size:11px;line-height:1.7">
-Otrzymujesz tę wiadomość, ponieważ wcześniej skontaktowałeś się z gracz.pl przez formularz kontaktowy.<br>
+Otrzymujesz tę wiadomość, ponieważ wcześniej skontaktowałeś się z ${brandLogoHtml({ compact: true, onDark: true })} przez formularz kontaktowy.<br>
 <a href="https://gracz.pl/polityka-prywatnosci/" style="color:#69cfc4">Polityka prywatności</a> ·
 <a href="https://gracz.pl/regulamin/" style="color:#69cfc4">Regulamin</a>
 </div>
@@ -405,7 +532,7 @@ function buildNewsletterEmailSection(newsletterUrl) {
     ? '<div style="padding-top:14px"><a href="' + escapeAttribute(url) + '" style="display:inline-block;background:#56c8c1;color:#08312b;text-decoration:none;padding:12px 17px;border-radius:9px;font-size:13px;font-weight:800">Zapisz się do newslettera gracz.pl</a></div><div style="padding-top:7px;color:#718a85;font-size:11px;line-height:1.5">Zapis prowadzi do osobnego procesu double opt-in.</div>'
     : '<div style="padding-top:14px"><span style="display:inline-block;background:#ffffff;border:1px solid #d5e8e4;color:#0f6d62;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800">ZAPISY — MODUŁ W PRZYGOTOWANIU</span></div><div style="padding-top:7px;color:#718a85;font-size:11px;line-height:1.5">Newsletter jest dobrowolny. Aktywny zapis pojawi się po uruchomieniu bezpiecznego double opt-in.</div>';
 
-  return '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #cfe9e4;border-radius:14px"><tr><td style="padding:18px 18px 8px"><div style="font-size:10px;font-weight:800;color:#2c8379;letter-spacing:.8px">NEWSLETTER GRACZ.PL</div><div style="font-size:18px;font-weight:800;color:#0d5a52;padding-top:4px">Chcesz być bliżej gracz.pl?</div><div style="font-size:13px;line-height:1.55;color:#496660;padding-top:6px">Nowe gry, poradniki i najważniejsze aktualizacje serwisu — bez zbędnego spamu.</div></td></tr><tr><td style="padding:8px 18px 4px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="33.33%" style="padding-right:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Nowe gry</strong><br>Premiery i nowe moduły.</div></td><td width="33.33%" style="padding:0 4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Poradniki</strong><br>Materiały i Academy.</div></td><td width="33.33%" style="padding-left:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Rozwój serwisu</strong><br>Ważne aktualizacje.</div></td></tr></table></td></tr><tr><td style="padding:8px 18px 18px">' + action + '</td></tr></table>';
+  return '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #cfe9e4;border-radius:14px"><tr><td style="padding:18px 18px 8px"><div style="font-size:10px;font-weight:800;color:#2c8379;letter-spacing:.8px">NEWSLETTER ' + brandLogoHtml({ compact: true }) + '</div><div style="font-size:18px;font-weight:800;color:#0d5a52;padding-top:4px">Chcesz być bliżej ' + brandLogoHtml({ compact: true }) + '?</div><div style="font-size:13px;line-height:1.55;color:#496660;padding-top:6px">Nowe gry, poradniki i najważniejsze aktualizacje serwisu — bez zbędnego spamu.</div></td></tr><tr><td style="padding:8px 18px 4px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="33.33%" style="padding-right:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Nowe gry</strong><br>Premiery i nowe moduły.</div></td><td width="33.33%" style="padding:0 4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Poradniki</strong><br>Materiały i Academy.</div></td><td width="33.33%" style="padding-left:4px;vertical-align:top"><div style="background:#fff;border:1px solid #dcebe8;border-radius:9px;padding:10px;font-size:11px;color:#3f5d57"><strong>Rozwój serwisu</strong><br>Ważne aktualizacje.</div></td></tr></table></td></tr><tr><td style="padding:8px 18px 18px">' + action + '</td></tr></table>';
 }
 
 function normalizeNewsletterUrl(value) {
@@ -417,6 +544,32 @@ function normalizeNewsletterUrl(value) {
   } catch {
     return "";
   }
+}
+
+function brandLogoHtml({ compact = false, onDark = false } = {}) {
+  const fontSize = compact ? "11px" : "13px";
+  const padding = onDark ? "0" : compact ? "2px 5px" : "3px 7px";
+  const background = onDark ? "transparent" : "#071f1a";
+  const radius = onDark ? "0" : "5px";
+  return (
+    '<span style="display:inline-block;vertical-align:baseline;background:' +
+    background +
+    ';border-radius:' +
+    radius +
+    ';padding:' +
+    padding +
+    ';font-size:' +
+    fontSize +
+    ';line-height:1;font-weight:900;letter-spacing:-.25px;white-space:nowrap">' +
+    '<span style="color:#ffffff">gracz</span><span style="color:#f0505d">.pl</span></span>'
+  );
+}
+
+function brandifyEmailText(value, { onDark = false } = {}) {
+  return escapeHtml(value).replace(
+    /gracz\.pl/gi,
+    brandLogoHtml({ compact: true, onDark })
+  );
 }
 
 function nl2br(value) {

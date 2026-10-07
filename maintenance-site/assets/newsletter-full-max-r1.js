@@ -52,7 +52,7 @@
     subscribePanel.hidden=true;
     actionPanel.hidden=false;
     if(mode==='confirm'){
-      actionKicker.textContent='DOUBLE OPT-IN';
+      actionKicker.textContent='POTWIERDZENIE ZAPISU';
       actionTitle.textContent='Potwierdź zapis do newslettera';
       actionCopy.textContent='Kliknij przycisk poniżej, aby aktywować newsletter gracz.pl. Samo otwarcie linku nie zapisuje adresu.';
       actionButton.textContent='Potwierdź zapis';
