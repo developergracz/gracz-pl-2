@@ -164,7 +164,10 @@ input:focus{
   padding:0 24px;
   border-radius:12px;
   background:linear-gradient(180deg,#79e7df,#4fc4bc);
-  font-size:13px;
+  font-family:Montserrat,OpenSans,Arial,sans-serif;
+  font-size:13.5px;
+  font-weight:800;
+  letter-spacing:.025em;
   box-shadow:0 12px 28px rgba(21,137,126,.18);
   transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
 }
