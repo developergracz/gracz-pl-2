@@ -92,6 +92,13 @@ export function createNewsletterManager({
       throw error;
     }
 
+    if (confirmedAt > 0 && confirmedAt > unsubscribedAt) {
+      return {
+        state: "already_subscribed",
+        recipient: maskEmail(data.email),
+      };
+    }
+
     if (confirmedAt >= data.iat) {
       return {
         state: "subscribed",
