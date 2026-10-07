@@ -115,3 +115,38 @@
 }
 .nl-footer__note.is-error{color:#f1a6a6!important}
 .nl-footer__note.is-success{color:#88d8b0!important}
+
+
+/* FULL MAX PREMIUM R3 — większa typografia w formularzu newslettera */
+.side-label{font-size:12px!important}
+.side h2{font-size:26px!important}
+.side p{font-size:15px!important;line-height:1.65!important}
+
+.signup-step{font-size:10.5px!important}
+.signup-step span{font-size:10.5px!important}
+
+.field-group label{font-size:13px!important}
+.field-group label em{font-size:10.5px!important}
+.field-group input{font-size:14px!important}
+.field-group small{font-size:11.5px!important;line-height:1.5!important}
+
+.consent-row{font-size:12.5px!important;line-height:1.55!important}
+.premium-submit{font-size:14px!important}
+
+.newsletter-status{font-size:12px!important;line-height:1.6!important}
+.resend-link{font-size:12px!important}
+
+.premium-security p{font-size:11.5px!important;line-height:1.55!important}
+.premium-security strong{font-size:12px!important}
+
+.field-error{font-size:12px!important;line-height:1.45!important}
+.field-error__icon{font-size:14px!important}
+
+.premium-trust{font-size:11px!important}
+
+@media(max-width:520px){
+  .field-group label{font-size:12.5px!important}
+  .field-group input{font-size:14px!important}
+  .consent-row{font-size:12px!important}
+  .newsletter-status{font-size:11.5px!important}
+}
