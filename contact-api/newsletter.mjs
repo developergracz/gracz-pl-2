@@ -28,25 +28,56 @@ export function createNewsletterManager({
   segmentName = "gracz.pl Newsletter",
   topicName = "Newsletter gracz.pl",
   providerTimeoutMs = 10_000,
+  consentStore = null,
+  consentHashSecret = "",
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
   const normalizedBase = String(resendApiBase || "").replace(/\/$/, "");
   const normalizedEmailEndpoint = String(emailEndpoint || "").trim();
   const normalizedBaseUrl = ensureHttpsPageUrl(baseUrl);
+  const normalizedConsentHashSecret = String(
+    consentHashSecret || normalizedSecret
+  ).trim();
+  const consentStoreConfigured = Boolean(
+    consentStore &&
+      typeof consentStore.ensureContact === "function" &&
+      typeof consentStore.getContact === "function" &&
+      typeof consentStore.upsertContact === "function" &&
+      typeof consentStore.appendConsentEvent === "function" &&
+      typeof consentStore.getConsentEvent === "function"
+  );
   const requestTimeoutMs =
     Number.isFinite(providerTimeoutMs) && providerTimeoutMs > 0
       ? Math.max(25, Math.min(Math.floor(providerTimeoutMs), 30_000))
       : 10_000;
-  const enabled = normalizedSecret.length >= 32 && Boolean(apiKey && normalizedBaseUrl);
+  const enabled =
+    normalizedSecret.length >= 32 &&
+    normalizedConsentHashSecret.length >= 32 &&
+    Boolean(apiKey && normalizedBaseUrl) &&
+    consentStoreConfigured;
   const key = normalizedSecret.length >= 32
     ? createHash("sha256").update(normalizedSecret, "utf8").digest()
+    : null;
+  const consentHashKey = normalizedConsentHashSecret.length >= 32
+    ? createHash("sha256")
+        .update("newsletter-consent-subject:", "utf8")
+        .update(normalizedConsentHashSecret, "utf8")
+        .digest()
     : null;
 
   let resourcesPromise = null;
 
   if (normalizedSecret && normalizedSecret.length < 32) {
     throw new Error("NEWSLETTER_SECRET must contain at least 32 characters");
+  }
+  if (
+    consentHashSecret &&
+    normalizedConsentHashSecret.length < 32
+  ) {
+    throw new Error(
+      "NEWSLETTER_CONSENT_HASH_SECRET must contain at least 32 characters"
+    );
   }
 
   async function requestOptIn({ email, name = "", source = "newsletter_page" }) {
@@ -66,6 +97,8 @@ export function createNewsletterManager({
     };
     const token = encrypt(tokenData);
     const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
+
+    await recordOptInRequested(tokenData);
 
     await sendEmail({
       to: cleanEmail,
