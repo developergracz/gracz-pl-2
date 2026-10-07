@@ -615,7 +615,7 @@ function buildConfirmHtml(url) {
   return premiumEmailShell({
     preheader:
       "Potwierdź zapis do Newslettera gracz.pl — bezpieczny double opt-in.",
-    eyebrow: "NEWSLETTER · DOUBLE OPT-IN",
+    eyebrow: "NEWSLETTER · FULL MAX PREMIUM · DOUBLE OPT-IN",
     statusLabel: "WYMAGA POTWIERDZENIA",
     title: "Potwierdź swój zapis",
     lead:
