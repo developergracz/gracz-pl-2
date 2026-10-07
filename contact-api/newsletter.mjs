@@ -676,6 +676,7 @@ export function createNewsletterManager({
       // A newer successful DOI has already won. Never let an older
       // compensation disable that subscription.
       if (before?.current_state === "subscribed") {
+        await ensureProviderNewsletterOn(email, resources);
         await clearProviderOffRequired(email);
         return { state: "kept_on" };
       }
