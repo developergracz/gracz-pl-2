@@ -46,6 +46,7 @@ jobs:
           node --check contact-api/persistence/memory-idempotency-store.mjs
           node --check contact-api/integration/persistence.integration.test.mjs
           node --check contact-api/integration/premium-reply.persistence.integration.test.mjs
+          node --check contact-api/integration/contact-idempotency.persistence.integration.test.mjs
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run SEO gate
