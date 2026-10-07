@@ -85,6 +85,10 @@ export function createNewsletterManager({
     const currentConsent = await consentStore.getContact(
       consentSubjectHash(cleanEmail)
     );
+    if (currentConsent?.provider_blocked_at) {
+      const resources = await ensureResources();
+      await recoverProviderOffObligation(cleanEmail, resources);
+    }
     const issuedAt = Math.max(
       Date.now(),
       timestampMs(currentConsent?.confirmed_at) + 1,
@@ -122,6 +126,7 @@ export function createNewsletterManager({
     requireEnabled();
     const data = decrypt(token, "confirm");
     const resources = await ensureResources();
+    await recoverProviderOffObligation(data.email, resources);
 
     const emailHash = consentSubjectHash(data.email);
     const ledgerContact = await consentStore.getContact(emailHash);
@@ -174,6 +179,12 @@ export function createNewsletterManager({
           expected: [200],
         });
 
+        // If an earlier confirmation committed durable consent and activated
+        // the provider but the deterministic welcome delivery failed, the
+        // missing provider timestamp keeps this replay on the repair path.
+        // Resend idempotency makes this safe when the welcome already landed.
+        await sendWelcomeEmail(data);
+
         return {
           state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
           recipient: maskEmail(data.email),
@@ -211,6 +222,14 @@ export function createNewsletterManager({
       [CONSENT_VERSION_KEY]: data.consentVersion,
     };
     let providerContactId = existing?.id || null;
+
+    // Safety ordering: durable first-party consent evidence is committed
+    // before any provider marketing activation. If this CAS loses to an
+    // unsubscribe or persistence fails, Resend is never turned on.
+    await recordConfirmedConsent(data, {
+      wasPreviouslyConfirmed,
+      providerContactId,
+    });
 
     if (!existing) {
       const createdContact = await api("/contacts", {
@@ -258,30 +277,23 @@ export function createNewsletterManager({
       }
     }
 
-    const unsubscribeToken = deterministicUnsubscribeToken(data);
-    const unsubscribeUrl = normalizedBaseUrl + "#unsubscribe=" + unsubscribeToken;
-
-    await sendEmail({
-      to: data.email,
-      subject: "gracz.pl Newsletter — witamy!",
-      text: buildWelcomeText(unsubscribeUrl),
-      html: buildWelcomeHtml(unsubscribeUrl),
-      idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
-      entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
-    });
-
-    try {
-      await recordConfirmedConsent(data, {
-        wasPreviouslyConfirmed,
-        providerContactId,
-      });
-    } catch (error) {
-      // Cross-system fail-closed compensation: if first-party consent
-      // evidence cannot be committed (including a confirm/unsubscribe race),
-      // do not leave the newsletter active at the provider.
-      await forceProviderNewsletterOff(data.email, resources).catch(() => {});
-      throw error;
+    // A withdrawal may have committed while provider activation was in
+    // flight. Re-read the durable consent state before any welcome is sent.
+    // If marketing is no longer permitted, force the provider off using a
+    // race-aware compensation routine that cannot clobber a newer valid DOI.
+    const afterActivation = await consentStore.getContact(emailHash);
+    if (afterActivation?.current_state !== "subscribed") {
+      await forceProviderNewsletterOffSafely(data.email, resources);
+      if (
+        afterActivation?.current_state === "unsubscribed" &&
+        timestampMs(afterActivation?.unsubscribed_at) >= data.iat
+      ) {
+        staleConfirmation();
+      }
+      consentConflict();
     }
+
+    await sendWelcomeEmail(data);
 
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
@@ -304,6 +316,7 @@ export function createNewsletterManager({
     requireEnabled();
     const data = decrypt(token, "unsubscribe");
     const resources = await ensureResources();
+    await recoverProviderOffObligation(data.email, resources);
     const existing = await getContact(data.email);
 
     if (existing) {
@@ -535,6 +548,56 @@ export function createNewsletterManager({
     consentConflict();
   }
 
+  async function sendWelcomeEmail(data) {
+    const unsubscribeToken = deterministicUnsubscribeToken(data);
+    const unsubscribeUrl = normalizedBaseUrl + "#unsubscribe=" + unsubscribeToken;
+
+    return sendEmail({
+      to: data.email,
+      subject: "gracz.pl Newsletter — witamy!",
+      text: buildWelcomeText(unsubscribeUrl),
+      html: buildWelcomeHtml(unsubscribeUrl),
+      idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
+      entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
+    });
+  }
+
+  async function ensureProviderNewsletterOn(email, resources) {
+    const encoded = encodeURIComponent(email);
+    const current = await getContact(email);
+
+    if (!current) {
+      await api("/contacts", {
+        method: "POST",
+        body: {
+          email,
+          unsubscribed: false,
+          segments: [{ id: resources.segmentId }],
+          topics: [{ id: resources.topicId, subscription: "opt_in" }],
+        },
+        expected: [201],
+      });
+      return;
+    }
+
+    await api("/contacts/" + encoded, {
+      method: "PATCH",
+      body: { unsubscribed: false },
+      expected: [200],
+    });
+    await api(
+      "/contacts/" + encoded + "/segments/" + encodeURIComponent(resources.segmentId),
+      { method: "POST", expected: [200, 201, 409] }
+    );
+    await api("/contacts/" + encoded + "/topics", {
+      method: "PATCH",
+      body: {
+        topics: [{ id: resources.topicId, subscription: "opt_in" }],
+      },
+      expected: [200],
+    });
+  }
+
   async function forceProviderNewsletterOff(email, resources) {
     const encoded = encodeURIComponent(email);
     let firstError = null;
@@ -545,7 +608,7 @@ export function createNewsletterManager({
         body: {
           topics: [{ id: resources.topicId, subscription: "opt_out" }],
         },
-        expected: [200],
+        expected: [200, 404],
       });
     } catch (error) {
       firstError = error;
@@ -562,6 +625,105 @@ export function createNewsletterManager({
     }
 
     if (firstError) throw firstError;
+  }
+
+  async function markProviderOffRequired(email) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current || current.current_state === "subscribed") return current;
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId: current.provider_contact_id || null,
+        currentState: current.current_state,
+        providerBlockedAt: new Date(),
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function clearProviderOffRequired(email) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current || !current.provider_blocked_at) return current;
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId: current.provider_contact_id || null,
+        currentState: current.current_state,
+        clearProviderBlock: true,
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function forceProviderNewsletterOffSafely(email, resources) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const before = await consentStore.getContact(emailHash);
+
+      // A newer successful DOI has already won. Never let an older
+      // compensation disable that subscription.
+      if (before?.current_state === "subscribed") {
+        await clearProviderOffRequired(email);
+        return { state: "kept_on" };
+      }
+
+      try {
+        await forceProviderNewsletterOff(email, resources);
+      } catch (error) {
+        // Persist a recoverable obligation instead of silently dropping a
+        // failed provider-off operation.
+        await markProviderOffRequired(email);
+        throw error;
+      }
+
+      const after = await consentStore.getContact(emailHash);
+      if (after?.current_state === "subscribed") {
+        // A newer confirmation committed while the provider-off writes were
+        // in flight. Restore the provider to the newer durable state.
+        await ensureProviderNewsletterOn(email, resources);
+        await clearProviderOffRequired(email);
+        return { state: "restored_newer_subscription" };
+      }
+
+      if (
+        !after ||
+        !before ||
+        stateVersion(after) === stateVersion(before)
+      ) {
+        await clearProviderOffRequired(email);
+        return { state: "off" };
+      }
+
+      // The durable state changed while we were compensating. Loop and settle
+      // against the newest state before returning.
+    }
+
+    consentConflict();
+  }
+
+  async function recoverProviderOffObligation(email, resources) {
+    const current = await consentStore.getContact(consentSubjectHash(email));
+    if (!current?.provider_blocked_at) return;
+
+    if (current.current_state === "subscribed") {
+      await clearProviderOffRequired(email);
+      return;
+    }
+
+    await forceProviderNewsletterOffSafely(email, resources);
   }
 
   function stateVersion(contact) {
