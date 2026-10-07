@@ -14,6 +14,7 @@ export function createDatabase({
   connectionString = process.env.DATABASE_URL,
   poolFactory,
   poolOptions = {},
+  logger = console,
 } = {}) {
   const normalizedConnectionString = String(connectionString || "").trim();
   const enabled = Boolean(normalizedConnectionString);
@@ -41,7 +42,7 @@ export function createDatabase({
           );
         }
 
-        return new Pool({
+        const pool = new Pool({
           connectionString: normalizedConnectionString,
           max: boundedInteger(process.env.DB_POOL_MAX, 10, 1, 50),
           idleTimeoutMillis: boundedInteger(
@@ -59,6 +60,24 @@ export function createDatabase({
           application_name: "gracz-contact-api",
           ...poolOptions,
         });
+
+        // node-postgres emits "error" for idle clients when PostgreSQL
+        // restarts, fails over or a network connection is reset. Without a
+        // listener EventEmitter treats that event as unhandled and exits the
+        // process. Log it and let pg discard the broken idle client so later
+        // requests can acquire a healthy connection.
+        if (typeof pool?.on === "function") {
+          pool.on("error", (error) => {
+            try {
+              logger?.error?.("gracz.pl PostgreSQL pool error", {
+                code: error?.code || "PG_POOL_ERROR",
+                message: error?.message || "Idle PostgreSQL client failed",
+              });
+            } catch {}
+          });
+        }
+
+        return pool;
       })();
     }
 
