@@ -162,10 +162,10 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r32'), `${rel}: legal/contact trigger exists but legal-links.js R32 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r33'), `${rel}: legal/contact trigger exists but legal-links.js R33 is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/contact-modal.css?v=r5'), `${rel}: contact modal CSS R5 must be preloaded to prevent flash`);
+    requireCheck(html.includes('/assets/contact-modal.css?v=r6'), `${rel}: contact modal CSS R6 must be preloaded to prevent flash`);
     requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
   }
   if (/\/zasady\/index\.html$/i.test(rel)) {
