@@ -762,6 +762,17 @@ export function createNewsletterManager({
       staleConfirmation();
     }
 
+    // Another fresh confirmation may have won the CAS race and already
+    // cleared the durable provider block. Treat that as the same successful
+    // logical reactivation instead of forcing the provider back off.
+    if (
+      current?.current_state === "subscribed" &&
+      timestampMs(current?.provider_blocked_at) === 0 &&
+      timestampMs(current?.confirmed_at) >= data.iat
+    ) {
+      return current;
+    }
+
     consentConflict();
   }
 

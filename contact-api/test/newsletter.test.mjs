@@ -642,6 +642,57 @@ test("R4.5 reconciliation never silently reactivates provider opt-out", async (t
   assert.equal(contact.provider_blocked_at, null);
 });
 
+test("R4.5 concurrent fresh confirmations cannot re-enable a provider block race", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const originalToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(originalToken);
+
+  provider.hostedUnsubscribe("concurrent@example.test");
+  const blocked = await manager.reconcile("concurrent@example.test");
+  assert.equal(blocked.state, "fresh_confirmation_required");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshA = extractToken(provider.emails[2], "confirm");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshB = extractToken(provider.emails[3], "confirm");
+
+  const results = await Promise.all([
+    manager.confirm(freshA),
+    manager.confirm(freshB),
+  ]);
+  assert.equal(results.length, 2);
+  assert.ok(results.every((entry) => entry.state === "resubscribed"));
+
+  const emailHash = consentEmailHash("concurrent@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(contact.provider_blocked_at, null);
+  assert.equal(
+    provider.memberships.get("concurrent@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("concurrent@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
 test("R4.5 reconciliation repairs provider drift for first-party unsubscribe", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);
