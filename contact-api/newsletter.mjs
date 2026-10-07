@@ -165,7 +165,6 @@ export function createNewsletterManager({
         await api("/contacts/" + encodeURIComponent(data.email), {
           method: "PATCH",
           body: {
-            unsubscribed: false,
             properties: {
               [CONFIRMED_AT_KEY]: ledgerConfirmedAt,
               [CONSENT_VERSION_KEY]:
@@ -287,7 +286,6 @@ export function createNewsletterManager({
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
       body: {
-        unsubscribed: false,
         properties: {
           [CONFIRMED_AT_KEY]: Date.now(),
           [CONSENT_VERSION_KEY]: data.consentVersion,
