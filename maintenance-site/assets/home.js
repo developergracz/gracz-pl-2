@@ -270,12 +270,17 @@
     openModal(trigger.getAttribute('data-modal'), trigger);
   });
 
-  /* Newsletter: no backend yet — never send or store the address. */
+  /* Newsletter FULL MAX PREMIUM R1: footer sends the user to the dedicated double-opt-in form. */
   var newsForm = document.querySelector('[data-newsletter]');
   if (newsForm) {
     newsForm.addEventListener('submit', function (event) {
       event.preventDefault();
-      openModal('newsletter', newsForm.querySelector('button'));
+      var input = newsForm.querySelector('input[type="email"]');
+      if (!input || !input.checkValidity()) {
+        if (input) input.reportValidity();
+        return;
+      }
+      window.location.assign('/newsletter/?email=' + encodeURIComponent(input.value.trim()) + '#zapis');
     });
   }
 
