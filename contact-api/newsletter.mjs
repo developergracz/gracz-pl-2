@@ -271,10 +271,18 @@ export function createNewsletterManager({
       entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
     });
 
-    await recordConfirmedConsent(data, {
-      wasPreviouslyConfirmed,
-      providerContactId,
-    });
+    try {
+      await recordConfirmedConsent(data, {
+        wasPreviouslyConfirmed,
+        providerContactId,
+      });
+    } catch (error) {
+      // Cross-system fail-closed compensation: if first-party consent
+      // evidence cannot be committed (including a confirm/unsubscribe race),
+      // do not leave the newsletter active at the provider.
+      await forceProviderNewsletterOff(data.email, resources).catch(() => {});
+      throw error;
+    }
 
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
@@ -454,6 +462,16 @@ export function createNewsletterManager({
     ) {
       staleConfirmation();
     }
+
+    // Another fresh confirmation may have won the CAS race. Treat that as
+    // the same successful logical outcome instead of compensating it away.
+    if (
+      current?.current_state === "subscribed" &&
+      timestampMs(current?.confirmed_at) >= data.iat
+    ) {
+      return current;
+    }
+
     consentConflict();
   }
 
@@ -517,6 +535,35 @@ export function createNewsletterManager({
     }
 
     consentConflict();
+  }
+
+  async function forceProviderNewsletterOff(email, resources) {
+    const encoded = encodeURIComponent(email);
+    let firstError = null;
+
+    try {
+      await api("/contacts/" + encoded + "/topics", {
+        method: "PATCH",
+        body: {
+          topics: [{ id: resources.topicId, subscription: "opt_out" }],
+        },
+        expected: [200],
+      });
+    } catch (error) {
+      firstError = error;
+    }
+
+    try {
+      await api(
+        "/contacts/" + encoded +
+          "/segments/" + encodeURIComponent(resources.segmentId),
+        { method: "DELETE", expected: [200, 404] }
+      );
+    } catch (error) {
+      if (!firstError) firstError = error;
+    }
+
+    if (firstError) throw firstError;
   }
 
   function stateVersion(contact) {
