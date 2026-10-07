@@ -144,6 +144,7 @@ export function createNewsletterManager({
 
     const ledgerConfirmedAt = timestampMs(ledgerContact?.confirmed_at);
     const ledgerUnsubscribedAt = timestampMs(ledgerContact?.unsubscribed_at);
+    const providerBlockedAt = timestampMs(ledgerContact?.provider_blocked_at);
 
     if (
       ledgerContact?.current_state === "unsubscribed" &&
@@ -152,11 +153,16 @@ export function createNewsletterManager({
       staleConfirmation();
     }
 
+    if (providerBlockedAt >= data.iat) {
+      staleConfirmation();
+    }
+
     // Bootstrap a pre-R4 active subscriber into the first-party ledger only
     // when Resend contains durable confirmation proof and the provider state
     // is still fully active.
     if (
       (!ledgerContact || ledgerContact.current_state === "pending") &&
+      providerBlockedAt === 0 &&
       providerActive &&
       providerConfirmedAt > 0 &&
       providerConfirmedAt > providerUnsubscribedAt
@@ -172,7 +178,11 @@ export function createNewsletterManager({
       };
     }
 
-    if (ledgerContact?.current_state === "subscribed" && providerActive) {
+    if (
+      ledgerContact?.current_state === "subscribed" &&
+      providerActive &&
+      providerBlockedAt === 0
+    ) {
       // The first-party confirmation may have committed successfully while
       // the final Resend contact-property patch failed. Repair that drift
       // without sending another welcome email or appending a duplicate
@@ -205,7 +215,8 @@ export function createNewsletterManager({
 
     const lastConfirmedAt = Math.max(
       ledgerConfirmedAt,
-      providerConfirmedAt
+      providerConfirmedAt,
+      providerBlockedAt
     );
 
     // If first-party consent exists but provider delivery state became
@@ -292,10 +303,20 @@ export function createNewsletterManager({
     // confirmation timestamp back to Resend. If the provider-side property
     // update fails, retrying the same token repairs that external drift
     // without duplicating the append-only consent event.
-    await recordConfirmedConsent(data, {
-      wasPreviouslyConfirmed,
-      providerContactId,
-    });
+    try {
+      await recordConfirmedConsent(data, {
+        wasPreviouslyConfirmed,
+        providerContactId,
+      });
+    } catch (error) {
+      if (
+        error?.code === "NEWSLETTER_CONFIRMATION_STALE" ||
+        error?.code === "NEWSLETTER_CONSENT_CONFLICT"
+      ) {
+        await forceProviderMarketingOff(data.email, resources).catch(() => {});
+      }
+      throw error;
+    }
 
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
@@ -361,7 +382,7 @@ export function createNewsletterManager({
     requireEnabled();
     const cleanEmail = validateMailbox(email);
     const emailHash = consentSubjectHash(cleanEmail);
-    const ledgerContact = await consentStore.getContact(emailHash);
+    let ledgerContact = await consentStore.getContact(emailHash);
 
     if (!ledgerContact) {
       return {
@@ -375,7 +396,7 @@ export function createNewsletterManager({
 
     if (!existing) {
       if (ledgerContact.current_state === "subscribed") {
-        await recordReconciliationObservation({
+        ledgerContact = await recordProviderBlock({
           email: cleanEmail,
           ledgerContact,
           providerContactId: null,
@@ -386,6 +407,7 @@ export function createNewsletterManager({
             globallyUnsubscribed: false,
           },
         });
+
         return {
           state: "fresh_confirmation_required",
           recipient: maskEmail(cleanEmail),
@@ -403,8 +425,33 @@ export function createNewsletterManager({
       existing.unsubscribed !== true &&
       providerState.inSegment &&
       providerState.topicSubscription === "opt_in";
+    const providerBlockedAt = timestampMs(ledgerContact.provider_blocked_at);
 
     if (ledgerContact.current_state === "subscribed") {
+      if (providerBlockedAt > 0) {
+        if (providerActive) {
+          await forceProviderMarketingOff(cleanEmail, resources, {
+            existing,
+            providerState,
+          });
+          await recordReconciliationObservation({
+            email: cleanEmail,
+            ledgerContact,
+            providerContactId: existing.id || null,
+            outcome: "repaired_provider_block",
+            providerState: {
+              ...providerState,
+              globallyUnsubscribed: existing.unsubscribed === true,
+            },
+          });
+        }
+
+        return {
+          state: "fresh_confirmation_required",
+          recipient: maskEmail(cleanEmail),
+        };
+      }
+
       if (providerActive) {
         return {
           state: "in_sync",
@@ -412,7 +459,7 @@ export function createNewsletterManager({
         };
       }
 
-      await recordReconciliationObservation({
+      ledgerContact = await recordProviderBlock({
         email: cleanEmail,
         ledgerContact,
         providerContactId: existing.id || null,
@@ -435,23 +482,10 @@ export function createNewsletterManager({
         providerState.topicSubscription === "opt_in";
 
       if (drift) {
-        if (providerState.topicSubscription !== "opt_out") {
-          await api("/contacts/" + encodeURIComponent(cleanEmail) + "/topics", {
-            method: "PATCH",
-            body: {
-              topics: [{ id: resources.topicId, subscription: "opt_out" }],
-            },
-            expected: [200],
-          });
-        }
-
-        if (providerState.inSegment) {
-          await api(
-            "/contacts/" + encodeURIComponent(cleanEmail) +
-              "/segments/" + encodeURIComponent(resources.segmentId),
-            { method: "DELETE", expected: [200, 404] }
-          );
-        }
+        await forceProviderMarketingOff(cleanEmail, resources, {
+          existing,
+          providerState,
+        });
 
         await recordReconciliationObservation({
           email: cleanEmail,
@@ -487,6 +521,7 @@ export function createNewsletterManager({
 
     if (
       providerActive &&
+      timestampMs(ledgerContact.provider_blocked_at) === 0 &&
       providerConfirmedAt > 0 &&
       providerConfirmedAt > providerUnsubscribedAt
     ) {
@@ -513,23 +548,10 @@ export function createNewsletterManager({
       providerState.inSegment ||
       providerState.topicSubscription === "opt_in"
     ) {
-      if (providerState.topicSubscription !== "opt_out") {
-        await api("/contacts/" + encodeURIComponent(cleanEmail) + "/topics", {
-          method: "PATCH",
-          body: {
-            topics: [{ id: resources.topicId, subscription: "opt_out" }],
-          },
-          expected: [200],
-        });
-      }
-
-      if (providerState.inSegment) {
-        await api(
-          "/contacts/" + encodeURIComponent(cleanEmail) +
-            "/segments/" + encodeURIComponent(resources.segmentId),
-          { method: "DELETE", expected: [200, 404] }
-        );
-      }
+      await forceProviderMarketingOff(cleanEmail, resources, {
+        existing,
+        providerState,
+      });
 
       await recordReconciliationObservation({
         email: cleanEmail,
@@ -628,6 +650,15 @@ export function createNewsletterManager({
       consentVersion: data.consentVersion,
     });
 
+    const current = await consentStore.getContact(emailHash);
+    if (
+      !current ||
+      current.current_state === "unsubscribed" ||
+      timestampMs(current.provider_blocked_at) > 0
+    ) {
+      consentConflict();
+    }
+
     const existing = await consentStore.getConsentEvent(eventId);
     if (!existing) {
       await consentStore.appendConsentEvent({
@@ -645,13 +676,17 @@ export function createNewsletterManager({
       });
     }
 
-    return consentStore.upsertContact({
+    const updated = await consentStore.upsertContact({
       emailHash,
       providerContactId,
       currentState: "subscribed",
       consentVersion: data.consentVersion,
       confirmedAt: occurredAt,
+      expectedStateVersion: stateVersion(current),
     });
+
+    if (!updated) consentConflict();
+    return updated;
   }
 
   async function recordConfirmedConsent(
@@ -665,6 +700,20 @@ export function createNewsletterManager({
       emailHash,
       consentVersion: data.consentVersion,
     });
+
+    let current = await consentStore.getContact(emailHash);
+    if (!current) consentConflict();
+
+    if (
+      current.current_state === "unsubscribed" &&
+      timestampMs(current.unsubscribed_at) >= data.iat
+    ) {
+      staleConfirmation();
+    }
+
+    if (timestampMs(current.provider_blocked_at) >= data.iat) {
+      staleConfirmation();
+    }
 
     const existingEvent = await consentStore.getConsentEvent(eventId);
     const occurredAt = existingEvent?.occurred_at
@@ -690,13 +739,30 @@ export function createNewsletterManager({
       });
     }
 
-    return consentStore.upsertContact({
+    const updated = await consentStore.upsertContact({
       emailHash,
       providerContactId,
       currentState: "subscribed",
       consentVersion: data.consentVersion,
       confirmedAt: occurredAt,
+      clearProviderBlock: true,
+      expectedStateVersion: stateVersion(current),
     });
+
+    if (updated) return updated;
+
+    current = await consentStore.getContact(emailHash);
+    if (
+      current?.current_state === "unsubscribed" &&
+      timestampMs(current?.unsubscribed_at) >= data.iat
+    ) {
+      staleConfirmation();
+    }
+    if (timestampMs(current?.provider_blocked_at) >= data.iat) {
+      staleConfirmation();
+    }
+
+    consentConflict();
   }
 
   async function recordUnsubscribedConsent(
@@ -730,12 +796,115 @@ export function createNewsletterManager({
       });
     }
 
-    return consentStore.upsertContact({
-      emailHash,
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current) consentConflict();
+
+      if (
+        current.current_state === "unsubscribed" &&
+        timestampMs(current.unsubscribed_at) >= occurredAt.getTime()
+      ) {
+        return current;
+      }
+
+      if (
+        current.current_state === "subscribed" &&
+        timestampMs(current.confirmed_at) > occurredAt.getTime()
+      ) {
+        return current;
+      }
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId,
+        currentState: "unsubscribed",
+        unsubscribedAt: occurredAt,
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function recordProviderBlock({
+    email,
+    ledgerContact,
+    providerContactId = null,
+    outcome,
+    providerState,
+  }) {
+    const emailHash = consentSubjectHash(email);
+    const observedAt = new Date();
+
+    await recordReconciliationObservation({
+      email,
+      ledgerContact,
       providerContactId,
-      currentState: "unsubscribed",
-      unsubscribedAt: occurredAt,
+      outcome,
+      providerState,
+      occurredAt: observedAt,
     });
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current =
+        attempt === 0
+          ? ledgerContact
+          : await consentStore.getContact(emailHash);
+
+      if (!current) consentConflict();
+      if (current.current_state === "unsubscribed") return current;
+      if (timestampMs(current.provider_blocked_at) > 0) return current;
+
+      // A newer explicit confirmation wins over an older provider observation.
+      if (timestampMs(current.confirmed_at) > observedAt.getTime()) {
+        return current;
+      }
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId,
+        currentState: current.current_state,
+        consentVersion: current.consent_version || null,
+        providerBlockedAt: observedAt,
+        expectedStateVersion: stateVersion(current),
+      });
+
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function forceProviderMarketingOff(
+    email,
+    resources,
+    snapshot = null
+  ) {
+    const existing = snapshot?.existing || await getContact(email);
+    if (!existing) return;
+
+    const providerState =
+      snapshot?.providerState ||
+      await getContactProviderState(email, resources);
+
+    if (providerState.topicSubscription !== "opt_out") {
+      await api("/contacts/" + encodeURIComponent(email) + "/topics", {
+        method: "PATCH",
+        body: {
+          topics: [{ id: resources.topicId, subscription: "opt_out" }],
+        },
+        expected: [200],
+      });
+    }
+
+    if (providerState.inSegment) {
+      await api(
+        "/contacts/" + encodeURIComponent(email) +
+          "/segments/" + encodeURIComponent(resources.segmentId),
+        { method: "DELETE", expected: [200, 404] }
+      );
+    }
   }
 
   async function recordReconciliationObservation({
@@ -744,6 +913,7 @@ export function createNewsletterManager({
     providerContactId = null,
     outcome,
     providerState,
+    occurredAt = new Date(),
   }) {
     const emailHash = consentSubjectHash(email);
     const seed = [
@@ -763,7 +933,7 @@ export function createNewsletterManager({
       eventType: "provider_sync",
       consentVersion: ledgerContact.consent_version || null,
       source: "reconciliation",
-      occurredAt: new Date(),
+      occurredAt,
       correlationId: eventId,
       providerRef: providerContactId,
       metadata: {
@@ -771,6 +941,23 @@ export function createNewsletterManager({
         providerState,
       },
     });
+  }
+
+  function stateVersion(contact) {
+    const version = Number(contact?.state_version);
+    if (!Number.isInteger(version) || version < 0) {
+      consentConflict();
+    }
+    return version;
+  }
+
+  function consentConflict() {
+    const error = new Error(
+      "Stan zgody newslettera zmienił się podczas operacji. Spróbuj ponownie."
+    );
+    error.code = "NEWSLETTER_CONSENT_CONFLICT";
+    error.status = 409;
+    throw error;
   }
 
   async function ensureResources() {

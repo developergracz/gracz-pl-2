@@ -593,8 +593,9 @@ test("R4.5 reconciliation never silently reactivates provider opt-out", async (t
   );
 
   const emailHash = consentEmailHash("reconcile@example.test");
-  const contact = await provider.consentStore.getContact(emailHash);
+  let contact = await provider.consentStore.getContact(emailHash);
   assert.equal(contact.current_state, "subscribed");
+  assert.ok(contact.provider_blocked_at);
 
   const events = await provider.consentStore.listConsentEvents(emailHash);
   assert.equal(
@@ -605,6 +606,40 @@ test("R4.5 reconciliation never silently reactivates provider opt-out", async (t
     ).length,
     1
   );
+
+  // Provider state must not be able to silently erase the durable block.
+  provider.contacts.get("reconcile@example.test").unsubscribed = false;
+  provider.memberships.get("reconcile@example.test").add("segment-1");
+  provider.topicStates.get("reconcile@example.test").set("topic-1", "opt_in");
+
+  const repaired = await manager.reconcile("reconcile@example.test");
+  assert.equal(repaired.state, "fresh_confirmation_required");
+  assert.equal(
+    provider.memberships.get("reconcile@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("reconcile@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  await assert.rejects(
+    () => manager.confirm(confirmToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+
+  await manager.requestOptIn({
+    email: "reconcile@example.test",
+    name: "Reconcile Test",
+    source: "newsletter_page",
+  });
+  const freshToken = extractToken(provider.emails[2], "confirm");
+  const reactivated = await manager.confirm(freshToken);
+  assert.equal(reactivated.state, "resubscribed");
+
+  contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(contact.provider_blocked_at, null);
 });
 
 test("R4.5 reconciliation repairs provider drift for first-party unsubscribe", async (t) => {
