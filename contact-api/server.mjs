@@ -409,15 +409,22 @@ createServer(async (req, res) => {
     } catch {}
 
     if (premiumReply.enabled && persistence) {
-      const marked = await persistence.contactCases.markDelivered(
-        requestId,
-        result.id || null
-      );
-      if (!marked) {
-        const error = new Error("Nie udało się zatwierdzić trwałego rekordu zgłoszenia.");
-        error.code = "CONTACT_CASE_COMMIT_FAILED";
-        error.status = 503;
-        throw error;
+      try {
+        const marked = await persistence.contactCases.markDelivered(
+          requestId,
+          result.id || null
+        );
+        if (!marked) {
+          console.error("[contact] durable delivery status missing", {
+            requestId,
+            code: "CONTACT_CASE_NOT_FOUND",
+          });
+        }
+      } catch (persistenceError) {
+        console.error("[contact] durable delivery status update failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
       }
     }
 
