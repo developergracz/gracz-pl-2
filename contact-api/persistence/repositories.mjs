@@ -357,6 +357,42 @@ export function createPersistenceRepositories(database) {
   };
 
   const newsletter = {
+    async ensureContact({
+      emailHash,
+      consentVersion = null,
+    }) {
+      const result = await database.query(
+        `INSERT INTO newsletter_contacts(
+          email_hash, current_state, consent_version
+        ) VALUES ($1, 'pending', $2)
+        ON CONFLICT (email_hash) DO UPDATE
+        SET consent_version = COALESCE(
+              EXCLUDED.consent_version,
+              newsletter_contacts.consent_version
+            ),
+            updated_at = now()
+        RETURNING email_hash, provider_contact_id, current_state,
+                  consent_version, confirmed_at, unsubscribed_at`,
+        [
+          assertHash(emailHash, "emailHash"),
+          consentVersion ? String(consentVersion).slice(0, 120) : null,
+        ]
+      );
+      return result.rows[0] || null;
+    },
+
+    async getContact(emailHash) {
+      const result = await database.query(
+        `SELECT email_hash, provider_contact_id, current_state,
+                consent_version, confirmed_at, unsubscribed_at,
+                created_at, updated_at
+         FROM newsletter_contacts
+         WHERE email_hash = $1`,
+        [assertHash(emailHash, "emailHash")]
+      );
+      return result.rows[0] || null;
+    },
+
     async upsertContact({
       emailHash,
       providerContactId = null,
@@ -371,14 +407,26 @@ export function createPersistenceRepositories(database) {
           confirmed_at, unsubscribed_at
         ) VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (email_hash) DO UPDATE
-        SET provider_contact_id = COALESCE(EXCLUDED.provider_contact_id, newsletter_contacts.provider_contact_id),
+        SET provider_contact_id = COALESCE(
+              EXCLUDED.provider_contact_id,
+              newsletter_contacts.provider_contact_id
+            ),
             current_state = EXCLUDED.current_state,
-            consent_version = COALESCE(EXCLUDED.consent_version, newsletter_contacts.consent_version),
-            confirmed_at = COALESCE(EXCLUDED.confirmed_at, newsletter_contacts.confirmed_at),
-            unsubscribed_at = COALESCE(EXCLUDED.unsubscribed_at, newsletter_contacts.unsubscribed_at),
+            consent_version = COALESCE(
+              EXCLUDED.consent_version,
+              newsletter_contacts.consent_version
+            ),
+            confirmed_at = COALESCE(
+              EXCLUDED.confirmed_at,
+              newsletter_contacts.confirmed_at
+            ),
+            unsubscribed_at = COALESCE(
+              EXCLUDED.unsubscribed_at,
+              newsletter_contacts.unsubscribed_at
+            ),
             updated_at = now()
-        RETURNING email_hash, current_state, consent_version,
-                  confirmed_at, unsubscribed_at`,
+        RETURNING email_hash, provider_contact_id, current_state,
+                  consent_version, confirmed_at, unsubscribed_at`,
         [
           assertHash(emailHash, "emailHash"),
           providerContactId ? String(providerContactId).slice(0, 200) : null,
@@ -407,6 +455,7 @@ export function createPersistenceRepositories(database) {
           event_id, email_hash, event_type, consent_version, source,
           occurred_at, correlation_id, provider_ref, metadata
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+        ON CONFLICT (event_id) DO NOTHING
         RETURNING event_id`,
         [
           eventId,
@@ -420,7 +469,35 @@ export function createPersistenceRepositories(database) {
           JSON.stringify(metadata || {}),
         ]
       );
-      return result.rows[0]?.event_id || null;
+
+      if (result.rowCount === 1) {
+        return { inserted: true, eventId: result.rows[0].event_id };
+      }
+
+      const existing = await database.query(
+        `SELECT event_id, email_hash, event_type, consent_version, source,
+                occurred_at, correlation_id, provider_ref, metadata
+         FROM newsletter_consent_events
+         WHERE event_id = $1`,
+        [eventId]
+      );
+
+      return {
+        inserted: false,
+        eventId,
+        event: existing.rows[0] || null,
+      };
+    },
+
+    async getConsentEvent(eventId) {
+      const result = await database.query(
+        `SELECT event_id, email_hash, event_type, consent_version, source,
+                occurred_at, correlation_id, provider_ref, metadata
+         FROM newsletter_consent_events
+         WHERE event_id = $1`,
+        [eventId]
+      );
+      return result.rows[0] || null;
     },
 
     async listConsentEvents(emailHash) {

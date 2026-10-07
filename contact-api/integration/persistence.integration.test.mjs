@@ -153,18 +153,29 @@ test(
       });
       assert.equal(contact.current_state, "pending");
 
-      assert.equal(
-        await repositories.newsletter.appendConsentEvent({
-          eventId,
-          emailHash,
-          eventType: "opt_in_requested",
-          consentVersion: "newsletter-r4-test",
-          source: "integration_test",
-          correlationId: requestId,
-          metadata: { test: true },
-        }),
-        eventId
-      );
+      const appended = await repositories.newsletter.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType: "opt_in_requested",
+        consentVersion: "newsletter-r4-test",
+        source: "integration_test",
+        correlationId: requestId,
+        metadata: { test: true },
+      });
+      assert.equal(appended.inserted, true);
+      assert.equal(appended.eventId, eventId);
+
+      const replayed = await repositories.newsletter.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType: "opt_in_requested",
+        consentVersion: "newsletter-r4-test",
+        source: "integration_test",
+        correlationId: requestId,
+        metadata: { test: true },
+      });
+      assert.equal(replayed.inserted, false);
+      assert.equal(replayed.eventId, eventId);
 
       const events = await repositories.newsletter.listConsentEvents(emailHash);
       assert.equal(events.length, 1);
