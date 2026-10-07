@@ -31,9 +31,10 @@
     status.classList.toggle('is-error',Boolean(isError));
   }
 
-  async function post(path,payload){
+  async function post(path,payload,timeoutMs){
     var controller=new AbortController();
-    var timer=window.setTimeout(function(){controller.abort();},12000);
+    var timeout=Number(timeoutMs)||20000;
+    var timer=window.setTimeout(function(){controller.abort();},timeout);
     try{
       var response=await fetch(API+path,{
         method:'POST',
@@ -98,7 +99,22 @@
     return;
   }
 
-  post('/reply-context',{token:token})
+  async function loadReplyContext(){
+    loading.textContent='Łączę z bezpiecznym kanałem gracz.pl…';
+    try{
+      return await post('/reply-context',{token:token},20000);
+    }catch(err){
+      var retryable=err&&(
+        err.name==='AbortError' ||
+        typeof err.status==='undefined'
+      );
+      if(!retryable)throw err;
+      loading.textContent='Serwer uruchamia bezpieczne połączenie. To może potrwać kilka sekund…';
+      return post('/reply-context',{token:token},30000);
+    }
+  }
+
+  loadReplyContext()
     .then(function(body){
       fillContext(body.context||{});
       loading.hidden=true;
@@ -106,6 +122,10 @@
       window.setTimeout(function(){message.focus();},0);
     })
     .catch(function(err){
-      setError(err&&err.name==='AbortError'?'Nie udało się zweryfikować linku w wymaganym czasie.':err.message);
+      setError(
+        err&&err.name==='AbortError'
+          ? 'Połączenie z bezpiecznym kanałem trwało zbyt długo. Odśwież stronę i spróbuj ponownie.'
+          : err.message
+      );
     });
 })();
