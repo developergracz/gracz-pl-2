@@ -45,6 +45,8 @@ jobs:
           node --check contact-api/persistence/memory-reply-token-store.mjs
           node --check contact-api/persistence/memory-idempotency-store.mjs
           node --check contact-api/persistence/memory-newsletter-consent-store.mjs
+          node --check contact-api/routes/newsletter-route.mjs
+          node --check contact-api/routes/premium-reply-route.mjs
           node --check contact-api/integration/persistence.integration.test.mjs
           node --check contact-api/integration/premium-reply.persistence.integration.test.mjs
           node --check contact-api/integration/contact-idempotency.persistence.integration.test.mjs
