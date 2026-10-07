@@ -110,6 +110,7 @@ test("contact API security regression suite", async (t) => {
       EMAIL_FROM: "Gracz.pl <kontakt@gracz.pl>",
       CONTACT_TO: "admin@gracz.pl",
       CONTACT_REPLY_SECRET: "test-" + "x".repeat(40),
+      PREMIUM_REPLY_TEST_MEMORY_STORE: "1",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
