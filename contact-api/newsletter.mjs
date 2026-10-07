@@ -77,6 +77,29 @@ export function createNewsletterManager({
 
     const existing = await getContact(data.email);
     const names = splitName(data.name);
+    const confirmedAt = Number(existing?.properties?.[CONFIRMED_AT_KEY] || 0);
+    const unsubscribedAt = Number(existing?.properties?.[UNSUBSCRIBED_AT_KEY] || 0);
+
+    if (unsubscribedAt >= data.iat) {
+      const error = new Error(
+        "Ten link został unieważniony przez późniejsze wypisanie. Poproś o nowy link zapisu."
+      );
+      error.code = "NEWSLETTER_CONFIRMATION_STALE";
+      error.status = 409;
+      throw error;
+    }
+
+    if (confirmedAt >= data.iat) {
+      return {
+        state: "subscribed",
+        recipient: maskEmail(data.email),
+      };
+    }
+
+    const consentProperties = {
+      [CONFIRMED_AT_KEY]: Date.now(),
+      [CONSENT_VERSION_KEY]: data.consentVersion,
+    };
 
     if (!existing) {
       await api("/contacts", {
@@ -88,6 +111,7 @@ export function createNewsletterManager({
           unsubscribed: false,
           segments: [{ id: resources.segmentId }],
           topics: [{ id: resources.topicId, subscription: "opt_in" }],
+          properties: consentProperties,
         },
         expected: [201],
       });
@@ -98,6 +122,7 @@ export function createNewsletterManager({
           first_name: names.firstName || undefined,
           last_name: names.lastName || undefined,
           unsubscribed: false,
+          properties: consentProperties,
         },
         expected: [200],
       });
