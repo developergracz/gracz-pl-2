@@ -48,6 +48,36 @@ Without Turnstile configuration, ordinary submissions continue to work. Very hig
 - `EMAIL_FROM`
 - `CONTACT_TO`
 
+## Contact data encryption at rest
+
+Durable contact metadata uses application-layer AES-256-GCM encryption.
+
+Required production variable:
+
+- `CONTACT_DATA_ENCRYPTION_SECRET` — independent cryptographically random secret, minimum 32 characters.
+
+Do not reuse `CONTACT_REPLY_SECRET`, `NEWSLETTER_SECRET`, `NEWSLETTER_CONSENT_HASH_SECRET`, API keys, passwords, or user credentials.
+
+### Zero-downtime rollout
+
+Migration `004_contact_data_encryption.sql` is intentionally an **expand-only** migration. It adds the encrypted columns without redacting legacy rows or adding restrictive constraints, because Render runs migrations during the build while the previous production instance can still be serving requests.
+
+Deployment sequence:
+
+1. Configure `CONTACT_DATA_ENCRYPTION_SECRET`.
+2. Deploy the encrypted writer with migration 004.
+3. Verify `/health` reports `contactDataEncryptionConfigured: true`.
+4. Send and verify one real contact-form message.
+5. Only in a separate follow-up release, redact legacy plaintext metadata and add strict database constraints.
+
+Do not combine the contract/redaction migration with the first encrypted-writer deploy.
+
+Protection boundary:
+- new durable contact subject/source metadata is encrypted at application level;
+- browser/API and API/provider transport remains protected by TLS;
+- normal e-mail content is not PGP/S/MIME end-to-end encrypted;
+- a full runtime compromise that includes the encryption secret is outside this protection boundary.
+
 ## Deployment rule
 
 Do not merge or deploy this branch solely because CI is green. Before production:
