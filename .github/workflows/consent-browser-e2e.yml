@@ -1,0 +1,32 @@
+name: Consent browser E2E
+
+on:
+  pull_request:
+    paths:
+      - 'maintenance-site/**'
+      - 'tests/consent/**'
+      - '.github/workflows/consent-browser-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consent-browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install pinned Playwright runner
+        run: npm install --no-save --prefix .consent-e2e @playwright/test@1.56.1
+      - name: Install Chromium
+        run: ./.consent-e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run consent browser tests
+        env:
+          NODE_PATH: ${{ github.workspace }}/.consent-e2e/node_modules
+        run: ./.consent-e2e/node_modules/.bin/playwright test --config=tests/consent/playwright.config.cjs
