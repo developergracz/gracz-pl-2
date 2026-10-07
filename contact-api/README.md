@@ -358,3 +358,50 @@ The newsletter manager is not considered fully configured unless the durable con
 If the first-party consent ledger or its hashing secret is unavailable, newsletter subscription operations do not silently continue using Resend as the sole consent source of truth.
 
 The existing test-only memory adapter is available only to automated tests. It is not a production fallback.
+
+
+## R4.5 newsletter reconciliation
+
+R4.5 reconciles gracz.pl's first-party consent state with Resend without allowing provider drift to silently reactivate a subscriber.
+
+### Authority model
+
+- The first-party PostgreSQL consent ledger is authoritative for consent history.
+- Resend remains the delivery and marketing execution layer.
+- Legacy Resend confirmation properties may be imported only when there is durable provider confirmation proof and the provider subscription is still fully active.
+- A provider-side opt-out or inactive state never causes automatic reactivation.
+- Reactivation after an inactive provider state requires a newly issued double-opt-in confirmation token.
+
+### Reconciliation outcomes
+
+The internal newsletter manager can return:
+
+- `in_sync`
+- `imported_subscribed`
+- `repaired_unsubscribed`
+- `repaired_pending`
+- `fresh_confirmation_required`
+- `unknown_subject`
+
+The reconciliation routine is intentionally not exposed as a public unauthenticated HTTP endpoint in R4.5.
+
+### Safe repair rules
+
+- First-party `unsubscribed` + provider still opted in: force Topic `opt_out` and remove the newsletter Segment membership.
+- First-party `pending` + provider active without durable legacy confirmation proof: force provider state back to non-marketing state.
+- First-party `subscribed` + provider inactive: do not opt in automatically; record the observed drift and require fresh double opt-in.
+- First-party `pending` + provider active with durable legacy confirmation proof: import as `provider_sync` once.
+- Reconciliation observations use deterministic append-only `provider_sync` events so repeated checks do not create duplicate audit entries.
+
+### Confirmation-token safety
+
+Confirmation now evaluates first-party `confirmed_at` and `unsubscribed_at` timestamps before provider properties. Provider timestamps remain only a legacy/recovery signal.
+
+An old token cannot reactivate a subscription after first-party unsubscribe or after a provider-side inactive transition. A token issued after the last confirmed/unsubscribed state may complete an explicit resubscription.
+
+### R4.5 acceptance tests
+
+- provider-hosted unsubscribe is not silently reactivated;
+- first-party unsubscribe repairs provider drift;
+- legacy active provider proof imports exactly once;
+- existing stale-token, resubscribe, retry and partial-activation tests remain green.
