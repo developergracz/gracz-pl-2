@@ -405,3 +405,57 @@ An old token cannot reactivate a subscription after first-party unsubscribe or a
 - first-party unsubscribe repairs provider drift;
 - legacy active provider proof imports exactly once;
 - existing stale-token, resubscribe, retry and partial-activation tests remain green.
+
+
+## R4.6 modular HTTP routes
+
+R4.6 starts the modular-monolith split without changing the public API contract.
+
+### Extracted boundaries
+
+The HTTP orchestration for the two non-contact domains has been moved out of `server.mjs`:
+
+- `routes/newsletter-route.mjs`
+- `routes/premium-reply-route.mjs`
+
+The main server now composes these route handlers with explicit dependencies instead of embedding their complete request/response flows inline.
+
+### Why this shape
+
+The route modules receive only the capabilities they need:
+
+- domain manager;
+- origin policy;
+- rate-limit stores and helpers;
+- request parsing / validation helpers;
+- provider circuit-breaker hooks;
+- delivery configuration;
+- logger/fetch boundary.
+
+This avoids hidden global imports inside the route modules and makes later extraction of anti-abuse, provider, security, observability and shared HTTP layers safer.
+
+### No behavior change
+
+R4.6 is intentionally structural:
+
+- endpoint paths remain unchanged;
+- CORS behavior remains unchanged;
+- CSP/security headers remain unchanged;
+- rate limits remain unchanged;
+- Premium Reply provider idempotency remains unchanged;
+- Newsletter double opt-in and first-party consent behavior remain unchanged.
+
+Existing contact/newsletter/Premium Reply regression tests are the compatibility gate for this extraction.
+
+### Next modularization slices
+
+The remaining large `server.mjs` concerns are intentionally left for smaller follow-up extractions:
+
+- contact route/service;
+- anti-abuse and rate-limit engine;
+- shared HTTP helpers;
+- security/input validation;
+- provider/Resend adapter;
+- observability/logging.
+
+The objective is a modular monolith, not microservices.
