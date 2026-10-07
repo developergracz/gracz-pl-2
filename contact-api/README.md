@@ -295,3 +295,66 @@ After deployment with PostgreSQL enabled:
 5. confirm the response is still replayed from PostgreSQL;
 6. use the same key with a changed payload and confirm `IDEMPOTENCY_CONFLICT`;
 7. verify a concurrent same-key pair reaches the mail provider at most once.
+
+
+## R4.4 first-party newsletter consent ledger
+
+R4.4 makes gracz.pl the durable source of truth for newsletter consent history while keeping Resend as the delivery and marketing execution layer.
+
+### Stored first-party state
+
+For each newsletter subject, PostgreSQL stores only a keyed one-way HMAC identifier derived from the normalized email address. The raw email address is not stored in the consent ledger.
+
+The append-only event history records:
+
+- `opt_in_requested`
+- `opt_in_confirmed`
+- `unsubscribe`
+- `resubscribe`
+- `provider_sync`
+- later provider-delivery events reserved by the schema
+
+The operational contact row stores the current state and confirmation/unsubscribe timestamps for reconciliation.
+
+### Required secret
+
+- `NEWSLETTER_CONSENT_HASH_SECRET` — independent random secret, minimum 32 characters.
+
+Do not reuse `NEWSLETTER_SECRET`, `RESEND_API_KEY` or `NEWSLETTER_RESEND_API_KEY`.
+
+The newsletter manager is not considered fully configured unless the durable consent store and this independent hashing secret are present.
+
+### Event semantics
+
+- requesting double opt-in appends an `opt_in_requested` event before the confirmation email is sent;
+- successful confirmation appends `opt_in_confirmed` or `resubscribe`;
+- unsubscribe appends `unsubscribe`;
+- replaying the same encrypted confirmation or unsubscribe token does not append a duplicate event because event IDs are deterministic per token JTI;
+- a pre-R4 subscriber already active in Resend can be imported as `provider_sync` without fabricating an original consent event;
+- provider-side state remains secondary and will be reconciled against first-party state in R4.5.
+
+### Privacy properties
+
+- no raw email address in the first-party consent ledger;
+- subject identifier uses HMAC-SHA-256 with a dedicated secret, not plain SHA-256;
+- no raw confirmation or unsubscribe token is persisted;
+- append-only protection remains enforced by PostgreSQL against UPDATE and DELETE.
+
+### Deployment order
+
+1. provision PostgreSQL and apply all migrations;
+2. create a new independent `NEWSLETTER_CONSENT_HASH_SECRET`;
+3. configure it in the API environment;
+4. deploy the R4.4 code;
+5. verify `/health` reports:
+   - `persistenceConfigured: true`
+   - `newsletterConfigured: true`
+   - `newsletterConsentLedger: true`
+6. run double-opt-in, unsubscribe and resubscribe acceptance tests;
+7. verify the ledger contains the expected ordered events without duplicate events after token replay.
+
+### Fail-closed rule
+
+If the first-party consent ledger or its hashing secret is unavailable, newsletter subscription operations do not silently continue using Resend as the sole consent source of truth.
+
+The existing test-only memory adapter is available only to automated tests. It is not a production fallback.
