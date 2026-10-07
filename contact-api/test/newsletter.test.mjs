@@ -284,13 +284,31 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   );
   assert.ok(unsubscribeMatch);
 
-  const emailCountBeforeReplay = emails.length;
   const repeated = await manager.confirm(confirmToken);
-  assert.equal(repeated.state, "subscribed");
+  assert.equal(repeated.state, "already_subscribed");
   assert.equal(contacts.size, 1);
   assert.equal(segments.length, 1);
   assert.equal(topics.length, 1);
-  assert.equal(emails.length, emailCountBeforeReplay);
+  assert.equal(emails.length, 2);
+
+  await manager.requestOptIn({
+    email: "jan@example.test",
+    name: "Jan Kowalski",
+    source: "newsletter_page",
+  });
+  assert.equal(emails.length, 3);
+
+  const secondConfirmMatch = emails[2].body.html.match(
+    /https:\/\/gracz\.pl\/newsletter\/#confirm=([A-Za-z0-9._-]+)/
+  );
+  assert.ok(secondConfirmMatch);
+  const secondConfirmToken = secondConfirmMatch[1];
+
+  const activeAgain = await manager.confirm(secondConfirmToken);
+  assert.equal(activeAgain.state, "already_subscribed");
+  assert.equal(memberships.get("jan@example.test").has("segment-1"), true);
+  assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_in");
+  assert.equal(emails.length, 3, "active subscriber must not receive another welcome email");
 
   const unsubscribed = await manager.unsubscribe(unsubscribeMatch[1]);
   assert.equal(unsubscribed.state, "unsubscribed");
@@ -299,10 +317,10 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   assert.ok(Number(contact.properties.gracz_newsletter_unsubscribed_at) > 0);
 
   await assert.rejects(
-    () => manager.confirm(confirmToken),
+    () => manager.confirm(secondConfirmToken),
     (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
   );
   assert.equal(memberships.get("jan@example.test").has("segment-1"), false);
   assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_out");
-  assert.equal(emails.length, emailCountBeforeReplay);
+  assert.equal(emails.length, 3);
 });
