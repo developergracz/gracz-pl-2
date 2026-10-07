@@ -567,6 +567,149 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.ok(thirdUnsubscribeToken.startsWith("n1."));
 });
 
+test("R4.5 reconciliation never silently reactivates provider opt-out", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "reconcile@example.test",
+    name: "Reconcile Test",
+    source: "newsletter_page",
+  });
+  const confirmToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(confirmToken);
+
+  provider.hostedUnsubscribe("reconcile@example.test");
+
+  const result = await manager.reconcile("reconcile@example.test");
+  assert.equal(result.state, "fresh_confirmation_required");
+  assert.equal(
+    provider.memberships.get("reconcile@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("reconcile@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  const emailHash = consentEmailHash("reconcile@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter(
+      (event) =>
+        event.event_type === "provider_sync" &&
+        event.metadata?.outcome === "provider_inactive"
+    ).length,
+    1
+  );
+});
+
+test("R4.5 reconciliation repairs provider drift for first-party unsubscribe", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "off@example.test",
+    name: "Off Test",
+    source: "newsletter_page",
+  });
+  const confirmToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(confirmToken);
+  const unsubscribeToken = extractToken(provider.emails[1], "unsubscribe");
+  await manager.unsubscribe(unsubscribeToken);
+
+  provider.contacts.get("off@example.test").unsubscribed = false;
+  provider.memberships.get("off@example.test").add("segment-1");
+  provider.topicStates.get("off@example.test").set("topic-1", "opt_in");
+
+  const repaired = await manager.reconcile("off@example.test");
+  assert.equal(repaired.state, "repaired_unsubscribed");
+  assert.equal(
+    provider.memberships.get("off@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("off@example.test").get("topic-1"),
+    "opt_out"
+  );
+
+  const repeated = await manager.reconcile("off@example.test");
+  assert.equal(repeated.state, "in_sync");
+
+  const emailHash = consentEmailHash("off@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "unsubscribed");
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter(
+      (event) =>
+        event.event_type === "provider_sync" &&
+        event.metadata?.outcome === "repaired_unsubscribed"
+    ).length,
+    1
+  );
+});
+
+test("R4.5 reconciliation imports legacy active provider proof once", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "legacy@example.test",
+    name: "Legacy Test",
+    source: "newsletter_page",
+  });
+
+  const first = await manager.reconcile("legacy@example.test");
+  assert.equal(first.state, "in_sync");
+  assert.equal(provider.segments.length, 1);
+  assert.equal(provider.topics.length, 1);
+
+  const confirmedAt = Date.now() - 60_000;
+  provider.contacts.set("legacy@example.test", {
+    object: "contact",
+    id: "legacy-contact-1",
+    email: "legacy@example.test",
+    first_name: "Legacy",
+    last_name: "Test",
+    unsubscribed: false,
+    properties: {
+      [CONFIRMED_AT_KEY]: confirmedAt,
+      [UNSUBSCRIBED_AT_KEY]: 0,
+      gracz_newsletter_consent_version: "newsletter-r1-2026-10-07",
+    },
+  });
+  provider.memberships.set(
+    "legacy@example.test",
+    new Set(["segment-1"])
+  );
+  provider.topicStates.set(
+    "legacy@example.test",
+    new Map([["topic-1", "opt_in"]])
+  );
+
+  const imported = await manager.reconcile("legacy@example.test");
+  assert.equal(imported.state, "imported_subscribed");
+
+  const repeated = await manager.reconcile("legacy@example.test");
+  assert.equal(repeated.state, "in_sync");
+
+  const emailHash = consentEmailHash("legacy@example.test");
+  const contact = await provider.consentStore.getContact(emailHash);
+  assert.equal(contact.current_state, "subscribed");
+  assert.equal(new Date(contact.confirmed_at).getTime(), confirmedAt);
+
+  const events = await provider.consentStore.listConsentEvents(emailHash);
+  assert.equal(
+    events.filter((event) => event.event_type === "provider_sync").length,
+    1
+  );
+});
+
 test("newsletter R3 repairs partial activation without duplicate welcome", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);
