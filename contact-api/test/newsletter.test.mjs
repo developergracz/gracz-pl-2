@@ -33,6 +33,7 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   const contacts = new Map();
   const segments = [];
   const topics = [];
+  const contactProperties = [];
   const memberships = new Map();
   const topicStates = new Map();
 
@@ -71,6 +72,27 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
       return send(res, 201, { object: "topic", id: entry.id });
     }
 
+    if (url.pathname === "/contact-properties" && method === "GET") {
+      return send(res, 200, {
+        object: "list",
+        has_more: false,
+        data: contactProperties,
+      });
+    }
+    if (url.pathname === "/contact-properties" && method === "POST") {
+      const body = await readBody(req);
+      const existing = contactProperties.find((item) => item.key === body.key);
+      if (existing) return send(res, 409, { message: "already exists" });
+      const entry = {
+        id: "property-" + String(contactProperties.length + 1),
+        key: body.key,
+        type: body.type,
+        fallback_value: body.fallback_value,
+      };
+      contactProperties.push(entry);
+      return send(res, 201, { object: "contact_property", id: entry.id });
+    }
+
     const contactMatch = url.pathname.match(/^\/contacts\/([^/]+)$/);
     if (contactMatch && method === "GET") {
       const email = decodeURIComponent(contactMatch[1]);
@@ -82,7 +104,6 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
 
     if (url.pathname === "/contacts" && method === "POST") {
       const body = await readBody(req);
-      assert.equal("properties" in body, false);
       const contact = {
         object: "contact",
         id: "contact-1",
@@ -90,6 +111,7 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
         first_name: body.first_name || null,
         last_name: body.last_name || null,
         unsubscribed: body.unsubscribed === true,
+        properties: { ...(body.properties || {}) },
       };
       contacts.set(body.email, contact);
       memberships.set(body.email, new Set((body.segments || []).map((x) => x.id)));
@@ -105,8 +127,10 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
       const current = contacts.get(email);
       if (!current) return send(res, 404, { message: "not found" });
       const body = await readBody(req);
-      assert.equal("properties" in body, false);
-      Object.assign(current, body);
+      const nextProperties = body.properties
+        ? { ...(current.properties || {}), ...body.properties }
+        : current.properties;
+      Object.assign(current, body, { properties: nextProperties });
       return send(res, 200, { object: "contact", id: current.id });
     }
 
@@ -199,12 +223,26 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   assert.equal(topics[0].name, "Newsletter gracz.pl");
   assert.equal(topics[0].default_subscription, "opt_out");
   assert.equal(topics[0].visibility, "public");
+  assert.equal(contactProperties.length, 3);
+  assert.deepEqual(
+    new Set(contactProperties.map((item) => item.key)),
+    new Set([
+      "gracz_newsletter_confirmed_at",
+      "gracz_newsletter_unsubscribed_at",
+      "gracz_newsletter_consent_version",
+    ])
+  );
 
   const contact = contacts.get("jan@example.test");
   assert.ok(contact);
   assert.equal(contact.unsubscribed, false);
   assert.equal(contact.first_name, "Jan");
   assert.equal(contact.last_name, "Kowalski");
+  assert.ok(Number(contact.properties.gracz_newsletter_confirmed_at) > 0);
+  assert.equal(
+    contact.properties.gracz_newsletter_consent_version,
+    "newsletter-r1-2026-10-07"
+  );
   assert.equal(memberships.get("jan@example.test").has("segment-1"), true);
   assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_in");
 
@@ -217,14 +255,25 @@ test("newsletter FULL MAX PREMIUM double opt-in lifecycle", async (t) => {
   );
   assert.ok(unsubscribeMatch);
 
+  const emailCountBeforeReplay = emails.length;
   const repeated = await manager.confirm(confirmToken);
   assert.equal(repeated.state, "subscribed");
   assert.equal(contacts.size, 1);
   assert.equal(segments.length, 1);
   assert.equal(topics.length, 1);
+  assert.equal(emails.length, emailCountBeforeReplay);
 
   const unsubscribed = await manager.unsubscribe(unsubscribeMatch[1]);
   assert.equal(unsubscribed.state, "unsubscribed");
   assert.equal(memberships.get("jan@example.test").has("segment-1"), false);
   assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_out");
+  assert.ok(Number(contact.properties.gracz_newsletter_unsubscribed_at) > 0);
+
+  await assert.rejects(
+    () => manager.confirm(confirmToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+  assert.equal(memberships.get("jan@example.test").has("segment-1"), false);
+  assert.equal(topicStates.get("jan@example.test").get("topic-1"), "opt_out");
+  assert.equal(emails.length, emailCountBeforeReplay);
 });
