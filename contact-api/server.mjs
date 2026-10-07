@@ -1249,96 +1249,144 @@ function validateIdempotencyKey(value) {
   return key;
 }
 
-function idempotencyStorageKey(ip, key) {
-  return hashValue(ip + "\n" + key);
+function contactIdempotencyKeyHash(key) {
+  return hashValue("contact\n" + String(key || ""));
 }
 
-function submissionFingerprint(payload) {
-  return hashValue([
-    payload.name,
-    payload.email,
-    payload.category,
-    payload.subject,
-    payload.message,
-    payload.page,
-    String(payload.acknowledgement),
-  ].join("\n"));
+function requireContactIdempotencyStore() {
+  if (contactIdempotencyStore) return contactIdempotencyStore;
+
+  const error = new Error(
+    "Trwała idempotencja formularza kontaktowego nie jest skonfigurowana."
+  );
+  error.code = "CONTACT_IDEMPOTENCY_NOT_CONFIGURED";
+  error.status = 503;
+  throw error;
 }
 
-function getIdempotentReplay(ip, key, fingerprint) {
-  cleanupIdempotency();
-  const entry = idempotencyCache.get(idempotencyStorageKey(ip, key));
-  if (!entry) return null;
+async function getContactIdempotentReplay(key, fingerprint) {
+  const store = requireContactIdempotencyStore();
+  const record = await store.get({
+    scope: "contact",
+    keyHash: contactIdempotencyKeyHash(key),
+  });
 
-  if (entry.fingerprint !== fingerprint) {
-    const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
+  return interpretContactIdempotencyRecord(record, fingerprint);
+}
+
+async function reserveContactIdempotency(key, fingerprint) {
+  const store = requireContactIdempotencyStore();
+  const keyHash = contactIdempotencyKeyHash(key);
+  const result = await store.reserve({
+    scope: "contact",
+    keyHash,
+    fingerprint,
+    expiresAt: new Date(Date.now() + IDEMPOTENCY_TTL_MS),
+  });
+
+  if (result?.reserved) {
+    return {
+      reservation: {
+        scope: "contact",
+        keyHash,
+        fingerprint,
+      },
+      replay: null,
+    };
+  }
+
+  const replay = interpretContactIdempotencyRecord(
+    result?.record || null,
+    fingerprint
+  );
+
+  if (replay) {
+    return { reservation: null, replay };
+  }
+
+  const error = new Error(
+    "Nie udało się bezpiecznie zarezerwować wysyłki wiadomości."
+  );
+  error.code = "IDEMPOTENCY_RESERVATION_FAILED";
+  error.status = 503;
+  throw error;
+}
+
+function interpretContactIdempotencyRecord(record, fingerprint) {
+  if (!record) return null;
+
+  if (record.fingerprint !== fingerprint) {
+    const error = new Error(
+      "Ten identyfikator wysyłki został już użyty dla innej wiadomości."
+    );
     error.code = "IDEMPOTENCY_CONFLICT";
     error.status = 409;
     throw error;
   }
 
-  if (entry.state === "done") {
-    return { status: entry.status, body: entry.body };
-  }
-
-  const error = new Error("Ta wiadomość jest już przetwarzana. Poczekaj chwilę.");
-  error.code = "REQUEST_IN_PROGRESS";
-  error.status = 409;
-  throw error;
-}
-
-function reserveIdempotency(ip, key, fingerprint) {
-  cleanupIdempotency();
-  const storageKey = idempotencyStorageKey(ip, key);
-  const existing = idempotencyCache.get(storageKey);
-
-  if (existing) {
-    if (existing.fingerprint !== fingerprint) {
-      const error = new Error("Ten identyfikator wysyłki został już użyty dla innej wiadomości.");
-      error.code = "IDEMPOTENCY_CONFLICT";
-      error.status = 409;
+  if (record.state === "done") {
+    const status = Number(record.response_status);
+    if (!Number.isInteger(status) || status < 100 || status > 599) {
+      const error = new Error(
+        "Trwały rekord idempotencji ma nieprawidłowy stan odpowiedzi."
+      );
+      error.code = "IDEMPOTENCY_STATE_INVALID";
+      error.status = 503;
       throw error;
     }
 
+    return {
+      status,
+      body: record.response_body ?? { ok: true },
+    };
+  }
+
+  if (record.state === "inflight") {
     const error = new Error(
-      existing.state === "done"
-        ? "Ta wiadomość została już przetworzona."
-        : "Ta wiadomość jest już przetwarzana. Poczekaj chwilę."
+      "Ta wiadomość jest już przetwarzana. Poczekaj chwilę."
     );
-    error.code = existing.state === "done" ? "ALREADY_PROCESSED" : "REQUEST_IN_PROGRESS";
+    error.code = "REQUEST_IN_PROGRESS";
     error.status = 409;
     throw error;
   }
 
-  boundedSet(idempotencyCache, storageKey, {
-    state: "pending",
-    fingerprint,
-    createdAt: Date.now(),
-  }, MAX_IDEMPOTENCY);
-
-  return storageKey;
+  const error = new Error(
+    "Trwały rekord idempotencji ma nieobsługiwany stan."
+  );
+  error.code = "IDEMPOTENCY_STATE_INVALID";
+  error.status = 503;
+  throw error;
 }
 
-function releaseIdempotency(storageKey) {
-  if (storageKey) idempotencyCache.delete(storageKey);
-}
-
-function rememberIdempotentResult(ip, key, fingerprint, status, body) {
-  cleanupIdempotency();
-  boundedSet(idempotencyCache, idempotencyStorageKey(ip, key), {
-    state: "done",
-    fingerprint,
+async function completeContactIdempotency(reservation, status, body) {
+  if (!reservation) return false;
+  const store = requireContactIdempotencyStore();
+  return store.complete({
+    scope: reservation.scope,
+    keyHash: reservation.keyHash,
+    fingerprint: reservation.fingerprint,
     status,
     body,
-    createdAt: Date.now(),
-  }, MAX_IDEMPOTENCY);
+  });
 }
 
-function cleanupIdempotency() {
-  const now = Date.now();
-  for (const [key, entry] of idempotencyCache) {
-    if (now - entry.createdAt >= IDEMPOTENCY_TTL_MS) idempotencyCache.delete(key);
-  }
+async function releaseContactIdempotency(reservation) {
+  if (!reservation) return false;
+  const store = requireContactIdempotencyStore();
+  return store.release({
+    scope: reservation.scope,
+    keyHash: reservation.keyHash,
+    fingerprint: reservation.fingerprint,
+  });
+}
+
+function isExplicitProviderFailureSafeToRetry(status) {
+  return (
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408
+  );
 }
 
 function registerAbuseStrike(ip, reason) {
