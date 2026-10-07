@@ -300,7 +300,7 @@
     return new Promise(function(resolve){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/account-access-premium.css?v=r1';
+      link.href='/assets/account-access-premium.css?v=r2';
       link.setAttribute('data-account-access-style','');
       link.addEventListener('load',resolve,{once:true});
       link.addEventListener('error',resolve,{once:true});
