@@ -9,6 +9,8 @@
   var contactOpenedAt=0;
   var contactRequestKey='';
   var contactSending=false;
+  var accountDialog=null;
+  var accountLastTrigger=null;
 
   function newRequestKey(){
     try{
@@ -286,6 +288,138 @@
   }
 
 
+  function ensureAccountAccessStyles(){
+    var existing=document.querySelector('link[data-account-access-style]');
+    if(existing){
+      if(existing.sheet)return Promise.resolve();
+      return new Promise(function(resolve){
+        existing.addEventListener('load',resolve,{once:true});
+        existing.addEventListener('error',resolve,{once:true});
+      });
+    }
+    return new Promise(function(resolve){
+      var link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='/assets/account-access-premium.css?v=r1';
+      link.setAttribute('data-account-access-style','');
+      link.addEventListener('load',resolve,{once:true});
+      link.addEventListener('error',resolve,{once:true});
+      document.head.appendChild(link);
+    });
+  }
+
+  function accountAccessMarkup(){
+    return '<div class="account-access__panel">'+
+      '<button class="account-access__close" type="button" data-account-close aria-label="Zamknij okno">×</button>'+
+      '<div class="account-access__topline">'+
+        '<span class="account-access__brand" aria-hidden="true">gracz<span>.pl</span></span>'+
+        '<span class="account-access__status"><i aria-hidden="true"></i>System kont w przygotowaniu</span>'+
+      '</div>'+
+      '<div class="account-access__hero">'+
+        '<p class="account-access__eyebrow">Konto gracza · FULL MAX PREMIUM</p>'+
+        '<h2 id="account-access-title">Konto gracza jest w przygotowaniu</h2>'+
+        '<p id="account-access-intro" class="account-access__intro"></p>'+
+      '</div>'+
+      '<section class="account-access__newsletter" aria-labelledby="account-access-newsletter-title">'+
+        '<div class="account-access__newsletter-icon" aria-hidden="true"><span>✦</span></div>'+
+        '<div class="account-access__newsletter-copy">'+
+          '<p class="account-access__newsletter-kicker">Bądź na bieżąco</p>'+
+          '<h3 id="account-access-newsletter-title">Nie czekaj na start kont graczy</h3>'+
+          '<p>Możesz już teraz zapisać się do naszego newslettera, aby otrzymywać najważniejsze informacje o uruchomieniu kont, nowych grach, funkcjach społecznościowych i rozwoju gracz.pl.</p>'+
+          '<ul class="account-access__benefits">'+
+            '<li><span aria-hidden="true">✓</span>informacja o starcie logowania i rejestracji</li>'+
+            '<li><span aria-hidden="true">✓</span>zapowiedzi nowych gier, Academy i funkcji</li>'+
+            '<li><span aria-hidden="true">✓</span>najważniejsze aktualizacje gracz.pl w jednym miejscu</li>'+
+          '</ul>'+
+          '<a class="account-access__newsletter-cta" href="/newsletter/"><span>Zapisz się do naszego newslettera</span><b aria-hidden="true">→</b></a>'+
+          '<p class="account-access__consent">Zapis jest dobrowolny, wymaga potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili.</p>'+
+        '</div>'+
+      '</section>'+
+      '<div class="account-access__footer">'+
+        '<span>gracz.pl · gry · Academy · społeczność</span>'+
+        '<button type="button" class="account-access__back" data-account-close>Wróć do serwisu</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function ensureAccountDialog(){
+    if(accountDialog)return accountDialog;
+    accountDialog=document.createElement('dialog');
+    accountDialog.className='account-access';
+    accountDialog.id='account-access-modal';
+    accountDialog.setAttribute('aria-labelledby','account-access-title');
+    accountDialog.setAttribute('aria-describedby','account-access-intro');
+    accountDialog.innerHTML=accountAccessMarkup();
+    document.body.appendChild(accountDialog);
+
+    accountDialog.addEventListener('click',function(event){
+      if(event.target===accountDialog||event.target.closest('[data-account-close]'))closeAccountAccess();
+    });
+
+    accountDialog.addEventListener('cancel',function(event){
+      event.preventDefault();
+      closeAccountAccess();
+    });
+
+    accountDialog.addEventListener('close',function(){
+      document.body.classList.remove('account-access-open');
+      if(accountLastTrigger&&document.contains(accountLastTrigger)){
+        try{accountLastTrigger.focus();}catch(_){}
+      }
+      accountLastTrigger=null;
+    });
+
+    accountDialog.addEventListener('keydown',function(event){
+      if(event.key!=='Tab')return;
+      var focusables=Array.prototype.slice.call(accountDialog.querySelectorAll('button,a[href]')).filter(function(node){
+        return !node.disabled&&node.tabIndex!==-1&&node.offsetParent!==null;
+      });
+      if(!focusables.length)return;
+      var first=focusables[0],last=focusables[focusables.length-1];
+      if(event.shiftKey&&document.activeElement===first){last.focus();event.preventDefault();}
+      else if(!event.shiftKey&&document.activeElement===last){first.focus();event.preventDefault();}
+    });
+
+    return accountDialog;
+  }
+
+  async function openAccountAccess(mode,trigger){
+    accountLastTrigger=trigger||document.activeElement;
+    await ensureAccountAccessStyles();
+    var target=ensureAccountDialog();
+    var title=target.querySelector('#account-access-title');
+    var intro=target.querySelector('#account-access-intro');
+
+    if(mode==='register'){
+      title.textContent='Załóż konto — funkcja już powstaje';
+      intro.textContent='Przygotowujemy bezpieczną rejestrację i profil gracza połączony z grami, Academy, rankingami i społecznością gracz.pl.';
+    }else{
+      title.textContent='Logowanie — funkcja już powstaje';
+      intro.textContent='System logowania i kont graczy jest w trakcie przygotowania. Po uruchomieniu jedno konto połączy Twoje gry, Academy, postępy i funkcje społecznościowe.';
+    }
+
+    if(typeof target.showModal==='function')target.showModal();
+    else target.setAttribute('open','');
+    document.body.classList.add('account-access-open');
+    window.setTimeout(function(){
+      var cta=target.querySelector('.account-access__newsletter-cta');
+      if(cta)cta.focus();
+    },0);
+  }
+
+  function closeAccountAccess(){
+    if(!accountDialog)return;
+    if(typeof accountDialog.close==='function'&&accountDialog.open)accountDialog.close();
+    else{
+      accountDialog.removeAttribute('open');
+      document.body.classList.remove('account-access-open');
+      if(accountLastTrigger&&document.contains(accountLastTrigger)){
+        try{accountLastTrigger.focus();}catch(_){}
+      }
+      accountLastTrigger=null;
+    }
+  }
+
   function ensureFooterNewsletterStyles(){
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
@@ -413,6 +547,14 @@
   },true);
 
   document.addEventListener('click',function(event){
+    var accountTrigger=event.target.closest('[data-modal="login"],[data-modal="register"]');
+    if(accountTrigger){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openAccountAccess(accountTrigger.getAttribute('data-modal'),accountTrigger);
+      return;
+    }
+
     var search=event.target.closest('[data-modal="search"],[data-gracz-search]');
     if(search&&!window.GraczSearch){
       event.preventDefault();
