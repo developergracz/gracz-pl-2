@@ -180,9 +180,13 @@ for (const file of allHtmlPages) {
 }
 
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
-requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");\nrequireCheck(fs.existsSync(path.resolve(root, "assets/footer-newsletter.css")), "footer-newsletter.css missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/footer-newsletter.css")), "footer-newsletter.css missing");
 const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
-const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");\nrequireCheck(legalLinksJs.includes("footer-newsletter.css?v=r1"), "live footer newsletter stylesheet loader missing");\nrequireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");\nrequireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
+const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
+requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r1"), "live footer newsletter stylesheet loader missing");
+requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
+requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes('/polityka-prywatnosci/#kontakt'), "contact modal: current privacy information link missing");
 requireCheck(contactCss.includes('resize:none'), "contact modal: message textarea must not be resizable");
 requireCheck(contactCss.includes('overflow-y:auto'), "contact modal: message textarea internal scrolling missing");
