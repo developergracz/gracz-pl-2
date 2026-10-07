@@ -5,6 +5,21 @@
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
   var lastTrigger=null;
+  var contactOpenedAt=0;
+  var contactRequestKey='';
+  var contactSending=false;
+
+  function newRequestKey(){
+    try{
+      if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+      if(window.crypto&&typeof window.crypto.getRandomValues==='function'){
+        var bytes=new Uint8Array(24);
+        window.crypto.getRandomValues(bytes);
+        return Array.prototype.map.call(bytes,function(value){return value.toString(16).padStart(2,'0');}).join('');
+      }
+    }catch(_){}
+    return 'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+  }
 
   function loadPortalSearch(){
     if(!document.querySelector('[data-modal="search"],[data-gracz-search]'))return;
@@ -112,6 +127,13 @@
       count.textContent=String(message.value.length)+' / 4000';
     });
 
+    form.addEventListener('input',function(event){
+      var field=event.target;
+      if(field&&field.matches&&field.matches('input,select,textarea')){
+        field.setAttribute('aria-invalid','false');
+      }
+    });
+
     dialog.addEventListener('click',function(event){
       if(event.target===dialog||event.target.closest('[data-contact-close]'))closeContact();
     });
@@ -142,6 +164,7 @@
 
     form.addEventListener('submit',async function(event){
       event.preventDefault();
+      if(contactSending)return;
       setStatus('');
       var fields=['name','email','category','subject','message','acknowledgement'];
       var valid=true;
@@ -160,6 +183,7 @@
       }
 
       var submit=form.querySelector('.contact-form__submit');
+      contactSending=true;
       submit.disabled=true;
       submit.textContent='Wysyłanie…';
 
@@ -171,26 +195,58 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
-        page:location.href
+        page:location.href,
+        startedAt:contactOpenedAt
       };
 
       try{
-        var response=await fetch(CONTACT_API,{
-          method:'POST',
-          headers:{'content-type':'application/json'},
-          body:JSON.stringify(payload),
-          mode:'cors',
-          credentials:'omit'
-        });
+        if(!contactRequestKey)contactRequestKey=newRequestKey();
+        var controller=new AbortController();
+        var timeout=window.setTimeout(function(){controller.abort();},12000);
+        var response;
+        try{
+          response=await fetch(CONTACT_API,{
+            method:'POST',
+            headers:{
+              'content-type':'application/json',
+              'x-idempotency-key':contactRequestKey
+            },
+            body:JSON.stringify(payload),
+            mode:'cors',
+            credentials:'omit',
+            signal:controller.signal
+          });
+        }finally{
+          window.clearTimeout(timeout);
+        }
         var body={};
         try{body=await response.json();}catch(_){}
-        if(!response.ok)throw new Error(body&&body.error&&body.error.message?body.error.message:'Nie udało się wysłać wiadomości.');
+        if(!response.ok||body.ok!==true){
+          var safeMessage=body&&body.error&&typeof body.error.message==='string'?body.error.message:'Nie udało się wysłać wiadomości.';
+          var requestError=new Error(safeMessage);
+          requestError.isContactApiError=true;
+          requestError.code=body&&body.error&&body.error.code?String(body.error.code):'';
+          throw requestError;
+        }
         setStatus('Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.','success');
         form.reset();
         count.textContent='0 / 4000';
+        contactOpenedAt=Date.now();
+        contactRequestKey=newRequestKey();
       }catch(error){
-        setStatus('Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.','error');
+        var message=error&&error.isContactApiError&&error.message
+          ? error.message
+          : 'Nie udało się wysłać wiadomości. Spróbuj ponownie za chwilę albo użyj linku e-mail obok przycisku.';
+        setStatus(message,'error');
+        var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
+        if(error&&emailCodes.indexOf(error.code)!==-1){
+          form.elements.email.setAttribute('aria-invalid','true');
+          form.elements.email.focus();
+        }else{
+          submit.focus();
+        }
       }finally{
+        contactSending=false;
         submit.disabled=false;
         submit.textContent='Wyślij wiadomość';
       }
@@ -201,6 +257,10 @@
 
   async function openContact(trigger){
     lastTrigger=trigger||document.activeElement;
+    if(!contactSending){
+      contactOpenedAt=Date.now();
+      contactRequestKey=newRequestKey();
+    }
     await ensureStyles();
     var target=ensureDialog();
     if(typeof target.showModal==='function')target.showModal();

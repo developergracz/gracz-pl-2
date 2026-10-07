@@ -2,9 +2,12 @@
   "name": "@gracz/contact-api",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs"
+    "check": "node --check server.mjs && node --check test/contact-api.test.mjs",
+    "test": "node --test test/*.test.mjs"
   }
 }
