@@ -22,21 +22,28 @@ export function createPersistenceRepositories(database) {
       requestId,
       senderHash,
       category,
-      subject,
-      sourcePath = "",
+      subjectCiphertext,
+      sourcePathCiphertext,
     }) {
+      const encryptedSubject = String(subjectCiphertext || "").trim();
+      const encryptedSource = String(sourcePathCiphertext || "").trim();
+      if (!encryptedSubject.startsWith("c1.") || !encryptedSource.startsWith("c1.")) {
+        throw new TypeError("contact case metadata must use c1 encrypted envelopes");
+      }
+
       const result = await database.query(
         `INSERT INTO contact_cases(
-          request_id, sender_hash, category, subject, source_path
-        ) VALUES ($1, $2, $3, $4, $5)
+          request_id, sender_hash, category, subject, source_path,
+          subject_ciphertext, source_path_ciphertext
+        ) VALUES ($1, $2, $3, '[encrypted]', '', $4, $5)
         ON CONFLICT (request_id) DO NOTHING
         RETURNING request_id`,
         [
           requestId,
           assertHash(senderHash, "senderHash"),
           String(category || "").slice(0, 80),
-          String(subject || "").slice(0, 180),
-          String(sourcePath || "").slice(0, 500),
+          encryptedSubject,
+          encryptedSource,
         ]
       );
       return result.rowCount === 1;
