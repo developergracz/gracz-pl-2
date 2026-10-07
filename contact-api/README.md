@@ -205,3 +205,45 @@ The PostgreSQL driver does not override TLS settings from the provider connectio
 Critical R4 guarantees must never silently fall back to process-memory Maps when PostgreSQL is unavailable. The persistence layer returns `PERSISTENCE_NOT_CONFIGURED` when no database is configured.
 
 **R4.1 does not yet switch the live contact, Premium Reply or newsletter flows to PostgreSQL.** That wiring belongs to the next staged PRs so existing production behavior remains unchanged until each durable path is independently tested and audited.
+
+
+## R4.2 durable Premium Reply
+
+R4.2 removes the production one-time-send guarantee from process memory and moves Premium Reply token state into PostgreSQL.
+
+### Production behavior
+
+- A Premium Reply link is issued only after its hashed JTI has been stored durably.
+- The raw encrypted token is never stored in PostgreSQL.
+- The database stores only the SHA-256 JTI hash plus lifecycle metadata.
+- Reply claims are atomic across processes and instances.
+- A used token remains used after process restart.
+- Concurrent requests cannot both reserve the same token.
+- The first reply body fingerprint is persisted. A retry may resend only the exact same normalized body, preventing a changed payload from reusing the same provider idempotency key after an ambiguous provider failure.
+- Provider delivery continues to use the deterministic `contact-reply/<hash>` idempotency key.
+- Failed provider attempts release the durable claim but retain the message fingerprint.
+- Successful provider delivery transitions the token to `used` and marks the parent contact case reply status as `sent`.
+- No production fallback to an in-memory token registry exists.
+
+### Deployment order
+
+1. Provision PostgreSQL and set `DATABASE_URL`.
+2. Run `npm --prefix contact-api run migrate`.
+3. Verify migration `002_durable_premium_reply.sql` is applied.
+4. Deploy the API.
+5. Confirm `/health` reports:
+   - `persistenceConfigured: true`
+   - `premiumReplyConfigured: true`
+   - `premiumReplyDurableState: true`
+6. Run a real contact-form acceptance test.
+7. Send one Premium Reply.
+8. Restart the API process.
+9. Reuse the original link and verify it is rejected as already used.
+
+### Failure semantics
+
+If `CONTACT_REPLY_SECRET` is configured but no durable token store is available, Premium Reply is disabled instead of silently falling back to memory. Contact delivery can still operate, but no Premium Reply link is issued.
+
+If the database fails while a Premium Reply token is being issued or claimed, the secure reply operation fails closed.
+
+A special in-memory store exists only for the isolated Node regression test process and is enabled solely with `NODE_ENV=test` plus `PREMIUM_REPLY_TEST_MEMORY_STORE=1`. It is not a production fallback.

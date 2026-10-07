@@ -67,18 +67,32 @@ test(
         true
       );
 
+      const messageHash = hash("reply-message-" + requestId);
       const [a, b] = await Promise.all([
-        repositories.replyTokens.claim(jtiHash),
-        repositories.replyTokens.claim(jtiHash),
+        repositories.replyTokens.claim(jtiHash, messageHash),
+        repositories.replyTokens.claim(jtiHash, messageHash),
       ]);
 
       assert.equal([a.claimed, b.claimed].filter(Boolean).length, 1);
 
-      assert.equal(await repositories.replyTokens.release(jtiHash), "issued");
-      assert.equal((await repositories.replyTokens.claim(jtiHash)).claimed, true);
-      assert.equal(await repositories.replyTokens.markUsed(jtiHash), true);
+      assert.equal(
+        await repositories.replyTokens.release(jtiHash, messageHash, "TEST_RELEASE"),
+        "issued"
+      );
+      assert.equal(
+        (await repositories.replyTokens.claim(jtiHash, messageHash)).claimed,
+        true
+      );
+      assert.equal(
+        await repositories.replyTokens.markUsed(
+          jtiHash,
+          messageHash,
+          "provider-message-persistence-test"
+        ),
+        true
+      );
 
-      const afterUse = await repositories.replyTokens.claim(jtiHash);
+      const afterUse = await repositories.replyTokens.claim(jtiHash, messageHash);
       assert.equal(afterUse.claimed, false);
       assert.equal(afterUse.token.state, "used");
     });

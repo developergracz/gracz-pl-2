@@ -5,6 +5,9 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createNewsletterManager } from "./newsletter.mjs";
+import { createDatabase } from "./persistence/database.mjs";
+import { createPersistenceRepositories } from "./persistence/repositories.mjs";
+import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -35,10 +38,24 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must use different mailbox addresses");
 }
 
+const database = createDatabase();
+const persistence = database.enabled
+  ? createPersistenceRepositories(database)
+  : null;
+
+const useTestReplyStore =
+  process.env.NODE_ENV === "test" &&
+  process.env.PREMIUM_REPLY_TEST_MEMORY_STORE === "1";
+
+const replyTokenStore = useTestReplyStore
+  ? createMemoryReplyTokenStore()
+  : persistence?.replyTokens || null;
+
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
   ownerAddress: CONTACT_TO_ADDRESS,
   newsletterUrl: NEWSLETTER_URL,
+  tokenStore: replyTokenStore,
 });
 
 const newsletter = createNewsletterManager({
@@ -152,7 +169,9 @@ createServer(async (req, res) => {
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
+        persistenceConfigured: database.enabled,
         premiumReplyConfigured: premiumReply.enabled,
+        premiumReplyDurableState: premiumReply.durableStateConfigured,
         newsletterConfigured: newsletter.enabled,
       });
     }
@@ -280,7 +299,24 @@ createServer(async (req, res) => {
 
     reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
 
-    const adminDelivery = premiumReply.createAdminDelivery(payload, requestId);
+    if (premiumReply.enabled && persistence) {
+      const created = await persistence.contactCases.create({
+        requestId,
+        senderHash: hashValue(payload.email),
+        category: payload.category,
+        subject: payload.subject,
+        sourcePath: payload.page,
+      });
+
+      if (!created) {
+        const error = new Error("Nie udało się utworzyć trwałego rekordu zgłoszenia.");
+        error.code = "CONTACT_CASE_PERSISTENCE_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
+
+    const adminDelivery = await premiumReply.createAdminDelivery(payload, requestId);
 
     let response;
     try {
@@ -302,6 +338,19 @@ createServer(async (req, res) => {
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {
+      if (premiumReply.enabled && persistence) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            error?.code || "MAIL_PROVIDER_NETWORK_ERROR"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
       recordProviderFailure();
       throw error;
     }
@@ -318,6 +367,20 @@ createServer(async (req, res) => {
       try {
         providerError = raw ? JSON.parse(raw) : {};
       } catch {}
+
+      if (premiumReply.enabled && persistence) {
+        try {
+          await persistence.contactCases.markDeliveryFailed(
+            requestId,
+            "MAIL_DELIVERY_FAILED"
+          );
+        } catch (persistenceError) {
+          console.error("[contact] persistence update failed", {
+            requestId,
+            code: persistenceError?.code || "PERSISTENCE_ERROR",
+          });
+        }
+      }
 
       console.error("[contact] provider rejected", {
         requestId,
@@ -344,6 +407,26 @@ createServer(async (req, res) => {
     try {
       result = raw ? JSON.parse(raw) : {};
     } catch {}
+
+    if (premiumReply.enabled && persistence) {
+      try {
+        const marked = await persistence.contactCases.markDelivered(
+          requestId,
+          result.id || null
+        );
+        if (!marked) {
+          console.error("[contact] durable delivery status missing", {
+            requestId,
+            code: "CONTACT_CASE_NOT_FOUND",
+          });
+        }
+      } catch (persistenceError) {
+        console.error("[contact] durable delivery status update failed", {
+          requestId,
+          code: persistenceError?.code || "PERSISTENCE_ERROR",
+        });
+      }
+    }
 
     rememberDuplicate(payload);
     recordProviderSuccess();
@@ -590,7 +673,7 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
 
   ensureProviderCircuitClosed();
 
-  const delivery = premiumReply.prepareReply(token, body.message);
+  const delivery = await premiumReply.prepareReply(token, body.message);
   let response;
 
   try {
@@ -599,7 +682,7 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
       headers: {
         authorization: "Bearer " + RESEND_API_KEY,
         "content-type": "application/json",
-        "Idempotency-Key": premiumReply.providerIdempotencyKey(delivery.jti),
+        "Idempotency-Key": delivery.providerIdempotencyKey,
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
@@ -612,7 +695,19 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
-    premiumReply.releaseReply(delivery.tokenKey);
+    try {
+      await premiumReply.releaseReply(
+        delivery.tokenKey,
+        delivery.messageHash,
+        error?.code || "MAIL_PROVIDER_NETWORK_ERROR"
+      );
+    } catch (persistenceError) {
+      console.error("[contact-reply] release failed", {
+        requestId,
+        contactRequestId: delivery.requestId,
+        code: persistenceError?.code || "PERSISTENCE_ERROR",
+      });
+    }
     recordProviderFailure();
     throw error;
   }
@@ -620,7 +715,20 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
   const raw = await response.text().catch(() => "");
 
   if (!response.ok) {
-    premiumReply.releaseReply(delivery.tokenKey);
+    try {
+      await premiumReply.releaseReply(
+        delivery.tokenKey,
+        delivery.messageHash,
+        "MAIL_PROVIDER_" + response.status
+      );
+    } catch (persistenceError) {
+      console.error("[contact-reply] release failed", {
+        requestId,
+        contactRequestId: delivery.requestId,
+        code: persistenceError?.code || "PERSISTENCE_ERROR",
+      });
+    }
+
     if (response.status === 408 || response.status === 429 || response.status >= 500) {
       recordProviderFailure();
     }
@@ -644,7 +752,11 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
     result = raw ? JSON.parse(raw) : {};
   } catch {}
 
-  premiumReply.markReplySent(delivery.tokenKey);
+  await premiumReply.markReplySent(
+    delivery.tokenKey,
+    delivery.messageHash,
+    result.id || null
+  );
   recordProviderSuccess();
 
   console.log("[contact-reply] sent", {

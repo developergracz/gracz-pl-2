@@ -17,21 +17,39 @@ export function createPremiumReplyManager({
   baseUrl = "https://gracz.pl/kontakt/odpowiedz/",
   ownerAddress,
   newsletterUrl = "",
+  tokenStore = null,
+  claimLeaseMs = 30_000,
 }) {
   const normalizedSecret = String(secret || "").trim();
-  const enabled = normalizedSecret.length >= 32;
-  const key = enabled
+  const secretConfigured = normalizedSecret.length >= 32;
+  const storeConfigured = Boolean(
+    tokenStore &&
+      typeof tokenStore.issue === "function" &&
+      typeof tokenStore.claim === "function" &&
+      typeof tokenStore.markUsed === "function" &&
+      typeof tokenStore.release === "function"
+  );
+  const enabled = secretConfigured && storeConfigured;
+  const key = secretConfigured
     ? createHash("sha256").update(normalizedSecret, "utf8").digest()
     : null;
-  const usedTokens = new Map();
+  const normalizedClaimLeaseMs = Math.max(
+    5_000,
+    Math.min(120_000, Number(claimLeaseMs) || 30_000)
+  );
 
-  if (normalizedSecret && !enabled) {
+  if (normalizedSecret && !secretConfigured) {
     throw new Error("CONTACT_REPLY_SECRET must contain at least 32 characters");
   }
 
-  function createAdminDelivery(payload, requestId) {
-    const token = enabled
-      ? encrypt({
+  async function createAdminDelivery(payload, requestId) {
+    let token = null;
+
+    if (enabled) {
+      let issued = false;
+
+      for (let attempt = 0; attempt < 3 && !issued; attempt += 1) {
+        const data = {
           v: 1,
           jti: randomUUID(),
           exp: Date.now() + TOKEN_TTL_MS,
@@ -41,8 +59,29 @@ export function createPremiumReplyManager({
           category: payload.category,
           subject: payload.subject,
           excerpt: payload.message.slice(0, 1200),
-        })
-      : null;
+        };
+        const tokenKey = hashTokenJti(data.jti);
+        const idempotencyKey = providerIdempotencyKey(data.jti);
+
+        issued = await tokenStore.issue({
+          jtiHash: tokenKey,
+          requestId,
+          expiresAt: new Date(data.exp),
+          providerIdempotencyKey: idempotencyKey,
+        });
+
+        if (issued) token = encrypt(data);
+      }
+
+      if (!token) {
+        const error = new Error(
+          "Nie udało się bezpiecznie utworzyć linku odpowiedzi."
+        );
+        error.code = "REPLY_TOKEN_ISSUE_FAILED";
+        error.status = 503;
+        throw error;
+      }
+    }
 
     const replyUrl = token ? baseUrl + "#token=" + token : null;
     const text = [
@@ -85,31 +124,34 @@ export function createPremiumReplyManager({
     };
   }
 
-  function prepareReply(token, message) {
-    cleanupUsedTokens();
-    const data = decrypt(token);
-    const cleanMessage = validateReplyMessage(message);
-    const tokenKey = createHash("sha256").update(data.jti).digest("hex");
-
-    if (usedTokens.has(tokenKey)) {
-      const error = new Error("Ta odpowiedź została już wysłana.");
-      error.code = "REPLY_TOKEN_USED";
-      error.status = 409;
+  async function prepareReply(token, message) {
+    if (!enabled) {
+      const error = new Error(
+        "Moduł odpowiedzi premium nie ma aktywnego trwałego magazynu stanu."
+      );
+      error.code = "REPLY_NOT_CONFIGURED";
+      error.status = 503;
       throw error;
     }
 
-    if (usedTokens.size >= MAX_USED_TOKENS) {
-      const oldestKey = usedTokens.keys().next().value;
-      if (oldestKey !== undefined) usedTokens.delete(oldestKey);
-    }
+    const data = decrypt(token);
+    const cleanMessage = validateReplyMessage(message);
+    const tokenKey = hashTokenJti(data.jti);
+    const messageHash = createHash("sha256")
+      .update(cleanMessage, "utf8")
+      .digest("hex");
 
-    usedTokens.set(tokenKey, {
-      state: "inflight",
-      expiresAt: data.exp,
+    const claim = await tokenStore.claim(tokenKey, messageHash, {
+      leaseMs: normalizedClaimLeaseMs,
     });
+
+    if (!claim?.claimed) {
+      rejectUnavailableClaim(claim);
+    }
 
     return {
       tokenKey,
+      messageHash,
       jti: data.jti,
       requestId: data.requestId,
       to: data.email,
@@ -117,25 +159,47 @@ export function createPremiumReplyManager({
       subject: "Odp: gracz.pl — " + data.subject,
       text: buildReplyText(data, cleanMessage),
       html: buildReplyHtml(data, cleanMessage, newsletterUrl),
+      providerIdempotencyKey:
+        claim.token?.provider_idempotency_key ||
+        providerIdempotencyKey(data.jti),
     };
   }
 
-  function markReplySent(tokenKey) {
-    const current = usedTokens.get(tokenKey);
-    if (current) current.state = "done";
+  async function markReplySent(tokenKey, messageHash, providerMessageId = null) {
+    const committed = await tokenStore.markUsed(
+      tokenKey,
+      messageHash,
+      providerMessageId
+    );
+
+    if (!committed) {
+      const error = new Error(
+        "Wysłano wiadomość, ale nie udało się zatwierdzić trwałego stanu odpowiedzi."
+      );
+      error.code = "REPLY_STATE_COMMIT_FAILED";
+      error.status = 503;
+      throw error;
+    }
   }
 
-  function releaseReply(tokenKey) {
-    const current = usedTokens.get(tokenKey);
-    if (current?.state === "inflight") usedTokens.delete(tokenKey);
+  async function releaseReply(tokenKey, messageHash, errorCode = null) {
+    if (!enabled) return null;
+    return tokenStore.release(tokenKey, messageHash, errorCode);
   }
 
   function providerIdempotencyKey(jti) {
-    return "contact-reply/" + createHash("sha256").update(jti).digest("hex").slice(0, 40);
+    return (
+      "contact-reply/" +
+      createHash("sha256").update(String(jti), "utf8").digest("hex").slice(0, 40)
+    );
+  }
+
+  function hashTokenJti(jti) {
+    return createHash("sha256").update(String(jti), "utf8").digest("hex");
   }
 
   function encrypt(payload) {
-    if (!enabled) return null;
+    if (!secretConfigured) return null;
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);
     const plaintext = Buffer.from(JSON.stringify(payload), "utf8");
@@ -150,7 +214,7 @@ export function createPremiumReplyManager({
   }
 
   function decrypt(token) {
-    if (!enabled) {
+    if (!secretConfigured) {
       const error = new Error("Moduł odpowiedzi premium nie jest skonfigurowany.");
       error.code = "REPLY_NOT_CONFIGURED";
       error.status = 503;
@@ -190,15 +254,10 @@ export function createPremiumReplyManager({
     }
   }
 
-  function cleanupUsedTokens() {
-    const now = Date.now();
-    for (const [tokenKey, entry] of usedTokens) {
-      if (entry.expiresAt <= now) usedTokens.delete(tokenKey);
-    }
-  }
-
   return {
     enabled,
+    secretConfigured,
+    durableStateConfigured: storeConfigured,
     createAdminDelivery,
     getPublicContext,
     prepareReply,
@@ -206,6 +265,58 @@ export function createPremiumReplyManager({
     releaseReply,
     providerIdempotencyKey,
   };
+}
+
+function rejectUnavailableClaim(claim) {
+  const state = claim?.token?.state;
+
+  if (state === "used") {
+    const error = new Error("Ta odpowiedź została już wysłana.");
+    error.code = "REPLY_TOKEN_USED";
+    error.status = 409;
+    throw error;
+  }
+
+  if (state === "expired") {
+    const error = new Error("Link do odpowiedzi wygasł.");
+    error.code = "REPLY_TOKEN_EXPIRED";
+    error.status = 410;
+    throw error;
+  }
+
+  if (claim?.messageConflict) {
+    const error = new Error(
+      "Po rozpoczęciu wysyłki treść odpowiedzi jest zablokowana. Ponów wysyłkę tej samej wiadomości."
+    );
+    error.code = "REPLY_TOKEN_MESSAGE_CONFLICT";
+    error.status = 409;
+    throw error;
+  }
+
+  if (state === "inflight") {
+    const error = new Error(
+      "Wysyłka tej odpowiedzi już trwa. Spróbuj ponownie za chwilę."
+    );
+    error.code = "REPLY_TOKEN_IN_PROGRESS";
+    error.status = 409;
+    throw error;
+  }
+
+  if (!claim?.token) {
+    const error = new Error(
+      "Ten link nie ma aktywnego rekordu trwałego stanu i nie może zostać użyty."
+    );
+    error.code = "REPLY_TOKEN_NOT_ISSUED";
+    error.status = 410;
+    throw error;
+  }
+
+  const error = new Error(
+    "Nie udało się bezpiecznie zarezerwować tej odpowiedzi."
+  );
+  error.code = "REPLY_STATE_UNAVAILABLE";
+  error.status = 503;
+  throw error;
 }
 
 function validateTokenPayload(data) {
