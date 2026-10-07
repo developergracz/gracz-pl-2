@@ -720,6 +720,7 @@ export function createNewsletterManager({
     if (!current?.provider_blocked_at) return;
 
     if (current.current_state === "subscribed") {
+      await ensureProviderNewsletterOn(email, resources);
       await clearProviderOffRequired(email);
       return;
     }
