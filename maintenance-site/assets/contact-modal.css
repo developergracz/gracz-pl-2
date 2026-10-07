@@ -498,3 +498,78 @@ body.contact-modal-open{overflow:hidden}
   .newsletter-consent-actions,.newsletter-thanks__actions,.email-preview__actions{flex-direction:column}
   .newsletter-consent-actions button,.newsletter-thanks__actions button,.email-preview__actions button{width:100%}
 }
+
+
+/* FULL MAX PREMIUM R2 — większa, czytelniejsza typografia we wszystkich formularzach */
+.contact-modal__eyebrow{font-size:13px!important}
+.contact-modal h2{font-size:clamp(30px,4vw,38px)!important}
+.contact-modal__intro{font-size:15px!important;line-height:1.6!important}
+
+.contact-field label,
+.contact-field__label{font-size:14px!important;line-height:1.3!important}
+
+.contact-field input,
+.contact-field select,
+.contact-field textarea{
+  font-size:15px!important;
+  line-height:1.5!important;
+}
+
+.contact-field__meta{font-size:12.5px!important}
+.contact-form__check{font-size:13px!important;line-height:1.5!important}
+.contact-form__status{font-size:13px!important;line-height:1.5!important}
+.contact-form__submit{font-size:14px!important}
+.contact-form__mail{font-size:13px!important}
+.contact-form__privacy{font-size:11.5px!important;line-height:1.5!important}
+.contact-preview-note{font-size:11.5px!important;line-height:1.5!important}
+
+.contact-casebar span,
+.email-preview__casebar span,
+.email-preview__grid span,
+.newsletter-thanks__grid span{font-size:10.5px!important}
+
+.contact-casebar strong,
+.email-preview__casebar strong,
+.email-preview__grid strong,
+.newsletter-thanks__grid strong{font-size:12px!important}
+
+.contact-chip{font-size:10.5px!important}
+
+.contact-newsletter-card__kicker,
+.email-preview__newsletter-kicker{font-size:10.5px!important}
+
+.contact-newsletter-card h3{font-size:18px!important}
+.contact-newsletter-card p{font-size:12.5px!important;line-height:1.55!important}
+.contact-newsletter-card__benefits{font-size:11px!important}
+.contact-newsletter-card__button{font-size:12.5px!important}
+
+.email-preview__top p{font-size:12px!important}
+.email-preview__badge{font-size:10.5px!important}
+.email-preview__content{font-size:14px!important;line-height:1.7!important}
+.email-preview__hello{font-size:19px!important}
+.email-preview__answer>span{font-size:10.5px!important}
+.email-preview__answer>strong{font-size:16px!important}
+.email-preview__newsletter h3{font-size:18px!important}
+.email-preview__newsletter p{font-size:13px!important}
+.email-preview__newsletter small{font-size:11px!important}
+.email-preview__security{font-size:12px!important}
+.email-preview__test{font-size:10.5px!important}
+
+.contact-newsletter-consent .optional{font-size:10.5px!important}
+.newsletter-consent-benefits strong{font-size:12px!important}
+.newsletter-consent-benefits span{font-size:11px!important}
+.newsletter-consent-status{font-size:12.5px!important}
+.newsletter-consent-actions button{font-size:13px!important}
+.newsletter-consent-note{font-size:11px!important;line-height:1.5!important}
+
+.newsletter-thanks__benefits h3{font-size:16px!important}
+.newsletter-thanks__benefits span{font-size:11.5px!important;line-height:1.5!important}
+.newsletter-thanks__next{font-size:12.5px!important;line-height:1.6!important}
+.newsletter-thanks__actions button{font-size:13px!important}
+
+@media(max-width:640px){
+  .contact-modal__intro{font-size:14px!important}
+  .contact-field label,.contact-field__label{font-size:13px!important}
+  .contact-field input,.contact-field select,.contact-field textarea{font-size:14px!important}
+  .contact-form__check{font-size:12px!important}
+}
