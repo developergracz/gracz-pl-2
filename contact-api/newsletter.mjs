@@ -333,6 +333,203 @@ export function createNewsletterManager({
     };
   }
 
+  async function reconcile(email) {
+    requireEnabled();
+    const cleanEmail = validateMailbox(email);
+    const emailHash = consentSubjectHash(cleanEmail);
+    const ledgerContact = await consentStore.getContact(emailHash);
+
+    if (!ledgerContact) {
+      return {
+        state: "unknown_subject",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    const resources = await ensureResources();
+    const existing = await getContact(cleanEmail);
+
+    if (!existing) {
+      if (ledgerContact.current_state === "subscribed") {
+        await recordReconciliationObservation({
+          email: cleanEmail,
+          ledgerContact,
+          providerContactId: null,
+          outcome: "provider_missing",
+          providerState: {
+            inSegment: false,
+            topicSubscription: "opt_out",
+            globallyUnsubscribed: false,
+          },
+        });
+        return {
+          state: "fresh_confirmation_required",
+          recipient: maskEmail(cleanEmail),
+        };
+      }
+
+      return {
+        state: "in_sync",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    const providerState = await getContactProviderState(cleanEmail, resources);
+    const providerActive =
+      existing.unsubscribed !== true &&
+      providerState.inSegment &&
+      providerState.topicSubscription === "opt_in";
+
+    if (ledgerContact.current_state === "subscribed") {
+      if (providerActive) {
+        return {
+          state: "in_sync",
+          recipient: maskEmail(cleanEmail),
+        };
+      }
+
+      await recordReconciliationObservation({
+        email: cleanEmail,
+        ledgerContact,
+        providerContactId: existing.id || null,
+        outcome: "provider_inactive",
+        providerState: {
+          ...providerState,
+          globallyUnsubscribed: existing.unsubscribed === true,
+        },
+      });
+
+      return {
+        state: "fresh_confirmation_required",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    if (ledgerContact.current_state === "unsubscribed") {
+      const drift =
+        providerState.inSegment ||
+        providerState.topicSubscription === "opt_in";
+
+      if (drift) {
+        if (providerState.topicSubscription !== "opt_out") {
+          await api("/contacts/" + encodeURIComponent(cleanEmail) + "/topics", {
+            method: "PATCH",
+            body: {
+              topics: [{ id: resources.topicId, subscription: "opt_out" }],
+            },
+            expected: [200],
+          });
+        }
+
+        if (providerState.inSegment) {
+          await api(
+            "/contacts/" + encodeURIComponent(cleanEmail) +
+              "/segments/" + encodeURIComponent(resources.segmentId),
+            { method: "DELETE", expected: [200, 404] }
+          );
+        }
+
+        await recordReconciliationObservation({
+          email: cleanEmail,
+          ledgerContact,
+          providerContactId: existing.id || null,
+          outcome: "repaired_unsubscribed",
+          providerState: {
+            ...providerState,
+            globallyUnsubscribed: existing.unsubscribed === true,
+          },
+        });
+
+        return {
+          state: "repaired_unsubscribed",
+          recipient: maskEmail(cleanEmail),
+        };
+      }
+
+      return {
+        state: "in_sync",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    const providerConfirmedAt = contactPropertyNumber(
+      existing,
+      CONFIRMED_AT_KEY
+    );
+    const providerUnsubscribedAt = contactPropertyNumber(
+      existing,
+      UNSUBSCRIBED_AT_KEY
+    );
+
+    if (
+      providerActive &&
+      providerConfirmedAt > 0 &&
+      providerConfirmedAt > providerUnsubscribedAt
+    ) {
+      await recordProviderSync(
+        {
+          email: cleanEmail,
+          consentVersion:
+            ledgerContact.consent_version || "legacy-provider-consent",
+          source: "reconciliation",
+        },
+        {
+          confirmedAt: providerConfirmedAt,
+          providerContactId: existing.id || null,
+        }
+      );
+
+      return {
+        state: "imported_subscribed",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    if (
+      providerState.inSegment ||
+      providerState.topicSubscription === "opt_in"
+    ) {
+      if (providerState.topicSubscription !== "opt_out") {
+        await api("/contacts/" + encodeURIComponent(cleanEmail) + "/topics", {
+          method: "PATCH",
+          body: {
+            topics: [{ id: resources.topicId, subscription: "opt_out" }],
+          },
+          expected: [200],
+        });
+      }
+
+      if (providerState.inSegment) {
+        await api(
+          "/contacts/" + encodeURIComponent(cleanEmail) +
+            "/segments/" + encodeURIComponent(resources.segmentId),
+          { method: "DELETE", expected: [200, 404] }
+        );
+      }
+
+      await recordReconciliationObservation({
+        email: cleanEmail,
+        ledgerContact,
+        providerContactId: existing.id || null,
+        outcome: "repaired_pending",
+        providerState: {
+          ...providerState,
+          globallyUnsubscribed: existing.unsubscribed === true,
+        },
+      });
+
+      return {
+        state: "repaired_pending",
+        recipient: maskEmail(cleanEmail),
+      };
+    }
+
+    return {
+      state: "in_sync",
+      recipient: maskEmail(cleanEmail),
+    };
+  }
+
   function consentSubjectHash(email) {
     return createHmac("sha256", consentHashKey)
       .update(validateMailbox(email), "utf8")
@@ -514,6 +711,41 @@ export function createNewsletterManager({
       providerContactId,
       currentState: "unsubscribed",
       unsubscribedAt: occurredAt,
+    });
+  }
+
+  async function recordReconciliationObservation({
+    email,
+    ledgerContact,
+    providerContactId = null,
+    outcome,
+    providerState,
+  }) {
+    const emailHash = consentSubjectHash(email);
+    const seed = [
+      emailHash,
+      ledgerContact.current_state,
+      timestampMs(ledgerContact.updated_at),
+      outcome,
+    ].join(":");
+    const eventId = deterministicConsentEventId("reconcile", seed);
+
+    const existing = await consentStore.getConsentEvent(eventId);
+    if (existing) return existing;
+
+    return consentStore.appendConsentEvent({
+      eventId,
+      emailHash,
+      eventType: "provider_sync",
+      consentVersion: ledgerContact.consent_version || null,
+      source: "reconciliation",
+      occurredAt: new Date(),
+      correlationId: eventId,
+      providerRef: providerContactId,
+      metadata: {
+        outcome,
+        providerState,
+      },
     });
   }
 
@@ -847,6 +1079,7 @@ export function createNewsletterManager({
     requestOptIn,
     confirm,
     unsubscribe,
+    reconcile,
     baseUrl: normalizedBaseUrl,
   };
 }
