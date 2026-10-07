@@ -268,15 +268,6 @@ export function createPremiumReplyManager({
 }
 
 function rejectUnavailableClaim(claim) {
-  if (claim?.messageConflict) {
-    const error = new Error(
-      "Po rozpoczęciu wysyłki treść odpowiedzi jest zablokowana. Ponów wysyłkę tej samej wiadomości."
-    );
-    error.code = "REPLY_TOKEN_MESSAGE_CONFLICT";
-    error.status = 409;
-    throw error;
-  }
-
   const state = claim?.token?.state;
 
   if (state === "used") {
@@ -290,6 +281,15 @@ function rejectUnavailableClaim(claim) {
     const error = new Error("Link do odpowiedzi wygasł.");
     error.code = "REPLY_TOKEN_EXPIRED";
     error.status = 410;
+    throw error;
+  }
+
+  if (claim?.messageConflict) {
+    const error = new Error(
+      "Po rozpoczęciu wysyłki treść odpowiedzi jest zablokowana. Ponów wysyłkę tej samej wiadomości."
+    );
+    error.code = "REPLY_TOKEN_MESSAGE_CONFLICT";
+    error.status = 409;
     throw error;
   }
 
