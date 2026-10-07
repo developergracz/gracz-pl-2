@@ -68,7 +68,7 @@
     return new Promise(function(resolve){
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/assets/contact-modal.css?v=r6';
+      link.href='/assets/contact-modal.css?v=r8';
       link.setAttribute('data-contact-modal-style','');
       link.addEventListener('load',resolve,{once:true});
       link.addEventListener('error',resolve,{once:true});
@@ -203,24 +203,17 @@
 
       try{
         if(!contactRequestKey)contactRequestKey=newRequestKey();
-        var controller=new AbortController();
-        var timeout=window.setTimeout(function(){controller.abort();},12000);
-        var response;
-        try{
-          response=await fetch(CONTACT_API,{
-            method:'POST',
-            headers:{
-              'content-type':'application/json',
-              'x-idempotency-key':contactRequestKey
-            },
-            body:JSON.stringify(payload),
-            mode:'cors',
-            credentials:'omit',
-            signal:controller.signal
-          });
-        }finally{
-          window.clearTimeout(timeout);
-        }
+        setStatus('Łączę z bezpiecznym kanałem gracz.pl. Przy pierwszym uruchomieniu może to potrwać kilkanaście sekund.');
+        var response=await fetch(CONTACT_API,{
+          method:'POST',
+          headers:{
+            'content-type':'application/json',
+            'x-idempotency-key':contactRequestKey
+          },
+          body:JSON.stringify(payload),
+          mode:'cors',
+          credentials:'omit'
+        });
         var body={};
         try{body=await response.json();}catch(_){}
         if(!response.ok||body.ok!==true){
