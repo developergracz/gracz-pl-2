@@ -28,3 +28,194 @@ input[type=text],input[type=email]{width:100%;height:46px;border:1px solid #376c
 .nl-footer{width:min(1120px,100%);margin:0 auto;padding:0 20px 34px;display:flex;justify-content:space-between;gap:20px;color:#688078;font-size:11px}.nl-footer nav{display:flex;gap:14px;flex-wrap:wrap}.nl-footer a{text-decoration:none}
 @media(max-width:720px){.nl-shell{padding:20px 12px 35px}.nl-card{border-radius:18px}.nl-hero{padding:30px 20px 24px}.nl-benefits{grid-template-columns:1fr;padding:20px 20px 0}.nl-panel{margin:20px;padding:20px}.nl-row{grid-template-columns:1fr}.nl-trust{grid-template-columns:1fr;padding:0 20px 24px}.nl-footer{flex-direction:column}.nl-topbar{padding:0 16px}.nl-back{font-size:10px}.nl-logo{font-size:27px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* COSMETIC R4 — premium polish only, no newsletter logic changes */
+.nl-topbar{
+  min-height:76px;
+  border-bottom:0;
+  background:linear-gradient(180deg,rgba(3,17,14,.96),rgba(4,21,18,.92));
+  box-shadow:0 10px 34px rgba(0,0,0,.16);
+}
+.nl-logo{font-size:32px}
+.nl-back{
+  border:0;
+  padding:12px 17px;
+  background:rgba(86,200,193,.10);
+  color:#d9eeea;
+  font-size:12.5px;
+  transition:background .16s ease,color .16s ease,transform .16s ease;
+}
+.nl-back:hover{
+  background:rgba(86,200,193,.16);
+  color:#fff;
+  transform:translateY(-1px);
+}
+
+.nl-shell{padding-top:38px}
+.nl-card{
+  position:relative;
+  border:0;
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 88% 4%,rgba(86,200,193,.08),transparent 28rem),
+    linear-gradient(158deg,#0c3029,#071d19 64%,#051511);
+  box-shadow:0 34px 90px rgba(0,0,0,.33);
+}
+.nl-card::before{
+  content:"";
+  position:absolute;
+  inset:0 auto auto 0;
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(117,229,222,.5),transparent);
+  pointer-events:none;
+}
+
+.nl-hero{
+  padding:50px 52px 34px;
+  border-bottom:0;
+}
+.nl-kicker{
+  font-size:11.5px;
+  letter-spacing:.16em;
+}
+.nl-hero h1{
+  margin-top:12px;
+  max-width:850px;
+  letter-spacing:-2px;
+}
+.nl-hero p{
+  max-width:780px;
+  color:#c2d4cf;
+  font-size:16.5px;
+}
+.nl-badges{gap:10px;margin-top:24px}
+.nl-badges span{
+  border:0;
+  padding:8px 11px;
+  background:rgba(86,200,193,.09);
+  color:#b9e8e1;
+}
+
+.nl-benefits{
+  gap:16px;
+  padding:24px 52px 0;
+}
+.nl-benefits article{
+  min-height:124px;
+  padding:21px 20px;
+  border:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.018));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .16s ease,background .16s ease;
+}
+.nl-benefits article:hover{
+  transform:translateY(-2px);
+  background:linear-gradient(180deg,rgba(86,200,193,.07),rgba(255,255,255,.02));
+}
+.nl-benefits article>span{font-size:11.5px}
+.nl-benefits h2{font-size:18px}
+.nl-benefits p{font-size:12.5px;line-height:1.6;color:#97aca6}
+
+.nl-panel{
+  margin:30px 52px;
+  padding:30px;
+  border:0;
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(86,200,193,.09),transparent 20rem),
+    linear-gradient(180deg,rgba(18,67,59,.62),rgba(7,37,32,.78));
+  box-shadow:0 18px 44px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035);
+}
+.nl-panel h2{font-size:25px}
+.nl-muted{font-size:13.5px;line-height:1.65}
+
+.nl-row{gap:16px}
+.nl-row label{gap:8px;font-size:12.5px}
+input[type=text],input[type=email]{
+  height:49px;
+  border:0;
+  border-radius:12px;
+  background:#092a24;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.055);
+  transition:background .16s ease,box-shadow .16s ease;
+}
+input[type=text]:hover,input[type=email]:hover{background:#0b3029}
+input:focus{
+  border-color:transparent;
+  background:#0b322b;
+  box-shadow:inset 0 0 0 1px rgba(103,216,207,.46),0 0 0 4px rgba(86,200,193,.08);
+}
+
+.nl-consent{
+  margin-top:18px;
+  padding:15px 16px;
+  border:0;
+  border-radius:13px;
+  background:rgba(255,255,255,.03);
+  font-size:12.5px;
+}
+.nl-consent a{font-weight:700;text-underline-offset:2px}
+
+.nl-status{margin-top:14px;font-size:12.5px}
+.nl-primary{
+  min-height:50px;
+  margin-top:10px;
+  padding:0 24px;
+  border-radius:12px;
+  background:linear-gradient(180deg,#79e7df,#4fc4bc);
+  font-size:13px;
+  box-shadow:0 12px 28px rgba(21,137,126,.18);
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+}
+.nl-primary:hover:not(:disabled){
+  transform:translateY(-1px);
+  filter:brightness(1.04);
+  box-shadow:0 14px 34px rgba(21,137,126,.26);
+}
+
+.nl-action{padding:42px 30px}
+.nl-action__icon{
+  width:62px;
+  height:62px;
+  border:0;
+  background:rgba(86,200,193,.11);
+  box-shadow:inset 0 0 0 1px rgba(86,200,193,.08);
+}
+
+.nl-trust{
+  gap:16px;
+  padding:0 52px 38px;
+}
+.nl-trust div{
+  padding:19px 20px;
+  border:0;
+  border-radius:14px;
+  background:rgba(2,17,14,.46);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.nl-trust strong{font-size:12.5px}
+.nl-trust span{font-size:11.5px;line-height:1.6}
+
+.nl-footer{
+  padding-top:2px;
+  padding-bottom:38px;
+  font-size:11.5px;
+}
+.nl-footer a{color:#7d9890}
+.nl-footer a:hover{color:#b9ddd6}
+
+@media(max-width:720px){
+  .nl-topbar{min-height:68px}
+  .nl-shell{padding:18px 10px 32px}
+  .nl-card{border-radius:20px}
+  .nl-hero{padding:30px 20px 22px}
+  .nl-hero h1{font-size:clamp(36px,12vw,48px);letter-spacing:-1.5px}
+  .nl-hero p{font-size:15px}
+  .nl-benefits{padding:18px 20px 0}
+  .nl-panel{margin:20px;padding:22px}
+  .nl-primary{width:100%}
+  .nl-trust{padding:0 20px 26px}
+  .nl-back{font-size:11px;padding:10px 12px}
+  .nl-logo{font-size:28px}
+}
