@@ -28,19 +28,40 @@ export function createNewsletterManager({
   segmentName = "gracz.pl Newsletter",
   topicName = "Newsletter gracz.pl",
   providerTimeoutMs = 10_000,
+  consentStore = null,
+  consentHashSecret = "",
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
   const normalizedBase = String(resendApiBase || "").replace(/\/$/, "");
   const normalizedEmailEndpoint = String(emailEndpoint || "").trim();
   const normalizedBaseUrl = ensureHttpsPageUrl(baseUrl);
+  const normalizedConsentHashSecret = String(consentHashSecret || "").trim();
+  const consentStoreConfigured = Boolean(
+    consentStore &&
+      typeof consentStore.ensureContact === "function" &&
+      typeof consentStore.getContact === "function" &&
+      typeof consentStore.upsertContact === "function" &&
+      typeof consentStore.appendConsentEvent === "function" &&
+      typeof consentStore.getConsentEvent === "function"
+  );
   const requestTimeoutMs =
     Number.isFinite(providerTimeoutMs) && providerTimeoutMs > 0
       ? Math.max(25, Math.min(Math.floor(providerTimeoutMs), 30_000))
       : 10_000;
-  const enabled = normalizedSecret.length >= 32 && Boolean(apiKey && normalizedBaseUrl);
+  const enabled =
+    normalizedSecret.length >= 32 &&
+    normalizedConsentHashSecret.length >= 32 &&
+    Boolean(apiKey && normalizedBaseUrl) &&
+    consentStoreConfigured;
   const key = normalizedSecret.length >= 32
     ? createHash("sha256").update(normalizedSecret, "utf8").digest()
+    : null;
+  const consentHashKey = normalizedConsentHashSecret.length >= 32
+    ? createHash("sha256")
+        .update("newsletter-consent-subject:", "utf8")
+        .update(normalizedConsentHashSecret, "utf8")
+        .digest()
     : null;
 
   let resourcesPromise = null;
@@ -48,17 +69,37 @@ export function createNewsletterManager({
   if (normalizedSecret && normalizedSecret.length < 32) {
     throw new Error("NEWSLETTER_SECRET must contain at least 32 characters");
   }
+  if (
+    consentHashSecret &&
+    normalizedConsentHashSecret.length < 32
+  ) {
+    throw new Error(
+      "NEWSLETTER_CONSENT_HASH_SECRET must contain at least 32 characters"
+    );
+  }
 
   async function requestOptIn({ email, name = "", source = "newsletter_page" }) {
     requireEnabled();
     const cleanEmail = validateMailbox(email);
     const cleanName = cleanShort(name, 80);
+    const currentConsent = await consentStore.getContact(
+      consentSubjectHash(cleanEmail)
+    );
+    if (currentConsent?.provider_blocked_at) {
+      const resources = await ensureResources();
+      await recoverProviderOffObligation(cleanEmail, resources);
+    }
+    const issuedAt = Math.max(
+      Date.now(),
+      timestampMs(currentConsent?.confirmed_at) + 1,
+      timestampMs(currentConsent?.unsubscribed_at) + 1
+    );
     const tokenData = {
       v: 1,
       purpose: "confirm",
       jti: randomUUID(),
-      iat: Date.now(),
-      exp: Date.now() + CONFIRM_TTL_MS,
+      iat: issuedAt,
+      exp: issuedAt + CONFIRM_TTL_MS,
       email: cleanEmail,
       name: cleanName,
       source: cleanShort(source, 40) || "unknown",
@@ -66,6 +107,8 @@ export function createNewsletterManager({
     };
     const token = encrypt(tokenData);
     const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
+
+    await recordOptInRequested(tokenData);
 
     await sendEmail({
       to: cleanEmail,
@@ -83,13 +126,25 @@ export function createNewsletterManager({
     requireEnabled();
     const data = decrypt(token, "confirm");
     const resources = await ensureResources();
+    await recoverProviderOffObligation(data.email, resources);
 
+    const emailHash = consentSubjectHash(data.email);
+    const ledgerContact = await consentStore.getContact(emailHash);
     const existing = await getContact(data.email);
     const names = splitName(data.name);
-    const confirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
-    const unsubscribedAt = contactPropertyNumber(existing, UNSUBSCRIBED_AT_KEY);
+    const providerConfirmedAt = contactPropertyNumber(existing, CONFIRMED_AT_KEY);
+    const providerUnsubscribedAt = contactPropertyNumber(
+      existing,
+      UNSUBSCRIBED_AT_KEY
+    );
+    const ledgerConfirmedAt = timestampMs(ledgerContact?.confirmed_at);
+    const ledgerUnsubscribedAt = timestampMs(ledgerContact?.unsubscribed_at);
 
-    if (unsubscribedAt >= data.iat) {
+    if (
+      providerUnsubscribedAt >= data.iat ||
+      (ledgerContact?.current_state === "unsubscribed" &&
+        ledgerUnsubscribedAt >= data.iat)
+    ) {
       staleConfirmation();
     }
 
@@ -100,35 +155,84 @@ export function createNewsletterManager({
           topicSubscription: "opt_out",
         };
 
-    const wasPreviouslyConfirmed = confirmedAt > 0;
-    const consentActive = confirmedAt > 0 && confirmedAt > unsubscribedAt;
     const providerActive =
       Boolean(existing) &&
       existing.unsubscribed !== true &&
       providerState.inSegment &&
       providerState.topicSubscription === "opt_in";
 
-    if (consentActive && providerActive) {
+    // Hybrid rule: Resend owns the operational subscription state.
+    // The first-party store is audit evidence, not a second delivery engine.
+    if (providerActive && ledgerContact?.current_state === "subscribed") {
+      // Repair only our provider-side audit timestamp after a partial previous
+      // confirmation. Do not resend the welcome e-mail or duplicate consent.
+      if (providerConfirmedAt < ledgerConfirmedAt) {
+        await api("/contacts/" + encodeURIComponent(data.email), {
+          method: "PATCH",
+          body: {
+            properties: {
+              [CONFIRMED_AT_KEY]: ledgerConfirmedAt,
+              [CONSENT_VERSION_KEY]:
+                ledgerContact.consent_version || data.consentVersion,
+            },
+          },
+          expected: [200],
+        });
+
+        // If an earlier confirmation committed durable consent and activated
+        // the provider but the deterministic welcome delivery failed, the
+        // missing provider timestamp keeps this replay on the repair path.
+        // Resend idempotency makes this safe when the welcome already landed.
+        await sendWelcomeEmail(data);
+
+        return {
+          state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
+          recipient: maskEmail(data.email),
+        };
+      }
+
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
       };
     }
 
-    // If the contact had a confirmed subscription but provider state is now
-    // inactive, only a confirmation token issued after that confirmation may
-    // reactivate it. This protects old/replayed links after provider-side
-    // unsubscribe or partial state changes.
-    if (consentActive && !providerActive && data.iat <= confirmedAt) {
+    // If Resend says the contact is inactive while our audit trail contains a
+    // previous confirmation, only a token issued after that confirmation may
+    // reactivate marketing. This prevents replaying an old DOI link after a
+    // provider-hosted unsubscribe.
+    const lastFirstPartyStateAt = Math.max(
+      ledgerConfirmedAt,
+      ledgerUnsubscribedAt,
+      providerConfirmedAt,
+      providerUnsubscribedAt
+    );
+    if (
+      ledgerContact?.current_state === "subscribed" &&
+      !providerActive &&
+      data.iat <= lastFirstPartyStateAt
+    ) {
       staleConfirmation();
     }
+
+    const wasPreviouslyConfirmed =
+      ledgerConfirmedAt > 0 || providerConfirmedAt > 0;
 
     const consentVersionProperties = {
       [CONSENT_VERSION_KEY]: data.consentVersion,
     };
+    let providerContactId = existing?.id || null;
+
+    // Safety ordering: durable first-party consent evidence is committed
+    // before any provider marketing activation. If this CAS loses to an
+    // unsubscribe or persistence fails, Resend is never turned on.
+    await recordConfirmedConsent(data, {
+      wasPreviouslyConfirmed,
+      providerContactId,
+    });
 
     if (!existing) {
-      await api("/contacts", {
+      const createdContact = await api("/contacts", {
         method: "POST",
         body: {
           email: data.email,
@@ -141,6 +245,7 @@ export function createNewsletterManager({
         },
         expected: [201],
       });
+      providerContactId = createdContact?.id || null;
     } else {
       await api("/contacts/" + encodeURIComponent(data.email), {
         method: "PATCH",
@@ -172,28 +277,27 @@ export function createNewsletterManager({
       }
     }
 
-    // The unsubscribe link must be byte-for-byte deterministic for a given
-    // confirmation token. This guarantees that Resend retries using the same
-    // Idempotency-Key also use the same message body.
-    const unsubscribeToken = deterministicUnsubscribeToken(data);
-    const unsubscribeUrl = normalizedBaseUrl + "#unsubscribe=" + unsubscribeToken;
+    // A withdrawal may have committed while provider activation was in
+    // flight. Re-read the durable consent state before any welcome is sent.
+    // If marketing is no longer permitted, force the provider off using a
+    // race-aware compensation routine that cannot clobber a newer valid DOI.
+    const afterActivation = await consentStore.getContact(emailHash);
+    if (afterActivation?.current_state !== "subscribed") {
+      await forceProviderNewsletterOffSafely(data.email, resources);
+      if (
+        afterActivation?.current_state === "unsubscribed" &&
+        timestampMs(afterActivation?.unsubscribed_at) >= data.iat
+      ) {
+        staleConfirmation();
+      }
+      consentConflict();
+    }
 
-    await sendEmail({
-      to: data.email,
-      subject: "gracz.pl Newsletter — witamy!",
-      text: buildWelcomeText(unsubscribeUrl),
-      html: buildWelcomeHtml(unsubscribeUrl),
-      idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
-      entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
-    });
+    await sendWelcomeEmail(data);
 
-    // Commit our consent proof last. If any provider mutation or welcome
-    // delivery fails before this point, retrying the same token repairs the
-    // incomplete state instead of incorrectly returning already_subscribed.
     await api("/contacts/" + encodeURIComponent(data.email), {
       method: "PATCH",
       body: {
-        unsubscribed: false,
         properties: {
           [CONFIRMED_AT_KEY]: Date.now(),
           [CONSENT_VERSION_KEY]: data.consentVersion,
@@ -212,6 +316,7 @@ export function createNewsletterManager({
     requireEnabled();
     const data = decrypt(token, "unsubscribe");
     const resources = await ensureResources();
+    await recoverProviderOffObligation(data.email, resources);
     const existing = await getContact(data.email);
 
     if (existing) {
@@ -240,10 +345,404 @@ export function createNewsletterManager({
       );
     }
 
+    await recordUnsubscribedConsent(data, {
+      providerContactId: existing?.id || null,
+    });
+
     return {
       state: "unsubscribed",
       recipient: maskEmail(data.email),
     };
+  }
+
+  function consentSubjectHash(email) {
+    return createHmac("sha256", consentHashKey)
+      .update(validateMailbox(email), "utf8")
+      .digest("hex");
+  }
+
+  function deterministicConsentEventId(namespace, seed) {
+    const bytes = createHash("sha256")
+      .update("gracz-newsletter-consent:", "utf8")
+      .update(String(namespace || ""), "utf8")
+      .update(":", "utf8")
+      .update(String(seed || ""), "utf8")
+      .digest()
+      .subarray(0, 16);
+
+    bytes[6] = (bytes[6] & 0x0f) | 0x50;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = bytes.toString("hex");
+    return [
+      hex.slice(0, 8),
+      hex.slice(8, 12),
+      hex.slice(12, 16),
+      hex.slice(16, 20),
+      hex.slice(20),
+    ].join("-");
+  }
+
+  async function recordOptInRequested(data) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("request", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+      consentVersion: data.consentVersion,
+    });
+
+    const existing = await consentStore.getConsentEvent(eventId);
+    if (existing) return existing;
+
+    return consentStore.appendConsentEvent({
+      eventId,
+      emailHash,
+      eventType: "opt_in_requested",
+      consentVersion: data.consentVersion,
+      source: data.source || "unknown",
+      occurredAt: new Date(data.iat),
+      correlationId: eventId,
+      metadata: {
+        tokenIssuedAt: data.iat,
+      },
+    });
+  }
+
+  async function recordConfirmedConsent(
+    data,
+    { wasPreviouslyConfirmed, providerContactId = null }
+  ) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("confirm", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+      consentVersion: data.consentVersion,
+    });
+
+    let current = await consentStore.getContact(emailHash);
+    if (!current) consentConflict();
+
+    if (
+      current.current_state === "unsubscribed" &&
+      timestampMs(current.unsubscribed_at) >= data.iat
+    ) {
+      staleConfirmation();
+    }
+
+    const existingEvent = await consentStore.getConsentEvent(eventId);
+    const occurredAt = existingEvent?.occurred_at
+      ? new Date(existingEvent.occurred_at)
+      : new Date();
+    const eventType =
+      existingEvent?.event_type ||
+      (wasPreviouslyConfirmed ? "resubscribe" : "opt_in_confirmed");
+
+    if (!existingEvent) {
+      await consentStore.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType,
+        consentVersion: data.consentVersion,
+        source: data.source || "confirm_link",
+        occurredAt,
+        correlationId: eventId,
+        providerRef: providerContactId,
+        metadata: {
+          tokenIssuedAt: data.iat,
+        },
+      });
+    }
+
+    const updated = await consentStore.upsertContact({
+      emailHash,
+      providerContactId,
+      currentState: "subscribed",
+      consentVersion: data.consentVersion,
+      confirmedAt: occurredAt,
+      expectedStateVersion: stateVersion(current),
+    });
+
+    if (updated) return updated;
+
+    current = await consentStore.getContact(emailHash);
+    if (
+      current?.current_state === "unsubscribed" &&
+      timestampMs(current?.unsubscribed_at) >= data.iat
+    ) {
+      staleConfirmation();
+    }
+
+    // Another fresh confirmation may have won the CAS race. Treat that as
+    // the same successful logical outcome instead of compensating it away.
+    if (
+      current?.current_state === "subscribed" &&
+      timestampMs(current?.confirmed_at) >= data.iat
+    ) {
+      return current;
+    }
+
+    consentConflict();
+  }
+
+  async function recordUnsubscribedConsent(
+    data,
+    { providerContactId = null } = {}
+  ) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("unsubscribe", data.jti);
+
+    await consentStore.ensureContact({
+      emailHash,
+    });
+
+    const existingEvent = await consentStore.getConsentEvent(eventId);
+    const occurredAt = existingEvent?.occurred_at
+      ? new Date(existingEvent.occurred_at)
+      : new Date();
+
+    if (!existingEvent) {
+      await consentStore.appendConsentEvent({
+        eventId,
+        emailHash,
+        eventType: "unsubscribe",
+        source: "newsletter_unsubscribe_link",
+        occurredAt,
+        correlationId: eventId,
+        providerRef: providerContactId,
+        metadata: {
+          tokenIssuedAt: data.iat,
+        },
+      });
+    }
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current) consentConflict();
+
+      if (
+        current.current_state === "unsubscribed" &&
+        timestampMs(current.unsubscribed_at) >= occurredAt.getTime()
+      ) {
+        return current;
+      }
+
+      if (
+        current.current_state === "subscribed" &&
+        timestampMs(current.confirmed_at) > occurredAt.getTime()
+      ) {
+        return current;
+      }
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId,
+        currentState: "unsubscribed",
+        unsubscribedAt: occurredAt,
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function sendWelcomeEmail(data) {
+    const unsubscribeToken = deterministicUnsubscribeToken(data);
+    const unsubscribeUrl = normalizedBaseUrl + "#unsubscribe=" + unsubscribeToken;
+
+    return sendEmail({
+      to: data.email,
+      subject: "gracz.pl Newsletter — witamy!",
+      text: buildWelcomeText(unsubscribeUrl),
+      html: buildWelcomeHtml(unsubscribeUrl),
+      idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
+      entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
+    });
+  }
+
+  async function ensureProviderNewsletterOn(email, resources) {
+    const encoded = encodeURIComponent(email);
+    const current = await getContact(email);
+
+    if (!current) {
+      await api("/contacts", {
+        method: "POST",
+        body: {
+          email,
+          unsubscribed: false,
+          segments: [{ id: resources.segmentId }],
+          topics: [{ id: resources.topicId, subscription: "opt_in" }],
+        },
+        expected: [201],
+      });
+      return;
+    }
+
+    await api("/contacts/" + encoded, {
+      method: "PATCH",
+      body: { unsubscribed: false },
+      expected: [200],
+    });
+    await api(
+      "/contacts/" + encoded + "/segments/" + encodeURIComponent(resources.segmentId),
+      { method: "POST", expected: [200, 201, 409] }
+    );
+    await api("/contacts/" + encoded + "/topics", {
+      method: "PATCH",
+      body: {
+        topics: [{ id: resources.topicId, subscription: "opt_in" }],
+      },
+      expected: [200],
+    });
+  }
+
+  async function forceProviderNewsletterOff(email, resources) {
+    const encoded = encodeURIComponent(email);
+    let firstError = null;
+
+    try {
+      await api("/contacts/" + encoded + "/topics", {
+        method: "PATCH",
+        body: {
+          topics: [{ id: resources.topicId, subscription: "opt_out" }],
+        },
+        expected: [200, 404],
+      });
+    } catch (error) {
+      firstError = error;
+    }
+
+    try {
+      await api(
+        "/contacts/" + encoded +
+          "/segments/" + encodeURIComponent(resources.segmentId),
+        { method: "DELETE", expected: [200, 404] }
+      );
+    } catch (error) {
+      if (!firstError) firstError = error;
+    }
+
+    if (firstError) throw firstError;
+  }
+
+  async function markProviderOffRequired(email) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current || current.current_state === "subscribed") return current;
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId: current.provider_contact_id || null,
+        currentState: current.current_state,
+        providerBlockedAt: new Date(),
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function clearProviderOffRequired(email) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const current = await consentStore.getContact(emailHash);
+      if (!current || !current.provider_blocked_at) return current;
+
+      const updated = await consentStore.upsertContact({
+        emailHash,
+        providerContactId: current.provider_contact_id || null,
+        currentState: current.current_state,
+        clearProviderBlock: true,
+        expectedStateVersion: stateVersion(current),
+      });
+      if (updated) return updated;
+    }
+
+    consentConflict();
+  }
+
+  async function forceProviderNewsletterOffSafely(email, resources) {
+    const emailHash = consentSubjectHash(email);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const before = await consentStore.getContact(emailHash);
+
+      // A newer successful DOI has already won. Never let an older
+      // compensation disable that subscription.
+      if (before?.current_state === "subscribed") {
+        await ensureProviderNewsletterOn(email, resources);
+        await clearProviderOffRequired(email);
+        return { state: "kept_on" };
+      }
+
+      try {
+        await forceProviderNewsletterOff(email, resources);
+      } catch (error) {
+        // Persist a recoverable obligation instead of silently dropping a
+        // failed provider-off operation.
+        await markProviderOffRequired(email);
+        throw error;
+      }
+
+      const after = await consentStore.getContact(emailHash);
+      if (after?.current_state === "subscribed") {
+        // A newer confirmation committed while the provider-off writes were
+        // in flight. Restore the provider to the newer durable state.
+        await ensureProviderNewsletterOn(email, resources);
+        await clearProviderOffRequired(email);
+        return { state: "restored_newer_subscription" };
+      }
+
+      if (
+        !after ||
+        !before ||
+        stateVersion(after) === stateVersion(before)
+      ) {
+        await clearProviderOffRequired(email);
+        return { state: "off" };
+      }
+
+      // The durable state changed while we were compensating. Loop and settle
+      // against the newest state before returning.
+    }
+
+    consentConflict();
+  }
+
+  async function recoverProviderOffObligation(email, resources) {
+    const current = await consentStore.getContact(consentSubjectHash(email));
+    if (!current?.provider_blocked_at) return;
+
+    if (current.current_state === "subscribed") {
+      await ensureProviderNewsletterOn(email, resources);
+      await clearProviderOffRequired(email);
+      return;
+    }
+
+    await forceProviderNewsletterOffSafely(email, resources);
+  }
+
+  function stateVersion(contact) {
+    const version = Number(contact?.state_version);
+    if (!Number.isInteger(version) || version < 0) {
+      consentConflict();
+    }
+    return version;
+  }
+
+  function consentConflict() {
+    const error = new Error(
+      "Stan zgody newslettera zmienił się podczas operacji. Spróbuj ponownie."
+    );
+    error.code = "NEWSLETTER_CONSENT_CONFLICT";
+    error.status = 409;
+    throw error;
   }
 
   async function ensureResources() {
@@ -542,9 +1041,9 @@ export function createNewsletterManager({
     if (parts.length !== 4 || parts[0] !== TOKEN_VERSION) invalidToken();
 
     try {
-      const iv = Buffer.from(parts[1], "base64url");
-      const tag = Buffer.from(parts[2], "base64url");
-      const ciphertext = Buffer.from(parts[3], "base64url");
+      const iv = decodeCanonicalBase64Url(parts[1]);
+      const tag = decodeCanonicalBase64Url(parts[2]);
+      const ciphertext = decodeCanonicalBase64Url(parts[3]);
       if (iv.length !== 12 || tag.length !== 16 || ciphertext.length < 16) {
         invalidToken();
       }
@@ -572,11 +1071,28 @@ export function createNewsletterManager({
 
   return {
     enabled,
+    consentLedgerConfigured: consentStoreConfigured,
     requestOptIn,
     confirm,
     unsubscribe,
     baseUrl: normalizedBaseUrl,
   };
+}
+
+function decodeCanonicalBase64Url(value) {
+  if (
+    typeof value !== "string" ||
+    !value ||
+    !/^[A-Za-z0-9_-]+$/.test(value)
+  ) {
+    invalidToken();
+  }
+
+  const decoded = Buffer.from(value, "base64url");
+  if (decoded.toString("base64url") !== value) {
+    invalidToken();
+  }
+  return decoded;
 }
 
 function validateTokenPayload(data, purpose) {
@@ -634,6 +1150,14 @@ function contactPropertyValue(contact, key) {
 function contactPropertyNumber(contact, key) {
   const value = Number(contactPropertyValue(contact, key) ?? 0);
   return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function timestampMs(value) {
+  if (!value) return 0;
+  const time = value instanceof Date
+    ? value.getTime()
+    : new Date(value).getTime();
+  return Number.isFinite(time) && time > 0 ? time : 0;
 }
 
 function staleConfirmation() {
@@ -840,7 +1364,7 @@ function buildConfirmHtml(url) {
     noticeBody:
       "Samo otrzymanie tej wiadomości nie aktywuje subskrypcji. Zapis nastąpi dopiero po kliknięciu przycisku i potwierdzeniu na stronie gracz.pl.",
     footerHtml:
-      'Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
+      'Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · ' + brandHomeLinkHtml(),
   });
 }
 
@@ -881,7 +1405,7 @@ function buildWelcomeHtml(unsubscribeUrl) {
     footerHtml:
       'Nie chcesz już otrzymywać Newslettera? <a href="' +
       escapeHtml(unsubscribeUrl) +
-      '" style="color:#89ddd6;text-decoration:none;font-weight:700">Wypisz się</a>.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
+      '" style="color:#89ddd6;text-decoration:none;font-weight:700">Wypisz się</a>.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · ' + brandHomeLinkHtml(),
   });
 }
 
@@ -912,7 +1436,7 @@ function premiumEmailShell({
         escapeHtml(featureName) +
         '</div>' +
         '<div style="padding-top:7px;font-size:12px;line-height:1.55;color:#9db8b1">' +
-        escapeHtml(featureBody) +
+        brandifyEmailText(featureBody) +
         '</div></td></tr></table></td>'
     )
     .join("");
@@ -947,9 +1471,9 @@ function premiumEmailShell({
 </td></tr>
 
 <tr><td style="padding:38px 38px 22px">
-<div style="font-size:12px;line-height:1.3;color:#159f94;font-weight:800;letter-spacing:.08em">GRACZ.PL NEWSLETTER</div>
-<h1 style="margin:9px 0 13px;font-size:30px;line-height:1.15;color:#0b3b34;font-weight:900;letter-spacing:-.7px">${escapeHtml(title)}</h1>
-<p style="margin:0;font-size:15px;line-height:1.75;color:#4e6862">${escapeHtml(lead)}</p>
+<div style="font-size:12px;line-height:1.3;color:#159f94;font-weight:800;letter-spacing:.08em">${brandLogoHtml({ compact: true })}<span style="padding-left:6px">NEWSLETTER</span></div>
+<h1 style="margin:9px 0 13px;font-size:30px;line-height:1.15;color:#0b3b34;font-weight:900;letter-spacing:-.7px">${brandifyEmailText(title)}</h1>
+<p style="margin:0;font-size:15px;line-height:1.75;color:#4e6862">${brandifyEmailText(lead)}</p>
 </td></tr>
 
 <tr><td align="center" style="padding:7px 38px 31px">
@@ -958,11 +1482,11 @@ function premiumEmailShell({
 <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;padding:15px 30px;color:#052d27;text-decoration:none;font-size:14px;line-height:1;font-weight:900">${escapeHtml(buttonText)}</a>
 </td></tr>
 </table>
-<div style="padding-top:11px;font-size:10px;line-height:1.5;color:#879b96">Przycisk prowadzi wyłącznie do bezpiecznej strony gracz.pl.</div>
+<div style="padding-top:11px;font-size:10px;line-height:1.5;color:#879b96">Przycisk prowadzi wyłącznie do bezpiecznej strony ${brandLogoHtml({ compact: true })}.</div>
 </td></tr>
 
 <tr><td style="padding:0 31px 7px">
-<div style="padding:0 7px 9px;font-size:11px;color:#54736c;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(featureTitle)}</div>
+<div style="padding:0 7px 9px;font-size:11px;color:#54736c;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${brandifyEmailText(featureTitle)}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#071f1a;border-radius:18px;padding:7px">
 <tr>${featureCells}</tr>
 </table>
@@ -972,7 +1496,7 @@ function premiumEmailShell({
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #c9ece8;border-radius:15px">
 <tr><td style="padding:18px 19px">
 <div style="font-size:12px;line-height:1.3;color:#0b4d45;font-weight:900">${escapeHtml(noticeTitle)}</div>
-<div style="padding-top:6px;font-size:12px;line-height:1.65;color:#56706a">${escapeHtml(noticeBody)}</div>
+<div style="padding-top:6px;font-size:12px;line-height:1.65;color:#56706a">${brandifyEmailText(noticeBody)}</div>
 </td></tr>
 </table>
 </td></tr>
@@ -981,7 +1505,7 @@ function premiumEmailShell({
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
 <tr>
 <td style="font-size:10px;line-height:1.7;color:#8aa49e">${footerHtml}</td>
-<td align="right" valign="bottom" style="font-size:10px;line-height:1.5;color:#55726b;white-space:nowrap">© 2026 gracz.pl</td>
+<td align="right" valign="bottom" style="font-size:10px;line-height:1.5;color:#55726b;white-space:nowrap">© 2026 ${brandLogoHtml({ compact: true, onDark: true })}</td>
 </tr>
 </table>
 </td></tr>
@@ -991,6 +1515,37 @@ function premiumEmailShell({
 </table>
 </body>
 </html>`;
+}
+
+function brandLogoHtml({ compact = false, onDark = false } = {}) {
+  const fontSize = compact ? "11px" : "13px";
+  const padding = onDark ? "0" : compact ? "2px 5px" : "3px 7px";
+  const background = onDark ? "transparent" : "#071f1a";
+  const radius = onDark ? "0" : "5px";
+  return (
+    '<span style="display:inline-block;vertical-align:baseline;background:' +
+    background +
+    ';border-radius:' +
+    radius +
+    ';padding:' +
+    padding +
+    ';font-size:' +
+    fontSize +
+    ';line-height:1;font-weight:900;letter-spacing:-.25px;white-space:nowrap">' +
+    '<span style="color:#ffffff">gracz</span><span style="color:#ef4555">.pl</span></span>'
+  );
+}
+
+function brandifyEmailText(value) {
+  return escapeHtml(value).replace(/gracz\.pl/gi, brandLogoHtml({ compact: true }));
+}
+
+function brandHomeLinkHtml() {
+  return (
+    '<a href="https://gracz.pl/" style="text-decoration:none">' +
+    brandLogoHtml({ compact: true, onDark: true }) +
+    "</a>"
+  );
 }
 
 function escapeHtml(value) {

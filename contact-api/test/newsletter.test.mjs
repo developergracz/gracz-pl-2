@@ -3,10 +3,23 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import net from "node:net";
+import { createHash, createHmac } from "node:crypto";
 import { createNewsletterManager } from "../newsletter.mjs";
+import { createMemoryNewsletterConsentStore } from "../persistence/memory-newsletter-consent-store.mjs";
 
 const CONFIRMED_AT_KEY = "gracz_newsletter_confirmed_at";
 const UNSUBSCRIBED_AT_KEY = "gracz_newsletter_unsubscribed_at";
+const CONSENT_HASH_SECRET = "test-consent-" + "h".repeat(40);
+
+function consentEmailHash(email) {
+  const key = createHash("sha256")
+    .update("newsletter-consent-subject:", "utf8")
+    .update(CONSENT_HASH_SECRET, "utf8")
+    .digest();
+  return createHmac("sha256", key)
+    .update(String(email).trim(), "utf8")
+    .digest("hex");
+}
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -73,6 +86,10 @@ async function createProvider(t) {
     contactGet503Remaining: 0,
     contactGetDelayMs: 0,
     failFinalConfirmPatchStatus: 0,
+    welcomeEmail503Remaining: 0,
+    topicOptOut503Remaining: 0,
+    segmentDelete503Remaining: 0,
+    beforeTopicOptOut: null,
   };
 
   const stats = {
@@ -104,6 +121,16 @@ async function createProvider(t) {
 
     if (url.pathname === "/emails" && method === "POST") {
       const body = await readBody(req);
+      if (
+        /Newsletter — witamy!/i.test(String(body.subject || "")) &&
+        behavior.welcomeEmail503Remaining > 0
+      ) {
+        behavior.welcomeEmail503Remaining -= 1;
+        return send(res, 503, {
+          name: "provider_unavailable",
+          message: "forced welcome failure",
+        });
+      }
       const key = String(req.headers["idempotency-key"] || "");
       const serialized = JSON.stringify(body);
       const existing = emailIdempotency.get(key);
@@ -221,6 +248,13 @@ async function createProvider(t) {
       }
       if (method === "DELETE") {
         stats.contactMutations += 1;
+        if (behavior.segmentDelete503Remaining > 0) {
+          behavior.segmentDelete503Remaining -= 1;
+          return send(res, 503, {
+            name: "provider_unavailable",
+            message: "forced segment delete failure",
+          });
+        }
         set.delete(segmentId);
         return send(res, 200, {
           object: "contact_segment",
@@ -250,6 +284,21 @@ async function createProvider(t) {
       stats.contactMutations += 1;
       const email = decodeURIComponent(topicMatch[1]);
       const body = await readBody(req);
+      const isOptOut = (body.topics || []).some(
+        (item) => item.subscription === "opt_out"
+      );
+      if (isOptOut && behavior.topicOptOut503Remaining > 0) {
+        behavior.topicOptOut503Remaining -= 1;
+        return send(res, 503, {
+          name: "provider_unavailable",
+          message: "forced topic opt-out failure",
+        });
+      }
+      if (isOptOut && typeof behavior.beforeTopicOptOut === "function") {
+        const hook = behavior.beforeTopicOptOut;
+        behavior.beforeTopicOptOut = null;
+        await hook();
+      }
       const states = topicStates.get(email) || new Map();
       topicStates.set(email, states);
       for (const item of body.topics || []) {
@@ -352,6 +401,8 @@ async function createProvider(t) {
 }
 
 function createManager(provider, options = {}) {
+  provider.consentStore ||= createMemoryNewsletterConsentStore();
+
   return createNewsletterManager({
     secret: "test-" + "n".repeat(40),
     resendApiKey: "test-key",
@@ -360,11 +411,13 @@ function createManager(provider, options = {}) {
     emailFrom: "gracz.pl <kontakt@gracz.pl>",
     replyTo: "admin@gracz.pl",
     baseUrl: "https://gracz.pl/newsletter/",
+    consentStore: provider.consentStore,
+    consentHashSecret: CONSENT_HASH_SECRET,
     ...options,
   });
 }
 
-test("newsletter R3 lifecycle uses documented nested properties and safe state transitions", async (t) => {
+test("hybrid newsletter lifecycle uses Resend operational state and first-party consent audit", async (t) => {
   const provider = await createProvider(t);
   const manager = createManager(provider);
 
@@ -375,6 +428,16 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   });
 
   assert.equal(requested.state, "confirmation_sent");
+
+  const consentHash = consentEmailHash("jan@example.test");
+  const pendingLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(pendingLedgerContact.current_state, "pending");
+  let consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.deepEqual(
+    consentEvents.map((event) => event.event_type),
+    ["opt_in_requested"]
+  );
+
   assert.equal(provider.contacts.size, 0, "contact must not exist before double opt-in");
   assert.equal(provider.emails.length, 1);
   assert.match(provider.emails[0].body.subject, /gracz\.pl Newsletter — potwierdź zapis/);
@@ -412,6 +475,15 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.memberships.get("jan@example.test").has("segment-1"), true);
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_in");
 
+  const confirmedLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(confirmedLedgerContact.current_state, "subscribed");
+  assert.ok(confirmedLedgerContact.confirmed_at);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.deepEqual(
+    consentEvents.map((event) => event.event_type),
+    ["opt_in_requested", "opt_in_confirmed"]
+  );
+
   const documented = provider.providerContact(contact);
   assert.equal(
     documented.properties[CONFIRMED_AT_KEY].value,
@@ -429,6 +501,11 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(repeated.state, "already_subscribed");
   assert.equal(provider.stats.contactMutations, mutationsBeforeReplay);
   assert.equal(provider.emails.length, 2);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "opt_in_confirmed").length,
+    1
+  );
 
   await manager.requestOptIn({
     email: "jan@example.test",
@@ -450,6 +527,15 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_out");
   assert.ok(Number(contact.properties[UNSUBSCRIBED_AT_KEY]) > 0);
 
+  const unsubscribedLedgerContact = await provider.consentStore.getContact(consentHash);
+  assert.equal(unsubscribedLedgerContact.current_state, "unsubscribed");
+  assert.ok(unsubscribedLedgerContact.unsubscribed_at);
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "unsubscribe").length,
+    1
+  );
+
   await assert.rejects(
     () => manager.confirm(secondConfirmToken),
     (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
@@ -467,6 +553,13 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_in");
   assert.equal(contact.unsubscribed, false);
   assert.equal(provider.emails.length, 5);
+
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "resubscribe").length,
+    1
+  );
+
   const thirdUnsubscribeToken = extractToken(provider.emails[4], "unsubscribe");
 
   const confirmedAtAfterResubscribe = Number(contact.properties[CONFIRMED_AT_KEY]);
@@ -500,8 +593,363 @@ test("newsletter R3 lifecycle uses documented nested properties and safe state t
   assert.equal(provider.memberships.get("jan@example.test").has("segment-1"), false);
   assert.equal(provider.topicStates.get("jan@example.test").get("topic-1"), "opt_out");
 
+  consentEvents = await provider.consentStore.listConsentEvents(consentHash);
+  assert.equal(
+    consentEvents.filter((event) => event.event_type === "unsubscribe").length,
+    2,
+    "reusing the same unsubscribe token must not append a duplicate event"
+  );
+
   assert.ok(thirdUnsubscribeToken.startsWith("n1."));
 });
+
+test("hybrid newsletter keeps Resend operational state and no reconciliation engine", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  assert.equal(
+    typeof manager.reconcile,
+    "undefined",
+    "hybrid mode must not expose a second subscription-state reconciliation engine"
+  );
+
+  await manager.requestOptIn({
+    email: "hybrid@example.test",
+    name: "Hybrid Test",
+    source: "newsletter_page",
+  });
+  const firstToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(firstToken);
+
+  provider.hostedUnsubscribe("hybrid@example.test");
+
+  await assert.rejects(
+    () => manager.confirm(firstToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+
+  await manager.requestOptIn({
+    email: "hybrid@example.test",
+    name: "Hybrid Test",
+    source: "newsletter_page",
+  });
+  const freshToken = extractToken(provider.emails[2], "confirm");
+  const result = await manager.confirm(freshToken);
+
+  assert.equal(result.state, "resubscribed");
+  assert.equal(provider.contacts.get("hybrid@example.test").unsubscribed, false);
+  assert.equal(
+    provider.memberships.get("hybrid@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("hybrid@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
+test("hybrid concurrent fresh confirmations keep provider active safely", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const originalToken = extractToken(provider.emails[0], "confirm");
+  await manager.confirm(originalToken);
+
+  provider.hostedUnsubscribe("concurrent@example.test");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshA = extractToken(provider.emails[2], "confirm");
+
+  await manager.requestOptIn({
+    email: "concurrent@example.test",
+    name: "Concurrent Test",
+    source: "newsletter_page",
+  });
+  const freshB = extractToken(provider.emails[3], "confirm");
+
+  const results = await Promise.all([
+    manager.confirm(freshA),
+    manager.confirm(freshB),
+  ]);
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((entry) => entry.state === "resubscribed"));
+  assert.equal(
+    provider.memberships.get("concurrent@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("concurrent@example.test").get("topic-1"),
+    "opt_in"
+  );
+});
+
+test("hybrid confirmation fails closed if consent commit loses to unsubscribe", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectUnsubscribeRace = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    getContact: (...args) => backingStore.getContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    async upsertContact(args) {
+      if (injectUnsubscribeRace && args.currentState === "subscribed") {
+        injectUnsubscribeRace = false;
+        const current = await backingStore.getContact(args.emailHash);
+        await backingStore.upsertContact({
+          emailHash: args.emailHash,
+          providerContactId: args.providerContactId,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+        return null;
+      }
+      return backingStore.upsertContact(args);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "race-off@example.test",
+    name: "Race Off",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+  injectUnsubscribeRace = true;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) =>
+      error?.code === "NEWSLETTER_CONFIRMATION_STALE" ||
+      error?.code === "NEWSLETTER_CONSENT_CONFLICT"
+  );
+
+  assert.equal(
+    provider.contacts.has("race-off@example.test"),
+    false,
+    "failed durable consent commit must happen before any provider activation"
+  );
+});
+
+test("hybrid delayed compensation cannot disable a newer successful confirmation", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectWithdrawalAfterActivation = false;
+  let injected = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    upsertContact: (...args) => backingStore.upsertContact(...args),
+    async getContact(emailHash) {
+      if (
+        injectWithdrawalAfterActivation &&
+        !injected &&
+        provider.topicStates.get("delayed-comp@example.test")?.get("topic-1") === "opt_in"
+      ) {
+        injected = true;
+        const current = await backingStore.getContact(emailHash);
+        await backingStore.upsertContact({
+          emailHash,
+          providerContactId: current?.provider_contact_id || null,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+      }
+      return backingStore.getContact(emailHash);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "delayed-comp@example.test",
+    name: "Delayed Compensation",
+    source: "newsletter_page",
+  });
+  const tokenA = extractToken(provider.emails[0], "confirm");
+  injectWithdrawalAfterActivation = true;
+
+  let tokenB = "";
+  provider.behavior.beforeTopicOptOut = async () => {
+    await manager.requestOptIn({
+      email: "delayed-comp@example.test",
+      name: "Delayed Compensation",
+      source: "newsletter_page",
+    });
+    tokenB = extractToken(provider.emails.at(-1), "confirm");
+    const resultB = await manager.confirm(tokenB);
+    assert.equal(resultB.state, "resubscribed");
+  };
+
+  await assert.rejects(
+    () => manager.confirm(tokenA),
+    (error) =>
+      error?.code === "NEWSLETTER_CONFIRMATION_STALE" ||
+      error?.code === "NEWSLETTER_CONSENT_CONFLICT"
+  );
+
+  assert.ok(tokenB, "newer confirmation must run during delayed compensation");
+  const ledger = await backingStore.getContact(
+    consentEmailHash("delayed-comp@example.test")
+  );
+  assert.equal(ledger.current_state, "subscribed");
+  assert.equal(
+    provider.memberships.get("delayed-comp@example.test").has("segment-1"),
+    true,
+    "older compensation must not remove the newer subscription"
+  );
+  assert.equal(
+    provider.topicStates.get("delayed-comp@example.test").get("topic-1"),
+    "opt_in",
+    "older compensation must restore provider topic when a newer DOI wins"
+  );
+});
+
+test("hybrid welcome failure cannot leave provider active without durable consent", async (t) => {
+  const provider = await createProvider(t);
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "welcome-failure@example.test",
+    name: "Welcome Failure",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+
+  provider.behavior.welcomeEmail503Remaining = 4;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) => error?.code === "NEWSLETTER_MAIL_FAILED"
+  );
+
+  const ledger = await provider.consentStore.getContact(
+    consentEmailHash("welcome-failure@example.test")
+  );
+  assert.equal(
+    ledger.current_state,
+    "subscribed",
+    "durable consent must exist before provider activation and welcome delivery"
+  );
+  assert.equal(
+    provider.memberships.get("welcome-failure@example.test").has("segment-1"),
+    true
+  );
+  assert.equal(
+    provider.topicStates.get("welcome-failure@example.test").get("topic-1"),
+    "opt_in"
+  );
+
+  const retried = await manager.confirm(token);
+  assert.equal(retried.state, "subscribed");
+  assert.equal(
+    provider.emails.filter((email) => /Newsletter — witamy!/i.test(email.body.subject)).length,
+    1,
+    "deterministic replay must deliver exactly one welcome"
+  );
+});
+
+test("hybrid exhausted provider-off compensation persists and recovers an obligation", async (t) => {
+  const provider = await createProvider(t);
+  const backingStore = createMemoryNewsletterConsentStore();
+  let injectWithdrawalAfterActivation = false;
+  let injected = false;
+
+  provider.consentStore = Object.freeze({
+    ensureContact: (...args) => backingStore.ensureContact(...args),
+    appendConsentEvent: (...args) => backingStore.appendConsentEvent(...args),
+    getConsentEvent: (...args) => backingStore.getConsentEvent(...args),
+    listConsentEvents: (...args) => backingStore.listConsentEvents(...args),
+    upsertContact: (...args) => backingStore.upsertContact(...args),
+    async getContact(emailHash) {
+      if (
+        injectWithdrawalAfterActivation &&
+        !injected &&
+        provider.topicStates.get("recover-off@example.test")?.get("topic-1") === "opt_in"
+      ) {
+        injected = true;
+        const current = await backingStore.getContact(emailHash);
+        await backingStore.upsertContact({
+          emailHash,
+          providerContactId: current?.provider_contact_id || null,
+          currentState: "unsubscribed",
+          unsubscribedAt: new Date(Date.now() + 5),
+          expectedStateVersion: current.state_version,
+        });
+      }
+      return backingStore.getContact(emailHash);
+    },
+  });
+
+  const manager = createManager(provider);
+
+  await manager.requestOptIn({
+    email: "recover-off@example.test",
+    name: "Recover Off",
+    source: "newsletter_page",
+  });
+  const token = extractToken(provider.emails[0], "confirm");
+
+  injectWithdrawalAfterActivation = true;
+  provider.behavior.topicOptOut503Remaining = 4;
+  provider.behavior.segmentDelete503Remaining = 4;
+
+  await assert.rejects(
+    () => manager.confirm(token),
+    (error) => error?.code === "NEWSLETTER_PROVIDER_FAILED"
+  );
+
+  let ledger = await backingStore.getContact(
+    consentEmailHash("recover-off@example.test")
+  );
+  assert.equal(ledger.current_state, "unsubscribed");
+  assert.ok(
+    ledger.provider_blocked_at,
+    "failed provider-off operation must persist a recovery obligation"
+  );
+
+  await manager.requestOptIn({
+    email: "recover-off@example.test",
+    name: "Recover Off",
+    source: "newsletter_page",
+  });
+
+  ledger = await backingStore.getContact(
+    consentEmailHash("recover-off@example.test")
+  );
+  assert.equal(
+    ledger.provider_blocked_at,
+    null,
+    "next newsletter interaction must recover and clear the provider-off obligation"
+  );
+  assert.equal(
+    provider.memberships.get("recover-off@example.test").has("segment-1"),
+    false
+  );
+  assert.equal(
+    provider.topicStates.get("recover-off@example.test").get("topic-1"),
+    "opt_out"
+  );
+});
+
 
 test("newsletter R3 repairs partial activation without duplicate welcome", async (t) => {
   const provider = await createProvider(t);
