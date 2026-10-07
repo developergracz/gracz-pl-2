@@ -81,6 +81,15 @@ async function createProvider(t) {
   const memberships = new Map();
   const topicStates = new Map();
 
+  function resolveContactEmail(identifier) {
+    const value = decodeURIComponent(String(identifier || ""));
+    if (contacts.has(value)) return value;
+    for (const [email, contact] of contacts.entries()) {
+      if (contact?.id === value) return email;
+    }
+    return value;
+  }
+
   const behavior = {
     contactGet429Remaining: 0,
     contactGet503Remaining: 0,
@@ -220,7 +229,7 @@ async function createProvider(t) {
 
     const segmentsListMatch = url.pathname.match(/^\/contacts\/([^/]+)\/segments$/);
     if (segmentsListMatch && method === "GET") {
-      const email = decodeURIComponent(segmentsListMatch[1]);
+      const email = resolveContactEmail(segmentsListMatch[1]);
       const ids = memberships.get(email) || new Set();
       return send(res, 200, {
         object: "list",
@@ -233,7 +242,7 @@ async function createProvider(t) {
       /^\/contacts\/([^/]+)\/segments\/([^/]+)$/
     );
     if (segmentMatch) {
-      const email = decodeURIComponent(segmentMatch[1]);
+      const email = resolveContactEmail(segmentMatch[1]);
       const segmentId = decodeURIComponent(segmentMatch[2]);
       const set = memberships.get(email) || new Set();
       memberships.set(email, set);
@@ -267,7 +276,7 @@ async function createProvider(t) {
 
     const topicMatch = url.pathname.match(/^\/contacts\/([^/]+)\/topics$/);
     if (topicMatch && method === "GET") {
-      const email = decodeURIComponent(topicMatch[1]);
+      const email = resolveContactEmail(topicMatch[1]);
       const states = topicStates.get(email) || new Map();
       return send(res, 200, {
         object: "list",
@@ -282,7 +291,7 @@ async function createProvider(t) {
     }
     if (topicMatch && method === "PATCH") {
       stats.contactMutations += 1;
-      const email = decodeURIComponent(topicMatch[1]);
+      const email = resolveContactEmail(topicMatch[1]);
       const body = await readBody(req);
       const isOptOut = (body.topics || []).some(
         (item) => item.subscription === "opt_out"
@@ -339,7 +348,7 @@ async function createProvider(t) {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      const email = decodeURIComponent(contactMatch[1]);
+      const email = resolveContactEmail(contactMatch[1]);
       const contact = contacts.get(email);
       return contact
         ? send(res, 200, providerContact(contact))
@@ -348,7 +357,7 @@ async function createProvider(t) {
 
     if (contactMatch && method === "PATCH") {
       stats.contactMutations += 1;
-      const email = decodeURIComponent(contactMatch[1]);
+      const email = resolveContactEmail(contactMatch[1]);
       const current = contacts.get(email);
       if (!current) return send(res, 404, { name: "not_found" });
       const body = await readBody(req);
