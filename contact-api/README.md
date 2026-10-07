@@ -64,14 +64,12 @@ Do not merge or deploy this branch solely because CI is green. Before production
 
 The API is compatible with an upstream WAF/reverse proxy. A future edge layer should restrict direct backend access at infrastructure level rather than trusting a browser-supplied secret header.
 
-
 ## Render client IP trust model
 
 - Use `X-Forwarded-For` for the client IP on Render.
 - Treat the first valid address as the real client address, per Render's documented behavior.
 - Do not trust `CF-Connecting-IP` directly in application code.
 - The public `.onrender.com` endpoint remains reachable, so Origin/CORS is not an authentication boundary.
-
 
 ## GRACZ.PL PREMIUM MAIL RESPONSE R1
 
@@ -130,7 +128,6 @@ After deployment:
 7. click Reply in the recipient mailbox and confirm it targets `CONTACT_TO`;
 8. reuse the original secure link and confirm the API rejects the second send.
 
-
 ## Newsletter FULL MAX PREMIUM R1
 
 Newsletter uses a separate consent from contact-form processing and requires double opt-in.
@@ -170,3 +167,41 @@ Do not reuse a send-only contact-form key if it lacks Contacts/Segments/Topics p
 - Newsletter endpoint has separate IP and email rate limits, honeypot and form-timing checks.
 - Server logs use request IDs and hashed email identifiers rather than raw subscriber addresses.
 - Broadcasts should target the dedicated Segment and Topic so opt-out state is respected.
+
+## R4.1 durable persistence foundation
+
+R4.1 introduces the PostgreSQL foundation required by the Contact + Premium Reply + Newsletter R4 architecture.
+
+### Scope
+
+- PostgreSQL connection wrapper with explicit transactions.
+- Ordered, checksummed SQL migrations protected by a PostgreSQL advisory lock.
+- Durable tables for:
+  - contact cases,
+  - one-time Premium Reply token state,
+  - critical idempotency,
+  - newsletter operational state,
+  - append-only first-party newsletter consent events.
+- Repository primitives with atomic reply-token claim and idempotency reservation.
+- PostgreSQL integration tests executed in GitHub Actions against a real PostgreSQL service.
+- Append-only protection for the consent-event ledger enforced inside PostgreSQL.
+
+### Production variables
+
+- `DATABASE_URL` — required before any R4 critical flow is switched to durable persistence.
+- `DB_POOL_MAX` — optional, default 10.
+- `DB_IDLE_TIMEOUT_MS` — optional, default 30000.
+- `DB_CONNECT_TIMEOUT_MS` — optional, default 5000.
+
+The PostgreSQL driver does not override TLS settings from the provider connection string. Use the Render-provided connection URL and its TLS parameters.
+
+### Commands
+
+- `npm run migrate` — apply pending checksummed migrations.
+- `npm run test:persistence` — run PostgreSQL integration tests.
+
+### Fail-closed rule
+
+Critical R4 guarantees must never silently fall back to process-memory Maps when PostgreSQL is unavailable. The persistence layer returns `PERSISTENCE_NOT_CONFIGURED` when no database is configured.
+
+**R4.1 does not yet switch the live contact, Premium Reply or newsletter flows to PostgreSQL.** That wiring belongs to the next staged PRs so existing production behavior remains unchanged until each durable path is independently tested and audited.

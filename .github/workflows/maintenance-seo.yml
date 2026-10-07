@@ -39,9 +39,45 @@ jobs:
           node --check contact-api/server.mjs
           node --check contact-api/premium-reply.mjs
           node --check contact-api/newsletter.mjs
+          node --check contact-api/persistence/database.mjs
+          node --check contact-api/persistence/migrator.mjs
+          node --check contact-api/persistence/repositories.mjs
+          node --check contact-api/integration/persistence.integration.test.mjs
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
       - name: Run security headers and CSP gate
         run: node scripts/check-security-headers.mjs
+
+  persistence:
+    name: PostgreSQL persistence gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gracz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gracz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/gracz_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install persistence dependencies
+        run: npm --prefix contact-api install --no-audit --no-fund
+      - name: Run PostgreSQL persistence integration tests
+        run: npm --prefix contact-api run test:persistence
