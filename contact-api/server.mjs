@@ -3,6 +3,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
+import { createPremiumReplyManager } from "./premium-reply.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -14,6 +15,7 @@ const EMAIL_FROM = String(process.env.EMAIL_FROM || "Gracz.pl <kontakt@gracz.pl>
 const CONTACT_TO = String(process.env.CONTACT_TO || "").trim();
 const EMAIL_FROM_ADDRESS = extractMailbox(EMAIL_FROM);
 const CONTACT_TO_ADDRESS = extractMailbox(CONTACT_TO);
+const CONTACT_REPLY_SECRET = String(process.env.CONTACT_REPLY_SECRET || "").trim();
 
 if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
@@ -21,6 +23,12 @@ if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
 if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must use different mailbox addresses");
 }
+
+const premiumReply = createPremiumReplyManager({
+  secret: CONTACT_REPLY_SECRET,
+  ownerAddress: CONTACT_TO_ADDRESS,
+});
+
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
 const TURNSTILE_ENABLED = Boolean(TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY);
@@ -71,6 +79,7 @@ const DOMAIN_TYPOS = new Map([
 ]);
 
 const ipBuckets = new Map();
+const replyIpBuckets = new Map();
 const emailBuckets = new Map();
 const duplicateSubmissions = new Map();
 const idempotencyCache = new Map();
@@ -119,7 +128,12 @@ createServer(async (req, res) => {
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
+        premiumReplyConfigured: premiumReply.enabled,
       });
+    }
+
+    if (url.pathname === "/reply-context" || url.pathname === "/reply") {
+      return await handlePremiumReplyRequest(req, res, url, requestId);
     }
 
     if (url.pathname !== "/contact") {
@@ -223,20 +237,7 @@ createServer(async (req, res) => {
 
     reservedIdempotencyKey = reserveIdempotency(ip, idempotencyKey, requestFingerprint);
 
-    const text = [
-      "Nowa wiadomość z formularza kontaktowego gracz.pl",
-      "",
-      "Imię i nazwisko: " + payload.name,
-      "E-mail nadawcy: " + payload.email,
-      "Kategoria: " + payload.category,
-      "Temat: " + payload.subject,
-      "Strona źródłowa: " + payload.page,
-      "",
-      "Wiadomość:",
-      payload.message,
-      "",
-      "ID zgłoszenia: " + requestId,
-    ].join("\n");
+    const adminDelivery = premiumReply.createAdminDelivery(payload, requestId);
 
     let response;
     try {
@@ -252,7 +253,8 @@ createServer(async (req, res) => {
           to: [CONTACT_TO_ADDRESS],
           reply_to: payload.email,
           subject: "gracz.pl " + payload.category + " — " + payload.subject,
-          text,
+          text: adminDelivery.text,
+          html: adminDelivery.html,
         }),
         signal: AbortSignal.timeout(10_000),
       });
@@ -346,8 +348,134 @@ createServer(async (req, res) => {
     configured: Boolean(
       RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
     ),
+    premiumReplyConfigured: premiumReply.enabled,
   });
 });
+
+async function handlePremiumReplyRequest(req, res, url, requestId) {
+  const origin = String(req.headers.origin || "");
+  if (!ALLOWED_ORIGINS.has(origin)) {
+    return json(res, 403, {
+      error: { code: "ORIGIN_NOT_ALLOWED", message: "Niedozwolone źródło żądania." },
+    });
+  }
+
+  setCors(res, origin);
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "600",
+      "Vary": "Origin",
+    });
+    return res.end();
+  }
+
+  if (req.method !== "POST") {
+    return json(res, 405, {
+      error: { code: "METHOD_NOT_ALLOWED", message: "Niedozwolona metoda." },
+    });
+  }
+
+  const ip = clientIp(req) || "unknown";
+  rateLimit(
+    replyIpBuckets,
+    hashValue(ip),
+    15 * 60 * 1000,
+    20,
+    "Za dużo prób użycia panelu odpowiedzi. Spróbuj ponownie później."
+  );
+
+  const body = await readJson(req, 16_384);
+  const token = typeof body.token === "string" ? body.token : "";
+
+  if (url.pathname === "/reply-context") {
+    const context = premiumReply.getPublicContext(token);
+    return json(res, 200, { ok: true, context });
+  }
+
+  if (!RESEND_API_KEY || !EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
+    return json(res, 503, {
+      error: {
+        code: "MAIL_NOT_CONFIGURED",
+        message: "Kanał wysyłki wiadomości nie jest skonfigurowany.",
+      },
+    });
+  }
+
+  ensureProviderCircuitClosed();
+
+  const delivery = premiumReply.prepareReply(token, body.message);
+  let response;
+
+  try {
+    response = await fetch(RESEND_ENDPOINT, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer " + RESEND_API_KEY,
+        "content-type": "application/json",
+        "Idempotency-Key": premiumReply.providerIdempotencyKey(delivery.jti),
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [delivery.to],
+        reply_to: delivery.replyTo,
+        subject: delivery.subject,
+        text: delivery.text,
+        html: delivery.html,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (error) {
+    premiumReply.releaseReply(delivery.tokenKey);
+    recordProviderFailure();
+    throw error;
+  }
+
+  const raw = await response.text().catch(() => "");
+
+  if (!response.ok) {
+    premiumReply.releaseReply(delivery.tokenKey);
+    if (response.status === 408 || response.status === 429 || response.status >= 500) {
+      recordProviderFailure();
+    }
+
+    console.error("[contact-reply] provider rejected", {
+      requestId,
+      status: response.status,
+      contactRequestId: delivery.requestId,
+    });
+
+    return json(res, 502, {
+      error: {
+        code: "MAIL_DELIVERY_FAILED",
+        message: "Nie udało się wysłać odpowiedzi. Spróbuj ponownie później.",
+      },
+    });
+  }
+
+  let result = {};
+  try {
+    result = raw ? JSON.parse(raw) : {};
+  } catch {}
+
+  premiumReply.markReplySent(delivery.tokenKey);
+  recordProviderSuccess();
+
+  console.log("[contact-reply] sent", {
+    requestId,
+    contactRequestId: delivery.requestId,
+    providerId: result.id || null,
+    recipientHash: hashValue(delivery.to).slice(0, 12),
+  });
+
+  return json(res, 200, {
+    ok: true,
+    id: delivery.requestId,
+  });
+}
 
 function readRiskThreshold(name, fallback) {
   const raw = process.env[name];
