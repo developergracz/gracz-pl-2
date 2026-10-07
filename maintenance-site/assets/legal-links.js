@@ -2,6 +2,7 @@
   'use strict';
 
   var CONTACT_API='https://gracz-contact-api.onrender.com/contact';
+  var NEWSLETTER_API='https://gracz-contact-api.onrender.com/newsletter/subscribe';
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
   var lastTrigger=null;
@@ -284,7 +285,132 @@
     }
   }
 
+
+  function ensureFooterNewsletterStyles(){
+    if(document.querySelector('link[data-footer-newsletter-style]'))return;
+    var link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/assets/footer-newsletter.css?v=r1';
+    link.setAttribute('data-footer-newsletter-style','');
+    document.head.appendChild(link);
+  }
+
+  function setFooterNewsletterStatus(form,text,type){
+    var status=form.querySelector('[data-footer-newsletter-status]');
+    if(!status)return;
+    status.textContent=text||'';
+    status.classList.toggle('is-error',type==='error');
+  }
+
+  function enhanceFooterNewsletter(form){
+    if(form.classList.contains('footer-newsletter-live'))return;
+    var email=form.querySelector('input[type="email"]');
+    var submit=form.querySelector('button[type="submit"]');
+    if(!email||!submit)return;
+
+    ensureFooterNewsletterStyles();
+    form.classList.add('footer-newsletter-live');
+    form.setAttribute('aria-label','Zapis do newslettera gracz.pl');
+    form.dataset.newsletterOpenedAt=String(Date.now());
+
+    email.name='email';
+    email.required=true;
+    email.maxLength=254;
+    email.autocomplete='email';
+    email.setAttribute('inputmode','email');
+
+    var consent=document.createElement('label');
+    consent.className='footer-newsletter-consent';
+    consent.setAttribute('data-footer-newsletter-consent','');
+    consent.innerHTML='<input name="consent" type="checkbox" required><span>Chcę otrzymywać newsletter gracz.pl. Zapis jest dobrowolny, wymaga potwierdzenia e-mail i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter">Polityka prywatności</a>.</span>';
+    form.appendChild(consent);
+
+    var honeypot=document.createElement('div');
+    honeypot.className='footer-newsletter-honeypot';
+    honeypot.setAttribute('aria-hidden','true');
+    honeypot.innerHTML='<label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label>';
+    form.appendChild(honeypot);
+
+    var status=document.createElement('p');
+    status.className='footer-newsletter-status';
+    status.setAttribute('data-footer-newsletter-status','');
+    status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
+    form.appendChild(status);
+  }
+
+  function initFooterNewsletters(){
+    var forms=document.querySelectorAll('form[data-newsletter]');
+    if(!forms.length)return;
+    Array.prototype.forEach.call(forms,enhanceFooterNewsletter);
+  }
+
+  async function submitFooterNewsletter(form){
+    if(form.dataset.newsletterSending==='1')return;
+    var email=form.elements.email;
+    var consent=form.elements.consent;
+    var submit=form.querySelector('button[type="submit"]');
+    if(!email||!consent||!submit)return;
+
+    setFooterNewsletterStatus(form,'');
+    if(!form.reportValidity())return;
+
+    form.dataset.newsletterSending='1';
+    submit.disabled=true;
+    var originalText=submit.textContent;
+    submit.textContent='Wysyłanie…';
+    setFooterNewsletterStatus(form,'Łączę z bezpiecznym kanałem gracz.pl. Przy pierwszym uruchomieniu może to potrwać kilkanaście sekund.');
+
+    try{
+      var response=await fetch(NEWSLETTER_API,{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          name:'',
+          email:String(email.value||'').trim(),
+          consent:Boolean(consent.checked),
+          website:String(form.elements.website&&form.elements.website.value||'').trim(),
+          startedAt:Number(form.dataset.newsletterOpenedAt||Date.now())
+        }),
+        mode:'cors',
+        credentials:'omit'
+      });
+      var body={};
+      try{body=await response.json();}catch(_){}
+      if(!response.ok||body.ok!==true){
+        var safeMessage=body&&body.error&&typeof body.error.message==='string'
+          ?body.error.message
+          :'Nie udało się rozpocząć zapisu. Spróbuj ponownie za chwilę.';
+        var error=new Error(safeMessage);
+        error.code=body&&body.error&&body.error.code?String(body.error.code):'';
+        throw error;
+      }
+
+      setFooterNewsletterStatus(form,'Sprawdź skrzynkę e-mail. Wysłaliśmy bezpieczny link potwierdzający zapis.');
+      form.reset();
+      form.dataset.newsletterOpenedAt=String(Date.now());
+    }catch(error){
+      setFooterNewsletterStatus(form,error&&error.message?error.message:'Nie udało się rozpocząć zapisu. Spróbuj ponownie za chwilę.','error');
+      var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
+      if(error&&emailCodes.indexOf(error.code)!==-1)email.focus();
+      else submit.focus();
+    }finally{
+      form.dataset.newsletterSending='0';
+      submit.disabled=false;
+      submit.textContent=originalText;
+    }
+  }
+
   loadPortalSearch();
+  initFooterNewsletters();
+
+  document.addEventListener('submit',function(event){
+    var form=event.target&&event.target.matches&&event.target.matches('form[data-newsletter]')?event.target:null;
+    if(!form||!form.classList.contains('footer-newsletter-live'))return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    submitFooterNewsletter(form);
+  },true);
 
   document.addEventListener('click',function(event){
     var search=event.target.closest('[data-modal="search"],[data-gracz-search]');
