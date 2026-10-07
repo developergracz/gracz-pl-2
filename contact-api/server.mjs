@@ -666,7 +666,7 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
 
   ensureProviderCircuitClosed();
 
-  const delivery = premiumReply.prepareReply(token, body.message);
+  const delivery = await premiumReply.prepareReply(token, body.message);
   let response;
 
   try {
@@ -675,7 +675,7 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
       headers: {
         authorization: "Bearer " + RESEND_API_KEY,
         "content-type": "application/json",
-        "Idempotency-Key": premiumReply.providerIdempotencyKey(delivery.jti),
+        "Idempotency-Key": delivery.providerIdempotencyKey,
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
@@ -688,7 +688,19 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
-    premiumReply.releaseReply(delivery.tokenKey);
+    try {
+      await premiumReply.releaseReply(
+        delivery.tokenKey,
+        delivery.messageHash,
+        error?.code || "MAIL_PROVIDER_NETWORK_ERROR"
+      );
+    } catch (persistenceError) {
+      console.error("[contact-reply] release failed", {
+        requestId,
+        contactRequestId: delivery.requestId,
+        code: persistenceError?.code || "PERSISTENCE_ERROR",
+      });
+    }
     recordProviderFailure();
     throw error;
   }
@@ -696,7 +708,20 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
   const raw = await response.text().catch(() => "");
 
   if (!response.ok) {
-    premiumReply.releaseReply(delivery.tokenKey);
+    try {
+      await premiumReply.releaseReply(
+        delivery.tokenKey,
+        delivery.messageHash,
+        "MAIL_PROVIDER_" + response.status
+      );
+    } catch (persistenceError) {
+      console.error("[contact-reply] release failed", {
+        requestId,
+        contactRequestId: delivery.requestId,
+        code: persistenceError?.code || "PERSISTENCE_ERROR",
+      });
+    }
+
     if (response.status === 408 || response.status === 429 || response.status >= 500) {
       recordProviderFailure();
     }
@@ -720,7 +745,11 @@ async function handlePremiumReplyRequest(req, res, url, requestId) {
     result = raw ? JSON.parse(raw) : {};
   } catch {}
 
-  premiumReply.markReplySent(delivery.tokenKey);
+  await premiumReply.markReplySent(
+    delivery.tokenKey,
+    delivery.messageHash,
+    result.id || null
+  );
   recordProviderSuccess();
 
   console.log("[contact-reply] sent", {
