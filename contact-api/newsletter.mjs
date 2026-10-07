@@ -36,9 +36,7 @@ export function createNewsletterManager({
   const normalizedBase = String(resendApiBase || "").replace(/\/$/, "");
   const normalizedEmailEndpoint = String(emailEndpoint || "").trim();
   const normalizedBaseUrl = ensureHttpsPageUrl(baseUrl);
-  const normalizedConsentHashSecret = String(
-    consentHashSecret || normalizedSecret
-  ).trim();
+  const normalizedConsentHashSecret = String(consentHashSecret || "").trim();
   const consentStoreConfigured = Boolean(
     consentStore &&
       typeof consentStore.ensureContact === "function" &&
