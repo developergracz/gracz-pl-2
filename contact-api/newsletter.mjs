@@ -63,10 +63,11 @@ export function createNewsletterManager({
 
     await sendEmail({
       to: cleanEmail,
-      subject: "Potwierdź zapis do newslettera gracz.pl",
+      subject: "gracz.pl Newsletter — potwierdź zapis",
       text: buildConfirmText(confirmUrl),
       html: buildConfirmHtml(confirmUrl),
       idempotencyKey: "newsletter-confirm/" + hashShort(tokenData.jti),
+      entityRef: "gracz-newsletter-confirm-" + hashShort(tokenData.jti),
     });
 
     return { state: "confirmation_sent" };
@@ -156,10 +157,11 @@ export function createNewsletterManager({
 
     await sendEmail({
       to: data.email,
-      subject: "Witamy w newsletterze gracz.pl",
+      subject: "gracz.pl Newsletter — witamy!",
       text: buildWelcomeText(unsubscribeUrl),
       html: buildWelcomeHtml(unsubscribeUrl),
       idempotencyKey: "newsletter-welcome/" + hashShort(data.jti),
+      entityRef: "gracz-newsletter-welcome-" + hashShort(data.jti),
     });
 
     return {
@@ -313,7 +315,7 @@ export function createNewsletterManager({
     }
   }
 
-  async function sendEmail({ to, subject, text, html, idempotencyKey }) {
+  async function sendEmail({ to, subject, text, html, idempotencyKey, entityRef }) {
     const payload = JSON.stringify({
       from: emailFrom,
       to: [to],
@@ -321,6 +323,9 @@ export function createNewsletterManager({
       subject,
       text,
       html,
+      headers: {
+        "X-Entity-Ref-ID": entityRef || idempotencyKey,
+      },
     });
 
     for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
@@ -588,36 +593,57 @@ function removeUndefined(value) {
 
 function buildConfirmText(url) {
   return [
-    "gracz.pl — potwierdzenie zapisu do newslettera",
+    "gracz.pl Newsletter — potwierdzenie zapisu",
     "",
-    "Otrzymaliśmy prośbę o zapis do newslettera gracz.pl.",
-    "Aby zakończyć zapis, otwórz poniższy link i kliknij przycisk potwierdzenia:",
+    "Potwierdź swój zapis do Newslettera gracz.pl.",
+    "Subskrypcja zostanie aktywowana dopiero po świadomym potwierdzeniu na stronie gracz.pl.",
+    "",
+    "Potwierdź zapis:",
     url,
     "",
+    "Co otrzymasz:",
+    "• informacje o nowych grach",
+    "• poradniki i najważniejsze materiały",
+    "• aktualizacje rozwoju gracz.pl",
+    "",
     "Link jest ważny przez 30 dni.",
-    "Jeśli to nie Ty inicjowałeś zapis, zignoruj tę wiadomość.",
+    "Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.",
   ].join("\n");
 }
 
 function buildConfirmHtml(url) {
-  return emailShell({
-    eyebrow: "DOUBLE OPT-IN",
-    title: "Potwierdź zapis do newslettera",
-    body:
-      "Kliknij przycisk poniżej, a następnie potwierdź zapis na stronie gracz.pl. Bez tego kroku adres nie zostanie aktywowany w newsletterze.",
+  return premiumEmailShell({
+    preheader:
+      "Potwierdź zapis do Newslettera gracz.pl — bezpieczny double opt-in.",
+    eyebrow: "NEWSLETTER · FULL MAX PREMIUM · DOUBLE OPT-IN",
+    statusLabel: "WYMAGA POTWIERDZENIA",
+    title: "Potwierdź swój zapis",
+    lead:
+      "Jeszcze jeden krok. Potwierdź adres e-mail, aby aktywować Newsletter gracz.pl.",
     buttonText: "Potwierdź zapis",
     buttonUrl: url,
-    footer:
-      "Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.",
+    featureTitle: "Po potwierdzeniu otrzymasz",
+    features: [
+      ["01", "Nowe gry", "Premiery, nowe tryby i rozwój modułów gracz.pl."],
+      ["02", "Poradniki", "Najciekawsze materiały, zasady i treści Academy."],
+      ["03", "Rozwój serwisu", "Najważniejsze aktualizacje i nowe funkcje."],
+    ],
+    noticeTitle: "Bezpieczny double opt-in",
+    noticeBody:
+      "Samo otrzymanie tej wiadomości nie aktywuje subskrypcji. Zapis nastąpi dopiero po kliknięciu przycisku i potwierdzeniu na stronie gracz.pl.",
+    footerHtml:
+      'Link jest ważny przez 30 dni. Jeśli nie inicjowałeś zapisu, zignoruj tę wiadomość.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
   });
 }
 
 function buildWelcomeText(unsubscribeUrl) {
   return [
-    "Witaj w newsletterze gracz.pl",
+    "Witaj w Newsletterze gracz.pl",
     "",
-    "Twój adres został potwierdzony metodą double opt-in.",
-    "Będziemy wysyłać informacje o nowych grach, poradnikach i rozwoju serwisu.",
+    "Twój zapis został potwierdzony metodą double opt-in.",
+    "Newsletter jest aktywny.",
+    "",
+    "Będziemy wysyłać informacje o nowych grach, poradnikach i najważniejszych aktualizacjach gracz.pl.",
     "",
     "Wypisz się:",
     unsubscribeUrl,
@@ -625,42 +651,138 @@ function buildWelcomeText(unsubscribeUrl) {
 }
 
 function buildWelcomeHtml(unsubscribeUrl) {
-  return emailShell({
-    eyebrow: "FULL MAX PREMIUM",
-    title: "Witaj w newsletterze gracz.pl",
-    body:
-      "Zapis został potwierdzony. Od teraz możesz otrzymywać informacje o nowych grach, poradnikach i najważniejszych aktualizacjach gracz.pl.",
+  return premiumEmailShell({
+    preheader:
+      "Newsletter gracz.pl jest aktywny — witamy w wersji FULL MAX PREMIUM.",
+    eyebrow: "NEWSLETTER · FULL MAX PREMIUM",
+    statusLabel: "SUBSKRYPCJA AKTYWNA",
+    title: "Witaj w Newsletterze gracz.pl",
+    lead:
+      "Zapis został potwierdzony. Od teraz najważniejsze informacje o nowych grach, poradnikach i rozwoju serwisu mogą trafiać bezpośrednio do Ciebie.",
     buttonText: "Przejdź do gracz.pl",
     buttonUrl: "https://gracz.pl/",
-    footer:
-      'Newsletter jest dobrowolny. <a href="' +
+    featureTitle: "Twój Newsletter gracz.pl",
+    features: [
+      ["01", "Nowe gry", "Premiery, testy i rozwój nowych modułów."],
+      ["02", "Poradniki", "Materiały pomagające lepiej poznać gry i zasady."],
+      ["03", "Aktualizacje", "Najważniejsze zmiany i nowe funkcje serwisu."],
+    ],
+    noticeTitle: "Pełna kontrola po Twojej stronie",
+    noticeBody:
+      "Newsletter jest dobrowolny. Możesz wycofać zgodę w dowolnym momencie, bez wpływu na pozostałe funkcje gracz.pl.",
+    footerHtml:
+      'Nie chcesz już otrzymywać Newslettera? <a href="' +
       escapeHtml(unsubscribeUrl) +
-      '" style="color:#79d9d1">Wypisz się z newslettera</a>.',
+      '" style="color:#89ddd6;text-decoration:none;font-weight:700">Wypisz się</a>.<br><a href="https://gracz.pl/polityka-prywatnosci/#newsletter" style="color:#89ddd6;text-decoration:none">Polityka prywatności</a> · <a href="https://gracz.pl/" style="color:#89ddd6;text-decoration:none">gracz.pl</a>',
   });
 }
 
-function emailShell({ eyebrow, title, body, buttonText, buttonUrl, footer }) {
+function premiumEmailShell({
+  preheader,
+  eyebrow,
+  statusLabel,
+  title,
+  lead,
+  buttonText,
+  buttonUrl,
+  featureTitle,
+  features,
+  noticeTitle,
+  noticeBody,
+  footerHtml,
+}) {
+  const featureCells = features
+    .map(
+      ([number, featureName, featureBody]) =>
+        '<td width="33.33%" valign="top" style="padding:7px">' +
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;background:#0d2e28;border:1px solid #1d544b;border-radius:14px">' +
+        '<tr><td style="padding:18px 16px">' +
+        '<div style="font-size:11px;line-height:1;color:#67d8cf;font-weight:800;letter-spacing:.08em">' +
+        escapeHtml(number) +
+        '</div>' +
+        '<div style="padding-top:8px;font-size:15px;line-height:1.25;color:#ffffff;font-weight:800">' +
+        escapeHtml(featureName) +
+        '</div>' +
+        '<div style="padding-top:7px;font-size:12px;line-height:1.55;color:#9db8b1">' +
+        escapeHtml(featureBody) +
+        '</div></td></tr></table></td>'
+    )
+    .join("");
+
   return `<!doctype html>
-<html lang="pl"><body style="margin:0;background:#edf4f3;font-family:Arial,Helvetica,sans-serif;color:#17342f">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#edf4f3;padding:32px 10px">
-<tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fff;border-radius:20px;overflow:hidden">
-<tr><td style="background:#071a17;padding:28px 34px">
-<div style="font-size:32px;font-weight:900;color:#fff">gracz<span style="color:#e54848">.pl</span></div>
-<div style="padding-top:7px;color:#b6d1cc;font-size:12px">NEWSLETTER · ${escapeHtml(eyebrow)}</div>
-</td></tr>
-<tr><td style="padding:34px">
-<h1 style="margin:0 0 14px;font-size:26px;color:#0d413a">${escapeHtml(title)}</h1>
-<p style="margin:0 0 22px;line-height:1.7;color:#405d58">${escapeHtml(body)}</p>
-<a href="${escapeHtml(buttonUrl)}" style="display:inline-block;background:#56c8c1;color:#08312b;text-decoration:none;padding:13px 18px;border-radius:9px;font-weight:800">${escapeHtml(buttonText)}</a>
-<div style="margin-top:26px;padding:16px 18px;background:#e9f8f6;border-radius:12px;color:#496660;font-size:12px;line-height:1.6">
-<strong>Newsletter gracz.pl</strong><br>Nowe gry · Poradniki · Rozwój serwisu
-</div>
-</td></tr>
-<tr><td style="background:#071a17;color:#8fa8a3;padding:20px 34px;font-size:11px;line-height:1.6">${footer}</td></tr>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>${escapeHtml(title)}</title>
+</head>
+<body style="margin:0;padding:0;background:#eaf1f0;font-family:Arial,Helvetica,sans-serif;color:#17342f">
+<div style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all">${escapeHtml(preheader)}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#eaf1f0;border-collapse:collapse">
+<tr><td align="center" style="padding:34px 12px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:700px;border-collapse:separate;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 55px rgba(7,26,23,.14)">
+
+<tr><td style="background:#061a16;padding:30px 34px 27px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<td valign="middle">
+<div style="font-size:34px;line-height:1;font-weight:900;letter-spacing:-1.6px;color:#ffffff">gracz<span style="color:#ef4555">.pl</span></div>
+<div style="padding-top:8px;font-size:10px;line-height:1.4;color:#83a79f;font-weight:700;letter-spacing:.16em">${escapeHtml(eyebrow)}</div>
+</td>
+<td align="right" valign="middle">
+<span style="display:inline-block;padding:8px 11px;border:1px solid #2d6e63;border-radius:999px;background:#0c342d;color:#87e9df;font-size:9px;line-height:1;font-weight:800;letter-spacing:.08em">${escapeHtml(statusLabel)}</span>
+</td>
+</tr>
 </table>
-</td></tr></table>
-</body></html>`;
+</td></tr>
+
+<tr><td style="padding:38px 38px 22px">
+<div style="font-size:12px;line-height:1.3;color:#159f94;font-weight:800;letter-spacing:.08em">GRACZ.PL NEWSLETTER</div>
+<h1 style="margin:9px 0 13px;font-size:30px;line-height:1.15;color:#0b3b34;font-weight:900;letter-spacing:-.7px">${escapeHtml(title)}</h1>
+<p style="margin:0;font-size:15px;line-height:1.75;color:#4e6862">${escapeHtml(lead)}</p>
+</td></tr>
+
+<tr><td align="center" style="padding:7px 38px 31px">
+<table role="presentation" cellspacing="0" cellpadding="0">
+<tr><td align="center" bgcolor="#56c8c1" style="border-radius:999px">
+<a href="${escapeHtml(buttonUrl)}" style="display:inline-block;padding:15px 30px;color:#052d27;text-decoration:none;font-size:14px;line-height:1;font-weight:900">${escapeHtml(buttonText)}</a>
+</td></tr>
+</table>
+<div style="padding-top:11px;font-size:10px;line-height:1.5;color:#879b96">Przycisk prowadzi wyłącznie do bezpiecznej strony gracz.pl.</div>
+</td></tr>
+
+<tr><td style="padding:0 31px 7px">
+<div style="padding:0 7px 9px;font-size:11px;color:#54736c;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(featureTitle)}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#071f1a;border-radius:18px;padding:7px">
+<tr>${featureCells}</tr>
+</table>
+</td></tr>
+
+<tr><td style="padding:22px 38px 34px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e9f8f6;border:1px solid #c9ece8;border-radius:15px">
+<tr><td style="padding:18px 19px">
+<div style="font-size:12px;line-height:1.3;color:#0b4d45;font-weight:900">${escapeHtml(noticeTitle)}</div>
+<div style="padding-top:6px;font-size:12px;line-height:1.65;color:#56706a">${escapeHtml(noticeBody)}</div>
+</td></tr>
+</table>
+</td></tr>
+
+<tr><td style="background:#061a16;padding:23px 34px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<td style="font-size:10px;line-height:1.7;color:#8aa49e">${footerHtml}</td>
+<td align="right" valign="bottom" style="font-size:10px;line-height:1.5;color:#55726b;white-space:nowrap">© 2026 gracz.pl</td>
+</tr>
+</table>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 }
 
 function escapeHtml(value) {
