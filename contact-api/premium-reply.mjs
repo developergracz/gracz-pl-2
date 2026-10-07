@@ -232,9 +232,9 @@ export function createPremiumReplyManager({
     }
 
     try {
-      const iv = Buffer.from(parts[1], "base64url");
-      const tag = Buffer.from(parts[2], "base64url");
-      const ciphertext = Buffer.from(parts[3], "base64url");
+      const iv = decodeCanonicalBase64Url(parts[1]);
+      const tag = decodeCanonicalBase64Url(parts[2]);
+      const ciphertext = decodeCanonicalBase64Url(parts[3]);
       if (iv.length !== 12 || tag.length !== 16 || ciphertext.length < 16) {
         invalidToken();
       }
@@ -317,6 +317,22 @@ function rejectUnavailableClaim(claim) {
   error.code = "REPLY_STATE_UNAVAILABLE";
   error.status = 503;
   throw error;
+}
+
+function decodeCanonicalBase64Url(value) {
+  if (
+    typeof value !== "string" ||
+    !value ||
+    !/^[A-Za-z0-9_-]+$/.test(value)
+  ) {
+    invalidToken();
+  }
+
+  const decoded = Buffer.from(value, "base64url");
+  if (decoded.toString("base64url") !== value) {
+    invalidToken();
+  }
+  return decoded;
 }
 
 function validateTokenPayload(data) {
