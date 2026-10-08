@@ -72,6 +72,39 @@ Deployment sequence:
 
 Do not combine the contract/redaction migration with the first encrypted-writer deploy.
 
+### CONTRACT preparation
+
+Before the destructive CONTRACT migration is allowed, legacy rows must first have
+authenticated ciphertext envelopes. The preparation tool is deliberately separate
+from normal migrations and is **read-only by default**.
+
+Read-only inspection:
+
+`npm --prefix contact-api run contact-data:contract-prep`
+
+The command verifies every existing encrypted envelope with the configured
+`CONTACT_DATA_ENCRYPTION_SECRET` and reports only aggregate counts. It never logs
+plaintext subject/source values.
+
+Explicit backfill of legacy rows:
+
+`CONTACT_DATA_CONTRACT_CONFIRM=BACKFILL_CONTACT_DATA_V1 npm --prefix contact-api run contact-data:contract-prep -- --execute`
+
+Backfill rules:
+
+- requires the existing production `CONTACT_DATA_ENCRYPTION_SECRET`;
+- refuses to run without the explicit confirmation token;
+- encrypts only missing `subject_ciphertext` / `source_path_ciphertext` values;
+- preserves legacy plaintext columns during the preparation phase;
+- uses the same per-request AAD as the live writer;
+- verifies all encrypted envelopes after the backfill;
+- fails closed if an already-redacted subject has no recoverable ciphertext;
+- does **not** add constraints, redact plaintext, drop columns or change the live writer.
+
+Only after read-only inspection and explicit backfill both report
+`rowsNeedingBackfill: 0` may a separate audited CONTRACT migration redact
+legacy plaintext and enforce database constraints.
+
 Protection boundary:
 - new durable contact subject/source metadata is encrypted at application level;
 - browser/API and API/provider transport remains protected by TLS;
