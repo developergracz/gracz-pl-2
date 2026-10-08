@@ -5,6 +5,7 @@ import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
 import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
+import { assertDisposableDatabaseUrl } from "./test-database-guard.mjs";
 import {
   backfillLegacyContactData,
   inspectContactDataContractState,
@@ -12,17 +13,6 @@ import {
 } from "../persistence/contact-data-contract-prep.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
-
-function assertDisposableDatabaseUrl(value) {
-  if (!value) return;
-  const parsed = new URL(value);
-  const allowedHosts = new Set(["127.0.0.1", "localhost", "::1", "postgres"]);
-  if (!allowedHosts.has(parsed.hostname)) {
-    throw new Error(
-      "Refusing persistence integration tests against a non-local PostgreSQL host."
-    );
-  }
-}
 
 function hash(value) {
   return createHash("sha256").update(String(value), "utf8").digest("hex");
