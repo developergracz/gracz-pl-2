@@ -400,3 +400,34 @@
   .site-header .header-inner{width:calc(100% - 20px)!important}
   .site-header .header-actions{grid-template-columns:1fr!important}
 }
+
+
+/* GLOBAL HEADER R2 — homepage width parity + desktop mobile-search fix */
+.homepage-premium-max .site-header .header-inner{
+  width:min(1340px,calc(100% - 48px))!important;
+}
+
+@media(min-width:1181px){
+  .site-header .search-btn--mobile,
+  .site-header .head-search-mobile{
+    display:none!important;
+  }
+}
+
+@media(min-width:1181px) and (max-width:1439px){
+  .homepage-premium-max .site-header .header-inner{
+    width:calc(100% - 40px)!important;
+  }
+}
+
+@media(max-width:1180px){
+  .homepage-premium-max .site-header .header-inner{
+    width:calc(100% - 32px)!important;
+  }
+}
+
+@media(max-width:560px){
+  .homepage-premium-max .site-header .header-inner{
+    width:calc(100% - 20px)!important;
+  }
+}
