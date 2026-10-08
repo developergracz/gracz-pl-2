@@ -87,7 +87,7 @@ const sharedHeaderPages = [
 for (const page of sharedHeaderPages) {
   const html = read(page);
   requireCheck(
-    html.includes('href="/assets/global-header-r1.css?v=r2"'),
+    html.includes('href="/assets/global-header-r1.css?v=r3"'),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
@@ -147,6 +147,14 @@ requireCheck(
 requireCheck(
   sharedHeaderCss.includes("width:min(1340px,calc(100% - 48px))!important"),
   "homepage header: 1340px layout parity missing"
+);
+requireCheck(
+  sharedHeaderCss.includes("GLOBAL HEADER R3 — homepage internal fit") &&
+    sharedHeaderCss.includes(".homepage-premium-max .site-header .nav-list{") &&
+    sharedHeaderCss.includes("gap:18px!important") &&
+    sharedHeaderCss.includes("min-width:128px!important") &&
+    sharedHeaderCss.includes("min-width:150px!important"),
+  "homepage header: compact internal geometry missing"
 );
 requireCheck(
   sharedHeaderCss.includes(".site-header .search-btn--mobile,") &&
