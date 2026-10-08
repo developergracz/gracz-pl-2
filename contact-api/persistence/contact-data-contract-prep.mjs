@@ -44,12 +44,23 @@ function assertCrypto(contactCrypto) {
 
 function normalizeBatchSize(value) {
   if (value === undefined) return DEFAULT_BATCH_SIZE;
+  if (typeof value !== "number" && typeof value !== "string") {
+    throw contractError(
+      `batchSize must be an integer from 1 to ${MAX_BATCH_SIZE}.`,
+      "CONTACT_DATA_BATCH_SIZE_INVALID"
+    );
+  }
+  if (typeof value === "string" && !/^[1-9][0-9]*$/.test(value)) {
+    throw contractError(
+      `batchSize must be an integer from 1 to ${MAX_BATCH_SIZE}.`,
+      "CONTACT_DATA_BATCH_SIZE_INVALID"
+    );
+  }
   const parsed = Number(value);
   if (
     !Number.isInteger(parsed) ||
     parsed < 1 ||
-    parsed > MAX_BATCH_SIZE ||
-    String(value).trim() === ""
+    parsed > MAX_BATCH_SIZE
   ) {
     throw contractError(
       `batchSize must be an integer from 1 to ${MAX_BATCH_SIZE}.`,
