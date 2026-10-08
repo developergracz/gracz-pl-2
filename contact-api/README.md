@@ -82,9 +82,12 @@ Read-only inspection:
 
 `npm --prefix contact-api run contact-data:contract-prep`
 
-The command verifies every existing encrypted envelope with the configured
-`CONTACT_DATA_ENCRYPTION_SECRET` and reports only aggregate counts. It never logs
-plaintext subject/source values.
+The command performs a complete read-only preflight in a REPEATABLE READ snapshot.
+Every non-NULL ciphertext field is authenticated independently with the configured
+`CONTACT_DATA_ENCRYPTION_SECRET`, including partial rows. Wherever retained legacy
+plaintext is still present, decrypted ciphertext must equal that plaintext exactly.
+The command reports aggregate counts plus the database name and never logs plaintext,
+ciphertext envelopes, the database URL or the encryption secret.
 
 Explicit backfill of legacy rows:
 
@@ -94,16 +97,35 @@ Backfill rules:
 
 - requires the existing production `CONTACT_DATA_ENCRYPTION_SECRET`;
 - refuses to run without the explicit confirmation token;
+- requires at least one complete encrypted row whenever legacy rows need backfill,
+  providing production-key evidence before the first write;
+- performs the complete authenticated/value-matching preflight before any write;
 - encrypts only missing `subject_ciphertext` / `source_path_ciphertext` values;
-- preserves legacy plaintext columns during the preparation phase;
+- preserves legacy plaintext columns and their existing `updated_at` values;
 - uses the same per-request AAD as the live writer;
-- verifies all encrypted envelopes after the backfill;
-- fails closed if an already-redacted subject has no recoverable ciphertext;
+- re-validates partial rows after taking row locks;
+- verifies every ciphertext field after the backfill;
+- uses request-id keyset pagination rather than timestamp cursors;
+- rejects malformed batch sizes and unknown CLI flags;
+- fails closed on redacted/placeholder data without the corresponding ciphertext;
 - does **not** add constraints, redact plaintext, drop columns or change the live writer.
 
-Only after read-only inspection and explicit backfill both report
-`rowsNeedingBackfill: 0` may a separate audited CONTRACT migration redact
-legacy plaintext and enforce database constraints.
+`rowsNeedingBackfill: 0` is **not** sufficient to authorize CONTRACT.
+
+Before a separate audited CONTRACT migration may redact legacy plaintext, all of the
+following must be true in a fresh read-only verification:
+
+1. `rowsNeedingBackfill: 0`;
+2. every ciphertext field authenticates with the production secret and row-bound AAD;
+3. `verifiedCiphertextFields === 2 * totalRows`;
+4. retained legacy plaintext matches the authenticated decrypted value exactly;
+5. at least one row written by the post-encryption production writer verifies;
+6. no placeholder-without-ciphertext anomaly remains;
+7. a second backfill run reports `updatedRows: 0`;
+8. a verified backup and encryption-secret escrow exist;
+9. an observation period shows that no old writer is creating NULL ciphertext fields.
+
+Migration 005 remains a separate, independently audited future step.
 
 Protection boundary:
 - new durable contact subject/source metadata is encrypted at application level;
