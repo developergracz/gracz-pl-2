@@ -11,6 +11,8 @@
   var contactSending=false;
   var accountDialog=null;
   var accountLastTrigger=null;
+  var newsletterSuccessDialog=null;
+  var newsletterSuccessLastTrigger=null;
 
   function newRequestKey(){
     try{
@@ -420,11 +422,113 @@
     }
   }
 
+
+  function newsletterSuccessMarkup(){
+    return '<div class="account-access__panel newsletter-success__panel">'+
+      '<button class="account-access__close" type="button" data-newsletter-success-close aria-label="Zamknij okno">×</button>'+
+      '<div class="account-access__topline">'+
+        '<span class="account-access__brand" aria-hidden="true">gracz<span>.pl</span></span>'+
+        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter · link wysłany</span>'+
+      '</div>'+
+      '<div class="account-access__hero newsletter-success__hero">'+
+        '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
+        '<h2 id="newsletter-success-title">Dziękujemy za zapis!</h2>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">Pierwszy krok jest gotowy. Na podany adres e-mail wysłaliśmy bezpieczny link potwierdzający zapis do newslettera gracz.pl.</p>'+
+      '</div>'+
+      '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
+        '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
+        '<div class="account-access__newsletter-copy">'+
+          '<p class="account-access__newsletter-kicker">Jeszcze jeden krok</p>'+
+          '<h3 id="newsletter-success-card-title">Sprawdź swoją skrzynkę e-mail</h3>'+
+          '<p>Otwórz wiadomość od gracz.pl i kliknij link potwierdzający. Dopiero wtedy zapis zostanie aktywowany — dzięki temu nikt nie może zapisać Twojego adresu bez Twojej zgody.</p>'+
+          '<ul class="account-access__benefits">'+
+            '<li><span aria-hidden="true">✓</span>kliknij link w wiadomości potwierdzającej</li>'+
+            '<li><span aria-hidden="true">✓</span>bez potwierdzenia adres nie zostanie aktywowany</li>'+
+            '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
+          '</ul>'+
+          '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — sprawdzę skrzynkę</span><b aria-hidden="true">→</b></button>'+
+          '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Link potwierdzający jest wysyłany tylko po poprawnym przyjęciu zapisu.</p>'+
+        '</div>'+
+      '</section>'+
+      '<div class="account-access__footer">'+
+        '<span>gracz.pl · bezpieczny zapis double opt-in</span>'+
+        '<button type="button" class="account-access__back" data-newsletter-success-close>Wróć do serwisu</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function ensureNewsletterSuccessDialog(){
+    if(newsletterSuccessDialog)return newsletterSuccessDialog;
+    newsletterSuccessDialog=document.createElement('dialog');
+    newsletterSuccessDialog.className='account-access newsletter-success';
+    newsletterSuccessDialog.id='newsletter-success-modal';
+    newsletterSuccessDialog.setAttribute('aria-labelledby','newsletter-success-title');
+    newsletterSuccessDialog.setAttribute('aria-describedby','newsletter-success-intro');
+    newsletterSuccessDialog.innerHTML=newsletterSuccessMarkup();
+    document.body.appendChild(newsletterSuccessDialog);
+
+    newsletterSuccessDialog.addEventListener('click',function(event){
+      if(event.target===newsletterSuccessDialog||event.target.closest('[data-newsletter-success-close]'))closeNewsletterSuccess();
+    });
+
+    newsletterSuccessDialog.addEventListener('cancel',function(event){
+      event.preventDefault();
+      closeNewsletterSuccess();
+    });
+
+    newsletterSuccessDialog.addEventListener('close',function(){
+      document.body.classList.remove('account-access-open');
+      if(newsletterSuccessLastTrigger&&document.contains(newsletterSuccessLastTrigger)){
+        try{newsletterSuccessLastTrigger.focus();}catch(_){}
+      }
+      newsletterSuccessLastTrigger=null;
+    });
+
+    newsletterSuccessDialog.addEventListener('keydown',function(event){
+      if(event.key!=='Tab')return;
+      var focusables=Array.prototype.slice.call(newsletterSuccessDialog.querySelectorAll('button,a[href]')).filter(function(node){
+        return !node.disabled&&node.tabIndex!==-1&&node.offsetParent!==null;
+      });
+      if(!focusables.length)return;
+      var first=focusables[0],last=focusables[focusables.length-1];
+      if(event.shiftKey&&document.activeElement===first){last.focus();event.preventDefault();}
+      else if(!event.shiftKey&&document.activeElement===last){first.focus();event.preventDefault();}
+    });
+
+    return newsletterSuccessDialog;
+  }
+
+  async function openNewsletterSuccess(trigger){
+    newsletterSuccessLastTrigger=trigger||document.activeElement;
+    ensureFooterNewsletterStyles();
+    await ensureAccountAccessStyles();
+    var target=ensureNewsletterSuccessDialog();
+    if(typeof target.showModal==='function')target.showModal();
+    else target.setAttribute('open','');
+    document.body.classList.add('account-access-open');
+    window.setTimeout(function(){
+      var primary=target.querySelector('.newsletter-success__cta');
+      if(primary)primary.focus();
+    },0);
+  }
+
+  function closeNewsletterSuccess(){
+    if(!newsletterSuccessDialog)return;
+    if(typeof newsletterSuccessDialog.close==='function'&&newsletterSuccessDialog.open)newsletterSuccessDialog.close();
+    else{
+      newsletterSuccessDialog.removeAttribute('open');
+      document.body.classList.remove('account-access-open');
+      if(newsletterSuccessLastTrigger&&document.contains(newsletterSuccessLastTrigger)){
+        try{newsletterSuccessLastTrigger.focus();}catch(_){}
+      }
+      newsletterSuccessLastTrigger=null;
+    }
+  }
   function ensureFooterNewsletterStyles(){
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r1';
+    link.href='/assets/footer-newsletter.css?v=r2';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -520,9 +624,10 @@
         throw error;
       }
 
-      setFooterNewsletterStatus(form,'Sprawdź skrzynkę e-mail. Wysłaliśmy bezpieczny link potwierdzający zapis.');
+      setFooterNewsletterStatus(form,'');
       form.reset();
       form.dataset.newsletterOpenedAt=String(Date.now());
+      await openNewsletterSuccess(submit);
     }catch(error){
       setFooterNewsletterStatus(form,error&&error.message?error.message:'Nie udało się rozpocząć zapisu. Spróbuj ponownie za chwilę.','error');
       var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
