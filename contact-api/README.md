@@ -74,6 +74,13 @@ Do not combine the contract/redaction migration with the first encrypted-writer 
 
 ### CONTRACT preparation
 
+Production execution is governed by
+[`PRODUCTION_BACKFILL_RUNBOOK.md`](./PRODUCTION_BACKFILL_RUNBOOK.md).
+The runbook is the operator gate for backup/restore, secret escrow, the verified
+cutoff, controlled execution, idempotency reruns, observation and migration 005
+eligibility.
+
+
 Before the destructive CONTRACT migration is allowed, legacy rows must first have
 authenticated ciphertext envelopes. The preparation tool is deliberately separate
 from normal migrations and is **read-only by default**.
