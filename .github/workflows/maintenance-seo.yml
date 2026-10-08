@@ -50,6 +50,7 @@ jobs:
           node --check contact-api/routes/premium-reply-route.mjs
           node --check contact-api/integration/persistence.integration.test.mjs
           node --check contact-api/integration/contact-data-contract-prep.integration.test.mjs
+          node --check contact-api/integration/test-database-guard.mjs
           node --check contact-api/integration/premium-reply.persistence.integration.test.mjs
           node --check contact-api/integration/contact-idempotency.persistence.integration.test.mjs
       - name: Run contact API regression tests
