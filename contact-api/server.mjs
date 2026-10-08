@@ -13,7 +13,6 @@ import { createMemoryNewsletterConsentStore } from "./persistence/memory-newslet
 import { createNewsletterRoute } from "./routes/newsletter-route.mjs";
 import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
-import { inspectContactDataContractState } from "./persistence/contact-data-contract-prep.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -39,8 +38,6 @@ const NEWSLETTER_RESEND_API_KEY = String(
 const RESEND_API_BASE = String(
   process.env.RESEND_API_BASE || "https://api.resend.com"
 ).trim();
-
-const CONTACT_DATA_CUTOFF_CANDIDATE = "2026-10-08T00:40:57.832519Z";
 
 if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
@@ -237,119 +234,6 @@ const handlePremiumReplyRequest = createPremiumReplyRoute({
   recordProviderFailure,
   recordProviderSuccess,
 });
-
-async function runTemporaryContactCutoffInspection() {
-  if (!database.enabled || !contactDataCrypto.enabled) {
-    console.log(
-      "[ops] contact cutoff inspection " +
-        JSON.stringify({
-          ok: false,
-          mode: "READ_ONLY",
-          code: "CONTACT_DATA_INSPECTION_NOT_CONFIGURED",
-        })
-    );
-    return;
-  }
-
-  try {
-    const aggregate = await database.transaction(async (client) => {
-      await client.query(
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
-      );
-      const result = await client.query(
-        `SELECT
-           count(*)::int AS total_rows,
-           count(*) FILTER (
-             WHERE created_at < $1::timestamptz
-           )::int AS pre_cutoff_rows,
-           count(*) FILTER (
-             WHERE created_at >= $1::timestamptz
-           )::int AS post_cutoff_rows,
-           count(*) FILTER (
-             WHERE created_at = $1::timestamptz
-           )::int AS exactly_at_cutoff_rows,
-           count(*) FILTER (
-             WHERE created_at < $1::timestamptz
-               AND (
-                 subject_ciphertext IS NULL OR
-                 source_path_ciphertext IS NULL
-               )
-           )::int AS pre_cutoff_rows_needing_backfill,
-           count(*) FILTER (
-             WHERE created_at >= $1::timestamptz
-               AND subject = '[encrypted]'
-               AND source_path = ''
-               AND subject_ciphertext IS NOT NULL
-               AND source_path_ciphertext IS NOT NULL
-           )::int AS post_cutoff_canonical_rows,
-           count(*) FILTER (
-             WHERE created_at >= $1::timestamptz
-               AND NOT (
-                 subject = '[encrypted]'
-                 AND source_path = ''
-                 AND subject_ciphertext IS NOT NULL
-                 AND source_path_ciphertext IS NOT NULL
-               )
-           )::int AS post_cutoff_anomaly_rows,
-           min(created_at) FILTER (
-             WHERE created_at >= $1::timestamptz
-           ) AS first_post_cutoff_created_at,
-           max(created_at) AS latest_created_at
-         FROM contact_cases`,
-        [CONTACT_DATA_CUTOFF_CANDIDATE]
-      );
-      return result.rows[0] || {};
-    });
-
-    let inspection;
-    try {
-      const state = await inspectContactDataContractState(database, {
-        contactCrypto: contactDataCrypto,
-        encryptedWriterCutoff: CONTACT_DATA_CUTOFF_CANDIDATE,
-      });
-      inspection = {
-        ok: true,
-        totalRows: state.totalRows,
-        rowsNeedingBackfill: state.rowsNeedingBackfill,
-        encryptedRows: state.encryptedRows,
-        legacyRows: state.legacyRows,
-        modernWriterRows: state.modernWriterRows,
-        verifiedEncryptedRows: state.verifiedEncryptedRows,
-        verifiedCiphertextFields: state.verifiedCiphertextFields,
-        keyEvidenceSatisfied: state.keyEvidenceSatisfied,
-      };
-    } catch (error) {
-      inspection = {
-        ok: false,
-        code: error?.code || "CONTACT_DATA_INSPECTION_FAILED",
-        field: error?.field || null,
-      };
-    }
-
-    console.log(
-      "[ops] contact cutoff inspection " +
-        JSON.stringify({
-          ok: true,
-          mode: "READ_ONLY",
-          cutoff: CONTACT_DATA_CUTOFF_CANDIDATE,
-          aggregate,
-          inspection,
-        })
-    );
-  } catch (error) {
-    console.error(
-      "[ops] contact cutoff inspection " +
-        JSON.stringify({
-          ok: false,
-          mode: "READ_ONLY",
-          cutoff: CONTACT_DATA_CUTOFF_CANDIDATE,
-          code: error?.code || "CONTACT_DATA_INSPECTION_FAILED",
-        })
-    );
-  }
-}
-
-await runTemporaryContactCutoffInspection();
 
 createServer(async (req, res) => {
   const requestId = randomUUID();
