@@ -8,6 +8,8 @@ const DEFAULT_BATCH_SIZE = 100;
 const MAX_BATCH_SIZE = 500;
 const SUBJECT_PLACEHOLDER = "[encrypted]";
 const SOURCE_PLACEHOLDER = "";
+const UTC_CUTOFF_PATTERN =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
 
 function contractError(
   message,
@@ -57,17 +59,24 @@ function normalizeBatchSize(value) {
     );
   }
   const parsed = Number(value);
-  if (
-    !Number.isInteger(parsed) ||
-    parsed < 1 ||
-    parsed > MAX_BATCH_SIZE
-  ) {
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_BATCH_SIZE) {
     throw contractError(
       `batchSize must be an integer from 1 to ${MAX_BATCH_SIZE}.`,
       "CONTACT_DATA_BATCH_SIZE_INVALID"
     );
   }
   return parsed;
+}
+
+function parseEncryptedWriterCutoff(value) {
+  const normalized = String(value || "").trim();
+  if (!UTC_CUTOFF_PATTERN.test(normalized) || Number.isNaN(Date.parse(normalized))) {
+    throw contractError(
+      "CONTACT_DATA_ENCRYPTED_WRITER_CUTOFF must be an exact UTC timestamp ending in Z.",
+      "CONTACT_DATA_WRITER_CUTOFF_REQUIRED"
+    );
+  }
+  return normalized;
 }
 
 function decryptField(contactCrypto, envelope, { requestId, field, aad, expected }) {
@@ -84,7 +93,7 @@ function decryptField(contactCrypto, envelope, { requestId, field, aad, expected
 
   if (expected !== undefined && plaintext !== expected) {
     throw contractError(
-      `Encrypted contact data does not match legacy plaintext for request ${requestId} field ${field}.`,
+      `Encrypted contact data does not match retained plaintext for request ${requestId} field ${field}.`,
       "CONTACT_DATA_PREFLIGHT_MISMATCH",
       { requestId, field }
     );
@@ -99,35 +108,55 @@ function verifyRow(contactCrypto, row) {
   const sourcePath = String(row.source_path ?? "");
   const hasSubjectCiphertext = row.subject_ciphertext !== null;
   const hasSourceCiphertext = row.source_path_ciphertext !== null;
+  const postWriterCutoff = row.is_post_writer_cutoff === true;
 
-  if (!hasSubjectCiphertext && subject === SUBJECT_PLACEHOLDER) {
-    throw contractError(
-      `Redacted subject has no encrypted envelope for request ${requestId}.`,
-      "CONTACT_DATA_BACKFILL_SOURCE_MISSING",
-      { requestId, field: "subject" }
-    );
-  }
+  if (postWriterCutoff) {
+    if (
+      subject !== SUBJECT_PLACEHOLDER ||
+      sourcePath !== SOURCE_PLACEHOLDER ||
+      !hasSubjectCiphertext ||
+      !hasSourceCiphertext
+    ) {
+      throw contractError(
+        `Post-cutoff contact row does not match the encrypted-writer invariant for request ${requestId}.`,
+        "CONTACT_DATA_POST_CUTOFF_WRITER_ANOMALY",
+        { requestId }
+      );
+    }
 
-  if (
-    !hasSourceCiphertext &&
-    sourcePath === SOURCE_PLACEHOLDER &&
-    (subject === SUBJECT_PLACEHOLDER || hasSubjectCiphertext)
-  ) {
-    throw contractError(
-      `Placeholder source has no encrypted envelope for request ${requestId}.`,
-      "CONTACT_DATA_BACKFILL_SOURCE_MISSING",
-      { requestId, field: "source" }
-    );
+    decryptField(contactCrypto, row.subject_ciphertext, {
+      requestId,
+      field: "subject",
+      aad: "contact-case:" + requestId + ":subject",
+    });
+    decryptField(contactCrypto, row.source_path_ciphertext, {
+      requestId,
+      field: "source",
+      aad: "contact-case:" + requestId + ":source",
+    });
+
+    return {
+      requestId,
+      subject,
+      sourcePath,
+      hasSubjectCiphertext,
+      hasSourceCiphertext,
+      verifiedCiphertextFields: 2,
+      isModernWriterRow: true,
+    };
   }
 
   let verifiedCiphertextFields = 0;
 
+  // Before the verified encrypted-writer cutoff, the retained plaintext is
+  // authoritative even when it equals a sentinel value such as "[encrypted]"
+  // or an empty source path. Never skip equality based on the value alone.
   if (hasSubjectCiphertext) {
     decryptField(contactCrypto, row.subject_ciphertext, {
       requestId,
       field: "subject",
       aad: "contact-case:" + requestId + ":subject",
-      expected: subject === SUBJECT_PLACEHOLDER ? undefined : subject,
+      expected: subject,
     });
     verifiedCiphertextFields += 1;
   }
@@ -137,7 +166,7 @@ function verifyRow(contactCrypto, row) {
       requestId,
       field: "source",
       aad: "contact-case:" + requestId + ":source",
-      expected: sourcePath === SOURCE_PLACEHOLDER ? undefined : sourcePath,
+      expected: sourcePath,
     });
     verifiedCiphertextFields += 1;
   }
@@ -149,30 +178,38 @@ function verifyRow(contactCrypto, row) {
     hasSubjectCiphertext,
     hasSourceCiphertext,
     verifiedCiphertextFields,
+    isModernWriterRow: false,
   };
 }
 
-async function scanContactRows(client, contactCrypto, batchSize) {
+async function scanContactRows(
+  client,
+  contactCrypto,
+  batchSize,
+  encryptedWriterCutoff
+) {
   let afterRequestId = null;
   const state = {
     totalRows: 0,
     rowsNeedingBackfill: 0,
     encryptedRows: 0,
+    legacyRows: 0,
+    modernWriterRows: 0,
     rowsWithLegacyPlaintext: 0,
     verifiedEncryptedRows: 0,
     verifiedCiphertextFields: 0,
-    unrecoverableRows: 0,
   };
 
   for (;;) {
     const result = await client.query(
       `SELECT request_id, subject, source_path,
-              subject_ciphertext, source_path_ciphertext
+              subject_ciphertext, source_path_ciphertext,
+              (created_at >= $3::timestamptz) AS is_post_writer_cutoff
        FROM contact_cases
        WHERE $1::uuid IS NULL OR request_id > $1::uuid
        ORDER BY request_id ASC
        LIMIT $2`,
-      [afterRequestId, batchSize]
+      [afterRequestId, batchSize, encryptedWriterCutoff]
     );
 
     if (result.rowCount === 0) break;
@@ -182,18 +219,18 @@ async function scanContactRows(client, contactCrypto, batchSize) {
       state.totalRows += 1;
       state.verifiedCiphertextFields += verified.verifiedCiphertextFields;
 
+      if (verified.isModernWriterRow) {
+        state.modernWriterRows += 1;
+      } else {
+        state.legacyRows += 1;
+        state.rowsWithLegacyPlaintext += 1;
+      }
+
       if (!verified.hasSubjectCiphertext || !verified.hasSourceCiphertext) {
         state.rowsNeedingBackfill += 1;
       } else {
         state.encryptedRows += 1;
         state.verifiedEncryptedRows += 1;
-      }
-
-      if (
-        verified.subject !== SUBJECT_PLACEHOLDER ||
-        verified.sourcePath !== SOURCE_PLACEHOLDER
-      ) {
-        state.rowsWithLegacyPlaintext += 1;
       }
 
       afterRequestId = verified.requestId;
@@ -205,11 +242,32 @@ async function scanContactRows(client, contactCrypto, batchSize) {
   return state;
 }
 
-async function inspectWithClient(client, contactCrypto, batchSize) {
+async function inspectWithClient(
+  client,
+  contactCrypto,
+  batchSize,
+  encryptedWriterCutoff
+) {
   const identity = await client.query(
     "SELECT current_database() AS database_name"
   );
-  const state = await scanContactRows(client, contactCrypto, batchSize);
+  const independentCount = await client.query(
+    "SELECT count(*)::int AS total_rows FROM contact_cases"
+  );
+  const state = await scanContactRows(
+    client,
+    contactCrypto,
+    batchSize,
+    encryptedWriterCutoff
+  );
+  const expectedTotal = Number(independentCount.rows[0]?.total_rows || 0);
+
+  if (state.totalRows !== expectedTotal) {
+    throw contractError(
+      "Contact-data scan count does not match an independent count(*) in the same snapshot.",
+      "CONTACT_DATA_SCAN_COUNT_MISMATCH"
+    );
+  }
 
   if (state.verifiedEncryptedRows !== state.encryptedRows) {
     throw contractError(
@@ -220,30 +278,42 @@ async function inspectWithClient(client, contactCrypto, batchSize) {
 
   return Object.freeze({
     databaseName: String(identity.rows[0]?.database_name || ""),
+    encryptedWriterCutoff,
+    keyEvidenceSatisfied: state.modernWriterRows > 0,
     ...state,
   });
 }
 
 export async function inspectContactDataContractState(
   database,
-  { contactCrypto, batchSize = DEFAULT_BATCH_SIZE } = {}
+  {
+    contactCrypto,
+    batchSize = DEFAULT_BATCH_SIZE,
+    encryptedWriterCutoff,
+  } = {}
 ) {
   assertDatabase(database);
   assertCrypto(contactCrypto);
   const normalizedBatchSize = normalizeBatchSize(batchSize);
+  const normalizedWriterCutoff = parseEncryptedWriterCutoff(encryptedWriterCutoff);
 
   return database.transaction(async (client) => {
     await client.query(
       "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
     );
-    return inspectWithClient(client, contactCrypto, normalizedBatchSize);
+    return inspectWithClient(
+      client,
+      contactCrypto,
+      normalizedBatchSize,
+      normalizedWriterCutoff
+    );
   });
 }
 
 function assertBackfillKeyEvidence(state) {
-  if (state.rowsNeedingBackfill > 0 && state.verifiedEncryptedRows < 1) {
+  if (state.rowsNeedingBackfill > 0 && state.modernWriterRows < 1) {
     throw contractError(
-      "Backfill requires at least one complete encrypted production row to verify the configured encryption key.",
+      "Backfill requires at least one authenticated row created after the verified encrypted-writer cutoff.",
       "CONTACT_DATA_KEY_EVIDENCE_REQUIRED"
     );
   }
@@ -255,6 +325,7 @@ export async function backfillLegacyContactData(
     contactCrypto,
     confirmation,
     batchSize = DEFAULT_BATCH_SIZE,
+    encryptedWriterCutoff,
   } = {}
 ) {
   assertDatabase(database);
@@ -268,12 +339,13 @@ export async function backfillLegacyContactData(
   }
 
   const normalizedBatchSize = normalizeBatchSize(batchSize);
+  const normalizedWriterCutoff = parseEncryptedWriterCutoff(encryptedWriterCutoff);
 
-  // PASS 0: full authenticated, value-matching preflight before the first write.
-  // Every non-NULL ciphertext is verified independently, including partial rows.
+  // PASS 0: full authenticated and provenance-aware validation before first write.
   const before = await inspectContactDataContractState(database, {
     contactCrypto,
     batchSize: normalizedBatchSize,
+    encryptedWriterCutoff: normalizedWriterCutoff,
   });
   assertBackfillKeyEvidence(before);
 
@@ -290,22 +362,30 @@ export async function backfillLegacyContactData(
 
       const selected = await client.query(
         `SELECT request_id, subject, source_path,
-                subject_ciphertext, source_path_ciphertext
+                subject_ciphertext, source_path_ciphertext,
+                (created_at >= $2::timestamptz) AS is_post_writer_cutoff
          FROM contact_cases
          WHERE subject_ciphertext IS NULL
             OR source_path_ciphertext IS NULL
          ORDER BY request_id ASC
          LIMIT $1
-         FOR UPDATE SKIP LOCKED`,
-        [normalizedBatchSize]
+         FOR NO KEY UPDATE SKIP LOCKED`,
+        [normalizedBatchSize, normalizedWriterCutoff]
       );
 
       if (selected.rowCount === 0) return 0;
 
       for (const row of selected.rows) {
-        // Defense in depth: re-validate partial rows after acquiring row locks.
         const verified = verifyRow(contactCrypto, row);
         const requestId = verified.requestId;
+
+        if (verified.isModernWriterRow) {
+          throw contractError(
+            `Modern encrypted-writer row unexpectedly requires backfill for request ${requestId}.`,
+            "CONTACT_DATA_POST_CUTOFF_WRITER_ANOMALY",
+            { requestId }
+          );
+        }
 
         const subjectCiphertext =
           row.subject_ciphertext ??
@@ -338,6 +418,7 @@ export async function backfillLegacyContactData(
   const after = await inspectContactDataContractState(database, {
     contactCrypto,
     batchSize: normalizedBatchSize,
+    encryptedWriterCutoff: normalizedWriterCutoff,
   });
 
   if (after.rowsNeedingBackfill !== 0) {
@@ -366,7 +447,7 @@ function parseCliArguments(argv) {
   const unknown = args.filter((arg) => arg !== "--execute");
   if (unknown.length > 0) {
     throw contractError(
-      `Unknown argument: ${unknown[0]}. No changes made.`,
+      "Unknown command-line argument. No changes made.",
       "CONTACT_DATA_CLI_ARGUMENT_INVALID"
     );
   }
@@ -378,20 +459,28 @@ async function runCli() {
   const contactCrypto = createContactDataCrypto({
     secret: process.env.CONTACT_DATA_ENCRYPTION_SECRET,
   });
+  const encryptedWriterCutoff = parseEncryptedWriterCutoff(
+    process.env.CONTACT_DATA_ENCRYPTED_WRITER_CUTOFF
+  );
   const { execute } = parseCliArguments(process.argv.slice(2));
 
   try {
     if (!execute) {
       const state = await inspectContactDataContractState(database, {
         contactCrypto,
+        encryptedWriterCutoff,
       });
-      console.log("gracz.pl contact-data contract prep (READ ONLY — NO CHANGES MADE)", state);
+      console.log(
+        "gracz.pl contact-data contract prep (READ ONLY — NO CHANGES MADE)",
+        state
+      );
       return;
     }
 
     const result = await backfillLegacyContactData(database, {
       contactCrypto,
       confirmation: process.env.CONTACT_DATA_CONTRACT_CONFIRM,
+      encryptedWriterCutoff,
     });
     console.log("gracz.pl contact-data contract prep completed", {
       updatedRows: result.updatedRows,
@@ -420,4 +509,8 @@ if (invokedAsScript) {
 }
 
 export const CONTACT_DATA_BACKFILL_CONFIRMATION = EXECUTE_CONFIRMATION;
-export { normalizeBatchSize, parseCliArguments };
+export {
+  normalizeBatchSize,
+  parseCliArguments,
+  parseEncryptedWriterCutoff,
+};
