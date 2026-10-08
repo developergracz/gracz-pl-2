@@ -32,6 +32,10 @@ mandatory immediately before any production write.
 
 ## Mandatory recovery gate
 
+The database plan upgrade and recovery rehearsal are governed by
+[`RENDER_POSTGRES_UPGRADE_RUNBOOK.md`](./RENDER_POSTGRES_UPGRADE_RUNBOOK.md).
+
+
 Do not execute the backfill until **all** of the following are true:
 
 1. The exact production database identity is reconfirmed.
