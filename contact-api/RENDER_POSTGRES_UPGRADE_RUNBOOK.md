@@ -142,6 +142,10 @@ artifact.
 
 ## Encryption-secret escrow gate
 
+Secret recovery is governed by
+[`CONTACT_DATA_ENCRYPTION_SECRET_ESCROW_RUNBOOK.md`](./CONTACT_DATA_ENCRYPTION_SECRET_ESCROW_RUNBOOK.md).
+
+
 `CONTACT_DATA_ENCRYPTION_SECRET` must have an independent recovery copy outside
 the running Render service before backfill.
 
