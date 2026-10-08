@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
+import { assertDisposableDatabaseUrl } from "./test-database-guard.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -15,6 +16,7 @@ test(
   "R4.3 contact idempotency survives restart and keeps uncertain inflight state fail-closed",
   { skip: !DATABASE_URL },
   async (t) => {
+    assertDisposableDatabaseUrl(DATABASE_URL);
     const database = createDatabase({ connectionString: DATABASE_URL });
     t.after(() => database.close());
 
