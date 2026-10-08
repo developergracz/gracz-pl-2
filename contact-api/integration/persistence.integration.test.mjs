@@ -13,6 +13,7 @@ import {
 } from "../persistence/contact-data-contract-prep.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
+const WRITER_CUTOFF = "2026-10-08T00:00:00Z";
 
 function hash(value) {
   return createHash("sha256").update(String(value), "utf8").digest("hex");
@@ -64,8 +65,9 @@ test(
 
       const inserted = await database.query(
         `INSERT INTO contact_cases(
-          request_id, sender_hash, category, subject, source_path
-        ) VALUES ($1, $2, $3, $4, $5)
+          request_id, sender_hash, category, subject, source_path,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $6::timestamptz)
         RETURNING request_id, subject, source_path, subject_ciphertext, source_path_ciphertext`,
         [
           legacyRequestId,
@@ -73,6 +75,7 @@ test(
           "Problem techniczny",
           "Legacy writer compatibility",
           "/kontakt",
+          "2026-10-07T23:00:00.123456Z",
         ]
       );
 
@@ -91,8 +94,11 @@ test(
       await database.query(
         `INSERT INTO contact_cases(
           request_id, sender_hash, category, subject, source_path,
-          subject_ciphertext, source_path_ciphertext
-        ) VALUES ($1, $2, $3, '[encrypted]', '', $4, $5)`,
+          subject_ciphertext, source_path_ciphertext, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, '[encrypted]', '', $4, $5,
+          $6::timestamptz, $6::timestamptz
+        )`,
         [
           evidenceRequestId,
           hash("key-evidence@example.test"),
@@ -103,22 +109,27 @@ test(
           prepCrypto.encrypt("/kontakt", {
             aad: "contact-case:" + evidenceRequestId + ":source",
           }),
+          "2026-10-08T01:00:00.654321Z",
         ]
       );
 
       const beforePrep = await inspectContactDataContractState(database, {
         contactCrypto: prepCrypto,
+        encryptedWriterCutoff: WRITER_CUTOFF,
       });
       assert.equal(beforePrep.totalRows, 2);
       assert.equal(beforePrep.rowsNeedingBackfill, 1);
       assert.equal(beforePrep.rowsWithLegacyPlaintext, 1);
       assert.equal(beforePrep.verifiedEncryptedRows, 1);
+      assert.equal(beforePrep.modernWriterRows, 1);
+      assert.equal(beforePrep.keyEvidenceSatisfied, true);
 
       await assert.rejects(
         () =>
           backfillLegacyContactData(database, {
             contactCrypto: prepCrypto,
             confirmation: "",
+            encryptedWriterCutoff: WRITER_CUTOFF,
           }),
         (error) => error?.code === "CONTACT_DATA_BACKFILL_CONFIRMATION_REQUIRED"
       );
@@ -126,6 +137,7 @@ test(
       const prep = await backfillLegacyContactData(database, {
         contactCrypto: prepCrypto,
         confirmation: CONTACT_DATA_BACKFILL_CONFIRMATION,
+        encryptedWriterCutoff: WRITER_CUTOFF,
       });
       assert.equal(prep.updatedRows, 1);
       assert.equal(prep.after.rowsNeedingBackfill, 0);
