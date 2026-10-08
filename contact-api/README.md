@@ -76,6 +76,8 @@ Do not combine the contract/redaction migration with the first encrypted-writer 
 
 Production execution is governed by
 [`PRODUCTION_BACKFILL_RUNBOOK.md`](./PRODUCTION_BACKFILL_RUNBOOK.md).
+The deferred Free-to-paid database upgrade and recovery rehearsal are governed by
+[`RENDER_POSTGRES_UPGRADE_RUNBOOK.md`](./RENDER_POSTGRES_UPGRADE_RUNBOOK.md).
 The runbook is the operator gate for backup/restore, secret escrow, the verified
 cutoff, controlled execution, idempotency reruns, observation and migration 005
 eligibility.
