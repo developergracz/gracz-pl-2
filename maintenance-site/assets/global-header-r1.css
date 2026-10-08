@@ -431,3 +431,57 @@
     width:calc(100% - 20px)!important;
   }
 }
+
+
+/* GLOBAL HEADER R3 — homepage internal fit inside the shared layout shell */
+@media(min-width:1181px){
+  .homepage-premium-max .site-header .header-inner{
+    gap:18px!important;
+  }
+  .homepage-premium-max .site-header .logo{
+    font-size:40px!important;
+  }
+  .homepage-premium-max .site-header .main-nav{
+    margin-left:18px!important;
+  }
+  .homepage-premium-max .site-header .nav-list{
+    gap:18px!important;
+  }
+  .homepage-premium-max .site-header .nav-link{
+    font-size:15px!important;
+  }
+  .homepage-premium-max .site-header .menu-toggle{
+    width:22px!important;
+    margin-left:0!important;
+  }
+  .homepage-premium-max .site-header .header-actions{
+    gap:10px!important;
+  }
+  .homepage-premium-max .site-header .head-icon,
+  .homepage-premium-max .site-header .icon-btn.search-btn,
+  .homepage-premium-max .site-header .search-btn{
+    width:46px!important;
+    min-width:46px!important;
+    height:46px!important;
+    min-height:46px!important;
+  }
+  .homepage-premium-max .site-header .head-btn,
+  .homepage-premium-max .site-header .btn--head{
+    height:46px!important;
+    min-height:46px!important;
+    padding:0 20px!important;
+    font-size:15px!important;
+  }
+  .homepage-premium-max .site-header .head-btn--outline,
+  .homepage-premium-max .site-header .btn--outline.btn--head{
+    min-width:128px!important;
+  }
+  .homepage-premium-max .site-header .head-btn--gold,
+  .homepage-premium-max .site-header .btn--gold.btn--head{
+    min-width:150px!important;
+  }
+  .homepage-premium-max .site-header .forum-trigger{
+    height:42px!important;
+    padding:0 17px!important;
+  }
+}
