@@ -51,6 +51,32 @@ test(
        CASCADE`
     );
 
+    await t.test("legacy contact writer remains compatible after migration 004", async () => {
+      const legacyRequestId = randomUUID();
+      const legacySenderHash = hash("legacy-writer@example.test");
+
+      const inserted = await database.query(
+        `INSERT INTO contact_cases(
+          request_id, sender_hash, category, subject, source_path
+        ) VALUES ($1, $2, $3, $4, $5)
+        RETURNING request_id, subject, source_path, subject_ciphertext, source_path_ciphertext`,
+        [
+          legacyRequestId,
+          legacySenderHash,
+          "Problem techniczny",
+          "Legacy writer compatibility",
+          "/kontakt",
+        ]
+      );
+
+      assert.equal(inserted.rowCount, 1);
+      assert.equal(inserted.rows[0].request_id, legacyRequestId);
+      assert.equal(inserted.rows[0].subject, "Legacy writer compatibility");
+      assert.equal(inserted.rows[0].source_path, "/kontakt");
+      assert.equal(inserted.rows[0].subject_ciphertext, null);
+      assert.equal(inserted.rows[0].source_path_ciphertext, null);
+    });
+
     const repositories = createPersistenceRepositories(database);
     const requestId = randomUUID();
     const senderHash = hash("jan@example.test");
