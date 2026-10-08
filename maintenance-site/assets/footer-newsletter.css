@@ -1,15 +1,30 @@
+/* gracz.pl — live footer newsletter R2
+ * Compact footer signup + premium centered success modal.
+ */
 form[data-newsletter].footer-newsletter-live{
   display:grid !important;
   grid-template-columns:minmax(0,1fr) auto;
-  gap:10px;
+  gap:7px 8px;
   align-items:center;
+  width:100%;
+  max-width:470px;
 }
 
 form[data-newsletter].footer-newsletter-live > input[type="email"]{
   min-width:0;
+  height:44px !important;
+  min-height:44px !important;
+  padding:0 15px !important;
+  font-size:.92rem !important;
+  line-height:1 !important;
 }
 
 form[data-newsletter].footer-newsletter-live > button[type="submit"]{
+  min-height:44px !important;
+  height:44px !important;
+  padding:0 22px !important;
+  font-size:.92rem !important;
+  line-height:1 !important;
   white-space:nowrap;
 }
 
@@ -17,19 +32,22 @@ form[data-newsletter].footer-newsletter-live > button[type="submit"]{
   grid-column:1 / -1;
   display:flex;
   align-items:flex-start;
-  gap:9px;
-  margin:2px 0 0;
-  font-size:.76rem;
-  line-height:1.45;
-  color:rgba(226,242,240,.78);
+  gap:7px;
+  max-width:455px;
+  margin:0;
+  font-size:.70rem;
+  line-height:1.34;
+  color:rgba(226,242,240,.76);
   cursor:pointer;
 }
 
 .footer-newsletter-consent input{
-  width:16px !important;
-  min-width:16px;
-  height:16px;
-  margin:2px 0 0;
+  width:14px !important;
+  min-width:14px;
+  height:14px;
+  min-height:14px !important;
+  margin:1px 0 0;
+  padding:0 !important;
   accent-color:#56d6cf;
 }
 
@@ -41,11 +59,15 @@ form[data-newsletter].footer-newsletter-live > button[type="submit"]{
 
 .footer-newsletter-status{
   grid-column:1 / -1;
-  min-height:1.25em;
+  min-height:0;
   margin:0;
-  font-size:.78rem;
-  line-height:1.4;
+  font-size:.72rem;
+  line-height:1.34;
   color:#8de7df;
+}
+
+.footer-newsletter-status:empty{
+  display:none;
 }
 
 .footer-newsletter-status.is-error{
@@ -67,12 +89,71 @@ form[data-newsletter].footer-newsletter-live button[disabled]{
   cursor:wait;
 }
 
+/* The success state reuses the same account-access FULL MAX PREMIUM shell,
+ * keeping the modal visually identical in width and viewport behavior to
+ * Zaloguj / Załóż konto while presenting newsletter-specific content.
+ */
+.newsletter-success .account-access__panel{
+  min-height:min(535px,calc(100dvh - 28px));
+  display:flex;
+  flex-direction:column;
+}
+
+.newsletter-success .newsletter-success__hero{
+  padding-bottom:17px;
+}
+
+.newsletter-success .newsletter-success__card{
+  margin:0;
+}
+
+.newsletter-success .newsletter-success__icon span{
+  font-size:29px;
+  font-weight:900;
+}
+
+.newsletter-success .newsletter-success__cta{
+  width:100%;
+  border:1px solid rgba(255,224,140,.55);
+  cursor:pointer;
+  font-family:inherit;
+  text-align:left;
+}
+
+.newsletter-success .account-access__footer{
+  margin-top:auto;
+}
+
+@media (max-height:850px) and (min-width:641px){
+  .newsletter-success .account-access__panel{
+    min-height:min(500px,calc(100dvh - 20px));
+  }
+}
+
 @media (max-width:560px){
   form[data-newsletter].footer-newsletter-live{
     grid-template-columns:1fr;
+    max-width:100%;
+    gap:7px;
+  }
+
+  form[data-newsletter].footer-newsletter-live > input[type="email"]{
+    height:42px !important;
+    min-height:42px !important;
   }
 
   form[data-newsletter].footer-newsletter-live > button[type="submit"]{
     width:100%;
+    height:42px !important;
+    min-height:42px !important;
+  }
+
+  .footer-newsletter-consent{
+    max-width:none;
+    font-size:.69rem;
+  }
+
+  .newsletter-success .account-access__panel{
+    min-height:auto;
   }
 }
