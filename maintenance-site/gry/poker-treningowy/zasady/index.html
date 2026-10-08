@@ -60,22 +60,67 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <script src="/assets/legal-links.js?v=r37" defer></script>
   <link rel="stylesheet" href="/assets/contact-modal.css?v=r8" data-contact-modal-style>
+  <link rel="stylesheet" href="/assets/global-header-r1.css?v=r1">
 </head>
 <body class="poker-rules-page">
   <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
   </svg>
   <a class="skip-link" href="#tresc">Przejdź do zasad</a>
-  <header class="rules-header">
-    <div class="rules-header__inner">
-      <a class="rules-logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-      <nav class="rules-nav" aria-label="Główna nawigacja"><ul><li><a href="/">Start</a></li><li><a href="/gry/">Gry</a></li><li><a href="/gry-karciane/">Gry karciane</a></li><li><a href="/poradniki/">Poradniki</a></li><li><button class="rules-nav__dialog" type="button" data-modal="community" aria-haspopup="dialog">Społeczność</button></li><li><button class="rules-nav__dialog" type="button" data-modal="forum" aria-haspopup="dialog">Forum</button></li><li><a href="/o-gracz-pl/">O gracz.pl</a></li></ul></nav>
-      <div class="rules-header-actions" aria-label="Konto i wyszukiwanie">
-        <button class="rules-head-search" type="button" data-modal="search" aria-label="Szukaj">
-          <svg aria-hidden="true"><use href="#i-search"/></svg>
-        </button>
-        <button class="rules-head-btn rules-head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
-        <button class="rules-head-btn rules-head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+  <header class="site-header shared-global-header" data-shared-header="r1">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj w serwisie">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
+        <svg class="burger-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <svg class="burger-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="menu-panel" id="menu-panel">
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <ul class="nav-list">
+            <li><a class="nav-link" data-nav-key="start" href="/">Start</a></li>
+            <li class="has-menu">
+              <a class="nav-link" data-nav-key="games" href="/gry/">Gry</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń Gry"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <ul class="dropdown" id="menu-gry">
+                <li><a href="/gry/">Wszystkie gry</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+                <li><a href="/gry/warcaby/">Warcaby</a></li>
+                <li><a href="/gry/gomoku/">Gomoku</a></li>
+              </ul>
+            </li>
+            <li class="has-menu">
+              <a class="nav-link" data-nav-key="cards" href="/gry-karciane/">Gry karciane</a>
+              <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-karty" aria-label="Rozwiń Gry karciane"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <ul class="dropdown" id="menu-karty">
+                <li><a href="/gry-karciane/">Wszystkie gry karciane</a></li>
+                <li><a href="/gry/poker-treningowy/">Poker treningowy</a></li>
+                <li><a href="/gry-karciane/#poker-academy">Poker Academy</a></li>
+                <li><a href="/gry/tysiac/">Tysiąc</a></li>
+              </ul>
+            </li>
+            <li><a class="nav-link" data-nav-key="guides" href="/poradniki/">Poradniki</a></li>
+            <li class="has-menu">
+              <button class="nav-link menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-community">Społeczność <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <ul class="dropdown" id="menu-community">
+                <li><button type="button" data-modal="community">Profil gracza</button></li>
+                <li><button type="button" data-modal="rankings">Rankingi</button></li>
+                <li><button type="button" data-modal="community">Turnieje</button></li>
+                <li><button type="button" data-modal="community">Społeczność</button></li>
+              </ul>
+            </li>
+            <li><button class="nav-link forum-trigger" type="button" data-modal="forum" aria-haspopup="dialog">Forum</button></li>
+            <li><a class="nav-link" data-nav-key="about" href="/o-gracz-pl/">O gracz.pl</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+          <button class="head-btn head-btn--outline" type="button" data-modal="login">Zaloguj się</button>
+          <button class="head-btn head-btn--gold" type="button" data-modal="register">Załóż konto</button>
+        </div>
       </div>
     </div>
   </header>
@@ -282,5 +327,6 @@
       <button class="rules-modal__ok" type="button" data-rules-close>Rozumiem</button>
     </div>
   </dialog>
+  <script src="/assets/global-header-r1.js?v=r1"></script>
 </body>
 </html>
