@@ -485,3 +485,23 @@
     padding:0 17px!important;
   }
 }
+
+
+/* GLOBAL HEADER R4 — prevent label toggles from collapsing/overlapping */
+@media(min-width:1181px){
+  .homepage-premium-max .site-header .menu-toggle--label{
+    width:auto!important;
+    min-width:max-content!important;
+    flex:0 0 auto!important;
+    margin-left:0!important;
+    padding:0!important;
+  }
+  .homepage-premium-max .site-header .nav-list>li,
+  .homepage-premium-max .site-header .nav-item{
+    flex:0 0 auto!important;
+    min-width:0!important;
+  }
+  .homepage-premium-max .site-header .nav-link{
+    flex:0 0 auto!important;
+  }
+}
