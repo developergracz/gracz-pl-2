@@ -1,0 +1,300 @@
+/* gracz.pl — account access FULL MAX PREMIUM R2
+ * Compact viewport-safe modal. Keeps the full dialog visible on common
+ * desktop/laptop viewports without removing content.
+ */
+body.account-access-open{overflow:hidden}
+
+.account-access{
+  width:min(740px,calc(100vw - 28px));
+  max-width:740px;
+  max-height:calc(100dvh - 28px);
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#eefcfb;
+  overflow:visible;
+}
+.account-access::backdrop{
+  background:rgba(2,10,14,.82);
+  backdrop-filter:blur(10px);
+}
+.account-access__panel{
+  position:relative;
+  max-height:calc(100dvh - 28px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  border:1px solid rgba(96,236,220,.28);
+  border-radius:26px;
+  padding:24px 26px 20px;
+  background:
+    radial-gradient(circle at 90% 0%,rgba(29,224,202,.19),transparent 34%),
+    radial-gradient(circle at 0% 100%,rgba(240,188,72,.12),transparent 32%),
+    linear-gradient(145deg,#07191d 0%,#0a2327 48%,#07161a 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.56),inset 0 1px 0 rgba(255,255,255,.05);
+}
+.account-access__panel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg,transparent 0 35%,rgba(255,255,255,.035) 48%,transparent 60%);
+}
+.account-access__close{
+  position:absolute;
+  z-index:3;
+  top:15px;
+  right:15px;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:50%;
+  background:rgba(2,12,15,.58);
+  color:#dff8f5;
+  font:400 25px/1 Arial,sans-serif;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.account-access__close:hover,.account-access__close:focus-visible{
+  transform:scale(1.05);
+  border-color:rgba(90,235,217,.62);
+  background:rgba(20,78,79,.72);
+  outline:none;
+}
+.account-access__topline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding-right:44px;
+}
+.account-access__brand{
+  font:800 25px/1.05 Arial,sans-serif;
+  letter-spacing:-1px;
+  color:#fff;
+}
+.account-access__brand span{color:#ff4f55}
+.account-access__status{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:29px;
+  padding:6px 11px;
+  border:1px solid rgba(72,224,207,.22);
+  border-radius:999px;
+  background:rgba(12,58,62,.58);
+  color:#bff7ef;
+  font:700 11px/1.2 Arial,sans-serif;
+  letter-spacing:.02em;
+}
+.account-access__status i{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#3ee1c9;
+  box-shadow:0 0 0 4px rgba(62,225,201,.1),0 0 16px rgba(62,225,201,.7);
+}
+.account-access__hero{padding:23px 0 16px}
+.account-access__eyebrow,
+.account-access__newsletter-kicker{
+  margin:0 0 7px;
+  color:#62e6d5;
+  font:800 10.5px/1.25 Arial,sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.15em;
+}
+.account-access__hero h2{
+  max-width:630px;
+  margin:0;
+  color:#fff;
+  font:800 clamp(28px,4.2vw,40px)/1.02 Arial,sans-serif;
+  letter-spacing:-1.5px;
+}
+.account-access__intro{
+  max-width:640px;
+  margin:10px 0 0;
+  color:#b8d2d1;
+  font:400 14.5px/1.5 Arial,sans-serif;
+}
+.account-access__newsletter{
+  position:relative;
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr);
+  gap:17px;
+  padding:18px 20px;
+  border:1px solid rgba(241,190,76,.27);
+  border-radius:20px;
+  background:
+    linear-gradient(135deg,rgba(239,185,64,.09),rgba(15,70,72,.42)),
+    rgba(6,25,29,.78);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.account-access__newsletter-icon{
+  display:grid;
+  place-items:center;
+  width:56px;
+  height:56px;
+  border-radius:16px;
+  background:linear-gradient(145deg,#f5d06f,#c9912e);
+  color:#17201d;
+  box-shadow:0 12px 28px rgba(198,145,46,.18);
+}
+.account-access__newsletter-icon span{font:900 27px/1 Arial,sans-serif}
+.account-access__newsletter h3{
+  margin:0;
+  color:#fff;
+  font:800 22px/1.12 Arial,sans-serif;
+  letter-spacing:-.5px;
+}
+.account-access__newsletter-copy>p:not(.account-access__newsletter-kicker):not(.account-access__consent){
+  margin:8px 0 0;
+  color:#c3d8d6;
+  font:400 13.5px/1.48 Arial,sans-serif;
+}
+.account-access__benefits{
+  display:grid;
+  gap:6px;
+  margin:12px 0 14px;
+  padding:0;
+  list-style:none;
+  color:#e5f6f3;
+  font:600 12.5px/1.32 Arial,sans-serif;
+}
+.account-access__benefits li{display:flex;align-items:flex-start;gap:8px}
+.account-access__benefits li span{
+  display:grid;
+  place-items:center;
+  flex:0 0 18px;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(55,220,197,.13);
+  color:#63ead7;
+  font-weight:900;
+}
+.account-access__newsletter-cta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:48px;
+  padding:0 16px 0 18px;
+  border:1px solid rgba(255,224,140,.55);
+  border-radius:13px;
+  background:linear-gradient(135deg,#f4cf6a 0%,#d49b32 100%);
+  color:#18211e;
+  text-decoration:none;
+  font:900 13.5px/1.2 Arial,sans-serif;
+  box-shadow:0 11px 24px rgba(205,151,48,.16);
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.account-access__newsletter-cta b{font-size:20px}
+.account-access__newsletter-cta:hover,
+.account-access__newsletter-cta:focus-visible{
+  transform:translateY(-2px);
+  filter:brightness(1.04);
+  box-shadow:0 15px 30px rgba(205,151,48,.24);
+  outline:3px solid rgba(99,234,215,.25);
+  outline-offset:3px;
+}
+.account-access__consent{
+  margin:8px 2px 0;
+  color:#829f9d;
+  font:400 10px/1.4 Arial,sans-serif;
+}
+.account-access__footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding-top:14px;
+}
+.account-access__footer>span{
+  color:#668884;
+  font:700 9.5px/1.25 Arial,sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.11em;
+}
+.account-access__back{
+  min-height:36px;
+  padding:0 14px;
+  border:1px solid rgba(114,221,208,.22);
+  border-radius:11px;
+  background:rgba(9,47,51,.5);
+  color:#d8f4f0;
+  font:800 11.5px/1 Arial,sans-serif;
+  cursor:pointer;
+}
+.account-access__back:hover,.account-access__back:focus-visible{
+  border-color:rgba(94,230,214,.55);
+  background:rgba(15,71,75,.74);
+  outline:none;
+}
+
+/* Laptop/short desktop viewport: fit the whole premium panel without
+ * visually stretching below the fold. */
+@media (max-height:850px) and (min-width:641px){
+  .account-access{
+    width:min(720px,calc(100vw - 24px));
+    max-width:720px;
+    max-height:calc(100dvh - 20px);
+  }
+  .account-access__panel{
+    max-height:calc(100dvh - 20px);
+    padding:18px 22px 16px;
+    border-radius:23px;
+  }
+  .account-access__close{top:12px;right:12px;width:35px;height:35px;font-size:23px}
+  .account-access__topline{gap:12px;padding-right:40px}
+  .account-access__brand{font-size:23px}
+  .account-access__status{min-height:27px;padding:5px 10px;font-size:10.5px}
+  .account-access__hero{padding:16px 0 12px}
+  .account-access__eyebrow,.account-access__newsletter-kicker{margin-bottom:5px;font-size:10px}
+  .account-access__hero h2{font-size:34px;line-height:1;letter-spacing:-1.25px}
+  .account-access__intro{margin-top:8px;font-size:13.5px;line-height:1.42}
+  .account-access__newsletter{grid-template-columns:50px minmax(0,1fr);gap:14px;padding:14px 16px;border-radius:18px}
+  .account-access__newsletter-icon{width:50px;height:50px;border-radius:14px}
+  .account-access__newsletter-icon span{font-size:24px}
+  .account-access__newsletter h3{font-size:20px}
+  .account-access__newsletter-copy>p:not(.account-access__newsletter-kicker):not(.account-access__consent){
+    margin-top:6px;
+    font-size:12.5px;
+    line-height:1.38;
+  }
+  .account-access__benefits{gap:4px;margin:9px 0 10px;font-size:11.5px;line-height:1.25}
+  .account-access__benefits li{gap:7px}
+  .account-access__benefits li span{flex-basis:17px;width:17px;height:17px}
+  .account-access__newsletter-cta{min-height:43px;padding:0 14px 0 16px;font-size:12.5px}
+  .account-access__newsletter-cta b{font-size:18px}
+  .account-access__consent{margin-top:6px;font-size:9px;line-height:1.3}
+  .account-access__footer{padding-top:10px}
+  .account-access__footer>span{font-size:9px}
+  .account-access__back{min-height:32px;font-size:10.5px}
+}
+
+@media(max-width:640px){
+  .account-access{
+    width:min(100% - 18px,740px);
+    max-height:calc(100dvh - 18px);
+  }
+  .account-access__panel{
+    max-height:calc(100dvh - 18px);
+    overflow:auto;
+    border-radius:22px;
+    padding:20px 17px 16px;
+  }
+  .account-access__topline{align-items:flex-start;flex-direction:column;padding-right:44px}
+  .account-access__status{font-size:10px}
+  .account-access__hero{padding:20px 0 14px}
+  .account-access__hero h2{font-size:30px;letter-spacing:-1.1px}
+  .account-access__intro{font-size:13.5px}
+  .account-access__newsletter{grid-template-columns:1fr;padding:16px}
+  .account-access__newsletter-icon{width:48px;height:48px;border-radius:14px}
+  .account-access__newsletter h3{font-size:20px}
+  .account-access__newsletter-cta{font-size:12.5px}
+  .account-access__footer{align-items:flex-start;flex-direction:column}
+  .account-access__back{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .account-access__close,.account-access__newsletter-cta{transition:none}
+}
