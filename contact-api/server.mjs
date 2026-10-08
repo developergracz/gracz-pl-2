@@ -12,6 +12,7 @@ import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-s
 import { createMemoryNewsletterConsentStore } from "./persistence/memory-newsletter-consent-store.mjs";
 import { createNewsletterRoute } from "./routes/newsletter-route.mjs";
 import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
+import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -24,6 +25,9 @@ const CONTACT_TO = String(process.env.CONTACT_TO || "").trim();
 const EMAIL_FROM_ADDRESS = extractMailbox(EMAIL_FROM);
 const CONTACT_TO_ADDRESS = extractMailbox(CONTACT_TO);
 const CONTACT_REPLY_SECRET = String(process.env.CONTACT_REPLY_SECRET || "").trim();
+const CONTACT_DATA_ENCRYPTION_SECRET = String(
+  process.env.CONTACT_DATA_ENCRYPTION_SECRET || ""
+).trim();
 const NEWSLETTER_URL = String(
   process.env.NEWSLETTER_URL || "https://gracz.pl/newsletter/"
 ).trim();
@@ -62,6 +66,16 @@ const useTestContactIdempotencyStore =
 const contactIdempotencyStore = useTestContactIdempotencyStore
   ? createMemoryIdempotencyStore()
   : persistence?.idempotency || null;
+
+const contactDataCrypto = createContactDataCrypto({
+  secret: CONTACT_DATA_ENCRYPTION_SECRET,
+});
+
+if (persistence && !contactDataCrypto.enabled) {
+  throw new Error(
+    "CONTACT_DATA_ENCRYPTION_SECRET is required when durable persistence is enabled"
+  );
+}
 
 const premiumReply = createPremiumReplyManager({
   secret: CONTACT_REPLY_SECRET,
@@ -239,6 +253,7 @@ createServer(async (req, res) => {
         premiumReplyConfigured: premiumReply.enabled,
         premiumReplyDurableState: premiumReply.durableStateConfigured,
         contactIdempotencyConfigured: Boolean(contactIdempotencyStore),
+        contactDataEncryptionConfigured: contactDataCrypto.enabled,
         newsletterConfigured: newsletter.enabled,
         newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
@@ -403,8 +418,12 @@ createServer(async (req, res) => {
         requestId,
         senderHash: hashValue(payload.email),
         category: payload.category,
-        subject: payload.subject,
-        sourcePath: payload.page,
+        subjectCiphertext: contactDataCrypto.encrypt(payload.subject, {
+          aad: "contact-case:" + requestId + ":subject",
+        }),
+        sourcePathCiphertext: contactDataCrypto.encrypt(payload.page, {
+          aad: "contact-case:" + requestId + ":source",
+        }),
       });
 
       if (!created) {
@@ -638,6 +657,7 @@ createServer(async (req, res) => {
       RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
     ),
     premiumReplyConfigured: premiumReply.enabled,
+    contactDataEncryptionConfigured: contactDataCrypto.enabled,
     newsletterConfigured: newsletter.enabled,
   });
 });
