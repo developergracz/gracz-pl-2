@@ -5,8 +5,15 @@ import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
 import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
+import { assertDisposableDatabaseUrl } from "./test-database-guard.mjs";
+import {
+  backfillLegacyContactData,
+  inspectContactDataContractState,
+  CONTACT_DATA_BACKFILL_CONFIRMATION,
+} from "../persistence/contact-data-contract-prep.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
+const WRITER_CUTOFF = "2026-10-08T00:00:00Z";
 
 function hash(value) {
   return createHash("sha256").update(String(value), "utf8").digest("hex");
@@ -16,6 +23,7 @@ test(
   "R4.1 PostgreSQL persistence is durable, atomic and append-only where required",
   { skip: !DATABASE_URL },
   async (t) => {
+    assertDisposableDatabaseUrl(DATABASE_URL);
     const database = createDatabase({ connectionString: DATABASE_URL });
     t.after(() => database.close());
 
@@ -57,8 +65,9 @@ test(
 
       const inserted = await database.query(
         `INSERT INTO contact_cases(
-          request_id, sender_hash, category, subject, source_path
-        ) VALUES ($1, $2, $3, $4, $5)
+          request_id, sender_hash, category, subject, source_path,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $6::timestamptz)
         RETURNING request_id, subject, source_path, subject_ciphertext, source_path_ciphertext`,
         [
           legacyRequestId,
@@ -66,6 +75,7 @@ test(
           "Problem techniczny",
           "Legacy writer compatibility",
           "/kontakt",
+          "2026-10-07T23:00:00.123456Z",
         ]
       );
 
@@ -75,6 +85,85 @@ test(
       assert.equal(inserted.rows[0].source_path, "/kontakt");
       assert.equal(inserted.rows[0].subject_ciphertext, null);
       assert.equal(inserted.rows[0].source_path_ciphertext, null);
+
+      const prepCrypto = createContactDataCrypto({
+        secret: "contract-prep-" + "q".repeat(64),
+      });
+
+      const evidenceRequestId = randomUUID();
+      await database.query(
+        `INSERT INTO contact_cases(
+          request_id, sender_hash, category, subject, source_path,
+          subject_ciphertext, source_path_ciphertext, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, '[encrypted]', '', $4, $5,
+          $6::timestamptz, $6::timestamptz
+        )`,
+        [
+          evidenceRequestId,
+          hash("key-evidence@example.test"),
+          "Pytanie ogólne",
+          prepCrypto.encrypt("Key evidence", {
+            aad: "contact-case:" + evidenceRequestId + ":subject",
+          }),
+          prepCrypto.encrypt("/kontakt", {
+            aad: "contact-case:" + evidenceRequestId + ":source",
+          }),
+          "2026-10-08T01:00:00.654321Z",
+        ]
+      );
+
+      const beforePrep = await inspectContactDataContractState(database, {
+        contactCrypto: prepCrypto,
+        encryptedWriterCutoff: WRITER_CUTOFF,
+      });
+      assert.equal(beforePrep.totalRows, 2);
+      assert.equal(beforePrep.rowsNeedingBackfill, 1);
+      assert.equal(beforePrep.rowsWithLegacyPlaintext, 1);
+      assert.equal(beforePrep.verifiedEncryptedRows, 1);
+      assert.equal(beforePrep.modernWriterRows, 1);
+      assert.equal(beforePrep.keyEvidenceSatisfied, true);
+
+      await assert.rejects(
+        () =>
+          backfillLegacyContactData(database, {
+            contactCrypto: prepCrypto,
+            confirmation: "",
+            encryptedWriterCutoff: WRITER_CUTOFF,
+          }),
+        (error) => error?.code === "CONTACT_DATA_BACKFILL_CONFIRMATION_REQUIRED"
+      );
+
+      const prep = await backfillLegacyContactData(database, {
+        contactCrypto: prepCrypto,
+        confirmation: CONTACT_DATA_BACKFILL_CONFIRMATION,
+        encryptedWriterCutoff: WRITER_CUTOFF,
+      });
+      assert.equal(prep.updatedRows, 1);
+      assert.equal(prep.after.rowsNeedingBackfill, 0);
+      assert.equal(prep.after.verifiedEncryptedRows, 2);
+      assert.equal(prep.after.rowsWithLegacyPlaintext, 1);
+
+      const prepared = await database.query(
+        `SELECT subject, source_path, subject_ciphertext, source_path_ciphertext
+         FROM contact_cases
+         WHERE request_id = $1`,
+        [legacyRequestId]
+      );
+      assert.equal(prepared.rows[0].subject, "Legacy writer compatibility");
+      assert.equal(prepared.rows[0].source_path, "/kontakt");
+      assert.equal(
+        prepCrypto.decrypt(prepared.rows[0].subject_ciphertext, {
+          aad: "contact-case:" + legacyRequestId + ":subject",
+        }),
+        "Legacy writer compatibility"
+      );
+      assert.equal(
+        prepCrypto.decrypt(prepared.rows[0].source_path_ciphertext, {
+          aad: "contact-case:" + legacyRequestId + ":source",
+        }),
+        "/kontakt"
+      );
     });
 
     const repositories = createPersistenceRepositories(database);

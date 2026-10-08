@@ -72,6 +72,94 @@ Deployment sequence:
 
 Do not combine the contract/redaction migration with the first encrypted-writer deploy.
 
+### CONTRACT preparation
+
+Before the destructive CONTRACT migration is allowed, legacy rows must first have
+authenticated ciphertext envelopes. The preparation tool is deliberately separate
+from normal migrations and is **read-only by default**.
+
+Read-only inspection:
+
+`CONTACT_DATA_ENCRYPTED_WRITER_CUTOFF=<verified-UTC-cutoff> npm --prefix contact-api run contact-data:contract-prep`
+
+The command performs a complete read-only preflight in a REPEATABLE READ snapshot.
+Every non-NULL ciphertext field is authenticated independently with the configured
+`CONTACT_DATA_ENCRYPTION_SECRET`, including partial rows.
+
+A verified UTC cutoff is mandatory. It must represent the point after which operations
+have established that only the encrypted writer could create new contact rows. The
+tool asks PostgreSQL itself whether each row is before or after that cutoff, so
+microsecond timestamp precision is not converted through JavaScript.
+
+Before the cutoff, retained `subject` and `source_path` are authoritative and
+decrypted ciphertext must equal them exactly, including the literal value
+`[encrypted]` and an empty source string.
+
+At or after the cutoff, a row is accepted as encrypted-writer provenance only when
+both legacy columns contain the canonical placeholders and both ciphertext envelopes
+are present and authenticate. Any other post-cutoff row is a fail-closed writer
+anomaly.
+
+The command reports aggregate counts plus the database name and never logs plaintext,
+ciphertext envelopes, the database URL or the encryption secret.
+
+Explicit backfill of legacy rows:
+
+`CONTACT_DATA_ENCRYPTED_WRITER_CUTOFF=<verified-UTC-cutoff> CONTACT_DATA_CONTRACT_CONFIRM=BACKFILL_CONTACT_DATA_V1 npm --prefix contact-api run contact-data:contract-prep -- --execute`
+
+Backfill rules:
+
+- requires the existing production `CONTACT_DATA_ENCRYPTION_SECRET`;
+- refuses to run without the explicit confirmation token;
+- requires at least one authenticated post-cutoff encrypted-writer row whenever legacy rows need backfill;
+- treats that row as operational key evidence only after the operator has independently verified the writer cutoff and retired old writers;
+- performs the complete authenticated/value-matching preflight before any write;
+- encrypts only missing `subject_ciphertext` / `source_path_ciphertext` values;
+- preserves legacy plaintext columns and their existing `updated_at` values;
+- uses the same per-request AAD as the live writer;
+- re-validates partial rows after taking row locks;
+- verifies every ciphertext field after the backfill;
+- uses request-id keyset pagination rather than timestamp cursors;
+- rejects malformed batch sizes and unknown CLI flags;
+- fails closed on every post-cutoff row that violates the encrypted-writer placeholder/ciphertext invariant;
+- compares pre-cutoff sentinel-looking values as ordinary authoritative plaintext instead of skipping equality;
+- does **not** add constraints, redact plaintext, drop columns or change the live writer.
+
+`rowsNeedingBackfill: 0` is **not** sufficient to authorize CONTRACT.
+
+Before a separate audited CONTRACT migration may redact legacy plaintext, all of the
+following must be true in a fresh read-only verification:
+
+1. `rowsNeedingBackfill: 0`;
+2. every ciphertext field authenticates with the production secret and row-bound AAD;
+3. `verifiedCiphertextFields === 2 * totalRows`;
+4. retained legacy plaintext matches the authenticated decrypted value exactly;
+5. `modernWriterRows >= 1` and `keyEvidenceSatisfied === true` under a verified writer cutoff;
+6. no placeholder-without-ciphertext anomaly remains;
+7. a second backfill run reports `updatedRows: 0`;
+8. a verified backup and encryption-secret escrow exist;
+9. an observation period shows that no old writer is creating NULL ciphertext fields.
+
+Migration 005 remains a separate, independently audited future step.
+
+
+### Destructive integration-test database guard
+
+All PostgreSQL integration entrypoints share one guard before migrations, TRUNCATE,
+UPDATE or other destructive test setup can run.
+
+The guard:
+
+- derives the effective host from the same `pg.Client` connection configuration
+  used by node-postgres;
+- allows only loopback hosts (`127.0.0.1`, `localhost`, `::1`);
+- rejects URL query overrides such as `host`, encoded `%68ost`, and `hostaddr`;
+- requires an approved disposable database name (default: `gracz_test`);
+- supports additional explicit disposable names only through
+  `CONTACT_API_DESTRUCTIVE_TEST_DATABASE_ALLOWLIST`.
+
+Do not set that allowlist to any production database name.
+
 Protection boundary:
 - new durable contact subject/source metadata is encrypted at application level;
 - browser/API and API/provider transport remains protected by TLS;

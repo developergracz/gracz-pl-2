@@ -6,6 +6,7 @@ import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
 import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
+import { assertDisposableDatabaseUrl } from "./test-database-guard.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -62,6 +63,7 @@ test(
   "R4.2 Premium Reply remains one-time across manager restart and concurrent claims",
   { skip: !DATABASE_URL },
   async (t) => {
+    assertDisposableDatabaseUrl(DATABASE_URL);
     const database = createDatabase({ connectionString: DATABASE_URL });
     t.after(() => database.close());
 
