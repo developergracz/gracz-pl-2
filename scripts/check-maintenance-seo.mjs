@@ -63,6 +63,92 @@ const privacy = read("polityka-prywatnosci/index.html");
 const robots = read("robots.txt");
 const sitemap = read("sitemap.xml");
 
+const sharedHeaderPages = [
+  "index.html",
+  "gry/index.html",
+  "gry-karciane/index.html",
+  "poradniki/index.html",
+  "o-gracz-pl/index.html",
+  "gry/poker-treningowy/index.html",
+  "gry/tysiac/index.html",
+  "gry/warcaby/index.html",
+  "gry/gomoku/index.html",
+  "gry/poker-treningowy/zasady/index.html",
+  "gry/tysiac/zasady/index.html",
+  "gry/warcaby/zasady/index.html",
+  "gry/gomoku/zasady/index.html",
+  "regulamin/index.html",
+  "polityka-prywatnosci/index.html",
+  "newsletter/index.html",
+  "szukaj/index.html",
+  "wyszukiwarka/index.html"
+];
+
+for (const page of sharedHeaderPages) {
+  const html = read(page);
+  requireCheck(
+    html.includes('href="/assets/global-header-r1.css?v=r1"'),
+    `${page}: canonical global header stylesheet missing`
+  );
+  requireCheck(
+    /<header class="site-header\b/.test(html),
+    `${page}: canonical site-header missing`
+  );
+  requireCheck(
+    /data-modal="login"[^>]*>Zaloguj się</.test(html),
+    `${page}: canonical login action missing`
+  );
+  requireCheck(
+    /data-modal="register"[^>]*>Załóż konto</.test(html),
+    `${page}: canonical gold register action missing`
+  );
+  requireCheck(
+    /class="[^"]*forum-trigger[^"]*"[^>]*>Forum</.test(html),
+    `${page}: canonical Forum action missing`
+  );
+}
+
+for (const page of [
+  "gry/poker-treningowy/zasady/index.html",
+  "gry/tysiac/zasady/index.html",
+  "gry/warcaby/zasady/index.html",
+  "gry/gomoku/zasady/index.html",
+  "regulamin/index.html",
+  "polityka-prywatnosci/index.html",
+  "newsletter/index.html",
+  "szukaj/index.html",
+  "wyszukiwarka/index.html"
+]) {
+  const html = read(page);
+  requireCheck(
+    html.includes('data-shared-header="r1"'),
+    `${page}: shared header runtime marker missing`
+  );
+  requireCheck(
+    html.includes('src="/assets/global-header-r1.js?v=r1"'),
+    `${page}: shared header behavior missing`
+  );
+}
+
+const sharedHeaderCss = read("assets/global-header-r1.css");
+const sharedHeaderJs = read("assets/global-header-r1.js");
+requireCheck(
+  sharedHeaderCss.includes("linear-gradient(180deg,#ffe9ad,#f2b43f)"),
+  "global header: approved gold register treatment missing"
+);
+requireCheck(
+  sharedHeaderCss.includes("background:#050706!important"),
+  "global header: approved dark login treatment missing"
+);
+requireCheck(
+  sharedHeaderCss.includes("--gh-teal:#56c8c1"),
+  "global header: approved Forum teal missing"
+);
+requireCheck(
+  sharedHeaderJs.includes("data-shared-header"),
+  "global header: special-page runtime binding missing"
+);
+
 const homeMeta = validateBasePage({
   html: home,
   label: "homepage",
