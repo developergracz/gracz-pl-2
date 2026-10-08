@@ -87,7 +87,7 @@ const sharedHeaderPages = [
 for (const page of sharedHeaderPages) {
   const html = read(page);
   requireCheck(
-    html.includes('href="/assets/global-header-r1.css?v=r1"'),
+    html.includes('href="/assets/global-header-r1.css?v=r2"'),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
@@ -143,6 +143,16 @@ requireCheck(
 requireCheck(
   sharedHeaderCss.includes("--gh-teal:#56c8c1"),
   "global header: approved Forum teal missing"
+);
+requireCheck(
+  sharedHeaderCss.includes("width:min(1340px,calc(100% - 48px))!important"),
+  "homepage header: 1340px layout parity missing"
+);
+requireCheck(
+  sharedHeaderCss.includes(".site-header .search-btn--mobile,") &&
+    sharedHeaderCss.includes(".site-header .head-search-mobile{") &&
+    sharedHeaderCss.includes("display:none!important"),
+  "global header: desktop mobile-search suppression missing"
 );
 requireCheck(
   sharedHeaderJs.includes("data-shared-header"),
