@@ -59,6 +59,7 @@ const validateBasePage = ({html, label, canonical, requireTitleTerms = [], requi
 const home = read("index.html");
 const games = read("gry/index.html");
 const regulation = read("regulamin/index.html");
+const privacy = read("polityka-prywatnosci/index.html");
 const robots = read("robots.txt");
 const sitemap = read("sitemap.xml");
 
@@ -96,7 +97,8 @@ const regulationMeta = validateBasePage({
   requireH1Terms: ["Regulamin", "gracz.pl"]
 });
 requireCheck(regulation.includes('href="/assets/legal.css?v=forum-teal-r3"'), "regulation: legal stylesheet missing");
-requireCheck(regulation.includes('src="/assets/legal.js?v=forum-r1"'), "regulation: legal script missing");
+requireCheck(regulation.includes('src="/assets/legal.js?v=owner-email-r1"'), "regulation: owner email premium legal script missing");
+requireCheck(privacy.includes('src="/assets/legal.js?v=owner-email-r1"'), "privacy: owner email premium legal script missing");
 
 const gamesMeta = validateBasePage({
   html: games,
@@ -183,12 +185,20 @@ requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "con
 requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/footer-newsletter.css")), "footer-newsletter.css missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/account-access-premium.css")), "account premium stylesheet missing");
+requireCheck(fs.existsSync(path.resolve(root, "assets/legal.js")), "legal script missing");
 const accountAccessCss = fs.readFileSync(path.resolve(root, "assets/account-access-premium.css"), "utf8");
+const legalJs = fs.readFileSync(path.resolve(root, "assets/legal.js"), "utf8");
 const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
 const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
 requireCheck(legalLinksJs.includes("account-access-premium.css?v=r2"), "account modal R2 stylesheet loader missing");
 requireCheck(accountAccessCss.includes("max-height:calc(100dvh - 28px)"), "account modal: desktop viewport height guard missing");
 requireCheck(accountAccessCss.includes("@media (max-height:850px) and (min-width:641px)"), "account modal: compact-height desktop mode missing");
+requireCheck(legalJs.includes('owner-email-premium-modal'), "owner email premium modal missing");
+requireCheck(legalJs.includes('a[href="mailto:czsocha@wp.pl"]'), "owner email links are not intercepted");
+requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r2'), "owner email modal must reuse account premium sizing");
+requireCheck(legalJs.includes('Napisz e-mail do gracz.pl'), "owner email premium CTA missing");
+requireCheck(regulation.includes('href="mailto:czsocha@wp.pl"'), "regulation: owner email mailto missing");
+requireCheck(privacy.includes('href="mailto:czsocha@wp.pl"'), "privacy: owner email mailto missing");
 requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r2"), "live footer newsletter R2 stylesheet loader missing");
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
