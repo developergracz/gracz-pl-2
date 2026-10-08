@@ -97,12 +97,32 @@ test(
         secret: "contract-prep-" + "q".repeat(64),
       });
 
+      const evidenceRequestId = randomUUID();
+      await database.query(
+        `INSERT INTO contact_cases(
+          request_id, sender_hash, category, subject, source_path,
+          subject_ciphertext, source_path_ciphertext
+        ) VALUES ($1, $2, $3, '[encrypted]', '', $4, $5)`,
+        [
+          evidenceRequestId,
+          hash("key-evidence@example.test"),
+          "Pytanie ogólne",
+          prepCrypto.encrypt("Key evidence", {
+            aad: "contact-case:" + evidenceRequestId + ":subject",
+          }),
+          prepCrypto.encrypt("/kontakt", {
+            aad: "contact-case:" + evidenceRequestId + ":source",
+          }),
+        ]
+      );
+
       const beforePrep = await inspectContactDataContractState(database, {
         contactCrypto: prepCrypto,
       });
-      assert.equal(beforePrep.totalRows, 1);
+      assert.equal(beforePrep.totalRows, 2);
       assert.equal(beforePrep.rowsNeedingBackfill, 1);
       assert.equal(beforePrep.rowsWithLegacyPlaintext, 1);
+      assert.equal(beforePrep.verifiedEncryptedRows, 1);
 
       await assert.rejects(
         () =>
@@ -119,7 +139,7 @@ test(
       });
       assert.equal(prep.updatedRows, 1);
       assert.equal(prep.after.rowsNeedingBackfill, 0);
-      assert.equal(prep.after.verifiedEncryptedRows, 1);
+      assert.equal(prep.after.verifiedEncryptedRows, 2);
       assert.equal(prep.after.rowsWithLegacyPlaintext, 1);
 
       const prepared = await database.query(
