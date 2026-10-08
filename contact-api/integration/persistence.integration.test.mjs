@@ -5,6 +5,11 @@ import { createDatabase } from "../persistence/database.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
 import { createContactDataCrypto } from "../security/contact-data-crypto.mjs";
+import {
+  backfillLegacyContactData,
+  inspectContactDataContractState,
+  CONTACT_DATA_BACKFILL_CONFIRMATION,
+} from "../persistence/contact-data-contract-prep.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -75,6 +80,56 @@ test(
       assert.equal(inserted.rows[0].source_path, "/kontakt");
       assert.equal(inserted.rows[0].subject_ciphertext, null);
       assert.equal(inserted.rows[0].source_path_ciphertext, null);
+
+      const prepCrypto = createContactDataCrypto({
+        secret: "contract-prep-" + "q".repeat(64),
+      });
+
+      const beforePrep = await inspectContactDataContractState(database, {
+        contactCrypto: prepCrypto,
+      });
+      assert.equal(beforePrep.totalRows, 1);
+      assert.equal(beforePrep.rowsNeedingBackfill, 1);
+      assert.equal(beforePrep.rowsWithLegacyPlaintext, 1);
+
+      await assert.rejects(
+        () =>
+          backfillLegacyContactData(database, {
+            contactCrypto: prepCrypto,
+            confirmation: "",
+          }),
+        (error) => error?.code === "CONTACT_DATA_BACKFILL_CONFIRMATION_REQUIRED"
+      );
+
+      const prep = await backfillLegacyContactData(database, {
+        contactCrypto: prepCrypto,
+        confirmation: CONTACT_DATA_BACKFILL_CONFIRMATION,
+      });
+      assert.equal(prep.updatedRows, 1);
+      assert.equal(prep.after.rowsNeedingBackfill, 0);
+      assert.equal(prep.after.verifiedEncryptedRows, 1);
+      assert.equal(prep.after.rowsWithLegacyPlaintext, 1);
+
+      const prepared = await database.query(
+        `SELECT subject, source_path, subject_ciphertext, source_path_ciphertext
+         FROM contact_cases
+         WHERE request_id = $1`,
+        [legacyRequestId]
+      );
+      assert.equal(prepared.rows[0].subject, "Legacy writer compatibility");
+      assert.equal(prepared.rows[0].source_path, "/kontakt");
+      assert.equal(
+        prepCrypto.decrypt(prepared.rows[0].subject_ciphertext, {
+          aad: "contact-case:" + legacyRequestId + ":subject",
+        }),
+        "Legacy writer compatibility"
+      );
+      assert.equal(
+        prepCrypto.decrypt(prepared.rows[0].source_path_ciphertext, {
+          aad: "contact-case:" + legacyRequestId + ":source",
+        }),
+        "/kontakt"
+      );
     });
 
     const repositories = createPersistenceRepositories(database);
