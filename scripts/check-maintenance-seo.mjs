@@ -86,8 +86,9 @@ const sharedHeaderPages = [
 
 for (const page of sharedHeaderPages) {
   const html = read(page);
+  const expectedHeaderVersion = page === "index.html" ? "r4" : "r3";
   requireCheck(
-    html.includes('href="/assets/global-header-r1.css?v=r3"'),
+    html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
@@ -155,6 +156,12 @@ requireCheck(
     sharedHeaderCss.includes("min-width:128px!important") &&
     sharedHeaderCss.includes("min-width:150px!important"),
   "homepage header: compact internal geometry missing"
+);
+requireCheck(
+  sharedHeaderCss.includes("GLOBAL HEADER R4 — prevent label toggles from collapsing/overlapping") &&
+    sharedHeaderCss.includes(".homepage-premium-max .site-header .menu-toggle--label{") &&
+    sharedHeaderCss.includes("min-width:max-content!important"),
+  "homepage header: community label overlap guard missing"
 );
 requireCheck(
   sharedHeaderCss.includes(".site-header .search-btn--mobile,") &&
