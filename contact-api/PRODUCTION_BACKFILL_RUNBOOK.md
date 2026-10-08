@@ -32,6 +32,10 @@ mandatory immediately before any production write.
 
 ## Mandatory recovery gate
 
+Encryption-secret recovery is governed by
+[`CONTACT_DATA_ENCRYPTION_SECRET_ESCROW_RUNBOOK.md`](./CONTACT_DATA_ENCRYPTION_SECRET_ESCROW_RUNBOOK.md).
+
+
 The database plan upgrade and recovery rehearsal are governed by
 [`RENDER_POSTGRES_UPGRADE_RUNBOOK.md`](./RENDER_POSTGRES_UPGRADE_RUNBOOK.md).
 
