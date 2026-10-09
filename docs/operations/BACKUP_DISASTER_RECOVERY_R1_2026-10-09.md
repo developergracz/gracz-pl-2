@@ -19,7 +19,7 @@ Existing binding operating documents remain authoritative:
 
 ## 2. Verified baseline vs unverified capabilities
 
-| Item | Baseline as of 2026-10-09 | Gate |
+| Item | Evidence baseline (Render observation 2026-10-08; rechecked where stated 2026-10-09) | Gate |
 | --- | --- | --- |
 | Render database | ID above, Free, available, no public IP allowlist | Recheck live before each operation |
 | Render managed recovery / export | Free plan does not expose PITR or Recovery-page export | Requires approved paid compute upgrade |
@@ -33,11 +33,11 @@ Do not equate a configuration screenshot or `pg_restore --list` with a successfu
 
 ## 3. Phase P0 — exact identity and safe preflight (read-only)
 
-1. Confirm database ID and connection association with `gracz-contact-api`; database name alone is not sufficient. Keep external IP allowlist empty unless a separately approved access method requires a temporary narrow entry.
+1. Confirm database ID and connection association with `gracz-contact-api`; database name alone is not sufficient. Keep the external IP allowlist unchanged under the canonical upgrade runbook. Any temporary narrow entry requires a separately documented, explicit Owner-approved **exception to that canonical rule** or an approved runbook amendment; approving a backup method alone is insufficient.
 2. Record live service deployment commit, `/health` result, database availability, maintenance window, storage, and logs for connection/migration/decrypt/persistence failures (aggregates only).
 3. Confirm no concurrent migration/backfill/older writer. Existing Render build command may invoke migrations: avoid triggering gratuitous deploys.
 4. Select a storage custodian, access policy, offsite encrypted destination, key escrow, retention period, deletion policy, recovery-time objective (RTO), recovery-point objective (RPO) and a budget **before** automation.
-5. Confirm PostgreSQL client/server compatibility, TLS verification and a non-privileged least-privilege export account when available. Do not disable certificates or log URLs.
+5. Confirm PostgreSQL client/server compatibility, path-specific TLS/security requirements and a non-privileged least-privilege export account when available. For an external connection, require trusted-CA and hostname validation (`sslmode=verify-full` with the approved trust chain). Render's internal PostgreSQL route can use self-signed certificates that do not support libpq `verify-ca` / `verify-full`; it requires a separately documented and approved private-network trust model. `sslmode=require` encrypts transport but does not by itself authenticate the server hostname. If the required trust model is unavailable, STOP; do not silently weaken it or log URLs.
 
 **STOP** if the data location, production writer, backup custody, encryption, repository access or cost is unclear.
 
@@ -46,8 +46,8 @@ Do not equate a configuration screenshot or `pg_restore --list` with a successfu
 Preferred sequence: prepare a trusted `pg_dump` client that can reach Render PostgreSQL using an approved access path, stream backup directly into **encrypted operator-controlled storage**, then verify it. Do not assume GitHub-hosted runners can reach Render's internal hostname: they cannot use Render's private service network by default.
 
 **Access options (design choices, not approval):**
-- **Temporary trusted operator client:** time-limited access from a known public IPv4 /32, only if individually approved; enforce authenticated TLS, export, then **revoke the IP rule and verify it is gone**. IP-scoping does not replace authentication.
-- **Trusted runtime inside Render's private network:** only after assessing Render plan/tool capability, technical feasibility, egress and cost. Do not create a new paid service or modify production build/start commands as a shortcut.
+- **Temporary trusted operator client:** a public IPv4 `/32` is **BLOCKED by default** under the canonical runbook's no-allowlist-change rule. It may be considered only after a **distinct written Owner approval of the precise canonical-policy exception (or a reconciled runbook amendment)**, including the specific IP, expiry and rollback. Require TLS hostname/CA verification (`verify-full`) with an approved trust chain, authentication, an export window, then **revoke the IP rule and verify it is gone**. IP-scoping does not replace authentication or TLS.
+- **Trusted runtime inside Render's private network:** only after assessing Render plan/tool capability, technical feasibility, network isolation, egress and cost. Render's internal self-signed PostgreSQL certificates may prevent libpq `verify-ca` / `verify-full`: document and separately approve the private-network security/trust boundary and transport controls before use, or STOP. Do not silently downgrade TLS or create a new paid service or modify production build/start commands as a shortcut.
 - **After paid upgrade:** use Render Recovery logical export and PITR, recognizing neither supplies a retroactive pre-upgrade recovery point.
 
 A proposed command **template for an approved trusted shell only** (not an executable GitHub workflow):
@@ -55,19 +55,22 @@ A proposed command **template for an approved trusted shell only** (not an execu
 ```sh
 # Use a secured runtime with libpq connection parameters supplied through
 # its protected secret mechanism; never echo the URI or put it in arguments.
-# Use a matching PostgreSQL 18 client and verified TLS to the approved host.
-pg_dump --format=custom --no-owner --no-acl --file="$PROTECTED_BACKUP_PATH"
+# Use a PostgreSQL 18-compatible client. Validate connection security separately:
+# external = approved CA + hostname verification; internal = explicitly reviewed
+# Render private-network trust model (verify-full may not be supported there).
+# This is a non-executable illustration until a vetted, encrypted destination exists.
+pg_dump --format=custom --file="$PROTECTED_BACKUP_PATH"
 pg_restore --list "$PROTECTED_BACKUP_PATH" >/dev/null
 sha256sum "$PROTECTED_BACKUP_PATH" > "$PROTECTED_BACKUP_PATH.sha256"
 ```
 
-The above is not complete until environment-specific connection variables, encryption at rest, file permissions, credential handling and custodian are approved. The SHA-256 file detects corruption; **it does not encrypt the dump**. Protect, encrypt and relocate both files outside CI and source control. Empty/nonzero error statuses and size must be checked without printing data.
+The custom-format archive may retain original ownership and privilege statements. `pg_dump --no-owner` does not implement ownership remapping for custom-format archives; restoration must explicitly define `pg_restore --no-owner --no-acl` where appropriate and approved destination ownership, roles and application GRANTs. `pg_dump` covers only the selected database, not cluster-global roles. Verify the restored application account's least-privilege access, not merely schema existence. The above is not complete until environment-specific connection variables, TLS/path trust model, encryption at rest, file permissions, credential handling and custodian are approved. The SHA-256 file detects corruption; **it does not encrypt the dump**. Protect, encrypt and relocate both files outside CI and source control. Empty/nonzero error statuses and size must be checked without printing data.
 
 ## 5. Phase P2 — verification and restore rehearsal
 
-1. Inspect archive metadata (`pg_restore --list`) and hash; ensure the backup's storage and encryption were actually verified.
+1. From the **final separate offsite backup destination**, retrieve the encrypted archive, authenticate its integrity, recover the archive decryption key by a **separate tested recovery path**, and decrypt in an approved isolated environment. Do not use only a local temporary dump or an already-unlocked live runner. The archive key and its recovery credentials, access to the backup store, and application `CONTACT_DATA_ENCRYPTION_SECRET` are three distinct recovery dependencies. All necessary archive key versions must be retained at least as long as the corresponding archives. Inspect decrypted archive metadata (`pg_restore --list`) and hash.
 2. Restore **to a separate isolated disposable PostgreSQL instance** with no public exposure and no connection from production services. This rehearsal may incur costs; require explicit Owner cost GO before provisioning.
-3. Verify schema objects, safe aggregate counts, permitted sample-level encrypted-field authentication and application-compatible decrypt capability with the original escrowed key, without logging personal data.
+3. Define destination database ownership/roles/ACL restoration (for example validated `pg_restore --no-owner --no-acl` plus explicit approved grants), including any cluster roles absent from a single-database dump. Verify schema objects, safe aggregate counts, application access under its intended restricted role, permitted sample-level encrypted-field authentication and application-compatible decrypt capability using the **separately recovered original escrowed application secret**, without logging personal data.
 4. Record only timestamp, backup ID outside Git, tool versions, validation outcomes, restored object/count summaries, cost authorization, retention and responsible reviewer.
 5. Revoke temporary accesses and credentials, securely remove temporary plaintext material, document isolated test resource teardown after Owner approval.
 
@@ -93,7 +96,7 @@ GitHub Actions may orchestrate scheduling, health/status attestations, hashes an
 Before creating any workflow, separately review:
 - trusted network path (GitHub-hosted runner is not on Render private network);
 - minimum permissions and secret custody (short-lived credentials where possible);
-- encryption **before data leaves the trusted execution boundary**;
+- encryption **before data leaves the trusted execution boundary**, separate archive-key escrow/recovery and independently recoverable storage credentials, with matching archive/key retention;
 - zero exposure of dump bytes, connection strings, contact data or secrets in logs/artifacts;
 - backup retention, deletion, least-privilege storage policy and offsite isolation;
 - restore drills, RTO/RPO, alerting and failure notification with no sensitive content;
@@ -114,7 +117,7 @@ To authorize the first real backup, Owner must approve: custodian/destination, n
 | --- | --- |
 | P0 app/DB exact-identity verification | PENDING |
 | P1 encrypted offsite dump, independently verified | PENDING |
-| P2 disposable restore rehearsal + decrypt evidence | PENDING |
+| P2 offsite archive retrieval + independent archive-key recovery + isolated restore + application-key decrypt evidence | PENDING |
 | Owner exact-cost upgrade approval | PENDING |
 | Paid plan/PITR/external logical export | PENDING |
 | Recovery R1 operational acceptance | **HOLD** |
