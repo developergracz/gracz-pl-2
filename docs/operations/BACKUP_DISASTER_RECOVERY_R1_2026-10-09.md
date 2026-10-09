@@ -26,7 +26,7 @@ Existing binding operating documents remain authoritative:
 | Existing `gracz-contact-api` | Render web service, Free; environment contains DATABASE_URL | Check exact connection identity, app health and deployed SHA without printing secrets |
 | Pre-upgrade logical dump | **NOT EXECUTED / NOT VERIFIED** | Choose an operator-controlled trusted client/path, then test |
 | Restore rehearsal | **NOT EXECUTED** | Real isolated restore; validate schema, counts and decrypt capability |
-| Encryption key escrow | Owner-reported PASS in A0/A1 evidence | Reconfirm provenance, recoverability without printing secret |
+| Encryption key escrow | **NOT VERIFIED** under the canonical escrow runbook | Independently verify exact existing key recovery outside Render, without printing secret |
 | Protected write operations | No backfill, no migration 005, no plaintext redaction | Separate authorization after every recovery gate passes |
 
 Do not equate a configuration screenshot or `pg_restore --list` with a successful restore rehearsal.
