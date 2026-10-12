@@ -18,7 +18,7 @@ Priorytet: **jakość, spójność i bezpieczeństwo fundamentu ponad szybkość
 | D06 | Resend 429, timeout, 5xx lub odpowiedź spóźniona | bounded retry/idempotency, fail-closed, brak bezwarunkowego resend |
 | D07 | unsubscribed / hosted unsubscribe | brak automatycznego opt-in, nowy potwierdzony DOI konieczny |
 | D08 | token przestarzały i odtwarzany | brak ponownej aktywacji, stary token nie wygrywa z opt-out |
-| D09 | legacy Resend-active, brak wpisu consent ledger | brak re-DIO, brak sfałszowanej historii zgody, właściwy status |
+| D09 | legacy Resend-active, brak wpisu consent ledger | brak re-DOI, brak sfałszowanej historii zgody, właściwy status |
 | D10 | rozbieżność provider/PG | brak fałszywego ACTIVE, widoczny alarm audit, bez automatycznej destrukcyjnej „naprawy” |
 | D11 | baza PostgreSQL nieosiągalna | fail-closed przy krytycznej operacji; bez przejścia na Maps |
 | D12 | publiczne sondowanie 100 losowych adresów | brak możliwości stwierdzenia członkostwa z treści, kodu, timingów, nagłówków i rozmiaru odpowiedzi |
@@ -29,6 +29,11 @@ Priorytet: **jakość, spójność i bezpieczeństwo fundamentu ponad szybkość
 | D17 | testy accessibility | focus trap, Escape, reduced-motion, keyboard-only, screen readers, mobile |
 | D18 | brak regresji Resend confirmation/unsubscribe/resubscribe | dotychczasowe zachowanie, brak dubli po restartach |
 | D19 | adapter providera opóźniony/niespójny | spójny model ACTIVE, fallback nie wycieka stanu |
+| D20 | anonimowy POST /newsletter/subscribe dla NEW / PENDING / ACTIVE | identyczny publiczny kontrakt, brak enumeracji oraz zbędnych wiadomości |
+| D21 | dobrowolne „Sprawdź status” dla dowolnego adresu | neutralny publiczny wynik, jednakowa treść e-maila, kosztowo ograniczony rate limit |
+| D22 | ważny jednorazowy STATUS_CHECK dla kontrolowanej skrzynki | dopiero wtedy ekran pokazuje dokładny stan, nigdy nie aktywuje subskrypcji |
+| D23 | token STATUS_CHECK wykorzystany dwukrotnie / wygasły / zmieniony | atomowa odmowa, zero wycieku danych i brak skutków DOI/opt-out |
+| D24 | token przekazany przez link, nawigacja / browser history / referrer / analytics | brak tokenów i PII w dziennikach, URL query, third-party referrer lub telemetry |
 
 Wszystkie testy z fałszywymi adresami/mock provider w CI. Test rzeczywistego DOI na adresie testowym i potwierdzenie w Resend **dopiero po osobnym Owner GO**, bez naruszania aktywnych subskrybentów. Jeśli migracja pending-claim jest wymagana: real PostgreSQL concurrency oraz rollback/expand-only test (zero operacji produkcyjnych w PR docs).
 

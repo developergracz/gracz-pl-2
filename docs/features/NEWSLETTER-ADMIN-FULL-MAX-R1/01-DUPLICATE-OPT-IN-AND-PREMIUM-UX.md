@@ -56,6 +56,25 @@ Zawartość:
 
 Wymagania dostępności: dialog role/aria-labelledby/aria-describedby, fokus początkowy i powrót fokusu, klawiatura ESC/Tab, screen reader aria-live, reduced motion, wysokie kontrasty, przewijanie wewnętrzne bez blokowania przycisków, 320–1920px i Safari/Chrome/Firefox/Edge. Wspólny komponent w stopkach i na /newsletter/; brak kolizji z contact modal.
 
+
+## 5A. Wymagany protokół weryfikacji właściciela adresu (doprecyzowanie audytowe)
+
+**Uzasadnienie:** Żądanie właściciela przewiduje ekranowy komunikat „Ten adres jest już zapisany”. Nie wolno realizować go przez publiczne sprawdzanie istnienia adresów, ponieważ napastnik otrzymałby możliwość enumeracji bazy. W PR-1 konieczny jest jawny, testowalny przepływ proof-of-mailbox.
+
+**Publiczne zgłoszenie bez weryfikacji:** wynik request_received (ten sam kod/schemat dla nowego, pending i active); premium modal z informacją neutralną. Nie rozpoczynamy dodatkowego DOI dla aktywnego adresu. Sam status first-party bez autorytatywnego Resend NIE pozwala pokazać „już zapisany”.
+
+**Osobna dobrowolna akcja „Sprawdź status”** (wymagana jako element zakresu UX, jej ostateczne nazwy API zatwierdza PR-1):
+
+1. Formularz przyjmuje e-mail i wyraźne żądanie **sprawdzenia statusu**, niezależne od opt-in marketingowego. Odpowiedź HTTP/schemat są zawsze neutralne i nie zdradzają istnienia subskrypcji.
+2. Backend stosuje limity per-IP / per-HMAC / globalne, cooldown, antybot oraz budżet wiadomości. Weryfikacyjny e-mail trafia wyłącznie do podanego adresu; mail ma taką samą treść niezależnie od stanu aktywności, nie zawiera statusu subskrypcji.
+3. Jednorazowy kryptograficzny token **STATUS_CHECK** jest rozdzielony od DOI i unsubscribe: oddzielny purpose/audience, CSPRNG nonce, krótki TTL (projektowo do 10 minut, sprawdzić faktyczną politykę), powiązanie z adresem i ograniczenie użyć. Preferować AEAD z oddzielnie wyprowadzonym kontekstowym kluczem oraz trwałe serwerowe zużycie nonce po stronie PostgreSQL (hash/TTL, bez jawnego adresu). Nie wolno używać tokenu STATUS_CHECK do aktywowania ani wycofywania zgody.
+4. Link kieruje na /newsletter/ ze stanem przekazanym w fragmencie URL i natychmiast usuwanym z historii przez replaceState, następnie frontend przesyła token w body POST po HTTPS z no-store, referrer-policy no-referrer i bez zewnętrznych skryptów na tej ścieżce. Endpoint weryfikacji atomowo zużywa token; chroni przed replay, stale expiry, brute force i zmianą tożsamości.
+5. **Dopiero po pozytywnym dowodzie kontroli skrzynki** backend odczytuje rzeczywisty stan Resend (segment+topic+unsubscribed+suppression) i zwraca ograniczony status do tej samej sesji/odpowiedzi: ACTIVE -> „Ten adres e-mail jest już zapisany do newslettera gracz.pl”; PENDING -> „Zapis oczekuje na potwierdzenie”; brak subskrypcji -> „Brak aktywnej subskrypcji”. Nie dopisywać zgody przy samym status-check.
+6. Tokenów i e-maili nie zapisywać w logach, telemetry, błędach, cache, HTML startowym, analityce ani parametrach URL zapytań. Konieczne osobne testy CSP, przejść pomiędzy podstronami, sesji i referrer leakage. E-mail status-check nie powinien być wysyłany automatycznie przy każdym ponownym kliknięciu „Zapisz”.
+7. Po czasowym błędzie dostawcy lub niespójności obu źródeł **nie** zgłaszać statusu ACTIVE/PENDING na podstawie zgadywania. Pokaż bezpieczny błąd i zapisz nieosobowe dowody diagnostyczne.
+
+**Alternatywa zatwierdzana wyłącznie przez Owner:** zrezygnować z akcji „Sprawdź status” i pozostawić wyłącznie neutralny modal publiczny. Wtedy nie wolno przedstawiać wymogu dokładnego ekranowego komunikatu jako spełnionego. Ta decyzja musi być jawnie odnotowana przed rozpoczęciem PR-1.
+
 ## 6. Ograniczanie nadużyć
 
 IP + HMAC(email) + globalne limity, niezależne liczniki dla wysyłki a odczytu; krótkie cooldown i dzienny limit DOI, rotacja bez utraty poprawnego tokenu, przeciwdziałanie botom i provider-cost exhaustion, brak PII w logach, stała korelacja requestId. Nigdy nie stosować CAPTCHA jako jedynej kontroli. W PR-1 określić oraz przetestować liczbowe progi i retencję według rzeczywistych ograniczeń dostawcy, nie wymyślać ich w tej propozycji.
