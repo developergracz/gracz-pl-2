@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { createDatabase } from "../persistence/database.mjs";
 import { createPersistenceRepositories } from "../persistence/repositories.mjs";
 import { applyMigrations } from "../persistence/migrator.mjs";
+import { applyNewsletterCandidate } from './newsletter-candidate.mjs';
 import { assertDisposableDatabaseUrl } from "./test-database-guard.mjs";
 import { createProvider, createManager, extractToken, consentEmailHash, getFreePort } from "../test-support/newsletter-provider.mjs";
 
@@ -40,6 +41,7 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
   const database = createDatabase({connectionString:DATABASE_URL});
   t.after(() => database.close());
   await applyMigrations(database);
+  await applyNewsletterCandidate(database, DATABASE_URL);
   await database.query('TRUNCATE newsletter_opt_in_requests');
   const store = createPersistenceRepositories(database).newsletter;
 
@@ -97,7 +99,7 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     assert.equal(provider.emails.length,4);
   });
   await t.test("cutover preserves legacy pending window without fabricating sent or consent", async () => {
-    const sql = await readFile(new URL('../persistence/migrations/005_newsletter_opt_in_requests.sql',import.meta.url),'utf8');
+    const sql = await readFile(new URL('../persistence/candidates/005_newsletter_opt_in_requests.sql',import.meta.url),'utf8');
     await database.transaction(async client => {
       await client.query('CREATE SCHEMA b1_cutover_fixture');
       await client.query('SET LOCAL search_path TO b1_cutover_fixture');
@@ -164,6 +166,13 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     const request = {email,consent:true,startedAt:Date.now()-5000};
     const expected = {status:200,body:{ok:true,state:'request_received'}};
     assert.deepEqual(await post('/newsletter/subscribe',request),expected);
+    // Admission is asynchronous: wait for durable completion before restarting.
+    for(let n=0;n<100;n++) {
+      const row=await database.query("SELECT state FROM idempotency_keys WHERE scope='newsletter-public-optin' AND key_hash=$1",[consentEmailHash(email)]);
+      if(row.rows[0]?.state==='done')break;
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
+    assert.equal(provider.emails.length,1);
     await stop();
     await start();
     assert.deepEqual(await post('/newsletter/subscribe',request),expected);
@@ -171,6 +180,16 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     assert.equal((await post('/newsletter/confirm',{token:extractToken(provider.emails[0],'confirm')})).status,200);
     assert.deepEqual(await post('/newsletter/subscribe',request),expected);
     assert.equal(provider.emails.length,2);
+    assert.deepEqual(await post('/newsletter/status-request',{email,startedAt:Date.now()-5000}),expected);
+    for(let n=0;n<100 && provider.emails.length<3;n++)await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(provider.emails.length,3);
+    const statusToken=provider.emails[2].body.text.match(/#status=([^\s]+)/)[1];
+    await stop();
+    await start();
+    assert.deepEqual(await post('/newsletter/status-check',{token:statusToken}),{status:200,body:{ok:true,state:'active'}});
+    assert.equal((await post('/newsletter/status-check',{token:statusToken})).status,400);
+    assert.equal((await post('/newsletter/confirm',{token:statusToken})).status,400);
+    assert.equal(provider.emails.length,3,'proof and replay do not send another welcome or DOI');
     await stop();
   });
 

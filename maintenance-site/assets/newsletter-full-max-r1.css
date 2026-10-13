@@ -28,3 +28,14 @@ input[type=text],input[type=email]{width:100%;height:46px;border:1px solid #376c
 .nl-footer{width:min(1120px,100%);margin:0 auto;padding:0 20px 34px;display:flex;justify-content:space-between;gap:20px;color:#688078;font-size:11px}.nl-footer nav{display:flex;gap:14px;flex-wrap:wrap}.nl-footer a{text-decoration:none}
 @media(max-width:720px){.nl-shell{padding:20px 12px 35px}.nl-card{border-radius:18px}.nl-hero{padding:30px 20px 24px}.nl-benefits{grid-template-columns:1fr;padding:20px 20px 0}.nl-panel{margin:20px;padding:20px}.nl-row{grid-template-columns:1fr}.nl-trust{grid-template-columns:1fr;padding:0 20px 24px}.nl-footer{flex-direction:column}.nl-topbar{padding:0 16px}.nl-back{font-size:10px}.nl-logo{font-size:27px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+/* Inline validation uses the same restrained red treatment as the premium footer. */
+.nl-field-error{display:block;margin:6px 0 0;min-height:0;color:#ffbdc5!important;font-size:12px;font-weight:600!important;line-height:1.5}
+.nl-field-error:empty{display:none}
+input[aria-invalid=true]{border-color:#ef7081;box-shadow:0 0 0 3px rgba(242,26,52,.12);background-color:#302326}
+.nl-consent:has(input[aria-invalid=true]){border-color:#ef7081;background:rgba(242,26,52,.06)}
+.nl-primary:focus-visible,a:focus-visible{outline:3px solid #a0f4eb;outline-offset:4px}
+.nl-panel[hidden]{display:none}
+#nl-status-panel .nl-kicker{margin-bottom:10px}
+@media(max-width:720px){.nl-primary{width:100%;height:auto;padding:14px 16px;line-height:1.5}.nl-row input{font-size:16px}.nl-hero h1{letter-spacing:-1px}}
+.nl-brand-domain{color:var(--red)}
+.nl-row label .nl-label-text{color:#e6efec;font-weight:700}

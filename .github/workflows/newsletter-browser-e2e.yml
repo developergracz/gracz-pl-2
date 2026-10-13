@@ -1,0 +1,32 @@
+name: Newsletter browser E2E
+on:
+  pull_request:
+    paths:
+      - 'maintenance-site/newsletter/**'
+      - 'maintenance-site/assets/newsletter-full-max-r1.*'
+      - 'maintenance-site/assets/legal-links.js'
+      - 'maintenance-site/assets/footer-newsletter.css'
+      - 'tests/newsletter/**'
+      - '.github/workflows/newsletter-browser-e2e.yml'
+permissions:
+  contents: read
+jobs:
+  newsletter-browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --prefix .newsletter-e2e @playwright/test@1.56.1
+      - run: ./.newsletter-e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Mock-only newsletter browser tests
+        env:
+          NODE_PATH: ${{ github.workspace }}/.newsletter-e2e/node_modules
+        run: ./.newsletter-e2e/node_modules/.bin/playwright test --config=tests/newsletter/playwright.config.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newsletter-browser-results
+          path: test-results/newsletter/

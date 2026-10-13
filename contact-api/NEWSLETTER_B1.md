@@ -1,4 +1,6 @@
-# B1 duplicate opt-in hardening — review evidence
+# B1 duplicate opt-in hardening — historical review evidence
+
+Preserved #248 evidence. For the integrated branch, current behavior, candidate SQL quarantine and production holds, see [NEWSLETTER_R3.md](NEWSLETTER_R3.md).
 
 Baseline: `4fa9b909667651a2580e28b404539dfe4306b950`. Scope: B1 only; merge and production remain on hold.
 

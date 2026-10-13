@@ -1,5 +1,6 @@
 export function createNewsletterOptInStore(database) {
   return {
+    async checkOptInAvailable() { await database.query("SELECT 1 FROM newsletter_opt_in_requests LIMIT 0"); },
     async claimOptInRequest({ emailHash, requestId, issuedAt, expiresAt, supersededBefore }) {
       const result = await database.query(
         `INSERT INTO newsletter_opt_in_requests(email_hash, request_id, issued_at, expires_at)

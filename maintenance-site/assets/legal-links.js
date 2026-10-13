@@ -13,6 +13,7 @@
   var accountLastTrigger=null;
   var newsletterSuccessDialog=null;
   var newsletterSuccessLastTrigger=null;
+  var footerNewsletterValidationSeq=0;
 
   function newRequestKey(){
     try{
@@ -433,7 +434,7 @@
       '<div class="account-access__hero newsletter-success__hero">'+
         '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
         '<h2 id="newsletter-success-title">Zgłoszenie przyjęte</h2>'+
-        '<p id="newsletter-success-intro" class="account-access__intro">Jeśli adres wymaga potwierdzenia, wyślemy bezpieczny link. Jeśli newsletter już działa, nie musisz nic robić.</p>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">Zgłoszenie przyjęto do obsługi. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.</p>'+
       '</div>'+
       '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
@@ -447,6 +448,7 @@
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
           '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — sprawdzę skrzynkę</span><b aria-hidden="true">→</b></button>'+
+          '<p class="account-access__consent"><a href="/newsletter/#nl-status-panel">Sprawdź status newslettera bez zapisywania się</a></p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
@@ -528,7 +530,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r2';
+    link.href='/assets/footer-newsletter.css?v=r2-premium-validation';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -538,6 +540,37 @@
     if(!status)return;
     status.textContent=text||'';
     status.classList.toggle('is-error',type==='error');
+  }
+
+  // Premium field-level validation; unlike reportValidity(), never opens Chrome bubbles.
+  function setFooterNewsletterFieldError(form,field,message){
+    var node=form.querySelector('[data-footer-newsletter-error="'+field+'"]');
+    var control=form.elements[field];
+    if(!node||!control)return;
+    node.textContent=message||'';
+    if(message)control.setAttribute('aria-invalid','true');
+    else control.removeAttribute('aria-invalid');
+  }
+
+  function validateFooterNewsletter(form){
+    var email=form.elements.email;
+    var consent=form.elements.consent;
+    if(!email||!consent)return false;
+
+    var address=String(email.value||'').trim();
+    var emailError='';
+    if(!address)emailError='Podaj adres e-mail, aby zapisać się do newslettera.';
+    else if((email.validity&&!email.validity.valid)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)){
+      emailError='Sprawdź adres e-mail. Wpisz go w formacie nazwa@domena.pl.';
+    }
+    var consentError=consent.checked?'':'Zaznacz zgodę na newsletter, aby kontynuować.';
+    setFooterNewsletterFieldError(form,'email',emailError);
+    setFooterNewsletterFieldError(form,'consent',consentError);
+    if(emailError||consentError){
+      (emailError?email:consent).focus();
+      return false;
+    }
+    return true;
   }
 
   function enhanceFooterNewsletter(form){
@@ -550,6 +583,7 @@
     form.classList.add('footer-newsletter-live');
     form.setAttribute('aria-label','Zapis do newslettera gracz.pl');
     form.dataset.newsletterOpenedAt=String(Date.now());
+    form.noValidate=true;
 
     email.name='email';
     email.required=true;
@@ -557,11 +591,34 @@
     email.autocomplete='email';
     email.setAttribute('inputmode','email');
 
+    var uniqueId=String(++footerNewsletterValidationSeq);
+    var emailError=document.createElement('p');
+    emailError.className='footer-newsletter-validation';
+    emailError.id='footer-newsletter-email-error-'+uniqueId;
+    emailError.setAttribute('data-footer-newsletter-error','email');
+    emailError.setAttribute('role','status');
+    emailError.setAttribute('aria-live','polite');
+    submit.insertAdjacentElement('afterend',emailError);
+    email.setAttribute('aria-describedby',((email.getAttribute('aria-describedby')||'')+' '+emailError.id).trim());
+    email.addEventListener('input',function(){setFooterNewsletterFieldError(form,'email','');});
+
     var consent=document.createElement('label');
     consent.className='footer-newsletter-consent';
     consent.setAttribute('data-footer-newsletter-consent','');
     consent.innerHTML='<input name="consent" type="checkbox" required><span>Chcę otrzymywać newsletter gracz.pl. Zapis jest dobrowolny, wymaga potwierdzenia e-mail i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter">Polityka prywatności</a>.</span>';
     form.appendChild(consent);
+    var consentInput=consent.querySelector('input[name="consent"]');
+    var consentError=document.createElement('p');
+    consentError.className='footer-newsletter-validation footer-newsletter-validation--consent';
+    consentError.id='footer-newsletter-consent-error-'+uniqueId;
+    consentError.setAttribute('data-footer-newsletter-error','consent');
+    consentError.setAttribute('role','status');
+    consentError.setAttribute('aria-live','polite');
+    form.appendChild(consentError);
+    if(consentInput){
+      consentInput.setAttribute('aria-describedby',((consentInput.getAttribute('aria-describedby')||'')+' '+consentError.id).trim());
+      consentInput.addEventListener('change',function(){setFooterNewsletterFieldError(form,'consent','');});
+    }
 
     var honeypot=document.createElement('div');
     honeypot.className='footer-newsletter-honeypot';
@@ -591,7 +648,7 @@
     if(!email||!consent||!submit)return;
 
     setFooterNewsletterStatus(form,'');
-    if(!form.reportValidity())return;
+    if(!validateFooterNewsletter(form))return;
 
     form.dataset.newsletterSending='1';
     submit.disabled=true;
@@ -599,6 +656,8 @@
     submit.textContent='Wysyłanie…';
     setFooterNewsletterStatus(form,'Łączę z bezpiecznym kanałem gracz.pl. Przy pierwszym uruchomieniu może to potrwać kilkanaście sekund.');
 
+    var controller=new AbortController();
+    var timer=window.setTimeout(function(){controller.abort();},30000);
     try{
       var response=await fetch(NEWSLETTER_API,{
         method:'POST',
@@ -611,7 +670,8 @@
           startedAt:Number(form.dataset.newsletterOpenedAt||Date.now())
         }),
         mode:'cors',
-        credentials:'omit'
+        credentials:'omit',
+        signal:controller.signal
       });
       var body={};
       try{body=await response.json();}catch(_){}
@@ -629,11 +689,12 @@
       form.dataset.newsletterOpenedAt=String(Date.now());
       await openNewsletterSuccess(submit);
     }catch(error){
-      setFooterNewsletterStatus(form,error&&error.message?error.message:'Nie udało się rozpocząć zapisu. Spróbuj ponownie za chwilę.','error');
+      setFooterNewsletterStatus(form,error&&(error.name==='AbortError'||error instanceof TypeError)?'Nie możemy potwierdzić wyniku. Zgłoszenie mogło zostać przyjęte. Sprawdź skrzynkę i nie ponawiaj od razu.':error&&error.message?error.message:'Nie udało się potwierdzić operacji.','error');
       var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
       if(error&&emailCodes.indexOf(error.code)!==-1)email.focus();
       else submit.focus();
     }finally{
+      window.clearTimeout(timer);
       form.dataset.newsletterSending='0';
       submit.disabled=false;
       submit.textContent=originalText;

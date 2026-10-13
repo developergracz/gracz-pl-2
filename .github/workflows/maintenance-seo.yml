@@ -57,6 +57,8 @@ jobs:
           node --check contact-api/integration/test-database-guard.mjs
           node --check contact-api/integration/premium-reply.persistence.integration.test.mjs
           node --check contact-api/integration/contact-idempotency.persistence.integration.test.mjs
+      - name: Check complete backend syntax
+        run: npm --prefix contact-api run check
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run SEO gate

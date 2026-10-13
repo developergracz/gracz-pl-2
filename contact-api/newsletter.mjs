@@ -1,3 +1,4 @@
+import { createMailboxStatus, createNewsletterAdmission } from './newsletter-status.mjs';
 import {
   createCipheriv,
   createDecipheriv,
@@ -30,6 +31,8 @@ export function createNewsletterManager({
   providerTimeoutMs = 10_000,
   consentStore = null,
   consentHashSecret = "",
+  proofStore = null,
+  logger = console,
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
@@ -1192,10 +1195,39 @@ export function createNewsletterManager({
     }
   }
 
+  async function readVerifiedStatus(email) {
+    if (await getSuppression(email)) return {state:'inactive'};
+    const contact = await getContact(email);
+    const evidence = await consentStore.getContact(consentSubjectHash(email));
+    if (evidence?.provider_blocked_at) throw providerError('NEWSLETTER_PROVIDER_UNCERTAIN',503);
+    if (contact) {
+      const [segments, topics] = await Promise.all([listAll('/segments'), listAll('/topics')]);
+      const segment = segments.find(item=>item.name===segmentName);
+      const topic = topics.find(item=>item.name===topicName);
+      const state = segment && topic ? await getContactProviderState(providerContactRef(contact,email),{segmentId:segment.id,topicId:topic.id}) : {inSegment:false,topicSubscription:'opt_out'};
+      if (!contact.unsubscribed && state.inSegment && state.topicSubscription==='opt_in') {
+        if(evidence?.current_state==='unsubscribed')throw providerError('NEWSLETTER_PROVIDER_UNCERTAIN',503);
+        return {state:'active'};
+      }
+      // Provider withdrawal/suppression always overrides first-party pending.
+      if(contact.unsubscribed || !state.inSegment || state.topicSubscription!=='opt_in')return {state:'inactive'};
+    }
+    if(evidence?.current_state==='pending') {
+      const events=await consentStore.listConsentEvents(consentSubjectHash(email));
+      if(events.some(event=>event.event_type==='opt_in_requested' && timestampMs(event.occurred_at)>Date.now()-CONFIRM_TTL_MS))return {state:'pending'};
+    }
+    return {state:'inactive'};
+  }
+  const mailboxStatus = createMailboxStatus({secret:normalizedSecret,store:proofStore,hashEmail:consentSubjectHash,sendEmail,readStatus:readVerifiedStatus,canSend:async email=>!await getSuppression(email),baseUrl:normalizedBaseUrl});
+  const admission = createNewsletterAdmission({store:proofStore,hashEmail:consentSubjectHash,requestOptIn,requestStatus:mailboxStatus.requestStatus,checkReady:()=>consentStore.checkOptInAvailable?.(),logger});
+
   return {
     enabled,
     consentLedgerConfigured: consentStoreConfigured,
     requestOptIn,
+    ...admission,
+    requestStatus: mailboxStatus.requestStatus,
+    checkStatus: mailboxStatus.checkStatus,
     confirm,
     unsubscribe,
     baseUrl: normalizedBaseUrl,

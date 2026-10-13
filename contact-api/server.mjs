@@ -1,3 +1,5 @@
+import { createNewsletterProofStore } from './persistence/newsletter-proof-store.mjs';
+import { createMemoryNewsletterProofStore } from './test-support/memory-newsletter-proof-store.mjs';
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
@@ -105,6 +107,7 @@ const newsletter = createNewsletterManager({
   replyTo: CONTACT_TO_ADDRESS,
   baseUrl: NEWSLETTER_URL,
   consentStore: newsletterConsentStore,
+  proofStore: useTestNewsletterConsentStore ? createMemoryNewsletterProofStore() : (database.enabled ? createNewsletterProofStore(database) : null),
   consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
 });
 
@@ -566,7 +569,7 @@ createServer(async (req, res) => {
     let newsletterState = "not_requested";
     if (payload.newsletter) {
       try {
-        await newsletter.requestOptIn({
+        await newsletter.acceptOptIn({
           email: payload.email,
           name: payload.name,
           source: "contact_form",
