@@ -84,6 +84,33 @@ form[data-newsletter].footer-newsletter-live > button[type="submit"]{
   white-space:nowrap !important;
 }
 
+/* FOOTER STATUS FLOW LAYOUT FIX — 2026-10-13.
+ * The desktop home.css footer-grid had a fixed height; the dynamically added
+ * required consent and asynchronous status text extended beyond that grid and
+ * overlapped footer-bottom/legal/social links. Keep the status in normal flow.
+ * Other viewports already use an auto-height grid.
+ */
+@media (min-width:1180px){
+  .site-footer .footer-grid{
+    height:auto;
+    padding-bottom:clamp(24px,2vw,36px);
+  }
+}
+
+/* home.css .footer-news p has greater specificity than the generic status
+ * rule; keep progress readable and restore red for an actual error. */
+.site-footer .footer-news .footer-newsletter-status{
+  margin:0;
+  max-width:100%;
+  color:#8de7df;
+  font-size:.72rem;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.site-footer .footer-news .footer-newsletter-status.is-error{
+  color:#ff8d97;
+}
+
 form[data-newsletter].footer-newsletter-live button[disabled]{
   opacity:.66;
   cursor:wait;
