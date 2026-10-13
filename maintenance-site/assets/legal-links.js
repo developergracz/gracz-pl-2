@@ -229,8 +229,8 @@
           throw requestError;
         }
         var successMessage='Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.';
-        if(body.newsletter==='confirmation_sent'){
-          successMessage+=' Newsletter: wysłaliśmy osobny e-mail z linkiem potwierdzającym zapis.';
+        if(body.newsletter==='request_received'||body.newsletter==='confirmation_sent'){
+          successMessage+=' Newsletter: zgłoszenie przyjęte. Jeśli adres wymaga potwierdzenia, wyślemy osobny link. Jeśli newsletter już działa, nie musisz nic robić.';
         }else if(payload.newsletter&&body.newsletter==='temporarily_unavailable'){
           successMessage+=' Wiadomość kontaktowa dotarła poprawnie, ale potwierdzenie newslettera nie mogło zostać teraz wysłane.';
         }
@@ -428,26 +428,26 @@
       '<button class="account-access__close" type="button" data-newsletter-success-close aria-label="Zamknij okno">×</button>'+
       '<div class="account-access__topline">'+
         '<span class="account-access__brand" aria-hidden="true">gracz<span>.pl</span></span>'+
-        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter · link wysłany</span>'+
+        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter · zgłoszenie przyjęte</span>'+
       '</div>'+
       '<div class="account-access__hero newsletter-success__hero">'+
         '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
-        '<h2 id="newsletter-success-title">Dziękujemy za zapis!</h2>'+
-        '<p id="newsletter-success-intro" class="account-access__intro">Pierwszy krok jest gotowy. Na podany adres e-mail wysłaliśmy bezpieczny link potwierdzający zapis do newslettera gracz.pl.</p>'+
+        '<h2 id="newsletter-success-title">Zgłoszenie przyjęte</h2>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">Jeśli adres wymaga potwierdzenia, wyślemy bezpieczny link. Jeśli newsletter już działa, nie musisz nic robić.</p>'+
       '</div>'+
       '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
         '<div class="account-access__newsletter-copy">'+
-          '<p class="account-access__newsletter-kicker">Jeszcze jeden krok</p>'+
+          '<p class="account-access__newsletter-kicker">Newsletter gracz.pl</p>'+
           '<h3 id="newsletter-success-card-title">Sprawdź swoją skrzynkę e-mail</h3>'+
-          '<p>Otwórz wiadomość od gracz.pl i kliknij link potwierdzający. Dopiero wtedy zapis zostanie aktywowany — dzięki temu nikt nie może zapisać Twojego adresu bez Twojej zgody.</p>'+
+          '<p>Jeżeli otrzymasz wiadomość od gracz.pl, kliknij link potwierdzający. Nowy zapis wymaga potwierdzenia — aktywna subskrypcja pozostaje bez zmian.</p>'+
           '<ul class="account-access__benefits">'+
             '<li><span aria-hidden="true">✓</span>kliknij link w wiadomości potwierdzającej</li>'+
             '<li><span aria-hidden="true">✓</span>bez potwierdzenia adres nie zostanie aktywowany</li>'+
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
           '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — sprawdzę skrzynkę</span><b aria-hidden="true">→</b></button>'+
-          '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Link potwierdzający jest wysyłany tylko po poprawnym przyjęciu zapisu.</p>'+
+          '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
       '<div class="account-access__footer">'+

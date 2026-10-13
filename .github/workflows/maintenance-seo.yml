@@ -39,6 +39,10 @@ jobs:
           node --check contact-api/server.mjs
           node --check contact-api/premium-reply.mjs
           node --check contact-api/newsletter.mjs
+          node --check contact-api/persistence/newsletter-opt-in-store.mjs
+          node --check contact-api/test/newsletter-route.test.mjs
+          node --check contact-api/test-support/newsletter-provider.mjs
+          node --check contact-api/integration/newsletter-opt-in.persistence.integration.test.mjs
           node --check contact-api/persistence/database.mjs
           node --check contact-api/persistence/migrator.mjs
           node --check contact-api/persistence/contact-data-contract-prep.mjs

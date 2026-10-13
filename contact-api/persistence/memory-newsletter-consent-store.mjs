@@ -5,6 +5,7 @@ function clone(value) {
 export function createMemoryNewsletterConsentStore() {
   const contacts = new Map();
   const events = new Map();
+  const requests = new Map();
 
   async function ensureContact({ emailHash, consentVersion = null }) {
     const existing = contacts.get(emailHash);
@@ -134,7 +135,33 @@ export function createMemoryNewsletterConsentStore() {
       .map(clone);
   }
 
+  async function claimOptInRequest({ emailHash, requestId, issuedAt, expiresAt, supersededBefore }) {
+    const previous = requests.get(emailHash);
+    if (previous && !(previous.state === "sent" &&
+      previous.issuedAt < issuedAt &&
+      (previous.expiresAt <= new Date() || previous.issuedAt <= supersededBefore))) {
+      return { claimed: false, state: previous.state, inProgress: previous.state === "inflight" && previous.issuedAt.getTime() > Date.now() - 5 * 60 * 1000 };
+    }
+    requests.set(emailHash, { requestId, issuedAt, expiresAt, state: "inflight" });
+    return { claimed: true, state: "inflight" };
+  }
+
+  async function markOptInUnknown({ emailHash, requestId }) {
+    const current = requests.get(emailHash);
+    if (current?.requestId === requestId && current.state === "inflight") current.state = "unknown";
+  }
+
+  async function markOptInSent({ emailHash, requestId }) {
+    const current = requests.get(emailHash);
+    if (!current || current.requestId !== requestId || current.state !== "inflight") return false;
+    current.state = "sent";
+    return true;
+  }
+
   return Object.freeze({
+    claimOptInRequest,
+    markOptInSent,
+    markOptInUnknown,
     ensureContact,
     getContact,
     upsertContact,
