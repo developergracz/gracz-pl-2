@@ -571,7 +571,7 @@ createServer(async (req, res) => {
           name: payload.name,
           source: "contact_form",
         });
-        newsletterState = "confirmation_sent";
+        newsletterState = "request_received";
       } catch (newsletterError) {
         newsletterState = "temporarily_unavailable";
         console.error("[newsletter] opt-in request failed", {

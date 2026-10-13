@@ -1,3 +1,5 @@
+import { createNewsletterOptInStore } from "./newsletter-opt-in-store.mjs";
+
 function assertHash(value, field) {
   const normalized = String(value || "").trim().toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(normalized)) {
@@ -364,6 +366,7 @@ export function createPersistenceRepositories(database) {
   };
 
   const newsletter = {
+    ...createNewsletterOptInStore(database),
     async ensureContact({
       emailHash,
       consentVersion = null,

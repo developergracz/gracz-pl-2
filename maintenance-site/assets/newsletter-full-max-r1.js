@@ -89,7 +89,7 @@
         website:String(form.elements.website.value||'').trim(),
         startedAt:openedAt
       });
-      setStatus(status,'Sprawdź skrzynkę e-mail. Wysłaliśmy bezpieczny link potwierdzający zapis.',false);
+      setStatus(status,'Zgłoszenie przyjęte. Jeśli adres wymaga potwierdzenia, wyślemy bezpieczny link. Jeśli newsletter już działa, nie musisz nic robić.',false);
       form.reset();
       openedAt=Date.now();
     }catch(error){
