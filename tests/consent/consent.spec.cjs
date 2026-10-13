@@ -127,3 +127,55 @@ test('Reject and accept choices have equal visual prominence', async ({ page }) 
   expect(Math.abs(rejectBox.width - acceptBox.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(rejectBox.height - acceptBox.height)).toBeLessThanOrEqual(1);
 });
+
+
+/* Regression for the dynamically enhanced footer: the consent checkbox and
+ * pending API status add rows after the page's static desktop grid is built.
+ * No provider request or production email is sent by this geometry test. */
+for (const viewport of [
+  { width: 1649, height: 900 },
+  { width: 1280, height: 800 },
+  { width: 375, height: 667 }
+]) {
+  test('Homepage footer newsletter progress does not overlap legal links at ' + viewport.width + 'px', async ({ browser }) => {
+    const context = await browser.newContext({ viewport });
+    try {
+      const page = await context.newPage();
+      await page.goto('/');
+
+      const form = page.locator('.site-footer form[data-newsletter]');
+      await expect(form).toHaveClass(/footer-newsletter-live/);
+
+      await page.evaluate(() => {
+        const footerForm = document.querySelector('.site-footer form[data-newsletter]');
+        const status = footerForm.querySelector('[data-footer-newsletter-status]');
+        status.textContent = 'Łączę z bezpiecznym kanałem gracz.pl. Przy pierwszym uruchomieniu może to potrwać kilkanaście sekund.';
+        footerForm.querySelector('button[type="submit"]').textContent = 'Wysyłanie…';
+      });
+
+      const result = await page.evaluate(() => {
+        const rect = selector => document.querySelector(selector).getBoundingClientRect();
+        const status = document.querySelector('.site-footer .footer-newsletter-status');
+        const progress = status.getBoundingClientRect();
+        const consent = rect('.site-footer .footer-newsletter-consent');
+        const grid = rect('.site-footer .footer-grid');
+        const legal = rect('.site-footer .footer-bottom');
+        return {
+          progressBottom: progress.bottom,
+          consentBottom: consent.bottom,
+          gridBottom: grid.bottom,
+          legalTop: legal.top,
+          progressVisible: progress.height > 0,
+          progressColor: getComputedStyle(status).color
+        };
+      });
+      expect(result.progressVisible).toBe(true);
+      expect(result.progressColor).toBe('rgb(141, 231, 223)');
+      expect(result.progressBottom).toBeLessThanOrEqual(result.legalTop - 2);
+      expect(result.consentBottom).toBeLessThanOrEqual(result.legalTop - 2);
+      expect(result.gridBottom).toBeLessThanOrEqual(result.legalTop + 1);
+    } finally {
+      await context.close();
+    }
+  });
+}
