@@ -9,7 +9,7 @@ Ten dokument jest propozycją procesu, a nie potwierdzeniem zakończenia istniej
 
 ## 1. Zasada podstawowa
 
-**ETAP CLOSED = zakres wdrożony + wymagane testy + niezależna ocena + dowody + pełna dokumentacja + decyzja Owner + stan GitHub odpowiadający decyzji.**
+**ETAP CLOSED (zadeklarowany zakres kodowania lub dokumentacji) = zakres zrealizowany zgodnie z mandatem + testy odpowiednie do ryzyka + niezależna ocena + dowody + pełne dossier + aktualne artefakty GitHub/CPAED, gdy mają zastosowanie + decyzja Owner. Wdrożenie produkcyjne i wykonanie migracji mają osobne bramki i nie są domyślnym elementem CLOSED.**
 
 Statusy rozdzielamy jednoznacznie:
 - PROPOSED: specyfikacja bez autoryzacji.
@@ -20,8 +20,8 @@ Statusy rozdzielamy jednoznacznie:
 - REVIEW_PASS: niezależna kontrola konkretnego HEAD zakończona PASS, nie implikuje merge.
 - READY_TO_MERGE: aktualny exact-head review i CI, wszystkie bramki i osobna zgoda Owner.
 - MERGED: commit/scalenie zweryfikowane na main, ale nie oznacza produkcji.
-- DEPLOYED: zweryfikowany SHA produkcji + kontrole po wdrożeniu.
-- CLOSED: kompletne dowody dla **zadeklarowanego zakresu** i zatwierdzony protokół zamknięcia; produkcja może pozostać osobno HOLD.
+- DEPLOYED: odrębny status operacyjny (zweryfikowany SHA produkcji + kontrole po wdrożeniu), a nie automatyczny krok między MERGED i CLOSED.
+- CLOSED: zamknięty jest wyłącznie **jawnie określony zakres**; wymagane testy, audyt, dokumentacja, dowody, zatwierdzenie i zależne aktualizacje stanu są kompletne. Produkcja może pozostać HOLD, ale nie wolno wówczas deklarować CLOSED dla zakresu obejmującego wdrożenie.
 - SUPERSEDED: zapis historyczny zastąpiony wskazanym SHA/PR. Nigdy nie usuwaj historii.
 
 Nie przenoś automatycznie PASS między HEAD, branchami, etapami, środowiskami czy datami.
@@ -48,9 +48,10 @@ Nie zamykaj etapu z pustym polem — wpisz NOT EXECUTED, UNKNOWN albo NOT APPLIC
 - G1 DESIGN: kontrakty, zagrożenia, ADR, plan testów, migracje i strategie wstecznej kompatybilności.
 - G2 IMPLEMENTATION: zapisany kod, pełna mapa diff, narzędzia i testy, brak nieujawnionych zmian.
 - G3 INDEPENDENT REVIEW: zewnętrzny wobec wykonawcy reviewer; dowody oparte na final HEAD; testy niepowiązane z zakresem nie liczą się.
-- G4 OWNER MERGE: jawne zatwierdzenie konkretnego HEAD i gotowych checks; żadnych domyślnych lub autonomicznych merge.
-- G5 RELEASE: osobne GO produkcyjne, kopia/restore i migracje, zgodność API/DB, rollback i obserwacja; niezależne od CLOSED kodowania.
-- G6 CLOSURE: ukończony dossier, niezmienna referencja do dowodów, przeniesione ryzyka, protokół Owner.
+- G4 OWNER MERGE: przed zgodą na merge sprawdź rzeczywistą konfigurację każdej powiązanej usługi (repo/branch, **auto-deploy ON/OFF, rzeczywisty build i pre-deploy command, migrator oraz DDL uruchamiane przez build/deploy**), uwzględniając Render static i contact API oraz inne konsumenty wspólnego `main`. Sprawdź zaległe migracje, bazę, skutki mieszanych wersji, rollback i DR. **Nieznany stan live deploy/build = MERGE HOLD**, gdy merge może uruchomić niezatwierdzoną operację; dokument z repo nie dowodzi stanu usługi. Następnie jawne zatwierdzenie Owner dla konkretnego HEAD i wszystkich wymaganych checks. Żadnego domyślnego merge.
+- G5 POST-MERGE: zweryfikuj rzeczywisty main merge SHA i skuteczny wynik integracji, wymagane push CI i spójny zapis canonical status. Zielone PR CI nie dowodzą post-merge PASS.
+- G6 RELEASE / PAID: oddzielne GO operacyjne; potwierdzone kopie/restore i migracje, zgodność API/DB, rollback, dowód wdrożonego SHA i obserwacja. Żadna zmiana statusu nie może automatycznie autoryzować produkcji lub kosztów.
+- G7 CLOSURE: kompletne dossier, trwała referencja do aktualnych dowodów, przeniesione ryzyka, spójność statusów i protokół decyzji Owner.
 
 Wybór bramek NOT APPLICABLE musi być jawny; przy projektach docs-only G2 oznacza zatwierdzoną dokumentację, nie udawane testy runtime.
 
@@ -67,17 +68,25 @@ Wszystkie aktywne PR, w szczególności newsletter #248 i dokumentacyjny #245, z
 ## 6. Szczególne ograniczenia PostgreSQL / Render / Resend
 
 - Istniejące runbooki DR, secret escrow i contact backfill pozostają nadrzędnymi bramkami operacyjnymi.
-- Numer migracji 005 jest aktualnie objęty kolizją / HOLD; standard nie zatwierdza nowej migracji ani sekwencji.
+- **MIGRATION SLOT 005 = BLOCKS_MERGE** każdego PR wprowadzającego plik SQL `005_*` lub produkcyjną DDL, dopóki nie uzgodniono numeracji, kompatybilności, migratora i recovery gates. Szczególnie PR #248 zawiera `005_newsletter_opt_in_requests.sql`, podczas gdy runbooki rezerwują 005 dla odrębnego CONTRACT contact-data. **Nie scalać PR #248**, nie wykonywać migracji ani nie uznawać zmiany nazwy za wystarczającą naprawę. Ten dokumentacyjny PR #249 nie zawiera DDL, jednak sam merge do `main` nadal wymaga kontroli rzeczywistego deploy-coupling według G4.
 - Zakaz samoczynnego uruchomienia DDL, produkcyjnych eksperymentów i zmian Render bez osobnego mandatu.
 - Rejestruj cutover starych/nowych instancji, downgrade/rollback, stan zgód oraz niespójności dostawcy.
 - Resend jest operacyjnym źródłem stanu subskrypcji w aktualnej architekturze; PostgreSQL przechowuje dowody zgody i kontrolę trwałych operacji.
 
 ## 7. Podstawy dowodowe i utrzymanie
 
-GitHub jest systemem odniesienia dla PR/SHA/CI. Raport z czatu nie wystarcza bez trwałej referencji. Linki do CI muszą wskazywać exact HEAD; daty, reviewer i środowiska są jawne. Zapisy historyczne pozostają niezmienione, a sprostowanie otrzymuje własną datę i link. Przy ponownym otwarciu etapu utwórz wersję dossier R2; nie nadpisuj dowodów starego PASS.
+GitHub jest systemem odniesienia dla PR/SHA/CI. Raport z czatu bez trwałej referencji otrzymuje stan EVIDENCE NOT PERSISTED / HOLD, a nie fikcyjny `independent PASS`. Zapisuj pełne SHA (nie tylko 7-znakowe skróty) i dowody z decyzji Owner, bez sekretów. Wymagane są źródło zdarzenia, data, identyfikator raportu, autor i powiązanie exact HEAD. Linki do CI muszą wskazywać exact HEAD; daty, reviewer i środowiska są jawne. Zapisy historyczne pozostają niezmienione, a sprostowanie otrzymuje własną datę i link. Przy ponownym otwarciu etapu utwórz wersję dossier R2; nie nadpisuj dowodów starego PASS.
 
 **Szablony:** [Dossier etapu](./templates/STAGE-DOSSIER-R1.md), [Lista kontroli dowodów](./templates/AUDIT-CLOSURE-CHECKLIST-R1.md).
 
 **Rejestr programu newsletter:** [NEWSLETTER-OWNER-ADMIN-REGISTER](./NEWSLETTER-OWNER-ADMIN-REGISTER-2026-10-13.md).
 
-**Niezmienny cel właściciela:** przed przekazaniem głównego wysiłku do L6 Gracz Next zakończyć kodowanie i audyty B1, B2, panelu newslettera Owner Admin FULL MAX PREMIUM i końcowe B3. To preferencja kolejności, nie upoważnienie do wdrożenia produkcyjnego.
+**Deklarowany cel właściciela (rozmowa 2026-10-13, publiczny trwały zapis autoryzacji poza tym dossier: PENDING):** przed przekazaniem głównego wysiłku do L6 Gracz Next zakończyć kodowanie i audyty B1, B2, panelu newslettera Owner Admin FULL MAX PREMIUM i końcowe B3. To preferencja kolejności, nie techniczna zależność ani upoważnienie do wdrożenia produkcyjnego.
+
+## 8. Wznowienie po przerwaniu / utracie workspace
+
+Po utracie zadania Codex/Factory/Claude lub limitach: pobierz ponownie `main`, aktualne PR, HEAD/TREE, gałąź, CI i zapisane dowody; zweryfikuj przydział właściciela oraz kolizje, porównaj stan rozmowy z trwałym stanem GitHub. Nie odtwarzaj testów ani PASS z pamięci. Kontynuuj istniejący PR tylko po potwierdzeniu zgodności źródeł i authority. Każdy nieodtwarzalny dowód oznacz UNKNOWN/HOLD. Nie importuj historycznych gałęzi bez analizy diff.
+
+## 9. Wspólne nazwy bramek z Gracz Next
+
+Oba standardy dokumentacyjne używają wspólnej semantyki **G0 SOURCE, G1 DESIGN, G2 IMPLEMENTATION, G3 INDEPENDENT REVIEW, G4 OWNER MERGE, G5 POST-MERGE, G6 RELEASE/PAID, G7 CLOSURE**. Te etykiety są językiem audytu, nie zmieniają istniejących bramek maszynowych AGCAF/CPAED ani hierarchii governance. Typy ustaleń: P0 CRITICAL, P1 BLOCKER/MAJOR, P2 SIGNIFICANT, P3 IMPROVEMENT; w każdym raporcie podać faktyczny wpływ i obowiązujący lokalny model severity.
