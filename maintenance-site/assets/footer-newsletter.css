@@ -74,6 +74,64 @@ form[data-newsletter].footer-newsletter-live > button[type="submit"]{
   color:#ff8d97;
 }
 
+/* Replaces browser-native email/consent error bubbles with inline Premium feedback. */
+form[data-newsletter].footer-newsletter-live > .footer-newsletter-validation{
+  grid-column:1 / -1;
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  margin:0;
+  padding:10px 12px;
+  border:1px solid rgba(83,212,204,.65);
+  border-left:3px solid #56d6cf;
+  border-radius:12px;
+  background:linear-gradient(115deg,rgba(10,49,44,.98),rgba(4,28,27,.98));
+  box-shadow:0 8px 24px rgba(0,0,0,.2),inset 0 1px 0 rgba(151,241,227,.08);
+  color:#f4fbfa;
+  font-size:.78rem;
+  font-weight:600;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+
+form[data-newsletter].footer-newsletter-live > .footer-newsletter-validation:empty{
+  display:none;
+}
+
+form[data-newsletter].footer-newsletter-live > .footer-newsletter-validation:not(:empty)::before{
+  content:"!";
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 19px;
+  width:19px;
+  height:19px;
+  border-radius:50%;
+  background:#56d6cf;
+  color:#062522;
+  font-size:.75rem;
+  font-weight:900;
+}
+
+form[data-newsletter].footer-newsletter-live > input[type="email"][aria-invalid="true"]{
+  border-color:#64dcd3 !important;
+  box-shadow:0 0 0 2px rgba(86,214,207,.2) !important;
+}
+
+form[data-newsletter].footer-newsletter-live .footer-newsletter-consent input[aria-invalid="true"]{
+  outline:2px solid #56d6cf;
+  outline-offset:3px;
+}
+
+@media (prefers-reduced-motion:reduce){
+  form[data-newsletter].footer-newsletter-live > .footer-newsletter-validation{
+    transition:none;
+    animation:none;
+  }
+}
+
 .footer-newsletter-honeypot{
   position:absolute !important;
   width:1px !important;
