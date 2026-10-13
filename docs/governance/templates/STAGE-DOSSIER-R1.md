@@ -10,9 +10,10 @@
 - Lead Architect: TODO
 - Independent reviewer (eligibility check): TODO
 - Baseline: main HEAD, date, remote: TODO
-- Branch / PR / issue / final HEAD / tree: TODO
+- Branch / PR / issue / final HEAD / tree (**FULL SHA**, exact GitHub URLs): TODO
 - Work dates and change log: TODO
-- Status: PROPOSED | ACTIVE | IMPLEMENTED | READY_FOR_INDEPENDENT_REVIEW | REVIEW_HOLD | REVIEW_PASS | READY_TO_MERGE | MERGED | DEPLOYED | CLOSED
+- Status (human evidence lifecycle): PROPOSED | ACTIVE | IMPLEMENTED | READY_FOR_INDEPENDENT_REVIEW | REVIEW_HOLD | BLOCKED | REVIEW_PASS | READY_TO_MERGE | MERGED | CLOSED | SUPERSEDED
+- Operational status, separate from lifecycle: NOT_DEPLOYED | DEPLOYED | PRODUCTION_HOLD | UNKNOWN
 - Relationship to other active PRs and ownership conflict check: TODO
 
 ## B. Scope and design
@@ -53,9 +54,13 @@
 - Final-head CI rerun after every change: UNKNOWN
 - Work not tested / coverage limitation: TODO
 - Source-drifts / superseded results: TODO
+- Lost workspace / continuation recovery: refreshed main HEAD, work-item owner, PR state, new tests and missing evidence: TODO
+- Evidence provenance and publication: GitHub URL or OWNER-PROVIDED / PERSISTENCE PENDING; do not call unrecorded audit closed: TODO
 
 ## F. Operations / roll-forward / rollback
 - Migration slot ownership, checked conflicts: TODO
+- **Pre-merge deploy coupling:** actual Render service, branch, autoDeploy, build/preDeploy command, migration invocation and pending DDL; independent read-only verification ref/date: UNKNOWN / MERGE HOLD until proven safe
+- `005_*` reservation / CONTRACT collision impact: BLOCKS_MERGE where the PR can introduce it
 - Database backup, isolated restore and decrypt readiness: UNKNOWN / HOLD
 - Old/new writer compatibility, health probes and cutover: TODO
 - Rollback and retention, failure to rollback: TODO
@@ -63,6 +68,7 @@
 - Production deployment and post-deploy observations: NOT AUTHORIZED until explicit GO
 
 ## G. Closure decision
+- Gate ID mapping (shared across projects): G0 SOURCE / G1 DESIGN / G2 IMPLEMENTATION / G3 REVIEW / G4 OWNER MERGE / G5 POST-MERGE / G6 RELEASE/PAID / G7 CLOSURE
 - All required gates, with dated links: TODO
 - Carried risks and successor ownership: TODO
 - Recommendation: HOLD / PASS FOR REVIEW / READY_TO_MERGE / CLOSED WITH EXCLUSIONS
@@ -71,4 +77,4 @@
 - Merge SHA / deployment SHA (if applicable): NOT EXECUTED
 - Closure date and evidence canonical location: NOT CLOSED
 
-**Guard:** Coding complete ≠ independent PASS ≠ merge ready ≠ deployed ≠ closed.
+**Guard:** A scoped CODING CLOSED can be recorded while PRODUCTION HOLD remains in force; a production-scope CLOSED requires G6 release proof. Coding complete ≠ independent PASS ≠ merge ready ≠ deployed; closure requires all DoD obligations for its stated scope.
