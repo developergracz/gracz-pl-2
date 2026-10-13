@@ -44,7 +44,7 @@ Nie zamykaj etapu z pustym polem — wpisz NOT EXECUTED, UNKNOWN albo NOT APPLIC
 
 ## 3. Bramki zatwierdzenia
 
-- G0 SCOPE: aktualne main, kolizje PR, istniejące dokumenty, ownership, brak niezatwierdzonych zmian.
+- G0 SOURCE: aktualne main, kolizje PR, istniejące dokumenty, ownership, brak niezatwierdzonych zmian. Zakres IN/OUT i autoryzacja decyzji Owner pozostają obowiązkowe niezależnie od nazwy bramki.
 - G1 DESIGN: kontrakty, zagrożenia, ADR, plan testów, migracje i strategie wstecznej kompatybilności.
 - G2 IMPLEMENTATION: zapisany kod, pełna mapa diff, narzędzia i testy, brak nieujawnionych zmian.
 - G3 INDEPENDENT REVIEW: zewnętrzny wobec wykonawcy reviewer; dowody oparte na final HEAD; testy niepowiązane z zakresem nie liczą się.
