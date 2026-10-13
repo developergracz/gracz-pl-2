@@ -13,6 +13,7 @@
   var accountLastTrigger=null;
   var newsletterSuccessDialog=null;
   var newsletterSuccessLastTrigger=null;
+  var footerNewsletterValidationSeq=0;
 
   function newRequestKey(){
     try{
@@ -540,6 +541,37 @@
     status.classList.toggle('is-error',type==='error');
   }
 
+  // Premium field-level validation; unlike reportValidity(), never opens Chrome bubbles.
+  function setFooterNewsletterFieldError(form,field,message){
+    var node=form.querySelector('[data-footer-newsletter-error="'+field+'"]');
+    var control=form.elements[field];
+    if(!node||!control)return;
+    node.textContent=message||'';
+    if(message)control.setAttribute('aria-invalid','true');
+    else control.removeAttribute('aria-invalid');
+  }
+
+  function validateFooterNewsletter(form){
+    var email=form.elements.email;
+    var consent=form.elements.consent;
+    if(!email||!consent)return false;
+
+    var address=String(email.value||'').trim();
+    var emailError='';
+    if(!address)emailError='Podaj adres e-mail, aby zapisać się do newslettera.';
+    else if((email.validity&&!email.validity.valid)||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(address)){
+      emailError='Sprawdź adres e-mail. Wpisz go w formacie nazwa@domena.pl.';
+    }
+    var consentError=consent.checked?'':'Zaznacz zgodę na newsletter, aby kontynuować.';
+    setFooterNewsletterFieldError(form,'email',emailError);
+    setFooterNewsletterFieldError(form,'consent',consentError);
+    if(emailError||consentError){
+      (emailError?email:consent).focus();
+      return false;
+    }
+    return true;
+  }
+
   function enhanceFooterNewsletter(form){
     if(form.classList.contains('footer-newsletter-live'))return;
     var email=form.querySelector('input[type="email"]');
@@ -550,6 +582,7 @@
     form.classList.add('footer-newsletter-live');
     form.setAttribute('aria-label','Zapis do newslettera gracz.pl');
     form.dataset.newsletterOpenedAt=String(Date.now());
+    form.noValidate=true;
 
     email.name='email';
     email.required=true;
@@ -557,11 +590,34 @@
     email.autocomplete='email';
     email.setAttribute('inputmode','email');
 
+    var uniqueId=String(++footerNewsletterValidationSeq);
+    var emailError=document.createElement('p');
+    emailError.className='footer-newsletter-validation';
+    emailError.id='footer-newsletter-email-error-'+uniqueId;
+    emailError.setAttribute('data-footer-newsletter-error','email');
+    emailError.setAttribute('role','status');
+    emailError.setAttribute('aria-live','polite');
+    submit.insertAdjacentElement('afterend',emailError);
+    email.setAttribute('aria-describedby',((email.getAttribute('aria-describedby')||'')+' '+emailError.id).trim());
+    email.addEventListener('input',function(){setFooterNewsletterFieldError(form,'email','');});
+
     var consent=document.createElement('label');
     consent.className='footer-newsletter-consent';
     consent.setAttribute('data-footer-newsletter-consent','');
     consent.innerHTML='<input name="consent" type="checkbox" required><span>Chcę otrzymywać newsletter gracz.pl. Zapis jest dobrowolny, wymaga potwierdzenia e-mail i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter">Polityka prywatności</a>.</span>';
     form.appendChild(consent);
+    var consentInput=consent.querySelector('input[name="consent"]');
+    var consentError=document.createElement('p');
+    consentError.className='footer-newsletter-validation footer-newsletter-validation--consent';
+    consentError.id='footer-newsletter-consent-error-'+uniqueId;
+    consentError.setAttribute('data-footer-newsletter-error','consent');
+    consentError.setAttribute('role','status');
+    consentError.setAttribute('aria-live','polite');
+    form.appendChild(consentError);
+    if(consentInput){
+      consentInput.setAttribute('aria-describedby',((consentInput.getAttribute('aria-describedby')||'')+' '+consentError.id).trim());
+      consentInput.addEventListener('change',function(){setFooterNewsletterFieldError(form,'consent','');});
+    }
 
     var honeypot=document.createElement('div');
     honeypot.className='footer-newsletter-honeypot';
@@ -591,7 +647,7 @@
     if(!email||!consent||!submit)return;
 
     setFooterNewsletterStatus(form,'');
-    if(!form.reportValidity())return;
+    if(!validateFooterNewsletter(form))return;
 
     form.dataset.newsletterSending='1';
     submit.disabled=true;
