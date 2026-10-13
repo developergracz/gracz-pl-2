@@ -1,0 +1,25 @@
+name: Newsletter Footer Premium Validation
+
+on:
+  pull_request:
+    paths:
+      - 'maintenance-site/assets/legal-links.js'
+      - 'maintenance-site/assets/footer-newsletter.css'
+      - 'scripts/test-footer-newsletter-premium-validation.mjs'
+      - '.github/workflows/newsletter-footer-premium-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  premium-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check for shared footer script
+        run: node --check maintenance-site/assets/legal-links.js
+      - name: Premium field validation regression
+        run: node --test scripts/test-footer-newsletter-premium-validation.mjs
