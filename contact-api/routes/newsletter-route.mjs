@@ -96,7 +96,7 @@ export function createNewsletterRoute({
         bad("Zgoda na newsletter jest wymagana.", "NEWSLETTER_CONSENT_REQUIRED");
       }
       if (website) {
-        return json(res, 200, { ok: true, state: "confirmation_sent" });
+        return json(res, 200, { ok: true, state: "request_received" });
       }
       if (startedAt > 0) enforceFormTiming(startedAt);
 
@@ -120,7 +120,7 @@ export function createNewsletterRoute({
         emailHash: hashValue(email).slice(0, 12),
       });
 
-      return json(res, 200, { ok: true, state: "confirmation_sent" });
+      return json(res, 200, { ok: true, state: "request_received" });
     }
 
     const token = typeof body?.token === "string" ? body.token : "";
