@@ -44,6 +44,8 @@ for (const state of ['active','pending','inactive']) {
   test(`proof click reveals ${state}, token removed before request`, async ({page},info) => {
     const requests=await mock(page,()=>({ok:true,state}));
     await page.goto('/newsletter/#status=secret-proof');
+    const csp=await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    expect(csp.split(';').map(value=>value.trim()).find(value=>value.startsWith('script-src '))).toBe("script-src 'self'");
     await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź status');
     expect(page.url()).not.toContain('secret-proof');
     expect(requests).toHaveLength(0);

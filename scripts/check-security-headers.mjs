@@ -27,7 +27,7 @@ for (const file of htmlFiles) {
   const policy = match[1];
   for (const required of [
     "default-src 'none'",
-    "script-src 'self' https://www.googletagmanager.com",
+    rel === "maintenance-site/newsletter/index.html" ? "script-src 'self'" : "script-src 'self' https://www.googletagmanager.com",
     "style-src 'self'",
     "font-src 'self'",
     "base-uri 'none'",
@@ -37,6 +37,11 @@ for (const file of htmlFiles) {
     if (!policy.includes(required)) {
       errors.push(`${rel}: CSP missing required directive: ${required}`);
     }
+  }
+
+  if (rel === 'maintenance-site/newsletter/index.html') {
+    const script = policy.split(';').map(value => value.trim()).find(value => value.startsWith('script-src '));
+    if (script !== "script-src 'self'") errors.push(`${rel}: mailbox proof page must forbid third-party scripts`);
   }
 
   const hasContactUi =

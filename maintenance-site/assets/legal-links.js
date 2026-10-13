@@ -231,7 +231,7 @@
         }
         var successMessage='Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.';
         if(body.newsletter==='request_received'||body.newsletter==='confirmation_sent'){
-          successMessage+=' Newsletter: zgłoszenie przyjęte. Jeśli adres wymaga potwierdzenia, wyślemy osobny link. Jeśli newsletter już działa, nie musisz nic robić.';
+          successMessage+=' Newsletter: zgłoszenie przyjęte do obsługi. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.';
         }else if(payload.newsletter&&body.newsletter==='temporarily_unavailable'){
           successMessage+=' Wiadomość kontaktowa dotarła poprawnie, ale potwierdzenie newslettera nie mogło zostać teraz wysłane.';
         }
