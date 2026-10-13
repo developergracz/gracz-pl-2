@@ -529,7 +529,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r2';
+    link.href='/assets/footer-newsletter.css?v=r3-premium-validation';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -559,7 +559,7 @@
     var address=String(email.value||'').trim();
     var emailError='';
     if(!address)emailError='Podaj adres e-mail, aby zapisać się do newslettera.';
-    else if((email.validity&&!email.validity.valid)||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(address)){
+    else if((email.validity&&!email.validity.valid)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)){
       emailError='Sprawdź adres e-mail. Wpisz go w formacie nazwa@domena.pl.';
     }
     var consentError=consent.checked?'':'Zaznacz zgodę na newsletter, aby kontynuować.';
