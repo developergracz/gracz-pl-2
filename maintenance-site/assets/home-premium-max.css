@@ -4687,3 +4687,29 @@ body.homepage-premium-max::after{
     scroll-behavior:auto!important;
   }
 }
+
+/* HOMEPAGE FOOTER — newsletter progress must never overlap the legal row. */
+/* home.css used a fixed four-column footer height before newsletter consent
+   and asynchronous status were added to the footer form. Keep the original
+   minimum silhouette, but let the real grid content determine its height. */
+@media (min-width:1180px){
+  .homepage-premium-max .site-footer .footer-grid{
+    height:auto;
+    min-height:calc(158 * var(--u));
+    padding-bottom:max(24px,calc(24 * var(--u)));
+  }
+}
+
+/* The generic .footer-news p rule must not turn the progress text white.
+   Keep progress and failure messages in the form's own grid row. */
+.homepage-premium-max .footer-news .footer-newsletter-status{
+  margin:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  color:#8de7df;
+  font-size:.72rem;
+  line-height:1.4;
+}
+.homepage-premium-max .footer-news .footer-newsletter-status.is-error{
+  color:#ff8d97;
+}
