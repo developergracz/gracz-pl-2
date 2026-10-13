@@ -529,7 +529,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r3-premium-validation';
+    link.href='/assets/footer-newsletter.css?v=r2-premium-validation';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
