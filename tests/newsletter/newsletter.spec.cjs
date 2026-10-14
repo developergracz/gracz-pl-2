@@ -51,7 +51,8 @@ for (const state of ['active','pending','inactive']) {
     expect(requests).toHaveLength(0);
     expect(await page.evaluate(()=>JSON.stringify(history.state))).not.toContain('secret-proof');
     await page.locator('#nl-action-button').click();
-    await expect(page.locator('#nl-action-status')).toHaveText('Gotowe.');
+    await expect(page.locator('#nl-action-status')).toContainText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
+    await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
     expect(requests).toEqual([{path:'/newsletter/status-check',payload:{token:'secret-proof'}}]);
     await expect(page.locator('#nl-action-title')).toHaveText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await page.evaluate(()=>window.scrollTo(0,0));
@@ -95,7 +96,7 @@ test('replay, invalid links and unavailable use generic errors',async({page})=>{
   for(const [index,token] of ['once','once','invalid','unavailable'].entries()) {
     await page.goto('/newsletter/#status='+token);
     await page.locator('#nl-action-button').click();
-    if(index===0)await expect(page.locator('#nl-action-status')).toHaveText('Gotowe.');
+    if(index===0)await expect(page.locator('#nl-action-status')).toContainText('Newsletter nieaktywny');
     else await expect(page.locator('#nl-action-status')).toContainText(token==='unavailable'?'chwilowo niedostępna':'Poproś o nowy bezpieczny link');
     await expect(page.locator('#nl-action-status')).not.toContainText('private');
   }
@@ -159,6 +160,7 @@ for(const mode of ['confirm','unsubscribe']) {
     await expect(page.locator('#nl-action-status')).toContainText('tym samym linkiem');
     await page.locator('#nl-action-button').click();
     await expect(page.locator('#nl-action-status')).toHaveText('Gotowe.');
+    await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
     expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}},{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
   });
 }

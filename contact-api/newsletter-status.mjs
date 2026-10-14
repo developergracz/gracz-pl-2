@@ -34,30 +34,37 @@ export function createMailboxStatus({secret,store,hashEmail,sendEmail,readStatus
     }catch {throw invalid();}
   }
   return {
-    async requestStatus({email}) {
+    async requestStatus({email,beforeExternalEffect=async()=>{}}) {
       if(!store)throw unavailable();
       const emailHash=hashEmail(email),requestId=randomBytes(32).toString('hex');
       const dispatch={scope:'newsletter-status-dispatch',emailHash,requestId,expiresAt:new Date(now()+TTL)};
       if(!await store.claimDispatch(dispatch))return {state:'request_received'};
-      // Budget is durable and independent of subscription membership. Exhaustion
-      // never bypasses the uncertain dispatch reservation or discloses membership.
-      if(!await store.reserveStatusBudget({emailHash})) {
-        await store.markDispatchDone(dispatch);
+      try {
+        // Budget is durable and independent of subscription membership. Exhaustion
+        // never bypasses the uncertain dispatch reservation or discloses membership.
+        if(!await store.reserveStatusBudget({emailHash})) {
+          await store.markDispatchDone(dispatch);
+          return {state:'request_received'};
+        }
+        if(!await canSend(email)) {
+          await store.markDispatchDone(dispatch);
+          return {state:'request_received'};
+        }
+        const data={purpose:'STATUS_CHECK',aud:'gracz.pl/newsletter/status-check',email,nonce:randomBytes(32).toString('hex'),iat:now(),exp:now()+TTL};
+        data.exp=data.iat+TTL;
+        if(!await store.issueStatusToken({tokenHash:digest(data.nonce),emailHash,expiresAt:new Date(data.exp)}))throw unavailable();
+        const link=baseUrl+'#status='+encrypt(data);
+        const text='Sprawdź status newslettera gracz.pl\n\nOtwórz link i potwierdź sprawdzenie statusu swojej skrzynki. Link jest jednorazowy i ważny 10 minut. Nie zapisuje ani nie wypisuje z newslettera.\n\n'+link+'\n\nJeśli nie prosisz o sprawdzenie, zignoruj tę wiadomość.';
+        await beforeExternalEffect();
+        if(!await store.markDispatchEffect(dispatch))throw unavailable();
+        const delivery=await sendEmail({to:email,subject:'gracz.pl — sprawdzenie statusu newslettera',text,html:'<p>Sprawdzenie statusu newslettera gracz.pl</p><p>Link jednorazowy, ważny 10 minut. Nie zmienia zgody na newsletter.</p><p><a href="'+link+'">Sprawdź status swojej skrzynki</a></p><p>Jeśli nie prosisz o sprawdzenie, zignoruj tę wiadomość.</p>',idempotencyKey:'newsletter-status/'+requestId,entityRef:'gracz-newsletter-status-'+requestId});
+        if(typeof delivery?.id!=='string'||!delivery.id)throw unavailable();
+        if(!await store.markDispatchDone(dispatch))throw unavailable();
         return {state:'request_received'};
+      }catch(error){
+        await store.releaseDispatchBeforeEffect(dispatch).catch(()=>{});
+        throw error;
       }
-      if(!await canSend(email)) {
-        await store.markDispatchDone(dispatch);
-        return {state:'request_received'};
-      }
-      const data={purpose:'STATUS_CHECK',aud:'gracz.pl/newsletter/status-check',email,nonce:randomBytes(32).toString('hex'),iat:now(),exp:now()+TTL};
-      data.exp=data.iat+TTL;
-      if(!await store.issueStatusToken({tokenHash:digest(data.nonce),emailHash,expiresAt:new Date(data.exp)}))throw unavailable();
-      const link=baseUrl+'#status='+encrypt(data);
-      const text='Sprawdź status newslettera gracz.pl\n\nOtwórz link i potwierdź sprawdzenie statusu swojej skrzynki. Link jest jednorazowy i ważny 10 minut. Nie zapisuje ani nie wypisuje z newslettera.\n\n'+link+'\n\nJeśli nie prosisz o sprawdzenie, zignoruj tę wiadomość.';
-      const delivery=await sendEmail({to:email,subject:'gracz.pl — sprawdzenie statusu newslettera',text,html:'<p>Sprawdzenie statusu newslettera gracz.pl</p><p>Link jednorazowy, ważny 10 minut. Nie zmienia zgody na newsletter.</p><p><a href="'+link+'">Sprawdź status swojej skrzynki</a></p><p>Jeśli nie prosisz o sprawdzenie, zignoruj tę wiadomość.</p>',idempotencyKey:'newsletter-status/'+requestId,entityRef:'gracz-newsletter-status-'+requestId});
-      if(typeof delivery?.id!=='string'||!delivery.id)throw unavailable();
-      if(!await store.markDispatchDone(dispatch))throw unavailable();
-      return {state:'request_received'};
     },
     async checkStatus(token) {
       if(!store)throw unavailable();
@@ -73,28 +80,40 @@ export function createMailboxStatus({secret,store,hashEmail,sendEmail,readStatus
 
 // Public requests acknowledge durable admission, not provider delivery. Provider
 // branches/errors run after admission and cannot become a membership timing oracle.
-export function createNewsletterAdmission({store,hashEmail,requestOptIn,requestStatus,checkReady=async()=>{},logger=console,now=Date.now}) {
+export function createNewsletterAdmission({store,hashEmail,requestOptIn,requestStatus,checkReady=async()=>{},logger=console,now=Date.now,intakePaused=false}) {
   const active=new Set();
-  let reserved=0;
+  let reserved=0,stopping=false;
+  const drained=new Set();
+  function releaseCapacity(){reserved--;if(!reserved){for(const resolve of drained)resolve();drained.clear();}}
   async function accept(kind,payload) {
-    if(!store||reserved>=64)throw unavailable();
+    if(intakePaused||stopping||!store||reserved>=64)throw unavailable();
     const dispatch={scope:'newsletter-public-'+kind,emailHash:hashEmail(payload.email),requestId:randomBytes(32).toString('hex'),expiresAt:new Date(now()+60000)};
     reserved++;
     let claimed;
-    try {if(kind==='optin')await checkReady();claimed=await store.claimDispatch(dispatch);}catch{reserved--;throw unavailable();}
+    try {if(kind==='optin')await checkReady();claimed=await store.claimDispatch(dispatch);}catch{releaseCapacity();throw unavailable();}
     if(claimed) {
       const work=new Promise(resolve=>setImmediate(resolve)).then(async()=>{
         try {
-          await (kind==='optin'?requestOptIn:requestStatus)(payload);
+          let marked=false;
+          const beforeExternalEffect=async()=>{
+            if(marked)return;
+            if(!await store.markDispatchEffect(dispatch))throw unavailable();
+            marked=true;
+          };
+          await (kind==='optin'?requestOptIn:requestStatus)({...payload,beforeExternalEffect});
           if(!await store.markDispatchDone(dispatch))throw unavailable();
         }catch {
           // Fixed code only: no provider text, token, raw email or HMAC in logs.
-          logger.error('[newsletter] admitted operation unavailable',{code:'NEWSLETTER_OPERATION_UNCERTAIN'});
+          const released=await store.releaseDispatchBeforeEffect(dispatch).catch(()=>false);
+          logger.error('[newsletter] admitted operation unavailable',{code:released?'NEWSLETTER_PRE_EFFECT_RELEASED':'NEWSLETTER_OPERATION_UNCERTAIN',operationId:dispatch.requestId});
         }
       });
-      active.add(work);work.finally(()=>{active.delete(work);reserved--;});
-    } else reserved--;
+      active.add(work);work.finally(()=>{active.delete(work);releaseCapacity();});
+    } else releaseCapacity();
     return {state:'request_received'};
   }
-  return {acceptOptIn:payload=>accept('optin',payload),acceptStatus:payload=>accept('status',payload),waitForPublicWork:()=>Promise.all([...active])};
+  return {acceptOptIn:payload=>accept('optin',payload),acceptStatus:payload=>accept('status',payload),
+    get intakePaused(){return intakePaused||stopping;},
+    stopAccepting(){stopping=true;},
+    waitForPublicWork:()=>reserved?new Promise(resolve=>drained.add(resolve)):Promise.resolve()};
 }

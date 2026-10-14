@@ -80,6 +80,7 @@ export function createNewsletterRoute({
     const body = await readJson(req, 8_192);
 
     if (url.pathname === "/newsletter/subscribe" || url.pathname === "/newsletter/status-request") {
+      if (newsletter.intakePaused) return json(res,503,{error:{code:"NEWSLETTER_INTAKE_PAUSED",message:"Przyjmowanie zgłoszeń jest chwilowo wstrzymane."}});
       const statusRequest = url.pathname === "/newsletter/status-request";
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         bad("Nieprawidłowe dane formularza.", "INVALID_PAYLOAD");

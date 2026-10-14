@@ -2,7 +2,7 @@ function clone(value) {
   return value == null ? value : structuredClone(value);
 }
 
-export function createMemoryNewsletterConsentStore() {
+export function createMemoryNewsletterConsentStore({ clock = () => new Date() } = {}) {
   const contacts = new Map();
   const events = new Map();
   const requests = new Map();
@@ -137,13 +137,57 @@ export function createMemoryNewsletterConsentStore() {
 
   async function claimOptInRequest({ emailHash, requestId, issuedAt, expiresAt, supersededBefore }) {
     const previous = requests.get(emailHash);
-    if (previous && !(previous.state === "sent" &&
-      previous.issuedAt < issuedAt &&
-      (previous.expiresAt <= new Date() || previous.issuedAt <= supersededBefore))) {
-      return { claimed: false, state: previous.state, inProgress: previous.state === "inflight" && previous.issuedAt.getTime() > Date.now() - 5 * 60 * 1000 };
+    const now = clock();
+    const replaceable = previous && previous.requestId !== requestId && previous.issuedAt < issuedAt && (
+      (['sent', 'legacy_pending'].includes(previous.state) &&
+       (previous.expiresAt <= now || previous.issuedAt <= supersededBefore)) ||
+      (previous.state === 'pre_send' && previous.issuedAt.getTime() < now.getTime() - 60000));
+    if (previous && !replaceable) {
+      return { claimed: false, state: previous.state, inProgress: ['pre_send', 'inflight'].includes(previous.state) && previous.issuedAt.getTime() > now.getTime() - 5 * 60 * 1000 };
     }
-    requests.set(emailHash, { requestId, issuedAt, expiresAt, state: "inflight" });
-    return { claimed: true, state: "inflight" };
+    requests.set(emailHash, { requestId, issuedAt: new Date(issuedAt), expiresAt: new Date(expiresAt), state: 'pre_send', sentAt: null });
+    return { claimed: true, state: 'pre_send' };
+  }
+
+  async function markOptInSending({ emailHash, requestId }) {
+    const row = requests.get(emailHash);
+    if (!row || row.requestId !== requestId || row.state !== 'pre_send') return false;
+    row.state = 'inflight';
+    return true;
+  }
+
+  async function releaseOptInBeforeSend({ emailHash, requestId }) {
+    const row = requests.get(emailHash);
+    if (!row || row.requestId !== requestId || row.state !== 'pre_send') return false;
+    return requests.delete(emailHash);
+  }
+
+  async function reconcileOptInFromConsent({ emailHash, requestId, eventId }) {
+    const row = requests.get(emailHash);
+    const event = events.get(eventId), contact = contacts.get(emailHash);
+    if (!row || row.requestId !== requestId || !['inflight', 'unknown'].includes(row.state) ||
+        !event || event.email_hash !== emailHash || !['opt_in_confirmed', 'resubscribe'].includes(event.event_type) ||
+        event.metadata.tokenIssuedAt !== row.issuedAt.getTime() || event.occurred_at < row.issuedAt ||
+        contact?.current_state !== 'subscribed' || contact.provider_blocked_at ||
+        !contact.confirmed_at || contact.confirmed_at < event.occurred_at) return false;
+    row.state = 'sent'; row.sentAt = new Date(event.occurred_at);
+    return true;
+  }
+
+  async function getOptInRequest(emailHash) { return clone(requests.get(emailHash) || null); }
+
+  async function importHistoricalOptIns() {
+    let count = 0;
+    const ordered = [...events.values()].filter(event => event.event_type === 'opt_in_requested' &&
+      event.occurred_at.getTime() + 30 * 86400000 > clock().getTime())
+      .sort((a, b) => b.occurred_at - a.occurred_at || b.event_id.localeCompare(a.event_id));
+    for (const event of ordered) {
+      if (requests.has(event.email_hash) || [...requests.values()].some(row => row.requestId === event.event_id)) continue;
+      requests.set(event.email_hash, { requestId: event.event_id, state: 'legacy_pending',
+        issuedAt: new Date(event.occurred_at), expiresAt: new Date(event.occurred_at.getTime() + 30 * 86400000), sentAt: null });
+      count++;
+    }
+    return count;
   }
 
   async function markOptInUnknown({ emailHash, requestId }) {
@@ -155,10 +199,17 @@ export function createMemoryNewsletterConsentStore() {
     const current = requests.get(emailHash);
     if (!current || current.requestId !== requestId || current.state !== "inflight") return false;
     current.state = "sent";
+    current.sentAt = clock();
     return true;
   }
 
   return Object.freeze({
+    checkOptInAvailable: async () => true,
+    markOptInSending,
+    releaseOptInBeforeSend,
+    reconcileOptInFromConsent,
+    importHistoricalOptIns,
+    getOptInRequest,
     claimOptInRequest,
     markOptInSent,
     markOptInUnknown,

@@ -56,8 +56,10 @@ test('B2 real PG mailbox proof lifecycle, authoritative provider and admission',
     assert.deepEqual(await m.acceptOptIn({email}),{state:'request_received'});
     await m.waitForPublicWork();const before=provider.emails.length;
     provider.behavior.suppressionError=0;
-    assert.deepEqual(await manager().acceptOptIn({email}),{state:'request_received'});
-    assert.equal(provider.emails.length,before);
-    assert.equal((await store.inspectDispatch({scope:'newsletter-public-optin',emailHash:consentEmailHash(email)})).state,'inflight');
+    const restarted=manager();
+    assert.deepEqual(await restarted.acceptOptIn({email}),{state:'request_received'});
+    await restarted.waitForPublicWork();
+    assert.equal(provider.emails.length,before+1);
+    assert.equal((await store.inspectDispatch({scope:'newsletter-public-optin',emailHash:consentEmailHash(email)})).state,'done');
   });
 });

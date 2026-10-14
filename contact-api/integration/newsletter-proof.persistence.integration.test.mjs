@@ -99,7 +99,7 @@ test('baseline PostgreSQL newsletter proof persistence', { skip: !DATABASE_URL }
     assert.deepEqual(result.rows.map(row => row.fingerprint).sort(), [emailHash, requestId].sort());
     for (const row of result.rows) {
       assert.match(row.key_hash, /^[0-9a-f]{64}$/);
-      assert.ok(row.response_body === null || JSON.stringify(row.response_body) === '{}');
+      assert.ok(row.response_body === null || ['{}','{"phase":"pre_effect"}'].includes(JSON.stringify(row.response_body)));
       assert.equal(JSON.stringify(row).includes('@'), false);
     }
   });

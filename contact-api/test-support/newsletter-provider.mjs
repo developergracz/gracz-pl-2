@@ -152,6 +152,7 @@ export async function createProvider(t) {
     const url = new URL(req.url, "http://127.0.0.1");
     const method = req.method || "GET";
     function emailResponse(id) {
+      if (behavior.emailResponseDelayMs > 0) return setTimeout(() => send(res,200,{id}),behavior.emailResponseDelayMs);
       if (behavior.confirmResponse === "timeout") return setTimeout(() => send(res,200,{id}),200);
       if (behavior.confirmResponse === "malformed") return send(res, 200, {});
       if (behavior.confirmResponse === "disconnect") return res.destroy();

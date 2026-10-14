@@ -54,7 +54,9 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
 
   await t.test("expired uncertain request is not recycled after restart or opt-out", async () => {
     const emailHash = 'b'.repeat(64);
-    await store.claimOptInRequest({emailHash,requestId:randomUUID(),issuedAt:new Date(0),expiresAt:new Date(1),supersededBefore:new Date(0)});
+    const requestId=randomUUID();
+    await store.claimOptInRequest({emailHash,requestId,issuedAt:new Date(0),expiresAt:new Date(1),supersededBefore:new Date(0)});
+    await store.markOptInSending({emailHash,requestId});
     const restarted = createPersistenceRepositories(database).newsletter;
     const result = await restarted.claimOptInRequest({emailHash,requestId:randomUUID(),issuedAt:new Date(),expiresAt:new Date(Date.now()+60000),supersededBefore:new Date()});
     assert.deepEqual(result, {claimed:false,state:'inflight',inProgress:false});
@@ -63,6 +65,7 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
   await t.test("sent expiry permits one replacement and rejects old completion", async () => {
     const emailHash = 'c'.repeat(64), requestId = randomUUID();
     await store.claimOptInRequest({emailHash,requestId,issuedAt:new Date(0),expiresAt:new Date(1),supersededBefore:new Date(0)});
+    assert.equal(await store.markOptInSending({emailHash,requestId}), true);
     assert.equal(await store.markOptInSent({emailHash,requestId}), true);
     const replacements = await Promise.all(Array.from({length:8}, () => store.claimOptInRequest({emailHash,requestId:randomUUID(),issuedAt:new Date(),expiresAt:new Date(Date.now()+60000),supersededBefore:new Date(0)})));
     assert.equal(replacements.filter(r => r.claimed).length, 1);

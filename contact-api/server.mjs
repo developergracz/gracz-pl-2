@@ -1,3 +1,4 @@
+import { installShutdown } from "./lifecycle.mjs";
 import { createNewsletterProofStore } from './persistence/newsletter-proof-store.mjs';
 import { createMemoryNewsletterProofStore } from './test-support/memory-newsletter-proof-store.mjs';
 import { createServer } from "node:http";
@@ -99,6 +100,7 @@ const NEWSLETTER_CONSENT_HASH_SECRET = String(
 ).trim();
 
 const newsletter = createNewsletterManager({
+  intakePaused: process.env.NEWSLETTER_INTAKE_PAUSED === "1" || process.env.NEWSLETTER_INTAKE_PAUSED === "true",
   secret: NEWSLETTER_SECRET,
   resendApiKey: NEWSLETTER_RESEND_API_KEY,
   resendApiBase: RESEND_API_BASE,
@@ -238,7 +240,7 @@ const handlePremiumReplyRequest = createPremiumReplyRoute({
   recordProviderSuccess,
 });
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const requestId = randomUUID();
   let reservedIdempotency = null;
   let providerAttempted = false;
@@ -247,8 +249,11 @@ createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
 
     if (req.method === "GET" && url.pathname === "/health") {
-      return json(res, 200, {
-        status: "ok",
+      const readiness = await newsletter.readiness();
+      return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, {
+        status: readiness.ready && !lifecycle.stopping ? "ok" : "unavailable",
+        newsletterSchemaReady: readiness.schemaReady,
+        newsletterIntakePaused: readiness.intakePaused,
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
@@ -653,7 +658,9 @@ createServer(async (req, res) => {
       },
     });
   }
-}).listen(PORT, HOST, () => {
+});
+const lifecycle = installShutdown({server,newsletter,database,timeoutMs:process.env.API_SHUTDOWN_TIMEOUT_MS});
+server.listen(PORT, HOST, () => {
   console.log("gracz.pl contact API listening", {
     port: PORT,
     configured: Boolean(

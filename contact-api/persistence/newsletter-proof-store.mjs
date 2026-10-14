@@ -24,13 +24,49 @@ export function createNewsletterProofStore(database) {
     },
     async claimDispatch({ scope: namespace, emailHash, requestId, expiresAt }) {
       const result = await database.query(
-        `INSERT INTO idempotency_keys(scope, key_hash, fingerprint, state, expires_at)
-         VALUES ($1, $2, $3, 'inflight', $4::timestamptz)
+        `INSERT INTO idempotency_keys(scope, key_hash, fingerprint, state, response_body, expires_at)
+         VALUES ($1, $2, $3, 'inflight', '{"phase":"pre_effect"}'::jsonb, $4::timestamptz)
          ON CONFLICT (scope, key_hash) DO UPDATE
          SET fingerprint = EXCLUDED.fingerprint, state = 'inflight', response_status = NULL,
-             response_body = NULL, expires_at = EXCLUDED.expires_at, updated_at = now()
-         WHERE idempotency_keys.state = 'done' AND idempotency_keys.expires_at <= now()
+             response_body = EXCLUDED.response_body, expires_at = EXCLUDED.expires_at, created_at = now(), updated_at = now()
+         WHERE (idempotency_keys.state = 'done' AND idempotency_keys.expires_at <= now())
+            OR (idempotency_keys.state = 'inflight'
+                AND idempotency_keys.response_body->>'phase' = 'pre_effect'
+                AND idempotency_keys.updated_at < now() - interval '60 seconds'
+                AND idempotency_keys.fingerprint <> EXCLUDED.fingerprint)
          RETURNING state`, [scope(namespace), hash(emailHash), hash(requestId), date(expiresAt)]);
+      return result.rowCount === 1;
+    },
+    async markDispatchEffect({ scope: namespace, emailHash, requestId }) {
+      const result = await database.query(
+        `UPDATE idempotency_keys SET response_body = '{"phase":"external_effect"}'::jsonb, updated_at = now()
+         WHERE scope = $1 AND key_hash = $2 AND fingerprint = $3 AND state = 'inflight'
+           AND response_body->>'phase' = 'pre_effect' RETURNING state`,
+        [scope(namespace), hash(emailHash), hash(requestId)]);
+      return result.rowCount === 1;
+    },
+    async releaseDispatchBeforeEffect({ scope: namespace, emailHash, requestId }) {
+      const result = await database.query(
+        `DELETE FROM idempotency_keys
+         WHERE scope = $1 AND key_hash = $2 AND fingerprint = $3 AND state = 'inflight'
+           AND response_body->>'phase' = 'pre_effect' RETURNING state`,
+        [scope(namespace), hash(emailHash), hash(requestId)]);
+      return result.rowCount === 1;
+    },
+    async reconcilePublicOptInFromConsent({ emailHash, eventId }) {
+      const result = await database.query(
+        `UPDATE idempotency_keys d SET state = 'done', response_status = 200,
+           response_body = '{}'::jsonb, expires_at = now(), updated_at = now()
+         FROM newsletter_consent_events e, newsletter_contacts c, newsletter_opt_in_requests r
+         WHERE d.scope = 'newsletter-public-optin' AND d.key_hash = $1 AND d.state = 'inflight'
+           AND e.event_id = $2 AND e.email_hash = d.key_hash
+           AND e.event_type IN ('opt_in_confirmed', 'resubscribe')
+           AND e.occurred_at >= d.created_at
+           AND c.email_hash = e.email_hash AND c.current_state = 'subscribed'
+           AND c.provider_blocked_at IS NULL AND c.confirmed_at >= e.occurred_at
+           AND r.email_hash = e.email_hash AND r.state = 'sent'
+           AND e.metadata->'tokenIssuedAt' = to_jsonb((extract(epoch FROM r.issued_at) * 1000)::bigint)
+         RETURNING d.state`, [hash(emailHash), eventId]);
       return result.rowCount === 1;
     },
     async markDispatchDone({ scope: namespace, emailHash, requestId }) {

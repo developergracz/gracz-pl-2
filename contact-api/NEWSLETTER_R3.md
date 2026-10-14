@@ -1,5 +1,7 @@
 # Newsletter R3 — implementation and release holds
 
+Historical R3 record. See [NEWSLETTER_R4.md](NEWSLETTER_R4.md) for the corrective phase model, current tests and release gates.
+
 Base: `bfbd5da5acd088430c2c3cb9d9b9fbc653bad30e`.
 Preserved B1 from #248 (`32b5de8beca8862ac2fda510c25a322857e74a70`), selectively integrated the four-file Premium patch from #253 (`64433ad934df1754181dc2a6f788420754183e27`). Original PRs and branches are untouched; main's #251 footer repair is retained.
 

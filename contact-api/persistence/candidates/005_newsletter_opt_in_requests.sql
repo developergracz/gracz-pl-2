@@ -2,7 +2,7 @@
 CREATE TABLE newsletter_opt_in_requests (
   email_hash char(64) PRIMARY KEY CHECK (email_hash ~ '^[0-9a-f]{64}$'),
   request_id uuid NOT NULL UNIQUE,
-  state varchar(16) NOT NULL DEFAULT 'inflight' CHECK (state IN ('inflight', 'unknown', 'sent', 'legacy_pending')),
+  state varchar(16) NOT NULL DEFAULT 'pre_send' CHECK (state IN ('pre_send', 'inflight', 'unknown', 'sent', 'legacy_pending')),
   issued_at timestamptz NOT NULL,
   expires_at timestamptz NOT NULL CHECK (expires_at > issued_at),
   sent_at timestamptz,
@@ -19,4 +19,5 @@ SELECT DISTINCT ON (email_hash)
 FROM newsletter_consent_events
 WHERE event_type = 'opt_in_requested'
   AND occurred_at + interval '30 days' > now()
-ORDER BY email_hash, occurred_at DESC, event_id DESC;
+ORDER BY email_hash, occurred_at DESC, event_id DESC
+ON CONFLICT DO NOTHING;

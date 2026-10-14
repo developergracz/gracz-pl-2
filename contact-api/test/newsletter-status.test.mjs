@@ -48,7 +48,7 @@ test('anonymous admission status/body/timing do not wait for membership or provi
   const samples=[];let calls=0;const logs=[];let release;
   const blocked=new Promise(resolve=>{release=resolve;});
   const options={store:createMemoryNewsletterProofStore(),hashEmail:email=>createHash('sha256').update(email).digest('hex'),logger:{error:(...args)=>logs.push(args)},
-    requestOptIn:async({email})=>{calls++;await blocked;if(email.startsWith('fail'))throw new Error('SECRET-EMAIL-TOKEN');},requestStatus:async()=>{await blocked;}};
+    requestOptIn:async({email,beforeExternalEffect})=>{calls++;await blocked;await beforeExternalEffect();if(email.startsWith('fail'))throw new Error('SECRET-EMAIL-TOKEN');},requestStatus:async()=>{await blocked;}};
   const admission=createNewsletterAdmission(options);
   for(const prefix of ['active','pending','new','fail']) {
     for(let i=0;i<6;i++) {
@@ -61,7 +61,9 @@ test('anonymous admission status/body/timing do not wait for membership or provi
   assert.ok(Math.max(...samples)<100,'bounded local admission independent of blocked provider');
   await new Promise(resolve=>setImmediate(resolve));release();await admission.waitForPublicWork();
   assert.equal(calls,24);assert.equal(logs.length,6);assert.ok(!JSON.stringify(logs).includes('SECRET'));
-  await createNewsletterAdmission(options).acceptOptIn({email:'fail0@example.test'});
+  const restarted=createNewsletterAdmission(options);
+  await restarted.acceptOptIn({email:'fail0@example.test'});
+  await restarted.waitForPublicWork();
   assert.equal(calls,24,'unknown admission cannot be replayed across managers');
 });
 test('anonymous admission reports DB failure, not false delivery success',async()=>{
@@ -106,6 +108,6 @@ test('status-mail suppression prevents delivery; missing permission stays fail-c
   assert.equal(x.mails.length,0);assert.equal(x.reads(),0);
   const y=setup({canSend:async()=>{throw new Error('permission denied');}});
   await assert.rejects(()=>y.manager.requestStatus({email:'unknown@example.test'}));
-  await y.manager.requestStatus({email:'unknown@example.test'});
+  await assert.rejects(()=>y.manager.requestStatus({email:'unknown@example.test'}));
   assert.equal(y.mails.length,0);
 });

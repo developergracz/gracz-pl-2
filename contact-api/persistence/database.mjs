@@ -117,6 +117,16 @@ export function createDatabase({
     return true;
   }
 
+  async function getConnectionIdentity() {
+    const pool = await getPool();
+    const client = await pool.connect();
+    try {
+      const parameters = client.connectionParameters;
+      if (!parameters) throw persistenceError('Connection identity unavailable.');
+      return Object.freeze({host: String(parameters.host || '').replace(/^\[|\]$/g, ''), database: String(parameters.database || '')});
+    } finally { client.release(); }
+  }
+
   async function close() {
     if (!poolPromise) return;
     const pool = await poolPromise;
@@ -129,6 +139,7 @@ export function createDatabase({
     query,
     transaction,
     ping,
+    getConnectionIdentity,
     close,
   });
 }

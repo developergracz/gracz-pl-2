@@ -33,6 +33,7 @@ export function createNewsletterManager({
   consentHashSecret = "",
   proofStore = null,
   logger = console,
+  intakePaused = false,
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
@@ -84,7 +85,7 @@ export function createNewsletterManager({
     );
   }
 
-  async function requestOptIn({ email, name = "", source = "newsletter_page" }) {
+  async function requestOptIn({ email, name = "", source = "newsletter_page", beforeExternalEffect = async () => {} }) {
     requireEnabled();
     const cleanEmail = validateMailbox(email);
     const cleanName = cleanShort(name, 80);
@@ -95,6 +96,7 @@ export function createNewsletterManager({
     if (suppression) return { state: "request_received" };
     // Preserve the existing fenced recovery obligation; never clear suppression.
     if (currentConsent?.provider_blocked_at) {
+      await beforeExternalEffect();
       const resources = await ensureResources();
       await recoverProviderOffObligation(cleanEmail, resources);
     }
@@ -154,6 +156,8 @@ export function createNewsletterManager({
       const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
 
       await recordOptInRequested(tokenData);
+      await beforeExternalEffect();
+      if (!await consentStore.markOptInSending(claimKey)) throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
 
       const delivery = await sendEmail({
         to: cleanEmail,
@@ -172,9 +176,20 @@ export function createNewsletterManager({
     } catch (error) {
       // The original caller receives the real error. Later callers must not
       // create a new operation after an ambiguous delivery or persistence failure.
-      try { await consentStore.markOptInUnknown(claimKey); } catch {}
+      try {
+        if (!await consentStore.releaseOptInBeforeSend(claimKey)) await consentStore.markOptInUnknown(claimKey);
+      } catch {}
       throw error;
     }
+  }
+
+  async function settleConfirmedOptIn(data) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("confirm", data.jti);
+    try {
+      await consentStore.reconcileOptInFromConsent({emailHash, requestId:data.jti, eventId});
+      await proofStore?.reconcilePublicOptInFromConsent({emailHash,eventId});
+    } catch { logger.error("[newsletter] consent reconciliation deferred", {code:"NEWSLETTER_RECONCILIATION_DEFERRED"}); }
   }
 
   async function confirm(token) {
@@ -233,6 +248,7 @@ export function createNewsletterManager({
       providerActive &&
       data.iat <= providerConfirmedAt
     ) {
+      await settleConfirmedOptIn(data);
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
@@ -275,12 +291,14 @@ export function createNewsletterManager({
         // Resend idempotency makes this safe when the welcome already landed.
         await sendWelcomeEmail(data);
 
+        await settleConfirmedOptIn(data);
         return {
           state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
           recipient: maskEmail(data.email),
         };
       }
 
+      await settleConfirmedOptIn(data);
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
@@ -392,6 +410,7 @@ export function createNewsletterManager({
       expected: [200],
     });
 
+    await settleConfirmedOptIn(data);
     return {
       state: wasPreviouslyConfirmed ? "resubscribed" : "subscribed",
       recipient: maskEmail(data.email),
@@ -1219,13 +1238,20 @@ export function createNewsletterManager({
     return {state:'inactive'};
   }
   const mailboxStatus = createMailboxStatus({secret:normalizedSecret,store:proofStore,hashEmail:consentSubjectHash,sendEmail,readStatus:readVerifiedStatus,canSend:async email=>!await getSuppression(email),baseUrl:normalizedBaseUrl});
-  const admission = createNewsletterAdmission({store:proofStore,hashEmail:consentSubjectHash,requestOptIn,requestStatus:mailboxStatus.requestStatus,checkReady:()=>consentStore.checkOptInAvailable?.(),logger});
+  const admission = createNewsletterAdmission({store:proofStore,hashEmail:consentSubjectHash,requestOptIn,requestStatus:mailboxStatus.requestStatus,checkReady:()=>consentStore.checkOptInAvailable?.(),logger,intakePaused});
 
   return {
     enabled,
     consentLedgerConfigured: consentStoreConfigured,
     requestOptIn,
     ...admission,
+    get intakePaused(){return admission.intakePaused;},
+    async readiness(){
+      if(!enabled)return {ready:true,configured:false,intakePaused:admission.intakePaused,schemaReady:false};
+      let schemaReady=false;
+      try {schemaReady=await consentStore.checkOptInAvailable()===true;}catch{}
+      return {ready:schemaReady||admission.intakePaused,configured:true,intakePaused:admission.intakePaused,schemaReady};
+    },
     requestStatus: mailboxStatus.requestStatus,
     checkStatus: mailboxStatus.checkStatus,
     confirm,

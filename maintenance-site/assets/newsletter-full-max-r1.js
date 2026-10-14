@@ -104,7 +104,7 @@
       }else if(mode==='confirm'){
         actionTitle.textContent='Newsletter aktywny';actionCopy.textContent='Subskrypcja newslettera gracz.pl jest aktywna.';
       }else{actionTitle.textContent='Subskrypcja wyłączona';actionCopy.textContent='Zgoda na newsletter gracz.pl została wycofana.';}
-      setStatus(actionStatus,'Gotowe.');
+      setStatus(actionStatus,mode==='status'?actionTitle.textContent+'. '+actionCopy.textContent:'Gotowe.');
     }catch(error){if(current===generation){
       if(mode==='status'){
         actionButton.hidden=true;
