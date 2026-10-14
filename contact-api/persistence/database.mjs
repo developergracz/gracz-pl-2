@@ -19,6 +19,16 @@ export function createDatabase({
   const normalizedConnectionString = String(connectionString || "").trim();
   const enabled = Boolean(normalizedConnectionString);
   let poolPromise = null;
+  const observedClients = new WeakSet();
+  const clientFailures = new WeakMap();
+  function logFailure(operation, error) {
+    // SQLSTATE or known transport codes only; never message/detail/SQL/identity.
+    const code = typeof error?.code === 'string' && (
+      /^[0-9A-Z]{5}$/.test(error.code) ||
+      ['ECONNRESET','ECONNREFUSED','EPIPE','ETIMEDOUT','ENOTFOUND'].includes(error.code)
+    ) ? error.code : 'PG_ERROR';
+    try { logger?.error?.('gracz.pl PostgreSQL error', {operation, code}); } catch {}
+  }
 
   async function getPool() {
     if (!enabled) {
@@ -61,21 +71,19 @@ export function createDatabase({
           ...poolOptions,
         });
 
-        // node-postgres emits "error" for idle clients when PostgreSQL
-        // restarts, fails over or a network connection is reset. Without a
-        // listener EventEmitter treats that event as unhandled and exits the
-        // process. Log it and let pg discard the broken idle client so later
-        // requests can acquire a healthy connection.
-        if (typeof pool?.on === "function") {
-          pool.on("error", (error) => {
-            try {
-              logger?.error?.("gracz.pl PostgreSQL pool error", {
-                code: error?.code || "PG_POOL_ERROR",
-                message: error?.message || "Idle PostgreSQL client failed",
-              });
-            } catch {}
+        // pg-pool emits connect synchronously before acquire/checkout callback
+        // and before removing its idle listener. Cover the gap before an await
+        // continuation can attach an operation-specific listener. Once per client,
+        // never release here: pg owns idle disposal, the caller owns checkout.
+        pool.on('connect', client => {
+          if (observedClients.has(client)) return;
+          observedClients.add(client);
+          client.on('error', error => {
+            clientFailures.set(client, error);
+            logFailure('PG_CLIENT_ERROR', error);
           });
-        }
+        });
+        pool.on('error', error => logFailure('PG_POOL_ERROR', error));
 
         return pool;
       })();
@@ -103,9 +111,9 @@ export function createDatabase({
         settled = true;
         clearTimeout(timer);
         // pg release(true) destroys the socket, terminating outstanding I/O.
-        // Keep the error listener through destruction to absorb late events.
+        // The permanent listener covers late events after local cleanup.
         client.release(Boolean(error));
-        if (!error) client.removeListener('error', onError);
+        client.removeListener('error', onError);
         if (error) reject(error); else resolve(result);
       };
       const onError = error => finish(error);
@@ -113,6 +121,7 @@ export function createDatabase({
         'Newsletter readiness query deadline exceeded.', 'PERSISTENCE_QUERY_TIMEOUT'
       )), budget);
       client.on('error', onError);
+      if (clientFailures.has(client)) { onError(clientFailures.get(client)); return; }
       (async () => {
         await client.query('BEGIN READ ONLY');
         if (settled) return;
@@ -133,12 +142,13 @@ export function createDatabase({
 
     const pool = await getPool();
     const client = await pool.connect();
-    let connectionError = null, rollbackError = null;
+    let connectionError = clientFailures.get(client) || null, rollbackError = null;
     // Checked-out clients emit their own error (the idle pool listener is not
     // attached here). A lost COMMIT response must reject, not crash the API.
     const onClientError = error => { connectionError = error; };
     client.on?.('error', onClientError);
     try {
+      if (connectionError) throw connectionError;
       await client.query("BEGIN");
       const result = await work(client);
       if (connectionError) throw connectionError;
@@ -148,7 +158,7 @@ export function createDatabase({
     } catch (error) {
       try {
         await client.query("ROLLBACK");
-      } catch (failure) { rollbackError = failure; }
+      } catch (failure) { rollbackError = failure; logFailure('PG_ROLLBACK_ERROR', failure); }
       throw error;
     } finally {
       client.release(connectionError || rollbackError || undefined);
