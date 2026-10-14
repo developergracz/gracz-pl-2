@@ -153,14 +153,17 @@ test('malformed email blocks request and leaving page discards bearer action',as
   expect(page.url()).not.toContain('leave-secret');
   expect(requests).toHaveLength(0);
 });
-for(const mode of ['confirm','unsubscribe']) {
-  test(`${mode} transient failure retries same action token without requesting new DOI`,async({page})=>{
-    let attempts=0;const requests=await mock(page,()=>++attempts===1?{http:503,ok:false}:{ok:true,state:mode==='confirm'?'subscribed':'unsubscribed'});
+for(const mode of ['confirm','unsubscribe']) for(const status of [400,503]) {
+  test(`${mode} HTTP ${status} failure retries same action token without requesting new DOI`,async({page})=>{
+    let attempts=0;const requests=await mock(page,()=>++attempts===1?{http:status,ok:false}:{ok:true,state:mode==='confirm'?'subscribed':'unsubscribed'});
     await page.goto('/newsletter/#'+mode+'=same-action-token');
     await page.locator('#nl-action-button').click();
     await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź wynik ponownie');
+    await expect(page.locator('#nl-action-status')).toBeFocused();
     await expect(page.locator('#nl-action-status')).toContainText('tym samym linkiem');
-    await page.locator('#nl-action-button').click();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#nl-action-button')).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.locator('#nl-action-status')).toContainText(/Newsletter aktywny|Subskrypcja wyłączona/);
     await expect(page.locator('#nl-action-status')).toBeFocused();
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');

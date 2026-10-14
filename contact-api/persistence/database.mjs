@@ -89,6 +89,43 @@ export function createDatabase({
     return pool.query(text, params);
   }
 
+  // Readiness only: bounded acquisition (pool connectionTimeoutMillis), then a
+  // server statement timeout plus a transport deadline. On any failure destroy
+  // the checked-out connection; never return a busy/aborted transaction to pool.
+  async function queryBounded(text, params = [], {timeoutMs = 2000} = {}) {
+    const budget = boundedInteger(timeoutMs, 2000, 100, 5000);
+    const pool = await getPool();
+    const client = await pool.connect();
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error, result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        // pg release(true) destroys the socket, terminating outstanding I/O.
+        // Keep the error listener through destruction to absorb late events.
+        client.release(Boolean(error));
+        if (!error) client.removeListener('error', onError);
+        if (error) reject(error); else resolve(result);
+      };
+      const onError = error => finish(error);
+      const timer = setTimeout(() => finish(persistenceError(
+        'Newsletter readiness query deadline exceeded.', 'PERSISTENCE_QUERY_TIMEOUT'
+      )), budget);
+      client.on('error', onError);
+      (async () => {
+        await client.query('BEGIN READ ONLY');
+        if (settled) return;
+        await client.query("SELECT set_config('statement_timeout', $1, true)", [String(Math.floor(budget * 0.75))]);
+        if (settled) return;
+        const result = await client.query(text, params);
+        if (settled) return;
+        await client.query('COMMIT');
+        finish(null, result);
+      })().catch(onError);
+    });
+  }
+
   async function transaction(work) {
     if (typeof work !== "function") {
       throw new TypeError("transaction work must be a function");
@@ -145,6 +182,7 @@ export function createDatabase({
     enabled,
     query,
     transaction,
+    queryBounded,
     ping,
     getConnectionIdentity,
     close,

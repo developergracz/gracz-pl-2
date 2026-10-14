@@ -119,7 +119,7 @@ test('R5 schema constraints, coalesced readiness and fenced offline import', {sk
     await client.query('CREATE SCHEMA r5_fixture');
     for(const table of ['newsletter_contacts','newsletter_consent_events','newsletter_opt_in_requests','idempotency_keys'])await client.query(`CREATE TABLE r5_fixture.${table} (LIKE public.${table} INCLUDING ALL)`);
     await client.query('SET LOCAL search_path TO r5_fixture');
-    let queries=0;const scoped={enabled:true,query:(...args)=>{queries++;return client.query(...args);},transaction:work=>work(client)};
+    let queries=0;const scoped={enabled:true,query:(...args)=>client.query(...args),queryBounded:(...args)=>{queries++;return client.query(...args);},transaction:work=>work(client)};
     const store=createPersistenceRepositories(scoped).newsletter;
     await Promise.all(Array.from({length:20},()=>store.checkOptInAvailable()));assert.equal(queries,1);
     const pk=(await client.query("SELECT conname FROM pg_constraint WHERE conrelid='newsletter_opt_in_requests'::regclass AND contype='p'")).rows[0].conname;

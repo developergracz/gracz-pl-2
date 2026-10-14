@@ -7,7 +7,7 @@ export function createNewsletterOptInStore(database) {
       // One catalog round trip replaces three queries; DDL changes are visible next probe.
       if (readinessProbe) return readinessProbe;
       readinessProbe = (async () => {
-        const result=await database.query(`SELECT c.relname,
+        const result=await database.queryBounded(`SELECT c.relname,
           (SELECT json_agg(json_build_object('name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'required',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid)))
            FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
            WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped) AS columns,

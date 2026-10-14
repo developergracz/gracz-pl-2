@@ -1,5 +1,8 @@
 # Newsletter R5 — targeted corrective handoff
 
+> Historical R5 evidence. R5.1 readiness, pause defaults and release procedure supersede
+> this document: see [NEWSLETTER_R51.md](NEWSLETTER_R51.md).
+
 Continue PR #254 and branch `codex/newsletter-b1-b2-r3-20261013` from audited R4
 `1e7d5d12990e57c913fc75004ab35d342ebb8506`. B1, B2 STATUS_CHECK, Premium and R4
 remain. This record supersedes R4's health and unfenced historical-import procedures.

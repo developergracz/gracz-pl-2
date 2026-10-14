@@ -1,6 +1,5 @@
-// Unknown values must never silently enable intake. Missing preserves default.
+// Only an explicit operator opt-in enables intake, including on first startup.
 export function parseNewsletterIntakePaused(value) {
-  if (value === undefined) return false;
   const normalized=String(value).trim().toLowerCase();
   if(['false','0'].includes(normalized))return false;
   return true;

@@ -157,7 +157,7 @@ test('R4 unnumbered expand proposal preserves old inflight and refuses old schem
     await client.query('CREATE SCHEMA r4_upgrade_fixture');await client.query('SET LOCAL search_path TO r4_upgrade_fixture');
     await client.query(`CREATE TABLE newsletter_opt_in_requests(email_hash char(64) PRIMARY KEY,request_id uuid UNIQUE,state varchar(16) NOT NULL DEFAULT 'inflight' CHECK(state IN ('inflight','unknown','sent','legacy_pending')),issued_at timestamptz,expires_at timestamptz CHECK(expires_at > issued_at),sent_at timestamptz,CHECK((state='sent')=(sent_at IS NOT NULL)))`);
     await client.query("INSERT INTO newsletter_opt_in_requests(email_hash,request_id,issued_at,expires_at) VALUES($1,$2,now()-interval '2 days',now()-interval '1 day')",[hash(),randomUUID()]);
-    const store=createNewsletterOptInStore(client);
+    const store=createNewsletterOptInStore({queryBounded:client.query.bind(client)});
     await assert.rejects(()=>store.checkOptInAvailable());
     await client.query(upgrade);
     await client.query("ALTER TABLE newsletter_opt_in_requests ALTER COLUMN email_hash SET NOT NULL, ALTER COLUMN request_id SET NOT NULL, ALTER COLUMN issued_at SET NOT NULL, ALTER COLUMN expires_at SET NOT NULL, ADD CHECK(email_hash ~ '^[0-9a-f]{64}$')");

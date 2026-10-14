@@ -1243,7 +1243,6 @@ function registerAbuseStrike(ip, reason) {
   }
 
   console.warn("[contact] abuse signal", {
-    ipHash: key.slice(0, 12),
     reason,
     count: current.count,
   });

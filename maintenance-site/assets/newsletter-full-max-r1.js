@@ -116,6 +116,7 @@
         actionToken=token;actionButton.hidden=false;actionButton.disabled=false;
         actionButton.textContent='Sprawdź wynik ponownie';
         setStatus(actionStatus,'Nie można potwierdzić wyniku. Możesz ponowić tę samą operację z tym samym linkiem; nie jest to nowa prośba o zapis.',true);
+        actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       }
     }}
   });

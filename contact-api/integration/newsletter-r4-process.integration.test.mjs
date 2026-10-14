@@ -28,7 +28,7 @@ test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, asy
     const port=await getFreePort();base='http://127.0.0.1:'+port;
     child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),stdio:['ignore','pipe','pipe'],env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL:url,HOST:'127.0.0.1',PORT:String(port),
       RESEND_API_KEY:'test-key',NEWSLETTER_RESEND_API_KEY:'test-key',RESEND_API_BASE:provider.base,RESEND_ENDPOINT:provider.base+'/emails',EMAIL_FROM:'sender@example.test',CONTACT_TO:'owner@example.test',
-      CONTACT_REPLY_SECRET:'test-'+'r'.repeat(40),CONTACT_DATA_ENCRYPTION_SECRET:'test-'+'c'.repeat(40),NEWSLETTER_SECRET:'test-'+'n'.repeat(40),NEWSLETTER_CONSENT_HASH_SECRET:'test-consent-'+'h'.repeat(40),...extra}});
+      CONTACT_REPLY_SECRET:'test-'+'r'.repeat(40),CONTACT_DATA_ENCRYPTION_SECRET:'test-'+'c'.repeat(40),NEWSLETTER_INTAKE_PAUSED:'false',NEWSLETTER_SECRET:'test-'+'n'.repeat(40),NEWSLETTER_CONSENT_HASH_SECRET:'test-consent-'+'h'.repeat(40),...extra}});
     child.stdout.on('data',c=>{logs+=c;});child.stderr.on('data',c=>{logs+=c;});
     await until(async()=>{assert.equal(child.exitCode,null);try{return (await fetch(base+'/health')).status===health;}catch{return false;}});
   }
@@ -83,6 +83,20 @@ test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, asy
     assert.equal((await post('unsubscribe',{token:extractToken(provider.emails.at(-1),'unsubscribe')})).status,200);
     assert.equal((await post('status-check',{token:'invalid'})).status,400,'proof route remains available');
     assert.equal((await (await fetch(base+'/health')).json()).newsletterIntakePaused,true);await stop();
+  });
+  for(const pause of [undefined,'','flase','false','0'])await t.test('R5.1 explicit intake configuration '+String(pause),async()=>{
+    await start({NEWSLETTER_INTAKE_PAUSED:pause});
+    const enabled=['false','0'].includes(pause);
+    assert.equal((await fetch(base+'/health')).status,200);
+    assert.equal((await fetch(base+'/newsletter/ready')).status,enabled?200:503);
+    if(!enabled){
+      assert.equal((await submit(randomUUID()+'@example.test')).status,503);
+      const response=await fetch(base+'/contact',{method:'POST',headers:{origin:'https://gracz.pl','content-type':'application/json','x-idempotency-key':randomUUID()},body:JSON.stringify({
+        name:'Test User',email:randomUUID()+'@example.test',category:'Pytanie ogólne',subject:'Test formularza',message:'To jest poprawna wiadomość testowa formularza gracz.pl.',website:'',acknowledgement:true,page:'https://gracz.pl/',startedAt:Date.now()-5000,newsletter:true
+      })});
+      assert.equal(response.status,200);const body=await response.json();assert.equal(body.ok,true);assert.equal(body.newsletter,'temporarily_unavailable');
+    }
+    await stop();
   });
   await t.test('R5 PostgreSQL outage never changes HTTP liveness; recovery restores readiness',async()=>{
     const unreachable=new URL(url);unreachable.port=String(await getFreePort());
