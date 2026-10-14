@@ -100,7 +100,7 @@ export function createNewsletterAdmission({store,hashEmail,requestOptIn,requestS
             if(!await store.markDispatchEffect(dispatch))throw unavailable();
             marked=true;
           };
-          await (kind==='optin'?requestOptIn:requestStatus)({...payload,beforeExternalEffect});
+          await (kind==='optin'?requestOptIn:requestStatus)({...payload,beforeExternalEffect,admissionDispatch:dispatch});
           if(!await store.markDispatchDone(dispatch))throw unavailable();
         }catch {
           // Fixed code only: no provider text, token, raw email or HMAC in logs.

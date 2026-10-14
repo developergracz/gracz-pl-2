@@ -53,6 +53,7 @@ for (const state of ['active','pending','inactive']) {
     await page.locator('#nl-action-button').click();
     await expect(page.locator('#nl-action-status')).toContainText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
+    await expect(page.locator('#nl-action-status')).toBeFocused();
     expect(requests).toEqual([{path:'/newsletter/status-check',payload:{token:'secret-proof'}}]);
     await expect(page.locator('#nl-action-title')).toHaveText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await page.evaluate(()=>window.scrollTo(0,0));
@@ -74,7 +75,8 @@ test('same tab hashes, back/forward, stale completion, and confirm/unsubscribe',
   release();
   await expect(page.locator('#nl-action-title')).toHaveText('Potwierdź zapis do newslettera');
   await page.locator('#nl-action-button').click();
-  await expect(page.locator('#nl-action-status')).toHaveText('Gotowe.');
+  await expect(page.locator('#nl-action-status')).toContainText(/Newsletter aktywny|Subskrypcja wyłączona/);
+    await expect(page.locator('#nl-action-status')).toBeFocused();
   await page.evaluate(()=>{location.hash='unsubscribe=third-secret';});
   await expect(page.locator('#nl-action-button')).toHaveText('Wypisz mnie');
   await page.locator('#nl-action-button').click();
@@ -159,8 +161,10 @@ for(const mode of ['confirm','unsubscribe']) {
     await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź wynik ponownie');
     await expect(page.locator('#nl-action-status')).toContainText('tym samym linkiem');
     await page.locator('#nl-action-button').click();
-    await expect(page.locator('#nl-action-status')).toHaveText('Gotowe.');
+    await expect(page.locator('#nl-action-status')).toContainText(/Newsletter aktywny|Subskrypcja wyłączona/);
+    await expect(page.locator('#nl-action-status')).toBeFocused();
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
+    await expect(page.locator('#nl-action-status')).toBeFocused();
     expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}},{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
   });
 }

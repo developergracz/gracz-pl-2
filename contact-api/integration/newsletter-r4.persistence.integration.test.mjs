@@ -72,7 +72,7 @@ async function exercise(t, store, proof, ageDispatch, legacyDispatch) {
     assert.equal(await proof.reconcilePublicOptInFromConsent({emailHash,eventId}),true);
     assert.equal((await proof.inspectDispatch(dispatch)).state,'done');
   });
-  await t.test('historical import is idempotent and preserves newer reservations and events', async () => {
+  await t.test('historical import refuses running writers and preserves reservations and events', async () => {
     const emailHash=hash(), other=hash();
     for (const subject of [emailHash,other]) {
       await store.ensureContact({emailHash:subject});
@@ -80,10 +80,9 @@ async function exercise(t, store, proof, ageDispatch, legacyDispatch) {
     }
     const claim={emailHash,requestId:randomUUID(),issuedAt:new Date(),expiresAt:new Date(Date.now()+60000),supersededBefore:new Date(0)};
     await store.claimOptInRequest(claim);
-    await store.importHistoricalOptIns();
-    assert.equal(await store.importHistoricalOptIns(),0);
+    await assert.rejects(()=>store.importHistoricalOptIns({cutoverBefore:new Date(),writersStopped:true}),/writer/);
     assert.equal(await store.markOptInSending(claim),true);
-    assert.equal((await store.claimOptInRequest({...claim,emailHash:other,requestId:randomUUID()})).state,'legacy_pending');
+    assert.equal((await store.claimOptInRequest({...claim,emailHash:other,requestId:randomUUID()})).claimed,true);
     assert.equal((await store.listConsentEvents(emailHash)).length,1);
   });
 }
@@ -159,8 +158,11 @@ test('R4 unnumbered expand proposal preserves old inflight and refuses old schem
     await client.query(`CREATE TABLE newsletter_opt_in_requests(email_hash char(64) PRIMARY KEY,request_id uuid UNIQUE,state varchar(16) NOT NULL DEFAULT 'inflight' CHECK(state IN ('inflight','unknown','sent','legacy_pending')),issued_at timestamptz,expires_at timestamptz CHECK(expires_at > issued_at),sent_at timestamptz,CHECK((state='sent')=(sent_at IS NOT NULL)))`);
     await client.query("INSERT INTO newsletter_opt_in_requests(email_hash,request_id,issued_at,expires_at) VALUES($1,$2,now()-interval '2 days',now()-interval '1 day')",[hash(),randomUUID()]);
     const store=createNewsletterOptInStore(client);
-    await assert.rejects(()=>store.checkOptInAvailable(),/does not support/);
-    await client.query(upgrade);assert.equal(await store.checkOptInAvailable(),true);
+    await assert.rejects(()=>store.checkOptInAvailable());
+    await client.query(upgrade);
+    await client.query("ALTER TABLE newsletter_opt_in_requests ALTER COLUMN email_hash SET NOT NULL, ALTER COLUMN request_id SET NOT NULL, ALTER COLUMN issued_at SET NOT NULL, ALTER COLUMN expires_at SET NOT NULL, ADD CHECK(email_hash ~ '^[0-9a-f]{64}$')");
+    await client.query('CREATE TABLE idempotency_keys (LIKE public.idempotency_keys INCLUDING ALL)');
+    assert.equal(await store.checkOptInAvailable(),true);
     assert.deepEqual((await client.query('SELECT state,sent_at FROM newsletter_opt_in_requests')).rows,[{state:'inflight',sent_at:null}]);
     await client.query('DROP SCHEMA r4_upgrade_fixture CASCADE');
   });
@@ -188,7 +190,7 @@ test('R4 logical restore preserves unknown reservations, consumed proof and appe
       await client.query(`INSERT INTO r4_dr_fixture.${table} SELECT * FROM public.${table}`);
     }
     await client.query('SET LOCAL search_path TO r4_dr_fixture');
-    const restoredDatabase={enabled:true,query:client.query.bind(client)};
+    const restoredDatabase={enabled:true,query:client.query.bind(client),transaction:work=>work(client)};
     const recovered=createPersistenceRepositories(restoredDatabase).newsletter,recoveredProof=createNewsletterProofStore(restoredDatabase);
     assert.equal((await recovered.claimOptInRequest({emailHash:subject,requestId:randomUUID(),issuedAt:new Date(Date.now()+1),expiresAt:new Date(Date.now()+600001),supersededBefore:new Date()})).claimed,false);
     assert.equal(await recoveredProof.claimDispatch({...dispatch,requestId:hash()}),false);

@@ -25,6 +25,12 @@ export function createMemoryNewsletterProofStore({ records = new Map(), clock = 
       records.set(id, { state: 'inflight', phase: 'pre_effect', requestId, expiresAt: new Date(expiresAt), createdAt: clock(), updatedAt: clock() });
       return true;
     },
+    markDispatchEffectAtomically({scope,emailHash,requestId}, mark) {
+      const row=records.get(key(scope,emailHash));
+      if(!row || row.state!=='inflight' || !['pre_effect','external_effect'].includes(row.phase) || row.requestId!==requestId)return false;
+      if(!mark())return false;
+      row.phase='external_effect';row.updatedAt=clock();return true;
+    },
     async markDispatchEffect({ scope, emailHash, requestId }) {
       const row = records.get(key(scope, emailHash)); hash(requestId);
       if (!row || row.state !== 'inflight' || row.phase !== 'pre_effect' || row.requestId !== requestId) return false;

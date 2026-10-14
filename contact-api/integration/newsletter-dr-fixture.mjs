@@ -45,6 +45,7 @@ try {
     const token=(await restored.query("SELECT * FROM idempotency_keys WHERE scope='newsletter-status-token' AND state='done' LIMIT 1")).rows[0];assert.ok(token);
     assert.equal(await proof.consumeStatusToken({tokenHash:token.key_hash,emailHash:token.fingerprint}),false);
     await assert.rejects(()=>restored.query("UPDATE newsletter_consent_events SET source='invalid'"));
-    console.log('DR: 9 checks PASS; unknown DOI, ambiguous dispatch, spent proof and ledger trigger preserved');
+    await assert.rejects(()=>store.importHistoricalOptIns({cutoverBefore:new Date(),writersStopped:true}),/writer start/);
+    console.log('DR: 10 checks PASS; unknown DOI, ambiguous dispatch, spent proof, ledger trigger and closed cutover preserved');
   } else throw new Error('Expected seed or verify mode');
 } finally {await source.close();await restored?.close();}

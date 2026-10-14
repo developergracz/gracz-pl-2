@@ -96,19 +96,26 @@ export function createDatabase({
 
     const pool = await getPool();
     const client = await pool.connect();
-
+    let connectionError = null, rollbackError = null;
+    // Checked-out clients emit their own error (the idle pool listener is not
+    // attached here). A lost COMMIT response must reject, not crash the API.
+    const onClientError = error => { connectionError = error; };
+    client.on?.('error', onClientError);
     try {
       await client.query("BEGIN");
       const result = await work(client);
+      if (connectionError) throw connectionError;
       await client.query("COMMIT");
+      if (connectionError) throw connectionError;
       return result;
     } catch (error) {
       try {
         await client.query("ROLLBACK");
-      } catch {}
+      } catch (failure) { rollbackError = failure; }
       throw error;
     } finally {
-      client.release();
+      client.release(connectionError || rollbackError || undefined);
+      client.removeListener?.("error", onClientError);
     }
   }
 

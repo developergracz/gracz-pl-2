@@ -1,3 +1,5 @@
+> Historical runbook: its Free-plan premise is superseded by the Owner-verified R5 state (PostgreSQL 18, active 0.1c-256mb plan). Do not execute a Free-to-paid upgrade from this document. See [NEWSLETTER_R5.md](NEWSLETTER_R5.md) for current release gates.
+
 # Render Postgres upgrade and recovery runbook
 
 Status: **PLANNED — do not execute until the scheduled upgrade window**

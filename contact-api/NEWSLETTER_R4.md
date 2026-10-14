@@ -1,5 +1,7 @@
 # Newsletter R4 — corrective implementation and release gates
 
+Historical R4 record. [NEWSLETTER_R5.md](NEWSLETTER_R5.md) supersedes the marker, health/readiness and historical-import procedures.
+
 Mandate: PR #254 comment 6159498312, 14 October 2026. Continue branch
 `codex/newsletter-b1-b2-r3-20261013`, audited baseline
 `4d7d2f66399138b5ef7100a90741be151a063875`. B1 #248, B2 and Premium #253 remain.

@@ -104,11 +104,13 @@
       }else if(mode==='confirm'){
         actionTitle.textContent='Newsletter aktywny';actionCopy.textContent='Subskrypcja newslettera gracz.pl jest aktywna.';
       }else{actionTitle.textContent='Subskrypcja wyłączona';actionCopy.textContent='Zgoda na newsletter gracz.pl została wycofana.';}
-      setStatus(actionStatus,mode==='status'?actionTitle.textContent+'. '+actionCopy.textContent:'Gotowe.');
+      setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
+      actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }catch(error){if(current===generation){
       if(mode==='status'){
         actionButton.hidden=true;
         setStatus(actionStatus,error.message,true);
+        actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       }else{
         // Retry the SAME idempotent confirm/withdrawal action, never another DOI.
         actionToken=token;actionButton.hidden=false;actionButton.disabled=false;

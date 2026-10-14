@@ -106,11 +106,12 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     await database.transaction(async client => {
       await client.query('CREATE SCHEMA b1_cutover_fixture');
       await client.query('SET LOCAL search_path TO b1_cutover_fixture');
+      await client.query('CREATE TABLE idempotency_keys (LIKE public.idempotency_keys INCLUDING ALL)');
       await client.query('CREATE TABLE newsletter_consent_events (email_hash char(64), event_id uuid, event_type text, occurred_at timestamptz)');
       await client.query("INSERT INTO newsletter_consent_events VALUES ($1,$2,'opt_in_requested',now()),($1,$3,'opt_in_requested',now()-interval '1 day'),($4,$5,'opt_in_requested',now()-interval '31 days')", ['d'.repeat(64),randomUUID(),randomUUID(),'e'.repeat(64),randomUUID()]);
       await client.query(sql);
       const result = await client.query('SELECT state,sent_at FROM newsletter_opt_in_requests');
-      assert.deepEqual(result.rows,[{state:'legacy_pending',sent_at:null}]);
+      assert.deepEqual(result.rows,[],'candidate installation never performs an unfenced history import');
       assert.equal((await client.query('SELECT * FROM newsletter_consent_events')).rowCount,3);
       await client.query('DROP SCHEMA b1_cutover_fixture CASCADE');
     });

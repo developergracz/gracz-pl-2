@@ -1,34 +1,54 @@
+import { importNewsletterHistory, markNewsletterWriterStarted } from "./newsletter-cutover.mjs";
 export function createNewsletterOptInStore(database) {
+  let readinessProbe=null;
   return {
-    async checkOptInAvailable() {
-      await database.query('SELECT email_hash, request_id, state, issued_at, expires_at, sent_at FROM newsletter_opt_in_requests LIMIT 0');
-      const schema = await database.query(
-        `SELECT column_default FROM information_schema.columns
-         WHERE table_schema = current_schema() AND table_name = 'newsletter_opt_in_requests' AND column_name = 'state'`);
-      const checks = await database.query(
-        `SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
-         WHERE conrelid = 'newsletter_opt_in_requests'::regclass AND contype = 'c'`);
-      const definitions = checks.rows.map(row => row.definition);
-      if (!schema.rows[0]?.column_default?.includes("'pre_send'") ||
-          !definitions.some(value => ['pre_send', 'inflight', 'unknown', 'sent', 'legacy_pending'].every(state => value.includes("'" + state + "'"))) ||
-          !definitions.some(value => value.includes('sent_at IS NOT NULL')) ||
-          !definitions.some(value => value.includes('expires_at > issued_at'))) {
-        throw new Error('Newsletter candidate schema does not support fenced pre_send reservations');
-      }
-      return true;
+    checkOptInAvailable() {
+      // Coalesce concurrent probes, never cache a success across later requests.
+      // One catalog round trip replaces three queries; DDL changes are visible next probe.
+      if (readinessProbe) return readinessProbe;
+      readinessProbe = (async () => {
+        const result=await database.query(`SELECT c.relname,
+          (SELECT json_agg(json_build_object('name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'required',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid)))
+           FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
+           WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped) AS columns,
+          (SELECT json_agg(json_build_object('kind',k.contype,'definition',pg_get_constraintdef(k.oid),'valid',k.convalidated,'deferred',k.condeferrable))
+           FROM pg_constraint k WHERE k.conrelid=c.oid) AS constraints
+          FROM pg_class c WHERE c.oid IN (to_regclass('newsletter_opt_in_requests'),to_regclass('idempotency_keys'))`);
+        const normalize=value=>value.replace(/::(?:character varying|text)(\[\])?/g,'').replace(/[()\s]/g,'');
+        const requireTable=(name,columns,checks)=>{
+          const row=result.rows.find(row=>row.relname===name);
+          if(!row)throw new Error('Newsletter schema unavailable');
+          for(const [name,type,required] of columns) {
+            const column=row.columns.find(column=>column.name===name);
+            if(!column||column.type!==type||(required&&!column.required))throw new Error('Newsletter critical column mismatch');
+          }
+          const definitions=(row.constraints||[]).filter(c=>c.valid&&!c.deferred).map(c=>normalize(c.definition));
+          if(!checks.every(check=>definitions.includes(normalize(check))))throw new Error('Newsletter critical constraint mismatch');
+          return row;
+        };
+        const row=requireTable('newsletter_opt_in_requests',[
+          ['email_hash','character(64)',true],['request_id','uuid',true],['state','character varying(16)',true],
+          ['issued_at','timestamp with time zone',true],['expires_at','timestamp with time zone',true],['sent_at','timestamp with time zone',false]
+        ],["PRIMARY KEY (email_hash)","UNIQUE (request_id)","CHECK (email_hash ~ '^[0-9a-f]{64}$')",
+          "CHECK (state = ANY (ARRAY['pre_send','inflight','unknown','sent','legacy_pending']))",
+          "CHECK (expires_at > issued_at)","CHECK ((state = 'sent') = (sent_at IS NOT NULL))"]);
+        if(!row.columns.find(c=>c.name==='state').default?.startsWith("'pre_send'::"))throw new Error('Newsletter schema does not support pre_send');
+        requireTable('idempotency_keys',[
+          ['scope','character varying(80)',true],['key_hash','character(64)',true],['fingerprint','character(64)',true],
+          ['state','character varying(16)',true],['response_body','jsonb',false],['response_status','smallint',false],
+          ['created_at','timestamp with time zone',true],['updated_at','timestamp with time zone',true],['expires_at','timestamp with time zone',true]
+        ],['PRIMARY KEY (scope,key_hash)',"CHECK (key_hash ~ '^[0-9a-f]{64}$')","CHECK (fingerprint ~ '^[0-9a-f]{64}$')",
+          "CHECK (state = ANY (ARRAY['inflight','done']))",
+          "CHECK ((state = 'inflight' AND response_status IS NULL) OR (state = 'done' AND response_status IS NOT NULL))"]);
+        return true;
+      })().finally(()=>{readinessProbe=null;});
+      return readinessProbe;
     },
-    async importHistoricalOptIns() {
-      const result = await database.query(
-        `INSERT INTO newsletter_opt_in_requests(email_hash, request_id, state, issued_at, expires_at)
-         SELECT DISTINCT ON (email_hash) email_hash, event_id, 'legacy_pending', occurred_at, occurred_at + interval '30 days'
-         FROM newsletter_consent_events WHERE event_type = 'opt_in_requested'
-           AND occurred_at + interval '30 days' > now()
-         ORDER BY email_hash, occurred_at DESC, event_id DESC
-         ON CONFLICT DO NOTHING`);
-      return result.rowCount;
-    },
+    importHistoricalOptIns(options) { return importNewsletterHistory(database,options); },
     async claimOptInRequest({ emailHash, requestId, issuedAt, expiresAt, supersededBefore }) {
-      const result = await database.query(
+      return database.transaction(async client => {
+      await markNewsletterWriterStarted(client);
+      const result = await client.query(
         `INSERT INTO newsletter_opt_in_requests(email_hash, request_id, issued_at, expires_at)
          VALUES ($1, $2, $3::timestamptz, $4::timestamptz)
          ON CONFLICT (email_hash) DO UPDATE
@@ -45,17 +65,36 @@ export function createNewsletterOptInStore(database) {
         [emailHash, requestId, issuedAt, expiresAt, supersededBefore]
       );
       if (result.rowCount) return { claimed: true, state: 'pre_send' };
-      const current = await database.query(
+      const current = await client.query(
         `SELECT state, (state IN ('pre_send', 'inflight') AND issued_at > now() - interval '5 minutes') AS in_progress
          FROM newsletter_opt_in_requests WHERE email_hash = $1`, [emailHash]
       );
       return { claimed: false, state: current.rows[0]?.state || 'unknown', inProgress: current.rows[0]?.in_progress === true };
+      });
     },
-    async markOptInSending({ emailHash, requestId }) {
-      const result = await database.query(
-        `UPDATE newsletter_opt_in_requests SET state = 'inflight'
-         WHERE email_hash = $1 AND request_id = $2 AND state = 'pre_send' RETURNING request_id`, [emailHash, requestId]);
-      return result.rowCount === 1;
+    async markOptInSending({ emailHash, requestId, admissionDispatch = null }) {
+      const mark = async client => {
+        if (admissionDispatch) {
+          if (admissionDispatch.scope !== 'newsletter-public-optin' || admissionDispatch.emailHash !== emailHash) throw new Error('Invalid admission binding');
+          const publicResult = await client.query(
+            `UPDATE idempotency_keys SET response_body = '{"phase":"external_effect"}'::jsonb, updated_at = now()
+             WHERE scope = 'newsletter-public-optin' AND key_hash = $1 AND fingerprint = $2 AND state = 'inflight'
+               AND response_body->>'phase' IN ('pre_effect','external_effect') RETURNING state`,
+            [emailHash, admissionDispatch.requestId]);
+          if (publicResult.rowCount !== 1) throw fenced;
+        }
+        const result = await client.query(
+          `UPDATE newsletter_opt_in_requests SET state = 'inflight'
+           WHERE email_hash = $1 AND request_id = $2 AND state = 'pre_send' RETURNING request_id`, [emailHash, requestId]);
+        if (result.rowCount !== 1) throw fenced;
+        return true;
+      };
+      const fenced = new Error('Newsletter sending claim lost');
+      try {
+        // The provider call happens only AFTER this transaction commits. A failure
+        // between markers rolls BOTH back; a lost commit ACK remains uncertain.
+        return admissionDispatch ? await database.transaction(mark) : await mark(database);
+      } catch (error) { if (error === fenced) return false; throw error; }
     },
     async releaseOptInBeforeSend({ emailHash, requestId }) {
       const result = await database.query(

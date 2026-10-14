@@ -85,7 +85,7 @@ export function createNewsletterManager({
     );
   }
 
-  async function requestOptIn({ email, name = "", source = "newsletter_page", beforeExternalEffect = async () => {} }) {
+  async function requestOptIn({ email, name = "", source = "newsletter_page", beforeExternalEffect = async () => {}, admissionDispatch = null }) {
     requireEnabled();
     const cleanEmail = validateMailbox(email);
     const cleanName = cleanShort(name, 80);
@@ -156,8 +156,7 @@ export function createNewsletterManager({
       const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
 
       await recordOptInRequested(tokenData);
-      await beforeExternalEffect();
-      if (!await consentStore.markOptInSending(claimKey)) throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
+      if (!await consentStore.markOptInSending({...claimKey, admissionDispatch, proofStore})) throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
 
       const delivery = await sendEmail({
         to: cleanEmail,
@@ -505,6 +504,7 @@ export function createNewsletterManager({
       occurredAt: new Date(data.iat),
       correlationId: eventId,
       metadata: {
+        intakeVersion: "R5",
         tokenIssuedAt: data.iat,
       },
     });
@@ -1247,10 +1247,10 @@ export function createNewsletterManager({
     ...admission,
     get intakePaused(){return admission.intakePaused;},
     async readiness(){
-      if(!enabled)return {ready:true,configured:false,intakePaused:admission.intakePaused,schemaReady:false};
+      if(!enabled)return {ready:false,configured:false,intakePaused:admission.intakePaused,schemaReady:false};
       let schemaReady=false;
       try {schemaReady=await consentStore.checkOptInAvailable()===true;}catch{}
-      return {ready:schemaReady||admission.intakePaused,configured:true,intakePaused:admission.intakePaused,schemaReady};
+      return {ready:schemaReady&&!admission.intakePaused,configured:true,intakePaused:admission.intakePaused,schemaReady};
     },
     requestStatus: mailboxStatus.requestStatus,
     checkStatus: mailboxStatus.checkStatus,
@@ -1370,6 +1370,7 @@ function providerError(code, status = 502, details = {}) {
   error.status = Number.isInteger(status) ? status : 502;
   if (error.status < 400) error.status = 502;
   error.providerOperation = cleanProviderOperation(details.operation);
+  error.deliveryOutcome = details.operation === "POST /emails" ? "uncertain" : "not_attempted_by_this_call";
   error.providerStatus = Number.isInteger(status) ? status : null;
   error.providerName = cleanProviderErrorName(details.providerName);
   error.providerRequestId = cleanProviderRequestId(details.providerRequestId);

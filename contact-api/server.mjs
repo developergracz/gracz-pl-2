@@ -1,3 +1,4 @@
+import { parseNewsletterIntakePaused } from "./newsletter-config.mjs";
 import { installShutdown } from "./lifecycle.mjs";
 import { createNewsletterProofStore } from './persistence/newsletter-proof-store.mjs';
 import { createMemoryNewsletterProofStore } from './test-support/memory-newsletter-proof-store.mjs';
@@ -100,7 +101,7 @@ const NEWSLETTER_CONSENT_HASH_SECRET = String(
 ).trim();
 
 const newsletter = createNewsletterManager({
-  intakePaused: process.env.NEWSLETTER_INTAKE_PAUSED === "1" || process.env.NEWSLETTER_INTAKE_PAUSED === "true",
+  intakePaused: parseNewsletterIntakePaused(process.env.NEWSLETTER_INTAKE_PAUSED),
   secret: NEWSLETTER_SECRET,
   resendApiKey: NEWSLETTER_RESEND_API_KEY,
   resendApiBase: RESEND_API_BASE,
@@ -249,11 +250,9 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
 
     if (req.method === "GET" && url.pathname === "/health") {
-      const readiness = await newsletter.readiness();
-      return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, {
-        status: readiness.ready && !lifecycle.stopping ? "ok" : "unavailable",
-        newsletterSchemaReady: readiness.schemaReady,
-        newsletterIntakePaused: readiness.intakePaused,
+      return json(res, lifecycle.stopping ? 503 : 200, {
+        status: lifecycle.stopping ? "stopping" : "ok",
+        newsletterIntakePaused: newsletter.intakePaused,
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
@@ -265,6 +264,11 @@ const server = createServer(async (req, res) => {
         newsletterConfigured: newsletter.enabled,
         newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
+    }
+
+    if (req.method === "GET" && url.pathname === "/newsletter/ready") {
+      const readiness = await newsletter.readiness();
+      return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
     }
 
     if (url.pathname === "/reply-context" || url.pathname === "/reply") {
@@ -585,7 +589,6 @@ const server = createServer(async (req, res) => {
         console.error("[newsletter] opt-in request failed", {
           requestId,
           code: newsletterError?.code || "NEWSLETTER_ERROR",
-          emailHash: hashValue(payload.email).slice(0, 12),
         });
       }
     }
@@ -622,7 +625,6 @@ const server = createServer(async (req, res) => {
       requestId,
       providerId: result.id || null,
       category: payload.category,
-      emailHash: hashValue(payload.email).slice(0, 12),
       riskScore: risk.score,
       riskSignals: risk.signals,
     });

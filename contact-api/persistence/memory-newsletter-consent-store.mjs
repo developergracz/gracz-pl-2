@@ -1,3 +1,4 @@
+import { validateCutover } from "./newsletter-cutover.mjs";
 function clone(value) {
   return value == null ? value : structuredClone(value);
 }
@@ -6,6 +7,8 @@ export function createMemoryNewsletterConsentStore({ clock = () => new Date() } 
   const contacts = new Map();
   const events = new Map();
   const requests = new Map();
+  let writerStarted=false,importBoundary=null;
+  const importNotAfter=clock();
 
   async function ensureContact({ emailHash, consentVersion = null }) {
     const existing = contacts.get(emailHash);
@@ -136,6 +139,7 @@ export function createMemoryNewsletterConsentStore({ clock = () => new Date() } 
   }
 
   async function claimOptInRequest({ emailHash, requestId, issuedAt, expiresAt, supersededBefore }) {
+    writerStarted=true;
     const previous = requests.get(emailHash);
     const now = clock();
     const replaceable = previous && previous.requestId !== requestId && previous.issuedAt < issuedAt && (
@@ -149,9 +153,10 @@ export function createMemoryNewsletterConsentStore({ clock = () => new Date() } 
     return { claimed: true, state: 'pre_send' };
   }
 
-  async function markOptInSending({ emailHash, requestId }) {
+  async function markOptInSending({ emailHash, requestId, admissionDispatch = null, proofStore = null }) {
     const row = requests.get(emailHash);
     if (!row || row.requestId !== requestId || row.state !== 'pre_send') return false;
+    if (admissionDispatch) return proofStore.markDispatchEffectAtomically(admissionDispatch, () => {row.state = 'inflight';return true;});
     row.state = 'inflight';
     return true;
   }
@@ -176,9 +181,15 @@ export function createMemoryNewsletterConsentStore({ clock = () => new Date() } 
 
   async function getOptInRequest(emailHash) { return clone(requests.get(emailHash) || null); }
 
-  async function importHistoricalOptIns() {
+  async function importHistoricalOptIns(options) {
+    validateCutover(options);
+    if(writerStarted)throw new Error('Historical import closed after writer start');
+    if(options.cutoverBefore>importNotAfter)throw new Error('Historical import requires sealed pre-writer cutover boundary');
+    if(importBoundary&&importBoundary!==options.cutoverBefore.toISOString())throw new Error('Cutover boundary is immutable');
+    if(importBoundary)return 0;
+    importBoundary=options.cutoverBefore.toISOString();
     let count = 0;
-    const ordered = [...events.values()].filter(event => event.event_type === 'opt_in_requested' &&
+    const ordered = [...events.values()].filter(event => event.event_type === 'opt_in_requested' && event.occurred_at < options.cutoverBefore && !event.metadata?.intakeVersion &&
       event.occurred_at.getTime() + 30 * 86400000 > clock().getTime())
       .sort((a, b) => b.occurred_at - a.occurred_at || b.event_id.localeCompare(a.event_id));
     for (const event of ordered) {

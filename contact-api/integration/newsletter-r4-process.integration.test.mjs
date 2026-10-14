@@ -84,11 +84,21 @@ test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, asy
     assert.equal((await post('status-check',{token:'invalid'})).status,400,'proof route remains available');
     assert.equal((await (await fetch(base+'/health')).json()).newsletterIntakePaused,true);await stop();
   });
-  await t.test('missing candidate table fails health until explicitly paused',async()=>{
+  await t.test('R5 PostgreSQL outage never changes HTTP liveness; recovery restores readiness',async()=>{
+    const unreachable=new URL(url);unreachable.port=String(await getFreePort());
+    await start({DATABASE_URL:String(unreachable)});
+    assert.equal((await fetch(base+'/health')).status,200);
+    assert.equal((await fetch(base+'/newsletter/ready')).status,503);
+    assert.equal((await submit(randomUUID()+'@example.test')).status,503);
+    assert.equal((await fetch(base+'/health')).status,200);
+    await stop();await start();assert.equal((await fetch(base+'/newsletter/ready')).status,200);await stop();
+  });
+  await t.test('missing candidate table fails newsletter readiness without affecting liveness',async()=>{
     await db.query('ALTER TABLE newsletter_opt_in_requests RENAME TO r4_schema_fixture');
     try{
-      await start({},503);assert.equal((await (await fetch(base+'/health')).json()).newsletterSchemaReady,false);assert.equal((await submit(randomUUID()+'@example.test')).status,503);await stop();
-      await start({NEWSLETTER_INTAKE_PAUSED:'true'});const health=await(await fetch(base+'/health')).json();assert.equal(health.newsletterSchemaReady,false);assert.equal(health.newsletterIntakePaused,true);await stop();
+      await start();assert.equal((await fetch(base+'/newsletter/ready')).status,503);assert.equal((await (await fetch(base+'/newsletter/ready')).json()).schemaReady,false);assert.equal((await submit(randomUUID()+'@example.test')).status,503);await stop();
+      await start({NEWSLETTER_INTAKE_PAUSED:'true'});const health=await(await fetch(base+'/newsletter/ready')).json();assert.equal(health.schemaReady,false);assert.equal(health.intakePaused,true);await stop();
     }finally{await stop('SIGKILL');await db.query('ALTER TABLE r4_schema_fixture RENAME TO newsletter_opt_in_requests');}
+    await start();assert.equal((await fetch(base+'/newsletter/ready')).status,200);await stop();
   });
 });
