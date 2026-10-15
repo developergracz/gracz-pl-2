@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Newsletter • Centrum Właściciela | gracz.pl</title>
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="/admin.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Przejdź do treści</a>
+    <div class="shell">
+      <aside>
+        <div class="logo">gracz<span>.pl</span></div>
+        <p class="eyebrow">CENTRUM WŁAŚCICIELA</p>
+        <nav aria-label="Panel">
+          <a href="#main" aria-current="page">◈ Newsletter</a
+          ><a href="#quality">◇ Jakość danych</a>
+        </nav>
+        <p class="aside-note">
+          R1 · Tylko odczyt<br />Kontrola bez zmiany zgód.
+        </p>
+      </aside>
+      <main id="main">
+        <header>
+          <div>
+            <p class="eyebrow">NEWSLETTER / PRZEGLĄD</p>
+            <h1>Relacja zaczyna się<br />od zaufania.</h1>
+            <p class="muted">Subskrypcje i dowody zgód w jednym miejscu.</p>
+          </div>
+          <span class="pill">PODGLĄD SYNTETYCZNY</span>
+        </header>
+        <div class="notice">
+          Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.
+          Panel produkcyjny pozostaje zamknięty.
+        </div>
+        <section class="cards" aria-label="Podsumowanie strony">
+          <article>
+            <p>Aktywni na stronie</p>
+            <strong id="active">—</strong
+            ><small>Potwierdzone warunki dostawcy</small>
+          </article>
+          <article>
+            <p>Wypisani na stronie</p>
+            <strong id="unsubscribed">—</strong
+            ><small>Globalnie lub w temacie</small>
+          </article>
+          <article>
+            <p>Oczekujący · łącznie</p>
+            <strong>—</strong><small>Agregat HMAC niedostępny</small>
+          </article>
+          <article>
+            <p>Wszystkie kontakty</p>
+            <strong id="total">—</strong
+            ><small id="total-note">Pełny licznik niedostępny</small>
+          </article>
+        </section>
+        <section class="panel" aria-labelledby="list-title">
+          <div class="section-title">
+            <div>
+              <h2 id="list-title">Subskrybenci</h2>
+              <p class="muted">Resend jako źródło stanu operacyjnego</p>
+            </div>
+            <button id="refresh" type="button">Odśwież</button>
+          </div>
+          <form id="filters">
+            <div>
+              <label for="query">Szukaj na pobranej stronie</label
+              ><input
+                id="query"
+                type="search"
+                maxlength="80"
+                placeholder="Fragment adresu e-mail"
+                autocomplete="off"
+              />
+            </div>
+            <div>
+              <label for="state">Stan subskrypcji</label
+              ><select id="state">
+                <option value="all">Wszystkie</option>
+                <option value="active">Aktywne</option>
+                <option value="unsubscribed">Wypisane</option>
+                <option value="suppressed">Zablokowane</option>
+                <option value="outside_segment">Poza segmentem</option>
+                <option value="unknown">Niezweryfikowane</option>
+              </select>
+            </div>
+            <button type="submit">Zastosuj</button>
+          </form>
+          <p id="status" role="status" aria-live="polite">
+            Oczekiwanie na dane…
+          </p>
+          <p class="muted">
+            Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy. Pusta
+            strona nie oznacza braku wyników na kolejnych stronach.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">
+                Lista kontaktów na bieżącej stronie dostawcy
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Adres e-mail</th>
+                  <th scope="col">Stan</th>
+                  <th scope="col">Dowody</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button id="first" type="button">Pierwsza strona</button
+            ><button id="next" type="button" disabled>Następna strona →</button>
+          </div>
+        </section>
+        <section class="panel" id="quality">
+          <h2>Zdrowie integracji i jakość danych</h2>
+          <p id="health">Nie sprawdzono</p>
+          <p class="muted">
+            Brak dowodu nie oznacza braku zgody. Panel nie rekonstruuje adresów
+            z HMAC ani nie naprawia subskrypcji automatycznie.
+          </p>
+          <p id="fetched">Ostatnie pobranie: —</p>
+        </section>
+        <footer>
+          Full Max Premium · Newsletter R1 · Bez eksportu i wysyłki
+        </footer>
+      </main>
+    </div>
+    <dialog id="detail" aria-labelledby="detail-title">
+      <div class="section-title">
+        <h2 id="detail-title">Szczegóły subskrypcji</h2>
+        <button id="close" type="button" aria-label="Zamknij szczegóły">
+          Zamknij
+        </button>
+      </div>
+      <div id="detail-body"></div>
+    </dialog>
+  </body>
+</html>
