@@ -153,7 +153,7 @@ The artifact does not itself terminate other instances or enforce a distributed 
 
 ## Open blockers
 
-Independent artifact/cutover audit; Owner execution approval; actual Render root/hook and
+Independent artifact PASS reported by both auditors; cutover RELEASE HOLD. Owner execution approval; actual Render root/hook and
 termination-grace verification; complete writer inventory/retirement evidence; maintenance
 window communication; approved frontend behavior; migration identity/registry/checksum and
 import authorization; production DR/PITR/RPO/RTO/secret escrow; uncertain DOI investigation
@@ -167,3 +167,148 @@ tests),0FAIL/0SKIPPED.23 existing syntax checks plus standalone syntax build, SE
 diff checks PASS. A separate read-only review found malformed-response framing; its
 regression and a half-open upgraded-connection shutdown regression both failed before
 their corrections and now pass. Exact-HEAD CI is recorded in the new DRAFT PR.
+
+## Post-audit correction R1: pinned delivery and release evidence
+
+Claude and Factory ARTIFACT PASS are recorded from the Owner's audit summary;
+Factory RELEASE HOLD remains in force. This correction does not reopen the artifact
+implementation audit. Test-only clock correction is tracked separately in PR #256;
+its identical patch is included here so this branch can obtain its own green CI.
+Neither production `newsletter.mjs` nor the three maintenance runtime files change.
+
+### Immutable artifact identity
+
+- Artifact health identifier: `contact-api-maintenance-r1` (not a cryptographic proof).
+- Audited source commit: `689749b2f4a0542e3cbcabc32110bf30b8490699`.
+- Repository: `developergracz/gracz-pl-2`; path: `contact-api/maintenance/`.
+- The delivery candidate is the **full current #255 HEAD recorded in the PR and signed
+  release record**, with successful CI for that SHA and these same three file digests.
+  A branch name, moving HEAD, or green CI on a different SHA is insufficient. The
+  audited commit above is a content provenance anchor, not a claim that its old CI passed.
+
+SHA-256 of exact Git file bytes (paths relative to repository root):
+
+```text
+0d1dc352e0cdf4309190a36d9c590ff1c51de1601baea30c994d1168766e5682  contact-api/maintenance/server.mjs
+f866d61fcaa7514499882363dd6a033f48e5f2d47b0792ee820543533debe2cd  contact-api/maintenance/build.sh
+15d13c24590db7e52b7925518f634e14ad74b9d15f1757117b425762460bf517  contact-api/maintenance/start.sh
+```
+
+Local reference archive, containing only those three files and their directories:
+
+```sh
+git archive --format=tar 689749b2f4a0542e3cbcabc32110bf30b8490699 \
+  contact-api/maintenance/server.mjs contact-api/maintenance/build.sh \
+  contact-api/maintenance/start.sh > contact-api-maintenance-r1-689749b.tar
+sha256sum contact-api-maintenance-r1-689749b.tar
+```
+
+Archive SHA-256: `7e07a3043ef6bb7845ff67cbabba3acb557a73a4295fb98080577e1e10462daf`.
+This is a locally generated reference archive, not a GitHub Actions upload or a
+Render deploy. Git archives of later commits can have different archive digests
+because of commit metadata; compare the three file digests to establish runtime
+identity. No `node_modules`, package installation or migrator belongs in delivery.
+
+### Concrete Git-backed delivery to the existing Render service
+
+**PROPOSED PROCEDURE ONLY — every platform prerequisite below requires verification
+before Owner GO; no settings or deploy were performed for this correction.**
+
+1. Before any launch, capture the actual service ID, Git repository, runtime, root,
+   linked branch, build/start/pre-deploy commands, hooks/wrappers, Blueprint ownership,
+   auto-deploy policy, rollout/termination settings and pending deploys. Confirm a
+   native Node service can run the standalone POSIX scripts on the existing plan.
+   If the actual service uses Docker or another unsupported path, HOLD; do not
+   improvise an image, new service, paid capacity or production package install.
+2. With separate execution authorization, freeze auto-deploy for API and frontend
+   and all manual/API/deploy-hook/Blueprint/preview/rollback launch sources. Cancel
+   pending legacy launches. If saving a source or command setting itself launches a
+   build, first establish an approved suspension/freeze that prevents it. Never
+   expose a newly selected commit to the old migrator-bearing build command.
+3. Before selecting/launching the candidate, replace the effective build/start with
+   the explicit row in this README for the verified root; pre-deploy must be empty
+   (no SQL or business command). Verify no package-manager hook, build wrapper,
+   entrypoint or Blueprint sync can restore the production migrator. Record the
+   effective settings after saving, not merely the intended edits. Secrets stay untouched.
+4. Make the approved full candidate SHA available through the service's connected
+   Git repository. If necessary, point its source branch to
+   `codex/f02-inert-maintenance-r1-20261015` under the freeze, after the safe commands
+   are effective; a merge into main is not required. In Render's manual deployment
+   flow choose **Deploy a specific commit**, supply the approved full SHA, and
+   verify that the selected commit matches it before launch. Availability/access
+   to this flow and that SHA on this service are required pre-GO evidence; if not
+   demonstrated, HOLD. Do not fall back to **Deploy latest commit**.
+5. After a separately authorized launch, retain deploy ID, resolved commit SHA,
+   effective root/commands, Node version and build/start logs. Compare the delivered
+   three file digests with the table using an approved platform inspection method;
+   the method/access must be established before GO. Build logs must show only the
+   standalone syntax check and startup the inert server; any migrator/business
+   execution means STOP. A matching `/health` string alone cannot verify the SHA.
+6. Only the combined retirement record below establishes `writersStopped`. Render
+   `live`, a successful build, `/health` 200 or green CI does not establish that barrier.
+
+### Measurable all-writer stop gate
+
+The release record must contain a row for **every** potential writer: API replica,
+old/new overlapping deploy, background process, worker, cron, preview, one-off job
+and external/manual script sharing the production DB or provider. Each row needs
+owner, service/job/instance identity, revision, launch source, stop method, terminal
+state and UTC stop timestamp with a platform evidence link. An unknown inventory
+entry or a writer that is only traffic-idle is a failure of this gate.
+
+All of the following must hold at one recorded boundary:
+
+- Zero legacy instances/processes still running, starting or draining; terminal
+  retirement evidence for every prior deploy/replica, after the **verified actual**
+  termination grace. Do not substitute an invented wait interval or newsletter's 25s.
+- Zero queued/running legacy builds, deploys, restarts, cron invocations or rollback
+  requests; automatic/manual launch sources cannot restart an old revision. Capture
+  the queue and launch-control evidence again after rollout completion.
+- Independently authorized read-only DB evidence shows zero sessions and active
+  transactions attributable to old writers, correlated to the inventory and platform
+  stops. Unattributable sessions/transactions are HOLD, not assumed harmless.
+- Inventory provider requests admitted before retirement, distinguishing accepted,
+  rejected and uncertain/in-flight attempts. Preserve their references, reservations
+  and uncertainty; a later delivery of an already accepted request is not proof of
+  a new writer. No new provider attempts attributable to old writers after the boundary.
+- Custom and direct `onrender.com` routes reach only inert instances: maintenance
+  health marker plus business 503, including cached-client/direct-API entry paths.
+  These probes corroborate process identity; they never replace retirement evidence.
+- Owner and DB operator sign the same inventory/timeline and last verified write
+  boundary. Missing platform retirement evidence means HOLD; authorized complete
+  suspension is acceptable only with evidence that all writers are stopped and no
+  restart can revive legacy code. No schema/import step may precede this gate.
+
+### Controlled abort and rollback target
+
+Record a known-good inert deploy ID **and its full SHA, file digests, root and safe
+commands** before later cutover. A previous business deploy is never an allowed
+rollback target. Keep API/frontend auto-deploy and other launch paths frozen.
+If the new candidate fails, use the verified inert target with the same safe
+build/start/no-pre-deploy settings, then repeat the all-writer retirement gate for
+the failed candidate. If no usable inert target exists, remain in approved complete
+suspension and frontend maintenance. Do not press rollback-to-previous, restore old
+build commands, resume a legacy revision, or re-enable intake to recover availability.
+Keep consent/withdrawal/uncertain-attempt evidence and additive schema intact; SQL
+reversal, old-snapshot restore, migration 005 and secret changes are not application
+rollback. Any later paused API and intake enablement need separate approval.
+
+### Required evidence before Owner GO — currently HOLD
+
+| Required evidence | Current status |
+|---|---|
+| Actual Render service IDs, native runtime/Node, root and connected repository/branch | UNVERIFIED — HOLD |
+| Effective syntax-only build, direct inert start, empty pre-deploy; all hooks/wrappers/Blueprint controls | UNVERIFIED — HOLD |
+| Auto-deploy/manual/hook/preview/rollback freeze and safe settings-save behavior | UNVERIFIED — HOLD |
+| Specific-commit selection/access, resolved SHA and delivered-digest verification method | UNVERIFIED — HOLD |
+| Actual replica topology, termination grace, platform retirement evidence availability | UNVERIFIED — HOLD |
+| Complete writer inventory and execution-time platform/DB/provider stop record | NOT EXECUTED — HOLD |
+| Existing-plan suspension/resumption and known-good inert rollback identity | UNVERIFIED — HOLD |
+| Approved outage/frontend behavior and signed execution window/Owner GO | NOT PROVIDED — HOLD |
+
+Configuration evidence above must be supplied before Owner GO. Execution-time stop
+records can only be produced during a separately authorized maintenance rollout and
+must be complete before any later schema/import authorization is used. Previously
+Owner-reported live facts are context, not freshly verified settings. Artifact PASS
+and green CI do not close RELEASE HOLD, migration 005 identity/checksum/registry
+conflict, production DR/PITR/RPO/RTO/escrow, or uncertain DOI/retention gates.
