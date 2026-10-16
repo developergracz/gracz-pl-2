@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "action": "INSTALL_NEWSLETTER_SCHEMA",
+  "codeHead": "REPLACE_WITH_REVIEWED_40_HEX_HEAD",
+  "migrationId": "newsletter/001_opt_in_requests",
+  "sqlSha256": "66566f04025ab96aff2d03e3426e70a38f8d13c657a81a81c503ed00cb304b99",
+  "registrySha256": "REPLACE_WITH_AUTHORIZED_REGISTRY_SHA256",
+  "target": {
+    "host": "REPLACE_WITH_APPROVED_DB_HOST",
+    "port": 5432,
+    "database": "REPLACE_WITH_APPROVED_DATABASE",
+    "user": "REPLACE_WITH_APPROVED_OPERATOR_ROLE"
+  },
+  "issuedAt": null,
+  "expiresAt": null,
+  "writersStoppedAt": null,
+  "owner": "",
+  "operator": "",
+  "evidence": {
+    "ownerGo": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "databaseOperatorGo": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "autoDeployFrozen": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "safeBuildStartHooks": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "allWriterRetirement": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "noQueuedLaunches": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "databaseSessionCrossCheck": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "providerUncertainInventory": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "restoreRehearsal": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "backupExportPitR": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "secretEscrow": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "inertRollback": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    },
+    "frontendCompatibility": {
+      "verified": false,
+      "reference": "UNVERIFIED",
+      "sha256": null
+    }
+  }
+}

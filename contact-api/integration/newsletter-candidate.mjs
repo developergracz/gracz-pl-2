@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import {applyNewsletterMigration} from '../persistence/newsletter-migrator.mjs';
 
 // Test-only candidate installation. Production migrator never scans candidates/.
 export async function applyNewsletterCandidate(database, connectionString) {
@@ -11,6 +11,5 @@ export async function applyNewsletterCandidate(database, connectionString) {
   const result = await database.query('SELECT current_database() AS name');
   if (result.rows[0]?.name !== 'gracz_test') throw new Error('Disposable DB identity mismatch');
   if((await database.query("SELECT to_regclass('newsletter_opt_in_requests') AS name")).rows[0].name)return;
-  const sql=await readFile(new URL('../persistence/candidates/005_newsletter_opt_in_requests.sql',import.meta.url),'utf8');
-  await database.transaction(client=>client.query(sql));
+  await applyNewsletterMigration(database,{mode:'disposable',connectionString});
 }
