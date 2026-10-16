@@ -6,33 +6,59 @@ production registry 001–004 (4/4 MATCH), no F-03 objects/seal, and counts 2/32
 accepted evidence. Dump-list PASS is not restore PASS. The following is the one
 current operator procedure; the older private-route section is historical only.
 
-## One local action now
+## One local action now — R1, local restore only
 
-Run `contact-api/operations/Restore-F03.ps1` from this PR's exact reviewed HEAD
-(HEAD and CI are recorded in the PR description), in a normal Windows PowerShell
-session without a transcript, not as administrator:
+The Owner's R1 mandate (2026-10-16) keeps merge, production SQL, deployment,
+mail and production configuration changes blocked pending separate GO.
+Do not run the script's default Render cleanup mode under this restore-only handoff.
+The previous procedure below is superseded by this pinned command.
+
+In a normal Windows PowerShell 5.1 session (not administrator, no transcript),
+paste this **one command block**. It downloads immutable script commit
+`585e28c3536e7d1389b47cc2d5c09c4168fa009e`, checks the raw file's SHA-256,
+and invokes only `-RestoreOnly`. Do not substitute a branch URL or skip the hash.
 
 ```powershell
-powershell.exe -NoProfile -File "$HOME\Downloads\Restore-F03.ps1"
+& {
+  $ErrorActionPreference = 'Stop'
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $f03Script = Join-Path $env:TEMP ('Restore-F03-' + [Guid]::NewGuid().ToString('N') + '.ps1')
+  Invoke-WebRequest -UseBasicParsing -MaximumRedirection 0 -Uri 'https://raw.githubusercontent.com/developergracz/gracz-pl-2/585e28c3536e7d1389b47cc2d5c09c4168fa009e/contact-api/operations/Restore-F03.ps1' -OutFile $f03Script
+  if ((Get-FileHash -LiteralPath $f03Script -Algorithm SHA256).Hash -ne 'a0a5280f9e42d04eeb8e5b36563bb6c1c0a758d59aa0f2af1df354d669f2cf3f') { throw 'SCRIPT_SHA256_MISMATCH' }
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $f03Script -RestoreOnly
+  if ($LASTEXITCODE -ne 0) { throw 'RESTORE_HOLD: use only the sanitized result report' }
+}
 ```
 
-Save the reviewed standalone script to that path first. Do not pipe downloaded
-text to Invoke-Expression. Default input is the Owner's existing
-`C:\Users\user\GraczDR\gracz_render_20261016_174133.dump`; default PG tools
-are `C:\Program Files\PostgreSQL\18\bin`. If installed elsewhere, pass only
-the local `-PgBin` path. No DB password, DATABASE_URL, production secret or dump
-is requested or transmitted. No new service, plan or recurring cost.
+This script revision passed Windows PowerShell 5.1 / PostgreSQL 18.6 synthetic
+restore in [run 38967001007](https://github.com/developergracz/gracz-pl-2/actions/runs/38967001007).
+The final PR HEAD and all current CI results are recorded in the PR description.
+The downloaded script remains byte-identical in later documentation/test-only commits.
+The process-scoped execution-policy option does not change machine policy.
 
-The masked local GUI requests a Render API key solely to GET the pinned database,
-remove exactly `GRACZ F03 TEMP / 193.106.209.40/32`, and GET-confirm `[]`.
-The key stays in process memory; do not paste it into chat or a command argument.
-Unexpected target or rules abort before PATCH. API uses verified HTTPS with
-redirects disabled. Closing this rule is explicitly authorized by mandate F while
-waiting for the operator session; it does not stop the API's internal DB access.
-If already closed, verification is idempotent. If there is no API-key access,
-close the rule in the Render database access settings and run `-RestoreOnly`;
-that mode reports allowlist NOT_CHECKED, requiring connector readback. The
-current connector lacks PATCH-Postgres capability and the cloud has no API key.
+Default dump: `C:\Users\user\GraczDR\gracz_render_20261016_174133.dump`.
+Default tools: `C:\Program Files\PostgreSQL\18\bin`.
+If installed elsewhere, supply the local `-PgBin` path.
+No DB password, DATABASE_URL, production secret, API key or dump is requested
+or transmitted. No new service, plan or recurring cost.
+Return only the sanitized `result.json` produced by this run.
+
+### Render TEMP closure — prepared, not executed by R1
+
+Authoritative Render `get_postgres` read on 2026-10-16 still showed exactly
+`193.106.209.40/32`, description `GRACZ F03 TEMP`, on
+`dpg-db38btt9fdbs73aadohg-a`. Do not report clean until a new read proves `[]`.
+
+After separate authorization for that configuration change, the script's default
+mode can use a **local masked API-key dialog** to GET the pinned database,
+accept only the exact single TEMP rule (or already empty list), PATCH only
+`{"ipAllowList":[]}`, then GET and require `[]`. Verified HTTPS, no redirects,
+no key logging; any other rule aborts without mutation. It never opens access.
+Alternatively, the authorized Owner can delete only that exact rule in
+[Render database access settings](https://dashboard.render.com/d/dpg-db38btt9fdbs73aadohg-a);
+a subsequent connector GET must independently confirm the result.
+The connector has no PATCH-Postgres capability; no API key is available in cloud.
+The restore command above deliberately reports allowlist `NOT_CHECKED`.
 
 The script uses a unique protected local directory, generated local SCRAM password,
 new PG18 cluster with locale C and port 55432, explicit loopback/role/database,
@@ -52,6 +78,23 @@ restoration and metadata/count checks, not offsite recovery, application decrypt
 escrow, role/ACL fidelity, live subscriber count or production migration GO.
 RTO field is measured restore+validation time, not whole-service RTO.
 The script never reads escrow keys and does not claim their recoverability.
+
+## R1 regression evidence
+
+The root cause of `LOCAL_IDENTITY_FAILED` was `inet_server_addr()::text`
+returning `127.0.0.1/32`, compared with `127.0.0.1`. The query now uses
+`host(inet_server_addr())`; data directory, exact address, port, role and
+PG18 version guards remain intact. CI proves both representations on a real PG18
+connection. psql output callbacks are drained before reading redirected stdout.
+Sanitized identity booleans distinguish failures without printing paths or data.
+
+The initial R1 diagnostic commit failed PowerShell parsing; it was corrected.
+Original failing run: 38931570246. The first restored full synthetic PASS:
+38967001007. No actual Owner dump was used in CI or accessed by Codex.
+Regressions require failures to occur specifically during restored-data validation,
+preserve the separate fixture server, exercise paths with spaces and reject an
+occupied listener without closing it. The final workflow also pins checkout to
+the PR head and executes `git diff --check` against the PR base.
 
 ## Exact next production sequence — gated, not executed
 
@@ -99,8 +142,7 @@ The script never reads escrow keys and does not claim their recoverability.
 **Current production state:** RESTORE HOLD; F03 NOT APPLIED (accepted mandate
 evidence); API MAINTENANCE; NEWSLETTER HOLD; external DB allowlist TEMP
 (control-plane observed this turn). No production DB connection or mutation,
-mail or deploy has been performed. The only prepared production mutation is
-closing the existing temporary allowlist through the Owner's local API session.
+mail or deploy has been performed. Closing the temporary allowlist is prepared but not invoked by the R1 restore-only command; production configuration changes require separate authorization.
 
 ---
 

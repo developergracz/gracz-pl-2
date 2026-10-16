@@ -13,6 +13,18 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Exact HEAD and whitespace check
+        shell: pwsh
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if ((git rev-parse HEAD) -ne $env:EXPECTED_HEAD) { throw 'HEAD_MISMATCH' }
+          git diff --check $env:BASE_SHA HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'DIFF_CHECK_FAILED' }
       - name: Download isolated PostgreSQL 18 binaries (no service install)
         shell: pwsh
         run: |

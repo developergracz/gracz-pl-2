@@ -27,7 +27,12 @@ function SQL([string]$Text) {
 function Check-Restore([bool]$ExpectedPass) {
   $work=Join-Path $root ([Guid]::NewGuid().ToString('N'))
   # Poison inherited settings: production script must ignore these.
-  $env:PGHOST='invalid.example'; $env:PGPORT='5432'; $env:PGSERVICE='invalid'
+  $poison=@{ PGHOST='invalid.example'; PGPORT='5432'; PGSERVICE='invalid';
+    PGSERVICEFILE='C:\nonexistent\pg_service.conf'; PGDATABASE='wrong_database';
+    PGUSER='wrong_user'; PGPASSWORD='synthetic-not-a-secret';
+    PGPASSFILE='C:\nonexistent\pgpass'; PGSSLMODE='verify-full';
+    PGOPTIONS='-c default_transaction_read_only=on'; PGDATA='C:\nonexistent\data' }
+  foreach ($name in $poison.Keys) { [Environment]::SetEnvironmentVariable($name,$poison[$name],'Process') }
   try {
     Write-Host ('RESTORE_START expectedPass=' + $ExpectedPass)
     $outputFile=Join-Path $root ([Guid]::NewGuid().ToString('N')+'.out')
@@ -37,7 +42,9 @@ function Check-Restore([bool]$ExpectedPass) {
     $null=$p.Handle
     if (-not $p.WaitForExit(120000)) { $p.Kill(); throw ('RESTORE_TIMEOUT: ' + (Get-Content $outputFile -Raw)) }
     $p.Refresh(); $code=$p.ExitCode; $output=@(Get-Content $outputFile)
-  } finally { Remove-Item Env:PGHOST,Env:PGPORT,Env:PGSERVICE -ErrorAction SilentlyContinue }
+  } finally {
+    foreach ($name in $poison.Keys) { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
+  }
   $files=@(Get-ChildItem -LiteralPath $work -Filter result.json -Recurse)
   if ($files.Count -ne 1) { throw ('RESTORE_REPORT_MISSING: '+($output -join ' ')) }
   $r=Get-Content -LiteralPath $files[0].FullName -Raw | ConvertFrom-Json
