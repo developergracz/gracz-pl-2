@@ -25,15 +25,36 @@ $envPrepared = $false
 
 function Stop-F03([string]$Code) { throw $Code }
 function Invoke-Pg([string]$Tool, [string[]]$Arguments) {
-  # Capture native stderr privately; never echo SQL, archive data, paths or credentials.
-  $old = $ErrorActionPreference
+  if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--version') {
+    $old = $ErrorActionPreference
+    try {
+      $ErrorActionPreference = 'Continue'
+      $output = @(& (Join-Path $PgBin ($Tool + '.exe')) --version 2>&1)
+      $exitCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $old }
+    if ($exitCode -ne 0) { Stop-F03 'PG_VERSION_FAILED' }
+    return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+  }
+  # Windows pg_ctl can leave descendant pipe handles open. Use protected files,
+  # wait for the actual executable with a deadline, not pipeline EOF.
+  if (-not $runDir) { Stop-F03 'PRIVATE_OUTPUT_DIRECTORY_REQUIRED' }
+  Write-Host ('F03 ' + $stage + ': ' + $Tool)
+  $prefix=Join-Path $runDir ('tool-' + [Guid]::NewGuid().ToString('N'))
+  $quoted=@($Arguments | ForEach-Object { '"' + $_.Replace('"','\"') + '"' })
   try {
-    $ErrorActionPreference = 'Continue'
-    $output = @(& (Join-Path $PgBin ($Tool + '.exe')) @Arguments 2>&1)
-    $exitCode = $LASTEXITCODE
-  } finally { $ErrorActionPreference = $old }
-  if ($exitCode -ne 0) { Stop-F03 ('PG_' + $Tool.ToUpperInvariant() + '_FAILED') }
-  return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+    $p=Start-Process -FilePath (Join-Path $PgBin ($Tool+'.exe')) -ArgumentList ($quoted -join ' ') -RedirectStandardOutput ($prefix+'.out') -RedirectStandardError ($prefix+'.err') -PassThru -NoNewWindow
+    $null=$p.Handle
+    $timeout=60000
+    if ($Tool -eq 'pg_restore') { $timeout=300000 }
+    if (-not $p.WaitForExit($timeout)) { $p.Kill(); Stop-F03 ('PG_' + $Tool.ToUpperInvariant() + '_TIMEOUT') }
+    $p.Refresh()
+    if ($p.ExitCode -ne 0) { Stop-F03 ('PG_' + $Tool.ToUpperInvariant() + '_FAILED') }
+    return ([IO.File]::ReadAllText($prefix+'.out')).Trim()
+  } finally {
+    foreach ($suffix in @('.out','.err')) {
+      if (Test-Path -LiteralPath ($prefix+$suffix)) { Remove-Item -LiteralPath ($prefix+$suffix) -Force -ErrorAction SilentlyContinue }
+    }
+  }
 }
 function Get-RenderToken {
   Add-Type -AssemblyName System.Windows.Forms
