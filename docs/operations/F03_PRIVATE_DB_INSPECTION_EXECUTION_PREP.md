@@ -1,3 +1,111 @@
+# P0 execution handoff — 2026-10-16 (supersedes the preparation status below)
+
+[Current mandate](https://github.com/developergracz/gracz-pl-2/pull/263#issuecomment-6219329181).
+No new general audit. The Owner's external /32 exception and already verified
+production registry 001–004 (4/4 MATCH), no F-03 objects/seal, and counts 2/32/1 are
+accepted evidence. Dump-list PASS is not restore PASS. The following is the one
+current operator procedure; the older private-route section is historical only.
+
+## One local action now
+
+Run `contact-api/operations/Restore-F03.ps1` from this PR's exact reviewed HEAD
+(HEAD and CI are recorded in the PR description), in a normal Windows PowerShell
+session without a transcript, not as administrator:
+
+```powershell
+powershell.exe -NoProfile -File "$HOME\Downloads\Restore-F03.ps1"
+```
+
+Save the reviewed standalone script to that path first. Do not pipe downloaded
+text to Invoke-Expression. Default input is the Owner's existing
+`C:\Users\user\GraczDR\gracz_render_20261016_174133.dump`; default PG tools
+are `C:\Program Files\PostgreSQL\18\bin`. If installed elsewhere, pass only
+the local `-PgBin` path. No DB password, DATABASE_URL, production secret or dump
+is requested or transmitted. No new service, plan or recurring cost.
+
+The masked local GUI requests a Render API key solely to GET the pinned database,
+remove exactly `GRACZ F03 TEMP / 193.106.209.40/32`, and GET-confirm `[]`.
+The key stays in process memory; do not paste it into chat or a command argument.
+Unexpected target or rules abort before PATCH. API uses verified HTTPS with
+redirects disabled. Closing this rule is explicitly authorized by mandate F while
+waiting for the operator session; it does not stop the API's internal DB access.
+If already closed, verification is idempotent. If there is no API-key access,
+close the rule in the Render database access settings and run `-RestoreOnly`;
+that mode reports allowlist NOT_CHECKED, requiring connector readback. The
+current connector lacks PATCH-Postgres capability and the cloud has no API key.
+
+The script uses a unique protected local directory, generated local SCRAM password,
+new PG18 cluster with locale C and port 55432, explicit loopback/role/database,
+and rejects an occupied port. It does not reuse or stop 5432 or any previous
+cluster. It clears inherited libpq settings, checks server data_directory/identity,
+restores the entire custom archive in one transaction with no owner/ACL/tablespace
+replay, verifies 2 contacts / 32 events / 1 confirmed event, last-event timestamp,
+exact four checksums and absence of F-03, then stops only its cluster and removes
+temporary password files. Local loopback-only ssl=off is not a production TLS
+policy or change. The private restored files remain ACL-protected for operator
+review; they contain production data and must not be uploaded. After approved
+retention, delete only this script's stopped run directory; retain the original dump.
+
+Return only `result.json` (sanitized counts/hash/status), never server logs,
+dump, data directory or secret files. PASS in this report means local full-dump
+restoration and metadata/count checks, not offsite recovery, application decrypt,
+escrow, role/ACL fidelity, live subscriber count or production migration GO.
+RTO field is measured restore+validation time, not whole-service RTO.
+The script never reads escrow keys and does not claim their recoverability.
+
+## Exact next production sequence — gated, not executed
+
+1. Preserve accepted read-only production evidence. Canonical Node/pg registry
+   SHA for exactly the four confirmed rows is
+   `12bf844cedef7c9b3dd4dba578f50435b9a763996c56abed3934f269e9494f1f`.
+   Derived from reviewed source checksums; not a new production query.
+2. After actual restore: independently verify private offsite/PITR/export recovery,
+   contact-encryption and newsletter signing/hash key recovery and decrypt.
+   No such evidence is currently available to Codex. Never print/read keys into chat.
+3. Complete the retirement certificate: no old/queued/manual/external writers,
+   DB-session cross-check plus provider uncertain DOI disposition and last-write
+   boundary. Current inert deployment and one confirmed event do not prove these.
+   32 events are preserved; no automatic replay, reset or assumption of two active
+   subscribers. No live Resend query/send was made in this task.
+4. Pin final integrated SHA and matching CI; populate the existing
+   `newsletter-migration-evidence.example.json` outside the checkout with real
+   references/hashes, Owner+DB GO, target and <=1-hour timestamps. Do not mark
+   missing gates verified. Keep both autoDeploy OFF and F-02.
+5. Use original `newsletter-migrator.mjs --preflight <receipt>`, then only with
+   specific production GO `--execute <receipt>` and
+   `NEWSLETTER_MIGRATION_CONFIRM=INSTALL_NEWSLETTER_SCHEMA`.
+   Secret injection must be private. External target is
+   `dpg-db38btt9fdbs73aadohg-a.frankfurt-postgres.render.com:5432`,
+   DB/user as in the mandate. URL must have no query/fragment.
+   Previously accepted psql sslmode=require does NOT satisfy the migrator's
+   rejectUnauthorized=true requirement. Obtain verified CA+hostname trust;
+   otherwise STOP for explicit policy review, never silently weaken the original.
+   No raw candidate SQL, CONTACT005, global migrator shortcut or automatic retry.
+6. With no new writer yet, separately authorize HISTORY with an immutable UTC
+   cutoff after `2026-10-15T19:29:31.474Z` and <= actual installation seal.
+   Use existing `importNewsletterHistory(database,{cutoverBefore:new Date(cutoff),
+   writersStopped:true})` from `persistence/newsletter-cutover.mjs`, with the
+   same verified target/TLS and receipt checks. Verify same-cutoff repeat returns
+   zero and 2/32/1/events remain unchanged; inspect exclusions/unknown sends.
+   This imports reservations, not consent rewriting or new active subscriptions.
+   No production wrapper is enabled before these inputs and approvals exist.
+7. Only then deliver pinned integrated API with intake paused, safe build/start,
+   readiness schemaReady=true/intakePaused=true, then matching frontend,
+   separate live-send test GO and enable GO. Keep original F-02 as rollback;
+   never restart legacy writers. Restore autoDeploy only by separate decision.
+8. Close any separately reopened /32 immediately after that approved window;
+   confirm control-plane allowlist [] again. The current script never opens it.
+
+**Current production state:** RESTORE HOLD; F03 NOT APPLIED (accepted mandate
+evidence); API MAINTENANCE; NEWSLETTER HOLD; external DB allowlist TEMP
+(control-plane observed this turn). No production DB connection or mutation,
+mail or deploy has been performed. The only prepared production mutation is
+closing the existing temporary allowlist through the Owner's local API session.
+
+---
+
+## Historical private-route preparation (superseded by the mandate above)
+
 # F-03 private DB inspection — execution preparation, 2026-10-16
 
 **BLOCKED.** Brak potwierdzonego, istniejącego kanału operatora do uruchomienia
