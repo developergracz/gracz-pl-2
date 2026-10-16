@@ -6,7 +6,7 @@ $scriptFile = Join-Path $repo 'contact-api/operations/Restore-F03.ps1'
 $tokens=$null; $errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($scriptFile,[ref]$tokens,[ref]$errors)
 if ($errors.Count) { throw 'POWERSHELL_PARSE_FAILED' }
-$root=Join-Path $env:RUNNER_TEMP ('f03-fixture-' + [Guid]::NewGuid().ToString('N'))
+$root=Join-Path $env:RUNNER_TEMP ('f03 fixture-' + [Guid]::NewGuid().ToString('N'))
 $null=New-Item -ItemType Directory -Path $root
 $source=Join-Path $root 'source'
 $dump=Join-Path $root 'fixture.dump'
@@ -45,6 +45,12 @@ function Check-Restore([bool]$ExpectedPass) {
       -not $r.stopped -or $r.release -ne 'HOLD' -or $r.allowlist -ne 'NOT_CHECKED') {
     throw ('RESTORE_EXPECTATION_FAILED: ' + ($r | ConvertTo-Json -Compress))
   }
+  if ($r.localIdentity.fields -ne 5 -or -not $r.localIdentity.directory -or
+      -not $r.localIdentity.address -or -not $r.localIdentity.port -or
+      -not $r.localIdentity.role -or -not $r.localIdentity.pg18) { throw 'IDENTITY_NOT_VERIFIED' }
+  if (-not $ExpectedPass -and ($r.failedStage -ne 'VERIFY_RESTORED_DATA' -or
+      $r.failureCode -ne 'PG_PSQL_FAILED')) { throw 'WRONG_REJECTION_REASON' }
+  SQL "SELECT 1;" # Independent existing fixture on 55433 must still answer.
   if (Get-ChildItem -LiteralPath $files[0].Directory.FullName -Filter 'local-*') { throw 'PASSWORD_FILE_RETAINED' }
   if (@([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() |
       Where-Object { $_.Port -eq 55432 }).Count) { throw 'RESTORE_SERVER_NOT_STOPPED' }
@@ -53,6 +59,17 @@ try {
   Pg 'initdb' @('-D',$source,'--locale=C','--encoding=UTF8','--username=fixture_owner','--auth=trust')
   Pg 'pg_ctl' @('-D',$source,'-l',(Join-Path $root 'fixture.log'),'-o','-h 127.0.0.1 -p 55433','-w','start')
   Pg 'createdb' @('-h','127.0.0.1','-p','55433','-U','fixture_owner','fixture')
+  # PostgreSQL inet::text includes /32; host(inet) is the exact address.
+  # This reproduces why the previous identity comparison rejected loopback.
+  SQL @'
+DO $proof$ BEGIN
+  IF inet_server_addr()::text <> '127.0.0.1/32'
+    OR host(inet_server_addr()) <> '127.0.0.1' THEN
+    RAISE EXCEPTION 'INET_REPRESENTATION_REGRESSION';
+  END IF;
+END $proof$;
+'@
+  Write-Host 'PASS: inet::text reproduces /32 mismatch; host(inet) preserves exact address'
   SQL 'CREATE TABLE schema_migrations(version text primary key,checksum char(64) not null);'
   $sha=[Security.Cryptography.SHA256]::Create()
   foreach ($name in @('001_persistent_state.sql','002_durable_premium_reply.sql','003_newsletter_state_version.sql','004_contact_data_encryption.sql')) {
@@ -86,6 +103,7 @@ SELECT gen_random_uuid(),repeat('1',64),CASE WHEN n=1 THEN 'opt_in_confirmed' EL
     $out=@(& powershell.exe -NoProfile -NonInteractive -File $scriptFile -RestoreOnly -PgBin $PgBin -DumpPath $dump -WorkRoot (Join-Path $root 'occupied') 2>&1)
     if ($LASTEXITCODE -eq 0 -or ($out -join ' ') -notmatch 'PORT_55432_OCCUPIED' -or
         (Test-Path -LiteralPath (Join-Path $root 'occupied'))) { throw 'OCCUPIED_PORT_NOT_REJECTED' }
+    if (-not $listener.Server.IsBound) { throw 'EXISTING_LISTENER_CHANGED' }
   } finally { $listener.Stop() }
   Write-Host 'PASS: occupied 55432 rejected without touching listener or directory'
   # Exercise real cleanup function with an in-memory HTTP fixture; never call Render.
