@@ -49,6 +49,9 @@ function Invoke-Pg([string]$Tool, [string[]]$Arguments) {
     if (-not $p.WaitForExit($timeout)) { $p.Kill(); Stop-F03 ('PG_' + $Tool.ToUpperInvariant() + '_TIMEOUT') }
     $p.Refresh()
     if ($p.ExitCode -ne 0) { Stop-F03 ('PG_' + $Tool.ToUpperInvariant() + '_FAILED') }
+    # Only psql's identity query needs stdout. pg_ctl descendants may retain its
+    # redirected file handle even after the launcher has successfully exited.
+    if ($Tool -ne 'psql') { return '' }
     return ([IO.File]::ReadAllText($prefix+'.out')).Trim()
   } finally {
     foreach ($suffix in @('.out','.err')) {
@@ -220,6 +223,8 @@ ROLLBACK;
 } catch {
   $result.restore='HOLD'
   $result.failedStage=$stage
+  $result.failureType=$_.Exception.GetType().Name
+  $result.failureLine=$_.InvocationInfo.ScriptLineNumber
   if ($_.Exception.Message -match '^[A-Z0-9_]+$') { $result.failureCode=$_.Exception.Message }
   # Never print the exception or native output: these may include data or credentials.
 } finally {
