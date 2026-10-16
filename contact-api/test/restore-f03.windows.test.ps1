@@ -15,9 +15,10 @@ function Pg([string]$Tool,[string[]]$Arguments) {
   $prefix=Join-Path $root ([Guid]::NewGuid().ToString('N'))
   $quoted=@($Arguments | ForEach-Object { '"' + $_.Replace('"','\"') + '"' })
   $p=Start-Process -FilePath (Join-Path $PgBin ($Tool+'.exe')) -ArgumentList ($quoted -join ' ') -RedirectStandardOutput ($prefix+'.out') -RedirectStandardError ($prefix+'.err') -PassThru -NoNewWindow
+  $null=$p.Handle
   if (-not $p.WaitForExit(60000)) { $p.Kill(); throw ('FIXTURE_TIMEOUT_' + $Tool) }
   $p.Refresh()
-  if ($p.ExitCode -ne 0) { throw ('FIXTURE_' + $Tool + '_FAILED: ' + (Get-Content ($prefix+'.err') -Raw)) }
+  if ($p.ExitCode -ne 0) { throw ('FIXTURE_' + $Tool + '_FAILED: ' + (Get-Content ($prefix+'.err') -Raw) + (Get-Content ($prefix+'.out') -Raw)) }
   Write-Host ('FIXTURE_DONE: ' + $Tool)
 }
 function SQL([string]$Text) {
@@ -33,6 +34,7 @@ function Check-Restore([bool]$ExpectedPass) {
     $arguments=@('-NoProfile','-NonInteractive','-File',$scriptFile,'-RestoreOnly','-PgBin',$PgBin,'-DumpPath',$dump,'-WorkRoot',$work)
     $quoted=@($arguments | ForEach-Object { '"' + $_.Replace('"','\"') + '"' })
     $p=Start-Process powershell.exe -ArgumentList ($quoted -join ' ') -RedirectStandardOutput $outputFile -RedirectStandardError ($outputFile+'.err') -PassThru -NoNewWindow
+    $null=$p.Handle
     if (-not $p.WaitForExit(120000)) { $p.Kill(); throw ('RESTORE_TIMEOUT: ' + (Get-Content $outputFile -Raw)) }
     $p.Refresh(); $code=$p.ExitCode; $output=@(Get-Content $outputFile)
   } finally { Remove-Item Env:PGHOST,Env:PGPORT,Env:PGSERVICE -ErrorAction SilentlyContinue }
@@ -113,5 +115,6 @@ SELECT gen_random_uuid(),repeat('1',64),CASE WHEN n=1 THEN 'opt_in_confirmed' EL
   if (-not $refused -or ($script:calls -join ',') -ne 'Get') { throw 'UNEXPECTED_RULE_CHANGED' }
   Write-Host 'PASS: exact TEMP removal/readback; unexpected allowlist refused (mock HTTP only)'
 } finally {
+  $ErrorActionPreference='Continue'
   & (Join-Path $PgBin 'pg_ctl.exe') -D $source -m fast -w stop 2>&1 | Out-Null
 }
