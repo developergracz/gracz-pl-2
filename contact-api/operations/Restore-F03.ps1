@@ -52,6 +52,9 @@ function Invoke-Pg([string]$Tool, [string[]]$Arguments) {
     # Only psql's identity query needs stdout. pg_ctl descendants may retain its
     # redirected file handle even after the launcher has successfully exited.
     if ($Tool -ne 'psql') { return '' }
+    # WaitForExit(timeout) can return before asynchronous redirected output is drained.
+    # psql has no server descendants; complete its stream callbacks before reading.
+    $p.WaitForExit()
     return ([IO.File]::ReadAllText($prefix+'.out')).Trim()
   } finally {
     foreach ($suffix in @('.out','.err')) {
@@ -177,6 +180,94 @@ log_disconnections = off
   $identitySql = "SELECT current_setting('data_directory'),inet_server_addr()::text,inet_server_port(),current_user,current_setting('server_version_num');"
   $identity = Invoke-Pg 'psql' ($connection + @('-X','-A','-t','-F','|','-d','postgres','-v','ON_ERROR_STOP=1','-c',$identitySql))
   $parts = $identity.Split('|')
+  # Safe diagnostics: report match booleans only, never local paths or raw output.
+  $result.localIdentity = [ordered]@{ fields=$parts.Count; directory=$false; address=$false; port=$false; role=$false; pg18=$false }
+  if ($parts.Count -eq 5) {
+    $result.localIdentity.directory = [IO.Path]::GetFullPath($parts[0]) -eq [IO.Path]::GetFullPath($dataDir)
+    $result.localIdentity.address = $parts[1] -eq '127.0.0.1'
+    $result.localIdentity.port = $parts[2] -eq '55432'
+    $result.localIdentity.role = $parts[3] -eq 'f03_restore_owner'
+    $result.localIdentity.pg18 = $parts[4] -match '^18[0-9]{4}
+  if ($parts.Count -ne 5 -or
+      [IO.Path]::GetFullPath($parts[0]) -ne [IO.Path]::GetFullPath($dataDir) -or
+      $parts[1] -ne '127.0.0.1' -or $parts[2] -ne '55432' -or $parts[3] -ne 'f03_restore_owner' -or
+      [int]$parts[4] -lt 180000 -or [int]$parts[4] -ge 190000) { Stop-F03 'LOCAL_IDENTITY_FAILED' }
+  $null = Invoke-Pg 'createdb' ($connection + @('--template=template0','f03_restore_check'))
+  $stage='RESTORE'
+  $watch = [Diagnostics.Stopwatch]::StartNew()
+  $null = Invoke-Pg 'pg_restore' ($connection + @('--dbname=f03_restore_check','--no-owner','--no-acl','--no-tablespaces','--no-subscriptions','--exit-on-error','--single-transaction',$dump.FullName))
+  $stage='VERIFY_RESTORED_DATA'
+  $sql = @'
+BEGIN READ ONLY;
+DO $verify$
+DECLARE registry jsonb;
+BEGIN
+  IF (SELECT count(*) FROM public.newsletter_contacts) <> 2
+    OR (SELECT count(*) FROM public.newsletter_consent_events) <> 32
+    OR (SELECT count(*) FROM public.newsletter_consent_events WHERE event_type='opt_in_confirmed') <> 1
+    OR (SELECT max(occurred_at) FROM public.newsletter_consent_events) IS DISTINCT FROM timestamptz '2026-10-15 19:29:31.474+00'
+    THEN RAISE EXCEPTION 'F03_RESTORE_COUNTS_MISMATCH'; END IF;
+  SELECT jsonb_agg(jsonb_build_object('version',version,'checksum',trim(checksum)) ORDER BY version)
+    INTO registry FROM public.schema_migrations;
+  IF registry IS DISTINCT FROM '[
+    {"version":"001_persistent_state.sql","checksum":"39aac752645ccf4cacd894985112f791cb09b8392c7e29f5d00c10856e6038fb"},
+    {"version":"002_durable_premium_reply.sql","checksum":"9dfff46f7067e3ee99fd5a04c0089f4751923a827799c5b8cfeff58e2c95a1ff"},
+    {"version":"003_newsletter_state_version.sql","checksum":"08ae96740be0d37c7e73c06ed7ba6c64d5d264d149829a577d2d2acb7b6ad5ea"},
+    {"version":"004_contact_data_encryption.sql","checksum":"4ff581bfb8d67984b8b3eca76e64569c7f14635c3c0c3f7581bdea749987cdd8"}
+  ]'::jsonb THEN RAISE EXCEPTION 'F03_RESTORE_REGISTRY_MISMATCH'; END IF;
+  IF to_regclass('public.newsletter_schema_migrations') IS NOT NULL
+    OR to_regclass('public.newsletter_opt_in_requests') IS NOT NULL
+    OR EXISTS(SELECT 1 FROM public.idempotency_keys WHERE scope='newsletter-cutover')
+    THEN RAISE EXCEPTION 'F03_RESTORE_UNEXPECTED_CUTOVER'; END IF;
+END $verify$;
+ROLLBACK;
+'@
+  $sqlFile = Join-Path $runDir 'verify.sql'
+  [IO.File]::WriteAllText($sqlFile,$sql,[Text.UTF8Encoding]::new($false))
+  $null = Invoke-Pg 'psql' ($connection + @('-X','-q','-d','f03_restore_check','-v','ON_ERROR_STOP=1','-f',$sqlFile))
+  $watch.Stop()
+  if ((Get-FileHash -LiteralPath $dump.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $dumpHash) { Stop-F03 'DUMP_CHANGED' }
+  $result.restore='PASS'; $result.dumpSha256=$dumpHash; $result.dumpBytes=$dump.Length
+  $result.contacts=2; $result.events=32; $result.confirmedEvents=1; $result.registryMatches=4
+  $result.restoreSeconds=[math]::Round($watch.Elapsed.TotalSeconds,2)
+  $result.escrow='NOT_VERIFIED'; $result.decrypt='NOT_VERIFIED'; $result.offsiteRecovery='NOT_VERIFIED'
+} catch {
+  $result.restore='HOLD'
+  $result.failedStage=$stage
+  $result.failureType=$_.Exception.GetType().Name
+  $result.failureLine=$_.InvocationInfo.ScriptLineNumber
+  if ($_.Exception.Message -match '^[A-Z0-9_]+$') { $result.failureCode=$_.Exception.Message }
+  # Never print the exception or native output: these may include data or credentials.
+} finally {
+  if ($serverMayExist) {
+    try {
+      $null = Invoke-Pg 'pg_ctl' @('-D',$dataDir,'-m','fast','-w','-t','30','stop')
+      $result.stopped=$true
+    } catch {
+      $result.restore='HOLD'; $result.failedStage='LOCAL_STOP_NOT_CONFIRMED'
+    }
+  }
+  if ($envPrepared) {
+    foreach ($name in @('PGDATA','PGPASSFILE','PGCONNECT_TIMEOUT','PGCLIENTENCODING')) {
+      [Environment]::SetEnvironmentVariable($name,$null,'Process')
+    }
+    foreach ($name in $savedEnv.Keys) { [Environment]::SetEnvironmentVariable($name,$savedEnv[$name],'Process') }
+  }
+  if ($runDir) {
+    foreach ($name in @('local-init-password','local-pgpass')) {
+      $file=Join-Path $runDir $name
+      if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
+    }
+    $result.completedAt=[DateTime]::UtcNow.ToString('o')
+    $result.scriptSha256=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $runDir 'result.json') -Encoding UTF8
+  }
+}
+$result | ConvertTo-Json -Depth 4
+if ($runDir) { Write-Host ('Private result: ' + (Join-Path $runDir 'result.json')) }
+if ($result.restore -ne 'PASS') { exit 1 }
+
+  }
   if ($parts.Count -ne 5 -or
       [IO.Path]::GetFullPath($parts[0]) -ne [IO.Path]::GetFullPath($dataDir) -or
       $parts[1] -ne '127.0.0.1' -or $parts[2] -ne '55432' -or $parts[3] -ne 'f03_restore_owner' -or
