@@ -184,7 +184,6 @@ export function createPremiumReplyRoute({
       requestId,
       contactRequestId: delivery.requestId,
       providerId: result.id || null,
-      recipientHash: hashValue(delivery.to).slice(0, 12),
     });
 
     return json(res, 200, {

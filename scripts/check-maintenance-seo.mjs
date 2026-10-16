@@ -314,7 +314,7 @@ requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r2"), "live footer n
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");
-requireCheck(legalLinksJs.includes("Dziękujemy za zapis!"), "premium newsletter success copy missing");
+requireCheck(legalLinksJs.includes("Zgłoszenie przyjęte"), "premium newsletter success copy missing");
 requireCheck(legalLinksJs.includes("await openNewsletterSuccess(submit)"), "footer newsletter success must open premium modal");
 const footerNewsletterCss = fs.readFileSync(path.resolve(root, "assets/footer-newsletter.css"), "utf8");
 requireCheck(footerNewsletterCss.includes("max-width:470px"), "footer newsletter: compact max width missing");

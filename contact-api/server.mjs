@@ -1,3 +1,7 @@
+import { parseNewsletterIntakePaused } from "./newsletter-config.mjs";
+import { installShutdown } from "./lifecycle.mjs";
+import { createNewsletterProofStore } from './persistence/newsletter-proof-store.mjs';
+import { createMemoryNewsletterProofStore } from './test-support/memory-newsletter-proof-store.mjs';
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
@@ -97,6 +101,7 @@ const NEWSLETTER_CONSENT_HASH_SECRET = String(
 ).trim();
 
 const newsletter = createNewsletterManager({
+  intakePaused: parseNewsletterIntakePaused(process.env.NEWSLETTER_INTAKE_PAUSED),
   secret: NEWSLETTER_SECRET,
   resendApiKey: NEWSLETTER_RESEND_API_KEY,
   resendApiBase: RESEND_API_BASE,
@@ -105,6 +110,7 @@ const newsletter = createNewsletterManager({
   replyTo: CONTACT_TO_ADDRESS,
   baseUrl: NEWSLETTER_URL,
   consentStore: newsletterConsentStore,
+  proofStore: useTestNewsletterConsentStore ? createMemoryNewsletterProofStore() : (database.enabled ? createNewsletterProofStore(database) : null),
   consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
 });
 
@@ -235,7 +241,7 @@ const handlePremiumReplyRequest = createPremiumReplyRoute({
   recordProviderSuccess,
 });
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const requestId = randomUUID();
   let reservedIdempotency = null;
   let providerAttempted = false;
@@ -244,8 +250,9 @@ createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
 
     if (req.method === "GET" && url.pathname === "/health") {
-      return json(res, 200, {
-        status: "ok",
+      return json(res, lifecycle.stopping ? 503 : 200, {
+        status: lifecycle.stopping ? "stopping" : "ok",
+        newsletterIntakePaused: newsletter.intakePaused,
         mailConfigured: Boolean(
           RESEND_API_KEY && CONTACT_TO_ADDRESS && EMAIL_FROM_ADDRESS
         ),
@@ -257,6 +264,11 @@ createServer(async (req, res) => {
         newsletterConfigured: newsletter.enabled,
         newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
+    }
+
+    if (req.method === "GET" && url.pathname === "/newsletter/ready") {
+      const readiness = await newsletter.readiness();
+      return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
     }
 
     if (url.pathname === "/reply-context" || url.pathname === "/reply") {
@@ -566,18 +578,17 @@ createServer(async (req, res) => {
     let newsletterState = "not_requested";
     if (payload.newsletter) {
       try {
-        await newsletter.requestOptIn({
+        await newsletter.acceptOptIn({
           email: payload.email,
           name: payload.name,
           source: "contact_form",
         });
-        newsletterState = "confirmation_sent";
+        newsletterState = "request_received";
       } catch (newsletterError) {
         newsletterState = "temporarily_unavailable";
         console.error("[newsletter] opt-in request failed", {
           requestId,
           code: newsletterError?.code || "NEWSLETTER_ERROR",
-          emailHash: hashValue(payload.email).slice(0, 12),
         });
       }
     }
@@ -614,7 +625,6 @@ createServer(async (req, res) => {
       requestId,
       providerId: result.id || null,
       category: payload.category,
-      emailHash: hashValue(payload.email).slice(0, 12),
       riskScore: risk.score,
       riskSignals: risk.signals,
     });
@@ -650,7 +660,9 @@ createServer(async (req, res) => {
       },
     });
   }
-}).listen(PORT, HOST, () => {
+});
+const lifecycle = installShutdown({server,newsletter,database,timeoutMs:process.env.API_SHUTDOWN_TIMEOUT_MS});
+server.listen(PORT, HOST, () => {
   console.log("gracz.pl contact API listening", {
     port: PORT,
     configured: Boolean(
@@ -1231,7 +1243,6 @@ function registerAbuseStrike(ip, reason) {
   }
 
   console.warn("[contact] abuse signal", {
-    ipHash: key.slice(0, 12),
     reason,
     count: current.count,
   });

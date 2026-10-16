@@ -79,7 +79,9 @@ export function createNewsletterRoute({
 
     const body = await readJson(req, 8_192);
 
-    if (url.pathname === "/newsletter/subscribe") {
+    if (url.pathname === "/newsletter/subscribe" || url.pathname === "/newsletter/status-request") {
+      if (newsletter.intakePaused) return json(res,503,{error:{code:"NEWSLETTER_INTAKE_PAUSED",message:"Przyjmowanie zgłoszeń jest chwilowo wstrzymane."}});
+      const statusRequest = url.pathname === "/newsletter/status-request";
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         bad("Nieprawidłowe dane formularza.", "INVALID_PAYLOAD");
       }
@@ -92,44 +94,45 @@ export function createNewsletterRoute({
       if (!isValidEmailSyntax(email)) {
         bad("Podaj prawidłowy adres e-mail.", "INVALID_EMAIL");
       }
-      if (body.consent !== true) {
+      if (!statusRequest && body.consent !== true) {
         bad("Zgoda na newsletter jest wymagana.", "NEWSLETTER_CONSENT_REQUIRED");
       }
       if (website) {
-        return json(res, 200, { ok: true, state: "confirmation_sent" });
+        return json(res, 200, { ok: true, state: "request_received" });
       }
       if (startedAt > 0) enforceFormTiming(startedAt);
 
       await validateEmailDomain(email);
       rateLimit(
         newsletterEmailBuckets,
-        hashValue(email),
+        hashValue((statusRequest ? "status:" : "optin:") + email),
         60 * 60 * 1000,
         4,
         "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
       );
 
-      await newsletter.requestOptIn({
+      await (statusRequest ? newsletter.acceptStatus : newsletter.acceptOptIn || newsletter.requestOptIn)({
         email,
         name,
         source: "newsletter_page",
       });
 
-      logger.log("[newsletter] confirmation requested", {
-        requestId,
-        emailHash: hashValue(email).slice(0, 12),
-      });
+      logger.log("[newsletter] request received", { requestId });
 
-      return json(res, 200, { ok: true, state: "confirmation_sent" });
+      return json(res, 200, { ok: true, state: "request_received" });
     }
 
     const token = typeof body?.token === "string" ? body.token : "";
+
+    if (url.pathname === "/newsletter/status-check") {
+      const result = await newsletter.checkStatus(token);
+      return json(res, 200, {ok:true, state:result.state});
+    }
 
     if (url.pathname === "/newsletter/confirm") {
       const result = await newsletter.confirm(token);
       logger.log("[newsletter] confirmed", {
         requestId,
-        recipient: result.recipient,
       });
       return json(res, 200, { ok: true, state: result.state });
     }
@@ -138,7 +141,6 @@ export function createNewsletterRoute({
       const result = await newsletter.unsubscribe(token);
       logger.log("[newsletter] unsubscribed", {
         requestId,
-        recipient: result.recipient,
       });
       return json(res, 200, { ok: true, state: result.state });
     }

@@ -366,4 +366,13 @@ test("contact API security regression suite", async (t) => {
     }
     assert.equal(statuses[5], 429);
   });
+  await t.test("newsletter failure never invalidates an accepted contact message", async () => {
+    const response = await request(endpoint, makePayload({email:"b1-contact@example.test",newsletter:true}), "b1-contact-independent-key");
+    assert.equal(response.status,200);
+    const body = await response.json();
+    assert.equal(body.ok,true);
+    assert.equal(body.newsletter,"temporarily_unavailable");
+    assert.ok(deliveries.some(item => item.body.reply_to === "b1-contact@example.test"));
+  });
+
 });

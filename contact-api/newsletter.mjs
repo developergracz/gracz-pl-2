@@ -1,3 +1,4 @@
+import { createMailboxStatus, createNewsletterAdmission } from './newsletter-status.mjs';
 import {
   createCipheriv,
   createDecipheriv,
@@ -30,6 +31,9 @@ export function createNewsletterManager({
   providerTimeoutMs = 10_000,
   consentStore = null,
   consentHashSecret = "",
+  proofStore = null,
+  logger = console,
+  intakePaused = false,
 }) {
   const normalizedSecret = String(secret || "").trim();
   const apiKey = String(resendApiKey || "").trim();
@@ -43,7 +47,10 @@ export function createNewsletterManager({
       typeof consentStore.getContact === "function" &&
       typeof consentStore.upsertContact === "function" &&
       typeof consentStore.appendConsentEvent === "function" &&
-      typeof consentStore.getConsentEvent === "function"
+      typeof consentStore.getConsentEvent === "function" &&
+      typeof consentStore.claimOptInRequest === "function" &&
+      typeof consentStore.markOptInSent === "function" &&
+      typeof consentStore.markOptInUnknown === "function"
   );
   const requestTimeoutMs =
     Number.isFinite(providerTimeoutMs) && providerTimeoutMs > 0
@@ -78,21 +85,45 @@ export function createNewsletterManager({
     );
   }
 
-  async function requestOptIn({ email, name = "", source = "newsletter_page" }) {
+  async function requestOptIn({ email, name = "", source = "newsletter_page", beforeExternalEffect = async () => {}, admissionDispatch = null }) {
     requireEnabled();
     const cleanEmail = validateMailbox(email);
     const cleanName = cleanShort(name, 80);
     const currentConsent = await consentStore.getContact(
       consentSubjectHash(cleanEmail)
     );
+    const suppression = await getSuppression(cleanEmail);
+    if (suppression) return { state: "request_received" };
+    // Preserve the existing fenced recovery obligation; never clear suppression.
     if (currentConsent?.provider_blocked_at) {
+      await beforeExternalEffect();
       const resources = await ensureResources();
       await recoverProviderOffObligation(cleanEmail, resources);
+    }
+    const existing = await getContact(cleanEmail);
+    if (existing && (typeof existing.unsubscribed !== "boolean" || !existing.id)) {
+      throw providerError("NEWSLETTER_PROVIDER_INVALID");
+    }
+    if (existing) {
+      const [segments, topics] = await Promise.all([listAll("/segments"), listAll("/topics")]);
+      const segment = segments.find(item => item.name === segmentName);
+      const topic = topics.find(item => item.name === topicName);
+      const state = segment && topic ? await getContactProviderState(
+        providerContactRef(existing, cleanEmail), { segmentId: segment.id, topicId: topic.id }
+      ) : { inSegment: false, topicSubscription: "opt_out" };
+      if (!existing.unsubscribed && state.inSegment && state.topicSubscription === "opt_in") {
+        if (currentConsent?.current_state === "unsubscribed") {
+          throw providerError("NEWSLETTER_PROVIDER_UNCERTAIN", 503);
+        }
+        return { state: "request_received" };
+      }
     }
     const issuedAt = Math.max(
       Date.now(),
       timestampMs(currentConsent?.confirmed_at) + 1,
-      timestampMs(currentConsent?.unsubscribed_at) + 1
+      timestampMs(currentConsent?.unsubscribed_at) + 1,
+      contactPropertyNumber(existing, CONFIRMED_AT_KEY) + 1,
+      contactPropertyNumber(existing, UNSUBSCRIBED_AT_KEY) + 1
     );
     const tokenData = {
       v: 1,
@@ -105,21 +136,59 @@ export function createNewsletterManager({
       source: cleanShort(source, 40) || "unknown",
       consentVersion: "newsletter-r1-2026-10-07",
     };
-    const token = encrypt(tokenData);
-    const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
-
-    await recordOptInRequested(tokenData);
-
-    await sendEmail({
-      to: cleanEmail,
-      subject: "♦️ gracz.pl Newsletter — potwierdź zapis",
-      text: buildConfirmText(confirmUrl),
-      html: buildConfirmHtml(confirmUrl),
-      idempotencyKey: "newsletter-confirm/" + hashShort(tokenData.jti),
-      entityRef: "gracz-newsletter-confirm-" + hashShort(tokenData.jti),
+    const claimKey = { emailHash: consentSubjectHash(cleanEmail), requestId: tokenData.jti };
+    const claim = await consentStore.claimOptInRequest({
+      ...claimKey,
+      issuedAt: new Date(issuedAt),
+      expiresAt: new Date(tokenData.exp),
+      supersededBefore: new Date(Math.max(
+        timestampMs(currentConsent?.confirmed_at), timestampMs(currentConsent?.unsubscribed_at),
+        contactPropertyNumber(existing, CONFIRMED_AT_KEY),
+        contactPropertyNumber(existing, UNSUBSCRIBED_AT_KEY)
+      )),
     });
+    if (!claim.claimed) {
+      if (!["sent", "legacy_pending"].includes(claim.state) && !claim.inProgress) throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
+      return { state: "request_received" };
+    }
+    try {
+      const token = encrypt(tokenData);
+      const confirmUrl = normalizedBaseUrl + "#confirm=" + token;
 
-    return { state: "confirmation_sent" };
+      await recordOptInRequested(tokenData);
+      if (!await consentStore.markOptInSending({...claimKey, admissionDispatch, proofStore})) throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
+
+      const delivery = await sendEmail({
+        to: cleanEmail,
+        subject: "♦️ gracz.pl Newsletter — potwierdź zapis",
+        text: buildConfirmText(confirmUrl),
+        html: buildConfirmHtml(confirmUrl),
+        idempotencyKey: "newsletter-confirm/" + hashShort(tokenData.jti),
+        entityRef: "gracz-newsletter-confirm-" + hashShort(tokenData.jti),
+      });
+
+      if (typeof delivery?.id !== "string" || !delivery.id ||
+          !await consentStore.markOptInSent(claimKey)) {
+        throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503);
+      }
+      return { state: "request_received" };
+    } catch (error) {
+      // The original caller receives the real error. Later callers must not
+      // create a new operation after an ambiguous delivery or persistence failure.
+      try {
+        if (!await consentStore.releaseOptInBeforeSend(claimKey)) await consentStore.markOptInUnknown(claimKey);
+      } catch {}
+      throw error;
+    }
+  }
+
+  async function settleConfirmedOptIn(data) {
+    const emailHash = consentSubjectHash(data.email);
+    const eventId = deterministicConsentEventId("confirm", data.jti);
+    try {
+      await consentStore.reconcileOptInFromConsent({emailHash, requestId:data.jti, eventId});
+      await proofStore?.reconcilePublicOptInFromConsent({emailHash,eventId});
+    } catch { logger.error("[newsletter] consent reconciliation deferred", {code:"NEWSLETTER_RECONCILIATION_DEFERRED"}); }
   }
 
   async function confirm(token) {
@@ -178,6 +247,7 @@ export function createNewsletterManager({
       providerActive &&
       data.iat <= providerConfirmedAt
     ) {
+      await settleConfirmedOptIn(data);
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
@@ -220,12 +290,14 @@ export function createNewsletterManager({
         // Resend idempotency makes this safe when the welcome already landed.
         await sendWelcomeEmail(data);
 
+        await settleConfirmedOptIn(data);
         return {
           state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
           recipient: maskEmail(data.email),
         };
       }
 
+      await settleConfirmedOptIn(data);
       return {
         state: "already_subscribed",
         recipient: maskEmail(data.email),
@@ -337,6 +409,7 @@ export function createNewsletterManager({
       expected: [200],
     });
 
+    await settleConfirmedOptIn(data);
     return {
       state: wasPreviouslyConfirmed ? "resubscribed" : "subscribed",
       recipient: maskEmail(data.email),
@@ -431,6 +504,7 @@ export function createNewsletterManager({
       occurredAt: new Date(data.iat),
       correlationId: eventId,
       metadata: {
+        intakeVersion: "R5",
         tokenIssuedAt: data.iat,
       },
     });
@@ -879,39 +953,72 @@ export function createNewsletterManager({
     }
   }
 
+  async function listAll(path) {
+    const items = [];
+    const cursors = new Set();
+    let after = "";
+    for (let page = 0; page < 100; page++) {
+      const result = await api(path + "?limit=100" + (after ? "&after=" + encodeURIComponent(after) : ""),
+        { method: "GET", expected: [200] });
+      if (!Array.isArray(result?.data) || typeof result.has_more !== "boolean" ||
+          result.data.some(item => !item || typeof item.id !== "string" || !item.id)) {
+        throw providerError("NEWSLETTER_PROVIDER_INVALID");
+      }
+      if ((path === "/segments" || path === "/topics") &&
+          result.data.some(item => typeof item.name !== "string" || !item.name.trim())) {
+        throw providerError("NEWSLETTER_PROVIDER_INVALID");
+      }
+      items.push(...result.data);
+      if (!result.has_more) return items;
+      after = result.data.at(-1)?.id;
+      if (!after || cursors.has(after)) throw providerError("NEWSLETTER_PROVIDER_INVALID");
+      cursors.add(after);
+    }
+    throw providerError("NEWSLETTER_PROVIDER_INVALID");
+  }
+
+  async function getSuppression(email) {
+    try {
+      const result = await api("/suppressions/" + encodeURIComponent(email), { method: "GET", expected: [200] });
+      if (result?.object !== "suppression" || !result.id || result.email !== email) {
+        throw providerError("NEWSLETTER_PROVIDER_INVALID");
+      }
+      return result;
+    } catch (error) {
+      if (error?.status === 404 && error.providerName === "not_found") return null;
+      throw error;
+    }
+  }
+
   async function getContact(email) {
     try {
-      return await api("/contacts/" + encodeURIComponent(email), {
+      const contact = await api("/contacts/" + encodeURIComponent(email), {
         method: "GET",
         expected: [200],
       });
+      if (!contact || typeof contact !== "object" || Array.isArray(contact) ||
+          typeof contact.id !== "string" || !contact.id ||
+          typeof contact.email !== "string" || contact.email.toLowerCase() !== email.toLowerCase() ||
+          typeof contact.unsubscribed !== "boolean") {
+        throw providerError("NEWSLETTER_PROVIDER_INVALID");
+      }
+      return contact;
     } catch (error) {
-      if (error?.status === 404) return null;
+      if (error?.status === 404 && error.providerName === "not_found") return null;
       throw error;
     }
   }
 
   async function getContactProviderState(contactRef, resources) {
-    const [segmentsResult, topicsResult] = await Promise.all([
-      api("/contacts/" + contactRef + "/segments?limit=100", {
-        method: "GET",
-        expected: [200],
-      }),
-      api("/contacts/" + contactRef + "/topics?limit=100", {
-        method: "GET",
-        expected: [200],
-      }),
+    const [segments, topics] = await Promise.all([
+      listAll("/contacts/" + contactRef + "/segments"),
+      listAll("/contacts/" + contactRef + "/topics"),
     ]);
-
-    const inSegment =
-      Array.isArray(segmentsResult?.data) &&
-      segmentsResult.data.some((item) => item?.id === resources.segmentId);
-
-    const topic =
-      Array.isArray(topicsResult?.data)
-        ? topicsResult.data.find((item) => item?.id === resources.topicId)
-        : null;
-
+    const inSegment = segments.some(item => item.id === resources.segmentId);
+    const topic = topics.find(item => item.id === resources.topicId);
+    if (topic && !["opt_in", "opt_out"].includes(topic.subscription)) {
+      throw providerError("NEWSLETTER_PROVIDER_INVALID");
+    }
     return {
       inSegment,
       topicSubscription:
@@ -1107,10 +1214,46 @@ export function createNewsletterManager({
     }
   }
 
+  async function readVerifiedStatus(email) {
+    if (await getSuppression(email)) return {state:'inactive'};
+    const contact = await getContact(email);
+    const evidence = await consentStore.getContact(consentSubjectHash(email));
+    if (evidence?.provider_blocked_at) throw providerError('NEWSLETTER_PROVIDER_UNCERTAIN',503);
+    if (contact) {
+      const [segments, topics] = await Promise.all([listAll('/segments'), listAll('/topics')]);
+      const segment = segments.find(item=>item.name===segmentName);
+      const topic = topics.find(item=>item.name===topicName);
+      const state = segment && topic ? await getContactProviderState(providerContactRef(contact,email),{segmentId:segment.id,topicId:topic.id}) : {inSegment:false,topicSubscription:'opt_out'};
+      if (!contact.unsubscribed && state.inSegment && state.topicSubscription==='opt_in') {
+        if(evidence?.current_state==='unsubscribed')throw providerError('NEWSLETTER_PROVIDER_UNCERTAIN',503);
+        return {state:'active'};
+      }
+      // Provider withdrawal/suppression always overrides first-party pending.
+      if(contact.unsubscribed || !state.inSegment || state.topicSubscription!=='opt_in')return {state:'inactive'};
+    }
+    if(evidence?.current_state==='pending') {
+      const events=await consentStore.listConsentEvents(consentSubjectHash(email));
+      if(events.some(event=>event.event_type==='opt_in_requested' && timestampMs(event.occurred_at)>Date.now()-CONFIRM_TTL_MS))return {state:'pending'};
+    }
+    return {state:'inactive'};
+  }
+  const mailboxStatus = createMailboxStatus({secret:normalizedSecret,store:proofStore,hashEmail:consentSubjectHash,sendEmail,readStatus:readVerifiedStatus,canSend:async email=>!await getSuppression(email),baseUrl:normalizedBaseUrl});
+  const admission = createNewsletterAdmission({store:proofStore,hashEmail:consentSubjectHash,requestOptIn,requestStatus:mailboxStatus.requestStatus,checkReady:()=>consentStore.checkOptInAvailable?.(),logger,intakePaused});
+
   return {
     enabled,
     consentLedgerConfigured: consentStoreConfigured,
     requestOptIn,
+    ...admission,
+    get intakePaused(){return admission.intakePaused;},
+    async readiness(){
+      if(!enabled)return {ready:false,configured:false,intakePaused:admission.intakePaused,schemaReady:false};
+      let schemaReady=false;
+      try {schemaReady=await consentStore.checkOptInAvailable()===true;}catch{}
+      return {ready:schemaReady&&!admission.intakePaused,configured:true,intakePaused:admission.intakePaused,schemaReady};
+    },
+    requestStatus: mailboxStatus.requestStatus,
+    checkStatus: mailboxStatus.checkStatus,
     confirm,
     unsubscribe,
     baseUrl: normalizedBaseUrl,
@@ -1227,6 +1370,7 @@ function providerError(code, status = 502, details = {}) {
   error.status = Number.isInteger(status) ? status : 502;
   if (error.status < 400) error.status = 502;
   error.providerOperation = cleanProviderOperation(details.operation);
+  error.deliveryOutcome = details.operation === "POST /emails" ? "uncertain" : "not_attempted_by_this_call";
   error.providerStatus = Number.isInteger(status) ? status : null;
   error.providerName = cleanProviderErrorName(details.providerName);
   error.providerRequestId = cleanProviderRequestId(details.providerRequestId);
@@ -1248,6 +1392,7 @@ function providerOperation(method, path) {
   if (/^\/contacts\/[^/?]+/.test(value)) {
     return verb + " /contacts/{contact}";
   }
+  if (/^\/suppressions\//.test(value)) return verb + " /suppressions/{recipient}";
   if (/^\/contacts(?:\?|$)/.test(value)) return verb + " /contacts";
   if (/^\/segments(?:\?|$)/.test(value)) return verb + " /segments";
   if (/^\/topics(?:\?|$)/.test(value)) return verb + " /topics";
