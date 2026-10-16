@@ -33,6 +33,8 @@ export function createReadService({
   let busy = false,
     lastRead = -Infinity;
   const ttl = 300000;
+  const lifetime = new AbortController();
+  const active = () => !lifetime.signal.aborted;
   function put(map, value) {
     for (const [key, v] of map) if (v.expires <= now()) map.delete(key);
     while (map.size >= 200) map.delete(map.keys().next().value);
@@ -54,6 +56,7 @@ export function createReadService({
     async list({ cursor = null, query = "", state = "all" } = {}) {
       let acquired = false;
       try {
+        if (!active()) throw fault("invalid_request");
         if (
           typeof query !== "string" ||
           query.length > 80 ||
@@ -80,11 +83,14 @@ export function createReadService({
         await bounded(
           () => audit({ action: "newsletter.list", requestId: token() }),
           2000,
+          lifetime.signal,
         );
         const page = await bounded(
           (signal) => adapter.readPage({ after, limit: 10, signal }),
           25000,
+          lifetime.signal,
         );
+        if (!active()) throw fault("invalid_request");
         if (page.items.some((item) => seen.includes(item.id)))
           throw fault("invalid_provider_response");
         if (seen.length + page.items.length > 1000)
@@ -133,16 +139,19 @@ export function createReadService({
     },
     async detail(handle) {
       const saved = handles.get(handle);
-      if (!saved || saved.expires <= now())
+      if (!active() || !saved || saved.expires <= now())
         return { ok: false, error: "not_found" };
       try {
         await bounded(
           () => audit({ action: "newsletter.detail", requestId: token() }),
           2000,
+          lifetime.signal,
         );
       } catch {
         return { ok: false, error: "audit_unavailable" };
       }
+      if (!active() || saved.expires <= now())
+        return { ok: false, error: "not_found" };
       const c = saved.contact;
       let consent = null;
       const quality = [];
@@ -152,6 +161,7 @@ export function createReadService({
         const raw = await bounded(
           (signal) => readConsent(hash, { signal, limit: 20 }),
           2000,
+          lifetime.signal,
         );
         if (raw)
           consent = {
@@ -181,6 +191,8 @@ export function createReadService({
       } catch {
         quality.push("consent_unavailable");
       }
+      if (!active() || saved.expires <= now())
+        return { ok: false, error: "not_found" };
       return {
         ok: true,
         email: c.email,
@@ -195,6 +207,7 @@ export function createReadService({
       };
     },
     clear() {
+      lifetime.abort();
       cursors.clear();
       handles.clear();
     },

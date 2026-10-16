@@ -89,3 +89,30 @@ Final local run (Node 24.19.0): backend **57 PASS / 0 FAIL / 0 SKIP**, including
 23 new unit/HTTP cases. Browser **12 PASS / 0 FAIL** after the review fixes.
 Syntax, SEO, public-site CSP and whitespace checks PASS. Browser package emitted
 only the runner's FORCE_COLOR/NO_COLOR warning. No test retry-to-green used.
+
+## Continuation 2026-10-16 — PR #258
+
+Verified original HEAD b38d588: all three GitHub workflows SUCCESS, including
+backend regression and disposable PostgreSQL persistence jobs in Maintenance SEO
+Gate. Runs: 38852682417 (Maintenance SEO), 38852682423 (Security), 38852682425
+(Greetings). These results apply to the original HEAD only.
+
+Focused lifecycle correction, without repeating prior audits or changing the auth
+gate: `clear()` now permanently invalidates its read-service instance and aborts
+inflight reads. A late list cannot recreate handles; a late detail cannot disclose
+an expired or cleared contact. A future approved session must create a fresh
+service instance. This is a data-service lifetime boundary, not login/session code.
+
+Browser requests are cancelled and generation-checked on pagehide and detail close;
+late responses cannot restore removed PII, even if transport ignores cancellation.
+Pagehide also clears search text and freshness indicators. Restoring from browser
+back/forward cache performs a fresh request. Production routes remain unmounted.
+
+Three new unit regressions failed before the correction, then passed. Two new
+browser scenarios likewise reproduced the stale list/detail and are run on desktop
+and mobile. No previous code replaced, no changes to #254/#255/#256 or migration005.
+
+Continuation local results: **60 backend PASS / 0 FAIL / 0 SKIP**, including 26
+admin unit/HTTP cases; **16 Chromium browser PASS / 0 FAIL** on desktop/mobile,
+retries 0. New-file syntax and diff checks PASS. Exact new-HEAD CI is recorded in
+PR #258 after push. Real OWNER authentication and all prior release HOLDs persist.

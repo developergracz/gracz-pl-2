@@ -84,3 +84,76 @@ test("private routes deny forged OWNER and page makes no external calls", async 
     await page.evaluate(() => localStorage.length + sessionStorage.length),
   ).toBe(0);
 });
+test("pagehide discards a late list response", async ({ page }) => {
+  await page.evaluate(() => {
+    const original = window.fetch;
+    window.fetch = (path, options) =>
+      path === "/fixture/list"
+        ? new Promise((resolve) => {
+            window.releaseList = () =>
+              resolve({
+                ok: true,
+                json: async () => ({
+                  ok: true,
+                  items: [
+                    {
+                      handle: "late",
+                      email: "late@example.test",
+                      state: "active",
+                    },
+                  ],
+                  counts: { active: 1, unsubscribed: 0 },
+                  total: 1,
+                  nextCursor: null,
+                  quality: [],
+                  fetchedAt: "2026-10-16T12:00:00Z",
+                }),
+              });
+          })
+        : original(path, options);
+  });
+  await page.getByRole("button", { name: "Odśwież", exact: true }).click();
+  await page.evaluate(async () => {
+    window.dispatchEvent(new PageTransitionEvent("pagehide"));
+    window.releaseList();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  await expect(page.locator("#rows tr")).toHaveCount(0);
+  await expect(page.locator("#active")).toHaveText("—");
+});
+test("closing detail discards its late response and clears private text", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const original = window.fetch;
+    window.fetch = (path, options) =>
+      path === "/fixture/detail"
+        ? new Promise((resolve) => {
+            window.releaseDetail = () =>
+              resolve({
+                ok: true,
+                json: async () => ({
+                  ok: true,
+                  email: "late@example.test",
+                  state: "active",
+                  observedAt: "2026-10-16T12:00:00Z",
+                  consent: null,
+                  quality: [],
+                }),
+              });
+          })
+        : original(path, options);
+  });
+  await page
+    .getByRole("button", {
+      name: "Szczegóły: gracz01@example.test",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: "Zamknij szczegóły" }).click();
+  await page.evaluate(async () => {
+    window.releaseDetail();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  await expect(page.locator("#detail-body")).toBeEmpty();
+});

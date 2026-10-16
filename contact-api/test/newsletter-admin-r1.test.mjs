@@ -387,3 +387,62 @@ test("missing and unavailable consent remain explicit without losing provider ob
     assert.ok(!JSON.stringify(detail).includes("private-message"));
   }
 });
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+test("clear cancels an inflight list and permanently invalidates the service", async () => {
+  const started = deferred(),
+    result = deferred();
+  let signal;
+  const svc = serviceOf({
+    readPage: async (options) => {
+      signal = options.signal;
+      started.resolve();
+      return result.promise;
+    },
+  });
+  const pending = svc.list({});
+  await started.promise;
+  svc.clear();
+  result.resolve({ items: [{ ...contact(), state: "active" }], after: null });
+  const response = await pending;
+  assert.equal(response.ok, false);
+  assert.equal(response.items, null);
+  assert.equal(signal.aborted, true);
+  assert.equal((await svc.list({})).ok, false);
+});
+test("clear during consent read prevents late detail disclosure", async () => {
+  const started = deferred(),
+    result = deferred();
+  const svc = serviceOf(fixture().adapter, {
+    readConsent: async () => {
+      started.resolve();
+      return result.promise;
+    },
+  });
+  const page = await svc.list({});
+  const pending = svc.detail(page.items[0].handle);
+  await started.promise;
+  svc.clear();
+  result.resolve({ state: "subscribed", events: [] });
+  const detail = await pending;
+  assert.equal(detail.ok, false);
+  assert.equal(detail.email, undefined);
+});
+test("detail expiry is rechecked after asynchronous evidence lookup", async () => {
+  let now = 0;
+  const svc = serviceOf(fixture().adapter, {
+    now: () => now,
+    readConsent: async () => {
+      now = 300001;
+      return { state: "subscribed", events: [] };
+    },
+  });
+  const page = await svc.list({});
+  assert.equal((await svc.detail(page.items[0].handle)).ok, false);
+});

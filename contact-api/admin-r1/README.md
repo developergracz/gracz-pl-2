@@ -11,7 +11,9 @@ UI files are outside the published website roots. Do not publish this directory.
   handles (max 200 each), rate limit, page counts, nullable global/pending counts,
   minimized HMAC-matched consent. No database writes or plaintext persistence.
   Create one instance per future approved session and clear on logout. No such
-  session factory exists yet. The transport and consent/audit sink are injected.
+  session factory exists yet. `clear()` permanently invalidates the instance and
+  cancels pending operations; create a fresh instance for a future new session.
+  The transport and consent/audit sink are injected.
 - `deny.mjs`: permanent denial and private response headers. All future production
   mounting and authentication is held for independent review.
 - `ui/`: responsive Polish dark/turquoise UI, explicit synthetic banner, accessible

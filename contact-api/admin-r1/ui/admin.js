@@ -13,13 +13,21 @@ let next = null,
   loading = false,
   query = "",
   state = "all",
-  generation = 0;
+  generation = 0,
+  detailGeneration = 0,
+  listController,
+  detailController;
+function clearDetail() {
+  detailGeneration++;
+  detailController?.abort();
+  $("detail-body").replaceChildren();
+}
 function clear() {
   $("rows").replaceChildren();
   for (const id of ["active", "unsubscribed", "total"]) $(id).textContent = "—";
   next = null;
   $("next").disabled = true;
-  $("detail-body").replaceChildren();
+  clearDetail();
   $("detail").close();
 }
 async function request(path, options) {
@@ -34,16 +42,20 @@ async function request(path, options) {
 async function load(cursor = null) {
   if (loading) return;
   loading = true;
-  generation++;
+  const current = ++generation;
+  listController?.abort();
+  listController = new AbortController();
   clear();
   $("status").textContent = "Pobieranie danych…";
   $("refresh").disabled = true;
   try {
     const data = await request("/fixture/list", {
+      signal: listController.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cursor, query, state }),
     });
+    if (current !== generation) return;
     if (!data.ok) throw new Error(data.error);
     $("active").textContent = data.counts.active;
     $("unsubscribed").textContent = data.counts.unsubscribed;
@@ -82,6 +94,7 @@ async function load(cursor = null) {
     $("fetched").textContent =
       `Ostatnie pobranie: ${new Date(data.fetchedAt).toLocaleString("pl-PL")}`;
   } catch (error) {
+    if (current !== generation) return;
     clear();
     $("status").textContent =
       error.message === "rate_limited"
@@ -92,21 +105,26 @@ async function load(cursor = null) {
     $("health").textContent = "Degradacja · brak aktualnych danych";
     $("fetched").textContent = "Ostatnie pobranie: —";
   } finally {
-    loading = false;
-    $("refresh").disabled = false;
+    if (current === generation) {
+      loading = false;
+      $("refresh").disabled = false;
+    }
   }
 }
 async function detail(handle) {
-  const current = generation;
+  clearDetail();
+  const current = detailGeneration;
+  detailController = new AbortController();
   $("detail-body").textContent = "Pobieranie dowodów…";
   $("detail").showModal();
   try {
     const data = await request("/fixture/detail", {
+      signal: detailController.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ handle }),
     });
-    if (current !== generation) return;
+    if (current !== detailGeneration || !$("detail").open) return;
     if (!data.ok) throw new Error();
     $("detail-body").replaceChildren();
     const lines = [
@@ -124,7 +142,7 @@ async function detail(handle) {
       $("detail-body").append(p);
     }
   } catch {
-    if (current === generation)
+    if (current === detailGeneration && $("detail").open)
       $("detail-body").textContent = "Dowody niedostępne. Spróbuj ponownie.";
   }
 }
@@ -138,9 +156,27 @@ $("filters").addEventListener("submit", (e) => {
 $("next").addEventListener("click", () => load(next));
 $("first").addEventListener("click", () => load());
 $("refresh").addEventListener("click", () => load());
-$("close").addEventListener("click", () => $("detail").close());
+$("close").addEventListener("click", () => {
+  clearDetail();
+  $("detail").close();
+});
+$("detail").addEventListener("close", () => {
+  if (!$("detail").open) clearDetail();
+});
+$("detail").addEventListener("cancel", clearDetail);
 window.addEventListener("pagehide", () => {
   generation++;
+  listController?.abort();
+  loading = false;
   clear();
+  $("query").value = "";
+  query = "";
+  $("health").textContent = "Nie sprawdzono";
+  $("fetched").textContent = "Ostatnie pobranie: —";
+  $("status").textContent = "Widok zamknięty. Odśwież, aby pobrać dane.";
+  $("refresh").disabled = false;
+});
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) load();
 });
 load();
