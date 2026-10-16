@@ -11,8 +11,14 @@ $null=New-Item -ItemType Directory -Path $root
 $source=Join-Path $root 'source'
 $dump=Join-Path $root 'fixture.dump'
 function Pg([string]$Tool,[string[]]$Arguments) {
-  $out=@(& (Join-Path $PgBin ($Tool+'.exe')) @Arguments 2>&1)
-  if ($LASTEXITCODE -ne 0) { throw ('FIXTURE_' + $Tool + '_FAILED: ' + ($out -join ' ')) }
+  Write-Host ('FIXTURE_START: ' + $Tool)
+  $prefix=Join-Path $root ([Guid]::NewGuid().ToString('N'))
+  $quoted=@($Arguments | ForEach-Object { '"' + $_.Replace('"','\"') + '"' })
+  $p=Start-Process -FilePath (Join-Path $PgBin ($Tool+'.exe')) -ArgumentList ($quoted -join ' ') -RedirectStandardOutput ($prefix+'.out') -RedirectStandardError ($prefix+'.err') -PassThru -NoNewWindow
+  if (-not $p.WaitForExit(60000)) { $p.Kill(); throw ('FIXTURE_TIMEOUT_' + $Tool) }
+  $p.Refresh()
+  if ($p.ExitCode -ne 0) { throw ('FIXTURE_' + $Tool + '_FAILED: ' + (Get-Content ($prefix+'.err') -Raw)) }
+  Write-Host ('FIXTURE_DONE: ' + $Tool)
 }
 function SQL([string]$Text) {
   Pg 'psql' @('-X','-h','127.0.0.1','-p','55433','-U','fixture_owner','-d','fixture','-v','ON_ERROR_STOP=1','-c',$Text)
@@ -22,8 +28,13 @@ function Check-Restore([bool]$ExpectedPass) {
   # Poison inherited settings: production script must ignore these.
   $env:PGHOST='invalid.example'; $env:PGPORT='5432'; $env:PGSERVICE='invalid'
   try {
-    $output=@(& powershell.exe -NoProfile -NonInteractive -File $scriptFile -RestoreOnly -PgBin $PgBin -DumpPath $dump -WorkRoot $work 2>&1)
-    $code=$LASTEXITCODE
+    Write-Host ('RESTORE_START expectedPass=' + $ExpectedPass)
+    $outputFile=Join-Path $root ([Guid]::NewGuid().ToString('N')+'.out')
+    $arguments=@('-NoProfile','-NonInteractive','-File',$scriptFile,'-RestoreOnly','-PgBin',$PgBin,'-DumpPath',$dump,'-WorkRoot',$work)
+    $quoted=@($arguments | ForEach-Object { '"' + $_.Replace('"','\"') + '"' })
+    $p=Start-Process powershell.exe -ArgumentList ($quoted -join ' ') -RedirectStandardOutput $outputFile -RedirectStandardError ($outputFile+'.err') -PassThru -NoNewWindow
+    if (-not $p.WaitForExit(120000)) { $p.Kill(); throw ('RESTORE_TIMEOUT: ' + (Get-Content $outputFile -Raw)) }
+    $p.Refresh(); $code=$p.ExitCode; $output=@(Get-Content $outputFile)
   } finally { Remove-Item Env:PGHOST,Env:PGPORT,Env:PGSERVICE -ErrorAction SilentlyContinue }
   $files=@(Get-ChildItem -LiteralPath $work -Filter result.json -Recurse)
   if ($files.Count -ne 1) { throw ('RESTORE_REPORT_MISSING: '+($output -join ' ')) }
