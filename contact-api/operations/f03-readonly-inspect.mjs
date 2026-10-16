@@ -1,12 +1,13 @@
 // Standalone operator tool only: never import from startup or expose over HTTP.
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { f03TlsOptions } from '../persistence/render-private-tls.mjs';
 
 const requireTrue = (value) => { if (!value) throw new Error('F03_INSPECTION_REJECTED'); };
 const digest = (rows) => createHash('sha256').update(JSON.stringify(rows)).digest('hex');
 
 // Expected target must be independently bound by the operator to the Render DB ID.
-// TLS trust must already exist; never disable certificate verification.
+// Verified TLS by default; narrow Owner-approved private Render exception is explicit and fail-closed.
 export async function inspect(env, loadPg = () => import('pg')) {
   const host = env.F03_EXPECTED_DB_HOST;
   const port = env.F03_EXPECTED_DB_PORT;
@@ -23,7 +24,7 @@ export async function inspect(env, loadPg = () => import('pg')) {
   const pool = new pg.Pool({
     // Explicit fields avoid URL options overriding the reviewed connection config.
     host, port: Number(port), database, user, password: decodeURIComponent(url.password),
-    ssl: { rejectUnauthorized: true }, max: 1,
+    ssl: f03TlsOptions(env.DATABASE_URL, env), max: 1,
     connectionTimeoutMillis: 4000, idleTimeoutMillis: 1000,
     query_timeout: 5000,
     options: '-c default_transaction_read_only=on -c statement_timeout=3000 -c idle_in_transaction_session_timeout=10000',
