@@ -310,6 +310,8 @@ test("hybrid cutover protects legacy subscribers without ledger rows", async (t)
 });
 
 test("hybrid concurrent fresh confirmations keep provider active safely", async (t) => {
+  // Keep provider-clock and app-clock comparable during concurrent DOI races.
+  t.mock.timers.enable({ apis: ["Date"], now: 1_800_000_000_000 });
   const provider = await createProvider(t);
   const manager = createManager(provider);
 
@@ -322,6 +324,11 @@ test("hybrid concurrent fresh confirmations keep provider active safely", async 
   await manager.confirm(originalToken);
 
   provider.hostedUnsubscribe("concurrent@example.test");
+  await assert.rejects(
+    () => manager.confirm(originalToken),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+  t.mock.timers.tick(1);
 
   await manager.requestOptIn({
     email: "concurrent@example.test",
@@ -852,10 +859,17 @@ for (const failure of [
 }
 
 test("re-activation of an existing provider contact addresses nested routes by contact id", async (t) => {
+  // Ensure new DOI is strictly later than the provider suppression lifecycle.
+  t.mock.timers.enable({ apis: ["Date"], now: 1_800_000_000_000 });
   const email = "reactivate@example.test";
   const { provider, manager, contact } = await subscribeFixture(t, email);
 
   provider.hostedUnsubscribe(email);
+  await assert.rejects(
+    () => manager.confirm(extractToken(provider.emails[0], "confirm")),
+    (error) => error?.code === "NEWSLETTER_CONFIRMATION_STALE"
+  );
+  t.mock.timers.tick(1);
   provider.requests.length = 0;
   await manager.requestOptIn({ email, name: "Wire Contract", source: "newsletter_page" });
   const resubscribed = await manager.confirm(
