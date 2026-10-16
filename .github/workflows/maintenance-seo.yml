@@ -59,6 +59,8 @@ jobs:
           node --check contact-api/integration/contact-idempotency.persistence.integration.test.mjs
       - name: Check complete backend syntax
         run: npm --prefix contact-api run check
+      - name: Install backend dependencies
+        run: npm --prefix contact-api install --ignore-scripts --no-audit --no-fund
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run SEO gate
@@ -67,12 +69,16 @@ jobs:
         run: node scripts/check-security-headers.mjs
 
   persistence:
-    name: PostgreSQL persistence gate
+    name: PostgreSQL ${{ matrix.postgres }} persistence gate
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: [16, 18]
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:${{ matrix.postgres }}-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
