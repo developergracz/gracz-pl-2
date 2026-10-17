@@ -1,0 +1,27 @@
+name: F03 One-Shot Safety
+on:
+  pull_request:
+    paths:
+      - 'contact-api/operations/newsletter-f03-one-shot.mjs'
+      - 'contact-api/test/newsletter-f03-one-shot.test.mjs'
+      - 'contact-api/persistence/newsletter-*.mjs'
+      - 'contact-api/persistence/render-private-tls.mjs'
+      - '.github/workflows/f03-one-shot-safety.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guarded-one-shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing backend dependencies (no lifecycle)
+        run: npm --prefix contact-api install --ignore-scripts --no-package-lock --no-audit --no-fund
+      - name: Check offline operator script syntax
+        run: node --check contact-api/operations/newsletter-f03-one-shot.mjs
+      - name: Test fail-closed release orchestrator
+        run: node --test contact-api/test/newsletter-f03-one-shot.test.mjs
