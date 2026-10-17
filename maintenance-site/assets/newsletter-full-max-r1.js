@@ -1,6 +1,9 @@
 (function(){
   'use strict';
   var API='https://gracz-contact-api.onrender.com';
+  // F-02: gated by an explicit future Owner-approved release, never by stale /health.
+  var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;
+  var NEWSLETTER_MAINTENANCE_NOTICE='Newsletter jest chwilowo niedostępny. Nie wysłano nowego żądania. W celu wycofania zgody skorzystaj z kontaktu na tej stronie.';
   function byId(id){return document.getElementById(id);}
   var subscribePanel=byId('nl-subscribe-panel'), requestPanel=byId('nl-status-panel');
   var actionPanel=byId('nl-action-panel'), actionStatus=byId('nl-action-status');
@@ -33,7 +36,7 @@
     var controls=[form.elements.email];if(consent)controls.push(form.elements.consent);
     controls.forEach(function(control){control.addEventListener('input',function(){fieldError(control,'');setStatus(status,'');});control.addEventListener('change',function(){fieldError(control,'');});});
     form.addEventListener('submit',async function(event){
-      event.preventDefault();if(busy)return;
+      event.preventDefault();if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(status,NEWSLETTER_MAINTENANCE_NOTICE,true);return;}if(busy)return;
       setStatus(status,'');var first=null;
       controls.forEach(function(control){
         var message=control.type==='checkbox'?(!control.checked?'Zaznacz zgodę, aby zapisać się do newslettera.':''):(!control.value.trim()?'Podaj adres e-mail.':(!control.validity.valid||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(control.value.trim())?'Wpisz poprawny adres e-mail, np. jan@example.pl.':''));
@@ -73,6 +76,7 @@
       status:['BEZPIECZNE SPRAWDZENIE','Sprawdź swoją subskrypcję','Kliknij przycisk, aby jednorazowo sprawdzić status. Ta operacja nie zapisuje do newslettera ani nie zmienia zgody.','Sprawdź status']
     }[mode];
     actionKicker.textContent=copy[0];actionTitle.textContent=copy[1];actionCopy.textContent=copy[2];actionButton.textContent=copy[3];
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){actionButton.disabled=true;setStatus(actionStatus,'Usługa jest chwilowo niedostępna. Operacja nie została wykonana. Zachowaj oryginalną wiadomość e-mail z linkiem; w sprawie wycofania zgody napisz na adres podany na stronie.',true);}
   }
   // popstate may precede hashchange for the same traversal; coalesce that duplicate.
   var lastNavigationURL='';
@@ -88,8 +92,13 @@
   window.addEventListener('pageshow',function(event){if(event.persisted)readAction();});
   setupForm('nl-form','nl-submit','nl-status','/newsletter/subscribe',true);
   setupForm('nl-status-form','nl-request-button','nl-request-status','/newsletter/status-request',false);
+  if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+    ['nl-submit','nl-request-button','nl-action-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}});
+    setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
+    setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
+  }
   actionButton.addEventListener('click',async function(){
-    if(!actionMode||!actionToken||actionButton.disabled)return;
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED||!actionMode||!actionToken||actionButton.disabled)return;
     var mode=actionMode,token=actionToken,current=generation;
     actionToken='';actionButton.disabled=true;
     setStatus(actionStatus,'Przetwarzanie…');
