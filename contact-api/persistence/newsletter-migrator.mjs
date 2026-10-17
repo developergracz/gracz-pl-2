@@ -3,6 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import path from 'node:path';
 import {createDatabase} from './database.mjs';
+import {f03TlsOptions} from './render-private-tls.mjs';
 import {CANDIDATE_SHA256, MIGRATION_ID, digest, refuse, validateMigrationTarget} from './newsletter-migration-preflight.mjs';
 
 const baseline = ['001_persistent_state.sql','002_durable_premium_reply.sql','003_newsletter_state_version.sql','004_contact_data_encryption.sql'];
@@ -136,7 +137,7 @@ async function cli() {
   validateMigrationTarget(options);
   if (action === '--preflight') {console.log('Evidence structure valid; external facts NOT independently verified; no DB connection.'); return;}
   if (process.env.NEWSLETTER_MIGRATION_CONFIRM !== 'INSTALL_NEWSLETTER_SCHEMA') refuse('NEWSLETTER_MIGRATION_APPROVAL_REQUIRED');
-  const db = createDatabase({connectionString:options.connectionString,poolOptions:{max:1,ssl:{rejectUnauthorized:true},application_name:'gracz-newsletter-offline-migration'}});
+  const db = createDatabase({connectionString:options.connectionString,poolOptions:{max:1,ssl:f03TlsOptions(options.connectionString),application_name:'gracz-newsletter-offline-migration'}});
   try {console.log(await applyNewsletterMigration(db,options));} finally {await db.close();}
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
