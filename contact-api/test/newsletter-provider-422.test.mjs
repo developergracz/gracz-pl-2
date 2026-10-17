@@ -32,7 +32,6 @@ test('definitive 422 records redacted operator hold, never retries or silently u
   assert.equal(stored?.state,'unknown','retain safe durable fence pending operator proof');
 
   provider.behavior.rejectConfirmationBeforeAccept422=false;
-  const repeat=await manager.requestOptIn({email,name:'Synthetic',source:'newsletter_page'});
-  assert.equal(repeat.state,'request_received');
+  await assert.rejects(()=>manager.requestOptIn({email,name:'Synthetic',source:'newsletter_page'}),error=>error?.code==='NEWSLETTER_REQUEST_UNCERTAIN');
   assert.equal(provider.emails.length,0,'ordinary later request must not silently resend');
 });
