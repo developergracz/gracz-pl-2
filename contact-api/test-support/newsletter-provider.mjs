@@ -188,7 +188,17 @@ export async function createProvider(t) {
       // accepted or deduplicated, unlike timeout/5xx scenarios.
       if (behavior.rejectConfirmationBeforeAccept422 &&
           /potwierdź zapis/i.test(String(body.subject || ""))) {
-        return send(res, 422, {name:"validation_error",message:"synthetic invalid sender"});
+        if (behavior.truncate422Body) {
+          res.writeHead(422, {'content-type':'application/json','content-length':'1000'});
+          res.write('{"name":"validation_error"');
+          return setTimeout(() => res.destroy(), 10);
+        }
+        if (behavior.invalid422Body) {
+          res.writeHead(422, {'content-type':'application/json'});
+          return res.end('not-json');
+        }
+        return send(res, 422, {name:"validation_error",message:"synthetic invalid sender"},
+          behavior.providerRequestId ? {'x-request-id':behavior.providerRequestId} : {});
       }
       const key = String(req.headers["idempotency-key"] || "");
       const serialized = JSON.stringify(body);

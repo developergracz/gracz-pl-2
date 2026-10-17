@@ -117,6 +117,28 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     });
   });
 
+  await t.test("confirmed 422 retains reservation and audit history across process restart", async () => {
+    const provider = await createProvider(t);
+    provider.consentStore = store;
+    provider.behavior.rejectConfirmationBeforeAccept422 = true;
+    const email = 'r2-422-' + randomUUID() + '@example.test';
+    await assert.rejects(() => createManager(provider,{logger:{error(){}}}).requestOptIn({email}), {code:'NEWSLETTER_MAIL_FAILED'});
+    const emailHash=consentEmailHash(email);
+    const before=await store.inspectOptInRequest(emailHash);
+    const events=await store.listConsentEvents(emailHash);
+    assert.equal(before.state,'unknown');
+    assert.equal(before.sentAt,null);
+    assert.equal(events.length,1);
+    assert.equal(provider.emails.length,0);
+    assert.equal(provider.requests.filter(r=>r.path==='/emails').length,1);
+    provider.behavior.rejectConfirmationBeforeAccept422 = false;
+    const results=await Promise.all(Array.from({length:4},()=>childRequest(provider.base,email)));
+    assert.ok(results.every(r=>r.code==='NEWSLETTER_REQUEST_UNCERTAIN'));
+    assert.deepEqual(await store.inspectOptInRequest(emailHash),before,'inspection/restart cannot mutate the reservation');
+    assert.deepEqual(await store.listConsentEvents(emailHash),events,'append-only evidence is preserved');
+    assert.equal(provider.requests.filter(r=>r.path==='/emails').length,1);
+  });
+
   await t.test("accepted message with lost acknowledgement stays blocked across process restart", async () => {
     const provider = await createProvider(t);
     provider.consentStore = store;
