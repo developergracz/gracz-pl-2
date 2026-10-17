@@ -65,7 +65,7 @@ function connectRealtime(){
   eventSource.addEventListener('thousand.snapshot',receive);eventSource.addEventListener('thousand.updated',receive);eventSource.addEventListener('thousand.round-started',receive);
   eventSource.onopen=()=>{$('#connection-state').textContent='online'};eventSource.onerror=()=>{$('#connection-state').textContent='ponowne łączenie…'};
 }
-function applyView(data){view=data;selectedGiftCards=selectedGiftCards.filter(id=>myHand().some(card=>card.id===id));render()}
+function applyView(data){const incomingRevision=Number(data?.revision);const currentRevision=view===null?-1:Number(view?.revision);if(!Number.isInteger(incomingRevision)||incomingRevision<0||incomingRevision<=currentRevision)return false;view=data;selectedGiftCards=selectedGiftCards.filter(id=>myHand().some(card=>card.id===id));render();return true}
 
 function render(){
   if(!view)return;
