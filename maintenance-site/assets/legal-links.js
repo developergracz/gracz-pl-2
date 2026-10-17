@@ -534,7 +534,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r2-premium-validation';
+    link.href='/assets/footer-newsletter.css?v=r3-maintenance-r2';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -544,6 +544,13 @@
     if(!status)return;
     status.textContent=text||'';
     status.classList.toggle('is-error',type==='error');
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      var manual=document.createElement('a');
+      manual.href='/newsletter/#nl-maintenance-notice';
+      manual.textContent='Informacja o niedostępności i wycofaniu zgody';
+      status.appendChild(document.createTextNode(' '));
+      status.appendChild(manual);
+    }
   }
 
   // Premium field-level validation; unlike reportValidity(), never opens Chrome bubbles.
@@ -641,11 +648,6 @@
       submit.disabled=true;
       if(consentInput)consentInput.disabled=true;
       setFooterNewsletterStatus(form,NEWSLETTER_MAINTENANCE_NOTICE,'error');
-      var manual=document.createElement('a');
-      manual.href='/newsletter/#nl-maintenance-notice';
-      manual.textContent='Informacja o niedostępności i wycofaniu zgody';
-      status.appendChild(document.createTextNode(' '));
-      status.appendChild(manual);
     }
   }
 

@@ -34,6 +34,7 @@
     var form=byId(formId),button=byId(buttonId),status=byId(statusId),openedAt=Date.now(),busy=false;
     var original=button.textContent;
     var controls=[form.elements.email];if(consent)controls.push(form.elements.consent);
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED)form.querySelectorAll('input').forEach(function(control){control.disabled=true;});
     controls.forEach(function(control){control.addEventListener('input',function(){fieldError(control,'');setStatus(status,'');});control.addEventListener('change',function(){fieldError(control,'');});});
     form.addEventListener('submit',async function(event){
       event.preventDefault();if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(status,NEWSLETTER_MAINTENANCE_NOTICE,true);return;}if(busy)return;
@@ -57,7 +58,11 @@
   function clearNavigation(){
     generation++;actionMode='';actionToken='';controllers.forEach(function(controller){controller.abort();});
     document.querySelectorAll('.nl-status').forEach(function(node){setStatus(node,'');});
-    actionButton.disabled=false;actionButton.hidden=false;
+    actionButton.disabled=!NEWSLETTER_PUBLIC_INTAKE_ENABLED;actionButton.hidden=false;
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
+      setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
+    }
     actionPanel.hidden=true;subscribePanel.hidden=false;requestPanel.hidden=false;
   }
   function readAction(){
