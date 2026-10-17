@@ -184,6 +184,12 @@ export async function createProvider(t) {
           message: "forced welcome failure",
         });
       }
+      // Synthetic definitive provider rejection occurs before any message is
+      // accepted or deduplicated, unlike timeout/5xx scenarios.
+      if (behavior.rejectConfirmationBeforeAccept422 &&
+          /potwierdź zapis/i.test(String(body.subject || ""))) {
+        return send(res, 422, {name:"validation_error",message:"synthetic invalid sender"});
+      }
       const key = String(req.headers["idempotency-key"] || "");
       const serialized = JSON.stringify(body);
       const existing = emailIdempotency.get(key);

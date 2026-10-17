@@ -1,4 +1,5 @@
 import { createMailboxStatus, createNewsletterAdmission } from './newsletter-status.mjs';
+import { isDefinitiveNewsletterEmailRejection } from './newsletter-rejection.mjs';
 import {
   createCipheriv,
   createDecipheriv,
@@ -173,6 +174,17 @@ export function createNewsletterManager({
       }
       return { state: "request_received" };
     } catch (error) {
+      // A fully received provider 422 is a definitive rejection *by this call*.
+      // Preserve the durable fence nevertheless. It needs authenticated
+      // operator evidence and reconciliation; it is never safe to retry or
+      // delete reservations automatically from a public request.
+      if (isDefinitiveNewsletterEmailRejection(error)) {
+        logger.error('[newsletter] confirmation provider rejection requires review', {
+          code: 'NEWSLETTER_DOI_422_OPERATOR_HOLD',
+          requestId: claimKey.requestId,
+          providerRequestId: error.providerRequestId || null,
+        });
+      }
       // The original caller receives the real error. Later callers must not
       // create a new operation after an ambiguous delivery or persistence failure.
       try {
