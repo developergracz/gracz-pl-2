@@ -5,7 +5,18 @@ async function mock(page, handler = () => ({ok:true,state:'request_received'})) 
   const requests=[];
   await page.route('**/*', async route => {
     const request=route.request(), url=new URL(request.url());
-    if(url.origin==='http://127.0.0.1:4174')return route.continue();
+    if(url.origin==='http://127.0.0.1:4174'){
+      // Exercise the future Owner-approved enabled state in test isolation
+      // only. Production assets remain explicitly fail-closed.
+      if(url.pathname==='/assets/newsletter-full-max-r1.js'||url.pathname==='/assets/legal-links.js'){
+        const response=await route.fetch();
+        const source=await response.text();
+        const anchor='var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;';
+        if(!source.includes(anchor))throw new Error('Expected explicit newsletter maintenance gate in browser fixture');
+        return route.fulfill({response,body:source.replace(anchor,'var NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;')});
+      }
+      return route.continue();
+    }
     if(url.origin!==API)return route.abort();
     if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-methods':'POST','access-control-allow-headers':'content-type'}});
     const payload=request.postDataJSON();requests.push({path:url.pathname,payload});
@@ -171,3 +182,23 @@ for(const mode of ['confirm','unsubscribe']) for(const status of [400,503]) {
     expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}},{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
   });
 }
+
+
+// Live F-02 behavior: this test never enables the test-only interactive override.
+test('maintenance mode visibly blocks form and bearer actions without any provider request',async({page})=>{
+  const outgoing=[];
+  await page.route(API+'/**',route=>{outgoing.push(route.request().url());return route.abort();});
+  await page.goto('/newsletter/#unsubscribe=synthetic-secret');
+  await expect(page.locator('#nl-maintenance-notice')).toBeVisible();
+  await expect(page.locator('#nl-submit')).toBeDisabled();
+  await expect(page.locator('#nl-request-button')).toBeDisabled();
+  await expect(page.locator('#nl-action-button')).toBeDisabled();
+  await expect(page.locator('#nl-action-status')).toContainText('nie została wykonana');
+  await expect(page.locator('#nl-maintenance-notice a[href^="mailto:"]')).toBeVisible();
+  expect(page.url()).not.toContain('synthetic-secret');
+  await page.goto('/');
+  const form=page.locator('form[data-newsletter]').first();
+  await expect(form.locator('button[type="submit"]')).toBeDisabled();
+  await expect(form.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
+  expect(outgoing).toHaveLength(0);
+});
