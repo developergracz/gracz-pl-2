@@ -3,6 +3,10 @@
 
   var CONTACT_API='https://gracz-contact-api.onrender.com/contact';
   var NEWSLETTER_API='https://gracz-contact-api.onrender.com/newsletter/subscribe';
+  // F-02 controlled release: keep public opt-in disabled until separate Owner GO.
+  // This flag is deliberately fail-closed; it does not probe or activate the API.
+  var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;
+  var NEWSLETTER_MAINTENANCE_NOTICE='Zapisy do newslettera są tymczasowo niedostępne. W sprawie wycofania zgody otwórz stronę gracz.pl/newsletter/ i skorzystaj z kontaktu e-mail.';
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
   var lastTrigger=null;
@@ -530,7 +534,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r2-premium-validation';
+    link.href='/assets/footer-newsletter.css?v=r3-maintenance-r2';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -540,6 +544,13 @@
     if(!status)return;
     status.textContent=text||'';
     status.classList.toggle('is-error',type==='error');
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      var manual=document.createElement('a');
+      manual.href='/newsletter/#nl-maintenance-notice';
+      manual.textContent='Informacja o niedostępności i wycofaniu zgody';
+      status.appendChild(document.createTextNode(' '));
+      status.appendChild(manual);
+    }
   }
 
   // Premium field-level validation; unlike reportValidity(), never opens Chrome bubbles.
@@ -632,6 +643,12 @@
     status.setAttribute('role','status');
     status.setAttribute('aria-live','polite');
     form.appendChild(status);
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      email.disabled=true;
+      submit.disabled=true;
+      if(consentInput)consentInput.disabled=true;
+      setFooterNewsletterStatus(form,NEWSLETTER_MAINTENANCE_NOTICE,'error');
+    }
   }
 
   function initFooterNewsletters(){
@@ -641,6 +658,10 @@
   }
 
   async function submitFooterNewsletter(form){
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      setFooterNewsletterStatus(form,NEWSLETTER_MAINTENANCE_NOTICE,'error');
+      return;
+    }
     if(form.dataset.newsletterSending==='1')return;
     var email=form.elements.email;
     var consent=form.elements.consent;

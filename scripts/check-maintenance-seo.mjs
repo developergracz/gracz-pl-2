@@ -275,7 +275,7 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r37'), `${rel}: legal/contact trigger exists but legal-links.js R37 is missing`);
+    requireCheck(html.includes('/assets/legal-links.js?v=r38-maintenance-r2'), `${rel}: legal/contact trigger exists but legal-links.js R38 maintenance is missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
@@ -310,7 +310,7 @@ requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r2'), "owner
 requireCheck(legalJs.includes('Napisz e-mail do gracz.pl'), "owner email premium CTA missing");
 requireCheck(regulation.includes('href="mailto:czsocha@wp.pl"'), "regulation: owner email mailto missing");
 requireCheck(privacy.includes('href="mailto:czsocha@wp.pl"'), "privacy: owner email mailto missing");
-requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r2"), "live footer newsletter R2 stylesheet loader missing");
+requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r3-maintenance-r2"), "live footer newsletter R3 maintenance stylesheet loader missing");
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");
