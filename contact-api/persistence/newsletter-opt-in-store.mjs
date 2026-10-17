@@ -116,6 +116,16 @@ export function createNewsletterOptInStore(database) {
          RETURNING r.request_id`, [emailHash, requestId, eventId]);
       return result.rowCount === 1;
     },
+    // Read-only diagnostic for a trusted operator. The public HTTP routes
+    // must never expose this record or the HMAC. No automatic recovery.
+    async inspectOptInRequest(emailHash) {
+      if(typeof emailHash!=='string'||!/^[0-9a-f]{64}$/.test(emailHash))throw new TypeError('Invalid HMAC identifier');
+      const result=await database.query(
+        `SELECT request_id, state, issued_at, expires_at, sent_at
+         FROM newsletter_opt_in_requests WHERE email_hash = $1`,[emailHash]);
+      const row=result.rows[0];
+      return row?{requestId:row.request_id,state:row.state,issuedAt:row.issued_at,expiresAt:row.expires_at,sentAt:row.sent_at}:null;
+    },
     async markOptInUnknown({ emailHash, requestId }) {
       await database.query(
         `UPDATE newsletter_opt_in_requests SET state = 'unknown'

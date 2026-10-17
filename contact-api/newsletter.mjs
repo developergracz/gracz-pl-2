@@ -1,4 +1,5 @@
 import { createMailboxStatus, createNewsletterAdmission } from './newsletter-status.mjs';
+import { isDefinitiveNewsletterEmailRejection } from './newsletter-rejection.mjs';
 import {
   createCipheriv,
   createDecipheriv,
@@ -173,11 +174,20 @@ export function createNewsletterManager({
       }
       return { state: "request_received" };
     } catch (error) {
-      // The original caller receives the real error. Later callers must not
-      // create a new operation after an ambiguous delivery or persistence failure.
+      // Persist the fence before diagnostics; logging must never affect safety.
       try {
         if (!await consentStore.releaseOptInBeforeSend(claimKey)) await consentStore.markOptInUnknown(claimKey);
       } catch {}
+      if (isDefinitiveNewsletterEmailRejection(error)) {
+        try {
+          logger.error('[newsletter] confirmation provider response requires review', {
+            code: 'NEWSLETTER_DOI_422_OPERATOR_HOLD',
+            requestId: claimKey.requestId,
+            providerRequestIdSha256: error.providerRequestId
+              ? createHash('sha256').update(error.providerRequestId).digest('hex') : null,
+          });
+        } catch {}
+      }
       throw error;
     }
   }
@@ -1040,53 +1050,52 @@ export function createNewsletterManager({
     });
     const operation = "POST /emails";
 
-    for (let attempt = 1; attempt <= PROVIDER_MAX_ATTEMPTS; attempt += 1) {
-      let response;
-      try {
-        response = await fetch(normalizedEmailEndpoint, {
-          method: "POST",
-          headers: {
-            authorization: "Bearer " + apiKey,
-            "content-type": "application/json",
-            "Idempotency-Key": idempotencyKey,
-            "User-Agent": "gracz.pl-newsletter/1.0",
-          },
-          body: payload,
-          signal: AbortSignal.timeout(requestTimeoutMs),
-        });
-      } catch (cause) {
-        if (attempt < PROVIDER_MAX_ATTEMPTS) {
-          await sleep(networkRetryDelayMs(attempt));
-          continue;
-        }
-        throw providerError("NEWSLETTER_MAIL_FAILED", 502, {
-          operation,
-          providerName: cleanProviderErrorName(cause?.name),
-        });
-      }
-
-      const raw = await response.text().catch(() => "");
-      if (response.ok) {
-        try {
-          return raw ? JSON.parse(raw) : {};
-        } catch {
-          return {};
-        }
-      }
-
-      if (isRetryableProviderStatus(response.status) && attempt < PROVIDER_MAX_ATTEMPTS) {
-        await sleep(providerRetryDelayMs(response, attempt));
-        continue;
-      }
-
-      throw providerError("NEWSLETTER_MAIL_FAILED", response.status, {
+    // One transport attempt per send. Idempotency alone cannot prove
+    // non-acceptance after timeout, disconnect, rate limit or server failure.
+    let response;
+    try {
+      response = await fetch(normalizedEmailEndpoint, {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + apiKey,
+          "content-type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+          "User-Agent": "gracz.pl-newsletter/1.0",
+        },
+        body: payload,
+        signal: AbortSignal.timeout(requestTimeoutMs),
+      });
+    } catch (cause) {
+      throw providerError("NEWSLETTER_MAIL_FAILED", 502, {
         operation,
-        providerName: providerErrorName(raw),
-        providerRequestId: providerRequestId(response),
+        failureKind: cause?.name === 'TimeoutError' || cause?.name === 'AbortError' ? 'timeout' : 'transport',
       });
     }
-
-    throw providerError("NEWSLETTER_MAIL_FAILED", 502, { operation });
+    let raw, parsed;
+    try {
+      raw = await response.text();
+    } catch {
+      throw providerError("NEWSLETTER_MAIL_FAILED", 502, {operation, failureKind:'response_incomplete'});
+    }
+    try {
+      parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
+    } catch {
+      throw providerError("NEWSLETTER_MAIL_FAILED", 502, {operation, failureKind:'response_invalid'});
+    }
+    if (response.ok) {
+      if (typeof parsed.id !== 'string' || !parsed.id.trim()) {
+        throw providerError("NEWSLETTER_REQUEST_UNCERTAIN", 503, {operation, failureKind:'acknowledgement_invalid'});
+      }
+      return parsed;
+    }
+    throw providerError("NEWSLETTER_MAIL_FAILED", response.status, {
+      operation,
+      providerName: providerErrorName(raw),
+      providerRequestId: providerRequestId(response),
+      responseComplete: true,
+      failureKind: 'http_response',
+    });
   }
 
   async function api(path, { method, body, expected }) {
@@ -1369,6 +1378,8 @@ function providerError(code, status = 502, details = {}) {
   error.code = code;
   error.status = Number.isInteger(status) ? status : 502;
   if (error.status < 400) error.status = 502;
+  error.providerResponseComplete = details.responseComplete === true;
+  error.providerFailureKind = details.failureKind || 'unspecified';
   error.providerOperation = cleanProviderOperation(details.operation);
   error.deliveryOutcome = details.operation === "POST /emails" ? "uncertain" : "not_attempted_by_this_call";
   error.providerStatus = Number.isInteger(status) ? status : null;
