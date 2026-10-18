@@ -103,7 +103,7 @@
     setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
     setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
   }
-  // F-03 rollout: the browser never enables intake from /health or cached state.
+  // F-03 release rule: never enable public intake from /health, cache or a browser-only flag.
   // An explicit backend opt-in + valid durable schema are required on EACH load.
   async function enableIntakeOnlyWhenReady(){
     if(NEWSLETTER_PUBLIC_INTAKE_ENABLED)return; // Existing synthetic E2E fixture.
