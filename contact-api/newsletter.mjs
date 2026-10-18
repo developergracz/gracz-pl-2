@@ -294,12 +294,10 @@ export function createNewsletterManager({
           expected: [200],
         });
 
-        // If an earlier confirmation committed durable consent and activated
-        // the provider but the deterministic welcome delivery failed, the
-        // missing provider timestamp keeps this replay on the repair path.
-        // Resend idempotency makes this safe when the welcome already landed.
-        await sendWelcomeEmail(data);
-
+        // Repair provider audit metadata only. NEVER resend the welcome from
+        // a confirmation replay: Resend idempotency has a bounded lifetime,
+        // so a replay after that window could duplicate an accepted message.
+        // An uncertain/missed welcome requires evidence-based operator review.
         await settleConfirmedOptIn(data);
         return {
           state: providerConfirmedAt > 0 ? "resubscribed" : "subscribed",
