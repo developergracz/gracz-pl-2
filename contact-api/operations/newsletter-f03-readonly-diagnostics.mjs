@@ -1,4 +1,5 @@
 // Diagnostic only. No SQL writes, no migrations, no secret or recipient logging.
+import {createHash} from 'node:crypto';
 // This module executes only when explicitly invoked by the business runtime.
 export async function diagnoseF03ReadOnly(database, logger = console) {
   try {
@@ -17,6 +18,19 @@ export async function diagnoseF03ReadOnly(database, logger = console) {
     logger.info('NEWSLETTER_F03_DIAGNOSTIC_TABLES', Object.fromEntries(
       Object.entries(tables).map(([k,v])=>[k,v===true])
     ));
+    // Private-DB registry fingerprint for the Owner's F03 release receipt.
+    // Same canonical pg row order and JSON encoding as the production migrator.
+    // Never print checksums, connection strings, credentials or contact records.
+    if (tables.baseline) {
+      const rows = (await database.queryBounded(
+        'SELECT version,trim(checksum) AS checksum FROM public.schema_migrations ORDER BY version',
+        [], {timeoutMs:3000}
+      )).rows;
+      logger.info('NEWSLETTER_F03_DIAGNOSTIC_REGISTRY_SHA256', {
+        sha256: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+        count: rows.length
+      });
+    }
     if (!tables.contacts || !tables.events) return;
     const census = (await database.queryBounded(`
       SELECT
