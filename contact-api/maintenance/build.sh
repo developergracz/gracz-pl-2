@@ -1,5 +1,9 @@
 #!/bin/sh
-# Syntax validation only. No install, package hooks, migration or business import.
+# Production business runtime build. No migrations, hooks, data writes or real email.
 set -eu
-artifact_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec env -u NODE_OPTIONS -u NODE_PATH node --check "$artifact_dir/server.mjs"
+unset NODE_OPTIONS NODE_PATH
+npm --prefix contact-api install --omit=dev --ignore-scripts --no-audit --no-fund --package-lock=false
+node --check contact-api/server.mjs
+node --check contact-api/newsletter.mjs
+node --check contact-api/routes/newsletter-route.mjs
+node --check contact-api/persistence/newsletter-opt-in-store.mjs
