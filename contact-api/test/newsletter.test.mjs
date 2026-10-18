@@ -507,7 +507,8 @@ test("hybrid welcome failure cannot leave provider active without durable consen
   });
   const token = extractToken(provider.emails[0], "confirm");
 
-  provider.behavior.welcomeEmail503Remaining = 4;
+  // R2: a send invocation now makes one attempt; explicit caller recovery remains tested.
+  provider.behavior.welcomeEmail503Remaining = 1;
 
   await assert.rejects(
     () => manager.confirm(token),
@@ -535,8 +536,8 @@ test("hybrid welcome failure cannot leave provider active without durable consen
   assert.equal(retried.state, "subscribed");
   assert.equal(
     provider.emails.filter((email) => /Newsletter — witamy!/i.test(email.body.subject)).length,
-    1,
-    "deterministic replay must deliver exactly one welcome"
+    0,
+    "uncertain welcome delivery must not trigger a new send from replay"
   );
 });
 
@@ -653,13 +654,16 @@ test("newsletter R3 repairs partial activation without duplicate welcome", async
   assert.equal(provider.topicStates.get("partial@example.test").get("topic-1"), "opt_in");
   assert.equal(provider.emails.length, 2, "welcome was accepted before final proof failed");
 
+  // Simulate expiry of Resend's bounded idempotency retention before replay.
+  // The repair must not issue a second welcome even without provider dedupe.
+  provider.expireEmailIdempotency();
   const retried = await manager.confirm(token);
   assert.equal(retried.state, "subscribed");
   assert.ok(Number(contact.properties[CONFIRMED_AT_KEY]) > 0);
   assert.equal(
     provider.emails.length,
     2,
-    "same deterministic welcome payload must reuse Resend idempotency result"
+    "replay must never resend an accepted welcome even after Resend dedupe expiry"
   );
 
   const replay = await manager.confirm(token);
@@ -1027,14 +1031,14 @@ test("B1 provider failure before reservation sends nothing and can safely retry"
 });
 
 for (const failure of [429, 503, 'disconnect', 'timeout']) {
-  test(`B1 uncertain send ${failure} reuses one payload and blocks restart resend`, async (t) => {
+  test(`B1 uncertain send ${failure} makes one attempt and blocks restart resend`, async (t) => {
     const provider = await createProvider(t), manager = createManager(provider, {providerTimeoutMs:50});
     const email = 'b1-failure@example.test';
     provider.behavior.confirmResponse = failure;
     await assert.rejects(() => manager.requestOptIn({email}), {code:'NEWSLETTER_MAIL_FAILED'});
     assert.equal(provider.emails.length,1, 'provider accepted only one idempotent message');
     const attempts = provider.requests.filter(r => r.path === '/emails').length;
-    assert.equal(attempts,4);
+    assert.equal(attempts,1,'R2 forbids automatic retries after an ambiguous send');
     provider.behavior.confirmResponse = null;
     await assert.rejects(() => createManager(provider).requestOptIn({email}), {code:'NEWSLETTER_REQUEST_UNCERTAIN'});
     assert.equal(provider.requests.filter(r => r.path === '/emails').length,attempts);

@@ -155,6 +155,10 @@ export async function createProvider(t) {
       if (behavior.emailResponseDelayMs > 0) return setTimeout(() => send(res,200,{id}),behavior.emailResponseDelayMs);
       if (behavior.confirmResponse === "timeout") return setTimeout(() => send(res,200,{id}),200);
       if (behavior.confirmResponse === "malformed") return send(res, 200, {});
+      if (behavior.confirmResponse === "redirect") {
+        res.writeHead(307, {location:"/synthetic-redirect-receiver"});
+        return res.end();
+      }
       if (behavior.confirmResponse === "disconnect") return res.destroy();
       if (Number.isInteger(behavior.confirmResponse)) return send(res, behavior.confirmResponse, {name:"provider_unavailable"});
       return send(res, 200, {id});
@@ -183,6 +187,22 @@ export async function createProvider(t) {
           name: "provider_unavailable",
           message: "forced welcome failure",
         });
+      }
+      // Synthetic definitive provider rejection occurs before any message is
+      // accepted or deduplicated, unlike timeout/5xx scenarios.
+      if (behavior.rejectConfirmationBeforeAccept422 &&
+          /potwierdź zapis/i.test(String(body.subject || ""))) {
+        if (behavior.truncate422Body) {
+          res.writeHead(422, {'content-type':'application/json','content-length':'1000'});
+          res.write('{"name":"validation_error"');
+          return setTimeout(() => res.destroy(), 10);
+        }
+        if (behavior.invalid422Body) {
+          res.writeHead(422, {'content-type':'application/json'});
+          return res.end('not-json');
+        }
+        return send(res, 422, {name:"validation_error",message:"synthetic invalid sender"},
+          behavior.providerRequestId ? {'x-request-id':behavior.providerRequestId} : {});
       }
       const key = String(req.headers["idempotency-key"] || "");
       const serialized = JSON.stringify(body);
@@ -489,6 +509,7 @@ export async function createProvider(t) {
     requests,
     providerContact,
     hostedUnsubscribe,
+    expireEmailIdempotency: () => emailIdempotency.clear(),
   };
 }
 

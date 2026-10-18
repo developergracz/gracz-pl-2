@@ -3,6 +3,10 @@
 
   var CONTACT_API='https://gracz-contact-api.onrender.com/contact';
   var NEWSLETTER_API='https://gracz-contact-api.onrender.com/newsletter/subscribe';
+  // F-02 controlled release: keep public opt-in disabled until separate Owner GO.
+  // This flag is deliberately fail-closed; it does not probe or activate the API.
+  var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;
+  var NEWSLETTER_MAINTENANCE_NOTICE='Zapisy do newslettera są tymczasowo niedostępne. W sprawie wycofania zgody otwórz stronę gracz.pl/newsletter/ i skorzystaj z kontaktu e-mail.';
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
   var lastTrigger=null;
@@ -100,7 +104,7 @@
         '</div>'+
         '<div class="contact-field"><label for="contact-message">Wiadomość</label><textarea id="contact-message" name="message" minlength="10" maxlength="4000" placeholder="Napisz, w czym możemy pomóc…" required></textarea><div class="contact-field__meta"><span>Minimum 10 znaków</span><span data-contact-count>0 / 4000</span></div></div>'+
         '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam zapoznanie się z <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Polityką prywatności</a> i przyjmuję do wiadomości zasady przetwarzania danych w celu obsługi zgłoszenia.</span></label>'+
-        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
+        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"'+(NEWSLETTER_PUBLIC_INTAKE_ENABLED?'':' disabled')+'><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
@@ -120,6 +124,10 @@
     document.body.appendChild(dialog);
 
     var form=dialog.querySelector('[data-contact-form]');
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      var newsletterOption=form.querySelector('.contact-form__newsletter');
+      if(newsletterOption){newsletterOption.hidden=true;newsletterOption.style.display='none';newsletterOption.setAttribute('aria-hidden','true');}
+    }
     var message=form.elements.message;
     var count=dialog.querySelector('[data-contact-count]');
     var status=dialog.querySelector('[data-contact-status]');
@@ -202,7 +210,7 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
-        newsletter:Boolean(form.elements.newsletter&&form.elements.newsletter.checked),
+        newsletter:Boolean(NEWSLETTER_PUBLIC_INTAKE_ENABLED&&form.elements.newsletter&&form.elements.newsletter.checked),
         page:location.href,
         startedAt:contactOpenedAt
       };
@@ -530,7 +538,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r2-premium-validation';
+    link.href='/assets/footer-newsletter.css?v=r3-maintenance-r2';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
@@ -540,6 +548,13 @@
     if(!status)return;
     status.textContent=text||'';
     status.classList.toggle('is-error',type==='error');
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      var manual=document.createElement('a');
+      manual.href='/newsletter/#nl-maintenance-notice';
+      manual.textContent='Informacja o niedostępności i wycofaniu zgody';
+      status.appendChild(document.createTextNode(' '));
+      status.appendChild(manual);
+    }
   }
 
   // Premium field-level validation; unlike reportValidity(), never opens Chrome bubbles.
@@ -632,6 +647,12 @@
     status.setAttribute('role','status');
     status.setAttribute('aria-live','polite');
     form.appendChild(status);
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      email.disabled=true;
+      submit.disabled=true;
+      if(consentInput)consentInput.disabled=true;
+      setFooterNewsletterStatus(form,NEWSLETTER_MAINTENANCE_NOTICE,'error');
+    }
   }
 
   function initFooterNewsletters(){
@@ -641,6 +662,10 @@
   }
 
   async function submitFooterNewsletter(form){
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      setFooterNewsletterStatus(form,NEWSLETTER_MAINTENANCE_NOTICE,'error');
+      return;
+    }
     if(form.dataset.newsletterSending==='1')return;
     var email=form.elements.email;
     var consent=form.elements.consent;
