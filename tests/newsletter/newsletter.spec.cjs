@@ -185,15 +185,15 @@ for(const mode of ['confirm','unsubscribe']) for(const status of [400,503]) {
 
 
 // Live F-02 behavior: this test never enables the test-only interactive override.
-test('maintenance mode visibly blocks form and bearer actions without any provider request',async({page})=>{
+test('maintenance blocks new submissions but preserves bearer link controls without automatic requests',async({page})=>{
   const outgoing=[];
   await page.route(API+'/**',route=>{outgoing.push(route.request().url());return route.abort();});
   await page.goto('/newsletter/#unsubscribe=synthetic-secret');
   await expect(page.locator('#nl-maintenance-notice')).toBeVisible();
   await expect(page.locator('#nl-submit')).toBeDisabled();
   await expect(page.locator('#nl-request-button')).toBeDisabled();
-  await expect(page.locator('#nl-action-button')).toBeDisabled();
-  await expect(page.locator('#nl-action-status')).toContainText('nie została wykonana');
+  await expect(page.locator('#nl-action-button')).toBeEnabled();
+  await expect(page.locator('#nl-action-status')).toContainText('Istniejący link pozostaje dostępny');
   await expect(page.locator('#nl-maintenance-notice a[href^="mailto:"]')).toBeVisible();
   expect(page.url()).not.toContain('synthetic-secret');
   await page.goto('/');
