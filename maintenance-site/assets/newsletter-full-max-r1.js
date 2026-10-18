@@ -58,7 +58,8 @@
   function clearNavigation(){
     generation++;actionMode='';actionToken='';controllers.forEach(function(controller){controller.abort();});
     document.querySelectorAll('.nl-status').forEach(function(node){setStatus(node,'');});
-    actionButton.disabled=!NEWSLETTER_PUBLIC_INTAKE_ENABLED;actionButton.hidden=false;
+    // Intake pause does not disable actions on already issued consent links.
+    actionButton.disabled=false;actionButton.hidden=false;
     if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
       setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
       setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
@@ -81,7 +82,7 @@
       status:['BEZPIECZNE SPRAWDZENIE','Sprawdź swoją subskrypcję','Kliknij przycisk, aby jednorazowo sprawdzić status. Ta operacja nie zapisuje do newslettera ani nie zmienia zgody.','Sprawdź status']
     }[mode];
     actionKicker.textContent=copy[0];actionTitle.textContent=copy[1];actionCopy.textContent=copy[2];actionButton.textContent=copy[3];
-    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){actionButton.disabled=true;setStatus(actionStatus,'Usługa jest chwilowo niedostępna. Operacja nie została wykonana. Zachowaj oryginalną wiadomość e-mail z linkiem; w sprawie wycofania zgody napisz na adres podany na stronie.',true);}
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(actionStatus,'Nowe zapisy są wstrzymane. Istniejący link pozostaje dostępny; wynik operacji będzie potwierdzony przez API.',false);}
   }
   // popstate may precede hashchange for the same traversal; coalesce that duplicate.
   var lastNavigationURL='';
@@ -98,12 +99,12 @@
   setupForm('nl-form','nl-submit','nl-status','/newsletter/subscribe',true);
   setupForm('nl-status-form','nl-request-button','nl-request-status','/newsletter/status-request',false);
   if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
-    ['nl-submit','nl-request-button','nl-action-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}});
+    ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}});
     setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
     setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
   }
   actionButton.addEventListener('click',async function(){
-    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED||!actionMode||!actionToken||actionButton.disabled)return;
+    if(!actionMode||!actionToken||actionButton.disabled)return;
     var mode=actionMode,token=actionToken,current=generation;
     actionToken='';actionButton.disabled=true;
     setStatus(actionStatus,'Przetwarzanie…');
