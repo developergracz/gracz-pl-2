@@ -1,9 +1,10 @@
 #!/bin/sh
-# Restart the real contact/newsletter API, not the maintenance-only 503 responder.
-# New newsletter intake stays fail-closed until the F03 database and provider
-# have been verified and an operator explicitly configures otherwise.
+# Default standalone maintenance responder is fully isolated from business code.
 set -eu
-unset NODE_OPTIONS NODE_PATH
-: "${NEWSLETTER_INTAKE_PAUSED:=true}"
-export NEWSLETTER_INTAKE_PAUSED
-exec node contact-api/server.mjs
+artifact_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ "${GRACZ_BUSINESS_RUNTIME_ENABLED:-0}" = "1" ]; then
+  : "${NEWSLETTER_INTAKE_PAUSED:=true}"
+  export NEWSLETTER_INTAKE_PAUSED
+  exec env -u NODE_OPTIONS -u NODE_PATH node "$artifact_dir/../server.mjs"
+fi
+exec env -u NODE_OPTIONS -u NODE_PATH node "$artifact_dir/server.mjs"
