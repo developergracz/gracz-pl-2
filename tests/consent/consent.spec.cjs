@@ -146,12 +146,10 @@ for (const viewport of [
       const form = page.locator('.site-footer form[data-newsletter]');
       await expect(form).toHaveClass(/footer-newsletter-live/);
 
-      await page.evaluate(() => {
-        const footerForm = document.querySelector('.site-footer form[data-newsletter]');
-        const status = footerForm.querySelector('[data-footer-newsletter-status]');
-        status.textContent = 'Łączę z bezpiecznym kanałem gracz.pl. Przy pierwszym uruchomieniu może to potrwać kilkanaście sekund.';
-        footerForm.querySelector('button[type="submit"]').textContent = 'Wysyłanie…';
-      });
+      // F-02 public maintenance: geometry must fit a visible error and withdrawal
+      // information, never an artificial "sending" progress state.
+      await expect(form.locator('button[type="submit"]')).toBeDisabled();
+      await expect(form.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
 
       const result = await page.evaluate(() => {
         const rect = selector => document.querySelector(selector).getBoundingClientRect();
@@ -170,7 +168,7 @@ for (const viewport of [
         };
       });
       expect(result.progressVisible).toBe(true);
-      expect(result.progressColor).toBe('rgb(141, 231, 223)');
+      expect(result.progressColor).toBe('rgb(255, 141, 151)');
       expect(result.progressBottom).toBeLessThanOrEqual(result.legalTop - 2);
       expect(result.consentBottom).toBeLessThanOrEqual(result.legalTop - 2);
       expect(result.gridBottom).toBeLessThanOrEqual(result.legalTop + 1);
