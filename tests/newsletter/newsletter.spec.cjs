@@ -200,5 +200,6 @@ test('maintenance blocks new submissions but preserves bearer link controls with
   const form=page.locator('form[data-newsletter]').first();
   await expect(form.locator('button[type="submit"]')).toBeDisabled();
   await expect(form.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
-  expect(outgoing).toHaveLength(0);
+  // Safe readiness GETs are allowed; no business POST may be triggered during maintenance.
+  expect(outgoing.filter(url=>!url.endsWith('/newsletter/ready'))).toHaveLength(0);
 });

@@ -728,6 +728,33 @@
 
   loadPortalSearch();
   initFooterNewsletters();
+  // F-03: activate only when the live API itself proves readiness. No stale
+  // /health, local storage, or client-only toggle may authorize a POST.
+  async function enableNewsletterFormsOnlyWhenReady(){
+    if(NEWSLETTER_PUBLIC_INTAKE_ENABLED)return; // Interactive E2E fixture.
+    try{
+      var abort=new AbortController(), timer=window.setTimeout(function(){abort.abort();},5000), response;
+      try{response=await fetch('https://gracz-contact-api.onrender.com/newsletter/ready',{method:'GET',credentials:'omit',mode:'cors',cache:'no-store',redirect:'error',signal:abort.signal});}
+      finally{window.clearTimeout(timer);}
+      if(response.status!==200)return;
+      var ready=await response.json();
+      if(!ready||ready.ready!==true||ready.intakePaused!==false||ready.schemaReady!==true||ready.configured!==true)return;
+      NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
+      document.querySelectorAll('form[data-newsletter].footer-newsletter-live').forEach(function(form){
+        var email=form.querySelector('input[type="email"]'),submit=form.querySelector('button[type="submit"]'),consent=form.querySelector('input[name="consent"]');
+        if(email)email.disabled=false;
+        if(submit)submit.disabled=false;
+        if(consent)consent.disabled=false;
+        setFooterNewsletterStatus(form,'');
+      });
+      if(dialog){
+        var opt=dialog.querySelector('.contact-form__newsletter'),check=dialog.querySelector('[name="newsletter"]');
+        if(opt){opt.hidden=false;opt.style.display='';opt.removeAttribute('aria-hidden');}
+        if(check)check.disabled=false;
+      }
+    }catch(_){/* Fail closed: retain disabled opt-in on errors. */}
+  }
+  enableNewsletterFormsOnlyWhenReady();
 
   document.addEventListener('submit',function(event){
     var form=event.target&&event.target.matches&&event.target.matches('form[data-newsletter]')?event.target:null;

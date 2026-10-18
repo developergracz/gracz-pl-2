@@ -47,9 +47,38 @@ test('paused contact form does not offer newsletter opt-in', async ({page}) => {
   await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeDisabled();
 });
 
+test('confirmed backend readiness enables newsletter signup, but not by stale /health', async ({page}) => {
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true})}));
+  await page.goto('/newsletter/');
+  await expect(page.locator('#nl-submit')).toBeEnabled();
+  await expect(page.locator('#nl-consent')).toBeEnabled();
+  await expect(page.locator('#nl-request-button')).toBeEnabled();
+  await expect(page.locator('#nl-maintenance-notice')).toBeHidden();
+  await page.goto('/');
+  const form=page.locator('form[data-newsletter]').first();
+  await expect(form.locator('button[type="submit"]')).toBeEnabled();
+  await expect(form.locator('input[type="email"]')).toBeEnabled();
+  await page.evaluate(() => document.querySelector('[data-modal="contact"]').click());
+  await expect(page.locator('.contact-form__newsletter')).toBeVisible();
+  await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeEnabled();
+});
+
+test('HTTP 200 without schema confirmation still blocks newsletter signup', async ({page}) => {
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:false})}));
+  await page.goto('/newsletter/');
+  await expect(page.locator('#nl-submit')).toBeDisabled();
+  await expect(page.locator('#nl-maintenance-notice')).toBeVisible();
+});
+
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
-    expect(readFileSync(path.join(root,file),'utf8'),file).toContain('/assets/legal-links.js?v=r38-maintenance-r2');
+    expect(readFileSync(path.join(root,file),'utf8'),file).toContain('/assets/legal-links.js?v=r39-readiness-r1');
   }
 });
 

@@ -103,6 +103,32 @@
     setStatus(byId('nl-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
     setStatus(byId('nl-request-status'),NEWSLETTER_MAINTENANCE_NOTICE,true);
   }
+  // F-03 release rule: never enable public intake from /health, cache or a browser-only flag.
+  // An explicit backend opt-in + valid durable schema are required on EACH load.
+  async function enableIntakeOnlyWhenReady(){
+    if(NEWSLETTER_PUBLIC_INTAKE_ENABLED)return; // Existing synthetic E2E fixture.
+    try{
+      var controller=new AbortController();
+      var timer=window.setTimeout(function(){controller.abort();},5000);
+      var response;
+      try{response=await fetch(API+'/newsletter/ready',{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});}
+      finally{window.clearTimeout(timer);}
+      if(response.status!==200)return;
+      var state=await response.json();
+      if(!state||state.ready!==true||state.intakePaused!==false||state.schemaReady!==true||state.configured!==true)return;
+      NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
+      ['nl-form','nl-status-form'].forEach(function(id){
+        var form=byId(id);
+        if(form)form.querySelectorAll('input').forEach(function(input){input.disabled=false;});
+      });
+      ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
+      setStatus(byId('nl-status'),'');
+      setStatus(byId('nl-request-status'),'');
+      var notice=byId('nl-maintenance-notice');
+      if(notice){notice.hidden=true;notice.style.display='none';}
+    }catch(_){/* Fail closed. A failed probe never sends a subscription. */}
+  }
+  enableIntakeOnlyWhenReady();
   actionButton.addEventListener('click',async function(){
     if(!actionMode||!actionToken||actionButton.disabled)return;
     var mode=actionMode,token=actionToken,current=generation;
