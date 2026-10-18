@@ -155,6 +155,10 @@ export async function createProvider(t) {
       if (behavior.emailResponseDelayMs > 0) return setTimeout(() => send(res,200,{id}),behavior.emailResponseDelayMs);
       if (behavior.confirmResponse === "timeout") return setTimeout(() => send(res,200,{id}),200);
       if (behavior.confirmResponse === "malformed") return send(res, 200, {});
+      if (behavior.confirmResponse === "redirect") {
+        res.writeHead(307, {location:"/synthetic-redirect-receiver"});
+        return res.end();
+      }
       if (behavior.confirmResponse === "disconnect") return res.destroy();
       if (Number.isInteger(behavior.confirmResponse)) return send(res, behavior.confirmResponse, {name:"provider_unavailable"});
       return send(res, 200, {id});
