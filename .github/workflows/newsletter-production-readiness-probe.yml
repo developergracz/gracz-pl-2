@@ -1,0 +1,35 @@
+name: Newsletter production read-only probe
+on:
+  pull_request:
+    paths:
+      - .github/workflows/newsletter-production-readiness-probe.yml
+  workflow_dispatch:
+jobs:
+  production-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Probe public API metadata without changing anything
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const origin = 'https://gracz-contact-api.onrender.com';
+          const controller = new AbortController();
+          const limit = setTimeout(() => controller.abort(), 20000);
+          for (const path of ['/health', '/newsletter/ready']) {
+            try {
+              const response=await fetch(origin + path, {redirect:'error',signal:controller.signal,headers:{accept:'application/json'}});
+              const body=await response.json().catch(()=>({}));
+              const allowed=['ok','mode','businessReady','newsletterConfigured','newsletterIntakePaused','newsletterConsentLedger','persistenceConfigured','configured','ready','intakePaused','schemaReady'];
+              const safe={};for(const k of allowed)if(typeof body[k]==='boolean'||typeof body[k]==='string')safe[k]=body[k];
+              console.log(path, response.status, JSON.stringify(safe));
+            }catch(error) {
+              console.log(path,'ERROR',String(error?.name||'FETCH_ERROR'));
+              process.exitCode=1;
+            }
+          }
+          clearTimeout(limit);
+          NODE
