@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {diagnoseF03ReadOnly} from '../operations/newsletter-f03-readonly-diagnostics.mjs';
 
-test('F03 diagnostic only reads metadata and logs aggregate booleans',async()=>{
+test('F03 diagnostic only reads metadata and logs aggregate booleans plus registry hash',async()=>{
   const statements=[],logs=[];
+  const registry=[{version:'001_persistent_state.sql',checksum:'a'.repeat(64)}];
   const database={async queryBounded(sql,params,{timeoutMs}){
     statements.push(sql);
     assert.deepEqual(params,[]);
@@ -12,15 +14,20 @@ test('F03 diagnostic only reads metadata and logs aggregate booleans',async()=>{
     if(statements.length===1)return {rows:[{
       expected_db:true,opt_in:false,f03_ledger:false,contacts:true,events:true,idempotency:true,baseline:true
     }]};
+    if(statements.length===2)return {rows:registry};
     return {rows:[{contacts:2,events:32,confirmed:1,latest:new Date('2026-10-15T19:29:31.474Z')}]};
   }};
   const logger={info:(message,value)=>logs.push([message,value]),error:()=>assert.fail('unexpected failure')};
   await diagnoseF03ReadOnly(database,logger);
-  assert.equal(statements.length,2);
+  assert.equal(statements.length,3);
+  assert.match(statements[1],/SELECT version,trim\(checksum\) AS checksum FROM public\.schema_migrations ORDER BY version/);
   assert.deepEqual(logs[0],['NEWSLETTER_F03_DIAGNOSTIC_TABLES',{
     expected_db:true,opt_in:false,f03_ledger:false,contacts:true,events:true,idempotency:true,baseline:true
   }]);
-  assert.deepEqual(logs[1],['NEWSLETTER_F03_DIAGNOSTIC_PINNED_SNAPSHOT',{
+  assert.deepEqual(logs[1],['NEWSLETTER_F03_DIAGNOSTIC_REGISTRY_SHA256',{
+    sha256:createHash('sha256').update(JSON.stringify(registry)).digest('hex'),count:1
+  }]);
+  assert.deepEqual(logs[2],['NEWSLETTER_F03_DIAGNOSTIC_PINNED_SNAPSHOT',{
     matchesPinnedHistory:true,newerThanPinned:false
   }]);
 });
