@@ -104,7 +104,7 @@
         '</div>'+
         '<div class="contact-field"><label for="contact-message">Wiadomość</label><textarea id="contact-message" name="message" minlength="10" maxlength="4000" placeholder="Napisz, w czym możemy pomóc…" required></textarea><div class="contact-field__meta"><span>Minimum 10 znaków</span><span data-contact-count>0 / 4000</span></div></div>'+
         '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam zapoznanie się z <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Polityką prywatności</a> i przyjmuję do wiadomości zasady przetwarzania danych w celu obsługi zgłoszenia.</span></label>'+
-        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
+        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"'+(NEWSLETTER_PUBLIC_INTAKE_ENABLED?'':' disabled')+'><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
@@ -124,6 +124,10 @@
     document.body.appendChild(dialog);
 
     var form=dialog.querySelector('[data-contact-form]');
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      var newsletterOption=form.querySelector('.contact-form__newsletter');
+      if(newsletterOption){newsletterOption.hidden=true;newsletterOption.setAttribute('aria-hidden','true');}
+    }
     var message=form.elements.message;
     var count=dialog.querySelector('[data-contact-count]');
     var status=dialog.querySelector('[data-contact-status]');
@@ -206,7 +210,7 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
-        newsletter:Boolean(form.elements.newsletter&&form.elements.newsletter.checked),
+        newsletter:Boolean(NEWSLETTER_PUBLIC_INTAKE_ENABLED&&form.elements.newsletter&&form.elements.newsletter.checked),
         page:location.href,
         startedAt:contactOpenedAt
       };
