@@ -54,6 +54,14 @@ const database = createDatabase();
 const persistence = database.enabled
   ? createPersistenceRepositories(database)
   : null;
+// A one-shot READ-ONLY F03 preflight can run inside the Render private
+// network where external SQL connections are blocked. Logs contain only
+// metadata booleans; it neither installs schema nor enables intake.
+if (process.env.NEWSLETTER_F03_DIAG_READONLY === '1' && database.enabled) {
+  void import('./operations/newsletter-f03-readonly-diagnostics.mjs')
+    .then(({diagnoseF03ReadOnly}) => diagnoseF03ReadOnly(database))
+    .catch(() => console.error('NEWSLETTER_F03_DIAGNOSTIC_ERROR',{code:'MODULE_ERROR'}));
+}
 
 const useTestReplyStore =
   process.env.NODE_ENV === "test" &&
