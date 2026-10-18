@@ -126,7 +126,7 @@
     var form=dialog.querySelector('[data-contact-form]');
     if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
       var newsletterOption=form.querySelector('.contact-form__newsletter');
-      if(newsletterOption){newsletterOption.hidden=true;newsletterOption.setAttribute('aria-hidden','true');}
+      if(newsletterOption){newsletterOption.hidden=true;newsletterOption.style.display='none';newsletterOption.setAttribute('aria-hidden','true');}
     }
     var message=form.elements.message;
     var count=dialog.querySelector('[data-contact-count]');
