@@ -26,13 +26,14 @@ for(const bodyFailure of ['truncate422Body','invalid422Body'])test(`422 with ${b
   assert.ok(!JSON.stringify(logs).includes('NEWSLETTER_DOI_422_OPERATOR_HOLD'));
 });
 
-for(const failure of [429,500,503,'timeout','disconnect'])test(`DOI ${failure} sends once then fences concurrent and restarted callers`,async t=>{
+for(const failure of [429,500,503,'timeout','disconnect','redirect'])test(`DOI ${failure} sends once then fences concurrent and restarted callers`,async t=>{
   const provider=await createProvider(t);
   provider.behavior.confirmResponse=failure;
   const email='single-attempt@example.test';
   const manager=createManager(provider,{providerTimeoutMs:60,logger:{error(){}}});
   await assert.rejects(()=>manager.requestOptIn({email}),{code:'NEWSLETTER_MAIL_FAILED'});
   assert.equal(provider.requests.filter(r=>r.path==='/emails').length,1);
+  assert.equal(provider.requests.filter(r=>r.path==='/synthetic-redirect-receiver').length,0,'redirect must not forward credentials or email body');
   provider.behavior.confirmResponse=null;
   const results=await Promise.allSettled(Array.from({length:8},()=>createManager(provider).requestOptIn({email})));
   assert.ok(results.every(r=>r.status==='rejected'&&r.reason.code==='NEWSLETTER_REQUEST_UNCERTAIN'));
