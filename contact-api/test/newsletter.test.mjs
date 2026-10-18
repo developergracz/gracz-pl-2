@@ -536,8 +536,8 @@ test("hybrid welcome failure cannot leave provider active without durable consen
   assert.equal(retried.state, "subscribed");
   assert.equal(
     provider.emails.filter((email) => /Newsletter — witamy!/i.test(email.body.subject)).length,
-    1,
-    "deterministic replay must deliver exactly one welcome"
+    0,
+    "uncertain welcome delivery must not trigger a new send from replay"
   );
 });
 
@@ -654,13 +654,16 @@ test("newsletter R3 repairs partial activation without duplicate welcome", async
   assert.equal(provider.topicStates.get("partial@example.test").get("topic-1"), "opt_in");
   assert.equal(provider.emails.length, 2, "welcome was accepted before final proof failed");
 
+  // Simulate expiry of Resend's bounded idempotency retention before replay.
+  // The repair must not issue a second welcome even without provider dedupe.
+  provider.expireEmailIdempotency();
   const retried = await manager.confirm(token);
   assert.equal(retried.state, "subscribed");
   assert.ok(Number(contact.properties[CONFIRMED_AT_KEY]) > 0);
   assert.equal(
     provider.emails.length,
     2,
-    "same deterministic welcome payload must reuse Resend idempotency result"
+    "replay must never resend an accepted welcome even after Resend dedupe expiry"
   );
 
   const replay = await manager.confirm(token);
