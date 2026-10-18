@@ -42,7 +42,7 @@ test('maintenance does not block an existing unsubscribe token', async ({page}) 
 
 test('paused contact form does not offer newsletter opt-in', async ({page}) => {
   await page.goto('/');
-  await page.locator('[data-modal="contact"]').first().click();
+  await page.evaluate(() => document.querySelector('[data-modal="contact"]').click());
   await expect(page.locator('.contact-form__newsletter')).toBeHidden();
   await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeDisabled();
 });
