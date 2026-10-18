@@ -18,14 +18,33 @@ test('maintenance persists after input, navigation and restored pages', async ({
     window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
   });
   await expect(page.locator('#nl-status')).toContainText('chwilowo niedostępny');
-  await expect(page.locator('#nl-action-button')).toBeDisabled();
   await page.evaluate(() => {location.hash='unsubscribe=synthetic-bearer';});
-  await expect(page.locator('#nl-action-button')).toBeDisabled();
-  await expect(page.locator('#nl-action-status')).toContainText('nie została wykonana');
+  await expect(page.locator('#nl-action-button')).toBeEnabled();
+  await expect(page.locator('#nl-action-status')).toContainText('Istniejący link pozostaje dostępny');
   await expect.poll(() => page.url()).not.toContain('synthetic-bearer');
   await page.evaluate(() => {location.hash='nl-maintenance-notice';});
   await expect(page.locator('#nl-status')).toContainText('chwilowo niedostępny');
   expect(posts).toEqual([]);
+});
+
+test('maintenance does not block an existing unsubscribe token', async ({page}) => {
+  const calls=[];
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/unsubscribe', async route => {
+    calls.push(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,state:'inactive'})});
+  });
+  await page.goto('/newsletter/#unsubscribe=synthetic-bearer');
+  await expect(page.locator('#nl-action-button')).toBeEnabled();
+  await page.locator('#nl-action-button').click();
+  await expect(page.locator('#nl-action-title')).toHaveText('Subskrypcja wyłączona');
+  expect(calls).toEqual([{token:'synthetic-bearer'}]);
+});
+
+test('paused contact form does not offer newsletter opt-in', async ({page}) => {
+  await page.goto('/');
+  await page.locator('[data-modal="contact"]').first().click();
+  await expect(page.locator('.contact-form__newsletter')).toBeHidden();
+  await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeDisabled();
 });
 
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
