@@ -267,6 +267,10 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/newsletter/ready") {
+      // Safe cross-origin readiness for the consent-gated gracz.pl forms.
+      // A 200 is emitted only for a real, configured and schema-ready backend.
+      const origin = String(req.headers.origin || "");
+      if (ALLOWED_ORIGINS.has(origin)) setCors(res, origin);
       const readiness = await newsletter.readiness();
       return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
     }
