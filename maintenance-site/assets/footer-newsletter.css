@@ -144,7 +144,7 @@ form[data-newsletter].footer-newsletter-live .footer-newsletter-consent input[ar
 
 form[data-newsletter].footer-newsletter-live button[disabled]{
   opacity:.66;
-  cursor:wait;
+  cursor:not-allowed;
 }
 
 /* The success state reuses the same account-access FULL MAX PREMIUM shell,
