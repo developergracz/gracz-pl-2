@@ -1063,6 +1063,7 @@ export function createNewsletterManager({
           "User-Agent": "gracz.pl-newsletter/1.0",
         },
         body: payload,
+        redirect: "error", // Never follow a provider redirect with authorization or personal data.
         signal: AbortSignal.timeout(requestTimeoutMs),
       });
     } catch (cause) {
@@ -1114,6 +1115,7 @@ export function createNewsletterManager({
             "User-Agent": "gracz.pl-newsletter/1.0",
           },
           body: payload,
+          redirect: "error", // Prevent redirect-based credential forwarding in provider API calls.
           signal: AbortSignal.timeout(requestTimeoutMs),
         });
       } catch (cause) {
