@@ -1,5 +1,9 @@
 #!/bin/sh
-# Direct process replacement: no npm prestart/start or inherited Node preload.
+# Restart the real contact/newsletter API, not the maintenance-only 503 responder.
+# New newsletter intake stays fail-closed until the F03 database and provider
+# have been verified and an operator explicitly configures otherwise.
 set -eu
-artifact_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec env -u NODE_OPTIONS -u NODE_PATH node "$artifact_dir/server.mjs"
+unset NODE_OPTIONS NODE_PATH
+: "${NEWSLETTER_INTAKE_PAUSED:=true}"
+export NEWSLETTER_INTAKE_PAUSED
+exec node contact-api/server.mjs
