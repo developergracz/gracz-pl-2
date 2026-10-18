@@ -509,6 +509,7 @@ export async function createProvider(t) {
     requests,
     providerContact,
     hostedUnsubscribe,
+    expireEmailIdempotency: () => emailIdempotency.clear(),
   };
 }
 
