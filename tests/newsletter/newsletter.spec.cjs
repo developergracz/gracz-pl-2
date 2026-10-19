@@ -21,6 +21,7 @@ async function mock(page, handler = () => ({ok:true,state:'request_received'})) 
     if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-methods':'POST','access-control-allow-headers':'content-type'}});
     const payload=request.postDataJSON();requests.push({path:url.pathname,payload});
     const response=await handler(url.pathname,payload);
+    if(response.network)return route.abort('failed');
     return route.fulfill({status:response.http||200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response)}).catch(()=>{});
   });
   return requests;
@@ -110,7 +111,7 @@ test('replay, invalid links and unavailable use generic errors',async({page})=>{
     await page.goto('/newsletter/#status='+token);
     await page.locator('#nl-action-button').click();
     if(index===0)await expect(page.locator('#nl-action-status')).toContainText('Newsletter nieaktywny');
-    else await expect(page.locator('#nl-action-status')).toContainText(token==='unavailable'?'chwilowo niedostępna':'Poproś o nowy bezpieczny link');
+    else await expect(page.locator('#nl-action-status')).toContainText(token==='unavailable'?'chwilowo niedostępna':'Nie ponawiaj teraz operacji');
     await expect(page.locator('#nl-action-status')).not.toContainText('private');
   }
   await expect(page.locator('#nl-action-status')).toContainText('chwilowo niedostępna');
@@ -164,25 +165,26 @@ test('malformed email blocks request and leaving page discards bearer action',as
   expect(page.url()).not.toContain('leave-secret');
   expect(requests).toHaveLength(0);
 });
-for(const mode of ['confirm','unsubscribe']) for(const status of [400,503]) {
-  test(`${mode} HTTP ${status} failure retries same action token without requesting new DOI`,async({page})=>{
-    let attempts=0;const requests=await mock(page,()=>++attempts===1?{http:status,ok:false}:{ok:true,state:mode==='confirm'?'subscribed':'unsubscribed'});
+for(const mode of ['confirm','unsubscribe']) for(const status of [400,503,500,502,504]) {
+  test(`${mode} HTTP ${status} stops action without claiming completion or inviting retry`,async({page})=>{
+    const requests=await mock(page,()=>({http:status,ok:false}));
     await page.goto('/newsletter/#'+mode+'=same-action-token');
     await page.locator('#nl-action-button').click();
-    await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź wynik ponownie');
+    await expect(page.locator('#nl-action-button')).toBeDisabled();
+    await expect(page.locator('#nl-action-button')).toBeHidden();
     await expect(page.locator('#nl-action-status')).toBeFocused();
-    await expect(page.locator('#nl-action-status')).toContainText('tym samym linkiem');
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#nl-action-button')).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('#nl-action-status')).toContainText(/Newsletter aktywny|Subskrypcja wyłączona/);
-    await expect(page.locator('#nl-action-status')).toBeFocused();
-    await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
-    await expect(page.locator('#nl-action-status')).toBeFocused();
-    expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}},{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
+    await expect(page.locator('#nl-action-copy')).not.toContainText('Kliknij');
+    await expect(page.locator('#nl-action-title')).toHaveText('Nie potwierdzono operacji');
+    await expect(page.locator('#nl-action-status')).not.toContainText('Możesz ponowić');
+    await expect(page.locator('#nl-action-title')).not.toHaveText(/Newsletter aktywny|Subskrypcja wyłączona/);
+    if(status===503){
+      await expect(page.locator('#nl-action-status')).toContainText('Nie potwierdzono zmiany subskrypcji');
+      await expect(page.locator('#nl-action-status')).toContainText('Nie ponawiaj teraz');
+    }
+    await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
   });
 }
-
 
 // Live F-02 behavior: this test never enables the test-only interactive override.
 test('maintenance blocks new submissions but preserves bearer link controls without automatic requests',async({page})=>{
@@ -193,7 +195,7 @@ test('maintenance blocks new submissions but preserves bearer link controls with
   await expect(page.locator('#nl-submit')).toBeDisabled();
   await expect(page.locator('#nl-request-button')).toBeDisabled();
   await expect(page.locator('#nl-action-button')).toBeEnabled();
-  await expect(page.locator('#nl-action-status')).toContainText('Istniejący link pozostaje dostępny');
+  await expect(page.locator('#nl-action-status')).toContainText('Operacje newslettera są chwilowo niedostępne');
   await expect(page.locator('#nl-maintenance-notice a[href^="mailto:"]')).toBeVisible();
   expect(page.url()).not.toContain('synthetic-secret');
   await page.goto('/');
@@ -203,3 +205,17 @@ test('maintenance blocks new submissions but preserves bearer link controls with
   // Safe readiness GETs are allowed; no business POST may be triggered during maintenance.
   expect(outgoing.filter(url=>!url.endsWith('/newsletter/ready'))).toHaveLength(0);
 });
+
+for(const mode of ['confirm','unsubscribe','status']) {
+  test(`${mode} network failure discards action without retry invitation`,async({page})=>{
+    const requests=await mock(page,()=>({network:true}));
+    await page.goto('/newsletter/#'+mode+'=synthetic-network');
+    await page.locator('#nl-action-button').click();
+    await expect(page.locator('#nl-action-title')).toHaveText('Nie potwierdzono operacji');
+    await expect(page.locator('#nl-action-copy')).not.toContainText('Kliknij');
+    await expect(page.locator('#nl-action-button')).toBeHidden();
+    await expect(page.locator('#nl-action-status')).toBeFocused();
+    await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    expect(requests).toHaveLength(1);
+  });
+}

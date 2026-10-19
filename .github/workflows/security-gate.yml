@@ -34,6 +34,19 @@ jobs:
       - name: Block high/critical production CVEs
         run: npm audit --omit=dev --audit-level=high
 
+  contact-api-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Deterministic backend install without lifecycle scripts
+        run: npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
+      - name: Block high/critical backend production CVEs
+        run: npm --prefix contact-api audit --omit=dev --audit-level=high
+
   secrets:
     runs-on: ubuntu-latest
     timeout-minutes: 10

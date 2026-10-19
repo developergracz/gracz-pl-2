@@ -19,7 +19,9 @@
       var response=await fetch(API+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),mode:'cors',credentials:'omit',signal:controller.signal});
       var body={};try{body=await response.json();}catch(_){}
       if(!response.ok||body.ok!==true){
-        throw new Error(response.status===503?'Usługa jest chwilowo niedostępna.':path==='/newsletter/status-check'?'Nie można sprawdzić statusu za pomocą tego linku. Poproś o nowy bezpieczny link.':'Nie udało się potwierdzić operacji.');
+        var unavailable=response.status===503;
+        var error=new Error(unavailable?'Usługa jest chwilowo niedostępna. Nie potwierdzono zmiany subskrypcji. Nie ponawiaj teraz operacji. W celu wycofania zgody skorzystaj z kontaktu na tej stronie; zgłoszenie wymaga weryfikacji i obsługi.':path==='/newsletter/status-check'?'Nie można sprawdzić statusu za pomocą tego linku. Nie ponawiaj teraz operacji.':'Nie udało się potwierdzić operacji.');
+        throw error;
       }
       return body;
     }catch(error){if(error.name==='AbortError'||error instanceof TypeError)throw new Error(ambiguous);throw error;}
@@ -74,6 +76,16 @@
     if(mode)window.history.replaceState(null,'',window.location.pathname+window.location.search);
     clearNavigation();
     if(!mode||!token)return;
+    // Compromised formats are permanently revoked, independent of intake/readiness.
+    if(/^(n1|ns1)(\.|$)/.test(token)){
+      subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
+      actionButton.disabled=true;actionButton.hidden=true;
+      actionKicker.textContent='NIEAKTUALNY LINK';actionTitle.textContent='Link został unieważniony';
+      actionCopy.textContent='W celu wycofania zgody skorzystaj z kontaktu na tej stronie. Zgłoszenie wymaga weryfikacji i obsługi.';
+      setStatus(actionStatus,'Ten link został unieważniony. Nie potwierdzono zmiany subskrypcji.',true);
+      actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
+      token='';return;
+    }
     actionMode=mode;actionToken=token;
     subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
     var copy={
@@ -82,7 +94,7 @@
       status:['BEZPIECZNE SPRAWDZENIE','Sprawdź swoją subskrypcję','Kliknij przycisk, aby jednorazowo sprawdzić status. Ta operacja nie zapisuje do newslettera ani nie zmienia zgody.','Sprawdź status']
     }[mode];
     actionKicker.textContent=copy[0];actionTitle.textContent=copy[1];actionCopy.textContent=copy[2];actionButton.textContent=copy[3];
-    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(actionStatus,'Nowe zapisy są wstrzymane. Istniejący link pozostaje dostępny; wynik operacji będzie potwierdzony przez API.',false);}
+    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(actionStatus,'Operacje newslettera są chwilowo niedostępne. Historyczne linki zostały unieważnione. Nie potwierdzono zmiany subskrypcji.',false);}
   }
   // popstate may precede hashchange for the same traversal; coalesce that duplicate.
   var lastNavigationURL='';
@@ -148,17 +160,11 @@
       setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }catch(error){if(current===generation){
-      if(mode==='status'){
-        actionButton.hidden=true;
-        setStatus(actionStatus,error.message,true);
-        actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
-      }else{
-        // Retry the SAME idempotent confirm/withdrawal action, never another DOI.
-        actionToken=token;actionButton.hidden=false;actionButton.disabled=false;
-        actionButton.textContent='Sprawdź wynik ponownie';
-        setStatus(actionStatus,'Nie można potwierdzić wyniku. Możesz ponowić tę samą operację z tym samym linkiem; nie jest to nowa prośba o zapis.',true);
-        actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
-      }
+      actionToken='';actionMode='';actionButton.disabled=true;actionButton.hidden=true;
+      actionTitle.textContent='Nie potwierdzono operacji';
+      actionCopy.textContent='Nie potwierdzono zmiany subskrypcji ani jej statusu. Nie ponawiaj teraz operacji. Zgłoszenie wycofania zgody wymaga weryfikacji i obsługi przez kontakt na tej stronie.';
+      setStatus(actionStatus,error.message,true);
+      actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }}
   });
 })();

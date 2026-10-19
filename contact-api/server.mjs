@@ -1,19 +1,15 @@
-import { parseNewsletterIntakePaused } from "./newsletter-config.mjs";
 import { installShutdown } from "./lifecycle.mjs";
-import { createNewsletterProofStore } from './persistence/newsletter-proof-store.mjs';
-import { createMemoryNewsletterProofStore } from './test-support/memory-newsletter-proof-store.mjs';
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
-import { createNewsletterManager } from "./newsletter.mjs";
+import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
 import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-store.mjs";
-import { createMemoryNewsletterConsentStore } from "./persistence/memory-newsletter-consent-store.mjs";
 import { createNewsletterRoute } from "./routes/newsletter-route.mjs";
 import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
@@ -35,14 +31,6 @@ const CONTACT_DATA_ENCRYPTION_SECRET = String(
 const NEWSLETTER_URL = String(
   process.env.NEWSLETTER_URL || "https://gracz.pl/newsletter/"
 ).trim();
-const NEWSLETTER_SECRET = String(process.env.NEWSLETTER_SECRET || "").trim();
-const NEWSLETTER_RESEND_API_KEY = String(
-  process.env.NEWSLETTER_RESEND_API_KEY || ""
-).trim();
-const RESEND_API_BASE = String(
-  process.env.RESEND_API_BASE || "https://api.resend.com"
-).trim();
-
 if (!EMAIL_FROM_ADDRESS || !CONTACT_TO_ADDRESS) {
   throw new Error("EMAIL_FROM and CONTACT_TO must contain valid mailbox addresses");
 }
@@ -96,31 +84,8 @@ const premiumReply = createPremiumReplyManager({
   tokenStore: replyTokenStore,
 });
 
-const useTestNewsletterConsentStore =
-  process.env.NODE_ENV === "test" &&
-  process.env.NEWSLETTER_CONSENT_TEST_MEMORY_STORE === "1";
-
-const newsletterConsentStore = useTestNewsletterConsentStore
-  ? createMemoryNewsletterConsentStore()
-  : persistence?.newsletter || null;
-
-const NEWSLETTER_CONSENT_HASH_SECRET = String(
-  process.env.NEWSLETTER_CONSENT_HASH_SECRET || ""
-).trim();
-
-const newsletter = createNewsletterManager({
-  intakePaused: parseNewsletterIntakePaused(process.env.NEWSLETTER_INTAKE_PAUSED),
-  secret: NEWSLETTER_SECRET,
-  resendApiKey: NEWSLETTER_RESEND_API_KEY,
-  resendApiBase: RESEND_API_BASE,
-  emailEndpoint: RESEND_ENDPOINT,
-  emailFrom: EMAIL_FROM,
-  replyTo: CONTACT_TO_ADDRESS,
-  baseUrl: NEWSLETTER_URL,
-  consentStore: newsletterConsentStore,
-  proofStore: useTestNewsletterConsentStore ? createMemoryNewsletterProofStore() : (database.enabled ? createNewsletterProofStore(database) : null),
-  consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
-});
+// #280: unconditional containment, including contact-form newsletter opt-in.
+const newsletter = createHeldNewsletterManager();
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();

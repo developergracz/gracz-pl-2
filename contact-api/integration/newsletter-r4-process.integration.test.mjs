@@ -13,7 +13,7 @@ const url=process.env.DATABASE_URL;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function until(predicate){for(let i=0;i<200;i++){if(await predicate())return;await delay(25);}throw new Error('condition timeout');}
 
-test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, async t=>{
+test('R4 legacy characterization: process interruption, shutdown, health and recovery', {skip:!url}, async t=>{
   assertDisposableDatabaseUrl(url);
   const db=createDatabase({connectionString:url});t.after(()=>db.close());
   await applyMigrations(db);await applyNewsletterCandidate(db,url);
@@ -26,7 +26,7 @@ test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, asy
   t.after(()=>stop('SIGKILL'));
   async function start(extra={},health=200){
     const port=await getFreePort();base='http://127.0.0.1:'+port;
-    child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),stdio:['ignore','pipe','pipe'],env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL:url,HOST:'127.0.0.1',PORT:String(port),
+    child=spawn(process.execPath,['test-support/legacy-newsletter-server.mjs'],{cwd:new URL('..',import.meta.url),stdio:['ignore','pipe','pipe'],env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL:url,HOST:'127.0.0.1',PORT:String(port),
       RESEND_API_KEY:'test-key',NEWSLETTER_RESEND_API_KEY:'test-key',RESEND_API_BASE:provider.base,RESEND_ENDPOINT:provider.base+'/emails',EMAIL_FROM:'sender@example.test',CONTACT_TO:'owner@example.test',
       CONTACT_REPLY_SECRET:'test-'+'r'.repeat(40),CONTACT_DATA_ENCRYPTION_SECRET:'test-'+'c'.repeat(40),NEWSLETTER_INTAKE_PAUSED:'false',NEWSLETTER_SECRET:'test-'+'n'.repeat(40),NEWSLETTER_CONSENT_HASH_SECRET:'test-consent-'+'h'.repeat(40),...extra}});
     child.stdout.on('data',c=>{logs+=c;});child.stderr.on('data',c=>{logs+=c;});
@@ -84,10 +84,13 @@ test('R4 real API interruption, shutdown, health and recovery', {skip:!url}, asy
     assert.equal((await post('status-check',{token:'invalid'})).status,400,'proof route remains available');
     assert.equal((await (await fetch(base+'/health')).json()).newsletterIntakePaused,true);await stop();
   });
-  for(const pause of [undefined,'','flase','false','0'])await t.test('R5.1 explicit intake configuration '+String(pause),async()=>{
+  for(const pause of [undefined,'','flase','false','0'])await t.test('R5.1 explicit intake configuration '+String(pause),async subtest=>{
+    subtest.after(()=>stop('SIGKILL')); // Clean up even when an assertion fails.
     await start({NEWSLETTER_INTAKE_PAUSED:pause});
     const enabled=['false','0'].includes(pause);
     assert.equal((await fetch(base+'/health')).status,200);
+    // Liveness may precede the first bounded database readiness check under load.
+    if(enabled)await until(async()=>(await fetch(base+'/newsletter/ready')).status===200);
     assert.equal((await fetch(base+'/newsletter/ready')).status,enabled?200:503);
     if(!enabled){
       assert.equal((await submit(randomUUID()+'@example.test')).status,503);

@@ -20,7 +20,7 @@ test('maintenance persists after input, navigation and restored pages', async ({
   await expect(page.locator('#nl-status')).toContainText('chwilowo niedostępny');
   await page.evaluate(() => {location.hash='unsubscribe=synthetic-bearer';});
   await expect(page.locator('#nl-action-button')).toBeEnabled();
-  await expect(page.locator('#nl-action-status')).toContainText('Istniejący link pozostaje dostępny');
+  await expect(page.locator('#nl-action-status')).toContainText('Operacje newslettera są chwilowo niedostępne');
   await expect.poll(() => page.url()).not.toContain('synthetic-bearer');
   await page.evaluate(() => {location.hash='nl-maintenance-notice';});
   await expect(page.locator('#nl-status')).toContainText('chwilowo niedostępny');
@@ -112,3 +112,26 @@ for(const width of [390,768,1440]) test(`all footer surfaces fit maintenance tex
   }
   expect(posts).toEqual([]);
 });
+
+for(const mode of ['confirm','unsubscribe','status']) for(const prefix of ['n1','ns1']) {
+  test(`compromised ${prefix} ${mode} never posts, including restored navigation`,async({page})=>{
+    const posts=[];
+    page.on('request',r=>{if(r.method()==='POST')posts.push(r.url());});
+    await page.goto('/newsletter/#'+mode+'='+prefix+'.synthetic-forged');
+    await expect(page.locator('#nl-action-button')).toBeDisabled();
+    await expect(page.locator('#nl-action-status')).toContainText('Ten link został unieważniony');
+    await expect(page.locator('#nl-action-button')).toBeHidden();
+    await expect(page.locator('#nl-action-status')).toBeFocused();
+    await expect(page.locator('#nl-action-status')).toContainText('Nie potwierdzono zmiany subskrypcji');
+    expect(page.url()).not.toContain('synthetic-forged');
+    await page.evaluate(()=>{
+      document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click'));
+      window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    });
+    await page.evaluate(({mode,prefix})=>{location.hash=mode+'='+prefix+'.synthetic-replay';},{mode,prefix});
+    await expect(page.locator('#nl-action-button')).toBeDisabled();
+    await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    expect(posts).toEqual([]);
+  });
+}
