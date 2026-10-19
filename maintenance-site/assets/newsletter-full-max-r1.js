@@ -71,7 +71,7 @@
   function readAction(){
     var params=new URLSearchParams(window.location.hash.slice(1));
     var mode=['confirm','unsubscribe','status'].find(function(key){return params.has(key);});
-    var token=mode?params.get(mode):'';
+    var token=mode?String(params.get(mode)||'').trim():'';
     // Strip bearer fragments before rendering or starting any request; never persist tokens.
     if(mode)window.history.replaceState(null,'',window.location.pathname+window.location.search);
     clearNavigation();
@@ -149,14 +149,20 @@
     try{
       var result=await post('/newsletter/'+(mode==='status'?'status-check':mode),{token:token});
       if(current!==generation)return;
-      actionButton.hidden=true;
+      // Never present success until the server confirms an exact, final state.
+      // HTTP 200 and ok:true alone are not evidence of a completed operation.
       if(mode==='status'){
         var states={active:['Newsletter aktywny','Ten adres ma aktywną subskrypcję newslettera gracz.pl.'],pending:['Oczekuje na potwierdzenie','Zapis wymaga jeszcze potwierdzenia zgody przez e-mail.'],inactive:['Newsletter nieaktywny','Ten adres nie ma aktywnej subskrypcji newslettera gracz.pl.']};
         if(!states[result.state])throw new Error('Nie można teraz potwierdzić statusu.');
         actionTitle.textContent=states[result.state][0];actionCopy.textContent=states[result.state][1];
       }else if(mode==='confirm'){
+        if(!['subscribed','resubscribed','already_subscribed'].includes(result.state))throw new Error('Nie można potwierdzić aktywacji newslettera.');
         actionTitle.textContent='Newsletter aktywny';actionCopy.textContent='Subskrypcja newslettera gracz.pl jest aktywna.';
-      }else{actionTitle.textContent='Subskrypcja wyłączona';actionCopy.textContent='Zgoda na newsletter gracz.pl została wycofana.';}
+      }else{
+        if(result.state!=='unsubscribed')throw new Error('Nie można potwierdzić wycofania zgody.');
+        actionTitle.textContent='Subskrypcja wyłączona';actionCopy.textContent='Zgoda na newsletter gracz.pl została wycofana.';
+      }
+      actionButton.hidden=true;
       setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }catch(error){if(current===generation){
