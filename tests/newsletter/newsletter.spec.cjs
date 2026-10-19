@@ -18,6 +18,13 @@ async function mock(page, handler = () => ({ok:true,state:'request_received'})) 
       return route.continue();
     }
     if(url.origin!==API)return route.abort();
+    // New opt-out readiness is a safe GET, not a business mutation. During
+    // old newsletter tests the new opt-out-only runtime is deliberately OFF.
+    if(request.method()==='GET'&&url.pathname==='/newsletter/withdrawal-ready'){
+      return route.fulfill({status:503,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},
+        body:JSON.stringify({ready:false,configured:false,withdrawalOnly:true,newsletterIntakeEnabled:false})});
+    }
     if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-methods':'POST','access-control-allow-headers':'content-type'}});
     const payload=request.postDataJSON();requests.push({path:url.pathname,payload});
     const response=await handler(url.pathname,payload);
@@ -208,7 +215,7 @@ test('maintenance blocks new submissions but preserves bearer link controls with
   await expect(form.locator('button[type="submit"]')).toBeDisabled();
   await expect(form.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
   // Safe readiness GETs are allowed; no business POST may be triggered during maintenance.
-  expect(outgoing.filter(url=>!url.endsWith('/newsletter/ready'))).toHaveLength(0);
+  expect(outgoing.filter(url=>!url.endsWith('/newsletter/ready')&&!url.endsWith('/newsletter/withdrawal-ready'))).toHaveLength(0);
 });
 
 for(const mode of ['confirm','unsubscribe','status']) {
