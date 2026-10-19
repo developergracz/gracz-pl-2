@@ -23,7 +23,7 @@ CREATE TABLE newsletter_recovery.withdrawal_events (
   CONSTRAINT withdrawal_event_shape CHECK (
     (event_kind='RECEIVED' AND actor_ref IS NULL AND reason_code IS NULL) OR
     (event_kind='QUARANTINED' AND actor_ref IS NOT NULL AND
-     reason_code IN ('UNVERIFIED','UNMAPPED','AMBIGUOUS','PROVIDER_UNKNOWN','OTHER'))
+     reason_code IS NOT NULL AND reason_code IN ('UNVERIFIED','UNMAPPED','AMBIGUOUS','PROVIDER_UNKNOWN','OTHER'))
   )
 );
 CREATE UNIQUE INDEX withdrawal_one_receipt
