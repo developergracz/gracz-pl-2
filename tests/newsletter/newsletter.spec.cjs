@@ -165,24 +165,23 @@ test('malformed email blocks request and leaving page discards bearer action',as
   expect(requests).toHaveLength(0);
 });
 for(const mode of ['confirm','unsubscribe']) for(const status of [400,503]) {
-  test(`${mode} HTTP ${status} failure retries same action token without requesting new DOI`,async({page})=>{
-    let attempts=0;const requests=await mock(page,()=>++attempts===1?{http:status,ok:false}:{ok:true,state:mode==='confirm'?'subscribed':'unsubscribed'});
+  test(`${mode} HTTP ${status} stops action without claiming completion or inviting retry`,async({page})=>{
+    const requests=await mock(page,()=>({http:status,ok:false}));
     await page.goto('/newsletter/#'+mode+'=same-action-token');
     await page.locator('#nl-action-button').click();
-    await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź wynik ponownie');
+    await expect(page.locator('#nl-action-button')).toBeDisabled();
+    await expect(page.locator('#nl-action-button')).toBeHidden();
     await expect(page.locator('#nl-action-status')).toBeFocused();
-    await expect(page.locator('#nl-action-status')).toContainText('tym samym linkiem');
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#nl-action-button')).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('#nl-action-status')).toContainText(/Newsletter aktywny|Subskrypcja wyłączona/);
-    await expect(page.locator('#nl-action-status')).toBeFocused();
-    await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
-    await expect(page.locator('#nl-action-status')).toBeFocused();
-    expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}},{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
+    await expect(page.locator('#nl-action-status')).not.toContainText('Możesz ponowić');
+    await expect(page.locator('#nl-action-title')).not.toHaveText(/Newsletter aktywny|Subskrypcja wyłączona/);
+    if(status===503){
+      await expect(page.locator('#nl-action-status')).toContainText('Nie potwierdzono zmiany subskrypcji');
+      await expect(page.locator('#nl-action-status')).toContainText('Nie ponawiaj teraz');
+    }
+    await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'same-action-token'}}]);
   });
 }
-
 
 // Live F-02 behavior: this test never enables the test-only interactive override.
 test('maintenance blocks new submissions but preserves bearer link controls without automatic requests',async({page})=>{

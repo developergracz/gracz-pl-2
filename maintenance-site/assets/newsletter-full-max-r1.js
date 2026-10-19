@@ -19,7 +19,10 @@
       var response=await fetch(API+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),mode:'cors',credentials:'omit',signal:controller.signal});
       var body={};try{body=await response.json();}catch(_){}
       if(!response.ok||body.ok!==true){
-        throw new Error(response.status===503?'Usługa jest chwilowo niedostępna.':path==='/newsletter/status-check'?'Nie można sprawdzić statusu za pomocą tego linku. Poproś o nowy bezpieczny link.':'Nie udało się potwierdzić operacji.');
+        var unavailable=response.status===503;
+        var error=new Error(unavailable?'Usługa jest chwilowo niedostępna. Nie potwierdzono zmiany subskrypcji. Nie ponawiaj teraz operacji. W celu wycofania zgody skorzystaj z kontaktu na tej stronie; zgłoszenie wymaga weryfikacji i obsługi.':path==='/newsletter/status-check'?'Nie można sprawdzić statusu za pomocą tego linku. Poproś o nowy bezpieczny link.':'Nie udało się potwierdzić operacji.');
+        error.noRetry=unavailable||(response.status>=400&&response.status<500);
+        throw error;
       }
       return body;
     }catch(error){if(error.name==='AbortError'||error instanceof TypeError)throw new Error(ambiguous);throw error;}
@@ -157,8 +160,8 @@
       setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }catch(error){if(current===generation){
-      if(mode==='status'){
-        actionButton.hidden=true;
+      if(mode==='status'||error.noRetry){
+        actionToken='';actionButton.disabled=true;actionButton.hidden=true;
         setStatus(actionStatus,error.message,true);
         actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       }else{

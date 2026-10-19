@@ -4,7 +4,7 @@ import {createDatabase} from '../persistence/database.mjs';
 import {createPersistenceRepositories} from '../persistence/repositories.mjs';
 import {createNewsletterProofStore} from '../persistence/newsletter-proof-store.mjs';
 import {parseNewsletterIntakePaused} from '../newsletter-config.mjs';
-export function createHeldNewsletterManager(){
+export function createLegacyFixtureManager(){
   const database=createDatabase();
   const manager=createNewsletterManager({
     intakePaused:parseNewsletterIntakePaused(process.env.NEWSLETTER_INTAKE_PAUSED),

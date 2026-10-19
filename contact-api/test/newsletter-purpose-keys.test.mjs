@@ -54,3 +54,25 @@ test('280 missing/unknown/retired/compromised keys and key reuse fail closed',as
   keys[0].key.fill(0);keys[0].state='compromised';
   assert.deepEqual(ring.open('confirm',token),{}); // immutable snapshot; replacement ring for rotation
 });
+
+for(const state of ['retired','compromised'])for(const purpose of purposes){
+  test(`R2 ${state} ${purpose}: no issue/verify/identity without active replacement; no legacy grace`,async()=>{
+    const keys=fixture(),previous=await load(keys),entry=keys.find(k=>k.purpose===purpose);
+    const old=purpose==='identity'?previous.identity('Case@example.test'):previous.seal(purpose,{},1000);
+    entry.state=state;
+    await assert.rejects(load(keys),{code:'NEWSLETTER_PROOF_INVALID'});
+    const nextId=purpose+'-next';
+    keys.push({id:nextId,purpose,state:'active',key:randomBytes(32)});
+    const current=await load(keys);
+    if(purpose==='identity'){
+      assert.notEqual(current.identity('Case@example.test'),old);
+      assert.ok(current.identity('Case@example.test').startsWith('ni2:'+nextId+':'));
+    }else{
+      assert.throws(()=>current.open(purpose,old),{code:'NEWSLETTER_PROOF_INVALID'});
+      const fresh=current.seal(purpose,{},1000);
+      assert.ok(fresh.startsWith('n2.'+nextId+'.'));
+      assert.deepEqual(current.open(purpose,fresh),{});
+      for(const legacy of ['n1.test','ns1.test'])assert.throws(()=>current.open(purpose,legacy));
+    }
+  });
+}

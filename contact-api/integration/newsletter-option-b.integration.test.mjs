@@ -5,14 +5,14 @@ import {createDatabase} from '../persistence/database.mjs';
 import {applyMigrations} from '../persistence/migrator.mjs';
 import {createPersistenceRepositories} from '../persistence/repositories.mjs';
 import {createNewsletterProofStore} from '../persistence/newsletter-proof-store.mjs';
-import {createHeldNewsletterManager} from '../security/newsletter-recovery-hold.mjs';
+import {startHeldHttpServer} from '../test-support/held-http-server.mjs';
 import {applyNewsletterCandidate} from './newsletter-candidate.mjs';
 import {assertDisposableDatabaseUrl} from './test-database-guard.mjs';
 const url=process.env.DATABASE_URL;
 const hash=n=>createHash('sha256').update('synthetic-280-'+n).digest('hex');
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 
-test('280 held recovery preserves complete 2/32/1 legacy history, suppression, fences, tombstones and seals', {skip:!url},async t=>{
+test('R2 real HTTP business server preserves complete 2/32/1 legacy history, suppression, fences, tombstones and seals', {skip:!url},async t=>{
   assertDisposableDatabaseUrl(url);
   const db=createDatabase({connectionString:url});t.after(()=>db.close());
   await db.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public');
@@ -41,10 +41,20 @@ test('280 held recovery preserves complete 2/32/1 legacy history, suppression, f
   const before=await snapshot();
   const counts=(await db.query("SELECT (SELECT count(*) FROM newsletter_contacts)::int contacts,(SELECT count(*) FROM newsletter_consent_events)::int events,(SELECT count(*) FROM newsletter_consent_events WHERE event_type='opt_in_confirmed')::int confirmed")).rows[0];
   assert.deepEqual(counts,{contacts:2,events:32,confirmed:1});
-  for(let restart=0;restart<3;restart++){
-    const held=createHeldNewsletterManager();
-    await Promise.all(['n1.forged','ns1.forged','n2.unknown'].flatMap(token=>['confirm','unsubscribe','checkStatus'].map(method=>assert.rejects(held[method](token),{code:'NEWSLETTER_RECOVERY_HOLD'}))));
-    await assert.rejects(held.requestOptIn({email:'unmapped@example.test'}),{code:'NEWSLETTER_RECOVERY_HOLD'});
+  for(let restart=0;restart<2;restart++){
+    const server=await startHeldHttpServer(t,url);
+    const readiness=await fetch(server.base+'/newsletter/ready');
+    assert.equal(readiness.status,503);
+    assert.deepEqual(await readiness.json(),{ready:false,configured:false,intakePaused:true,schemaReady:false});
+    for(const token of ['n1.test','ns1.test','n2.test'])for(const path of ['subscribe','status-request','confirm','unsubscribe','status-check']){
+      const response=await fetch(server.base+'/newsletter/'+path,{method:'POST',headers:{origin:'https://gracz.pl','content-type':'application/json'},body:JSON.stringify({token,email:'unmapped@example.test',consent:true})});
+      assert.equal(response.status,503);
+      assert.equal(await snapshot()===before,true,'HTTP action must not mutate historical rows');
+    }
+    await server.stop();
+    assert.equal(server.providerCalls,0);
+    assert.doesNotMatch(server.logs,/unmapped@example|n1\.test|ns1\.test|n2\.test/);
+    assert.equal(await snapshot()===before,true,'process shutdown preserves historical rows');
   }
   assert.equal(await snapshot()===before,true,'complete snapshots identical (do not print rows)');
   assert.equal(await proof.consumeStatusToken(token),false);

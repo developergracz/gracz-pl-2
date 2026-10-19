@@ -13,7 +13,7 @@ export function createHeldNewsletterManager() {
     requestOptIn: held, acceptOptIn: held,
     requestStatus: held, acceptStatus: held,
     confirm: held, unsubscribe: held, checkStatus: held,
-    readiness: async () => ({ready:false,configured:false,intakePaused:true,schemaReady:false,recoveryHeld:true}),
+    readiness: async () => ({ready:false,configured:false,intakePaused:true,schemaReady:false}),
     stopAccepting() {},
     async waitForPublicWork() {},
   });

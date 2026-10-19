@@ -13,7 +13,7 @@ test('280 held manager cannot read stores, send, accept consent or report withdr
   const manager=createHeldNewsletterManager();
   assert.equal(manager.enabled,false);
   assert.equal(manager.intakePaused,true);
-  assert.deepEqual(await manager.readiness(),{ready:false,configured:false,intakePaused:true,schemaReady:false,recoveryHeld:true});
+  assert.deepEqual(await manager.readiness(),{ready:false,configured:false,intakePaused:true,schemaReady:false});
   for(const method of ['requestOptIn','acceptOptIn','requestStatus','acceptStatus','confirm','unsubscribe','checkStatus']) {
     for(const input of ['n1.forged','ns1.forged','n2.future',{email:'synthetic@example.test',consent:true}]) {
       await assert.rejects(manager[method](input),{code:'NEWSLETTER_RECOVERY_HOLD',status:503});
