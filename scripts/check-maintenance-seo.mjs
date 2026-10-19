@@ -86,7 +86,7 @@ const sharedHeaderPages = [
 
 for (const page of sharedHeaderPages) {
   const html = read(page);
-  const expectedHeaderVersion = page === "index.html" ? "r5" : "r3";
+  const expectedHeaderVersion = page === "index.html" ? "r6" : "r3";
   requireCheck(
     html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`),
     `${page}: canonical global header stylesheet missing`
@@ -133,6 +133,18 @@ for (const page of [
 
 const sharedHeaderCss = read("assets/global-header-r1.css");
 const sharedHeaderJs = read("assets/global-header-r1.js");
+requireCheck(
+  !home.includes('class="icon-btn search-btn search-btn--mobile"') &&
+    home.includes('class="icon-btn search-btn search-btn--desktop"'),
+  "homepage: redundant search button beside logo must be removed; retain right search"
+);
+requireCheck(
+  sharedHeaderCss.includes("GLOBAL HEADER R6 — homepage has one search action only") &&
+    sharedHeaderCss.includes(".homepage-premium-max .site-header .header-actions .search-btn--desktop{") &&
+    sharedHeaderCss.includes("grid-column:1/-1"),
+  "homepage: the single search button must remain accessible in the mobile menu"
+);
+
 requireCheck(
   sharedHeaderCss.includes(".site-header .icon-btn.search-btn.search-btn--mobile,") &&
     sharedHeaderCss.includes(".site-header .head-icon.head-search-mobile{") &&
