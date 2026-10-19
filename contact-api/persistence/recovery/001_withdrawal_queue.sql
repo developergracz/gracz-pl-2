@@ -8,7 +8,7 @@ REVOKE ALL ON SCHEMA newsletter_recovery FROM PUBLIC;
 CREATE TABLE newsletter_recovery.withdrawal_requests (
   request_id uuid PRIMARY KEY,
   dedupe_tag char(64) NOT NULL UNIQUE CHECK (dedupe_tag ~ '^[0-9a-f]{64}$'),
-  intake_source varchar(24) NOT NULL CHECK (intake_source IN ('routed_email','operator_record','support_request')),
+  intake_source varchar(24) NOT NULL CHECK (intake_source IN ('routed_email','operator_record','support_request','self_service')),
   evidence_ref uuid NOT NULL,
   received_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
@@ -209,6 +209,64 @@ CREATE TRIGGER withdrawal_recipient_links_no_update_delete
   FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
 CREATE TRIGGER withdrawal_recipient_links_no_truncate
   BEFORE TRUNCATE ON newsletter_recovery.verified_recipient_links
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+
+
+-- R9: authenticated RECIPIENT self-service, with no accounts, old n1/ns1
+-- tokens, operator provisioning or new marketing consent. A confirmation
+-- requires a NEW strong mailbox-secret delivered out of band.
+CREATE TABLE newsletter_recovery.self_service_challenges (
+  challenge_id uuid PRIMARY KEY,
+  recipient_tag char(64) NOT NULL CHECK (recipient_tag ~ '^[0-9a-f]{64}$'),
+  token_tag char(64) NOT NULL UNIQUE CHECK (token_tag ~ '^[0-9a-f]{64}$'),
+  ciphertext bytea NOT NULL CHECK (octet_length(ciphertext) >= 16),
+  nonce bytea NOT NULL CHECK (octet_length(nonce) = 12),
+  auth_tag bytea NOT NULL CHECK (octet_length(auth_tag) = 16),
+  requested_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  expires_at timestamptz NOT NULL CHECK (expires_at > requested_at)
+);
+CREATE INDEX self_service_recent_by_recipient ON
+  newsletter_recovery.self_service_challenges(recipient_tag,requested_at DESC);
+
+CREATE TABLE newsletter_recovery.self_service_verified (
+  challenge_id uuid PRIMARY KEY REFERENCES newsletter_recovery.self_service_challenges(challenge_id),
+  withdrawal_request_id uuid NOT NULL UNIQUE
+    REFERENCES newsletter_recovery.withdrawal_requests(request_id),
+  verified_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE newsletter_recovery.self_service_provider_intents (
+  challenge_id uuid PRIMARY KEY REFERENCES newsletter_recovery.self_service_verified(challenge_id),
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE newsletter_recovery.self_service_provider_verified (
+  challenge_id uuid PRIMARY KEY REFERENCES newsletter_recovery.self_service_provider_intents(challenge_id),
+  verified_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+-- No historical consent event is rewritten, and provider-off alone does not
+-- claim first-party consent ledger reconciliation.
+CREATE TRIGGER self_service_challenges_append_only
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.self_service_challenges
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_challenges_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.self_service_challenges
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_verified_append_only
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.self_service_verified
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_verified_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.self_service_verified
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_intents_append_only
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.self_service_provider_intents
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_intents_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.self_service_provider_intents
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_provider_verified_append_only
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.self_service_provider_verified
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_provider_verified_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.self_service_provider_verified
   FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
 
 REVOKE ALL ON ALL TABLES IN SCHEMA newsletter_recovery FROM PUBLIC;
