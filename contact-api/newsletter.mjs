@@ -429,7 +429,15 @@ export function createNewsletterManager({
     requireEnabled();
     const data = decrypt(token, "unsubscribe");
     const resources = await ensureResources();
-    await recoverProviderOffObligation(data.email, resources);
+    // A global withdrawal hold must never force a provider marketing ON
+    // transition just to process an explicit opt-out. A legacy provider
+    // obligation in subscribed state is left durable until the off path below
+    // and follow-up reconciliation; it is NOT evidence of a completed send.
+    const beforeWithdrawal = await consentStore.getContact(consentSubjectHash(data.email));
+    if (!beforeWithdrawal?.provider_blocked_at ||
+        beforeWithdrawal.current_state !== "subscribed") {
+      await recoverProviderOffObligation(data.email, resources);
+    }
     const existing = await getContact(data.email);
 
     if (existing) {
