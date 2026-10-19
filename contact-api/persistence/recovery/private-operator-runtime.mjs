@@ -1,3 +1,4 @@
+import {createPublicKey} from 'node:crypto';
 import {createOperatorAssertionVerifier} from './operator-assertion.mjs';
 import {createOwnerApprovedOperatorEnrollment} from './operator-enrollment.mjs';
 import {createWithdrawalEvidenceVerifier} from './withdrawal-evidence.mjs';
@@ -22,6 +23,14 @@ export function createPrivateWithdrawalOperatorRuntime({
     throw new TypeError('Private operator runtime requires all trusted services');
   }
 
+  // Separate Owner approval cannot be issued by the login provider itself.
+  const identityPub=createPublicKey(operatorAuthority.publicKeyPem)
+    .export({format:'der',type:'spki'});
+  const ownerPub=createPublicKey(ownerApprovalAuthority.publicKeyPem)
+    .export({format:'der',type:'spki'});
+  if(identityPub.equals(ownerPub) ||
+     operatorAuthority.issuer===ownerApprovalAuthority.issuer)
+    throw new TypeError('Owner approval must be independent from operator login');
   // MFA verifier rejects unsigned/stale assertions and requires WebAuthn MFA.
   // The operator DB account is additionally checked for every operation.
   const assertionVerifier=createOperatorAssertionVerifier({
