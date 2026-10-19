@@ -20,7 +20,40 @@ export function createWithdrawalSendFence(database) {
   if (typeof database?.transaction !== 'function') {
     throw new TypeError('Durable transactional PostgreSQL client is required');
   }
+  async function withAdmissionLock(effect) {
+    return database.transaction(async client => {
+      let result;
+      try {
+        await client.query(
+          'SELECT pg_advisory_xact_lock_shared($1::int,$2::int)',
+          WITHDRAWAL_EGRESS_LOCK
+        );
+        result = await client.query(
+          "SELECT " +
+          " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_requests LIMIT 1) AS requests_exist, " +
+          " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_no_send_obligations LIMIT 1) AS obligations_exist"
+        );
+      } catch {
+        throw refuse('WITHDRAWAL_SEND_FENCE_UNAVAILABLE');
+      }
+      if (result.rowCount !== 1 ||
+          typeof result.rows[0]?.requests_exist !== 'boolean' ||
+          typeof result.rows[0]?.obligations_exist !== 'boolean') {
+        throw refuse('WITHDRAWAL_SEND_FENCE_UNAVAILABLE');
+      }
+      if (result.rows[0].requests_exist || result.rows[0].obligations_exist) {
+        throw refuse('WITHDRAWAL_SEND_BLOCKED');
+      }
+      return effect();
+    });
+  }
   return Object.freeze({
+    async checkAvailable() {
+      // Readiness takes the same shared lock and checks the same durable
+      // suppression obligations, without authorizing external effects.
+      try { await withAdmissionLock(async () => {});return true; }
+      catch { return false; }
+    },
     async withSendPermit(effect) {
       if (typeof effect !== 'function') {
         throw new TypeError('A bounded outbound provider effect callback is required');
@@ -29,39 +62,9 @@ export function createWithdrawalSendFence(database) {
       // preventing intake from acknowledging a concurrent withdrawal.
       // Intake obtains the matching exclusive lock before any durable write.
       // When a withdrawal arrives first, this check observes it and refuses.
-      return database.transaction(async client => {
-        let result;
-        try {
-        await client.query(
-          'SELECT pg_advisory_xact_lock_shared($1::int,$2::int)',
-          WITHDRAWAL_EGRESS_LOCK
-        );
-
-        // Fail closed if the schema is not yet installed, privileges are
-        // insufficient, PostgreSQL is unreachable, or the check times out.
-        // No raw addresses, bearer tokens or email hashes are selected.
-        result = await client.query(
-          "SELECT " +
-          " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_requests LIMIT 1) AS requests_exist, " +
-          " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_no_send_obligations LIMIT 1) AS obligations_exist"
-        );
-        } catch {
-          // PG/privilege/schema failures never expose SQL or names in the app API.
-          throw refuse('WITHDRAWAL_SEND_FENCE_UNAVAILABLE');
-        }
-        if (result.rowCount !== 1 ||
-            typeof result.rows[0]?.requests_exist !== 'boolean' ||
-            typeof result.rows[0]?.obligations_exist !== 'boolean') {
-          throw refuse('WITHDRAWAL_SEND_FENCE_UNAVAILABLE');
-        }
-        if (result.rows[0].requests_exist || result.rows[0].obligations_exist) {
-          throw refuse('WITHDRAWAL_SEND_BLOCKED');
-        }
-        // The callback must implement independent idempotency and bounded
-        // provider retries. A lost provider ACK cannot be inferred safe from
-        // a successful DB transaction. This guard is NOT a send ledger.
-        return effect();
-      });
+      // The callback owns provider idempotency and ambiguity recovery.
+      // The fence does not claim that a lost provider ACK is safe.
+      return withAdmissionLock(effect);
     }
   });
 }
