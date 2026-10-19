@@ -34,7 +34,7 @@ test('#282 accepts only two independent authority-signed matching proofs, return
   const {requestId,subjectRef,mailboxToken,mappingToken}=pair();
   const result=verifier.verifyPair({expectedRequestId:requestId,mailboxToken,mappingToken});
   assert.deepEqual(Object.keys(result),
-    ['requestId','legacySubjectRef','mailboxProofRef','mappingProofRef','mailboxProofTag','mappingProofTag']);
+    ['requestId','mailboxTag','legacySubjectRef','mailboxProofRef','mappingProofRef','mailboxProofTag','mappingProofTag']);
   assert.equal(result.requestId,requestId);
   assert.equal(result.legacySubjectRef,subjectRef);
   assert.match(result.mailboxProofTag,/^[0-9a-f]{64}$/);
