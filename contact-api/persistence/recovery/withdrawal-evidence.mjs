@@ -70,6 +70,17 @@ export function createWithdrawalEvidenceVerifier({mailbox,mapping,now=()=>Date.n
   const mpPub=mp.key.export({format:'der',type:'spki'});
   if(mb.issuer===mp.issuer||mbPub.equals(mpPub)||mb.audience===mp.audience)inputError();
   return Object.freeze({
+    verifyMailbox({mailboxToken,expectedRequestId,expectedMailboxTag}={}) {
+      if(!validUuid(expectedRequestId)||!TAG.test(expectedMailboxTag||''))throw denied();
+      const proof=open(mailboxToken,mb);
+      if(proof.request_id.toLowerCase()!==expectedRequestId.toLowerCase()||
+         proof.mailbox_tag!==expectedMailboxTag)throw denied();
+      return Object.freeze({
+        requestId:expectedRequestId.toLowerCase(),
+        mailboxTag:proof.mailbox_tag,
+        challengeRef:proof.challenge_ref.toLowerCase()
+      });
+    },
     verifyPair({mailboxToken,mappingToken,expectedRequestId}={}) {
       if(!validUuid(expectedRequestId))throw denied();
       const mail=open(mailboxToken,mb),map=open(mappingToken,mp);
