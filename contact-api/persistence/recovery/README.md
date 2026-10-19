@@ -80,6 +80,43 @@ that a withdrawal is confirmed.
   Integration tests are collected by the existing persistence CI glob,
   restricted by the disposable loopback gracz_test guard.
 
+## R8: private authentication and verified identity mapping
+
+- The private runtime in `private-operator-runtime.mjs` wires the existing
+  strict pinned Ed25519/WebAuthn-MFA assertion verifier to two individually
+  authenticated operators, an *independently* signed Owner enrollment approval,
+  verified mailbox + mapping authorities, private PostgreSQL and Resend-off.
+  No public route, shared password, human DB login, auto-enrollment or
+  default accounts are added. Missing config fails closed.
+- One-time enrollment requires two different fresh IdP MFA assertions and a
+  short-lived Owner-signed approval bound to the **exact ordered pair** of
+  private subject tags. Operator roles are persisted and checked on every
+  operation; account disable flags remain effective.
+- Mapping is computed for one requested mailbox only: use fully matching
+  independently protected legacy consent-secret copies, the exact old HMAC
+  derivation, a fresh signed **independent mailbox challenge**, one historical
+  contact and consent event, an installed F03 table, and a read-only Resend
+  suppression/contact check. The separate pinned mapping issuer signs the
+  matching legacy subject reference and mailbox tag. No mass rehash/import.
+- An authenticated operator may link that record to a verified request. The
+  recipient email is encrypted at rest with a **new purpose-specific AES-256-GCM
+  key**, and subject/email/mailbox identifiers are uniqueness constrained.
+  Wrong tag, mismatching historical HMAC, missing history/F03, ambiguous
+  mapping or incorrect escrow comparison causes **DENY / NO SEND**. It never
+  creates consent or clears old suppression.
+- Only private authenticated mapping can resolve the recipient for the
+  existing Resend provider-OFF path. An independent readback of suppression
+  and provider contact is still required, and full historical consent
+  reconciliation has *not* been implemented.
+
+**Operationally not yet provisioned:** real Owner/backup MFA identities and
+WebAuthn enrollment, independent Owner approval signing key, independent
+mailbox-challenge issuer, new private mapping-signing/encryption/mailbox keys,
+verified exact Render-vault/Owner-escrow legacy secret equivalence, private DB
+schema/least-privilege grants and live provider access. Those require an actual
+restricted Owner-authorized operational setup; synthetic CI credentials do
+not count. Never copy/print secrets, raw subject maps or recipient lists.
+
 ## Deliberately not implemented / release blocking
 
 - No online operator login or MFA setup: an independent verified identity
