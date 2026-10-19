@@ -4,6 +4,7 @@ import {createHash,createHmac,generateKeyPairSync,randomUUID,sign} from 'node:cr
 import {createOperatorAssertionVerifier} from '../persistence/recovery/operator-assertion.mjs';
 import {createOwnerApprovedOperatorEnrollment} from '../persistence/recovery/operator-enrollment.mjs';
 import {createVerifiedRecipientMapping,legacySubjectRefFromHash} from '../persistence/recovery/verified-recipient-mapping.mjs';
+import {createPrivateWithdrawalOperatorRuntime} from '../persistence/recovery/private-operator-runtime.mjs';
 
 const epoch=1_800_000_000_000,sec=Math.floor(epoch/1000);
 const op=generateKeyPairSync('ed25519'),owner=generateKeyPairSync('ed25519');
@@ -140,4 +141,22 @@ test('#282 missing F03, missing historic events, wrong escrow or mismatched mail
     legacySubjectRef:f.ref,mailboxTag:'a'.repeat(64),email:f.address,operatorRef:f.actor}),
     {code:'WITHDRAWAL_IDENTITY_UNRESOLVED'});
   assert.equal(f.row,null);
+});
+
+
+test('#282 private runtime fails closed without real IdP, separate owner approval and escrow',()=>{
+  const db={transaction:async()=>{},query:async()=>{}};
+  assert.throws(()=>createPrivateWithdrawalOperatorRuntime({database:db}),TypeError);
+  assert.throws(()=>createPrivateWithdrawalOperatorRuntime({
+    database:db,operatorAuthority:{
+      issuer,audience:'withdrawal-operator',keyId:'synthetic-op',
+      publicKeyPem:op.publicKey.export({format:'pem',type:'spki'})
+    },
+    ownerApprovalAuthority:{
+      issuer,audience:'operator-pair',keyId:'synthetic-owner',
+      publicKeyPem:op.publicKey.export({format:'pem',type:'spki'})
+    },
+    mailboxEvidenceAuthority:{},mappingEvidenceAuthority:{},
+    resendApiKey:'synthetic',
+  }),TypeError);
 });
