@@ -119,17 +119,31 @@ const withdrawal = WITHDRAWAL_ENABLED
 async function checkWithdrawalReady() {
   if(!WITHDRAWAL_ENABLED||!database.enabled||!withdrawal)return false;
   try {
-    // One bounded, read-only PostgreSQL statement validates all required
-    // relations AND the runtime SELECT privileges before exposing the form.
-    await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_challenges c ' +
-      'CROSS JOIN newsletter_recovery.withdrawal_requests r ' +
-      'CROSS JOIN newsletter_recovery.self_service_provider_intents i ' +
-      'CROSS JOIN newsletter_recovery.self_service_mail_budget b ' +
-      'CROSS JOIN newsletter_recovery.self_service_verified v ' +
-      'CROSS JOIN newsletter_recovery.self_service_provider_verified p LIMIT 0'
+    // One bounded READ ONLY statement: recovery tables and SELECT grants,
+    // exact F03 migration receipt and sealed historical cutover are mandatory.
+    // Never expose a withdrawal link from a partially migrated database.
+    const result=await database.queryBounded(
+      "WITH recovery_grants AS (" +
+      "SELECT 1 FROM newsletter_recovery.self_service_challenges c " +
+      "CROSS JOIN newsletter_recovery.withdrawal_requests r " +
+      "CROSS JOIN newsletter_recovery.withdrawal_no_send_obligations n " +
+      "CROSS JOIN newsletter_recovery.self_service_provider_intents i " +
+      "CROSS JOIN newsletter_recovery.self_service_mail_budget b " +
+      "CROSS JOIN newsletter_recovery.self_service_verified v " +
+      "CROSS JOIN newsletter_recovery.self_service_provider_verified p LIMIT 0)" +
+      "SELECT " +
+      "EXISTS(SELECT 1 FROM public.newsletter_schema_migrations " +
+      "WHERE version='newsletter/001_opt_in_requests' AND " +
+      "trim(checksum)='66566f04025ab96aff2d03e3426e70a38f8d13c657a81a81c503ed00cb304b99') AS f03, " +
+      "EXISTS(SELECT 1 FROM public.idempotency_keys " +
+      "WHERE scope='newsletter-cutover' AND key_hash=repeat('0',64) " +
+      "AND response_body->>'imported'='true' " +
+      "AND response_body->>'cutoverBefore'='2026-10-15T19:29:32.000Z' " +
+      "AND COALESCE(response_body->>'writerStarted','false')='false') AS cutover, " +
+      "(SELECT count(*) FROM recovery_grants) AS checked"
     );
-    return true;
+    return result.rowCount===1 && result.rows[0]?.f03===true &&
+      result.rows[0]?.cutover===true;
   }catch{return false;}
 }
 
