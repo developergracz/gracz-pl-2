@@ -505,3 +505,12 @@
     flex:0 0 auto!important;
   }
 }
+
+
+/* GLOBAL HEADER R5 — prevent mobile search controls showing on desktop. */
+@media(min-width:1181px){
+  .site-header .icon-btn.search-btn.search-btn--mobile,
+  .site-header .head-icon.head-search-mobile{
+    display:none!important;
+  }
+}
