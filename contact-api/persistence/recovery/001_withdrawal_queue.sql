@@ -173,5 +173,43 @@ CREATE TRIGGER withdrawal_off_verified_no_truncate
   BEFORE TRUNCATE ON newsletter_recovery.withdrawal_provider_off_verified
   FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
 
+
+-- Separate owner-signed enrollment attestation: two individually MFA verified
+-- subjects. No accounts are provisioned during migration.
+CREATE TABLE newsletter_recovery.operator_enrollments (
+  approval_tag char(64) PRIMARY KEY CHECK (approval_tag ~ '^[0-9a-f]{64}$'),
+  primary_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  backup_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  approved_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  CHECK (primary_ref <> backup_ref)
+);
+
+-- Legacy identity is only mapped AFTER independent signed mailbox + mapping
+-- proofs and a matches-existing-legacy-ledger check with escrow-verified key.
+-- The encrypted mailbox is never logged and cannot overwrite legacy evidence.
+CREATE TABLE newsletter_recovery.verified_recipient_links (
+  request_id uuid PRIMARY KEY REFERENCES newsletter_recovery.withdrawal_verified_evidence(request_id),
+  legacy_subject_ref uuid NOT NULL UNIQUE,
+  mailbox_tag char(64) NOT NULL UNIQUE CHECK (mailbox_tag ~ '^[0-9a-f]{64}$'),
+  legacy_email_hash char(64) NOT NULL UNIQUE CHECK (legacy_email_hash ~ '^[0-9a-f]{64}$'),
+  ciphertext bytea NOT NULL CHECK (octet_length(ciphertext) >= 16),
+  nonce bytea NOT NULL CHECK (octet_length(nonce)=12),
+  auth_tag bytea NOT NULL CHECK (octet_length(auth_tag)=16),
+  linked_by uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  linked_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TRIGGER withdrawal_operator_enrollment_no_update_delete
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.operator_enrollments
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_operator_enrollment_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.operator_enrollments
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_recipient_links_no_update_delete
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.verified_recipient_links
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_recipient_links_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.verified_recipient_links
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+
 REVOKE ALL ON ALL TABLES IN SCHEMA newsletter_recovery FROM PUBLIC;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
