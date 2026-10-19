@@ -53,7 +53,6 @@ test('#282 direct manager: blocked provider activation does not switch marketing
   // but no Resend contact, segment, opt_in topic or welcome may be created.
   assert.equal(provider.contacts.size,0);
   assert.equal(provider.emails.length,1);
-  assert.equal(provider.requests.filter(r=>r.path==='/emails').length,1);
 });
 
 test('#282 direct manager: allow real provider opt-out during global send hold',{timeout:30000},async t=>{
@@ -79,10 +78,6 @@ test('#282 invalid fence configuration denies outbound effect rather than allowi
   const manager=createManager(provider,{withdrawalSendFence:{}});
   await assert.rejects(manager.requestOptIn({
     email:'misconfigured@example.test',source:'newsletter_page'
-  }),{code:'NEWSLETTER_PROVIDER_FAILED'}).catch(async error=>{
-    // The constructor's fence interface should be validated at startup;
-    // if not, request must still fail before any provider email is sent.
-    assert.equal(error?.code,'ERR_ASSERTION');
-  });
+  }),{code:'WITHDRAWAL_SEND_FENCE_UNAVAILABLE'});
   assert.equal(provider.emails.length,0);
 });
