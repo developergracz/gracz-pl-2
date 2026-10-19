@@ -9,7 +9,11 @@ test('newsletter page explicitly blocks submissions and preserves manual withdra
   assert.match(js,/NEWSLETTER_PUBLIC_INTAKE_ENABLED=false/);
   assert.match(js,/if\(!NEWSLETTER_PUBLIC_INTAKE_ENABLED\).*return/);
   assert.match(js,/actionButton\.disabled=true/);
-  assert.match(js,/\['nl-submit','nl-request-button','nl-action-button'\]/);
+  // #280 supersedes #276 only for compromised envelopes; ordinary pause remains distinct.
+  assert.match(js,/\['nl-submit','nl-request-button'\]/);
+  assert.ok(js.includes('if(/^(n1|ns1)(\\.|$)/.test(token))'));
+  assert.match(js,/Ten link został unieważniony/);
+  assert.match(js,/Nie potwierdzono zmiany subskrypcji/);
   assert.match(html,/id="nl-maintenance-notice"/);
   assert.match(html,/mailto:czsocha@wp\.pl\?subject=/);
   assert.match(html,/nie oznacza automatycznego wypisania/i);

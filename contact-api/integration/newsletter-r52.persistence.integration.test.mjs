@@ -47,13 +47,13 @@ async function checkoutFaultProxy(admin) {
   return {url:String(proxyUrl),get kills(){return kills;},recover(){enabled=false;},async close(){for(const socket of sockets)socket.destroy();await new Promise(r=>server.close(r));}};
 }
 
-test('R5.2 real API survives PostgreSQL checkout FATAL before await resumes', {skip:!url,timeout:30000},async t=>{
+test('R5.2 legacy API characterization survives PostgreSQL checkout FATAL before await resumes', {skip:!url,timeout:30000},async t=>{
   assertDisposableDatabaseUrl(url);const admin=createDatabase({connectionString:url});t.after(()=>admin.close());
   await applyMigrations(admin);await applyNewsletterCandidate(admin,url);
   const proxy=await checkoutFaultProxy(admin);t.after(()=>proxy.close());
   const provider=await createProvider(t),port=await getFreePort(),base='http://127.0.0.1:'+port;
-  const child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),stdio:['ignore','pipe','pipe'],env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL:proxy.url,PORT:String(port),HOST:'127.0.0.1',
-    NEWSLETTER_INTAKE_PAUSED:'false',NEWSLETTER_SECRET:'test-'+'n'.repeat(40),NEWSLETTER_CONSENT_HASH_SECRET:'test-'+'h'.repeat(40),CONTACT_REPLY_SECRET:'test-'+'r'.repeat(40),CONTACT_DATA_ENCRYPTION_SECRET:'test-'+'c'.repeat(40),
+  const child=spawn(process.execPath,['test-support/legacy-newsletter-server.mjs'],{cwd:new URL('..',import.meta.url),stdio:['ignore','pipe','pipe'],env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL:proxy.url,PORT:String(port),HOST:'127.0.0.1',
+    NEWSLETTER_INTAKE_PAUSED:'false',NEWSLETTER_SECRET:'test-'+'n'.repeat(40),NEWSLETTER_CONSENT_HASH_SECRET:'test-consent-'+'h'.repeat(40),CONTACT_REPLY_SECRET:'test-'+'r'.repeat(40),CONTACT_DATA_ENCRYPTION_SECRET:'test-'+'c'.repeat(40),
     RESEND_API_KEY:'test-key',NEWSLETTER_RESEND_API_KEY:'test-key',RESEND_API_BASE:provider.base,RESEND_ENDPOINT:provider.base+'/emails',EMAIL_FROM:'sender@example.test',CONTACT_TO:'owner@example.test'}});
   let stderr='';child.stderr.on('data',c=>stderr+=c);child.stdout.resume();
   t.after(async()=>{if(child.exitCode===null&&child.signalCode===null){const exit=once(child,'exit');child.kill('SIGKILL');await exit;}});

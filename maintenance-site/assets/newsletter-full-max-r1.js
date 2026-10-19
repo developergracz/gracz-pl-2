@@ -74,6 +74,15 @@
     if(mode)window.history.replaceState(null,'',window.location.pathname+window.location.search);
     clearNavigation();
     if(!mode||!token)return;
+    // Compromised formats are permanently revoked, independent of intake/readiness.
+    if(/^(n1|ns1)(\.|$)/.test(token)){
+      subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
+      actionButton.disabled=true;actionButton.hidden=false;
+      actionKicker.textContent='NIEAKTUALNY LINK';actionTitle.textContent='Link został unieważniony';
+      actionCopy.textContent='W celu wycofania zgody skorzystaj z kontaktu na tej stronie. Zgłoszenie wymaga weryfikacji i obsługi.';
+      setStatus(actionStatus,'Ten link został unieważniony. Nie potwierdzono zmiany subskrypcji.',true);
+      token='';return;
+    }
     actionMode=mode;actionToken=token;
     subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
     var copy={

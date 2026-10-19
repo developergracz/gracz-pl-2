@@ -6,6 +6,8 @@ on:
       - "maintenance-site/**"
       - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
+      - "scripts/test-newsletter-maintenance-notice.mjs"
+      - "scripts/test-footer-newsletter-premium-validation.mjs"
       - ".github/workflows/maintenance-seo.yml"
   push:
     branches:
@@ -14,6 +16,8 @@ on:
       - "maintenance-site/**"
       - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
+      - "scripts/test-newsletter-maintenance-notice.mjs"
+      - "scripts/test-footer-newsletter-premium-validation.mjs"
       - ".github/workflows/maintenance-seo.yml"
 
 permissions:
@@ -30,7 +34,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24.21.0"
       - name: Check contact scripts
         run: |
           node --check maintenance-site/assets/legal-links.js
@@ -63,6 +67,8 @@ jobs:
         run: npm --prefix contact-api install --ignore-scripts --no-audit --no-fund
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
+      - name: Run maintenance revocation and Premium footer regressions
+        run: node --test scripts/test-newsletter-maintenance-notice.mjs scripts/test-footer-newsletter-premium-validation.mjs
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
       - name: Run security headers and CSP gate
@@ -98,7 +104,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24.21.0"
+      - name: Verify isolated process-test hook support
+        run: node --input-type=module -e "import { registerHooks } from 'node:module'; if (typeof registerHooks !== 'function') process.exit(1)"
       - name: Install persistence dependencies
         run: npm --prefix contact-api install --no-audit --no-fund
       - name: Run PostgreSQL persistence integration tests

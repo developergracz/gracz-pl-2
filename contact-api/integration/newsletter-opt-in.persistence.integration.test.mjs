@@ -151,7 +151,7 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     assert.equal((await store.listConsentEvents(consentEmailHash(email))).length,1);
   });
 
-  await t.test("HTTP API restart preserves dedup and neutral new/pending/active responses", async () => {
+  await t.test("legacy HTTP characterization preserves dedup across restart", async () => {
     const provider = await createProvider(t);
     const port = await getFreePort();
     let child;
@@ -165,7 +165,7 @@ test("B1 real PostgreSQL durable DOI reservations", {skip:!DATABASE_URL}, async 
     };
     t.after(stop);
     const start = async () => {
-      child = spawn(process.execPath,['server.mjs'], {
+      child = spawn(process.execPath,['test-support/legacy-newsletter-server.mjs'], {
         cwd:new URL('..',import.meta.url), stdio:['ignore','ignore','pipe'],
         env:{PATH:process.env.PATH,NODE_ENV:'test',DATABASE_URL,HOST:'127.0.0.1',PORT:String(port),
           RESEND_API_KEY:'test-key',NEWSLETTER_RESEND_API_KEY:'test-key',RESEND_API_BASE:provider.base,
