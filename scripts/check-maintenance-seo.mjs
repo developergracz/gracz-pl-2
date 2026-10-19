@@ -86,7 +86,7 @@ const sharedHeaderPages = [
 
 for (const page of sharedHeaderPages) {
   const html = read(page);
-  const expectedHeaderVersion = page === "index.html" ? "r4" : "r3";
+  const expectedHeaderVersion = page === "index.html" ? "r5" : "r3";
   requireCheck(
     html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`),
     `${page}: canonical global header stylesheet missing`
@@ -133,6 +133,13 @@ for (const page of [
 
 const sharedHeaderCss = read("assets/global-header-r1.css");
 const sharedHeaderJs = read("assets/global-header-r1.js");
+requireCheck(
+  sharedHeaderCss.includes(".site-header .icon-btn.search-btn.search-btn--mobile,") &&
+    sharedHeaderCss.includes(".site-header .head-icon.head-search-mobile{") &&
+    /@media\(min-width:1181px\)\{\s*\.site-header \.icon-btn\.search-btn\.search-btn--mobile,\s*\.site-header \.head-icon\.head-search-mobile\{\s*display:none!important;/.test(sharedHeaderCss),
+  "global header: mobile search must stay hidden on desktop"
+);
+
 requireCheck(
   sharedHeaderCss.includes("linear-gradient(180deg,#ffe9ad,#f2b43f)"),
   "global header: approved gold register treatment missing"
