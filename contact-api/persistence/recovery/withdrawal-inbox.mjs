@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {WITHDRAWAL_EGRESS_LOCK} from './withdrawal-send-fence.mjs';
 
 // Internal library only: not wired to routes, provider, operator UI or migrations.
 // Caller must first independently authenticate its trusted intake channel.
@@ -22,6 +23,9 @@ export function createWithdrawalInbox(database) {
       if(!SOURCES.has(source))throw new TypeError('Unknown trusted intake source');
       if(typeof evidenceRef!=='string'||!UUID.test(evidenceRef))throw new TypeError('Opaque evidence UUID required');
       return database.transaction(async client=>{
+        // Block any concurrent egress permit until this durable intake commits.
+        // The send side holds the matching shared lock through its provider call.
+        await client.query('SELECT pg_advisory_xact_lock($1::int,$2::int)',WITHDRAWAL_EGRESS_LOCK);
         const requestId=randomUUID();
         const inserted=await client.query(
           "INSERT INTO newsletter_recovery.withdrawal_requests(request_id,dedupe_tag,intake_source,evidence_ref) " +
