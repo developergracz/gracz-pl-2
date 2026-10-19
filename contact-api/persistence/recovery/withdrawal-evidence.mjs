@@ -78,6 +78,7 @@ export function createWithdrawalEvidenceVerifier({mailbox,mapping,now=()=>Date.n
          mail.mailbox_tag!==map.mailbox_tag)throw denied();
       return Object.freeze({
         requestId:expectedRequestId.toLowerCase(),
+        mailboxTag:mail.mailbox_tag,
         legacySubjectRef:map.subject_ref.toLowerCase(),
         mailboxProofRef:mail.challenge_ref.toLowerCase(),
         mappingProofRef:map.mapping_ref.toLowerCase(),
