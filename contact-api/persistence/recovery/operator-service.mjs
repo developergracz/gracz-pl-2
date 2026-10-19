@@ -51,7 +51,7 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
         // Never return evidence_ref, dedupe_tag or any mailbox evidence.
         return result.rows.map(r=>Object.freeze({
           requestId:r.request_id,source:r.intake_source,
-          receivedAt:r.received_at,state:r.latest_state==='VERIFIED_PENDING'?'VERIFIED_PENDING':r.latest_state==='QUARANTINED'?'QUARANTINED':'PENDING'
+          receivedAt:r.received_at,state:r.latest_state==='PROVIDER_OFF_VERIFIED'?'PROVIDER_OFF_VERIFIED':r.latest_state==='VERIFIED_PENDING'?'VERIFIED_PENDING':r.latest_state==='QUARANTINED'?'QUARANTINED':'PENDING'
         }));
       });
     },
