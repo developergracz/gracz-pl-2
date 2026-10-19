@@ -9,6 +9,7 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createNewsletterManager } from "./newsletter.mjs";
+import { createWithdrawalSendFence } from "./persistence/recovery/withdrawal-send-fence.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
@@ -51,6 +52,9 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
 }
 
 const database = createDatabase();
+// Business runtime cannot silently bypass durable withdrawal admission.
+// Without PostgreSQL or installed recovery schema, the fence denies effects.
+const withdrawalSendFence = createWithdrawalSendFence(database);
 const persistence = database.enabled
   ? createPersistenceRepositories(database)
   : null;
@@ -120,6 +124,7 @@ const newsletter = createNewsletterManager({
   consentStore: newsletterConsentStore,
   proofStore: useTestNewsletterConsentStore ? createMemoryNewsletterProofStore() : (database.enabled ? createNewsletterProofStore(database) : null),
   consentHashSecret: NEWSLETTER_CONSENT_HASH_SECRET,
+  withdrawalSendFence,
 });
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
