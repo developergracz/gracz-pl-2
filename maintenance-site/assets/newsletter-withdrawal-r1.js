@@ -31,13 +31,24 @@
   }
   // NEW single-use proof in a URL fragment, stripped from browser history
   // before any network request, navigation or visible action.
-  var hash=new URLSearchParams(window.location.hash.slice(1));
-  var raw=hash.get('withdrawal');
-  if(raw!==null){
+  function readProofFragment(){
+    var hash=new URLSearchParams(window.location.hash.slice(1));
+    var raw=hash.get('withdrawal');
+    // Navigation to any other fragment also discards stale proof authority.
+    proof=null;panel.hidden=true;
+    if(raw===null)return;
     history.replaceState(null,'',location.pathname+location.search);
     var match=/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/i.exec(raw);
-    if(match)proof={challengeId:match[1],token:match[2]};
+    if(!match)return;
+    proof={challengeId:match[1],token:match[2]};
+    confirmButton.disabled=false;confirmButton.hidden=false;
+    message(confirmation,'');
+    if(ready){panel.hidden=false;panel.scrollIntoView({block:'nearest'});}
   }
+  readProofFragment();
+  window.addEventListener('hashchange',readProofFragment);
+  window.addEventListener('popstate',readProofFragment);
+  window.addEventListener('pageshow',function(event){if(event.persisted)readProofFragment();});
   async function checkReady(){
     try{
       var answer=await fetchBounded('/newsletter/withdrawal-ready',null,'GET');
