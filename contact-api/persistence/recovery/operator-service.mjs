@@ -9,7 +9,7 @@ function deny() {const e=new Error('OPERATOR_ACCESS_DENIED');e.code='OPERATOR_AC
 function fail(code){const e=new Error(code);e.code=code;return e;}
 function validUuid(value){return typeof value==='string'&&UUID.test(value);}
 
-export function createWithdrawalOperatorService({database,assertionVerifier,evidenceVerifier}={}) {
+export function createWithdrawalOperatorService({database,assertionVerifier,evidenceVerifier,providerOff,resolveVerifiedRecipient}={}) {
   if(typeof database?.transaction!=='function'||typeof assertionVerifier?.verify!=='function')
     throw new TypeError('Durable database and pinned assertion verifier required');
 
@@ -99,6 +99,108 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
         // Never return CONFIRMED or trigger any provider operation.
         return Object.freeze({requestId,state:'VERIFIED_PENDING',
           providerState:'RECONCILIATION_PENDING',confirmed:false});
+      });
+    },
+    async reconcileProviderOff({signedToken,requestId}={}) {
+      if(!validUuid(requestId))throw new TypeError('Invalid withdrawal ID');
+      if(typeof providerOff?.ensureOff!=='function'||
+         typeof providerOff?.verifyOff!=='function'||
+         typeof resolveVerifiedRecipient!=='function')
+        throw fail('WITHDRAWAL_PROVIDER_OFF_NOT_CONFIGURED');
+
+      // Phase 1: commit an immutable OFF intent BEFORE touching Resend.
+      // A lost response/crash leaves an unresolved intent and a global send HOLD.
+      const reserved=await authorized(signedToken,async(client,actor)=>{
+        const item=await client.query(
+          "SELECT v.legacy_subject_ref,v.mailbox_tag FROM newsletter_recovery.withdrawal_verified_evidence v " +
+          "JOIN newsletter_recovery.withdrawal_no_send_obligations n ON n.request_id=v.request_id " +
+          "WHERE v.request_id=$1 FOR UPDATE OF v",[requestId]
+        );
+        if(item.rowCount!==1)throw fail('WITHDRAWAL_VERIFIED_EVIDENCE_REQUIRED');
+        const latest=await client.query(
+          "SELECT event_kind FROM newsletter_recovery.withdrawal_events " +
+          "WHERE request_id=$1 ORDER BY event_id DESC LIMIT 1",[requestId]
+        );
+        if(!['VERIFIED_PENDING','PROVIDER_OFF_VERIFIED'].includes(latest.rows[0]?.event_kind))
+          throw fail('WITHDRAWAL_VERIFICATION_STATE_CONFLICT');
+        await audit(client,actor,'RECONCILE_PROVIDER_OFF',requestId);
+        const inserted=await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_provider_off_intents(request_id,actor_ref) " +
+          "VALUES($1,$2) ON CONFLICT(request_id) DO NOTHING RETURNING request_id",
+          [requestId,actor.operatorRef]
+        );
+        return Object.freeze({
+          actorRef:actor.operatorRef,
+          mailboxTag:item.rows[0].mailbox_tag,
+          legacySubjectRef:item.rows[0].legacy_subject_ref,
+          newIntent:inserted.rowCount===1,
+          alreadyOff:latest.rows[0].event_kind==='PROVIDER_OFF_VERIFIED'
+        });
+      });
+
+      // The resolver is a separate TRUSTED identity service; the operator
+      // cannot submit a recipient directly. It must present a mailbox tag
+      // matching both independently signed proofs stored in PostgreSQL.
+      let target;
+      try {target=await resolveVerifiedRecipient({
+        requestId,legacySubjectRef:reserved.legacySubjectRef
+      });} catch {throw fail('WITHDRAWAL_RECIPIENT_UNRESOLVED');}
+      if(!target||typeof target.email!=='string'||
+         target.email!==target.email.trim().toLowerCase()||
+         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.email)||
+         target.mailboxTag!==reserved.mailboxTag||
+         target.legacySubjectRef!==reserved.legacySubjectRef)
+        throw fail('WITHDRAWAL_RECIPIENT_UNRESOLVED');
+
+      // An existing intent may mean a timed-out mutation. Inspect its state;
+      // NEVER blindly perform the same external side effect a second time.
+      if(!reserved.newIntent) {
+        let existing;
+        try {existing=await providerOff.verifyOff(target.email);}catch {
+          throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+        }
+        if(existing?.off!==true)throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+      } else {
+        try {const done=await providerOff.ensureOff(target.email);
+          if(done?.off!==true)throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+        } catch {throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');}
+      }
+      // Independent read-after-write; no success from provider ACK alone.
+      let observed;
+      try {observed=await providerOff.verifyOff(target.email);}catch {
+        throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+      }
+      if(observed?.off!==true)throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+
+      return database.transaction(async client=>{
+        const locked=await client.query(
+          "SELECT request_id FROM newsletter_recovery.withdrawal_requests " +
+          "WHERE request_id=$1 FOR UPDATE",[requestId]
+        );
+        if(locked.rowCount!==1)throw fail('WITHDRAWAL_REQUEST_NOT_FOUND');
+        const intent=await client.query(
+          "SELECT request_id FROM newsletter_recovery.withdrawal_provider_off_intents WHERE request_id=$1",
+          [requestId]
+        );
+        if(intent.rowCount!==1)throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
+        const wrote=await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_provider_off_verified(request_id,actor_ref) " +
+          "VALUES($1,$2) ON CONFLICT(request_id) DO NOTHING RETURNING request_id",
+          [requestId,reserved.actorRef]
+        );
+        if(wrote.rowCount===1) {
+          await client.query(
+            "INSERT INTO newsletter_recovery.withdrawal_events " +
+            "(request_id,event_kind,actor_ref) VALUES($1,'PROVIDER_OFF_VERIFIED',$2)",
+            [requestId,reserved.actorRef]
+          );
+        }
+        // First-party historic consent ledger remains unresolved. Global
+        // no-send obligation is NOT cleared, and CONFIRMED is never returned.
+        return Object.freeze({
+          requestId,state:'PROVIDER_OFF_VERIFIED',
+          confirmed:false,firstPartyConsentReconciliation:'PENDING'
+        });
       });
     },
     async quarantine({signedToken,requestId,reason}={}) {
