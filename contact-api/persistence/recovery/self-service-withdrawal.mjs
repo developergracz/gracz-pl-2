@@ -77,6 +77,17 @@ export function createSelfServiceWithdrawal({
           [tag]
         );
         if(recent.rowCount)return null;
+        // Atomic global hourly budget prevents open-relay abuse across IPs
+        // and process restarts. A rejected issuance looks neutral publicly.
+        const budget=await client.query(
+          "INSERT INTO newsletter_recovery.self_service_mail_budget " +
+          "(hour_bucket,accepted_count) VALUES(date_trunc('hour',clock_timestamp()),1) "+
+          "ON CONFLICT(hour_bucket) DO UPDATE "+
+          "SET accepted_count=newsletter_recovery.self_service_mail_budget.accepted_count+1 "+
+          "WHERE newsletter_recovery.self_service_mail_budget.accepted_count<60 "+
+          "RETURNING accepted_count"
+        );
+        if(budget.rowCount!==1)return null;
         const challengeId=randomUUID(),token=randomBytes(32).toString('base64url');
         const expiresAt=new Date(now()+TTL_MS),data=seal(recipient,challengeId);
         await client.query(
