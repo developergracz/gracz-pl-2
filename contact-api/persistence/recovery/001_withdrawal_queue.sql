@@ -66,9 +66,7 @@ CREATE TRIGGER withdrawal_receipt_after_insert
 -- Account onboarding/revocation requires independent, restricted Owner controls.
 CREATE TABLE newsletter_recovery.operator_accounts (
   operator_ref uuid PRIMARY KEY,
-  subject_tag char(64) NOT NULL UNIQUE CHECK (subject_tag ~ '^[0-9a-f]{64}
-REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
-),
+  subject_tag char(64) NOT NULL UNIQUE CHECK (subject_tag ~ '^[0-9a-f]{64}$'),
   role varchar(12) NOT NULL CHECK (role IN ('primary','backup')),
   disabled_at timestamptz,
   enrolled_at timestamptz NOT NULL DEFAULT clock_timestamp()
@@ -82,9 +80,7 @@ CREATE UNIQUE INDEX withdrawal_one_backup
 -- Every operator action (including a private read) must be durably audited.
 CREATE TABLE newsletter_recovery.operator_actions (
   audit_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  token_use char(64) NOT NULL UNIQUE CHECK (token_use ~ '^[0-9a-f]{64}
-REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
-),
+  token_use char(64) NOT NULL UNIQUE CHECK (token_use ~ '^[0-9a-f]{64}$'),
   operator_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
   action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE')),
   request_id uuid REFERENCES newsletter_recovery.withdrawal_requests(request_id),
