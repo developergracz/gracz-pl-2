@@ -79,9 +79,9 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
         const obligationId=randomUUID();
         await client.query(
           "INSERT INTO newsletter_recovery.withdrawal_verified_evidence "+
-          "(request_id,actor_ref,legacy_subject_ref,mailbox_proof_ref,mapping_proof_ref,mailbox_proof_tag,mapping_proof_tag) "+
-          "VALUES ($1,$2,$3,$4,$5,$6,$7)",
-          [requestId,actor.operatorRef,proof.legacySubjectRef,proof.mailboxProofRef,
+          "(request_id,actor_ref,legacy_subject_ref,mailbox_tag,mailbox_proof_ref,mapping_proof_ref,mailbox_proof_tag,mapping_proof_tag) "+
+          "VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+          [requestId,actor.operatorRef,proof.legacySubjectRef,proof.mailboxTag,proof.mailboxProofRef,
            proof.mappingProofRef,proof.mailboxProofTag,proof.mappingProofTag]
         );
         await client.query(
