@@ -6,6 +6,8 @@ import {createDatabase} from '../persistence/database.mjs';
 import {assertDisposableDatabaseUrl} from './test-database-guard.mjs';
 import {createWithdrawalInbox} from '../persistence/recovery/withdrawal-inbox.mjs';
 import {createWithdrawalSendFence,WITHDRAWAL_EGRESS_LOCK} from '../persistence/recovery/withdrawal-send-fence.mjs';
+import {createSelfServiceWithdrawal} from '../persistence/recovery/self-service-withdrawal.mjs';
+import {randomBytes} from 'node:crypto';
 
 const url=process.env.DATABASE_URL;
 const schemaSql=await readFile(new URL('../persistence/recovery/001_withdrawal_queue.sql',import.meta.url),'utf8');
@@ -141,4 +143,68 @@ test('#282 public readiness stays false for missing schema and ANY pending withd
   assert.equal(await fence.checkAvailable(),false);
   await db.query('DROP SCHEMA newsletter_recovery CASCADE');
   assert.equal(await fence.checkAvailable(),false);
+});
+
+
+function selfService(db,{providerFails=false}={}) {
+  const delivered=[];
+  const provider={calls:0,off:false,
+    async ensureOff(){this.calls++;if(providerFails)throw new Error('synthetic timeout');this.off=true;return {off:true};},
+    async verifyOff(){return {off:this.off};}
+  };
+  const api=createSelfServiceWithdrawal({
+    database:db,
+    recipientTagKey:Buffer.alloc(32,1),
+    challengeKey:Buffer.alloc(32,2),
+    encryptionKey:Buffer.alloc(32,3),
+    challengeMailer:{async sendChallenge(message){delivered.push(message);}},
+    providerOff:provider
+  });
+  return {api,delivered,provider};
+}
+
+test('#283 self-service: new one-time mailbox proof triggers provider OFF and durable NO SEND without operator',{timeout:30000},async t=>{
+  const {db,fence}=await fixture(t);
+  const {api,delivered,provider}=selfService(db);
+  assert.equal(await fence.checkAvailable(),true);
+  assert.deepEqual(await api.requestChallenge({email:'synthetic@example.test'}),
+    {state:'request_received',confirmed:false});
+  assert.deepEqual(await api.requestChallenge({email:'synthetic@example.test'}),
+    {state:'request_received',confirmed:false});
+  assert.equal(delivered.length,1);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_requests')).rows[0].n,0);
+  const msg=delivered[0];
+  assert.equal(msg.token.includes('@'),false);
+  await assert.rejects(api.confirmChallenge({
+    challengeId:msg.challengeId,token:randomBytes(32).toString('base64url')
+  }),{code:'WITHDRAWAL_CHALLENGE_REJECTED'});
+  assert.equal(provider.calls,0);
+  const done=await api.confirmChallenge({challengeId:msg.challengeId,token:msg.token});
+  assert.deepEqual(done,{state:'provider_off_verified',confirmed:false});
+  assert.equal(provider.calls,1);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.self_service_provider_verified')).rows[0].n,1);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_requests')).rows[0].n,1);
+  const encrypted=(await db.query('SELECT ciphertext FROM newsletter_recovery.self_service_challenges')).rows[0].ciphertext;
+  assert.equal(encrypted.includes(Buffer.from('synthetic@example.test')),false);
+  assert.equal(await fence.checkAvailable(),false);
+  await assert.rejects(api.confirmChallenge({challengeId:msg.challengeId,token:msg.token}),
+    {code:'WITHDRAWAL_CHALLENGE_REJECTED'});
+  assert.equal(provider.calls,1);
+});
+
+test('#283 self-service: ambiguous provider result never confirms, preserves durable hold, rejects replay',{timeout:30000},async t=>{
+  const {db,fence}=await fixture(t);
+  const {api,delivered,provider}=selfService(db,{providerFails:true});
+  await api.requestChallenge({email:'rejected@example.test'});
+  assert.equal(delivered.length,1);
+  const msg=delivered[0];
+  assert.deepEqual(await api.confirmChallenge({challengeId:msg.challengeId,token:msg.token}),
+    {state:'request_received',confirmed:false});
+  assert.equal(provider.calls,1);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.self_service_provider_intents')).rows[0].n,1);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.self_service_provider_verified')).rows[0].n,0);
+  assert.equal(await fence.checkAvailable(),false);
+  await assert.rejects(api.confirmChallenge({challengeId:msg.challengeId,token:msg.token}),
+    {code:'WITHDRAWAL_CHALLENGE_REJECTED'});
+  assert.equal(provider.calls,1);
 });
