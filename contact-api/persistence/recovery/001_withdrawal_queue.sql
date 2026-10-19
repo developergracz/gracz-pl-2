@@ -62,5 +62,48 @@ CREATE TRIGGER withdrawal_receipt_after_insert
   AFTER INSERT ON newsletter_recovery.withdrawal_requests
   FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.record_withdrawal_receipt();
 
+-- No operator accounts are provisioned by this migration: default deny.
+-- Account onboarding/revocation requires independent, restricted Owner controls.
+CREATE TABLE newsletter_recovery.operator_accounts (
+  operator_ref uuid PRIMARY KEY,
+  subject_tag char(64) NOT NULL UNIQUE CHECK (subject_tag ~ '^[0-9a-f]{64}
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
+),
+  role varchar(12) NOT NULL CHECK (role IN ('primary','backup')),
+  disabled_at timestamptz,
+  enrolled_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE UNIQUE INDEX withdrawal_one_primary
+  ON newsletter_recovery.operator_accounts(role) WHERE role='primary' AND disabled_at IS NULL;
+CREATE UNIQUE INDEX withdrawal_one_backup
+  ON newsletter_recovery.operator_accounts(role) WHERE role='backup' AND disabled_at IS NULL;
+
+-- Each short-lived, signed MFA assertion is single-use at the DB boundary.
+-- Every operator action (including a private read) must be durably audited.
+CREATE TABLE newsletter_recovery.operator_actions (
+  audit_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  token_use char(64) NOT NULL UNIQUE CHECK (token_use ~ '^[0-9a-f]{64}
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
+),
+  operator_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE')),
+  request_id uuid REFERENCES newsletter_recovery.withdrawal_requests(request_id),
+  recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  CHECK (
+    (action_kind='INSPECT_PENDING' AND request_id IS NULL) OR
+    (action_kind='QUARANTINE' AND request_id IS NOT NULL)
+  )
+);
+CREATE TRIGGER withdrawal_operator_actions_no_update_delete
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.operator_actions
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_operator_actions_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.operator_actions
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+
+-- A restricted operator service must have only SELECT on accounts/requests/events
+-- and INSERT on actions/events, never UPDATE/DELETE/DDL; role grants and
+-- identity-provider onboarding require a separate reviewed future release.
+
 REVOKE ALL ON ALL TABLES IN SCHEMA newsletter_recovery FROM PUBLIC;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA newsletter_recovery FROM PUBLIC;
