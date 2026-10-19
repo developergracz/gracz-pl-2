@@ -60,8 +60,15 @@ async function fixture(t){
   await db.query('DROP SCHEMA IF EXISTS newsletter_recovery CASCADE');
   await db.query(sql);
   const inbox=createWithdrawalInbox(db);
+  const mapped=new Map();
+  const provider={off:false,fail:false,writes:0,
+    async ensureOff(){this.writes++;if(this.fail)throw new Error('synthetic provider uncertainty');this.off=true;return {off:true};},
+    async verifyOff(){return {off:this.off};}
+  };
   const ops=createWithdrawalOperatorService({
-    database:db,assertionVerifier:operatorVerifier,evidenceVerifier
+    database:db,assertionVerifier:operatorVerifier,evidenceVerifier,
+    providerOff:provider,
+    resolveVerifiedRecipient:async({legacySubjectRef})=>mapped.get(legacySubjectRef)
   });
   const sub=randomUUID(),ref=randomUUID();
   const signer=(jti=randomUUID())=>jwt(operatorConfig,operatorKeys,{
@@ -73,7 +80,7 @@ async function fixture(t){
   );
   const request=async tag=>inbox.receive({dedupeTag:tag||'a'.repeat(64),
     source:'routed_email',evidenceRef:randomUUID()});
-  return {db,ops,signer,request,ref};
+  return {db,ops,signer,request,ref,mapped,provider};
 }
 
 test('#282 two independently signed proofs yield durable VERIFIED_PENDING and NO-SEND obligation, never confirmed',{timeout:30000},async t=>{
@@ -192,4 +199,61 @@ test('#282 evidence transaction failure rolls back audit, verification event and
     signedToken:signer(),requestId,mailboxToken:p.mailboxToken,mappingToken:p.mappingToken
   });
   assert.equal(done.state,'VERIFIED_PENDING');
+});
+
+
+test('#282 signed operator + two proofs: Resend OFF verified and durable, but NOT legacy consent confirmed',{timeout:30000},async t=>{
+  const {db,ops,signer,request,mapped,provider}=await fixture(t);
+  const {requestId}=await request('7'.repeat(64));
+  const p=proofs(requestId);
+  await ops.recordVerifiedPending({signedToken:signer(),requestId,
+    mailboxToken:p.mailboxToken,mappingToken:p.mappingToken});
+  mapped.set(p.subjectRef,{
+    email:'synthetic@example.test',legacySubjectRef:p.subjectRef,
+    mailboxTag:'b'.repeat(64)
+  });
+  const result=await ops.reconcileProviderOff({signedToken:signer(),requestId});
+  assert.deepEqual(result,{requestId,state:'PROVIDER_OFF_VERIFIED',
+    confirmed:false,firstPartyConsentReconciliation:'PENDING'});
+  assert.equal(provider.writes,1);
+  const resultAgain=await ops.reconcileProviderOff({signedToken:signer(),requestId});
+  assert.equal(resultAgain.confirmed,false);
+  assert.equal(provider.writes,1);
+  assert.deepEqual((await db.query(
+    'SELECT event_kind FROM newsletter_recovery.withdrawal_events ORDER BY event_id'
+  )).rows.map(x=>x.event_kind),['RECEIVED','VERIFIED_PENDING','PROVIDER_OFF_VERIFIED']);
+  assert.equal((await db.query(
+    'SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_provider_off_verified'
+  )).rows[0].n,1);
+  assert.equal((await db.query(
+    'SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_no_send_obligations'
+  )).rows[0].n,1);
+});
+
+test('#282 unknown provider outcome stays HOLD; retry observes provider only, no blind write',{timeout:30000},async t=>{
+  const {db,ops,signer,request,mapped,provider}=await fixture(t);
+  const {requestId}=await request('8'.repeat(64));
+  const p=proofs(requestId);
+  await ops.recordVerifiedPending({signedToken:signer(),requestId,
+    mailboxToken:p.mailboxToken,mappingToken:p.mappingToken});
+  mapped.set(p.subjectRef,{
+    email:'synthetic@example.test',legacySubjectRef:p.subjectRef,
+    mailboxTag:'b'.repeat(64)
+  });
+  provider.fail=true;
+  await assert.rejects(ops.reconcileProviderOff({signedToken:signer(),requestId}),
+    {code:'WITHDRAWAL_PROVIDER_UNCERTAIN'});
+  assert.equal(provider.writes,1);
+  await assert.rejects(ops.reconcileProviderOff({signedToken:signer(),requestId}),
+    {code:'WITHDRAWAL_PROVIDER_UNCERTAIN'});
+  assert.equal(provider.writes,1);
+  assert.equal((await db.query(
+    'SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_provider_off_intents'
+  )).rows[0].n,1);
+  assert.equal((await db.query(
+    'SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_provider_off_verified'
+  )).rows[0].n,0);
+  assert.equal((await db.query(
+    'SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_events'
+  )).rows[0].n,2);
 });
