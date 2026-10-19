@@ -228,6 +228,19 @@ CREATE TABLE newsletter_recovery.self_service_challenges (
 CREATE INDEX self_service_recent_by_recipient ON
   newsletter_recovery.self_service_challenges(recipient_tag,requested_at DESC);
 
+-- Global, restart-safe anti-abuse budget. This guards transactional mail
+-- across rotating addresses/IPs without retaining their plaintext identifiers.
+CREATE TABLE newsletter_recovery.self_service_mail_budget (
+  hour_bucket timestamptz PRIMARY KEY,
+  accepted_count integer NOT NULL DEFAULT 0 CHECK (accepted_count >= 0 AND accepted_count <= 60)
+);
+CREATE TRIGGER self_service_mail_budget_no_delete
+  BEFORE DELETE ON newsletter_recovery.self_service_mail_budget
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER self_service_mail_budget_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.self_service_mail_budget
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+
 CREATE TABLE newsletter_recovery.self_service_verified (
   challenge_id uuid PRIMARY KEY REFERENCES newsletter_recovery.self_service_challenges(challenge_id),
   withdrawal_request_id uuid NOT NULL UNIQUE
