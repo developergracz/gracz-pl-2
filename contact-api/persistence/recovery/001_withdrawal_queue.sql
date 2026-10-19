@@ -16,7 +16,7 @@ CREATE TABLE newsletter_recovery.withdrawal_requests (
 CREATE TABLE newsletter_recovery.withdrawal_events (
   event_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   request_id uuid NOT NULL REFERENCES newsletter_recovery.withdrawal_requests(request_id),
-  event_kind varchar(24) NOT NULL CHECK (event_kind IN ('RECEIVED','QUARANTINED','VERIFIED_PENDING')),
+  event_kind varchar(24) NOT NULL CHECK (event_kind IN ('RECEIVED','QUARANTINED','VERIFIED_PENDING','PROVIDER_OFF_VERIFIED')),
   actor_ref uuid,
   reason_code varchar(32),
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -24,7 +24,7 @@ CREATE TABLE newsletter_recovery.withdrawal_events (
     (event_kind='RECEIVED' AND actor_ref IS NULL AND reason_code IS NULL) OR
     (event_kind='QUARANTINED' AND actor_ref IS NOT NULL AND
      reason_code IS NOT NULL AND reason_code IN ('UNVERIFIED','UNMAPPED','AMBIGUOUS','PROVIDER_UNKNOWN','OTHER')) OR
-    (event_kind='VERIFIED_PENDING' AND actor_ref IS NOT NULL AND reason_code IS NULL)
+    (event_kind IN ('VERIFIED_PENDING','PROVIDER_OFF_VERIFIED') AND actor_ref IS NOT NULL AND reason_code IS NULL)
   )
 );
 CREATE UNIQUE INDEX withdrawal_one_receipt
@@ -83,12 +83,12 @@ CREATE TABLE newsletter_recovery.operator_actions (
   audit_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   token_use char(64) NOT NULL UNIQUE CHECK (token_use ~ '^[0-9a-f]{64}$'),
   operator_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
-  action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE','RECORD_VERIFIED_PENDING')),
+  action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF')),
   request_id uuid REFERENCES newsletter_recovery.withdrawal_requests(request_id),
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   CHECK (
     (action_kind='INSPECT_PENDING' AND request_id IS NULL) OR
-    (action_kind IN ('QUARANTINE','RECORD_VERIFIED_PENDING') AND request_id IS NOT NULL)
+    (action_kind IN ('QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF') AND request_id IS NOT NULL)
   )
 );
 CREATE TRIGGER withdrawal_operator_actions_no_update_delete
@@ -137,6 +137,39 @@ CREATE TRIGGER withdrawal_no_send_obligations_no_update_delete
   FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
 CREATE TRIGGER withdrawal_no_send_obligations_no_truncate
   BEFORE TRUNCATE ON newsletter_recovery.withdrawal_no_send_obligations
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+
+
+-- One durable intent is written BEFORE any external provider-off request.
+-- A second process can inspect its effect, but must not blindly repeat it.
+CREATE TABLE newsletter_recovery.withdrawal_provider_off_intents (
+  request_id uuid PRIMARY KEY REFERENCES newsletter_recovery.withdrawal_verified_evidence(request_id),
+  actor_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+
+-- Readback of team-wide suppression AND Resend unsubscribed contact state.
+-- This is not itself a legacy consent-ledger withdrawal confirmation.
+CREATE TABLE newsletter_recovery.withdrawal_provider_off_verified (
+  request_id uuid PRIMARY KEY REFERENCES newsletter_recovery.withdrawal_provider_off_intents(request_id),
+  actor_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
+  verified_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE UNIQUE INDEX withdrawal_one_provider_off_event
+  ON newsletter_recovery.withdrawal_events(request_id)
+  WHERE event_kind='PROVIDER_OFF_VERIFIED';
+
+CREATE TRIGGER withdrawal_off_intents_no_update_delete
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.withdrawal_provider_off_intents
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_off_intents_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.withdrawal_provider_off_intents
+  FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_off_verified_no_update_delete
+  BEFORE UPDATE OR DELETE ON newsletter_recovery.withdrawal_provider_off_verified
+  FOR EACH ROW EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
+CREATE TRIGGER withdrawal_off_verified_no_truncate
+  BEFORE TRUNCATE ON newsletter_recovery.withdrawal_provider_off_verified
   FOR EACH STATEMENT EXECUTE FUNCTION newsletter_recovery.reject_withdrawal_mutation();
 
 REVOKE ALL ON ALL TABLES IN SCHEMA newsletter_recovery FROM PUBLIC;
