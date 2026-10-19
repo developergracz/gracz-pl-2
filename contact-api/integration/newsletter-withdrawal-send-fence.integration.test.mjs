@@ -208,3 +208,19 @@ test('#283 self-service: ambiguous provider result never confirms, preserves dur
     {code:'WITHDRAWAL_CHALLENGE_REJECTED'});
   assert.equal(provider.calls,1);
 });
+
+
+test('#283 global hourly challenge budget refuses additional mail with neutral response',{timeout:30000},async t=>{
+  const {db}=await fixture(t);
+  const {api,delivered}=selfService(db);
+  await db.query(
+    "INSERT INTO newsletter_recovery.self_service_mail_budget(hour_bucket,accepted_count) "+
+    "VALUES(date_trunc('hour',clock_timestamp()),60)"
+  );
+  assert.deepEqual(await api.requestChallenge({email:'limit@example.test'}),
+    {state:'request_received',confirmed:false});
+  assert.equal(delivered.length,0);
+  assert.equal((await db.query(
+    "SELECT count(*)::int AS n FROM newsletter_recovery.self_service_challenges"
+  )).rows[0].n,0);
+});
