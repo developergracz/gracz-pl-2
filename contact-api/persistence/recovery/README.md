@@ -1,6 +1,6 @@
-# #282 — private withdrawal queue, operator core and dual-proof pending obligation (R3)
+# #283 — recipient self-service withdrawal and optional private legacy recovery
 
-**DRAFT / HARD HOLD / NOT A LIVE WITHDRAWAL SERVICE.**
+**DRAFT / HARD HOLD / NOT YET A LIVE WITHDRAWAL SERVICE.**
 
 This PR adds a separate additive PostgreSQL recovery namespace (not CONTACT005
 or F03), append-only opaque withdrawal intake receipts, and an internal
@@ -8,6 +8,39 @@ operator-only read/quarantine core. Nothing is installed or connected to the
 website, email provider or public HTTP endpoints. The system never claims
 that a withdrawal is confirmed.
 
+## Owner-approved simplification R9 (2026-10-19)
+
+**Primary path requires NO identity provider, operator account, passkey or paid auth vendor.**
+The recipient requests a NEW mailbox challenge, receives a random single-use proof
+only via transactional email, then confirms it. This creates a durable
+append-only withdrawal request and provider-OFF intent. Resend suppression
+and contact unsubscribed state must be checked by a fresh provider readback.
+Uncertain results remain NO SEND and are not reported as completed. Old
+potentially compromised n1/ns1 tokens are never accepted for this flow.
+
+- `self-service-withdrawal.mjs` plus the `self_service_*` tables implement the
+  isolated flow. Three independent 32-byte owner-supplied purpose keys
+  separate subject HMAC, challenge proof and encrypted email. One challenge
+  per recipient per 15 minutes, one-time 32-byte proof with 15-minute TTL,
+  no raw token or recipient in responses or persisted plaintext.
+- Durable withdrawal begins ONLY after confirmation of independent mailbox
+  control. The exclusive PostgreSQL advisory lock serializes verified intake
+  against in-flight marketing sends. Immutable Resend OFF intent precedes
+  the external effect; no blind retry is made on unknown provider outcomes.
+- A recipient can stop marketing at Resend without historical HMAC recovery.
+  The legacy consent ledger is not rewritten: provider_off_verified does NOT
+  mean full legal/first-party CONFIRMED reconciliation.
+- Existing two-operator MFA and historical alias utilities are retained
+  as OPTIONAL offline exceptions, never prerequisites for end-user withdrawal.
+  Any exceptional admin access still requires restricted authentication.
+
+**Not production-ready yet:** no public challenge request/confirmation route,
+transactional sender, persistent global IP rate limiting, Origin/CSRF defense,
+production F03 and recovery migration, configured new purpose keys, verified
+provider integration or first-party historic consent reconciliation.
+Production `server.mjs` remains the held implementation and all live sends
+remain disabled. Unavailable mailbox proof requires a monitored private
+support escalation, never a fabricated confirmation.
 ## Implemented
 
 - Immutable opaque request intake with a purpose-separated HMAC dedupe tag;
