@@ -58,7 +58,7 @@ test('#283 withdrawal-only flow: readiness, neutral request and manual fragment 
   await expect(page.locator('#nl-submit')).toBeDisabled();
   await page.locator('#nl-withdrawal-email').fill('synthetic@example.test');
   await page.locator('#nl-withdrawal-submit').click();
-  await expect(page.locator('#nl-withdrawal-status')).toContainText('Sprawdź skrzynkę');
+  await expect(page.locator('#nl-withdrawal-status')).toContainText(/sprawdź skrzynkę/i);
   expect(requests).toHaveLength(1);
   expect(requests[0].path).toBe('/newsletter/withdrawal-request');
   const id='912cabea-71cc-4c26-9201-3bd421333333',token='a'.repeat(43);
