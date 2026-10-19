@@ -1,3 +1,5 @@
+import {randomUUID} from 'node:crypto';
+
 // Restricted internal operator operations. Not exposed to any HTTP listener.
 // Requires a separately deployed trusted identity gateway and purpose-separated
 // signed MFA assertions. Role always comes from DB, never from JWT claims.
@@ -7,7 +9,7 @@ function deny() {const e=new Error('OPERATOR_ACCESS_DENIED');e.code='OPERATOR_AC
 function fail(code){const e=new Error(code);e.code=code;return e;}
 function validUuid(value){return typeof value==='string'&&UUID.test(value);}
 
-export function createWithdrawalOperatorService({database,assertionVerifier}={}) {
+export function createWithdrawalOperatorService({database,assertionVerifier,evidenceVerifier}={}) {
   if(typeof database?.transaction!=='function'||typeof assertionVerifier?.verify!=='function')
     throw new TypeError('Durable database and pinned assertion verifier required');
 
@@ -49,8 +51,54 @@ export function createWithdrawalOperatorService({database,assertionVerifier}={})
         // Never return evidence_ref, dedupe_tag or any mailbox evidence.
         return result.rows.map(r=>Object.freeze({
           requestId:r.request_id,source:r.intake_source,
-          receivedAt:r.received_at,state:r.latest_state==='QUARANTINED'?'QUARANTINED':'PENDING'
+          receivedAt:r.received_at,state:r.latest_state==='VERIFIED_PENDING'?'VERIFIED_PENDING':r.latest_state==='QUARANTINED'?'QUARANTINED':'PENDING'
         }));
+      });
+    },
+    async recordVerifiedPending({signedToken,requestId,mailboxToken,mappingToken}={}) {
+      // No trusted proof authority configured: explicitly fail closed.
+      if(typeof evidenceVerifier?.verifyPair!=='function')throw fail('WITHDRAWAL_PROOF_PROVIDER_UNAVAILABLE');
+      if(!validUuid(requestId))throw new TypeError('Invalid request identifier');
+      // Role/MFA verification alone never establishes mailbox control or an
+      // unambiguous one-to-one mapping to a historical subject.
+      const proof=evidenceVerifier.verifyPair({
+        expectedRequestId:requestId,mailboxToken,mappingToken
+      });
+      return authorized(signedToken,async(client,actor)=>{
+        const locked=await client.query(
+          "SELECT request_id FROM newsletter_recovery.withdrawal_requests WHERE request_id=$1 FOR UPDATE",
+          [requestId]
+        );
+        if(locked.rowCount!==1)throw fail('WITHDRAWAL_REQUEST_NOT_FOUND');
+        const latest=await client.query(
+          "SELECT event_kind FROM newsletter_recovery.withdrawal_events "+
+          "WHERE request_id=$1 ORDER BY event_id DESC LIMIT 1",[requestId]
+        );
+        if(!['RECEIVED','QUARANTINED'].includes(latest.rows[0]?.event_kind))
+          throw fail('WITHDRAWAL_VERIFICATION_STATE_CONFLICT');
+        const obligationId=randomUUID();
+        await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_verified_evidence "+
+          "(request_id,actor_ref,legacy_subject_ref,mailbox_proof_ref,mapping_proof_ref,mailbox_proof_tag,mapping_proof_tag) "+
+          "VALUES ($1,$2,$3,$4,$5,$6,$7)",
+          [requestId,actor.operatorRef,proof.legacySubjectRef,proof.mailboxProofRef,
+           proof.mappingProofRef,proof.mailboxProofTag,proof.mappingProofTag]
+        );
+        await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_no_send_obligations "+
+          "(obligation_id,request_id,legacy_subject_ref) VALUES ($1,$2,$3)",
+          [obligationId,requestId,proof.legacySubjectRef]
+        );
+        await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_events "+
+          "(request_id,event_kind,actor_ref) VALUES ($1,'VERIFIED_PENDING',$2)",
+          [requestId,actor.operatorRef]
+        );
+        await audit(client,actor,'RECORD_VERIFIED_PENDING',requestId);
+        // Provider-off and legally effective suppression remain unverified.
+        // Never return CONFIRMED or trigger any provider operation.
+        return Object.freeze({requestId,state:'VERIFIED_PENDING',
+          providerState:'RECONCILIATION_PENDING',confirmed:false});
       });
     },
     async quarantine({signedToken,requestId,reason}={}) {
