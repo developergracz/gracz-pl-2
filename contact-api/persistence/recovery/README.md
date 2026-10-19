@@ -1,4 +1,4 @@
-# #282 — isolated private withdrawal queue and operator-core R2
+# #282 — private withdrawal queue, operator core and dual-proof pending obligation (R3)
 
 **DRAFT / HARD HOLD / NOT A LIVE WITHDRAWAL SERVICE.**
 
@@ -24,6 +24,18 @@ that a withdrawal is confirmed.
   Read actions and quarantine actions are committed with append-only audits.
 - A quarantine never sends mail, changes consent, creates alias mappings or
   claims that a withdrawal was processed. Conflicting quarantine outcomes fail.
+- **New R3:** independent mailbox-control and legacy one-to-one mapping evidence
+  verifiers, each pinned to a different Ed25519 signer, issuer, audience and
+  purpose. A source claiming only email delivery or a compromised legacy
+  bearer can never pass these checks. Test signatures are synthetic.
+- When both independent signatures match the same request and opaque mailbox
+  tag, an authenticated operator may atomically append VERIFIED_PENDING,
+  durable immutable proof references and a RECONCILIATION_PENDING no-send
+  obligation. Such entries are not integrated with production suppression,
+  so they are **NOT a completed withdrawal** and do not enable sending.
+- New focused PG16/18 tests require durable rollback if an obligation or audit
+  cannot be written, deny forged/mismatched proofs and prove no confirmed
+  effect. All writes occur only in a disposable gracz_test fixture.
 - Synthetic unit tests and isolated PostgreSQL 16/18 integration tests.
   Integration tests are collected by the existing persistence CI glob,
   restricted by the disposable loopback gracz_test guard.
@@ -44,10 +56,15 @@ that a withdrawal is confirmed.
 - No private encrypted mailbox evidence store, source attestation or
   automatic Cloudflare inbound-to-queue bridge. A message delivered to
   an inbox does not establish requester identity.
-- No recipient-independent mailbox challenge, one-to-one historical subject
-  proof, durable VERIFIED_PENDING transition, actual suppression/provider-off
-  execution, legacy-alias reconciliation, or CONFIRMED withdrawal.
-  Neither the queue nor the operator can clear an UNKNOWN/no-send fence.
+- No real independent mailbox challenge issuer, independently reviewed
+  one-to-one historical identity mapping service or enrolled signing keys.
+  The signature verifier and VERIFIED_PENDING storage work only with future
+  properly authorized external evidence services; synthetic proofs do not
+  satisfy this production requirement.
+- No integration of pending no-send obligations into the live newsletter sender,
+  historical subject reconciliation, durable consent withdrawal, Resend
+  provider-off/suppression execution or CONFIRMED withdrawal. No operator
+  may clear an UNKNOWN/no-send fence solely from mailbox possession.
 - No verified operator rehearsal, intake monitoring evidence, account
   onboarding, privacy/legal approval, retention policy or production restore
   proof. Owner operational statements are not substitutes for verification.
