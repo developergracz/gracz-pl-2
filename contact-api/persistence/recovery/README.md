@@ -36,6 +36,18 @@ that a withdrawal is confirmed.
 - New focused PG16/18 tests require durable rollback if an obligation or audit
   cannot be written, deny forged/mismatched proofs and prove no confirmed
   effect. All writes occur only in a disposable gracz_test fixture.
+- **New R4: offline global send-admission fence:** the internal
+  `withdrawal-send-fence.mjs` is a fail-closed wrapper around a synthetic
+  provider callback. It holds a PostgreSQL shared transaction advisory lock
+  while the bounded effect executes; `withdrawal-inbox.mjs` acquires the matching
+  exclusive lock before accepting an intake request. This serializes durable
+  intake against admitted sends without relying on an email-to-legacy-subject
+  guess. ANY unresolved request blocks ALL newsletter marketing egress.
+  Missing schema, missing privileges or database failures deny the permit.
+  PG16/18 tests prove blocking, lack of bypass, rollback and the lock race.
+  **This wrapper is not yet connected to the real newsletter send paths.**
+  The live sender remains intentionally disabled; the guard alone DOES NOT
+  make newsletter or provider integration safe to activate.
 - Synthetic unit tests and isolated PostgreSQL 16/18 integration tests.
   Integration tests are collected by the existing persistence CI glob,
   restricted by the disposable loopback gracz_test guard.
@@ -61,9 +73,10 @@ that a withdrawal is confirmed.
   The signature verifier and VERIFIED_PENDING storage work only with future
   properly authorized external evidence services; synthetic proofs do not
   satisfy this production requirement.
-- No integration of pending no-send obligations into the live newsletter sender,
-  historical subject reconciliation, durable consent withdrawal, Resend
-  provider-off/suppression execution or CONFIRMED withdrawal. No operator
+- No integration of the new egress-admission wrapper into EVERY real newsletter
+  provider send path, historical subject reconciliation, durable consent
+  withdrawal, Resend provider-off/suppression execution or CONFIRMED withdrawal.
+  A global send stop is a safe interim behavior, NOT per-recipient suppression. No operator
   may clear an UNKNOWN/no-send fence solely from mailbox possession.
 - No verified operator rehearsal, intake monitoring evidence, account
   onboarding, privacy/legal approval, retention policy or production restore
@@ -81,5 +94,5 @@ The fixture creates/drops only the distinct newsletter_recovery schema in
 a disposable loopback database named gracz_test. Never point it at Render.
 No real secrets, PII, subscribers or provider effects are used.
 
-Cross-references #280, #281, #282. PR #281 stays DRAFT and production HARD HOLD.
+Cross-references #280, #281, #282. PR #281 has been merged as *inert security containment*. Production activation stays on HARD HOLD.
 NO MERGE, DEPLOY, LIVE DATABASE SQL, SECRET ROTATION, REAL SENDS OR PUBLIC INTAKE.
