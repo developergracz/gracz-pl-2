@@ -33,6 +33,7 @@ export function createNewsletterManager({
   consentStore = null,
   consentHashSecret = "",
   proofStore = null,
+  withdrawalSendFence = null,
   logger = console,
   intakePaused = false,
 }) {
@@ -1034,7 +1035,13 @@ export function createNewsletterManager({
     };
   }
 
-  async function sendEmail({ to, subject, text, html, idempotencyKey, entityRef }) {
+  // Sender-side admission belongs at the outbound provider boundary, not
+  // the UI. Every newsletter email (DOI, status and welcome) passes here.
+  async function sendEmail(args) {
+    return withWithdrawalPermit(() => sendEmailUnchecked(args));
+  }
+
+  async function sendEmailUnchecked({ to, subject, text, html, idempotencyKey, entityRef }) {
     const payload = JSON.stringify({
       from: emailFrom,
       to: [to],
@@ -1097,7 +1104,40 @@ export function createNewsletterManager({
     });
   }
 
-  async function api(path, { method, body, expected }) {
+  function activatesMarketing(path, {method,body}={}) {
+    // Only producer/on mutations: opt-out, segment DELETE and durable
+    // suppression/withdrawal must remain usable even while sends are held.
+    if (method === 'POST' && path === '/contacts') {
+      return body?.unsubscribed === false ||
+        body?.topics?.some?.(topic => topic.subscription === 'opt_in') === true;
+    }
+    if (method === 'POST' && /^\/contacts\/[^/]+\/segments\/[^/]+$/.test(path))return true;
+    if (method === 'PATCH' && /^\/contacts\/[^/]+$/.test(path))return body?.unsubscribed === false;
+    if (method === 'PATCH' && /^\/contacts\/[^/]+\/topics$/.test(path)) {
+      return Array.isArray(body) && body.some(topic => topic?.subscription === 'opt_in');
+    }
+    return false;
+  }
+  async function withWithdrawalPermit(work) {
+    // Direct library construction without the fence is used by legacy
+    // isolated test doubles. The business runtime MUST inject the real
+    // DB-backed fence; see server.mjs. Never enable production via a fixture.
+    if (withdrawalSendFence) {
+      if(typeof withdrawalSendFence.withSendPermit !== 'function') {
+        throw providerError('WITHDRAWAL_SEND_FENCE_UNAVAILABLE',503);
+      }
+      return withdrawalSendFence.withSendPermit(work);
+    }
+    return work();
+  }
+
+  async function api(path, options) {
+    if (activatesMarketing(path,options)) {
+      return withWithdrawalPermit(() => apiUnchecked(path,options));
+    }
+    return apiUnchecked(path,options);
+  }
+  async function apiUnchecked(path, { method, body, expected }) {
     const payload =
       body === undefined ? undefined : JSON.stringify(removeUndefined(body));
     const operation = providerOperation(method, path);
@@ -1259,6 +1299,11 @@ export function createNewsletterManager({
       if(!enabled)return {ready:false,configured:false,intakePaused:admission.intakePaused,schemaReady:false};
       let schemaReady=false;
       try {schemaReady=await consentStore.checkOptInAvailable()===true;}catch{}
+      // Server injects an always-on fence: no valid recovery schema/privileges
+      // or even one unresolved withdrawal must keep public intake disabled.
+      let withdrawalReady=false;
+      try {withdrawalReady=await withdrawalSendFence?.checkAvailable?.()===true;}catch{}
+      if (withdrawalSendFence && !withdrawalReady) schemaReady=false;
       return {ready:schemaReady&&!admission.intakePaused,configured:true,intakePaused:admission.intakePaused,schemaReady};
     },
     requestStatus: mailboxStatus.requestStatus,
