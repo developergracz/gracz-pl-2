@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '24'
       - name: Install existing backend dependencies (no lifecycle)
-        run: npm --prefix contact-api install --ignore-scripts --no-package-lock --no-audit --no-fund
+        run: npm --prefix contact-api ci --ignore-scripts --no-audit --no-fund
       - name: Check offline operator script syntax
         run: node --check contact-api/operations/newsletter-f03-one-shot.mjs
       - name: Test fail-closed release orchestrator
