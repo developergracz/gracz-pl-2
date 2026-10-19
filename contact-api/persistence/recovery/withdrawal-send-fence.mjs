@@ -30,18 +30,25 @@ export function createWithdrawalSendFence(database) {
       // Intake obtains the matching exclusive lock before any durable write.
       // When a withdrawal arrives first, this check observes it and refuses.
       return database.transaction(async client => {
+        let result;
+        try {
         await client.query(
           'SELECT pg_advisory_xact_lock_shared($1::int,$2::int)',
           WITHDRAWAL_EGRESS_LOCK
         );
+
         // Fail closed if the schema is not yet installed, privileges are
         // insufficient, PostgreSQL is unreachable, or the check times out.
         // No raw addresses, bearer tokens or email hashes are selected.
-        const result = await client.query(
+        result = await client.query(
           "SELECT " +
           " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_requests LIMIT 1) AS requests_exist, " +
           " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_no_send_obligations LIMIT 1) AS obligations_exist"
         );
+        } catch {
+          // PG/privilege/schema failures never expose SQL or names in the app API.
+          throw refuse('WITHDRAWAL_SEND_FENCE_UNAVAILABLE');
+        }
         if (result.rowCount !== 1 ||
             typeof result.rows[0]?.requests_exist !== 'boolean' ||
             typeof result.rows[0]?.obligations_exist !== 'boolean') {
