@@ -49,7 +49,8 @@ test('#283 verified withdrawal request has neutral response, strict origin and b
   const result=await h.request('POST','/newsletter/withdrawal-confirm',{challengeId,token});
   assert.deepEqual(result,{status:200,body:{ok:true,state:'provider_off_verified',confirmed:false}});
   assert.equal(h.calls.length,2);
-  assert.deepEqual(h.limits,[8,25]);
+  // Invalid confirmation attempts also consume a rate-limit slot.
+  assert.deepEqual(h.limits,[8,25,25]);
 });
 test('#283 proof-only Resend transport sends a short-lived fragment link, not marketing or query secret',async()=>{
   let outbound;
