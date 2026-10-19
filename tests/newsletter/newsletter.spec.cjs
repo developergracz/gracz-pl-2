@@ -76,7 +76,12 @@ for (const state of ['active','pending','inactive']) {
 }
 test('same tab hashes, back/forward, stale completion, and confirm/unsubscribe',async({page})=>{
   let release;const held=new Promise(resolve=>{release=resolve;});
-  const requests=await mock(page,async(path)=>{if(path.endsWith('status-check'))await held;return {ok:true,state:'active'};});
+  const requests=await mock(page,async(path)=>{
+    if(path.endsWith('status-check')){await held;return {ok:true,state:'active'};}
+    if(path.endsWith('/confirm'))return {ok:true,state:'subscribed'};
+    if(path.endsWith('/unsubscribe'))return {ok:true,state:'unsubscribed'};
+    return {ok:false};
+  });
   await page.goto('/newsletter/');
   await page.evaluate(()=>{location.hash='status=first-secret';});
   await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź status');
@@ -216,6 +221,38 @@ for(const mode of ['confirm','unsubscribe','status']) {
     await expect(page.locator('#nl-action-button')).toBeHidden();
     await expect(page.locator('#nl-action-status')).toBeFocused();
     await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    expect(requests).toHaveLength(1);
+  });
+}
+
+
+for(const mode of ['confirm','unsubscribe']){
+  test(mode+' refuses misleading HTTP 200 success bodies without a final state',async({page})=>{
+    const requests=await mock(page,()=>({ok:true,state:'request_received'}));
+    await page.goto('/newsletter/#'+mode+'=synthetic-link');
+    await page.locator('#nl-action-button').click();
+    await expect(page.locator('#nl-action-title')).toHaveText('Nie potwierdzono operacji');
+    await expect(page.locator('#nl-action-status')).toBeFocused();
+    await expect(page.locator('#nl-action-button')).toBeHidden();
+    await expect(page.locator('#nl-action-status')).not.toContainText('została wycofana');
+    expect(requests).toEqual([{path:'/newsletter/'+mode,payload:{token:'synthetic-link'}}]);
+  });
+  test(mode+' refuses HTTP 200 ok:false even if final state is present',async({page})=>{
+    const requests=await mock(page,()=>({ok:false,state:mode==='confirm'?'subscribed':'unsubscribed'}));
+    await page.goto('/newsletter/#'+mode+'=synthetic-link');
+    await page.locator('#nl-action-button').click();
+    await expect(page.locator('#nl-action-title')).toHaveText('Nie potwierdzono operacji');
+    await expect(page.locator('#nl-action-button')).toBeHidden();
+    expect(requests).toHaveLength(1);
+  });
+}
+for(const [mode,state] of [['confirm','already_subscribed'],['confirm','resubscribed'],['confirm','subscribed'],['unsubscribe','unsubscribed']]){
+  test(mode+' recognizes only final '+state+' result',async({page})=>{
+    const requests=await mock(page,()=>({ok:true,state}));
+    await page.goto('/newsletter/#'+mode+'=synthetic-link');
+    await page.locator('#nl-action-button').click();
+    await expect(page.locator('#nl-action-title')).toHaveText(mode==='confirm'?'Newsletter aktywny':'Subskrypcja wyłączona');
+    await expect(page.locator('#nl-action-status')).toBeFocused();
     expect(requests).toHaveLength(1);
   });
 }
