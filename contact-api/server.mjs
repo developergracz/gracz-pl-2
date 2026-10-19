@@ -119,25 +119,17 @@ const withdrawal = WITHDRAWAL_ENABLED
 async function checkWithdrawalReady() {
   if(!WITHDRAWAL_ENABLED||!database.enabled||!withdrawal)return false;
   try {
-    const result=await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_challenges LIMIT 0'
-    );
+    // One bounded, read-only PostgreSQL statement validates all required
+    // relations AND the runtime SELECT privileges before exposing the form.
     await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.withdrawal_requests LIMIT 0'
+      'SELECT 1 FROM newsletter_recovery.self_service_challenges c ' +
+      'CROSS JOIN newsletter_recovery.withdrawal_requests r ' +
+      'CROSS JOIN newsletter_recovery.self_service_provider_intents i ' +
+      'CROSS JOIN newsletter_recovery.self_service_mail_budget b ' +
+      'CROSS JOIN newsletter_recovery.self_service_verified v ' +
+      'CROSS JOIN newsletter_recovery.self_service_provider_verified p LIMIT 0'
     );
-    await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_provider_intents LIMIT 0'
-    );
-    await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_mail_budget LIMIT 0'
-    );
-    await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_verified LIMIT 0'
-    );
-    await database.queryBounded(
-      'SELECT 1 FROM newsletter_recovery.self_service_provider_verified LIMIT 0'
-    );
-    return Boolean(result);
+    return true;
   }catch{return false;}
 }
 
