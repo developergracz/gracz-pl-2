@@ -1,0 +1,86 @@
+// Restricted internal operator operations. Not exposed to any HTTP listener.
+// Requires a separately deployed trusted identity gateway and purpose-separated
+// signed MFA assertions. Role always comes from DB, never from JWT claims.
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const REASONS=new Set(['UNVERIFIED','UNMAPPED','AMBIGUOUS','PROVIDER_UNKNOWN','OTHER']);
+function deny() {const e=new Error('OPERATOR_ACCESS_DENIED');e.code='OPERATOR_ACCESS_DENIED';return e;}
+function fail(code){const e=new Error(code);e.code=code;return e;}
+function validUuid(value){return typeof value==='string'&&UUID.test(value);}
+
+export function createWithdrawalOperatorService({database,assertionVerifier}={}) {
+  if(typeof database?.transaction!=='function'||typeof assertionVerifier?.verify!=='function')
+    throw new TypeError('Durable database and pinned assertion verifier required');
+
+  async function authorized(signedToken,work){
+    const verified=assertionVerifier.verify(signedToken);
+    return database.transaction(async client=>{
+      const actor=await client.query(
+        "SELECT operator_ref,role FROM newsletter_recovery.operator_accounts " +
+        "WHERE subject_tag=$1 AND disabled_at IS NULL AND role IN ('primary','backup') FOR SHARE",
+        [verified.subjectTag]
+      );
+      if(actor.rowCount!==1)throw deny();
+      const operatorRef=actor.rows[0].operator_ref;
+      // jti fence: one signed MFA token can authorize one action only,
+      // even with simultaneous requests or process restarts.
+      return work(client,{operatorRef,tokenUse:verified.tokenUse});
+    });
+  }
+  async function audit(client,actor,action,requestId){
+    await client.query(
+      "INSERT INTO newsletter_recovery.operator_actions(token_use,operator_ref,action_kind,request_id) " +
+      "VALUES ($1,$2,$3,$4)",
+      [actor.tokenUse,actor.operatorRef,action,requestId]
+    );
+  }
+  return Object.freeze({
+    async inspectPending({signedToken,limit=20}={}) {
+      if(!Number.isInteger(limit)||limit<1||limit>50)throw new TypeError('Invalid page size');
+      return authorized(signedToken,async(client,actor)=>{
+        await audit(client,actor,'INSPECT_PENDING',null);
+        const result=await client.query(
+          "SELECT r.request_id,r.intake_source,r.received_at," +
+          " (SELECT e.event_kind FROM newsletter_recovery.withdrawal_events e " +
+          "  WHERE e.request_id=r.request_id ORDER BY e.event_id DESC LIMIT 1) AS latest_state " +
+          "FROM newsletter_recovery.withdrawal_requests r " +
+          "ORDER BY r.received_at DESC,r.request_id DESC LIMIT $1",
+          [limit]
+        );
+        // Never return evidence_ref, dedupe_tag or any mailbox evidence.
+        return result.rows.map(r=>Object.freeze({
+          requestId:r.request_id,source:r.intake_source,
+          receivedAt:r.received_at,state:r.latest_state==='QUARANTINED'?'QUARANTINED':'PENDING'
+        }));
+      });
+    },
+    async quarantine({signedToken,requestId,reason}={}) {
+      if(!validUuid(requestId)||!REASONS.has(reason))throw new TypeError('Invalid quarantine request');
+      return authorized(signedToken,async(client,actor)=>{
+        const locked=await client.query(
+          "SELECT request_id FROM newsletter_recovery.withdrawal_requests WHERE request_id=$1 FOR UPDATE",
+          [requestId]
+        );
+        if(locked.rowCount!==1)throw fail('WITHDRAWAL_REQUEST_NOT_FOUND');
+        const last=await client.query(
+          "SELECT event_kind,reason_code FROM newsletter_recovery.withdrawal_events " +
+          "WHERE request_id=$1 ORDER BY event_id DESC LIMIT 1",[requestId]
+        );
+        const state=last.rows[0];
+        if(!state||!['RECEIVED','QUARANTINED'].includes(state.event_kind))
+          throw fail('WITHDRAWAL_UNKNOWN_STATE');
+        if(state.event_kind==='QUARANTINED'&&state.reason_code!==reason)
+          throw fail('WITHDRAWAL_QUARANTINE_CONFLICT');
+        await audit(client,actor,'QUARANTINE',requestId);
+        if(state.event_kind==='RECEIVED'){
+          await client.query(
+            "INSERT INTO newsletter_recovery.withdrawal_events(request_id,event_kind,actor_ref,reason_code) " +
+            "VALUES ($1,'QUARANTINED',$2,$3)",
+            [requestId,actor.operatorRef,reason]
+          );
+        }
+        // A quarantine is NOT a confirmed unsubscribe, and does NOT call Resend.
+        return Object.freeze({requestId,state:'QUARANTINED',created:state.event_kind==='RECEIVED'});
+      });
+    }
+  });
+}
