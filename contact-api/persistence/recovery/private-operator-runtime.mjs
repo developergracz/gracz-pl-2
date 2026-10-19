@@ -5,6 +5,7 @@ import {createWithdrawalEvidenceVerifier} from './withdrawal-evidence.mjs';
 import {createVerifiedRecipientMapping} from './verified-recipient-mapping.mjs';
 import {createWithdrawalOperatorService} from './operator-service.mjs';
 import {createResendProviderOff} from './resend-provider-off.mjs';
+import {createLegacyMappingAuthority} from './legacy-mapping-authority.mjs';
 
 // Private process factory, never imported from the public newsletter server.
 // Uses REAL separately pinned signing authorities and independently supplied
@@ -14,7 +15,7 @@ export function createPrivateWithdrawalOperatorRuntime({
   database,operatorAuthority,ownerApprovalAuthority,
   mailboxEvidenceAuthority,mappingEvidenceAuthority,
   operatorSubjectKey,legacyConsentSecret,ownerEscrowConsentSecret,
-  mailboxTagKey,recipientEncryptionKey,resendApiKey
+  mailboxTagKey,recipientEncryptionKey,resendApiKey,mappingSigningPrivateKeyPem
 }={}) {
   if(typeof database?.transaction!=='function'||typeof database?.query!=='function'||
      !operatorAuthority||!ownerApprovalAuthority||
@@ -53,8 +54,16 @@ export function createPrivateWithdrawalOperatorRuntime({
     mailboxTagKey,encryptionKey:recipientEncryptionKey
   });
   const providerOff=createResendProviderOff({apiKey:resendApiKey});
+  const attestor=createLegacyMappingAuthority({
+    database,mailboxEvidenceVerifier:evidenceVerifier,providerOff,
+    legacyConsentSecret,escrowConsentSecret:ownerEscrowConsentSecret,
+    mailboxTagKey,signingPrivateKeyPem:mappingSigningPrivateKeyPem,
+    pinnedPublicKeyPem:mappingEvidenceAuthority.publicKeyPem,
+    issuer:mappingEvidenceAuthority.issuer,audience:mappingEvidenceAuthority.audience,
+    keyId:mappingEvidenceAuthority.keyId
+  });
   const operator=createWithdrawalOperatorService({
     database,assertionVerifier,evidenceVerifier,recipientMapping,providerOff
   });
-  return Object.freeze({enroll,operator});
+  return Object.freeze({enroll,operator,attestor});
 }
