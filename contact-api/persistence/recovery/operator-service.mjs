@@ -9,7 +9,7 @@ function deny() {const e=new Error('OPERATOR_ACCESS_DENIED');e.code='OPERATOR_AC
 function fail(code){const e=new Error(code);e.code=code;return e;}
 function validUuid(value){return typeof value==='string'&&UUID.test(value);}
 
-export function createWithdrawalOperatorService({database,assertionVerifier,evidenceVerifier,providerOff,resolveVerifiedRecipient}={}) {
+export function createWithdrawalOperatorService({database,assertionVerifier,evidenceVerifier,providerOff,resolveVerifiedRecipient,recipientMapping}={}) {
   if(typeof database?.transaction!=='function'||typeof assertionVerifier?.verify!=='function')
     throw new TypeError('Durable database and pinned assertion verifier required');
 
@@ -101,11 +101,29 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
           providerState:'RECONCILIATION_PENDING',confirmed:false});
       });
     },
+    async linkVerifiedRecipient({signedToken,requestId,email}={}) {
+      if(!validUuid(requestId)||typeof recipientMapping?.linkVerified!=='function')
+        throw fail('WITHDRAWAL_IDENTITY_MAPPING_UNAVAILABLE');
+      return authorized(signedToken,async(client,actor)=>{
+        const evidence=await client.query(
+          "SELECT legacy_subject_ref,mailbox_tag FROM newsletter_recovery.withdrawal_verified_evidence " +
+          "WHERE request_id=$1 FOR SHARE",[requestId]
+        );
+        if(evidence.rowCount!==1)throw fail('WITHDRAWAL_VERIFIED_EVIDENCE_REQUIRED');
+        const outcome=await recipientMapping.linkVerified({
+          client,requestId,email,operatorRef:actor.operatorRef,
+          legacySubjectRef:evidence.rows[0].legacy_subject_ref,
+          mailboxTag:evidence.rows[0].mailbox_tag
+        });
+        await audit(client,actor,'LINK_VERIFIED_RECIPIENT',requestId);
+        return outcome;
+      });
+    },
     async reconcileProviderOff({signedToken,requestId}={}) {
       if(!validUuid(requestId))throw new TypeError('Invalid withdrawal ID');
       if(typeof providerOff?.ensureOff!=='function'||
          typeof providerOff?.verifyOff!=='function'||
-         typeof resolveVerifiedRecipient!=='function')
+         typeof (recipientMapping?.resolveVerifiedRecipient || resolveVerifiedRecipient)!=='function')
         throw fail('WITHDRAWAL_PROVIDER_OFF_NOT_CONFIGURED');
 
       // Phase 1: commit an immutable OFF intent BEFORE touching Resend.
@@ -142,7 +160,7 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
       // cannot submit a recipient directly. It must present a mailbox tag
       // matching both independently signed proofs stored in PostgreSQL.
       let target;
-      try {target=await resolveVerifiedRecipient({
+      try {target=await (recipientMapping?.resolveVerifiedRecipient || resolveVerifiedRecipient)({
         requestId,legacySubjectRef:reserved.legacySubjectRef
       });} catch {throw fail('WITHDRAWAL_RECIPIENT_UNRESOLVED');}
       if(!target||typeof target.email!=='string'||
