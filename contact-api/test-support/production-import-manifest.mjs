@@ -13,6 +13,12 @@ export const productionModules=Object.freeze([
   'persistence/memory-reply-token-store.mjs',
   'persistence/memory-idempotency-store.mjs',
   'routes/newsletter-route.mjs',
+  // Reviewed opt-out-only path: opt-in remains held.
+  'routes/newsletter-withdrawal-route.mjs',
+  'persistence/recovery/self-service-withdrawal.mjs',
+  'persistence/recovery/withdrawal-send-fence.mjs',
+  'persistence/recovery/withdrawal-challenge-mailer.mjs',
+  'persistence/recovery/resend-provider-off.mjs',
   'routes/premium-reply-route.mjs',
   'operations/newsletter-f03-readonly-diagnostics.mjs',
 ]);

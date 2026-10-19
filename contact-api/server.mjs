@@ -11,6 +11,10 @@ import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
 import { createMemoryIdempotencyStore } from "./persistence/memory-idempotency-store.mjs";
 import { createNewsletterRoute } from "./routes/newsletter-route.mjs";
+import { createNewsletterWithdrawalRoute } from "./routes/newsletter-withdrawal-route.mjs";
+import { createSelfServiceWithdrawal } from "./persistence/recovery/self-service-withdrawal.mjs";
+import { createWithdrawalChallengeMailer } from "./persistence/recovery/withdrawal-challenge-mailer.mjs";
+import { createResendProviderOff } from "./persistence/recovery/resend-provider-off.mjs";
 import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
 
@@ -86,6 +90,52 @@ const premiumReply = createPremiumReplyManager({
 
 // #280: unconditional containment, including contact-form newsletter opt-in.
 const newsletter = createHeldNewsletterManager();
+
+// This opt-out path is INDEPENDENT of newsletter opt-in. It stays disabled
+// by default. Missing new 256-bit keys, DB, or provider config fail closed.
+function withdrawalKey(name) {
+  const encoded=process.env[name];
+  if(typeof encoded!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(encoded))
+    throw new Error('WITHDRAWAL_CONFIGURATION_INCOMPLETE');
+  const decoded=Buffer.from(encoded,'base64url');
+  if(decoded.length!==32||decoded.toString('base64url')!==encoded)
+    throw new Error('WITHDRAWAL_CONFIGURATION_INCOMPLETE');
+  return decoded;
+}
+const WITHDRAWAL_ENABLED = process.env.NEWSLETTER_WITHDRAWAL_ENABLED === '1';
+const withdrawal = WITHDRAWAL_ENABLED
+  ? createSelfServiceWithdrawal({
+      database,
+      recipientTagKey:withdrawalKey('WITHDRAWAL_RECIPIENT_TAG_KEY'),
+      challengeKey:withdrawalKey('WITHDRAWAL_CHALLENGE_KEY'),
+      encryptionKey:withdrawalKey('WITHDRAWAL_ENCRYPTION_KEY'),
+      challengeMailer:createWithdrawalChallengeMailer({
+        apiKey:RESEND_API_KEY,
+        emailFrom:process.env.WITHDRAWAL_EMAIL_FROM || EMAIL_FROM
+      }),
+      providerOff:createResendProviderOff({apiKey:RESEND_API_KEY})
+    })
+  : null;
+async function checkWithdrawalReady() {
+  if(!WITHDRAWAL_ENABLED||!database.enabled||!withdrawal)return false;
+  try {
+    // Recipient opt-out is independent of F03 legacy consent migrations.
+    // Only the durable private recovery namespace and SELECT grants are
+    // mandatory here; full newsletter opt-in remains permanently HELD.
+    const result=await database.queryBounded(
+      "WITH recovery_grants AS (" +
+      "SELECT 1 FROM newsletter_recovery.self_service_challenges c " +
+      "CROSS JOIN newsletter_recovery.withdrawal_requests r " +
+      "CROSS JOIN newsletter_recovery.withdrawal_no_send_obligations n " +
+      "CROSS JOIN newsletter_recovery.self_service_provider_intents i " +
+      "CROSS JOIN newsletter_recovery.self_service_mail_budget b " +
+      "CROSS JOIN newsletter_recovery.self_service_verified v " +
+      "CROSS JOIN newsletter_recovery.self_service_provider_verified p LIMIT 0) " +
+      "SELECT count(*)::int AS checked FROM recovery_grants"
+    );
+    return result.rowCount===1 && result.rows[0]?.checked===0;
+  }catch{return false;}
+}
 
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
@@ -194,6 +244,12 @@ const handleNewsletterRequest = createNewsletterRoute({
   validateEmailDomain,
 });
 
+const handleNewsletterWithdrawal = createNewsletterWithdrawalRoute({
+  allowedOrigins:ALLOWED_ORIGINS,withdrawal,checkReady:checkWithdrawalReady,
+  ipBuckets:newsletterIpBuckets,rateLimit,hashValue,clientIp,
+  readJson,json,setCors,normalizeEmail
+});
+
 const handlePremiumReplyRequest = createPremiumReplyRoute({
   allowedOrigins: ALLOWED_ORIGINS,
   premiumReply,
@@ -250,6 +306,10 @@ const server = createServer(async (req, res) => {
 
     if (url.pathname === "/reply-context" || url.pathname === "/reply") {
       return await handlePremiumReplyRequest(req, res, url, requestId);
+    }
+
+    if (url.pathname.startsWith("/newsletter/withdrawal-")) {
+      return await handleNewsletterWithdrawal(req,res,url);
     }
 
     if (url.pathname.startsWith("/newsletter/")) {
