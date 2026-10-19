@@ -64,7 +64,7 @@ jobs:
       - name: Check complete backend syntax
         run: npm --prefix contact-api run check
       - name: Install backend dependencies
-        run: npm --prefix contact-api install --ignore-scripts --no-audit --no-fund
+        run: npm --prefix contact-api ci --ignore-scripts --no-audit --no-fund
       - name: Run contact API regression tests
         run: npm --prefix contact-api test
       - name: Run maintenance revocation and Premium footer regressions
@@ -108,6 +108,6 @@ jobs:
       - name: Verify isolated process-test hook support
         run: node --input-type=module -e "import { registerHooks } from 'node:module'; if (typeof registerHooks !== 'function') process.exit(1)"
       - name: Install persistence dependencies
-        run: npm --prefix contact-api install --no-audit --no-fund
+        run: npm --prefix contact-api ci --ignore-scripts --no-audit --no-fund
       - name: Run PostgreSQL persistence integration tests
         run: npm --prefix contact-api run test:persistence

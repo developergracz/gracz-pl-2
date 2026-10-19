@@ -84,10 +84,13 @@ test('R4 legacy characterization: process interruption, shutdown, health and rec
     assert.equal((await post('status-check',{token:'invalid'})).status,400,'proof route remains available');
     assert.equal((await (await fetch(base+'/health')).json()).newsletterIntakePaused,true);await stop();
   });
-  for(const pause of [undefined,'','flase','false','0'])await t.test('R5.1 explicit intake configuration '+String(pause),async()=>{
+  for(const pause of [undefined,'','flase','false','0'])await t.test('R5.1 explicit intake configuration '+String(pause),async subtest=>{
+    subtest.after(()=>stop('SIGKILL')); // Clean up even when an assertion fails.
     await start({NEWSLETTER_INTAKE_PAUSED:pause});
     const enabled=['false','0'].includes(pause);
     assert.equal((await fetch(base+'/health')).status,200);
+    // Liveness may precede the first bounded database readiness check under load.
+    if(enabled)await until(async()=>(await fetch(base+'/newsletter/ready')).status===200);
     assert.equal((await fetch(base+'/newsletter/ready')).status,enabled?200:503);
     if(!enabled){
       assert.equal((await submit(randomUUID()+'@example.test')).status,503);

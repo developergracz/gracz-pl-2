@@ -11,5 +11,7 @@ ready=false
 for ((i=0;i<60;i++)); do if docker_local exec "$container" pg_isready -h 127.0.0.1 -U postgres -d gracz_test >/dev/null; then ready=true; break; fi; sleep .5; done
 [[ "$ready" == true ]] || { echo "Disposable PostgreSQL startup failed" >&2; exit 1; }
 port=$(docker_local port "$container" 5432/tcp);port=${port##*:}
-env -i PATH="$PATH" NODE_ENV=test DATABASE_URL="postgres://postgres:synthetic-only@127.0.0.1:$port/gracz_test" node --test --test-timeout=180000 --test-concurrency=1 integration/*.test.mjs > "/tmp/280-pg$version.log" 2>&1
-tail -12 "/tmp/280-pg$version.log"
+log=$(mktemp "/tmp/gracz-r3-pg${version}.XXXXXX.log")
+env -i PATH="$PATH" NODE_ENV=test DATABASE_URL="postgres://postgres:synthetic-only@127.0.0.1:$port/gracz_test" node scripts/run-tests.mjs persistence > "$log" 2>&1 || { tail -60 "$log"; echo "Full synthetic test log: $log"; exit 1; }
+tail -12 "$log"
+echo "Full synthetic test log: $log"

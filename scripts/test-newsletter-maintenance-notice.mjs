@@ -27,3 +27,7 @@ test('all shared footer forms are disabled before sending',()=>{
   assert.match(js,/if\(!NEWSLETTER_PUBLIC_INTAKE_ENABLED\)\{/);
   assert.match(js,/Informacja o niedostępności i wycofaniu zgody/);
 });
+test('R3 maintenance notice does not claim historical links still work',()=>{
+  assert.doesNotMatch(read('maintenance-site/newsletter/index.html'),/Istniejące linki.*pozostają dostępne/);
+  assert.doesNotMatch(read('maintenance-site/assets/newsletter-full-max-r1.js'),/Istniejący link pozostaje dostępny|Możesz ponowić tę samą operację/);
+});

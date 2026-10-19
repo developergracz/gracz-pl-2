@@ -5,7 +5,7 @@ artifact_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ "${GRACZ_BUSINESS_RUNTIME_ENABLED:-0}" = "1" ]; then
   repo_root=$(CDPATH= cd -- "$artifact_dir/../.." && pwd)
   cd "$repo_root"
-  npm --prefix contact-api install --omit=dev --ignore-scripts --no-audit --no-fund --package-lock=false
+  npm --prefix contact-api ci --omit=dev --ignore-scripts --no-audit --no-fund
   node --check contact-api/server.mjs
   node --check contact-api/newsletter.mjs
   node --check contact-api/routes/newsletter-route.mjs

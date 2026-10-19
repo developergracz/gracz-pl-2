@@ -27,6 +27,8 @@ export function createNewsletterPurposeKeys({keys,now=Date.now}={}) {
   for(const entry of keys) {
     if(!entry||typeof entry.id!=='string'||!identifier.test(entry.id)||!purposes.has(entry.purpose)||
       !['active','retired','compromised'].includes(entry.state)||!Buffer.isBuffer(entry.key)||entry.key.length!==32||byId.has(entry.id))throw invalid();
+    // Reject obvious placeholder material; this cannot prove CSPRNG provenance.
+    if(entry.key.every(byte=>byte===entry.key[0]))throw invalid();
     const material=entry.key.toString('hex');
     if(materials.has(material))throw invalid();
     materials.add(material);

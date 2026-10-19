@@ -2,19 +2,26 @@
 import {parse} from 'acorn';
 import {readFile,realpath} from 'node:fs/promises';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import {isBuiltin} from 'node:module';
+import {productionModules,productionDependencies} from './production-import-manifest.mjs';
 
 export async function auditProductionImports(entry,{
   read=url=>readFile(url,'utf8'),
   canonical=async url=>pathToFileURL(await realpath(fileURLToPath(url))),
 }={}) {
-  const root=new URL('./',entry),visited=new Set();
+  if(entry.protocol!=='file:'||entry.search||entry.hash)throw new Error('Invalid production entry');
+  const directory=await canonical(new URL('./',entry));
+  if(directory.protocol!=='file:')throw new Error('Invalid production root');
+  const root=new URL(directory.href.replace(/\/?$/, '/'));
+  const allowed=new Set(productionModules.map(path=>new URL(path,root).href));
+  const dependencies=new Set(productionDependencies),visited=new Set();
   async function visit(input){
-    const url=await canonical(input),path=fileURLToPath(url);
-    if(!url.href.startsWith(root.href)||/(?:^|\/)(?:tests?|__tests__|test-support|integration|fixtures?)\//.test(path)||
-      (/\/(?:newsletter|newsletter-status)\.mjs$/.test(path)||/\.(?:test|spec)\.mjs$/.test(path)))throw new Error('Forbidden production import: '+path);
-    if(visited.has(path))return;
-    visited.add(path);
+    if(!allowed.has(input.href))throw new Error('Unreviewed production module');
+    const url=await canonical(input);
+    // A checkout directory may be symlinked, but an allowed filename cannot alias
+    // a different file. URL membership is independent of host path separators.
+    if(url.href!==input.href||!allowed.has(url.href))throw new Error('Forbidden production module alias');
+    if(visited.has(url.href))return;
+    visited.add(url.href);
     const tree=parse(await read(url),{ecmaVersion:'latest',sourceType:'module'}),edges=[];
     function walk(node){
       if(!node||typeof node!=='object')return;
@@ -30,11 +37,12 @@ export async function auditProductionImports(entry,{
     }
     walk(tree);
     for(const specifier of edges){
-      if(isBuiltin(specifier)||specifier==='pg')continue;
+      if(dependencies.has(specifier))continue;
+      if(/[\\%?#]/.test(specifier))throw new Error('Ambiguous production specifier');
       if(!specifier.startsWith('./')&&!specifier.startsWith('../'))throw new Error('Unreviewed production dependency: '+specifier);
       await visit(new URL(specifier,url));
     }
   }
-  await visit(entry);
-  return [...visited];
+  await visit(new URL(entry.pathname.split('/').at(-1),root));
+  return [...visited].map(url=>fileURLToPath(url));
 }

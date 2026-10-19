@@ -76,3 +76,11 @@ for(const state of ['retired','compromised'])for(const purpose of purposes){
     }
   });
 }
+
+test('R3 rejects trivially repeated key material for every purpose',async()=>{
+  const {createNewsletterPurposeKeys}=await import('../security/newsletter-purpose-keys.mjs');
+  for(const purpose of purposes)for(const byte of [0,1,255]){
+    const keys=fixture();keys.find(k=>k.purpose===purpose).key=Buffer.alloc(32,byte);
+    assert.throws(()=>createNewsletterPurposeKeys({keys}),{code:'NEWSLETTER_PROOF_INVALID'});
+  }
+});

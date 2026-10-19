@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=24.19.0 <25"
   },
   "scripts": {
     "start": "node server.mjs",
     "check": "node scripts/check-modules.mjs",
-    "test": "node --test test/*.test.mjs",
-    "test:persistence": "node --test --test-concurrency=1 integration/*.test.mjs",
+    "test": "node scripts/run-tests.mjs unit",
+    "test:persistence": "node scripts/run-tests.mjs persistence",
     "migrate": "node persistence/migrator.mjs",
     "contact-data:contract-prep": "node persistence/contact-data-contract-prep.mjs"
   },

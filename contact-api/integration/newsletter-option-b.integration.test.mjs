@@ -5,6 +5,7 @@ import {createDatabase} from '../persistence/database.mjs';
 import {applyMigrations} from '../persistence/migrator.mjs';
 import {createPersistenceRepositories} from '../persistence/repositories.mjs';
 import {createNewsletterProofStore} from '../persistence/newsletter-proof-store.mjs';
+import {syntheticLegacyEnvelopes} from '../test-support/synthetic-legacy-envelopes.mjs';
 import {startHeldHttpServer} from '../test-support/held-http-server.mjs';
 import {applyNewsletterCandidate} from './newsletter-candidate.mjs';
 import {assertDisposableDatabaseUrl} from './test-database-guard.mjs';
@@ -12,7 +13,7 @@ const url=process.env.DATABASE_URL;
 const hash=n=>createHash('sha256').update('synthetic-280-'+n).digest('hex');
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 
-test('R2 real HTTP business server preserves complete 2/32/1 legacy history, suppression, fences, tombstones and seals', {skip:!url},async t=>{
+test('R3 real HTTP business server preserves complete 2/32/1 legacy history, suppression, fences, tombstones and seals', {skip:!url},async t=>{
   assertDisposableDatabaseUrl(url);
   const db=createDatabase({connectionString:url});t.after(()=>db.close());
   await db.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public');
@@ -29,16 +30,20 @@ test('R2 real HTTP business server preserves complete 2/32/1 legacy history, sup
   const token={tokenHash:hash(4),emailHash:hash(1),expiresAt:new Date(Date.now()+60000)};
   await proof.issueStatusToken(token);await proof.consumeStatusToken(token);
   await proof.reserveStatusBudget({emailHash:hash(1)});
-  const tables=(await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows.map(r=>r.tablename);
-  const snapshot=async()=>{
+  const snapshot=async({newsletterOnly=false}={})=>{
     const state={};
+    const tables=(await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows.map(r=>r.tablename);
     for(const table of tables){
       assert.match(table,/^[a-z_]+$/);
-      state[table]=(await db.query(`SELECT to_jsonb(t) AS row FROM "${table}" t ORDER BY to_jsonb(t)::text`)).rows;
+      if(newsletterOnly&&['contact_cases','reply_tokens'].includes(table))continue;
+      const where=newsletterOnly&&table==='idempotency_keys'?" WHERE t.scope <> 'contact'":'';
+      state[table]=(await db.query(`SELECT to_jsonb(t) AS row FROM "${table}" t${where} ORDER BY to_jsonb(t)::text`)).rows;
     }
     return JSON.stringify(state);
   };
-  const before=await snapshot();
+  let before=await snapshot();
+  const newsletterBefore=await snapshot({newsletterOnly:true});
+  const envelopes=syntheticLegacyEnvelopes();
   const counts=(await db.query("SELECT (SELECT count(*) FROM newsletter_contacts)::int contacts,(SELECT count(*) FROM newsletter_consent_events)::int events,(SELECT count(*) FROM newsletter_consent_events WHERE event_type='opt_in_confirmed')::int confirmed")).rows[0];
   assert.deepEqual(counts,{contacts:2,events:32,confirmed:1});
   for(let restart=0;restart<2;restart++){
@@ -46,14 +51,28 @@ test('R2 real HTTP business server preserves complete 2/32/1 legacy history, sup
     const readiness=await fetch(server.base+'/newsletter/ready');
     assert.equal(readiness.status,503);
     assert.deepEqual(await readiness.json(),{ready:false,configured:false,intakePaused:true,schemaReady:false});
-    for(const token of ['n1.test','ns1.test','n2.test'])for(const path of ['subscribe','status-request','confirm','unsubscribe','status-check']){
+    for(const token of [...Object.values(envelopes),'n1.test','ns1.test','n2.test'])for(const path of ['subscribe','status-request','confirm','unsubscribe','status-check']){
       const response=await fetch(server.base+'/newsletter/'+path,{method:'POST',headers:{origin:'https://gracz.pl','content-type':'application/json'},body:JSON.stringify({token,email:'unmapped@example.test',consent:true})});
       assert.equal(response.status,503);
+      assert.equal((await response.json()).error.code,'NEWSLETTER_NOT_CONFIGURED');
       assert.equal(await snapshot()===before,true,'HTTP action must not mutate historical rows');
     }
+    const rejected=await fetch(server.base+'/contact',{method:'POST',headers:{origin:'https://untrusted.example.test','content-type':'application/json'},body:JSON.stringify({newsletter:true,email:'unmapped@example.test'})});
+    assert.equal(rejected.status,403);assert.equal((await rejected.json()).error.code,'ORIGIN_NOT_ALLOWED');
+    assert.equal(await snapshot()===before,true,'rejected contact leaves every table unchanged');
+    const contact=await fetch(server.base+'/contact',{method:'POST',headers:{origin:'https://gracz.pl','content-type':'application/json','x-idempotency-key':'synthetic-contact-'+restart},body:JSON.stringify({
+      name:'Synthetic Player',email:'contact'+restart+'@example.test',category:'Pytanie ogólne',subject:'Synthetic request '+restart,
+      message:'Synthetic contact regression message '+restart,acknowledgement:true,newsletter:true,website:'',startedAt:Date.now()-10000,
+    })});
+    assert.equal(contact.status,200);
+    const result=await contact.json();assert.equal(result.ok,true);assert.equal(result.newsletter,'temporarily_unavailable');
+    assert.equal(server.contactCalls,1,'only synthetic CONTACT delivery allowed');
+    assert.equal(await snapshot({newsletterOnly:true})===newsletterBefore,true,'contact opt-in must preserve all newsletter state');
+    before=await snapshot(); // CONTACT rows may change; subsequent restart must preserve them too.
     await server.stop();
     assert.equal(server.providerCalls,0);
-    assert.doesNotMatch(server.logs,/unmapped@example|n1\.test|ns1\.test|n2\.test/);
+    assert.doesNotMatch(server.logs,/unmapped@example|contact[01]@example|n1\.test|ns1\.test|n2\.test/);
+    for(const envelope of Object.values(envelopes))assert.equal(server.logs.includes(envelope),false,'no bearer in logs');
     assert.equal(await snapshot()===before,true,'process shutdown preserves historical rows');
   }
   assert.equal(await snapshot()===before,true,'complete snapshots identical (do not print rows)');
