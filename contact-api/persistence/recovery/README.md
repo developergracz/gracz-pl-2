@@ -53,10 +53,29 @@ that a withdrawal is confirmed.
   not the legacy manager.** The candidate cannot send from production.
   A future business-runtime adapter would have to inject the fence and prove
   it does not restore compromised legacy n1/ns1 tokens before activation.
-  The recovery schema, independent evidence issuers, operator identity
-  provisioning and actual provider suppression remain unimplemented.
+  The recovery schema deployment and independent evidence issuers/operator
+  identities remain unimplemented. The provider-off adapter and verified
+  readback are now coded but not configured with a real Resend credential.
   The feature branch predates #281/#284 and must be reconciled to current
   `main` with exact-HEAD CI and an independent security delta review.
+- **R7 provider-off implementation (offline):** `resend-provider-off.mjs` uses
+  Resend's official suppressions and contacts APIs. It first records a durable
+  suppression, then sets `unsubscribed:true` for an existing contact. A fresh
+  API read must confirm both the suppression and the unsubscribed state (or
+  absent contact) before a successful outcome is returned. Unknown responses
+  never report success; provider mutations are not automatically repeated.
+- The operator workflow accepts only a signed MFA assertion, existing
+  `VERIFIED_PENDING` evidence and a separate trusted resolver whose recipient
+  matches the mailbox tag in BOTH signed proofs. It commits an immutable
+  provider-off intent **before** the first external effect, then records
+  `PROVIDER_OFF_VERIFIED` after a new independent readback. No recipient
+  address or provider keys are stored in the public repository.
+- **Still not legally/technically CONFIRMED:** the older first-party consent
+  ledger and historical identifiers have not been reconciled; the durable
+  global no-send obligation remains. There is no real credential provisioning,
+  private identity resolver, operator login, remote Resend connection, public
+  intake or production migration in this PR. Synthetic tests are the only
+  source of external calls in CI.
 - Synthetic unit tests and isolated PostgreSQL 16/18 integration tests.
   Integration tests are collected by the existing persistence CI glob,
   restricted by the disposable loopback gracz_test guard.
@@ -87,9 +106,10 @@ that a withdrawal is confirmed.
   recovery, F03 and provider suppression are implemented. The candidate
   manager's optional fence injection must be made mandatory in any future
   business runtime and tested against the merged R3 import-graph restrictions.
-- No historical subject reconciliation, durable consent withdrawal, live
-  provider-off/suppression reconciliation or CONFIRMED state in the recovery
-  namespace. The global send stop is intentionally conservative and is NOT
+- No historical subject reconciliation, actual signed mailbox challenge
+  authority, live provisioned provider credentials or CONFIRMED first-party
+  consent ledger state. The private provider-off reconciliation is offline
+  code and cannot operate until separately authenticated mapping exists. The global send stop is intentionally conservative and is NOT
   per-recipient suppression. No operator
   may clear an UNKNOWN/no-send fence solely from mailbox possession.
 - No verified operator rehearsal, intake monitoring evidence, account
