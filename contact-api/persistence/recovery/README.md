@@ -45,9 +45,20 @@ that a withdrawal is confirmed.
   guess. ANY unresolved request blocks ALL newsletter marketing egress.
   Missing schema, missing privileges or database failures deny the permit.
   PG16/18 tests prove blocking, lack of bypass, rollback and the lock race.
-  **This wrapper is not yet connected to the real newsletter send paths.**
-  The live sender remains intentionally disabled; the guard alone DOES NOT
-  make newsletter or provider integration safe to activate.
+  **R5 integration in this DRAFT branch:** `server.mjs` always injects the
+  PostgreSQL-backed fence into `newsletter.mjs`. All newsletter e-mail sends
+  (DOI, welcome, status) run through this egress permit. Every Resend mutation
+  that can mark a contact opted in, add a marketing segment or activate a topic
+  is guarded at the central provider API boundary. Provider opt-out, segment
+  removal, and other provider-off compensation stay allowed while globally
+  blocked. `/newsletter/ready` stays non-ready if the recovery schema is missing
+  or there is any unresolved withdrawal. A loopback-only Resend double tests
+  these actual provider pathways; PostgreSQL 16/18 tests verify the DB gate.
+  **This is still not a deployable withdrawal service:** no real operator
+  verification issuer, verified historic subject mapping, confirmed provider
+  suppression or production recovery migration. Also, the branch predates
+  the merged #281/#284 security import-manifest gate and requires exact-HEAD
+  merge reconciliation plus focused security review before a possible merge.
 - Synthetic unit tests and isolated PostgreSQL 16/18 integration tests.
   Integration tests are collected by the existing persistence CI glob,
   restricted by the disposable loopback gracz_test guard.
@@ -73,10 +84,13 @@ that a withdrawal is confirmed.
   The signature verifier and VERIFIED_PENDING storage work only with future
   properly authorized external evidence services; synthetic proofs do not
   satisfy this production requirement.
-- No integration of the new egress-admission wrapper into EVERY real newsletter
-  provider send path, historical subject reconciliation, durable consent
-  withdrawal, Resend provider-off/suppression execution or CONFIRMED withdrawal.
-  A global send stop is a safe interim behavior, NOT per-recipient suppression. No operator
+- No finished release-safe egress proof across the merged #281/#284 import graph;
+  this feature branch predates that production baseline. The newly guarded
+  manager paths require exact-HEAD reconciliation and negative process tests.
+- No historical subject reconciliation, durable consent withdrawal, live
+  provider-off/suppression reconciliation or CONFIRMED state in the recovery
+  namespace. The global send stop is intentionally conservative and is NOT
+  per-recipient suppression. No operator
   may clear an UNKNOWN/no-send fence solely from mailbox possession.
 - No verified operator rehearsal, intake monitoring evidence, account
   onboarding, privacy/legal approval, retention policy or production restore
