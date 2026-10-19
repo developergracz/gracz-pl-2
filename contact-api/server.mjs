@@ -128,6 +128,15 @@ async function checkWithdrawalReady() {
     await database.queryBounded(
       'SELECT 1 FROM newsletter_recovery.self_service_provider_intents LIMIT 0'
     );
+    await database.queryBounded(
+      'SELECT 1 FROM newsletter_recovery.self_service_mail_budget LIMIT 0'
+    );
+    await database.queryBounded(
+      'SELECT 1 FROM newsletter_recovery.self_service_verified LIMIT 0'
+    );
+    await database.queryBounded(
+      'SELECT 1 FROM newsletter_recovery.self_service_provider_verified LIMIT 0'
+    );
     return Boolean(result);
   }catch{return false;}
 }
