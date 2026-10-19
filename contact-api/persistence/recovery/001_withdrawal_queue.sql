@@ -83,12 +83,12 @@ CREATE TABLE newsletter_recovery.operator_actions (
   audit_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   token_use char(64) NOT NULL UNIQUE CHECK (token_use ~ '^[0-9a-f]{64}$'),
   operator_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
-  action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF')),
+  action_kind varchar(24) NOT NULL CHECK (action_kind IN ('INSPECT_PENDING','QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF','LINK_VERIFIED_RECIPIENT')),
   request_id uuid REFERENCES newsletter_recovery.withdrawal_requests(request_id),
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   CHECK (
     (action_kind='INSPECT_PENDING' AND request_id IS NULL) OR
-    (action_kind IN ('QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF') AND request_id IS NOT NULL)
+    (action_kind IN ('QUARANTINE','RECORD_VERIFIED_PENDING','RECONCILE_PROVIDER_OFF','LINK_VERIFIED_RECIPIENT') AND request_id IS NOT NULL)
   )
 );
 CREATE TRIGGER withdrawal_operator_actions_no_update_delete
