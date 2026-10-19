@@ -110,6 +110,7 @@ CREATE TABLE newsletter_recovery.withdrawal_verified_evidence (
   request_id uuid PRIMARY KEY REFERENCES newsletter_recovery.withdrawal_requests(request_id),
   actor_ref uuid NOT NULL REFERENCES newsletter_recovery.operator_accounts(operator_ref),
   legacy_subject_ref uuid NOT NULL,
+  mailbox_tag char(64) NOT NULL CHECK (mailbox_tag ~ '^[0-9a-f]{64}$'),
   mailbox_proof_ref uuid NOT NULL,
   mapping_proof_ref uuid NOT NULL,
   mailbox_proof_tag char(64) NOT NULL UNIQUE CHECK (mailbox_proof_tag ~ '^[0-9a-f]{64}$'),
