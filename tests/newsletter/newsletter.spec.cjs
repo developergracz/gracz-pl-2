@@ -33,6 +33,47 @@ async function mock(page, handler = () => ({ok:true,state:'request_received'})) 
   });
   return requests;
 }
+test('#283 withdrawal-only flow: readiness, neutral request and manual fragment proof confirm',{timeout:45000},async({page})=>{
+  const requests=[];
+  await page.route('**/*',async route=>{
+    const request=route.request(),url=new URL(request.url());
+    if(url.origin==='http://127.0.0.1:4174')return route.continue();
+    if(url.origin!==API)return route.abort();
+    if(request.method()==='OPTIONS')return route.fulfill({status:204,
+      headers:{'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type'}});
+    const ready=request.method()==='GET'&&url.pathname==='/newsletter/withdrawal-ready';
+    if(ready)return route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,withdrawalOnly:true,newsletterIntakeEnabled:false})});
+    if(request.method()!=='POST')return route.abort();
+    requests.push({path:url.pathname,payload:request.postDataJSON()});
+    return route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify(url.pathname.endsWith('withdrawal-confirm')?
+        {ok:true,state:'provider_off_verified',confirmed:false}:
+        {ok:true,state:'request_received'})});
+  });
+  await page.goto('/newsletter/');
+  await expect(page.locator('#nl-withdrawal-submit')).toBeEnabled();
+  await expect(page.locator('#nl-submit')).toBeDisabled();
+  await page.locator('#nl-withdrawal-email').fill('synthetic@example.test');
+  await page.locator('#nl-withdrawal-submit').click();
+  await expect(page.locator('#nl-withdrawal-status')).toContainText('Sprawdź skrzynkę');
+  expect(requests).toHaveLength(1);
+  expect(requests[0].path).toBe('/newsletter/withdrawal-request');
+  const id='912cabea-71cc-4c26-9201-3bd421333333',token='a'.repeat(43);
+  await page.goto('/newsletter/#withdrawal='+id+'.'+token);
+  await expect(page.locator('#nl-withdrawal-confirm')).toBeVisible();
+  expect(page.url()).not.toContain(token);
+  expect(requests).toHaveLength(1); // opening a link never performs opt-out
+  await page.locator('#nl-withdrawal-confirm').click();
+  await expect(page.locator('#nl-withdrawal-action-status')).toContainText('Resend potwierdził');
+  expect(requests).toEqual([
+    {path:'/newsletter/withdrawal-request',payload:{email:'synthetic@example.test',website:''}},
+    {path:'/newsletter/withdrawal-confirm',payload:{challengeId:id,token}}
+  ]);
+});
+
 test('inline validation, keyboard focus, clearing and voluntary status request', async ({page},info) => {
   const requests=await mock(page);
   await page.goto('/newsletter/');
