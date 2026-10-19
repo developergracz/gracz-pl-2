@@ -31,7 +31,7 @@ test('maintenance does not block an existing unsubscribe token', async ({page}) 
   const calls=[];
   await page.route('https://gracz-contact-api.onrender.com/newsletter/unsubscribe', async route => {
     calls.push(route.request().postDataJSON());
-    await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,state:'inactive'})});
+    await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,state:'unsubscribed'})});
   });
   await page.goto('/newsletter/#unsubscribe=synthetic-bearer');
   await expect(page.locator('#nl-action-button')).toBeEnabled();
@@ -133,5 +133,19 @@ for(const mode of ['confirm','unsubscribe','status']) for(const prefix of ['n1',
     await expect(page.locator('#nl-action-button')).toBeDisabled();
     await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
     expect(posts).toEqual([]);
+  });
+}
+
+
+for(const prefix of ['n1','ns1']) for(const mode of ['confirm','unsubscribe','status']) {
+  test('revoked '+prefix+' '+mode+' link with leading whitespace never allows action',async({page})=>{
+    const outgoing=[];
+    page.on('request',request=>{if(request.method()==='POST')outgoing.push(request.url());});
+    await page.goto('/newsletter/#'+mode+'=%20'+prefix+'.synthetic-retired');
+    await expect(page.locator('#nl-action-title')).toHaveText('Link został unieważniony');
+    await expect(page.locator('#nl-action-button')).toBeHidden();
+    await expect(page.locator('#nl-action-status')).toContainText('Nie potwierdzono zmiany subskrypcji');
+    await expect.poll(()=>page.url()).not.toContain('synthetic-retired');
+    expect(outgoing).toHaveLength(0);
   });
 }
