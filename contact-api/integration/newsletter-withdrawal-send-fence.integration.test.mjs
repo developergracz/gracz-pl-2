@@ -132,3 +132,13 @@ test('#282 fence refuses missing callback and transactional client',{timeout:300
   });
   await assert.rejects(fence.withSendPermit(null),TypeError);
 });
+
+
+test('#282 public readiness stays false for missing schema and ANY pending withdrawal',{timeout:30000},async t=>{
+  const {db,fence,inbox}=await fixture(t);
+  assert.equal(await fence.checkAvailable(),true);
+  await receive(inbox,'f'.repeat(64));
+  assert.equal(await fence.checkAvailable(),false);
+  await db.query('DROP SCHEMA newsletter_recovery CASCADE');
+  assert.equal(await fence.checkAvailable(),false);
+});
