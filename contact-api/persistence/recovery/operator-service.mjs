@@ -142,16 +142,10 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
         if(!['VERIFIED_PENDING','PROVIDER_OFF_VERIFIED'].includes(latest.rows[0]?.event_kind))
           throw fail('WITHDRAWAL_VERIFICATION_STATE_CONFLICT');
         await audit(client,actor,'RECONCILE_PROVIDER_OFF',requestId);
-        const inserted=await client.query(
-          "INSERT INTO newsletter_recovery.withdrawal_provider_off_intents(request_id,actor_ref) " +
-          "VALUES($1,$2) ON CONFLICT(request_id) DO NOTHING RETURNING request_id",
-          [requestId,actor.operatorRef]
-        );
         return Object.freeze({
           actorRef:actor.operatorRef,
           mailboxTag:item.rows[0].mailbox_tag,
           legacySubjectRef:item.rows[0].legacy_subject_ref,
-          newIntent:inserted.rowCount===1,
           alreadyOff:latest.rows[0].event_kind==='PROVIDER_OFF_VERIFIED'
         });
       });
@@ -170,9 +164,27 @@ export function createWithdrawalOperatorService({database,assertionVerifier,evid
          target.legacySubjectRef!==reserved.legacySubjectRef)
         throw fail('WITHDRAWAL_RECIPIENT_UNRESOLVED');
 
+      // Identity must be resolved BEFORE creating an immutable provider intent.
+      // Otherwise an early unmapped request could permanently consume the
+      // one permitted provider mutation before the recipient is known.
+      const newIntent=await database.transaction(async client=>{
+        const item=await client.query(
+          "SELECT v.legacy_subject_ref,v.mailbox_tag FROM newsletter_recovery.withdrawal_verified_evidence v " +
+          "WHERE v.request_id=$1 FOR UPDATE OF v",[requestId]
+        );
+        if(item.rowCount!==1||item.rows[0].legacy_subject_ref!==reserved.legacySubjectRef||
+           item.rows[0].mailbox_tag!==reserved.mailboxTag)
+          throw fail('WITHDRAWAL_RECIPIENT_UNRESOLVED');
+        const inserted=await client.query(
+          "INSERT INTO newsletter_recovery.withdrawal_provider_off_intents(request_id,actor_ref) " +
+          "VALUES($1,$2) ON CONFLICT(request_id) DO NOTHING RETURNING request_id",
+          [requestId,reserved.actorRef]
+        );
+        return inserted.rowCount===1;
+      });
       // An existing intent may mean a timed-out mutation. Inspect its state;
       // NEVER blindly perform the same external side effect a second time.
-      if(!reserved.newIntent) {
+      if(!newIntent) {
         let existing;
         try {existing=await providerOff.verifyOff(target.email);}catch {
           throw fail('WITHDRAWAL_PROVIDER_UNCERTAIN');
