@@ -47,7 +47,6 @@
   }
   readProofFragment();
   window.addEventListener('hashchange',readProofFragment);
-  window.addEventListener('popstate',readProofFragment);
   window.addEventListener('pageshow',function(event){if(event.persisted)readProofFragment();});
   async function checkReady(){
     try{
