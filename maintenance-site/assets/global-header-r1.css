@@ -514,3 +514,11 @@
     display:none!important;
   }
 }
+
+/* GLOBAL HEADER R6 — homepage has one search action only; on mobile it lives inside the opened menu. */
+@media(max-width:1180px){
+  .homepage-premium-max .site-header .header-actions .search-btn--desktop{
+    display:grid!important;
+    grid-column:1/-1;
+  }
+}
