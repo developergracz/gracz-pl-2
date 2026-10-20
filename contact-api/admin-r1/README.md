@@ -42,3 +42,15 @@ state with explicit evidence-unavailable quality.
 
 The security proposal and acceptance register live under
 `docs/features/NEWSLETTER-ADMIN-R1-IMPLEMENTATION/`. Migration 005 remains HARD HOLD.
+
+## New-only first-party consent reader (not routed)
+`new-only-reader.mjs` is a private, dependency-injected, bounded PostgreSQL
+adapter that decrypts only the requested page after authenticating the AES-GCM
+envelope AND verifying the mailbox HMAC. It reads `newsletter_new.subscribers`,
+the append-only opt-in evidence and `newsletter_new.revocations`, never the
+legacy subscriber list or Resend marketing contacts. Its active status means
+**consent confirmed, not marketing deliverability**; pending and revoked are
+distinct, and any future campaign must additionally enforce provider
+suppressions. No public HTTP route, credentials or authentication method is
+added. This reader must not be wired into production until a reviewed OWNER
+session exists and migration 002 is applied.
