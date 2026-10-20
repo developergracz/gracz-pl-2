@@ -7,6 +7,13 @@ export const productionModules=Object.freeze([
   'security/newsletter-recovery-hold.mjs',
   // Fresh isolated DOI; no legacy consent or marketing-provider import.
   'new-only-newsletter.mjs',
+  // Owner-only guarded admin graph. Disabled by default.
+  'admin-r1/owner-router.mjs',
+  'admin-r1/owner-auth.mjs',
+  'admin-r1/deny.mjs',
+  'admin-r1/new-only-reader.mjs',
+  'admin-r1/service.mjs',
+  'admin-r1/provider.mjs',
   'security/contact-data-crypto.mjs',
   'persistence/database.mjs',
   'persistence/repositories.mjs',
@@ -25,5 +32,6 @@ export const productionModules=Object.freeze([
   'operations/newsletter-f03-readonly-diagnostics.mjs',
 ]);
 export const productionDependencies=Object.freeze([
-  'node:http','node:crypto','node:dns/promises','node:net','node:url','pg',
+  'node:http','node:crypto','node:dns/promises','node:net','node:url',
+  'node:fs/promises','node:util','pg',
 ]);
