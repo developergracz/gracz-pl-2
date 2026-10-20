@@ -63,3 +63,41 @@ CREATE TRIGGER dispatch_events_immutable
 BEFORE UPDATE OR DELETE OR TRUNCATE ON newsletter_campaigns.dispatch_events
 FOR EACH STATEMENT EXECUTE FUNCTION newsletter_campaigns.deny_event_mutation();
 REVOKE UPDATE,DELETE,TRUNCATE ON newsletter_campaigns.dispatch_events FROM PUBLIC;
+
+-- Atomic, idempotent reservation, conditional on current recorded DOI and no
+-- withdrawal. Reservation does NOT authorize sending: the sender must recheck
+-- permission immediately before each external effect.
+CREATE FUNCTION newsletter_campaigns.reserve_confirmed(
+  p_campaign uuid, p_dispatch uuid, p_event uuid, p_email_tag char(64)
+) RETURNS boolean LANGUAGE plpgsql AS $$
+DECLARE inserted_id uuid;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM newsletter_campaigns.campaigns c
+    WHERE c.id=p_campaign AND c.state='approved'
+  ) THEN RETURN false; END IF;
+  INSERT INTO newsletter_campaigns.dispatches(id,campaign_id,email_tag)
+  SELECT p_dispatch,p_campaign,s.email_tag
+  FROM newsletter_new.subscribers s
+  WHERE s.email_tag=p_email_tag AND s.state='active'
+    AND s.confirmed_at IS NOT NULL
+    AND EXISTS (
+      SELECT 1 FROM newsletter_new.consent_events e
+      WHERE e.email_tag=s.email_tag AND e.event_type='opt_in_confirmed'
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM newsletter_new.revocations r
+      WHERE r.email_tag=s.email_tag
+    )
+  ON CONFLICT (campaign_id,email_tag) DO NOTHING
+  RETURNING id INTO inserted_id;
+  IF inserted_id IS NULL THEN RETURN false; END IF;
+  INSERT INTO newsletter_campaigns.dispatch_events
+    (id,campaign_id,dispatch_id,event_type)
+    VALUES(p_event,p_campaign,inserted_id,'reserved');
+  RETURN true;
+END $$;
+-- IMPORTANT: revoke EXECUTE by default until the approved operator-specific
+-- role grant; never expose via an unauthenticated or public route.
+REVOKE ALL ON FUNCTION newsletter_campaigns.reserve_confirmed(uuid,uuid,uuid,char(64))
+  FROM PUBLIC;
