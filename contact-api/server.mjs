@@ -7,6 +7,7 @@ import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
 import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
+import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
@@ -94,6 +95,14 @@ const newsletter = createHeldNewsletterManager();
 // Completely separate enrollment, fresh purpose keys and dedicated consent ledger.
 // Default OFF. Legacy manager stays HELD for contact and old n1/ns1 actions.
 const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
+const ownerAdmin=createOwnerRouter({
+  database,
+  enabled:process.env.NEWSLETTER_OWNER_ADMIN_ENABLED==='1',
+  passwordSpec:process.env.NEWSLETTER_OWNER_PASSWORD_VERIFIER,
+  totpBase32:process.env.NEWSLETTER_OWNER_TOTP_SECRET,
+  encryptionKey:process.env.NEWSLETTER_NEW_ENCRYPTION_KEY,
+  subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY
+});
 
 // This opt-out path is INDEPENDENT of newsletter opt-in. It stays disabled
 // by default. Missing new 256-bit keys, DB, or provider config fail closed.
@@ -315,6 +324,10 @@ const server = createServer(async (req, res) => {
       if (ALLOWED_ORIGINS.has(origin)) setCors(res, origin);
       const readiness = await newOnlyNewsletter.readiness();
       return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
+    }
+
+    if (url.pathname.startsWith("/owner/newsletter")) {
+      return await ownerAdmin.handle(req,res,url);
     }
 
     if (url.pathname === "/reply-context" || url.pathname === "/reply") {
