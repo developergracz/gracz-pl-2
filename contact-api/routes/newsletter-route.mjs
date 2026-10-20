@@ -111,7 +111,7 @@ export function createNewsletterRoute({
         "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
       );
 
-      await (statusRequest ? newsletter.acceptStatus : newsletter.acceptOptIn || newsletter.requestOptIn)({
+      const outcome = await (statusRequest ? newsletter.acceptStatus : newsletter.acceptOptIn || newsletter.requestOptIn)({
         email,
         name,
         source: "newsletter_page",
@@ -119,7 +119,11 @@ export function createNewsletterRoute({
 
       logger.log("[newsletter] request received", { requestId });
 
-      return json(res, 200, { ok: true, state: "request_received" });
+      // Explicit Owner-approved public duplicate response. Existing IP/email
+      // rate limits apply; never include email, subscriber metadata or counts.
+      const duplicate = !statusRequest && outcome?.state === "already_subscribed";
+      return json(res, 200, { ok: true,
+        state: duplicate ? "already_subscribed" : "request_received" });
     }
 
     const token = typeof body?.token === "string" ? body.token : "";
