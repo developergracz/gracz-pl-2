@@ -92,7 +92,7 @@ export function createNewOnlySummary({database}={}){
     let requestedSum=0,confirmedSum=0,previous='';
     const daily=trend.map(entry=>{
       if(!entry||typeof entry.day!=='string'||
-         !/^\\d{4}-\\d{2}-\\d{2}$/.test(entry.day)||entry.day<=previous)
+         !/^\d{4}-\d{2}-\d{2}$/.test(entry.day)||entry.day<=previous)
         throw Error('invalid_summary');
       previous=entry.day;
       const requested=safeJsonCount(entry.requested),
