@@ -853,6 +853,22 @@ draftRefreshButton?.addEventListener("click",async()=>{
 });
 // Authenticated server handshake only: production stays disabled until an
 // explicitly configured, verified draft store is supplied at release time.
+async function loadCampaignConsentProofCount(){
+  const status=$("campaign-consent-evidence");
+  if(!status)return;
+  try{
+    const result=await draftRequest("audience",{});
+    if(result?.ok!==true||result?.advisoryOnly!==true||
+       !Number.isSafeInteger(result.confirmed)||result.confirmed<0||
+       result.scope!=="new_only_doi_evidence_no_revocation")
+      throw Error("audience_evidence_invalid");
+    status.textContent="Potwierdzone zgody DOI bez wypisania (nowy rejestr): "+
+      result.confirmed+". Wynik orientacyjny — nie upoważnia do wysyłki.";
+  }catch{
+    status.textContent="Nie udało się potwierdzić dowodów zgód. "+
+      "Nie można ustalić liczby odbiorców. Wysyłka jest wyłączona.";
+  }
+}
 async function checkCampaignDraftAvailability(){
   if(draftSaveButton)draftSaveButton.disabled=true;
   if(draftRefreshButton)draftRefreshButton.disabled=true;
@@ -868,6 +884,7 @@ async function checkCampaignDraftAvailability(){
       if(draftRefreshButton)draftRefreshButton.disabled=false;
       if(availabilityDescription)availabilityDescription.textContent=
         "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
+      void loadCampaignConsentProofCount();
     }
   }catch{ /* release remains disabled */ }
 }

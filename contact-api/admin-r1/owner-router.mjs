@@ -99,7 +99,7 @@ export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
   recoverySecret,recoveryMailer,recoveryEnabled=false,
-  campaignDraftStore=null,campaignDraftsEnabled=false
+  campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -238,6 +238,15 @@ export function createOwnerRouter({
           }catch{ready=false;}
         }
         return response(res,200,{ok:true,enabled:ready});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/campaign-drafts/audience'){
+        if(!campaignDraftsEnabled||!campaignDraftStore||
+           typeof campaignAudienceProofCount!=='function')return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==0)return reject(res);
+        return response(res,200,await campaignAudienceProofCount());
       }
       if(req.method==='POST'&&[
         PREFIX+'/campaign-drafts/save',PREFIX+'/campaign-drafts/list',

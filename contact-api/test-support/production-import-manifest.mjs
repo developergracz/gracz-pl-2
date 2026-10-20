@@ -10,6 +10,7 @@ export const productionModules=Object.freeze([
   // Owner-only guarded admin graph. Disabled by default.
   'admin-r1/owner-router.mjs',
   'campaigns/draft-store.mjs',
+  'campaigns/audience-proof-count.mjs',
   'campaigns/prepare.mjs',
   'admin-r1/owner-auth.mjs',
   'admin-r1/owner-recovery-mailer.mjs',
