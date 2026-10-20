@@ -615,6 +615,36 @@ $("trend-search").addEventListener("submit",event=>{
   searchTrendDetails();
 });
 
+// Full Max Premium legal notice is informative, not a consent or license grant.
+const rightsDialog=$("rights-dialog");
+const rightsCopy=$("rights-copy");
+function openRights(){
+  if(!rightsDialog.open){
+    rightsCopy.scrollTop=0;
+    rightsDialog.showModal();
+    $("rights-close").focus();
+  }
+}
+function closeRights(){
+  if(rightsDialog.open)rightsDialog.close();
+}
+$("rights-open").addEventListener("click",openRights);
+$("rights-close").addEventListener("click",closeRights);
+$("rights-understood").addEventListener("click",closeRights);
+rightsDialog.addEventListener("close",()=>{
+  $("rights-open").focus({preventScroll:true});
+});
+for(const button of rightsDialog.querySelectorAll("[data-rights-target]")){
+  button.addEventListener("click",()=>{
+    const target=rightsDialog.querySelector("#"+button.dataset.rightsTarget);
+    if(!target)return;
+    const relativeTop=target.getBoundingClientRect().top-
+      rightsCopy.getBoundingClientRect().top+rightsCopy.scrollTop;
+    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    rightsCopy.scrollTo({top:relativeTop,behavior:reducedMotion?"instant":"smooth"});
+  });
+}
+
 async function startOwnerDashboard(){
   try{
     const response=await fetch("/owner/newsletter/session",{
