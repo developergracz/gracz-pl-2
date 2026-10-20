@@ -450,15 +450,15 @@
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
         '<div class="account-access__newsletter-copy">'+
           '<p class="account-access__newsletter-kicker">Newsletter gracz.pl</p>'+
-          '<h3 id="newsletter-success-card-title">Ten adres może być już aktywny</h3>'+
+          '<h3 id="newsletter-success-card-title">Sprawdź, czy adres jest już zapisany</h3>'+
           '<p><strong>Masz już aktywną subskrypcję?</strong> Nic nie musisz robić — pozostaje aktywna, a kolejny link potwierdzający nie zostanie wysłany. <strong>Zapisujesz się pierwszy raz?</strong> Sprawdź pocztę i potwierdź zapis otrzymanym linkiem.</p>'+
           '<ul class="account-access__benefits">'+
             '<li><span aria-hidden="true">✓</span>aktywnych adresów nie zapisujemy ponownie</li>'+
             '<li><span aria-hidden="true">✓</span>nowy zapis wymaga potwierdzenia e-mail</li>'+
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
-          '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — wróć do gracz.pl</span><b aria-hidden="true">→</b></button>'+
-          '<p class="account-access__consent"><a href="/newsletter/#nl-status-panel">Sprawdź swój status bezpiecznie — odbierz link na e-mail</a>. Dopiero po otwarciu linku pokażemy, czy adres jest już aktywny.</p>'+
+          '<a class="account-access__newsletter-cta newsletter-success__cta" href="/newsletter/#nl-status-panel"><span>Sprawdź status swojego adresu</span><b aria-hidden="true">→</b></a>'+
+          '<p class="account-access__consent">System odczyta aktualny status z bazy newslettera po potwierdzeniu dostępu do skrzynki linkiem e-mail ważnym 15 minut. Bez tego potwierdzenia nie ujawniamy statusu podanego adresu.</p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+

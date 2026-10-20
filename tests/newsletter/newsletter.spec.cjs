@@ -99,7 +99,8 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await modal.locator('#nl-result-close').click();
   await expect(modal).toBeHidden();
   await page.locator('#nl-check-email').fill('owner@example.com');
-  await page.locator('#nl-check-email').press('Enter');
+  await expect(page.locator('#nl-request-button')).toBeEnabled();
+  await page.locator('#nl-request-button').click();
   await expect(page.locator('#nl-request-status')).toContainText('nie ujawnia statusu subskrypcji');
   await expect(modal).toBeVisible();
   await expect(modal.locator('#nl-result-title')).toHaveText('Sprawdź swoją skrzynkę e-mail');
@@ -127,8 +128,8 @@ for (const state of ['active','pending','inactive']) {
     if(state==='active'){
       const modal=page.locator('#nl-result-dialog');
       await expect(modal).toBeVisible();
-      await expect(modal.locator('#nl-result-title')).toHaveText('TEN ADRES JEST JUŻ AKTYWNY W NEWSLETTERZE');
-      await expect(modal).toContainText('Potwierdzono dostęp do skrzynki');
+      await expect(modal.locator('#nl-result-title')).toHaveText('Ten adres już jest w naszym newsletterze');
+      await expect(modal).toContainText('sprawdzono aktualny stan bazy');
       await modal.locator('#nl-result-close').click();
       await expect(modal).toBeHidden();
     }else await expect(page.locator('#nl-action-status')).toBeFocused();
@@ -215,11 +216,12 @@ test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   await form.locator('button[type="submit"]').click();
   const dialog=page.locator('#newsletter-success-modal');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Ten adres może być już aktywny');
+  await expect(dialog).toContainText('Sprawdź, czy adres jest już zapisany');
+  await expect(dialog).not.toContainText('Ten adres już jest w naszym newsletterze');
   await expect(dialog).toContainText('statusu adresu nie ujawniamy bez potwierdzenia');
-  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toBeVisible();
+  await expect(dialog.locator('.newsletter-success__cta[href="/newsletter/#nl-status-panel"]')).toBeVisible();
   await page.screenshot({path:info.outputPath('footer-newsletter-modal.png'),fullPage:false});
-  await dialog.locator('.newsletter-success__cta').click();
+  await dialog.locator('[data-newsletter-success-close]').first().click();
   await expect(dialog).toBeHidden();
   expect(requests).toHaveLength(1);
 });
