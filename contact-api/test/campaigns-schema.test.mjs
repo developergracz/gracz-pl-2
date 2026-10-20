@@ -19,3 +19,13 @@ test('dispatch audit is append-only and tied to one campaign recipient',()=>{
   assert.match(sql,/BEFORE UPDATE OR DELETE OR TRUNCATE ON newsletter_campaigns\.dispatch_events/);
   assert.match(sql,/REVOKE UPDATE,DELETE,TRUNCATE ON newsletter_campaigns\.dispatch_events FROM PUBLIC/);
 });
+
+test('reservation uses confirmed consent, excludes withdrawals, and is atomic',()=>{
+  assert.match(sql,/CREATE FUNCTION newsletter_campaigns\.reserve_confirmed/);
+  assert.match(sql,/s\.state='active'/);
+  assert.match(sql,/e\.event_type='opt_in_confirmed'/);
+  assert.match(sql,/NOT EXISTS \(\s*SELECT 1 FROM newsletter_new\.revocations/);
+  assert.match(sql,/ON CONFLICT \(campaign_id,email_tag\) DO NOTHING/);
+  assert.match(sql,/INSERT INTO newsletter_campaigns\.dispatch_events/);
+  assert.match(sql,/REVOKE ALL ON FUNCTION newsletter_campaigns\.reserve_confirmed/);
+});
