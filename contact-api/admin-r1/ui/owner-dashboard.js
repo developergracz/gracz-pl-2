@@ -713,6 +713,7 @@ async function startOwnerDashboard(){
     const result=await response.json();
     if(!result.ok||typeof result.csrf!=="string")throw Error("unauthorized");
     ownerCsrf=result.csrf;
+    await checkCampaignDraftAvailability();
     const pending=document.createElement("option");
     pending.value="pending";pending.textContent="Oczekujące";
     $("state").insertBefore(pending,$("state").options[2]);
@@ -736,3 +737,90 @@ $("logout").addEventListener("click",async()=>{
 });
 $("m4-refresh").addEventListener("click",loadSummary);
 startOwnerDashboard();
+
+
+// Draft-only campaign preview. No API requests, storage writes or mail delivery.
+const campaignPreviewForm=$("campaign-preview-form");
+campaignPreviewForm?.addEventListener("submit",event=>{
+  event.preventDefault();
+  const subject=$("campaign-subject").value.trim();
+  const body=$("campaign-body").value.trim();
+  const status=$("campaign-preview-status");
+  if(subject.length<3||subject.length>160||/[\r\n\x00-\x1f\x7f]/.test(subject)||
+     body.length<10||body.length>20000){
+    status.textContent="Uzupełnij poprawny temat i treść kampanii.";
+    return;
+  }
+  const escape=value=>value.replace(/[&<>"']/g,ch=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[ch]);
+  $("campaign-preview-frame").srcdoc='<!doctype html><html lang="pl"><meta charset="utf-8">'+
+    '<body style="font:16px Arial,sans-serif;padding:20px;background:#0e1724;color:white">'+
+    '<h1>gracz<span style="color:#f66">.pl</span></h1><h2>'+escape(subject)+
+    '</h2><p>'+escape(body).replace(/\n/g,'<br>')+'</p>'+
+    '<p>Podgląd — wiadomość nie została wysłana.</p></body></html>';
+  status.textContent="Podgląd przygotowany lokalnie. Nie zapisano ani nie wysłano wiadomości.";
+});
+
+
+// OWNER draft API: server retains the release gate; UI unlocks only when explicitly enabled.
+// No campaign send endpoints exist here.
+const draftSaveButton=$("campaign-save-draft");
+const draftRefreshButton=$("campaign-refresh-drafts");
+const draftStatus=$("campaign-preview-status");
+async function draftRequest(route,payload){
+  const response=await fetch("/owner/newsletter/campaign-drafts/"+route,{
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+    body:JSON.stringify(payload)
+  });
+  if(!response.ok)throw Error("draft_unavailable");
+  return response.json();
+}
+async function refreshDrafts(){
+  const result=await draftRequest("list",{});
+  const list=$("campaign-drafts-list");
+  list.replaceChildren();
+  for(const draft of result.drafts||[]){
+    const li=document.createElement("li");
+    li.textContent=String(draft.subject||"");
+    list.append(li);
+  }
+  draftStatus.textContent="Odczytano zapisane wersje robocze.";
+}
+draftSaveButton?.addEventListener("click",async()=>{
+  draftSaveButton.disabled=true;
+  try{
+    const result=await draftRequest("save",{
+      subject:$("campaign-subject").value.trim(),
+      body:$("campaign-body").value.trim(),
+      audience:"confirmed_active_new_only"
+    });
+    draftStatus.textContent=result?.state==="draft"?
+      "Wersja robocza zapisana. Nie wysłano wiadomości.":"Nie zapisano kampanii.";
+    await refreshDrafts();
+  }catch{
+    draftStatus.textContent="Zapisywanie kampanii nie jest jeszcze dostępne.";
+  }finally{draftSaveButton.disabled=false;}
+});
+draftRefreshButton?.addEventListener("click",async()=>{
+  try{await refreshDrafts();}
+  catch{draftStatus.textContent="Lista wersji roboczych jest niedostępna.";}
+});
+// Authenticated server handshake only: production stays disabled until an
+// explicitly configured, verified draft store is supplied at release time.
+async function checkCampaignDraftAvailability(){
+  if(draftSaveButton)draftSaveButton.disabled=true;
+  if(draftRefreshButton)draftRefreshButton.disabled=true;
+  try{
+    const response=await fetch("/owner/newsletter/campaign-drafts/availability",{
+      credentials:"same-origin",cache:"no-store"
+    });
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data.ok===true&&data.enabled===true){
+      if(draftSaveButton)draftSaveButton.disabled=false;
+      if(draftRefreshButton)draftRefreshButton.disabled=false;
+    }
+  }catch{ /* release remains disabled */ }
+}

@@ -8,6 +8,7 @@ import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
 import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
+import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
 import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
@@ -108,7 +109,9 @@ const ownerAdmin=createOwnerRouter({
   subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,
   recoveryEnabled:process.env.NEWSLETTER_OWNER_RECOVERY_ENABLED==='1',
   recoverySecret:CONTACT_DATA_ENCRYPTION_SECRET,
-  recoveryMailer:ownerRecoveryMailer
+  recoveryMailer:ownerRecoveryMailer,
+  campaignDraftStore:createCampaignDraftStore({database}),
+  campaignDraftsEnabled:process.env.NEWSLETTER_CAMPAIGN_DRAFTS_ENABLED==='1'
 });
 
 // This opt-out path is INDEPENDENT of newsletter opt-in. It stays disabled

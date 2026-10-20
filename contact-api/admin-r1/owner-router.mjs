@@ -27,12 +27,12 @@ function text(res,status,data,mime='text/html; charset=utf-8'){
 function reject(res,status=403){
   response(res,status,{ok:false,error:status===429?'rate_limited':'unavailable'});
 }
-async function input(req){
+async function input(req,limit=maxBody){
   if(String(req.headers['content-type']||'').split(';')[0]!=='application/json')throw Error('invalid_type');
   let body='';
   for await(const chunk of req){
     body+=chunk;
-    if(Buffer.byteLength(body)>maxBody)throw Error('too_large');
+    if(Buffer.byteLength(body)>limit)throw Error('too_large');
   }
   const parsed=JSON.parse(body);
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('invalid_body');
@@ -98,7 +98,8 @@ ${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomni
 export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
-  recoverySecret,recoveryMailer,recoveryEnabled=false
+  recoverySecret,recoveryMailer,recoveryEnabled=false,
+  campaignDraftStore=null,campaignDraftsEnabled=false
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -223,6 +224,42 @@ export function createOwnerRouter({
         await auth.logout(cookie);
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
+      }
+      if(req.method==='GET'&&path===PREFIX+'/campaign-drafts/availability'){
+        let ready=false;
+        if(campaignDraftsEnabled&&campaignDraftStore&&database?.enabled){
+          try{
+            const check=await database.query(
+              "SELECT to_regclass('newsletter_campaigns.campaigns') IS NOT NULL "+
+              "AND has_schema_privilege(current_user,'newsletter_campaigns','USAGE') "+
+              "AND has_table_privilege(current_user,'newsletter_campaigns.campaigns','SELECT,INSERT') AS ready"
+            );
+            ready=check.rows?.[0]?.ready===true;
+          }catch{ready=false;}
+        }
+        return response(res,200,{ok:true,enabled:ready});
+      }
+      if(req.method==='POST'&&
+         (path===PREFIX+'/campaign-drafts/save'||path===PREFIX+'/campaign-drafts/list')){
+        // Release switch is deliberately off. Do not enable until candidate
+        // schema, owner session and PostgreSQL integration have been verified.
+        if(!campaignDraftsEnabled||!campaignDraftStore)return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req,path.endsWith('/save')?65536:maxBody);
+        if(path.endsWith('/list')){
+          if(Object.keys(data).length!==0)return reject(res);
+          return response(res,200,{ok:true,drafts:await campaignDraftStore.list()});
+        }
+        if(Object.keys(data).some(k=>!['subject','body','audience'].includes(k)))
+          return reject(res);
+        try{
+          const saved=await campaignDraftStore.save(data);
+          return response(res,201,{ok:true,...saved});
+        }catch(error){
+          if(error?.code==='invalid_campaign')return response(res,400,{ok:false,error:'invalid_campaign'});
+          throw error;
+        }
       }
       if(req.method==='POST'&&path===PREFIX+'/settings'){
         if(!passwordOnly||!safePost(req,origin)||
