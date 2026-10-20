@@ -1,4 +1,27 @@
 "use strict";
+
+// Show/hide controls for every owner-dashboard password field.
+document.querySelectorAll('input[type="password"]').forEach(input=>{
+  const wrapper=document.createElement('span');
+  wrapper.className='password-visibility';
+  input.parentNode.insertBefore(wrapper,input);
+  wrapper.append(input);
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='password-visibility__toggle';
+  button.textContent='Pokaż';
+  button.setAttribute('aria-label','Pokaż hasło');
+  button.setAttribute('aria-pressed','false');
+  wrapper.append(button);
+  button.addEventListener('click',()=>{
+    const visible=input.type==='password';
+    input.type=visible?'text':'password';
+    button.textContent=visible?'Ukryj':'Pokaż';
+    button.setAttribute('aria-label',visible?'Ukryj hasło':'Pokaż hasło');
+    button.setAttribute('aria-pressed',String(visible));
+  });
+});
+
 let ownerCsrf = null;
 const $ = (id) => document.getElementById(id);
 const labels = {
