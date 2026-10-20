@@ -29,3 +29,13 @@ test('reservation uses confirmed consent, excludes withdrawals, and is atomic',(
   assert.match(sql,/INSERT INTO newsletter_campaigns\.dispatch_events/);
   assert.match(sql,/REVOKE ALL ON FUNCTION newsletter_campaigns\.reserve_confirmed/);
 });
+
+test('pre-send transition serializes withdrawal, checks DOI again and cannot retry',()=>{
+  assert.match(sql,/CREATE FUNCTION newsletter_campaigns\.claim_delivery/);
+  assert.match(sql,/WHERE s\.email_tag=v_tag FOR UPDATE/);
+  assert.match(sql,/NOT EXISTS \(\s*SELECT 1 FROM newsletter_new\.revocations/);
+  assert.match(sql,/AND state='reserved'/);
+  assert.match(sql,/SET state='inflight', attempted_at=clock_timestamp\(\)/);
+  assert.match(sql,/SET state='suppressed'/);
+  assert.match(sql,/REVOKE ALL ON FUNCTION newsletter_campaigns\.claim_delivery/);
+});
