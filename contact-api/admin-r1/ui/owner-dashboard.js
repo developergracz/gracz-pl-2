@@ -282,6 +282,10 @@ $("detail").addEventListener("cancel", clearDetail);
 window.addEventListener("pagehide", () => {
   generation++;
   summaryGeneration++;
+  trendDetailGeneration++;
+  trendDetailController?.abort();
+  trendDetailBusy=false;
+  $("trend-search-button").disabled=false;
   summaryController?.abort();
   summaryBusy=false;
   listController?.abort();
@@ -317,6 +321,8 @@ async function loadOwnerSettings(){
     $("owner-recovery-current").textContent=data.recoveryEmailMasked||"Nie ustawiono";
     $("account-settings-link").hidden=false;
     $("account-settings").hidden=false;
+    $("owner-account-nav").hidden=false;
+    $("owner-recovery-link").hidden=data.recoveryAvailable!==true;
   }catch{ /* fail closed: never render a nonfunctional settings form */ }
 }
 let changingCredentials=false;
@@ -416,6 +422,93 @@ $("owner-recovery-code-form").addEventListener("submit",async event=>{
   }catch{
     status.textContent="Kod jest nieprawidłowy lub wygasł. Nie zmieniono adresu odzyskiwania.";
   }finally{button.disabled=false;}
+});
+
+
+let trendDetailController,trendDetailGeneration=0,trendDetailBusy=false;
+const calendarDate=()=>new Intl.DateTimeFormat('sv-SE',{
+  timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit'
+}).format(new Date());
+const dateBack=(date,offset)=>{
+  const ms=Date.parse(date+'T00:00:00Z');
+  return new Date(ms-offset*86_400_000).toISOString().slice(0,10);
+};
+function setTrendPeriod(days){
+  const today=calendarDate();
+  $("trend-to").value=today;
+  $("trend-from").value=dateBack(today,days-1);
+}
+setTrendPeriod(30);
+$("trend-period").addEventListener("change",event=>{
+  if(event.currentTarget.value!=="custom")
+    setTrendPeriod(Number(event.currentTarget.value));
+});
+for(const id of ["trend-from","trend-to"]){
+  $(id).addEventListener("change",()=>{$("trend-period").value="custom";});
+}
+async function searchTrendDetails(){
+  if(trendDetailBusy||!ownerCsrf)return;
+  const from=$("trend-from").value,to=$("trend-to").value,
+    source=$("trend-source").value.trim();
+  const fromTime=Date.parse(from+'T00:00:00Z'),
+    toTime=Date.parse(to+'T00:00:00Z'),
+    days=1+(toTime-fromTime)/86_400_000;
+  if(!Number.isInteger(days)||days<1||days>366||
+    (source!==""&&!/^[a-z_]{1,40}$/.test(source))){
+    $("trend-detail-status").textContent=
+      "Podaj prawidłowy zakres od 1 do 366 dni i opcjonalnie kod źródła (małe litery oraz _).";
+    return;
+  }
+  const current=++trendDetailGeneration;
+  trendDetailController?.abort();
+  trendDetailController=new AbortController();
+  trendDetailBusy=true;
+  const button=$("trend-search-button");
+  button.disabled=true;
+  $("trend-detail-result").hidden=true;
+  $("trend-detail-rows").replaceChildren();
+  $("trend-detail-status").textContent="Wyszukiwanie szczegółów w rejestrze…";
+  try{
+    const data=await request("/owner/newsletter/trend-detail",{
+      method:"POST",signal:trendDetailController.signal,
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({from,to,source})
+    });
+    if(current!==trendDetailGeneration)return;
+    if(!data.ok||data.scope!=="new_only_global"||
+      !Array.isArray(data.rows)||data.rows.length!==days)
+      throw Error("invalid_detail");
+    const fragment=document.createDocumentFragment();
+    for(const row of data.rows){
+      const tr=document.createElement("tr");
+      for(const value of [row.day,row.requested,row.confirmed,
+        row.pending,row.withdrawn,row.doiRate===null?"—":row.doiRate+"%"])
+        tr.append(makeCell(value));
+      fragment.append(tr);
+    }
+    $("trend-detail-rows").replaceChildren(fragment);
+    const t=data.totals;
+    $("trend-detail-totals").textContent=
+      "Zakres: "+from+" – "+to+" · źródło: "+(source||"wszystkie")+
+      " · zgłoszenia: "+t.requested+" · potwierdzeni DOI: "+t.confirmed+
+      " · oczekujący: "+t.pending+" · wycofani: "+t.withdrawn;
+    $("trend-detail-result").hidden=false;
+    $("trend-detail-status").textContent="Wyniki dzienne · "+days+
+      " dni · strefa Europe/Warsaw. Dane zagregowane, bez adresów e-mail.";
+  }catch{
+    if(current===trendDetailGeneration)
+      $("trend-detail-status").textContent=
+        "Szczegóły niedostępne — spróbuj ponownie. Brak danych nie jest traktowany jako zero.";
+  }finally{
+    if(current===trendDetailGeneration){
+      trendDetailBusy=false;
+      button.disabled=false;
+    }
+  }
+}
+$("trend-search").addEventListener("submit",event=>{
+  event.preventDefault();
+  searchTrendDetails();
 });
 
 async function startOwnerDashboard(){
