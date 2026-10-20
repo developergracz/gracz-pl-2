@@ -53,52 +53,71 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
     }catch{throw fault('invalid_provider_response');}
   };
   const adapter=Object.freeze({
-    async readPage({after=null,limit=MAX_PAGE,signal}={}) {
+    async readPage({after=null,limit=MAX_PAGE,search="",state="all",signal}={}) {
       if(!Number.isInteger(limit)||limit<1||limit>MAX_PAGE||
-         (after!==null&&(!hex64.test(after)))) throw fault('invalid_request');
-      const rows=await query(`
-        SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
-               s.source,s.consent_version,s.delivery_state,
-               s.requested_at,s.confirmed_at,
-               (r.email_tag IS NOT NULL) AS revoked,
-               r.recorded_at AS revoked_at
-        FROM newsletter_new.subscribers s
-        LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
-        WHERE ($1::text IS NULL OR s.email_tag < $1::text)
-        ORDER BY s.email_tag DESC LIMIT $2
-      `,[after,limit+1],signal);
-      if(rows.length>limit+1)throw fault('invalid_provider_response');
-      const page=rows.slice(0,limit);
-      const ids=new Set();
-      const items=page.map(row=>{
-        const id=HEX(row.email_tag);
-        if(!hex64.test(id)||ids.has(id) ||
-           !['pending','active'].includes(row.state) ||
-           typeof row.revoked!=='boolean')throw fault('invalid_provider_response');
-        ids.add(id);
-        const iso=value=>{
-          const date=value instanceof Date?value:new Date(String(value));
-          if(!Number.isFinite(date.getTime()))throw fault('invalid_provider_response');
-          return date.toISOString();
-        };
-        if(typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source)||
-           typeof row.consent_version!=='string'||row.consent_version.length<1||
-           row.consent_version.length>64||/[\x00-\x1f\x7f]/.test(row.consent_version)||
-           !['uncertain','sent'].includes(row.delivery_state)||
-           !row.requested_at||(row.state==='active'&&!row.confirmed_at)||
-           (row.revoked&&!row.revoked_at))
-          throw fault('invalid_provider_response');
-        return {id,email:decrypt(row),
-          // This is first-party consent only, NOT proven provider deliverability.
-          state:row.revoked?'unsubscribed':row.state,
-          requestedAt:iso(row.requested_at),
-          confirmedAt:row.confirmed_at?iso(row.confirmed_at):null,
-          revokedAt:row.revoked_at?iso(row.revoked_at):null,
-          source:row.source,consentVersion:row.consent_version,
-          deliveryState:row.delivery_state,
-          globalUnsubscribed:null,inSegment:null,topic:null,suppressed:null};
-      });
-      return {items,after:rows.length>limit?items.at(-1).id:null};
+         (after!==null&&!hex64.test(after))||
+         typeof search!=="string"||search.length>80||
+         !['all','active','pending','unsubscribed'].includes(state))
+        throw fault('invalid_request');
+      const term=search.trim().toLowerCase();
+      const matches=[];
+      let boundary=after,hasMore=false;
+      // Encrypted addresses cannot be filtered with SQL LIKE. Scan bounded
+      // keyset batches, decrypt only on the private OWNER route, and resume
+      // from the last inspected key without skipping matching records.
+      for(let batch=0;batch<8&&matches.length<limit;batch++){
+        const rows=await query(`
+          SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
+                 s.source,s.consent_version,s.delivery_state,
+                 s.requested_at,s.confirmed_at,
+                 (r.email_tag IS NOT NULL) AS revoked,
+                 r.recorded_at AS revoked_at
+          FROM newsletter_new.subscribers s
+          LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+          WHERE ($1::text IS NULL OR s.email_tag < $1::text)
+          ORDER BY s.email_tag DESC LIMIT 101
+        `,[boundary],signal);
+        if(rows.length>101)throw fault('invalid_provider_response');
+        const full=rows.length===101;
+        const slice=rows.slice(0,100);
+        if(!slice.length){hasMore=false;break;}
+        const ids=new Set();
+        const items=slice.map(row=>{
+          const id=HEX(row.email_tag);
+          if(!hex64.test(id)||ids.has(id)||
+             !['pending','active'].includes(row.state)||
+             typeof row.revoked!=='boolean')throw fault('invalid_provider_response');
+          ids.add(id);
+          const iso=value=>{
+            const date=value instanceof Date?value:new Date(String(value));
+            if(!Number.isFinite(date.getTime()))throw fault('invalid_provider_response');
+            return date.toISOString();
+          };
+          if(typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source)||
+             typeof row.consent_version!=='string'||row.consent_version.length<1||
+             row.consent_version.length>64||/[\\x00-\\x1f\\x7f]/.test(row.consent_version)||
+             !['uncertain','sent'].includes(row.delivery_state)||
+             !row.requested_at||(row.state==='active'&&!row.confirmed_at)||
+             (row.revoked&&!row.revoked_at))
+            throw fault('invalid_provider_response');
+          return {id,email:decrypt(row),state:row.revoked?'unsubscribed':row.state,
+            requestedAt:iso(row.requested_at),
+            confirmedAt:row.confirmed_at?iso(row.confirmed_at):null,
+            revokedAt:row.revoked_at?iso(row.revoked_at):null,
+            source:row.source,consentVersion:row.consent_version,
+            deliveryState:row.delivery_state,
+            globalUnsubscribed:null,inSegment:null,topic:null,suppressed:null};
+        });
+        for(const item of items){
+          boundary=item.id;
+          if((state==='all'||item.state===state)&&item.email.includes(term))
+            matches.push(item);
+          if(matches.length===limit)break;
+        }
+        hasMore=full||boundary!==slice.at(-1).email_tag;
+        if(matches.length===limit||!full)break;
+      }
+      return {items:matches,after:hasMore?boundary:null};
     }
   });
 
