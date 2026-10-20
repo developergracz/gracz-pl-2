@@ -24,6 +24,40 @@ document.querySelectorAll('input[type="password"]').forEach(input=>{
 
 let ownerCsrf = null;
 const $ = (id) => document.getElementById(id);
+
+const premiumForms=['owner-change-password','owner-change-nick','owner-recovery-email-form','owner-recovery-code-form'];
+for(const id of premiumForms){
+  const form=document.getElementById(id);
+  if(!form)continue;
+  form.addEventListener('invalid',event=>{
+    const input=event.target;
+    if(!(input instanceof HTMLInputElement))return;
+    event.preventDefault();
+    const container=input.closest('.password-visibility')||input;
+    const previous=container.nextElementSibling;
+    if(previous?.classList.contains('premium-field-error'))previous.remove();
+    const message=document.createElement('span');
+    message.className='premium-field-error';
+    message.setAttribute('role','alert');
+    message.textContent=input.validity.valueMissing?'Wypełnij to pole.':
+      input.validity.tooShort?'Wpisz wymaganą liczbę znaków.':
+      input.validity.patternMismatch?'Sprawdź format wpisanych danych.':
+      input.validity.typeMismatch?'Wpisz poprawną wartość.':'Sprawdź poprawność pola.';
+    container.insertAdjacentElement('afterend',message);
+    input.classList.add('premium-field-invalid');
+    input.setAttribute('aria-invalid','true');
+  },true);
+  form.addEventListener('input',event=>{
+    const input=event.target;
+    if(!(input instanceof HTMLInputElement))return;
+    input.classList.remove('premium-field-invalid');
+    input.removeAttribute('aria-invalid');
+    const container=input.closest('.password-visibility')||input;
+    if(container.nextElementSibling?.classList.contains('premium-field-error'))
+      container.nextElementSibling.remove();
+  });
+}
+
 const labels = {
   active: "Aktywna",
   unsubscribed: "Wypisana",
@@ -65,6 +99,7 @@ let next = null,
 const summaryIds = ["total","active","pending","withdrawn","today","week","month","doi"];
 function clearSummary(message="Dane niedostępne") {
   for (const id of summaryIds) $("m4-"+id).textContent = "—";
+  $("recent-registered-total").textContent="—";
   $("m4-trend").replaceChildren();
   $("m4-monthly").replaceChildren();
   $("m4-sources").replaceChildren();
@@ -98,6 +133,7 @@ async function loadSummary() {
       $("m4-"+element).textContent=String(result.counts[key]);
     }
     $("m4-doi").textContent=result.doiRate30===null?"—":result.doiRate30+"%";
+    $("recent-registered-total").textContent=String(result.counts.total);
     $("m4-asof").textContent="Dane pobrano: "+warsawTime(result.fetchedAt);
     const max=Math.max(1,...result.trend.map(day=>day.requested));
     const fragment=document.createDocumentFragment();
