@@ -10,11 +10,15 @@ for(const field of ['RESEND_API_BASE','RESEND_ENDPOINT']) {
 }
 if(process.env.NEWSLETTER_SECRET!=='test-'+'n'.repeat(40)||process.env.NEWSLETTER_CONSENT_HASH_SECRET!=='test-consent-'+'h'.repeat(40))throw new Error('Synthetic keys required');
 const heldUrl=new URL('../security/newsletter-recovery-hold.mjs',import.meta.url).href;
+const newOnlyUrl=new URL('../new-only-newsletter.mjs',import.meta.url).href;
 const fixtureUrl=new URL('./legacy-newsletter-manager.mjs',import.meta.url).href;
 // Explicit test-only bridge; the fixture itself is never named as a held manager.
 const bridge='data:text/javascript,'+encodeURIComponent(`export {createLegacyFixtureManager as createHeldNewsletterManager} from ${JSON.stringify(fixtureUrl)};`);
+const newOnlyBridge='data:text/javascript,'+encodeURIComponent(`export {createLegacyFixtureManager as createNewOnlyNewsletter} from ${JSON.stringify(fixtureUrl)};`);
 registerHooks({resolve(specifier,context,next){
   const result=next(specifier,context);
-  return result.url===heldUrl?{...result,url:bridge}:result;
+  if(result.url===heldUrl)return {...result,url:bridge};
+  if(result.url===newOnlyUrl)return {...result,url:newOnlyBridge};
+  return result;
 }});
 await import('../server.mjs');
