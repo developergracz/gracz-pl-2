@@ -458,7 +458,7 @@
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
           '<a class="account-access__newsletter-cta newsletter-success__cta" href="/newsletter/#nl-status-panel"><span>Sprawdź status swojego adresu</span><b aria-hidden="true">→</b></a>'+
-          '<p class="account-access__consent">System odczyta aktualny status z bazy newslettera po potwierdzeniu dostępu do skrzynki jednorazowym linkiem e-mail. Bez tego potwierdzenia nie ujawniamy statusu podanego adresu.</p>'+
+          '<p class="account-access__consent">System odczyta aktualny status z bazy newslettera po potwierdzeniu dostępu do skrzynki linkiem e-mail ważnym 15 minut. Bez tego potwierdzenia nie ujawniamy statusu podanego adresu.</p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
