@@ -452,3 +452,7 @@ nav [hidden],.nav-subgroup[hidden]{display:none!important}
   #account-settings, #owner-change-password, #owner-change-nick,
   #owner-recovery-settings {scroll-margin-top:155px}
 }
+
+/* Newsletter OWNER footer: same original branding as the site's wordmark. */
+footer .footer-brand{color:#fff;font-weight:800;white-space:nowrap}
+footer .footer-brand span{color:#ff6573}
