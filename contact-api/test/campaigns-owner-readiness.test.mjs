@@ -27,3 +27,15 @@ test('OWNER saved-draft read and update require CSRF and do not expose sending',
   assert.match(router,/campaignDraftStore\.update\(id,draft\)/);
   assert.doesNotMatch(router,/campaign-drafts\/send/);
 });
+
+test('consent evidence count is OWNER-only, CSRF-checked and non-sending',()=>{
+  assert.ok(router.indexOf("const session=await auth.session") <
+    router.indexOf("path===PREFIX+'/campaign-drafts/audience'"));
+  assert.match(router,/path===PREFIX\+'\/campaign-drafts\/audience'/);
+  assert.match(router,/!campaignDraftsEnabled\|\|!campaignDraftStore\|\|/);
+  assert.match(router,/typeof campaignAudienceProofCount!=='function'/);
+  assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
+  assert.match(router,/await campaignAudienceProofCount\(\)/);
+  assert.match(ui,/await draftRequest\("audience",\{\}\)/);
+  assert.match(ui,/result\.advisoryOnly!==true/);
+});
