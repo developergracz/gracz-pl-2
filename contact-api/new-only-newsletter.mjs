@@ -260,9 +260,7 @@ export function createNewOnlyNewsletter({
         from:emailFrom,to:[mailbox],subject:'gracz.pl — bezpieczne sprawdzenie newslettera',
         text:'Aby sprawdzić status swojej subskrypcji newslettera gracz.pl, otwórz link: '+
           baseUrl+'#status='+proof+
-          '
-
-Link jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.'
+          '\n\nLink jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.'
       }),
       signal:AbortSignal.timeout(10000)
     });
@@ -276,7 +274,7 @@ Link jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj w
     const invalid=()=>Object.assign(new Error('Nieważny lub wygasły link do statusu.'),{
       code:'NEWSLETTER_STATUS_REJECTED',status:400
     });
-    const parts=/^ns2.([A-Za-z0-9_-]{16}).([A-Za-z0-9_-]{1,600}).([A-Za-z0-9_-]{22})$/.exec(String(token||''));
+    const parts=/^ns2[.]([A-Za-z0-9_-]{16})[.]([A-Za-z0-9_-]{1,600})[.]([A-Za-z0-9_-]{22})$/.exec(String(token||''));
     if(!parts)throw invalid();
     let payload;
     try{
@@ -287,7 +285,7 @@ Link jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj w
       payload=JSON.parse(data.toString('utf8'));
     }catch{throw invalid();}
     if(!payload||typeof payload.mailbox!=='string'||payload.mailbox.length>254||
-      !/^[^s@]+@[^s@]+.[^s@]+$/.test(payload.mailbox)||
+      !/^[^\s@]+@[^\s@]+[.][^\s@]+$/.test(payload.mailbox)||
       !Number.isSafeInteger(payload.issued)||payload.issued>Date.now()||
       Date.now()-payload.issued>STATUS_TTL_MS)throw invalid();
     const found=await database.queryBounded(`
