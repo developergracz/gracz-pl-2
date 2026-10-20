@@ -571,6 +571,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   result=await call('/owner/newsletter/recent-subscribers',{
     method:'POST',cookie,csrf:login.csrf,data:{unexpected:true}});
   assert.equal(result.status,403,'Recent subscribers reject extraneous input');
+  // Invalid requests consume the OWNER endpoint's anti-flood cooldown.
+  await new Promise(resolve=>setTimeout(resolve,3100));
   result=await call('/owner/newsletter/recent-subscribers',{
     method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,200);
