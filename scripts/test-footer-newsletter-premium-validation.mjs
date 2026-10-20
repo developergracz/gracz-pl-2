@@ -100,7 +100,7 @@ test('Premium dialog explains already active addresses without exposing subscrib
   assert.match(source,/aktywnych adresów nie zapisujemy ponownie/);
   assert.match(source,/nowy zapis wymaga potwierdzenia e-mail/);
   assert.match(source,/statusu adresu nie ujawniamy bez potwierdzenia/);
-  assert.match(source,/newsletterSuccessDialog\.showModal\(\)/);
+  assert.match(source,/target\.showModal\(\)/);
   assert.match(source,/data-newsletter-success-close/);
   assert.doesNotMatch(source,/<h2 id="newsletter-success-title">Zgłoszenie przyjęte<\/h2>/);
 });
