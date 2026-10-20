@@ -130,7 +130,7 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
   assert.ok(first);
   const info=await auth.settings(first.token);
   assert.equal(info.username,'graczowner');
-  assert.match(info.lastLoginAt,/^\\d{4}-/);
+  assert.match(info.lastLoginAt,/^\d{4}-/);
   assert.equal(await auth.changeCredentials(first.token,{
     oldPassword:'not-the-correct-password',newPassword:'a-new-secure-owner-password-2026'
   }),false);
