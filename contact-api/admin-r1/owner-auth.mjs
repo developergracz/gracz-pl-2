@@ -61,16 +61,41 @@ export function createOwnerAuth({
   if(!database?.enabled||typeof database.transaction!=='function'||!password||
      (passwordOnly?!ownerName:!secret))return null;
   // Changing the mode, username or verifier revokes existing durable sessions.
-  const credentialFingerprint=passwordOnly
-    ?createHmac('sha256',password.verifier)
-      .update('gracz-owner-nick-password-v1:').update(ownerName).digest('hex')
+  const fingerprint=(verifier,name)=>passwordOnly
+    ?createHmac('sha256',verifier.verifier)
+      .update('gracz-owner-nick-password-v1:').update(name).digest('hex')
     :createHmac('sha256',secret)
       .update('gracz-owner-credential-generation-v1')
-      .update(password.verifier).digest('hex');
-  const csrfKey=createHmac('sha256',password.verifier).update('gracz-owner-session-csrf-v1').digest();
-  const csrf=token=>createHmac('sha256',csrfKey).update(token).digest('base64url');
+      .update(verifier.verifier).digest('hex');
+  // Only a verified password-only OWNER can persist overrides. Before the
+  // first explicit change, private Render secrets remain the bootstrap source.
+  // A missing/invalid credential store MUST fail closed, never silently
+  // restore the old environment password after a credential change.
+  async function credentials(client=database){
+    if(!passwordOnly){
+      const csrfKey=createHmac('sha256',password.verifier)
+        .update('gracz-owner-session-csrf-v1').digest();
+      return {password,name:ownerName,verifierSpec:passwordSpec,
+        fingerprint:fingerprint(password,ownerName),
+        csrf:token=>createHmac('sha256',csrfKey).update(token).digest('base64url')};
+    }
+    const result=await client.query(
+      'SELECT username,password_verifier FROM newsletter_owner.credentials WHERE id=1');
+    if(result.rowCount>1)throw Error('Invalid OWNER credentials');
+    const row=result.rows[0];
+    const spec=row?row.password_verifier:passwordSpec;
+    const name=row?row.username:ownerName;
+    const parsed=validPasswordSpec(spec);
+    if(!parsed||!(/^[A-Za-z][A-Za-z0-9._-]{2,31}$/.test(name)))
+      throw Error('Invalid OWNER credential store');
+    const csrfKey=createHmac('sha256',parsed.verifier)
+      .update('gracz-owner-session-csrf-v1').digest();
+    return {password:parsed,name,verifierSpec:spec,
+      fingerprint:fingerprint(parsed,name),
+      csrf:token=>createHmac('sha256',csrfKey).update(token).digest('base64url')};
+  }
   async function audit(client,action){
-    if(!['login_ok','login_denied','session_read','subscriber_list','subscriber_detail','logout'].includes(action))
+    if(!['login_ok','login_denied','session_read','subscriber_list','subscriber_detail','logout','credentials_changed'].includes(action))
       throw Error('Invalid audit action');
     await client.query('INSERT INTO newsletter_owner.audit(event_id,action) VALUES($1,$2)',[randomUUID(),action]);
   }
@@ -85,19 +110,24 @@ export function createOwnerAuth({
     if(preflight.rows?.length!==1 ||
        (preflight.rows[0].locked_until &&
         new Date(preflight.rows[0].locked_until).getTime()>now()))return null;
+    const current=await credentials();
     // Compute KDF outside the PostgreSQL transaction.
-    const digest=await scrypt(attempt,password.salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
-    const passwordOk=equals(digest,password.verifier);
+    const digest=await scrypt(attempt,current.password.salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
+    const passwordOk=equals(digest,current.password.verifier);
     // Check both identities without early exit; failed usernames count toward lockout.
     const usernameOk=!passwordOnly||(typeof attemptedName==='string'&&
       attemptedName.length<=64&&equals(
         createHash('sha256').update(attemptedName).digest(),
-        createHash('sha256').update(ownerName).digest()));
+        createHash('sha256').update(current.name).digest()));
     return database.transaction(async client=>{
       const r=await client.query('SELECT failures,locked_until,last_totp_step FROM newsletter_owner.guard WHERE id=1 FOR UPDATE');
       if(r.rowCount!==1)throw Error('Owner schema missing');
       const guard=r.rows[0],time=now();
       if(guard.locked_until && new Date(guard.locked_until).getTime()>time)return null;
+      // Reject a concurrent credential rotation, even if password verification
+      // started before the other request committed its update.
+      const locked=await credentials(client);
+      if(locked.fingerprint!==current.fingerprint)return null;
       let matching=-1;
       if(!passwordOnly){
         const step=Math.floor(time/30000);
@@ -125,24 +155,25 @@ export function createOwnerAuth({
       await client.query(`INSERT INTO newsletter_owner.sessions
         (token_hash,credential_fingerprint,created_at,expires_at,idle_expires_at)
         VALUES ($1,$4,clock_timestamp(),$2,$3)`,
-        [tokenHash,new Date(time+ABS_MS),new Date(time+IDLE_MS),credentialFingerprint]);
+        [tokenHash,new Date(time+ABS_MS),new Date(time+IDLE_MS),current.fingerprint]);
       await audit(client,'login_ok');
-      return {token,csrf:csrf(token),tokenHash};
+      return {token,csrf:current.csrf(token),tokenHash};
     });
   }
   async function session(raw,action='session_read'){
     if(!raw||!['session_read','subscriber_list','subscriber_detail'].includes(action))return null;
     const tokenHash=hash(raw);
     return database.transaction(async client=>{
+      const current=await credentials(client);
       const result=await client.query(`SELECT expires_at,idle_expires_at
-        FROM newsletter_owner.sessions WHERE token_hash=$1 AND credential_fingerprint=$2 FOR UPDATE`,[tokenHash,credentialFingerprint]);
+        FROM newsletter_owner.sessions WHERE token_hash=$1 AND credential_fingerprint=$2 FOR UPDATE`,[tokenHash,current.fingerprint]);
       const row=result.rows[0],time=now();
       if(!row||new Date(row.expires_at).getTime()<=time||
          new Date(row.idle_expires_at).getTime()<=time)return null;
       await client.query('UPDATE newsletter_owner.sessions SET idle_expires_at=$2 WHERE token_hash=$1',
         [tokenHash,new Date(Math.min(time+IDLE_MS,new Date(row.expires_at).getTime()))]);
       await audit(client,action); // No data is returned if audit storage fails.
-      return {tokenHash,csrf:csrf(raw)};
+      return {tokenHash,csrf:current.csrf(raw)};
     });
   }
   async function logout(raw){
@@ -152,8 +183,64 @@ export function createOwnerAuth({
       await audit(client,'logout');
     });
   }
+  async function settings(raw){
+    if(!passwordOnly||!await session(raw))return null;
+    const result=await database.queryBounded(
+      "SELECT max(recorded_at) AS last_login_at FROM newsletter_owner.audit WHERE action='login_ok'",
+      [],{timeoutMs:2000});
+    const current=await credentials();
+    return {username:current.name,
+      lastLoginAt:result.rows?.[0]?.last_login_at?.toISOString?.()??null};
+  }
+  async function changeCredentials(raw,{oldPassword,newPassword,username:newName}={}){
+    if(!passwordOnly||typeof oldPassword!=='string'||
+       oldPassword.length<16||oldPassword.length>256||
+       (newPassword!==undefined&&(typeof newPassword!=='string'||
+       newPassword.length<16||newPassword.length>128))||
+       (newName!==undefined&&!/^[A-Za-z][A-Za-z0-9._-]{2,31}$/.test(newName)))
+      return false;
+    const current=await credentials();
+    const name=newName===undefined?current.name:newName;
+    if(name===current.name&&newPassword===undefined)return false;
+    // Both password checks and fresh scrypt run outside the database lock.
+    const oldDigest=await scrypt(oldPassword,current.password.salt,32,
+      {N:16384,r:8,p:1,maxmem:64*1024*1024});
+    const passwordMatches=equals(oldDigest,current.password.verifier);
+    if(!passwordMatches)return false;
+    const nextSpec=newPassword===undefined?current.verifierSpec:await newVerifier(newPassword);
+    const nextParsed=validPasswordSpec(nextSpec);
+    if(newPassword!==undefined){
+      const same=await scrypt(newPassword,current.password.salt,32,
+        {N:16384,r:8,p:1,maxmem:64*1024*1024});
+      if(equals(same,current.password.verifier))return false;
+    }
+    if(!nextParsed)return false;
+    const tokenHash=hash(raw);
+    return database.transaction(async client=>{
+      // The shared OWNER guard serializes concurrent account changes.
+      const guard=await client.query(
+        'SELECT locked_until FROM newsletter_owner.guard WHERE id=1 FOR UPDATE');
+      if(guard.rowCount!==1)return false;
+      if(guard.rows[0].locked_until&&
+         new Date(guard.rows[0].locked_until).getTime()>now())return false;
+      const locked=await credentials(client);
+      if(locked.fingerprint!==current.fingerprint)return false;
+      const existing=await client.query(
+        'SELECT expires_at,idle_expires_at FROM newsletter_owner.sessions WHERE token_hash=$1 AND credential_fingerprint=$2 FOR UPDATE',
+        [tokenHash,current.fingerprint]);
+      const row=existing.rows[0],time=now();
+      if(!row||new Date(row.expires_at).getTime()<=time||
+         new Date(row.idle_expires_at).getTime()<=time)return false;
+      await client.query(
+        'INSERT INTO newsletter_owner.credentials(id,username,password_verifier) VALUES(1,$1,$2) ON CONFLICT(id) DO UPDATE SET username=excluded.username,password_verifier=excluded.password_verifier,updated_at=clock_timestamp()',
+        [name,nextSpec]);
+      await client.query('DELETE FROM newsletter_owner.sessions');
+      await audit(client,'credentials_changed');
+      return true;
+    });
+  }
   const checkCsrf=(session,value)=>typeof value==='string'&&
     /^[A-Za-z0-9_-]{43}$/.test(value)&&
     equals(Buffer.from(session.csrf),Buffer.from(value));
-  return Object.freeze({login,session,logout,checkCsrf});
+  return Object.freeze({login,session,logout,checkCsrf,settings,changeCredentials});
 }
