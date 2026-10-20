@@ -37,5 +37,5 @@ test('consent evidence count is OWNER-only, CSRF-checked and non-sending',()=>{
   assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
   assert.match(router,/await campaignAudienceProofCount\(\)/);
   assert.match(ui,/await draftRequest\("audience",\{\}\)/);
-  assert.match(ui,/result\.advisoryOnly!==true/);
+  assert.match(ui,/result\?\.advisoryOnly!==true/);
 });
