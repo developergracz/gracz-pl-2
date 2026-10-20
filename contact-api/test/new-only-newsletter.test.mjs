@@ -105,7 +105,8 @@ test('new-only DOI requires a fresh mailbox proof and produces one immutable con
   assert.equal(events.length,1);
   assert.equal([...records.values()][0].state,'active');
   await assert.rejects(manager.confirm(link),{code:'NEWSLETTER_CONFIRM_REJECTED'});
-  await manager.acceptOptIn({email:'synthetic@example.test'});
+  assert.deepEqual(await manager.acceptOptIn({email:'synthetic@example.test'}),
+    {state:'already_subscribed'});
   assert.equal(sends,1);
   assert.equal(events.length,1);
 });
