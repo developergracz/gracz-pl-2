@@ -507,6 +507,9 @@ test("new-only private reader resolves active, pending and revoked evidence with
   assert.equal(snapshot.counts.active,1);
   const detail=await service.detail(snapshot.items.find(x=>x.state==="active").handle);
   assert.equal(detail.consent.state,"subscribed");
+  assert.equal(detail.requestedAt,"2026-10-20T01:00:00.000Z");
+  assert.equal(detail.confirmedAt,"2026-10-20T01:04:00.000Z");
+  assert.equal(detail.source,"newsletter_page");
   // Tampered encryption must fail closed and reveal no raw provider / query errors.
   const tamper=records[0];
   const old=Buffer.from(tamper.auth_tag);
