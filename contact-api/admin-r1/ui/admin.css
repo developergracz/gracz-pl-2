@@ -345,3 +345,16 @@ dialog::backdrop {
 .m4-table-scroll meter{width:min(120px,35vw);height:12px;margin-left:10px;vertical-align:middle;}
 #statistics .cards{margin-bottom:12px;}
 #statistics h3{font-size:17px;margin:22px 0 8px;}
+
+
+/* M5 — one OWNER settings section, no third-party dependencies. */
+#account-settings[hidden],#account-settings-link[hidden]{display:none!important}
+.owner-account-meta{padding:14px 18px;margin-top:20px;border:1px solid var(--line);border-radius:12px}
+.owner-account-meta p{margin:7px 0;overflow-wrap:anywhere}
+.owner-account-forms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+#account-settings form{display:flex;flex-direction:column;align-items:stretch;gap:9px;
+  border:1px solid var(--line);border-radius:14px;padding:22px}
+#account-settings form h3{font-size:17px;margin:0 0 10px}
+#account-settings form button{margin-top:12px;background:var(--accent);color:#081b20}
+#account-settings-status{min-height:22px;color:var(--accent);font-size:14px}
+@media(max-width:850px){.owner-account-forms{grid-template-columns:1fr}}
