@@ -358,6 +358,18 @@ dialog::backdrop {
 .owner-login button{margin-top:10px;}
 #login-status{min-height:24px;color:var(--muted);}
 
+/* Keep OWNER login and recovery action visible on typical laptop viewports. */
+.owner-login{margin:clamp(12px,3vh,32px) auto;padding:clamp(14px,2vh,22px) 28px;}
+.owner-login-brand{margin-bottom:14px;}
+.owner-login h1{margin:12px 0;font-size:clamp(30px,4vh,44px);line-height:1.12;}
+.owner-login>p{margin:12px 0;}
+.owner-login form{gap:8px;}
+.owner-login form label{margin:4px 0 0;}
+.owner-login #login-button{margin-top:8px;}
+.owner-login #login-status{min-height:18px;margin:6px 0;}
+.owner-login #forgot-open{margin-top:0;}
+@media(max-width:520px){.owner-login{padding:16px 18px;}}
+
 /* M4: bounded, accessible trend table; no external chart assets. */
 .m4-table-scroll{max-height:420px;overflow:auto;margin-top:24px;}
 .m4-table-scroll meter{width:min(120px,35vw);height:12px;margin-left:10px;vertical-align:middle;}
