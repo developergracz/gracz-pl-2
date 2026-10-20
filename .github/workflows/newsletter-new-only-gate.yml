@@ -1,0 +1,101 @@
+name: Newsletter new-only release gate
+
+on:
+  pull_request:
+    paths:
+      - "contact-api/new-only-newsletter.mjs"
+      - "contact-api/persistence/new-only/**"
+      - "contact-api/persistence/recovery/self-service-withdrawal.mjs"
+      - "contact-api/server.mjs"
+      - "contact-api/test/new-only-newsletter.test.mjs"
+      - ".github/workflows/newsletter-new-only-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  new-only:
+    name: New-only DOI + PostgreSQL 18 revocation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: newsletter_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d newsletter_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: contact-api/package-lock.json
+      - name: Install existing API dependencies
+        run: npm --prefix contact-api ci --ignore-scripts
+      - name: Verify new-only opt-in and revocation regression cases
+        run: node --test contact-api/test/new-only-newsletter.test.mjs
+      - name: Verify 001 + 002 PostgreSQL 18 migrations and immutable opt-out
+        working-directory: contact-api
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: ci-only
+          PGDATABASE: newsletter_ci
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile} from 'node:fs/promises';
+          import pg from 'pg';
+          const db=new pg.Client();
+          await db.connect();
+          try {
+            for (const name of ['001_new_only_doi.sql','002_verified_withdrawal.sql']) {
+              const sql=await readFile('persistence/new-only/'+name,'utf8');
+              await db.query('BEGIN');
+              try {await db.query(sql);await db.query('COMMIT');}
+              catch(e){await db.query('ROLLBACK');throw e;}
+            }
+            const schema=await db.query(
+              "SELECT (to_regclass('newsletter_new.subscribers') IS NOT NULL) AS subscribers,"+
+              " (to_regclass('newsletter_new.revocations') IS NOT NULL) AS revocations"
+            );
+            assert.equal(schema.rows[0].subscribers,true);
+            assert.equal(schema.rows[0].revocations,true);
+            const emailTag='a'.repeat(64);
+            const challenge='00000000-0000-4000-8000-000000000001';
+            await db.query(
+              "INSERT INTO newsletter_new.subscribers "+
+              "(email_tag,ciphertext,nonce,auth_tag,challenge_id,token_tag,state,"+
+              "delivery_state,source,consent_version,expires_at) "+
+              "VALUES ($1,$2,$3,$4,$5,$6,'pending','sent','newsletter_page','ci-only',now()+interval '30 minutes')",
+              [emailTag,Buffer.from('fakeciphertext'),Buffer.alloc(12),Buffer.alloc(16),
+                challenge,'b'.repeat(64)]
+            );
+            await db.query(
+              "INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES ($1,$2)",
+              [emailTag,'00000000-0000-4000-8000-000000000002']
+            );
+            await assert.rejects(
+              db.query('DELETE FROM newsletter_new.revocations WHERE email_tag=$1',[emailTag]),
+              /NEWSLETTER_NEW_AUDIT_APPEND_ONLY/
+            );
+            await assert.rejects(
+              db.query('UPDATE newsletter_new.revocations SET recorded_at=now() WHERE email_tag=$1',[emailTag]),
+              /NEWSLETTER_NEW_AUDIT_APPEND_ONLY/
+            );
+            const rows=await db.query('SELECT count(*)::int AS count FROM newsletter_new.revocations');
+            assert.equal(rows.rows[0].count,1);
+            console.log('New-only PostgreSQL 18 migrations and immutable opt-out PASS');
+          } finally {await db.end();}
+          NODE
