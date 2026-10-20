@@ -638,3 +638,58 @@ footer .footer-brand span{color:#ff6573}
   font-variant-numeric:tabular-nums;
 }
 #m4-total{color:#ffd56a;}
+
+/* OWNER campaign drafts — readable editor and CSP-independent preview. */
+#campaign-drafts #campaign-preview-form{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:16px;
+  align-items:stretch;margin:20px 0;
+}
+#campaign-drafts .campaign-field{display:grid;gap:6px;min-width:0;}
+#campaign-drafts .campaign-field label{font-size:13px;margin:0;}
+#campaign-drafts .campaign-field input,
+#campaign-drafts .campaign-field textarea{
+  width:100%;min-width:0;max-width:100%;padding:12px 14px;
+  border:1px solid #53677f;border-radius:10px;
+  background:#101f30;color:#f2f7ff;font:inherit;font-size:15px;line-height:1.55;
+}
+#campaign-drafts .campaign-field textarea{min-height:180px;resize:vertical;}
+#campaign-drafts .campaign-audience{margin:0;}
+#campaign-drafts .campaign-actions{
+  display:flex;flex-wrap:wrap;justify-content:flex-start;
+  align-items:center;gap:12px;
+}
+#campaign-drafts .campaign-actions button{max-width:100%;}
+#campaign-drafts #campaign-preview-status{min-height:21px;color:var(--accent);}
+#campaign-drafts .campaign-output{
+  display:grid;grid-template-columns:minmax(0,3fr) minmax(240px,2fr);
+  align-items:start;gap:18px;margin-top:16px;
+}
+#campaign-drafts .campaign-output-panel{min-width:0;}
+#campaign-drafts .campaign-output-panel h3{font-size:16px;margin:0 0 12px;}
+#campaign-drafts .campaign-preview-mail{
+  background:#0e1724;color:#f2f7ff;border:1px solid #43546b;
+  border-radius:12px;padding:24px;min-height:230px;
+}
+#campaign-drafts .campaign-brand{
+  font-size:28px;letter-spacing:-1.5px;font-weight:850;margin:0 0 18px;
+}
+#campaign-drafts .campaign-brand span{color:#ff6573;}
+#campaign-drafts #campaign-preview-subject{font-size:19px;margin:0 0 16px;}
+#campaign-drafts #campaign-preview-body{
+  font-size:15px;line-height:1.65;white-space:pre-wrap;
+  overflow-wrap:anywhere;margin:0 0 18px;
+}
+#campaign-drafts .campaign-preview-note{
+  border-top:1px solid var(--line);padding-top:12px;
+  font-size:12px;color:var(--muted);
+}
+#campaign-drafts #campaign-drafts-list{padding-left:20px;margin:0;line-height:1.7;overflow-wrap:anywhere;}
+#campaign-drafts #campaign-drafts-list li{margin:0 0 8px;}
+@media(max-width:850px){
+  #campaign-drafts .campaign-output{grid-template-columns:minmax(0,1fr);}
+}
+@media(max-width:500px){
+  #campaign-drafts .campaign-actions{flex-direction:column;align-items:stretch;}
+  #campaign-drafts .campaign-actions button{width:100%;}
+  #campaign-drafts .campaign-preview-mail{padding:16px;}
+}
