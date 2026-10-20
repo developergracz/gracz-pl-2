@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createOwnerAuth,parseOwnerCookie,newCookie,clearCookie} from './owner-auth.mjs';
 import {createNewOnlyAdminReader} from './new-only-reader.mjs';
 import {createNewOnlySummary} from './summary.mjs';
+import {createNewOnlyTrendDetail} from './trend-detail.mjs';
 import {createReadService} from './service.mjs';
 import {privateHeaders,denyAdmin} from './deny.mjs';
 const PREFIX='/owner/newsletter';
@@ -65,14 +66,21 @@ pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
 <p id="login-status" role="status" aria-live="polite"></p>
 ${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomniałem hasła?</button></p>
 <dialog id="forgot-dialog" aria-labelledby="forgot-title">
+<div class="forgot-heading">
 <h2 id="forgot-title">Odzyskaj hasło administratora</h2>
+<button id="forgot-close" type="button">Zamknij</button>
+</div>
 <p>Wpisz potwierdzony adres e-mail odzyskiwania.</p>
+<div class="forgot-forms">
+<section aria-label="Wysyłka kodu odzyskiwania">
 <form id="forgot-request-form" autocomplete="off">
 <label for="forgot-email">Adres e-mail odzyskiwania</label>
 <input id="forgot-email" type="email" autocomplete="email" maxlength="254" required>
 <button type="submit">Wyślij hasło tymczasowe</button>
 </form>
 <p id="forgot-request-status" role="status" aria-live="polite"></p>
+</section>
+<section aria-label="Ustawienie nowego hasła">
 <form id="forgot-complete-form" autocomplete="off">
 <label for="forgot-code">Hasło tymczasowe z wiadomości</label>
 <input id="forgot-code" type="text" minlength="24" maxlength="24" autocomplete="one-time-code" required>
@@ -83,7 +91,8 @@ ${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomni
 <button type="submit">Ustaw nowe hasło</button>
 </form>
 <p id="forgot-complete-status" role="status" aria-live="polite"></p>
-<button id="forgot-close" type="button">Zamknij</button>
+</section>
+</div>
 </dialog>`:''}
 </main></body></html>`;
 export function createOwnerRouter({
@@ -100,10 +109,12 @@ export function createOwnerRouter({
     catch {reader=null;}
   }
   const readSummary=reader?createNewOnlySummary({database}):null;
-  const configured=Boolean(auth&&reader&&readSummary&&origin===ORIGIN);
+  const readTrendDetail=reader?createNewOnlyTrendDetail({database}):null;
+  const configured=Boolean(auth&&reader&&readSummary&&readTrendDetail&&origin===ORIGIN);
   const services=new Map();
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
+  let trendBusy=false,trendLastAt=-Infinity;
   let settingsBusy=false,settingsLastAt=-Infinity;
   let recoverBusy=false;
   function serviceFor(tokenHash){
@@ -254,6 +265,21 @@ export function createOwnerRouter({
           if(!ok)return response(res,400,{ok:false,error:'invalid_or_unavailable'});
           return response(res,200,{ok:true});
         }finally{settingsBusy=false;}
+      }
+      if(req.method==='POST'&&path===PREFIX+'/trend-detail'){
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        if(trendBusy||Date.now()-trendLastAt<1200)return reject(res,429);
+        trendBusy=true;trendLastAt=Date.now();
+        try{
+          const data=await input(req);
+          if(Object.keys(data).some(k=>!['from','to','source'].includes(k))||
+             !Object.hasOwn(data,'from')||!Object.hasOwn(data,'to'))
+            return reject(res);
+          const result=await readTrendDetail(data);
+          return result?response(res,200,result)
+            :response(res,400,{ok:false,error:'invalid_range'});
+        }finally{trendBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/summary'){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
