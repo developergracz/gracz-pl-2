@@ -20,6 +20,10 @@ The file `schema-r1.sql` defines draft/approval state and a unique campaign–re
 
 `dispatch-coordinator.mjs` connects a committed claim, single provider attempt and durable result recorder through injectable interfaces. No production component constructs it. The claim implementation, authorization boundary, real database transaction and current opt-out readiness remain release blockers; the contract must not be treated as proof that these exist. No automatic retries after any uncertain result.
 
+## PostgreSQL adapter (draft only)
+
+`pg-dispatch-store.mjs` calls the existing candidate `claim_delivery` and `record_delivery_result` SQL functions inside separate committed `database.transaction` calls. The stored functions are NOT installed, production dispatch remains disabled, and there is no OWNER route or service wiring. Integration tests against PostgreSQL and the end-to-end proof of current consent are still required before enabling.
+
 ## Required implementation before a release
 1. Finish the database candidate with immutable dispatch audit and controlled state transitions, durable campaign-recipient idempotency, explicit owner approval and recovery after uncertain Resend response.
 2. Recheck confirmed opt-in and latest withdrawal/suppression immediately before each send; never send to historical contacts or pending/unsubscribed recipients. Consent purpose and permitted communication must match.
