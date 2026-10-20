@@ -7,6 +7,7 @@ import {createDatabase} from '../../persistence/database.mjs';
 import {createOwnerAuth,codeAt,encodeTotp,newVerifier,parseOwnerCookie} from '../owner-auth.mjs';
 import {createOwnerRouter} from '../owner-router.mjs';
 import {createNewOnlyTrendDetail} from '../trend-detail.mjs';
+import {createNewOnlyAdminReader} from '../new-only-reader.mjs';
 import {createOwnerRecoveryMailer} from '../owner-recovery-mailer.mjs';
 const url=process.env.OWNER_TEST_DATABASE_URL;
 if(!url)throw Error('Disposable OWNER_TEST_DATABASE_URL required');
@@ -558,6 +559,56 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     assert.ok(html.includes('id="'+id+'"'),'Missing section anchor '+id);
     assert.ok(html.includes('href="#'+id+'"'),'Missing menu link '+id);
   }
+
+  // M8: an independent private endpoint supplies the 24-hour banner,
+  // two-hour conditional CTA and a bounded newest-first subscriber tab.
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',data:{}});
+  assert.equal(result.status,401,'Anonymous recent subscribers unavailable');
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',cookie,data:{}});
+  assert.equal(result.status,403,'Recent subscribers require CSRF');
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',cookie,csrf:login.csrf,data:{unexpected:true}});
+  assert.equal(result.status,403,'Recent subscribers reject extraneous input');
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',cookie,csrf:login.csrf,data:{}});
+  assert.equal(result.status,200);
+  const fresh=await result.json();
+  assert.equal(fresh.scope,'new_only_global');
+  assert.equal(fresh.total24,3);
+  assert.equal(fresh.total2,3);
+  assert.equal(fresh.items.length,3);
+  assert.equal(fresh.hasMore,false);
+  assert.ok(fresh.items.every(item=>/^[0-9]{4}-/.test(item.requestedAt)));
+  assert.ok(!fresh.items.some(item=>item.email==='older-owner-fixture@example.test'));
+  assert.ok(fresh.items.some(item=>item.email==='private-owner-fixture@example.test'));
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',cookie,csrf:login.csrf,data:{}});
+  assert.equal(result.status,429,'Recent snapshots are rate-limited');
+  const recentReader=createNewOnlyAdminReader({
+    database:db,encryptionKey:enc,subjectKey:subject
+  });
+  const pendingTag=createHmac('sha256',subject)
+    .update('gracz-new-only:email\npending-owner-fixture@example.test').digest('hex');
+  await db.query(
+    "UPDATE newsletter_new.subscribers SET requested_at=now()-interval '3 hours' WHERE email_tag=$1",
+    [pendingTag]);
+  const mid=await recentReader.readRecent();
+  assert.equal(mid.total24,3);
+  assert.equal(mid.total2,2,'Two-hour CTA only when requests fall within the window');
+  await db.query(
+    "UPDATE newsletter_new.subscribers SET requested_at=now()-interval '25 hours'");
+  const empty=await recentReader.readRecent();
+  assert.equal(empty.total24,0);
+  assert.equal(empty.total2,0);
+  assert.deepEqual(empty.items,[]);
+  assert.equal(empty.hasMore,false);
+  assert.ok(html.includes('id="recent-banner-title"'));
+  assert.ok(html.includes('id="recent-check"'));
+  assert.ok(html.includes('id="recent-subscribers"'));
+  assert.ok(html.includes('href="#recent-subscribers"'));
+
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
@@ -568,5 +619,9 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     method:'POST',cookie,csrf:login.csrf,data:{from:previous29,to:today}
   });
   assert.equal(result.status,401,'Logged-out trend access denied');
+  result=await call('/owner/newsletter/recent-subscribers',{
+    method:'POST',cookie,csrf:login.csrf,data:{}
+  });
+  assert.equal(result.status,401,'Logged-out recent subscribers denied');
   assert.ok(!(await result.text()).includes(email));
 });
