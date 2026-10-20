@@ -263,20 +263,39 @@
         </section>
         <section class="panel" id="campaign-drafts" aria-labelledby="campaign-drafts-title">
           <h2 id="campaign-drafts-title">Kampanie newslettera — Full Max Premium</h2>
-          <p class="muted">Podgląd roboczy w przeglądarce. Zapis do bazy i wysyłanie są wyłączone.</p>
+          <p class="muted" id="campaign-drafts-description">Przygotuj podgląd kampanii. Zapis będzie dostępny po potwierdzeniu gotowości serwera. Wysyłanie wiadomości jest wyłączone.</p>
           <form id="campaign-preview-form">
-            <label for="campaign-subject">Temat</label>
-            <input id="campaign-subject" type="text" minlength="3" maxlength="160" required>
-            <label for="campaign-body">Treść wiadomości</label>
-            <textarea id="campaign-body" rows="6" minlength="10" maxlength="20000" required></textarea>
-            <p>Odbiorcy: tylko aktywne zapisy z potwierdzoną zgodą.</p>
-            <button type="submit">Pokaż podgląd</button>
-            <button type="button" id="campaign-save-draft" disabled>Zapisz wersję roboczą</button>
-            <button type="button" id="campaign-refresh-drafts" disabled>Odśwież zapisane</button>
+            <div class="campaign-field">
+              <label for="campaign-subject">Temat wiadomości</label>
+              <input id="campaign-subject" type="text" minlength="3" maxlength="160" required>
+            </div>
+            <div class="campaign-field">
+              <label for="campaign-body">Treść wiadomości</label>
+              <textarea id="campaign-body" rows="7" minlength="10" maxlength="20000" required></textarea>
+            </div>
+            <p class="campaign-audience muted">Docelowi odbiorcy: wyłącznie aktywne subskrypcje z potwierdzoną zgodą. W tym etapie nie wykonuje się wysyłki.</p>
+            <div class="campaign-actions">
+              <button type="submit">Pokaż podgląd</button>
+              <button type="button" id="campaign-save-draft" disabled>Zapisz wersję roboczą</button>
+              <button type="button" id="campaign-refresh-drafts" disabled>Odśwież zapisane</button>
+            </div>
           </form>
           <p id="campaign-preview-status" role="status" aria-live="polite"></p>
-          <ul id="campaign-drafts-list" aria-label="Zapisane wersje robocze"></ul>
-          <iframe id="campaign-preview-frame" title="Lokalny podgląd kampanii" sandbox="" referrerpolicy="no-referrer" style="width:100%;height:280px;border:1px solid #64748b;border-radius:10px"></iframe>
+          <div class="campaign-output">
+            <div class="campaign-output-panel">
+              <h3>Podgląd wiadomości</h3>
+              <div id="campaign-preview-frame" class="campaign-preview-mail" aria-label="Podgląd kampanii bez wysyłania">
+                <p class="campaign-brand">gracz<span>.pl</span></p>
+                <h4 id="campaign-preview-subject">Temat kampanii</h4>
+                <p id="campaign-preview-body">Wpisz treść i wybierz „Pokaż podgląd”.</p>
+                <p class="campaign-preview-note">Wersja robocza — wiadomość nie została wysłana.</p>
+              </div>
+            </div>
+            <div class="campaign-output-panel">
+              <h3>Zapisane wersje robocze</h3>
+              <ul id="campaign-drafts-list" aria-label="Lista zapisanych wersji roboczych"></ul>
+            </div>
+          </div>
         </section>
         <section class="panel" id="quality">
           <h2>Zdrowie integracji i jakość danych</h2>
