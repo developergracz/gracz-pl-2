@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {createServer,request as httpRequest} from 'node:http';
 import {randomBytes,createCipheriv,createHmac,randomUUID} from 'node:crypto';
 import {createDatabase} from '../../persistence/database.mjs';
@@ -18,9 +19,20 @@ test('RFC6238 TOTP, high-entropy verifier and absent auth configuration fail clo
   assert.equal(parseOwnerCookie('__Host-gracz_owner=not-a-token'),null);
   const s=await newVerifier(password);
   assert.match(s,/^scrypt:[a-f0-9]{32}:[a-f0-9]{64}$/);
+  await assert.rejects(newVerifier('12345678'),/9\.\.128/);
   assert.equal(createOwnerAuth({database:db,passwordSpec:'plaintext',totpBase32}),null);
   const disabled=createOwnerRouter({database:db,enabled:false});
   assert.equal(disabled.configured,false);
+});
+
+test('M5 form requires 9 characters and allows an existing 9-character password',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  assert.match(html,/Nowe hasło \(minimum 9 znaków\)/);
+  for(const id of ['owner-old-password','owner-new-password','owner-repeat-password','owner-nick-password']){
+    const tag=html.match(new RegExp('<input\\s+id="'+id+'"[^>]*>'))?.[0];
+    assert.ok(tag,'Missing password field '+id);
+    assert.match(tag,/minlength="9"/);
+  }
 });
 
 test('OWNER session: password, one-use TOTP, lockout, durable token, idle expiration, logout',async()=>{
@@ -146,7 +158,12 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     'environment nickname is no longer valid after durable change');
   const second=await restarted.login({username:'newowner',password});
   assert.ok(second);
-  const updatedPassword='a-new-secure-owner-password-2026';
+  // Boundary regression: 8 characters rejected, exactly 9 accepted.
+  const updatedPassword='NineChar9';
+  assert.equal(updatedPassword.length,9);
+  assert.equal(await restarted.changeCredentials(second.token,{
+    oldPassword:password,newPassword:'Eight888'
+  }),false,'new password shorter than nine characters rejected');
   assert.equal(await restarted.changeCredentials(second.token,{
     oldPassword:password,newPassword:password
   }),false,'unchanged password rejected');
