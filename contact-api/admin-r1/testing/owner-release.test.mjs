@@ -608,8 +608,16 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(empty.hasMore,false);
   assert.ok(html.includes('id="recent-banner-title"'));
   assert.ok(html.includes('id="recent-check"'));
+  assert.match(html,/<button type="button" id="recent-show">POKAŻ<\/button>/,
+    'POKAŻ is always visible in the top banner');
   assert.ok(html.includes('id="recent-subscribers"'));
-  assert.ok(html.includes('href="#recent-subscribers"'));
+  assert.match(html,/<a href="#recent-subscribers">Nowi subskrybenci<\/a>/,
+    'The right-hand navigation links to the existing recent subscribers tab');
+  assert.equal((html.match(/href="#recent-subscribers"/g)||[]).length,1,
+    'Do not duplicate the recent subscribers menu item');
+  const dashboardJs=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  assert.match(dashboardJs,/\$\("recent-show"\)\.addEventListener\("click",openRecentSubscribers\)/);
+  assert.match(dashboardJs,/\$\("recent-check"\)\.addEventListener\("click",openRecentSubscribers\)/);
 
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
