@@ -35,6 +35,16 @@ daily AS (
   WHERE f.day BETWEEN snap.day-29 AND snap.day
   GROUP BY f.day
 ),
+monthly AS (
+  SELECT date_trunc('month',f.day::timestamp)::date AS month,
+         count(*) AS requested,
+         count(*) FILTER (WHERE f.confirmed_at IS NOT NULL) AS confirmed
+  FROM facts f CROSS JOIN snap
+  WHERE f.day BETWEEN
+    (date_trunc('month',snap.day::timestamp)::date - interval '11 months')::date
+    AND snap.day
+  GROUP BY 1
+),
 sources AS (
   SELECT f.source, count(*) AS total
   FROM facts f CROSS JOIN snap
@@ -56,6 +66,15 @@ SELECT snap.at AS fetched_at,
          ) ORDER BY days.day)
         FROM (SELECT (snap.day - n)::date AS day FROM generate_series(0,29) n) days
         LEFT JOIN daily ON daily.day=days.day) AS trend,
+       (SELECT jsonb_agg(jsonb_build_object(
+           'month',to_char(months.month::timestamp,'YYYY-MM'),
+           'requested',coalesce(monthly.requested,0),
+           'confirmed',coalesce(monthly.confirmed,0)
+         ) ORDER BY months.month)
+         FROM (SELECT (date_trunc('month',snap.day::timestamp)
+                       - n * interval '1 month')::date AS month
+               FROM generate_series(0,11) n) months
+         LEFT JOIN monthly ON monthly.month=months.month) AS monthly_trend,
        (SELECT coalesce(jsonb_agg(jsonb_build_object(
            'source',sources.source,'count',sources.total)
            ORDER BY sources.total DESC,sources.source),'[]'::jsonb)
@@ -103,6 +122,22 @@ export function createNewOnlySummary({database}={}){
     });
     if(requestedSum!==counts.last30||confirmedSum!==counts.confirmed30)
       throw Error('invalid_summary');
+    const months=row.monthly_trend;
+    if(!Array.isArray(months)||months.length!==12)throw Error('invalid_summary');
+    let lastMonth='',monthRequested=0,monthConfirmed=0;
+    const monthlyTrend=months.map(entry=>{
+      if(!entry||typeof entry.month!=='string'||
+         !/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(entry.month)||entry.month<=lastMonth)
+        throw Error('invalid_summary');
+      lastMonth=entry.month;
+      const requested=safeJsonCount(entry.requested),
+            confirmed=safeJsonCount(entry.confirmed);
+      if(confirmed>requested)throw Error('invalid_summary');
+      monthRequested+=requested;monthConfirmed+=confirmed;
+      return {month:entry.month,requested,confirmed};
+    });
+    if(monthRequested>counts.total||monthRequested<counts.last30||
+       monthConfirmed>monthRequested)throw Error('invalid_summary');
     if(!Array.isArray(row.sources)||row.sources.length>8)throw Error('invalid_summary');
     const sources=row.sources.map(entry=>{
       if(!entry||typeof entry.source!=='string'||
@@ -118,7 +153,7 @@ export function createNewOnlySummary({database}={}){
       counts,
       doiRate30:counts.last30?
         Math.round(1000*counts.confirmed30/counts.last30)/10:null,
-      trend:daily,sources,sourceScope:'top_8',
+      trend:daily,monthlyTrend,sources,sourceScope:'top_8',
       quality:['new_only_only','one_current_record_per_address',
                'latest_request_date_not_all_attempts','doi_not_provider_delivery']
     };
