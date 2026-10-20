@@ -64,7 +64,15 @@ export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}=
   async function login({password:attempt,code}={}){
     if(typeof attempt!=='string'||attempt.length>256||
        typeof code!=='string'||!/^[0-9]{6}$/.test(code))return null;
-    // scrypt executes before the transaction to avoid holding a DB lock during KDF.
+    // Cheap durable lockout preflight avoids expensive KDF work after the
+    // limit is reached. Rechecked under the row lock below to avoid races.
+    const preflight=await database.queryBounded(
+      'SELECT locked_until FROM newsletter_owner.guard WHERE id=1',[],
+      {timeoutMs:2000});
+    if(preflight.rows?.length!==1 ||
+       (preflight.rows[0].locked_until &&
+        new Date(preflight.rows[0].locked_until).getTime()>now()))return null;
+    // Compute KDF outside the PostgreSQL transaction.
     const digest=await scrypt(attempt,password.salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
     const passwordOk=equals(digest,password.verifier);
     return database.transaction(async client=>{
