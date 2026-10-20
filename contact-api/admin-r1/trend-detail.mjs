@@ -1,5 +1,5 @@
 // OWNER-only bounded, date-filtered aggregates. No mailbox, identifiers or events.
-const SQL=String.raw\`
+const SQL=String.raw`
 WITH filtered AS MATERIALIZED (
   SELECT (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date AS day,
          s.state,s.confirmed_at,
@@ -26,7 +26,7 @@ SELECT days.day::date::text AS day,
 FROM generate_series($1::date,$2::date,interval '1 day') AS days(day)
 LEFT JOIN daily ON daily.day=days.day::date
 ORDER BY days.day
-\`;
+`;
 function parseDay(value){
   if(typeof value!=='string'||!/^(20\d\d)-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(value))
     return null;
