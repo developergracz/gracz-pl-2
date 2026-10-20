@@ -229,9 +229,15 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     if(revoked)await db.query(
       'INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',
       [tag,randomUUID()]);
+    return tag;
   }
   await seed('pending-owner-fixture@example.test','pending','footer');
   await seed('withdrawn-owner-fixture@example.test','active','auth_modal',true);
+  const oldTag=await seed('older-owner-fixture@example.test','active','footer');
+  await db.query(`UPDATE newsletter_new.subscribers SET requested_at=(
+      date_trunc('month',now() AT TIME ZONE 'Europe/Warsaw')
+      - interval '2 months' + interval '15 days') AT TIME ZONE 'Europe/Warsaw'
+      WHERE email_tag=$1`,[oldTag]);
   result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,
     data:{unexpected:true}});
   assert.equal(result.status,403,'summary rejects unnecessary input');
@@ -243,7 +249,7 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.deepEqual(
     {total:m4.counts.total,active:m4.counts.active,
       pending:m4.counts.pending,withdrawn:m4.counts.withdrawn},
-    {total:3,active:1,pending:1,withdrawn:1});
+    {total:4,active:2,pending:1,withdrawn:1});
   assert.equal(m4.counts.last30,3);
   assert.equal(m4.counts.confirmed30,2);
   assert.equal(m4.doiRate30,66.7);
@@ -251,6 +257,15 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(m4.trend.reduce((n,x)=>n+x.requested,0),3);
   assert.equal(m4.trend.reduce((n,x)=>n+x.confirmed,0),2);
   assert.equal(m4.sources.reduce((n,x)=>n+x.count,0),3);
+  assert.equal(m4.monthlyTrend.length,12);
+  assert.equal(m4.monthlyTrend.reduce((n,x)=>n+x.requested,0),4);
+  assert.equal(m4.monthlyTrend.reduce((n,x)=>n+x.confirmed,0),3);
+  assert.equal(m4.monthlyTrend.at(-1).requested,3);
+  assert.equal(m4.monthlyTrend.at(-2).requested,0);
+  assert.equal(m4.monthlyTrend.at(-3).requested,1);
+  assert.ok(m4.monthlyTrend.every((m,i,a)=>
+    /^[0-9]{4}-(0[1-9]|1[0-2])$/.test(m.month)&&
+    (i===0||a[i-1].month<m.month)));
   assert.ok(!JSON.stringify(m4).includes('private-owner-fixture@example.test'));
   assert.match(m4.fetchedAt,/^\d{4}-\d{2}-\d{2}T/);
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
