@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 const CONSENT_VERSION = 'newsletter-new-only-2026-10-20';
 const CONFIRM_TTL_MS = 30 * 60 * 1000;
 const STATUS_TTL_MS = 15 * 60 * 1000;
+const MAX_STATUS_MAILS_PER_HOUR = 15;
 const MAX_CONFIRM_MAILS_PER_HOUR = 60;
 
 function decodeNewKey(raw) {
@@ -247,7 +248,7 @@ export function createNewOnlyNewsletter({
           SET used=newsletter_new.mail_budget.used+1
           WHERE newsletter_new.mail_budget.used < $1
         RETURNING used
-      `,[MAX_CONFIRM_MAILS_PER_HOUR]);
+      `,[MAX_STATUS_MAILS_PER_HOUR]);
       if(budget.rowCount!==1)throw unavailable();
     });
     const response=await fetchFn('https://api.resend.com/emails',{
