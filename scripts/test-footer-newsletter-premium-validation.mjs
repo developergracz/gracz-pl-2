@@ -95,7 +95,7 @@ test('errors are removed after field correction without altering consent state',
   assert.equal(x.checkbox.attributes.has('aria-invalid'), false);
 });
 
-test('Premium dialog explains already active addresses without exposing subscriber status', () => {
+test('Premium dialog reports live active status only from API result', () => {
   assert.match(source,/Sprawdź, czy adres jest już zapisany/);
   assert.match(source,/already_subscribed/);
   assert.match(source,/Ten adres już jest w naszym newsletterze/);
@@ -103,7 +103,7 @@ test('Premium dialog explains already active addresses without exposing subscrib
   assert.doesNotMatch(source,/<h3 id="newsletter-success-card-title">Ten adres już jest w naszym newsletterze<\/h3>/);
   assert.match(source,/aktywnych adresów nie zapisujemy ponownie/);
   assert.match(source,/nowy zapis wymaga potwierdzenia e-mail/);
-  assert.match(source,/statusu adresu nie ujawniamy bez potwierdzenia/);
+  assert.match(source,/body.state!=='request_received'&&body.state!=='already_subscribed'/);
   assert.match(source,/target\.showModal\(\)/);
   assert.match(source,/data-newsletter-success-close/);
   assert.match(source,/Sprawdź status swojego adresu/);
