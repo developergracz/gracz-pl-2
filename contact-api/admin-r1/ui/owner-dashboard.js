@@ -713,6 +713,7 @@ async function startOwnerDashboard(){
     const result=await response.json();
     if(!result.ok||typeof result.csrf!=="string")throw Error("unauthorized");
     ownerCsrf=result.csrf;
+    await checkCampaignDraftAvailability();
     const pending=document.createElement("option");
     pending.value="pending";pending.textContent="Oczekujące";
     $("state").insertBefore(pending,$("state").options[2]);
@@ -806,5 +807,20 @@ draftRefreshButton?.addEventListener("click",async()=>{
   try{await refreshDrafts();}
   catch{draftStatus.textContent="Lista wersji roboczych jest niedostępna.";}
 });
-// Server-side feature flag still defaults OFF. No automatic availability probe
-// or unverified action enables draft writes from this UI.
+// Authenticated server handshake only: production stays disabled until an
+// explicitly configured, verified draft store is supplied at release time.
+async function checkCampaignDraftAvailability(){
+  if(draftSaveButton)draftSaveButton.disabled=true;
+  if(draftRefreshButton)draftRefreshButton.disabled=true;
+  try{
+    const response=await fetch("/owner/newsletter/campaign-drafts/availability",{
+      credentials:"same-origin",cache:"no-store"
+    });
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data.ok===true&&data.enabled===true){
+      if(draftSaveButton)draftSaveButton.disabled=false;
+      if(draftRefreshButton)draftRefreshButton.disabled=false;
+    }
+  }catch{ /* release remains disabled */ }
+}
