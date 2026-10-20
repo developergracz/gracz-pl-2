@@ -230,7 +230,9 @@ export function createOwnerRouter({
         if(campaignDraftsEnabled&&campaignDraftStore&&database?.enabled){
           try{
             const check=await database.query(
-              "SELECT to_regclass('newsletter_campaigns.campaigns') IS NOT NULL AS ready"
+              "SELECT to_regclass('newsletter_campaigns.campaigns') IS NOT NULL "+
+              "AND has_schema_privilege(current_user,'newsletter_campaigns','USAGE') "+
+              "AND has_table_privilege(current_user,'newsletter_campaigns.campaigns','SELECT,INSERT') AS ready"
             );
             ready=check.rows?.[0]?.ready===true;
           }catch{ready=false;}
