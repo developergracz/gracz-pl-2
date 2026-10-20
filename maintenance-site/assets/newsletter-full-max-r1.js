@@ -148,7 +148,7 @@
     actionToken='';actionButton.disabled=true;
     setStatus(actionStatus,'Przetwarzanie…');
     try{
-      var freshParts=mode==='fresh-confirm' ? /^([0-9a-f-]{36})\\.([A-Za-z0-9_-]{43})$/i.exec(token) : null;
+      var freshParts=mode==='fresh-confirm' ? /^([0-9a-f-]{36})\.([A-Za-z0-9_-]{43})$/i.exec(token) : null;
       if(mode==='fresh-confirm'&&!freshParts)throw new Error('Link jest nieprawidłowy.');
       var result=mode==='fresh-confirm'
         ? await post('/newsletter/fresh-confirm',{id:freshParts[1],token:freshParts[2]})
