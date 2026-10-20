@@ -54,6 +54,7 @@ export const newVerifier=async password=>{
 export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}={}){
   const password=validPasswordSpec(passwordSpec),secret=decodeTotp(totpBase32);
   if(!database?.enabled||typeof database.transaction!=='function'||!password||!secret)return null;
+  const credentialFingerprint=hash(passwordSpec+'\\0'+totpBase32);
   const csrfKey=createHmac('sha256',password.verifier).update('gracz-owner-session-csrf-v1').digest();
   const csrf=token=>createHmac('sha256',csrfKey).update(token).digest('base64url');
   async function audit(client,action){
@@ -98,9 +99,9 @@ export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}=
       await client.query('DELETE FROM newsletter_owner.sessions');
       const token=randomBytes(32).toString('base64url'),tokenHash=hash(token);
       await client.query(`INSERT INTO newsletter_owner.sessions
-        (token_hash,created_at,expires_at,idle_expires_at)
-        VALUES ($1,clock_timestamp(),$2,$3)`,
-        [tokenHash,new Date(time+ABS_MS),new Date(time+IDLE_MS)]);
+        (token_hash,credential_fingerprint,created_at,expires_at,idle_expires_at)
+        VALUES ($1,$4,clock_timestamp(),$2,$3)`,
+        [tokenHash,new Date(time+ABS_MS),new Date(time+IDLE_MS),credentialFingerprint]);
       await audit(client,'login_ok');
       return {token,csrf:csrf(token),tokenHash};
     });
@@ -110,7 +111,7 @@ export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}=
     const tokenHash=hash(raw);
     return database.transaction(async client=>{
       const result=await client.query(`SELECT expires_at,idle_expires_at
-        FROM newsletter_owner.sessions WHERE token_hash=$1 FOR UPDATE`,[tokenHash]);
+        FROM newsletter_owner.sessions WHERE token_hash=$1 AND credential_fingerprint=$2 FOR UPDATE`,[tokenHash,credentialFingerprint]);
       const row=result.rows[0],time=now();
       if(!row||new Date(row.expires_at).getTime()<=time||
          new Date(row.idle_expires_at).getTime()<=time)return null;
