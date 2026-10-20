@@ -93,7 +93,7 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await expect(page.locator('#nl-status')).toContainText('przyjęte do obsługi');
   await page.locator('#nl-check-email').fill('owner@example.com');
   await page.locator('#nl-check-email').press('Enter');
-  await expect(page.locator('#nl-request-status')).toContainText('nie potwierdza statusu');
+  await expect(page.locator('#nl-request-status')).toContainText('nie ujawnia statusu subskrypcji');
   expect(requests.map(r=>r.path)).toEqual(['/newsletter/subscribe','/newsletter/status-request']);
   expect(requests[1].payload).not.toHaveProperty('consent');
   await expect(page.locator('#nl-consent')).not.toBeChecked();
