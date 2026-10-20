@@ -61,6 +61,63 @@ test('OWNER session: password, one-use TOTP, lockout, durable token, idle expira
   assert.ok((await db.query('SELECT count(*)::int AS n FROM newsletter_owner.audit')).rows[0].n>=7);
 });
 
+test('phone-free OWNER login requires valid nick, locks out guessing and rotates session',async(t)=>{
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  await db.query('DELETE FROM newsletter_owner.sessions');
+  const verifier=await newVerifier(password);
+  const options={database:db,passwordSpec:verifier,passwordOnly:true};
+  assert.equal(createOwnerAuth({...options}),null,'missing nickname must deny');
+  assert.equal(createOwnerAuth({...options,username:'<bad>'}),null,'invalid nickname must deny');
+  assert.equal(createOwnerRouter({
+    ...options,enabled:true,
+    encryptionKey:enc.toString('base64url'),subjectKey:subject.toString('base64url')
+  }).configured,false,'bad configuration cannot expose the panel');
+  const nick='owner_2026';
+  const auth=createOwnerAuth({...options,username:nick});
+  assert.ok(auth,'valid nickname and verifier must configure auth');
+  assert.equal(await auth.login({username:'unknown',password}),null);
+  const good=await auth.login({username:nick,password});
+  assert.ok(good,'correct nickname and password should work without phone');
+  assert.ok(await auth.session(good.token));
+  assert.equal(await createOwnerAuth({database:db,passwordSpec:verifier,totpBase32}).session(good.token),null,
+    'phone-free sessions must never validate in TOTP mode');
+  assert.equal(await createOwnerAuth({...options,username:'other_owner'}).session(good.token),null,
+    'nickname change invalidates sessions');
+  assert.equal(await createOwnerAuth({
+    ...options,username:nick,passwordSpec:await newVerifier(password)
+  }).session(good.token),null,'password verifier rotation invalidates sessions');
+  await auth.logout(good.token);
+  for(let i=0;i<5;i++){
+    assert.equal(await auth.login({username:'unknown',password}),null);
+  }
+  assert.equal(await auth.login({username:nick,password}),null,'durable lockout applies');
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  const router=createOwnerRouter({
+    ...options,username:nick,enabled:true,
+    encryptionKey:enc.toString('base64url'),subjectKey:subject.toString('base64url')
+  });
+  assert.equal(router.configured,true);
+  const srv=createServer((req,res)=>router.handle(req,res,new URL(req.url,'http://localhost')));
+  await new Promise(resolve=>srv.listen(0,'127.0.0.1',resolve));
+  try {
+    const loginPage=await new Promise((resolve,reject)=>{
+      const req=httpRequest({
+        hostname:'127.0.0.1',port:srv.address().port,path:'/owner/newsletter/login',
+        headers:{host:'gracz-contact-api.onrender.com','x-forwarded-proto':'https'}
+      },res=>{
+        let body='';
+        res.on('data',chunk=>{body+=chunk;});
+        res.on('end',()=>resolve({status:res.statusCode,body}));
+        res.on('error',reject);
+      });
+      req.on('error',reject);req.end();
+    });
+    assert.equal(loginPage.status,200);
+    assert.match(loginPage.body,/id="username"/);
+    assert.doesNotMatch(loginPage.body,/id="code"/);
+  } finally {await new Promise(resolve=>srv.close(resolve));}
+});
+
 test('protected HTTP exposes no subscriber data before OWNER login and CSRF',async(t)=>{
   await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL,last_totp_step=-1 WHERE id=1');
   await db.query('DELETE FROM newsletter_owner.sessions');

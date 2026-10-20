@@ -5,6 +5,7 @@ form.addEventListener('submit',async event=>{
   event.preventDefault();
   const password=document.getElementById('password');
   const code=document.getElementById('code');
+  const username=document.getElementById('username');
   const button=document.getElementById('login-button');
   if(button.disabled)return;
   button.disabled=true;
@@ -13,9 +14,14 @@ form.addEventListener('submit',async event=>{
     const result=await fetch('/owner/newsletter/login',{
       method:'POST',credentials:'same-origin',cache:'no-store',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:password.value,code:code.value})
+      body:JSON.stringify({
+        password:password.value,
+        ...(username?{username:username.value}:{code:code.value})
+      })
     });
-    password.value='';code.value='';
+    password.value='';
+    if(code)code.value='';
+    if(username)username.value='';
     if(!result.ok)throw Error('login_failed');
     location.replace('/owner/newsletter/');
   }catch{
