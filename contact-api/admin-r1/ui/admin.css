@@ -463,8 +463,10 @@ footer .footer-brand span{color:#ff6573}
   border:1px solid #32645e;border-radius:14px;background:#132d30}
 .recent-banner strong{display:block;font-size:16px;line-height:1.45}
 .recent-banner p{margin:6px 0 0}
-#recent-check{flex:none;background:var(--accent);border-color:var(--accent);
-  color:#081b20;font-weight:750;min-width:130px}
+.recent-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+#recent-show,#recent-check{flex:none;min-width:116px;font-weight:750}
+#recent-show{border-color:var(--accent);color:var(--accent);background:transparent}
+#recent-check{background:var(--accent);border-color:var(--accent);color:#081b20}
 #recent-check[hidden]{display:none!important}
 #recent-subscribers .recent-new-row{background:rgba(88,236,206,.08)}
 #recent-subscribers .recent-new-row td:last-child{color:var(--accent);font-weight:700}
@@ -472,6 +474,7 @@ footer .footer-brand span{color:#ff6573}
 #recent-subscribers{scroll-margin-top:18px}
 @media(max-width:650px){
   .recent-banner{flex-direction:column;align-items:stretch;padding:14px}
-  #recent-check{width:100%}
+  .recent-actions{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+  #recent-check,#recent-show{width:100%}
   #recent-subscribers{scroll-margin-top:155px}
 }
