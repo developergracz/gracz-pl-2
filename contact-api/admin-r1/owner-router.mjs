@@ -225,8 +225,18 @@ export function createOwnerRouter({
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
       }
-      if(req.method==='GET'&&path===PREFIX+'/campaign-drafts/availability')
-        return response(res,200,{ok:true,enabled:Boolean(campaignDraftsEnabled&&campaignDraftStore)});
+      if(req.method==='GET'&&path===PREFIX+'/campaign-drafts/availability'){
+        let ready=false;
+        if(campaignDraftsEnabled&&campaignDraftStore&&database?.enabled){
+          try{
+            const check=await database.query(
+              "SELECT to_regclass('newsletter_campaigns.campaigns') IS NOT NULL AS ready"
+            );
+            ready=check.rows?.[0]?.ready===true;
+          }catch{ready=false;}
+        }
+        return response(res,200,{ok:true,enabled:ready});
+      }
       if(req.method==='POST'&&
          (path===PREFIX+'/campaign-drafts/save'||path===PREFIX+'/campaign-drafts/list')){
         // Release switch is deliberately off. Do not enable until candidate
