@@ -54,7 +54,9 @@ export const newVerifier=async password=>{
 export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}={}){
   const password=validPasswordSpec(passwordSpec),secret=decodeTotp(totpBase32);
   if(!database?.enabled||typeof database.transaction!=='function'||!password||!secret)return null;
-  const credentialFingerprint=hash(passwordSpec+'\\0'+totpBase32);
+  const credentialFingerprint=createHmac('sha256',secret)
+    .update('gracz-owner-credential-generation-v1')
+    .update(password.verifier).digest('hex');
   const csrfKey=createHmac('sha256',password.verifier).update('gracz-owner-session-csrf-v1').digest();
   const csrf=token=>createHmac('sha256',csrfKey).update(token).digest('base64url');
   async function audit(client,action){
