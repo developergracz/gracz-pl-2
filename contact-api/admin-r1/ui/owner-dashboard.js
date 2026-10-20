@@ -35,7 +35,88 @@ let next = null,
   generation = 0,
   detailGeneration = 0,
   listController,
-  detailController;
+  detailController,
+  summaryController,
+  summaryGeneration = 0,
+  summaryBusy = false;
+const summaryIds = ["total","active","pending","withdrawn","today","week","month","doi"];
+function clearSummary(message="Dane niedostępne") {
+  for (const id of summaryIds) $("m4-"+id).textContent = "—";
+  $("m4-trend").replaceChildren();
+  $("m4-monthly").replaceChildren();
+  $("m4-sources").replaceChildren();
+  $("m4-status").textContent = message;
+  $("m4-asof").textContent = "Dane pobrano: —";
+}
+function makeCell(content) {
+  const cell=document.createElement("td");
+  cell.textContent=String(content);
+  return cell;
+}
+async function loadSummary() {
+  if(summaryBusy || !ownerCsrf)return;
+  summaryBusy=true;
+  const generation=++summaryGeneration;
+  summaryController?.abort();
+  summaryController=new AbortController();
+  clearSummary("Pobieranie globalnych statystyk…");
+  $("m4-refresh").disabled=true;
+  try {
+    const result=await request("/owner/newsletter/summary",{
+      method:"POST",signal:summaryController.signal,
+      headers:{"Content-Type":"application/json"},
+      body:"{}"
+    });
+    if(generation!==summaryGeneration)return;
+    if(!result.ok || result.scope!=="new_only_global")throw Error("unavailable");
+    const ids={total:"total",active:"active",pending:"pending",withdrawn:"withdrawn",
+      today:"today",week:"last7",month:"last30"};
+    for(const [element,key] of Object.entries(ids)){
+      $("m4-"+element).textContent=String(result.counts[key]);
+    }
+    $("m4-doi").textContent=result.doiRate30===null?"—":result.doiRate30+"%";
+    $("m4-asof").textContent="Dane pobrano: "+warsawTime(result.fetchedAt);
+    const max=Math.max(1,...result.trend.map(day=>day.requested));
+    const fragment=document.createDocumentFragment();
+    for(const day of result.trend){
+      const tr=document.createElement("tr");
+      tr.append(makeCell(day.day),makeCell(day.requested));
+      const confirmed=makeCell(day.confirmed);
+      const meter=document.createElement("meter");
+      meter.min=0;meter.max=max;meter.value=day.requested;
+      meter.setAttribute("aria-label","Zgłoszenia "+day.day);
+      tr.children[1].append(" ",meter);
+      tr.append(confirmed);
+      fragment.append(tr);
+    }
+    $("m4-trend").replaceChildren(fragment);
+    if(!Array.isArray(result.monthlyTrend)||result.monthlyTrend.length!==12)
+      throw Error("unavailable");
+    const monthly=document.createDocumentFragment();
+    for(const month of result.monthlyTrend){
+      const tr=document.createElement("tr");
+      tr.append(makeCell(month.month),makeCell(month.requested),makeCell(month.confirmed));
+      monthly.append(tr);
+    }
+    $("m4-monthly").replaceChildren(monthly);
+    const sources=document.createDocumentFragment();
+    for(const item of result.sources){
+      const tr=document.createElement("tr");
+      tr.append(makeCell(sourceLabel(item.source)),makeCell(item.count));
+      sources.append(tr);
+    }
+    $("m4-sources").replaceChildren(sources);
+    $("m4-status").textContent="Dane całego nowego rejestru · stan potwierdzony przez PostgreSQL.";
+  } catch(error) {
+    if(generation===summaryGeneration)
+      clearSummary("Statystyki niedostępne — spróbuj ponownie za chwilę. Nie zastępujemy błędów zerami.");
+  } finally {
+    if(generation===summaryGeneration){
+      summaryBusy=false;
+      $("m4-refresh").disabled=false;
+    }
+  }
+}
 function clearDetail() {
   detailGeneration++;
   detailController?.abort();
@@ -56,7 +137,7 @@ async function request(path, options) {
     ...options,
     headers: { ...options?.headers, "X-Owner-CSRF": ownerCsrf },
   });
-  if (response.status === 401) { clear(); location.replace("/owner/newsletter/login"); throw new Error("unauthorized"); }
+  if (response.status === 401) { clear(); clearSummary(); location.replace("/owner/newsletter/login"); throw new Error("unauthorized"); }
   if (!response.ok) throw new Error("unavailable");
   return response.json();
 }
@@ -200,9 +281,13 @@ $("detail").addEventListener("close", () => {
 $("detail").addEventListener("cancel", clearDetail);
 window.addEventListener("pagehide", () => {
   generation++;
+  summaryGeneration++;
+  summaryController?.abort();
+  summaryBusy=false;
   listController?.abort();
   loading = false;
   clear();
+  clearSummary("Widok zamknięty.");
   $("query").value = "";
   query = "";
   $("health").textContent = "Nie sprawdzono";
@@ -211,7 +296,7 @@ window.addEventListener("pagehide", () => {
   $("refresh").disabled = false;
 });
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) load();
+  if (event.persisted) {loadSummary();load();}
 });
 
 async function startOwnerDashboard(){
@@ -226,14 +311,15 @@ async function startOwnerDashboard(){
     const pending=document.createElement("option");
     pending.value="pending";pending.textContent="Oczekujące";
     $("state").insertBefore(pending,$("state").options[2]);
-    await load();
+    await Promise.all([loadSummary(),load()]);
   }catch{
     clear();location.replace("/owner/newsletter/login");
   }
 }
 $("logout").addEventListener("click",async()=>{
   const button=$("logout");button.disabled=true;
-  generation++;listController?.abort();clear();
+  generation++;summaryGeneration++;
+  listController?.abort();summaryController?.abort();clear();clearSummary();
   try{
     await fetch("/owner/newsletter/logout",{
       method:"POST",credentials:"same-origin",cache:"no-store",
@@ -243,4 +329,5 @@ $("logout").addEventListener("click",async()=>{
     ownerCsrf=null;location.replace("/owner/newsletter/login");
   }
 });
+$("m4-refresh").addEventListener("click",loadSummary);
 startOwnerDashboard();

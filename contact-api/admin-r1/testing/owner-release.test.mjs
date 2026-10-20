@@ -25,7 +25,7 @@ test('RFC6238 TOTP, high-entropy verifier and absent auth configuration fail clo
 
 test('OWNER session: password, one-use TOTP, lockout, durable token, idle expiration, logout',async()=>{
   const verifier=await newVerifier(password);
-  let now=Date.parse('2026-10-20T11:00:00.000Z');
+  let now=Date.now(); // Relative session tests must not precede PostgreSQL wall-clock creation.
   const auth=createOwnerAuth({database:db,passwordSpec:verifier,totpBase32,now:()=>now});
   assert.ok(auth);
   assert.equal(await auth.login({password:'incorrect-password',code:codeAt(secret,Math.floor(now/30000))}),null);
@@ -169,6 +169,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(result.status,401);
   result=await call('/owner/newsletter/list',{method:'POST',data:{}});
   assert.equal(result.status,401);
+  result=await call('/owner/newsletter/summary',{method:'POST',data:{}});
+  assert.equal(result.status,401);
   result=await call('/owner/newsletter/login',{method:'POST',
     origin:'https://evil.example',data:{password,code:codeAt(secret,Math.floor(Date.now()/30000))}});
   assert.equal(result.status,403);
@@ -181,6 +183,11 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.match(cookie,/Secure; HttpOnly; SameSite=Strict/);
   assert.equal(typeof login.csrf,'string');
   result=await call('/owner/newsletter/list',{method:'POST',cookie,data:{}});
+  assert.equal(result.status,403);
+  result=await call('/owner/newsletter/summary',{method:'POST',cookie,data:{}});
+  assert.equal(result.status,403);
+  result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,
+    origin:'https://evil.example',data:{}});
   assert.equal(result.status,403);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,200);
@@ -204,9 +211,68 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(detail.revokedAt,null);
   assert.equal(detail.consent?.consentVersion,'test-owner');
   assert.equal(detail.consent?.source,'newsletter_page');
+  // Synthetic additional rows in the disposable PG18 test DB only:
+  // one pending and one verified withdrawal; public newsletter remains untouched.
+  async function seed(email,state,sourceCode,revoked=false){
+    const tag=createHmac('sha256',subject)
+      .update('gracz-new-only:email\n'+email).digest('hex');
+    const nonce=randomBytes(12),cipher=createCipheriv('aes-256-gcm',enc,nonce);
+    cipher.setAAD(Buffer.from('gracz-newsletter-new:'+tag));
+    const ciphertext=Buffer.concat([cipher.update(email),cipher.final()]);
+    await db.query(`INSERT INTO newsletter_new.subscribers
+      (email_tag,ciphertext,nonce,auth_tag,challenge_id,token_tag,state,
+       delivery_state,source,consent_version,expires_at,confirmed_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,'sent',$8,'test-owner',now()+interval '30 minutes',$9)`,
+       [tag,ciphertext,nonce,cipher.getAuthTag(),randomUUID(),
+        state==='pending'?'a'.repeat(64):null,state,sourceCode,
+        state==='active'?new Date():null]);
+    if(revoked)await db.query(
+      'INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',
+      [tag,randomUUID()]);
+    return tag;
+  }
+  await seed('pending-owner-fixture@example.test','pending','footer');
+  await seed('withdrawn-owner-fixture@example.test','active','auth_modal',true);
+  const oldTag=await seed('older-owner-fixture@example.test','active','footer');
+  await db.query(`UPDATE newsletter_new.subscribers SET requested_at=(
+      date_trunc('month',now() AT TIME ZONE 'Europe/Warsaw')
+      - interval '2 months' + interval '15 days') AT TIME ZONE 'Europe/Warsaw'
+      WHERE email_tag=$1`,[oldTag]);
+  result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,
+    data:{unexpected:true}});
+  assert.equal(result.status,403,'summary rejects unnecessary input');
+  result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,
+    data:{}});
+  assert.equal(result.status,200,'M4 private summary works with authorized session');
+  const m4=await result.json();
+  assert.equal(m4.scope,'new_only_global');
+  assert.deepEqual(
+    {total:m4.counts.total,active:m4.counts.active,
+      pending:m4.counts.pending,withdrawn:m4.counts.withdrawn},
+    {total:4,active:2,pending:1,withdrawn:1});
+  assert.equal(m4.counts.last30,3);
+  assert.equal(m4.counts.confirmed30,2);
+  assert.equal(m4.doiRate30,66.7);
+  assert.equal(m4.trend.length,30);
+  assert.equal(m4.trend.reduce((n,x)=>n+x.requested,0),3);
+  assert.equal(m4.trend.reduce((n,x)=>n+x.confirmed,0),2);
+  assert.equal(m4.sources.reduce((n,x)=>n+x.count,0),3);
+  assert.equal(m4.monthlyTrend.length,12);
+  assert.equal(m4.monthlyTrend.reduce((n,x)=>n+x.requested,0),4);
+  assert.equal(m4.monthlyTrend.reduce((n,x)=>n+x.confirmed,0),3);
+  assert.equal(m4.monthlyTrend.at(-1).requested,3);
+  assert.equal(m4.monthlyTrend.at(-2).requested,0);
+  assert.equal(m4.monthlyTrend.at(-3).requested,1);
+  assert.ok(m4.monthlyTrend.every((m,i,a)=>
+    /^[0-9]{4}-(0[1-9]|1[0-2])$/.test(m.month)&&
+    (i===0||a[i-1].month<m.month)));
+  assert.ok(!JSON.stringify(m4).includes('private-owner-fixture@example.test'));
+  assert.match(m4.fetchedAt,/^\d{4}-\d{2}-\d{2}T/);
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
+  assert.equal(result.status,401);
+  result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,401);
   assert.ok(!(await result.text()).includes(email));
 });

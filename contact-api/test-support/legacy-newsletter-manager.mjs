@@ -4,7 +4,10 @@ import {createDatabase} from '../persistence/database.mjs';
 import {createPersistenceRepositories} from '../persistence/repositories.mjs';
 import {createNewsletterProofStore} from '../persistence/newsletter-proof-store.mjs';
 import {parseNewsletterIntakePaused} from '../newsletter-config.mjs';
+let fixtureManager;
 export function createLegacyFixtureManager(){
+  // Both synthetic server routes and shutdown must share one test manager.
+  if(fixtureManager)return fixtureManager;
   const database=createDatabase();
   const manager=createNewsletterManager({
     intakePaused:parseNewsletterIntakePaused(process.env.NEWSLETTER_INTAKE_PAUSED),
@@ -14,5 +17,6 @@ export function createLegacyFixtureManager(){
     consentStore:createPersistenceRepositories(database).newsletter,proofStore:createNewsletterProofStore(database),
   });
   const wait=manager.waitForPublicWork;
-  return {...manager,waitForPublicWork:async()=>{await wait();await database.close();}};
+  fixtureManager={...manager,waitForPublicWork:async()=>{await wait();await database.close();}};
+  return fixtureManager;
 }

@@ -15,7 +15,7 @@
         <p class="eyebrow">CENTRUM WŁAŚCICIELA</p>
         <nav aria-label="Panel">
           <a href="#main" aria-current="page">◈ Newsletter</a
-          ><a href="#quality">◇ Jakość danych</a>
+          ><a href="#statistics">◇ Statystyki</a><a href="#quality">◇ Jakość danych</a>
         </nav>
         <p class="aside-note">
           R1 · Tylko odczyt<br />Kontrola bez zmiany zgód.
@@ -34,6 +34,66 @@
           Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.
           Panel produkcyjny pozostaje zamknięty.
         </div>
+        <section class="panel" id="statistics" aria-labelledby="statistics-title">
+          <div class="section-title">
+            <div>
+              <h2 id="statistics-title">Statystyki newslettera · M4</h2>
+              <p class="muted">Cały rejestr nowych subskrybentów PostgreSQL, nie bieżąca strona listy.</p>
+            </div>
+            <button id="m4-refresh" type="button">Odśwież statystyki</button>
+          </div>
+          <p id="m4-status" role="status" aria-live="polite">Oczekiwanie na dane…</p>
+          <div class="cards" aria-label="Globalne stany i zgłoszenia">
+            <article><p>W rejestrze ogółem</p><strong id="m4-total">—</strong>
+              <small>Unikalne adresy w nowym rejestrze</small></article>
+            <article><p>Potwierdzeni aktywni</p><strong id="m4-active">—</strong>
+              <small>DOI potwierdzony, bez wycofania zgody</small></article>
+            <article><p>Oczekujący na DOI</p><strong id="m4-pending">—</strong>
+              <small>Stan pending w rejestrze, także po terminie</small></article>
+            <article><p>Wycofane zgody</p><strong id="m4-withdrawn">—</strong>
+              <small>Zweryfikowane wycofania w PostgreSQL</small></article>
+            <article><p>Zgłoszenia dziś</p><strong id="m4-today">—</strong>
+              <small>Ostatnia data zgłoszenia · Polska</small></article>
+            <article><p>Ostatnie 7 dni</p><strong id="m4-week">—</strong>
+              <small>Unikalne bieżące wpisy</small></article>
+            <article><p>Ostatnie 30 dni</p><strong id="m4-month">—</strong>
+              <small>Według ostatniego zgłoszenia</small></article>
+            <article><p>DOI · zgłoszenia z 30 dni</p><strong id="m4-doi">—</strong>
+              <small>Odsetek obecnie potwierdzonych; nie skuteczność doręczenia</small></article>
+          </div>
+          <p id="m4-asof" class="muted">Dane pobrano: —</p>
+          <p class="muted">Dane o dostarczalności, blokadach Resend i pełnej historycznej liczbie prób
+            są niedostępne w tym rejestrze. Nie są przedstawiane jako zero.</p>
+          <div class="table-wrap m4-table-scroll">
+            <h3>Trend zgłoszeń · 30 dni (Europe/Warsaw)</h3>
+            <table>
+              <caption class="sr-only">Nowe zgłoszenia i potwierdzeni spośród zgłoszonych w danym dniu</caption>
+              <thead><tr><th scope="col">Dzień</th><th scope="col">Zgłoszenia</th>
+                <th scope="col">Z nich potwierdzeni DOI</th></tr></thead>
+              <tbody id="m4-trend"></tbody>
+            </table>
+          </div>
+          <div class="table-wrap m4-table-scroll">
+            <h3>Trend miesięczny · 12 miesięcy kalendarzowych (Europe/Warsaw)</h3>
+            <p class="muted">Bieżące rekordy według ostatniej daty zgłoszenia; nie liczba wszystkich historycznych prób.</p>
+            <table>
+              <caption class="sr-only">Liczba zgłoszeń i obecnie potwierdzonych według miesiąca zgłoszenia</caption>
+              <thead><tr><th scope="col">Miesiąc</th><th scope="col">Zgłoszenia</th>
+                <th scope="col">Z nich potwierdzeni DOI</th></tr></thead>
+              <tbody id="m4-monthly"></tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <h3>Źródła zgłoszeń · ostatnie 30 dni</h3>
+            <table>
+              <caption class="sr-only">Maksymalnie osiem najczęstszych źródeł bieżących rekordów</caption>
+              <thead><tr><th scope="col">Źródło</th><th scope="col">Zgłoszenia</th></tr></thead>
+              <tbody id="m4-sources"></tbody>
+            </table>
+            <p class="muted">Najwyżej 8 źródeł; lista może nie obejmować wszystkich.</p>
+          </div>
+        </section>
+        <h2 id="page-title">Bieżąca strona listy subskrybentów</h2>
         <section class="cards" aria-label="Podsumowanie strony">
           <article>
             <p>Aktywni na stronie</p>

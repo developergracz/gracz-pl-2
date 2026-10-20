@@ -2,6 +2,7 @@
 import {readFile} from 'node:fs/promises';
 import {createOwnerAuth,parseOwnerCookie,newCookie,clearCookie} from './owner-auth.mjs';
 import {createNewOnlyAdminReader} from './new-only-reader.mjs';
+import {createNewOnlySummary} from './summary.mjs';
 import {createReadService} from './service.mjs';
 import {privateHeaders,denyAdmin} from './deny.mjs';
 const PREFIX='/owner/newsletter';
@@ -74,9 +75,11 @@ export function createOwnerRouter({
     try {reader=createNewOnlyAdminReader({database,encryptionKey:enc,subjectKey:subject});}
     catch {reader=null;}
   }
-  const configured=Boolean(auth&&reader&&origin===ORIGIN);
+  const readSummary=reader?createNewOnlySummary({database}):null;
+  const configured=Boolean(auth&&reader&&readSummary&&origin===ORIGIN);
   const services=new Map();
   let loginBusy=false;
+  let summaryBusy=false,summaryLastAt=-Infinity;
   function serviceFor(tokenHash){
     let svc=services.get(tokenHash);
     if(!svc){
@@ -127,7 +130,7 @@ export function createOwnerRouter({
       }
       // Every private route requires a live, durable server-side session.
       if(!cookie)return reject(res,401);
-      const kind=path===PREFIX+'/list'?'subscriber_list':
+      const kind=(path===PREFIX+'/list'||path===PREFIX+'/summary')?'subscriber_list':
         path===PREFIX+'/detail'?'subscriber_detail':'session_read';
       const session=await auth.session(cookie,kind);
       if(!session){
@@ -163,6 +166,17 @@ export function createOwnerRouter({
         await auth.logout(cookie);
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/summary'){
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==0)return reject(res);
+        if(summaryBusy||Date.now()-summaryLastAt<3000)return reject(res,429);
+        summaryBusy=true;summaryLastAt=Date.now();
+        try{
+          return response(res,200,await readSummary());
+        }finally{summaryBusy=false;}
       }
       if(req.method==='POST'&&(path===PREFIX+'/list'||path===PREFIX+'/detail')){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))

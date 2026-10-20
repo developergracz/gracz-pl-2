@@ -21,7 +21,12 @@ test('R4 legacy characterization: process interruption, shutdown, health and rec
   let child,base,logs='';
   async function stop(signal='SIGTERM'){
     if(!child||child.exitCode!==null||child.signalCode!==null)return;
-    const exited=once(child,'exit');child.kill(signal);return await exited;
+    const running=child;
+    const exited=once(running,'exit');
+    // A broken graceful shutdown must fail promptly, not hang the entire CI gate.
+    const deadline=signal==='SIGKILL'?null:setTimeout(()=>running.kill('SIGKILL'),3000);
+    running.kill(signal);
+    try{return await exited;}finally{if(deadline)clearTimeout(deadline);}
   }
   t.after(()=>stop('SIGKILL'));
   async function start(extra={},health=200){

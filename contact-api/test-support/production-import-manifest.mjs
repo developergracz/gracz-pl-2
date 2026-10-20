@@ -12,6 +12,7 @@ export const productionModules=Object.freeze([
   'admin-r1/owner-auth.mjs',
   'admin-r1/deny.mjs',
   'admin-r1/new-only-reader.mjs',
+  'admin-r1/summary.mjs',
   'admin-r1/service.mjs',
   'admin-r1/provider.mjs',
   'security/contact-data-crypto.mjs',
