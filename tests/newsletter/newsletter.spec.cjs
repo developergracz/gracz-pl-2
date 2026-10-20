@@ -91,9 +91,20 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await page.locator('#nl-consent').press('Space');
   await page.locator('#nl-submit').click();
   await expect(page.locator('#nl-status')).toContainText('przyjęte do obsługi');
+  const modal=page.locator('#nl-result-dialog');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('#nl-result-title')).toHaveText('Sprawdź swoją subskrypcję');
+  await expect(modal).toContainText('Jeżeli ten adres jest już aktywny');
+  await expect(modal.locator('#nl-result-check')).toBeVisible();
+  await modal.locator('#nl-result-close').click();
+  await expect(modal).toBeHidden();
   await page.locator('#nl-check-email').fill('owner@example.com');
   await page.locator('#nl-check-email').press('Enter');
   await expect(page.locator('#nl-request-status')).toContainText('nie ujawnia statusu subskrypcji');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('#nl-result-title')).toHaveText('Sprawdź swoją skrzynkę e-mail');
+  await expect(modal.locator('#nl-result-check')).toBeHidden();
+  await modal.locator('#nl-result-close').click();
   expect(requests.map(r=>r.path)).toEqual(['/newsletter/subscribe','/newsletter/status-request']);
   expect(requests[1].payload).not.toHaveProperty('consent');
   await expect(page.locator('#nl-consent')).not.toBeChecked();
@@ -113,7 +124,14 @@ for (const state of ['active','pending','inactive']) {
     await page.locator('#nl-action-button').click();
     await expect(page.locator('#nl-action-status')).toContainText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
-    await expect(page.locator('#nl-action-status')).toBeFocused();
+    if(state==='active'){
+      const modal=page.locator('#nl-result-dialog');
+      await expect(modal).toBeVisible();
+      await expect(modal.locator('#nl-result-title')).toHaveText('TEN ADRES JEST JUŻ AKTYWNY W NEWSLETTERZE');
+      await expect(modal).toContainText('Potwierdzono dostęp do skrzynki');
+      await modal.locator('#nl-result-close').click();
+      await expect(modal).toBeHidden();
+    }else await expect(page.locator('#nl-action-status')).toBeFocused();
     expect(requests).toEqual([{path:'/newsletter/status-check',payload:{token:'secret-proof'}}]);
     await expect(page.locator('#nl-action-title')).toHaveText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await page.evaluate(()=>window.scrollTo(0,0));
