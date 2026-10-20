@@ -10,6 +10,24 @@ const labels = {
   pending: "Oczekuje na DOI",
   subscribed: "Potwierdzona",
 };
+const warsawFormatter = new Intl.DateTimeFormat("pl-PL", {
+  timeZone: "Europe/Warsaw", day: "2-digit", month: "2-digit", year: "numeric",
+  hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  timeZoneName: "short"
+});
+function warsawTime(value) {
+  if (typeof value !== "string" || !value) return "Brak danych";
+  const timestamp = new Date(value);
+  return Number.isFinite(timestamp.getTime())
+    ? `${warsawFormatter.format(timestamp)} (Europe/Warsaw)`
+    : "Brak danych";
+}
+const sourceLabel = code => code === "newsletter_page"
+  ? "Strona newslettera" : code ? `Kod: ${code}` : "Nieznane";
+const eventLabel = {
+  opt_in_requested: "Zgłoszenie", opt_in_confirmed: "Potwierdzenie DOI",
+  unsubscribed: "Wycofanie zgody"
+};
 let next = null,
   loading = false,
   query = "",
@@ -75,6 +93,10 @@ async function load(cursor = null) {
       const status = document.createElement("td");
       status.textContent = labels[item.state];
       status.className = "badge";
+      const signup = document.createElement("td");
+      signup.textContent = warsawTime(item.requestedAt);
+      const source = document.createElement("td");
+      source.textContent = sourceLabel(item.source);
       const action = document.createElement("td");
       const button = document.createElement("button");
       button.type = "button";
@@ -82,7 +104,7 @@ async function load(cursor = null) {
       button.setAttribute("aria-label", `Szczegóły: ${item.email}`);
       button.addEventListener("click", () => detail(item.handle));
       action.append(button);
-      tr.append(email, status, action);
+      tr.append(email, status, signup, source, action);
       $("rows").append(tr);
     }
     next = data.nextCursor;
@@ -93,10 +115,10 @@ async function load(cursor = null) {
     $("health").textContent = data.quality.includes(
       "incomplete_provider_evidence",
     )
-      ? "Dostawca odpowiada · część stanów niezweryfikowana"
-      : "Dostawca odpowiada · dane strony zweryfikowane";
+      ? "Rejestr odpowiada · część stanów niezweryfikowana"
+      : "Rejestr odpowiada · dane bieżącej strony odczytane";
     $("fetched").textContent =
-      `Ostatnie pobranie: ${new Date(data.fetchedAt).toLocaleString("pl-PL")}`;
+      `Ostatnie pobranie: ${warsawTime(data.fetchedAt)}`;
   } catch (error) {
     if (current !== generation) return;
     clear();
@@ -104,7 +126,7 @@ async function load(cursor = null) {
       error.message === "rate_limited"
         ? "Limit odczytów. Odczekaj chwilę i odśwież."
         : error.message === "timeout"
-          ? "Dostawca nie odpowiedział na czas. Dane niedostępne."
+          ? "Rejestr nie odpowiedział na czas. Dane niedostępne."
           : "Integracja niedostępna. Nie można ustalić liczby subskrybentów.";
     $("health").textContent = "Degradacja · brak aktualnych danych";
     $("fetched").textContent = "Ostatnie pobranie: —";
@@ -134,15 +156,20 @@ async function detail(handle) {
     const lines = [
       data.email,
       `Stan subskrypcji: ${labels[data.state]}`,
-      ...(data.requestedAt?[ `Zgłoszenie: ${new Date(data.requestedAt).toLocaleString("pl-PL")}` ]:[]),
-      ...(data.confirmedAt?[ `Potwierdzenie: ${new Date(data.confirmedAt).toLocaleString("pl-PL")}` ]:[]),
-      ...(data.source?[ `Źródło zapisu: ${data.source}` ]:[]),
-      `Stan zaobserwowany: ${new Date(data.observedAt).toLocaleString("pl-PL")}`,
+      `Zgłoszenie (zapis w bazie): ${warsawTime(data.requestedAt)}`,
+      `Potwierdzenie DOI: ${warsawTime(data.confirmedAt)}`,
+      ...(data.revokedAt?[`Wycofanie zgody: ${warsawTime(data.revokedAt)}`]:[]),
+      `Źródło zapisu: ${sourceLabel(data.source)}`,
+      `Wersja zgody: ${data.consentVersion || "Brak danych"}`,
+      `Status próby wysyłki DOI: ${data.deliveryState==="sent"?"Oznaczona jako wysłana":data.deliveryState==="uncertain"?"Niepewny — nie potwierdza doręczenia":"Niedostępny"}`,
+      `Stan odczytany: ${warsawTime(data.observedAt)}`,
       `Dowód zgody: ${data.consent ? labels[data.consent.state] || "Nieznany" : "Niedostępny — nie odtwarzamy historii"}`,
       `Jakość: ${data.quality.length ? "Wymaga weryfikacji" : "Brak wykrytych rozbieżności"}`,
     ];
     for (const event of data.consent?.events || [])
-      lines.push(`${event.at || "Brak daty"} · ${event.type}`);
+      lines.push(`${warsawTime(event.at)} · ${eventLabel[event.type] || "Nieznane zdarzenie"}` +
+        (event.source?` · ${sourceLabel(event.source)}`:"") +
+        (event.consentVersion?` · zgoda ${event.consentVersion}`:""));
     for (const line of lines) {
       const p = document.createElement("p");
       p.textContent = line;

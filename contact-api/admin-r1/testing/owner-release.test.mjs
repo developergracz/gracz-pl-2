@@ -188,11 +188,22 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(listing.ok,true);
   assert.equal(listing.items.length,1);
   assert.equal(listing.items[0].email,email);
+  assert.equal(listing.items[0].source,'newsletter_page');
+  assert.match(listing.items[0].requestedAt,/^\d{4}-\d{2}-\d{2}T/);
+  assert.equal(listing.items[0].confirmedAt!==null,true);
   const tokenHandle=listing.items[0].handle;
   result=await call('/owner/newsletter/detail',{method:'POST',cookie,
     csrf:login.csrf,data:{handle:tokenHandle}});
   assert.equal(result.status,200);
-  assert.equal((await result.json()).email,email);
+  const detail=await result.json();
+  assert.equal(detail.email,email);
+  assert.equal(detail.source,'newsletter_page');
+  assert.equal(detail.consentVersion,'test-owner');
+  assert.equal(detail.deliveryState,'sent');
+  assert.ok(detail.requestedAt&&detail.confirmedAt);
+  assert.equal(detail.revokedAt,null);
+  assert.equal(detail.consent?.consentVersion,'test-owner');
+  assert.equal(detail.consent?.source,'newsletter_page');
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
