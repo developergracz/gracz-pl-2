@@ -199,7 +199,7 @@ test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Ten adres może być już aktywny');
   await expect(dialog).toContainText('statusu adresu nie ujawniamy bez potwierdzenia');
-  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toHaveCount(0);
+  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toBeVisible();
   await page.screenshot({path:info.outputPath('footer-newsletter-modal.png'),fullPage:false});
   await dialog.locator('.newsletter-success__cta').click();
   await expect(dialog).toBeHidden();
