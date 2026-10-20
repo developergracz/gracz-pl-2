@@ -5,6 +5,8 @@ export const productionModules=Object.freeze([
   'lifecycle.mjs',
   'premium-reply.mjs',
   'security/newsletter-recovery-hold.mjs',
+  // Fresh isolated DOI; no legacy consent or marketing-provider import.
+  'new-only-newsletter.mjs',
   'security/contact-data-crypto.mjs',
   'persistence/database.mjs',
   'persistence/repositories.mjs',
