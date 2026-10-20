@@ -47,7 +47,12 @@ export function createSelfServiceWithdrawal({
   function seal(email,id){
     const nonce=randomBytes(12),cipher=createCipheriv('aes-256-gcm',dataKey,nonce);
     cipher.setAAD(Buffer.from('gracz-withdrawal-recipient-v1\0'+id));
-    const ciphertext=Buffer.concat([cipher.update(email,'utf8'),cipher.final()]);
+    // PostgreSQL requires ciphertext >= 16 bytes; AES-GCM does not add length.
+    // Authenticated zero-padding preserves short legitimate email addresses.
+    const bytes=Buffer.from(email,'utf8');
+    const padded=Buffer.alloc(Math.max(16,bytes.length));
+    bytes.copy(padded);
+    const ciphertext=Buffer.concat([cipher.update(padded),cipher.final()]);
     return {ciphertext,nonce,authTag:cipher.getAuthTag()};
   }
   function unseal(row) {
@@ -55,9 +60,9 @@ export function createSelfServiceWithdrawal({
       const decoder=createDecipheriv('aes-256-gcm',dataKey,row.nonce);
       decoder.setAAD(Buffer.from('gracz-withdrawal-recipient-v1\0'+row.challenge_id));
       decoder.setAuthTag(row.auth_tag);
-      return emailAddress(Buffer.concat([
-        decoder.update(row.ciphertext),decoder.final()
-      ]).toString('utf8'));
+      const decrypted=Buffer.concat([decoder.update(row.ciphertext),decoder.final()]);
+      // Existing unpadded challenges remain readable; email syntax forbids NUL.
+      return emailAddress(decrypted.toString('utf8').replace(/\0+$/g,''));
     } catch {throw deny();}
   }
 
