@@ -99,7 +99,8 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await modal.locator('#nl-result-close').click();
   await expect(modal).toBeHidden();
   await page.locator('#nl-check-email').fill('owner@example.com');
-  await page.locator('#nl-check-email').press('Enter');
+  await expect(page.locator('#nl-request-button')).toBeEnabled();
+  await page.locator('#nl-request-button').click();
   await expect(page.locator('#nl-request-status')).toContainText('nie ujawnia statusu subskrypcji');
   await expect(modal).toBeVisible();
   await expect(modal.locator('#nl-result-title')).toHaveText('Sprawdź swoją skrzynkę e-mail');
