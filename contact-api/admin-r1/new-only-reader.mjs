@@ -57,7 +57,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       if(!Number.isInteger(limit)||limit<1||limit>MAX_PAGE||
          (after!==null&&!hex64.test(after))||
          typeof search!=="string"||search.length>80||
-         !['all','active','pending','unsubscribed'].includes(state))
+         !['all','active','pending','unsubscribed','suppressed','outside_segment','unknown'].includes(state))
         throw fault('invalid_request');
       const term=search.trim().toLowerCase();
       const matches=[];
