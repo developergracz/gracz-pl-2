@@ -19,8 +19,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src https://gracz-contact-api.onrender.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/newsletter-full-max-r1.css?v=r3">
-  <script src="/assets/newsletter-full-max-r1.js?v=r44-status-verify-r1" defer></script>
+  <link rel="stylesheet" href="/assets/newsletter-full-max-r1.css?v=r4-page-premium-modal-r1">
+  <script src="/assets/newsletter-full-max-r1.js?v=r45-page-premium-modal-r1" defer></script>
   <script src="/assets/newsletter-withdrawal-r1.js?v=r1" defer></script>
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
@@ -205,6 +205,21 @@
       <a href="/">Start</a>
     </nav>
   </footer>
+
+  <dialog id="nl-result-dialog" class="nl-result-dialog" aria-modal="true"
+          aria-labelledby="nl-result-title" aria-describedby="nl-result-copy">
+    <div class="nl-result-dialog__panel">
+      <button class="nl-result-dialog__x" data-nl-result-close type="button" aria-label="Zamknij okno">×</button>
+      <span class="nl-result-dialog__brand" aria-hidden="true">gracz<span>.pl</span></span>
+      <p class="nl-result-dialog__kicker">NEWSLETTER · FULL MAX PREMIUM</p>
+      <h2 id="nl-result-title">Sprawdź swoją subskrypcję</h2>
+      <p id="nl-result-copy" class="nl-result-dialog__copy"></p>
+      <div class="nl-result-dialog__actions">
+        <a id="nl-result-check" href="#nl-status-panel">Sprawdź status przez e-mail</a>
+        <button id="nl-result-close" data-nl-result-close type="button">Rozumiem</button>
+      </div>
+    </div>
+  </dialog>
   <script src="/assets/legal-links.js?v=r40-new-only-r1"></script>
   <script src="/assets/global-header-r1.js?v=r1"></script>
 </body>
