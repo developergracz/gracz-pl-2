@@ -6,7 +6,9 @@ const ui=readFileSync(new URL('../admin-r1/ui/owner-dashboard.js',import.meta.ur
 test('authenticated OWNER session precedes draft readiness route',()=>{
   assert.ok(router.indexOf("const session=await auth.session")<
     router.indexOf("path===PREFIX+'/campaign-drafts/availability'"));
-  assert.match(router,/enabled:Boolean\(campaignDraftsEnabled&&campaignDraftStore\)/);
+  assert.match(router,/if\(campaignDraftsEnabled&&campaignDraftStore&&database\?\.enabled\)/);
+  assert.match(router,/to_regclass\('newsletter_campaigns\.campaigns'\)/);
+  assert.match(router,/enabled:ready/);
   assert.match(router,/campaignDraftsEnabled=false/);
 });
 test('draft controls remain disabled without verified readiness',()=>{
