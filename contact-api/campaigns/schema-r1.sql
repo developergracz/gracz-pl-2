@@ -28,6 +28,7 @@ CREATE TABLE newsletter_campaigns.dispatches (
   attempted_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   UNIQUE (campaign_id,email_tag),
+  UNIQUE (campaign_id,id),
   CHECK ((state='reserved' AND attempted_at IS NULL) OR
          (state IN ('inflight','uncertain','accepted') AND attempted_at IS NOT NULL) OR
          state='suppressed')
@@ -37,3 +38,28 @@ CREATE INDEX dispatches_by_campaign_state
 -- The application must use durable compare-and-set transitions.
 -- Unknown send effects are permanently held for operator reconciliation.
 -- No automatic timeout-based release or retry after an external attempt.
+
+-- Immutable dispatch event history, with no personal addresses.
+CREATE TABLE newsletter_campaigns.dispatch_events (
+  id uuid PRIMARY KEY,
+  campaign_id uuid NOT NULL,
+  dispatch_id uuid NOT NULL,
+  event_type varchar(24) NOT NULL CHECK (
+    event_type IN ('reserved','suppressed','attempted','accepted','uncertain')
+  ),
+  recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  FOREIGN KEY (campaign_id,dispatch_id)
+    REFERENCES newsletter_campaigns.dispatches(campaign_id,id)
+);
+CREATE INDEX campaign_dispatch_events ON newsletter_campaigns.dispatch_events
+  (campaign_id,dispatch_id,recorded_at);
+
+CREATE FUNCTION newsletter_campaigns.deny_event_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'campaign event log is append-only';
+END $$;
+CREATE TRIGGER dispatch_events_immutable
+BEFORE UPDATE OR DELETE OR TRUNCATE ON newsletter_campaigns.dispatch_events
+FOR EACH STATEMENT EXECUTE FUNCTION newsletter_campaigns.deny_event_mutation();
+REVOKE UPDATE,DELETE,TRUNCATE ON newsletter_campaigns.dispatch_events FROM PUBLIC;
