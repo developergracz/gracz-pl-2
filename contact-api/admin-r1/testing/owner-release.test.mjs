@@ -126,6 +126,7 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     });
     assert.equal(loginPage.status,200);
     assert.match(loginPage.body,/id="username"/);
+    assert.match(loginPage.body,/<input id="password"[^>]*minlength="9"/);
     assert.doesNotMatch(loginPage.body,/id="code"/);
   } finally {await new Promise(resolve=>srv.close(resolve));}
 });
