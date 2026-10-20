@@ -299,6 +299,74 @@ window.addEventListener("pageshow", (event) => {
   if (event.persisted) {loadSummary();load();}
 });
 
+
+async function loadOwnerSettings(){
+  try{
+    const response=await fetch("/owner/newsletter/settings",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+      body:"{}"
+    });
+    if(!response.ok)return; // Hide account controls in legacy TOTP mode.
+    const data=await response.json();
+    if(!data.ok||typeof data.username!=="string")return;
+    $("account-current-nick").textContent=data.username;
+    $("owner-new-nick").value=data.username;
+    $("account-last-login").textContent=data.lastLoginAt?warsawTime(data.lastLoginAt):"Brak historii";
+    $("account-settings-link").hidden=false;
+    $("account-settings").hidden=false;
+  }catch{ /* fail closed: never render a nonfunctional settings form */ }
+}
+let changingCredentials=false;
+async function changeOwnerCredentials(form,payload){
+  if(changingCredentials||!ownerCsrf)return;
+  const status=$("account-settings-status");
+  const button=form.querySelector('button[type="submit"]');
+  changingCredentials=true;
+  button.disabled=true;
+  status.textContent="Trwa bezpieczna zmiana danych logowania…";
+  try{
+    const response=await fetch("/owner/newsletter/change-credentials",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+      body:JSON.stringify(payload)
+    });
+    if(!response.ok)throw Error("not_changed");
+    const answer=await response.json();
+    if(!answer.ok||answer.relogin!==true)throw Error("not_changed");
+    status.textContent="Dane logowania zmienione. Zaloguj się ponownie.";
+    form.reset();
+    ownerCsrf=null;
+    location.replace("/owner/newsletter/login");
+  }catch{
+    status.textContent="Nie zmieniono danych. Sprawdź obecne hasło i wymagania pól lub spróbuj za chwilę.";
+    form.querySelectorAll('input[type="password"]').forEach(input=>{input.value="";});
+    button.disabled=false;
+    changingCredentials=false;
+  }
+}
+$("owner-change-password").addEventListener("submit",event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const oldPassword=$("owner-old-password").value;
+  const newPassword=$("owner-new-password").value;
+  if(newPassword!==$("owner-repeat-password").value){
+    $("account-settings-status").textContent="Nowe hasła muszą być identyczne.";
+    $("owner-repeat-password").focus();
+    return;
+  }
+  changeOwnerCredentials(form,{oldPassword,newPassword});
+});
+$("owner-change-nick").addEventListener("submit",event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const username=$("owner-new-nick").value;
+  if(username===$("account-current-nick").textContent){
+    $("account-settings-status").textContent="Nowy nick musi różnić się od obecnego.";
+    return;
+  }
+  changeOwnerCredentials(form,{username,oldPassword:$("owner-nick-password").value});
+});
 async function startOwnerDashboard(){
   try{
     const response=await fetch("/owner/newsletter/session",{
@@ -311,7 +379,7 @@ async function startOwnerDashboard(){
     const pending=document.createElement("option");
     pending.value="pending";pending.textContent="Oczekujące";
     $("state").insertBefore(pending,$("state").options[2]);
-    await Promise.all([loadSummary(),load()]);
+    await Promise.all([loadSummary(),load(),loadOwnerSettings()]);
   }catch{
     clear();location.replace("/owner/newsletter/login");
   }

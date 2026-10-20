@@ -80,6 +80,7 @@ export function createOwnerRouter({
   const services=new Map();
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
+  let settingsBusy=false,settingsLastAt=-Infinity;
   function serviceFor(tokenHash){
     let svc=services.get(tokenHash);
     if(!svc){
@@ -146,7 +147,7 @@ export function createOwnerRouter({
           .replace('"/admin.js"','"'+PREFIX+'/owner-dashboard.js"')
           .replace('PODGLĄD SYNTETYCZNY','TYLKO WŁAŚCICIEL')
           .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
-            'Dane nowych subskrybentów. Panel tylko do odczytu.')
+            'Dane subskrybentów tylko do odczytu. Ustawienia konta są dostępne wyłącznie właścicielowi.')
           .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
           .replace('Globalnie lub w temacie','Potwierdzone wypisania')
           .replace('Oczekujący · łącznie','Oczekujący na stronie')
@@ -166,6 +167,33 @@ export function createOwnerRouter({
         await auth.logout(cookie);
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/settings'){
+        if(!passwordOnly||!safePost(req,origin)||
+           !auth.checkCsrf(session,req.headers['x-owner-csrf']))return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==0)return reject(res);
+        const settings=await auth.settings(cookie);
+        if(!settings)return reject(res,401);
+        return response(res,200,{ok:true,...settings});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/change-credentials'){
+        if(!passwordOnly||!safePost(req,origin)||
+           !auth.checkCsrf(session,req.headers['x-owner-csrf']))return reject(res);
+        if(settingsBusy||Date.now()-settingsLastAt<2000)return reject(res,429);
+        settingsBusy=true;settingsLastAt=Date.now();
+        try{
+          const data=await input(req);
+          if(Object.keys(data).some(k=>!['oldPassword','newPassword','username'].includes(k))||
+             !Object.hasOwn(data,'oldPassword')||
+             !Object.hasOwn(data,'newPassword')&&!Object.hasOwn(data,'username'))
+            return reject(res);
+          const changed=await auth.changeCredentials(cookie,data);
+          if(!changed)return response(res,400,{ok:false,error:'invalid_account_change'});
+          clearServices();
+          return response(res,200,{ok:true,relogin:true},
+            {'Set-Cookie':clearCookie});
+        }finally{settingsBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/summary'){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))

@@ -118,6 +118,118 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
   } finally {await new Promise(resolve=>srv.close(resolve));}
 });
 
+
+test('M5 account settings: password and nickname rotation survive auth recreation',async()=>{
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  await db.query('DELETE FROM newsletter_owner.sessions');
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  const verifier=await newVerifier(password);
+  const config={database:db,passwordSpec:verifier,passwordOnly:true,username:'graczowner'};
+  const auth=createOwnerAuth(config);
+  const first=await auth.login({username:'graczowner',password});
+  assert.ok(first);
+  const info=await auth.settings(first.token);
+  assert.equal(info.username,'graczowner');
+  assert.match(info.lastLoginAt,/^\d{4}-/);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:'not-the-correct-password',newPassword:'a-new-secure-owner-password-2026'
+  }),false);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:password,username:'bad name!'
+  }),false);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:password,username:'newowner'
+  }),true);
+  assert.equal(await auth.session(first.token),null,'all prior sessions revoked on nickname rotation');
+  const restarted=createOwnerAuth(config);
+  assert.equal(await restarted.login({username:'graczowner',password}),null,
+    'environment nickname is no longer valid after durable change');
+  const second=await restarted.login({username:'newowner',password});
+  assert.ok(second);
+  const updatedPassword='a-new-secure-owner-password-2026';
+  assert.equal(await restarted.changeCredentials(second.token,{
+    oldPassword:password,newPassword:password
+  }),false,'unchanged password rejected');
+  assert.equal(await restarted.changeCredentials(second.token,{
+    oldPassword:password,newPassword:updatedPassword
+  }),true);
+  assert.equal(await restarted.session(second.token),null,'password rotation revokes session');
+  const final=createOwnerAuth(config);
+  assert.equal(await final.login({username:'newowner',password}),null);
+  const third=await final.login({username:'newowner',password:updatedPassword});
+  assert.ok(third,'durable password works with a new OWNER auth instance');
+  assert.equal((await final.settings(third.token)).username,'newowner');
+  assert.ok((await db.query(
+    "SELECT count(*)::int AS n FROM newsletter_owner.audit WHERE action='credentials_changed'"
+  )).rows[0].n>=2);
+  await final.logout(third.token);
+  // Synthetic HTTP on loopback: only a live OWNER session + same-origin CSRF
+  // can read or mutate credentials. No real administrator values are involved.
+  const router=createOwnerRouter({
+    ...config,enabled:true,
+    encryptionKey:enc.toString('base64url'),subjectKey:subject.toString('base64url')
+  });
+  const server=createServer((req,res)=>router.handle(req,res,new URL(req.url,'http://localhost')));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const send=(path,{data,cookie,csrf,origin='https://gracz-contact-api.onrender.com'}={})=>
+    new Promise((resolve,reject)=>{
+      const method='POST';
+      const req=httpRequest({
+        hostname:'127.0.0.1',port:server.address().port,path,method,
+        headers:{host:'gracz-contact-api.onrender.com',
+          'x-forwarded-proto':'https',origin,
+          'sec-fetch-site':'same-origin','content-type':'application/json',
+          ...(cookie?{cookie}:{}),...(csrf?{'x-owner-csrf':csrf}:{})}
+      },res=>{
+        let body='';
+        res.on('data',chunk=>body+=chunk);
+        res.on('end',()=>resolve({status:res.statusCode,
+          cookie:res.headers['set-cookie']?.[0]||'',
+          body:JSON.parse(body)}));
+        res.on('error',reject);
+      });
+      req.on('error',reject);
+      req.end(JSON.stringify(data||{}));
+    });
+  try {
+    const signed=await send('/owner/newsletter/login',{
+      data:{username:'newowner',password:updatedPassword}
+    });
+    assert.equal(signed.status,200);
+    const cookie=signed.cookie.split(';')[0];
+    const csrf=signed.body.csrf;
+    assert.equal((await send('/owner/newsletter/settings',{data:{}})).status,401);
+    assert.equal((await send('/owner/newsletter/settings',{cookie})).status,403);
+    assert.equal((await send('/owner/newsletter/settings',{
+      cookie,csrf,origin:'https://attacker.example'
+    })).status,403);
+    const account=await send('/owner/newsletter/settings',{cookie,csrf});
+    assert.equal(account.status,200);
+    assert.equal(account.body.username,'newowner');
+    assert.equal(Object.hasOwn(account.body,'password_verifier'),false);
+    const denied=await send('/owner/newsletter/change-credentials',{
+      cookie,csrf,data:{oldPassword:'invalid-old-owner-password',username:'changedowner'}
+    });
+    assert.equal(denied.status,400);
+    // M5 deliberately throttles credential attempts to once every 2 seconds.
+    const tooSoon=await send('/owner/newsletter/change-credentials',{
+      cookie,csrf,data:{oldPassword:updatedPassword,username:'changedowner'}
+    });
+    assert.equal(tooSoon.status,429);
+    await new Promise(resolve=>setTimeout(resolve,2100));
+    const changed=await send('/owner/newsletter/change-credentials',{
+      cookie,csrf,data:{oldPassword:updatedPassword,username:'changedowner'}
+    });
+    assert.equal(changed.status,200);
+    assert.equal(changed.body.relogin,true);
+    assert.match(changed.cookie,/Max-Age=0/);
+    assert.equal((await send('/owner/newsletter/settings',{cookie,csrf})).status,401);
+  } finally {await new Promise(resolve=>server.close(resolve));}
+  // Disposable test database only; restore environment bootstrap for other tests.
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+});
+
 test('protected HTTP exposes no subscriber data before OWNER login and CSRF',async(t)=>{
   await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL,last_totp_step=-1 WHERE id=1');
   await db.query('DELETE FROM newsletter_owner.sessions');

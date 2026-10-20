@@ -15,7 +15,7 @@
         <p class="eyebrow">CENTRUM WŁAŚCICIELA</p>
         <nav aria-label="Panel">
           <a href="#main" aria-current="page">◈ Newsletter</a
-          ><a href="#statistics">◇ Statystyki</a><a href="#quality">◇ Jakość danych</a>
+          ><a href="#statistics">◇ Statystyki</a><a href="#quality">◇ Jakość danych</a><a id="account-settings-link" href="#account-settings" hidden>◇ Ustawienia konta</a>
         </nav>
         <p class="aside-note">
           R1 · Tylko odczyt<br />Kontrola bez zmiany zgód.
@@ -184,6 +184,45 @@
             z HMAC ani nie naprawia subskrypcji automatycznie.
           </p>
           <p id="fetched">Ostatnie pobranie: —</p>
+        </section>
+        <section class="panel" id="account-settings" aria-labelledby="account-settings-heading" hidden>
+          <div class="section-title">
+            <div>
+              <h2 id="account-settings-heading">Ustawienia administratora · M5</h2>
+              <p class="muted">Bezpieczne zarządzanie kontem właściciela gracz.pl.</p>
+            </div>
+          </div>
+          <div class="owner-account-meta">
+            <p><strong>Nick administratora:</strong> <span id="account-current-nick">—</span></p>
+            <p><strong>Ostatnie logowanie:</strong> <span id="account-last-login">—</span></p>
+            <p class="muted">Zmiana hasła lub nicku automatycznie kończy sesję. Zaloguj się ponownie nowymi danymi.</p>
+          </div>
+          <div class="owner-account-forms">
+            <form id="owner-change-password" autocomplete="off">
+              <h3>Zmiana hasła</h3>
+              <label for="owner-old-password">Obecne hasło</label>
+              <input id="owner-old-password" name="oldPassword" type="password"
+                autocomplete="current-password" minlength="16" maxlength="128" required />
+              <label for="owner-new-password">Nowe hasło (minimum 16 znaków)</label>
+              <input id="owner-new-password" name="newPassword" type="password"
+                autocomplete="new-password" minlength="16" maxlength="128" required />
+              <label for="owner-repeat-password">Powtórz nowe hasło</label>
+              <input id="owner-repeat-password" type="password" autocomplete="new-password"
+                minlength="16" maxlength="128" required />
+              <button type="submit">Zmień hasło</button>
+            </form>
+            <form id="owner-change-nick" autocomplete="off">
+              <h3>Zmiana nicku</h3>
+              <label for="owner-new-nick">Nowy nick administratora</label>
+              <input id="owner-new-nick" type="text" autocomplete="username" required
+                pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" />
+              <label for="owner-nick-password">Potwierdź obecnym hasłem</label>
+              <input id="owner-nick-password" type="password" autocomplete="current-password"
+                minlength="16" maxlength="128" required />
+              <button type="submit">Zmień nick</button>
+            </form>
+          </div>
+          <p id="account-settings-status" role="status" aria-live="polite"></p>
         </section>
         <footer>
           Full Max Premium · Nowi subskrybenci · Bez eksportu i wysyłki
