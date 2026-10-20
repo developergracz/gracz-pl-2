@@ -15,6 +15,9 @@ export const productionModules=Object.freeze([
   'routes/newsletter-route.mjs',
   // Reviewed opt-out-only path: opt-in remains held.
   'routes/newsletter-withdrawal-route.mjs',
+  // Separate new-recipient consent flow; never imports legacy newsletter manager.
+  'routes/newsletter-fresh-route.mjs',
+  'persistence/fresh-newsletter.mjs',
   'persistence/recovery/self-service-withdrawal.mjs',
   'persistence/recovery/withdrawal-send-fence.mjs',
   'persistence/recovery/withdrawal-challenge-mailer.mjs',
