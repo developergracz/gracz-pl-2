@@ -5,6 +5,7 @@ on:
     paths:
       - "contact-api/admin-r1/**"
       - "contact-api/persistence/new-only/003_owner_sessions.sql"
+      - "contact-api/persistence/new-only/004_owner_credentials.sql"
       - "contact-api/server.mjs"
       - "contact-api/test-support/production-import-manifest.mjs"
       - ".github/workflows/newsletter-owner-auth-gate.yml"
@@ -54,7 +55,8 @@ jobs:
           try {
             for(const file of ['001_new_only_doi.sql',
                                '002_verified_withdrawal.sql',
-                               '003_owner_sessions.sql']){
+                               '003_owner_sessions.sql',
+                               '004_owner_credentials.sql']){
               const sql=await readFile('persistence/new-only/'+file,'utf8');
               await db.query('BEGIN');
               try {await db.query(sql);await db.query('COMMIT');}
