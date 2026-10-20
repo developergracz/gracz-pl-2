@@ -6,6 +6,7 @@ import {randomBytes,createCipheriv,createHmac,randomUUID} from 'node:crypto';
 import {createDatabase} from '../../persistence/database.mjs';
 import {createOwnerAuth,codeAt,encodeTotp,newVerifier,parseOwnerCookie} from '../owner-auth.mjs';
 import {createOwnerRouter} from '../owner-router.mjs';
+import {createNewOnlyTrendDetail} from '../trend-detail.mjs';
 import {createOwnerRecoveryMailer} from '../owner-recovery-mailer.mjs';
 const url=process.env.OWNER_TEST_DATABASE_URL;
 if(!url)throw Error('Disposable OWNER_TEST_DATABASE_URL required');
@@ -518,9 +519,12 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   result=await getTrends({from:previous29,to:today,source:"x' OR 1=1 --"});
   assert.equal(result.status,400,'SQL injection-like source denied');
   result=await getTrends({from:'2026-02-29',to:today});
-  assert.equal(result.status,400,'Invalid date denied');
-  result=await getTrends({from:'2024-01-01',to:today});
-  assert.equal(result.status,400,'Oversized date window denied');
+  assert.equal(result.status,429,'Owner trend endpoint rate-limits rapid consecutive requests');
+  const readTrend=createNewOnlyTrendDetail({database:db});
+  assert.equal(await readTrend({from:'2026-02-29',to:today}),null,'Invalid date denied');
+  assert.equal(await readTrend({from:'2024-01-01',to:today}),null,'Oversized date window denied');
+  assert.equal(await readTrend({from:today,to:previous29}),null,'Inverted window denied');
+  await new Promise(resolve=>setTimeout(resolve,1300));
   result=await getTrends({from:previous29,to:today,source:''});
   assert.equal(result.status,200);
   const trendDetail=await result.json();
@@ -535,14 +539,14 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(trendDetail.rows.at(-1).day,today);
   assert.ok(!JSON.stringify(trendDetail).includes(email),
     'Detailed trends must not disclose subscriber mailbox');
+  await new Promise(resolve=>setTimeout(resolve,1300));
   result=await getTrends({from:previous29,to:today,source:'footer'});
   assert.equal(result.status,200);
   const footerTrend=await result.json();
   assert.deepEqual(footerTrend.totals,{
     requested:1,confirmed:0,pending:1,withdrawn:0
   });
-  result=await getTrends({from:today,to:previous29});
-  assert.equal(result.status,400,'Inverted date window denied');
+
   // Ensure all right-side anchors point to real panel sections.
   result=await call('/owner/newsletter/',{cookie});
   assert.equal(result.status,200);
