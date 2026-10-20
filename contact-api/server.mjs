@@ -123,7 +123,8 @@ const withdrawal = WITHDRAWAL_ENABLED
         apiKey:RESEND_API_KEY,
         emailFrom:process.env.WITHDRAWAL_EMAIL_FROM || EMAIL_FROM
       }),
-      providerOff:createResendProviderOff({apiKey:WITHDRAWAL_RESEND_API_KEY})
+      providerOff:createResendProviderOff({apiKey:WITHDRAWAL_RESEND_API_KEY}),
+      afterVerifiedRecipient:newOnlyNewsletter.recordVerifiedWithdrawal
     })
   : null;
 async function checkWithdrawalReady() {
@@ -140,7 +141,8 @@ async function checkWithdrawalReady() {
       "CROSS JOIN newsletter_recovery.self_service_provider_intents i " +
       "CROSS JOIN newsletter_recovery.self_service_mail_budget b " +
       "CROSS JOIN newsletter_recovery.self_service_verified v " +
-      "CROSS JOIN newsletter_recovery.self_service_provider_verified p LIMIT 0) " +
+      "CROSS JOIN newsletter_recovery.self_service_provider_verified p " +
+      "CROSS JOIN newsletter_new.revocations nr LIMIT 0) " +
       "SELECT count(*)::int AS checked FROM recovery_grants"
     );
     return result.rowCount===1 && result.rows[0]?.checked===0;
