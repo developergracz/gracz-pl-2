@@ -6,6 +6,7 @@ test('OWNER keeps small limits for auth and separate bounded draft save input',(
   assert.match(src,/const maxBody=2048;/);
   assert.match(src,/async function input\(req,limit=maxBody\)/);
   assert.match(src,/if\(Buffer\.byteLength\(body\)>limit\)throw Error\('too_large'\)/);
-  assert.match(src,/input\(req,path\.endsWith\('\/save'\)\?65536:maxBody\)/);
+  assert.match(src,/const writing=path\.endsWith\('\/save'\)\|\|path\.endsWith\('\/update'\)/);
+  assert.match(src,/input\(req,writing\?65536:maxBody\)/);
   assert.match(src,/if\(!campaignDraftsEnabled\|\|!campaignDraftStore\)return reject\(res,503\)/);
 });

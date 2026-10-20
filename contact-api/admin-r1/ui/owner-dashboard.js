@@ -772,30 +772,79 @@ async function draftRequest(route,payload){
   if(!response.ok)throw Error("draft_unavailable");
   return response.json();
 }
+let editingCampaignId=null;
+const newDraftButton=$("campaign-new-draft");
+function selectCampaignDraft(id){
+  editingCampaignId=id;
+  if(draftSaveButton)draftSaveButton.textContent=id?"Zapisz zmiany":"Zapisz wersję roboczą";
+  if(newDraftButton)newDraftButton.hidden=!id;
+}
+newDraftButton?.addEventListener("click",()=>{
+  selectCampaignDraft(null);
+  $("campaign-subject").value="";
+  $("campaign-body").value="";
+  $("campaign-preview-subject").textContent="Temat kampanii";
+  $("campaign-preview-body").textContent="Wpisz treść i wybierz „Pokaż podgląd”.";
+  draftStatus.textContent="Nowa wersja robocza. Nie wysłano wiadomości.";
+});
+async function openCampaignDraft(id){
+  const response=await draftRequest("get",{id});
+  const draft=response.draft;
+  if(!draft||draft.id!==id||draft.audience!=="confirmed_active_new_only")
+    throw Error("draft_unavailable");
+  $("campaign-subject").value=draft.subject;
+  $("campaign-body").value=draft.body;
+  $("campaign-preview-subject").textContent=draft.subject;
+  $("campaign-preview-body").textContent=draft.body;
+  selectCampaignDraft(id);
+  draftStatus.textContent="Wczytano wersję roboczą do edycji. Nie wysłano wiadomości.";
+  $("campaign-subject").focus();
+}
 async function refreshDrafts({notify=true}={}){
   const result=await draftRequest("list",{});
   const list=$("campaign-drafts-list");
   list.replaceChildren();
   for(const draft of result.drafts||[]){
     const li=document.createElement("li");
-    li.textContent=String(draft.subject||"");
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="campaign-draft-open";
+    button.textContent=String(draft.subject||"");
+    button.setAttribute("aria-label","Otwórz wersję roboczą: "+String(draft.subject||""));
+    button.addEventListener("click",async()=>{
+      button.disabled=true;
+      try{await openCampaignDraft(draft.id);}
+      catch{draftStatus.textContent="Nie można wczytać tej wersji roboczej.";}
+      finally{button.disabled=false;}
+    });
+    li.append(button);
     list.append(li);
   }
   if(notify)draftStatus.textContent="Odczytano zapisane wersje robocze.";
 }
 draftSaveButton?.addEventListener("click",async()=>{
+  if(!campaignPreviewForm?.reportValidity())return;
   draftSaveButton.disabled=true;
   try{
-    const result=await draftRequest("save",{
+    const draft={
       subject:$("campaign-subject").value.trim(),
       body:$("campaign-body").value.trim(),
       audience:"confirmed_active_new_only"
-    });
-    draftStatus.textContent=result?.state==="draft"?
-      "Wersja robocza zapisana. Nie wysłano wiadomości.":"Nie zapisano kampanii.";
-    await refreshDrafts({notify:false});
+    };
+    const result=editingCampaignId
+      ?await draftRequest("update",{id:editingCampaignId,...draft})
+      :await draftRequest("save",draft);
+    if(result?.state!=="draft"||typeof result.id!=="string")
+      throw Error("draft_unavailable");
+    selectCampaignDraft(result.id);
+    $("campaign-preview-subject").textContent=draft.subject;
+    $("campaign-preview-body").textContent=draft.body;
+    draftStatus.textContent="Wersja robocza zapisana w PostgreSQL. Nie wysłano wiadomości.";
+    try{await refreshDrafts({notify:false});}catch{
+      draftStatus.textContent="Zapisano wersję roboczą, ale nie udało się odświeżyć listy.";
+    }
   }catch{
-    draftStatus.textContent="Zapisywanie kampanii nie jest jeszcze dostępne.";
+    draftStatus.textContent="Nie udało się zapisać zmian. Sprawdź dane i spróbuj ponownie.";
   }finally{draftSaveButton.disabled=false;}
 });
 draftRefreshButton?.addEventListener("click",async()=>{

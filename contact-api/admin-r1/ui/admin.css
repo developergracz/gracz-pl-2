@@ -693,3 +693,15 @@ footer .footer-brand span{color:#ff6573}
   #campaign-drafts .campaign-actions button{width:100%;}
   #campaign-drafts .campaign-preview-mail{padding:16px;}
 }
+
+/* Saved OWNER campaigns are explicit keyboard-accessible edit actions. */
+#campaign-drafts #campaign-new-draft[hidden]{display:none;}
+#campaign-drafts .campaign-draft-open{
+  display:block;width:100%;min-height:42px;text-align:left;
+  color:#f2f7ff;background:#152636;border:1px solid #43546b;
+  overflow-wrap:anywhere;white-space:normal;
+}
+#campaign-drafts .campaign-draft-open:hover,
+#campaign-drafts .campaign-draft-open:focus-visible{
+  border-color:var(--accent);background:#1b3344;
+}

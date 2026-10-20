@@ -9,7 +9,7 @@ test('authenticated OWNER session precedes draft readiness route',()=>{
   assert.match(router,/if\(campaignDraftsEnabled&&campaignDraftStore&&database\?\.enabled\)/);
   assert.match(router,/to_regclass\('newsletter_campaigns\.campaigns'\)/);
   assert.match(router,/has_schema_privilege\(current_user,'newsletter_campaigns','USAGE'\)/);
-  assert.match(router,/has_table_privilege\(current_user,'newsletter_campaigns\.campaigns','SELECT,INSERT'\)/);
+  assert.match(router,/has_table_privilege\(current_user,'newsletter_campaigns\.campaigns','SELECT,INSERT,UPDATE'\)/);
   assert.match(router,/enabled:ready/);
   assert.match(router,/campaignDraftsEnabled=false/);
 });
@@ -17,4 +17,13 @@ test('draft controls remain disabled without verified readiness',()=>{
   assert.match(ui,/await checkCampaignDraftAvailability\(\)/);
   assert.match(ui,/if\(draftSaveButton\)draftSaveButton.disabled=true/);
   assert.match(ui,/if\(data.ok===true&&data.enabled===true\)/);
+});
+
+test('OWNER saved-draft read and update require CSRF and do not expose sending',()=>{
+  assert.match(router,/PREFIX\+'\/campaign-drafts\/get'/);
+  assert.match(router,/PREFIX\+'\/campaign-drafts\/update'/);
+  assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
+  assert.match(router,/campaignDraftStore\.get\(data\.id\)/);
+  assert.match(router,/campaignDraftStore\.update\(id,draft\)/);
+  assert.doesNotMatch(router,/campaign-drafts\/send/);
 });
