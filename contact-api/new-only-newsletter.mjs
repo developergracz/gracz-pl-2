@@ -81,7 +81,7 @@ export function createNewOnlyNewsletter({
 
   async function acceptOptIn({email, source = 'newsletter_page'} = {}) {
     await requireReady();
-    const mailbox = String(email || '').trim();
+    const mailbox = String(email || '').trim().toLowerCase();
     if (mailbox.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailbox))
       throw Object.assign(new Error('Nieprawidłowy e-mail.'),{status:400,code:'INVALID_EMAIL'});
     const safeSource = /^[a-z_]{1,40}$/.test(source) ? source : 'newsletter_page';
