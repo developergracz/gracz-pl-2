@@ -97,6 +97,9 @@ test('errors are removed after field correction without altering consent state',
 
 test('Premium dialog explains already active addresses without exposing subscriber status', () => {
   assert.match(source,/Sprawdź, czy adres jest już zapisany/);
+  assert.match(source,/already_subscribed/);
+  assert.match(source,/Ten adres już jest w naszym newsletterze/);
+  assert.match(source,/newsletterSuccessMarkup\(state==='already_subscribed'\)/);
   assert.doesNotMatch(source,/<h3 id="newsletter-success-card-title">Ten adres już jest w naszym newsletterze<\/h3>/);
   assert.match(source,/aktywnych adresów nie zapisujemy ponownie/);
   assert.match(source,/nowy zapis wymaga potwierdzenia e-mail/);
