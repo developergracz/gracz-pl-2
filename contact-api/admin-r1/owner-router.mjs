@@ -27,12 +27,12 @@ function text(res,status,data,mime='text/html; charset=utf-8'){
 function reject(res,status=403){
   response(res,status,{ok:false,error:status===429?'rate_limited':'unavailable'});
 }
-async function input(req){
+async function input(req,limit=maxBody){
   if(String(req.headers['content-type']||'').split(';')[0]!=='application/json')throw Error('invalid_type');
   let body='';
   for await(const chunk of req){
     body+=chunk;
-    if(Buffer.byteLength(body)>maxBody)throw Error('too_large');
+    if(Buffer.byteLength(body)>limit)throw Error('too_large');
   }
   const parsed=JSON.parse(body);
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('invalid_body');
@@ -232,7 +232,7 @@ export function createOwnerRouter({
         if(!campaignDraftsEnabled||!campaignDraftStore)return reject(res,503);
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);
-        const data=await input(req);
+        const data=await input(req,path.endsWith('/save')?65536:maxBody);
         if(path.endsWith('/list')){
           if(Object.keys(data).length!==0)return reject(res);
           return response(res,200,{ok:true,drafts:await campaignDraftStore.list()});
