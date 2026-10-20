@@ -42,29 +42,32 @@ function safePost(req,origin){
     (!fetchSite||fetchSite==='same-origin') &&
     req.headers['sec-fetch-mode']!=='no-cors';
 }
-const loginHtml=`<!doctype html><html lang="pl"><head><meta charset="utf-8">
+const loginHtml=passwordOnly=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logowanie właściciela — gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
 <script src="${PREFIX}/login.js" defer></script></head>
 <body><main class="owner-login"><p class="eyebrow">GRACZ.PL · PANEL PRYWATNY</p>
 <h1>Logowanie właściciela</h1>
-<p>Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.</p>
+<p>${passwordOnly?'Podaj nick administratora i hasło.':'Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
 <form id="login-form" autocomplete="off">
+${passwordOnly?`<label for="username">Nick administratora</label>
+<input id="username" type="text" autocomplete="username"
+pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" required>`:''}
 <label for="password">Hasło</label>
 <input id="password" type="password" autocomplete="current-password"
 minlength="16" maxlength="128" required>
-<label for="code">Kod Authenticator</label>
+${passwordOnly?'':`<label for="code">Kod Authenticator</label>
 <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code"
-pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
 <button id="login-button" type="submit">Zaloguj</button></form>
 <p id="login-status" role="status" aria-live="polite"></p>
 </main></body></html>`;
 export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
-  encryptionKey,subjectKey,origin=ORIGIN
+  username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN
 }={}){
-  const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32}):null;
+  const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly}):null;
   const enc=key(encryptionKey),subject=key(subjectKey);
   let reader=null;
   if(auth&&enc&&subject&&!enc.equals(subject)){
@@ -101,7 +104,7 @@ export function createOwnerRouter({
     const cookie=parseOwnerCookie(req.headers.cookie);
     try{
       if(req.method==='GET'&&path===PREFIX+'/login')
-        return text(res,200,loginHtml);
+        return text(res,200,loginHtml(passwordOnly));
       if(req.method==='GET'&&path===PREFIX+'/admin.css'){
         return text(res,200,await readFile(new URL('./ui/admin.css',import.meta.url)),
           'text/css; charset=utf-8');
@@ -115,7 +118,7 @@ export function createOwnerRouter({
         loginBusy=true;
         try {
           const data=await input(req);
-          const outcome=await auth.login({password:data.password,code:data.code});
+          const outcome=await auth.login({password:data.password,code:data.code,username:data.username});
           if(!outcome)return response(res,401,{ok:false,error:'invalid_credentials'});
           clearServices();
           return response(res,200,{ok:true,csrf:outcome.csrf},
