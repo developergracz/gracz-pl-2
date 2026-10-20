@@ -97,7 +97,7 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
       response.on('end',()=>{
         const body=Buffer.concat(chunks).toString('utf8');
         resolve({status:response.statusCode,
-          headers:{get:(name)=>response.headers[name.toLowerCase()]??null},
+          headers:{get:(name)=>{const value=response.headers[name.toLowerCase()];return Array.isArray(value)?value.join('; '):value??null;}},
           json:async()=>JSON.parse(body),text:async()=>body});
       });
     });
