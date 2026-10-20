@@ -150,10 +150,11 @@ export function createNewOnlyNewsletter({
     if (!response.ok) throw unavailable();
     const receipt = await response.json().catch(() => null);
     if (typeof receipt?.id !== 'string' || !receipt.id) throw unavailable();
-    await database.query(`
+    const sent = await database.query(`
       UPDATE newsletter_new.subscribers SET delivery_state='sent'
       WHERE email_tag=$1 AND challenge_id=$2 AND state='pending'
     `,[emailTag,challengeId]);
+    if (sent.rowCount !== 1) throw unavailable();
     return {state:'request_received'};
   }
 
