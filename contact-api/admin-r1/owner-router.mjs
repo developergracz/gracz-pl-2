@@ -142,7 +142,6 @@ export function createOwnerRouter({
           .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
             'Dane nowych subskrybentów. Panel tylko do odczytu.')
           .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
-          .replace('Wypisani na stronie','Wypisani na stronie')
           .replace('Globalnie lub w temacie','Potwierdzone wypisania')
           .replace('Oczekujący · łącznie','Oczekujący na stronie')
           .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
