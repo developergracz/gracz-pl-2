@@ -37,6 +37,10 @@ test('OWNER session: password, one-use TOTP, lockout, durable token, idle expira
   let session=await auth.session(good.token);
   assert.ok(session);
   assert.equal(session.csrf,good.csrf);
+  const rotatedAuth=createOwnerAuth({database:db,passwordSpec:verifier,
+    totpBase32:encodeTotp(Buffer.alloc(20,7)),now:()=>now});
+  assert.equal(await rotatedAuth.session(good.token),null,
+    'changing the authenticator must revoke older credentials');
   assert.equal(auth.checkCsrf(session,'wrong'),false);
   assert.equal(auth.checkCsrf(session,good.csrf),true);
   const dbRows=await db.query('SELECT token_hash FROM newsletter_owner.sessions');
