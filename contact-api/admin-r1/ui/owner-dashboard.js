@@ -286,7 +286,7 @@ window.addEventListener("pagehide", () => {
   $("refresh").disabled = false;
 });
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) load();
+  if (event.persisted) {loadSummary();load();}
 });
 
 async function startOwnerDashboard(){
