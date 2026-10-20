@@ -13,9 +13,24 @@
       <aside>
         <div class="logo">gracz<span>.pl</span></div>
         <p class="eyebrow">CENTRUM WŁAŚCICIELA</p>
-        <nav aria-label="Panel">
-          <a href="#main" aria-current="page">◈ Newsletter</a
-          ><a href="#statistics">◇ Statystyki</a><a href="#quality">◇ Jakość danych</a><a id="account-settings-link" href="#account-settings" hidden>◇ Ustawienia konta</a>
+        <nav aria-label="Sekcje panelu administratora">
+          <a href="#main" aria-current="page">◈ Przegląd</a>
+          <a href="#statistics">◇ Statystyki</a>
+          <a class="nav-sub" href="#m4-global">Liczby i zgłoszenia</a>
+          <a class="nav-sub" href="#trend-daily">Trend 30 dni</a>
+          <a class="nav-sub" href="#trend-details">Wyszukiwanie trendów</a>
+          <a class="nav-sub" href="#trend-monthly">Trend miesięczny</a>
+          <a class="nav-sub" href="#trend-sources">Źródła zgłoszeń</a>
+          <a href="#subscribers">◇ Subskrybenci</a>
+          <a class="nav-sub" href="#subscriber-overview">Podsumowanie listy</a>
+          <a class="nav-sub" href="#filters">Filtry i wyszukiwarka</a>
+          <a href="#quality">◇ Jakość danych</a>
+          <a id="account-settings-link" href="#account-settings" hidden>◇ Ustawienia konta</a>
+          <div id="owner-account-nav" class="nav-subgroup" hidden>
+            <a class="nav-sub" href="#owner-change-password">Zmiana hasła</a>
+            <a class="nav-sub" href="#owner-change-nick">Zmiana nicku</a>
+            <a class="nav-sub" id="owner-recovery-link" href="#owner-recovery-settings" hidden>Odzyskiwanie hasła</a>
+          </div>
         </nav>
         <p class="aside-note">
           R1 · Tylko odczyt<br />Kontrola bez zmiany zgód.
@@ -43,7 +58,7 @@
             <button id="m4-refresh" type="button">Odśwież statystyki</button>
           </div>
           <p id="m4-status" role="status" aria-live="polite">Oczekiwanie na dane…</p>
-          <div class="cards" aria-label="Globalne stany i zgłoszenia">
+          <div class="cards" id="m4-global" aria-label="Globalne stany i zgłoszenia">
             <article><p>W rejestrze ogółem</p><strong id="m4-total">—</strong>
               <small>Unikalne adresy w nowym rejestrze</small></article>
             <article><p>Potwierdzeni aktywni</p><strong id="m4-active">—</strong>
@@ -64,7 +79,7 @@
           <p id="m4-asof" class="muted">Dane pobrano: —</p>
           <p class="muted">Dane o dostarczalności, blokadach Resend i pełnej historycznej liczbie prób
             są niedostępne w tym rejestrze. Nie są przedstawiane jako zero.</p>
-          <div class="table-wrap m4-table-scroll">
+          <div class="table-wrap m4-table-scroll" id="trend-daily">
             <h3>Trend zgłoszeń · 30 dni (Europe/Warsaw)</h3>
             <table>
               <caption class="sr-only">Nowe zgłoszenia i potwierdzeni spośród zgłoszonych w danym dniu</caption>
@@ -73,7 +88,44 @@
               <tbody id="m4-trend"></tbody>
             </table>
           </div>
-          <div class="table-wrap m4-table-scroll">
+          <section class="trend-explorer" id="trend-details" aria-labelledby="trend-details-heading">
+            <h3 id="trend-details-heading">Szczegółowe trendy zgłoszeń — wyszukiwarka</h3>
+            <p class="muted">Wyszukaj przedział dat i opcjonalnie kod źródła zgłoszenia. Dane dzienne dotyczą bieżących wpisów nowego rejestru, nie wszystkich historycznych prób.</p>
+            <form id="trend-search" autocomplete="off">
+              <div>
+                <label for="trend-period">Zakres czasu</label>
+                <select id="trend-period">
+                  <option value="7">Ostatnie 7 dni</option>
+                  <option value="30" selected>Ostatnie 30 dni</option>
+                  <option value="90">Ostatnie 90 dni</option>
+                  <option value="365">Ostatnie 365 dni</option>
+                  <option value="custom">Własne daty</option>
+                </select>
+              </div>
+              <div><label for="trend-from">Od dnia</label>
+                <input id="trend-from" type="date" required></div>
+              <div><label for="trend-to">Do dnia</label>
+                <input id="trend-to" type="date" required></div>
+              <div><label for="trend-source">Źródło (opcjonalnie)</label>
+                <input id="trend-source" type="search" maxlength="40" pattern="[a-z_]{1,40}"
+                  placeholder="np. newsletter_page"></div>
+              <button type="submit" id="trend-search-button">Pokaż szczegóły</button>
+            </form>
+            <p id="trend-detail-status" role="status" aria-live="polite">Wybierz daty i wyszukaj.</p>
+            <div id="trend-detail-result" hidden>
+              <p id="trend-detail-totals" class="muted"></p>
+              <div class="table-wrap m4-table-scroll">
+                <table>
+                  <caption class="sr-only">Szczegółowy dzienny trend z wybranego zakresu</caption>
+                  <thead><tr><th scope="col">Dzień</th><th scope="col">Zgłoszenia</th>
+                    <th scope="col">Potwierdzeni DOI</th><th scope="col">Oczekujący</th>
+                    <th scope="col">Wycofani</th><th scope="col">DOI %</th></tr></thead>
+                  <tbody id="trend-detail-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          <div class="table-wrap m4-table-scroll" id="trend-monthly">
             <h3>Trend miesięczny · 12 miesięcy kalendarzowych (Europe/Warsaw)</h3>
             <p class="muted">Bieżące rekordy według ostatniej daty zgłoszenia; nie liczba wszystkich historycznych prób.</p>
             <table>
@@ -83,7 +135,7 @@
               <tbody id="m4-monthly"></tbody>
             </table>
           </div>
-          <div class="table-wrap">
+          <div class="table-wrap" id="trend-sources">
             <h3>Źródła zgłoszeń · ostatnie 30 dni</h3>
             <table>
               <caption class="sr-only">Maksymalnie osiem najczęstszych źródeł bieżących rekordów</caption>
@@ -94,7 +146,7 @@
           </div>
         </section>
         <h2 id="page-title">Bieżąca strona listy subskrybentów</h2>
-        <section class="cards" aria-label="Podsumowanie strony">
+        <section class="cards" id="subscriber-overview" aria-label="Podsumowanie strony">
           <article>
             <p>Aktywni na stronie</p>
             <strong id="active">—</strong
@@ -115,7 +167,7 @@
             ><small id="total-note">Pełny licznik niedostępny</small>
           </article>
         </section>
-        <section class="panel" aria-labelledby="list-title">
+        <section class="panel" id="subscribers" aria-labelledby="list-title">
           <div class="section-title">
             <div>
               <h2 id="list-title">Subskrybenci</h2>

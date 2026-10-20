@@ -6,6 +6,7 @@ import {randomBytes,createCipheriv,createHmac,randomUUID} from 'node:crypto';
 import {createDatabase} from '../../persistence/database.mjs';
 import {createOwnerAuth,codeAt,encodeTotp,newVerifier,parseOwnerCookie} from '../owner-auth.mjs';
 import {createOwnerRouter} from '../owner-router.mjs';
+import {createNewOnlyTrendDetail} from '../trend-detail.mjs';
 import {createOwnerRecoveryMailer} from '../owner-recovery-mailer.mjs';
 const url=process.env.OWNER_TEST_DATABASE_URL;
 if(!url)throw Error('Disposable OWNER_TEST_DATABASE_URL required');
@@ -499,11 +500,73 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     (i===0||a[i-1].month<m.month)));
   assert.ok(!JSON.stringify(m4).includes('private-owner-fixture@example.test'));
   assert.match(m4.fetchedAt,/^\d{4}-\d{2}-\d{2}T/);
+
+  // M7: private trend explorer is guarded by the same durable OWNER session,
+  // same-origin origin/CSRF and bounded, read-only date/source input.
+  const today=new Intl.DateTimeFormat('sv-SE',{
+    timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit'
+  }).format(new Date());
+  const previous29=new Date(Date.parse(today+'T00:00:00Z')-29*86_400_000)
+    .toISOString().slice(0,10);
+  const getTrends=(data,csrf=login.csrf)=>call('/owner/newsletter/trend-detail',{
+    method:'POST',cookie,csrf,data
+  });
+  result=await call('/owner/newsletter/trend-detail',{
+    method:'POST',data:{from:previous29,to:today}});
+  assert.equal(result.status,401,'Anonymous trend access denied');
+  result=await getTrends({from:previous29,to:today},null);
+  assert.equal(result.status,403,'Trend access without CSRF denied');
+  result=await getTrends({from:previous29,to:today,source:"x' OR 1=1 --"});
+  assert.equal(result.status,400,'SQL injection-like source denied');
+  result=await getTrends({from:'2026-02-29',to:today});
+  assert.equal(result.status,429,'Owner trend endpoint rate-limits rapid consecutive requests');
+  const readTrend=createNewOnlyTrendDetail({database:db});
+  assert.equal(await readTrend({from:'2026-02-29',to:today}),null,'Invalid date denied');
+  assert.equal(await readTrend({from:'2024-01-01',to:today}),null,'Oversized date window denied');
+  assert.equal(await readTrend({from:today,to:previous29}),null,'Inverted window denied');
+  await new Promise(resolve=>setTimeout(resolve,1300));
+  result=await getTrends({from:previous29,to:today,source:''});
+  assert.equal(result.status,200);
+  const trendDetail=await result.json();
+  assert.equal(trendDetail.scope,'new_only_global');
+  assert.equal(trendDetail.timezone,'Europe/Warsaw');
+  assert.equal(trendDetail.days,30);
+  assert.equal(trendDetail.rows.length,30);
+  assert.deepEqual(trendDetail.totals,{
+    requested:3,confirmed:2,pending:1,withdrawn:1
+  });
+  assert.deepEqual(trendDetail.rows.map(row=>row.day).slice(0,1),[previous29]);
+  assert.equal(trendDetail.rows.at(-1).day,today);
+  assert.ok(!JSON.stringify(trendDetail).includes(email),
+    'Detailed trends must not disclose subscriber mailbox');
+  await new Promise(resolve=>setTimeout(resolve,1300));
+  result=await getTrends({from:previous29,to:today,source:'footer'});
+  assert.equal(result.status,200);
+  const footerTrend=await result.json();
+  assert.deepEqual(footerTrend.totals,{
+    requested:1,confirmed:0,pending:1,withdrawn:0
+  });
+
+  // Ensure all right-side anchors point to real panel sections.
+  result=await call('/owner/newsletter/',{cookie});
+  assert.equal(result.status,200);
+  const html=await result.text();
+  for(const id of ['statistics','m4-global','trend-daily','trend-details',
+    'trend-monthly','trend-sources','subscribers','subscriber-overview',
+    'filters','quality','account-settings','owner-change-password',
+    'owner-change-nick','owner-recovery-settings']){
+    assert.ok(html.includes('id="'+id+'"'),'Missing section anchor '+id);
+    assert.ok(html.includes('href="#'+id+'"'),'Missing menu link '+id);
+  }
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,401);
   result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,401);
+  result=await call('/owner/newsletter/trend-detail',{
+    method:'POST',cookie,csrf:login.csrf,data:{from:previous29,to:today}
+  });
+  assert.equal(result.status,401,'Logged-out trend access denied');
   assert.ok(!(await result.text()).includes(email));
 });
