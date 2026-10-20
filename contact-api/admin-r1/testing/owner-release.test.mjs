@@ -16,6 +16,30 @@ const secret=Buffer.from('12345678901234567890');
 const totpBase32=encodeTotp(secret);
 const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22);
 const password='a-temporary-long-synthetic-password';
+test('OWNER copyright notice has legal scope, full dialog, sticky navigation and close controls',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
+  const js=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  assert.match(html,/Wszystkie prawa zastrzeżone/);
+  assert.match(html,/<button id="rights-open"[^>]+>Zobacz szczegóły<\/button>/);
+  assert.match(html,/<dialog id="rights-dialog"[^>]+aria-labelledby="rights-title"/);
+  assert.match(html,/<button id="rights-understood" type="button">Zrozumiałem<\/button>/);
+  assert.match(html,/https:\/\/eli.gov.pl\/eli\/DU\/1994\/83\/ogl/);
+  assert.match(html,/dozwolonego użytku osobistego/);
+  assert.match(html,/Prawa do elementów dostarczonych przez użytkowników/);
+  const targets=[...html.matchAll(/data-rights-target="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(targets.length,8);
+  assert.equal(new Set(targets).size,8,'Do not duplicate menu items');
+  for(const id of targets){
+    assert.ok(html.includes('<section id="'+id+'"'),'Missing legal section '+id);
+  }
+  assert.match(css,/#rights-dialog \.rights-copy\{[^}]*overflow-y:auto/s);
+  assert.match(css,/#rights-dialog \.rights-nav\{[^}]*position:sticky/s);
+  assert.match(js,/rightsDialog\.showModal\(\)/);
+  assert.match(js,/\$\("rights-understood"\)\.addEventListener\("click",closeRights\)/);
+  assert.match(js,/rightsCopy\.scrollTo\(/);
+});
+
 test('RFC6238 TOTP, high-entropy verifier and absent auth configuration fail closed',async()=>{
   assert.equal(codeAt(secret,1),'287082');
   assert.equal(totpBase32.length,32);
