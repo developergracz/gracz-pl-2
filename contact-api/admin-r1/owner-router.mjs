@@ -57,7 +57,7 @@ ${passwordOnly?`<label for="username">Nick administratora</label>
 pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" required>`:''}
 <label for="password">Hasło</label>
 <input id="password" type="password" autocomplete="current-password"
-minlength="16" maxlength="128" required>
+minlength="${passwordOnly?9:16}" maxlength="128" required>
 ${passwordOnly?'':`<label for="code">Kod Authenticator</label>
 <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code"
 pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
