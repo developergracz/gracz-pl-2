@@ -72,6 +72,10 @@ CREATE FUNCTION newsletter_campaigns.reserve_confirmed(
 ) RETURNS boolean LANGUAGE plpgsql AS $$
 DECLARE inserted_id uuid;
 BEGIN
+  -- Lock order matches verified withdrawal: subscriber row first.
+  PERFORM 1 FROM newsletter_new.subscribers
+    WHERE email_tag=p_email_tag FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
   IF NOT EXISTS (
     SELECT 1 FROM newsletter_campaigns.campaigns c
     WHERE c.id=p_campaign AND c.state='approved'
@@ -100,4 +104,62 @@ END $$;
 -- IMPORTANT: revoke EXECUTE by default until the approved operator-specific
 -- role grant; never expose via an unauthenticated or public route.
 REVOKE ALL ON FUNCTION newsletter_campaigns.reserve_confirmed(uuid,uuid,uuid,char(64))
+  FROM PUBLIC;
+
+-- The only state transition allowed before an external send. Lock the same
+-- subscriber row as verified withdrawal, then reserve an irrevocable attempt.
+-- Caller must commit BEFORE invoking Resend; a crash after commit must not
+-- cause a retry. 'inflight' is treated as uncertain until reconciled.
+CREATE FUNCTION newsletter_campaigns.claim_delivery(
+  p_campaign uuid, p_dispatch uuid, p_event uuid
+) RETURNS boolean LANGUAGE plpgsql AS $$
+DECLARE v_tag char(64);
+BEGIN
+  SELECT d.email_tag INTO v_tag
+    FROM newsletter_campaigns.dispatches d
+    WHERE d.id=p_dispatch AND d.campaign_id=p_campaign;
+  IF v_tag IS NULL THEN RETURN false; END IF;
+
+  -- This lock serializes consent withdrawal with the last eligibility read.
+  PERFORM 1 FROM newsletter_new.subscribers s
+    WHERE s.email_tag=v_tag FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM newsletter_campaigns.campaigns c
+    WHERE c.id=p_campaign AND c.state IN ('approved','sending')
+  ) AND EXISTS (
+    SELECT 1 FROM newsletter_new.subscribers s
+    WHERE s.email_tag=v_tag AND s.state='active'
+      AND s.confirmed_at IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM newsletter_new.consent_events e
+        WHERE e.email_tag=s.email_tag AND e.event_type='opt_in_confirmed'
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM newsletter_new.revocations r
+        WHERE r.email_tag=s.email_tag
+      )
+  ) THEN
+    UPDATE newsletter_campaigns.dispatches
+      SET state='inflight', attempted_at=clock_timestamp(),
+          updated_at=clock_timestamp()
+      WHERE id=p_dispatch AND campaign_id=p_campaign AND state='reserved';
+    IF NOT FOUND THEN RETURN false; END IF;
+    INSERT INTO newsletter_campaigns.dispatch_events
+      (id,campaign_id,dispatch_id,event_type)
+      VALUES (p_event,p_campaign,p_dispatch,'attempted');
+    RETURN true;
+  END IF;
+
+  UPDATE newsletter_campaigns.dispatches
+    SET state='suppressed', updated_at=clock_timestamp()
+    WHERE id=p_dispatch AND campaign_id=p_campaign AND state='reserved';
+  IF NOT FOUND THEN RETURN false; END IF;
+  INSERT INTO newsletter_campaigns.dispatch_events
+    (id,campaign_id,dispatch_id,event_type)
+    VALUES(p_event,p_campaign,p_dispatch,'suppressed');
+  RETURN false;
+END $$;
+REVOKE ALL ON FUNCTION newsletter_campaigns.claim_delivery(uuid,uuid,uuid)
   FROM PUBLIC;
