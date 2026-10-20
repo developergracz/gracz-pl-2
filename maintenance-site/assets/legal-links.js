@@ -458,7 +458,7 @@
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
           '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — wróć do gracz.pl</span><b aria-hidden="true">→</b></button>'+
-          '<p class="account-access__consent">Status konkretnego adresu można potwierdzić dopiero po weryfikacji właściciela skrzynki.</p>'+
+          '<p class="account-access__consent"><a href="/newsletter/#nl-status-panel">Sprawdź swój status bezpiecznie — odbierz link na e-mail</a>. Dopiero po otwarciu linku pokażemy, czy adres jest już aktywny.</p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
