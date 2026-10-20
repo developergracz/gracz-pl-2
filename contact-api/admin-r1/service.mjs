@@ -3,6 +3,7 @@ import { bounded, fault } from "./provider.mjs";
 const states = [
   "all",
   "active",
+  "pending",
   "unsubscribed",
   "suppressed",
   "outside_segment",
@@ -98,6 +99,7 @@ export function createReadService({
         seen = [...seen, ...page.items.map((item) => item.id)];
         const counts = {
           active: 0,
+          pending: 0,
           unsubscribed: 0,
           suppressed: 0,
           outside_segment: 0,
@@ -202,6 +204,9 @@ export function createReadService({
         inSegment: c.inSegment,
         topic: c.topic,
         suppressed: c.suppressed,
+        requestedAt:typeof c.requestedAt==='string' ? c.requestedAt:null,
+        confirmedAt:typeof c.confirmedAt==='string' ? c.confirmedAt:null,
+        source:typeof c.source==='string' ? c.source:null,
         consent,
         quality,
       };
