@@ -24,6 +24,28 @@ test('manual OWNER draft-only schema stores drafts, lists headers and contains n
   assert.equal(rows.length,1);
   assert.equal(rows[0].id,record.id);
   assert.equal(rows[0].subject,'Gry gracz.pl');
+  const opened=await store.get(record.id);
+  assert.deepEqual(opened,{
+    id:record.id,subject:'Gry gracz.pl',body:'Witaj w nowych grach gracz.pl.',
+    audience:'confirmed_active_new_only'
+  });
+  const changed=await store.update(record.id,{
+    subject:'Nowości gracz.pl',body:'Nowa wersja wiadomości newslettera.',
+    audience:'confirmed_active_new_only'
+  });
+  assert.deepEqual(changed,{id:record.id,state:'draft'});
+  const reopened=await store.get(record.id);
+  assert.equal(reopened.subject,'Nowości gracz.pl');
+  assert.equal(reopened.body,'Nowa wersja wiadomości newslettera.');
+  await db.query("UPDATE newsletter_campaigns.campaigns "+
+    "SET state='approved',approved_at=clock_timestamp() WHERE id=$1",[record.id]);
+  assert.equal(await store.update(record.id,{
+    subject:'Nie zmieniaj',body:'Próba zmiany zatwierdzonej kampanii.',
+    audience:'confirmed_active_new_only'
+  }),null);
+  assert.equal(await store.get(record.id),null);
+  await db.query("UPDATE newsletter_campaigns.campaigns "+
+    "SET state='draft',approved_at=NULL WHERE id=$1",[record.id]);
   const persisted=await db.query('SELECT state,approved_at FROM newsletter_campaigns.campaigns WHERE id=$1',[record.id]);
   assert.equal(persisted.rows[0].state,'draft');
   assert.equal(persisted.rows[0].approved_at,null);
