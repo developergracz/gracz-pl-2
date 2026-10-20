@@ -129,13 +129,16 @@
       var state=await response.json();
       if(!state||state.ready!==true||state.intakePaused!==false||state.schemaReady!==true||state.configured!==true)return;
       NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
-      ['nl-form','nl-status-form'].forEach(function(id){
+      // New-only consent release: historical status/request tokens stay revoked.
+      ['nl-form'].forEach(function(id){
         var form=byId(id);
         if(form)form.querySelectorAll('input').forEach(function(input){input.disabled=false;});
       });
-      ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
+      ['nl-submit'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
       setStatus(byId('nl-status'),'');
-      setStatus(byId('nl-request-status'),'');
+      // Old status endpoint deliberately remains unavailable.
+      requestPanel.hidden=true;
+      if(actionMode==='confirm' && /^ni3\./.test(actionToken))setStatus(actionStatus,'');
       var notice=byId('nl-maintenance-notice');
       if(notice){notice.hidden=true;notice.style.display='none';}
     }catch(_){/* Fail closed. A failed probe never sends a subscription. */}
