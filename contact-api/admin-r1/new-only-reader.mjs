@@ -58,8 +58,10 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
          (after!==null&&(!hex64.test(after)))) throw fault('invalid_request');
       const rows=await query(`
         SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
-               s.source,s.requested_at,s.confirmed_at,
-               (r.email_tag IS NOT NULL) AS revoked
+               s.source,s.consent_version,s.delivery_state,
+               s.requested_at,s.confirmed_at,
+               (r.email_tag IS NOT NULL) AS revoked,
+               r.recorded_at AS revoked_at
         FROM newsletter_new.subscribers s
         LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
         WHERE ($1::text IS NULL OR s.email_tag < $1::text)
@@ -80,14 +82,20 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           return date.toISOString();
         };
         if(typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source)||
-           !row.requested_at|| (row.state==='active'&&!row.confirmed_at))
+           typeof row.consent_version!=='string'||row.consent_version.length<1||
+           row.consent_version.length>64||/[\x00-\x1f\x7f]/.test(row.consent_version)||
+           !['uncertain','sent'].includes(row.delivery_state)||
+           !row.requested_at||(row.state==='active'&&!row.confirmed_at)||
+           (row.revoked&&!row.revoked_at))
           throw fault('invalid_provider_response');
         return {id,email:decrypt(row),
           // This is first-party consent only, NOT proven provider deliverability.
           state:row.revoked?'unsubscribed':row.state,
           requestedAt:iso(row.requested_at),
           confirmedAt:row.confirmed_at?iso(row.confirmed_at):null,
-          source:row.source,
+          revokedAt:row.revoked_at?iso(row.revoked_at):null,
+          source:row.source,consentVersion:row.consent_version,
+          deliveryState:row.delivery_state,
           globalUnsubscribed:null,inSegment:null,topic:null,suppressed:null};
       });
       return {items,after:rows.length>limit?items.at(-1).id:null};
@@ -97,7 +105,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
     if(!hex64.test(emailTag) || !Number.isInteger(limit) || limit<1 || limit>20)
       throw fault('invalid_request');
     const rows=await query(`
-      SELECT s.state,s.confirmed_at,
+      SELECT s.state,s.confirmed_at,s.source,s.consent_version,
         (r.email_tag IS NOT NULL) AS revoked
       FROM newsletter_new.subscribers s
       LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
@@ -108,16 +116,21 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
     if(!['pending','active'].includes(row.state)||typeof row.revoked!=='boolean')
       throw fault('invalid_provider_response');
     const events=await query(`
-      SELECT event_type AS type, recorded_at AS at FROM newsletter_new.consent_events
-      WHERE email_tag=$1
+      SELECT event_type AS type, recorded_at AS at, source, consent_version
+      FROM newsletter_new.consent_events WHERE email_tag=$1
       UNION ALL
-      SELECT 'unsubscribed' AS type, recorded_at AS at FROM newsletter_new.revocations
+      SELECT 'unsubscribed' AS type, recorded_at AS at,
+        NULL::varchar(40) AS source,NULL::varchar(64) AS consent_version
+      FROM newsletter_new.revocations
       WHERE email_tag=$1
       ORDER BY at DESC LIMIT $2
     `,[emailTag,limit],signal);
     return {state:row.revoked?'unsubscribed':row.state==='active'?'subscribed':'pending',
-      events:events.map(e=>({type:e.type,at:e.at instanceof Date
-        ?e.at.toISOString():String(e.at)}))};
+      source:row.source,consentVersion:row.consent_version,
+      events:events.map(e=>({
+        type:e.type,at:e.at instanceof Date?e.at.toISOString():String(e.at),
+        source:e.source??null,consentVersion:e.consent_version??null
+      }))};
   };
   return Object.freeze({adapter,subjectHash,readConsent});
 }
