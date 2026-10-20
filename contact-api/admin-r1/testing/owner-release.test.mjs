@@ -118,6 +118,56 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
   } finally {await new Promise(resolve=>srv.close(resolve));}
 });
 
+
+test('M5 account settings: password and nickname rotation survive auth recreation',async()=>{
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  await db.query('DELETE FROM newsletter_owner.sessions');
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  const verifier=await newVerifier(password);
+  const config={database:db,passwordSpec:verifier,passwordOnly:true,username:'graczowner'};
+  const auth=createOwnerAuth(config);
+  const first=await auth.login({username:'graczowner',password});
+  assert.ok(first);
+  const info=await auth.settings(first.token);
+  assert.equal(info.username,'graczowner');
+  assert.match(info.lastLoginAt,/^\\d{4}-/);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:'not-the-correct-password',newPassword:'a-new-secure-owner-password-2026'
+  }),false);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:password,username:'bad name!'
+  }),false);
+  assert.equal(await auth.changeCredentials(first.token,{
+    oldPassword:password,username:'newowner'
+  }),true);
+  assert.equal(await auth.session(first.token),null,'all prior sessions revoked on nickname rotation');
+  const restarted=createOwnerAuth(config);
+  assert.equal(await restarted.login({username:'graczowner',password}),null,
+    'environment nickname is no longer valid after durable change');
+  const second=await restarted.login({username:'newowner',password});
+  assert.ok(second);
+  const updatedPassword='a-new-secure-owner-password-2026';
+  assert.equal(await restarted.changeCredentials(second.token,{
+    oldPassword:password,newPassword:password
+  }),false,'unchanged password rejected');
+  assert.equal(await restarted.changeCredentials(second.token,{
+    oldPassword:password,newPassword:updatedPassword
+  }),true);
+  assert.equal(await restarted.session(second.token),null,'password rotation revokes session');
+  const final=createOwnerAuth(config);
+  assert.equal(await final.login({username:'newowner',password}),null);
+  const third=await final.login({username:'newowner',password:updatedPassword});
+  assert.ok(third,'durable password works with a new OWNER auth instance');
+  assert.equal((await final.settings(third.token)).username,'newowner');
+  assert.ok((await db.query(
+    "SELECT count(*)::int AS n FROM newsletter_owner.audit WHERE action='credentials_changed'"
+  )).rows[0].n>=2);
+  await final.logout(third.token);
+  // Disposable test database only; restore environment bootstrap for other tests.
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+});
+
 test('protected HTTP exposes no subscriber data before OWNER login and CSRF',async(t)=>{
   await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL,last_totp_step=-1 WHERE id=1');
   await db.query('DELETE FROM newsletter_owner.sessions');
