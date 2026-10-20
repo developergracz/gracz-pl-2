@@ -101,6 +101,56 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       return {items,after:rows.length>limit?items.at(-1).id:null};
     }
   });
+
+  // Read only the current new-only subscriber ledger, latest request timestamp.
+  // This is NOT a historical count of every attempt or delivery receipt.
+  async function readRecent(){
+    const rows=await query(String.raw`
+      WITH snap AS (SELECT clock_timestamp() AS at),
+      recent AS MATERIALIZED (
+        SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
+          s.source,s.requested_at,(r.email_tag IS NOT NULL) AS revoked
+        FROM newsletter_new.subscribers s
+        LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+        CROSS JOIN snap
+        WHERE s.requested_at>snap.at-interval '24 hours'
+          AND s.requested_at<=snap.at
+      )
+      SELECT recent.*,
+        count(*) OVER()::text AS total24,
+        count(*) FILTER (
+          WHERE requested_at>(SELECT at FROM snap)-interval '2 hours'
+        ) OVER()::text AS total2
+      FROM recent ORDER BY requested_at DESC,email_tag DESC LIMIT 51
+    `,[],null);
+    if(rows.length>51)throw fault('invalid_provider_response');
+    const nonnegative=value=>{
+      if(typeof value!=='string'||!/^(0|[1-9][0-9]*)$/.test(value))
+        throw fault('invalid_provider_response');
+      const n=Number(value);
+      if(!Number.isSafeInteger(n))throw fault('invalid_provider_response');
+      return n;
+    };
+    const total24=rows.length?nonnegative(rows[0].total24):0;
+    const total2=rows.length?nonnegative(rows[0].total2):0;
+    if(total2>total24||total24<rows.length||rows.length!==Math.min(51,total24))
+      throw fault('invalid_provider_response');
+    const items=rows.slice(0,50).map(row=>{
+      if(!['pending','active'].includes(row.state)||
+         typeof row.revoked!=='boolean'||
+         typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source))
+        throw fault('invalid_provider_response');
+      const time=row.requested_at instanceof Date?row.requested_at:
+        new Date(String(row.requested_at));
+      if(!Number.isFinite(time.getTime()))throw fault('invalid_provider_response');
+      return {email:decrypt(row),state:row.revoked?'unsubscribed':row.state,
+        requestedAt:time.toISOString(),source:row.source};
+    });
+    return {ok:true,scope:'new_only_global',total24,total2,
+      items,hasMore:total24>50,fetchedAt:new Date().toISOString(),
+      note:'latest_request_date_not_all_attempts'};
+  }
+
   const readConsent=async(emailTag,{signal,limit=20}={})=>{
     if(!hex64.test(emailTag) || !Number.isInteger(limit) || limit<1 || limit>20)
       throw fault('invalid_request');
@@ -132,5 +182,5 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
         source:e.source??null,consentVersion:e.consent_version??null
       }))};
   };
-  return Object.freeze({adapter,subjectHash,readConsent});
+  return Object.freeze({adapter,subjectHash,readConsent,readRecent});
 }
