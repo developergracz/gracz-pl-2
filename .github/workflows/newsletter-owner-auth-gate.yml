@@ -1,0 +1,69 @@
+name: Newsletter Owner login release gate
+
+on:
+  pull_request:
+    paths:
+      - "contact-api/admin-r1/**"
+      - "contact-api/persistence/new-only/003_owner_sessions.sql"
+      - "contact-api/server.mjs"
+      - "contact-api/test-support/production-import-manifest.mjs"
+      - ".github/workflows/newsletter-owner-auth-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owner:
+    name: OWNER password + TOTP + PostgreSQL 18
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: owner_auth_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d owner_auth_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      OWNER_TEST_DATABASE_URL: postgresql://postgres:ci-only@127.0.0.1:5432/owner_auth_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: contact-api/package-lock.json
+      - name: Install existing API dependencies
+        run: npm --prefix contact-api ci --ignore-scripts
+      - name: Install isolated test schemas on disposable PostgreSQL 18
+        working-directory: contact-api
+        run: |
+          node --input-type=module <<'NODE'
+          import pg from 'pg';
+          import {readFile} from 'node:fs/promises';
+          const db=new pg.Client({connectionString:process.env.OWNER_TEST_DATABASE_URL});
+          await db.connect();
+          try {
+            for(const file of ['001_new_only_doi.sql',
+                               '002_verified_withdrawal.sql',
+                               '003_owner_sessions.sql']){
+              const sql=await readFile('persistence/new-only/'+file,'utf8');
+              await db.query('BEGIN');
+              try {await db.query(sql);await db.query('COMMIT');}
+              catch(e){await db.query('ROLLBACK');throw e;}
+            }
+          } finally {await db.end();}
+          NODE
+      - name: Verify private route, password, TOTP, durable session, CSRF and consent
+        working-directory: contact-api
+        run: node --test admin-r1/testing/owner-release.test.mjs
+      - name: Check every backend module syntax
+        run: npm --prefix contact-api run check
