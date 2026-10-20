@@ -3,7 +3,7 @@
 -- Run once in a reviewed transaction using the migration/owner DB role.
 CREATE SCHEMA IF NOT EXISTS newsletter_campaigns;
 REVOKE ALL ON SCHEMA newsletter_campaigns FROM PUBLIC;
-CREATE TABLE IF NOT EXISTS newsletter_campaigns.campaigns (
+CREATE TABLE newsletter_campaigns.campaigns (
   id uuid PRIMARY KEY,
   subject varchar(160) NOT NULL CHECK (length(subject) BETWEEN 3 AND 160),
   body text NOT NULL CHECK (length(body) BETWEEN 10 AND 20000),
