@@ -102,5 +102,6 @@ test('Premium dialog explains already active addresses without exposing subscrib
   assert.match(source,/statusu adresu nie ujawniamy bez potwierdzenia/);
   assert.match(source,/target\.showModal\(\)/);
   assert.match(source,/data-newsletter-success-close/);
+  assert.match(source,/Sprawdź swój status bezpiecznie/);
   assert.doesNotMatch(source,/<h2 id="newsletter-success-title">Zgłoszenie przyjęte<\/h2>/);
 });
