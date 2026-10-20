@@ -163,3 +163,24 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION newsletter_campaigns.claim_delivery(uuid,uuid,uuid)
   FROM PUBLIC;
+
+-- Result recording is monotonic: it never makes a recipient sendable again.
+-- An HTTP timeout, ambiguous provider response or process crash is uncertain,
+-- not a reason to retry; only a verified provider acceptance becomes accepted.
+CREATE FUNCTION newsletter_campaigns.record_delivery_result(
+  p_campaign uuid, p_dispatch uuid, p_event uuid, p_accepted boolean
+) RETURNS boolean LANGUAGE plpgsql AS $$
+DECLARE v_state varchar(16);
+BEGIN
+  v_state := CASE WHEN p_accepted THEN 'accepted' ELSE 'uncertain' END;
+  UPDATE newsletter_campaigns.dispatches
+  SET state=v_state,updated_at=clock_timestamp()
+  WHERE id=p_dispatch AND campaign_id=p_campaign AND state='inflight';
+  IF NOT FOUND THEN RETURN false; END IF;
+  INSERT INTO newsletter_campaigns.dispatch_events
+    (id,campaign_id,dispatch_id,event_type)
+    VALUES (p_event,p_campaign,p_dispatch,v_state);
+  RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION newsletter_campaigns.record_delivery_result(uuid,uuid,uuid,boolean)
+  FROM PUBLIC;
