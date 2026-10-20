@@ -74,9 +74,20 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
            !['pending','active'].includes(row.state) ||
            typeof row.revoked!=='boolean')throw fault('invalid_provider_response');
         ids.add(id);
+        const iso=value=>{
+          const date=value instanceof Date?value:new Date(String(value));
+          if(!Number.isFinite(date.getTime()))throw fault('invalid_provider_response');
+          return date.toISOString();
+        };
+        if(typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source)||
+           !row.requested_at|| (row.state==='active'&&!row.confirmed_at))
+          throw fault('invalid_provider_response');
         return {id,email:decrypt(row),
           // This is first-party consent only, NOT proven provider deliverability.
           state:row.revoked?'unsubscribed':row.state,
+          requestedAt:iso(row.requested_at),
+          confirmedAt:row.confirmed_at?iso(row.confirmed_at):null,
+          source:row.source,
           globalUnsubscribed:null,inSegment:null,topic:null,suppressed:null};
       });
       return {items,after:rows.length>limit?items.at(-1).id:null};
