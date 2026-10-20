@@ -27,6 +27,44 @@
     }catch(error){if(error.name==='AbortError'||error instanceof TypeError)throw new Error(ambiguous);throw error;}
     finally{window.clearTimeout(timer);controllers.delete(controller);}
   }
+
+  // One accessible, centered Full Max Premium modal on the newsletter page.
+  // The anonymous POST never proves ownership; the verified status link does.
+  var resultDialog=byId('nl-result-dialog');
+  var resultTitle=byId('nl-result-title');
+  var resultCopy=byId('nl-result-copy');
+  var resultCheck=byId('nl-result-check');
+  var resultClose=byId('nl-result-close');
+  var resultTrigger=null;
+  function closeResultDialog(){
+    if(!resultDialog)return;
+    if(typeof resultDialog.close==='function'&&resultDialog.open)resultDialog.close();
+    else resultDialog.removeAttribute('open');
+  }
+  function openResultDialog(title,copy,showCheck,trigger){
+    if(!resultDialog)return;
+    resultTrigger=trigger||document.activeElement;
+    resultTitle.textContent=title;
+    resultCopy.textContent=copy;
+    resultCheck.hidden=!showCheck;
+    if(typeof resultDialog.showModal==='function'){
+      if(!resultDialog.open)resultDialog.showModal();
+    }else resultDialog.setAttribute('open','');
+    resultClose.focus();
+  }
+  if(resultDialog){
+    resultDialog.addEventListener('click',function(event){
+      if(event.target===resultDialog||event.target.closest('[data-nl-result-close]'))
+        closeResultDialog();
+    });
+    resultCheck.addEventListener('click',closeResultDialog);
+    resultDialog.addEventListener('close',function(){
+      if(resultTrigger&&document.contains(resultTrigger)&&!resultTrigger.hidden&&!resultTrigger.disabled){
+        resultTrigger.focus();
+      }
+      resultTrigger=null;
+    });
+  }
   function fieldError(control,message){
     var node=byId(control.getAttribute('aria-describedby'));
     if(node)node.textContent=message||'';
@@ -55,6 +93,15 @@
           ?'Zlecono wysłanie linku do bezpiecznego sprawdzenia statusu. Sprawdź skrzynkę e-mail. Ten komunikat nie ujawnia statusu subskrypcji ani dostarczenia wiadomości.'
           :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.');
         form.reset();openedAt=Date.now();
+        if(path==='/newsletter/subscribe'){
+          openResultDialog('Sprawdź swoją subskrypcję',
+            'Jeżeli ten adres jest już aktywny w newsletterze, pozostaje aktywny — nie trzeba zapisywać się drugi raz. Jeśli zapis jest nowy, potwierdź go linkiem z wiadomości e-mail. Aby zobaczyć dokładny status adresu, odbierz bezpieczny link do weryfikacji.',
+            true,button);
+        }else{
+          openResultDialog('Sprawdź swoją skrzynkę e-mail',
+            'Zgłoszenie sprawdzenia statusu zostało przyjęte. Jeżeli otrzymasz link, otwórz go, aby bezpiecznie poznać status subskrypcji. Sama odpowiedź formularza nie potwierdza, że adres jest aktywny.',
+            false,button);
+        }
       }catch(error){if(current===generation)setStatus(status,error.message,true);}
       finally{busy=false;button.disabled=false;button.textContent=original;}
     });
@@ -175,6 +222,11 @@
       actionButton.hidden=true;
       setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
+      if(mode==='status'&&result.state==='active'){
+        openResultDialog('TEN ADRES JEST JUŻ AKTYWNY W NEWSLETTERZE',
+          'Potwierdzono dostęp do skrzynki e-mail. Subskrypcja newslettera gracz.pl jest aktywna. Nie musisz zapisywać się ponownie ani potwierdzać kolejnego linku.',
+          false,actionButton);
+      }
     }catch(error){if(current===generation){
       actionToken='';actionMode='';actionButton.disabled=true;actionButton.hidden=true;
       actionTitle.textContent='Nie potwierdzono operacji';
