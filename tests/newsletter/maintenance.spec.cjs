@@ -66,6 +66,20 @@ test('confirmed backend readiness enables newsletter signup, but not by stale /h
   await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeEnabled();
 });
 
+test('new-only DOI readiness enables subscribe without reviving old status or legacy tokens', async ({page}) => {
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  await page.goto('/newsletter/');
+  await expect(page.locator('#nl-submit')).toBeEnabled();
+  await expect(page.locator('#nl-consent')).toBeEnabled();
+  await expect(page.locator('#nl-request-button')).toBeDisabled();
+  await expect(page.locator('#nl-status-panel')).toBeHidden();
+  await page.goto('/newsletter/#confirm=n1.compromised');
+  await expect(page.locator('#nl-action-button')).toBeDisabled();
+});
+
 test('HTTP 200 without schema confirmation still blocks newsletter signup', async ({page}) => {
   await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
     route.fulfill({status:200,contentType:'application/json',
