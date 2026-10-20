@@ -1,4 +1,4 @@
-// Owner-only password + TOTP, durable PostgreSQL sessions and no public enrollment.
+// Owner-only password with opt-in username mode or legacy TOTP; durable PostgreSQL sessions.
 import {createHash,createHmac,randomBytes,randomUUID,scrypt as scryptCallback,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
 const scrypt=promisify(scryptCallback);
@@ -51,12 +51,22 @@ export const newVerifier=async password=>{
   const digest=await scrypt(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
   return 'scrypt:'+salt+':'+digest.toString('hex');
 };
-export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}={}){
-  const password=validPasswordSpec(passwordSpec),secret=decodeTotp(totpBase32);
-  if(!database?.enabled||typeof database.transaction!=='function'||!password||!secret)return null;
-  const credentialFingerprint=createHmac('sha256',secret)
-    .update('gracz-owner-credential-generation-v1')
-    .update(password.verifier).digest('hex');
+export function createOwnerAuth({
+  database,passwordSpec,totpBase32,username,passwordOnly=false,now=Date.now
+}={}){
+  const password=validPasswordSpec(passwordSpec);
+  const secret=passwordOnly?null:decodeTotp(totpBase32);
+  const ownerName=passwordOnly&&typeof username==='string'&&
+    /^[A-Za-z][A-Za-z0-9._-]{2,31}$/.test(username)?username:null;
+  if(!database?.enabled||typeof database.transaction!=='function'||!password||
+     (passwordOnly?!ownerName:!secret))return null;
+  // Changing the mode, username or verifier revokes existing durable sessions.
+  const credentialFingerprint=passwordOnly
+    ?createHmac('sha256',password.verifier)
+      .update('gracz-owner-nick-password-v1:').update(ownerName).digest('hex')
+    :createHmac('sha256',secret)
+      .update('gracz-owner-credential-generation-v1')
+      .update(password.verifier).digest('hex');
   const csrfKey=createHmac('sha256',password.verifier).update('gracz-owner-session-csrf-v1').digest();
   const csrf=token=>createHmac('sha256',csrfKey).update(token).digest('base64url');
   async function audit(client,action){
@@ -64,9 +74,9 @@ export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}=
       throw Error('Invalid audit action');
     await client.query('INSERT INTO newsletter_owner.audit(event_id,action) VALUES($1,$2)',[randomUUID(),action]);
   }
-  async function login({password:attempt,code}={}){
+  async function login({username:attemptedName,password:attempt,code}={}){
     if(typeof attempt!=='string'||attempt.length>256||
-       typeof code!=='string'||!/^[0-9]{6}$/.test(code))return null;
+       (!passwordOnly&&(typeof code!=='string'||!/^[0-9]{6}$/.test(code))))return null;
     // Cheap durable lockout preflight avoids expensive KDF work after the
     // limit is reached. Rechecked under the row lock below to avoid races.
     const preflight=await database.queryBounded(
@@ -78,25 +88,37 @@ export function createOwnerAuth({database,passwordSpec,totpBase32,now=Date.now}=
     // Compute KDF outside the PostgreSQL transaction.
     const digest=await scrypt(attempt,password.salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
     const passwordOk=equals(digest,password.verifier);
+    // Check both identities without early exit; failed usernames count toward lockout.
+    const usernameOk=!passwordOnly||(typeof attemptedName==='string'&&
+      attemptedName.length<=64&&equals(
+        createHash('sha256').update(attemptedName).digest(),
+        createHash('sha256').update(ownerName).digest()));
     return database.transaction(async client=>{
       const r=await client.query('SELECT failures,locked_until,last_totp_step FROM newsletter_owner.guard WHERE id=1 FOR UPDATE');
       if(r.rowCount!==1)throw Error('Owner schema missing');
       const guard=r.rows[0],time=now();
       if(guard.locked_until && new Date(guard.locked_until).getTime()>time)return null;
-      const step=Math.floor(time/30000);
       let matching=-1;
-      for(const delta of [-1,0,1]){
-        const n=step+delta;
-        if(n>Number(guard.last_totp_step) && equals(Buffer.from(code),Buffer.from(codeAt(secret,n))))matching=n;
+      if(!passwordOnly){
+        const step=Math.floor(time/30000);
+        for(const delta of [-1,0,1]){
+          const n=step+delta;
+          if(n>Number(guard.last_totp_step) &&
+             equals(Buffer.from(code),Buffer.from(codeAt(secret,n))))matching=n;
+        }
       }
-      if(!passwordOk||matching<0){
+      if(!passwordOk||!usernameOk||(!passwordOnly&&matching<0)){
         const failures=Number(guard.failures)+1;
         await client.query('UPDATE newsletter_owner.guard SET failures=$1,locked_until=$2 WHERE id=1',
           [failures>=5?0:failures,failures>=5?new Date(time+15*60_000):null]);
         await audit(client,'login_denied');return null;
       }
-      await client.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL,last_totp_step=$1 WHERE id=1',
-        [matching]);
+      if(passwordOnly){
+        await client.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+      }else{
+        await client.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL,last_totp_step=$1 WHERE id=1',
+          [matching]);
+      }
       // One OWNER session: rotate, revoke earlier sessions on every successful login.
       await client.query('DELETE FROM newsletter_owner.sessions');
       const token=randomBytes(32).toString('base64url'),tokenHash=hash(token);
