@@ -98,7 +98,8 @@ ${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomni
 export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
-  recoverySecret,recoveryMailer,recoveryEnabled=false
+  recoverySecret,recoveryMailer,recoveryEnabled=false,
+  campaignDraftStore=null,campaignDraftsEnabled=false
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -223,6 +224,28 @@ export function createOwnerRouter({
         await auth.logout(cookie);
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
+      }
+      if(req.method==='POST'&&
+         (path===PREFIX+'/campaign-drafts/save'||path===PREFIX+'/campaign-drafts/list')){
+        // Release switch is deliberately off. Do not enable until candidate
+        // schema, owner session and PostgreSQL integration have been verified.
+        if(!campaignDraftsEnabled||!campaignDraftStore)return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(path.endsWith('/list')){
+          if(Object.keys(data).length!==0)return reject(res);
+          return response(res,200,{ok:true,drafts:await campaignDraftStore.list()});
+        }
+        if(Object.keys(data).some(k=>!['subject','body','audience'].includes(k)))
+          return reject(res);
+        try{
+          const saved=await campaignDraftStore.save(data);
+          return response(res,201,{ok:true,...saved});
+        }catch(error){
+          if(error?.code==='invalid_campaign')return response(res,400,{ok:false,error:'invalid_campaign'});
+          throw error;
+        }
       }
       if(req.method==='POST'&&path===PREFIX+'/settings'){
         if(!passwordOnly||!safePost(req,origin)||
