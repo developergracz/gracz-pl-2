@@ -271,8 +271,11 @@
             <textarea id="campaign-body" rows="6" minlength="10" maxlength="20000" required></textarea>
             <p>Odbiorcy: tylko aktywne zapisy z potwierdzoną zgodą.</p>
             <button type="submit">Pokaż podgląd</button>
+            <button type="button" id="campaign-save-draft" disabled>Zapisz wersję roboczą</button>
+            <button type="button" id="campaign-refresh-drafts" disabled>Odśwież zapisane</button>
           </form>
           <p id="campaign-preview-status" role="status" aria-live="polite"></p>
+          <ul id="campaign-drafts-list" aria-label="Zapisane wersje robocze"></ul>
           <iframe id="campaign-preview-frame" title="Lokalny podgląd kampanii" sandbox="" referrerpolicy="no-referrer" style="width:100%;height:280px;border:1px solid #64748b;border-radius:10px"></iframe>
         </section>
         <section class="panel" id="quality">
