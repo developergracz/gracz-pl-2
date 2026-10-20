@@ -38,7 +38,7 @@ function fakeStore() {
       });return {rowCount:1};
     }
     if(sql.startsWith('INSERT INTO newsletter_new.mail_budget')) {
-      used++;return {rowCount:used<=60?1:0,rows:[{used}]};
+      used++;return {rowCount:used<=p[0]?1:0,rows:[{used}]};
     }
     if(sql.startsWith('SELECT email_tag,token_tag,state,delivery_state,expires_at')) {
       const row=[...records.values()].find(row=>row.challenge_id===p[0]);
