@@ -50,7 +50,7 @@ test('R3 real HTTP business server preserves complete 2/32/1 legacy history, sup
     const server=await startHeldHttpServer(t,url);
     const readiness=await fetch(server.base+'/newsletter/ready');
     assert.equal(readiness.status,503);
-    assert.deepEqual(await readiness.json(),{ready:false,configured:false,intakePaused:true,schemaReady:false});
+    assert.deepEqual(await readiness.json(),{ready:false,configured:false,intakePaused:true,schemaReady:false,newOnly:true});
     for(const token of [...Object.values(envelopes),'n1.test','ns1.test','n2.test'])for(const path of ['subscribe','status-request','confirm','unsubscribe','status-check']){
       const response=await fetch(server.base+'/newsletter/'+path,{method:'POST',headers:{origin:'https://gracz.pl','content-type':'application/json'},body:JSON.stringify({token,email:'unmapped@example.test',consent:true})});
       assert.equal(response.status,503);
