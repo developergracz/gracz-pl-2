@@ -760,3 +760,51 @@ campaignPreviewForm?.addEventListener("submit",event=>{
     '<p>Podgląd — wiadomość nie została wysłana.</p></body></html>';
   status.textContent="Podgląd przygotowany lokalnie. Nie zapisano ani nie wysłano wiadomości.";
 });
+
+
+// OWNER draft API: server retains the release gate; UI unlocks only when explicitly enabled.
+// No campaign send endpoints exist here.
+const draftSaveButton=$("campaign-save-draft");
+const draftRefreshButton=$("campaign-refresh-drafts");
+const draftStatus=$("campaign-preview-status");
+async function draftRequest(route,payload){
+  const response=await fetch("/owner/newsletter/campaign-drafts/"+route,{
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+    body:JSON.stringify(payload)
+  });
+  if(!response.ok)throw Error("draft_unavailable");
+  return response.json();
+}
+async function refreshDrafts(){
+  const result=await draftRequest("list",{});
+  const list=$("campaign-drafts-list");
+  list.replaceChildren();
+  for(const draft of result.drafts||[]){
+    const li=document.createElement("li");
+    li.textContent=String(draft.subject||"");
+    list.append(li);
+  }
+  draftStatus.textContent="Odczytano zapisane wersje robocze.";
+}
+draftSaveButton?.addEventListener("click",async()=>{
+  draftSaveButton.disabled=true;
+  try{
+    const result=await draftRequest("save",{
+      subject:$("campaign-subject").value.trim(),
+      body:$("campaign-body").value.trim(),
+      audience:"confirmed_active_new_only"
+    });
+    draftStatus.textContent=result?.state==="draft"?
+      "Wersja robocza zapisana. Nie wysłano wiadomości.":"Nie zapisano kampanii.";
+    await refreshDrafts();
+  }catch{
+    draftStatus.textContent="Zapisywanie kampanii nie jest jeszcze dostępne.";
+  }finally{draftSaveButton.disabled=false;}
+});
+draftRefreshButton?.addEventListener("click",async()=>{
+  try{await refreshDrafts();}
+  catch{draftStatus.textContent="Lista wersji roboczych jest niedostępna.";}
+});
+// Server-side feature flag still defaults OFF. No automatic availability probe
+// or unverified action enables draft writes from this UI.
