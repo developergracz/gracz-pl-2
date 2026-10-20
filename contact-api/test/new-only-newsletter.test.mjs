@@ -190,7 +190,9 @@ test('status proof requires mailbox access, reveals state only after proof and c
   const proof=delivered.at(-1).text.match(/#status=(ns2[.][A-Za-z0-9_.-]+)/)?.[1];
   assert.ok(proof,'only the verified mailbox receives proof');
   assert.deepEqual(await manager.checkStatus(proof),{state:'active'});
-  await assert.rejects(manager.checkStatus(proof.slice(0,-1)+'A'),{code:'NEWSLETTER_STATUS_REJECTED'});
+  const tampered=proof.split('.');
+  tampered[2]=(tampered[2][0]==='A'?'B':'A')+tampered[2].slice(1);
+  await assert.rejects(manager.checkStatus(tampered.join('.')),{code:'NEWSLETTER_STATUS_REJECTED'});
   await manager.recordVerifiedWithdrawal({
     client,email,challengeId:'00000000-0000-4000-8000-000000000003'
   });
