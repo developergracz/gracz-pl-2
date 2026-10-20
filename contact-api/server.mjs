@@ -9,6 +9,7 @@ import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold
 import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
 import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
+import { createCampaignAudienceProofCount } from "./campaigns/audience-proof-count.mjs";
 import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
@@ -111,6 +112,7 @@ const ownerAdmin=createOwnerRouter({
   recoverySecret:CONTACT_DATA_ENCRYPTION_SECRET,
   recoveryMailer:ownerRecoveryMailer,
   campaignDraftStore:createCampaignDraftStore({database}),
+  campaignAudienceProofCount:createCampaignAudienceProofCount({database}),
   campaignDraftsEnabled:process.env.NEWSLETTER_CAMPAIGN_DRAFTS_ENABLED==='1'
 });
 
