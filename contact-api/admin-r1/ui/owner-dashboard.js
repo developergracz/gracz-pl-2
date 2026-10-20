@@ -43,6 +43,7 @@ const summaryIds = ["total","active","pending","withdrawn","today","week","month
 function clearSummary(message="Dane niedostępne") {
   for (const id of summaryIds) $("m4-"+id).textContent = "—";
   $("m4-trend").replaceChildren();
+  $("m4-monthly").replaceChildren();
   $("m4-sources").replaceChildren();
   $("m4-status").textContent = message;
   $("m4-asof").textContent = "Dane pobrano: —";
@@ -89,6 +90,15 @@ async function loadSummary() {
       fragment.append(tr);
     }
     $("m4-trend").replaceChildren(fragment);
+    if(!Array.isArray(result.monthlyTrend)||result.monthlyTrend.length!==12)
+      throw Error("unavailable");
+    const monthly=document.createDocumentFragment();
+    for(const month of result.monthlyTrend){
+      const tr=document.createElement("tr");
+      tr.append(makeCell(month.month),makeCell(month.requested),makeCell(month.confirmed));
+      monthly.append(tr);
+    }
+    $("m4-monthly").replaceChildren(monthly);
     const sources=document.createDocumentFragment();
     for(const item of result.sources){
       const tr=document.createElement("tr");
