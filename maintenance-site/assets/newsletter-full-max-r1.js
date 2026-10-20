@@ -51,7 +51,9 @@
       if(consent){payload.name=form.elements.name.value.trim();payload.consent=true;}
       try{
         await post(path,payload);if(current!==generation)return;
-        setStatus(status,'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.');
+        setStatus(status,path==='/newsletter/status-request'
+          ?'Zlecono wysłanie linku do bezpiecznego sprawdzenia statusu. Sprawdź skrzynkę e-mail. Ten komunikat nie ujawnia statusu subskrypcji ani dostarczenia wiadomości.'
+          :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.');
         form.reset();openedAt=Date.now();
       }catch(error){if(current===generation)setStatus(status,error.message,true);}
       finally{busy=false;button.disabled=false;button.textContent=original;}
@@ -131,15 +133,18 @@
       NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
       // New-only release does NOT revive historical status or revoked tokens.
       var newOnly=state.newOnly===true;
-      (newOnly?['nl-form']:['nl-form','nl-status-form']).forEach(function(id){
+      ['nl-form','nl-status-form'].forEach(function(id){
         var form=byId(id);
         if(form)form.querySelectorAll('input').forEach(function(input){input.disabled=false;});
       });
-      (newOnly?['nl-submit']:['nl-submit','nl-request-button']).forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
+      ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
       setStatus(byId('nl-status'),'');
       if(newOnly){
-        requestPanel.hidden=true;
-        if(actionMode==='confirm' && /^ni3\./.test(actionToken))setStatus(actionStatus,'');
+        requestPanel.hidden=false;
+        setStatus(byId('nl-request-status'),'');
+        if((actionMode==='confirm' && /^ni3\./.test(actionToken))||
+           (actionMode==='status' && /^ns2[.]/.test(actionToken)))
+          setStatus(actionStatus,'');
       }else{setStatus(byId('nl-request-status'),'');}
       var notice=byId('nl-maintenance-notice');
       if(notice){notice.hidden=true;notice.style.display='none';}
