@@ -39,3 +39,10 @@ test('pre-send transition serializes withdrawal, checks DOI again and cannot ret
   assert.match(sql,/SET state='suppressed'/);
   assert.match(sql,/REVOKE ALL ON FUNCTION newsletter_campaigns\.claim_delivery/);
 });
+
+test('delivery outcomes transition once from inflight and never reopen a send',()=>{
+  assert.match(sql,/CREATE FUNCTION newsletter_campaigns\.record_delivery_result/);
+  assert.match(sql,/WHERE id=p_dispatch AND campaign_id=p_campaign AND state='inflight'/);
+  assert.match(sql,/CASE WHEN p_accepted THEN 'accepted' ELSE 'uncertain' END/);
+  assert.match(sql,/REVOKE ALL ON FUNCTION newsletter_campaigns\.record_delivery_result/);
+});
