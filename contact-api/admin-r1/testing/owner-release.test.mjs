@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
+import {createServer,request as httpRequest} from 'node:http';
 import {randomBytes,createCipheriv,createHmac,randomUUID} from 'node:crypto';
 import {createDatabase} from '../../persistence/database.mjs';
 import {createOwnerAuth,codeAt,encodeTotp,newVerifier,parseOwnerCookie} from '../owner-auth.mjs';
@@ -80,16 +80,29 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   const srv=createServer((req,res)=>router.handle(req,res,new URL(req.url,'http://localhost')));
   await new Promise(resolve=>srv.listen(0,'127.0.0.1',resolve));
   t.after(async()=>{await new Promise(resolve=>srv.close(resolve));await db.close();});
-  const host='http://127.0.0.1:'+srv.address().port;
   const h={'host':'gracz-contact-api.onrender.com','x-forwarded-proto':'https',
     'origin':'https://gracz-contact-api.onrender.com',
     'sec-fetch-site':'same-origin'};
-  const call=(path,{method='GET',data,cookie,csrf,origin}={})=>fetch(host+path,{
-    method,headers:{...h,...(origin===undefined?{}:{origin}),
-      ...(cookie?{'cookie':cookie}:{}),
-      ...(csrf?{'x-owner-csrf':csrf}:{}),
-      ...(data?{'content-type':'application/json'}:{})},
-    ...(data?{body:JSON.stringify(data)}:{})
+  const call=(path,{method='GET',data,cookie,csrf,origin}={})=>new Promise((resolve,reject)=>{
+    const request=httpRequest({
+      hostname:'127.0.0.1',port:srv.address().port,path,method,
+      headers:{...h,...(origin===undefined?{}:{origin}),
+        ...(cookie?{'cookie':cookie}:{}),
+        ...(csrf?{'x-owner-csrf':csrf}:{}),
+        ...(data?{'content-type':'application/json'}:{})}
+    },response=>{
+      const chunks=[];
+      response.on('data',chunk=>chunks.push(chunk));
+      response.on('error',reject);
+      response.on('end',()=>{
+        const body=Buffer.concat(chunks).toString('utf8');
+        resolve({status:response.statusCode,
+          headers:{get:(name)=>response.headers[name.toLowerCase()]??null},
+          json:async()=>JSON.parse(body),text:async()=>body});
+      });
+    });
+    request.on('error',reject);
+    request.end(data?JSON.stringify(data):undefined);
   });
   let result=await call('/owner/newsletter/');
   assert.equal(result.status,401);
