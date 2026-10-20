@@ -56,7 +56,9 @@ export function createNewOnlyNewsletter({
             AND has_table_privilege(current_user,'newsletter_new.subscribers','UPDATE')
             AND has_table_privilege(current_user,'newsletter_new.mail_budget','INSERT')
             AND has_table_privilege(current_user,'newsletter_new.mail_budget','UPDATE')
-            AND has_table_privilege(current_user,'newsletter_new.consent_events','INSERT') AS allowed
+            AND has_table_privilege(current_user,'newsletter_new.consent_events','INSERT')
+            AND has_table_privilege(current_user,'newsletter_new.revocations','SELECT')
+            AND has_table_privilege(current_user,'newsletter_new.revocations','INSERT') AS allowed
         `, [], {timeoutMs:2000});
         lastReady = checked.rows?.[0]?.allowed === true;
       } catch { lastReady = false; }
@@ -79,7 +81,7 @@ export function createNewOnlyNewsletter({
 
   async function acceptOptIn({email, source = 'newsletter_page'} = {}) {
     await requireReady();
-    const mailbox = String(email || '').trim();
+    const mailbox = String(email || '').trim().toLowerCase();
     if (mailbox.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailbox))
       throw Object.assign(new Error('Nieprawidłowy e-mail.'),{status:400,code:'INVALID_EMAIL'});
     const safeSource = /^[a-z_]{1,40}$/.test(source) ? source : 'newsletter_page';
@@ -92,6 +94,14 @@ export function createNewOnlyNewsletter({
     // One atomic reservation of recipient + account-wide hourly delivery budget.
     // Any subsequent uncertain provider effect is fenced until TTL expiry.
     const accepted = await database.transaction(async client => {
+      // Serialize new enrollment with an existing verified withdrawal.
+      await client.query(
+        'SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',
+        [emailTag]);
+      const blocked = await client.query(
+        'SELECT 1 FROM newsletter_new.revocations WHERE email_tag=$1',
+        [emailTag]);
+      if (blocked.rowCount) return false;
       const insert = await client.query(`
         INSERT INTO newsletter_new.subscribers
           (email_tag,ciphertext,nonce,auth_tag,challenge_id,token_tag,state,
@@ -174,6 +184,10 @@ export function createNewOnlyNewsletter({
           !row.token_tag || Date.parse(row.expires_at) <= Date.now() ||
           !timingSafeEqual(Buffer.from(row.token_tag,'hex'),Buffer.from(tokenTag,'hex')))
         throw rejected();
+      const blocked = await client.query(
+        'SELECT 1 FROM newsletter_new.revocations WHERE email_tag=$1',
+        [row.email_tag]);
+      if (blocked.rowCount) throw rejected();
       await client.query(`
         UPDATE newsletter_new.subscribers
         SET state='active',token_tag=NULL,confirmed_at=clock_timestamp()
@@ -187,12 +201,32 @@ export function createNewOnlyNewsletter({
       return {state:'subscribed'};
     });
   }
+  // Called only after a verified one-time withdrawal challenge, inside its
+  // PostgreSQL transaction. No historical subscriber records are accessed.
+  async function recordVerifiedWithdrawal({client,email,challengeId}={}) {
+    if (!database?.enabled || !tagKey) return;
+    if (typeof client?.query !== 'function' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(challengeId||'')))
+      throw unavailable();
+    const recipient = String(email || '').trim().toLowerCase();
+    if (recipient.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient))
+      throw unavailable();
+    const emailTag = tag('email',recipient);
+    const existing = await client.query(
+      'SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',
+      [emailTag]);
+    if (!existing.rowCount) return;
+    await client.query(
+      'INSERT INTO newsletter_new.revocations (email_tag,challenge_id) VALUES ($1,$2) '+
+      'ON CONFLICT (email_tag) DO NOTHING',
+      [emailTag,challengeId]);
+  }
   async function held() { throw unavailable(); }
   return Object.freeze({
     enabled:configured,
     intakePaused:!configured,
     consentLedgerConfigured:configured,
-    acceptOptIn,requestOptIn:acceptOptIn,confirm,readiness,
+    acceptOptIn,requestOptIn:acceptOptIn,confirm,readiness,recordVerifiedWithdrawal,
     acceptStatus:held,checkStatus:held,unsubscribe:held,
     stopAccepting(){},async waitForPublicWork(){},
   });
