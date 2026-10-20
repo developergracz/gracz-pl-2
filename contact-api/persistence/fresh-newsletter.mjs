@@ -191,7 +191,7 @@ export function createFreshResend({sendKey,manageKey,emailFrom,segmentId,topicId
     async enroll(email) {
       // Existing provider contact, even if not unsubscribed, always stays on HOLD.
       if(!await isEligible(email))return false;
-      const body={email,unsubscribed:false,segments:[segmentId],
+      const body={email,unsubscribed:false,segments:[{id:segmentId}],
         ...(topicId?{topics:[{id:topicId,subscription:'opt_in'}]}:{})};
       const result=await call('POST','/contacts',body,true);
       if(!result.found)return false;
