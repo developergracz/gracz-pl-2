@@ -223,8 +223,8 @@
       setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       if(mode==='status'&&result.state==='active'){
-        openResultDialog('TEN ADRES JEST JUŻ AKTYWNY W NEWSLETTERZE',
-          'Potwierdzono dostęp do skrzynki e-mail. Subskrypcja newslettera gracz.pl jest aktywna. Nie musisz zapisywać się ponownie ani potwierdzać kolejnego linku.',
+        openResultDialog('Ten adres już jest w naszym newsletterze',
+          'Potwierdzono dostęp do skrzynki e-mail i sprawdzono aktualny stan bazy. Ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie musisz zapisywać się ponownie ani potwierdzać kolejnego linku.',
           false,actionButton);
       }
     }catch(error){if(current===generation){
