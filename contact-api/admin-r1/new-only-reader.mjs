@@ -95,7 +95,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           };
           if(typeof row.source!=='string'||!/^[a-z_]{1,40}$/.test(row.source)||
              typeof row.consent_version!=='string'||row.consent_version.length<1||
-             row.consent_version.length>64||/[\\x00-\\x1f\\x7f]/.test(row.consent_version)||
+             row.consent_version.length>64||/[\x00-\x1f\x7f]/.test(row.consent_version)||
              !['uncertain','sent'].includes(row.delivery_state)||
              !row.requested_at||(row.state==='active'&&!row.confirmed_at)||
              (row.revoked&&!row.revoked_at))
