@@ -215,7 +215,7 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   // one pending and one verified withdrawal; public newsletter remains untouched.
   async function seed(email,state,sourceCode,revoked=false){
     const tag=createHmac('sha256',subject)
-      .update('gracz-new-only:email\\n'+email).digest('hex');
+      .update('gracz-new-only:email\n'+email).digest('hex');
     const nonce=randomBytes(12),cipher=createCipheriv('aes-256-gcm',enc,nonce);
     cipher.setAAD(Buffer.from('gracz-newsletter-new:'+tag));
     const ciphertext=Buffer.concat([cipher.update(email),cipher.final()]);
@@ -252,7 +252,7 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(m4.trend.reduce((n,x)=>n+x.confirmed,0),2);
   assert.equal(m4.sources.reduce((n,x)=>n+x.count,0),3);
   assert.ok(!JSON.stringify(m4).includes('private-owner-fixture@example.test'));
-  assert.match(m4.fetchedAt,/^\\d{4}-\\d{2}-\\d{2}T/);
+  assert.match(m4.fetchedAt,/^\d{4}-\d{2}-\d{2}T/);
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
