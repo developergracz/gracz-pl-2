@@ -6,6 +6,8 @@
   // F-02 controlled release: keep public opt-in disabled until separate Owner GO.
   // This flag is deliberately fail-closed; it does not probe or activate the API.
   var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;
+  // Contact opt-in still uses the legacy HELD backend; keep this separate.
+  var NEWSLETTER_CONTACT_OPTIN_ENABLED=false;
   var NEWSLETTER_MAINTENANCE_NOTICE='Zapisy do newslettera są tymczasowo niedostępne. W sprawie wycofania zgody otwórz stronę gracz.pl/newsletter/ i skorzystaj z kontaktu e-mail.';
   var CONTACT_EMAIL='czsocha@wp.pl';
   var dialog=null;
@@ -104,7 +106,7 @@
         '</div>'+
         '<div class="contact-field"><label for="contact-message">Wiadomość</label><textarea id="contact-message" name="message" minlength="10" maxlength="4000" placeholder="Napisz, w czym możemy pomóc…" required></textarea><div class="contact-field__meta"><span>Minimum 10 znaków</span><span data-contact-count>0 / 4000</span></div></div>'+
         '<label class="contact-form__check"><input name="acknowledgement" type="checkbox" required><span>Potwierdzam zapoznanie się z <a href="/polityka-prywatnosci/#kontakt" target="_blank" rel="noopener">Polityką prywatności</a> i przyjmuję do wiadomości zasady przetwarzania danych w celu obsługi zgłoszenia.</span></label>'+
-        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"'+(NEWSLETTER_PUBLIC_INTAKE_ENABLED?'':' disabled')+'><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
+        '<label class="contact-form__check contact-form__newsletter"><input name="newsletter" type="checkbox"'+(NEWSLETTER_CONTACT_OPTIN_ENABLED?'':' disabled')+'><span><strong>Newsletter gracz.pl — opcjonalnie.</strong> Chcę otrzymywać informacje o nowych grach, poradnikach i rozwoju serwisu. Zapis wymaga osobnego potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili. <a href="/polityka-prywatnosci/#newsletter" target="_blank" rel="noopener">Szczegóły</a>.</span></label>'+
         '<div class="contact-form__honeypot" aria-hidden="true"><label>Strona WWW<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>'+
         '<p class="contact-form__status" data-contact-status role="status" aria-live="polite"></p>'+
         '<div class="contact-form__actions"><button class="contact-form__submit" type="submit">Wyślij wiadomość</button><span class="contact-form__mail">lub napisz bezpośrednio: <a href="mailto:'+CONTACT_EMAIL+'">'+CONTACT_EMAIL+'</a></span></div>'+
@@ -124,7 +126,7 @@
     document.body.appendChild(dialog);
 
     var form=dialog.querySelector('[data-contact-form]');
-    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+    if(!NEWSLETTER_CONTACT_OPTIN_ENABLED){
       var newsletterOption=form.querySelector('.contact-form__newsletter');
       if(newsletterOption){newsletterOption.hidden=true;newsletterOption.style.display='none';newsletterOption.setAttribute('aria-hidden','true');}
     }
@@ -210,7 +212,7 @@
         message:String(form.elements.message.value||'').trim(),
         website:String(form.elements.website.value||'').trim(),
         acknowledgement:Boolean(form.elements.acknowledgement.checked),
-        newsletter:Boolean(NEWSLETTER_PUBLIC_INTAKE_ENABLED&&form.elements.newsletter&&form.elements.newsletter.checked),
+        newsletter:Boolean(NEWSLETTER_CONTACT_OPTIN_ENABLED&&form.elements.newsletter&&form.elements.newsletter.checked),
         page:location.href,
         startedAt:contactOpenedAt
       };
@@ -747,7 +749,10 @@
         if(consent)consent.disabled=false;
         setFooterNewsletterStatus(form,'');
       });
-      if(dialog){
+      // The contact form still uses the HELD legacy manager. Only the footer
+      // uses the dedicated new-only endpoint until contact opt-in is migrated.
+      if(ready.newOnly!==true)NEWSLETTER_CONTACT_OPTIN_ENABLED=true;
+      if(dialog && NEWSLETTER_CONTACT_OPTIN_ENABLED){
         var opt=dialog.querySelector('.contact-form__newsletter'),check=dialog.querySelector('[name="newsletter"]');
         if(opt){opt.hidden=false;opt.style.display='';opt.removeAttribute('aria-hidden');}
         if(check)check.disabled=false;

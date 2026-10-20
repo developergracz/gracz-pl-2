@@ -6,6 +6,7 @@ import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
+import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
@@ -90,6 +91,9 @@ const premiumReply = createPremiumReplyManager({
 
 // #280: unconditional containment, including contact-form newsletter opt-in.
 const newsletter = createHeldNewsletterManager();
+// Completely separate enrollment, fresh purpose keys and dedicated consent ledger.
+// Default OFF. Legacy manager stays HELD for contact and old n1/ns1 actions.
+const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
 
 // This opt-out path is INDEPENDENT of newsletter opt-in. It stays disabled
 // by default. Missing new 256-bit keys, DB, or provider config fail closed.
@@ -231,7 +235,7 @@ const MAX_MX_IN_FLIGHT = 50;
 
 const handleNewsletterRequest = createNewsletterRoute({
   allowedOrigins: ALLOWED_ORIGINS,
-  newsletter,
+  newsletter: newOnlyNewsletter,
   newsletterIpBuckets,
   newsletterEmailBuckets,
   rateLimit,
@@ -298,6 +302,7 @@ const server = createServer(async (req, res) => {
         contactDataEncryptionConfigured: contactDataCrypto.enabled,
         newsletterConfigured: newsletter.enabled,
         newsletterConsentLedger: newsletter.consentLedgerConfigured,
+        newsletterNewOnlyConfigured: newOnlyNewsletter.enabled,
       });
     }
 
@@ -306,7 +311,7 @@ const server = createServer(async (req, res) => {
       // A 200 is emitted only for a real, configured and schema-ready backend.
       const origin = String(req.headers.origin || "");
       if (ALLOWED_ORIGINS.has(origin)) setCors(res, origin);
-      const readiness = await newsletter.readiness();
+      const readiness = await newOnlyNewsletter.readiness();
       return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
     }
 
