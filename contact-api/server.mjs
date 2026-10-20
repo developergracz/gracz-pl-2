@@ -102,7 +102,13 @@ function withdrawalKey(name) {
     throw new Error('WITHDRAWAL_CONFIGURATION_INCOMPLETE');
   return decoded;
 }
-const WITHDRAWAL_ENABLED = process.env.NEWSLETTER_WITHDRAWAL_ENABLED === '1';
+// RESEND_API_KEY stays send-only. Managing suppressions/contacts needs its own
+// key; without it withdrawal stays off while the rest of the API keeps running.
+const WITHDRAWAL_RESEND_API_KEY = String(process.env.WITHDRAWAL_RESEND_API_KEY || "").trim();
+const WITHDRAWAL_REQUESTED = process.env.NEWSLETTER_WITHDRAWAL_ENABLED === '1';
+const WITHDRAWAL_ENABLED = WITHDRAWAL_REQUESTED && Boolean(WITHDRAWAL_RESEND_API_KEY);
+if (WITHDRAWAL_REQUESTED && !WITHDRAWAL_ENABLED)
+  console.error('WITHDRAWAL_DISABLED',{code:'WITHDRAWAL_RESEND_API_KEY_MISSING'});
 const withdrawal = WITHDRAWAL_ENABLED
   ? createSelfServiceWithdrawal({
       database,
@@ -113,7 +119,7 @@ const withdrawal = WITHDRAWAL_ENABLED
         apiKey:RESEND_API_KEY,
         emailFrom:process.env.WITHDRAWAL_EMAIL_FROM || EMAIL_FROM
       }),
-      providerOff:createResendProviderOff({apiKey:RESEND_API_KEY})
+      providerOff:createResendProviderOff({apiKey:WITHDRAWAL_RESEND_API_KEY})
     })
   : null;
 async function checkWithdrawalReady() {

@@ -44,7 +44,8 @@ Without Turnstile configuration, ordinary submissions continue to work. Very hig
 
 ## Existing mail variables
 
-- `RESEND_API_KEY`
+- `RESEND_API_KEY` (send-only)
+- `WITHDRAWAL_RESEND_API_KEY` (optional; separate key for newsletter withdrawal suppression/contact operations — withdrawal stays disabled without it)
 - `EMAIL_FROM`
 - `CONTACT_TO`
 
