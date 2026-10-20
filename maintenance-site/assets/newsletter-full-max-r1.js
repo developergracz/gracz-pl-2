@@ -88,15 +88,25 @@
       var payload={email:form.elements.email.value.trim(),website:form.elements.website.value.trim(),startedAt:openedAt};
       if(consent){payload.name=form.elements.name.value.trim();payload.consent=true;}
       try{
-        await post(path,payload);if(current!==generation)return;
+        var reply=await post(path,payload);if(current!==generation)return;
+        if(reply.state!=='request_received'&&reply.state!=='already_subscribed')
+          throw new Error('Nie można potwierdzić odpowiedzi newslettera.');
         setStatus(status,path==='/newsletter/status-request'
           ?'Zlecono wysłanie linku do bezpiecznego sprawdzenia statusu. Sprawdź skrzynkę e-mail. Ten komunikat nie ujawnia statusu subskrypcji ani dostarczenia wiadomości.'
-          :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.');
+          :reply.state==='already_subscribed'
+            ?'Ten adres już jest w naszym newsletterze.'
+            :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.');
         form.reset();openedAt=Date.now();
         if(path==='/newsletter/subscribe'){
-          openResultDialog('Sprawdź swoją subskrypcję',
-            'Jeżeli ten adres jest już aktywny w newsletterze, pozostaje aktywny — nie trzeba zapisywać się drugi raz. Jeśli zapis jest nowy, potwierdź go linkiem z wiadomości e-mail. Aby zobaczyć dokładny status adresu, odbierz bezpieczny link do weryfikacji.',
-            true,button);
+          if(reply.state==='already_subscribed'){
+            openResultDialog('Ten adres już jest w naszym newsletterze',
+              'Sprawdziliśmy aktualny status w bazie PostgreSQL: subskrypcja jest aktywna. Nie wysłano kolejnej wiadomości potwierdzającej. Nie musisz zapisywać się ponownie.',
+              false,button);
+          }else{
+            openResultDialog('Sprawdź swoją subskrypcję',
+              'Jeżeli ten adres jest już aktywny w newsletterze, pozostaje aktywny — nie trzeba zapisywać się drugi raz. Jeśli zapis jest nowy, potwierdź go linkiem z wiadomości e-mail. Aby zobaczyć dokładny status adresu, odbierz bezpieczny link do weryfikacji.',
+              true,button);
+          }
         }else{
           openResultDialog('Sprawdź swoją skrzynkę e-mail',
             'Zgłoszenie sprawdzenia statusu zostało przyjęte. Jeżeli otrzymasz link, otwórz go, aby bezpiecznie poznać status subskrypcji. Sama odpowiedź formularza nie potwierdza, że adres jest aktywny.',
