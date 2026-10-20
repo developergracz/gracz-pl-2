@@ -49,7 +49,7 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <title>Logowanie właściciela — gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
 <script src="${PREFIX}/login.js" defer></script></head>
-<body><main class="owner-login"><p class="eyebrow">GRACZ.PL · PANEL PRYWATNY</p>
+<body><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div><p>Prywatny panel admina newslettera serwisu gracz.pl</p></div>
 <h1>Logowanie właściciela</h1>
 <p>${passwordOnly?'Podaj nick administratora i hasło.':'Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
 <form id="login-form" autocomplete="off">
