@@ -837,9 +837,9 @@ draftSaveButton?.addEventListener("click",async()=>{
     if(result?.state!=="draft"||typeof result.id!=="string")
       throw Error("draft_unavailable");
     selectCampaignDraft(result.id);
-    draftStatus.textContent=editingCampaignId===result.id?
-      "Wersja robocza zapisana w PostgreSQL. Nie wysłano wiadomości.":
-      "Wersja robocza zapisana. Nie wysłano wiadomości.";
+    $("campaign-preview-subject").textContent=draft.subject;
+    $("campaign-preview-body").textContent=draft.body;
+    draftStatus.textContent="Wersja robocza zapisana w PostgreSQL. Nie wysłano wiadomości.";
     try{await refreshDrafts({notify:false});}catch{
       draftStatus.textContent="Zapisano wersję roboczą, ale nie udało się odświeżyć listy.";
     }
