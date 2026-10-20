@@ -434,7 +434,7 @@
   }
 
 
-  function newsletterSuccessMarkup(){
+  function newsletterSuccessMarkup(alreadySubscribed){
     return '<div class="account-access__panel newsletter-success__panel">'+
       '<button class="account-access__close" type="button" data-newsletter-success-close aria-label="Zamknij okno">×</button>'+
       '<div class="account-access__topline">'+
@@ -443,22 +443,24 @@
       '</div>'+
       '<div class="account-access__hero newsletter-success__hero">'+
         '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
-        '<h2 id="newsletter-success-title">Sprawdź swoją subskrypcję</h2>'+
-        '<p id="newsletter-success-intro" class="account-access__intro">Jeśli ten adres jest już aktywny w newsletterze, subskrypcja pozostaje bez zmian. Nie trzeba zapisywać się drugi raz. Ze względów prywatności statusu adresu nie ujawniamy bez potwierdzenia dostępu do skrzynki.</p>'+
+        '<h2 id="newsletter-success-title">'+(alreadySubscribed?'Ten adres już jest w naszym newsletterze':'Sprawdź swoją subskrypcję')+'</h2>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">'+(alreadySubscribed?'System potwierdził, że ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie wysłano kolejnego linku potwierdzającego.':'Zgłoszenie przyjęto. Jeśli adres jest nowy, sprawdź skrzynkę i potwierdź zapis. Możesz także sprawdzić status subskrypcji.')+'</p>'+
       '</div>'+
       '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
         '<div class="account-access__newsletter-copy">'+
           '<p class="account-access__newsletter-kicker">Newsletter gracz.pl</p>'+
-          '<h3 id="newsletter-success-card-title">Sprawdź, czy adres jest już zapisany</h3>'+
-          '<p><strong>Masz już aktywną subskrypcję?</strong> Nic nie musisz robić — pozostaje aktywna, a kolejny link potwierdzający nie zostanie wysłany. <strong>Zapisujesz się pierwszy raz?</strong> Sprawdź pocztę i potwierdź zapis otrzymanym linkiem.</p>'+
+          '<h3 id="newsletter-success-card-title">'+(alreadySubscribed?'Subskrypcja jest aktywna':'Sprawdź, czy adres jest już zapisany')+'</h3>'+
+          '<p>'+(alreadySubscribed?'Ten adres już jest w naszym newsletterze. Nie trzeba ponawiać zapisu, ponownie potwierdzać zgody ani czekać na nowy e-mail.':'<strong>Masz już aktywną subskrypcję?</strong> Nie musisz robić nic więcej. <strong>Zapisujesz się pierwszy raz?</strong> Sprawdź pocztę i potwierdź zapis otrzymanym linkiem.')+'</p>'+
           '<ul class="account-access__benefits">'+
             '<li><span aria-hidden="true">✓</span>aktywnych adresów nie zapisujemy ponownie</li>'+
             '<li><span aria-hidden="true">✓</span>nowy zapis wymaga potwierdzenia e-mail</li>'+
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
-          '<a class="account-access__newsletter-cta newsletter-success__cta" href="/newsletter/#nl-status-panel"><span>Sprawdź status swojego adresu</span><b aria-hidden="true">→</b></a>'+
-          '<p class="account-access__consent">System odczyta aktualny status z bazy newslettera po potwierdzeniu dostępu do skrzynki linkiem e-mail ważnym 15 minut. Bez tego potwierdzenia nie ujawniamy statusu podanego adresu.</p>'+
+          (alreadySubscribed
+            ?'<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — wróć do gracz.pl</span><b aria-hidden="true">→</b></button>'
+            :'<a class="account-access__newsletter-cta newsletter-success__cta" href="/newsletter/#nl-status-panel"><span>Sprawdź status swojego adresu</span><b aria-hidden="true">→</b></a>')+
+          '<p class="account-access__consent">'+(alreadySubscribed?'Aktywna subskrypcja nie została zmieniona. Z newslettera możesz wypisać się w każdej chwili.':'Po potwierdzeniu dostępu do skrzynki linkiem e-mail ważnym 15 minut możesz także zobaczyć swój aktualny status.')+'</p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
@@ -510,11 +512,12 @@
     return newsletterSuccessDialog;
   }
 
-  async function openNewsletterSuccess(trigger){
+  async function openNewsletterSuccess(trigger,state){
     newsletterSuccessLastTrigger=trigger||document.activeElement;
     ensureFooterNewsletterStyles();
     await ensureAccountAccessStyles();
     var target=ensureNewsletterSuccessDialog();
+    target.innerHTML=newsletterSuccessMarkup(state==='already_subscribed');
     if(typeof target.showModal==='function')target.showModal();
     else target.setAttribute('open','');
     document.body.classList.add('account-access-open');
@@ -714,7 +717,9 @@
       setFooterNewsletterStatus(form,'');
       form.reset();
       form.dataset.newsletterOpenedAt=String(Date.now());
-      await openNewsletterSuccess(submit);
+      if(body.state!=='request_received'&&body.state!=='already_subscribed')
+        throw new Error('Nie można potwierdzić odpowiedzi newslettera.');
+      await openNewsletterSuccess(submit,body.state);
     }catch(error){
       setFooterNewsletterStatus(form,error&&(error.name==='AbortError'||error instanceof TypeError)?'Nie możemy potwierdzić wyniku. Zgłoszenie mogło zostać przyjęte. Sprawdź skrzynkę i nie ponawiaj od razu.':error&&error.message?error.message:'Nie udało się potwierdzić operacji.','error');
       var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
