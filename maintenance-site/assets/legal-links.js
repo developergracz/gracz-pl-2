@@ -439,26 +439,26 @@
       '<button class="account-access__close" type="button" data-newsletter-success-close aria-label="Zamknij okno">×</button>'+
       '<div class="account-access__topline">'+
         '<span class="account-access__brand" aria-hidden="true">gracz<span>.pl</span></span>'+
-        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter · zgłoszenie przyjęte</span>'+
+        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter · informacja o zapisie</span>'+
       '</div>'+
       '<div class="account-access__hero newsletter-success__hero">'+
         '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
-        '<h2 id="newsletter-success-title">Zgłoszenie przyjęte</h2>'+
-        '<p id="newsletter-success-intro" class="account-access__intro">Zgłoszenie przyjęto do obsługi. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.</p>'+
+        '<h2 id="newsletter-success-title">Sprawdź swoją subskrypcję</h2>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">Jeśli ten adres jest już aktywny w newsletterze, subskrypcja pozostaje bez zmian. Nie trzeba zapisywać się drugi raz. Ze względów prywatności statusu adresu nie ujawniamy bez potwierdzenia dostępu do skrzynki.</p>'+
       '</div>'+
       '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+
         '<div class="account-access__newsletter-copy">'+
           '<p class="account-access__newsletter-kicker">Newsletter gracz.pl</p>'+
-          '<h3 id="newsletter-success-card-title">Sprawdź swoją skrzynkę e-mail</h3>'+
-          '<p>Jeżeli otrzymasz wiadomość od gracz.pl, kliknij link potwierdzający. Nowy zapis wymaga potwierdzenia — aktywna subskrypcja pozostaje bez zmian.</p>'+
+          '<h3 id="newsletter-success-card-title">Ten adres może być już aktywny</h3>'+
+          '<p><strong>Masz już aktywną subskrypcję?</strong> Nic nie musisz robić — pozostaje aktywna, a kolejny link potwierdzający nie zostanie wysłany. <strong>Zapisujesz się pierwszy raz?</strong> Sprawdź pocztę i potwierdź zapis otrzymanym linkiem.</p>'+
           '<ul class="account-access__benefits">'+
-            '<li><span aria-hidden="true">✓</span>kliknij link w wiadomości potwierdzającej</li>'+
-            '<li><span aria-hidden="true">✓</span>bez potwierdzenia adres nie zostanie aktywowany</li>'+
+            '<li><span aria-hidden="true">✓</span>aktywnych adresów nie zapisujemy ponownie</li>'+
+            '<li><span aria-hidden="true">✓</span>nowy zapis wymaga potwierdzenia e-mail</li>'+
             '<li><span aria-hidden="true">✓</span>z newslettera możesz wypisać się w każdej chwili</li>'+
           '</ul>'+
-          '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — sprawdzę skrzynkę</span><b aria-hidden="true">→</b></button>'+
-          '<p class="account-access__consent"><a href="/newsletter/#nl-status-panel">Sprawdź status newslettera bez zapisywania się</a></p>'+
+          '<button class="account-access__newsletter-cta newsletter-success__cta" type="button" data-newsletter-success-close><span>Rozumiem — wróć do gracz.pl</span><b aria-hidden="true">→</b></button>'+
+          '<p class="account-access__consent">Status konkretnego adresu można potwierdzić dopiero po weryfikacji właściciela skrzynki.</p>'+
           '<p class="account-access__consent">Jeżeli wiadomości nie ma w Odebranych, sprawdź także folder Spam lub Oferty. Ponowne zgłoszenie nie powoduje wysłania kolejnego linku, jeśli poprzedni nadal jest ważny.</p>'+
         '</div>'+
       '</section>'+
