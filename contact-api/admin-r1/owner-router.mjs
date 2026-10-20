@@ -232,32 +232,55 @@ export function createOwnerRouter({
             const check=await database.query(
               "SELECT to_regclass('newsletter_campaigns.campaigns') IS NOT NULL "+
               "AND has_schema_privilege(current_user,'newsletter_campaigns','USAGE') "+
-              "AND has_table_privilege(current_user,'newsletter_campaigns.campaigns','SELECT,INSERT') AS ready"
+              "AND has_table_privilege(current_user,'newsletter_campaigns.campaigns','SELECT,INSERT,UPDATE') AS ready"
             );
             ready=check.rows?.[0]?.ready===true;
           }catch{ready=false;}
         }
         return response(res,200,{ok:true,enabled:ready});
       }
-      if(req.method==='POST'&&
-         (path===PREFIX+'/campaign-drafts/save'||path===PREFIX+'/campaign-drafts/list')){
-        // Release switch is deliberately off. Do not enable until candidate
-        // schema, owner session and PostgreSQL integration have been verified.
+      if(req.method==='POST'&&[
+        PREFIX+'/campaign-drafts/save',PREFIX+'/campaign-drafts/list',
+        PREFIX+'/campaign-drafts/get',PREFIX+'/campaign-drafts/update'
+      ].includes(path)){
+        // OWNER session has already been checked. All mutations remain
+        // drafts-only and require same-origin + CSRF. No send or approval routes.
         if(!campaignDraftsEnabled||!campaignDraftStore)return reject(res,503);
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);
-        const data=await input(req,path.endsWith('/save')?65536:maxBody);
+        const writing=path.endsWith('/save')||path.endsWith('/update');
+        const data=await input(req,writing?65536:maxBody);
         if(path.endsWith('/list')){
           if(Object.keys(data).length!==0)return reject(res);
           return response(res,200,{ok:true,drafts:await campaignDraftStore.list()});
         }
-        if(Object.keys(data).some(k=>!['subject','body','audience'].includes(k)))
+        if(path.endsWith('/get')&&
+           (Object.keys(data).length!==1||!Object.hasOwn(data,'id')))return reject(res);
+        if(path.endsWith('/update')&&
+           (Object.keys(data).length!==4||
+            !['id','subject','body','audience'].every(k=>Object.hasOwn(data,k))))
+          return reject(res);
+        if(path.endsWith('/save')&&
+           (Object.keys(data).length!==3||
+            !['subject','body','audience'].every(k=>Object.hasOwn(data,k))))
           return reject(res);
         try{
+          if(path.endsWith('/get')){
+            const draft=await campaignDraftStore.get(data.id);
+            return draft?response(res,200,{ok:true,draft}):
+              response(res,404,{ok:false,error:'draft_not_found'});
+          }
+          if(path.endsWith('/update')){
+            const {id,...draft}=data;
+            const updated=await campaignDraftStore.update(id,draft);
+            return updated?response(res,200,{ok:true,...updated}):
+              response(res,404,{ok:false,error:'draft_not_found'});
+          }
           const saved=await campaignDraftStore.save(data);
           return response(res,201,{ok:true,...saved});
         }catch(error){
-          if(error?.code==='invalid_campaign')return response(res,400,{ok:false,error:'invalid_campaign'});
+          if(error?.code==='invalid_campaign')
+            return response(res,400,{ok:false,error:'invalid_campaign'});
           throw error;
         }
       }
