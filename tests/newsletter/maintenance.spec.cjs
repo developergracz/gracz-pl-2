@@ -80,6 +80,20 @@ test('new-only DOI readiness enables subscribe without reviving old status or le
   await expect(page.locator('#nl-action-button')).toBeDisabled();
 });
 
+test('new-only readiness permits footer DOI but never contact-form legacy opt-in', async ({page}) => {
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  await page.goto('/');
+  const footer=page.locator('form[data-newsletter]').first();
+  await expect(footer.locator('button[type="submit"]')).toBeEnabled();
+  await expect(footer.locator('input[name="consent"]')).toBeEnabled();
+  await page.evaluate(() => document.querySelector('[data-modal="contact"]').click());
+  await expect(page.locator('.contact-form__newsletter')).toBeHidden();
+  await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeDisabled();
+});
+
 test('HTTP 200 without schema confirmation still blocks newsletter signup', async ({page}) => {
   await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
     route.fulfill({status:200,contentType:'application/json',
