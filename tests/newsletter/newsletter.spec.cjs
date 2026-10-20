@@ -225,6 +225,36 @@ test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   await expect(dialog).toBeHidden();
   expect(requests).toHaveLength(1);
 });
+test('active email returns immediate Full Max Premium confirmation in footer',async({page})=>{
+  const requests=await mock(page,()=>({ok:true,state:'already_subscribed'}));
+  await page.goto('/');
+  const reject=page.getByRole('button',{name:'Odrzuć wszystko'});
+  if(await reject.count())await reject.click();
+  const form=page.locator('form[data-newsletter]').first();
+  await form.locator('[name=email]').fill('already@example.test');
+  await form.locator('[name=consent]').check();
+  await form.locator('button[type=submit]').click();
+  const dialog=page.locator('#newsletter-success-modal');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('#newsletter-success-title')).toHaveText('Ten adres już jest w naszym newsletterze');
+  await expect(dialog).toContainText('Nie wysłano kolejnego linku potwierdzającego');
+  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toHaveCount(0);
+  await expect(dialog.locator('.newsletter-success__cta[data-newsletter-success-close]')).toBeVisible();
+  expect(requests.map(r=>r.path)).toEqual(['/newsletter/subscribe']);
+});
+test('active email immediately shows the correct Premium dialog on newsletter page',async({page})=>{
+  const requests=await mock(page,()=>({ok:true,state:'already_subscribed'}));
+  await page.goto('/newsletter/');
+  await page.locator('#nl-email').fill('already@example.test');
+  await page.locator('#nl-consent').check();
+  await page.locator('#nl-submit').click();
+  const modal=page.locator('#nl-result-dialog');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('#nl-result-title')).toHaveText('Ten adres już jest w naszym newsletterze');
+  await expect(modal).toContainText('Sprawdziliśmy aktualny status w bazie PostgreSQL');
+  await expect(modal.locator('#nl-result-check')).toBeHidden();
+  expect(requests.map(r=>r.path)).toEqual(['/newsletter/subscribe']);
+});
 test('malformed email blocks request and leaving page discards bearer action',async({page})=>{
   const requests=await mock(page);
   await page.goto('/newsletter/');
