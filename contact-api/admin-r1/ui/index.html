@@ -202,13 +202,13 @@
               <h3>Zmiana hasła</h3>
               <label for="owner-old-password">Obecne hasło</label>
               <input id="owner-old-password" name="oldPassword" type="password"
-                autocomplete="current-password" minlength="16" maxlength="128" required />
-              <label for="owner-new-password">Nowe hasło (minimum 16 znaków)</label>
+                autocomplete="current-password" minlength="9" maxlength="128" required />
+              <label for="owner-new-password">Nowe hasło (minimum 9 znaków)</label>
               <input id="owner-new-password" name="newPassword" type="password"
-                autocomplete="new-password" minlength="16" maxlength="128" required />
+                autocomplete="new-password" minlength="9" maxlength="128" required />
               <label for="owner-repeat-password">Powtórz nowe hasło</label>
               <input id="owner-repeat-password" type="password" autocomplete="new-password"
-                minlength="16" maxlength="128" required />
+                minlength="9" maxlength="128" required />
               <button type="submit">Zmień hasło</button>
             </form>
             <form id="owner-change-nick" autocomplete="off">
@@ -218,7 +218,7 @@
                 pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" />
               <label for="owner-nick-password">Potwierdź obecnym hasłem</label>
               <input id="owner-nick-password" type="password" autocomplete="current-password"
-                minlength="16" maxlength="128" required />
+                minlength="9" maxlength="128" required />
               <button type="submit">Zmień nick</button>
             </form>
           </div>

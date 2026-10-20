@@ -46,7 +46,7 @@ export function parseOwnerCookie(header){
 export const clearCookie=COOKIE+'=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Strict';
 export const newCookie=token=>COOKIE+'='+token+'; Path=/; Max-Age=28800; Secure; HttpOnly; SameSite=Strict';
 export const newVerifier=async password=>{
-  if(typeof password!=='string'||password.length<16||password.length>128)throw Error('Password must be 16..128 characters');
+  if(typeof password!=='string'||password.length<9||password.length>128)throw Error('Password must be 9..128 characters');
   const salt=randomBytes(16).toString('hex');
   const digest=await scrypt(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
   return 'scrypt:'+salt+':'+digest.toString('hex');
@@ -194,9 +194,9 @@ export function createOwnerAuth({
   }
   async function changeCredentials(raw,{oldPassword,newPassword,username:newName}={}){
     if(!passwordOnly||typeof oldPassword!=='string'||
-       oldPassword.length<16||oldPassword.length>256||
+       oldPassword.length<9||oldPassword.length>256||
        (newPassword!==undefined&&(typeof newPassword!=='string'||
-       newPassword.length<16||newPassword.length>128))||
+       newPassword.length<9||newPassword.length>128))||
        (newName!==undefined&&!/^[A-Za-z][A-Za-z0-9._-]{2,31}$/.test(newName)))
       return false;
     const current=await credentials();
