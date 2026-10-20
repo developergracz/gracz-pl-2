@@ -5,9 +5,20 @@ import {createNewOnlyNewsletter} from '../new-only-newsletter.mjs';
 function fakeStore() {
   const records = new Map();
   const events = [];
+  const revocations = new Map();
   let used = 0;
   const client = {async query(statement,p=[]) {
     const sql = statement.replace(/\s+/g,' ').trim();
+    if(sql.startsWith('SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE')) {
+      const row=records.get(p[0]);return {rowCount:row?1:0,rows:row?[{email_tag:p[0]}]:[]};
+    }
+    if(sql.startsWith('SELECT 1 FROM newsletter_new.revocations')) {
+      return {rowCount:revocations.has(p[0])?1:0,rows:revocations.has(p[0])?[{one:1}]:[]};
+    }
+    if(sql.startsWith('INSERT INTO newsletter_new.revocations')) {
+      if(revocations.has(p[0]))return {rowCount:0};
+      revocations.set(p[0],p[1]);return {rowCount:1};
+    }
     if(sql.startsWith('INSERT INTO newsletter_new.subscribers')) {
       if(records.has(p[0]))return {rowCount:0,rows:[]};
       records.set(p[0],{
@@ -44,7 +55,7 @@ function fakeStore() {
     throw Error('Unexpected database query: '+sql.slice(0,110));
   }};
   return {
-    records,events,
+    records,events,revocations,client,
     db:{
       enabled:true,
       async queryBounded(){return {rows:[{allowed:true}]};},
@@ -103,4 +114,48 @@ test('missing new-only enablement never activates legacy newsletter or sends ema
   assert.equal((await manager.readiness()).ready,false);
   await assert.rejects(manager.acceptOptIn({email:'tester@example.test'}),{code:'NEWSLETTER_NEW_NOT_READY'});
   assert.equal(sends,0);
+});
+
+test('verified withdrawal fences the new-only recipient and an outstanding DOI link',async()=>{
+  const {db,client,records,revocations}=fakeStore();
+  let sent,deliveries=0;
+  const manager=createNewOnlyNewsletter({
+    database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
+    apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    fetchFn:async (_url,options)=>{
+      deliveries++;sent=JSON.parse(options.body);
+      return {ok:true,json:async()=>({id:'receipt'})};
+    }
+  });
+  const email='new-recipient@example.test';
+  await manager.acceptOptIn({email});
+  assert.equal(deliveries,1);
+  const token=sent.text.match(/#confirm=(ni3\.[\w.-]+)/)?.[1];
+  assert.ok(token);
+  const challengeId='00000000-0000-4000-8000-000000000001';
+  await manager.recordVerifiedWithdrawal({client,email,challengeId});
+  assert.equal(revocations.size,1);
+  assert.equal([...revocations.values()][0],challengeId);
+  await assert.rejects(manager.confirm(token),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+  records.get([...records.keys()][0]).expires_at=new Date(0);
+  await manager.acceptOptIn({email});
+  assert.equal(deliveries,1);
+  await manager.recordVerifiedWithdrawal({
+    client,email,challengeId:'00000000-0000-4000-8000-000000000002'
+  });
+  assert.equal(revocations.size,1);
+  assert.equal([...revocations.values()][0],challengeId);
+});
+
+test('withdrawal of a legacy-only address does not create new-only subscriber data',async()=>{
+  const {db,client,records,revocations}=fakeStore();
+  const manager=createNewOnlyNewsletter({
+    database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
+    apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    fetchFn:async()=>{throw Error('unexpected send');}
+  });
+  await manager.recordVerifiedWithdrawal({client,email:'legacy@example.test',
+    challengeId:'00000000-0000-4000-8000-000000000003'});
+  assert.equal(records.size,0);
+  assert.equal(revocations.size,0);
 });
