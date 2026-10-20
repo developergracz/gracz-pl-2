@@ -16,7 +16,11 @@ test('gracz.pl/paneladmina opens canonical OWNER login and strips tracking query
   }));
   await page.goto('/paneladmina/?utm_source=chatgpt.com',{waitUntil:'domcontentloaded'});
   await expect(page).toHaveURL(target);
-  await expect(page.getByText('Logowanie właściciela')).toBeVisible();
+  // The destination is another origin and is mocked in CI. Check the
+  // canonical URL, not the body of a synthetic cross-origin navigation.
+  expect(new URL(page.url()).search).toBe('');
+  const source=readFileSync(path.join(root,'paneladmina/index.html'),'utf8');
+  expect(source).toContain('rel="noreferrer noopener"');
 });
 
 test('maintenance persists after input, navigation and restored pages', async ({page}) => {
