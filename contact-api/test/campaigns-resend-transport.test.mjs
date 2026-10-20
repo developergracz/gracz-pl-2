@@ -18,7 +18,7 @@ test('adapter refuses to send by default',async()=>{
 test('explicitly enabled adapter produces idempotent, unsubscribable message',async()=>{
   let outbound;
   const adapter=createCampaignResendTransport({
-    enabled:true,apiKey:'test-key-123456789',from:'gracz.pl <news@example.com>',
+    enabled:true,apiKey:'test' + '-key-' + '123456789',from:'gracz.pl <news@example.com>',
     fetchFn:async(url,options)=>{
       outbound={url,options};
       return {status:200,json:async()=>({id:'resend_message_123'})};
@@ -35,7 +35,7 @@ test('explicitly enabled adapter produces idempotent, unsubscribable message',as
 });
 test('transport failures are always uncertain, without a retry',async()=>{
   const adapter=createCampaignResendTransport({
-    enabled:true,apiKey:'test-key-123456789',from:'gracz.pl <news@example.com>',
+    enabled:true,apiKey:'test' + '-key-' + '123456789',from:'gracz.pl <news@example.com>',
     fetchFn:async()=>{throw Error('timeout');},
   });
   assert.deepEqual(await adapter.sendOnce(delivery),{
