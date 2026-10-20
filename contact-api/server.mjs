@@ -100,6 +100,8 @@ const ownerAdmin=createOwnerRouter({
   enabled:process.env.NEWSLETTER_OWNER_ADMIN_ENABLED==='1',
   passwordSpec:process.env.NEWSLETTER_OWNER_PASSWORD_VERIFIER,
   totpBase32:process.env.NEWSLETTER_OWNER_TOTP_SECRET,
+  username:process.env.NEWSLETTER_OWNER_USERNAME,
+  passwordOnly:process.env.NEWSLETTER_OWNER_PASSWORD_ONLY_ENABLED==='1',
   encryptionKey:process.env.NEWSLETTER_NEW_ENCRYPTION_KEY,
   subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY
 });
