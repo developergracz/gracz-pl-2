@@ -204,12 +204,14 @@ async function loadRecent(){
     }
   }
 }
-$("recent-check").addEventListener("click",()=>{
+function openRecentSubscribers(){
   const section=$("recent-subscribers");
   section.scrollIntoView({block:"start",behavior:"auto"});
-  // An explicit section hash makes the same view shareable after login.
+  // Both actions lead to the same anchored section without a new API request.
   history.replaceState(null,"","#recent-subscribers");
-});
+}
+$("recent-show").addEventListener("click",openRecentSubscribers);
+$("recent-check").addEventListener("click",openRecentSubscribers);
 $("recent-refresh").addEventListener("click",loadRecent);
 // Update only while the authenticated dashboard is actively viewed.
 setInterval(()=>{if(!document.hidden&&ownerCsrf)loadRecent();},5*60*1000);
