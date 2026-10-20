@@ -96,12 +96,13 @@ test('errors are removed after field correction without altering consent state',
 });
 
 test('Premium dialog explains already active addresses without exposing subscriber status', () => {
-  assert.match(source,/Ten adres może być już aktywny/);
+  assert.match(source,/Sprawdź, czy adres jest już zapisany/);
+  assert.doesNotMatch(source,/<h3 id="newsletter-success-card-title">Ten adres już jest w naszym newsletterze<\/h3>/);
   assert.match(source,/aktywnych adresów nie zapisujemy ponownie/);
   assert.match(source,/nowy zapis wymaga potwierdzenia e-mail/);
   assert.match(source,/statusu adresu nie ujawniamy bez potwierdzenia/);
   assert.match(source,/target\.showModal\(\)/);
   assert.match(source,/data-newsletter-success-close/);
-  assert.match(source,/Sprawdź swój status bezpiecznie/);
+  assert.match(source,/Sprawdź status swojego adresu/);
   assert.doesNotMatch(source,/<h2 id="newsletter-success-title">Zgłoszenie przyjęte<\/h2>/);
 });
