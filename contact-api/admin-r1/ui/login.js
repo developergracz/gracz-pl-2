@@ -1,4 +1,27 @@
 "use strict";
+
+// Podgląd hasła jest wyłącznie lokalną funkcją interfejsu; nie zapisuje ani nie przesyła danych.
+document.querySelectorAll('input[type="password"]').forEach(input=>{
+  const wrapper=document.createElement('span');
+  wrapper.className='password-visibility';
+  input.parentNode.insertBefore(wrapper,input);
+  wrapper.append(input);
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='password-visibility__toggle';
+  button.setAttribute('aria-label','Pokaż hasło');
+  button.setAttribute('aria-pressed','false');
+  button.textContent='Pokaż';
+  wrapper.append(button);
+  button.addEventListener('click',()=>{
+    const reveal=input.type==='password';
+    input.type=reveal?'text':'password';
+    button.textContent=reveal?'Ukryj':'Pokaż';
+    button.setAttribute('aria-label',reveal?'Ukryj hasło':'Pokaż hasło');
+    button.setAttribute('aria-pressed',String(reveal));
+  });
+});
+
 const form=document.getElementById('login-form');
 const status=document.getElementById('login-status');
 form.addEventListener('submit',async event=>{
