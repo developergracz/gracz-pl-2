@@ -8,6 +8,7 @@ import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
 import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
+import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
 import { createMemoryReplyTokenStore } from "./persistence/memory-reply-token-store.mjs";
@@ -95,6 +96,7 @@ const newsletter = createHeldNewsletterManager();
 // Completely separate enrollment, fresh purpose keys and dedicated consent ledger.
 // Default OFF. Legacy manager stays HELD for contact and old n1/ns1 actions.
 const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
+const ownerRecoveryMailer=createOwnerRecoveryMailer({apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
 const ownerAdmin=createOwnerRouter({
   database,
   enabled:process.env.NEWSLETTER_OWNER_ADMIN_ENABLED==='1',
@@ -103,7 +105,10 @@ const ownerAdmin=createOwnerRouter({
   username:process.env.NEWSLETTER_OWNER_USERNAME,
   passwordOnly:process.env.NEWSLETTER_OWNER_PASSWORD_ONLY_ENABLED==='1',
   encryptionKey:process.env.NEWSLETTER_NEW_ENCRYPTION_KEY,
-  subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY
+  subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,
+  recoveryEnabled:process.env.NEWSLETTER_OWNER_RECOVERY_ENABLED==='1',
+  recoverySecret:CONTACT_DATA_ENCRYPTION_SECRET,
+  recoveryMailer:ownerRecoveryMailer
 });
 
 // This opt-out path is INDEPENDENT of newsletter opt-in. It stays disabled

@@ -313,6 +313,8 @@ async function loadOwnerSettings(){
     $("account-current-nick").textContent=data.username;
     $("owner-new-nick").value=data.username;
     $("account-last-login").textContent=data.lastLoginAt?warsawTime(data.lastLoginAt):"Brak historii";
+    $("owner-recovery-settings").hidden=data.recoveryAvailable!==true;
+    $("owner-recovery-current").textContent=data.recoveryEmailMasked||"Nie ustawiono";
     $("account-settings-link").hidden=false;
     $("account-settings").hidden=false;
   }catch{ /* fail closed: never render a nonfunctional settings form */ }
@@ -367,6 +369,55 @@ $("owner-change-nick").addEventListener("submit",event=>{
   }
   changeOwnerCredentials(form,{username,oldPassword:$("owner-nick-password").value});
 });
+
+async function ownerRecoveryPost(path,payload){
+  const result=await fetch("/owner/newsletter/recover/"+path,{
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+    body:JSON.stringify(payload)
+  });
+  if(!result.ok)throw Error("not_confirmed");
+  return result.json();
+}
+$("owner-recovery-email-form").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const form=event.currentTarget,status=$("owner-recovery-status");
+  const button=form.querySelector('button[type="submit"]');
+  if(button.disabled||!ownerCsrf)return;
+  button.disabled=true;
+  status.textContent="Wysyłanie kodu weryfikacyjnego…";
+  try{
+    await ownerRecoveryPost("email",{
+      email:$("owner-recovery-email").value,
+      password:$("owner-recovery-password").value
+    });
+    status.textContent="Kod wysłany. Wprowadź go w polu „Potwierdź adres e-mail” w ciągu 10 minut.";
+    $("owner-recovery-code").focus();
+  }catch{
+    status.textContent="Nie wysłano kodu. Sprawdź obecne hasło i adres lub spróbuj później.";
+  }finally{
+    $("owner-recovery-password").value="";
+    button.disabled=false;
+  }
+});
+$("owner-recovery-code-form").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const form=event.currentTarget,status=$("owner-recovery-status");
+  const button=form.querySelector('button[type="submit"]');
+  if(button.disabled||!ownerCsrf)return;
+  button.disabled=true;
+  status.textContent="Sprawdzanie kodu…";
+  try{
+    await ownerRecoveryPost("verify",{code:$("owner-recovery-code").value.trim()});
+    form.reset();
+    $("owner-recovery-email-form").reset();
+    await loadOwnerSettings();
+    status.textContent="Adres odzyskiwania potwierdzony i aktywny.";
+  }catch{
+    status.textContent="Kod jest nieprawidłowy lub wygasł. Nie zmieniono adresu odzyskiwania.";
+  }finally{button.disabled=false;}
+});
+
 async function startOwnerDashboard(){
   try{
     const response=await fetch("/owner/newsletter/session",{

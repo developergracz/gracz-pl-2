@@ -358,3 +358,16 @@ dialog::backdrop {
 #account-settings form button{margin-top:12px;background:var(--accent);color:#081b20}
 #account-settings-status{min-height:22px;color:var(--accent);font-size:14px}
 @media(max-width:850px){.owner-account-forms{grid-template-columns:1fr}}
+
+/* M6 — private email recovery, only first-party controls and no remote assets. */
+#forgot-dialog{width:min(94vw,510px);max-height:90vh;overflow:auto;
+  padding:24px;background:#122733;color:#eaf3f3;border:1px solid #3b6870;border-radius:16px}
+#forgot-dialog::backdrop{background:rgba(0,10,16,.78)}
+#forgot-dialog h2{margin:0 0 14px}
+#forgot-dialog form{display:grid;gap:8px;margin:18px 0}
+#forgot-dialog form label{font-size:14px}
+#forgot-dialog form button{margin:8px 0 0}
+#forgot-dialog p[role="status"],#owner-recovery-status{min-height:24px;overflow-wrap:anywhere}
+#forgot-open{font:inherit;cursor:pointer}
+#owner-recovery-settings[hidden]{display:none!important}
+#owner-recovery-settings .owner-account-forms{margin-top:16px}

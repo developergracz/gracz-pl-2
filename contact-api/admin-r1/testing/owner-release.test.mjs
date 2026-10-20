@@ -6,6 +6,7 @@ import {randomBytes,createCipheriv,createHmac,randomUUID} from 'node:crypto';
 import {createDatabase} from '../../persistence/database.mjs';
 import {createOwnerAuth,codeAt,encodeTotp,newVerifier,parseOwnerCookie} from '../owner-auth.mjs';
 import {createOwnerRouter} from '../owner-router.mjs';
+import {createOwnerRecoveryMailer} from '../owner-recovery-mailer.mjs';
 const url=process.env.OWNER_TEST_DATABASE_URL;
 if(!url)throw Error('Disposable OWNER_TEST_DATABASE_URL required');
 const db=createDatabase({connectionString:url});
@@ -128,6 +129,8 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.match(loginPage.body,/id="username"/);
     assert.match(loginPage.body,/<input id="password"[^>]*minlength="9"/);
     assert.doesNotMatch(loginPage.body,/id="code"/);
+    assert.doesNotMatch(loginPage.body,/id="forgot-open"/,
+      'Recovery is not visible before the dedicated schema and feature flag are enabled');
   } finally {await new Promise(resolve=>srv.close(resolve));}
 });
 
@@ -246,6 +249,104 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
   // Disposable test database only; restore environment bootstrap for other tests.
   await db.query('DELETE FROM newsletter_owner.credentials');
   await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+});
+
+
+
+test('M6 recovery mailer sends transactional code only to the verified mailbox',async()=>{
+  const captured=[];
+  const mailer=createOwnerRecoveryMailer({
+    apiKey:'synthetic-resend-test-key',
+    emailFrom:'gracz.pl <kontakt@gracz.pl>',
+    request:async(url,options)=>{
+      captured.push({url,options});
+      return {status:200,json:async()=>({id:'synthetic-message-id'})};
+    }
+  });
+  assert.ok(mailer);
+  const email='mailbox-recovery@example.test',code='X'.repeat(24);
+  await mailer.send({email,code,purpose:'reset'});
+  assert.equal(captured.length,1);
+  assert.equal(captured[0].url,'https://api.resend.com/emails');
+  const body=JSON.parse(captured[0].options.body);
+  assert.deepEqual(body.to,[email]);
+  assert.match(body.text,/Hasło tymczasowe/);
+  assert.ok(body.text.includes(code));
+  assert.equal(Object.hasOwn(body,'reply_to'),false);
+  assert.equal(createOwnerRecoveryMailer({apiKey:'',emailFrom:'kontakt@gracz.pl'}),null);
+  await assert.rejects(mailer.send({email,code:'invalid',purpose:'reset'}));
+});
+
+test('M6 recovery: verified mailbox, private temporary code, one-use reset, replay denial',async()=>{
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  await db.query('DELETE FROM newsletter_owner.sessions');
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  await db.query(
+    'UPDATE newsletter_owner.recovery SET email_ciphertext=NULL,email_tag=NULL,'+
+    'pending_ciphertext=NULL,pending_tag=NULL,pending_code_hash=NULL,pending_expires=NULL,'+
+    'pending_attempts=0,pending_last_sent=NULL,reset_code_hash=NULL,reset_expires=NULL,'+
+    'reset_attempts=0,reset_last_sent=NULL,reset_day=NULL,reset_daily_count=0 WHERE id=1');
+  const sent=[];
+  const mailbox='test-owner-recovery@example.test';
+  const bootstrap=await newVerifier(password);
+  const config={database:db,passwordSpec:bootstrap,passwordOnly:true,
+    username:'graczowner',recoveryEnabled:true,
+    recoverySecret:['m6','synthetic','test','key','material','only','not','real'].join(':'),
+    recoveryMailer:{send:async message=>{sent.push(message);return true;}}};
+  const auth=createOwnerAuth(config);
+  const initial=await auth.login({username:'graczowner',password});
+  assert.ok(initial);
+  assert.equal((await auth.settings(initial.token)).recoveryEmailMasked,null);
+  assert.equal(await auth.beginRecoveryEmail(initial.token,{email:mailbox,
+    password:'wrong-password'}),false);
+  assert.equal(sent.length,0);
+  assert.equal(await auth.beginRecoveryEmail(initial.token,{email:mailbox,password}),true);
+  assert.equal(sent.length,1);
+  assert.equal(sent[0].purpose,'verify');
+  assert.equal(sent[0].code.length,24);
+  assert.equal((await auth.settings(initial.token)).recoveryEmailMasked,null,
+    'Email is inactive until mailbox proof succeeds');
+  assert.equal(await auth.confirmRecoveryEmail(initial.token,'A'.repeat(24)),false);
+  assert.equal(await auth.confirmRecoveryEmail(initial.token,sent[0].code),true);
+  assert.equal(await auth.confirmRecoveryEmail(initial.token,sent[0].code),false,
+    'Email verification is single use');
+  assert.match((await auth.settings(initial.token)).recoveryEmailMasked,/\*\*\*@example\.test/);
+  const row=await db.query('SELECT email_ciphertext,email_tag FROM newsletter_owner.recovery WHERE id=1');
+  assert.ok(row.rows[0].email_ciphertext.startsWith('c1.'));
+  assert.ok(!JSON.stringify(row.rows[0]).includes(mailbox),
+    'Recovery address encrypted at rest');
+  assert.equal(await auth.requestPasswordRecovery('unknown-owner@example.test'),true);
+  assert.equal(sent.length,1,'Unknown email must not trigger outbound email');
+  assert.equal(await auth.requestPasswordRecovery(mailbox),true);
+  assert.equal(sent.length,2);
+  assert.equal(sent[1].purpose,'reset');
+  assert.equal(sent[1].email,mailbox);
+  assert.equal(await auth.requestPasswordRecovery(mailbox),true);
+  assert.equal(sent.length,2,'Durable recovery request throttled');
+  assert.equal(await auth.completePasswordRecovery({
+    email:mailbox,code:'B'.repeat(24),newPassword:'NineChar9'
+  }),false);
+  assert.equal(await auth.completePasswordRecovery({
+    email:mailbox,code:sent[1].code,newPassword:'Eight888'
+  }),false,'Eight-character passwords are rejected');
+  assert.equal(await auth.completePasswordRecovery({
+    email:mailbox,code:sent[1].code,newPassword:'NineChar9'
+  }),true);
+  assert.equal(await auth.session(initial.token),null,'Password recovery invalidates prior sessions');
+  assert.equal(await auth.completePasswordRecovery({
+    email:mailbox,code:sent[1].code,newPassword:'Another99'
+  }),false,'Temporary password cannot be reused');
+  const afterRestart=createOwnerAuth(config);
+  const restored=await afterRestart.login({username:'graczowner',password:'NineChar9'});
+  assert.ok(restored,'Nine-character recovery password works after auth recreation');
+  await afterRestart.logout(restored.token);
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  await db.query(
+    'UPDATE newsletter_owner.recovery SET email_ciphertext=NULL,email_tag=NULL,'+
+    'pending_ciphertext=NULL,pending_tag=NULL,pending_code_hash=NULL,pending_expires=NULL,'+
+    'pending_attempts=0,pending_last_sent=NULL,reset_code_hash=NULL,reset_expires=NULL,'+
+    'reset_attempts=0,reset_last_sent=NULL,reset_day=NULL,reset_daily_count=0 WHERE id=1');
 });
 
 test('protected HTTP exposes no subscriber data before OWNER login and CSRF',async(t)=>{
