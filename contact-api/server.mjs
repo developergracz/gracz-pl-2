@@ -113,6 +113,7 @@ const ownerAdmin=createOwnerRouter({
   recoveryMailer:ownerRecoveryMailer,
   campaignDraftStore:createCampaignDraftStore({database}),
   campaignAudienceProofCount:createCampaignAudienceProofCount({database}),
+  campaignWithdrawalReady:checkWithdrawalReady,
   campaignDraftsEnabled:process.env.NEWSLETTER_CAMPAIGN_DRAFTS_ENABLED==='1'
 });
 
