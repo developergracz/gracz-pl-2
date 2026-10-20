@@ -116,8 +116,10 @@ export function createNewOnlyNewsletter({
         const row = (await client.query(
           'SELECT state,expires_at FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',
           [emailTag])).rows[0];
-        if (!row || row.state === 'active' || Date.parse(row.expires_at) > Date.now())
-          return false;
+        // Report only an existing ACTIVE row. The unique-row lock keeps
+        // the lookup and reservation atomic under simultaneous submissions.
+        if (row?.state === 'active') return 'already_subscribed';
+        if (!row || Date.parse(row.expires_at) > Date.now()) return false;
         await client.query(`
           UPDATE newsletter_new.subscribers
           SET ciphertext=$2,nonce=$3,auth_tag=$4,challenge_id=$5,token_tag=$6,
@@ -138,6 +140,7 @@ export function createNewOnlyNewsletter({
       if (budget.rowCount !== 1) throw unavailable();
       return true;
     });
+    if (accepted === 'already_subscribed') return {state:'already_subscribed'};
     if (!accepted) return {state:'request_received'};
 
     const url = baseUrl + '#confirm=ni3.' + challengeId + '.' + rawToken;
