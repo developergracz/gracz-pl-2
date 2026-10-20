@@ -117,6 +117,103 @@ async function loadSummary() {
     }
   }
 }
+
+let recentBusy=false,recentGeneration=0,recentController;
+function clearRecent(message="Dane chwilowo niedostępne"){
+  $("recent-banner-title").textContent=message;
+  $("recent-banner-detail").textContent=
+    "Brak aktualnego odczytu — nie oznacza to braku zapisów.";
+  $("recent-check").hidden=true;
+  $("recent-counts").textContent="";
+  $("recent-rows").replaceChildren();
+  $("recent-status").textContent=message;
+}
+const countName=(count,one,many,five)=>{
+  const end=count%10,dec=count%100;
+  return count===1?one:(end>=2&&end<=4&&(dec<12||dec>14))?many:five;
+};
+async function loadRecent(){
+  if(recentBusy||!ownerCsrf)return;
+  recentBusy=true;
+  const generation=++recentGeneration;
+  recentController?.abort();
+  recentController=new AbortController();
+  $("recent-refresh").disabled=true;
+  $("recent-status").textContent="Pobieranie nowych zgłoszeń…";
+  try{
+    const data=await request("/owner/newsletter/recent-subscribers",{
+      method:"POST",signal:recentController.signal,
+      headers:{"Content-Type":"application/json"},body:"{}"
+    });
+    if(generation!==recentGeneration)return;
+    if(!data.ok||data.scope!=="new_only_global"||
+      !Number.isSafeInteger(data.total24)||data.total24<0||
+      !Number.isSafeInteger(data.total2)||data.total2<0||
+      data.total2>data.total24||
+      !Array.isArray(data.items)||data.items.length>50)
+      throw Error("invalid_recent_data");
+    const moment=Date.parse(data.fetchedAt);
+    if(!Number.isFinite(moment))throw Error("invalid_recent_time");
+    const rows=document.createDocumentFragment();
+    for(const item of data.items){
+      if(typeof item.email!=="string"||typeof item.requestedAt!=="string"||
+        typeof item.source!=="string"||!labels[item.state])
+        throw Error("invalid_recent_item");
+      const requested=Date.parse(item.requestedAt);
+      if(!Number.isFinite(requested))throw Error("invalid_recent_time");
+      const isTwoHours=requested>moment-2*60*60*1000&&requested<=moment;
+      const tr=document.createElement("tr");
+      for(const val of [item.email,labels[item.state],
+        warsawTime(item.requestedAt),sourceLabel(item.source),
+        isTwoHours?"Ostatnie 2 godz.":"Ostatnie 24 godz."])
+        tr.append(makeCell(val));
+      if(isTwoHours)tr.className="recent-new-row";
+      rows.append(tr);
+    }
+    $("recent-rows").replaceChildren(rows);
+    const dayCount=data.total24,twoCount=data.total2;
+    if(dayCount===0){
+      $("recent-banner-title").textContent=
+        "W ostatnich 24 godzinach nie ma nowych zgłoszeń do newslettera gracz.pl.";
+      $("recent-banner-detail").textContent=
+        "Brak nowych wpisów w bieżącym rejestrze newslettera.";
+    }else{
+      $("recent-banner-title").textContent=
+        "W ostatnich 24 godzinach: "+dayCount+" "+
+        countName(dayCount,"nowe zgłoszenie","nowe zgłoszenia","nowych zgłoszeń")+
+        " do newslettera gracz.pl.";
+      $("recent-banner-detail").textContent=twoCount?
+        "W ostatnich 2 godzinach: "+twoCount+" "+
+          countName(twoCount,"zgłoszenie","zgłoszenia","zgłoszeń")+".":
+        "W ostatnich 2 godzinach nie odnotowano nowych zgłoszeń.";
+    }
+    $("recent-check").hidden=twoCount===0;
+    $("recent-counts").textContent="Ostatnie 24 godziny: "+dayCount+
+      " · Ostatnie 2 godziny: "+twoCount+".";
+    $("recent-status").textContent=dayCount?
+      "Najnowsze zgłoszenia · "+Math.min(dayCount,50)+" z "+dayCount+
+      (data.hasMore?" (pozostałe poza limitem widoku).":"."):
+      "Brak zgłoszeń z ostatnich 24 godzin.";
+  }catch{
+    if(generation===recentGeneration)
+      clearRecent("Nie można odczytać najnowszych zgłoszeń. Spróbuj ponownie.");
+  }finally{
+    if(generation===recentGeneration){
+      recentBusy=false;
+      $("recent-refresh").disabled=false;
+    }
+  }
+}
+$("recent-check").addEventListener("click",()=>{
+  const section=$("recent-subscribers");
+  section.scrollIntoView({block:"start",behavior:"auto"});
+  // An explicit section hash makes the same view shareable after login.
+  history.replaceState(null,"","#recent-subscribers");
+});
+$("recent-refresh").addEventListener("click",loadRecent);
+// Update only while the authenticated dashboard is actively viewed.
+setInterval(()=>{if(!document.hidden&&ownerCsrf)loadRecent();},5*60*1000);
+
 function clearDetail() {
   detailGeneration++;
   detailController?.abort();
@@ -137,7 +234,7 @@ async function request(path, options) {
     ...options,
     headers: { ...options?.headers, "X-Owner-CSRF": ownerCsrf },
   });
-  if (response.status === 401) { clear(); clearSummary(); location.replace("/owner/newsletter/login"); throw new Error("unauthorized"); }
+  if (response.status === 401) { clear(); clearSummary(); clearRecent("Sesja wygasła."); location.replace("/owner/newsletter/login"); throw new Error("unauthorized"); }
   if (!response.ok) throw new Error("unavailable");
   return response.json();
 }
@@ -282,6 +379,11 @@ $("detail").addEventListener("cancel", clearDetail);
 window.addEventListener("pagehide", () => {
   generation++;
   summaryGeneration++;
+  recentGeneration++;
+  recentController?.abort();
+  recentBusy=false;
+  clearRecent("Widok zamknięty.");
+  $("recent-refresh").disabled=false;
   trendDetailGeneration++;
   trendDetailController?.abort();
   trendDetailBusy=false;
@@ -300,7 +402,7 @@ window.addEventListener("pagehide", () => {
   $("refresh").disabled = false;
 });
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) {loadSummary();load();}
+  if (event.persisted) {loadSummary();load();loadRecent();}
 });
 
 
@@ -523,7 +625,7 @@ async function startOwnerDashboard(){
     const pending=document.createElement("option");
     pending.value="pending";pending.textContent="Oczekujące";
     $("state").insertBefore(pending,$("state").options[2]);
-    await Promise.all([loadSummary(),load(),loadOwnerSettings()]);
+    await Promise.all([loadSummary(),load(),loadOwnerSettings(),loadRecent()]);
   }catch{
     clear();location.replace("/owner/newsletter/login");
   }

@@ -115,6 +115,7 @@ export function createOwnerRouter({
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
   let trendBusy=false,trendLastAt=-Infinity;
+  let recentBusy=false,recentLastAt=-Infinity;
   let settingsBusy=false,settingsLastAt=-Infinity;
   let recoverBusy=false;
   function serviceFor(tokenHash){
@@ -265,6 +266,17 @@ export function createOwnerRouter({
           if(!ok)return response(res,400,{ok:false,error:'invalid_or_unavailable'});
           return response(res,200,{ok:true});
         }finally{settingsBusy=false;}
+      }
+      if(req.method==='POST'&&path===PREFIX+'/recent-subscribers'){
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        if(recentBusy||Date.now()-recentLastAt<3000)return reject(res,429);
+        recentBusy=true;recentLastAt=Date.now();
+        try{
+          const data=await input(req);
+          if(Object.keys(data).length!==0)return reject(res);
+          return response(res,200,await reader.readRecent());
+        }finally{recentBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/trend-detail'){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))

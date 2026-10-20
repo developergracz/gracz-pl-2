@@ -21,6 +21,7 @@
           <a class="nav-sub" href="#trend-details">Wyszukiwanie trendów</a>
           <a class="nav-sub" href="#trend-monthly">Trend miesięczny</a>
           <a class="nav-sub" href="#trend-sources">Źródła zgłoszeń</a>
+          <a href="#recent-subscribers">◇ Nowi subskrybenci</a>
           <a href="#subscribers">◇ Subskrybenci</a>
           <a class="nav-sub" href="#subscriber-overview">Podsumowanie listy</a>
           <a class="nav-sub" href="#filters">Filtry i wyszukiwarka</a>
@@ -45,6 +46,13 @@
           </div>
           <span class="pill">PODGLĄD SYNTETYCZNY</span>
         </header>
+        <section class="recent-banner" id="recent-banner" aria-label="Nowi subskrybenci newslettera">
+          <div>
+            <strong id="recent-banner-title">Sprawdzanie zgłoszeń z ostatnich 24 godzin…</strong>
+            <p id="recent-banner-detail" class="muted">Stan nowych zgłoszeń w rejestrze newslettera gracz.pl.</p>
+          </div>
+          <button type="button" id="recent-check" hidden>SPRAWDŹ</button>
+        </section>
         <div class="notice">
           Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.
           Panel produkcyjny pozostaje zamknięty.
@@ -144,6 +152,27 @@
             </table>
             <p class="muted">Najwyżej 8 źródeł; lista może nie obejmować wszystkich.</p>
           </div>
+        </section>
+        <section class="panel" id="recent-subscribers" aria-labelledby="recent-heading">
+          <div class="section-title">
+            <div>
+              <h2 id="recent-heading">Nowi subskrybenci newslettera gracz.pl</h2>
+              <p class="muted">Ostatnie 24 godziny, najnowsze zgłoszenia jako pierwsze. Nowe wpisy z ostatnich 2 godzin są wyróżnione.</p>
+            </div>
+            <button type="button" id="recent-refresh">Odśwież</button>
+          </div>
+          <p id="recent-status" role="status" aria-live="polite">Oczekiwanie na dane…</p>
+          <p id="recent-counts" class="muted"></p>
+          <div class="table-wrap m4-table-scroll">
+            <table>
+              <caption class="sr-only">Nowe wpisy subskrybentów w ostatnich 24 godzinach</caption>
+              <thead><tr><th scope="col">Adres e-mail</th><th scope="col">Stan</th>
+                <th scope="col">Ostatnie zgłoszenie (Warszawa)</th>
+                <th scope="col">Źródło</th><th scope="col">Okres</th></tr></thead>
+              <tbody id="recent-rows"></tbody>
+            </table>
+          </div>
+          <p class="muted">Pokazujemy maksymalnie 50 najnowszych wpisów. Dane obejmują wyłącznie aktualne rekordy nowego rejestru, według ostatniej daty zgłoszenia; nie odtwarzamy wszystkich historycznych prób ani nie potwierdzamy doręczenia e-maili.</p>
         </section>
         <h2 id="page-title">Bieżąca strona listy subskrybentów</h2>
         <section class="cards" id="subscriber-overview" aria-label="Podsumowanie strony">
