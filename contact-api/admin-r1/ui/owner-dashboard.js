@@ -751,14 +751,9 @@ campaignPreviewForm?.addEventListener("submit",event=>{
     status.textContent="Uzupełnij poprawny temat i treść kampanii.";
     return;
   }
-  const escape=value=>value.replace(/[&<>"']/g,ch=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[ch]);
-  $("campaign-preview-frame").srcdoc='<!doctype html><html lang="pl"><meta charset="utf-8">'+
-    '<body style="font:16px Arial,sans-serif;padding:20px;background:#0e1724;color:white">'+
-    '<h1>gracz<span style="color:#f66">.pl</span></h1><h2>'+escape(subject)+
-    '</h2><p>'+escape(body).replace(/\n/g,'<br>')+'</p>'+
-    '<p>Podgląd — wiadomość nie została wysłana.</p></body></html>';
+  // textContent preserves newlines without interpreting supplied HTML or scripts.
+  $("campaign-preview-subject").textContent=subject;
+  $("campaign-preview-body").textContent=body;
   status.textContent="Podgląd przygotowany lokalnie. Nie zapisano ani nie wysłano wiadomości.";
 });
 
@@ -777,7 +772,7 @@ async function draftRequest(route,payload){
   if(!response.ok)throw Error("draft_unavailable");
   return response.json();
 }
-async function refreshDrafts(){
+async function refreshDrafts({notify=true}={}){
   const result=await draftRequest("list",{});
   const list=$("campaign-drafts-list");
   list.replaceChildren();
@@ -786,7 +781,7 @@ async function refreshDrafts(){
     li.textContent=String(draft.subject||"");
     list.append(li);
   }
-  draftStatus.textContent="Odczytano zapisane wersje robocze.";
+  if(notify)draftStatus.textContent="Odczytano zapisane wersje robocze.";
 }
 draftSaveButton?.addEventListener("click",async()=>{
   draftSaveButton.disabled=true;
@@ -798,7 +793,7 @@ draftSaveButton?.addEventListener("click",async()=>{
     });
     draftStatus.textContent=result?.state==="draft"?
       "Wersja robocza zapisana. Nie wysłano wiadomości.":"Nie zapisano kampanii.";
-    await refreshDrafts();
+    await refreshDrafts({notify:false});
   }catch{
     draftStatus.textContent="Zapisywanie kampanii nie jest jeszcze dostępne.";
   }finally{draftSaveButton.disabled=false;}
@@ -812,6 +807,7 @@ draftRefreshButton?.addEventListener("click",async()=>{
 async function checkCampaignDraftAvailability(){
   if(draftSaveButton)draftSaveButton.disabled=true;
   if(draftRefreshButton)draftRefreshButton.disabled=true;
+  const availabilityDescription=$("campaign-drafts-description");
   try{
     const response=await fetch("/owner/newsletter/campaign-drafts/availability",{
       credentials:"same-origin",cache:"no-store"
@@ -821,6 +817,8 @@ async function checkCampaignDraftAvailability(){
     if(data.ok===true&&data.enabled===true){
       if(draftSaveButton)draftSaveButton.disabled=false;
       if(draftRefreshButton)draftRefreshButton.disabled=false;
+      if(availabilityDescription)availabilityDescription.textContent=
+        "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
     }
   }catch{ /* release remains disabled */ }
 }
