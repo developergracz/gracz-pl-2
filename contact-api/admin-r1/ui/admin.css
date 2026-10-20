@@ -585,3 +585,38 @@ footer .footer-brand span{color:#ff6573}
 .password-visibility .password-visibility__toggle:focus-visible{
   outline:2px solid var(--accent);outline-offset:2px;
 }
+
+
+/* Full Max Premium: restrained account controls and vertically centred reveal buttons. */
+#account-settings .password-visibility{position:relative;display:block;min-width:0;}
+#account-settings .password-visibility input{width:100%;padding-right:94px;}
+#account-settings .password-visibility .password-visibility__toggle{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:auto;min-width:68px;min-height:34px;margin:0;padding:5px 10px;
+  border:1px solid #466071;border-radius:8px;
+  background:#142333;color:#f2f7ff;font:inherit;font-size:12px;line-height:1.2;
+  cursor:pointer;
+}
+#account-settings .password-visibility .password-visibility__toggle:hover{background:#1b3042;border-color:#7697a7;}
+#account-settings .password-visibility .password-visibility__toggle:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+#account-settings #owner-change-password > button[type="submit"],
+#account-settings #owner-change-nick > button[type="submit"],
+#account-settings #owner-recovery-email-form > button[type="submit"],
+#account-settings #owner-recovery-code-form > button[type="submit"]{
+  background:#152636;color:#f2f7ff;border:1px solid #486374;
+  box-shadow:none;
+}
+#account-settings #owner-change-password > button[type="submit"]:hover,
+#account-settings #owner-change-nick > button[type="submit"]:hover,
+#account-settings #owner-recovery-email-form > button[type="submit"]:hover,
+#account-settings #owner-recovery-code-form > button[type="submit"]:hover{
+  background:#1d3345;border-color:#7697a7;
+}
+#account-settings #owner-change-password > button[type="submit"]:focus-visible,
+#account-settings #owner-change-nick > button[type="submit"]:focus-visible,
+#account-settings #owner-recovery-email-form > button[type="submit"]:focus-visible,
+#account-settings #owner-recovery-code-form > button[type="submit"]:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
