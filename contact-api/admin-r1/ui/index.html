@@ -330,8 +330,12 @@
           </section>
           <p id="account-settings-status" role="status" aria-live="polite"></p>
         </section>
-        <footer>
-          Panel administracyjny newslettera jest własnością serwisu <span class="footer-brand">gracz<span>.pl</span></span>.
+        <footer class="owner-footer">
+          <span>Panel administracyjny newslettera jest własnością serwisu <span class="footer-brand">gracz<span>.pl</span></span>.</span>
+          <span class="owner-footer-rights">
+            <span>Wszystkie prawa zastrzeżone</span>
+            <button id="rights-open" type="button" aria-haspopup="dialog" aria-controls="rights-dialog">Zobacz szczegóły</button>
+          </span>
         </footer>
       </main>
     </div>
@@ -343,6 +347,74 @@
         </button>
       </div>
       <div id="detail-body"></div>
+    </dialog>
+    <dialog id="rights-dialog" aria-labelledby="rights-title" aria-describedby="rights-description">
+      <div class="rights-dialog-shell">
+        <header class="rights-header">
+          <div>
+            <p class="eyebrow">GRACZ.PL · INFORMACJA O OCHRONIE PRAW</p>
+            <h2 id="rights-title">Prawa autorskie i własność intelektualna</h2>
+            <p id="rights-description">Informacja prawna dotycząca oryginalnych tekstów, grafik oraz innych chronionych elementów serwisu gracz.pl.</p>
+          </div>
+          <button id="rights-close" type="button" aria-label="Zamknij szczegóły praw autorskich">Zamknij</button>
+        </header>
+        <div class="rights-dialog-grid">
+          <article class="rights-copy" id="rights-copy" tabindex="0" aria-label="Treść informacji o prawach autorskich">
+            <section id="rights-scope" aria-labelledby="rights-scope-title">
+              <h3 id="rights-scope-title">1. Podmiot uprawniony i zakres zastrzeżenia</h3>
+              <p>Serwis internetowy gracz.pl jest prowadzony przez jego właściciela. Właścicielowi lub innym uprawnionym podmiotom przysługują prawa do tych elementów serwisu, które stanowią utwory w rozumieniu prawa i zostały przez nich stworzone albo do których skutecznie nabyli odpowiednie prawa lub uzyskali licencje.</p>
+              <p>Oznaczenie „Wszystkie prawa zastrzeżone” wskazuje wolę ochrony własnych materiałów serwisu. Nie ustanawia nowych praw, nie stanowi dowodu nabycia praw do cudzych materiałów i nie ogranicza uprawnień przyznanych odbiorcom przez bezwzględnie obowiązujące przepisy.</p>
+            </section>
+            <section id="rights-materials" aria-labelledby="rights-materials-title">
+              <h3 id="rights-materials-title">2. Teksty, grafika i opracowanie serwisu</h3>
+              <p>Ochroną mogą być objęte w szczególności oryginalne opisy, instrukcje, poradniki, opracowania redakcyjne, autorskie ilustracje i grafiki, projekty elementów interfejsu, fotografie, układy twórczych elementów strony oraz oprogramowanie — o ile dany element wykazuje indywidualny i twórczy charakter.</p>
+              <p>Na podstawie art. 1 ust. 1–4 ustawy o prawie autorskim ochrona powstaje z chwilą ustalenia utworu i nie wymaga rejestracji. Same pomysły, zasady gier, metody działania, procedury, fakty i informacje jako takie nie uzyskują ochrony autorskoprawnej wyłącznie przez ich zamieszczenie w serwisie (art. 1 ust. 2¹).</p>
+            </section>
+            <section id="rights-exclusive" aria-labelledby="rights-exclusive-title">
+              <h3 id="rights-exclusive-title">3. Zasady korzystania i prawa wyłączne</h3>
+              <p>W granicach posiadanych praw majątkowych właściciel zastrzega uprawnienia do korzystania z chronionych utworów i rozporządzania nimi na właściwych polach eksploatacji, zgodnie z art. 17 i art. 50 ustawy. W szczególności publikowanie kopii cudzych chronionych materiałów, ich komercyjne zwielokrotnianie, rozpowszechnianie, modyfikowanie i udostępnianie poza zakresem dozwolonego użytku wymaga odpowiedniej podstawy prawnej, w tym zgody uprawnionego.</p>
+              <p>Sam dostęp do strony, rejestracja konta, przeglądanie tekstów ani pobranie elementu przez przeglądarkę nie oznaczają przeniesienia autorskich praw majątkowych ani udzielenia nieograniczonej licencji. Zgoda na określone wykorzystanie, jeżeli jest wymagana, powinna jednoznacznie określać materiał i sposób użycia.</p>
+            </section>
+            <section id="rights-moral" aria-labelledby="rights-moral-title">
+              <h3 id="rights-moral-title">4. Prawa osobiste twórców</h3>
+              <p>Autorskie prawa osobiste przysługują twórcom i chronią w szczególności autorstwo, oznaczenie nazwiskiem lub pseudonimem, integralność utworu oraz jego rzetelne wykorzystanie (art. 16 ustawy). Nie są one automatycznie przenoszone na właściciela serwisu wraz z nabyciem praw majątkowych.</p>
+            </section>
+            <section id="rights-exceptions" aria-labelledby="rights-exceptions-title">
+              <h3 id="rights-exceptions-title">5. Dozwolony użytek i uprawnienia ustawowe</h3>
+              <p>Niniejsze zastrzeżenie nie wyłącza dozwolonego użytku osobistego, prawa cytatu ani innych ustawowych wyjątków i ograniczeń, o ile spełnione są właściwe przesłanki (w szczególności art. 23 i art. 29 ustawy). Nie ogranicza również korzystania z materiałów znajdujących się w domenie publicznej lub udostępnionych na podstawie odrębnych licencji w zakresie tych licencji.</p>
+            </section>
+            <section id="rights-third-party" aria-labelledby="rights-third-party-title">
+              <h3 id="rights-third-party-title">6. Materiały podmiotów trzecich i użytkowników</h3>
+              <p>Prawa do elementów dostarczonych przez użytkowników, partnerów, dostawców bibliotek, ikon lub materiałów licencyjnych pozostają przy odpowiednich uprawnionych, chyba że odrębna i skuteczna podstawa prawna stanowi inaczej. Wykorzystanie takich elementów przez gracz.pl może odbywać się na warunkach właściwej licencji. Nazwy, znaki i identyfikatory osób trzecich należą do ich uprawnionych podmiotów.</p>
+              <p>Właściciel gracz.pl nie przypisuje sobie przez ten komunikat wyłącznych praw do wszystkich treści zamieszczanych przez inne osoby ani do ogólnodostępnych informacji, faktów lub zasad gier.</p>
+            </section>
+            <section id="rights-remedies" aria-labelledby="rights-remedies-title">
+              <h3 id="rights-remedies-title">7. Skutki bezprawnego wykorzystania</h3>
+              <p>W razie naruszenia praw uprawniony może, stosownie do okoliczności i obowiązujących przepisów, dochodzić między innymi zaniechania naruszeń, usunięcia ich skutków, naprawienia szkody lub wydania uzyskanych korzyści, zgodnie z art. 79 ustawy. Zakres dostępnych roszczeń oraz ewentualna odpowiedzialność zależą od okoliczności konkretnego przypadku; niniejszy komunikat nie przewiduje automatycznych kar umownych.</p>
+            </section>
+            <section id="rights-requests" aria-labelledby="rights-requests-title">
+              <h3 id="rights-requests-title">8. Zgody, zgłoszenia i podstawa prawna</h3>
+              <p>Prośby o zgodę na wykorzystanie materiałów gracz.pl oraz zgłoszenia potencjalnego naruszenia praw można przekazywać właścicielowi za pośrednictwem funkcji „Kontakt” dostępnej w serwisie. Zgłoszenie powinno wskazywać konkretny materiał, planowany sposób wykorzystania lub uzasadnienie naruszenia.</p>
+              <p>Podstawa prawna: <a href="https://eli.gov.pl/eli/DU/1994/83/ogl" target="_blank" rel="noopener noreferrer">ustawa z dnia 4 lutego 1994 r. o prawie autorskim i prawach pokrewnych</a>, w szczególności art. 1, 16, 17, 23, 29, 50 i 79, w obowiązującym brzmieniu. Niniejszy dokument ma charakter informacyjny; nie zastępuje regulaminu, umowy licencyjnej ani indywidualnej oceny prawnej stanu faktycznego.</p>
+            </section>
+          </article>
+          <nav class="rights-nav" aria-label="Spis treści informacji o prawach autorskich">
+            <p class="rights-nav-label">PRZEJDŹ DO SEKCJI</p>
+            <button type="button" data-rights-target="rights-scope">1. Właściciel i prawa</button>
+            <button type="button" data-rights-target="rights-materials">2. Teksty i grafika</button>
+            <button type="button" data-rights-target="rights-exclusive">3. Korzystanie</button>
+            <button type="button" data-rights-target="rights-moral">4. Autorzy</button>
+            <button type="button" data-rights-target="rights-exceptions">5. Dozwolony użytek</button>
+            <button type="button" data-rights-target="rights-third-party">6. Cudze materiały</button>
+            <button type="button" data-rights-target="rights-remedies">7. Naruszenia</button>
+            <button type="button" data-rights-target="rights-requests">8. Kontakt i przepisy</button>
+          </nav>
+        </div>
+        <div class="rights-dialog-footer">
+          <span>gracz<span class="rights-pl">.pl</span> · Ochrona praw autorskich</span>
+          <button id="rights-understood" type="button">Zrozumiałem</button>
+        </div>
+      </div>
     </dialog>
   </body>
 </html>
