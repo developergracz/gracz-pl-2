@@ -87,7 +87,7 @@ export function createReadService({
           lifetime.signal,
         );
         const page = await bounded(
-          (signal) => adapter.readPage({ after, limit: 10, signal }),
+          (signal) => adapter.readPage({ after, limit: 10, search:query, state, signal }),
           25000,
           lifetime.signal,
         );
@@ -132,7 +132,7 @@ export function createReadService({
             : null,
           fetchedAt: new Date(now()).toISOString(),
           quality: [
-            "bounded_page_search",
+            "bounded_full_register_search",
             ...(counts.unknown ? ["incomplete_provider_evidence"] : []),
           ],
           provider: "available",
