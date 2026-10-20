@@ -99,7 +99,8 @@ export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
   recoverySecret,recoveryMailer,recoveryEnabled=false,
-  campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null
+  campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null,
+  campaignWithdrawalReady=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -246,7 +247,14 @@ export function createOwnerRouter({
           return reject(res);
         const data=await input(req);
         if(Object.keys(data).length!==0)return reject(res);
-        return response(res,200,await campaignAudienceProofCount());
+        const evidence=await campaignAudienceProofCount();
+        let withdrawalReady=false;
+        try{
+          withdrawalReady=typeof campaignWithdrawalReady==='function' &&
+            await campaignWithdrawalReady()===true;
+        }catch{withdrawalReady=false;}
+        // Advisory only. This is NOT authorization to send any campaign.
+        return response(res,200,{...evidence,withdrawalReady});
       }
       if(req.method==='POST'&&[
         PREFIX+'/campaign-drafts/save',PREFIX+'/campaign-drafts/list',
