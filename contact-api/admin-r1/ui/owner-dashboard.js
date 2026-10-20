@@ -736,3 +736,27 @@ $("logout").addEventListener("click",async()=>{
 });
 $("m4-refresh").addEventListener("click",loadSummary);
 startOwnerDashboard();
+
+
+// Draft-only campaign preview. No API requests, storage writes or mail delivery.
+const campaignPreviewForm=$("campaign-preview-form");
+campaignPreviewForm?.addEventListener("submit",event=>{
+  event.preventDefault();
+  const subject=$("campaign-subject").value.trim();
+  const body=$("campaign-body").value.trim();
+  const status=$("campaign-preview-status");
+  if(subject.length<3||subject.length>160||/[\r\n\x00-\x1f\x7f]/.test(subject)||
+     body.length<10||body.length>20000){
+    status.textContent="Uzupełnij poprawny temat i treść kampanii.";
+    return;
+  }
+  const escape=value=>value.replace(/[&<>"']/g,ch=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[ch]);
+  $("campaign-preview-frame").srcdoc='<!doctype html><html lang="pl"><meta charset="utf-8">'+
+    '<body style="font:16px Arial,sans-serif;padding:20px;background:#0e1724;color:white">'+
+    '<h1>gracz<span style="color:#f66">.pl</span></h1><h2>'+escape(subject)+
+    '</h2><p>'+escape(body).replace(/\n/g,'<br>')+'</p>'+
+    '<p>Podgląd — wiadomość nie została wysłana.</p></body></html>';
+  status.textContent="Podgląd przygotowany lokalnie. Nie zapisano ani nie wysłano wiadomości.";
+});
