@@ -39,3 +39,35 @@ input[aria-invalid=true]{border-color:#ef7081;box-shadow:0 0 0 3px rgba(242,26,5
 @media(max-width:720px){.nl-primary{width:100%;height:auto;padding:14px 16px;line-height:1.5}.nl-row input{font-size:16px}.nl-hero h1{letter-spacing:-1px}}
 .nl-brand-domain{color:var(--red)}
 .nl-row label .nl-label-text{color:#e6efec;font-weight:700}
+
+
+/* Full Max Premium — centered result modal on newsletter page, not inline-only. */
+.nl-result-dialog{
+  position:fixed;inset:0;margin:auto;width:min(560px,calc(100vw - 28px));
+  max-height:calc(100dvh - 28px);padding:0;overflow-y:auto;
+  border:1px solid rgba(86,200,193,.32);border-radius:24px;color:#f3f7f4;
+  background:linear-gradient(150deg,#123c34,#061c18 73%);
+  box-shadow:0 32px 110px rgba(0,0,0,.72);
+}
+.nl-result-dialog::backdrop{background:rgba(0,10,9,.80);backdrop-filter:blur(5px)}
+.nl-result-dialog__panel{position:relative;padding:34px 34px 30px;text-align:center}
+.nl-result-dialog__brand{display:block;margin:4px 0 22px;font:800 31px Montserrat,Arial,sans-serif;letter-spacing:-1.5px}
+.nl-result-dialog__brand span{color:#f21a34}
+.nl-result-dialog__kicker{margin:0 0 12px;color:#73dbd1;font:800 11px Montserrat,Arial,sans-serif;letter-spacing:.12em}
+.nl-result-dialog h2{font:800 clamp(21px,4vw,29px)/1.25 Montserrat,Arial,sans-serif;margin:0 0 15px;color:#fff}
+.nl-result-dialog__copy{font:14px/1.7 OpenSans,Arial,sans-serif;color:#c5d7d1;margin:0 0 22px}
+.nl-result-dialog__actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.nl-result-dialog__actions a,.nl-result-dialog__actions button{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:44px;padding:10px 20px;border-radius:999px;
+  font:700 12px Montserrat,Arial,sans-serif;text-decoration:none;cursor:pointer
+}
+.nl-result-dialog__actions a{background:#58d1c5;color:#06231e;border:0}
+.nl-result-dialog__actions button{background:transparent;color:#e3f4ef;border:1px solid #4c8278}
+.nl-result-dialog__x{position:absolute;top:13px;right:15px;width:36px;height:36px;
+  background:rgba(255,255,255,.07);color:#fff;border:0;border-radius:50%;
+  font-size:22px;cursor:pointer}
+.nl-result-dialog [hidden]{display:none!important}
+.nl-result-dialog a:focus-visible,.nl-result-dialog button:focus-visible{outline:3px solid #a0f4eb;outline-offset:3px}
+@media(max-width:600px){.nl-result-dialog__panel{padding:28px 20px 24px}
+  .nl-result-dialog__actions{flex-direction:column}.nl-result-dialog__actions a,.nl-result-dialog__actions button{width:100%}}
