@@ -87,6 +87,7 @@
       token='';return;
     }
     actionMode=mode;actionToken=token;
+    if(mode==='fresh-confirm')actionButton.disabled=!NEWSLETTER_PUBLIC_INTAKE_ENABLED;
     subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
     var copy={
       'fresh-confirm':['NOWA ZGODA','Potwierdź nowy zapis do newslettera','Potwierdzenie dotyczy tylko nowej zgody. Historyczne subskrypcje pozostają oddzielnie zabezpieczone.','Potwierdź zapis'],
@@ -130,6 +131,7 @@
       var state=await response.json();
       if(!state||state.ready!==true||state.intakePaused!==false||state.schemaReady!==true||state.configured!==true)return;
       NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
+      if(actionMode==='fresh-confirm'){actionButton.disabled=false;setStatus(actionStatus,'');}
       ['nl-form'].forEach(function(id){
         var form=byId(id);
         if(form)form.querySelectorAll('input').forEach(function(input){input.disabled=false;});
