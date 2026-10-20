@@ -25,7 +25,7 @@ test('RFC6238 TOTP, high-entropy verifier and absent auth configuration fail clo
 
 test('OWNER session: password, one-use TOTP, lockout, durable token, idle expiration, logout',async()=>{
   const verifier=await newVerifier(password);
-  let now=Date.parse('2026-10-20T11:00:00.000Z');
+  let now=Date.now(); // Relative session tests must not precede PostgreSQL wall-clock creation.
   const auth=createOwnerAuth({database:db,passwordSpec:verifier,totpBase32,now:()=>now});
   assert.ok(auth);
   assert.equal(await auth.login({password:'incorrect-password',code:codeAt(secret,Math.floor(now/30000))}),null);
