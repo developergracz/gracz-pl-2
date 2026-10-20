@@ -1,6 +1,7 @@
 // Owner-only password with opt-in username mode or legacy TOTP; durable PostgreSQL sessions.
 import {createHash,createHmac,randomBytes,randomUUID,scrypt as scryptCallback,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
+import {createContactDataCrypto} from '../security/contact-data-crypto.mjs';
 const scrypt=promisify(scryptCallback);
 const COOKIE='__Host-gracz_owner';
 const ABS_MS=8*60*60*1000, IDLE_MS=15*60*1000;
@@ -52,7 +53,8 @@ export const newVerifier=async password=>{
   return 'scrypt:'+salt+':'+digest.toString('hex');
 };
 export function createOwnerAuth({
-  database,passwordSpec,totpBase32,username,passwordOnly=false,now=Date.now
+  database,passwordSpec,totpBase32,username,passwordOnly=false,now=Date.now,
+  recoverySecret,recoveryMailer,recoveryEnabled=false
 }={}){
   const password=validPasswordSpec(passwordSpec);
   const secret=passwordOnly?null:decodeTotp(totpBase32);
@@ -95,7 +97,8 @@ export function createOwnerAuth({
       csrf:token=>createHmac('sha256',csrfKey).update(token).digest('base64url')};
   }
   async function audit(client,action){
-    if(!['login_ok','login_denied','session_read','subscriber_list','subscriber_detail','logout','credentials_changed'].includes(action))
+    if(!['login_ok','login_denied','session_read','subscriber_list','subscriber_detail','logout','credentials_changed',
+      'recovery_email_set','recovery_requested','recovery_completed'].includes(action))
       throw Error('Invalid audit action');
     await client.query('INSERT INTO newsletter_owner.audit(event_id,action) VALUES($1,$2)',[randomUUID(),action]);
   }
@@ -189,7 +192,18 @@ export function createOwnerAuth({
       "SELECT max(recorded_at) AS last_login_at FROM newsletter_owner.audit WHERE action='login_ok'",
       [],{timeoutMs:2000});
     const current=await credentials();
-    return {username:current.name,
+    let recoveryEmailMasked=null;
+    if(recoveryReady){
+      const recovery=await database.queryBounded(
+        'SELECT email_ciphertext FROM newsletter_owner.recovery WHERE id=1',[],{timeoutMs:2000});
+      const cipher=recovery.rows?.[0]?.email_ciphertext;
+      if(cipher){
+        const mailbox=recoveryCrypto.decrypt(cipher,{aad:'owner-recovery-email'});
+        const [local,domain]=mailbox.split('@');
+        recoveryEmailMasked=local.slice(0,1)+'***@'+domain;
+      }
+    }
+    return {username:current.name,recoveryAvailable:recoveryReady,recoveryEmailMasked,
       lastLoginAt:result.rows?.[0]?.last_login_at?.toISOString?.()??null};
   }
   async function changeCredentials(raw,{oldPassword,newPassword,username:newName}={}){
@@ -239,8 +253,149 @@ export function createOwnerAuth({
       return true;
     });
   }
+
+  // M6 is opt-in until the dedicated SQL is applied on the private Render DB.
+  // Bootstrapping login remains independent of recovery availability.
+  const recoveryCrypto=createContactDataCrypto({secret:recoverySecret});
+  const recoveryReady=Boolean(recoveryEnabled&&passwordOnly&&
+    recoveryCrypto.enabled&&typeof recoveryMailer?.send==='function');
+  const dateKey=value=>value instanceof Date?value.toISOString().slice(0,10):
+    typeof value==='string'?value.slice(0,10):'';
+  const normalizeEmail=value=>{
+    const email=typeof value==='string'?value.trim().toLowerCase():'';
+    return email.length>=6&&email.length<=254&&
+      /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)?email:null;
+  };
+  const tagEmail=email=>createHmac('sha256',String(recoverySecret))
+    .update('gracz.pl/owner/recovery/email/v1:').update(email).digest('hex');
+  const codeHash=(purpose,code)=>hash('owner-recovery:'+purpose+':'+code);
+  const safeCode=code=>typeof code==='string'&&/^[A-Za-z0-9_-]{24}$/.test(code);
+  const waitMs=(date,time)=>date&&new Date(date).getTime()>time;
+  const codeMatches=(provided,stored)=>typeof stored==='string'&&
+    equals(Buffer.from(provided,'hex'),Buffer.from(stored,'hex'));
+
+  // OWNER must know their current password AND have a live CSRF-protected
+  // session to start associating a new recovery mailbox.
+  async function beginRecoveryEmail(raw,{password:oldPassword,email:inputEmail}={}){
+    if(!recoveryReady||!await session(raw)||!normalizeEmail(inputEmail)||
+      typeof oldPassword!=='string'||oldPassword.length>256)return false;
+    const current=await credentials();
+    const digest=await scrypt(oldPassword,current.password.salt,32,
+      {N:16384,r:8,p:1,maxmem:64*1024*1024});
+    if(!equals(digest,current.password.verifier))return false;
+    const email=normalizeEmail(inputEmail),code=randomBytes(18).toString('base64url');
+    const encrypted=recoveryCrypto.encrypt(email,{aad:'owner-recovery-email'});
+    const reserved=await database.transaction(async client=>{
+      const g=await client.query('SELECT locked_until FROM newsletter_owner.guard WHERE id=1 FOR UPDATE');
+      if(waitMs(g.rows[0]?.locked_until,now()))return false;
+      if((await credentials(client)).fingerprint!==current.fingerprint)return false;
+      const r=await client.query('SELECT pending_last_sent FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+      if(r.rowCount!==1||waitMs(r.rows[0].pending_last_sent&&
+        new Date(r.rows[0].pending_last_sent).getTime()+60_000,now()))return false;
+      await client.query(
+        'UPDATE newsletter_owner.recovery SET pending_ciphertext=$1,pending_tag=$2,'+
+        'pending_code_hash=$3,pending_expires=$4,pending_attempts=0,pending_last_sent=clock_timestamp() WHERE id=1',
+        [encrypted,tagEmail(email),codeHash('verify',code),new Date(now()+600_000)]);
+      return true;
+    });
+    if(!reserved)return false;
+    try{await recoveryMailer.send({email,code,purpose:'verify'});return true;}
+    catch{return false;}
+  }
+  async function confirmRecoveryEmail(raw,code){
+    if(!recoveryReady||!safeCode(code)||!await session(raw))return false;
+    return database.transaction(async client=>{
+      const r=await client.query('SELECT * FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+      const row=r.rows[0];
+      if(!row||!waitMs(row.pending_expires,now())||row.pending_attempts>=5)return false;
+      if(!codeMatches(codeHash('verify',code),row.pending_code_hash)){
+        await client.query(
+          'UPDATE newsletter_owner.recovery SET pending_attempts=LEAST(5,pending_attempts+1) WHERE id=1');
+        return false;
+      }
+      await client.query(
+        'UPDATE newsletter_owner.recovery SET email_ciphertext=pending_ciphertext,email_tag=pending_tag,'+
+        'pending_ciphertext=NULL,pending_tag=NULL,pending_code_hash=NULL,pending_expires=NULL,'+
+        'pending_attempts=0,pending_last_sent=NULL,reset_code_hash=NULL,reset_expires=NULL,'+
+        'reset_attempts=0,reset_last_sent=NULL,reset_day=NULL,reset_daily_count=0 WHERE id=1');
+      await audit(client,'recovery_email_set');
+      return true;
+    });
+  }
+  // Public request: always respond identically regardless of account/mailbox.
+  async function requestPasswordRecovery(inputEmail){
+    if(!recoveryReady)return false;
+    const email=normalizeEmail(inputEmail);
+    if(!email)return true;
+    const code=randomBytes(18).toString('base64url'),time=now(),day=new Date(time).toISOString().slice(0,10);
+    const allowed=await database.transaction(async client=>{
+      const r=await client.query(
+        'SELECT email_tag,reset_last_sent,reset_day,reset_daily_count FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+      const row=r.rows[0];
+      if(!row||row.email_tag!==tagEmail(email)||
+        waitMs(row.reset_last_sent&&new Date(row.reset_last_sent).getTime()+300_000,time)||
+        (dateKey(row.reset_day)===day&&row.reset_daily_count>=5))return false;
+      await client.query(
+        'UPDATE newsletter_owner.recovery SET reset_code_hash=$1,reset_expires=$2,'+
+        'reset_attempts=0,reset_last_sent=clock_timestamp(),reset_day=$3,'+
+        'reset_daily_count=$4 WHERE id=1',
+        [codeHash('reset',code),new Date(time+600_000),day,
+          dateKey(row.reset_day)===day?Number(row.reset_daily_count)+1:1]);
+      await audit(client,'recovery_requested');
+      return true;
+    });
+    if(allowed)try{await recoveryMailer.send({email,code,purpose:'reset'});}catch{
+      // Deliberately indistinguishable from unknown mailbox; do not retry
+      // an uncertain Resend delivery automatically.
+    }
+    return true;
+  }
+  // Reset is limited to a verified mailbox, one random 144-bit code,
+  // max five guesses and 10 minutes. No credential changes on request alone.
+  async function completePasswordRecovery({email:inputEmail,code,newPassword}={}){
+    if(!recoveryReady||!safeCode(code)||!normalizeEmail(inputEmail)||
+      typeof newPassword!=='string'||newPassword.length<9||newPassword.length>128)return false;
+    const address=tagEmail(normalizeEmail(inputEmail)),digest=codeHash('reset',code);
+    const pre=await database.queryBounded(
+      'SELECT email_tag,reset_code_hash,reset_expires,reset_attempts '+
+      'FROM newsletter_owner.recovery WHERE id=1',[],{timeoutMs:2000});
+    const row=pre.rows?.[0];
+    if(!row||row.email_tag!==address||!waitMs(row.reset_expires,now())||
+      row.reset_attempts>=5)return false;
+    if(!codeMatches(digest,row.reset_code_hash)){
+      await database.transaction(async client=>{
+        const v=await client.query(
+          'SELECT email_tag,reset_code_hash,reset_attempts,reset_expires FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+        if(v.rows[0]?.email_tag===address&&waitMs(v.rows[0]?.reset_expires,now())&&
+          v.rows[0]?.reset_attempts<5&&!codeMatches(digest,v.rows[0]?.reset_code_hash))
+          await client.query('UPDATE newsletter_owner.recovery SET reset_attempts=LEAST(5,reset_attempts+1) WHERE id=1');
+      });
+      return false;
+    }
+    const nextSpec=await newVerifier(newPassword); // only after cheap proof check
+    return database.transaction(async client=>{
+      await client.query('SELECT id FROM newsletter_owner.guard WHERE id=1 FOR UPDATE');
+      const r=await client.query('SELECT * FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+      const v=r.rows[0];
+      if(!v||v.email_tag!==address||!waitMs(v.reset_expires,now())||
+        v.reset_attempts>=5||!codeMatches(digest,v.reset_code_hash))return false;
+      const current=await credentials(client);
+      await client.query(
+        'INSERT INTO newsletter_owner.credentials(id,username,password_verifier) VALUES(1,$1,$2) '+
+        'ON CONFLICT(id) DO UPDATE SET password_verifier=excluded.password_verifier,'+
+        'updated_at=clock_timestamp()', [current.name,nextSpec]);
+      await client.query('DELETE FROM newsletter_owner.sessions');
+      await client.query(
+        'UPDATE newsletter_owner.recovery SET reset_code_hash=NULL,reset_expires=NULL,reset_attempts=0 WHERE id=1');
+      await audit(client,'recovery_completed');
+      return true;
+    });
+  }
+
   const checkCsrf=(session,value)=>typeof value==='string'&&
     /^[A-Za-z0-9_-]{43}$/.test(value)&&
     equals(Buffer.from(session.csrf),Buffer.from(value));
-  return Object.freeze({login,session,logout,checkCsrf,settings,changeCredentials});
+  return Object.freeze({login,session,logout,checkCsrf,settings,changeCredentials,
+    recoveryReady,beginRecoveryEmail,confirmRecoveryEmail,
+    requestPasswordRecovery,completePasswordRecovery});
 }

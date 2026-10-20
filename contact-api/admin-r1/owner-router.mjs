@@ -43,7 +43,7 @@ function safePost(req,origin){
     (!fetchSite||fetchSite==='same-origin') &&
     req.headers['sec-fetch-mode']!=='no-cors';
 }
-const loginHtml=passwordOnly=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
+const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logowanie właściciela — gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
@@ -63,12 +63,36 @@ ${passwordOnly?'':`<label for="code">Kod Authenticator</label>
 pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
 <button id="login-button" type="submit">Zaloguj</button></form>
 <p id="login-status" role="status" aria-live="polite"></p>
+${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomniałem hasła?</button></p>
+<dialog id="forgot-dialog" aria-labelledby="forgot-title">
+<h2 id="forgot-title">Odzyskaj hasło administratora</h2>
+<p>Wpisz potwierdzony adres e-mail odzyskiwania.</p>
+<form id="forgot-request-form" autocomplete="off">
+<label for="forgot-email">Adres e-mail odzyskiwania</label>
+<input id="forgot-email" type="email" autocomplete="email" maxlength="254" required>
+<button type="submit">Wyślij hasło tymczasowe</button>
+</form>
+<p id="forgot-request-status" role="status" aria-live="polite"></p>
+<form id="forgot-complete-form" autocomplete="off">
+<label for="forgot-code">Hasło tymczasowe z wiadomości</label>
+<input id="forgot-code" type="text" minlength="24" maxlength="24" autocomplete="one-time-code" required>
+<label for="forgot-new-password">Nowe hasło (minimum 9 znaków)</label>
+<input id="forgot-new-password" type="password" minlength="9" maxlength="128" autocomplete="new-password" required>
+<label for="forgot-repeat">Powtórz nowe hasło</label>
+<input id="forgot-repeat" type="password" minlength="9" maxlength="128" autocomplete="new-password" required>
+<button type="submit">Ustaw nowe hasło</button>
+</form>
+<p id="forgot-complete-status" role="status" aria-live="polite"></p>
+<button id="forgot-close" type="button">Zamknij</button>
+</dialog>`:''}
 </main></body></html>`;
 export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
-  username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN
+  username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
+  recoverySecret,recoveryMailer,recoveryEnabled=false
 }={}){
-  const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly}):null;
+  const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
+    recoverySecret,recoveryMailer,recoveryEnabled}):null;
   const enc=key(encryptionKey),subject=key(subjectKey);
   let reader=null;
   if(auth&&enc&&subject&&!enc.equals(subject)){
@@ -81,6 +105,7 @@ export function createOwnerRouter({
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
   let settingsBusy=false,settingsLastAt=-Infinity;
+  let recoverBusy=false;
   function serviceFor(tokenHash){
     let svc=services.get(tokenHash);
     if(!svc){
@@ -108,7 +133,7 @@ export function createOwnerRouter({
     const cookie=parseOwnerCookie(req.headers.cookie);
     try{
       if(req.method==='GET'&&path===PREFIX+'/login')
-        return text(res,200,loginHtml(passwordOnly));
+        return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
       if(req.method==='GET'&&path===PREFIX+'/admin.css'){
         return text(res,200,await readFile(new URL('./ui/admin.css',import.meta.url)),
           'text/css; charset=utf-8');
@@ -128,6 +153,25 @@ export function createOwnerRouter({
           return response(res,200,{ok:true,csrf:outcome.csrf},
             {'Set-Cookie':newCookie(outcome.token)});
         } finally {loginBusy=false;}
+      }
+      if(req.method==='POST'&&(path===PREFIX+'/recover/request'||path===PREFIX+'/recover/complete')){
+        if(!passwordOnly||!auth?.recoveryReady||!safePost(req,origin))return reject(res,503);
+        if(recoverBusy)return reject(res,429);
+        recoverBusy=true;
+        try{
+          const data=await input(req);
+          if(path===PREFIX+'/recover/request'){
+            if(Object.keys(data).some(k=>k!=='email'))return reject(res);
+            await auth.requestPasswordRecovery(data.email);
+            // Never reveal whether this is the recovery mailbox.
+            return response(res,200,{ok:true});
+          }
+          if(Object.keys(data).some(k=>!['email','code','newPassword'].includes(k)))return reject(res);
+          const updated=await auth.completePasswordRecovery(data);
+          if(!updated)return response(res,400,{ok:false,error:'invalid_or_expired'});
+          clearServices();
+          return response(res,200,{ok:true,relogin:true});
+        }finally{recoverBusy=false;}
       }
       // Every private route requires a live, durable server-side session.
       if(!cookie)return reject(res,401);
@@ -193,6 +237,22 @@ export function createOwnerRouter({
           clearServices();
           return response(res,200,{ok:true,relogin:true},
             {'Set-Cookie':clearCookie});
+        }finally{settingsBusy=false;}
+      }
+      if(req.method==='POST'&&(path===PREFIX+'/recover/email'||path===PREFIX+'/recover/verify')){
+        if(!passwordOnly||!auth?.recoveryReady||!safePost(req,origin)||
+          !auth.checkCsrf(session,req.headers['x-owner-csrf']))return reject(res);
+        if(settingsBusy||Date.now()-settingsLastAt<2000)return reject(res,429);
+        settingsBusy=true;settingsLastAt=Date.now();
+        try{
+          const data=await input(req);
+          const isSet=path===PREFIX+'/recover/email';
+          if(Object.keys(data).some(k=>!(isSet?['email','password']:['code']).includes(k)))return reject(res);
+          const ok=isSet
+            ?await auth.beginRecoveryEmail(cookie,data)
+            :await auth.confirmRecoveryEmail(cookie,data.code);
+          if(!ok)return response(res,400,{ok:false,error:'invalid_or_unavailable'});
+          return response(res,200,{ok:true});
         }finally{settingsBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/summary'){

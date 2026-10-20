@@ -222,6 +222,28 @@
               <button type="submit">Zmień nick</button>
             </form>
           </div>
+          <section id="owner-recovery-settings" class="owner-account-meta" hidden>
+            <h3>Odzyskiwanie hasła — e-mail administratora</h3>
+            <p><strong>Potwierdzony adres:</strong> <span id="owner-recovery-current">Nie ustawiono</span></p>
+            <p class="muted">Adres zostanie aktywowany dopiero po wpisaniu kodu otrzymanego e-mailem. Dostęp do tego pola wymaga zalogowania.</p>
+            <div class="owner-account-forms">
+              <form id="owner-recovery-email-form" autocomplete="off">
+                <h3>Dodaj lub zmień adres odzyskiwania</h3>
+                <label for="owner-recovery-email">Adres e-mail</label>
+                <input id="owner-recovery-email" type="email" maxlength="254" autocomplete="email" required />
+                <label for="owner-recovery-password">Potwierdź obecnym hasłem</label>
+                <input id="owner-recovery-password" type="password" minlength="9" maxlength="128" autocomplete="current-password" required />
+                <button type="submit">Wyślij kod weryfikacyjny</button>
+              </form>
+              <form id="owner-recovery-code-form" autocomplete="off">
+                <h3>Potwierdź adres e-mail</h3>
+                <label for="owner-recovery-code">Jednorazowe hasło z e-maila</label>
+                <input id="owner-recovery-code" type="text" minlength="24" maxlength="24" autocomplete="one-time-code" required />
+                <button type="submit">Potwierdź adres odzyskiwania</button>
+              </form>
+            </div>
+            <p id="owner-recovery-status" role="status" aria-live="polite"></p>
+          </section>
           <p id="account-settings-status" role="status" aria-live="polite"></p>
         </section>
         <footer>
