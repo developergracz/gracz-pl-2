@@ -128,7 +128,7 @@ export function createOwnerRouter({
         path===PREFIX+'/detail'?'subscriber_detail':'session_read';
       const session=await auth.session(cookie,kind);
       if(!session){
-        services.clear();
+        clearServices();
         return response(res,401,{ok:false,error:'unauthorized'},
           {'Set-Cookie':clearCookie});
       }
