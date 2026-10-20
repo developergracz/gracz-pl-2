@@ -225,6 +225,8 @@ export function createOwnerRouter({
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
       }
+      if(req.method==='GET'&&path===PREFIX+'/campaign-drafts/availability')
+        return response(res,200,{ok:true,enabled:Boolean(campaignDraftsEnabled&&campaignDraftStore)});
       if(req.method==='POST'&&
          (path===PREFIX+'/campaign-drafts/save'||path===PREFIX+'/campaign-drafts/list')){
         // Release switch is deliberately off. Do not enable until candidate
