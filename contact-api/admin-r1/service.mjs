@@ -114,7 +114,11 @@ export function createReadService({
           )
           .map((c) => {
             const handle = put(handles, { contact: c });
-            return { handle, email: c.email, state: c.state };
+            return {
+              handle,email:c.email,state:c.state,
+              requestedAt:c.requestedAt??null,confirmedAt:c.confirmedAt??null,
+              source:c.source??null
+            };
           });
         return {
           ok: true,
@@ -170,6 +174,8 @@ export function createReadService({
             state: ["pending", "subscribed", "unsubscribed"].includes(raw.state)
               ? raw.state
               : "unknown",
+            source: typeof raw.source==="string"?raw.source:null,
+            consentVersion:typeof raw.consentVersion==="string"?raw.consentVersion:null,
             events: (Array.isArray(raw.events) ? raw.events : [])
               .slice(0, 20)
               .map((e) => ({
@@ -185,6 +191,8 @@ export function createReadService({
                   /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(e.at)
                     ? e.at
                     : null,
+                source:typeof e.source==="string"?e.source:null,
+                consentVersion:typeof e.consentVersion==="string"?e.consentVersion:null,
               })),
           };
         if (!raw) quality.push("consent_missing");
@@ -206,7 +214,10 @@ export function createReadService({
         suppressed: c.suppressed,
         requestedAt:typeof c.requestedAt==='string' ? c.requestedAt:null,
         confirmedAt:typeof c.confirmedAt==='string' ? c.confirmedAt:null,
+        revokedAt:typeof c.revokedAt==='string'?c.revokedAt:null,
         source:typeof c.source==='string' ? c.source:null,
+        consentVersion:typeof c.consentVersion==='string'?c.consentVersion:null,
+        deliveryState:['sent','uncertain'].includes(c.deliveryState)?c.deliveryState:null,
         consent,
         quality,
       };
