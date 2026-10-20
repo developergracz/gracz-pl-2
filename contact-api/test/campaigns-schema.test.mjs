@@ -12,3 +12,10 @@ test('campaign schema cannot send without approval or duplicate recipient',()=>{
 test('no production schema migration in draft',()=>{
   assert.match(sql,/NOT wired to automatic production migrations/);
 });
+
+test('dispatch audit is append-only and tied to one campaign recipient',()=>{
+  assert.match(sql,/UNIQUE \(campaign_id,id\)/);
+  assert.match(sql,/FOREIGN KEY \(campaign_id,dispatch_id\)/);
+  assert.match(sql,/BEFORE UPDATE OR DELETE OR TRUNCATE ON newsletter_campaigns\.dispatch_events/);
+  assert.match(sql,/REVOKE UPDATE,DELETE,TRUNCATE ON newsletter_campaigns\.dispatch_events FROM PUBLIC/);
+});
