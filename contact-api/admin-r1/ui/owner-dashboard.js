@@ -641,7 +641,7 @@ for(const button of rightsDialog.querySelectorAll("[data-rights-target]")){
     const relativeTop=target.getBoundingClientRect().top-
       rightsCopy.getBoundingClientRect().top+rightsCopy.scrollTop;
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    rightsCopy.scrollTo({top:relativeTop,behavior:reducedMotion?"instant":"smooth"});
+    rightsCopy.scrollTo({top:relativeTop,behavior:reducedMotion?"auto":"smooth"});
   });
 }
 
