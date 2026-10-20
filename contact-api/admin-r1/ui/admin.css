@@ -18,13 +18,22 @@ body {
 }
 .shell {
   display: grid;
-  grid-template-columns: 230px 1fr;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  grid-template-areas: "content sidebar";
   min-height: 100vh;
 }
 aside {
-  padding: 38px 26px;
+  grid-area: sidebar;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 14px;
   background: #0c1522;
-  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 .logo {
   font-size: 36px;
@@ -42,11 +51,14 @@ aside {
 }
 nav {
   display: grid;
-  gap: 12px;
-  margin-top: 50px;
+  gap: 3px;
+  margin-top: 16px;
 }
 nav a {
-  padding: 13px 10px;
+  display: block;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.25;
   color: var(--muted);
   text-decoration: none;
   border-radius: 10px;
@@ -62,9 +74,12 @@ nav a[aria-current] {
   color: var(--muted);
 }
 main {
+  grid-area: content;
   max-width: 1440px;
+  min-width: 0;
   width: 100%;
-  padding: 48px 5vw;
+  margin: 0 auto;
+  padding: 48px clamp(18px,3vw,60px);
 }
 header {
   display: flex;
@@ -266,7 +281,7 @@ dialog::backdrop {
 }
 @media (max-width: 1100px) {
   .shell {
-    grid-template-columns: 170px 1fr;
+    grid-template-columns: minmax(0,1fr) 208px;
   }
   aside {
     padding: 28px 16px;
@@ -371,3 +386,69 @@ dialog::backdrop {
 #forgot-open{font:inherit;cursor:pointer}
 #owner-recovery-settings[hidden]{display:none!important}
 #owner-recovery-settings .owner-account-forms{margin-top:16px}
+
+/* M7 — permanently visible navigation on the right; independent scrolling. */
+#main, #statistics, #m4-global, #trend-daily, #trend-details, #trend-monthly,
+#trend-sources, #subscribers, #subscriber-overview, #filters, #quality,
+#account-settings, #owner-change-password, #owner-change-nick,
+#owner-recovery-settings {scroll-margin-top:18px}
+nav a:hover{background:#19323a;color:#eaf3ff}
+nav .nav-sub{font-size:12px;padding:6px 8px 6px 24px}
+.nav-subgroup{display:grid;gap:2px}
+nav [hidden],.nav-subgroup[hidden]{display:none!important}
+.aside-note{margin-top:20px;line-height:1.5}
+.trend-explorer{margin:24px 0 28px;padding:20px;border:1px solid var(--line);
+  background:#0c1b29;border-radius:14px}
+#trend-search{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:end;gap:12px;margin:16px 0}
+#trend-search>div{min-width:0}
+#trend-search label{min-height:26px}
+#trend-search-button{grid-column:1/-1;justify-self:start;min-width:190px}
+#trend-detail-status{min-height:24px;color:var(--accent);font-size:13px}
+#trend-detail-result[hidden]{display:none!important}
+#trend-detail-totals{margin:10px 0 12px}
+#trend-detail-result .table-wrap{max-height:400px}
+#trend-detail-result th{position:sticky;top:0;background:#101f30;z-index:1}
+
+/* M7 — complete recovery dialog at desktop browser height. */
+#forgot-dialog{width:min(96vw,900px);max-width:900px;
+  max-height:calc(100dvh - 20px);padding:clamp(12px,2vh,22px);
+  overflow-y:auto}
+#forgot-dialog .forgot-heading{display:flex;align-items:center;
+  justify-content:space-between;gap:16px}
+#forgot-dialog .forgot-heading h2{margin:0;font-size:21px}
+#forgot-dialog .forgot-heading button{flex:none;min-height:36px;padding:7px 12px}
+#forgot-dialog .forgot-forms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;align-items:start}
+#forgot-dialog .forgot-forms section{min-width:0}
+#forgot-dialog form{display:grid;align-items:stretch;gap:5px;margin:9px 0 0}
+#forgot-dialog form label{font-size:12px;margin:0}
+#forgot-dialog input{min-height:39px;padding:7px 10px}
+#forgot-dialog form button{min-height:40px;margin:6px 0 0;padding:8px}
+#forgot-dialog p{font-size:13px;line-height:1.4;margin:9px 0}
+#forgot-dialog p[role="status"]{font-size:12px;margin:10px 0;min-height:20px}
+@media(max-width:1050px){#trend-search{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+  #forgot-dialog{width:calc(100% - 16px);max-height:calc(100dvh - 12px);padding:13px}
+  #forgot-dialog .forgot-forms{grid-template-columns:1fr;gap:12px}
+  #forgot-dialog .forgot-heading h2{font-size:18px}
+  #forgot-dialog .forgot-forms section+section{border-top:1px solid var(--line);padding-top:8px}
+}
+@media(max-width:650px){
+  .shell{display:flex;flex-direction:column}
+  aside{position:sticky;top:0;z-index:20;align-self:stretch;
+    height:auto;max-height:148px;overflow:auto;padding:8px 12px;
+    border-left:0;border-bottom:1px solid var(--line)}
+  aside .logo{font-size:23px;line-height:1.1}
+  aside nav{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;margin-top:5px;
+    scrollbar-width:thin;align-items:center}
+  aside nav a,aside nav .nav-sub{padding:7px 9px;white-space:nowrap;flex:none}
+  aside nav .nav-subgroup{display:contents}
+  main{padding:22px 16px}
+  #trend-search{grid-template-columns:1fr}
+  #trend-search-button{width:100%;justify-self:stretch}
+  #main, #statistics, #m4-global, #trend-daily, #trend-details, #trend-monthly,
+  #trend-sources, #subscribers, #subscriber-overview, #filters, #quality,
+  #account-settings, #owner-change-password, #owner-change-nick,
+  #owner-recovery-settings {scroll-margin-top:155px}
+}
