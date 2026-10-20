@@ -8,6 +8,17 @@ test.beforeEach(async ({page}) => {
   await page.route('**/*', route => new URL(route.request().url()).origin === 'http://127.0.0.1:4174' ? route.continue() : route.abort());
 });
 
+test('gracz.pl/paneladmina opens canonical OWNER login and strips tracking query', async ({page}) => {
+  const target='https://gracz-contact-api.onrender.com/owner/newsletter/login';
+  await page.route(target,route=>route.fulfill({
+    status:200,contentType:'text/html',
+    body:'<!doctype html><html lang="pl"><title>Panel administratora</title><body>Logowanie właściciela</body></html>'
+  }));
+  await page.goto('/paneladmina/?utm_source=chatgpt.com',{waitUntil:'domcontentloaded'});
+  await expect(page).toHaveURL(target);
+  await expect(page.getByText('Logowanie właściciela')).toBeVisible();
+});
+
 test('maintenance persists after input, navigation and restored pages', async ({page}) => {
   const posts=[];
   page.on('request', r => {if(r.method()==='POST')posts.push(r.url());});
