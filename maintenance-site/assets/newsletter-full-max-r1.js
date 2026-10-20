@@ -47,7 +47,7 @@
       });
       if(first){first.focus();return;}
       busy=true;button.disabled=true;button.textContent='Przetwarzanie…';var current=generation;
-      var payload={email:form.elements.email.value.trim(),website:form.elements.website.value.trim(),startedAt:openedAt};
+      var payload={email:form.elements.email.value.trim(),website:form.elements.website.value.trim(),startedAt:openedAt,source:'newsletter_page'};
       if(consent){payload.name=form.elements.name.value.trim();payload.consent=true;}
       try{
         await post(path,payload);if(current!==generation)return;
@@ -70,7 +70,7 @@
   }
   function readAction(){
     var params=new URLSearchParams(window.location.hash.slice(1));
-    var mode=['confirm','unsubscribe','status'].find(function(key){return params.has(key);});
+    var mode=['fresh-confirm','confirm','unsubscribe','status'].find(function(key){return params.has(key);});
     var token=mode?String(params.get(mode)||'').trim():'';
     // Strip bearer fragments before rendering or starting any request; never persist tokens.
     if(mode)window.history.replaceState(null,'',window.location.pathname+window.location.search);
@@ -89,6 +89,7 @@
     actionMode=mode;actionToken=token;
     subscribePanel.hidden=true;requestPanel.hidden=true;actionPanel.hidden=false;
     var copy={
+      'fresh-confirm':['NOWA ZGODA','Potwierdź nowy zapis do newslettera','Potwierdzenie dotyczy tylko nowej zgody. Historyczne subskrypcje pozostają oddzielnie zabezpieczone.','Potwierdź zapis'],
       confirm:['POTWIERDZENIE ZAPISU','Potwierdź zapis do newslettera','Kliknij przycisk poniżej, aby aktywować newsletter gracz.pl. Samo otwarcie linku nie zapisuje adresu.','Potwierdź zapis'],
       unsubscribe:['ZARZĄDZANIE SUBSKRYPCJĄ','Wypisz się z newslettera','Kliknij przycisk poniżej, aby wycofać zgodę na newsletter. Pozostałe funkcje gracz.pl nie zostaną zmienione.','Wypisz mnie'],
       status:['BEZPIECZNE SPRAWDZENIE','Sprawdź swoją subskrypcję','Kliknij przycisk, aby jednorazowo sprawdzić status. Ta operacja nie zapisuje do newslettera ani nie zmienia zgody.','Sprawdź status']
@@ -108,7 +109,7 @@
   window.addEventListener('popstate',navigation);
   window.addEventListener('pagehide',clearNavigation);
   window.addEventListener('pageshow',function(event){if(event.persisted)readAction();});
-  setupForm('nl-form','nl-submit','nl-status','/newsletter/subscribe',true);
+  setupForm('nl-form','nl-submit','nl-status','/newsletter/fresh-request',true);
   setupForm('nl-status-form','nl-request-button','nl-request-status','/newsletter/status-request',false);
   if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
     ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}});
@@ -123,19 +124,19 @@
       var controller=new AbortController();
       var timer=window.setTimeout(function(){controller.abort();},5000);
       var response;
-      try{response=await fetch(API+'/newsletter/ready',{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});}
+      try{response=await fetch(API+'/newsletter/fresh-ready',{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});}
       finally{window.clearTimeout(timer);}
       if(response.status!==200)return;
       var state=await response.json();
       if(!state||state.ready!==true||state.intakePaused!==false||state.schemaReady!==true||state.configured!==true)return;
       NEWSLETTER_PUBLIC_INTAKE_ENABLED=true;
-      ['nl-form','nl-status-form'].forEach(function(id){
+      ['nl-form'].forEach(function(id){
         var form=byId(id);
         if(form)form.querySelectorAll('input').forEach(function(input){input.disabled=false;});
       });
-      ['nl-submit','nl-request-button'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
+      ['nl-submit'].forEach(function(id){var button=byId(id);if(button){button.disabled=false;button.removeAttribute('aria-disabled');}});
       setStatus(byId('nl-status'),'');
-      setStatus(byId('nl-request-status'),'');
+      setStatus(byId('nl-request-status'),'Historyczne sprawdzanie statusu pozostaje wyłączone. Wypisanie działa w sekcji powyżej.',false);
       var notice=byId('nl-maintenance-notice');
       if(notice){notice.hidden=true;notice.style.display='none';}
     }catch(_){/* Fail closed. A failed probe never sends a subscription. */}
@@ -147,11 +148,18 @@
     actionToken='';actionButton.disabled=true;
     setStatus(actionStatus,'Przetwarzanie…');
     try{
-      var result=await post('/newsletter/'+(mode==='status'?'status-check':mode),{token:token});
+      var freshParts=mode==='fresh-confirm' ? /^([0-9a-f-]{36})\\.([A-Za-z0-9_-]{43})$/i.exec(token) : null;
+      if(mode==='fresh-confirm'&&!freshParts)throw new Error('Link jest nieprawidłowy.');
+      var result=mode==='fresh-confirm'
+        ? await post('/newsletter/fresh-confirm',{id:freshParts[1],token:freshParts[2]})
+        : await post('/newsletter/'+(mode==='status'?'status-check':mode),{token:token});
       if(current!==generation)return;
       // Never present success until the server confirms an exact, final state.
       // HTTP 200 and ok:true alone are not evidence of a completed operation.
-      if(mode==='status'){
+      if(mode==='fresh-confirm'){
+        if(result.state!=='subscribed'||result.confirmed!==true)throw new Error('Zgoda została zapisana, ale aktywacja w Resend wymaga obsługi. Nie ponawiaj linku.');
+        actionTitle.textContent='Nowy zapis potwierdzony';actionCopy.textContent='Newsletter gracz.pl jest aktywny dla tej nowej zgody.';
+      }else if(mode==='status'){
         var states={active:['Newsletter aktywny','Ten adres ma aktywną subskrypcję newslettera gracz.pl.'],pending:['Oczekuje na potwierdzenie','Zapis wymaga jeszcze potwierdzenia zgody przez e-mail.'],inactive:['Newsletter nieaktywny','Ten adres nie ma aktywnej subskrypcji newslettera gracz.pl.']};
         if(!states[result.state])throw new Error('Nie można teraz potwierdzić statusu.');
         actionTitle.textContent=states[result.state][0];actionCopy.textContent=states[result.state][1];
