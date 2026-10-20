@@ -38,7 +38,7 @@ function fakeStore() {
       });return {rowCount:1};
     }
     if(sql.startsWith('INSERT INTO newsletter_new.mail_budget')) {
-      used++;return {rowCount:used<=60?1:0,rows:[{used}]};
+      used++;return {rowCount:used<=p[0]?1:0,rows:[{used}]};
     }
     if(sql.startsWith('SELECT email_tag,token_tag,state,delivery_state,expires_at')) {
       const row=[...records.values()].find(row=>row.challenge_id===p[0]);
@@ -58,7 +58,13 @@ function fakeStore() {
     records,events,revocations,client,
     db:{
       enabled:true,
-      async queryBounded(){return {rows:[{allowed:true}]};},
+      async queryBounded(sql,p=[]){
+        if(sql.includes('FROM newsletter_new.subscribers s WHERE s.email_tag=$1')){
+          const row=records.get(p[0]);
+          return {rows:row?[{state:row.state,withdrawn:revocations.has(p[0])}]:[]};
+        }
+        return {rows:[{allowed:true}]};
+      },
       async transaction(work){return work(client);},
       async query(sql,p){
         assert.match(sql,/delivery_state='sent'/);
@@ -158,4 +164,46 @@ test('withdrawal of a legacy-only address does not create new-only subscriber da
     challengeId:'00000000-0000-4000-8000-000000000003'});
   assert.equal(records.size,0);
   assert.equal(revocations.size,0);
+});
+
+test('status proof requires mailbox access, reveals state only after proof and changes no consent',async()=>{
+  const {db,records,events,revocations,client}=fakeStore();
+  const delivered=[];
+  const manager=createNewOnlyNewsletter({
+    database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
+    apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    fetchFn:async (_url,options)=>{
+      delivered.push(JSON.parse(options.body));
+      return {ok:true,json:async()=>({id:'receipt'})};
+    }
+  });
+  const email='verified@example.test';
+  await manager.acceptOptIn({email});
+  const doi=delivered.at(-1).text.match(/#confirm=(ni3[.][A-Za-z0-9_.-]+)/)?.[1];
+  assert.ok(doi);
+  await manager.confirm(doi);
+  assert.equal(events.length,1);
+  const before=records.size;
+  assert.deepEqual(await manager.acceptStatus({email}),{state:'request_received'});
+  assert.equal(records.size,before);
+  assert.equal(events.length,1);
+  const proof=delivered.at(-1).text.match(/#status=(ns2[.][A-Za-z0-9_.-]+)/)?.[1];
+  assert.ok(proof,'only the verified mailbox receives proof');
+  assert.deepEqual(await manager.checkStatus(proof),{state:'active'});
+  const tampered=proof.split('.');
+  tampered[2]=(tampered[2][0]==='A'?'B':'A')+tampered[2].slice(1);
+  await assert.rejects(manager.checkStatus(tampered.join('.')),{code:'NEWSLETTER_STATUS_REJECTED'});
+  await manager.recordVerifiedWithdrawal({
+    client,email,challengeId:'00000000-0000-4000-8000-000000000003'
+  });
+  assert.equal(revocations.size,1);
+  assert.deepEqual(await manager.checkStatus(proof),{state:'inactive'});
+  assert.deepEqual(await manager.acceptStatus({email:'unknown@example.test'}),{state:'request_received'});
+  const unknown=delivered.at(-1).text.match(/#status=(ns2[.][A-Za-z0-9_.-]+)/)?.[1];
+  assert.deepEqual(await manager.checkStatus(unknown),{state:'inactive'});
+  const realNow=Date.now;
+  try{
+    Date.now=()=>realNow()+16*60*1000;
+    await assert.rejects(manager.checkStatus(proof),{code:'NEWSLETTER_STATUS_REJECTED'});
+  } finally {Date.now=realNow;}
 });

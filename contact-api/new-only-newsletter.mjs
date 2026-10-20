@@ -1,7 +1,9 @@
-import { createCipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 
 const CONSENT_VERSION = 'newsletter-new-only-2026-10-20';
 const CONFIRM_TTL_MS = 30 * 60 * 1000;
+const STATUS_TTL_MS = 15 * 60 * 1000;
+const MAX_STATUS_MAILS_PER_HOUR = 15;
 const MAX_CONFIRM_MAILS_PER_HOUR = 60;
 
 function decodeNewKey(raw) {
@@ -221,13 +223,90 @@ export function createNewOnlyNewsletter({
       'ON CONFLICT (email_tag) DO NOTHING',
       [emailTag,challengeId]);
   }
+  // An anonymous POST must never disclose whether an address exists.
+  // Status is returned only to the holder of an encrypted, short-lived
+  // mailbox-delivered bearer proof. No new DB table or consent mutation.
+  async function acceptStatus({email}={}) {
+    await requireReady();
+    const mailbox=String(email||'').trim().toLowerCase();
+    if(mailbox.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailbox))
+      throw Object.assign(new Error('Nieprawidłowy e-mail.'),{status:400,code:'INVALID_EMAIL'});
+    const nonce=randomBytes(12);
+    const cipher=createCipheriv('aes-256-gcm',enc,nonce);
+    cipher.setAAD(Buffer.from('gracz-new-only:status:v1'));
+    const ciphertext=Buffer.concat([cipher.update(JSON.stringify({
+      mailbox,issued:Date.now()
+    }),'utf8'),cipher.final()]);
+    const proof='ns2.'+nonce.toString('base64url')+'.'+ciphertext.toString('base64url')+
+      '.'+cipher.getAuthTag().toString('base64url');
+    // Shared existing global send budget, also used by DOI.
+    await database.transaction(async client=>{
+      const budget=await client.query(`
+        INSERT INTO newsletter_new.mail_budget(hour_bucket,used)
+        VALUES (date_trunc('hour',clock_timestamp()),1)
+        ON CONFLICT (hour_bucket) DO UPDATE
+          SET used=newsletter_new.mail_budget.used+1
+          WHERE newsletter_new.mail_budget.used < $1
+        RETURNING used
+      `,[MAX_STATUS_MAILS_PER_HOUR]);
+      if(budget.rowCount!==1)throw unavailable();
+    });
+    const response=await fetchFn('https://api.resend.com/emails',{
+      method:'POST',
+      headers:{
+        Authorization:'Bearer '+apiKey,'Content-Type':'application/json',
+        'Idempotency-Key':'newsletter-status/'+createHash('sha256').update(proof).digest('hex')
+      },
+      body:JSON.stringify({
+        from:emailFrom,to:[mailbox],subject:'gracz.pl — bezpieczne sprawdzenie newslettera',
+        text:'Aby sprawdzić status swojej subskrypcji newslettera gracz.pl, otwórz link: '+
+          baseUrl+'#status='+proof+
+          '\n\nLink jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.'
+      }),
+      signal:AbortSignal.timeout(10000)
+    });
+    if(!response.ok)throw unavailable();
+    const receipt=await response.json().catch(()=>null);
+    if(typeof receipt?.id!=='string'||!receipt.id)throw unavailable();
+    return {state:'request_received'};
+  }
+  async function checkStatus(token){
+    await requireReady();
+    const invalid=()=>Object.assign(new Error('Nieważny lub wygasły link do statusu.'),{
+      code:'NEWSLETTER_STATUS_REJECTED',status:400
+    });
+    const parts=/^ns2[.]([A-Za-z0-9_-]{16})[.]([A-Za-z0-9_-]{1,600})[.]([A-Za-z0-9_-]{22})$/.exec(String(token||''));
+    if(!parts)throw invalid();
+    let payload;
+    try{
+      const decipher=createDecipheriv('aes-256-gcm',enc,Buffer.from(parts[1],'base64url'));
+      decipher.setAAD(Buffer.from('gracz-new-only:status:v1'));
+      decipher.setAuthTag(Buffer.from(parts[3],'base64url'));
+      const data=Buffer.concat([decipher.update(Buffer.from(parts[2],'base64url')),decipher.final()]);
+      payload=JSON.parse(data.toString('utf8'));
+    }catch{throw invalid();}
+    if(!payload||typeof payload.mailbox!=='string'||payload.mailbox.length>254||
+      !/^[^\s@]+@[^\s@]+[.][^\s@]+$/.test(payload.mailbox)||
+      !Number.isSafeInteger(payload.issued)||payload.issued>Date.now()||
+      Date.now()-payload.issued>STATUS_TTL_MS)throw invalid();
+    const found=await database.queryBounded(`
+      SELECT s.state,
+        EXISTS(SELECT 1 FROM newsletter_new.revocations r
+               WHERE r.email_tag=s.email_tag) AS withdrawn
+      FROM newsletter_new.subscribers s WHERE s.email_tag=$1
+    `,[tag('email',payload.mailbox)],{timeoutMs:2000});
+    const row=found.rows?.[0];
+    const state=!row||row.withdrawn?'inactive':
+      row.state==='active'?'active':row.state==='pending'?'pending':'inactive';
+    return {state};
+  }
   async function held() { throw unavailable(); }
   return Object.freeze({
     enabled:configured,
     intakePaused:!configured,
     consentLedgerConfigured:configured,
     acceptOptIn,requestOptIn:acceptOptIn,confirm,readiness,recordVerifiedWithdrawal,
-    acceptStatus:held,checkStatus:held,unsubscribe:held,
+    acceptStatus,checkStatus,unsubscribe:held,
     stopAccepting(){},async waitForPublicWork(){},
   });
 }

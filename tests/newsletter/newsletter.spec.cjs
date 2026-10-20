@@ -93,7 +93,7 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await expect(page.locator('#nl-status')).toContainText('przyjęte do obsługi');
   await page.locator('#nl-check-email').fill('owner@example.com');
   await page.locator('#nl-check-email').press('Enter');
-  await expect(page.locator('#nl-request-status')).toContainText('nie potwierdza statusu');
+  await expect(page.locator('#nl-request-status')).toContainText('nie ujawnia statusu subskrypcji');
   expect(requests.map(r=>r.path)).toEqual(['/newsletter/subscribe','/newsletter/status-request']);
   expect(requests[1].payload).not.toHaveProperty('consent');
   await expect(page.locator('#nl-consent')).not.toBeChecked();
@@ -199,7 +199,7 @@ test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Ten adres może być już aktywny');
   await expect(dialog).toContainText('statusu adresu nie ujawniamy bez potwierdzenia');
-  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toHaveCount(0);
+  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toBeVisible();
   await page.screenshot({path:info.outputPath('footer-newsletter-modal.png'),fullPage:false});
   await dialog.locator('.newsletter-success__cta').click();
   await expect(dialog).toBeHidden();
