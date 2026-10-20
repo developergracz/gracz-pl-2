@@ -66,7 +66,7 @@ test('confirmed backend readiness enables newsletter signup, but not by stale /h
   await expect(page.locator('[data-contact-form] [name="newsletter"]')).toBeEnabled();
 });
 
-test('new-only DOI readiness enables subscribe without reviving old status or legacy tokens', async ({page}) => {
+test('new-only DOI readiness enables subscribe and verified status without reviving legacy tokens', async ({page}) => {
   await page.route('https://gracz-contact-api.onrender.com/newsletter/ready', route =>
     route.fulfill({status:200,contentType:'application/json',
       headers:{'access-control-allow-origin':'*'},
@@ -74,8 +74,8 @@ test('new-only DOI readiness enables subscribe without reviving old status or le
   await page.goto('/newsletter/');
   await expect(page.locator('#nl-submit')).toBeEnabled();
   await expect(page.locator('#nl-consent')).toBeEnabled();
-  await expect(page.locator('#nl-request-button')).toBeDisabled();
-  await expect(page.locator('#nl-status-panel')).toBeHidden();
+  await expect(page.locator('#nl-request-button')).toBeEnabled();
+  await expect(page.locator('#nl-status-panel')).toBeVisible();
   await page.goto('/newsletter/#confirm=n1.compromised');
   await expect(page.locator('#nl-action-button')).toBeDisabled();
 });
@@ -106,7 +106,7 @@ test('HTTP 200 without schema confirmation still blocks newsletter signup', asyn
 
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
-    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1)/);
+    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1)/);
   }
 });
 
