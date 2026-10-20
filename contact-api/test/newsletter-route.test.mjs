@@ -32,3 +32,15 @@ test("B1 public contract preserves validation and actual provider failure", asyn
   await assert.rejects(() => setup(manager, {email:"test@example.test", consent:false})(req, {}, url, "test"), {code:"NEWSLETTER_CONSENT_REQUIRED"});
   await assert.rejects(() => setup(manager, {email:"test@example.test", consent:true})(req, {}, url, "test"), error => error === failure);
 });
+
+test("public duplicate response is specific only for confirmed active records", async () => {
+  const manager={enabled:true,async requestOptIn(){return {state:"already_subscribed"};}};
+  const live=await setup(manager,{email:"known@example.test",consent:true,website:""})(req,{},url,"live");
+  assert.deepEqual(live,{status:200,body:{ok:true,state:"already_subscribed"}});
+  const honeypot=await setup(manager,{email:"known@example.test",consent:true,website:"bot"})(req,{},url,"bot");
+  assert.deepEqual(honeypot,{status:200,body:{ok:true,state:"request_received"}});
+  const statusRequest=await setup({enabled:true,async requestOptIn(){return {state:"already_subscribed"};},
+    async acceptStatus(){return {state:"request_received"};}},{email:"known@example.test",website:""})(
+      req,{},new URL("https://test/newsletter/status-request"),"status");
+  assert.deepEqual(statusRequest,{status:200,body:{ok:true,state:"request_received"}});
+});
