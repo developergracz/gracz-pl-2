@@ -204,6 +204,9 @@ export function createReadService({
         inSegment: c.inSegment,
         topic: c.topic,
         suppressed: c.suppressed,
+        requestedAt:typeof c.requestedAt==='string' ? c.requestedAt:null,
+        confirmedAt:typeof c.confirmedAt==='string' ? c.confirmedAt:null,
+        source:typeof c.source==='string' ? c.source:null,
         consent,
         quality,
       };
