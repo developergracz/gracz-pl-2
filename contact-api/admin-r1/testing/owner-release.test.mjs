@@ -211,6 +211,12 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
       cookie,csrf,data:{oldPassword:'invalid-old-owner-password',username:'changedowner'}
     });
     assert.equal(denied.status,400);
+    // M5 deliberately throttles credential attempts to once every 2 seconds.
+    const tooSoon=await send('/owner/newsletter/change-credentials',{
+      cookie,csrf,data:{oldPassword:updatedPassword,username:'changedowner'}
+    });
+    assert.equal(tooSoon.status,429);
+    await new Promise(resolve=>setTimeout(resolve,2100));
     const changed=await send('/owner/newsletter/change-credentials',{
       cookie,csrf,data:{oldPassword:updatedPassword,username:'changedowner'}
     });
