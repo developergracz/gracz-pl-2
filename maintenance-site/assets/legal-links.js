@@ -747,7 +747,9 @@
         if(consent)consent.disabled=false;
         setFooterNewsletterStatus(form,'');
       });
-      if(dialog){
+      // The contact form still uses the HELD legacy manager. Only the footer
+      // uses the dedicated new-only endpoint until contact opt-in is migrated.
+      if(dialog && ready.newOnly!==true){
         var opt=dialog.querySelector('.contact-form__newsletter'),check=dialog.querySelector('[name="newsletter"]');
         if(opt){opt.hidden=false;opt.style.display='';opt.removeAttribute('aria-hidden');}
         if(check)check.disabled=false;
