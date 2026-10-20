@@ -350,6 +350,9 @@ dialog::backdrop {
 
 /* Private OWNER login, no third-party assets. */
 .owner-login{max-width:460px;margin:clamp(40px,8vh,100px) auto;padding:28px;}
+.owner-login-brand{margin-bottom:28px;}
+.owner-login-brand .logo{font-size:clamp(34px,7vw,46px);line-height:1.1;}
+.owner-login-brand p{margin:9px 0 0;color:var(--muted);font-size:14px;line-height:1.5;}
 .owner-login form{display:grid;align-items:stretch;gap:12px;}
 .owner-login form label{margin:8px 0 0;}
 .owner-login button{margin-top:10px;}
