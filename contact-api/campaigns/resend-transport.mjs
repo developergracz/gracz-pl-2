@@ -2,7 +2,7 @@ import {classifyResendResult,classifyResendFailure} from './resend-result.mjs';
 
 // Internal transport adapter. Not registered as an OWNER route or background job.
 // Caller must commit the one-time dispatch claim AND verify an up-to-date opt-out
-// link before invocation. Sending is gated off until approved release wiring.
+// link before invocation. This URL links to the real withdrawal request form. Sending is gated off until approved release wiring.
 export function createCampaignResendTransport({
   enabled=false, fetchFn=globalThis.fetch, apiKey, from,
 }={}) {
@@ -16,7 +16,7 @@ export function createCampaignResendTransport({
         typeof to!=='string'||to.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||
         typeof subject!=='string'||subject.length<3||subject.length>160||
         /[\r\n]/.test(subject)||typeof text!=='string'||text.length<10||text.length>20000||
-        typeof unsubscribeUrl!=='string'||!unsubscribeUrl.startsWith('https://gracz.pl/newsletter/')||
+        typeof unsubscribeUrl!=='string'||unsubscribeUrl!=='https://gracz.pl/newsletter/#nl-withdrawal-panel'||
         /[\s\r\n]/.test(unsubscribeUrl))
         throw Object.assign(new Error('invalid_campaign_delivery'),{code:'invalid_campaign_delivery'});
       try {
