@@ -129,7 +129,10 @@ async function detail(handle) {
     $("detail-body").replaceChildren();
     const lines = [
       data.email,
-      `Stan dostawcy: ${labels[data.state]}`,
+      `Stan subskrypcji: ${labels[data.state]}`,
+      ...(data.requestedAt?[ `Zgłoszenie: ${new Date(data.requestedAt).toLocaleString("pl-PL")}` ]:[]),
+      ...(data.confirmedAt?[ `Potwierdzenie: ${new Date(data.confirmedAt).toLocaleString("pl-PL")}` ]:[]),
+      ...(data.source?[ `Źródło zapisu: ${data.source}` ]:[]),
       `Stan zaobserwowany: ${new Date(data.observedAt).toLocaleString("pl-PL")}`,
       `Dowód zgody: ${data.consent ? labels[data.consent.state] || "Nieznany" : "Niedostępny — nie odtwarzamy historii"}`,
       `Jakość: ${data.quality.length ? "Wymaga weryfikacji" : "Brak wykrytych rozbieżności"}`,
