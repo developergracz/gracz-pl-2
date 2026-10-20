@@ -446,3 +446,79 @@ test("detail expiry is rechecked after asynchronous evidence lookup", async () =
   const page = await svc.list({});
   assert.equal((await svc.detail(page.items[0].handle)).ok, false);
 });
+
+test("new-only private reader resolves active, pending and revoked evidence without legacy Resend",async()=>{
+  const {createNewOnlyAdminReader}=await import("../admin-r1/new-only-reader.mjs");
+  const {createCipheriv,createHmac}=await import("node:crypto");
+  const encryptionKey=Buffer.alloc(32,0x21);
+  const subjectKey=Buffer.alloc(32,0x32);
+  const mailboxTag=email=>createHmac("sha256",subjectKey)
+    .update("gracz-new-only:email\n"+email).digest("hex");
+  const record=(email,state,revoked=false)=>{
+    const emailTag=mailboxTag(email),nonce=Buffer.alloc(12,0x09);
+    const cipher=createCipheriv("aes-256-gcm",encryptionKey,nonce);
+    cipher.setAAD(Buffer.from("gracz-newsletter-new:"+emailTag));
+    const ciphertext=Buffer.concat([cipher.update(email,"utf8"),cipher.final()]);
+    return {email_tag:emailTag,ciphertext,nonce,auth_tag:cipher.getAuthTag(),
+      state,revoked,source:"newsletter_page",
+      requested_at:new Date("2026-10-20T01:00:00Z"),
+      confirmed_at:state==="active"?new Date("2026-10-20T01:04:00Z"):null};
+  };
+  const records=[
+    record("alpha@example.test","active"),
+    record("beta@example.test","pending"),
+    record("gamma@example.test","active",true),
+  ].sort((a,b)=>b.email_tag.localeCompare(a.email_tag));
+  const calls=[];
+  const database={async queryBounded(sql,params,opts){
+    calls.push({sql,opts});
+    if(sql.includes("s.ciphertext")){
+      const after=params[0];
+      return {rows:records.filter(x=>after===null||x.email_tag<after).slice(0,params[1])};
+    }
+    if(sql.includes("SELECT s.state,s.confirmed_at")){
+      return {rows:records.filter(x=>x.email_tag===params[0]).map(x=>({
+        state:x.state,revoked:x.revoked,confirmed_at:x.confirmed_at
+      }))};
+    }
+    if(sql.includes("UNION ALL")){
+      const r=records.find(x=>x.email_tag===params[0]);
+      return {rows:r?.revoked?[{type:"unsubscribed",at:new Date("2026-10-20T02:00:00Z")}]:
+        r?.state==="active"?[{type:"opt_in_confirmed",at:new Date("2026-10-20T01:04:00Z")}]:[]};
+    }
+    throw Error("unexpected database query");
+  }};
+  const reader=createNewOnlyAdminReader({database,encryptionKey,subjectKey});
+  const page=await reader.adapter.readPage({limit:2});
+  assert.equal(page.items.length,2);
+  assert.ok(page.after);
+  assert.deepEqual(new Set([...page.items,(await reader.adapter.readPage({after:page.after})).items[0]]
+    .map(x=>x.state)),new Set(["active","pending","unsubscribed"]));
+  assert.ok(!JSON.stringify(page).includes("ciphertext"));
+  assert.ok(calls.every(x=>x.opts.timeoutMs===2000));
+  const revoked=await reader.readConsent(mailboxTag("gamma@example.test"));
+  assert.equal(revoked.state,"unsubscribed");
+  assert.equal(revoked.events[0].type,"unsubscribed");
+  const service=createReadService({...reader,audit:async()=>{}});
+  const snapshot=await service.list({});
+  assert.equal(snapshot.ok,true);
+  assert.equal(snapshot.counts.pending,1);
+  assert.equal(snapshot.counts.unsubscribed,1);
+  assert.equal(snapshot.counts.active,1);
+  const detail=await service.detail(snapshot.items.find(x=>x.state==="active").handle);
+  assert.equal(detail.consent.state,"subscribed");
+  // Tampered encryption must fail closed and reveal no raw provider / query errors.
+  const tamper=records[0];
+  const old=Buffer.from(tamper.auth_tag);
+  tamper.auth_tag=Buffer.from(old);tamper.auth_tag[0]^=1;
+  await assert.rejects(reader.adapter.readPage({limit:2}),{code:"invalid_provider_response"});
+});
+test("new-only private reader rejects missing keys, invalid cursors, and is never routed",async()=>{
+  const {createNewOnlyAdminReader}=await import("../admin-r1/new-only-reader.mjs");
+  assert.throws(()=>createNewOnlyAdminReader({database:{queryBounded:async()=>({rows:[]})}}),
+    {code:"configuration"});
+  const source=createNewOnlyAdminReader({database:{queryBounded:async()=>({rows:[]})},
+    encryptionKey:Buffer.alloc(32,1),subjectKey:Buffer.alloc(32,2)});
+  await assert.rejects(source.adapter.readPage({after:"../../old-newsletter"}),{code:"invalid_request"});
+  await assert.rejects(source.readConsent("not-a-subject"),{code:"invalid_request"});
+});
