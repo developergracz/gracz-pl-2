@@ -15,6 +15,8 @@ import { createNewsletterWithdrawalRoute } from "./routes/newsletter-withdrawal-
 import { createSelfServiceWithdrawal } from "./persistence/recovery/self-service-withdrawal.mjs";
 import { createWithdrawalChallengeMailer } from "./persistence/recovery/withdrawal-challenge-mailer.mjs";
 import { createResendProviderOff } from "./persistence/recovery/resend-provider-off.mjs";
+import {createFreshNewsletter,createFreshResend} from "./persistence/fresh-newsletter.mjs";
+import {createFreshNewsletterRoute} from "./routes/newsletter-fresh-route.mjs";
 import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
 
@@ -143,6 +145,25 @@ async function checkWithdrawalReady() {
   }catch{return false;}
 }
 
+// A separate, opt-in-only system. The compromised legacy n1/ns1 manager remains held.
+const FRESH_REQUESTED = process.env.NEWSLETTER_FRESH_ENABLED === '1';
+const FRESH_KEY_TEXT = String(process.env.NEWSLETTER_FRESH_KEY||'').trim();
+const FRESH_KEY_BYTES = /^[A-Za-z0-9_-]{43}$/.test(FRESH_KEY_TEXT)
+  ? Buffer.from(FRESH_KEY_TEXT,'base64url') : null;
+const FRESH_SEGMENT_ID = String(process.env.NEWSLETTER_FRESH_SEGMENT_ID||'').trim();
+const FRESH_ENABLED = Boolean(FRESH_REQUESTED && database.enabled && RESEND_API_KEY &&
+  WITHDRAWAL_RESEND_API_KEY && FRESH_KEY_BYTES?.length===32 &&
+  FRESH_KEY_BYTES.toString('base64url')===FRESH_KEY_TEXT &&
+  /^[0-9a-f-]{36}$/i.test(FRESH_SEGMENT_ID));
+if(FRESH_REQUESTED&&!FRESH_ENABLED)
+  console.error('FRESH_NEWSLETTER_DISABLED',{code:'FRESH_CONFIG_INCOMPLETE'});
+const freshNewsletter = FRESH_ENABLED ? (()=>{
+  const provider=createFreshResend({sendKey:RESEND_API_KEY,manageKey:WITHDRAWAL_RESEND_API_KEY,
+    emailFrom:EMAIL_FROM,segmentId:FRESH_SEGMENT_ID,
+    topicId:String(process.env.NEWSLETTER_FRESH_TOPIC_ID||'').trim()||undefined});
+  return createFreshNewsletter({database,rootKey:FRESH_KEY_BYTES,mailer:provider,provider});
+})() : null;
+
 const TURNSTILE_SECRET_KEY = String(process.env.TURNSTILE_SECRET_KEY || "").trim();
 const TURNSTILE_SITE_KEY = String(process.env.TURNSTILE_SITE_KEY || "").trim();
 const TURNSTILE_ENABLED = Boolean(TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY);
@@ -256,6 +277,13 @@ const handleNewsletterWithdrawal = createNewsletterWithdrawalRoute({
   readJson,json,setCors,normalizeEmail
 });
 
+const handleFreshNewsletter = createFreshNewsletterRoute({
+  allowedOrigins:ALLOWED_ORIGINS,manager:freshNewsletter,
+  ready:async()=>Boolean(freshNewsletter&&await freshNewsletter.readiness()),
+  rateLimit,ipBuckets:newsletterIpBuckets,hashValue,clientIp,
+  readJson,json,setCors,normalizeEmail
+});
+
 const handlePremiumReplyRequest = createPremiumReplyRoute({
   allowedOrigins: ALLOWED_ORIGINS,
   premiumReply,
@@ -299,6 +327,10 @@ const server = createServer(async (req, res) => {
         newsletterConfigured: newsletter.enabled,
         newsletterConsentLedger: newsletter.consentLedgerConfigured,
       });
+    }
+
+    if (url.pathname.startsWith('/newsletter/fresh-')) {
+      return await handleFreshNewsletter(req,res,url);
     }
 
     if (req.method === "GET" && url.pathname === "/newsletter/ready") {

@@ -2,7 +2,7 @@
   'use strict';
 
   var CONTACT_API='https://gracz-contact-api.onrender.com/contact';
-  var NEWSLETTER_API='https://gracz-contact-api.onrender.com/newsletter/subscribe';
+  var NEWSLETTER_API='https://gracz-contact-api.onrender.com/newsletter/fresh-request';
   // F-02 controlled release: keep public opt-in disabled until separate Owner GO.
   // This flag is deliberately fail-closed; it does not probe or activate the API.
   var NEWSLETTER_PUBLIC_INTAKE_ENABLED=false;
@@ -692,7 +692,8 @@
           email:String(email.value||'').trim(),
           consent:Boolean(consent.checked),
           website:String(form.elements.website&&form.elements.website.value||'').trim(),
-          startedAt:Number(form.dataset.newsletterOpenedAt||Date.now())
+          startedAt:Number(form.dataset.newsletterOpenedAt||Date.now()),
+          source:'footer'
         }),
         mode:'cors',
         credentials:'omit',
@@ -734,7 +735,7 @@
     if(NEWSLETTER_PUBLIC_INTAKE_ENABLED)return; // Interactive E2E fixture.
     try{
       var abort=new AbortController(), timer=window.setTimeout(function(){abort.abort();},5000), response;
-      try{response=await fetch('https://gracz-contact-api.onrender.com/newsletter/ready',{method:'GET',credentials:'omit',mode:'cors',cache:'no-store',redirect:'error',signal:abort.signal});}
+      try{response=await fetch('https://gracz-contact-api.onrender.com/newsletter/fresh-ready',{method:'GET',credentials:'omit',mode:'cors',cache:'no-store',redirect:'error',signal:abort.signal});}
       finally{window.clearTimeout(timer);}
       if(response.status!==200)return;
       var ready=await response.json();
@@ -747,11 +748,8 @@
         if(consent)consent.disabled=false;
         setFooterNewsletterStatus(form,'');
       });
-      if(dialog){
-        var opt=dialog.querySelector('.contact-form__newsletter'),check=dialog.querySelector('[name="newsletter"]');
-        if(opt){opt.hidden=false;opt.style.display='';opt.removeAttribute('aria-hidden');}
-        if(check)check.disabled=false;
-      }
+      // Contact form's legacy newsletter checkbox remains disabled:
+      // the new, consent-only path is currently the newsletter page and footers.
     }catch(_){/* Fail closed: retain disabled opt-in on errors. */}
   }
   enableNewsletterFormsOnlyWhenReady();
