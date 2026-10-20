@@ -8,6 +8,8 @@ test('authenticated OWNER session precedes draft readiness route',()=>{
     router.indexOf("path===PREFIX+'/campaign-drafts/availability'"));
   assert.match(router,/if\(campaignDraftsEnabled&&campaignDraftStore&&database\?\.enabled\)/);
   assert.match(router,/to_regclass\('newsletter_campaigns\.campaigns'\)/);
+  assert.match(router,/has_schema_privilege\(current_user,'newsletter_campaigns','USAGE'\)/);
+  assert.match(router,/has_table_privilege\(current_user,'newsletter_campaigns\.campaigns','SELECT,INSERT'\)/);
   assert.match(router,/enabled:ready/);
   assert.match(router,/campaignDraftsEnabled=false/);
 });
