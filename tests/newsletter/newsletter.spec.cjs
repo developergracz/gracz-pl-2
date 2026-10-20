@@ -182,7 +182,7 @@ test('bounded timeout is ambiguous, no concurrent duplicate request',async({page
   await expect(page.locator('#nl-request-status')).not.toContainText('Spróbuj ponownie');
   expect(requests).toHaveLength(1);
 });
-test('footer premium validation and modal link share the status flow',async({page},info)=>{
+test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   const requests=await mock(page);
   await page.goto('/');
   const reject=page.getByRole('button', { name: 'Odrzuć wszystko' });
@@ -197,10 +197,13 @@ test('footer premium validation and modal link share the status flow',async({pag
   await form.locator('button[type="submit"]').click();
   const dialog=page.locator('#newsletter-success-modal');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('nie potwierdza statusu subskrypcji ani dostarczenia');
+  await expect(dialog).toContainText('Ten adres może być już aktywny');
+  await expect(dialog).toContainText('statusu adresu nie ujawniamy bez potwierdzenia');
+  await expect(dialog.locator('a[href="/newsletter/#nl-status-panel"]')).toHaveCount(0);
   await page.screenshot({path:info.outputPath('footer-newsletter-modal.png'),fullPage:false});
-  await dialog.locator('a[href="/newsletter/#nl-status-panel"]').click();
-  await expect(page.locator('#nl-status-form')).toBeVisible();
+  await dialog.locator('.newsletter-success__cta').click();
+  await expect(dialog).toBeHidden();
+  expect(requests).toHaveLength(1);
 });
 test('malformed email blocks request and leaving page discards bearer action',async({page})=>{
   const requests=await mock(page);

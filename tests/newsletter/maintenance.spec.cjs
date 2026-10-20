@@ -106,7 +106,7 @@ test('HTTP 200 without schema confirmation still blocks newsletter signup', asyn
 
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
-    expect(readFileSync(path.join(root,file),'utf8'),file).toContain('/assets/legal-links.js?v=r40-new-only-r1');
+    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1)/);
   }
 });
 

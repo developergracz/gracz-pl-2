@@ -294,7 +294,7 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/legal-links.js?v=r40-new-only-r1'), `${rel}: legal/contact trigger exists but legal-links.js R38 maintenance is missing`);
+    requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1)/.test(html)), `${rel}: approved legal/contact script version missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
@@ -333,7 +333,7 @@ requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r3-maintenance-r2"),
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");
-requireCheck(legalLinksJs.includes("Zgłoszenie przyjęte"), "premium newsletter success copy missing");
+requireCheck(legalLinksJs.includes("Ten adres może być już aktywny"), "premium newsletter duplicate-safe copy missing");
 requireCheck(legalLinksJs.includes("await openNewsletterSuccess(submit)"), "footer newsletter success must open premium modal");
 const footerNewsletterCss = fs.readFileSync(path.resolve(root, "assets/footer-newsletter.css"), "utf8");
 requireCheck(footerNewsletterCss.includes("max-width:470px"), "footer newsletter: compact max width missing");
