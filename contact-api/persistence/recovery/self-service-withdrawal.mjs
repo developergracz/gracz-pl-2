@@ -29,12 +29,13 @@ function key(value){
 }
 export function createSelfServiceWithdrawal({
   database,recipientTagKey,challengeKey,encryptionKey,challengeMailer,
-  providerOff,now=()=>Date.now()
+  providerOff,afterVerifiedRecipient=async()=>{},now=()=>Date.now()
 }={}) {
   if(typeof database?.transaction!=='function'||
      typeof challengeMailer?.sendChallenge!=='function'||
      typeof providerOff?.ensureOff!=='function'||
-     typeof providerOff?.verifyOff!=='function'||typeof now!=='function')
+     typeof providerOff?.verifyOff!=='function'||typeof now!=='function'||
+     typeof afterVerifiedRecipient!=='function')
     throw new TypeError('Durable PostgreSQL, challenge delivery and provider OFF required');
   const tagKey=key(recipientTagKey),tokenKey=key(challengeKey),dataKey=key(encryptionKey);
   if(tagKey.equals(tokenKey)||tagKey.equals(dataKey)||tokenKey.equals(dataKey))
@@ -141,6 +142,7 @@ export function createSelfServiceWithdrawal({
         if(expected.length!==32||!timingSafeEqual(expected,actual))throw deny();
         const email=unseal(record);
         if(recipientTag(email)!==record.recipient_tag)throw deny();
+        await afterVerifiedRecipient({email,challengeId,client});
         const requestId=randomUUID();
         await client.query(
           "INSERT INTO newsletter_recovery.withdrawal_requests " +
