@@ -76,7 +76,7 @@ export function createCampaignRecipientEvidenceReview({
      timingSafeEqual(subject,withdrawal))
     throw invalid();
 
-  return async function reviewOne(emailTag,expectedAddress){
+  async function reviewOne(emailTag,expectedAddress,onRecipient){
     if(typeof emailTag!=='string'||!HEX64.test(emailTag))throw invalid();
     // The optional expected address is supplied only by a private, future
     // dispatch adapter. Merely possessing an email_tag must never authorize
@@ -137,10 +137,19 @@ export function createCampaignRecipientEvidenceReview({
     if(result?.rows?.length!==1||
        typeof result.rows[0]?.withdrawn!=='boolean')throw invalid();
     if(result.rows[0].withdrawn)return verdict('verified_withdrawal');
+    if(onRecipient)onRecipient(email);
     if(!matchAddress)return verdict('evidence_complete_for_review');
     // Additional evidence, never a sender permit: only inside the separate
     // global send fence and after a durable delivery claim can this be used.
     return Object.freeze({...verdict('evidence_complete_for_review'),
       recipientMatched:true});
+  }
+  const review=(emailTag,expectedAddress)=>reviewOne(emailTag,expectedAddress);
+  // Private process memory only; never expose this address in OWNER responses.
+  review.resolveRecipient=async emailTag=>{
+    let recipient=null;
+    await reviewOne(emailTag,undefined,email=>{recipient=email;});
+    return recipient;
   };
+  return Object.freeze(review);
 }

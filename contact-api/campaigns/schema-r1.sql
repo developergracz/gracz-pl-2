@@ -1,9 +1,10 @@
 -- Campaigns R1 schema CANDIDATE. NOT wired to automatic production migrations.
 -- Apply only in an approved release after backup and verified consent safeguards.
-CREATE SCHEMA newsletter_campaigns;
+-- Also extends the existing draft-only schema; apply ONCE in one transaction.
+CREATE SCHEMA IF NOT EXISTS newsletter_campaigns;
 REVOKE ALL ON SCHEMA newsletter_campaigns FROM PUBLIC;
 
-CREATE TABLE newsletter_campaigns.campaigns (
+CREATE TABLE IF NOT EXISTS newsletter_campaigns.campaigns (
   id uuid PRIMARY KEY,
   subject varchar(160) NOT NULL CHECK (length(subject) BETWEEN 3 AND 160),
   body text NOT NULL CHECK (length(body) BETWEEN 10 AND 20000),
@@ -184,3 +185,19 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION newsletter_campaigns.record_delivery_result(uuid,uuid,uuid,boolean)
   FROM PUBLIC;
+
+-- Approval freezes the exact content, including against direct SQL edits.
+CREATE FUNCTION newsletter_campaigns.protect_approved_content()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.approved_at IS NOT NULL AND
+     (NEW.subject,NEW.body,NEW.audience,NEW.approved_at) IS DISTINCT FROM
+     (OLD.subject,OLD.body,OLD.audience,OLD.approved_at) THEN
+    RAISE EXCEPTION 'campaign_approved_content_immutable';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER campaigns_approved_content_immutable
+BEFORE UPDATE ON newsletter_campaigns.campaigns
+FOR EACH ROW EXECUTE FUNCTION newsletter_campaigns.protect_approved_content();
+REVOKE ALL ON TABLE newsletter_campaigns.dispatches,newsletter_campaigns.dispatch_events FROM PUBLIC;

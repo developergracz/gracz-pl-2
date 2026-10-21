@@ -82,3 +82,36 @@ zmienia historycznego globalnego HOLD ani nie uruchamia wysyłek.
 4. Wykonać testy integracyjne i otrzymać odrębne zatwierdzenie wdrożenia wysyłki. Domyślnie pozostawić funkcję wysyłania wyłączoną.
 
 Rejestr subskrybentów w OWNER pozostaje tylko do odczytu; operacje zapisu obejmują wyłącznie własne wersje robocze kampanii.
+
+## #333 — ręczna wysyłka zatwierdzonej kampanii (kandydat, domyślnie OFF)
+
+Powyższe opisy niepodłączonych adapterów opisują wcześniejsze etapy. Nowa akcja
+`POST /owner/newsletter/campaigns/send` łączy istniejące adaptery, bez schedulera.
+Wymaga sesji OWNER, Origin, CSRF i wpisania `WYSYŁAM KAMPANIĘ` w panelu.
+Wysyła wyłącznie niezmienioną treść `approved`, do nowego rejestru DOI.
+Każdy odbiorca ma trwałą rezerwację i jednokrotny claim. Kontrola DOI,
+powiązania adresu, wypisań i dowodów provider-OFF jest ponawiana wewnątrz
+`withSendPermit`; istniejący globalny HOLD pozostaje bez zmian. Odpowiedź
+zawiera tylko liczniki, nigdy adresy ani identyfikatory odbiorców.
+
+Po **odrębnym GO OWNER**, rozwiązaniu blokujących zgłoszeń wypisań i
+zweryfikowaniu obsługi wypisania:
+1. Po kopii bazy zastosować **jedną ręczną migrację `schema-r1.sql`** w jednej
+   transakcji. Rozszerza istniejącą tabelę kampanii o rejestr prób i procedury;
+   blokuje również zmianę zatwierdzonej treści. Nie jest w automatycznym migratorze.
+   Uprawnienia roli API: istniejące SELECT kampanii/subskrybentów/dowodów,
+   SELECT/INSERT/UPDATE dispatches, INSERT dispatch_events, EXECUTE trzech
+   procedur reserve_confirmed/claim_delivery/record_delivery_result. Blokady
+   wierszy wymagają również uprawnień UPDATE kampanii i subskrybentów.
+2. Zachować istniejące klucze nowego rejestru i `WITHDRAWAL_RECIPIENT_TAG_KEY`.
+   Osobno włączyć `NEWSLETTER_CAMPAIGN_SEND_ENABLED=1`. Brak flagi, konfiguracji,
+   dostępnej bazy lub pozwolenia bramki blokuje wysyłkę.
+3. OWNER wybiera zatwierdzoną kampanię i świadomie potwierdza wysłanie.
+   Żądanie przetwarza odbiorców sekwencyjnie, stronami po 100; przy dużej liście
+   może przekroczyć limit czasu HTTP. Brak odpowiedzi **nie** oznacza braku wysyłki.
+4. Przy wyniku niepewnym przerwać i sprawdzić trwały rejestr. Nie resetować
+   `inflight`/`uncertain`, nie usuwać rezerwacji i nie ponawiać automatycznie.
+   Ponowne ręczne żądanie pomija wszystkie istniejące rezerwacje, także te
+   sprzed restartu. `accepted` oznacza przyjęcie przez Resend, nie doręczenie.
+
+Ten PR nie wykonuje migracji produkcji, wysyłki, zmiany flag ani zdjęcia HOLD.

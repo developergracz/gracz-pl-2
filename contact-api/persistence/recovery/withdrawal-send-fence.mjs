@@ -44,7 +44,7 @@ export function createWithdrawalSendFence(database) {
       if (result.rows[0].requests_exist || result.rows[0].obligations_exist) {
         throw refuse('WITHDRAWAL_SEND_BLOCKED');
       }
-      return effect();
+      return effect(client);
     });
   }
   return Object.freeze({

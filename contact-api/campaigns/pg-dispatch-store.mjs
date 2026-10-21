@@ -11,6 +11,19 @@ export function createCampaignPgDispatchStore({database}={}) {
   if(typeof database?.transaction!=='function')
     throw new TypeError('durable_postgres_required');
   return Object.freeze({
+    async reserve({campaignId,emailTag}) {
+      validId(campaignId);
+      if(typeof emailTag!=='string'||!/^[0-9a-f]{64}$/.test(emailTag))
+        throw new TypeError('invalid_recipient_tag');
+      const dispatchId=randomUUID();
+      const reserved=await database.transaction(async client=>{
+        const r=await client.query(
+          'SELECT newsletter_campaigns.reserve_confirmed($1::uuid,$2::uuid,$3::uuid,$4::char(64)) AS reserved',
+          [campaignId,dispatchId,randomUUID(),emailTag]);
+        return r.rows?.[0]?.reserved===true;
+      });
+      return reserved?dispatchId:null;
+    },
     async claim({campaignId,dispatchId}) {
       validId(campaignId);validId(dispatchId);
       return database.transaction(async client=>{

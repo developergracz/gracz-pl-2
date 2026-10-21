@@ -100,7 +100,8 @@ export function createOwnerRouter({
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
   recoverySecret,recoveryMailer,recoveryEnabled=false,
   campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null,
-  campaignWithdrawalReady=null,campaignEgressReady=null,campaignTestSender=null
+  campaignWithdrawalReady=null,campaignEgressReady=null,campaignTestSender=null,
+  campaignSender=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -241,7 +242,10 @@ export function createOwnerRouter({
         let testSendEnabled=false;
         if(ready&&typeof campaignTestSender?.available==='function')
           testSendEnabled=await campaignTestSender.available();
-        return response(res,200,{ok:true,enabled:ready,testSendEnabled});
+        let campaignSendEnabled=false;
+        if(ready&&typeof campaignSender?.available==='function')
+          campaignSendEnabled=await campaignSender.available();
+        return response(res,200,{ok:true,enabled:ready,testSendEnabled,campaignSendEnabled});
       }
       if(req.method==='POST'&&path===PREFIX+'/campaign-drafts/audience'){
         if(!campaignDraftsEnabled||!campaignDraftStore||
@@ -264,6 +268,19 @@ export function createOwnerRouter({
         }catch{globalEgressReady=false;}
         // Both booleans are advisory. Neither authorizes marketing egress.
         return response(res,200,{...evidence,withdrawalReady,globalEgressReady});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/campaigns/send'){
+        if(!campaignDraftsEnabled||typeof campaignSender?.send!=='function')
+          return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==2||!Object.hasOwn(data,'id')||
+           data.confirmation!=='WYSYŁAM KAMPANIĘ')return reject(res);
+        try{
+          const result=await campaignSender.send(data.id);
+          return response(res,result.state==='uncertain'?202:200,{ok:true,...result});
+        }catch{return reject(res,503);}
       }
       if(req.method==='POST'&&path===PREFIX+'/campaign-tests/send'){
         // Explicit OWNER click is necessary, but never sufficient: dedicated

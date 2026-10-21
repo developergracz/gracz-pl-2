@@ -759,12 +759,13 @@ campaignPreviewForm?.addEventListener("submit",event=>{
 
 
 // OWNER draft API: server retains the release gate; UI unlocks only when explicitly enabled.
-// No campaign send endpoints exist here.
+// Campaign sending requires its separate server-side gate and explicit confirmation.
 const draftSaveButton=$("campaign-save-draft");
 const draftRefreshButton=$("campaign-refresh-drafts");
 const campaignTestButton=$("campaign-send-test");
 const campaignApproveButton=$("campaign-approve-content");
 let campaignTestReady=false;
+let campaignSendReady=false;
 const draftStatus=$("campaign-preview-status");
 async function draftRequest(route,payload){
   const response=await fetch("/owner/newsletter/campaign-drafts/"+route,{
@@ -815,6 +816,34 @@ async function refreshApproved(){
   for(const campaign of result.campaigns||[]){
     const li=document.createElement("li");
     li.textContent=String(campaign.subject||"")+ " — zatwierdzono, bez wysyłki";
+    const send=document.createElement("button");
+    send.type="button";
+    send.textContent="Wyślij zatwierdzoną kampanię";
+    send.disabled=!campaignSendReady;
+    send.addEventListener("click",async()=>{
+      const phrase=window.prompt("Uruchomienie wysyła zatwierdzoną kampanię: "+
+        campaign.subject+". Wpisz: WYSYŁAM KAMPANIĘ");
+      if(phrase!=="WYSYŁAM KAMPANIĘ")return;
+      send.disabled=true;
+      const status=$("campaign-send-status");
+      status.textContent="Trwa ręczna wysyłka kampanii. Nie ponawiaj żądania.";
+      try{
+        const response=await fetch("/owner/newsletter/campaigns/send",{
+          method:"POST",credentials:"same-origin",headers:{
+            "Content-Type":"application/json","X-Owner-CSRF":ownerCsrf
+          },body:JSON.stringify({id:campaign.id,confirmation:phrase})
+        });
+        const result=await response.json();
+        if(!response.ok||result?.ok!==true)throw Error("campaign_send_failed");
+        status.textContent=result.state==="finished"
+          ?"Zakończono próbę. Przyjęte przez dostawcę: "+result.accepted+
+            ". Pominięte: "+result.suppressed+". Przyjęcie nie oznacza doręczenia."
+          :"Wynik niepewny. Nie ponawiaj wysyłki; wymagane sprawdzenie przez operatora.";
+      }catch{
+        status.textContent="Brak potwierdzenia wyniku. Nie ponawiaj wysyłki; sprawdź blokady i trwały rejestr prób.";
+      }
+    });
+    li.append(send);
     list.append(li);
   }
 }
@@ -980,6 +1009,7 @@ async function checkCampaignDraftAvailability(){
   if(draftSaveButton)draftSaveButton.disabled=true;
   if(draftRefreshButton)draftRefreshButton.disabled=true;
   campaignTestReady=false;
+  campaignSendReady=false;
   if(campaignTestButton)campaignTestButton.disabled=true;
   if(campaignApproveButton)campaignApproveButton.disabled=!editingCampaignId;
   const availabilityDescription=$("campaign-drafts-description");
@@ -995,6 +1025,7 @@ async function checkCampaignDraftAvailability(){
       if(availabilityDescription)availabilityDescription.textContent=
         "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
       campaignTestReady=data.testSendEnabled===true;
+      campaignSendReady=data.campaignSendEnabled===true;
       if(campaignTestButton)campaignTestButton.disabled=!(campaignTestReady&&editingCampaignId);
       const description=$("campaign-test-description");
       if(description)description.textContent=campaignTestReady
