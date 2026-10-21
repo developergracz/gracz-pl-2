@@ -6,9 +6,14 @@
 //   node contact-api/operations/repair-repeat-withdrawal-marker.mjs                    count only
 //   node contact-api/operations/repair-repeat-withdrawal-marker.mjs --address          one address, read-only
 //   node contact-api/operations/repair-repeat-withdrawal-marker.mjs --address --apply  after OWNER approval
+// On a terminal the address is typed with TTY echo off; the terminal settings
+// are restored on Enter, EOF, Ctrl+C, a signal, a stream error or exit.
+// Exit 0 done, 1 refused/unavailable (no change), 2 COMMIT outcome uncertain
+// (re-check with --address, READ-ONLY), 128+N interrupted while typing.
 // Sets only repeat_withdrawn_at from append-only newsletter_recovery evidence.
 // Never prints an email, tag, key, challenge or raw error; never sends mail.
 import {createHmac} from 'node:crypto';
+import {constants} from 'node:os';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
@@ -47,6 +52,9 @@ LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
 WHERE s.email_tag=$1
 `;
 const invalid=()=>new Error('REPEAT_WITHDRAWAL_REPAIR_UNAVAILABLE');
+const INPUT_ABORTED='REPEAT_WITHDRAWAL_INPUT_ABORTED';
+// A lost COMMIT acknowledgement proves neither COMMIT nor ROLLBACK.
+const UNCERTAIN=Object.freeze({repaired:null,state:'WYNIK_NIEPEWNY'});
 
 function emailTag(subjectKey,email){
   if(typeof subjectKey!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(subjectKey))throw invalid();
@@ -90,29 +98,98 @@ export async function inspectRepeatWithdrawal({database,subjectKey,email}={}){
 export async function repairRepeatWithdrawal({database,subjectKey,email}={}){
   if(typeof database?.transaction!=='function')throw invalid();
   const tag=emailTag(subjectKey,email);
-  return database.transaction(async client=>{
-    // Same lock order as DOI, confirmation and verified withdrawal; the
-    // evidence is read as a separate statement after the row lock.
-    await client.query(
-      'SELECT 1 FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',[tag]);
-    const updated=await client.query(`
-      UPDATE newsletter_new.subscribers s SET repeat_withdrawn_at=e.withdrawn_at
-      FROM (${EVIDENCE}) e
-      WHERE s.email_tag=e.email_tag AND s.repeat_withdrawn_at IS NULL
-      RETURNING s.repeat_withdrawn_at
-    `,[tag]);
-    if(updated.rowCount>1)throw invalid();
-    const after=await inspect((sql,params)=>client.query(sql,params),tag);
-    if(updated.rowCount===0)return Object.freeze({repaired:false,...after});
-    if(after.state!=='WYPISANA')throw invalid();
-    return Object.freeze({repaired:true,...after,
-      withdrawnAt:iso(updated.rows[0].repeat_withdrawn_at)});
+  let written=false;
+  try{
+    return await database.transaction(async client=>{
+      // Same lock order as DOI, confirmation and verified withdrawal; the
+      // evidence is read as a separate statement after the row lock.
+      await client.query(
+        'SELECT 1 FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',[tag]);
+      const updated=await client.query(`
+        UPDATE newsletter_new.subscribers s SET repeat_withdrawn_at=e.withdrawn_at
+        FROM (${EVIDENCE}) e
+        WHERE s.email_tag=e.email_tag AND s.repeat_withdrawn_at IS NULL
+        RETURNING s.repeat_withdrawn_at
+      `,[tag]);
+      if(updated.rowCount>1)throw invalid();
+      const after=await inspect((sql,params)=>client.query(sql,params),tag);
+      if(updated.rowCount===0)return Object.freeze({repaired:false,...after});
+      if(after.state!=='WYPISANA')throw invalid();
+      const result=Object.freeze({repaired:true,...after,
+        withdrawnAt:iso(updated.rows[0].repeat_withdrawn_at)});
+      // Only COMMIT remains: from here a failure may follow a durable write.
+      written=true;
+      return result;
+    });
+  }catch(error){
+    // Any earlier failure rolls back (COMMIT was never sent), so it really is
+    // "no change". After the write the server may have committed even though
+    // its answer never arrived; only a READ ONLY re-check can tell.
+    if(written)return UNCERTAIN;
+    throw error;
+  }
+}
+
+// The address must never reach the screen, scrollback or a session recording:
+// on a TTY the terminal's own ECHO is switched off (raw mode) BEFORE the prompt,
+// and every way out restores it before the promise settles.
+const ABORT_KEYS=Object.freeze({'\x03':'SIGINT','\x1c':'SIGQUIT'});
+const STOP_SIGNALS=Object.freeze(['SIGINT','SIGTERM','SIGHUP','SIGQUIT']);
+const aborted=signal=>Object.assign(new Error(INPUT_ABORTED),{code:INPUT_ABORTED,signal});
+
+export function readHiddenLine({input=process.stdin,output=process.stdout,signals=process,
+  prompt='Adres e-mail (nie zostanie wypisany): '}={}){
+  if(!input?.isTTY)return readPipedLine({input,output,prompt});
+  return new Promise((resolvePromise,reject)=>{
+    let value='',done=false,prompted=false;
+    const restore=()=>{try{input.setRawMode(false);}catch{}};
+    const finish=(error,line)=>{
+      if(done)return;
+      done=true;
+      input.removeListener('data',onData);
+      input.removeListener('end',onEnd);
+      input.removeListener('error',onError);
+      for(const name of STOP_SIGNALS)signals.removeListener(name,onSignal);
+      signals.removeListener('exit',restore);
+      restore();
+      try{input.pause();if(prompted)output.write('\n');}catch{}
+      if(error)reject(error);else resolvePromise(line);
+    };
+    const onData=chunk=>{
+      try{
+        for(const char of String(chunk)){
+          if(char==='\r'||char==='\n'||char==='\x04')return finish(null,value);
+          if(Object.hasOwn(ABORT_KEYS,char))return finish(aborted(ABORT_KEYS[char]));
+          if(char==='\x7f'||char==='\b')value=Array.from(value).slice(0,-1).join('');
+          else if(char==='\x15')value='';
+          else if(char>=' '&&value.length<320)value+=char;
+        }
+      }catch(error){finish(error);}
+    };
+    const onEnd=()=>finish(null,value);
+    const onError=error=>finish(error);
+    const onSignal=signal=>finish(aborted(signal));
+    // In raw mode Ctrl+C is a byte; external signals and exit still restore.
+    signals.on('exit',restore);
+    for(const name of STOP_SIGNALS)signals.on(name,onSignal);
+    input.on('error',onError);
+    try{
+      input.setRawMode(true);
+      if(input.isRaw!==true)throw invalid();
+      output.write(prompt);
+      prompted=true;
+    }catch(error){return finish(error);}
+    input.setEncoding('utf8');
+    input.on('end',onEnd);
+    input.on('data',onData);
+    input.resume();
   });
 }
 
-async function readAddress(){
-  process.stdout.write('Adres e-mail (nie zostanie wypisany): ');
-  const lines=createInterface({input:process.stdin,terminal:false});
+// Piped stdin has no terminal echo; keep reading exactly one line.
+async function readPipedLine({input,output,prompt}){
+  output.write(prompt);
+  const lines=createInterface({input,terminal:false});
   for await(const line of lines){lines.close();return line;}
   return '';
 }
@@ -129,18 +206,31 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
         const n=await countRepeatWithdrawalsWithoutMarker({database});
         console.log('HISTORYCZNE WYPISANIA BEZ ZNACZNIKA:',n);
       }else{
-        const input={database,subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,email:await readAddress()};
+        const input={database,subjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,email:await readHiddenLine()};
         const result=args.endsWith('--apply')?await repairRepeatWithdrawal(input):
           await inspectRepeatWithdrawal(input);
         console.log('STAN:',result.state);
         if(result.requestedAt)console.log('OSTATNI ZAPIS (requested_at):',result.requestedAt);
         if(result.withdrawnAt)console.log('ZWERYFIKOWANE WYPISANIE:',result.withdrawnAt);
-        if('repaired' in result)console.log('WYNIK NAPRAWY:',result.repaired?'ZNACZNIK ZAPISANY':'BEZ ZMIAN');
+        if(result===UNCERTAIN){
+          console.log('WYNIK NAPRAWY: NIEPEWNY — COMMIT MOGL ZOSTAC ZAPISANY, ODPOWIEDZ BAZY NIE DOTARLA');
+          console.log('SPRAWDZ STAN TYLKO DO ODCZYTU (READ-ONLY), BEZ --apply:');
+          console.log('  node contact-api/operations/repair-repeat-withdrawal-marker.mjs --address');
+          console.log('NIE POWTARZAJ --apply PRZED TYM SPRAWDZENIEM.');
+          process.exitCode=2;
+        }else if('repaired' in result)console.log('WYNIK NAPRAWY:',result.repaired?'ZNACZNIK ZAPISANY':'BEZ ZMIAN');
       }
-    }catch{
-      // pg errors can contain private details; never expose them in Shell logs.
-      console.log('KONTROLA NIEDOSTEPNA — BEZ ZMIAN');
-      process.exitCode=1;
+    }catch(error){
+      if(error?.code===INPUT_ABORTED){
+        // Interrupted while typing: nothing has been sent to the database yet.
+        console.log('PRZERWANO — BEZ ZMIAN');
+        process.exitCode=128+(constants.signals[error.signal]||constants.signals.SIGINT);
+      }else{
+        // pg errors can contain private details; never expose them in Shell logs.
+        // Every path here failed before COMMIT or wrote nothing (see UNCERTAIN).
+        console.log('KONTROLA NIEDOSTEPNA — BEZ ZMIAN');
+        process.exitCode=1;
+      }
     }finally{
       await database.close().catch(()=>{});
     }

@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHmac,randomBytes} from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {connect,createServer} from 'node:net';
+import {fileURLToPath} from 'node:url';
 import {createDatabase} from '../persistence/database.mjs';
 import {assertDisposableDatabaseUrl} from './test-database-guard.mjs';
 import {createNewOnlyNewsletter} from '../new-only-newsletter.mjs';
@@ -14,6 +17,7 @@ import {createCampaignRecipientEvidenceReview} from '../campaigns/recipient-evid
 import {
   countRepeatWithdrawalsWithoutMarker,inspectRepeatWithdrawal,repairRepeatWithdrawal
 } from '../operations/repair-repeat-withdrawal-marker.mjs';
+import {runOnPty} from '../test-support/pty-session.mjs';
 
 const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22);
 const withdrawalTag=Buffer.alloc(32,33);
@@ -221,4 +225,101 @@ test('an expired DOI without a later verified withdrawal is never marked withdra
   assert.deepEqual(await evidenceCounts(),evidence);
   assert.equal((await inspectRepeatWithdrawal({database,subjectKey,email:'missing@example.test'})).state,'BRAK_REKORDU');
   await assert.rejects(inspectRepeatWithdrawal({database,subjectKey:'short',email}));
+});
+
+const cli=fileURLToPath(new URL('../operations/repair-repeat-withdrawal-marker.mjs',import.meta.url));
+const cliEnv=databaseUrl=>({PATH:process.env.PATH||'/usr/bin:/bin',DATABASE_URL:databaseUrl,
+  NEWSLETTER_NEW_SUBJECT_KEY:subjectKey});
+function runCli(args,{databaseUrl,email}){
+  return new Promise((resolve,reject)=>{
+    const child=spawn(process.execPath,[cli,...args],{env:cliEnv(databaseUrl)});
+    let output='';
+    child.stdout.on('data',chunk=>{output+=chunk;});
+    child.stderr.on('data',chunk=>{output+=chunk;});
+    child.on('error',reject);
+    child.on('close',code=>resolve({code,output}));
+    child.stdin.end(email+'\n');
+  });
+}
+
+// Forwards PostgreSQL traffic. The first client message containing `marker`
+// still reaches the server and runs there, but its answer is never delivered.
+async function answerDroppingProxy(databaseUrl,marker){
+  const target=new URL(databaseUrl),sockets=new Set();
+  let armed=true;
+  const server=createServer(client=>{
+    const upstream=connect(Number(target.port||5432),target.hostname.replace(/^\[|\]$/g,''));
+    let dropping=false;
+    for(const [from,to] of [[client,upstream],[upstream,client]]){
+      sockets.add(from);
+      from.on('error',()=>to.destroy());
+      from.on('close',()=>to.destroy());
+    }
+    client.on('data',chunk=>{
+      if(armed&&chunk.includes(marker)){armed=false;dropping=true;}
+      upstream.write(chunk);
+    });
+    upstream.on('data',chunk=>{
+      if(!dropping)return void client.write(chunk);
+      client.destroy();
+      upstream.destroy();
+    });
+  });
+  await new Promise(done=>server.listen(0,'127.0.0.1',done));
+  const url=new URL(databaseUrl);
+  url.hostname='127.0.0.1';
+  url.port=String(server.address().port);
+  return {url:url.href,get dropped(){return !armed;},
+    close(){for(const socket of sockets)socket.destroy();return new Promise(done=>server.close(done));}};
+}
+const COMMIT_MESSAGE=Buffer.from('Q\0\0\0\x0bCOMMIT\0','latin1');
+const MARKER_WRITE=Buffer.from('SET repeat_withdrawn_at=e.withdrawn_at');
+
+test('CLI: hidden address on a real PTY; a lost COMMIT answer is uncertain, never "BEZ ZMIAN"',{timeout:60000},async t=>{
+  const {database,manager,subscribe,withdraw}=await fixture(t);
+  const email='uncertain@example.test',url=process.env.DATABASE_URL;
+  await manager.confirm(await subscribe(email));
+  await withdraw(email);
+  await manager.confirm(await subscribe(email));
+  await withdraw(email,pre354Withdrawal);
+  const marker=async()=>(await database.query(
+    'SELECT repeat_withdrawn_at FROM newsletter_new.subscribers WHERE email_tag=$1',[tagOf(email)])).rows[0].repeat_withdrawn_at;
+
+  // The exact address arrives through the hidden input; the terminal never shows it.
+  const pty=await runOnPty({argv:[process.execPath,cli,'--address'],env:cliEnv(url),
+    steps:[{wait:'(nie zostanie wypisany): '},{snapshot:'typing'},{write:email+'\r'}]});
+  assert.equal(pty.error,undefined);
+  assert.equal(pty.typing.echo,false);
+  assert.equal(pty.code,0);
+  assert.match(pty.text,/STAN: HISTORYCZNE_WYPISANIE_BEZ_ZNACZNIKA/);
+  assert.equal(pty.text.includes('uncertain@'),false);
+  assert.deepEqual(pty.after.attrs,pty.before.attrs);
+
+  // Connection lost before COMMIT: PostgreSQL rolls back, so "BEZ ZMIAN" is true.
+  let proxy=await answerDroppingProxy(url,MARKER_WRITE);
+  let run=await runCli(['--address','--apply'],{databaseUrl:proxy.url,email});
+  await proxy.close();
+  assert.equal(proxy.dropped,true);
+  assert.equal(run.code,1);
+  assert.match(run.output,/KONTROLA NIEDOSTEPNA — BEZ ZMIAN/);
+  assert.equal(await marker(),null);
+
+  // COMMIT reaches PostgreSQL and is applied, but its answer never arrives.
+  proxy=await answerDroppingProxy(url,COMMIT_MESSAGE);
+  run=await runCli(['--address','--apply'],{databaseUrl:proxy.url,email});
+  await proxy.close();
+  assert.equal(proxy.dropped,true);
+  assert.equal(run.code,2);
+  assert.match(run.output,/STAN: WYNIK_NIEPEWNY\n/);
+  assert.match(run.output,/^WYNIK NAPRAWY: NIEPEWNY — COMMIT MOGL ZOSTAC ZAPISANY/m);
+  assert.match(run.output,/READ-ONLY\), BEZ --apply:\n  node contact-api\/operations\/repair-repeat-withdrawal-marker\.mjs --address\n/);
+  assert.doesNotMatch(run.output,/BEZ ZMIAN/);
+  assert.equal(run.output.includes('uncertain@'),false);
+  assert.notEqual(await marker(),null,'the unacknowledged COMMIT was applied');
+
+  // The prescribed READ-ONLY re-check reports the real state.
+  run=await runCli(['--address'],{databaseUrl:url,email});
+  assert.equal(run.code,0);
+  assert.match(run.output,/STAN: WYPISANA\n/);
+  assert.equal(await countRepeatWithdrawalsWithoutMarker({database}),0);
 });
