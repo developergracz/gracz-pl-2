@@ -1112,6 +1112,19 @@ campaignApproveButton?.addEventListener("click",async()=>{
     campaignApproveButton.disabled=!editingCampaignId;
   }
 });
+// Native modal stays centred in the viewport, traps focus and supports Escape.
+// A cancelled or dismissed modal never triggers a request to Resend.
+const campaignTestDialog=$("campaign-test-dialog");
+function confirmCampaignTestSend(){
+  if(!campaignTestDialog||campaignTestDialog.open)return Promise.resolve(false);
+  campaignTestDialog.returnValue="cancel";
+  return new Promise(resolve=>{
+    campaignTestDialog.addEventListener("close",()=>{
+      resolve(campaignTestDialog.returnValue==="confirm");
+    },{once:true});
+    campaignTestDialog.showModal();
+  });
+}
 campaignTestButton?.addEventListener("click",async()=>{
   if(!campaignTestReady||!editingCampaignId)return;
   if(savedCampaignSnapshot?.id!==editingCampaignId||
@@ -1120,7 +1133,7 @@ campaignTestButton?.addEventListener("click",async()=>{
     $("campaign-test-status").textContent="Najpierw zapisz zmiany, aby test odpowiadał zapisanej treści.";
     return;
   }
-  if(!window.confirm("Wysłać JEDNĄ wiadomość testową wyłącznie na skonfigurowany adres obsługi gracz.pl? Nie wysyła to nic do subskrybentów."))return;
+  if(!await confirmCampaignTestSend())return;
   campaignTestButton.disabled=true;
   const status=$("campaign-test-status");
   try{

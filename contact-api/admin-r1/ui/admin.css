@@ -772,3 +772,51 @@ footer .footer-brand span{color:#ff6573}
 #campaign-drafts .campaign-draft-open:focus-visible{
   border-color:var(--accent);background:#1b3344;
 }
+
+/* Full Max Premium: centred, keyboard-accessible single-test confirmation. */
+#campaign-test-dialog{
+  box-sizing:border-box;position:fixed;inset:0;margin:auto;
+  width:min(540px,calc(100vw - 28px));max-width:540px;max-height:calc(100dvh - 30px);
+  padding:0;overflow-y:auto;border-radius:20px;
+  border:1px solid #3d7c7a;background:#112635;color:#f3f8fc;
+  box-shadow:0 28px 90px rgba(0,0,0,.72);
+}
+#campaign-test-dialog::backdrop{background:rgba(0,9,20,.84);}
+#campaign-test-dialog .campaign-test-dialog-content{
+  padding:clamp(20px,4vw,32px);text-align:center;
+}
+#campaign-test-dialog .campaign-test-eyebrow{
+  margin:0 0 18px;color:#66dfd0;letter-spacing:.9px;font-size:11px;font-weight:800;
+}
+#campaign-test-dialog .campaign-test-brand{
+  color:#fff;letter-spacing:-1px;font-size:22px;font-weight:900;
+}
+#campaign-test-dialog .campaign-test-brand span{color:#ff6573;}
+#campaign-test-dialog h2{
+  margin:0 0 16px;font-size:clamp(21px,3vw,26px);line-height:1.3;
+}
+#campaign-test-dialog #campaign-test-description{
+  margin:0 auto;max-width:445px;font-size:15px;line-height:1.6;
+}
+#campaign-test-dialog .campaign-test-assurance{
+  margin:16px auto 22px;max-width:440px;color:#b4cbd3;font-size:13px;line-height:1.65;
+}
+#campaign-test-dialog .campaign-test-dialog-actions{
+  display:flex;justify-content:center;gap:12px;flex-wrap:wrap;
+}
+#campaign-test-dialog .campaign-test-dialog-actions button{
+  min-height:46px;min-width:155px;flex:1 1 185px;font-size:14px;font-weight:800;
+}
+#campaign-test-dialog button[value="confirm"]{
+  background:#50dfca;border-color:#50dfca;color:#09252c;
+}
+#campaign-test-dialog button[value="cancel"]{
+  background:transparent;color:#e7f1f9;border-color:#5c8290;
+}
+#campaign-test-dialog button:focus-visible{
+  outline:3px solid #ffe18d;outline-offset:3px;
+}
+@media(max-width:480px){
+  #campaign-test-dialog .campaign-test-dialog-actions{flex-direction:column;}
+  #campaign-test-dialog .campaign-test-dialog-actions button{width:100%;flex:none;}
+}
