@@ -67,6 +67,15 @@ const labels = {
   pending: "Oczekuje na DOI",
   subscribed: "Potwierdzona",
 };
+// DOI expires 30 minutes after the request. Display-only: no consent is created.
+function consentStateLabel(item, observedAt=Date.now()) {
+  const current=labels[item.state] || "Nieznana";
+  if(item.state!=="pending")return current;
+  const requested=Date.parse(item.requestedAt);
+  return Number.isFinite(requested)&&Number.isFinite(observedAt)&&
+    observedAt-requested>=30*60*1000
+    ? "DOI wygasło — brak potwierdzenia" : current;
+}
 const warsawFormatter = new Intl.DateTimeFormat("pl-PL", {
   timeZone: "Europe/Warsaw", day: "2-digit", month: "2-digit", year: "numeric",
   hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
@@ -223,7 +232,7 @@ async function loadRecent(){
       if(!Number.isFinite(requested))throw Error("invalid_recent_time");
       const isTwoHours=requested>moment-2*60*60*1000&&requested<=moment;
       const tr=document.createElement("tr");
-      for(const val of [item.email,labels[item.state],
+      for(const val of [item.email,consentStateLabel(item,moment),
         warsawTime(item.requestedAt),sourceLabel(item.source),
         isTwoHours?"Ostatnie 2 godz.":"Ostatnie 24 godz."])
         tr.append(makeCell(val));
@@ -442,13 +451,15 @@ async function load(cursor = null) {
         ? "Pełny licznik niedostępny"
         : "Pełny odczyt jednej strony";
     visibleActive=data.items.filter(x=>x.state==="active");
+    const observed=Date.parse(data.fetchedAt);
+    const observedAt=Number.isFinite(observed)?observed:Date.now();
     refreshTargetedButton();
     for (const item of data.items) {
       const tr = document.createElement("tr");
       const email = document.createElement("td");
       email.textContent = item.email;
       const status = document.createElement("td");
-      status.textContent = labels[item.state];
+      status.textContent = consentStateLabel(item,observedAt);
       status.className = "badge";
       const signup = document.createElement("td");
       signup.textContent = warsawTime(item.requestedAt);
@@ -518,7 +529,7 @@ async function detail(handle) {
     $("detail-body").replaceChildren();
     const lines = [
       data.email,
-      `Stan subskrypcji: ${labels[data.state]}`,
+      `Stan subskrypcji: ${consentStateLabel(data,Date.parse(data.observedAt))}`,
       `Zgłoszenie (zapis w bazie): ${warsawTime(data.requestedAt)}`,
       `Potwierdzenie DOI: ${warsawTime(data.confirmedAt)}`,
       ...(data.revokedAt?[`Wycofanie zgody: ${warsawTime(data.revokedAt)}`]:[]),
