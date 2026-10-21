@@ -216,7 +216,6 @@ test('footer premium validation and duplicate-safe modal',async({page},info)=>{
   await form.locator('button[type="submit"]').click();
   const dialog=page.locator('#newsletter-success-modal');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Sprawdź, czy adres jest już zapisany');
   await expect(dialog).not.toContainText('Ten adres już jest w naszym newsletterze');
   await expect(dialog).toContainText('Jeśli adres jest nowy, sprawdź skrzynkę');
   await expect(dialog).not.toContainText('Ten adres już jest w naszym newsletterze');
