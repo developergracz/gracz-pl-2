@@ -5,8 +5,9 @@
   var form=byId('nl-withdrawal-form'),email=byId('nl-withdrawal-email');
   var submit=byId('nl-withdrawal-submit'),status=byId('nl-withdrawal-status');
   var panel=byId('nl-withdrawal-action'),confirmButton=byId('nl-withdrawal-confirm');
+  var cancelButton=byId('nl-withdrawal-cancel');
   var confirmation=byId('nl-withdrawal-action-status');
-  if(!form||!email||!submit||!status||!panel||!confirmButton||!confirmation)return;
+  if(!form||!email||!submit||!status||!panel||!confirmButton||!confirmation||!cancelButton)return;
   var ready=false,busy=false,proof=null;
   function message(node,text,error){
     node.textContent=text;
@@ -29,21 +30,38 @@
       return json;
     }finally{clearTimeout(timer);}
   }
+  function openConfirmModal(){
+    panel.hidden=false;
+    if(!panel.open)panel.showModal();
+    if(ready&&proof)confirmButton.focus();
+    else cancelButton.focus();
+  }
+  function closeConfirmModal(){
+    if(panel.open)panel.close();
+    panel.hidden=true;
+  }
+  cancelButton.addEventListener('click',function(){
+    if(busy)return;
+    proof=null;
+    confirmButton.disabled=true;
+    closeConfirmModal();
+  });
   // NEW single-use proof in a URL fragment, stripped from browser history
   // before any network request, navigation or visible action.
   function readProofFragment(){
     var hash=new URLSearchParams(window.location.hash.slice(1));
     var raw=hash.get('withdrawal');
     // Navigation to any other fragment also discards stale proof authority.
-    proof=null;panel.hidden=true;
+    proof=null;closeConfirmModal();
     if(raw===null)return;
     history.replaceState(null,'',location.pathname+location.search);
     var match=/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/i.exec(raw);
     if(!match)return;
     proof={challengeId:match[1],token:match[2]};
-    confirmButton.disabled=false;confirmButton.hidden=false;
-    message(confirmation,'');
-    if(ready){panel.hidden=false;panel.scrollIntoView({block:'nearest'});}
+    confirmButton.disabled=!ready;confirmButton.hidden=false;
+    cancelButton.textContent='Anuluj';
+    message(confirmation,ready?'':'Sprawdzanie dostępności bezpiecznego wypisania…');
+    openConfirmModal();
   }
   readProofFragment();
   window.addEventListener('hashchange',readProofFragment);
@@ -57,10 +75,15 @@
       submit.disabled=false;submit.removeAttribute('aria-disabled');
       message(status,'Podaj adres i poproś o nowy link do wypisania.');
       if(proof){
-        panel.hidden=false;
-        panel.scrollIntoView({block:'nearest'});
+        confirmButton.disabled=false;
+        message(confirmation,'Kliknij „Potwierdź wypisanie”, aby zakończyć rezygnację.');
+        if(!panel.open)openConfirmModal();
+        confirmButton.focus();
       }
-    }catch(_){message(status,help(),true);}
+    }catch(_){
+      message(status,help(),true);
+      if(proof)message(confirmation,help(),true);
+    }
   }
   email.addEventListener('input',function(){
     email.removeAttribute('aria-invalid');
@@ -96,13 +119,17 @@
     try{
       var reply=await fetchBounded('/newsletter/withdrawal-confirm',ticket);
       if(reply.state==='provider_off_verified'&&reply.confirmed===false){
-        message(confirmation,'Resend potwierdził blokadę wysyłek na ten adres. Historyczne zapisy pozostają oddzielnie zabezpieczone.');
+        message(confirmation,'Zarejestrowano wycofanie zgody i Resend potwierdził wyłączenie wysyłek na ten adres. Odśwież panel administratora, aby sprawdzić status.');
       }else{
         message(confirmation,'Prośba została przyjęta do bezpiecznej obsługi. Nie potwierdzono jeszcze wyłączenia w Resend. Nie ponawiaj operacji.',true);
       }
     }catch(_){
       message(confirmation,'Nie potwierdzono wyniku. Zgłoszenie mogło zostać zapisane; nie ponawiaj linku. Skorzystaj z kontaktu, jeśli potrzebujesz pomocy.',true);
-    }finally{busy=false;confirmButton.hidden=true;confirmButton.disabled=true;}
+    }finally{
+      busy=false;confirmButton.hidden=true;confirmButton.disabled=true;
+      cancelButton.textContent='Zrozumiałem';
+      cancelButton.focus();
+    }
   });
   checkReady();
 })();
