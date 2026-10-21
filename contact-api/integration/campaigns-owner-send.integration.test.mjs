@@ -128,7 +128,8 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   await Promise.all(Array.from({length:3},()=>manager.acceptOptIn({email:address})));
   assert.equal(tokens.length,1,'parallel submissions reserve one DOI');
   assert.equal((await review(emailTag)).state,'no_current_doi');
-  await assert.rejects(sender.send(await campaign()),{code:'campaign_send_unavailable'});
+  assert.equal((await sender.send(await campaign())).accepted,0,
+    'historical verified opt-out allows admission but NO send without a fresh DOI');
   await manager.confirm(tokens[0]);
   await assert.rejects(manager.confirm(tokens[0]),{code:'NEWSLETTER_CONFIRM_REJECTED'});
   const count=createCampaignAudienceProofCount({database});
@@ -142,8 +143,9 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   const reserved=await dispatch.reserve({campaignId:futureCampaign,emailTag});
   assert.ok(reserved,'renewed consent qualifies for a future reservation');
   assert.equal(await dispatch.claim({campaignId:futureCampaign,dispatchId:reserved}),true);
-  await assert.rejects(sender.send(await campaign()),{code:'campaign_send_unavailable'});
-  assert.equal(calls,2,'global HOLD remains despite renewed consent');
+  assert.equal((await sender.send(await campaign())).accepted,1,
+    'fresh DOI permits only newly re-consented recipient, after historical verified withdrawal');
+  assert.equal(calls,3,'prior opt-out is not a permanent global block');
   const second=await addWithdrawal();
   // Even before the callback updates the subscriber, the fresh recovery evidence denies.
   assert.equal((await review(emailTag)).state,'verified_withdrawal','later recovery withdrawal denies');
@@ -157,10 +159,10 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
     (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'operator_record',$3)`,
     [randomUUID(),'b'.repeat(64),randomUUID()]);
   await assert.rejects(sender.send(await campaign()));
-  assert.equal(calls,2,'global HOLD never reaches provider');
+  assert.equal(calls,3,'unresolved operator withdrawal still prevents any additional delivery');
   await assert.rejects(createCampaignOwnerSender({...config,database:{
     transaction:async()=>{throw Error('database unavailable');},
     queryBounded:async()=>{throw Error('database unavailable');}
   }}).send(id));
-  assert.equal(calls,2);
+  assert.equal(calls,3);
 });

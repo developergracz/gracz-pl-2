@@ -64,10 +64,15 @@ test('OWNER checks the global withdrawal no-send fence; missing proof always fai
   assert.match(ui,/typeof result\.globalEgressReady!=="boolean"/);
   assert.match(ui,/egressStatus\.textContent=result\.globalEgressReady/);
   assert.match(html,/id="campaign-egress-readiness"/);
-  assert.match(fence,/withdrawal_requests LIMIT 1/);
+  assert.match(fence,/FROM newsletter_recovery\.withdrawal_requests r/);
+  assert.match(fence,/self_service_provider_verified p/);
+  assert.match(fence,/p\.challenge_id IS NULL/);
+  assert.match(fence,/r\.intake_source<>'self_service'/);
+  assert.match(fence,/unresolved_requests/);
   assert.match(fence,/withdrawal_no_send_obligations LIMIT 1/);
   assert.match(fence,/async checkAvailable\(\)/);
-  // The existing global fence remains the only admission policy and is not
-  // weakened or rewritten. No bulk-send route or scheduler is introduced.
+  // The global fence continues to refuse unresolved opt-outs and immutable
+  // obligations. Verified historical self-service requests alone no longer
+  // cause a permanent marketing stop. No scheduler is introduced.
   assert.doesNotMatch(router,/campaigns\/send-all|campaigns\/dispatch-all/);
 });
