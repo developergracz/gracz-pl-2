@@ -196,13 +196,26 @@ export function createOwnerRouter({
           return response(res,200,{ok:true,relogin:true});
         }finally{recoverBusy=false;}
       }
-      // Every private route requires a live, durable server-side session.
-      if(!cookie)return reject(res,401);
+      // Only the HTML entry point redirects unauthenticated browsers to login.
+      // Private JSON endpoints still fail closed, without any authentication bypass.
+      const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX);
+      if(!cookie){
+        if(ownerEntry){
+          res.writeHead(302,{...privateHeaders,Location:PREFIX+'/login'});
+          return res.end();
+        }
+        return reject(res,401);
+      }
       const kind=(path===PREFIX+'/list'||path===PREFIX+'/summary')?'subscriber_list':
         path===PREFIX+'/detail'?'subscriber_detail':'session_read';
       const session=await auth.session(cookie,kind);
       if(!session){
         clearServices();
+        if(ownerEntry){
+          res.writeHead(302,{...privateHeaders,Location:PREFIX+'/login',
+            'Set-Cookie':clearCookie});
+          return res.end();
+        }
         return response(res,401,{ok:false,error:'unauthorized'},
           {'Set-Cookie':clearCookie});
       }
