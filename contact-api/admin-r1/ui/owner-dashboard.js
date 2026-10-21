@@ -322,6 +322,7 @@ function openTargeted(items){
   targetedId=null;targetedApproved=false;targetedStarted=false;
   $("targeted-compose").reset();
   $("targeted-compose").hidden=false;$("targeted-final").hidden=true;
+  $("targeted-close").hidden=true;
   $("targeted-approve").disabled=false;$("targeted-send").disabled=false;
   $("targeted-preview-subject").textContent="Podgląd tematu";
   $("targeted-preview-body").textContent="Podgląd wiadomości";
@@ -336,6 +337,7 @@ const postTargeted=(path,payload)=>request("/owner/newsletter/"+path,{
 });
 $("send-found").addEventListener("click",()=>openTargeted(visibleActive));
 $("targeted-close").addEventListener("click",()=>targetedDialog.close());
+$("targeted-compose-close").addEventListener("click",()=>targetedDialog.close());
 $("targeted-compose").addEventListener("submit",e=>e.preventDefault());
 for(const name of ["subject","body"])
   $("targeted-"+name).addEventListener("input",()=>{
@@ -363,6 +365,7 @@ $("targeted-approve").addEventListener("click",async()=>{
     if(result?.state!=="approved")throw Error("not_approved");
     targetedApproved=true;
     $("targeted-compose").hidden=true;$("targeted-final").hidden=false;
+    $("targeted-close").hidden=false;
     $("targeted-status").textContent="Treść i lista odbiorców zatwierdzone. Nie wysłano wiadomości.";
     $("targeted-confirmation").focus();
   }catch{
