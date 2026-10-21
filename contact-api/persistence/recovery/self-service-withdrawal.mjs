@@ -155,7 +155,8 @@ export function createSelfServiceWithdrawal({
           "(challenge_id,withdrawal_request_id) VALUES($1,$2)",
           [challengeId,requestId]
         );
-        // Durable provider effect intent MUST exist before any Resend mutation.
+        // Durable intent precedes the optional Resend contact preference update.
+        // Voluntary withdrawal must not add a Resend delivery suppression.
         await client.query(
           "INSERT INTO newsletter_recovery.self_service_provider_intents " +
           "(challenge_id) VALUES($1)",[challengeId]
@@ -181,8 +182,9 @@ export function createSelfServiceWithdrawal({
           [challengeId]
         );
       });
-      // This proves only provider suppression. The old first-party consent
-      // ledger is STILL quarantined; never claim a full confirmed withdrawal.
+      // This verifies the Resend contact is absent/unsubscribed; PostgreSQL
+      // records the withdrawal. It does not claim legacy consent reconciliation
+      // and must never create an account-wide delivery suppression.
       return Object.freeze({state:'provider_off_verified',confirmed:false});
     }
   });

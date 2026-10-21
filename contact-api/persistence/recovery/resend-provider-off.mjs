@@ -1,7 +1,9 @@
-// Internal #282 provider-off adapter. Only a verified subject resolver may
-// provide the address; never expose this module to a public HTTP route.
-// The Resend team-wide suppression list is a durable stop to email delivery,
-// even when a contact is inadvertently added back to a marketing segment.
+// Internal withdrawal adapter. Only a verified subject resolver may provide
+// the address; never expose this module to a public HTTP route.
+// First-party PostgreSQL revocations and the global marketing send fence
+// enforce no-send. A voluntary opt-out must NEVER create a team-wide Resend
+// suppression, which would also block a future fresh DOI confirmation.
+// Provider contact preferences remain unsubscribed until later explicit consent.
 function uncertain() {
   return Object.assign(new Error('WITHDRAWAL_PROVIDER_UNCERTAIN'),{
     code:'WITHDRAWAL_PROVIDER_UNCERTAIN',status:503
@@ -58,10 +60,11 @@ export function createResendProviderOff({
   }
   async function verify(email){
     if(!validEmail(email))throw new TypeError('Trusted normalized email required');
-    // Both checks must succeed. Provider API outage or inconsistent payloads
-    // are UNKNOWN, never confirmation.
-    const [blocked,current]=await Promise.all([suppression(email),contact(email)]);
-    return blocked && (current===null||current.unsubscribed===true);
+    // An absent contact cannot receive Resend broadcasts. For an existing
+    // contact, the provider's unsubscribe flag must be verified by readback.
+    // The durable first-party revocation / global send fence are authoritative.
+    const current=await contact(email);
+    return current===null||current.unsubscribed===true;
   }
   return Object.freeze({
     // Read-only preflight. Never clears suppression or changes contact consent.
@@ -75,17 +78,13 @@ export function createResendProviderOff({
     },
     async ensureOff(email) {
       if(!validEmail(email))throw new TypeError('Trusted normalized email required');
-      // Idempotent reconciliation of UNKNOWN outcomes: inspect before writing.
-      if(await verify(email))return Object.freeze({off:true});
-      if(!await suppression(email)) {
-        // One attempt; a transport error is UNKNOWN. An operator can retry by
-        // inspecting provider state, never by blindly resending a mutation.
-        await call('POST','/suppressions',{email},[200,201,409]);
-      }
+      // No writes to /suppressions. Provider blocklists still protect genuine
+      // bounces, complaints and independent operator safety decisions.
       const current=await contact(email);
-      if(current && !current.unsubscribed) {
-        await call('PATCH','/contacts/'+encodeURIComponent(current.id),{unsubscribed:true},[200]);
-      }
+      if(current===null||current.unsubscribed) return Object.freeze({off:true});
+      // Reconcile only the contact's marketing preference, not delivery.
+      await call('PATCH','/contacts/'+encodeURIComponent(current.id),
+        {unsubscribed:true},[200]);
       if(!await verify(email))throw uncertain();
       return Object.freeze({off:true});
     }
