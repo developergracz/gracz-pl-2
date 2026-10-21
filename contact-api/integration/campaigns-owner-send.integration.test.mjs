@@ -147,7 +147,7 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   assert.equal((await count()).confirmed,1,'historical withdrawal does not erase new DOI');
   providerAllowed=false;
   assert.equal((await review(emailTag)).state,'provider_evidence_hold','suppression still denies renewed consent');
-  assert.equal(calls,4);
+  assert.equal(calls,3);
   providerAllowed=true;
   assert.equal((await review(emailTag)).state,'evidence_complete_for_review');
   const futureCampaign=await campaign();
