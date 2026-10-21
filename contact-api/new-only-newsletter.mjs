@@ -40,6 +40,7 @@ export function createNewOnlyNewsletter({
   emailFrom = process.env.EMAIL_FROM,
   baseUrl = 'https://gracz.pl/newsletter/',
   fetchFn = globalThis.fetch,
+  checkDeliveryAllowed,
 } = {}) {
   const enc = decodeNewKey(encryptionKey);
   const tagKey = decodeNewKey(subjectKey);
@@ -93,6 +94,12 @@ export function createNewOnlyNewsletter({
     const mailbox = String(email || '').trim().toLowerCase();
     if (mailbox.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailbox))
       throw Object.assign(new Error('Nieprawidłowy e-mail.'),{status:400,code:'INVALID_EMAIL'});
+    // Public response never reveals a provider block. No reservation is made,
+    // so an OWNER-reviewed unblock permits a fresh deliberate submission.
+    try {
+      if (typeof checkDeliveryAllowed !== 'function' ||
+          await checkDeliveryAllowed(mailbox) !== true) return {state:'request_received'};
+    } catch { return {state:'request_received'}; }
     const safeSource = /^[a-z_]{1,40}$/.test(source) ? source : 'newsletter_page';
     const emailTag = tag('email',mailbox);
     const rawToken = randomBytes(32).toString('base64url');

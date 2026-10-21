@@ -15,6 +15,7 @@ const sql=await Promise.all([
 const emailTag='a'.repeat(64);
 const campaignId=randomUUID();
 const dispatchId=randomUUID();
+const challengeId=randomUUID();
 
 test('campaign PostgreSQL reservation, DOI, withdrawal and single claim',{timeout:30000},async t=>{
   assertDisposableDatabaseUrl(url);
@@ -33,11 +34,11 @@ test('campaign PostgreSQL reservation, DOI, withdrawal and single claim',{timeou
      source,consent_version,expires_at,confirmed_at)
     VALUES($1,$2,$3,$4,$5,'active','sent','newsletter',
       'newsletter-new-only-2026-10-20',clock_timestamp()+interval '1 day',clock_timestamp())`,
-  [emailTag,Buffer.alloc(20,1),Buffer.alloc(12,2),Buffer.alloc(16,3),randomUUID()]);
+  [emailTag,Buffer.alloc(20,1),Buffer.alloc(12,2),Buffer.alloc(16,3),challengeId]);
   await db.query(`INSERT INTO newsletter_new.consent_events
     (event_id,email_tag,challenge_id,event_type,consent_version,source)
     VALUES ($1,$2,$3,'opt_in_confirmed','newsletter-new-only-2026-10-20','newsletter')`,
-    [randomUUID(),emailTag,randomUUID()]);
+    [randomUUID(),emailTag,challengeId]);
   await db.query(`INSERT INTO newsletter_campaigns.campaigns
     (id,subject,body,audience,state,approved_at)
     VALUES ($1,'Nowości gracz.pl','Witaj w newsletterze','confirmed_active_new_only',

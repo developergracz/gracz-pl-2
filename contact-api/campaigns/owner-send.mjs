@@ -11,12 +11,12 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 // Only an explicit OWNER request invokes this. No jobs, timers or automatic retry.
 export function createCampaignOwnerSender({database,enabled=false,
   newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey,
-  apiKey,from,checkWithdrawalReady,fetchFn=globalThis.fetch
+  apiKey,from,checkWithdrawalReady,checkDeliveryAllowed,fetchFn=globalThis.fetch
 }={}){
   let review=null;
   if(enabled===true){
     try{review=createCampaignRecipientEvidenceReview({database,
-      newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey});}catch{}
+      newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey,checkDeliveryAllowed});}catch{}
   }
   const configured=enabled===true&&review!==null&&
     typeof checkWithdrawalReady==='function'&&typeof apiKey==='string'&&
@@ -72,7 +72,7 @@ export function createCampaignOwnerSender({database,enabled=false,
             await client.query("SET LOCAL statement_timeout='3000ms'");
             const readDatabase={queryBounded:(sql,params)=>client.query(sql,params)};
             currentReview=createCampaignRecipientEvidenceReview({database:readDatabase,
-              newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey});
+              newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey,checkDeliveryAllowed});
             // Keep content/state and recipient stable throughout fresh review + HTTP.
             const current=await client.query(
               "SELECT 1 FROM newsletter_campaigns.campaigns WHERE id=$1 AND state='approved' "+

@@ -96,6 +96,7 @@ test('new-only DOI requires a fresh mailbox proof and produces one immutable con
   const manager=createNewOnlyNewsletter({
     database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
     apiKey:'fake-send-key',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
     fetchFn:async (_url,options)=>{
       sends++;sent=JSON.parse(options.body);
       assert.match(options.headers['Idempotency-Key'],/^newsletter-new\//);
@@ -129,6 +130,7 @@ test('missing new-only enablement never activates legacy newsletter or sends ema
   const manager=createNewOnlyNewsletter({
     database:{enabled:true},enabled:false,encryptionKey:key(1),subjectKey:key(2),
     apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
     fetchFn:async()=>{sends++;throw Error('unexpected');}
   });
   assert.equal((await manager.readiness()).ready,false);
@@ -141,6 +143,7 @@ function recordingManager(db) {
   const manager=createNewOnlyNewsletter({
     database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
     apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
     fetchFn:async (_url,options)=>{
       sent.push(JSON.parse(options.body));
       return {ok:true,json:async()=>({id:'receipt'})};
@@ -236,6 +239,7 @@ test('withdrawal of a legacy-only address does not create new-only subscriber da
   const manager=createNewOnlyNewsletter({
     database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
     apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
     fetchFn:async()=>{throw Error('unexpected send');}
   });
   await manager.recordVerifiedWithdrawal({client,email:'legacy@example.test',
@@ -250,6 +254,7 @@ test('status proof requires mailbox access, reveals state only after proof and c
   const manager=createNewOnlyNewsletter({
     database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
     apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
     fetchFn:async (_url,options)=>{
       delivered.push(JSON.parse(options.body));
       return {ok:true,json:async()=>({id:'receipt'})};
@@ -284,4 +289,50 @@ test('status proof requires mailbox access, reveals state only after proof and c
     Date.now=()=>realNow()+16*60*1000;
     await assert.rejects(manager.checkStatus(proof),{code:'NEWSLETTER_STATUS_REJECTED'});
   } finally {Date.now=realNow;}
+});
+
+test('blocked or unknown provider state never sends DOI or activates consent; deliberate retry works',async()=>{
+  const {db,records,events}=fakeStore();
+  let allowed=false,sends=0,token;
+  const manager=createNewOnlyNewsletter({database:db,enabled:true,
+    encryptionKey:key(1),subjectKey:key(2),apiKey:'synthetic',emailFrom:'newsletter@example.test',
+    checkDeliveryAllowed:async()=>{if(allowed==='unknown')throw Error('provider unavailable');return allowed;},
+    fetchFn:async(_url,options)=>{
+      sends++;token=JSON.parse(options.body).text.match(/#confirm=(ni3\.[\w.-]+)/)[1];
+      return {ok:true,json:async()=>({id:'receipt'})};
+    }});
+  assert.deepEqual(await manager.acceptOptIn({email:'returning@example.test'}),{state:'request_received'});
+  assert.equal(sends,0);
+  assert.equal(records.size,0);
+  assert.equal(events.length,0);
+  allowed='unknown';
+  assert.deepEqual(await manager.acceptOptIn({email:'returning@example.test'}),{state:'request_received'});
+  assert.equal(sends,0);
+  assert.equal(records.size,0);
+  allowed=true;
+  await manager.acceptOptIn({email:'returning@example.test'});
+  assert.equal(sends,1);
+  assert.equal([...records.values()][0].state,'pending');
+  await manager.confirm(token);
+  assert.equal(events.length,1);
+});
+
+test('provider rejection or ambiguous acceptance leaves DOI unconfirmable without duplicate send',async()=>{
+  for(const result of [null,{ok:false},{ok:true,json:async()=>({})}]){
+    const {db,records,events}=fakeStore();
+    let token,sends=0;
+    const manager=createNewOnlyNewsletter({database:db,enabled:true,
+      encryptionKey:key(1),subjectKey:key(2),apiKey:'synthetic',emailFrom:'newsletter@example.test',
+      checkDeliveryAllowed:async()=>true,fetchFn:async(_url,options)=>{
+        sends++;token=JSON.parse(options.body).text.match(/#confirm=(ni3\.[\w.-]+)/)[1];
+        if(result===null)throw Error('synthetic timeout');
+        return result;
+      }});
+    await assert.rejects(manager.acceptOptIn({email:'failure@example.test'}));
+    await assert.rejects(manager.confirm(token),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+    await manager.acceptOptIn({email:'failure@example.test'});
+    assert.equal(sends,1);
+    assert.equal([...records.values()][0].delivery_state,'uncertain');
+    assert.equal(events.length,0);
+  }
 });

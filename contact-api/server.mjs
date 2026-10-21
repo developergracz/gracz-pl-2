@@ -100,7 +100,13 @@ const premiumReply = createPremiumReplyManager({
 const newsletter = createHeldNewsletterManager();
 // Completely separate enrollment, fresh purpose keys and dedicated consent ledger.
 // Default OFF. Legacy manager stays HELD for contact and old n1/ns1 actions.
-const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
+// Read-only suppression checks use the existing management key, never send-only credentials.
+const WITHDRAWAL_RESEND_API_KEY = String(process.env.WITHDRAWAL_RESEND_API_KEY || "").trim();
+const providerSuppression = WITHDRAWAL_RESEND_API_KEY
+  ? createResendProviderOff({apiKey:WITHDRAWAL_RESEND_API_KEY}) : null;
+const checkDeliveryAllowed = email => providerSuppression
+  ? providerSuppression.deliveryAllowed(email) : Promise.resolve(false);
+const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM,checkDeliveryAllowed});
 const ownerRecoveryMailer=createOwnerRecoveryMailer({apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
 const campaignEgressFence=createWithdrawalSendFence(database);
 const ownerAdmin=createOwnerRouter({
@@ -121,7 +127,7 @@ const ownerAdmin=createOwnerRouter({
   campaignEgressReady:campaignEgressFence.checkAvailable,
   campaignSender:createCampaignOwnerSender({
     database,enabled:process.env.NEWSLETTER_CAMPAIGN_SEND_ENABLED==='1',
-    apiKey:RESEND_API_KEY,from:EMAIL_FROM,checkWithdrawalReady,
+    apiKey:RESEND_API_KEY,from:EMAIL_FROM,checkWithdrawalReady,checkDeliveryAllowed,
     newEncryptionKey:process.env.NEWSLETTER_NEW_ENCRYPTION_KEY,
     newSubjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,
     withdrawalRecipientTagKey:process.env.WITHDRAWAL_RECIPIENT_TAG_KEY
@@ -147,9 +153,6 @@ function withdrawalKey(name) {
     throw new Error('WITHDRAWAL_CONFIGURATION_INCOMPLETE');
   return decoded;
 }
-// RESEND_API_KEY stays send-only. Managing suppressions/contacts needs its own
-// key; without it withdrawal stays off while the rest of the API keeps running.
-const WITHDRAWAL_RESEND_API_KEY = String(process.env.WITHDRAWAL_RESEND_API_KEY || "").trim();
 const WITHDRAWAL_REQUESTED = process.env.NEWSLETTER_WITHDRAWAL_ENABLED === '1';
 const WITHDRAWAL_ENABLED = WITHDRAWAL_REQUESTED && Boolean(WITHDRAWAL_RESEND_API_KEY);
 if (WITHDRAWAL_REQUESTED && !WITHDRAWAL_ENABLED)

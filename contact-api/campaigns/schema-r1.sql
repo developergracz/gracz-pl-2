@@ -68,7 +68,7 @@ REVOKE UPDATE,DELETE,TRUNCATE ON newsletter_campaigns.dispatch_events FROM PUBLI
 -- Atomic, idempotent reservation, conditional on current recorded DOI and no
 -- withdrawal. Reservation does NOT authorize sending: the sender must recheck
 -- permission immediately before each external effect.
-CREATE FUNCTION newsletter_campaigns.reserve_confirmed(
+CREATE OR REPLACE FUNCTION newsletter_campaigns.reserve_confirmed(
   p_campaign uuid, p_dispatch uuid, p_event uuid, p_email_tag char(64)
 ) RETURNS boolean LANGUAGE plpgsql AS $$
 DECLARE inserted_id uuid;
@@ -86,13 +86,17 @@ BEGIN
   FROM newsletter_new.subscribers s
   WHERE s.email_tag=p_email_tag AND s.state='active'
     AND s.confirmed_at IS NOT NULL
+    AND s.delivery_state='sent'
+    AND s.consent_version='newsletter-new-only-2026-10-20'
     AND EXISTS (
       SELECT 1 FROM newsletter_new.consent_events e
       WHERE e.email_tag=s.email_tag AND e.event_type='opt_in_confirmed'
+        AND e.challenge_id=s.challenge_id AND e.consent_version=s.consent_version
+        AND e.source=s.source
     )
     AND NOT EXISTS (
       SELECT 1 FROM newsletter_new.revocations r
-      WHERE r.email_tag=s.email_tag
+      WHERE r.email_tag=s.email_tag AND r.recorded_at>=s.requested_at
     )
   ON CONFLICT (campaign_id,email_tag) DO NOTHING
   RETURNING id INTO inserted_id;
@@ -111,7 +115,7 @@ REVOKE ALL ON FUNCTION newsletter_campaigns.reserve_confirmed(uuid,uuid,uuid,cha
 -- subscriber row as verified withdrawal, then reserve an irrevocable attempt.
 -- Caller must commit BEFORE invoking Resend; a crash after commit must not
 -- cause a retry. 'inflight' is treated as uncertain until reconciled.
-CREATE FUNCTION newsletter_campaigns.claim_delivery(
+CREATE OR REPLACE FUNCTION newsletter_campaigns.claim_delivery(
   p_campaign uuid, p_dispatch uuid, p_event uuid
 ) RETURNS boolean LANGUAGE plpgsql AS $$
 DECLARE v_tag char(64);
@@ -133,13 +137,17 @@ BEGIN
     SELECT 1 FROM newsletter_new.subscribers s
     WHERE s.email_tag=v_tag AND s.state='active'
       AND s.confirmed_at IS NOT NULL
+    AND s.delivery_state='sent'
+    AND s.consent_version='newsletter-new-only-2026-10-20'
       AND EXISTS (
         SELECT 1 FROM newsletter_new.consent_events e
         WHERE e.email_tag=s.email_tag AND e.event_type='opt_in_confirmed'
+        AND e.challenge_id=s.challenge_id AND e.consent_version=s.consent_version
+        AND e.source=s.source
       )
       AND NOT EXISTS (
         SELECT 1 FROM newsletter_new.revocations r
-        WHERE r.email_tag=s.email_tag
+        WHERE r.email_tag=s.email_tag AND r.recorded_at>=s.requested_at
       )
   ) THEN
     UPDATE newsletter_campaigns.dispatches
