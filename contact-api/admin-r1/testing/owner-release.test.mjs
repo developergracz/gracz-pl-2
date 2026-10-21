@@ -458,7 +458,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     request.end(data?JSON.stringify(data):undefined);
   });
   let result=await call('/owner/newsletter/');
-  assert.equal(result.status,401);
+  assert.equal(result.status,302);
+  assert.equal(result.headers.get('location'),'/owner/newsletter/login');
   result=await call('/owner/newsletter/list',{method:'POST',data:{}});
   assert.equal(result.status,401);
   result=await call('/owner/newsletter/summary',{method:'POST',data:{}});
