@@ -92,6 +92,10 @@ test('withdrawal link shows a premium modal; cancel never changes consent',async
       return route.fulfill({status:200,contentType:'application/json',
         headers:{'access-control-allow-origin':'*'},
         body:JSON.stringify({ready:true,withdrawalOnly:true,newsletterIntakeEnabled:false})});
+    if(request.method()==='GET'&&url.pathname==='/newsletter/ready')
+      return route.fulfill({status:503,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ready:false})});
+    // Only mutation requests are counted; readiness checks may occur automatically.
     requests.push(url.pathname);
     return route.abort();
   });
