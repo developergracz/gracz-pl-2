@@ -1,3 +1,5 @@
+import {renderPremiumEmail} from '../email/full-max-premium.mjs';
+
 // Transactional OWNER-only mail; no tracking, links, logging or marketing audiences.
 // A one-time secret is delivered only to the mailbox chosen and confirmed by OWNER.
 export function createOwnerRecoveryMailer({apiKey,emailFrom,request=fetch}={}){
@@ -25,7 +27,15 @@ export function createOwnerRecoveryMailer({apiKey,emailFrom,request=fetch}={}){
         headers:{Authorization:'Bearer '+apiKey.trim(),'Content-Type':'application/json'},
         body:JSON.stringify({from:emailFrom,to:[email],
           subject:verify?'gracz.pl — potwierdź e-mail odzyskiwania':
-            'gracz.pl — jednorazowe hasło tymczasowe',text}),
+            'gracz.pl — jednorazowe hasło tymczasowe',text,
+          html:renderPremiumEmail({
+            category:'PANEL WŁAŚCICIELA · BEZPIECZEŃSTWO',
+            title:verify?'Potwierdzenie adresu odzyskiwania':'Odzyskiwanie dostępu do panelu',
+            body:verify
+              ?'Otrzymaliśmy prośbę o potwierdzenie adresu odzyskiwania konta administratora. Wprowadź kod w ustawieniach panelu.'
+              :'Otrzymaliśmy prośbę o odzyskanie dostępu do konta administratora. Wprowadź poniższe hasło jednorazowe w oknie „Zapomniałem hasła?” i ustaw nowe hasło.',
+            code,footnote:'Kod traci ważność po 10 minutach. Nie przekazuj go nikomu. Jeśli nie zlecano tej operacji, zignoruj wiadomość.'
+          })}),
         signal:AbortSignal.timeout(10000)
       });
       if(response?.status!==200&&response?.status!==201)

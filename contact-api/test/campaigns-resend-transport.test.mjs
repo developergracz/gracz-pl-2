@@ -31,6 +31,9 @@ test('explicitly enabled adapter produces idempotent, unsubscribable message',as
   assert.equal(outbound.options.headers['Idempotency-Key'],'gracz-campaign/'+delivery.dispatchId);
   const body=JSON.parse(outbound.options.body);
   assert.match(body.text,/Wypisz się/);
+  assert.match(body.html,/Odwiedź gracz\.pl<\/a>/);
+  assert.match(body.html,/Wypisz się z newslettera/);
+  assert.ok(body.html.includes('Poznaj nowe gry w naszym serwisie.'));
   assert.equal(body.headers['List-Unsubscribe'],'<'+delivery.unsubscribeUrl+'>');
 });
 test('transport failures are always uncertain, without a retry',async()=>{
