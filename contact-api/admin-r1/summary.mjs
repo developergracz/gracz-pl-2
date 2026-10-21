@@ -12,6 +12,7 @@ facts AS MATERIALIZED (
          (r.email_tag IS NOT NULL) AS revoked
   FROM newsletter_new.subscribers s
   LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+            AND r.recorded_at>=s.requested_at
 ),
 totals AS (
   SELECT count(*) AS total,
