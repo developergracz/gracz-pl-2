@@ -9,9 +9,10 @@ const MAX_CONFIRM_MAILS_PER_HOUR = 60;
 // it. Run only after the subscriber row lock, as a separate statement, so a
 // just-committed withdrawal is visible.
 const WITHDRAWN_SQL = `
-  SELECT 1 FROM newsletter_new.revocations r
-  JOIN newsletter_new.subscribers s ON s.email_tag=r.email_tag
-  WHERE r.email_tag=$1 AND r.recorded_at>=s.requested_at`;
+  SELECT 1 FROM newsletter_new.subscribers s
+  LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+  WHERE s.email_tag=$1 AND
+    (r.recorded_at>=s.requested_at OR s.repeat_withdrawn_at>=s.requested_at)`;
 
 function decodeNewKey(raw) {
   if (typeof raw !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(raw)) return null;
@@ -68,7 +69,8 @@ export function createNewOnlyNewsletter({
             AND has_table_privilege(current_user,'newsletter_new.mail_budget','UPDATE')
             AND has_table_privilege(current_user,'newsletter_new.consent_events','INSERT')
             AND has_table_privilege(current_user,'newsletter_new.revocations','SELECT')
-            AND has_table_privilege(current_user,'newsletter_new.revocations','INSERT') AS allowed
+            AND has_table_privilege(current_user,'newsletter_new.revocations','INSERT')
+            AND has_column_privilege(current_user,'newsletter_new.subscribers','repeat_withdrawn_at','UPDATE') AS allowed
         `, [], {timeoutMs:2000});
         lastReady = checked.rows?.[0]?.allowed === true;
       } catch { lastReady = false; }
@@ -237,12 +239,14 @@ export function createNewOnlyNewsletter({
       'ON CONFLICT (email_tag) DO NOTHING',
       [emailTag,challengeId]);
     if (recorded.rowCount) return;
-    // The register keeps one immutable row per address (its first withdrawal);
-    // every withdrawal stays in newsletter_recovery. Close a consent or DOI
-    // request made after that row: not active, unusable token, expired link.
+    // The register keeps the first immutable withdrawal for this address.
+    // Every verified withdrawal is audited in newsletter_recovery.
+    // A subsequent withdrawal also records an explicit durable state marker,
+    // so the admin UI never confuses withdrawn consent with a fresh DOI.
     await client.query(`
       UPDATE newsletter_new.subscribers
-      SET state='pending',token_tag=$2,confirmed_at=NULL,expires_at=clock_timestamp()
+      SET state='pending',token_tag=$2,confirmed_at=NULL,expires_at=clock_timestamp(),
+           repeat_withdrawn_at=clock_timestamp()
       WHERE email_tag=$1 AND requested_at>(
         SELECT recorded_at FROM newsletter_new.revocations WHERE email_tag=$1)
     `,[emailTag,randomBytes(32).toString('hex')]);
@@ -315,9 +319,10 @@ export function createNewOnlyNewsletter({
       Date.now()-payload.issued>STATUS_TTL_MS)throw invalid();
     const found=await database.queryBounded(`
       SELECT s.state,s.expires_at,
-        EXISTS(SELECT 1 FROM newsletter_new.revocations r
+        (EXISTS(SELECT 1 FROM newsletter_new.revocations r
                WHERE r.email_tag=s.email_tag
-                 AND r.recorded_at>=s.requested_at) AS withdrawn
+                 AND r.recorded_at>=s.requested_at)
+         OR s.repeat_withdrawn_at>=s.requested_at) AS withdrawn
       FROM newsletter_new.subscribers s WHERE s.email_tag=$1
     `,[tag('email',payload.mailbox)],{timeoutMs:2000});
     const row=found.rows?.[0];
