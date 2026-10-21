@@ -267,7 +267,17 @@ export function createOwnerRouter({
         let campaignSendEnabled=false;
         if(ready&&typeof campaignSender?.available==='function')
           campaignSendEnabled=await campaignSender.available();
-        return response(res,200,{ok:true,enabled:ready,testSendEnabled,campaignSendEnabled});
+        let targetedSendEnabled=false;
+        if(ready&&campaignSendEnabled){
+          try{
+            const table=await database.queryBounded(
+              "SELECT to_regclass('newsletter_campaigns.targeted_audiences') IS NOT NULL "+
+              "AND has_table_privilege(current_user,'newsletter_campaigns.targeted_audiences','SELECT,INSERT') AS ready",
+              [],{timeoutMs:3000});
+            targetedSendEnabled=table.rows?.length===1&&table.rows[0]?.ready===true;
+          }catch{targetedSendEnabled=false;}
+        }
+        return response(res,200,{ok:true,enabled:ready,testSendEnabled,campaignSendEnabled,targetedSendEnabled});
       }
       if(req.method==='POST'&&path===PREFIX+'/campaign-drafts/audience'){
         if(!campaignDraftsEnabled||!campaignDraftStore||
@@ -290,6 +300,39 @@ export function createOwnerRouter({
         }catch{globalEgressReady=false;}
         // Both booleans are advisory. Neither authorizes marketing egress.
         return response(res,200,{...evidence,withdrawalReady,globalEgressReady});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/campaign-targeted/save'){
+        if(!campaignDraftsEnabled||typeof campaignDraftStore?.saveTargeted!=='function')
+          return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req,65536);
+        if(Object.keys(data).length!==4||
+           !['subject','body','audience','handles'].every(k=>Object.hasOwn(data,k)))
+          return reject(res);
+        try{
+          const ids=serviceFor(session.tokenHash).resolveTargetHandles(data.handles);
+          const {handles,...draft}=data;
+          const saved=await campaignDraftStore.saveTargeted(draft,ids);
+          return response(res,201,{ok:true,...saved});
+        }catch(e){
+          if(['invalid_campaign','invalid_targets','invalid_request'].includes(e?.code))
+            return reject(res,400);
+          return reject(res,503);
+        }
+      }
+      if(req.method==='POST'&&path===PREFIX+'/campaign-targeted/send'){
+        if(!campaignDraftsEnabled||typeof campaignSender?.sendTargeted!=='function')
+          return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==2||!Object.hasOwn(data,'id')||
+           data.confirmation!=='WYSYŁAM DO WYBRANYCH')return reject(res,400);
+        try{
+          const result=await campaignSender.sendTargeted(data.id);
+          return response(res,result.state==='uncertain'?202:200,{ok:true,...result});
+        }catch{return reject(res,503);}
       }
       if(req.method==='POST'&&path===PREFIX+'/campaigns/send'){
         if(!campaignDraftsEnabled||typeof campaignSender?.send!=='function')
@@ -474,7 +517,8 @@ export function createOwnerRouter({
         const data=await input(req);
         const svc=serviceFor(session.tokenHash);
         const value=path===PREFIX+'/list'
-          ?await svc.list({cursor:data.cursor??null,query:data.query??'',state:data.state??'all'})
+          ?await svc.list({cursor:data.cursor??null,query:data.query??'',state:data.state??'all',
+             from:data.from??'',to:data.to??''})
           :await svc.detail(data.handle);
         return response(res,200,value);
       }

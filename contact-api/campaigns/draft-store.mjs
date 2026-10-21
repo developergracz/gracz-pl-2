@@ -24,6 +24,28 @@ export function createCampaignDraftStore({database}={}) {
       });
       return Object.freeze({id,state:'draft'});
     },
+    // Target scope is committed atomically with its draft, and is immutable.
+    // The HTML form never submits raw e-mail as send authority.
+    async saveTargeted(raw,ids){
+      const draft=prepareCampaignDraft(raw);
+      if(!Array.isArray(ids)||ids.length<1||ids.length>10||
+         new Set(ids).size!==ids.length||
+         ids.some(tag=>typeof tag!=='string'||!/^[0-9a-f]{64}$/.test(tag)))
+        throw Object.assign(new Error('invalid_targets'),{code:'invalid_targets'});
+      const id=randomUUID();
+      await database.transaction(async client=>{
+        const r=await client.query(
+          "INSERT INTO newsletter_campaigns.campaigns (id,subject,body,audience,state) "+
+          "VALUES($1,$2,$3,$4,'draft') RETURNING id",
+          [id,draft.subject,draft.body,draft.audience]);
+        if(r.rowCount!==1)throw new Error('targeted_draft_not_saved');
+        const target=await client.query(
+          'INSERT INTO newsletter_campaigns.targeted_audiences(campaign_id,email_tags) '+
+          'VALUES($1,$2::text[]) RETURNING campaign_id',[id,ids]);
+        if(target.rowCount!==1)throw new Error('targeted_scope_not_saved');
+      });
+      return Object.freeze({id,state:'draft',targetCount:ids.length});
+    },
     async get(id) {
       draftId(id);
       const result=await database.transaction(async client=>client.query(
@@ -66,10 +88,18 @@ export function createCampaignDraftStore({database}={}) {
       });
     },
     async listApproved() {
-      const rows=await database.transaction(async client=>client.query(
-        "SELECT id,subject,approved_at FROM newsletter_campaigns.campaigns "+
-        "WHERE state='approved' ORDER BY approved_at DESC,id DESC LIMIT 50"
-      ));
+      const rows=await database.transaction(async client=>{
+        const installed=await client.query(
+          "SELECT to_regclass('newsletter_campaigns.targeted_audiences') IS NOT NULL AS installed"
+        );
+        const exclusion=installed.rows?.[0]?.installed===true
+          ? " AND NOT EXISTS(SELECT 1 FROM newsletter_campaigns.targeted_audiences t WHERE t.campaign_id=c.id)"
+          : "";
+        return client.query(
+          "SELECT c.id,c.subject,c.approved_at FROM newsletter_campaigns.campaigns c "+
+          "WHERE c.state='approved'"+exclusion+
+          " ORDER BY c.approved_at DESC,c.id DESC LIMIT 50");
+      });
       return Object.freeze((rows.rows||[]).map(row=>Object.freeze({
         id:row.id,subject:row.subject,approvedAt:row.approved_at,
         state:'approved',sendingEnabled:false

@@ -231,8 +231,21 @@
                 <option value="unknown">Niezweryfikowane</option>
               </select>
             </div>
+            <div>
+              <label for="date-from">Zgłoszenia od (Warszawa)</label>
+              <input type="date" id="date-from" />
+            </div>
+            <div>
+              <label for="date-to">Zgłoszenia do (Warszawa)</label>
+              <input type="date" id="date-to" />
+            </div>
+            <button type="button" id="last-month">Ostatnie 30 dni</button>
             <button type="submit">Zastosuj</button>
           </form>
+          <div class="targeted-results-bar">
+            <p class="muted">Wiadomość do pojedynczej osoby lub maksymalnie 10 aktywnych wyników na bieżącej stronie. Wybór z innych stron wymaga osobnego wysłania.</p>
+            <button type="button" id="send-found" disabled>Wyślij do znalezionych (0)</button>
+          </div>
           <p id="status" role="status" aria-live="polite">
             Oczekiwanie na dane…
           </p>
@@ -250,7 +263,7 @@
                   <th scope="col">Stan</th>
                   <th scope="col">Data zgłoszenia (Warszawa)</th>
                   <th scope="col">Źródło</th>
-                  <th scope="col">Dowody</th>
+                  <th scope="col">Działania</th>
                 </tr>
               </thead>
               <tbody id="rows"></tbody>
@@ -431,6 +444,35 @@
           <button type="submit" value="confirm">Wyślij jeden test</button>
         </form>
       </div>
+    </dialog>
+    <dialog id="targeted-dialog" aria-labelledby="targeted-title" aria-describedby="targeted-recipients">
+      <section class="targeted-dialog-content">
+        <p class="targeted-brand">gracz<span>.pl</span> · FULL MAX PREMIUM</p>
+        <h2 id="targeted-title">Wiadomość do wybranych subskrybentów</h2>
+        <p id="targeted-recipients" role="status"></p>
+        <p class="muted">System przed wysyłką ponownie sprawdzi DOI, wypisania i blokady doręczeń. Wysłana wiadomość zawiera link wypisania.</p>
+        <form id="targeted-compose">
+          <label for="targeted-subject">Temat wiadomości</label>
+          <input id="targeted-subject" type="text" minlength="3" maxlength="160" required autocomplete="off" />
+          <label for="targeted-body">Treść wiadomości</label>
+          <textarea id="targeted-body" rows="8" minlength="10" maxlength="20000" required></textarea>
+          <div class="targeted-preview" aria-live="polite">
+            <strong id="targeted-preview-subject">Podgląd tematu</strong>
+            <p id="targeted-preview-body">Podgląd wiadomości</p>
+          </div>
+          <label for="targeted-approval">Aby zatwierdzić treść, wpisz: ZATWIERDZAM TREŚĆ</label>
+          <input id="targeted-approval" type="text" autocomplete="off" />
+          <button type="button" id="targeted-approve">Zapisz i zatwierdź treść</button>
+        </form>
+        <div id="targeted-final" hidden>
+          <p>Treść i lista odbiorców są zatwierdzone. Aby rozpocząć wysyłkę, wpisz: <strong>WYSYŁAM DO WYBRANYCH</strong></p>
+          <label for="targeted-confirmation">Ostateczne potwierdzenie wysyłki</label>
+          <input id="targeted-confirmation" type="text" autocomplete="off" />
+          <button type="button" id="targeted-send">Wyślij wyłącznie do wybranych</button>
+        </div>
+        <p id="targeted-status" role="status" aria-live="polite"></p>
+        <button type="button" id="targeted-close">Zamknij</button>
+      </section>
     </dialog>
     <dialog id="detail" aria-labelledby="detail-title">
       <div class="section-title">

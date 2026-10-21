@@ -96,7 +96,8 @@ test('OWNER approval is exactly-once and compares the complete current draft',as
 test('approved list returns only headers and cannot return message body',async()=>{
   const store=createCampaignDraftStore({database:{
     transaction:async fn=>fn({query:async sql=>{
-      assert.match(sql,/WHERE state='approved'/);
+      if(sql.includes('to_regclass'))return {rows:[{installed:false}]};
+      assert.match(sql,/WHERE c.state='approved'/);
       assert.match(sql,/LIMIT 50/);
       return {rows:[{
         id:'1',subject:'Nowa kampania',approved_at:'2026-10-21',

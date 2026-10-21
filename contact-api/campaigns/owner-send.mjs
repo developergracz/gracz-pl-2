@@ -38,20 +38,42 @@ export function createCampaignOwnerSender({database,enabled=false,
       return ready.rows?.length===1&&ready.rows[0].ready===true;
     }catch{return false;}
   }
-  async function send(campaignId){
+  async function sendCampaign(campaignId,targeted=false){
     if(typeof campaignId!=='string'||!UUID.test(campaignId)||!await available())throw deny();
     const rows=await database.queryBounded(
       "SELECT subject,body,audience FROM newsletter_campaigns.campaigns WHERE id=$1 AND state='approved'",
       [campaignId],{timeoutMs:3000});
     if(rows.rows?.length!==1)throw deny();
     const draft=prepareCampaignDraft(rows.rows[0]);
-    let after='',accepted=0,suppressed=0;
+    // No targeted mutation without the immutable DB scope. Old deployments
+    // without this optional manual schema retain the original bulk behavior.
+    const table=await database.queryBounded(
+      "SELECT to_regclass('newsletter_campaigns.targeted_audiences') IS NOT NULL AS installed",
+      [],{timeoutMs:3000});
+    if(table.rows?.length!==1||typeof table.rows[0].installed!=='boolean')throw deny();
+    let selected=null;
+    if(table.rows[0].installed){
+      const scope=await database.queryBounded(
+        'SELECT email_tags FROM newsletter_campaigns.targeted_audiences WHERE campaign_id=$1',
+        [campaignId],{timeoutMs:3000});
+      if(!Array.isArray(scope.rows)||scope.rows.length>1)throw deny();
+      if(scope.rows.length){
+        if(!targeted)throw deny(); // Never use the bulk-sending endpoint here.
+        selected=scope.rows[0].email_tags;
+        if(!Array.isArray(selected)||selected.length<1||selected.length>10||
+           new Set(selected).size!==selected.length||
+           selected.some(x=>typeof x!=='string'||!/^[0-9a-f]{64}$/.test(x)))throw deny();
+      }else if(targeted)throw deny();
+    }else if(targeted)throw deny();
+    let after='',accepted=0,suppressed=0,page=0;
     // Keyset pages bound memory. A dropped response/restart never releases claims.
     for(;;){
-      const candidates=await database.queryBounded(
-        "SELECT s.email_tag FROM newsletter_new.subscribers s WHERE s.email_tag>$1 AND s.state='active' "+
-        "AND NOT EXISTS(SELECT 1 FROM newsletter_campaigns.dispatches d WHERE d.campaign_id=$2 AND d.email_tag=s.email_tag) "+
-        "ORDER BY s.email_tag LIMIT 100",[after,campaignId],{timeoutMs:3000});
+      const candidates=selected
+        ? {rows:page++===0?selected.map(email_tag=>({email_tag})):[]}
+        : await database.queryBounded(
+          "SELECT s.email_tag FROM newsletter_new.subscribers s WHERE s.email_tag>$1 AND s.state='active' "+
+          "AND NOT EXISTS(SELECT 1 FROM newsletter_campaigns.dispatches d WHERE d.campaign_id=$2 AND d.email_tag=s.email_tag) "+
+          "ORDER BY s.email_tag LIMIT 100",[after,campaignId],{timeoutMs:3000});
       if(!Array.isArray(candidates.rows))throw deny();
       if(!candidates.rows.length)break;
       for(const {email_tag:emailTag} of candidates.rows){
@@ -74,10 +96,16 @@ export function createCampaignOwnerSender({database,enabled=false,
             currentReview=createCampaignRecipientEvidenceReview({database:readDatabase,
               newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey,checkDeliveryAllowed});
             // Keep content/state and recipient stable throughout fresh review + HTTP.
+            const scopeSql=table.rows[0].installed
+              ? (targeted
+                ? ' AND EXISTS(SELECT 1 FROM newsletter_campaigns.targeted_audiences t WHERE t.campaign_id=$1 AND $5=ANY(t.email_tags))'
+                : ' AND NOT EXISTS(SELECT 1 FROM newsletter_campaigns.targeted_audiences t WHERE t.campaign_id=$1)')
+              : '';
             const current=await client.query(
               "SELECT 1 FROM newsletter_campaigns.campaigns WHERE id=$1 AND state='approved' "+
-              'AND subject=$2 AND body=$3 AND audience=$4 FOR SHARE',
-              [campaignId,draft.subject,draft.body,draft.audience]);
+              'AND subject=$2 AND body=$3 AND audience=$4'+scopeSql+' FOR SHARE',
+              targeted?[campaignId,draft.subject,draft.body,draft.audience,emailTag]
+                      :[campaignId,draft.subject,draft.body,draft.audience]);
             if(current.rowCount!==1)throw deny();
             const recipient=await client.query(
               'SELECT 1 FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',[emailTag]);
@@ -98,5 +126,9 @@ export function createCampaignOwnerSender({database,enabled=false,
     // No recipient identifiers, content or provider response leaves this adapter.
     return {state:'finished',accepted,suppressed,retryAllowed:false};
   }
-  return Object.freeze({available,send});
+  return Object.freeze({
+    available,
+    send:campaignId=>sendCampaign(campaignId,false),
+    sendTargeted:campaignId=>sendCampaign(campaignId,true)
+  });
 }

@@ -16,6 +16,28 @@ const secret=Buffer.from('12345678901234567890');
 const totpBase32=encodeTotp(secret);
 const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22);
 const password='a-temporary-long-synthetic-password';
+test('OWNER date filters and scoped premium messaging preserve explicit send confirmation',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
+  const router=await readFile(new URL('../owner-router.mjs',import.meta.url),'utf8');
+  const sender=await readFile(new URL('../../campaigns/owner-send.mjs',import.meta.url),'utf8');
+  for(const id of ['date-from','date-to','last-month','send-found','targeted-dialog',
+    'targeted-subject','targeted-body','targeted-approval','targeted-confirmation'])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(html,/Wyślij wyłącznie do wybranych/);
+  assert.match(ui,/send\.textContent="Wyślij wiadomość"/);
+  assert.match(ui,/send\.disabled=!targetedReady\|\|item\.state!=="active"/);
+  assert.match(ui,/targetedReady=data\.targetedSendEnabled===true/);
+  assert.match(ui,/if\(targetedBusy\|\|!targetedApproved\|\|targetedStarted\|\|!targetedId\)return/);
+  assert.match(ui,/targetedStarted=true/);
+  assert.match(ui,/WYSYŁAM DO WYBRANYCH/);
+  assert.match(router,/resolveTargetHandles\(data\.handles\)/);
+  assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
+  assert.match(sender,/if\(!targeted\)throw deny\(\)/);
+  assert.match(css,/#targeted-dialog\{box-sizing:border-box;position:fixed;inset:0;margin:auto/);
+});
+
 test('OWNER single-test confirmation uses centred premium dialog and cancels without sending',async()=>{
   const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
   const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');

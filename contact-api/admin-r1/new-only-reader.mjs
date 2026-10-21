@@ -53,10 +53,11 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
     }catch{throw fault('invalid_provider_response');}
   };
   const adapter=Object.freeze({
-    async readPage({after=null,limit=MAX_PAGE,search="",state="all",signal}={}) {
+    async readPage({after=null,limit=MAX_PAGE,search="",state="all",from="",to="",signal}={}) {
       if(!Number.isInteger(limit)||limit<1||limit>MAX_PAGE||
          (after!==null&&!hex64.test(after))||
          typeof search!=="string"||search.length>80||
+         typeof from!=="string"||typeof to!=="string"||
          !['all','active','pending','unsubscribed','suppressed','outside_segment','unknown'].includes(state))
         throw fault('invalid_request');
       const term=search.trim().toLowerCase();
@@ -76,8 +77,10 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
           WHERE ($1::text IS NULL OR s.email_tag < $1::text)
+            AND ($2::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date >= NULLIF($2::text,'')::date)
+            AND ($3::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date <= NULLIF($3::text,'')::date)
           ORDER BY s.email_tag DESC LIMIT 101
-        `,[boundary],signal);
+        `,[boundary,from,to],signal);
         if(rows.length>101)throw fault('invalid_provider_response');
         const full=rows.length===101;
         const slice=rows.slice(0,100);
