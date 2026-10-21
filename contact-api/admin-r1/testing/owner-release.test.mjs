@@ -16,6 +16,29 @@ const secret=Buffer.from('12345678901234567890');
 const totpBase32=encodeTotp(secret);
 const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22);
 const password='a-temporary-long-synthetic-password';
+test('OWNER single-test confirmation uses centred premium dialog and cancels without sending',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
+  const js=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  assert.match(html,/<dialog id="campaign-test-dialog" aria-labelledby="campaign-test-title" aria-describedby="campaign-test-description">/);
+  assert.match(html,/<form method="dialog" class="campaign-test-dialog-actions">/);
+  assert.match(html,/<button type="submit" value="cancel" autofocus>Anuluj<\/button>/);
+  assert.match(html,/<button type="submit" value="confirm">Wyślij jeden test<\/button>/);
+  assert.match(html,/Ta czynność nie wysyła wiadomości do subskrybentów/);
+  assert.match(css,/#campaign-test-dialog\{[^}]*position:fixed;inset:0;margin:auto/s);
+  assert.match(css,/#campaign-test-dialog::backdrop/);
+  assert.match(js,/campaignTestDialog\.returnValue="cancel"/);
+  assert.match(js,/campaignTestDialog\.showModal\(\)/);
+  assert.match(js,/campaignTestDialog\.returnValue==="confirm"/);
+  assert.match(js,/if\(!await confirmCampaignTestSend\(\)\)return;/);
+  assert.doesNotMatch(js,/window\.confirm\(/);
+  const clickHandler=js.slice(js.indexOf('campaignTestButton?.addEventListener("click"'),
+                               js.indexOf('draftRefreshButton?.addEventListener("click"'));
+  assert.ok(clickHandler.indexOf('if(!await confirmCampaignTestSend())return;')<
+            clickHandler.indexOf('fetch("/owner/newsletter/campaign-tests/send"'),
+            'do not send without explicit modal confirmation');
+});
+
 test('OWNER copyright notice has legal scope, full dialog, sticky navigation and close controls',async()=>{
   const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
   const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
