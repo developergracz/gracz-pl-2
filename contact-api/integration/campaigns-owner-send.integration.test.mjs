@@ -28,6 +28,8 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
     'persistence/recovery/001_withdrawal_queue.sql',
     'campaigns/draft-only-manual-r1.sql','campaigns/schema-r1.sql'])
     await database.query(await readFile(new URL('../'+path,import.meta.url),'utf8'));
+  await database.query(await readFile(
+    new URL('../campaigns/targeted-send-manual-r1.sql',import.meta.url),'utf8'));
   const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22),withdrawal=Buffer.alloc(32,33);
   const address='synthetic@example.test';
   const emailTag=createHmac('sha256',subject).update('gracz-new-only:email\n'+address).digest('hex');
@@ -71,11 +73,20 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   assert.equal(calls,1);
   await createCampaignOwnerSender(config).send(id);
   assert.equal(calls,1,'restart cannot replay');
+  const selected=await drafts.saveTargeted(content,[emailTag]);
+  await drafts.approve(selected.id,content);
+  await assert.rejects(sender.send(selected.id),{code:'campaign_send_unavailable'});
+  assert.equal((await sender.sendTargeted(selected.id)).accepted,1);
+  assert.equal(calls,2,'exactly one selected recipient');
+  assert.equal((await sender.sendTargeted(selected.id)).accepted,0,'durable deduplication');
+  assert.equal(calls,2,'replaying selected send does not reach provider');
+  await assert.rejects(drafts.saveTargeted(content,[emailTag,emailTag]),{code:'invalid_targets'});
+
   const unknown=await campaign();
   uncertain=true;
   assert.equal((await sender.send(unknown)).state,'uncertain');
   await createCampaignOwnerSender(config).send(unknown);
-  assert.equal(calls,2,'unknown provider result cannot replay');
+  assert.equal(calls,3,'unknown provider result cannot replay');
   assert.equal((await database.query('SELECT state FROM newsletter_campaigns.dispatches WHERE campaign_id=$1',[unknown])).rows[0].state,'uncertain');
   // Consent changed after resolution/reservation: the final check must see it.
   const freshCheck=await campaign();
@@ -89,11 +100,11 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
     return result;
   }};
   assert.equal((await createCampaignOwnerSender({...config,database:changingDb}).send(freshCheck)).suppressed,1);
-  assert.equal(calls,2,'fresh DOI review runs after claim, before provider');
+  assert.equal(calls,3,'fresh DOI review runs after claim, before provider');
   await database.query("UPDATE newsletter_new.subscribers SET delivery_state='sent' WHERE email_tag=$1",[emailTag]);
   await database.query('INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',[emailTag,randomUUID()]);
   assert.equal((await sender.send(await campaign())).accepted,0);
-  assert.equal(calls,2,'revoked consent never reaches provider');
+  assert.equal(calls,3,'revoked consent never reaches provider');
   // Exercise the real renewed DOI, immutable withdrawal history and provider gate.
   const recoveryTag=createHmac('sha256',withdrawal).update('gracz-withdrawal-v1\0recipient\0'+address).digest('hex');
   const addWithdrawal=async()=>{
@@ -136,7 +147,7 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   assert.equal((await count()).confirmed,1,'historical withdrawal does not erase new DOI');
   providerAllowed=false;
   assert.equal((await review(emailTag)).state,'provider_evidence_hold','suppression still denies renewed consent');
-  assert.equal(calls,2);
+  assert.equal(calls,4);
   providerAllowed=true;
   assert.equal((await review(emailTag)).state,'evidence_complete_for_review');
   const futureCampaign=await campaign();
@@ -145,7 +156,7 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   assert.equal(await dispatch.claim({campaignId:futureCampaign,dispatchId:reserved}),true);
   assert.equal((await sender.send(await campaign())).accepted,1,
     'fresh DOI permits only newly re-consented recipient, after historical verified withdrawal');
-  assert.equal(calls,3,'prior opt-out is not a permanent global block');
+  assert.equal(calls,4,'prior opt-out is not a permanent global block');
   const second=await addWithdrawal();
   // Even before the callback updates the subscriber, the fresh recovery evidence denies.
   assert.equal((await review(emailTag)).state,'verified_withdrawal','later recovery withdrawal denies');
@@ -159,10 +170,10 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
     (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'operator_record',$3)`,
     [randomUUID(),'b'.repeat(64),randomUUID()]);
   await assert.rejects(sender.send(await campaign()));
-  assert.equal(calls,3,'unresolved operator withdrawal still prevents any additional delivery');
+  assert.equal(calls,4,'unresolved operator withdrawal still prevents any additional delivery');
   await assert.rejects(createCampaignOwnerSender({...config,database:{
     transaction:async()=>{throw Error('database unavailable');},
     queryBounded:async()=>{throw Error('database unavailable');}
   }}).send(id));
-  assert.equal(calls,3);
+  assert.equal(calls,4);
 });
