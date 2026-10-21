@@ -104,8 +104,8 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical gold register action missing`
   );
   requireCheck(
-    /class="[^"]*forum-trigger[^"]*"[^>]*>Forum</.test(html),
-    `${page}: canonical Forum action missing`
+    /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html),
+    `${page}: canonical Newsletter action missing`
   );
 }
 
@@ -294,7 +294,7 @@ for (const file of allHtmlPages) {
   requireCheck(shortcut === 1, `${rel}: expected exactly one shortcut favicon link, got ${shortcut}`);
   requireCheck(apple === 1, `${rel}: expected exactly one apple-touch-icon link, got ${apple}`);
   if (/data-modal="terms"/i.test(html) || /data-modal="contact"/i.test(html)) {
-    requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1)/.test(html)), `${rel}: approved legal/contact script version missing`);
+    requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021)/.test(html)), `${rel}: approved legal/contact script version missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
     requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
@@ -306,7 +306,7 @@ for (const file of allHtmlPages) {
     requireCheck(html.includes('href="/gry-karciane/"'), `${rel}: top navigation Gry karciane action missing`);
     requireCheck(html.includes('href="/poradniki/"'), `${rel}: top navigation Poradniki action missing`);
     requireCheck(html.includes('data-modal="community"'), `${rel}: top navigation Społeczność action missing`);
-    requireCheck(html.includes('data-modal="forum"'), `${rel}: top navigation Forum action missing`);
+    requireCheck(html.includes('data-newsletter-open'), `${rel}: top navigation Newsletter action missing`);
     requireCheck(html.includes('href="/o-gracz-pl/"'), `${rel}: top navigation O gracz.pl action missing`);
   }
 }
@@ -334,7 +334,7 @@ requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsle
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");
 requireCheck(legalLinksJs.includes("Sprawdź, czy adres jest już zapisany"), "premium newsletter duplicate-safe copy missing");
-requireCheck(legalLinksJs.includes("await openNewsletterSuccess(submit,body.state)"), "footer newsletter result must open state-aware premium modal");
+requireCheck(legalLinksJs.includes("await openNewsletterSuccess(successTrigger,body.state)"), "footer newsletter result must open state-aware premium modal");
 const footerNewsletterCss = fs.readFileSync(path.resolve(root, "assets/footer-newsletter.css"), "utf8");
 requireCheck(footerNewsletterCss.includes("max-width:470px"), "footer newsletter: compact max width missing");
 requireCheck(footerNewsletterCss.includes("height:44px !important"), "footer newsletter: compact field height missing");

@@ -19,6 +19,8 @@
   var accountLastTrigger=null;
   var newsletterSuccessDialog=null;
   var newsletterSuccessLastTrigger=null;
+  var newsletterSignupDialog=null;
+  var newsletterSignupLastTrigger=null;
   var footerNewsletterValidationSeq=0;
 
   function newRequestKey(){
@@ -539,6 +541,111 @@
       newsletterSuccessLastTrigger=null;
     }
   }
+
+  // Global newsletter action: reuses the existing footer POST, validation,
+  // verified readiness check and double-opt-in response flow.
+  function newsletterSignupMarkup(){
+    return '<div class="account-access__panel newsletter-signup__panel">'+
+      '<button class="account-access__close" type="button" data-newsletter-signup-close aria-label="Zamknij okno">×</button>'+
+      '<div class="account-access__topline">'+
+        '<span class="account-access__brand" aria-hidden="true">gracz<span>.pl</span></span>'+
+        '<span class="account-access__status"><i aria-hidden="true"></i>Newsletter gracz.pl</span>'+
+      '</div>'+
+      '<div class="account-access__hero">'+
+        '<p class="account-access__eyebrow">Newsletter · FULL MAX PREMIUM</p>'+
+        '<h2 id="newsletter-signup-title">Zapisz się do newslettera</h2>'+
+        '<p id="newsletter-signup-intro" class="account-access__intro">Otrzymuj informacje o nowych grach, poradnikach i rozwoju gracz.pl. Bezpłatnie, z potwierdzeniem adresu e-mail.</p>'+
+      '</div>'+
+      '<section class="account-access__newsletter newsletter-signup__card">'+
+        '<div class="account-access__newsletter-copy">'+
+          '<p class="account-access__newsletter-kicker">Zostań z nami na bieżąco</p>'+
+          '<form data-newsletter class="newsletter-signup__form" novalidate>'+
+            '<label class="newsletter-signup__label" for="newsletter-signup-email">Twój adres e-mail</label>'+
+            '<input id="newsletter-signup-email" name="email" type="email" placeholder="adres@domena.pl" autocomplete="email" required>'+
+            '<button type="submit">Zapisz się</button>'+
+          '</form>'+
+        '</div>'+
+      '</section>'+
+      '<div class="account-access__footer">'+
+        '<span>Bezpieczny zapis double opt-in · RODO</span>'+
+        '<button type="button" class="account-access__back" data-newsletter-signup-close>Wróć do serwisu</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function restoreNewsletterSignupFocus(){
+    var trigger=newsletterSignupLastTrigger;
+    var fallback=document.querySelector('.site-header .burger');
+    if(trigger&&document.contains(trigger)&&trigger.offsetParent!==null){
+      try{trigger.focus();}catch(_){}
+    }else if(fallback&&fallback.offsetParent!==null){
+      fallback.focus();
+    }
+    newsletterSignupLastTrigger=null;
+  }
+
+  function ensureNewsletterSignupDialog(){
+    if(newsletterSignupDialog)return newsletterSignupDialog;
+    var target=document.createElement('dialog');
+    target.className='account-access newsletter-signup';
+    target.id='newsletter-signup-modal';
+    target.setAttribute('aria-labelledby','newsletter-signup-title');
+    target.setAttribute('aria-describedby','newsletter-signup-intro');
+    target.innerHTML=newsletterSignupMarkup();
+    document.body.appendChild(target);
+    target.addEventListener('click',function(event){
+      if(event.target===target||event.target.closest('[data-newsletter-signup-close]'))closeNewsletterSignup();
+    });
+    target.addEventListener('cancel',function(event){
+      event.preventDefault();
+      closeNewsletterSignup();
+    });
+    target.addEventListener('close',function(){
+      if(!newsletterSuccessDialog||!newsletterSuccessDialog.open)document.body.classList.remove('account-access-open');
+      restoreNewsletterSignupFocus();
+    });
+    newsletterSignupDialog=target;
+    enhanceFooterNewsletter(target.querySelector('form[data-newsletter]'));
+    return target;
+  }
+
+  async function openNewsletterSignup(trigger){
+    newsletterSignupLastTrigger=trigger||document.activeElement;
+    ensureFooterNewsletterStyles();
+    await ensureAccountAccessStyles();
+    var target=ensureNewsletterSignupDialog();
+    if(typeof target.showModal==='function'){
+      if(!target.open)target.showModal();
+    }else target.setAttribute('open','');
+    document.body.classList.add('account-access-open');
+    var focusTarget=NEWSLETTER_PUBLIC_INTAKE_ENABLED
+      ?target.querySelector('input[type="email"]')
+      :target.querySelector('[data-newsletter-signup-close]');
+    if(focusTarget)focusTarget.focus();
+  }
+
+  function closeNewsletterSignup(){
+    if(!newsletterSignupDialog)return;
+    if(typeof newsletterSignupDialog.close==='function'&&newsletterSignupDialog.open){
+      newsletterSignupDialog.close();
+    }else{
+      newsletterSignupDialog.removeAttribute('open');
+      document.body.classList.remove('account-access-open');
+      restoreNewsletterSignupFocus();
+    }
+  }
+
+  function initHeaderNewsletterTriggers(){
+    document.querySelectorAll('.site-header .forum-trigger,.site-header [data-newsletter-open]').forEach(function(button){
+      button.textContent='Newsletter';
+      button.removeAttribute('data-modal');
+      button.setAttribute('data-newsletter-open','');
+      button.setAttribute('aria-haspopup','dialog');
+      button.setAttribute('aria-controls','newsletter-signup-modal');
+      button.classList.add('newsletter-trigger');
+    });
+  }
+
   function ensureFooterNewsletterStyles(){
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
@@ -719,7 +826,12 @@
       form.dataset.newsletterOpenedAt=String(Date.now());
       if(body.state!=='request_received'&&body.state!=='already_subscribed')
         throw new Error('Nie można potwierdzić odpowiedzi newslettera.');
-      await openNewsletterSuccess(submit,body.state);
+      var successTrigger=submit;
+      if(newsletterSignupDialog&&newsletterSignupDialog.contains(form)){
+        successTrigger=newsletterSignupLastTrigger||submit;
+        closeNewsletterSignup();
+      }
+      await openNewsletterSuccess(successTrigger,body.state);
     }catch(error){
       setFooterNewsletterStatus(form,error&&(error.name==='AbortError'||error instanceof TypeError)?'Nie możemy potwierdzić wyniku. Zgłoszenie mogło zostać przyjęte. Sprawdź skrzynkę i nie ponawiaj od razu.':error&&error.message?error.message:'Nie udało się potwierdzić operacji.','error');
       var emailCodes=['INVALID_EMAIL','EMAIL_DOMAIN_NO_MX','EMAIL_DOMAIN_TYPO','DISPOSABLE_EMAIL','ADMIN_EMAIL_NOT_ALLOWED'];
@@ -733,6 +845,7 @@
     }
   }
 
+  initHeaderNewsletterTriggers();
   loadPortalSearch();
   initFooterNewsletters();
   // F-03: activate only when the live API itself proves readiness. No stale
@@ -775,6 +888,13 @@
   },true);
 
   document.addEventListener('click',function(event){
+    var newsletterTrigger=event.target.closest('[data-newsletter-open]');
+    if(newsletterTrigger){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openNewsletterSignup(newsletterTrigger);
+      return;
+    }
     var accountTrigger=event.target.closest('[data-modal="login"],[data-modal="register"]');
     if(accountTrigger){
       event.preventDefault();

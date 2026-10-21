@@ -119,9 +119,55 @@ test('HTTP 200 without schema confirmation still blocks newsletter signup', asyn
   await expect(page.locator('#nl-maintenance-notice')).toBeVisible();
 });
 
+
+test('top Newsletter button opens accessible signup and stays safely disabled until API ready', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const nav=page.locator('.site-header [data-newsletter-open]');
+  await expect(nav).toHaveText('Newsletter');
+  if(!(await nav.isVisible()))await page.locator('.site-header .burger').click();
+  await nav.click();
+  const dialog=page.locator('#newsletter-signup-modal');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('input[name="email"]')).toBeDisabled();
+  await expect(dialog.locator('input[name="consent"]')).toBeDisabled();
+  await expect(dialog.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  if(await nav.isVisible())await expect(nav).toBeFocused();
+  else await expect(page.locator('.site-header .burger')).toBeFocused();
+});
+
+test('top Newsletter uses existing verified subscribe and Premium result flow', async ({page}) => {
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
+    route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  const posts=[];
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/subscribe',route=>{
+    posts.push(route.request().postDataJSON());
+    return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ok:true,state:'request_received'})});
+  });
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const nav=page.locator('.site-header [data-newsletter-open]');
+  if(!(await nav.isVisible()))await page.locator('.site-header .burger').click();
+  await nav.click();
+  const dialog=page.locator('#newsletter-signup-modal');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('input[name="email"]')).toBeEnabled();
+  await dialog.locator('input[name="email"]').fill('newsletter-e2e@example.pl');
+  await dialog.locator('input[name="consent"]').check();
+  await dialog.locator('button[type="submit"]').click();
+  await expect(page.locator('#newsletter-success-modal')).toBeVisible();
+  await expect(dialog).toBeHidden();
+  expect(posts).toHaveLength(1);
+  expect(posts[0]).toMatchObject({email:'newsletter-e2e@example.pl',consent:true});
+});
+
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
-    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1)/);
+    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021)/);
   }
 });
 
