@@ -50,7 +50,7 @@ jobs:
         run: npm --prefix contact-api ci --ignore-scripts
       - name: Verify new-only opt-in, revocation and provider no-suppression
         run: node --test contact-api/test/new-only-newsletter.test.mjs contact-api/test/newsletter-resend-provider-off.test.mjs
-      - name: Verify 001 + 002 PostgreSQL 18 migrations and immutable opt-out
+      - name: Verify 001 + 002 + 005 PostgreSQL 18 migrations and immutable opt-out
         working-directory: contact-api
         env:
           PGHOST: 127.0.0.1
@@ -66,7 +66,7 @@ jobs:
           const db=new pg.Client();
           await db.connect();
           try {
-            for (const name of ['001_new_only_doi.sql','002_verified_withdrawal.sql']) {
+            for (const name of ['001_new_only_doi.sql','002_verified_withdrawal.sql','005_repeat_withdrawal_state.sql']) {
               const sql=await readFile('persistence/new-only/'+name,'utf8');
               await db.query('BEGIN');
               try {await db.query(sql);await db.query('COMMIT');}
@@ -78,6 +78,10 @@ jobs:
             );
             assert.equal(schema.rows[0].subscribers,true);
             assert.equal(schema.rows[0].revocations,true);
+            const added=await db.query(
+              "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='newsletter_new' AND table_name='subscribers' AND column_name='repeat_withdrawn_at') AS present"
+            );
+            assert.equal(added.rows[0].present,true);
             const emailTag='a'.repeat(64);
             const challenge='00000000-0000-4000-8000-000000000001';
             await db.query(
@@ -102,6 +106,14 @@ jobs:
             );
             const rows=await db.query('SELECT count(*)::int AS count FROM newsletter_new.revocations');
             assert.equal(rows.rows[0].count,1);
+            await db.query("UPDATE newsletter_new.subscribers SET requested_at=now()-interval '10 minutes',state='pending',token_tag=$2,expires_at=now()+interval '20 minutes',repeat_withdrawn_at=now(),confirmed_at=NULL WHERE email_tag=$1",[emailTag,'c'.repeat(64)]);
+            const withdrawn=await db.query(
+              "SELECT (r.recorded_at>=s.requested_at OR s.repeat_withdrawn_at>=s.requested_at) AS revoked FROM newsletter_new.subscribers s LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag WHERE s.email_tag=$1",[emailTag]);
+            assert.equal(withdrawn.rows[0].revoked,true);
+            await db.query("UPDATE newsletter_new.subscribers SET requested_at=now()+interval '1 minute',expires_at=now()+interval '31 minutes' WHERE email_tag=$1",[emailTag]);
+            const fresh=await db.query(
+              "SELECT (r.recorded_at>=s.requested_at OR s.repeat_withdrawn_at>=s.requested_at) AS revoked FROM newsletter_new.subscribers s LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag WHERE s.email_tag=$1",[emailTag]);
+            assert.equal(fresh.rows[0].revoked,false);
             console.log('New-only PostgreSQL 18 migrations and immutable opt-out PASS');
           } finally {await db.end();}
           NODE
