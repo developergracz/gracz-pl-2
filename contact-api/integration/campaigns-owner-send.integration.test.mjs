@@ -25,6 +25,7 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   await reset();
   for(const path of ['persistence/new-only/001_new_only_doi.sql',
     'persistence/new-only/002_verified_withdrawal.sql',
+    'persistence/new-only/005_repeat_withdrawal_state.sql',
     'persistence/recovery/001_withdrawal_queue.sql',
     'campaigns/draft-only-manual-r1.sql','campaigns/schema-r1.sql'])
     await database.query(await readFile(new URL('../'+path,import.meta.url),'utf8'));
