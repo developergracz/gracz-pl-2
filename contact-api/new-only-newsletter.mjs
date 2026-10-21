@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import {renderPremiumEmail} from './email/full-max-premium.mjs';
 
 const CONSENT_VERSION = 'newsletter-new-only-2026-10-20';
 const CONFIRM_TTL_MS = 30 * 60 * 1000;
@@ -174,6 +175,13 @@ export function createNewOnlyNewsletter({
         text:'Aby potwierdzić nową zgodę na newsletter gracz.pl, otwórz link: '+url+
           '\n\nLink jest ważny 30 minut. Jeśli to nie Ty, zignoruj wiadomość.\n'+
           'Informacje o prywatności: https://gracz.pl/polityka-prywatnosci/',
+        html:renderPremiumEmail({
+          category:'NEWSLETTER · POTWIERDZENIE',title:'Potwierdź zapis do newslettera',
+          preheader:'Dokończ zapis jednym kliknięciem na gracz.pl',
+          body:'Otrzymaliśmy prośbę o zapis do newslettera gracz.pl. Aby aktywować subskrypcję, przejdź do strony potwierdzenia i świadomie zaakceptuj zapis.',
+          actionUrl:url,actionLabel:'Potwierdź zapis',
+          footnote:'Link jest ważny 30 minut. Samo otwarcie wiadomości nie zapisuje do newslettera. Jeśli to nie Ty, zignoruj wiadomość.'
+        }),
       }),
       signal:AbortSignal.timeout(10000),
     });
@@ -289,7 +297,13 @@ export function createNewOnlyNewsletter({
         from:emailFrom,to:[mailbox],subject:'gracz.pl — bezpieczne sprawdzenie newslettera',
         text:'Aby sprawdzić status swojej subskrypcji newslettera gracz.pl, otwórz link: '+
           baseUrl+'#status='+proof+
-          '\n\nLink jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.'
+          '\n\nLink jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.',
+        html:renderPremiumEmail({
+          category:'NEWSLETTER · BEZPIECZEŃSTWO',title:'Sprawdź status newslettera',
+          body:'Sprawdź bezpiecznie status swojej subskrypcji newslettera gracz.pl.',
+          actionUrl:baseUrl+'#status='+proof,actionLabel:'Sprawdź status',
+          footnote:'Link jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli nie zlecano tej operacji, zignoruj wiadomość.'
+        })
       }),
       signal:AbortSignal.timeout(10000)
     });
