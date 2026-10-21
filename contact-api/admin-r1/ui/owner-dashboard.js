@@ -763,6 +763,7 @@ campaignPreviewForm?.addEventListener("submit",event=>{
 const draftSaveButton=$("campaign-save-draft");
 const draftRefreshButton=$("campaign-refresh-drafts");
 const campaignTestButton=$("campaign-send-test");
+const campaignApproveButton=$("campaign-approve-content");
 let campaignTestReady=false;
 const draftStatus=$("campaign-preview-status");
 async function draftRequest(route,payload){
@@ -782,6 +783,7 @@ function selectCampaignDraft(id){
   if(draftSaveButton)draftSaveButton.textContent=id?"Zapisz zmiany":"Zapisz wersję roboczą";
   if(newDraftButton)newDraftButton.hidden=!id;
   if(campaignTestButton)campaignTestButton.disabled=!(id&&campaignTestReady);
+  if(campaignApproveButton)campaignApproveButton.disabled=!id;
 }
 newDraftButton?.addEventListener("click",()=>{
   selectCampaignDraft(null);
@@ -806,6 +808,16 @@ async function openCampaignDraft(id){
   draftStatus.textContent="Wczytano wersję roboczą do edycji. Nie wysłano wiadomości.";
   $("campaign-subject").focus();
 }
+async function refreshApproved(){
+  const result=await draftRequest("approved",{});
+  const list=$("campaign-approved-list");
+  list.replaceChildren();
+  for(const campaign of result.campaigns||[]){
+    const li=document.createElement("li");
+    li.textContent=String(campaign.subject||"")+ " — zatwierdzono, bez wysyłki";
+    list.append(li);
+  }
+}
 async function refreshDrafts({notify=true}={}){
   const result=await draftRequest("list",{});
   const list=$("campaign-drafts-list");
@@ -826,7 +838,8 @@ async function refreshDrafts({notify=true}={}){
     li.append(button);
     list.append(li);
   }
-  if(notify)draftStatus.textContent="Odczytano zapisane wersje robocze.";
+  await refreshApproved();
+  if(notify)draftStatus.textContent="Odczytano zapisane wersje robocze i zatwierdzone treści.";
 }
 draftSaveButton?.addEventListener("click",async()=>{
   if(!campaignPreviewForm?.reportValidity())return;
@@ -853,6 +866,47 @@ draftSaveButton?.addEventListener("click",async()=>{
   }catch{
     draftStatus.textContent="Nie udało się zapisać zmian. Sprawdź dane i spróbuj ponownie.";
   }finally{draftSaveButton.disabled=false;}
+});
+campaignApproveButton?.addEventListener("click",async()=>{
+  if(!editingCampaignId||!savedCampaignSnapshot)return;
+  const subject=$("campaign-subject").value.trim();
+  const body=$("campaign-body").value.trim();
+  if(savedCampaignSnapshot.id!==editingCampaignId||
+     subject!==savedCampaignSnapshot.subject||
+     body!==savedCampaignSnapshot.body){
+    $("campaign-approval-status").textContent=
+      "Najpierw zapisz zmiany. Zatwierdzenie dotyczy dokładnie zapisanej treści.";
+    return;
+  }
+  const phrase=window.prompt(
+    "Zatwierdzenie treści jest nieodwracalne w tym panelu. "+
+    "NIE uruchamia wysyłki. Aby potwierdzić, wpisz: ZATWIERDZAM TREŚĆ"
+  );
+  if(phrase!=="ZATWIERDZAM TREŚĆ")return;
+  campaignApproveButton.disabled=true;
+  const status=$("campaign-approval-status");
+  try{
+    const result=await draftRequest("approve",{
+      id:editingCampaignId,subject,body,
+      audience:"confirmed_active_new_only",
+      confirmation:"ZATWIERDZAM TREŚĆ"
+    });
+    if(result?.ok!==true||result?.state!=="approved"||
+       result?.sendingEnabled!==false)
+      throw Error("approval_not_confirmed");
+    // An approved campaign can no longer be edited in the draft-only store.
+    selectCampaignDraft(null);
+    savedCampaignSnapshot=null;
+    $("campaign-subject").value="";
+    $("campaign-body").value="";
+    status.textContent="Treść zatwierdzona. Wysyłka nie została uruchomiona.";
+    await refreshDrafts({notify:false});
+  }catch{
+    status.textContent="Zatwierdzenie nie zostało potwierdzone. "+
+      "Treść mogła zostać zmieniona. Odśwież zapisane kampanie.";
+  }finally{
+    campaignApproveButton.disabled=!editingCampaignId;
+  }
 });
 campaignTestButton?.addEventListener("click",async()=>{
   if(!campaignTestReady||!editingCampaignId)return;
@@ -927,6 +981,7 @@ async function checkCampaignDraftAvailability(){
   if(draftRefreshButton)draftRefreshButton.disabled=true;
   campaignTestReady=false;
   if(campaignTestButton)campaignTestButton.disabled=true;
+  if(campaignApproveButton)campaignApproveButton.disabled=!editingCampaignId;
   const availabilityDescription=$("campaign-drafts-description");
   try{
     const response=await fetch("/owner/newsletter/campaign-drafts/availability",{
