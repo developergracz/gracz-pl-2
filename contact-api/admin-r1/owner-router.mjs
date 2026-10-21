@@ -100,7 +100,7 @@ export function createOwnerRouter({
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
   recoverySecret,recoveryMailer,recoveryEnabled=false,
   campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null,
-  campaignWithdrawalReady=null
+  campaignWithdrawalReady=null,campaignTestSender=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -238,7 +238,10 @@ export function createOwnerRouter({
             ready=check.rows?.[0]?.ready===true;
           }catch{ready=false;}
         }
-        return response(res,200,{ok:true,enabled:ready});
+        let testSendEnabled=false;
+        if(ready&&typeof campaignTestSender?.available==='function')
+          testSendEnabled=await campaignTestSender.available();
+        return response(res,200,{ok:true,enabled:ready,testSendEnabled});
       }
       if(req.method==='POST'&&path===PREFIX+'/campaign-drafts/audience'){
         if(!campaignDraftsEnabled||!campaignDraftStore||
@@ -255,6 +258,27 @@ export function createOwnerRouter({
         }catch{withdrawalReady=false;}
         // Advisory only. This is NOT authorization to send any campaign.
         return response(res,200,{...evidence,withdrawalReady});
+      }
+      if(req.method==='POST'&&path===PREFIX+'/campaign-tests/send'){
+        // Explicit OWNER click is necessary, but never sufficient: dedicated
+        // feature flag, durable send-attempt table and withdrawal checks apply.
+        if(!campaignDraftsEnabled||typeof campaignTestSender?.sendTest!=='function')
+          return reject(res,503);
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req);
+        if(Object.keys(data).length!==1||!Object.hasOwn(data,'id'))
+          return reject(res);
+        try{
+          const result=await campaignTestSender.sendTest(data.id);
+          return response(res,result.state==='uncertain'?202:200,{ok:true,...result});
+        }catch(error){
+          if(error?.code==='invalid_campaign_id')
+            return response(res,400,{ok:false,error:'invalid_campaign_id'});
+          if(error?.code==='campaign_test_send_unavailable')
+            return reject(res,503);
+          throw error;
+        }
       }
       if(req.method==='POST'&&[
         PREFIX+'/campaign-drafts/save',PREFIX+'/campaign-drafts/list',

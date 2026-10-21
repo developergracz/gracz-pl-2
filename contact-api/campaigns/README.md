@@ -14,6 +14,19 @@
 
 `schema-r1.sql` zawiera kandydackie tabele i procedury wysyłki. **Nie są zainstalowane w produkcji**. `dispatch-coordinator.mjs`, `pg-dispatch-store.mjs` i `resend-transport.mjs` są tylko niepodłączonymi adapterami; ich obecność nie oznacza gotowości funkcji wysyłkowej.
 
+## Wysyłka próbna — kandydat R1, WSTRZYMANY produkcyjnie
+
+Kod jednorazowej wysyłki testowej działa **wyłącznie po osobnym uruchomieniu**:
+- Tylko zalogowany OWNER, same-origin + CSRF, ręczne potwierdzenie w panelu.
+- Tylko istniejąca zapisana wersja robocza, bez zatwierdzania kampanii.
+- Odbiorca ustalony na serwerze z istniejącego `CONTACT_TO` (adres obsługi gracz.pl). Panel nie pozwala wpisać dowolnego odbiorcy.
+- Przed próbą: gotowa obsługa wypisań, PostgreSQL z wymaganymi uprawnieniami oraz osobny `NEWSLETTER_CAMPAIGN_TEST_SEND_ENABLED=1` (domyślnie OFF).
+- Ręczny, osobno zatwierdzany skrypt `test-send-manual-r1.sql` tworzy jedynie `newsletter_campaigns.test_attempts`. Nie jest uruchamiany automatycznie. **Nie stosować bez aktualnej kopii bazy**.
+- Trwała rezerwacja w PostgreSQL przed Resend, jeden test na niezmienioną treść kampanii, limit pięciu prób w 24 godziny. Wynik niepewny = brak ponowienia.
+- Odpowiedź `accepted` oznacza wyłącznie, że Resend przyjął wiadomość, a nie jej doręczenie.
+
+**Samo scalenie PR nie uruchamia wysyłki.** Bez migracji i przełączenia flagi API odmawia testu, a przycisk w panelu pozostaje nieaktywny.
+
 ## Warunki przed przyszłą wysyłką
 
 1. Dowieść w testach produkcyjnego przepływu: aktualna zgoda DOI, cel przetwarzania, wycofanie zgody i weryfikacja adresu tuż przed próbą doręczenia; nie wykorzystywać listy historycznej.
