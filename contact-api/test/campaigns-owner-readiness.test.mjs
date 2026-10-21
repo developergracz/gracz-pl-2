@@ -39,3 +39,15 @@ test('consent evidence count is OWNER-only, CSRF-checked and non-sending',()=>{
   assert.match(ui,/await draftRequest\("audience",\{\}\)/);
   assert.match(ui,/result\?\.advisoryOnly!==true/);
 });
+
+test('campaign preflight checks withdrawal readiness without enabling sends',()=>{
+  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+  assert.match(server,/campaignWithdrawalReady:checkWithdrawalReady/);
+  assert.match(router,/withdrawalReady=typeof campaignWithdrawalReady==='function'/);
+  assert.match(router,/await campaignWithdrawalReady\(\)===true/);
+  assert.match(router,/catch\{withdrawalReady=false;\}/);
+  assert.match(router,/return response\(res,200,\{\.\.\.evidence,withdrawalReady\}\)/);
+  assert.match(ui,/typeof result\.withdrawalReady!=="boolean"/);
+  assert.match(ui,/withdrawalStatus\.textContent=result\.withdrawalReady/);
+  assert.match(ui,/Nie można potwierdzić gotowości obsługi wypisań/);
+});
