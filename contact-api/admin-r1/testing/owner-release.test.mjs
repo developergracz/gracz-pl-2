@@ -175,6 +175,13 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(redirected.headers.location,'/owner/newsletter/');
     assert.equal(redirected.headers['cache-control'],'no-store');
     assert.equal(redirected.headers['set-cookie'],undefined);
+    const loginRedirect=await probe('/owner/newsletter/login?utm_source=chatgpt.com');
+    assert.equal(loginRedirect.status,302);
+    assert.equal(loginRedirect.headers.location,'/owner/newsletter/login');
+    assert.equal(loginRedirect.headers['set-cookie'],undefined);
+    assert.equal(loginRedirect.headers['cache-control'],'no-store');
+    assert.equal((await probe('/owner/newsletter/login?utm_source=unknown')).status,403);
+    assert.equal((await probe('/owner/newsletter/login?utm_source=chatgpt.com','POST')).status,403);
     const anonymous=await probe('/owner/newsletter/');
     assert.equal(anonymous.status,302);
     assert.equal(anonymous.headers.location,'/owner/newsletter/login');
