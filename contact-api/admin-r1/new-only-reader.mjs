@@ -74,6 +74,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
                  r.recorded_at AS revoked_at
           FROM newsletter_new.subscribers s
           LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+            AND r.recorded_at>=s.requested_at
           WHERE ($1::text IS NULL OR s.email_tag < $1::text)
           ORDER BY s.email_tag DESC LIMIT 101
         `,[boundary],signal);
@@ -131,6 +132,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           s.source,s.requested_at,(r.email_tag IS NOT NULL) AS revoked
         FROM newsletter_new.subscribers s
         LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+            AND r.recorded_at>=s.requested_at
         CROSS JOIN snap
         WHERE s.requested_at>snap.at-interval '24 hours'
           AND s.requested_at<=snap.at
@@ -178,6 +180,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
         (r.email_tag IS NOT NULL) AS revoked
       FROM newsletter_new.subscribers s
       LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+            AND r.recorded_at>=s.requested_at
       WHERE s.email_tag=$1
     `,[emailTag],signal);
     if(rows.length!==1)return null;
