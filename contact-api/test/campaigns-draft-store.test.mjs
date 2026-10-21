@@ -68,3 +68,44 @@ test('OWNER draft body is accessible only by identifier and draft state',async()
   await assert.rejects(store.get('invalid-id'),{code:'invalid_campaign'});
   assert.equal(calls.length,1);
 });
+
+test('OWNER approval is exactly-once and compares the complete current draft',async()=>{
+  const id='123e4567-e89b-42d3-a456-426614174000';
+  const queries=[];
+  let applied=true;
+  const store=createCampaignDraftStore({database:{
+    transaction:async fn=>fn({query:async(sql,params)=>{
+      queries.push({sql,params});
+      return {rowCount:applied?1:0,rows:applied?[{id,approved_at:'2026-10-21'}]:[]};
+    }})
+  }});
+  const draft={subject:'Nowości gracz.pl',
+    body:'Nowa wiadomość dla użytkowników serwisu gracz.pl.',
+    audience:'confirmed_active_new_only'};
+  assert.deepEqual(await store.approve(id,draft),{
+    id,state:'approved',sendingEnabled:false
+  });
+  assert.match(queries[0].sql,/WHERE id=\$1 AND state='draft' AND approved_at IS NULL/);
+  assert.match(queries[0].sql,/AND subject=\$2 AND body=\$3 AND audience=\$4/);
+  assert.deepEqual(queries[0].params,[id,draft.subject,draft.body,draft.audience]);
+  assert.doesNotMatch(queries[0].sql,/dispatch|resend|email_tag/i);
+  applied=false;
+  assert.equal(await store.approve(id,draft),null);
+  await assert.rejects(store.approve('not-uuid',draft),{code:'invalid_campaign'});
+});
+test('approved list returns only headers and cannot return message body',async()=>{
+  const store=createCampaignDraftStore({database:{
+    transaction:async fn=>fn({query:async sql=>{
+      assert.match(sql,/WHERE state='approved'/);
+      assert.match(sql,/LIMIT 50/);
+      return {rows:[{
+        id:'1',subject:'Nowa kampania',approved_at:'2026-10-21',
+        body:'SECRET BODY',email:'private@example.test'
+      }]};
+    }})
+  }});
+  assert.deepEqual(await store.listApproved(),[{
+    id:'1',subject:'Nowa kampania',approvedAt:'2026-10-21',
+    state:'approved',sendingEnabled:false
+  }]);
+});

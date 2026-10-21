@@ -288,18 +288,24 @@ export function createOwnerRouter({
       }
       if(req.method==='POST'&&[
         PREFIX+'/campaign-drafts/save',PREFIX+'/campaign-drafts/list',
-        PREFIX+'/campaign-drafts/get',PREFIX+'/campaign-drafts/update'
+        PREFIX+'/campaign-drafts/get',PREFIX+'/campaign-drafts/update',
+        PREFIX+'/campaign-drafts/approve',PREFIX+'/campaign-drafts/approved'
       ].includes(path)){
-        // OWNER session has already been checked. All mutations remain
-        // drafts-only and require same-origin + CSRF. No send or approval routes.
+        // Authenticated OWNER, same-origin + CSRF. Content approval is
+        // independent of (and never grants) any marketing send permission.
         if(!campaignDraftsEnabled||!campaignDraftStore)return reject(res,503);
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);
-        const writing=path.endsWith('/save')||path.endsWith('/update');
+        const writing=path.endsWith('/save')||path.endsWith('/update')||
+          path.endsWith('/approve');
         const data=await input(req,writing?65536:maxBody);
         if(path.endsWith('/list')){
           if(Object.keys(data).length!==0)return reject(res);
           return response(res,200,{ok:true,drafts:await campaignDraftStore.list()});
+        }
+        if(path.endsWith('/approved')){
+          if(Object.keys(data).length!==0)return reject(res);
+          return response(res,200,{ok:true,campaigns:await campaignDraftStore.listApproved()});
         }
         if(path.endsWith('/get')&&
            (Object.keys(data).length!==1||!Object.hasOwn(data,'id')))return reject(res);
@@ -310,6 +316,12 @@ export function createOwnerRouter({
         if(path.endsWith('/save')&&
            (Object.keys(data).length!==3||
             !['subject','body','audience'].every(k=>Object.hasOwn(data,k))))
+          return reject(res);
+        if(path.endsWith('/approve')&&
+           (Object.keys(data).length!==5||
+            !['id','subject','body','audience','confirmation']
+              .every(k=>Object.hasOwn(data,k))||
+            data.confirmation!=='ZATWIERDZAM TREŚĆ'))
           return reject(res);
         try{
           if(path.endsWith('/get')){
@@ -322,6 +334,12 @@ export function createOwnerRouter({
             const updated=await campaignDraftStore.update(id,draft);
             return updated?response(res,200,{ok:true,...updated}):
               response(res,404,{ok:false,error:'draft_not_found'});
+          }
+          if(path.endsWith('/approve')){
+            const {id,confirmation,...draft}=data;
+            const approved=await campaignDraftStore.approve(id,draft);
+            return approved?response(res,200,{ok:true,...approved}):
+              response(res,409,{ok:false,error:'campaign_changed_or_approved'});
           }
           const saved=await campaignDraftStore.save(data);
           return response(res,201,{ok:true,...saved});

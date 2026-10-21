@@ -8,6 +8,22 @@
 - Odczyt i modyfikacja są ograniczone do `state='draft'`. Lista nie zwraca treści wiadomości; treść pobierana jest dopiero po wybraniu zapisanej wersji roboczej.
 - Włączenie możliwości zapisu wymaga `NEWSLETTER_CAMPAIGN_DRAFTS_ENABLED=1`, dostępnej tabeli oraz wymaganych uprawnień PostgreSQL.
 
+## Zatwierdzanie treści przez OWNER — bez wysyłki
+
+Przygotowaną wersję roboczą można ręcznie oznaczyć jako `approved`.
+Wymagane są aktywna sesja OWNER, Origin, CSRF, świadome wpisanie
+`ZATWIERDZAM TREŚĆ` i zgodność **całej** zapisanej treści z podglądem.
+PostgreSQL wykonuje tylko atomowy warunkowy `draft → approved`; zmieniona
+lub już zatwierdzona wersja jest odrzucana. Po zatwierdzeniu nie można
+edytować jej w panelu wersji roboczych. W panelu pozostaje odczytowa lista
+zatwierdzonych tytułów (bez treści i adresów odbiorców).
+
+**`approved` oznacza akceptację treści, a nie zezwolenie na wysyłkę.**
+Nie utworzono tabel `dispatches`, zadań, trasy marketingowego `send`,
+ani przełącznika produkcyjnej wysyłki. Globalne wypisania pozostają
+nadrzędną blokadą. Wysyłkę właściwą można zaprojektować dopiero po
+odrębnym dopuszczeniu odbiorców i zatwierdzeniu przez OWNER.
+
 ## Granice bezpieczeństwa
 
 **Wysyłanie kampanii jest wyłączone.** Wersje robocze nie rezerwują odbiorców, nie odczytują ich adresów, nie tworzą rekordów wysyłki i nie wywołują Resend. Zmiany w tym etapie nie wymagają kolejnej migracji bazy.

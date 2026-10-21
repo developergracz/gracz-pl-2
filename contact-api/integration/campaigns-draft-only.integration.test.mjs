@@ -37,8 +37,21 @@ test('manual OWNER draft-only schema stores drafts, lists headers and contains n
   const reopened=await store.get(record.id);
   assert.equal(reopened.subject,'Nowości gracz.pl');
   assert.equal(reopened.body,'Nowa wersja wiadomości newslettera.');
-  await db.query("UPDATE newsletter_campaigns.campaigns "+
-    "SET state='approved',approved_at=clock_timestamp() WHERE id=$1",[record.id]);
+  const approvalContent={
+    subject:reopened.subject,body:reopened.body,audience:reopened.audience
+  };
+  // A stale review never changes the approved state.
+  assert.equal(await store.approve(record.id,{
+    ...approvalContent,body:'Wiadomość zmieniona pomiędzy podglądem i potwierdzeniem.'
+  }),null);
+  assert.deepEqual(await store.approve(record.id,approvalContent),{
+    id:record.id,state:'approved',sendingEnabled:false
+  });
+  assert.equal(await store.approve(record.id,approvalContent),null);
+  const approved=await store.listApproved();
+  assert.equal(approved.length,1);
+  assert.equal(approved[0].id,record.id);
+  assert.equal(approved[0].sendingEnabled,false);
   assert.equal(await store.update(record.id,{
     subject:'Nie zmieniaj',body:'Próba zmiany zatwierdzonej kampanii.',
     audience:'confirmed_active_new_only'
