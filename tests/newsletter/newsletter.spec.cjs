@@ -54,6 +54,9 @@ test('#283 withdrawal-only flow: readiness, neutral request and manual fragment 
         {ok:true,state:'request_received'})});
   });
   await page.goto('/newsletter/');
+  expect(await page.locator('#nl-subscribe-panel').evaluate(
+    node=>Boolean(node.compareDocumentPosition(document.querySelector('#nl-withdrawal-panel'))&Node.DOCUMENT_POSITION_FOLLOWING)
+  )).toBe(true);
   await expect(page.locator('#nl-withdrawal-submit')).toBeEnabled();
   await expect(page.locator('#nl-submit')).toBeDisabled();
   await page.locator('#nl-withdrawal-email').fill('synthetic@example.test');
@@ -65,14 +68,22 @@ test('#283 withdrawal-only flow: readiness, neutral request and manual fragment 
   await page.goto('/newsletter/#withdrawal='+id+'.'+token);
   await expect(page.locator('#nl-withdrawal-action')).toBeVisible();
   await expect(page.locator('#nl-withdrawal-action')).toHaveAttribute('open','');
+  expect(await page.locator('#nl-withdrawal-action').evaluate(node=>node.parentElement===document.body)).toBe(true);
+  const rect=await page.locator('#nl-withdrawal-action').boundingBox();
+  const viewport=page.viewportSize();
+  expect(rect).not.toBeNull();
+  expect(rect.y).toBeGreaterThanOrEqual(0);
+  expect(rect.y+rect.height).toBeLessThanOrEqual(viewport.height+1);
   await expect(page.locator('#nl-withdrawal-confirm')).toBeVisible();
   await expect(page.locator('#nl-withdrawal-confirm')).toBeEnabled();
   expect(page.url()).not.toContain(token);
   expect(requests).toHaveLength(1); // opening a link never performs opt-out
   await page.locator('#nl-withdrawal-confirm').click();
-  await expect(page.locator('#nl-withdrawal-action-status')).toContainText('Resend potwierdził');
+  await expect(page.locator('#nl-withdrawal-confirm-title')).toHaveText('Zostałeś wypisany z newslettera gracz.pl');
+  await expect(page.locator('#nl-withdrawal-action-status')).toContainText('bez nowej, potwierdzonej zgody');
+  await expect(page.locator('#nl-withdrawal-action')).toHaveClass(/nl-withdrawal-dialog--success/);
   await expect(page.locator('#nl-withdrawal-confirm')).toBeHidden();
-  await expect(page.locator('#nl-withdrawal-cancel')).toHaveText('Zrozumiałem');
+  await expect(page.locator('#nl-withdrawal-cancel')).toHaveText('Zamknij');
   expect(requests).toEqual([
     {path:'/newsletter/withdrawal-request',payload:{email:'synthetic@example.test',website:''}},
     {path:'/newsletter/withdrawal-confirm',payload:{challengeId:id,token}}
@@ -115,6 +126,38 @@ test('withdrawal link shows a premium modal; cancel never changes consent',async
   await page.goto('/newsletter/#withdrawal=invalid');
   await expect(dialog).toBeHidden();
   expect(requests).toEqual([]);
+});
+
+test('withdrawal unresolved delivery response never claims successful unsubscribe',async({page})=>{
+  const changes=[];
+  await page.route('**/*',async route=>{
+    const req=route.request(),url=new URL(req.url());
+    if(url.origin==='http://127.0.0.1:4174')return route.continue();
+    if(url.origin!==API)return route.abort();
+    if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{
+      'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS',
+      'access-control-allow-headers':'content-type'}});
+    if(req.method()==='GET'&&url.pathname==='/newsletter/withdrawal-ready')
+      return route.fulfill({status:200,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},
+        body:JSON.stringify({ready:true,withdrawalOnly:true,newsletterIntakeEnabled:false})});
+    if(req.method()==='POST'&&url.pathname==='/newsletter/withdrawal-confirm'){
+      changes.push(req.postDataJSON());
+      return route.fulfill({status:200,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},
+        body:JSON.stringify({ok:true,state:'request_received',confirmed:false})});
+    }
+    return route.abort();
+  });
+  const token='d'.repeat(43),id='912cabea-71cc-4c26-9201-3bd421444444';
+  await page.goto('/newsletter/#withdrawal='+id+'.'+token);
+  const dialog=page.locator('#nl-withdrawal-action');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('#nl-withdrawal-confirm').click();
+  await expect(dialog.locator('#nl-withdrawal-confirm-title')).toHaveText('Wypisanie wymaga weryfikacji');
+  await expect(dialog.locator('#nl-withdrawal-action-status')).toContainText('Nie ponawiaj operacji');
+  await expect(dialog).not.toHaveClass(/nl-withdrawal-dialog--success/);
+  expect(changes).toEqual([{challengeId:id,token}]);
 });
 
 test('inline validation, keyboard focus, clearing and voluntary status request', async ({page},info) => {
