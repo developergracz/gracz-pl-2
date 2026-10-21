@@ -77,8 +77,8 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
           WHERE ($1::text IS NULL OR s.email_tag < $1::text)
-            AND ($2::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date >= $2::date)
-            AND ($3::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date <= $3::date)
+            AND ($2::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date >= NULLIF($2::text,'')::date)
+            AND ($3::text='' OR (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date <= NULLIF($3::text,'')::date)
           ORDER BY s.email_tag DESC LIMIT 101
         `,[boundary,from,to],signal);
         if(rows.length>101)throw fault('invalid_provider_response');
