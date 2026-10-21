@@ -56,6 +56,7 @@ jobs:
           try {
             for(const file of ['001_new_only_doi.sql',
                                '002_verified_withdrawal.sql',
+                               '005_repeat_withdrawal_state.sql',
                                '003_owner_sessions.sql',
                                '004_owner_credentials.sql',
                                'owner-recovery-r1.sql']){
