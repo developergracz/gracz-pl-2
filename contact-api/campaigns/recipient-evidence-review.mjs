@@ -76,8 +76,15 @@ export function createCampaignRecipientEvidenceReview({
      timingSafeEqual(subject,withdrawal))
     throw invalid();
 
-  return async function reviewOne(emailTag){
+  return async function reviewOne(emailTag,expectedAddress){
     if(typeof emailTag!=='string'||!HEX64.test(emailTag))throw invalid();
+    // The optional expected address is supplied only by a private, future
+    // dispatch adapter. Merely possessing an email_tag must never authorize
+    // sending to an arbitrary address.
+    const matchAddress=expectedAddress!==undefined;
+    if(matchAddress&&(typeof expectedAddress!=='string'||
+       expectedAddress.length>254||expectedAddress!==expectedAddress.trim().toLowerCase()||
+       !MAIL.test(expectedAddress)))throw invalid();
 
     // An unresolved self-service provider effect, any exceptional/legacy intake
     // or a global no-send obligation requires a conservative NO, not a guess.
@@ -115,6 +122,13 @@ export function createCampaignRecipientEvidenceReview({
       .update(REGISTRY_CONTEXT+email).digest();
     if(!timingSafeEqual(computed,Buffer.from(emailTag,'hex')))
       throw invalid();
+    if(matchAddress){
+      const verified=Buffer.from(email,'utf8');
+      const supplied=Buffer.from(expectedAddress,'utf8');
+      if(verified.length!==supplied.length||
+         !timingSafeEqual(verified,supplied))
+        return verdict('recipient_mismatch');
+    }
 
     const withdrawalTag=createHmac('sha256',withdrawal)
       .update(WITHDRAWAL_CONTEXT+email).digest('hex');
@@ -122,8 +136,11 @@ export function createCampaignRecipientEvidenceReview({
       WITHDRAWAL_SQL,[withdrawalTag],{timeoutMs:3000});
     if(result?.rows?.length!==1||
        typeof result.rows[0]?.withdrawn!=='boolean')throw invalid();
-    return result.rows[0].withdrawn
-      ?verdict('verified_withdrawal')
-      :verdict('evidence_complete_for_review');
+    if(result.rows[0].withdrawn)return verdict('verified_withdrawal');
+    if(!matchAddress)return verdict('evidence_complete_for_review');
+    // Additional evidence, never a sender permit: only inside the separate
+    // global send fence and after a durable delivery claim can this be used.
+    return Object.freeze({...verdict('evidence_complete_for_review'),
+      recipientMatched:true});
   };
 }
