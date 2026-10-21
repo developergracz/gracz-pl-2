@@ -186,7 +186,10 @@ test('#283 self-service: new one-time mailbox proof triggers provider OFF and du
   assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_requests')).rows[0].n,1);
   const encrypted=(await db.query('SELECT ciphertext FROM newsletter_recovery.self_service_challenges')).rows[0].ciphertext;
   assert.equal(encrypted.includes(Buffer.from('synthetic@example.test')),false);
-  assert.equal(await fence.checkAvailable(),false);
+  assert.equal(await fence.checkAvailable(),true,
+    'historically verified withdrawal must not block all unrelated campaigns');
+  const synthetic=await fence.withSendPermit(async()=>({admitted:true}));
+  assert.equal(synthetic.admitted,true,'admission does not itself select marketing recipients');
   await assert.rejects(api.confirmChallenge({challengeId:msg.challengeId,token:msg.token}),
     {code:'WITHDRAWAL_CHALLENGE_REJECTED'});
   assert.equal(provider.calls,1);
