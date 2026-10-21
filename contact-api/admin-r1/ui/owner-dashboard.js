@@ -304,9 +304,11 @@ async function request(path, options) {
 }
 
 // OWNER messaging — session-specific handles, up to ten active people.
-let targetedReady=false,visibleActive=[],selectedHandles=[],targetedId=null,
+let targetedReady=false,visibleActive=[],selectedHandles=[],selectedRecipientEmails=[],targetedId=null,
   targetedApproved=false,targetedStarted=false,targetedBusy=false;
 const targetedDialog=$("targeted-dialog");
+const targetedSuccessDialog=$("targeted-success-dialog");
+$("targeted-success-close").addEventListener("click",()=>targetedSuccessDialog.close());
 function refreshTargetedButton(){
   $("send-found").textContent="Wyślij do znalezionych ("+visibleActive.length+")";
   $("send-found").disabled=!targetedReady||visibleActive.length===0;
@@ -316,6 +318,7 @@ function openTargeted(items){
      items.length<1||items.length>10||
      items.some(x=>x.state!=="active"||typeof x.handle!=="string"))return;
   selectedHandles=items.map(x=>x.handle);
+  selectedRecipientEmails=items.map(x=>x.email);
   targetedId=null;targetedApproved=false;targetedStarted=false;
   $("targeted-compose").reset();
   $("targeted-compose").hidden=false;$("targeted-final").hidden=true;
@@ -376,10 +379,27 @@ $("targeted-send").addEventListener("click",async()=>{
   try{
     const result=await postTargeted("campaign-targeted/send",{
       id:targetedId,confirmation:"WYSYŁAM DO WYBRANYCH"});
-    $("targeted-status").textContent=result?.state==="finished"
-      ?"Resend przyjął: "+result.accepted+", pominięto: "+
-        result.suppressed+". Przyjęcie nie oznacza doręczenia."
-      :"Wynik niepewny. Nie ponawiaj wysyłki.";
+    const accepted=result?.accepted;
+    const suppressed=result?.suppressed;
+    if(result?.state==="finished"&&Number.isSafeInteger(accepted)&&accepted>0&&
+       accepted<=selectedRecipientEmails.length&&Number.isSafeInteger(suppressed)&&suppressed>=0){
+      const single=selectedRecipientEmails.length===1&&accepted===1&&suppressed===0;
+      $("targeted-success-title").textContent=single
+        ?"Wiadomość została wysłana do "+selectedRecipientEmails[0]
+        :"Wiadomości zostały przyjęte do wysyłki";
+      $("targeted-success-description").textContent=
+        "Resend przyjął wiadomość do wysyłki. To nie jest jeszcze potwierdzenie jej doręczenia.";
+      $("targeted-success-count").textContent=
+        "Przyjęte: "+accepted+". Pominięte: "+suppressed+".";
+      $("targeted-status").textContent="Resend przyjął: "+accepted+", pominięto: "+
+        suppressed+". Przyjęcie nie oznacza doręczenia.";
+      targetedDialog.close();
+      targetedSuccessDialog.showModal();
+    }else{
+      $("targeted-status").textContent=result?.state==="finished"&&accepted===0
+        ?"Żadna wiadomość nie została przyjęta do wysyłki. Pominięto: "+suppressed+"."
+        :"Wynik niepewny. Nie ponawiaj wysyłki.";
+    }
   }catch{$("targeted-status").textContent="Nie można potwierdzić wyniku. Nie ponawiaj wysyłki.";}
   finally{targetedBusy=false;}
 });

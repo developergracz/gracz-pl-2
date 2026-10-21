@@ -897,3 +897,42 @@ footer .footer-brand span{color:#ff6573}
   #targeted-dialog .targeted-preview{max-height:120px;}
 }
 
+/* Read-only status modal: displayed only after provider accepted >=1 send. */
+#targeted-success-dialog{
+  box-sizing:border-box;position:fixed;inset:0;margin:auto;
+  width:min(560px,calc(100vw - 24px));max-width:560px;
+  max-height:calc(100dvh - 24px);padding:0;overflow-y:auto;
+  color:#f3faff;background:#102635;border:1px solid #458e8b;
+  border-radius:20px;box-shadow:0 32px 92px rgba(0,0,0,.72);
+}
+#targeted-success-dialog::backdrop{background:rgba(0,8,18,.86);}
+#targeted-success-dialog .targeted-success-content{
+  box-sizing:border-box;padding:clamp(18px,4vw,30px);text-align:center;
+  display:grid;justify-items:center;gap:14px;
+}
+#targeted-success-dialog .targeted-success-brand{
+  margin:0;font-size:21px;font-weight:900;letter-spacing:-.4px;
+}
+#targeted-success-dialog .targeted-success-brand span{color:#ff6573;}
+#targeted-success-dialog .targeted-success-symbol{
+  display:grid;place-items:center;width:68px;height:68px;
+  border-radius:50%;border:2px solid #55e5cc;color:#55e5cc;
+  background:rgba(85,229,204,.1);font-size:34px;line-height:1;
+}
+#targeted-success-dialog h2{
+  font-size:clamp(20px,2.8vw,26px);line-height:1.35;
+  margin:0;overflow-wrap:anywhere;
+}
+#targeted-success-dialog #targeted-success-description{
+  color:#b4cbd3;line-height:1.6;margin:0;
+}
+#targeted-success-dialog .targeted-success-count{
+  margin:0;color:#66ebd1;font-weight:700;
+}
+#targeted-success-dialog #targeted-success-close{
+  width:100%;max-width:310px;min-height:46px;
+  background:#55e5cc;color:#06272e;border-color:#55e5cc;font-weight:850;
+}
+#targeted-success-dialog button:focus-visible{
+  outline:3px solid #ffe18d;outline-offset:3px;
+}
