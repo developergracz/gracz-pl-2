@@ -27,6 +27,22 @@ Kod jednorazowej wysyłki testowej działa **wyłącznie po osobnym uruchomieniu
 
 **Samo scalenie PR nie uruchamia wysyłki.** Bez migracji i przełączenia flagi API odmawia testu, a przycisk w panelu pozostaje nieaktywny.
 
+## Kontrola kwalifikacji pojedynczego odbiorcy — R1 (tylko dowody)
+
+Moduł `recipient-evidence-review.mjs` porównuje wyłącznie nowy zapis z dowodem
+aktualnego DOI oraz niezależnie zaszyfrowaną historią wypisań. Weryfikuje
+poprawność AES-256-GCM i HMAC bez ujawniania odbiorcy ani jego adresu.
+W przypadku niepotwierdzonego wyłączenia u dostawcy, innego historycznego
+zgłoszenia lub zobowiązania no-send wynik jest odmowny dla wszystkich.
+Potwierdzone wypisanie danego adresu wyklucza go także wtedy, gdy w nowym
+rejestrze nie ma jeszcze odpowiadającego mu `revocations`.
+
+**Wynik służy tylko przeglądowi dowodów. Nie jest zgodą na wysłanie.**
+Brak publicznego endpointu, harmonogramu, wywołania Resend i przełącznika
+pozwalającego ominąć `withdrawal-send-fence.mjs`. Przy przyszłej wysyłce
+konieczna jest ponowna walidacja we wspólnej transakcji z blokadami
+wycofania zgody, deduplikacja trwałej rezerwacji oraz odrębna akceptacja OWNER.
+
 ## Warunki przed przyszłą wysyłką
 
 1. Dowieść w testach produkcyjnego przepływu: aktualna zgoda DOI, cel przetwarzania, wycofanie zgody i weryfikacja adresu tuż przed próbą doręczenia; nie wykorzystywać listy historycznej.
