@@ -95,7 +95,7 @@ test('global withdrawal fence denial never calls the provider',async()=>{
     throw Object.assign(Error('withdrawal detected'),{code:'WITHDRAWAL_SEND_BLOCKED'});
   }});
   assert.deepEqual(await x.coordinator.dispatch(delivery),
-    {state:'uncertain',retryAllowed:false});
+    {state:'uncertain',providerMessageId:null,retryAllowed:false});
   assert.equal(x.sends,0);
   assert.deepEqual(x.steps,['durable_claim','uncertain']);
 });
@@ -104,7 +104,7 @@ test('transport uncertainty never retries and records an uncertain attempt',asyn
     throw Error('timeout');
   }}});
   assert.deepEqual(await x.coordinator.dispatch(delivery),
-    {state:'uncertain',retryAllowed:false});
+    {state:'uncertain',providerMessageId:null,retryAllowed:false});
   assert.deepEqual(x.steps,[
     'durable_claim','global_shared_lock','fresh_DOI_and_verified_withdrawal','uncertain'
   ]);
