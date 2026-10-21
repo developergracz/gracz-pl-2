@@ -114,6 +114,9 @@ test('new-only DOI requires a fresh mailbox proof and produces one immutable con
   assert.equal(JSON.stringify([...records.values()]).includes('synthetic@example.test'),false);
   assert.deepEqual(await manager.acceptOptIn({email:'synthetic@example.test'}),{state:'request_received'});
   assert.equal(sends,1);
+  assert.match(sent.html,/Potwierdź zapis do newslettera/);
+  assert.match(sent.html,/Potwierdź zapis<\/a>/);
+  assert.match(sent.html,/gracz<span style="color:#ef5261">\.pl<\/span>/);
   const link=sent.text.match(/#confirm=(ni3\.[\w.-]+)/)?.[1];
   assert.ok(link);
   await assert.rejects(manager.confirm('n1.compromised'),{code:'NEWSLETTER_CONFIRM_REJECTED'});
