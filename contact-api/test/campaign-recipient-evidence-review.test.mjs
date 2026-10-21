@@ -88,3 +88,30 @@ test('invalid identifier and missing configuration are rejected',async()=>{
   assert.throws(()=>createCampaignRecipientEvidenceReview({database:{}}),
     /read_only_database_required/);
 });
+
+test('the reviewed recipient must match the authenticated encrypted DOI identity',async()=>{
+  const a=fixture();
+  assert.deepEqual(await a.review(a.tag,'recipient@example.test'),{
+    state:'evidence_complete_for_review',
+    advisoryOnly:true,maySend:false,recipientMatched:true
+  });
+  const b=fixture();
+  assert.deepEqual(await b.review(b.tag,'another@example.test'),{
+    state:'recipient_mismatch',advisoryOnly:true,maySend:false
+  });
+  assert.equal(b.statements.length,2,
+    'mismatch must not be treated as a delivery-ready checked recipient');
+});
+test('invalid send-to address cannot bypass recipient binding',async()=>{
+  const a=fixture();
+  for(const value of ['RECIPIENT@example.test',' recipient@example.test ',
+    'evil@example.test\nBcc:someone@example.test',null]){
+    await assert.rejects(a.review(a.tag,value));
+  }
+});
+test('a verified opt-out denies even when an authenticated address matches',async()=>{
+  const a=fixture({withdrawn:true});
+  assert.deepEqual(await a.review(a.tag,'recipient@example.test'),{
+    state:'verified_withdrawal',advisoryOnly:true,maySend:false
+  });
+});
