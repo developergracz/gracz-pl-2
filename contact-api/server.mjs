@@ -10,6 +10,7 @@ import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
 import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
 import { createCampaignAudienceProofCount } from "./campaigns/audience-proof-count.mjs";
+import { createWithdrawalSendFence } from "./persistence/recovery/withdrawal-send-fence.mjs";
 import { createCampaignOwnerTestSender } from "./campaigns/owner-test-send.mjs";
 import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
@@ -100,6 +101,7 @@ const newsletter = createHeldNewsletterManager();
 // Default OFF. Legacy manager stays HELD for contact and old n1/ns1 actions.
 const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
 const ownerRecoveryMailer=createOwnerRecoveryMailer({apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
+const campaignEgressFence=createWithdrawalSendFence(database);
 const ownerAdmin=createOwnerRouter({
   database,
   enabled:process.env.NEWSLETTER_OWNER_ADMIN_ENABLED==='1',
@@ -115,6 +117,7 @@ const ownerAdmin=createOwnerRouter({
   campaignDraftStore:createCampaignDraftStore({database}),
   campaignAudienceProofCount:createCampaignAudienceProofCount({database}),
   campaignWithdrawalReady:checkWithdrawalReady,
+  campaignEgressReady:campaignEgressFence.checkAvailable,
   campaignTestSender:createCampaignOwnerTestSender({
     database,
     enabled:process.env.NEWSLETTER_CAMPAIGN_TEST_SEND_ENABLED==='1',
