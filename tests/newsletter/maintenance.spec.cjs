@@ -169,6 +169,49 @@ test('top Newsletter uses existing verified subscribe and Premium result flow', 
   expect(posts[0]).toMatchObject({email:'newsletter-e2e@example.pl',consent:true});
 });
 
+
+test('verified status read recovers from transient server error without losing mailbox proof',async({page})=>{
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  let attempts=0;
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/status-check',route=>{
+    attempts++;
+    return route.fulfill({status:attempts===1?503:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:attempts===1?'{"error":{"code":"TEMPORARY"}}':'{"ok":true,"state":"pending"}'});
+  });
+  await page.goto('/newsletter/#status=ns2.synthetic-local-proof');
+  const action=page.locator('#nl-action-button');
+  await expect(action).toBeEnabled();
+  await action.click();
+  await expect(page.locator('#nl-action-title')).toHaveText('Nie udało się odczytać statusu');
+  await expect(action).toHaveText('Ponów sprawdzenie statusu');
+  await expect(action).toBeEnabled();
+  await action.click();
+  await expect(page.locator('#nl-action-title')).toHaveText('Oczekuje na potwierdzenie');
+  expect(attempts).toBe(2);
+  expect(page.url()).not.toContain('synthetic-local-proof');
+});
+
+test('expired status proof explains how to request a fresh link without changing subscription',async({page})=>{
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/status-check',route=>
+    route.fulfill({status:400,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},body:'{"error":{"code":"NEWSLETTER_STATUS_REJECTED"}}'}));
+  await page.goto('/newsletter/#status=ns2.synthetic-invalid-proof');
+  const action=page.locator('#nl-action-button');
+  await expect(action).toBeEnabled();
+  await action.click();
+  await expect(page.locator('#nl-action-title')).toHaveText('Link do sprawdzenia statusu jest nieaktualny');
+  await expect(page.locator('#nl-action-copy')).toContainText('poproś o nowy link');
+  await expect(action).toBeHidden();
+});
+
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
     expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021)/);

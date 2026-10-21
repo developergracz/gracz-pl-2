@@ -301,10 +301,17 @@ test('replay, invalid links and unavailable use generic errors',async({page})=>{
     await page.goto('/newsletter/#status='+token);
     await page.locator('#nl-action-button').click();
     if(index===0)await expect(page.locator('#nl-action-status')).toContainText('Newsletter nieaktywny');
-    else await expect(page.locator('#nl-action-status')).toContainText(token==='unavailable'?'chwilowo niedostępna':'Nie ponawiaj teraz operacji');
+    else await expect(page.locator('#nl-action-status')).toContainText(
+      token==='unavailable'?'Chwilowy problem':'Poproś o nowy link');
     await expect(page.locator('#nl-action-status')).not.toContainText('private');
+    if(token==='unavailable'){
+      await expect(page.locator('#nl-action-button')).toBeEnabled();
+      await expect(page.locator('#nl-action-button')).toHaveText('Ponów sprawdzenie statusu');
+    } else if(index!==0){
+      await expect(page.locator('#nl-action-button')).toBeHidden();
+    }
   }
-  await expect(page.locator('#nl-action-status')).toContainText('chwilowo niedostępna');
+  await expect(page.locator('#nl-action-status')).toContainText('Chwilowy problem');
 });
 test('bounded timeout is ambiguous, no concurrent duplicate request',async({page})=>{
   await page.clock.install();
@@ -431,15 +438,22 @@ test('maintenance blocks new submissions but preserves bearer link controls with
 });
 
 for(const mode of ['confirm','unsubscribe','status']) {
-  test(`${mode} network failure discards action without retry invitation`,async({page})=>{
+  test(`${mode} network failure keeps consent fail-closed and retries only read-only status`,async({page})=>{
     const requests=await mock(page,()=>({network:true}));
     await page.goto('/newsletter/#'+mode+'=synthetic-network');
     await page.locator('#nl-action-button').click();
-    await expect(page.locator('#nl-action-title')).toHaveText('Nie potwierdzono operacji');
+    await expect(page.locator('#nl-action-title')).toHaveText(
+      mode==='status'?'Nie udało się odczytać statusu':'Nie potwierdzono operacji');
     await expect(page.locator('#nl-action-copy')).not.toContainText('Kliknij');
-    await expect(page.locator('#nl-action-button')).toBeHidden();
+    if(mode==='status'){
+      await expect(page.locator('#nl-action-button')).toBeEnabled();
+      await expect(page.locator('#nl-action-button')).toHaveText('Ponów sprawdzenie statusu');
+    }else{
+      await expect(page.locator('#nl-action-button')).toBeHidden();
+    }
     await expect(page.locator('#nl-action-status')).toBeFocused();
-    await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
+    if(mode!=='status')
+      await page.evaluate(()=>document.querySelector('#nl-action-button').dispatchEvent(new MouseEvent('click')));
     expect(requests).toHaveLength(1);
   });
 }
