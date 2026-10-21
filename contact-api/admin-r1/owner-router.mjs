@@ -143,7 +143,15 @@ export function createOwnerRouter({
     // client-controlled forwarded host as a separate authority.
     if(req.headers.host!==new URL(origin).host ||
        req.headers['x-forwarded-proto']!=='https' ||
-       url.search||url.hash)return denyAdmin(req,res);
+       url.hash)return denyAdmin(req,res);
+    // Only the OWNER HTML entry point can discard the known ChatGPT link
+    // attribution. Keep all API endpoints and unknown queries fail-closed.
+    if(req.method==='GET' && url.pathname===PREFIX+'/' &&
+       url.search==='?utm_source=chatgpt.com'){
+      res.writeHead(302,{...privateHeaders,Location:PREFIX+'/'});
+      return res.end();
+    }
+    if(url.search)return denyAdmin(req,res);
     const path=url.pathname;
     const cookie=parseOwnerCookie(req.headers.cookie);
     try{

@@ -157,6 +157,29 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.doesNotMatch(loginPage.body,/id="code"/);
     assert.doesNotMatch(loginPage.body,/id="forgot-open"/,
       'Recovery is not visible before the dedicated schema and feature flag are enabled');
+    // A ChatGPT-added attribution must not lock the OWNER out of the entry
+    // page. Redirect without cookies or credentials; keep private APIs strict.
+    const probe=(path,method='GET')=>new Promise((resolve,reject)=>{
+      const req=httpRequest({
+        hostname:'127.0.0.1',port:srv.address().port,path,method,
+        headers:{host:'gracz-contact-api.onrender.com','x-forwarded-proto':'https'}
+      },res=>{
+        res.resume();
+        res.on('end',()=>resolve({status:res.statusCode,headers:res.headers}));
+        res.on('error',reject);
+      });
+      req.on('error',reject);req.end();
+    });
+    const redirected=await probe('/owner/newsletter/?utm_source=chatgpt.com');
+    assert.equal(redirected.status,302);
+    assert.equal(redirected.headers.location,'/owner/newsletter/');
+    assert.equal(redirected.headers['cache-control'],'no-store');
+    assert.equal(redirected.headers['set-cookie'],undefined);
+    assert.equal((await probe('/owner/newsletter/')).status,401,
+      'clean entry still requires OWNER session');
+    assert.equal((await probe('/owner/newsletter/?utm_source=untrusted')).status,403);
+    assert.equal((await probe('/owner/newsletter/session?utm_source=chatgpt.com')).status,403);
+    assert.equal((await probe('/owner/newsletter/?utm_source=chatgpt.com','POST')).status,403);
   } finally {await new Promise(resolve=>srv.close(resolve));}
 });
 
