@@ -1,0 +1,58 @@
+// Shared, presentation-only HTML for gracz.pl mail. Never embeds remote assets or tracking.
+export function escapeEmailHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+function safeLink(value) {
+  if(typeof value!=='string') throw new TypeError('Valid email action URL required');
+  const u=new URL(value);
+  if(u.protocol!=='https:'||u.hostname!=='gracz.pl'||u.port||u.username||u.password)
+    throw new TypeError('Only gracz.pl HTTPS email links are permitted');
+  return escapeEmailHtml(u.href);
+}
+function copy(value) {
+  return escapeEmailHtml(value).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
+}
+export function renderPremiumEmail({
+  category='WIADOMOŚĆ SERWISOWA',title,preheader='',body='',
+  actionUrl,actionLabel,code,unsubscribeUrl,footnote=''
+}={}) {
+  if(typeof title!=='string'||!title.trim()) throw new TypeError('Email title required');
+  if((actionUrl===undefined)!==(actionLabel===undefined))
+    throw new TypeError('Action URL and label must be paired');
+  const button=actionUrl===undefined?'':`
+    <tr><td align="center" style="padding:12px 28px 24px">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center" bgcolor="#19d9c4" style="background:#19d9c4;border-radius:12px">
+        <a href="${safeLink(actionUrl)}" style="display:inline-block;background:#19d9c4;border-radius:12px;padding:16px 26px;color:#042026;font-size:16px;font-weight:800;text-decoration:none">${escapeEmailHtml(actionLabel)}</a>
+      </td></tr></table>
+    </td></tr>`;
+  const codePanel=code===undefined?'':`
+    <tr><td style="padding:10px 28px 25px;text-align:center">
+      <div style="background:#061b22;border:1px solid #285c67;border-radius:12px;padding:18px 12px">
+        <div style="font-size:11px;color:#92b5bd;letter-spacing:1px;margin-bottom:12px">KOD JEDNORAZOWY</div>
+        <strong style="color:#fff;font-size:25px;letter-spacing:2px;overflow-wrap:anywhere;font-family:Consolas,'Courier New',monospace">${escapeEmailHtml(code)}</strong>
+      </div>
+    </td></tr>`;
+  const unsubscribe=unsubscribeUrl===undefined?'':`<div style="padding-top:10px"><a href="${safeLink(unsubscribeUrl)}" style="color:#8be6df;text-decoration:underline">Wypisz się z newslettera</a></div>`;
+  return `<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeEmailHtml(title)}</title></head>
+<body style="margin:0;padding:0;background:#061218;color:#effbfc;font-family:Arial,Helvetica,sans-serif">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">${escapeEmailHtml(preheader||title)}</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="#061218"><tr><td align="center" style="padding:30px 12px">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:620px;background:#10242d;border:1px solid #24505b;border-radius:18px">
+<tr><td style="padding:28px;background:#0b1d25;border-bottom:1px solid #24434d;border-radius:18px 18px 0 0">
+ <div style="font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff">gracz<span style="color:#ef5261">.pl</span></div>
+ <div style="margin-top:8px;font-size:11px;letter-spacing:1.4px;font-weight:700;color:#74dfd3">FULL MAX PREMIUM · ${escapeEmailHtml(category)}</div>
+</td></tr>
+<tr><td style="padding:30px 28px 15px">
+ <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;color:#fff;font-weight:800">${escapeEmailHtml(title)}</h1>
+ <div style="font-size:15px;line-height:1.8;color:#c6dce0">${copy(body)}</div>
+</td></tr>
+${codePanel}${button}
+<tr><td style="padding:10px 28px 28px"><div style="border-top:1px solid #27505b;padding-top:18px;color:#a0bec4;font-size:13px;line-height:1.7">${copy(footnote)}</div></td></tr>
+<tr><td style="padding:22px 28px;background:#0b1d25;border-top:1px solid #24434d;border-radius:0 0 18px 18px">
+ <div style="color:#90aeb7;font-size:12px;line-height:1.7">Wiadomość z gracz.pl · <a href="https://gracz.pl/" style="color:#8be6df;text-decoration:none">Strona główna</a> · <a href="https://gracz.pl/polityka-prywatnosci/" style="color:#8be6df;text-decoration:none">Polityka prywatności</a>${unsubscribe}</div>
+ <div style="margin-top:9px;color:#7896a0;font-size:11px">© gracz.pl · Wszystkie prawa zastrzeżone</div>
+</td></tr></table></td></tr></table></body></html>`;
+}

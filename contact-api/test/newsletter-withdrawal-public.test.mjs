@@ -72,4 +72,6 @@ test('#283 proof-only Resend transport sends a short-lived fragment link, not ma
   assert.equal(body.text.includes('/newsletter/#withdrawal='+id+'.'+token),true);
   assert.equal(outbound.options.headers['Idempotency-Key'],'gracz-withdrawal-'+id);
   assert.equal(body.subject.includes('wypisanie'),true);
+  assert.match(body.html,/Potwierdź wypisanie<\/a>/);
+  assert.ok(body.html.includes('#withdrawal='+id+'.'+token));
 });

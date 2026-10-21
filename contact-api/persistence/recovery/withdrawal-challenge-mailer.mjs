@@ -1,3 +1,5 @@
+import {renderPremiumEmail} from '../../email/full-max-premium.mjs';
+
 // Transactional proof-only email, not marketing. The single-use challenge
 // is never sent in a URL query, API response, log or contact property.
 export function createWithdrawalChallengeMailer({
@@ -21,7 +23,14 @@ export function createWithdrawalChallengeMailer({
         text:'Otrzymaliśmy prośbę o wypisanie z newslettera gracz.pl.\n'+
           'Aby potwierdzić, otwórz link i kliknij przycisk wypisania:\n'+link+
           '\n\nLink jest ważny przez 15 minut. Jeśli to nie Ty, zignoruj wiadomość.\n'+
-          'To wiadomość dotycząca zarządzania zgodą, nie reklama.'
+          'To wiadomość dotycząca zarządzania zgodą, nie reklama.',
+        html:renderPremiumEmail({
+          category:'NEWSLETTER · WYPISANIE',title:'Potwierdź wypisanie z newslettera',
+          preheader:'Otrzymaliśmy prośbę o wypisanie z gracz.pl',
+          body:'Otrzymaliśmy prośbę o wypisanie z newslettera gracz.pl. Kliknij przycisk, aby przejść do potwierdzenia wypisania.',
+          actionUrl:link,actionLabel:'Potwierdź wypisanie',
+          footnote:'Link jest ważny 15 minut. Otwarcie wiadomości samo nie wypisuje — potwierdź decyzję na stronie. Jeśli to nie Ty, zignoruj wiadomość.'
+        })
       };
       let reply;
       try {
