@@ -36,6 +36,12 @@ test('OWNER date filters and scoped premium messaging preserve explicit send con
   assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
   assert.match(sender,/if\(!targeted\)throw deny\(\)/);
   assert.match(css,/#targeted-dialog\{box-sizing:border-box;position:fixed;inset:0;margin:auto/);
+  assert.match(css,/max-height:calc\(100dvh - 24px\)/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/"body-label preview"\s+"body preview"/);
+  assert.match(css,/\.targeted-preview\{grid-area:preview;[^}]*max-height:177px;overflow:auto/s);
+  assert.match(css,/@media\(max-height:760px\)/);
+  assert.match(css,/@media\(max-width:650px\)/);
 });
 
 test('OWNER single-test confirmation uses centred premium dialog and cancels without sending',async()=>{
