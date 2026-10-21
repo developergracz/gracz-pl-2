@@ -46,6 +46,35 @@ export function createCampaignDraftStore({database}={}) {
         return result.rowCount===1?Object.freeze({id,state:'draft'}):null;
       });
     },
+    // OWNER approves ONLY the exact version that was reviewed. This is a
+    // monotonic content-only transition: never a send authorization.
+    async approve(id,raw) {
+      draftId(id);
+      const draft=prepareCampaignDraft(raw);
+      return database.transaction(async client=>{
+        const result=await client.query(
+          "UPDATE newsletter_campaigns.campaigns "+
+          "SET state='approved',approved_at=clock_timestamp() "+
+          "WHERE id=$1 AND state='draft' AND approved_at IS NULL "+
+          "AND subject=$2 AND body=$3 AND audience=$4 "+
+          "RETURNING id,approved_at",
+          [id,draft.subject,draft.body,draft.audience]
+        );
+        return result.rowCount===1?Object.freeze({
+          id,state:'approved',sendingEnabled:false
+        }):null;
+      });
+    },
+    async listApproved() {
+      const rows=await database.transaction(async client=>client.query(
+        "SELECT id,subject,approved_at FROM newsletter_campaigns.campaigns "+
+        "WHERE state='approved' ORDER BY approved_at DESC,id DESC LIMIT 50"
+      ));
+      return Object.freeze((rows.rows||[]).map(row=>Object.freeze({
+        id:row.id,subject:row.subject,approvedAt:row.approved_at,
+        state:'approved',sendingEnabled:false
+      })));
+    },
     async list() {
       const rows=await database.transaction(async client=>client.query(
         "SELECT id,subject,created_at FROM newsletter_campaigns.campaigns "+
