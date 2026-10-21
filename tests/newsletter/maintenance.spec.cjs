@@ -122,6 +122,7 @@ test('HTTP 200 without schema confirmation still blocks newsletter signup', asyn
 
 test('top Newsletter button opens accessible signup and stays safely disabled until API ready', async ({page}) => {
   await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
   const nav=page.locator('.site-header [data-newsletter-open]');
   await expect(nav).toHaveText('Newsletter');
   if(!(await nav.isVisible()))await page.locator('.site-header .burger').click();
@@ -147,6 +148,7 @@ test('top Newsletter uses existing verified subscribe and Premium result flow', 
       body:JSON.stringify({ok:true,state:'request_received'})});
   });
   await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
   const nav=page.locator('.site-header [data-newsletter-open]');
   if(!(await nav.isVisible()))await page.locator('.site-header .burger').click();
   await nav.click();
