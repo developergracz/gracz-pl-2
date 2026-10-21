@@ -313,7 +313,10 @@ export function createNewOnlyNewsletter({
     return {state:'request_received'};
   }
   async function checkStatus(token){
-    await requireReady();
+    // Status is a read-only operation. Subscription enrollment may be paused
+    // for unrelated INSERT/UPDATE permissions; a mailbox proof remains valid.
+    // Cryptographic configuration and SELECT still fail closed.
+    if(!configured || !database?.enabled) throw unavailable();
     const invalid=()=>Object.assign(new Error('Nieważny lub wygasły link do statusu.'),{
       code:'NEWSLETTER_STATUS_REJECTED',status:400
     });
