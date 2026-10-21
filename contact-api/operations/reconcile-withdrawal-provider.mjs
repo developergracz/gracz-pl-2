@@ -48,8 +48,8 @@ export async function reconcileOneProviderWithdrawal({
     if(typeof provider?.ensureOff!=='function'||
        typeof provider?.verifyOff!=='function')throw refuse();
 
-    // ensureOff always verifies current Resend state before any optional
-    // suppression or contact mutation; uncertainty never gets a success marker.
+    // ensureOff may unsubscribe an existing Resend marketing contact.
+    // It never creates a delivery suppression; uncertainty stays HOLD.
     const off=await provider.ensureOff(email);
     if(off?.off!==true)throw refuse();
     const proof=await provider.verifyOff(email);
