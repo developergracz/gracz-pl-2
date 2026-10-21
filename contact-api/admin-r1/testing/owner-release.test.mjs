@@ -58,7 +58,17 @@ test('OWNER date filters and scoped premium messaging preserve explicit send con
   assert.match(css,/max-height:calc\(100dvh - 24px\)/);
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/"body-label preview"\s+"body preview"/);
-  assert.match(css,/\.targeted-preview\{grid-area:preview;[^}]*max-height:177px;overflow:auto/s);
+  assert.match(css,/\.targeted-preview\{grid-area:preview;[^}]*max-height:280px;box-sizing:border-box;\s*overflow:auto/s);
+  assert.match(css,/width:min\(940px,calc\(100vw - 24px\)\);max-width:940px/);
+  assert.match(css,/height:220px;min-height:190px;max-height:280px;resize:vertical/);
+  assert.match(css,/"actions actions"/);
+  assert.match(css,/\.targeted-compose-actions\{grid-area:actions;\s*display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/#targeted-dialog #targeted-body\{height:174px;min-height:150px;max-height:210px/);
+  assert.match(html,/<div class="targeted-compose-actions">\s*<button type="button" id="targeted-approve">Zapisz i zatwierdź treść<\/button>\s*<button type="button" id="targeted-compose-close">Zamknij<\/button>\s*<\/div>/);
+  assert.match(html,/<button type="button" id="targeted-close" hidden>Zamknij<\/button>/);
+  assert.match(ui,/\$\("targeted-compose-close"\)\.addEventListener\("click",\(\)=>targetedDialog\.close\(\)\)/);
+  assert.match(ui,/\$\("targeted-close"\)\.hidden=true/);
+  assert.match(ui,/\$\("targeted-close"\)\.hidden=false/);
   assert.match(css,/@media\(max-height:760px\)/);
   assert.match(css,/@media\(max-width:650px\)/);
 });
