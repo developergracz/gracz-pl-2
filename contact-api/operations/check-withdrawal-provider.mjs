@@ -27,15 +27,9 @@ function decodedKey(raw){
   return bytes;
 }
 
-export async function checkWithdrawalProviderReadOnly({
-  database,encryptionKey,recipientTagKey,providerApiKey,providerFactory=createResendProviderOff
-}={}){
-  if(typeof database?.queryBounded!=='function'||typeof providerFactory!=='function'||
-     typeof providerApiKey!=='string'||!providerApiKey.trim())throw invalid();
+export function resolveWithdrawalRecipient({row,encryptionKey,recipientTagKey}={}){
   const enc=decodedKey(encryptionKey);
   const tagKey=decodedKey(recipientTagKey);
-  const {rows}=await database.queryBounded(QUERY,[],{timeoutMs:3000});
-  if(!Array.isArray(rows)||rows.length!==1)throw invalid();
   const row=rows[0];
   if(!row||typeof row.challenge_id!=='string'||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.challenge_id)||
@@ -58,6 +52,17 @@ export async function checkWithdrawalProviderReadOnly({
   const tag=createHmac('sha256',tagKey)
     .update('gracz-withdrawal-v1\0recipient\0'+email).digest();
   if(!timingSafeEqual(tag,Buffer.from(row.recipient_tag.trim(),'hex')))throw invalid();
+  return email;
+}
+
+export async function checkWithdrawalProviderReadOnly({
+  database,encryptionKey,recipientTagKey,providerApiKey,providerFactory=createResendProviderOff
+}={}){
+  if(typeof database?.queryBounded!=='function'||typeof providerFactory!=='function'||
+     typeof providerApiKey!=='string'||!providerApiKey.trim())throw invalid();
+  const {rows}=await database.queryBounded(QUERY,[],{timeoutMs:3000});
+  if(!Array.isArray(rows)||rows.length!==1)throw invalid();
+  const email=resolveWithdrawalRecipient({row:rows[0],encryptionKey,recipientTagKey});
   const provider=providerFactory({apiKey:providerApiKey});
   if(typeof provider?.verifyOff!=='function')throw invalid();
   const verification=await provider.verifyOff(email); // ONLY GET suppression and contact
