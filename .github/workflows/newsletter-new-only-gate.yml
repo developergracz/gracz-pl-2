@@ -6,6 +6,8 @@ on:
       - "contact-api/new-only-newsletter.mjs"
       - "contact-api/persistence/new-only/**"
       - "contact-api/persistence/recovery/self-service-withdrawal.mjs"
+      - "contact-api/persistence/recovery/resend-provider-off.mjs"
+      - "contact-api/test/newsletter-resend-provider-off.test.mjs"
       - "contact-api/server.mjs"
       - "contact-api/test/new-only-newsletter.test.mjs"
       - ".github/workflows/newsletter-new-only-gate.yml"
@@ -42,8 +44,8 @@ jobs:
           cache-dependency-path: contact-api/package-lock.json
       - name: Install existing API dependencies
         run: npm --prefix contact-api ci --ignore-scripts
-      - name: Verify new-only opt-in and revocation regression cases
-        run: node --test contact-api/test/new-only-newsletter.test.mjs
+      - name: Verify new-only opt-in, revocation and provider no-suppression
+        run: node --test contact-api/test/new-only-newsletter.test.mjs contact-api/test/newsletter-resend-provider-off.test.mjs
       - name: Verify 001 + 002 PostgreSQL 18 migrations and immutable opt-out
         working-directory: contact-api
         env:
