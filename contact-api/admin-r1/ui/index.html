@@ -283,11 +283,14 @@
               <button type="button" id="campaign-new-draft" hidden>Nowa wersja robocza</button>
               <button type="button" id="campaign-refresh-drafts" disabled>Odśwież zapisane</button>
               <button type="button" id="campaign-send-test" disabled>Wyślij test do administratora</button>
+              <button type="button" id="campaign-approve-content" disabled>Zatwierdź treść (bez wysyłki)</button>
             </div>
           </form>
           <p id="campaign-preview-status" role="status" aria-live="polite"></p>
           <p class="muted" id="campaign-test-description">Wysyłka próbna jest domyślnie wyłączona. Po jej uruchomieniu będzie możliwa tylko na skonfigurowany adres obsługi gracz.pl, bez wysyłania do subskrybentów.</p>
           <p id="campaign-test-status" role="status" aria-live="polite"></p>
+          <p class="muted">Zatwierdzenie treści blokuje jej dalszą edycję. Nie oznacza zgody na wysłanie newslettera.</p>
+          <p id="campaign-approval-status" role="status" aria-live="polite"></p>
           <div class="campaign-output">
             <div class="campaign-output-panel">
               <h3>Podgląd wiadomości</h3>
@@ -301,6 +304,8 @@
             <div class="campaign-output-panel">
               <h3>Zapisane wersje robocze</h3>
               <ul id="campaign-drafts-list" aria-label="Lista zapisanych wersji roboczych"></ul>
+              <h3>Zatwierdzone treści — oczekują na osobną decyzję o wysyłce</h3>
+              <ul id="campaign-approved-list" aria-label="Zatwierdzone kampanie, bez wysyłania"></ul>
             </div>
           </div>
         </section>
