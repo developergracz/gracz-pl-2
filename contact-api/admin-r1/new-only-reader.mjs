@@ -71,7 +71,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
                  s.source,s.consent_version,s.delivery_state,
                  s.requested_at,s.confirmed_at,
-                 (r.email_tag IS NOT NULL OR s.repeat_withdrawn_at>=s.requested_at) AS revoked,
+                 (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked,
                  CASE WHEN s.repeat_withdrawn_at>=s.requested_at
                       THEN s.repeat_withdrawn_at ELSE r.recorded_at END AS revoked_at
           FROM newsletter_new.subscribers s
@@ -134,7 +134,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       recent AS MATERIALIZED (
         SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
           s.source,s.requested_at,
-          (r.email_tag IS NOT NULL OR s.repeat_withdrawn_at>=s.requested_at) AS revoked
+          (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked
         FROM newsletter_new.subscribers s
         LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
@@ -182,7 +182,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       throw fault('invalid_request');
     const rows=await query(`
       SELECT s.state,s.confirmed_at,s.source,s.consent_version,
-        (r.email_tag IS NOT NULL OR s.repeat_withdrawn_at>=s.requested_at) AS revoked
+        (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked
       FROM newsletter_new.subscribers s
       LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
