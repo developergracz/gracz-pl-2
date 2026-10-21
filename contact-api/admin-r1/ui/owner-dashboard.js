@@ -739,6 +739,177 @@ $("m4-refresh").addEventListener("click",loadSummary);
 startOwnerDashboard();
 
 
+// Safe rich-Markdown campaign editing. Drafts remain plaintext; no script
+// or pasted HTML executes. All preview elements are created as DOM nodes.
+const campaignBody=$("campaign-body");
+const campaignSubject=$("campaign-subject");
+const campaignHistory=[];
+let campaignHistoryPosition=-1;
+function campaignRefreshCounts(){
+  $("campaign-subject-count").textContent=campaignSubject.value.length+" / 160 znaków";
+  const value=campaignBody.value;
+  const words=value.trim()?value.trim().split(/\s+/u).length:0;
+  $("campaign-body-count").textContent=words+" słów · "+value.length+" / 20 000 znaków";
+}
+function campaignRemember(){
+  const value=campaignBody.value;
+  if(campaignHistory[campaignHistoryPosition]===value)return;
+  campaignHistory.splice(campaignHistoryPosition+1);
+  campaignHistory.push(value);
+  if(campaignHistory.length>60)campaignHistory.shift();
+  campaignHistoryPosition=campaignHistory.length-1;
+}
+function campaignResetHistory(){
+  campaignHistory.length=0;campaignHistoryPosition=-1;
+  campaignRemember();campaignRefreshCounts();
+}
+function campaignHttpsLink(value){
+  try{
+    const url=new URL(value);
+    return url.protocol==="https:"&&!url.username&&!url.password&&url.hostname
+      ?url.href:null;
+  }catch{return null;}
+}
+function campaignRenderInline(parent,text){
+  const pattern=/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|\+\+([^+\n]+)\+\+|~~([^~\n]+)~~|\x60([^\x60\n]+)\x60|\*([^*\n]+)\*/g;
+  let offset=0,match;
+  while((match=pattern.exec(text))!==null){
+    if(match.index>offset)
+      parent.append(document.createTextNode(text.slice(offset,match.index)));
+    let element=null,value="";
+    if(match[1]!==undefined){
+      const href=campaignHttpsLink(match[2]);
+      if(href){
+        element=document.createElement("a");
+        element.href=href;element.target="_blank";element.rel="noopener noreferrer";
+        value=match[1];
+      }
+    }else if(match[3]!==undefined){element=document.createElement("strong");value=match[3];}
+    else if(match[4]!==undefined){element=document.createElement("u");value=match[4];}
+    else if(match[5]!==undefined){element=document.createElement("s");value=match[5];}
+    else if(match[6]!==undefined){element=document.createElement("code");value=match[6];}
+    else if(match[7]!==undefined){element=document.createElement("em");value=match[7];}
+    if(element){element.textContent=value;parent.append(element);}
+    else parent.append(document.createTextNode(match[0]));
+    offset=pattern.lastIndex;
+  }
+  if(offset<text.length)parent.append(document.createTextNode(text.slice(offset)));
+}
+function campaignRenderPreview(body){
+  const output=$("campaign-preview-body");output.replaceChildren();
+  if(!body.trim()){
+    output.textContent="Wpisz treść i wybierz „Pokaż podgląd”.";
+    return;
+  }
+  let list=null,listType="";
+  for(const line of body.replace(/\r\n/g,"\n").split("\n")){
+    if(!line.trim()){list=null;listType="";continue;}
+    const h=line.match(/^(#{1,3})\s+(.+)$/u);
+    const ul=line.match(/^\s*[-*]\s+(.+)$/u);
+    const ol=line.match(/^\s*\d+[.)]\s+(.+)$/u);
+    if(ul||ol){
+      const type=ul?"ul":"ol";
+      if(type!==listType){list=document.createElement(type);output.append(list);listType=type;}
+      const li=document.createElement("li");campaignRenderInline(li,(ul||ol)[1]);list.append(li);
+      continue;
+    }
+    list=null;listType="";
+    if(/^\s*---\s*$/u.test(line)){output.append(document.createElement("hr"));continue;}
+    const type=h?"h"+h[1].length:line.startsWith("> ")?"blockquote":"p";
+    const value=h?h[2]:type==="blockquote"?line.slice(2):line;
+    const block=document.createElement(type);campaignRenderInline(block,value);output.append(block);
+  }
+}
+function campaignPreviewCurrent(){
+  $("campaign-preview-subject").textContent=campaignSubject.value.trim()||"Temat kampanii";
+  campaignRenderPreview(campaignBody.value);
+}
+function campaignChangeBody(replacement,start,end,selectionStart,selectionEnd){
+  const max=Number(campaignBody.maxLength)||20000;
+  if(campaignBody.value.length-(end-start)+replacement.length>max){
+    $("campaign-preview-status").textContent="Limit treści: 20 000 znaków.";
+    return;
+  }
+  campaignBody.focus();
+  campaignBody.setRangeText(replacement,start,end,"select");
+  campaignBody.setSelectionRange(selectionStart,selectionEnd);
+  campaignBody.dispatchEvent(new Event("input",{bubbles:true}));
+}
+function campaignSurround(before,after,sample){
+  const start=campaignBody.selectionStart,end=campaignBody.selectionEnd;
+  const value=campaignBody.value.slice(start,end)||sample;
+  campaignChangeBody(before+value+after,start,end,
+    start+before.length,start+before.length+value.length);
+}
+function campaignPrefix(prefix,numbered=false){
+  const start=campaignBody.selectionStart,end=campaignBody.selectionEnd;
+  const source=campaignBody.value;
+  const from=source.lastIndexOf("\n",start-1)+1;
+  const foundEnd=source.indexOf("\n",end);
+  const to=foundEnd<0?source.length:foundEnd;
+  const lines=source.slice(from,to).split("\n");
+  const replacement=lines.map((line,i)=>{
+    const clean=line.replace(/^(?:#{1,3}|>|\s*[-*]|\s*\d+[.)])\s+/u,"");
+    return (numbered?(i+1)+". ":prefix)+clean;
+  }).join("\n");
+  campaignChangeBody(replacement,from,to,from,from+replacement.length);
+}
+function campaignDoFormat(type){
+  if(type==="undo"||type==="redo"){
+    const next=campaignHistoryPosition+(type==="undo"?-1:1);
+    if(next<0||next>=campaignHistory.length)return;
+    campaignHistoryPosition=next;campaignBody.value=campaignHistory[next];campaignBody.focus();
+    campaignRefreshCounts();campaignPreviewCurrent();return;
+  }
+  if(type==="bold")return campaignSurround("**","**","pogrubiony tekst");
+  if(type==="italic")return campaignSurround("*","*","kursywa");
+  if(type==="underline")return campaignSurround("++","++","podkreślony tekst");
+  if(type==="strike")return campaignSurround("~~","~~","przekreślony tekst");
+  if(type==="code")return campaignSurround(String.fromCharCode(96),String.fromCharCode(96),"fragment kodu");
+  if(type==="bullet")return campaignPrefix("- ");
+  if(type==="number")return campaignPrefix("",true);
+  if(type==="quote")return campaignPrefix("> ");
+  if(type==="rule"){
+    const start=campaignBody.selectionStart;
+    return campaignChangeBody("\n\n---\n\n",start,start,start+7,start+7);
+  }
+  if(type==="link"){
+    const raw=window.prompt("Podaj pełny adres HTTPS (bezpieczny link):","https://");
+    if(raw===null)return;
+    const url=campaignHttpsLink(raw.trim());
+    if(!url){$("campaign-preview-status").textContent="Link musi mieć poprawny adres HTTPS.";return;}
+    const start=campaignBody.selectionStart,end=campaignBody.selectionEnd;
+    const label=(campaignBody.value.slice(start,end)||"tekst linku")
+      .replace(/[\]\[\r\n]/g," ").trim();
+    const replacement="["+label+"]("+url+")";
+    return campaignChangeBody(replacement,start,end,start,start+replacement.length);
+  }
+}
+$("campaign-drafts")?.querySelectorAll("[data-campaign-format]").forEach(button=>{
+  button.addEventListener("click",()=>campaignDoFormat(button.dataset.campaignFormat));
+});
+$("campaign-style")?.addEventListener("change",event=>{
+  const style=event.target.value;
+  if(style==="plain")campaignPrefix("");
+  else if(["h1","h2","h3"].includes(style))
+    campaignPrefix("#".repeat(Number(style.slice(1)))+" ");
+  event.target.value="plain";
+});
+campaignBody?.addEventListener("keydown",event=>{
+  if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+  const key=event.key.toLowerCase();
+  if(key==="b"||key==="i"){
+    event.preventDefault();campaignDoFormat(key==="b"?"bold":"italic");
+  }
+});
+campaignBody?.addEventListener("input",()=>{
+  campaignRemember();campaignRefreshCounts();campaignPreviewCurrent();
+});
+campaignSubject?.addEventListener("input",()=>{
+  campaignRefreshCounts();campaignPreviewCurrent();
+});
+campaignResetHistory();
+
 // Draft-only campaign preview. No API requests, storage writes or mail delivery.
 const campaignPreviewForm=$("campaign-preview-form");
 campaignPreviewForm?.addEventListener("submit",event=>{
@@ -753,7 +924,7 @@ campaignPreviewForm?.addEventListener("submit",event=>{
   }
   // textContent preserves newlines without interpreting supplied HTML or scripts.
   $("campaign-preview-subject").textContent=subject;
-  $("campaign-preview-body").textContent=body;
+  campaignRenderPreview(body);
   status.textContent="Podgląd przygotowany lokalnie. Nie zapisano ani nie wysłano wiadomości.";
 });
 
@@ -791,8 +962,9 @@ newDraftButton?.addEventListener("click",()=>{
   savedCampaignSnapshot=null;
   $("campaign-subject").value="";
   $("campaign-body").value="";
+  campaignResetHistory();
   $("campaign-preview-subject").textContent="Temat kampanii";
-  $("campaign-preview-body").textContent="Wpisz treść i wybierz „Pokaż podgląd”.";
+  campaignRenderPreview("");
   draftStatus.textContent="Nowa wersja robocza. Nie wysłano wiadomości.";
 });
 async function openCampaignDraft(id){
@@ -802,8 +974,9 @@ async function openCampaignDraft(id){
     throw Error("draft_unavailable");
   $("campaign-subject").value=draft.subject;
   $("campaign-body").value=draft.body;
+  campaignResetHistory();
   $("campaign-preview-subject").textContent=draft.subject;
-  $("campaign-preview-body").textContent=draft.body;
+  campaignRenderPreview(draft.body);
   selectCampaignDraft(id);
   savedCampaignSnapshot={id,subject:draft.subject,body:draft.body};
   draftStatus.textContent="Wczytano wersję roboczą do edycji. Nie wysłano wiadomości.";
@@ -887,7 +1060,7 @@ draftSaveButton?.addEventListener("click",async()=>{
     selectCampaignDraft(result.id);
     savedCampaignSnapshot={id:result.id,...draft};
     $("campaign-preview-subject").textContent=draft.subject;
-    $("campaign-preview-body").textContent=draft.body;
+    campaignRenderPreview(draft.body);
     draftStatus.textContent="Wersja robocza zapisana w PostgreSQL. Nie wysłano wiadomości.";
     try{await refreshDrafts({notify:false});}catch{
       draftStatus.textContent="Zapisano wersję roboczą, ale nie udało się odświeżyć listy.";
@@ -928,6 +1101,8 @@ campaignApproveButton?.addEventListener("click",async()=>{
     savedCampaignSnapshot=null;
     $("campaign-subject").value="";
     $("campaign-body").value="";
+    campaignResetHistory();
+    campaignPreviewCurrent();
     status.textContent="Treść zatwierdzona. Wysyłka nie została uruchomiona.";
     await refreshDrafts({notify:false});
   }catch{

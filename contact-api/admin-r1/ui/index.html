@@ -268,11 +268,42 @@
             <div class="campaign-field">
               <label for="campaign-subject">Temat wiadomości</label>
               <input id="campaign-subject" type="text" minlength="3" maxlength="160" required>
+              <span class="campaign-field-count" id="campaign-subject-count" aria-live="off">0 / 160 znaków</span>
             </div>
             <div class="campaign-field">
               <label for="campaign-body">Treść wiadomości</label>
-              <textarea id="campaign-body" rows="7" minlength="10" maxlength="20000" required></textarea>
+              <div class="campaign-editor">
+                <div class="campaign-editor-toolbar" role="toolbar" aria-label="Zaawansowane formatowanie treści kampanii">
+                  <select id="campaign-style" aria-label="Styl akapitu" title="Styl akapitu">
+                    <option value="plain">Akapit</option>
+                    <option value="h1">Nagłówek 1</option>
+                    <option value="h2">Nagłówek 2</option>
+                    <option value="h3">Nagłówek 3</option>
+                  </select>
+                  <span class="campaign-editor-divider" aria-hidden="true"></span>
+                  <button type="button" data-campaign-format="bold" aria-label="Pogrubienie" title="Pogrubienie (Ctrl+B)"><strong>B</strong></button>
+                  <button type="button" data-campaign-format="italic" aria-label="Kursywa" title="Kursywa (Ctrl+I)"><em>I</em></button>
+                  <button type="button" data-campaign-format="underline" aria-label="Podkreślenie" title="Podkreślenie"><u>U</u></button>
+                  <button type="button" data-campaign-format="strike" aria-label="Przekreślenie" title="Przekreślenie"><s>S</s></button>
+                  <button type="button" data-campaign-format="code" aria-label="Kod w tekście" title="Kod w tekście">&lt;/&gt;</button>
+                  <span class="campaign-editor-divider" aria-hidden="true"></span>
+                  <button type="button" data-campaign-format="bullet" aria-label="Lista punktowana" title="Lista punktowana">☷</button>
+                  <button type="button" data-campaign-format="number" aria-label="Lista numerowana" title="Lista numerowana">1.</button>
+                  <button type="button" data-campaign-format="quote" aria-label="Cytat" title="Cytat">❞</button>
+                  <button type="button" data-campaign-format="link" aria-label="Wstaw link" title="Wstaw bezpieczny link">↗</button>
+                  <button type="button" data-campaign-format="rule" aria-label="Linia oddzielająca" title="Linia oddzielająca">―</button>
+                  <span class="campaign-editor-divider" aria-hidden="true"></span>
+                  <button type="button" data-campaign-format="undo" aria-label="Cofnij zmianę" title="Cofnij">↶</button>
+                  <button type="button" data-campaign-format="redo" aria-label="Ponów zmianę" title="Ponów">↷</button>
+                </div>
+                <textarea id="campaign-body" rows="9" minlength="10" maxlength="20000" spellcheck="true" aria-describedby="campaign-editor-help" required></textarea>
+                <div class="campaign-editor-footer">
+                  <span id="campaign-editor-help">Markdown + podkreślenie (++tekst++) · skróty Ctrl+B / Ctrl+I</span>
+                  <span class="campaign-field-count" id="campaign-body-count" aria-live="off">0 słów · 0 / 20 000 znaków</span>
+                </div>
+              </div>
             </div>
+            <p class="campaign-audience muted">Podgląd formatuje wersję roboczą; w bazie zapisujemy tekst ze znacznikami. Wysyłka wiadomości HTML wymaga oddzielnego wdrożenia i jest obecnie wyłączona.</p>
             <p class="campaign-audience muted">Docelowi odbiorcy: wyłącznie aktywne subskrypcje z potwierdzoną zgodą. W tym etapie nie wykonuje się wysyłki.</p>
             <p id="campaign-consent-evidence" class="muted" role="status" aria-live="polite">Dowody zgody: jeszcze nie sprawdzono. To informacja orientacyjna, a nie zgoda na wysłanie kampanii.</p>
             <p id="campaign-withdrawal-readiness" class="muted" role="status" aria-live="polite">Obsługa wypisania: jeszcze nie sprawdzono. Wysyłka kampanii jest wyłączona.</p>
@@ -298,7 +329,7 @@
               <div id="campaign-preview-frame" class="campaign-preview-mail" aria-label="Podgląd kampanii bez wysyłania">
                 <p class="campaign-brand">gracz<span>.pl</span></p>
                 <h4 id="campaign-preview-subject">Temat kampanii</h4>
-                <p id="campaign-preview-body">Wpisz treść i wybierz „Pokaż podgląd”.</p>
+                <div id="campaign-preview-body">Wpisz treść i wybierz „Pokaż podgląd”.</div>
                 <p class="campaign-preview-note">Wersja robocza — wiadomość nie została wysłana.</p>
               </div>
             </div>

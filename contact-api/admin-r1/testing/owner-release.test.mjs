@@ -40,6 +40,34 @@ test('OWNER copyright notice has legal scope, full dialog, sticky navigation and
   assert.match(js,/rightsCopy\.scrollTo\(/);
 });
 
+test('premium campaign editor formats draft text without expanding send permissions',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  const js=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
+  const buttons=[...html.matchAll(/data-campaign-format="([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(buttons,[
+    'bold','italic','underline','strike','code','bullet',
+    'number','quote','link','rule','undo','redo'
+  ]);
+  assert.match(html,/id="campaign-style"/);
+  assert.match(html,/id="campaign-body-count"/);
+  assert.match(html,/id="campaign-subject-count"/);
+  assert.match(html,/<div id="campaign-preview-body"/);
+  assert.match(html,/Wysyłka wiadomości HTML wymaga oddzielnego wdrożenia/);
+  assert.match(js,/campaignBody\.setRangeText\(/);
+  assert.match(js,/campaignBody\.dispatchEvent\(new Event\("input"/);
+  assert.match(js,/campaignRenderPreview\(draft\.body\)/);
+  assert.match(js,/campaignRenderPreview\(body\)/);
+  assert.match(js,/output\.replaceChildren\(\)/);
+  assert.match(js,/parent\.append\(document\.createTextNode\(/);
+  assert.match(js,/url\.protocol==="https:"/);
+  assert.doesNotMatch(js,/campaign-preview-body"\)\.innerHTML\s*=/);
+  assert.match(css,/\.campaign-editor-toolbar/);
+  // Rendering and editing must not alter POST payload, delivery or server gates.
+  assert.match(js,/body:\$\("campaign-body"\)\.value\.trim\(\)/);
+  assert.match(js,/campaignSendReady=false/);
+});
+
 test('RFC6238 TOTP, high-entropy verifier and absent auth configuration fail closed',async()=>{
   assert.equal(codeAt(secret,1),'287082');
   assert.equal(totpBase32.length,32);
