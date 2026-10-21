@@ -896,24 +896,30 @@ draftRefreshButton?.addEventListener("click",async()=>{
 async function loadCampaignConsentProofCount(){
   const status=$("campaign-consent-evidence");
   const withdrawalStatus=$("campaign-withdrawal-readiness");
-  if(!status||!withdrawalStatus)return;
+  const egressStatus=$("campaign-egress-readiness");
+  if(!status||!withdrawalStatus||!egressStatus)return;
   try{
     const result=await draftRequest("audience",{});
     if(result?.ok!==true||result?.advisoryOnly!==true||
        !Number.isSafeInteger(result.confirmed)||result.confirmed<0||
        result.scope!=="new_only_doi_evidence_no_revocation")
       throw Error("audience_evidence_invalid");
-    if(typeof result.withdrawalReady!=="boolean")
+    if(typeof result.withdrawalReady!=="boolean"||
+       typeof result.globalEgressReady!=="boolean")
       throw Error("withdrawal_readiness_invalid");
     status.textContent="Potwierdzone zgody DOI bez wypisania (nowy rejestr): "+
       result.confirmed+". Wynik orientacyjny — nie upoważnia do wysyłki.";
     withdrawalStatus.textContent=result.withdrawalReady
       ?"Obsługa wypisań: podstawowa gotowość serwera potwierdzona. Przed wysyłką wymagane osobne testy."
       :"Obsługa wypisań: niegotowa. Wysyłanie kampanii pozostaje zablokowane.";
+    egressStatus.textContent=result.globalEgressReady
+      ?"Globalna blokada marketingowa: brak aktywnego wstrzymania w rejestrze. Nie upoważnia to do wysyłki."
+      :"Globalna blokada marketingowa: WSTRZYMANE. Wcześniejsze żądania wypisania lub brak gotowości wymagają wyjaśnienia przed wysyłką.";
   }catch{
     status.textContent="Nie udało się potwierdzić dowodów zgód. "+
       "Nie można ustalić liczby odbiorców. Wysyłka jest wyłączona.";
     withdrawalStatus.textContent="Nie można potwierdzić gotowości obsługi wypisań. Wysyłka jest wyłączona.";
+    egressStatus.textContent="Globalna blokada marketingowa: stan nieznany — wysyłka pozostaje wstrzymana.";
   }
 }
 async function checkCampaignDraftAvailability(){

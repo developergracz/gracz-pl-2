@@ -46,8 +46,28 @@ test('campaign preflight checks withdrawal readiness without enabling sends',()=
   assert.match(router,/withdrawalReady=typeof campaignWithdrawalReady==='function'/);
   assert.match(router,/await campaignWithdrawalReady\(\)===true/);
   assert.match(router,/catch\{withdrawalReady=false;\}/);
-  assert.match(router,/return response\(res,200,\{\.\.\.evidence,withdrawalReady\}\)/);
+  assert.match(router,/return response\(res,200,\{\.\.\.evidence,withdrawalReady,globalEgressReady\}\)/);
   assert.match(ui,/typeof result\.withdrawalReady!=="boolean"/);
   assert.match(ui,/withdrawalStatus\.textContent=result\.withdrawalReady/);
   assert.match(ui,/Nie można potwierdzić gotowości obsługi wypisań/);
+});
+
+test('OWNER checks the global withdrawal no-send fence; missing proof always fails closed',()=>{
+  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../admin-r1/ui/index.html',import.meta.url),'utf8');
+  const fence=readFileSync(new URL('../persistence/recovery/withdrawal-send-fence.mjs',import.meta.url),'utf8');
+  assert.match(server,/campaignEgressFence=createWithdrawalSendFence\(database\)/);
+  assert.match(server,/campaignEgressReady:campaignEgressFence\.checkAvailable/);
+  assert.match(router,/typeof campaignEgressReady==='function'/);
+  assert.match(router,/await campaignEgressReady\(\)===true/);
+  assert.match(router,/catch\{globalEgressReady=false;\}/);
+  assert.match(ui,/typeof result\.globalEgressReady!=="boolean"/);
+  assert.match(ui,/egressStatus\.textContent=result\.globalEgressReady/);
+  assert.match(html,/id="campaign-egress-readiness"/);
+  assert.match(fence,/withdrawal_requests LIMIT 1/);
+  assert.match(fence,/withdrawal_no_send_obligations LIMIT 1/);
+  assert.match(fence,/async checkAvailable\(\)/);
+  // The existing global fence remains the only admission policy and is not
+  // weakened or rewritten. No bulk-send route or scheduler is introduced.
+  assert.doesNotMatch(router,/campaigns\/send-all|campaigns\/dispatch-all/);
 });
