@@ -93,3 +93,30 @@ input[aria-invalid=true]{border-color:#ef7081;box-shadow:0 0 0 3px rgba(242,26,5
   .nl-status-followup{padding:16px 12px}
   .nl-status-followup .nl-primary{width:100%}
 }
+
+/* One-time mailbox proof: centered, accessible, fail-closed confirmation. */
+#nl-withdrawal-action[hidden]{display:none!important}
+.nl-withdrawal-dialog{
+  width:min(600px,calc(100vw - 24px));
+  max-height:calc(100dvh - 24px);
+}
+.nl-withdrawal-dialog .nl-status{
+  overflow-wrap:anywhere;font-size:14px;line-height:1.6;
+  min-height:22px;margin:12px 0;
+}
+.nl-withdrawal-dialog__actions{
+  margin-top:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+}
+.nl-withdrawal-dialog__actions button{
+  width:100%;min-height:48px;margin:0;border-radius:999px;
+  font:800 12px Montserrat,Arial,sans-serif;cursor:pointer;
+}
+.nl-withdrawal-dialog__actions #nl-withdrawal-cancel{
+  border:1px solid #438579;background:transparent;color:#f3f7f4;
+}
+.nl-withdrawal-dialog__actions button:focus-visible{
+  outline:3px solid #a0f4eb;outline-offset:3px;
+}
+@media(max-width:520px){
+  .nl-withdrawal-dialog__actions{grid-template-columns:1fr;}
+}
