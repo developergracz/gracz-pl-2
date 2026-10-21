@@ -89,6 +89,7 @@ let next = null,
   loading = false,
   query = "",
   state = "all",
+  dateFrom = "",dateTo = "",
   generation = 0,
   detailGeneration = 0,
   listController,
@@ -299,6 +300,96 @@ async function request(path, options) {
   if (!response.ok) throw new Error("unavailable");
   return response.json();
 }
+
+// OWNER messaging — session-specific handles, up to ten active people.
+let targetedReady=false,visibleActive=[],selectedHandles=[],targetedId=null,
+  targetedApproved=false,targetedStarted=false,targetedBusy=false;
+const targetedDialog=$("targeted-dialog");
+function refreshTargetedButton(){
+  $("send-found").textContent="Wyślij do znalezionych ("+visibleActive.length+")";
+  $("send-found").disabled=!targetedReady||visibleActive.length===0;
+}
+function openTargeted(items){
+  if(!targetedReady||targetedBusy||targetedDialog.open||!Array.isArray(items)||
+     items.length<1||items.length>10||
+     items.some(x=>x.state!=="active"||typeof x.handle!=="string"))return;
+  selectedHandles=items.map(x=>x.handle);
+  targetedId=null;targetedApproved=false;targetedStarted=false;
+  $("targeted-compose").reset();
+  $("targeted-compose").hidden=false;$("targeted-final").hidden=true;
+  $("targeted-approve").disabled=false;$("targeted-send").disabled=false;
+  $("targeted-preview-subject").textContent="Podgląd tematu";
+  $("targeted-preview-body").textContent="Podgląd wiadomości";
+  $("targeted-status").textContent="";
+  $("targeted-recipients").textContent=items.length===1
+    ?"Odbiorca: "+items[0].email
+    :"Wybrano "+items.length+" aktywnych osób z bieżącej strony.";
+  targetedDialog.showModal();$("targeted-subject").focus();
+}
+const postTargeted=(path,payload)=>request("/owner/newsletter/"+path,{
+  method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)
+});
+$("send-found").addEventListener("click",()=>openTargeted(visibleActive));
+$("targeted-close").addEventListener("click",()=>targetedDialog.close());
+$("targeted-compose").addEventListener("submit",e=>e.preventDefault());
+for(const name of ["subject","body"])
+  $("targeted-"+name).addEventListener("input",()=>{
+    $("targeted-preview-"+name).textContent=$("targeted-"+name).value;
+  });
+$("targeted-approve").addEventListener("click",async()=>{
+  if(targetedBusy||targetedApproved||targetedStarted)return;
+  if(!$("targeted-compose").reportValidity())return;
+  if($("targeted-approval").value!=="ZATWIERDZAM TREŚĆ"){
+    $("targeted-status").textContent="Wpisz dokładnie ZATWIERDZAM TREŚĆ.";return;
+  }
+  targetedBusy=true;$("targeted-approve").disabled=true;
+  $("targeted-status").textContent="Zapisywanie i zatwierdzanie. Nie zamykaj okna.";
+  try{
+    const draft={subject:$("targeted-subject").value.trim(),
+      body:$("targeted-body").value.trim(),audience:"confirmed_active_new_only"};
+    if(!targetedId){
+      const saved=await postTargeted("campaign-targeted/save",{
+        ...draft,handles:selectedHandles});
+      if(!saved.id)throw Error("missing_draft");
+      targetedId=saved.id;
+    }
+    const result=await postTargeted("campaign-drafts/approve",{
+      ...draft,id:targetedId,confirmation:"ZATWIERDZAM TREŚĆ"});
+    if(result?.state!=="approved")throw Error("not_approved");
+    targetedApproved=true;
+    $("targeted-compose").hidden=true;$("targeted-final").hidden=false;
+    $("targeted-status").textContent="Treść i lista odbiorców zatwierdzone. Nie wysłano wiadomości.";
+    $("targeted-confirmation").focus();
+  }catch{
+    $("targeted-status").textContent="Nie potwierdzono zatwierdzenia. Nie twórz kolejnego szkicu ani nie wysyłaj.";
+  }finally{targetedBusy=false;$("targeted-approve").disabled=targetedApproved;}
+});
+$("targeted-send").addEventListener("click",async()=>{
+  if(targetedBusy||!targetedApproved||targetedStarted||!targetedId)return;
+  if($("targeted-confirmation").value!=="WYSYŁAM DO WYBRANYCH"){
+    $("targeted-status").textContent="Wpisz dokładnie WYSYŁAM DO WYBRANYCH.";return;
+  }
+  targetedBusy=true;targetedStarted=true;$("targeted-send").disabled=true;
+  $("targeted-status").textContent="Próba wysyłki rozpoczęta. Nie ponawiaj.";
+  try{
+    const result=await postTargeted("campaign-targeted/send",{
+      id:targetedId,confirmation:"WYSYŁAM DO WYBRANYCH"});
+    $("targeted-status").textContent=result?.state==="finished"
+      ?"Resend przyjął: "+result.accepted+", pominięto: "+
+        result.suppressed+". Przyjęcie nie oznacza doręczenia."
+      :"Wynik niepewny. Nie ponawiaj wysyłki.";
+  }catch{$("targeted-status").textContent="Nie można potwierdzić wyniku. Nie ponawiaj wysyłki.";}
+  finally{targetedBusy=false;}
+});
+$("last-month").addEventListener("click",()=>{
+  const format=d=>new Intl.DateTimeFormat("sv-SE",{
+    timeZone:"Europe/Warsaw",year:"numeric",month:"2-digit",day:"2-digit"
+  }).format(d);
+  $("date-from").value=format(new Date(Date.now()-30*86400000));
+  $("date-to").value=format(new Date());
+  $("filters").requestSubmit();
+});
+
 async function load(cursor = null) {
   if (loading) return;
   loading = true;
@@ -313,7 +404,7 @@ async function load(cursor = null) {
       signal: listController.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cursor, query, state }),
+      body: JSON.stringify({ cursor, query, state, from:dateFrom, to:dateTo }),
     });
     if (current !== generation) return;
     if (!data.ok) throw new Error(data.error);
@@ -325,6 +416,8 @@ async function load(cursor = null) {
       data.total === null
         ? "Pełny licznik niedostępny"
         : "Pełny odczyt jednej strony";
+    visibleActive=data.items.filter(x=>x.state==="active");
+    refreshTargetedButton();
     for (const item of data.items) {
       const tr = document.createElement("tr");
       const email = document.createElement("td");
@@ -342,8 +435,14 @@ async function load(cursor = null) {
       button.textContent = "Szczegóły";
       button.setAttribute("aria-label", `Szczegóły: ${item.email}`);
       button.addEventListener("click", () => detail(item.handle));
-      action.append(button);
-      tr.append(email, status, signup, source, action);
+      const send=document.createElement("button");
+      send.type="button";send.textContent="Wyślij wiadomość";
+      send.className="subscriber-send";
+      send.disabled=!targetedReady||item.state!=="active";
+      send.addEventListener("click",()=>openTargeted([item]));
+      action.className="subscriber-actions";
+      action.append(button,send);
+      tr.append(email,status,signup,source,action);
       $("rows").append(tr);
     }
     next = data.nextCursor;
@@ -424,6 +523,7 @@ $("filters").addEventListener("submit", (e) => {
   if (loading) return;
   query = $("query").value;
   state = $("state").value;
+  dateFrom=$("date-from").value;dateTo=$("date-to").value;
   load();
 });
 $("next").addEventListener("click", () => load(next));
@@ -1214,6 +1314,8 @@ async function checkCampaignDraftAvailability(){
         "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
       campaignTestReady=data.testSendEnabled===true;
       campaignSendReady=data.campaignSendEnabled===true;
+      targetedReady=data.targetedSendEnabled===true;
+      refreshTargetedButton();
       if(campaignTestButton)campaignTestButton.disabled=!(campaignTestReady&&editingCampaignId);
       const description=$("campaign-test-description");
       if(description)description.textContent=campaignTestReady
