@@ -22,11 +22,22 @@
       var body={};try{body=await response.json();}catch(_){}
       if(!response.ok||body.ok!==true){
         var unavailable=response.status===503;
-        var error=new Error(unavailable?'Usługa jest chwilowo niedostępna. Nie potwierdzono zmiany subskrypcji. Nie ponawiaj teraz operacji. W celu wycofania zgody skorzystaj z kontaktu na tej stronie; zgłoszenie wymaga weryfikacji i obsługi.':path==='/newsletter/status-check'?'Nie można sprawdzić statusu za pomocą tego linku. Nie ponawiaj teraz operacji.':'Nie udało się potwierdzić operacji.');
+        var error=new Error(path==='/newsletter/status-check'
+          ? (unavailable?'Chwilowy problem z odczytem statusu. Spróbuj ponownie, gdy połączenie wróci.':'Link do statusu wygasł lub jest nieprawidłowy. Poproś o nowy link.')
+          : (unavailable?'Usługa jest chwilowo niedostępna. Nie potwierdzono zmiany subskrypcji. Nie ponawiaj teraz operacji. W celu wycofania zgody skorzystaj z kontaktu na tej stronie; zgłoszenie wymaga weryfikacji i obsługi.':'Nie udało się potwierdzić operacji.'));
+        error.status=response.status;
+        error.retryable=response.status>=500 || response.status===429;
         throw error;
       }
       return body;
-    }catch(error){if(error.name==='AbortError'||error instanceof TypeError)throw new Error(ambiguous);throw error;}
+    }catch(error){
+      if(error.name==='AbortError'||error instanceof TypeError){
+        var transient=new Error(ambiguous);
+        transient.retryable=true;
+        throw transient;
+      }
+      throw error;
+    }
     finally{window.clearTimeout(timer);controllers.delete(controller);}
   }
 
@@ -275,9 +286,23 @@
         resultCheck.setAttribute('href','#nl-withdrawal-panel');
       }
     }catch(error){if(current===generation){
+      // No consent is changed by status-check. Unlike DOI/unsubscribe, a
+      // transient READ failure can be retried with the same unexpired proof.
+      if(mode==='status' && error.retryable){
+        actionMode='status';actionToken=token;
+        actionTitle.textContent='Nie udało się odczytać statusu';
+        actionCopy.textContent='Subskrypcja nie została zmieniona. Możesz bezpiecznie ponowić sprawdzenie, dopóki link jest ważny.';
+        actionButton.textContent='Ponów sprawdzenie statusu';
+        actionButton.hidden=false;actionButton.disabled=false;
+        setStatus(actionStatus,'Chwilowy problem z usługą. Ponowienie dotyczy wyłącznie odczytu statusu.',true);
+        actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
+        return;
+      }
       actionToken='';actionMode='';actionButton.disabled=true;actionButton.hidden=true;
-      actionTitle.textContent='Nie potwierdzono operacji';
-      actionCopy.textContent='Nie potwierdzono zmiany subskrypcji ani jej statusu. Nie ponawiaj teraz operacji. Zgłoszenie wycofania zgody wymaga weryfikacji i obsługi przez kontakt na tej stronie.';
+      actionTitle.textContent=mode==='status'?'Link do sprawdzenia statusu jest nieaktualny':'Nie potwierdzono operacji';
+      actionCopy.textContent=mode==='status'
+        ?'Nie zmieniono subskrypcji. Jeśli link wygasł lub jest nieprawidłowy, wróć do formularza i poproś o nowy link.'
+        :'Nie potwierdzono zmiany subskrypcji ani jej statusu. Nie ponawiaj teraz operacji. Zgłoszenie wycofania zgody wymaga weryfikacji i obsługi przez kontakt na tej stronie.';
       setStatus(actionStatus,error.message,true);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
     }}
