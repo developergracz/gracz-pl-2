@@ -131,6 +131,10 @@ test('top Newsletter button opens accessible signup and stays safely disabled un
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('input[name="email"]')).toBeDisabled();
   await expect(dialog.locator('input[name="consent"]')).toBeDisabled();
+  const premiumButton=dialog.locator('button[type="submit"]');
+  await expect(premiumButton).toBeDisabled();
+  await expect(premiumButton).toHaveCSS('border-top-left-radius','14px');
+  await expect(premiumButton).toHaveCSS('background-image',/linear-gradient/);
   await expect(dialog.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
