@@ -68,6 +68,6 @@ jobs:
           NODE
       - name: Verify private route, password, TOTP, durable session, CSRF and consent
         working-directory: contact-api
-        run: node --test admin-r1/testing/owner-release.test.mjs
+        run: node --test admin-r1/testing/owner-release.test.mjs test/owner-renewed-consent-status.test.mjs
       - name: Check every backend module syntax
         run: npm --prefix contact-api run check
