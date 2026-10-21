@@ -6,6 +6,7 @@ WITH filtered AS MATERIALIZED (
          (r.email_tag IS NOT NULL) AS revoked
   FROM newsletter_new.subscribers s
   LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
+            AND r.recorded_at>=s.requested_at
   WHERE (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date
         BETWEEN $1::date AND $2::date
     AND ($3::text IS NULL OR s.source=$3)
