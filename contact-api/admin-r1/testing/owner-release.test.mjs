@@ -159,10 +159,10 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
       'Recovery is not visible before the dedicated schema and feature flag are enabled');
     // A ChatGPT-added attribution must not lock the OWNER out of the entry
     // page. Redirect without cookies or credentials; keep private APIs strict.
-    const probe=(path,method='GET')=>new Promise((resolve,reject)=>{
+    const probe=(path,method='GET',headers={})=>new Promise((resolve,reject)=>{
       const req=httpRequest({
         hostname:'127.0.0.1',port:srv.address().port,path,method,
-        headers:{host:'gracz-contact-api.onrender.com','x-forwarded-proto':'https'}
+        headers:{host:'gracz-contact-api.onrender.com','x-forwarded-proto':'https',...headers}
       },res=>{
         res.resume();
         res.on('end',()=>resolve({status:res.statusCode,headers:res.headers}));
@@ -175,8 +175,20 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(redirected.headers.location,'/owner/newsletter/');
     assert.equal(redirected.headers['cache-control'],'no-store');
     assert.equal(redirected.headers['set-cookie'],undefined);
-    assert.equal((await probe('/owner/newsletter/')).status,401,
-      'clean entry still requires OWNER session');
+    const anonymous=await probe('/owner/newsletter/');
+    assert.equal(anonymous.status,302);
+    assert.equal(anonymous.headers.location,'/owner/newsletter/login');
+    assert.equal(anonymous.headers['set-cookie'],undefined,
+      'anonymous entry cannot create a session');
+    const expired=await probe('/owner/newsletter/','GET',{
+      cookie:'__Host-gracz_owner='+Buffer.alloc(32,99).toString('base64url')
+    });
+    assert.equal(expired.status,302);
+    assert.equal(expired.headers.location,'/owner/newsletter/login');
+    assert.match(expired.headers['set-cookie']?.[0]||'',/Max-Age=0/,
+      'invalid OWNER session must be cleared');
+    assert.equal((await probe('/owner/newsletter/session')).status,401,
+      'private JSON endpoints must continue denying unauthenticated clients');
     assert.equal((await probe('/owner/newsletter/?utm_source=untrusted')).status,403);
     assert.equal((await probe('/owner/newsletter/session?utm_source=chatgpt.com')).status,403);
     assert.equal((await probe('/owner/newsletter/?utm_source=chatgpt.com','POST')).status,403);
@@ -446,7 +458,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     request.end(data?JSON.stringify(data):undefined);
   });
   let result=await call('/owner/newsletter/');
-  assert.equal(result.status,401);
+  assert.equal(result.status,302);
+  assert.equal(result.headers.get('location'),'/owner/newsletter/login');
   result=await call('/owner/newsletter/list',{method:'POST',data:{}});
   assert.equal(result.status,401);
   result=await call('/owner/newsletter/summary',{method:'POST',data:{}});
