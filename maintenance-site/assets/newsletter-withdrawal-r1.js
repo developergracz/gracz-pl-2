@@ -7,7 +7,8 @@
   var panel=byId('nl-withdrawal-action'),confirmButton=byId('nl-withdrawal-confirm');
   var cancelButton=byId('nl-withdrawal-cancel');
   var confirmation=byId('nl-withdrawal-action-status');
-  if(!form||!email||!submit||!status||!panel||!confirmButton||!confirmation||!cancelButton)return;
+  var actionTitle=byId('nl-withdrawal-confirm-title'),actionCopy=byId('nl-withdrawal-confirm-copy');
+  if(!form||!email||!submit||!status||!panel||!confirmButton||!confirmation||!cancelButton||!actionTitle||!actionCopy)return;
   var ready=false,busy=false,proof=null;
   function message(node,text,error){
     node.textContent=text;
@@ -29,6 +30,20 @@
       if(!response.ok||(!method&&json.ok!==true))throw new Error('WITHDRAWAL_NOT_CONFIRMED');
       return json;
     }finally{clearTimeout(timer);}
+  }
+  function resetConfirmation(){
+    actionTitle.textContent='Potwierdź wypisanie z newslettera';
+    actionCopy.textContent='Czy na pewno chcesz wycofać zgodę na newsletter gracz.pl? Samo otwarcie linku nie zmienia subskrypcji.';
+    panel.classList.remove('nl-withdrawal-dialog--success');
+    message(confirmation,'');
+  }
+  function showOutcome(title,copy,text,success){
+    actionTitle.textContent=title;
+    actionCopy.textContent=copy;
+    panel.classList.toggle('nl-withdrawal-dialog--success',success);
+    message(confirmation,text,!success);
+    actionTitle.setAttribute('tabindex','-1');
+    actionTitle.focus();
   }
   function openConfirmModal(){
     panel.hidden=false;
@@ -58,6 +73,7 @@
     var match=/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/i.exec(raw);
     if(!match)return;
     proof={challengeId:match[1],token:match[2]};
+    resetConfirmation();
     confirmButton.disabled=!ready;confirmButton.hidden=false;
     cancelButton.textContent='Anuluj';
     message(confirmation,ready?'':'Sprawdzanie dostępności bezpiecznego wypisania…');
@@ -70,7 +86,7 @@
     try{
       var answer=await fetchBounded('/newsletter/withdrawal-ready',null,'GET');
       if(answer.ready!==true||answer.withdrawalOnly!==true||
-         answer.newsletterIntakeEnabled!==false)return;
+         answer.newsletterIntakeEnabled!==false)throw new Error('WITHDRAWAL_NOT_READY');
       ready=true;email.disabled=false;form.elements.website.disabled=false;
       submit.disabled=false;submit.removeAttribute('aria-disabled');
       message(status,'Podaj adres i poproś o nowy link do wypisania.');
@@ -119,15 +135,21 @@
     try{
       var reply=await fetchBounded('/newsletter/withdrawal-confirm',ticket);
       if(reply.state==='provider_off_verified'&&reply.confirmed===false){
-        message(confirmation,'Zarejestrowano wycofanie zgody i Resend potwierdził wyłączenie wysyłek na ten adres. Odśwież panel administratora, aby sprawdzić status.');
+        showOutcome('Zostałeś wypisany z newslettera gracz.pl',
+          'Twoja rezygnacja została zarejestrowana, a dostawca wiadomości potwierdził wyłączenie wysyłek na ten adres.',
+          'Nie będziemy wysyłać newslettera na ten adres bez nowej, potwierdzonej zgody.',true);
       }else{
-        message(confirmation,'Prośba została przyjęta do bezpiecznej obsługi. Nie potwierdzono jeszcze wyłączenia w Resend. Nie ponawiaj operacji.',true);
+        showOutcome('Wypisanie wymaga weryfikacji',
+          'Zgłoszenie zostało przyjęte, ale nie potwierdzono jeszcze wyłączenia wysyłek.',
+          'Nie ponawiaj operacji tym samym linkiem. W razie potrzeby skontaktuj się z administratorem.',false);
       }
     }catch(_){
-      message(confirmation,'Nie potwierdzono wyniku. Zgłoszenie mogło zostać zapisane; nie ponawiaj linku. Skorzystaj z kontaktu, jeśli potrzebujesz pomocy.',true);
+      showOutcome('Nie potwierdzono wypisania',
+        'Nie udało się jednoznacznie potwierdzić wyniku tej operacji.',
+        'Zgłoszenie mogło zostać zapisane. Nie ponawiaj linku; w razie potrzeby skontaktuj się z administratorem.',false);
     }finally{
       busy=false;confirmButton.hidden=true;confirmButton.disabled=true;
-      cancelButton.textContent='Zrozumiałem';
+      cancelButton.textContent='Zamknij';
       cancelButton.focus();
     }
   });
