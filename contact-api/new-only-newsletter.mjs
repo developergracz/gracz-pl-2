@@ -322,7 +322,7 @@ export function createNewOnlyNewsletter({
         (EXISTS(SELECT 1 FROM newsletter_new.revocations r
                WHERE r.email_tag=s.email_tag
                  AND r.recorded_at>=s.requested_at)
-         OR s.repeat_withdrawn_at>=s.requested_at) AS withdrawn
+         OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS withdrawn
       FROM newsletter_new.subscribers s WHERE s.email_tag=$1
     `,[tag('email',payload.mailbox)],{timeoutMs:2000});
     const row=found.rows?.[0];
