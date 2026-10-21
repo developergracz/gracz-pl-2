@@ -43,6 +43,21 @@ pozwalającego ominąć `withdrawal-send-fence.mjs`. Przy przyszłej wysyłce
 konieczna jest ponowna walidacja we wspólnej transakcji z blokadami
 wycofania zgody, deduplikacja trwałej rezerwacji oraz odrębna akceptacja OWNER.
 
+## Obowiązkowa bramka tuż przed doręczeniem — adapter wewnętrzny
+
+`dispatch-coordinator.mjs` pozostaje domyślnie wyłączony i nie ma trasy HTTP.
+Nie przyjmuje już jako kompletnej konfiguracji samej rezerwacji i transportu.
+Każda przyszła próba wymaga trwałego jednokrotnego `claim`, istniejącej globalnej
+blokady `withSendPermit` oraz świeżego `reviewRecipient(emailTag,to)`.
+Ostatni warunek potwierdza AES-GCM/HMAC, aktywny DOI, brak wycofania i dokładny
+adres docelowy. Sprawdzenie i wywołanie Resend muszą wykonać się **wewnątrz**
+globalnej blokady. Niespełnienie warunku nie może dotrzeć do transportu.
+
+Po trwałej rezerwacji nie wolno ponawiać próby nawet przy niedostępności
+bramki. Niepewny wynik pozostaje niepewny. Ten adapter jest wyłącznie
+fundamentem przyszłego połączenia; nie instaluje funkcji wysyłkowej, nie
+zmienia historycznego globalnego HOLD ani nie uruchamia wysyłek.
+
 ## Warunki przed przyszłą wysyłką
 
 1. Dowieść w testach produkcyjnego przepływu: aktualna zgoda DOI, cel przetwarzania, wycofanie zgody i weryfikacja adresu tuż przed próbą doręczenia; nie wykorzystywać listy historycznej.
