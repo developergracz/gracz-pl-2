@@ -30,7 +30,6 @@ function decodedKey(raw){
 export function resolveWithdrawalRecipient({row,encryptionKey,recipientTagKey}={}){
   const enc=decodedKey(encryptionKey);
   const tagKey=decodedKey(recipientTagKey);
-  const row=rows[0];
   if(!row||typeof row.challenge_id!=='string'||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.challenge_id)||
      !Buffer.isBuffer(row.nonce)||row.nonce.length!==12||
