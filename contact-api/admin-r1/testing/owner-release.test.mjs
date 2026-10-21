@@ -16,6 +16,25 @@ const secret=Buffer.from('12345678901234567890');
 const totpBase32=encodeTotp(secret);
 const enc=Buffer.alloc(32,11),subject=Buffer.alloc(32,22);
 const password='a-temporary-long-synthetic-password';
+test('OWNER premium sent confirmation names one recipient and never claims delivery',async()=>{
+  const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
+  const js=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
+  const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
+  assert.match(html,/<dialog id="targeted-success-dialog" aria-labelledby="targeted-success-title" aria-describedby="targeted-success-description">/);
+  assert.match(html,/id="targeted-success-close" autofocus>Zrozumiałem<\/button>/);
+  assert.match(js,/selectedRecipientEmails=items\.map\(x=>x\.email\)/);
+  assert.match(js,/result\?\.state==="finished"&&Number\.isSafeInteger\(accepted\)&&accepted>0/);
+  assert.match(js,/selectedRecipientEmails\.length===1&&accepted===1&&suppressed===0/);
+  assert.match(js,/"Wiadomość została wysłana do "\+selectedRecipientEmails\[0\]/);
+  assert.match(js,/targetedDialog\.close\(\);\s*targetedSuccessDialog\.showModal\(\)/);
+  assert.match(js,/targetedSuccessDialog\.close\(\)/);
+  assert.match(js,/To nie jest jeszcze potwierdzenie jej doręczenia/);
+  assert.match(js,/Żadna wiadomość nie została przyjęta do wysyłki/);
+  assert.match(js,/Wynik niepewny\. Nie ponawiaj wysyłki/);
+  assert.match(css,/#targeted-success-dialog\{[^}]*position:fixed;inset:0;margin:auto/s);
+  assert.match(css,/#targeted-success-dialog::backdrop/);
+});
+
 test('OWNER date filters and scoped premium messaging preserve explicit send confirmation',async()=>{
   const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
   const ui=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
