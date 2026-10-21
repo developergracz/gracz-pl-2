@@ -54,18 +54,23 @@ export function createReadService({
     };
   }
   return Object.freeze({
-    async list({ cursor = null, query = "", state = "all" } = {}) {
+    async list({ cursor = null, query = "", state = "all", from = "", to = "" } = {}) {
       let acquired = false;
       try {
         if (!active()) throw fault("invalid_request");
         if (
           typeof query !== "string" ||
           query.length > 80 ||
-          !states.includes(state)
+          !states.includes(state) ||
+          typeof from !== 'string' || typeof to !== 'string' ||
+          [from,to].some(date => date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+            !Number.isFinite(Date.parse(date)) ||
+            new Date(date).toISOString().slice(0,10)!==date)) ||
+          (from && to && from > to)
         )
           throw fault("invalid_request");
         query = query.trim().toLowerCase();
-        const scope = JSON.stringify([query, state]);
+        const scope = JSON.stringify([query, state, from, to]);
         let after = null,
           seen = [];
         if (cursor !== null) {
@@ -87,7 +92,7 @@ export function createReadService({
           lifetime.signal,
         );
         const page = await bounded(
-          (signal) => adapter.readPage({ after, limit: 10, search:query, state, signal }),
+          (signal) => adapter.readPage({ after, limit: 10, search:query, state, from, to, signal }),
           25000,
           lifetime.signal,
         );
@@ -142,6 +147,21 @@ export function createReadService({
       } finally {
         if (acquired) busy = false;
       }
+    },
+    // Session-scoped opaque handles; do not trust arbitrary addresses/tags
+    // submitted through a browser when building a marketing target list.
+    resolveTargetHandles(values) {
+      if(!active()||!Array.isArray(values)||values.length<1||values.length>10||
+         values.some(h=>typeof h!=='string'||h.length>200)||
+         new Set(values).size!==values.length)
+        throw fault('invalid_request');
+      return values.map(handle=>{
+        const record=handles.get(handle);
+        if(!record||record.expires<=now()||record.contact?.state!=='active'||
+           !/^[0-9a-f]{64}$/.test(record.contact?.id||''))
+          throw fault('invalid_request');
+        return record.contact.id;
+      });
     },
     async detail(handle) {
       const saved = handles.get(handle);
