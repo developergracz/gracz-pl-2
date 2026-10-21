@@ -11,6 +11,10 @@ export const productionModules=Object.freeze([
   'admin-r1/owner-router.mjs',
   'campaigns/draft-store.mjs',
   'campaigns/audience-proof-count.mjs',
+  // OWNER test-send adapter is inert unless an explicit release flag and durable ledger exist.
+  'campaigns/owner-test-send.mjs',
+  'campaigns/resend-transport.mjs',
+  'campaigns/resend-result.mjs',
   'campaigns/prepare.mjs',
   'admin-r1/owner-auth.mjs',
   'admin-r1/owner-recovery-mailer.mjs',

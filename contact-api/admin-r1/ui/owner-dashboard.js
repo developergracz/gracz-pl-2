@@ -762,6 +762,8 @@ campaignPreviewForm?.addEventListener("submit",event=>{
 // No campaign send endpoints exist here.
 const draftSaveButton=$("campaign-save-draft");
 const draftRefreshButton=$("campaign-refresh-drafts");
+const campaignTestButton=$("campaign-send-test");
+let campaignTestReady=false;
 const draftStatus=$("campaign-preview-status");
 async function draftRequest(route,payload){
   const response=await fetch("/owner/newsletter/campaign-drafts/"+route,{
@@ -773,14 +775,17 @@ async function draftRequest(route,payload){
   return response.json();
 }
 let editingCampaignId=null;
+let savedCampaignSnapshot=null;
 const newDraftButton=$("campaign-new-draft");
 function selectCampaignDraft(id){
   editingCampaignId=id;
   if(draftSaveButton)draftSaveButton.textContent=id?"Zapisz zmiany":"Zapisz wersję roboczą";
   if(newDraftButton)newDraftButton.hidden=!id;
+  if(campaignTestButton)campaignTestButton.disabled=!(id&&campaignTestReady);
 }
 newDraftButton?.addEventListener("click",()=>{
   selectCampaignDraft(null);
+  savedCampaignSnapshot=null;
   $("campaign-subject").value="";
   $("campaign-body").value="";
   $("campaign-preview-subject").textContent="Temat kampanii";
@@ -797,6 +802,7 @@ async function openCampaignDraft(id){
   $("campaign-preview-subject").textContent=draft.subject;
   $("campaign-preview-body").textContent=draft.body;
   selectCampaignDraft(id);
+  savedCampaignSnapshot={id,subject:draft.subject,body:draft.body};
   draftStatus.textContent="Wczytano wersję roboczą do edycji. Nie wysłano wiadomości.";
   $("campaign-subject").focus();
 }
@@ -837,6 +843,7 @@ draftSaveButton?.addEventListener("click",async()=>{
     if(result?.state!=="draft"||typeof result.id!=="string")
       throw Error("draft_unavailable");
     selectCampaignDraft(result.id);
+    savedCampaignSnapshot={id:result.id,...draft};
     $("campaign-preview-subject").textContent=draft.subject;
     $("campaign-preview-body").textContent=draft.body;
     draftStatus.textContent="Wersja robocza zapisana w PostgreSQL. Nie wysłano wiadomości.";
@@ -846,6 +853,39 @@ draftSaveButton?.addEventListener("click",async()=>{
   }catch{
     draftStatus.textContent="Nie udało się zapisać zmian. Sprawdź dane i spróbuj ponownie.";
   }finally{draftSaveButton.disabled=false;}
+});
+campaignTestButton?.addEventListener("click",async()=>{
+  if(!campaignTestReady||!editingCampaignId)return;
+  if(savedCampaignSnapshot?.id!==editingCampaignId||
+     $("campaign-subject").value.trim()!==savedCampaignSnapshot.subject||
+     $("campaign-body").value.trim()!==savedCampaignSnapshot.body){
+    $("campaign-test-status").textContent="Najpierw zapisz zmiany, aby test odpowiadał zapisanej treści.";
+    return;
+  }
+  if(!window.confirm("Wysłać JEDNĄ wiadomość testową wyłącznie na skonfigurowany adres obsługi gracz.pl? Nie wysyła to nic do subskrybentów."))return;
+  campaignTestButton.disabled=true;
+  const status=$("campaign-test-status");
+  try{
+    const response=await fetch("/owner/newsletter/campaign-tests/send",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+      body:JSON.stringify({id:editingCampaignId})
+    });
+    if(!response.ok)throw Error("test_send_unavailable");
+    const data=await response.json();
+    const messages={
+      accepted:"Resend przyjął jedną wiadomość testową. To jeszcze nie potwierdza jej doręczenia.",
+      uncertain:"Niepewny wynik Resend. Nie ponawiaj tej próby automatycznie.",
+      already_attempted:"Próba dla tej wersji kampanii została już zarejestrowana. Nie wysłano ponownie.",
+      limit_reached:"Osiągnięto limit 5 prób testowych w ciągu 24 godzin. Nie wysłano wiadomości.",
+      not_found:"Nie znaleziono tej wersji roboczej. Nie wysłano wiadomości."
+    };
+    status.textContent=messages[data?.state]||"Nie udało się potwierdzić wyniku próby.";
+  }catch{
+    status.textContent="Próba testowa niedostępna lub wynik niepewny. Nie ponawiaj bez sprawdzenia stanu.";
+  }finally{
+    campaignTestButton.disabled=!(campaignTestReady&&editingCampaignId);
+  }
 });
 draftRefreshButton?.addEventListener("click",async()=>{
   try{await refreshDrafts();}
@@ -879,6 +919,8 @@ async function loadCampaignConsentProofCount(){
 async function checkCampaignDraftAvailability(){
   if(draftSaveButton)draftSaveButton.disabled=true;
   if(draftRefreshButton)draftRefreshButton.disabled=true;
+  campaignTestReady=false;
+  if(campaignTestButton)campaignTestButton.disabled=true;
   const availabilityDescription=$("campaign-drafts-description");
   try{
     const response=await fetch("/owner/newsletter/campaign-drafts/availability",{
@@ -891,6 +933,12 @@ async function checkCampaignDraftAvailability(){
       if(draftRefreshButton)draftRefreshButton.disabled=false;
       if(availabilityDescription)availabilityDescription.textContent=
         "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
+      campaignTestReady=data.testSendEnabled===true;
+      if(campaignTestButton)campaignTestButton.disabled=!(campaignTestReady&&editingCampaignId);
+      const description=$("campaign-test-description");
+      if(description)description.textContent=campaignTestReady
+        ?"Wysyłka próbna dostępna tylko po otwarciu zapisanej wersji roboczej. Odbiorca: skonfigurowany adres obsługi gracz.pl."
+        :"Wysyłka testowa jeszcze nieaktywna. Nie wysyłamy do subskrybentów.";
       void loadCampaignConsentProofCount();
     }
   }catch{ /* release remains disabled */ }

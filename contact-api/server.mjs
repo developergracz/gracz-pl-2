@@ -10,6 +10,7 @@ import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
 import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
 import { createCampaignAudienceProofCount } from "./campaigns/audience-proof-count.mjs";
+import { createCampaignOwnerTestSender } from "./campaigns/owner-test-send.mjs";
 import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
 import { createPersistenceRepositories } from "./persistence/repositories.mjs";
@@ -114,6 +115,13 @@ const ownerAdmin=createOwnerRouter({
   campaignDraftStore:createCampaignDraftStore({database}),
   campaignAudienceProofCount:createCampaignAudienceProofCount({database}),
   campaignWithdrawalReady:checkWithdrawalReady,
+  campaignTestSender:createCampaignOwnerTestSender({
+    database,
+    enabled:process.env.NEWSLETTER_CAMPAIGN_TEST_SEND_ENABLED==='1',
+    apiKey:RESEND_API_KEY,from:EMAIL_FROM,
+    operatorAddress:CONTACT_TO_ADDRESS,
+    checkWithdrawalReady
+  }),
   campaignDraftsEnabled:process.env.NEWSLETTER_CAMPAIGN_DRAFTS_ENABLED==='1'
 });
 
