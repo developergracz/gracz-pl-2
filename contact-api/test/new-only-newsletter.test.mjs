@@ -1,3 +1,44 @@
+
+test('verified status remains readable when new signups are paused by write-permission readiness',async()=>{
+  const {db}=fakeStore();
+  const mailed=[];
+  const common={database:db,enabled:true,encryptionKey:key(1),subjectKey:key(2),
+    apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    checkDeliveryAllowed:async()=>true,
+    fetchFn:async(_url,options)=>{mailed.push(JSON.parse(options.body));return {ok:true,json:async()=>({id:'receipt'})};}};
+  const first=createNewOnlyNewsletter(common);
+  await first.acceptStatus({email:'owner@example.test'});
+  const token=mailed.at(-1).text.match(/#status=(ns2[.][A-Za-z0-9_.-]+)/)?.[1];
+  assert.ok(token);
+  const original=db.queryBounded.bind(db);
+  db.queryBounded=async(sql,args,opts)=>sql.includes('has_schema_privilege')
+    ? {rows:[{allowed:false}]} : original(sql,args,opts);
+  const afterPause=createNewOnlyNewsletter(common);
+  assert.equal((await afterPause.readiness()).ready,false);
+  await assert.rejects(afterPause.acceptOptIn({email:'someone@example.test'}),{code:'NEWSLETTER_NEW_NOT_READY'});
+  assert.deepEqual(await afterPause.checkStatus(token),{state:'inactive'});
+  await assert.rejects(afterPause.checkStatus('ns2.invalid'),{code:'NEWSLETTER_STATUS_REJECTED'});
+});
+
+test('temporary status read failure never changes consent and proof can be retried',async()=>{
+  const {db}=fakeStore();
+  let mail;
+  const manager=createNewOnlyNewsletter({database:db,enabled:true,encryptionKey:key(1),
+    subjectKey:key(2),apiKey:'synthetic',emailFrom:'gracz.pl <newsletter@gracz.pl>',
+    fetchFn:async(_url,options)=>{mail=JSON.parse(options.body);return {ok:true,json:async()=>({id:'receipt'})};}});
+  await manager.acceptStatus({email:'owner@example.test'});
+  const token=mail.text.match(/#status=(ns2[.][A-Za-z0-9_.-]+)/)[1];
+  const original=db.queryBounded.bind(db);let once=true;
+  db.queryBounded=async(sql,args,opts)=>{
+    if(once && sql.includes('FROM newsletter_new.subscribers s WHERE')){
+      once=false;throw Error('temporary database timeout');
+    }
+    return original(sql,args,opts);
+  };
+  await assert.rejects(manager.checkStatus(token),/temporary database timeout/);
+  assert.deepEqual(await manager.checkStatus(token),{state:'inactive'});
+});
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createNewOnlyNewsletter} from '../new-only-newsletter.mjs';
