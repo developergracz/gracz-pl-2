@@ -120,3 +120,16 @@ input[aria-invalid=true]{border-color:#ef7081;box-shadow:0 0 0 3px rgba(242,26,5
 @media(max-width:520px){
   .nl-withdrawal-dialog__actions{grid-template-columns:1fr;}
 }
+
+/* A verified e-mail withdrawal is a viewport-level dialog, never a scrolled form. */
+.nl-withdrawal-dialog--success{
+  border-color:rgba(88,209,197,.75);
+}
+.nl-withdrawal-dialog--success .nl-result-dialog__panel::before{
+  content:'✓';display:grid;place-items:center;
+  width:44px;height:44px;border-radius:50%;margin:0 auto 16px;
+  background:#58d1c5;color:#05231e;font:800 25px Montserrat,Arial,sans-serif;
+}
+.nl-withdrawal-dialog--success #nl-withdrawal-action-status{
+  color:#82efe0;font-weight:700;
+}
