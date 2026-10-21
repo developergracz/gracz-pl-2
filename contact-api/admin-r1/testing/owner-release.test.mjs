@@ -659,3 +659,43 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.equal(result.status,401,'Logged-out recent subscribers denied');
   assert.ok(!(await result.text()).includes(email));
 });
+
+test('campaign send requires OWNER session, Origin, CSRF and explicit confirmation',async t=>{
+  t.after(()=>db.close());
+  await db.query('DELETE FROM newsletter_owner.credentials');
+  await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
+  const config={database:db,passwordSpec:await newVerifier(password),passwordOnly:true,username:'campaignowner'};
+  const auth=createOwnerAuth(config);
+  const login=await auth.login({username:'campaignowner',password});
+  assert.ok(login);
+  let calls=0;
+  const router=createOwnerRouter({...config,enabled:true,
+    encryptionKey:enc.toString('base64url'),subjectKey:subject.toString('base64url'),
+    campaignDraftsEnabled:true,campaignSender:{send:async()=>{
+      calls++;return {state:'finished',accepted:1,suppressed:0,retryAllowed:false};
+    }}});
+  const server=createServer((req,res)=>router.handle(req,res,new URL(req.url,'http://localhost')));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  const send=({cookie=true,csrf=login.csrf,origin='https://gracz-contact-api.onrender.com',confirmation='WYSYŁAM KAMPANIĘ'}={})=>new Promise((resolve,reject)=>{
+    const req=httpRequest({hostname:'127.0.0.1',port:server.address().port,
+      path:'/owner/newsletter/campaigns/send',method:'POST',
+      headers:{host:'gracz-contact-api.onrender.com','x-forwarded-proto':'https',origin,
+        'sec-fetch-site':'same-origin','content-type':'application/json','x-owner-csrf':csrf,
+        ...(cookie?{cookie:'__Host-gracz_owner='+login.token}:{})}},res=>{
+      let body='';res.on('data',chunk=>body+=chunk);
+      res.on('end',()=>resolve({status:res.statusCode,body:JSON.parse(body)}));
+      res.on('error',reject);
+    });
+    req.on('error',reject);req.end(JSON.stringify({id:randomUUID(),confirmation}));
+  });
+  assert.equal((await send({cookie:false})).status,401);
+  assert.equal((await send({csrf:'invalid'})).status,403);
+  assert.equal((await send({origin:'https://attacker.example'})).status,403);
+  assert.equal((await send({confirmation:'yes'})).status,403);
+  assert.equal(calls,0);
+  const success=await send();
+  assert.equal(success.status,200);
+  assert.deepEqual(success.body,{ok:true,state:'finished',accepted:1,suppressed:0,retryAllowed:false});
+  assert.equal(calls,1);
+});

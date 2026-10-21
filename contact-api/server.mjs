@@ -11,6 +11,7 @@ import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
 import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
 import { createCampaignAudienceProofCount } from "./campaigns/audience-proof-count.mjs";
 import { createWithdrawalSendFence } from "./persistence/recovery/withdrawal-send-fence.mjs";
+import {createCampaignOwnerSender} from './campaigns/owner-send.mjs';
 import { createCampaignOwnerTestSender } from "./campaigns/owner-test-send.mjs";
 import { createOwnerRecoveryMailer } from "./admin-r1/owner-recovery-mailer.mjs";
 import { createDatabase } from "./persistence/database.mjs";
@@ -118,6 +119,13 @@ const ownerAdmin=createOwnerRouter({
   campaignAudienceProofCount:createCampaignAudienceProofCount({database}),
   campaignWithdrawalReady:checkWithdrawalReady,
   campaignEgressReady:campaignEgressFence.checkAvailable,
+  campaignSender:createCampaignOwnerSender({
+    database,enabled:process.env.NEWSLETTER_CAMPAIGN_SEND_ENABLED==='1',
+    apiKey:RESEND_API_KEY,from:EMAIL_FROM,checkWithdrawalReady,
+    newEncryptionKey:process.env.NEWSLETTER_NEW_ENCRYPTION_KEY,
+    newSubjectKey:process.env.NEWSLETTER_NEW_SUBJECT_KEY,
+    withdrawalRecipientTagKey:process.env.WITHDRAWAL_RECIPIENT_TAG_KEY
+  }),
   campaignTestSender:createCampaignOwnerTestSender({
     database,
     enabled:process.env.NEWSLETTER_CAMPAIGN_TEST_SEND_ENABLED==='1',
@@ -160,13 +168,13 @@ const withdrawal = WITHDRAWAL_ENABLED
       afterVerifiedRecipient:newOnlyNewsletter.recordVerifiedWithdrawal
     })
   : null;
-async function checkWithdrawalReady() {
+async function checkWithdrawalReady(readDatabase=database) {
   if(!WITHDRAWAL_ENABLED||!database.enabled||!withdrawal)return false;
   try {
     // Recipient opt-out is independent of F03 legacy consent migrations.
     // Only the durable private recovery namespace and SELECT grants are
     // mandatory here; full newsletter opt-in remains permanently HELD.
-    const result=await database.queryBounded(
+    const result=await readDatabase.queryBounded(
       "WITH recovery_grants AS (" +
       "SELECT 1 FROM newsletter_recovery.self_service_challenges c " +
       "CROSS JOIN newsletter_recovery.withdrawal_requests r " +

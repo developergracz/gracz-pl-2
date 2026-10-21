@@ -13,6 +13,10 @@ export const productionModules=Object.freeze([
   'campaigns/audience-proof-count.mjs',
   // OWNER test-send adapter is inert unless an explicit release flag and durable ledger exist.
   'campaigns/owner-test-send.mjs',
+  'campaigns/owner-send.mjs',
+  'campaigns/pg-dispatch-store.mjs',
+  'campaigns/dispatch-coordinator.mjs',
+  'campaigns/recipient-evidence-review.mjs',
   'campaigns/resend-transport.mjs',
   'campaigns/resend-result.mjs',
   'campaigns/prepare.mjs',

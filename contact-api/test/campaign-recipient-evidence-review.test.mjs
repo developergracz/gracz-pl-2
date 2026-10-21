@@ -115,3 +115,13 @@ test('a verified opt-out denies even when an authenticated address matches',asyn
     state:'verified_withdrawal',advisoryOnly:true,maySend:false
   });
 });
+
+test('private sender resolves only a verified current recipient without changing advisory output',async()=>{
+  const a=fixture();
+  assert.equal(typeof a.review.resolveRecipient,'function');
+  assert.equal(await a.review.resolveRecipient(a.tag),'recipient@example.test');
+  for(const options of [{doi:false},{withdrawn:true},{pending:true}]){
+    const b=fixture(options);
+    assert.equal(await b.review.resolveRecipient(b.tag),null);
+  }
+});
