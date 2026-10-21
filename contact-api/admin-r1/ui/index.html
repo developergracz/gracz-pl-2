@@ -462,7 +462,10 @@
           </div>
           <label for="targeted-approval">Aby zatwierdzić treść, wpisz: ZATWIERDZAM TREŚĆ</label>
           <input id="targeted-approval" type="text" autocomplete="off" />
-          <button type="button" id="targeted-approve">Zapisz i zatwierdź treść</button>
+          <div class="targeted-compose-actions">
+            <button type="button" id="targeted-approve">Zapisz i zatwierdź treść</button>
+            <button type="button" id="targeted-compose-close">Zamknij</button>
+          </div>
         </form>
         <div id="targeted-final" hidden>
           <p>Treść i lista odbiorców są zatwierdzone. Aby rozpocząć wysyłkę, wpisz: <strong>WYSYŁAM DO WYBRANYCH</strong></p>
@@ -471,7 +474,7 @@
           <button type="button" id="targeted-send">Wyślij wyłącznie do wybranych</button>
         </div>
         <p id="targeted-status" role="status" aria-live="polite"></p>
-        <button type="button" id="targeted-close">Zamknij</button>
+        <button type="button" id="targeted-close" hidden>Zamknij</button>
       </section>
     </dialog>
     <dialog id="targeted-success-dialog" aria-labelledby="targeted-success-title" aria-describedby="targeted-success-description">
