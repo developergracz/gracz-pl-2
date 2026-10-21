@@ -831,25 +831,69 @@ footer .footer-brand span{color:#ff6573}
 #subscribers .subscriber-actions button{min-height:42px;white-space:nowrap;}
 #subscribers .subscriber-actions .subscriber-send:not(:disabled),
 #subscribers #send-found:not(:disabled){background:#55e5cc;color:#06272e;border-color:#55e5cc;font-weight:800;}
+/* Premium message editor fits into the visible desktop viewport.
+   Long message content scrolls inside its field/preview, not the whole modal. */
 #targeted-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;
-  width:min(680px,calc(100vw - 24px));max-width:680px;max-height:calc(100dvh - 24px);
+  width:min(760px,calc(100vw - 24px));max-width:760px;
+  max-height:calc(100dvh - 24px);
   padding:0;border-radius:20px;background:#102635;color:#f3faff;
-  border:1px solid #458e8b;box-shadow:0 32px 92px rgba(0,0,0,.7);overflow-y:auto;}
+  border:1px solid #458e8b;box-shadow:0 32px 92px rgba(0,0,0,.7);
+  overflow-y:auto;overscroll-behavior:contain;}
 #targeted-dialog::backdrop{background:rgba(0,8,18,.86);}
-#targeted-dialog .targeted-dialog-content{padding:clamp(18px,3vw,30px);display:grid;gap:12px;}
-#targeted-dialog .targeted-brand{font-size:24px;font-weight:900;margin:0;}
+#targeted-dialog .targeted-dialog-content{
+  padding:clamp(14px,2.5vh,25px);display:grid;gap:clamp(6px,1vh,10px);
+}
+#targeted-dialog .targeted-brand{font-size:21px;font-weight:900;margin:0;}
 #targeted-dialog .targeted-brand span{color:#ff6573;}
-#targeted-dialog h2{margin:0;font-size:clamp(20px,2.4vw,28px);}
-#targeted-dialog p{margin:0;line-height:1.5;overflow-wrap:anywhere;}
-#targeted-dialog form,#targeted-dialog #targeted-final{display:grid;gap:12px;}
+#targeted-dialog h2{margin:0;font-size:clamp(20px,2.4vw,26px);line-height:1.2;}
+#targeted-dialog p{margin:0;line-height:1.4;overflow-wrap:anywhere;}
+#targeted-dialog #targeted-compose{display:grid;gap:7px 12px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-areas:
+    "subject-label subject-label"
+    "subject subject"
+    "body-label preview"
+    "body preview"
+    "approval-label approval-label"
+    "approval approval"
+    "approve approve";
+}
+#targeted-dialog label[for="targeted-subject"]{grid-area:subject-label;}
+#targeted-dialog #targeted-subject{grid-area:subject;}
+#targeted-dialog label[for="targeted-body"]{grid-area:body-label;}
+#targeted-dialog #targeted-body{grid-area:body;
+  height:138px;min-height:118px;max-height:172px;resize:vertical;}
+#targeted-dialog .targeted-preview{grid-area:preview;min-width:0;min-height:0;
+  max-height:177px;overflow:auto;overscroll-behavior:contain;
+  padding:12px;background:#0a1928;border:1px solid #36586b;border-radius:12px;}
+#targeted-dialog .targeted-preview p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px;}
+#targeted-dialog label[for="targeted-approval"]{grid-area:approval-label;}
+#targeted-dialog #targeted-approval{grid-area:approval;}
+#targeted-dialog #targeted-approve{grid-area:approve;}
+#targeted-dialog #targeted-final{display:grid;gap:9px;}
 #targeted-dialog form[hidden],#targeted-dialog #targeted-final[hidden]{display:none;}
 #targeted-dialog label{font-size:13px;font-weight:650;}
-#targeted-dialog input,#targeted-dialog textarea{width:100%;box-sizing:border-box;min-height:43px;}
-#targeted-dialog textarea{resize:vertical;min-height:156px;}
-#targeted-dialog .targeted-preview{padding:17px;background:#0a1928;border:1px solid #36586b;border-radius:12px;}
-#targeted-dialog .targeted-preview p{white-space:pre-wrap;margin-top:10px;}
-#targeted-dialog #targeted-status{min-height:22px;color:#66ebd1;}
-#targeted-dialog #targeted-send,#targeted-dialog #targeted-approve{background:#55e5cc;color:#06272e;border-color:#55e5cc;font-weight:850;}
+#targeted-dialog input,#targeted-dialog textarea{width:100%;box-sizing:border-box;min-height:41px;}
+#targeted-dialog #targeted-status{min-height:20px;color:#66ebd1;}
+#targeted-dialog #targeted-send,#targeted-dialog #targeted-approve{
+  background:#55e5cc;color:#06272e;border-color:#55e5cc;font-weight:850;}
 #targeted-dialog #targeted-close{background:transparent;border-color:#618595;}
-#targeted-dialog button:focus-visible,#targeted-dialog input:focus-visible{outline:3px solid #ffe18d;outline-offset:2px;}
-@media(max-width:700px){#subscribers .subscriber-actions{min-width:220px;}#targeted-dialog{max-height:calc(100dvh - 10px);}}
+#targeted-dialog button:focus-visible,#targeted-dialog input:focus-visible,
+#targeted-dialog textarea:focus-visible{outline:3px solid #ffe18d;outline-offset:2px;}
+@media(max-height:760px){
+  #targeted-dialog .targeted-dialog-content{padding:12px 18px;gap:6px;}
+  #targeted-dialog .targeted-brand{font-size:18px;}
+  #targeted-dialog h2{font-size:20px;}
+  #targeted-dialog #targeted-body{height:102px;min-height:96px;max-height:125px;}
+  #targeted-dialog .targeted-preview{max-height:137px;padding:10px;}
+  #targeted-dialog #targeted-compose{gap:5px 10px;}
+}
+@media(max-width:650px){
+  #subscribers .subscriber-actions{min-width:220px;}
+  #targeted-dialog{max-height:calc(100dvh - 10px);}
+  #targeted-dialog #targeted-compose{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"subject-label" "subject" "body-label" "body"
+                        "preview" "approval-label" "approval" "approve";}
+  #targeted-dialog .targeted-preview{max-height:120px;}
+}
+
