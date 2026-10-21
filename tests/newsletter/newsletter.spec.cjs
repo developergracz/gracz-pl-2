@@ -141,6 +141,38 @@ for (const state of ['active','pending','inactive']) {
     await expect(page.locator('#nl-action-panel')).toBeHidden();
   });
 }
+test('verified status offers correct self-service action without implicit consent changes',async({page})=>{
+  for(const state of ['active','pending','inactive']){
+    const requests=await mock(page,()=>({ok:true,state}));
+    await page.goto('/newsletter/#status=synthetic-proof-'+state);
+    const followup=page.locator('#nl-status-followup');
+    await expect(followup).toBeHidden();
+    await page.locator('#nl-action-button').click();
+    await expect(followup).toBeVisible();
+    const link=page.locator('#nl-status-followup-link');
+    const expected={
+      active:['Wypisz się z newslettera','#nl-withdrawal-panel'],
+      pending:['Poproś o nowy link potwierdzający','#nl-subscribe-panel'],
+      inactive:['Zapisz się ponownie','#nl-subscribe-panel'],
+    }[state];
+    await expect(link).toHaveText(expected[0]);
+    await expect(link).toHaveAttribute('href',expected[1]);
+    if(state==='active'){
+      const dialog=page.locator('#nl-result-dialog');
+      await expect(dialog.locator('#nl-result-check')).toHaveText(expected[0]);
+      await expect(dialog.locator('#nl-result-check')).toHaveAttribute('href',expected[1]);
+      await dialog.locator('#nl-result-close').click();
+    }
+    // Opening a destination form never requests withdrawal or opt-in.
+    await link.click();
+    await expect(page.locator('#nl-status-followup')).toBeHidden();
+    await expect(page.locator('#nl-action-panel')).toBeHidden();
+    expect(requests).toEqual([{path:'/newsletter/status-check',payload:{token:'synthetic-proof-'+state}}]);
+    await page.reload();
+    await expect(page.locator('#nl-status-followup')).toBeHidden();
+  }
+});
+
 test('same tab hashes, back/forward, stale completion, and confirm/unsubscribe',async({page})=>{
   let release;const held=new Promise(resolve=>{release=resolve;});
   const requests=await mock(page,async(path)=>{

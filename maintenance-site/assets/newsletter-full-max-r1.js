@@ -9,6 +9,8 @@
   var actionPanel=byId('nl-action-panel'), actionStatus=byId('nl-action-status');
   var actionButton=byId('nl-action-button'), actionTitle=byId('nl-action-title');
   var actionCopy=byId('nl-action-copy'), actionKicker=byId('nl-action-kicker');
+  var followup=byId('nl-status-followup'),followupLink=byId('nl-status-followup-link');
+  var followupNote=byId('nl-status-followup-note');
   var actionMode='', actionToken='', generation=0, controllers=new Set();
   var ambiguous='Nie możemy potwierdzić wyniku operacji. Zgłoszenie mogło zostać przyjęte. Sprawdź skrzynkę i nie ponawiaj od razu.';
   function setStatus(node,text,error){node.textContent=text||'';node.classList.toggle('is-error',Boolean(error));}
@@ -46,6 +48,8 @@
     resultTrigger=trigger||document.activeElement;
     resultTitle.textContent=title;
     resultCopy.textContent=copy;
+    resultCheck.textContent='Sprawdź status przez e-mail';
+    resultCheck.setAttribute('href','#nl-status-panel');
     resultCheck.hidden=!showCheck;
     if(typeof resultDialog.showModal==='function'){
       if(!resultDialog.open)resultDialog.showModal();
@@ -116,8 +120,38 @@
       finally{busy=false;button.disabled=false;button.textContent=original;}
     });
   }
+  // Verified status is only displayed after the mailbox-link action succeeds.
+  // These links open existing self-service forms; they do not send requests
+  // or alter consent. Entering an address and (re)consenting stays explicit.
+  function showVerifiedFollowup(state){
+    var choices={
+      active:{
+        label:'Wypisz się z newslettera',
+        href:'#nl-withdrawal-panel',
+        note:'Wypisanie wymaga osobnego potwierdzenia. Jeżeli bezpieczny formularz wypisania jest niedostępny, skorzystaj z podanego tam kontaktu z administratorem.'
+      },
+      inactive:{
+        label:'Zapisz się ponownie',
+        href:'#nl-subscribe-panel',
+        note:'Przejdź do formularza zapisu. Podaj adres i wyraź nową zgodę, a następnie potwierdź ją linkiem e-mail.'
+      },
+      pending:{
+        label:'Poproś o nowy link potwierdzający',
+        href:'#nl-subscribe-panel',
+        note:'Wpisz adres ponownie i zaznacz zgodę. Nowy link może zostać wysłany dopiero po wygaśnięciu poprzedniego (do 30 minut). Prośba nie gwarantuje wysyłki.'
+      }
+    };
+    var choice=choices[state];
+    if(!choice)return;
+    followupNote.textContent=choice.note;
+    followupLink.textContent=choice.label;
+    followupLink.setAttribute('href',choice.href);
+    followup.hidden=false;
+  }
   function clearNavigation(){
     generation++;actionMode='';actionToken='';controllers.forEach(function(controller){controller.abort();});
+    followup.hidden=true;
+    followupLink.removeAttribute('href');
     document.querySelectorAll('.nl-status').forEach(function(node){setStatus(node,'');});
     // Intake pause does not disable actions on already issued consent links.
     actionButton.disabled=false;actionButton.hidden=false;
@@ -222,6 +256,7 @@
         var states={active:['Newsletter aktywny','Ten adres jest już aktywny w newsletterze gracz.pl. Nie musisz zapisywać się ponownie.'],pending:['Oczekuje na potwierdzenie','Zapis wymaga jeszcze potwierdzenia zgody przez e-mail.'],inactive:['Newsletter nieaktywny','Ten adres nie ma aktywnej subskrypcji newslettera gracz.pl.']};
         if(!states[result.state])throw new Error('Nie można teraz potwierdzić statusu.');
         actionTitle.textContent=states[result.state][0];actionCopy.textContent=states[result.state][1];
+        showVerifiedFollowup(result.state);
       }else if(mode==='confirm'){
         if(!['subscribed','resubscribed','already_subscribed'].includes(result.state))throw new Error('Nie można potwierdzić aktywacji newslettera.');
         actionTitle.textContent='Newsletter aktywny';actionCopy.textContent='Subskrypcja newslettera gracz.pl jest aktywna.';
@@ -235,7 +270,9 @@
       if(mode==='status'&&result.state==='active'){
         openResultDialog('Ten adres już jest w naszym newsletterze',
           'Potwierdzono dostęp do skrzynki e-mail i sprawdzono aktualny stan bazy. Ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie musisz zapisywać się ponownie ani potwierdzać kolejnego linku.',
-          false,actionButton);
+          true,actionButton);
+        resultCheck.textContent='Wypisz się z newslettera';
+        resultCheck.setAttribute('href','#nl-withdrawal-panel');
       }
     }catch(error){if(current===generation){
       actionToken='';actionMode='';actionButton.disabled=true;actionButton.hidden=true;
