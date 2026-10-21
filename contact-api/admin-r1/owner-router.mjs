@@ -100,7 +100,7 @@ export function createOwnerRouter({
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
   recoverySecret,recoveryMailer,recoveryEnabled=false,
   campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null,
-  campaignWithdrawalReady=null,campaignTestSender=null
+  campaignWithdrawalReady=null,campaignEgressReady=null,campaignTestSender=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -256,8 +256,14 @@ export function createOwnerRouter({
           withdrawalReady=typeof campaignWithdrawalReady==='function' &&
             await campaignWithdrawalReady()===true;
         }catch{withdrawalReady=false;}
-        // Advisory only. This is NOT authorization to send any campaign.
-        return response(res,200,{...evidence,withdrawalReady});
+        let globalEgressReady=false;
+        try{
+          globalEgressReady=withdrawalReady===true &&
+            typeof campaignEgressReady==='function' &&
+            await campaignEgressReady()===true;
+        }catch{globalEgressReady=false;}
+        // Both booleans are advisory. Neither authorizes marketing egress.
+        return response(res,200,{...evidence,withdrawalReady,globalEgressReady});
       }
       if(req.method==='POST'&&path===PREFIX+'/campaign-tests/send'){
         // Explicit OWNER click is necessary, but never sufficient: dedicated
