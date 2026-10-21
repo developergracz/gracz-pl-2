@@ -573,6 +573,17 @@
     '</div>';
   }
 
+  function restoreNewsletterSignupFocus(){
+    var trigger=newsletterSignupLastTrigger;
+    var fallback=document.querySelector('.site-header .burger');
+    if(trigger&&document.contains(trigger)&&trigger.offsetParent!==null){
+      try{trigger.focus();}catch(_){}
+    }else if(fallback&&fallback.offsetParent!==null){
+      fallback.focus();
+    }
+    newsletterSignupLastTrigger=null;
+  }
+
   function ensureNewsletterSignupDialog(){
     if(newsletterSignupDialog)return newsletterSignupDialog;
     var target=document.createElement('dialog');
@@ -591,10 +602,7 @@
     });
     target.addEventListener('close',function(){
       if(!newsletterSuccessDialog||!newsletterSuccessDialog.open)document.body.classList.remove('account-access-open');
-      if(newsletterSignupLastTrigger&&document.contains(newsletterSignupLastTrigger)){
-        try{newsletterSignupLastTrigger.focus();}catch(_){}
-      }
-      newsletterSignupLastTrigger=null;
+      restoreNewsletterSignupFocus();
     });
     newsletterSignupDialog=target;
     enhanceFooterNewsletter(target.querySelector('form[data-newsletter]'));
@@ -623,10 +631,7 @@
     }else{
       newsletterSignupDialog.removeAttribute('open');
       document.body.classList.remove('account-access-open');
-      if(newsletterSignupLastTrigger&&document.contains(newsletterSignupLastTrigger)){
-        try{newsletterSignupLastTrigger.focus();}catch(_){}
-      }
-      newsletterSignupLastTrigger=null;
+      restoreNewsletterSignupFocus();
     }
   }
 
