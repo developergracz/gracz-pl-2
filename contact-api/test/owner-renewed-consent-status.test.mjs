@@ -6,6 +6,7 @@ import {createNewOnlySummary} from '../admin-r1/summary.mjs';
 import {createNewOnlyTrendDetail} from '../admin-r1/trend-detail.mjs';
 
 const scopedJoin=/LEFT JOIN newsletter_new\.revocations r ON r\.email_tag=s\.email_tag\s+AND r\.recorded_at>=s\.requested_at/;
+const repeatMarker=/COALESCE\(s\.repeat_withdrawn_at>=s\.requested_at,FALSE\)/;
 
 test('OWNER views use current consent, preserving a historical withdrawal',async()=>{
   const email='renewed@example.test';
@@ -28,6 +29,7 @@ test('OWNER views use current consent, preserving a historical withdrawal',async
   const db={queryBounded:async(sql)=>{
     if(sql.includes('LEFT JOIN newsletter_new.revocations r')){
       assert.match(sql,scopedJoin);
+      assert.match(sql,repeatMarker);
       verified++;
     }
     if(sql.includes('ORDER BY s.email_tag DESC LIMIT 101'))
@@ -51,12 +53,22 @@ test('OWNER views use current consent, preserving a historical withdrawal',async
   assert.deepEqual(consent.events.map(e=>e.type),['opt_in_confirmed','unsubscribed']);
   assert.equal(verified,3,'all three OWNER reads must scope revocation to the current request');
 
+  // A second, verified opt-out of renewed consent remains clearly unsubscribed
+  // in each OWNER view, never an apparently fresh pending DOI.
+  row.state='pending';
+  row.confirmed_at=null;
+  row.revoked=true;
+  row.revoked_at=new Date('2026-10-21T09:07:00Z');
+  assert.equal((await reader.adapter.readPage()).items[0].state,'unsubscribed');
+  assert.equal((await reader.readRecent()).items[0].state,'unsubscribed');
+  assert.equal((await reader.readConsent(emailTag)).state,'unsubscribed');
+
   for(const run of [
     ()=>createNewOnlySummary({database:{queryBounded:async(sql)=>{
-      assert.match(sql,scopedJoin);throw Error('verified_summary');
+      assert.match(sql,scopedJoin);assert.match(sql,repeatMarker);throw Error('verified_summary');
     }}})(),
     ()=>createNewOnlyTrendDetail({database:{queryBounded:async(sql)=>{
-      assert.match(sql,scopedJoin);throw Error('verified_trend');
+      assert.match(sql,scopedJoin);assert.match(sql,repeatMarker);throw Error('verified_trend');
     }}})({from:'2026-10-21',to:'2026-10-21'})
   ])await assert.rejects(run(),/verified_(summary|trend)/);
 });

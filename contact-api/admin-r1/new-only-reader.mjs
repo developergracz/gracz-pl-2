@@ -71,8 +71,9 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
           SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
                  s.source,s.consent_version,s.delivery_state,
                  s.requested_at,s.confirmed_at,
-                 (r.email_tag IS NOT NULL) AS revoked,
-                 r.recorded_at AS revoked_at
+                 (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked,
+                 CASE WHEN s.repeat_withdrawn_at>=s.requested_at
+                      THEN s.repeat_withdrawn_at ELSE r.recorded_at END AS revoked_at
           FROM newsletter_new.subscribers s
           LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
@@ -132,7 +133,8 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       WITH snap AS (SELECT clock_timestamp() AS at),
       recent AS MATERIALIZED (
         SELECT s.email_tag,s.ciphertext,s.nonce,s.auth_tag,s.state,
-          s.source,s.requested_at,(r.email_tag IS NOT NULL) AS revoked
+          s.source,s.requested_at,
+          (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked
         FROM newsletter_new.subscribers s
         LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
@@ -180,7 +182,7 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
       throw fault('invalid_request');
     const rows=await query(`
       SELECT s.state,s.confirmed_at,s.source,s.consent_version,
-        (r.email_tag IS NOT NULL) AS revoked
+        (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked
       FROM newsletter_new.subscribers s
       LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
@@ -198,6 +200,11 @@ export function createNewOnlyAdminReader({database,encryptionKey,subjectKey}={})
         NULL::varchar(40) AS source,NULL::varchar(64) AS consent_version
       FROM newsletter_new.revocations
       WHERE email_tag=$1
+      UNION ALL
+      SELECT 'unsubscribed' AS type, repeat_withdrawn_at AS at,
+        NULL::varchar(40) AS source,NULL::varchar(64) AS consent_version
+      FROM newsletter_new.subscribers
+      WHERE email_tag=$1 AND repeat_withdrawn_at IS NOT NULL
       ORDER BY at DESC LIMIT $2
     `,[emailTag,limit],signal);
     return {state:row.revoked?'unsubscribed':row.state==='active'?'subscribed':'pending',

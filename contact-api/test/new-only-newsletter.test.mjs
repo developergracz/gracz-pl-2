@@ -13,7 +13,7 @@ function fakeStore() {
     if(sql.startsWith('SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE')) {
       const row=records.get(p[0]);return {rowCount:row?1:0,rows:row?[{email_tag:p[0]}]:[]};
     }
-    if(sql.startsWith('SELECT 1 FROM newsletter_new.revocations r JOIN')) {
+    if(sql.startsWith('SELECT 1 FROM newsletter_new.subscribers s LEFT JOIN newsletter_new.revocations r')) {
       const hit=withdrawn(p[0]);return {rowCount:hit?1:0,rows:hit?[{one:1}]:[]};
     }
     if(sql.startsWith('INSERT INTO newsletter_new.revocations')) {
@@ -23,7 +23,8 @@ function fakeStore() {
     if(sql.startsWith("UPDATE newsletter_new.subscribers SET state='pending'")) {
       const row=records.get(p[0]),rev=revocations.get(p[0]);
       if(!row||!rev||row.requested_at<=rev.recordedAt)return {rowCount:0};
-      Object.assign(row,{state:'pending',token_tag:p[1],confirmed_at:null,expires_at:new Date()});
+      Object.assign(row,{state:'pending',token_tag:p[1],confirmed_at:null,
+        expires_at:new Date(),repeat_withdrawn_at:tick()});
       return {rowCount:1};
     }
     if(sql.startsWith('INSERT INTO newsletter_new.subscribers')) {
@@ -64,7 +65,8 @@ function fakeStore() {
   }};
   function withdrawn(emailTag) {
     const row=records.get(emailTag),rev=revocations.get(emailTag);
-    return Boolean(row&&rev&&rev.recordedAt>=row.requested_at);
+    return Boolean(row&&((rev&&rev.recordedAt>=row.requested_at)||
+      row.repeat_withdrawn_at>=row.requested_at));
   }
   return {
     records,events,revocations,client,
@@ -223,6 +225,7 @@ test('confirmed subscriber can re-subscribe after withdrawal only via the new li
   assert.equal([...revocations.values()][0].challengeId,first);
   assert.equal(row.state,'pending');
   assert.equal(row.confirmed_at,null);
+  assert.ok(row.repeat_withdrawn_at>row.requested_at);
   assert.equal(await status(),'inactive');
   await assert.rejects(manager.confirm(secondToken),{code:'NEWSLETTER_CONFIRM_REJECTED'});
   assert.equal(events.length,2);
@@ -230,7 +233,11 @@ test('confirmed subscriber can re-subscribe after withdrawal only via the new li
   assert.deepEqual(await manager.acceptOptIn({email}),{state:'request_received'});
   const thirdToken=link('confirm');
   assert.ok(thirdToken);
+  assert.equal(row.state,'pending');
+  assert.ok(row.requested_at>row.repeat_withdrawn_at);
+  assert.equal(await status(),'pending');
   assert.deepEqual(await manager.confirm(thirdToken),{state:'subscribed'});
+  assert.equal(await status(),'active');
   assert.equal(events.length,3);
 });
 

@@ -3,7 +3,7 @@ const SQL=String.raw`
 WITH filtered AS MATERIALIZED (
   SELECT (s.requested_at AT TIME ZONE 'Europe/Warsaw')::date AS day,
          s.state,s.confirmed_at,
-         (r.email_tag IS NOT NULL) AS revoked
+         (r.email_tag IS NOT NULL OR COALESCE(s.repeat_withdrawn_at>=s.requested_at,FALSE)) AS revoked
   FROM newsletter_new.subscribers s
   LEFT JOIN newsletter_new.revocations r ON r.email_tag=s.email_tag
             AND r.recorded_at>=s.requested_at
