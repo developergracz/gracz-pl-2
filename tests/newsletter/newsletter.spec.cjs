@@ -63,15 +63,58 @@ test('#283 withdrawal-only flow: readiness, neutral request and manual fragment 
   expect(requests[0].path).toBe('/newsletter/withdrawal-request');
   const id='912cabea-71cc-4c26-9201-3bd421333333',token='a'.repeat(43);
   await page.goto('/newsletter/#withdrawal='+id+'.'+token);
+  await expect(page.locator('#nl-withdrawal-action')).toBeVisible();
+  await expect(page.locator('#nl-withdrawal-action')).toHaveAttribute('open','');
   await expect(page.locator('#nl-withdrawal-confirm')).toBeVisible();
+  await expect(page.locator('#nl-withdrawal-confirm')).toBeEnabled();
   expect(page.url()).not.toContain(token);
   expect(requests).toHaveLength(1); // opening a link never performs opt-out
   await page.locator('#nl-withdrawal-confirm').click();
   await expect(page.locator('#nl-withdrawal-action-status')).toContainText('Resend potwierdził');
+  await expect(page.locator('#nl-withdrawal-confirm')).toBeHidden();
+  await expect(page.locator('#nl-withdrawal-cancel')).toHaveText('Zrozumiałem');
   expect(requests).toEqual([
     {path:'/newsletter/withdrawal-request',payload:{email:'synthetic@example.test',website:''}},
     {path:'/newsletter/withdrawal-confirm',payload:{challengeId:id,token}}
   ]);
+});
+
+test('withdrawal link shows a premium modal; cancel never changes consent',async({page})=>{
+  const requests=[];
+  await page.route('**/*',async route=>{
+    const request=route.request(),url=new URL(request.url());
+    if(url.origin==='http://127.0.0.1:4174')return route.continue();
+    if(url.origin!==API)return route.abort();
+    if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{
+      'access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS',
+      'access-control-allow-headers':'content-type'}});
+    if(request.method()==='GET'&&url.pathname==='/newsletter/withdrawal-ready')
+      return route.fulfill({status:200,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},
+        body:JSON.stringify({ready:true,withdrawalOnly:true,newsletterIntakeEnabled:false})});
+    if(request.method()==='GET'&&url.pathname==='/newsletter/ready')
+      return route.fulfill({status:503,contentType:'application/json',
+        headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ready:false})});
+    // Only mutation requests are counted; readiness checks may occur automatically.
+    requests.push(url.pathname);
+    return route.abort();
+  });
+  const id='912cabea-71cc-4c26-9201-3bd421333333',token='c'.repeat(43);
+  await page.goto('/newsletter/#withdrawal='+id+'.'+token);
+  const dialog=page.locator('#nl-withdrawal-action');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('#nl-withdrawal-confirm')).toBeEnabled();
+  await expect(dialog.locator('#nl-withdrawal-confirm-title')).toHaveText('Potwierdź wypisanie z newslettera');
+  expect(page.url()).not.toContain(token);
+  expect(requests).toEqual([]);
+  await dialog.locator('#nl-withdrawal-cancel').click();
+  await expect(dialog).toBeHidden();
+  expect(requests).toEqual([]);
+  await page.reload();
+  await expect(dialog).toBeHidden();
+  await page.goto('/newsletter/#withdrawal=invalid');
+  await expect(dialog).toBeHidden();
+  expect(requests).toEqual([]);
 });
 
 test('inline validation, keyboard focus, clearing and voluntary status request', async ({page},info) => {
