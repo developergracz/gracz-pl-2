@@ -329,7 +329,7 @@ requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r2'), "owner
 requireCheck(legalJs.includes('Napisz e-mail do gracz.pl'), "owner email premium CTA missing");
 requireCheck(regulation.includes('href="mailto:czsocha@wp.pl"'), "regulation: owner email mailto missing");
 requireCheck(privacy.includes('href="mailto:czsocha@wp.pl"'), "privacy: owner email mailto missing");
-requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r3-maintenance-r2"), "live footer newsletter R3 maintenance stylesheet loader missing");
+requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r4-premium-submit-r1"), "live footer newsletter R4 Premium stylesheet loader missing");
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");

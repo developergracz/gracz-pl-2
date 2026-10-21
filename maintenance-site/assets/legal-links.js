@@ -650,7 +650,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r3-maintenance-r2';
+    link.href='/assets/footer-newsletter.css?v=r4-premium-submit-r1';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
