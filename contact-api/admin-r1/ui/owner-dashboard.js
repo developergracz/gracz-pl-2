@@ -283,6 +283,8 @@ function clearDetail() {
 }
 function clear() {
   $("rows").replaceChildren();
+  visibleActive=[];
+  refreshTargetedButton();
   for (const id of ["active", "pending", "unsubscribed", "total"]) $(id).textContent = "—";
   next = null;
   $("next").disabled = true;
