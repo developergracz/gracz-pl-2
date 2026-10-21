@@ -134,7 +134,8 @@ test('top Newsletter button opens accessible signup and stays safely disabled un
   await expect(dialog.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(nav).toBeFocused();
+  if(await nav.isVisible())await expect(nav).toBeFocused();
+  else await expect(page.locator('.site-header .burger')).toBeFocused();
 });
 
 test('top Newsletter uses existing verified subscribe and Premium result flow', async ({page}) => {
