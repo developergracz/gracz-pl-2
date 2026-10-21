@@ -241,7 +241,7 @@
         }
         var successMessage='Wiadomość została wysłana. Dziękujemy — odpowiemy na podany adres e-mail.';
         if(body.newsletter==='request_received'||body.newsletter==='confirmation_sent'){
-          successMessage+=' Newsletter: zgłoszenie przyjęte do obsługi. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości.';
+          successMessage+=' Newsletter: zgłoszenie przyjęte do obsługi. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości. Jeśli link nie dotrze, skontaktuj się z obsługą przez stronę Kontakt. Ponowny zapis po wypisaniu może wymagać indywidualnej weryfikacji.';
         }else if(payload.newsletter&&body.newsletter==='temporarily_unavailable'){
           successMessage+=' Wiadomość kontaktowa dotarła poprawnie, ale potwierdzenie newslettera nie mogło zostać teraz wysłane.';
         }
@@ -444,7 +444,7 @@
       '<div class="account-access__hero newsletter-success__hero">'+
         '<p class="account-access__eyebrow">Newsletter gracz.pl · FULL MAX PREMIUM</p>'+
         '<h2 id="newsletter-success-title">'+(alreadySubscribed?'Ten adres już jest w naszym newsletterze':'Sprawdź swoją subskrypcję')+'</h2>'+
-        '<p id="newsletter-success-intro" class="account-access__intro">'+(alreadySubscribed?'System potwierdził, że ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie wysłano kolejnego linku potwierdzającego.':'Zgłoszenie przyjęto. Jeśli adres jest nowy, sprawdź skrzynkę i potwierdź zapis. Możesz także sprawdzić status subskrypcji.')+'</p>'+
+        '<p id="newsletter-success-intro" class="account-access__intro">'+(alreadySubscribed?'System potwierdził, że ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie wysłano kolejnego linku potwierdzającego.':'Zgłoszenie przyjęto. Sprawdź skrzynkę i potwierdź nowy zapis. Przyjęcie zgłoszenia nie potwierdza doręczenia. Jeśli link nie dotrze, skontaktuj się z obsługą przez stronę Kontakt; ponowny zapis po wypisaniu może wymagać indywidualnej weryfikacji.')+'</p>'+
       '</div>'+
       '<section class="account-access__newsletter newsletter-success__card" aria-labelledby="newsletter-success-card-title">'+
         '<div class="account-access__newsletter-icon newsletter-success__icon" aria-hidden="true"><span>✓</span></div>'+

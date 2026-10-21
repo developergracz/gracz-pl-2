@@ -5,6 +5,13 @@ const CONFIRM_TTL_MS = 30 * 60 * 1000;
 const STATUS_TTL_MS = 15 * 60 * 1000;
 const MAX_STATUS_MAILS_PER_HOUR = 15;
 const MAX_CONFIRM_MAILS_PER_HOUR = 60;
+// A verified withdrawal closes the stored consent or DOI request made before
+// it. Run only after the subscriber row lock, as a separate statement, so a
+// just-committed withdrawal is visible.
+const WITHDRAWN_SQL = `
+  SELECT 1 FROM newsletter_new.revocations r
+  JOIN newsletter_new.subscribers s ON s.email_tag=r.email_tag
+  WHERE r.email_tag=$1 AND r.recorded_at>=s.requested_at`;
 
 function decodeNewKey(raw) {
   if (typeof raw !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(raw)) return null;
@@ -33,6 +40,7 @@ export function createNewOnlyNewsletter({
   emailFrom = process.env.EMAIL_FROM,
   baseUrl = 'https://gracz.pl/newsletter/',
   fetchFn = globalThis.fetch,
+  checkDeliveryAllowed,
 } = {}) {
   const enc = decodeNewKey(encryptionKey);
   const tagKey = decodeNewKey(subjectKey);
@@ -86,6 +94,12 @@ export function createNewOnlyNewsletter({
     const mailbox = String(email || '').trim().toLowerCase();
     if (mailbox.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailbox))
       throw Object.assign(new Error('Nieprawidłowy e-mail.'),{status:400,code:'INVALID_EMAIL'});
+    // Public response never reveals a provider block. No reservation is made,
+    // so an OWNER-reviewed unblock permits a fresh deliberate submission.
+    try {
+      if (typeof checkDeliveryAllowed !== 'function' ||
+          await checkDeliveryAllowed(mailbox) !== true) return {state:'request_received'};
+    } catch { return {state:'request_received'}; }
     const safeSource = /^[a-z_]{1,40}$/.test(source) ? source : 'newsletter_page';
     const emailTag = tag('email',mailbox);
     const rawToken = randomBytes(32).toString('base64url');
@@ -100,10 +114,9 @@ export function createNewOnlyNewsletter({
       await client.query(
         'SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',
         [emailTag]);
-      const blocked = await client.query(
-        'SELECT 1 FROM newsletter_new.revocations WHERE email_tag=$1',
-        [emailTag]);
-      if (blocked.rowCount) return false;
+      // The revocation stays as immutable history. A deliberate new request
+      // gets a fresh challenge that only its own new link can confirm.
+      const withdrawn = (await client.query(WITHDRAWN_SQL,[emailTag])).rowCount > 0;
       const insert = await client.query(`
         INSERT INTO newsletter_new.subscribers
           (email_tag,ciphertext,nonce,auth_tag,challenge_id,token_tag,state,
@@ -118,8 +131,8 @@ export function createNewOnlyNewsletter({
           [emailTag])).rows[0];
         // Report only an existing ACTIVE row. The unique-row lock keeps
         // the lookup and reservation atomic under simultaneous submissions.
-        if (row?.state === 'active') return 'already_subscribed';
-        if (!row || Date.parse(row.expires_at) > Date.now()) return false;
+        if (!withdrawn && row?.state === 'active') return 'already_subscribed';
+        if (!row || (!withdrawn && Date.parse(row.expires_at) > Date.now())) return false;
         await client.query(`
           UPDATE newsletter_new.subscribers
           SET ciphertext=$2,nonce=$3,auth_tag=$4,challenge_id=$5,token_tag=$6,
@@ -189,9 +202,7 @@ export function createNewOnlyNewsletter({
           !row.token_tag || Date.parse(row.expires_at) <= Date.now() ||
           !timingSafeEqual(Buffer.from(row.token_tag,'hex'),Buffer.from(tokenTag,'hex')))
         throw rejected();
-      const blocked = await client.query(
-        'SELECT 1 FROM newsletter_new.revocations WHERE email_tag=$1',
-        [row.email_tag]);
+      const blocked = await client.query(WITHDRAWN_SQL,[row.email_tag]);
       if (blocked.rowCount) throw rejected();
       await client.query(`
         UPDATE newsletter_new.subscribers
@@ -221,10 +232,20 @@ export function createNewOnlyNewsletter({
       'SELECT email_tag FROM newsletter_new.subscribers WHERE email_tag=$1 FOR UPDATE',
       [emailTag]);
     if (!existing.rowCount) return;
-    await client.query(
+    const recorded = await client.query(
       'INSERT INTO newsletter_new.revocations (email_tag,challenge_id) VALUES ($1,$2) '+
       'ON CONFLICT (email_tag) DO NOTHING',
       [emailTag,challengeId]);
+    if (recorded.rowCount) return;
+    // The register keeps one immutable row per address (its first withdrawal);
+    // every withdrawal stays in newsletter_recovery. Close a consent or DOI
+    // request made after that row: not active, unusable token, expired link.
+    await client.query(`
+      UPDATE newsletter_new.subscribers
+      SET state='pending',token_tag=$2,confirmed_at=NULL,expires_at=clock_timestamp()
+      WHERE email_tag=$1 AND requested_at>(
+        SELECT recorded_at FROM newsletter_new.revocations WHERE email_tag=$1)
+    `,[emailTag,randomBytes(32).toString('hex')]);
   }
   // An anonymous POST must never disclose whether an address exists.
   // Status is returned only to the holder of an encrypted, short-lived
@@ -293,14 +314,17 @@ export function createNewOnlyNewsletter({
       !Number.isSafeInteger(payload.issued)||payload.issued>Date.now()||
       Date.now()-payload.issued>STATUS_TTL_MS)throw invalid();
     const found=await database.queryBounded(`
-      SELECT s.state,
+      SELECT s.state,s.expires_at,
         EXISTS(SELECT 1 FROM newsletter_new.revocations r
-               WHERE r.email_tag=s.email_tag) AS withdrawn
+               WHERE r.email_tag=s.email_tag
+                 AND r.recorded_at>=s.requested_at) AS withdrawn
       FROM newsletter_new.subscribers s WHERE s.email_tag=$1
     `,[tag('email',payload.mailbox)],{timeoutMs:2000});
     const row=found.rows?.[0];
+    // A request closed by a later withdrawal is expired, never 'pending'.
     const state=!row||row.withdrawn?'inactive':
-      row.state==='active'?'active':row.state==='pending'?'pending':'inactive';
+      row.state==='active'?'active':
+      row.state==='pending'&&Date.parse(row.expires_at)>Date.now()?'pending':'inactive';
     return {state};
   }
   async function held() { throw unavailable(); }

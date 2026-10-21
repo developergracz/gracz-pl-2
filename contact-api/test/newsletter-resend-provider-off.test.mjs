@@ -61,3 +61,16 @@ test('#282 Resend: unknown mutation/readback never reports OFF, never leaks prov
   assert.throws(()=>createResendProviderOff({apiKey:'fake',baseUrl:'https://attacker.invalid'}),TypeError);
   await assert.rejects(service.ensureOff('Not-Normalized@Example.test'),TypeError);
 });
+
+test('delivery preflight is read-only and denies active suppression or unknown state',async()=>{
+  const h=harness();
+  const service=createResendProviderOff({apiKey:'synthetic',request:h.request});
+  assert.equal(await service.deliveryAllowed(email),true);
+  assert.ok(h.methods.every(m=>m.startsWith('GET ')));
+  await service.ensureOff(email);
+  h.methods.length=0;
+  assert.equal(await service.deliveryAllowed(email),false);
+  assert.ok(h.methods.every(m=>m.startsWith('GET ')));
+  const broken=createResendProviderOff({apiKey:'synthetic',request:async()=>({status:403,json:async()=>({})})});
+  await assert.rejects(broken.deliveryAllowed(email));
+});

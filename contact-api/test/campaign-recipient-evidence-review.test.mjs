@@ -6,7 +6,7 @@ import {CAMPAIGN_CONSENT_VERSION} from '../campaigns/audience-proof-count.mjs';
 
 function fixture({
   pending=false,obligation=false,doi=true,withdrawn=false,corrupt=false,
-  mismatchedTag=false,queryFails=false
+  mismatchedTag=false,queryFails=false,providerAllowed=true
 }={}){
   const enc=randomBytes(32),subject=randomBytes(32),withdrawal=randomBytes(32);
   const email='recipient@example.test';
@@ -32,13 +32,13 @@ function fixture({
     if(sql.includes('SELECT s.email_tag'))
       return {rows:doi?[row]:[]};
     if(sql.includes('AS withdrawn')){
-      assert.deepEqual(params,[recoveryTag]);
+      assert.deepEqual(params,[recoveryTag,tag]);
       return {rows:[{withdrawn}]};
     }
     throw Error('Unexpected SQL');
   }};
   const review=createCampaignRecipientEvidenceReview({
-    database,
+    database,checkDeliveryAllowed:async()=>providerAllowed,
     newEncryptionKey:enc.toString('base64url'),
     newSubjectKey:subject.toString('base64url'),
     withdrawalRecipientTagKey:withdrawal.toString('base64url')
@@ -123,5 +123,13 @@ test('private sender resolves only a verified current recipient without changing
   for(const options of [{doi:false},{withdrawn:true},{pending:true}]){
     const b=fixture(options);
     assert.equal(await b.review.resolveRecipient(b.tag),null);
+  }
+});
+
+test('provider suppression or unknown preflight denies despite current DOI',async()=>{
+  for(const providerAllowed of [false,undefined,null]){
+    const a=fixture({providerAllowed:providerAllowed===undefined?null:providerAllowed});
+    assert.equal((await a.review(a.tag)).state,'provider_evidence_hold');
+    assert.equal(await a.review.resolveRecipient(a.tag),null);
   }
 });

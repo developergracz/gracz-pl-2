@@ -1,5 +1,5 @@
 // Internal evidence-only recipient screening before future newsletter campaigns.
-// No send route, provider calls, sender permits or eligibility cache.
+// No send route, provider mutations, sender permits or eligibility cache.
 // A positive result is NOT authority to send: the global withdrawal fence and
 // fresh transactional checks still apply before any future provider effect.
 import {createDecipheriv,createHmac,timingSafeEqual} from 'node:crypto';
@@ -43,7 +43,7 @@ const DOI_SQL=`
    )
    AND NOT EXISTS(
      SELECT 1 FROM newsletter_new.revocations v
-     WHERE v.email_tag=s.email_tag
+     WHERE v.email_tag=s.email_tag AND v.recorded_at>=s.requested_at
    )
 `;
 const WITHDRAWAL_SQL=`
@@ -51,7 +51,8 @@ const WITHDRAWAL_SQL=`
    SELECT 1 FROM newsletter_recovery.self_service_challenges c
    JOIN newsletter_recovery.self_service_verified v
      ON v.challenge_id=c.challenge_id
-   WHERE c.recipient_tag=$1
+   JOIN newsletter_new.subscribers s ON s.email_tag=$2
+   WHERE c.recipient_tag=$1 AND v.verified_at>=s.requested_at
  ) AS withdrawn
 `;
 const invalid=()=>new Error('campaign_recipient_evidence_unavailable');
@@ -65,7 +66,7 @@ function decodeKey(value){
 const verdict=(state)=>Object.freeze({state,advisoryOnly:true,maySend:false});
 
 export function createCampaignRecipientEvidenceReview({
-  database,newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey
+  database,newEncryptionKey,newSubjectKey,withdrawalRecipientTagKey,checkDeliveryAllowed
 }={}){
   if(typeof database?.queryBounded!=='function')
     throw new TypeError('read_only_database_required');
@@ -133,10 +134,14 @@ export function createCampaignRecipientEvidenceReview({
     const withdrawalTag=createHmac('sha256',withdrawal)
       .update(WITHDRAWAL_CONTEXT+email).digest('hex');
     const result=await database.queryBounded(
-      WITHDRAWAL_SQL,[withdrawalTag],{timeoutMs:3000});
+      WITHDRAWAL_SQL,[withdrawalTag,emailTag],{timeoutMs:3000});
     if(result?.rows?.length!==1||
        typeof result.rows[0]?.withdrawn!=='boolean')throw invalid();
     if(result.rows[0].withdrawn)return verdict('verified_withdrawal');
+    try {
+      if(typeof checkDeliveryAllowed!=='function'||await checkDeliveryAllowed(email)!==true)
+        return verdict('provider_evidence_hold');
+    } catch { return verdict('provider_evidence_hold'); }
     if(onRecipient)onRecipient(email);
     if(!matchAddress)return verdict('evidence_complete_for_review');
     // Additional evidence, never a sender permit: only inside the separate

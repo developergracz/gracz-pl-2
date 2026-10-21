@@ -21,7 +21,7 @@ test('dispatch audit is append-only and tied to one campaign recipient',()=>{
 });
 
 test('reservation uses confirmed consent, excludes withdrawals, and is atomic',()=>{
-  assert.match(sql,/CREATE FUNCTION newsletter_campaigns\.reserve_confirmed/);
+  assert.match(sql,/CREATE OR REPLACE FUNCTION newsletter_campaigns\.reserve_confirmed/);
   assert.match(sql,/s\.state='active'/);
   assert.match(sql,/e\.event_type='opt_in_confirmed'/);
   assert.match(sql,/NOT EXISTS \(\s*SELECT 1 FROM newsletter_new\.revocations/);
@@ -31,7 +31,7 @@ test('reservation uses confirmed consent, excludes withdrawals, and is atomic',(
 });
 
 test('pre-send transition serializes withdrawal, checks DOI again and cannot retry',()=>{
-  assert.match(sql,/CREATE FUNCTION newsletter_campaigns\.claim_delivery/);
+  assert.match(sql,/CREATE OR REPLACE FUNCTION newsletter_campaigns\.claim_delivery/);
   assert.match(sql,/WHERE s\.email_tag=v_tag FOR UPDATE/);
   assert.match(sql,/NOT EXISTS \(\s*SELECT 1 FROM newsletter_new\.revocations/);
   assert.match(sql,/AND state='reserved'/);

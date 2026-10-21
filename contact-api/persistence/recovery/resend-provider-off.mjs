@@ -64,6 +64,11 @@ export function createResendProviderOff({
     return blocked && (current===null||current.unsubscribed===true);
   }
   return Object.freeze({
+    // Read-only preflight. Never clears suppression or changes contact consent.
+    async deliveryAllowed(email) {
+      if(!validEmail(email))throw new TypeError('Trusted normalized email required');
+      return !await suppression(email);
+    },
     async verifyOff(email) {
       return (await verify(email)) ? Object.freeze({off:true}) :
         Object.freeze({off:false});

@@ -5,6 +5,10 @@ import {randomUUID,createCipheriv,createHmac} from 'node:crypto';
 import {createDatabase} from '../persistence/database.mjs';
 import {assertDisposableDatabaseUrl} from './test-database-guard.mjs';
 import {createCampaignDraftStore} from '../campaigns/draft-store.mjs';
+import {createCampaignRecipientEvidenceReview} from '../campaigns/recipient-evidence-review.mjs';
+import {createCampaignPgDispatchStore} from '../campaigns/pg-dispatch-store.mjs';
+import {createNewOnlyNewsletter} from '../new-only-newsletter.mjs';
+import {createCampaignAudienceProofCount} from '../campaigns/audience-proof-count.mjs';
 import {createCampaignOwnerSender} from '../campaigns/owner-send.mjs';
 import {CAMPAIGN_CONSENT_VERSION} from '../campaigns/audience-proof-count.mjs';
 
@@ -42,9 +46,10 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
     await drafts.approve(id,content);
     return id;
   };
-  let calls=0,uncertain=false;
+  let calls=0,uncertain=false,providerAllowed=true;
   const config={database,enabled:true,newEncryptionKey:enc.toString('base64url'),
     newSubjectKey:subject.toString('base64url'),withdrawalRecipientTagKey:withdrawal.toString('base64url'),
+    checkDeliveryAllowed:async()=>providerAllowed,
     apiKey:'synthetic-api-key',from:'newsletter@example.test',checkWithdrawalReady:async()=>true,
     fetchFn:async(_url,options)=>{
       calls++;
@@ -89,6 +94,65 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   await database.query('INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',[emailTag,randomUUID()]);
   assert.equal((await sender.send(await campaign())).accepted,0);
   assert.equal(calls,2,'revoked consent never reaches provider');
+  // Exercise the real renewed DOI, immutable withdrawal history and provider gate.
+  const recoveryTag=createHmac('sha256',withdrawal).update('gracz-withdrawal-v1\0recipient\0'+address).digest('hex');
+  const addWithdrawal=async()=>{
+    const request=randomUUID(),withdrawChallenge=randomUUID();
+    await database.query(`INSERT INTO newsletter_recovery.withdrawal_requests
+      (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'self_service',$3)`,
+      [request,withdrawChallenge.replaceAll('-','').repeat(2),randomUUID()]);
+    await database.query(`INSERT INTO newsletter_recovery.self_service_challenges
+      (challenge_id,recipient_tag,token_tag,ciphertext,nonce,auth_tag,expires_at)
+      VALUES($1,$2,$3,$4,$5,$6,clock_timestamp()+interval '30 minutes')`,
+      [withdrawChallenge,recoveryTag,withdrawChallenge.replaceAll('-','').repeat(2),ciphertext,nonce,Buffer.alloc(16)]);
+    await database.query('INSERT INTO newsletter_recovery.self_service_verified(challenge_id,withdrawal_request_id) VALUES($1,$2)',[withdrawChallenge,request]);
+    await database.query('INSERT INTO newsletter_recovery.self_service_provider_intents(challenge_id) VALUES($1)',[withdrawChallenge]);
+    await database.query('INSERT INTO newsletter_recovery.self_service_provider_verified(challenge_id) VALUES($1)',[withdrawChallenge]);
+    return withdrawChallenge;
+  };
+  await addWithdrawal();
+  const review=createCampaignRecipientEvidenceReview(config);
+  const dispatch=createCampaignPgDispatchStore({database});
+  const tokens=[];
+  const manager=createNewOnlyNewsletter({database,enabled:true,
+    encryptionKey:enc.toString('base64url'),subjectKey:subject.toString('base64url'),
+    apiKey:'synthetic',emailFrom:'newsletter@example.test',checkDeliveryAllowed:async()=>providerAllowed,
+    fetchFn:async(_url,options)=>{
+      tokens.push(JSON.parse(options.body).text.match(/#confirm=(ni3\.[\w.-]+)/)[1]);
+      return {ok:true,json:async()=>({id:'synthetic-doi'})};
+    }});
+  providerAllowed=false;
+  await manager.acceptOptIn({email:address});
+  assert.equal(tokens.length,0,'suppression blocks DOI');
+  providerAllowed=true;uncertain=false;
+  await Promise.all(Array.from({length:3},()=>manager.acceptOptIn({email:address})));
+  assert.equal(tokens.length,1,'parallel submissions reserve one DOI');
+  assert.equal((await review(emailTag)).state,'no_current_doi');
+  await assert.rejects(sender.send(await campaign()),{code:'campaign_send_unavailable'});
+  await manager.confirm(tokens[0]);
+  await assert.rejects(manager.confirm(tokens[0]),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+  const count=createCampaignAudienceProofCount({database});
+  assert.equal((await count()).confirmed,1,'historical withdrawal does not erase new DOI');
+  providerAllowed=false;
+  assert.equal((await review(emailTag)).state,'provider_evidence_hold','suppression still denies renewed consent');
+  assert.equal(calls,2);
+  providerAllowed=true;
+  assert.equal((await review(emailTag)).state,'evidence_complete_for_review');
+  const futureCampaign=await campaign();
+  const reserved=await dispatch.reserve({campaignId:futureCampaign,emailTag});
+  assert.ok(reserved,'renewed consent qualifies for a future reservation');
+  assert.equal(await dispatch.claim({campaignId:futureCampaign,dispatchId:reserved}),true);
+  await assert.rejects(sender.send(await campaign()),{code:'campaign_send_unavailable'});
+  assert.equal(calls,2,'global HOLD remains despite renewed consent');
+  const second=await addWithdrawal();
+  // Even before the callback updates the subscriber, the fresh recovery evidence denies.
+  assert.equal((await review(emailTag)).state,'verified_withdrawal','later recovery withdrawal denies');
+  await database.transaction(client=>manager.recordVerifiedWithdrawal({client,email:address,challengeId:second}));
+  assert.equal((await count()).confirmed,0);
+  await assert.rejects(manager.confirm(tokens[0]),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+  assert.equal((await database.query('SELECT count(*) FROM newsletter_new.revocations')).rows[0].count,'1');
+  await assert.rejects(database.query('DELETE FROM newsletter_new.revocations'));
+  assert.equal((await database.query('SELECT count(*) FROM newsletter_recovery.self_service_verified')).rows[0].count,'2');
   await database.query(`INSERT INTO newsletter_recovery.withdrawal_requests
     (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'operator_record',$3)`,
     [randomUUID(),'b'.repeat(64),randomUUID()]);

@@ -8,6 +8,7 @@ const SQL=`
   FROM newsletter_new.subscribers s
   WHERE s.state='active'
     AND s.confirmed_at IS NOT NULL
+    AND s.delivery_state='sent'
     AND s.consent_version=$1
     AND EXISTS (
       SELECT 1 FROM newsletter_new.consent_events e
@@ -15,10 +16,11 @@ const SQL=`
         AND e.event_type='opt_in_confirmed'
         AND e.consent_version=s.consent_version
         AND e.challenge_id=s.challenge_id
+        AND e.source=s.source
     )
     AND NOT EXISTS (
       SELECT 1 FROM newsletter_new.revocations r
-      WHERE r.email_tag=s.email_tag
+      WHERE r.email_tag=s.email_tag AND r.recorded_at>=s.requested_at
     )
 `;
 
