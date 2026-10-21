@@ -4,6 +4,7 @@ export const productionModules=Object.freeze([
   'server.mjs',
   'lifecycle.mjs',
   'premium-reply.mjs',
+  'email/full-max-premium.mjs',
   'security/newsletter-recovery-hold.mjs',
   // Fresh isolated DOI; no legacy consent or marketing-provider import.
   'new-only-newsletter.mjs',
