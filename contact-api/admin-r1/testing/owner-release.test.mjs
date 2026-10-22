@@ -84,9 +84,11 @@ test('OWNER one-click Premium send preserves recipient consent and durable dispa
   // The modal itself never scrolls the send/close controls out of sight.
   assert.match(html,/<form id="targeted-compose">\s*<div class="targeted-compose-fields">/);
   assert.match(html,/<\/div>\s*<div class="targeted-compose-actions">\s*<button type="submit" id="targeted-send">/);
-  assert.match(css,/#targeted-dialog\[open\]\{[^}]*height:min\(760px,calc\(100dvh - 24px\)\);[^}]*overflow:hidden;/s);
+  assert.match(css,/#targeted-dialog\[open\]\{[^}]*height:min\(860px,calc\(100dvh - 24px\)\);[^}]*overflow:hidden;/s);
   assert.match(css,/#targeted-dialog #targeted-compose\{[^}]*display:flex;[^}]*overflow:hidden;/s);
   assert.match(css,/#targeted-dialog \.targeted-compose-fields\{[^}]*overflow-y:auto;/s);
+  assert.match(css,/#targeted-dialog \.targeted-editor #targeted-body\{[^}]*height:clamp\(195px,24dvh,232px\);[^}]*min-height:195px;/s);
+  assert.match(css,/#targeted-dialog \.targeted-compose-actions\{[^}]*flex:0 0 auto;/s);
   assert.match(css,/#targeted-dialog \.targeted-compose-actions\{[^}]*flex:0 0 auto;[^}]*border-top:/s);
   assert.match(css,/#targeted-dialog #targeted-send\{[^}]*background:linear-gradient\(115deg,/s);
   assert.match(css,/#targeted-dialog #targeted-compose-close\{[^}]*background:linear-gradient\(135deg,/s);
