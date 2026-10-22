@@ -57,3 +57,32 @@ test('targeted Markdown email renders formatting safely and leaves non-targeted 
   assert.ok(plain.includes('**Witaj**'));
   assert.doesNotMatch(plain,/<strong>Witaj<\/strong>/);
 });
+
+test('campaign title and message keep white gracz and red .pl in Gmail',()=>{
+  const brand='<span style="color:#ffffff !important;text-decoration:none">gracz</span>'+
+    '<span style="color:#ef5261 !important;text-decoration:none">.pl</span>';
+  const html=renderPremiumEmail({
+    title:'Test kampanii gracz.pl',
+    body:'Nowości gracz.pl i https://gracz.pl/poradniki/ oraz admin@gracz.pl',
+    footnote:'Subskrybujesz newsletter gracz.pl.'
+  });
+  assert.ok(html.includes('Test kampanii '+brand+'</h1>'));
+  assert.ok(html.includes('Nowości '+brand+' i https://gracz.pl/poradniki/'));
+  assert.ok(html.includes('oraz admin@gracz.pl'));
+  assert.ok(html.includes('newsletter '+brand+'.'));
+  assert.doesNotMatch(html,/<h1[^>]*>Test kampanii gracz\.pl<\/h1>/);
+});
+
+test('brand styling preserves safe markdown links and HTML escaping',()=>{
+  const html=renderPremiumEmail({
+    title:'gracz.pl <script>',
+    body:'**gracz.pl** [gracz.pl](https://gracz.pl/) <img src=x>',
+    bodyMarkdown:true
+  });
+  assert.match(html,/<h1[^>]*><span style="color:#ffffff !important;text-decoration:none">gracz<\/span>/);
+  assert.match(html,/<strong><span style="color:#ffffff !important;text-decoration:none">gracz<\/span>/);
+  assert.match(html,/<a href="https:\/\/gracz\.pl\/" style="color:#8be6df;text-decoration:underline">/);
+  assert.match(html,/&lt;script&gt;/);
+  assert.match(html,/&lt;img src=x&gt;/);
+  assert.doesNotMatch(html,/<script\b|<img\b/);
+});

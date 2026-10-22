@@ -4,6 +4,23 @@ export function escapeEmailHtml(value) {
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   })[c]);
 }
+
+// Split visible brand text into separately styled inline spans so Gmail does not
+// auto-link "gracz.pl" in a heading and turn it blue. URLs and email addresses
+// must remain intact. All other user-controlled text is still escaped.
+const BRAND_HTML='<span style="color:#ffffff !important;text-decoration:none">gracz</span>'+
+  '<span style="color:#ef5261 !important;text-decoration:none">.pl</span>';
+function brandText(value) {
+  const input=String(value);
+  const pattern=/(?<![a-z0-9@/.-])gracz\.pl(?![a-z0-9-]|\.[a-z0-9]|\/)/gi;
+  let out='',last=0;
+  for(const match of input.matchAll(pattern)){
+    out+=escapeEmailHtml(input.slice(last,match.index));
+    out+=BRAND_HTML;
+    last=match.index+match[0].length;
+  }
+  return out+escapeEmailHtml(input.slice(last));
+}
 function safeLink(value) {
   if(typeof value!=='string') throw new TypeError('Valid email action URL required');
   const u=new URL(value);
@@ -12,7 +29,7 @@ function safeLink(value) {
   return escapeEmailHtml(u.href);
 }
 function copy(value) {
-  return escapeEmailHtml(value).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
+  return brandText(value).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
 }
 // Render only a constrained Markdown subset. Every content span and href is
 // escaped, raw HTML is inert, and links require credential-free HTTPS.
@@ -20,10 +37,10 @@ function emailMarkdownInline(value){
   const source=String(value), pattern=/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|\+\+([^+\n]+)\+\+|~~([^~\n]+)~~|\x60([^\x60\n]+)\x60|\*([^*\n]+)\*/g;
   let out='',offset=0,match;
   while((match=pattern.exec(source))!==null){
-    out+=escapeEmailHtml(source.slice(offset,match.index));
+    out+=brandText(source.slice(offset,match.index));
     const wrapper=match[3]!==undefined?'strong':match[4]!==undefined?'u':
       match[5]!==undefined?'s':match[6]!==undefined?'code':match[7]!==undefined?'em':null;
-    if(wrapper)out+='<'+wrapper+'>'+escapeEmailHtml(match[3]??match[4]??match[5]??match[6]??match[7])+'</'+wrapper+'>';
+    if(wrapper)out+='<'+wrapper+'>'+brandText(match[3]??match[4]??match[5]??match[6]??match[7])+'</'+wrapper+'>';
     else if(match[1]!==undefined){
       let url=null;
       try {
@@ -31,11 +48,11 @@ function emailMarkdownInline(value){
         if(candidate.protocol==='https:'&&!candidate.username&&!candidate.password&&
            candidate.hostname&&candidate.href.length<=2048)url=candidate.href;
       }catch{}
-      out+=url?'<a href="'+escapeEmailHtml(url)+'" style="color:#8be6df;text-decoration:underline">'+escapeEmailHtml(match[1])+'</a>':escapeEmailHtml(match[0]);
+      out+=url?'<a href="'+escapeEmailHtml(url)+'" style="color:#8be6df;text-decoration:underline">'+brandText(match[1])+'</a>':brandText(match[0]);
     }else out+=escapeEmailHtml(match[0]);
     offset=pattern.lastIndex;
   }
-  return out+escapeEmailHtml(source.slice(offset));
+  return out+brandText(source.slice(offset));
 }
 function emailMarkdownBody(value){
   let output='',list='';
@@ -92,13 +109,13 @@ export function renderPremiumEmail({
  <div style="margin-top:8px;font-size:11px;letter-spacing:1.4px;font-weight:700;color:#74dfd3">FULL MAX PREMIUM · ${escapeEmailHtml(category)}</div>
 </td></tr>
 <tr><td style="padding:30px 28px 15px">
- <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;color:#fff;font-weight:800">${escapeEmailHtml(title)}</h1>
+ <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;color:#fff;font-weight:800">${brandText(title)}</h1>
  <div style="font-size:15px;line-height:1.8;color:#c6dce0">${bodyMarkdown===true?emailMarkdownBody(body):copy(body)}</div>
 </td></tr>
 ${codePanel}${button}
 <tr><td style="padding:10px 28px 28px"><div style="border-top:1px solid #27505b;padding-top:18px;color:#a0bec4;font-size:13px;line-height:1.7">${copy(footnote)}</div></td></tr>
 <tr><td style="padding:22px 28px;background:#0b1d25;border-top:1px solid #24434d;border-radius:0 0 18px 18px">
- <div style="color:#90aeb7;font-size:12px;line-height:1.7">Wiadomość z gracz.pl · <a href="https://gracz.pl/" style="color:#8be6df;text-decoration:none">Strona główna</a> · <a href="https://gracz.pl/polityka-prywatnosci/" style="color:#8be6df;text-decoration:none">Polityka prywatności</a>${unsubscribe}</div>
- <div style="margin-top:9px;color:#7896a0;font-size:11px">© gracz.pl · Wszystkie prawa zastrzeżone</div>
+ <div style="color:#90aeb7;font-size:12px;line-height:1.7">${brandText("Wiadomość z gracz.pl")} · <a href="https://gracz.pl/" style="color:#8be6df;text-decoration:none">Strona główna</a> · <a href="https://gracz.pl/polityka-prywatnosci/" style="color:#8be6df;text-decoration:none">Polityka prywatności</a>${unsubscribe}</div>
+ <div style="margin-top:9px;color:#7896a0;font-size:11px">© ${brandText("gracz.pl")} · Wszystkie prawa zastrzeżone</div>
 </td></tr></table></td></tr></table></body></html>`;
 }
