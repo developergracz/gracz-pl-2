@@ -44,7 +44,13 @@ test('OWNER one-click Premium send preserves recipient consent and durable dispa
   for(const id of ['date-from','date-to','last-month','send-found','targeted-dialog',
     'targeted-subject','targeted-body','targeted-send','targeted-compose-close'])
     assert.ok(html.includes('id="'+id+'"'),'missing '+id);
-  assert.match(html,/<button type="submit" id="targeted-send">Wyślij<\/button>/);
+  assert.match(html,/<button type="submit" id="targeted-send"><span aria-hidden="true">➤<\/span> Wyślij wiadomość<\/button>/);
+  assert.match(html,/role="toolbar" aria-label="Formatowanie treści wiadomości"/);
+  assert.match(html,/data-targeted-format="bold"/);
+  assert.match(html,/id="targeted-preview-body"/);
+  assert.match(ui,/campaignRenderPreview\(targetedBody.value,\$\("targeted-preview-body"\)\)/);
+  assert.match(sender,/markdown:targeted/);
+  assert.match(css,/#targeted-dialog \.targeted-compose-actions button\{flex:0 0 auto!important;width:auto!important/);
   assert.doesNotMatch(html,/id="targeted-approval"|id="targeted-confirmation"|id="targeted-final"/);
   assert.match(ui,/send\.textContent="Wyślij wiadomość"/);
   assert.match(ui,/send\.disabled=!targetedReady\|\|item\.state!=="active"/);

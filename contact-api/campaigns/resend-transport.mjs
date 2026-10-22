@@ -11,7 +11,7 @@ export function createCampaignResendTransport({
     typeof apiKey==='string' && apiKey.length>8 &&
     typeof from==='string' && from.length>3;
   return Object.freeze({
-    async sendOnce({dispatchId,to,subject,text,unsubscribeUrl}={}) {
+    async sendOnce({dispatchId,to,subject,text,unsubscribeUrl,markdown=false}={}) {
       if(!ready) throw Object.assign(new Error('campaign_sending_disabled'),{code:'campaign_sending_disabled'});
       if(typeof dispatchId!=='string'||!/^[0-9a-f-]{36}$/i.test(dispatchId)||
         typeof to!=='string'||to.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||
@@ -33,7 +33,7 @@ export function createCampaignResendTransport({
             text:text+'\n\nWypisz się z newslettera: '+unsubscribeUrl,
             html:renderPremiumEmail({
               category:'NEWSLETTER · GRACZ.PL',title:subject,
-              preheader:text.slice(0,110),body:text,
+              preheader:text.slice(0,110),body:text,bodyMarkdown:markdown===true,
               actionUrl:'https://gracz.pl/',actionLabel:'Odwiedź gracz.pl',
               unsubscribeUrl,footnote:'Otrzymujesz tę wiadomość w związku z subskrypcją newslettera gracz.pl.'
             }),
