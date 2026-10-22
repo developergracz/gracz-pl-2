@@ -1,0 +1,22 @@
+name: gracz.pl Attachment Lab - policy preflight
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gracz-attachment-lab.yml'
+      - '.github/workflows/gracz-attachment-lab-preflight.yml'
+      - 'contact-api/attachment-lab/**'
+      - 'contact-api/test/attachment-lab-boundary.test.mjs'
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate scripts syntax without running scanners
+        run: |
+          bash -n contact-api/attachment-lab/clamav-smoke.sh
+          bash -n contact-api/attachment-lab/converter-smoke.sh
+      - name: Verify manual-only scheduling and production fail-closed
+        run: node --test contact-api/test/attachment-lab-boundary.test.mjs
