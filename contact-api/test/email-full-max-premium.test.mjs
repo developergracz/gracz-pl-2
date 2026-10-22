@@ -102,6 +102,6 @@ test('brand styling preserves safe markdown links and HTML escaping',()=>{
   assert.match(html,/<a href="https:\/\/gracz\.pl\/" style="color:#8be6df;text-decoration:underline">/);
   assert.match(html,/&lt;script&gt;/);
   assert.match(html,/&lt;img src=x&gt;/);
-  assert.doesNotMatch(html,/<script\b|<img src=x>/);
+  assert.doesNotMatch(html,/<script\b|<img src=x>/i);
   assert.equal((html.match(/<img\b/g)||[]).length,1);
 });
