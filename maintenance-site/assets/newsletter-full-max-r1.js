@@ -218,8 +218,18 @@
       status:['BEZPIECZNE SPRAWDZENIE','Sprawdź swoją subskrypcję','Kliknij przycisk, aby jednorazowo sprawdzić status. Ta operacja nie zapisuje do newslettera ani nie zmienia zgody.','Sprawdź status']
     }[mode];
     actionKicker.textContent=copy[0];actionTitle.textContent=copy[1];actionCopy.textContent=copy[2];actionButton.textContent=copy[3];
-    if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(actionStatus,'Operacje newslettera są chwilowo niedostępne. Historyczne linki zostały unieważnione. Nie potwierdzono zmiany subskrypcji.',false);}
+    if(mode==='status'){
+      // Mailbox-verified status is read-only: fetch once on link open, without an
+      // intermediate confirmation. Consent changes still require a button click.
+      actionButton.hidden=true;
+      actionTitle.textContent='Sprawdzanie statusu newslettera';
+      actionCopy.textContent='Bezpiecznie sprawdzamy aktualny status Twojej subskrypcji.';
+      setStatus(actionStatus,'Sprawdzanie…');
+    }else if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){
+      setStatus(actionStatus,'Operacje newslettera są chwilowo niedostępne. Historyczne linki zostały unieważnione. Nie potwierdzono zmiany subskrypcji.',false);
+    }
     showActionDialog();
+    if(mode==='status')void processAction();
   }
   // popstate may precede hashchange for the same traversal; coalesce that duplicate.
   var lastNavigationURL='';
@@ -274,7 +284,7 @@
     }catch(_){/* Fail closed. A failed probe never sends a subscription. */}
   }
   enableIntakeOnlyWhenReady();
-  actionButton.addEventListener('click',async function(){
+  async function processAction(){
     if(!actionMode||!actionToken||actionButton.disabled)return;
     var mode=actionMode,token=actionToken,current=generation;
     actionToken='';actionButton.disabled=true;
@@ -308,14 +318,7 @@
         actionStatus.classList.remove('is-error');
       }else setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
-      if(mode==='status'&&result.state==='active'){
-        openResultDialog('Ten adres już jest w naszym newsletterze',
-          'Potwierdzono dostęp do skrzynki e-mail i sprawdzono aktualny stan bazy. Ten adres ma aktywną subskrypcję newslettera gracz.pl. Nie musisz zapisywać się ponownie ani potwierdzać kolejnego linku.',
-          true,actionButton);
-        resultCheck.textContent='Wypisz się z newslettera';
-        resultCheck.setAttribute('href','#nl-withdrawal-panel');
-      }
-    }catch(error){if(current===generation){
+     }catch(error){if(current===generation){
       // No consent is changed by status-check. Unlike DOI/unsubscribe, a
       // transient READ failure can be retried with the same unexpired proof.
       if(mode==='status' && error.retryable){
@@ -340,5 +343,6 @@
       actionClose.disabled=false;
       actionClose.textContent=actionToken&&!actionButton.hidden?'Anuluj':'Zrozumiałem';
     }
-  });
+  }
+  actionButton.addEventListener('click',processAction);
 })();
