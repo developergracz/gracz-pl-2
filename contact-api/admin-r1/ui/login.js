@@ -152,7 +152,7 @@ if(recoveryDialog){
     recoveryHint.textContent=value.length===0
       ?'Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.'
       :recoveryEmail.validity.valid
-        ?'Adres ma poprawny format, ale to NIE potwierdza przypisania do administratora. Hasło tymczasowe wyślemy tylko na wcześniej potwierdzoną skrzynkę.'
+        ?'Ten adres e-mail nie został potwierdzony jako przypisany do konta administratora. Podaj adres e-mail użyty przy konfiguracji odzyskiwania hasła.'
         :'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.';
   });
   sendForm.addEventListener('submit',async event=>{
@@ -169,7 +169,7 @@ if(recoveryDialog){
         body:JSON.stringify({email:document.getElementById('forgot-email').value})
       });
       if(!response.ok)throw Error('unavailable');
-      requestStatus.textContent='Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło tymczasowe ważne 10 minut. Sprawdź skrzynkę.';
+      requestStatus.textContent='Podaj adres e-mail przypisany do konta administratora. Jeśli wpisany adres jest zgodny, otrzymasz 10-literowe hasło tymczasowe ważne 10 minut. Sprawdź skrzynkę.';
     }catch{
       requestStatus.textContent='Odzyskiwanie jest chwilowo niedostępne. Spróbuj później.';
     }finally{button.disabled=false;}
