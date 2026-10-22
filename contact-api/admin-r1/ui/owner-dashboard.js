@@ -1577,6 +1577,64 @@ async function ownerLimitInspect(){
     $("limit-result").hidden=true;$("limit-message").textContent="Odczyt niedostępny.";
   }finally{limitsSaving=false;$("limit-inspect").disabled=false;}
 }
+let activeLimitLoading=false;
+async function ownerLimitActive(){
+  if(!ownerCsrf||activeLimitLoading)return;
+  activeLimitLoading=true;
+  $("limit-active-refresh").disabled=true;
+  const rows=$("limit-active-rows");
+  rows.replaceChildren();
+  $("limit-active-info").textContent="Pobieranie aktywnych blokad…";
+  try{
+    const result=await request("/owner/newsletter/limits/active",{
+      method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
+    });
+    if(!result.ok||!Array.isArray(result.entries))throw Error("unavailable");
+    for(const item of result.entries){
+      const tr=document.createElement("tr");
+      tr.append(makeCell(item.email),makeCell(warsawTime(item.startedAt)),
+        makeCell(warsawTime(item.blockedAt)),makeCell(warsawTime(item.expiresAt)),
+        makeCell(item.used+" / "+item.limit),makeCell(item.reason));
+      const cell=document.createElement("td");
+      const button=document.createElement("button");
+      button.type="button";button.textContent="Odblokuj adres";
+      button.setAttribute("aria-label","Odblokuj "+item.email);
+      button.addEventListener("click",()=>void ownerLimitUnlock(item.email));
+      cell.append(button);tr.append(cell);rows.append(tr);
+    }
+    if(!result.entries.length){
+      const tr=document.createElement("tr"),cell=document.createElement("td");
+      cell.colSpan=7;cell.textContent="Brak aktywnych blokad adresów e-mail.";
+      tr.append(cell);rows.append(tr);
+    }
+    $("limit-active-info").textContent="Aktywne blokady: "+result.total+
+      " · Aktualizacja: "+warsawTime(result.asOf);
+  }catch{
+    $("limit-active-info").textContent="Nie udało się pobrać listy blokad. Spróbuj ponownie.";
+  }finally{
+    activeLimitLoading=false;$("limit-active-refresh").disabled=false;
+  }
+}
+async function ownerLimitUnlock(email){
+  if(!ownerCsrf||limitsSaving)return;
+  limitsSaving=true;$("limit-clear").disabled=true;
+  $("limit-message").textContent="Odblokowywanie wskazanego adresu…";
+  try{
+    const result=await request("/owner/newsletter/limits/unlock",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,confirmation:"ODBLOKUJ ADRES"})
+    });
+    $("limit-message").textContent=result.changed
+      ?"Odblokowano licznik adresu "+email+". Inne zabezpieczenia pozostają aktywne."
+      :"Blokada adresu "+email+" już wygasła.";
+  }catch{
+    $("limit-message").textContent="Nie potwierdzono odblokowania. Sprawdź ponownie stan.";
+  }finally{
+    verifiedLimitEmail=null;$("limit-result").hidden=true;limitsSaving=false;
+    await ownerLimitActive();
+    await ownerLimitHistory();
+  }
+}
 async function ownerLimitHistory(){
   if(!ownerCsrf)return;
   try{
@@ -1603,25 +1661,17 @@ $("limit-form").addEventListener("submit",event=>{
 $("limit-email").addEventListener("input",()=>{
   verifiedLimitEmail=null;$("limit-clear").disabled=true;$("limit-result").hidden=true;
 });
-$("limit-clear").addEventListener("click",async()=>{
-  if(!ownerCsrf||limitsSaving||!verifiedLimitEmail||
+$("limit-clear").addEventListener("click",()=>{
+  if(!verifiedLimitEmail||
      $("limit-email").value.trim().toLowerCase()!==verifiedLimitEmail)return;
-  limitsSaving=true;$("limit-clear").disabled=true;
-  $("limit-message").textContent="Odblokowywanie…";
-  try{
-    const r=await request("/owner/newsletter/limits/unlock",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({email:verifiedLimitEmail,confirmation:"ODBLOKUJ ADRES"})
-    });
-    $("limit-message").textContent=r.changed?"Odblokowano licznik adresu. Inne zabezpieczenia pozostają aktywne.":"Ograniczenie już wygasło.";
-    verifiedLimitEmail=null;$("limit-result").hidden=true;
-    await ownerLimitHistory();
-  }catch{
-    $("limit-message").textContent="Nie potwierdzono odblokowania. Sprawdź ponownie stan.";
-    verifiedLimitEmail=null;$("limit-result").hidden=true;
-  }finally{limitsSaving=false;}
+  void ownerLimitUnlock(verifiedLimitEmail);
 });
 $("limit-history-refresh").addEventListener("click",ownerLimitHistory);
+$("limit-active-refresh").addEventListener("click",ownerLimitActive);
 document.querySelector('a[href="#owner-limits"]').addEventListener("click",()=>{
-  if(ownerCsrf)void ownerLimitHistory();
+  if(ownerCsrf){void ownerLimitActive();void ownerLimitHistory();}
 });
+setInterval(()=>{
+  if(ownerCsrf&&location.hash==="#owner-limits"&&document.visibilityState==="visible")
+    void ownerLimitActive();
+},60000);

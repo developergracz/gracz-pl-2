@@ -1500,3 +1500,11 @@ footer .footer-brand span{color:#ff6573}
 .limit-history{margin-top:23px;border-top:1px solid #30605d;padding-top:16px}
 .limit-history .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .limit-history li{line-height:1.8}
+
+/* OWNER current email-only lock list */
+.limit-table-wrap{overflow-x:auto;max-width:100%;margin:12px 0 18px}
+.limit-active-table{width:100%;border-collapse:collapse;min-width:900px}
+.limit-active-table th,.limit-active-table td{padding:12px 10px;border-bottom:1px solid #37605c;text-align:left;vertical-align:middle;overflow-wrap:anywhere}
+.limit-active-table th{color:#99eee1;font-weight:700;white-space:nowrap}
+.limit-active-table td{color:#e2f4f3}
+.limit-active-table button{white-space:nowrap}
