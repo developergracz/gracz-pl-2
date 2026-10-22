@@ -31,3 +31,52 @@ test('expired limit is not reset and invalid address is rejected',()=>{
     assert.throws(()=>m.unlock(invalid),TypeError);
   }
 });
+
+test('live blocked list records first request, block, denial, and expiry',()=>{
+  let now=Date.parse('2026-10-22T20:00:00Z');
+  const map=new Map();
+  const owner=createNewsletterLimitControl({getBucket:e=>map.get(e),
+    clearBucket:e=>map.delete(e),now:()=>now,logger:{info(){}}});
+  const start=now;
+  for(let n=1;n<=3;n++){
+    map.set('blocked@example.com',{startedAt:start,count:n});owner.observe('blocked@example.com');
+  }
+  assert.equal(owner.listBlocked().total,0);
+  now+=180000;
+  map.set('blocked@example.com',{startedAt:start,count:4});
+  owner.observe('blocked@example.com');
+  const blockedAt=new Date(now).toISOString();
+  assert.equal(owner.listBlocked().total,1);
+  now+=1000;
+  map.set('blocked@example.com',{startedAt:start,count:5});
+  owner.observe('blocked@example.com');
+  const entry=owner.listBlocked().entries[0];
+  assert.equal(entry.email,'blocked@example.com');
+  assert.equal(entry.used,5);
+  assert.equal(entry.deniedAttempts,1);
+  assert.equal(entry.blockedAt,blockedAt);
+  assert.equal(entry.firstRequestAt,new Date(start).toISOString());
+  assert.equal(entry.expiresAt,new Date(start+3600000).toISOString());
+  assert.equal(entry.lastAttemptAt,new Date(now).toISOString());
+  assert.equal(owner.unlock('blocked@example.com').changed,true);
+  assert.equal(owner.listBlocked().total,0);
+});
+test('blocked address list expires automatically and cannot override unrelated limits',()=>{
+  let time=1000;
+  const map=new Map([['status:one@example.com',{startedAt:1000,count:5}],
+    ['status:two@example.com',{startedAt:1000,count:5}],
+    ['optin:one@example.com',{startedAt:1000,count:9}],
+    ['ip:network',{startedAt:1000,count:16}]]);
+  const owner=createNewsletterLimitControl({
+    getBucket:e=>map.get('status:'+e),clearBucket:e=>map.delete('status:'+e),
+    now:()=>time,logger:{info(){}}
+  });
+  owner.observe('one@example.com');owner.observe('two@example.com');
+  assert.equal(owner.listBlocked().total,2);
+  owner.unlock('one@example.com');
+  assert.equal(owner.listBlocked().total,1);
+  assert.equal(map.has('optin:one@example.com'),true);
+  assert.equal(map.has('ip:network'),true);
+  time+=3600000;
+  assert.equal(owner.listBlocked().total,0);
+});

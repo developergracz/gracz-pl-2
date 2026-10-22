@@ -376,6 +376,33 @@
           </div>
           <p id="limit-message" class="muted" role="status" aria-live="polite"></p>
           <p class="muted">Limit: 4 żądania/60 minut. Odblokowanie nie zmienia limitów IP, wspólnego budżetu wysyłek, blokad Resend ani zgód.</p>
+
+          <div class="limit-active-blocks">
+            <div class="section-title">
+              <div>
+                <h3>Aktualnie zablokowane adresy <span id="limit-active-count" aria-live="polite">—</span></h3>
+                <p class="muted">Aktywne ograniczenia statusu newslettera · godziny polskie</p>
+              </div>
+              <button id="limit-active-refresh" type="button">Odśwież listę</button>
+            </div>
+            <p id="limit-active-info" class="muted" role="status" aria-live="polite">Otwórz zakładkę, aby pobrać listę.</p>
+            <div class="limit-active-scroll">
+              <table class="limit-active-table" aria-label="Lista aktywnie zablokowanych adresów">
+                <thead><tr>
+                  <th scope="col">Adres e-mail</th>
+                  <th scope="col">Zablokowano</th>
+                  <th scope="col">Odblokowanie automatyczne</th>
+                  <th scope="col">Pierwsze zapytanie</th>
+                  <th scope="col">Ostatnia próba</th>
+                  <th scope="col">Zapytania / odrzucone</th>
+                  <th scope="col">Przyczyna</th>
+                  <th scope="col">Odblokowanie ręczne</th>
+                </tr></thead>
+                <tbody id="limit-active-body"><tr><td colspan="8">Brak danych.</td></tr></tbody>
+              </table>
+            </div>
+            <p class="muted">Lista dotyczy limitów e-mail bieżącej instancji API. Nie obejmuje blokad IP ani Resend.</p>
+          </div>
           <div class="limit-history">
             <div class="section-title">
               <h3>Historia odblokowań</h3>

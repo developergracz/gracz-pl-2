@@ -44,3 +44,29 @@ test("public duplicate response is specific only for confirmed active records", 
       req,{},new URL("https://test/newsletter/status-request"),"status");
   assert.deepEqual(statusRequest,{status:200,body:{ok:true,state:"request_received"}});
 });
+
+test('status rate observer includes quota exhaustion and rejected 429, not opt-in',async()=>{
+  const store=new Map(),seen=[];
+  const rateLimit=(map,key,_window,max)=>{
+    if(key.startsWith('status:')){
+      const data=map.get(key)||{startedAt:1,count:0};
+      data.count++;map.set(key,data);
+      if(data.count>max)throw Object.assign(new Error('limited'),{code:'RATE_LIMITED',status:429});
+    }
+  };
+  const route=createNewsletterRoute({
+    allowedOrigins:new Set(['https://gracz.pl']),
+    newsletter:{enabled:true,async requestOptIn(){return {state:'new'};},
+      async acceptStatus(){return {state:'request_received'};}},
+    newsletterIpBuckets:new Map(),newsletterEmailBuckets:store,rateLimit,
+    statusLimitObserver:email=>seen.push(store.get('status:'+email)?.count),
+    hashValue:v=>v,clientIp:()=> '127.0.0.1',readJson:async()=>({email:'a@example.com'}),
+    json:(_r,status,body)=>({status,body}),setCors(){},
+    normalizeEmail:v=>v,requiredString:v=>v,optionalString:()=>'',parseStartedAt:()=>0,
+    isValidEmailSyntax:()=>true,validateEmailDomain:async()=>{},logger:{log(){}}
+  });
+  const endpoint=new URL('https://test.invalid/newsletter/status-request');
+  for(let i=0;i<4;i++)assert.equal((await route(req,{},endpoint,'x')).status,200);
+  await assert.rejects(()=>route(req,{},endpoint,'x'),{status:429});
+  assert.deepEqual(seen,[1,2,3,4,5]);
+});

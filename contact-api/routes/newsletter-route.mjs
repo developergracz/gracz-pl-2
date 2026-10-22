@@ -17,6 +17,7 @@ export function createNewsletterRoute({
   isValidEmailSyntax,
   enforceFormTiming,
   validateEmailDomain,
+  statusLimitObserver = null,
   logger = console,
 }) {
   if (!(allowedOrigins instanceof Set)) {
@@ -103,13 +104,20 @@ export function createNewsletterRoute({
       if (startedAt > 0) enforceFormTiming(startedAt);
 
       await validateEmailDomain(email);
-      rateLimit(
-        newsletterEmailBuckets,
-        hashValue((statusRequest ? "status:" : "optin:") + email),
-        60 * 60 * 1000,
-        4,
-        "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
-      );
+      try {
+        rateLimit(
+          newsletterEmailBuckets,
+          hashValue((statusRequest ? "status:" : "optin:") + email),
+          60 * 60 * 1000,
+          4,
+          "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
+        );
+      } finally {
+        // Observer records only status quota exhaustion, including failed 429.
+        // It cannot affect public acceptance or expose membership.
+        if(statusRequest && statusLimitObserver)
+          try {statusLimitObserver(email);} catch { /* Keep original rate result. */ }
+      }
 
       const outcome = await (statusRequest ? newsletter.acceptStatus : newsletter.acceptOptIn || newsletter.requestOptIn)({
         email,

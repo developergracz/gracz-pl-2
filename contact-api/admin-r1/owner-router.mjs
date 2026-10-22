@@ -275,7 +275,8 @@ export function createOwnerRouter({
       }
 
       if(req.method==='POST'&&[
-        PREFIX+'/limits/inspect',PREFIX+'/limits/unlock',PREFIX+'/limits/history'
+        PREFIX+'/limits/inspect',PREFIX+'/limits/unlock',PREFIX+'/limits/history',
+        PREFIX+'/limits/blocked'
       ].includes(path)){
         if(!limits||!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);
@@ -283,9 +284,10 @@ export function createOwnerRouter({
         limitsBusy=true;
         try{
           const data=await input(req);
-          if(path===PREFIX+'/limits/history'){
+          if(path===PREFIX+'/limits/history'||path===PREFIX+'/limits/blocked'){
             if(Object.keys(data).length!==0)return reject(res,400);
-            return response(res,200,{ok:true,...limits.history()});
+            return response(res,200,{ok:true,...(path.endsWith('/blocked')
+              ?limits.listBlocked():limits.history())});
           }
           if(typeof data.email!=='string')return reject(res,400);
           if(path===PREFIX+'/limits/inspect'){

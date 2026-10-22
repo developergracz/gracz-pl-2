@@ -1500,3 +1500,15 @@ footer .footer-brand span{color:#ff6573}
 .limit-history{margin-top:23px;border-top:1px solid #30605d;padding-top:16px}
 .limit-history .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .limit-history li{line-height:1.8}
+
+/* OWNER live blocked-address table, Full Max Premium */
+.limit-active-blocks{padding:18px;margin:22px 0;border:1px solid #2d766e;border-radius:16px;background:#0b2329}
+.limit-active-blocks .section-title{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.limit-active-blocks h3{margin:0 0 4px}
+#limit-active-count{color:#7de9dc}
+.limit-active-scroll{max-width:100%;overflow-x:auto}
+.limit-active-table{width:100%;min-width:1050px;border-collapse:collapse}
+.limit-active-table th,.limit-active-table td{padding:11px 9px;text-align:left;vertical-align:top;border-bottom:1px solid #2f5559;font-size:12px}
+.limit-active-table th{color:#bceee4}
+.limit-active-table td:first-child{font-weight:700;overflow-wrap:anywhere}
+.limit-active-blocks button:focus-visible{outline:2px solid #fff;outline-offset:3px}
