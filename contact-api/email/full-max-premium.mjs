@@ -12,7 +12,7 @@ const BRAND_HTML='<span style="color:#ffffff !important;text-decoration:none">gr
   '<span style="color:#ef5261 !important;text-decoration:none">.pl</span>';
 function brandText(value) {
   const input=String(value);
-  const pattern=/(?<![a-z0-9@/.-])gracz\.pl(?![a-z0-9.-])/gi;
+  const pattern=/(?<![a-z0-9@/.-])gracz\.pl(?![a-z0-9-]|\.[a-z0-9]|\/)/gi;
   let out='',last=0;
   for(const match of input.matchAll(pattern)){
     out+=escapeEmailHtml(input.slice(last,match.index));
