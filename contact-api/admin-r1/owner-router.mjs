@@ -369,8 +369,13 @@ export function createOwnerRouter({
           const saved=await campaignDraftStore.saveTargeted(draft,ids);
           return response(res,201,{ok:true,...saved});
         }catch(e){
-          if(['invalid_campaign','invalid_targets','invalid_request'].includes(e?.code))
-            return reject(res,400);
+          // A stale/invalid session-scoped selection is rejected BEFORE any
+          // draft write. Only this deterministic failure may trigger a fresh
+          // OWNER list read; never retry on DB/transport uncertainty.
+          if(e?.code==='invalid_request')
+            return response(res,409,{ok:false,error:'recipient_selection_expired'});
+          if(['invalid_campaign','invalid_targets'].includes(e?.code))
+            return response(res,400,{ok:false,error:e.code});
           return reject(res,503);
         }
       }

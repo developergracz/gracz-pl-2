@@ -308,7 +308,14 @@ async function request(path, options) {
     headers: { ...options?.headers, "X-Owner-CSRF": ownerCsrf },
   });
   if (response.status === 401) { clear(); clearSummary(); clearRecent("Sesja wygasła."); location.replace("/owner/newsletter/login"); throw new Error("unauthorized"); }
-  if (!response.ok) throw new Error("unavailable");
+  if (!response.ok) {
+    const error = new Error("unavailable");
+    error.httpStatus = response.status;
+    const payload = await response.json().catch(() => null);
+    // Never echo API messages or arbitrary server data in OWNER UI.
+    error.code = typeof payload?.error === "string" ? payload.error : null;
+    throw error;
+  }
   return response.json();
 }
 
@@ -376,6 +383,26 @@ function openTargeted(items){
 const postTargeted=(path,payload)=>request("/owner/newsletter/"+path,{
   method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)
 });
+// A five-minute OWNER list handle can expire while the message is composed.
+// Renew ONLY after the server explicitly refused the old selection (409),
+// and ONLY for exactly the same currently-active mailbox. No raw mailbox is
+// accepted as sending authority; the replacement is a fresh opaque handle.
+async function renewSingleTargetedSelection(){
+  if(selectedRecipientEmails.length!==1||selectedHandles.length!==1)
+    throw new Error("selection_refresh_unavailable");
+  const email=selectedRecipientEmails[0].trim().toLowerCase();
+  const fresh=await request("/owner/newsletter/list",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cursor:null,query:email,state:"active",from:"",to:""})
+  });
+  if(fresh?.ok!==true||!Array.isArray(fresh.items))
+    throw new Error("selection_refresh_unavailable");
+  const exact=fresh.items.filter(row=>row?.state==="active"&&
+    typeof row.email==="string"&&row.email.trim().toLowerCase()===email&&
+    typeof row.handle==="string"&&row.handle.length>0);
+  if(exact.length!==1)throw new Error("selection_refresh_unavailable");
+  selectedHandles=[exact[0].handle];
+}
 $("send-found").addEventListener("click",()=>openTargeted(visibleActive));
 $("targeted-compose-close").addEventListener("click",()=>{
   if(!targetedBusy)targetedDialog.close();
@@ -478,15 +505,30 @@ $("targeted-compose").addEventListener("submit",async event=>{
   $("targeted-compose-close").disabled=true;
   targetedDialog.setAttribute("aria-busy","true");
   $("targeted-status").textContent="Trwa przygotowanie i wysyłanie. Nie ponawiaj.";
-  let stage="prepare";
+  let stage="save";
   try{
     const draft={subject:$("targeted-subject").value.trim(),
       body:$("targeted-body").value.trim(),audience:"confirmed_active_new_only"};
     // Prepare and approve the immutable recipient scope using existing APIs.
     // These fixed protocol fields are not extra OWNER authentication.
-    const saved=await postTargeted("campaign-targeted/save",{
-      ...draft,handles:selectedHandles});
+    let saved;
+    try{
+      saved=await postTargeted("campaign-targeted/save",{
+        ...draft,handles:selectedHandles});
+    }catch(error){
+      if(error?.httpStatus!==409||error.code!=="recipient_selection_expired")
+        throw error;
+      if(selectedRecipientEmails.length!==1)throw error;
+      try{await renewSingleTargetedSelection();}
+      catch{throw Object.assign(new Error("selection_refresh_unavailable"),
+        {code:"selection_refresh_unavailable"});}
+      // Previous request was rejected before database writes. Exactly one
+      // safe retry of the draft-save step; never retry approval or sending.
+      saved=await postTargeted("campaign-targeted/save",{
+        ...draft,handles:selectedHandles});
+    }
     if(!saved?.id)throw Error("missing_draft");
+    stage="approve";
     const approved=await postTargeted("campaign-drafts/approve",{
       ...draft,id:saved.id,confirmation:"ZATWIERDZAM TREŚĆ"});
     if(approved?.state!=="approved")throw Error("not_approved");
@@ -515,10 +557,26 @@ $("targeted-compose").addEventListener("submit",async event=>{
         ?"Żadna wiadomość nie została przyjęta do wysyłki. Pominięto: "+suppressed+"."
         :"Wynik niepewny. Nie ponawiaj wysyłki.";
     }
-  }catch{
-    $("targeted-status").textContent=stage==="send"
-      ?"Nie można potwierdzić wyniku wysyłki. Nie ponawiaj wysyłki."
-      :"Nie udało się potwierdzić przygotowania wiadomości. Nie rozpoczęto wysyłki.";
+  }catch(error){
+    if(stage==="send"){
+      $("targeted-status").textContent="Nie można potwierdzić wyniku wysyłki. Nie ponawiaj wysyłki.";
+    }else{
+      const code=error?.code;
+      $("targeted-status").textContent=
+        code==="recipient_selection_expired"||code==="selection_refresh_unavailable"
+          ?"Wybór odbiorcy wygasł lub nie można go ponownie potwierdzić. Odśwież listę subskrybentów i wybierz adres ponownie. Nie rozpoczęto wysyłki."
+          :code==="invalid_campaign"
+          ?"Sprawdź temat (3–160 znaków) i treść (10–20 000 znaków). Nie rozpoczęto wysyłki."
+          :code==="campaign_changed_or_approved"
+          ?"Nie można zatwierdzić szkicu: treść została zmieniona lub już zatwierdzona. Nie rozpoczęto wysyłki."
+          :stage==="approve"
+          ?"Nie udało się zatwierdzić szkicu. Nie rozpoczęto wysyłki. Sprawdź dostępność panelu."
+          :"Nie udało się zapisać szkicu. Nie rozpoczęto wysyłki. Sprawdź dostępność panelu.";
+      // No dispatch has been attempted; the draft remains in the editor.
+      // A new explicit click is required for any subsequent send attempt.
+      targetedStarted=false;
+      $("targeted-send").disabled=code==="recipient_selection_expired";
+    }
   }finally{
     targetedBusy=false;
     targetedDialog.removeAttribute("aria-busy");
