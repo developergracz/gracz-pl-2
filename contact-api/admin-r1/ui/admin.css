@@ -357,6 +357,32 @@ dialog::backdrop {
 .owner-login form label{margin:8px 0 0;}
 .owner-login button{margin-top:10px;}
 #login-status{min-height:24px;color:var(--muted);}
+/* Full Max Premium login validation: readable and centered, not a browser tooltip. */
+.owner-login #login-nick-validation{
+  display:flex;align-items:center;gap:12px;position:relative;z-index:2;
+  justify-self:center;width:min(600px,calc(100vw - 32px));max-width:calc(100vw - 32px);
+  padding:12px 15px;margin:0 0 4px;border:1px solid #d7a854;border-radius:12px;
+  background:linear-gradient(110deg,rgba(26,32,39,.98),rgba(11,39,49,.98));
+  box-shadow:0 14px 36px rgba(0,0,0,.47),0 0 0 1px rgba(71,226,208,.28);
+  color:#f8fcff;font-size:14px;line-height:1.4;font-weight:600;
+}
+.owner-login #login-nick-validation[hidden]{display:none;}
+.owner-login #login-nick-validation::before{
+  content:"";position:absolute;top:-6px;left:11%;width:10px;height:10px;
+  transform:rotate(45deg);background:#20272e;
+  border-left:1px solid #d7a854;border-top:1px solid #d7a854;
+}
+.owner-login .login-nick-validation__icon{
+  display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;
+  border-radius:7px;background:linear-gradient(135deg,#f0a438,#c87b19);
+  color:#fff;font-size:20px;font-weight:900;box-shadow:0 0 14px rgba(228,149,38,.24);
+}
+.owner-login #username[aria-invalid="true"]{
+  border-color:#e7bc65;box-shadow:0 0 0 2px rgba(87,233,213,.34);
+}
+@media(max-width:520px){
+  .owner-login #login-nick-validation{font-size:13px;padding:11px 12px;gap:10px;}
+}
 
 /* Keep OWNER login and recovery action visible on typical laptop viewports. */
 .owner-login{margin:clamp(12px,3vh,32px) auto;padding:clamp(14px,2vh,22px) 28px;}
