@@ -10,6 +10,8 @@ export const productionModules=Object.freeze([
   'new-only-newsletter.mjs',
   // Owner-only guarded admin graph. Disabled by default.
   'admin-r1/owner-router.mjs',
+  // Read-only ClamAV/converter interface contract; all processing remains OFF.
+  'attachment-lab/integration.mjs',
   'campaigns/draft-store.mjs',
   'campaigns/audience-proof-count.mjs',
   // OWNER test-send adapter is inert unless an explicit release flag and durable ledger exist.

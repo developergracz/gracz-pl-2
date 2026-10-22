@@ -6,6 +6,7 @@ import {createNewOnlySummary} from './summary.mjs';
 import {createNewOnlyTrendDetail} from './trend-detail.mjs';
 import {createReadService} from './service.mjs';
 import {privateHeaders,denyAdmin} from './deny.mjs';
+import {getAttachmentCapabilities} from '../attachment-lab/integration.mjs';
 const PREFIX='/owner/newsletter';
 const ORIGIN='https://gracz-contact-api.onrender.com';
 const maxBody=2048;
@@ -237,6 +238,10 @@ export function createOwnerRouter({
       }
       if(req.method==='GET'&&path===PREFIX+'/session')
         return response(res,200,{ok:true,csrf:session.csrf});
+      // Read-only OWNER capability contract: never accepts file content.
+      // No API route for uploading, scanning, conversion or attachment sending.
+      if(req.method==='GET'&&path===PREFIX+'/attachment-capabilities')
+        return response(res,200,{ok:true,...getAttachmentCapabilities()});
       if(req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX)){
         let html=await readFile(new URL('./ui/index.html',import.meta.url),'utf8');
         html=html.replace('"/admin.css"','"'+PREFIX+'/admin.css"')
