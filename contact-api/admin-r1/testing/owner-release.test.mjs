@@ -473,20 +473,31 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
 
 
 test('OWNER recovery form checks syntax but never reveals the registered recovery mailbox',async()=>{
-  const [router,script]=await Promise.all([
+  const [router,script,css]=await Promise.all([
     readFile(new URL('../owner-router.mjs',import.meta.url),'utf8'),
-    readFile(new URL('../ui/login.js',import.meta.url),'utf8')
+    readFile(new URL('../ui/login.js',import.meta.url),'utf8'),
+    readFile(new URL('../ui/admin.css',import.meta.url),'utf8')
   ]);
   assert.match(router,/id="forgot-email-hint"/);
+  assert.match(router,/id="forgot-email-validation"[^>]*role="alert" hidden/);
+  assert.match(router,/id="forgot-email-validation-message"/);
+  assert.match(router,/id="forgot-email"[^>]*required/);
   assert.match(router,/id="forgot-code"[^>]*minlength="10" maxlength="24"/);
   assert.match(router,/pattern="\(\?:\[A-Za-z\]\{10\}\|\[A-Za-z0-9_-\]\{24\}\)"/);
   assert.match(script,/recoveryEmail\.addEventListener\('input'/);
+  assert.match(script,/recoveryEmail\.addEventListener\('invalid',event=>\{\s*event\.preventDefault\(\)/);
+  assert.match(script,/Wpisz adres e-mail odzyskiwania hasła\./);
+  assert.match(script,/emailNotice\.hidden=false/);
+  assert.match(script,/if\(recoveryEmail\.validity\.valid\)hideEmailNotice\(\)/);
   assert.match(script,/recoveryEmail\.validity\.valid/);
   assert.match(script,/Adres ma poprawny format, ale to NIE potwierdza przypisania/);
   assert.match(script,/Hasło tymczasowe wyślemy tylko na wcześniej potwierdzoną skrzynkę/);
   assert.doesNotMatch(script,/Format adresu jest poprawny\. Kliknij/);
   assert.match(script,/Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło/);
   assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
+  assert.match(css,/#forgot-dialog \.forgot-email-validation\{/);
+  assert.match(css,/#forgot-dialog \.forgot-email-validation\[hidden\]\{display:none;\}/);
+  assert.match(css,/justify-self:center;width:max-content;max-width:100%/);
 });
 
 test('M6 recovery mailer sends transactional code only to the verified mailbox',async()=>{
