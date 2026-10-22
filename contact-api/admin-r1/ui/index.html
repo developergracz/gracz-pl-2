@@ -453,6 +453,7 @@
         <p id="targeted-recipients" role="status"></p>
         <p class="muted">System przed wysyłką ponownie sprawdzi DOI, wypisania i blokady doręczeń. Wysłana wiadomość zawiera link wypisania.</p>
         <form id="targeted-compose">
+          <div class="targeted-compose-fields">
           <label for="targeted-subject">Temat wiadomości</label>
           <input id="targeted-subject" type="text" minlength="3" maxlength="160" required autocomplete="off" />
           <label for="targeted-body">Treść wiadomości</label>
@@ -495,6 +496,7 @@
             <div class="targeted-preview-content">
               <div id="targeted-preview-body">Podgląd wiadomości będzie widoczny tutaj.</div>
             </div>
+          </div>
           </div>
           <div class="targeted-compose-actions">
             <button type="submit" id="targeted-send"><span aria-hidden="true">➤</span> Wyślij wiadomość</button>
