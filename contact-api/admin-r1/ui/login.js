@@ -122,6 +122,30 @@ if(recoveryDialog){
   const completeStatus=document.getElementById('forgot-complete-status');
   const recoveryEmail=document.getElementById('forgot-email');
   const recoveryHint=document.getElementById('forgot-email-hint');
+  const emailNotice=document.getElementById('forgot-email-validation');
+  const emailNoticeMessage=document.getElementById('forgot-email-validation-message');
+  const hideEmailNotice=()=>{
+    emailNotice.hidden=true;
+    recoveryEmail.removeAttribute('aria-invalid');
+    recoveryEmail.setAttribute('aria-describedby','forgot-email-hint');
+  };
+  const showEmailNotice=()=>{
+    emailNoticeMessage.textContent=recoveryEmail.validity.valueMissing
+      ?'Wpisz adres e-mail odzyskiwania hasła.'
+      :'Wpisz poprawny adres e-mail.';
+    emailNotice.hidden=false;
+    recoveryEmail.setAttribute('aria-invalid','true');
+    recoveryEmail.setAttribute('aria-describedby',
+      'forgot-email-hint forgot-email-validation-message');
+  };
+  recoveryEmail.addEventListener('invalid',event=>{
+    event.preventDefault(); // Keep required/type=email validation, suppress native popup.
+    showEmailNotice();
+  });
+  recoveryEmail.addEventListener('input',()=>{
+    if(recoveryEmail.validity.valid)hideEmailNotice();
+    else if(!emailNotice.hidden)showEmailNotice();
+  });
   recoveryEmail.addEventListener('input',()=>{
     // Format-only feedback: a public login must never identify the OWNER mailbox.
     const value=recoveryEmail.value.trim();
@@ -133,6 +157,7 @@ if(recoveryDialog){
   });
   sendForm.addEventListener('submit',async event=>{
     event.preventDefault();
+    hideEmailNotice();
     const button=sendForm.querySelector('button[type="submit"]');
     if(button.disabled)return;
     button.disabled=true;
