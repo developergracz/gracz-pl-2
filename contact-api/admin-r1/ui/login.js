@@ -55,6 +55,34 @@ if(nickname&&nickNotice){
   });
 }
 
+
+const passwordInput=document.getElementById('password');
+const passwordNotice=document.getElementById('login-password-validation');
+if(passwordInput&&passwordNotice){
+  const message=document.getElementById('login-password-validation-message');
+  const hidePasswordNotice=()=>{
+    passwordNotice.hidden=true;
+    passwordInput.removeAttribute('aria-invalid');
+    passwordInput.removeAttribute('aria-describedby');
+  };
+  const showPasswordNotice=()=>{
+    message.textContent=passwordInput.validity.valueMissing
+      ?'Wpisz hasło.'
+      :'Hasło jest za krótkie.';
+    passwordNotice.hidden=false;
+    passwordInput.setAttribute('aria-invalid','true');
+    passwordInput.setAttribute('aria-describedby','login-password-validation-message');
+  };
+  passwordInput.addEventListener('invalid',event=>{
+    event.preventDefault(); // Keep native constraints without the unstyled browser popup.
+    showPasswordNotice();
+  });
+  passwordInput.addEventListener('input',()=>{
+    if(passwordInput.validity.valid)hidePasswordNotice();
+    else if(!passwordNotice.hidden)showPasswordNotice();
+  });
+}
+
 form.addEventListener('submit',async event=>{
   event.preventDefault();
   const password=document.getElementById('password');
