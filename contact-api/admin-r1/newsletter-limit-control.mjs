@@ -17,7 +17,7 @@ export function createNewsletterLimitControl({getBucket,clearBucket,now=Date.now
     const blocked=used>=MAX,known=blocked?active.get(email):null;
     return {email,used,limit:MAX,blocked,remaining:Math.max(0,MAX-used),
       startedAt:live?new Date(entry.startedAt).toISOString():null,
-      blockedAt:known?.startedAt===entry?.startedAt?new Date(known.blockedAt).toISOString():null,
+      blockedAt:known&&entry&&known.startedAt===entry.startedAt?new Date(known.blockedAt).toISOString():null,
       expiresAt:live?new Date(entry.startedAt+WINDOW).toISOString():null};
   }
   // Only exhausted status buckets are indexed. Raw addresses never enter logs or
