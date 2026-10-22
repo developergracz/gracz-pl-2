@@ -1,4 +1,4 @@
-// Shared, presentation-only HTML for gracz.pl mail. Never embeds remote assets or tracking.
+// Shared, presentation-only HTML for gracz.pl mail. Only one fixed first-party mail branding PNG; no tracking URLs.
 export function escapeEmailHtml(value) {
   return String(value).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -105,7 +105,12 @@ export function renderPremiumEmail({
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="#061218"><tr><td align="center" style="padding:30px 12px">
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:620px;background:#10242d;border:1px solid #24505b;border-radius:18px">
 <tr><td style="padding:28px;background:#0b1d25;border-bottom:1px solid #24434d;border-radius:18px 18px 0 0">
- <div style="font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff">gracz<span style="color:#ef5261">.pl</span></div>
+ <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+  <td width="66" valign="middle" style="width:66px;padding:0 12px 0 0">
+   <img src="https://gracz.pl/assets/gracz-envelope-yellow-spade.png" width="54" height="54" alt="Koperta z żółtym pikiem" style="display:block;width:54px;height:54px;border:0;outline:none;text-decoration:none">
+  </td>
+  <td valign="middle" style="vertical-align:middle"><div style="font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff">gracz<span style="color:#ef5261">.pl</span></div></td>
+ </tr></table>
  <div style="margin-top:8px;font-size:11px;letter-spacing:1.4px;font-weight:700;color:#74dfd3">FULL MAX PREMIUM · ${escapeEmailHtml(category)}</div>
 </td></tr>
 <tr><td style="padding:30px 28px 15px">
