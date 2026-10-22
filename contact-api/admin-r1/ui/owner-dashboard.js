@@ -324,6 +324,31 @@ function refreshTargetedButton(){
   $("send-found").textContent="Wyślij do znalezionych ("+visibleActive.length+")";
   $("send-found").disabled=!targetedReady||visibleActive.length===0;
 }
+function renderAttachmentCapabilities(verified=false){
+  // Backend is authoritative. Even a successful lab run is not production AV.
+  $("targeted-antivirus-state").textContent=verified
+    ?"◇ ClamAV: interfejs podłączony · skanowanie wyłączone"
+    :"◇ Skan antywirusowy: niedostępny · integracja niepotwierdzona";
+  $("targeted-converter-state").textContent=verified
+    ?"⚙ Konwerter: interfejs podłączony · konwersja wyłączona"
+    :"⚙ Konwersja: oczekuje na konfigurację · integracja niepotwierdzona";
+  $("targeted-threat-state").textContent="◇ Kontrola zagrożeń: niedostępna · wysyłka wyłączona";
+}
+async function refreshAttachmentCapabilities(){
+  renderAttachmentCapabilities(false);
+  try{
+    const info=await request("/owner/newsletter/attachment-capabilities");
+    // Never infer availability from an incomplete or unexpectedly enabled reply.
+    const confirmed=info?.ok===true && info?.mode==="prepared_disabled"
+      && info?.uploadsEnabled===false && info?.scanningEnabled===false
+      && info?.conversionEnabled===false && info?.sendingEnabled===false
+      && info?.scanner?.engine==="clamav" && info?.scanner?.enabled===false
+      && info?.converter?.enabled===false;
+    if(targetedDialog.open)renderAttachmentCapabilities(confirmed);
+  }catch{
+    if(targetedDialog.open)renderAttachmentCapabilities(false);
+  }
+}
 function openTargeted(items){
   if(!targetedReady||targetedBusy||targetedDialog.open||!Array.isArray(items)||
      items.length<1||items.length>10||
@@ -345,6 +370,8 @@ function openTargeted(items){
     ?"Odbiorca: "+items[0].email
     :"Wybrano "+items.length+" aktywnych osób z bieżącej strony.";
   targetedDialog.showModal();$("targeted-subject").focus();
+  // No uploads or processing; one authenticated status read when dialog opens.
+  void refreshAttachmentCapabilities();
 }
 const postTargeted=(path,payload)=>request("/owner/newsletter/"+path,{
   method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)

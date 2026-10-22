@@ -481,9 +481,9 @@
             <p id="targeted-attachment-status" role="status" aria-live="polite">Załączniki wymagają aktywnego skanera antywirusowego. Obecnie wysyłanie plików jest wyłączone.</p>
             <button type="button" id="targeted-attachment-remove" hidden>Usuń załącznik</button>
             <div class="targeted-attachment-safety" aria-label="Stan ochrony załączników">
-              <span>⚙ Konwersja: oczekuje na konfigurację</span>
-              <span>◇ Skan antywirusowy: niedostępny</span>
-              <span>◇ Kontrola zagrożeń: niedostępna</span>
+              <span id="targeted-converter-state">⚙ Konwersja: oczekuje na konfigurację · interfejs przygotowany</span>
+              <span id="targeted-antivirus-state">◇ Skan antywirusowy: niedostępny · interfejs ClamAV przygotowany</span>
+              <span id="targeted-threat-state">◇ Kontrola zagrożeń: niedostępna · wysyłka wyłączona</span>
             </div>
           </div>
           <div class="targeted-preview" aria-live="polite">
