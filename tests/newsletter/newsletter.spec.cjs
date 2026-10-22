@@ -489,3 +489,61 @@ for(const [mode,state] of [['confirm','already_subscribed'],['confirm','resubscr
     expect(requests).toHaveLength(1);
   });
 }
+
+
+test('DOI email link opens centered Premium confirmation, with one explicit consent POST',async({page})=>{
+  const calls=[];
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
+    route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ready:true,configured:true,intakePaused:false,schemaReady:true,newOnly:true})}));
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/confirm',route=>{
+    calls.push(route.request().postDataJSON());
+    return route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({ok:true,state:'subscribed'})});
+  });
+  const proof='ni3.912cabea-71cc-4c26-9201-3bd421333333.'+'b'.repeat(43);
+  await page.goto('/newsletter/#confirm='+proof);
+  const dialog=page.locator('#nl-action-panel');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute('open','');
+  await expect(dialog.locator('#nl-action-title')).toHaveText('Potwierdź zapis do newslettera');
+  await expect(dialog.locator('#nl-action-button')).toBeFocused();
+  const bounds=await dialog.boundingBox(),viewport=page.viewportSize();
+  expect(bounds).not.toBeNull();
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y+bounds.height).toBeLessThanOrEqual(viewport.height+1);
+  expect(Math.abs(bounds.y+bounds.height/2-viewport.height/2)).toBeLessThan(3);
+  expect(await page.evaluate(()=>scrollY)).toBe(0);
+  expect(page.url()).not.toContain(proof);
+  expect(calls).toHaveLength(0);
+  await dialog.locator('#nl-action-button').click();
+  await expect(dialog.locator('#nl-action-title')).toHaveText('Newsletter aktywny');
+  await expect(dialog.locator('#nl-action-status')).toContainText('Newsletter aktywny');
+  await expect(dialog.locator('#nl-action-close')).toHaveText('Zrozumiałem');
+  expect(calls).toEqual([{token:proof}]);
+  await dialog.locator('#nl-action-close').click();
+  await expect(dialog).toBeHidden();
+});
+
+test('closing DOI window never confirms consent and does not retain the bearer link',async({page})=>{
+  const posts=[];
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
+    route.fulfill({status:503,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},body:'{}'}));
+  await page.route('https://gracz-contact-api.onrender.com/newsletter/confirm',route=>{
+    posts.push(route.request().postDataJSON());return route.abort();
+  });
+  const proof='ni3.912cabea-71cc-4c26-9201-3bd421333333.'+'c'.repeat(43);
+  await page.goto('/newsletter/#confirm='+proof);
+  const dialog=page.locator('#nl-action-panel');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('#nl-action-close').click();
+  await expect(dialog).toBeHidden();
+  expect(posts).toEqual([]);
+  expect(page.url()).not.toContain(proof);
+  await page.reload();
+  await expect(dialog).toBeHidden();
+  expect(posts).toEqual([]);
+});
