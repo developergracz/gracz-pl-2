@@ -1059,3 +1059,75 @@ footer .footer-brand span{color:#ff6573}
   #targeted-dialog .targeted-preview{height:auto;min-height:140px;max-height:230px;}
 }
 @media(prefers-reduced-motion:reduce){#targeted-dialog .targeted-compose-actions button,#targeted-dialog .targeted-toolbar button{transition:none;}}
+
+/* Equal-size Full Max Premium composer columns; attachment policy is fail-closed. */
+#targeted-dialog #targeted-compose{
+  grid-template-areas:
+   "subject-label subject-label"
+   "subject subject"
+   "body-label body-label"
+   "body preview"
+   "attachments preview"
+   "actions actions";
+  grid-template-rows:auto auto auto auto minmax(0,1fr) auto;
+  align-items:stretch;gap:8px 12px;
+}
+#targeted-dialog .targeted-editor{
+  border:1px solid #477482;box-shadow:none;
+}
+#targeted-dialog .targeted-editor:focus-within{
+  border-color:#60c3bd;box-shadow:0 0 0 1px rgba(96,195,189,.22);
+}
+#targeted-dialog .targeted-editor #targeted-body:focus,
+#targeted-dialog .targeted-editor #targeted-body:focus-visible{
+  outline:none!important;border:0;box-shadow:none!important;
+}
+#targeted-dialog .targeted-attachments{grid-area:attachments;min-width:0;
+  background:linear-gradient(180deg,#0a2733,#081d2a);border:1px solid #3a6b79;
+  border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+#targeted-dialog .targeted-attachment-picker{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+#targeted-dialog .targeted-attachment-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;border:1px solid #51dfcc;color:#61f6e0;
+  background:#0a2835;border-radius:10px;padding:9px 13px;
+  cursor:pointer;min-height:37px;white-space:nowrap;
+}
+#targeted-dialog .targeted-attachment-button:focus-within,
+#targeted-dialog .targeted-attachment-button:hover{background:#15414b;}
+#targeted-dialog #targeted-attachment{position:absolute;width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);border:0;}
+#targeted-dialog #targeted-attachment:focus-visible + .targeted-attachment-limit{outline:2px solid #71e4d6;outline-offset:2px;}
+#targeted-dialog .targeted-attachment-limit{color:#b5d2db;font-size:11px;}
+#targeted-dialog #targeted-attachment-status{font-size:12px;line-height:1.45;color:#e8cf94;}
+#targeted-dialog #targeted-attachment-remove{align-self:flex-start;width:auto!important;
+  min-height:34px;padding:6px 12px;border:1px solid #7ca5ae;border-radius:9px;background:#16303d;}
+#targeted-dialog .targeted-attachment-safety{display:flex;flex-wrap:wrap;gap:5px;}
+#targeted-dialog .targeted-attachment-safety span{flex:1 1 125px;
+  padding:8px 7px;border:1px solid #365566;border-radius:9px;
+  background:rgba(28,63,77,.4);color:#b7cbd1;
+  font-size:10px;line-height:1.3;text-align:center;}
+#targeted-dialog .targeted-preview{display:flex;flex-direction:column;
+  align-self:stretch;justify-content:flex-start;height:100%;min-height:0;
+  max-height:none;overflow:hidden;padding:10px;border:1px solid #477482;}
+#targeted-dialog .targeted-preview-heading{flex:0 0 auto;padding:8px 8px 12px;
+  display:grid;gap:8px;min-height:93px;}
+#targeted-dialog .targeted-preview-label{margin-bottom:0;}
+#targeted-dialog #targeted-preview-subject{margin-bottom:0;}
+#targeted-dialog .targeted-preview-hint{color:#adced7;font-size:12px;}
+#targeted-dialog .targeted-preview-content{
+  flex:1;min-height:140px;overflow:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;background:#071826;
+  border:1px solid #315969;border-radius:12px;padding:14px;}
+#targeted-dialog #targeted-preview-body{min-width:0;overflow-wrap:anywhere;}
+#targeted-dialog .targeted-compose-actions{padding-top:5px;}
+@media(min-width:651px){
+ #targeted-dialog #targeted-compose{grid-template-columns:repeat(2,minmax(0,1fr));}
+ #targeted-dialog .targeted-preview{grid-row:4 / 6;}
+}
+@media(max-width:650px){
+ #targeted-dialog #targeted-compose{grid-template-columns:minmax(0,1fr);
+   grid-template-areas:"subject-label" "subject" "body-label" "body" "attachments" "preview" "actions";
+   grid-template-rows:auto;}
+ #targeted-dialog .targeted-preview{height:330px;min-height:260px;max-height:none;}
+ #targeted-dialog .targeted-preview-content{min-height:140px;}
+}

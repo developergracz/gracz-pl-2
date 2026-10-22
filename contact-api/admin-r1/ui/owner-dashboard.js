@@ -335,8 +335,11 @@ function openTargeted(items){
   $("targeted-send").disabled=false;
   $("targeted-compose-close").disabled=false;
   $("targeted-preview-subject").textContent="Podgląd tematu";
-  $("targeted-preview-body").textContent="Podgląd wiadomości";
+  $("targeted-preview-body").textContent="Podgląd wiadomości będzie widoczny tutaj.";
   $("targeted-body-count").textContent="0 / 20 000 znaków";
+  $("targeted-attachment").value="";
+  $("targeted-attachment-remove").hidden=true;
+  $("targeted-attachment-status").textContent="Załączniki wymagają aktywnego skanera antywirusowego. Obecnie wysyłanie plików jest wyłączone.";
   $("targeted-status").textContent="";
   $("targeted-recipients").textContent=items.length===1
     ?"Odbiorca: "+items[0].email
@@ -359,7 +362,32 @@ $("targeted-subject").addEventListener("input",()=>{
 const targetedBody=$("targeted-body");
 targetedBody.addEventListener("input",()=>{
   $("targeted-body-count").textContent=targetedBody.value.length+" / 20 000 znaków";
-  campaignRenderPreview(targetedBody.value,$("targeted-preview-body"));
+  if(targetedBody.value.trim()) campaignRenderPreview(targetedBody.value,$("targeted-preview-body"));
+  else $("targeted-preview-body").textContent="Podgląd wiadomości będzie widoczny tutaj.";
+});
+// Selecting a file is local-only. Never send bytes, names or paths to the API
+// until server-side malware scanning, conversion and durable storage exist.
+// Text-only delivery continues to use the existing consent-checked endpoint.
+const targetedAttachment=$("targeted-attachment");
+targetedAttachment.addEventListener("change",()=>{
+  const file=targetedAttachment.files?.[0];
+  const note=$("targeted-attachment-status");
+  $("targeted-attachment-remove").hidden=!file;
+  if(!file){
+    note.textContent="Załączniki wymagają aktywnego skanera antywirusowego. Obecnie wysyłanie plików jest wyłączone.";
+    return;
+  }
+  const allowed=/\.(?:pdf|docx|xlsx|png|jpe?g|zip)$/i.test(file.name);
+  if(!allowed || file.size<1 || file.size>10*1024*1024){
+    note.textContent="Nieprawidłowy załącznik. Limit: 10 MB; dozwolone rozszerzenia PDF, DOCX, XLSX, PNG, JPG, ZIP. Nie wysłano pliku.";
+    return;
+  }
+  note.textContent="Wybrano plik: "+file.name+". Nie przesłano go na serwer. Skaner antywirusowy nie jest skonfigurowany; wysyłka z załącznikiem jest zablokowana.";
+});
+$("targeted-attachment-remove").addEventListener("click",()=>{
+  if(targetedBusy)return;
+  targetedAttachment.value="";
+  targetedAttachment.dispatchEvent(new Event("change",{bubbles:true}));
 });
 function targetedReplace(text,start,end,selectFrom,selectTo){
   if(targetedBody.value.length-(end-start)+text.length>targetedBody.maxLength){
@@ -413,6 +441,10 @@ targetedBody.addEventListener("keydown",event=>{
 $("targeted-compose").addEventListener("submit",async event=>{
   event.preventDefault();
   if(targetedBusy||targetedStarted||!targetedReady||!selectedHandles.length)return;
+  if(targetedAttachment.files?.length){
+    $("targeted-status").textContent="Nie można wysłać załącznika bez aktywnego skanera i kontroli bezpieczeństwa. Usuń plik, aby wysłać wiadomość tekstową.";
+    return;
+  }
   if(!$("targeted-compose").reportValidity())return;
   targetedBusy=true;targetedStarted=true;
   $("targeted-send").disabled=true;

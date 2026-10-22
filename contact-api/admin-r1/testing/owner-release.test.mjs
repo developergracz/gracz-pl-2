@@ -48,6 +48,13 @@ test('OWNER one-click Premium send preserves recipient consent and durable dispa
   assert.match(html,/role="toolbar" aria-label="Formatowanie treści wiadomości"/);
   assert.match(html,/data-targeted-format="bold"/);
   assert.match(html,/id="targeted-preview-body"/);
+  assert.match(html,/id="targeted-attachment"/);
+  assert.match(html,/id="targeted-attachment-remove"/);
+  assert.match(html,/Skan antywirusowy: niedostępny/);
+  assert.match(ui,/if\(targetedAttachment.files\?\.length\)\{/);
+  assert.match(ui,/nie jest skonfigurowany; wysyłka z załącznikiem jest zablokowana/);
+  assert.match(css,/#targeted-dialog \.targeted-preview-heading/);
+  assert.match(css,/#targeted-dialog \.targeted-editor:focus-within\{/);
   assert.match(ui,/campaignRenderPreview\(targetedBody.value,\$\("targeted-preview-body"\)\)/);
   assert.match(sender,/markdown:targeted/);
   assert.match(css,/#targeted-dialog \.targeted-compose-actions button\{flex:0 0 auto!important;width:auto!important/);
