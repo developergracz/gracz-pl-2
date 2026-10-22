@@ -1177,7 +1177,7 @@ footer .footer-brand span{color:#ff6573}
 #targeted-dialog[open]{
   display:flex;
   flex-direction:column;
-  height:min(760px,calc(100dvh - 24px));
+  height:min(860px,calc(100dvh - 24px));
   max-height:calc(100dvh - 24px);
   overflow:hidden;
 }
@@ -1230,9 +1230,10 @@ footer .footer-brand span{color:#ff6573}
   max-height:none;
 }
 #targeted-dialog .targeted-editor #targeted-body{
-  height:clamp(105px,16vh,146px);
-  min-height:105px;
-  max-height:180px;
+  /* Restore a comfortable editor; the fields, never the actions, scroll on short screens. */
+  height:clamp(195px,24dvh,232px);
+  min-height:195px;
+  max-height:280px;
 }
 #targeted-dialog .targeted-preview-content{
   min-height:100px;
