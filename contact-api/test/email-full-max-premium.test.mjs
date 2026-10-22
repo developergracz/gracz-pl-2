@@ -18,7 +18,9 @@ test('premium mail escapes user content, has correct brand and accessible CTA',(
   assert.doesNotMatch(html,/<script\b/);
   assert.match(html,/Potwierdź zapis<\/a>/);
   assert.match(html,/Wypisz się z newslettera/);
-  assert.doesNotMatch(html,/<img\b|<iframe\b/);
+  assert.match(html,/<img src="https:\/\/gracz\.pl\/assets\/gracz-envelope-yellow-spade\.png" width="54" height="54" alt="Koperta z żółtym pikiem"/);
+  assert.equal((html.match(/<img\b/g)||[]).length,1,'Only the approved first-party branding image may load');
+  assert.doesNotMatch(html,/<iframe\b/);
 });
 
 test('approved mail identity keeps only white-red gracz.pl and thin-seam yellow-spade envelope',()=>{
@@ -30,6 +32,10 @@ test('approved mail identity keeps only white-red gracz.pl and thin-seam yellow-
   assert.match(svg,/stroke="#CED3D9" stroke-width="1\.15"/);
   assert.match(svg,/fill="#FFCC21"/);
   assert.doesNotMatch(svg,/<text\b|<script\b|<image\b/i);
+  const png=readFileSync(new URL('../../maintenance-site/assets/gracz-envelope-yellow-spade.png',import.meta.url));
+  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  assert.ok(png.length>100,'Approved SVG raster must be available as lossless PNG');
+
 });
 
 test('premium mail disallows external, insecure and credential-bearing action URLs',()=>{
@@ -96,5 +102,6 @@ test('brand styling preserves safe markdown links and HTML escaping',()=>{
   assert.match(html,/<a href="https:\/\/gracz\.pl\/" style="color:#8be6df;text-decoration:underline">/);
   assert.match(html,/&lt;script&gt;/);
   assert.match(html,/&lt;img src=x&gt;/);
-  assert.doesNotMatch(html,/<script\b|<img\b/);
+  assert.doesNotMatch(html,/<script\b|<img src=x>/);
+  assert.equal((html.match(/<img\b/g)||[]).length,1);
 });
