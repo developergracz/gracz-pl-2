@@ -490,15 +490,20 @@ test('OWNER recovery form checks syntax but never reveals the registered recover
   assert.match(script,/emailNotice\.hidden=false/);
   assert.match(script,/if\(recoveryEmail\.validity\.valid\)hideEmailNotice\(\)/);
   assert.match(script,/recoveryEmail\.validity\.valid/);
-  assert.match(script,/Ten adres e-mail nie został potwierdzony jako przypisany do konta administratora/);
-  assert.match(script,/Podaj adres e-mail użyty przy konfiguracji odzyskiwania hasła/);
-  assert.doesNotMatch(script,/Format adresu jest poprawny\. Kliknij/);
-  assert.match(script,/Jeśli wpisany adres jest zgodny, otrzymasz 10-literowe hasło/);
+  assert.match(script,/Format adresu jest poprawny\. Kliknij/);
+  assert.doesNotMatch(script,/Ten adres e-mail nie został potwierdzony jako przypisany/);
+  assert.match(script,/recoveryHint\.classList\.toggle\('is-invalid',invalid\)/);
+  assert.match(script,/requestStatus\.setAttribute\('data-state','accepted'\)/);
+  assert.match(script,/Prośba została przyjęta\. Jeśli wpisany adres jest przypisany/);
+  assert.match(script,/10-literowy kod odzyskiwania ważny 10 minut/);
+  assert.match(script,/requestStatus\.setAttribute\('data-state','error'\)/);
   assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
   assert.match(css,/#forgot-dialog \.forgot-email-validation\{/);
   assert.match(css,/#forgot-dialog \.forgot-email-validation\[hidden\]\{display:none;\}/);
-  assert.match(css,/#forgot-dialog \.forgot-email-hint\{[\s\S]*?color:#ff9197/);
-  assert.match(css,/#forgot-dialog #forgot-request-status\{[\s\S]*?color:#ff9197/);
+  assert.match(css,/#forgot-dialog \.forgot-email-hint\{[\s\S]*?color:#b5f1e5/);
+  assert.match(css,/#forgot-dialog \.forgot-email-hint\.is-invalid\{[\s\S]*?color:#ff9197/);
+  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="accepted"\]\{[\s\S]*?color:#91f1d9/);
+  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="error"\]\{[\s\S]*?color:#ff9197/);
   assert.match(css,/justify-self:center;width:max-content;max-width:100%/);
 });
 
