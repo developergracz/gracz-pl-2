@@ -490,13 +490,15 @@ test('OWNER recovery form checks syntax but never reveals the registered recover
   assert.match(script,/emailNotice\.hidden=false/);
   assert.match(script,/if\(recoveryEmail\.validity\.valid\)hideEmailNotice\(\)/);
   assert.match(script,/recoveryEmail\.validity\.valid/);
-  assert.match(script,/Adres ma poprawny format, ale to NIE potwierdza przypisania/);
-  assert.match(script,/Hasło tymczasowe wyślemy tylko na wcześniej potwierdzoną skrzynkę/);
+  assert.match(script,/Ten adres e-mail nie został potwierdzony jako przypisany do konta administratora/);
+  assert.match(script,/Podaj adres e-mail użyty przy konfiguracji odzyskiwania hasła/);
   assert.doesNotMatch(script,/Format adresu jest poprawny\. Kliknij/);
-  assert.match(script,/Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło/);
+  assert.match(script,/Jeśli wpisany adres jest zgodny, otrzymasz 10-literowe hasło/);
   assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
   assert.match(css,/#forgot-dialog \.forgot-email-validation\{/);
   assert.match(css,/#forgot-dialog \.forgot-email-validation\[hidden\]\{display:none;\}/);
+  assert.match(css,/#forgot-dialog \.forgot-email-hint\{[\s\S]*?color:#ff9197/);
+  assert.match(css,/#forgot-dialog #forgot-request-status\{[\s\S]*?color:#ff9197/);
   assert.match(css,/justify-self:center;width:max-content;max-width:100%/);
 });
 
