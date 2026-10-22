@@ -31,3 +31,44 @@ test('expired limit is not reset and invalid address is rejected',()=>{
     assert.throws(()=>m.unlock(invalid),TypeError);
   }
 });
+
+test('live block registry shows dates, expiry and manual unlock',()=>{
+  let time=10_000;
+  const buckets=new Map([['status:a@example.com',{startedAt:9000,count:4}],
+    ['status:b@example.com',{startedAt:9500,count:5}],
+    ['optin:a@example.com',{startedAt:9000,count:4}]]);
+  const control=createNewsletterLimitControl({getBucket:email=>buckets.get('status:'+email),
+    clearBucket:email=>buckets.delete('status:'+email),now:()=>time,logger:{info(){}}});
+  control.observe('a@example.com');time+=100;
+  control.observe('b@example.com');
+  const snapshot=control.listActive();
+  assert.equal(snapshot.total,2);
+  assert.deepEqual(snapshot.entries.map(x=>x.email),['b@example.com','a@example.com']);
+  assert.equal(snapshot.entries[0].blockedAt,new Date(time).toISOString());
+  assert.equal(snapshot.entries[0].expiresAt,new Date(9500+3600000).toISOString());
+  assert.equal(snapshot.entries[0].startedAt,new Date(9500).toISOString());
+  assert.equal(snapshot.entries[1].used,4);
+  assert.equal(control.unlock('b@example.com').changed,true);
+  assert.equal(control.listActive().total,1);
+  assert.equal(buckets.has('optin:a@example.com'),true);
+  time=9000+3600000;
+  assert.equal(control.listActive().total,0);
+  assert.equal(control.inspect('a@example.com').blocked,false);
+});
+
+test('registry never lists sub-quota or opt-in buckets',()=>{
+  let time=1000;
+  const buckets=new Map([['status:user@example.com',{startedAt:1000,count:3}],
+    ['optin:other@example.com',{startedAt:1000,count:10}]]);
+  const m=createNewsletterLimitControl({getBucket:e=>buckets.get('status:'+e),
+    clearBucket:e=>buckets.delete('status:'+e),now:()=>time,logger:{info(){}}});
+  m.observe('user@example.com');
+  assert.equal(m.listActive().total,0);
+  buckets.get('status:user@example.com').count=4;
+  time=1111;m.observe('user@example.com');
+  assert.equal(m.listActive().entries[0].blockedAt,new Date(1111).toISOString());
+  buckets.get('status:user@example.com').count=8;
+  time=1222;m.observe('user@example.com');
+  assert.equal(m.listActive().entries[0].blockedAt,new Date(1111).toISOString());
+  assert.equal(m.listActive().total,1);
+});

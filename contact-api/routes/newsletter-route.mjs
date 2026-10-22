@@ -3,6 +3,7 @@ export function createNewsletterRoute({
   newsletter,
   newsletterIpBuckets,
   newsletterEmailBuckets,
+  onStatusLimitAttempt,
   rateLimit,
   hashValue,
   clientIp,
@@ -103,13 +104,19 @@ export function createNewsletterRoute({
       if (startedAt > 0) enforceFormTiming(startedAt);
 
       await validateEmailDomain(email);
-      rateLimit(
-        newsletterEmailBuckets,
-        hashValue((statusRequest ? "status:" : "optin:") + email),
-        60 * 60 * 1000,
-        4,
-        "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
-      );
+      try {
+        rateLimit(
+          newsletterEmailBuckets,
+          hashValue((statusRequest ? "status:" : "optin:") + email),
+          60 * 60 * 1000,
+          4,
+          "Z tego adresu wysłano zbyt wiele próśb o zapis. Spróbuj ponownie później."
+        );
+      } finally {
+        // Includes attempts rejected on the next request after quota exhaustion.
+        // Tracking failure must not change the public request outcome.
+        if(statusRequest)try{onStatusLimitAttempt?.(email);}catch{}
+      }
 
       const outcome = await (statusRequest ? newsletter.acceptStatus : newsletter.acceptOptIn || newsletter.requestOptIn)({
         email,

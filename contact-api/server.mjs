@@ -291,6 +291,7 @@ const handleNewsletterRequest = createNewsletterRoute({
   newsletter: newOnlyNewsletter,
   newsletterIpBuckets,
   newsletterEmailBuckets,
+  onStatusLimitAttempt:email=>ownerLimits.observe(email),
   rateLimit,
   hashValue,
   clientIp,
