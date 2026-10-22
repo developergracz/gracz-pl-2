@@ -222,7 +222,7 @@ test('expired status proof explains how to request a fresh link without changing
 
 test('every shared script reference invalidates the pre-maintenance cache', async () => {
   for(const file of pages){
-    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021)/);
+    expect(readFileSync(path.join(root,file),'utf8'),file).toMatch(/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021|49-premium-email-input-20261022)/);
   }
 });
 
