@@ -1,0 +1,48 @@
+name: gracz.pl - test ClamAV i konwersji (recznie)
+# No push, PR, schedule, production keys or deployments.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gracz-attachment-lab
+  cancel-in-progress: false
+jobs:
+  antivirus:
+    name: ClamAV - clean file and EICAR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRACZ_ATTACHMENT_LAB_ONLY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify lab boundary and script
+        run: |
+          bash -n contact-api/attachment-lab/clamav-smoke.sh
+          node --test contact-api/test/attachment-lab-boundary.test.mjs
+      - name: Install and update ClamAV signatures on disposable runner
+        run: |
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends clamav clamav-freshclam
+          sudo systemctl stop clamav-freshclam.service || true
+          sudo freshclam --stdout
+      - name: Scan harmless synthetic samples
+        run: bash contact-api/attachment-lab/clamav-smoke.sh
+  conversion:
+    name: Converter - PNG JPG HTML DOCX PDF
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GRACZ_ATTACHMENT_LAB_ONLY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify lab boundary and script
+        run: |
+          bash -n contact-api/attachment-lab/converter-smoke.sh
+          node --test contact-api/test/attachment-lab-boundary.test.mjs
+      - name: Install free converters only on temporary runner
+        run: |
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends imagemagick ghostscript pandoc file unzip
+      - name: Convert synthetic samples only
+        run: bash contact-api/attachment-lab/converter-smoke.sh
