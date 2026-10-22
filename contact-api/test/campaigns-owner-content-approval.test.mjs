@@ -24,8 +24,12 @@ test('UI clearly separates content approval from marketing delivery',()=>{
   assert.match(html,/id="campaign-approve-content" disabled/);
   assert.match(html,/Zatwierdź treść \(bez wysyłki\)/);
   assert.match(html,/id="campaign-approved-list"/);
-  assert.match(dashboard,/window\.prompt\(/);
-  assert.match(dashboard,/ZATWIERDZAM TREŚĆ/);
+  assert.match(html,/id="campaign-send-now" disabled/);
+  assert.match(dashboard,/campaignSendNowButton\?\.addEventListener\("click"/);
+  assert.match(dashboard,/confirmation:"ZATWIERDZAM TREŚĆ"/);
+  assert.match(dashboard,/confirmation:"WYSYŁAM KAMPANIĘ"/);
+  assert.match(dashboard,/campaignSending\|\|campaignAttempted/);
+  assert.doesNotMatch(dashboard,/const phrase=window\.prompt\(/);
   assert.match(dashboard,/savedCampaignSnapshot\.subject/);
   assert.match(dashboard,/savedCampaignSnapshot\.body/);
   assert.match(dashboard,/sendingEnabled!==false/);
