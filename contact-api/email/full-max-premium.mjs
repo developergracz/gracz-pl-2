@@ -17,7 +17,7 @@ function copy(value) {
 // Render only a constrained Markdown subset. Every content span and href is
 // escaped, raw HTML is inert, and links require credential-free HTTPS.
 function emailMarkdownInline(value){
-  const source=String(value), pattern=/\\[([^\\]\\n]+)\\]\\((https:\\/\\/[^\\s)]+)\\)|\\*\\*([^*\\n]+)\\*\\*|\\+\\+([^+\\n]+)\\+\\+|~~([^~\\n]+)~~|\\x60([^\\x60\\n]+)\\x60|\\*([^*\\n]+)\\*/g;
+  const source=String(value), pattern=/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|\+\+([^+\n]+)\+\+|~~([^~\n]+)~~|\x60([^\x60\n]+)\x60|\*([^*\n]+)\*/g;
   let out='',offset=0,match;
   while((match=pattern.exec(source))!==null){
     out+=escapeEmailHtml(source.slice(offset,match.index));
@@ -40,7 +40,7 @@ function emailMarkdownInline(value){
 function emailMarkdownBody(value){
   let output='',list='';
   for(const line of String(value).replace(/\r\n?/g,'\n').split('\n')){
-    const ul=line.match(/^\\s*[-*]\\s+(.+)$/u),ol=line.match(/^\\s*\\d+[.)]\\s+(.+)$/u);
+    const ul=line.match(/^\s*[-*]\s+(.+)$/u),ol=line.match(/^\s*\d+[.)]\s+(.+)$/u);
     const kind=ul?'ul':ol?'ol':'';
     if(list&&kind!==list){output+='</'+list+'>';list='';}
     if(kind){
@@ -48,13 +48,13 @@ function emailMarkdownBody(value){
       output+='<li>'+emailMarkdownInline((ul||ol)[1])+'</li>';continue;
     }
     if(!line.trim()){output+='<div style="height:11px"></div>';continue;}
-    const h=line.match(/^(#{1,3})\\s+(.+)$/u);
+    const h=line.match(/^(#{1,3})\s+(.+)$/u);
     const text=h?h[2]:line.startsWith('> ')?line.slice(2):line;
     const style=h?'font-weight:800;color:#fff;font-size:'+(h[1].length===1?'22':h[1].length===2?'19':'17')+'px;margin:13px 0 7px'
       :line.startsWith('> ')?'border-left:3px solid #53dbc8;padding-left:12px;color:#c6dce0;margin:8px 0'
       :'margin:5px 0';
     const tag=h?'h'+h[1].length:line.startsWith('> ')?'blockquote':'p';
-    if(/^\\s*---\\s*$/u.test(line)){output+='<hr style="border:0;border-top:1px solid #39636c;margin:13px 0">';continue;}
+    if(/^\s*---\s*$/u.test(line)){output+='<hr style="border:0;border-top:1px solid #39636c;margin:13px 0">';continue;}
     output+='<'+tag+' style="'+style+'">'+emailMarkdownInline(text)+'</'+tag+'>';
   }
   if(list)output+='</'+list+'>';
