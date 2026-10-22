@@ -1314,3 +1314,148 @@ footer .footer-brand span{color:#ff6573}
     gap:4px;
   }
 }
+
+/* OWNER RECOVERY — Full Max Premium, scoped to the existing secure dialog. */
+#forgot-dialog.owner-recovery-premium{
+  box-sizing:border-box;width:min(94vw,980px);max-width:980px;
+  padding:clamp(18px,2.5vw,30px);
+  border:1px solid rgba(79,230,208,.56);border-radius:22px;
+  background:linear-gradient(150deg,#112d39 0%,#102633 51%,#091e2b 100%);
+  color:#f0fbff;
+  box-shadow:0 30px 95px rgba(0,0,0,.65),0 0 0 1px rgba(246,207,127,.1);
+}
+#forgot-dialog.owner-recovery-premium::backdrop{
+  background:rgba(1,11,20,.84);
+  backdrop-filter:blur(5px);
+}
+#forgot-dialog .forgot-heading{
+  padding-bottom:15px;border-bottom:1px solid rgba(105,212,198,.23);
+  align-items:center;
+}
+#forgot-dialog .forgot-heading-text{min-width:0;}
+#forgot-dialog .forgot-eyebrow{
+  margin:0 0 8px;color:#f4fcff;letter-spacing:.09em;
+  font-size:12px;font-weight:850;
+}
+#forgot-dialog .forgot-eyebrow span{color:#ff6573;}
+#forgot-dialog .forgot-heading h2{
+  font-size:clamp(20px,2.2vw,28px);
+  line-height:1.2;letter-spacing:-.02em;color:#fff;
+}
+#forgot-dialog #forgot-close{
+  margin:0;padding:10px 17px;min-height:42px;
+  color:#e4faff;background:#102130;border:1px solid #5b9b9d;
+  border-radius:11px;font-weight:750;
+}
+#forgot-dialog #forgot-close:hover{
+  border-color:#f3cc77;background:#193540;
+}
+#forgot-dialog .forgot-description{
+  margin:14px 0 18px;color:#b8d6df;font-size:14px;
+}
+#forgot-dialog .forgot-forms{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;
+}
+#forgot-dialog .forgot-forms .forgot-card{
+  display:flex;flex-direction:column;min-width:0;padding:20px 18px;
+  border:1px solid rgba(82,192,191,.46);border-radius:16px;
+  background:linear-gradient(160deg,rgba(8,26,40,.85),rgba(17,48,57,.72));
+  box-shadow:inset 0 1px 0 rgba(221,255,245,.055);
+}
+#forgot-dialog .forgot-card-heading{
+  display:flex;gap:12px;align-items:flex-start;min-height:66px;
+}
+#forgot-dialog .forgot-step{
+  display:grid;place-items:center;flex:0 0 34px;
+  height:34px;border:1px solid #d6b15f;border-radius:10px;
+  background:rgba(211,162,60,.1);color:#f7d78c;
+  font-weight:850;font-size:13px;letter-spacing:.05em;
+}
+#forgot-dialog .forgot-card-heading h3{
+  margin:1px 0 5px;color:#f6fffd;font-size:16px;line-height:1.28;
+}
+#forgot-dialog .forgot-card-heading p{
+  margin:0;color:#b0cfda;font-size:12px;line-height:1.45;
+}
+#forgot-dialog .forgot-card form{
+  display:grid;gap:8px;margin:14px 0 0;min-width:0;
+}
+#forgot-dialog .forgot-card form label{
+  margin:3px 0 0;color:#b9d1db;font-size:12px;font-weight:700;
+}
+#forgot-dialog .forgot-card input{
+  width:100%;min-width:0;min-height:47px;box-sizing:border-box;
+  padding:10px 13px;border:1px solid #517f8e;border-radius:11px;
+  background:#0c1e2d;color:#f2fbff;font:inherit;font-size:14px;
+}
+#forgot-dialog .forgot-card input:focus{
+  outline:none;border-color:#66e9d6;
+  box-shadow:0 0 0 3px rgba(82,225,206,.18);
+}
+#forgot-dialog .forgot-card .password-visibility input{padding-right:82px;}
+#forgot-dialog .forgot-card .password-visibility__toggle{
+  margin:0;min-height:34px;height:34px;padding:4px 12px;
+  border:1px solid #5c9b9c;border-radius:8px;
+  background:#163442;color:#e7fff9;font-size:12px;
+  box-shadow:none;
+}
+#forgot-dialog .forgot-card form button[type="submit"]{
+  margin:12px 0 0;min-height:48px;border-radius:11px;
+  border:1px solid #80eddb;color:#072d34;
+  background:linear-gradient(110deg,#43d8c6,#76efd9);
+  font-size:14px;font-weight:850;letter-spacing:.01em;
+  box-shadow:0 8px 23px rgba(34,215,183,.16);
+}
+#forgot-dialog .forgot-card form button[type="submit"]:hover{
+  background:linear-gradient(110deg,#64ead7,#91f8e3);
+}
+#forgot-dialog .forgot-card form button:disabled{
+  opacity:.65;cursor:wait;box-shadow:none;
+}
+#forgot-dialog #forgot-email-hint{
+  padding:12px 13px;border:1px solid #3d8080;border-radius:10px;
+  background:#11333b;color:#b8f2e6;font-size:12px;
+}
+#forgot-dialog #forgot-email-hint.is-invalid{
+  color:#ffb6b9;background:#39242c;border-color:#be646d;
+}
+#forgot-dialog #forgot-request-status,
+#forgot-dialog #forgot-complete-status{
+  font-size:13px;line-height:1.55;font-weight:650;
+  overflow-wrap:anywhere;
+}
+#forgot-dialog #forgot-request-status:empty,
+#forgot-dialog #forgot-complete-status:empty{
+  display:none;
+}
+#forgot-dialog #forgot-request-status:not(:empty),
+#forgot-dialog #forgot-complete-status:not(:empty){
+  margin:13px 0 0;padding:13px 14px;border-radius:11px;
+  border:1px solid #547680;background:rgba(14,38,49,.84);
+  color:#d0e6eb;
+}
+#forgot-dialog #forgot-request-status[data-state="accepted"]{
+  background:#0d393b;border-color:#3ba69a;color:#adfbe1;
+}
+#forgot-dialog #forgot-request-status[data-state="error"]{
+  background:#39242c;border-color:#be646d;color:#ffb6b9;
+}
+#forgot-dialog button:focus-visible{
+  outline:3px solid #f4d17b;outline-offset:2px;
+}
+@media(max-width:700px){
+  #forgot-dialog.owner-recovery-premium{
+    width:calc(100% - 16px);max-height:calc(100dvh - 12px);
+    padding:16px;border-radius:16px;
+  }
+  #forgot-dialog .forgot-forms{grid-template-columns:minmax(0,1fr);gap:12px;}
+  #forgot-dialog .forgot-forms .forgot-card{padding:15px 13px;}
+  #forgot-dialog .forgot-forms .forgot-card+.forgot-card{
+    border-top:1px solid rgba(82,192,191,.46);
+  }
+  #forgot-dialog .forgot-heading h2{font-size:20px;}
+  #forgot-dialog .forgot-description{margin:12px 0;}
+}
+@media(prefers-reduced-motion:reduce){
+  #forgot-dialog *{scroll-behavior:auto;}
+}

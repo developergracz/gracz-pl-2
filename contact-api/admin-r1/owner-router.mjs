@@ -76,14 +76,20 @@ pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
 ${passwordOnly&&recoveryReady?'<button id="forgot-open" type="button">Zapomniałem hasła?</button>':''}
 </div></form>
 <p id="login-status" role="status" aria-live="polite"></p>
-${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgot-title">
+${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" class="owner-recovery-premium" aria-labelledby="forgot-title" aria-describedby="forgot-description">
 <div class="forgot-heading">
+<div class="forgot-heading-text">
+<p class="forgot-eyebrow">gracz<span>.pl</span> · FULL MAX PREMIUM</p>
 <h2 id="forgot-title">Odzyskaj hasło administratora</h2>
+</div>
 <button id="forgot-close" type="button">Zamknij</button>
 </div>
-<p>Wpisz potwierdzony adres e-mail odzyskiwania.</p>
+<p id="forgot-description" class="forgot-description">Dostęp do panelu przywrócisz w dwóch prostych krokach.</p>
 <div class="forgot-forms">
-<section aria-label="Wysyłka kodu odzyskiwania">
+<section class="forgot-card" aria-label="Wysyłka kodu odzyskiwania">
+<div class="forgot-card-heading"><span class="forgot-step" aria-hidden="true">01</span>
+<div><h3>Otrzymaj kod odzyskiwania</h3>
+<p>Wpisz wcześniej potwierdzony adres e-mail administratora.</p></div></div>
 <form id="forgot-request-form" autocomplete="off">
 <label for="forgot-email">Adres e-mail odzyskiwania</label>
 <input id="forgot-email" type="email" autocomplete="email" maxlength="254" aria-describedby="forgot-email-hint" required>
@@ -96,7 +102,10 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgo
 </form>
 <p id="forgot-request-status" role="status" aria-live="polite"></p>
 </section>
-<section aria-label="Ustawienie nowego hasła">
+<section class="forgot-card" aria-label="Ustawienie nowego hasła">
+<div class="forgot-card-heading"><span class="forgot-step" aria-hidden="true">02</span>
+<div><h3>Ustaw nowe hasło</h3>
+<p>Wpisz otrzymany kod i dwukrotnie nowe hasło.</p></div></div>
 <form id="forgot-complete-form" autocomplete="off">
 <label for="forgot-code">Hasło tymczasowe z wiadomości</label>
 <input id="forgot-code" type="text" minlength="10" maxlength="24" pattern="(?:[A-Za-z]{10}|[A-Za-z0-9_-]{24})" autocomplete="one-time-code" required>
