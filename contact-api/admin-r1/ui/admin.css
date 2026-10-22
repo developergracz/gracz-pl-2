@@ -475,8 +475,8 @@ dialog::backdrop {
 #forgot-dialog #forgot-request-status{
   color:#c8e9eb;font-weight:650;
 }
-#forgot-dialog #forgot-request-status[data-state="accepted"]{
-  color:#91f1d9;
+#forgot-dialog #forgot-request-status[data-state="processed"]{
+  color:#f2d6a0;
 }
 #forgot-dialog #forgot-request-status[data-state="error"]{
   color:#ff9197;
@@ -1445,8 +1445,8 @@ footer .footer-brand span{color:#ff6573}
   border:1px solid #547680;background:rgba(14,38,49,.84);
   color:#d0e6eb;
 }
-#forgot-dialog #forgot-request-status[data-state="accepted"]{
-  background:#0d393b;border-color:#3ba69a;color:#adfbe1;
+#forgot-dialog #forgot-request-status[data-state="processed"]{
+  background:#302a23;border-color:#a78956;color:#f2d6a0;
 }
 #forgot-dialog #forgot-request-status[data-state="error"]{
   background:#39242c;border-color:#be646d;color:#ffb6b9;

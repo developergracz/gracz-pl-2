@@ -156,7 +156,7 @@ if(recoveryDialog){
       ?'Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.'
       :invalid
         ?'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.'
-        :'Format adresu jest poprawny. Kliknij „Wyślij hasło tymczasowe”, aby przekazać prośbę do bezpiecznej weryfikacji.';
+        :'Format adresu e-mail jest poprawny, ale to nie oznacza, że jest przypisany do konta administratora. Upewnij się, że wpisujesz adres odzyskiwania hasła.';
     requestStatus.textContent='';
     requestStatus.removeAttribute('data-state');
   });
@@ -175,8 +175,8 @@ if(recoveryDialog){
         body:JSON.stringify({email:document.getElementById('forgot-email').value})
       });
       if(!response.ok)throw Error('unavailable');
-      requestStatus.setAttribute('data-state','accepted');
-      requestStatus.textContent='Prośba została przyjęta. Jeśli wpisany adres jest przypisany do administratora, otrzymasz na niego 10-literowy kod odzyskiwania ważny 10 minut. Sprawdź skrzynkę i folder Spam.';
+      requestStatus.setAttribute('data-state','processed');
+      requestStatus.textContent='Żądanie zostało przetworzone. To NIE jest potwierdzenie wysłania kodu. Kod 10-literowy ważny 10 minut jest wysyłany wyłącznie na wcześniej potwierdzony adres odzyskiwania. Sprawdź właściwą skrzynkę i folder Spam.';
     }catch{
       requestStatus.setAttribute('data-state','error');
       requestStatus.textContent='Odzyskiwanie jest chwilowo niedostępne. Spróbuj później.';
