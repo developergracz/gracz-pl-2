@@ -135,6 +135,11 @@ test('top Newsletter button opens accessible signup and stays safely disabled un
   await expect(premiumButton).toBeDisabled();
   await expect(premiumButton).toHaveCSS('border-top-left-radius','14px');
   await expect(premiumButton).toHaveCSS('background-image',/linear-gradient/);
+  const premiumEmail=dialog.locator('.newsletter-signup__email-field');
+  await expect(premiumEmail).toBeVisible();
+  await expect(premiumEmail.locator('.newsletter-signup__email-icon')).toHaveText('✉');
+  await expect(premiumEmail).toHaveCSS('background-image',/linear-gradient/);
+  await expect(premiumEmail.locator('input[name="email"]')).toHaveAttribute('autocomplete','email');
   await expect(dialog.locator('[data-footer-newsletter-status]')).toContainText('tymczasowo niedostępne');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -160,6 +165,9 @@ test('top Newsletter uses existing verified subscribe and Premium result flow', 
   const dialog=page.locator('#newsletter-signup-modal');
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('input[name="email"]')).toBeEnabled();
+  const premiumEmail=dialog.locator('.newsletter-signup__email-field');
+  await dialog.locator('input[name="email"]').focus();
+  await expect(premiumEmail).toHaveCSS('box-shadow',/rgb/);
   await dialog.locator('input[name="email"]').fill('newsletter-e2e@example.pl');
   await dialog.locator('input[name="consent"]').check();
   await dialog.locator('button[type="submit"]').click();
