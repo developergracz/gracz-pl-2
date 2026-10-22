@@ -212,6 +212,9 @@ for (const state of ['active','pending','inactive']) {
     await expect(page.locator('#nl-action-status')).toContainText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
     if(state==='active'){
+      await expect(page.locator('#nl-action-panel')).toHaveClass(/nl-action-dialog--active/);
+      await expect(page.locator('#nl-action-status strong')).toHaveText('Newsletter aktywny');
+      await expect(page.locator('#nl-action-status span')).toHaveText('Ten adres jest już aktywny w newsletterze gracz.pl. Nie musisz zapisywać się ponownie.');
       const modal=page.locator('#nl-result-dialog');
       await expect(modal).toBeVisible();
       await expect(modal.locator('#nl-result-title')).toHaveText('Ten adres już jest w naszym newsletterze');
@@ -521,6 +524,8 @@ test('DOI email link opens centered Premium confirmation, with one explicit cons
   await dialog.locator('#nl-action-button').click();
   await expect(dialog.locator('#nl-action-title')).toHaveText('Newsletter aktywny');
   await expect(dialog.locator('#nl-action-status')).toContainText('Newsletter aktywny');
+  await expect(dialog).toHaveClass(/nl-action-dialog--active/);
+  await expect(dialog.locator('#nl-action-status strong')).toHaveText('Newsletter aktywny');
   await expect(dialog.locator('#nl-action-close')).toHaveText('Zrozumiałem');
   expect(calls).toEqual([{token:proof}]);
   await dialog.locator('#nl-action-close').click();
