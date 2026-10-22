@@ -9,6 +9,7 @@
   var actionPanel=byId('nl-action-panel'), actionStatus=byId('nl-action-status');
   var actionButton=byId('nl-action-button'), actionTitle=byId('nl-action-title');
   var actionCopy=byId('nl-action-copy'), actionKicker=byId('nl-action-kicker');
+  var actionClose=byId('nl-action-close'),actionBusy=false;
   var followup=byId('nl-status-followup'),followupLink=byId('nl-status-followup-link');
   var followupNote=byId('nl-status-followup-note');
   var actionMode='', actionToken='', generation=0, controllers=new Set();
@@ -159,8 +160,25 @@
     followupLink.setAttribute('href',choice.href);
     followup.hidden=false;
   }
+  // Render mailbox proofs as a viewport dialog. The token is never submitted
+  // until the original, guarded confirmation button is explicitly clicked.
+  function showActionDialog(){
+    actionPanel.hidden=false;
+    if(!actionPanel.open)actionPanel.showModal();
+    (actionButton.hidden||actionButton.disabled?actionClose:actionButton).focus();
+  }
+  function dismissActionDialog(){
+    if(actionBusy)return; // Never hide an in-flight consent result.
+    clearNavigation();
+  }
+  actionClose.addEventListener('click',dismissActionDialog);
+  actionPanel.addEventListener('cancel',function(event){
+    event.preventDefault();dismissActionDialog();
+  });
   function clearNavigation(){
     generation++;actionMode='';actionToken='';controllers.forEach(function(controller){controller.abort();});
+    if(actionPanel.open)actionPanel.close();
+    actionClose.disabled=false;actionClose.textContent='Anuluj';
     followup.hidden=true;
     followupLink.removeAttribute('href');
     document.querySelectorAll('.nl-status').forEach(function(node){setStatus(node,'');});
@@ -187,6 +205,7 @@
       actionKicker.textContent='NIEAKTUALNY LINK';actionTitle.textContent='Link został unieważniony';
       actionCopy.textContent='W celu wycofania zgody skorzystaj z kontaktu na tej stronie. Zgłoszenie wymaga weryfikacji i obsługi.';
       setStatus(actionStatus,'Ten link został unieważniony. Nie potwierdzono zmiany subskrypcji.',true);
+      showActionDialog();
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       token='';return;
     }
@@ -199,6 +218,7 @@
     }[mode];
     actionKicker.textContent=copy[0];actionTitle.textContent=copy[1];actionCopy.textContent=copy[2];actionButton.textContent=copy[3];
     if(!NEWSLETTER_PUBLIC_INTAKE_ENABLED){setStatus(actionStatus,'Operacje newslettera są chwilowo niedostępne. Historyczne linki zostały unieważnione. Nie potwierdzono zmiany subskrypcji.',false);}
+    showActionDialog();
   }
   // popstate may precede hashchange for the same traversal; coalesce that duplicate.
   var lastNavigationURL='';
@@ -257,6 +277,7 @@
     if(!actionMode||!actionToken||actionButton.disabled)return;
     var mode=actionMode,token=actionToken,current=generation;
     actionToken='';actionButton.disabled=true;
+    actionBusy=true;actionClose.disabled=true;
     setStatus(actionStatus,'Przetwarzanie…');
     try{
       var result=await post('/newsletter/'+(mode==='status'?'status-check':mode),{token:token});
@@ -305,6 +326,10 @@
         :'Nie potwierdzono zmiany subskrypcji ani jej statusu. Nie ponawiaj teraz operacji. Zgłoszenie wycofania zgody wymaga weryfikacji i obsługi przez kontakt na tej stronie.';
       setStatus(actionStatus,error.message,true);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
-    }}
+    }}finally{
+      actionBusy=false;
+      actionClose.disabled=false;
+      actionClose.textContent=actionToken&&!actionButton.hidden?'Anuluj':'Zrozumiałem';
+    }
   });
 })();
