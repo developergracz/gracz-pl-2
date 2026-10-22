@@ -204,23 +204,18 @@ for (const state of ['active','pending','inactive']) {
     await page.goto('/newsletter/#status=secret-proof');
     const csp=await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
     expect(csp.split(';').map(value=>value.trim()).find(value=>value.startsWith('script-src '))).toBe("script-src 'self'");
-    await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź status');
+    await expect(page.locator('#nl-action-button')).toBeHidden();
     expect(page.url()).not.toContain('secret-proof');
-    expect(requests).toHaveLength(0);
     expect(await page.evaluate(()=>JSON.stringify(history.state))).not.toContain('secret-proof');
-    await page.locator('#nl-action-button').click();
+    await expect.poll(()=>requests.length).toBe(1);
     await expect(page.locator('#nl-action-status')).toContainText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
     await expect(page.locator('#nl-action-status')).toHaveAttribute('aria-live','polite');
     if(state==='active'){
       await expect(page.locator('#nl-action-panel')).toHaveClass(/nl-action-dialog--active/);
       await expect(page.locator('#nl-action-status strong')).toHaveText('Newsletter aktywny');
       await expect(page.locator('#nl-action-status span')).toHaveText('Ten adres jest już aktywny w newsletterze gracz.pl. Nie musisz zapisywać się ponownie.');
-      const modal=page.locator('#nl-result-dialog');
-      await expect(modal).toBeVisible();
-      await expect(modal.locator('#nl-result-title')).toHaveText('Ten adres już jest w naszym newsletterze');
-      await expect(modal).toContainText('sprawdzono aktualny stan bazy');
-      await modal.locator('#nl-result-close').click();
-      await expect(modal).toBeHidden();
+      await expect(page.locator('#nl-result-dialog')).toBeHidden();
+      await expect(page.locator('#nl-status-followup-link')).toHaveText('Wypisz się z newslettera');
     }else await expect(page.locator('#nl-action-status')).toBeFocused();
     expect(requests).toEqual([{path:'/newsletter/status-check',payload:{token:'secret-proof'}}]);
     await expect(page.locator('#nl-action-title')).toHaveText({active:'Newsletter aktywny',pending:'Oczekuje na potwierdzenie',inactive:'Newsletter nieaktywny'}[state]);
@@ -235,9 +230,8 @@ test('verified status offers correct self-service action without implicit consen
     const requests=await mock(page,()=>({ok:true,state}));
     await page.goto('/newsletter/#status=synthetic-proof-'+state);
     const followup=page.locator('#nl-status-followup');
-    await expect(followup).toBeHidden();
-    await page.locator('#nl-action-button').click();
     await expect(followup).toBeVisible();
+    await expect(page.locator('#nl-action-button')).toBeHidden();
     const link=page.locator('#nl-status-followup-link');
     const expected={
       active:['Wypisz się z newslettera','#nl-withdrawal-panel'],
@@ -246,12 +240,7 @@ test('verified status offers correct self-service action without implicit consen
     }[state];
     await expect(link).toHaveText(expected[0]);
     await expect(link).toHaveAttribute('href',expected[1]);
-    if(state==='active'){
-      const dialog=page.locator('#nl-result-dialog');
-      await expect(dialog.locator('#nl-result-check')).toHaveText(expected[0]);
-      await expect(dialog.locator('#nl-result-check')).toHaveAttribute('href',expected[1]);
-      await dialog.locator('#nl-result-close').click();
-    }
+    if(state==='active')await expect(page.locator('#nl-result-dialog')).toBeHidden();
     // Opening a destination form never requests withdrawal or opt-in.
     await link.click();
     await expect(page.locator('#nl-status-followup')).toBeHidden();
@@ -272,8 +261,7 @@ test('same tab hashes, back/forward, stale completion, and confirm/unsubscribe',
   });
   await page.goto('/newsletter/');
   await page.evaluate(()=>{location.hash='status=first-secret';});
-  await expect(page.locator('#nl-action-button')).toHaveText('Sprawdź status');
-  await page.locator('#nl-action-button').click();
+  await expect(page.locator('#nl-action-button')).toBeHidden();
   await expect.poll(()=>requests.length).toBe(1);
   await page.evaluate(()=>{location.hash='confirm=second-secret';});
   await expect(page.locator('#nl-action-button')).toHaveText('Potwierdź zapis');
@@ -302,7 +290,6 @@ test('replay, invalid links and unavailable use generic errors',async({page})=>{
   });
   for(const [index,token] of ['once','once','invalid','unavailable'].entries()) {
     await page.goto('/newsletter/#status='+token);
-    await page.locator('#nl-action-button').click();
     if(index===0)await expect(page.locator('#nl-action-status')).toContainText('Newsletter nieaktywny');
     else await expect(page.locator('#nl-action-status')).toContainText(
       token==='unavailable'?'Chwilowy problem':'Poproś o nowy link');
@@ -391,7 +378,7 @@ test('malformed email blocks request and leaving page discards bearer action',as
   await expect(page.locator('#nl-check-email')).toBeFocused();
   await expect(page.locator('#nl-check-email-error')).toContainText('poprawny adres');
   expect(requests).toHaveLength(0);
-  await page.goto('/newsletter/#status=leave-secret');
+  await page.goto('/newsletter/#confirm=leave-secret');
   await expect(page.locator('#nl-action-button')).toBeVisible();
   await page.goto('/polityka-prywatnosci/');
   await page.goBack();
@@ -444,7 +431,7 @@ for(const mode of ['confirm','unsubscribe','status']) {
   test(`${mode} network failure keeps consent fail-closed and retries only read-only status`,async({page})=>{
     const requests=await mock(page,()=>({network:true}));
     await page.goto('/newsletter/#'+mode+'=synthetic-network');
-    await page.locator('#nl-action-button').click();
+    if(mode!=='status')await page.locator('#nl-action-button').click();
     await expect(page.locator('#nl-action-title')).toHaveText(
       mode==='status'?'Nie udało się odczytać statusu':'Nie potwierdzono operacji');
     await expect(page.locator('#nl-action-copy')).not.toContainText('Kliknij');
