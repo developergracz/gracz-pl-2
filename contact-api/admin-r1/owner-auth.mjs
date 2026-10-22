@@ -1,5 +1,5 @@
 // Owner-only password with opt-in username mode or legacy TOTP; durable PostgreSQL sessions.
-import {createHash,createHmac,randomBytes,randomUUID,scrypt as scryptCallback,timingSafeEqual} from 'node:crypto';
+import {createHash,createHmac,randomBytes,randomInt,randomUUID,scrypt as scryptCallback,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
 import {createContactDataCrypto} from '../security/contact-data-crypto.mjs';
 const scrypt=promisify(scryptCallback);
@@ -269,7 +269,14 @@ export function createOwnerAuth({
   const tagEmail=email=>createHmac('sha256',String(recoverySecret))
     .update('gracz.pl/owner/recovery/email/v1:').update(email).digest('hex');
   const codeHash=(purpose,code)=>hash('owner-recovery:'+purpose+':'+code);
-  const safeCode=code=>typeof code==='string'&&/^[A-Za-z0-9_-]{24}$/.test(code);
+  const safeVerifyCode=code=>typeof code==='string'&&/^[A-Za-z0-9_-]{24}$/.test(code);
+  // 52^10 (~57 bits) of cryptographic randomness with only five online
+  // guesses and ten-minute expiry. Existing 24-character reset codes remain
+  // acceptable during the short transition window.
+  const resetAlphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  const newResetCode=()=>Array.from({length:10},()=>resetAlphabet[randomInt(resetAlphabet.length)]).join('');
+  const safeResetCode=code=>typeof code==='string'&&
+    (/^[A-Za-z]{10}$/.test(code)||/^[A-Za-z0-9_-]{24}$/.test(code));
   const waitMs=(date,time)=>date&&new Date(date).getTime()>time;
   const codeMatches=(provided,stored)=>typeof stored==='string'&&
     equals(Buffer.from(provided,'hex'),Buffer.from(stored,'hex'));
@@ -303,7 +310,7 @@ export function createOwnerAuth({
     catch{return false;}
   }
   async function confirmRecoveryEmail(raw,code){
-    if(!recoveryReady||!safeCode(code)||!await session(raw))return false;
+    if(!recoveryReady||!safeVerifyCode(code)||!await session(raw))return false;
     return database.transaction(async client=>{
       const r=await client.query('SELECT * FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
       const row=r.rows[0];
@@ -327,7 +334,7 @@ export function createOwnerAuth({
     if(!recoveryReady)return false;
     const email=normalizeEmail(inputEmail);
     if(!email)return true;
-    const code=randomBytes(18).toString('base64url'),time=now(),day=new Date(time).toISOString().slice(0,10);
+    const code=newResetCode(),time=now(),day=new Date(time).toISOString().slice(0,10);
     const allowed=await database.transaction(async client=>{
       const r=await client.query(
         'SELECT email_tag,reset_last_sent,reset_day,reset_daily_count FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
@@ -350,10 +357,10 @@ export function createOwnerAuth({
     }
     return true;
   }
-  // Reset is limited to a verified mailbox, one random 144-bit code,
+  // Reset is limited to a verified mailbox, a random 10-letter code,
   // max five guesses and 10 minutes. No credential changes on request alone.
   async function completePasswordRecovery({email:inputEmail,code,newPassword}={}){
-    if(!recoveryReady||!safeCode(code)||!normalizeEmail(inputEmail)||
+    if(!recoveryReady||!safeResetCode(code)||!normalizeEmail(inputEmail)||
       typeof newPassword!=='string'||newPassword.length<9||newPassword.length>128)return false;
     const address=tagEmail(normalizeEmail(inputEmail)),digest=codeHash('reset',code);
     const pre=await database.queryBounded(
