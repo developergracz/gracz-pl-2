@@ -147,13 +147,18 @@ if(recoveryDialog){
     else if(!emailNotice.hidden)showEmailNotice();
   });
   recoveryEmail.addEventListener('input',()=>{
-    // Format-only feedback: a public login must never identify the OWNER mailbox.
+    // A public recovery page can check only syntax. The server privately
+    // compares the saved recovery address and sends only on a match.
     const value=recoveryEmail.value.trim();
+    const invalid=value.length>0&&!recoveryEmail.validity.valid;
+    recoveryHint.classList.toggle('is-invalid',invalid);
     recoveryHint.textContent=value.length===0
       ?'Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.'
-      :recoveryEmail.validity.valid
-        ?'Ten adres e-mail nie został potwierdzony jako przypisany do konta administratora. Podaj adres e-mail użyty przy konfiguracji odzyskiwania hasła.'
-        :'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.';
+      :invalid
+        ?'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.'
+        :'Format adresu jest poprawny. Kliknij „Wyślij hasło tymczasowe”, aby przekazać prośbę do bezpiecznej weryfikacji.';
+    requestStatus.textContent='';
+    requestStatus.removeAttribute('data-state');
   });
   sendForm.addEventListener('submit',async event=>{
     event.preventDefault();
@@ -161,6 +166,7 @@ if(recoveryDialog){
     const button=sendForm.querySelector('button[type="submit"]');
     if(button.disabled)return;
     button.disabled=true;
+    requestStatus.removeAttribute('data-state');
     requestStatus.textContent='Przetwarzanie prośby…';
     try{
       const response=await fetch('/owner/newsletter/recover/request',{
@@ -169,8 +175,10 @@ if(recoveryDialog){
         body:JSON.stringify({email:document.getElementById('forgot-email').value})
       });
       if(!response.ok)throw Error('unavailable');
-      requestStatus.textContent='Podaj adres e-mail przypisany do konta administratora. Jeśli wpisany adres jest zgodny, otrzymasz 10-literowe hasło tymczasowe ważne 10 minut. Sprawdź skrzynkę.';
+      requestStatus.setAttribute('data-state','accepted');
+      requestStatus.textContent='Prośba została przyjęta. Jeśli wpisany adres jest przypisany do administratora, otrzymasz na niego 10-literowy kod odzyskiwania ważny 10 minut. Sprawdź skrzynkę i folder Spam.';
     }catch{
+      requestStatus.setAttribute('data-state','error');
       requestStatus.textContent='Odzyskiwanie jest chwilowo niedostępne. Spróbuj później.';
     }finally{button.disabled=false;}
   });

@@ -465,12 +465,21 @@ dialog::backdrop {
 #forgot-dialog form{display:grid;gap:8px;margin:18px 0}
 #forgot-dialog form label{font-size:14px}
 #forgot-dialog .forgot-email-hint{
-  margin:0;padding:9px 11px;color:#ff9197;background:#2b1d29;
-  border:1px solid #a85863;border-radius:9px;font-size:12px;line-height:1.45;
+  margin:0;padding:9px 11px;color:#b5f1e5;background:#102e36;
+  border:1px solid #438a82;border-radius:9px;font-size:12px;line-height:1.45;
   font-weight:650;
 }
+#forgot-dialog .forgot-email-hint.is-invalid{
+  color:#ff9197;background:#2b1d29;border-color:#a85863;
+}
 #forgot-dialog #forgot-request-status{
-  color:#ff9197;font-weight:650;
+  color:#c8e9eb;font-weight:650;
+}
+#forgot-dialog #forgot-request-status[data-state="accepted"]{
+  color:#91f1d9;
+}
+#forgot-dialog #forgot-request-status[data-state="error"]{
+  color:#ff9197;
 }
 /* Full Max Premium: content-sized warning instead of native browser tooltip. */
 #forgot-dialog .forgot-email-validation{
