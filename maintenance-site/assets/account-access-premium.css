@@ -188,6 +188,7 @@ body.account-access-open{overflow:hidden}
   box-shadow:0 11px 24px rgba(205,151,48,.16);
   transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
 }
+.account-access__newsletter-cta[data-account-newsletter-open]{width:100%;cursor:pointer;text-align:left}
 .account-access__newsletter-cta b{font-size:20px}
 .account-access__newsletter-cta:hover,
 .account-access__newsletter-cta:focus-visible{
