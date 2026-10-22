@@ -575,8 +575,7 @@ $("targeted-compose").addEventListener("submit",async event=>{
       // No dispatch has been attempted; the draft remains in the editor.
       // A new explicit click is required for any subsequent send attempt.
       targetedStarted=false;
-      $("targeted-send").disabled=code==="recipient_selection_expired"||
-        code==="selection_refresh_unavailable";
+      $("targeted-send").disabled=code==="recipient_selection_expired";
     }
   }finally{
     targetedBusy=false;
