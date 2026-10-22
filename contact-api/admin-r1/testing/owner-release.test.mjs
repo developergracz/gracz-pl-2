@@ -570,6 +570,8 @@ test('M6 recovery: verified mailbox, private temporary code, one-use reset, repl
   assert.equal(sent[0].code.length,24,'mailbox ownership proof unchanged');
   assert.equal((await auth.settings(initial.token)).recoveryEmailMasked,null,
     'Email is inactive until mailbox proof succeeds');
+  assert.equal(await auth.requestPasswordRecovery(),true);
+  assert.equal(sent.length,1,'No reset mail is sent before mailbox confirmation');
   assert.equal(await auth.confirmRecoveryEmail(initial.token,'A'.repeat(24)),false);
   assert.equal(await auth.confirmRecoveryEmail(initial.token,sent[0].code),true);
   assert.equal(await auth.confirmRecoveryEmail(initial.token,sent[0].code),false,
@@ -579,27 +581,25 @@ test('M6 recovery: verified mailbox, private temporary code, one-use reset, repl
   assert.ok(row.rows[0].email_ciphertext.startsWith('c1.'));
   assert.ok(!JSON.stringify(row.rows[0]).includes(mailbox),
     'Recovery address encrypted at rest');
-  assert.equal(await auth.requestPasswordRecovery('unknown-owner@example.test'),true);
-  assert.equal(sent.length,1,'Unknown email must not trigger outbound email');
-  assert.equal(await auth.requestPasswordRecovery(mailbox),true);
-  assert.equal(sent.length,2);
+  assert.equal(await auth.requestPasswordRecovery(),true);
+  assert.equal(sent.length,2,'Stored verified mailbox receives reset without user input');
   assert.equal(sent[1].purpose,'reset');
   assert.equal(sent[1].email,mailbox);
   assert.match(sent[1].code,/^[A-Za-z]{10}$/,'10 cryptographically random letters for recovery');
-  assert.equal(await auth.requestPasswordRecovery(mailbox),true);
+  assert.equal(await auth.requestPasswordRecovery(),true);
   assert.equal(sent.length,2,'Durable recovery request throttled');
   assert.equal(await auth.completePasswordRecovery({
-    email:mailbox,code:'B'.repeat(24),newPassword:'NineChar9'
+    code:'B'.repeat(24),newPassword:'NineChar9'
   }),false);
   assert.equal(await auth.completePasswordRecovery({
-    email:mailbox,code:sent[1].code,newPassword:'Eight888'
+    code:sent[1].code,newPassword:'Eight888'
   }),false,'Eight-character passwords are rejected');
   assert.equal(await auth.completePasswordRecovery({
-    email:mailbox,code:sent[1].code,newPassword:'NineChar9'
+    code:sent[1].code,newPassword:'NineChar9'
   }),true);
   assert.equal(await auth.session(initial.token),null,'Password recovery invalidates prior sessions');
   assert.equal(await auth.completePasswordRecovery({
-    email:mailbox,code:sent[1].code,newPassword:'Another99'
+    code:sent[1].code,newPassword:'Another99'
   }),false,'Temporary password cannot be reused');
   const afterRestart=createOwnerAuth(config);
   const restored=await afterRestart.login({username:'graczowner',password:'NineChar9'});
