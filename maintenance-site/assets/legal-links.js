@@ -346,7 +346,7 @@
             '<li><span aria-hidden="true">✓</span>zapowiedzi nowych gier, Academy i funkcji</li>'+
             '<li><span aria-hidden="true">✓</span>najważniejsze aktualizacje gracz.pl w jednym miejscu</li>'+
           '</ul>'+
-          '<a class="account-access__newsletter-cta" href="/newsletter/"><span>Zapisz się do naszego newslettera</span><b aria-hidden="true">→</b></a>'+
+          '<button class="account-access__newsletter-cta" type="button" data-account-newsletter-open aria-haspopup="dialog" aria-controls="newsletter-signup-modal"><span>Zapisz się do naszego newslettera</span><b aria-hidden="true">→</b></button>'+
           '<p class="account-access__consent">Zapis jest dobrowolny, wymaga potwierdzenia e-mail (double opt-in) i można go wycofać w każdej chwili.</p>'+
         '</div>'+
       '</section>'+
@@ -368,6 +368,16 @@
     document.body.appendChild(accountDialog);
 
     accountDialog.addEventListener('click',function(event){
+      var signup=event.target.closest('[data-account-newsletter-open]');
+      if(signup){
+        event.preventDefault();
+        // Switch the modals in place: return focus to the original login/register
+        // button once the newsletter flow is closed.
+        var origin=accountLastTrigger||signup;
+        closeAccountAccess();
+        void openNewsletterSignup(origin);
+        return;
+      }
       if(event.target===accountDialog||event.target.closest('[data-account-close]'))closeAccountAccess();
     });
 
@@ -377,9 +387,12 @@
     });
 
     accountDialog.addEventListener('close',function(){
-      document.body.classList.remove('account-access-open');
-      if(accountLastTrigger&&document.contains(accountLastTrigger)){
-        try{accountLastTrigger.focus();}catch(_){}
+      // Don't steal focus or clear the modal state when transitioning to signup.
+      if(!newsletterSignupDialog||!newsletterSignupDialog.open){
+        document.body.classList.remove('account-access-open');
+        if(accountLastTrigger&&document.contains(accountLastTrigger)){
+          try{accountLastTrigger.focus();}catch(_){}
+        }
       }
       accountLastTrigger=null;
     });
