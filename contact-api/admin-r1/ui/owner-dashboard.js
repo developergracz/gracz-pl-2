@@ -1648,6 +1648,9 @@ async function ownerBlockedList(){
   }
 }
 $("limit-active-refresh").addEventListener("click",ownerBlockedList);
+window.addEventListener("hashchange",()=>{
+  if(ownerCsrf&&location.hash==="#owner-limits")void ownerBlockedList();
+});
 setInterval(()=>{
   if(ownerCsrf&&!document.hidden&&location.hash==="#owner-limits")
     void ownerBlockedList();
