@@ -1172,3 +1172,145 @@ footer .footer-brand span{color:#ff6573}
  #targeted-dialog .targeted-preview{height:330px;min-height:260px;max-height:none;}
  #targeted-dialog .targeted-preview-content{min-height:140px;}
 }
+
+/* R11: viewport-fit OWNER composer. The fields scroll; actions never scroll away. */
+#targeted-dialog[open]{
+  display:flex;
+  flex-direction:column;
+  height:min(760px,calc(100dvh - 24px));
+  max-height:calc(100dvh - 24px);
+  overflow:hidden;
+}
+#targeted-dialog .targeted-dialog-content{
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+  padding:clamp(12px,2vh,20px);
+  gap:clamp(5px,.85vh,9px);
+}
+#targeted-dialog #targeted-compose{
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  gap:0;
+}
+#targeted-dialog .targeted-compose-fields{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#5e9296 #0a2532;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-areas:
+    "subject-label subject-label"
+    "subject subject"
+    "body-label body-label"
+    "body preview"
+    "attachments preview";
+  grid-template-rows:auto auto auto auto auto;
+  align-content:start;
+  align-items:stretch;
+  gap:8px 12px;
+  padding:3px 8px 10px 1px;
+}
+#targeted-dialog .targeted-compose-fields .targeted-preview{
+  grid-row:4 / 6;
+  height:100%;
+  min-height:0;
+  max-height:none;
+}
+#targeted-dialog .targeted-editor #targeted-body{
+  height:clamp(105px,16vh,146px);
+  min-height:105px;
+  max-height:180px;
+}
+#targeted-dialog .targeted-preview-content{
+  min-height:100px;
+}
+#targeted-dialog .targeted-compose-actions{
+  flex:0 0 auto;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:9px;
+  padding:12px 2px 3px;
+  border-top:1px solid rgba(112,219,208,.36);
+  background:linear-gradient(180deg,#102c3a,#0b2633);
+}
+#targeted-dialog .targeted-compose-actions button{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-height:44px;
+  border-radius:13px;
+  padding:10px 20px;
+  font-weight:850;
+  letter-spacing:.015em;
+}
+#targeted-dialog #targeted-send{
+  min-width:194px;
+  background:linear-gradient(115deg,#9bf7e8 0%,#52e2ce 58%,#34bda9 100%);
+  border:1px solid #a5fff0;
+  color:#082e37;
+  box-shadow:0 5px 20px rgba(46,209,185,.2),inset 0 1px 0 rgba(255,255,255,.3);
+}
+#targeted-dialog #targeted-compose-close{
+  min-width:142px;
+  background:linear-gradient(135deg,#1c3948,#102938);
+  color:#f5ffff;
+  border:1px solid #729ca7;
+  box-shadow:0 3px 12px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.05);
+}
+#targeted-dialog .targeted-compose-actions button:focus-visible{
+  outline:2px solid #71efdb;
+  outline-offset:3px;
+}
+#targeted-dialog #targeted-status{
+  flex:0 0 auto;
+  min-height:18px;
+  font-size:12px;
+}
+@media(max-width:650px){
+  #targeted-dialog[open]{
+    height:calc(100dvh - 12px);
+    max-height:calc(100dvh - 12px);
+  }
+  #targeted-dialog .targeted-compose-fields{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"subject-label" "subject" "body-label" "body" "attachments" "preview";
+    grid-template-rows:auto;
+  }
+  #targeted-dialog .targeted-compose-fields .targeted-preview{
+    grid-row:auto;
+    height:235px;
+    min-height:200px;
+  }
+  #targeted-dialog .targeted-compose-actions{
+    justify-content:stretch;
+  }
+  #targeted-dialog .targeted-compose-actions button{
+    flex:1 1 132px!important;
+    min-width:0;
+  }
+}
+@media(max-height:610px){
+  #targeted-dialog[open]{
+    height:calc(100dvh - 8px);
+    max-height:calc(100dvh - 8px);
+  }
+  #targeted-dialog .targeted-dialog-content{
+    padding:9px 12px;
+    gap:4px;
+  }
+}
