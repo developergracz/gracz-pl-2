@@ -1296,6 +1296,15 @@ campaignSendNowButton?.addEventListener("click",async()=>{
     }else{
       status.textContent="Wynik wysyłki niepewny. Nie ponawiaj; sprawdź rejestr prób.";
     }
+    // Once the server returned a final outcome, clear the composer so another
+    // message requires deliberate new content instead of a duplicate click.
+    if(result.state==="finished"){
+      campaignSubject.value="";
+      campaignBody.value="";
+      campaignResetHistory();
+      campaignPreviewCurrent();
+      campaignAttempted=false;
+    }
     selectCampaignDraft(null);
     savedCampaignSnapshot=null;
     try{await refreshDrafts({notify:false});}catch{/* Send result stays visible. */}
