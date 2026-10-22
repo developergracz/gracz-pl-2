@@ -133,3 +133,15 @@ input[aria-invalid=true]{border-color:#ef7081;box-shadow:0 0 0 3px rgba(242,26,5
 .nl-withdrawal-dialog--success #nl-withdrawal-action-status{
   color:#82efe0;font-weight:700;
 }
+
+/* Direct mailbox action: center the Premium confirmation within the viewport. */
+.nl-action-dialog[hidden]{display:none!important}
+.nl-action-dialog .nl-result-dialog__panel{padding:32px 34px 30px}
+.nl-action-dialog .nl-action__icon{display:grid;place-items:center;margin:0 auto 16px;width:58px;height:58px;border:1px solid #39796e;border-radius:50%;background:rgba(86,200,193,.12);font-size:25px}
+.nl-action-dialog .nl-status{margin:0 0 20px;min-height:0;line-height:1.6}
+.nl-action-dialog .nl-status:empty{display:none}
+.nl-action-dialog .nl-action-dialog__actions #nl-action-button{background:linear-gradient(180deg,#75e5de,#45beb6);color:#041d19;border:0;min-width:175px;margin:0}
+.nl-action-dialog .nl-action-dialog__actions #nl-action-close{background:transparent;color:#e3f4ef;border:1px solid #4c8278;min-width:118px}
+.nl-action-dialog .nl-action-dialog__actions button:disabled{opacity:.55;cursor:not-allowed}
+.nl-action-dialog #nl-status-followup{margin-top:20px}
+@media(max-width:600px){.nl-action-dialog .nl-result-dialog__panel{padding:26px 20px}.nl-action-dialog .nl-action-dialog__actions button{width:100%}}
