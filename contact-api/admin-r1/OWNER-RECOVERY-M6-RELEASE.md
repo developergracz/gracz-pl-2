@@ -4,7 +4,7 @@
 Adres: `https://gracz.pl/paneladmina/` → istniejący formularz OWNER.
 Istniejące hasło, nick i newsletter nie są zmieniane podczas wdrożenia.
 Używamy istniejących Resend (transakcyjne wiadomości) i PostgreSQL; nie tworzymy nowego dostawcy ani kont.
-Kod jednorazowy ma 144 bity losowości, 24 znaki base64url i ważność 10 minut.
+Kod do potwierdzania adresu ma 144 bity losowości i 24 znaki base64url. Hasło tymczasowe do resetowania dostępu ma 10 kryptograficznie losowych liter (ok. 57 bitów), ważność 10 minut i najwyżej 5 prób.
 Żaden adres e-mail ani kod nie trafia do audytu, URL, logów lub publicznej odpowiedzi.
 E-mail odzyskiwania pozostaje nieaktywny do potwierdzenia kodem w panelu.
 
