@@ -329,19 +329,26 @@ export function createOwnerAuth({
       return true;
     });
   }
-  // Public request: always respond identically regardless of account/mailbox.
-  async function requestPasswordRecovery(inputEmail){
+  // Public request: no address input or account discovery. The single OWNER
+  // recovery mailbox is decrypted only on the server, inside the durable gate.
+  // Existing 5-minute cooldown and 5/day ceiling also apply to anonymous clicks.
+  async function requestPasswordRecovery(){
     if(!recoveryReady)return false;
-    const email=normalizeEmail(inputEmail);
-    if(!email)return true;
     const code=newResetCode(),time=now(),day=new Date(time).toISOString().slice(0,10);
-    const allowed=await database.transaction(async client=>{
+    const email=await database.transaction(async client=>{
       const r=await client.query(
-        'SELECT email_tag,reset_last_sent,reset_day,reset_daily_count FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
+        'SELECT email_ciphertext,email_tag,reset_last_sent,reset_day,reset_daily_count '+
+        'FROM newsletter_owner.recovery WHERE id=1 FOR UPDATE');
       const row=r.rows[0];
-      if(!row||row.email_tag!==tagEmail(email)||
+      if(!row?.email_ciphertext||!row.email_tag||
         waitMs(row.reset_last_sent&&new Date(row.reset_last_sent).getTime()+300_000,time)||
-        (dateKey(row.reset_day)===day&&row.reset_daily_count>=5))return false;
+        (dateKey(row.reset_day)===day&&row.reset_daily_count>=5))return null;
+      let mailbox=null;
+      try {
+        mailbox=normalizeEmail(recoveryCrypto.decrypt(row.email_ciphertext,
+          {aad:'owner-recovery-email'}));
+      } catch {return null;}
+      if(!mailbox||row.email_tag!==tagEmail(mailbox))return null;
       await client.query(
         'UPDATE newsletter_owner.recovery SET reset_code_hash=$1,reset_expires=$2,'+
         'reset_attempts=0,reset_last_sent=clock_timestamp(),reset_day=$3,'+
@@ -349,25 +356,25 @@ export function createOwnerAuth({
         [codeHash('reset',code),new Date(time+600_000),day,
           dateKey(row.reset_day)===day?Number(row.reset_daily_count)+1:1]);
       await audit(client,'recovery_requested');
-      return true;
+      return mailbox;
     });
-    if(allowed)try{await recoveryMailer.send({email,code,purpose:'reset'});}catch{
-      // Deliberately indistinguishable from unknown mailbox; do not retry
-      // an uncertain Resend delivery automatically.
+    if(email)try{await recoveryMailer.send({email,code,purpose:'reset'});}catch{
+      // Do not retry uncertain delivery automatically or disclose status.
     }
     return true;
   }
   // Reset is limited to a verified mailbox, a random 10-letter code,
   // max five guesses and 10 minutes. No credential changes on request alone.
-  async function completePasswordRecovery({email:inputEmail,code,newPassword}={}){
-    if(!recoveryReady||!safeResetCode(code)||!normalizeEmail(inputEmail)||
+  async function completePasswordRecovery({code,newPassword}={}){
+    if(!recoveryReady||!safeResetCode(code)||
       typeof newPassword!=='string'||newPassword.length<9||newPassword.length>128)return false;
-    const address=tagEmail(normalizeEmail(inputEmail)),digest=codeHash('reset',code);
+    const digest=codeHash('reset',code);
     const pre=await database.queryBounded(
       'SELECT email_tag,reset_code_hash,reset_expires,reset_attempts '+
       'FROM newsletter_owner.recovery WHERE id=1',[],{timeoutMs:2000});
     const row=pre.rows?.[0];
-    if(!row||row.email_tag!==address||!waitMs(row.reset_expires,now())||
+    const address=row?.email_tag;
+    if(!address||!waitMs(row.reset_expires,now())||
       row.reset_attempts>=5)return false;
     if(!codeMatches(digest,row.reset_code_hash)){
       await database.transaction(async client=>{
