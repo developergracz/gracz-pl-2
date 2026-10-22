@@ -1470,3 +1470,58 @@ footer .footer-brand span{color:#ff6573}
 @media(prefers-reduced-motion:reduce){
   #forgot-dialog *{scroll-behavior:auto;}
 }
+
+/* Full Max Premium R12: compact action strip and attachments, more room for
+   message editor without scrolling to reach its attachment controls. */
+#targeted-dialog .targeted-dialog-content{
+  padding-bottom:9px;
+  gap:5px;
+}
+#targeted-dialog .targeted-compose-fields{
+  gap:6px 10px;
+  padding-bottom:5px;
+}
+#targeted-dialog .targeted-compose-actions{
+  margin-top:4px;
+  padding:7px 0 1px;
+  gap:8px;
+  min-height:0;
+}
+#targeted-dialog .targeted-compose-actions button{
+  height:42px;
+  min-height:42px;
+  padding:8px 15px;
+}
+#targeted-dialog #targeted-status{
+  flex:1 1 180px;
+  min-width:0;
+  min-height:0;
+  max-height:72px;
+  overflow:auto;
+  font-size:12px;
+  line-height:1.35;
+  margin:0;
+}
+#targeted-dialog #targeted-status:empty{display:none;}
+#targeted-dialog .targeted-attachments{
+  padding:7px 8px;
+  gap:5px;
+}
+#targeted-dialog .targeted-attachment-button{
+  min-height:34px;
+  padding:6px 11px;
+}
+#targeted-dialog #targeted-attachment-status{
+  font-size:11px;
+  line-height:1.3;
+}
+#targeted-dialog .targeted-attachment-safety{gap:4px;}
+#targeted-dialog .targeted-attachment-safety span{
+  padding:5px 4px;
+  font-size:10px;
+  line-height:1.2;
+}
+@media(max-width:650px){
+  #targeted-dialog .targeted-compose-actions{flex-wrap:wrap;}
+  #targeted-dialog #targeted-status:not(:empty){flex-basis:100%;}
+}
