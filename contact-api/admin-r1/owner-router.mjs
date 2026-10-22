@@ -86,6 +86,10 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgo
 <form id="forgot-request-form" autocomplete="off">
 <label for="forgot-email">Adres e-mail odzyskiwania</label>
 <input id="forgot-email" type="email" autocomplete="email" maxlength="254" aria-describedby="forgot-email-hint" required>
+<div id="forgot-email-validation" class="forgot-email-validation" role="alert" hidden>
+<span class="forgot-email-validation__icon" aria-hidden="true">!</span>
+<span id="forgot-email-validation-message"></span>
+</div>
 <p id="forgot-email-hint" class="forgot-email-hint" role="status" aria-live="polite">Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.</p>
 <button type="submit">Wyślij hasło tymczasowe</button>
 </form>
