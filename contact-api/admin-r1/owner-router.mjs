@@ -120,7 +120,7 @@ export function createOwnerRouter({
   recoverySecret,recoveryMailer,recoveryEnabled=false,
   campaignDraftStore=null,campaignDraftsEnabled=false,campaignAudienceProofCount=null,
   campaignWithdrawalReady=null,campaignEgressReady=null,campaignTestSender=null,
-  campaignSender=null
+  campaignSender=null,limits=null
 }={}){
   const auth=enabled?createOwnerAuth({database,passwordSpec,totpBase32,username,passwordOnly,
     recoverySecret,recoveryMailer,recoveryEnabled}):null;
@@ -139,6 +139,7 @@ export function createOwnerRouter({
   let trendBusy=false,trendLastAt=-Infinity;
   let recentBusy=false,recentLastAt=-Infinity;
   let settingsBusy=false,settingsLastAt=-Infinity;
+  let limitsBusy=false;
   let recoverBusy=false;
   function serviceFor(tokenHash){
     let svc=services.get(tokenHash);
@@ -271,6 +272,32 @@ export function createOwnerRouter({
         await auth.logout(cookie);
         clearServices();
         return response(res,200,{ok:true},{'Set-Cookie':clearCookie});
+      }
+
+      if(req.method==='POST'&&[
+        PREFIX+'/limits/inspect',PREFIX+'/limits/unlock',PREFIX+'/limits/history'
+      ].includes(path)){
+        if(!limits||!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        if(limitsBusy)return reject(res,429);
+        limitsBusy=true;
+        try{
+          const data=await input(req);
+          if(path===PREFIX+'/limits/history'){
+            if(Object.keys(data).length!==0)return reject(res,400);
+            return response(res,200,{ok:true,...limits.history()});
+          }
+          if(typeof data.email!=='string')return reject(res,400);
+          if(path===PREFIX+'/limits/inspect'){
+            if(Object.keys(data).length!==1)return reject(res,400);
+            return response(res,200,{ok:true,...limits.inspect(data.email)});
+          }
+          if(Object.keys(data).length!==2||data.confirmation!=='ODBLOKUJ ADRES')
+            return reject(res,400);
+          return response(res,200,{ok:true,...limits.unlock(data.email)});
+        }catch(error){
+          return reject(res,error instanceof TypeError?400:503);
+        }finally{limitsBusy=false;}
       }
       if(req.method==='GET'&&path===PREFIX+'/campaign-drafts/availability'){
         let ready=false;

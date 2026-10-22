@@ -26,6 +26,7 @@
           <a class="nav-sub" href="#subscriber-overview">Podsumowanie listy</a>
           <a class="nav-sub" href="#filters">Filtry i wyszukiwarka</a>
           <a href="#campaign-drafts">◇ Kampanie newslettera</a>
+          <a href="#owner-limits">◇ Blokady i limity</a>
           <a href="#quality">◇ Jakość danych</a>
           <a id="account-settings-link" href="#account-settings" hidden>◇ Ustawienia konta</a>
           <div id="owner-account-nav" class="nav-subgroup" hidden>
@@ -353,6 +354,35 @@
               <h3>Zatwierdzone treści — oczekują na osobną decyzję o wysyłce</h3>
               <ul id="campaign-approved-list" aria-label="Zatwierdzone kampanie, bez wysyłania"></ul>
             </div>
+          </div>
+        </section>
+        
+        <section class="panel owner-limit-panel" id="owner-limits" aria-labelledby="limit-title">
+          <p class="eyebrow">BEZPIECZEŃSTWO / FULL MAX PREMIUM</p>
+          <h2 id="limit-title">Blokady i limity newslettera</h2>
+          <p class="muted">Zarządzanie ograniczeniem żądań sprawdzenia statusu dla pojedynczego adresu.</p>
+          <form id="limit-form">
+            <label for="limit-email">Adres e-mail</label>
+            <div class="limit-form-row">
+              <input id="limit-email" type="email" maxlength="254" placeholder="adres@example.com" required autocomplete="off" />
+              <button id="limit-inspect" type="submit">Sprawdź blokadę</button>
+            </div>
+          </form>
+          <div id="limit-result" class="limit-result" hidden>
+            <strong id="limit-state">—</strong>
+            <p id="limit-count">—</p>
+            <p id="limit-expiry">—</p>
+            <button id="limit-clear" type="button" disabled>Odblokuj adres</button>
+          </div>
+          <p id="limit-message" class="muted" role="status" aria-live="polite"></p>
+          <p class="muted">Limit: 4 żądania/60 minut. Odblokowanie nie zmienia limitów IP, wspólnego budżetu wysyłek, blokad Resend ani zgód.</p>
+          <div class="limit-history">
+            <div class="section-title">
+              <h3>Historia odblokowań</h3>
+              <button type="button" id="limit-history-refresh">Odśwież historię</button>
+            </div>
+            <p class="muted" id="limit-history-info">Historia od uruchomienia tej instancji API.</p>
+            <ul id="limit-history-list"></ul>
           </div>
         </section>
         <section class="panel" id="quality">

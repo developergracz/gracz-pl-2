@@ -1487,3 +1487,16 @@ footer .footer-brand span{color:#ff6573}
   #targeted-dialog .targeted-compose-actions{flex-wrap:wrap;}
   #targeted-dialog #targeted-status:not(:empty){flex-basis:100%;}
 }
+
+
+/* OWNER newsletter limits: Full Max Premium */
+.owner-limit-panel{border:1px solid #276f68;background:linear-gradient(145deg,#102d2d,#101b2a)}
+.limit-form-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+.limit-form-row input{flex:1 1 250px;min-width:0;padding:13px;border:1px solid #389a8e;border-radius:11px;background:#193239;color:#fff;font:inherit}
+.owner-limit-panel button{padding:11px 17px;border:0;border-radius:12px;background:#57d3c6;color:#092022;cursor:pointer;font-weight:700}
+.owner-limit-panel button:disabled{opacity:.5;cursor:not-allowed}
+.limit-result{padding:17px;margin:12px 0;border:1px solid #327a72;border-radius:15px;background:#103333}
+.limit-result strong{color:#71e8d7}
+.limit-history{margin-top:23px;border-top:1px solid #30605d;padding-top:16px}
+.limit-history .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.limit-history li{line-height:1.8}
