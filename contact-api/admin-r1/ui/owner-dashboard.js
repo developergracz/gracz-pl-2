@@ -312,9 +312,11 @@ async function request(path, options) {
   return response.json();
 }
 
-// OWNER messaging — session-specific handles, up to ten active people.
-let targetedReady=false,visibleActive=[],selectedHandles=[],selectedRecipientEmails=[],targetedId=null,
-  targetedApproved=false,targetedStarted=false,targetedBusy=false;
+// OWNER messaging — one explicit Send click, no extra typed phrases.
+// Keep the existing OWNER session/CSRF and server-side consent, withdrawal,
+// delivery-fence and durable no-retry controls intact.
+let targetedReady=false,visibleActive=[],selectedHandles=[],selectedRecipientEmails=[],
+  targetedStarted=false,targetedBusy=false;
 const targetedDialog=$("targeted-dialog");
 const targetedSuccessDialog=$("targeted-success-dialog");
 $("targeted-success-close").addEventListener("click",()=>targetedSuccessDialog.close());
@@ -328,11 +330,10 @@ function openTargeted(items){
      items.some(x=>x.state!=="active"||typeof x.handle!=="string"))return;
   selectedHandles=items.map(x=>x.handle);
   selectedRecipientEmails=items.map(x=>x.email);
-  targetedId=null;targetedApproved=false;targetedStarted=false;
+  targetedStarted=false;
   $("targeted-compose").reset();
-  $("targeted-compose").hidden=false;$("targeted-final").hidden=true;
-  $("targeted-close").hidden=true;
-  $("targeted-approve").disabled=false;$("targeted-send").disabled=false;
+  $("targeted-send").disabled=false;
+  $("targeted-compose-close").disabled=false;
   $("targeted-preview-subject").textContent="Podgląd tematu";
   $("targeted-preview-body").textContent="Podgląd wiadomości";
   $("targeted-status").textContent="";
@@ -345,64 +346,53 @@ const postTargeted=(path,payload)=>request("/owner/newsletter/"+path,{
   method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)
 });
 $("send-found").addEventListener("click",()=>openTargeted(visibleActive));
-$("targeted-close").addEventListener("click",()=>targetedDialog.close());
-$("targeted-compose-close").addEventListener("click",()=>targetedDialog.close());
-$("targeted-compose").addEventListener("submit",e=>e.preventDefault());
+$("targeted-compose-close").addEventListener("click",()=>{
+  if(!targetedBusy)targetedDialog.close();
+});
+targetedDialog.addEventListener("cancel",event=>{
+  if(targetedBusy)event.preventDefault();
+});
 for(const name of ["subject","body"])
   $("targeted-"+name).addEventListener("input",()=>{
     $("targeted-preview-"+name).textContent=$("targeted-"+name).value;
   });
-$("targeted-approve").addEventListener("click",async()=>{
-  if(targetedBusy||targetedApproved||targetedStarted)return;
+$("targeted-compose").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(targetedBusy||targetedStarted||!targetedReady||!selectedHandles.length)return;
   if(!$("targeted-compose").reportValidity())return;
-  if($("targeted-approval").value!=="ZATWIERDZAM TREŚĆ"){
-    $("targeted-status").textContent="Wpisz dokładnie ZATWIERDZAM TREŚĆ.";return;
-  }
-  targetedBusy=true;$("targeted-approve").disabled=true;
-  $("targeted-status").textContent="Zapisywanie i zatwierdzanie. Nie zamykaj okna.";
+  targetedBusy=true;targetedStarted=true;
+  $("targeted-send").disabled=true;
+  $("targeted-compose-close").disabled=true;
+  targetedDialog.setAttribute("aria-busy","true");
+  $("targeted-status").textContent="Trwa przygotowanie i wysyłanie. Nie ponawiaj.";
+  let stage="prepare";
   try{
     const draft={subject:$("targeted-subject").value.trim(),
       body:$("targeted-body").value.trim(),audience:"confirmed_active_new_only"};
-    if(!targetedId){
-      const saved=await postTargeted("campaign-targeted/save",{
-        ...draft,handles:selectedHandles});
-      if(!saved.id)throw Error("missing_draft");
-      targetedId=saved.id;
-    }
-    const result=await postTargeted("campaign-drafts/approve",{
-      ...draft,id:targetedId,confirmation:"ZATWIERDZAM TREŚĆ"});
-    if(result?.state!=="approved")throw Error("not_approved");
-    targetedApproved=true;
-    $("targeted-compose").hidden=true;$("targeted-final").hidden=false;
-    $("targeted-close").hidden=false;
-    $("targeted-status").textContent="Treść i lista odbiorców zatwierdzone. Nie wysłano wiadomości.";
-    $("targeted-confirmation").focus();
-  }catch{
-    $("targeted-status").textContent="Nie potwierdzono zatwierdzenia. Nie twórz kolejnego szkicu ani nie wysyłaj.";
-  }finally{targetedBusy=false;$("targeted-approve").disabled=targetedApproved;}
-});
-$("targeted-send").addEventListener("click",async()=>{
-  if(targetedBusy||!targetedApproved||targetedStarted||!targetedId)return;
-  if($("targeted-confirmation").value!=="WYSYŁAM DO WYBRANYCH"){
-    $("targeted-status").textContent="Wpisz dokładnie WYSYŁAM DO WYBRANYCH.";return;
-  }
-  targetedBusy=true;targetedStarted=true;$("targeted-send").disabled=true;
-  $("targeted-status").textContent="Próba wysyłki rozpoczęta. Nie ponawiaj.";
-  try{
+    // Prepare and approve the immutable recipient scope using existing APIs.
+    // These fixed protocol fields are not extra OWNER authentication.
+    const saved=await postTargeted("campaign-targeted/save",{
+      ...draft,handles:selectedHandles});
+    if(!saved?.id)throw Error("missing_draft");
+    const approved=await postTargeted("campaign-drafts/approve",{
+      ...draft,id:saved.id,confirmation:"ZATWIERDZAM TREŚĆ"});
+    if(approved?.state!=="approved")throw Error("not_approved");
+    stage="send";
     const result=await postTargeted("campaign-targeted/send",{
-      id:targetedId,confirmation:"WYSYŁAM DO WYBRANYCH"});
+      id:saved.id,confirmation:"WYSYŁAM DO WYBRANYCH"});
     const accepted=result?.accepted;
     const suppressed=result?.suppressed;
     if(result?.state==="finished"&&Number.isSafeInteger(accepted)&&accepted>0&&
        accepted<=selectedRecipientEmails.length&&Number.isSafeInteger(suppressed)&&suppressed>=0){
       const single=selectedRecipientEmails.length===1&&accepted===1&&suppressed===0;
       $("targeted-success-title").textContent=single
-        ?"Wiadomość została wysłana do "+selectedRecipientEmails[0]
+        ?"Wiadomość została wysłana na adres "+selectedRecipientEmails[0]
         :"Wiadomości zostały przyjęte do wysyłki";
       $("targeted-success-description").textContent=
         "Resend przyjął wiadomość do wysyłki. To nie jest jeszcze potwierdzenie jej doręczenia.";
-      $("targeted-success-count").textContent=
-        "Przyjęte: "+accepted+". Pominięte: "+suppressed+".";
+      $("targeted-success-count").textContent=single
+        ?"Odbiorca: "+selectedRecipientEmails[0]
+        :"Przyjęte: "+accepted+". Pominięte: "+suppressed+".";
       $("targeted-status").textContent="Resend przyjął: "+accepted+", pominięto: "+
         suppressed+". Przyjęcie nie oznacza doręczenia.";
       targetedDialog.close();
@@ -412,8 +402,15 @@ $("targeted-send").addEventListener("click",async()=>{
         ?"Żadna wiadomość nie została przyjęta do wysyłki. Pominięto: "+suppressed+"."
         :"Wynik niepewny. Nie ponawiaj wysyłki.";
     }
-  }catch{$("targeted-status").textContent="Nie można potwierdzić wyniku. Nie ponawiaj wysyłki.";}
-  finally{targetedBusy=false;}
+  }catch{
+    $("targeted-status").textContent=stage==="send"
+      ?"Nie można potwierdzić wyniku wysyłki. Nie ponawiaj wysyłki."
+      :"Nie udało się potwierdzić przygotowania wiadomości. Nie rozpoczęto wysyłki.";
+  }finally{
+    targetedBusy=false;
+    targetedDialog.removeAttribute("aria-busy");
+    $("targeted-compose-close").disabled=false;
+  }
 });
 $("last-month").addEventListener("click",()=>{
   const format=d=>new Intl.DateTimeFormat("sv-SE",{

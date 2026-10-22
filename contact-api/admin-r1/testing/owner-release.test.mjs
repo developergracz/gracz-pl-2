@@ -25,7 +25,7 @@ test('OWNER premium sent confirmation names one recipient and never claims deliv
   assert.match(js,/selectedRecipientEmails=items\.map\(x=>x\.email\)/);
   assert.match(js,/result\?\.state==="finished"&&Number\.isSafeInteger\(accepted\)&&accepted>0/);
   assert.match(js,/selectedRecipientEmails\.length===1&&accepted===1&&suppressed===0/);
-  assert.match(js,/"Wiadomość została wysłana do "\+selectedRecipientEmails\[0\]/);
+  assert.match(js,/"Wiadomość została wysłana na adres "\+selectedRecipientEmails\[0\]/);
   assert.match(js,/targetedDialog\.close\(\);\s*targetedSuccessDialog\.showModal\(\)/);
   assert.match(js,/targetedSuccessDialog\.close\(\)/);
   assert.match(js,/To nie jest jeszcze potwierdzenie jej doręczenia/);
@@ -35,40 +35,40 @@ test('OWNER premium sent confirmation names one recipient and never claims deliv
   assert.match(css,/#targeted-success-dialog::backdrop/);
 });
 
-test('OWNER date filters and scoped premium messaging preserve explicit send confirmation',async()=>{
+test('OWNER one-click Premium send preserves recipient consent and durable dispatch guards',async()=>{
   const html=await readFile(new URL('../ui/index.html',import.meta.url),'utf8');
   const ui=await readFile(new URL('../ui/owner-dashboard.js',import.meta.url),'utf8');
   const css=await readFile(new URL('../ui/admin.css',import.meta.url),'utf8');
   const router=await readFile(new URL('../owner-router.mjs',import.meta.url),'utf8');
   const sender=await readFile(new URL('../../campaigns/owner-send.mjs',import.meta.url),'utf8');
   for(const id of ['date-from','date-to','last-month','send-found','targeted-dialog',
-    'targeted-subject','targeted-body','targeted-approval','targeted-confirmation'])
-    assert.match(html,new RegExp('id="'+id+'"'));
-  assert.match(html,/Wyślij wyłącznie do wybranych/);
+    'targeted-subject','targeted-body','targeted-send','targeted-compose-close'])
+    assert.ok(html.includes('id="'+id+'"'),'missing '+id);
+  assert.match(html,/<button type="submit" id="targeted-send">Wyślij<\/button>/);
+  assert.doesNotMatch(html,/id="targeted-approval"|id="targeted-confirmation"|id="targeted-final"/);
   assert.match(ui,/send\.textContent="Wyślij wiadomość"/);
   assert.match(ui,/send\.disabled=!targetedReady\|\|item\.state!=="active"/);
   assert.match(ui,/targetedReady=data\.targetedSendEnabled===true/);
-  assert.match(ui,/if\(targetedBusy\|\|!targetedApproved\|\|targetedStarted\|\|!targetedId\)return/);
+  assert.match(ui,/if\(targetedBusy\|\|targetedStarted\|\|!targetedReady\|\|!selectedHandles\.length\)return/);
   assert.match(ui,/targetedStarted=true/);
-  assert.match(ui,/WYSYŁAM DO WYBRANYCH/);
+  assert.match(ui,/targetedDialog\.addEventListener\("cancel",event=>\{/);
+  const submit=ui.slice(ui.indexOf('$("targeted-compose").addEventListener("submit",async event=>{'),
+                        ui.indexOf('$("last-month").addEventListener("click"'));
+  assert.ok(submit.includes('reportValidity()'));
+  assert.ok(submit.includes('campaign-targeted/save'));
+  assert.ok(submit.includes('campaign-drafts/approve'));
+  assert.ok(submit.includes('campaign-targeted/send'));
+  assert.ok(submit.indexOf('campaign-targeted/save')<submit.indexOf('campaign-drafts/approve'));
+  assert.ok(submit.indexOf('campaign-drafts/approve')<submit.indexOf('campaign-targeted/send'));
+  assert.match(ui,/confirmation:"ZATWIERDZAM TREŚĆ"/);
+  assert.match(ui,/confirmation:"WYSYŁAM DO WYBRANYCH"/);
   assert.match(router,/resolveTargetHandles\(data\.handles\)/);
   assert.match(router,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
   assert.match(sender,/if\(!targeted\)throw deny\(\)/);
   assert.match(css,/#targeted-dialog\{box-sizing:border-box;position:fixed;inset:0;margin:auto/);
   assert.match(css,/max-height:calc\(100dvh - 24px\)/);
-  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css,/"body-label preview"\s+"body preview"/);
-  assert.match(css,/\.targeted-preview\{grid-area:preview;[^}]*max-height:280px;box-sizing:border-box;\s*overflow:auto/s);
-  assert.match(css,/width:min\(940px,calc\(100vw - 24px\)\);max-width:940px/);
-  assert.match(css,/height:220px;min-height:190px;max-height:280px;resize:vertical/);
-  assert.match(css,/"actions actions"/);
-  assert.match(css,/\.targeted-compose-actions\{grid-area:actions;\s*display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css,/#targeted-dialog #targeted-body\{height:174px;min-height:150px;max-height:210px/);
-  assert.match(html,/<div class="targeted-compose-actions">\s*<button type="button" id="targeted-approve">Zapisz i zatwierdź treść<\/button>\s*<button type="button" id="targeted-compose-close">Zamknij<\/button>\s*<\/div>/);
-  assert.match(html,/<button type="button" id="targeted-close" hidden>Zamknij<\/button>/);
-  assert.match(ui,/\$\("targeted-compose-close"\)\.addEventListener\("click",\(\)=>targetedDialog\.close\(\)\)/);
-  assert.match(ui,/\$\("targeted-close"\)\.hidden=true/);
-  assert.match(ui,/\$\("targeted-close"\)\.hidden=false/);
+  assert.match(css,/#targeted-dialog \.targeted-compose-actions\{grid-area:actions;/);
+  assert.match(css,/"body-label preview"\s+"body preview"\s+"actions actions"/);
   assert.match(css,/@media\(max-height:760px\)/);
   assert.match(css,/@media\(max-width:650px\)/);
 });
