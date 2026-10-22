@@ -140,7 +140,8 @@ test('login/register notice opens Full Max Premium signup in place, never naviga
     expect(new URL(page.url()).pathname).toBe('/');
     await page.keyboard.press('Escape');
     await expect(signup).toBeHidden();
-    await expect(entry).toBeFocused();
+    if(await entry.isVisible())await expect(entry).toBeFocused();
+    else await expect(page.locator('.site-header .burger')).toBeFocused();
   }
 });
 
