@@ -208,7 +208,7 @@ test('OWNER session: password, one-use TOTP, lockout, durable token, idle expira
   assert.ok((await db.query('SELECT count(*)::int AS n FROM newsletter_owner.audit')).rows[0].n>=7);
 });
 
-test('OWNER login nickname validation uses accessible Full Max Premium message',async()=>{
+test('OWNER login uses compact Premium field warnings and one aligned action row',async()=>{
   const [router,login,css]=await Promise.all([
     readFile(new URL('../owner-router.mjs',import.meta.url),'utf8'),
     readFile(new URL('../ui/login.js',import.meta.url),'utf8'),
@@ -216,14 +216,26 @@ test('OWNER login nickname validation uses accessible Full Max Premium message',
   ]);
   assert.match(router,/minlength="3" maxlength="32" required>/);
   assert.match(router,/id="login-nick-validation"[^>]+role="alert" hidden/);
-  assert.match(router,/id="login-nick-validation-message"/);
+  assert.match(router,/id="login-password-validation"[^>]+role="alert" hidden/);
+  assert.match(router,/id="login-password-validation-message"/);
+  assert.match(router,/<div class="owner-login-actions">/);
+  assert.match(router,/<button id="login-button" type="submit">Zaloguj się<\/button>/);
+  assert.match(router,/passwordOnly&&recoveryReady\?'<button id="forgot-open" type="button">Zapomniałem hasła\?<\/button>'/);
+  assert.match(router,/passwordOnly&&recoveryReady\?`<dialog id="forgot-dialog"/);
   assert.match(login,/nickname\.addEventListener\('invalid',event=>\{\s*event\.preventDefault\(\)/);
   assert.match(login,/nickNotice\.hidden=false/);
   assert.match(login,/nickname\.addEventListener\('input'/);
   assert.match(login,/if\(nickname\.validity\.valid\)hideNotice\(\)/);
   assert.match(login,/Wydłuż ten tekst do co najmniej 3 znaków/);
-  assert.match(css,/width:min\(600px,calc\(100vw - 32px\)\)/);
-  assert.match(css,/#login-nick-validation\[hidden\]\{display:none;\}/);
+  assert.match(login,/passwordInput\.addEventListener\('invalid',event=>\{\s*event\.preventDefault\(\)/);
+  assert.match(login,/passwordNotice\.hidden=false/);
+  assert.match(login,/Wpisz hasło\./);
+  assert.match(login,/if\(passwordInput\.validity\.valid\)hidePasswordNotice\(\)/);
+  assert.match(css,/width:max-content;max-width:100%/);
+  assert.match(css,/#login-nick-validation\[hidden\],[\s\S]*?#login-password-validation\[hidden\]\{display:none;\}/);
+  assert.match(css,/#login-form \.owner-login-actions\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/#login-form #login-button\{/);
+  assert.match(css,/#login-form #forgot-open\{/);
 });
 
 test('phone-free OWNER login requires valid nick, locks out guessing and rotates session',async(t)=>{
