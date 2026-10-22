@@ -1669,7 +1669,10 @@ $("limit-clear").addEventListener("click",()=>{
 $("limit-history-refresh").addEventListener("click",ownerLimitHistory);
 $("limit-active-refresh").addEventListener("click",ownerLimitActive);
 document.querySelector('a[href="#owner-limits"]').addEventListener("click",()=>{
-  if(ownerCsrf){void ownerLimitActive();void ownerLimitHistory();}
+  if(ownerCsrf)void (async()=>{
+    await ownerLimitActive();
+    await ownerLimitHistory();
+  })();
 });
 setInterval(()=>{
   if(ownerCsrf&&location.hash==="#owner-limits"&&document.visibilityState==="visible")
