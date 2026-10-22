@@ -464,6 +464,10 @@ dialog::backdrop {
 #forgot-dialog h2{margin:0 0 14px}
 #forgot-dialog form{display:grid;gap:8px;margin:18px 0}
 #forgot-dialog form label{font-size:14px}
+#forgot-dialog .forgot-email-hint{
+  margin:0;padding:9px 11px;color:#c7eee6;background:#102a35;
+  border:1px solid #3d6b70;border-radius:9px;font-size:12px;line-height:1.45;
+}
 #forgot-dialog form button{margin:8px 0 0}
 #forgot-dialog p[role="status"],#owner-recovery-status{min-height:24px;overflow-wrap:anywhere}
 #forgot-open{font:inherit;cursor:pointer}
