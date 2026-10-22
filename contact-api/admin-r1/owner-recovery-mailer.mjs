@@ -9,7 +9,9 @@ export function createOwnerRecoveryMailer({apiKey,emailFrom,request=fetch}={}){
   return Object.freeze({
     async send({email,code,purpose}={}){
       if(typeof email!=='string'||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||
-        !/^[A-Za-z0-9_-]{24}$/.test(code||'')||
+        !(purpose==='verify'
+          ?/^[A-Za-z0-9_-]{24}$/.test(code||'')
+          :/^(?:[A-Za-z]{10}|[A-Za-z0-9_-]{24})$/.test(code||''))||
         !['verify','reset'].includes(purpose))throw Error('Invalid OWNER mail');
       const verify=purpose==='verify';
       const text=verify

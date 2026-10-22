@@ -472,6 +472,20 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
 
 
 
+test('OWNER recovery form checks syntax but never reveals the registered recovery mailbox',async()=>{
+  const [router,script]=await Promise.all([
+    readFile(new URL('../owner-router.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../ui/login.js',import.meta.url),'utf8')
+  ]);
+  assert.match(router,/id="forgot-email-hint"/);
+  assert.match(router,/id="forgot-code"[^>]*minlength="10" maxlength="24"/);
+  assert.match(router,/pattern="\(\?:\[A-Za-z\]\{10\}\|\[A-Za-z0-9_-\]\{24\}\)"/);
+  assert.match(script,/recoveryEmail\.addEventListener\('input'/);
+  assert.match(script,/recoveryEmail\.validity\.valid/);
+  assert.match(script,/Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło/);
+  assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
+});
+
 test('M6 recovery mailer sends transactional code only to the verified mailbox',async()=>{
   const captured=[];
   const mailer=createOwnerRecoveryMailer({
@@ -483,7 +497,7 @@ test('M6 recovery mailer sends transactional code only to the verified mailbox',
     }
   });
   assert.ok(mailer);
-  const email='mailbox-recovery@example.test',code='X'.repeat(24);
+  const email='mailbox-recovery@example.test',code='AbCdEfGhIj';
   await mailer.send({email,code,purpose:'reset'});
   assert.equal(captured.length,1);
   assert.equal(captured[0].url,'https://api.resend.com/emails');
@@ -491,6 +505,8 @@ test('M6 recovery mailer sends transactional code only to the verified mailbox',
   assert.deepEqual(body.to,[email]);
   assert.match(body.text,/Hasło tymczasowe/);
   assert.ok(body.text.includes(code));
+  await mailer.send({email,code:'X'.repeat(24),purpose:'verify'});
+  assert.equal(captured.length,2,'24-character mailbox verification remains supported');
   assert.equal(Object.hasOwn(body,'reply_to'),false);
   assert.equal(createOwnerRecoveryMailer({apiKey:'',emailFrom:'kontakt@gracz.pl'}),null);
   await assert.rejects(mailer.send({email,code:'invalid',purpose:'reset'}));
@@ -522,7 +538,7 @@ test('M6 recovery: verified mailbox, private temporary code, one-use reset, repl
   assert.equal(await auth.beginRecoveryEmail(initial.token,{email:mailbox,password}),true);
   assert.equal(sent.length,1);
   assert.equal(sent[0].purpose,'verify');
-  assert.equal(sent[0].code.length,24);
+  assert.equal(sent[0].code.length,24,'mailbox ownership proof unchanged');
   assert.equal((await auth.settings(initial.token)).recoveryEmailMasked,null,
     'Email is inactive until mailbox proof succeeds');
   assert.equal(await auth.confirmRecoveryEmail(initial.token,'A'.repeat(24)),false);
@@ -540,6 +556,7 @@ test('M6 recovery: verified mailbox, private temporary code, one-use reset, repl
   assert.equal(sent.length,2);
   assert.equal(sent[1].purpose,'reset');
   assert.equal(sent[1].email,mailbox);
+  assert.match(sent[1].code,/^[A-Za-z]{10}$/,'10 cryptographically random letters for recovery');
   assert.equal(await auth.requestPasswordRecovery(mailbox),true);
   assert.equal(sent.length,2,'Durable recovery request throttled');
   assert.equal(await auth.completePasswordRecovery({
