@@ -63,13 +63,19 @@ pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" required>
 <label for="password">Hasło</label>
 <input id="password" type="password" autocomplete="current-password"
 minlength="${passwordOnly?9:16}" maxlength="128" required>
+<div id="login-password-validation" class="login-premium-validation" role="alert" hidden>
+<span class="login-premium-validation__icon" aria-hidden="true">!</span>
+<span id="login-password-validation-message"></span>
+</div>
 ${passwordOnly?'':`<label for="code">Kod Authenticator</label>
 <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code"
 pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
-<button id="login-button" type="submit">Zaloguj</button></form>
+<div class="owner-login-actions">
+<button id="login-button" type="submit">Zaloguj się</button>
+${passwordOnly&&recoveryReady?'<button id="forgot-open" type="button">Zapomniałem hasła?</button>':''}
+</div></form>
 <p id="login-status" role="status" aria-live="polite"></p>
-${passwordOnly&&recoveryReady?`<p><button id="forgot-open" type="button">Zapomniałem hasła?</button></p>
-<dialog id="forgot-dialog" aria-labelledby="forgot-title">
+${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgot-title">
 <div class="forgot-heading">
 <h2 id="forgot-title">Odzyskaj hasło administratora</h2>
 <button id="forgot-close" type="button">Zamknij</button>
