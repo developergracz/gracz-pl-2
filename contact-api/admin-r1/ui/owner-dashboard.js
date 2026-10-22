@@ -385,7 +385,7 @@ function targetedFormat(type){
     const next=before.indexOf("\n",end),to=next<0?before.length:next;
     const replacement=before.slice(from,to).split("\n").map((line,index)=>
       (type==="bullet"?"- ":(index+1)+". ")+
-      line.replace(/^(?:\\s*[-*]|\\s*\\d+[.)])\\s+/u,"")
+      line.replace(/^(?:\s*[-*]|\s*\d+[.)])\s+/u,"")
     ).join("\n");
     targetedReplace(replacement,from,to,from,from+replacement.length);
     return;
@@ -395,7 +395,7 @@ function targetedFormat(type){
     if(entered===null)return;
     const href=campaignHttpsLink(entered.trim());
     if(!href){$("targeted-status").textContent="Link musi być poprawnym adresem HTTPS.";return;}
-    const label=(before.slice(start,end)||"tekst linku").replace(/[\\[\\]\\r\\n]/g," ").trim();
+    const label=(before.slice(start,end)||"tekst linku").replace(/[\[\]\r\n]/g," ").trim();
     const text="["+label+"]("+href+")";
     targetedReplace(text,start,end,start,start+text.length);
   }
