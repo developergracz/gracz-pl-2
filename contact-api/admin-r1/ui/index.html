@@ -456,13 +456,30 @@
           <label for="targeted-subject">Temat wiadomości</label>
           <input id="targeted-subject" type="text" minlength="3" maxlength="160" required autocomplete="off" />
           <label for="targeted-body">Treść wiadomości</label>
-          <textarea id="targeted-body" rows="8" minlength="10" maxlength="20000" required></textarea>
+          <div class="targeted-editor">
+            <div class="targeted-toolbar" role="toolbar" aria-label="Formatowanie treści wiadomości">
+              <button type="button" data-targeted-format="bold" aria-label="Pogrubienie" title="Pogrubienie (Ctrl+B)"><strong>B</strong></button>
+              <button type="button" data-targeted-format="italic" aria-label="Kursywa" title="Kursywa (Ctrl+I)"><em>I</em></button>
+              <button type="button" data-targeted-format="underline" aria-label="Podkreślenie" title="Podkreślenie"><u>U</u></button>
+              <span class="targeted-toolbar-divider" aria-hidden="true"></span>
+              <button type="button" data-targeted-format="bullet" aria-label="Lista punktowana" title="Lista punktowana">☷</button>
+              <button type="button" data-targeted-format="number" aria-label="Lista numerowana" title="Lista numerowana">1.</button>
+              <button type="button" data-targeted-format="link" aria-label="Wstaw link HTTPS" title="Wstaw link HTTPS">↗</button>
+            </div>
+            <textarea id="targeted-body" rows="8" minlength="10" maxlength="20000" spellcheck="true" aria-describedby="targeted-editor-help" required></textarea>
+            <div class="targeted-editor-footer">
+              <span id="targeted-editor-help">Zaznacz tekst i wybierz formatowanie. Podgląd aktualizuje się na bieżąco.</span>
+              <span id="targeted-body-count" aria-live="off">0 / 20 000 znaków</span>
+            </div>
+          </div>
           <div class="targeted-preview" aria-live="polite">
+            <span class="targeted-preview-label">PODGLĄD WIADOMOŚCI</span>
             <strong id="targeted-preview-subject">Podgląd tematu</strong>
-            <p id="targeted-preview-body">Podgląd wiadomości</p>
+            <div id="targeted-preview-body">Podgląd wiadomości</div>
+            <p class="targeted-preview-note">Podgląd wersji roboczej · wysyłka po kliknięciu „Wyślij”.</p>
           </div>
           <div class="targeted-compose-actions">
-            <button type="submit" id="targeted-send">Wyślij</button>
+            <button type="submit" id="targeted-send"><span aria-hidden="true">➤</span> Wyślij wiadomość</button>
             <button type="button" id="targeted-compose-close">Zamknij</button>
           </div>
         </form>

@@ -14,9 +14,55 @@ function safeLink(value) {
 function copy(value) {
   return escapeEmailHtml(value).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
 }
+// Render only a constrained Markdown subset. Every content span and href is
+// escaped, raw HTML is inert, and links require credential-free HTTPS.
+function emailMarkdownInline(value){
+  const source=String(value), pattern=/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|\+\+([^+\n]+)\+\+|~~([^~\n]+)~~|\x60([^\x60\n]+)\x60|\*([^*\n]+)\*/g;
+  let out='',offset=0,match;
+  while((match=pattern.exec(source))!==null){
+    out+=escapeEmailHtml(source.slice(offset,match.index));
+    const wrapper=match[3]!==undefined?'strong':match[4]!==undefined?'u':
+      match[5]!==undefined?'s':match[6]!==undefined?'code':match[7]!==undefined?'em':null;
+    if(wrapper)out+='<'+wrapper+'>'+escapeEmailHtml(match[3]??match[4]??match[5]??match[6]??match[7])+'</'+wrapper+'>';
+    else if(match[1]!==undefined){
+      let url=null;
+      try {
+        const candidate=new URL(match[2]);
+        if(candidate.protocol==='https:'&&!candidate.username&&!candidate.password&&
+           candidate.hostname&&candidate.href.length<=2048)url=candidate.href;
+      }catch{}
+      out+=url?'<a href="'+escapeEmailHtml(url)+'" style="color:#8be6df;text-decoration:underline">'+escapeEmailHtml(match[1])+'</a>':escapeEmailHtml(match[0]);
+    }else out+=escapeEmailHtml(match[0]);
+    offset=pattern.lastIndex;
+  }
+  return out+escapeEmailHtml(source.slice(offset));
+}
+function emailMarkdownBody(value){
+  let output='',list='';
+  for(const line of String(value).replace(/\r\n?/g,'\n').split('\n')){
+    const ul=line.match(/^\s*[-*]\s+(.+)$/u),ol=line.match(/^\s*\d+[.)]\s+(.+)$/u);
+    const kind=ul?'ul':ol?'ol':'';
+    if(list&&kind!==list){output+='</'+list+'>';list='';}
+    if(kind){
+      if(!list){list=kind;output+='<'+list+' style="padding-left:21px;margin:9px 0">';}
+      output+='<li>'+emailMarkdownInline((ul||ol)[1])+'</li>';continue;
+    }
+    if(!line.trim()){output+='<div style="height:11px"></div>';continue;}
+    const h=line.match(/^(#{1,3})\s+(.+)$/u);
+    const text=h?h[2]:line.startsWith('> ')?line.slice(2):line;
+    const style=h?'font-weight:800;color:#fff;font-size:'+(h[1].length===1?'22':h[1].length===2?'19':'17')+'px;margin:13px 0 7px'
+      :line.startsWith('> ')?'border-left:3px solid #53dbc8;padding-left:12px;color:#c6dce0;margin:8px 0'
+      :'margin:5px 0';
+    const tag=h?'h'+h[1].length:line.startsWith('> ')?'blockquote':'p';
+    if(/^\s*---\s*$/u.test(line)){output+='<hr style="border:0;border-top:1px solid #39636c;margin:13px 0">';continue;}
+    output+='<'+tag+' style="'+style+'">'+emailMarkdownInline(text)+'</'+tag+'>';
+  }
+  if(list)output+='</'+list+'>';
+  return output;
+}
 export function renderPremiumEmail({
   category='WIADOMOŚĆ SERWISOWA',title,preheader='',body='',
-  actionUrl,actionLabel,code,unsubscribeUrl,footnote=''
+  actionUrl,actionLabel,code,unsubscribeUrl,footnote='',bodyMarkdown=false
 }={}) {
   if(typeof title!=='string'||!title.trim()) throw new TypeError('Email title required');
   if((actionUrl===undefined)!==(actionLabel===undefined))
@@ -47,7 +93,7 @@ export function renderPremiumEmail({
 </td></tr>
 <tr><td style="padding:30px 28px 15px">
  <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;color:#fff;font-weight:800">${escapeEmailHtml(title)}</h1>
- <div style="font-size:15px;line-height:1.8;color:#c6dce0">${copy(body)}</div>
+ <div style="font-size:15px;line-height:1.8;color:#c6dce0">${bodyMarkdown===true?emailMarkdownBody(body):copy(body)}</div>
 </td></tr>
 ${codePanel}${button}
 <tr><td style="padding:10px 28px 28px"><div style="border-top:1px solid #27505b;padding-top:18px;color:#a0bec4;font-size:13px;line-height:1.7">${copy(footnote)}</div></td></tr>

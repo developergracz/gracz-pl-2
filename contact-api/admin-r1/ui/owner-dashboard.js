@@ -336,6 +336,7 @@ function openTargeted(items){
   $("targeted-compose-close").disabled=false;
   $("targeted-preview-subject").textContent="Podgląd tematu";
   $("targeted-preview-body").textContent="Podgląd wiadomości";
+  $("targeted-body-count").textContent="0 / 20 000 znaków";
   $("targeted-status").textContent="";
   $("targeted-recipients").textContent=items.length===1
     ?"Odbiorca: "+items[0].email
@@ -352,10 +353,63 @@ $("targeted-compose-close").addEventListener("click",()=>{
 targetedDialog.addEventListener("cancel",event=>{
   if(targetedBusy)event.preventDefault();
 });
-for(const name of ["subject","body"])
-  $("targeted-"+name).addEventListener("input",()=>{
-    $("targeted-preview-"+name).textContent=$("targeted-"+name).value;
-  });
+$("targeted-subject").addEventListener("input",()=>{
+  $("targeted-preview-subject").textContent=$("targeted-subject").value.trim()||"Podgląd tematu";
+});
+const targetedBody=$("targeted-body");
+targetedBody.addEventListener("input",()=>{
+  $("targeted-body-count").textContent=targetedBody.value.length+" / 20 000 znaków";
+  campaignRenderPreview(targetedBody.value,$("targeted-preview-body"));
+});
+function targetedReplace(text,start,end,selectFrom,selectTo){
+  if(targetedBody.value.length-(end-start)+text.length>targetedBody.maxLength){
+    $("targeted-status").textContent="Limit wiadomości: 20 000 znaków.";return;
+  }
+  targetedBody.focus();
+  targetedBody.setRangeText(text,start,end,"select");
+  targetedBody.setSelectionRange(selectFrom,selectTo);
+  targetedBody.dispatchEvent(new Event("input",{bubbles:true}));
+}
+function targetedFormat(type){
+  if(targetedBusy||targetedStarted)return;
+  const start=targetedBody.selectionStart,end=targetedBody.selectionEnd;
+  const before=targetedBody.value;
+  if(["bold","italic","underline"].includes(type)){
+    const mark=type==="bold"?"**":type==="italic"?"*":"++";
+    const value=before.slice(start,end)||"tekst";
+    targetedReplace(mark+value+mark,start,end,start+mark.length,start+mark.length+value.length);
+    return;
+  }
+  if(type==="bullet"||type==="number"){
+    const from=before.lastIndexOf("\n",Math.max(0,start-1))+1;
+    const next=before.indexOf("\n",end),to=next<0?before.length:next;
+    const replacement=before.slice(from,to).split("\n").map((line,index)=>
+      (type==="bullet"?"- ":(index+1)+". ")+
+      line.replace(/^(?:\s*[-*]|\s*\d+[.)])\s+/u,"")
+    ).join("\n");
+    targetedReplace(replacement,from,to,from,from+replacement.length);
+    return;
+  }
+  if(type==="link"){
+    const entered=window.prompt("Podaj pełny adres HTTPS:","https://");
+    if(entered===null)return;
+    const href=campaignHttpsLink(entered.trim());
+    if(!href){$("targeted-status").textContent="Link musi być poprawnym adresem HTTPS.";return;}
+    const label=(before.slice(start,end)||"tekst linku").replace(/[\[\]\r\n]/g," ").trim();
+    const text="["+label+"]("+href+")";
+    targetedReplace(text,start,end,start,start+text.length);
+  }
+}
+$("targeted-dialog").querySelectorAll("[data-targeted-format]").forEach(button=>{
+  button.addEventListener("click",()=>targetedFormat(button.dataset.targetedFormat));
+});
+targetedBody.addEventListener("keydown",event=>{
+  if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+  if(event.key.toLowerCase()==="b"||event.key.toLowerCase()==="i"){
+    event.preventDefault();
+    targetedFormat(event.key.toLowerCase()==="b"?"bold":"italic");
+  }
+});
 $("targeted-compose").addEventListener("submit",async event=>{
   event.preventDefault();
   if(targetedBusy||targetedStarted||!targetedReady||!selectedHandles.length)return;
@@ -928,8 +982,8 @@ function campaignRenderInline(parent,text){
   }
   if(offset<text.length)parent.append(document.createTextNode(text.slice(offset)));
 }
-function campaignRenderPreview(body){
-  const output=$("campaign-preview-body");output.replaceChildren();
+function campaignRenderPreview(body,output=$("campaign-preview-body")){
+  output.replaceChildren();
   if(!body.trim()){
     output.textContent="Wpisz treść i wybierz „Pokaż podgląd”.";
     return;
