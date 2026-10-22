@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {renderPremiumEmail} from '../email/full-max-premium.mjs';
 import {createOwnerRecoveryMailer} from '../admin-r1/owner-recovery-mailer.mjs';
 
@@ -18,6 +19,17 @@ test('premium mail escapes user content, has correct brand and accessible CTA',(
   assert.match(html,/Potwierdź zapis<\/a>/);
   assert.match(html,/Wypisz się z newslettera/);
   assert.doesNotMatch(html,/<img\b|<iframe\b/);
+});
+
+test('approved mail identity keeps only white-red gracz.pl and thin-seam yellow-spade envelope',()=>{
+  const markup=renderPremiumEmail({title:'Potwierdź zapis',body:'Powiadomienie'});
+  assert.match(markup, /color:#fff">gracz<span style="color:#ef5261">\.pl<\/span>/);
+  const svg=readFileSync(new URL('../../maintenance-site/.well-known/bimi/gracz-envelope-yellow-spade.svg',import.meta.url),'utf8');
+  assert.match(svg,/baseProfile="tiny-ps"/);
+  assert.match(svg,/<rect x="22" y="63" width="212" height="137" rx="15" fill="#FFFFFF"\/>/);
+  assert.match(svg,/stroke="#CED3D9" stroke-width="1\.15"/);
+  assert.match(svg,/fill="#FFCC21"/);
+  assert.doesNotMatch(svg,/<text\b|<script\b|<image\b/i);
 });
 
 test('premium mail disallows external, insecure and credential-bearing action URLs',()=>{
