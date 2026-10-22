@@ -320,12 +320,12 @@ const accountAccessCss = fs.readFileSync(path.resolve(root, "assets/account-acce
 const legalJs = fs.readFileSync(path.resolve(root, "assets/legal.js"), "utf8");
 const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
 const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
-requireCheck(legalLinksJs.includes("account-access-premium.css?v=r2"), "account modal R2 stylesheet loader missing");
+requireCheck(legalLinksJs.includes("account-access-premium.css?v=r3"), "account modal R3 stylesheet loader missing");
 requireCheck(accountAccessCss.includes("max-height:calc(100dvh - 28px)"), "account modal: desktop viewport height guard missing");
 requireCheck(accountAccessCss.includes("@media (max-height:850px) and (min-width:641px)"), "account modal: compact-height desktop mode missing");
 requireCheck(legalJs.includes('owner-email-premium-modal'), "owner email premium modal missing");
 requireCheck(legalJs.includes('a[href="mailto:czsocha@wp.pl"]'), "owner email links are not intercepted");
-requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r2'), "owner email modal must reuse account premium sizing");
+requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r3'), "owner email modal must reuse account premium sizing");
 requireCheck(legalJs.includes('Napisz e-mail do gracz.pl'), "owner email premium CTA missing");
 requireCheck(regulation.includes('href="mailto:czsocha@wp.pl"'), "regulation: owner email mailto missing");
 requireCheck(privacy.includes('href="mailto:czsocha@wp.pl"'), "privacy: owner email mailto missing");
