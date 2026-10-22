@@ -488,55 +488,31 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
 
 
 
-test('OWNER recovery form checks syntax but never reveals the registered recovery mailbox',async()=>{
-  const [router,script,css]=await Promise.all([
+test('OWNER recovery uses one click and stored encrypted recovery mailbox',async()=>{
+  const [router,script,css,auth]=await Promise.all([
     readFile(new URL('../owner-router.mjs',import.meta.url),'utf8'),
     readFile(new URL('../ui/login.js',import.meta.url),'utf8'),
-    readFile(new URL('../ui/admin.css',import.meta.url),'utf8')
+    readFile(new URL('../ui/admin.css',import.meta.url),'utf8'),
+    readFile(new URL('../owner-auth.mjs',import.meta.url),'utf8')
   ]);
-  assert.match(router,/id="forgot-email-hint"/);
-  assert.match(router,/id="forgot-dialog" class="owner-recovery-premium"/);
-  assert.match(router,/aria-describedby="forgot-description"/);
-  assert.match(router,/class="forgot-eyebrow"/);
-  assert.match(router,/FULL MAX PREMIUM/);
-  assert.match(router,/class="forgot-card" aria-label="Wysyłka kodu odzyskiwania"/);
-  assert.match(router,/class="forgot-card" aria-label="Ustawienie nowego hasła"/);
-  assert.match(router,/id="forgot-close" type="button">Zamknij/);
-  assert.match(router,/id="forgot-request-form"/);
-  assert.match(router,/id="forgot-complete-form"/);
-  assert.match(router,/id="forgot-email-validation"[^>]*role="alert" hidden/);
-  assert.match(router,/id="forgot-email-validation-message"/);
-  assert.match(router,/id="forgot-email"[^>]*required/);
-  assert.match(router,/id="forgot-code"[^>]*minlength="10" maxlength="24"/);
-  assert.match(router,/pattern="\(\?:\[A-Za-z\]\{10\}\|\[A-Za-z0-9_-\]\{24\}\)"/);
-  assert.match(script,/recoveryEmail\.addEventListener\('input'/);
-  assert.match(script,/recoveryEmail\.addEventListener\('invalid',event=>\{\s*event\.preventDefault\(\)/);
-  assert.match(script,/Wpisz adres e-mail odzyskiwania hasła\./);
-  assert.match(script,/emailNotice\.hidden=false/);
-  assert.match(script,/if\(recoveryEmail\.validity\.valid\)hideEmailNotice\(\)/);
-  assert.match(script,/recoveryEmail\.validity\.valid/);
-  assert.match(script,/Format adresu e-mail jest poprawny, ale to nie oznacza, że jest przypisany/);
-  assert.doesNotMatch(script,/Ten adres e-mail nie został potwierdzony jako przypisany/);
-  assert.doesNotMatch(script,/requestStatus\.setAttribute\('data-state','accepted'\)/);
-  assert.match(script,/recoveryHint\.classList\.toggle\('is-invalid',invalid\)/);
-  assert.match(script,/requestStatus\.setAttribute\('data-state','processed'\)/);
-  assert.match(script,/Żądanie zostało przetworzone\. To NIE jest potwierdzenie wysłania kodu/);
-  assert.match(script,/Kod 10-literowy ważny 10 minut jest wysyłany wyłącznie na wcześniej potwierdzony adres odzyskiwania/);
-  assert.match(script,/requestStatus\.setAttribute\('data-state','error'\)/);
-  assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
-  assert.match(css,/#forgot-dialog \.forgot-email-validation\{/);
-  assert.match(css,/#forgot-dialog \.forgot-email-validation\[hidden\]\{display:none;\}/);
-  assert.match(css,/#forgot-dialog \.forgot-email-hint\{[\s\S]*?color:#b5f1e5/);
-  assert.match(css,/#forgot-dialog \.forgot-email-hint\.is-invalid\{[\s\S]*?color:#ff9197/);
-  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="processed"\]\{[\s\S]*?color:#f2d6a0/);
-  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="error"\]\{[\s\S]*?color:#ff9197/);
-  assert.match(css,/justify-self:center;width:max-content;max-width:100%/);
-  assert.match(css,/#forgot-dialog\.owner-recovery-premium\{/);
-  assert.match(css,/#forgot-dialog \.forgot-forms \.forgot-card\{/);
-  assert.match(css,/#forgot-dialog \.forgot-card form button\[type="submit"\]\{/);
-  assert.match(css,/#forgot-dialog \.forgot-card \.password-visibility__toggle\{/);
-  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="processed"\]\{/);
-  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?#forgot-dialog \.forgot-forms\{grid-template-columns:minmax\(0,1fr\)/);
+  assert.ok(router.includes('id="forgot-dialog" class="owner-recovery-premium"'));
+  assert.ok(router.includes('id="forgot-request-form"'));
+  assert.ok(router.includes('id="forgot-mailbox-note"'));
+  assert.ok(router.includes('Wyślij kod odzyskiwania'));
+  assert.ok(router.includes('id="forgot-complete-form"'));
+  assert.ok(router.includes('id="forgot-code"'));
+  assert.ok(!router.includes('id="forgot-email"'));
+  assert.ok(router.includes('await auth.requestPasswordRecovery()'));
+  assert.ok(script.includes('body:JSON.stringify({})'));
+  assert.ok(!script.includes("getElementById('forgot-email')"));
+  assert.ok(script.includes("requestStatus.setAttribute('data-state','processed')"));
+  assert.ok(script.includes('Ten komunikat nie potwierdza doręczenia'));
+  assert.ok(auth.includes('recoveryCrypto.decrypt(row.email_ciphertext'));
+  assert.ok(auth.includes('row.email_tag!==tagEmail(mailbox)'));
+  assert.ok(auth.includes('reset_daily_count>=5'));
+  assert.ok(auth.includes('async function completePasswordRecovery({code,newPassword}={})'));
+  assert.ok(css.includes('#forgot-dialog .forgot-mailbox-note{'));
+  assert.ok(css.includes('#forgot-dialog.owner-recovery-premium{'));
 });
 
 test('M6 recovery mailer sends transactional code only to the verified mailbox',async()=>{
