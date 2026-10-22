@@ -19,10 +19,15 @@ async function fixture(t) {
   const db=createDatabase({connectionString:url});
   t.after(async()=>{
     await db.query('DROP SCHEMA IF EXISTS newsletter_recovery CASCADE');
+    await db.query('DROP SCHEMA IF EXISTS newsletter_new CASCADE');
     await db.close();
   });
   await db.query('DROP SCHEMA IF EXISTS newsletter_recovery CASCADE');
   await db.query(schemaSql);
+  await db.query('DROP SCHEMA IF EXISTS newsletter_new CASCADE');
+  for (const name of ['001_new_only_doi.sql','002_verified_withdrawal.sql']) {
+    await db.query(await readFile(new URL('../persistence/new-only/'+name,import.meta.url),'utf8'));
+  }
   return {
     db,inbox:createWithdrawalInbox(db),
     fence:createWithdrawalSendFence(db)
@@ -146,7 +151,7 @@ test('#282 public readiness stays false for missing schema and ANY pending withd
 });
 
 
-function selfService(db,{providerFails=false}={}) {
+function selfService(db,{providerFails=false,afterVerifiedRecipient=async()=>{}}={}) {
   const delivered=[];
   const provider={calls:0,off:false,
     async ensureOff(){this.calls++;if(providerFails)throw new Error('synthetic timeout');this.off=true;return {off:true};},
@@ -158,7 +163,8 @@ function selfService(db,{providerFails=false}={}) {
     challengeKey:Buffer.alloc(32,2),
     encryptionKey:Buffer.alloc(32,3),
     challengeMailer:{async sendChallenge(message){delivered.push(message);}},
-    providerOff:provider
+    providerOff:provider,
+    afterVerifiedRecipient
   });
   return {api,delivered,provider};
 }
@@ -186,13 +192,77 @@ test('#283 self-service: new one-time mailbox proof triggers provider OFF and du
   assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_requests')).rows[0].n,1);
   const encrypted=(await db.query('SELECT ciphertext FROM newsletter_recovery.self_service_challenges')).rows[0].ciphertext;
   assert.equal(encrypted.includes(Buffer.from('synthetic@example.test')),false);
-  assert.equal(await fence.checkAvailable(),true,
-    'historically verified withdrawal must not block all unrelated campaigns');
-  const synthetic=await fence.withSendPermit(async()=>({admitted:true}));
-  assert.equal(synthetic.admitted,true,'admission does not itself select marketing recipients');
+  assert.equal(await fence.checkAvailable(),false);
   await assert.rejects(api.confirmChallenge({challengeId:msg.challengeId,token:msg.token}),
     {code:'WITHDRAWAL_CHALLENGE_REJECTED'});
   assert.equal(provider.calls,1);
+});
+
+// Synthetic ledger data only; all mailbox/provider effects stay in memory.
+async function completeRequest(db, suffix='a', {wrongChallenge=false}={}) {
+  const emailTag=suffix.repeat(64);
+  await db.query(`INSERT INTO newsletter_new.subscribers
+    (email_tag,ciphertext,nonce,auth_tag,challenge_id,state,delivery_state,source,consent_version,expires_at,confirmed_at)
+    VALUES($1,$2,$3,$4,$5,'active','sent','newsletter','test',now()+interval '1 day',now())`,
+    [emailTag,Buffer.alloc(16),Buffer.alloc(12),Buffer.alloc(16),randomUUID()]);
+  const {api,delivered}=selfService(db,{afterVerifiedRecipient:async({client,challengeId})=>{
+    await client.query('INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',
+      [emailTag,wrongChallenge?randomUUID():challengeId]);
+  }});
+  await api.requestChallenge({email:suffix+'@example.test'});
+  await api.confirmChallenge(delivered[0]);
+  return delivered[0].challengeId;
+}
+
+test('#335 all complete self-service proofs make only the logical gate available',async t=>{
+  const {db,fence}=await fixture(t);
+  await completeRequest(db,'a');
+  await completeRequest(db,'b');
+  assert.equal(await fence.checkAvailable(),true);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_recovery.withdrawal_requests')).rows[0].n,2);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM newsletter_new.revocations')).rows[0].n,2);
+});
+
+test('#335 mismatched DOI proof keeps HOLD despite verified provider OFF',async t=>{
+  const {db,fence}=await fixture(t);
+  await completeRequest(db,'a',{wrongChallenge:true});
+  assert.equal(await fence.checkAvailable(),false);
+  await assert.rejects(fence.withSendPermit(async()=>assert.fail('must not call provider')),
+    {code:'WITHDRAWAL_SEND_BLOCKED'});
+});
+
+test('#335 concurrent new intake wins before admission and restores HOLD',{timeout:30000},async t=>{
+  const {db,fence}=await fixture(t);
+  await completeRequest(db);
+  assert.equal(await fence.checkAvailable(),true);
+  let entered,release;
+  const locked=new Promise(resolve=>{entered=resolve;});
+  const finish=new Promise(resolve=>{release=resolve;});
+  const intake=db.transaction(async client=>{
+    await client.query('SELECT pg_advisory_xact_lock($1::int,$2::int)',WITHDRAWAL_EGRESS_LOCK);
+    await client.query(`INSERT INTO newsletter_recovery.withdrawal_requests
+      (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'operator_record',$3)`,
+      [randomUUID(),'f'.repeat(64),randomUUID()]);
+    entered();
+    await finish;
+  });
+  try {
+    await locked;
+    let attempted;
+    const sharedAttempt=new Promise(resolve=>{attempted=resolve;});
+    const waitingFence=createWithdrawalSendFence({transaction:work=>db.transaction(client=>work({
+      query(sql,params) {
+        const result=client.query(sql,params);
+        if(sql.includes('pg_advisory_xact_lock_shared'))attempted();
+        return result;
+      }
+    }))});
+    const available=waitingFence.checkAvailable();
+    await sharedAttempt;
+    release();
+    await intake;
+    assert.equal(await available,false);
+  } finally { release();await intake; }
 });
 
 test('#283 self-service: ambiguous provider result never confirms, preserves durable hold, rejects replay',{timeout:30000},async t=>{
