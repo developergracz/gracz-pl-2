@@ -491,6 +491,15 @@ test('OWNER recovery form checks syntax but never reveals the registered recover
     readFile(new URL('../ui/admin.css',import.meta.url),'utf8')
   ]);
   assert.match(router,/id="forgot-email-hint"/);
+  assert.match(router,/id="forgot-dialog" class="owner-recovery-premium"/);
+  assert.match(router,/aria-describedby="forgot-description"/);
+  assert.match(router,/class="forgot-eyebrow"/);
+  assert.match(router,/FULL MAX PREMIUM/);
+  assert.match(router,/class="forgot-card" aria-label="Wysyłka kodu odzyskiwania"/);
+  assert.match(router,/class="forgot-card" aria-label="Ustawienie nowego hasła"/);
+  assert.match(router,/id="forgot-close" type="button">Zamknij/);
+  assert.match(router,/id="forgot-request-form"/);
+  assert.match(router,/id="forgot-complete-form"/);
   assert.match(router,/id="forgot-email-validation"[^>]*role="alert" hidden/);
   assert.match(router,/id="forgot-email-validation-message"/);
   assert.match(router,/id="forgot-email"[^>]*required/);
@@ -517,6 +526,12 @@ test('OWNER recovery form checks syntax but never reveals the registered recover
   assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="accepted"\]\{[\s\S]*?color:#91f1d9/);
   assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="error"\]\{[\s\S]*?color:#ff9197/);
   assert.match(css,/justify-self:center;width:max-content;max-width:100%/);
+  assert.match(css,/#forgot-dialog\.owner-recovery-premium\{/);
+  assert.match(css,/#forgot-dialog \.forgot-forms \.forgot-card\{/);
+  assert.match(css,/#forgot-dialog \.forgot-card form button\[type="submit"\]\{/);
+  assert.match(css,/#forgot-dialog \.forgot-card \.password-visibility__toggle\{/);
+  assert.match(css,/#forgot-dialog #forgot-request-status\[data-state="accepted"\]\{/);
+  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?#forgot-dialog \.forgot-forms\{grid-template-columns:minmax\(0,1fr\)/);
 });
 
 test('M6 recovery mailer sends transactional code only to the verified mailbox',async()=>{
