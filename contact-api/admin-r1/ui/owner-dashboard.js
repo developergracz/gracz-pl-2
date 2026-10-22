@@ -1663,7 +1663,8 @@ async function ownerLimitUnlock(email){
     });
     $("limit-message").textContent=r.changed?"Odblokowano licznik adresu. Inne zabezpieczenia pozostają aktywne.":"Ograniczenie już wygasło.";
     verifiedLimitEmail=null;$("limit-result").hidden=true;
-    await Promise.all([ownerLimitHistory(),ownerBlockedList()]);
+    await ownerBlockedList();
+    await ownerLimitHistory();
   }catch{
     $("limit-message").textContent="Nie potwierdzono odblokowania. Sprawdź ponownie stan.";
     verifiedLimitEmail=null;$("limit-result").hidden=true;
@@ -1680,5 +1681,5 @@ $("limit-clear").addEventListener("click",()=>{
 });
 $("limit-history-refresh").addEventListener("click",ownerLimitHistory);
 document.querySelector('a[href="#owner-limits"]').addEventListener("click",()=>{
-  if(ownerCsrf)void Promise.all([ownerLimitHistory(),ownerBlockedList()]);
+  if(ownerCsrf)void (async()=>{await ownerBlockedList();await ownerLimitHistory();})();
 });
