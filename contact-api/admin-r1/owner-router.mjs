@@ -55,7 +55,11 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <form id="login-form" autocomplete="off">
 ${passwordOnly?`<label for="username">Nick administratora</label>
 <input id="username" type="text" autocomplete="username"
-pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" required>`:''}
+pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" minlength="3" maxlength="32" required>
+<div id="login-nick-validation" class="login-nick-validation" role="alert" hidden>
+<span class="login-nick-validation__icon" aria-hidden="true">!</span>
+<span id="login-nick-validation-message"></span>
+</div>`:''}
 <label for="password">Hasło</label>
 <input id="password" type="password" autocomplete="current-password"
 minlength="${passwordOnly?9:16}" maxlength="128" required>
