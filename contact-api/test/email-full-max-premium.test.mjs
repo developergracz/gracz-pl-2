@@ -41,3 +41,19 @@ test('OWNER one-time recovery secret is shown as a code, never embedded in a URL
   assert.doesNotMatch(sent.html,/href="[^"]*A{24}/);
   assert.ok(sent.text.includes(code));
 });
+
+
+test('targeted Markdown email renders formatting safely and leaves non-targeted content plain',()=>{
+  const body='**Witaj** *graczu* ++ważne++\\n- Pierwsza wiadomość\\n- Druga wiadomość\\n[Odwiedź](https://gracz.pl/poradniki/)\\n<script>alert(1)</script> [klik](javascript:alert(1))';
+  const premium=renderPremiumEmail({title:'Nowości gracz.pl',body,bodyMarkdown:true});
+  assert.match(premium,/<strong>Witaj<\\/strong>/);
+  assert.match(premium,/<em>graczu<\\/em>/);
+  assert.match(premium,/<u>ważne<\\/u>/);
+  assert.match(premium,/<ul[^>]*>/);
+  assert.match(premium,/<a href="https:\\/\\/gracz.pl\\/poradniki\\/"/);
+  assert.match(premium,/&lt;script&gt;alert\\(1\\)&lt;\\/script&gt;/);
+  assert.doesNotMatch(premium,/<script|href="javascript:/);
+  const plain=renderPremiumEmail({title:'Nowości',body});
+  assert.ok(plain.includes('**Witaj**'));
+  assert.doesNotMatch(plain,/<strong>Witaj<\\/strong>/);
+});
