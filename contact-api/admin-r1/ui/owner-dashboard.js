@@ -1667,7 +1667,11 @@ async function ownerLimitUnlock(email){
   }catch{
     $("limit-message").textContent="Nie potwierdzono odblokowania. Sprawdź ponownie stan.";
     verifiedLimitEmail=null;$("limit-result").hidden=true;
-  }finally{limitsSaving=false;}
+  }finally{
+    limitsSaving=false;
+    // Re-enable row actions after the post-unlock list refresh.
+    $("limit-active-body").querySelectorAll("button").forEach(button=>{button.disabled=false;});
+  }
 }
 $("limit-clear").addEventListener("click",()=>{
   if(verifiedLimitEmail&&
