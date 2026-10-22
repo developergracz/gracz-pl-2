@@ -464,46 +464,10 @@ dialog::backdrop {
 #forgot-dialog h2{margin:0 0 14px}
 #forgot-dialog form{display:grid;gap:8px;margin:18px 0}
 #forgot-dialog form label{font-size:14px}
-#forgot-dialog .forgot-email-hint{
-  margin:0;padding:9px 11px;color:#b5f1e5;background:#102e36;
-  border:1px solid #438a82;border-radius:9px;font-size:12px;line-height:1.45;
-  font-weight:650;
-}
-#forgot-dialog .forgot-email-hint.is-invalid{
-  color:#ff9197;background:#2b1d29;border-color:#a85863;
-}
-#forgot-dialog #forgot-request-status{
-  color:#c8e9eb;font-weight:650;
-}
-#forgot-dialog #forgot-request-status[data-state="processed"]{
-  color:#f2d6a0;
-}
-#forgot-dialog #forgot-request-status[data-state="error"]{
-  color:#ff9197;
-}
-/* Full Max Premium: content-sized warning instead of native browser tooltip. */
-#forgot-dialog .forgot-email-validation{
-  display:inline-flex;align-items:center;gap:10px;position:relative;
-  justify-self:center;width:max-content;max-width:100%;min-width:0;
-  padding:11px 14px;margin:6px 0 4px;border:1px solid #d6a950;
-  border-radius:12px;background:linear-gradient(120deg,#20272e,#102a35);
-  color:#f7fcff;font-size:13px;font-weight:700;line-height:1.4;
-  box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 1px rgba(65,219,205,.22);
-  overflow-wrap:anywhere;
-}
-#forgot-dialog .forgot-email-validation[hidden]{display:none;}
-#forgot-dialog .forgot-email-validation::before{
-  content:"";position:absolute;top:-6px;left:calc(50% - 5px);
-  height:10px;width:10px;transform:rotate(45deg);
-  background:#20272e;border-top:1px solid #d6a950;border-left:1px solid #d6a950;
-}
-#forgot-dialog .forgot-email-validation__icon{
-  flex:0 0 27px;display:grid;place-items:center;width:27px;height:27px;
-  border-radius:7px;background:linear-gradient(140deg,#f1ac3d,#c87b1a);
-  color:#fff;font-size:20px;font-weight:800;
-}
-#forgot-dialog #forgot-email[aria-invalid="true"]{
-  border-color:#e6bd6c;box-shadow:0 0 0 2px rgba(84,228,207,.27);
+#forgot-dialog .forgot-mailbox-note{
+  margin:0;padding:14px 15px;color:#b9efec;background:#12313c;
+  border:1px solid #4a888b;border-radius:11px;
+  font-size:13px;line-height:1.55;font-weight:650;
 }
 #forgot-dialog form button{margin:8px 0 0}
 #forgot-dialog p[role="status"],#owner-recovery-status{min-height:24px;overflow-wrap:anywhere}
@@ -1423,12 +1387,10 @@ footer .footer-brand span{color:#ff6573}
 #forgot-dialog .forgot-card form button:disabled{
   opacity:.65;cursor:wait;box-shadow:none;
 }
-#forgot-dialog #forgot-email-hint{
-  padding:12px 13px;border:1px solid #3d8080;border-radius:10px;
-  background:#11333b;color:#b8f2e6;font-size:12px;
-}
-#forgot-dialog #forgot-email-hint.is-invalid{
-  color:#ffb6b9;background:#39242c;border-color:#be646d;
+#forgot-dialog .forgot-mailbox-note{
+  padding:16px;border:1px solid #398b84;border-radius:12px;
+  background:linear-gradient(140deg,#0e343b,#0f2a39);
+  color:#bef7e9;font-size:13px;line-height:1.55;
 }
 #forgot-dialog #forgot-request-status,
 #forgot-dialog #forgot-complete-status{
