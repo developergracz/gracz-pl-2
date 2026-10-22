@@ -120,49 +120,8 @@ if(recoveryDialog){
   const finishForm=document.getElementById('forgot-complete-form');
   const requestStatus=document.getElementById('forgot-request-status');
   const completeStatus=document.getElementById('forgot-complete-status');
-  const recoveryEmail=document.getElementById('forgot-email');
-  const recoveryHint=document.getElementById('forgot-email-hint');
-  const emailNotice=document.getElementById('forgot-email-validation');
-  const emailNoticeMessage=document.getElementById('forgot-email-validation-message');
-  const hideEmailNotice=()=>{
-    emailNotice.hidden=true;
-    recoveryEmail.removeAttribute('aria-invalid');
-    recoveryEmail.setAttribute('aria-describedby','forgot-email-hint');
-  };
-  const showEmailNotice=()=>{
-    emailNoticeMessage.textContent=recoveryEmail.validity.valueMissing
-      ?'Wpisz adres e-mail odzyskiwania hasła.'
-      :'Wpisz poprawny adres e-mail.';
-    emailNotice.hidden=false;
-    recoveryEmail.setAttribute('aria-invalid','true');
-    recoveryEmail.setAttribute('aria-describedby',
-      'forgot-email-hint forgot-email-validation-message');
-  };
-  recoveryEmail.addEventListener('invalid',event=>{
-    event.preventDefault(); // Keep required/type=email validation, suppress native popup.
-    showEmailNotice();
-  });
-  recoveryEmail.addEventListener('input',()=>{
-    if(recoveryEmail.validity.valid)hideEmailNotice();
-    else if(!emailNotice.hidden)showEmailNotice();
-  });
-  recoveryEmail.addEventListener('input',()=>{
-    // A public recovery page can check only syntax. The server privately
-    // compares the saved recovery address and sends only on a match.
-    const value=recoveryEmail.value.trim();
-    const invalid=value.length>0&&!recoveryEmail.validity.valid;
-    recoveryHint.classList.toggle('is-invalid',invalid);
-    recoveryHint.textContent=value.length===0
-      ?'Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.'
-      :invalid
-        ?'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.'
-        :'Format adresu e-mail jest poprawny, ale to nie oznacza, że jest przypisany do konta administratora. Upewnij się, że wpisujesz adres odzyskiwania hasła.';
-    requestStatus.textContent='';
-    requestStatus.removeAttribute('data-state');
-  });
   sendForm.addEventListener('submit',async event=>{
     event.preventDefault();
-    hideEmailNotice();
     const button=sendForm.querySelector('button[type="submit"]');
     if(button.disabled)return;
     button.disabled=true;
@@ -172,11 +131,11 @@ if(recoveryDialog){
       const response=await fetch('/owner/newsletter/recover/request',{
         method:'POST',credentials:'same-origin',cache:'no-store',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:document.getElementById('forgot-email').value})
+        body:JSON.stringify({})
       });
       if(!response.ok)throw Error('unavailable');
       requestStatus.setAttribute('data-state','processed');
-      requestStatus.textContent='Żądanie zostało przetworzone. To NIE jest potwierdzenie wysłania kodu. Kod 10-literowy ważny 10 minut jest wysyłany wyłącznie na wcześniej potwierdzony adres odzyskiwania. Sprawdź właściwą skrzynkę i folder Spam.';
+      requestStatus.textContent='Żądanie zostało przetworzone. Jeśli dla konta zapisano potwierdzony adres odzyskiwania i nie przekroczono limitu, wysłano na niego 10-literowy kod ważny 10 minut. Sprawdź skrzynkę i folder Spam. Ten komunikat nie potwierdza doręczenia.';
     }catch{
       requestStatus.setAttribute('data-state','error');
       requestStatus.textContent='Odzyskiwanie jest chwilowo niedostępne. Spróbuj później.';
@@ -199,7 +158,6 @@ if(recoveryDialog){
         method:'POST',credentials:'same-origin',cache:'no-store',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          email:document.getElementById('forgot-email').value,
           code:document.getElementById('forgot-code').value.trim(),
           newPassword:newPassword.value
         })
