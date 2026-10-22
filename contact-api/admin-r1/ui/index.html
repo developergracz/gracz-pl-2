@@ -317,7 +317,7 @@
               </div>
             </div>
             <p class="campaign-audience muted">Podgląd formatuje wersję roboczą; w bazie zapisujemy tekst ze znacznikami. Wysyłka wiadomości HTML wymaga oddzielnego wdrożenia i jest obecnie wyłączona.</p>
-            <p class="campaign-audience muted">Docelowi odbiorcy: wyłącznie aktywne subskrypcje z potwierdzoną zgodą. W tym etapie nie wykonuje się wysyłki.</p>
+            <p class="campaign-audience muted">Odbiorcy: tylko aktywne subskrypcje z potwierdzoną zgodą. Wysyłanie jednym kliknięciem działa wyłącznie przy aktywnej usłudze wysyłki; wymagane blokady bezpieczeństwa pozostają włączone.</p>
             <p id="campaign-consent-evidence" class="muted" role="status" aria-live="polite">Dowody zgody: jeszcze nie sprawdzono. To informacja orientacyjna, a nie zgoda na wysłanie kampanii.</p>
             <p id="campaign-withdrawal-readiness" class="muted" role="status" aria-live="polite">Obsługa wypisania: jeszcze nie sprawdzono. Wysyłka kampanii jest wyłączona.</p>
             <p id="campaign-egress-readiness" class="muted" role="status" aria-live="polite">Globalna blokada marketingowa: niezweryfikowana. Wysyłka kampanii jest wyłączona.</p>
@@ -328,6 +328,7 @@
               <button type="button" id="campaign-refresh-drafts" disabled>Odśwież zapisane</button>
               <button type="button" id="campaign-send-test" disabled>Wyślij test do administratora</button>
               <button type="button" id="campaign-approve-content" disabled>Zatwierdź treść (bez wysyłki)</button>
+              <button type="button" id="campaign-send-now" disabled>Wyślij do subskrybentów</button>
             </div>
           </form>
           <p id="campaign-preview-status" role="status" aria-live="polite"></p>
