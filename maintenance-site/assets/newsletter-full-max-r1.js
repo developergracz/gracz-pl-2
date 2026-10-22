@@ -177,6 +177,7 @@
   });
   function clearNavigation(){
     generation++;actionMode='';actionToken='';controllers.forEach(function(controller){controller.abort();});
+    actionPanel.classList.remove('nl-action-dialog--active');
     if(actionPanel.open)actionPanel.close();
     actionClose.disabled=false;actionClose.textContent='Anuluj';
     followup.hidden=true;
@@ -297,7 +298,15 @@
         actionTitle.textContent='Subskrypcja wyłączona';actionCopy.textContent='Zgoda na newsletter gracz.pl została wycofana.';
       }
       actionButton.hidden=true;
-      setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
+      if(actionTitle.textContent==='Newsletter aktywny'){
+        // Present the verified result once, inside the Full Max Premium card.
+        actionPanel.classList.add('nl-action-dialog--active');
+        var headline=document.createElement('strong'),message=document.createElement('span');
+        headline.textContent=actionTitle.textContent;
+        message.textContent=actionCopy.textContent;
+        actionStatus.replaceChildren(headline,message);
+        actionStatus.classList.remove('is-error');
+      }else setStatus(actionStatus,actionTitle.textContent+'. '+actionCopy.textContent);
       actionStatus.setAttribute('tabindex','-1');actionStatus.focus();
       if(mode==='status'&&result.state==='active'){
         openResultDialog('Ten adres już jest w naszym newsletterze',
