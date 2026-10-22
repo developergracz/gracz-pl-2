@@ -208,6 +208,24 @@ test('OWNER session: password, one-use TOTP, lockout, durable token, idle expira
   assert.ok((await db.query('SELECT count(*)::int AS n FROM newsletter_owner.audit')).rows[0].n>=7);
 });
 
+test('OWNER login nickname validation uses accessible Full Max Premium message',async()=>{
+  const [router,login,css]=await Promise.all([
+    readFile(new URL('../owner-router.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../ui/login.js',import.meta.url),'utf8'),
+    readFile(new URL('../ui/admin.css',import.meta.url),'utf8')
+  ]);
+  assert.match(router,/minlength="3" maxlength="32" required>/);
+  assert.match(router,/id="login-nick-validation"[^>]+role="alert" hidden/);
+  assert.match(router,/id="login-nick-validation-message"/);
+  assert.match(login,/nickname\.addEventListener\('invalid',event=>\{\s*event\.preventDefault\(\)/);
+  assert.match(login,/nickNotice\.hidden=false/);
+  assert.match(login,/nickname\.addEventListener\('input'/);
+  assert.match(login,/if\(nickname\.validity\.valid\)hideNotice\(\)/);
+  assert.match(login,/Wydłuż ten tekst do co najmniej 3 znaków/);
+  assert.match(css,/width:min\(600px,calc\(100vw - 32px\)\)/);
+  assert.match(css,/#login-nick-validation\[hidden\]\{display:none;\}/);
+});
+
 test('phone-free OWNER login requires valid nick, locks out guessing and rotates session',async(t)=>{
   await db.query('UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
   await db.query('DELETE FROM newsletter_owner.sessions');
