@@ -111,7 +111,7 @@
           ?'Zlecono wysłanie linku do bezpiecznego sprawdzenia statusu. Sprawdź skrzynkę e-mail. Ten komunikat nie ujawnia statusu subskrypcji ani dostarczenia wiadomości.'
           :reply.state==='already_subscribed'
             ?'Ten adres już jest w naszym newsletterze.'
-            :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości. Jeśli link nie dotrze, skontaktuj się z obsługą przez stronę Kontakt. Ponowny zapis po wypisaniu może wymagać indywidualnej weryfikacji.');
+            :'Zgłoszenie przyjęte do obsługi. Sprawdź skrzynkę e-mail. Ta odpowiedź nie potwierdza statusu subskrypcji ani dostarczenia wiadomości. Jeśli link nie dotrze, skontaktuj się z obsługą przez stronę Kontakt. Po wypisaniu możesz zapisać się ponownie, potwierdzając nową zgodę. Jeśli poprzedni link wygasł, złóż nowe zgłoszenie. Przy problemach z doręczeniem skorzystaj z Kontakt.');
         form.reset();openedAt=Date.now();
         if(path==='/newsletter/subscribe'){
           if(reply.state==='already_subscribed'){

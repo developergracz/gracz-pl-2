@@ -123,8 +123,16 @@ function fakeStore() {
       },
       async transaction(work){return work(client);},
       async query(sql,p){
-        assert.match(sql,/delivery_state='sent'/);
         const row=records.get(p[0]);
+        if(sql.includes('SET expires_at=clock_timestamp()')){
+          assert.match(sql,/delivery_state='uncertain'/);
+          if(row?.challenge_id===p[1]&&row.state==='pending'&&row.delivery_state==='uncertain'){
+            row.expires_at=new Date(Date.now()-1000);
+            return {rowCount:1};
+          }
+          return {rowCount:0};
+        }
+        assert.match(sql,/delivery_state='sent'/);
         if(row?.challenge_id===p[1]){row.delivery_state='sent';return {rowCount:1};}
         return {rowCount:0};
       }
@@ -386,4 +394,48 @@ test('provider rejection or ambiguous acceptance leaves DOI unconfirmable withou
     assert.equal([...records.values()][0].delivery_state,'uncertain');
     assert.equal(events.length,0);
   }
+});
+
+
+test('definite Resend refusal releases a pending challenge without activating it',async()=>{
+  const {db,records,events}=fakeStore();
+  const tokens=[];let attempts=0;
+  const manager=createNewOnlyNewsletter({database:db,enabled:true,
+    encryptionKey:key(1),subjectKey:key(2),apiKey:'synthetic',
+    emailFrom:'newsletter@example.test',checkDeliveryAllowed:async()=>true,
+    fetchFn:async(_url,options)=>{
+      attempts++;
+      const token=JSON.parse(options.body).text.match(/#confirm=(ni3[.][A-Za-z0-9_.-]+)/)[1];
+      tokens.push(token);
+      return attempts===1?{ok:false,status:422}:{ok:true,json:async()=>({id:'receipt'})};
+    }});
+  const email='retry-after-422@example.test';
+  assert.deepEqual(await manager.acceptOptIn({email}),{state:'request_received'});
+  const row=[...records.values()][0];
+  assert.equal(row.delivery_state,'uncertain');
+  assert.ok(Date.parse(row.expires_at)<=Date.now());
+  assert.equal(events.length,0);
+  await assert.rejects(manager.confirm(tokens[0]),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+  assert.deepEqual(await manager.acceptOptIn({email}),{state:'request_received'});
+  assert.equal(attempts,2);
+  assert.notEqual(tokens[0],tokens[1]);
+  assert.deepEqual(await manager.confirm(tokens[1]),{state:'subscribed'});
+  assert.equal(events.length,1);
+  await assert.rejects(manager.confirm(tokens[0]),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+});
+
+test('expired pending DOI is renewable without resetting consent history',async()=>{
+  const {db,records,events}=fakeStore();
+  const {manager,sent,link}=recordingManager(db);
+  await manager.acceptOptIn({email:'expired-request@example.test'});
+  const old=link('confirm');
+  const row=[...records.values()][0];row.expires_at=new Date(Date.now()-1000);
+  assert.deepEqual(await manager.acceptOptIn({email:'expired-request@example.test'}),
+    {state:'request_received'});
+  assert.equal(sent.length,2);
+  const fresh=link('confirm');
+  assert.notEqual(old,fresh);
+  await assert.rejects(manager.confirm(old),{code:'NEWSLETTER_CONFIRM_REJECTED'});
+  assert.deepEqual(await manager.confirm(fresh),{state:'subscribed'});
+  assert.equal(events.length,1);
 });

@@ -185,7 +185,24 @@ export function createNewOnlyNewsletter({
       }),
       signal:AbortSignal.timeout(10000),
     });
-    if (!response.ok) throw unavailable();
+    if (!response.ok) {
+      // A definitive Resend rejection means no message was accepted.
+      // Expire this specific challenge, so a deliberate new POST can issue
+      // a fresh DOI without a 30-minute dead end. Do not expose the verdict
+      // to anonymous callers or touch confirmed consent.
+      // Timeout, rate limit, 5xx and missing receipt remain uncertain:
+      // preserve the TTL fence against duplicate email delivery.
+      if ([400, 422].includes(response.status)) {
+        const expired = await database.query(`
+          UPDATE newsletter_new.subscribers SET expires_at=clock_timestamp()
+          WHERE email_tag=$1 AND challenge_id=$2
+            AND state='pending' AND delivery_state='uncertain'
+        `,[emailTag,challengeId]);
+        if (expired.rowCount !== 1) throw unavailable();
+        return {state:'request_received'};
+      }
+      throw unavailable();
+    }
     const receipt = await response.json().catch(() => null);
     if (typeof receipt?.id !== 'string' || !receipt.id) throw unavailable();
     const sent = await database.query(`
