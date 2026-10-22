@@ -24,6 +24,37 @@ document.querySelectorAll('input[type="password"]').forEach(input=>{
 
 const form=document.getElementById('login-form');
 const status=document.getElementById('login-status');
+// Replace the browser's unstyleable nickname tooltip with a readable Premium notice.
+const nickname=document.getElementById('username');
+const nickNotice=document.getElementById('login-nick-validation');
+if(nickname&&nickNotice){
+  const message=document.getElementById('login-nick-validation-message');
+  const hideNotice=()=>{
+    nickNotice.hidden=true;
+    nickname.removeAttribute('aria-invalid');
+    nickname.removeAttribute('aria-describedby');
+  };
+  const showNotice=()=>{
+    const count=nickname.value.length;
+    message.textContent=nickname.validity.valueMissing
+      ?'Wpisz nick administratora.'
+      :count<3
+        ?'Wydłuż ten tekst do co najmniej 3 znaków (teraz używasz '+count+' znaków).'
+        :'Nick musi zaczynać się literą i zawierać tylko litery, cyfry, kropki, myślniki lub podkreślenia.';
+    nickNotice.hidden=false;
+    nickname.setAttribute('aria-invalid','true');
+    nickname.setAttribute('aria-describedby','login-nick-validation-message');
+  };
+  nickname.addEventListener('invalid',event=>{
+    event.preventDefault(); // Prevent the native tooltip; retain HTML constraint checks.
+    showNotice();
+  });
+  nickname.addEventListener('input',()=>{
+    if(nickname.validity.valid)hideNotice();
+    else if(!nickNotice.hidden)showNotice();
+  });
+}
+
 form.addEventListener('submit',async event=>{
   event.preventDefault();
   const password=document.getElementById('password');
