@@ -8,6 +8,7 @@ import { createPremiumReplyManager } from "./premium-reply.mjs";
 import { createHeldNewsletterManager } from "./security/newsletter-recovery-hold.mjs";
 import { createNewOnlyNewsletter } from "./new-only-newsletter.mjs";
 import { createOwnerRouter } from "./admin-r1/owner-router.mjs";
+import { createNewsletterLimitControl } from "./admin-r1/newsletter-limit-control.mjs";
 import { createCampaignDraftStore } from "./campaigns/draft-store.mjs";
 import { createCampaignAudienceProofCount } from "./campaigns/audience-proof-count.mjs";
 import { createWithdrawalSendFence } from "./persistence/recovery/withdrawal-send-fence.mjs";
@@ -109,8 +110,14 @@ const checkDeliveryAllowed = email => providerSuppression
 const newOnlyNewsletter = createNewOnlyNewsletter({database,apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM,checkDeliveryAllowed});
 const ownerRecoveryMailer=createOwnerRecoveryMailer({apiKey:RESEND_API_KEY,emailFrom:EMAIL_FROM});
 const campaignEgressFence=createWithdrawalSendFence(database);
+// Closure adapters read existing buckets only after API startup.
+const ownerLimits=createNewsletterLimitControl({
+  getBucket:email=>newsletterEmailBuckets.get(hashValue('status:'+email)),
+  clearBucket:email=>newsletterEmailBuckets.delete(hashValue('status:'+email))
+});
 const ownerAdmin=createOwnerRouter({
   database,
+  limits:ownerLimits,
   enabled:process.env.NEWSLETTER_OWNER_ADMIN_ENABLED==='1',
   passwordSpec:process.env.NEWSLETTER_OWNER_PASSWORD_VERIFIER,
   totpBase32:process.env.NEWSLETTER_OWNER_TOTP_SECRET,

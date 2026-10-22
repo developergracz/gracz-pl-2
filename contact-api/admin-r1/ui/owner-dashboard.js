@@ -1549,3 +1549,79 @@ async function checkCampaignDraftAvailability(){
     }
   }catch{ /* release remains disabled */ }
 }
+
+
+// OWNER status e-mail limit management: one scoped counter, no consent mutation.
+let verifiedLimitEmail=null,limitsSaving=false;
+async function ownerLimitInspect(){
+  if(!ownerCsrf||limitsSaving)return;
+  if(!$("limit-email").reportValidity())return;
+  limitsSaving=true;verifiedLimitEmail=null;
+  $("limit-clear").disabled=true;$("limit-inspect").disabled=true;
+  $("limit-message").textContent="Sprawdzanie…";
+  try{
+    const result=await request("/owner/newsletter/limits/inspect",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email:$("limit-email").value.trim()})
+    });
+    verifiedLimitEmail=result.email;
+    $("limit-result").hidden=false;
+    $("limit-state").textContent=result.blocked?"Limit adresu wykorzystany":"Brak aktywnej blokady adresu";
+    $("limit-count").textContent="Zapytania: "+result.used+" / "+result.limit+
+      " · Pozostało: "+result.remaining;
+    $("limit-expiry").textContent=result.expiresAt
+      ?"Odblokowanie automatyczne: "+warsawTime(result.expiresAt):"Brak aktywnego okna";
+    $("limit-clear").disabled=!result.blocked;
+    $("limit-message").textContent=result.blocked?"Można wyzerować wyłącznie ten licznik.":"Brak blokady do usunięcia.";
+  }catch{
+    $("limit-result").hidden=true;$("limit-message").textContent="Odczyt niedostępny.";
+  }finally{limitsSaving=false;$("limit-inspect").disabled=false;}
+}
+async function ownerLimitHistory(){
+  if(!ownerCsrf)return;
+  try{
+    const r=await request("/owner/newsletter/limits/history",{
+      method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
+    });
+    const list=$("limit-history-list");list.replaceChildren();
+    for(const ev of r.events){
+      const item=document.createElement("li");
+      item.textContent=warsawTime(ev.at)+" — "+ev.action+" ("+ev.recipient+") · "+ev.actor;
+      list.append(item);
+    }
+    if(!r.events.length){
+      const item=document.createElement("li");
+      item.textContent="Brak odblokowań od uruchomienia API.";list.append(item);
+    }
+    $("limit-history-info").textContent="Historia bieżącej instancji od "+warsawTime(r.since)+
+      ". Dziennik techniczny jest w logach Render.";
+  }catch{$("limit-history-info").textContent="Historia chwilowo niedostępna.";}
+}
+$("limit-form").addEventListener("submit",event=>{
+  event.preventDefault();void ownerLimitInspect();
+});
+$("limit-email").addEventListener("input",()=>{
+  verifiedLimitEmail=null;$("limit-clear").disabled=true;$("limit-result").hidden=true;
+});
+$("limit-clear").addEventListener("click",async()=>{
+  if(!ownerCsrf||limitsSaving||!verifiedLimitEmail||
+     $("limit-email").value.trim().toLowerCase()!==verifiedLimitEmail)return;
+  limitsSaving=true;$("limit-clear").disabled=true;
+  $("limit-message").textContent="Odblokowywanie…";
+  try{
+    const r=await request("/owner/newsletter/limits/unlock",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email:verifiedLimitEmail,confirmation:"ODBLOKUJ ADRES"})
+    });
+    $("limit-message").textContent=r.changed?"Odblokowano licznik adresu. Inne zabezpieczenia pozostają aktywne.":"Ograniczenie już wygasło.";
+    verifiedLimitEmail=null;$("limit-result").hidden=true;
+    await ownerLimitHistory();
+  }catch{
+    $("limit-message").textContent="Nie potwierdzono odblokowania. Sprawdź ponownie stan.";
+    verifiedLimitEmail=null;$("limit-result").hidden=true;
+  }finally{limitsSaving=false;}
+});
+$("limit-history-refresh").addEventListener("click",ownerLimitHistory);
+document.querySelector('a[href="#owner-limits"]').addEventListener("click",()=>{
+  if(ownerCsrf)void ownerLimitHistory();
+});
