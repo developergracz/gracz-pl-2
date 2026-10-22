@@ -1217,22 +1217,32 @@ footer .footer-brand span{color:#ff6573}
     "body-label body-label"
     "body preview"
     "attachments preview";
-  grid-template-rows:auto auto auto auto auto;
+  grid-template-rows:repeat(5,max-content);
   align-content:start;
-  align-items:stretch;
+  align-items:start;
   gap:8px 12px;
   padding:3px 8px 10px 1px;
 }
+/* The editor container must never be squeezed to a 50px strip by CSS Grid. */
+#targeted-dialog .targeted-compose-fields .targeted-editor{
+  align-self:start;
+  height:max-content;
+  min-height:290px;
+  box-sizing:border-box;
+}
 #targeted-dialog .targeted-compose-fields .targeted-preview{
   grid-row:4 / 6;
-  height:100%;
-  min-height:0;
+  align-self:stretch;
+  height:auto;
+  min-height:290px;
   max-height:none;
 }
 #targeted-dialog .targeted-editor #targeted-body{
-  /* Restore a comfortable editor; the fields, never the actions, scroll on short screens. */
-  height:clamp(195px,24dvh,232px);
-  min-height:195px;
+  /* The textarea and its wrapper BOTH retain an intrinsic usable height. */
+  box-sizing:border-box;
+  display:block;
+  height:clamp(205px,25dvh,250px);
+  min-height:205px;
   max-height:280px;
 }
 #targeted-dialog .targeted-preview-content{
@@ -1290,7 +1300,7 @@ footer .footer-brand span{color:#ff6573}
   #targeted-dialog .targeted-compose-fields{
     grid-template-columns:minmax(0,1fr);
     grid-template-areas:"subject-label" "subject" "body-label" "body" "attachments" "preview";
-    grid-template-rows:auto;
+    grid-template-rows:repeat(6,max-content);
   }
   #targeted-dialog .targeted-compose-fields .targeted-preview{
     grid-row:auto;
