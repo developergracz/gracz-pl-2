@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" width="256px" height="256px" viewBox="0 0 256 256">
+  <title>gracz.pl — prostokątna koperta z żółtym pikiem</title>
+  <rect width="256" height="256" fill="#121820"/>
+  <rect x="21" y="69" width="219" height="132" rx="8" fill="#0A1117"/>
+  <rect x="16" y="64" width="221" height="132" rx="8" fill="#F5FAFD" stroke="#C0D5E1" stroke-width="2.5"/>
+  <path d="M21 69 L120 139 Q128 146 136 139 L232 69 Z" fill="#E0EDF5"/>
+  <path d="M21 70 L120 139 Q128 146 136 139 L232 70" fill="none" stroke="#A9C6D8" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M23 185 L231 185" fill="none" stroke="#E7F1F6" stroke-width="1.6"/>
+  <path d="M128 116 C121 127 102 138 102 151 C102 160 109 166 117 166 C122 166 126 164 128 160 C130 164 134 166 139 166 C147 166 154 160 154 151 C154 138 135 127 128 116 Z" fill="#FFD33D"/>
+  <path d="M125 158 L125 171 Q125 177 120 181 L136 181 Q131 177 131 171 L131 158 Z" fill="#FFD33D"/>
+</svg>
