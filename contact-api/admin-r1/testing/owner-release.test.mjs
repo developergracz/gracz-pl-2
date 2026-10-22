@@ -87,7 +87,11 @@ test('OWNER one-click Premium send preserves recipient consent and durable dispa
   assert.match(css,/#targeted-dialog\[open\]\{[^}]*height:min\(860px,calc\(100dvh - 24px\)\);[^}]*overflow:hidden;/s);
   assert.match(css,/#targeted-dialog #targeted-compose\{[^}]*display:flex;[^}]*overflow:hidden;/s);
   assert.match(css,/#targeted-dialog \.targeted-compose-fields\{[^}]*overflow-y:auto;/s);
-  assert.match(css,/#targeted-dialog \.targeted-editor #targeted-body\{[^}]*height:clamp\(195px,24dvh,232px\);[^}]*min-height:195px;/s);
+  assert.match(css,/#targeted-dialog \.targeted-editor #targeted-body\{[^}]*display:block;[^}]*height:clamp\(205px,25dvh,250px\);[^}]*min-height:205px;/s);
+  assert.match(css,/#targeted-dialog \.targeted-compose-fields\{[^}]*grid-template-rows:repeat\(5,max-content\);/s);
+  assert.match(css,/#targeted-dialog \.targeted-compose-fields \.targeted-editor\{[^}]*height:max-content;[^}]*min-height:290px;/s);
+  assert.match(css,/#targeted-dialog \.targeted-compose-fields \.targeted-preview\{[^}]*height:auto;[^}]*min-height:290px;/s);
+  assert.match(css,/#targeted-dialog \.targeted-compose-fields\{[^}]*grid-template-rows:repeat\(6,max-content\);/s);
   assert.match(css,/#targeted-dialog \.targeted-compose-actions\{[^}]*flex:0 0 auto;/s);
   assert.match(css,/#targeted-dialog \.targeted-compose-actions\{[^}]*flex:0 0 auto;[^}]*border-top:/s);
   assert.match(css,/#targeted-dialog #targeted-send\{[^}]*background:linear-gradient\(115deg,/s);
