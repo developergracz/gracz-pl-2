@@ -120,6 +120,17 @@ if(recoveryDialog){
   const finishForm=document.getElementById('forgot-complete-form');
   const requestStatus=document.getElementById('forgot-request-status');
   const completeStatus=document.getElementById('forgot-complete-status');
+  const recoveryEmail=document.getElementById('forgot-email');
+  const recoveryHint=document.getElementById('forgot-email-hint');
+  recoveryEmail.addEventListener('input',()=>{
+    // Format-only feedback: a public login must never identify the OWNER mailbox.
+    const value=recoveryEmail.value.trim();
+    recoveryHint.textContent=value.length===0
+      ?'Wpisz adres odzyskiwania. Jego przypisanie sprawdzimy bez ujawniania wyniku na stronie.'
+      :recoveryEmail.validity.valid
+        ?'Format adresu jest poprawny. Kliknij „Wyślij hasło tymczasowe”, aby rozpocząć bezpieczną weryfikację.'
+        :'Sprawdź format adresu e-mail.';
+  });
   sendForm.addEventListener('submit',async event=>{
     event.preventDefault();
     const button=sendForm.querySelector('button[type="submit"]');
@@ -133,7 +144,7 @@ if(recoveryDialog){
         body:JSON.stringify({email:document.getElementById('forgot-email').value})
       });
       if(!response.ok)throw Error('unavailable');
-      requestStatus.textContent='Jeśli to przypisany adres, wyślemy na niego jednorazowe hasło tymczasowe ważne 10 minut. Sprawdź skrzynkę.';
+      requestStatus.textContent='Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło tymczasowe ważne 10 minut. Sprawdź skrzynkę.';
     }catch{
       requestStatus.textContent='Odzyskiwanie jest chwilowo niedostępne. Spróbuj później.';
     }finally{button.disabled=false;}
