@@ -115,7 +115,7 @@ export function createCampaignOwnerSender({database,enabled=false,
         });
         let result;
         try{result=await coordinator.dispatch({campaignId,dispatchId,emailTag,to,
-          subject:draft.subject,text:draft.body,
+          subject:draft.subject,text:draft.body,markdown:targeted,
           unsubscribeUrl:'https://gracz.pl/newsletter/#nl-withdrawal-panel'});}
         catch{return {state:'uncertain',accepted,suppressed,retryAllowed:false};}
         if(result.state==='accepted')accepted++;
