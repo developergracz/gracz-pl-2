@@ -250,9 +250,8 @@ test('verified status read recovers from transient server error without losing m
   });
   await page.goto('/newsletter/#status=ns2.synthetic-local-proof');
   const action=page.locator('#nl-action-button');
-  await expect(action).toBeEnabled();
-  await action.click();
   await expect(page.locator('#nl-action-title')).toHaveText('Nie udało się odczytać statusu');
+  await expect(action).toBeEnabled();
   await expect(action).toHaveText('Ponów sprawdzenie statusu');
   await expect(action).toBeEnabled();
   await action.click();
@@ -271,8 +270,6 @@ test('expired status proof explains how to request a fresh link without changing
       headers:{'access-control-allow-origin':'*'},body:'{"error":{"code":"NEWSLETTER_STATUS_REJECTED"}}'}));
   await page.goto('/newsletter/#status=ns2.synthetic-invalid-proof');
   const action=page.locator('#nl-action-button');
-  await expect(action).toBeEnabled();
-  await action.click();
   await expect(page.locator('#nl-action-title')).toHaveText('Link do sprawdzenia statusu jest nieaktualny');
   await expect(page.locator('#nl-action-copy')).toContainText('poproś o nowy link');
   await expect(action).toBeHidden();
