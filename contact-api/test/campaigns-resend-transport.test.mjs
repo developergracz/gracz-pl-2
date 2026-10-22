@@ -50,3 +50,21 @@ test('does not accept invented opt-out token URLs',async()=>{
   const adapter=createCampaignResendTransport({enabled:true,apiKey:'test'+'-key-'+'123456789',from:'gracz.pl <news@example.com>',fetchFn:async()=>{throw Error('unexpected send');}});
   await assert.rejects(adapter.sendOnce({...delivery,unsubscribeUrl:'https://gracz.pl/newsletter/#unsubscribe=proof'}),{code:'invalid_campaign_delivery'});
 });
+
+
+test('targeted transport sends formatted Premium HTML but preserves text fallback and opt-out',async()=>{
+  let output;
+  const adapter=createCampaignResendTransport({
+    enabled:true,apiKey:'test-key-123456789',from:'gracz.pl <news@example.com>',
+    fetchFn:async(_url,opts)=>{output=JSON.parse(opts.body);return {status:200,json:async()=>({id:'synthetic'})};}
+  });
+  const msg={...delivery,markdown:true,text:'**Dzień dobry**\\n- Nowość\\n[Serwis](https://gracz.pl/) <script>'};
+  const result=await adapter.sendOnce(msg);
+  assert.equal(result.state,'accepted');
+  assert.match(output.html,/<strong>Dzień dobry<\\/strong>/);
+  assert.match(output.html,/<li>Nowość<\\/li>/);
+  assert.match(output.html,/&lt;script&gt;/);
+  assert.doesNotMatch(output.html,/<script>/);
+  assert.match(output.text,/\\*\\*Dzień dobry\\*\\*/);
+  assert.match(output.text,/Wypisz się z newslettera/);
+});
