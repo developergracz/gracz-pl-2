@@ -1507,4 +1507,5 @@ footer .footer-brand span{color:#ff6573}
 .limit-active-table th,.limit-active-table td{padding:12px 10px;border-bottom:1px solid #37605c;text-align:left;vertical-align:middle;overflow-wrap:anywhere}
 .limit-active-table th{color:#99eee1;font-weight:700;white-space:nowrap}
 .limit-active-table td{color:#e2f4f3}
+#limit-active-rows td:first-child{color:#ff6573;font-weight:700}
 .limit-active-table button{white-space:nowrap}
