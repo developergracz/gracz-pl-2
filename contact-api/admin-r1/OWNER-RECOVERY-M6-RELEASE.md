@@ -40,10 +40,10 @@ E-mail odzyskiwania pozostaje nieaktywny do potwierdzenia kodem w panelu.
 3. Sprawdź, czy `RESEND_API_KEY`, `EMAIL_FROM` i `CONTACT_DATA_ENCRYPTION_SECRET` są już prawidłowo ustawione (bez ujawniania ich wartości).
 4. W Render `gracz-contact-api` ustaw `NEWSLETTER_OWNER_RECOVERY_ENABLED=1`; zapisz/deploy do aktywacji M6.
 5. Po zalogowaniu na istniejące konto `graczowner` przejdź do „Ustawienia administratora → Odzyskiwanie hasła”, wpisz wybrany e-mail i bieżące hasło. Potwierdź skrzynkę kodem z e-maila.
-6. Dopiero potem używaj „Zapomniałem hasła?” na stronie logowania. Prośba o kod nie zmienia hasła; dopiero jednorazowy kod wraz z nowym hasłem je zastępuje i unieważnia stare sesje.
+6. Dopiero potem używaj „Zapomniałem hasła?” na stronie logowania. Publiczny formularz nie wymaga podawania adresu e-mail: po kliknięciu „Wyślij kod odzyskiwania” serwer odczytuje zaszyfrowany, potwierdzony adres z bazy i tylko tam kieruje kod. Prośba nie zmienia hasła; dopiero jednorazowy kod wraz z nowym hasłem je zastępuje i unieważnia stare sesje.
 
 ## Wyłączenie / rollback
 Ustaw `NEWSLETTER_OWNER_RECOVERY_ENABLED=0` i zastosuj ustawienie. Nie usuwaj tabeli, nie zmieniaj istniejących haseł i nie wyłączaj logowania OWNER.
 
 ## Ochrona przed nadużyciami
-Publiczna odpowiedź na prośbę o kod zawsze wygląda tak samo niezależnie od dopasowania adresu. Każda skrzynka ma 5-minutową przerwę między kodami i maksymalnie 5 wysyłek dziennie. Kod może być wypróbowany maksymalnie 5 razy i wygasa po 10 minutach; po udanej zmianie zostaje usunięty. Jednorazowe kody nie zastępują żadnego hasła przed pomyślnym potwierdzeniem.
+Publiczna odpowiedź na prośbę o kod jest zawsze neutralna: nie ujawnia adresu ani doręczenia. Anonimowy przycisk wysyłki podlega 5-minutowej przerwie między kodami i limitowi 5 wysyłek dziennie dla konta właściciela. Kod może być wypróbowany maksymalnie 5 razy i wygasa po 10 minutach; po udanej zmianie zostaje usunięty. Jednorazowe kody nie zastępują żadnego hasła przed pomyślnym potwierdzeniem.
