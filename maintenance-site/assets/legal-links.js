@@ -558,10 +558,13 @@
       '</div>'+
       '<section class="account-access__newsletter newsletter-signup__card">'+
         '<div class="account-access__newsletter-copy">'+
-          '<p class="account-access__newsletter-kicker">Zostań z nami na bieżąco</p>'+
+          '<p class="account-access__newsletter-kicker newsletter-signup__section-title"><span class="newsletter-signup__section-icon" aria-hidden="true">✉</span><span>Zostań z nami na bieżąco</span></p>'+
           '<form data-newsletter class="newsletter-signup__form" novalidate>'+
             '<label class="newsletter-signup__label" for="newsletter-signup-email">Twój adres e-mail</label>'+
-            '<input id="newsletter-signup-email" name="email" type="email" placeholder="adres@domena.pl" autocomplete="email" required>'+
+            '<span class="newsletter-signup__email-field">'+
+               '<span class="newsletter-signup__email-icon" aria-hidden="true">✉</span>'+
+               '<input id="newsletter-signup-email" name="email" type="email" placeholder="adres@domena.pl" autocomplete="email" required>'+ 
+             '</span>'+
             '<button type="submit">Zapisz się</button>'+
           '</form>'+
         '</div>'+
@@ -650,7 +653,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r4-premium-submit-r1';
+    link.href='/assets/footer-newsletter.css?v=r5-premium-email-input-20261022';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }
