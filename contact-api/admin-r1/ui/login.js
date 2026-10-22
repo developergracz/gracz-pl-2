@@ -126,10 +126,10 @@ if(recoveryDialog){
     // Format-only feedback: a public login must never identify the OWNER mailbox.
     const value=recoveryEmail.value.trim();
     recoveryHint.textContent=value.length===0
-      ?'Wpisz adres odzyskiwania. Jego przypisanie sprawdzimy bez ujawniania wyniku na stronie.'
+      ?'Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.'
       :recoveryEmail.validity.valid
-        ?'Format adresu jest poprawny. Kliknij „Wyślij hasło tymczasowe”, aby rozpocząć bezpieczną weryfikację.'
-        :'Sprawdź format adresu e-mail.';
+        ?'Adres ma poprawny format, ale to NIE potwierdza przypisania do administratora. Hasło tymczasowe wyślemy tylko na wcześniej potwierdzoną skrzynkę.'
+        :'Niepoprawny format adresu e-mail. Sprawdź wpisany tekst.';
   });
   sendForm.addEventListener('submit',async event=>{
     event.preventDefault();

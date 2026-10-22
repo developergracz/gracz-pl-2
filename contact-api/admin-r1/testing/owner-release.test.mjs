@@ -482,6 +482,9 @@ test('OWNER recovery form checks syntax but never reveals the registered recover
   assert.match(router,/pattern="\(\?:\[A-Za-z\]\{10\}\|\[A-Za-z0-9_-\]\{24\}\)"/);
   assert.match(script,/recoveryEmail\.addEventListener\('input'/);
   assert.match(script,/recoveryEmail\.validity\.valid/);
+  assert.match(script,/Adres ma poprawny format, ale to NIE potwierdza przypisania/);
+  assert.match(script,/Hasło tymczasowe wyślemy tylko na wcześniej potwierdzoną skrzynkę/);
+  assert.doesNotMatch(script,/Format adresu jest poprawny\. Kliknij/);
   assert.match(script,/Jeśli adres jest przypisany do administratora, otrzymasz 10-literowe hasło/);
   assert.doesNotMatch(script,/recoveryHint\.textContent\s*=\s*.*recoveryRegistered/);
 });
