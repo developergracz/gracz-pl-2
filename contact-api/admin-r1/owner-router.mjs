@@ -85,7 +85,8 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgo
 <section aria-label="Wysyłka kodu odzyskiwania">
 <form id="forgot-request-form" autocomplete="off">
 <label for="forgot-email">Adres e-mail odzyskiwania</label>
-<input id="forgot-email" type="email" autocomplete="email" maxlength="254" required>
+<input id="forgot-email" type="email" autocomplete="email" maxlength="254" aria-describedby="forgot-email-hint" required>
+<p id="forgot-email-hint" class="forgot-email-hint" role="status" aria-live="polite">Wpisz adres odzyskiwania. Jego przypisanie sprawdzimy bez ujawniania wyniku na stronie.</p>
 <button type="submit">Wyślij hasło tymczasowe</button>
 </form>
 <p id="forgot-request-status" role="status" aria-live="polite"></p>
@@ -93,7 +94,7 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" aria-labelledby="forgo
 <section aria-label="Ustawienie nowego hasła">
 <form id="forgot-complete-form" autocomplete="off">
 <label for="forgot-code">Hasło tymczasowe z wiadomości</label>
-<input id="forgot-code" type="text" minlength="24" maxlength="24" autocomplete="one-time-code" required>
+<input id="forgot-code" type="text" minlength="10" maxlength="24" pattern="(?:[A-Za-z]{10}|[A-Za-z0-9_-]{24})" autocomplete="one-time-code" required>
 <label for="forgot-new-password">Nowe hasło (minimum 9 znaków)</label>
 <input id="forgot-new-password" type="password" minlength="9" maxlength="128" autocomplete="new-password" required>
 <label for="forgot-repeat">Powtórz nowe hasło</label>
