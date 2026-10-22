@@ -26,7 +26,7 @@ test('expired limit is not reset and invalid address is rejected',()=>{
   assert.equal(m.inspect('x@example.com').blocked,false);
   assert.equal(m.unlock('x@example.com').changed,false);
   assert.equal(cleared,0);
-  for(const invalid of ['','x','a@@b.com','x@','a\\nb@example.com']){
+  for(const invalid of ['','x','a@@b.com','x@','a b@example.com']){
     assert.throws(()=>m.inspect(invalid),TypeError);
     assert.throws(()=>m.unlock(invalid),TypeError);
   }
