@@ -472,11 +472,29 @@
               <span id="targeted-body-count" aria-live="off">0 / 20 000 znaków</span>
             </div>
           </div>
+          <div class="targeted-attachments">
+            <div class="targeted-attachment-picker">
+              <label for="targeted-attachment" class="targeted-attachment-button">♢ Dodaj załącznik</label>
+              <input id="targeted-attachment" name="attachment" type="file" accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip" aria-describedby="targeted-attachment-status" />
+              <span class="targeted-attachment-limit">Maks. 10 MB · PDF, DOCX, XLSX, PNG, JPG, ZIP</span>
+            </div>
+            <p id="targeted-attachment-status" role="status" aria-live="polite">Załączniki wymagają aktywnego skanera antywirusowego. Obecnie wysyłanie plików jest wyłączone.</p>
+            <button type="button" id="targeted-attachment-remove" hidden>Usuń załącznik</button>
+            <div class="targeted-attachment-safety" aria-label="Stan ochrony załączników">
+              <span>⚙ Konwersja: oczekuje na konfigurację</span>
+              <span>◇ Skan antywirusowy: niedostępny</span>
+              <span>◇ Kontrola zagrożeń: niedostępna</span>
+            </div>
+          </div>
           <div class="targeted-preview" aria-live="polite">
-            <span class="targeted-preview-label">PODGLĄD WIADOMOŚCI</span>
-            <strong id="targeted-preview-subject">Podgląd tematu</strong>
-            <div id="targeted-preview-body">Podgląd wiadomości</div>
-            <p class="targeted-preview-note">Podgląd wersji roboczej · wysyłka po kliknięciu „Wyślij”.</p>
+            <div class="targeted-preview-heading">
+              <span class="targeted-preview-label">PODGLĄD WIADOMOŚCI</span>
+              <strong id="targeted-preview-subject">Podgląd tematu</strong>
+              <span class="targeted-preview-hint">Wpisz treść i wybierz „Pokaż podgląd”.</span>
+            </div>
+            <div class="targeted-preview-content">
+              <div id="targeted-preview-body">Podgląd wiadomości będzie widoczny tutaj.</div>
+            </div>
           </div>
           <div class="targeted-compose-actions">
             <button type="submit" id="targeted-send"><span aria-hidden="true">➤</span> Wyślij wiadomość</button>
