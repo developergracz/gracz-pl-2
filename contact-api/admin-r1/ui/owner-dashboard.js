@@ -1063,11 +1063,13 @@ campaignPreviewForm?.addEventListener("submit",event=>{
 
 
 // OWNER draft API: server retains the release gate; UI unlocks only when explicitly enabled.
-// Campaign sending requires its separate server-side gate and explicit confirmation.
+// One deliberate OWNER Send click is sufficient; existing backend safety gates stay mandatory.
 const draftSaveButton=$("campaign-save-draft");
 const draftRefreshButton=$("campaign-refresh-drafts");
 const campaignTestButton=$("campaign-send-test");
 const campaignApproveButton=$("campaign-approve-content");
+const campaignSendNowButton=$("campaign-send-now");
+let campaignSending=false,campaignAttempted=false;
 let campaignTestReady=false;
 let campaignSendReady=false;
 const draftStatus=$("campaign-preview-status");
@@ -1127,9 +1129,8 @@ async function refreshApproved(){
     send.textContent="Wyślij zatwierdzoną kampanię";
     send.disabled=!campaignSendReady;
     send.addEventListener("click",async()=>{
-      const phrase=window.prompt("Uruchomienie wysyła zatwierdzoną kampanię: "+
-        campaign.subject+". Wpisz: WYSYŁAM KAMPANIĘ");
-      if(phrase!=="WYSYŁAM KAMPANIĘ")return;
+      // The button click is the explicit send intent; no extra phrase is required.
+      if(send.disabled||!campaignSendReady)return;
       send.disabled=true;
       const status=$("campaign-send-status");
       status.textContent="Trwa ręczna wysyłka kampanii. Nie ponawiaj żądania.";
@@ -1137,7 +1138,7 @@ async function refreshApproved(){
         const response=await fetch("/owner/newsletter/campaigns/send",{
           method:"POST",credentials:"same-origin",headers:{
             "Content-Type":"application/json","X-Owner-CSRF":ownerCsrf
-          },body:JSON.stringify({id:campaign.id,confirmation:phrase})
+          },body:JSON.stringify({id:campaign.id,confirmation:"WYSYŁAM KAMPANIĘ"})
         });
         const result=await response.json();
         if(!response.ok||result?.ok!==true)throw Error("campaign_send_failed");
@@ -1213,11 +1214,7 @@ campaignApproveButton?.addEventListener("click",async()=>{
       "Najpierw zapisz zmiany. Zatwierdzenie dotyczy dokładnie zapisanej treści.";
     return;
   }
-  const phrase=window.prompt(
-    "Zatwierdzenie treści jest nieodwracalne w tym panelu. "+
-    "NIE uruchamia wysyłki. Aby potwierdzić, wpisz: ZATWIERDZAM TREŚĆ"
-  );
-  if(phrase!=="ZATWIERDZAM TREŚĆ")return;
+  // Explicit content-approval click: no typed phrase or extra browser dialog.
   campaignApproveButton.disabled=true;
   const status=$("campaign-approval-status");
   try{
@@ -1243,6 +1240,76 @@ campaignApproveButton?.addEventListener("click",async()=>{
       "Treść mogła zostać zmieniona. Odśwież zapisane kampanie.";
   }finally{
     campaignApproveButton.disabled=!editingCampaignId;
+  }
+});
+// Single-click campaign send from the current editor. Saves and approves the
+// exact content before sending; the server still enforces authenticated OWNER,
+// CSRF, verified DOI, suppression, global HOLD and durable no-retry fences.
+campaignSendNowButton?.addEventListener("click",async()=>{
+  if(!campaignSendReady||campaignSending||campaignAttempted)return;
+  if(!campaignPreviewForm?.reportValidity())return;
+  const draft={subject:campaignSubject.value.trim(),
+    body:campaignBody.value.trim(),audience:"confirmed_active_new_only"};
+  campaignSending=true;
+  campaignAttempted=true;
+  campaignSendNowButton.disabled=true;
+  if(draftSaveButton)draftSaveButton.disabled=true;
+  if(campaignApproveButton)campaignApproveButton.disabled=true;
+  if(newDraftButton)newDraftButton.disabled=true;
+  const status=$("campaign-send-status");
+  let stage="prepare";
+  status.textContent="Przygotowywanie wiadomości i odbiorców…";
+  try{
+    let id=editingCampaignId;
+    if(id){
+      if(savedCampaignSnapshot?.id!==id||
+         savedCampaignSnapshot.subject!==draft.subject||
+         savedCampaignSnapshot.body!==draft.body){
+        const updated=await draftRequest("update",{id,...draft});
+        if(updated?.state!=="draft")throw Error("update_failed");
+      }
+    }else{
+      const saved=await draftRequest("save",draft);
+      if(saved?.state!=="draft"||typeof saved.id!=="string")
+        throw Error("save_failed");
+      id=saved.id;
+    }
+    // Approval remains a content-only operation; it does not authorize egress.
+    const approved=await draftRequest("approve",{
+      id,...draft,confirmation:"ZATWIERDZAM TREŚĆ"});
+    if(approved?.state!=="approved"||approved.sendingEnabled!==false)
+      throw Error("approve_failed");
+    stage="send";
+    status.textContent="Trwa wysyłka. Nie ponawiaj operacji.";
+    const response=await fetch("/owner/newsletter/campaigns/send",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","X-Owner-CSRF":ownerCsrf},
+      body:JSON.stringify({id,confirmation:"WYSYŁAM KAMPANIĘ"})
+    });
+    const result=await response.json().catch(()=>null);
+    if(!response.ok||result?.ok!==true)throw Error("send_unconfirmed");
+    if(result.state==="finished"&&Number.isSafeInteger(result.accepted)&&
+       Number.isSafeInteger(result.suppressed)){
+      status.textContent="Resend przyjął: "+result.accepted+
+        ". Pominięto: "+result.suppressed+
+        ". Przyjęcie nie jest potwierdzeniem doręczenia.";
+    }else{
+      status.textContent="Wynik wysyłki niepewny. Nie ponawiaj; sprawdź rejestr prób.";
+    }
+    selectCampaignDraft(null);
+    savedCampaignSnapshot=null;
+    try{await refreshDrafts({notify:false});}catch{/* Send result stays visible. */}
+  }catch{
+    status.textContent=stage==="send"
+      ?"Nie potwierdzono wyniku wysyłki. Nie ponawiaj jej; sprawdź rejestr prób."
+      :"Nie udało się przygotować wiadomości. Wysyłki nie rozpoczęto.";
+    if(stage==="prepare")campaignAttempted=false;
+  }finally{
+    campaignSending=false;
+    if(draftSaveButton)draftSaveButton.disabled=false;
+    if(campaignApproveButton)campaignApproveButton.disabled=!editingCampaignId;
+    if(newDraftButton)newDraftButton.disabled=false;
+    campaignSendNowButton.disabled=!campaignSendReady||campaignAttempted;
   }
 });
 // Native modal stays centred in the viewport, traps focus and supports Escape.
@@ -1331,6 +1398,7 @@ async function checkCampaignDraftAvailability(){
   if(draftRefreshButton)draftRefreshButton.disabled=true;
   campaignTestReady=false;
   campaignSendReady=false;
+  if(campaignSendNowButton)campaignSendNowButton.disabled=true;
   if(campaignTestButton)campaignTestButton.disabled=true;
   if(campaignApproveButton)campaignApproveButton.disabled=!editingCampaignId;
   const availabilityDescription=$("campaign-drafts-description");
@@ -1344,9 +1412,10 @@ async function checkCampaignDraftAvailability(){
       if(draftSaveButton)draftSaveButton.disabled=false;
       if(draftRefreshButton)draftRefreshButton.disabled=false;
       if(availabilityDescription)availabilityDescription.textContent=
-        "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłanie kampanii jest wyłączone.";
+        "Możesz przygotowywać i zapisywać wersje robocze w PostgreSQL. Wysyłka wymaga gotowej usługi kampanii.";
       campaignTestReady=data.testSendEnabled===true;
       campaignSendReady=data.campaignSendEnabled===true;
+      if(campaignSendNowButton)campaignSendNowButton.disabled=!campaignSendReady||campaignAttempted;
       targetedReady=data.targetedSendEnabled===true;
       refreshTargetedButton();
       if(campaignTestButton)campaignTestButton.disabled=!(campaignTestReady&&editingCampaignId);
