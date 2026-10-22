@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" width="256px" height="256px" viewBox="0 0 256 256">
-  <title>gracz.pl — koperta z żółtym pikiem</title>
-  <rect x="0" y="0" width="256" height="256" fill="#121820"/>
-  <rect x="33" y="61" width="190" height="138" rx="10" ry="10" fill="#F7FCFF" stroke="#9DCDE5" stroke-width="8"/>
-  <path d="M39 72 L128 136 L217 72" fill="none" stroke="#94C6E1" stroke-width="8" stroke-linejoin="round"/>
-  <path d="M40 187 L91 141 M216 187 L165 141" fill="none" stroke="#C3E0EF" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M128 91 C118 106 87 123 87 140 C87 154 98 163 110 163 C118 163 124 159 128 154 C132 159 138 163 146 163 C158 163 169 154 169 140 C169 123 138 106 128 91 Z" fill="#FFD33D"/>
-  <path d="M124 148 L124 170 C124 181 118 187 112 189 L144 189 C138 187 132 181 132 170 L132 148 Z" fill="#FFD33D"/>
+  <title>gracz.pl — prostokątna koperta z żółtym pikiem</title>
+  <rect width="256" height="256" fill="#121820"/>
+  <rect x="21" y="69" width="219" height="132" rx="8" fill="#0A1117"/>
+  <rect x="16" y="64" width="221" height="132" rx="8" fill="#F5FAFD" stroke="#C0D5E1" stroke-width="2.5"/>
+  <path d="M21 69 L120 139 Q128 146 136 139 L232 69 Z" fill="#E0EDF5"/>
+  <path d="M21 70 L120 139 Q128 146 136 139 L232 70" fill="none" stroke="#A9C6D8" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M23 185 L231 185" fill="none" stroke="#E7F1F6" stroke-width="1.6"/>
+  <path d="M128 116 C121 127 102 138 102 151 C102 160 109 166 117 166 C122 166 126 164 128 160 C130 164 134 166 139 166 C147 166 154 160 154 151 C154 138 135 127 128 116 Z" fill="#FFD33D"/>
+  <path d="M125 158 L125 171 Q125 177 120 181 L136 181 Q131 177 131 171 L131 158 Z" fill="#FFD33D"/>
 </svg>
