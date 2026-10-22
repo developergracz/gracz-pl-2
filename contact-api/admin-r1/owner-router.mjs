@@ -89,16 +89,10 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" class="owner-recovery-
 <section class="forgot-card" aria-label="Wysyłka kodu odzyskiwania">
 <div class="forgot-card-heading"><span class="forgot-step" aria-hidden="true">01</span>
 <div><h3>Otrzymaj kod odzyskiwania</h3>
-<p>Wpisz wcześniej potwierdzony adres e-mail administratora.</p></div></div>
+<p>Serwer użyje potwierdzonego adresu odzyskiwania zapisanego na koncie.</p></div></div>
 <form id="forgot-request-form" autocomplete="off">
-<label for="forgot-email">Adres e-mail odzyskiwania</label>
-<input id="forgot-email" type="email" autocomplete="email" maxlength="254" aria-describedby="forgot-email-hint" required>
-<div id="forgot-email-validation" class="forgot-email-validation" role="alert" hidden>
-<span class="forgot-email-validation__icon" aria-hidden="true">!</span>
-<span id="forgot-email-validation-message"></span>
-</div>
-<p id="forgot-email-hint" class="forgot-email-hint" role="status" aria-live="polite">Wpisz wcześniej potwierdzony adres e-mail odzyskiwania hasła.</p>
-<button type="submit">Wyślij hasło tymczasowe</button>
+<p id="forgot-mailbox-note" class="forgot-mailbox-note">Nie wpisujesz adresu e-mail. Kod wyślemy wyłącznie na wcześniej potwierdzoną skrzynkę przypisaną do konta administratora.</p>
+<button type="submit">Wyślij kod odzyskiwania</button>
 </form>
 <p id="forgot-request-status" role="status" aria-live="polite"></p>
 </section>
@@ -211,7 +205,7 @@ export function createOwnerRouter({
           const data=await input(req);
           if(path===PREFIX+'/recover/request'){
             if(Object.keys(data).some(k=>k!=='email'))return reject(res);
-            await auth.requestPasswordRecovery(data.email);
+            await auth.requestPasswordRecovery();
             // Never reveal whether this is the recovery mailbox.
             return response(res,200,{ok:true});
           }
