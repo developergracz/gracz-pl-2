@@ -2,6 +2,15 @@ name: gracz.pl - test ClamAV i konwersji (recznie)
 # No push, PR, schedule, production keys or deployments.
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Uruchom tylko konwerter (ClamAV zaliczony) albo oba testy"
+        type: choice
+        required: true
+        default: converter
+        options:
+          - converter
+          - both
 permissions:
   contents: read
 concurrency:
@@ -9,6 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   antivirus:
+    if: inputs.mode == 'both'
     name: ClamAV - clean file and EICAR
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -30,8 +40,8 @@ jobs:
         run: bash contact-api/attachment-lab/clamav-smoke.sh
   conversion:
     name: Converter - PNG JPG HTML DOCX PDF
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       GRACZ_ATTACHMENT_LAB_ONLY: "1"
     steps:
@@ -40,9 +50,14 @@ jobs:
         run: |
           bash -n contact-api/attachment-lab/converter-smoke.sh
           node --test contact-api/test/attachment-lab-boundary.test.mjs
-      - name: Install free converters only on temporary runner
+      - name: Install converters from official Ubuntu mirror (bounded)
         run: |
-          sudo apt-get update -qq
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends imagemagick ghostscript pandoc file unzip
+          # Previous run spent >12m downloading packages from azure.archive.ubuntu.com.
+          # Use Ubuntu's signed public archive directly instead of the slow Azure mirrorlist.
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
+          timeout 900s sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 \
+            install -y --no-install-recommends imagemagick ghostscript pandoc file unzip
       - name: Convert synthetic samples only
         run: bash contact-api/attachment-lab/converter-smoke.sh
