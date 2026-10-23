@@ -1,0 +1,24 @@
+name: SEO AUTO MAX R1 - Live Indexation Health
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seo-live:
+    name: Verify public indexing readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Check indexable pages, sitemap and public URLs
+        run: node scripts/check-seo-indexation.mjs --live
