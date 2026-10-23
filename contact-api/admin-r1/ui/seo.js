@@ -132,6 +132,10 @@ async function loadGoogle(){
     text("google-impressions",data.totals.impressions);
     text("google-ctr",data.totals.ctr===null?"—":data.totals.ctr+"%");
     text("google-position",data.totals.position??"—");
+    rowsInto("google-days",data.days.map(x=>({
+      date:x.date,clicks:x.clicks,impressions:x.impressions,
+      ctr:x.ctr===null?"—":x.ctr+"%"
+    })),["date","clicks","impressions","ctr"]);
     rowsInto("google-queries",data.queries.map(x=>({
       query:x.query,clicks:x.clicks,position:x.position
     })),["query","clicks","position"]);
@@ -142,7 +146,7 @@ async function loadGoogle(){
     text("google-state","Google Search Console: brak potwierdzonych danych. Sprawdź uprawnienia konta lub połączenie API.");
     text("google-period","Dane Google niedostępne.");
     for(const id of ["google-clicks","google-impressions","google-ctr","google-position"])text(id,"—");
-    $("google-queries").replaceChildren();$("google-pages").replaceChildren();
+    $("google-queries").replaceChildren();$("google-pages").replaceChildren();$("google-days").replaceChildren();
   }finally{$("google-refresh").disabled=false;}
 }
 async function loadHistory(){
