@@ -166,10 +166,11 @@ export function createOwnerRouter({
     if(req.headers.host!==new URL(origin).host ||
        req.headers['x-forwarded-proto']!=='https' ||
        url.hash)return denyAdmin(req,res);
-    // Only the OWNER HTML entry and login pages can discard the exact
-    // ChatGPT link attribution. All private API endpoints remain fail-closed.
+    // Only OWNER HTML entry pages may discard exact ChatGPT attribution.
+    // Host/TLS and configured checks run first; private JSON endpoints stay fail-closed.
     if(req.method==='GET' &&
-       (url.pathname===PREFIX+'/' || url.pathname===PREFIX+'/login') &&
+       (url.pathname===PREFIX+'/' || url.pathname===PREFIX+'/login' ||
+        url.pathname===PREFIX+'/seo') &&
        url.search==='?utm_source=chatgpt.com'){
       res.writeHead(302,{...privateHeaders,Location:url.pathname});
       return res.end();
