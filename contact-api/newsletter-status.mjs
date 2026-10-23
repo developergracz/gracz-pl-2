@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto';
-import {renderPremiumEmail} from './email/full-max-premium.mjs';
+import {renderPremiumEmail,brandEmailSubject} from './email/full-max-premium.mjs';
 
 const TTL = 10 * 60 * 1000;
 const AAD = Buffer.from('gracz.pl/newsletter/STATUS_CHECK/v1');
@@ -58,7 +58,7 @@ export function createMailboxStatus({secret,store,hashEmail,sendEmail,readStatus
         const text='Sprawdź status newslettera gracz.pl\n\nOtwórz link i potwierdź sprawdzenie statusu swojej skrzynki. Link jest jednorazowy i ważny 10 minut. Nie zapisuje ani nie wypisuje z newslettera.\n\n'+link+'\n\nJeśli nie prosisz o sprawdzenie, zignoruj tę wiadomość.';
         await beforeExternalEffect();
         if(!await store.markDispatchEffect(dispatch))throw unavailable();
-        const delivery=await sendEmail({to:email,subject:'gracz.pl — sprawdzenie statusu newslettera',text,html:renderPremiumEmail({
+        const delivery=await sendEmail({to:email,subject:brandEmailSubject('gracz.pl — sprawdzenie statusu newslettera'),text,html:renderPremiumEmail({
           category:'NEWSLETTER · BEZPIECZEŃSTWO',title:'Sprawdź status newslettera',
           body:'Skorzystaj z bezpiecznego odnośnika, aby sprawdzić status swojej skrzynki. Nie zmienia to zgody na newsletter.',
           actionUrl:link,actionLabel:'Sprawdź status',
