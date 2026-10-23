@@ -68,3 +68,29 @@ test('targeted transport sends formatted Premium HTML but preserves text fallbac
   assert.match(output.text,/\*\*Dzień dobry\*\*/);
   assert.match(output.text,/Wypisz się z newslettera/);
 });
+
+test('campaign inbox preview uses the subject instead of message body',async()=>{
+  let mail=null;
+  const transport=createCampaignResendTransport({
+    enabled:true,apiKey:'test'+'-key-'+'123456789',from:'gracz.pl <news@example.com>',
+    fetchFn:async(_url,opts)=>{
+      mail=JSON.parse(opts.body);
+      return {status:200,json:async()=>({id:'synthetic-preview'})};
+    }
+  });
+  const message={...delivery,subject:'Temat kampanii <Premium>',
+    text:'Pierwszy test gracz.pl FULL MAX PREMIUM · newsletter',markdown:true};
+  assert.equal((await transport.sendOnce(message)).state,'accepted');
+  assert.equal(mail.subject,message.subject);
+  assert.ok(mail.text.startsWith(message.text),'Plain-text message body must remain unchanged');
+  const hidden=mail.html.match(/<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(hidden,'Hidden inbox preheader exists');
+  assert.ok(hidden.startsWith('Temat kampanii &lt;Premium&gt;'));
+  assert.ok(!hidden.includes('Pierwszy test'),'Preview must not contain message body');
+  assert.ok((hidden.match(/&#8204;&nbsp;/g)||[]).length>=100,
+    'Invisible preview padding prevents body text spilling into inbox snippets');
+  assert.ok(mail.html.includes('Pierwszy test'),'Opened email still shows its original content');
+  assert.ok(mail.html.includes('FULL MAX PREMIUM · newsletter'));
+  assert.ok(mail.html.includes('color:#ffffff !important'),'Existing gracz.pl brand styling remains active');
+  assert.match(mail.html,/<h1[^>]*>Temat kampanii &lt;Premium&gt;<\/h1>/);
+});
