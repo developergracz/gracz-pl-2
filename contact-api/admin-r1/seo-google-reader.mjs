@@ -109,8 +109,14 @@ export function createSeoGoogleReader({
   }
   async function inspect(url){
     if(!enabled)return {state:"needs_configuration"};
-    if(typeof url!=="string"||url.length>240||!url.startsWith("https://gracz.pl/"))
+    if(typeof url!=="string"||url.length>240)
       return {state:"invalid_url"};
+    try {
+      const parsed=new URL(url);
+      if(parsed.origin!=="https://gracz.pl" || parsed.href!==url ||
+         parsed.search || parsed.hash || parsed.username || parsed.password)
+        return {state:"invalid_url"};
+    } catch {return {state:"invalid_url"};}
     const saved=inspections.get(url);
     if(saved&&now()-saved.at<12*60*60*1000)return saved.result;
     // A single explicit inspection per window; no crawler-wide bulk requests.
