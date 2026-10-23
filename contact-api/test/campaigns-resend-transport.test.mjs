@@ -83,12 +83,12 @@ test('campaign inbox preview uses the subject instead of message body',async()=>
   assert.equal((await transport.sendOnce(message)).state,'accepted');
   assert.equal(mail.subject,message.subject);
   assert.ok(mail.text.startsWith(message.text),'Plain-text message body must remain unchanged');
-  const hidden=mail.html.match(/<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">([\\s\\S]*?)<\\/div>/)?.[1];
+  const hidden=mail.html.match(/<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(hidden,'Hidden inbox preheader exists');
   assert.ok(hidden.startsWith('Temat kampanii &lt;Premium&gt;'));
   assert.ok(!hidden.includes('Pierwszy test'),'Preview must not contain message body');
   assert.ok((hidden.match(/&#8204;&nbsp;/g)||[]).length>=100,
     'Invisible preview padding prevents body text spilling into inbox snippets');
   assert.ok(mail.html.includes(message.text),'Opened email still shows its complete original content');
-  assert.match(mail.html,/<h1[^>]*>Temat kampanii &lt;Premium&gt;<\\/h1>/);
+  assert.match(mail.html,/<h1[^>]*>Temat kampanii &lt;Premium&gt;<\/h1>/);
 });
