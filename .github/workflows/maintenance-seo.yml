@@ -6,6 +6,7 @@ on:
       - "maintenance-site/**"
       - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
+      - "scripts/check-seo-indexation.mjs"
       - "scripts/test-newsletter-maintenance-notice.mjs"
       - "scripts/test-footer-newsletter-premium-validation.mjs"
       - ".github/workflows/maintenance-seo.yml"
@@ -16,6 +17,7 @@ on:
       - "maintenance-site/**"
       - "contact-api/**"
       - "scripts/check-maintenance-seo.mjs"
+      - "scripts/check-seo-indexation.mjs"
       - "scripts/test-newsletter-maintenance-notice.mjs"
       - "scripts/test-footer-newsletter-premium-validation.mjs"
       - ".github/workflows/maintenance-seo.yml"
@@ -71,6 +73,8 @@ jobs:
         run: node --test scripts/test-newsletter-maintenance-notice.mjs scripts/test-footer-newsletter-premium-validation.mjs
       - name: Run SEO gate
         run: node scripts/check-maintenance-seo.mjs
+      - name: Validate all indexable pages against sitemap
+        run: node scripts/check-seo-indexation.mjs
       - name: Run security headers and CSP gate
         run: node scripts/check-security-headers.mjs
 
