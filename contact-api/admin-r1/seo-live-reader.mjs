@@ -106,6 +106,9 @@ export function createSeoLiveReader({fetcher=fetch,now=Date.now,ttlMs=15*60_000}
              googlebot.some(isNoindex))faults.push("noindex");
           if(!/<title\b[^>]*>\s*[^<\s][\s\S]*?<\/title>/i.test(head))
             faults.push("title");
+          const desc=directives(head,"description");
+          if(desc.length!==1 || !desc[0]?.trim())faults.push("description");
+          if((html.match(/<h1\b/gi)??[]).length!==1)faults.push("h1");
         } catch {faults.push("unavailable");}
         if(!faults.length)result.passing++;
         else for(const fault of faults)issue(url,fault);
