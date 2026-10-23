@@ -15,6 +15,20 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   assert.match(css,/\.access-button/);
 });
 
+test("System Admin removes decorative spade and fits desktop viewport while mobile can scroll",async()=>{
+  const entry=await read("../../maintenance-site/systemadmin/index.html");
+  const entryCss=await read("../../maintenance-site/systemadmin/systemadmin.css");
+  const dashboard=await read("../admin-r1/ui/systemadmin.html");
+  const css=await read("../admin-r1/ui/systemadmin.css");
+  assert.doesNotMatch(entry,/♠|class="signet"/);
+  assert.doesNotMatch(dashboard,/♠|class="systemadmin-symbol"/);
+  assert.doesNotMatch(css,/\.systemadmin-symbol\{/);
+  assert.doesNotMatch(entryCss,/\.signet\{/);
+  assert.match(css,/\.systemadmin-center\{[^}]*min-height:0/);
+  assert.match(css,/@media\(max-width:760px\)/);
+  assert.match(css,/\.systemadmin-tiles\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
 test("protected hub contains exactly the two OWNER target panels",async()=>{
   const html=await read("../admin-r1/ui/systemadmin.html");
   assert.match(html,/SEO Control Center/);
