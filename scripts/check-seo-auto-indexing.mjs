@@ -170,25 +170,25 @@ export async function auditLiveIndexability(fetcher = fetch) {
     return ["Live robots.txt/sitemap.xml inaccessible: " + error.message];
   }
 
-  if (!/^\\s*Sitemap:\\s*https:\\/\\/gracz\\.pl\\/sitemap\\.xml\\s*$/im.test(robots)) {
+  if (!/^\s*Sitemap:\s*https:\/\/gracz\.pl\/sitemap\.xml\s*$/im.test(robots)) {
     errors.push("Live robots.txt: expected sitemap declaration missing");
   }
-  if (/^\\s*Disallow:\\s*\\/\\s*$/im.test(robots)) {
+  if (/^\s*Disallow:\s*\/\s*$/im.test(robots)) {
     errors.push("Live robots.txt: blanket Disallow: /");
   }
-  if (!/<urlset\\b[^>]*xmlns=["']http:\\/\\/www\\.sitemaps\\.org\\/schemas\\/sitemap\\/0\\.9["']/i.test(sitemap)) {
+  if (!/<urlset\b[^>]*xmlns=["']http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9["']/i.test(sitemap)) {
     errors.push("Live sitemap.xml: invalid sitemap namespace");
   }
 
-  const blocks = [...sitemap.matchAll(/<url>\\s*([\\s\\S]*?)<\\/url>/gi)];
-  const locs = [...sitemap.matchAll(/<loc>\\s*([^<]+?)\\s*<\\/loc>/gi)];
+  const blocks = [...sitemap.matchAll(/<url>\s*([\s\S]*?)<\/url>/gi)];
+  const locs = [...sitemap.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)];
   if (!blocks.length || blocks.length !== locs.length) {
     errors.push("Live sitemap.xml: missing or malformed URL entries");
   }
   const urls = [];
   const seen = new Set();
   for (const block of blocks) {
-    const matches = [...block[1].matchAll(/<loc>\\s*([^<]+?)\\s*<\\/loc>/gi)];
+    const matches = [...block[1].matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)];
     if (matches.length !== 1) {
       errors.push("Live sitemap.xml: every URL needs exactly one loc");
       continue;
