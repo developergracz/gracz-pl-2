@@ -66,8 +66,8 @@ test('OWNER checks the global withdrawal no-send fence; missing proof always fai
   assert.match(html,/id="campaign-egress-readiness"/);
   assert.match(fence,/FROM newsletter_recovery\.withdrawal_requests r/);
   assert.match(fence,/self_service_provider_verified p/);
-  assert.match(fence,/p\.challenge_id IS NULL/);
-  assert.match(fence,/r\.intake_source<>'self_service'/);
+  assert.match(fence,/newsletter_new\.revocations d/);
+  assert.match(fence,/r\.intake_source='self_service'/);
   assert.match(fence,/unresolved_requests/);
   assert.match(fence,/withdrawal_no_send_obligations LIMIT 1/);
   assert.match(fence,/async checkAvailable\(\)/);

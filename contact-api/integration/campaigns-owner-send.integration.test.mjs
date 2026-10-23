@@ -103,26 +103,27 @@ test('manual campaign send is fail-closed, durable and once-only',{timeout:60000
   assert.equal((await createCampaignOwnerSender({...config,database:changingDb}).send(freshCheck)).suppressed,1);
   assert.equal(calls,3,'fresh DOI review runs after claim, before provider');
   await database.query("UPDATE newsletter_new.subscribers SET delivery_state='sent' WHERE email_tag=$1",[emailTag]);
-  await database.query('INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',[emailTag,randomUUID()]);
-  assert.equal((await sender.send(await campaign())).accepted,0);
-  assert.equal(calls,3,'revoked consent never reaches provider');
   // Exercise the real renewed DOI, immutable withdrawal history and provider gate.
   const recoveryTag=createHmac('sha256',withdrawal).update('gracz-withdrawal-v1\0recipient\0'+address).digest('hex');
-  const addWithdrawal=async()=>{
+  const addWithdrawal=async({recordRevocation=false}={})=>{
     const request=randomUUID(),withdrawChallenge=randomUUID();
     await database.query(`INSERT INTO newsletter_recovery.withdrawal_requests
       (request_id,dedupe_tag,intake_source,evidence_ref) VALUES($1,$2,'self_service',$3)`,
-      [request,withdrawChallenge.replaceAll('-','').repeat(2),randomUUID()]);
+      [request,withdrawChallenge.replaceAll('-','').repeat(2),withdrawChallenge]);
     await database.query(`INSERT INTO newsletter_recovery.self_service_challenges
       (challenge_id,recipient_tag,token_tag,ciphertext,nonce,auth_tag,expires_at)
       VALUES($1,$2,$3,$4,$5,$6,clock_timestamp()+interval '30 minutes')`,
       [withdrawChallenge,recoveryTag,withdrawChallenge.replaceAll('-','').repeat(2),ciphertext,nonce,Buffer.alloc(16)]);
+    if(recordRevocation)await database.query(
+      'INSERT INTO newsletter_new.revocations(email_tag,challenge_id) VALUES($1,$2)',[emailTag,withdrawChallenge]);
     await database.query('INSERT INTO newsletter_recovery.self_service_verified(challenge_id,withdrawal_request_id) VALUES($1,$2)',[withdrawChallenge,request]);
     await database.query('INSERT INTO newsletter_recovery.self_service_provider_intents(challenge_id) VALUES($1)',[withdrawChallenge]);
     await database.query('INSERT INTO newsletter_recovery.self_service_provider_verified(challenge_id) VALUES($1)',[withdrawChallenge]);
     return withdrawChallenge;
   };
-  await addWithdrawal();
+  await addWithdrawal({recordRevocation:true});
+  assert.equal((await sender.send(await campaign())).accepted,0);
+  assert.equal(calls,3,'revoked consent never reaches provider');
   const review=createCampaignRecipientEvidenceReview(config);
   const dispatch=createCampaignPgDispatchStore({database});
   const tokens=[];
