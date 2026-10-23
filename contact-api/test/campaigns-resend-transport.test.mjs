@@ -34,7 +34,7 @@ test('explicitly enabled adapter produces idempotent, unsubscribable message',as
   assert.match(body.html,/Odwiedź gracz\.pl<\/a>/);
   assert.match(body.html,/Wypisz się z newslettera/);
   assert.ok(body.html.includes('Poznaj nowe gry w naszym serwisie.'));
-  assert.equal(body.subject,'✉️♠️ '+delivery.subject);
+  assert.equal(body.subject,'♠️ '+delivery.subject);
   assert.equal(body.headers['List-Unsubscribe'],'<'+delivery.unsubscribeUrl+'>');
 });
 test('transport failures are always uncertain, without a retry',async()=>{
@@ -82,7 +82,7 @@ test('campaign inbox snippet stays invisible instead of repeating subject or bod
   const message={...delivery,subject:'Temat kampanii <Premium>',
     text:'Pierwszy test gracz.pl FULL MAX PREMIUM · newsletter',markdown:true};
   assert.equal((await transport.sendOnce(message)).state,'accepted');
-  assert.equal(mail.subject,'✉️♠️ '+message.subject);
+  assert.equal(mail.subject,'♠️ '+message.subject);
   assert.ok(mail.text.startsWith(message.text),'Plain-text message body must remain unchanged');
   const hidden=mail.html.match(/<div aria-hidden="true" style="[^"]+">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(hidden,'Hidden inbox preheader exists');

@@ -1,9 +1,13 @@
 // Shared, presentation-only HTML for gracz.pl mail. Only one fixed first-party mail branding PNG; no tracking URLs.
 // Free sender recognition: this is a Unicode *subject prefix*, not a BIMI sender avatar.
 // Keep existing OWNER-provided subjects intact when the 160-character limit is full.
-export const FREE_MAIL_SUBJECT_PREFIX='✉️♠️ ';
+export const FREE_MAIL_SUBJECT_PREFIX='♠️ ';
+const PREVIOUS_MAIL_SUBJECT_PREFIX='✉️♠️ ';
 export function brandEmailSubject(subject){
   if(typeof subject!=='string')throw new TypeError('Subject must be a string');
+  // Replace an earlier mark if the OWNER reused an old campaign subject.
+  if(subject.startsWith(PREVIOUS_MAIL_SUBJECT_PREFIX))
+    return FREE_MAIL_SUBJECT_PREFIX+subject.slice(PREVIOUS_MAIL_SUBJECT_PREFIX.length);
   // Operator test messages must retain the exact leading [TEST] marker.
   if(subject.startsWith(FREE_MAIL_SUBJECT_PREFIX)||subject.startsWith('[TEST] ')||
      subject.length+FREE_MAIL_SUBJECT_PREFIX.length>160)return subject;
