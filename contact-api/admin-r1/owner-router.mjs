@@ -8,6 +8,8 @@ import {createReadService} from './service.mjs';
 import {privateHeaders,denyAdmin} from './deny.mjs';
 import {getAttachmentCapabilities} from '../attachment-lab/integration.mjs';
 import {createSeoLiveReader} from './seo-live-reader.mjs';
+import {createSeoGoogleReader} from './seo-google-reader.mjs';
+import {createSeoSpeedReader} from './seo-speed-reader.mjs';
 const PREFIX='/owner/newsletter';
 const ORIGIN='https://gracz-contact-api.onrender.com';
 const maxBody=2048;
@@ -136,6 +138,19 @@ export function createOwnerRouter({
   const configured=Boolean(auth&&reader&&readSummary&&readTrendDetail&&origin===ORIGIN);
   const services=new Map();
   const readSeoStatus=createSeoLiveReader();
+  const seoGoogle=createSeoGoogleReader();
+  const readSeoSpeed=createSeoSpeedReader();
+  // Bounded, process-local recent panel checks. Not a persistent 24h archive.
+  const seoHistory=[];
+  async function seoSnapshot(){
+    const snapshot=await readSeoStatus();
+    if(seoHistory.at(-1)?.checkedAt!==snapshot.checkedAt) {
+      seoHistory.push({checkedAt:snapshot.checkedAt,ok:snapshot.ok,total:snapshot.total,
+        passing:snapshot.passing,issues:snapshot.issues.length});
+      if(seoHistory.length>48)seoHistory.shift();
+    }
+    return snapshot;
+  }
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
   let trendBusy=false,trendLastAt=-Infinity;
@@ -256,7 +271,26 @@ export function createOwnerRouter({
         return text(res,200,await readFile(new URL('./ui/seo.css',import.meta.url)),
           'text/css; charset=utf-8');
       if(req.method==='GET'&&path===PREFIX+'/seo/status')
-        return response(res,200,await readSeoStatus());
+        return response(res,200,await seoSnapshot());
+      if(req.method==='GET'&&path===PREFIX+'/seo/history'){
+        await seoSnapshot();
+        return response(res,200,{ok:true,storage:"process_memory",entries:seoHistory.slice()});
+      }
+      if(req.method==='GET'&&path===PREFIX+'/seo/google')
+        return response(res,200,await seoGoogle.read());
+      if(req.method==='GET'&&path===PREFIX+'/seo/speed')
+        return response(res,200,await readSeoSpeed());
+      if(req.method==='POST'&&path===PREFIX+'/seo/inspect'){
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const data=await input(req,512);
+        if(Object.keys(data).length!==1||typeof data.url!=='string')
+          return reject(res,400);
+        const live=await seoSnapshot();
+        if(!live.pages.some(page=>page.url===data.url))
+          return reject(res,400);
+        return response(res,200,await seoGoogle.inspect(data.url));
+      }
       // Read-only OWNER capability contract: never accepts file content.
       // No API route for uploading, scanning, conversion or attachment sending.
       if(req.method==='GET'&&path===PREFIX+'/attachment-capabilities')
