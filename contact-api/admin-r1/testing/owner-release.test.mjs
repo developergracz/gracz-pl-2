@@ -353,6 +353,17 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(loginRedirect.headers.location,'/owner/newsletter/login');
     assert.equal(loginRedirect.headers['set-cookie'],undefined);
     assert.equal(loginRedirect.headers['cache-control'],'no-store');
+    const seoRedirect=await probe('/owner/newsletter/seo?utm_source=chatgpt.com');
+    assert.equal(seoRedirect.status,302);
+    assert.equal(seoRedirect.headers.location,'/owner/newsletter/seo');
+    assert.equal(seoRedirect.headers['cache-control'],'no-store');
+    assert.equal(seoRedirect.headers['set-cookie'],undefined);
+    const seoUnauthenticated=await probe('/owner/newsletter/seo');
+    assert.equal(seoUnauthenticated.status,302);
+    assert.equal(seoUnauthenticated.headers.location,'/owner/newsletter/login');
+    assert.equal((await probe('/owner/newsletter/seo?utm_source=unknown')).status,403);
+    assert.equal((await probe('/owner/newsletter/seo?utm_source=chatgpt.com','POST')).status,403);
+    assert.equal((await probe('/owner/newsletter/seo/status?utm_source=chatgpt.com')).status,403);
     assert.equal((await probe('/owner/newsletter/login?utm_source=unknown')).status,403);
     assert.equal((await probe('/owner/newsletter/login?utm_source=chatgpt.com','POST')).status,403);
     const anonymous=await probe('/owner/newsletter/');
