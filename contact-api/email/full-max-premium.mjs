@@ -102,7 +102,11 @@ export function renderPremiumEmail({
   return `<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeEmailHtml(title)}</title></head>
 <body style="margin:0;padding:0;background:#061218;color:#effbfc;font-family:Arial,Helvetica,sans-serif">
-<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">${escapeEmailHtml(preheader||title)}${preheaderPadding===true?'&#8204;&nbsp;'.repeat(140):''}</div>
+${preheaderPadding===true
+  ? '<div aria-hidden="true" style="font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all">'+
+    '&#847;&zwnj;&nbsp;&shy;'.repeat(320)+'</div>'
+  : '<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">'+
+    escapeEmailHtml(preheader||title)+'</div>'}
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="#061218"><tr><td align="center" style="padding:30px 12px">
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:620px;background:#10242d;border:1px solid #24505b;border-radius:18px">
 <tr><td style="padding:28px;background:#0b1d25;border-bottom:1px solid #24434d;border-radius:18px 18px 0 0">
