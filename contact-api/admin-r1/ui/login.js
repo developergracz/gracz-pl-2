@@ -105,7 +105,12 @@ form.addEventListener('submit',async event=>{
     if(code)code.value='';
     if(username)username.value='';
     if(!result.ok)throw Error('login_failed');
-    location.replace('/owner/newsletter/');
+    // A fixed server-authored destination is allowed only for the System Admin entry.
+    // No arbitrary query parameter or external URL can become a login redirect.
+    if(form.dataset.afterLogin==='/owner/newsletter/systemadmin')
+      location.replace('/owner/newsletter/systemadmin');
+    else
+      location.replace('/owner/newsletter/');
   }catch{
     status.textContent='Logowanie nie powiodło się. Sprawdź dane lub spróbuj później.';
   }finally{button.disabled=false;}
