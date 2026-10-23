@@ -16,6 +16,7 @@ Existing binding operating documents remain authoritative:
 - [Render PostgreSQL upgrade and recovery](../../contact-api/RENDER_POSTGRES_UPGRADE_RUNBOOK.md)
 - [Encryption secret escrow](../../contact-api/CONTACT_DATA_ENCRYPTION_SECRET_ESCROW_RUNBOOK.md)
 - [Production contact-data backfill](../../contact-api/PRODUCTION_BACKFILL_RUNBOOK.md)
+- [Render LIVE auto-deploy / merge→migrator incident observation 2026-10-13](./RENDER_LIVE_AUTODEPLOY_MERGE_MIGRATION_OBSERVATION_2026-10-13.md): exact PR #251 dual-deploy evidence and mandatory live-config pre-merge safety check (snapshot, not approval).
 
 ## 2. Verified baseline vs unverified capabilities
 
@@ -35,7 +36,7 @@ Do not equate a configuration screenshot or `pg_restore --list` with a successfu
 
 1. Confirm database ID and connection association with `gracz-contact-api`; database name alone is not sufficient. Keep the external IP allowlist unchanged under the canonical upgrade runbook. Any temporary narrow entry requires a separately documented, explicit Owner-approved **exception to that canonical rule** or an approved runbook amendment; approving a backup method alone is insufficient.
 2. Record live service deployment commit, `/health` result, database availability, maintenance window, storage, and logs for connection/migration/decrypt/persistence failures (aggregates only).
-3. Confirm no concurrent migration/backfill/older writer. Existing Render build command may invoke migrations: avoid triggering gratuitous deploys.
+3. Confirm no concurrent migration/backfill/older writer. **Before *any* merge to `main` (including docs/CSS-only), re-check both services' actual Render LIVE `autoDeploy` and effective build commands**: the 2026-10-13 merge of PR #251 automatically deployed `gracz-pl-maintenance` *and* `gracz-contact-api`, whose build executed `npm run migrate` (this time `applied: []`). GitHub `render.yaml` had `autoDeployTrigger: off` for the static site, but the actual Render service was `yes`; source YAML is not proof of live state. If a pending/unauthorized migration, deployment coupling or DR gate is unknown, **MERGE HOLD**. See the dated [Render incident/evidence record](./RENDER_LIVE_AUTODEPLOY_MERGE_MIGRATION_OBSERVATION_2026-10-13.md).
 4. Select a storage custodian, access policy, offsite encrypted destination, key escrow, retention period, deletion policy, recovery-time objective (RTO), recovery-point objective (RPO) and a budget **before** automation.
 5. Confirm PostgreSQL client/server compatibility, path-specific TLS/security requirements and a non-privileged least-privilege export account when available. For an external connection, require trusted-CA and hostname validation (`sslmode=verify-full` with the approved trust chain). Render's internal PostgreSQL route can use self-signed certificates that do not support libpq `verify-ca` / `verify-full`; it requires a separately documented and approved private-network trust model. `sslmode=require` encrypts transport but does not by itself authenticate the server hostname. If the required trust model is unavailable, STOP; do not silently weaken it or log URLs.
 
