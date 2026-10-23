@@ -1,8 +1,8 @@
-name: SEO AUTO MAX R1 - Live Indexability
+name: SEO AUTO MAX R2 - 24h Live Guardian
 
 on:
   schedule:
-    - cron: "17 5 * * 1"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   seo-live:
-    name: Weekly production SEO health
+    name: Hourly production SEO health
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
