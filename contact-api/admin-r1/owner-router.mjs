@@ -7,6 +7,7 @@ import {createNewOnlyTrendDetail} from './trend-detail.mjs';
 import {createReadService} from './service.mjs';
 import {privateHeaders,denyAdmin} from './deny.mjs';
 import {getAttachmentCapabilities} from '../attachment-lab/integration.mjs';
+import {createSeoLiveReader} from './seo-live-reader.mjs';
 const PREFIX='/owner/newsletter';
 const ORIGIN='https://gracz-contact-api.onrender.com';
 const maxBody=2048;
@@ -134,6 +135,7 @@ export function createOwnerRouter({
   const readTrendDetail=reader?createNewOnlyTrendDetail({database}):null;
   const configured=Boolean(auth&&reader&&readSummary&&readTrendDetail&&origin===ORIGIN);
   const services=new Map();
+  const readSeoStatus=createSeoLiveReader();
   let loginBusy=false;
   let summaryBusy=false,summaryLastAt=-Infinity;
   let trendBusy=false,trendLastAt=-Infinity;
@@ -219,7 +221,7 @@ export function createOwnerRouter({
       }
       // Only the HTML entry point redirects unauthenticated browsers to login.
       // Private JSON endpoints still fail closed, without any authentication bypass.
-      const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX);
+      const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX||path===PREFIX+'/seo');
       if(!cookie){
         if(ownerEntry){
           res.writeHead(302,{...privateHeaders,Location:PREFIX+'/login'});
@@ -242,6 +244,18 @@ export function createOwnerRouter({
       }
       if(req.method==='GET'&&path===PREFIX+'/session')
         return response(res,200,{ok:true,csrf:session.csrf});
+      // Read-only SEO CONTROL CENTER reuses the current durable OWNER session.
+      // Never expose its HTML, assets or monitoring JSON before authentication.
+      if(req.method==='GET'&&path===PREFIX+'/seo')
+        return text(res,200,await readFile(new URL('./ui/seo.html',import.meta.url),'utf8'));
+      if(req.method==='GET'&&path===PREFIX+'/seo.js')
+        return text(res,200,await readFile(new URL('./ui/seo.js',import.meta.url)),
+          'text/javascript; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/seo.css')
+        return text(res,200,await readFile(new URL('./ui/seo.css',import.meta.url)),
+          'text/css; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/seo/status')
+        return response(res,200,await readSeoStatus());
       // Read-only OWNER capability contract: never accepts file content.
       // No API route for uploading, scanning, conversion or attachment sending.
       if(req.method==='GET'&&path===PREFIX+'/attachment-capabilities')
