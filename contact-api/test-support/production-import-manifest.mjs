@@ -10,6 +10,8 @@ export const productionModules=Object.freeze([
   'new-only-newsletter.mjs',
   // Owner-only guarded admin graph. Disabled by default.
   'admin-r1/owner-router.mjs',
+  // Reviewed fixed-host, bounded read-only SEO probes; no external dependencies.
+  'admin-r1/seo-live-reader.mjs',
   // OWNER-only scoped status e-mail rate-bucket introspection; no provider or consent changes.
   'admin-r1/newsletter-limit-control.mjs',
   // Read-only ClamAV/converter interface contract; all processing remains OFF.

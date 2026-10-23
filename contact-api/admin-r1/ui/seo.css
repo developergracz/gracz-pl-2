@@ -1,0 +1,19 @@
+
+/* SEO AUTO MAX R2: first-party styles, no external assets */
+.seo-shell header{align-items:center}
+.seo-shell .cards strong{font-size:clamp(24px,2.7vw,38px);overflow-wrap:anywhere}
+.seo-shell .cards article{min-width:0}
+.seo-shell .notice{margin:20px 0}
+.seo-shell .section-title{margin:20px 0}
+.seo-shell #seo-issues ul{padding-left:20px;overflow-wrap:anywhere}
+.seo-shell #seo-issues li{padding:8px 0;border-bottom:1px solid var(--line)}
+.seo-shell td:first-child{font-size:13px;word-break:break-word}
+.seo-shell td:nth-child(2){font-weight:800}
+.seo-shell #seo-status{font-weight:700}
+@media(max-width:650px){
+ .seo-shell aside{height:auto;position:relative}
+ .seo-shell aside nav{display:flex;flex-wrap:wrap;gap:6px}
+ .seo-shell aside nav a{padding:10px}
+ .seo-shell .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .seo-shell .section-title{align-items:stretch;flex-direction:column}
+}
