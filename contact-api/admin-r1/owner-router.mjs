@@ -11,6 +11,20 @@ import {createSeoLiveReader} from './seo-live-reader.mjs';
 import {createSeoGoogleReader} from './seo-google-reader.mjs';
 import {createSeoSpeedReader} from './seo-speed-reader.mjs';
 const PREFIX='/owner/newsletter';
+const OWNER_HUB=PREFIX+'/systemadmin';
+const OWNER_HUB_LOGIN=PREFIX+'/login/systemadmin';
+// One existing OWNER session, no second account or cross-domain session cookie.
+// All HTML, APIs and styles are served only from the trusted backend origin.
+function withAdminSwitchBar(html,current) {
+  const nav=(name,path,id)=>'<a href="'+path+'"'+(current===id?' aria-current="page"':'')+'>'+name+'</a>';
+  const bar='<nav class="systemadmin-topnav" aria-label="Przełączanie paneli administracyjnych">'+
+    '<a class="systemadmin-topnav-brand" href="'+OWNER_HUB+'">gracz<span>.pl</span> · SYSTEM ADMIN</a>'+
+    nav('Centrum administracyjne',OWNER_HUB,'hub')+
+    nav('SEO Control Center',PREFIX+'/seo','seo')+
+    nav('Panel administracyjny Newslettera',PREFIX+'/','newsletter')+'</nav>';
+  return html.replace('</head>','<link rel="stylesheet" href="'+PREFIX+'/systemadmin.css"></head>')
+    .replace('<body>','<body>'+bar);
+}
 const ORIGIN='https://gracz-contact-api.onrender.com';
 const maxBody=2048;
 const maxServices=8;
@@ -185,7 +199,8 @@ export function createOwnerRouter({
     // Host/TLS and configured checks run first; private JSON endpoints stay fail-closed.
     if(req.method==='GET' &&
        (url.pathname===PREFIX+'/' || url.pathname===PREFIX+'/login' ||
-        url.pathname===PREFIX+'/seo') &&
+        url.pathname===PREFIX+'/seo' || url.pathname===OWNER_HUB ||
+        url.pathname===OWNER_HUB_LOGIN) &&
        url.search==='?utm_source=chatgpt.com'){
       res.writeHead(302,{...privateHeaders,Location:url.pathname});
       return res.end();
@@ -196,6 +211,14 @@ export function createOwnerRouter({
     try{
       if(req.method==='GET'&&path===PREFIX+'/login')
         return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
+      if(req.method==='GET'&&path===OWNER_HUB_LOGIN){
+        const html=loginHtml(passwordOnly,auth?.recoveryReady)
+          .replace('id="login-form" autocomplete="off"',
+            'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
+          .replace('Prywatny panel admina newslettera serwisu gracz.pl',
+            'Prywatne centrum administracyjne gracz.pl');
+        return text(res,200,html);
+      }
       if(req.method==='GET'&&path===PREFIX+'/admin.css'){
         return text(res,200,await readFile(new URL('./ui/admin.css',import.meta.url)),
           'text/css; charset=utf-8');
@@ -237,10 +260,12 @@ export function createOwnerRouter({
       }
       // Only the HTML entry point redirects unauthenticated browsers to login.
       // Private JSON endpoints still fail closed, without any authentication bypass.
-      const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX||path===PREFIX+'/seo');
+      const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX||
+        path===PREFIX+'/seo'||path===OWNER_HUB);
+      const entryLogin=path===OWNER_HUB?OWNER_HUB_LOGIN:PREFIX+'/login';
       if(!cookie){
         if(ownerEntry){
-          res.writeHead(302,{...privateHeaders,Location:PREFIX+'/login'});
+          res.writeHead(302,{...privateHeaders,Location:entryLogin});
           return res.end();
         }
         return reject(res,401);
@@ -251,7 +276,7 @@ export function createOwnerRouter({
       if(!session){
         clearServices();
         if(ownerEntry){
-          res.writeHead(302,{...privateHeaders,Location:PREFIX+'/login',
+          res.writeHead(302,{...privateHeaders,Location:entryLogin,
             'Set-Cookie':clearCookie});
           return res.end();
         }
@@ -260,10 +285,17 @@ export function createOwnerRouter({
       }
       if(req.method==='GET'&&path===PREFIX+'/session')
         return response(res,200,{ok:true,csrf:session.csrf});
+      if(req.method==='GET'&&path===OWNER_HUB)
+        return text(res,200,withAdminSwitchBar(
+          await readFile(new URL('./ui/systemadmin.html',import.meta.url),'utf8'),'hub'));
+      if(req.method==='GET'&&path===PREFIX+'/systemadmin.css')
+        return text(res,200,await readFile(new URL('./ui/systemadmin.css',import.meta.url)),
+          'text/css; charset=utf-8');
       // Read-only SEO CONTROL CENTER reuses the current durable OWNER session.
       // Never expose its HTML, assets or monitoring JSON before authentication.
       if(req.method==='GET'&&path===PREFIX+'/seo')
-        return text(res,200,await readFile(new URL('./ui/seo.html',import.meta.url),'utf8'));
+        return text(res,200,withAdminSwitchBar(
+          await readFile(new URL('./ui/seo.html',import.meta.url),'utf8'),'seo'));
       if(req.method==='GET'&&path===PREFIX+'/seo.js')
         return text(res,200,await readFile(new URL('./ui/seo.js',import.meta.url)),
           'text/javascript; charset=utf-8');
@@ -310,7 +342,7 @@ export function createOwnerRouter({
         html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
           .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
             'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
-        return text(res,200,html);
+        return text(res,200,withAdminSwitchBar(html,'newsletter'));
       }
       if(req.method==='GET'&&path===PREFIX+'/owner-dashboard.js')
         return text(res,200,await readFile(new URL('./ui/owner-dashboard.js',import.meta.url)),
