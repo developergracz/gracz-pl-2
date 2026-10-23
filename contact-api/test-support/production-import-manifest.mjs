@@ -12,6 +12,9 @@ export const productionModules=Object.freeze([
   'admin-r1/owner-router.mjs',
   // Reviewed fixed-host, bounded read-only SEO probes; no external dependencies.
   'admin-r1/seo-live-reader.mjs',
+  // Reviewed, read-only Google API adapters; fixed targets and no new packages.
+  'admin-r1/seo-google-reader.mjs',
+  'admin-r1/seo-speed-reader.mjs',
   // OWNER-only scoped status e-mail rate-bucket introspection; no provider or consent changes.
   'admin-r1/newsletter-limit-control.mjs',
   // Read-only ClamAV/converter interface contract; all processing remains OFF.

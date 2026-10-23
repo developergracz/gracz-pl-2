@@ -17,3 +17,23 @@
  .seo-shell .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
  .seo-shell .section-title{align-items:stretch;flex-direction:column}
 }
+
+/* R3: private, responsive real-data modules */
+.seo-shell .seo-tables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.seo-shell .seo-tables h3{font-size:16px;margin:10px 0}
+.seo-shell .seo-tables .table-wrap{min-width:0}
+.seo-shell .seo-tables th,.seo-shell .seo-tables td{padding:10px 7px}
+.seo-shell .seo-tables td:first-child{max-width:330px;overflow-wrap:anywhere}
+.seo-shell .seo-details{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;margin:22px 0}
+.seo-shell .seo-details dt{color:var(--muted);font-weight:600}
+.seo-shell .seo-details dd{margin:0;overflow-wrap:anywhere}
+.seo-shell #seo-recommendations li{margin:9px 0;line-height:1.5}
+.seo-shell form#seo-inspect-form{flex-wrap:wrap}
+.seo-shell form#seo-inspect-form>div{min-width:min(280px,100%)}
+@media(max-width:950px){
+ .seo-shell .seo-tables{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ .seo-shell .seo-details{grid-template-columns:1fr;gap:4px}
+ .seo-shell .seo-details dd{margin-bottom:12px}
+}
