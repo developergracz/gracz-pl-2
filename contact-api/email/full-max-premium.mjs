@@ -4,7 +4,8 @@
 export const FREE_MAIL_SUBJECT_PREFIX='✉️♠️ ';
 export function brandEmailSubject(subject){
   if(typeof subject!=='string')throw new TypeError('Subject must be a string');
-  if(subject.startsWith(FREE_MAIL_SUBJECT_PREFIX)||
+  // Operator test messages must retain the exact leading [TEST] marker.
+  if(subject.startsWith(FREE_MAIL_SUBJECT_PREFIX)||subject.startsWith('[TEST] ')||
      subject.length+FREE_MAIL_SUBJECT_PREFIX.length>160)return subject;
   return FREE_MAIL_SUBJECT_PREFIX+subject;
 }
