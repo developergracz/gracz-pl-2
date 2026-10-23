@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import {renderPremiumEmail} from './email/full-max-premium.mjs';
+import {renderPremiumEmail,brandEmailSubject} from './email/full-max-premium.mjs';
 
 const CONSENT_VERSION = 'newsletter-new-only-2026-10-20';
 const CONFIRM_TTL_MS = 30 * 60 * 1000;
@@ -171,7 +171,7 @@ export function createNewOnlyNewsletter({
       },
       body:JSON.stringify({
         from:emailFrom, to:[mailbox],
-        subject:'gracz.pl — potwierdź zapis do newslettera',
+        subject:brandEmailSubject('gracz.pl — potwierdź zapis do newslettera'),
         text:'Aby potwierdzić nową zgodę na newsletter gracz.pl, otwórz link: '+url+
           '\n\nLink jest ważny 30 minut. Jeśli to nie Ty, zignoruj wiadomość.\n'+
           'Informacje o prywatności: https://gracz.pl/polityka-prywatnosci/',
@@ -311,7 +311,7 @@ export function createNewOnlyNewsletter({
         'Idempotency-Key':'newsletter-status/'+createHash('sha256').update(proof).digest('hex')
       },
       body:JSON.stringify({
-        from:emailFrom,to:[mailbox],subject:'gracz.pl — bezpieczne sprawdzenie newslettera',
+        from:emailFrom,to:[mailbox],subject:brandEmailSubject('gracz.pl — bezpieczne sprawdzenie newslettera'),
         text:'Aby sprawdzić status swojej subskrypcji newslettera gracz.pl, otwórz link: '+
           baseUrl+'#status='+proof+
           '\n\nLink jest ważny 15 minut. Nie zmienia subskrypcji. Jeśli to nie Ty, zignoruj wiadomość.',
