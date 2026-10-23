@@ -69,7 +69,7 @@ test('targeted transport sends formatted Premium HTML but preserves text fallbac
   assert.match(output.text,/Wypisz się z newslettera/);
 });
 
-test('campaign inbox preview uses the subject instead of message body',async()=>{
+test('campaign inbox snippet stays invisible instead of repeating subject or body',async()=>{
   let mail=null;
   const transport=createCampaignResendTransport({
     enabled:true,apiKey:'test'+'-key-'+'123456789',from:'gracz.pl <news@example.com>',
@@ -85,7 +85,8 @@ test('campaign inbox preview uses the subject instead of message body',async()=>
   assert.ok(mail.text.startsWith(message.text),'Plain-text message body must remain unchanged');
   const hidden=mail.html.match(/<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(hidden,'Hidden inbox preheader exists');
-  assert.ok(hidden.startsWith('Temat kampanii &lt;Premium&gt;'));
+  assert.ok(hidden.startsWith('\u034f\u200c'), 'Invisible combining joiner and ZWNJ start the snippet');
+  assert.ok(!hidden.includes('Temat kampanii'),'Subject must not repeat in the snippet');
   assert.ok(!hidden.includes('Pierwszy test'),'Preview must not contain message body');
   assert.ok((hidden.match(/&#8204;&nbsp;/g)||[]).length>=100,
     'Invisible preview padding prevents body text spilling into inbox snippets');
