@@ -144,8 +144,99 @@ export function auditIndexability(root) {
   return errors;
 }
 
+// Live inspection runs only in scheduled or manually dispatched GitHub Actions.
+// The normal PR gate stays deterministic and does not depend on network uptime.
+async function fetchPublicPage(url, fetcher) {
+  const response = await fetcher(url, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(15000),
+    headers: {"User-Agent": "gracz-seo-auto/1.0"}
+  });
+  if (!response.ok || response.url !== url) {
+    throw new Error("HTTP " + response.status + "; final URL " + response.url);
+  }
+  return response.text();
+}
+
+export async function auditLiveIndexability(fetcher = fetch) {
+  const errors = [];
+  let robots, sitemap;
+  try {
+    [robots, sitemap] = await Promise.all([
+      fetchPublicPage(HOST + "/robots.txt", fetcher),
+      fetchPublicPage(SITEMAP_URL, fetcher)
+    ]);
+  } catch (error) {
+    return ["Live robots.txt/sitemap.xml inaccessible: " + error.message];
+  }
+
+  if (!/^\\s*Sitemap:\\s*https:\\/\\/gracz\\.pl\\/sitemap\\.xml\\s*$/im.test(robots)) {
+    errors.push("Live robots.txt: expected sitemap declaration missing");
+  }
+  if (/^\\s*Disallow:\\s*\\/\\s*$/im.test(robots)) {
+    errors.push("Live robots.txt: blanket Disallow: /");
+  }
+  if (!/<urlset\\b[^>]*xmlns=["']http:\\/\\/www\\.sitemaps\\.org\\/schemas\\/sitemap\\/0\\.9["']/i.test(sitemap)) {
+    errors.push("Live sitemap.xml: invalid sitemap namespace");
+  }
+
+  const blocks = [...sitemap.matchAll(/<url>\\s*([\\s\\S]*?)<\\/url>/gi)];
+  const locs = [...sitemap.matchAll(/<loc>\\s*([^<]+?)\\s*<\\/loc>/gi)];
+  if (!blocks.length || blocks.length !== locs.length) {
+    errors.push("Live sitemap.xml: missing or malformed URL entries");
+  }
+  const urls = [];
+  const seen = new Set();
+  for (const block of blocks) {
+    const matches = [...block[1].matchAll(/<loc>\\s*([^<]+?)\\s*<\\/loc>/gi)];
+    if (matches.length !== 1) {
+      errors.push("Live sitemap.xml: every URL needs exactly one loc");
+      continue;
+    }
+    const url = matches[0][1].trim();
+    let valid = false;
+    try {
+      const parsed = new URL(url);
+      valid = parsed.origin === HOST && parsed.href === url &&
+        !parsed.search && !parsed.hash;
+    } catch {
+      // Reject malformed URLs and never fetch a foreign host.
+    }
+    if (!valid) {
+      errors.push("Live sitemap.xml: invalid canonical URL " + url);
+    } else if (seen.has(url)) {
+      errors.push("Live sitemap.xml: duplicate URL " + url);
+    } else {
+      seen.add(url);
+      urls.push(url);
+    }
+  }
+  // Bounded batches avoid a burst of requests to the production service.
+  for (let i = 0; i < urls.length; i += 4) {
+    await Promise.all(urls.slice(i, i + 4).map(async (url) => {
+      try {
+        const html = await fetchPublicPage(url, fetcher);
+        const canonical = canonicalLinks(html);
+        const robotsTags = metaValues(html, "robots");
+        const googlebotTags = metaValues(html, "googlebot");
+        if (canonical.length !== 1 || canonical[0] !== url) {
+          errors.push("Live page canonical mismatch: " + url);
+        }
+        if (robotsTags.length !== 1 || robotsTags.some(isNoindex) ||
+            googlebotTags.some(isNoindex)) {
+          errors.push("Live page blocked from indexing: " + url);
+        }
+      } catch (error) {
+        errors.push("Live page unavailable " + url + ": " + error.message);
+      }
+    }));
+  }
+  return errors;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const errors = auditIndexability(path.resolve("maintenance-site"));
+  if (process.argv.includes("--live")) errors.push(...await auditLiveIndexability());
   if (errors.length) {
     console.error("SEO AUTO R1: FAIL");
     for (const error of errors) console.error("- " + error);
