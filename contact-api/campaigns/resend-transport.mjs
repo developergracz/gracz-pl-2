@@ -33,7 +33,9 @@ export function createCampaignResendTransport({
             text:text+'\n\nWypisz się z newslettera: '+unsubscribeUrl,
             html:renderPremiumEmail({
               category:'NEWSLETTER · GRACZ.PL',title:subject,
-              preheader:subject,preheaderPadding:true,
+              // Inbox subject already contains the title. Keep the snippet
+              // invisible so Gmail does not show that title twice or leak body text.
+              preheader:'\u034f\u200c',preheaderPadding:true,
               body:text,bodyMarkdown:markdown===true,
               actionUrl:'https://gracz.pl/',actionLabel:'Odwiedź gracz.pl',
               unsubscribeUrl,footnote:'Otrzymujesz tę wiadomość w związku z subskrypcją newslettera gracz.pl.'
