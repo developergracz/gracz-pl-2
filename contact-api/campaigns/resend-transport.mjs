@@ -1,5 +1,5 @@
 import {classifyResendResult,classifyResendFailure} from './resend-result.mjs';
-import {renderPremiumEmail} from '../email/full-max-premium.mjs';
+import {renderPremiumEmail,brandEmailSubject} from '../email/full-max-premium.mjs';
 
 // Internal transport adapter. Not registered as an OWNER route or background job.
 // Caller must commit the one-time dispatch claim AND verify an up-to-date opt-out
@@ -29,7 +29,7 @@ export function createCampaignResendTransport({
             'Idempotency-Key':'gracz-campaign/'+dispatchId,
           },
           body:JSON.stringify({
-            from,to:[to],subject,
+            from,to:[to],subject:brandEmailSubject(subject),
             text:text+'\n\nWypisz się z newslettera: '+unsubscribeUrl,
             html:renderPremiumEmail({
               category:'NEWSLETTER · GRACZ.PL',title:subject,
