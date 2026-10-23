@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {auditIndexability} from "./check-seo-auto-indexing.mjs";
+import {auditIndexability, auditLiveIndexability} from "./check-seo-auto-indexing.mjs";
 
 const ROOT = "https://gracz.pl/";
 const RULES = "User-agent: *\nAllow: /\n\nSitemap: https://gracz.pl/sitemap.xml\n";
@@ -78,4 +78,42 @@ test("public page missing metadata is blocked", (t) => {
   assert.match(result, /canonical/);
   assert.match(result, /meta description missing/);
   assert.match(result, /exactly one H1/);
+});
+
+test("live audit detects a noindex page, even when sitemap lists it", async () => {
+  const fetcher = async (url) => ({
+    ok: true, status: 200, url,
+    text: async () => {
+      if (url.endsWith("robots.txt")) return RULES;
+      if (url.endsWith("sitemap.xml")) return sitemap([ROOT]);
+      return page(ROOT, "index,follow", '<meta name="googlebot" content="noindex">');
+    }
+  });
+  assert.match((await auditLiveIndexability(fetcher)).join("\n"), /blocked from indexing/);
+});
+
+test("live audit rejects redirects and never fetches an external sitemap URL", async () => {
+  const requested = [];
+  const fetcher = async (url) => {
+    requested.push(url);
+    return {
+      ok: true, status: 200, url,
+      text: async () => {
+        if (url.endsWith("robots.txt")) return RULES;
+        if (url.endsWith("sitemap.xml")) return sitemap(["https://gracz.pl.attacker.invalid/"]);
+        return page(ROOT);
+      }
+    };
+  };
+  assert.match((await auditLiveIndexability(fetcher)).join("\n"), /invalid canonical URL/);
+  assert.deepEqual(requested, [ROOT + "robots.txt", ROOT + "sitemap.xml"]);
+});
+
+test("live audit detects redirects from indexed pages", async () => {
+  const fetcher = async (url) => ({
+    ok: true, status: 200, url: url === ROOT ? ROOT + "other/" : url,
+    text: async () => url.endsWith("robots.txt") ? RULES
+      : url.endsWith("sitemap.xml") ? sitemap([ROOT]) : page(ROOT)
+  });
+  assert.match((await auditLiveIndexability(fetcher)).join("\n"), /Live page unavailable/);
 });
