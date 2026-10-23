@@ -83,12 +83,12 @@ test('campaign inbox snippet stays invisible instead of repeating subject or bod
   assert.equal((await transport.sendOnce(message)).state,'accepted');
   assert.equal(mail.subject,message.subject);
   assert.ok(mail.text.startsWith(message.text),'Plain-text message body must remain unchanged');
-  const hidden=mail.html.match(/<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent">([\s\S]*?)<\/div>/)?.[1];
+  const hidden=mail.html.match(/<div aria-hidden="true" style="[^"]+">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(hidden,'Hidden inbox preheader exists');
-  assert.ok(hidden.startsWith('\u034f\u200c'), 'Invisible combining joiner and ZWNJ start the snippet');
+  assert.ok(hidden.startsWith('&#847;&zwnj;&nbsp;&shy;'), 'Invisible preheader padding starts the snippet');
   assert.ok(!hidden.includes('Temat kampanii'),'Subject must not repeat in the snippet');
   assert.ok(!hidden.includes('Pierwszy test'),'Preview must not contain message body');
-  assert.ok((hidden.match(/&#8204;&nbsp;/g)||[]).length>=100,
+  assert.ok((hidden.match(/&#847;&zwnj;&nbsp;&shy;/g)||[]).length>=300,
     'Invisible preview padding prevents body text spilling into inbox snippets');
   assert.ok(mail.html.includes('Pierwszy test'),'Opened email still shows its original content');
   assert.ok(mail.html.includes('FULL MAX PREMIUM · newsletter'));

@@ -105,3 +105,22 @@ test('brand styling preserves safe markdown links and HTML escaping',()=>{
   assert.doesNotMatch(html,/<script\b|<img src=x>/i);
   assert.equal((html.match(/<img\b/g)||[]).length,1);
 });
+
+test('campaign preview is blank with cross-client invisible padding, branding remains untouched',()=>{
+  const mail=renderPremiumEmail({category:'NEWSLETTER · GRACZ.PL',
+    title:'Temat dnia na gracz.pl !',preheader:'\\u034f\\u200c',
+    preheaderPadding:true,
+    body:'To jest przykładowa treść newslettera gracz.pl.'
+  });
+  const snippet=mail.match(/<div aria-hidden="true" style="([^"]+)">([\s\S]*?)<\/div>/);
+  assert.ok(snippet,'Preview spacer must be first in the HTML body');
+  assert.ok(!snippet[1].includes('display:none'),'WP mail may omit elements with display:none from snippet extraction');
+  assert.ok(snippet[1].includes('max-height:0;')&&snippet[1].includes('overflow:hidden;'));
+  assert.equal((snippet[2].match(/&#847;&zwnj;&nbsp;&shy;/g)||[]).length,320);
+  assert.ok(!snippet[2].includes('Temat dnia')&&!snippet[2].includes('To jest przykładowa'));
+  assert.ok(mail.indexOf(snippet[0])<mail.indexOf('FULL MAX PREMIUM'));
+  assert.ok(mail.includes('To jest przykładowa treść'));
+  assert.ok(mail.includes('gracz<span style="color:#ef5261">.pl</span>'));
+  const other=renderPremiumEmail({title:'Zapis potwierdzony',body:'Witaj!'});
+  assert.match(other,/display:none;max-height:0/,'Transactional messages keep their previous preheader');
+});
