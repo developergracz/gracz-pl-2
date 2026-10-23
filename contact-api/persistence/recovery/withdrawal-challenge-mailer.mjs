@@ -1,4 +1,4 @@
-import {renderPremiumEmail} from '../../email/full-max-premium.mjs';
+import {renderPremiumEmail,brandEmailSubject} from '../../email/full-max-premium.mjs';
 
 // Transactional proof-only email, not marketing. The single-use challenge
 // is never sent in a URL query, API response, log or contact property.
@@ -19,7 +19,7 @@ export function createWithdrawalChallengeMailer({
       const link='https://gracz.pl/newsletter/#withdrawal='+challengeId+'.'+token;
       const body={
         from:emailFrom.trim(),to:[email],
-        subject:'gracz.pl — potwierdź wypisanie z newslettera',
+        subject:brandEmailSubject('gracz.pl — potwierdź wypisanie z newslettera'),
         text:'Otrzymaliśmy prośbę o wypisanie z newslettera gracz.pl.\n'+
           'Aby potwierdzić, otwórz link i kliknij przycisk wypisania:\n'+link+
           '\n\nLink jest ważny przez 15 minut. Jeśli to nie Ty, zignoruj wiadomość.\n'+

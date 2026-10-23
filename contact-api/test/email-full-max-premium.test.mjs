@@ -124,3 +124,13 @@ test('campaign preview is blank with cross-client invisible padding, branding re
   const other=renderPremiumEmail({title:'Zapis potwierdzony',body:'Witaj!'});
   assert.match(other,/display:none;max-height:0/,'Transactional messages keep their previous preheader');
 });
+
+test('free subject mark is the envelope and spade, idempotent and never truncates',async()=>{
+  const {brandEmailSubject,FREE_MAIL_SUBJECT_PREFIX}=await import('../email/full-max-premium.mjs');
+  assert.equal(FREE_MAIL_SUBJECT_PREFIX,'✉️♠️ ');
+  assert.equal(brandEmailSubject('Temat gracz.pl'),'✉️♠️ Temat gracz.pl');
+  assert.equal(brandEmailSubject('✉️♠️ Temat gracz.pl'),'✉️♠️ Temat gracz.pl');
+  assert.equal(brandEmailSubject('[TEST] Kampania gracz.pl'),'[TEST] Kampania gracz.pl');
+  assert.equal(brandEmailSubject('a'.repeat(160)),'a'.repeat(160));
+  assert.equal(brandEmailSubject('a'.repeat(155)),'✉️♠️ '+'a'.repeat(155));
+});
