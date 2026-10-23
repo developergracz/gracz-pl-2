@@ -130,6 +130,7 @@ test('free subject mark is the envelope and spade, idempotent and never truncate
   assert.equal(FREE_MAIL_SUBJECT_PREFIX,'✉️♠️ ');
   assert.equal(brandEmailSubject('Temat gracz.pl'),'✉️♠️ Temat gracz.pl');
   assert.equal(brandEmailSubject('✉️♠️ Temat gracz.pl'),'✉️♠️ Temat gracz.pl');
+  assert.equal(brandEmailSubject('[TEST] Kampania gracz.pl'),'[TEST] Kampania gracz.pl');
   assert.equal(brandEmailSubject('a'.repeat(160)),'a'.repeat(160));
   assert.equal(brandEmailSubject('a'.repeat(155)),'✉️♠️ '+'a'.repeat(155));
 });
