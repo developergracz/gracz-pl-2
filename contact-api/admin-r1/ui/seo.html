@@ -19,20 +19,25 @@
       <a href="#main" aria-current="page">◈ Przegląd LIVE</a>
       <a href="#seo-pages">◇ Podstrony</a>
       <a href="#seo-issues">◇ Wykryte problemy</a>
+      <a href="#seo-google">◇ Google Search Console</a>
+      <a href="#seo-inspect">◇ Indeksacja URL</a>
+      <a href="#seo-speed">◇ PageSpeed</a>
+      <a href="#seo-history">◇ Historia i alerty</a>
+      <a href="#seo-advisor">◇ SEO Advisor</a>
       <a href="/owner/newsletter/">← Panel administracyjny</a>
     </nav>
-    <p class="aside-note">R2 · Dostęp wyłącznie OWNER<br>Kontrola tylko do odczytu</p>
+    <p class="aside-note">R3 · Dostęp wyłącznie OWNER<br>Kontrola tylko do odczytu</p>
   </aside>
   <main id="main">
     <header>
       <div>
-        <p class="eyebrow">GRACZ.PL SEO AUTO MAX R2</p>
+        <p class="eyebrow">GRACZ.PL SEO AUTO MAX R3</p>
         <h1>SEO Control Center</h1>
         <p class="muted">Prywatny podgląd rzeczywistego stanu publicznych podstron gracz.pl.</p>
       </div>
       <span class="pill" id="seo-pill">ODCZYT LIVE</span>
     </header>
-    <div class="notice">Monitoring automatyczny uruchamia GitHub Actions co 15 minut (harmonogram orientacyjny).
+    <div class="notice">Monitoring automatyczny uruchamia GitHub Actions co godzinę (harmonogram orientacyjny).
       Dane poniżej pochodzą z niezależnego odczytu publicznej witryny, odświeżanego nie częściej niż co 15 minut.
       Wynik nie oznacza potwierdzenia indeksacji przez Google.</div>
     <div class="section-title">
@@ -59,11 +64,68 @@
       <p id="seo-issue-info" class="muted">Oczekiwanie na wynik…</p>
       <ul id="seo-issue-list"></ul>
     </section>
-    <section class="panel">
-      <h2>Dane z Google</h2>
-      <p class="muted">Search Console nie jest jeszcze połączone. Pozycje, kliknięcia i rzeczywisty stan indeksacji pozostają nieznane — nie pokazujemy wymyślonych wyników.</p>
+    <section class="panel" id="seo-google" aria-labelledby="seo-google-title">
+      <div class="section-title"><h2 id="seo-google-title">Google Search Console</h2>
+        <button type="button" id="google-refresh">Odśwież raport</button></div>
+      <p id="google-state" class="muted" role="status">Sprawdzanie połączenia Google…</p>
+      <p id="google-period" class="muted">Okres danych: —</p>
+      <div class="cards" aria-label="Raport widoczności Google">
+        <article><p>Kliknięcia</p><strong id="google-clicks">—</strong><small>Wynik Google Search</small></article>
+        <article><p>Wyświetlenia</p><strong id="google-impressions">—</strong><small>W wynikach wyszukiwania</small></article>
+        <article><p>CTR</p><strong id="google-ctr">—</strong><small>Procent kliknięć</small></article>
+        <article><p>Śr. pozycja</p><strong id="google-position">—</strong><small>Średnia, nie stały ranking</small></article>
+      </div>
+      <div class="seo-tables">
+        <div class="table-wrap"><h3>Najczęstsze zapytania</h3>
+          <table><thead><tr><th>Fraza</th><th>Kliknięcia</th><th>Pozycja</th></tr></thead>
+          <tbody id="google-queries"></tbody></table>
+        </div>
+        <div class="table-wrap"><h3>Najpopularniejsze podstrony</h3>
+          <table><thead><tr><th>URL</th><th>Kliknięcia</th><th>Pozycja</th></tr></thead>
+          <tbody id="google-pages"></tbody></table>
+        </div>
+      </div>
     </section>
-    <footer>Panel właściciela gracz.pl · SEO R2 · Bez automatycznej zmiany treści serwisu.</footer>
+    <section class="panel" id="seo-inspect" aria-labelledby="seo-inspect-title">
+      <h2 id="seo-inspect-title">Kontrola indeksacji w Google</h2>
+      <p class="muted">Sprawdza zapisany stan indeksu Google, nie testuje aktualnie działającej strony.</p>
+      <form id="seo-inspect-form">
+        <div><label for="seo-inspect-url">Podstrona z mapy witryny</label>
+          <select id="seo-inspect-url" required><option value="">Wybierz podstronę</option></select></div>
+        <button type="submit">Sprawdź w Google</button>
+      </form>
+      <p id="seo-inspect-state" role="status" class="muted">Wybierz stronę, aby rozpocząć sprawdzenie.</p>
+      <dl class="seo-details" id="seo-inspect-details" hidden>
+        <dt>Ocena Google</dt><dd id="inspect-verdict">—</dd>
+        <dt>Stan indeksu</dt><dd id="inspect-coverage">—</dd>
+        <dt>Reguły indeksowania</dt><dd id="inspect-rules">—</dd>
+        <dt>Canonical Google</dt><dd id="inspect-canonical">—</dd>
+        <dt>Ostatnie pobranie Googlebota</dt><dd id="inspect-crawl">—</dd>
+      </dl>
+    </section>
+    <section class="panel" id="seo-speed" aria-labelledby="seo-speed-title">
+      <div class="section-title"><h2 id="seo-speed-title">PageSpeed · strona główna</h2>
+        <button id="seo-speed-refresh" type="button">Sprawdź PageSpeed</button></div>
+      <p id="seo-speed-state" role="status" class="muted">Dane szybkości nie zostały jeszcze pobrane.</p>
+      <div class="cards">
+        <article><p>Lighthouse mobile</p><strong id="speed-score">—</strong><small>Ocena 0–100</small></article>
+        <article><p>LCP</p><strong id="speed-lcp">—</strong><small>Milisekundy, pomiar laboratoryjny</small></article>
+        <article><p>CLS</p><strong id="speed-cls">—</strong><small>Przesunięcia układu</small></article>
+        <article><p>INP</p><strong id="speed-inp">—</strong><small>Tylko jeśli dostępne dane terenowe</small></article>
+      </div>
+    </section>
+    <section class="panel" id="seo-history" aria-labelledby="seo-history-title">
+      <h2 id="seo-history-title">Historia kontroli i alerty</h2>
+      <p class="muted">Ostatnie odczyty panelu w pamięci serwera. Historia jest tymczasowa i znika po restarcie; harmonogram GitHub Actions prowadzi własne logi kontroli.</p>
+      <div class="table-wrap"><table><thead><tr><th>Data</th><th>Stan</th><th>Problemy</th></tr></thead>
+        <tbody id="seo-history-rows"></tbody></table></div>
+    </section>
+    <section class="panel" id="seo-advisor" aria-labelledby="seo-advisor-title">
+      <h2 id="seo-advisor-title">SEO Advisor · zalecane działania</h2>
+      <p class="muted">Wskazówki na podstawie aktualnie wykrytych problemów. Bez automatycznego modyfikowania strony.</p>
+      <ul id="seo-recommendations"><li>Analiza uruchomi się po odczycie LIVE.</li></ul>
+    </section>
+    <footer>Panel właściciela gracz.pl · SEO R3 · Bez automatycznej zmiany treści serwisu.</footer>
   </main>
 </div>
 </body>
