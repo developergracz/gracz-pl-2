@@ -56,7 +56,7 @@ test("GSC uses signed OAuth service account, read-only scope, and caches search 
 test("GSC URL Inspection returns only real Google verdicts and caches results",async()=>{
   let calls=0;
   const fetcher=async(url,options)=>{
-    if(url.includes("oauth2.googleapis.com"))return new Response(JSON.stringify({
+    if(url==="https://oauth2.googleapis.com/token")return new Response(JSON.stringify({
       access_token:"test-access-token-1234567",expires_in:3600
     }));
     assert.equal(url,"https://searchconsole.googleapis.com/v1/urlInspection/index:inspect");
