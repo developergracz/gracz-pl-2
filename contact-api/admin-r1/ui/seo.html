@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>SEO Control Center — gracz.pl</title>
+<link rel="stylesheet" href="/owner/newsletter/admin.css">
+<link rel="stylesheet" href="/owner/newsletter/seo.css">
+<script src="/owner/newsletter/seo.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Przejdź do treści</a>
+<div class="shell seo-shell">
+  <aside>
+    <div class="logo">gracz<span>.pl</span></div>
+    <p class="eyebrow">FULL MAX PREMIUM / SEO</p>
+    <nav aria-label="Panel SEO">
+      <a href="#main" aria-current="page">◈ Przegląd LIVE</a>
+      <a href="#seo-pages">◇ Podstrony</a>
+      <a href="#seo-issues">◇ Wykryte problemy</a>
+      <a href="/owner/newsletter/">← Panel administracyjny</a>
+    </nav>
+    <p class="aside-note">R2 · Dostęp wyłącznie OWNER<br>Kontrola tylko do odczytu</p>
+  </aside>
+  <main id="main">
+    <header>
+      <div>
+        <p class="eyebrow">GRACZ.PL SEO AUTO MAX R2</p>
+        <h1>SEO Control Center</h1>
+        <p class="muted">Prywatny podgląd rzeczywistego stanu publicznych podstron gracz.pl.</p>
+      </div>
+      <span class="pill" id="seo-pill">ODCZYT LIVE</span>
+    </header>
+    <div class="notice">Monitoring automatyczny uruchamia GitHub Actions co 15 minut (harmonogram orientacyjny).
+      Dane poniżej pochodzą z niezależnego odczytu publicznej witryny, odświeżanego nie częściej niż co 15 minut.
+      Wynik nie oznacza potwierdzenia indeksacji przez Google.</div>
+    <div class="section-title">
+      <p id="seo-status" role="status" aria-live="polite">Pobieranie stanu SEO…</p>
+      <button type="button" id="seo-refresh">Sprawdź stan</button>
+    </div>
+    <div class="cards" aria-label="Najważniejsze wskaźniki">
+      <article><p>Stan techniczny</p><strong id="seo-health">—</strong><small>Odczyt publicznych stron</small></article>
+      <article><p>Adresy w sitemap</p><strong id="seo-total">—</strong><small>Wykryte adresy</small></article>
+      <article><p>Poprawne strony</p><strong id="seo-passing">—</strong><small>Bez błędów kontroli</small></article>
+      <article><p>Problemy SEO</p><strong id="seo-count">—</strong><small>Wymagają weryfikacji</small></article>
+    </div>
+    <p id="seo-time" class="muted">Ostatni odczyt: —</p>
+    <section class="panel" id="seo-pages">
+      <h2>Podstrony gracz.pl</h2>
+      <p class="muted">Adresy pochodzą z aktualnej publicznej mapy witryny. Kontrola: HTTP, canonical, noindex i tytuł.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Adres</th><th scope="col">Stan</th><th scope="col">Szczegóły</th></tr></thead>
+        <tbody id="seo-rows"></tbody>
+      </table></div>
+    </section>
+    <section class="panel" id="seo-issues">
+      <h2>Wykryte problemy</h2>
+      <p id="seo-issue-info" class="muted">Oczekiwanie na wynik…</p>
+      <ul id="seo-issue-list"></ul>
+    </section>
+    <section class="panel">
+      <h2>Dane z Google</h2>
+      <p class="muted">Search Console nie jest jeszcze połączone. Pozycje, kliknięcia i rzeczywisty stan indeksacji pozostają nieznane — nie pokazujemy wymyślonych wyników.</p>
+    </section>
+    <footer>Panel właściciela gracz.pl · SEO R2 · Bez automatycznej zmiany treści serwisu.</footer>
+  </main>
+</div>
+</body>
+</html>
