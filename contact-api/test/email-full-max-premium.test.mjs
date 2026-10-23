@@ -112,7 +112,7 @@ test('campaign preview is blank with cross-client invisible padding, branding re
     preheaderPadding:true,
     body:'To jest przykładowa treść newslettera gracz.pl.'
   });
-  const snippet=mail.match(/<div aria-hidden="true" style="([^"]+)">([\\s\\S]*?)<\\/div>/);
+  const snippet=mail.match(/<div aria-hidden="true" style="([^"]+)">([\s\S]*?)<\/div>/);
   assert.ok(snippet,'Preview spacer must be first in the HTML body');
   assert.ok(!snippet[1].includes('display:none'),'WP mail may omit elements with display:none from snippet extraction');
   assert.ok(snippet[1].includes('max-height:0;')&&snippet[1].includes('overflow:hidden;'));
