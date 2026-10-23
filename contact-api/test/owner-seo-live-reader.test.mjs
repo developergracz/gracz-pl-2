@@ -11,6 +11,7 @@ const site=(urls)=>'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/
   urls.map(url=>"<url><loc>"+url+"</loc></url>").join("")+"</urlset>";
 const page=(url,extra="")=>'<!doctype html><html><head><title>gracz.pl — gry</title>'+
   '<link rel="canonical" href="'+url+'"><meta name="robots" content="index,follow">'+
+  '<meta name="description" content="Graj online w serwisie gracz.pl">'+
   extra+'</head><body><h1>Gry</h1></body></html>';
 function fixture({urls=[root],pages={},status={}}={}) {
   const requested=[];
@@ -82,6 +83,15 @@ test("cached monitoring never makes duplicate network requests within TTL",async
   time+=1001;
   await reader();
   assert.equal(requested.length,6);
+});
+
+test("missing description and multiple H1 headings require SEO review",async()=>{
+  const bad=page(root).replace(/<meta name="description"[^>]*>/,"")
+    .replace("</body>","<h1>Duplikat</h1></body>");
+  const report=await createSeoLiveReader({fetcher:fixture({pages:{[root]:bad}}).fetcher})();
+  assert.equal(report.ok,false);
+  assert.ok(report.pages[0].problems.includes("description"));
+  assert.ok(report.pages[0].problems.includes("h1"));
 });
 
 test("dashboard is private noindex and reachable only through owner router",async()=>{
