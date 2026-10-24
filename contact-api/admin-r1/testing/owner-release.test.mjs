@@ -1020,8 +1020,27 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.match(dashboardJs,/\$\("recent-show"\)\.addEventListener\("click",openRecentSubscribers\)/);
   assert.match(dashboardJs,/\$\("recent-check"\)\.addEventListener\("click",openRecentSubscribers\)/);
 
+  // The existing secured topbar is present on every OWNER system page.
+  for(const page of ['/owner/newsletter/systemadmin','/owner/newsletter/seo','/owner/newsletter/']){
+    const response=await call(page,{cookie});
+    assert.equal(response.status,200);
+    const markup=await response.text();
+    assert.equal((markup.match(/id="systemadmin-logout"/g)||[]).length,1,
+      'Each OWNER page has exactly one shared logout button');
+    assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
+    assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
+    assert.match(markup,/href="\/owner\/newsletter\/seo"/);
+    assert.match(markup,/href="\/owner\/newsletter\/"/);
+  }
+  result=await call('/owner/newsletter/systemadmin-logout.js',{cookie});
+  assert.equal(result.status,200,'Shared logout handler is served to authenticated OWNER');
+  assert.match(await result.text(),/X-Owner-CSRF/);
+  result=await call('/owner/newsletter/logout',{method:'POST',cookie});
+  assert.equal(result.status,403,'Logout without CSRF must be rejected');
   result=await call('/owner/newsletter/logout',{method:'POST',cookie,csrf:login.csrf});
   assert.equal(result.status,200);
+  result=await call('/owner/newsletter/systemadmin-logout.js',{cookie});
+  assert.equal(result.status,401,'Logged-out session cannot fetch logout handler');
   result=await call('/owner/newsletter/list',{method:'POST',cookie,csrf:login.csrf,data:{}});
   assert.equal(result.status,401);
   result=await call('/owner/newsletter/summary',{method:'POST',cookie,csrf:login.csrf,data:{}});
