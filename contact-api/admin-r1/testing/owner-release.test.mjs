@@ -580,7 +580,7 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
       username:'changedowner',password:'wrong-owner-password-test'
     }).toString()});
     assert.equal(failed.status,303);
-    assert.equal(failed.headers.location,'https://gracz.pl/systemadmin#login-failed');
+    assert.equal(failed.headers.location,'https://gracz.pl/systemadmin/#login-failed');
     assert.equal(failed.cookie,'');
     assert.doesNotMatch(failed.html,/Logowanie właściciela|password|changedowner/);
   } finally {await new Promise(resolve=>server.close(resolve));}
