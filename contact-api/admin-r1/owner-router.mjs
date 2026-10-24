@@ -215,7 +215,11 @@ export function createOwnerRouter({
         const html=loginHtml(passwordOnly,auth?.recoveryReady)
           .replace('id="login-form" autocomplete="off"',
             'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
-          .replace('Prywatny panel admina newslettera serwisu gracz.pl',
+          .replace('<title>Logowanie właściciela — gracz.pl</title>',
+            '<title>System Admin — logowanie gracz.pl</title>')
+          .replace('<h1>Logowanie właściciela</h1>',
+            '<h1>System Admin — logowanie</h1>')
+          .replaceAll('Prywatny panel admina newslettera serwisu gracz.pl',
             'Prywatne centrum administracyjne gracz.pl');
         return text(res,200,html);
       }
