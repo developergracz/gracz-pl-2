@@ -24,3 +24,14 @@ if(form&&feedback){
     // Keep the native HTTPS POST; do not disable the submit button.
   });
 }
+
+const passwordInput=document.getElementById('admin-password');
+const visibilityToggle=document.getElementById('toggle-admin-password');
+if(passwordInput&&visibilityToggle){
+  visibilityToggle.addEventListener('click',()=>{
+    const reveal=passwordInput.type==='password';
+    passwordInput.type=reveal?'text':'password';
+    visibilityToggle.textContent=reveal?'Ukryj':'Pokaż';
+    visibilityToggle.setAttribute('aria-pressed',String(reveal));
+  });
+}
