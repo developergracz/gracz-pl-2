@@ -94,8 +94,8 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <script src="${PREFIX}/login.js" defer></script></head>
 <body class="owner-login-page"><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div></div>
 <p class="owner-login-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>
-<h1>Logowanie <span>właściciela</span></h1>
-<p class="owner-login-subtitle">${passwordOnly?'Podaj nick administratora i hasło.':'Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
+<h1>Panel Admin <span>gracz.pl</span></h1>
+<p class="owner-login-subtitle">${passwordOnly?'Bezpieczne logowanie do Centrum administracyjnego gracz.pl.':'Bezpieczne logowanie do Centrum administracyjnego gracz.pl. Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
 <section class="owner-login-card" aria-label="Bezpieczny formularz logowania">
 <div class="owner-login-diamond" aria-hidden="true"></div>
 <form id="login-form" autocomplete="off">
@@ -279,7 +279,7 @@ export function createOwnerRouter({
             'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
           .replace('<title>Logowanie właściciela — gracz.pl</title>',
             '<title>System Admin — logowanie gracz.pl</title>')
-          .replace('<h1>Logowanie <span>właściciela</span></h1>',
+          .replace('<h1>Panel Admin <span>gracz.pl</span></h1>',
             '<h1>System Admin — logowanie</h1>')
           .replaceAll('Prywatny panel admina newslettera serwisu gracz.pl',
             'Prywatne centrum administracyjne gracz.pl');
