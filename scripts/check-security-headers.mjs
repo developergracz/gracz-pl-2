@@ -31,7 +31,9 @@ for (const file of htmlFiles) {
     "style-src 'self'",
     "font-src 'self'",
     "base-uri 'none'",
-    "form-action 'none'",
+    rel === 'maintenance-site/systemadmin/index.html'
+      ? "form-action https://gracz-contact-api.onrender.com"
+      : "form-action 'none'",
     "object-src 'none'"
   ]) {
     if (!policy.includes(required)) {
@@ -81,6 +83,14 @@ for (const [name, value] of expectedHeaders) {
 
 if (!renderYaml.includes('name: Content-Security-Policy')) {
   errors.push('maintenance-site/render.yaml: missing Content-Security-Policy response header');
+}
+// Only the fixed HTTPS OWNER backend is a permitted form POST target.
+// Every other HTML page retains form-action 'none' in its own CSP meta.
+if (!renderYaml.includes("form-action https://gracz-contact-api.onrender.com;")) {
+  errors.push('maintenance-site/render.yaml: OWNER form action must allow only exact backend origin');
+}
+if (renderYaml.includes("form-action *")) {
+  errors.push('maintenance-site/render.yaml: wildcard form destinations are prohibited');
 }
 if (!renderYaml.includes("frame-ancestors 'none'")) {
   errors.push("maintenance-site/render.yaml: response CSP must include frame-ancestors 'none'");

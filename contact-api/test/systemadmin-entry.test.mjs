@@ -7,15 +7,38 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   const html=await read("../../maintenance-site/systemadmin/index.html");
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
   assert.match(html,/<meta name="robots" content="noindex,nofollow,noarchive">/);
-  assert.match(html,/<meta name="referrer" content="no-referrer">/);
-  assert.match(html,/<meta http-equiv="refresh" content="0; url=https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/systemadmin">/);
-  assert.equal((html.match(/http-equiv="refresh"/g)||[]).length,1);
-  assert.match(html,/Bezpieczne logowanie otwiera się automatycznie/);
-  assert.match(html,/href="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/systemadmin"/);
+  assert.match(html,/<meta name="referrer" content="strict-origin">/);
+  assert.doesNotMatch(html,/<meta http-equiv="refresh"/i);
+  assert.match(html,/action="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/public-form"/);
+  assert.match(html,/<form class="admin-login-form" method="post"/);
+  assert.match(html,/name="username" autocomplete="username"/);
+  assert.match(html,/name="password" autocomplete="current-password"/);
+  assert.match(html,/type="submit">Zaloguj się/);
+  assert.match(html,/Zapomniałem hasła<\/a>/);
+  assert.match(html,/login\/systemadmin#forgot/);
   assert.match(html,/href="\/systemadmin\/systemadmin\.css"/);
   assert.match(html,/Logowanie administratora/);
-  assert.doesNotMatch(html,/<input\b[^>]*type="password"|<form\b|<script\b/i);
+  assert.doesNotMatch(html,/<script\b/i);
   assert.match(css,/\.access-button/);
+  assert.match(css,/\.admin-login-field input:focus-visible/);
+  assert.match(css,/\.admin-login-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
+test("Full Max Premium form permits only trusted backend and keeps other pages locked",async()=>{
+  const page=await read("../../maintenance-site/systemadmin/index.html");
+  const headers=await read("../../maintenance-site/render.yaml");
+  const gate=await read("../../scripts/check-security-headers.mjs");
+  const router=await read("../admin-r1/owner-router.mjs");
+  const client=await read("../admin-r1/ui/login.js");
+  assert.match(page,/form-action https:\/\/gracz-contact-api\.onrender\.com/);
+  assert.match(headers,/form-action https:\/\/gracz-contact-api\.onrender\.com/);
+  assert.match(gate,/rel === 'maintenance-site\/systemadmin\/index.html'/);
+  assert.match(router,/PUBLIC_OWNER_FORM_ORIGIN='https:\/\/gracz.pl'/);
+  assert.match(router,/req.headers.origin!==PUBLIC_OWNER_FORM_ORIGIN/);
+  assert.match(router,/publicOwnerFormInput\(req\)/);
+  assert.match(router,/Set-Cookie':newCookie\(outcome.token\)/);
+  assert.match(router,/if\(!passwordOnly \|\|/);
+  assert.match(client,/location.hash==='#forgot'/);
 });
 
 test("System Admin removes decorative spade and fits desktop viewport while mobile can scroll",async()=>{

@@ -120,6 +120,8 @@ form.addEventListener('submit',async event=>{
 const recoveryDialog=document.getElementById('forgot-dialog');
 if(recoveryDialog){
   document.getElementById('forgot-open').addEventListener('click',()=>recoveryDialog.showModal());
+  if(location.pathname==='/owner/newsletter/login/systemadmin'&&
+     location.hash==='#forgot')recoveryDialog.showModal();
   document.getElementById('forgot-close').addEventListener('click',()=>recoveryDialog.close());
   const sendForm=document.getElementById('forgot-request-form');
   const finishForm=document.getElementById('forgot-complete-form');
