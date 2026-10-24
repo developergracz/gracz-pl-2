@@ -8,6 +8,9 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
   assert.match(html,/<meta name="robots" content="noindex,nofollow,noarchive">/);
   assert.match(html,/<meta name="referrer" content="no-referrer">/);
+  assert.match(html,/<meta http-equiv="refresh" content="0; url=https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/systemadmin">/);
+  assert.equal((html.match(/http-equiv="refresh"/g)||[]).length,1);
+  assert.match(html,/Bezpieczne logowanie otwiera się automatycznie/);
   assert.match(html,/href="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/systemadmin"/);
   assert.match(html,/href="\/systemadmin\/systemadmin\.css"/);
   assert.match(html,/Logowanie administratora/);
@@ -46,6 +49,9 @@ test("login redirect is allowlisted to the server-owned hub path, not user input
   const hub=router.indexOf("path===OWNER_HUB)",session);
   assert.ok(session>0&&hub>session,"hub HTML is authenticated");
   assert.match(router,/data-after-login/);
+  assert.match(router,/System Admin — logowanie/);
+  assert.match(router,/replaceAll\('Prywatny panel admina newslettera serwisu gracz.pl'/);
+  assert.match(router,/path===OWNER_HUB\?OWNER_HUB_LOGIN:PREFIX\+'\/login'/);
   assert.match(login,/form\.dataset\.afterLogin==='\/owner\/newsletter\/systemadmin'/);
   assert.match(login,/location\.replace\('\/owner\/newsletter\/'\)/);
   assert.match(router,/url\.search\)return denyAdmin\(req,res\)/);
