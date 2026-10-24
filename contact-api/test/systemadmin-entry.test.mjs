@@ -59,6 +59,7 @@ test("Premium System Admin authenticates only on the OWNER origin without a seco
   assert.match(router,/path===PREFIX\+'\/login\/visual\.css'/);
   assert.match(router,/path===PREFIX\+'\/login\/visual\.js'/);
   assert.match(router,/readFile\(new URL\('\.\.\/\.\.\/maintenance-site\/systemadmin\/index\.html'/);
+  assert.match(router,/\.replace\(\/<meta http-equiv="refresh"/);
   assert.match(router,/\.replace\(\/<meta http-equiv="Content-Security-Policy"/);
   assert.match(router,/action="#"/);
   assert.match(js,/event\.preventDefault\(\)/);
