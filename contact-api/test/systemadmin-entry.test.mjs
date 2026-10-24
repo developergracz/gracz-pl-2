@@ -27,7 +27,7 @@ test("OWNER login uses the approved Full Max Premium design with no side gold li
     /side-line|side-ornament|background-image:\s*url|linear-gradient\([^\n]*golden-line/);
   assert.match(login,/fetch\('\/owner\/newsletter\/login'/);
   assert.match(login,/credentials:'same-origin'/);
-  assert.match(login,/location\.replace\('\/owner\/newsletter\/'\)/);
+  assert.doesNotMatch(login,/location\.replace\('\/owner\/newsletter\/'\)/);
   assert.match(login,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
 });
 
@@ -108,13 +108,13 @@ test("Panel Admin reuses OWNER login and returns to the existing two-tile choice
   assert.match(router,/path===PREFIX\+'\/login\/visual\/paneladmin'/);
   assert.match(router,/data-after-login="systemadmin"/);
   assert.match(router,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
-  assert.match(js,/form\.dataset\.afterLogin==='newsletter'/);
+  assert.doesNotMatch(js,/form\.dataset\.afterLogin==='newsletter'/);
   assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
   const tiles=await read("../admin-r1/ui/systemadmin.html");
   assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,2);
   assert.match(tiles,/href="\/owner\/newsletter\/seo"/);
   assert.match(tiles,/href="\/owner\/newsletter\/"/);
-  assert.match(js,/location\.replace\('\/owner\/newsletter\/'\)/);
+  assert.doesNotMatch(js,/location\.replace\('\/owner\/newsletter\/'\)/);
   assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
   assert.match(js,/credentials:'same-origin'/);
   assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|console\./);
@@ -153,6 +153,47 @@ test("Panel Admin login success opens two-tile hub rather than the newsletter da
   assert.deepEqual(destinations,["/owner/newsletter/systemadmin"]);
   assert.equal(button.disabled,false);
   assert.equal(password.value,"");
+});
+
+test("all OWNER login entries lead to the same protected two-tile selection page",async()=>{
+  const script=await read("../admin-r1/ui/login.js");
+  const tiles=await read("../admin-r1/ui/systemadmin.html");
+  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.match(tiles,/href="\/owner\/newsletter\/seo"/);
+  assert.match(tiles,/href="\/owner\/newsletter\/"/);
+  for(const afterLogin of [undefined,"/owner/newsletter/","/owner/newsletter/systemadmin"]){
+    for(const ok of [true,false]){
+      const listeners=new Map();
+      const username={value:"testowner",validity:{valid:true}};
+      const password={value:"synthetic-placeholder-password",validity:{valid:true}};
+      const submit={disabled:false};
+      const form={dataset:{afterLogin},addEventListener:(event,handler)=>listeners.set(event,handler)};
+      const status={textContent:""};
+      const locations=[];
+      const fields={
+        "login-form":form,"login-status":status,
+        username,password,"login-button":submit
+      };
+      let request;
+      runInNewContext(script,{
+        document:{
+          querySelectorAll:()=>[],
+          getElementById:id=>fields[id]||null
+        },
+        fetch:async(url,options)=>{request={url,options};return {ok};},
+        location:{replace:url=>locations.push(url)}
+      });
+      assert.equal(typeof listeners.get("submit"),"function");
+      await listeners.get("submit")({preventDefault(){}});
+      assert.equal(request.url,"/owner/newsletter/login");
+      assert.equal(request.options.method,"POST");
+      assert.equal(request.options.credentials,"same-origin");
+      assert.deepEqual(locations,ok?["/owner/newsletter/systemadmin"]:[]);
+      assert.equal(password.value,"");
+      assert.equal(submit.disabled,false);
+      if(!ok)assert.match(status.textContent,/Logowanie nie powiodło się/);
+    }
+  }
 });
 
 test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
@@ -198,8 +239,8 @@ test("login redirect is allowlisted to the server-owned hub path, not user input
   assert.match(router,/System Admin — logowanie/);
   assert.match(router,/replaceAll\('Prywatny panel admina newslettera serwisu gracz.pl'/);
   assert.match(router,/path===OWNER_HUB\?OWNER_HUB_LOGIN:PREFIX\+'\/login'/);
-  assert.match(login,/form\.dataset\.afterLogin==='\/owner\/newsletter\/systemadmin'/);
-  assert.match(login,/location\.replace\('\/owner\/newsletter\/'\)/);
+  assert.match(login,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+  assert.doesNotMatch(login,/location\.replace\('\/owner\/newsletter\/'\)/);
   assert.match(router,/url\.search\)return denyAdmin\(req,res\)/);
   assert.match(router,/X-Robots-Tag|privateHeaders/);
 });
