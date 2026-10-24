@@ -31,7 +31,7 @@ for (const file of htmlFiles) {
     "style-src 'self'",
     "font-src 'self'",
     "base-uri 'none'",
-    rel === 'maintenance-site/systemadmin/index.html'
+    ['maintenance-site/systemadmin/index.html', 'maintenance-site/paneladmin/index.html'].includes(rel)
       ? "form-action 'self' https://gracz-contact-api.onrender.com"
       : "form-action 'none'",
     "object-src 'none'"
