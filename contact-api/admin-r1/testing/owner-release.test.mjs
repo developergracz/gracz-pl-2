@@ -698,15 +698,28 @@ test('M6 recovery: verified mailbox, private temporary code, one-use reset, repl
   assert.match(sent[1].code,/^[A-Za-z]{10}$/,'10 cryptographically random letters for recovery');
   assert.equal(await auth.requestPasswordRecovery(),true);
   assert.equal(sent.length,2,'Durable recovery request throttled');
+  // A previously locked account must not remain locked AFTER the owner
+  // proves mailbox possession and completes password recovery.
+  await db.query("UPDATE newsletter_owner.guard SET failures=4,locked_until=clock_timestamp() + interval '15 minutes' WHERE id=1");
+  assert.equal(await auth.login({username:'graczowner',password}),null,
+    'An existing lockout still blocks login before recovery');
   assert.equal(await auth.completePasswordRecovery({
     code:'B'.repeat(24),newPassword:'NineChar9'
   }),false);
+  let lock=await db.query('SELECT failures,locked_until FROM newsletter_owner.guard WHERE id=1');
+  assert.equal(Number(lock.rows[0].failures),4,
+    'An invalid recovery code must not clear failed-login counters');
+  assert.ok(new Date(lock.rows[0].locked_until).getTime()>Date.now(),
+    'An invalid recovery code must not clear a lockout');
   assert.equal(await auth.completePasswordRecovery({
     code:sent[1].code,newPassword:'Eight888'
   }),false,'Eight-character passwords are rejected');
   assert.equal(await auth.completePasswordRecovery({
     code:sent[1].code,newPassword:'NineChar9'
   }),true);
+  lock=await db.query('SELECT failures,locked_until FROM newsletter_owner.guard WHERE id=1');
+  assert.equal(Number(lock.rows[0].failures),0,'Verified recovery clears prior failures');
+  assert.equal(lock.rows[0].locked_until,null,'Verified recovery clears prior lockout');
   assert.equal(await auth.session(initial.token),null,'Password recovery invalidates prior sessions');
   assert.equal(await auth.completePasswordRecovery({
     code:sent[1].code,newPassword:'Another99'

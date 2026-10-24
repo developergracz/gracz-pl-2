@@ -399,6 +399,10 @@ export function createOwnerAuth({
         'ON CONFLICT(id) DO UPDATE SET password_verifier=excluded.password_verifier,'+
         'updated_at=clock_timestamp()', [current.name,nextSpec]);
       await client.query('DELETE FROM newsletter_owner.sessions');
+      // Verified recovery is a new proof of account control. Remove any
+      // previous failed-login lockout atomically with the password rotation.
+      await client.query(
+        'UPDATE newsletter_owner.guard SET failures=0,locked_until=NULL WHERE id=1');
       await client.query(
         'UPDATE newsletter_owner.recovery SET reset_code_hash=NULL,reset_expires=NULL,reset_attempts=0 WHERE id=1');
       await audit(client,'recovery_completed');
