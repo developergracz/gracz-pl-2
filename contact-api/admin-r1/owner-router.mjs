@@ -88,9 +88,12 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <title>Logowanie właściciela — gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
 <script src="${PREFIX}/login.js" defer></script></head>
-<body><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div><p>Prywatny panel admina newslettera serwisu gracz.pl</p></div>
-<h1>Logowanie właściciela</h1>
-<p>${passwordOnly?'Podaj nick administratora i hasło.':'Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
+<body class="owner-login-page"><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div></div>
+<p class="owner-login-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>
+<h1>Logowanie <span>właściciela</span></h1>
+<p class="owner-login-subtitle">${passwordOnly?'Podaj nick administratora i hasło.':'Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
+<section class="owner-login-card" aria-label="Bezpieczny formularz logowania">
+<div class="owner-login-diamond" aria-hidden="true"></div>
 <form id="login-form" autocomplete="off">
 ${passwordOnly?`<label for="username">Nick administratora</label>
 <input id="username" type="text" autocomplete="username"
@@ -114,6 +117,7 @@ pattern="[0-9]{6}" minlength="6" maxlength="6" required>`}
 ${passwordOnly&&recoveryReady?'<button id="forgot-open" type="button">Zapomniałem hasła?</button>':''}
 </div></form>
 <p id="login-status" role="status" aria-live="polite"></p>
+</section>
 ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" class="owner-recovery-premium" aria-labelledby="forgot-title" aria-describedby="forgot-description">
 <div class="forgot-heading">
 <div class="forgot-heading-text">
@@ -271,7 +275,7 @@ export function createOwnerRouter({
             'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
           .replace('<title>Logowanie właściciela — gracz.pl</title>',
             '<title>System Admin — logowanie gracz.pl</title>')
-          .replace('<h1>Logowanie właściciela</h1>',
+          .replace('<h1>Logowanie <span>właściciela</span></h1>',
             '<h1>System Admin — logowanie</h1>')
           .replaceAll('Prywatny panel admina newslettera serwisu gracz.pl',
             'Prywatne centrum administracyjne gracz.pl');

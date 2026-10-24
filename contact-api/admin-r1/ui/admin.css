@@ -1509,3 +1509,181 @@ footer .footer-brand span{color:#ff6573}
 .limit-active-table td{color:#e2f4f3}
 #limit-active-rows td:first-child{color:#ff6573;font-weight:700}
 .limit-active-table button{white-space:nowrap}
+
+
+/* Full Max Premium OWNER login: approved navy/gold screen, no side ornaments.
+   All rules are scoped to the login body, leaving dashboard and recovery logic intact. */
+body.owner-login-page{
+  min-height:100vh;
+  min-height:100dvh;
+  background:
+    radial-gradient(ellipse 55% 52% at 50% 3%,rgba(48,84,128,.43),transparent 76%),
+    radial-gradient(ellipse 47% 42% at 50% 84%,rgba(20,46,78,.42),transparent 84%),
+    linear-gradient(165deg,#070e19 6%,#0c1b2e 52%,#050b15 100%);
+  color:#f3f6ff;
+}
+.owner-login-page .owner-login{
+  width:min(100%,780px);
+  max-width:780px;
+  margin:0 auto;
+  padding:clamp(28px,6vh,66px) clamp(16px,3vw,40px) 45px;
+  text-align:center;
+}
+.owner-login-page .owner-login-brand{margin:0 0 23px;}
+.owner-login-page .owner-login-brand .logo{
+  color:#fff;
+  font-size:clamp(44px,4.6vw,60px);
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:-.065em;
+  text-shadow:0 3px 16px rgba(0,0,0,.32);
+}
+.owner-login-page .owner-login-brand .logo span{color:#ff536c;}
+.owner-login-page .owner-login-eyebrow{
+  margin:0 0 10px;
+  color:#ffd778;
+  font-size:clamp(10px,1vw,13px);
+  font-weight:800;
+  line-height:1.5;
+  letter-spacing:.17em;
+}
+.owner-login-page .owner-login h1{
+  margin:0 0 8px;
+  font-size:clamp(30px,3.4vw,46px);
+  font-weight:850;
+  letter-spacing:-.045em;
+  line-height:1.15;
+}
+.owner-login-page .owner-login h1 span{color:#f7d289;}
+.owner-login-page .owner-login-subtitle{
+  margin:0 auto 17px;
+  color:#ccd7e7;
+  font-size:clamp(15px,1.5vw,19px);
+  line-height:1.5;
+}
+.owner-login-page .owner-login-card{
+  position:relative;
+  max-width:680px;
+  margin:0 auto;
+  padding:25px clamp(21px,4vw,54px) 30px;
+  border:1px solid #e3bd6e;
+  border-radius:25px;
+  background:linear-gradient(150deg,rgba(28,49,74,.83),rgba(8,22,38,.94) 78%);
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.48),
+    0 0 0 1px rgba(255,223,152,.08),
+    0 0 33px rgba(216,168,75,.14);
+  text-align:left;
+}
+.owner-login-page .owner-login-diamond{
+  width:12px;
+  height:12px;
+  margin:0 auto 21px;
+  background:linear-gradient(135deg,#ffe6a0,#e3a837);
+  transform:rotate(45deg);
+  box-shadow:0 0 15px rgba(244,185,74,.26);
+}
+.owner-login-page .owner-login #login-form{
+  display:grid;
+  gap:10px;
+  text-align:left;
+}
+.owner-login-page .owner-login #login-form label{
+  margin:5px 0 0;
+  color:#f5f8ff;
+  font-size:14px;
+  font-weight:700;
+}
+.owner-login-page .owner-login #login-form input{
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:53px;
+  margin:0;
+  padding:12px 15px;
+  border:1px solid #647993;
+  border-radius:11px;
+  background:#0b1a2d;
+  color:#f5f8ff;
+  font:inherit;
+  font-size:15px;
+}
+.owner-login-page .owner-login #login-form input:focus-visible{
+  outline:2px solid #f9d37a;
+  outline-offset:2px;
+  border-color:#f9d37a;
+}
+.owner-login-page .owner-login #login-form .password-visibility input{padding-right:91px;}
+.owner-login-page .owner-login #login-form .password-visibility__toggle{
+  right:7px;
+  min-width:74px;
+  min-height:36px;
+  margin:0;
+  border:1px solid #496178;
+  border-radius:8px;
+  background:linear-gradient(#1a3049,#11263a);
+  color:#f7d389;
+  font-weight:650;
+  font-size:13px;
+}
+.owner-login-page .owner-login #login-form .password-visibility__toggle:focus-visible{
+  outline:2px solid #f9d37a;
+  outline-offset:2px;
+}
+.owner-login-page .owner-login #login-form .owner-login-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:17px;
+  margin:15px 0 0;
+}
+.owner-login-page .owner-login #login-form .owner-login-actions:has(> :only-child){
+  grid-template-columns:minmax(0,1fr);
+}
+.owner-login-page .owner-login #login-form .owner-login-actions button{
+  min-height:57px;
+  margin:0;
+  border-radius:12px;
+  font-size:clamp(14px,1.15vw,17px);
+  font-weight:850;
+  box-shadow:0 8px 21px rgba(0,0,0,.2);
+}
+.owner-login-page .owner-login #login-form #login-button{
+  color:#101620;
+  border:1px solid #ffe59c;
+  background:linear-gradient(130deg,#ffe69c,#eeb94d);
+}
+.owner-login-page .owner-login #login-form #forgot-open{
+  color:#f9d384;
+  border:1px solid #e7b653;
+  background:#102034;
+}
+.owner-login-page .owner-login #login-form .owner-login-actions button:hover:not(:disabled){
+  filter:brightness(1.07);
+}
+.owner-login-page .owner-login #login-status{
+  min-height:1.35em;
+  margin:10px 0 0;
+  color:#f6d99c;
+  font-size:14px;
+  line-height:1.45;
+  text-align:center;
+}
+.owner-login-page .owner-login #login-nick-validation,
+.owner-login-page .owner-login #login-password-validation{
+  color:#fff;
+}
+@media(max-width:520px){
+  .owner-login-page .owner-login{padding:28px 14px 28px;}
+  .owner-login-page .owner-login-card{padding:23px 17px 25px;border-radius:18px;}
+  .owner-login-page .owner-login #login-form .owner-login-actions{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+}
+@media(max-height:700px) and (min-width:521px){
+  .owner-login-page .owner-login{padding-top:18px;padding-bottom:18px;}
+  .owner-login-page .owner-login-brand{margin-bottom:10px;}
+  .owner-login-page .owner-login-card{padding-top:18px;padding-bottom:20px;}
+  .owner-login-page .owner-login-diamond{margin-bottom:10px;}
+  .owner-login-page .owner-login #login-form input{min-height:46px;}
+}

@@ -4,6 +4,33 @@ import {readFile} from "node:fs/promises";
 import {runInNewContext} from "node:vm";
 const read=path=>readFile(new URL(path,import.meta.url),"utf8");
 
+test("OWNER login uses the approved Full Max Premium design with no side gold lines or new authentication code",async()=>{
+  const router=await read("../admin-r1/owner-router.mjs");
+  const css=await read("../admin-r1/ui/admin.css");
+  const login=await read("../admin-r1/ui/login.js");
+  assert.match(router,/<body class="owner-login-page"><main class="owner-login">/);
+  assert.match(router,/FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA/);
+  assert.match(router,/<h1>Logowanie <span>właściciela<\/span><\/h1>/);
+  assert.match(router,/gracz<span>\.pl<\/span>/);
+  assert.match(router,/class="owner-login-card"/);
+  assert.match(router,/class="owner-login-diamond"/);
+  assert.match(router,/id="username"/);
+  assert.match(router,/id="password"/);
+  assert.match(router,/id="forgot-open"/);
+  assert.match(router,/id="login-form"/);
+  assert.match(router,/id="forgot-dialog"/);
+  assert.match(css,/body\.owner-login-page\{/);
+  assert.match(css,/\.owner-login-page \.owner-login #login-form #login-button\{/);
+  assert.match(css,/\.owner-login-page \.owner-login #login-form #forgot-open\{/);
+  assert.match(css,/\.owner-login-page \.owner-login-brand \.logo span\{color:#ff536c;\}/);
+  assert.doesNotMatch(css.slice(css.indexOf("Full Max Premium OWNER login: approved")),
+    /side-line|side-ornament|background-image:\s*url|linear-gradient\([^\n]*golden-line/);
+  assert.match(login,/fetch\('\/owner\/newsletter\/login'/);
+  assert.match(login,/credentials:'same-origin'/);
+  assert.match(login,/location\.replace\('\/owner\/newsletter\/'\)/);
+  assert.match(login,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+});
+
 test("public gracz.pl/systemadmin entry has private noindex and only a backend login handoff",async()=>{
   const html=await read("../../maintenance-site/systemadmin/index.html");
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
