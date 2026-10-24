@@ -116,7 +116,7 @@ test("blocked native form validation shows a visible message without handling cr
   };
   runInNewContext(script,{document:{
     querySelector:()=>form,
-    getElementById:()=>feedback
+    getElementById:id=>id==='admin-login-validation'?feedback:null
   }});
   listeners.get("invalid")({target:password});
   assert.equal(feedback.hidden,false);
@@ -128,4 +128,38 @@ test("blocked native form validation shows a visible message without handling cr
   assert.match(feedback.textContent,/Sprawdzanie danych logowania/);
   assert.match(css,/\.admin-login-validation\[hidden\]\{display:none\}/);
   assert.doesNotMatch(script,/preventDefault|\.disabled\s*=|fetch\(|localStorage|sessionStorage|console\./);
+});
+
+test("System Admin toggles password reveal and conceal without submitting or copying it",async()=>{
+  const html=await read("../../maintenance-site/systemadmin/index.html");
+  const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
+  const script=await read("../../maintenance-site/systemadmin/systemadmin-login.js");
+  assert.match(html,/class="password-with-toggle"/);
+  assert.match(html,/<button type="button" class="password-visibility-toggle" id="toggle-admin-password"/);
+  assert.match(html,/aria-controls="admin-password" aria-pressed="false">Pokaż<\/button>/);
+  assert.match(css,/\.password-visibility-toggle:focus-visible/);
+  assert.match(css,/\.password-with-toggle\{position:relative/);
+  assert.match(css,/\.password-with-toggle input\{padding-right:100px/);
+  const field={type:"password"};
+  let click;
+  const toggle={
+    textContent:"Pokaż",attributes:{},
+    addEventListener:(event,handler)=>{if(event==="click")click=handler;},
+    setAttribute:(key,val)=>{toggle.attributes[key]=val;}
+  };
+  runInNewContext(script,{document:{
+    querySelector:()=>null,
+    getElementById:id=>id==="admin-password"?field:
+      id==="toggle-admin-password"?toggle:null
+  }});
+  assert.equal(typeof click,"function");
+  click();
+  assert.equal(field.type,"text");
+  assert.equal(toggle.textContent,"Ukryj");
+  assert.equal(toggle.attributes["aria-pressed"],"true");
+  click();
+  assert.equal(field.type,"password");
+  assert.equal(toggle.textContent,"Pokaż");
+  assert.equal(toggle.attributes["aria-pressed"],"false");
+  assert.doesNotMatch(script,/passwordInput\.value|preventDefault|fetch\(|localStorage|sessionStorage/);
 });
