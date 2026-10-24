@@ -29,6 +29,27 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   assert.match(css,/\.admin-login-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
+test("paneladmin entry uses the same OWNER account, submits securely and opens newsletter, not System Admin",async()=>{
+  const html=await read("../../maintenance-site/paneladmin/index.html");
+  const router=await read("../admin-r1/owner-router.mjs");
+  assert.match(html,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+  assert.match(html,/action="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/paneladmin-form"/);
+  assert.match(html,/<form class="admin-login-form" method="post"/);
+  assert.match(html,/name="username" autocomplete="username"/);
+  assert.match(html,/name="password" autocomplete="current-password"/);
+  assert.match(html,/<script src="\/systemadmin\/systemadmin-login\.js" defer><\/script>/);
+  assert.match(html,/href="\/systemadmin\/systemadmin\.css"/);
+  assert.match(html,/id="login-failed" class="admin-login-feedback" role="alert"/);
+  assert.match(html,/form-action 'self' https:\/\/gracz-contact-api\.onrender\.com/);
+  assert.match(html,/<meta name="robots" content="noindex,nofollow,noarchive">/);
+  assert.doesNotMatch(html,/<meta http-equiv="refresh"/i);
+  assert.match(router,/path===PREFIX\+'\/login\/paneladmin-form'/);
+  assert.match(router,/const newsletterOnly=path===PREFIX\+'\/login\/paneladmin-form'/);
+  assert.match(router,/newsletterOnly\?await newsletterPanelHtml\(\)/);
+  assert.match(router,/req\.headers\.origin!==PUBLIC_OWNER_FORM_ORIGIN/);
+  assert.match(router,/Set-Cookie':newCookie\(outcome\.token\)/);
+});
+
 test("Full Max Premium form permits only trusted backend and keeps other pages locked",async()=>{
   const page=await read("../../maintenance-site/systemadmin/index.html");
   const headers=await read("../../maintenance-site/render.yaml");
@@ -37,10 +58,11 @@ test("Full Max Premium form permits only trusted backend and keeps other pages l
   const client=await read("../admin-r1/ui/login.js");
   assert.match(page,/form-action 'self' https:\/\/gracz-contact-api\.onrender\.com/);
   assert.match(headers,/form-action 'self' https:\/\/gracz-contact-api\.onrender\.com/);
-  assert.match(gate,/rel === 'maintenance-site\/systemadmin\/index.html'/);
+  assert.match(gate,/\['maintenance-site\/systemadmin\/index.html', 'maintenance-site\/paneladmin\/index.html'\]/);
   // Chrome also checks the return redirect of the cross-origin HTML POST.
   // Only gracz.pl itself and the fixed OWNER backend may appear in form-action.
-  assert.match(router,/Location:'https:\/\/gracz\.pl\/systemadmin\/#login-failed'/);
+  assert.match(router,/Location:newsletterOnly\?'https:\/\/gracz\.pl\/paneladmin\/#login-failed':/);
+  assert.match(router,/'https:\/\/gracz\.pl\/systemadmin\/#login-failed'/);
   assert.doesNotMatch(page,/form-action \*/);
   assert.doesNotMatch(headers,/form-action \*/);
   assert.match(router,/PUBLIC_OWNER_FORM_ORIGIN='https:\/\/gracz.pl'/);
