@@ -21,8 +21,12 @@ function withAdminSwitchBar(html,current) {
     '<a class="systemadmin-topnav-brand" href="'+OWNER_HUB+'">gracz<span>.pl</span> · SYSTEM ADMIN</a>'+
     nav('Centrum administracyjne',OWNER_HUB,'hub')+
     nav('SEO Control Center',PREFIX+'/seo','seo')+
-    nav('Panel administracyjny Newslettera',PREFIX+'/','newsletter')+'</nav>';
-  return html.replace('</head>','<link rel="stylesheet" href="'+PREFIX+'/systemadmin.css"></head>')
+    nav('Panel administracyjny Newslettera',PREFIX+'/','newsletter')+
+    '<button type="button" id="systemadmin-logout" class="systemadmin-logout">Wyloguj</button>'+
+    '<span id="systemadmin-logout-status" class="systemadmin-logout-status" role="status" aria-live="polite"></span>'+
+    '</nav>';
+  return html.replace('</head>','<link rel="stylesheet" href="'+PREFIX+'/systemadmin.css">'+
+      '<script src="'+PREFIX+'/systemadmin-logout.js" defer></script></head>')
     .replace('<body>','<body>'+bar);
 }
 const ORIGIN='https://gracz-contact-api.onrender.com';
@@ -392,6 +396,9 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/systemadmin.css')
         return text(res,200,await readFile(new URL('./ui/systemadmin.css',import.meta.url)),
           'text/css; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/systemadmin-logout.js')
+        return text(res,200,await readFile(new URL('./ui/systemadmin-logout.js',import.meta.url)),
+          'text/javascript; charset=utf-8');
       // Read-only SEO CONTROL CENTER reuses the current durable OWNER session.
       // Never expose its HTML, assets or monitoring JSON before authentication.
       if(req.method==='GET'&&path===PREFIX+'/seo')
@@ -440,8 +447,7 @@ export function createOwnerRouter({
           .replace('Oczekujący · łącznie','Oczekujący na stronie')
           .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
             '<strong id="pending">—</strong><small>Oczekujący na potwierdzenie</small>');
-        html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
-          .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
+        html=html.replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
             'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
         return text(res,200,withAdminSwitchBar(html,'newsletter'));
       }

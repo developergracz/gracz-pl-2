@@ -6,6 +6,12 @@
 .systemadmin-topnav>a[aria-current="page"]{color:#f4d08a;background:#32271e;border-color:#8e743f}
 .systemadmin-topnav a:focus-visible{outline:3px solid #f8c56d;outline-offset:2px}
 .systemadmin-topnav>a:hover{border-color:#e2bd6e}
+.systemadmin-topnav>.systemadmin-logout{flex:0 0 auto;margin:0 0 0 10px;min-height:37px;padding:8px 16px;border:1px solid #d7a959;border-radius:10px;background:#32271e;color:#f9d88f;font-size:12px;font-weight:800;line-height:1.3;cursor:pointer}
+.systemadmin-topnav>.systemadmin-logout:hover{background:#473523;border-color:#ffda8d}
+.systemadmin-topnav>.systemadmin-logout:focus-visible{outline:3px solid #ffda8d;outline-offset:2px}
+.systemadmin-topnav>.systemadmin-logout:disabled{opacity:.65;cursor:default}
+.systemadmin-topnav>.systemadmin-logout-status{position:absolute;right:clamp(15px,3vw,45px);top:100%;max-width:min(400px,90vw);padding:8px 12px;border:1px solid #d7a959;border-radius:0 0 9px 9px;background:#29211f;color:#fff2d5;font-size:12px;line-height:1.4}
+.systemadmin-topnav>.systemadmin-logout-status:empty{display:none}
 .systemadmin-center{max-width:1160px;margin:0 auto;min-height:0;width:100%;padding:clamp(18px,2.7vh,30px) clamp(18px,4vw,54px) 18px;grid-area:auto}
 .systemadmin-hero{text-align:center;max-width:720px;margin:0 auto}
 .systemadmin-overline{letter-spacing:2.2px;color:#eec772;font-size:11px;font-weight:800}

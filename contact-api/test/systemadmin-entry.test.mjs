@@ -245,6 +245,75 @@ test("login redirect is allowlisted to the server-owned hub path, not user input
   assert.match(router,/X-Robots-Tag|privateHeaders/);
 });
 
+test("shared Full Max Premium toolbar contains one far-right logout on all three private pages",async()=>{
+  const router=await read("../admin-r1/owner-router.mjs");
+  const css=await read("../admin-r1/ui/systemadmin.css");
+  const dashboard=await read("../admin-r1/ui/owner-dashboard.js");
+  assert.match(router,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
+  assert.match(router,/id="systemadmin-logout-status"[^>]+role="status"/);
+  assert.match(router,/systemadmin-logout\.js" defer/);
+  assert.match(router,/path===PREFIX\+'\/systemadmin-logout\.js'/);
+  assert.match(router,/withAdminSwitchBar\(html,'newsletter'\)/);
+  assert.match(router,/withAdminSwitchBar\([\s\S]*?'seo'\)/);
+  assert.match(router,/withAdminSwitchBar\([\s\S]*?'hub'\)/);
+  assert.doesNotMatch(router,/replace\('<\/header>','<button type="button" id="logout"/);
+  assert.doesNotMatch(dashboard,/\$\("logout"\)\.addEventListener/);
+  assert.match(css,/\.systemadmin-topnav>\.systemadmin-logout\{/);
+  assert.match(css,/margin:0 0 0 10px/);
+  assert.match(css,/\.systemadmin-topnav>\.systemadmin-logout:focus-visible/);
+  assert.match(css,/\.systemadmin-topnav>\.systemadmin-logout-status:empty\{display:none\}/);
+});
+
+test("shared logout requires live CSRF and redirects only after confirmed success",async()=>{
+  const script=await read("../admin-r1/ui/systemadmin-logout.js");
+  assert.doesNotMatch(script,/localStorage|sessionStorage|document\.cookie/);
+  for(const scenario of ["success","session401","session503","logout403"]){
+    let handler;
+    const calls=[],destinations=[];
+    const button={
+      disabled:false,
+      addEventListener:(name,cb)=>{if(name==="click")handler=cb;}
+    };
+    const message={textContent:""};
+    runInNewContext(script,{
+      document:{getElementById:id=>id==="systemadmin-logout"?button:
+        id==="systemadmin-logout-status"?message:null},
+      location:{replace:url=>destinations.push(url)},
+      fetch:async(url,options)=>{
+        calls.push({url,options});
+        if(url==="/owner/newsletter/session"){
+          if(scenario==="session401")return {ok:false,status:401};
+          if(scenario==="session503")return {ok:false,status:503};
+          return {ok:true,status:200,json:async()=>({ok:true,csrf:"synthetic-csrf-token"})};
+        }
+        if(url==="/owner/newsletter/logout"){
+          return {ok:scenario!=="logout403",status:scenario==="logout403"?403:200};
+        }
+        throw Error("Unexpected endpoint");
+      }
+    });
+    assert.equal(typeof handler,"function");
+    await handler();
+    assert.equal(button.disabled,false);
+    assert.equal(calls[0].url,"/owner/newsletter/session");
+    assert.equal(calls[0].options.credentials,"same-origin");
+    assert.equal(calls[0].options.cache,"no-store");
+    if(scenario==="success" || scenario==="logout403"){
+      assert.equal(calls.length,2);
+      assert.equal(calls[1].url,"/owner/newsletter/logout");
+      assert.equal(calls[1].options.method,"POST");
+      assert.equal(calls[1].options.headers["X-Owner-CSRF"],"synthetic-csrf-token");
+      assert.equal(calls[1].options.credentials,"same-origin");
+    }else{
+      assert.equal(calls.length,1,"No unauthenticated logout POST");
+    }
+    assert.deepEqual(destinations,
+      scenario==="success" || scenario==="session401"?["/owner/newsletter/login"]:[]);
+    if(scenario==="logout403" || scenario==="session503")
+      assert.match(message.textContent,/Nie udało się wylogować/);
+  }
+});
+
 test("switch navigation routes to hub, SEO, and newsletter without a second login",async()=>{
   const router=await read("../admin-r1/owner-router.mjs");
   const css=await read("../admin-r1/ui/systemadmin.css");
