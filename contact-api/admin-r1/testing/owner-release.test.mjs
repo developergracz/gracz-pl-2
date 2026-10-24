@@ -511,14 +511,15 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     assert.equal((await send('/owner/newsletter/settings',{cookie,csrf})).status,401);
     // Browser form is a top-level HTTPS navigation from gracz.pl to
     // onrender.com; never a credentialed cross-site XHR or iframe.
-    const formPost=({origin='https://gracz.pl',body,contentType='application/x-www-form-urlencoded'}={})=>
+    const formPost=({origin='https://gracz.pl',body,contentType='application/x-www-form-urlencoded',
+      pathname='/owner/newsletter/login/public-form'}={})=>
       new Promise((resolve,reject)=>{
         const formBody=body??new URLSearchParams({
           username:'changedowner',password:updatedPassword
         }).toString();
         const request=httpRequest({
           hostname:'127.0.0.1',port:server.address().port,
-          path:'/owner/newsletter/login/public-form',method:'POST',
+          path:pathname,method:'POST',
           headers:{
             host:'gracz-contact-api.onrender.com',
             'x-forwarded-proto':'https',
@@ -574,6 +575,29 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     assert.equal(authenticated.status,200);
     assert.match(authenticated.html,/SEO Control Center/);
     assert.match(authenticated.html,/Panel administracyjny Newslettera/);
+    // The separate public /paneladmin/ entrance must reuse the same OWNER
+    // verifier, guard, durable session and cookie, but render newsletter.
+    const panelPath='/owner/newsletter/login/paneladmin-form';
+    assert.equal((await formPost({pathname:panelPath,origin:'https://untrusted.example'})).status,403);
+    assert.equal((await formPost({pathname:panelPath,contentType:'application/json'})).status,400);
+    const panel=await formPost({pathname:panelPath});
+    assert.equal(panel.status,200);
+    assert.match(panel.cookie,/^__Host-gracz_owner=/);
+    assert.match(panel.cookie,/Secure; HttpOnly; SameSite=Strict/);
+    assert.match(panel.html,/id="logout"/);
+    assert.match(panel.html,/Panel administracyjny Newslettera/);
+    assert.match(panel.html,/owner-dashboard\.js/);
+    assert.doesNotMatch(panel.html,/http-equiv="refresh"/);
+    assert.match(panel.headers['content-security-policy'],/form-action 'none'/);
+    assert.equal(panel.headers['cache-control'],'no-store');
+    const panelFailed=await formPost({pathname:panelPath,body:new URLSearchParams({
+      username:'changedowner',password:'wrong-owner-password-test'
+    }).toString()});
+    assert.equal(panelFailed.status,303);
+    assert.equal(panelFailed.headers.location,'https://gracz.pl/paneladmin/#login-failed');
+    assert.equal(panelFailed.cookie,'');
+    assert.doesNotMatch(panelFailed.html,/password|changedowner/);
+
     // Failed credentials must NEVER open a second OWNER login screen at Render.
     // Fixed redirect keeps the only credential form on gracz.pl/systemadmin.
     const failed=await formPost({body:new URLSearchParams({
