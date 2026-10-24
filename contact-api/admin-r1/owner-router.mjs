@@ -230,6 +230,27 @@ export function createOwnerRouter({
     const path=url.pathname;
     const cookie=parseOwnerCookie(req.headers.cookie);
     try{
+      // The same Premium login form as gracz.pl/systemadmin, now served from
+      // the OWNER origin so the existing Strict cookie and JSON login work.
+      if(req.method==='GET'&&path===PREFIX+'/login/visual'){
+        if(!passwordOnly)return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
+        const html=(await readFile(new URL('../../maintenance-site/systemadmin/index.html',import.meta.url),'utf8'))
+          .replace(/<meta http-equiv="refresh"[^>]*>\s*/, '')
+          .replace(/<meta http-equiv="Content-Security-Policy"[^>]*>\s*/, '')
+          .replace('href="/systemadmin/systemadmin.css"',
+            'href="'+PREFIX+'/login/visual.css"')
+          .replace('src="/systemadmin/systemadmin-login.js"',
+            'src="'+PREFIX+'/login/visual.js"')
+          .replace('action="https://gracz-contact-api.onrender.com/owner/newsletter/login/public-form"',
+            'action="#"');
+        return text(res,200,html);
+      }
+      if(req.method==='GET'&&path===PREFIX+'/login/visual.css')
+        return text(res,200,await readFile(new URL('../../maintenance-site/systemadmin/systemadmin.css',import.meta.url)),
+          'text/css; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/login/visual.js')
+        return text(res,200,await readFile(new URL('./ui/visual-login.js',import.meta.url)),
+          'text/javascript; charset=utf-8');
       if(req.method==='GET'&&path===PREFIX+'/login')
         return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
       if(req.method==='GET'&&path===OWNER_HUB_LOGIN){
