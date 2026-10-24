@@ -70,6 +70,24 @@ test("Premium System Admin authenticates only on the OWNER origin without a seco
   assert.match(page,/login\/visual/);
 });
 
+test("Panel Admin reuses the safe visual OWNER form and opens only newsletter after login",async()=>{
+  const panel=await read("../../maintenance-site/paneladmin/index.html");
+  const router=await read("../admin-r1/owner-router.mjs");
+  const js=await read("../admin-r1/ui/visual-login.js");
+  assert.match(panel,/http-equiv="refresh" content="0; url=https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/visual\/paneladmin"/);
+  assert.match(panel,/rel="noreferrer noopener"/);
+  assert.match(panel,/form-action 'none'/);
+  assert.match(panel,/noindex,nofollow,noarchive/);
+  assert.match(router,/path===PREFIX\+'\/login\/visual\/paneladmin'/);
+  assert.match(router,/data-after-login="newsletter"/);
+  assert.match(router,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+  assert.match(js,/form\.dataset\.afterLogin==='newsletter'/);
+  assert.match(js,/location\.replace\('\/owner\/newsletter\/'\)/);
+  assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+  assert.match(js,/credentials:'same-origin'/);
+  assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|console\./);
+});
+
 test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
   assert.match(css,/\.public-admin-shell\{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto minmax\(0,1fr\) auto\}/);

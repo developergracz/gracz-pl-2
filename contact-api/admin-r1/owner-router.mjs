@@ -232,9 +232,10 @@ export function createOwnerRouter({
     try{
       // The same Premium login form as gracz.pl/systemadmin, now served from
       // the OWNER origin so the existing Strict cookie and JSON login work.
-      if(req.method==='GET'&&path===PREFIX+'/login/visual'){
+      if(req.method==='GET'&&(path===PREFIX+'/login/visual'||
+         path===PREFIX+'/login/visual/paneladmin')){
         if(!passwordOnly)return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
-        const html=(await readFile(new URL('../../maintenance-site/systemadmin/index.html',import.meta.url),'utf8'))
+        let html=(await readFile(new URL('../../maintenance-site/systemadmin/index.html',import.meta.url),'utf8'))
           .replace(/<meta http-equiv="refresh"[^>]*>\s*/, '')
           .replace(/<meta http-equiv="Content-Security-Policy"[^>]*>\s*/, '')
           .replace('href="/systemadmin/systemadmin.css"',
@@ -243,6 +244,17 @@ export function createOwnerRouter({
             'src="'+PREFIX+'/login/visual.js"')
           .replace('action="https://gracz-contact-api.onrender.com/owner/newsletter/login/public-form"',
             'action="#"');
+        if(path===PREFIX+'/login/visual/paneladmin'){
+          html=html
+            .replace('class="admin-login-form" method="post"',
+              'class="admin-login-form" data-after-login="newsletter" method="post"')
+            .replace('<h1>System Admin <span>gracz.pl</span></h1>',
+              '<h1>Panel Admin <span>gracz.pl</span></h1>')
+            .replace('Jedno bezpieczne logowanie do obu systemów administracyjnych.',
+              'Bezpieczne logowanie do panelu administracyjnego newslettera.')
+            .replace('Po zalogowaniu wybierzesz SEO Control Center lub Panel administracyjny Newslettera.',
+              'Po zalogowaniu otworzysz Panel administracyjny Newslettera.');
+        }
         return text(res,200,html);
       }
       if(req.method==='GET'&&path===PREFIX+'/login/visual.css')
