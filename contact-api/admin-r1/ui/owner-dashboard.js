@@ -1026,19 +1026,6 @@ async function startOwnerDashboard(){
     clear();location.replace("/owner/newsletter/login");
   }
 }
-$("logout").addEventListener("click",async()=>{
-  const button=$("logout");button.disabled=true;
-  generation++;summaryGeneration++;
-  listController?.abort();summaryController?.abort();clear();clearSummary();
-  try{
-    await fetch("/owner/newsletter/logout",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"X-Owner-CSRF":ownerCsrf}
-    });
-  }finally{
-    ownerCsrf=null;location.replace("/owner/newsletter/login");
-  }
-});
 $("m4-refresh").addEventListener("click",loadSummary);
 startOwnerDashboard();
 
