@@ -209,24 +209,24 @@ export function createOwnerRouter({
     for(const svc of services.values())svc.clear();
     services.clear();
   }
-  // Shared protected dashboard renderer: used after successful first-party POST
-  // and authenticated GET. Never called before OWNER credential verification.
+  // Shared protected dashboard renderer: used after successful public form POST
+  // and authenticated GET. Called on POST only after OWNER verification.
   async function newsletterPanelHtml(){
-        let html=await readFile(new URL('./ui/index.html',import.meta.url),'utf8');
-        html=html.replace('"/admin.css"','"'+PREFIX+'/admin.css"')
-          .replace('"/admin.js"','"'+PREFIX+'/owner-dashboard.js"')
-          .replace('PODGLĄD SYNTETYCZNY','TYLKO WŁAŚCICIEL')
-          .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
-            'Dane subskrybentów tylko do odczytu. Ustawienia konta są dostępne wyłącznie właścicielowi.')
-          .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
-          .replace('Globalnie lub w temacie','Potwierdzone wypisania')
-          .replace('Oczekujący · łącznie','Oczekujący na stronie')
-          .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
-            '<strong id="pending">—</strong><small>Oczekujący na potwierdzenie</small>');
-        html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
-          .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
-            'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
-        return withAdminSwitchBar(html,'newsletter');
+    let html=await readFile(new URL('./ui/index.html',import.meta.url),'utf8');
+    html=html.replace('"/admin.css"','"'+PREFIX+'/admin.css"')
+      .replace('"/admin.js"','"'+PREFIX+'/owner-dashboard.js"')
+      .replace('PODGLĄD SYNTETYCZNY','TYLKO WŁAŚCICIEL')
+      .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
+        'Dane subskrybentów tylko do odczytu. Ustawienia konta są dostępne wyłącznie właścicielowi.')
+      .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
+      .replace('Globalnie lub w temacie','Potwierdzone wypisania')
+      .replace('Oczekujący · łącznie','Oczekujący na stronie')
+      .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
+        '<strong id="pending">—</strong><small>Oczekujący na potwierdzenie</small>');
+    html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
+      .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
+        'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
+    return withAdminSwitchBar(html,'newsletter');
   }
   async function handle(req,res,url){
     if(!configured)return denyAdmin(req,res);
@@ -270,7 +270,7 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/login.js')
         return text(res,200,await readFile(new URL('./ui/login.js',import.meta.url)),
           'text/javascript; charset=utf-8');
-      // Dedicated HTML form endpoint for HTTPS gracz.pl /systemadmin.
+      // Two scoped public HTML forms: /systemadmin and /paneladmin, one OWNER verifier.
       // Exact first-party Origin, top-level navigation and existing durable
       // credential verification. Session cookies stay scoped to onrender.com.
       if(req.method==='POST'&&(path===PREFIX+'/login/public-form'||
@@ -302,8 +302,8 @@ export function createOwnerRouter({
           clearServices();
           // The submission starts at gracz.pl (cross-site). Redirecting immediately
           // can omit a newly issued SameSite=Strict cookie on the redirect chain.
-          // Serve the actual OWNER hub as the successful POST response. The next
-          // deliberate click on SEO or Newsletter is same-site and retains Strict.
+          // Serve the authenticated destination on this same navigation:
+          // System Admin hub or newsletter panel, with the original Strict cookie.
           const destinationHtml=newsletterOnly?await newsletterPanelHtml():withAdminSwitchBar(
             await readFile(new URL('./ui/systemadmin.html',import.meta.url),'utf8'),'hub');
           res.writeHead(200,{...privateHeaders,
