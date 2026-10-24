@@ -10,13 +10,27 @@ a{color:inherit}
 .public-admin-main{width:min(100% - 36px,750px);margin:auto;text-align:center;padding:clamp(22px,4vh,42px) 0 clamp(22px,4vh,42px)}
 .eyebrow{font-size:12px;color:#eac47d;font-weight:700;letter-spacing:2px}
 h1{font-size:clamp(32px,5vw,56px);margin:14px 0 16px;letter-spacing:-2px}
-.lead{font-size:clamp(16px,2vw,20px);line-height:1.7;color:#bec8d5;margin:0 auto 32px;max-width:580px}
-.access-card{border:1px solid #455567;background:linear-gradient(145deg,#182936,#0d1929);box-shadow:0 24px 65px #0008;border-radius:22px;display:grid;justify-items:center;gap:12px;padding:38px 36px}
+.lead{font-size:clamp(16px,2vw,20px);line-height:1.55;color:#bec8d5;margin:0 auto 22px;max-width:580px}
+.access-card{border:1px solid #455567;background:linear-gradient(145deg,#182936,#0d1929);box-shadow:0 24px 65px #0008;border-radius:22px;display:grid;justify-items:center;gap:10px;padding:clamp(25px,4vh,36px) clamp(20px,4vw,42px)}
 .access-emblem{color:#efc46d;font-size:24px}
 h2{font-size:23px;margin:0 0 12px}
-.access-card p{color:#b9c8d5;line-height:1.7;margin:0 auto 18px;max-width:530px}
+.access-card p{color:#b9c8d5;line-height:1.6;margin:0 auto 8px;max-width:530px}
 .access-button{display:flex;align-items:center;justify-content:center;gap:16px;min-height:52px;width:min(100%,440px);padding:12px 24px;background:linear-gradient(135deg,#ffe098,#e4ae49);color:#131a25;font-weight:800;text-decoration:none;border-radius:12px;transition:filter .16s}
 .access-button:hover{filter:brightness(1.08)}
+.admin-login-form{width:min(100%,540px);display:grid;gap:14px;margin:4px auto 0;text-align:left}
+.admin-login-field{display:grid;gap:7px}
+.admin-login-field label{font-size:13px;color:#e4ebf5;font-weight:750}
+.admin-login-field input{width:100%;min-height:53px;outline:0;padding:12px 16px;border:1px solid #586b80;border-radius:11px;background:#0a1725;color:#fff;font-family:inherit;font-size:16px;transition:border-color .15s,box-shadow .15s}
+.admin-login-field input::placeholder{color:#899caf}
+.admin-login-field input:hover{border-color:#8a9daf}
+.admin-login-field input:focus-visible{border-color:#f1c776;box-shadow:0 0 0 3px #f1c77636}
+.admin-login-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:6px}
+.admin-login-actions .access-button{border:0;cursor:pointer;font-size:15px;font-family:inherit;text-align:center}
+.recovery-button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:12px 15px;border-radius:12px;border:1px solid #a78b55;background:#132639;color:#ffdf9b;font-size:14px;font-weight:750;text-align:center;text-decoration:none;transition:background .16s,border-color .16s}
+.recovery-button:hover{background:#23394c;border-color:#f3ce84}
+.admin-login-form button:focus-visible,.admin-login-form a:focus-visible{outline:3px solid #f9d186;outline-offset:3px}
+@media(max-width:540px){.admin-login-actions{grid-template-columns:1fr}.admin-login-form{gap:12px}.access-card{padding:24px 18px}}
+
 a:focus-visible{outline:3px solid #edcc80;outline-offset:4px}
 .footnote{color:#a8b9ca;font-size:12px;line-height:1.6;margin:22px auto 0;max-width:530px}
 .public-admin-footer{text-align:center;color:#91a0af;padding:24px 18px 30px;font-size:12px;border-top:1px solid #273342}
