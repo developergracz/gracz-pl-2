@@ -274,7 +274,7 @@ export function createOwnerRouter({
             // A fixed 303 GET returns to gracz.pl without reflecting credentials,
             // exposing account state, or changing the durable 15-minute lockout.
             res.writeHead(303,{...privateHeaders,
-              Location:'https://gracz.pl/systemadmin#login-failed'});
+              Location:'https://gracz.pl/systemadmin/#login-failed'});
             return res.end();
           }
           clearServices();
