@@ -40,7 +40,10 @@ if(form&&feedback&&passwordInput&&submit){
         })
       });
       if(response.ok){
-        location.replace('/owner/newsletter/systemadmin');
+        if(form.dataset.afterLogin==='newsletter')
+          location.replace('/owner/newsletter/');
+        else
+          location.replace('/owner/newsletter/systemadmin');
         return;
       }
       show(response.status===429
