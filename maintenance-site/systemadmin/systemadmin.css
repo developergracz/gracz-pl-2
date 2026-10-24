@@ -68,3 +68,10 @@ a:focus-visible{outline:3px solid #edcc80;outline-offset:4px}
   .public-admin-main .lead{margin-bottom:7px}
   .public-admin-main .footnote{margin-top:6px}
 }
+
+/* Invalid OWNER credentials must return to the SAME public login page.
+   :target requires no client-side JavaScript or third-party cookies. */
+.admin-login-feedback{display:none;width:min(100%,540px);margin:7px auto 0!important;
+padding:12px 16px;border:1px solid #ed9786;border-radius:12px;
+color:#ffe0d7!important;background:#502c32;text-align:left;font-size:13px;line-height:1.5}
+.admin-login-feedback:target{display:block}
