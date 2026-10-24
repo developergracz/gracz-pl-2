@@ -10,7 +10,11 @@ test("OWNER login uses the approved Full Max Premium design with no side gold li
   const login=await read("../admin-r1/ui/login.js");
   assert.match(router,/<body class="owner-login-page"><main class="owner-login">/);
   assert.match(router,/FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA/);
-  assert.match(router,/<h1>Logowanie <span>właściciela<\/span><\/h1>/);
+  assert.match(router,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+  assert.match(router,/Bezpieczne logowanie do Centrum administracyjnego gracz\.pl\./);
+  assert.match(css,/\.owner-login-page \.owner-login h1 span\{color:#ff536c;\}/);
+  assert.match(router,/\.replace\('<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>',/);
+  assert.doesNotMatch(router,/<h1>Logowanie <span>właściciela<\/span><\/h1>/);
   assert.match(router,/gracz<span>\.pl<\/span>/);
   assert.match(router,/class="owner-login-card"/);
   assert.match(router,/class="owner-login-diamond"/);
