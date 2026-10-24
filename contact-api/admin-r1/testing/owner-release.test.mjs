@@ -375,6 +375,13 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(anonymousHub.headers.location,'/owner/newsletter/login/systemadmin');
     const anonymousHubLogin=await probe('/owner/newsletter/login/systemadmin');
     assert.equal(anonymousHubLogin.status,200);
+    // Both public premium screens are readable without a session, but private
+    // dashboards remain guarded. No separate credentials are introduced.
+    assert.equal((await probe('/owner/newsletter/login/visual')).status,200);
+    assert.equal((await probe('/owner/newsletter/login/visual/paneladmin')).status,200);
+    assert.equal((await probe('/owner/newsletter/login/visual/paneladmin?next=https://evil.example')).status,403);
+    assert.equal((await probe('/owner/newsletter/login/visual/paneladmin','POST')).status,403);
+
     assert.equal((await probe('/owner/newsletter/systemadmin.css')).status,401);
     assert.equal((await probe('/owner/newsletter/systemadmin?utm_source=other')).status,403);
     assert.equal((await probe('/owner/newsletter/systemadmin?utm_source=chatgpt.com','POST')).status,403);
