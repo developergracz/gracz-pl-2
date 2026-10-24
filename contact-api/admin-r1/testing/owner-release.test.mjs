@@ -380,7 +380,7 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal((await probe('/owner/newsletter/login/visual')).status,200);
     assert.equal((await probe('/owner/newsletter/login/visual/paneladmin')).status,200);
     assert.equal((await probe('/owner/newsletter/login/visual/paneladmin?next=https://evil.example')).status,403);
-    assert.equal((await probe('/owner/newsletter/login/visual/paneladmin','POST')).status,403);
+    assert.equal((await probe('/owner/newsletter/login/visual/paneladmin','POST')).status,401);
 
     assert.equal((await probe('/owner/newsletter/systemadmin.css')).status,401);
     assert.equal((await probe('/owner/newsletter/systemadmin?utm_source=other')).status,403);
