@@ -547,7 +547,15 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     assert.equal(premium.status,200);
     assert.match(premium.cookie,/^__Host-gracz_owner=/);
     assert.match(premium.cookie,/Secure; HttpOnly; SameSite=Strict/);
-    assert.match(premium.html,/http-equiv="refresh" content="0; url=\/owner\/newsletter\/systemadmin"/);
+    // Successful cross-site login must render the final panel immediately.
+    // A forced refresh/redirect can lose a Strict cookie before first navigation.
+    assert.match(premium.html,/SEO Control Center/);
+    assert.match(premium.html,/Panel administracyjny Newslettera/);
+    assert.match(premium.html,/href="\/owner\/newsletter\/seo"/);
+    assert.match(premium.html,/href="\/owner\/newsletter\/"/);
+    assert.doesNotMatch(premium.html,/http-equiv="refresh"/);
+    assert.match(premium.headers['content-security-policy'],/form-action 'none'/);
+    assert.equal(premium.headers['cache-control'],'no-store');
     const authenticated=await new Promise((resolve,reject)=>{
       const request=httpRequest({
         hostname:'127.0.0.1',port:server.address().port,

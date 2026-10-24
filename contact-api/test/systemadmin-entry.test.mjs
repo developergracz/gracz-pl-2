@@ -41,6 +41,15 @@ test("Full Max Premium form permits only trusted backend and keeps other pages l
   assert.match(client,/location.hash==='#forgot'/);
 });
 
+test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
+  const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
+  assert.match(css,/\.public-admin-shell\{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto minmax\(0,1fr\) auto\}/);
+  assert.match(css,/\.public-admin-main\{margin:auto;padding:10px 0;/);
+  assert.match(css,/\.public-admin-main \.admin-login-field input\{min-height:44px;/);
+  assert.match(css,/@media\(max-height:670px\) and \(min-width:541px\)/);
+  assert.doesNotMatch(css,/overflow:hidden/);
+});
+
 test("System Admin removes decorative spade and fits desktop viewport while mobile can scroll",async()=>{
   const entry=await read("../../maintenance-site/systemadmin/index.html");
   const entryCss=await read("../../maintenance-site/systemadmin/systemadmin.css");

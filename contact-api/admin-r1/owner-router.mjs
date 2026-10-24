@@ -83,16 +83,6 @@ async function publicOwnerFormInput(req){
      password.length>128)return null;
   return {username,password};
 }
-function ownerSuccessHtml(){
-  return '<!doctype html><html lang="pl"><head><meta charset="utf-8">'+
-    '<meta name="robots" content="noindex,nofollow">'+
-    '<meta name="referrer" content="no-referrer">'+
-    '<meta http-equiv="refresh" content="0; url='+OWNER_HUB+'">'+
-    '<title>System Admin — logowanie zakończone</title></head><body>'+
-    '<main><p>Zalogowano. Otwieranie Centrum Administracyjnego…</p>'+
-    '<a href="'+OWNER_HUB+'">Przejdź do centrum administracyjnego</a></main></body></html>';
-}
-
 const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logowanie właściciela — gracz.pl</title>
@@ -288,10 +278,16 @@ export function createOwnerRouter({
             return text(res,401,html);
           }
           clearServices();
+          // The submission starts at gracz.pl (cross-site). Redirecting immediately
+          // can omit a newly issued SameSite=Strict cookie on the redirect chain.
+          // Serve the actual OWNER hub as the successful POST response. The next
+          // deliberate click on SEO or Newsletter is same-site and retains Strict.
+          const hubHtml=withAdminSwitchBar(
+            await readFile(new URL('./ui/systemadmin.html',import.meta.url),'utf8'),'hub');
           res.writeHead(200,{...privateHeaders,
             'Content-Type':'text/html; charset=utf-8',
             'Set-Cookie':newCookie(outcome.token)});
-          return res.end(ownerSuccessHtml());
+          return res.end(hubHtml);
         }finally{loginBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/login'){
