@@ -32,7 +32,7 @@ for (const file of htmlFiles) {
     "font-src 'self'",
     "base-uri 'none'",
     rel === 'maintenance-site/systemadmin/index.html'
-      ? "form-action https://gracz-contact-api.onrender.com"
+      ? "form-action 'self' https://gracz-contact-api.onrender.com"
       : "form-action 'none'",
     "object-src 'none'"
   ]) {
@@ -86,7 +86,7 @@ if (!renderYaml.includes('name: Content-Security-Policy')) {
 }
 // Only the fixed HTTPS OWNER backend is a permitted form POST target.
 // Every other HTML page retains form-action 'none' in its own CSP meta.
-if (!renderYaml.includes("form-action https://gracz-contact-api.onrender.com;")) {
+if (!renderYaml.includes("form-action 'self' https://gracz-contact-api.onrender.com;")) {
   errors.push('maintenance-site/render.yaml: OWNER form action must allow only exact backend origin');
 }
 if (renderYaml.includes("form-action *")) {

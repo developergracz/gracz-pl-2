@@ -35,9 +35,14 @@ test("Full Max Premium form permits only trusted backend and keeps other pages l
   const gate=await read("../../scripts/check-security-headers.mjs");
   const router=await read("../admin-r1/owner-router.mjs");
   const client=await read("../admin-r1/ui/login.js");
-  assert.match(page,/form-action https:\/\/gracz-contact-api\.onrender\.com/);
-  assert.match(headers,/form-action https:\/\/gracz-contact-api\.onrender\.com/);
+  assert.match(page,/form-action 'self' https:\/\/gracz-contact-api\.onrender\.com/);
+  assert.match(headers,/form-action 'self' https:\/\/gracz-contact-api\.onrender\.com/);
   assert.match(gate,/rel === 'maintenance-site\/systemadmin\/index.html'/);
+  // Chrome also checks the return redirect of the cross-origin HTML POST.
+  // Only gracz.pl itself and the fixed OWNER backend may appear in form-action.
+  assert.match(router,/Location:'https:\/\/gracz\.pl\/systemadmin\/#login-failed'/);
+  assert.doesNotMatch(page,/form-action \*/);
+  assert.doesNotMatch(headers,/form-action \*/);
   assert.match(router,/PUBLIC_OWNER_FORM_ORIGIN='https:\/\/gracz.pl'/);
   assert.match(router,/req.headers.origin!==PUBLIC_OWNER_FORM_ORIGIN/);
   assert.match(router,/publicOwnerFormInput\(req\)/);
