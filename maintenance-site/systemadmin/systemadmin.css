@@ -79,3 +79,13 @@ color:#ffe0d7!important;background:#502c32;text-align:left;font-size:13px;line-h
 /* Client-side HTML validity feedback: never hides the submit control. */
 .admin-login-validation{width:min(100%,540px);margin:7px auto 0!important;padding:12px 16px;border:1px solid #ed9786;border-radius:12px;color:#ffe0d7!important;background:#502c32;text-align:left;font-size:13px;line-height:1.5}
 .admin-login-validation[hidden]{display:none}
+
+/* Password visibility lives inside the same form field; no layout shifts. */
+.password-with-toggle{position:relative;width:100%}
+.public-admin-main .admin-login-field .password-with-toggle input{padding-right:100px}
+.password-visibility-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);
+min-width:78px;min-height:34px;padding:6px 10px;border:1px solid #667c92;border-radius:8px;
+background:#172c3d;color:#ffe0a1;font:700 13px system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+cursor:pointer}
+.password-visibility-toggle:hover{background:#213c52;border-color:#f1c776}
+.password-visibility-toggle:focus-visible{outline:3px solid #f9d186;outline-offset:2px}
