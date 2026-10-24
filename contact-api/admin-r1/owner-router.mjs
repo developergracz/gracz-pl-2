@@ -270,12 +270,12 @@ export function createOwnerRouter({
         try{
           const outcome=await auth.login(data);
           if(!outcome){
-            const html=loginHtml(passwordOnly,auth?.recoveryReady)
-              .replace('id="login-form" autocomplete="off"',
-                'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
-              .replace('<p id="login-status" role="status" aria-live="polite"></p>',
-                '<p id="login-status" role="status" aria-live="polite">Logowanie nie powiodło się. Sprawdź login i hasło.</p>');
-            return text(res,401,html);
+            // The public OWNER form must remain the user's only login screen.
+            // A fixed 303 GET returns to gracz.pl without reflecting credentials,
+            // exposing account state, or changing the durable 15-minute lockout.
+            res.writeHead(303,{...privateHeaders,
+              Location:'https://gracz.pl/systemadmin#login-failed'});
+            return res.end();
           }
           clearServices();
           // The submission starts at gracz.pl (cross-site). Redirecting immediately

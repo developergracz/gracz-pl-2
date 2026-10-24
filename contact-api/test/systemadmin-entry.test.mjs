@@ -11,6 +11,8 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   assert.doesNotMatch(html,/<meta http-equiv="refresh"/i);
   assert.match(html,/action="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/public-form"/);
   assert.match(html,/<form class="admin-login-form" method="post"/);
+  assert.match(html,/id="login-failed" class="admin-login-feedback" role="alert"/);
+  assert.match(css,/\.admin-login-feedback:target\{display:block\}/);
   assert.match(html,/name="username" autocomplete="username"/);
   assert.match(html,/name="password" autocomplete="current-password"/);
   assert.match(html,/type="submit">Zaloguj się/);

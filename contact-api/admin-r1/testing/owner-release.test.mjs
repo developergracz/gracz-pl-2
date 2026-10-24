@@ -574,6 +574,15 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     assert.equal(authenticated.status,200);
     assert.match(authenticated.html,/SEO Control Center/);
     assert.match(authenticated.html,/Panel administracyjny Newslettera/);
+    // Failed credentials must NEVER open a second OWNER login screen at Render.
+    // Fixed redirect keeps the only credential form on gracz.pl/systemadmin.
+    const failed=await formPost({body:new URLSearchParams({
+      username:'changedowner',password:'wrong-owner-password-test'
+    }).toString()});
+    assert.equal(failed.status,303);
+    assert.equal(failed.headers.location,'https://gracz.pl/systemadmin#login-failed');
+    assert.equal(failed.cookie,'');
+    assert.doesNotMatch(failed.html,/Logowanie właściciela|password|changedowner/);
   } finally {await new Promise(resolve=>server.close(resolve));}
   // Disposable test database only; restore environment bootstrap for other tests.
   await db.query('DELETE FROM newsletter_owner.credentials');
