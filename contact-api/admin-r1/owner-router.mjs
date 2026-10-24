@@ -247,13 +247,13 @@ export function createOwnerRouter({
         if(path===PREFIX+'/login/visual/paneladmin'){
           html=html
             .replace('class="admin-login-form" method="post"',
-              'class="admin-login-form" data-after-login="newsletter" method="post"')
+              'class="admin-login-form" data-after-login="systemadmin" method="post"')
             .replace('<h1>System Admin <span>gracz.pl</span></h1>',
               '<h1>Panel Admin <span>gracz.pl</span></h1>')
             .replace('Jedno bezpieczne logowanie do obu systemów administracyjnych.',
-              'Bezpieczne logowanie do panelu administracyjnego newslettera.')
+              'Bezpieczne logowanie do Centrum administracyjnego gracz.pl.')
             .replace('Po zalogowaniu wybierzesz SEO Control Center lub Panel administracyjny Newslettera.',
-              'Po zalogowaniu otworzysz Panel administracyjny Newslettera.');
+              'Po zalogowaniu wybierzesz SEO Control Center lub Panel administracyjny Newslettera.');
         }
         return text(res,200,html);
       }

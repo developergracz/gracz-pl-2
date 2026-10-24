@@ -70,7 +70,7 @@ test("Premium System Admin authenticates only on the OWNER origin without a seco
   assert.match(page,/login\/visual/);
 });
 
-test("Panel Admin reuses the safe visual OWNER form and opens only newsletter after login",async()=>{
+test("Panel Admin reuses OWNER login and returns to the existing two-tile choice after login",async()=>{
   const panel=await read("../../maintenance-site/paneladmin/index.html");
   const router=await read("../admin-r1/owner-router.mjs");
   const js=await read("../admin-r1/ui/visual-login.js");
@@ -79,13 +79,53 @@ test("Panel Admin reuses the safe visual OWNER form and opens only newsletter af
   assert.match(panel,/form-action 'none'/);
   assert.match(panel,/noindex,nofollow,noarchive/);
   assert.match(router,/path===PREFIX\+'\/login\/visual\/paneladmin'/);
-  assert.match(router,/data-after-login="newsletter"/);
+  assert.match(router,/data-after-login="systemadmin"/);
   assert.match(router,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
   assert.match(js,/form\.dataset\.afterLogin==='newsletter'/);
+  assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+  const tiles=await read("../admin-r1/ui/systemadmin.html");
+  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.match(tiles,/href="\/owner\/newsletter\/seo"/);
+  assert.match(tiles,/href="\/owner\/newsletter\/"/);
   assert.match(js,/location\.replace\('\/owner\/newsletter\/'\)/);
   assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
   assert.match(js,/credentials:'same-origin'/);
   assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|console\./);
+});
+
+test("Panel Admin login success opens two-tile hub rather than the newsletter dashboard",async()=>{
+  const script=await read("../admin-r1/ui/visual-login.js");
+  const registered=new Map();
+  const username={value:"syntheticowner"};
+  const password={value:"synthetic-test-password"};
+  const button={disabled:false};
+  const form={
+    dataset:{afterLogin:"systemadmin"},
+    elements:{username},
+    querySelector:()=>button,
+    reportValidity:()=>true,
+    addEventListener:(type,handler)=>registered.set(type,handler)
+  };
+  const feedback={textContent:"",hidden:true};
+  const destinations=[];
+  let authRequest;
+  const document={
+    querySelector:selector=>selector===".admin-login-form"?form:null,
+    getElementById:id=>id==="admin-login-validation"?feedback:
+      id==="admin-password"?password:null
+  };
+  runInNewContext(script,{
+    document,
+    fetch:async(url,options)=>{authRequest={url,options};return {ok:true,status:200};},
+    location:{replace:destination=>destinations.push(destination)},
+    AbortController, setTimeout, clearTimeout
+  });
+  await registered.get("submit")({preventDefault(){}});
+  assert.equal(authRequest.url,"/owner/newsletter/login");
+  assert.equal(authRequest.options.credentials,"same-origin");
+  assert.deepEqual(destinations,["/owner/newsletter/systemadmin"]);
+  assert.equal(button.disabled,false);
+  assert.equal(password.value,"");
 });
 
 test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
