@@ -40,10 +40,9 @@ if(form&&feedback&&passwordInput&&submit){
         })
       });
       if(response.ok){
-        if(form.dataset.afterLogin==='newsletter')
-          location.replace('/owner/newsletter/');
-        else
-          location.replace('/owner/newsletter/systemadmin');
+        // One authenticated destination for Panel Admin and System Admin.
+        // Opening either panel requires choosing its existing tile.
+        location.replace('/owner/newsletter/systemadmin');
         return;
       }
       show(response.status===429
