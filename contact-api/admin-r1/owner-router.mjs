@@ -235,6 +235,7 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/login/visual'){
         if(!passwordOnly)return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
         const html=(await readFile(new URL('../../maintenance-site/systemadmin/index.html',import.meta.url),'utf8'))
+          .replace(/<meta http-equiv="refresh"[^>]*>\s*/, '')
           .replace(/<meta http-equiv="Content-Security-Policy"[^>]*>\s*/, '')
           .replace('href="/systemadmin/systemadmin.css"',
             'href="'+PREFIX+'/login/visual.css"')
