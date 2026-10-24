@@ -35,3 +35,36 @@ a:focus-visible{outline:3px solid #edcc80;outline-offset:4px}
 .footnote{color:#a8b9ca;font-size:12px;line-height:1.6;margin:22px auto 0;max-width:530px}
 .public-admin-footer{text-align:center;color:#91a0af;padding:24px 18px 30px;font-size:12px;border-top:1px solid #273342}
 @media(max-width:540px){.public-admin-header{padding:18px}.private-pill{font-size:9px}.access-card{padding:28px 20px}.public-admin-main{padding:32px 0 52px}}
+
+/* Compact Full Max Premium layout: header, form and footer fit laptop height.
+   Small viewports retain normal scrolling; no clipping or fixed-height traps. */
+.public-admin-shell{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.public-admin-header{padding:12px clamp(18px,3vw,36px)}
+.public-admin-main{margin:auto;padding:10px 0;width:min(100% - 28px,750px)}
+.public-admin-main .eyebrow{font-size:11px;margin:0 0 3px}
+.public-admin-main h1{font-size:clamp(28px,3.6vw,44px);line-height:1.12;margin:4px 0 9px}
+.public-admin-main .lead{font-size:clamp(14px,1.55vw,18px);line-height:1.4;margin:0 auto 12px}
+.public-admin-main .access-card{gap:7px;padding:clamp(14px,2.3vh,24px) clamp(18px,3vw,32px)}
+.public-admin-main .access-emblem{font-size:17px;line-height:1}
+.public-admin-main .access-card h2{font-size:21px;margin:2px 0 6px}
+.public-admin-main .access-card p{font-size:14px;line-height:1.4;margin:0 auto 4px}
+.public-admin-main .admin-login-form{gap:9px;margin:0 auto}
+.public-admin-main .admin-login-field{gap:4px}
+.public-admin-main .admin-login-field input{min-height:44px;padding:10px 13px}
+.public-admin-main .admin-login-actions{margin-top:3px}
+.public-admin-main .admin-login-actions .access-button,
+.public-admin-main .admin-login-actions .recovery-button{min-height:46px;padding:10px 12px}
+.public-admin-main .footnote{margin:9px auto 0;font-size:11px;line-height:1.4}
+.public-admin-footer{padding:12px 15px;font-size:11px}
+@media(max-width:540px){
+  .public-admin-main{padding:18px 0}
+  .public-admin-main .access-card{padding:18px 16px}
+  .public-admin-main .admin-login-actions{grid-template-columns:1fr}
+}
+@media(max-height:670px) and (min-width:541px){
+  .public-admin-header{padding-top:8px;padding-bottom:8px}
+  .public-admin-main{padding:6px 0}
+  .public-admin-main .access-card{padding-top:10px;padding-bottom:10px}
+  .public-admin-main .lead{margin-bottom:7px}
+  .public-admin-main .footnote{margin-top:6px}
+}
