@@ -9,7 +9,7 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
   assert.match(html,/<meta name="robots" content="noindex,nofollow,noarchive">/);
   assert.match(html,/<meta name="referrer" content="strict-origin">/);
-  assert.doesNotMatch(html,/<meta http-equiv="refresh"/i);
+  assert.match(html,/<meta http-equiv="refresh" content="0; url=https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/visual">/);
   assert.match(html,/action="https:\/\/gracz-contact-api\.onrender\.com\/owner\/newsletter\/login\/public-form"/);
   assert.match(html,/<form class="admin-login-form" method="post"/);
   assert.match(html,/id="login-failed" class="admin-login-feedback" role="alert"/);
@@ -49,6 +49,24 @@ test("Full Max Premium form permits only trusted backend and keeps other pages l
   assert.match(router,/Set-Cookie':newCookie\(outcome.token\)/);
   assert.match(router,/if\(!passwordOnly \|\|/);
   assert.match(client,/location.hash==='#forgot'/);
+});
+
+test("Premium System Admin authenticates only on the OWNER origin without a second credential store",async()=>{
+  const router=await read("../admin-r1/owner-router.mjs");
+  const js=await read("../admin-r1/ui/visual-login.js");
+  const page=await read("../../maintenance-site/systemadmin/index.html");
+  assert.match(router,/path===PREFIX\+'\/login\/visual'/);
+  assert.match(router,/path===PREFIX\+'\/login\/visual\.css'/);
+  assert.match(router,/path===PREFIX\+'\/login\/visual\.js'/);
+  assert.match(router,/readFile\(new URL\('\.\.\/\.\.\/maintenance-site\/systemadmin\/index\.html'/);
+  assert.match(router,/\.replace\(\/<meta http-equiv="Content-Security-Policy"/);
+  assert.match(router,/action="#"/);
+  assert.match(js,/event\.preventDefault\(\)/);
+  assert.match(js,/fetch\('\/owner\/newsletter\/login'/);
+  assert.match(js,/credentials:'same-origin'/);
+  assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+  assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|console\./);
+  assert.match(page,/login\/visual/);
 });
 
 test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
