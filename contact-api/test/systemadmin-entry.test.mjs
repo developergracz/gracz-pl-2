@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
+import {runInNewContext} from "node:vm";
 const read=path=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("public gracz.pl/systemadmin entry has private noindex and only a backend login handoff",async()=>{
@@ -20,7 +21,9 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   assert.match(html,/login\/systemadmin#forgot/);
   assert.match(html,/href="\/systemadmin\/systemadmin\.css"/);
   assert.match(html,/Logowanie administratora/);
-  assert.doesNotMatch(html,/<script\b/i);
+  assert.match(html,/<script src="\\/systemadmin\\/systemadmin-login\\.js" defer><\\/script>/);
+  assert.equal((html.match(/<script\\b/gi)||[]).length,1);
+  assert.match(html,/id="admin-login-validation" class="admin-login-validation" role="alert" aria-live="polite" hidden/);
   assert.match(css,/\.access-button/);
   assert.match(css,/\.admin-login-field input:focus-visible/);
   assert.match(css,/\.admin-login-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
@@ -99,4 +102,30 @@ test("switch navigation routes to hub, SEO, and newsletter without a second logi
   assert.match(router,/withAdminSwitchBar\(html,'newsletter'\)/);
   assert.match(router,/withAdminSwitchBar\([\s\S]*?'seo'\)/);
   assert.match(css,/\.systemadmin-topnav/);
+});
+
+test("blocked native form validation shows a visible message without handling credentials",async()=>{
+  const script=await read("../../maintenance-site/systemadmin/systemadmin-login.js");
+  const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
+  const listeners=new Map();
+  const password={name:"password",validity:{valueMissing:false}};
+  const feedback={textContent:"",hidden:true};
+  const form={
+    addEventListener:(type,fn)=>listeners.set(type,fn),
+    querySelector:()=>password
+  };
+  runInNewContext(script,{document:{
+    querySelector:()=>form,
+    getElementById:()=>feedback
+  }});
+  listeners.get("invalid")({target:password});
+  assert.equal(feedback.hidden,false);
+  assert.match(feedback.textContent,/co najmniej 9 znaków/);
+  listeners.get("input")();
+  assert.equal(feedback.hidden,true);
+  listeners.get("submit")();
+  assert.equal(feedback.hidden,false);
+  assert.match(feedback.textContent,/Sprawdzanie danych logowania/);
+  assert.match(css,/\\.admin-login-validation\\[hidden\\]\\{display:none\\}/);
+  assert.doesNotMatch(script,/preventDefault|\\.disabled\\s*=|fetch\\(|localStorage|sessionStorage|console\\./);
 });
