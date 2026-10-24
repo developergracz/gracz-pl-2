@@ -21,8 +21,8 @@ test("public gracz.pl/systemadmin entry has private noindex and only a backend l
   assert.match(html,/login\/systemadmin#forgot/);
   assert.match(html,/href="\/systemadmin\/systemadmin\.css"/);
   assert.match(html,/Logowanie administratora/);
-  assert.match(html,/<script src="\\/systemadmin\\/systemadmin-login\\.js" defer><\\/script>/);
-  assert.equal((html.match(/<script\\b/gi)||[]).length,1);
+  assert.match(html,/<script src="\/systemadmin\/systemadmin-login\.js" defer><\/script>/);
+  assert.equal((html.match(/<script\b/gi)||[]).length,1);
   assert.match(html,/id="admin-login-validation" class="admin-login-validation" role="alert" aria-live="polite" hidden/);
   assert.match(css,/\.access-button/);
   assert.match(css,/\.admin-login-field input:focus-visible/);
@@ -126,6 +126,6 @@ test("blocked native form validation shows a visible message without handling cr
   listeners.get("submit")();
   assert.equal(feedback.hidden,false);
   assert.match(feedback.textContent,/Sprawdzanie danych logowania/);
-  assert.match(css,/\\.admin-login-validation\\[hidden\\]\\{display:none\\}/);
-  assert.doesNotMatch(script,/preventDefault|\\.disabled\\s*=|fetch\\(|localStorage|sessionStorage|console\\./);
+  assert.match(css,/\.admin-login-validation\[hidden\]\{display:none\}/);
+  assert.doesNotMatch(script,/preventDefault|\.disabled\s*=|fetch\(|localStorage|sessionStorage|console\./);
 });
