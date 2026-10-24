@@ -3,7 +3,7 @@ const {readFileSync} = require('node:fs');
 const path = require('node:path');
 
 test('gracz.pl/paneladmin opens the existing OWNER login without tracking parameters', async ({page}) => {
-  const target = 'https://gracz-contact-api.onrender.com/owner/newsletter/login/visual';
+  const target = 'https://gracz-contact-api.onrender.com/owner/newsletter/login/visual/paneladmin';
   await page.route('**/*', route => {
     const url = route.request().url();
     if(url === target) return route.fulfill({
