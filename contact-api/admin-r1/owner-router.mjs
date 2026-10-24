@@ -62,6 +62,37 @@ function safePost(req,origin){
     (!fetchSite||fetchSite==='same-origin') &&
     req.headers['sec-fetch-mode']!=='no-cors';
 }
+const PUBLIC_OWNER_FORM_ORIGIN='https://gracz.pl';
+// The static gracz.pl form does NOT store credentials. Its only destination
+// is a top-level HTTPS document POST, never an iframe, fetch or CORS grant.
+async function publicOwnerFormInput(req){
+  if(String(req.headers['content-type']||'').split(';')[0]!=='application/x-www-form-urlencoded')
+    throw Error('invalid_type');
+  let body='',size=0;
+  for await(const chunk of req){
+    size+=chunk.length;
+    if(size>512)throw Error('too_large');
+    body+=chunk.toString('utf8');
+  }
+  const fields=new URLSearchParams(body);
+  const names=[...fields.keys()];
+  if(names.length!==2||!names.includes('username')||!names.includes('password'))
+    throw Error('invalid_fields');
+  const username=fields.get('username'),password=fields.get('password');
+  if(!/^[A-Za-z][A-Za-z0-9._-]{2,31}$/.test(username)||password.length<9||
+     password.length>128)return null;
+  return {username,password};
+}
+function ownerSuccessHtml(){
+  return '<!doctype html><html lang="pl"><head><meta charset="utf-8">'+
+    '<meta name="robots" content="noindex,nofollow">'+
+    '<meta name="referrer" content="no-referrer">'+
+    '<meta http-equiv="refresh" content="0; url='+OWNER_HUB+'">'+
+    '<title>System Admin — logowanie zakończone</title></head><body>'+
+    '<main><p>Zalogowano. Otwieranie Centrum Administracyjnego…</p>'+
+    '<a href="'+OWNER_HUB+'">Przejdź do centrum administracyjnego</a></main></body></html>';
+}
+
 const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logowanie właściciela — gracz.pl</title>
@@ -230,6 +261,39 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/login.js')
         return text(res,200,await readFile(new URL('./ui/login.js',import.meta.url)),
           'text/javascript; charset=utf-8');
+      // Dedicated HTML form endpoint for HTTPS gracz.pl /systemadmin.
+      // Exact first-party Origin, top-level navigation and existing durable
+      // credential verification. Session cookies stay scoped to onrender.com.
+      if(req.method==='POST'&&path===PREFIX+'/login/public-form'){
+        if(!passwordOnly ||
+           req.headers.origin!==PUBLIC_OWNER_FORM_ORIGIN ||
+           (req.headers['sec-fetch-site']&&req.headers['sec-fetch-site']!=='cross-site') ||
+           (req.headers['sec-fetch-mode']&&req.headers['sec-fetch-mode']!=='navigate') ||
+           (req.headers['sec-fetch-dest']&&req.headers['sec-fetch-dest']!=='document'))
+          return reject(res);
+        if(loginBusy)return reject(res,429);
+        let data;
+        try{data=await publicOwnerFormInput(req);}
+        catch{return reject(res,400);}
+        if(!data)return reject(res,400);
+        loginBusy=true;
+        try{
+          const outcome=await auth.login(data);
+          if(!outcome){
+            const html=loginHtml(passwordOnly,auth?.recoveryReady)
+              .replace('id="login-form" autocomplete="off"',
+                'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
+              .replace('<p id="login-status" role="status" aria-live="polite"></p>',
+                '<p id="login-status" role="status" aria-live="polite">Logowanie nie powiodło się. Sprawdź login i hasło.</p>');
+            return text(res,401,html);
+          }
+          clearServices();
+          res.writeHead(200,{...privateHeaders,
+            'Content-Type':'text/html; charset=utf-8',
+            'Set-Cookie':newCookie(outcome.token)});
+          return res.end(ownerSuccessHtml());
+        }finally{loginBusy=false;}
+      }
       if(req.method==='POST'&&path===PREFIX+'/login'){
         if(!safePost(req,origin))return reject(res);
         if(loginBusy)return reject(res,429);
