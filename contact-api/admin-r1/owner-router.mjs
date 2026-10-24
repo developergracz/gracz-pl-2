@@ -209,6 +209,25 @@ export function createOwnerRouter({
     for(const svc of services.values())svc.clear();
     services.clear();
   }
+  // Shared protected dashboard renderer: used after successful first-party POST
+  // and authenticated GET. Never called before OWNER credential verification.
+  async function newsletterPanelHtml(){
+        let html=await readFile(new URL('./ui/index.html',import.meta.url),'utf8');
+        html=html.replace('"/admin.css"','"'+PREFIX+'/admin.css"')
+          .replace('"/admin.js"','"'+PREFIX+'/owner-dashboard.js"')
+          .replace('PODGLĄD SYNTETYCZNY','TYLKO WŁAŚCICIEL')
+          .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
+            'Dane subskrybentów tylko do odczytu. Ustawienia konta są dostępne wyłącznie właścicielowi.')
+          .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
+          .replace('Globalnie lub w temacie','Potwierdzone wypisania')
+          .replace('Oczekujący · łącznie','Oczekujący na stronie')
+          .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
+            '<strong id="pending">—</strong><small>Oczekujący na potwierdzenie</small>');
+        html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
+          .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
+            'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
+        return withAdminSwitchBar(html,'newsletter');
+  }
   async function handle(req,res,url){
     if(!configured)return denyAdmin(req,res);
     // Render's TLS-terminated hostname only; never accept preview, www or
@@ -254,7 +273,9 @@ export function createOwnerRouter({
       // Dedicated HTML form endpoint for HTTPS gracz.pl /systemadmin.
       // Exact first-party Origin, top-level navigation and existing durable
       // credential verification. Session cookies stay scoped to onrender.com.
-      if(req.method==='POST'&&path===PREFIX+'/login/public-form'){
+      if(req.method==='POST'&&(path===PREFIX+'/login/public-form'||
+         path===PREFIX+'/login/paneladmin-form')){
+        const newsletterOnly=path===PREFIX+'/login/paneladmin-form';
         if(!passwordOnly ||
            req.headers.origin!==PUBLIC_OWNER_FORM_ORIGIN ||
            (req.headers['sec-fetch-site']&&req.headers['sec-fetch-site']!=='cross-site') ||
@@ -274,7 +295,8 @@ export function createOwnerRouter({
             // A fixed 303 GET returns to gracz.pl without reflecting credentials,
             // exposing account state, or changing the durable 15-minute lockout.
             res.writeHead(303,{...privateHeaders,
-              Location:'https://gracz.pl/systemadmin/#login-failed'});
+              Location:newsletterOnly?'https://gracz.pl/paneladmin/#login-failed':
+                'https://gracz.pl/systemadmin/#login-failed'});
             return res.end();
           }
           clearServices();
@@ -282,12 +304,12 @@ export function createOwnerRouter({
           // can omit a newly issued SameSite=Strict cookie on the redirect chain.
           // Serve the actual OWNER hub as the successful POST response. The next
           // deliberate click on SEO or Newsletter is same-site and retains Strict.
-          const hubHtml=withAdminSwitchBar(
+          const destinationHtml=newsletterOnly?await newsletterPanelHtml():withAdminSwitchBar(
             await readFile(new URL('./ui/systemadmin.html',import.meta.url),'utf8'),'hub');
           res.writeHead(200,{...privateHeaders,
             'Content-Type':'text/html; charset=utf-8',
             'Set-Cookie':newCookie(outcome.token)});
-          return res.end(hubHtml);
+          return res.end(destinationHtml);
         }finally{loginBusy=false;}
       }
       if(req.method==='POST'&&path===PREFIX+'/login'){
@@ -391,23 +413,8 @@ export function createOwnerRouter({
       // No API route for uploading, scanning, conversion or attachment sending.
       if(req.method==='GET'&&path===PREFIX+'/attachment-capabilities')
         return response(res,200,{ok:true,...getAttachmentCapabilities()});
-      if(req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX)){
-        let html=await readFile(new URL('./ui/index.html',import.meta.url),'utf8');
-        html=html.replace('"/admin.css"','"'+PREFIX+'/admin.css"')
-          .replace('"/admin.js"','"'+PREFIX+'/owner-dashboard.js"')
-          .replace('PODGLĄD SYNTETYCZNY','TYLKO WŁAŚCICIEL')
-          .replace('Dane demonstracyjne · Logowanie OWNER oczekuje na niezależny audyt.\n          Panel produkcyjny pozostaje zamknięty.',
-            'Dane subskrybentów tylko do odczytu. Ustawienia konta są dostępne wyłącznie właścicielowi.')
-          .replace('Resend jako źródło stanu operacyjnego','Potwierdzone zgody w PostgreSQL')
-          .replace('Globalnie lub w temacie','Potwierdzone wypisania')
-          .replace('Oczekujący · łącznie','Oczekujący na stronie')
-          .replace('<strong>—</strong><small>Agregat HMAC niedostępny</small>',
-            '<strong id="pending">—</strong><small>Oczekujący na potwierdzenie</small>');
-        html=html.replace('</header>','<button type="button" id="logout">Wyloguj</button></header>')
-          .replace('Filtry dotyczą maksymalnie 10 kontaktów na stronie dostawcy.',
-            'Filtry dotyczą maksymalnie 10 kontaktów na stronie rejestru.');
-        return text(res,200,withAdminSwitchBar(html,'newsletter'));
-      }
+      if(req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX))
+        return text(res,200,await newsletterPanelHtml());
       if(req.method==='GET'&&path===PREFIX+'/owner-dashboard.js')
         return text(res,200,await readFile(new URL('./ui/owner-dashboard.js',import.meta.url)),
           'text/javascript; charset=utf-8');
