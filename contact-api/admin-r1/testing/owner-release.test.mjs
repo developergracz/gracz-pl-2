@@ -509,6 +509,63 @@ test('M5 account settings: password and nickname rotation survive auth recreatio
     assert.equal(changed.body.relogin,true);
     assert.match(changed.cookie,/Max-Age=0/);
     assert.equal((await send('/owner/newsletter/settings',{cookie,csrf})).status,401);
+    // Browser form is a top-level HTTPS navigation from gracz.pl to
+    // onrender.com; never a credentialed cross-site XHR or iframe.
+    const formPost=({origin='https://gracz.pl',body,contentType='application/x-www-form-urlencoded'}={})=>
+      new Promise((resolve,reject)=>{
+        const formBody=body??new URLSearchParams({
+          username:'changedowner',password:updatedPassword
+        }).toString();
+        const request=httpRequest({
+          hostname:'127.0.0.1',port:server.address().port,
+          path:'/owner/newsletter/login/public-form',method:'POST',
+          headers:{
+            host:'gracz-contact-api.onrender.com',
+            'x-forwarded-proto':'https',
+            origin,'sec-fetch-site':'cross-site',
+            'sec-fetch-mode':'navigate','sec-fetch-dest':'document',
+            'content-type':contentType
+          }
+        },response=>{
+          let html='';
+          response.on('data',chunk=>html+=chunk);
+          response.on('end',()=>resolve({status:response.statusCode,html,
+            cookie:response.headers['set-cookie']?.[0]||'',
+            headers:response.headers}));
+          response.on('error',reject);
+        });
+        request.on('error',reject);
+        request.end(formBody);
+      });
+    assert.equal((await formPost({origin:'https://untrusted.example'})).status,403,
+      'untrusted form origins are rejected');
+    assert.equal((await formPost({contentType:'application/json'})).status,400,
+      'the public form never accepts JSON');
+    assert.equal((await formPost({body:'username=x&username=y&password=anything'})).status,400,
+      'duplicate form fields are rejected without password verification');
+    const premium=await formPost();
+    assert.equal(premium.status,200);
+    assert.match(premium.cookie,/^__Host-gracz_owner=/);
+    assert.match(premium.cookie,/Secure; HttpOnly; SameSite=Strict/);
+    assert.match(premium.html,/http-equiv="refresh" content="0; url=\/owner\/newsletter\/systemadmin"/);
+    const authenticated=await new Promise((resolve,reject)=>{
+      const request=httpRequest({
+        hostname:'127.0.0.1',port:server.address().port,
+        path:'/owner/newsletter/systemadmin',
+        headers:{host:'gracz-contact-api.onrender.com',
+          'x-forwarded-proto':'https',
+          cookie:premium.cookie.split(';')[0]}
+      },res=>{
+        let html='';
+        res.on('data',chunk=>html+=chunk);
+        res.on('end',()=>resolve({status:res.statusCode,html}));
+        res.on('error',reject);
+      });
+      request.on('error',reject);request.end();
+    });
+    assert.equal(authenticated.status,200);
+    assert.match(authenticated.html,/SEO Control Center/);
+    assert.match(authenticated.html,/Panel administracyjny Newslettera/);
   } finally {await new Promise(resolve=>server.close(resolve));}
   // Disposable test database only; restore environment bootstrap for other tests.
   await db.query('DELETE FROM newsletter_owner.credentials');
