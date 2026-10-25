@@ -47,9 +47,27 @@ export function summarizeLcpEvidence(audits={}) {
     const n=audits[id]?.numericValue;
     if(Number.isFinite(n) && n>=0)timings[name]=Math.round(n);
   }
+  const blockers=[];
+  for(const id of ["render-blocking-resources","render-blocking-insight"]){
+    const items=audits[id]?.details?.items;
+    if(!Array.isArray(items))continue;
+    for(const item of items.slice(0,12)){
+      if(typeof item?.url!=="string" || blockers.length>=6)continue;
+      let pathname;
+      try{
+        const u=new URL(item.url);
+        // Report only pathnames for known public, first-party assets.
+        if(u.origin!=="https://gracz.pl")continue;
+        pathname=u.pathname.slice(0,150);
+      }catch{continue;}
+      if(blockers.some(b=>b.path===pathname))continue;
+      blockers.push({path:pathname,
+        wastedMs:Number.isFinite(item.wastedMs)?Math.round(item.wastedMs):null});
+    }
+  }
   // Insight audit presence is useful when exact element attribution is unavailable.
   return {element:selectors[0]||null,insightsAvailable:relevantIds,
-    timings};
+    timings,blockers};
 }
 export function parseLighthouse(json,url,strategy){
  const audits=json?.audits,raw=audits?.["largest-contentful-paint"]?.numericValue;
