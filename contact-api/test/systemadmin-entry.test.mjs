@@ -324,7 +324,7 @@ test("both Premium gold tile actions hug their labels without stretching or losi
   assert.match(rule,/width:fit-content/);
   assert.match(rule,/max-width:100%/,"Avoid mobile overflow");
   assert.match(rule,/justify-content:flex-start/,"Keep arrow next to the label");
-  assert.doesNotMatch(rule,/width:100%|justify-content:space-between/);
+  assert.doesNotMatch(rule,/(?:^|;)width:100%(?:;|$)|justify-content:space-between/);
   assert.match(rule,/background:linear-gradient\(120deg,#f2d38f,#d5a84f\)/,
     "Preserve original Full Max Premium gold styling");
   assert.match(css,/\.owner-admin-hub-layout \.systemadmin-tile-action\{[\s\S]*?min-height:43px/);
