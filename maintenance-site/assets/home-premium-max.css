@@ -4713,3 +4713,22 @@ body.homepage-premium-max::after{
 .homepage-premium-max .footer-news .footer-newsletter-status.is-error{
   color:#ff8d97;
 }
+
+
+/* MOBILE LCP R1: skip layout/paint for below-fold sections until they approach
+   the viewport. Do not touch the hero, header or consent dialog. */
+@supports (content-visibility:auto){
+  @media screen{
+    body.homepage-premium-max main > :is(
+      .academy-showcase,
+      .ai-poker-premium,
+      .knowledge-premium,
+      .popular-premium,
+      .community-premium,
+      .updates-premium
+    ){
+      content-visibility:auto;
+      contain-intrinsic-size:auto 760px;
+    }
+  }
+}
