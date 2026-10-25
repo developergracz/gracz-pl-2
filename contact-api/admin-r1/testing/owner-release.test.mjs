@@ -1069,7 +1069,7 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
       assert.doesNotMatch(markup,/owner-admin-hub-layout/,
         'Compact hub rules must not affect other OWNER modules');
     }
-    assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
+    assert.match(markup,/class="owner-premium-heading">Panel Admin gracz\.<span>pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
     assert.match(markup,/href="\/owner\/newsletter\/seo"/);
