@@ -179,9 +179,14 @@ const speedReasons={
 };
 async function loadSpeed(){
   $("seo-speed-refresh").disabled=true;
-  text("seo-speed-state","Pobieranie danych PageSpeed (mobile)…");
+  text("seo-speed-state","Uruchamianie nowego pomiaru PageSpeed (mobile)…");
   try{
-    const data=await readPrivate("speed");
+    const data=await readPrivate("speed?refresh=1");
+    if(data.state==="rate_guard"){
+      text("seo-speed-state","Od ostatniej próby minęło zbyt mało czasu. Nowy pomiar dostępny za "+data.retryAfterSeconds+
+        " s. Wcześniej wyświetlone wyniki pozostają wynikami poprzedniego pomiaru.");
+      return;
+    }
     if(data.state!=="available"){
       for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
       text("seo-speed-state","PageSpeed: "+(speedReasons[data.reason]||speedReasons.provider_failed));
@@ -191,8 +196,8 @@ async function loadSpeed(){
     text("speed-lcp",data.lcpMs??"—");
     text("speed-cls",data.cls??"—");
     text("speed-inp",data.inpMs??"—");
-    text("seo-speed-state","PageSpeed / Lighthouse · "+asDate(data.checkedAt)+
-      ". Pomyślny pomiar w pamięci do 24 godzin. INP tylko przy dostępnych danych terenowych.");
+    text("seo-speed-state","PageSpeed / Lighthouse · nowy pomiar: "+asDate(data.checkedAt)+
+      ". INP tylko przy dostępnych danych terenowych.");
   }catch{
     for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
     text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
