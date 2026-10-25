@@ -199,7 +199,18 @@ const homeMeta = validateBasePage({
   canonical: "https://gracz.pl/",
   requireTitleTerms: ["gracz.pl", "gry online"]
 });
-requireCheck(/href="\/assets\/img\/hero-bg\.webp"[^>]*fetchpriority="high"/i.test(home), "homepage: hero image preload/fetchpriority missing");
+// The Premium hero uses text and a transparent background: prioritize its Polish font,
+ // not the obsolete photographic hero from the earlier layout.
+requireCheck(
+  /rel="preload" href="\/assets\/fonts\/montserrat-latin-ext\.woff2" as="font" type="font\/woff2" crossorigin/.test(home) &&
+  fs.existsSync(path.join(root, "assets/fonts/montserrat-latin-ext.woff2")),
+  "homepage: primary Polish Montserrat font preload missing"
+);
+requireCheck(
+  !/rel="preload" href="\/assets\/img\/hero-bg\.webp"/.test(home) &&
+  /\.homepage-premium-max \.hero\{\s*background:transparent!important;/.test(read("assets/home-premium-max.css")),
+  "homepage: obsolete hero preload must not compete with visible LCP text"
+);
 
 for (const href of [
   "/gry/",
