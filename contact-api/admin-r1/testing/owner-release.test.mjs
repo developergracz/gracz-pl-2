@@ -331,6 +331,13 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.doesNotMatch(loginPage.body,/id="forgot-open"/,
       'Recovery is not visible before the dedicated schema and feature flag are enabled');
     assert.match(loginPage.body,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+    assert.match(loginPage.body,/id="owner-login-center-title">Centrum administracyjne<\/h2>/);
+    assert.match(loginPage.body,/GRACZ\.PL · FULL MAX PREMIUM/);
+    assert.ok(loginPage.body.indexOf('id="owner-login-center-title"')<
+      loginPage.body.indexOf('id="login-form"'),
+      'The Centrum intro renders above the unchanged sign-in form');
+    assert.doesNotMatch(loginPage.body,/class="systemadmin-tile" href=/,
+      'Private system chooser must remain protected until successful login');
     assert.match(loginPage.body,/class="owner-premium-login-footer"/);
     assert.match(loginPage.body,/class="owner-login-security-note"/);
     assert.match(loginPage.body,/id="login-password-validation"/);
