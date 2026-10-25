@@ -330,6 +330,45 @@ test("both Premium gold tile actions hug their labels without stretching or losi
   assert.match(css,/\.owner-admin-hub-layout \.systemadmin-tile-action\{[\s\S]*?min-height:43px/);
 });
 
+test("SEO Premium Podstrony starts folded and toggles full LIVE list with POKAŻ / ZWIŃ",async()=>{
+  const html=await read("../admin-r1/ui/seo.html");
+  const script=await read("../admin-r1/ui/seo.js");
+  const css=await read("../admin-r1/ui/seo.css");
+  assert.match(html,/id="seo-pages-toggle" aria-controls="seo-pages-list" aria-expanded="false">POKAŻ<\/button>/);
+  assert.match(html,/<div id="seo-pages-list" hidden>/);
+  assert.match(html,/<tbody id="seo-rows"><\/tbody>/);
+  assert.match(html,/id="seo-inspect-url"/,"Indexation selector remains available independently");
+  assert.match(css,/#seo-pages \.seo-pages-heading\{/);
+  assert.match(css,/#seo-pages #seo-pages-list\[hidden\]\{display:none\}/);
+  assert.match(css,/#seo-pages #seo-pages-toggle:focus-visible/);
+  assert.match(script,/\$\("seo-rows"\)\.replaceChildren\(rows\)/,
+    "The LIVE response must keep rendering all pages even while folded");
+  const toggleCode=script.slice(script.indexOf('const pagesToggle='),script.indexOf('const terms='));
+  assert.ok(toggleCode.includes('addEventListener("click"'),"Button must have a click handler");
+  const list={hidden:true};
+  let click;
+  const attrs={};
+  const button={
+    textContent:"POKAŻ",
+    addEventListener:(name,callback)=>{if(name==="click")click=callback;},
+    setAttribute:(name,value)=>{attrs[name]=value;}
+  };
+  runInNewContext('const $=id=>document.getElementById(id);'+toggleCode,{
+    document:{getElementById:id=>id==="seo-pages-toggle"?button:
+      id==="seo-pages-list"?list:null}
+  });
+  assert.equal(typeof click,"function");
+  assert.equal(list.hidden,true);
+  click();
+  assert.equal(list.hidden,false);
+  assert.equal(button.textContent,"ZWIŃ");
+  assert.equal(attrs["aria-expanded"],"true");
+  click();
+  assert.equal(list.hidden,true);
+  assert.equal(button.textContent,"POKAŻ");
+  assert.equal(attrs["aria-expanded"],"false");
+});
+
 test("protected hub contains exactly the two OWNER target panels",async()=>{
   const html=await read("../admin-r1/ui/systemadmin.html");
   assert.match(html,/SEO Control Center/);
