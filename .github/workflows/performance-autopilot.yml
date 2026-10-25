@@ -7,8 +7,6 @@ on:
       - "scripts/performance-observer.mjs"
       - "scripts/performance-lighthouse-fallback.mjs"
       - "scripts/performance-lighthouse-fallback.test.mjs"
-      - "scripts/performance-lighthouse-fallback.mjs"
-      - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-autopilot.test.mjs"
       - "scripts/performance-autopilot-r2.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
@@ -20,6 +18,8 @@ on:
     paths:
       - "scripts/performance-autopilot*.mjs"
       - "scripts/performance-observer.mjs"
+      - "scripts/performance-lighthouse-fallback.mjs"
+      - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
       - "scripts/performance-render-deploy.mjs"
       - ".github/workflows/performance-autopilot.yml"
