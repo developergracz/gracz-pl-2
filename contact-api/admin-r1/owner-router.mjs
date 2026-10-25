@@ -31,9 +31,10 @@ function withAdminSwitchBar(html,current) {
     '<p class="owner-premium-description">Bezpieczne logowanie do Centrum administracyjnego gracz.pl.</p>'+
     '</section>';
   const footer='<footer class="owner-premium-footer">© gracz.pl · Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone</footer>';
+  const layoutClass='owner-admin-layout'+(current==='hub'?' owner-admin-hub-layout':'');
   return html.replace('</head>','<link rel="stylesheet" href="'+PREFIX+'/systemadmin.css">'+
       '<script src="'+PREFIX+'/systemadmin-logout.js" defer></script></head>')
-    .replace('<body>','<body class="owner-admin-layout">'+bar+identity)
+    .replace('<body>','<body class="'+layoutClass+'">'+bar+identity)
     .replace('</body>',footer+'</body>');
 }
 const ORIGIN='https://gracz-contact-api.onrender.com';
