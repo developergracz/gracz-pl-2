@@ -43,3 +43,30 @@ test("CLI runner remains scoped and does not execute on arbitrary URLs",async()=
  assert.equal(report.state,"available");
  assert.equal(report.lcpMs,1600);
 });
+
+
+test("LCP attribution reports only bounded node selector and timing fields",()=>{
+ const a=parseLighthouse({
+  categories:{performance:{score:.91}},
+  audits:{
+    "largest-contentful-paint":{numericValue:3100},
+    "first-contentful-paint":{numericValue:1400},
+    "server-response-time":{numericValue:202},
+    "largest-contentful-paint-element":{
+      details:{items:[{node:{selector:".home-hero-premium__title",nodeLabel:"Graj. Ucz się."}}]}
+    }
+  }
+ },"https://gracz.pl/","mobile");
+ assert.equal(a.lcpEvidence.element.selector,".home-hero-premium__title");
+ assert.equal(a.lcpEvidence.element.description,"Graj. Ucz się.");
+ assert.equal(a.lcpEvidence.timings.fcpMs,1400);
+ assert.equal(a.lcpEvidence.timings.ttfbMs,202);
+ assert.ok(a.lcpEvidence.insightsAvailable.includes("largest-contentful-paint-element"));
+});
+test("unavailable LCP element audit is reported as unknown without guessing",()=>{
+ const a=parseLighthouse({categories:{performance:{score:.95}},audits:{
+  "largest-contentful-paint":{numericValue:1800}
+ }},"https://gracz.pl/","desktop");
+ assert.equal(a.lcpEvidence.element,null);
+ assert.deepEqual(a.lcpEvidence.insightsAvailable,[]);
+});
