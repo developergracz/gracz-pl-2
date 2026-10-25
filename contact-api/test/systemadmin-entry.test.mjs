@@ -460,7 +460,8 @@ test("shared logout requires live CSRF and redirects only after confirmed succes
       assert.equal(calls.length,1,"No unauthenticated logout POST");
     }
     assert.deepEqual(destinations,
-      scenario==="success" || scenario==="session401"?["/owner/newsletter/login"]:[]);
+      scenario==="success"?["/owner/newsletter/logged-out"]:
+        scenario==="session401"?["/owner/newsletter/login"]:[]);
     if(scenario==="logout403" || scenario==="session503")
       assert.match(message.textContent,/Nie udało się wylogować/);
   }
