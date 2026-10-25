@@ -248,7 +248,11 @@ export function createOwnerRouter({
       res.writeHead(302,{...privateHeaders,Location:url.pathname});
       return res.end();
     }
-    if(url.search)return denyAdmin(req,res);
+    // Only the authenticated PageSpeed endpoint accepts an exact refresh flag.
+    // All other private query strings remain rejected.
+    const speedRefresh=req.method==='GET'&&
+      url.pathname===PREFIX+'/seo/speed'&&url.search==='?refresh=1';
+    if(url.search&&!speedRefresh)return denyAdmin(req,res);
     const path=url.pathname;
     const cookie=parseOwnerCookie(req.headers.cookie);
     try{
@@ -433,7 +437,7 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/seo/google')
         return response(res,200,await seoGoogle.read());
       if(req.method==='GET'&&path===PREFIX+'/seo/speed')
-        return response(res,200,await readSeoSpeed());
+        return response(res,200,await readSeoSpeed('mobile',{refresh:speedRefresh}));
       if(req.method==='POST'&&path===PREFIX+'/seo/inspect'){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);
