@@ -270,7 +270,7 @@ async function loadSpeed(){
         "Czas pomiaru niepodany w raporcie. Rozpoczęcie zapytania: "+asDate(data.checkedAt)+".")+
       " INP: CrUX, dane rzeczywistych użytkowników, jeśli dostępne.");
     text("seo-speed-state","Odczyt PageSpeed / Lighthouse · rozpoczęcie zapytania: "+asDate(data.checkedAt)+
-      ". TBT jest wskaźnikiem laboratoryjnym, nie INP.");
+      ". INP: dane użytkowników (strona lub domena). TBT jest wskaźnikiem laboratoryjnym, nie INP.");
   }catch{
     for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
     text("speed-inp-source","Brak danych terenowych · ms");
