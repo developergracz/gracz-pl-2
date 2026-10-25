@@ -308,7 +308,7 @@ for (const file of allHtmlPages) {
     requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021|49-premium-email-input-20261022)/.test(html)), `${rel}: approved legal/contact script version missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    requireCheck(!/<link[^>]*href="\\/assets\\/contact-modal\\.css\\?v=r8"/i.test(html),
+    requireCheck(!html.includes('href="/assets/contact-modal.css?v=r8"'),
       `${rel}: hidden contact modal CSS must not block initial rendering`);
     requireCheck(html.includes('/assets/legal-links.js?v='),
       `${rel}: contact modal must retain on-demand stylesheet loader`);
@@ -336,8 +336,8 @@ for (const [page, hero] of [
   requireCheck(fs.existsSync(path.join(root, "assets", hero)), `${page}: hero asset missing`);
 }
 requireCheck(
-  /href="\\/assets\\/fonts\\/montserrat-latin\\.woff2" as="font" type="font\\/woff2" crossorigin fetchpriority="high"/.test(home) &&
-  /href="\\/assets\\/fonts\\/montserrat-latin-ext\\.woff2" as="font" type="font\\/woff2" crossorigin fetchpriority="high"/.test(home),
+  home.includes('href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high"') &&
+  home.includes('href="/assets/fonts/montserrat-latin-ext.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high"'),
   "homepage: primary heading fonts must receive high preload priority"
 );
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
