@@ -74,8 +74,23 @@ export async function publish({commitId,key,fetcher=fetch,sleeper=sleep,maxPolls
       await sleeper(5000);
     }
     rollback=await call("/rollback","POST",{deployId:previous.id});
-    return {state:"rollback_triggered",commitId,failedDeploy:target.id,
-      rollbackDeployId:(rollback.deploy||rollback)?.id||null,previousCommit:previous.commit.id};
+    const rollbackId=(rollback.deploy||rollback)?.id||null;
+    if(!rollbackId) return {state:"rollback_unverified",commitId,failedDeploy:target.id,
+      previousCommit:previous.commit.id};
+    for(let i=0;i<maxPolls;i++){
+      const restored=await call("/deploys/"+encodeURIComponent(rollbackId));
+      if(restored.status==="live"&&restored.commit?.id===previous.commit.id){
+        const verified=await checkPages({fetcher});
+        return {state:verified.ok?"rollback_verified":"rollback_unverified",
+          commitId,failedDeploy:target.id,rollbackDeployId:rollbackId,
+          previousCommit:previous.commit.id};
+      }
+      if(["build_failed","update_failed","canceled","pre_deploy_failed"].includes(restored.status))
+        break;
+      await sleeper(5000);
+    }
+    return {state:"rollback_unverified",commitId,failedDeploy:target.id,
+      rollbackDeployId:rollbackId,previousCommit:previous.commit.id};
   }catch(error){
     // Never roll back in ambiguous state unless the newly created deploy was
     // confirmed live and failed the checks above. Otherwise leave service untouched.
