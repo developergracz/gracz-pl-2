@@ -53,3 +53,72 @@
 .seo-shell #seo-pages #seo-pages-toggle:hover{filter:brightness(1.07)}
 .seo-shell #seo-pages #seo-pages-toggle:focus-visible{outline:3px solid #ffe49c;outline-offset:3px}
 .seo-shell #seo-pages #seo-pages-list[hidden]{display:none}
+
+/* Full Max Premium: real public page links, keeping table status columns unchanged. */
+.seo-shell #seo-rows .seo-public-page-link{
+  display:inline-block;
+  max-width:100%;
+  color:#c6e4fa;
+  font-weight:650;
+  text-decoration:underline;
+  text-decoration-color:#537b96;
+  text-underline-offset:3px;
+  overflow-wrap:anywhere;
+  border-radius:5px;
+  padding:3px 4px;
+  margin:-3px -4px;
+  transition:color .15s ease,background-color .15s ease,text-decoration-color .15s ease;
+}
+.seo-shell #seo-rows .seo-public-page-link:is(:hover,:focus-visible){
+  color:#ffe39b;
+  text-decoration-color:#ffe39b;
+  background:rgba(226,177,90,.13);
+}
+.seo-shell #seo-rows .seo-public-page-link:focus-visible{
+  outline:2px solid #ffe39b;
+  outline-offset:3px;
+}
+
+/* Native browser select-validation tooltips are replaced by an accessible,
+   reusable Premium message. The select itself keeps native keyboard behavior. */
+.seo-shell select{
+  color:#f5f8ff;
+  background-color:#0d2237;
+  border:1px solid #5a7897;
+  border-radius:11px;
+  min-height:48px;
+  cursor:pointer;
+}
+.seo-shell select:hover{border-color:#f2c45e;}
+.seo-shell select:focus-visible{outline:2px solid #f5d47e;outline-offset:2px;}
+.seo-shell select option{background:#0d2237;color:#f5f8ff;}
+.seo-shell select[aria-invalid="true"]{border-color:#f3ba61;box-shadow:0 0 0 1px #f3ba6155;}
+.seo-shell .seo-premium-select-warning{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:9px 0 0;
+  padding:11px 14px;
+  width:100%;
+  color:#ffe2ad;
+  background:linear-gradient(140deg,#273448,#17283b);
+  border:1px solid #d3a85d;
+  border-radius:11px;
+  box-shadow:0 9px 25px rgba(0,0,0,.17);
+  font-size:13px;
+  line-height:1.5;
+  font-weight:650;
+}
+.seo-shell .seo-premium-select-warning::before{
+  content:"!";
+  display:grid;
+  place-items:center;
+  flex:0 0 23px;
+  height:23px;
+  border:1px solid #ffd889;
+  border-radius:50%;
+  font-weight:800;
+}
+@media(prefers-reduced-motion:reduce){
+  .seo-shell #seo-rows .seo-public-page-link{transition:none;}
+}
