@@ -26,6 +26,67 @@ const asDate=s=>new Intl.DateTimeFormat("pl-PL",{
 function cell(row,value) {
   const td=document.createElement("td");td.textContent=String(value);row.append(td);
 }
+// Only canonical public gracz.pl URLs are clickable. URLs from the report are data,
+// never HTML; unrecognized addresses remain plain text.
+function safePublicPageUrl(raw){
+  if(typeof raw!=="string"||raw.length>2048)return null;
+  try{
+    const url=new URL(raw);
+    if(url.origin!=="https://gracz.pl"||url.username||url.password||url.search||url.hash)
+      return null;
+    return url.href;
+  }catch{return null;}
+}
+function publicPageCell(row,raw){
+  const td=document.createElement("td");
+  const url=safePublicPageUrl(raw);
+  if(url){
+    const link=document.createElement("a");
+    link.className="seo-public-page-link";
+    link.href=url;
+    link.target="_blank";
+    link.rel="noopener noreferrer";
+    link.textContent=raw;
+    link.title="Otwórz podstronę gracz.pl w nowej karcie";
+    td.append(link);
+  }else td.textContent=String(raw??"—");
+  row.append(td);
+}
+
+// Native 'Wybierz element z listy' validation bubbles cannot be styled reliably.
+// Handle every required select in the OWNER SEO panel (including future dialogs).
+function clearSelectWarning(select){
+  if(!(select instanceof HTMLSelectElement))return;
+  const id=select.id+"-premium-warning";
+  const warning=document.getElementById(id);
+  if(warning)warning.remove();
+  select.removeAttribute("aria-invalid");
+  const described=(select.getAttribute("aria-describedby")||"").split(/\s+/).filter(x=>x&&x!==id);
+  if(described.length)select.setAttribute("aria-describedby",described.join(" "));
+  else select.removeAttribute("aria-describedby");
+}
+document.addEventListener("invalid",event=>{
+  const select=event.target;
+  if(!(select instanceof HTMLSelectElement)||!select.required||
+     !select.closest(".seo-shell"))return;
+  event.preventDefault();
+  if(!select.id)return;
+  clearSelectWarning(select);
+  const warning=document.createElement("p");
+  warning.className="seo-premium-select-warning";
+  warning.id=select.id+"-premium-warning";
+  warning.setAttribute("role","alert");
+  warning.textContent="Wybierz element z listy, aby kontynuować.";
+  select.insertAdjacentElement("afterend",warning);
+  select.setAttribute("aria-invalid","true");
+  const described=[select.getAttribute("aria-describedby"),warning.id].filter(Boolean).join(" ");
+  select.setAttribute("aria-describedby",described);
+},true);
+document.addEventListener("change",event=>{
+  if(event.target instanceof HTMLSelectElement&&event.target.validity.valid)
+    clearSelectWarning(event.target);
+});
+
 async function load() {
   $("seo-refresh").disabled=true;
   text("seo-status","Sprawdzanie publicznej witryny…");
@@ -48,7 +109,7 @@ async function load() {
     const rows=document.createDocumentFragment();
     for(const item of data.pages) {
       const tr=document.createElement("tr");
-      cell(tr,item.url);cell(tr,item.ok?"OK":"BŁĄD");
+      publicPageCell(tr,item.url);cell(tr,item.ok?"OK":"BŁĄD");
       cell(tr,item.problems.length?item.problems.map(label).join(", "):"Bez błędów");
       rows.append(tr);
     }
