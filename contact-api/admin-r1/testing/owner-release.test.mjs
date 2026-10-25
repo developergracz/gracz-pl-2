@@ -330,6 +330,10 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.doesNotMatch(loginPage.body,/id="code"/);
     assert.doesNotMatch(loginPage.body,/id="forgot-open"/,
       'Recovery is not visible before the dedicated schema and feature flag are enabled');
+    assert.match(loginPage.body,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+    assert.match(loginPage.body,/class="owner-premium-login-footer"/);
+    assert.match(loginPage.body,/class="owner-login-security-note"/);
+    assert.match(loginPage.body,/id="login-password-validation"/);
     // A ChatGPT-added attribution must not lock the OWNER out of the entry
     // page. Redirect without cookies or credentials; keep private APIs strict.
     const probe=(path,method='GET',headers={})=>new Promise((resolve,reject)=>{
@@ -375,13 +379,7 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(anonymousHub.headers.location,'/owner/newsletter/login/systemadmin');
     const anonymousHubLogin=await probe('/owner/newsletter/login/systemadmin');
     assert.equal(anonymousHubLogin.status,200);
-    const initialLogin=await probe('/owner/newsletter/login');
-    assert.equal(initialLogin.status,200);
-    const loginHtmlText=await initialLogin.text();
-    assert.match(loginHtmlText,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
-    assert.match(loginHtmlText,/class="owner-premium-login-footer"/);
-    assert.match(loginHtmlText,/class="owner-login-security-note"/);
-    assert.match(loginHtmlText,/id="login-password-validation"/);
+
     // Both public premium screens are readable without a session, but private
     // dashboards remain guarded. No separate credentials are introduced.
     assert.equal((await probe('/owner/newsletter/login/visual')).status,200);
