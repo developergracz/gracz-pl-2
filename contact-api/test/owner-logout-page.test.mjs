@@ -47,6 +47,15 @@ test('logout page CSS fits a typical laptop viewport and gracefully scrolls on p
   assert.doesNotMatch(css,/overflow:hidden|[;{]height:100dvh/);
 });
 
+test('desktop Full Max Premium composition is distinct while compact and mobile styles remain intact',async()=>{
+  const css=await read('../admin-r1/ui/logout.css');
+  assert.match(css,/@media\(min-width:960px\) and \(min-height:700px\)/);
+  assert.match(css,/\.logout-layout\{width:min\(100%,1200px\);display:grid;grid-template-columns:/);
+  assert.match(css,/\.logout-hero\{text-align:left/);
+  assert.match(css,/\.logout-footer\{grid-column:1\/-1/);
+  assert.match(css,/@media\(max-width:650px\)/);
+});
+
 test('logout success navigates to confirmation only after 200; expired sessions keep login flow',async()=>{
   const js=await read('../admin-r1/ui/systemadmin-logout.js');
   const result=js.indexOf('if(!result.ok)throw Error("logout_failed");');
