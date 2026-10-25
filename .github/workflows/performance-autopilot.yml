@@ -11,6 +11,12 @@ on:
       - "scripts/performance-autopilot-r2.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
       - "scripts/performance-render-deploy.mjs"
+      - "scripts/performance-rollback-stage.mjs"
+      - "scripts/performance-rollback-stage.test.mjs"
+      - ".github/workflows/performance-rollback-stage.yml"
+      - "scripts/performance-rollback-stage.mjs"
+      - "scripts/performance-rollback-stage.test.mjs"
+      - ".github/workflows/performance-rollback-stage.yml"
       - ".github/workflows/performance-autopilot.yml"
   push:
     branches:
@@ -51,7 +57,8 @@ jobs:
           node --check scripts/performance-lighthouse-fallback.mjs
           node --check scripts/performance-ai-advisor.mjs
           node --check scripts/performance-render-deploy.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs
+          node --check scripts/performance-rollback-stage.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-rollback-stage.test.mjs
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
@@ -104,7 +111,7 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-rollback-stage.test.mjs
       - name: Keep repairs restricted to approved public HTML files
         id: changes
         run: |
@@ -136,7 +143,7 @@ jobs:
             --body "Bounded repair only: in-job unit tests, SEO/indexability, security headers and allowlisted HTML changes. Automatic merge/deploy requires explicit opt-in and Render API credentials; otherwise review before publish.")
           echo "pr_url=$pr" >> "$GITHUB_OUTPUT"
       - name: Autopublish allowlisted repair with verified Render rollback
-        if: steps.proposed.outputs.pr_url != '' && vars.GRACZ_PERF_AUTO_PUBLISH == 'enabled'
+        if: steps.proposed.outputs.pr_url != '' && vars.GRACZ_PERF_AUTO_PUBLISH == 'enabled' && vars.GRACZ_PERF_ROLLBACK_TESTED == 'enabled'
         env:
           GH_TOKEN: ${{ github.token }}
           RENDER_AUTOPILOT_API_KEY: ${{ secrets.RENDER_AUTOPILOT_API_KEY }}
@@ -153,6 +160,22 @@ jobs:
             exit 1
           fi
           pr="${{ steps.proposed.outputs.pr_url }}"
+          head="$(gh pr view "$pr" --repo "${{ github.repository }}" --json headRefOid --jq '.headRefOid')"
+          if ! [[ "$head" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Cannot verify exact repair PR head SHA."
+            exit 1
+          fi
+          # Require independent CI on the exact repair head; GitHub Actions
+          # normally suppresses PR workflows when the PR uses GITHUB_TOKEN.
+          # In that situation leave the PR open, NEVER silently auto-merge.
+          checks="$(gh api --method GET "repos/${{ github.repository }}/commits/$head/check-runs" -F per_page=100)"
+          for job in "codeql" "secrets" "node-security" "contact-api-security" "Validate site SEO"; do
+            passed="$(jq -r --arg job "$job" '[.check_runs[] | select(.name==$job and .status=="completed" and .conclusion=="success")] | length' <<< "$checks")"
+            if [ "$passed" -lt 1 ]; then
+              echo "::error::Missing successful independent CI check: $job. PR kept open."
+              exit 1
+            fi
+          done
           gh pr merge "$pr" --repo "${{ github.repository }}" --squash
           sha="$(gh pr view "$pr" --repo "${{ github.repository }}" --json mergeCommit --jq '.mergeCommit.oid')"
           if ! [[ "$sha" =~ ^[a-f0-9]{40}$ ]]; then
@@ -167,6 +190,6 @@ jobs:
           {
             echo ""
             echo "R1 modifies only allowlisted static resource hints, never arbitrary code."
-            echo "Automatic merge/deploy requires GRACZ_PERF_AUTO_PUBLISH=enabled and RENDER_AUTOPILOT_API_KEY, otherwise PR only."
+            echo "Automatic publication requires verified staging rollback, explicit opt-in, Render secret, and independent PR CI checks; otherwise PR only."
             echo "No performance conclusions are drawn from missing or throttled PageSpeed results."
           } >> "$GITHUB_STEP_SUMMARY"
