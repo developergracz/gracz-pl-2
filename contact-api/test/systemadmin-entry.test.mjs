@@ -391,7 +391,9 @@ test("login redirect is allowlisted to the server-owned hub path, not user input
   assert.match(router,/path===OWNER_HUB\?OWNER_HUB_LOGIN:PREFIX\+'\/login'/);
   assert.match(login,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
   assert.doesNotMatch(login,/location\.replace\('\/owner\/newsletter\/'\)/);
-  assert.match(router,/url\.search\)return denyAdmin\(req,res\)/);
+  assert.match(router,/if\(url\.search&&!speedRefresh\)return denyAdmin\(req,res\)/);
+  assert.match(router,/url\.pathname===PREFIX\+'\/seo\/speed'&&url\.search==='\?refresh=1'/);
+  assert.doesNotMatch(router,/url\.searchParams\.get\(['"]redirect['"]\)/);
   assert.match(router,/X-Robots-Tag|privateHeaders/);
 });
 
