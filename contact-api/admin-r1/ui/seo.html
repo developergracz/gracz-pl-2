@@ -117,7 +117,11 @@
       <p class="muted">Sprawdza zapisany stan indeksu Google, nie testuje aktualnie działającej strony.</p>
       <form id="seo-inspect-form">
         <div><label for="seo-inspect-url">Podstrona z mapy witryny</label>
-          <select id="seo-inspect-url" required><option value="">Wybierz podstronę</option></select></div>
+          <select id="seo-inspect-url" required><option value="">Wybierz podstronę</option></select>
+          <div id="seo-inspect-validation" class="seo-select-validation" role="alert" hidden>
+            <span class="seo-select-validation__icon" aria-hidden="true">!</span>
+            <span id="seo-inspect-validation-message">Wybierz podstronę z listy.</span>
+          </div></div>
         <button type="submit">Sprawdź w Google</button>
       </form>
       <p id="seo-inspect-state" role="status" class="muted">Wybierz stronę, aby rozpocząć sprawdzenie.</p>
