@@ -158,7 +158,7 @@ test("GitHub log timestamp is the report write time, not the workflow start",asy
  assert.equal(data.latest.reports[0].reportLoggedAt,"2026-10-25T20:00:00.000Z");
 });
 test("unparseable log timestamps remain unknown, never substituted with run start",()=>{
- const malformed="this-is-not-a-timestamp "+JSON.stringify(result)+"\\n";
+ const malformed="this-is-not-a-timestamp "+JSON.stringify(result)+"\n";
  const reports=parseGuardianLog(malformed);
  assert.equal(reports.length,2);
  assert.equal(reports[0].reportLoggedAt,null);
