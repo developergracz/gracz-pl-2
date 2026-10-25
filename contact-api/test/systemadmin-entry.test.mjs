@@ -257,6 +257,24 @@ test("all OWNER login entries lead to the same protected two-tile selection page
   }
 });
 
+test("OWNER premium login matches the approved wide reference without changing auth or mobile flow",async()=>{
+  const css=await read("../admin-r1/ui/admin.css");
+  const router=await read("../admin-r1/owner-router.mjs");
+  const script=await read("../admin-r1/ui/login.js");
+  assert.match(css,/width:min\(100%,900px\)/);
+  assert.match(css,/max-width:815px/);
+  assert.match(css,/max-width:836px/);
+  assert.match(css,/@media \(min-width:651px\) and \(max-height:900px\)/);
+  assert.match(css,/@media\(max-width:520px\)/);
+  assert.doesNotMatch(css.slice(css.indexOf("OWNER login: preserve the approved reference")),
+    /overflow:hidden|height:100dvh/);
+  assert.match(router,/id="login-button" type="submit">Zaloguj się/);
+  assert.match(router,/id="forgot-open" type="button">Zapomniałem hasła\?/);
+  assert.match(router,/id="username" type="text"/);
+  assert.match(router,/id="password" type="password"/);
+  assert.match(script,/fetch\('\/owner\/newsletter\/login'/);
+});
+
 test("Full Max Premium complete login fits laptop view without clipping smaller screens",async()=>{
   const css=await read("../../maintenance-site/systemadmin/systemadmin.css");
   assert.match(css,/\.public-admin-shell\{min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto minmax\(0,1fr\) auto\}/);
