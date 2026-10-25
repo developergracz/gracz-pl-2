@@ -93,7 +93,14 @@ export function buildPerformanceIssues(reports){
     const name=page==="home"?"Strona główna":"Poker";
     const base={page,pageName:name,pageUrl:r.url};
     const add=(category,id,title,priority,metric,resourceUrl=null,selector=null)=>{
-      issues.push({...base,category,id:page+"-"+id,title,priority,metric,resourceUrl,selector});
+      const codePath=resourceUrl?.startsWith("https://gracz.pl/assets/")?
+        "/maintenance-site"+new URL(resourceUrl).pathname:
+        category==="lcp"?(page==="home"?"/maintenance-site/index.html":
+          "/maintenance-site/gry/poker-treningowy/index.html"):null;
+      const codeUrl=codePath?
+        "https://github.com/developergracz/gracz-pl-2/blob/main"+codePath:null;
+      issues.push({...base,category,id:page+"-"+id,title,priority,metric,
+        resourceUrl,codeUrl,selector});
     };
     if(boundedInteger(r.lcpMs)!==null){
       add("lcp","lcp",name+" — największy element (LCP)",
