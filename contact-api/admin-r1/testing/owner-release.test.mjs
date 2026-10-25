@@ -1033,7 +1033,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.match(dashboardJs,/\$\("recent-check"\)\.addEventListener\("click",openRecentSubscribers\)/);
 
   // The existing secured topbar is present on every OWNER system page.
-  for(const page of ['/owner/newsletter/systemadmin','/owner/newsletter/seo','/owner/newsletter/']){
+  for(const page of ['/owner/newsletter/systemadmin','/owner/newsletter/seo',
+    '/owner/newsletter/performance','/owner/newsletter/']){
     const response=await call(page,{cookie});
     assert.equal(response.status,200);
     const markup=await response.text();
@@ -1045,19 +1046,21 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
       'Each OWNER page has exactly one common footer');
     if(page==='/owner/newsletter/systemadmin'){
       assert.match(markup,/<body class="owner-admin-layout owner-admin-hub-layout">/);
-      assert.equal((markup.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+      assert.equal((markup.match(/class="systemadmin-tile" href=/g)||[]).length,3);
       assert.match(markup,/Przejdź do panelu SEO/);
+       assert.match(markup,/Przejdź do Performance/);
       assert.match(markup,/Przejdź do Newslettera/);
       assert.match(markup,/class="systemadmin-secure-note"/);
     }else{
       assert.match(markup,/<body class="owner-admin-layout">/);
       assert.doesNotMatch(markup,/owner-admin-hub-layout/,
-        'Compact hub rules must not affect SEO and Newsletter interfaces');
+        'Compact hub rules must not affect other OWNER modules');
     }
     assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
     assert.match(markup,/href="\/owner\/newsletter\/seo"/);
+    assert.match(markup,/href="\/owner\/newsletter\/performance"/);
     assert.match(markup,/href="\/owner\/newsletter\/"/);
   }
   result=await call('/owner/newsletter/systemadmin-logout.js',{cookie});
