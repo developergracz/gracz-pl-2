@@ -167,10 +167,10 @@ test("Performance UI labels source, Warsaw clock and separate run start date",as
  const {readFile}=await import("node:fs/promises");
  const js=await readFile(new URL("../admin-r1/ui/performance.js",import.meta.url),"utf8");
  const html=await readFile(new URL("../admin-r1/ui/performance.html",import.meta.url),"utf8");
- assert.match(js,/Europe\\/Warsaw/);
+ assert.ok(js.includes('timeZone:"Europe/Warsaw"'));
  assert.match(js,/reportLoggedAt/);
  assert.match(js,/Raport pomiarów zapisano:/);
  assert.match(js,/Uruchomienie zadania:/);
- assert.match(html,/Start zadania \\(Warszawa\\)/);
+ assert.ok(html.includes('Start zadania (Warszawa)'));
  assert.match(html,/Źródło: GitHub Actions/);
 });
