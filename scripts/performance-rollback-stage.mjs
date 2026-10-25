@@ -16,9 +16,17 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const api="https://api.render.com/v1/services/"+STAGE.id;
 
 export function trustedStage(service) {
+  // Render staging may run with autodeploy disabled. Keep it off when present;
+  // never change deployment settings or permit a different service.
+  const autoDeployOff = service?.autoDeploy==="no" &&
+    (service?.autoDeployTrigger===undefined || service.autoDeployTrigger==="off");
+  const autoDeployOn = service?.autoDeploy==="yes" &&
+    (service?.autoDeployTrigger===undefined || service.autoDeployTrigger==="commit");
   return Boolean(service?.id===STAGE.id&&service?.name===STAGE.name&&
     service?.repo===STAGE.repo&&service?.branch===STAGE.branch&&
-    service?.type==="static_site"&&service?.autoDeploy==="yes"&&
+    service?.type==="static_site"&&(autoDeployOff||autoDeployOn)&&
+    service?.rootDir===""&&
+    service?.serviceDetails?.publishPath==="performance/staging"&&
     service?.serviceDetails?.url===STAGE.origin);
 }
 export async function rehearse({key,fetcher=fetch,sleeper=sleep,polls=40}={}) {
