@@ -166,21 +166,36 @@ async function loadHistory(){
     })),["time","status","issues"]);
   }catch{$("seo-history-rows").replaceChildren();}
 }
+const speedReasons={
+  rate_limited:"Google ograniczył liczbę zapytań. Sprawdź limit PageSpeed API i klucz SEO_PAGESPEED_API_KEY.",
+  access_denied:"Google odmówił dostępu. Sprawdź włączenie PageSpeed Insights API i ograniczenia klucza.",
+  invalid_request:"Google odrzucił zapytanie PageSpeed dla strony głównej.",
+  provider_unavailable:"Usługa PageSpeed Google jest chwilowo niedostępna.",
+  response_too_large:"Raport Lighthouse przekroczył bezpieczny limit rozmiaru.",
+  invalid_response:"Google zwrócił niekompletny raport Lighthouse.",
+  timeout:"Pomiar Google przekroczył 80 sekund.",
+  network_error:"Nie udało się nawiązać połączenia z PageSpeed Google.",
+  provider_failed:"Nie udało się pobrać raportu PageSpeed."
+};
 async function loadSpeed(){
   $("seo-speed-refresh").disabled=true;
   text("seo-speed-state","Pobieranie danych PageSpeed (mobile)…");
   try{
     const data=await readPrivate("speed");
-    if(data.state!=="available")throw Error("not_available");
+    if(data.state!=="available"){
+      for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
+      text("seo-speed-state","PageSpeed: "+(speedReasons[data.reason]||speedReasons.provider_failed));
+      return;
+    }
     text("speed-score",data.score??"—");
     text("speed-lcp",data.lcpMs??"—");
     text("speed-cls",data.cls??"—");
     text("speed-inp",data.inpMs??"—");
     text("seo-speed-state","PageSpeed / Lighthouse · "+asDate(data.checkedAt)+
-      ". Raport laboratoryjny, przechowywany w pamięci do 24 godzin.");
+      ". Pomyślny pomiar w pamięci do 24 godzin. INP tylko przy dostępnych danych terenowych.");
   }catch{
     for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
-    text("seo-speed-state","PageSpeed: pomiar niedostępny. Nie pokazujemy fikcyjnych wyników.");
+    text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
   }finally{$("seo-speed-refresh").disabled=false;}
 }
 async function inspectGoogle(event){
