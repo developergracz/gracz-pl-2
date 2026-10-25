@@ -1,4 +1,4 @@
-name: GRACZ Performance Autopilot R1
+name: GRACZ Performance Autopilot R2
 
 on:
   pull_request:
@@ -6,6 +6,18 @@ on:
       - "scripts/performance-autopilot.mjs"
       - "scripts/performance-observer.mjs"
       - "scripts/performance-autopilot.test.mjs"
+      - "scripts/performance-autopilot-r2.test.mjs"
+      - "scripts/performance-ai-advisor.mjs"
+      - "scripts/performance-render-deploy.mjs"
+      - ".github/workflows/performance-autopilot.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/performance-autopilot*.mjs"
+      - "scripts/performance-observer.mjs"
+      - "scripts/performance-ai-advisor.mjs"
+      - "scripts/performance-render-deploy.mjs"
       - ".github/workflows/performance-autopilot.yml"
   workflow_dispatch:
   schedule:
@@ -32,7 +44,9 @@ jobs:
         run: |
           node --check scripts/performance-autopilot.mjs
           node --check scripts/performance-observer.mjs
-          node --test scripts/performance-autopilot.test.mjs
+          node --check scripts/performance-ai-advisor.mjs
+          node --check scripts/performance-render-deploy.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
@@ -45,7 +59,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 9
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,12 +72,20 @@ jobs:
           SEO_PAGESPEED_API_KEY: ${{ secrets.SEO_PAGESPEED_API_KEY }}
           PERF_REPORT_PATH: performance-report.json
         run: node scripts/performance-observer.mjs
+      - name: AI analysis of measured regressions (read-only; optional)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PERF_REPORT_PATH: performance-report.json
+          PERF_AI_REPORT_PATH: performance-ai-report.json
+        run: node scripts/performance-ai-advisor.mjs
       - name: Preserve diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gracz-performance-sample-${{ github.run_id }}
-          path: performance-report.json
+          path: |
+            performance-report.json
+            performance-ai-report.json
           retention-days: 14
           if-no-files-found: ignore
       - name: Repair only known, safe source regressions
@@ -73,7 +95,7 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
-          node --test scripts/performance-autopilot.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs
       - name: Keep repairs restricted to approved public HTML files
         id: changes
         run: |
@@ -87,6 +109,7 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
       - name: Propose safe repair through GitHub pull request
+        id: proposed
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -99,15 +122,42 @@ jobs:
           git add maintenance-site
           git commit -m "fix(perf): restore approved LCP resource hints and deferred modal CSS"
           git push origin "HEAD:refs/heads/$branch"
-          gh pr create --repo "${{ github.repository }}" --head "$branch" --base main \
+          pr=$(gh pr create --repo "${{ github.repository }}" --head "$branch" --base main \
             --title "fix(perf): automatic safe LCP regression repair" \
-            --body "Automated bounded repair only. The workflow has run idempotency, SEO/indexability and security-header tests. Production deploy is deliberately held until PR checks and deployment authorization. No account, newsletter, game or API code was modified."
+            --body "Bounded repair only: in-job unit tests, SEO/indexability, security headers and allowlisted HTML changes. Automatic merge/deploy requires explicit opt-in and Render API credentials; otherwise review before publish.")
+          echo "pr_url=$pr" >> "$GITHUB_OUTPUT"
+      - name: Autopublish allowlisted repair with verified Render rollback
+        if: steps.proposed.outputs.pr_url != '' && vars.GRACZ_PERF_AUTO_PUBLISH == 'enabled'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RENDER_AUTOPILOT_API_KEY: ${{ secrets.RENDER_AUTOPILOT_API_KEY }}
+          PERF_AUTOPILOT_AUTO_PUBLISH: enabled
+        run: |
+          set -euo pipefail
+          if [ -z "$RENDER_AUTOPILOT_API_KEY" ]; then
+            echo "::error::Missing Render API credential; PR remains pending."
+            exit 1
+          fi
+          current="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$current" != "${{ github.sha }}" ]; then
+            echo "::error::Main changed during the check; refusing to merge or deploy."
+            exit 1
+          fi
+          pr="${{ steps.proposed.outputs.pr_url }}"
+          gh pr merge "$pr" --repo "${{ github.repository }}" --squash
+          sha="$(gh pr view "$pr" --repo "${{ github.repository }}" --json mergeCommit --jq '.mergeCommit.oid')"
+          if ! [[ "$sha" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Cannot verify merged commit."
+            exit 1
+          fi
+          export PERF_AUTOPILOT_COMMIT_SHA="$sha"
+          node scripts/performance-render-deploy.mjs
       - name: Summarize outcome
         if: always()
         run: |
           {
             echo ""
             echo "R1 modifies only allowlisted static resource hints, never arbitrary code."
-            echo "Generated PRs are not merged or deployed automatically."
+            echo "Automatic merge/deploy requires GRACZ_PERF_AUTO_PUBLISH=enabled and RENDER_AUTOPILOT_API_KEY, otherwise PR only."
             echo "No performance conclusions are drawn from missing or throttled PageSpeed results."
           } >> "$GITHUB_STEP_SUMMARY"
