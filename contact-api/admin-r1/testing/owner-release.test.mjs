@@ -1043,6 +1043,17 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
       'Each OWNER page has exactly one shared Premium heading');
     assert.equal((markup.match(/class="owner-premium-footer"/g)||[]).length,1,
       'Each OWNER page has exactly one common footer');
+    if(page==='/owner/newsletter/systemadmin'){
+      assert.match(markup,/<body class="owner-admin-layout owner-admin-hub-layout">/);
+      assert.equal((markup.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+      assert.match(markup,/Przejdź do panelu SEO/);
+      assert.match(markup,/Przejdź do Newslettera/);
+      assert.match(markup,/class="systemadmin-secure-note"/);
+    }else{
+      assert.match(markup,/<body class="owner-admin-layout">/);
+      assert.doesNotMatch(markup,/owner-admin-hub-layout/,
+        'Compact hub rules must not affect SEO and Newsletter interfaces');
+    }
     assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
