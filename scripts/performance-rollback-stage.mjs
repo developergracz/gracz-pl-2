@@ -32,14 +32,21 @@ export async function rehearse({key,fetcher=fetch,sleeper=sleep,polls=40}={}) {
     if(!response.ok)throw Error("render_http_"+response.status);
     return response.json();
   };
+  // Render may report LIVE before its static CDN has propagated the release.
+  // Each bounded probe uses a unique query string to avoid stale edge-cache hits.
+  let probePhase=0;
   const marker=async(release)=>{
-    for(let i=0;i<8;i++) {
+    const phase=probePhase++;
+    for(let i=0;i<30;i++) {
+      const url=STAGE.origin+"/?perf_rollback_probe="+
+        encodeURIComponent(release.marker)+
+        "&phase="+phase+"&attempt="+i;
       try {
-        const r=await fetcher(STAGE.origin+"/",{signal:AbortSignal.timeout(15000),
-          headers:{"cache-control":"no-cache"}});
-        if(r.ok&&r.url===STAGE.origin+"/"&&(await r.text()).includes(release.marker))return true;
-      }catch{ /* temporary propagation failure */ }
-      await sleeper(2000);
+        const r=await fetcher(url,{redirect:"error",signal:AbortSignal.timeout(15000),
+          headers:{"cache-control":"no-store, no-cache","pragma":"no-cache"}});
+        if(r.ok&&r.url===url&&(await r.text()).includes(release.marker))return true;
+      }catch{ /* transient propagation failure: retry only the fixed staging origin */ }
+      if(i<29)await sleeper(3000);
     }
     return false;
   };

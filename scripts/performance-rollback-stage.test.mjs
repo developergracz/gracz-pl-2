@@ -5,13 +5,18 @@ import {STAGE,trustedStage,rehearse} from "./performance-rollback-stage.mjs";
 const SERVICE={id:STAGE.id,name:STAGE.name,repo:STAGE.repo,branch:STAGE.branch,
  type:"static_site",autoDeploy:"yes",serviceDetails:{url:STAGE.origin}};
 const response=(status,payload)=>({ok:status<400,status,json:async()=>payload});
-function fake({wrongService=false,badStageMarker=false,lostReply=false}={}) {
-  let version="A",posts=0;
+function fake({wrongService=false,badStageMarker=false,lostReply=false,staleStageReads=0}={}) {
+  let version="A",posts=0,remainingStale=staleStageReads;
   const calls=[];
   async function fetcher(url,opts={}) {
     const method=opts.method||"GET";calls.push({url,method});
-    if(url===STAGE.origin+"/") {
-      const marker=version==="B"&&badStageMarker?'data-release="C"':`data-release="${version}"`;
+    if(url.startsWith(STAGE.origin+"/?perf_rollback_probe=")) {
+      assert.equal(new URL(url).origin,STAGE.origin);
+      assert.equal(new URL(url).pathname,"/");
+      assert.equal(opts.headers["cache-control"],"no-store, no-cache");
+      const stale=version==="B"&&remainingStale-->0;
+      const marker=version==="B"&&badStageMarker?'data-release="C"':
+        stale?'data-release="A"':`data-release="${version}"`;
       return {...response(200,{}),url,text:async()=>"<h1>Staging</h1><p "+marker+">ok</p>"};
     }
     const root="https://api.render.com/v1/services/"+STAGE.id;
@@ -70,4 +75,16 @@ test("lost response after B activation also triggers safe recovery",async()=>{
   assert.equal(result.state,"recovered_after_test_failure");
   assert.equal(m.posts,2);
   assert.equal(m.version,"A");
+});
+
+test("rollback marker retries stale CDN pages using unique cache-busting probes",async()=>{
+  const m=fake({staleStageReads:6});
+  const result=await rehearse({key:"dummy",fetcher:m.fetcher,sleeper:async()=>{}});
+  assert.equal(result.state,"rollback_verified");
+  assert.equal(result.site,STAGE.name);
+  assert.equal(m.posts,2);
+  assert.equal(m.version,"A");
+  const probes=m.calls.filter(x=>x.url.startsWith(STAGE.origin+"/?perf_rollback_probe="));
+  assert.ok(probes.length>=9);
+  assert.equal(new Set(probes.map(x=>x.url)).size,probes.length);
 });
