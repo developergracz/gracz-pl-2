@@ -4,7 +4,11 @@
 const REPO="developergracz/gracz-pl-2";
 const API="https://api.github.com/repos/"+REPO;
 const RUN_URL="https://github.com/"+REPO+"/actions/runs/";
-const TRUSTED_REDIRECTS=["pipelines.actions.githubusercontent.com","productionresultssa0.blob.core.windows.net"];
+// GitHub Actions job log URLs are short-lived signed downloads.
+// Since 2026-10-22 GitHub uses additional productionresultssaNNN blob hosts.
+// Allow only GitHub's own log-storage host naming pattern, not arbitrary Azure hosts.
+const TRUSTED_REDIRECTS=["pipelines.actions.githubusercontent.com"];
+const GITHUB_LOG_BLOB_HOST=/^productionresultssa[0-9]{1,3}[.]blob[.]core[.]windows[.]net$/;
 const TARGETS=new Set(["https://gracz.pl/","https://gracz.pl/gry/poker-treningowy/"]);
 const MAX_BYTES=1500000;
 const TTL_MS=300000;
@@ -14,8 +18,9 @@ function boundedInteger(n){return Number.isSafeInteger(n)&&n>=0?n:null;}
 function allowedRedirect(value){
   try{
     const u=new URL(value);
-    return u.protocol==="https:" && !u.username && !u.password &&
-      (TRUSTED_REDIRECTS.includes(u.hostname)||u.hostname.endsWith(".actions.githubusercontent.com"));
+    return u.protocol==="https:" && !u.username && !u.password && !u.port &&
+      (TRUSTED_REDIRECTS.includes(u.hostname)||u.hostname.endsWith(".actions.githubusercontent.com")||
+       GITHUB_LOG_BLOB_HOST.test(u.hostname));
   }catch{return false;}
 }
 async function boundedText(response,limit=MAX_BYTES){

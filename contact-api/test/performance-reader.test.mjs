@@ -87,3 +87,61 @@ test("untrusted logs redirect is not followed with an auth token",async()=>{
   assert.equal(r.state,"incomplete");
   assert.ok(urls.every(url=>url.startsWith(repo)));
 });
+
+
+test("new GitHub Actions blob storage redirects yield real LCP without forwarding the token",async()=>{
+  for(const host of ["productionresultssa30.blob.core.windows.net",
+                     "productionresultssa149.blob.core.windows.net"]){
+    const calls=[];
+    const signed="https://"+host+"/some-container/job-logs.txt?sig=fake";
+    const fetcher=async(url,options)=>{
+      calls.push({url,options});
+      if(url===repo+"/actions/workflows/performance-autopilot.yml/runs?branch=main&per_page=6")
+        return json({workflow_runs:[{id:456,head_branch:"main",status:"completed",
+          conclusion:"success",created_at:"2026-10-25T21:15:00Z",head_sha:"a".repeat(40)}]});
+      if(url===repo+"/actions/runs/456/jobs?per_page=40")
+        return json({jobs:[{id:987,name:"Observe LCP and self-repair only approved regressions",
+          status:"completed",conclusion:"success"}]});
+      if(url===repo+"/actions/jobs/987/logs")
+        return new Response(null,{status:302,headers:{location:signed}});
+      if(url===signed)
+        return new Response(log,{status:200,headers:{"content-type":"text/plain"}});
+      if(url===repo+"/actions/workflows/performance-rollback-stage.yml/runs?per_page=1")
+        return json({workflow_runs:[]});
+      throw Error("unexpected URL");
+    };
+    const read=createPerformanceReader({token:"private-token",fetcher});
+    const result=await read();
+    assert.equal(result.state,"available");
+    assert.equal(result.latest.reports[0].lcpMs,3100);
+    assert.equal(result.latest.reports[0].element,".home-hero-premium__lead");
+    assert.equal(calls.filter(x=>x.url===signed).length,1);
+    assert.ok(!("Authorization" in calls.find(x=>x.url===signed).options.headers));
+    assert.equal(calls.find(x=>x.url===signed).options.redirect,"error");
+  }
+});
+test("arbitrary blob hosts and HTTP cannot receive any GitHub log download request",async()=>{
+  for(const signed of ["https://attacker.blob.core.windows.net/logs",
+                       "https://productionresultssa30.blob.core.windows.net.evil.example/logs",
+                       "http://productionresultssa30.blob.core.windows.net/logs",
+                       "https://productionresultssa30.blob.core.windows.net:8443/logs"]){
+    const received=[];
+    const fetcher=async url=>{
+      received.push(url);
+      if(url===repo+"/actions/workflows/performance-autopilot.yml/runs?branch=main&per_page=6")
+        return json({workflow_runs:[{id:456,head_branch:"main",status:"completed",
+          conclusion:"success",created_at:"2026-10-25T21:15:00Z",head_sha:"a".repeat(40)}]});
+      if(url===repo+"/actions/runs/456/jobs?per_page=40")
+        return json({jobs:[{id:987,name:"Observe LCP and self-repair only approved regressions",
+          status:"completed",conclusion:"success"}]});
+      if(url===repo+"/actions/jobs/987/logs")
+        return new Response(null,{status:302,headers:{location:signed}});
+      if(url===repo+"/actions/workflows/performance-rollback-stage.yml/runs?per_page=1")
+        return json({workflow_runs:[]});
+      throw Error("redirect followed outside allowlist");
+    };
+    const result=await createPerformanceReader({token:"private-token",fetcher})();
+    assert.equal(result.state,"incomplete");
+    assert.ok(received.every(url=>url.startsWith(repo)));
+  }
+});
