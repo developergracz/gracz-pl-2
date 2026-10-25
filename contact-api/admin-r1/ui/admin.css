@@ -1523,10 +1523,10 @@ body.owner-login-page{
   color:#f3f6ff;
 }
 .owner-login-page .owner-login{
-  width:min(100%,780px);
-  max-width:780px;
+  width:min(100%,900px);
+  max-width:900px;
   margin:0 auto;
-  padding:clamp(28px,6vh,66px) clamp(16px,3vw,40px) 45px;
+  padding:clamp(28px,6vh,66px) clamp(16px,2vw,25px) 45px;
   text-align:center;
 }
 .owner-login-page .owner-login-brand{margin:0 0 23px;}
@@ -1563,9 +1563,9 @@ body.owner-login-page{
 }
 .owner-login-page .owner-login-card{
   position:relative;
-  max-width:680px;
+  max-width:815px;
   margin:0 auto;
-  padding:25px clamp(21px,4vw,54px) 30px;
+  padding:25px clamp(21px,3.8vw,65px) 30px;
   border:1px solid #e3bd6e;
   border-radius:25px;
   background:linear-gradient(150deg,rgba(28,49,74,.83),rgba(8,22,38,.94) 78%);
@@ -1707,7 +1707,7 @@ body.owner-login-page{display:flex;flex-direction:column}
 .owner-login-page .owner-login-center-intro{
   margin:0 auto 16px;
   padding:15px 12px 18px;
-  max-width:780px;
+  max-width:836px;
   background:linear-gradient(180deg,rgba(4,12,22,.28),rgba(3,10,19,.64));
   border-radius:16px;
   text-align:center;
@@ -1744,4 +1744,57 @@ body.owner-login-page{display:flex;flex-direction:column}
   .owner-login-page .owner-login-center-intro{padding:10px 8px;margin-bottom:10px}
   .owner-login-page .owner-login-center-intro h2{font-size:clamp(27px,3vw,36px)}
   .owner-login-page .owner-login-card{padding-top:17px;padding-bottom:17px}
+}
+
+/* OWNER login: preserve the approved reference proportions while keeping the
+   brand, both action buttons and the footer visible on laptop-height screens.
+   Mobile and the recovery dialog retain their current scrolling behavior. */
+@media (min-width:651px) and (max-height:900px){
+  .owner-login-page .owner-login{
+    padding-top:clamp(9px,1.6vh,15px);
+    padding-bottom:clamp(8px,1.5vh,13px);
+  }
+  .owner-login-page .owner-login-brand{margin-bottom:5px;}
+  .owner-login-page .owner-login-brand .logo{font-size:clamp(36px,5.4vh,47px);}
+  .owner-login-page .owner-login-eyebrow{margin-bottom:4px;font-size:11px;}
+  .owner-login-page .owner-login h1{
+    font-size:clamp(29px,4.5vh,39px);
+    margin-bottom:4px;
+  }
+  .owner-login-page .owner-login-subtitle{
+    font-size:clamp(13px,2vh,16px);
+    line-height:1.35;
+    margin-bottom:8px;
+  }
+  .owner-login-page .owner-login-center-intro{
+    padding:10px 12px 12px;
+    margin-bottom:10px;
+  }
+  .owner-login-page .owner-login-center-overline{margin-bottom:4px;}
+  .owner-login-page .owner-login-center-intro h2{
+    font-size:clamp(27px,4.1vh,36px);
+    margin-bottom:4px;
+  }
+  .owner-login-page .owner-login-center-copy{
+    font-size:clamp(13px,1.8vh,15px);
+    line-height:1.35;
+  }
+  .owner-login-page .owner-login-card{
+    padding-top:clamp(13px,2vh,17px);
+    padding-bottom:clamp(14px,2.1vh,19px);
+  }
+  .owner-login-page .owner-login-diamond{margin-bottom:12px;}
+  .owner-login-page .owner-login #login-form{gap:7px;}
+  .owner-login-page .owner-login #login-form label{margin-top:3px;}
+  .owner-login-page .owner-login #login-form input{min-height:clamp(44px,6.4vh,52px);}
+  .owner-login-page .owner-login #login-form .owner-login-actions{
+    margin-top:9px;
+    gap:16px;
+  }
+  .owner-login-page .owner-login #login-form .owner-login-actions button{
+    min-height:clamp(46px,6.8vh,55px);
+  }
+  .owner-login-page .owner-login #login-status{min-height:1em;margin-top:6px;}
+  .owner-login-page .owner-login-security-note{margin-top:8px;font-size:11px;}
+  .owner-login-page .owner-premium-login-footer{padding:9px 16px;}
 }
