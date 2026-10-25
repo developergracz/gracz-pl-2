@@ -53,3 +53,78 @@ body{margin:0;min-height:100vh;min-height:100dvh;background:radial-gradient(elli
  .logout-card{padding-top:10px;padding-bottom:10px}
 }
 @media(prefers-reduced-motion:reduce){.logout-action{transition:none}}
+
+
+/* Full Max Premium R2: one lightweight, unmistakable visual upgrade.
+   The existing links, session handling and responsive grid remain unchanged. */
+body.owner-logout-page{
+  background:radial-gradient(ellipse 80% 55% at 50% 8%,#213e5a 0%,#0f2741 47%,transparent 100%),linear-gradient(180deg,#081a2e,#050e1b);
+}
+.logout-layout{width:min(100%,1168px);gap:clamp(11px,1.6vh,18px);padding-inline:clamp(16px,2.5vw,32px)}
+.logout-hero{padding:clamp(5px,1vh,12px) 10px 0}
+.logout-brand{font-size:clamp(40px,5.8vh,58px);text-shadow:0 5px 25px #0005}
+.logout-eyebrow{margin:8px 0 8px}
+.logout-hero h1{font-size:clamp(30px,4.6vh,46px)}
+.logout-card{
+  position:relative;max-width:1100px;border-color:#d8b366;border-radius:26px;
+  background:radial-gradient(ellipse 75% 85% at 5% 0%,#244159a8,transparent 85%),linear-gradient(155deg,#132a41,#091a2e 75%);
+  padding:clamp(16px,2.5vh,26px) clamp(18px,2.6vw,32px);
+  box-shadow:0 28px 75px #0007,inset 0 0 0 1px #f4d79b18;
+}
+.logout-card::before{
+  content:"";position:absolute;left:12%;right:12%;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,#ffe49f 45%,#dba64c 65%,transparent);
+}
+.logout-status-panel{
+  display:flex;align-items:center;gap:19px;text-align:left;
+  padding:5px 5px clamp(16px,2.2vh,23px);margin-bottom:clamp(12px,1.8vh,19px);
+  border-bottom:1px solid #60718580;
+}
+.logout-status-copy{flex:1;min-width:0}
+.logout-status-label{margin:0 0 6px;color:#f6c96f;font-size:11px;font-weight:850;letter-spacing:.13em}
+.logout-success-icon{
+  flex:0 0 59px;width:59px;height:59px;margin:0;background:#f4bc4c17;
+  border-color:#ffcf72;box-shadow:0 0 0 6px #f4bc4c12,0 0 25px #f4bc4c25;
+}
+.logout-card h2{margin:0 0 5px;font-size:clamp(27px,3.6vh,40px)}
+.logout-status-chip{
+  flex:0 0 auto;padding:9px 12px;border:1px solid #caac65;border-radius:999px;
+  background:#b38d3c22;color:#ffdb8f;font-size:10px;font-weight:850;letter-spacing:.09em;
+}
+.logout-next-label{text-align:left;margin:0 3px 11px;color:#e9d5a8;font-size:11px;font-weight:850;letter-spacing:.15em}
+.logout-actions{gap:clamp(10px,1.35vh,14px)}
+.logout-action{
+  min-height:clamp(65px,8vh,82px);border-color:#486078;border-radius:14px;
+  background:linear-gradient(125deg,#152e45,#0a1d31 85%);
+  box-shadow:inset 0 1px #ffffff0c,0 8px 18px #0002;
+}
+.logout-action:hover{background:linear-gradient(125deg,#213e56,#10253b);border-color:#ebc67e}
+.logout-action-icon{
+  flex:0 0 44px;width:44px;height:44px;border:1px solid #aa884c;
+  border-radius:12px;background:#dfac5020;color:#ffcd71;
+}
+.logout-action-copy strong{font-size:clamp(14px,1.8vh,17px)}
+.logout-action-primary{
+  background:linear-gradient(115deg,#ffe4a2,#efbe60 88%);border-color:#ffe5a4;
+  box-shadow:0 8px 22px #c58b342c;
+}
+.logout-action-primary:hover{background:linear-gradient(115deg,#fff0c3,#f5c969)}
+.logout-action-primary .logout-action-icon{background:#142d4019;border-color:#142d4040;color:#142b3d}
+.logout-action-help{min-height:clamp(58px,7vh,72px)}
+.logout-security{margin-top:clamp(12px,1.8vh,18px);border-color:#385675;background:#0b263ca3}
+.logout-footer{padding:3px 0}
+@media(max-width:650px){
+  .logout-layout{padding:22px 14px;gap:15px}
+  .logout-status-panel{flex-direction:column;text-align:center;gap:12px}
+  .logout-status-chip{order:-1}
+  .logout-success-icon{flex-basis:auto}
+  .logout-next-label{text-align:center}
+  .logout-card{padding:20px 15px}
+  .logout-action{min-height:73px}
+}
+@media(max-height:650px) and (min-width:651px){
+  .logout-status-panel{padding-bottom:12px;margin-bottom:10px}
+  .logout-card{padding-block:12px}
+  .logout-action{min-height:55px}
+  .logout-action-help{min-height:50px}
+}
