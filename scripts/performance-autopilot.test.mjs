@@ -72,3 +72,25 @@ test("provider failures, missing LCP and nonallowlisted URLs fail closed",async(
  assert.equal(classify(missing).state,"unknown");
  assert.equal(classify({state:"available",lcpMs:2900,score:90}).state,"attention");
 });
+
+
+test("offscreen mobile LCP paint optimization leaves both critical hero regions eager",()=>{
+  const root=path.resolve("maintenance-site");
+  const home=fs.readFileSync(path.join(root,"assets/home-premium-max.css"),"utf8");
+  const poker=fs.readFileSync(path.join(root,"assets/poker-treningowy.css"),"utf8");
+  const homeMarkup=fs.readFileSync(path.join(root,"index.html"),"utf8");
+  const pokerMarkup=fs.readFileSync(path.join(root,"gry/poker-treningowy/index.html"),"utf8");
+  const homeRule=home.split("/* MOBILE LCP R1:").at(-1);
+  const pokerRule=poker.split("/* MOBILE LCP R1:").at(-1);
+  assert.match(homeRule,/main > :is\(/);
+  assert.match(homeRule,/\.academy-showcase/);
+  assert.match(homeRule,/\.updates-premium/);
+  assert.doesNotMatch(homeRule,/\.home-hero-premium/);
+  assert.match(pokerRule,/\.main-column > :is\(/);
+  assert.match(pokerRule,/\.poker-scene-section/);
+  assert.doesNotMatch(pokerRule,/\.hero-card|\.academy-cockpit|\.site-header/);
+  assert.match(homeMarkup,/class="hero home-hero-premium/);
+  assert.match(pokerMarkup,/class="hero-card"/);
+  assert.match(homeRule,/content-visibility:auto/);
+  assert.match(pokerRule,/content-visibility:auto/);
+});
