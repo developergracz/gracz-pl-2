@@ -153,3 +153,28 @@
    flex-direction:column;align-items:flex-start;width:100%;
  }
 }
+
+/* R5 · Google SEO Opportunities, segmentation and safe in-panel charts. */
+.seo-shell .seo-google-monitor-r4 .seo-google-opportunities,
+.seo-shell .seo-google-monitor-r4 .seo-google-segments,
+.seo-shell .seo-google-monitor-r4 .seo-google-charts{min-width:0}
+.seo-shell .seo-google-options{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
+.seo-shell .seo-google-options label{display:grid;gap:6px;color:#c9d9e7;font-size:12px;font-weight:700}
+.seo-shell .seo-google-options select{min-width:165px;max-width:100%;min-height:43px;padding:6px 9px}
+.seo-shell #google-copy-opportunities{min-height:42px;background:linear-gradient(110deg,#eed292,#cca155);color:#1b2635;border:1px solid #d9af60;border-radius:9px;padding:9px 15px;font-weight:850;cursor:pointer}
+.seo-shell #google-copy-opportunities:disabled{opacity:.5;cursor:default}
+.seo-shell #google-opportunities-rows button{padding:8px 12px;min-height:36px;border:1px solid #9fcce1;border-radius:8px;color:#d8f4fc;background:#18364a;cursor:pointer;font-weight:700}
+.seo-shell #google-opportunities-rows button:focus-visible,
+.seo-shell #google-copy-opportunities:focus-visible{outline:3px solid #ebc878;outline-offset:3px}
+.seo-shell #google-opportunities-rows tr td{vertical-align:middle;overflow-wrap:anywhere}
+.seo-shell #google-opportunities-rows td:nth-child(2){min-width:180px;max-width:320px}
+.seo-shell .seo-google-chart-scroller{width:100%;max-width:100%;overflow-x:auto;padding:12px 0}
+.seo-shell #google-chart{display:block;min-width:550px;width:100%;height:auto;min-height:175px;background:#101f32;border:1px solid #334e65;border-radius:13px}
+.seo-shell .seo-google-segments .seo-tables{margin:0;gap:18px}
+.seo-shell .seo-google-segments .seo-tables h4{margin:8px 0;font-size:15px}
+.seo-shell #google-copy-status{min-height:23px;overflow-wrap:anywhere}
+@media(max-width:650px){
+ .seo-shell .seo-google-options{flex-direction:column}
+ .seo-shell .seo-google-options label,.seo-shell .seo-google-options select{width:100%}
+ .seo-shell #google-copy-opportunities{width:100%}
+}

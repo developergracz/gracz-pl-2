@@ -50,7 +50,7 @@ test("GSC uses signed OAuth service account, read-only scope, and caches search 
   assert.equal(r.totals.ctr,8);
   await google.read();
   assert.equal(authCount,1);
-  assert.equal(queries,9);
+  assert.equal(queries,13);
 });
 
 test("GSC URL Inspection returns only real Google verdicts and caches results",async()=>{
@@ -183,10 +183,10 @@ test("GSC compares separate FINAL periods, exact gracz query and only overlappin
   assert.equal(result.freshness.timezone,"America/Los_Angeles");
   assert.equal(result.freshness.firstIncompleteDate,"2026-10-24");
   assert.deepEqual(result.freshness.days.map(x=>x.provisional),[false,true]);
-  assert.equal(seen.length,9);
+  assert.equal(seen.length,13);
   assert.ok(seen.every(x=>x.startDate && x.endDate && x.rowLimit<=250));
   assert.ok(seen.filter(x=>x.dataState==="all").length===1);
-  assert.ok(seen.filter(x=>x.dataState===undefined).length===8);
+  assert.ok(seen.filter(x=>x.dataState===undefined).length===12);
 });
 test("GSC does not invent Google ranking for missing exact query or single-period pages",async()=>{
   const fixed=()=>Date.parse("2026-10-26T12:00:00Z");
@@ -243,4 +243,105 @@ test("GSC monitor UI keeps incomplete data separate from 28-day alert calculatio
   assert.ok(js.includes("renderGoogleMonitor(data)"));
   assert.ok(!js.includes("innerHTML"));
   assert.match(css,/seo-google-monitor-r4/);
+});
+
+test("GSC R5 classifies only real high-value opportunities, devices, countries and FINAL 90d series",async()=>{
+  const fixed=()=>Date.parse("2026-10-26T12:00:00Z");
+  const calls=[];
+  const fetcher=async(url,options)=>{
+    if(url==="https://oauth2.googleapis.com/token")
+      return new Response(JSON.stringify({access_token:"test-access-token-1234567",expires_in:3600}));
+    const q=JSON.parse(options.body);calls.push(q);
+    if(q.dataState==="all")return new Response(JSON.stringify({rows:[]}));
+    if(q.dimensions.join(",")==="query,page"){
+      assert.equal(q.rowLimit,250);
+      return new Response(JSON.stringify({rows:[
+        {keys:["warcaby zasady","https://gracz.pl/gry/warcaby/"],
+          clicks:2,impressions:150,ctr:2/150,position:9.1},
+        {keys:["poker texas holdem","https://gracz.pl/gry/poker-treningowy/"],
+          clicks:1,impressions:42,ctr:1/42,position:12.4},
+        {keys:["zły adres","https://evil.invalid/"],clicks:1,impressions:500,ctr:.001,position:7},
+        {keys:["mała próba","https://gracz.pl/"],clicks:0,impressions:20,ctr:0,position:8},
+        {keys:["wysoki CTR","https://gracz.pl/"],clicks:15,impressions:100,ctr:.15,position:10},
+        {keys:["pierwsza pozycja","https://gracz.pl/"],clicks:1,impressions:90,ctr:.01,position:1}
+      ]}));
+    }
+    if(q.dimensions.join(",")==="device")
+      return new Response(JSON.stringify({rows:[
+        {keys:["MOBILE"],clicks:5,impressions:80,ctr:.0625,position:6},
+        {keys:["DESKTOP"],clicks:3,impressions:40,ctr:.075,position:4},
+        {keys:["UNKNOWN"],clicks:100,impressions:900,ctr:.1,position:2}
+      ]}));
+    if(q.dimensions.join(",")==="country")
+      return new Response(JSON.stringify({rows:[
+        {keys:["pol"],clicks:8,impressions:120,ctr:.066,position:5},
+        {keys:["us"],clicks:1,impressions:20,ctr:.05,position:8}
+      ]}));
+    if(q.dimensions.join(",")==="date"){
+      const isLong=q.startDate==="2026-07-26";
+      if(isLong){
+        assert.equal(q.endDate,"2026-10-23");
+        return new Response(JSON.stringify({rows:[
+          {keys:["2026-09-20"],clicks:1,impressions:20,ctr:.05,position:8},
+          {keys:["2026-10-22"],clicks:3,impressions:30,ctr:.1,position:6},
+          {keys:["2026-10-23"],clicks:4,impressions:50,ctr:.08,position:5},
+          {keys:["2026-10-24"],clicks:1,impressions:100,ctr:.01,position:1}
+        ]}));
+      }
+      return new Response(JSON.stringify({rows:[]}));
+    }
+    if(q.dimensions.length===0)return new Response(JSON.stringify({rows:[
+      {clicks:9,impressions:220,ctr:9/220,position:5}]}));
+    return new Response(JSON.stringify({rows:[]}));
+  };
+  const d=await createSeoGoogleReader({fetcher,now:fixed,email,privateKey,property}).read();
+  assert.equal(d.state,"connected");
+  assert.equal(d.insights.state,"available");
+  assert.equal(d.insights.dateRange.startDate,"2026-07-26");
+  assert.equal(d.insights.trend90.length,3);
+  assert.equal(d.insights.opportunities.length,2);
+  assert.deepEqual(d.insights.opportunities.map(x=>x.priority),["high","medium"]);
+  assert.equal(d.insights.opportunities[0].url,"https://gracz.pl/gry/warcaby/");
+  assert.equal(d.insights.opportunities[0].impressions,150);
+  assert.deepEqual(d.insights.devices.map(x=>x.device),["MOBILE","DESKTOP"]);
+  assert.deepEqual(d.insights.countries.map(x=>x.country),["pol"]);
+  assert.ok(d.insights.topRowsLimited);
+  assert.equal(calls.length,13);
+  assert.ok(calls.every(x=>x.type==="web"&&x.rowLimit<=250));
+  assert.ok(calls.filter(x=>x.dimensions.join(",")==="date").every(x=>x.dataState!=="hourly_all"));
+});
+test("Optional GSC opportunity endpoint failing does not erase existing validated 28-day statistics",async()=>{
+  const fetcher=async(url,options)=>{
+    if(url==="https://oauth2.googleapis.com/token")
+      return new Response(JSON.stringify({access_token:"test-access-token-1234567",expires_in:3600}));
+    const q=JSON.parse(options.body);
+    if(q.dimensions.join(",")==="query,page")return new Response("temporarily unavailable",{status:503});
+    return new Response(JSON.stringify({rows:q.dimensions.length?[]:[{clicks:7,
+      impressions:110,ctr:7/110,position:4.1}]}));
+  };
+  const d=await createSeoGoogleReader({fetcher,now,email,privateKey,property}).read();
+  assert.equal(d.state,"connected");
+  assert.equal(d.totals.clicks,7);
+  assert.equal(d.insights.state,"unavailable");
+  assert.equal(d.insights.opportunities.length,0);
+});
+test("SEO R5 UI renders 4 modules safely, independently and with explicit copy action",async()=>{
+  const html=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  const js=await readFile(new URL("../admin-r1/ui/seo.js",import.meta.url),"utf8");
+  const css=await readFile(new URL("../admin-r1/ui/seo.css",import.meta.url),"utf8");
+  for(const id of ["google-opportunities-rows","google-opportunities-filter",
+    "google-copy-opportunities","google-copy-status","google-devices-rows",
+    "google-countries-rows","google-chart","google-chart-days",
+    "google-chart-metric","google-chart-summary"]){
+    assert.ok(html.includes('id="'+id+'"'),"HTML "+id);
+    assert.ok(js.includes('"'+id+'"'),"JS "+id);
+  }
+  for(const val of ["7","28","90"])assert.ok(html.includes('value="'+val+'"'));
+  assert.ok(js.includes("navigator.clipboard?.writeText"));
+  assert.ok(js.includes("gscCopyText([x])"));
+  assert.ok(js.includes("gscCopyText(gscFilteredOpportunities())"));
+  assert.ok(js.includes('createElementNS("http://www.w3.org/2000/svg"'));
+  assert.ok(js.includes("gscResetInsights()"));
+  assert.ok(!js.includes("innerHTML"));
+  assert.match(css,/seo-google-chart-scroller/);
 });

@@ -147,7 +147,9 @@ export function createSeoGoogleReader({
     const data={state:"unavailable",property,updatedAt:new Date(now()).toISOString(),
       startDate:null,endDate:null,totals:null,days:[],queries:[],pages:[],
       comparison:null,brand:null,pageChanges:[],alerts:[],
-      freshness:{state:"unavailable",days:[],firstIncompleteDate:null,checkedAt:null}};
+      freshness:{state:"unavailable",days:[],firstIncompleteDate:null,checkedAt:null},
+      insights:{state:"unavailable",opportunities:[],devices:[],countries:[],
+        trend90:[],dateRange:null,reason:"provider_unavailable"}};
     try{
       const today=pacificToday();
       const endDate=shiftDay(today,-3),startDate=shiftDay(today,-30);
@@ -200,6 +202,48 @@ export function createSeoGoogleReader({
           Math.round((branded.position-previousBranded.position)*100)/100};
       data.pageChanges=pageChanges;
       data.alerts=alerts(currentMetrics,oldMetrics,branded,previousBranded,pageChanges);
+      // Optional 90-day history and actionable SEO dimensions. Keep the
+      // existing 28-day verified report usable if optional requests fail.
+      // Query+page results are a truncated/top-row sample, not all searches.
+      try{
+        const first90=shiftDay(endDate,-89);
+        const [series90,devices,countries,queryPages]=await Promise.all([
+          query(first90,endDate,["date"],100),
+          query(startDate,endDate,["device"],3),
+          query(startDate,endDate,["country"],10),
+          query(startDate,endDate,["query","page"],250)
+        ]);
+        if([series90,devices,countries,queryPages].some(x=>!Array.isArray(x.rows??[])))
+          throw Error("invalid_google_insights");
+        const keepDate=row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date||"")&&
+          row.date>=first90&&row.date<=endDate;
+        const trend90=series90.rows.slice(0,100).map(row=>({
+          date:safeText(row.keys?.[0],10),...metrics(row)
+        })).filter(keepDate).sort((x,y)=>x.date.localeCompare(y.date));
+        const deviceTypes=new Set(["MOBILE","DESKTOP","TABLET"]);
+        const deviceRows=devices.rows.slice(0,3).map(row=>({
+          device:safeText(row.keys?.[0],12),...metrics(row)
+        })).filter(x=>deviceTypes.has(x.device));
+        const countriesRows=countries.rows.slice(0,10).map(row=>({
+          country:safeText(row.keys?.[0],3),...metrics(row)
+        })).filter(x=>/^[a-z]{3}$/.test(x.country||""));
+        const opportunities=queryPages.rows.slice(0,250).map(row=>({
+          query:safeText(row.keys?.[0],120),
+          url:safeText(row.keys?.[1],240),...metrics(row)
+        })).filter(row=>row.query&&validPage(row.url)&&
+          row.impressions>=30&&row.position!==null&&
+          row.position>=4&&row.position<=15&&
+          row.ctr!==null&&row.ctr<5
+        ).map(row=>({...row,priority:row.impressions>=100?"high":"medium",
+          recommendation:"Zweryfikuj zgodność intencji zapytania z tytułem, opisem i treścią strony."}))
+        .sort((x,y)=>y.impressions-x.impressions||x.position-y.position).slice(0,20);
+        data.insights={state:"available",opportunities,devices:deviceRows,
+          countries:countriesRows,trend90,dateRange:{startDate:first90,endDate},
+          reason:null,topRowsLimited:true};
+      }catch{
+        data.insights={state:"unavailable",opportunities:[],devices:[],countries:[],
+          trend90:[],dateRange:null,reason:"provider_unavailable"};
+      }
       // Newer data is intentionally separate: never combine provisional daily
       // rows with finalized 28-day comparisons or ranking alerts.
       try{
