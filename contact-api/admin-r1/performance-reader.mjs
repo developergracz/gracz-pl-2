@@ -82,6 +82,49 @@ export function parseGuardianLog(log){
   }
   return null;
 }
+// Only already-sanitized, public Lighthouse observations are made copyable.
+// These are priorities for performance work, NOT numerical Google ranking impacts.
+export function buildPerformanceIssues(reports){
+  if(!Array.isArray(reports))return [];
+  const issues=[];
+  for(const r of reports.slice(0,4)){
+    if(r?.strategy!=="mobile" || !TARGETS.has(r.url))continue;
+    const page=r.url==="https://gracz.pl/"?"home":"poker";
+    const name=page==="home"?"Strona główna":"Poker";
+    const base={page,pageName:name,pageUrl:r.url};
+    const add=(category,id,title,priority,metric,resourceUrl=null,selector=null)=>{
+      issues.push({...base,category,id:page+"-"+id,title,priority,metric,resourceUrl,selector});
+    };
+    if(boundedInteger(r.lcpMs)!==null){
+      add("lcp","lcp",name+" — największy element (LCP)",
+        r.lcpMs>=2500?"high":"info",r.lcpMs+" ms",null,
+        typeof r.element==="string"?r.element.slice(0,160):null);
+    }
+    if(Array.isArray(r.blockers)){
+      r.blockers.slice(0,6).forEach((b,i)=>{
+        if(!b || typeof b.path!=="string" ||
+          !/^\/assets\/[A-Za-z0-9_.\/-]+$/.test(b.path))return;
+        const ms=boundedInteger(b.wastedMs);
+        add("css","css-"+i,name+" — CSS blokujący: "+b.path,
+          ms!==null&&ms>=700?"high":ms!==null&&ms>=300?"medium":"info",
+          ms===null?"Brak oszacowania opóźnienia":ms+" ms szacowanego opóźnienia",
+          "https://gracz.pl"+b.path);
+      });
+    }
+    if(boundedInteger(r.fcpMs)!==null){
+      add("fcp","fcp",name+" — pierwsze wyświetlenie treści (FCP)",
+        r.fcpMs>=2500?"high":r.fcpMs>=1800?"medium":"info",r.fcpMs+" ms");
+    }
+    if(boundedInteger(r.ttfbMs)!==null){
+      add("ttfb","ttfb",name+" — odpowiedź serwera (TTFB)",
+        r.ttfbMs>=800?"high":r.ttfbMs>=400?"medium":"info",r.ttfbMs+" ms");
+    }
+  }
+  const rank={high:0,medium:1,info:2};
+  return issues.sort((a,b)=>rank[a.priority]-rank[b.priority]||
+    a.page.localeCompare(b.page)||a.id.localeCompare(b.id)).slice(0,30);
+}
+
 export function createPerformanceReader({
  token=process.env.GRACZ_PERFORMANCE_GITHUB_TOKEN||"",
  fetcher=fetch,now=Date.now
@@ -127,7 +170,7 @@ export function createPerformanceReader({
   async function collect(){
     if(!token)return {
       ok:false,state:"needs_configuration",checkedAt:new Date(now()).toISOString(),
-      source:"github_actions_private",history:[],latest:null,rollback:null
+      source:"github_actions_private",history:[],latest:null,rollback:null,issues:[]
     };
     try{
       const data=await api(fixedPath);
@@ -157,9 +200,10 @@ export function createPerformanceReader({
       const latest=completed.find(r=>Array.isArray(r.reports))||null;
       return {ok:true,state:latest?"available":"incomplete",
         checkedAt:new Date(now()).toISOString(),
-        source:"github_actions_private",history,latest,rollback};
+        source:"github_actions_private",history,latest,rollback,
+        issues:latest?buildPerformanceIssues(latest.reports):[]};
     }catch{return {ok:false,state:"unavailable",checkedAt:new Date(now()).toISOString(),
-      source:"github_actions_private",history:[],latest:null,rollback:null};}
+      source:"github_actions_private",history:[],latest:null,rollback:null,issues:[]};}
   }
   return async function read(){
     if(cached&&now()<expiresAt)return cached;
