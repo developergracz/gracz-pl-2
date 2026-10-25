@@ -12,8 +12,7 @@ on:
     - cron: "43 */6 * * *"
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: gracz-performance-autopilot-main
@@ -40,6 +39,9 @@ jobs:
 
   autopilot:
     name: Observe LCP and self-repair only approved regressions
+    permissions:
+      contents: write
+      pull-requests: write
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
