@@ -65,8 +65,11 @@ test("OWNER login uses the approved Full Max Premium design with no side gold li
   const router=await read("../admin-r1/owner-router.mjs");
   const css=await read("../admin-r1/ui/admin.css");
   const login=await read("../admin-r1/ui/login.js");
-  assert.match(router,/<body class="owner-login-page"><main class="owner-login">/);
-  assert.match(router,/FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA/);
+  assert.match(router,/<body class="owner-login-page"><main class="owner-login"><h1>Panel Admin <span>gracz.pl<\/span><\/h1>/);
+  const loginOnly=router.slice(router.indexOf('const loginHtml='),router.indexOf('export function createOwnerRouter'));
+  assert.doesNotMatch(loginOnly,/owner-login-brand|owner-login-eyebrow/,
+    'No duplicate logo or tagline above Panel Admin heading');
+  assert.match(loginOnly,/class="owner-login-center-overline">GRACZ.PL · FULL MAX PREMIUM/);
   assert.match(router,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
   assert.match(router,/Bezpieczne logowanie do Centrum administracyjnego gracz\.pl\./);
   assert.match(css,/\.owner-login-page \.owner-login h1 span\{color:#ff536c;\}/);
