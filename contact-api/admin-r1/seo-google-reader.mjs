@@ -29,7 +29,7 @@ export function createSeoGoogleReader({
   email=process.env.SEO_GSC_CLIENT_EMAIL,
   privateKey=process.env.SEO_GSC_PRIVATE_KEY,
   property=process.env.SEO_GSC_PROPERTY,
-  ttlMs=6*60*60*1000
+  ttlMs=60*60*1000
 }={}) {
   const key=typeof privateKey==="string"?privateKey.replace(/\\n/g,"\n"):null;
   const enabled=validIdentity(email,key,property);
