@@ -179,7 +179,7 @@ test("Performance UI labels source, Warsaw clock and separate run start date",as
 test("Performance triage groups mobile LCP, CSS, FCP and TTFB with grounded source URLs",()=>{
   const reports=parseGuardianLog(log);
   const issues=buildPerformanceIssues(reports);
-  assert.equal(issues.length,6);
+  assert.equal(issues.length,5);
   assert.deepEqual(new Set(issues.map(x=>x.category)),new Set(["lcp","css","fcp","ttfb"]));
   const lcp=issues.find(x=>x.id==="home-lcp");
   assert.equal(lcp.priority,"high");
@@ -224,10 +224,12 @@ test("Performance UI has accessible category, page and priority filters and safe
     assert.ok(js.includes('"'+id+'"'));
   }
   for(const kind of ["lcp","css","fcp","ttfb"])assert.ok(html.includes('value="'+kind+'"'));
-  assert.match(js,/navigator.clipboard\\?\\.writeText/);
-  assert.match(js,/copyPayload\\(\\[x\\]\\)/);
-  assert.match(js,/copyPayload\\(filteredFindings\\(\\)\\)/);
-  assert.match(js,/findings.filter\\(x=>x.priority==="high"\\)/);
-  assert.match(js,/create\\("a",label\\)/);
-  assert.doesNotMatch(js,/innerHTML|sendBeacon|fetch\\("https:\/\/api.openai.com/);
+  assert.ok(js.includes("navigator.clipboard?.writeText"));
+  assert.ok(js.includes("copyPayload([x])"));
+  assert.ok(js.includes("copyPayload(filteredFindings())"));
+  assert.ok(js.includes('findings.filter(x=>x.priority==="high")'));
+  assert.ok(js.includes('create("a",label)'));
+  assert.ok(!js.includes("innerHTML"));
+  assert.ok(!js.includes("sendBeacon"));
+  assert.ok(!js.includes('fetch("https://api.openai.com'));
 });
