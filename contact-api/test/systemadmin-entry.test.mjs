@@ -35,6 +35,31 @@ test("OWNER header/footer is shared across protected pages and login stays Premi
 });
 
 
+test("login page places the original two-panel Centrum header above existing OWNER credentials",async()=>{
+  const router=await read("../admin-r1/owner-router.mjs");
+  const css=await read("../admin-r1/ui/admin.css");
+  const hub=await read("../admin-r1/ui/systemadmin.html");
+  const first=router.indexOf('<h1>Panel Admin <span>gracz.pl</span></h1>');
+  const intro=router.indexOf('class="owner-login-center-intro"');
+  const heading=router.indexOf('id="owner-login-center-title">Centrum administracyjne</h2>');
+  const fields=router.indexOf('<form id="login-form" autocomplete="off">');
+  assert.ok(first>=0&&intro>first&&heading>intro&&fields>heading);
+  assert.match(router,/GRACZ\.PL · FULL MAX PREMIUM/);
+  assert.match(router,/Wybierz system, którym chcesz zarządzać\. Oba panele są dostępne w ramach jednej sesji właściciela\./);
+  assert.match(router,/aria-labelledby="owner-login-center-title"/);
+  assert.match(css,/\.owner-login-page \.owner-login-center-intro\{/);
+  assert.match(css,/\.owner-login-page \.owner-login-center-intro h2\{/);
+  assert.match(css,/@media\(max-width:520px\)/);
+  assert.match(css,/@media\(max-height:740px\) and \(min-width:521px\)/);
+  assert.match(hub,/id="systemadmin-heading">Centrum administracyjne/);
+  assert.equal((hub.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.doesNotMatch(router.slice(intro,fields),/class="systemadmin-tile"/);
+  assert.match(router,/id="username"/);
+  assert.match(router,/id="password"/);
+  assert.match(router,/id="login-button"/);
+  assert.match(router,/class="owner-premium-login-footer"/);
+});
+
 test("OWNER login uses the approved Full Max Premium design with no side gold lines or new authentication code",async()=>{
   const router=await read("../admin-r1/owner-router.mjs");
   const css=await read("../admin-r1/ui/admin.css");

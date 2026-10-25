@@ -1697,3 +1697,51 @@ body.owner-login-page{display:flex;flex-direction:column}
 .owner-login-page #login-status[data-state="error"]{padding:12px 14px;margin:10px 0 0;color:#ffe3dc;background:#4e2a32;border:1px solid #df9188;border-radius:11px;text-align:left;line-height:1.55}
 .owner-login-page #login-status[data-state="pending"]{color:#f6d99c}
 @media(max-width:520px){.owner-login-page .owner-login-security-note{padding:0 6px}}
+
+
+/* OWNER login: existing two-panel chooser intro, placed before credentials. */
+.owner-login-page .owner-login{padding-top:clamp(16px,3vh,32px);padding-bottom:22px}
+.owner-login-page .owner-login-brand{margin-bottom:13px}
+.owner-login-page .owner-login-brand .logo{font-size:clamp(40px,3.8vw,54px)}
+.owner-login-page .owner-login-subtitle{margin-bottom:12px}
+.owner-login-page .owner-login-center-intro{
+  margin:0 auto 16px;
+  padding:15px 12px 18px;
+  max-width:780px;
+  background:linear-gradient(180deg,rgba(4,12,22,.28),rgba(3,10,19,.64));
+  border-radius:16px;
+  text-align:center;
+}
+.owner-login-page .owner-login-center-overline{
+  margin:0 0 7px;
+  color:#ffd778;
+  font-size:clamp(10px,.95vw,12px);
+  font-weight:850;
+  letter-spacing:.18em;
+  line-height:1.4;
+}
+.owner-login-page .owner-login-center-intro h2{
+  margin:0 0 7px;
+  color:#f3f6fc;
+  font-size:clamp(28px,3.6vw,43px);
+  font-weight:850;
+  letter-spacing:-.045em;
+  line-height:1.15;
+}
+.owner-login-page .owner-login-center-copy{
+  max-width:700px;
+  margin:0 auto;
+  color:#bcd1e6;
+  font-size:clamp(13px,1.3vw,16px);
+  line-height:1.48;
+}
+@media(max-width:520px){
+  .owner-login-page .owner-login-center-intro{padding:13px 8px 14px;margin-bottom:12px}
+}
+@media(max-height:740px) and (min-width:521px){
+  .owner-login-page .owner-login{padding-top:12px;padding-bottom:12px}
+  .owner-login-page .owner-login-brand{margin-bottom:8px}
+  .owner-login-page .owner-login-center-intro{padding:10px 8px;margin-bottom:10px}
+  .owner-login-page .owner-login-center-intro h2{font-size:clamp(27px,3vw,36px)}
+  .owner-login-page .owner-login-card{padding-top:17px;padding-bottom:17px}
+}
