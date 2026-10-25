@@ -13,25 +13,47 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
+      - name: Capture actual homepage for Google preview
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --directory maintenance-site --bind 127.0.0.1 >/tmp/gracz-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/ >/dev/null
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --disable-javascript --hide-scrollbars --force-device-scale-factor=1 \
+            --window-size=1200,630 --virtual-time-budget=2000 \
+            --screenshot="$RUNNER_TEMP/gracz-homepage.png" \
+            http://127.0.0.1:4173/
+          test -s "$RUNNER_TEMP/gracz-homepage.png"
+          colors=$(identify -format '%k' "$RUNNER_TEMP/gracz-homepage.png")
+          test "$colors" -ge 50
       - name: Build optimized SEO images
         run: |
-          convert maintenance-site/approved-maintenance.png \
+          set -euo pipefail
+          convert "$RUNNER_TEMP/gracz-homepage.png" \
             -auto-orient \
             -resize '1200x630^' \
             -gravity center \
             -extent 1200x630 \
             -strip \
-            -quality 88 \
+            -quality 85 \
             maintenance-site/og-gracz-pl.jpg
           convert maintenance-site/approved-maintenance.png \
             -auto-orient \
             -strip \
             -quality 82 \
             maintenance-site/approved-maintenance.webp
+          test "$(identify -format '%wx%h' maintenance-site/og-gracz-pl.jpg)" = '1200x630'
           identify maintenance-site/og-gracz-pl.jpg
           identify maintenance-site/approved-maintenance.webp
       - name: Commit generated images
@@ -40,5 +62,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add maintenance-site/og-gracz-pl.jpg maintenance-site/approved-maintenance.webp
           git diff --cached --quiet && exit 0
-          git commit -m "chore(maintenance): publish optimized SEO images"
+          git commit -m "fix(seo): use actual homepage as Google image preview"
           git push
