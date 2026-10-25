@@ -63,4 +63,6 @@ jobs:
           git add maintenance-site/og-gracz-pl.jpg maintenance-site/approved-maintenance.webp
           git diff --cached --quiet && exit 0
           git commit -m "fix(seo): use actual homepage as Google image preview"
-          git push
+          branch="seo/homepage-image-${GITHUB_RUN_ID}"
+          git push origin "HEAD:refs/heads/${branch}"
+          echo "Generated thumbnail branch: ${branch}"
