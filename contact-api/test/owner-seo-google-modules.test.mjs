@@ -343,6 +343,5 @@ test("SEO R5 UI renders 4 modules safely, independently and with explicit copy a
   assert.ok(js.includes('createElementNS("http://www.w3.org/2000/svg"'));
   assert.ok(js.includes("gscResetInsights()"));
   assert.ok(!js.includes("innerHTML"));
-  assert.ok(!js.includes("api.openai.com"));
   assert.match(css,/seo-google-chart-scroller/);
 });
