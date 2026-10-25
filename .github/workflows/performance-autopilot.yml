@@ -14,9 +14,6 @@ on:
       - "scripts/performance-rollback-stage.mjs"
       - "scripts/performance-rollback-stage.test.mjs"
       - ".github/workflows/performance-rollback-stage.yml"
-      - "scripts/performance-rollback-stage.mjs"
-      - "scripts/performance-rollback-stage.test.mjs"
-      - ".github/workflows/performance-rollback-stage.yml"
       - ".github/workflows/performance-autopilot.yml"
   push:
     branches:
@@ -28,6 +25,9 @@ on:
       - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
       - "scripts/performance-render-deploy.mjs"
+      - "scripts/performance-rollback-stage.mjs"
+      - "scripts/performance-rollback-stage.test.mjs"
+      - ".github/workflows/performance-rollback-stage.yml"
       - ".github/workflows/performance-autopilot.yml"
   workflow_dispatch:
   schedule:
