@@ -286,6 +286,214 @@ function renderGoogleMonitor(data){
     status:x.provisional?"Wstępne / do korekty":"Ostateczne"
   })),["date","clicks","impressions","status"]);
 }
+// Read-only extensions for verified Google Search Console data.
+// Never interpret ranked top-row samples as a full inventory of Google searches.
+let gscOpportunities=[],gscTrend90=[],gscReportMeta=null;
+const gscMetricNames={clicks:"Kliknięcia",impressions:"Wyświetlenia",
+  ctr:"CTR (%)",position:"Średnia pozycja"};
+const gscPlotValue=(row,metric)=>Number.isFinite(row?.[metric])?row[metric]:null;
+const gscFmt=(v)=>Number.isFinite(v)?v.toLocaleString("pl-PL"):"—";
+const gscAllowedOpportunity=x=>x&&typeof x.query==="string"&&
+  x.query.length<=120&&safePublicPageUrl(x.url)&&
+  Number.isFinite(x.impressions)&&Number.isFinite(x.clicks)&&
+  Number.isFinite(x.ctr)&&Number.isFinite(x.position)&&
+  ["high","medium"].includes(x.priority);
+function gscFilteredOpportunities(){
+  const priority=$("google-opportunities-filter").value;
+  return gscOpportunities.filter(x=>priority==="all"||x.priority===priority);
+}
+function gscCopyText(items){
+  const meta=gscReportMeta;
+  if(!meta||!items.length)return "";
+  const body=[
+    "GRACZ.PL — ZADANIE ANALIZY SEO (Google Search Console)",
+    "Źródło: Search Console API, dane historyczne ostateczne.",
+    "Okres: "+meta.start+" — "+meta.end+". Odczyt: "+meta.read+".",
+    "Repozytorium: developergracz/gracz-pl-2; gałąź main.",
+    "Zbadaj aktualny kod, treść, tytuł i description dla wskazanych URL.",
+    "Nie zakładaj, że niższy CTR automatycznie oznacza błąd. Uwzględnij intencję zapytania, wygląd wyników Google i ograniczenie danych do najważniejszych wierszy.",
+    "Proponuj tylko rzeczowe poprawki dla użytkowników, bez keyword stuffing, zmiany wyglądu Full Max Premium, cookies, logowania lub newslettera.",
+    "Przed wdrożeniem sprawdź SEO, bezpieczeństwo i poprawność działających funkcji.",
+    ""
+  ];
+  items.forEach((x,i)=>body.push(
+    (i+1)+". Fraza: "+x.query,
+    "   Podstrona: "+x.url,
+    "   Wyświetlenia: "+x.impressions+"; kliknięcia: "+x.clicks+
+      "; CTR: "+x.ctr+"%; średnia pozycja: "+x.position+".",
+    "   Priorytet: "+(x.priority==="high"?"wysoki":"średni")+
+      ". Zalecenie: "+x.recommendation
+  ));
+  return body.join("\n");
+}
+async function gscCopy(textValue,label){
+  if(!textValue)return;
+  let copied=false;
+  try{
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(textValue);copied=true;
+    }
+  }catch{ /* fallback supports browsers with restricted clipboard API */ }
+  if(!copied){
+    const field=document.createElement("textarea");
+    field.value=textValue;field.readOnly=true;field.style.position="fixed";
+    field.style.left="-9999px";document.body.append(field);field.select();
+    try{copied=document.execCommand("copy")===true;}catch{copied=false;}
+    field.remove();
+  }
+  text("google-copy-status",copied?
+    "Skopiowano "+label+" do schowka. Wklej do ChatGPT (Ctrl + V).":
+    "Kopiowanie zablokowane. Sprawdź uprawnienia schowka przeglądarki.");
+}
+function gscRenderOpportunities(){
+  const visible=gscFilteredOpportunities();
+  const frag=document.createDocumentFragment();
+  for(const x of visible){
+    const row=document.createElement("tr");
+    cell(row,x.query);publicPageCell(row,x.url);
+    cell(row,x.impressions);cell(row,x.ctr+"%");cell(row,x.position);
+    const td=document.createElement("td");
+    const btn=document.createElement("button");btn.type="button";
+    btn.textContent="Kopiuj";
+    btn.title="Kopiuj wynik i zadanie analizy do ChatGPT";
+    btn.addEventListener("click",()=>void gscCopy(gscCopyText([x]),"jeden problem"));
+    td.append(btn);row.append(td);frag.append(row);
+  }
+  if(!visible.length){
+    const row=document.createElement("tr"),td=document.createElement("td");
+    td.colSpan=6;td.textContent="Brak potwierdzonych możliwości dla wybranego filtra. To nie oznacza braku potencjału SEO.";
+    row.append(td);frag.append(row);
+  }
+  $("google-opportunities-rows").replaceChildren(frag);
+  $("google-copy-opportunities").disabled=!visible.length;
+  text("google-opportunities-info","Wyniki: "+visible.length+" / "+gscOpportunities.length+
+    ". Kryteria: co najmniej 30 wyświetleń, średnia pozycja 4–15, CTR poniżej 5%. "+
+    "Próbka najważniejszych zapytań z Google; nie jest pełnym audytem ani pomiarem wpływu na ranking.");
+}
+function gscRenderSegments(insights){
+  const render=(id,items,field)=>{
+    const rows=document.createDocumentFragment();
+    for(const item of items){
+      const tr=document.createElement("tr");
+      const name=field==="device"?
+        ({MOBILE:"Telefon",DESKTOP:"Komputer",TABLET:"Tablet"}[item.device]||item.device):
+        item.country==="pol"?"Polska (POL)":item.country.toUpperCase();
+      cell(tr,name);cell(tr,item.clicks);cell(tr,item.impressions);
+      cell(tr,item.ctr===null?"—":item.ctr+"%");
+      cell(tr,item.position);rows.append(tr);
+    }
+    if(!rows.childNodes.length){
+      const tr=document.createElement("tr"),td=document.createElement("td");
+      td.colSpan=5;td.textContent="Brak danych dla tego podziału.";tr.append(td);rows.append(tr);
+    }
+    $(id).replaceChildren(rows);
+  };
+  render("google-devices-rows",insights.devices||[],"device");
+  render("google-countries-rows",insights.countries||[],"country");
+  text("google-segments-info",
+    "Google Search Console: ruch z wyników wyszukiwarki, za bieżące 28 pełnych dni. "+
+    "Kraje pokazane kodami ISO-3166 alpha-3, maksymalnie 10. Wiersze krajów mogą być niepełne.");
+}
+function gscSvg(tag,attrs){
+  const x=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(const [k,v] of Object.entries(attrs))x.setAttribute(k,String(v));
+  return x;
+}
+function gscRenderChart(){
+  const days=Number($("google-chart-days").value);
+  const metric=$("google-chart-metric").value;
+  const svg=$("google-chart");
+  svg.replaceChildren();
+  if(![7,28,90].includes(days)||!Object.hasOwn(gscMetricNames,metric))return;
+  const end=gscReportMeta?.end;
+  const records=gscTrend90.filter(x=>typeof x.date==="string"&&
+    /^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<=end).slice(-90);
+  // Use actual dates, not the last N nonempty rows, to preserve genuine windows.
+  const boundary=end?new Date(end+"T12:00:00Z"):null;
+  if(!boundary||!Number.isFinite(boundary.getTime()))return;
+  boundary.setUTCDate(boundary.getUTCDate()-(days-1));
+  const begin=boundary.toISOString().slice(0,10);
+  const chosen=records.filter(x=>x.date>=begin&&x.date<=end&&
+    gscPlotValue(x,metric)!==null);
+  if(!chosen.length){
+    text("google-chart-info","Brak zweryfikowanych wierszy Google dla tego zakresu.");
+    text("google-chart-summary","Brak danych do wykresu.");
+    return;
+  }
+  const left=56,right=870,top=18,bottom=214;
+  const vals=chosen.map(x=>x[metric]);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(min===max){min=Math.min(0,min);max=Math.max(1,max+1);}
+  const total=days-1||1;
+  const xDate=date=>{
+    const diff=Math.round((Date.parse(date+"T12:00:00Z")-Date.parse(begin+"T12:00:00Z"))/86400000);
+    return left+(right-left)*(diff/total);
+  };
+  const yVal=v=>bottom-(bottom-top)*(v-min)/(max-min);
+  for(let k=0;k<=4;k++){
+    const v=min+(max-min)*k/4;
+    const y=yVal(v);
+    svg.append(gscSvg("line",{x1:left,y1:y,x2:right,y2:y,stroke:"#39516a",
+      "stroke-width":"1","stroke-dasharray":"4 6"}));
+    const t=gscSvg("text",{x:2,y:y+5,fill:"#b8cad9","font-size":13});
+    t.textContent=gscFmt(Math.round(v*100)/100);svg.append(t);
+  }
+  svg.append(gscSvg("line",{x1:left,y1:bottom,x2:right,y2:bottom,stroke:"#9bbbd1"}));
+  for(const [i,date] of [[0,begin],[1,end]]){
+    const t=gscSvg("text",{x:i?right:left,y:242,"text-anchor":i?"end":"start",
+      fill:"#c5d7e6","font-size":14});
+    t.textContent=date;svg.append(t);
+  }
+  // Separate segments at missing dates; do not invent values.
+  let path="",prev=null,segments=0;
+  for(const item of chosen){
+    const x=xDate(item.date),y=yVal(item[metric]);
+    if(!prev||Math.round((Date.parse(item.date)-Date.parse(prev.date))/86400000)!==1){
+      path+="M"+x.toFixed(1)+","+y.toFixed(1)+" ";segments++;
+    }else path+="L"+x.toFixed(1)+","+y.toFixed(1)+" ";
+    prev=item;
+  }
+  svg.append(gscSvg("path",{d:path.trim(),fill:"none",stroke:"#45dfc6",
+    "stroke-width":"3","stroke-linecap":"round","stroke-linejoin":"round"}));
+  for(const item of chosen){
+    const circle=gscSvg("circle",{cx:xDate(item.date),cy:yVal(item[metric]),r:3,
+      fill:"#f2c873",stroke:"#152336","stroke-width":"1"});
+    const title=gscSvg("title",{});
+    title.textContent=item.date+" · "+gscMetricNames[metric]+": "+gscFmt(item[metric]);
+    circle.append(title);svg.append(circle);
+  }
+  text("google-chart-info","Wykres "+gscMetricNames[metric]+", okres "+begin+
+    " — "+end+". Wykorzystano "+chosen.length+" rzeczywistych dni (z "+days+"). "+
+    "Luki w danych nie są uzupełniane zerami. Wersja ostateczna Google.");
+  text("google-chart-summary","Pierwszy dostępny dzień: "+chosen[0].date+
+    ", "+gscFmt(chosen[0][metric])+" · ostatni: "+chosen.at(-1).date+
+    ", "+gscFmt(chosen.at(-1)[metric])+". "+
+    "Wykres nie stanowi prognozy przyszłej pozycji.");
+}
+function gscRenderInsights(data){
+  const insights=data.insights;
+  if(insights?.state!=="available"||!Array.isArray(insights.opportunities)||
+    !Array.isArray(insights.trend90)||!Array.isArray(insights.devices)||
+    !Array.isArray(insights.countries))throw Error("insights_unavailable");
+  gscReportMeta={start:data.startDate,end:data.endDate,read:asDate(data.updatedAt)};
+  gscOpportunities=insights.opportunities.filter(gscAllowedOpportunity).slice(0,20);
+  gscTrend90=insights.trend90.filter(x=>x&&typeof x.date==="string").slice(0,90);
+  gscRenderOpportunities();
+  gscRenderSegments(insights);
+  gscRenderChart();
+}
+function gscResetInsights(){
+  gscOpportunities=[];gscTrend90=[];gscReportMeta=null;
+  $("google-opportunities-rows").replaceChildren();
+  $("google-devices-rows").replaceChildren();
+  $("google-countries-rows").replaceChildren();
+  $("google-chart").replaceChildren();
+  $("google-copy-opportunities").disabled=true;
+  for(const id of ["google-opportunities-info","google-segments-info",
+    "google-chart-info","google-chart-summary"]){
+    text(id,"Brak potwierdzonego odczytu danych Google Search Console.");
+  }
+}
 async function loadGoogle(){
   $("google-refresh").disabled=true;
   text("google-state","Pobieranie statystyk Google…");
@@ -294,7 +502,7 @@ async function loadGoogle(){
     if(data.state==="needs_configuration"){
       text("google-state","Search Console: oczekuje na przyznanie dostępu kontu technicznemu Google w Renderze.");
       text("google-period","Dane Google nie są jeszcze podłączone.");
-      resetGoogleMonitor();
+      resetGoogleMonitor();gscResetInsights();
       return;
     }
     if(data.state!=="connected"||!data.totals)throw Error("unavailable");
@@ -306,6 +514,7 @@ async function loadGoogle(){
     text("google-ctr",data.totals.ctr===null?"—":data.totals.ctr+"%");
     text("google-position",data.totals.position??"—");
     renderGoogleMonitor(data);
+    try{gscRenderInsights(data);}catch{gscResetInsights();}
     rowsInto("google-days",data.days.map(x=>({
       date:x.date,clicks:x.clicks,impressions:x.impressions,
       ctr:x.ctr===null?"—":x.ctr+"%"
@@ -319,7 +528,7 @@ async function loadGoogle(){
   }catch{
     text("google-state","Google Search Console: brak potwierdzonych danych. Sprawdź uprawnienia konta lub połączenie API.");
     text("google-period","Dane Google niedostępne.");
-    resetGoogleMonitor();
+    resetGoogleMonitor();gscResetInsights();
     for(const id of ["google-clicks","google-impressions","google-ctr","google-position"])text(id,"—");
     $("google-queries").replaceChildren();$("google-pages").replaceChildren();$("google-days").replaceChildren();
   }finally{$("google-refresh").disabled=false;}
@@ -467,6 +676,11 @@ async function inspectGoogle(event){
   }finally{button.disabled=false;}
 }
 $("google-refresh").addEventListener("click",()=>void loadGoogle());
+$("google-opportunities-filter").addEventListener("change",gscRenderOpportunities);
+$("google-copy-opportunities").addEventListener("click",()=>
+  void gscCopy(gscCopyText(gscFilteredOpportunities()),"widoczne możliwości SEO"));
+$("google-chart-days").addEventListener("change",gscRenderChart);
+$("google-chart-metric").addEventListener("change",gscRenderChart);
 $("google-trend-filter").addEventListener("change",renderPageChanges);
 $("seo-speed-refresh").addEventListener("click",()=>void loadSpeed());
 $("seo-guardian-refresh").addEventListener("click",()=>void loadGuardian());
