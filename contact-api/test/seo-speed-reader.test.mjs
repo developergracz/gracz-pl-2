@@ -39,6 +39,8 @@ test("PageSpeed parses a real-size Lighthouse result (larger than old 800 KB lim
   assert.equal(first.lcpMs,2310.4);
   assert.equal(first.cls,0.08);
   assert.equal(first.inpMs,145);
+  assert.equal(first.inpSource,"page");
+  assert.equal(first.tbtMs,null);
   assert.equal(first.reason,undefined);
   t+=4000;
   assert.deepEqual(await read(),first);
@@ -58,6 +60,8 @@ test("PageSpeed 429 failure shows a reason and is not cached for 24 hours",async
   const second=await read();
   assert.equal(second.state,"available");
   assert.equal(second.inpMs,null,"No field INP should remain unknown");
+  assert.equal(second.inpSource,null);
+  assert.equal(second.tbtMs,null);
   assert.equal(calls,2,"Failure must be retried immediately rather than remembered for 24 h");
 });
 
@@ -97,7 +101,7 @@ test("SEO UI displays provider reasons and retains private OWNER route",async()=
   const router=await readFile(new URL("../admin-r1/owner-router.mjs",import.meta.url),"utf8");
   assert.match(js,/const speedReasons=\{/);
   assert.match(js,/speedReasons\[data.reason\]/);
-  assert.match(js,/INP tylko przy dostępnych danych terenowych/);
+  assert.match(js,/INP: dane użytkowników \(strona lub domena\)/);
   assert.match(router,/path===PREFIX\+'\/seo\/speed'/);
   assert.match(js,/readPrivate\("speed\?refresh=1"\)/);
   assert.match(router,/url\.pathname===PREFIX\+'\/seo\/speed'&&url\.search==='\?refresh=1'/);
@@ -155,4 +159,79 @@ test("invalid PageSpeed strategy cannot trigger a refresh request",async()=>{
   const read=createSeoSpeedReader({fetcher:async()=>{calls++;return googleReport();}});
   assert.equal((await read("invalid",{refresh:true})).state,"invalid_strategy");
   assert.equal(calls,0);
+});
+
+
+test("INP prefers homepage CrUX when both homepage and domain values are available",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    loadingExperience:{metrics:{INTERACTION_TO_NEXT_PAINT:{percentile:180}}},
+    originLoadingExperience:{metrics:{INTERACTION_TO_NEXT_PAINT:{percentile:380}}},
+    lighthouseResult:{
+      categories:{performance:{score:0.92}},
+      audits:{"total-blocking-time":{numericValue:132.83}}
+    }
+  })});
+  const data=await read();
+  assert.equal(data.state,"available");
+  assert.equal(data.inpMs,180);
+  assert.equal(data.inpSource,"page");
+  assert.equal(data.tbtMs,132.83);
+});
+
+test("INP uses domain-level CrUX only when homepage INP is missing",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    loadingExperience:{metrics:{}},
+    originLoadingExperience:{metrics:{INTERACTION_TO_NEXT_PAINT:{percentile:215}}},
+    lighthouseResult:{
+      categories:{performance:{score:0.88}},
+      audits:{"total-blocking-time":{numericValue:210}}
+    }
+  })});
+  const data=await read();
+  assert.equal(data.inpMs,215);
+  assert.equal(data.inpSource,"origin");
+  assert.equal(data.tbtMs,210);
+});
+
+test("No field INP is represented as unknown, not replaced by lab TBT",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    loadingExperience:{metrics:{INTERACTION_TO_NEXT_PAINT:{percentile:null}}},
+    originLoadingExperience:{metrics:{INTERACTION_TO_NEXT_PAINT:{percentile:-1}}},
+    lighthouseResult:{
+      categories:{performance:{score:0.91}},
+      audits:{"total-blocking-time":{numericValue:294.87}}
+    }
+  })});
+  const data=await read();
+  assert.equal(data.inpMs,null);
+  assert.equal(data.inpSource,null);
+  assert.equal(data.tbtMs,294.87);
+});
+
+test("Invalid or missing TBT does not produce an invented laboratory value",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    loadingExperience:{},
+    originLoadingExperience:{metrics:{}},
+    lighthouseResult:{
+      categories:{performance:{score:0.92}},
+      audits:{"total-blocking-time":{numericValue:-3}}
+    }
+  })});
+  const data=await read();
+  assert.equal(data.inpMs,null);
+  assert.equal(data.inpSource,null);
+  assert.equal(data.tbtMs,null);
+});
+
+test("SEO PageSpeed interface labels provenance and TBT independently",async()=>{
+  const js=await readFile(new URL("../admin-r1/ui/seo.js",import.meta.url),"utf8");
+  const html=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  assert.match(html,/id="speed-inp-source"/);
+  assert.match(html,/id="speed-tbt"/);
+  assert.match(html,/TBT · laboratorium/);
+  assert.match(js,/data.inpSource==="origin"/);
+  assert.match(js,/Cała domena gracz.pl · dane terenowe/);
+  assert.match(js,/data.inpSource==="page"/);
+  assert.match(js,/Brak danych terenowych/);
+  assert.match(js,/data.tbtMs\?\?"—"/);
 });
