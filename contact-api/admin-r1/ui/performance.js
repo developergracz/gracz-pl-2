@@ -17,6 +17,142 @@ function metric(id,value){
   el.classList.toggle("is-slow",n!==null&&n>=2500);
   el.classList.toggle("is-fast",n!==null&&n<2500);
 }
+// Server-side triage contains only validated public findings; do not copy
+// credentials, private raw logs or browser session data.
+let findings=[];
+let findingsContext=null;
+const categories={lcp:"LCP — największy element",css:"CSS blokujący renderowanie",
+  fcp:"FCP — pierwsze wyświetlenie",ttfb:"TTFB — odpowiedź serwera"};
+const priorities={high:"Wysoki",medium:"Średni",info:"Informacyjny"};
+const allowedLink=raw=>{
+  if(typeof raw!=="string"||raw.length>500)return null;
+  try{
+    const u=new URL(raw);
+    if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash)return null;
+    if(u.origin==="https://gracz.pl" &&
+       (u.pathname==="/"||u.pathname==="/gry/poker-treningowy/"||
+        /^\/assets\/[A-Za-z0-9_.\/-]+$/.test(u.pathname)))return u.href;
+    if(u.origin==="https://github.com" &&
+       u.pathname.startsWith("/developergracz/gracz-pl-2/blob/main/maintenance-site/"))
+      return u.href;
+  }catch{}
+  return null;
+};
+function filteredFindings(){
+  const category=$("performance-filter-category").value;
+  const page=$("performance-filter-page").value;
+  const priority=$("performance-filter-priority").value;
+  const query=$("performance-filter-query").value.trim().toLocaleLowerCase("pl-PL");
+  return findings.filter(x=>(category==="all"||x.category===category)&&
+    (page==="all"||x.page===page)&&(priority==="all"||x.priority===priority)&&
+    (!query||[x.title,x.metric,x.selector,x.resourceUrl,x.pageName,x.codeUrl]
+      .some(y=>typeof y==="string"&&y.toLocaleLowerCase("pl-PL").includes(query))));
+}
+function copyPayload(items){
+  const ctx=findingsContext;
+  const date=ctx?.reports?.find(x=>x.reportLoggedAt)?.reportLoggedAt;
+  const lines=[
+    "GRACZ.PL — DIAGNOZA WYDAJNOŚCI DO WERYFIKACJI I BEZPIECZNEJ NAPRAWY",
+    "Repozytorium: developergracz/gracz-pl-2 (gałąź main).",
+    "Źródło: Performance Guardian R3 / GitHub Actions / lokalny Chrome Lighthouse (mobile).",
+    "Zapis raportu: "+(date?asDate(date):"brak potwierdzonego czasu")+
+      " (Europe/Warsaw).",
+    "Start uruchomienia: "+asDate(ctx?.createdAt)+".",
+    "Proszę przeanalizować wskazane problemy, zweryfikować aktualny kod i dobrać najmniejszą bezpieczną poprawkę. "+
+      "Nie zmieniaj działania cookies, logowania, newslettera ani wyglądu hero. "+
+      "Przed wdrożeniem wykonaj testy SEO, bezpieczeństwa i Lighthouse. "+
+      "Wyniki CSS są szacunkami diagnostycznymi i nie sumują się; priorytet NIE jest pomiarem pozycji Google.",
+    ""
+  ];
+  items.forEach((x,i)=>{
+    lines.push((i+1)+". "+x.title,
+      "   Kategoria: "+(categories[x.category]||x.category)+
+        "; priorytet techniczny: "+(priorities[x.priority]||x.priority),
+      "   Wynik: "+x.metric,
+      "   Badana strona: "+x.pageUrl);
+    if(x.resourceUrl)lines.push("   Zasób: "+x.resourceUrl);
+    if(x.codeUrl)lines.push("   Plik w GitHub: "+x.codeUrl);
+    if(x.selector)lines.push("   Element LCP: "+x.selector);
+  });
+  return lines.join("\\n");
+}
+async function putOnClipboard(value,description){
+  if(!value)return;
+  let ok=false;
+  try{
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(value);ok=true;
+    }
+  }catch{ /* Use the browser's legacy copy fallback on secure admin pages. */ }
+  if(!ok){
+    const field=document.createElement("textarea");
+    field.value=value;field.setAttribute("readonly","");
+    field.style.position="fixed";field.style.left="-9999px";
+    document.body.append(field);
+    field.select();
+    try{ok=document.execCommand("copy")===true;}catch{ok=false;}
+    field.remove();
+  }
+  $("performance-copy-status").textContent=ok?
+    "Skopiowano: "+description+". Wklej tekst w ChatGPT (Ctrl + V).":
+    "Nie udało się automatycznie skopiować. Sprawdź uprawnienia schowka w przeglądarce.";
+}
+const addIssueLink=(parent,label,value)=>{
+  const link=allowedLink(value);
+  if(!link)return;
+  const a=create("a",label);a.href=link;a.target="_blank";a.rel="noopener noreferrer";
+  parent.append(a);
+};
+function renderFindings(){
+  const visible=filteredFindings();
+  const list=document.createDocumentFragment();
+  for(const x of visible){
+    const li=document.createElement("li");li.className="performance-issue";
+    const head=document.createElement("div");head.className="performance-issue-heading";
+    const title=create("strong",x.title);title.className="performance-issue-title";
+    const priority=create("span",priorities[x.priority]||"Informacyjny");
+    priority.className="performance-issue-priority";priority.dataset.priority=x.priority;
+    head.append(title,priority);li.append(head);
+    const detail=create("p",(categories[x.category]||x.category)+
+      " · "+x.metric+(x.selector?" · Element: "+x.selector:""));
+    detail.className="performance-issue-meta";li.append(detail);
+    const links=document.createElement("div");links.className="performance-issue-links";
+    addIssueLink(links,"Strona",x.pageUrl);
+    addIssueLink(links,"Zasób publiczny",x.resourceUrl);
+    addIssueLink(links,"Plik w GitHub",x.codeUrl);
+    li.append(links);
+    const actions=document.createElement("div");actions.className="performance-issue-buttons";
+    const one=create("button","Kopiuj do ChatGPT");one.type="button";
+    one.addEventListener("click",()=>void putOnClipboard(copyPayload([x]),"opis jednego problemu"));
+    actions.append(one);
+    const target=allowedLink(x.codeUrl)||allowedLink(x.resourceUrl)||allowedLink(x.pageUrl);
+    if(target){
+      const linkButton=create("button","Kopiuj link");linkButton.type="button";
+      linkButton.addEventListener("click",()=>void putOnClipboard(target,"link do pliku lub strony"));
+      actions.append(linkButton);
+    }
+    li.append(actions);list.append(li);
+  }
+  if(visible.length===0)list.append(create("li",
+    findings.length?"Brak wyników dla wybranych filtrów.":"Brak potwierdzonych danych diagnostycznych."));
+  $("performance-diagnosis").replaceChildren(list);
+  $("performance-findings-count").textContent=
+    "Widoczne: "+visible.length+" / "+findings.length+
+    " · Wysoki priorytet: "+findings.filter(x=>x.priority==="high").length+
+    ". Priorytet oznacza wielkość problemu wydajnościowego, nie pozycję w Google.";
+  $("performance-copy-visible").disabled=visible.length===0;
+  $("performance-copy-all").disabled=findings.length===0;
+  $("performance-copy-priority").disabled=!findings.some(x=>x.priority==="high");
+}
+function showFindings(data){
+  findings=Array.isArray(data?.issues)?data.issues.filter(x=>
+    x && Object.hasOwn(categories,x.category)&&
+    Object.hasOwn(priorities,x.priority)&&["home","poker"].includes(x.page)&&
+    typeof x.title==="string"&&typeof x.metric==="string"&&
+    allowedLink(x.pageUrl)).slice(0,30):[];
+  findingsContext={reports:data.latest?.reports,createdAt:data.latest?.createdAt};
+  renderFindings();
+}
 function showMeasurements(data){
   const reports=Array.isArray(data.latest?.reports)?data.latest.reports:[];
   const get=(url,strategy)=>reports.find(x=>x.url===url&&x.strategy===strategy);
@@ -32,19 +168,7 @@ function showMeasurements(data){
     " · commit "+(data.latest.commit||"nieznany")+". "+
     "Godziny: Europe/Warsaw.":
     "Źródło: GitHub Actions → lokalny Lighthouse (Chrome). Brak potwierdzonych pomiarów.";
-  const list=document.createDocumentFragment();
-  for(const r of reports.filter(x=>x.strategy==="mobile")){
-    const location=r.url===PUBLIC?"Strona główna":r.url===POKER?"Poker":"Podstrona";
-    const item=create("li",location+": "+(Number.isInteger(r.lcpMs)?r.lcpMs+" ms":"brak pomiaru")+
-      (r.element?" · Element LCP: "+r.element:""));
-    list.append(item);
-    for(const b of (r.blockers||[]).slice(0,4)){
-      list.append(create("li","Zasób blokujący: "+b.path+
-        (Number.isInteger(b.wastedMs)?" ("+b.wastedMs+" ms szacowanego opóźnienia)":"")));
-    }
-  }
-  if(!list.childNodes.length)list.append(create("li","Brak szczegółowego raportu."));
-  $("performance-diagnosis").replaceChildren(list);
+  showFindings(data);
 }
 function showHistory(data){
   const body=$("performance-history"),rows=document.createDocumentFragment();
@@ -96,8 +220,19 @@ async function load(){
       "Nie można obecnie pobrać prywatnych raportów GitHub.");
   }catch{
     metric("perf-home-mobile",null);metric("perf-home-desktop",null);metric("perf-poker-mobile",null);
+    showFindings(null);
     statusLine("Raport jest niedostępny. Spróbuj ponownie bez zmieniania ustawień strony.");
   }finally{btn.disabled=false;}
 }
 $("performance-refresh").addEventListener("click",()=>void load());
+for(const id of ["performance-filter-category","performance-filter-page",
+  "performance-filter-priority","performance-filter-query"]){
+  $(id).addEventListener(id==="performance-filter-query"?"input":"change",renderFindings);
+}
+$("performance-copy-visible").addEventListener("click",()=>
+  void putOnClipboard(copyPayload(filteredFindings()),"widoczne wyniki"));
+$("performance-copy-priority").addEventListener("click",()=>
+  void putOnClipboard(copyPayload(findings.filter(x=>x.priority==="high")),"problemy o wysokim priorytecie"));
+$("performance-copy-all").addEventListener("click",()=>
+  void putOnClipboard(copyPayload(findings),"wszystkie wyniki"));
 void load();
