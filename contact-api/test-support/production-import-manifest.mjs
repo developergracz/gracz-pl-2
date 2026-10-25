@@ -17,6 +17,8 @@ export const productionModules=Object.freeze([
   'admin-r1/seo-speed-reader.mjs',
   // OWNER read-only summary: no network calls or dependencies; relies on reviewed probes.
   'admin-r1/seo-guardian.mjs',
+  // Reviewed fixed-repository GitHub Actions:read adapter; no mutations or arbitrary URLs.
+  'admin-r1/performance-reader.mjs',
   // OWNER-only scoped status e-mail rate-bucket introspection; no provider or consent changes.
   'admin-r1/newsletter-limit-control.mjs',
   // Read-only ClamAV/converter interface contract; all processing remains OFF.
