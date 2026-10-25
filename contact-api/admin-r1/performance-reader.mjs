@@ -50,6 +50,13 @@ export function parseGuardianLog(log){
   for(let i=lines.length-1;i>=0;i--){
     const start=lines[i].indexOf('{"state":');
     if(start<0 || lines[i].length-start>20000)continue;
+    // GitHub prefixes every log entry with an audit timestamp. This is the
+    // time the measurement report was WRITTEN, not the workflow start time.
+    const match=lines[i].slice(0,start).match(
+      /(?:^|\s)(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z)\s*$/
+    );
+    const loggedAt=match && Number.isFinite(Date.parse(match[1]))
+      ?new Date(match[1]).toISOString():null;
     try{
       const data=JSON.parse(lines[i].slice(start).replace(/\x1b\[[0-9;]*m/g,"").trim());
       if(data.paidAiUsed!==false || !Array.isArray(data.reports))continue;
@@ -60,7 +67,7 @@ export function parseGuardianLog(log){
         const lcpMs=boundedInteger(entry.lcpMs);
         const element=entry.lcpElement?.selector;
         reports.push({
-          url:entry.url,strategy:entry.strategy,
+          url:entry.url,strategy:entry.strategy,reportLoggedAt:loggedAt,
           lcpMs, state:lcpMs===null?"unknown":lcpMs<2500?"good":"attention",
           element:typeof element==="string"?element.slice(0,160):null,
           fcpMs:boundedInteger(entry.timings?.fcpMs),
