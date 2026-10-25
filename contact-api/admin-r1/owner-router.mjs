@@ -101,9 +101,7 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <title>Panel Admin — logowanie gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
 <script src="${PREFIX}/login.js" defer></script></head>
-<body class="owner-login-page"><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div></div>
-<p class="owner-login-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>
-<h1>Panel Admin <span>gracz.pl</span></h1>
+<body class="owner-login-page"><main class="owner-login"><h1>Panel Admin <span>gracz.pl</span></h1>
 <p class="owner-login-subtitle">${passwordOnly?'Bezpieczne logowanie do Centrum administracyjnego gracz.pl.':'Bezpieczne logowanie do Centrum administracyjnego gracz.pl. Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
 <section class="owner-login-center-intro" aria-labelledby="owner-login-center-title">
   <p class="owner-login-center-overline">GRACZ.PL · FULL MAX PREMIUM</p>
