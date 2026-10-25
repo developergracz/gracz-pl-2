@@ -1,0 +1,55 @@
+/* Full Max Premium OWNER logout; deliberately standalone and lightweight. */
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#061426;color:#f5f7fd}
+*,*::before,*::after{box-sizing:border-box}
+html{min-height:100%;background:#061426}
+body{margin:0;min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse 70% 60% at 50% 38%,#152f4b 0%,#0b2038 55%,#061426 100%);color:#f5f7fd}
+.logout-layout{width:min(100%,980px);min-height:100vh;min-height:100dvh;margin:auto;padding:clamp(10px,1.5vh,19px) clamp(14px,2.5vw,28px) clamp(8px,1.3vh,14px);display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.5vh,15px)}
+.logout-hero{text-align:center;flex:0 0 auto}
+.logout-brand{font-size:clamp(36px,4.4vh,52px);font-weight:900;letter-spacing:-.075em;line-height:1.05;color:white}
+.logout-brand span{color:#ff536b}
+.logout-eyebrow{margin:4px 0 6px;font-size:clamp(9px,1.15vh,12px);font-weight:850;letter-spacing:.18em;color:#ffd579}
+.logout-hero h1{margin:0;font-size:clamp(26px,4vh,41px);font-weight:850;line-height:1.14;letter-spacing:-.05em}
+.logout-hero h1 span{color:#ff536b}
+.logout-intro{margin:5px auto 0;color:#c6d8ee;font-size:clamp(12px,1.65vh,17px);line-height:1.3}
+.logout-card{border:1px solid #f0ba58;border-radius:24px;background:linear-gradient(145deg,#122943f2,#081728f7 70%);box-shadow:0 18px 55px #0005,inset 0 0 0 1px #ffe1a112;max-width:910px;width:100%;padding:clamp(13px,2vh,22px) clamp(16px,2.4vw,30px);margin-inline:auto;text-align:center}
+.logout-success-icon{width:clamp(39px,5.7vh,58px);height:clamp(39px,5.7vh,58px);display:grid;place-items:center;margin:0 auto clamp(4px,.8vh,9px);font-size:clamp(24px,3.6vh,38px);font-weight:900;line-height:1;color:#ffc758;border:3px solid #ffc758;border-radius:50%;box-shadow:0 0 24px #ffc7582e}
+.logout-card h2{font-size:clamp(24px,3.65vh,40px);line-height:1.1;letter-spacing:-.05em;margin:0 0 5px}
+.logout-confirmation{margin:0;font-size:clamp(12px,1.65vh,17px);color:#d4e0ee;line-height:1.3}
+.logout-divider{max-width:420px;display:flex;align-items:center;gap:12px;justify-content:center;margin:clamp(7px,1.2vh,12px) auto;color:#ffd074;font-size:10px}
+.logout-divider::before,.logout-divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#d5a955)}
+.logout-divider::after{background:linear-gradient(90deg,#d5a955,transparent)}
+.logout-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(7px,1.1vh,12px)}
+.logout-action{min-height:clamp(56px,8vh,75px);display:flex;align-items:center;gap:clamp(10px,1.3vw,17px);padding:8px clamp(12px,1.7vw,19px);border:1px solid #d7a958;border-radius:12px;background:#091c31d9;color:#f5f7fd;text-align:left;text-decoration:none;transition:border-color .12s,background .12s}
+.logout-action:hover{background:#1c344a;border-color:#ffdd93}
+.logout-action:focus-visible{outline:3px solid #ffce67;outline-offset:3px}
+.logout-action-primary{border-color:#ffe08b;background:linear-gradient(115deg,#ffe397,#f3bb4d);color:#102032}
+.logout-action-primary:hover{background:linear-gradient(115deg,#ffecba,#f9c861)}
+.logout-action-icon{display:grid;place-items:center;flex:0 0 36px;width:36px;color:#ffca62;font-size:29px;font-weight:650;line-height:1}
+.logout-action-primary .logout-action-icon{color:#102032}
+.logout-action-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.logout-action-copy strong{font-size:clamp(13px,1.65vh,17px);font-weight:800;line-height:1.2}
+.logout-action-copy small{font-size:clamp(10px,1.3vh,13px);line-height:1.3;color:#b8cce1}
+.logout-action-primary .logout-action-copy small{color:#25384c}
+.logout-action-help{grid-column:1/-1;min-height:clamp(51px,6.8vh,66px)}
+.logout-security{display:flex;align-items:center;gap:14px;text-align:left;margin-top:clamp(8px,1.3vh,14px);border:1px solid #244158;border-radius:12px;padding:clamp(8px,1.2vh,12px) clamp(12px,1.7vw,20px);background:#0a1f34;color:#f2f6ff}
+.logout-security-icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:2px solid #ffcb6b;border-radius:12px;color:#ffcf6e;font-size:31px;line-height:1}
+.logout-security strong{font-size:clamp(12px,1.55vh,15px)}
+.logout-security p{font-size:clamp(10px,1.33vh,13px);line-height:1.35;color:#c0d2e6;margin:3px 0 0}
+.logout-footer{flex:0 0 auto;text-align:center;color:#ffd078;font-size:clamp(9px,1.15vh,12px);font-weight:800;letter-spacing:.09em;line-height:1.35}
+.logout-footer span{font-weight:500;letter-spacing:0;color:#c4d2e4}
+@media(max-width:650px){
+ .logout-layout{justify-content:flex-start;padding:20px 14px;gap:16px}
+ .logout-actions{grid-template-columns:1fr;gap:9px}
+ .logout-action-help{grid-column:auto}
+ .logout-card{padding:22px 16px;border-radius:18px}
+ .logout-action{min-height:69px}
+ .logout-hero h1{font-size:30px}
+ .logout-security{align-items:flex-start}
+}
+@media(max-height:650px) and (min-width:651px){
+ .logout-layout{justify-content:flex-start}
+ .logout-action{min-height:52px}
+ .logout-action-help{min-height:45px}
+ .logout-card{padding-top:10px;padding-bottom:10px}
+}
+@media(prefers-reduced-motion:reduce){.logout-action{transition:none}}
