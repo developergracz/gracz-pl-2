@@ -15,6 +15,8 @@ export const productionModules=Object.freeze([
   // Reviewed, read-only Google API adapters; fixed targets and no new packages.
   'admin-r1/seo-google-reader.mjs',
   'admin-r1/seo-speed-reader.mjs',
+  // OWNER read-only summary: no network calls or dependencies; relies on reviewed probes.
+  'admin-r1/seo-guardian.mjs',
   // OWNER-only scoped status e-mail rate-bucket introspection; no provider or consent changes.
   'admin-r1/newsletter-limit-control.mjs',
   // Read-only ClamAV/converter interface contract; all processing remains OFF.
