@@ -8,9 +8,12 @@ test('logout confirmation is a standalone Polish Full Max Premium page without c
   const html=await read('../admin-r1/ui/logout.html');
   assert.match(html,/<html lang="pl">/);
   assert.match(html,/<h2 id="logout-title">Wylogowano pomyślnie<\/h2>/);
-  assert.match(html,/<link rel="stylesheet" href="\/owner\/newsletter\/logout.css">/);
+  assert.match(html,/<link rel="stylesheet" href="\/owner\/newsletter\/logout.css\?v=full-max-premium-r2">/);
   assert.match(html,/<div class="logout-brand" aria-label="gracz\.pl">gracz\.<span>pl<\/span><\/div>/);
   assert.match(html,/<h1>Panel Admin gracz\.<span>pl<\/span><\/h1>/);
+  assert.match(html,/class="logout-status-panel"/);
+  assert.match(html,/class="logout-status-chip">SESJA ZAMKNIĘTA/);
+  assert.match(html,/class="logout-next-label">DALSZE DZIAŁANIA/);
   assert.match(html,/Sesja została zakończona/);
   assert.doesNotMatch(html,/<form\b|<script\b|<input\b|password|session_token/i);
 });

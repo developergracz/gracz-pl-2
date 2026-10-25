@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Wylogowano pomyślnie — Panel Admin gracz.pl</title>
-  <link rel="stylesheet" href="/owner/newsletter/logout.css">
+  <link rel="stylesheet" href="/owner/newsletter/logout.css?v=full-max-premium-r2">
 </head>
 <body class="owner-logout-page">
   <main class="logout-layout">
@@ -17,10 +17,16 @@
     </header>
 
     <section class="logout-card" aria-labelledby="logout-title">
-      <div class="logout-success-icon" aria-hidden="true">✓</div>
-      <h2 id="logout-title">Wylogowano pomyślnie</h2>
-      <p class="logout-confirmation">Sesja administracyjna została zakończona.</p>
-      <div class="logout-divider" aria-hidden="true"><span>◆</span></div>
+      <div class="logout-status-panel">
+        <div class="logout-success-icon" aria-hidden="true">✓</div>
+        <div class="logout-status-copy">
+          <p class="logout-status-label">BEZPIECZEŃSTWO KONTA · POTWIERDZENIE</p>
+          <h2 id="logout-title">Wylogowano pomyślnie</h2>
+          <p class="logout-confirmation">Sesja administracyjna została zakończona.</p>
+        </div>
+        <span class="logout-status-chip">SESJA ZAMKNIĘTA</span>
+      </div>
+      <p class="logout-next-label">DALSZE DZIAŁANIA</p>
 
       <nav class="logout-actions" aria-label="Co chcesz zrobić dalej?">
         <a class="logout-action logout-action-primary" href="/owner/newsletter/login">
