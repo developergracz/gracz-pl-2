@@ -11,7 +11,7 @@ test("OWNER header/footer is shared across protected pages and login stays Premi
   const loginJs=await read("../admin-r1/ui/login.js");
   const visualHtml=await read("../../maintenance-site/systemadmin/index.html");
   assert.match(router,/class="owner-premium-identity"/);
-  assert.match(router,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
+  assert.match(router,/class="owner-premium-heading">Panel Admin gracz\.<span>pl<\/span>/);
   assert.match(router,/FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA/);
   assert.match(router,/Bezpieczne logowanie do Centrum administracyjnego gracz\.pl/);
   assert.match(router,/class="owner-premium-footer"/);
