@@ -9,7 +9,8 @@ test('logout confirmation is a standalone Polish Full Max Premium page without c
   assert.match(html,/<html lang="pl">/);
   assert.match(html,/<h2 id="logout-title">Wylogowano pomyślnie<\/h2>/);
   assert.match(html,/<link rel="stylesheet" href="\/owner\/newsletter\/logout.css">/);
-  assert.match(html,/gracz<span>\.pl<\/span>/);
+  assert.match(html,/<div class="logout-brand" aria-label="gracz\.pl">gracz\.<span>pl<\/span><\/div>/);
+  assert.match(html,/<h1>Panel Admin gracz\.<span>pl<\/span><\/h1>/);
   assert.match(html,/Sesja została zakończona/);
   assert.doesNotMatch(html,/<form\b|<script\b|<input\b|password|session_token/i);
 });
@@ -33,6 +34,9 @@ test('all five actions use fixed safe destinations; protected panels do not bypa
 test('logout page CSS fits a typical laptop viewport and gracefully scrolls on phones',async()=>{
   const css=await read('../admin-r1/ui/logout.css');
   assert.match(css,/min-height:100dvh/);
+  assert.match(css,/\.logout-brand\{[^\n]*color:white/);
+  assert.match(css,/\.logout-brand span\{color:#ff536b\}/);
+  assert.match(css,/\.logout-hero h1 span\{color:#ff536b\}/);
   assert.match(css,/justify-content:center/);
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/@media\(max-width:650px\)/);
