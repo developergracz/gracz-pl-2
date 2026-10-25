@@ -1,0 +1,38 @@
+name: GRACZ Performance - real Render rollback staging test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gracz-performance-staging-rollback
+  cancel-in-progress: false
+
+jobs:
+  staging-rollback:
+    name: Verify rollback endpoint on isolated Render service
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed implementation
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Validate staging rollback logic without secrets
+        run: |
+          node --check scripts/performance-rollback-stage.mjs
+          node --test scripts/performance-rollback-stage.test.mjs
+      - name: Run real Render rollback ONLY on isolated staging
+        env:
+          RENDER_AUTOPILOT_API_KEY: ${{ secrets.RENDER_AUTOPILOT_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$RENDER_AUTOPILOT_API_KEY" ]; then
+            echo "::error::RENDER_AUTOPILOT_API_KEY is not configured; no Render deployment was changed."
+            exit 1
+          fi
+          node scripts/performance-rollback-stage.mjs
