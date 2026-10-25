@@ -308,8 +308,13 @@ for (const file of allHtmlPages) {
     requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021|49-premium-email-input-20261022)/.test(html)), `${rel}: approved legal/contact script version missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
-    requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
+    if (rel === "index.html") {
+      requireCheck(!/<link[^>]*href="\/assets\/contact-modal\.css\?v=r8"/i.test(html),
+        "homepage: contact-only CSS must not block initial rendering");
+    } else {
+      requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
+      requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
+    }
   }
   if (/\/zasady\/index\.html$/i.test(rel)) {
     requireCheck(html.includes('href="/"'), `${rel}: top navigation Start action missing`);
@@ -332,6 +337,12 @@ const legalJs = fs.readFileSync(path.resolve(root, "assets/legal.js"), "utf8");
 const contactCss = fs.readFileSync(path.resolve(root, "assets/contact-modal.css"), "utf8");
 const legalLinksJs = fs.readFileSync(path.resolve(root, "assets/legal-links.js"), "utf8");
 requireCheck(legalLinksJs.includes("account-access-premium.css?v=r3"), "account modal R3 stylesheet loader missing");
+requireCheck(
+  legalLinksJs.includes("await ensureStyles();") &&
+  legalLinksJs.includes("link.href='/assets/contact-modal.css?v=r8'") &&
+  legalLinksJs.includes("link.addEventListener('load',resolve,{once:true});"),
+  "homepage: contact modal must load R8 CSS before showing the dialog"
+);
 requireCheck(accountAccessCss.includes("max-height:calc(100dvh - 28px)"), "account modal: desktop viewport height guard missing");
 requireCheck(accountAccessCss.includes("@media (max-height:850px) and (min-width:641px)"), "account modal: compact-height desktop mode missing");
 requireCheck(legalJs.includes('owner-email-premium-modal'), "owner email premium modal missing");
