@@ -235,3 +235,37 @@ test("SEO PageSpeed interface labels provenance and TBT independently",async()=>
   assert.match(js,/Brak danych terenowych/);
   assert.match(js,/data.tbtMs\?\?"—"/);
 });
+
+
+test("SEO PageSpeed uses Lighthouse fetchTime as audit time, not API request start",async()=>{
+  const read=createSeoSpeedReader({now:()=>Date.parse("2026-10-25T20:30:00Z"),
+    fetcher:async()=>googleReport({lighthouseResult:{
+      fetchTime:"2026-10-25T20:31:12.345Z",
+      categories:{performance:{score:.93}},
+      audits:{"largest-contentful-paint":{numericValue:2885}}
+    }})
+  });
+  const data=await read();
+  assert.equal(data.checkedAt,"2026-10-25T20:30:00.000Z");
+  assert.equal(data.measuredAt,"2026-10-25T20:31:12.345Z");
+  assert.equal(data.lcpMs,2885);
+});
+test("SEO PageSpeed never invents the measurement timestamp when Google omits it",async()=>{
+  const read=createSeoSpeedReader({now:()=>Date.parse("2026-10-25T20:30:00Z"),
+    fetcher:async()=>googleReport()});
+  const data=await read();
+  assert.equal(data.state,"available");
+  assert.equal(data.measuredAt,null);
+});
+test("SEO Performance UI identifies source, precise audit time and missing audit time",async()=>{
+  const js=await readFile(new URL("../admin-r1/ui/seo.js",import.meta.url),"utf8");
+  const html=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  const guardian=await readFile(new URL("../admin-r1/seo-guardian.mjs",import.meta.url),"utf8");
+  assert.match(html,/id="seo-speed-provenance"/);
+  assert.match(js,/Źródło: Google PageSpeed Insights API/);
+  assert.match(js,/data.measuredAt/);
+  assert.match(js,/Czas pomiaru niepodany w raporcie/);
+  assert.match(js,/Europe\/Warsaw/);
+  assert.match(js,/Źródło: Google PageSpeed Insights API → Lighthouse \(telefon\)/);
+  assert.match(guardian,/measuredAt:performanceReady\?speed.measuredAt/);
+});
