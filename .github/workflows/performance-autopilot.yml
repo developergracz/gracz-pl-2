@@ -5,6 +5,8 @@ on:
     paths:
       - "scripts/performance-autopilot.mjs"
       - "scripts/performance-observer.mjs"
+      - "scripts/performance-lighthouse-fallback.mjs"
+      - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-autopilot.test.mjs"
       - "scripts/performance-autopilot-r2.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
@@ -16,6 +18,8 @@ on:
     paths:
       - "scripts/performance-autopilot*.mjs"
       - "scripts/performance-observer.mjs"
+      - "scripts/performance-lighthouse-fallback.mjs"
+      - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
       - "scripts/performance-render-deploy.mjs"
       - ".github/workflows/performance-autopilot.yml"
@@ -44,9 +48,10 @@ jobs:
         run: |
           node --check scripts/performance-autopilot.mjs
           node --check scripts/performance-observer.mjs
+          node --check scripts/performance-lighthouse-fallback.mjs
           node --check scripts/performance-ai-advisor.mjs
           node --check scripts/performance-render-deploy.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
@@ -72,6 +77,10 @@ jobs:
           SEO_PAGESPEED_API_KEY: ${{ secrets.SEO_PAGESPEED_API_KEY }}
           PERF_REPORT_PATH: performance-report.json
         run: node scripts/performance-observer.mjs
+      - name: Fall back to local Lighthouse when PageSpeed hits quota
+        env:
+          PERF_REPORT_PATH: performance-report.json
+        run: node scripts/performance-lighthouse-fallback.mjs
       - name: AI analysis of measured regressions (read-only; optional)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -95,7 +104,7 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs
       - name: Keep repairs restricted to approved public HTML files
         id: changes
         run: |
