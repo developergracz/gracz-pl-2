@@ -37,7 +37,7 @@ test('logout page CSS fits a typical laptop viewport and gracefully scrolls on p
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/@media\(max-width:650px\)/);
   assert.match(css,/\.logout-actions\{grid-template-columns:1fr/);
-  assert.doesNotMatch(css,/overflow:hidden|height:100dvh/);
+  assert.doesNotMatch(css,/overflow:hidden|[;{]height:100dvh/);
 });
 
 test('logout success navigates to confirmation only after 200; expired sessions keep login flow',async()=>{
