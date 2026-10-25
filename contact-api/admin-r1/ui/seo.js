@@ -26,6 +26,27 @@ const asDate=s=>new Intl.DateTimeFormat("pl-PL",{
 function cell(row,value) {
   const td=document.createElement("td");td.textContent=String(value);row.append(td);
 }
+// Only public gracz.pl sitemap URLs become navigation targets in the OWNER table.
+function pageCell(row,value) {
+  const td=document.createElement("td");
+  try {
+    if(typeof value!=="string")throw Error("invalid_url");
+    const url=new URL(value);
+    if(url.origin!=="https://gracz.pl"||url.username||url.password||
+       url.search||url.hash||url.href!==value)throw Error("invalid_url");
+    const link=document.createElement("a");
+    link.className="seo-page-link";
+    link.href=url.href;
+    link.target="_blank";
+    link.rel="noopener noreferrer";
+    link.textContent=value;
+    link.title="Otwórz podstronę w nowej karcie";
+    td.append(link);
+  } catch {
+    td.textContent=String(value);
+  }
+  row.append(td);
+}
 async function load() {
   $("seo-refresh").disabled=true;
   text("seo-status","Sprawdzanie publicznej witryny…");
@@ -48,7 +69,7 @@ async function load() {
     const rows=document.createDocumentFragment();
     for(const item of data.pages) {
       const tr=document.createElement("tr");
-      cell(tr,item.url);cell(tr,item.ok?"OK":"BŁĄD");
+      pageCell(tr,item.url);cell(tr,item.ok?"OK":"BŁĄD");
       cell(tr,item.problems.length?item.problems.map(label).join(", "):"Bez błędów");
       rows.append(tr);
     }
@@ -253,6 +274,23 @@ async function loadGuardian(){
     $("guardian-alerts").replaceChildren();
   }finally{$("seo-guardian-refresh").disabled=false;}
 }
+// Native select validation is replaced by an accessible Full Max Premium notice.
+const inspectChoice=$("seo-inspect-url");
+const inspectValidation=$("seo-inspect-validation");
+const hideInspectValidation=()=>{
+  inspectValidation.hidden=true;
+  inspectChoice.removeAttribute("aria-invalid");
+  inspectChoice.removeAttribute("aria-describedby");
+};
+inspectChoice.addEventListener("invalid",event=>{
+  event.preventDefault();
+  inspectValidation.hidden=false;
+  inspectChoice.setAttribute("aria-invalid","true");
+  inspectChoice.setAttribute("aria-describedby","seo-inspect-validation-message");
+});
+inspectChoice.addEventListener("change",()=>{
+  if(inspectChoice.validity.valid)hideInspectValidation();
+});
 async function inspectGoogle(event){
   event.preventDefault();
   const url=$("seo-inspect-url").value;
