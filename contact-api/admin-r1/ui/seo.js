@@ -1,5 +1,13 @@
 "use strict";
 const $ = id => document.getElementById(id);
+const pagesToggle=$("seo-pages-toggle");
+const pagesList=$("seo-pages-list");
+pagesToggle.addEventListener("click",()=>{
+  const open=pagesList.hidden;
+  pagesList.hidden=!open;
+  pagesToggle.textContent=open?"ZWIŃ":"POKAŻ";
+  pagesToggle.setAttribute("aria-expanded",String(open));
+});
 const terms={
   canonical:"Nieprawidłowy adres kanoniczny",
   noindex:"Indeksacja zablokowana lub brak poprawnych dyrektyw robots",

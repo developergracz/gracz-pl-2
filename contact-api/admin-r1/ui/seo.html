@@ -52,12 +52,17 @@
     </div>
     <p id="seo-time" class="muted">Ostatni odczyt: —</p>
     <section class="panel" id="seo-pages">
-      <h2>Podstrony gracz.pl</h2>
+      <div class="seo-pages-heading">
+        <h2>Podstrony gracz.pl</h2>
+        <button type="button" id="seo-pages-toggle" aria-controls="seo-pages-list" aria-expanded="false">POKAŻ</button>
+      </div>
       <p class="muted">Adresy pochodzą z aktualnej publicznej mapy witryny. Kontrola: HTTP, canonical, noindex i tytuł.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th scope="col">Adres</th><th scope="col">Stan</th><th scope="col">Szczegóły</th></tr></thead>
-        <tbody id="seo-rows"></tbody>
-      </table></div>
+      <div id="seo-pages-list" hidden>
+        <div class="table-wrap"><table>
+          <thead><tr><th scope="col">Adres</th><th scope="col">Stan</th><th scope="col">Szczegóły</th></tr></thead>
+          <tbody id="seo-rows"></tbody>
+        </table></div>
+      </div>
     </section>
     <section class="panel" id="seo-issues">
       <h2>Wykryte problemy</h2>
