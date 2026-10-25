@@ -92,6 +92,11 @@ export function formatSummary(result) {
       (Number.isFinite(timing.ttfbMs)?"; TTFB: "+timing.ttfbMs+" ms":"")+
       (Number.isFinite(timing.fcpMs)?"; FCP: "+timing.fcpMs+" ms":"")+
       (available?"; dostępne audyty: "+available:""));
+    const blocks=r.lcpEvidence?.blockers||[];
+    if(blocks.length){
+      lines.push("  - Zasoby blokujące pierwsze renderowanie: "+
+        blocks.map(b=>b.path+(b.wastedMs===null?"":" ("+b.wastedMs+" ms)")).join(", "));
+    }
   }
   lines.push("","**Diagnostyka:**");
   for(const d of result.diagnostic){
@@ -119,6 +124,7 @@ if(main){
       lcpMs:r.lcpMs??null,state:r.state,reason:r.reason,
       lcpElement:r.lcpEvidence?.element||null,
       timings:r.lcpEvidence?.timings||null,
-      lcpAudits:r.lcpEvidence?.insightsAvailable||[]}))
+      lcpAudits:r.lcpEvidence?.insightsAvailable||[],
+      renderBlockers:r.lcpEvidence?.blockers||[]}))
   })+"\n");
 }
