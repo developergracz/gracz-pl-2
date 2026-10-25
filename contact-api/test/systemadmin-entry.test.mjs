@@ -322,7 +322,7 @@ test("Full Max Premium hub fits laptop with three full cards and footer, without
   ]){
     assert.ok(css.includes(selector+'{'),"Missing compact laptop rule "+selector);
   }
-  const compact=css.slice(css.indexOf('/* Premium three-tile hub: keep BOTH'));
+  const compact=css.slice(css.indexOf('/* Premium two-tile hub: keep BOTH'));
   assert.match(compact,/\.owner-admin-hub-layout \.systemadmin-tile\{[\s\S]*?min-height:260px/);
   assert.match(compact,/\.owner-admin-hub-layout \.systemadmin-tile-action\{[\s\S]*?min-height:43px/);
   assert.doesNotMatch(compact,/overflow\s*:\s*hidden|display\s*:\s*none|position\s*:\s*fixed/,
