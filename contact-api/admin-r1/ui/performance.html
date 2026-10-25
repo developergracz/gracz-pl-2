@@ -35,8 +35,45 @@
     <p class="performance-note" id="performance-checked">Źródło: GitHub Actions → lokalny Lighthouse (Chrome). Data pomiaru: oczekiwanie na raport.</p>
   </section>
   <section class="performance-panel" aria-labelledby="performance-diagnosis-title">
-    <h2 id="performance-diagnosis-title">Diagnoza mobilnego LCP</h2>
-    <ul id="performance-diagnosis"><li>Oczekiwanie na dane…</li></ul>
+    <h2 id="performance-diagnosis-title">Diagnoza mobilna · wyszukiwarka problemów</h2>
+    <p class="performance-note">Filtruj wyniki LCP, blokujących arkuszy CSS, FCP i TTFB. Priorytet jest techniczny: nie oznacza dokładnego wpływu na pozycję w Google.</p>
+    <div class="performance-diagnostic-filters">
+      <label>Kategoria
+        <select id="performance-filter-category">
+          <option value="all">Wszystkie kategorie</option>
+          <option value="lcp">Największy element (LCP)</option>
+          <option value="css">Blokujący CSS</option>
+          <option value="fcp">Pierwsze wyświetlenie (FCP)</option>
+          <option value="ttfb">Czas odpowiedzi (TTFB)</option>
+        </select>
+      </label>
+      <label>Strona
+        <select id="performance-filter-page">
+          <option value="all">Wszystkie strony</option>
+          <option value="home">Strona główna</option>
+          <option value="poker">Poker</option>
+        </select>
+      </label>
+      <label>Priorytet techniczny
+        <select id="performance-filter-priority">
+          <option value="all">Wszystkie priorytety</option>
+          <option value="high">Wysoki</option>
+          <option value="medium">Średni</option>
+          <option value="info">Informacyjny</option>
+        </select>
+      </label>
+      <label>Szukaj w wynikach
+        <input id="performance-filter-query" type="search" maxlength="100" placeholder="Plik CSS, LCP, hero…">
+      </label>
+    </div>
+    <div class="performance-copy-actions">
+      <button id="performance-copy-visible" type="button" disabled>Kopiuj widoczne do ChatGPT</button>
+      <button id="performance-copy-priority" type="button" disabled>Kopiuj priorytetowe</button>
+      <button id="performance-copy-all" type="button" disabled>Kopiuj wszystkie</button>
+    </div>
+    <p id="performance-findings-count" class="performance-note" aria-live="polite">Oczekiwanie na dane…</p>
+    <ol id="performance-diagnosis" class="performance-issues"><li>Oczekiwanie na dane…</li></ol>
+    <p id="performance-copy-status" class="performance-note" role="status" aria-live="polite">Kopiowanie zapisuje tylko publiczne adresy i wyniki Lighthouse. Nie wysyła danych automatycznie do ChatGPT.</p>
   </section>
   <section class="performance-panel" aria-labelledby="performance-operations-title">
     <h2 id="performance-operations-title">Bezpieczeństwo wdrożeń</h2>

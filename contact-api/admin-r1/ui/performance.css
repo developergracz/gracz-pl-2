@@ -32,3 +32,28 @@
 .performance-panel th,.performance-panel td{padding:12px;text-align:left;border-bottom:1px solid #34485c;font-size:13px}
 .performance-panel a{color:#f2d591;text-decoration:underline}
 @media(max-width:700px){.performance-cards{grid-template-columns:1fr}.performance-facts>div{flex-direction:column;gap:5px}.performance-facts dd{text-align:left}}
+
+
+/* Scoped diagnostics: accessible filters and compact copy controls. */
+.performance-diagnostic-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:15px 0}
+.performance-diagnostic-filters label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#c2d1df}
+.performance-diagnostic-filters select,.performance-diagnostic-filters input{width:100%;min-width:0;min-height:43px;background:#0d1c2e;border:1px solid #52708a;border-radius:9px;color:#f2f6fc;padding:10px 11px;font:inherit;font-size:13px}
+.performance-diagnostic-filters select:focus-visible,.performance-diagnostic-filters input:focus-visible,.performance-copy-actions button:focus-visible,.performance-issue-buttons button:focus-visible{outline:3px solid #f1ce80;outline-offset:2px}
+.performance-copy-actions{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+.performance-copy-actions button,.performance-issue-buttons button{border-radius:9px;border:1px solid #9d8252;min-height:39px;padding:9px 13px;background:#352b1c;color:#ffe6a8;font-size:12px;font-weight:750;cursor:pointer}
+.performance-copy-actions button:first-child{background:#594223}
+.performance-copy-actions button:disabled,.performance-issue-buttons button:disabled{cursor:default;opacity:.5}
+.performance-issues{list-style:none;padding:0!important;margin:12px 0!important;display:grid;gap:11px}
+.performance-issues>.performance-issue{margin:0;padding:14px 16px;border:1px solid #38546d;border-radius:12px;background:#102236}
+.performance-issue-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.performance-issue-title{font-size:14px;font-weight:800;overflow-wrap:anywhere}
+.performance-issue-priority{font-size:11px;font-weight:800;letter-spacing:.02em;border:1px solid #64788e;border-radius:6px;padding:3px 7px;color:#d6e7f0}
+.performance-issue-priority[data-priority=high]{border-color:#c69c5e;color:#f6c67b}
+.performance-issue-priority[data-priority=medium]{color:#f0ddae}
+.performance-issue-meta{margin:6px 0 9px;color:#c0d1df;font-size:13px;overflow-wrap:anywhere}
+.performance-issue-links{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin:8px 0}
+.performance-issue-buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.performance-main .performance-issue-links a{color:#dce9ff;text-decoration:underline;text-underline-offset:2px}
+#performance-copy-status{min-height:20px;overflow-wrap:anywhere}
+@media(max-width:1100px){.performance-diagnostic-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.performance-diagnostic-filters{grid-template-columns:1fr}.performance-issue-heading{display:block}.performance-issue-priority{display:inline-block;margin-top:6px}}
