@@ -142,6 +142,55 @@
             <tbody id="google-page-changes"></tbody>
           </table></div>
         </section>
+        <section class="seo-google-opportunities" aria-labelledby="google-opportunities-title">
+          <div class="section-title">
+            <h3 id="google-opportunities-title">SEO Opportunities · możliwości zwiększenia kliknięć</h3>
+            <button id="google-copy-opportunities" type="button" disabled>Kopiuj wybrane możliwości do ChatGPT</button>
+          </div>
+          <p class="muted" id="google-opportunities-info">Analiza rzeczywistych zapytań i podstron Google. Priorytet techniczny, bez gwarancji poprawy pozycji.</p>
+          <div class="seo-google-options">
+            <label for="google-opportunities-filter">Priorytet
+              <select id="google-opportunities-filter">
+                <option value="all">Wszystkie</option><option value="high">Wysoki</option>
+                <option value="medium">Średni</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Fraza</th><th scope="col">Strona</th><th scope="col">Wyświetlenia</th><th scope="col">CTR</th><th scope="col">Śr. pozycja</th><th scope="col">Działanie</th></tr></thead>
+            <tbody id="google-opportunities-rows"></tbody>
+          </table></div>
+          <p id="google-copy-status" class="muted" role="status" aria-live="polite">Kopiowanie wymaga kliknięcia. Żadne dane nie są automatycznie wysyłane do ChatGPT.</p>
+        </section>
+        <section class="seo-google-segments" aria-labelledby="google-segments-title">
+          <h3 id="google-segments-title">Urządzenia i kraje · źródło widoczności</h3>
+          <p id="google-segments-info" class="muted">Źródło: Google Search Console API · dane ostateczne za obecne 28 dni.</p>
+          <div class="seo-tables">
+            <div class="table-wrap"><h4>Urządzenia</h4><table><thead><tr><th>Typ</th><th>Kliknięcia</th><th>Wyświetlenia</th><th>CTR</th><th>Pozycja</th></tr></thead><tbody id="google-devices-rows"></tbody></table></div>
+            <div class="table-wrap"><h4>Kraje (kod ISO)</h4><table><thead><tr><th>Kraj</th><th>Kliknięcia</th><th>Wyświetlenia</th><th>CTR</th><th>Pozycja</th></tr></thead><tbody id="google-countries-rows"></tbody></table></div>
+          </div>
+        </section>
+        <section class="seo-google-charts" aria-labelledby="google-charts-title">
+          <h3 id="google-charts-title">Wykres rozwoju SEO · dane ostateczne</h3>
+          <div class="seo-google-options">
+            <label for="google-chart-days">Okres
+              <select id="google-chart-days">
+                <option value="7">7 dni</option><option value="28" selected>28 dni</option><option value="90">90 dni</option>
+              </select>
+            </label>
+            <label for="google-chart-metric">Wskaźnik
+              <select id="google-chart-metric">
+                <option value="clicks">Kliknięcia</option><option value="impressions" selected>Wyświetlenia</option>
+                <option value="ctr">CTR</option><option value="position">Średnia pozycja</option>
+              </select>
+            </label>
+          </div>
+          <p id="google-chart-info" class="muted">Wykres pokazuje tylko daty z rzeczywistymi wierszami Google. Brakujące dni nie są uzupełniane zerami.</p>
+          <div class="seo-google-chart-scroller">
+            <svg id="google-chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="Wykres zmian widoczności w Google Search Console"></svg>
+          </div>
+          <p id="google-chart-summary" class="muted">Oczekiwanie na dane.</p>
+        </section>
         <section class="seo-google-alerts" aria-labelledby="google-alerts-title">
           <h3 id="google-alerts-title">Alerty zmian widoczności</h3>
           <p class="muted">Ostrzeżenia są liczone wyłącznie z zakończonych okresów. Nie potwierdzają przyczyny spadku ani kar Google.</p>
