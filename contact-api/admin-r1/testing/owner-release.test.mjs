@@ -330,6 +330,10 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.doesNotMatch(loginPage.body,/id="code"/);
     assert.doesNotMatch(loginPage.body,/id="forgot-open"/,
       'Recovery is not visible before the dedicated schema and feature flag are enabled');
+    assert.match(loginPage.body,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+    assert.match(loginPage.body,/class="owner-premium-login-footer"/);
+    assert.match(loginPage.body,/class="owner-login-security-note"/);
+    assert.match(loginPage.body,/id="login-password-validation"/);
     // A ChatGPT-added attribution must not lock the OWNER out of the entry
     // page. Redirect without cookies or credentials; keep private APIs strict.
     const probe=(path,method='GET',headers={})=>new Promise((resolve,reject)=>{
@@ -375,6 +379,7 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(anonymousHub.headers.location,'/owner/newsletter/login/systemadmin');
     const anonymousHubLogin=await probe('/owner/newsletter/login/systemadmin');
     assert.equal(anonymousHubLogin.status,200);
+
     // Both public premium screens are readable without a session, but private
     // dashboards remain guarded. No separate credentials are introduced.
     assert.equal((await probe('/owner/newsletter/login/visual')).status,200);
@@ -1027,6 +1032,11 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     const markup=await response.text();
     assert.equal((markup.match(/id="systemadmin-logout"/g)||[]).length,1,
       'Each OWNER page has exactly one shared logout button');
+    assert.equal((markup.match(/class="owner-premium-identity"/g)||[]).length,1,
+      'Each OWNER page has exactly one shared Premium heading');
+    assert.equal((markup.match(/class="owner-premium-footer"/g)||[]).length,1,
+      'Each OWNER page has exactly one common footer');
+    assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
     assert.match(markup,/href="\/owner\/newsletter\/seo"/);

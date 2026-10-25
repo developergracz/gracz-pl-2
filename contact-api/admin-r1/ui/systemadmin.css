@@ -28,3 +28,19 @@
 .systemadmin-tile-action{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:15px;border-radius:10px;background:linear-gradient(120deg,#f2d38f,#d5a84f);color:#15202c;font-size:14px;font-weight:800}
 .systemadmin-secure-note{color:#9eafbd;text-align:center;font-size:12px;line-height:1.7}
 @media(max-width:760px){.systemadmin-center{padding:24px 18px}.systemadmin-tiles{grid-template-columns:1fr;gap:16px;margin:24px 0 18px}.systemadmin-tile{min-height:270px}.systemadmin-topnav{justify-content:center}.systemadmin-topnav-brand{flex-basis:100%;text-align:center;margin-right:0!important}.systemadmin-topnav>a:not(.systemadmin-topnav-brand){flex:1;min-width:100px;font-size:11px;padding:7px}}
+
+
+/* Shared Full Max Premium identity and footer across OWNER hub / SEO / newsletter. */
+body.owner-admin-layout{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;background:#080f1a}
+.owner-admin-layout .shell{flex:1 0 auto;min-height:0}
+.owner-admin-layout .systemadmin-center{flex:1 0 auto}
+.owner-premium-identity{width:100%;padding:clamp(17px,2.6vh,28px) 16px clamp(12px,2vh,20px);text-align:center;background:linear-gradient(180deg,#0c1929,#0a1422)}
+.owner-premium-eyebrow{margin:0 0 8px;color:#f2c775;font-size:clamp(10px,1vw,12px);font-weight:850;letter-spacing:.18em;line-height:1.5}
+.owner-premium-heading{color:#f3f6fc;font-size:clamp(30px,3.5vw,48px);font-weight:850;line-height:1.12;letter-spacing:-.045em}
+.owner-premium-heading span{color:#ff536c}
+.owner-premium-description{margin:8px auto 0;color:#c2d0e1;font-size:clamp(13px,1.3vw,17px);line-height:1.5}
+.owner-premium-footer{flex:0 0 auto;width:100%;margin-top:auto;padding:14px clamp(12px,3vw,35px);border-top:1px solid #29384b;text-align:center;background:#070e18;color:#a1b7ce;font-size:12px;line-height:1.5}
+@media(max-width:760px){
+ .owner-premium-identity{padding:17px 14px}
+ .owner-premium-description{max-width:36rem}
+}

@@ -4,6 +4,37 @@ import {readFile} from "node:fs/promises";
 import {runInNewContext} from "node:vm";
 const read=path=>readFile(new URL(path,import.meta.url),"utf8");
 
+test("OWNER header/footer is shared across protected pages and login stays Premium",async()=>{
+  const router=await read("../admin-r1/owner-router.mjs");
+  const shellCss=await read("../admin-r1/ui/systemadmin.css");
+  const adminCss=await read("../admin-r1/ui/admin.css");
+  const loginJs=await read("../admin-r1/ui/login.js");
+  const visualHtml=await read("../../maintenance-site/systemadmin/index.html");
+  assert.match(router,/class="owner-premium-identity"/);
+  assert.match(router,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
+  assert.match(router,/FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA/);
+  assert.match(router,/Bezpieczne logowanie do Centrum administracyjnego gracz\.pl/);
+  assert.match(router,/class="owner-premium-footer"/);
+  assert.match(router,/class="owner-premium-login-footer"/);
+  assert.match(router,/class="owner-login-security-note"/);
+  assert.match(router,/Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone/);
+  assert.match(router,/\.replace\('<body>','<body class="owner-admin-layout">'\+bar\+identity\)/);
+  assert.match(router,/\.replace\('<\/body>',footer\+'<\/body>'\)/);
+  assert.match(shellCss,/\.owner-premium-heading span\{color:#ff536c\}/);
+  assert.match(shellCss,/\.owner-premium-footer\{/);
+  assert.match(shellCss,/\.owner-admin-layout \.shell\{flex:1 0 auto;min-height:0\}/);
+  assert.match(adminCss,/\.owner-premium-login-footer\{/);
+  assert.match(adminCss,/\.owner-login-security-note\{/);
+  assert.match(adminCss,/#login-status\[data-state="error"\]/);
+  assert.match(loginJs,/setAttribute\?\.\('data-state','error'\)/);
+  assert.match(visualHtml,/class="public-admin-footer"/);
+  assert.match(visualHtml,/Formularz wysyła dane bezpośrednio szyfrowanym połączeniem/);
+  assert.match(visualHtml,/id="admin-login-validation"/);
+  assert.match(loginJs,/fetch\('\/owner\/newsletter\/login'/);
+  assert.match(loginJs,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
+});
+
+
 test("OWNER login uses the approved Full Max Premium design with no side gold lines or new authentication code",async()=>{
   const router=await read("../admin-r1/owner-router.mjs");
   const css=await read("../admin-r1/ui/admin.css");

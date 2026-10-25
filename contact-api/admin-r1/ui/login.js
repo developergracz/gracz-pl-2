@@ -91,6 +91,7 @@ form.addEventListener('submit',async event=>{
   const button=document.getElementById('login-button');
   if(button.disabled)return;
   button.disabled=true;
+  status.setAttribute?.('data-state','pending');
   status.textContent='Sprawdzanie…';
   try{
     const result=await fetch('/owner/newsletter/login',{
@@ -109,6 +110,7 @@ form.addEventListener('submit',async event=>{
     // Never derive the destination from user-controlled query parameters.
     location.replace('/owner/newsletter/systemadmin');
   }catch{
+    status.setAttribute?.('data-state','error');
     status.textContent='Logowanie nie powiodło się. Sprawdź dane lub spróbuj później.';
   }finally{button.disabled=false;}
 });

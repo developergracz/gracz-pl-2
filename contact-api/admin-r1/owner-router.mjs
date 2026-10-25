@@ -25,9 +25,16 @@ function withAdminSwitchBar(html,current) {
     '<button type="button" id="systemadmin-logout" class="systemadmin-logout">Wyloguj</button>'+
     '<span id="systemadmin-logout-status" class="systemadmin-logout-status" role="status" aria-live="polite"></span>'+
     '</nav>';
+  const identity='<section class="owner-premium-identity" aria-label="Panel Admin gracz.pl">'+
+    '<p class="owner-premium-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>'+
+    '<div class="owner-premium-heading">Panel Admin <span>gracz.pl</span></div>'+
+    '<p class="owner-premium-description">Bezpieczne logowanie do Centrum administracyjnego gracz.pl.</p>'+
+    '</section>';
+  const footer='<footer class="owner-premium-footer">© gracz.pl · Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone</footer>';
   return html.replace('</head>','<link rel="stylesheet" href="'+PREFIX+'/systemadmin.css">'+
       '<script src="'+PREFIX+'/systemadmin-logout.js" defer></script></head>')
-    .replace('<body>','<body>'+bar);
+    .replace('<body>','<body class="owner-admin-layout">'+bar+identity)
+    .replace('</body>',footer+'</body>');
 }
 const ORIGIN='https://gracz-contact-api.onrender.com';
 const maxBody=2048;
@@ -89,7 +96,7 @@ async function publicOwnerFormInput(req){
 }
 const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Logowanie właściciela — gracz.pl</title>
+<title>Panel Admin — logowanie gracz.pl</title>
 <link rel="stylesheet" href="${PREFIX}/admin.css">
 <script src="${PREFIX}/login.js" defer></script></head>
 <body class="owner-login-page"><main class="owner-login"><div class="owner-login-brand" aria-label="gracz.pl — Prywatny panel admina newslettera serwisu gracz.pl"><div class="logo" aria-hidden="true">gracz<span>.pl</span></div></div>
@@ -122,6 +129,7 @@ ${passwordOnly&&recoveryReady?'<button id="forgot-open" type="button">Zapomniał
 </div></form>
 <p id="login-status" role="status" aria-live="polite"></p>
 </section>
+<p class="owner-login-security-note">Formularz wysyła dane bezpośrednio szyfrowanym połączeniem do serwera administracyjnego. Nie zapisujemy hasła na stronie publicznej.</p>
 ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" class="owner-recovery-premium" aria-labelledby="forgot-title" aria-describedby="forgot-description">
 <div class="forgot-heading">
 <div class="forgot-heading-text">
@@ -159,7 +167,7 @@ ${passwordOnly&&recoveryReady?`<dialog id="forgot-dialog" class="owner-recovery-
 </section>
 </div>
 </dialog>`:''}
-</main></body></html>`;
+</main><footer class="owner-premium-login-footer">© gracz.pl · Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone</footer></body></html>`;
 export function createOwnerRouter({
   database,enabled=false,passwordSpec,totpBase32,
   username,passwordOnly=false,encryptionKey,subjectKey,origin=ORIGIN,
@@ -277,7 +285,7 @@ export function createOwnerRouter({
         const html=loginHtml(passwordOnly,auth?.recoveryReady)
           .replace('id="login-form" autocomplete="off"',
             'id="login-form" data-after-login="'+OWNER_HUB+'" autocomplete="off"')
-          .replace('<title>Logowanie właściciela — gracz.pl</title>',
+          .replace('<title>Panel Admin — logowanie gracz.pl</title>',
             '<title>System Admin — logowanie gracz.pl</title>')
           .replace('<h1>Panel Admin <span>gracz.pl</span></h1>',
             '<h1>System Admin — logowanie</h1>')

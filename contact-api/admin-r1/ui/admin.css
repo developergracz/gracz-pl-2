@@ -1687,3 +1687,13 @@ body.owner-login-page{
   .owner-login-page .owner-login-diamond{margin-bottom:10px;}
   .owner-login-page .owner-login #login-form input{min-height:46px;}
 }
+
+
+/* Full Max Premium login footnote, footer and nonintrusive validation status. */
+body.owner-login-page{display:flex;flex-direction:column}
+.owner-login-page .owner-login{flex:1 0 auto}
+.owner-login-page .owner-login-security-note{max-width:610px;margin:12px auto 0;color:#acc0d5;font-size:12px;line-height:1.55;text-align:center}
+.owner-login-page .owner-premium-login-footer{flex:0 0 auto;width:100%;margin-top:auto;padding:14px 16px;border-top:1px solid #29384b;background:#070e18;color:#a1b7ce;text-align:center;font-size:12px;line-height:1.5}
+.owner-login-page #login-status[data-state="error"]{padding:12px 14px;margin:10px 0 0;color:#ffe3dc;background:#4e2a32;border:1px solid #df9188;border-radius:11px;text-align:left;line-height:1.55}
+.owner-login-page #login-status[data-state="pending"]{color:#f6d99c}
+@media(max-width:520px){.owner-login-page .owner-login-security-note{padding:0 6px}}
