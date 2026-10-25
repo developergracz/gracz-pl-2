@@ -550,3 +550,25 @@ html{scroll-padding-top:148px}
 
 /* R20 — header fits the shared 1360px rhythm at the 1181px desktop breakpoint (no overshoot) */
 @media(min-width:1181px) and (max-width:1360px){.header-inner{gap:20px}.nav-list{gap:22px}.header-actions{gap:12px}}
+
+
+/* MOBILE LCP R1: do not render offscreen poker academy sections during
+   first paint; the hero and progress/navigation controls stay eager. */
+@supports (content-visibility:auto){
+  @media screen{
+    body.poker-academy-page .main-column > :is(
+      .academy-path,
+      .poker-quick,
+      .poker-scene-section,
+      .poker-lab,
+      .decision-arena,
+      .poker-quiz,
+      .academy-bridge,
+      .poker-faq,
+      .poker-related
+    ){
+      content-visibility:auto;
+      contain-intrinsic-size:auto 820px;
+    }
+  }
+}
