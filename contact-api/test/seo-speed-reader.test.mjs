@@ -101,7 +101,7 @@ test("SEO UI displays provider reasons and retains private OWNER route",async()=
   const router=await readFile(new URL("../admin-r1/owner-router.mjs",import.meta.url),"utf8");
   assert.match(js,/const speedReasons=\{/);
   assert.match(js,/speedReasons\[data.reason\]/);
-  assert.match(js,/INP tylko przy dostępnych danych terenowych/);
+  assert.match(js,/INP: dane użytkowników \(strona lub domena\)/);
   assert.match(router,/path===PREFIX\+'\/seo\/speed'/);
   assert.match(js,/readPrivate\("speed\?refresh=1"\)/);
   assert.match(router,/url\.pathname===PREFIX\+'\/seo\/speed'&&url\.search==='\?refresh=1'/);
