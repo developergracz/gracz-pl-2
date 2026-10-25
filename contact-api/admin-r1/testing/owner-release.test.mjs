@@ -375,6 +375,13 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(anonymousHub.headers.location,'/owner/newsletter/login/systemadmin');
     const anonymousHubLogin=await probe('/owner/newsletter/login/systemadmin');
     assert.equal(anonymousHubLogin.status,200);
+    const initialLogin=await probe('/owner/newsletter/login');
+    assert.equal(initialLogin.status,200);
+    const loginHtmlText=await initialLogin.text();
+    assert.match(loginHtmlText,/<h1>Panel Admin <span>gracz\.pl<\/span><\/h1>/);
+    assert.match(loginHtmlText,/class="owner-premium-login-footer"/);
+    assert.match(loginHtmlText,/class="owner-login-security-note"/);
+    assert.match(loginHtmlText,/id="login-password-validation"/);
     // Both public premium screens are readable without a session, but private
     // dashboards remain guarded. No separate credentials are introduced.
     assert.equal((await probe('/owner/newsletter/login/visual')).status,200);
@@ -1027,6 +1034,11 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     const markup=await response.text();
     assert.equal((markup.match(/id="systemadmin-logout"/g)||[]).length,1,
       'Each OWNER page has exactly one shared logout button');
+    assert.equal((markup.match(/class="owner-premium-identity"/g)||[]).length,1,
+      'Each OWNER page has exactly one shared Premium heading');
+    assert.equal((markup.match(/class="owner-premium-footer"/g)||[]).length,1,
+      'Each OWNER page has exactly one common footer');
+    assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
     assert.match(markup,/href="\/owner\/newsletter\/seo"/);
