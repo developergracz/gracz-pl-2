@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createPerformanceReader,parseGuardianLog} from "../admin-r1/performance-reader.mjs";
+import {createPerformanceReader,parseGuardianLog,buildPerformanceIssues} from "../admin-r1/performance-reader.mjs";
 
 const repo="https://api.github.com/repos/developergracz/gracz-pl-2";
 const result={state:"attention",paidAiUsed:false,reports:[
@@ -173,4 +173,61 @@ test("Performance UI labels source, Warsaw clock and separate run start date",as
  assert.match(js,/Uruchomienie zadania:/);
  assert.ok(html.includes('Start zadania (Warszawa)'));
  assert.match(html,/Źródło: GitHub Actions/);
+});
+
+
+test("Performance triage groups mobile LCP, CSS, FCP and TTFB with grounded source URLs",()=>{
+  const reports=parseGuardianLog(log);
+  const issues=buildPerformanceIssues(reports);
+  assert.equal(issues.length,6);
+  assert.deepEqual(new Set(issues.map(x=>x.category)),new Set(["lcp","css","fcp","ttfb"]));
+  const lcp=issues.find(x=>x.id==="home-lcp");
+  assert.equal(lcp.priority,"high");
+  assert.equal(lcp.metric,"3100 ms");
+  assert.equal(lcp.codeUrl,
+    "https://github.com/developergracz/gracz-pl-2/blob/main/maintenance-site/index.html");
+  assert.equal(lcp.selector,".home-hero-premium__lead");
+  const css=issues.find(x=>x.category==="css");
+  assert.equal(css.priority,"medium");
+  assert.equal(css.metric,"480 ms szacowanego opóźnienia");
+  assert.equal(css.resourceUrl,"https://gracz.pl/assets/home.css");
+  assert.equal(css.codeUrl,
+    "https://github.com/developergracz/gracz-pl-2/blob/main/maintenance-site/assets/home.css");
+  assert.ok(!JSON.stringify(issues).includes("evil.example"));
+  assert.equal(issues.at(-1).category,"ttfb");
+});
+test("Performance triage prioritizes largest measured blockers, never infers Google ranking",()=>{
+  const observed=[{url:"https://gracz.pl/",strategy:"mobile",lcpMs:3398,
+    blockers:[{path:"/assets/home-premium-max.css",wastedMs:1033},
+      {path:"/assets/home.css",wastedMs:873},
+      {path:"/assets/global-header-r1.css",wastedMs:714},
+      {path:"/assets/cookie-consent.css",wastedMs:396}]}];
+  const issues=buildPerformanceIssues(observed);
+  assert.equal(issues.filter(x=>x.priority==="high").length,4);
+  assert.equal(issues.find(x=>x.id==="home-css-3").priority,"medium");
+  assert.equal(issues.find(x=>x.id==="home-css-0").resourceUrl,
+    "https://gracz.pl/assets/home-premium-max.css");
+  assert.ok(issues.every(x=>!Object.hasOwn(x,"googleRankingEffect")));
+  assert.deepEqual(buildPerformanceIssues([{url:"https://attacker.example",strategy:"mobile",
+    blockers:[{path:"/assets/exfiltrate.css",wastedMs:900}]}]),[]);
+  assert.deepEqual(buildPerformanceIssues(null),[]);
+});
+test("Performance UI has accessible category, page and priority filters and safe clipboard actions",async()=>{
+  const {readFile}=await import("node:fs/promises");
+  const js=await readFile(new URL("../admin-r1/ui/performance.js",import.meta.url),"utf8");
+  const html=await readFile(new URL("../admin-r1/ui/performance.html",import.meta.url),"utf8");
+  for(const id of ["performance-filter-category","performance-filter-page",
+    "performance-filter-priority","performance-filter-query",
+    "performance-copy-visible","performance-copy-priority","performance-copy-all",
+    "performance-copy-status","performance-findings-count"]){
+    assert.ok(html.includes('id="'+id+'"'));
+    assert.ok(js.includes('"'+id+'"'));
+  }
+  for(const kind of ["lcp","css","fcp","ttfb"])assert.ok(html.includes('value="'+kind+'"'));
+  assert.match(js,/navigator.clipboard\\?\\.writeText/);
+  assert.match(js,/copyPayload\\(\\[x\\]\\)/);
+  assert.match(js,/copyPayload\\(filteredFindings\\(\\)\\)/);
+  assert.match(js,/findings.filter\\(x=>x.priority==="high"\\)/);
+  assert.match(js,/create\\("a",label\\)/);
+  assert.doesNotMatch(js,/innerHTML|sendBeacon|fetch\\("https:\/\/api.openai.com/);
 });
