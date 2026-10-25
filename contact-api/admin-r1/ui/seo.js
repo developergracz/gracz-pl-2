@@ -188,7 +188,8 @@ async function loadSpeed(){
       return;
     }
     if(data.state!=="available"){
-      for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
+      for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
+      text("speed-inp-source","Brak danych terenowych · ms");
       text("seo-speed-state","PageSpeed: "+(speedReasons[data.reason]||speedReasons.provider_failed));
       return;
     }
@@ -196,10 +197,16 @@ async function loadSpeed(){
     text("speed-lcp",data.lcpMs??"—");
     text("speed-cls",data.cls??"—");
     text("speed-inp",data.inpMs??"—");
+    text("speed-inp-source",data.inpMs==null?"Brak danych terenowych · ms":
+      data.inpSource==="page"?"Strona główna · dane terenowe (ms)":
+      data.inpSource==="origin"?"Cała domena gracz.pl · dane terenowe (ms)":
+      "Nieznane źródło danych INP");
+    text("speed-tbt",data.tbtMs??"—");
     text("seo-speed-state","PageSpeed / Lighthouse · nowy pomiar: "+asDate(data.checkedAt)+
-      ". INP tylko przy dostępnych danych terenowych.");
+      ". INP: dane użytkowników (strona lub domena). TBT: pomiar laboratoryjny, nie INP.");
   }catch{
-    for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp"])text(id,"—");
+    for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
+    text("speed-inp-source","Brak danych terenowych · ms");
     text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
   }finally{$("seo-speed-refresh").disabled=false;}
 }
