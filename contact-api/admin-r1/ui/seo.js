@@ -177,6 +177,21 @@ const speedReasons={
   network_error:"Nie udało się nawiązać połączenia z PageSpeed Google.",
   provider_failed:"Nie udało się pobrać raportu PageSpeed."
 };
+function clearLcpDiagnostics(){
+  for(const id of ["speed-lcp-element","speed-lcp-ttfb","speed-lcp-load-delay",
+    "speed-lcp-load-time","speed-lcp-render-delay"])text(id,"—");
+}
+function showLcpDiagnostics(data){
+  const element=data.lcpElement;
+  text("speed-lcp-element",element?.selector||element?.label||"Brak szczegółów w raporcie");
+  const phases=data.lcpPhases;
+  const display=value=>typeof value==="number"&&Number.isFinite(value)&&value>=0
+    ?value+" ms":"—";
+  text("speed-lcp-ttfb",display(phases?.timeToFirstByte));
+  text("speed-lcp-load-delay",display(phases?.resourceLoadDelay));
+  text("speed-lcp-load-time",display(phases?.resourceLoadDuration));
+  text("speed-lcp-render-delay",display(phases?.elementRenderDelay));
+}
 async function loadSpeed(){
   $("seo-speed-refresh").disabled=true;
   text("seo-speed-state","Uruchamianie nowego pomiaru PageSpeed (mobile)…");
@@ -190,6 +205,7 @@ async function loadSpeed(){
     if(data.state!=="available"){
       for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
       text("speed-inp-source","Brak danych terenowych · ms");
+      clearLcpDiagnostics();
       text("seo-speed-state","PageSpeed: "+(speedReasons[data.reason]||speedReasons.provider_failed));
       return;
     }
@@ -202,11 +218,13 @@ async function loadSpeed(){
       data.inpSource==="origin"?"Cała domena gracz.pl · dane terenowe (ms)":
       "Nieznane źródło danych INP");
     text("speed-tbt",data.tbtMs??"—");
+    showLcpDiagnostics(data);
     text("seo-speed-state","PageSpeed / Lighthouse · nowy pomiar: "+asDate(data.checkedAt)+
       ". INP: dane użytkowników (strona lub domena). TBT: pomiar laboratoryjny, nie INP.");
   }catch{
     for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
     text("speed-inp-source","Brak danych terenowych · ms");
+    clearLcpDiagnostics();
     text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
   }finally{$("seo-speed-refresh").disabled=false;}
 }
