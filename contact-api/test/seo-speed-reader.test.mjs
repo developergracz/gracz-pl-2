@@ -235,3 +235,84 @@ test("SEO PageSpeed interface labels provenance and TBT independently",async()=>
   assert.match(js,/Brak danych terenowych/);
   assert.match(js,/data.tbtMs\?\?"—"/);
 });
+
+test("modern Lighthouse LCP breakdown retains only numeric phases and short element identity",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    lighthouseResult:{categories:{performance:{score:0.93}},audits:{
+      "largest-contentful-paint":{numericValue:2832},
+      "lcp-breakdown-insight":{details:{type:"list",items:[
+        {type:"table",items:[
+          {subpart:"timeToFirstByte",duration:420.152},
+          {subpart:"resourceLoadDelay",duration:190},
+          {subpart:"resourceLoadDuration",duration:349.856},
+          {subpart:"elementRenderDelay",duration:1872.12},
+          {subpart:"other",duration:900}
+        ]},
+        {type:"node",selector:"#hero-title",nodeLabel:"Graj. Ucz się. Rywalizuj."}
+      ]}}
+    }}
+  })});
+  const data=await read();
+  assert.equal(data.state,"available");
+  assert.deepEqual(data.lcpElement,{selector:"#hero-title",label:"Graj. Ucz się. Rywalizuj."});
+  assert.deepEqual(data.lcpPhases,{
+    timeToFirstByte:420.15,
+    resourceLoadDelay:190,
+    resourceLoadDuration:349.86,
+    elementRenderDelay:1872.12
+  });
+  assert.equal(data.score,93);
+  assert.equal(data.lcpMs,2832);
+});
+
+test("text-only LCP has no fake image phases; missing audit remains unknown",async()=>{
+  const response=createSeoSpeedReader({fetcher:async()=>googleReport({
+    lighthouseResult:{categories:{performance:{score:0.99}},audits:{
+      "lcp-breakdown-insight":{details:{type:"list",items:[
+        {type:"table",items:[
+          {subpart:"timeToFirstByte",duration:290.11},
+          {subpart:"elementRenderDelay",duration:320.56}
+        ]},
+        {type:"node",selector:"h1",nodeLabel:"Portal"}
+      ]}}
+    }}
+  })});
+  const result=await response();
+  assert.deepEqual(result.lcpPhases,{
+    timeToFirstByte:290.11,resourceLoadDelay:null,
+    resourceLoadDuration:null,elementRenderDelay:320.56
+  });
+  const missing=await createSeoSpeedReader({fetcher:async()=>googleReport()})();
+  assert.equal(missing.lcpElement,null);
+  assert.equal(missing.lcpPhases,null);
+});
+
+test("older Lighthouse element shape is supported and malformed timings are never displayed as zero",async()=>{
+  const read=createSeoSpeedReader({fetcher:async()=>googleReport({
+    lighthouseResult:{categories:{performance:{score:0.9}},audits:{
+      "largest-contentful-paint-element":{details:{type:"list",items:[
+        {type:"table",items:[{node:{type:"node",selector:"main h1",
+          nodeLabel:"Example heading"}}]}
+      ]}},
+      "lcp-breakdown-insight":{details:{type:"list",items:[
+        {type:"table",items:[{subpart:"timeToFirstByte",duration:-200},
+          {subpart:"elementRenderDelay",duration:"42"}]}
+      ]}}
+    }}
+  })});
+  const out=await read();
+  assert.deepEqual(out.lcpElement,{selector:"main h1",label:"Example heading"});
+  assert.equal(out.lcpPhases,null);
+});
+
+test("OWNER SEO UI displays new LCP details from the same PageSpeed reading safely",async()=>{
+  const js=await readFile(new URL("../admin-r1/ui/seo.js",import.meta.url),"utf8");
+  const html=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  for(const id of ["speed-lcp-element","speed-lcp-ttfb","speed-lcp-load-delay",
+    "speed-lcp-load-time","speed-lcp-render-delay"])assert.ok(html.includes('id="'+id+'"'));
+  assert.match(js,/showLcpDiagnostics\(data\)/);
+  assert.match(js,/clearLcpDiagnostics\(\)/);
+  assert.match(js,/text\("speed-lcp-element",element\?\.selector/);
+  assert.match(js,/Brak szczegółów w raporcie/);
+  assert.match(js,/textContent=String\(value\)/);
+});
