@@ -38,12 +38,19 @@ const statusReason=status=>{
 };
 export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
   key=process.env.SEO_PAGESPEED_API_KEY,ttlMs=24*60*60*1000}={}) {
-  const cache=new Map(),inFlight=new Map();
-  async function read(strategy="mobile"){
+  const cache=new Map(),inFlight=new Map(),lastAttempts=new Map();
+  const MIN_REFRESH_INTERVAL_MS=60_000; // Avoid exhausting the Google API quota.
+  async function read(strategy="mobile",{refresh=false}={}){
     if(!["mobile","desktop"].includes(strategy))return {state:"invalid_strategy"};
-    const saved=cache.get(strategy);
-    if(saved&&now()-saved.at<ttlMs)return saved.data;
     if(inFlight.has(strategy))return inFlight.get(strategy);
+    const saved=cache.get(strategy);
+    if(!refresh&&saved&&now()-saved.at<ttlMs)return saved.data;
+    const last=lastAttempts.get(strategy);
+    if(refresh&&last!==undefined&&now()-last<MIN_REFRESH_INTERVAL_MS){
+      return {state:"rate_guard",strategy,
+        retryAfterSeconds:Math.ceil((MIN_REFRESH_INTERVAL_MS-(now()-last))/1000)};
+    }
+    lastAttempts.set(strategy,now());
     const task=(async()=>{
       const result={state:"unavailable",reason:"provider_failed",
         url:HOME,strategy,checkedAt:new Date(now()).toISOString(),
