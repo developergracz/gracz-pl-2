@@ -22,6 +22,7 @@
       <a href="#seo-google">◇ Google Search Console</a>
       <a href="#seo-inspect">◇ Indeksacja URL</a>
       <a href="#seo-speed">◇ PageSpeed</a>
+      <a href="#seo-guardian">◇ SEO Guardian</a>
       <a href="#seo-history">◇ Historia i alerty</a>
       <a href="#seo-advisor">◇ SEO Advisor</a>
       <a href="/owner/newsletter/">← Panel administracyjny</a>
@@ -51,6 +52,21 @@
       <article><p>Problemy SEO</p><strong id="seo-count">—</strong><small>Wymagają weryfikacji</small></article>
     </div>
     <p id="seo-time" class="muted">Ostatni odczyt: —</p>
+    <section class="panel" id="seo-guardian" aria-labelledby="seo-guardian-title">
+      <div class="section-title"><h2 id="seo-guardian-title">SEO Guardian · ochrona indeksacji i LCP</h2>
+        <button id="seo-guardian-refresh" type="button">Sprawdź Guardian</button></div>
+      <p class="muted">Lekki monitor wykorzystujący istniejące kontrole gracz.pl. Nie zmienia stron ani ustawień Google. AI Advisor pozostaje opcjonalny — bez płatnych wywołań AI.</p>
+      <p id="seo-guardian-status" role="status" aria-live="polite">Oczekiwanie na odczyt…</p>
+      <div class="cards">
+        <article><p>Stan Guardian</p><strong id="guardian-health">—</strong><small>Kontrola tylko do odczytu</small></article>
+        <article><p>Indeksowalność</p><strong id="guardian-index">—</strong><small>Wynik kontroli technicznej, nie gwarancja indeksacji</small></article>
+        <article><p>LCP mobile</p><strong id="guardian-lcp">—</strong><small>Laboratoryjny Lighthouse, cel &lt; 2500 ms</small></article>
+      </div>
+      <p id="guardian-checked-at" class="muted">Ostatnia kontrola: —</p>
+      <p id="guardian-speed-at" class="muted">Ostatni pomiar Lighthouse: —</p>
+      <h3>Ostrzeżenia i zalecenia</h3>
+      <ul id="guardian-alerts"><li>Oczekiwanie na wyniki.</li></ul>
+    </section>
     <section class="panel" id="seo-pages">
       <div class="seo-pages-heading">
         <h2>Podstrony gracz.pl</h2>

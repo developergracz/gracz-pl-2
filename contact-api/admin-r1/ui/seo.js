@@ -210,6 +210,49 @@ async function loadSpeed(){
     text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
   }finally{$("seo-speed-refresh").disabled=false;}
 }
+const guardianStates={healthy:"BEZ OSTRZEŻEŃ",attention:"WYMAGA KONTROLI",unknown:"BRAK PEŁNYCH DANYCH"};
+async function loadGuardian(){
+  $("seo-guardian-refresh").disabled=true;
+  text("seo-guardian-status","Sprawdzanie indeksowalności i ostatniego pomiaru Lighthouse…");
+  try{
+    const data=await readPrivate("guardian");
+    if(data.scope!=="owner_read_only"||!guardianStates[data.state]||
+       !Array.isArray(data.alerts)||!data.technical||!data.performance)
+      throw Error("invalid_guardian_report");
+    text("guardian-health",guardianStates[data.state]);
+    text("guardian-index",data.technical.state==="healthy"?"OK":
+      data.technical.state==="attention"?"UWAGA":"—");
+    text("guardian-lcp",data.performance.lcpMs==null?"—":data.performance.lcpMs+" ms");
+    text("guardian-checked-at","Ostatnia kontrola: "+asDate(data.checkedAt));
+    text("guardian-speed-at",data.performance.checkedAt?
+      "Pomiar Lighthouse wykonano: "+asDate(data.performance.checkedAt)+
+      " (wynik może pochodzić z pamięci do 24 godzin).":
+      "Pomiar Lighthouse: niedostępny.");
+    text("seo-guardian-status",data.state==="healthy"?
+      "Brak wykrytych zagrożeń w bieżących kontrolach technicznych i laboratoryjnych.":
+      data.state==="attention"?"Wykryto problemy wymagające sprawdzenia.":
+      "Nie udało się potwierdzić wszystkich wskaźników. Brak danych nie oznacza awarii.");
+    const list=document.createDocumentFragment();
+    for(const alert of data.alerts.slice(0,13)){
+      const item=document.createElement("li");
+      item.textContent=String(alert.message||"Wymagana weryfikacja")+
+        (alert.url&&alert.url!=="https://gracz.pl"?" — "+alert.url:"");
+      list.append(item);
+    }
+    if(data.alerts.length===0){
+      const item=document.createElement("li");
+      item.textContent="Brak alarmów. To nie jest gwarancja pozycji ani obecności w indeksie Google.";
+      list.append(item);
+    }
+    $("guardian-alerts").replaceChildren(list);
+  }catch{
+    text("guardian-health","—");text("guardian-index","—");text("guardian-lcp","—");
+    text("guardian-checked-at","Ostatnia kontrola: —");
+    text("guardian-speed-at","Pomiar Lighthouse: —");
+    text("seo-guardian-status","Guardian: brak potwierdzonego odczytu. Spróbuj ponownie.");
+    $("guardian-alerts").replaceChildren();
+  }finally{$("seo-guardian-refresh").disabled=false;}
+}
 async function inspectGoogle(event){
   event.preventDefault();
   const url=$("seo-inspect-url").value;
@@ -248,6 +291,8 @@ async function inspectGoogle(event){
 }
 $("google-refresh").addEventListener("click",()=>void loadGoogle());
 $("seo-speed-refresh").addEventListener("click",()=>void loadSpeed());
+$("seo-guardian-refresh").addEventListener("click",()=>void loadGuardian());
 $("seo-inspect-form").addEventListener("submit",event=>void inspectGoogle(event));
 void loadGoogle();
 void loadHistory();
+void loadGuardian();
