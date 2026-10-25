@@ -70,32 +70,157 @@ export function createSeoGoogleReader({
     });
   }
   const metrics=row=>({
-    clicks:Number.isFinite(row?.clicks)?row.clicks:0,
-    impressions:Number.isFinite(row?.impressions)?row.impressions:0,
-    ctr:Number.isFinite(row?.ctr)?Math.round(row.ctr*10000)/100:null,
-    position:Number.isFinite(row?.position)?Math.round(row.position*100)/100:null
+    clicks:Number.isFinite(row?.clicks)&&row.clicks>=0?Math.round(row.clicks):0,
+    impressions:Number.isFinite(row?.impressions)&&row.impressions>=0?Math.round(row.impressions):0,
+    ctr:Number.isFinite(row?.ctr)&&row.ctr>=0?Math.round(row.ctr*10000)/100:null,
+    position:Number.isFinite(row?.position)&&row.position>=0?Math.round(row.position*100)/100:null
   });
+  // Search Console dates and incomplete-date metadata use Pacific time, not UTC/Warsaw.
+  const pacificToday=()=>{
+    const parts=new Intl.DateTimeFormat("en-US",{
+      timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit"
+    }).formatToParts(new Date(now()));
+    const part=x=>parts.find(y=>y.type===x)?.value;
+    return part("year")+"-"+part("month")+"-"+part("day");
+  };
+  const shiftDay=(date,offset)=>{
+    const d=new Date(date+"T12:00:00Z");
+    d.setUTCDate(d.getUTCDate()+offset);
+    return d.toISOString().slice(0,10);
+  };
+  const pctChange=(current,previous)=>{
+    if(previous===0)return null; // no invented growth percentages from zero.
+    return Math.round((current-previous)/previous*10000)/100;
+  };
+  const validPage=url=>{
+    if(typeof url!=="string"||url.length>240)return false;
+    try{
+      const parsed=new URL(url);
+      return parsed.origin==="https://gracz.pl"&&!parsed.username&&!parsed.password&&
+        !parsed.search&&!parsed.hash&&parsed.href===url;
+    }catch{return false;}
+  };
+  function compareTotals(current,previous){
+    return {previous,clicksPercent:pctChange(current.clicks,previous.clicks),
+      impressionsPercent:pctChange(current.impressions,previous.impressions),
+      ctrPoints:current.ctr===null||previous.ctr===null?null:
+        Math.round((current.ctr-previous.ctr)*100)/100,
+      positionChange:current.position===null||previous.position===null?null:
+        Math.round((current.position-previous.position)*100)/100};
+  }
+  function comparePages(current,previous){
+    // Search Analytics returns top rows, not an exhaustive page inventory.
+    // Compare only URLs actually returned in BOTH periods; never fill missing
+    // pages with synthetic zeros or treat them as confirmed traffic losses.
+    const prev=new Map(previous.map(r=>[r.url,r]));
+    return current.filter(r=>prev.has(r.url)).map(r=>{
+      const old=prev.get(r.url);
+      const delta=r.impressions-old.impressions;
+      return {url:r.url,clicks:r.clicks,impressions:r.impressions,position:r.position,
+        previousClicks:old.clicks,previousImpressions:old.impressions,
+        clickChange:r.clicks-old.clicks,impressionChange:delta,
+        positionChange:r.position===null||old.position===null?null:
+          Math.round((r.position-old.position)*100)/100,
+        trend:delta>0?"up":delta<0?"down":"flat"};
+    }).sort((a,b)=>Math.abs(b.impressionChange)-Math.abs(a.impressionChange)||
+      b.impressions-a.impressions).slice(0,15);
+  }
+  function alerts(current,previous,brandCurrent,brandPrevious,changes){
+    const all=[];
+    if(previous.clicks>=20&&current.clicks<previous.clicks*.7)
+      all.push({id:"clicks_drop",severity:"warning",
+        text:"Spadek kliknięć z Google o co najmniej 30% względem poprzednich 28 dni."});
+    if(previous.impressions>=100&&current.impressions<previous.impressions*.75)
+      all.push({id:"impressions_drop",severity:"warning",
+        text:"Spadek wyświetleń w Google o co najmniej 25% względem poprzednich 28 dni."});
+    if(brandCurrent.found&&brandPrevious.found&&brandPrevious.impressions>=20&&
+      brandCurrent.impressions<brandPrevious.impressions*.7)
+      all.push({id:"gracz_drop",severity:"warning",
+        text:"Spadek wyświetleń dla dokładnej frazy „gracz” o co najmniej 30%."});
+    const weak=changes.filter(p=>p.previousImpressions>=50&&
+      p.impressionChange<=-Math.max(20,p.previousImpressions*.3)).slice(0,3);
+    for(const p of weak)all.push({id:"page_drop",severity:"notice",
+      text:"Znaczny spadek wyświetleń podstrony: "+p.url});
+    return all.slice(0,6);
+  }
   async function collect(){
     const data={state:"unavailable",property,updatedAt:new Date(now()).toISOString(),
-      startDate:null,endDate:null,totals:null,days:[],queries:[],pages:[]};
+      startDate:null,endDate:null,totals:null,days:[],queries:[],pages:[],
+      comparison:null,brand:null,pageChanges:[],alerts:[],
+      freshness:{state:"unavailable",days:[],firstIncompleteDate:null,checkedAt:null}};
     try{
-      const endDate=day(now()-3*86400000),startDate=day(now()-30*86400000);
+      const today=pacificToday();
+      const endDate=shiftDay(today,-3),startDate=shiftDay(today,-30);
+      const previousEndDate=shiftDay(today,-31),previousStartDate=shiftDay(today,-58);
       const url=GSC_API+encodeURIComponent(property)+"/searchAnalytics/query";
-      const query=(dimensions,rowLimit)=>googlePost(url,{
-        startDate,endDate,dimensions,rowLimit,type:"web"
+      const query=(startDate,endDate,dimensions,rowLimit,extra={})=>googlePost(url,{
+        startDate,endDate,dimensions,rowLimit,type:"web",...extra
       });
-      const [totals,days,queries,pages]=await Promise.all([
-        query([],1),query(["date"],31),query(["query"],10),query(["page"],10)
+      const brandFilter={dimensionFilterGroups:[{groupType:"and",filters:[
+        {dimension:"query",operator:"equals",expression:"gracz"}]}]};
+      // Only finalized data participates in 28-day trends, changes and alerts.
+      const [totals,days,queries,pages,previousTotals,previousPages,
+        brandCurrent,brandPrevious]=await Promise.all([
+        query(startDate,endDate,[],1),
+        query(startDate,endDate,["date"],31),
+        query(startDate,endDate,["query"],10),
+        query(startDate,endDate,["page"],250),
+        query(previousStartDate,previousEndDate,[],1),
+        query(previousStartDate,previousEndDate,["page"],250),
+        query(startDate,endDate,[],1,brandFilter),
+        query(previousStartDate,previousEndDate,[],1,brandFilter)
       ]);
-      if(!Array.isArray(totals.rows??[])||!Array.isArray(days.rows??[])||
-         !Array.isArray(queries.rows??[])||!Array.isArray(pages.rows??[]))
-        throw Error("invalid_provider_data");
+      if([totals,days,queries,pages,previousTotals,previousPages,brandCurrent,brandPrevious]
+        .some(x=>!Array.isArray(x.rows??[])))throw Error("invalid_provider_data");
+      const currentMetrics=metrics(totals.rows?.[0]),oldMetrics=metrics(previousTotals.rows?.[0]);
+      const brandMetrics=(reply)=>({found:reply.rows.length>0,...metrics(reply.rows?.[0])});
+      const branded=brandMetrics(brandCurrent),previousBranded=brandMetrics(brandPrevious);
+      const makePages=rows=>rows.slice(0,250).map(row=>({
+        url:safeText(row.keys?.[0],240),...metrics(row)
+      })).filter(row=>validPage(row.url));
+      const nowPages=makePages(pages.rows),priorPages=makePages(previousPages.rows);
+      const pageChanges=comparePages(nowPages,priorPages);
       data.state="connected";data.startDate=startDate;data.endDate=endDate;
-      data.totals=totals.rows?.length?metrics(totals.rows[0]):metrics(null);
-      data.days=days.rows.slice(0,31).map(row=>({date:safeText(row.keys?.[0],10),...metrics(row)}));
-      data.queries=queries.rows.slice(0,10).map(row=>({query:safeText(row.keys?.[0],120),...metrics(row)}));
-      data.pages=pages.rows.slice(0,10).map(row=>({url:safeText(row.keys?.[0],240),...metrics(row)}));
-    }catch{ /* no secrets or Google error details in OWNER response */ }
+      data.totals=currentMetrics;
+      data.days=days.rows.slice(0,31).map(row=>({
+        date:safeText(row.keys?.[0],10),...metrics(row)
+      })).filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date||""));
+      data.queries=queries.rows.slice(0,10).map(row=>({
+        query:safeText(row.keys?.[0],120),...metrics(row)
+      }));
+      data.pages=nowPages.slice(0,10);
+      data.comparison={
+        startDate:previousStartDate,endDate:previousEndDate,
+        ...compareTotals(currentMetrics,oldMetrics)
+      };
+      data.brand={query:"gracz",current:branded,previous:previousBranded,
+        clicksPercent:pctChange(branded.clicks,previousBranded.clicks),
+        impressionsPercent:pctChange(branded.impressions,previousBranded.impressions),
+        positionChange:branded.position===null||previousBranded.position===null?null:
+          Math.round((branded.position-previousBranded.position)*100)/100};
+      data.pageChanges=pageChanges;
+      data.alerts=alerts(currentMetrics,oldMetrics,branded,previousBranded,pageChanges);
+      // Newer data is intentionally separate: never combine provisional daily
+      // rows with finalized 28-day comparisons or ranking alerts.
+      try{
+        const fresh=await query(shiftDay(today,-5),today,["date"],7,{dataState:"all"});
+        if(!Array.isArray(fresh.rows??[]))throw Error("invalid_fresh_response");
+        const marker=fresh.metadata?.first_incomplete_date||
+          fresh.metadata?.firstIncompleteDate||null;
+        const firstIncompleteDate=typeof marker==="string"&&
+          /^\d{4}-\d{2}-\d{2}$/.test(marker)?marker:null;
+        const freshDays=fresh.rows.slice(0,7).map(row=>({
+          date:safeText(row.keys?.[0],10),...metrics(row)
+        })).filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date||"")&&row.date<=today);
+        data.freshness={state:"available",checkedAt:new Date(now()).toISOString(),
+          timezone:"America/Los_Angeles",firstIncompleteDate,
+          days:freshDays.map(x=>({...x,provisional:firstIncompleteDate?
+            x.date>=firstIncompleteDate:true}))};
+      }catch{
+        data.freshness={state:"unavailable",days:[],
+          firstIncompleteDate:null,checkedAt:new Date(now()).toISOString()};
+      }
+    }catch{ /* no secrets or provider internals in OWNER output */ }
     return data;
   }
   async function read(){
