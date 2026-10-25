@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {STAGE,trustedStage,rehearse} from "./performance-rollback-stage.mjs";
 
 const SERVICE={id:STAGE.id,name:STAGE.name,repo:STAGE.repo,branch:STAGE.branch,
- type:"static_site",autoDeploy:"yes",serviceDetails:{url:STAGE.origin}};
+ type:"static_site",autoDeploy:"yes",autoDeployTrigger:"commit",rootDir:"",
+ serviceDetails:{url:STAGE.origin,publishPath:"performance/staging"}};
 const response=(status,payload)=>({ok:status<400,status,json:async()=>payload});
 function fake({wrongService=false,badStageMarker=false,lostReply=false,staleStageReads=0}={}) {
   let version="A",posts=0,remainingStale=staleStageReads;
@@ -43,6 +44,11 @@ function fake({wrongService=false,badStageMarker=false,lostReply=false,staleStag
 }
 test("service identity is hardcoded to isolated noindex staging service",()=>{
   assert.equal(trustedStage(SERVICE),true);
+  assert.equal(trustedStage({...SERVICE,autoDeploy:"no",autoDeployTrigger:"off"}),true);
+  assert.equal(trustedStage({...SERVICE,autoDeploy:"no"}),false); // mismatch with commit
+  assert.equal(trustedStage({...SERVICE,autoDeploy:"no",autoDeployTrigger:"commit"}),false);
+  assert.equal(trustedStage({...SERVICE,rootDir:"maintenance-site"}),false);
+  assert.equal(trustedStage({...SERVICE,serviceDetails:{...SERVICE.serviceDetails,publishPath:"."}}),false);
   assert.equal(trustedStage({...SERVICE,name:"gracz-pl-maintenance"}),false);
   assert.equal(trustedStage({...SERVICE,branch:"main"}),false);
   assert.equal(trustedStage({...SERVICE,id:"srv-da9m8rhsrm7s73co2780"}),false);
@@ -87,4 +93,17 @@ test("rollback marker retries stale CDN pages using unique cache-busting probes"
   const probes=m.calls.filter(x=>x.url.startsWith(STAGE.origin+"/?perf_rollback_probe="));
   assert.ok(probes.length>=9);
   assert.equal(new Set(probes.map(x=>x.url)).size,probes.length);
+});
+
+test("safe API rollback rehearsal accepts autodeploy disabled on verified staging",async()=>{
+  const m=fake();
+  const fetcher=async(url,opts)=>{
+    if(url==="https://api.render.com/v1/services/"+STAGE.id)
+      return response(200,{...SERVICE,autoDeploy:"no",autoDeployTrigger:"off"});
+    return m.fetcher(url,opts);
+  };
+  const result=await rehearse({key:"dummy",fetcher,sleeper:async()=>{}});
+  assert.equal(result.state,"rollback_verified");
+  assert.equal(m.posts,2);
+  assert.equal(m.version,"A");
 });
