@@ -111,7 +111,7 @@ test("PageSpeed forced refresh bypasses 24-hour cache once 60-second quota guard
   const read=createSeoSpeedReader({now:()=>t,fetcher:async()=>{
     calls++;
     return googleReport({lighthouseResult:{
-      categories:{performance:{score:calls===1?.91:.95}},
+      categories:{performance:{score:calls===1 ? 0.91 : 0.95}},
       audits:{"largest-contentful-paint":{numericValue:calls===1?3098:2410},
         "cumulative-layout-shift":{numericValue:0}}
     }});
