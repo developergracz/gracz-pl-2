@@ -94,3 +94,23 @@ test("offscreen mobile LCP paint optimization leaves both critical hero regions 
   assert.match(homeRule,/content-visibility:auto/);
   assert.match(pokerRule,/content-visibility:auto/);
 });
+
+
+test("Poker offscreen thumbnails are nonblocking but restored after first paint and without JavaScript",()=>{
+ const html=fs.readFileSync("maintenance-site/gry/poker-treningowy/index.html","utf8");
+ const js=fs.readFileSync("maintenance-site/assets/poker-treningowy.js","utf8");
+ const css=fs.readFileSync("maintenance-site/assets/related-thumbnails.css","utf8");
+ assert.match(html,/<link rel="stylesheet" href="\/assets\/related-thumbnails\.css\?v=frameless-r2" media="print" data-poker-related-style>/);
+ assert.match(html,/<noscript><link rel="stylesheet" href="\/assets\/related-thumbnails\.css\?v=frameless-r2"><\/noscript>/);
+ assert.match(js,/querySelector\('link\[data-poker-related-style\]'\)/);
+ assert.match(js,/requestAnimationFrame\(activateRelatedStyle\)/);
+ assert.match(js,/relatedStyle\.media='all'/);
+ assert.match(css,/\.related-image\{/);
+ // Visible first-screen hero, cookie consent and navigation remain render-blocking.
+ for (const href of ["cookie-consent.css?v=r3","poker-treningowy.css?v=corr-r1",
+   "unified-subpage-hero.css?v=r2","academy-global-qa.css?v=corr-r1",
+   "global-header-r1.css?v=r3"]){
+   assert.match(html,new RegExp('<link rel="stylesheet" href="/assets/'+href.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'">'));
+ }
+ assert.doesNotMatch(css,/\.gcc-dialog|\.hero-card|\.site-header/);
+});

@@ -1,6 +1,20 @@
 (function(){
   'use strict';
 
+  // Related thumbnails appear below the first viewport. Keep their stylesheet
+  // non-blocking until after the first paint; critical hero/CMP styles stay eager.
+  var relatedStyle=document.querySelector('link[data-poker-related-style]');
+  if(relatedStyle){
+    var activateRelatedStyle=function(){relatedStyle.media='all';};
+    if(typeof window.requestAnimationFrame==='function'){
+      window.requestAnimationFrame(function(){
+        window.requestAnimationFrame(activateRelatedStyle);
+      });
+    }else{
+      window.setTimeout(activateRelatedStyle,0);
+    }
+  }
+
   // Progress integrity helpers (assets/academy-progress.js); safe no-op fallback keeps the page working without them.
   var GA=window.GraczAcademy||{passMark:function(n){return Math.ceil(n*2/3);},refresh:function(){},mark:function(){},explore:function(){},status:function(){}};
 
