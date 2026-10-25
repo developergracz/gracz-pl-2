@@ -17,7 +17,7 @@ const make=()=>{
  const css='<link rel="stylesheet" href="/assets/contact-modal.css?v=r8" data-contact-modal-style>';
  const fontTags=["montserrat-latin.woff2","montserrat-latin-ext.woff2"].map(f=>`<link rel="preload" href="/assets/fonts/${f}" as="font" type="font/woff2" crossorigin>`).join("\n");
  put("index.html",'<head>'+fontTags+'</head><body>'+shared+'</body>');
- put("gry-karciane/index.html",'<head>'+css+'</head><body>'+shared+'<img src="/assets/gry-karciane-hero-reference.webp" alt=""></body>');
+ put("gry-karciane/index.html",'<head>\n  '+css+'\n</head><body>'+shared+'<img src="/assets/gry-karciane-hero-reference.webp" alt=""></body>');
  put("o-gracz-pl/index.html",'<head></head><body><img src="/assets/o-gracz-pl-hero-approved.webp" alt=""></body>');
  return {root,put,cleanup:()=>fs.rmSync(root,{recursive:true,force:true})};
 };
