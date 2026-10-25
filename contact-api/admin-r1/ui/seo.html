@@ -90,11 +90,63 @@
         <button type="button" id="google-refresh">Odśwież raport</button></div>
       <p id="google-state" class="muted" role="status">Sprawdzanie połączenia Google…</p>
       <p id="google-period" class="muted">Okres danych: —</p>
+      <p id="google-freshness-note" class="muted">Źródło: Google Search Console API · statystyki pochodzą z Google, nie z bieżącego ruchu na serwerze.</p>
       <div class="cards" aria-label="Raport widoczności Google">
         <article><p>Kliknięcia</p><strong id="google-clicks">—</strong><small>Wynik Google Search</small></article>
         <article><p>Wyświetlenia</p><strong id="google-impressions">—</strong><small>W wynikach wyszukiwania</small></article>
         <article><p>CTR</p><strong id="google-ctr">—</strong><small>Procent kliknięć</small></article>
         <article><p>Śr. pozycja</p><strong id="google-position">—</strong><small>Średnia, nie stały ranking</small></article>
+      </div>
+      <div class="seo-google-monitor-r4" aria-label="Google SEO Monitor">
+        <h3>Porównanie 28 dni z poprzednimi 28 dniami</h3>
+        <p id="google-compare-period" class="muted">Okres porównawczy: —</p>
+        <div class="cards seo-google-comparison">
+          <article><p>Zmiana kliknięć</p><strong id="google-delta-clicks">—</strong><small id="google-delta-clicks-base">Poprzedni okres: —</small></article>
+          <article><p>Zmiana wyświetleń</p><strong id="google-delta-impressions">—</strong><small id="google-delta-impressions-base">Poprzedni okres: —</small></article>
+          <article><p>Zmiana CTR</p><strong id="google-delta-ctr">—</strong><small>Różnica w punktach procentowych</small></article>
+          <article><p>Zmiana średniej pozycji</p><strong id="google-delta-position">—</strong><small>Wartość ujemna oznacza poprawę</small></article>
+        </div>
+        <section class="seo-google-brand" aria-labelledby="google-brand-title">
+          <h3 id="google-brand-title">Fraza „gracz” · dokładne zapytanie</h3>
+          <p id="google-brand-note" class="muted">Sprawdzanie danych dla zapytania „gracz”…</p>
+          <div class="cards">
+            <article><p>Kliknięcia</p><strong id="google-brand-clicks">—</strong><small id="google-brand-clicks-change">Zmiana: —</small></article>
+            <article><p>Wyświetlenia</p><strong id="google-brand-impressions">—</strong><small id="google-brand-impressions-change">Zmiana: —</small></article>
+            <article><p>CTR</p><strong id="google-brand-ctr">—</strong><small>Fraza dokładna „gracz”</small></article>
+            <article><p>Śr. pozycja</p><strong id="google-brand-position">—</strong><small id="google-brand-position-change">Zmiana: —</small></article>
+          </div>
+        </section>
+        <section class="seo-google-freshness" aria-labelledby="google-fresh-title">
+          <h3 id="google-fresh-title">Najnowsze dostępne dane Google</h3>
+          <p id="google-fresh-state" class="muted">Sprawdzanie najświeższych dni…</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Data (czas Google/Pacific)</th><th>Kliknięcia</th><th>Wyświetlenia</th><th>Status</th></tr></thead>
+            <tbody id="google-fresh-days"></tbody>
+          </table></div>
+        </section>
+        <section class="seo-google-changes" aria-labelledby="google-changes-title">
+          <div class="section-title">
+            <h3 id="google-changes-title">Widoczność podstron — zmiany wyświetleń</h3>
+            <label for="google-trend-filter">Pokaż
+              <select id="google-trend-filter">
+                <option value="all">Wszystkie kierunki</option>
+                <option value="up">Wzrosty</option>
+                <option value="down">Spadki</option>
+                <option value="flat">Bez zmian</option>
+              </select>
+            </label>
+          </div>
+          <p id="google-changes-info" class="muted">Porównujemy tylko adresy zwrócone przez Google w obu okresach; brak adresu w próbie nie oznacza zera.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Podstrona</th><th>Wyświetlenia teraz</th><th>Zmiana wyświetleń</th><th>Zmiana kliknięć</th><th>Zmiana pozycji</th></tr></thead>
+            <tbody id="google-page-changes"></tbody>
+          </table></div>
+        </section>
+        <section class="seo-google-alerts" aria-labelledby="google-alerts-title">
+          <h3 id="google-alerts-title">Alerty zmian widoczności</h3>
+          <p class="muted">Ostrzeżenia są liczone wyłącznie z zakończonych okresów. Nie potwierdzają przyczyny spadku ani kar Google.</p>
+          <ul id="google-alert-list" aria-live="polite"><li>Oczekiwanie na dane…</li></ul>
+        </section>
       </div>
       <div class="table-wrap seo-daily-trend">
         <h3>Trendy dzienne Google (ostatnie 28 dni)</h3>
