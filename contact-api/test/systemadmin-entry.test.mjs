@@ -18,7 +18,8 @@ test("OWNER header/footer is shared across protected pages and login stays Premi
   assert.match(router,/class="owner-premium-login-footer"/);
   assert.match(router,/class="owner-login-security-note"/);
   assert.match(router,/Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone/);
-  assert.match(router,/\.replace\('<body>','<body class="owner-admin-layout">'\+bar\+identity\)/);
+  assert.match(router,/const layoutClass='owner-admin-layout'\+\(current==='hub'\?' owner-admin-hub-layout':''\)/);
+  assert.match(router,/\.replace\('<body>','<body class="'\+layoutClass\+'">'\+bar\+identity\)/);
   assert.match(router,/\.replace\('<\/body>',footer\+'<\/body>'\)/);
   assert.match(shellCss,/\.owner-premium-heading span\{color:#ff536c\}/);
   assert.match(shellCss,/\.owner-premium-footer\{/);
@@ -277,6 +278,36 @@ test("System Admin removes decorative spade and fits desktop viewport while mobi
   assert.match(css,/\.systemadmin-center\{[^}]*min-height:0/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/\.systemadmin-tiles\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
+test("Full Max Premium hub fits laptop with two full cards and footer, without clipping smaller screens",async()=>{
+  const html=await read("../admin-r1/ui/systemadmin.html");
+  const css=await read("../admin-r1/ui/systemadmin.css");
+  const router=await read("../admin-r1/owner-router.mjs");
+  assert.match(router,/current==='hub'\?' owner-admin-hub-layout':''/);
+  assert.equal((html.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.match(html,/Przejdź do panelu SEO/);
+  assert.match(html,/Przejdź do Newslettera/);
+  assert.match(html,/class="systemadmin-secure-note"/);
+  assert.match(css,/@media \(min-width:761px\) and \(max-height:900px\)/);
+  for(const selector of [
+    '.owner-admin-hub-layout .owner-premium-identity',
+    '.owner-admin-hub-layout .systemadmin-center',
+    '.owner-admin-hub-layout .systemadmin-tiles',
+    '.owner-admin-hub-layout .systemadmin-tile',
+    '.owner-admin-hub-layout .systemadmin-tile-action',
+    '.owner-admin-hub-layout .systemadmin-secure-note',
+    '.owner-admin-hub-layout .owner-premium-footer'
+  ]){
+    assert.ok(css.includes(selector+'{'),"Missing compact laptop rule "+selector);
+  }
+  const compact=css.slice(css.indexOf('/* Premium two-tile hub: keep BOTH'));
+  assert.match(compact,/\.owner-admin-hub-layout \.systemadmin-tile\{[\s\S]*?min-height:260px/);
+  assert.match(compact,/\.owner-admin-hub-layout \.systemadmin-tile-action\{[\s\S]*?min-height:43px/);
+  assert.doesNotMatch(compact,/overflow\s*:\s*hidden|display\s*:\s*none|position\s*:\s*fixed/,
+    "Never hide content or pin the footer over cards");
+  assert.match(css,/@media\(max-width:760px\)/,
+    "Mobile must keep its normal single-column scrollable layout");
 });
 
 test("protected hub contains exactly the two OWNER target panels",async()=>{
