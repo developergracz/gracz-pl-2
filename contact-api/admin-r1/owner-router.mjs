@@ -11,6 +11,7 @@ import {createSeoLiveReader} from './seo-live-reader.mjs';
 import {createSeoGoogleReader} from './seo-google-reader.mjs';
 import {createSeoSpeedReader} from './seo-speed-reader.mjs';
 import {createSeoGuardian} from './seo-guardian.mjs';
+import {createPerformanceReader} from './performance-reader.mjs';
 const PREFIX='/owner/newsletter';
 const OWNER_HUB=PREFIX+'/systemadmin';
 const OWNER_HUB_LOGIN=PREFIX+'/login/systemadmin';
@@ -22,6 +23,7 @@ function withAdminSwitchBar(html,current) {
     '<a class="systemadmin-topnav-brand" href="'+OWNER_HUB+'">gracz<span>.pl</span> · SYSTEM ADMIN</a>'+
     nav('Centrum administracyjne',OWNER_HUB,'hub')+
     nav('SEO Control Center',PREFIX+'/seo','seo')+
+    nav('Performance Guardian',PREFIX+'/performance','performance')+
     nav('Panel administracyjny Newslettera',PREFIX+'/','newsletter')+
     '<button type="button" id="systemadmin-logout" class="systemadmin-logout">Wyloguj</button>'+
     '<span id="systemadmin-logout-status" class="systemadmin-logout-status" role="status" aria-live="polite"></span>'+
@@ -197,6 +199,7 @@ export function createOwnerRouter({
   const seoGoogle=createSeoGoogleReader();
   const readSeoSpeed=createSeoSpeedReader();
   const readSeoGuardian=createSeoGuardian({readStatus:readSeoStatus,readSpeed:readSeoSpeed});
+  const readPerformance=createPerformanceReader();
   // Bounded, process-local recent panel checks. Not a persistent 24h archive.
   const seoHistory=[];
   async function seoSnapshot(){
@@ -242,7 +245,8 @@ export function createOwnerRouter({
     // Host/TLS and configured checks run first; private JSON endpoints stay fail-closed.
     if(req.method==='GET' &&
        (url.pathname===PREFIX+'/' || url.pathname===PREFIX+'/login' ||
-        url.pathname===PREFIX+'/seo' || url.pathname===OWNER_HUB ||
+        url.pathname===PREFIX+'/seo' || url.pathname===PREFIX+'/performance' ||
+        url.pathname===OWNER_HUB ||
         url.pathname===OWNER_HUB_LOGIN) &&
        url.search==='?utm_source=chatgpt.com'){
       res.writeHead(302,{...privateHeaders,Location:url.pathname});
@@ -391,7 +395,7 @@ export function createOwnerRouter({
       // Only the HTML entry point redirects unauthenticated browsers to login.
       // Private JSON endpoints still fail closed, without any authentication bypass.
       const ownerEntry=req.method==='GET'&&(path===PREFIX+'/'||path===PREFIX||
-        path===PREFIX+'/seo'||path===OWNER_HUB);
+        path===PREFIX+'/seo'||path===PREFIX+'/performance'||path===OWNER_HUB);
       const entryLogin=path===OWNER_HUB?OWNER_HUB_LOGIN:PREFIX+'/login';
       if(!cookie){
         if(ownerEntry){
@@ -426,6 +430,18 @@ export function createOwnerRouter({
           'text/javascript; charset=utf-8');
       // Read-only SEO CONTROL CENTER reuses the current durable OWNER session.
       // Never expose its HTML, assets or monitoring JSON before authentication.
+      // Performance Guardian: all data and assets require the same OWNER session.
+      if(req.method==='GET'&&path===PREFIX+'/performance')
+        return text(res,200,withAdminSwitchBar(
+          await readFile(new URL('./ui/performance.html',import.meta.url),'utf8'),'performance'));
+      if(req.method==='GET'&&path===PREFIX+'/performance.js')
+        return text(res,200,await readFile(new URL('./ui/performance.js',import.meta.url)),
+          'text/javascript; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/performance.css')
+        return text(res,200,await readFile(new URL('./ui/performance.css',import.meta.url)),
+          'text/css; charset=utf-8');
+      if(req.method==='GET'&&path===PREFIX+'/performance/report')
+        return response(res,200,await readPerformance());
       if(req.method==='GET'&&path===PREFIX+'/seo')
         return text(res,200,withAdminSwitchBar(
           await readFile(new URL('./ui/seo.html',import.meta.url),'utf8'),'seo'));
