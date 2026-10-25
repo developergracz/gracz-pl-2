@@ -369,6 +369,19 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(seoRedirect.headers.location,'/owner/newsletter/seo');
     assert.equal(seoRedirect.headers['cache-control'],'no-store');
     assert.equal(seoRedirect.headers['set-cookie'],undefined);
+    for(const protectedPath of [
+      '/owner/newsletter/performance/report',
+      '/owner/newsletter/performance.js',
+      '/owner/newsletter/performance.css'
+    ]) {
+      const denial=await probe(protectedPath);
+      assert.equal(denial.status,401,'private Performance Guardian endpoint must reject anonymous readers');
+      assert.equal(denial.headers['cache-control'],'no-store');
+    }
+    const performanceUnauthenticated=await probe('/owner/newsletter/performance');
+    assert.equal(performanceUnauthenticated.status,302);
+    assert.equal(performanceUnauthenticated.headers.location,'/owner/newsletter/login');
+    assert.equal((await probe('/owner/newsletter/performance?utm_source=unsafe')).status,403);
     const seoUnauthenticated=await probe('/owner/newsletter/seo');
     assert.equal(seoUnauthenticated.status,302);
     assert.equal(seoUnauthenticated.headers.location,'/owner/newsletter/login');
@@ -1033,7 +1046,8 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
   assert.match(dashboardJs,/\$\("recent-check"\)\.addEventListener\("click",openRecentSubscribers\)/);
 
   // The existing secured topbar is present on every OWNER system page.
-  for(const page of ['/owner/newsletter/systemadmin','/owner/newsletter/seo','/owner/newsletter/']){
+  for(const page of ['/owner/newsletter/systemadmin','/owner/newsletter/seo',
+    '/owner/newsletter/performance','/owner/newsletter/']){
     const response=await call(page,{cookie});
     assert.equal(response.status,200);
     const markup=await response.text();
@@ -1045,21 +1059,30 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
       'Each OWNER page has exactly one common footer');
     if(page==='/owner/newsletter/systemadmin'){
       assert.match(markup,/<body class="owner-admin-layout owner-admin-hub-layout">/);
-      assert.equal((markup.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+      assert.equal((markup.match(/class="systemadmin-tile" href=/g)||[]).length,3);
       assert.match(markup,/Przejdź do panelu SEO/);
+       assert.match(markup,/Przejdź do Performance/);
       assert.match(markup,/Przejdź do Newslettera/);
       assert.match(markup,/class="systemadmin-secure-note"/);
     }else{
       assert.match(markup,/<body class="owner-admin-layout">/);
       assert.doesNotMatch(markup,/owner-admin-hub-layout/,
-        'Compact hub rules must not affect SEO and Newsletter interfaces');
+        'Compact hub rules must not affect other OWNER modules');
     }
     assert.match(markup,/class="owner-premium-heading">Panel Admin <span>gracz\.pl<\/span>/);
     assert.match(markup,/id="systemadmin-logout" class="systemadmin-logout">Wyloguj<\/button>/);
     assert.match(markup,/src="\/owner\/newsletter\/systemadmin-logout\.js" defer/);
     assert.match(markup,/href="\/owner\/newsletter\/seo"/);
+    assert.match(markup,/href="\/owner\/newsletter\/performance"/);
     assert.match(markup,/href="\/owner\/newsletter\/"/);
   }
+  for(const path of ['/owner/newsletter/performance.js','/owner/newsletter/performance.css']){
+    const asset=await call(path,{cookie});
+    assert.equal(asset.status,200,'authenticated OWNER reads its private Performance assets');
+  }
+  result=await call('/owner/newsletter/performance/report',{cookie});
+  assert.equal(result.status,200,'authenticated OWNER can read the Performance endpoint');
+  assert.equal((await result.json()).source,'github_actions_private');
   result=await call('/owner/newsletter/systemadmin-logout.js',{cookie});
   assert.equal(result.status,200,'Shared logout handler is served to authenticated OWNER');
   assert.match(await result.text(),/X-Owner-CSRF/);

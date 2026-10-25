@@ -53,7 +53,7 @@ test("login page places the original two-panel Centrum header above existing OWN
   assert.match(css,/@media\(max-width:520px\)/);
   assert.match(css,/@media\(max-height:740px\) and \(min-width:521px\)/);
   assert.match(hub,/id="systemadmin-heading">Centrum administracyjne/);
-  assert.equal((hub.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.equal((hub.match(/class="systemadmin-tile" href=/g)||[]).length,3);
   assert.doesNotMatch(router.slice(intro,fields),/class="systemadmin-tile"/);
   assert.match(router,/id="username"/);
   assert.match(router,/id="password"/);
@@ -161,7 +161,7 @@ test("Premium System Admin authenticates only on the OWNER origin without a seco
   assert.match(page,/login\/visual/);
 });
 
-test("Panel Admin reuses OWNER login and returns to the existing two-tile choice after login",async()=>{
+test("Panel Admin reuses OWNER login and returns to the existing three-tile choice after login",async()=>{
   const panel=await read("../../maintenance-site/paneladmin/index.html");
   const router=await read("../admin-r1/owner-router.mjs");
   const js=await read("../admin-r1/ui/visual-login.js");
@@ -175,7 +175,7 @@ test("Panel Admin reuses OWNER login and returns to the existing two-tile choice
   assert.doesNotMatch(js,/form\.dataset\.afterLogin==='newsletter'/);
   assert.match(js,/location\.replace\('\/owner\/newsletter\/systemadmin'\)/);
   const tiles=await read("../admin-r1/ui/systemadmin.html");
-  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,3);
   assert.match(tiles,/href="\/owner\/newsletter\/seo"/);
   assert.match(tiles,/href="\/owner\/newsletter\/"/);
   assert.doesNotMatch(js,/location\.replace\('\/owner\/newsletter\/'\)/);
@@ -184,7 +184,7 @@ test("Panel Admin reuses OWNER login and returns to the existing two-tile choice
   assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|console\./);
 });
 
-test("Panel Admin login success opens two-tile hub rather than the newsletter dashboard",async()=>{
+test("Panel Admin login success opens three-tile hub rather than the newsletter dashboard",async()=>{
   const script=await read("../admin-r1/ui/visual-login.js");
   const registered=new Map();
   const username={value:"syntheticowner"};
@@ -219,10 +219,10 @@ test("Panel Admin login success opens two-tile hub rather than the newsletter da
   assert.equal(password.value,"");
 });
 
-test("all OWNER login entries lead to the same protected two-tile selection page",async()=>{
+test("all OWNER login entries lead to the same protected three-tile selection page",async()=>{
   const script=await read("../admin-r1/ui/login.js");
   const tiles=await read("../admin-r1/ui/systemadmin.html");
-  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.equal((tiles.match(/class="systemadmin-tile" href=/g)||[]).length,3);
   assert.match(tiles,/href="\/owner\/newsletter\/seo"/);
   assert.match(tiles,/href="\/owner\/newsletter\/"/);
   for(const afterLogin of [undefined,"/owner/newsletter/","/owner/newsletter/systemadmin"]){
@@ -301,12 +301,12 @@ test("System Admin removes decorative spade and fits desktop viewport while mobi
   assert.match(css,/\.systemadmin-tiles\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
-test("Full Max Premium hub fits laptop with two full cards and footer, without clipping smaller screens",async()=>{
+test("Full Max Premium hub fits laptop with three full cards and footer, without clipping smaller screens",async()=>{
   const html=await read("../admin-r1/ui/systemadmin.html");
   const css=await read("../admin-r1/ui/systemadmin.css");
   const router=await read("../admin-r1/owner-router.mjs");
   assert.match(router,/current==='hub'\?' owner-admin-hub-layout':''/);
-  assert.equal((html.match(/class="systemadmin-tile" href=/g)||[]).length,2);
+  assert.equal((html.match(/class="systemadmin-tile" href=/g)||[]).length,3);
   assert.match(html,/Przejdź do panelu SEO/);
   assert.match(html,/Przejdź do Newslettera/);
   assert.match(html,/class="systemadmin-secure-note"/);
@@ -331,16 +331,16 @@ test("Full Max Premium hub fits laptop with two full cards and footer, without c
     "Mobile must keep its normal single-column scrollable layout");
 });
 
-test("both Premium gold tile actions hug their labels without stretching or losing bottom alignment",async()=>{
+test("all three Premium gold tile actions hug their labels without stretching or losing bottom alignment",async()=>{
   const html=await read("../admin-r1/ui/systemadmin.html");
   const css=await read("../admin-r1/ui/systemadmin.css");
   const actions=html.match(/class="systemadmin-tile-action"/g)||[];
-  assert.equal(actions.length,2);
+  assert.equal(actions.length,3);
   assert.match(html,/Przejdź do panelu SEO/);
   assert.match(html,/Przejdź do Newslettera/);
   const rule=css.match(/\.systemadmin-tile-action\{([^}]+)\}/)?.[1];
   assert.ok(rule,"Gold tile action style must exist");
-  assert.match(rule,/margin-top:auto/,"Place both actions at the card bottom");
+  assert.match(rule,/margin-top:auto/,"Place all actions at the card bottom");
   assert.match(rule,/align-self:flex-start/,"Do not stretch to full card width");
   assert.match(rule,/width:fit-content/);
   assert.match(rule,/max-width:100%/,"Avoid mobile overflow");

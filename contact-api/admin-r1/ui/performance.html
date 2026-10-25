@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Performance Guardian — System Admin gracz.pl</title>
+<link rel="stylesheet" href="/owner/newsletter/admin.css">
+<link rel="stylesheet" href="/owner/newsletter/performance.css">
+<script src="/owner/newsletter/performance.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Przejdź do treści</a>
+<main class="performance-main" id="main">
+  <div class="performance-head">
+    <div>
+      <p class="performance-eyebrow">FULL MAX PREMIUM · GRACZ.PL</p>
+      <h1>Performance Guardian <span>R3</span></h1>
+      <p class="performance-subtitle">Prywatny monitoring LCP i bezpieczeństwa napraw. Pomiary z GitHub Actions — bez płatnego OpenAI API.</p>
+    </div>
+    <a class="performance-back" href="/owner/newsletter/systemadmin">Centrum administracyjne</a>
+  </div>
+  <div class="performance-toolbar">
+    <p id="performance-status" role="status" aria-live="polite">Pobieranie raportu Performance Guardian…</p>
+    <button type="button" id="performance-refresh">Odśwież raport</button>
+  </div>
+  <section aria-labelledby="performance-metrics-title">
+    <h2 id="performance-metrics-title">Ostatni pomiar Lighthouse</h2>
+    <div class="performance-cards">
+      <article><p>Strona główna — telefon</p><strong id="perf-home-mobile">—</strong><small>Cel LCP poniżej 2,5 s</small></article>
+      <article><p>Strona główna — komputer</p><strong id="perf-home-desktop">—</strong><small>Laboratoryjny LCP</small></article>
+      <article><p>Poker — telefon</p><strong id="perf-poker-mobile">—</strong><small>Laboratoryjny LCP</small></article>
+    </div>
+    <p class="performance-note" id="performance-checked">Brak potwierdzonego pomiaru.</p>
+  </section>
+  <section class="performance-panel" aria-labelledby="performance-diagnosis-title">
+    <h2 id="performance-diagnosis-title">Diagnoza mobilnego LCP</h2>
+    <ul id="performance-diagnosis"><li>Oczekiwanie na dane…</li></ul>
+  </section>
+  <section class="performance-panel" aria-labelledby="performance-operations-title">
+    <h2 id="performance-operations-title">Bezpieczeństwo wdrożeń</h2>
+    <dl class="performance-facts">
+      <div><dt>Automatyczne naprawy</dt><dd>Wyłącznie zatwierdzona lista zmian, testy i PR</dd></div>
+      <div><dt>OpenAI API</dt><dd>Wyłączone — analiza regułowa</dd></div>
+      <div><dt>Ostatni test rollbacku staging</dt><dd id="performance-rollback">Brak potwierdzonego wyniku</dd></div>
+      <div><dt>Aktualny stan Render LIVE</dt><dd>Nieodczytywany w tym module — sprawdź w panelu Render</dd></div>
+    </dl>
+  </section>
+  <section class="performance-panel" aria-labelledby="performance-history-title">
+    <h2 id="performance-history-title">Historia uruchomień GitHub Actions</h2>
+    <div class="performance-table-scroll">
+      <table>
+        <thead><tr><th>Wykonanie</th><th>Data</th><th>Wynik</th><th>LCP mobile (główna)</th></tr></thead>
+        <tbody id="performance-history"><tr><td colspan="4">Oczekiwanie na wyniki…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="performance-note">Historia obejmuje ostatnie odczytane uruchomienia. Brak pomiaru nie oznacza awarii. Wyniki Lighthouse nie zastępują danych rzeczywistych użytkowników (CrUX).</p>
+  </section>
+  <p class="performance-note">GitHub Actions jest źródłem pomiarów; panel nie steruje wdrożeniami i nie przechowuje klucza GitHub w przeglądarce.</p>
+</main>
+</body>
+</html>
