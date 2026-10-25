@@ -70,3 +70,20 @@ test("unavailable LCP element audit is reported as unknown without guessing",()=
  assert.equal(a.lcpEvidence.element,null);
  assert.deepEqual(a.lcpEvidence.insightsAvailable,[]);
 });
+
+
+test("reports bounded first-party render-blocking URLs only, never external URLs",()=>{
+ const result=parseLighthouse({categories:{performance:{score:.78}},audits:{
+  "largest-contentful-paint":{numericValue:3300},
+  "render-blocking-resources":{details:{items:[
+   {url:"https://gracz.pl/assets/home-premium-max.css?v=1",wastedMs:600},
+   {url:"https://other.example/tracker.js",wastedMs:700},
+   {url:"https://gracz.pl/assets/home-premium-max.css?v=2",wastedMs:590},
+   {url:"https://gracz.pl/assets/global-header-r1.css",wastedMs:230}
+  ]}}
+ }},"https://gracz.pl/","mobile");
+ assert.deepEqual(result.lcpEvidence.blockers,[
+  {path:"/assets/home-premium-max.css",wastedMs:600},
+  {path:"/assets/global-header-r1.css",wastedMs:230}
+ ]);
+});
