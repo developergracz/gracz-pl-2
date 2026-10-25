@@ -10,6 +10,7 @@ import {getAttachmentCapabilities} from '../attachment-lab/integration.mjs';
 import {createSeoLiveReader} from './seo-live-reader.mjs';
 import {createSeoGoogleReader} from './seo-google-reader.mjs';
 import {createSeoSpeedReader} from './seo-speed-reader.mjs';
+import {createSeoGuardian} from './seo-guardian.mjs';
 const PREFIX='/owner/newsletter';
 const OWNER_HUB=PREFIX+'/systemadmin';
 const OWNER_HUB_LOGIN=PREFIX+'/login/systemadmin';
@@ -197,6 +198,7 @@ export function createOwnerRouter({
   const readSeoStatus=createSeoLiveReader();
   const seoGoogle=createSeoGoogleReader();
   const readSeoSpeed=createSeoSpeedReader();
+  const readSeoGuardian=createSeoGuardian({readStatus:readSeoStatus,readSpeed:readSeoSpeed});
   // Bounded, process-local recent panel checks. Not a persistent 24h archive.
   const seoHistory=[];
   async function seoSnapshot(){
@@ -430,6 +432,8 @@ export function createOwnerRouter({
           'text/css; charset=utf-8');
       if(req.method==='GET'&&path===PREFIX+'/seo/status')
         return response(res,200,await seoSnapshot());
+      if(req.method==='GET'&&path===PREFIX+'/seo/guardian')
+        return response(res,200,await readSeoGuardian());
       if(req.method==='GET'&&path===PREFIX+'/seo/history'){
         await seoSnapshot();
         return response(res,200,{ok:true,storage:"process_memory",entries:seoHistory.slice()});
