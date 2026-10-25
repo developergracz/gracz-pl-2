@@ -310,6 +310,26 @@ test("Full Max Premium hub fits laptop with two full cards and footer, without c
     "Mobile must keep its normal single-column scrollable layout");
 });
 
+test("both Premium gold tile actions hug their labels without stretching or losing bottom alignment",async()=>{
+  const html=await read("../admin-r1/ui/systemadmin.html");
+  const css=await read("../admin-r1/ui/systemadmin.css");
+  const actions=html.match(/class="systemadmin-tile-action"/g)||[];
+  assert.equal(actions.length,2);
+  assert.match(html,/Przejdź do panelu SEO/);
+  assert.match(html,/Przejdź do Newslettera/);
+  const rule=css.match(/\.systemadmin-tile-action\{([^}]+)\}/)?.[1];
+  assert.ok(rule,"Gold tile action style must exist");
+  assert.match(rule,/margin-top:auto/,"Place both actions at the card bottom");
+  assert.match(rule,/align-self:flex-start/,"Do not stretch to full card width");
+  assert.match(rule,/width:fit-content/);
+  assert.match(rule,/max-width:100%/,"Avoid mobile overflow");
+  assert.match(rule,/justify-content:flex-start/,"Keep arrow next to the label");
+  assert.doesNotMatch(rule,/width:100%|justify-content:space-between/);
+  assert.match(rule,/background:linear-gradient\(120deg,#f2d38f,#d5a84f\)/,
+    "Preserve original Full Max Premium gold styling");
+  assert.match(css,/\.owner-admin-hub-layout \.systemadmin-tile-action\{[\s\S]*?min-height:43px/);
+});
+
 test("protected hub contains exactly the two OWNER target panels",async()=>{
   const html=await read("../admin-r1/ui/systemadmin.html");
   assert.match(html,/SEO Control Center/);
