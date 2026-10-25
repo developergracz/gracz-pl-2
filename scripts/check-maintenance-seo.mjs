@@ -308,13 +308,10 @@ for (const file of allHtmlPages) {
     requireCheck((/\/assets\/legal-links\.js\?v=r(?:40-new-only-r1|41-active-modal-r1|42-verified-status-r1|43-verified-copy-r1|44-live-duplicate-r1|48-header-newsletter-dialog-20261021|49-premium-email-input-20261022)/.test(html)), `${rel}: approved legal/contact script version missing`);
   }
   if (/data-modal="contact"/i.test(html)) {
-    if (rel === "index.html") {
-      requireCheck(!/<link[^>]*href="\/assets\/contact-modal\.css\?v=r8"/i.test(html),
-        "homepage: contact-only CSS must not block initial rendering");
-    } else {
-      requireCheck(html.includes('/assets/contact-modal.css?v=r8'), `${rel}: contact modal CSS R8 must be preloaded to prevent flash`);
-      requireCheck(/data-contact-modal-style/i.test(html), `${rel}: contact modal preload marker missing`);
-    }
+    requireCheck(!/<link[^>]*href="\\/assets\\/contact-modal\\.css\\?v=r8"/i.test(html),
+      `${rel}: hidden contact modal CSS must not block initial rendering`);
+    requireCheck(html.includes('/assets/legal-links.js?v='),
+      `${rel}: contact modal must retain on-demand stylesheet loader`);
   }
   if (/\/zasady\/index\.html$/i.test(rel)) {
     requireCheck(html.includes('href="/"'), `${rel}: top navigation Start action missing`);
@@ -327,6 +324,22 @@ for (const file of allHtmlPages) {
   }
 }
 
+for (const [page, hero] of [
+  ["gry-karciane/index.html", "gry-karciane-hero-reference.webp"],
+  ["o-gracz-pl/index.html", "o-gracz-pl-hero-approved.webp"]
+]) {
+  const html = fs.readFileSync(path.join(root, page), "utf8");
+  requireCheck(html.includes(`href="/assets/${hero}" as="image" type="image/webp" fetchpriority="high"`),
+    `${page}: primary hero image requires early high-priority preload`);
+  requireCheck(html.includes(`src="/assets/${hero}"`) && html.includes(`fetchpriority="high"`),
+    `${page}: primary hero image must remain in the DOM`);
+  requireCheck(fs.existsSync(path.join(root, "assets", hero)), `${page}: hero asset missing`);
+}
+requireCheck(
+  /href="\\/assets\\/fonts\\/montserrat-latin\\.woff2" as="font" type="font\\/woff2" crossorigin fetchpriority="high"/.test(home) &&
+  /href="\\/assets\\/fonts\\/montserrat-latin-ext\\.woff2" as="font" type="font\\/woff2" crossorigin fetchpriority="high"/.test(home),
+  "homepage: primary heading fonts must receive high preload priority"
+);
 requireCheck(fs.existsSync(path.resolve(root, "assets/contact-modal.css")), "contact modal stylesheet missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/legal-links.js")), "legal-links.js missing");
 requireCheck(fs.existsSync(path.resolve(root, "assets/footer-newsletter.css")), "footer-newsletter.css missing");
