@@ -4,6 +4,37 @@ const HOME="https://gracz.pl/";
 const MAX_REPORT_BYTES=12_000_000; // Lighthouse JSON routinely exceeds 800 KB.
 const num=value=>Number.isFinite(value)?Math.round(value*100)/100:null;
 
+// Read only stable, bounded Lighthouse diagnostics from the same PageSpeed response.
+// Modern Lighthouse reports the LCP element and subparts in lcp-breakdown-insight;
+// older responses may provide the element in largest-contentful-paint-element.
+function lcpDiagnostics(audits={}) {
+  const breakdown=audits["lcp-breakdown-insight"]?.details;
+  const legacy=audits["largest-contentful-paint-element"]?.details;
+  const modernItems=Array.isArray(breakdown?.items)?breakdown.items:[];
+  const oldItems=Array.isArray(legacy?.items)?legacy.items:[];
+  const node=modernItems.find(item=>item?.type==="node")||
+    oldItems.find(item=>item?.node?.type==="node")?.node||
+    oldItems.find(item=>item?.type==="table"&&Array.isArray(item.items))
+      ?.items?.find(item=>item?.node?.type==="node")?.node;
+  const safeText=value=>typeof value==="string"&&value.length>0?
+    value.slice(0,180):null;
+  const element=node?{
+    selector:safeText(node.selector),
+    label:safeText(node.nodeLabel)
+  }:null;
+  const phases={timeToFirstByte:null,resourceLoadDelay:null,
+    resourceLoadDuration:null,elementRenderDelay:null};
+  const table=modernItems.find(item=>item?.type==="table"&&Array.isArray(item.items));
+  const names=new Set(Object.keys(phases));
+  for(const row of (table?.items||[]).slice(0,8)){
+    if(names.has(row?.subpart)&&Number.isFinite(row.duration)&&row.duration>=0)
+      phases[row.subpart]=num(row.duration);
+  }
+  return {lcpElement:element?.selector||element?.label?element:null,
+    lcpPhases:Object.values(phases).some(v=>v!==null)?phases:null};
+}
+
+
 async function boundedText(response) {
   const size=Number(response.headers?.get?.("content-length"));
   if(Number.isFinite(size)&&size>MAX_REPORT_BYTES)throw Error("response_too_large");
@@ -54,7 +85,7 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
     const task=(async()=>{
       const result={state:"unavailable",reason:"provider_failed",
         url:HOME,strategy,checkedAt:new Date(now()).toISOString(),
-        score:null,lcpMs:null,cls:null,inpMs:null,inpSource:null,tbtMs:null,source:"Lighthouse lab"};
+        score:null,lcpMs:null,cls:null,inpMs:null,inpSource:null,tbtMs:null,lcpElement:null,lcpPhases:null,source:"Lighthouse lab"};
       try{
         const url=new URL(API);
         url.searchParams.set("url",HOME);
@@ -79,6 +110,9 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
         result.score=Math.round(score*100);
         result.lcpMs=num(lighthouse.audits?.["largest-contentful-paint"]?.numericValue);
         result.cls=num(lighthouse.audits?.["cumulative-layout-shift"]?.numericValue);
+        const lcp=lcpDiagnostics(lighthouse.audits);
+        result.lcpElement=lcp.lcpElement;
+        result.lcpPhases=lcp.lcpPhases;
         // INP comes only from CrUX field samples, never from Lighthouse lab data.
         const pageInp=data.loadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile;
         const originInp=data.originLoadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile;
