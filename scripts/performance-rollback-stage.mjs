@@ -34,11 +34,13 @@ export async function rehearse({key,fetcher=fetch,sleeper=sleep,polls=40}={}) {
   };
   // Render may report LIVE before its static CDN has propagated the release.
   // Each bounded probe uses a unique query string to avoid stale edge-cache hits.
+  let probePhase=0;
   const marker=async(release)=>{
+    const phase=probePhase++;
     for(let i=0;i<30;i++) {
       const url=STAGE.origin+"/?perf_rollback_probe="+
         encodeURIComponent(release.marker)+
-        "&attempt="+i;
+        "&phase="+phase+"&attempt="+i;
       try {
         const r=await fetcher(url,{redirect:"error",signal:AbortSignal.timeout(15000),
           headers:{"cache-control":"no-store, no-cache","pragma":"no-cache"}});
