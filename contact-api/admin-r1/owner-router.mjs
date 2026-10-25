@@ -291,6 +291,13 @@ export function createOwnerRouter({
       if(req.method==='GET'&&path===PREFIX+'/login/visual.js')
         return text(res,200,await readFile(new URL('./ui/visual-login.js',import.meta.url)),
           'text/javascript; charset=utf-8');
+      // Session revocation happens in POST /logout, never in this public confirmation.
+      // Only static HTML/CSS are exposed here; all OWNER data remains protected.
+      if(req.method==='GET'&&path===PREFIX+'/logged-out')
+        return text(res,200,await readFile(new URL('./ui/logout.html',import.meta.url),'utf8'));
+      if(req.method==='GET'&&path===PREFIX+'/logout.css')
+        return text(res,200,await readFile(new URL('./ui/logout.css',import.meta.url),'utf8'),
+          'text/css; charset=utf-8');
       if(req.method==='GET'&&path===PREFIX+'/login')
         return text(res,200,loginHtml(passwordOnly,auth?.recoveryReady));
       if(req.method==='GET'&&path===OWNER_HUB_LOGIN){

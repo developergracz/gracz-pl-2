@@ -25,7 +25,8 @@
         headers:{"X-Owner-CSRF":details.csrf}
       });
       if(!result.ok)throw Error("logout_failed");
-      location.replace("/owner/newsletter/login");
+      // Show confirmation only after the server revoked the OWNER session.
+      location.replace("/owner/newsletter/logged-out");
     }catch{
       status.textContent="Nie udało się wylogować. Spróbuj ponownie.";
     }finally{
