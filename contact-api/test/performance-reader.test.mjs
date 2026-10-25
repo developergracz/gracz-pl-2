@@ -145,3 +145,32 @@ test("arbitrary blob hosts and HTTP cannot receive any GitHub log download reque
     assert.ok(received.every(url=>url.startsWith(repo)));
   }
 });
+
+
+test("GitHub log timestamp is the report write time, not the workflow start",async()=>{
+ const reports=parseGuardianLog(log);
+ assert.equal(reports[0].reportLoggedAt,"2026-10-25T20:00:00.000Z");
+ assert.equal(reports[1].reportLoggedAt,"2026-10-25T20:00:00.000Z");
+ const calls=[];
+ const data=await createPerformanceReader({token:"test-read-only-token",
+   fetcher:mockFetch(calls),now:()=>Date.parse("2026-10-25T21:00:00Z")})();
+ assert.equal(data.latest.createdAt,"2026-10-25T19:50:00Z");
+ assert.equal(data.latest.reports[0].reportLoggedAt,"2026-10-25T20:00:00.000Z");
+});
+test("unparseable log timestamps remain unknown, never substituted with run start",()=>{
+ const malformed="this-is-not-a-timestamp "+JSON.stringify(result)+"\\n";
+ const reports=parseGuardianLog(malformed);
+ assert.equal(reports.length,2);
+ assert.equal(reports[0].reportLoggedAt,null);
+});
+test("Performance UI labels source, Warsaw clock and separate run start date",async()=>{
+ const {readFile}=await import("node:fs/promises");
+ const js=await readFile(new URL("../admin-r1/ui/performance.js",import.meta.url),"utf8");
+ const html=await readFile(new URL("../admin-r1/ui/performance.html",import.meta.url),"utf8");
+ assert.match(js,/Europe\\/Warsaw/);
+ assert.match(js,/reportLoggedAt/);
+ assert.match(js,/Raport pomiarów zapisano:/);
+ assert.match(js,/Uruchomienie zadania:/);
+ assert.match(html,/Start zadania \\(Warszawa\\)/);
+ assert.match(html,/Źródło: GitHub Actions/);
+});
