@@ -1,10 +1,12 @@
-name: GRACZ Performance Autopilot R2
+name: GRACZ Performance Guardian R3 (bez AI API)
 
 on:
   pull_request:
     paths:
       - "scripts/performance-autopilot.mjs"
       - "scripts/performance-observer.mjs"
+      - "scripts/performance-free-guardian.mjs"
+      - "scripts/performance-free-guardian.test.mjs"
       - "scripts/performance-lighthouse-fallback.mjs"
       - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-autopilot.test.mjs"
@@ -21,6 +23,8 @@ on:
     paths:
       - "scripts/performance-autopilot*.mjs"
       - "scripts/performance-observer.mjs"
+      - "scripts/performance-free-guardian.mjs"
+      - "scripts/performance-free-guardian.test.mjs"
       - "scripts/performance-lighthouse-fallback.mjs"
       - "scripts/performance-lighthouse-fallback.test.mjs"
       - "scripts/performance-ai-advisor.mjs"
@@ -54,11 +58,12 @@ jobs:
         run: |
           node --check scripts/performance-autopilot.mjs
           node --check scripts/performance-observer.mjs
+          node --check scripts/performance-free-guardian.mjs
           node --check scripts/performance-lighthouse-fallback.mjs
           node --check scripts/performance-ai-advisor.mjs
           node --check scripts/performance-render-deploy.mjs
           node --check scripts/performance-rollback-stage.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-rollback-stage.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-free-guardian.test.mjs scripts/performance-rollback-stage.test.mjs
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
@@ -79,29 +84,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.21.0"
-      - name: Measure production LCP (fail closed when provider unavailable)
-        env:
-          SEO_PAGESPEED_API_KEY: ${{ secrets.SEO_PAGESPEED_API_KEY }}
-          PERF_REPORT_PATH: performance-report.json
-        run: node scripts/performance-observer.mjs
-      - name: Fall back to local Lighthouse when PageSpeed hits quota
+      - name: Local Lighthouse measurements and free rule-based diagnostics
         env:
           PERF_REPORT_PATH: performance-report.json
-        run: node scripts/performance-lighthouse-fallback.mjs
-      - name: AI analysis of measured regressions (read-only; optional)
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PERF_REPORT_PATH: performance-report.json
-          PERF_AI_REPORT_PATH: performance-ai-report.json
-        run: node scripts/performance-ai-advisor.mjs
+        run: node scripts/performance-free-guardian.mjs
       - name: Preserve diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gracz-performance-sample-${{ github.run_id }}
-          path: |
-            performance-report.json
-            performance-ai-report.json
+          path: performance-report.json
           retention-days: 14
           if-no-files-found: ignore
       - name: Repair only known, safe source regressions
@@ -111,7 +103,7 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
-          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-rollback-stage.test.mjs
+          node --test scripts/performance-autopilot.test.mjs scripts/performance-autopilot-r2.test.mjs scripts/performance-lighthouse-fallback.test.mjs scripts/performance-free-guardian.test.mjs scripts/performance-rollback-stage.test.mjs
       - name: Keep repairs restricted to approved public HTML files
         id: changes
         run: |
@@ -191,5 +183,5 @@ jobs:
             echo ""
             echo "R1 modifies only allowlisted static resource hints, never arbitrary code."
             echo "Automatic publication requires verified staging rollback, explicit opt-in, Render secret, and independent PR CI checks; otherwise PR only."
-            echo "No performance conclusions are drawn from missing or throttled PageSpeed results."
+            echo "R3 uses local Lighthouse and fixed rules; it never calls OpenAI or PageSpeed APIs. Missing data cannot trigger repairs."
           } >> "$GITHUB_STEP_SUMMARY"
