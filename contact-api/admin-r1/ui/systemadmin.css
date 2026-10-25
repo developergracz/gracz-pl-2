@@ -135,3 +135,12 @@ body.owner-admin-layout{display:flex;flex-direction:column;min-height:100vh;min-
     font-size:11px;
   }
 }
+
+
+/* Three primary OWNER modules. Only the hub is changed; other panels retain their layout. */
+.owner-admin-hub-layout .systemadmin-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:23px 0 16px}
+.owner-admin-hub-layout .systemadmin-tile{min-height:265px;padding:clamp(17px,2vw,23px);gap:11px}
+.owner-admin-hub-layout .systemadmin-tile-icon{width:48px;height:48px;font-size:27px}
+.owner-admin-hub-layout .systemadmin-tile strong{font-size:clamp(18px,2vw,24px)}
+.owner-admin-hub-layout .systemadmin-tile-text{font-size:13px;line-height:1.5}
+@media(max-width:900px){.owner-admin-hub-layout .systemadmin-tiles{grid-template-columns:1fr}.owner-admin-hub-layout .systemadmin-tile{min-height:210px}}
