@@ -103,6 +103,11 @@ const loginHtml=(passwordOnly,recoveryReady=false)=>`<!doctype html><html lang="
 <p class="owner-login-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>
 <h1>Panel Admin <span>gracz.pl</span></h1>
 <p class="owner-login-subtitle">${passwordOnly?'Bezpieczne logowanie do Centrum administracyjnego gracz.pl.':'Bezpieczne logowanie do Centrum administracyjnego gracz.pl. Podaj hasło oraz sześciocyfrowy kod z aplikacji Authenticator.'}</p>
+<section class="owner-login-center-intro" aria-labelledby="owner-login-center-title">
+  <p class="owner-login-center-overline">GRACZ.PL · FULL MAX PREMIUM</p>
+  <h2 id="owner-login-center-title">Centrum administracyjne</h2>
+  <p class="owner-login-center-copy">Wybierz system, którym chcesz zarządzać. Oba panele są dostępne w ramach jednej sesji właściciela.</p>
+</section>
 <section class="owner-login-card" aria-label="Bezpieczny formularz logowania">
 <div class="owner-login-diamond" aria-hidden="true"></div>
 <form id="login-form" autocomplete="off">
