@@ -25,7 +25,7 @@
 .systemadmin-tile-kicker{color:#ecc77b;font-size:11px;font-weight:800;letter-spacing:1.5px}
 .systemadmin-tile strong{display:block;font-size:clamp(22px,2.6vw,29px);line-height:1.25;letter-spacing:-.5px}
 .systemadmin-tile-text{color:#bacbd7;font-size:14px;line-height:1.7}
-.systemadmin-tile-action{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:15px;border-radius:10px;background:linear-gradient(120deg,#f2d38f,#d5a84f);color:#15202c;font-size:14px;font-weight:800}
+.systemadmin-tile-action{margin-top:auto;display:inline-flex;align-items:center;justify-content:flex-start;align-self:flex-start;gap:12px;width:fit-content;max-width:100%;min-height:43px;padding:12px 18px;border-radius:10px;background:linear-gradient(120deg,#f2d38f,#d5a84f);color:#15202c;font-size:14px;font-weight:800;line-height:1.3}
 .systemadmin-secure-note{color:#9eafbd;text-align:center;font-size:12px;line-height:1.7}
 @media(max-width:760px){.systemadmin-center{padding:24px 18px}.systemadmin-tiles{grid-template-columns:1fr;gap:16px;margin:24px 0 18px}.systemadmin-tile{min-height:270px}.systemadmin-topnav{justify-content:center}.systemadmin-topnav-brand{flex-basis:100%;text-align:center;margin-right:0!important}.systemadmin-topnav>a:not(.systemadmin-topnav-brand){flex:1;min-width:100px;font-size:11px;padding:7px}}
 
@@ -121,7 +121,7 @@ body.owner-admin-layout{display:flex;flex-direction:column;min-height:100vh;min-
     line-height:1.5;
   }
   .owner-admin-hub-layout .systemadmin-tile-action{
-    padding:11px 13px;
+    padding:10px 16px;
     font-size:13px;
     min-height:43px;
   }
