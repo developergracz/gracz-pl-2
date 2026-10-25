@@ -54,7 +54,7 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
     const task=(async()=>{
       const result={state:"unavailable",reason:"provider_failed",
         url:HOME,strategy,checkedAt:new Date(now()).toISOString(),
-        score:null,lcpMs:null,cls:null,inpMs:null,source:"Lighthouse lab"};
+        score:null,lcpMs:null,cls:null,inpMs:null,inpSource:null,tbtMs:null,source:"Lighthouse lab"};
       try{
         const url=new URL(API);
         url.searchParams.set("url",HOME);
@@ -79,8 +79,19 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
         result.score=Math.round(score*100);
         result.lcpMs=num(lighthouse.audits?.["largest-contentful-paint"]?.numericValue);
         result.cls=num(lighthouse.audits?.["cumulative-layout-shift"]?.numericValue);
-        const inp=data.loadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile;
-        result.inpMs=num(inp); // Field data; missing means unknown, not zero.
+        // INP comes only from CrUX field samples, never from Lighthouse lab data.
+        const pageInp=data.loadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile;
+        const originInp=data.originLoadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile;
+        if(Number.isFinite(pageInp)&&pageInp>=0){
+          result.inpMs=num(pageInp);
+          result.inpSource="page";
+        }else if(Number.isFinite(originInp)&&originInp>=0){
+          result.inpMs=num(originInp);
+          result.inpSource="origin"; // Aggregated over gracz.pl, not homepage alone.
+        }
+        // Laboratory proxy, deliberately not labeled as INP.
+        const tbt=lighthouse.audits?.["total-blocking-time"]?.numericValue;
+        result.tbtMs=Number.isFinite(tbt)&&tbt>=0?num(tbt):null;
         result.state="available";
         delete result.reason;
         cache.set(strategy,{at:now(),data:result}); // Only successful measurements cached for 24 h.
