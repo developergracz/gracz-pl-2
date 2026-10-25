@@ -18,7 +18,8 @@ function createFetcher({badPage=false,badService=false}={}){
     if(url.endsWith("/deploys")&&method==="POST"){deployed=true;return data(201,{id:"dep-new"});}
     if(url.endsWith("/deploys/dep-new"))
       return data(200,{id:"dep-new",status:"live",commit:{id:newsha}});
-    if(url.endsWith("/rollback"))return data(201,{id:"dep-rollback"});
+    if(url.endsWith("/rollback")&&method==="POST"){deployed=false;return data(201,{id:"dep-rollback"});}
+    if(url.endsWith("/deploys/dep-rollback"))return data(200,{id:"dep-rollback",status:"live",commit:{id:oldsha}});
     if(url.startsWith("https://gracz.pl/")){
       const pathname=new URL(url).pathname;
       const valid='<link rel="canonical" href="https://gracz.pl'+pathname+'"><h1>GRACZ.PL</h1>'+"z".repeat(700);
@@ -54,7 +55,7 @@ test("Render deploy pins commit and checks public HTML before accepting live",as
 test("Render deploy explicitly triggers rollback if newly-live public page fails",async()=>{
   const f=createFetcher({badPage:true});
   const result=await publish({commitId:newsha,key:"dummy",fetcher:f.request,sleeper:async()=>{}});
-  assert.equal(result.state,"rollback_triggered");
+  assert.equal(result.state,"rollback_verified");
   assert.equal(result.previousCommit,oldsha);
   assert.equal(f.calls.some(x=>x.url.endsWith("/rollback")&&x.method==="POST"),true);
 });
