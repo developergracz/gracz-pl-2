@@ -53,3 +53,38 @@
 .seo-shell #seo-pages #seo-pages-toggle:hover{filter:brightness(1.07)}
 .seo-shell #seo-pages #seo-pages-toggle:focus-visible{outline:3px solid #ffe49c;outline-offset:3px}
 .seo-shell #seo-pages #seo-pages-list[hidden]{display:none}
+
+/* Full Max Premium — real, safe links in the public pages table. */
+.seo-shell #seo-pages .seo-page-link{
+  color:#a6f2e3;text-decoration:underline;text-decoration-color:transparent;
+  text-underline-offset:4px;overflow-wrap:anywhere;
+  border-radius:5px;transition:color .15s ease,background-color .15s ease,text-decoration-color .15s ease;
+}
+.seo-shell #seo-pages .seo-page-link:hover{
+  color:#ffe19b;background:rgba(217,170,75,.12);text-decoration-color:currentColor;
+}
+.seo-shell #seo-pages .seo-page-link:focus-visible{
+  color:#ffe19b;text-decoration-color:currentColor;outline:2px solid #ffe19b;outline-offset:3px;
+}
+/* Full Max Premium — no unstyled browser "Wybierz element z listy" bubble. */
+.seo-shell #seo-inspect .seo-select-validation{
+  display:inline-flex;align-items:center;gap:10px;position:relative;
+  width:max-content;max-width:100%;margin:11px 0 0;padding:11px 14px;
+  border:1px solid #d6a950;border-radius:12px;
+  background:linear-gradient(120deg,#20272e,#102a35);
+  color:#f7fcff;font-size:13px;font-weight:700;line-height:1.4;
+  box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 1px rgba(65,219,205,.22);
+  overflow-wrap:anywhere;
+}
+.seo-shell #seo-inspect .seo-select-validation[hidden]{display:none}
+.seo-shell #seo-inspect .seo-select-validation__icon{
+  flex:0 0 27px;display:grid;place-items:center;width:27px;height:27px;
+  border-radius:7px;background:linear-gradient(140deg,#f1ac3d,#c87b1a);
+  color:#fff;font-size:20px;font-weight:800;
+}
+.seo-shell #seo-inspect #seo-inspect-url[aria-invalid="true"]{
+  border-color:#e6bd6c;box-shadow:0 0 0 2px rgba(84,228,207,.27);
+}
+@media(prefers-reduced-motion:reduce){
+  .seo-shell #seo-pages .seo-page-link{transition:none}
+}
