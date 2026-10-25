@@ -81,6 +81,18 @@ export function formatSummary(result) {
     const r=result.reports[i], d=result.diagnostic[i];
     lines.push(`| ${new URL(r.url).pathname} | ${r.strategy} | ${d.lcpMs===null?"brak":d.lcpMs+" ms"} | ${d.state} |`);
   }
+  lines.push("","**Identyfikacja elementu LCP:**");
+  for(const r of result.reports){
+    const elem=r.lcpEvidence?.element;
+    const timing=r.lcpEvidence?.timings||{};
+    const available=(r.lcpEvidence?.insightsAvailable||[]).join(", ");
+    const note=elem ? (elem.selector+(elem.description?" — "+elem.description:"")) : "brak identyfikacji w dostępnym audycie";
+    lines.push("- "+new URL(r.url).pathname+" ("+r.strategy+"): "+
+      note.replace(/[|<>]/g,"").slice(0,230)+
+      (Number.isFinite(timing.ttfbMs)?"; TTFB: "+timing.ttfbMs+" ms":"")+
+      (Number.isFinite(timing.fcpMs)?"; FCP: "+timing.fcpMs+" ms":"")+
+      (available?"; dostępne audyty: "+available:""));
+  }
   lines.push("","**Diagnostyka:**");
   for(const d of result.diagnostic){
     if(d.state==="attention")lines.push(
@@ -104,6 +116,9 @@ if(main){
   process.stdout.write(JSON.stringify({
     state:report.state,paidAiUsed:false,
     reports:report.reports.map(r=>({url:r.url,strategy:r.strategy,
-      lcpMs:r.lcpMs??null,state:r.state,reason:r.reason}))
+      lcpMs:r.lcpMs??null,state:r.state,reason:r.reason,
+      lcpElement:r.lcpEvidence?.element||null,
+      timings:r.lcpEvidence?.timings||null,
+      lcpAudits:r.lcpEvidence?.insightsAvailable||[]}))
   })+"\n");
 }

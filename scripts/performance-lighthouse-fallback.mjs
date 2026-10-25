@@ -15,6 +15,42 @@ export function eligibleForFallback(report) {
    ["mobile","desktop"].includes(report.strategy) &&
    report.state==="unavailable" && FAIL_REASONS.has(report.reason));
 }
+// Read-only, bounded LCP attribution from the Lighthouse JSON report.
+// Never interpret these diagnostics as authorization to change any source file.
+export function summarizeLcpEvidence(audits={}) {
+  const relevantIds=Object.keys(audits).filter(x=>
+    x==="largest-contentful-paint-element" ||
+    x==="lcp-breakdown-insight" || x==="lcp-discovery-insight" ||
+    x==="render-blocking-resources" || x==="render-blocking-insight"
+  );
+  const selectors=[];
+  function visit(value,depth=0){
+    if(!value || typeof value!=="object" || depth>5 || selectors.length>=4)return;
+    if(typeof value.selector==="string" && value.selector.length<250){
+      selectors.push({selector:value.selector,description:
+        typeof value.nodeLabel==="string" ? value.nodeLabel.slice(0,140) : null});
+    }
+    if(Array.isArray(value)){
+      for(const x of value.slice(0,6))visit(x,depth+1);
+    }else{
+      for(const k of ["node","element","lcpElement","items","subItems","value","lcpBreakdown"])
+        if(value[k])visit(value[k],depth+1);
+    }
+  }
+  for(const id of relevantIds)visit(audits[id]?.details?.items,0);
+  const timings={};
+  for(const [name,id] of [
+    ["fcpMs","first-contentful-paint"],
+    ["ttfbMs","server-response-time"],
+    ["speedIndexMs","speed-index"]
+  ]){
+    const n=audits[id]?.numericValue;
+    if(Number.isFinite(n) && n>=0)timings[name]=Math.round(n);
+  }
+  // Insight audit presence is useful when exact element attribution is unavailable.
+  return {element:selectors[0]||null,insightsAvailable:relevantIds,
+    timings};
+}
 export function parseLighthouse(json,url,strategy){
  const audits=json?.audits,raw=audits?.["largest-contentful-paint"]?.numericValue;
  const score=json?.categories?.performance?.score;
@@ -22,6 +58,7 @@ export function parseLighthouse(json,url,strategy){
    return {url,strategy,state:"unavailable",reason:"invalid_local_lighthouse_report"};
  return {url,strategy,state:"available",source:"Lighthouse local Chrome lab",
    lcpMs:Math.round(raw),score:Math.round(score*100),
+   lcpEvidence:summarizeLcpEvidence(audits),
    tbtMs:Number.isFinite(audits["total-blocking-time"]?.numericValue)?
      Math.round(audits["total-blocking-time"].numericValue):null,
    cls:Number.isFinite(audits["cumulative-layout-shift"]?.numericValue)?
