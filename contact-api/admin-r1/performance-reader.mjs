@@ -8,7 +8,7 @@ const RUN_URL="https://github.com/"+REPO+"/actions/runs/";
 // Since 2026-10-22 GitHub uses additional productionresultssaNNN blob hosts.
 // Allow only GitHub's own log-storage host naming pattern, not arbitrary Azure hosts.
 const TRUSTED_REDIRECTS=["pipelines.actions.githubusercontent.com"];
-const GITHUB_LOG_BLOB_HOST=/^productionresultssa[0-9]{1,3}\\.blob\\.core\\.windows\\.net$/;
+const GITHUB_LOG_BLOB_HOST=/^productionresultssa[0-9]{1,3}[.]blob[.]core[.]windows[.]net$/;
 const TARGETS=new Set(["https://gracz.pl/","https://gracz.pl/gry/poker-treningowy/"]);
 const MAX_BYTES=1500000;
 const TTL_MS=300000;
