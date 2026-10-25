@@ -107,7 +107,11 @@ test("SEO private API routes require OWNER session and POST inspection requires 
   const source=await readFile(new URL("../admin-r1/owner-router.mjs",import.meta.url),"utf8");
   const auth=source.indexOf("const session=await auth.session(cookie,kind)");
   for(const route of ["/seo/google","/seo/speed","/seo/history","/seo/inspect"]){
-    assert.ok(source.indexOf("PREFIX+'"+route+"'")>auth,"protected "+route);
+    const method=route==="/seo/inspect"?"POST":"GET";
+    const protectedHandler="if(req.method==='"+method+"'&&path===PREFIX+'"+route+"'";
+    assert.ok(source.indexOf(protectedHandler)>auth,"protected "+route);
   }
+  assert.match(source,/url\.pathname===PREFIX\+'\/seo\/speed'&&url\.search==='\?refresh=1'/);
+  assert.match(source,/if\(url\.search&&!speedRefresh\)return denyAdmin\(req,res\)/);
   assert.match(source,/path===PREFIX\+'\/seo\/inspect'\)\{\s*if\(!safePost\(req,origin\)\|\|!auth\.checkCsrf/);
 });

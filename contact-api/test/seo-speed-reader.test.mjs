@@ -99,5 +99,60 @@ test("SEO UI displays provider reasons and retains private OWNER route",async()=
   assert.match(js,/speedReasons\[data.reason\]/);
   assert.match(js,/INP tylko przy dostępnych danych terenowych/);
   assert.match(router,/path===PREFIX\+'\/seo\/speed'/);
-  assert.match(router,/await readSeoSpeed\(\)/);
+  assert.match(js,/readPrivate\("speed\?refresh=1"\)/);
+  assert.match(router,/url\.pathname===PREFIX\+'\/seo\/speed'&&url\.search==='\?refresh=1'/);
+  assert.match(router,/if\(url\.search&&!speedRefresh\)return denyAdmin/);
+  assert.match(router,/await readSeoSpeed\('mobile',\{refresh:speedRefresh\}\)/);
+});
+
+
+test("PageSpeed forced refresh bypasses 24-hour cache once 60-second quota guard expires",async()=>{
+  let t=100_000,calls=0;
+  const read=createSeoSpeedReader({now:()=>t,fetcher:async()=>{
+    calls++;
+    return googleReport({lighthouseResult:{
+      categories:{performance:{score:calls===1 ? 0.91 : 0.95}},
+      audits:{"largest-contentful-paint":{numericValue:calls===1?3098:2410},
+        "cumulative-layout-shift":{numericValue:0}}
+    }});
+  }});
+  const first=await read();
+  assert.equal(first.score,91);
+  t+=10_000;
+  const blocked=await read("mobile",{refresh:true});
+  assert.equal(blocked.state,"rate_guard");
+  assert.equal(blocked.retryAfterSeconds,50);
+  assert.equal(calls,1);
+  assert.equal((await read()).score,91,"Default read retains 24-hour cache");
+  t+=50_000;
+  const fresh=await read("mobile",{refresh:true});
+  assert.equal(fresh.state,"available");
+  assert.equal(fresh.score,95);
+  assert.equal(fresh.lcpMs,2410);
+  assert.equal(calls,2);
+  assert.equal((await read()).score,95,"Fresh success replaces cached result");
+});
+
+test("simultaneous forced PageSpeed clicks share a single upstream measurement",async()=>{
+  let resolve, calls=0;
+  const fetcher=async()=>{
+    calls++;
+    return new Promise(done=>{resolve=()=>done(googleReport());});
+  };
+  const read=createSeoSpeedReader({fetcher});
+  const a=read("mobile",{refresh:true});
+  const b=read("mobile",{refresh:true});
+  assert.equal(calls,1);
+  resolve();
+  const [one,two]=await Promise.all([a,b]);
+  assert.deepEqual(one,two);
+  assert.equal(one.state,"available");
+  assert.equal(calls,1);
+});
+
+test("invalid PageSpeed strategy cannot trigger a refresh request",async()=>{
+  let calls=0;
+  const read=createSeoSpeedReader({fetcher:async()=>{calls++;return googleReport();}});
+  assert.equal((await read("invalid",{refresh:true})).state,"invalid_strategy");
+  assert.equal(calls,0);
 });
