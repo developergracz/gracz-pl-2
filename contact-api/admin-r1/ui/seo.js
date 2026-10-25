@@ -183,6 +183,109 @@ async function readPrivate(endpoint){
   if(!res.ok)throw Error("unavailable");
   return res.json();
 }
+let googlePageChanges=[];
+const changeLabel=n=>Number.isFinite(n)?(n>0?"+":"")+n.toLocaleString("pl-PL"):"—";
+const percentLabel=n=>Number.isFinite(n)?changeLabel(n)+"%":"— (brak podstawy)";
+function resetGoogleMonitor(){
+  for(const id of ["google-delta-clicks","google-delta-impressions","google-delta-ctr",
+    "google-delta-position","google-brand-clicks","google-brand-impressions",
+    "google-brand-ctr","google-brand-position"])text(id,"—");
+  for(const id of ["google-delta-clicks-base","google-delta-impressions-base",
+    "google-brand-clicks-change","google-brand-impressions-change",
+    "google-brand-position-change"])text(id,"Brak potwierdzonych danych");
+  for(const id of ["google-page-changes","google-fresh-days","google-alert-list"])
+    $(id).replaceChildren();
+  for(const id of ["google-brand-note","google-compare-period","google-fresh-state",
+    "google-changes-info"])text(id,"Dane Google niedostępne.");
+  googlePageChanges=[];
+}
+function renderPageChanges(){
+  const mode=$("google-trend-filter").value;
+  const chosen=googlePageChanges.filter(x=>mode==="all"||x.trend===mode);
+  const body=document.createDocumentFragment();
+  for(const p of chosen){
+    const tr=document.createElement("tr");
+    publicPageCell(tr,p.url);
+    cell(tr,p.impressions);
+    cell(tr,changeLabel(p.impressionChange));
+    cell(tr,changeLabel(p.clickChange));
+    cell(tr,Number.isFinite(p.positionChange)?
+      changeLabel(p.positionChange)+" (mniej = lepiej)":"—");
+    body.append(tr);
+  }
+  if(!chosen.length){
+    const tr=document.createElement("tr");
+    const td=document.createElement("td");td.colSpan=5;
+    td.textContent="Brak podstron z potwierdzonymi wynikami w obu porównywanych okresach.";
+    tr.append(td);body.append(tr);
+  }
+  $("google-page-changes").replaceChildren(body);
+}
+function renderGoogleMonitor(data){
+  const compare=data.comparison;
+  if(!compare||!data.brand||!Array.isArray(data.pageChanges)||
+    !Array.isArray(data.alerts))throw Error("invalid_google_monitor");
+  text("google-compare-period","Poprzedni okres: "+compare.startDate+" — "+
+    compare.endDate+" (28 pełnych dni). Obecny okres: "+data.startDate+
+    " — "+data.endDate+" (28 pełnych dni).");
+  text("google-delta-clicks",percentLabel(compare.clicksPercent));
+  text("google-delta-impressions",percentLabel(compare.impressionsPercent));
+  text("google-delta-ctr",Number.isFinite(compare.ctrPoints)?
+    changeLabel(compare.ctrPoints)+" pp":"—");
+  text("google-delta-position",changeLabel(compare.positionChange));
+  text("google-delta-clicks-base","Poprzednio: "+compare.previous.clicks);
+  text("google-delta-impressions-base","Poprzednio: "+compare.previous.impressions);
+  const brand=data.brand;
+  const noData=!brand.current.found;
+  text("google-brand-note","Dane dla dokładnego zapytania „gracz” z Google Search Console; "+
+    "brak wiersza nie potwierdza braku pozycji (zapytania mogą być anonimizowane).");
+  text("google-brand-clicks",noData?"—":brand.current.clicks);
+  text("google-brand-impressions",noData?"—":brand.current.impressions);
+  text("google-brand-ctr",noData||brand.current.ctr===null?"—":brand.current.ctr+"%");
+  text("google-brand-position",noData||brand.current.position===null?
+    "—":brand.current.position);
+  text("google-brand-clicks-change",noData||!brand.previous.found?
+    "Brak danych porównawczych":"Zmiana: "+percentLabel(brand.clicksPercent));
+  text("google-brand-impressions-change",noData||!brand.previous.found?
+    "Brak danych porównawczych":"Zmiana: "+percentLabel(brand.impressionsPercent));
+  text("google-brand-position-change",noData||!brand.previous.found?
+    "Brak danych porównawczych":"Zmiana pozycji: "+changeLabel(brand.positionChange));
+  googlePageChanges=data.pageChanges.filter(x=>x&&safePublicPageUrl(x.url)&&
+    ["up","down","flat"].includes(x.trend)).slice(0,15);
+  text("google-changes-info","Porównujemy tylko adresy zwrócone przez Google w obu okresach. "+
+    "Brak podstrony w danych nie oznacza zera. Różnice pozycji: wartość ujemna = poprawa.");
+  renderPageChanges();
+  const alerts=document.createDocumentFragment();
+  if(data.alerts.length===0){
+    const li=document.createElement("li");li.textContent=
+      "Brak istotnych spadków według ustalonych progów. Nie oznacza to gwarancji pozycji.";
+    alerts.append(li);
+  }else for(const alert of data.alerts.slice(0,6)){
+    if(!alert||typeof alert.text!=="string")continue;
+    const li=document.createElement("li");
+    li.textContent=alert.text;
+    li.className=alert.severity==="warning"?"seo-google-alert-warning":"";
+    alerts.append(li);
+  }
+  $("google-alert-list").replaceChildren(alerts);
+  const fresh=data.freshness;
+  if(fresh?.state!=="available"||!Array.isArray(fresh.days)){
+    text("google-fresh-state","Google nie udostępnił nowszych danych. "+
+      "Nie łączymy ich z ostatecznym raportem 28 dni.");
+    $("google-fresh-days").replaceChildren();
+    return;
+  }
+  text("google-fresh-state","Dane Google Search Console API (dataState=all), "+
+    "odczyt: "+asDate(fresh.checkedAt)+". Strefa dat: America/Los_Angeles. "+
+    (fresh.firstIncompleteDate?
+      "Dane od "+fresh.firstIncompleteDate+" są NIEPEŁNE i mogą się zmienić.":
+      "Google nie podało granicy niepełności — prezentujemy najnowsze dni ostrożnie.")+
+    " Nie są to dane w czasie rzeczywistym.");
+  rowsInto("google-fresh-days",fresh.days.map(x=>({
+    date:x.date,clicks:x.clicks,impressions:x.impressions,
+    status:x.provisional?"Wstępne / do korekty":"Ostateczne"
+  })),["date","clicks","impressions","status"]);
+}
 async function loadGoogle(){
   $("google-refresh").disabled=true;
   text("google-state","Pobieranie statystyk Google…");
@@ -191,6 +294,7 @@ async function loadGoogle(){
     if(data.state==="needs_configuration"){
       text("google-state","Search Console: oczekuje na przyznanie dostępu kontu technicznemu Google w Renderze.");
       text("google-period","Dane Google nie są jeszcze podłączone.");
+      resetGoogleMonitor();
       return;
     }
     if(data.state!=="connected"||!data.totals)throw Error("unavailable");
@@ -201,6 +305,7 @@ async function loadGoogle(){
     text("google-impressions",data.totals.impressions);
     text("google-ctr",data.totals.ctr===null?"—":data.totals.ctr+"%");
     text("google-position",data.totals.position??"—");
+    renderGoogleMonitor(data);
     rowsInto("google-days",data.days.map(x=>({
       date:x.date,clicks:x.clicks,impressions:x.impressions,
       ctr:x.ctr===null?"—":x.ctr+"%"
@@ -214,6 +319,7 @@ async function loadGoogle(){
   }catch{
     text("google-state","Google Search Console: brak potwierdzonych danych. Sprawdź uprawnienia konta lub połączenie API.");
     text("google-period","Dane Google niedostępne.");
+    resetGoogleMonitor();
     for(const id of ["google-clicks","google-impressions","google-ctr","google-position"])text(id,"—");
     $("google-queries").replaceChildren();$("google-pages").replaceChildren();$("google-days").replaceChildren();
   }finally{$("google-refresh").disabled=false;}
@@ -361,6 +467,7 @@ async function inspectGoogle(event){
   }finally{button.disabled=false;}
 }
 $("google-refresh").addEventListener("click",()=>void loadGoogle());
+$("google-trend-filter").addEventListener("change",renderPageChanges);
 $("seo-speed-refresh").addEventListener("click",()=>void loadSpeed());
 $("seo-guardian-refresh").addEventListener("click",()=>void loadGuardian());
 $("seo-inspect-form").addEventListener("submit",event=>void inspectGoogle(event));
