@@ -252,6 +252,7 @@ async function loadSpeed(){
       for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
       text("speed-inp-source","Brak danych terenowych · ms");
       text("seo-speed-state","PageSpeed: "+(speedReasons[data.reason]||speedReasons.provider_failed));
+      text("seo-speed-provenance","Źródło: Google PageSpeed Insights API. Data pomiaru: brak potwierdzonego raportu.");
       return;
     }
     text("speed-score",data.score??"—");
@@ -263,12 +264,18 @@ async function loadSpeed(){
       data.inpSource==="origin"?"Cała domena gracz.pl · dane terenowe (ms)":
       "Nieznane źródło danych INP");
     text("speed-tbt",data.tbtMs??"—");
-    text("seo-speed-state","PageSpeed / Lighthouse · nowy pomiar: "+asDate(data.checkedAt)+
-      ". INP: dane użytkowników (strona lub domena). TBT: pomiar laboratoryjny, nie INP.");
+    text("seo-speed-provenance","Źródło: Google PageSpeed Insights API → Lighthouse (laboratorium, telefon). "+
+      (data.measuredAt?"Data i godzina pomiaru: "+asDate(data.measuredAt)+
+        " (czas z raportu Google).":
+        "Czas pomiaru niepodany w raporcie. Rozpoczęcie zapytania: "+asDate(data.checkedAt)+".")+
+      " INP: CrUX, dane rzeczywistych użytkowników, jeśli dostępne.");
+    text("seo-speed-state","Odczyt PageSpeed / Lighthouse · rozpoczęcie zapytania: "+asDate(data.checkedAt)+
+      ". INP: dane użytkowników (strona lub domena). TBT jest wskaźnikiem laboratoryjnym, nie INP.");
   }catch{
     for(const id of ["speed-score","speed-lcp","speed-cls","speed-inp","speed-tbt"])text(id,"—");
     text("speed-inp-source","Brak danych terenowych · ms");
     text("seo-speed-state","PageSpeed: nie można odczytać raportu z serwera. Spróbuj ponownie.");
+    text("seo-speed-provenance","Źródło: Google PageSpeed Insights API. Data pomiaru: brak potwierdzonego raportu.");
   }finally{$("seo-speed-refresh").disabled=false;}
 }
 const guardianStates={healthy:"BEZ OSTRZEŻEŃ",attention:"WYMAGA KONTROLI",unknown:"BRAK PEŁNYCH DANYCH"};
@@ -286,9 +293,12 @@ async function loadGuardian(){
     text("guardian-lcp",data.performance.lcpMs==null?"—":data.performance.lcpMs+" ms");
     text("guardian-checked-at","Ostatnia kontrola: "+asDate(data.checkedAt));
     text("guardian-speed-at",data.performance.checkedAt?
-      "Pomiar Lighthouse wykonano: "+asDate(data.performance.checkedAt)+
-      " (wynik może pochodzić z pamięci do 24 godzin).":
-      "Pomiar Lighthouse: niedostępny.");
+      "Źródło: Google PageSpeed Insights API → Lighthouse (telefon). "+
+      (data.performance.measuredAt?
+        "Data pomiaru: "+asDate(data.performance.measuredAt)+". ":
+        "Czas pomiaru niedostępny; rozpoczęcie odczytu: "+asDate(data.performance.checkedAt)+". ")+
+      "Wynik może pochodzić z pamięci do 24 godzin.":
+      "Źródło: Google PageSpeed Insights API. Pomiar Lighthouse: niedostępny.");
     text("seo-guardian-status",data.state==="healthy"?
       "Brak wykrytych zagrożeń w bieżących kontrolach technicznych i laboratoryjnych.":
       data.state==="attention"?"Wykryto problemy wymagające sprawdzenia.":

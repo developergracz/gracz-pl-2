@@ -71,6 +71,7 @@ export function createSeoGuardian({readStatus,readSpeed,now=Date.now}={}){
       performance:{
         state:performanceReady?(speed.lcpMs>=2500||speed.score<90?"attention":"healthy"):"unknown",
         checkedAt:performanceReady?speed.checkedAt:null,
+        measuredAt:performanceReady?speed.measuredAt||null:null,
         lcpMs:performanceReady?speed.lcpMs:null,
         score:performanceReady?speed.score:null,
         source:"Lighthouse mobile · laboratoryjny"

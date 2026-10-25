@@ -5,7 +5,9 @@ const POKER="https://gracz.pl/gry/poker-treningowy/";
 const asDate=value=>{
   if(!value)return "—";
   const d=new Date(value);
-  return Number.isNaN(d.getTime())?"—":d.toLocaleString("pl-PL");
+  return Number.isNaN(d.getTime())?"—":new Intl.DateTimeFormat("pl-PL",{
+    timeZone:"Europe/Warsaw",dateStyle:"medium",timeStyle:"medium"
+  }).format(d);
 };
 const statusLine=message=>{$("performance-status").textContent=message;};
 const create=(tag,text)=>{const el=document.createElement(tag);el.textContent=text;return el;};
@@ -21,9 +23,15 @@ function showMeasurements(data){
   metric("perf-home-mobile",get(PUBLIC,"mobile")?.lcpMs);
   metric("perf-home-desktop",get(PUBLIC,"desktop")?.lcpMs);
   metric("perf-poker-mobile",get(POKER,"mobile")?.lcpMs);
+  const reportTime=reports.find(r=>r.reportLoggedAt)?.reportLoggedAt;
   $("performance-checked").textContent=data.latest?
-    "Pomiar GitHub Actions: "+asDate(data.latest.createdAt)+" · commit "+(data.latest.commit||"nieznany"):
-    "Brak potwierdzonych pomiarów Lighthouse.";
+    "Źródło: GitHub Actions → lokalny Lighthouse (Chrome, laboratorium). "+
+    (reportTime?"Raport pomiarów zapisano: "+asDate(reportTime)+". ":
+      "Czas zapisu raportu niedostępny. ")+
+    "Uruchomienie zadania: "+asDate(data.latest.createdAt)+
+    " · commit "+(data.latest.commit||"nieznany")+". "+
+    "Godziny: Europe/Warsaw.":
+    "Źródło: GitHub Actions → lokalny Lighthouse (Chrome). Brak potwierdzonych pomiarów.";
   const list=document.createDocumentFragment();
   for(const r of reports.filter(x=>x.strategy==="mobile")){
     const location=r.url===PUBLIC?"Strona główna":r.url===POKER?"Poker":"Podstrona";

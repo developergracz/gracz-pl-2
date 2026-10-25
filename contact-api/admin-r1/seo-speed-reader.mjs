@@ -54,7 +54,8 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
     const task=(async()=>{
       const result={state:"unavailable",reason:"provider_failed",
         url:HOME,strategy,checkedAt:new Date(now()).toISOString(),
-        score:null,lcpMs:null,cls:null,inpMs:null,inpSource:null,tbtMs:null,source:"Lighthouse lab"};
+        score:null,lcpMs:null,cls:null,inpMs:null,inpSource:null,tbtMs:null,
+        source:"Lighthouse lab",measuredAt:null};
       try{
         const url=new URL(API);
         url.searchParams.set("url",HOME);
@@ -75,6 +76,13 @@ export function createSeoSpeedReader({fetcher=fetch,now=Date.now,
         if(!Number.isFinite(score)||score<0||score>1){
           result.reason="invalid_response";
           return result;
+        }
+        // Lighthouse fetchTime comes from Google's audit; do not mislabel the
+        // time the API request started as the measurement time.
+        const fetchTime=lighthouse.fetchTime;
+        if(typeof fetchTime==="string" && /^\d{4}-\d\d-\d\dT/.test(fetchTime) &&
+           Number.isFinite(Date.parse(fetchTime))){
+          result.measuredAt=new Date(fetchTime).toISOString();
         }
         result.score=Math.round(score*100);
         result.lcpMs=num(lighthouse.audits?.["largest-contentful-paint"]?.numericValue);
