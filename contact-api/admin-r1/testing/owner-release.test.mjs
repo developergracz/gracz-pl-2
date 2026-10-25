@@ -369,6 +369,19 @@ test('phone-free OWNER login requires valid nick, locks out guessing and rotates
     assert.equal(seoRedirect.headers.location,'/owner/newsletter/seo');
     assert.equal(seoRedirect.headers['cache-control'],'no-store');
     assert.equal(seoRedirect.headers['set-cookie'],undefined);
+    for(const protectedPath of [
+      '/owner/newsletter/performance/report',
+      '/owner/newsletter/performance.js',
+      '/owner/newsletter/performance.css'
+    ]) {
+      const denial=await probe(protectedPath);
+      assert.equal(denial.status,401,'private Performance Guardian endpoint must reject anonymous readers');
+      assert.equal(denial.headers['cache-control'],'no-store');
+    }
+    const performanceUnauthenticated=await probe('/owner/newsletter/performance');
+    assert.equal(performanceUnauthenticated.status,302);
+    assert.equal(performanceUnauthenticated.headers.location,'/owner/newsletter/login');
+    assert.equal((await probe('/owner/newsletter/performance?utm_source=unsafe')).status,403);
     const seoUnauthenticated=await probe('/owner/newsletter/seo');
     assert.equal(seoUnauthenticated.status,302);
     assert.equal(seoUnauthenticated.headers.location,'/owner/newsletter/login');
@@ -1063,6 +1076,13 @@ test('protected HTTP exposes no subscriber data before OWNER login and CSRF',asy
     assert.match(markup,/href="\/owner\/newsletter\/performance"/);
     assert.match(markup,/href="\/owner\/newsletter\/"/);
   }
+  for(const path of ['/owner/newsletter/performance.js','/owner/newsletter/performance.css']){
+    const asset=await call(path,{cookie});
+    assert.equal(asset.status,200,'authenticated OWNER reads its private Performance assets');
+  }
+  result=await call('/owner/newsletter/performance/report',{cookie});
+  assert.equal(result.status,200,'authenticated OWNER can read the Performance endpoint');
+  assert.equal((await result.json()).source,'github_actions_private');
   result=await call('/owner/newsletter/systemadmin-logout.js',{cookie});
   assert.equal(result.status,200,'Shared logout handler is served to authenticated OWNER');
   assert.match(await result.text(),/X-Owner-CSRF/);
