@@ -556,3 +556,82 @@ test("System Admin toggles password reveal and conceal without submitting or cop
   assert.equal(toggle.attributes["aria-pressed"],"false");
   assert.doesNotMatch(script,/passwordInput\.value|preventDefault|fetch\(|localStorage|sessionStorage/);
 });
+
+
+test("SEO sitemap selector displays Full Max Premium validation instead of a native popup",async()=>{
+  const [html,script,css]=await Promise.all([
+    read("../admin-r1/ui/seo.html"),read("../admin-r1/ui/seo.js"),
+    read("../admin-r1/ui/seo.css")
+  ]);
+  assert.match(html,/<select id="seo-inspect-url" required>/);
+  assert.match(html,/id="seo-inspect-validation" class="seo-select-validation" role="alert" hidden/);
+  assert.match(html,/id="seo-inspect-validation-message">Wybierz podstronę z listy/);
+  assert.match(css,/#seo-inspect \.seo-select-validation\[hidden\]\{display:none\}/);
+  assert.match(css,/#seo-inspect #seo-inspect-url\[aria-invalid="true"\]/);
+  const start=script.indexOf('const inspectChoice=$("seo-inspect-url");');
+  const stop=script.indexOf("async function inspectGoogle(event)",start);
+  assert.ok(start>=0&&stop>start);
+  const handlers=new Map();
+  const attributes=new Map();
+  const choice={
+    validity:{valid:false},
+    addEventListener:(name,callback)=>handlers.set(name,callback),
+    setAttribute:(key,value)=>attributes.set(key,value),
+    removeAttribute:key=>attributes.delete(key)
+  };
+  const notice={hidden:true};
+  runInNewContext('const $=id=>document.getElementById(id);\n'+script.slice(start,stop),{
+    document:{getElementById:id=>id==="seo-inspect-url"?choice:
+      id==="seo-inspect-validation"?notice:null}
+  });
+  let cancelled=false;
+  handlers.get("invalid")({preventDefault(){cancelled=true;}});
+  assert.equal(cancelled,true);
+  assert.equal(notice.hidden,false);
+  assert.equal(attributes.get("aria-invalid"),"true");
+  assert.equal(attributes.get("aria-describedby"),"seo-inspect-validation-message");
+  choice.validity.valid=true;
+  handlers.get("change")();
+  assert.equal(notice.hidden,true);
+  assert.equal(attributes.has("aria-invalid"),false);
+  assert.equal(attributes.has("aria-describedby"),false);
+});
+
+test("SEO public pages URLs open safe gracz.pl destinations from the left column",async()=>{
+  const [html,script,css]=await Promise.all([
+    read("../admin-r1/ui/seo.html"),read("../admin-r1/ui/seo.js"),
+    read("../admin-r1/ui/seo.css")
+  ]);
+  assert.match(html,/<tbody id="seo-rows"><\/tbody>/);
+  assert.match(script,/pageCell\(tr,item\.url\)/);
+  assert.match(css,/#seo-pages \.seo-page-link:hover/);
+  assert.match(css,/#seo-pages \.seo-page-link:focus-visible/);
+  const start=script.indexOf("function pageCell(row,value)");
+  const stop=script.indexOf("async function load()",start);
+  assert.ok(start>=0&&stop>start);
+  const make=tagName=>({
+    tagName,children:[],append(child){this.children.push(child);}
+  });
+  const pageCell=runInNewContext(script.slice(start,stop)+"\npageCell",{
+    document:{createElement:make},URL
+  });
+  const render=value=>{
+    const row=make("tr");
+    pageCell(row,value);
+    return row.children[0];
+  };
+  const good=render("https://gracz.pl/warcaby/");
+  const anchor=good.children[0];
+  assert.equal(anchor.tagName,"a");
+  assert.equal(anchor.href,"https://gracz.pl/warcaby/");
+  assert.equal(anchor.target,"_blank");
+  assert.equal(anchor.rel,"noopener noreferrer");
+  assert.equal(anchor.textContent,"https://gracz.pl/warcaby/");
+  for(const value of ["javascript:alert(1)","https://gracz.pl.evil.test/",
+    "https://evil.test/","https://gracz.pl/?q=x",
+    "https://gracz.pl/#private","https://gracz.pl@evil.test/"]){
+    const cell=render(value);
+    assert.equal(cell.children.length,0,"Unsafe URLs must be plain text");
+    assert.equal(cell.textContent,value);
+  }
+});
