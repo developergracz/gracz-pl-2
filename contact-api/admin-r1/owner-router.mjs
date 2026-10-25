@@ -20,7 +20,7 @@ const OWNER_HUB_LOGIN=PREFIX+'/login/systemadmin';
 function withAdminSwitchBar(html,current) {
   const nav=(name,path,id)=>'<a href="'+path+'"'+(current===id?' aria-current="page"':'')+'>'+name+'</a>';
   const bar='<nav class="systemadmin-topnav" aria-label="Przełączanie paneli administracyjnych">'+
-    '<a class="systemadmin-topnav-brand" href="'+OWNER_HUB+'">gracz<span>.pl</span> · SYSTEM ADMIN</a>'+
+    '<a class="systemadmin-topnav-brand" href="'+OWNER_HUB+'">gracz.<span>pl</span> · SYSTEM ADMIN</a>'+
     nav('Centrum administracyjne',OWNER_HUB,'hub')+
     nav('SEO Control Center',PREFIX+'/seo','seo')+
     nav('Performance Guardian',PREFIX+'/performance','performance')+
@@ -30,7 +30,7 @@ function withAdminSwitchBar(html,current) {
     '</nav>';
   const identity='<section class="owner-premium-identity" aria-label="Panel Admin gracz.pl">'+
     '<p class="owner-premium-eyebrow">FULL MAX PREMIUM · CENTRUM WŁAŚCICIELA</p>'+
-    '<div class="owner-premium-heading">Panel Admin <span>gracz.pl</span></div>'+
+    '<div class="owner-premium-heading">Panel Admin gracz.<span>pl</span></div>'+
     '<p class="owner-premium-description">Bezpieczne logowanie do Centrum administracyjnego gracz.pl.</p>'+
     '</section>';
   const footer='<footer class="owner-premium-footer">© gracz.pl · Prywatne centrum administracyjne · Wszystkie prawa zastrzeżone</footer>';
