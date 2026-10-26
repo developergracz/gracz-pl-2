@@ -252,3 +252,38 @@ test("Performance Guardian R3 exposes a working right-side OWNER menu on desktop
   assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.performance-shell \.performance-side nav\{/);
   assert.ok(!html.includes('target="_blank"'),"Internal menu stays on the same page");
 });
+
+test("Performance sidebar reuses the original SEO Full Max Premium design and every real function",async()=>{
+  const {readFile}=await import("node:fs/promises");
+  const html=await readFile(new URL("../admin-r1/ui/performance.html",import.meta.url),"utf8");
+  const css=await readFile(new URL("../admin-r1/ui/performance.css",import.meta.url),"utf8");
+  const js=await readFile(new URL("../admin-r1/ui/performance.js",import.meta.url),"utf8");
+  const base=await readFile(new URL("../admin-r1/ui/admin.css",import.meta.url),"utf8");
+  const seo=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  const sharedLogo='<div class="logo">gracz<span>.pl</span></div>';
+  assert.ok(html.includes(sharedLogo)&&seo.includes(sharedLogo),
+    "Performance uses the original white/red logo component");
+  assert.ok(html.includes('<p class="eyebrow">FULL MAX PREMIUM / PERFORMANCE</p>'));
+  assert.ok(html.includes('<p class="aside-note">R3 · Dostęp wyłącznie OWNER<br>'));
+  assert.ok(base.includes("nav a[aria-current]"),"active item inherits mint SEO highlight");
+  assert.ok(base.includes(".logo span"),"shared brand colors are inherited");
+  assert.ok(!html.includes("Menu Performance"),"do not render the invented heading");
+  assert.ok(!css.includes("background:#14283b;color:#dce9f6"),
+    "do not restore the unrelated blue outlined button design");
+  const targets=[
+    "main","performance-metrics","performance-diagnostics","performance-filters",
+    "performance-diagnosis","performance-copy-actions","performance-operations",
+    "performance-history-section"
+  ];
+  for(const id of targets){
+    assert.ok(html.includes('href="#'+id+'"'),"missing menu link "+id);
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,
+      "broken or ambiguous destination "+id);
+  }
+  assert.match(html,/href="\/owner\/newsletter\/systemadmin">← Centrum administracyjne/);
+  assert.match(html,/href="#main" aria-current="location">◈ Przegląd LIVE/);
+  assert.match(js,/addEventListener\("hashchange",updatePerformanceNav\)/);
+  assert.match(js,/removeAttribute\("aria-current"\)/);
+  assert.match(css,/\.performance-shell \.performance-side\{[\s\S]*?position:sticky/);
+  assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?overflow-x:auto/);
+});
