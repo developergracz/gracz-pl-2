@@ -287,15 +287,17 @@ export function createSeoGoogleReader({
         return {state:"invalid_url"};
     } catch {return {state:"invalid_url"};}
     const saved=inspections.get(url);
-    if(saved&&now()-saved.at<12*60*60*1000)return saved.result;
-    // A single explicit inspection per window; no crawler-wide bulk requests.
+    if(saved&&now()-saved.at<(saved.result.state==="connected"?12*60*60*1000:5*60*1000))
+      return saved.result;
+    // Each Google inspection is cached to respect provider quota. Both single
+    // and sitemap-bulk paths use this same validated, owner-only inspector.
     if(inspections.size>=50)inspections.clear();
     let result={state:"unavailable",url};
     try {
       const data=await googlePost(INSPECT_API,{inspectionUrl:url,siteUrl:property,languageCode:"pl-PL"});
       const info=data?.inspectionResult?.indexStatusResult;
       if(!info||typeof info!=="object")throw Error("invalid_inspection");
-      result={state:"connected",url,
+      result={state:"connected",url,checkedAt:new Date(now()).toISOString(),
         verdict:safeText(info.verdict,24),
         coverageState:safeText(info.coverageState,180),
         indexingState:safeText(info.indexingState,60),
@@ -303,8 +305,60 @@ export function createSeoGoogleReader({
         lastCrawlTime:safeText(info.lastCrawlTime,60),
         googleCanonical:safeText(info.googleCanonical,240)};
     } catch { /* fail closed; no false "indexed" claims */ }
+    // Provider errors are NOT indexed statuses. Retry a failed read after a
+    // short cooldown, while verified Google verdicts retain the 12-hour cache.
     inspections.set(url,{at:now(),result});
     return result;
   }
-  return {read,inspect};
+  let bulkBusy=null;
+  const indexStatus=entry=>{
+    if(entry.state!=="connected")return "unknown";
+    if(entry.verdict==="PASS"&&entry.indexingState!=="INDEXING_DISALLOWED")
+      return "indexed";
+    if(entry.verdict==="NEUTRAL"||entry.verdict==="FAIL")
+      return "not_indexed";
+    return "unknown";
+  };
+  // The authoritative URL list comes from the server's live sitemap monitor,
+  // not from a browser-supplied list. Bound checks and concurrent calls to avoid
+  // unmetered crawler behavior and provider overload.
+  async function inspectSitemap(urls){
+    if(!enabled)return {state:"needs_configuration",entries:[]};
+    if(!Array.isArray(urls)||urls.length<1||urls.length>25||
+       new Set(urls).size!==urls.length||
+       urls.some(x=>typeof x!=="string"||!validPage(x)))
+      return {state:"invalid_sitemap",entries:[]};
+    if(bulkBusy)return bulkBusy;
+    const selected=[...urls];
+    bulkBusy=(async()=>{
+      const results=new Array(selected.length);
+      let next=0;
+      const worker=async()=>{
+        while(next<selected.length){
+          const i=next++;
+          results[i]=await inspect(selected[i]);
+        }
+      };
+      await Promise.all(Array.from({length:Math.min(3,selected.length)},()=>worker()));
+      const entries=results.map((value,i)=>({
+        url:selected[i],status:indexStatus(value),verdict:value.verdict??null,
+        coverageState:value.coverageState??null,
+        indexingState:value.indexingState??null,
+        googleCanonical:value.googleCanonical??null,
+        lastCrawlTime:value.lastCrawlTime??null,
+        inspectionState:value.state,
+        inspectedAt:value.checkedAt??null
+      }));
+      const indexed=entries.filter(x=>x.status==="indexed").length;
+      const notIndexed=entries.filter(x=>x.status==="not_indexed").length;
+      const unknown=entries.length-indexed-notIndexed;
+      return {state:unknown===0?"complete":"partial",
+        checkedAt:new Date(now()).toISOString(),total:entries.length,
+        indexed,notIndexed,unknown,entries,
+        source:"google_search_console_url_inspection",
+        disclaimer:"Raport Google o znanej wersji indeksu, nie test wersji LIVE."};
+    })().finally(()=>{bulkBusy=null;});
+    return bulkBusy;
+  }
+  return {read,inspect,inspectSitemap};
 }

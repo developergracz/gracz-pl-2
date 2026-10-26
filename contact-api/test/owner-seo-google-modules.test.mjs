@@ -345,3 +345,95 @@ test("SEO R5 UI renders 4 modules safely, independently and with explicit copy a
   assert.ok(!js.includes("innerHTML"));
   assert.match(css,/seo-google-chart-scroller/);
 });
+
+
+test("GSC bulk inspection checks 17 canonical sitemap URLs exactly once, with three-way verdicts",async()=>{
+  const urls=[
+    "https://gracz.pl/","https://gracz.pl/gry/",
+    "https://gracz.pl/gry/warcaby/","https://gracz.pl/gry/gomoku/",
+    "https://gracz.pl/gry/warcaby/zasady/","https://gracz.pl/gry/gomoku/zasady/",
+    "https://gracz.pl/gry/poker-treningowy/","https://gracz.pl/gry/poker-treningowy/zasady/",
+    "https://gracz.pl/gry/tysiac/","https://gracz.pl/gry/tysiac/zasady/",
+    "https://gracz.pl/gry-karciane/","https://gracz.pl/poradniki/",
+    "https://gracz.pl/o-gracz-pl/","https://gracz.pl/wyszukiwarka/",
+    "https://gracz.pl/regulamin/","https://gracz.pl/polityka-prywatnosci/",
+    "https://gracz.pl/newsletter/"
+  ];
+  let count=0,active=0,peak=0;
+  const fetcher=async(url,options)=>{
+    if(url==="https://oauth2.googleapis.com/token")
+      return new Response(JSON.stringify({access_token:"test-access-token-1234567",expires_in:3600}));
+    assert.equal(url,"https://searchconsole.googleapis.com/v1/urlInspection/index:inspect");
+    const json=JSON.parse(options.body);
+    assert.equal(json.siteUrl,property);
+    assert.equal(json.languageCode,"pl-PL");
+    assert.ok(urls.includes(json.inspectionUrl));
+    count++;active++;peak=Math.max(peak,active);
+    await Promise.resolve();
+    active--;
+    const n=urls.indexOf(json.inspectionUrl);
+    if(n===2)return new Response(JSON.stringify({inspectionResult:{indexStatusResult:{
+      verdict:"NEUTRAL",coverageState:"Crawled - currently not indexed",
+      indexingState:"INDEXING_ALLOWED"}}}));
+    if(n===3)return new Response("temporarily unavailable",{status:429});
+    return new Response(JSON.stringify({inspectionResult:{indexStatusResult:{
+      verdict:"PASS",coverageState:"Submitted and indexed",
+      indexingState:"INDEXING_ALLOWED",lastCrawlTime:"2026-10-22T12:30:00Z",
+      googleCanonical:json.inspectionUrl
+    }}}));
+  };
+  const read=createSeoGoogleReader({fetcher,now,email,privateKey,property});
+  const result=await read.inspectSitemap(urls);
+  assert.equal(result.state,"partial");
+  assert.equal(result.total,17);
+  assert.equal(result.indexed,15);
+  assert.equal(result.notIndexed,1);
+  assert.equal(result.unknown,1);
+  assert.equal(result.entries[2].status,"not_indexed");
+  assert.equal(result.entries[2].coverageState,"Crawled - currently not indexed");
+  assert.equal(result.entries[3].status,"unknown");
+  assert.equal(result.entries[0].status,"indexed");
+  assert.equal(result.entries[0].googleCanonical,"https://gracz.pl/");
+  assert.ok(peak<=3);
+  assert.equal(count,17);
+  const repeated=await read.inspectSitemap(urls);
+  assert.equal(count,17,"verified and failed results must be cached briefly on repeat");
+  assert.equal(repeated.entries.length,17);
+});
+
+test("GSC bulk inspector refuses arbitrary URLs, duplicates, empty lists and over-limit batches",async()=>{
+  const inspect=createSeoGoogleReader({fetcher:async()=>{throw Error("must not call provider");},
+    now,email,privateKey,property}).inspectSitemap;
+  for(const bad of [[],["https://evil.example/"],
+    ["https://gracz.pl/","https://gracz.pl/"],
+    ["https://gracz.pl/?x=1"],["http://gracz.pl/"],
+    Array.from({length:26},(_,i)=>"https://gracz.pl/gry/test-"+i+"/")]){
+    const data=await inspect(bad);
+    assert.equal(data.state,"invalid_sitemap");
+    assert.deepEqual(data.entries,[]);
+  }
+});
+
+test("GSC bulk indexing endpoint is OWNER+CSRF guarded and derives URLs server-side",async()=>{
+  const router=await readFile(new URL("../admin-r1/owner-router.mjs",import.meta.url),"utf8");
+  const pos=router.indexOf("if(req.method==='POST'&&path===PREFIX+'/seo/inspect-all'){");
+  assert.ok(pos>router.indexOf("const session=await auth.session(cookie,kind)"));
+  const section=router.slice(pos,pos+1000);
+  assert.match(section,/safePost\(req,origin\)/);
+  assert.match(section,/auth\.checkCsrf\(session,req\.headers\['x-owner-csrf'\]\)/);
+  assert.match(section,/await seoSnapshot\(\)/);
+  assert.match(section,/live\.pages\.map\(page=>page\.url\)/);
+  assert.match(section,/seoGoogle\.inspectSitemap\(urls\)/);
+  assert.ok(!section.includes("data.urls"));
+  const html=await readFile(new URL("../admin-r1/ui/seo.html",import.meta.url),"utf8");
+  const js=await readFile(new URL("../admin-r1/ui/seo.js",import.meta.url),"utf8");
+  for(const id of ["seo-inspect-all-button","seo-inspect-all-status","seo-inspect-all-rows",
+    "seo-all-total","seo-all-indexed","seo-all-not-indexed","seo-all-unknown",
+    "seo-inspect-all-time"]){
+    assert.ok(html.includes('id="'+id+'"'),"UI "+id);
+    assert.ok(js.includes('"'+id+'"'),"script "+id);
+  }
+  assert.ok(js.includes('"X-Owner-Csrf":session.csrf'));
+  assert.ok(js.includes('body:JSON.stringify({scope:"sitemap"})'));
+  assert.ok(!js.includes("innerHTML"));
+});

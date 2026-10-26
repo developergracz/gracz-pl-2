@@ -229,6 +229,27 @@
         <dt>Canonical Google</dt><dd id="inspect-canonical">—</dd>
         <dt>Ostatnie pobranie Googlebota</dt><dd id="inspect-crawl">—</dd>
       </dl>
+      <section class="seo-inspect-all" aria-labelledby="seo-inspect-all-title">
+        <div class="section-title">
+          <h3 id="seo-inspect-all-title">Indeksacja wszystkich podstron z sitemap</h3>
+          <button type="button" id="seo-inspect-all-button">Sprawdź wszystkie podstrony w Google</button>
+        </div>
+        <p class="muted">Sprawdzenie korzysta z rzeczywistych wyników Google URL Inspection API. Strony wybrane są automatycznie z aktualnej mapy witryny gracz.pl. To stan znany Google, nie test wersji LIVE; ponowne odczyty mogą korzystać z 12-godzinnej pamięci.</p>
+        <p id="seo-inspect-all-status" class="muted" role="status" aria-live="polite">Uruchom kontrolę, aby poznać liczbę stron w indeksie Google.</p>
+        <div class="cards" aria-label="Wynik kontroli indeksacji">
+          <article><p>Sprawdzone adresy</p><strong id="seo-all-total">—</strong><small>Aktualna sitemap</small></article>
+          <article><p>Zaindeksowane</p><strong id="seo-all-indexed">—</strong><small>Potwierdzone przez Google</small></article>
+          <article><p>Niezaindeksowane</p><strong id="seo-all-not-indexed">—</strong><small>Wykluczone lub z błędem</small></article>
+          <article><p>Nieustalone</p><strong id="seo-all-unknown">—</strong><small>Brak pełnego odczytu Google</small></article>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Adres podstrony</th><th>Status indeksacji</th><th>Powód / stan Google</th><th>Ostatni Googlebot</th><th>Canonical wybrany przez Google</th></tr></thead>
+            <tbody id="seo-inspect-all-rows"></tbody>
+          </table>
+        </div>
+        <p id="seo-inspect-all-time" class="muted">Kontrola nie została jeszcze uruchomiona.</p>
+      </section>
     </section>
     <section class="panel" id="seo-speed" aria-labelledby="seo-speed-title">
       <div class="section-title"><h2 id="seo-speed-title">PageSpeed · strona główna</h2>

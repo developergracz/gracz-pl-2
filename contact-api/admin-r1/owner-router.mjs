@@ -463,6 +463,21 @@ export function createOwnerRouter({
         return response(res,200,await seoGoogle.read());
       if(req.method==='GET'&&path===PREFIX+'/seo/speed')
         return response(res,200,await readSeoSpeed('mobile',{refresh:speedRefresh}));
+      // Only OWNER can trigger bulk inspection. URLs are selected exclusively
+      // from the independently verified, live sitemap snapshot.
+      if(req.method==='POST'&&path===PREFIX+'/seo/inspect-all'){
+        if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
+          return reject(res);
+        const body=await input(req,128);
+        if(Object.keys(body).length!==1||body.scope!=='sitemap')
+          return reject(res,400);
+        const live=await seoSnapshot();
+        const urls=Array.isArray(live.pages)?live.pages.map(page=>page.url):[];
+        if(urls.length<1||urls.length>25||urls.length!==live.total||
+          new Set(urls).size!==urls.length)
+          return response(res,503,{state:"invalid_sitemap",entries:[]});
+        return response(res,200,await seoGoogle.inspectSitemap(urls));
+      }
       if(req.method==='POST'&&path===PREFIX+'/seo/inspect'){
         if(!safePost(req,origin)||!auth.checkCsrf(session,req.headers['x-owner-csrf']))
           return reject(res);

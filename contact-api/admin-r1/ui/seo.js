@@ -639,6 +639,82 @@ async function loadGuardian(){
     $("guardian-alerts").replaceChildren();
   }finally{$("seo-guardian-refresh").disabled=false;}
 }
+const seoIndexStatus={indexed:"Zaindeksowana",not_indexed:"Niezaindeksowana",
+  unknown:"Nieustalona"};
+async function inspectSitemapGoogle(){
+  const btn=$("seo-inspect-all-button");
+  btn.disabled=true;
+  text("seo-inspect-all-status","Pobieranie statusu indeksacji z Google dla podstron w sitemap…");
+  try{
+    const auth=await fetch("/owner/newsletter/session",{
+      credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+    });
+    if(auth.status===401){location.assign("/owner/newsletter/login");return;}
+    if(!auth.ok)throw Error("missing_session");
+    const session=await auth.json();
+    if(typeof session.csrf!=="string")throw Error("missing_csrf");
+    const result=await fetch("/owner/newsletter/seo/inspect-all",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","X-Owner-Csrf":session.csrf,
+        "Accept":"application/json"},
+      body:JSON.stringify({scope:"sitemap"})
+    });
+    if(result.status===401){location.assign("/owner/newsletter/login");return;}
+    if(!result.ok)throw Error("not_available");
+    const data=await result.json();
+    if(data.state==="needs_configuration"){
+      text("seo-inspect-all-status","Google Search Console wymaga połączenia konta technicznego.");
+      return;
+    }
+    if(!["complete","partial"].includes(data.state)||
+       !Array.isArray(data.entries)||!Number.isInteger(data.total)||
+       data.total!==data.entries.length||data.total<1||data.total>25||
+       ![data.indexed,data.notIndexed,data.unknown].every(Number.isInteger)||
+       data.indexed+data.notIndexed+data.unknown!==data.total)
+      throw Error("invalid_inspection_report");
+    text("seo-all-total",data.total);
+    text("seo-all-indexed",data.indexed);
+    text("seo-all-not-indexed",data.notIndexed);
+    text("seo-all-unknown",data.unknown);
+    const fragment=document.createDocumentFragment();
+    for(const record of data.entries){
+      if(!record||!Object.hasOwn(seoIndexStatus,record.status))continue;
+      const tr=document.createElement("tr");
+      publicPageCell(tr,record.url);
+      const state=document.createElement("td");
+      const badge=document.createElement("span");
+      badge.className="seo-index-badge";
+      badge.dataset.state=record.status;
+      badge.textContent=seoIndexStatus[record.status];
+      state.append(badge);tr.append(state);
+      cell(tr,record.coverageState||record.verdict||"Brak danych od Google");
+      const timestamp=record.lastCrawlTime?
+        new Date(record.lastCrawlTime):null;
+      cell(tr,timestamp&&Number.isFinite(timestamp.getTime())?
+        asDate(record.lastCrawlTime):"—");
+      const canonical=document.createElement("td");
+      const canonicalUrl=safePublicPageUrl(record.googleCanonical);
+      if(canonicalUrl){
+        const link=document.createElement("a");
+        link.href=canonicalUrl;link.target="_blank";
+        link.rel="noopener noreferrer";link.textContent=canonicalUrl;
+        canonical.append(link);
+      }else canonical.textContent=record.googleCanonical||"—";
+      tr.append(canonical);
+      fragment.append(tr);
+    }
+    $("seo-inspect-all-rows").replaceChildren(fragment);
+    text("seo-inspect-all-status",data.unknown===0?
+      "Sprawdzono "+data.total+" podstron. Wyniki indeksacji Google są kompletne.":
+      "Sprawdzono "+data.total+" podstron; dla "+data.unknown+
+        " Google nie potwierdził statusu. Brak wyniku NIE oznacza braku indeksacji.");
+    text("seo-inspect-all-time","Odczyt: "+asDate(data.checkedAt)+
+      " (czas Polski). Dane inspekcji mogą pochodzić z pamięci do 12 godzin.");
+  }catch{
+    text("seo-inspect-all-status","Nie udało się potwierdzić pełnej kontroli. "+
+      "Sprawdź dostęp do Google Search Console lub ponów później.");
+  }finally{btn.disabled=false;}
+}
 async function inspectGoogle(event){
   event.preventDefault();
   const url=$("seo-inspect-url").value;
@@ -675,6 +751,7 @@ async function inspectGoogle(event){
     text("seo-inspect-state","Nie udało się pobrać stanu indeksacji. Sprawdź konfigurację i uprawnienia Search Console.");
   }finally{button.disabled=false;}
 }
+$("seo-inspect-all-button").addEventListener("click",()=>void inspectSitemapGoogle());
 $("google-refresh").addEventListener("click",()=>void loadGoogle());
 $("google-opportunities-filter").addEventListener("change",gscRenderOpportunities);
 $("google-copy-opportunities").addEventListener("click",()=>
