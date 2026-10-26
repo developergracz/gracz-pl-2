@@ -401,6 +401,32 @@ test("GSC bulk inspection checks 17 canonical sitemap URLs exactly once, with th
   assert.equal(repeated.entries.length,17);
 });
 
+test("Bulk Google errors, alternate canonicals and explicit noindex are never falsely counted as indexed",async()=>{
+  const urls=["https://gracz.pl/","https://gracz.pl/gry/",
+    "https://gracz.pl/gry/warcaby/","https://gracz.pl/gry/gomoku/"];
+  const fetcher=async(url,options)=>{
+    if(url==="https://oauth2.googleapis.com/token")
+      return new Response(JSON.stringify({access_token:"test-access-token-1234567",expires_in:3600}));
+    const current=JSON.parse(options.body).inspectionUrl;
+    const i=urls.indexOf(current);
+    assert.ok(i>=0);
+    const record=i===0?{verdict:"FAIL",coverageState:"Google inspection error"}:
+      i===1?{verdict:"PASS",indexingState:"INDEXING_ALLOWED",
+        googleCanonical:"https://gracz.pl/"}:
+      i===2?{verdict:"PASS",indexingState:"BLOCKED_BY_META_TAG",
+        googleCanonical:current}:
+      {verdict:"NEUTRAL",coverageState:"Crawled - currently not indexed"};
+    return new Response(JSON.stringify({inspectionResult:{indexStatusResult:record}}));
+  };
+  const inspector=createSeoGoogleReader({fetcher,now,email,privateKey,property});
+  const result=await inspector.inspectSitemap(urls);
+  assert.equal(result.indexed,0);
+  assert.equal(result.notIndexed,1);
+  assert.equal(result.unknown,3);
+  assert.deepEqual(result.entries.map(x=>x.status),
+    ["unknown","unknown","unknown","not_indexed"]);
+});
+
 test("GSC bulk inspector refuses arbitrary URLs, duplicates, empty lists and over-limit batches",async()=>{
   const inspect=createSeoGoogleReader({fetcher:async()=>{throw Error("must not call provider");},
     now,email,privateKey,property}).inspectSitemap;

@@ -313,10 +313,13 @@ export function createSeoGoogleReader({
   let bulkBusy=null;
   const indexStatus=entry=>{
     if(entry.state!=="connected")return "unknown";
-    if(entry.verdict==="PASS"&&entry.indexingState!=="INDEXING_DISALLOWED")
+    // PASS is conclusive only for this canonical URL, with no indexing block.
+    if(entry.verdict==="PASS"&&
+       !["BLOCKED_BY_META_TAG","BLOCKED_BY_HTTP_HEADER"].includes(entry.indexingState)&&
+       (!entry.googleCanonical||entry.googleCanonical===entry.url))
       return "indexed";
-    if(entry.verdict==="NEUTRAL"||entry.verdict==="FAIL")
-      return "not_indexed";
+    // FAIL means a Google inspection error, not proof of deindexing.
+    if(entry.verdict==="NEUTRAL")return "not_indexed";
     return "unknown";
   };
   // The authoritative URL list comes from the server's live sitemap monitor,
