@@ -178,3 +178,20 @@
  .seo-shell .seo-google-options label,.seo-shell .seo-google-options select{width:100%}
  .seo-shell #google-copy-opportunities{width:100%}
 }
+
+/* Bulk Google indexing: consistent with the existing Full Max Premium panel. */
+.seo-shell .seo-inspect-all{margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+.seo-shell .seo-inspect-all .section-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.seo-shell #seo-inspect-all-button{min-height:43px;padding:9px 15px;border-radius:10px;border:1px solid #d1ac66;
+ background:linear-gradient(110deg,#f2d18f,#d3a755);color:#172337;font-weight:850;cursor:pointer}
+.seo-shell #seo-inspect-all-button:disabled{opacity:.55;cursor:wait}
+.seo-shell #seo-inspect-all-button:focus-visible{outline:3px solid #f7d89a;outline-offset:3px}
+.seo-shell .seo-inspect-all .cards{margin:15px 0 20px}
+.seo-shell .seo-inspect-all .table-wrap{width:100%;overflow-x:auto}
+.seo-shell #seo-inspect-all-rows td{overflow-wrap:anywhere;vertical-align:middle;max-width:330px}
+.seo-shell .seo-index-badge{display:inline-block;padding:5px 9px;border:1px solid #677d97;border-radius:7px;
+ font-weight:750;line-height:1.5;white-space:nowrap}
+.seo-shell .seo-index-badge[data-state=indexed]{color:#98e3bc;border-color:#449d70}
+.seo-shell .seo-index-badge[data-state=not_indexed]{color:#f4ba9a;border-color:#b67350}
+.seo-shell .seo-index-badge[data-state=unknown]{color:#eddbad;border-color:#ad965c}
+@media(max-width:650px){.seo-shell #seo-inspect-all-button{width:100%}}
