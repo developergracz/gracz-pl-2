@@ -235,4 +235,15 @@ $("performance-copy-priority").addEventListener("click",()=>
   void putOnClipboard(copyPayload(findings.filter(x=>x.priority==="high")),"problemy o wysokim priorytecie"));
 $("performance-copy-all").addEventListener("click",()=>
   void putOnClipboard(copyPayload(findings),"wszystkie wyniki"));
+// Mirror SEO's highlighted navigation while visiting real report anchors.
+const performanceNav=document.querySelector(".performance-side nav");
+function updatePerformanceNav(){
+  const selected=location.hash||"#main";
+  for(const link of performanceNav.querySelectorAll('a[href^="#"]')){
+    if(link.getAttribute("href")===selected)link.setAttribute("aria-current","location");
+    else link.removeAttribute("aria-current");
+  }
+}
+window.addEventListener("hashchange",updatePerformanceNav);
+updatePerformanceNav();
 void load();
