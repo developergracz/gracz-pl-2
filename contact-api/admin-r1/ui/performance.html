@@ -12,6 +12,7 @@
 </head>
 <body>
 <a class="skip" href="#main">Przejdź do treści</a>
+<div class="shell performance-shell">
 <main class="performance-main" id="main">
   <div class="performance-head">
     <div>
@@ -25,7 +26,7 @@
     <p id="performance-status" role="status" aria-live="polite">Pobieranie raportu Performance Guardian…</p>
     <button type="button" id="performance-refresh">Odśwież raport</button>
   </div>
-  <section aria-labelledby="performance-metrics-title">
+  <section id="performance-metrics" aria-labelledby="performance-metrics-title">
     <h2 id="performance-metrics-title">Ostatni pomiar Lighthouse</h2>
     <div class="performance-cards">
       <article><p>Strona główna — telefon</p><strong id="perf-home-mobile">—</strong><small>Cel LCP poniżej 2,5 s</small></article>
@@ -34,7 +35,7 @@
     </div>
     <p class="performance-note" id="performance-checked">Źródło: GitHub Actions → lokalny Lighthouse (Chrome). Data pomiaru: oczekiwanie na raport.</p>
   </section>
-  <section class="performance-panel" aria-labelledby="performance-diagnosis-title">
+  <section class="performance-panel" id="performance-diagnostics" aria-labelledby="performance-diagnosis-title">
     <h2 id="performance-diagnosis-title">Diagnoza mobilna · wyszukiwarka problemów</h2>
     <p class="performance-note">Filtruj wyniki LCP, blokujących arkuszy CSS, FCP i TTFB. Priorytet jest techniczny: nie oznacza dokładnego wpływu na pozycję w Google.</p>
     <div class="performance-diagnostic-filters">
@@ -75,7 +76,7 @@
     <ol id="performance-diagnosis" class="performance-issues"><li>Oczekiwanie na dane…</li></ol>
     <p id="performance-copy-status" class="performance-note" role="status" aria-live="polite">Kopiowanie zapisuje tylko publiczne adresy i wyniki Lighthouse. Nie wysyła danych automatycznie do ChatGPT.</p>
   </section>
-  <section class="performance-panel" aria-labelledby="performance-operations-title">
+  <section class="performance-panel" id="performance-operations" aria-labelledby="performance-operations-title">
     <h2 id="performance-operations-title">Bezpieczeństwo wdrożeń</h2>
     <dl class="performance-facts">
       <div><dt>Automatyczne naprawy</dt><dd>Wyłącznie zatwierdzona lista zmian, testy i PR</dd></div>
@@ -84,7 +85,7 @@
       <div><dt>Aktualny stan Render LIVE</dt><dd>Nieodczytywany w tym module — sprawdź w panelu Render</dd></div>
     </dl>
   </section>
-  <section class="performance-panel" aria-labelledby="performance-history-title">
+  <section class="performance-panel" id="performance-history-section" aria-labelledby="performance-history-title">
     <h2 id="performance-history-title">Historia uruchomień GitHub Actions</h2>
     <div class="performance-table-scroll">
       <table>
@@ -96,5 +97,18 @@
   </section>
   <p class="performance-note">GitHub Actions jest źródłem pomiarów; panel nie steruje wdrożeniami i nie przechowuje klucza GitHub w przeglądarce.</p>
 </main>
+<aside class="performance-side" aria-label="Menu boczne Performance Guardian">
+  <p class="performance-side-kicker">GRACZ.PL · FULL MAX PREMIUM</p>
+  <h2>Menu Performance</h2>
+  <nav aria-label="Sekcje raportu Performance Guardian">
+    <a href="#main">Przegląd raportu</a>
+    <a href="#performance-metrics">Pomiary Lighthouse</a>
+    <a href="#performance-diagnostics">Diagnostyka LCP</a>
+    <a href="#performance-operations">Bezpieczeństwo wdrożeń</a>
+    <a href="#performance-history-section">Historia pomiarów</a>
+  </nav>
+  <p class="performance-side-note">Prywatny panel OWNER · tylko odczyt</p>
+</aside>
+</div>
 </body>
 </html>

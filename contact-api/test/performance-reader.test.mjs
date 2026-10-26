@@ -233,3 +233,22 @@ test("Performance UI has accessible category, page and priority filters and safe
   assert.ok(!js.includes("sendBeacon"));
   assert.ok(!js.includes('fetch("https://api.openai.com'));
 });
+
+test("Performance Guardian R3 exposes a working right-side OWNER menu on desktop and mobile",async()=>{
+  const {readFile}=await import("node:fs/promises");
+  const html=await readFile(new URL("../admin-r1/ui/performance.html",import.meta.url),"utf8");
+  const css=await readFile(new URL("../admin-r1/ui/performance.css",import.meta.url),"utf8");
+  assert.match(html,/<div class="shell performance-shell">\s*<main class="performance-main" id="main">/);
+  assert.match(html,/<\/main>\s*<aside class="performance-side" aria-label="Menu boczne Performance Guardian">/);
+  assert.match(html,/<nav aria-label="Sekcje raportu Performance Guardian">/);
+  for(const id of ["main","performance-metrics","performance-diagnostics",
+    "performance-operations","performance-history-section"]){
+    assert.ok(html.includes('href="#'+id+'"'),"Missing menu item "+id);
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,
+      "Target must be unique: "+id);
+  }
+  assert.match(css,/\.performance-shell\{grid-template-columns:minmax\(0,1fr\) 248px/);
+  assert.match(css,/\.performance-shell \.performance-side\{[\s\S]*?position:sticky/);
+  assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.performance-shell \.performance-side nav\{/);
+  assert.ok(!html.includes('target="_blank"'),"Internal menu stays on the same page");
+});

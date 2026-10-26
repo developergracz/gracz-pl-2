@@ -57,3 +57,46 @@
 #performance-copy-status{min-height:20px;overflow-wrap:anywhere}
 @media(max-width:1100px){.performance-diagnostic-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.performance-diagnostic-filters{grid-template-columns:1fr}.performance-issue-heading{display:block}.performance-issue-priority{display:inline-block;margin-top:6px}}
+
+/* OWNER Performance R3: the right-hand section menu, without changing reports. */
+.performance-shell{grid-template-columns:minmax(0,1fr) 248px;min-width:0}
+.performance-shell .performance-main{min-width:0}
+.performance-shell .performance-side{
+  grid-area:sidebar;position:sticky;top:65px;align-self:start;
+  height:calc(100dvh - 65px);max-height:none;overflow-y:auto;
+  padding:26px 17px;background:#0c1522;border-left:1px solid #34475e;
+}
+.performance-shell .performance-side-kicker{margin:0 0 10px;color:#f0cd85;font-size:10px;font-weight:850;letter-spacing:.12em}
+.performance-shell .performance-side h2{margin:0 0 19px;color:#f2f6ff;font-size:19px;line-height:1.35}
+.performance-shell .performance-side nav{display:grid;gap:8px;margin:0}
+.performance-shell .performance-side nav a{
+  display:block;padding:11px 13px;border:1px solid #35516a;border-radius:10px;
+  background:#14283b;color:#dce9f6;font-size:13px;font-weight:700;
+  line-height:1.45;text-decoration:none;overflow-wrap:anywhere;
+}
+.performance-shell .performance-side nav a:hover{color:#f5d792;border-color:#a78852;background:#253246}
+.performance-shell .performance-side nav a:focus-visible{outline:3px solid #f4d38e;outline-offset:2px}
+.performance-shell .performance-side-note{margin:20px 0 0;color:#adbfcf;font-size:12px;line-height:1.6}
+.performance-shell #main,.performance-shell #performance-metrics,
+.performance-shell #performance-diagnostics,.performance-shell #performance-operations,
+.performance-shell #performance-history-section{scroll-margin-top:90px}
+@media(max-width:1100px){
+  .performance-shell{grid-template-columns:minmax(0,1fr) 208px}
+  .performance-shell .performance-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .performance-shell{display:flex;flex-direction:column}
+  .performance-shell .performance-side{
+    order:0;position:relative;top:auto;align-self:stretch;height:auto;max-height:none;
+    padding:12px 16px;border-left:0;border-bottom:1px solid #34475e;
+  }
+  .performance-shell .performance-main{order:1}
+  .performance-shell .performance-side-kicker,.performance-shell .performance-side-note{display:none}
+  .performance-shell .performance-side h2{font-size:15px;margin:0 0 10px}
+  .performance-shell .performance-side nav{
+    display:flex;flex-direction:row;flex-wrap:nowrap;gap:7px;overflow-x:auto;
+    padding-bottom:3px;scrollbar-width:thin;
+  }
+  .performance-shell .performance-side nav a{flex:0 0 auto;white-space:nowrap;padding:9px 12px}
+  .performance-shell .performance-cards{grid-template-columns:1fr}
+}
