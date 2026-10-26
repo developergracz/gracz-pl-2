@@ -38,7 +38,7 @@
   <section class="performance-panel" id="performance-diagnostics" aria-labelledby="performance-diagnosis-title">
     <h2 id="performance-diagnosis-title">Diagnoza mobilna · wyszukiwarka problemów</h2>
     <p class="performance-note">Filtruj wyniki LCP, blokujących arkuszy CSS, FCP i TTFB. Priorytet jest techniczny: nie oznacza dokładnego wpływu na pozycję w Google.</p>
-    <div class="performance-diagnostic-filters">
+    <div class="performance-diagnostic-filters" id="performance-filters">
       <label>Kategoria
         <select id="performance-filter-category">
           <option value="all">Wszystkie kategorie</option>
@@ -67,7 +67,7 @@
         <input id="performance-filter-query" type="search" maxlength="100" placeholder="Plik CSS, LCP, hero…">
       </label>
     </div>
-    <div class="performance-copy-actions">
+    <div class="performance-copy-actions" id="performance-copy-actions">
       <button id="performance-copy-visible" type="button" disabled>Kopiuj widoczne do ChatGPT</button>
       <button id="performance-copy-priority" type="button" disabled>Kopiuj priorytetowe</button>
       <button id="performance-copy-all" type="button" disabled>Kopiuj wszystkie</button>
@@ -98,16 +98,20 @@
   <p class="performance-note">GitHub Actions jest źródłem pomiarów; panel nie steruje wdrożeniami i nie przechowuje klucza GitHub w przeglądarce.</p>
 </main>
 <aside class="performance-side" aria-label="Menu boczne Performance Guardian">
-  <p class="performance-side-kicker">GRACZ.PL · FULL MAX PREMIUM</p>
-  <h2>Menu Performance</h2>
+  <div class="logo">gracz<span>.pl</span></div>
+  <p class="eyebrow">FULL MAX PREMIUM / PERFORMANCE</p>
   <nav aria-label="Sekcje raportu Performance Guardian">
-    <a href="#main">Przegląd raportu</a>
-    <a href="#performance-metrics">Pomiary Lighthouse</a>
-    <a href="#performance-diagnostics">Diagnostyka LCP</a>
-    <a href="#performance-operations">Bezpieczeństwo wdrożeń</a>
-    <a href="#performance-history-section">Historia pomiarów</a>
+    <a href="#main" aria-current="location">◈ Przegląd LIVE</a>
+    <a href="#performance-metrics">◇ Pomiary Lighthouse</a>
+    <a href="#performance-diagnostics">◇ Diagnoza mobilna LCP</a>
+    <a href="#performance-filters">◇ Filtry problemów</a>
+    <a href="#performance-diagnosis">◇ Wykryte problemy</a>
+    <a href="#performance-copy-actions">◇ Kopiowanie do ChatGPT</a>
+    <a href="#performance-operations">◇ Bezpieczeństwo wdrożeń</a>
+    <a href="#performance-history-section">◇ Historia pomiarów</a>
+    <a href="/owner/newsletter/systemadmin">← Centrum administracyjne</a>
   </nav>
-  <p class="performance-side-note">Prywatny panel OWNER · tylko odczyt</p>
+  <p class="aside-note">R3 · Dostęp wyłącznie OWNER<br>Kontrola tylko do odczytu</p>
 </aside>
 </div>
 </body>
