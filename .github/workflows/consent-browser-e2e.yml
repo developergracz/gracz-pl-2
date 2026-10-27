@@ -35,6 +35,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: homepage-r2-responsive-screenshots
-          path: test-results/home-r2/*.png
+          path: |
+            test-results/home-r2/*.png
+            test-results/home-r3/*.png
           if-no-files-found: ignore
           retention-days: 7
