@@ -6,6 +6,7 @@ on:
       - "maintenance-site/assets/home-premium-max.min.css"
       - "maintenance-site/assets/home-premium-max.css"
       - "scripts/check-home-premium-css-compact.mjs"
+      - "scripts/probe-home-critical-css.cjs"
       - ".github/workflows/home-css-preview-gate.yml"
   workflow_dispatch:
 
