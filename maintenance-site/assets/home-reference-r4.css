@@ -99,7 +99,7 @@ body.homepage-premium-max #tresc *,body.homepage-premium-max .site-footer *{box-
 .r4-community-visual{min-height:170px;position:relative;display:grid;align-items:end;
  overflow:hidden;border-radius:12px;border:1px solid rgba(230,186,104,.22);
  background:linear-gradient(90deg,#091927 8%,transparent 67%),
- url("/assets/r4-reference-community.webp") center/cover no-repeat}
+ url("/assets/r4-reference-community.webp") right center/auto 170% no-repeat}
 .r4-community-panel{display:flex;gap:16px;align-items:center;max-width:335px;
  padding:18px;background:rgba(4,13,22,.68);color:#fff}
 .r4-community-panel svg{width:39px;height:39px;flex:none}
@@ -157,6 +157,14 @@ body.homepage-premium-max .site-footer .footer-news{background:
 body.homepage-premium-max .site-footer .footer-news #f-news{font-size:clamp(27px,2.2vw,38px)!important}
 body.homepage-premium-max .site-footer .footer-news>p{font-size:13px!important}
 body.homepage-premium-max .site-footer .footer-news .news-form{max-width:550px}
+body.homepage-premium-max .site-footer .footer-news .news-form .btn--news{
+ background:linear-gradient(135deg,#ffe1a0,#e2ac55)!important;
+ color:#171914!important;border:1px solid #dcb064!important;font-weight:900!important;
+}
+body.homepage-premium-max .site-footer .footer-news .news-form input{
+ background:#061b29!important;color:#f8f6ef!important;
+ border:1px solid rgba(245,196,108,.55)!important;
+}
 body.homepage-premium-max .site-footer .home-full-news-graphic{display:none!important}
 body.homepage-premium-max .site-footer .footer-bottom{min-height:48px!important}
 @media(max-width:1180px){
