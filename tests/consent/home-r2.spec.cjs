@@ -13,9 +13,9 @@ for(const width of [360,390,768,1366,1920]){
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
    await expect(page.locator('h1')).toHaveCount(1);
-   await expect(page.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
-   await expect(page.locator('.r4-hero-motto')).toHaveText('Graj. Ucz się. Rywalizuj.');
-   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM!');
+   await expect(page.locator('#hero-title')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
+   await expect(page.locator('.ref-hero__desc')).toContainText('Graj, ucz się, rywalizuj i poznawaj nowych ludzi.');
+   await expect(page.locator('.ref-hero__picture img')).toHaveAttribute('src','/assets/home-owner-newsletter.webp');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
    await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
@@ -30,7 +30,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(form).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
 
-   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','r4-game-chess.webp','r4-game-checkers.webp','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
+   for(const asset of ['home-owner-newsletter.webp','r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','r4-game-chess.webp','r4-game-checkers.webp','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
      const response=await page.request.get('/assets/'+asset);
      expect(response.status(),asset).toBe(200);
      expect((await response.body()).length,asset).toBeGreaterThan(1000);
@@ -40,9 +40,9 @@ for(const width of [360,390,768,1366,1920]){
       const rect=q=>{const e=document.querySelector(q),r=e.getBoundingClientRect();
         return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
       return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
-       hero:rect('.r4-hero'),card:rect('.r4-game'),footer:rect('.footer-news'),
+       hero:rect('.ref-hero'),card:rect('.r4-game'),footer:rect('.footer-news'),
        legal:rect('.footer-bottom'),
-       illustration:getComputedStyle(document.querySelector('.r4-hero-art')).backgroundImage,
+       illustration:document.querySelector('.ref-hero__picture img').getAttribute('src'),
        css:getComputedStyle(document.querySelector('.r4-games-grid')).gridTemplateColumns,
        header:rect('.site-header')};
    });
@@ -52,7 +52,7 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   expect(layout.illustration).toContain('r4-reference-hero.webp');
+   expect(layout.illustration).toContain('home-owner-newsletter.webp');
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
