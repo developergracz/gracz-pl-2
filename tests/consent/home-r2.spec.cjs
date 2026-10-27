@@ -30,7 +30,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(form).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
 
-   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp']){
+   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','r4-game-chess.webp','r4-game-checkers.webp','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
      const response=await page.request.get('/assets/'+asset);
      expect(response.status(),asset).toBe(200);
      expect((await response.body()).length,asset).toBeGreaterThan(1000);
