@@ -6,6 +6,11 @@ body.homepage-premium-max :is(.site-header,.site-footer){
  background:#031423!important;border-color:rgba(221,175,95,.22)!important
 }
 body.homepage-premium-max .header-inner{width:min(1460px,calc(100% - 56px))}
+body.homepage-premium-max .search-btn--desktop{display:inline-flex!important;align-items:center;gap:8px;width:auto!important;min-width:0!important;padding:8px 12px!important}
+body.homepage-premium-max .search-btn--desktop svg{flex:none;width:22px;height:22px}
+body.homepage-premium-max .r4-search-label{font-size:13px;font-weight:600;color:#9eb4c4}
+@media(max-width:1250px){body.homepage-premium-max .r4-search-label{display:none}}
+
 body.homepage-premium-max .site-header .logo{font-weight:900;letter-spacing:-.07em}
 body.homepage-premium-max #tresc{display:block;width:100%;max-width:none;margin:0 auto}
 body.homepage-premium-max #tresc *,body.homepage-premium-max .site-footer *{box-sizing:border-box}
