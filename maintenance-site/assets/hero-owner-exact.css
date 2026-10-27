@@ -34,7 +34,7 @@
  }
  .homepage-premium-max .r4-owner-hotspot--games{left:1.35%;width:19.2%}
  .homepage-premium-max .r4-owner-hotspot--guides{left:21.35%;width:20.8%}
- .homepage-premium-max .r4-owner-hotspot:hover{box-shadow:inset 0 0 0 2px rgba(255,229,159,.55)}
+ /* The clickable hotspots overlay text baked into the HERO image: no hover border, which would be displaced from the visible buttons. */
  .homepage-premium-max .r4-owner-hotspot:focus-visible{
     outline:3px solid #ffe3a0;outline-offset:3px;background:rgba(250,196,97,.12)
  }
