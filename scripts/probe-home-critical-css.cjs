@@ -33,7 +33,7 @@ async function main(){
     const walk=(list,parent,key)=>{
      for(let i=0;i<list.length;i++){
       const r=list[i],k=key?key+'/'+i:String(i);
-      if(r.cssRules)walk(r.cssRules,parent.concat(r.cssText.slice(0,r.cssText.indexOf('{')).trim()),k);
+      if(r.cssRules && !r.selectorText)walk(r.cssRules,parent.concat(r.cssText.slice(0,r.cssText.indexOf('{')).trim()),k);
       else leaves.push({key:k,parent,css:r.cssText,used:r.selectorText?visible(r.selectorText):true});
      }
     };
