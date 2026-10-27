@@ -102,8 +102,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(geometry.heroHeight).toBeGreaterThan(385);
-      expect(geometry.heroHeight).toBeLessThanOrEqual(465);
+      expect(Math.abs(geometry.heroHeight - width * 485 / 1828)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
