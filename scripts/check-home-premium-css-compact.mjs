@@ -57,7 +57,9 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
       html.indexOf("href=\"/assets/home-premium-max.min.css?v=compact-r1\""),
     "Keep the exact approved stylesheet cascade order");
   // Guard against accidentally moving the highest-impact hero and the cookie module.
-  assert.ok(html.includes('class="home-hero-premium__lead"') &&
-    html.includes('href="/assets/cookie-consent.css?v=r3"'));
+  assert.ok((html.includes('class="home-hero-premium__lead"') ||
+    html.includes('class="r4-hero-description"')) &&
+    html.includes('href="/assets/cookie-consent.css?v=r3"'),
+    "Preserve homepage hero text and the cookie module");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
 }

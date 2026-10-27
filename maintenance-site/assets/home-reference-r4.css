@@ -1,0 +1,266 @@
+/* R4: the approved "Polskie Centrum Gracza" reference layout, scoped to homepage only.
+   Real, accessible HTML and links remain selectable/indexable. */
+body.homepage-premium-max{background:#04111f!important;color:#f5f5f2!important}
+body.homepage-premium-max::before{background:linear-gradient(165deg,#03111f,#071a2c 44%,#04111e)!important}
+body.homepage-premium-max :is(.site-header,.site-footer){
+ background:#031423!important;border-color:rgba(221,175,95,.22)!important
+}
+body.homepage-premium-max .header-inner{width:min(1460px,calc(100% - 56px))}
+@media(min-width:1441px){
+ body.homepage-premium-max .search-btn--desktop{display:inline-flex!important;flex-direction:row!important;align-items:center;white-space:nowrap;gap:9px;width:auto!important;min-width:132px!important;padding:8px 12px!important}
+ body.homepage-premium-max .search-btn--desktop svg{flex:none;width:21px;height:21px}
+ body.homepage-premium-max .r4-search-label{font-size:13px;font-weight:600;color:#a9bbc8}
+}
+@media(max-width:1440px){body.homepage-premium-max .r4-search-label{display:none}}
+
+body.homepage-premium-max .site-header .logo{font-weight:900;letter-spacing:-.07em}
+body.homepage-premium-max .site-header .newsletter-trigger{
+ background:transparent!important;border-color:transparent!important;box-shadow:none!important;
+ color:#e9edf1!important;font-weight:700!important;
+}
+body.homepage-premium-max .site-header .newsletter-trigger:hover{
+ color:#f7ce84!important;background:rgba(239,189,96,.07)!important;
+}
+
+body.homepage-premium-max #tresc{display:block;width:100%;max-width:none;margin:0 auto}
+body.homepage-premium-max #tresc *,body.homepage-premium-max .site-footer *{box-sizing:border-box}
+.r4-homepage{background:#041625!important}
+.r4-homepage :is(h1,h2,h3,p){margin:0}
+.r4-homepage a{text-decoration:none}
+.r4-homepage :is(a,button):focus-visible{outline:3px solid #f6ce77;outline-offset:3px}
+.r4-hero{display:grid;grid-template-columns:minmax(0,47%) minmax(0,53%);
+  position:relative;min-height:410px;overflow:hidden;
+  width:100%;margin:0;
+  background:linear-gradient(100deg,#04121f 0%,#061927 48%,#071727 100%);
+  border-bottom:1px solid rgba(221,165,84,.20)}
+.r4-hero-copy{position:relative;z-index:2;align-self:center;
+ padding:clamp(24px,3.2vw,50px) 12px clamp(22px,3vw,45px) max(32px,calc((100vw - 1460px)/2));
+ max-width:850px}
+.r4-hero h1{font-size:clamp(34px,3.55vw,61px);font-weight:900;letter-spacing:-.045em;
+ line-height:1.08;white-space:nowrap;color:#fff!important}
+.r4-hero h1 span{color:#efc171}
+.r4-hero-motto{font-size:clamp(19px,2vw,32px);font-weight:900;color:#fff;margin-top:4px!important}
+.r4-hero-claim{font-size:clamp(20px,2vw,33px);font-weight:900;letter-spacing:-.02em;
+ color:#fff;margin-top:8px!important;white-space:nowrap}
+.r4-hero-rule{height:4px;width:min(100%,545px);margin:13px 0;
+ background:linear-gradient(90deg,transparent,#f6c45b 13%,#ffc75a 70%,transparent);
+ box-shadow:0 0 14px rgba(234,164,66,.35);transform:skew(-18deg)}
+.r4-hero-description{font-size:clamp(13px,1.08vw,18px);line-height:1.48;color:#dee6f0!important;
+ max-width:660px;margin:0 0 20px!important}
+.r4-hero-description strong{color:#fff}.r4-hero-description strong span{color:#ed2e44}
+.r4-hero-actions{display:flex;flex-wrap:wrap;gap:15px}
+.r4-btn{display:inline-flex;justify-content:center;align-items:center;gap:12px;min-height:54px;
+ padding:12px 23px;border:2px solid #c69546;border-radius:11px;white-space:nowrap;
+ font-size:clamp(14px,1.15vw,18px);font-weight:900;line-height:1.1}
+.r4-btn svg{height:23px;width:23px;flex:none}
+.r4-btn-gold,.r4-card-action{background:linear-gradient(135deg,#ffe4a2,#e3ad58);color:#161a21!important;
+ border-color:#f4c171;box-shadow:0 2px 0 rgba(90,51,7,.22)}
+.r4-btn-outline,.r4-card-action-outline{background:rgba(4,14,23,.58)!important;color:#fff!important;
+ border-color:#bb8c40!important}
+.r4-btn:hover,.r4-card-action:hover{filter:brightness(1.08)}
+.r4-hero-art{position:relative;z-index:1;min-width:0;background:
+ linear-gradient(90deg,#061621 0%,transparent 16%),
+ url("/assets/r4-reference-hero.webp") center center/cover no-repeat;
+}
+.r4-hero-art::after{content:"";position:absolute;inset:0;
+ background:linear-gradient(90deg,rgba(4,17,29,.2),transparent 23%),linear-gradient(0deg,#061522 0%,transparent 25%);
+ pointer-events:none}
+.r4-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:1560px;
+ margin:0 auto;padding:14px 26px;border-bottom:1px solid rgba(235,197,123,.13);
+ background:#051929}
+.r4-shortcuts a{display:flex;gap:13px;align-items:center;min-width:0;padding:7px 15px;
+ border-right:1px solid rgba(170,200,231,.12);color:#fff}
+.r4-shortcuts a:first-child{padding-left:0}.r4-shortcuts a:last-child{border:0}
+.r4-shortcuts svg{width:42px;height:42px;flex:none;color:#efbd69}
+.r4-shortcuts strong{font-size:14px;line-height:1.25;display:block}
+.r4-shortcuts small{font-size:11px;line-height:1.35;color:#9fb0bd;display:block;margin-top:4px}
+.r4-shortcuts a:hover strong{color:#f7c86e}
+.r4-section{width:min(1460px,calc(100% - 64px));margin:0 auto;
+ padding:20px 0 28px;border-bottom:1px solid rgba(232,196,117,.17)}
+.r4-section-title{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:17px}
+.r4-section-title h2,.r4-community h2,.r4-next h2{font-size:clamp(26px,2.2vw,38px);
+ font-weight:900;line-height:1.16;letter-spacing:-.035em;color:#fff}
+.r4-section-title p{font-size:14px;color:#bac7d3;margin-top:8px}
+.r4-section-title>a{white-space:nowrap;color:#f5c878;font-weight:800;font-size:13px}
+.r4-games-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.r4-game{min-width:0;overflow:hidden;display:flex;flex-direction:column;
+ border:1px solid rgba(239,193,114,.25);border-radius:12px;
+ background:linear-gradient(175deg,#0c2434,#041320);box-shadow:0 8px 21px rgba(0,0,0,.22)}
+.r4-game-image,.r4-guide-photo,.r4-update-photo,.r4-phone-image{
+ display:block;min-width:0;background-color:#142132;background-size:cover;
+ background-position:center;background-repeat:no-repeat}
+.r4-game-image{height:clamp(116px,10vw,175px);border-bottom:1px solid rgba(255,255,255,.08)}
+.r4-img-chess{background-image:url("/assets/r4-game-chess.webp")}
+.r4-img-checkers{background-image:url("/assets/r4-game-checkers.webp")}
+.r4-img-gomoku{background-image:url("/assets/r4-game-gomoku.webp")}
+.r4-img-thousand{background-image:url("/assets/r4-game-thousand.webp")}
+.r4-img-poker{background-image:url("/assets/r4-game-poker.webp")}
+.r4-game-body{display:flex;flex:1;flex-direction:column;align-items:flex-start;
+ padding:13px 12px 12px;gap:8px}
+.r4-game h3{font-size:clamp(16px,1.22vw,20px);line-height:1.1;font-weight:900;color:#fff}
+.r4-game p{font-size:clamp(11px,.82vw,13px);line-height:1.42;color:#cbd4db;min-height:48px}
+.r4-status{border-radius:30px;padding:4px 8px;color:#fff;font-size:11px;font-weight:800;line-height:1.1}
+.r4-status-ready{background:#08694d}.r4-status-soon{background:#92522b}
+.r4-status-training{background:#96572d}
+.r4-card-action{display:flex;align-items:center;justify-content:center;gap:5px;min-height:36px;
+ border-radius:7px;border:1px solid #d5a257;font-size:12px;font-weight:850;
+ width:100%;margin-top:auto;padding:9px 8px}
+.r4-community{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.95fr);
+ gap:35px;align-items:center;padding-top:27px;padding-bottom:27px}
+.r4-community-copy>p{color:#d4dae4;margin:10px 0 18px;line-height:1.5;font-size:14px}
+.r4-community .r4-btn{min-height:44px;font-size:14px}
+.r4-community-tags{display:flex;flex-wrap:wrap;gap:15px;margin-top:17px;color:#b2becb;font-size:12px}
+.r4-community-tags span::before{content:"◇";color:#e7bd79;padding-right:7px}
+.r4-community-visual{min-height:170px;position:relative;display:grid;align-items:end;
+ overflow:hidden;border-radius:12px;border:1px solid rgba(230,186,104,.22);
+ background:linear-gradient(90deg,#091927 8%,transparent 67%),
+ url("/assets/r4-reference-community.webp") center 15%/cover no-repeat}
+.r4-community-panel{display:flex;gap:16px;align-items:center;max-width:335px;
+ padding:18px;background:rgba(4,13,22,.68);color:#fff}
+.r4-community-panel svg{width:39px;height:39px;flex:none}
+.r4-community-panel strong{display:block;font-weight:850;font-size:16px}
+.r4-community-panel p{color:#cbd6e2;font-size:12px;line-height:1.45;margin-top:5px}
+.r4-guides-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.r4-guide,.r4-update{display:block;min-width:0;border:1px solid rgba(231,185,112,.20);
+ border-radius:9px;overflow:hidden;background:#071929;color:#fff}
+.r4-guide-photo{height:130px}
+.r4-guide-body{padding:13px;display:grid;gap:6px;min-height:116px}
+.r4-guide small{color:#f0c679;font-size:10px;font-weight:900}
+.r4-guide strong{color:#fff;font-size:16px;line-height:1.2}
+.r4-guide-body>span{font-size:12px;color:#bec9d5;line-height:1.45}
+.r4-updates{display:grid;grid-template-columns:minmax(0,1fr) 205px;gap:26px;
+ align-items:start;padding-bottom:28px}
+.r4-updates-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.r4-update-photo{height:107px}.r4-update>span:last-child{display:grid;gap:7px;padding:12px}
+.r4-update small{font-size:10px;color:#d0a870;font-weight:850}
+.r4-update strong{font-size:14px;line-height:1.2;color:#fff}
+.r4-update em{font-size:11px;color:#d5c4a8;font-style:normal}
+.r4-phone{border:5px solid #515c6c;outline:2px solid #ad946c;
+ border-radius:28px;padding:17px 13px;background:#04111e;
+ box-shadow:0 12px 35px rgba(0,0,0,.35);color:#fff;min-height:365px}
+.r4-phone-top{display:flex;justify-content:space-between;margin-bottom:21px}
+.r4-phone-top strong{font-size:18px}.r4-phone-top strong span,.r4-phone-title span{color:#ee3445}
+.r4-phone-title{display:block;font-size:20px;line-height:1.12;margin-bottom:8px}
+.r4-phone p{font-size:12px}.r4-phone-claim{display:block;font-size:13px;font-weight:800;color:#ecc478;margin:7px 0}
+.r4-phone .r4-card-action{font-size:11px;min-height:30px;padding:6px;margin:9px 0}
+.r4-phone-heading{font-size:18px;margin-top:13px;display:block}
+.r4-phone-image{height:72px;margin:10px 0;border-radius:6px}
+.r4-phone>strong:last-of-type{font-size:11px}
+.r4-next{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:25px}
+.r4-next h2 span{color:#ef3148}
+.r4-next>div:first-child p{font-size:13px;color:#d4dee9;max-width:720px;margin:8px 0}
+.r4-next .r4-btn{min-height:44px;font-size:13px;margin-top:12px}
+.r4-next-icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.r4-next-icons div{text-align:center;min-width:0}
+.r4-next-icons svg{width:38px;height:38px;display:block;margin:0 auto 10px;color:#f0c578}
+.r4-next-icons strong{font-size:12px;display:block;color:#fff}
+.r4-next-icons small{font-size:10px;color:#a8b8c7;display:block;line-height:1.3;margin-top:5px}
+body.homepage-premium-max .site-footer{background:#03111e!important}
+body.homepage-premium-max .site-footer .footer-grid{width:min(1460px,calc(100% - 64px))!important;
+ grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,.85fr)!important;
+ grid-auto-rows:auto;align-items:start;
+ padding:16px 0 14px!important;gap:19px!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-news{grid-column:1/-1!important;grid-row:1!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-brand{grid-column:1!important;grid-row:2!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-nav"]{grid-column:2!important;grid-row:2!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-popular"]{grid-column:3!important;grid-row:2!important}
+body.homepage-premium-max .site-footer .footer-news{background:
+ linear-gradient(90deg,#061726 0%,rgba(7,23,37,.88) 52%,rgba(7,23,37,.06)),
+ url("/assets/r4-reference-newsletter.webp") right center/auto 100% no-repeat!important;
+ border-radius:12px!important;min-height:215px;align-content:center;
+ padding:25px 28px!important}
+body.homepage-premium-max .site-footer .footer-news #f-news{font-size:clamp(27px,2.2vw,38px)!important}
+body.homepage-premium-max .site-footer .footer-news>p{font-size:13px!important}
+body.homepage-premium-max .site-footer .footer-news .news-form{max-width:550px}
+body.homepage-premium-max .site-footer .footer-news .news-form .btn--news{
+ background:linear-gradient(135deg,#ffe1a0,#e2ac55)!important;
+ color:#171914!important;border:1px solid #dcb064!important;font-weight:900!important;
+}
+body.homepage-premium-max .site-footer .footer-news .news-form input{
+ background:#061b29!important;color:#f8f6ef!important;
+ border:1px solid rgba(245,196,108,.55)!important;
+}
+body.homepage-premium-max .site-footer .home-full-news-graphic{display:none!important}
+body.homepage-premium-max .site-footer .footer-bottom{min-height:48px!important}
+@media(max-width:1180px){
+.r4-shortcuts{padding:12px 16px}.r4-shortcuts svg{width:29px;height:29px}
+.r4-shortcuts a{gap:8px;padding:5px 7px}.r4-shortcuts strong{font-size:12px}
+.r4-shortcuts small{font-size:10px}
+.r4-hero{min-height:355px}.r4-hero h1{white-space:normal}
+.r4-hero-claim{white-space:normal}
+.r4-game-image{height:125px}
+}
+@media(max-width:960px){
+.r4-hero{grid-template-columns:minmax(0,57%) minmax(0,43%)}
+.r4-hero-copy{padding:25px 10px 25px 22px}
+.r4-hero h1{font-size:clamp(28px,4.6vw,42px)}
+.r4-hero-motto{font-size:clamp(18px,2.6vw,24px)}
+.r4-hero-claim{font-size:clamp(19px,2.45vw,23px)}
+.r4-games-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.r4-game-image{height:158px}
+.r4-guides-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.r4-community{grid-template-columns:1fr}
+.r4-community-visual{min-height:200px}
+.r4-updates{grid-template-columns:1fr 170px}
+.r4-updates-grid{grid-template-columns:1fr}
+.r4-update{display:grid;grid-template-columns:140px minmax(0,1fr)}
+.r4-update-photo{height:100%;min-height:110px}
+.r4-next{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+body.homepage-premium-max .header-inner{width:calc(100% - 24px)}
+.r4-hero{display:flex;flex-direction:column;min-height:0;padding:0}
+.r4-hero-copy{padding:28px 20px 20px;max-width:none}
+.r4-hero h1{font-size:clamp(30px,7.6vw,42px)}
+.r4-hero-motto{font-size:21px}
+.r4-hero-claim{font-size:21px}
+.r4-hero-description{font-size:14px}
+.r4-hero-art{height:220px;flex:none;background-position:center;order:1}
+.r4-hero-actions{gap:9px}
+.r4-btn{min-height:49px;flex:1 1 145px;padding:10px 12px;font-size:14px}
+.r4-shortcuts{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;padding:11px 14px}
+.r4-shortcuts a{flex:0 0 205px;scroll-snap-align:start}
+.r4-section{width:calc(100% - 28px);padding:23px 0}
+.r4-section-title{align-items:flex-start;gap:10px}
+.r4-section-title h2,.r4-community h2,.r4-next h2{font-size:27px}
+.r4-section-title>a{white-space:normal;max-width:132px;text-align:right;font-size:11px}
+.r4-games-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.r4-game-image{height:135px}
+.r4-game-body{padding:11px 9px;gap:7px}
+.r4-game h3{font-size:17px}
+.r4-game p{font-size:12px;min-height:65px}
+.r4-community{gap:15px}
+.r4-community-visual{min-height:165px}
+.r4-guides-grid{gap:10px}
+.r4-guide-photo{height:110px}
+.r4-guide-body{padding:9px;min-height:160px}
+.r4-guide strong{font-size:13px}
+.r4-updates{grid-template-columns:1fr}
+.r4-updates-grid{grid-template-columns:1fr}
+.r4-phone{display:none}
+.r4-next-icons{gap:5px}
+.r4-next-icons svg{width:29px;height:29px}
+body.homepage-premium-max .site-footer .footer-grid{
+ width:calc(100% - 28px)!important;grid-template-columns:minmax(0,1fr)!important;
+}
+body.homepage-premium-max .site-footer .footer-grid>.footer-news{grid-column:1!important;grid-row:1!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-brand,
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-nav"],
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-popular"]{
+ grid-column:1!important;grid-row:auto!important
+}
+body.homepage-premium-max .site-footer .footer-news{background:
+ linear-gradient(120deg,rgba(3,17,28,.96),rgba(3,17,28,.74)),
+ url("/assets/r4-reference-newsletter.webp") right center/cover no-repeat!important;
+ padding:23px 15px!important}
+}
+@media(max-width:390px){
+.r4-game-image{height:111px}
+.r4-game h3{font-size:15px}
+.r4-game p{font-size:11px;min-height:80px}
+.r4-hero h1{font-size:29px}
+.r4-guide-photo{height:100px}
+}
+@media(prefers-reduced-motion:reduce){
+.r4-homepage *{scroll-behavior:auto!important}
+}

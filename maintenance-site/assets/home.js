@@ -371,25 +371,6 @@
   }
 
 
-  // Full Max Premium R3: first-screen CSS remains synchronous. The rest
-  // never blocks LCP and is activated on browser idle or first interaction.
-  var fullR3Detail = document.querySelector('link[data-home-r3-detail]');
-  if (fullR3Detail) {
-    var fullR3Activated = false;
-    function activateFullR3() {
-      if (fullR3Activated) return;
-      fullR3Activated = true;
-      fullR3Detail.media = 'all';
-    }
-    window.addEventListener('scroll', activateFullR3, { passive: true, once: true });
-    window.addEventListener('pointerdown', activateFullR3, { passive: true, once: true });
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(activateFullR3, { timeout: 800 });
-    } else {
-      window.setTimeout(activateFullR3, 300);
-    }
-  }
-
   renderHomeAcademyProgress();
 
   window.addEventListener('storage', function (event) {

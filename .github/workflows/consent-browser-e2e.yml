@@ -38,5 +38,6 @@ jobs:
           path: |
             test-results/home-r2/*.png
             test-results/home-r3/*.png
+            test-results/home-r4/*.png
           if-no-files-found: ignore
           retention-days: 7

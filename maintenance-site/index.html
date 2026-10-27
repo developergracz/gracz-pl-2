@@ -140,9 +140,8 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <script src="/assets/legal-links.js?v=r49-premium-email-input-20261022" defer></script>
   <link rel="stylesheet" href="/assets/global-header-r1.css?v=r6">
-  <link rel="stylesheet" href="/assets/home-r2.css?v=20261027-r3-first-screen">
-  <link rel="stylesheet" href="/assets/home-full-premium-r3-detail.css?v=20261027-r3" media="print" data-home-r3-detail>
-  <noscript><link rel="stylesheet" href="/assets/home-full-premium-r3-detail.css?v=20261027-r3"></noscript>
+  <link rel="preload" href="/assets/r4-reference-hero.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/home-reference-r4.css?v=ref-20261027-r1">
 </head>
 <body class="homepage-premium-max">
   <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -183,8 +182,6 @@
       <div class="menu-panel" id="menu-panel">
         <nav class="main-nav" aria-label="Główna nawigacja">
           <ul class="nav-list">
-            <li class="nav-item"><a class="nav-link is-active" href="/" aria-current="page">Start</a></li>
-
             <li class="nav-item has-menu">
               <a class="nav-link" href="/gry/">Gry</a>
               <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-gry" aria-label="Rozwiń menu Gry">
@@ -213,27 +210,17 @@
             </li>
 
             <li class="nav-item"><a class="nav-link" href="/poradniki/">Poradniki</a></li>
+            <li class="nav-item"><a class="nav-link" href="#aktualnosci">Blog</a></li>
 
-            <li class="nav-item has-menu">
-              <button class="nav-link menu-toggle menu-toggle--label" type="button" aria-expanded="false" aria-controls="menu-spolecznosc">
-                Społeczność <svg aria-hidden="true"><use href="#i-chevron"/></svg>
-              </button>
-              <ul class="dropdown" id="menu-spolecznosc">
-                <li><button type="button" data-modal="community">Profil gracza <span class="soon">wkrótce</span></button></li>
-                <li><button type="button" data-modal="community">Rankingi <span class="soon">wkrótce</span></button></li>
-                <li><button type="button" data-modal="community">Turnieje <span class="soon">wkrótce</span></button></li>
-                <li><button type="button" data-modal="community">Społeczność <span class="soon">wkrótce</span></button></li>
-              </ul>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="#spolecznosc">Społeczność</a></li>
 
             <li class="nav-item"><button class="nav-link forum-trigger newsletter-trigger" type="button" data-newsletter-open aria-haspopup="dialog" aria-controls="newsletter-signup-modal">Newsletter</button></li>
-            <li class="nav-item"><a class="nav-link" href="/o-gracz-pl/">O gracz.pl</a></li>
           </ul>
         </nav>
 
         <div class="header-actions">
           <button class="icon-btn search-btn search-btn--desktop" type="button" data-modal="search" aria-label="Szukaj w serwisie">
-            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <svg aria-hidden="true"><use href="#i-search"/></svg><span class="r4-search-label" aria-hidden="true">Wyszukiwarka</span>
           </button>
           <button class="btn btn--outline btn--head" type="button" data-modal="login">Zaloguj się</button>
           <button class="btn btn--gold btn--head" type="button" data-modal="register">Załóż konto</button>
@@ -242,742 +229,103 @@
     </div>
   </header>
 
-  <main id="tresc" tabindex="-1">
-    <section class="hero home-hero-premium home-hero-premium--dense" aria-labelledby="hero-title">
-      <div class="home-hero-premium__shell">
-        <div class="home-hero-premium__copy">
-          <p class="home-hero-premium__eyebrow"><span aria-hidden="true"></span>Polskie Centrum Gracza</p>
-          <h1 id="hero-title" class="home-hero-premium__title">Polskie <span class="home-r2-gold">Centrum Gracza</span></h1>
-          <p class="home-r2-motto">Graj. Ucz się. Rywalizuj.</p>
-          <p class="home-r2-slogan">ZOSTAŃ NAJLEPSZYM GRACZEM!</p>
-          <p class="home-hero-premium__lead"><strong class="home-r2-wordmark">gracz<span>.pl</span></strong> to miejsce dla prawdziwych pasjonatów gier. Graj, ucz się, rywalizuj i poznawaj nowych ludzi. Dołącz do Polskiego Centrum Gracza i twórz z nami wyjątkową społeczność!</p>
-
-          <div class="home-hero-premium__actions">
-            <a class="home-hero-premium__primary" href="/gry/">
-              <svg aria-hidden="true"><use href="#i-gamepad"/></svg>
-              <span>Odkryj gry<small>4 gry i Academy</small></span>
-            </a>
-            <a class="home-hero-premium__secondary" href="/poradniki/">
-              <svg aria-hidden="true"><use href="#i-cap"/></svg>
-              <span>Poznaj poradniki<small>zasady, nauka i strategie</small></span>
-            </a>
-          </div>
-
-          <div class="home-hero-premium__stats" aria-label="Najważniejsze elementy gracz.pl">
-            <div><strong>4</strong><span>główne gry</span></div>
-            <div><strong>4</strong><span>Academy</span></div>
-            <div><strong>1</strong><span>centrum wiedzy</span></div>
-            <div><strong>NEXT</strong><span>multiplayer w rozwoju</span></div>
-          </div>
-
-          <div class="home-hero-premium__promise">
-            <span class="home-hero-premium__promise-icon"><svg aria-hidden="true"><use href="#i-shield"/></svg></span>
-            <span><strong>Jeden spójny ekosystem</strong><small>gry, nauka, profil gracza, rankingi i społeczność w jednym interfejsie.</small></span>
-          </div>
-        </div>
-
-        <div class="home-hero-premium__hub" aria-label="Wybierz Academy">
-          <div class="home-hero-premium__hub-head">
-            <div>
-              <small>Wybierz swoją ścieżkę</small>
-              <h2>Academy na start</h2>
-            </div>
-            <span><i aria-hidden="true"></i>4 aktywne ścieżki</span>
-          </div>
-
-          <div class="home-hero-premium__hub-grid">
-            <a class="home-hub-card home-hub-card--poker" href="/gry/poker-treningowy/">
-              <span class="home-hub-card__visual home-hub-card__visual--card" aria-hidden="true"><b>A</b><i>♠</i></span>
-              <span class="home-hub-card__text"><small>Poker Academy</small><strong>Texas Hold’em</strong><em>układy · pozycje · decyzje</em></span>
-              <span class="home-hub-card__arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a class="home-hub-card home-hub-card--tysiac" href="/gry/tysiac/">
-              <span class="home-hub-card__visual home-hub-card__visual--card home-hub-card__visual--red" aria-hidden="true"><b>K</b><i>♥</i></span>
-              <span class="home-hub-card__text"><small>Tysiąc Academy</small><strong>Licytacja i meldunki</strong><em>kontrakt · punktacja · strategia</em></span>
-              <span class="home-hub-card__arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a class="home-hub-card home-hub-card--warcaby" href="/gry/warcaby/">
-              <span class="home-hub-card__visual home-hub-card__visual--board home-hub-card__visual--checkers" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="home-hub-card__text"><small>Warcaby Academy</small><strong>Bicie i damka</strong><em>seria bić · legalny ruch · taktyka</em></span>
-              <span class="home-hub-card__arrow" aria-hidden="true">→</span>
-            </a>
-
-            <a class="home-hub-card home-hub-card--gomoku" href="/gry/gomoku/">
-              <span class="home-hub-card__visual home-hub-card__visual--board home-hub-card__visual--gomoku" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-              <span class="home-hub-card__text"><small>Gomoku Academy</small><strong>Pięć w linii</strong><em>zagrożenia · atak · obrona</em></span>
-              <span class="home-hub-card__arrow" aria-hidden="true">→</span>
-            </a>
-          </div>
-
-          <div class="home-hero-premium__hub-bottom">
-            <a href="/gry-karciane/"><svg aria-hidden="true"><use href="#i-cards"/></svg><span><strong>Gry karciane</strong><small>Poker, Tysiąc i kolejne tytuły</small></span></a>
-            <a href="/poradniki/"><svg aria-hidden="true"><use href="#i-cap"/></svg><span><strong>Poradniki</strong><small>Zasady, wiedza i materiały</small></span></a>
-            <button type="button" data-modal="next"><svg aria-hidden="true"><use href="#i-people"/></svg><span><strong>gracz.NEXT</strong><small>Profil, rankingi i multiplayer</small></span></button>
-          </div>
-
-          <div class="home-hero-why" aria-labelledby="home-hero-why-title">
-            <div class="home-hero-why__head">
-              <div>
-                <small>Dlaczego gracz.pl?</small>
-                <strong id="home-hero-why-title">Jedno miejsce. Więcej możliwości.</strong>
-              </div>
-              <a href="/o-gracz-pl/">Poznaj gracz.pl <span aria-hidden="true">→</span></a>
-            </div>
-
-            <div class="home-hero-why__grid">
-              <div class="home-hero-why__item">
-                <span><svg aria-hidden="true"><use href="#i-gamepad"/></svg></span>
-                <div><strong>Gry + Academy + wiedza</strong><small>Zasady, nauka i praktyka w jednym serwisie.</small></div>
-              </div>
-              <div class="home-hero-why__item">
-                <span><svg aria-hidden="true"><use href="#i-cap"/></svg></span>
-                <div><strong>Nauka przez praktykę</strong><small>Interaktywne moduły i zapis postępu Academy.</small></div>
-              </div>
-              <div class="home-hero-why__item">
-                <span><svg aria-hidden="true"><use href="#i-cards"/></svg></span>
-                <div><strong>AI Poker Academy</strong><small>Trening decyzji i rozwijana analiza AI.</small></div>
-              </div>
-              <div class="home-hero-why__item">
-                <span><svg aria-hidden="true"><use href="#i-people"/></svg></span>
-                <div><strong>gracz.NEXT</strong><small>Profil, rankingi i multiplayer rozwijane etapami.</small></div>
-              </div>
-            </div>
-          </div>
+  <main id="tresc" tabindex="-1" class="r4-homepage">
+    <section class="r4-hero" aria-labelledby="hero-title">
+      <div class="r4-hero-copy">
+        <h1 id="hero-title">Polskie Centrum <span>Gracza</span></h1>
+        <p class="r4-hero-motto">Graj. Ucz się. Rywalizuj.</p>
+        <p class="r4-hero-claim">ZOSTAŃ NAJLEPSZYM GRACZEM!</p>
+        <div class="r4-hero-rule" aria-hidden="true"></div>
+        <p class="r4-hero-description"><strong>gracz<span>.pl</span></strong> to miejsce dla prawdziwych pasjonatów gier. Graj, ucz się, rywalizuj i poznawaj nowych ludzi. Dołącz do Polskiego Centrum Gracza i twórz z nami wyjątkową społeczność!</p>
+        <div class="r4-hero-actions">
+          <a href="/gry/" class="r4-btn r4-btn-gold"><svg aria-hidden="true"><use href="#i-gamepad"/></svg> Odkryj gry <span aria-hidden="true">→</span></a>
+          <a href="/poradniki/" class="r4-btn r4-btn-outline"><svg aria-hidden="true"><use href="#i-cap"/></svg> Poznaj poradniki <span aria-hidden="true">→</span></a>
         </div>
       </div>
-
-      <div class="home-academy-progress" aria-labelledby="home-academy-progress-title" data-home-academy-progress>
-        <div class="home-academy-progress__head">
-          <div>
-            <small>Twój panel nauki</small>
-            <strong id="home-academy-progress-title">Twój postęp Academy</strong>
-          </div>
-          <div class="home-academy-progress__overall" aria-live="polite">
-            <span><b data-home-academy-total>0%</b> łącznie</span>
-            <em data-home-academy-summary>Rozpocznij pierwszą ścieżkę Academy</em>
-          </div>
-        </div>
-
-        <div class="home-academy-progress__games">
-          <a class="home-progress-game" href="/gry/poker-treningowy/" data-home-progress-game="poker">
-            <span class="home-progress-game__name"><i aria-hidden="true">♠</i><strong>Poker</strong></span>
-            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
-            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
-          </a>
-
-          <a class="home-progress-game" href="/gry/tysiac/" data-home-progress-game="tysiac">
-            <span class="home-progress-game__name"><i class="is-red" aria-hidden="true">♥</i><strong>Tysiąc</strong></span>
-            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
-            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
-          </a>
-
-          <a class="home-progress-game" href="/gry/warcaby/" data-home-progress-game="warcaby">
-            <span class="home-progress-game__name"><i aria-hidden="true">▦</i><strong>Warcaby</strong></span>
-            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
-            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
-          </a>
-
-          <a class="home-progress-game" href="/gry/gomoku/" data-home-progress-game="gomoku">
-            <span class="home-progress-game__name"><i aria-hidden="true">●</i><strong>Gomoku</strong></span>
-            <span class="home-progress-game__bar"><span data-home-progress-fill></span></span>
-            <span class="home-progress-game__meta"><b data-home-progress-value>0%</b><em data-home-progress-action>Rozpocznij</em></span>
-          </a>
-        </div>
-
-        <div class="home-academy-progress__status" aria-label="Status platformy">
-          <span><i class="is-live" aria-hidden="true"></i><strong>4 Academy aktywne</strong></span>
-          <span><i aria-hidden="true"></i><strong>Poradniki dostępne</strong></span>
-          <span><i class="is-future" aria-hidden="true"></i><strong>Multiplayer w rozwoju</strong></span>
-        </div>
-      </div>
+      <div class="r4-hero-art" aria-hidden="true"></div>
     </section>
 
-    <nav class="home-full-jump" aria-label="Przejdź do działu">
-      <a href="#popularne-teraz"><svg aria-hidden="true"><use href="#i-gamepad"/></svg>Nasze gry</a>
-      <a href="#academy"><svg aria-hidden="true"><use href="#i-cap"/></svg>Academy</a>
-      <a href="#spolecznosc-next"><svg aria-hidden="true"><use href="#i-people"/></svg>Społeczność</a>
-      <a href="#centrum-wiedzy"><svg aria-hidden="true"><use href="#i-cards"/></svg>Poradniki</a>
-      <a href="#co-nowego"><svg aria-hidden="true"><use href="#i-bars"/></svg>Aktualności</a>
-      <a href="#gracz-next"><svg aria-hidden="true"><use href="#i-shield"/></svg>Gracz Next</a>
+    <nav class="r4-shortcuts" aria-label="Najważniejsze działy Polskiego Centrum Gracza">
+      <a href="#nasze-gry"><svg aria-hidden="true"><use href="#i-gamepad"/></svg><span><strong>Gry online</strong><small>Warcaby, Gomoku, Tysiąc, Poker i inne</small></span></a>
+      <a href="#poradniki-academy"><svg aria-hidden="true"><use href="#i-cap"/></svg><span><strong>Poradniki i Academy</strong><small>Rozwijaj swoje umiejętności</small></span></a>
+      <a href="#spolecznosc"><svg aria-hidden="true"><use href="#i-people"/></svg><span><strong>Społeczność</strong><small>Poznaj plany dla graczy</small></span></a>
+      <a href="#gracz-next"><svg aria-hidden="true"><use href="#i-bars"/></svg><span><strong>Rankingi i statystyki</strong><small>Funkcje w przygotowaniu</small></span></a>
+      <a href="#aktualnosci"><svg aria-hidden="true"><use href="#i-cards"/></svg><span><strong>Aktualności</strong><small>Nowości i rozwój serwisu</small></span></a>
     </nav>
 
-    <section class="popular-premium" id="popularne-teraz" aria-labelledby="popular-premium-title">
-      <div class="popular-premium__inner">
-        <div class="popular-premium__head">
-          <div>
-            <p class="popular-premium__eyebrow"><span aria-hidden="true"></span>Nasze gry</p>
-            <h2 id="popular-premium-title">Wybierz grę i zacznij przygodę</h2>
-            <p>Poker, Tysiąc, Warcaby i Gomoku — przejdź do dostępnych modułów nauki i poznaj zasady. Rozgrywki online przygotowujemy etapami.</p>
-          </div>
-          <a class="popular-premium__all" href="/gry/">
-            Wszystkie gry
-            <span aria-hidden="true">→</span>
-          </a>
-        </div>
-
-        <div class="popular-premium__grid">
-          <a class="popular-card popular-card--poker popular-card--featured" href="/gry/poker-treningowy/">
-            <span class="popular-card__visual popular-card__visual--poker" aria-hidden="true">
-              <i class="popular-playing-card popular-playing-card--a"><b>A</b><em>♠</em></i>
-              <i class="popular-playing-card popular-playing-card--k"><b>K</b><em>♠</em></i>
-            </span>
-            <span class="popular-card__copy">
-              <small>Polecane na start</small>
-              <strong>Poker Academy</strong>
-              <p>Texas Hold’em, układy, pozycja, trener decyzji, matematyka i rozwijany moduł AI.</p>
-              <em>Wejdź do Academy <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="popular-card popular-card--tysiac" href="/gry/tysiac/">
-            <span class="popular-card__visual popular-card__visual--card" aria-hidden="true">
-              <i><b>K</b><em>♥</em></i>
-            </span>
-            <span class="popular-card__copy">
-              <small>Academy</small>
-              <strong>Tysiąc</strong>
-              <p>Licytacja, meldunki, kontrakt, punktacja i quiz.</p>
-              <em>Rozpocznij naukę <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="popular-card popular-card--warcaby" href="/gry/warcaby/">
-            <span class="popular-card__visual popular-card__visual--board popular-card__visual--checkers" aria-hidden="true">
-              <i></i><i></i><i></i>
-            </span>
-            <span class="popular-card__copy">
-              <small>Academy</small>
-              <strong>Warcaby</strong>
-              <p>Bicie, seria bić, damka, strategia i quiz.</p>
-              <em>Rozpocznij naukę <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="popular-card popular-card--gomoku" href="/gry/gomoku/">
-            <span class="popular-card__visual popular-card__visual--board popular-card__visual--gomoku" aria-hidden="true">
-              <i></i><i></i><i></i><i></i>
-            </span>
-            <span class="popular-card__copy">
-              <small>Academy</small>
-              <strong>Gomoku</strong>
-              <p>Pięć w linii, zagrożenia, atak, obrona i strategia.</p>
-              <em>Rozpocznij naukę <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="popular-card popular-card--guides" href="/poradniki/">
-            <span class="popular-card__visual popular-card__visual--icon" aria-hidden="true">
-              <svg><use href="#i-cap"/></svg>
-            </span>
-            <span class="popular-card__copy">
-              <small>Wiedza</small>
-              <strong>Poradniki</strong>
-              <p>Zasady, krótkie materiały, ścieżki nauki i praktyczne wprowadzenia.</p>
-              <em>Otwórz poradniki <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-        </div>
+    <section class="r4-section r4-games" id="nasze-gry" aria-labelledby="r4-games-title">
+      <div class="r4-section-title"><h2 id="r4-games-title">Nasze gry</h2><a href="/gry/">Zobacz wszystkie gry <span aria-hidden="true">→</span></a></div>
+      <div class="r4-games-grid">
+        <article class="r4-game">
+          <div class="r4-game-image r4-img-chess"></div>
+          <div class="r4-game-body"><h3>Szachy online</h3><p>Klasyczna strategia, która nigdy się nie nudzi. Moduł gry jest planowany.</p><span class="r4-status r4-status-soon">W przygotowaniu</span><a href="/gry/" class="r4-card-action r4-card-action-outline">Poznaj nasze gry <span aria-hidden="true">→</span></a></div>
+        </article>
+        <article class="r4-game">
+          <div class="r4-game-image r4-img-checkers"></div>
+          <div class="r4-game-body"><h3>Warcaby</h3><p>Poznaj obowiązkowe bicia, taktykę i grę damką w Academy.</p><span class="r4-status r4-status-ready">Academy dostępne</span><a href="/gry/warcaby/" class="r4-card-action">Przejdź do gry <span aria-hidden="true">→</span></a></div>
+        </article>
+        <article class="r4-game">
+          <div class="r4-game-image r4-img-gomoku"></div>
+          <div class="r4-game-body"><h3>Gomoku</h3><p>Pięć w linii, zagrożenia, atak i obrona. Ćwicz strategię.</p><span class="r4-status r4-status-ready">Academy dostępne</span><a href="/gry/gomoku/" class="r4-card-action">Poznaj grę <span aria-hidden="true">→</span></a></div>
+        </article>
+        <article class="r4-game">
+          <div class="r4-game-image r4-img-thousand"></div>
+          <div class="r4-game-body"><h3>Tysiąc</h3><p>Polska gra karciana. Licytacja, meldunki i punktacja.</p><span class="r4-status r4-status-ready">Academy dostępne</span><a href="/gry/tysiac/" class="r4-card-action">Przejdź do gry <span aria-hidden="true">→</span></a></div>
+        </article>
+        <article class="r4-game">
+          <div class="r4-game-image r4-img-poker"></div>
+          <div class="r4-game-body"><h3>Poker treningowy</h3><p>Ćwicz i analizuj rozdania Texas Hold’em bez prawdziwych pieniędzy.</p><span class="r4-status r4-status-training">Trening dostępny</span><a href="/gry/poker-treningowy/" class="r4-card-action r4-card-action-outline">Poznaj szczegóły <span aria-hidden="true">→</span></a></div>
+        </article>
       </div>
     </section>
 
-    <section class="discover academy-showcase" id="academy" aria-labelledby="academy-showcase-title">
-      <div class="discover-inner academy-showcase__inner">
-        <header class="academy-showcase__header">
-          <p class="academy-showcase__eyebrow"><span aria-hidden="true"></span>Graj i ucz się</p>
-          <h2 id="academy-showcase-title">Cztery gry. Cztery Academy. Jeden <span>gracz.pl</span></h2>
-          <p>Poznaj układy i pozycje w Texas Hold’em, ćwicz licytację i meldunki w Tysiącu, a w Warcabach oraz Gomoku rozwijaj taktykę na planszy. Każda gra ma osobne zasady, quizy i ćwiczenia w Academy. Rozgrywkę online przygotowujemy etapami.</p>
-        </header>
+    <section class="r4-section r4-community" id="spolecznosc" aria-labelledby="r4-community-title">
+      <div class="r4-community-copy"><h2 id="r4-community-title">Społeczność i forum</h2>
+      <p>Rozmowy o grach, strategiach i doświadczeniach. Budujemy społeczność, która będzie łączyć graczy i pozwalać wymieniać wiedzę.</p>
+      <a href="/o-gracz-pl/" class="r4-btn r4-btn-gold">Poznaj plany społeczności <span aria-hidden="true">→</span></a>
+      <div class="r4-community-tags"><span>Forum w przygotowaniu</span><span>Rankingi planowane</span><span>Turnieje w przyszłości</span></div></div>
+      <div class="r4-community-visual"><div class="r4-community-panel"><svg aria-hidden="true"><use href="#i-people"/></svg><div><strong>Dołącz do rozmowy</strong><p>Forum i wspólne wydarzenia są w przygotowaniu.</p></div></div></div>
+    </section>
 
-        <div class="academy-showcase__grid">
-          <article class="academy-tile academy-tile--poker">
-            <a class="academy-tile__link" href="/gry/poker-treningowy/" aria-label="Wejdź do Poker Academy">
-              <div class="academy-tile__visual academy-tile__visual--poker" aria-hidden="true">
-                <span class="academy-tile__badge">Poker Academy</span>
-                <div class="academy-poker-table">
-                  <span class="academy-card academy-card--a"><b>A</b><i>♠</i></span>
-                  <span class="academy-card academy-card--k"><b>K</b><i>♥</i></span>
-                  <span class="academy-chip academy-chip--1"></span>
-                  <span class="academy-chip academy-chip--2"></span>
-                  <span class="academy-chip academy-chip--3"></span>
-                </div>
-                <span class="academy-tile__visual-caption">Texas Hold’em · decyzje · układy</span>
-              </div>
-              <div class="academy-tile__body">
-                <span class="academy-tile__number">01</span>
-                <h3>Poker Academy</h3>
-                <p>Ucz się Texas Hold’em bez prawdziwych pieniędzy. Poznaj układy kart, pozycje, przebieg rozdania i analizę decyzji.</p>
-                <ul aria-label="Moduły Poker Academy">
-                  <li>Układy kart</li>
-                  <li>Pozycje</li>
-                  <li>Trener decyzji</li>
-                </ul>
-                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
-              </div>
-            </a>
-          </article>
-
-          <article class="academy-tile academy-tile--tysiac">
-            <a class="academy-tile__link" href="/gry/tysiac/" aria-label="Wejdź do Tysiąc Academy">
-              <div class="academy-tile__visual academy-tile__visual--tysiac" aria-hidden="true">
-                <span class="academy-tile__badge">Tysiąc Academy</span>
-                <div class="academy-tysiac-scene">
-                  <span class="academy-score"><small>Cel</small><strong>1000</strong></span>
-                  <span class="academy-card academy-card--q"><b>Q</b><i>♥</i></span>
-                  <span class="academy-card academy-card--king"><b>K</b><i>♥</i></span>
-                </div>
-                <span class="academy-tile__visual-caption">Licytacja · meldunki · punktacja</span>
-              </div>
-              <div class="academy-tile__body">
-                <span class="academy-tile__number">02</span>
-                <h3>Tysiąc Academy</h3>
-                <p>Przejdź przez licytację, meldunki, kontrakt i punktację. Nauka prowadzi od podstaw do świadomego planowania rozdania.</p>
-                <ul aria-label="Moduły Tysiąc Academy">
-                  <li>Licytacja</li>
-                  <li>Meldunki</li>
-                  <li>Kalkulator</li>
-                </ul>
-                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
-              </div>
-            </a>
-          </article>
-
-          <article class="academy-tile academy-tile--warcaby">
-            <a class="academy-tile__link" href="/gry/warcaby/" aria-label="Wejdź do Warcaby Academy">
-              <div class="academy-tile__visual academy-tile__visual--warcaby" aria-hidden="true">
-                <span class="academy-tile__badge">Warcaby Academy</span>
-                <div class="academy-checkers-board">
-                  <i class="acp acp--light acp1"></i><i class="acp acp--dark acp2"></i><i class="acp acp--light acp3"></i><i class="acp acp--dark acp4"></i>
-                </div>
-                <span class="academy-tile__visual-caption">Bicie · seria bić · damka</span>
-              </div>
-              <div class="academy-tile__body">
-                <span class="academy-tile__number">03</span>
-                <h3>Warcaby Academy</h3>
-                <p>Ćwicz obowiązkowe bicie, wielokrotne skoki i grę damką. Interaktywny trening pomaga zrozumieć legalne decyzje.</p>
-                <ul aria-label="Moduły Warcaby Academy">
-                  <li>Obowiązkowe bicie</li>
-                  <li>Seria bić</li>
-                  <li>Damka</li>
-                </ul>
-                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
-              </div>
-            </a>
-          </article>
-
-          <article class="academy-tile academy-tile--gomoku">
-            <a class="academy-tile__link" href="/gry/gomoku/" aria-label="Wejdź do Gomoku Academy">
-              <div class="academy-tile__visual academy-tile__visual--gomoku" aria-hidden="true">
-                <span class="academy-tile__badge">Gomoku Academy</span>
-                <div class="academy-gomoku-board">
-                  <i class="ags ags--b ag1"></i><i class="ags ags--w ag2"></i><i class="ags ags--b ag3"></i><i class="ags ags--w ag4"></i><i class="ags ags--b ag5"></i><i class="ags ags--b ag6"></i>
-                </div>
-                <span class="academy-tile__visual-caption">Zagrożenia · atak · obrona</span>
-              </div>
-              <div class="academy-tile__body">
-                <span class="academy-tile__number">04</span>
-                <h3>Gomoku Academy</h3>
-                <p>Rozpoznawaj trójki i czwórki, ucz się priorytetu ataku i obrony oraz budowania pięciu kamieni w jednej linii.</p>
-                <ul aria-label="Moduły Gomoku Academy">
-                  <li>Zagrożenia</li>
-                  <li>Atak / obrona</li>
-                  <li>Legalny ruch</li>
-                </ul>
-                <span class="academy-tile__cta">Wejdź do Academy <b aria-hidden="true">→</b></span>
-              </div>
-            </a>
-          </article>
-        </div>
-
-        <div class="academy-showcase__footer">
-          <div>
-            <strong>Nie wiesz, od czego zacząć?</strong>
-            <span>Przejdź do centrum gier albo otwórz Poradniki i wybierz ścieżkę według tematu.</span>
-          </div>
-          <div class="academy-showcase__footer-actions">
-            <a href="/gry/">Wszystkie gry <span aria-hidden="true">→</span></a>
-            <a href="/poradniki/">Centrum Poradników <span aria-hidden="true">→</span></a>
-          </div>
-        </div>
+    <section class="r4-section r4-guides" id="poradniki-academy" aria-labelledby="r4-guides-title">
+      <div class="r4-section-title"><div><h2 id="r4-guides-title">Poradniki i Academy</h2><p>Poznaj zasady gier, ucz się strategii i rozwijaj umiejętności we własnym tempie.</p></div><a href="/poradniki/">Zobacz wszystkie poradniki <span aria-hidden="true">→</span></a></div>
+      <div class="r4-guides-grid">
+        <a class="r4-guide" href="/gry/poker-treningowy/zasady/"><span class="r4-guide-photo r4-img-chess"></span><span class="r4-guide-body"><small>POKER</small><strong>Zasady i decyzje w Texas Hold’em</strong><span>Układy, przebieg rozdania i podstawowe strategie.</span></span></a>
+        <a class="r4-guide" href="/gry/warcaby/zasady/"><span class="r4-guide-photo r4-img-checkers"></span><span class="r4-guide-body"><small>WARCABY</small><strong>Strategie otwarć w warcabach</strong><span>Sprawdzone warianty i pułapki, które warto znać.</span></span></a>
+        <a class="r4-guide" href="/gry/gomoku/zasady/"><span class="r4-guide-photo r4-img-gomoku"></span><span class="r4-guide-body"><small>GOMOKU</small><strong>Od podstaw do mistrzostwa</strong><span>Zasady, zagrożenia i najważniejsze wzorce na planszy.</span></span></a>
+        <a class="r4-guide" href="/gry/tysiac/zasady/"><span class="r4-guide-photo r4-img-thousand"></span><span class="r4-guide-body"><small>GRY KARCIANE</small><strong>Tysiąc — poradnik dla początkujących</strong><span>Zasady, licytacja, strategie i praktyczne wskazówki.</span></span></a>
       </div>
     </section>
 
-    <section class="ai-poker-premium" id="ai-poker-academy" aria-labelledby="ai-poker-title">
-      <div class="ai-poker-premium__inner">
-        <div class="ai-poker-premium__copy">
-          <p class="ai-poker-premium__eyebrow"><span aria-hidden="true"></span>Flagowy moduł gracz.pl</p>
-          <h2 id="ai-poker-title">AI Poker Academy</h2>
-          <p class="ai-poker-premium__lead">Nie tylko poznawaj zasady. Ucz się podejmować lepsze decyzje w Texas Hold’em dzięki treningowi, matematyce i analizie sytuacji.</p>
-
-          <div class="ai-poker-premium__status" aria-label="Status AI Poker Academy">
-            <span><i aria-hidden="true"></i>Academy działa</span>
-            <strong>Warstwa AI jest rozwijana etapami</strong>
-            <small>Obecna wersja udostępnia zasady, układy, pozycję, trener decyzji, matematykę i quiz. Zaawansowana analiza AI nie jest jeszcze przedstawiana jako funkcja gotowa.</small>
-          </div>
-
-          <div class="ai-poker-premium__available">
-            <small>Dostępne teraz</small>
-            <ul>
-              <li>Układy kart</li>
-              <li>Pozycja przy stole</li>
-              <li>Trener decyzji</li>
-              <li>Matematyka rozdania</li>
-              <li>Quiz wiedzy</li>
-              <li>Lokalny postęp Academy</li>
-            </ul>
-          </div>
-
-          <div class="ai-poker-premium__actions">
-            <a class="ai-poker-premium__primary" href="/gry/poker-treningowy/">
-              <svg aria-hidden="true"><use href="#i-cards"/></svg>
-              <span>Wejdź do Poker Academy<small>interaktywny trening Texas Hold’em</small></span>
-            </a>
-            <a class="ai-poker-premium__secondary" href="/gry/poker-treningowy/zasady/">
-              <span>Pełne zasady pokera</span>
-              <b aria-hidden="true">→</b>
-            </a>
-          </div>
-        </div>
-
-        <div class="ai-poker-premium__console" aria-label="Kierunek rozwoju AI Poker Academy">
-          <div class="ai-poker-console__head">
-            <div>
-              <small>Decision Lab</small>
-              <strong>Analiza rozdania krok po kroku</strong>
-            </div>
-            <span><i aria-hidden="true"></i>AI · W ROZWOJU</span>
-          </div>
-
-          <div class="ai-poker-console__table" aria-hidden="true">
-            <div class="ai-poker-console__felt">
-              <span class="ai-poker-card ai-poker-card--a"><b>A</b><i>♠</i></span>
-              <span class="ai-poker-card ai-poker-card--k"><b>K</b><i>♠</i></span>
-              <span class="ai-poker-console__pot">POT <b>24 BB</b></span>
-              <span class="ai-poker-console__seat ai-poker-console__seat--1">BTN</span>
-              <span class="ai-poker-console__seat ai-poker-console__seat--2">BB</span>
-              <span class="ai-poker-console__seat ai-poker-console__seat--3">CO</span>
-            </div>
-          </div>
-
-          <div class="ai-poker-console__streets">
-            <div>
-              <span>01</span>
-              <strong>Preflop</strong>
-              <small>pozycja · zakres sytuacji</small>
-              <em class="is-ready">TRENING</em>
-            </div>
-            <div>
-              <span>02</span>
-              <strong>Flop</strong>
-              <small>decyzja · pot odds · kontekst</small>
-              <em class="is-ready">TRENING</em>
-            </div>
-            <div>
-              <span>03</span>
-              <strong>Turn</strong>
-              <small>kontynuacja linii rozdania</small>
-              <em>AI PLAN</em>
-            </div>
-            <div>
-              <span>04</span>
-              <strong>River</strong>
-              <small>podsumowanie decyzji</small>
-              <em>AI PLAN</em>
-            </div>
-          </div>
-
-          <div class="ai-poker-console__analysis">
-            <div>
-              <small>Kierunek modułu AI</small>
-              <strong>Decyzja → matematyka → informacja zwrotna</strong>
-              <p>Docelowo moduł ma łączyć kolejne etapy rozdania z analizą decyzji i edukacyjnym feedbackiem, bez gry na prawdziwe pieniądze.</p>
-            </div>
-            <span class="ai-poker-console__signal" aria-hidden="true">
-              <i></i><i></i><i></i><i></i><i></i>
-            </span>
-          </div>
+    <section class="r4-section r4-updates" id="aktualnosci" aria-labelledby="r4-updates-title">
+      <div class="r4-updates-main">
+        <div class="r4-section-title"><div><h2 id="r4-updates-title">Blog i aktualności</h2><p>Nowości, materiały edukacyjne i aktualizacje Polskiego Centrum Gracza.</p></div><a href="/poradniki/">Zobacz poradniki <span aria-hidden="true">→</span></a></div>
+        <div class="r4-updates-grid">
+          <a class="r4-update" href="/gry/poker-treningowy/"><span class="r4-update-photo r4-img-chess"></span><span><small>ACADEMY</small><strong>Ćwiczenia i wiedza dla pasjonatów gier</strong><em>Otwórz Academy →</em></span></a>
+          <a class="r4-update" href="/poradniki/"><span class="r4-update-photo r4-img-checkers"></span><span><small>PORADNIKI</small><strong>Jak analizować swoje partie? Praktyczny poradnik</strong><em>Przejdź do poradników →</em></span></a>
+          <a class="r4-update" href="/gry/tysiac/zasady/"><span class="r4-update-photo r4-img-thousand"></span><span><small>GRY KARCIANE</small><strong>Tysiąc — zasady i nauka gry</strong><em>Poznaj zasady →</em></span></a>
         </div>
       </div>
+      <aside class="r4-phone" aria-label="Podgląd serwisu na urządzeniu mobilnym">
+        <div class="r4-phone-top"><strong>gracz<span>.pl</span></strong><span aria-hidden="true">☰</span></div>
+        <strong class="r4-phone-title">Polskie Centrum <span>Gracza</span></strong>
+        <p>Graj. Ucz się. Rywalizuj.</p>
+        <span class="r4-phone-claim">ZOSTAŃ NAJLEPSZYM GRACZEM!</span>
+        <a class="r4-card-action" href="/gry/">Odkryj gry →</a>
+        <strong class="r4-phone-heading">Nasze gry</strong>
+        <span class="r4-phone-image r4-img-chess"></span>
+        <strong>Warcaby · Gomoku · Tysiąc · Poker</strong>
+        <a class="r4-card-action" href="/gry/">Zobacz wszystkie gry →</a>
+      </aside>
     </section>
 
-    <section class="community-premium" id="spolecznosc-next" aria-labelledby="community-premium-title">
-      <div class="community-premium__inner">
-        <div class="community-premium__copy">
-          <p class="community-premium__eyebrow"><span aria-hidden="true"></span>gracz.NEXT · kolejny etap</p>
-          <h2 id="community-premium-title">Społeczność i forum gracz.pl</h2>
-          <p>Rozwijamy przestrzeń spotkań dla graczy. Forum, znajomi, rankingi, turnieje i wspólna rozgrywka dołączą etapami do działających już Academy i poradników.</p>
-          <p class="home-full-forum-note"><strong>Forum w przygotowaniu.</strong> Obecnie korzystaj z gier, materiałów edukacyjnych i newslettera — nie wymagamy rejestracji do funkcji, które nie są jeszcze dostępne.</p>
-
-          <div class="community-premium__status">
-            <span><i aria-hidden="true"></i>W rozwoju</span>
-            <strong>Funkcje społecznościowe nie są jeszcze aktywne</strong>
-            <small>Pokazujemy kierunek rozwoju bez sugerowania, że moduły są już dostępne.</small>
-          </div>
-
-          <div class="community-premium__actions">
-            <a class="community-premium__primary" href="/o-gracz-pl/">
-              <span>Poznaj plan gracz.pl<small>zobacz, co budujemy dalej</small></span>
-              <b aria-hidden="true">→</b>
-            </a>
-            <button class="community-premium__secondary" type="button" data-modal="community">
-              <span>Sprawdź status społeczności<small>funkcje w przygotowaniu</small></span>
-              <b aria-hidden="true">↗</b>
-            </button>
-          </div>
-        </div>
-
-        <div class="community-premium__roadmap" aria-label="Planowane funkcje społeczności gracz.pl">
-          <article class="community-feature">
-            <span class="community-feature__number">01</span>
-            <span class="community-feature__icon"><svg aria-hidden="true"><use href="#i-people"/></svg></span>
-            <div>
-              <small>Profil gracza</small>
-              <strong>Twoje miejsce w gracz.pl</strong>
-              <p>Profil, historia aktywności i wspólna tożsamość gracza w całym serwisie.</p>
-            </div>
-            <em>W ROZWOJU</em>
-          </article>
-
-          <article class="community-feature">
-            <span class="community-feature__number">02</span>
-            <span class="community-feature__icon"><svg aria-hidden="true"><use href="#i-bars"/></svg></span>
-            <div>
-              <small>Rankingi</small>
-              <strong>Postęp i porównanie wyników</strong>
-              <p>Rankingi oraz wyniki powiązane z przyszłymi trybami rozgrywki.</p>
-            </div>
-            <em>W ROZWOJU</em>
-          </article>
-
-          <article class="community-feature">
-            <span class="community-feature__number">03</span>
-            <span class="community-feature__icon"><svg aria-hidden="true"><use href="#i-shield"/></svg></span>
-            <div>
-              <small>Turnieje</small>
-              <strong>Rozgrywki wydarzeniowe</strong>
-              <p>Docelowo turnieje i wydarzenia dla wybranych gier w ramach wspólnego systemu.</p>
-            </div>
-            <em>PLANOWANE</em>
-          </article>
-
-          <article class="community-feature">
-            <span class="community-feature__number">04</span>
-            <span class="community-feature__icon"><svg aria-hidden="true"><use href="#i-gamepad"/></svg></span>
-            <div>
-              <small>Multiplayer</small>
-              <strong>Gra z innymi użytkownikami</strong>
-              <p>Rozgrywka online będzie wdrażana etapami wraz z gotowością poszczególnych gier.</p>
-            </div>
-            <em>W ROZWOJU</em>
-          </article>
-
-          <article class="community-feature">
-            <span class="community-feature__number">05</span>
-            <span class="community-feature__icon"><svg aria-hidden="true"><use href="#i-people"/></svg></span>
-            <div>
-              <small>Znajomi i społeczność</small>
-              <strong>Łatwiejszy kontakt między graczami</strong>
-              <p>Warstwa społecznościowa ma połączyć profile, znajomych i komunikację w jednym miejscu.</p>
-            </div>
-            <em>PLANOWANE</em>
-          </article>
-
-          <div class="community-premium__next-card">
-            <div>
-              <small>Jeden produkt</small>
-              <strong>Academy → Gra → Profil → Społeczność</strong>
-              <p>To kierunek, w którym rozwijamy interfejs gracz.pl.</p>
-            </div>
-            <a href="/o-gracz-pl/">O gracz.pl <span aria-hidden="true">→</span></a>
-          </div>
-        </div>
-      </div>
+    <section class="r4-section r4-next" id="gracz-next" aria-labelledby="r4-next-title">
+      <div><h2 id="r4-next-title">Jedno konto Gracz<span>Next</span></h2><p>Twoje gry. Twoja społeczność. Twoje statystyki. Więcej możliwości.</p><p>Przygotowujemy jedno konto do gier, forum, profilu gracza i przyszłych funkcji. System kont nie jest jeszcze publicznie dostępny.</p><a class="r4-btn r4-btn-gold" href="/o-gracz-pl/">Poznaj projekt Gracz Next →</a></div>
+      <div class="r4-next-icons"><div><svg aria-hidden="true"><use href="#i-people"/></svg><strong>Twój profil</strong><small>W przygotowaniu</small></div><div><svg aria-hidden="true"><use href="#i-shield"/></svg><strong>Bezpieczeństwo</strong><small>Jedna tożsamość</small></div><div><svg aria-hidden="true"><use href="#i-bars"/></svg><strong>Statystyki</strong><small>Planowane</small></div><div><svg aria-hidden="true"><use href="#i-people"/></svg><strong>Społeczność</strong><small>W rozwoju</small></div></div>
     </section>
-
-    <section class="knowledge-premium" id="centrum-wiedzy" aria-labelledby="knowledge-premium-title">
-      <div class="knowledge-premium__inner">
-        <div class="knowledge-premium__intro">
-          <p class="knowledge-premium__eyebrow"><span aria-hidden="true"></span>Centrum wiedzy</p>
-          <h2 id="knowledge-premium-title">Poradniki i Academy</h2>
-          <p>Nie musisz szukać informacji po całym serwisie. Centrum wiedzy łączy pełne zasady gier, krótkie poradniki, materiały edukacyjne i bezpośrednie wejścia do Academy.</p>
-
-          <div class="knowledge-premium__actions">
-            <a class="knowledge-premium__primary" href="/poradniki/">
-              <svg aria-hidden="true"><use href="#i-cap"/></svg>
-              <span>Otwórz Centrum Poradników<small>pełna biblioteka wiedzy gracz.pl</small></span>
-            </a>
-            <a class="knowledge-premium__secondary" href="/gry/">
-              <svg aria-hidden="true"><use href="#i-gamepad"/></svg>
-              <span>Przejdź do gier<small>wybierz grę i zacznij naukę</small></span>
-            </a>
-          </div>
-
-          <div class="knowledge-premium__paths" aria-label="Jak korzystać z Centrum wiedzy">
-            <div>
-              <span>01</span>
-              <strong>Poznaj zasady</strong>
-              <small>Zacznij od podstaw i legalnych ruchów.</small>
-            </div>
-            <div>
-              <span>02</span>
-              <strong>Przejdź do Academy</strong>
-              <small>Ćwicz decyzje w interaktywnych modułach.</small>
-            </div>
-            <div>
-              <span>03</span>
-              <strong>Sprawdź wiedzę</strong>
-              <small>Quizy i krótkie ćwiczenia utrwalają materiał.</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="knowledge-premium__library" aria-label="Wiedza według gry">
-          <a class="knowledge-card knowledge-card--poker" href="/gry/poker-treningowy/zasady/">
-            <span class="knowledge-card__icon" aria-hidden="true">♠</span>
-            <span class="knowledge-card__body">
-              <small>Poker</small>
-              <strong>Texas Hold’em — pełne zasady</strong>
-              <em>układy · przebieg rozdania · pozycje</em>
-            </span>
-            <span class="knowledge-card__arrow" aria-hidden="true">→</span>
-          </a>
-
-          <a class="knowledge-card knowledge-card--tysiac" href="/gry/tysiac/zasady/">
-            <span class="knowledge-card__icon knowledge-card__icon--red" aria-hidden="true">♥</span>
-            <span class="knowledge-card__body">
-              <small>Tysiąc</small>
-              <strong>Licytacja, meldunki i punktacja</strong>
-              <em>kontrakt · ruch · rozliczenie rozdania</em>
-            </span>
-            <span class="knowledge-card__arrow" aria-hidden="true">→</span>
-          </a>
-
-          <a class="knowledge-card knowledge-card--warcaby" href="/gry/warcaby/zasady/">
-            <span class="knowledge-card__icon knowledge-card__icon--board" aria-hidden="true">▦</span>
-            <span class="knowledge-card__body">
-              <small>Warcaby</small>
-              <strong>Bicie, damka i ruchy obowiązkowe</strong>
-              <em>8×8 · seria bić · awans pionka</em>
-            </span>
-            <span class="knowledge-card__arrow" aria-hidden="true">→</span>
-          </a>
-
-          <a class="knowledge-card knowledge-card--gomoku" href="/gry/gomoku/zasady/">
-            <span class="knowledge-card__icon knowledge-card__icon--board" aria-hidden="true">●</span>
-            <span class="knowledge-card__body">
-              <small>Gomoku</small>
-              <strong>Pięć w linii — zasady 15×15</strong>
-              <em>ruch · zwycięstwo · remis</em>
-            </span>
-            <span class="knowledge-card__arrow" aria-hidden="true">→</span>
-          </a>
-
-          <div class="knowledge-premium__finder">
-            <div>
-              <small>Nie wiesz, od czego zacząć?</small>
-              <strong>Wybierz temat, nie grę</strong>
-              <p>Centrum Poradników prowadzi przez podstawy, najczęstsze błędy i kolejne etapy nauki.</p>
-            </div>
-            <a href="/poradniki/">Znajdź poradnik <span aria-hidden="true">→</span></a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="updates-premium" id="co-nowego" aria-labelledby="updates-premium-title">
-      <div class="updates-premium__inner">
-        <div class="updates-premium__head">
-          <div>
-            <p class="updates-premium__eyebrow"><span aria-hidden="true"></span>Co nowego na gracz.pl</p>
-            <h2 id="updates-premium-title">Blog i aktualności</h2>
-            <p>Aktualności z budowy Polskiego Centrum Gracza, dostępne materiały i kolejne etapy rozwoju. Osobny blog przygotowujemy.</p>
-          </div>
-          <button class="updates-premium__all" type="button" data-modal="updates">
-            Poznaj aktualizacje
-            <span aria-hidden="true">→</span>
-          </button>
-        </div>
-
-        <div class="updates-premium__grid">
-          <a class="home-update-card home-update-card--featured" href="/gry/poker-treningowy/">
-            <span class="home-update-card__icon">
-              <svg aria-hidden="true"><use href="#i-cards"/></svg>
-            </span>
-            <span class="home-update-card__content">
-              <small><i aria-hidden="true"></i>NOWE</small>
-              <strong>AI Poker Academy</strong>
-              <p>Flagowy moduł Texas Hold’em: trening decyzji, matematyka, pozycja i rozwijana warstwa AI.</p>
-              <em>Otwórz Poker Academy <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="home-update-card" href="/gry/">
-            <span class="home-update-card__icon">
-              <svg aria-hidden="true"><use href="#i-gamepad"/></svg>
-            </span>
-            <span class="home-update-card__content">
-              <small><i aria-hidden="true"></i>AKTYWNE</small>
-              <strong>4 ścieżki Academy</strong>
-              <p>Poker, Tysiąc, Warcaby i Gomoku mają własne moduły nauki oraz lokalny postęp użytkownika.</p>
-              <em>Zobacz wszystkie gry <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <a class="home-update-card" href="/poradniki/">
-            <span class="home-update-card__icon">
-              <svg aria-hidden="true"><use href="#i-cap"/></svg>
-            </span>
-            <span class="home-update-card__content">
-              <small><i aria-hidden="true"></i>DOSTĘPNE</small>
-              <strong>Centrum wiedzy</strong>
-              <p>Poradniki, zasady, krótkie ścieżki nauki i materiały prowadzące bezpośrednio do Academy.</p>
-              <em>Przejdź do poradników <b aria-hidden="true">→</b></em>
-            </span>
-          </a>
-
-          <button class="home-update-card home-update-card--future" type="button" data-modal="next">
-            <span class="home-update-card__icon">
-              <svg aria-hidden="true"><use href="#i-people"/></svg>
-            </span>
-            <span class="home-update-card__content">
-              <small><i aria-hidden="true"></i>W ROZWOJU</small>
-              <strong>gracz.NEXT</strong>
-              <p>Profil gracza, rankingi, multiplayer, turnieje i funkcje społecznościowe będą wdrażane etapami.</p>
-              <em>Sprawdź kierunek rozwoju <b aria-hidden="true">→</b></em>
-            </span>
-          </button>
-        </div>
-
-        <div class="updates-premium__footer">
-          <span><i class="is-live" aria-hidden="true"></i><strong>Academy</strong> aktywne</span>
-          <span><i class="is-live" aria-hidden="true"></i><strong>Poradniki</strong> dostępne</span>
-          <span><i class="is-future" aria-hidden="true"></i><strong>AI</strong> rozwijane</span>
-          <span><i class="is-future" aria-hidden="true"></i><strong>Multiplayer</strong> w rozwoju</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="home-full-next" id="gracz-next" aria-labelledby="home-full-next-title">
-      <div class="home-full-next__inner">
-        <div class="home-full-next__copy">
-          <p class="home-full-next__eyebrow">Jeden ekosystem · gracz Next</p>
-          <h2 id="home-full-next-title">Jedno konto. Całe Centrum Gracza.</h2>
-          <p>Przygotowujemy wspólną tożsamość użytkownika dla przyszłych gier, forum, rankingów i społeczności. Obecnie funkcja konta Gracz Next nie jest jeszcze dostępna.</p>
-          <div class="home-full-next__actions">
-            <a href="/o-gracz-pl/">Poznaj plany rozwoju <span aria-hidden="true">→</span></a>
-            <span>W przygotowaniu</span>
-          </div>
-        </div>
-        <div class="home-full-next__visual" aria-hidden="true">
-          <div class="home-full-next__profile"><span class="home-full-next__avatar">G</span><span><b>gracz<span>.pl</span></b><small>Jeden profil · docelowo</small></span></div>
-          <div class="home-full-next__chips"><span>Gry</span><span>Academy</span><span>Forum</span><span>Rankingi</span></div>
-          <p>Połączona społeczność — kierunek rozwoju</p>
-        </div>
-      </div>
-    </section>
-
   </main>
+
+
 
   <footer class="site-footer">
     <div class="footer-grid">
