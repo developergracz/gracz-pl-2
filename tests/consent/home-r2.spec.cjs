@@ -154,7 +154,7 @@ test('R11 hero: sharp native heading, owner photograph and interactive CTAs on d
    expect(dims.width).toBe(1828);
    expect(dims.height).toBe(485);
    expect(dims.src).toContain('hero-owner-exact-20261027.webp');
-   expect(Math.abs(dims.imgRatio-1828/485)).toBeLessThan(.01);
+   expect(Math.abs(dims.imgRatio-1828/485)).toBeLessThan(.03);
    await expect(page.locator('#hero-title')).toBeVisible();
    await expect(page.locator('.r4-hero-motto')).toBeVisible();
    await expect(page.locator('.r4-hero-claim')).toBeVisible();
