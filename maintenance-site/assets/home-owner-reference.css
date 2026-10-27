@@ -67,3 +67,5 @@
 /* Blend the cropped reference art into the dark hero; eliminate text fragments at crop edge. */
 .homepage-premium-max .ref-hero__picture img{-webkit-mask-image:linear-gradient(to right,transparent 0%,transparent 17%,#000 33%,#000 100%);mask-image:linear-gradient(to right,transparent 0%,transparent 17%,#000 33%,#000 100%)}
 @media(min-width:1180px){.homepage-premium-max .ref-hero h1{white-space:nowrap;font-size:clamp(31px,2.7vw,55px)}}
+
+@media(min-width:1180px){.homepage-premium-max .home-ref-newsletter-mobile{display:none!important}}
