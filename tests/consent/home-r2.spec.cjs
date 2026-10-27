@@ -137,27 +137,55 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
 });
 
 
-test('Owner exact screenshot is rendered at native dimensions on desktop, with live clickable buttons',async({browser})=>{
- const context=await browser.newContext({viewport:{width:1649,height:900}});
- try {
-  const page=await context.newPage();
-  await page.goto('/');
-  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  const exact=page.locator('.r4-owner-image');
-  await expect(exact).toBeVisible();
-  await exact.evaluate(el=>el.decode());
-  const dims=await exact.evaluate(el=>({width:el.naturalWidth,height:el.naturalHeight,currentSrc:el.currentSrc,cssWidth:el.getBoundingClientRect().width,cssHeight:el.getBoundingClientRect().height}));
-  expect(dims.width).toBe(1828);
-  expect(dims.height).toBe(485);
-  expect(dims.currentSrc).toContain('hero-owner-exact-20261027.webp');
-  expect(Math.abs(dims.cssHeight/dims.cssWidth-485/1828)).toBeLessThan(.002);
-  const links=page.locator('.r4-owner-hotspot');
-  await expect(links).toHaveCount(2);
-  await expect(page.locator('.r4-owner-hotspot--games')).toHaveAttribute('href','/gry/');
-  await expect(page.locator('.r4-owner-hotspot--guides')).toHaveAttribute('href','/poradniki/');
-  await page.locator('.r4-owner-hotspot--games').click();
-  await expect(page).toHaveURL(/\/gry\/$/);
- }finally{await context.close()}
+test('R11 hero: sharp native heading, owner photograph and interactive CTAs on desktop',async({browser})=>{
+ for(const width of [1181,1366,1649,1920]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const exact=page.locator('.r4-owner-image');
+   await expect(exact).toBeVisible();
+   await exact.evaluate(el=>el.decode());
+   const dims=await exact.evaluate(el=>({
+    width:el.naturalWidth,height:el.naturalHeight,src:el.currentSrc,
+    imgRatio:el.getBoundingClientRect().width/el.getBoundingClientRect().height
+   }));
+   expect(dims.width).toBe(1828);
+   expect(dims.height).toBe(485);
+   expect(dims.src).toContain('hero-owner-exact-20261027.webp');
+   expect(Math.abs(dims.imgRatio-1828/485)).toBeLessThan(.03);
+   await expect(page.locator('#hero-title')).toBeVisible();
+   await expect(page.locator('.r4-hero-motto')).toBeVisible();
+   await expect(page.locator('.r4-hero-claim')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
+   const layout=await page.evaluate(()=>{
+    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();
+      return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+    const copy=document.querySelector('.r4-hero-copy');
+    const art=document.querySelector('.r4-owner-picture');
+    return {hero:rect('.r4-hero'),copy:rect('.r4-hero-copy'),
+     title:rect('#hero-title'),claim:rect('.r4-hero-claim'),
+     game:rect('.r4-hero-actions a[href="/gry/"]'),
+     guides:rect('.r4-hero-actions a[href="/poradniki/"]'),
+     mask:getComputedStyle(art).maskImage,
+     copied:getComputedStyle(copy).clipPath,
+     pageWidth:document.documentElement.scrollWidth};
+   });
+   expect(layout.mask).toContain('linear-gradient');
+   expect(layout.copied).toBe('none');
+   expect(layout.copy.width).toBeGreaterThan(400);
+   expect(layout.copy.bottom).toBeLessThanOrEqual(layout.hero.bottom+2);
+   expect(layout.title.right).toBeLessThanOrEqual(layout.hero.right+2);
+   expect(layout.claim.right).toBeLessThanOrEqual(layout.hero.right+2);
+   expect(layout.guides.right).toBeLessThanOrEqual(layout.hero.right+2);
+   expect(layout.game.bottom).toBeLessThanOrEqual(layout.hero.bottom+2);
+   expect(layout.pageWidth).toBeLessThanOrEqual(width+2);
+   await page.locator('.r4-hero-actions a[href="/gry/"]').click();
+   await expect(page).toHaveURL(/\/gry\/$/);
+  }finally{await context.close()}
+ }
 });
 test('Owner hero preserves responsive HTML copy and ordinary links on mobile',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844}});
