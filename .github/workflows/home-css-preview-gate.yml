@@ -12,6 +12,11 @@ on:
       - "maintenance-site/assets/r4-reference-hero.webp"
       - "maintenance-site/assets/r4-reference-community.webp"
       - "maintenance-site/assets/r4-reference-newsletter.webp"
+      - "maintenance-site/assets/r4-game-chess.webp"
+      - "maintenance-site/assets/r4-game-checkers.webp"
+      - "maintenance-site/assets/r4-game-gomoku.webp"
+      - "maintenance-site/assets/r4-game-thousand.webp"
+      - "maintenance-site/assets/r4-game-poker.webp"
       - "maintenance-site/assets/home.js"
       - "maintenance-site/assets/global-header-r1.css"
       - "maintenance-site/assets/legal-links.js"
@@ -53,7 +58,7 @@ jobs:
           assert.ok(html.includes('data-newsletter'),'Newsletter preserved');
           assert.ok(!html.includes('data-home-r3-detail'),'Obsolete R3 deferred CSS removed');
           const css=fs.readFileSync('maintenance-site/assets/home-reference-r4.css','utf8');
-          for(const file of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp']){
+          for(const file of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','r4-game-chess.webp','r4-game-checkers.webp','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
             assert.ok(css.includes(file),'CSS must use approved reference '+file);
             const bytes=fs.readFileSync('maintenance-site/assets/'+file);
             assert.ok(bytes.length>1000&&bytes.subarray(0,4).toString()==='RIFF','Valid WebP '+file);
