@@ -1,8 +1,12 @@
-name: Homepage CSS compact — guarded mobile Lighthouse preview
+name: Homepage mobile Lighthouse — main vs PR regression guard
 on:
   pull_request:
     paths:
       - "maintenance-site/index.html"
+      - "maintenance-site/assets/home.css"
+      - "maintenance-site/assets/home-r2.css"
+      - "maintenance-site/assets/global-header-r1.css"
+      - "maintenance-site/assets/legal-links.js"
       - "maintenance-site/assets/home-premium-max.min.css"
       - "maintenance-site/assets/home-premium-max.css"
       - "scripts/check-home-premium-css-compact.mjs"
@@ -14,7 +18,7 @@ permissions:
 
 jobs:
   css-review:
-    name: Equivalent CSS + SEO + mobile Lighthouse comparison
+    name: SEO + deterministic CSS + main-to-PR mobile regression check
     runs-on: ubuntu-latest
     timeout-minutes: 16
     steps:
@@ -29,24 +33,19 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
-      - name: Compare unchanged source stylesheet and compact stylesheet with local mobile Lighthouse
+      - name: Compare current main and candidate PR in the same mobile Lighthouse environment
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: |
           set -euo pipefail
+          BASE_REF="${GITHUB_BASE_REF:-main}"
           mkdir -p "$RUNNER_TEMP/css-original"
-          cp -a maintenance-site/. "$RUNNER_TEMP/css-original/"
-          python3 - "$RUNNER_TEMP/css-original/index.html" <<'PY'
-          import sys
-          from pathlib import Path
-          p=Path(sys.argv[1])
-          html=p.read_text()
-          before='/assets/home-premium-max.min.css?v=compact-r1'
-          after='/assets/home-premium-max.css?v=footer-layout-r1'
-          assert html.count(before)==1
-          p.write_text(html.replace(before,after))
-          PY
-          python3 -m http.server 4173 -d "$RUNNER_TEMP/css-original" --bind 127.0.0.1 > /tmp/gracz-original.log 2>&1 &
+          git fetch --no-tags --depth=1 origin "refs/heads/$BASE_REF"
+          git archive FETCH_HEAD maintenance-site/ | tar -xf - -C "$RUNNER_TEMP/css-original"
+          test -f "$RUNNER_TEMP/css-original/maintenance-site/index.html"
+          # Both copies use the exact same local uncompressed server, so only
+          # relative regressions are gated. Absolute LCP is NOT field CWV.
+          python3 -m http.server 4173 -d "$RUNNER_TEMP/css-original/maintenance-site" --bind 127.0.0.1 > /tmp/gracz-original.log 2>&1 &
           PID1=$!
           python3 -m http.server 4174 -d maintenance-site --bind 127.0.0.1 > /tmp/gracz-compact.log 2>&1 &
           PID2=$!
@@ -77,8 +76,7 @@ jobs:
               const d=JSON.parse(fs.readFileSync(path.join(dir,kind+"-"+i+".json"),"utf8"));
               const lcp=d.audits?.["largest-contentful-paint"]?.numericValue;
               const cls=d.audits?.["cumulative-layout-shift"]?.numericValue;
-              const url=kind==="compact"?
-                "home-premium-max.min.css":"home-premium-max.css";
+              const url="home-premium-max.min.css";
               const requests=d.audits?.["network-requests"]?.details?.items||[];
               if(!requests.some(x=>x.url?.includes("/assets/"+url+"?")&&x.statusCode===200))
                 throw Error(kind+" stylesheet not loaded with HTTP 200");
@@ -90,9 +88,19 @@ jobs:
               cls:records.reduce((s,x)=>s+x.cls,0)/records.length};
           };
           const original=check("original"),compact=check("compact");
-          console.log(JSON.stringify({original,compact}));
-          if(compact.lcp>original.lcp*1.15+100)
-            throw Error("Compacted CSS increases mobile LCP beyond regression limit");
+          console.log("HOME_MAIN_VS_PR "+JSON.stringify({base:original,pr:compact,
+            lcpDeltaMs:compact.lcp-original.lcp,clsDelta:compact.cls-original.cls}));
+          if(compact.lcp>original.lcp*1.10+100)
+            throw Error("PR mobile LCP regression exceeds 10% + 100ms noise allowance");
           if(compact.cls>original.cls+0.03)
-            throw Error("Compacted CSS increases mobile layout shifting");
+            throw Error("PR mobile CLS regression exceeds 0.03");
           JS
+
+      - name: Preserve Lighthouse diagnostics for R2 review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-r2-lighthouse-diagnostics
+          path: ${{ runner.temp }}/css-reports/*.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -2,7 +2,7 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: 'consent.spec.cjs',
+  testMatch: ['consent.spec.cjs', 'home-r2.spec.cjs'],
   timeout: 30000,
   retries: 0,
   workers: 1,
