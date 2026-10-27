@@ -1,18 +1,18 @@
-/* GRACZ.PL — approved Full Max Premium hero (R13), actual supplied artwork on desktop.
+/* GRACZ.PL — approved Full Max Premium hero (R14), actual supplied artwork on desktop.
  * Text / links remain accessible native HTML; mobile keeps semantic R4 layout.
- * Artwork intrinsic size 1721x914: do not crop, upscale or impose another aspect ratio.
+ * Artwork intrinsic size 2172x724: keep whole desktop image in its 3:1 ratio.
  */
 .r4-owner-picture,.r4-owner-hotspot{display:none}
 @media(min-width:1181px){
  .homepage-premium-max .r4-hero{
    position:relative!important;display:block!important;width:100%!important;
-   height:auto!important;min-height:0!important;aspect-ratio:1721/914!important;
+   height:auto!important;min-height:0!important;aspect-ratio:2172/724!important;
    background:#041421!important;border-bottom:1px solid rgba(235,187,98,.25)!important;
    overflow:hidden!important;
  }
  .homepage-premium-max .r4-owner-picture{display:block;width:100%;height:auto;line-height:0}
  .homepage-premium-max .r4-owner-image{
-   display:block;width:100%;height:auto;aspect-ratio:1721/914;
+   display:block;width:100%;height:auto;aspect-ratio:2172/724;
    object-fit:contain;object-position:center;
    max-width:none;filter:none!important;image-rendering:auto;
  }
@@ -28,12 +28,12 @@
  .homepage-premium-max .r4-hero-copy .r4-hero-actions{display:none!important}
  .homepage-premium-max .r4-hero-art{display:none!important}
  .homepage-premium-max .r4-owner-hotspot{
-   display:block;position:absolute;z-index:5;top:75.2%;height:14.4%;
+   display:block;position:absolute;z-index:5;top:69.1%;height:14.1%;
    background:transparent;border:0;border-radius:10px;
    text-decoration:none!important;cursor:pointer;
  }
- .homepage-premium-max .r4-owner-hotspot--games{left:4.8%;width:35.9%}
- .homepage-premium-max .r4-owner-hotspot--guides{left:42.4%;width:40.0%}
+ .homepage-premium-max .r4-owner-hotspot--games{left:1.35%;width:19.2%}
+ .homepage-premium-max .r4-owner-hotspot--guides{left:21.35%;width:20.8%}
  .homepage-premium-max .r4-owner-hotspot:hover{box-shadow:inset 0 0 0 2px rgba(255,229,159,.55)}
  .homepage-premium-max .r4-owner-hotspot:focus-visible{
     outline:3px solid #ffe3a0;outline-offset:3px;background:rgba(250,196,97,.12)
@@ -47,4 +47,12 @@
    buttons; do not squeeze rasterized typography to unreadable dimensions. */
 @media(max-width:1180px){
  .homepage-premium-max .r4-owner-picture,.homepage-premium-max .r4-owner-hotspot{display:none!important}
+ .homepage-premium-max .r4-hero-art{
+   background-image:linear-gradient(90deg,rgba(3,14,25,.40),rgba(3,14,25,.05) 65%),url("/assets/gracz-hero-mobile-art-r14.webp")!important;
+   background-size:100% 100%,cover!important;
+   background-position:center,center!important;
+   background-repeat:no-repeat!important;
+ }
+ .homepage-premium-max .r4-hero-motto{font-style:italic;letter-spacing:.01em}
+ .homepage-premium-max .r4-hero-claim{color:#e5eef9!important}
 }

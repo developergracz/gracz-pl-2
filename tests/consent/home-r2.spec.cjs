@@ -14,7 +14,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
    await expect(page.locator('h1')).toHaveCount(1);
    await expect(page.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
-   await expect(page.locator('.r4-hero-motto')).toHaveText('Graj. Ucz się. Rywalizuj.');
+   await expect(page.locator('.r4-hero-motto')).toHaveText('Graj, ucz się, rywalizuj.');
    await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
@@ -137,7 +137,7 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
 });
 
 
-test('R13: approved Full Max artwork is actually displayed with accessible clickable CTAs',async({browser})=>{
+test('R14: approved Full Max artwork is actually displayed with accessible clickable CTAs',async({browser})=>{
  for(const width of [1181,1366,1649,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -157,12 +157,12 @@ test('R13: approved Full Max artwork is actually displayed with accessible click
     copyVisible:getComputedStyle(document.querySelector('.r4-hero-copy')).clipPath,
     overflow:document.documentElement.scrollWidth
    }));
-   expect(dims.naturalWidth).toBe(1721);
-   expect(dims.naturalHeight).toBe(914);
-   expect(dims.src).toContain('hero-owner-fullmax-approved-r13.webp');
-   expect(Math.abs(dims.heroRect.height/dims.heroRect.width-914/1721)).toBeLessThan(.01);
-   expect(Math.abs(dims.imageRect.height/dims.imageRect.width-914/1721)).toBeLessThan(.02);
-   expect(dims.heroRect.height).toBeGreaterThan(600);
+   expect(dims.naturalWidth).toBe(2172);
+   expect(dims.naturalHeight).toBe(724);
+   expect(dims.src).toContain('gracz-hero-approved-r14.webp');
+   expect(Math.abs(dims.heroRect.height/dims.heroRect.width-724/2172)).toBeLessThan(.01);
+   expect(Math.abs(dims.imageRect.height/dims.imageRect.width-724/2172)).toBeLessThan(.02);
+   expect(dims.heroRect.height).toBeGreaterThan(380);
    expect(dims.copyVisible).toContain('inset');
    expect(dims.overflow).toBeLessThanOrEqual(width+2);
    for(const rect of [dims.game,dims.guides]){
