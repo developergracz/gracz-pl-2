@@ -233,15 +233,16 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
        phone:rect('.r4-phone'),blog:rect('.r4-updates'),
        news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
        logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
-       newsBackgroundPosition:getComputedStyle(newsletter).backgroundPosition,
-       newsBackgroundSize:getComputedStyle(newsletter).backgroundSize,
+       photo:rect('.site-footer .footer-news-photo'),
        logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
      };
    });
    expect(info.scroll).toBeLessThanOrEqual(width+2);
    expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
    expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
-   expect(info.newsBackgroundPosition).toContain('255px');
+   expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
+   expect(info.photo.right).toBeLessThanOrEqual(info.news.right-200);
+   expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    expect(info.logoDisplay).not.toBe('none');
    expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
    expect(info.logo.bottom).toBeLessThanOrEqual(info.footer.bottom+1);
@@ -349,27 +350,39 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R8 newsletter original photo fits without vector overlays at mobile/tablet/desktop',async({browser})=>{
+test('R9 newsletter photograph fully fits and its screen remains unaltered',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const img=await page.evaluate(async()=>{
-    const art=new Image();
-    art.src='/assets/r4-reference-newsletter.webp';
-    await art.decode();
-    const css=getComputedStyle(document.querySelector('.site-footer .footer-news'));
-    return {naturalWidth:art.naturalWidth,naturalHeight:art.naturalHeight,
-     background:css.backgroundImage,size:css.backgroundSize,
-     overflow:document.documentElement.scrollWidth};
+   const photo=page.locator('.site-footer .footer-news > img.footer-news-photo');
+   await photo.scrollIntoViewIfNeeded();
+   const result=await photo.evaluate(async(img)=>{
+    await img.decode();
+    const container=img.closest('.footer-news');
+    const imgr=img.getBoundingClientRect();
+    const box=container.getBoundingClientRect();
+    const style=getComputedStyle(container),imgstyle=getComputedStyle(img);
+    return {naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
+      visible:imgstyle.display!=='none',objectFit:imgstyle.objectFit,
+      image:[imgr.left,imgr.top,imgr.right,imgr.bottom],
+      container:[box.left,box.top,box.right,box.bottom],
+      background:style.backgroundImage,
+      scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(img.naturalWidth).toBe(336);
-   expect(img.naturalHeight).toBe(200);
-   expect(img.background).toContain('r4-reference-newsletter.webp');
-   expect(img.background).not.toMatch(/newsletter-(?:crisp|sharp)[^)]*\.svg/);
-   expect(img.size).not.toContain('cover');
-   expect(img.overflow).toBeLessThanOrEqual(width+2);
+   expect(result.naturalWidth).toBe(336);
+   expect(result.naturalHeight).toBe(200);
+   expect(result.visible).toBe(true);
+   expect(result.objectFit).toBe('contain');
+   expect(result.background).not.toContain('newsletter.webp');
+   expect(result.scrollWidth).toBeLessThanOrEqual(width+2);
+   const [left,top,right,bottom]=result.image;
+   const [cl,ct,cr,cb]=result.container;
+   expect(left).toBeGreaterThanOrEqual(cl-2);
+   expect(right).toBeLessThanOrEqual(cr+2);
+   expect(top).toBeGreaterThanOrEqual(ct-2);
+   expect(bottom).toBeLessThanOrEqual(cb+2);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
