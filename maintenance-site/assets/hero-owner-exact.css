@@ -120,6 +120,7 @@
   background:linear-gradient(180deg,#fff0bb,#edb958)!important;
   border:2px solid #eec276!important;color:#091623!important;
  }
+ body.homepage-premium-max .r4-hero .r4-hero-actions .r4-btn-gold svg{filter:brightness(0)!important}
  body.homepage-premium-max .r4-hero .r4-hero-actions .r4-btn-outline{
   background:#061421!important;border:2px solid #bd8b3b!important;color:#fff!important;
  }
