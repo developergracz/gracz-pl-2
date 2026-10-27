@@ -233,15 +233,16 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
        phone:rect('.r4-phone'),blog:rect('.r4-updates'),
        news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
        logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
-       newsBackgroundPosition:getComputedStyle(newsletter).backgroundPosition,
-       newsBackgroundSize:getComputedStyle(newsletter).backgroundSize,
+       photo:rect('.site-footer .footer-news-photo'),
        logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
      };
    });
    expect(info.scroll).toBeLessThanOrEqual(width+2);
    expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
    expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
-   expect(info.newsBackgroundPosition).toContain('255px');
+   expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
+   expect(info.photo.right).toBeLessThanOrEqual(info.news.right-200);
+   expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    expect(info.logoDisplay).not.toBe('none');
    expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
    expect(info.logo.bottom).toBeLessThanOrEqual(info.footer.bottom+1);
