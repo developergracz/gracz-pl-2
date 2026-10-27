@@ -132,7 +132,19 @@ for (const width of [360, 390, 768, 1366, 1920]) {
       expect(box.form.right).toBeLessThanOrEqual(width + 2);
       expect(box.form.x).toBeGreaterThanOrEqual(-2);
       expect(box.newsletter.bottom).toBeLessThanOrEqual(box.legal.top - 2);
+      // Exercise natural lazy painting while scrolling through every section.
+      for (const section of page.locator('main > section').all ? await page.locator('main > section').all() : []) {
+        await section.scrollIntoViewIfNeeded();
+        await expect(section).toBeVisible();
+      }
       await page.locator('.footer-news').scrollIntoViewIfNeeded();
+      await page.evaluate(() => {
+        // Browser full-page screenshots otherwise omit sections optimized by
+        // content-visibility:auto outside the viewport. Snapshot-only override.
+        for (const section of document.querySelectorAll('main > section')) {
+          section.style.contentVisibility = 'visible';
+        }
+      });
       await page.evaluate(() => document.fonts.ready);
       const output = path.resolve('test-results', 'home-r3', 'full-' + width + '.png');
       fs.mkdirSync(path.dirname(output), { recursive: true });
