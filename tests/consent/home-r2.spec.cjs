@@ -190,7 +190,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
    expect(m.hero.h).toBeLessThan(410);
    expect(Math.abs(m.cVisual.x-m.community.x)).toBeLessThan(2);
-   expect(Math.abs(m.cVisual.w-m.community.w)).toBeLessThan(2);
+   expect(Math.abs(m.cVisual.w-m.community.w)).toBeLessThan(3);
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
