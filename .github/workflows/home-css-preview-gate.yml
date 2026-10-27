@@ -49,7 +49,10 @@ jobs:
             'R3 split must preserve exact canonical CSS rules and order');
           const html=fs.readFileSync('maintenance-site/index.html','utf8');
           assert.ok(html.includes('data-home-r3-detail'));
-          assert.ok(html.includes('home-full-premium-r3-critical.css'));
+          assert.ok(html.includes('home-r2.css?v=20261027-r3-first-screen'));
+          const hero=fs.readFileSync(dir+'home-r2.css','utf8');
+          assert.ok(hero.trimEnd().endsWith(critical.trimEnd()),
+            'R3 critical CSS must be appended to the existing hero stylesheet');
           JS
       - name: Compare current main and candidate PR in the same mobile Lighthouse environment
         env:
