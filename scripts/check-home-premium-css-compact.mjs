@@ -58,8 +58,7 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
     "Keep the exact approved stylesheet cascade order");
   // Guard against accidentally moving the highest-impact hero and the cookie module.
   assert.ok((html.includes('class="home-hero-premium__lead"') ||
-    html.includes('class="r4-hero-description"') ||
-    html.includes('class="ref-hero__desc"')) &&
+    html.includes('class="r4-hero-description"')) &&
     html.includes('href="/assets/cookie-consent.css?v=r3"'),
     "Preserve homepage hero text and the cookie module");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
