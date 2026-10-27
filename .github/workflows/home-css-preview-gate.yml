@@ -45,7 +45,7 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const html=fs.readFileSync('maintenance-site/index.html','utf8');
-          assert.equal((html.match(/<h1\\b/g)||[]).length,1,'One H1 only');
+          assert.equal(html.split('<h1 ').length-1,1,'One H1 only');
           assert.ok(html.includes('home-reference-r4.css?v=ref-20261027-r1'),'Reference CSS enabled');
           assert.ok(html.includes('r4-reference-hero.webp'),'Reference image prioritized');
           assert.ok(html.includes('class="r4-shortcuts"'),'Five-item navigation present');
