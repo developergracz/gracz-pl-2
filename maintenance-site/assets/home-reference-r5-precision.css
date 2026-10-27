@@ -276,3 +276,15 @@ body.homepage-premium-max .site-footer .footer-bottom{
  body.homepage-premium-max .r4-guide-photo{transition:none!important}
  body.homepage-premium-max .r4-guide:hover .r4-guide-photo{transform:none!important}
 }
+/* Narrow-layout specificity: desktop photo overlays remain, but columns reflow. */
+@media(max-width:1180px){
+ body.homepage-premium-max .r4-homepage .r4-community{grid-template-columns:1fr!important}
+ body.homepage-premium-max .r4-homepage .r4-guides-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.homepage-premium-max .r4-homepage .r4-updates-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.homepage-premium-max .r4-homepage .r4-next{grid-template-columns:1fr!important;padding-right:0!important}
+ body.homepage-premium-max .r4-homepage .r4-phone{display:none!important}
+}
+@media(max-width:680px){
+ body.homepage-premium-max .r4-homepage .r4-guides-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.homepage-premium-max .r4-homepage .r4-updates-grid{grid-template-columns:1fr!important}
+}
