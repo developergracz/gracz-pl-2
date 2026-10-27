@@ -189,8 +189,9 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
    expect(m.hero.h).toBeLessThan(410);
-   expect(Math.abs(m.cVisual.x-m.community.x)).toBeLessThan(2);
-   expect(Math.abs(m.cVisual.w-m.community.w)).toBeLessThan(3);
+   expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.33);
+   expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
+   expect(m.cVisual.h).toBeLessThan(m.community.h);
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
@@ -289,12 +290,14 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
    const info=await image.evaluate(async img=>{
     await img.decode();
     const rect=img.getBoundingClientRect();
-    return {w:img.naturalWidth,h:img.naturalHeight,displayW:rect.width,src:img.currentSrc,overflow:document.documentElement.scrollWidth};
+    return {w:img.naturalWidth,h:img.naturalHeight,displayW:rect.width,src:img.currentSrc,
+      fit:getComputedStyle(img).objectFit,overflow:document.documentElement.scrollWidth};
    });
-   expect(info.w).toBe(720);
-   expect(info.h).toBe(357);
+   expect(info.w).toBe(1282);
+   expect(info.h).toBe(666);
    expect(info.displayW).toBeGreaterThan(250);
-   expect(info.src).toContain('gracz-community-fullmax-20261027.avif');
+   expect(info.fit).toBe('contain');
+   expect(info.src).toContain('gracz-community-art-sharp-r2.webp');
    expect(info.overflow).toBeLessThanOrEqual(width+2);
    const button=section.getByRole('button',{name:'Dołącz do rozmowy'});
    await expect(button).toBeVisible();
