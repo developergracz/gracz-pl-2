@@ -309,3 +309,42 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
   }finally{await context.close()}
  }
 });
+
+test('Owner R6 blog entries, preview alignment and newsletter behavior match approved lower layout',async({browser})=>{
+ for(const width of [390,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const cards=page.locator('#aktualnosci .r4-update');
+   await expect(cards).toHaveCount(3);
+   await expect(cards.nth(0)).toContainText('Turnieje szachowe');
+   await expect(cards.nth(1)).toContainText('Jak analizować swoje partie?');
+   await expect(cards.nth(2)).toContainText('Tysiąc — historia i ciekawostki');
+   await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
+   const geo=await page.evaluate(()=>{
+    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();
+      return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+    return {scroll:document.documentElement.scrollWidth,blog:rect('.r4-updates'),
+      cards:rect('.r4-updates-grid'),phone:rect('.r4-phone'),next:rect('.r4-next'),
+      news:rect('.site-footer .footer-news'),
+      phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display};
+   });
+   expect(geo.scroll).toBeLessThanOrEqual(width+2);
+   if(width>1180){
+    expect(geo.phone.left).toBeGreaterThanOrEqual(geo.cards.right);
+    expect(geo.phone.top).toBeGreaterThanOrEqual(geo.blog.top);
+    expect(geo.phone.bottom).toBeGreaterThan(geo.next.top);
+    expect(geo.news.left).toBeLessThan(geo.cards.left+3);
+   }else{
+    expect(geo.phoneDisplay).toBe('none');
+   }
+   const form=page.locator('.site-footer form[data-newsletter]');
+   await expect(form).toHaveCount(1);
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const signup=page.locator('#gracz-next [data-modal="register"]');
+   await signup.click();
+   await expect(page.getByRole('dialog')).toBeVisible();
+  }finally{await context.close();}
+ }
+});

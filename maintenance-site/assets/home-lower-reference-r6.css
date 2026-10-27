@@ -1,0 +1,188 @@
+/* Owner reference: lower homepage (blog / Gracz Next / newsletter / phone).
+   Presentation only; keep existing routes, consent, auth and SEO unchanged. */
+@media (min-width:1181px) {
+  body.homepage-premium-max .r4-homepage .r4-updates {
+    min-height:270px!important;
+    padding-top:19px!important;
+    padding-bottom:18px!important;
+    overflow:visible!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-updates-main {
+    width:calc(100% - 275px)!important;
+  }
+  body.homepage-premium-max .r4-updates .r4-section-title {
+    margin-bottom:12px!important;
+  }
+  body.homepage-premium-max .r4-updates .r4-section-title h2 {
+    font-size:clamp(29px,2.45vw,38px)!important;
+  }
+  body.homepage-premium-max .r4-updates .r4-section-title p {
+    font-size:clamp(13px,.98vw,16px)!important;
+  }
+  body.homepage-premium-max .r4-updates-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:13px!important;
+  }
+  body.homepage-premium-max .r4-update {
+    height:197px!important;
+    min-height:197px!important;
+    border:1px solid #193649!important;
+    border-radius:11px!important;
+  }
+  body.homepage-premium-max .r4-update-photo {
+    background-position:center 33%!important;
+  }
+  body.homepage-premium-max .r4-update::after {
+    background:linear-gradient(0deg,#041423 0%,rgba(4,20,35,.95) 24%,rgba(4,20,35,.67) 44%,transparent 78%)!important;
+  }
+  body.homepage-premium-max .r4-update-body {
+    padding:12px 14px!important;
+    gap:5px!important;
+  }
+  body.homepage-premium-max .r4-update small {
+    color:#c8d1db!important;
+    font-size:11px!important;
+    font-weight:500!important;
+  }
+  body.homepage-premium-max .r4-update strong {
+    font-size:clamp(14px,1.12vw,18px)!important;
+    line-height:1.22!important;
+  }
+  body.homepage-premium-max .r4-update em {
+    color:#d5e0e8!important;
+    font-size:clamp(11px,.87vw,13px)!important;
+    line-height:1.26!important;
+  }
+  body.homepage-premium-max .r4-update em b {
+    color:#f4c16b!important;
+    font-size:20px!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-phone {
+    box-sizing:border-box!important;
+    right:0!important;
+    top:6px!important;
+    width:246px!important;
+    min-height:690px!important;
+    padding:14px 12px 17px!important;
+    border:5px solid #57636f!important;
+    outline:2px solid #bda06e!important;
+    border-radius:31px!important;
+    background:#051320!important;
+  }
+  body.homepage-premium-max .r4-phone-top strong {font-size:18px!important}
+  body.homepage-premium-max .r4-phone-title {
+    font-size:24px!important;
+    line-height:1.04!important;
+    margin-top:11px!important;
+    margin-bottom:12px!important;
+  }
+  body.homepage-premium-max .r4-phone>p {
+    font-size:11.5px!important;
+    line-height:1.32!important;
+  }
+  body.homepage-premium-max .r4-phone .r4-card-action {
+    min-height:35px!important;
+    margin:9px 0!important;
+    padding:8px 7px!important;
+    font-size:11px!important;
+  }
+  body.homepage-premium-max .r4-phone-heading {
+    padding-top:10px!important;
+    border-top:1px solid rgba(244,199,112,.12);
+    font-size:17px!important;
+    margin-top:13px!important;
+  }
+  body.homepage-premium-max .r4-phone-image {height:100px!important}
+  body.homepage-premium-max .r4-phone-community {
+    padding:10px 8px!important;
+    font-size:11px!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-next {
+    grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)!important;
+    min-height:174px!important;
+    gap:24px!important;
+    padding:18px 274px 18px 0!important;
+  }
+  body.homepage-premium-max .r4-next h2 {
+    font-size:clamp(28px,2.4vw,37px)!important;
+    margin-bottom:8px!important;
+  }
+  body.homepage-premium-max .r4-next>div:first-child p {
+    max-width:690px!important;
+    font-size:clamp(12px,.96vw,15px)!important;
+    line-height:1.35!important;
+    margin:6px 0!important;
+  }
+  body.homepage-premium-max .r4-next .r4-btn {
+    min-height:42px!important;
+    padding:10px 22px!important;
+    margin-top:6px!important;
+    font-size:14px!important;
+  }
+  body.homepage-premium-max .r4-next-icons {gap:6px!important}
+  body.homepage-premium-max .r4-next-icons>div {
+    padding:0 5px!important;
+    border-right:1px solid rgba(238,193,105,.09);
+  }
+  body.homepage-premium-max .r4-next-icons>div:last-child {border-right:0}
+  body.homepage-premium-max .r4-next-icons svg {
+    width:37px!important;height:37px!important;margin-bottom:9px!important;
+  }
+  body.homepage-premium-max .r4-next-icons strong {font-size:12px!important}
+  body.homepage-premium-max .r4-next-icons small {
+    font-size:11px!important;line-height:1.28!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news {
+    box-sizing:border-box!important;
+    min-height:328px!important;
+    padding:19px 280px 22px 0!important;
+    background-image:
+      linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 27%,rgba(4,22,37,.7) 39%,rgba(4,22,37,.10) 57%,transparent 78%),
+      url("/assets/r4-reference-newsletter.webp")!important;
+    background-position:center,right 255px center!important;
+    background-size:100% 100%,auto 100%!important;
+    background-repeat:no-repeat!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news #f-news {
+    font-size:clamp(31px,2.55vw,39px)!important;margin-bottom:6px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news>p {
+    max-width:675px!important;
+    font-size:clamp(13px,.98vw,16px)!important;
+    line-height:1.42!important;
+    margin-bottom:13px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news form[data-newsletter] {
+    max-width:600px!important;gap:9px 10px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>input[type=email],
+  body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>button[type=submit] {
+    height:46px!important;min-height:46px!important;font-size:14px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news .footer-newsletter-consent {
+    max-width:590px!important;font-size:11px!important;line-height:1.4!important;
+  }
+}
+@media (min-width:1181px) and (max-width:1350px) {
+  body.homepage-premium-max .r4-homepage .r4-updates-main{width:calc(100% - 245px)!important}
+  body.homepage-premium-max .r4-homepage .r4-phone{width:218px!important;min-height:668px!important}
+  body.homepage-premium-max .r4-homepage .r4-next{padding-right:243px!important;gap:14px!important}
+  body.homepage-premium-max .site-footer .footer-news{padding-right:246px!important;background-position:center,right 238px center!important}
+}
+@media (min-width:681px) and (max-width:1180px) {
+  body.homepage-premium-max .r4-homepage .r4-update{height:205px!important;min-height:205px!important}
+  body.homepage-premium-max .r4-homepage .r4-update strong{font-size:14px!important}
+  body.homepage-premium-max .r4-homepage .r4-next{grid-template-columns:1fr!important;padding-right:0!important}
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-homepage .r4-update{height:205px!important;min-height:205px!important}
+  body.homepage-premium-max .r4-homepage .r4-update strong{font-size:17px!important}
+  body.homepage-premium-max .r4-homepage .r4-update small{font-size:11px!important}
+  body.homepage-premium-max .r4-homepage .r4-next{padding-right:0!important}
+  body.homepage-premium-max .site-footer .footer-news{background-size:100% 100%,cover!important}
+}
+/* Use the already-local newsletter illustration for the analysis article rather than downloading artwork. */
+body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
+  background-image:url("/assets/r4-reference-newsletter.webp")!important;
+  background-position:68% center!important;
+}
