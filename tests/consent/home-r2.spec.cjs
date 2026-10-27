@@ -350,7 +350,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R9 newsletter photograph fully fits and its screen remains unaltered',async({browser})=>{
+test('R10 original 720px newsletter photograph fits and keeps screen perspective',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -371,8 +371,8 @@ test('R9 newsletter photograph fully fits and its screen remains unaltered',asyn
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(336);
-   expect(result.naturalHeight).toBe(200);
+   expect(result.naturalWidth).toBe(720);
+   expect(result.naturalHeight).toBe(374);
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
