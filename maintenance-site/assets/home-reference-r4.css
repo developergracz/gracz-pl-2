@@ -75,11 +75,11 @@ body.homepage-premium-max #tresc *,body.homepage-premium-max .site-footer *{box-
  display:block;min-width:0;background-color:#142132;background-size:cover;
  background-position:center;background-repeat:no-repeat}
 .r4-game-image{height:clamp(116px,10vw,175px);border-bottom:1px solid rgba(255,255,255,.08)}
-.r4-img-chess{background-image:url("/assets/img/tile-games.webp")}
-.r4-img-checkers{background-image:url("/assets/game-thumb-warcaby-r2.webp")}
-.r4-img-gomoku{background-image:url("/assets/game-thumb-gomoku-r2.webp")}
-.r4-img-thousand{background-image:url("/assets/img/tile-cards.webp")}
-.r4-img-poker{background-image:url("/assets/game-thumb-poker-r3.webp")}
+.r4-img-chess{background-image:url("/assets/r4-game-chess.webp")}
+.r4-img-checkers{background-image:url("/assets/r4-game-checkers.webp")}
+.r4-img-gomoku{background-image:url("/assets/r4-game-gomoku.webp")}
+.r4-img-thousand{background-image:url("/assets/r4-game-thousand.webp")}
+.r4-img-poker{background-image:url("/assets/r4-game-poker.webp")}
 .r4-game-body{display:flex;flex:1;flex-direction:column;align-items:flex-start;
  padding:13px 12px 12px;gap:8px}
 .r4-game h3{font-size:clamp(16px,1.22vw,20px);line-height:1.1;font-weight:900;color:#fff}
