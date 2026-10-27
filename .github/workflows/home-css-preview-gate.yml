@@ -5,6 +5,10 @@ on:
       - "maintenance-site/index.html"
       - "maintenance-site/assets/home.css"
       - "maintenance-site/assets/home-r2.css"
+      - "maintenance-site/assets/home-full-premium-r3.css"
+      - "maintenance-site/assets/home-full-premium-r3-critical.css"
+      - "maintenance-site/assets/home-full-premium-r3-detail.css"
+      - "maintenance-site/assets/home.js"
       - "maintenance-site/assets/global-header-r1.css"
       - "maintenance-site/assets/legal-links.js"
       - "maintenance-site/assets/home-premium-max.min.css"
@@ -33,6 +37,23 @@ jobs:
           node scripts/check-maintenance-seo.mjs
           node scripts/check-seo-auto-indexing.mjs
           node scripts/check-security-headers.mjs
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import { compact } from './scripts/check-home-premium-css-compact.mjs';
+          const dir='maintenance-site/assets/';
+          const original=fs.readFileSync(dir+'home-full-premium-r3.css','utf8');
+          const critical=fs.readFileSync(dir+'home-full-premium-r3-critical.css','utf8');
+          const detail=fs.readFileSync(dir+'home-full-premium-r3-detail.css','utf8');
+          assert.equal(compact(original),compact(critical+'\n'+detail),
+            'R3 split must preserve exact canonical CSS rules and order');
+          const html=fs.readFileSync('maintenance-site/index.html','utf8');
+          assert.ok(html.includes('data-home-r3-detail'));
+          assert.ok(html.includes('home-r2.css?v=20261027-r3-first-screen'));
+          const hero=fs.readFileSync(dir+'home-r2.css','utf8');
+          assert.ok(hero.trimEnd().endsWith(critical.trimEnd()),
+            'R3 critical CSS must be appended to the existing hero stylesheet');
+          JS
       - name: Compare current main and candidate PR in the same mobile Lighthouse environment
         env:
           CHROME_PATH: /usr/bin/google-chrome
