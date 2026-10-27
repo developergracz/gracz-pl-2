@@ -862,7 +862,9 @@
   }
 
   initHeaderNewsletterTriggers();
-  loadPortalSearch();
+  // The homepage search is loaded on first activation by the existing click handler.
+  // Other pages retain eager initialization until their own search flows are audited.
+  if(!document.body.classList.contains('homepage-premium-max'))loadPortalSearch();
   initFooterNewsletters();
   // F-03: activate only when the live API itself proves readiness. No stale
   // /health, local storage, or client-only toggle may authorize a POST.
