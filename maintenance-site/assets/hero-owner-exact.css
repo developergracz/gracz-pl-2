@@ -1,50 +1,168 @@
-/* GRACZ.PL — owner-supplied hero, exact composition on desktop.
- * Text / links remain accessible native HTML; mobile keeps semantic R4 layout.
- * The artwork has intrinsic 1828x485 aspect ratio: never crop, blur or upscale from thumbnail.
- */
+/* GRACZ.PL HERO R11 — crisp native typography over existing owner photography.
+   Replace raster lettering (blurred by desktop scaling) with the existing semantic
+   heading, copy and accessible CTAs. No new artwork, JS, image filters or SEO changes. */
 .r4-owner-picture,.r4-owner-hotspot{display:none}
-@media(min-width:1181px){
- .homepage-premium-max .r4-hero{
-   position:relative!important;display:block!important;width:100%!important;
-   height:auto!important;min-height:0!important;aspect-ratio:1828/485!important;
-   background:#041421!important;border-bottom:1px solid rgba(235,187,98,.25)!important;
-   overflow:hidden!important;
- }
- .homepage-premium-max .r4-owner-picture{display:block;width:100%;height:auto;line-height:0}
- .homepage-premium-max .r4-owner-image{
-   display:block;width:100%;height:auto;aspect-ratio:1828/485;
-   object-fit:contain;object-position:center;
-   max-width:none;filter:none!important;image-rendering:auto;
- }
- /* Image contains the approved visible copy; keep the original actual H1 and
-    paragraph in DOM for assistive technology and SEO without doubled text. */
- .homepage-premium-max .r4-hero-copy{
-   position:absolute!important;left:0!important;top:0!important;
-   width:1px!important;height:1px!important;max-width:1px!important;
-   padding:0!important;margin:-1px!important;overflow:hidden!important;
-   clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;
-   white-space:nowrap!important;
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions{display:none!important}
- .homepage-premium-max .r4-hero-art{display:none!important}
- .homepage-premium-max .r4-owner-hotspot{
-   display:block;position:absolute;z-index:5;top:78.9%;height:14.7%;
-   background:transparent;border:0;border-radius:10px;
-   text-decoration:none!important;cursor:pointer;
- }
- .homepage-premium-max .r4-owner-hotspot--games{left:.2%;width:18.2%}
- .homepage-premium-max .r4-owner-hotspot--guides{left:19.7%;width:20.5%}
- .homepage-premium-max .r4-owner-hotspot:hover{box-shadow:inset 0 0 0 2px rgba(255,229,159,.55)}
- .homepage-premium-max .r4-owner-hotspot:focus-visible{
-    outline:3px solid #ffe3a0;outline-offset:3px;background:rgba(250,196,97,.12)
- }
- .homepage-premium-max .r4-owner-hotspot__label{
-   position:absolute;width:1px;height:1px;margin:-1px;padding:0;
-   overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0
- }
+
+@media (min-width:1181px) {
+  body.homepage-premium-max .r4-homepage .r4-hero {
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    aspect-ratio:1828 / 485!important;
+    isolation:isolate;
+    background:linear-gradient(100deg,#031421 0%,#051a2b 55%,#04131e 100%)!important;
+    border-bottom:1px solid rgba(235,187,98,.25)!important;
+    overflow:hidden!important;
+  }
+  /* Keep the original high-resolution games/chess art on the right. The left
+     half contains old baked-in letters: mask it rather than double-render it. */
+  body.homepage-premium-max .r4-hero .r4-owner-picture {
+    display:block!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    z-index:0!important;
+    line-height:0!important;
+    pointer-events:none!important;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 47%,#000 58%,#000 100%);
+    mask-image:linear-gradient(90deg,transparent 0%,transparent 47%,#000 58%,#000 100%);
+  }
+  body.homepage-premium-max .r4-hero .r4-owner-image {
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    aspect-ratio:1828 / 485;
+    object-fit:contain!important;
+    object-position:center!important;
+    filter:none!important;
+    transform:none!important;
+    image-rendering:auto!important;
+  }
+  /* Restore real HTML copy on desktop. It uses the same source as mobile,
+     so text stays sharp at any DPI and can be selected, scaled and indexed. */
+  body.homepage-premium-max .r4-hero .r4-hero-copy {
+    position:relative!important;
+    left:auto!important;top:auto!important;
+    z-index:2!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+    width:56%!important;
+    max-width:56%!important;
+    height:100%!important;
+    min-height:0!important;
+    padding:clamp(13px,1.7vw,28px) 0 clamp(13px,1.7vw,28px) clamp(18px,2.05vw,32px)!important;
+    margin:0!important;
+    overflow:visible!important;
+    clip:auto!important;
+    clip-path:none!important;
+    white-space:normal!important;
+    box-sizing:border-box!important;
+  }
+  body.homepage-premium-max .r4-hero h1 {
+    font-size:clamp(35px,3.5vw,55px)!important;
+    line-height:1.05!important;
+    letter-spacing:-.044em!important;
+    font-weight:900!important;
+    color:#f9fbff!important;
+    white-space:nowrap!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.22)!important;
+  }
+  body.homepage-premium-max .r4-hero h1 span {
+    color:#f5c876!important;
+    text-shadow:0 1px 2px rgba(30,13,0,.24)!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-motto {
+    margin:4px 0 0!important;
+    font-size:clamp(21px,2.24vw,35px)!important;
+    line-height:1.07!important;
+    letter-spacing:-.026em!important;
+    font-weight:850!important;
+    color:#f8fafc!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.22)!important;
+    white-space:nowrap!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-claim {
+    margin:5px 0 0!important;
+    font-size:clamp(19px,2.18vw,34px)!important;
+    line-height:1.10!important;
+    letter-spacing:-.017em!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    color:#fefefe!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.22)!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-rule {
+    display:block!important;
+    flex:none!important;
+    width:93%!important;
+    height:3px!important;
+    margin:11px 0 10px!important;
+    border-radius:100%;
+    background:linear-gradient(90deg,#ffe4a0 0%,#ffe08c 15%,#db9d3f 64%,transparent 100%)!important;
+    box-shadow:0 0 9px rgba(242,177,68,.48)!important;
+    transform:none!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-description {
+    margin:0 0 11px!important;
+    font-size:clamp(12px,1.04vw,16.5px)!important;
+    line-height:1.32!important;
+    font-weight:500!important;
+    letter-spacing:-.01em!important;
+    color:#eef2f7!important;
+    max-width:100%!important;
+    text-shadow:none!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-description strong {
+    font-weight:900!important;
+    color:#fff!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-description strong span {
+    color:#fc3046!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-actions {
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:clamp(10px,1.5vw,23px)!important;
+    margin:0!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-actions .r4-btn {
+    display:inline-flex!important;
+    height:clamp(42px,4vw,61px)!important;
+    min-height:0!important;
+    padding:9px clamp(12px,1.6vw,25px)!important;
+    border-radius:10px!important;
+    font-size:clamp(13px,1.25vw,19px)!important;
+    line-height:1.13!important;
+    font-weight:850!important;
+    gap:clamp(6px,.8vw,12px)!important;
+    box-shadow:none;
+    white-space:nowrap!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-actions .r4-btn svg {
+    width:clamp(19px,1.55vw,24px)!important;
+    height:clamp(19px,1.55vw,24px)!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-actions .r4-btn-gold {
+    box-shadow:inset 0 1px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.2)!important;
+  }
+  body.homepage-premium-max .r4-hero .r4-hero-art,
+  body.homepage-premium-max .r4-hero .r4-owner-hotspot {
+    display:none!important;
+  }
 }
-/* On tablets/phones, keep the existing reflowing, sharp HTML text and genuine
-   buttons; do not squeeze rasterized typography to unreadable dimensions. */
-@media(max-width:1180px){
- .homepage-premium-max .r4-owner-picture,.homepage-premium-max .r4-owner-hotspot{display:none!important}
+/* Above-the-fold and downstream headings: vector/browser text, no blur filter,
+   zoom transform or artificial image sharpening. */
+body.homepage-premium-max .r4-homepage :is(h1,h2,h3,.r4-hero-motto,.r4-hero-claim) {
+  text-rendering:optimizeLegibility;
+}
+@media (max-width:1180px) {
+  body.homepage-premium-max .r4-owner-picture,
+  body.homepage-premium-max .r4-owner-hotspot {display:none!important}
 }
