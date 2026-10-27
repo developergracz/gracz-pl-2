@@ -105,3 +105,50 @@ jobs:
           path: ${{ runner.temp }}/css-reports/compact-1.json
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Compare font preloads using identical HTML and CSS
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/font-a" "$RUNNER_TEMP/font-b" "$RUNNER_TEMP/font-reports"
+          cp -a maintenance-site/. "$RUNNER_TEMP/font-a/"
+          cp -a maintenance-site/. "$RUNNER_TEMP/font-b/"
+          python3 - "$RUNNER_TEMP/font-b/index.html" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1])
+          txt=p.read_text()
+          old='<link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>'
+          new='<link rel="preload" href="/assets/fonts/opensans-latin-ext.woff2" as="font" type="font/woff2" crossorigin>'
+          assert txt.count(old)==1
+          p.write_text(txt.replace(old,new))
+          PY
+          python3 -m http.server 4191 -d "$RUNNER_TEMP/font-a" --bind 127.0.0.1 >/tmp/gracz-font-a.log 2>&1 &
+          P1=$!
+          python3 -m http.server 4192 -d "$RUNNER_TEMP/font-b" --bind 127.0.0.1 >/tmp/gracz-font-b.log 2>&1 &
+          P2=$!
+          trap 'kill "$P1" "$P2" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:4191/ >/dev/null && curl -sf http://127.0.0.1:4192/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for sample in 1 2; do
+            for variant in a b; do
+              port=4191
+              [ "$variant" = b ] && port=4192
+              npx --yes lighthouse@12.8.2 "http://127.0.0.1:$port/" --quiet --only-categories=performance --output=json --output-path="$RUNNER_TEMP/font-reports/$variant-$sample.json" --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --max-wait-for-load=20000
+            done
+          done
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const root=process.env.RUNNER_TEMP+'/font-reports';
+          const get=(variant)=>[1,2].map(i=>{
+            const d=JSON.parse(fs.readFileSync(root+'/'+variant+'-'+i+'.json','utf8'));
+            return {lcp:d.audits['largest-contentful-paint']?.numericValue,fcp:d.audits['first-contentful-paint']?.numericValue,cls:d.audits['cumulative-layout-shift']?.numericValue};
+          });
+          const a=get('a'),b=get('b');
+          const mean=x=>x.reduce((s,r)=>s+r.lcp,0)/x.length;
+          if([...a,...b].some(r=>!Number.isFinite(r.lcp)||!Number.isFinite(r.cls)))throw Error('Missing Lighthouse metrics');
+          console.log('FONT_PRELOAD_AB '+JSON.stringify({baseline:a,variant:b,meanBaseline:mean(a),meanVariant:mean(b),deltaMs:mean(b)-mean(a)}));
+          JS
