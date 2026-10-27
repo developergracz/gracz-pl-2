@@ -264,3 +264,86 @@ body.homepage-premium-max .site-footer .footer-news{background:
 @media(prefers-reduced-motion:reduce){
 .r4-homepage *{scroll-behavior:auto!important}
 }
+
+
+/* OWNER R4 FIDELITY — same approved graphic, no new components or services. */
+/* The screenshot is a continuous scene, not a hard-edged right column. */
+@media(min-width:1181px){
+ body.homepage-premium-max .site-header{height:76px!important;min-height:76px!important}
+ body.homepage-premium-max .site-header .header-inner{width:calc(100% - 94px)!important;max-width:1820px!important;gap:clamp(12px,1.15vw,22px)!important}
+ body.homepage-premium-max .site-header .nav-link{height:76px!important}
+ body.homepage-premium-max .site-header .main-nav{margin-left:clamp(2px,.7vw,15px)!important}
+ body.homepage-premium-max .site-header .nav-list{gap:clamp(10px,1.12vw,23px)!important}
+ body.homepage-premium-max .site-header .header-actions{gap:clamp(8px,.8vw,16px)!important}
+ body.homepage-premium-max .site-header .btn--outline.btn--head{border:1px solid #c99949!important;border-radius:9px!important;background:#050e17!important}
+ body.homepage-premium-max .site-header .btn--gold.btn--head{border-radius:9px!important}
+ body.homepage-premium-max .site-header .icon-btn.search-btn.search-btn--desktop{
+  display:inline-flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:center!important;gap:8px!important;width:46px!important;min-width:46px!important;
+  height:46px!important;min-height:46px!important;padding:0!important;white-space:nowrap!important;
+  border-radius:8px!important;background:transparent!important;line-height:1!important
+ }
+ body.homepage-premium-max .site-header .r4-search-label{
+  display:none!important;position:static!important;white-space:nowrap!important;
+  font:600 13px/1.2 Montserrat,Arial,sans-serif!important;color:#b8c4d0!important
+ }
+}
+@media(min-width:1600px){
+ body.homepage-premium-max .site-header .icon-btn.search-btn.search-btn--desktop{
+  width:160px!important;min-width:160px!important;justify-content:flex-start!important;
+  border:1px solid rgba(207,184,139,.28)!important;padding:0 12px!important
+ }
+ body.homepage-premium-max .site-header .r4-search-label{display:inline!important}
+}
+@media(min-width:1181px) and (max-width:1370px){
+ body.homepage-premium-max .site-header .header-inner{width:calc(100% - 36px)!important;gap:10px!important}
+ body.homepage-premium-max .site-header .main-nav{margin-left:2px!important}
+ body.homepage-premium-max .site-header .nav-list{gap:11px!important}
+ body.homepage-premium-max .site-header .nav-link{font-size:14px!important}
+ body.homepage-premium-max .site-header .logo{font-size:37px!important}
+}
+@media(min-width:1181px){
+ .r4-hero{display:block!important;height:clamp(395px,25vw,460px)!important;min-height:0!important;isolation:isolate;
+  background:#04121f!important;overflow:hidden}
+ .r4-hero-copy{position:relative!important;z-index:2!important;
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  justify-content:center!important;align-items:flex-start!important;
+  width:55%!important;height:100%!important;max-width:960px!important;
+  padding:17px 0 22px clamp(38px,3vw,65px)!important}
+ .r4-hero-art{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  pointer-events:none!important;z-index:1!important;
+  background-image:linear-gradient(90deg,#04121f 0%,rgba(4,18,31,.99) 20%,rgba(4,18,31,.82) 35%,rgba(4,18,31,.31) 51%,rgba(4,18,31,0) 70%),url("/assets/r4-reference-hero.webp")!important;
+  background-position:center,right center!important;
+  background-size:100% 100%,67% auto!important;background-repeat:no-repeat!important}
+ .r4-hero-art::after{background:linear-gradient(0deg,rgba(3,16,27,.55),transparent 17%)!important}
+ .r4-hero h1{font-size:clamp(37px,3.3vw,63px)!important;letter-spacing:-.045em!important}
+ .r4-hero-motto{font-size:clamp(20px,1.9vw,30px)!important}
+ .r4-hero-claim{font-size:clamp(21px,1.88vw,32px)!important}
+ .r4-hero-description{font-size:clamp(14px,1.04vw,18px)!important;max-width:780px!important;line-height:1.47!important}
+ .r4-hero-actions{gap:17px!important}
+ .r4-hero-actions .r4-btn{border-radius:9px!important;min-height:56px!important}
+ .r4-shortcuts{max-width:none!important;margin:0!important;padding:13px clamp(26px,3.15vw,64px)!important}
+ .r4-shortcuts strong{font-size:clamp(13px,.93vw,17px)!important}
+ .r4-shortcuts small{font-size:clamp(11px,.72vw,13px)!important}
+ .r4-section{width:calc(100% - clamp(60px,6.3vw,128px))!important;max-width:1792px!important}
+}
+@media(min-width:681px) and (max-width:1180px){
+ .r4-hero{display:grid!important;grid-template-columns:minmax(0,57%) minmax(0,43%)!important;
+  height:auto!important;min-height:380px!important}
+ .r4-hero-copy{display:block!important;width:auto!important;max-width:none!important;height:auto!important;padding:24px 12px 24px 26px!important}
+ .r4-hero-art{position:relative!important;inset:auto!important;min-height:380px!important;
+  background:linear-gradient(90deg,#061621 0%,transparent 22%),url("/assets/r4-reference-hero.webp") center/cover no-repeat!important}
+}
+@media(max-width:680px){
+ .r4-hero{height:auto!important;display:flex!important;flex-direction:column!important}
+ .r4-hero-copy{height:auto!important;width:100%!important;max-width:none!important;display:block!important;padding:26px 20px 20px!important}
+ .r4-hero-art{position:relative!important;inset:auto!important;height:clamp(190px,58vw,290px)!important;
+  width:100%!important;flex:none!important;background:linear-gradient(0deg,#041625 0%,transparent 19%),
+  linear-gradient(90deg,#04121f 0%,transparent 20%),url("/assets/r4-reference-hero.webp") right center/cover no-repeat!important}
+ .r4-hero-art::after{display:none!important}
+ .r4-shortcuts{scroll-padding-left:14px}
+}
+.r4-game{position:relative}
+.r4-game{cursor:pointer;text-decoration:none}
+.r4-game:hover,.r4-game:focus-within{border-color:#f4c171;box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.r4-game:focus-within{outline:2px solid #f8d58b;outline-offset:2px}
