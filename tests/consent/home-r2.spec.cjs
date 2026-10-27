@@ -52,7 +52,8 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   expect(layout.illustration).toContain('r4-reference-hero.webp');
+   if(width>=681)expect(layout.illustration).toContain('r4-reference-hero-crisp.svg');
+   else expect(layout.illustration).toContain('r4-reference-hero.webp');
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
@@ -118,4 +119,20 @@ test('R4 Newsletter opens its existing Premium dialog, without enabling held sig
   await page.locator('.site-header [data-newsletter-open]').click();
   await expect(page.locator('#newsletter-signup-modal')).toBeVisible({timeout:15000});
   await expect(page.locator('.site-footer form[data-newsletter] button[type=submit]')).toBeDisabled();
+});
+
+// The approved artwork must decode cleanly at its explicit 2x SVG render size,
+// not just be present as a CSS string or a 200 response.
+test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
+ await page.goto('/');
+ const result=await page.evaluate(async()=>{
+  const im=new Image();im.src='/assets/r4-reference-hero-crisp.svg';await im.decode();
+  return {width:im.naturalWidth,height:im.naturalHeight};
+ });
+ expect(result).toEqual({width:1002,height:474});
+ const response=await page.request.get('/assets/r4-reference-hero-crisp.svg');
+ expect(response.status()).toBe(200);
+ const svg=await response.text();
+ expect(svg).toContain('feConvolveMatrix');
+ expect(svg).not.toContain('<script');
 });
