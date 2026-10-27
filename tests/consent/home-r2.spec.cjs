@@ -21,7 +21,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
    await expect(page.locator('.r4-updates-grid .r4-update')).toHaveCount(3);
    await expect(page.locator('#spolecznosc')).toContainText('Forum w przygotowaniu');
-   await expect(page.locator('#gracz-next')).toContainText('nie jest jeszcze publicznie dostępny');
+   await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
    for(const [label,href] of [['Warcaby','/gry/warcaby/'],['Gomoku','/gry/gomoku/'],['Tysiąc','/gry/tysiac/'],['Poker treningowy','/gry/poker-treningowy/']]){
     const card=page.locator('.r4-game').filter({has:page.locator('h3', {hasText:label})});
     await expect(card).toHaveAttribute('href',href);
@@ -102,7 +102,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(Math.abs(geometry.heroHeight - width * 485 / 1828)).toBeLessThan(3);
+      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 485 / 1828)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
@@ -170,4 +170,50 @@ test('Owner hero preserves responsive HTML copy and ordinary links on mobile',as
   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
  }finally{await context.close()}
+});
+
+test('Owner R5 compact desktop hierarchy and active guide/community routes', async({browser})=>{
+ for(const width of [1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const m=await page.evaluate(()=>{
+    const rect=(s)=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
+    return {hero:rect('.r4-hero'),community:rect('.r4-community'),cVisual:rect('.r4-community-visual'),
+     guides:rect('.r4-guides'),guide:rect('.r4-guide'),blog:rect('.r4-updates'),
+     blogCard:rect('.r4-update'),phone:rect('.r4-phone'),next:rect('.r4-next'),
+     image:getComputedStyle(document.querySelector('.r4-guide-photo')).position,
+     columns:getComputedStyle(document.querySelector('.r4-guides-grid')).gridTemplateColumns.split(' ').length,
+     scrollWidth:document.documentElement.scrollWidth};
+   });
+   expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
+   expect(m.hero.h).toBeLessThan(410);
+   expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.50);
+   expect(m.guide.h).toBeGreaterThan(210);
+   expect(m.guide.h).toBeLessThan(250);
+   expect(m.image).toBe('absolute');
+   expect(m.columns).toBe(4);
+   expect(m.phone.x).toBeGreaterThan(m.blogCard.right);
+   expect(m.phone.y).toBeGreaterThanOrEqual(m.blog.y-1);
+   await expect(page.locator('.r4-community-tags span')).toHaveCount(4);
+   await expect(page.locator('.r4-phone-community')).toContainText('Forum w przygotowaniu');
+   await expect(page.locator('.r4-guide[href="/gry/warcaby/zasady/"]')).toBeVisible();
+  }finally{await context.close();}
+ }
+});
+test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844}});
+ try{
+  const page=await context.newPage();await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const v=await page.evaluate(()=>({
+   scroll:document.documentElement.scrollWidth,
+   columns:getComputedStyle(document.querySelector('.r4-guides-grid')).gridTemplateColumns.split(' ').length,
+   phone:getComputedStyle(document.querySelector('.r4-phone')).display
+  }));
+  expect(v.scroll).toBeLessThanOrEqual(392);
+  expect(v.columns).toBe(2);
+  expect(v.phone).toBe('none');
+ }finally{await context.close();}
 });
