@@ -247,6 +247,11 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
    const form=page.locator('.site-footer form[data-newsletter]');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   await expect(notice.locator('a')).toHaveAttribute('href','/newsletter/#nl-maintenance-notice');
+   const noticeFont=await notice.locator('a').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+   expect(noticeFont).toBeLessThan(13);
   }finally{await context.close()}
  }
 });
