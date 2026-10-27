@@ -353,3 +353,18 @@ body.homepage-premium-max .site-header{
     transition:none!important;
   }
 }
+
+/* Final gold accents: existing navigational actions, no new components. */
+.homepage-premium-max :is(.knowledge-premium__primary,.ai-poker-premium__primary,.community-premium__primary){
+  background:linear-gradient(130deg,#fbe2a0,#dab16b)!important;
+  color:#152032!important;border-color:rgba(254,227,168,.58)!important;
+}
+.homepage-premium-max :is(.knowledge-premium__primary,.ai-poker-premium__primary,.community-premium__primary) :is(span,strong,small,b,svg){
+  color:inherit!important;
+}
+.homepage-premium-max :is(.academy-tile__cta,.popular-card__copy em,.home-update-card__content em,.knowledge-card__arrow){
+  color:#f6d08b!important;
+}
+.homepage-premium-max :is(.updates-premium__all,.popular-premium__all,.community-premium__secondary){
+  color:#efcd8c!important;border-color:rgba(236,194,113,.45)!important;
+}
