@@ -102,8 +102,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(geometry.heroHeight).toBeGreaterThan(385);
-      expect(geometry.heroHeight).toBeLessThanOrEqual(465);
+      expect(Math.abs(geometry.heroHeight - width * 485 / 1828)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
@@ -135,4 +134,40 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
  const svg=await response.text();
  expect(svg).toContain('feConvolveMatrix');
  expect(svg).not.toContain('<script');
+});
+
+
+test('Owner exact screenshot is rendered at native dimensions on desktop, with live clickable buttons',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:1649,height:900}});
+ try {
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const exact=page.locator('.r4-owner-image');
+  await expect(exact).toBeVisible();
+  await exact.evaluate(el=>el.decode());
+  const dims=await exact.evaluate(el=>({width:el.naturalWidth,height:el.naturalHeight,currentSrc:el.currentSrc,cssWidth:el.getBoundingClientRect().width,cssHeight:el.getBoundingClientRect().height}));
+  expect(dims.width).toBe(1828);
+  expect(dims.height).toBe(485);
+  expect(dims.currentSrc).toContain('hero-owner-exact-20261027.webp');
+  expect(Math.abs(dims.cssHeight/dims.cssWidth-485/1828)).toBeLessThan(.002);
+  const links=page.locator('.r4-owner-hotspot');
+  await expect(links).toHaveCount(2);
+  await expect(page.locator('.r4-owner-hotspot--games')).toHaveAttribute('href','/gry/');
+  await expect(page.locator('.r4-owner-hotspot--guides')).toHaveAttribute('href','/poradniki/');
+  await page.locator('.r4-owner-hotspot--games').click();
+  await expect(page).toHaveURL(/\/gry\/$/);
+ }finally{await context.close()}
+});
+test('Owner hero preserves responsive HTML copy and ordinary links on mobile',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844}});
+ try{
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  await expect(page.locator('.r4-owner-picture')).toBeHidden();
+  await expect(page.locator('.r4-hero-copy')).toBeVisible();
+  await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
+  await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
+ }finally{await context.close()}
 });
