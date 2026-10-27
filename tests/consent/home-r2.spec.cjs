@@ -102,7 +102,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 485 / 1828)).toBeLessThan(3);
+      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 914 / 1721)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
@@ -137,7 +137,7 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
 });
 
 
-test('R11 hero: sharp native heading, owner photograph and interactive CTAs on desktop',async({browser})=>{
+test('R13: approved Full Max artwork is actually displayed with accessible clickable CTAs',async({browser})=>{
  for(const width of [1181,1366,1649,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -148,42 +148,35 @@ test('R11 hero: sharp native heading, owner photograph and interactive CTAs on d
    await expect(exact).toBeVisible();
    await exact.evaluate(el=>el.decode());
    const dims=await exact.evaluate(el=>({
-    width:el.naturalWidth,height:el.naturalHeight,src:el.currentSrc,
-    imgRatio:el.getBoundingClientRect().width/el.getBoundingClientRect().height
+    naturalWidth:el.naturalWidth,naturalHeight:el.naturalHeight,
+    src:el.currentSrc,
+    imageRect:el.getBoundingClientRect().toJSON(),
+    heroRect:document.querySelector('.r4-hero').getBoundingClientRect().toJSON(),
+    game:document.querySelector('.r4-owner-hotspot--games').getBoundingClientRect().toJSON(),
+    guides:document.querySelector('.r4-owner-hotspot--guides').getBoundingClientRect().toJSON(),
+    copyVisible:getComputedStyle(document.querySelector('.r4-hero-copy')).clipPath,
+    overflow:document.documentElement.scrollWidth
    }));
-   expect(dims.width).toBe(1828);
-   expect(dims.height).toBe(485);
-   expect(dims.src).toContain('hero-owner-exact-20261027.webp');
-   expect(Math.abs(dims.imgRatio-1828/485)).toBeLessThan(.03);
-   await expect(page.locator('#hero-title')).toBeVisible();
-   await expect(page.locator('.r4-hero-motto')).toBeVisible();
-   await expect(page.locator('.r4-hero-claim')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
-   const layout=await page.evaluate(()=>{
-    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();
-      return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    const copy=document.querySelector('.r4-hero-copy');
-    const art=document.querySelector('.r4-owner-picture');
-    return {hero:rect('.r4-hero'),copy:rect('.r4-hero-copy'),
-     title:rect('#hero-title'),claim:rect('.r4-hero-claim'),
-     game:rect('.r4-hero-actions a[href="/gry/"]'),
-     guides:rect('.r4-hero-actions a[href="/poradniki/"]'),
-     mask:getComputedStyle(art).maskImage,
-     copied:getComputedStyle(copy).clipPath,
-     pageWidth:document.documentElement.scrollWidth};
-   });
-   expect(layout.mask).toContain('linear-gradient');
-   expect(layout.copied).toBe('none');
-   expect(layout.copy.width).toBeGreaterThan(400);
-   expect(layout.copy.bottom).toBeLessThanOrEqual(layout.hero.bottom+2);
-   expect(layout.title.right).toBeLessThanOrEqual(layout.hero.right+2);
-   expect(layout.claim.right).toBeLessThanOrEqual(layout.hero.right+2);
-   expect(layout.guides.right).toBeLessThanOrEqual(layout.hero.right+2);
-   expect(layout.game.bottom).toBeLessThanOrEqual(layout.hero.bottom+2);
-   expect(layout.pageWidth).toBeLessThanOrEqual(width+2);
-   await page.locator('.r4-hero-actions a[href="/gry/"]').click();
-   await expect(page).toHaveURL(/\/gry\/$/);
+   expect(dims.naturalWidth).toBe(1721);
+   expect(dims.naturalHeight).toBe(914);
+   expect(dims.src).toContain('hero-owner-fullmax-approved-r13.webp');
+   expect(Math.abs(dims.heroRect.height/dims.heroRect.width-914/1721)).toBeLessThan(.01);
+   expect(Math.abs(dims.imageRect.height/dims.imageRect.width-914/1721)).toBeLessThan(.02);
+   expect(dims.heroRect.height).toBeGreaterThan(600);
+   expect(dims.copyVisible).toContain('inset');
+   expect(dims.overflow).toBeLessThanOrEqual(width+2);
+   for(const rect of [dims.game,dims.guides]){
+    expect(rect.left).toBeGreaterThanOrEqual(dims.heroRect.left);
+    expect(rect.right).toBeLessThanOrEqual(dims.heroRect.right+2);
+    expect(rect.top).toBeGreaterThanOrEqual(dims.heroRect.top);
+    expect(rect.bottom).toBeLessThanOrEqual(dims.heroRect.bottom+2);
+   }
+   await expect(page.locator('.r4-owner-hotspot--games')).toHaveAttribute('href','/gry/');
+   await expect(page.locator('.r4-owner-hotspot--guides')).toHaveAttribute('href','/poradniki/');
+   if(width===1366) {
+     await page.locator('.r4-owner-hotspot--games').click();
+     await expect(page).toHaveURL(/\/gry\/$/);
+   }
   }finally{await context.close()}
  }
 });
@@ -216,7 +209,8 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
      scrollWidth:document.documentElement.scrollWidth};
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
-   expect(m.hero.h).toBeLessThan(410);
+   expect(m.hero.h).toBeGreaterThan(620);
+   expect(m.hero.h).toBeLessThan(810);
    expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.33);
    expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
    expect(m.cVisual.h).toBeLessThan(m.community.h);
