@@ -1,0 +1,49 @@
+/* Owner-approved Full Max Premium community artwork. Only right visual card. */
+body.homepage-premium-max .r4-homepage .r4-community-promo{
+  display:block!important;
+  min-height:0!important;
+  width:100%!important;
+  padding:0!important;
+  border:1px solid rgba(229,179,88,.58)!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+  background:#061522!important;
+  background-image:none!important;
+  aspect-ratio:3 / 1;
+  position:relative!important;
+  box-sizing:border-box!important;
+  line-height:0!important;
+  isolation:isolate;
+  box-shadow:0 8px 22px rgba(0,0,0,.23);
+  text-decoration:none!important;
+}
+body.homepage-premium-max .r4-homepage .r4-community-promo picture{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+}
+body.homepage-premium-max .r4-homepage .r4-community-promo img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  aspect-ratio:3/1;
+  max-width:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+body.homepage-premium-max .r4-homepage .r4-community-promo:hover{
+  border-color:#f4cc79!important;
+}
+body.homepage-premium-max .r4-homepage .r4-community-promo:focus-visible{
+  outline:3px solid #f6d781!important;
+  outline-offset:4px!important;
+}
+@media(max-width:1180px){
+  body.homepage-premium-max .r4-homepage .r4-community-promo{
+    min-height:0!important;
+    height:auto!important;
+    aspect-ratio:3/1!important;
+  }
+}
