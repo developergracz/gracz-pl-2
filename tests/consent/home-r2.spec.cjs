@@ -56,6 +56,9 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
+   // Sticky header must be captured at the top, not where footer scrolling left it.
+   await page.evaluate(()=>scrollTo(0,0));
+   await page.waitForTimeout(80);
    const filename=path.resolve('test-results/home-r4/full-'+width+'.png');
    fs.mkdirSync(path.dirname(filename),{recursive:true});
    await page.screenshot({path:filename,fullPage:true,animations:'disabled'});
