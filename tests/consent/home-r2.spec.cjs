@@ -172,6 +172,10 @@ test('R14: approved Full Max artwork is actually displayed with accessible click
    }
    await expect(page.locator('.r4-owner-hotspot--games')).toHaveAttribute('href','/gry/');
    await expect(page.locator('.r4-owner-hotspot--guides')).toHaveAttribute('href','/poradniki/');
+   for(const hotspot of ['.r4-owner-hotspot--games','.r4-owner-hotspot--guides']) {
+     await page.locator(hotspot).hover();
+     expect(await page.locator(hotspot).evaluate(el=>getComputedStyle(el).boxShadow)).toBe('none');
+   }
    if(width===1366) {
      await page.locator('.r4-owner-hotspot--games').click();
      await expect(page).toHaveURL(/\/gry\/$/);
