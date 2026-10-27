@@ -138,9 +138,9 @@
     padding:19px 280px 22px 0!important;
     background-image:
       linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 27%,rgba(4,22,37,.7) 39%,rgba(4,22,37,.10) 57%,transparent 78%),
-      url("/assets/r4-reference-newsletter-sharp.svg")!important;
+      url("/assets/r4-reference-newsletter.webp")!important;
     background-position:center,right 255px center!important;
-    background-size:100% 100%,auto 80%!important;
+    background-size:100% 100%,auto 73%!important;
     background-repeat:no-repeat!important;
   }
   body.homepage-premium-max .site-footer .footer-news #f-news {
@@ -187,22 +187,22 @@ body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
   background-position:68% center!important;
 }
 
-/* Owner R7: fit the ENTIRE newsletter illustration into the reserved area.
-   Sharp SVG lettering is independent of the 336x200 source photo.
-   No overlays on the form, no changes to newsletter behavior. */
+/* Owner R8: render the unaltered laptop photograph at a smaller scale.
+   No artificial vector captions: the screen content stays in perspective
+   inside the photographed laptop bezel; forms and SEO stay unchanged. */
 @media (min-width:1181px) {
   body.homepage-premium-max .site-footer .footer-news {
     background-image:
       linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 28%,rgba(4,22,37,.82) 42%,rgba(4,22,37,.12) 59%,transparent 79%),
-      url("/assets/r4-reference-newsletter-crisp-r7.svg")!important;
-    background-size:100% 100%,auto 270px!important;
+      url("/assets/r4-reference-newsletter.webp")!important;
+    background-size:100% 100%,auto 244px!important;
     background-position:center,right 255px center!important;
     background-repeat:no-repeat!important;
   }
 }
 @media (min-width:1181px) and (max-width:1350px) {
   body.homepage-premium-max .site-footer .footer-news {
-    background-size:100% 100%,auto 255px!important;
+    background-size:100% 100%,auto 218px!important;
     background-position:center,right 238px center!important;
   }
 }
@@ -212,8 +212,8 @@ body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
     min-height:275px!important;
     background-image:
       linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 36%,rgba(4,22,37,.55) 65%,transparent 100%),
-      url("/assets/r4-reference-newsletter-crisp-r7.svg")!important;
-    background-size:100% 100%,auto 205px!important;
+      url("/assets/r4-reference-newsletter.webp")!important;
+    background-size:100% 100%,auto 190px!important;
     background-position:center,right 7px center!important;
     background-repeat:no-repeat!important;
   }
@@ -225,8 +225,8 @@ body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
     min-height:410px!important;
     background-image:
       linear-gradient(180deg,#041625 0%,rgba(4,22,37,.97) 44%,rgba(4,22,37,.25) 100%),
-      url("/assets/r4-reference-newsletter-crisp-r7.svg")!important;
-    background-size:100% 100%,auto min(46vw,195px)!important;
+      url("/assets/r4-reference-newsletter.webp")!important;
+    background-size:100% 100%,auto min(43vw,180px)!important;
     background-position:center,right 8px bottom 10px!important;
     background-repeat:no-repeat!important;
   }
