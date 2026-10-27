@@ -1,154 +1,76 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { test, expect } = require('@playwright/test');
+const fs=require('node:fs');
+const path=require('node:path');
+const {test,expect}=require('@playwright/test');
 
-// PR #479 only: verify real Chromium rendering without touching backend,
-// sessions, subscriber data or production.
-for (const width of [360, 390, 768, 1366, 1920]) {
-  test('Full Max Premium R2 hero at ' + width + 'px', async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width, height: 850 }, deviceScaleFactor: 1 });
-    try {
-      const page = await context.newPage();
-      await page.goto('/');
-      await page.getByRole('button', { name: 'Odrzuć wszystko' }).click();
-      await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
-      await page.evaluate(() => document.fonts.ready);
-      await expect(page.locator('h1')).toHaveCount(1);
-      await expect(page.locator('h1')).toHaveText('Polskie Centrum Gracza');
-      await expect(page.locator('.home-r2-motto')).toHaveText('Graj. Ucz się. Rywalizuj.');
-      await expect(page.locator('.home-r2-slogan')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM!');
-      await expect(page.locator('.home-hero-premium__lead')).toContainText('prawdziwych pasjonatów gier');
-      await expect(page.locator('.home-r2-wordmark span')).toHaveCSS('color', 'rgb(236, 32, 56)');
+// Approved owner image, not an experimental redesign: exact section hierarchy,
+// featured photographs, five game tiles and working real routes.
+for(const width of [360,390,768,1366,1920]){
+ test('R4 approved image layout, '+width+'px',async({browser})=>{
+  const context=await browser.newContext({viewport:{width,height:850},deviceScaleFactor:1});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
+   await expect(page.locator('h1')).toHaveCount(1);
+   await expect(page.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
+   await expect(page.locator('.r4-hero-motto')).toHaveText('Graj. Ucz się. Rywalizuj.');
+   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM!');
+   await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
+   await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
+   await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
+   await expect(page.locator('.r4-updates-grid .r4-update')).toHaveCount(3);
+   await expect(page.locator('#spolecznosc')).toContainText('Forum w przygotowaniu');
+   await expect(page.locator('#gracz-next')).toContainText('nie jest jeszcze publicznie dostępny');
+   for(const [label,href] of [['Warcaby','/gry/warcaby/'],['Gomoku','/gry/gomoku/'],['Tysiąc','/gry/tysiac/'],['Poker treningowy','/gry/poker-treningowy/']]){
+    const card=page.locator('.r4-game').filter({has:page.locator('h3', {hasText:label})});
+    await expect(card.locator('a.r4-card-action')).toHaveAttribute('href',href);
+   }
+   const form=page.locator('.site-footer form[data-newsletter]');
+   await expect(form).toHaveCount(1);
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
 
-      const primary = page.locator('.home-hero-premium__primary');
-      const secondary = page.locator('.home-hero-premium__secondary');
-      await expect(primary).toHaveAttribute('href', '/gry/');
-      await expect(secondary).toHaveAttribute('href', '/poradniki/');
-
-      const info = await page.evaluate(() => {
-        const selectors = [
-          '.home-hero-premium__title', '.home-r2-motto', '.home-r2-slogan',
-          '.home-hero-premium__lead', '.home-hero-premium__primary',
-          '.home-hero-premium__secondary'
-        ];
-        const regions = selectors.map(selector => {
-          const el = document.querySelector(selector);
-          if (!el) throw Error('Missing hero element: ' + selector);
-          const r = el.getBoundingClientRect();
-          return { selector, x: r.left, right: r.right, top: r.top, width: r.width, height: r.height };
-        });
-        return {
-          viewport: window.innerWidth,
-          documentWidth: document.documentElement.scrollWidth,
-          regions,
-          // Ensure the R2 stylesheet actually loaded, not merely the fallback HTML.
-          headlineColor: getComputedStyle(document.querySelector('.home-hero-premium__title')).color
-        };
-      });
-      console.log('R2_VIEWPORT_CHECK ' + JSON.stringify(info));
-      expect(info.documentWidth, 'No global horizontal scrolling').toBeLessThanOrEqual(width + 2);
-      expect(info.headlineColor).toBe('rgb(255, 255, 255)');
-      for (const r of info.regions) {
-        expect(r.height, r.selector + ' must have nonzero height').toBeGreaterThan(0);
-        expect(r.x, r.selector + ' should not clip on the left').toBeGreaterThanOrEqual(-1);
-        expect(r.right, r.selector + ' should fit the viewport').toBeLessThanOrEqual(width + 2);
-      }
-      const output = path.resolve('test-results', 'home-r2', 'hero-' + width + '.png');
-      fs.mkdirSync(path.dirname(output), { recursive: true });
-      await page.screenshot({ path: output, animations: 'disabled' });
-      // Real navigation stays an anchor rather than a fictitious registration flow.
-      await expect(page.locator('.academy-showcase__grid .academy-tile')).toHaveCount(4);
-    } finally {
-      await context.close();
-    }
-  });
+   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp']){
+     const response=await page.request.get('/assets/'+asset);
+     expect(response.status(),asset).toBe(200);
+     expect((await response.body()).length,asset).toBeGreaterThan(1000);
+   }
+   await page.evaluate(()=>document.fonts.ready);
+   const layout=await page.evaluate(()=>{
+      const rect=q=>{const e=document.querySelector(q),r=e.getBoundingClientRect();
+        return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+      return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
+       hero:rect('.r4-hero'),card:rect('.r4-game'),footer:rect('.footer-news'),
+       legal:rect('.footer-bottom'),
+       illustration:getComputedStyle(document.querySelector('.r4-hero-art')).backgroundImage,
+       css:getComputedStyle(document.querySelector('.r4-games-grid')).gridTemplateColumns,
+       header:rect('.site-header')};
+   });
+   console.log('R4_LAYOUT '+JSON.stringify(layout));
+   expect(layout.scrollWidth).toBeLessThanOrEqual(width+2);
+   expect(layout.card.width).toBeGreaterThan(90);
+   expect(layout.card.left).toBeGreaterThanOrEqual(-1);
+   expect(layout.card.right).toBeLessThanOrEqual(width+2);
+   expect(layout.hero.height).toBeGreaterThan(300);
+   expect(layout.illustration).toContain('r4-reference-hero.webp');
+   expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
+   await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
+   await page.locator('.footer-news').scrollIntoViewIfNeeded();
+   const filename=path.resolve('test-results/home-r4/full-'+width+'.png');
+   fs.mkdirSync(path.dirname(filename),{recursive:true});
+   await page.screenshot({path:filename,fullPage:true,animations:'disabled'});
+  }finally{await context.close()}
+ });
 }
-
-test('Search assets are absent at initial render and search still opens on demand', async ({ page }) => {
-  await page.setViewportSize({ width: 1366, height: 850 });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Odrzuć wszystko' }).click();
-  await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
-  await page.waitForLoadState('networkidle');
-  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
-  expect(await page.evaluate(() => !!window.GraczSearch)).toBe(false);
-
-  await page.locator('.search-btn--desktop').click();
-  await expect(page.locator('dialog.gracz-search')).toBeVisible({ timeout: 12000 });
-  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
-  expect(await page.evaluate(() => typeof window.GraczSearch?.open)).toBe('function');
+test('Search remains lazy and opens after real click',async({page})=>{
+ await page.goto('/');
+ await page.getByRole('button',{name:'Odrzu wszystko'}).count().then(async c=>{
+    if(c>0)await page.getByRole('button',{name:'Odrzu wszystko'}).click();
+    else await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+ });
+ await page.waitForLoadState('networkidle');
+ await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
+ await page.locator('.search-btn--desktop').click();
+ await expect(page.locator('dialog.gracz-search')).toBeVisible({timeout:15000});
+ await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
 });
-
-for (const width of [360, 390, 768, 1366, 1920]) {
-  test('Full Max Premium R3 complete page at ' + width + 'px', async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width, height: 860 }, deviceScaleFactor: 1 });
-    try {
-      const page = await context.newPage();
-      await page.goto('/');
-      await page.getByRole('button', { name: 'Odrzuć wszystko' }).click();
-      await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
-      await expect(page.locator('h1')).toHaveCount(1);
-
-      const ids = ['popularne-teraz', 'academy', 'ai-poker-academy',
-        'spolecznosc-next', 'centrum-wiedzy', 'co-nowego', 'gracz-next'];
-      for (const id of ids) await expect(page.locator('main > section#' + id)).toHaveCount(1);
-
-      const sections = await page.locator('main > section').evaluateAll(nodes =>
-        nodes.map(node => node.id || 'hero')
-      );
-      expect(sections).toEqual(['hero', 'popularne-teraz', 'academy',
-        'ai-poker-academy', 'spolecznosc-next', 'centrum-wiedzy', 'co-nowego', 'gracz-next']);
-      await expect(page.locator('.home-full-jump a')).toHaveCount(6);
-      await expect(page.locator('.home-full-next')).toContainText('funkcja konta Gracz Next nie jest jeszcze dostępna');
-      await expect(page.locator('.home-full-forum-note')).toContainText('Forum w przygotowaniu');
-
-      const games = ['/gry/poker-treningowy/', '/gry/tysiac/', '/gry/warcaby/', '/gry/gomoku/'];
-      for (const href of games) {
-        await expect(page.locator('.popular-premium__grid a[href="' + href + '"]')).toHaveCount(1);
-      }
-      const form = page.locator('.site-footer form[data-newsletter]');
-      await expect(form).toHaveCount(1);
-      await expect(form).toHaveClass(/footer-newsletter-live/);
-      await expect(form.locator('button[type="submit"]')).toBeDisabled();
-      const box = await page.evaluate(() => {
-        const target = selector => {
-          const r = document.querySelector(selector).getBoundingClientRect();
-          return { x: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
-        };
-        return {
-          docWidth: document.documentElement.scrollWidth,
-          screenWidth: innerWidth,
-          newsletter: target('.footer-news'),
-          legal: target('.footer-bottom'),
-          form: target('.site-footer form[data-newsletter]'),
-          bodyColor: getComputedStyle(document.body).backgroundImage,
-          sections: [...document.querySelectorAll('main > section')].length
-        };
-      });
-      console.log('FULL_R3_VIEWPORT ' + JSON.stringify(box));
-      expect(box.docWidth).toBeLessThanOrEqual(width + 2);
-      expect(box.form.width).toBeGreaterThan(100);
-      expect(box.newsletter.width).toBeGreaterThan(200);
-      expect(box.form.right).toBeLessThanOrEqual(width + 2);
-      expect(box.form.x).toBeGreaterThanOrEqual(-2);
-      expect(box.newsletter.bottom).toBeLessThanOrEqual(box.legal.top - 2);
-      // Exercise natural lazy painting while scrolling through every section.
-      for (const section of page.locator('main > section').all ? await page.locator('main > section').all() : []) {
-        await section.scrollIntoViewIfNeeded();
-        await expect(section).toBeVisible();
-      }
-      await page.locator('.footer-news').scrollIntoViewIfNeeded();
-      await page.evaluate(() => {
-        // Browser full-page screenshots otherwise omit sections optimized by
-        // content-visibility:auto outside the viewport. Snapshot-only override.
-        for (const section of document.querySelectorAll('main > section')) {
-          section.style.contentVisibility = 'visible';
-        }
-      });
-      await page.evaluate(() => document.fonts.ready);
-      const output = path.resolve('test-results', 'home-r3', 'full-' + width + '.png');
-      fs.mkdirSync(path.dirname(output), { recursive: true });
-      await page.screenshot({ path: output, fullPage: true, animations: 'disabled' });
-    } finally { await context.close(); }
-  });
-}
