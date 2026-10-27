@@ -349,7 +349,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R7 newsletter image remains fully contained and crisp at mobile/tablet/desktop',async({browser})=>{
+test('R8 newsletter original photo fits without vector overlays at mobile/tablet/desktop',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -357,16 +357,17 @@ test('R7 newsletter image remains fully contained and crisp at mobile/tablet/des
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const img=await page.evaluate(async()=>{
     const art=new Image();
-    art.src='/assets/r4-reference-newsletter-crisp-r7.svg';
+    art.src='/assets/r4-reference-newsletter.webp';
     await art.decode();
     const css=getComputedStyle(document.querySelector('.site-footer .footer-news'));
     return {naturalWidth:art.naturalWidth,naturalHeight:art.naturalHeight,
      background:css.backgroundImage,size:css.backgroundSize,
      overflow:document.documentElement.scrollWidth};
    });
-   expect(img.naturalWidth).toBe(672);
-   expect(img.naturalHeight).toBe(400);
-   expect(img.background).toContain('r4-reference-newsletter-crisp-r7.svg');
+   expect(img.naturalWidth).toBe(336);
+   expect(img.naturalHeight).toBe(200);
+   expect(img.background).toContain('r4-reference-newsletter.webp');
+   expect(img.background).not.toMatch(/newsletter-(?:crisp|sharp)[^)]*\.svg/);
    expect(img.size).not.toContain('cover');
    expect(img.overflow).toBeLessThanOrEqual(width+2);
    const signup=page.locator('.site-footer form[data-newsletter]');
