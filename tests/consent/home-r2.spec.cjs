@@ -286,7 +286,9 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
    const section=page.locator('#spolecznosc');
    const image=section.locator('img.r4-community-art');
    await expect(section.getByRole('heading',{name:'Społeczność GRACZ.PL'})).toBeVisible();
+   await image.scrollIntoViewIfNeeded();
    await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
    const info=await image.evaluate(async img=>{
     await img.decode();
     const rect=img.getBoundingClientRect();
