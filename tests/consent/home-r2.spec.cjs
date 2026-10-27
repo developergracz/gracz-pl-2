@@ -63,3 +63,18 @@ for (const width of [360, 390, 768, 1366, 1920]) {
     }
   });
 }
+
+test('Search assets are absent at initial render and search still opens on demand', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 850 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Odrzuć wszystko' }).click();
+  await expect(page.locator('#gracz-cookie-consent')).toBeHidden();
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
+  expect(await page.evaluate(() => !!window.GraczSearch)).toBe(false);
+
+  await page.locator('.search-btn--desktop').click();
+  await expect(page.locator('dialog.gracz-search')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
+  expect(await page.evaluate(() => typeof window.GraczSearch?.open)).toBe('function');
+});
