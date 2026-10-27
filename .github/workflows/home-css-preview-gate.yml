@@ -96,3 +96,12 @@ jobs:
           if(compact.cls>original.cls+0.03)
             throw Error("Compacted CSS increases mobile layout shifting");
           JS
+
+      - name: Preserve Lighthouse diagnostics for R2 review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-r2-lighthouse-diagnostics
+          path: ${{ runner.temp }}/css-reports/compact-1.json
+          if-no-files-found: ignore
+          retention-days: 7
