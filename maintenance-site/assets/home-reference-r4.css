@@ -344,6 +344,6 @@ body.homepage-premium-max .site-footer .footer-news{background:
  .r4-shortcuts{scroll-padding-left:14px}
 }
 .r4-game{position:relative}
-.r4-game .r4-card-action::after{content:"";position:absolute;inset:0;z-index:1;cursor:pointer}
+.r4-game{cursor:pointer;text-decoration:none}
 .r4-game:hover,.r4-game:focus-within{border-color:#f4c171;box-shadow:0 14px 30px rgba(0,0,0,.35)}
 .r4-game:focus-within{outline:2px solid #f8d58b;outline-offset:2px}
