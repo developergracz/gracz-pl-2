@@ -291,3 +291,26 @@ body.homepage-premium-max .site-footer .footer-bottom{
 
 /* Keep the copyright separator visibly below the newsletter image. */
 @media(min-width:1181px){body.homepage-premium-max .site-footer .footer-bottom{margin-top:4px!important}}
+
+/* Original reference footer: white/red wordmark followed by navigation and copyright. */
+@media(min-width:1181px){
+ body.homepage-premium-max .site-footer .footer-grid>.footer-brand{
+  display:flex!important;position:absolute!important;left:28px;bottom:7px;
+  z-index:3;align-items:center;grid-column:auto!important;grid-row:auto!important
+ }
+ body.homepage-premium-max .site-footer .footer-brand .logo{
+  font-size:25px!important;line-height:1!important;font-weight:900!important;color:#fff!important
+ }
+ body.homepage-premium-max .site-footer .footer-brand>p{display:none!important}
+ body.homepage-premium-max .site-footer .footer-bottom{
+  display:flex!important;align-items:center!important;gap:16px!important;
+  padding-left:126px!important
+ }
+ body.homepage-premium-max .site-footer .footer-bottom .legal{
+  order:1!important;display:flex!important;gap:14px!important
+ }
+ body.homepage-premium-max .site-footer .footer-bottom .social{order:2!important;display:flex!important}
+ body.homepage-premium-max .site-footer .footer-bottom .copy{
+  order:3!important;margin-left:auto!important;font-size:10px!important
+ }
+}
