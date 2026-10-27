@@ -272,3 +272,37 @@ test('R5 mobile footer retains original brand without duplicate link or overflow
   expect(state.phone).toBe('none');
  }finally{await context.close();}
 });
+
+
+test('Owner final community graphic replaces previous overlay, decodes and stays clickable',async({browser})=>{
+ for(const width of [390,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:880}});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const card=page.locator('.r4-community-promo');
+   await expect(card).toHaveAttribute('href','/o-gracz-pl/');
+   await expect(card.locator('picture source')).toHaveAttribute('srcset','/assets/community-full-max-owner-20261027.avif');
+   await expect(card.locator('img')).toBeVisible();
+   const info=await card.evaluate(async el=>{
+    const img=el.querySelector('img');await img.decode();
+    const r=el.getBoundingClientRect();
+    const css=getComputedStyle(el);
+    return {w:r.width,h:r.height,src:img.currentSrc,iw:img.naturalWidth,ih:img.naturalHeight,
+      bg:css.backgroundImage,overflow:document.documentElement.scrollWidth};
+   });
+   expect(info.iw).toBe(1024);
+   expect(info.ih).toBe(341);
+   expect(info.src).toContain('community-full-max-owner-20261027.avif');
+   expect(info.bg).toBe('none');
+   expect(Math.abs(info.w/info.h-3)).toBeLessThan(.12);
+   expect(info.overflow).toBeLessThanOrEqual(width+2);
+   await expect(page.locator('.r4-community-panel')).toHaveCount(0);
+   if(width===1366){
+    await card.click();
+    await expect(page).toHaveURL(/\/o-gracz-pl\/$/);
+   }
+  }finally{await context.close()}
+ }
+});
