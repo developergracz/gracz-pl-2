@@ -217,3 +217,58 @@ test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async
   expect(v.phone).toBe('none');
  }finally{await context.close();}
 });
+
+test('R5 desktop footer aligns its logo and newsletter image clears floating phone',async({browser})=>{
+ for(const width of [1366,1600,1920]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const info=await page.evaluate(()=>{
+     const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,midY:(r.top+r.bottom)/2};};
+     const newsletter=document.querySelector('.site-footer .footer-news');
+     return {scroll:document.documentElement.scrollWidth,
+       phone:rect('.r4-phone'),blog:rect('.r4-updates'),
+       news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
+       logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
+       newsBackgroundPosition:getComputedStyle(newsletter).backgroundPosition,
+       newsBackgroundSize:getComputedStyle(newsletter).backgroundSize,
+       logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
+     };
+   });
+   expect(info.scroll).toBeLessThanOrEqual(width+2);
+   expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
+   expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
+   expect(info.newsBackgroundPosition).toContain('255px');
+   expect(info.logoDisplay).not.toBe('none');
+   expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
+   expect(info.logo.bottom).toBeLessThanOrEqual(info.footer.bottom+1);
+   expect(info.phone.bottom).toBeLessThanOrEqual(info.footer.top+4);
+   const form=page.locator('.site-footer form[data-newsletter]');
+   await expect(form.locator('input[type=email]')).toBeVisible();
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   await expect(notice.locator('a')).toHaveAttribute('href','/newsletter/#nl-maintenance-notice');
+   const noticeFont=await notice.locator('a').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+   expect(noticeFont).toBeLessThan(13);
+  }finally{await context.close()}
+ }
+});
+test('R5 mobile footer retains original brand without duplicate link or overflow',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844}});
+ try{
+  const page=await context.newPage();await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const state=await page.evaluate(()=>({
+   scroll:document.documentElement.scrollWidth,
+   addedLogo:getComputedStyle(document.querySelector('.footer-signature-logo')).display,
+   baseLogo:getComputedStyle(document.querySelector('.site-footer .footer-brand')).display,
+   phone:getComputedStyle(document.querySelector('.r4-phone')).display
+  }));
+  expect(state.scroll).toBeLessThanOrEqual(392);
+  expect(state.addedLogo).toBe('none');
+  expect(state.baseLogo).not.toBe('none');
+  expect(state.phone).toBe('none');
+ }finally{await context.close();}
+});
