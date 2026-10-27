@@ -196,3 +196,31 @@
     font-size:11px!important;
   }
 }
+
+
+/* Maintenance notice remains visible without breaking the reference typography. */
+body.homepage-premium-max .site-footer .footer-news form[data-newsletter] .footer-newsletter-status{
+  grid-column:1/-1!important;
+  max-width:580px!important;
+  margin:0!important;
+  color:#e8b88a!important;
+  font-size:10.5px!important;
+  line-height:1.38!important;
+  overflow-wrap:anywhere!important;
+  font-weight:500!important;
+}
+body.homepage-premium-max .site-footer .footer-news form[data-newsletter] .footer-newsletter-status a{
+  color:#82dfd5!important;
+  display:inline!important;
+  font-size:inherit!important;
+  font-weight:600!important;
+  line-height:inherit!important;
+  text-decoration:underline!important;
+  text-underline-offset:2px!important;
+  white-space:normal!important;
+}
+@media(max-width:680px){
+  body.homepage-premium-max .site-footer .footer-news form[data-newsletter] .footer-newsletter-status{
+    max-width:100%!important;font-size:11px!important;
+  }
+}
