@@ -187,47 +187,58 @@ body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
   background-position:68% center!important;
 }
 
-/* Owner R8: render the unaltered laptop photograph at a smaller scale.
-   No artificial vector captions: the screen content stays in perspective
-   inside the photographed laptop bezel; forms and SEO stay unchanged. */
+/* R9: the newsletter illustration is an actual <img>, never an oversized
+   CSS background or an artificial text layer on the photographed screen. */
+body.homepage-premium-max .site-footer .footer-news {
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  background-image:linear-gradient(110deg,#041625,#071a2c)!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+}
+body.homepage-premium-max .site-footer .footer-news > :is(h2,p,form) {
+  position:relative;
+  z-index:1;
+}
+body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+  display:block!important;
+  max-width:100%!important;
+  width:100%;
+  height:auto!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  pointer-events:none;
+  user-select:none;
+}
 @media (min-width:1181px) {
-  body.homepage-premium-max .site-footer .footer-news {
-    background-image:
-      linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 28%,rgba(4,22,37,.82) 42%,rgba(4,22,37,.12) 59%,transparent 79%),
-      url("/assets/r4-reference-newsletter.webp")!important;
-    background-size:100% 100%,auto 244px!important;
-    background-position:center,right 255px center!important;
-    background-repeat:no-repeat!important;
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    position:absolute!important;
+    width:min(34vw,425px)!important;
+    max-height:calc(100% - 28px)!important;
+    right:255px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    z-index:0;
+    margin:0!important;
   }
 }
 @media (min-width:1181px) and (max-width:1350px) {
-  body.homepage-premium-max .site-footer .footer-news {
-    background-size:100% 100%,auto 218px!important;
-    background-position:center,right 238px center!important;
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    width:min(33vw,388px)!important;
+    right:238px!important;
   }
 }
-@media (min-width:681px) and (max-width:1180px) {
+@media (max-width:1180px) {
   body.homepage-premium-max .site-footer .footer-news {
-    padding-right:clamp(190px,30vw,285px)!important;
-    min-height:275px!important;
-    background-image:
-      linear-gradient(90deg,#041625 0%,rgba(4,22,37,.98) 36%,rgba(4,22,37,.55) 65%,transparent 100%),
-      url("/assets/r4-reference-newsletter.webp")!important;
-    background-size:100% 100%,auto 190px!important;
-    background-position:center,right 7px center!important;
-    background-repeat:no-repeat!important;
+    min-height:0!important;
+    padding-right:16px!important;
+    padding-bottom:20px!important;
   }
-}
-@media (max-width:680px) {
-  body.homepage-premium-max .site-footer .footer-news {
-    box-sizing:border-box!important;
-    padding-bottom:clamp(178px,54vw,227px)!important;
-    min-height:410px!important;
-    background-image:
-      linear-gradient(180deg,#041625 0%,rgba(4,22,37,.97) 44%,rgba(4,22,37,.25) 100%),
-      url("/assets/r4-reference-newsletter.webp")!important;
-    background-size:100% 100%,auto min(43vw,180px)!important;
-    background-position:center,right 8px bottom 10px!important;
-    background-repeat:no-repeat!important;
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    position:relative!important;
+    width:min(100%,450px)!important;
+    margin:18px 0 0 auto!important;
+    transform:none!important;
   }
 }
