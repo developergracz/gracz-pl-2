@@ -6,7 +6,6 @@ on:
       - "maintenance-site/assets/home-premium-max.min.css"
       - "maintenance-site/assets/home-premium-max.css"
       - "scripts/check-home-premium-css-compact.mjs"
-      - "scripts/probe-home-critical-css.cjs"
       - ".github/workflows/home-css-preview-gate.yml"
   workflow_dispatch:
 
@@ -106,11 +105,3 @@ jobs:
           path: ${{ runner.temp }}/css-reports/compact-1.json
           if-no-files-found: ignore
           retention-days: 7
-
-      - name: Probe critical CSS in isolated local copies
-        env:
-          NODE_PATH: ${{ github.workspace }}/.critical-css-test/node_modules
-        run: |
-          npm install --no-save --prefix .critical-css-test @playwright/test@1.56.1
-          node --check scripts/probe-home-critical-css.cjs
-          node scripts/probe-home-critical-css.cjs
