@@ -106,7 +106,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
-        await expect(page).toHaveURL(/\\/gry\\/warcaby\\/$/);
+        await expect(page).toHaveURL(/\/gry\/warcaby\/$/);
       }
     } finally {await context.close();}
   }
