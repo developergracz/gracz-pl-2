@@ -52,8 +52,7 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   if(width>=681)expect(layout.illustration).toContain('r4-reference-hero-crisp.svg');
-   else expect(layout.illustration).toContain('r4-reference-hero.webp');
+   if(width<1181)expect(layout.illustration).toContain('gracz-hero-mobile-art-r14.webp');
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
@@ -102,7 +101,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 914 / 1721)).toBeLessThan(3);
+      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 724 / 2172)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
         await page.locator('.r4-game').nth(1).click();
@@ -209,8 +208,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
      scrollWidth:document.documentElement.scrollWidth};
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
-   expect(m.hero.h).toBeGreaterThan(620);
-   expect(m.hero.h).toBeLessThan(810);
+   expect(Math.abs(m.hero.h-m.hero.w*724/2172)).toBeLessThan(3);
    expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.33);
    expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
    expect(m.cVisual.h).toBeLessThan(m.community.h);
