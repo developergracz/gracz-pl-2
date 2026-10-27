@@ -217,7 +217,15 @@ body.homepage-premium-max .header-inner{width:calc(100% - 24px)}
 .r4-phone{display:none}
 .r4-next-icons{gap:5px}
 .r4-next-icons svg{width:29px;height:29px}
-body.homepage-premium-max .site-footer .footer-grid{width:calc(100% - 28px)!important}
+body.homepage-premium-max .site-footer .footer-grid{
+ width:calc(100% - 28px)!important;grid-template-columns:minmax(0,1fr)!important;
+}
+body.homepage-premium-max .site-footer .footer-grid>.footer-news{grid-column:1!important;grid-row:1!important}
+body.homepage-premium-max .site-footer .footer-grid>.footer-brand,
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-nav"],
+body.homepage-premium-max .site-footer .footer-grid>.footer-col[aria-labelledby="f-popular"]{
+ grid-column:1!important;grid-row:auto!important
+}
 body.homepage-premium-max .site-footer .footer-news{background:
  linear-gradient(120deg,rgba(3,17,28,.96),rgba(3,17,28,.74)),
  url("/assets/r4-reference-newsletter.webp") right center/cover no-repeat!important;
