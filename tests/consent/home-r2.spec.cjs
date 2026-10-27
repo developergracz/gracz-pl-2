@@ -64,10 +64,7 @@ for(const width of [360,390,768,1366,1920]){
 }
 test('Search remains lazy and opens after real click',async({page})=>{
  await page.goto('/');
- await page.getByRole('button',{name:'Odrzu wszystko'}).count().then(async c=>{
-    if(c>0)await page.getByRole('button',{name:'Odrzu wszystko'}).click();
-    else await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
- });
+ await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  await page.waitForLoadState('networkidle');
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
  await page.locator('.search-btn--desktop').click();
