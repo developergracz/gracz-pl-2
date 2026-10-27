@@ -172,7 +172,7 @@ test('Owner hero preserves responsive HTML copy and ordinary links on mobile',as
  }finally{await context.close()}
 });
 
-test('Owner R5 compact desktop hierarchy and active guide/community routes', async({browser})=>{
+test('Owner R5 compact desktop hierarchy and full community banner', async({browser})=>{
  for(const width of [1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -180,7 +180,7 @@ test('Owner R5 compact desktop hierarchy and active guide/community routes', asy
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const m=await page.evaluate(()=>{
     const rect=(s)=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
-    return {hero:rect('.r4-hero'),community:rect('.r4-community'),cVisual:rect('.r4-community-visual'),
+    return {hero:rect('.r4-hero'),community:rect('.r4-community'),cVisual:rect('.r4-community-art'),
      guides:rect('.r4-guides'),guide:rect('.r4-guide'),blog:rect('.r4-updates'),
      blogCard:rect('.r4-update'),phone:rect('.r4-phone'),next:rect('.r4-next'),
      image:getComputedStyle(document.querySelector('.r4-guide-photo')).position,
@@ -189,14 +189,15 @@ test('Owner R5 compact desktop hierarchy and active guide/community routes', asy
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
    expect(m.hero.h).toBeLessThan(410);
-   expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.50);
+   expect(Math.abs(m.cVisual.x-m.community.x)).toBeLessThan(2);
+   expect(Math.abs(m.cVisual.w-m.community.w)).toBeLessThan(2);
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
    expect(m.columns).toBe(4);
    expect(m.phone.x).toBeGreaterThan(m.blogCard.right);
    expect(m.phone.y).toBeGreaterThanOrEqual(m.blog.y-1);
-   await expect(page.locator('.r4-community-tags span')).toHaveCount(4);
+   await expect(page.locator('.r4-community-tags span')).toHaveCount(2);
    await expect(page.locator('.r4-phone-community')).toContainText('Forum w przygotowaniu');
    await expect(page.locator('.r4-guide[href="/gry/warcaby/zasady/"]')).toBeVisible();
   }finally{await context.close();}
@@ -274,35 +275,32 @@ test('R5 mobile footer retains original brand without duplicate link or overflow
 });
 
 
-test('Owner final community graphic replaces previous overlay, decodes and stays clickable',async({browser})=>{
+test('Full Max Premium community artwork decodes, stays responsive and opens forum info',async({browser})=>{
  for(const width of [390,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:880}});
   try{
    const page=await context.newPage();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const card=page.locator('.r4-community-promo');
-   await expect(card).toHaveAttribute('href','/o-gracz-pl/');
-   await expect(card.locator('picture source')).toHaveAttribute('srcset','/assets/community-full-max-owner-20261027.avif');
-   await expect(card.locator('img')).toBeVisible();
-   const info=await card.evaluate(async el=>{
-    const img=el.querySelector('img');await img.decode();
-    const r=el.getBoundingClientRect();
-    const css=getComputedStyle(el);
-    return {w:r.width,h:r.height,src:img.currentSrc,iw:img.naturalWidth,ih:img.naturalHeight,
-      bg:css.backgroundImage,overflow:document.documentElement.scrollWidth};
+   const section=page.locator('#spolecznosc');
+   const image=section.locator('img.r4-community-art');
+   await expect(section.getByRole('heading',{name:'Społeczność GRACZ.PL'})).toBeVisible();
+   await expect(image).toBeVisible();
+   const info=await image.evaluate(async img=>{
+    await img.decode();
+    const rect=img.getBoundingClientRect();
+    return {w:img.naturalWidth,h:img.naturalHeight,displayW:rect.width,src:img.currentSrc,overflow:document.documentElement.scrollWidth};
    });
-   expect(info.iw).toBe(1024);
-   expect(info.ih).toBe(341);
-   expect(info.src).toContain('community-full-max-owner-20261027.avif');
-   expect(info.bg).toBe('none');
-   expect(Math.abs(info.w/info.h-3)).toBeLessThan(.12);
+   expect(info.w).toBe(720);
+   expect(info.h).toBe(357);
+   expect(info.displayW).toBeGreaterThan(250);
+   expect(info.src).toContain('gracz-community-fullmax-20261027.avif');
    expect(info.overflow).toBeLessThanOrEqual(width+2);
-   await expect(page.locator('.r4-community-panel')).toHaveCount(0);
-   if(width===1366){
-    await card.click();
-    await expect(page).toHaveURL(/\/o-gracz-pl\/$/);
-   }
+   const button=section.getByRole('button',{name:'Dołącz do rozmowy'});
+   await expect(button).toBeVisible();
+   await button.click();
+   await expect(page.getByRole('dialog')).toBeVisible();
+   await expect(page.locator('#modal-title')).toContainText('Forum gracz.pl jest w trakcie budowy');
   }finally{await context.close()}
  }
 });
