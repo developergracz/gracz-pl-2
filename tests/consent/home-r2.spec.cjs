@@ -24,7 +24,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('#gracz-next')).toContainText('nie jest jeszcze publicznie dostępny');
    for(const [label,href] of [['Warcaby','/gry/warcaby/'],['Gomoku','/gry/gomoku/'],['Tysiąc','/gry/tysiac/'],['Poker treningowy','/gry/poker-treningowy/']]){
     const card=page.locator('.r4-game').filter({has:page.locator('h3', {hasText:label})});
-    await expect(card.locator('a.r4-card-action')).toHaveAttribute('href',href);
+    await expect(card).toHaveAttribute('href',href);
    }
    const form=page.locator('.site-footer form[data-newsletter]');
    await expect(form).toHaveCount(1);
