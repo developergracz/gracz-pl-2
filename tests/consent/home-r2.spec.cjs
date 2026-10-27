@@ -15,7 +15,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('h1')).toHaveCount(1);
    await expect(page.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
    await expect(page.locator('.r4-hero-motto')).toHaveText('Graj. Ucz się. Rywalizuj.');
-   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM!');
+   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
    await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
@@ -73,4 +73,49 @@ test('Search remains lazy and opens after real click',async({page})=>{
  await page.locator('.search-btn--desktop').click();
  await expect(page.locator('dialog.gracz-search')).toBeVisible({timeout:15000});
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
+});
+
+// R4 visual-fidelity regression: no clipped header search and the game card is a real link.
+test('R4 desktop header search fits and a whole game card navigates', async ({browser}) => {
+  for (const width of [1366,1600,1920]) {
+    const context=await browser.newContext({viewport:{width,height:850}});
+    try {
+      const page=await context.newPage();
+      await page.goto('/');
+      await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+      const geometry=await page.evaluate(()=>{
+        const rect=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {l:r.left,r:r.right,t:r.top,b:r.bottom};};
+        const label=document.querySelector('.r4-search-label');
+        return {header:rect('.site-header'),nav:rect('.main-nav'),search:rect('.search-btn--desktop'),
+          actions:rect('.header-actions'),label:rect('.r4-search-label'),
+          labelVisible:getComputedStyle(label).display!=='none',
+          heroHeight:document.querySelector('.r4-hero').getBoundingClientRect().height,
+          heroPhotoPosition:getComputedStyle(document.querySelector('.r4-hero-art')).position};
+      });
+      expect(geometry.actions.r).toBeLessThanOrEqual(width+2);
+      expect(geometry.nav.r).toBeLessThanOrEqual(geometry.search.l+3);
+      expect(geometry.search.t).toBeGreaterThanOrEqual(geometry.header.t-1);
+      expect(geometry.search.b).toBeLessThanOrEqual(geometry.header.b+1);
+      if(geometry.labelVisible){
+        expect(geometry.label.t).toBeGreaterThanOrEqual(geometry.search.t-1);
+        expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
+        expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
+      }
+      expect(geometry.heroHeight).toBeGreaterThan(385);
+      expect(geometry.heroHeight).toBeLessThanOrEqual(465);
+      expect(geometry.heroPhotoPosition).toBe('absolute');
+      if(width===1600){
+        await page.locator('.r4-game').nth(1).click();
+        await expect(page).toHaveURL(/\\/gry\\/warcaby\\/$/);
+      }
+    } finally {await context.close();}
+  }
+});
+
+test('R4 Newsletter opens its existing Premium dialog, without enabling held signup',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  await page.locator('.site-header [data-newsletter-open]').click();
+  await expect(page.locator('#newsletter-signup-modal')).toBeVisible({timeout:15000});
+  await expect(page.locator('.site-footer form[data-newsletter] button[type=submit]')).toBeDisabled();
 });
