@@ -57,6 +57,7 @@ for(const width of [360,390,768,1366,1920]){
       await expect(page.locator('.r4-owner-picture')).toBeVisible();
       await expect(page.locator('.r4-owner-image')).toHaveAttribute('fetchpriority','high');
        await expect(page.locator('.r4-owner-image')).toHaveAttribute('src','/assets/gracz-hero-mobile-lcp-r16.webp');
+       await expect(page.locator('link[data-gracz-mobile-deferred]')).toHaveAttribute('media','(max-width:680px)');
       await expect.poll(()=>page.locator('.r4-owner-image').evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
     }
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
