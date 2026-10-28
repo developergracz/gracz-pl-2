@@ -320,11 +320,11 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
     return {w:img.naturalWidth,h:img.naturalHeight,displayW:rect.width,src:img.currentSrc,
       fit:getComputedStyle(img).objectFit,overflow:document.documentElement.scrollWidth};
    });
-   expect(info.w).toBe(1282);
-   expect(info.h).toBe(666);
+   expect(info.w).toBe(1383);
+   expect(info.h).toBe(631);
    expect(info.displayW).toBeGreaterThan(250);
    expect(info.fit).toBe('cover');
-   expect(info.src).toContain('gracz-community-art-sharp-r2.webp');
+   expect(info.src).toContain('gracz-community-owner-accepted-20261028.avif');
    expect(info.overflow).toBeLessThanOrEqual(width+2);
    const button=section.getByRole('button',{name:'Dołącz do rozmowy'});
    await expect(button).toBeVisible();
