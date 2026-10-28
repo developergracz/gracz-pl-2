@@ -58,11 +58,25 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
   const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
   assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
-  const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
-  assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
-  assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028");
-  assert.ok(html.indexOf("gracz-hero-mobile-art-r14.webp")<html.indexOf("home-lcp-bundle-r1.css"),
-    "Preload mobile LCP image before requesting CSS bundle");
+  // Desktop keeps the exact approved bundle. Mobile gets viewport CSS
+  // without blocking on below-the-fold rules; JS-disabled users get full CSS.
+  const mobileCritical=fs.readFileSync("maintenance-site/assets/home-mobile-critical-r3.css","utf8");
+  const mobileDeferred=fs.readFileSync("maintenance-site/assets/home-mobile-deferred-r3.css","utf8");
+  assert.ok(mobileCritical.includes(".r4-owner-picture") && mobileCritical.includes(".r4-hero"),
+    "Mobile critical CSS must retain the approved HERO geometry");
+  assert.ok(mobileCritical.length>90_000&&mobileCritical.length<bundle.length*.75,
+    "Critical CSS must contain full first-viewport rules and reduce the blocking payload");
+  assert.ok(mobileDeferred.length>30_000&&mobileDeferred.length<bundle.length*.4,
+    "Defer only verified below-the-fold CSS");
+  for (const required of [
+    'media="(min-width:681px)" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028"',
+    'media="(max-width:680px)" href="/assets/home-mobile-critical-r3.css?v=mobile-critical-20261028"',
+    'media="print" data-gracz-mobile-deferred href="/assets/home-mobile-deferred-r3.css?v=mobile-critical-20261028"',
+    'src="/assets/home-mobile-css-activate-r3.js?v=20261028" defer',
+    '<noscript><link rel="stylesheet" media="(max-width:680px)" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028"></noscript>'
+  ]) assert.ok(html.includes(required),"Critical mobile CSS contract missing "+required);
+  assert.ok(html.indexOf("gracz-hero-mobile-lcp-r16.webp")<html.indexOf("home-mobile-critical-r3.css"),
+    "LCP mobile image must be discoverable before mobile render-blocking CSS");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
 }
