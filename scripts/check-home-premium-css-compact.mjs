@@ -48,18 +48,21 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const html=fs.readFileSync("maintenance-site/index.html","utf8");
   assert.equal(min,compact(src),"Compact stylesheet must be a deterministic reduction of the approved source");
   assert.ok(min.length<=src.length*.95,"Minified CSS must have a meaningful size reduction");
-  assert.equal((html.match(/href="\/assets\/home-premium-max\.min\.css\?v=compact-r1"/g)||[]).length,1,
-    "Homepage must use exactly one compact stylesheet");
-  assert.ok(!/href="\/assets\/home-premium-max\.css/.test(html),
-    "Do not load full source stylesheet alongside compact asset");
-  assert.ok(html.includes('<link rel="stylesheet" href="/assets/home.css?v=forum-nav-r1">') &&
-    html.indexOf("href=\"/assets/home.css?v=forum-nav-r1\"")<
-      html.indexOf("href=\"/assets/home-premium-max.min.css?v=compact-r1\""),
-    "Keep the exact approved stylesheet cascade order");
-  // Guard against accidentally moving the highest-impact hero and the cookie module.
-  assert.ok((html.includes('class="home-hero-premium__lead"') ||
-    html.includes('class="r4-hero-description"')) &&
-    html.includes('href="/assets/cookie-consent.css?v=r3"'),
-    "Preserve homepage hero text and the cookie module");
+  // The homepage's CSS is now a deterministic, order-preserving single bundle.
+  const files=[
+    "cookie-consent.css","home.css","home-premium-max.min.css",
+    "global-header-r1.css","home-reference-r4.css","hero-owner-exact.css",
+    "home-reference-r5-precision.css","home-r5-final-alignment.css",
+    "home-community-fullmax-r1.css","home-lower-reference-r6.css"
+  ];
+  const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
+  const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
+  assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
+  const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
+  assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
+  assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028");
+  assert.ok(html.indexOf("gracz-hero-mobile-art-r14.webp")<html.indexOf("home-lcp-bundle-r1.css"),
+    "Preload mobile LCP image before requesting CSS bundle");
+  assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
 }
