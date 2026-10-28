@@ -52,7 +52,12 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   if(width<1181)expect(layout.illustration).toContain('gracz-hero-mobile-art-r14.webp');
+   if(width>680 && width<1181)expect(layout.illustration).toContain('gracz-hero-mobile-art-r14.webp');
+    if(width<=680){
+      await expect(page.locator('.r4-owner-picture')).toBeVisible();
+      await expect(page.locator('.r4-owner-image')).toHaveAttribute('fetchpriority','high');
+      await expect.poll(()=>page.locator('.r4-owner-image').evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
+    }
    expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
@@ -189,7 +194,8 @@ test('Owner hero preserves responsive HTML copy and ordinary links on mobile',as
   const page=await context.newPage();
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  await expect(page.locator('.r4-owner-picture')).toBeHidden();
+  await expect(page.locator('.r4-owner-picture')).toBeVisible();
+   await expect(page.locator('.r4-owner-image')).toBeVisible();
   await expect(page.locator('.r4-hero-copy')).toBeVisible();
   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
