@@ -34,14 +34,14 @@ jobs:
               if image.width > max_width:
                   image=image.resize((max_width,round(image.height*max_width/image.width)),Image.Resampling.LANCZOS)
               chosen=None
-              for quality in [74,70,66,62,58]:
+              for quality in [74,70,66,62,58,56,54]:
                   image.save(out,'WEBP',quality=quality,method=6)
                   print('Candidate quality',quality,'bytes',out.stat().st_size)
                   if out.stat().st_size <= 46_000:
                       chosen=quality
                       break
               if chosen is None:
-                  raise SystemExit('No image at <=46 KB while maintaining quality >=58; no deployment')
+                  raise SystemExit('No image at <=46 KB while maintaining quality >=54; no deployment')
               print('Optimized:',image.size,out.stat().st_size,'quality:',chosen)
               assert out.stat().st_size < original.stat().st_size*.8
               with Image.open(out) as optimized:
