@@ -58,11 +58,17 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
   const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
   assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
-  const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
-  assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
-  assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028");
-  assert.ok(html.indexOf("gracz-hero-mobile-art-r14.webp")<html.indexOf("home-lcp-bundle-r1.css"),
-    "Preload mobile LCP image before requesting CSS bundle");
+  const critical=fs.readFileSync("maintenance-site/assets/home-lcp-critical-r1.css","utf8");
+  assert.ok(critical.length<bundle.length*.35 && critical.includes(".r4-hero"),
+    "First-paint CSS must stay small while preserving the HERO rules");
+  assert.ok(html.includes('<link rel="stylesheet" href="/assets/home-lcp-critical-r1.css?v=lcp-critical-20261028">'),
+    "Critical first-viewport stylesheet missing");
+  assert.ok(html.includes('<link rel="stylesheet" media="print" data-home-full-css href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261028">'),
+    "Non-blocking complete CSS cascade missing");
+  assert.ok(html.includes('src="/assets/home-lcp-defer-r1.js?v=lcp-20261028" defer'),
+    "Same-origin CSS activation script missing");
+  assert.ok(html.indexOf("gracz-hero-mobile-art-r14.webp")<html.indexOf("home-lcp-critical-r1.css"),
+    "Preload mobile LCP image before requesting critical CSS");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
 }
