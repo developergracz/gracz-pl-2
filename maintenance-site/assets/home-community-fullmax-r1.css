@@ -180,3 +180,76 @@ body.homepage-premium-max .r4-community-tags .r4-community-soon {
   body.homepage-premium-max .r4-community .r4-community-tags {font-size:12px!important;gap:10px!important;}
   body.homepage-premium-max .r4-community-tags svg {width:19px;height:19px;}
 }
+
+
+/* Owner-approved composition 2026-10-28: photo fills the panel behind
+   a continuous navy fade; no visible vertical split. Semantic copy and
+   the original functioning forum CTA remain real HTML. */
+body.homepage-premium-max .r4-homepage .r4-community::before {
+  z-index:1!important;
+  background:linear-gradient(90deg,
+    #071521 0%,
+    rgba(7,21,33,.99) 15%,
+    rgba(7,21,33,.92) 27%,
+    rgba(7,21,33,.68) 39%,
+    rgba(7,21,33,.26) 52%,
+    rgba(7,21,33,0) 68%)!important;
+}
+body.homepage-premium-max .r4-community .r4-community-art {
+  z-index:0!important;
+  top:0!important;
+  right:0!important;
+  bottom:0!important;
+  left:22%!important;
+  width:78%!important;
+  height:100%!important;
+  max-height:none!important;
+  transform:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+}
+body.homepage-premium-max .r4-community .r4-community-copy {
+  z-index:2!important;
+  width:min(47%,680px)!important;
+}
+@media (min-width:681px) and (max-width:1180px) {
+  body.homepage-premium-max .r4-community .r4-community-art {
+    left:22%!important;
+    width:78%!important;
+  }
+  body.homepage-premium-max .r4-community .r4-community-copy {
+    width:min(52%,540px)!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-community::before {
+    background:linear-gradient(90deg,
+      #071521 0%,
+      rgba(7,21,33,.99) 19%,
+      rgba(7,21,33,.89) 32%,
+      rgba(7,21,33,.40) 55%,
+      transparent 78%)!important;
+  }
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-community .r4-community-art {
+    top:auto!important;
+    right:0!important;
+    bottom:0!important;
+    left:0!important;
+    width:100%!important;
+    height:60%!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-community::before {
+    background:linear-gradient(180deg,
+      #071521 0%,
+      rgba(7,21,33,.99) 38%,
+      rgba(7,21,33,.88) 52%,
+      rgba(7,21,33,.32) 75%,
+      rgba(7,21,33,.05) 100%)!important;
+  }
+  body.homepage-premium-max .r4-community .r4-community-copy {
+    width:100%!important;
+  }
+}
