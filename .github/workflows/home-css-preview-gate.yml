@@ -51,7 +51,7 @@ jobs:
           import assert from 'node:assert/strict';
           const html=fs.readFileSync('maintenance-site/index.html','utf8');
           assert.equal(html.split('<h1 ').length-1,1,'One H1 only');
-          assert.ok(html.includes('home-reference-r4.css?v=ref-20261027-r1'),'Reference CSS enabled');
+          assert.ok(html.includes('home-lcp-bundle-r1.css?v=css-lcp-20261028'),'Verified homepage CSS bundle enabled');
           assert.ok(html.includes('gracz-hero-approved-r14.webp'),'Approved R14 hero image prioritized');
           assert.ok(html.includes('class="r4-shortcuts"'),'Five-item navigation present');
           assert.ok(html.includes('class="r4-games-grid"'),'Five card games present');
@@ -107,9 +107,9 @@ jobs:
               const d=JSON.parse(fs.readFileSync(path.join(dir,kind+"-"+i+".json"),"utf8"));
               const lcp=d.audits?.["largest-contentful-paint"]?.numericValue;
               const cls=d.audits?.["cumulative-layout-shift"]?.numericValue;
-              const url="home-premium-max.min.css";
+              const urls=["home-premium-max.min.css","home-lcp-bundle-r1.css"];
               const requests=d.audits?.["network-requests"]?.details?.items||[];
-              if(!requests.some(x=>x.url?.includes("/assets/"+url+"?")&&x.statusCode===200))
+              if(!requests.some(x=>urls.some(url=>x.url?.includes("/assets/"+url+"?"))&&x.statusCode===200))
                 throw Error(kind+" stylesheet not loaded with HTTP 200");
               if(!Number.isFinite(lcp)||!Number.isFinite(cls))
                 throw Error(kind+" Lighthouse metrics unavailable");
