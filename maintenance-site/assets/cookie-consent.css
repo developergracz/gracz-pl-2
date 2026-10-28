@@ -197,3 +197,6 @@ html.gcc-open { overflow: hidden; }
   font: 600 13px/1.4 "Open Sans", Arial, sans-serif;
   background: #041713;
 }
+
+/* A/B test: reduce mobile cookie overlay compositor work. */
+@media(max-width:680px){.gcc-overlay{backdrop-filter:none;background:rgba(0,10,8,.82)}}
