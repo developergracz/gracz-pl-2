@@ -1,0 +1,21 @@
+name: LCP one-time local source snapshot
+on:
+  push:
+    branches: [perf/home-lcp-critical-audit-20261028]
+    paths: [.github/workflows/_lcp-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gracz-lcp-source-inspection
+          path: |
+            maintenance-site/**
+            tests/consent/home-r2.spec.cjs
+            .github/workflows/home-css-preview-gate.yml
+          retention-days: 1
+          include-hidden-files: false
