@@ -107,7 +107,7 @@ jobs:
               const d=JSON.parse(fs.readFileSync(path.join(dir,kind+"-"+i+".json"),"utf8"));
               const lcp=d.audits?.["largest-contentful-paint"]?.numericValue;
               const cls=d.audits?.["cumulative-layout-shift"]?.numericValue;
-              const urls=["home-premium-max.min.css","home-lcp-bundle-r1.css"];
+              const urls=["home-premium-max.min.css","home-lcp-bundle-r1.css","home-mobile-critical-r3.css"];
               const requests=d.audits?.["network-requests"]?.details?.items||[];
               if(!requests.some(x=>urls.some(url=>x.url?.includes("/assets/"+url+"?"))&&x.statusCode===200))
                 throw Error(kind+" stylesheet not loaded with HTTP 200");
