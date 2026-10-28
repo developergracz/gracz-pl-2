@@ -213,9 +213,9 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
    expect(Math.abs(m.hero.h-m.hero.w*724/2172)).toBeLessThan(3);
-   expect(m.cVisual.x).toBeGreaterThan(m.community.x+m.community.w*.33);
+   expect(Math.abs(m.cVisual.x-(m.community.x+m.community.w*.22))).toBeLessThan(3);
    expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
-   expect(m.cVisual.h).toBeLessThan(m.community.h);
+   expect(Math.abs(m.cVisual.h-m.community.h)).toBeLessThan(3);
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
@@ -323,7 +323,7 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
    expect(info.w).toBe(1282);
    expect(info.h).toBe(666);
    expect(info.displayW).toBeGreaterThan(250);
-   expect(info.fit).toBe('contain');
+   expect(info.fit).toBe('cover');
    expect(info.src).toContain('gracz-community-art-sharp-r2.webp');
    expect(info.overflow).toBeLessThanOrEqual(width+2);
    const button=section.getByRole('button',{name:'Dołącz do rozmowy'});
