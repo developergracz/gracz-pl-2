@@ -330,7 +330,7 @@ test('Full Max Premium community artwork decodes, stays responsive and opens for
    expect(info.w).toBe(1383);
    expect(info.h).toBe(631);
    expect(info.displayW).toBeGreaterThan(250);
-   expect(info.fit).toBe('cover');
+   expect(info.fit).toBe('contain');
    expect(info.src).toContain('gracz-community-owner-accepted-20261028.avif');
    expect(info.overflow).toBeLessThanOrEqual(width+2);
    const button=section.getByRole('button',{name:'Dołącz do rozmowy'});
