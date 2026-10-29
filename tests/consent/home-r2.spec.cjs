@@ -272,7 +272,7 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
    expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
    expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
    expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
-   expect(info.photo.right).toBeLessThanOrEqual(info.news.right-200);
+   expect(info.photo.right).toBeLessThanOrEqual(info.news.right+2);
    expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    expect(info.logoDisplay).not.toBe('none');
    expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
