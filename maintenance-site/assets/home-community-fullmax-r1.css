@@ -9,7 +9,7 @@ body.homepage-premium-max .r4-homepage .r4-community {
   box-sizing:border-box;
   width:calc(100% - clamp(36px,5vw,96px))!important;
   max-width:1792px!important;
-  min-height:clamp(310px,24vw,420px);
+  min-height:clamp(350px,29vw,560px);
   margin:28px auto 36px!important;
   padding:clamp(24px,3vw,40px)!important;
   border:1px solid #dcb86d;
@@ -205,8 +205,8 @@ body.homepage-premium-max .r4-community .r4-community-art {
   height:100%!important;
   max-height:none!important;
   transform:none!important;
-  object-fit:cover!important;
-  object-position:center center!important;
+  object-fit:contain!important;
+  object-position:right center!important;
 }
 body.homepage-premium-max .r4-community .r4-community-copy {
   z-index:2!important;
@@ -238,8 +238,8 @@ body.homepage-premium-max .r4-community .r4-community-copy {
     width:100%!important;
     height:60%!important;
     max-height:none!important;
-    object-fit:cover!important;
-    object-position:center center!important;
+    object-fit:contain!important;
+    object-position:right bottom!important;
   }
   body.homepage-premium-max .r4-homepage .r4-community::before {
     background:linear-gradient(180deg,
