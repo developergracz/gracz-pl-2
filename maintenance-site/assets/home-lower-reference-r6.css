@@ -321,33 +321,70 @@ body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>button
   }
 }
 
-/* Owner-approved photograph, isolated from the real interactive signup form.
-   Reserve room for the existing floating Gomoku/community panel on desktop. */
+/* Owner-approved newsletter photo R15. Keep the floating Gomoku/community
+   preview on the right, and keep all signup copy as native HTML. */
 @media (min-width:1181px) {
   body.homepage-premium-max .site-footer .footer-news {
-    grid-template-columns:minmax(0,1fr) minmax(300px,41%)!important;
-    padding-right:clamp(190px,15vw,260px)!important;
+    display:block!important;
     min-height:470px!important;
-    background:linear-gradient(110deg,#041625 0%,#041625 44%,#071b2b 100%)!important;
+    padding:48px clamp(25px,2.8vw,45px)!important;
+    padding-right:clamp(260px,17vw,325px)!important;
+    background:linear-gradient(105deg,#041625 0%,#041625 38%,#072030 100%)!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news > :is(h2,p,form) {
+    position:relative!important;
+    z-index:2!important;
+    max-width:min(45vw,680px)!important;
+    min-width:0!important;
   }
   body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
-    width:100%!important;
-    max-width:605px!important;
-    max-height:none!important;
-    aspect-ratio:605/627!important;
+    position:absolute!important;
+    display:block!important;
+    width:min(61vw,940px)!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:calc(100% - 20px)!important;
+    aspect-ratio:1027/457!important;
     object-fit:contain!important;
-    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 100%);
-    mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 100%);
+    object-position:center center!important;
+    top:50%!important;
+    right:clamp(260px,17vw,325px)!important;
+    transform:translateY(-50%)!important;
+    margin:0!important;
+    z-index:0!important;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.18) 10%,#000 33%);
+    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.18) 10%,#000 33%);
   }
 }
 @media (max-width:1180px) {
+  body.homepage-premium-max .site-footer .footer-news {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    min-height:0!important;
+    padding:24px 18px!important;
+    background:linear-gradient(120deg,#041625,#071b2b)!important;
+  }
   body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
     position:static!important;
     display:block!important;
-    width:min(100%,520px)!important;
+    width:min(100%,850px)!important;
+    max-width:100%!important;
+    max-height:none!important;
     height:auto!important;
-    aspect-ratio:605/627!important;
+    aspect-ratio:1027/457!important;
     object-fit:contain!important;
-    margin:20px auto 0!important;
+    top:auto!important;
+    right:auto!important;
+    transform:none!important;
+    margin:22px auto 0!important;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 12%);
+    mask-image:linear-gradient(90deg,transparent 0%,#000 12%);
+  }
+}
+@media (min-width:961px) and (max-width:1180px) {
+  /* The phone panel can still extend beside the newsletter at tablet widths. */
+  body.homepage-premium-max .site-footer .footer-news {
+    padding-right:clamp(208px,21vw,265px)!important;
   }
 }
