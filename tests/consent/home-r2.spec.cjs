@@ -272,7 +272,7 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
    expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
    expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
    expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
-   expect(info.photo.right).toBeLessThanOrEqual(info.news.right-200);
+   expect(info.photo.right).toBeLessThanOrEqual(info.news.right+2);
    expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    expect(info.logoDisplay).not.toBe('none');
    expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
@@ -381,7 +381,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R11 newsletter vector screen text remains crisp, responsive and signup works',async({browser})=>{
+test('R12 newsletter photograph is separate from signup content and blog art is independent',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -395,16 +395,20 @@ test('R11 newsletter vector screen text remains crisp, responsive and signup wor
     const imgr=img.getBoundingClientRect();
     const box=container.getBoundingClientRect();
     const style=getComputedStyle(container),imgstyle=getComputedStyle(img);
+    const form=container.querySelector('form[data-newsletter]').getBoundingClientRect();
+    const heading=container.querySelector('#f-news').getBoundingClientRect();
     return {naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
       visible:imgstyle.display!=='none',objectFit:imgstyle.objectFit,
       image:[imgr.left,imgr.top,imgr.right,imgr.bottom],
+      form:[form.left,form.top,form.right,form.bottom],
+      heading:[heading.left,heading.top,heading.right,heading.bottom],
       container:[box.left,box.top,box.right,box.bottom],
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(672);
-   expect(result.naturalHeight).toBe(400);
-   await expect(photo).toHaveAttribute('src','/assets/r4-reference-newsletter-crisp-r7.svg');
+   expect(result.naturalWidth).toBe(720);
+   expect(result.naturalHeight).toBe(374);
+   await expect(photo).toHaveAttribute('src','/assets/r4-reference-newsletter-owner-720.webp');
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
@@ -415,6 +419,14 @@ test('R11 newsletter vector screen text remains crisp, responsive and signup wor
    expect(right).toBeLessThanOrEqual(cr+2);
    expect(top).toBeGreaterThanOrEqual(ct-2);
    expect(bottom).toBeLessThanOrEqual(cb+2);
+   if(width>1180){
+    expect(left).toBeGreaterThanOrEqual(result.form[2]+8);
+    expect(left).toBeGreaterThanOrEqual(result.heading[2]+8);
+   }else{
+    expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
+   }
+   const analysis=page.locator('#aktualnosci .r4-update-photo.r4-blog-analysis');
+   await expect(analysis).toHaveCSS('background-image',/poradnik-ksiega-hero-v2\.webp/);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
