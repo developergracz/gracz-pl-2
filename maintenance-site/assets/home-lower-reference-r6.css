@@ -182,10 +182,10 @@
   body.homepage-premium-max .r4-homepage .r4-next{padding-right:0!important}
   body.homepage-premium-max .site-footer .footer-news{background-size:100% 100%,cover!important}
 }
-/* Use the already-local newsletter illustration for the analysis article rather than downloading artwork. */
+/* The analysis article uses its own guide artwork, never the newsletter. */
 body.homepage-premium-max .r4-update-photo.r4-blog-analysis {
-  background-image:url("/assets/r4-reference-newsletter.webp")!important;
-  background-position:68% center!important;
+  background-image:url("/assets/poradnik-ksiega-hero-v2.webp")!important;
+  background-position:center 47%!important;
 }
 
 /* R9: the newsletter illustration is an actual <img>, never an oversized
@@ -260,4 +260,63 @@ body.homepage-premium-max .site-footer .footer-news .footer-newsletter-consent {
 body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>input[type=email],
 body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>button[type=submit] {
   font-size:16px!important;
+}
+
+/* R12 corrective layout: photo and real newsletter form occupy separate grid
+   areas; neither can cover, clip or duplicate text. No changes to signup API. */
+@media (min-width:1181px) {
+  body.homepage-premium-max .site-footer .footer-news {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(300px,42%)!important;
+    grid-template-rows:auto auto auto!important;
+    align-content:center!important;
+    column-gap:clamp(24px,3vw,48px)!important;
+    min-height:340px!important;
+    padding:26px clamp(20px,2.5vw,38px)!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news > :is(h2,p,form) {
+    grid-column:1!important;
+    min-width:0!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news > h2 {grid-row:1!important;}
+  body.homepage-premium-max .site-footer .footer-news > p {grid-row:2!important;}
+  body.homepage-premium-max .site-footer .footer-news > form {grid-row:3!important;}
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    position:static!important;
+    grid-column:2!important;
+    grid-row:1/4!important;
+    width:100%!important;
+    max-width:720px!important;
+    height:auto!important;
+    max-height:none!important;
+    right:auto!important;
+    top:auto!important;
+    transform:none!important;
+    margin:0!important;
+    align-self:center!important;
+    justify-self:center!important;
+    object-fit:contain!important;
+  }
+}
+@media (max-width:1180px) {
+  body.homepage-premium-max .site-footer .footer-news {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    min-height:0!important;
+    padding:24px 18px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    position:static!important;
+    display:block!important;
+    width:min(100%,560px)!important;
+    max-width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    right:auto!important;
+    top:auto!important;
+    transform:none!important;
+    margin:20px auto 0!important;
+    object-fit:contain!important;
+  }
 }
