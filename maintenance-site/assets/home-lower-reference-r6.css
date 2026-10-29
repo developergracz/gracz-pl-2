@@ -320,3 +320,34 @@ body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>button
     object-fit:contain!important;
   }
 }
+
+/* Owner-approved photograph, isolated from the real interactive signup form.
+   Reserve room for the existing floating Gomoku/community panel on desktop. */
+@media (min-width:1181px) {
+  body.homepage-premium-max .site-footer .footer-news {
+    grid-template-columns:minmax(0,1fr) minmax(300px,41%)!important;
+    padding-right:clamp(190px,15vw,260px)!important;
+    min-height:470px!important;
+    background:linear-gradient(110deg,#041625 0%,#041625 44%,#071b2b 100%)!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    width:100%!important;
+    max-width:605px!important;
+    max-height:none!important;
+    aspect-ratio:605/627!important;
+    object-fit:contain!important;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 100%);
+    mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 100%);
+  }
+}
+@media (max-width:1180px) {
+  body.homepage-premium-max .site-footer .footer-news > .footer-news-photo {
+    position:static!important;
+    display:block!important;
+    width:min(100%,520px)!important;
+    height:auto!important;
+    aspect-ratio:605/627!important;
+    object-fit:contain!important;
+    margin:20px auto 0!important;
+  }
+}

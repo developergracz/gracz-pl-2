@@ -381,7 +381,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R12 newsletter photograph is separate from signup content and blog art is independent',async({browser})=>{
+test('R13 owner-approved newsletter image is uncropped and signup stays interactive',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -406,9 +406,9 @@ test('R12 newsletter photograph is separate from signup content and blog art is 
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(720);
-   expect(result.naturalHeight).toBe(374);
-   await expect(photo).toHaveAttribute('src','/assets/r4-reference-newsletter-owner-720.webp');
+   expect(result.naturalWidth).toBe(605);
+   expect(result.naturalHeight).toBe(627);
+   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-approved-laptop-r1.avif');
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
