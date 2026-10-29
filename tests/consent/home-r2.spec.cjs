@@ -381,7 +381,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R13 owner-approved newsletter image is uncropped and signup stays interactive',async({browser})=>{
+test('R15 approved full laptop scene fits beside unchanged phone and live form',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -406,9 +406,9 @@ test('R13 owner-approved newsletter image is uncropped and signup stays interact
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(605);
-   expect(result.naturalHeight).toBe(627);
-   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-approved-laptop-r1.avif');
+   expect(result.naturalWidth).toBe(1027);
+   expect(result.naturalHeight).toBe(457);
+   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-approved-scene-r2.avif');
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
@@ -420,8 +420,10 @@ test('R13 owner-approved newsletter image is uncropped and signup stays interact
    expect(top).toBeGreaterThanOrEqual(ct-2);
    expect(bottom).toBeLessThanOrEqual(cb+2);
    if(width>1180){
-    expect(left).toBeGreaterThanOrEqual(result.form[2]+8);
-    expect(left).toBeGreaterThanOrEqual(result.heading[2]+8);
+    // The transparent left edge may sit under copy, but the actual laptop
+    // begins after the interactive form. Preserve room for the floating phone.
+    expect(left+(right-left)*.48).toBeGreaterThanOrEqual(result.form[2]-24);
+    expect(right).toBeLessThanOrEqual(cr-205);
    }else{
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
