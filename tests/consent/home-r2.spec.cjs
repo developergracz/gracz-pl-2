@@ -381,7 +381,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R10 original 720px newsletter photograph fits and keeps screen perspective',async({browser})=>{
+test('R11 newsletter vector screen text remains crisp, responsive and signup works',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -402,8 +402,9 @@ test('R10 original 720px newsletter photograph fits and keeps screen perspective
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(720);
-   expect(result.naturalHeight).toBe(374);
+   expect(result.naturalWidth).toBe(672);
+   expect(result.naturalHeight).toBe(400);
+   await expect(photo).toHaveAttribute('src','/assets/r4-reference-newsletter-crisp-r7.svg');
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
