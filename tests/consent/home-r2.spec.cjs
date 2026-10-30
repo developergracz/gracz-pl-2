@@ -439,12 +439,12 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
 
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
- ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-approved-r1.avif'],
- ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-approved-r1.avif'],
- ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-approved-r1.avif'],
- ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-approved-r1.avif'],
- ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-approved-r1.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-approved-r1.avif']
+ ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-clean-r2.avif'],
+ ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-clean-r2.avif'],
+ ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-clean-r2.avif'],
+ ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-clean-r2.avif'],
+ ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-clean-r2.avif'],
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-clean-r2.avif']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -482,7 +482,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain('-approved-r1.avif');
+    expect(s.photo).toContain('-clean-r2.avif');
     expect(s.position).toContain(y);
     expect(s.contrast).toContain('contrast(1.04)');
    }
