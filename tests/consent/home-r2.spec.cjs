@@ -18,7 +18,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
-   await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
+   await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(3);
    await expect(page.locator('.r4-updates-grid .r4-update')).toHaveCount(3);
    await expect(page.locator('#spolecznosc')).toContainText('Forum w przygotowaniu');
    await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
@@ -226,7 +226,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
-   expect(m.columns).toBe(4);
+   expect(m.columns).toBe(3);
    expect(m.phone.x).toBeGreaterThan(m.blogCard.right);
    expect(m.phone.y).toBeGreaterThanOrEqual(m.blog.y-1);
    await expect(page.locator('.r4-community-tags span')).toHaveCount(2);
@@ -246,7 +246,7 @@ test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async
    phone:getComputedStyle(document.querySelector('.r4-phone')).display
   }));
   expect(v.scroll).toBeLessThanOrEqual(392);
-  expect(v.columns).toBe(2);
+  expect(v.columns).toBe(1);
   expect(v.phone).toBe('none');
  }finally{await context.close();}
 });
@@ -427,11 +427,42 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
    }else{
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
-   const analysis=page.locator('#aktualnosci .r4-update-photo.r4-blog-analysis');
-   await expect(analysis).toHaveCSS('background-image',/poradnik-ksiega-hero-v2\.webp/);
+   const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
+   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-approved-r1\.avif/);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
   }finally{await context.close()}
+ }
+});
+
+test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
+ const cards=[
+ ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-approved-r1.avif'],
+ ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-approved-r1.avif'],
+ ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-approved-r1.avif'],
+ ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-approved-r1.avif'],
+ ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-approved-r1.avif'],
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-approved-r1.avif']
+ ];
+ for(const width of [390,768,1366]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const backgrounds=[];
+   for(const [selector,filename] of cards){
+    const tile=page.locator(selector);
+    await expect(tile).toHaveCount(1);
+    const bg=await tile.evaluate(el=>getComputedStyle(el).backgroundImage);
+    expect(bg).toContain(filename);backgrounds.push(bg);
+    const response=await page.request.get('/assets/'+filename);
+    expect(response.status(),filename).toBe(200);
+    expect((await response.body()).length,filename).toBeGreaterThan(2000);
+   }
+   expect(new Set(backgrounds).size).toBe(6);
+   await expect(page.locator('#poradniki-academy .r4-guide[href="/gry/poker-treningowy/"]')).toBeVisible();
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await context.close();}
  }
 });
