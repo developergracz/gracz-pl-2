@@ -18,7 +18,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
-   await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(4);
+   await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(3);
    await expect(page.locator('.r4-updates-grid .r4-update')).toHaveCount(3);
    await expect(page.locator('#spolecznosc')).toContainText('Forum w przygotowaniu');
    await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
@@ -226,7 +226,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    expect(m.guide.h).toBeGreaterThan(210);
    expect(m.guide.h).toBeLessThan(250);
    expect(m.image).toBe('absolute');
-   expect(m.columns).toBe(4);
+   expect(m.columns).toBe(3);
    expect(m.phone.x).toBeGreaterThan(m.blogCard.right);
    expect(m.phone.y).toBeGreaterThanOrEqual(m.blog.y-1);
    await expect(page.locator('.r4-community-tags span')).toHaveCount(2);
@@ -353,6 +353,16 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
    await expect(cards.nth(0)).toContainText('Turnieje szachowe');
    await expect(cards.nth(1)).toContainText('Jak analizować swoje partie?');
    await expect(cards.nth(2)).toContainText('Tysiąc — historia i ciekawostki');
+   const artwork=await page.evaluate(()=>[...document.querySelectorAll('.r4-guides-grid .r4-guide-photo, .r4-updates-grid .r4-update-photo')].map(el=>getComputedStyle(el).backgroundImage));
+   expect(artwork).toHaveLength(6);
+   expect(new Set(artwork).size).toBe(6);
+   for(const asset of ['gracz-guide-chess-approved-r1.avif','gracz-guide-checkers-approved-r1.avif','gracz-guide-poker-approved-r1.avif','gracz-blog-tournament-approved-r1.avif','gracz-blog-analysis-approved-r1.avif','gracz-blog-thousand-approved-r1.avif']){
+     expect(artwork.some(bg=>bg.includes(asset))).toBe(true);
+     const resource=await page.request.get('/assets/'+asset);
+     expect(resource.ok()).toBe(true);
+     expect(resource.headers()['content-type']).toContain('image/');
+   }
+
    await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
    const geo=await page.evaluate(()=>{
     const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();
