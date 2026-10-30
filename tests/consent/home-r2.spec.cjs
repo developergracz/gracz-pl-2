@@ -213,7 +213,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
     const rect=(s)=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
     return {hero:rect('.r4-hero'),community:rect('.r4-community'),cVisual:rect('.r4-community-art'),
      guides:rect('.r4-guides'),guide:rect('.r4-guide'),blog:rect('.r4-updates'),
-     blogCard:rect('.r4-update'),phone:rect('.r4-phone'),next:rect('.r4-next'),
+     blogCard:rect('.r4-update'),phone:rect('.r4-phone'),phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display,next:rect('.r4-next'),
      image:getComputedStyle(document.querySelector('.r4-guide-photo')).position,
      columns:getComputedStyle(document.querySelector('.r4-guides-grid')).gridTemplateColumns.split(' ').length,
      scrollWidth:document.documentElement.scrollWidth};
@@ -223,12 +223,12 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
    expect(Math.abs(m.cVisual.x-(m.community.x+m.community.w*.22))).toBeLessThan(3);
    expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
    expect(Math.abs(m.cVisual.h-m.community.h)).toBeLessThan(3);
-   expect(m.guide.h).toBeGreaterThan(210);
-   expect(m.guide.h).toBeLessThan(250);
+   expect(m.guide.h).toBeGreaterThan(400);
+   expect(m.guide.h).toBeLessThanOrEqual(512);
    expect(m.image).toBe('absolute');
    expect(m.columns).toBe(3);
-   expect(m.phone.x).toBeGreaterThan(m.blogCard.right);
-   expect(m.phone.y).toBeGreaterThanOrEqual(m.blog.y-1);
+   expect(m.phoneDisplay).toBe('none');
+   expect(m.blogCard.w).toBeGreaterThan(200);
    await expect(page.locator('.r4-community-tags span')).toHaveCount(2);
    await expect(page.locator('.r4-phone-community')).toContainText('Forum w przygotowaniu');
    await expect(page.locator('.r4-guide[href="/gry/warcaby/zasady/"]')).toBeVisible();
@@ -265,19 +265,20 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
        news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
        logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
        photo:rect('.site-footer .footer-news-photo'),
+       phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display,
        logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
      };
    });
    expect(info.scroll).toBeLessThanOrEqual(width+2);
-   expect(info.phone.left).toBeGreaterThan(info.blog.left+info.blog.width*.70);
-   expect(info.phone.top).toBeGreaterThanOrEqual(info.blog.top-1);
+   expect(info.phoneDisplay).toBe('none');
+   expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
    expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
    expect(info.photo.right).toBeLessThanOrEqual(info.news.right+2);
    expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    expect(info.logoDisplay).not.toBe('none');
    expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
    expect(info.logo.bottom).toBeLessThanOrEqual(info.footer.bottom+1);
-   expect(info.phone.bottom).toBeLessThanOrEqual(info.footer.top+4);
+   expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
    const form=page.locator('.site-footer form[data-newsletter]');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -351,8 +352,8 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
    const cards=page.locator('#aktualnosci .r4-update');
    await expect(cards).toHaveCount(3);
    await expect(cards.nth(0)).toContainText('Turnieje szachowe');
-   await expect(cards.nth(1)).toContainText('Jak analizować swoje partie?');
-   await expect(cards.nth(2)).toContainText('Tysiąc — historia i ciekawostki');
+   await expect(cards.nth(1)).toContainText('Analiza partii szachowych krok po kroku');
+   await expect(cards.nth(2)).toContainText('Tysiąc — zasady, taktyka');
    await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
    const geo=await page.evaluate(()=>{
     const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();
@@ -364,9 +365,9 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
    });
    expect(geo.scroll).toBeLessThanOrEqual(width+2);
    if(width>1180){
-    expect(geo.phone.left).toBeGreaterThanOrEqual(geo.cards.right);
-    expect(geo.phone.top).toBeGreaterThanOrEqual(geo.blog.top);
-    expect(geo.phone.bottom).toBeGreaterThan(geo.next.top);
+    expect(geo.phoneDisplay).toBe('none');
+    expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
+    expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
     expect(geo.news.left).toBeLessThan(geo.cards.left+3);
    }else{
     expect(geo.phoneDisplay).toBe('none');
@@ -487,5 +488,32 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
+ }
+});
+
+test('Owner Full Max Premium gallery uses large responsive cards and circular links',async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await expect(page.locator('#poradniki-academy .r4-guide')).toHaveCount(3);
+   await expect(page.locator('#aktualnosci .r4-update')).toHaveCount(3);
+   await expect(page.locator('.r4-premium-card-arrow')).toHaveCount(6);
+   await expect(page.locator('#poradniki-academy .r4-premium-section-link')).toHaveAttribute('href','/poradniki/');
+   await expect(page.locator('#aktualnosci .r4-premium-section-link')).toHaveAttribute('href','/poradniki/');
+   await expect(page.locator('#aktualnosci .r4-phone')).toBeHidden();
+   const d=await page.evaluate(()=>{
+    const rect=sel=>{const r=document.querySelector(sel).getBoundingClientRect();return {h:r.height,bottom:r.bottom}};
+    const cols=sel=>getComputedStyle(document.querySelector(sel)).gridTemplateColumns.split(' ').length;
+    return {scroll:document.documentElement.scrollWidth,guide:rect('#poradniki-academy .r4-guide'),blog:rect('#aktualnosci .r4-update'),section:rect('#aktualnosci'),guides:cols('#poradniki-academy .r4-guides-grid'),blogs:cols('#aktualnosci .r4-updates-grid'),phone:getComputedStyle(document.querySelector('#aktualnosci .r4-phone')).display};
+   });
+   const n=width<=680?1:width<=1180?2:3;
+   expect(d.guides).toBe(n);expect(d.blogs).toBe(n);
+   expect(d.guide.h).toBeGreaterThanOrEqual(width<=680?350:400);
+   expect(d.blog.h).toBeGreaterThanOrEqual(width<=680?350:400);
+   expect(d.blog.bottom).toBeLessThanOrEqual(d.section.bottom+2);
+   expect(d.phone).toBe('none');expect(d.scroll).toBeLessThanOrEqual(width+2);
+  }finally{await context.close();}
  }
 });
