@@ -484,7 +484,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
     expect(s.photo).toContain('-approved-r1.avif');
     expect(s.position).toContain(y);
-    expect(s.contrast).toContain('contrast(1.08)');
+    expect(s.contrast).toContain('contrast(1.04)');
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
