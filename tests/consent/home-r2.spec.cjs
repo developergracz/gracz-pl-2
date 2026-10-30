@@ -439,9 +439,9 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
 
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
- ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-clean-r2.avif'],
- ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-clean-r2.avif'],
- ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-clean-r2.avif'],
+ ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-sharp-owner-r4.avif'],
+ ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-sharp-owner-r4.avif'],
+ ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-sharp-owner-r4.avif'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-owner-premium-r3.avif']
@@ -475,17 +475,16 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    const page=await ctx.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const positions=[
-    ['.r4-approved-guide-chess','0%'],['.r4-approved-guide-checkers','74%'],
-    ['.r4-approved-guide-poker','92%'],['.r4-approved-blog-tournament','0%'],
+    ['.r4-approved-guide-chess','0%'],['.r4-approved-guide-checkers','0%'],
+    ['.r4-approved-guide-poker','0%'],['.r4-approved-blog-tournament','0%'],
     ['.r4-approved-blog-analysis','45%'],['.r4-approved-blog-thousand','94%']
    ];
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-')?'-owner-premium-r3.avif':'-clean-r2.avif');
+    expect(s.photo).toContain(selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
-    if(selector.includes('blog-')) expect(s.contrast).toBe('none');
-    else expect(s.contrast).toContain('contrast(1.04)');
+    expect(s.contrast).toBe('none');
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
