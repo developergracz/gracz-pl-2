@@ -388,3 +388,37 @@ body.homepage-premium-max .site-footer .footer-news form[data-newsletter]>button
     padding-right:clamp(208px,21vw,265px)!important;
   }
 }
+
+/* Approved Full Max Premium R1: six distinct photographs, no reused game thumbnails. */
+@media (min-width:961px) {
+  body.homepage-premium-max .r4-homepage .r4-guides-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:14px!important;
+  }
+}
+body.homepage-premium-max .r4-guides-grid .r4-guide-photo.r4-img-chess {
+  background-image:url("/assets/gracz-guide-chess-approved-r1.avif")!important;
+}
+body.homepage-premium-max .r4-guides-grid .r4-guide-photo.r4-img-checkers {
+  background-image:url("/assets/gracz-guide-checkers-approved-r1.avif")!important;
+}
+body.homepage-premium-max .r4-guides-grid .r4-guide-photo.r4-img-poker {
+  background-image:url("/assets/gracz-guide-poker-approved-r1.avif")!important;
+}
+body.homepage-premium-max .r4-updates-grid .r4-update-photo.r4-blog-tournament {
+  background-image:url("/assets/gracz-blog-tournament-approved-r1.avif")!important;
+  background-position:center 38%!important;
+}
+body.homepage-premium-max .r4-updates-grid .r4-update-photo.r4-blog-analysis {
+  background-image:url("/assets/gracz-blog-analysis-approved-r1.avif")!important;
+  background-position:center 38%!important;
+}
+body.homepage-premium-max .r4-updates-grid .r4-update-photo.r4-blog-thousand {
+  background-image:url("/assets/gracz-blog-thousand-approved-r1.avif")!important;
+  background-position:center 44%!important;
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-guides-grid .r4-guide:last-child {
+    grid-column:1/-1;
+  }
+}
