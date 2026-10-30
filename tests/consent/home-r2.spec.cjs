@@ -429,7 +429,7 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
    const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
-   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-clean-r2\.avif/);
+   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-owner-premium-r3\.avif/);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
