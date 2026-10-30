@@ -429,7 +429,7 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
    const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
-   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-clean-r2\.avif/);
+   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-owner-premium-r3\.avif/);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
@@ -442,9 +442,9 @@ test('Approved six-card images are unique and all local assets resolve',async({b
  ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-clean-r2.avif'],
  ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-clean-r2.avif'],
  ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-clean-r2.avif'],
- ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-clean-r2.avif'],
- ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-clean-r2.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-clean-r2.avif']
+ ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
+ ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-owner-premium-r3.avif'],
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-owner-premium-r3.avif']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -482,9 +482,10 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain('-clean-r2.avif');
-    expect(s.position).toContain(y);
-    expect(s.contrast).toContain('contrast(1.04)');
+    expect(s.photo).toContain(selector.includes('blog-')?'-owner-premium-r3.avif':'-clean-r2.avif');
+    expect(s.position).toContain(selector.includes('blog-')?'0%':y);
+    if(selector.includes('blog-')) expect(s.contrast).toBe('none');
+    else expect(s.contrast).toContain('contrast(1.04)');
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
@@ -514,6 +515,35 @@ test('Owner Full Max Premium gallery uses large responsive cards and circular li
    expect(d.blog.h).toBeGreaterThanOrEqual(width<=680?350:400);
    expect(d.blog.bottom).toBeLessThanOrEqual(d.section.bottom+2);
    expect(d.phone).toBe('none');expect(d.scroll).toBeLessThanOrEqual(width+2);
+  }finally{await context.close();}
+ }
+});
+
+test('Owner-approved sharp Blog photos and Full Max Premium arrows render correctly',async({browser})=>{
+ for(const width of [390,1366]){
+  const context=await browser.newContext({viewport:{width,height:850}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const cards=page.locator('#aktualnosci .r4-update');
+   await expect(cards).toHaveCount(3);
+   const expected=[
+     'gracz-blog-tournament-owner-premium-r3.avif',
+     'gracz-blog-analysis-owner-premium-r3.avif',
+     'gracz-blog-thousand-owner-premium-r3.avif'
+   ];
+   for(let i=0;i<3;i++){
+     const card=cards.nth(i),photo=card.locator('.r4-update-photo');
+     const arrow=card.locator('.r4-premium-card-arrow');
+     await expect(arrow).toBeVisible();
+     expect(await arrow.evaluate(el=>getComputedStyle(el).boxShadow)).not.toBe('none');
+     expect(await photo.evaluate(el=>getComputedStyle(el).backgroundImage)).toContain(expected[i]);
+     expect(await photo.evaluate(el=>getComputedStyle(el).filter)).toBe('none');
+     const response=await page.request.get('/assets/'+expected[i]);
+     expect(response.status(),expected[i]).toBe(200);
+     expect((await response.body()).length).toBeGreaterThan(25000);
+   }
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
  }
 });

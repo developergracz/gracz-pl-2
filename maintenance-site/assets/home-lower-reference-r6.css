@@ -396,9 +396,9 @@ body.homepage-premium-max .r4-guide,body.homepage-premium-max .r4-update{border-
 body.homepage-premium-max .r4-guide-photo.r4-approved-guide-chess{background-image:url("/assets/gracz-guide-chess-clean-r2.avif")!important;background-position:center 38%!important}
 body.homepage-premium-max .r4-guide-photo.r4-approved-guide-checkers{background-image:url("/assets/gracz-guide-checkers-clean-r2.avif")!important;background-position:center 45%!important}
 body.homepage-premium-max .r4-guide-photo.r4-approved-guide-poker{background-image:url("/assets/gracz-guide-poker-clean-r2.avif")!important;background-position:center 48%!important}
-body.homepage-premium-max .r4-update-photo.r4-approved-blog-tournament{background-image:url("/assets/gracz-blog-tournament-clean-r2.avif")!important;background-position:center 14%!important}
-body.homepage-premium-max .r4-update-photo.r4-approved-blog-analysis{background-image:url("/assets/gracz-blog-analysis-clean-r2.avif")!important;background-position:center 46%!important}
-body.homepage-premium-max .r4-update-photo.r4-approved-blog-thousand{background-image:url("/assets/gracz-blog-thousand-clean-r2.avif")!important;background-position:center 58%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-tournament{background-image:url("/assets/gracz-blog-tournament-owner-premium-r3.avif")!important;background-position:center 14%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-analysis{background-image:url("/assets/gracz-blog-analysis-owner-premium-r3.avif")!important;background-position:center 46%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-thousand{background-image:url("/assets/gracz-blog-thousand-owner-premium-r3.avif")!important;background-position:center 58%!important}
 @media(min-width:1181px){body.homepage-premium-max .r4-updates-grid .r4-update{height:238px!important;min-height:238px!important}}
 @media(max-width:680px){body.homepage-premium-max .r4-homepage .r4-guides-grid{grid-template-columns:minmax(0,1fr)!important}body.homepage-premium-max .r4-guides-grid .r4-guide{height:245px!important;min-height:245px!important}}
 
@@ -546,3 +546,22 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-phone{display:none!impor
  }
 }
 
+
+/* Owner-approved sharp Blog photos and Full Max Premium glowing arrow rings. */
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update-photo{
+ background-position:center top!important;background-size:cover!important;filter:none!important;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update::after{
+ background:linear-gradient(0deg,rgba(3,19,31,.52) 0%,transparent 44%)!important;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-premium-card-arrow{
+ border:2px solid #ffca74!important;color:#ffd88a!important;
+ background:linear-gradient(145deg,rgba(15,35,45,.94),rgba(3,15,26,.88))!important;
+ box-shadow:0 0 0 1px rgba(254,195,87,.23),0 0 13px rgba(255,185,67,.48),inset 0 0 8px rgba(232,164,49,.12)!important;
+ transition:background .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update:hover .r4-premium-card-arrow{
+ color:#061522!important;background:#ffcf7e!important;
+ box-shadow:0 0 0 2px rgba(255,197,94,.35),0 0 23px rgba(255,190,73,.66)!important;transform:translateY(-2px);
+}
+@media(prefers-reduced-motion:reduce){body.homepage-premium-max .r4-homepage #aktualnosci .r4-premium-card-arrow{transition:none!important}}
