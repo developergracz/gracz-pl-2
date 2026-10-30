@@ -424,3 +424,125 @@ body.homepage-premium-max .r4-guide-photo.r4-approved-guide-poker{background-pos
 body.homepage-premium-max .r4-update-photo.r4-approved-blog-tournament{background-position:center 0%!important}
 body.homepage-premium-max .r4-update-photo.r4-approved-blog-analysis{background-position:center 45%!important}
 body.homepage-premium-max .r4-update-photo.r4-approved-blog-thousand{background-position:center 94%!important}
+
+
+/* Exact approved premium magazine layout: Academy and Blog only. */
+body.homepage-premium-max .r4-homepage #poradniki-academy,
+body.homepage-premium-max .r4-homepage #aktualnosci{
+ padding:clamp(35px,3.5vw,55px) 0!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-section-title,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-section-title{
+ position:relative;align-items:center!important;gap:20px!important;
+ padding-top:26px!important;margin-bottom:30px!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-section-title::before,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-section-title::before{
+ content:"";position:absolute;top:0;left:0;width:55px;height:5px;border-radius:5px;
+ background:linear-gradient(90deg,#ffe5ab,#db9f43);
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-section-title h2,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-section-title h2{
+ font-size:clamp(33px,3.85vw,58px)!important;line-height:1.12!important;
+ letter-spacing:-.04em!important;color:white!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-section-title h2 span{
+ background:linear-gradient(100deg,#ffefad,#dca24d 85%,#ffe4a5);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-section-title p{
+ font-size:clamp(15px,1.3vw,19px)!important;line-height:1.45!important;
+ color:#c3d1e2!important;margin-top:14px!important;
+}
+body.homepage-premium-max .r4-homepage .r4-premium-section-link{
+ display:inline-flex!important;align-items:center;justify-content:center;
+ width:53px!important;height:53px!important;min-width:53px!important;max-width:none!important;
+ flex:0 0 53px!important;border:1.5px solid #e3ae55;border-radius:50%;
+ color:#f2c36d!important;background:rgba(4,18,29,.5);font-size:28px!important;
+ padding:0!important;line-height:1!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-guides-grid,
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-updates-grid{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:clamp(14px,1.5vw,22px)!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guides-grid .r4-guide,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update{
+ display:block!important;position:relative!important;
+ height:clamp(405px,34vw,510px)!important;min-height:clamp(405px,34vw,510px)!important;
+ border-radius:17px!important;border:1px solid #25475b!important;
+ background:#071827!important;overflow:hidden!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide-photo,.r4-update-photo){
+ height:100%!important;width:100%!important;inset:0!important;
+ background-size:cover!important;filter:contrast(1.04) saturate(1.04) brightness(1.02)!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide::after,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update::after{
+ background:linear-gradient(0deg,#031521 0%,rgba(3,21,34,.96) 13%,rgba(3,21,34,.76) 29%,rgba(3,21,34,.12) 55%,transparent 73%)!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide-body,.r4-update-body){
+ position:absolute!important;bottom:0!important;left:0!important;right:0!important;
+ z-index:1!important;display:grid!important;gap:8px!important;
+ padding:18px 62px 24px 19px!important;min-height:0!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide,.r4-update) small{
+ font-size:12px!important;font-weight:850!important;color:#f4c776!important;
+}
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide,.r4-update) strong{
+ font-size:clamp(19px,1.55vw,23px)!important;line-height:1.22!important;color:#fff!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-body>span,
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update em{
+ font-size:clamp(14px,1.03vw,17px)!important;line-height:1.4!important;
+ color:#cbd9e9!important;padding:0!important;
+}
+body.homepage-premium-max .r4-homepage .r4-premium-card-arrow{
+ display:grid;place-items:center;position:absolute;bottom:19px;right:17px;z-index:2;
+ width:40px;height:40px;border:1.5px solid #dfa94f;border-radius:50%;
+ color:#f5bd63;font-size:23px;background:rgba(4,19,30,.55);
+}
+body.homepage-premium-max .r4-homepage .r4-premium-section-link:hover,
+body.homepage-premium-max .r4-homepage :is(.r4-guide,.r4-update):hover .r4-premium-card-arrow{
+ background:#f2c16b!important;color:#051522!important;
+}
+body.homepage-premium-max .r4-homepage :is(.r4-guide,.r4-update,.r4-premium-section-link):focus-visible{
+ outline:3px solid #ffde9b;outline-offset:3px;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci{
+ display:block!important;min-height:0!important;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-main{width:100%!important}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-phone{display:none!important}
+@media(min-width:1181px){
+ body.homepage-premium-max .r4-homepage .r4-next{padding-right:0!important}
+}
+@media(min-width:681px) and (max-width:1180px){
+ body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guides-grid,
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important
+ }
+ body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide,.r4-update){
+  height:420px!important;min-height:420px!important
+ }
+}
+@media(max-width:680px){
+ body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guides-grid,
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
+  grid-template-columns:minmax(0,1fr)!important
+ }
+ body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide,.r4-update){
+  height:clamp(355px,110vw,445px)!important;min-height:clamp(355px,110vw,445px)!important
+ }
+ body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-section-title h2{
+  font-size:clamp(29px,7vw,39px)!important
+ }
+ body.homepage-premium-max .r4-homepage .r4-premium-section-link{
+  width:43px!important;height:43px!important;min-width:43px!important;flex-basis:43px!important;
+  font-size:23px!important
+ }
+ body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) :is(.r4-guide-body,.r4-update-body){
+  padding:16px 53px 19px 16px!important
+ }
+}
+
