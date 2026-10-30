@@ -466,3 +466,26 @@ test('Approved six-card images are unique and all local assets resolve',async({b
   }finally{await context.close();}
  }
 });
+
+test('Approved gallery photo framing, legibility and viewport stability',async({browser})=>{
+ for(const width of [390,1366,1920]){
+  const ctx=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await ctx.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const positions=[
+    ['.r4-approved-guide-chess','0%'],['.r4-approved-guide-checkers','74%'],
+    ['.r4-approved-guide-poker','92%'],['.r4-approved-blog-tournament','0%'],
+    ['.r4-approved-blog-analysis','45%'],['.r4-approved-blog-thousand','94%']
+   ];
+   for(const [selector,y] of positions){
+    const tile=page.locator(selector);await expect(tile).toHaveCount(1);
+    const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
+    expect(s.photo).toContain('-approved-r1.avif');
+    expect(s.position).toContain(y);
+    expect(s.contrast).toContain('contrast(1.08)');
+   }
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await ctx.close();}
+ }
+});

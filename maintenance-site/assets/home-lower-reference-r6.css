@@ -401,3 +401,26 @@ body.homepage-premium-max .r4-update-photo.r4-approved-blog-analysis{background-
 body.homepage-premium-max .r4-update-photo.r4-approved-blog-thousand{background-image:url("/assets/gracz-blog-thousand-approved-r1.avif")!important;background-position:center 58%!important}
 @media(min-width:1181px){body.homepage-premium-max .r4-updates-grid .r4-update{height:238px!important;min-height:238px!important}}
 @media(max-width:680px){body.homepage-premium-max .r4-homepage .r4-guides-grid{grid-template-columns:minmax(0,1fr)!important}body.homepage-premium-max .r4-guides-grid .r4-guide{height:245px!important;min-height:245px!important}}
+
+/* Gallery readability correction: preserve the approved six photos and links. */
+body.homepage-premium-max .r4-guide-photo,
+body.homepage-premium-max .r4-update-photo{
+  filter:contrast(1.08) saturate(1.08) brightness(1.07)!important;
+  background-repeat:no-repeat!important;
+}
+body.homepage-premium-max .r4-guide::after{
+  background:linear-gradient(0deg,rgba(3,15,27,.98) 0%,rgba(3,15,27,.90) 17%,rgba(3,15,27,.48) 38%,rgba(3,15,27,.10) 65%,transparent 84%)!important;
+}
+body.homepage-premium-max .r4-update::after{
+  background:linear-gradient(0deg,rgba(3,15,27,.98) 0%,rgba(3,15,27,.90) 17%,rgba(3,15,27,.50) 39%,rgba(3,15,27,.11) 65%,transparent 86%)!important;
+}
+body.homepage-premium-max .r4-guide-body strong,
+body.homepage-premium-max .r4-guide-body>span,
+body.homepage-premium-max .r4-update-body strong,
+body.homepage-premium-max .r4-update-body em{text-shadow:0 1px 2px rgba(0,0,0,.70)}
+body.homepage-premium-max .r4-guide-photo.r4-approved-guide-chess{background-position:center 0%!important}
+body.homepage-premium-max .r4-guide-photo.r4-approved-guide-checkers{background-position:center 74%!important}
+body.homepage-premium-max .r4-guide-photo.r4-approved-guide-poker{background-position:center 92%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-tournament{background-position:center 0%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-analysis{background-position:center 45%!important}
+body.homepage-premium-max .r4-update-photo.r4-approved-blog-thousand{background-position:center 94%!important}
