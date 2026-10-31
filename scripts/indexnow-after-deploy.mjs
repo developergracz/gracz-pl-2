@@ -53,7 +53,7 @@ export async function submit({base,head,root=ROOT,fetcher=fetch,wait=ms=>new Pro
   const key=keyFile(root);
   const files=changedFiles(base,head);
   const urls=urlsForChangedFiles(files,fs.readFileSync(path.join(root,"sitemap.xml"),"utf8"),root);
-  if(!urls.length)return {state:"no_changed_pages",count:0};
+  // Even without changed pages, verify the public root key after this release.
   if(urls.length>50)throw Error("Unexpected IndexNow batch size");
   let live=false;
   for(let i=0;i<tries;i++){
@@ -61,6 +61,7 @@ export async function submit({base,head,root=ROOT,fetcher=fetch,wait=ms=>new Pro
     if(i+1<tries)await wait(15000);
   }
   if(!live)return {state:"not_published_yet",count:0};
+  if(!urls.length)return {state:"verification_live_no_changed_pages",count:0};
   const response=await fetcher("https://api.indexnow.org/indexnow",{
     method:"POST",headers:{"content-type":"application/json; charset=utf-8"},
     body:JSON.stringify({host:"gracz.pl",key:key.value,keyLocation:HOST+"/"+key.name,urlList:urls}),
