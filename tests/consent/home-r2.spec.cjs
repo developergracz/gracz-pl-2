@@ -444,7 +444,7 @@ test('Approved six-card images are unique and all local assets resolve',async({b
  ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-sharp-owner-r4.avif'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-owner-premium-r3.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-cardback-premium-r5.avif']
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-white-premium-r6.avif']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -482,7 +482,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-cardback-premium-r5.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'-white-premium-r6.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
@@ -529,7 +529,7 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
    const expected=[
      'gracz-blog-tournament-owner-premium-r3.avif',
      'gracz-blog-analysis-owner-premium-r3.avif',
-     'gracz-blog-thousand-cardback-premium-r5.avif'
+     'gracz-blog-thousand-white-premium-r6.avif'
    ];
    for(let i=0;i<3;i++){
      const card=cards.nth(i),photo=card.locator('.r4-update-photo');
