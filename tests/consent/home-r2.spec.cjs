@@ -593,3 +593,30 @@ test('Two approved wide scenes load as native images without duplicate card copy
   }finally{await ctx.close();}
  }
 });
+
+
+test('Premium Academy and Blog circular CTA arrows remain centered at mobile and desktop widths',async({browser})=>{
+ for(const width of [390,768,1366]){
+  const ctx=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await ctx.newPage();await page.goto('/');
+   const arrows=page.locator('#poradniki-academy .r4-premium-card-arrow, #aktualnosci .r4-premium-card-arrow');
+   await expect(arrows).toHaveCount(6);
+   for(const arrow of await arrows.all()){
+    const m=await arrow.evaluate(el=>{
+     const css=getComputedStyle(el),box=el.getBoundingClientRect();
+     const range=document.createRange();range.selectNodeContents(el);
+     const glyph=range.getBoundingClientRect();
+     return {display:css.display,justify:css.justifyContent,align:css.alignItems,
+       padding:css.padding,gap:css.gap,width:box.width,height:box.height,
+       deltaX:Math.abs((glyph.left+glyph.width/2)-(box.left+box.width/2)),
+       deltaY:Math.abs((glyph.top+glyph.height/2)-(box.top+box.height/2))};
+    });
+    expect(m.display).toBe('flex');expect(m.justify).toBe('center');expect(m.align).toBe('center');
+    expect(m.padding).toBe('0px');expect(m.gap).toBe('0px');
+    expect(Math.abs(m.width-m.height)).toBeLessThanOrEqual(1);
+    expect(m.deltaX).toBeLessThanOrEqual(3);expect(m.deltaY).toBeLessThanOrEqual(3);
+   }
+  }finally{await ctx.close();}
+ }
+});
