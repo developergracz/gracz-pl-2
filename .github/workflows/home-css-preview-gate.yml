@@ -61,7 +61,10 @@ jobs:
           for(const file of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','gracz-game-chess-online-premium-r12.avif','gracz-game-checkers-premium-r12.avif','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
             assert.ok(css.includes(file),'CSS must use approved reference '+file);
             const bytes=fs.readFileSync('maintenance-site/assets/'+file);
-            assert.ok(bytes.length>1000&&bytes.subarray(0,4).toString()==='RIFF','Valid WebP '+file);
+            const validSignature=file.endsWith('.avif')
+              ? bytes.subarray(4,12).toString().startsWith('ftypavif')
+              : bytes.subarray(0,4).toString()==='RIFF';
+            assert.ok(bytes.length>1000&&validSignature,'Valid premium image '+file);
           }
           JS
       - name: Compare current main and candidate PR in the same mobile Lighthouse environment
