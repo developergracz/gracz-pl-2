@@ -482,7 +482,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-cardback-premium-r5.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'-white-premium-r6.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
