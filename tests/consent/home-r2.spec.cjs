@@ -546,3 +546,25 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
   }finally{await context.close();}
  }
 });
+
+test('Approved Tysiac premium chip photo appears uncropped without duplicated text',async({browser})=>{
+ for(const width of [390,1366]){
+  const ctx=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await ctx.newPage();await page.goto('/');
+   const card=page.locator('#aktualnosci .r4-update').nth(2);
+   const photo=card.locator('img.r4-approved-blog-thousand');
+   await expect(photo).toHaveAttribute('src','/assets/gracz-blog-thousand-chip-approved-r8.avif');
+   await expect(photo).toHaveAttribute('alt','');
+   await expect(photo).toHaveAttribute('loading','lazy');
+   await photo.scrollIntoViewIfNeeded();
+   await expect.poll(async()=>photo.evaluate(el=>el.naturalWidth)).toBe(465);
+   await expect(photo).toHaveCSS('object-fit','cover');
+   await expect(card.locator('.r4-update-body strong')).toHaveText('Tysiąc — zasady, taktyka i najważniejsze wskazówki');
+   const response=await page.request.get('/assets/gracz-blog-thousand-chip-approved-r8.avif');
+   expect(response.status()).toBe(200);
+   expect((await response.body()).length).toBeGreaterThan(10000);
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await ctx.close();}
+ }
+});
