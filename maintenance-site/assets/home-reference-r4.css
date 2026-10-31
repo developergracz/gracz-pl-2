@@ -90,8 +90,8 @@ body.homepage-premium-max #tresc *,body.homepage-premium-max .site-footer *{box-
  display:block;min-width:0;background-color:#142132;background-size:cover;
  background-position:center;background-repeat:no-repeat}
 .r4-game-image{height:clamp(116px,10vw,175px);border-bottom:1px solid rgba(255,255,255,.08)}
-.r4-img-chess{background-image:url("/assets/r4-game-chess.webp")}
-.r4-img-checkers{background-image:url("/assets/r4-game-checkers.webp")}
+.r4-img-chess{background-image:url("/assets/gracz-game-chess-online-premium-r12.avif")}
+.r4-img-checkers{background-image:url("/assets/gracz-game-checkers-premium-r12.avif")}
 .r4-img-gomoku{background-image:url("/assets/r4-game-gomoku.webp")}
 .r4-img-thousand{background-image:url("/assets/r4-game-thousand.webp")}
 .r4-img-poker{background-image:url("/assets/r4-game-poker.webp")}

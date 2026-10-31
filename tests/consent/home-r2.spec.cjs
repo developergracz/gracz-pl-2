@@ -30,7 +30,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(form).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
 
-   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','r4-game-chess.webp','r4-game-checkers.webp','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
+   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','gracz-game-chess-online-premium-r12.avif','gracz-game-checkers-premium-r12.avif','r4-game-gomoku.webp','r4-game-thousand.webp','r4-game-poker.webp']){
      const response=await page.request.get('/assets/'+asset);
      expect(response.status(),asset).toBe(200);
      expect((await response.body()).length,asset).toBeGreaterThan(1000);
@@ -617,6 +617,26 @@ test('Premium Academy and Blog circular CTA arrows remain centered at mobile and
     expect(Math.abs(m.width-m.height)).toBeLessThanOrEqual(1);
     expect(m.deltaX).toBeLessThanOrEqual(3);expect(m.deltaY).toBeLessThanOrEqual(3);
    }
+  }finally{await ctx.close();}
+ }
+});
+
+
+test('Approved Full Max Premium game images load and display in chess and checkers cards',async({browser})=>{
+ for(const width of [390,1366]){
+  const ctx=await browser.newContext({viewport:{width,height:850}});
+  try{
+   const page=await ctx.newPage();await page.goto('/');
+   for(const [klass,file] of [['r4-img-chess','gracz-game-chess-online-premium-r12.avif'],['r4-img-checkers','gracz-game-checkers-premium-r12.avif']]){
+    const photo=page.locator('#nasze-gry .r4-game-image.'+klass);
+    await expect(photo).toHaveCount(1);
+    await expect.poll(async()=>photo.evaluate(el=>getComputedStyle(el).backgroundImage)).toContain('/assets/'+file);
+    const response=await page.request.get('/assets/'+file);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('image/avif');
+    expect((await response.body()).length).toBeGreaterThan(5000);
+   }
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
  }
 });
