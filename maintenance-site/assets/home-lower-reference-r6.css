@@ -568,9 +568,9 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update:hover .r4-premium
 
 
 /* Owner-approved focused photographs for the three Academy guide cards. */
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-chess{background-image:url("/assets/gracz-guide-chess-sharp-owner-r4.avif")!important}
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-checkers{background-image:url("/assets/gracz-guide-checkers-sharp-owner-r4.avif")!important}
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-poker{background-image:url("/assets/gracz-guide-poker-sharp-owner-r4.avif")!important}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-chess{background-image:url("/assets/gracz-guide-chess-wide-approved-r10.avif")!important}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-checkers{background-image:url("/assets/gracz-guide-checkers-wide-approved-r10.avif")!important}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-poker{background-image:url("/assets/gracz-guide-poker-wide-approved-r10.avif")!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo{background-position:center top!important;background-size:cover!important;background-repeat:no-repeat!important;filter:none!important;transform:none!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide:hover .r4-guide-photo{transform:none!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide::after{background:linear-gradient(0deg,rgba(3,19,31,.92) 0%,rgba(3,19,31,.75) 18%,rgba(3,19,31,.17) 40%,transparent 64%)!important}
