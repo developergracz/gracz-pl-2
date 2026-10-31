@@ -444,7 +444,7 @@ test('Approved six-card images are unique and all local assets resolve',async({b
  ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-sharp-owner-r4.avif'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-owner-premium-r3.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-cardback-premium-r5.avif']
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-white-premium-r6.avif']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -529,7 +529,7 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
    const expected=[
      'gracz-blog-tournament-owner-premium-r3.avif',
      'gracz-blog-analysis-owner-premium-r3.avif',
-     'gracz-blog-thousand-cardback-premium-r5.avif'
+     'gracz-blog-thousand-white-premium-r6.avif'
    ];
    for(let i=0;i<3;i++){
      const card=cards.nth(i),photo=card.locator('.r4-update-photo');
