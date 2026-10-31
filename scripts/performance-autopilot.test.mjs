@@ -89,7 +89,14 @@ test("offscreen mobile LCP paint optimization leaves both critical hero regions 
   assert.match(pokerRule,/\.main-column > :is\(/);
   assert.match(pokerRule,/\.poker-scene-section/);
   assert.doesNotMatch(pokerRule,/\.hero-card|\.academy-cockpit|\.site-header/);
-  assert.match(homeMarkup,/class="hero home-hero-premium/);
+  // The live R4/R14 homepage HERO replaced the former home-hero-premium class.
+  // Verify both the current visual LCP candidate and semantic copy remain eager.
+  assert.match(homeMarkup,/<section class="r4-hero" aria-labelledby="hero-title">/);
+  assert.match(homeMarkup,/<picture class="r4-owner-picture" aria-hidden="true">/);
+  assert.match(homeMarkup,/<img class="r4-owner-image"[^>]*loading="eager"[^>]*fetchpriority="high">/);
+  assert.match(homeMarkup,/<link rel="preload" href="\\/assets\\/gracz-hero-mobile-lcp-r16\\.webp"[^>]*media="\\(max-width:680px\\)"[^>]*fetchpriority="high">/);
+  assert.match(homeMarkup,/<link rel="preload" href="\\/assets\\/gracz-hero-approved-r14\\.webp"[^>]*media="\\(min-width:1181px\\)"[^>]*fetchpriority="high">/);
+  assert.doesNotMatch(homeRule,/\\.r4-hero\\b/);
   assert.match(pokerMarkup,/class="hero-card"/);
   assert.match(homeRule,/content-visibility:auto/);
   assert.match(pokerRule,/content-visibility:auto/);
