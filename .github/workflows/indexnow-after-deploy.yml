@@ -1,0 +1,60 @@
+name: GRACZ.PL — IndexNow after Render LIVE
+
+on:
+  pull_request:
+    paths:
+      - "maintenance-site/*.txt"
+      - "scripts/indexnow-after-deploy*.mjs"
+      - ".github/workflows/indexnow-after-deploy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "maintenance-site/index.html"
+      - "maintenance-site/**/index.html"
+      - "maintenance-site/*.txt"
+  workflow_dispatch:
+    inputs:
+      before_sha:
+        description: "Previous released SHA for retry after a delayed manual Render deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gracz-indexnow-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Check IndexNow protocol and limited scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - run: |
+          node --check scripts/indexnow-after-deploy.mjs
+          node --test scripts/indexnow-after-deploy.test.mjs
+
+  submit:
+    name: Notify changed pages only when LIVE bytes match Git
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Validate live release and notify IndexNow
+        env:
+          INDEXNOW_BEFORE_SHA: ${{ github.event.before || inputs.before_sha }}
+          INDEXNOW_HEAD_SHA: ${{ github.sha }}
+        run: node scripts/indexnow-after-deploy.mjs --notify
