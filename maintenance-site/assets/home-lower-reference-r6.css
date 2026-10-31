@@ -586,3 +586,10 @@ body.homepage-premium-max .r4-homepage #aktualnosci img.r4-update-photo:is(.r4-a
  object-position:center top!important;
  background-color:#031521!important;
 }
+
+/* Center the decorative arrows within their gold rings; older .r4-update>span:last-child
+   adds 12px padding and a grid gap, shifting the glyph to the lower-right. */
+body.homepage-premium-max .r4-homepage :is(#poradniki-academy,#aktualnosci) .r4-premium-card-arrow{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ padding:0!important;gap:0!important;line-height:1!important;box-sizing:border-box!important;
+}
