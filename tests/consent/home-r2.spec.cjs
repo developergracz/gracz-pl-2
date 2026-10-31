@@ -439,9 +439,9 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
 
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
- ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-sharp-owner-r4.avif'],
- ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-sharp-owner-r4.avif'],
- ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-sharp-owner-r4.avif'],
+ ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-wide-approved-r10.avif'],
+ ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-wide-approved-r10.avif'],
+ ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-wide-approved-r10.avif'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
  ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
@@ -482,7 +482,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-wide-approved-r10.avif');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
