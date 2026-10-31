@@ -429,7 +429,7 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
    const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
-   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-owner-premium-r3\.avif/);
+   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-wide-premium-r9\.avif/);
    const signup=page.locator('.site-footer form[data-newsletter]');
    await expect(signup).toBeVisible();
    await expect(signup.locator('button[type=submit]')).toBeDisabled();
@@ -443,8 +443,8 @@ test('Approved six-card images are unique and all local assets resolve',async({b
  ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-sharp-owner-r4.avif'],
  ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-sharp-owner-r4.avif'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
- ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-owner-premium-r3.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-white-premium-r6.avif']
+ ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -482,7 +482,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-white-premium-r6.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-sharp-owner-r4.avif');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
@@ -528,8 +528,8 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
    await expect(cards).toHaveCount(3);
    const expected=[
      'gracz-blog-tournament-owner-premium-r3.avif',
-     'gracz-blog-analysis-owner-premium-r3.avif',
-     'gracz-blog-thousand-white-premium-r6.avif'
+     'gracz-blog-analysis-wide-premium-r9.avif',
+     'gracz-blog-thousand-wide-premium-r9.avif'
    ];
    for(let i=0;i<3;i++){
      const card=cards.nth(i),photo=card.locator('.r4-update-photo');
@@ -540,7 +540,7 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
      expect(await photo.evaluate(el=>getComputedStyle(el).filter)).toBe('none');
      const response=await page.request.get('/assets/'+expected[i]);
      expect(response.status(),expected[i]).toBe(200);
-     const bytes=(await response.body()).length;expect(bytes).toBeGreaterThan(i===2?10000:25000);if(i===2)expect(bytes).toBeLessThan(50000);
+     const bytes=(await response.body()).length;expect(bytes).toBeGreaterThan(i===0?25000:10000);if(i>0)expect(bytes).toBeLessThan(50000);
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
@@ -554,16 +554,41 @@ test('Approved Tysiac premium chip photo appears uncropped without duplicated te
    const page=await ctx.newPage();await page.goto('/');
    const card=page.locator('#aktualnosci .r4-update').nth(2);
    const photo=card.locator('img.r4-approved-blog-thousand');
-   await expect(photo).toHaveAttribute('src','/assets/gracz-blog-thousand-chip-approved-r8.avif');
+   await expect(photo).toHaveAttribute('src','/assets/gracz-blog-thousand-wide-premium-r9.avif');
    await expect(photo).toHaveAttribute('alt','');
    await expect(photo).toHaveAttribute('loading','lazy');
    await photo.scrollIntoViewIfNeeded();
-   await expect.poll(async()=>photo.evaluate(el=>el.naturalWidth)).toBe(465);
+   await expect.poll(async()=>photo.evaluate(el=>el.naturalWidth)).toBe(720);
    await expect(photo).toHaveCSS('object-fit','cover');
    await expect(card.locator('.r4-update-body strong')).toHaveText('Tysiąc — zasady, taktyka i najważniejsze wskazówki');
-   const response=await page.request.get('/assets/gracz-blog-thousand-chip-approved-r8.avif');
+   const response=await page.request.get('/assets/gracz-blog-thousand-wide-premium-r9.avif');
    expect(response.status()).toBe(200);
    expect((await response.body()).length).toBeGreaterThan(10000);
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await ctx.close();}
+ }
+});
+
+// Both approved wide photographs use actual files (not baked-in headings/buttons).
+test('Two approved wide scenes load as native images without duplicate card copy',async({browser})=>{
+ for(const width of [390,1366]){
+  const ctx=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await ctx.newPage();await page.goto('/');
+   for(const [selector,filename] of [
+    ['.r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
+    ['.r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
+   ]){
+    const photo=page.locator('#aktualnosci img'+selector);
+    await expect(photo).toHaveCount(1);
+    await expect(photo).toHaveAttribute('src','/assets/'+filename);
+    await expect(photo).toHaveAttribute('alt','');
+    await photo.scrollIntoViewIfNeeded();
+    await expect.poll(async()=>photo.evaluate(el=>el.naturalWidth)).toBe(720);
+    await expect(photo).toHaveCSS('object-fit','cover');
+   }
+   await expect(page.locator('#aktualnosci .r4-update-body')).toHaveCount(3);
+   await expect(page.locator('#aktualnosci .r4-premium-card-arrow')).toHaveCount(3);
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
  }
