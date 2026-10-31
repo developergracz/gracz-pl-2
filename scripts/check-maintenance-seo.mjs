@@ -206,6 +206,11 @@ requireCheck(
   fs.existsSync(path.join(root, "assets/fonts/montserrat-latin-ext.woff2")),
   "homepage: primary Polish Montserrat font preload missing"
 );
+// Mobile HERO is the measured LCP element (Lighthouse 2026-10-31). Do not let
+// a non-critical body font compete with the existing high-priority HERO image.
+// Open Sans remains available via the font-face rule in the bundled stylesheet.
+requireCheck(!home.includes('href="/assets/fonts/opensans-latin.woff2" as="font"'),
+  "homepage: non-critical Open Sans preload must not compete with LCP");
 requireCheck(
   !/rel="preload" href="\/assets\/img\/hero-bg\.webp"/.test(home) &&
   /\.homepage-premium-max \.hero\{\s*background:transparent!important;/.test(read("assets/home-premium-max.css")),
