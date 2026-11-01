@@ -410,9 +410,9 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
       const css=getComputedStyle(el);
       return {background:css.backgroundColor,fill:css.webkitTextFillColor,shadow:css.boxShadow,opacity:css.opacity};
     });
-    expect(style.background).toBe('rgb(255, 255, 255)');
-    expect(style.fill).toBe('rgb(20, 38, 55)');
-    expect(style.shadow).toContain('999px');
+    expect(style.background).toBe('rgb(11, 37, 53)');
+    expect(style.fill).toBe('rgb(245, 252, 255)');
+    expect(style.shadow).toContain('rgba');
     expect(style.opacity).toBe('1');
    }
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -450,7 +450,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     expect(Math.abs((fy-y)/(b-y)-.3920)).toBeLessThan(.022);
     expect(Math.abs((fr-fx)/(r-x)-.4505)).toBeLessThan(.024);
     expect(Math.abs((fb-fy)/(b-y)-.0800)).toBeLessThan(.024);
-    expect(Math.abs((r-x)-width),'R27 artwork fills viewport width').toBeLessThanOrEqual(2);
+    expect(Math.abs((r-x)-Math.min(width,(900-148)*1.77577)),'R29 art fits both viewport dimensions').toBeLessThanOrEqual(3);
     const [ex,ey,er,eb]=state.email;
     const [bx,by,br,bb]=state.submit;
     expect(er).toBeLessThanOrEqual(bx+2);
@@ -470,7 +470,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
-test('R27 newsletter spans desktop width without cropping or distorting the artwork', async({browser})=>{
+test('R29 newsletter artwork fits complete desktop viewport without cropping', async({browser})=>{
  test.setTimeout(60000);
  for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:785},{width:1600,height:900}]){
   const context=await browser.newContext({viewport});
@@ -482,6 +482,7 @@ test('R27 newsletter spans desktop width without cropping or distorting the artw
    const img=section.locator('> img.footer-news-full-art-r16');
    const form=section.locator('form[data-newsletter]');
    await section.scrollIntoViewIfNeeded();
+   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
    await expect(img).toBeVisible();
    await expect(form).toBeVisible();
    const geo=await page.evaluate(()=>{
@@ -501,14 +502,14 @@ test('R27 newsletter spans desktop width without cropping or distorting the artw
     expect(geo.ambientMask,'desktop backdrop must not disappear in the side gutters').toBe('none');
     expect(geo.ambientBackground).toContain('radial-gradient');
    }
-   expect(Math.abs(geo.s.width-viewport.width),'R27 newsletter fills available browser width').toBeLessThanOrEqual(2);
+   expect(Math.abs(geo.s.width-Math.min(viewport.width,(viewport.height-148)*1.77577)),'R29 width limited by visible viewport height').toBeLessThanOrEqual(3);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'R27 artwork extends naturally and scrolls when taller than the viewport').toBeGreaterThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
+   expect(geo.s.height,'R29 image fits above footer within visible browser').toBeLessThanOrEqual(viewport.height-135);
    if(viewport.width>=1181){
     expect(geo.s.width,'desktop newsletter must use the available height, not empty side gutters').toBeGreaterThanOrEqual(viewport.height>=900?1300:1100);
    }
-   expect(geo.s.bottom,'Newsletter must remain reachable by vertical scroll').toBeGreaterThan(0);
-   expect(geo.s.top,'Newsletter must intersect viewport after scrolling').toBeLessThanOrEqual(viewport.height+2);
+   expect(geo.s.bottom,'R29 image must end inside browser').toBeLessThanOrEqual(viewport.height+2);
+   expect(geo.s.top,'R29 image must start below sticky header').toBeGreaterThanOrEqual(65);
    if(viewport.width>=1181)expect(geo.footerBottom.top,'Legal footer must follow the complete artwork').toBeGreaterThanOrEqual(geo.s.bottom-2);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
    expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
@@ -567,7 +568,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
     expect(g.form.width,'Signup form must use full mobile column').toBeGreaterThanOrEqual(viewport.width*.67);
     expect(g.input.width,'Email input may not collapse').toBeGreaterThanOrEqual(viewport.width*.55);
    }else{
-    expect(g.banner.height,'R27 banner keeps the original aspect ratio').toBeCloseTo(g.banner.width*941/1671,0);
+    expect(g.banner.height,'R29 banner keeps the original aspect ratio').toBeCloseTo(g.banner.width*941/1671,0);
     expect(g.banner.width).toBeGreaterThan(800);
    }
    if(viewport.width===390||viewport.width===1600){
