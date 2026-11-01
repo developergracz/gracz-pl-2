@@ -1067,3 +1067,37 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
    margin:0!important;
  }
 }
+
+
+/* R22: Extend the Owner-approved newsletter scene into the empty desktop
+   gutters using CSS-only ambient lighting. Preserve the original artwork
+   pixel for pixel, its aspect ratio, form position, and mobile layout. */
+@media (min-width:961px) {
+  body.homepage-premium-max .site-footer {
+    width:100%!important;
+    max-width:none!important;
+    isolation:isolate!important;
+    background:#031625!important;
+  }
+  body.homepage-premium-max .site-footer::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(ellipse 28% 56% at 10% 43%,
+        rgba(0,197,226,.33) 0%,rgba(0,124,169,.17) 40%,transparent 88%),
+      radial-gradient(ellipse 27% 60% at 90% 43%,
+        rgba(0,186,221,.34) 0%,rgba(0,119,164,.15) 42%,transparent 88%),
+      radial-gradient(ellipse 15% 38% at 14% 78%,
+        rgba(223,152,45,.14),transparent 90%),
+      radial-gradient(ellipse 15% 38% at 86% 78%,
+        rgba(219,158,55,.12),transparent 90%);
+  }
+  body.homepage-premium-max .site-footer > .footer-grid,
+  body.homepage-premium-max .site-footer > .footer-bottom {
+    position:relative!important;
+    z-index:1!important;
+  }
+}
