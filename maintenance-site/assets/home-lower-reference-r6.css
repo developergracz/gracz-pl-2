@@ -722,3 +722,150 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15 .f
     flex:0 0 52px!important;width:100%!important;height:52px!important;
   }
 }
+
+
+/* Owner R16 — exact accepted full-scene newsletter on desktop. The genuine
+   HTML newsletter form overlays the painted controls; no visual redraw of
+   the phone, headline, cards, chips or mug. On smaller viewports the original
+   semantic text/form and approved phone preview remain responsive. */
+@media (min-width:961px) {
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
+  display:block!important;position:relative!important;isolation:isolate!important;
+  width:100%!important;min-width:0!important;min-height:0!important;
+  aspect-ratio:1671 / 941!important;padding:0!important;margin:0!important;
+  border:0!important;border-radius:clamp(12px,1.4vw,24px)!important;
+  background:#041625!important;overflow:hidden!important;box-sizing:border-box!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-full-art-r16 {
+  display:block!important;position:relative!important;inset:auto!important;
+  width:100%!important;height:auto!important;max-width:100%!important;
+  max-height:none!important;aspect-ratio:1671 / 941!important;
+  object-fit:contain!important;margin:0!important;padding:0!important;
+  transform:none!important;filter:none!important;mask-image:none!important;
+  -webkit-mask-image:none!important;z-index:1!important;pointer-events:none!important;
+}
+/* Keep headings and marketing details in accessible HTML without duplicating
+   the exact words painted into the approved desktop artwork. */
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>:is(h2,p,ul),
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>:is(.footer-news-smartphone,.footer-news-details) {
+  position:absolute!important;width:1px!important;height:1px!important;
+  overflow:hidden!important;clip-path:inset(50%)!important;
+  white-space:nowrap!important;margin:0!important;padding:0!important;
+  border:0!important;opacity:0!important;z-index:0!important;
+  pointer-events:none!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form {
+  position:absolute!important;top:53.45%!important;left:7.05%!important;
+  width:51.40%!important;height:9.08%!important;z-index:4!important;
+  display:flex!important;align-items:stretch!important;flex-wrap:nowrap!important;
+  gap:1.65%!important;margin:0!important;padding:0!important;
+  min-width:0!important;max-width:none!important;background:transparent!important;
+  box-sizing:border-box!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form:before {
+  content:"✉";position:absolute;left:3.2%;top:50%;transform:translateY(-50%);
+  color:#071526;font-size:clamp(22px,2.4vw,34px);line-height:1;
+  z-index:2;pointer-events:none;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>input[type=email] {
+  position:relative!important;display:block!important;flex:1 1 64.4%!important;
+  min-width:0!important;width:64.4%!important;max-width:none!important;
+  height:100%!important;min-height:0!important;box-sizing:border-box!important;
+  padding:0 12px 0 18.3%!important;
+  border:1px solid #e9edf2!important;border-radius:clamp(9px,1.5vw,24px)!important;
+  background:#fff!important;color:#12283a!important;font-size:clamp(13px,1.56vw,24px)!important;
+  box-shadow:none!important;opacity:1!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>input[type=email]::placeholder {
+  color:#687585!important;opacity:1!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>.btn--news {
+  position:relative!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;flex:0 0 33.6%!important;
+  width:33.6%!important;max-width:none!important;min-width:0!important;
+  height:100%!important;min-height:0!important;box-sizing:border-box!important;
+  margin:0!important;padding:0 5px!important;
+  border:1px solid #ffd578!important;border-radius:clamp(9px,1.5vw,24px)!important;
+  background:linear-gradient(115deg,#ffe58c 0%,#f2b222 75%,#ffba28 100%)!important;
+  color:#101523!important;font-weight:900!important;font-size:clamp(13px,1.85vw,28px)!important;
+  box-shadow:none!important;opacity:1!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>.btn--news:before {
+  content:"➤";display:inline-block;margin-right:.55em;font-size:1.1em;transform:rotate(-22deg);
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-newsletter-status,
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-newsletter-consent {
+  position:absolute!important;top:auto!important;bottom:2%!important;left:7%!important;
+  max-width:52%!important;width:auto!important;z-index:5!important;
+  color:#fff!important;background:#051829!important;padding:6px 10px!important;
+  border-radius:6px!important;opacity:1!important;clip-path:none!important;
+  white-space:normal!important;
+}
+}
+/* A full 1671px mockup is too small to read on phones. Preserve the existing
+   fully accessible responsive form and the approved upright smartphone instead. */
+@media (max-width:960px) {
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
+  position:relative!important;display:flex!important;flex-direction:column!important;
+  align-items:stretch!important;aspect-ratio:auto!important;min-height:0!important;
+  padding:clamp(20px,4vw,32px)!important;gap:14px!important;
+  border-radius:16px!important;overflow:hidden!important;
+  background:linear-gradient(120deg,#041625,#062738)!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-full-art-r16,
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-details {
+  display:none!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>:is(h2,p,ul) {
+  position:relative!important;display:block!important;opacity:1!important;
+  clip-path:none!important;overflow:visible!important;white-space:normal!important;
+  width:auto!important;height:auto!important;max-width:100%!important;
+  margin:0!important;padding:0!important;grid-column:auto!important;
+  grid-row:auto!important;z-index:2!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-benefits {
+  display:grid!important;gap:9px!important;padding:0 0 0 35px!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form {
+  position:relative!important;top:auto!important;left:auto!important;
+  display:flex!important;align-items:stretch!important;width:100%!important;
+  height:auto!important;min-height:52px!important;max-width:100%!important;
+  margin:0!important;padding:0!important;flex-wrap:nowrap!important;
+  gap:10px!important;grid-column:auto!important;grid-row:auto!important;z-index:4!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>input[type=email] {
+  flex:1 1 0!important;min-width:0!important;max-width:none!important;
+  padding:0 15px!important;height:54px!important;background:#fff!important;color:#10283b!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>.btn--news {
+  flex:0 0 155px!important;width:155px!important;min-width:0!important;
+  height:54px!important;max-width:none!important;
+  background:linear-gradient(135deg,#ffe58e,#eeb127)!important;color:#101523!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-smartphone {
+  position:relative!important;display:block!important;width:min(100%,385px)!important;
+  height:auto!important;max-width:100%!important;max-height:none!important;
+  aspect-ratio:600/917!important;object-fit:contain!important;
+  align-self:center!important;margin:10px auto 0!important;opacity:1!important;
+  clip-path:none!important;filter:drop-shadow(0 8px 17px rgba(0,0,0,.36))!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 .footer-newsletter-status,
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 .footer-newsletter-consent {
+  position:relative!important;clip-path:none!important;opacity:1!important;
+  width:auto!important;max-width:100%!important;grid-column:auto!important;
+  white-space:normal!important;
+}
+}
+@media(max-width:440px) {
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form {
+  flex-direction:column!important;align-items:stretch!important;gap:10px!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>input[type=email] {
+  flex:0 0 52px!important;width:100%!important;height:52px!important;
+}
+body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form>.btn--news {
+  flex:0 0 52px!important;width:100%!important;height:52px!important;
+}
+}
+/* R16: do not render the obsolete R15 phone on desktop over the Owner's full artwork. */
+@media (min-width:961px){body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-smartphone,body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-details{display:none!important;}}
