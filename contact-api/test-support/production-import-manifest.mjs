@@ -4,6 +4,8 @@ export const productionModules=Object.freeze([
   'server.mjs',
   // Public account signup and session UI; first-party API with hashed credentials.
   'auth/public-identity.mjs',
+  // Deterministic game engine: server-authoritative moves only; no external dependencies.
+  'auth/game-engine.mjs',
   'auth/page.mjs',
   // Authenticated player UI; same-origin HTML/CSS/JS, no runtime imports or new dependencies.
   'auth/panel.mjs',
