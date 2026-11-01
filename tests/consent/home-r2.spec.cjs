@@ -455,9 +455,9 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
-test('R19 readable newsletter remains uncropped across desktop viewport sizes', async({browser})=>{
+test('R20 newsletter scales to the whole visible desktop viewport without cropping', async({browser})=>{
  test.setTimeout(60000);
- for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:900}]){
+ for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:785},{width:1600,height:900}]){
   const context=await browser.newContext({viewport});
   try{
    const page=await context.newPage();
@@ -478,7 +478,10 @@ test('R19 readable newsletter remains uncropped across desktop viewport sizes', 
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
    expect(geo.s.width).toBeLessThanOrEqual(1121);
-   expect(geo.s.width,'newsletter must remain legible instead of shrinking with viewport height').toBeGreaterThanOrEqual(viewport.width>1200?1100:850);
+   expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
+   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-167);
+   expect(geo.s.top,'image top must remain in viewport after scrolling to newsletter').toBeGreaterThanOrEqual(-2);
+   expect(geo.s.bottom,'image bottom must remain in viewport after scrolling to newsletter').toBeLessThanOrEqual(viewport.height+2);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
    expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
    expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
