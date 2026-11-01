@@ -337,7 +337,8 @@ test('friends UI has real action handlers, no fabricated presence and all reques
   for(const id of ['friends-search-form','friends-search-results','friends-list','friends-incoming',
     'friends-outgoing','friends-blocked','friends-status'])
     assert.match(r.body,new RegExp('id="'+id+'"'));
-  assert.match(r.body,/Status online i wiadomości będą dostępne/);
+  assert.match(r.body,/Status online wymaga przyszłej integracji/);
+  assert.match(r.body,/Prywatne wiadomości są dostępne w osobnej zakładce/);
   assert.match(script.body,/api\('friends\/action'/);
   assert.match(script.body,/refreshFriends/);
   new Script(script.body);
