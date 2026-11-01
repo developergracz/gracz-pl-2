@@ -251,7 +251,7 @@ test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async
  }finally{await context.close();}
 });
 
-test('R5 desktop footer aligns its logo and newsletter image clears floating phone',async({browser})=>{
+test('R15 desktop footer keeps logo aligned and approved phone within container',async({browser})=>{
  for(const width of [1366,1600,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -264,7 +264,7 @@ test('R5 desktop footer aligns its logo and newsletter image clears floating pho
        phone:rect('.r4-phone'),blog:rect('.r4-updates'),
        news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
        logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
-       photo:rect('.site-footer .footer-news-photo'),
+       photo:rect('.site-footer .footer-news-smartphone'),
        phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display,
        logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
      };
@@ -382,13 +382,13 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R15 approved full laptop scene fits beside unchanged phone and live form',async({browser})=>{
+test('R15 approved smartphone fits beside functional newsletter form',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const photo=page.locator('.site-footer .footer-news > img.footer-news-photo');
+   const photo=page.locator('.site-footer .footer-news > img.footer-news-smartphone');
    await photo.scrollIntoViewIfNeeded();
    const result=await photo.evaluate(async(img)=>{
     await img.decode();
@@ -407,9 +407,9 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
       background:style.backgroundImage,
       scrollWidth:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(1027);
-   expect(result.naturalHeight).toBe(457);
-   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-approved-scene-r2.avif');
+   expect(result.naturalWidth).toBe(600);
+   expect(result.naturalHeight).toBe(917);
+   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-phone-approved-r15.webp');
    expect(result.visible).toBe(true);
    expect(result.objectFit).toBe('contain');
    expect(result.background).not.toContain('newsletter.webp');
@@ -420,12 +420,12 @@ test('R15 approved full laptop scene fits beside unchanged phone and live form',
    expect(right).toBeLessThanOrEqual(cr+2);
    expect(top).toBeGreaterThanOrEqual(ct-2);
    expect(bottom).toBeLessThanOrEqual(cb+2);
-   if(width>1180){
-    // The transparent left edge may sit under copy, but the actual laptop
-    // begins after the interactive form. Preserve room for the floating phone.
-    expect(left+(right-left)*.48).toBeGreaterThanOrEqual(result.form[2]-24);
-    expect(right).toBeLessThanOrEqual(cr-205);
+   if(width>760){
+    // The functional form remains at left. The phone must be in the right column.
+    expect(left).toBeGreaterThanOrEqual(result.form[2]-24);
+    expect(right).toBeLessThanOrEqual(cr+2);
    }else{
+    // On narrow devices the phone follows the real signup form.
     expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
    }
    const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
