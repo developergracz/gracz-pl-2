@@ -1114,3 +1114,26 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
     z-index:1!important;
   }
 }
+
+/* R24: scale the complete approved newsletter artwork to the viewport.
+   Remove the 540px minimum and the non-shrinking grid, preserving all form controls. */
+@media (min-width:961px) {
+  body.homepage-premium-max .site-footer .footer-grid {
+    flex:1 1 auto!important;
+    height:auto!important;
+    min-height:0!important;
+    align-content:center!important;
+    padding-top:clamp(6px,1dvh,12px)!important;
+    padding-bottom:clamp(6px,1dvh,12px)!important;
+    box-sizing:border-box!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
+    width:min(100%,1360px,calc((100dvh - 190px) * 1.77577))!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0 auto!important;
+  }
+  body.homepage-premium-max .site-footer .footer-bottom {
+    flex:0 0 auto!important;
+  }
+}
