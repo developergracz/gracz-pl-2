@@ -103,7 +103,7 @@ for (const page of sharedHeaderPages) {
   );
   requireCheck(
     page === "index.html"
-      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Załóż konto<\/a>/.test(html)
+      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Zarejestruj się<\/a>/.test(html)
       : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
   );
