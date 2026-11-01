@@ -106,3 +106,61 @@ test('profile PUT validates origin and persists only allowed profile fields',asy
   const reread=await call('GET','/auth/profile',{cookie});
   assert.equal(reread.body.profile.displayName,'Mistrz Warcabów');
 });
+
+
+// Browser-like regression: the session gate must not flash a private account and redirect.
+async function simulatePanel(status,profile) {
+  const served=response();
+  servePlayerPanel({method:'GET'},served,new URL('/konto/panel/app.js','https://gracz-contact-api.onrender.com'));
+  const nodes=new Map();
+  const document={
+    getElementById(id){
+      if(!nodes.has(id))nodes.set(id,{
+        hidden:id==='player-shell',textContent:'',value:'',disabled:false,
+        classList:{toggle(){},add(){},remove(){}},
+        addEventListener(){},focus(){},setAttribute(){}
+      });
+      return nodes.get(id);
+    },
+    querySelectorAll(){return[];}
+  };
+  let navigations=0;
+  const fetch=async(path,options)=>{
+    assert.equal(path,'/auth/profile');
+    assert.equal(options.credentials,'same-origin');
+    return {status,ok:status===200,json:async()=>status===200?{ok:true,profile}:{ok:false,error:'BRAK_SESJI'}};
+  };
+  new Script(served.body).runInNewContext({
+    document,fetch,location:{replace(){navigations++;},assign(){navigations++;}},
+  });
+  await new Promise(resolve=>setImmediate(resolve));
+  return {nodes,navigations};
+}
+
+test('unauthorized panel stays on page with an explicit login link and no private data flash',async()=>{
+  const {nodes,navigations}=await simulatePanel(401);
+  assert.equal(nodes.get('player-shell').hidden,true);
+  assert.equal(nodes.get('access-screen').hidden,false);
+  assert.equal(nodes.get('access-login').hidden,false);
+  assert.match(nodes.get('access-title').textContent,/Zaloguj/);
+  assert.equal(navigations,0);
+});
+
+test('authorized panel becomes visible after successful profile fetch',async()=>{
+  const profile={nickname:'Gracz123',email:'test@example.test',displayName:'Mistrz',
+    bio:'Warcaby',country:'PL',language:'pl'};
+  const {nodes,navigations}=await simulatePanel(200,profile);
+  assert.equal(nodes.get('player-shell').hidden,false);
+  assert.equal(nodes.get('access-screen').hidden,true);
+  assert.equal(nodes.get('nickname').value,'Gracz123');
+  assert.equal(nodes.get('profile-heading').textContent,'Mistrz');
+  assert.equal(navigations,0);
+});
+
+test('login page verifies server-side session cookie before opening player panel',async()=>{
+  const {serveIdentityPage}=await import('../auth/page.mjs');
+  const res=response();
+  assert.equal(serveIdentityPage({method:'GET'},res,new URL('/konto/app.js','https://gracz-contact-api.onrender.com')),true);
+  assert.match(res.body,/const session=await api\('session'\)/);
+  assert.match(res.body,/if\(!session\.loggedIn \|\| session\.nickname!==b\.nickname\)/);
+});
