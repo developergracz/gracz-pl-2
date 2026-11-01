@@ -12,19 +12,19 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
-<div class="branding"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">★ PREMIUM</span></div>
-<h1>Gomoku <em>Online</em></h1><div class="premium-sub">FULL MAX PREMIUM</div>
+<div class="branding"><span class="laurel" aria-hidden="true">❧</span><span class="brand-gamepad" aria-hidden="true">🎮</span><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">PREMIUM</span><span class="laurel" aria-hidden="true">❧</span></div>
+<h1>Gomoku <em>Online</em></h1><div class="premium-sub" aria-label="Full Max Premium"><span aria-hidden="true">♛</span></div>
 <p class="lede">Pięć w linii. Jeden ruch może zmienić wszystko.</p>
 </header>
 <div class="mode" role="group" aria-label="Tryb gry">
-<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">♛</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
-<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">♙</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">🎓</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">👥</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
 </div>
 <section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p>
 <label for="ai-level">Poziom komputera</label>
-<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — kilka ruchów naprzód</option></select>
-<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
+<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — dla bardzo doświadczonych</option></select>
+<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i rzadko popełnia błędy. Najtrudniejszy poziom.</p>
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -33,7 +33,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
 <section class="sidecard rules"><h2>ⓘ &nbsp;Jak grać?</h2>
-<p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy.</p>
+<p>Ułóż 5 swoich kamieni w linii: poziomo, pionowo lub na skos. Blokuj zagrożenia przeciwnika i planuj ruchy z wyprzedzeniem.</p>
 <p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p>
 </section>
 <nav class="side-links"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav>
@@ -42,7 +42,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
 <div class="versus">VS</div>
-<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♙</span></div>
+<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
 <div class="arena">
@@ -51,10 +51,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 <aside class="side-dock" aria-label="Historia ruchów i rozmowa">
 <section class="match-panel">
-<div class="dock-header"><span class="dock-eyebrow">CENTRUM PARTII</span><span class="dock-live" id="dock-status">● TRENING</span></div>
+<div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
-<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">♟ Ruchy</button>
-<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">◉ Czat</button></div>
+<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">☷ &nbsp;Ruchy</button>
+<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button></div>
 <div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab">
 <div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
 <div id="moves-list" class="moves-list" aria-live="polite"><p class="dock-empty">Wybierz pole i rozpocznij partię.</p></div>
@@ -62,10 +62,13 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 <div id="chat-panel" class="dock-content" role="tabpanel" aria-labelledby="chat-tab" hidden>
 <div class="dock-title"><strong>Czat przy stole</strong><span class="chat-lock">Prywatny</span></div>
-<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Czat jest dostępny podczas gry online ze znajomym.</p></div>
-<form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Napisz wiadomość do przeciwnika</label>
-<div class="chat-compose"><input id="chat-input" maxlength="600" type="text" autocomplete="off" placeholder="Napisz wiadomość…" disabled><button id="chat-send" type="submit" disabled aria-label="Wyślij wiadomość">➤</button></div></form>
-<p class="chat-footnote" id="chat-status">Wyłącznie uczestnicy tej partii · 600 znaków</p>
+<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Rozmowa przy stole gry.</p></div>
+</div>
+<div class="mini-chat">
+<div id="chat-preview" class="chat-preview" aria-label="Ostatnie wiadomości"><p class="dock-empty">Rozpocznij partię lub rozmowę.</p></div>
+<form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Napisz wiadomość do przeciwnika lub komputera treningowego</label>
+<div class="chat-compose"><input id="chat-input" maxlength="600" type="text" autocomplete="off" placeholder="Napisz wiadomość…"><button id="chat-send" type="submit" aria-label="Wyślij wiadomość">➤</button></div></form>
+<p class="chat-footnote" id="chat-status">Komentarze treningowe · bez zapisu na serwerze</p>
 </div>
 </section>
 <div class="game-tools" aria-label="Narzędzia gry">
