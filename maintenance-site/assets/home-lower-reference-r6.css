@@ -1158,3 +1158,39 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
     box-sizing:border-box!important;
   }
 }
+
+/* R26: the artwork must remain undistorted and fully visible, while its
+   surrounding desktop canvas is genuinely full-bleed. R23 blurred and
+   masked this region into dark empty-looking sidebars. Replace the blur
+   with crisp CSS-only lighting; no duplicate image, extra request or
+   loss of the newsletter form's image-aligned hit targets. */
+@media (min-width:961px) {
+  body.homepage-premium-max .site-footer {
+    width:100%!important;
+    max-width:none!important;
+    background:#052036!important;
+  }
+  body.homepage-premium-max .site-footer > .footer-grid {
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+  }
+  body.homepage-premium-max .site-footer::before {
+    background:
+      radial-gradient(ellipse 38% 64% at 2% 46%,rgba(0,202,233,.58),transparent 77%),
+      radial-gradient(ellipse 35% 66% at 98% 50%,rgba(1,154,208,.57),transparent 78%),
+      radial-gradient(ellipse 22% 32% at 95% 86%,rgba(238,170,56,.32),transparent 85%),
+      linear-gradient(105deg,#053149,#071f35 37%,#061c30 63%,#052d46)!important;
+    filter:none!important;
+    opacity:1!important;
+    transform:none!important;
+    -webkit-mask-image:none!important;
+    mask-image:none!important;
+  }
+  body.homepage-premium-max .site-footer::after {
+    background:
+      linear-gradient(90deg,rgba(2,18,29,.10),transparent 28%,transparent 72%,rgba(2,18,29,.10)),
+      repeating-linear-gradient(118deg,transparent 0 85px,rgba(58,213,235,.08) 86px 87px,transparent 88px 174px)!important;
+    opacity:1!important;
+  }
+}

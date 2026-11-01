@@ -478,9 +478,18 @@ test('R21 newsletter scales to desktop without clipping the image', async({brows
     const img=section.querySelector('.footer-news-full-art-r16');
     const form=section.querySelector('form[data-newsletter]');
     const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    return {s:rect(section),art:rect(img),form:rect(form),footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
+    const footer=document.querySelector('.site-footer');
+    const ambient=getComputedStyle(footer,'::before');
+    return {s:rect(section),art:rect(img),form:rect(form),footer:rect(footer),ambientFilter:ambient.filter,ambientMask:ambient.maskImage,
+      ambientBackground:ambient.backgroundImage,footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
+   if(viewport.width>=1024){
+    expect(geo.footer.width,'premium backdrop must span the browser').toBeGreaterThanOrEqual(viewport.width-2);
+    expect(geo.ambientFilter,'desktop backdrop must be sharp, not blurred').toBe('none');
+    expect(geo.ambientMask,'desktop backdrop must not disappear in the side gutters').toBe('none');
+    expect(geo.ambientBackground).toContain('radial-gradient');
+   }
    expect(geo.s.width).toBeLessThanOrEqual(1361);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
    expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
@@ -558,7 +567,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
-test('R23 approved newsletter extends the original art across the desktop without clipping',async({browser})=>{
+test('R26 approved newsletter uses a crisp full-width desktop canvas without clipping',async({browser})=>{
  test.setTimeout(90000);
  fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
@@ -590,8 +599,8 @@ test('R23 approved newsletter extends the original art across the desktop withou
    expect(state.footer.right).toBeLessThanOrEqual(viewport.width+2);
    expect(state.footer.width).toBeGreaterThanOrEqual(viewport.width-2);
    expect(state.beforeContent).not.toBe('none');
-   expect(state.beforeBackground).toContain('gracz-newsletter-full-approved-r16.webp');
-   expect(state.beforeMask).toContain('linear-gradient');
+   expect(state.beforeBackground).toContain('radial-gradient');
+   expect(state.beforeMask).toBe('none');
    expect(state.banner.left).toBeGreaterThan(50);
    expect(state.banner.right).toBeLessThan(viewport.width-50);
    expect(state.art.width).toBeCloseTo(state.banner.width,0);
