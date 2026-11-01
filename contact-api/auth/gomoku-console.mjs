@@ -192,7 +192,8 @@ const $=id=>document.getElementById(id);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
- thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1};
+ thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:''};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -249,6 +250,9 @@ function render(){
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
  $('game-state').textContent=describe();
+ renderMoveHistory();
+ $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
+ $('history-info').textContent=online?'Ruchy potwierdzane na serwerze':'Zapis lokalny w treningu';
  $('undo-move').disabled=online||state.snapshots.length===0;
  $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
@@ -262,7 +266,7 @@ function render(){
 }
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
- state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;
+ state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
  $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
@@ -410,9 +414,10 @@ function cpuMove(board,level='expert'){
 }
 function trainMove(to){
  if(state.thinking||state.winner||state.board[to])return;
- state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last});
+ state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last,history:state.trainHistory.slice()});
  state.suggestion=-1;$('analysis-note').hidden=true;
  state.board[to]=1;state.last=to;state.moves++;
+ state.trainHistory.push({player:1,to,number:state.moves});
  if(victory(state.board,to,1))state.winner=1;
  else if(state.moves===count)state.winner=3;
  else state.thinking=true;
@@ -424,6 +429,7 @@ function trainMove(to){
   const at=cpuMove(state.board,$('ai-level').value);
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
+  state.trainHistory.push({player:2,to:at,number:state.moves});
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
   state.thinking=false;render();
@@ -482,6 +488,7 @@ async function loadMatch(id){
   if(epoch!==state.epoch||state.mode!=='online')return;
   if(result.match?.game!=='gomoku')throw new Error('Ten pokój nie jest partią Gomoku.');
   state.matchId=id;state.match=result.match;
+  state.chatSignature='';void refreshRoomChat();
   $('room-select').value=id;
   history.replaceState(null,'','/konto/gomoku/?match='+encodeURIComponent(id));
   note('Połączono z pokojem. Ruchy są zatwierdzane przez serwer.');
@@ -514,11 +521,140 @@ async function play(to){
  if(state.mode==='training')trainMove(to);
  else await onlineMove(to);
 }
+
+function notation(to){
+ const row=Math.floor(to/15),col=to%15;
+ return String.fromCharCode(65+col)+(row+1);
+}
+function renderMoveHistory(){
+ const online=state.mode==='online',m=state.match;
+ const entries=online?(Array.isArray(m?.state?.history)?m.state.history:[]):state.trainHistory;
+ const list=$('moves-list');
+ const lastSeen=list.dataset?.signature;
+ const signature=(online?(m?.id||'none')+':':'training:')+
+  entries.map(item=>item.number+':'+item.player+':'+item.to).join(',');
+ if(signature===lastSeen)return;
+ if(list.dataset)list.dataset.signature=signature;
+ list.replaceChildren();
+ $('history-count').textContent=String(entries.length);
+ if(!entries.length){
+  const empty=document.createElement('p');empty.className='dock-empty';
+  empty.textContent=online&&m?.state?.moves>0?
+   'Starsze ruchy tej partii nie były jeszcze rejestrowane. Nowe ruchy pojawią się tutaj.':
+   online?'Wybierz pokój i rozpocznij partię.':'Wybierz pole i rozpocznij partię.';
+  list.append(empty);return;
+ }
+ entries.forEach((entry,i)=>{
+  if(!Number.isInteger(entry.to)||entry.to<0||entry.to>=225||
+     ![1,2].includes(entry.player))return;
+  const row=document.createElement('div');
+  row.className='move-row'+(i===entries.length-1?' latest':'');
+  const number=document.createElement('span');number.className='move-number';
+  number.textContent=String(entry.number||i+1).padStart(2,'0');
+  const player=document.createElement('span');player.className='move-player';
+  const stone=document.createElement('i');stone.className='mini-stone p'+entry.player;
+  stone.setAttribute('aria-hidden','true');
+  const nick=document.createElement('strong');
+  nick.textContent=online?(m?.players?.[entry.player-1]||'Gracz'):
+    entry.player===1?'Ty':'Komputer';
+  player.append(stone,nick);
+  const move=document.createElement('strong');move.className='move-coordinate';
+  move.textContent=notation(entry.to);
+  row.append(number,player,move);list.append(row);
+ });
+ list.scrollTop=list.scrollHeight;
+}
+function setDockTab(tab){
+ state.dockTab=tab;
+ const moves=tab==='moves';
+ $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
+ $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
+ $('history-tab').setAttribute('aria-selected',String(moves));
+ $('chat-tab').setAttribute('aria-selected',String(!moves));
+ if(!moves)void refreshRoomChat();
+}
+function showChatNotice(text){
+ const box=$('chat-messages');box.replaceChildren();
+ const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
+ $('chat-status').textContent='Wyłącznie uczestnicy tej partii · 600 znaków';
+}
+function drawRoomChat(messages){
+ const signature=(state.matchId||'')+':'+messages.map(x=>x.id).join(',');
+ if(signature===state.chatSignature)return;
+ state.chatSignature=signature;
+ const box=$('chat-messages');box.replaceChildren();
+ if(!messages.length){
+  const p=document.createElement('p');p.className='dock-empty';
+  p.textContent='Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.';
+  box.append(p);return;
+ }
+ messages.forEach(message=>{
+  const mine=message.player===state.match?.player;
+  const bubble=document.createElement('div');bubble.className='chat-bubble'+(mine?' own':'');
+  const title=document.createElement('strong');
+  title.textContent=mine?'Ty':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  const text=document.createElement('p');text.textContent=message.body;
+  const time=document.createElement('time');
+  const date=new Date(message.createdAt);
+  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  bubble.append(title,text,time);box.append(bubble);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+async function refreshRoomChat(){
+ if(state.mode!=='online'||!state.matchId||!state.match){
+  $('chat-input').disabled=true;$('chat-send').disabled=true;
+  if(state.mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+  else showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć rozmowę.');
+  return;
+ }
+ if(state.chatBusy)return;
+ state.chatBusy=true;
+ const id=state.matchId,epoch=state.epoch;
+ try{
+  const result=await api('match/chat?id='+encodeURIComponent(id));
+  if(epoch!==state.epoch||state.matchId!==id)return;
+  $('chat-input').disabled=false;$('chat-send').disabled=false;
+  drawRoomChat(result.messages);
+  $('chat-status').textContent='Prywatny czat partii · ostatnie 60 wiadomości';
+ }catch(error){
+  if(epoch!==state.epoch)return;
+  $('chat-input').disabled=true;$('chat-send').disabled=true;
+  $('chat-status').textContent=error.message;
+ }finally{state.chatBusy=false;}
+}
+$('history-tab').addEventListener('click',()=>setDockTab('moves'));
+$('chat-tab').addEventListener('click',()=>setDockTab('chat'));
+$('chat-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(state.mode!=='online'||!state.matchId||state.chatBusy)return;
+ const message=$('chat-input').value.trim();
+ if(!message||message.length>600){
+  $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
+ }
+ const id=state.matchId,epoch=state.epoch;
+ $('chat-send').disabled=true;
+ try{
+  await api('match/chat',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id,message})});
+  if(epoch!==state.epoch||state.matchId!==id)return;
+  $('chat-input').value='';
+  state.chatSignature='';
+  await refreshRoomChat();
+ }catch(error){$('chat-status').textContent=error.message;}
+ finally{if(epoch===state.epoch&&state.matchId===id)$('chat-send').disabled=false;}
+});
+window.setInterval(()=>{
+ if(state.mode==='online'&&state.matchId&&document.visibilityState==='visible')void refreshRoomChat();
+},8000);
+
 function undoTrainingMove(){
  if(state.mode!=='training'||!state.snapshots.length)return;
  ++state.epoch;state.thinking=false;
  const previous=state.snapshots.pop();
  state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
+ state.trainHistory=previous.history;
  state.suggestion=-1;$('analysis-note').hidden=true;render();
 }
 function analyzeTrainingPosition(){
@@ -552,6 +688,9 @@ async function toggleFullscreen(){
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.chatSignature='';setDockTab('moves');
+ $('chat-input').disabled=true;$('chat-send').disabled=true;
+ if(mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
  state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
@@ -586,6 +725,7 @@ window.setInterval(()=>{
   void refreshOnline();
 },4000);
 render();
+showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
