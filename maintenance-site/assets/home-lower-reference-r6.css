@@ -1019,3 +1019,51 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
    min-width:0!important;
  }
 }
+
+
+/* R21 tablet correction: reset legacy explicit grid-column 2/3. Without
+   resetting each aria-labelled footer child the one-track grid generates
+   two implicit columns and crushes the signup field at 768px. */
+@media (max-width:960px) {
+ body.homepage-premium-max .site-footer .footer-grid > .footer-brand,
+ body.homepage-premium-max .site-footer .footer-grid > .footer-col[aria-labelledby="f-nav"],
+ body.homepage-premium-max .site-footer .footer-grid > .footer-col[aria-labelledby="f-popular"] {
+   grid-column:1/-1!important;
+   grid-row:auto!important;
+   justify-self:stretch!important;
+   min-width:0!important;
+ }
+}
+@media (min-width:441px) and (max-width:960px) {
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live {
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr) minmax(135px,auto)!important;
+   grid-template-rows:auto!important;
+   align-items:center!important;
+   gap:10px!important;
+   min-height:0!important;
+   width:100%!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > input[type=email] {
+   grid-column:1!important;
+   width:100%!important;
+   min-width:0!important;
+   height:54px!important;
+   flex:none!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > button.btn--news {
+   grid-column:2!important;
+   width:100%!important;
+   min-width:135px!important;
+   height:54px!important;
+   flex:none!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > :is(.footer-newsletter-consent,.footer-newsletter-validation,.footer-newsletter-status) {
+   grid-column:1/-1!important;
+   grid-row:auto!important;
+   width:100%!important;
+   max-width:100%!important;
+   min-width:0!important;
+   margin:0!important;
+ }
+}
