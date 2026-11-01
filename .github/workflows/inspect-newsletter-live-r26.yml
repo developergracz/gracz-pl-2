@@ -1,0 +1,23 @@
+name: Inspect LIVE newsletter version (one-shot)
+on:
+  push:
+    branches:
+      - diagnostic/newsletter-live-origin-20261101
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Compare canonical and Render origin
+        shell: bash
+        run: |
+          for url in "https://gracz.pl/?liveprobe=20261101" "https://gracz-pl-maintenance.onrender.com/?liveprobe=20261101"; do
+            echo "=== URL $url ==="
+            curl -sSIL --max-time 20 "$url" | grep -Ei '^(HTTP/|server:|cache-control:|cf-cache-status:|x-render-|age:|location:)' || true
+            curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "$url" > /tmp/gracz-probe.html || true
+            wc -c /tmp/gracz-probe.html
+            grep -Eo 'home-lcp-bundle-r1[.]css[?]v=[^"]+' /tmp/gracz-probe.html | head -1 || true
+            grep -Eo 'footer-news--approved-r16' /tmp/gracz-probe.html | head -1 || true
+          done
