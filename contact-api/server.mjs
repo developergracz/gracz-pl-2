@@ -59,6 +59,12 @@ const publicIdentity = createPublicIdentityRouter({
   emailFrom: EMAIL_FROM,
   resendKey: RESEND_API_KEY,
 });
+void publicIdentity.probe().then(
+  () => console.info('PUBLIC_IDENTITY_READY'),
+  error => console.error('PUBLIC_IDENTITY_NOT_READY', {
+    code: typeof error?.code === 'string' ? error.code : 'SCHEMA_SETUP_ERROR',
+  }),
+);
 const persistence = database.enabled
   ? createPersistenceRepositories(database)
   : null;
