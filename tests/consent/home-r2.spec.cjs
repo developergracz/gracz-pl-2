@@ -404,6 +404,17 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
    await expect(scene).toHaveAttribute('src','/assets/gracz-newsletter-full-approved-r16.webp');
    await expect(form).toBeVisible();
    await expect(form.locator('#news-email')).toHaveAttribute('type','email');
+   if(width>960){
+    // The approved image itself contains the placeholder; check real input hides it.
+    const style=await form.locator('#news-email').evaluate(el=>{
+      const css=getComputedStyle(el);
+      return {background:css.backgroundColor,fill:css.webkitTextFillColor,shadow:css.boxShadow,opacity:css.opacity};
+    });
+    expect(style.background).toBe('rgb(255, 255, 255)');
+    expect(style.fill).toBe('rgb(20, 38, 55)');
+    expect(style.shadow).toContain('999px');
+    expect(style.opacity).toBe('1');
+   }
    await expect(form.locator('button[type=submit]')).toBeDisabled();
    if(width>960){
     await expect.poll(()=>scene.evaluate(img=>img.complete && img.naturalWidth===1671),{timeout:10000}).toBe(true);
