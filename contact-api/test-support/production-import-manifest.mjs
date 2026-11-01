@@ -5,6 +5,8 @@ export const productionModules=Object.freeze([
   // Public account signup and session UI; first-party API with hashed credentials.
   'auth/public-identity.mjs',
   'auth/page.mjs',
+  // Authenticated player UI; same-origin HTML/CSS/JS, no runtime imports or new dependencies.
+  'auth/panel.mjs',
   'lifecycle.mjs',
   'premium-reply.mjs',
   'email/full-max-premium.mjs',
