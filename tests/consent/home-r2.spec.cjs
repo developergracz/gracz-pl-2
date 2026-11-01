@@ -483,7 +483,10 @@ test('R21 newsletter scales to desktop without clipping the image', async({brows
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
    expect(geo.s.width).toBeLessThanOrEqual(1361);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-157);
+   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
+   if(viewport.width>=1181){
+    expect(geo.s.width,'desktop newsletter must use the available height, not empty side gutters').toBeGreaterThanOrEqual(viewport.height>=900?1300:1100);
+   }
    expect(geo.s.top,'image top must remain in viewport after scrolling to newsletter').toBeGreaterThanOrEqual(-2);
    expect(geo.s.bottom,'image bottom must remain in viewport after scrolling to newsletter').toBeLessThanOrEqual(viewport.height+2);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
