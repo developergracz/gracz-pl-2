@@ -359,6 +359,27 @@ body::before{
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
+ // Scale the entire 1536×950 desktop composition uniformly into the browser
+ // viewport. Native inputs stay clickable and the image keeps its proportions.
+ const accountScene=document.querySelector('.scene');
+ let accountFitScheduled=false;
+ function fitOwnerScene(){
+  accountScene.style.zoom='';
+  if(window.innerWidth<=1180)return;
+  const headerHeight=document.querySelector('.top').getBoundingClientRect().height;
+  const viewportHeight=window.visualViewport?.height||window.innerHeight;
+  const naturalHeight=Math.max(950,accountScene.scrollHeight);
+  const fit=Math.min(1,window.innerWidth/1536,(viewportHeight-headerHeight-4)/naturalHeight);
+  accountScene.style.zoom=Math.max(.35,fit).toFixed(4);
+ }
+ function scheduleOwnerFit(){
+  if(accountFitScheduled)return;
+  accountFitScheduled=true;
+  requestAnimationFrame(()=>{accountFitScheduled=false;fitOwnerScene();});
+ }
+ window.addEventListener('resize',scheduleOwnerFit);
+ window.visualViewport?.addEventListener('resize',scheduleOwnerFit);
+ document.fonts?.ready?.then(scheduleOwnerFit);
 const form=document.getElementById('register-form'),login=document.getElementById('login-form'),account=document.getElementById('account'),verified=document.getElementById('verified'),heading=document.getElementById('page-title');
 function msg(s){notice.textContent=s;}
 const nickInput=document.getElementById('nickname');
@@ -428,7 +449,7 @@ function validateRegistration(){
  msg('');
  return true;
 }
-function view(name){document.body.dataset.accountView=name;form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');}
+function view(name){document.body.dataset.accountView=name;form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');scheduleOwnerFit();}
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
