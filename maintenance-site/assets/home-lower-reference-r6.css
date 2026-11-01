@@ -867,3 +867,5 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
   flex:0 0 52px!important;width:100%!important;height:52px!important;
 }
 }
+/* R16: do not render the obsolete R15 phone on desktop over the Owner's full artwork. */
+@media (min-width:961px){body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-smartphone,body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-details{display:none!important;}}
