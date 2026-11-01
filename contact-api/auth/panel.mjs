@@ -33,6 +33,7 @@ const html=String.raw`<!doctype html>
 <button class="nav" data-section="privacy" type="button"><span aria-hidden="true">◈</span> Prywatność</button>
 <button class="nav" data-section="notifications" type="button"><span aria-hidden="true">♢</span> Powiadomienia</button>
 <button class="nav" data-section="messages" type="button"><span aria-hidden="true">✉</span> Wiadomości i chat</button>
+<button class="nav" data-section="challenges" type="button"><span aria-hidden="true">⚔</span> Zaproszenia do gier</button>
 <button class="nav" data-section="games" type="button"><span aria-hidden="true">♜</span> Gry i rozgrywka</button>
 <button class="nav" data-section="appearance" type="button"><span aria-hidden="true">☼</span> Wygląd i dostępność</button>
 <button class="nav" data-section="sessions" type="button"><span aria-hidden="true">▣</span> Sesje i urządzenia</button>
@@ -68,7 +69,7 @@ const html=String.raw`<!doctype html>
 <div class="form-actions"><span id="saved-state">Dane zapisane bezpiecznie w koncie</span><button class="primary" id="save" type="submit">Zapisz profil</button></div></form></section>
 <section class="view" data-panel="friends">
 <div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
-<p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online i wiadomości będą dostępne po integracji modułu społeczności.</p>
+<p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online wymaga przyszłej integracji. Prywatne wiadomości są dostępne w osobnej zakładce.</p>
 <form id="friends-search-form" class="friends-search" role="search">
 <label for="friends-query">Znajdź gracza</label><div class="friends-search-controls">
 <input id="friends-query" type="search" placeholder="Wpisz co najmniej 3 znaki nicku" minlength="3" maxlength="32" autocomplete="off" required>
@@ -90,7 +91,35 @@ const html=String.raw`<!doctype html>
 <button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
 <section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
-<section class="view" data-panel="messages"><div class="card"><p class="card-kicker">SPOŁECZNOŚĆ</p><h2>Wiadomości i chat</h2><p>Prywatne wiadomości, lista znajomych i chat społeczności będą dostępne po integracji z platformą gier.</p></div></section>
+<section class="view" data-panel="messages">
+<div class="card">
+<p class="card-kicker">PRYWATNE ROZMOWY</p><h2>Wiadomości ze znajomymi</h2>
+<p>Rozmawiaj bezpośrednio z zaakceptowanymi znajomymi. Wiadomości są przechowywane w Twoim koncie. Rozmowę możesz odświeżyć ręcznie; czat na żywo jest przygotowywany.</p>
+<label class="social-label" for="message-recipient">Wybierz znajomego</label>
+<div class="social-controls"><select id="message-recipient"><option value="">Wybierz znajomego</option></select>
+<button id="messages-refresh" type="button" class="secondary">Odśwież rozmowę</button></div>
+<div id="message-thread" class="social-thread" aria-live="polite"><p>Wybierz znajomego, aby wyświetlić rozmowę.</p></div>
+<form id="message-form" class="social-send">
+<label class="social-label" for="message-content">Nowa wiadomość</label>
+<textarea id="message-content" rows="3" maxlength="1000" placeholder="Napisz prywatną wiadomość…" required></textarea>
+<div class="form-actions"><span>Do 1000 znaków · tylko znajomi</span><button class="primary" type="submit" id="message-send" disabled>Wyślij wiadomość</button></div>
+</form><p id="messages-state" aria-live="polite">Wybierz znajomego z listy.</p>
+</div></section>
+<section class="view" data-panel="challenges">
+<div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
+<p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
+<p class="social-limitation">Ważne: aktualne strony Warcabów i Gomoku są treningowe. Przyjęte zaproszenie nie uruchamia jeszcze wspólnej partii online — synchronizacja rozgrywki jest osobnym etapem.</p>
+<form id="challenge-form" class="social-send">
+<label class="social-label" for="challenge-friend">Zaproś znajomego</label>
+<div class="social-controls"><select id="challenge-friend"><option value="">Wybierz znajomego</option></select>
+<select id="challenge-game" aria-label="Wybierz grę"><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option></select>
+<button class="primary" type="submit">Wyślij wyzwanie</button></div>
+</form>
+<div class="card-heading"><div><p class="card-kicker">AKTYWNE WYZWANIA</p><h2>Twoje zaproszenia</h2></div>
+<button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
+<div id="challenge-list" class="friends-items" aria-live="polite"></div>
+<p id="challenges-state" aria-live="polite"></p>
+</div></section>
 <section class="view" data-panel="games">
 <div class="card"><p class="card-kicker">MOJA BIBLIOTEKA</p><h2>Ulubione gry</h2>
 <p>Wybierz ulubione tytuły. Gwiazdka zapisuje wybór w Twoim koncie i dodaje skrót na pulpicie.</p>
@@ -127,6 +156,16 @@ const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}htm
 
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.stat{padding:20px}.stat small{font-size:10px;color:#f4c67d;font-weight:900;letter-spacing:1.2px}.stat strong{display:block;font-size:clamp(22px,3vw,36px);margin:8px 0;color:#f6fbff}.stat span{font-size:12px;color:#a6c3d0}.favorite-links,.quick-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.favorite-links a{display:inline-flex;border:1px solid #478399;background:#103849;color:#e5f6fa;padding:10px 15px;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}.quick-actions .link-button{margin-top:0}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}.game-tile{padding:19px;border:1px solid #356679;background:linear-gradient(145deg,#0c3446,#081f30);border-radius:15px}.game-tile h3{font-size:19px;margin:8px 0 4px}.game-tile p{font-size:12px;margin:4px 0 14px}.game-emoji{font-size:30px;color:#f4cb80}.game-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}.game-actions a,.game-actions button{font-size:13px;font-weight:800;color:#dff9fd;border:1px solid #548b9c;border-radius:8px;background:#123e51;padding:9px 11px;text-decoration:none;cursor:pointer}.game-actions button[aria-pressed="true"]{background:#4c3e23;color:#f8d288;border-color:#d1aa66}.appearance-form{display:grid;gap:10px}.setting{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 0;border-bottom:1px solid #284858}.setting span{display:grid;gap:6px}.setting strong{font-size:14px}.setting small{font-size:12px;color:#9db6c5}.setting select{background:#0b2939;border:1px solid #4a8090;color:#fff;border-radius:8px;padding:11px;max-width:200px}.setting input{width:22px;height:22px;accent-color:#efc77d}.session-list{margin:18px 0}.session-item{border-bottom:1px solid #285364;padding:15px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.session-item strong{font-size:13px}.session-item span{display:block;margin-top:5px;color:#a1bcca;font-size:12px}.session-item em{font-size:11px;color:#a4ecd5;font-style:normal}body.panel-compact .card{padding:14px}body.panel-compact .view.active{gap:10px}body.panel-large{font-size:18px}body.panel-large .card p,body.panel-large .nav,body.panel-large .detail,body.panel-large .setting small{font-size:1rem}body.panel-no-motion *,body.panel-no-motion *:before,body.panel-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}@media(max-width:610px){.stats,.game-grid{grid-template-columns:1fr}.setting{flex-wrap:wrap}.session-item{align-items:flex-start}}
 .friends-search{display:grid;gap:10px}.friends-search label{font-size:13px;font-weight:800;color:#dcebf0}.friends-search-controls{display:flex;align-items:stretch;gap:10px}.friends-search-controls input{flex:1;min-width:0;background:#071e2a;border:1px solid #487a8d;color:#f1faff;font:inherit;font-size:14px;border-radius:10px;padding:13px}.friends-items{display:grid;gap:9px;margin:12px 0}.friend-person{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;background:linear-gradient(105deg,#0d3040,#081e2e);border:1px solid #35697b;border-radius:12px}.friend-name{font-size:14px;font-weight:850;overflow-wrap:anywhere}.friend-sub{font-size:11px;color:#9dbdcb;margin-top:4px}.friend-controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}.friend-controls button{border-radius:8px;border:1px solid #518b9c;background:#103849;color:#f1fcff;padding:9px 11px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}.friend-controls button.friend-main{border-color:#dfba73;background:#533e24;color:#ffdd9c}.friend-controls button:disabled{opacity:.55;cursor:wait}.friend-empty{color:#8daebb!important;font-size:13px;margin:6px 0!important}.friend-alert{color:#ffd59f!important;font-size:13px}.friends-stats .stat strong{font-variant-numeric:tabular-nums}@media(max-width:610px){.friends-search-controls{flex-wrap:wrap}.friends-search-controls button{width:100%}.friend-person{align-items:flex-start;flex-wrap:wrap}.friend-controls{width:100%;justify-content:flex-start}}
+
+.social-label{display:block;color:#dbeff6;font-weight:800;margin:12px 0;font-size:13px}
+.social-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.social-controls select{flex:1;min-width:160px;padding:12px;background:#082537;color:#fff;border:1px solid #447b8f;border-radius:9px;font:inherit}
+.social-thread{min-height:260px;max-height:420px;overflow-y:auto;border:1px solid #386c7e;border-radius:13px;background:linear-gradient(140deg,#061622,#09283b);padding:16px;display:flex;flex-direction:column;gap:11px}
+.social-thread>p{color:#a7c3d2}.social-bubble{padding:12px 15px;border:1px solid #367185;border-radius:13px;max-width:85%;align-self:flex-start;background:#143448;overflow-wrap:anywhere}.social-bubble.own{align-self:flex-end;background:#453c2b;border-color:#8f774c}
+.social-bubble p{color:#f4f8fc!important;white-space:pre-wrap;margin:0 0 7px;line-height:1.55}.social-bubble small{font-size:10px;color:#b5cfdb}
+.social-send textarea{width:100%;min-height:90px;background:#091f2d;color:#f8fbfc;border:1px solid #416c80;border-radius:9px;padding:12px;font:inherit}
+.social-limitation{border:1px solid #816a42;border-radius:11px;background:#42311c55;color:#f6d6a2!important;padding:13px}
+@media(max-width:610px){.social-controls{align-items:stretch;flex-direction:column}.social-controls>*{width:100%}.social-bubble{max-width:95%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}`;
 const js=String.raw`(()=>{
 'use strict';
@@ -138,7 +177,8 @@ const sectionNames={
  security:['Bezpieczeństwo','Kontrola bezpieczeństwa Twojego konta.'],
  privacy:['Prywatność','Zarządzanie widocznością danych.'],
  notifications:['Powiadomienia','Informacje o Twoich aktywnościach.'],
- messages:['Wiadomości i chat','Twoja społeczność graczy.'],
+ messages:['Wiadomości','Prywatne rozmowy ze znajomymi.'],
+ challenges:['Zaproszenia do gier','Wyzwania Warcaby i Gomoku dla znajomych.'],
  games:['Gry i rozgrywka','Wszystkie gry w jednym miejscu.'],
  appearance:['Wygląd i dostępność','Panel dopasowany do Twojego ekranu.'],
  sessions:['Sesje i urządzenia','Kontrola zalogowanych urządzeń.'],
