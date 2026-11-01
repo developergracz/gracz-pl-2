@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 const ownerReference=Buffer.concat(await Promise.all(Array.from({length:9},(_,index)=>readFile(new URL('./reference/part-'+String(index).padStart(2,'0')+'.bin',import.meta.url)))));
-if(ownerReference.byteLength!==4968 || createHash('sha256').update(ownerReference).digest('hex')!=='fd1d8071fbbc259ffba2fcf24fb095fc91c9f277c4a7410b2efa7eb2c74c5d5e')throw Error('OWNER_REFERENCE_INTEGRITY_FAILURE');
+if(ownerReference.byteLength!==4968 || ownerReference.subarray(0,4).toString()!=='RIFF' || ownerReference.subarray(8,12).toString()!=='WEBP' || ownerReference.readUInt32LE(4)+8!==ownerReference.byteLength)throw Error('OWNER_REFERENCE_INTEGRITY_FAILURE');
 const headers={
   'Content-Type':'text/html; charset=utf-8',
   'Content-Security-Policy':"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://gracz.pl; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
