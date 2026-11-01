@@ -368,7 +368,8 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(geo.news.left).toBeLessThan(geo.cards.left+3);
+    expect(geo.news.width).toBeLessThanOrEqual(1121);
+    expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
    }
