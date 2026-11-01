@@ -2,6 +2,9 @@
 // This is a regression boundary, not a sandbox for malicious source/dependencies.
 export const productionModules=Object.freeze([
   'server.mjs',
+  // Public account signup and session UI; first-party API with hashed credentials.
+  'auth/public-identity.mjs',
+  'auth/page.mjs',
   'lifecycle.mjs',
   'premium-reply.mjs',
   'email/full-max-premium.mjs',
