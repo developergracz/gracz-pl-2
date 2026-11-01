@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -31,13 +31,19 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
  assert.match(css,/@media\(max-width:560px\)/);assert.match(css,/aspect-ratio:1/);
+ assert.match(css,/\.cell\.p1\.occupied::after/);
+ assert.match(css,/\.cell\.p2\.occupied::after/);
+ assert.match(css,/#edf0ec/); // pearl white board, no dark wooden board
+ assert.match(css,/\.boardframe\{[^}]*background:linear-gradient/);
+ assert.match(css,/@media\(max-width:800px\)/);
+ assert.match(css,/\.tool-btn/);
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
  const fake=new Map(),queued=[],calls=[];
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
-   this.textContent='';this.style={};this.classes=new Set();
+   this.textContent='';this.style={};this.classes=new Set();this.focused=false;
    this.classList={add:(...x)=>x.forEach(v=>this.classes.add(v)),
     contains:x=>this.classes.has(x),
     toggle:(x,value)=>{if(value===undefined)value=!this.classes.has(x);if(value)this.classes.add(x);else this.classes.delete(x);}};
@@ -46,6 +52,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
   append(...children){this.children.push(...children);}
   replaceChildren(...children){this.children=[...children];this.value='';}
   setAttribute(){}
+  focus(){this.focused=true;}
+  scrollIntoView(){}
  }
  const get=id=>{if(!fake.has(id))fake.set(id,new Element());return fake.get(id);};
  const board=Array(225).fill(0);
@@ -83,7 +91,19 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(queued.length,1);queued.pop()();
  assert.equal(get('move-count').textContent,'Ruchy: 2');
  assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
+ assert.equal(get('undo-move').disabled,false);
+ get('analyze-position').listeners.click();
+ assert.equal(get('analysis-note').hidden,false);
+ assert.equal(get('board').children.filter(x=>x.classes.has('suggested')).length,1);
+ get('game-settings').listeners.click();
+ assert.equal(get('ai-level').focused,true);
+ get('undo-move').listeners.click();
+ assert.equal(get('move-count').textContent,'Ruchy: 0');
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
+ assert.equal(get('undo-move').disabled,true);
  get('online-mode').listeners.click();
+ assert.equal(get('undo-move').disabled,true);
+ assert.equal(get('analyze-position').disabled,true);
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('room-select').children.length,2);
  assert.equal(get('join-room').disabled,false);
