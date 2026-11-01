@@ -208,6 +208,66 @@ footer{display:none}
 @media (max-width:779px){
  .premium-feedback{font-size:12px;padding:10px 12px;right:0;left:0}
 }
+
+/* Responsive account screen: preserve the accepted artwork, with less dark masking. */
+.scene{
+ background-image:linear-gradient(90deg,rgba(2,9,19,.10),rgba(2,9,19,.02)),url('/konto/reference.webp');
+ background-position:center center;
+ background-size:cover;
+}
+@media (min-width:780px){
+ .scene{
+  height:calc(100dvh - 74px);
+  min-height:0;
+  padding-top:clamp(9px,1.3dvh,16px);
+  padding-bottom:clamp(9px,1.3dvh,16px);
+  align-items:stretch;
+  overflow:hidden;
+ }
+ .left{height:100%;min-height:0;background:linear-gradient(180deg,rgba(2,11,20,.43),rgba(2,11,20,.35) 52%,rgba(2,11,20,.15) 78%,transparent)}
+ .panel{align-self:start;height:auto;min-height:0;max-height:none;overflow:visible;transform-origin:top left}
+ .right{height:100%;min-height:0}
+ .right .info{background:#051727da}
+}
+@media (min-width:780px) and (max-width:1180px){
+ .top{height:clamp(60px,8dvh,74px)}
+ .scene{
+  height:calc(100dvh - clamp(60px,8dvh,74px));
+  padding:clamp(8px,1.3dvh,14px) clamp(8px,1.5vw,18px);
+  grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);
+  gap:clamp(8px,1vw,14px);
+ }
+ .left{padding:clamp(15px,3dvh,30px) 12px}
+ .left-copy em{font-size:clamp(20px,2.6vw,29px)}
+ .hero-brand{font-size:clamp(36px,5vw,56px)}
+ .eyebrow{font-size:clamp(10px,1.35vw,14px);letter-spacing:1px}
+ .benefits{gap:clamp(5px,1dvh,12px)}
+ .benefits b{width:38px;height:38px;flex:0 0 38px;font-size:19px}
+ .benefits strong{font-size:clamp(11px,1.5vw,14px)}
+ .benefits small{font-size:clamp(10px,1.2vw,12px)}
+ .panel{padding:clamp(9px,1.8dvh,16px) clamp(10px,1.5vw,20px);border-radius:17px}
+ .panel-heading .round{width:clamp(34px,5.5dvh,48px);height:clamp(34px,5.5dvh,48px)}
+ .panel h1{font-size:clamp(19px,2.2vw,26px);white-space:normal}
+ .panel-heading p{white-space:normal}
+ .panel form>label{margin:clamp(5px,1dvh,10px) 0 4px 50px}
+ .field{margin-left:50px}
+ .field-icon{left:-48px;top:-2px;width:39px;height:39px;font-size:19px}
+ .field input{height:clamp(36px,5dvh,43px)}
+ .hint{margin:3px 0 3px 50px}
+ .checks{margin:clamp(6px,1dvh,12px) 0;gap:4px}
+ .checks label{font-size:12px}
+ .checks input{width:18px;height:18px}
+ .submit{height:clamp(41px,5.8dvh,49px);font-size:16px}
+ .oauth-separator{margin:7px 0 5px;font-size:12px}
+ .oauth-buttons{gap:6px}
+ .oauth-buttons button{height:36px;font-size:11px}
+ .switch{margin:7px 0 2px;font-size:12px}
+}
+@media (max-width:779px){
+ .scene{background-image:linear-gradient(90deg,rgba(2,9,19,.14),rgba(2,9,19,.06)),url('/konto/reference.webp')}
+ .left{background:rgba(2,12,23,.55)}
+}
+
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
@@ -219,20 +279,21 @@ function fitAccountPanel(){
  accountPanel.style.width='';
  accountPanel.style.maxHeight='';
  accountPanel.style.overflowY='';
- if(window.innerWidth<1181)return;
- // Measure the full natural height, including the submit button and social-provider row.
+ // Phones retain natural scrolling so form controls remain legible.
+ if(window.innerWidth<780)return;
  accountPanel.style.maxHeight='none';
  accountPanel.style.overflowY='visible';
- const top=accountPanel.getBoundingClientRect().top;
- const available=Math.max(0,window.innerHeight-top-9);
+ const sceneBottom=document.querySelector('.scene').getBoundingClientRect().bottom;
+ const panelTop=accountPanel.getBoundingClientRect().top;
+ const available=Math.max(0,Math.min(sceneBottom,window.innerHeight)-panelTop-10);
  const naturalHeight=accountPanel.scrollHeight;
  if(naturalHeight<=available)return;
- const scale=Math.max(.70,Math.min(1,available/naturalHeight));
- // Widen before transforming so the card keeps filling its assigned grid column.
+ // Uniform scaling keeps all fields active, with a readable minimum size.
+ const scale=Math.max(.76,Math.min(1,available/naturalHeight));
  accountPanel.style.width=(100/scale)+'%';
  accountPanel.style.transform='scale('+scale+')';
  if(naturalHeight*scale>available+1){
-  // Unusually short desktop windows remain usable: never clip buttons or inputs.
+  // Exceptional short windows still allow access to every form control.
   accountPanel.style.maxHeight=(available/scale)+'px';
   accountPanel.style.overflowY='auto';
  }
