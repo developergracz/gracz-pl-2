@@ -88,7 +88,7 @@ for (const page of sharedHeaderPages) {
   const html = read(page);
   const expectedHeaderVersion = page === "index.html" ? "r6" : "r3";
   requireCheck(
-    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-compact-r17"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
+    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-viewport-r18"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
