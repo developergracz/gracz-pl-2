@@ -383,6 +383,10 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
 });
 
 test('R16 displays exact accepted full newsletter artwork with a genuine aligned form',async({browser})=>{
+ test.setTimeout(60000); // Sequential viewport matrix on CI.
+ const approvedImage=fs.readFileSync(path.join(__dirname,'../../maintenance-site/assets/gracz-newsletter-full-approved-r16.webp'));
+ const approvedSHA=require('node:crypto').createHash('sha256').update(approvedImage).digest('hex');
+ expect(approvedSHA,'Only the exact Owner-approved R16 art may pass').toBe('1f4d91984b76e50cada7c1409aced20e85a0eeb9f0af3a69e34a9737dae8988c');
  for(const width of [390,768,960,1024,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -396,11 +400,13 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
    await expect(form).toBeVisible();
    await expect(form.locator('#news-email')).toHaveAttribute('type','email');
    await expect(form.locator('button[type=submit]')).toBeDisabled();
-   const state=await page.evaluate(async()=>{
+   if(width>960){
+    await expect.poll(()=>scene.evaluate(img=>img.complete && img.naturalWidth===1671),{timeout:10000}).toBe(true);
+   }
+   const state=await page.evaluate(()=>{
     const section=document.querySelector('.site-footer .footer-news');
     const scene=section.querySelector('img.footer-news-full-art-r16');
     const phone=section.querySelector('img.footer-news-smartphone');
-    await Promise.all([scene.decode(),phone.decode()]);
     const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
     return {section:rect(section),scene:rect(scene),phone:rect(phone),
       form:rect(section.querySelector('form[data-newsletter]')),
@@ -409,10 +415,10 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
       natural:[scene.naturalWidth,scene.naturalHeight],
       overflow:document.documentElement.scrollWidth};
    });
-   expect(state.natural).toEqual([1672,941]);
    expect(state.overflow).toBeLessThanOrEqual(width+2);
    if(width>960){
     expect(state.sceneDisplayed).toBe(true);
+    expect(state.natural).toEqual([1671,941]);
     expect(state.phoneDisplayed).toBe(false);
     const [x,y,r,b]=state.section;
     const [sx,sy,sr,sb]=state.scene;
