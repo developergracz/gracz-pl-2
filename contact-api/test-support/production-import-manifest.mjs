@@ -9,6 +9,8 @@ export const productionModules=Object.freeze([
   'auth/page.mjs',
   // Authenticated player UI; same-origin HTML/CSS/JS, no runtime imports or new dependencies.
   'auth/panel.mjs',
+  // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
+  'auth/gomoku-console.mjs',
   'lifecycle.mjs',
   'premium-reply.mjs',
   'email/full-max-premium.mjs',
