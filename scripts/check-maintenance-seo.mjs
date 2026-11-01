@@ -96,11 +96,15 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical site-header missing`
   );
   requireCheck(
-    /data-modal="login"[^>]*>Zaloguj się</.test(html),
+    page === "index.html"
+      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/\?widok=login"[^>]*>Zaloguj się<\/a>/.test(html)
+      : /data-modal="login"[^>]*>Zaloguj się</.test(html),
     `${page}: canonical login action missing`
   );
   requireCheck(
-    /data-modal="register"[^>]*>Załóż konto</.test(html),
+    page === "index.html"
+      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Zarejestruj się<\/a>/.test(html)
+      : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
   );
   requireCheck(
