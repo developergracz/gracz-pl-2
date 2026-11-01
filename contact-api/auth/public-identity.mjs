@@ -90,6 +90,16 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
     return json(res,200,q.rows.length?{ok:true,loggedIn:true,nickname:q.rows[0].nickname}:{ok:true,loggedIn:false}),true;
    }catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
   }
+  if(url.pathname==='/auth/nick-available' && req.method==='GET'){
+   if(!allow('nick-check:'+req.socket.remoteAddress,55))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+   const nick=normalizeNick(url.searchParams.get('nick'));
+   if(!validNick(nick))return json(res,200,{ok:true,available:false}),true;
+   try{
+    await ready();
+    const lookup=await database.query('SELECT 1 FROM gracz_public_identity.accounts WHERE nickname_key=$1 LIMIT 1',[nick.toLowerCase()]);
+    return json(res,200,{ok:true,available:lookup.rows.length===0}),true;
+   }catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
+  }
   if(req.method!=='POST')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
   if(!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
   if(!['/auth/register','/auth/verify','/auth/login','/auth/logout'].includes(url.pathname))return bad(res,404,'NIE_ZNALEZIONO'),true;
