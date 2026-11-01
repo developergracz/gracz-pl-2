@@ -73,6 +73,13 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       display_name text NOT NULL, bio text NOT NULL DEFAULT '',
       country text NOT NULL DEFAULT 'PL', language text NOT NULL DEFAULT 'pl',
       updated_at timestamptz NOT NULL DEFAULT now())`);
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.player_preferences (
+       account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       density text NOT NULL DEFAULT 'comfortable',
+       reduce_motion boolean NOT NULL DEFAULT false,
+       large_text boolean NOT NULL DEFAULT false,
+       favorite_games text[] NOT NULL DEFAULT ARRAY[]::text[],
+       updated_at timestamptz NOT NULL DEFAULT now())`);
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
@@ -138,6 +145,71 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       }}),true;
     }catch(e){
       console.error('IDENTITY_PROFILE_ERROR',{code:safeText(e?.code)||'PROFILE_ERROR'});
+      return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+    }
+  }
+  
+  if(url.pathname==='/auth/player-center' || url.pathname==='/auth/player-center/revoke-others'){
+    const revoke=url.pathname.endsWith('/revoke-others');
+    if((revoke && req.method!=='POST')||(!revoke && !['GET','PUT'].includes(req.method)))
+      return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+    if(req.method!=='GET' && !authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+    try{
+      await ready();
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const tokenDigest=digest(token);
+      const session=await database.query(`SELECT a.id FROM gracz_public_identity.sessions s
+        JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+        WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[tokenDigest]);
+      if(!session.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+      const accountId=session.rows[0].id;
+      if(revoke){
+        if(!allow('player-revoke:'+accountId,12))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+        const result=await database.query(`DELETE FROM gracz_public_identity.sessions
+          WHERE account_id=$1 AND token_digest<>$2`,[accountId,tokenDigest]);
+        return json(res,200,{ok:true,revoked:result.rowCount||0}),true;
+      }
+      if(req.method==='PUT'){
+        if(!allow('player-prefs:'+accountId,35))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+        let body;try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+        const {density,reduceMotion,largeText,favoriteGames}=body;
+        const allowedGames=['warcaby','gomoku','tysiac','poker'];
+        if(!['comfortable','compact'].includes(density)||
+          typeof reduceMotion!=='boolean'||typeof largeText!=='boolean'||
+          !Array.isArray(favoriteGames)||favoriteGames.length>allowedGames.length||
+          favoriteGames.some(game=>typeof game!=='string'||!allowedGames.includes(game))||
+          new Set(favoriteGames).size!==favoriteGames.length)
+          return bad(res,400,'POPRAW_USTAWIENIA'),true;
+        await database.query(`INSERT INTO gracz_public_identity.player_preferences
+          (account_id,density,reduce_motion,large_text,favorite_games,updated_at)
+          VALUES ($1,$2,$3,$4,$5,now())
+          ON CONFLICT(account_id) DO UPDATE SET density=excluded.density,
+          reduce_motion=excluded.reduce_motion,large_text=excluded.large_text,
+          favorite_games=excluded.favorite_games,updated_at=now()`,
+          [accountId,density,reduceMotion,largeText,favoriteGames]);
+      }
+      const [prefResult,sessionsResult]=await Promise.all([
+        database.query(`SELECT density,reduce_motion,large_text,favorite_games
+          FROM gracz_public_identity.player_preferences WHERE account_id=$1`,[accountId]),
+        database.query(`SELECT created_at,expires_at,(token_digest=$2) AS current
+          FROM gracz_public_identity.sessions WHERE account_id=$1 AND expires_at>now()
+          ORDER BY created_at DESC LIMIT 25`,[accountId,tokenDigest])
+      ]);
+      const pref=prefResult.rows[0]||{};
+      return json(res,200,{ok:true,center:{
+        preferences:{
+          density:pref.density||'comfortable',
+          reduceMotion:pref.reduce_motion===true,
+          largeText:pref.large_text===true,
+          favoriteGames:Array.isArray(pref.favorite_games)?pref.favorite_games:[]
+        },
+        sessions:sessionsResult.rows.map(row=>({
+          createdAt:row.created_at,expiresAt:row.expires_at,current:row.current===true
+        }))
+      }}),true;
+    }catch(e){
+      console.error('PLAYER_CENTER_ERROR',{code:safeText(e?.code)||'CENTER_ERROR'});
       return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
     }
   }
