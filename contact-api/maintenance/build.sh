@@ -7,6 +7,8 @@ if [ "${GRACZ_BUSINESS_RUNTIME_ENABLED:-0}" = "1" ]; then
   cd "$repo_root"
   npm --prefix contact-api ci --omit=dev --ignore-scripts --no-audit --no-fund
   node --check contact-api/server.mjs
+  node --check contact-api/auth/public-identity.mjs
+  node --check contact-api/auth/page.mjs
   node --check contact-api/newsletter.mjs
   node --check contact-api/routes/newsletter-route.mjs
   node --check contact-api/persistence/newsletter-opt-in-store.mjs

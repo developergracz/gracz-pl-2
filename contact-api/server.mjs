@@ -1,4 +1,6 @@
 import { installShutdown } from "./lifecycle.mjs";
+import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
+import { serveIdentityPage } from "./auth/page.mjs";
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
@@ -52,6 +54,11 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
 }
 
 const database = createDatabase();
+const publicIdentity = createPublicIdentityRouter({
+  database,
+  emailFrom: EMAIL_FROM,
+  resendKey: RESEND_API_KEY,
+});
 const persistence = database.enabled
   ? createPersistenceRepositories(database)
   : null;
@@ -368,6 +375,10 @@ const server = createServer(async (req, res) => {
       const readiness = await newOnlyNewsletter.readiness();
       return json(res, readiness.ready && !lifecycle.stopping ? 200 : 503, readiness);
     }
+
+    // Account screen and its API share one origin; Secure HttpOnly session cookies work reliably.
+    if (serveIdentityPage(req, res, url)) return;
+    if (await publicIdentity.handle(req, res, url)) return;
 
     if (url.pathname.startsWith("/owner/newsletter")) {
       return await ownerAdmin.handle(req,res,url);

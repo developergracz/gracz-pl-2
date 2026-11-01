@@ -267,7 +267,13 @@
     var trigger = event.target.closest('[data-modal]');
     if (!trigger) return;
     event.preventDefault();
-    openModal(trigger.getAttribute('data-modal'), trigger);
+    var action = trigger.getAttribute('data-modal');
+    if (action === 'login' || action === 'register') {
+      window.location.assign('https://gracz-contact-api.onrender.com/konto/' +
+        (action === 'login' ? '?widok=login' : ''));
+      return;
+    }
+    openModal(action, trigger);
   });
 
   /* Newsletter: no backend yet — never send or store the address. */
