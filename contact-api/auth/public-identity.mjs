@@ -149,5 +149,5 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
   }catch(e){console.error('IDENTITY_PUBLIC_ERROR',{code:safeText(e?.code)||'AUTH_ERROR'});return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
   return bad(res,404,'NIE_ZNALEZIONO'),true;
  }
- return {handle:respond};
+ return {handle:respond,probe:ready};
 }
