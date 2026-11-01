@@ -12,19 +12,19 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
-<div class="branding"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">★ PREMIUM</span></div>
-<h1>Gomoku <em>Online</em></h1><div class="premium-sub">FULL MAX PREMIUM</div>
+<div class="branding"><span class="laurel" aria-hidden="true">❧</span><span class="brand-gamepad" aria-hidden="true">🎮</span><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">PREMIUM</span><span class="laurel" aria-hidden="true">❧</span></div>
+<h1>Gomoku <em>Online</em></h1><div class="premium-sub" aria-label="Full Max Premium"><span aria-hidden="true">♛</span></div>
 <p class="lede">Pięć w linii. Jeden ruch może zmienić wszystko.</p>
 </header>
 <div class="mode" role="group" aria-label="Tryb gry">
-<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">♛</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
-<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">♙</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">🎓</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">👥</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
 </div>
 <section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p>
 <label for="ai-level">Poziom komputera</label>
-<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — kilka ruchów naprzód</option></select>
-<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
+<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — dla bardzo doświadczonych</option></select>
+<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i rzadko popełnia błędy. Najtrudniejszy poziom.</p>
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -33,7 +33,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
 <section class="sidecard rules"><h2>ⓘ &nbsp;Jak grać?</h2>
-<p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy.</p>
+<p>Ułóż 5 swoich kamieni w linii: poziomo, pionowo lub na skos. Blokuj zagrożenia przeciwnika i planuj ruchy z wyprzedzeniem.</p>
 <p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p>
 </section>
 <nav class="side-links"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav>
@@ -42,7 +42,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
 <div class="versus">VS</div>
-<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♙</span></div>
+<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
 <div class="arena">
@@ -51,10 +51,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 <aside class="side-dock" aria-label="Historia ruchów i rozmowa">
 <section class="match-panel">
-<div class="dock-header"><span class="dock-eyebrow">CENTRUM PARTII</span><span class="dock-live" id="dock-status">● TRENING</span></div>
+<div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
-<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">♟ Ruchy</button>
-<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">◉ Czat</button></div>
+<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">☷ &nbsp;Ruchy</button>
+<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button></div>
 <div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab">
 <div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
 <div id="moves-list" class="moves-list" aria-live="polite"><p class="dock-empty">Wybierz pole i rozpocznij partię.</p></div>
@@ -62,10 +62,13 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 <div id="chat-panel" class="dock-content" role="tabpanel" aria-labelledby="chat-tab" hidden>
 <div class="dock-title"><strong>Czat przy stole</strong><span class="chat-lock">Prywatny</span></div>
-<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Czat jest dostępny podczas gry online ze znajomym.</p></div>
-<form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Napisz wiadomość do przeciwnika</label>
-<div class="chat-compose"><input id="chat-input" maxlength="600" type="text" autocomplete="off" placeholder="Napisz wiadomość…" disabled><button id="chat-send" type="submit" disabled aria-label="Wyślij wiadomość">➤</button></div></form>
-<p class="chat-footnote" id="chat-status">Wyłącznie uczestnicy tej partii · 600 znaków</p>
+<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Rozmowa przy stole gry.</p></div>
+</div>
+<div class="mini-chat">
+<div id="chat-preview" class="chat-preview" aria-label="Ostatnie wiadomości"><p class="dock-empty">Rozpocznij partię lub rozmowę.</p></div>
+<form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Napisz wiadomość do przeciwnika lub komputera treningowego</label>
+<div class="chat-compose"><input id="chat-input" maxlength="600" type="text" autocomplete="off" placeholder="Napisz wiadomość…"><button id="chat-send" type="submit" aria-label="Wyślij wiadomość">➤</button></div></form>
+<p class="chat-footnote" id="chat-status">Komentarze treningowe · bez zapisu na serwerze</p>
 </div>
 </section>
 <div class="game-tools" aria-label="Narzędzia gry">
@@ -186,6 +189,96 @@ select option{background:#102c34;color:#fff}
 @media(max-width:1150px) and (min-width:801px){.arena{grid-template-columns:minmax(0,1fr) 222px;gap:10px}.side-dock{max-height:calc(100dvh - 145px)}.dock-header{padding:9px}.dock-content{padding:0 8px 8px}.move-row{gap:5px;padding:8px 5px}.side-dock .tool-btn{font-size:9px}.boardframe{width:min(100%,calc(100dvh - 222px))}}
 @media(max-width:800px){.arena{display:flex;flex-direction:column}.side-dock{width:100%;max-height:none;flex-direction:column}.match-panel{max-height:none;min-height:290px;height:340px;flex:none}.moves-list,.chat-messages{max-height:214px}.side-dock .game-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.side-dock{width:100%;max-height:none}.match-panel{height:320px}.dock-tab{font-size:12px}.move-row{grid-template-columns:25px 1fr auto}.boardframe{max-width:520px}}
+
+/* OWNER APPROVED GOMOKU FULL MAX PREMIUM: faithful 1648x925 three-column composition */
+:root{--gold:#ffd47b;--gold-deep:#96601d;--cyan:#39d9d5;--ivory:#f9f9f8}
+.layout{position:relative;grid-template-columns:27.5% minmax(0,1fr);width:100%;max-width:1920px;height:100dvh;min-height:590px;margin:0 auto;border-radius:clamp(16px,3.6vw,56px);border:1px solid #477f70;overflow:hidden;background:#01191d;box-shadow:inset 0 0 0 1px #c49b4a52,0 0 0 3px #001414}
+.layout:after{content:"";pointer-events:none;position:absolute;inset:0;z-index:5;border-radius:inherit;box-shadow:inset 0 0 0 1px #cda75a75,inset 0 0 32px #09b7bd20;background:radial-gradient(ellipse 46% 18% at 96% -4%,#ffe19ba6,transparent 75%),radial-gradient(ellipse 40% 10% at 1% 103%,#dca54b7c,transparent 70%),radial-gradient(ellipse 55% 8% at 103% 101%,#ffd16f65,transparent 75%);opacity:.7}
+.sidebar{padding:clamp(17px,2vw,30px) clamp(20px,3vw,43px);border-right:1px solid #6f927e;background:radial-gradient(ellipse 60% 24% at 8% 5%,#08696f48,transparent 72%),linear-gradient(140deg,#001318 0%,#021e25 52%,#00151a 100%);box-shadow:inset -9px 0 19px #0005;z-index:1}
+.sidebar:before,.sidebar:after{border-color:#eac37e;box-shadow:0 0 10px #d7a23f80}
+.side-header{margin-bottom:clamp(16px,2vh,24px)}
+.branding{gap:6px;flex-wrap:nowrap;margin-bottom:16px;min-height:32px}
+.branding .brand{font-size:clamp(16px,1.58vw,27px);letter-spacing:-1.35px;white-space:nowrap;text-shadow:0 1px 1px #000}
+.brand-gamepad{font-size:22px;filter:sepia(1) saturate(4) hue-rotate(348deg) brightness(1.15);line-height:1}
+.branding .laurel{color:#ffd06c;font-size:27px;filter:drop-shadow(0 0 5px #e3a92b);line-height:1}
+.badge-premium{font-size:clamp(8px,.8vw,12px);font-weight:950;white-space:nowrap;padding:4px 9px;border:1px solid #fff2be;background:linear-gradient(180deg,#fff3bb,#f2bb42 70%,#d08f20);box-shadow:0 0 11px #ecac3695;color:#152522;border-radius:9px}
+.side-header h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(30px,2.9vw,50px);font-weight:700;letter-spacing:-1.5px;color:#ffe1a0;text-shadow:0 0 15px #edb34f82;white-space:nowrap}
+.side-header h1 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:#f7fcf9;text-shadow:0 2px 4px #0008}
+.premium-sub{position:relative;display:grid;place-items:center;height:24px;margin:6px auto 15px;color:#f9c45d;font-size:21px}
+.premium-sub:before,.premium-sub:after{content:"";height:1px;width:38%;position:absolute;top:50%;background:linear-gradient(90deg,transparent,#ffc76a)}
+.premium-sub:before{left:0}.premium-sub:after{right:0;transform:rotate(180deg)}
+.lede{font-size:clamp(11px,1.1vw,16px);color:#f3f2e9;line-height:1.55}
+.mode{gap:11px;margin:5px 0 16px}
+.mode-choice{min-height:clamp(63px,7.4vh,79px);border-radius:15px;padding:9px 13px;grid-template-columns:clamp(35px,3.5vw,58px) 1fr 15px;background:linear-gradient(135deg,#063e3c,#031a20);border-color:#20d8d6;box-shadow:inset 0 0 12px #37b0a824}
+.mode-choice.active{border:2px solid #ffcf6b;background:linear-gradient(95deg,#5b431f7d,#031d20 75%);box-shadow:0 0 0 1px #ffe58fb8,0 0 14px 3px #eaa536aa,inset 0 0 11px #f3bc4e55}
+.mode-choice strong{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:clamp(18px,1.5vw,26px)}.mode-choice small{font-size:clamp(10px,1vw,14px);color:#f0eeea;margin-top:2px}
+.mode-icon{font-size:clamp(23px,2.7vw,38px);filter:drop-shadow(0 0 3px #d59b38)}.mode-arrow{color:#ffcf58;font-weight:800;font-size:30px}
+.sidecard{margin-top:14px;padding-top:17px;border-top:1px solid #ad8d4880;position:relative}
+.sidecard:before{content:"◇";font-size:14px;color:#f4c765;position:absolute;left:50%;top:-10px;background:#03202a;padding:0 6px}
+.sidecard h2{font-family:Georgia,"Times New Roman",serif;color:#ffd476;font-size:clamp(18px,1.6vw,26px);margin-bottom:8px}
+.sidecard p{font-size:clamp(11px,1.0vw,14px);color:#f2f2f1;line-height:1.35}
+.sidecard label{font-size:clamp(11px,1vw,15px);margin:10px 0 7px}
+.sidecard select{border:2px solid #f6bd4c;background:linear-gradient(115deg,#092c31,#03171d 75%);border-radius:10px;font-weight:700;box-shadow:inset 0 0 8px #56cebc1a}
+.sidecard .hint{color:#e1e5df;font-size:clamp(10px,.94vw,13px);line-height:1.35;margin:8px 0 14px}
+#restart{font-family:Georgia,"Times New Roman",serif;font-size:clamp(17px,1.7vw,26px);padding:10px;border:2px solid #fff1ae;border-radius:14px;background:linear-gradient(180deg,#ffe997 0%,#ffb92e 60%,#d38909 100%);box-shadow:inset 0 1px 2px #fff,0 0 14px #edac3b98,0 5px 10px #0007}
+#restart span{font-family:Arial,sans-serif;font-size:24px}
+.rules{margin-top:20px}.rules p{line-height:1.4}
+.side-links{position:relative;z-index:6}
+.boardarea{z-index:1;position:relative;display:grid;grid-template-columns:minmax(0,1fr) clamp(290px,23vw,385px);grid-template-rows:68px 43px minmax(0,1fr) 58px;column-gap:clamp(14px,1.3vw,24px);row-gap:10px;padding:17px clamp(17px,1.3vw,25px);background:radial-gradient(ellipse 68% 85% at 54% 52%,#06696b58,transparent 78%),linear-gradient(120deg,#011c20,#042c2d 55%,#01151a)}
+.boardarea:before{z-index:-1;opacity:.7;border-top:2px solid #29d3cf99;width:60%;height:20%;left:-10%;bottom:-8%;filter:drop-shadow(0 0 10px #00d4da)}
+.boardarea:after{z-index:-1;opacity:.8;border-top:3px solid #f1c97f;width:60%;height:20%;right:-24%;top:-10%;filter:drop-shadow(0 0 15px #edba61)}
+.players{grid-column:1;grid-row:1;grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr);gap:8px;min-height:0}
+.player{min-height:0;height:66px;padding:6px 16px;border-radius:20px;background:linear-gradient(145deg,#035959,#01181d 55%,#064c50);border:2px solid #ffe7a3;box-shadow:inset 0 0 0 2px #a56e21,0 0 0 1px #e8ad45,0 0 17px #ecc06a8c}
+.player .stone{height:45px;width:45px;border:2px solid #d9ac55;box-shadow:0 0 12px #c28e41a0,inset -6px -6px 10px #0008}
+.player strong{font-family:Georgia,"Times New Roman",serif;font-size:clamp(19px,1.65vw,27px);color:#fff}.player small{font-size:clamp(10px,.95vw,14px);color:#fff}
+.player-icon{display:block;color:#f9c356;font-size:30px;text-shadow:0 0 7px #e6a33a}
+.versus{font-family:Georgia,"Times New Roman",serif;font-size:27px;color:#ffce64;text-shadow:0 0 10px #ffc14e}
+.state{grid-column:1;grid-row:2;min-height:0;padding:6px 13px;border-radius:15px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(14px,1.18vw,20px);color:#f1e4bd;border:1px solid #37d7d7;background:linear-gradient(#075857,#011b20 82%);box-shadow:inset 0 1px 0 #a3f8e36e,0 4px 12px #0008}
+.arena{display:contents}
+.board-center{grid-column:1;grid-row:3;min-height:0;min-width:0;gap:0;justify-content:center}
+.boardtop{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.boardframe{width:min(100%,calc(100dvh - 270px),750px);max-width:100%;aspect-ratio:1;padding:clamp(8px,.85vw,13px);border:3px solid #fff0b5;border-radius:clamp(21px,2.3vw,33px);background:linear-gradient(128deg,#fff7cb 0%,#ffbf48 11%,#fff5c6 23%,#c48117 45%,#fff2a6 70%,#b66d08 100%);box-shadow:inset 0 0 0 2px #885319,inset 0 0 0 6px #f5cd6d,0 0 0 2px #ffb838,0 0 20px 4px #ffae38b8,0 14px 23px #0009}
+.board{background:radial-gradient(ellipse at 40% 35%,#fff 1%,#fafbfa 58%,#ededec);border:3px solid #72542e;border-radius:13px;box-shadow:inset 0 0 12px #9986694a}
+.cell::before{background:linear-gradient(to right,transparent calc(50% - .65px),#434549c8 calc(50% - .65px),#434549c8 calc(50% + .65px),transparent calc(50% + .65px)),linear-gradient(to bottom,transparent calc(50% - .65px),#434549c8 calc(50% - .65px),#434549c8 calc(50% + .65px),transparent calc(50% + .65px))}
+.cell.star:not(.occupied)::after{width:16%;height:16%;background:radial-gradient(circle at 30% 30%,#ffda7c,#c8881f);box-shadow:0 0 3px #f6ae33}
+.cell.occupied::after{width:90%;height:90%;box-shadow:inset -3px -4px 5px #0009,0 2px 4px #0008,0 0 1px #000a}
+.cell.p1.occupied::after{background:radial-gradient(circle at 27% 19%,#a7acb2 0%,#34393e 24%,#080d12 57%,#010103 95%)}
+.cell.p2.occupied::after{background:radial-gradient(circle at 27% 18%,#fff 0%,#fff 35%,#dce3e7 68%,#899398 100%);box-shadow:inset -3px -4px 4px #0004,0 3px 5px #0006}
+.bottom{grid-column:1;grid-row:4;min-height:0;align-items:center;gap:8px}
+.info-pill{border:2px solid #fbd27f;background:linear-gradient(140deg,#074343,#03171e);color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(15px,1.3vw,23px);padding:10px 20px;box-shadow:inset 0 1px #84f7db55,0 0 8px #dca7478a}
+.help{font-size:11px;color:#a2cbcb}
+.side-dock{grid-column:2;grid-row:1 / 5;align-self:stretch;justify-content:stretch;max-height:none;min-height:0;margin:54px 0 70px;padding:10px 10px 13px;gap:8px;border:2px solid #e6bd73;border-radius:25px;background:linear-gradient(145deg,#083f40,#02171c 55%,#041a1e);box-shadow:inset 0 0 0 2px #426b58,0 0 18px #ecac4060}
+.match-panel{min-height:0;max-height:none;flex:1;border:0;background:none;border-radius:0;box-shadow:none;overflow:hidden}
+.dock-header{height:0;padding:0;visibility:hidden;overflow:hidden}
+.dock-tabs{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 8px;padding:0;border:0;background:none}
+.dock-tab{border:1px solid #18d1cb;background:linear-gradient(160deg,#0b5050,#05292e);color:#fff;height:45px;border-radius:14px 14px 4px 4px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(15px,1.15vw,19px);font-weight:bold}
+.dock-tab.active{background:linear-gradient(180deg,#fff1b4,#f9bf45 58%,#b77913);border:2px solid #fff4b8;color:#191a15;box-shadow:inset 0 1px #fff,0 0 12px #ffbc44b5}
+.chat-led{display:inline-block;width:8px;height:8px;border-radius:100%;background:#25ea7e;box-shadow:0 0 6px #32f38c}
+.dock-content{padding:0 2px 5px;min-height:0;flex:1}
+.dock-title{display:none}
+.moves-list{min-height:0;border:1px solid #08b7b3;border-radius:11px;padding:3px 8px;background:#001b20;scrollbar-color:#dfc593 #09262a}
+.move-row{height:clamp(22px,2.6vh,29px);margin:0;padding:0 6px;border:0;border-radius:0;border-bottom:1px solid #42656666;background:transparent;grid-template-columns:29px minmax(0,1fr) auto;gap:8px}
+.move-row.latest{background:#1f514e75;border:0;border-bottom:1px solid #5f8d73}
+.move-number{font-size:12px;color:#ecf4ec;font-weight:700}.move-player strong{font-size:12px;color:#fff}.move-coordinate{font-size:13px;color:#fff}.mini-stone{width:17px;height:17px}
+.history-footer{display:none}
+.mini-chat{display:flex;flex-direction:column;flex:0 0 clamp(178px,22vh,225px);min-height:0;border-top:1px solid #b785327d;padding:6px 1px 1px}
+.chat-preview{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:4px 0}
+.chat-preview .chat-bubble{max-width:94%;padding:5px 8px;border-radius:11px;background:linear-gradient(145deg,#0b6665,#082f3d)}
+.chat-preview .chat-bubble.own{background:linear-gradient(140deg,#13696a,#03343b);align-self:flex-start}
+.chat-preview .chat-bubble p{font-size:12px}.chat-preview .chat-bubble time{font-size:9px}
+.chat-preview .dock-empty{padding:10px;color:#d3dbd6}
+#chat-panel .chat-messages{max-height:none;min-height:0}
+.chat-compose input{height:39px;padding:8px 11px;font-size:12px;background:linear-gradient(#031920,#03343a);border:1px solid #e7bb64;border-radius:13px}
+.chat-compose button{font-size:18px;padding:7px 11px;border-radius:10px;background:linear-gradient(#fff5ba,#f2c343 62%,#ae7119)}
+.chat-footnote{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-dock .game-tools{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.side-dock .tool-btn{height:clamp(64px,7.8vh,85px);min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px;padding:4px;border:1px solid #38d5c9;border-radius:15px;background:linear-gradient(#064747,#011b23 85%);color:#fff;font-size:clamp(10px,.78vw,13px);line-height:1.15;box-shadow:inset 0 1px #afe7cb44}
+.side-dock .tool-btn span{font-size:clamp(20px,2.2vw,34px);min-width:0;line-height:1;color:#f3bd55;text-shadow:0 0 7px #e2ae378c}
+@media(max-width:1190px) and (min-width:801px){.layout{grid-template-columns:27% minmax(0,1fr)}.boardarea{grid-template-columns:minmax(0,1fr) clamp(255px,25vw,320px);padding:10px;column-gap:10px}.side-dock{margin:45px 0 65px;padding:7px}.boardframe{width:min(100%,calc(100dvh - 236px))}.player{padding:5px 8px}.branding .laurel{display:none}.brand-gamepad{font-size:19px}.side-header h1{font-size:clamp(27px,2.8vw,36px)}.sidebar{padding:17px 16px}}
+@media(max-width:800px){.layout{display:block;width:100%;height:auto;min-height:100dvh;overflow:visible;border-radius:22px}.sidebar{height:auto;min-height:0;padding:17px 18px;border-right:0}.branding{justify-content:center}.boardarea{display:flex;flex-direction:column;padding:12px;gap:10px}.players{width:100%;display:grid;grid-template-columns:1fr 40px 1fr}.player{height:57px}.arena{display:flex;flex-direction:column;gap:15px}.board-center{width:100%}.boardframe{width:min(100%,calc(100dvh - 165px),700px)}.boardtop{position:absolute}.side-dock{width:100%;margin:0;padding:12px;gap:10px;max-height:none;min-height:0}.match-panel{height:400px;min-height:350px;flex:none;max-height:none}.mini-chat{flex-basis:165px}.side-dock .game-tools{grid-template-columns:repeat(4,minmax(0,1fr))}.bottom{width:100%}.info-pill{font-size:15px}.side-header h1{font-size:35px}.sidecard.rules{display:block}}
+@media(max-width:560px){.layout{border-radius:15px}.sidebar{padding:14px}.side-header h1{font-size:30px}.mode-choice{min-height:55px}.mode-choice strong{font-size:16px}.mode-choice small{font-size:10px}.mode-icon{font-size:24px}.boardarea{padding:10px}.players{grid-template-columns:1fr 26px 1fr;gap:5px}.player{height:50px;padding:5px}.player .stone{height:26px;width:26px}.player strong{font-size:13px}.player small{font-size:9px}.player-icon{display:none}.versus{font-size:15px}.boardframe{width:100%;padding:7px;border-radius:15px}.board{border-width:1px}.state{font-size:12px}.match-panel{height:370px}.mini-chat{flex-basis:145px}.side-dock .tool-btn{height:62px;font-size:9px;gap:3px}.side-dock .tool-btn span{font-size:22px}.bottom{flex-wrap:wrap}.info-pill{font-size:12px;padding:7px}.help{order:3;width:100%}}
+@media(max-height:700px) and (min-width:801px){.layout{min-height:560px}.boardarea{grid-template-rows:54px 35px minmax(0,1fr) 44px;gap:6px;padding:8px 12px}.player{height:52px}.boardframe{width:min(100%,calc(100dvh - 192px))}.side-dock{margin:45px 0 46px}.mini-chat{flex-basis:155px}.side-dock .tool-btn{height:57px;min-height:54px}.mode-choice{min-height:48px}}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -193,7 +286,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:''};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -212,7 +305,7 @@ function describe(){
   if(state.winner===1)return 'Wygrywasz! Pięć czarnych kamieni w rzędzie.';
   if(state.winner===2)return 'Komputer wygrał. Rozpocznij nową partię.';
   if(state.winner===3)return 'Remis — plansza została zapełniona.';
-  return state.thinking?'Komputer wykonuje ruch…':'Twój ruch — postaw czarny kamień.';
+  return state.thinking?'Komputer analizuje ruch…':state.moves>0&&state.last>=0&&state.board[state.last]===2?'🏆 Komputer zagrał ruch. Twoja kolej!':'Twój ruch — postaw czarny kamień.';
  }
  const m=state.match;
  if(!m)return 'Wybierz przyjęte wyzwanie i otwórz pokój.';
@@ -267,6 +360,8 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
+ state.localChat=[];state.chatSignature='';
+ showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
@@ -430,6 +525,18 @@ function trainMove(to){
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
   state.trainHistory.push({player:2,to:at,number:state.moves});
+  if(state.moves===2 || (state.moves>=6&&state.moves%6===0)){
+   const reactions=[
+    'Twój ruch! Powodzenia! 🙂',
+    'Uważaj na otwarte trójki i czwarte kamienie. ♟',
+    'Ciekawa partia. Szukam najlepszego ruchu. ♟'
+   ];
+   state.localChat.push({id:'local-'+(++state.chatSequence),player:2,
+    body:reactions[state.moves===2?0:Math.floor(state.moves/6)%2+1],
+    createdAt:new Date().toISOString()});
+   state.localChat=state.localChat.slice(-40);
+   state.chatSignature='';drawRoomChat(state.localChat);
+  }
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
   state.thinking=false;render();
@@ -568,31 +675,37 @@ function setDockTab(tab){
  state.dockTab=tab;
  const moves=tab==='moves';
  $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
+ $('chat-preview').hidden=!moves;
  $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
  $('history-tab').setAttribute('aria-selected',String(moves));
  $('chat-tab').setAttribute('aria-selected',String(!moves));
  if(!moves)void refreshRoomChat();
 }
 function showChatNotice(text){
- const box=$('chat-messages');box.replaceChildren();
- const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
- $('chat-status').textContent='Wyłącznie uczestnicy tej partii · 600 znaków';
+ for(const id of ['chat-messages','chat-preview']){
+  const box=$(id);box.replaceChildren();
+  const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
+ }
+ $('chat-status').textContent=state.mode==='training'?
+  'Trening: krótkie odpowiedzi automatyczne · lokalnie':
+  'Prywatny czat dwóch uczestników · 600 znaków';
 }
 function drawRoomChat(messages){
- const signature=(state.matchId||'')+':'+messages.map(x=>x.id).join(',');
+ const signature=(state.mode==='training'?'training':state.matchId||'')+':'+messages.map(x=>x.id).join(',');
  if(signature===state.chatSignature)return;
  state.chatSignature=signature;
  const box=$('chat-messages');box.replaceChildren();
  if(!messages.length){
-  const p=document.createElement('p');p.className='dock-empty';
-  p.textContent='Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.';
-  box.append(p);return;
+  showChatNotice(state.mode==='training'?
+   'Napisz do komputera treningowego. Odpowiedzi są krótkimi, automatycznymi komentarzami.':
+   'Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.');
+  return;
  }
  messages.forEach(message=>{
-  const mine=message.player===state.match?.player;
+  const mine=message.player===(state.mode==='training'?1:state.match?.player);
   const bubble=document.createElement('div');bubble.className='chat-bubble'+(mine?' own':'');
   const title=document.createElement('strong');
-  title.textContent=mine?'Ty':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  title.textContent=mine?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
   const text=document.createElement('p');text.textContent=message.body;
   const time=document.createElement('time');
   const date=new Date(message.createdAt);
@@ -600,12 +713,30 @@ function drawRoomChat(messages){
   bubble.append(title,text,time);box.append(bubble);
  });
  box.scrollTop=box.scrollHeight;
+ const preview=$('chat-preview');preview.replaceChildren();
+ messages.slice(-2).forEach(message=>{
+  const own=message.player===(state.mode==='training'?1:state.match?.player);
+  const bubble=document.createElement('div');bubble.className='chat-bubble'+(own?' own':'');
+  const title=document.createElement('strong');
+  title.textContent=own?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  const content=document.createElement('p');content.textContent=message.body;
+  const time=document.createElement('time');const date=new Date(message.createdAt);
+  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  bubble.append(title,content,time);preview.append(bubble);
+ });
+ preview.scrollTop=preview.scrollHeight;
 }
 async function refreshRoomChat(){
- if(state.mode!=='online'||!state.matchId||!state.match){
+ if(state.mode==='training'){
+  $('chat-input').disabled=false;$('chat-send').disabled=false;
+  state.chatSignature='';
+  drawRoomChat(state.localChat);
+  $('chat-status').textContent='Trening: komentarze automatyczne · bez zapisu';
+  return;
+ }
+ if(!state.matchId||!state.match){
   $('chat-input').disabled=true;$('chat-send').disabled=true;
-  if(state.mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
-  else showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć rozmowę.');
+  showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć prywatny czat.');
   return;
  }
  if(state.chatBusy)return;
@@ -627,11 +758,26 @@ $('history-tab').addEventListener('click',()=>setDockTab('moves'));
 $('chat-tab').addEventListener('click',()=>setDockTab('chat'));
 $('chat-form').addEventListener('submit',async event=>{
  event.preventDefault();
- if(state.mode!=='online'||!state.matchId||state.chatBusy)return;
+ if(state.chatBusy)return;
  const message=$('chat-input').value.trim();
  if(!message||message.length>600){
   $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
  }
+ if(state.mode==='training'){
+  const now=new Date().toISOString();
+  state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:now});
+  const lower=message.toLocaleLowerCase('pl-PL');
+  const answer=/powodzen|cześć|witam|hej/.test(lower)?'Dzięki, wzajemnie! 🤝':
+   /ruch|porad|pomoc|wskaz/.test(lower)?'Szukaj otwartych trójek i pilnuj zagrożeń. ♟':
+   /dzięk|dziek/.test(lower)?'Nie ma za co! Powodzenia! 🙂':
+   'Dobry trening! Najważniejsze to pięć w jednej linii. ♟';
+  state.localChat.push({id:'local-'+(++state.chatSequence),player:2,body:answer,createdAt:new Date().toISOString()});
+  state.localChat=state.localChat.slice(-40);
+  $('chat-input').value='';state.chatSignature='';drawRoomChat(state.localChat);
+  $('chat-status').textContent='Trening: automatyczne komentarze komputera · lokalnie';
+  return;
+ }
+ if(!state.matchId)return;
  const id=state.matchId,epoch=state.epoch;
  $('chat-send').disabled=true;
  try{
@@ -689,8 +835,8 @@ function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
  state.chatSignature='';setDockTab('moves');
- $('chat-input').disabled=true;$('chat-send').disabled=true;
- if(mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+ $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
+ if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
  state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
@@ -725,7 +871,7 @@ window.setInterval(()=>{
   void refreshOnline();
 },4000);
 render();
-showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;

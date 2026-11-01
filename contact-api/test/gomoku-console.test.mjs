@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-form','chat-input','chat-send'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -40,6 +40,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.side-dock/);
  assert.match(css,/\.move-row/);
  assert.match(css,/\.chat-bubble/);
+ assert.match(css,/grid-template-columns:27\.5%/);
+ assert.match(css,/\.side-dock\{grid-column:2;grid-row:1 \/ 5/);
+ assert.match(css,/\.side-dock \.game-tools\{grid-template-columns:repeat\(4/);
+ assert.match(css,/\.boardframe\{width:min\(100%,calc\(100dvh - 270px\)/);
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
@@ -112,10 +116,17 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('chat-tab').listeners.click();
  assert.equal(get('chat-panel').hidden,false);
  assert.equal(get('moves-panel').hidden,true);
- assert.equal(get('chat-input').disabled,true);
+ assert.equal(get('chat-input').disabled,false);
+ get('chat-input').value='Powodzenia!';
+ await get('chat-form').listeners.submit({preventDefault(){}});
+ assert.equal(get('chat-messages').children.length,3);
+ assert.equal(get('chat-messages').children[2].children[1].textContent,'Dzięki, wzajemnie! 🤝');
+ assert.equal(get('chat-preview').children.length,2);
  get('history-tab').listeners.click();
+ assert.equal(get('chat-preview').hidden,false);
  assert.equal(get('chat-panel').hidden,true);
  get('online-mode').listeners.click();
+ assert.equal(get('chat-input').disabled,true);
  assert.equal(get('undo-move').disabled,true);
  assert.equal(get('analyze-position').disabled,true);
  await new Promise(resolve=>setImmediate(resolve));
