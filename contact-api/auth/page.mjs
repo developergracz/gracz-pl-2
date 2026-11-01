@@ -296,62 +296,72 @@ body::before{
 }
 
 
-/* Owner-approved 1536 x 1024 composition. Header stays real HTML; scene artwork
-   is cropped below it. Its rasterized center was removed so only the REAL form
-   is visible and interactive. Never stretch or blur this high-resolution artwork. */
-@media (min-width:1181px){
-  body::before{content:none!important}
-  body{background:#031321}
-  .scene{
-    width:1536px;
-    max-width:none;
-    height:950px;
-    min-height:950px;
-    margin:0 auto;
-    padding:24px 0 12px;
-    display:grid;
-    grid-template-columns:610px 605px 321px;
-    align-items:start;
-    gap:0;
-    overflow:visible;
-    background:#031523 url('/konto/owner-layout.webp') center top/1536px 950px no-repeat;
-    transform:none!important;
-  }
-  .left,.right{background:none!important;min-height:0;height:auto}
-  .left{padding:0}
-  .left-copy,.right .info{opacity:0;pointer-events:none}
-  .right{padding:0}
-  .panel{
-    width:605px;
-    min-height:0;
-    max-height:none;
-    height:auto;
-    overflow:visible;
-    margin:0;
-    padding:18px 34px 18px;
-    border:2px solid #f8bd6c;
-    border-radius:23px;
-    background:linear-gradient(140deg,rgba(2,21,36,.98),rgba(1,15,27,.985));
-    box-shadow:0 0 13px #ffba654b,0 0 2px 1px #ffbb66 inset,0 12px 30px #0008;
-  }
-  .panel-heading{margin-bottom:7px}
-  .panel-heading .round{width:65px;height:65px}
-  .panel h1{font-size:34px}
-  .panel form>label{margin-top:clamp(10px,1.4dvh,15px)}
-  .field input{height:46px}
-  .checks{margin:17px 0 18px;gap:8px}
-  .submit{height:57px}
-  .oauth-separator{margin:12px 0 8px}
-  .oauth-buttons button{height:46px}
-  .switch{margin:15px 0 2px}
-  body[data-account-view="login"] .panel{
-    min-height:855px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-  }
-  body[data-account-view="login"] .panel-heading{margin-bottom:22px}
+/* Fluid Owner Premium stage: full browser width, no page zoom. */
+@media(min-width:1181px){
+ body::before{content:none!important}
+ body{background:#031321;overflow-x:hidden}
+ .scene{
+  width:100%;max-width:none;height:auto;
+  min-height:calc(100dvh - clamp(57px,8dvh,74px));
+  margin:0;padding:clamp(8px,1.2dvh,16px) 0;
+  display:grid;grid-template-columns:minmax(0,610fr) minmax(0,605fr) minmax(0,321fr);
+  gap:0;align-items:stretch;overflow:visible;
+  background:#031523 url('/konto/owner-layout.webp') center/100% 100% no-repeat;
+ }
+ .left,.right{background:none!important;min-height:0;height:auto;align-self:stretch;padding:0}
+ .left-copy,.right .info{opacity:0;pointer-events:none}
+ .panel{
+  width:100%;min-height:0;max-height:none;height:auto;min-width:0;
+  align-self:stretch;overflow:visible;margin:0;
+  padding:clamp(10px,1.4dvh,18px) clamp(15px,2.2vw,34px);
+  border:2px solid #f8bd6c;border-radius:clamp(15px,1.5vw,23px);
+  background:linear-gradient(140deg,rgba(2,21,36,.985),rgba(1,15,27,.99));
+  box-shadow:0 0 13px #ffba654b,0 0 2px 1px #ffbb66 inset,0 12px 30px #0008;
+ }
+ .panel-heading{margin-bottom:clamp(5px,1dvh,10px)}
+ .panel-heading .round{width:clamp(42px,5.5dvh,65px);height:clamp(42px,5.5dvh,65px)}
+ .panel h1{font-size:clamp(23px,2vw,34px);white-space:normal}
+ .panel-heading p{white-space:normal}
+ .panel form>label{margin-top:clamp(6px,1.3dvh,12px)}
+ .field input{height:clamp(38px,5dvh,46px)}
+ .checks{margin:clamp(8px,1.3dvh,17px) 0;gap:clamp(4px,.85dvh,8px)}
+ .submit{height:clamp(44px,6dvh,57px)}
+ .oauth-separator{margin:clamp(8px,1.3dvh,12px) 0 8px}
+ .oauth-buttons button{height:clamp(38px,5dvh,46px)}
+ .switch{margin:clamp(8px,1.4dvh,15px) 0 2px}
+ body[data-account-view="login"] .panel{
+  display:flex;flex-direction:column;justify-content:center;
+  gap:0;padding-block:clamp(22px,4dvh,40px);
+ }
+ body[data-account-view="login"] .panel-heading{
+  margin-bottom:clamp(18px,3dvh,30px);gap:clamp(12px,1.8vw,26px);
+ }
+ body[data-account-view="login"] .panel-heading h1{font-size:clamp(26px,2.25vw,35px)}
+ body[data-account-view="login"] .panel-heading p{font-size:clamp(12px,1vw,15px)}
+ body[data-account-view="login"] #login-form{display:grid;align-content:start;width:100%}
+ body[data-account-view="login"] #login-form>label{
+  margin:clamp(10px,1.8dvh,18px) 0 7px 58px;
+  font-size:clamp(13px,.97vw,15px);
+ }
+ body[data-account-view="login"] #login-form .field{margin-left:58px}
+ body[data-account-view="login"] #login-form .field input{
+  height:clamp(43px,5.5dvh,51px);font-size:15px;
+ }
+ body[data-account-view="login"] #login-form .submit{
+  height:clamp(49px,6.2dvh,58px);margin-top:clamp(20px,3dvh,30px);
+  font-size:clamp(17px,1.3vw,20px);
+ }
+ body[data-account-view="login"] #login-form .switch{
+  margin-top:clamp(16px,2.4dvh,24px);font-size:14px;
+ }
+ body[data-account-view="login"] .oauth-note{
+  display:block;margin-top:clamp(15px,2.5dvh,24px);
+  padding-top:clamp(12px,1.6dvh,16px);
+  color:#aabed0;font-size:11px;line-height:1.5;
+  border-top:1px solid #47617a;
+ }
 }
+
 @media(max-width:1180px){
   .scene{background:none}
 }
@@ -359,27 +369,7 @@ body::before{
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
- // Scale the entire 1536×950 desktop composition uniformly into the browser
- // viewport. Native inputs stay clickable and the image keeps its proportions.
- const accountScene=document.querySelector('.scene');
- let accountFitScheduled=false;
- function fitOwnerScene(){
-  accountScene.style.zoom='';
-  if(window.innerWidth<=1180)return;
-  const headerHeight=document.querySelector('.top').getBoundingClientRect().height;
-  const viewportHeight=window.visualViewport?.height||window.innerHeight;
-  const naturalHeight=Math.max(950,accountScene.scrollHeight);
-  const fit=Math.min(1,window.innerWidth/1536,(viewportHeight-headerHeight-4)/naturalHeight);
-  accountScene.style.zoom=Math.max(.35,fit).toFixed(4);
- }
- function scheduleOwnerFit(){
-  if(accountFitScheduled)return;
-  accountFitScheduled=true;
-  requestAnimationFrame(()=>{accountFitScheduled=false;fitOwnerScene();});
- }
- window.addEventListener('resize',scheduleOwnerFit);
- window.visualViewport?.addEventListener('resize',scheduleOwnerFit);
- document.fonts?.ready?.then(scheduleOwnerFit);
+// Responsive CSS replaces viewport zoom of the whole page.
 const form=document.getElementById('register-form'),login=document.getElementById('login-form'),account=document.getElementById('account'),verified=document.getElementById('verified'),heading=document.getElementById('page-title');
 function msg(s){notice.textContent=s;}
 const nickInput=document.getElementById('nickname');
@@ -449,7 +439,7 @@ function validateRegistration(){
  msg('');
  return true;
 }
-function view(name){document.body.dataset.accountView=name;form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');scheduleOwnerFit();}
+function view(name){document.body.dataset.accountView=name;form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');}
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
