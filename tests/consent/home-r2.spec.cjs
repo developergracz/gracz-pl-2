@@ -550,7 +550,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
-test('R22 approved newsletter has premium full-width side ambience without cropping the image',async({browser})=>{
+test('R23 approved newsletter extends the original art across the desktop without clipping',async({browser})=>{
  test.setTimeout(90000);
  fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
@@ -573,6 +573,7 @@ test('R22 approved newsletter has premium full-width side ambience without cropp
     return {footer:rect(footer),banner:rect(banner),art:rect(art),
       beforeContent:getComputedStyle(footer,'::before').content,
       beforeBackground:getComputedStyle(footer,'::before').backgroundImage,
+      beforeMask:getComputedStyle(footer,'::before').maskImage,
       emailCount:form.querySelectorAll('input[type=email]').length,
       submitCount:form.querySelectorAll('button[type=submit]').length,
       overflow:document.documentElement.scrollWidth};
@@ -581,7 +582,8 @@ test('R22 approved newsletter has premium full-width side ambience without cropp
    expect(state.footer.right).toBeLessThanOrEqual(viewport.width+2);
    expect(state.footer.width).toBeGreaterThanOrEqual(viewport.width-2);
    expect(state.beforeContent).not.toBe('none');
-   expect(state.beforeBackground).toContain('radial-gradient');
+   expect(state.beforeBackground).toContain('gracz-newsletter-full-approved-r16.webp');
+   expect(state.beforeMask).toContain('linear-gradient');
    expect(state.banner.left).toBeGreaterThan(50);
    expect(state.banner.right).toBeLessThan(viewport.width-50);
    expect(state.art.width).toBeCloseTo(state.banner.width,0);
@@ -590,7 +592,7 @@ test('R22 approved newsletter has premium full-width side ambience without cropp
    expect(state.overflow).toBeLessThanOrEqual(viewport.width+2);
    expect(state.emailCount).toBe(1);
    expect(state.submitCount).toBe(1);
-   await page.screenshot({path:'test-results/home-r4/newsletter-r22-viewport-'+viewport.width+'.png',animations:'disabled',fullPage:false});
+   await page.screenshot({path:'test-results/home-r4/newsletter-r23-viewport-'+viewport.width+'.png',animations:'disabled',fullPage:false});
   }finally{await ctx.close();}
  }
 });
