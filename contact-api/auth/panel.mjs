@@ -378,6 +378,106 @@ $('friends-search-form').addEventListener('submit',async event=>{
  }catch(error){friendsStatus(error.message,true);}
 });
 
+
+let activeMatchId=null,activeMatch=null,selectedChecker=null,moving=false;
+function gameDescription(match){
+ const state=match.state;
+ const names=match.players;
+ if(state.winner===3)return 'Remis. Partia zakończona.';
+ if(state.winner===1||state.winner===2)return 'Wygrał gracz '+names[state.winner-1]+'. Partia zakończona.';
+ return 'Tura: '+names[state.turn-1]+(state.turn===match.player?' (Twój ruch)':' (ruch przeciwnika)')+
+  (state.forced!==null&&state.forced!==undefined?' · obowiązkowe kolejne bicie':'')+
+  (match.playable?'':' · partia zablokowana');
+}
+function drawMatch(match){
+ activeMatch=match;
+ const state=match.state,game=match.game;
+ $('match-heading').textContent=(game==='warcaby'?'Warcaby 8×8':'Gomoku 15×15')+' — partia online';
+ $('match-players').textContent='Gracz 1: '+match.players[0]+' · Gracz 2: '+match.players[1];
+ $('match-state').textContent=gameDescription(match);
+ const board=$('match-board');
+ board.replaceChildren();
+ board.className='match-board '+(game==='warcaby'?'checkers':'gomoku');
+ const n=game==='warcaby'?8:15;
+ board.style.gridTemplateColumns='repeat('+n+',minmax(0,1fr))';
+ for(let i=0;i<n*n;i++){
+  const [r,c]=[Math.floor(i/n),i%n],piece=state.board[i];
+  const cell=document.createElement('button');cell.type='button';cell.className='match-cell';
+  cell.setAttribute('aria-label','Rząd '+(r+1)+', kolumna '+(c+1)+
+   (piece?(', '+(piece===1||piece===3?'gracz 1':'gracz 2')+(piece>=3?' damka':' pion')):' puste'));
+  if(game==='warcaby'){
+   cell.classList.add((r+c)%2===1?'dark':'light');
+   if(selectedChecker===i)cell.classList.add('selected');
+   cell.textContent=piece>=3?'♛':piece?'●':'';
+  }else cell.textContent=piece?'●':'';
+  if(piece)cell.classList.add((piece===1||piece===3)?'p1':'p2');
+  const yourTurn=state.turn===match.player&&state.winner===0&&match.playable;
+  cell.disabled=!yourTurn||(game==='warcaby'&&(r+c)%2===0);
+  if(!cell.disabled)cell.addEventListener('click',()=>void boardCellClick(i));
+  board.append(cell);
+ }
+}
+async function openMatch(id){
+ if(!sessionConfirmed)return;
+ activeMatchId=id;selectedChecker=null;
+ switchSection('play');
+ $('match-state').textContent='Łączenie z pokojem rozgrywki…';
+ await refreshMatch();
+}
+async function refreshMatch(){
+ if(!activeMatchId||!sessionConfirmed)return;
+ const expected=activeMatchId;
+ try{
+  const result=await api('match?id='+encodeURIComponent(expected));
+  if(activeMatchId!==expected)return;
+  drawMatch(result.match);
+ }catch(error){
+  $('match-state').textContent='Nie udało się otworzyć partii: '+error.message;
+ }
+}
+async function boardCellClick(to){
+ if(moving||!activeMatch||activeMatch.state.winner!==0||
+  activeMatch.state.turn!==activeMatch.player)return;
+ const {game,state,version}=activeMatch;
+ let move;
+ if(game==='gomoku'){
+  if(state.board[to]!==0)return;
+  move={to};
+ }else{
+  const piece=state.board[to];
+  const own=piece&&(piece===activeMatch.player||piece===activeMatch.player+2);
+  if(own){
+   if(state.forced!==null&&state.forced!==to){
+    $('match-state').textContent='Musisz kontynuować bicie wskazanym pionkiem.';
+    return;
+   }
+   selectedChecker=to;drawMatch(activeMatch);return;
+  }
+  if(selectedChecker===null){
+   $('match-state').textContent='Najpierw wybierz własny pionek.';
+   return;
+  }
+  move={from:selectedChecker,to};
+ }
+ moving=true;
+ try{
+  const result=await api('match',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id:activeMatchId,version,move})});
+  selectedChecker=result.match.state.forced??null;
+  drawMatch(result.match);
+ }catch(error){
+  await refreshMatch();
+  $('match-state').textContent='Ruch nie został wykonany: '+error.message;
+ }finally{moving=false;}
+}
+$('match-refresh').addEventListener('click',()=>void refreshMatch());
+if(typeof setInterval==='function')setInterval(()=>{
+ if(activeMatchId&&sessionConfirmed&&!moving&&
+  document.querySelector('[data-panel="play"]').classList.contains('active')&&
+  (typeof document.visibilityState==='undefined'||document.visibilityState==='visible'))
+   void refreshMatch();
+},4000);
 function socialNotice(id,message,error=false){
  const el=$(id);el.textContent=message;el.classList.toggle('friend-alert',error);
 }
