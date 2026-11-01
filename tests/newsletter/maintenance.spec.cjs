@@ -120,32 +120,26 @@ test('HTTP 200 without schema confirmation still blocks newsletter signup', asyn
 });
 
 
-test('login/register notice opens Full Max Premium signup in place, never navigates',async({page})=>{
+test('account links navigate directly; Newsletter opens in-place with safe disabled defaults',async({page})=>{
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  for(const mode of ['login','register']){
-    const entry=page.locator('.site-header [data-modal="'+mode+'"]');
-    if(!(await entry.isVisible()))await page.locator('.site-header .burger').click();
-    await entry.click();
-    const account=page.locator('#account-access-modal');
-    await expect(account).toBeVisible();
-    const cta=account.locator('[data-account-newsletter-open]');
-    await expect(cta).toHaveText(/Zapisz się do naszego newslettera/);
-    await cta.click();
-    const signup=page.locator('#newsletter-signup-modal');
-    await expect(account).toBeHidden();
-    await expect(signup).toBeVisible();
-    await expect(signup.locator('input[name="email"]')).toBeDisabled();
-    await expect(signup.locator('input[name="consent"]')).toBeDisabled();
-    expect(new URL(page.url()).pathname).toBe('/');
-    await page.keyboard.press('Escape');
-    await expect(signup).toBeHidden();
-    if(await entry.isVisible())await expect(entry).toBeFocused();
-    else await expect(page.locator('.site-header .burger')).toBeFocused();
-  }
+  const login=page.locator('.site-header a.btn--outline.btn--head');
+  const register=page.locator('.site-header a.btn--gold.btn--head');
+  await expect(login).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/?widok=login');
+  await expect(register).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/');
+  const newsletter=page.locator('.site-header [data-newsletter-open]');
+  if(!(await newsletter.isVisible()))await page.locator('.site-header .burger').click();
+  await newsletter.click();
+  const popup=page.locator('#newsletter-signup-modal');
+  await expect(popup).toBeVisible();
+  await expect(popup.locator('input[name="email"]')).toBeDisabled();
+  await expect(popup.locator('input[name="consent"]')).toBeDisabled();
+  expect(new URL(page.url()).pathname).toBe('/');
+  await page.keyboard.press('Escape');
+  await expect(popup).toBeHidden();
 });
 
-test('account notice signup uses actual newsletter flow with consent and DOI, no navigation',async({page})=>{
+test('header Newsletter signup uses actual flow with consent and DOI, no navigation',async({page})=>{
   await page.route('https://gracz-contact-api.onrender.com/newsletter/ready',route=>
     route.fulfill({status:200,contentType:'application/json',
       headers:{'access-control-allow-origin':'*'},
@@ -159,10 +153,9 @@ test('account notice signup uses actual newsletter flow with consent and DOI, no
   });
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  const entry=page.locator('.site-header [data-modal="register"]');
+  const entry=page.locator('.site-header [data-newsletter-open]');
   if(!(await entry.isVisible()))await page.locator('.site-header .burger').click();
   await entry.click();
-  await page.locator('#account-access-modal [data-account-newsletter-open]').click();
   const popup=page.locator('#newsletter-signup-modal');
   await expect(popup).toBeVisible();
   await expect(popup.locator('input[name="email"]')).toBeEnabled();
