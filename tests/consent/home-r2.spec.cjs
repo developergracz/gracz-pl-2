@@ -478,14 +478,18 @@ test('R21 newsletter scales to desktop without clipping the image', async({brows
     const img=section.querySelector('.footer-news-full-art-r16');
     const form=section.querySelector('form[data-newsletter]');
     const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    return {s:rect(section),art:rect(img),form:rect(form),overflow:document.documentElement.scrollWidth};
+    return {s:rect(section),art:rect(img),form:rect(form),footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
    expect(geo.s.width).toBeLessThanOrEqual(1361);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-157);
+   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
+   if(viewport.width>=1181){
+    expect(geo.s.width,'desktop newsletter must use the available height, not empty side gutters').toBeGreaterThanOrEqual(viewport.height>=900?1300:1100);
+   }
    expect(geo.s.top,'image top must remain in viewport after scrolling to newsletter').toBeGreaterThanOrEqual(-2);
    expect(geo.s.bottom,'image bottom must remain in viewport after scrolling to newsletter').toBeLessThanOrEqual(viewport.height+2);
+   if(viewport.width>=1181)expect(geo.footerBottom.bottom,'legal footer row must also fit in browser').toBeLessThanOrEqual(viewport.height+4);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
    expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
    expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
@@ -543,7 +547,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
     expect(g.form.width,'Signup form must use full mobile column').toBeGreaterThanOrEqual(viewport.width*.67);
     expect(g.input.width,'Email input may not collapse').toBeGreaterThanOrEqual(viewport.width*.55);
    }else{
-    expect(g.banner.height).toBeLessThanOrEqual(viewport.height-151);
+    expect(g.banner.height).toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:151));
     expect(g.banner.width).toBeGreaterThan(800);
    }
    if(viewport.width===390||viewport.width===1600){
