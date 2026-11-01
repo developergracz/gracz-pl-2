@@ -122,6 +122,74 @@ const sectionNames={
  sessions:['Sesje i urządzenia','Kontrola zalogowanych urządzeń.'],
  data:['Dane i konto','Informacje o zarządzaniu kontem.']
 };
+
+const gameCatalog={
+ warcaby:{name:'Warcaby',url:'https://gracz.pl/gry/warcaby/'},
+ gomoku:{name:'Gomoku',url:'https://gracz.pl/gry/gomoku/'},
+ tysiac:{name:'Tysiąc',url:'https://gracz.pl/gry/tysiac/'},
+ poker:{name:'Poker treningowy',url:'https://gracz.pl/gry/poker-treningowy/'}
+};
+let profileSnapshot=null,centerState=null;
+function formattedDate(value){
+ const date=new Date(value);
+ return Number.isNaN(date.getTime())?'—':new Intl.DateTimeFormat('pl-PL',{day:'2-digit',month:'short',year:'numeric'}).format(date);
+}
+function renderFavorites(){
+ const favorites=centerState?.preferences?.favoriteGames||[];
+ $('dashboard-favorites').textContent=String(favorites.length);
+ $('favorites-empty').hidden=favorites.length>0;
+ const links=$('favorites-links');links.replaceChildren();
+ favorites.forEach(key=>{
+  if(!gameCatalog[key])return;
+  const item=document.createElement('a');item.href=gameCatalog[key].url;
+  item.textContent='★ '+gameCatalog[key].name;links.append(item);
+ });
+ document.querySelectorAll('[data-favorite]').forEach(button=>{
+  const selected=favorites.includes(button.dataset.favorite);
+  button.setAttribute('aria-pressed',String(selected));
+  button.textContent=(selected?'★ ':'☆ ')+(selected?'W ulubionych':'Ulubione');
+  button.disabled=!centerState;
+ });
+}
+function renderSessions(){
+ const sessions=centerState?.sessions||[];
+ $('dashboard-sessions').textContent=String(sessions.length);
+ const list=$('session-list');list.replaceChildren();
+ if(!sessions.length){list.textContent='Nie znaleziono aktywnych sesji.';return;}
+ sessions.forEach((session,index)=>{
+  const entry=document.createElement('div');entry.className='session-item';
+  const body=document.createElement('div'),title=document.createElement('strong'),dates=document.createElement('span'),state=document.createElement('em');
+  title.textContent=session.current?'Ta przeglądarka':'Inna aktywna sesja '+(index+1);
+  dates.textContent='Zalogowano: '+formattedDate(session.createdAt)+' · ważna do: '+formattedDate(session.expiresAt);
+  state.textContent=session.current?'BIEŻĄCA':'AKTYWNA';
+  body.append(title,dates);entry.append(body,state);list.append(entry);
+ });
+ $('sessions-revoke').disabled=sessions.filter(x=>!x.current).length===0;
+}
+function applyCenter(center){
+ if(!center||!center.preferences||!Array.isArray(center.sessions))throw new Error('Niepełne dane centrum gracza.');
+ centerState=center;
+ const prefs=center.preferences;
+ $('setting-density').value=prefs.density;
+ $('setting-large').checked=prefs.largeText;
+ $('setting-motion').checked=prefs.reduceMotion;
+ document.body.classList.toggle('panel-compact',prefs.density==='compact');
+ document.body.classList.toggle('panel-large',prefs.largeText===true);
+ document.body.classList.toggle('panel-no-motion',prefs.reduceMotion===true);
+ renderFavorites();renderSessions();
+}
+async function refreshCenter(){
+ const result=await api('player-center');
+ applyCenter(result.center);
+ return result.center;
+}
+async function saveCenter(next){
+ if(!sessionConfirmed||!centerState)throw new Error('Zaloguj się ponownie, aby zapisać ustawienia.');
+ const result=await api('player-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify(next)});
+ applyCenter(result.center);
+ return result.center;
+}
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
@@ -146,8 +214,11 @@ function fill(profile){
  $('nav-name').textContent=profile.displayName;
  $('profile-heading').textContent=profile.displayName;
  $('profile-handle').textContent='@'+profile.nickname;
+ profileSnapshot=profile;
+ $('dashboard-name').textContent=profile.displayName;
+ $('dashboard-joined').textContent=formattedDate(profile.createdAt);
  const initial=profile.displayName.slice(0,1).toUpperCase()||'G';
- $('nav-avatar').textContent=initial;$('profile-avatar').textContent=initial;
+ $('nav-avatar').textContent=initial;$('profile-avatar').textContent=initial;$('dashboard-avatar').textContent=initial;
 }
 let sessionConfirmed=false;
 function accessState(title,message,{login=false,retry=false}={}){
@@ -169,6 +240,7 @@ async function load(){
   $('player-shell').hidden=false;
   $('access-screen').hidden=true;
   notice('');
+  try{await refreshCenter();}catch{notice('Profil jest dostępny, ale ustawienia premium lub lista sesji są chwilowo niedostępne.',true);}
  }catch(error){
   if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła lub nie została rozpoznana. Zaloguj się, aby otworzyć swój panel.',{login:true});
   else accessState('Nie udało się wczytać konta','Nie możemy teraz potwierdzić sesji. Spróbuj ponownie. Dane konta pozostają ukryte.',{retry:true});
@@ -192,6 +264,61 @@ async function logout(){
  try{await api('logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});location.replace('/konto/?widok=login');}
  catch(error){notice(error.message,true);}
 }
+
+$('dashboard-profile').addEventListener('click',()=>switchSection('profile'));
+$('dashboard-manage-games').addEventListener('click',()=>switchSection('games'));
+$('dashboard-devices').addEventListener('click',()=>switchSection('sessions'));
+document.querySelectorAll('[data-favorite]').forEach(button=>button.addEventListener('click',async()=>{
+ if(!centerState){notice('Najpierw wczytaj ustawienia konta.',true);return;}
+ const key=button.dataset.favorite,previous=centerState.preferences;
+ const favorites=new Set(previous.favoriteGames);
+ if(favorites.has(key))favorites.delete(key);else favorites.add(key);
+ button.disabled=true;
+ try{await saveCenter({...previous,favoriteGames:[...favorites]});notice('Ulubione gry zapisane w koncie.');}
+ catch(error){notice(error.message,true);}
+ finally{button.disabled=false;}
+}));
+$('appearance-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!centerState){notice('Ustawienia są chwilowo niedostępne.',true);return;}
+ const button=$('appearance-save');button.disabled=true;$('appearance-state').textContent='Zapisywanie…';
+ try{
+  await saveCenter({
+   ...centerState.preferences,
+   density:$('setting-density').value,
+   reduceMotion:$('setting-motion').checked,
+   largeText:$('setting-large').checked
+  });
+  $('appearance-state').textContent='Zapisano na Twoim koncie';
+  notice('Wygląd panelu został zapisany.');
+ }catch(error){$('appearance-state').textContent='Nie zapisano';notice(error.message,true);}
+ finally{button.disabled=false;}
+});
+$('sessions-refresh').addEventListener('click',async()=>{
+ try{await refreshCenter();notice('Sesje odświeżone.');}catch(error){notice(error.message,true);}
+});
+$('sessions-revoke').addEventListener('click',async()=>{
+ if(!sessionConfirmed||!centerState)return;
+ const button=$('sessions-revoke');button.disabled=true;
+ try{
+  const result=await api('player-center/revoke-others',{method:'POST',
+   headers:{'Content-Type':'application/json'},body:'{}'});
+  await refreshCenter();
+  notice('Zakończono inne sesje: '+result.revoked+'.');
+ }catch(error){notice(error.message,true);}
+ finally{button.disabled=false;}
+});
+$('export-profile').addEventListener('click',()=>{
+ if(!sessionConfirmed||!profileSnapshot||!centerState){notice('Najpierw wczytaj dane konta.',true);return;}
+ const payload={source:'gracz.pl — dane profilu i ustawienia panelu',exportedAt:new Date().toISOString(),
+  profile:profileSnapshot,preferences:centerState.preferences};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+ const link=document.createElement('a');link.href=url;link.download='gracz-pl-moj-profil.json';
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ notice('Przygotowano plik JSON z danymi profilu.');
+});
+
 ['side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
 load();
 })();`;
