@@ -270,6 +270,8 @@ function friendRow(nickname,description,actions){
    if(action==='accept'||action==='send')button.classList.add('friend-main');
    button.setAttribute('aria-label',label+': '+nickname);
    button.addEventListener('click',async()=>{
+    if(action==='message'){void openSocialContact('messages',nickname);return;}
+    if(action==='challenge'){void openSocialContact('challenges',nickname);return;}
     button.disabled=true;
     try{await api('friends/action',{method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({action,nickname})});await refreshFriends();
@@ -299,7 +301,7 @@ async function refreshFriends(){
   $('friends-incoming-count').textContent=String(incoming.length);
   $('friends-outgoing-count').textContent=String(outgoing.length);
   renderFriendList('friends-list',accepted,'Nie masz jeszcze znajomych.','Znajomy',
-   [{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
+   [{action:'message',label:'Napisz'},{action:'challenge',label:'Zaproś do gry'},{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-incoming',incoming,'Brak nowych zaproszeń.','Zaprasza Cię do znajomych',
    [{action:'accept',label:'Akceptuj'},{action:'decline',label:'Odrzuć'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-outgoing',outgoing,'Nie masz oczekujących zaproszeń.','Oczekuje na odpowiedź',
@@ -343,6 +345,139 @@ $('friends-search-form').addEventListener('submit',async event=>{
   friendsStatus('Wyniki wyszukiwania: '+result.players.length+'.');
  }catch(error){friendsStatus(error.message,true);}
 });
+
+function socialNotice(id,message,error=false){
+ const el=$(id);el.textContent=message;el.classList.toggle('friend-alert',error);
+}
+function safeDate(value){
+ const date=new Date(value);
+ return Number.isNaN(date.getTime())?'—':date.toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'});
+}
+async function prepareSocial(name){
+ if(!sessionConfirmed)return;
+ if(!friendsState)await refreshFriends();
+ const accepted=(friendsState?.connections||[]).filter(item=>item.status==='accepted');
+ const selectIds=['message-recipient','challenge-friend'];
+ for(const id of selectIds){
+  const sel=$(id),selected=sel.value;sel.replaceChildren();
+  const empty=document.createElement('option');empty.value='';empty.textContent='Wybierz znajomego';sel.append(empty);
+  accepted.forEach(item=>{
+   const option=document.createElement('option');option.value=item.nickname;
+   option.textContent=item.nickname;sel.append(option);
+  });
+  if(accepted.some(item=>item.nickname===selected))sel.value=selected;
+ }
+ $('message-send').disabled=!$('message-recipient').value;
+ if(name==='challenges')await refreshChallenges();
+}
+async function openSocialContact(section,nick){
+ switchSection(section);
+ await prepareSocial(section);
+ const selection=$(section==='messages'?'message-recipient':'challenge-friend');
+ selection.value=nick;
+ if(section==='messages')await refreshThread();
+}
+async function refreshThread(){
+ const select=$('message-recipient'),nick=select.value;
+ const thread=$('message-thread');thread.replaceChildren();
+ $('message-send').disabled=!nick;
+ if(!nick){
+  const p=document.createElement('p');p.textContent='Wybierz znajomego, aby wyświetlić rozmowę.';thread.append(p);
+  return;
+ }
+ socialNotice('messages-state','Wczytywanie rozmowy…');
+ try{
+  const response=await api('social/messages?nick='+encodeURIComponent(nick));
+  if(select.value!==nick)return;
+  if(!response.messages.length){
+   const p=document.createElement('p');p.textContent='Nie ma jeszcze wiadomości. Rozpocznij rozmowę.';thread.append(p);
+  }
+  response.messages.forEach(item=>{
+   const bubble=document.createElement('div');bubble.className='social-bubble'+(item.own?' own':'');
+   const text=document.createElement('p');text.textContent=item.body;
+   const date=document.createElement('small');date.textContent=(item.own?'Ty':'Znajomy')+' · '+safeDate(item.createdAt);
+   bubble.append(text,date);thread.append(bubble);
+  });
+  thread.scrollTop=thread.scrollHeight;
+  socialNotice('messages-state','Wiadomości w rozmowie: '+response.messages.length+'.');
+ }catch(error){socialNotice('messages-state',error.message,true);}
+}
+$('message-recipient').addEventListener('change',()=>void refreshThread());
+$('messages-refresh').addEventListener('click',()=>void refreshThread());
+$('message-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const nick=$('message-recipient').value,body=$('message-content').value.trim();
+ if(!nick||!body||body.length>1000){socialNotice('messages-state','Wybierz znajomego i wpisz wiadomość (maks. 1000 znaków).',true);return;}
+ const button=$('message-send');button.disabled=true;
+ try{
+  await api('social/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({nickname:nick,message:body})});
+  $('message-content').value='';await refreshThread();
+  socialNotice('messages-state','Wiadomość wysłana.');
+ }catch(error){socialNotice('messages-state',error.message,true);}
+ finally{button.disabled=!$('message-recipient').value;}
+});
+async function refreshChallenges(){
+ const list=$('challenge-list');list.replaceChildren();
+ socialNotice('challenges-state','Wczytywanie wyzwań…');
+ try{
+  const response=await api('social/challenges');
+  if(!response.challenges.length){
+   const p=document.createElement('p');p.className='friend-empty';
+   p.textContent='Brak zaproszeń do gier. Zaproś znajomego do Warcabów lub Gomoku.';
+   list.append(p);
+  }
+  response.challenges.forEach(challenge=>{
+   const row=document.createElement('div');row.className='friend-person';
+   const info=document.createElement('div');
+   const title=document.createElement('div');title.className='friend-name';
+   title.textContent=(challenge.game==='warcaby'?'♟ Warcaby':'◉ Gomoku')+' · '+challenge.opponent;
+   const detail=document.createElement('div');detail.className='friend-sub';
+   const states={pending:'Oczekuje',accepted:'Przyjęto',declined:'Odrzucono',
+    cancelled:'Anulowano',expired:'Wygasło'};
+   detail.textContent=(challenge.outgoing?'Wysłane · ':'Otrzymane · ')+(states[challenge.status]||challenge.status)+' · '+safeDate(challenge.createdAt);
+   info.append(title,detail);row.append(info);
+   const controls=document.createElement('div');controls.className='friend-controls';
+   const actions=challenge.status==='pending'?
+     challenge.outgoing?[['cancel','Anuluj']]:[['accept','Akceptuj'],['decline','Odrzuć']]:[];
+   actions.forEach(([action,label])=>{
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    button.addEventListener('click',async()=>{
+     button.disabled=true;
+     try{
+      await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({action,id:challenge.id})});
+      await refreshChallenges();socialNotice('challenges-state','Zaktualizowano zaproszenie.');
+     }catch(error){socialNotice('challenges-state',error.message,true);}
+     finally{button.disabled=false;}
+    });
+    controls.append(button);
+   });
+   if(challenge.status==='accepted'){
+    const a=document.createElement('a');
+    a.href=challenge.game==='warcaby'?'https://gracz.pl/gry/warcaby/':'https://gracz.pl/gry/gomoku/';
+    a.className='secondary link-button';a.textContent='Otwórz trening '+(challenge.game==='warcaby'?'Warcabów':'Gomoku');
+    a.title='Strona Academy, bez wspólnej rozgrywki online';
+    controls.append(a);
+   }
+   row.append(controls);list.append(row);
+  });
+  socialNotice('challenges-state','Zaproszenia: '+response.challenges.length+'.');
+ }catch(error){socialNotice('challenges-state',error.message,true);}
+}
+$('challenges-refresh').addEventListener('click',()=>void refreshChallenges());
+$('challenge-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const nickname=$('challenge-friend').value,game=$('challenge-game').value;
+ if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return;}
+ const button=$('challenge-form').querySelector('button[type="submit"]');button.disabled=true;
+ try{
+  await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action:'send',nickname,game})});
+  await refreshChallenges();socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='warcaby'?'Warcabów':'Gomoku')+'.');
+ }catch(error){socialNotice('challenges-state',error.message,true);}
+ finally{button.disabled=false;}
+});
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
@@ -350,6 +485,7 @@ function switchSection(name){
  document.querySelectorAll('[data-panel]').forEach(e=>e.classList.toggle('active',e.dataset.panel===name));
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
+ if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
 async function api(path,options={}){
