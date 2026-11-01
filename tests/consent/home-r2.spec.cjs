@@ -567,7 +567,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
-test('R23 approved newsletter extends the original art across the desktop without clipping',async({browser})=>{
+test('R26 approved newsletter uses a crisp full-width desktop canvas without clipping',async({browser})=>{
  test.setTimeout(90000);
  fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
@@ -599,8 +599,8 @@ test('R23 approved newsletter extends the original art across the desktop withou
    expect(state.footer.right).toBeLessThanOrEqual(viewport.width+2);
    expect(state.footer.width).toBeGreaterThanOrEqual(viewport.width-2);
    expect(state.beforeContent).not.toBe('none');
-   expect(state.beforeBackground).toContain('gracz-newsletter-full-approved-r16.webp');
-   expect(state.beforeMask).toContain('linear-gradient');
+   expect(state.beforeBackground).toContain('radial-gradient');
+   expect(state.beforeMask).toBe('none');
    expect(state.banner.left).toBeGreaterThan(50);
    expect(state.banner.right).toBeLessThan(viewport.width-50);
    expect(state.art.width).toBeCloseTo(state.banner.width,0);
