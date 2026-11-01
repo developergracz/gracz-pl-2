@@ -4,64 +4,62 @@ const secure={
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
  'Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'
 };
-const html=String.raw`<!doctype html>
-<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#051827"><meta name="robots" content="noindex,nofollow,noarchive">
-<title>Gomoku Online — Konsola Gracza Full Max Premium | gracz.pl</title>
+const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04191b"><meta name="robots" content="noindex,nofollow,noarchive">
+<title>Gomoku Online — Full Max Premium | gracz.pl</title>
 <link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
 <body>
-<a class="skip" href="#game">Przejdź do planszy</a>
-<header class="top"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl, strona główna">gracz<span>.pl</span></a>
-<div class="tag">POLSKIE CENTRUM GRACZA <b>FULL MAX PREMIUM</b></div>
-<nav class="topnav"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav></header>
+<a class="skip" href="#board">Przejdź do planszy</a>
 <main class="layout" id="game">
-<aside class="sidebar">
-<div class="eyebrow">GOMOKU · CONSOLA PREMIUM</div>
-<h1>Gomoku <em>Online</em></h1>
+<aside class="sidebar" aria-label="Panel gry">
+<header class="side-header">
+<div class="branding"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">★ PREMIUM</span></div>
+<h1>Gomoku <em>Online</em></h1><div class="premium-sub">FULL MAX PREMIUM</div>
 <p class="lede">Pięć w linii. Jeden ruch może zmienić wszystko.</p>
+</header>
 <div class="mode" role="group" aria-label="Tryb gry">
-<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><strong>Trening</strong><small>Graj od razu z komputerem</small></button>
-<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><strong>Ze znajomym</strong><small>Wspólna partia online</small></button>
+<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">♛</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">♙</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
 </div>
-<section class="sidecard" id="training-settings">
-<h2>Twój trening</h2>
+<section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p>
 <label for="ai-level">Poziom komputera</label>
-<select id="ai-level" aria-label="Poziom trudności komputera">
-<option value="normal">Normalny — gra rekreacyjna</option>
-<option value="hard">Trudny — analiza zagrożeń</option>
-<option value="expert" selected>Ekspert — kilka ruchów naprzód</option>
-</select>
-<p id="ai-hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
-<button class="primary" id="restart" type="button">Nowa partia</button></section>
-<section class="sidecard" id="online-settings" hidden>
-<h2>Moje pokoje Gomoku</h2>
+<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — kilka ruchów naprzód</option></select>
+<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
+<button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
+<section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
 <label for="room-select">Wybierz zaakceptowane wyzwanie</label>
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
-<a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a>
+<a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
+<section class="sidecard rules"><h2>ⓘ &nbsp;Jak grać?</h2>
+<p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy.</p>
+<p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p>
 </section>
-<div class="sidecard rules"><h2>Jak grać?</h2><p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy. Gracze wykonują ruchy na zmianę.</p>
-<p class="muted">Tryb online: ruch zatwierdza serwer, a plansza przeciwnika odświeża się automatycznie. Trening jest lokalny i nie zapisuje się w rankingu.</p></div>
+<nav class="side-links"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
-<div class="boardtop">
-<div><div class="eyebrow">STÓŁ GRACZA · 15 × 15</div><h2 id="session-heading">Trening z komputerem</h2></div>
-<div class="roomtag" id="room-tag">TRENING</div>
-</div>
 <div class="players">
-<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne · zaczynają</small></div></div>
+<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
 <div class="versus">VS</div>
-<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div></div>
+<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♙</span></div>
 </div>
-<div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — wybierz pole planszy.</div>
+<div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
+<div class="arena">
+<div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
 <div class="boardframe"><div class="board" id="board" role="grid" aria-label="Plansza Gomoku 15 na 15"></div></div>
-<div class="bottom"><span id="move-count">Ruchy: 0</span><span id="turn-label">Tura: czarne</span><button id="refresh-match" class="secondary" type="button" hidden>Odśwież stan</button></div>
-<p class="help" id="board-help">Wybierz wolne pole, aby postawić czarny kamień.</p>
+</div>
+<div class="game-tools" aria-label="Narzędzia gry">
+<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> Cofnij ruch</button>
+<button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
+<button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
+<button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
+<button type="button" class="tool-btn" id="refresh-match" hidden><span aria-hidden="true">↻</span> Odśwież partię</button>
+</div></div>
+<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
+<p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
-</main><footer>gracz.pl · Polskie Centrum Gracza · Gomoku Full Max Premium</footer>
-</body></html>`;
+</main></body></html>`;
 const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none}
 *{box-sizing:border-box}html{background:#051421}body{margin:0;color:#eaf6fc;background:radial-gradient(ellipse at 75% 15%,#17506455 0%,transparent 42%),linear-gradient(120deg,#04101c,#092338 70%,#041320);min-height:100dvh}
 a{color:inherit}.skip{position:absolute;top:-100px;left:8px;background:#fff;color:#111;padding:10px;z-index:10}.skip:focus{top:8px}
