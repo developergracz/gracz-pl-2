@@ -179,6 +179,9 @@ footer{display:none}
 /* Keep feedback legible if the user zooms or rotates the device. */
 .premium-feedback{box-sizing:border-box}
 #notice:not(:empty){background:linear-gradient(125deg,#263445,#091b2b);color:#ffdfa6;border:1px solid #e2ab52;border-radius:9px;box-shadow:0 6px 20px #0007}
+/* Keep premium validation in the document flow: it must not cover the next field. */
+.field .premium-feedback{position:relative;top:auto;left:auto;right:auto;margin-top:9px;z-index:2}
+@media(min-width:1181px){.panel{transform-origin:top left;will-change:transform}}
 /* Replace Chrome's native validation bubble with an accessible premium popover. */
 .field input[aria-invalid="true"]{border-color:#f4bd6b;box-shadow:0 0 0 1px #e2a73d,0 0 14px #e1ab3833;outline:0}
 .premium-feedback{
@@ -209,7 +212,39 @@ footer{display:none}
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
 const form=document.getElementById('register-form'),login=document.getElementById('login-form'),account=document.getElementById('account'),verified=document.getElementById('verified'),heading=document.getElementById('page-title');
-function msg(s){notice.textContent=s;}
+const accountPanel=document.querySelector('.panel');
+let fitScheduled=false;
+function fitAccountPanel(){
+ accountPanel.style.transform='';
+ accountPanel.style.width='';
+ accountPanel.style.maxHeight='';
+ accountPanel.style.overflowY='';
+ if(window.innerWidth<1181)return;
+ // Measure the full natural height, including the submit button and social-provider row.
+ accountPanel.style.maxHeight='none';
+ accountPanel.style.overflowY='visible';
+ const top=accountPanel.getBoundingClientRect().top;
+ const available=Math.max(0,window.innerHeight-top-9);
+ const naturalHeight=accountPanel.scrollHeight;
+ if(naturalHeight<=available)return;
+ const scale=Math.max(.70,Math.min(1,available/naturalHeight));
+ // Widen before transforming so the card keeps filling its assigned grid column.
+ accountPanel.style.width=(100/scale)+'%';
+ accountPanel.style.transform='scale('+scale+')';
+ if(naturalHeight*scale>available+1){
+  // Unusually short desktop windows remain usable: never clip buttons or inputs.
+  accountPanel.style.maxHeight=(available/scale)+'px';
+  accountPanel.style.overflowY='auto';
+ }
+}
+function scheduleFit(){
+ if(fitScheduled)return;
+ fitScheduled=true;
+ requestAnimationFrame(()=>{fitScheduled=false;fitAccountPanel();});
+}
+window.addEventListener('resize',scheduleFit);
+window.visualViewport?.addEventListener('resize',scheduleFit);
+function msg(s){notice.textContent=s;scheduleFit();}
 const nickInput=document.getElementById('nickname');
 const nickStatus=document.getElementById('nick-status');
 let nickDelay=0, nickVersion=0;
@@ -238,11 +273,11 @@ function showPasswordFeedback(){
  const count=passwordField.value.length;
  passwordFeedbackText.textContent='Hasło musi mieć co najmniej 15 znaków. Wpisano '+count+'.';
  passwordField.setAttribute('aria-invalid','true');
- passwordFeedback.hidden=false;
+ passwordFeedback.hidden=false;scheduleFit();
 }
 function hidePasswordFeedback(){
  passwordFeedback.hidden=true;
- passwordField.removeAttribute('aria-invalid');
+ passwordField.removeAttribute('aria-invalid');scheduleFit();
 }
 passwordField.addEventListener('input',()=>{
  if(passwordField.value.length>=15 || passwordField.value.length===0)hidePasswordFeedback();
@@ -277,7 +312,7 @@ function validateRegistration(){
  msg('');
  return true;
 }
-function view(name){form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');}
+function view(name){form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');scheduleFit();}
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
