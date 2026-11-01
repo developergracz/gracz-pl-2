@@ -258,3 +258,87 @@ test('dashboard includes real controls for sessions, favorites, preferences and 
  assert.match(htmlRes.body,/gracz\.pl\/gry\/warcaby/);
  assert.match(htmlRes.body,/nie jest pełny eksport/i);
 });
+
+
+test('friends endpoints fail closed without a verified session and reject cross-origin mutation',async()=>{
+  const {call}=fixture();
+  assert.equal((await call('GET','/auth/friends')).status,401);
+  assert.equal((await call('GET','/auth/friends/search?nick=gracz')).status,401);
+  const missing=await call('POST','/auth/friends/action',{origin:'https://gracz-contact-api.onrender.com',body:{action:'send',nickname:'GraczBeta'}});
+  assert.equal(missing.status,401);
+  const crossOrigin=await call('POST','/auth/friends/action',{cookie,origin:'https://evil.example.test',
+    body:{action:'send',nickname:'GraczBeta'}});
+  assert.equal(crossOrigin.status,403);
+  assert.equal((await call('GET','/auth/friends/action')).status,405);
+  assert.equal((await call('POST','/auth/friends',{cookie,origin:'https://gracz-contact-api.onrender.com',body:{}})).status,405);
+});
+
+test('friends relationship mutations bind account IDs and do not accept client-supplied account IDs',async()=>{
+  const other={id:'00000000-0000-4000-8000-000000000002',nickname:'GraczBeta'};
+  const recorded=[],relations=new Map(),blocks=new Set();
+  const db={enabled:true,async query(sql,params=[]){
+    recorded.push({sql,params});
+    if(sql.includes('SELECT a.id')&&sql.includes('FROM gracz_public_identity.sessions s'))
+      return {rows:[{id:account.id}],rowCount:1};
+    if(sql.includes('SELECT id FROM gracz_public_identity.accounts WHERE nickname_key='))
+      return {rows:params[0]==='graczbeta'?[other]:[],rowCount:params[0]==='graczbeta'?1:0};
+    if(sql.includes('INSERT INTO gracz_public_identity.friend_connections')){
+      if(relations.has('pair')||blocks.size)return {rows:[],rowCount:0};
+      relations.set('pair',{from:account.id,status:'pending'});return {rows:[{account_a:account.id}],rowCount:1};
+    }
+    if(sql.includes('UPDATE gracz_public_identity.friend_connections')){
+      const r=relations.get('pair');
+      if(!r||r.from!==params[1]||r.status!=='pending')return {rows:[],rowCount:0};
+      r.status='accepted';return {rows:[{account_a:account.id}],rowCount:1};
+    }
+    if(sql.includes('INSERT INTO gracz_public_identity.friend_blocks')){
+      blocks.add(params[0]+'|'+params[1]);return {rows:[],rowCount:1};
+    }
+    if(sql.includes('DELETE FROM gracz_public_identity.friend_connections')){
+      const exists=relations.has('pair');
+      relations.delete('pair');return {rows:exists?[{account_a:account.id}]:[],rowCount:exists?1:0};
+    }
+    if(sql.includes('SELECT a.nickname,c.status,')){
+      const r=relations.get('pair');
+      return {rows:r?[{nickname:other.nickname,status:r.status,direction:'outgoing'}]:[],rowCount:r?1:0};
+    }
+    if(sql.includes('SELECT a.nickname FROM gracz_public_identity.friend_blocks')){
+      return {rows:blocks.size?[{nickname:other.nickname}]:[],rowCount:blocks.size};
+    }
+    if(sql.includes('starts_with(a.nickname_key')){
+      return {rows:blocks.size?[]:[{nickname:other.nickname}]};
+    }
+    return {rows:[],rowCount:0};
+  }};
+  const router=createPublicIdentityRouter({database:db,emailFrom:'test@example.test',resendKey:'synthetic-key'});
+  async function action(name,nickname){
+    const req=request('POST','/auth/friends/action',{cookie,origin:'https://gracz-contact-api.onrender.com',
+      body:{action:name,nickname,accountId:'00000000-0000-4000-8000-00000000ffff'}});
+    const res=response();
+    assert.equal(await router.handle(req,res,new URL('/auth/friends/action','https://gracz-contact-api.onrender.com')),true);
+    return {status:res.status,body:JSON.parse(res.body)};
+  }
+  assert.equal((await action('send','GraczBeta')).status,200);
+  assert.equal((await action('send','GraczBeta')).status,409);
+  assert.equal((await action('accept','GraczBeta')).status,409);
+  assert.equal((await action('block','GraczBeta')).status,200);
+  assert.equal((await action('send','GraczBeta')).status,409);
+  assert.equal((await action('send','TestowyGracz')).status,404);
+  const sent=recorded.find(x=>x.sql.includes('INSERT INTO gracz_public_identity.friend_connections'));
+  assert.deepEqual(sent.params,[account.id,other.id]);
+  assert.match(sent.sql,/ON CONFLICT DO NOTHING/);
+  assert.match(sent.sql,/friend_blocks/);
+});
+
+test('friends UI has real action handlers, no fabricated presence and all requested sections',()=>{
+  const r=response(),script=response();
+  servePlayerPanel({method:'GET'},r,new URL('/konto/panel/','https://gracz-contact-api.onrender.com'));
+  servePlayerPanel({method:'GET'},script,new URL('/konto/panel/app.js','https://gracz-contact-api.onrender.com'));
+  for(const id of ['friends-search-form','friends-search-results','friends-list','friends-incoming',
+    'friends-outgoing','friends-blocked','friends-status'])
+    assert.match(r.body,new RegExp('id="'+id+'"'));
+  assert.match(r.body,/Status online i wiadomości będą dostępne/);
+  assert.match(script.body,/api\('friends\/action'/);
+  assert.match(script.body,/refreshFriends/);
+  new Script(script.body);
+});
