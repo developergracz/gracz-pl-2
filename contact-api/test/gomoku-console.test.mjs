@@ -119,8 +119,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('chat-input').disabled,false);
  get('chat-input').value='Powodzenia!';
  await get('chat-form').listeners.submit({preventDefault(){}});
- assert.equal(get('chat-messages').children.length,2);
- assert.equal(get('chat-messages').children[1].children[1].textContent,'Dzięki, wzajemnie! 🤝');
+ assert.equal(get('chat-messages').children.length,3);
+ assert.equal(get('chat-messages').children[2].children[1].textContent,'Dzięki, wzajemnie! 🤝');
  assert.equal(get('chat-preview').children.length,2);
  get('history-tab').listeners.click();
  assert.equal(get('chat-preview').hidden,false);
