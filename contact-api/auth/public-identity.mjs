@@ -59,14 +59,14 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
   if(!initialized){
    initialized=(async()=>{
     await database.query('CREATE SCHEMA IF NOT EXISTS gracz_public_identity');
-    await database.query(\`CREATE TABLE IF NOT EXISTS gracz_public_identity.accounts (
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.accounts (
       id uuid PRIMARY KEY, nickname text NOT NULL, nickname_key text NOT NULL UNIQUE,
       email_key text NOT NULL UNIQUE, salt bytea NOT NULL, password_digest bytea NOT NULL,
       verified_at timestamptz, verify_digest bytea, verify_expires_at timestamptz,
-      created_at timestamptz NOT NULL DEFAULT now())\`);
-    await database.query(\`CREATE TABLE IF NOT EXISTS gracz_public_identity.sessions (
+      created_at timestamptz NOT NULL DEFAULT now())`);
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.sessions (
       token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
-      created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)\`);
+      created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
     await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_expiry ON gracz_public_identity.sessions(expires_at)');
    })().catch(e=>{initialized=undefined;throw e;});
   }
@@ -84,9 +84,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
    try{
     await ready();const token=sessionToken(req);
     if(!/^[a-f0-9]{64}$/.test(token))return json(res,200,{ok:true,loggedIn:false}),true;
-    const q=await database.query(\`SELECT a.nickname FROM gracz_public_identity.sessions s
+    const q=await database.query(`SELECT a.nickname FROM gracz_public_identity.sessions s
       JOIN gracz_public_identity.accounts a ON a.id=s.account_id
-      WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1\`,[digest(token)]);
+      WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
     return json(res,200,q.rows.length?{ok:true,loggedIn:true,nickname:q.rows[0].nickname}:{ok:true,loggedIn:false}),true;
    }catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
   }
@@ -106,9 +106,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
     const salt=randomBytes(16),hash=await hashPassword(pwd,salt),verify=randomBytes(32).toString('hex');
     let created=false;
     try{
-     await database.query(\`INSERT INTO gracz_public_identity.accounts
+     await database.query(`INSERT INTO gracz_public_identity.accounts
        (id,nickname,nickname_key,email_key,salt,password_digest,verify_digest,verify_expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,now()+interval '30 minutes')\`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,now()+interval '30 minutes')`,
        [randomUUID(),nick,nick.toLowerCase(),email,salt,hash,digest(verify)]);created=true;
     }catch(e){if(e?.code!=='23505')throw e;}
     if(created){
@@ -120,23 +120,23 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
    if(url.pathname==='/auth/verify'){
     const token=safeText(body.token);
     if(!/^[a-f0-9]{64}$/.test(token))return bad(res,400,'LINK_NIEWAZNY'),true;
-    const x=await database.query(\`UPDATE gracz_public_identity.accounts
+    const x=await database.query(`UPDATE gracz_public_identity.accounts
       SET verified_at=now(),verify_digest=NULL,verify_expires_at=NULL
-      WHERE verify_digest=$1 AND verify_expires_at>now() AND verified_at IS NULL RETURNING id\`,[digest(token)]);
+      WHERE verify_digest=$1 AND verify_expires_at>now() AND verified_at IS NULL RETURNING id`,[digest(token)]);
     return x.rowCount?json(res,200,{ok:true}):bad(res,400,'LINK_NIEWAZNY_LUB_WYGASL'),true;
    }
    if(url.pathname==='/auth/login'){
     const login=normalizeEmail(body.login),pwd=body.password;
     if(login.length>254||!validPassword(pwd))return bad(res,401,'BLEDNY_LOGIN_LUB_HASLO'),true;
     if(!allow('login:'+digest(login).toString('hex'),12))return bad(res,429,'ZBYT_WIELE_PROB'),true;
-    const x=await database.query(\`SELECT id,nickname,salt,password_digest,verified_at
-      FROM gracz_public_identity.accounts WHERE email_key=$1 OR nickname_key=$1 LIMIT 1\`,[login]);
+    const x=await database.query(`SELECT id,nickname,salt,password_digest,verified_at
+      FROM gracz_public_identity.accounts WHERE email_key=$1 OR nickname_key=$1 LIMIT 1`,[login]);
     const account=x.rows[0],salt=account?.salt||Buffer.from('0000000000000000'),hash=await hashPassword(pwd,salt);
     if(!account||!timingSafeEqual(Buffer.from(account.password_digest),hash)||!account.verified_at)
       return bad(res,401,'BLEDNY_LOGIN_LUB_HASLO'),true;
     const token=randomBytes(32).toString('hex');
-    await database.query(\`INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)
-      VALUES($1,$2,now()+interval '7 days')\`,[digest(token),account.id]);
+    await database.query(`INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)
+      VALUES($1,$2,now()+interval '7 days')`,[digest(token),account.id]);
     res.setHeader('Set-Cookie',cookie(token));
     return json(res,200,{ok:true,nickname:account.nickname}),true;
    }
