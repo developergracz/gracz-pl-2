@@ -88,7 +88,7 @@ for (const page of sharedHeaderPages) {
   const html = read(page);
   const expectedHeaderVersion = page === "index.html" ? "r6" : "r3";
   requireCheck(
-    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fullbleed-r23"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
+    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-viewport-r24"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
@@ -96,11 +96,15 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical site-header missing`
   );
   requireCheck(
-    /data-modal="login"[^>]*>Zaloguj się</.test(html),
+    page === "index.html"
+      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/\?widok=login"[^>]*>Zaloguj się<\/a>/.test(html)
+      : /data-modal="login"[^>]*>Zaloguj się</.test(html),
     `${page}: canonical login action missing`
   );
   requireCheck(
-    /data-modal="register"[^>]*>Załóż konto</.test(html),
+    page === "index.html"
+      ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Zarejestruj się<\/a>/.test(html)
+      : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
   );
   requireCheck(
