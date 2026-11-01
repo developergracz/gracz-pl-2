@@ -113,7 +113,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       const account=result.rows[0];
       if(req.method==='PUT'){
         if(!allow('profile:'+account.id,25))return bad(res,429,'ZBYT_WIELE_PROB'),true;
-        const body=await readBody(req);
+        let body;
+        try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
         const displayName=typeof body.displayName==='string'?body.displayName.trim():'';
         const bio=typeof body.bio==='string'?body.bio.trim():'';
         const country=body.country,language=body.language;
