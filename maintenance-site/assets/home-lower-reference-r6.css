@@ -1137,3 +1137,24 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
     flex:0 0 auto!important;
   }
 }
+
+/* R25: genuinely use the desktop viewport, not a 180px safety gap.
+   Desktop header is 76px and the compact legal row is 50px.
+   Artwork stays complete (1671:941); real controls stay aligned to it. */
+@media (min-width:1181px) {
+  body.homepage-premium-max .site-footer .footer-grid {
+    padding-top:3px!important;
+    padding-bottom:3px!important;
+  }
+  body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
+    width:min(100%,1360px,calc((100dvh - 132px) * 1.77577))!important;
+    margin:0 auto!important;
+  }
+  body.homepage-premium-max .site-footer .footer-bottom {
+    height:50px!important;
+    min-height:50px!important;
+    margin-top:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+  }
+}
