@@ -368,7 +368,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(geo.news.width,'R27 newsletter fills the desktop width').toBeGreaterThanOrEqual(width-2);
+    expect(Math.abs(geo.news.width-Math.min(width,(900-148)*1.77577)),'R29 newsletter fits the desktop height').toBeLessThanOrEqual(3);
     expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
@@ -579,7 +579,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
-test('R27 approved newsletter image fills the complete desktop width',async({browser})=>{
+test('R29 approved newsletter image stays fully visible and centered',async({browser})=>{
  test.setTimeout(90000);
  fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
@@ -613,9 +613,10 @@ test('R27 approved newsletter image fills the complete desktop width',async({bro
    expect(state.beforeContent).not.toBe('none');
    expect(state.beforeBackground).toContain('radial-gradient');
    expect(state.beforeMask).toBe('none');
-   expect(state.banner.left,'R27 artwork begins at left edge').toBeGreaterThanOrEqual(-2);
-   expect(state.banner.right,'R27 artwork reaches right edge').toBeGreaterThanOrEqual(viewport.width-2);
-   expect(state.art.width).toBeCloseTo(state.banner.width,0);
+   expect(state.banner.left,'R29 image must stay inside viewport').toBeGreaterThanOrEqual(-2);
+   expect(Math.abs(state.banner.width-Math.min(viewport.width,(viewport.height-148)*1.77577)),'R29 width must preserve full artwork').toBeLessThanOrEqual(3);
+   expect(Math.abs((state.banner.left+state.banner.right)/2-viewport.width/2),'R29 image centered on screen').toBeLessThanOrEqual(3);
+    expect(state.art.width).toBeCloseTo(state.banner.width,0);
    expect(state.art.top).toBeCloseTo(state.banner.top,0);
    expect(state.art.bottom).toBeCloseTo(state.banner.bottom,0);
    expect(state.overflow).toBeLessThanOrEqual(viewport.width+2);
