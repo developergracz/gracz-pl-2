@@ -4,120 +4,146 @@ const secure={
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
  'Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'
 };
-const html=String.raw`<!doctype html>
-<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#051827"><meta name="robots" content="noindex,nofollow,noarchive">
-<title>Gomoku Online — Konsola Gracza Full Max Premium | gracz.pl</title>
+const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04191b"><meta name="robots" content="noindex,nofollow,noarchive">
+<title>Gomoku Online — Full Max Premium | gracz.pl</title>
 <link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
 <body>
-<a class="skip" href="#game">Przejdź do planszy</a>
-<header class="top"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl, strona główna">gracz<span>.pl</span></a>
-<div class="tag">POLSKIE CENTRUM GRACZA <b>FULL MAX PREMIUM</b></div>
-<nav class="topnav"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav></header>
+<a class="skip" href="#board">Przejdź do planszy</a>
 <main class="layout" id="game">
-<aside class="sidebar">
-<div class="eyebrow">GOMOKU · CONSOLA PREMIUM</div>
-<h1>Gomoku <em>Online</em></h1>
+<aside class="sidebar" aria-label="Panel gry">
+<header class="side-header">
+<div class="branding"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><span class="badge-premium">★ PREMIUM</span></div>
+<h1>Gomoku <em>Online</em></h1><div class="premium-sub">FULL MAX PREMIUM</div>
 <p class="lede">Pięć w linii. Jeden ruch może zmienić wszystko.</p>
+</header>
 <div class="mode" role="group" aria-label="Tryb gry">
-<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><strong>Trening</strong><small>Graj od razu z komputerem</small></button>
-<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><strong>Ze znajomym</strong><small>Wspólna partia online</small></button>
+<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">♛</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">♙</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
 </div>
-<section class="sidecard" id="training-settings">
-<h2>Twój trening</h2>
+<section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p>
 <label for="ai-level">Poziom komputera</label>
-<select id="ai-level" aria-label="Poziom trudności komputera">
-<option value="normal">Normalny — gra rekreacyjna</option>
-<option value="hard">Trudny — analiza zagrożeń</option>
-<option value="expert" selected>Ekspert — kilka ruchów naprzód</option>
-</select>
-<p id="ai-hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
-<button class="primary" id="restart" type="button">Nowa partia</button></section>
-<section class="sidecard" id="online-settings" hidden>
-<h2>Moje pokoje Gomoku</h2>
+<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — kilka ruchów naprzód</option></select>
+<p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
+<button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
+<section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
 <label for="room-select">Wybierz zaakceptowane wyzwanie</label>
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
-<a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a>
+<a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
+<section class="sidecard rules"><h2>ⓘ &nbsp;Jak grać?</h2>
+<p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy.</p>
+<p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p>
 </section>
-<div class="sidecard rules"><h2>Jak grać?</h2><p>Ułóż <b>pięć kamieni w jednej linii</b>: poziomo, pionowo lub po przekątnej. Kliknij wolne przecięcie linii planszy. Gracze wykonują ruchy na zmianę.</p>
-<p class="muted">Tryb online: ruch zatwierdza serwer, a plansza przeciwnika odświeża się automatycznie. Trening jest lokalny i nie zapisuje się w rankingu.</p></div>
+<nav class="side-links"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
-<div class="boardtop">
-<div><div class="eyebrow">STÓŁ GRACZA · 15 × 15</div><h2 id="session-heading">Trening z komputerem</h2></div>
-<div class="roomtag" id="room-tag">TRENING</div>
-</div>
 <div class="players">
-<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne · zaczynają</small></div></div>
+<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
 <div class="versus">VS</div>
-<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div></div>
+<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♙</span></div>
 </div>
-<div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — wybierz pole planszy.</div>
+<div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
+<div class="arena">
+<div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
 <div class="boardframe"><div class="board" id="board" role="grid" aria-label="Plansza Gomoku 15 na 15"></div></div>
-<div class="bottom"><span id="move-count">Ruchy: 0</span><span id="turn-label">Tura: czarne</span><button id="refresh-match" class="secondary" type="button" hidden>Odśwież stan</button></div>
-<p class="help" id="board-help">Wybierz wolne pole, aby postawić czarny kamień.</p>
+</div>
+<div class="game-tools" aria-label="Narzędzia gry">
+<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> Cofnij ruch</button>
+<button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
+<button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
+<button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
+<button type="button" class="tool-btn" id="refresh-match" hidden><span aria-hidden="true">↻</span> Odśwież partię</button>
+</div></div>
+<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
+<p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
-</main><footer>gracz.pl · Polskie Centrum Gracza · Gomoku Full Max Premium</footer>
-</body></html>`;
-const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none}
-*{box-sizing:border-box}html{background:#051421}body{margin:0;color:#eaf6fc;background:radial-gradient(ellipse at 75% 15%,#17506455 0%,transparent 42%),linear-gradient(120deg,#04101c,#092338 70%,#041320);min-height:100dvh}
-a{color:inherit}.skip{position:absolute;top:-100px;left:8px;background:#fff;color:#111;padding:10px;z-index:10}.skip:focus{top:8px}
-button,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}
-.top{height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px clamp(15px,3vw,45px);background:#061724d9;border-bottom:1px solid #366779}
-.brand{text-decoration:none;font-size:30px;font-weight:950;letter-spacing:-1.5px;color:#fff}.brand span{color:#fa3e54}
-.tag{font-size:10px;font-weight:850;letter-spacing:1.7px;color:#b9d4df}.tag b{color:#f2cc80}
-.topnav{display:flex;gap:18px}.topnav a{text-decoration:none;font-size:12px;font-weight:750;color:#cde3ec}.topnav a:hover{color:#f6d38a}
-.layout{display:grid;grid-template-columns:minmax(270px,345px) minmax(0,1fr);gap:clamp(14px,2vw,25px);max-width:1510px;margin:auto;padding:clamp(14px,2vw,27px);align-items:start}
-.sidebar{background:linear-gradient(145deg,#103246,#071b2b);border:1px solid #326378;border-radius:18px;padding:clamp(17px,2vw,26px);box-shadow:0 12px 35px #0004}
-.eyebrow{font-size:10px;letter-spacing:1.6px;color:#f0bd69;font-weight:950}.sidebar h1{font-size:clamp(32px,3vw,43px);letter-spacing:-1px;margin:10px 0}.sidebar h1 em{font-weight:500;color:#68dbde;font-style:normal}.lede{font-size:13px;line-height:1.6;color:#b9d3dc;margin-bottom:22px}
-.mode{display:grid;gap:9px}.mode-choice{text-align:left;padding:14px;background:#0a2535;border:1px solid #396477;border-radius:11px;color:#eefaff;transition:border-color .15s,background .15s}
-.mode-choice.active{border-color:#efc277;background:linear-gradient(90deg,#214a57,#102e40)}.mode-choice strong,.mode-choice small{display:block}.mode-choice strong{font-size:14px}.mode-choice small{font-size:11px;color:#adc9d5;margin-top:4px}
-.sidecard{border-top:1px solid #325465;padding-top:16px;margin-top:20px}.sidecard h2{font-size:16px;margin:0 0 10px}.sidecard p{color:#b4cdd8;line-height:1.55;font-size:12px}
-.sidecard label{font-size:12px;display:block;margin:12px 0 7px;color:#dcecf3}
-select{width:100%;min-width:0;padding:12px;border:1px solid #47798c;background:#061f2d;color:#fff;border-radius:9px}
-.primary,.secondary{border-radius:9px;padding:11px 16px;font-size:12px;font-weight:900}
-.primary{border:1px solid #f7d591;background:linear-gradient(#fbe1a8,#e6b35b);color:#172536}.secondary{border:1px solid #497b8e;background:#0b2c41;color:#e4f9ff}
-.actions{display:flex;gap:9px;margin-top:13px;flex-wrap:wrap}.textlink{display:inline-block;font-size:12px;color:#9ee3e6;margin-top:14px;line-height:1.55}.muted{color:#8faebb!important}
-.boardarea{border:1px solid #396a80;background:linear-gradient(155deg,#0a2d40,#071b2c);border-radius:18px;padding:clamp(13px,2vw,25px);min-width:0}
-.boardtop{display:flex;justify-content:space-between;align-items:center;gap:10px}.boardtop h2{font-size:clamp(19px,2.4vw,29px);margin:7px 0 2px}
-.roomtag{white-space:nowrap;border:1px solid #987b4c;border-radius:25px;color:#f9d99a;padding:8px 11px;font-size:10px;font-weight:850;letter-spacing:1px}
-.players{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:17px 0 12px}
-.player{display:flex;align-items:center;gap:10px;min-width:0;background:#112f42;border:1px solid #3b6575;border-radius:11px;padding:10px clamp(8px,2vw,15px);flex:1}
-.player strong,.player small{display:block;overflow-wrap:anywhere}.player strong{font-size:13px}.player small{font-size:10px;color:#a4bdca;margin-top:3px}.versus{font-size:11px;font-weight:950;color:#e9c078}
-.stone{display:block;flex:none;width:26px;height:26px;border-radius:50%;box-shadow:inset -4px -5px 7px #0007,0 2px 4px #0005}
-.stone.black{background:radial-gradient(circle at 32% 27%,#6a7787,#101e2b 65%,#02060b)}.stone.white{background:radial-gradient(circle at 30% 20%,#fff,#e1e7e9 63%,#929fa4)}
-.state{padding:11px 13px;background:#0f3948;border:1px solid #3d8993;border-radius:9px;font-size:13px;color:#dbf8f9;text-align:center;font-weight:750}
-.boardframe{width:min(100%,670px,66vh);margin:13px auto;aspect-ratio:1;border:clamp(5px,1.4vw,12px) solid #9e6935;border-radius:12px;box-shadow:0 0 0 2px #d6b67e,0 14px 36px #0007,inset 0 0 25px #47321a;overflow:hidden;background:#d2a967}
-.board{width:100%;height:100%;display:grid;grid-template-columns:repeat(15,minmax(0,1fr));grid-template-rows:repeat(15,minmax(0,1fr));padding:0;background:radial-gradient(ellipse at 30% 18%,#f3d49b,#c79759 95%)}
-.cell{border:0;padding:0;background:transparent;position:relative;min-width:0;min-height:0;display:grid;place-items:center;outline-offset:-2px}
-.cell::before{content:"";position:absolute;width:100%;height:100%;background:linear-gradient(to right,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px)),linear-gradient(to bottom,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px));pointer-events:none}
-.cell.edge-top::before{background:linear-gradient(to right,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px)),linear-gradient(to bottom,transparent 50%,#84603a 50%,#84603a calc(50% + .7px),transparent calc(50% + .7px))}
-.cell.edge-bottom::before{background:linear-gradient(to right,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px)),linear-gradient(to bottom,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a 50%,transparent 50%)}
-.cell.edge-left::before{background:linear-gradient(to right,transparent 50%,#84603a 50%,#84603a calc(50% + .7px),transparent calc(50% + .7px)),linear-gradient(to bottom,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px))}
-.cell.edge-right::before{background:linear-gradient(to right,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a 50%,transparent 50%),linear-gradient(to bottom,transparent calc(50% - .7px),#84603a calc(50% - .7px),#84603a calc(50% + .7px),transparent calc(50% + .7px))}
-.cell.star:not(.occupied)::after{content:"";width:16%;height:16%;background:#7c5631;border-radius:50%;position:relative;z-index:1}
-.cell.occupied::after{content:"";display:block;width:83%;height:83%;border-radius:50%;position:relative;z-index:2;box-shadow:0 2px 5px #0007,inset -2px -3px 5px #0006}
-.cell.p1.occupied::after{background:radial-gradient(circle at 30% 22%,#738392,#07141d 68%,#02070a)}
-.cell.p2.occupied::after{background:radial-gradient(circle at 30% 20%,#fff,#dae3e7 70%,#9fa9ac)}
-.cell.last::after{outline:2px solid #e1a23b;outline-offset:1px}
-.cell:not(:disabled):hover{background:#f4db9b88;cursor:pointer}
-.cell:focus-visible{outline:3px solid #20b8c6;z-index:3}
-.bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#b3d3df;font-size:12px;font-weight:800}
-.help{color:#90afbb;font-size:11px;text-align:center;margin-bottom:0}
-footer{color:#829fae;text-align:center;font-size:11px;padding:8px 10px 26px}
+</main></body></html>`;
+const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none;--gold:#efca82;--teal:#51d6d3;--navy:#03171e;--line:#395f64}
+*{box-sizing:border-box}html{background:#031519}body{margin:0;min-height:100dvh;color:#f1f9fc;background:#031519}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 74% 53%,#08747555,transparent 72%),linear-gradient(135deg,#021218,#05202b 50%,#03151d)}
+a{color:inherit}button,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.43;cursor:not-allowed}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #86f6f1;outline-offset:3px}
+.skip{position:absolute;z-index:50;top:-100px;left:10px;padding:11px;background:white;color:#101010}.skip:focus{top:10px}
+.layout{display:grid;grid-template-columns:clamp(270px,27vw,370px) minmax(0,1fr);width:100%;height:100dvh;min-height:590px;max-width:1800px;margin:auto;isolation:isolate;overflow:hidden}
+.sidebar{display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#996e3d #071922;padding:clamp(19px,2vw,30px) clamp(20px,2.5vw,34px);background:radial-gradient(ellipse at 5% 0%,#14606644,transparent 39%),linear-gradient(160deg,#01131d 0%,#041a25 65%,#03181c 100%);border-right:1px solid #3b737b;box-shadow:9px 0 30px #0005;position:relative}
+.sidebar:before,.sidebar:after{content:"";position:absolute;pointer-events:none;width:190px;height:110px;border:1px solid #d3ae62a0;border-left-color:transparent;border-bottom-color:transparent;border-radius:50%;transform:rotate(-31deg)}
+.sidebar:before{top:-70px;left:-65px}.sidebar:after{bottom:-75px;right:-65px;transform:rotate(150deg)}
+.side-header{text-align:center;margin-bottom:18px}
+.branding{display:flex;align-items:center;justify-content:center;gap:13px;flex-wrap:wrap;margin-bottom:20px}.brand{text-decoration:none;font-size:clamp(19px,1.65vw,25px);font-weight:950;letter-spacing:-1px;color:#fff}.brand span{color:#f34055}
+.badge-premium{font-size:10px;font-weight:950;color:#16232b;letter-spacing:.8px;background:linear-gradient(145deg,#ffedb2,#bb8132);padding:5px 9px;border-radius:15px;box-shadow:0 0 16px #dfac5540}
+.side-header h1{font-size:clamp(30px,2.65vw,43px);font-family:Inter,"Segoe UI",Arial,sans-serif;line-height:1.09;letter-spacing:-1.5px;margin:0;color:#fff;text-shadow:0 0 22px #dda75545;white-space:nowrap}
+.side-header h1 em{font-style:normal;color:#f2c77d;font-weight:450}
+.premium-sub{color:#d9b671;letter-spacing:.28em;font-size:10px;font-weight:850;margin:12px auto 17px}
+.lede{font-size:12px;color:#d4e6e9;line-height:1.6;margin:0}
+.mode{display:grid;gap:10px}
+.mode-choice{width:100%;min-height:70px;text-align:left;color:#f9fcff;display:grid;grid-template-columns:35px 1fr 15px;align-items:center;gap:9px;padding:10px 13px;border:1px solid #4e8287;border-radius:14px;background:linear-gradient(120deg,#082f36 0%,#051e28 95%);transition:box-shadow .15s,border-color .15s}
+.mode-choice.active{border:1px solid #f5c972;background:linear-gradient(120deg,#72542866,#123236 83%);box-shadow:0 0 0 1px #fce19a60,inset 0 1px #ffe5b34a,0 0 19px #e7a9486b}
+.mode-icon{font-size:27px;color:#f1cc8b;text-align:center}.mode-arrow{color:#f6ce7c;font-size:24px}.mode-choice strong{font-size:17px;display:block}.mode-choice small{display:block;color:#c3d9de;font-size:11px;margin-top:4px}
+.sidecard{margin-top:19px;padding-top:17px;border-top:1px solid #9e79438f}
+.sidecard h2{font-size:19px;margin:0 0 12px;color:#ecc37b;letter-spacing:-.2px}
+.sidecard p{font-size:12px;color:#dce6e8;line-height:1.55;margin:10px 0}
+.sidecard label{display:block;font-size:12px;font-weight:800;margin:14px 0 8px}
+select{width:100%;padding:12px 13px;background:linear-gradient(#0c2c31,#03171e);color:#f7f5f1;border:1px solid #f0c477;border-radius:10px;min-width:0;box-shadow:0 0 0 1px #e9bd5f2b}
+select option{background:#102c34;color:#fff}
+.sidecard .hint{color:#c9dcde;font-size:11px;margin:13px 0 18px}
+.primary,.secondary{display:inline-flex;align-items:center;justify-content:center;gap:11px;font-size:13px;font-weight:900;border-radius:11px;padding:12px 15px}
+.primary{background:linear-gradient(180deg,#fff0be 0%,#f3c36d 57%,#cb9035 100%);border:1px solid #ffebb0;color:#1d1d16;box-shadow:inset 0 1px #fffdf0,0 0 0 1px #9b682d,0 5px 20px #d9973c60}
+#restart{display:flex;width:100%;font-size:16px;border-radius:24px;padding:12px 20px}
+.secondary{border:1px solid #4c888b;background:linear-gradient(#06333b,#031f28);color:#f3f9f8}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.textlink{display:block;font-size:11px;color:#a4f0e6;line-height:1.5;margin-top:14px}
+.rules{margin-top:22px}.rules p{margin-bottom:0}.muted{color:#9bb8bb!important;font-size:11px!important}
+.side-links{display:flex;gap:15px;margin-top:auto;padding-top:18px;color:#aac9c9;font-size:11px}.side-links a{text-decoration:none;border-bottom:1px solid #659aa071}
+.boardarea{min-width:0;min-height:0;position:relative;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:clamp(8px,1.2vh,14px);padding:clamp(12px,2vh,22px) clamp(14px,2.2vw,32px) clamp(13px,1.8vh,20px);background:radial-gradient(ellipse 72% 60% at 59% 55%,#09656e39,transparent 75%),linear-gradient(145deg,#031719,#043139 55%,#031b25)}
+.boardarea:before,.boardarea:after{content:"";position:absolute;pointer-events:none;z-index:-1;width:520px;height:240px;border-radius:50%;border-top:1px solid #41c6b367;filter:drop-shadow(0 0 12px #11bcc37c);transform:rotate(-23deg)}
+.boardarea:before{left:-80px;bottom:16px}.boardarea:after{right:-190px;top:30px;transform:rotate(155deg)}
+.players{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);gap:clamp(8px,1.5vw,22px);align-items:center;min-height:64px}
+.player{display:flex;align-items:center;gap:13px;min-width:0;min-height:63px;padding:8px 16px;border-radius:18px;background:linear-gradient(130deg,#0a3b40,#021c21 70%,#07353a);border:1px solid #f5d498;box-shadow:inset 0 1px 2px #ffe6a17c,0 0 0 1px #eab7606a,0 0 22px #e5ae5440}
+.player div{min-width:0}.player strong{font-size:clamp(15px,2vw,23px);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player small{font-size:11px;display:block;color:#c6d7db;margin-top:3px}
+.player .stone{width:42px;height:42px}.player-icon{font-size:24px;color:#f5ce84;margin-left:auto}
+.stone{display:inline-block;flex:none;width:26px;height:26px;border-radius:50%;box-shadow:inset -4px -5px 7px #0008,0 2px 5px #0008}
+.stone.black{background:radial-gradient(circle at 31% 22%,#aab2b5,#3b4348 27%,#0a1017 61%,#010203 89%)}
+.stone.white{background:radial-gradient(circle at 31% 19%,#fff,#f3f6f8 39%,#d9e0e2 74%,#869296 99%)}
+.versus{text-align:center;font-size:clamp(16px,2vw,26px);font-weight:950;color:#f3d089;letter-spacing:1px;text-shadow:0 0 10px #be8b45}
+.state{padding:10px 18px;min-height:39px;display:grid;place-items:center;text-align:center;background:linear-gradient(105deg,#064343,#062e36 52%,#062b30);border:1px solid #cb9d50;border-radius:18px;color:#f8e0a9;font-size:clamp(11px,1.2vw,15px);font-weight:850;box-shadow:inset 0 1px #4e9c94a0}
+.arena{display:grid;grid-template-columns:minmax(0,1fr) clamp(104px,11vw,160px);gap:clamp(10px,1.6vw,24px);min-height:0;align-items:center}
+.board-center{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.boardtop{display:flex;align-items:center;justify-content:center;gap:11px;min-height:23px}
+.boardtop h2{font-size:11px;font-weight:700;color:#c4dde0;margin:0}.roomtag{border:1px solid #bd9555;color:#f8dca3;padding:3px 9px;border-radius:30px;font-size:9px;font-weight:800}
+.boardframe{width:min(100%,calc(100dvh - 212px),720px);aspect-ratio:1;flex:none;padding:clamp(6px,.8vw,10px);margin:auto;background:linear-gradient(140deg,#fff6df 0%,#be873b 17%,#fce3a4 40%,#b67d30 75%,#fff2c8);border:2px solid #fce6ab;border-radius:clamp(13px,1.6vw,23px);box-shadow:inset 0 0 0 2px #7a451b,0 0 0 2px #e4b463,0 0 22px #ffbb68a0,0 14px 34px #0009;overflow:hidden}
+.board{width:100%;height:100%;display:grid;grid-template-columns:repeat(15,minmax(0,1fr));grid-template-rows:repeat(15,minmax(0,1fr));border:2px solid #bcab8d;border-radius:10px;overflow:hidden;background:radial-gradient(circle at 34% 25%,#fff 0%,#f8f9f8 47%,#edf0ec 100%)}
+.cell{border:0;padding:0;min-width:0;min-height:0;position:relative;display:grid;place-items:center;background:transparent}
+.cell::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px)),linear-gradient(to bottom,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px))}
+.cell.edge-top::before{background:linear-gradient(to right,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px)),linear-gradient(to bottom,transparent 50%,#707778a8 50%,#707778a8 calc(50% + .6px),transparent calc(50% + .6px))}
+.cell.edge-bottom::before{background:linear-gradient(to right,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px)),linear-gradient(to bottom,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 50%,transparent 50%)}
+.cell.edge-left::before{background:linear-gradient(to right,transparent 50%,#707778a8 50%,#707778a8 calc(50% + .6px),transparent calc(50% + .6px)),linear-gradient(to bottom,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px))}
+.cell.edge-right::before{background:linear-gradient(to right,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 50%,transparent 50%),linear-gradient(to bottom,transparent calc(50% - .6px),#707778a8 calc(50% - .6px),#707778a8 calc(50% + .6px),transparent calc(50% + .6px))}
+.cell.star:not(.occupied)::after{content:"";width:15%;height:15%;background:#b6975b;border-radius:50%;position:relative;z-index:1}
+.cell.occupied::after{content:"";display:block;width:84%;height:84%;border-radius:50%;position:relative;z-index:2;box-shadow:inset -2px -3px 4px #0007,0 2px 4px #0006}
+.cell.p1.occupied::after{background:radial-gradient(circle at 27% 19%,#9babb1,#313b42 29%,#060e14 64%,#000)}
+.cell.p2.occupied::after{background:radial-gradient(circle at 27% 18%,#fff 0%,#fbfcfc 34%,#dfe6e8 76%,#98a2a7)}
+.cell.last::after{outline:2px solid #d69f4e;outline-offset:1px}
+.cell.suggested:not(.occupied){background:#31bbb455!important;box-shadow:inset 0 0 0 2px #008f92}
+.cell:not(:disabled):hover{background:#c9e6df6e;cursor:pointer}.cell:focus-visible{outline:2px solid #078a91;outline-offset:-2px;z-index:3}
+.game-tools{display:flex;flex-direction:column;justify-content:center;gap:clamp(9px,1.5vh,17px)}
+.tool-btn{display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;min-height:44px;text-align:left;border:1px solid #93baa9;border-radius:12px;color:#f6faf9;padding:8px 11px;background:linear-gradient(155deg,#0b4946,#05242d 77%);box-shadow:inset 0 1px #7cafa27a,0 7px 17px #0005;font-size:11px;font-weight:750;transition:transform .15s,border-color .15s}
+.tool-btn:hover:not(:disabled){transform:translateY(-2px);border-color:#f4cf88}.tool-btn span{font-size:22px;color:#f3c676;min-width:27px;text-align:center}
+.bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:39px;color:#cfebeb}
+.info-pill{border:1px solid #dfb66b;border-radius:22px;padding:9px 15px;background:linear-gradient(115deg,#073a3c,#021c22);font-size:12px;font-weight:800;white-space:nowrap}
+.help{color:#c4dade;font-size:11px;line-height:1.45;text-align:center;margin:0}
+.analysis-note{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);z-index:5;max-width:80%;text-align:center;padding:11px 17px;color:#fff5d1;border:1px solid #c79b55;background:#07252bea;border-radius:12px;box-shadow:0 8px 20px #0007;font-size:12px}
 [hidden]{display:none!important}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{padding:16px}.sidecard.rules{display:none}.boardframe{width:min(100%,72vh,670px)}}
-@media(max-width:560px){.top{height:auto;flex-wrap:wrap;padding:10px 15px}.brand{font-size:25px}.tag{display:none}.topnav{gap:13px}.layout{padding:10px;gap:10px}.sidebar h1{font-size:28px}.sidebar .lede{margin:8px 0}.mode{grid-template-columns:1fr 1fr}.mode-choice{padding:9px}.mode-choice strong{font-size:12px}.mode-choice small{font-size:10px}.boardarea{padding:11px}.boardframe{width:100%;border-width:5px}.players{gap:5px}.player{padding:7px;gap:6px}.player strong{font-size:11px}.player small{font-size:9px}.stone{height:20px;width:20px}.boardtop h2{font-size:18px}}
+@media(max-width:1050px){.layout{grid-template-columns:260px minmax(0,1fr)}.sidebar{padding:15px}.arena{grid-template-columns:minmax(0,1fr) 112px}.boardframe{width:min(100%,calc(100dvh - 220px))}.player{padding:8px 10px}.player .stone{height:31px;width:31px}.player-icon{display:none}}
+@media(max-width:800px){.layout{height:auto;min-height:100dvh;display:block;overflow:visible}.sidebar{overflow:visible;min-height:auto;border-right:0;border-bottom:1px solid #b19b6c}.side-header{margin-bottom:12px}.branding{margin-bottom:10px}.side-header h1{font-size:30px}.premium-sub{margin:7px 0}.mode{grid-template-columns:1fr 1fr}.mode-choice{min-height:57px}.sidecard{margin-top:12px;padding-top:12px}.sidecard.rules{display:none}.side-links{margin-top:8px;padding-top:6px}.boardarea{min-height:0;padding:12px;gap:11px}.boardframe{width:min(100%,calc(100dvh - 210px),680px)}.arena{grid-template-columns:minmax(0,1fr) 115px}.players{min-height:50px}.player{min-height:53px}}
+@media(max-width:560px){.branding{gap:9px}.brand{font-size:23px}.side-header h1{font-size:27px}.lede{font-size:11px}.mode-choice{padding:9px;grid-template-columns:25px 1fr 10px;gap:5px}.mode-choice strong{font-size:13px}.mode-choice small{font-size:10px}.mode-icon{font-size:19px}.sidecard h2{font-size:16px}.sidecard p{font-size:11px}.players{grid-template-columns:minmax(0,1fr) 27px minmax(0,1fr);gap:5px}.player{min-height:46px;padding:5px 7px;gap:6px;border-radius:11px}.player .stone{width:24px;height:24px}.player strong{font-size:12px}.player small{font-size:9px}.versus{font-size:14px}.state{font-size:11px;min-height:36px}.arena{display:flex;flex-direction:column;gap:11px}.board-center{width:100%}.boardframe{width:100%;max-width:520px;border-width:2px;padding:6px}.game-tools{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tool-btn{min-height:40px;padding:7px;font-size:11px}.tool-btn span{font-size:20px}.bottom{gap:7px;flex-wrap:wrap}.info-pill{font-size:10px;padding:7px 10px}.help{order:3;width:100%;font-size:11px}.boardtop h2{font-size:10px}}
+@media(max-height:700px) and (min-width:801px){.layout{min-height:560px}.sidecard{margin-top:12px;padding-top:10px}.side-header{margin-bottom:12px}.branding{margin-bottom:10px}.side-header h1{font-size:31px}.premium-sub{margin:7px auto}.mode-choice{min-height:53px;padding:7px}.sidecard p{margin:6px 0}.boardframe{width:min(100%,calc(100dvh - 180px),650px)}.arena{gap:10px}.boardarea{gap:7px;padding:9px 15px}.players{min-height:53px}.player{min-height:51px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
- thinking:false,matchId:null,match:null,busy:false,epoch:0};
+ thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -160,6 +186,7 @@ function render(){
   if(col===size-1)cell.classList.add('edge-right');
   if([3,7,11].includes(row)&&[3,7,11].includes(col))cell.classList.add('star');
   if(piece){cell.classList.add('occupied','p'+piece);}
+  if(!online&&i===state.suggestion&&!piece)cell.classList.add('suggested');
   const last=online?(m?.state?.last??-1):state.last;
   if(last===i)cell.classList.add('last');
   cell.disabled=!!piece||!canPlay;
@@ -173,6 +200,8 @@ function render(){
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
  $('game-state').textContent=describe();
+ $('undo-move').disabled=online||state.snapshots.length===0;
+ $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
   $('black-name').textContent=m.players[0];$('white-name').textContent=m.players[1];
   $('session-heading').textContent='Partia online — Gomoku';
@@ -184,7 +213,8 @@ function render(){
 }
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
- state.last=-1;state.thinking=false;render();
+ state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;
+ $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
 // All candidate calculations temporarily place a stone and restore the board.
@@ -331,6 +361,8 @@ function cpuMove(board,level='expert'){
 }
 function trainMove(to){
  if(state.thinking||state.winner||state.board[to])return;
+ state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last});
+ state.suggestion=-1;$('analysis-note').hidden=true;
  state.board[to]=1;state.last=to;state.moves++;
  if(victory(state.board,to,1))state.winner=1;
  else if(state.moves===count)state.winner=3;
@@ -433,9 +465,45 @@ async function play(to){
  if(state.mode==='training')trainMove(to);
  else await onlineMove(to);
 }
+function undoTrainingMove(){
+ if(state.mode!=='training'||!state.snapshots.length)return;
+ ++state.epoch;state.thinking=false;
+ const previous=state.snapshots.pop();
+ state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
+ state.suggestion=-1;$('analysis-note').hidden=true;render();
+}
+function analyzeTrainingPosition(){
+ if(state.mode!=='training'||state.thinking||state.winner!==0)return;
+ const choices=rankedMoves(state.board,1,3);
+ if(!choices.length)return;
+ const candidate=choices[0];state.suggestion=candidate.at;
+ const row=Math.floor(candidate.at/15)+1,col=candidate.at%15+1;
+ const reason=candidate.attack>=decisive?'Możliwa natychmiastowa wygrana.':
+   candidate.block>=decisive?'Zablokuj natychmiastową wygraną komputera.':
+   candidate.attack>12000?'Rozwijaj silne zagrożenie.':'Propozycja na podstawie analizy taktycznej.';
+ const label=$('analysis-note');label.textContent='Analiza: rząd '+row+', kolumna '+col+'. '+reason;
+ label.hidden=false;render();
+}
+function openGameSettings(){
+ const section=state.mode==='training'?$('training-settings'):$('online-settings');
+ section.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+ const target=state.mode==='training'?$('ai-level'):$('room-select');
+ target.focus();
+}
+async function toggleFullscreen(){
+ try{
+  if(document.fullscreenElement){await document.exitFullscreen();return;}
+  if(!document.documentElement?.requestFullscreen)throw new Error('unsupported');
+  await document.documentElement.requestFullscreen();
+ }catch{
+  const label=$('analysis-note');label.textContent='Tryb pełnoekranowy nie jest dostępny w tej przeglądarce.';
+  label.hidden=false;
+ }
+}
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
  $('training-mode').classList.toggle('active',mode==='training');
@@ -448,6 +516,10 @@ function setMode(mode){
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
 $('restart').addEventListener('click',restart);
+$('undo-move').addEventListener('click',undoTrainingMove);
+$('analyze-position').addEventListener('click',analyzeTrainingPosition);
+$('game-settings').addEventListener('click',openGameSettings);
+$('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
 $('ai-level').addEventListener('change',()=>{
  const descriptions={
   normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
