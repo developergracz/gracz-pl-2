@@ -478,9 +478,18 @@ test('R21 newsletter scales to desktop without clipping the image', async({brows
     const img=section.querySelector('.footer-news-full-art-r16');
     const form=section.querySelector('form[data-newsletter]');
     const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    return {s:rect(section),art:rect(img),form:rect(form),footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
+    const footer=document.querySelector('.site-footer');
+    const ambient=getComputedStyle(footer,'::before');
+    return {s:rect(section),art:rect(img),form:rect(form),footer:rect(footer),ambientFilter:ambient.filter,ambientMask:ambient.maskImage,
+      ambientBackground:ambient.backgroundImage,footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
+   if(viewport.width>=1024){
+    expect(geo.footer.width,'premium backdrop must span the browser').toBeGreaterThanOrEqual(viewport.width-2);
+    expect(geo.ambientFilter,'desktop backdrop must be sharp, not blurred').toBe('none');
+    expect(geo.ambientMask,'desktop backdrop must not disappear in the side gutters').toBe('none');
+    expect(geo.ambientBackground).toContain('radial-gradient');
+   }
    expect(geo.s.width).toBeLessThanOrEqual(1361);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
    expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
