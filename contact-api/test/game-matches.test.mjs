@@ -55,7 +55,7 @@ const tokenA='a'.repeat(64),tokenB='b'.repeat(64),tokenC='c'.repeat(64);
 const digest=t=>createHash('sha256').update(t).digest('hex');
 
 function fixture(){
- const matches=new Map(),queries=[];
+ const matches=new Map(),queries=[],messages=[];
  let blocked=false,accepted=true;
  const db={enabled:true,async query(sql,p=[]){
   queries.push({sql,p});
@@ -78,6 +78,18 @@ function fixture(){
     state:m.state,version:m.version,game:'gomoku',sender_id:idA,recipient_id:idB,
     sender_nick:'GraczA',recipient_nick:'GraczB',playable:!blocked
    }]:[]};
+  }
+  if(sql.includes('SELECT id,sender_id,body,created_at FROM (')){
+   const rows=messages.filter(x=>x.matchId===p[0]).map(x=>({
+    id:x.id,sender_id:x.sender_id,body:x.body,created_at:x.created_at
+   }));
+   return {rows,rowCount:rows.length};
+  }
+  if(sql.includes('INSERT INTO gracz_public_identity.game_match_messages')){
+   if(blocked)return {rows:[],rowCount:0};
+   const [id,sender_id,body,matchId]=p;
+   messages.push({id,sender_id,body,matchId,created_at:'2026-11-01T20:00:00Z'});
+   return {rows:[{id,created_at:'2026-11-01T20:00:00Z'}],rowCount:1};
   }
   if(sql.includes('UPDATE gracz_public_identity.game_matches m')){
    const m=matches.get(p[1]);
@@ -113,6 +125,7 @@ test('match API isolates the two participants and rejects forged or stale moves'
  assert.equal((await f.call(tokenB,'POST','/auth/match',{id:challenge,version:0,move:{to:15}})).body.error,'NIE_TWOJA_TURA');
  const move=await f.call(tokenA,'POST','/auth/match',{id:challenge,version:0,move:{to:0}});
  assert.equal(move.status,200);assert.equal(move.body.match.version,1);
+ assert.deepEqual(move.body.match.state.history,[{player:1,to:0,number:1}]);
  assert.equal((await f.call(tokenA,'POST','/auth/match',{id:challenge,version:0,move:{to:1}})).status,409);
  const opponent=await f.call(tokenB,'GET','/auth/match?id='+challenge);
  assert.equal(opponent.body.match.state.board[0],1);
@@ -120,6 +133,7 @@ test('match API isolates the two participants and rejects forged or stale moves'
  assert.doesNotMatch(JSON.stringify(opponent.body),/email_key|token_digest|password_digest/);
  const next=await f.call(tokenB,'POST','/auth/match',{id:challenge,version:1,move:{to:15}});
  assert.equal(next.status,200);assert.equal(next.body.match.state.board[15],2);
+ assert.deepEqual(next.body.match.state.history,[{player:1,to:0,number:1},{player:2,to:15,number:2}]);
  f.setBlocked(true);
  assert.equal((await f.call(tokenA,'POST','/auth/match',{id:challenge,version:2,move:{to:1}})).status,403);
  assert.match(f.queries.find(q=>q.sql.includes('UPDATE gracz_public_identity.game_matches m')).sql,/m.version=\$3/);
@@ -127,4 +141,31 @@ test('match API isolates the two participants and rejects forged or stale moves'
 test('declined challenges cannot start matches',async()=>{
  const f=fixture();f.setAccepted(false);
  assert.equal((await f.call(tokenA,'GET','/auth/match?id='+challenge)).status,404);
+});
+
+test('Gomoku private match chat allows only the two players and blocks unsafe content',async()=>{
+ const f=fixture();
+ const get=token=>f.call(token,'GET','/auth/match/chat?id='+challenge);
+ const post=(token,message,origin=host)=>f.call(token,'POST','/auth/match/chat',{id:challenge,message},origin);
+ assert.equal((await get(null)).status,401);
+ assert.equal((await get(tokenC)).status,404);
+ assert.equal((await post(tokenA,'Cześć!','https://evil.test')).status,403);
+ assert.equal((await post(tokenA,'')).status,400);
+ assert.equal((await post(tokenA,'x'.repeat(601))).status,400);
+ assert.equal((await post(tokenA,'<img src=x onerror=alert(1)>')).status,200);
+ assert.equal((await post(tokenB,'Powodzenia!')).status,200);
+ const alice=await get(tokenA);
+ assert.equal(alice.status,200);
+ assert.equal(alice.body.messages.length,2);
+ assert.equal(alice.body.messages[0].body,'<img src=x onerror=alert(1)>');
+ assert.equal(alice.body.messages[0].player,1);
+ assert.equal(alice.body.messages[1].player,2);
+ assert.doesNotMatch(JSON.stringify(alice.body),/sender_id|token_digest|password_digest/);
+ const bob=await get(tokenB);
+ assert.deepEqual(bob.body.messages,alice.body.messages);
+ f.setBlocked(true);
+ assert.equal((await get(tokenA)).status,403);
+ assert.equal((await post(tokenB,'Nie')).status,403);
+ assert.match(f.queries.find(q=>q.sql.includes('INSERT INTO gracz_public_identity.game_match_messages')).sql,
+  /NOT EXISTS\(SELECT 1 FROM gracz_public_identity.friend_blocks/);
 });
