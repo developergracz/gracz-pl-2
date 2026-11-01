@@ -382,58 +382,57 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R15 approved smartphone fits beside functional newsletter form',async({browser})=>{
- for(const width of [390,768,1366,1600]){
+test('R16 displays exact accepted full newsletter artwork with a genuine aligned form',async({browser})=>{
+ for(const width of [390,768,960,1024,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const photo=page.locator('.site-footer .footer-news > img.footer-news-smartphone');
-   await photo.scrollIntoViewIfNeeded();
-   const result=await photo.evaluate(async(img)=>{
-    await img.decode();
-    const container=img.closest('.footer-news');
-    const imgr=img.getBoundingClientRect();
-    const box=container.getBoundingClientRect();
-    const style=getComputedStyle(container),imgstyle=getComputedStyle(img);
-    const form=container.querySelector('form[data-newsletter]').getBoundingClientRect();
-    const heading=container.querySelector('#f-news').getBoundingClientRect();
-    return {naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
-      visible:imgstyle.display!=='none',objectFit:imgstyle.objectFit,
-      image:[imgr.left,imgr.top,imgr.right,imgr.bottom],
-      form:[form.left,form.top,form.right,form.bottom],
-      heading:[heading.left,heading.top,heading.right,heading.bottom],
-      container:[box.left,box.top,box.right,box.bottom],
-      background:style.backgroundImage,
-      scrollWidth:document.documentElement.scrollWidth};
+   const scene=page.locator('.site-footer .footer-news > img.footer-news-full-art-r16');
+   const phone=page.locator('.site-footer .footer-news > img.footer-news-smartphone');
+   const form=page.locator('.site-footer form[data-newsletter]');
+   await form.scrollIntoViewIfNeeded();
+   await expect(scene).toHaveAttribute('src','/assets/gracz-newsletter-full-approved-r16.webp');
+   await expect(form).toBeVisible();
+   await expect(form.locator('#news-email')).toHaveAttribute('type','email');
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const state=await page.evaluate(async()=>{
+    const section=document.querySelector('.site-footer .footer-news');
+    const scene=section.querySelector('img.footer-news-full-art-r16');
+    const phone=section.querySelector('img.footer-news-smartphone');
+    await Promise.all([scene.decode(),phone.decode()]);
+    const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
+    return {section:rect(section),scene:rect(scene),phone:rect(phone),
+      form:rect(section.querySelector('form[data-newsletter]')),
+      sceneDisplayed:getComputedStyle(scene).display!=='none',
+      phoneDisplayed:getComputedStyle(phone).display!=='none',
+      natural:[scene.naturalWidth,scene.naturalHeight],
+      overflow:document.documentElement.scrollWidth};
    });
-   expect(result.naturalWidth).toBe(600);
-   expect(result.naturalHeight).toBe(917);
-   await expect(photo).toHaveAttribute('src','/assets/gracz-newsletter-phone-approved-r15.webp');
-   expect(result.visible).toBe(true);
-   expect(result.objectFit).toBe('contain');
-   expect(result.background).not.toContain('newsletter.webp');
-   expect(result.scrollWidth).toBeLessThanOrEqual(width+2);
-   const [left,top,right,bottom]=result.image;
-   const [cl,ct,cr,cb]=result.container;
-   expect(left).toBeGreaterThanOrEqual(cl-2);
-   expect(right).toBeLessThanOrEqual(cr+2);
-   expect(top).toBeGreaterThanOrEqual(ct-2);
-   expect(bottom).toBeLessThanOrEqual(cb+2);
-   if(width>760){
-    // The functional form remains at left. The phone must be in the right column.
-    expect(left).toBeGreaterThanOrEqual(result.form[2]-24);
-    expect(right).toBeLessThanOrEqual(cr+2);
+   expect(state.natural).toEqual([1672,941]);
+   expect(state.overflow).toBeLessThanOrEqual(width+2);
+   if(width>960){
+    expect(state.sceneDisplayed).toBe(true);
+    expect(state.phoneDisplayed).toBe(false);
+    const [x,y,r,b]=state.section;
+    const [sx,sy,sr,sb]=state.scene;
+    const [fx,fy,fr,fb]=state.form;
+    expect(Math.abs(sx-x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(sr-r)).toBeLessThanOrEqual(2);
+    expect(Math.abs(sy-y)).toBeLessThanOrEqual(2);
+    expect(Math.abs((b-y)-(sb-sy))).toBeLessThanOrEqual(3);
+    expect(Math.abs((fx-x)/(r-x)-.0705)).toBeLessThan(.018);
+    expect(Math.abs((fy-y)/(b-y)-.5345)).toBeLessThan(.022);
+    expect(Math.abs((fr-fx)/(r-x)-.514)).toBeLessThan(.024);
+    expect(Math.abs((fb-fy)/(b-y)-.0908)).toBeLessThan(.024);
    }else{
-    // On narrow devices the phone follows the real signup form.
-    expect(top).toBeGreaterThanOrEqual(result.form[3]+5);
+    expect(state.sceneDisplayed).toBe(false);
+    expect(state.phoneDisplayed).toBe(true);
+    expect(state.phone[1]).toBeGreaterThanOrEqual(state.form[3]+5);
+    expect(state.phone[0]).toBeGreaterThanOrEqual(state.section[0]-2);
+    expect(state.phone[2]).toBeLessThanOrEqual(state.section[2]+2);
    }
-   const analysis=page.locator('#aktualnosci .r4-update-photo.r4-approved-blog-analysis');
-   await expect(analysis).toHaveCSS('background-image',/gracz-blog-analysis-wide-premium-r9\.avif/);
-   const signup=page.locator('.site-footer form[data-newsletter]');
-   await expect(signup).toBeVisible();
-   await expect(signup.locator('button[type=submit]')).toBeDisabled();
-  }finally{await context.close()}
+  }finally{await context.close();}
  }
 });
 
