@@ -87,16 +87,35 @@ footer{display:none}
 
 /* Sharp, text-free GRACZ.PL casino artwork (no page screenshot, no drawn form copy).
    The only form is the real HTML form (keyboard, screen-reader and password manager safe). */
+/* Display the entire approved casino scene within the visible screen, never crop it.
+   Keep it behind the real form even when the document needs vertical scrolling. */
 body{
- background:
+ --account-header-height:clamp(57px,8dvh,74px);
+ background:#05111d;
+}
+body::before{
+ content:"";
+ position:fixed;
+ inset:var(--account-header-height) 0 0;
+ z-index:0;
+ pointer-events:none;
+ background-image:
   radial-gradient(ellipse at 52% 40%,rgba(10,110,128,.30),transparent 62%),
   linear-gradient(90deg,rgba(2,16,36,.64),rgba(2,18,38,.34) 34%,rgba(2,20,40,.16) 64%,rgba(2,16,36,.38)),
   linear-gradient(180deg,rgba(2,16,34,.44),rgba(2,22,40,.08) 38%,rgba(2,16,34,.48)),
-  url('/konto/tlo.webp') center top/cover no-repeat,
-  #05111d;
+  url('/konto/tlo.webp');
+ background-repeat:no-repeat;
+ background-position:center;
+ background-size:100% 100%,100% 100%,100% 100%,contain;
 }
+.top,.scene{position:relative;z-index:1}
 .scene{background:none}
-@media(max-width:779px){body{background-position:0 0,0 0,0 0,left top,0 0}}
+@media(min-width:780px) and (max-width:1180px){
+ body{--account-header-height:clamp(60px,8dvh,74px)}
+}
+@media(max-width:779px){
+ body{--account-header-height:67px}
+}
 .left{background:linear-gradient(180deg,rgba(2,11,20,.66) 0%,rgba(2,11,20,.66) 51%,rgba(2,11,20,.23) 72%,transparent 100%)}
 .left-copy{filter:drop-shadow(0 2px 2px #04101a)}
 .cards{display:none}
