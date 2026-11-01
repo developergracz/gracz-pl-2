@@ -875,9 +875,9 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
    painted controls in the exact R16 image; keep image, DOI and mobile untouched. */
 @media (min-width:961px) {
   body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
-    width:min(100%,1120px,max(320px,calc((100svh - 235px) * 1.77577)))!important;
+    width:min(100%,1120px)!important;
     max-width:1120px!important;
-    margin:20px auto 26px!important;
+    margin:10px auto 16px!important;
   }
   body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.news-form {
     top:39.20%!important;
