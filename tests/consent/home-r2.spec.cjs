@@ -455,6 +455,41 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
+test('R18 accepted newsletter artwork fits whole desktop viewport without clipping', async({browser})=>{
+ test.setTimeout(60000);
+ for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:900}]){
+  const context=await browser.newContext({viewport});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
+   const img=section.locator('> img.footer-news-full-art-r16');
+   const form=section.locator('form[data-newsletter]');
+   await section.scrollIntoViewIfNeeded();
+   await expect(img).toBeVisible();
+   await expect(form).toBeVisible();
+   const geo=await page.evaluate(()=>{
+    const section=document.querySelector('.site-footer .footer-news.footer-news--approved-r16');
+    const img=section.querySelector('.footer-news-full-art-r16');
+    const form=section.querySelector('form[data-newsletter]');
+    const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+    return {s:rect(section),art:rect(img),form:rect(form),overflow:document.documentElement.scrollWidth};
+   });
+   expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
+   expect(geo.s.width).toBeLessThanOrEqual(1121);
+   expect(geo.s.height,'entire scene must fit available browser height').toBeLessThanOrEqual(viewport.height-231);
+   expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
+   expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
+   expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
+   expect(geo.form.left).toBeGreaterThanOrEqual(geo.s.left-2);
+   expect(geo.form.right).toBeLessThanOrEqual(geo.s.right+2);
+   await expect(form.locator('input[type=email]')).toHaveCount(1);
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+  }finally{await context.close();}
+ }
+});
+
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
  ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-wide-approved-r10.avif'],

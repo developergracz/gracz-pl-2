@@ -51,7 +51,7 @@ jobs:
           import assert from 'node:assert/strict';
           const html=fs.readFileSync('maintenance-site/index.html','utf8');
           assert.equal(html.split('<h1 ').length-1,1,'One H1 only');
-          assert.ok(html.includes('home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-compact-r17'),'Verified homepage CSS bundle enabled');
+          assert.ok(html.includes('home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-viewport-r18'),'Verified homepage CSS bundle enabled');
           assert.ok(html.includes('gracz-hero-approved-r14.webp'),'Approved R14 hero image prioritized');
           assert.ok(html.includes('class="r4-shortcuts"'),'Five-item navigation present');
           assert.ok(html.includes('class="r4-games-grid"'),'Five card games present');
