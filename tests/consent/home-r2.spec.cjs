@@ -376,9 +376,12 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
    const form=page.locator('.site-footer form[data-newsletter]');
    await expect(form).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
-   const signup=page.locator('#gracz-next [data-modal="register"]');
+   const signup=page.locator('#gracz-next a.r4-btn-gold[href="https://gracz-contact-api.onrender.com/konto/"]');
+   await expect(signup).toBeVisible();
+   // Account navigation remains operational without homepage JavaScript.
+   await page.route('https://gracz-contact-api.onrender.com/konto/',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Konto gracz.pl</title><h1>Załóż konto w gracz.pl</h1>'}));
    await signup.click();
-   await expect(page.getByRole('dialog')).toBeVisible();
+   await expect(page).toHaveURL('https://gracz-contact-api.onrender.com/konto/');
   }finally{await context.close();}
  }
 });
