@@ -49,13 +49,32 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
 <div class="boardframe"><div class="board" id="board" role="grid" aria-label="Plansza Gomoku 15 na 15"></div></div>
 </div>
+<aside class="side-dock" aria-label="Historia ruchów i rozmowa">
+<section class="match-panel">
+<div class="dock-header"><span class="dock-eyebrow">CENTRUM PARTII</span><span class="dock-live" id="dock-status">● TRENING</span></div>
+<div class="dock-tabs" role="tablist" aria-label="Panel partii">
+<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">♟ Ruchy</button>
+<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">◉ Czat</button></div>
+<div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab">
+<div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
+<div id="moves-list" class="moves-list" aria-live="polite"><p class="dock-empty">Wybierz pole i rozpocznij partię.</p></div>
+<div class="history-footer" id="history-info">Zapis lokalny w treningu</div>
+</div>
+<div id="chat-panel" class="dock-content" role="tabpanel" aria-labelledby="chat-tab" hidden>
+<div class="dock-title"><strong>Czat przy stole</strong><span class="chat-lock">Prywatny</span></div>
+<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Czat jest dostępny podczas gry online ze znajomym.</p></div>
+<form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Napisz wiadomość do przeciwnika</label>
+<div class="chat-compose"><input id="chat-input" maxlength="600" type="text" autocomplete="off" placeholder="Napisz wiadomość…" disabled><button id="chat-send" type="submit" disabled aria-label="Wyślij wiadomość">➤</button></div></form>
+<p class="chat-footnote" id="chat-status">Wyłącznie uczestnicy tej partii · 600 znaków</p>
+</div>
+</section>
 <div class="game-tools" aria-label="Narzędzia gry">
 <button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> Cofnij ruch</button>
 <button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
 <button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
 <button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
 <button type="button" class="tool-btn" id="refresh-match" hidden><span aria-hidden="true">↻</span> Odśwież partię</button>
-</div></div>
+</div></aside></div>
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
@@ -137,13 +156,44 @@ select option{background:#102c34;color:#fff}
 @media(max-width:800px){.layout{height:auto;min-height:100dvh;display:block;overflow:visible}.sidebar{overflow:visible;min-height:auto;border-right:0;border-bottom:1px solid #b19b6c}.side-header{margin-bottom:12px}.branding{margin-bottom:10px}.side-header h1{font-size:30px}.premium-sub{margin:7px 0}.mode{grid-template-columns:1fr 1fr}.mode-choice{min-height:57px}.sidecard{margin-top:12px;padding-top:12px}.sidecard.rules{display:none}.side-links{margin-top:8px;padding-top:6px}.boardarea{min-height:0;padding:12px;gap:11px}.boardframe{width:min(100%,calc(100dvh - 210px),680px)}.arena{grid-template-columns:minmax(0,1fr) 115px}.players{min-height:50px}.player{min-height:53px}}
 @media(max-width:560px){.branding{gap:9px}.brand{font-size:23px}.side-header h1{font-size:27px}.lede{font-size:11px}.mode-choice{padding:9px;grid-template-columns:25px 1fr 10px;gap:5px}.mode-choice strong{font-size:13px}.mode-choice small{font-size:10px}.mode-icon{font-size:19px}.sidecard h2{font-size:16px}.sidecard p{font-size:11px}.players{grid-template-columns:minmax(0,1fr) 27px minmax(0,1fr);gap:5px}.player{min-height:46px;padding:5px 7px;gap:6px;border-radius:11px}.player .stone{width:24px;height:24px}.player strong{font-size:12px}.player small{font-size:9px}.versus{font-size:14px}.state{font-size:11px;min-height:36px}.arena{display:flex;flex-direction:column;gap:11px}.board-center{width:100%}.boardframe{width:100%;max-width:520px;border-width:2px;padding:6px}.game-tools{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tool-btn{min-height:40px;padding:7px;font-size:11px}.tool-btn span{font-size:20px}.bottom{gap:7px;flex-wrap:wrap}.info-pill{font-size:10px;padding:7px 10px}.help{order:3;width:100%;font-size:11px}.boardtop h2{font-size:10px}}
 @media(max-height:700px) and (min-width:801px){.layout{min-height:560px}.sidecard{margin-top:12px;padding-top:10px}.side-header{margin-bottom:12px}.branding{margin-bottom:10px}.side-header h1{font-size:31px}.premium-sub{margin:7px auto}.mode-choice{min-height:53px;padding:7px}.sidecard p{margin:6px 0}.boardframe{width:min(100%,calc(100dvh - 180px),650px)}.arena{gap:10px}.boardarea{gap:7px;padding:9px 15px}.players{min-height:53px}.player{min-height:51px}}
+
+/* Premium in-game dock: move list, private match chat, functional tools */
+.arena{grid-template-columns:minmax(0,1fr) clamp(236px,22vw,306px);gap:clamp(12px,1.5vw,23px)}
+.side-dock{display:flex;flex-direction:column;min-height:0;max-height:min(100%,calc(100dvh - 152px));gap:12px;align-self:stretch;justify-content:center}
+.match-panel{display:flex;flex-direction:column;min-height:220px;flex:1;max-height:520px;overflow:hidden;background:linear-gradient(150deg,#0c4244,#041e28 60%,#061b23);border:1px solid #c19a63;border-radius:16px;box-shadow:inset 0 1px #a9d6ca50,0 10px 24px #0006}
+.dock-header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:13px 14px 9px}.dock-eyebrow{font-size:10px;letter-spacing:1.3px;color:#f2d4a0;font-weight:900}.dock-live{font-size:10px;color:#86e8c9;font-weight:900}
+.dock-tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;margin:0 10px 8px;border:1px solid #3f6971;border-radius:11px;background:#021923;gap:3px}
+.dock-tab{padding:9px 3px;color:#aeced1;border:0;background:transparent;border-radius:8px;font-size:12px;font-weight:800}
+.dock-tab.active{color:#16292b;background:linear-gradient(160deg,#ffe6af,#cda15c);box-shadow:0 1px 7px #e3b76e50}
+.dock-content{display:flex;flex-direction:column;min-height:0;flex:1;padding:1px 13px 12px}
+.dock-title{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:4px 0 10px}.dock-title strong{font-size:12px}.dock-title>span{font-size:10px;color:#f4d594;border:1px solid #bd9567;border-radius:12px;padding:3px 8px}
+.moves-list,.chat-messages{min-height:110px;flex:1;overflow-y:auto;scrollbar-color:#76979b #0a2a32;scrollbar-width:thin;border-radius:10px;padding:2px 3px 4px}
+.dock-empty{font-size:12px;color:#a2bfc7;line-height:1.55;text-align:center;padding:25px 8px}
+.move-row{display:grid;grid-template-columns:25px minmax(0,1fr) auto;gap:9px;align-items:center;margin:5px 0;padding:9px 7px;border:1px solid #31565b;border-radius:9px;background:linear-gradient(90deg,#153b46,#072731)}
+.move-row.latest{border-color:#d8ae64;background:linear-gradient(90deg,#31534f,#102f34)}
+.move-number{font-size:10px;font-weight:900;color:#b5cbd0}.move-player{display:flex;gap:8px;align-items:center;min-width:0}.move-player strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mini-stone{width:17px;height:17px;border-radius:50%;box-shadow:inset -3px -3px 4px #0009,0 1px 4px #0008;flex:none}.mini-stone.p1{background:radial-gradient(circle at 25% 25%,#9ea8b0,#131b22 60%,#020205)}.mini-stone.p2{background:radial-gradient(circle at 25% 25%,white,#e8eff1 60%,#a2afb8)}
+.move-coordinate{font-size:12px;font-weight:900;color:#f3d292}
+.history-footer{font-size:10px;color:#b4ced0;padding:10px 2px 0;border-top:1px solid #325c60;margin-top:7px}
+.chat-messages{display:flex;flex-direction:column;gap:8px}
+.chat-bubble{max-width:92%;padding:9px 11px;align-self:flex-start;background:#183d48;border:1px solid #498188;border-radius:13px 13px 13px 4px;overflow-wrap:anywhere}
+.chat-bubble.own{align-self:flex-end;background:#54442a;border-color:#d0a866;border-radius:13px 13px 4px 13px}
+.chat-bubble strong{display:block;font-size:10px;color:#f2d39a;margin-bottom:5px}.chat-bubble p{margin:0;font-size:12px;line-height:1.45;white-space:pre-wrap;color:#f6fbfa}.chat-bubble time{display:block;margin-top:6px;text-align:right;color:#a9c3c4;font-size:9px}
+.chat-compose{display:flex;gap:6px;align-items:center;margin-top:9px}.chat-compose input{width:100%;min-width:0;height:39px;border:1px solid #4f838a;border-radius:9px;color:#ecf6f9;background:#041f2b;padding:8px;font:inherit;font-size:11px}.chat-compose button{border:1px solid #f6d995;border-radius:9px;background:linear-gradient(#ffe7ab,#d2a155);color:#142028;font-weight:950;padding:9px 11px}
+.chat-footnote{font-size:10px;color:#a8c7c6;margin:7px 0 0;line-height:1.4}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.side-dock .game-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:none}
+.side-dock .tool-btn{min-height:36px;padding:7px 8px;gap:5px;font-size:10px;border-radius:9px}.side-dock .tool-btn span{font-size:16px;min-width:18px}
+@media(max-width:1150px) and (min-width:801px){.arena{grid-template-columns:minmax(0,1fr) 222px;gap:10px}.side-dock{max-height:calc(100dvh - 145px)}.dock-header{padding:9px}.dock-content{padding:0 8px 8px}.move-row{gap:5px;padding:8px 5px}.side-dock .tool-btn{font-size:9px}.boardframe{width:min(100%,calc(100dvh - 222px))}}
+@media(max-width:800px){.arena{display:flex;flex-direction:column}.side-dock{width:100%;max-height:none;flex-direction:column}.match-panel{max-height:none;min-height:290px;height:340px;flex:none}.moves-list,.chat-messages{max-height:214px}.side-dock .game-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.side-dock{width:100%;max-height:none}.match-panel{height:320px}.dock-tab{font-size:12px}.move-row{grid-template-columns:25px 1fr auto}.boardframe{max-width:520px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
- thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1};
+ thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:''};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -200,6 +250,9 @@ function render(){
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
  $('game-state').textContent=describe();
+ renderMoveHistory();
+ $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
+ $('history-info').textContent=online?'Ruchy potwierdzane na serwerze':'Zapis lokalny w treningu';
  $('undo-move').disabled=online||state.snapshots.length===0;
  $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
@@ -213,7 +266,7 @@ function render(){
 }
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
- state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;
+ state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
  $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
@@ -361,9 +414,10 @@ function cpuMove(board,level='expert'){
 }
 function trainMove(to){
  if(state.thinking||state.winner||state.board[to])return;
- state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last});
+ state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last,history:state.trainHistory.slice()});
  state.suggestion=-1;$('analysis-note').hidden=true;
  state.board[to]=1;state.last=to;state.moves++;
+ state.trainHistory.push({player:1,to,number:state.moves});
  if(victory(state.board,to,1))state.winner=1;
  else if(state.moves===count)state.winner=3;
  else state.thinking=true;
@@ -375,6 +429,7 @@ function trainMove(to){
   const at=cpuMove(state.board,$('ai-level').value);
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
+  state.trainHistory.push({player:2,to:at,number:state.moves});
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
   state.thinking=false;render();
@@ -433,6 +488,7 @@ async function loadMatch(id){
   if(epoch!==state.epoch||state.mode!=='online')return;
   if(result.match?.game!=='gomoku')throw new Error('Ten pokój nie jest partią Gomoku.');
   state.matchId=id;state.match=result.match;
+  state.chatSignature='';void refreshRoomChat();
   $('room-select').value=id;
   history.replaceState(null,'','/konto/gomoku/?match='+encodeURIComponent(id));
   note('Połączono z pokojem. Ruchy są zatwierdzane przez serwer.');
@@ -465,11 +521,140 @@ async function play(to){
  if(state.mode==='training')trainMove(to);
  else await onlineMove(to);
 }
+
+function notation(to){
+ const row=Math.floor(to/15),col=to%15;
+ return String.fromCharCode(65+col)+(row+1);
+}
+function renderMoveHistory(){
+ const online=state.mode==='online',m=state.match;
+ const entries=online?(Array.isArray(m?.state?.history)?m.state.history:[]):state.trainHistory;
+ const list=$('moves-list');
+ const lastSeen=list.dataset?.signature;
+ const signature=(online?(m?.id||'none')+':':'training:')+
+  entries.map(item=>item.number+':'+item.player+':'+item.to).join(',');
+ if(signature===lastSeen)return;
+ if(list.dataset)list.dataset.signature=signature;
+ list.replaceChildren();
+ $('history-count').textContent=String(entries.length);
+ if(!entries.length){
+  const empty=document.createElement('p');empty.className='dock-empty';
+  empty.textContent=online&&m?.state?.moves>0?
+   'Starsze ruchy tej partii nie były jeszcze rejestrowane. Nowe ruchy pojawią się tutaj.':
+   online?'Wybierz pokój i rozpocznij partię.':'Wybierz pole i rozpocznij partię.';
+  list.append(empty);return;
+ }
+ entries.forEach((entry,i)=>{
+  if(!Number.isInteger(entry.to)||entry.to<0||entry.to>=225||
+     ![1,2].includes(entry.player))return;
+  const row=document.createElement('div');
+  row.className='move-row'+(i===entries.length-1?' latest':'');
+  const number=document.createElement('span');number.className='move-number';
+  number.textContent=String(entry.number||i+1).padStart(2,'0');
+  const player=document.createElement('span');player.className='move-player';
+  const stone=document.createElement('i');stone.className='mini-stone p'+entry.player;
+  stone.setAttribute('aria-hidden','true');
+  const nick=document.createElement('strong');
+  nick.textContent=online?(m?.players?.[entry.player-1]||'Gracz'):
+    entry.player===1?'Ty':'Komputer';
+  player.append(stone,nick);
+  const move=document.createElement('strong');move.className='move-coordinate';
+  move.textContent=notation(entry.to);
+  row.append(number,player,move);list.append(row);
+ });
+ list.scrollTop=list.scrollHeight;
+}
+function setDockTab(tab){
+ state.dockTab=tab;
+ const moves=tab==='moves';
+ $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
+ $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
+ $('history-tab').setAttribute('aria-selected',String(moves));
+ $('chat-tab').setAttribute('aria-selected',String(!moves));
+ if(!moves)void refreshRoomChat();
+}
+function showChatNotice(text){
+ const box=$('chat-messages');box.replaceChildren();
+ const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
+ $('chat-status').textContent='Wyłącznie uczestnicy tej partii · 600 znaków';
+}
+function drawRoomChat(messages){
+ const signature=(state.matchId||'')+':'+messages.map(x=>x.id).join(',');
+ if(signature===state.chatSignature)return;
+ state.chatSignature=signature;
+ const box=$('chat-messages');box.replaceChildren();
+ if(!messages.length){
+  const p=document.createElement('p');p.className='dock-empty';
+  p.textContent='Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.';
+  box.append(p);return;
+ }
+ messages.forEach(message=>{
+  const mine=message.player===state.match?.player;
+  const bubble=document.createElement('div');bubble.className='chat-bubble'+(mine?' own':'');
+  const title=document.createElement('strong');
+  title.textContent=mine?'Ty':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  const text=document.createElement('p');text.textContent=message.body;
+  const time=document.createElement('time');
+  const date=new Date(message.createdAt);
+  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  bubble.append(title,text,time);box.append(bubble);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+async function refreshRoomChat(){
+ if(state.mode!=='online'||!state.matchId||!state.match){
+  $('chat-input').disabled=true;$('chat-send').disabled=true;
+  if(state.mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+  else showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć rozmowę.');
+  return;
+ }
+ if(state.chatBusy)return;
+ state.chatBusy=true;
+ const id=state.matchId,epoch=state.epoch;
+ try{
+  const result=await api('match/chat?id='+encodeURIComponent(id));
+  if(epoch!==state.epoch||state.matchId!==id)return;
+  $('chat-input').disabled=false;$('chat-send').disabled=false;
+  drawRoomChat(result.messages);
+  $('chat-status').textContent='Prywatny czat partii · ostatnie 60 wiadomości';
+ }catch(error){
+  if(epoch!==state.epoch)return;
+  $('chat-input').disabled=true;$('chat-send').disabled=true;
+  $('chat-status').textContent=error.message;
+ }finally{state.chatBusy=false;}
+}
+$('history-tab').addEventListener('click',()=>setDockTab('moves'));
+$('chat-tab').addEventListener('click',()=>setDockTab('chat'));
+$('chat-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(state.mode!=='online'||!state.matchId||state.chatBusy)return;
+ const message=$('chat-input').value.trim();
+ if(!message||message.length>600){
+  $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
+ }
+ const id=state.matchId,epoch=state.epoch;
+ $('chat-send').disabled=true;
+ try{
+  await api('match/chat',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id,message})});
+  if(epoch!==state.epoch||state.matchId!==id)return;
+  $('chat-input').value='';
+  state.chatSignature='';
+  await refreshRoomChat();
+ }catch(error){$('chat-status').textContent=error.message;}
+ finally{if(epoch===state.epoch&&state.matchId===id)$('chat-send').disabled=false;}
+});
+window.setInterval(()=>{
+ if(state.mode==='online'&&state.matchId&&document.visibilityState==='visible')void refreshRoomChat();
+},8000);
+
 function undoTrainingMove(){
  if(state.mode!=='training'||!state.snapshots.length)return;
  ++state.epoch;state.thinking=false;
  const previous=state.snapshots.pop();
  state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
+ state.trainHistory=previous.history;
  state.suggestion=-1;$('analysis-note').hidden=true;render();
 }
 function analyzeTrainingPosition(){
@@ -503,6 +688,9 @@ async function toggleFullscreen(){
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.chatSignature='';setDockTab('moves');
+ $('chat-input').disabled=true;$('chat-send').disabled=true;
+ if(mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
  state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
@@ -537,6 +725,7 @@ window.setInterval(()=>{
   void refreshOnline();
 },4000);
 render();
+showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;

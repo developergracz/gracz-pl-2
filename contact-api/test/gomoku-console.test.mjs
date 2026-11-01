@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-form','chat-input','chat-send'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -37,6 +37,9 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.boardframe\{[^}]*background:linear-gradient/);
  assert.match(css,/@media\(max-width:800px\)/);
  assert.match(css,/\.tool-btn/);
+ assert.match(css,/\.side-dock/);
+ assert.match(css,/\.move-row/);
+ assert.match(css,/\.chat-bubble/);
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
@@ -68,6 +71,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
   ]})};
   if(path==='/auth/match?id='+encodeURIComponent(matchId))return {ok:true,status:200,
    json:async()=>({ok:true,match})};
+  if(path==='/auth/match/chat?id='+matchId)return {ok:true,status:200,json:async()=>({ok:true,messages:[]})};
   if(path==='/auth/match'&&options.method==='POST'){
    const sent=JSON.parse(options.body);
    assert.equal(sent.version,0);assert.equal(sent.id,matchId);
@@ -91,6 +95,9 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(queued.length,1);queued.pop()();
  assert.equal(get('move-count').textContent,'Ruchy: 2');
  assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
+ assert.equal(get('moves-list').children.length,2,'History includes player and AI response');
+ assert.equal(get('history-count').textContent,'2');
+ assert.equal(get('moves-list').children[0].children[2].textContent,'H8');
  assert.equal(get('undo-move').disabled,false);
  get('analyze-position').listeners.click();
  assert.equal(get('analysis-note').hidden,false);
@@ -101,6 +108,13 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('move-count').textContent,'Ruchy: 0');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
  assert.equal(get('undo-move').disabled,true);
+ assert.equal(get('moves-list').children[0].textContent,'Wybierz pole i rozpocznij partię.');
+ get('chat-tab').listeners.click();
+ assert.equal(get('chat-panel').hidden,false);
+ assert.equal(get('moves-panel').hidden,true);
+ assert.equal(get('chat-input').disabled,true);
+ get('history-tab').listeners.click();
+ assert.equal(get('chat-panel').hidden,true);
  get('online-mode').listeners.click();
  assert.equal(get('undo-move').disabled,true);
  assert.equal(get('analyze-position').disabled,true);
@@ -112,6 +126,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children.length,225);
  assert.equal(get('black-name').textContent,'GraczAlfa');
  assert.equal(get('room-tag').textContent,'POKÓJ ONLINE');
+ assert.equal(get('chat-input').disabled,false);
  get('board').children[44].listeners.click();
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('board').children[44].classes.has('p1'),true);

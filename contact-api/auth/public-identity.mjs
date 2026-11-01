@@ -126,6 +126,13 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
        state jsonb NOT NULL, version integer NOT NULL DEFAULT 0,
        created_at timestamptz NOT NULL DEFAULT now(),
        updated_at timestamptz NOT NULL DEFAULT now())`);
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_match_messages (
+       id uuid PRIMARY KEY,
+       match_id uuid NOT NULL REFERENCES gracz_public_identity.game_matches(challenge_id) ON DELETE CASCADE,
+       sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 600),
+       created_at timestamptz NOT NULL DEFAULT now())`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_match_messages_recent ON gracz_public_identity.game_match_messages(match_id,created_at DESC,id DESC)');
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
@@ -262,7 +269,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
 
  
 
-  if(url.pathname==='/auth/match'){
+  if(url.pathname==='/auth/match' || url.pathname==='/auth/match/chat'){
+    const isChat=url.pathname==='/auth/match/chat';
     if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
     if(req.method==='POST'&&!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
     try{
@@ -274,7 +282,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
         WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
       if(!authenticated.rows.length)return bad(res,401,'BRAK_SESJI'),true;
       const actor=authenticated.rows[0].id;
-      if(!allow('game-'+req.method+':'+actor,req.method==='GET'?240:80))
+      if(!allow((isChat?'match-chat-':'game-')+req.method+':'+actor,
+        isChat?(req.method==='GET'?180:40):(req.method==='GET'?240:80)))
         return bad(res,429,'ZBYT_WIELE_PROB'),true;
       let body={};if(req.method==='POST'){
         try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
@@ -308,12 +317,45 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       if(!current.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
       let match=current.rows[0];
       const player=match.sender_id===actor?1:2;
+      if(isChat){
+        if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        if(match.game!=='gomoku')return bad(res,400,'CZAT_GOMOKU'),true;
+        if(req.method==='GET'){
+          const messages=await database.query(`SELECT id,sender_id,body,created_at FROM (
+            SELECT id,sender_id,body,created_at
+            FROM gracz_public_identity.game_match_messages
+            WHERE match_id=$1 ORDER BY created_at DESC,id DESC LIMIT 60
+          ) recent ORDER BY created_at,id`,[matchId]);
+          return json(res,200,{ok:true,messages:messages.rows.map(row=>({
+            id:row.id,player:row.sender_id===match.sender_id?1:2,
+            body:row.body,createdAt:row.created_at
+          }))}),true;
+        }
+        const message=typeof body.message==='string'?body.message.trim():'';
+        if(message.length<1||message.length>600||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(message))
+          return bad(res,400,'POPRAW_WIADOMOSC'),true;
+        const sent=await database.query(`INSERT INTO gracz_public_identity.game_match_messages
+          (id,match_id,sender_id,body)
+          SELECT $1,c.id,$2,$3 FROM gracz_public_identity.game_challenges c
+          WHERE c.id=$4 AND c.status='accepted'
+          AND ($2=c.sender_id OR $2=c.recipient_id)
+          AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+             WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+             OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
+          RETURNING id,created_at`,[randomUUID(),actor,message,matchId]);
+        if(!sent.rowCount)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        return json(res,200,{ok:true,message:{id:sent.rows[0].id,createdAt:sent.rows[0].created_at}}),true;
+      }
       if(req.method==='POST'){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
         if(!Number.isInteger(body.version)||body.version!==match.version)
           return bad(res,409,'ODSWIEZ_PARTIE'),true;
         const result=playMove(match.game,match.state,player,body.move);
         if(result.error)return bad(res,409,result.error),true;
+        if(match.game==='gomoku'){
+          const previous=Array.isArray(match.state.history)?match.state.history.slice(-224):[];
+          result.state.history=[...previous,{player,to:body.move.to,number:result.state.moves}];
+        }
         const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
           FROM gracz_public_identity.game_challenges c
