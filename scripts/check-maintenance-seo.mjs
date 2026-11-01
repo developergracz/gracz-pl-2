@@ -88,7 +88,7 @@ for (const page of sharedHeaderPages) {
   const html = read(page);
   const expectedHeaderVersion = page === "index.html" ? "r6" : "r3";
   requireCheck(
-    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fullwidth-r27"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
+    (page === "index.html" ? html.includes('href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fit-r29"') : html.includes(`href="/assets/global-header-r1.css?v=${expectedHeaderVersion}"`)),
     `${page}: canonical global header stylesheet missing`
   );
   requireCheck(
@@ -368,7 +368,7 @@ requireCheck(legalJs.includes('/assets/account-access-premium.css?v=r3'), "owner
 requireCheck(legalJs.includes('Napisz e-mail do gracz.pl'), "owner email premium CTA missing");
 requireCheck(regulation.includes('href="mailto:czsocha@wp.pl"'), "regulation: owner email mailto missing");
 requireCheck(privacy.includes('href="mailto:czsocha@wp.pl"'), "privacy: owner email mailto missing");
-requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r28-opaque-email-input-20261101"), "live footer newsletter R5 Premium input stylesheet loader missing");
+requireCheck(legalLinksJs.includes("footer-newsletter.css?v=r29-premium-email-field-20261101"), "live footer newsletter R5 Premium input stylesheet loader missing");
 requireCheck(legalLinksJs.includes("/newsletter/subscribe"), "live footer newsletter API handler missing");
 requireCheck(legalLinksJs.includes("data-footer-newsletter-consent"), "live footer newsletter consent UI missing");
 requireCheck(legalLinksJs.includes("newsletter-success-modal"), "premium newsletter success modal missing");
