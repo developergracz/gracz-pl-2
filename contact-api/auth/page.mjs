@@ -8,18 +8,18 @@ const headers={
   'Cache-Control':'no-store','X-Frame-Options':'DENY'
 };
 const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Załóż konto lub zaloguj się — gracz.pl</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="/konto/styl.css"><script src="/konto/app.js" defer></script></head><body>
-<header class="top"><a class="brand" href="https://gracz.pl/">gracz<span>.pl</span></a><nav aria-label="Nawigacja"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/">Forum</a><a href="https://gracz.pl/">Aktualności</a><a href="https://gracz.pl/#spolecznosc">Społeczność</a><a href="https://gracz.pl/#gracz-next">Gracz Next</a></nav><span class="nav-icons" aria-hidden="true">⌕　☼</span><div class="actions"><button type="button" data-view="login" class="top-login">Zaloguj się</button><button type="button" data-view="register" class="top-register">♙ Zarejestruj się</button></div></header>
+<header class="top"><a class="brand" href="https://gracz.pl/">gracz<span>.pl</span></a><nav aria-label="Nawigacja"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/">Forum</a><a href="https://gracz.pl/">Aktualności</a><a href="https://gracz.pl/#spolecznosc">Społeczność</a><a href="https://gracz.pl/#gracz-next">Gracz Next</a></nav><span class="nav-icons" aria-hidden="true">⌕　☼</span><div class="actions"><button type="button" data-view="login" class="top-login">Zaloguj się</button><a href="/konto/" data-view="register" class="top-register">♙ Zarejestruj się</a></div></header>
 <main class="scene">
 <aside class="left"><div class="left-copy"><em>Dołącz do społeczności</em><div class="hero-brand">gracz<span>.pl</span></div><div class="eyebrow">POLSKIE CENTRUM GRACZA</div><ul class="benefits"><li><b>♟</b><span><strong>Graj online</strong><small>Warcaby, Szachy, Tysiąc, Poker i inne gry</small></span></li><li><b>♧</b><span><strong>Ucz się i rozwijaj</strong><small>Poradniki, strategie, analizy</small></span></li><li><b>🏆</b><span><strong>Rywalizuj</strong><small>Turnieje, rankingi, kluby graczy</small></span></li><li><b>♧</b><span><strong>Twórz społeczność</strong><small>Forum, znajomi, wspólne pasje</small></span></li></ul></div><div class="cards" aria-hidden="true"><div class="stack">♠<br><span>gracz.pl</span></div><div class="chip">gracz<span>.pl</span></div></div></aside>
 <section class="panel" aria-label="Panel konta gracza"><div class="panel-heading"><div class="round"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="8" fill="currentColor"/><path d="M9 37c0-8 5-14 15-14s15 6 15 14v2H9z" fill="currentColor"/></svg></div><div><h1 id="page-title">Załóż konto w <span class="form-logo">gracz<span>.pl</span></span></h1><p>Graj, ucz się, rywalizuj – w jednym miejscu.</p></div></div>
 <div id="notice" role="status" aria-live="polite"></div>
-<form id="register-form" autocomplete="on"><label for="nickname">Nick gracza</label><div class="field nickname-field"><span class="field-icon" aria-hidden="true">♧</span><input name="nickname" id="nickname" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required placeholder="Wpisz swój nick" autocomplete="username"><output id="nick-status" aria-live="polite"></output></div><p class="hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – .</p>
+<form id="register-form" autocomplete="on" novalidate><label for="nickname">Nick gracza</label><div class="field nickname-field"><span class="field-icon" aria-hidden="true">♧</span><input name="nickname" id="nickname" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required placeholder="Wpisz swój nick" autocomplete="username"><output id="nick-status" aria-live="polite"></output></div><p class="hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – .</p>
 <label for="email">Adres e-mail</label><div class="field"><span class="field-icon">✉</span><input name="email" id="email" maxlength="254" required type="email" placeholder="Wpisz swój adres e-mail" autocomplete="email"></div>
-<label for="password">Hasło</label><div class="field"><span class="field-icon">♙</span><input name="password" id="password" minlength="15" maxlength="256" required type="password" placeholder="Utwórz hasło" autocomplete="new-password"><button class="eye" type="button" data-show="password" aria-label="Pokaż hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div><p class="hint">Co najmniej 15 znaków — najlepiej długa, unikalna fraza.</p>
+<label for="password">Hasło</label><div class="field"><span class="field-icon">♙</span><input name="password" id="password" minlength="15" maxlength="256" required type="password" placeholder="Utwórz hasło" autocomplete="new-password" aria-describedby="password-feedback"><button class="eye" type="button" data-show="password" aria-label="Pokaż hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><div id="password-feedback" class="premium-feedback" role="alert" aria-live="polite" hidden><span class="premium-feedback-icon" aria-hidden="true">!</span><span id="password-feedback-text"></span></div></div><p class="hint">Co najmniej 15 znaków — najlepiej długa, unikalna fraza.</p>
 <label for="repeatPassword">Powtórz hasło</label><div class="field"><span class="field-icon">♙</span><input name="repeatPassword" id="repeatPassword" minlength="15" maxlength="256" required type="password" placeholder="Wpisz ponownie hasło" autocomplete="new-password"><button class="eye" type="button" data-show="repeatPassword" aria-label="Pokaż powtórzone hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>
 <div class="checks"><label><input name="terms" type="checkbox" required>Akceptuję <a href="https://gracz.pl/regulamin/" target="_blank" rel="noopener">Regulamin serwisu gracz.pl</a></label><label><input name="privacy" type="checkbox" required>Akceptuję <a href="https://gracz.pl/polityka-prywatnosci/" target="_blank" rel="noopener">Politykę prywatności</a></label><label class="muted"><input type="checkbox" disabled>Chcę otrzymywać newsletter <small>(dostępne wkrótce)</small></label></div>
 <button class="submit" type="submit">♙　 Zarejestruj się　 →</button><p class="oauth-separator">lub zarejestruj się przez</p><div class="oauth-buttons"><button disabled title="Rejestracja Google nie jest jeszcze dostępna"><span class="google-logo">G</span> Google</button><button disabled title="Rejestracja Microsoft nie jest jeszcze dostępna"><span class="microsoft-logo">▦</span> Microsoft</button><button disabled title="Rejestracja Discord nie jest jeszcze dostępna"><span class="discord-logo">●</span> Discord</button></div><p class="switch">Masz już konto? <button type="button" data-view="login">Zaloguj się</button></p></form>
-<form id="login-form" hidden><label for="login">E-mail lub nick gracza</label><div class="field"><span class="field-icon">✉</span><input id="login" name="login" autocomplete="username" placeholder="Wpisz e-mail lub nick" required></div><label for="loginPassword">Hasło</label><div class="field"><span class="field-icon">♙</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Wpisz hasło"><button class="eye" type="button" data-show="loginPassword" aria-label="Pokaż hasło">◉</button></div><button class="submit" type="submit">Zaloguj się →</button><p class="switch">Nie masz konta? <button type="button" data-view="register">Zarejestruj się</button></p></form>
+<form id="login-form" hidden novalidate><label for="login">E-mail lub nick gracza</label><div class="field"><span class="field-icon">✉</span><input id="login" name="login" autocomplete="username" placeholder="Wpisz e-mail lub nick" required></div><label for="loginPassword">Hasło</label><div class="field"><span class="field-icon">♙</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Wpisz hasło"><button class="eye" type="button" data-show="loginPassword" aria-label="Pokaż hasło">◉</button></div><button class="submit" type="submit">Zaloguj się →</button><p class="switch">Nie masz konta? <button type="button" data-view="register">Zarejestruj się</button></p></form>
 <section id="account" hidden><h2>Twoje konto</h2><p>Zalogowano jako <strong id="user-nick"></strong></p><button id="logout" class="submit">Wyloguj się</button></section>
 <section id="verified" hidden><h2>Potwierdzenie adresu e-mail</h2><p>Twoje konto jest gotowe. Możesz się zalogować.</p><button type="button" class="submit" data-view="login">Przejdź do logowania</button></section>
 <div class="oauth-note">Bezpieczne konta przez e-mail. Logowania Google, Microsoft i Discord zostaną udostępnione po konfiguracji dostawców.</div></section>
@@ -114,6 +114,97 @@ footer{display:none}
  .right{display:none}
  .panel{background:#041727fa}
 }
+
+.actions a.top-register{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap;background:transparent}
+/* Desktop stage fits the real browser viewport, not a fixed 1024px mockup. */
+@media (min-width:1181px) {
+  .top {height:clamp(57px,8dvh,74px);padding-inline:clamp(16px,4vw,96px);gap:clamp(10px,2.7vw,47px)}
+  .top nav{gap:clamp(10px,1.85vw,29px)}
+  .scene{
+    height:calc(100dvh - clamp(57px,8dvh,74px));
+    min-height:0;
+    padding:clamp(8px,1.3dvh,15px) 0 0;
+    overflow:hidden;
+    grid-template-columns:minmax(0,39.7fr) minmax(0,39.4fr) minmax(0,20.9fr);
+    background-size:cover;
+    background-position:center center;
+  }
+  .left{height:100%;min-height:0;padding:clamp(10px,3dvh,34px) 20px 14px clamp(14px,6vw,96px)}
+  .left-copy em{font-size:clamp(22px,2.5vw,37px)}
+  .hero-brand{font-size:clamp(44px,4.85vw,74px)}
+  .eyebrow{font-size:clamp(13px,1.25vw,20px);margin:clamp(5px,1dvh,11px) 0 clamp(8px,2dvh,19px)}
+  .benefits{gap:clamp(6px,1.4dvh,13px)}
+  .benefits b{width:clamp(38px,4.6dvh,52px);height:clamp(38px,4.6dvh,52px);flex-basis:clamp(38px,4.6dvh,52px);font-size:clamp(20px,2.9dvh,27px)}
+  .benefits strong{font-size:clamp(12px,1vw,15px)}
+  .benefits small{font-size:clamp(11px,.84vw,13px)}
+  .panel{
+    height:auto;min-height:0;max-height:100%;
+    padding:clamp(10px,1.5dvh,20px) clamp(14px,2vw,30px);
+    overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ad7c3f transparent;
+  }
+  .panel-heading{margin-bottom:clamp(5px,1dvh,10px);gap:clamp(10px,1.5vw,22px)}
+  .panel-heading .round{width:clamp(40px,5.4dvh,60px);height:clamp(40px,5.4dvh,60px)}
+  .round svg{width:clamp(28px,3.6dvh,38px);height:clamp(28px,3.6dvh,38px)}
+  .panel h1{font-size:clamp(23px,2vw,33px)}
+  .panel-heading p{font-size:clamp(12px,1.05vw,15px)}
+  .panel form>label{margin:clamp(6px,1.3dvh,12px) 0 4px 58px;font-size:clamp(12px,1vw,14px)}
+  .field{margin-left:58px}
+  .field-icon{left:-57px;top:-2px;width:clamp(36px,4.7dvh,49px);height:clamp(36px,4.7dvh,49px);font-size:clamp(19px,2.5dvh,24px)}
+  .field input{height:clamp(36px,4.8dvh,45px);font-size:14px}
+  #nick-status{height:clamp(36px,4.8dvh,45px)}
+  .hint{margin:clamp(3px,.7dvh,6px) 0 2px 58px;font-size:clamp(11px,.85vw,12px)}
+  .checks{margin:clamp(8px,1.45dvh,14px) 0;gap:clamp(4px,.9dvh,8px)}
+  .checks label{font-size:clamp(11px,.95vw,13px)}
+  .checks input{width:clamp(18px,2.65dvh,23px);height:clamp(18px,2.65dvh,23px)}
+  .submit{height:clamp(42px,5.5dvh,53px);font-size:clamp(16px,1.3vw,19px)}
+  .oauth-separator{margin:clamp(7px,1.2dvh,12px) 0 clamp(5px,.8dvh,8px);font-size:12px}
+  .oauth-buttons{gap:8px}
+  .oauth-buttons button{height:clamp(35px,4.5dvh,44px);font-size:13px}
+  .switch{margin:clamp(8px,1.4dvh,14px) 0 2px;font-size:13px}
+  .right{height:100%;min-height:0;padding:clamp(30px,10dvh,86px) clamp(10px,2vw,30px) 0 clamp(8px,1vw,14px)}
+  .right .info{min-height:0;padding:clamp(10px,1.5dvh,16px) 10px}
+  .right .info:nth-child(2){min-height:0}
+  .right .info p{margin:clamp(5px,1dvh,10px) 0}
+  .right .avatars{height:clamp(45px,7dvh,72px)}
+}
+@media (min-width:1181px) and (max-height:690px) {
+ .panel{padding:7px 16px}
+ .panel-heading{margin-bottom:1px}
+ .panel form>label{margin-top:4px}
+ .checks{margin:6px 0;gap:3px}
+ .hint{margin-top:2px}
+ .right{padding-top:20px}
+}
+
+/* Keep feedback legible if the user zooms or rotates the device. */
+.premium-feedback{box-sizing:border-box}
+#notice:not(:empty){background:linear-gradient(125deg,#263445,#091b2b);color:#ffdfa6;border:1px solid #e2ab52;border-radius:9px;box-shadow:0 6px 20px #0007}
+/* Replace Chrome's native validation bubble with an accessible premium popover. */
+.field input[aria-invalid="true"]{border-color:#f4bd6b;box-shadow:0 0 0 1px #e2a73d,0 0 14px #e1ab3833;outline:0}
+.premium-feedback{
+ position:absolute;z-index:10;left:2px;right:0;top:calc(100% + 8px);
+ display:flex;align-items:flex-start;gap:11px;
+ max-width:100%;padding:12px 15px;border:1px solid #e4ac50;
+ border-radius:11px;background:linear-gradient(125deg,#142d3e,#071725);
+ color:#ffe5b0;font-size:13px;font-weight:600;line-height:1.4;
+ box-shadow:0 12px 30px #000c,0 0 16px #e4ab3455;
+}
+.premium-feedback[hidden]{display:none!important}
+.premium-feedback::before{
+ content:"";position:absolute;top:-7px;left:27px;width:12px;height:12px;
+ background:#132b3b;border-top:1px solid #e4ac50;border-left:1px solid #e4ac50;transform:rotate(45deg)
+}
+.premium-feedback-icon{
+ display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;
+ border-radius:6px;background:#ffc36c;color:#2a1a05;font-size:16px;font-weight:900
+}
+@media (max-width:1180px) {
+ .scene{min-height:0}
+ .panel{min-height:0}
+}
+@media (max-width:779px){
+ .premium-feedback{font-size:12px;padding:10px 12px;right:0;left:0}
+}
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
@@ -138,12 +229,60 @@ nickInput.addEventListener('input',()=>{
  },400);
 });
 
+
+const passwordField=document.getElementById('password');
+const repeatField=document.getElementById('repeatPassword');
+const passwordFeedback=document.getElementById('password-feedback');
+const passwordFeedbackText=document.getElementById('password-feedback-text');
+function showPasswordFeedback(){
+ const count=passwordField.value.length;
+ passwordFeedbackText.textContent='Hasło musi mieć co najmniej 15 znaków. Wpisano '+count+'.';
+ passwordField.setAttribute('aria-invalid','true');
+ passwordFeedback.hidden=false;
+}
+function hidePasswordFeedback(){
+ passwordFeedback.hidden=true;
+ passwordField.removeAttribute('aria-invalid');
+}
+passwordField.addEventListener('input',()=>{
+ if(passwordField.value.length>=15 || passwordField.value.length===0)hidePasswordFeedback();
+ else if(!passwordFeedback.hidden)showPasswordFeedback();
+});
+passwordField.addEventListener('blur',()=>{
+ if(passwordField.value.length>0 && passwordField.value.length<15)showPasswordFeedback();
+});
+function invalid(input,message){
+ msg(message);
+ input.setAttribute('aria-invalid','true');
+ input.focus();
+ return false;
+}
+form.querySelectorAll('input').forEach(input=>{
+ input.addEventListener('input',()=>{if(input!==passwordField)input.removeAttribute('aria-invalid');});
+ input.addEventListener('change',()=>input.removeAttribute('aria-invalid'));
+});
+function validateRegistration(){
+ const nick=nickInput.value.trim(),email=document.getElementById('email');
+ if(!/^[a-z][a-z0-9._-]{2,31}$/i.test(nick))return invalid(nickInput,'Nick musi mieć 3–32 znaki, zaczynać się literą i zawierać tylko litery, cyfry, kropki, podkreślenia lub łączniki.');
+ if(nickStatus.dataset.state==='taken')return invalid(nickInput,'Ten nick jest zajęty. Wybierz inny.');
+ if(!email.checkValidity())return invalid(email,'Wpisz poprawny adres e-mail.');
+ if(passwordField.value.length<15){showPasswordFeedback();passwordField.focus();return false;}
+ if(new TextEncoder().encode(passwordField.value).length>256)return invalid(passwordField,'Hasło jest za długie. Maksymalnie 256 bajtów.');
+ hidePasswordFeedback();
+ if(repeatField.value!==passwordField.value)return invalid(repeatField,'Hasła nie są takie same.');
+ const terms=form.elements.namedItem('terms');
+ const privacy=form.elements.namedItem('privacy');
+ if(!terms.checked)return invalid(terms,'Zaakceptuj regulamin serwisu.');
+ if(!privacy.checked)return invalid(privacy,'Zaakceptuj politykę prywatności.');
+ msg('');
+ return true;
+}
 function view(name){form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');}
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
-document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>view(button.dataset.view)));
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
-form.addEventListener('submit',async e=>{e.preventDefault();const btn=form.querySelector('[type=submit]');const d=new FormData(form);if(d.get('password')!==d.get('repeatPassword')){msg('Hasła nie są takie same.');return;}btn.disabled=true;try{const b=await api('register',{nickname:d.get('nickname'),email:d.get('email'),password:d.get('password'),repeatPassword:d.get('repeatPassword'),terms:d.get('terms')==='on',privacy:d.get('privacy')==='on'});form.reset();msg(b.message);}catch(err){msg(err.message);}finally{btn.disabled=false;}});
-login.addEventListener('submit',async e=>{e.preventDefault();const btn=login.querySelector('[type=submit]'),d=new FormData(login);btn.disabled=true;try{const b=await api('login',{login:d.get('login'),password:d.get('password')});login.reset();document.getElementById('user-nick').textContent=b.nickname;view('account');}catch(err){msg(err.message);}finally{btn.disabled=false;}});
+form.addEventListener('submit',async e=>{e.preventDefault();if(!validateRegistration())return;const btn=form.querySelector('[type=submit]');const d=new FormData(form);btn.disabled=true;try{const b=await api('register',{nickname:d.get('nickname'),email:d.get('email'),password:d.get('password'),repeatPassword:d.get('repeatPassword'),terms:d.get('terms')==='on',privacy:d.get('privacy')==='on'});form.reset();hidePasswordFeedback();msg(b.message);}catch(err){msg(err.message);}finally{btn.disabled=false;}});
+login.addEventListener('submit',async e=>{e.preventDefault();const loginName=login.elements.namedItem('login'),loginPass=login.elements.namedItem('password');if(!loginName.value.trim())return invalid(loginName,'Wpisz e-mail lub nick gracza.');if(!loginPass.value)return invalid(loginPass,'Wpisz hasło.');const btn=login.querySelector('[type=submit]'),d=new FormData(login);btn.disabled=true;try{const b=await api('login',{login:d.get('login'),password:d.get('password')});login.reset();document.getElementById('user-nick').textContent=b.nickname;view('account');}catch(err){msg(err.message);}finally{btn.disabled=false;}});
 document.getElementById('logout').addEventListener('click',async()=>{try{await api('logout',{});view('login');msg('Wylogowano.');}catch(err){msg(err.message);}});
 (async()=>{const hash=new URLSearchParams(location.hash.slice(1));const token=hash.get('potwierdz');if(token){history.replaceState(null,'','/konto/');try{await api('verify',{token});view('verified');}catch(err){view('login');msg(err.message);}return;}try{const s=await api('session');if(s.loggedIn){document.getElementById('user-nick').textContent=s.nickname;view('account');return;}}catch{}view(new URLSearchParams(location.search).get('widok')==='login'?'login':'register');})();
 })();`;
