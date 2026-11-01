@@ -26,6 +26,13 @@ const html=String.raw`<!doctype html>
 <section class="sidecard" id="training-settings">
 <h2>Twój trening</h2>
 <p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p>
+<label for="ai-level">Poziom komputera</label>
+<select id="ai-level" aria-label="Poziom trudności komputera">
+<option value="normal">Normalny — gra rekreacyjna</option>
+<option value="hard">Trudny — analiza zagrożeń</option>
+<option value="expert" selected>Ekspert — kilka ruchów naprzód</option>
+</select>
+<p id="ai-hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i analizuje odpowiedzi przeciwnika.</p>
 <button class="primary" id="restart" type="button">Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden>
 <h2>Moje pokoje Gomoku</h2>
@@ -179,24 +186,148 @@ function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;render();
 }
-function cpuMove(board){
- const open=[];
- for(let i=0;i<count;i++)if(board[i]===0)open.push(i);
- if(!open.length)return -1;
- for(const i of open){board[i]=2;const win=victory(board,i,2);board[i]=0;if(win)return i;}
- for(const i of open){board[i]=1;const win=victory(board,i,1);board[i]=0;if(win)return i;}
- let best=open[0],value=-Infinity;
- for(const i of open){
-  const r=Math.floor(i/size),c=i%size;
-  let score=24-(Math.abs(r-7)+Math.abs(c-7))*2;
+// Tactical evaluation for free-style Gomoku (five or more wins).
+// All candidate calculations temporarily place a stone and restore the board.
+const axes=[[1,0],[0,1],[1,1],[1,-1]];
+const decisive=10000000;
+function vicinity(board){
+ const spots=new Uint8Array(count);
+ let stones=0;
+ for(let i=0;i<count;i++)if(board[i]){
+  stones++;
+  const row=Math.floor(i/size),col=i%size;
   for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
-   if(!dr&&!dc)continue;
-   const rr=r+dr,cc=c+dc;
-   if(inBounds(rr,cc)){const p=board[rr*size+cc];if(p)score+=(p===2?11:8)/(Math.max(Math.abs(dr),Math.abs(dc)));}
+   const r=row+dr,c=col+dc;
+   if(inBounds(r,c)&&!board[r*size+c])spots[r*size+c]=1;
   }
-  if(score>value){value=score;best=i;}
+ }
+ if(!stones)return [Math.floor(count/2)];
+ const result=[];
+ for(let i=0;i<count;i++)if(spots[i])result.push(i);
+ return result;
+}
+function tacticalScore(board,at,player){
+ if(board[at])return -1;
+ const row=Math.floor(at/size),col=at%size;
+ board[at]=player;
+ let score=0,openThrees=0,fourThreats=0;
+ for(const [dr,dc] of axes){
+  let left=0,right=0;
+  for(let step=1;step<size;step++){
+   const r=row-dr*step,c=col-dc*step;
+   if(!inBounds(r,c)||board[r*size+c]!==player)break;
+   left++;
+  }
+  for(let step=1;step<size;step++){
+   const r=row+dr*step,c=col+dc*step;
+   if(!inBounds(r,c)||board[r*size+c]!==player)break;
+   right++;
+  }
+  const span=left+1+right;
+  if(span>=5){board[at]=0;return decisive;}
+  const beforeR=row-dr*(left+1),beforeC=col-dc*(left+1);
+  const afterR=row+dr*(right+1),afterC=col+dc*(right+1);
+  const open=(inBounds(beforeR,beforeC)&&!board[beforeR*size+beforeC]?1:0)+
+   (inBounds(afterR,afterC)&&!board[afterR*size+afterC]?1:0);
+  if(span===4){score+=open===2?110000:open===1?23000:0;if(open)fourThreats++;}
+  if(span===3){score+=open===2?12000:open===1?1700:0;if(open===2)openThrees++;}
+  if(span===2)score+=open===2?750:open===1?135:0;
+  if(span===1&&open===2)score+=20;
+  // Also detect split sequences, e.g. XX_XX, which a contiguous-run count misses.
+  for(let offset=-4;offset<=0;offset++){
+   let ours=0,empty=0,valid=true;
+   for(let j=0;j<5;j++){
+    const r=row+dr*(offset+j),c=col+dc*(offset+j);
+    if(!inBounds(r,c)){valid=false;break;}
+    const piece=board[r*size+c];
+    if(piece===player)ours++;
+    else if(!piece)empty++;
+    else {valid=false;break;}
+   }
+   if(valid&&ours===4&&empty===1){score+=7000;fourThreats++;}
+   else if(valid&&ours===3&&empty===2)score+=350;
+  }
+ }
+ board[at]=0;
+ if(openThrees>=2)score+=80000;
+ if(fourThreats>=2)score+=110000;
+ score+=Math.max(0,14-Math.abs(row-7)-Math.abs(col-7))*2;
+ return score;
+}
+function rankedMoves(board,turn,limit){
+ const places=vicinity(board);
+ const opponent=3-turn;
+ const ranked=places.map(at=>{
+  const attack=tacticalScore(board,at,turn);
+  const block=tacticalScore(board,at,opponent);
+  return {at,attack,block,rank:attack*1.18+block*1.12};
+ });
+ const wins=ranked.filter(move=>move.attack>=decisive);
+ if(wins.length)return wins.sort((a,b)=>b.rank-a.rank).slice(0,limit);
+ const blocks=ranked.filter(move=>move.block>=decisive);
+ if(blocks.length)return blocks.sort((a,b)=>b.rank-a.rank).slice(0,limit);
+ return ranked.sort((a,b)=>b.rank-a.rank||a.at-b.at).slice(0,limit);
+}
+function positionValue(board,turn){
+ const spots=vicinity(board);
+ let bestCPU=0,nextCPU=0,bestHuman=0,nextHuman=0;
+ for(const at of spots){
+  const cpu=tacticalScore(board,at,2),human=tacticalScore(board,at,1);
+  if(cpu>bestCPU){nextCPU=bestCPU;bestCPU=cpu;}
+  else if(cpu>nextCPU)nextCPU=cpu;
+  if(human>bestHuman){nextHuman=bestHuman;bestHuman=human;}
+  else if(human>nextHuman)nextHuman=human;
+ }
+ if(bestCPU>=decisive&&turn===2)return decisive*2;
+ if(bestHuman>=decisive&&turn===1)return -decisive*2;
+ return (bestCPU*1.15+nextCPU*.16)*(turn===2?1.14:1)-
+  (bestHuman*1.18+nextHuman*.16)*(turn===1?1.14:1);
+}
+function searchPosition(board,turn,depth,alpha,beta,last,ply,search){
+ if(last>=0&&victory(board,last,3-turn))return turn===1?decisive*5-ply:-decisive*5+ply;
+ if(depth<=0||++search.nodes>search.nodeLimit)return positionValue(board,turn);
+ const maximizing=turn===2;
+ let best=maximizing?-Infinity:Infinity;
+ const limit=depth>=3?6:depth===2?5:4;
+ const moves=rankedMoves(board,turn,limit);
+ if(!moves.length)return 0;
+ for(const move of moves){
+  board[move.at]=turn;
+  const value=searchPosition(board,3-turn,depth-1,alpha,beta,move.at,ply+1,search);
+  board[move.at]=0;
+  if(maximizing){best=Math.max(best,value);alpha=Math.max(alpha,best);}
+  else{best=Math.min(best,value);beta=Math.min(beta,best);}
+  if(beta<=alpha)break;
  }
  return best;
+}
+function cpuMove(board,level='expert'){
+ const places=vicinity(board);
+ if(!places.length)return -1;
+ let bestWin=-1,bestBlock=-1;
+ for(const at of places){
+  if(tacticalScore(board,at,2)>=decisive){bestWin=at;break;}
+ }
+ if(bestWin>=0)return bestWin;
+ for(const at of places){
+  if(tacticalScore(board,at,1)>=decisive){bestBlock=at;break;}
+ }
+ if(bestBlock>=0)return bestBlock;
+ const moves=rankedMoves(board,2,level==='expert'?8:level==='hard'?6:1);
+ if(!moves.length)return -1;
+ if(level==='normal')return moves[0].at;
+ const search={nodes:0,nodeLimit:level==='expert'?1350:360};
+ const depth=level==='expert'?3:2;
+ let result=moves[0].at,best=-Infinity;
+ for(const move of moves){
+  board[move.at]=2;
+  const estimate=searchPosition(board,1,depth-1,-Infinity,Infinity,move.at,1,search);
+  board[move.at]=0;
+  // Use tactical score as a tiebreaker after searching the opponent's response.
+  const combined=estimate+move.attack*.015+move.block*.004;
+  if(combined>best){best=combined;result=move.at;}
+ }
+ return result;
 }
 function trainMove(to){
  if(state.thinking||state.winner||state.board[to])return;
@@ -209,7 +340,7 @@ function trainMove(to){
  const epoch=state.epoch;
  window.setTimeout(()=>{
   if(epoch!==state.epoch||state.mode!=='training'||!state.thinking)return;
-  const at=cpuMove(state.board);
+  const at=cpuMove(state.board,$('ai-level').value);
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
   if(victory(state.board,at,2))state.winner=2;
@@ -317,6 +448,15 @@ function setMode(mode){
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
 $('restart').addEventListener('click',restart);
+$('ai-level').addEventListener('change',()=>{
+ const descriptions={
+  normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
+  hard:'Trudny: analizuje zagrożenia oraz odpowiedź przeciwnika.',
+  expert:'Ekspert: analizuje kilka kolejnych ruchów, podwójne zagrożenia i wymuszone bloki.'
+ };
+ $('ai-hint').textContent=descriptions[$('ai-level').value]||descriptions.expert;
+ restart();
+});
 $('reload-rooms').addEventListener('click',()=>void rooms());
 $('join-room').addEventListener('click',()=>void loadMatch($('room-select').value));
 $('refresh-match').addEventListener('click',()=>void refreshOnline());
