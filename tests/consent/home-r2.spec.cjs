@@ -368,7 +368,8 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(geo.news.left).toBeLessThan(geo.cards.left+3);
+    expect(geo.news.width).toBeLessThanOrEqual(1121);
+    expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
    }
@@ -408,8 +409,11 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     const scene=section.querySelector('img.footer-news-full-art-r16');
     const phone=section.querySelector('img.footer-news-smartphone');
     const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
+    const form=section.querySelector('form[data-newsletter]');
     return {section:rect(section),scene:rect(scene),phone:rect(phone),
-      form:rect(section.querySelector('form[data-newsletter]')),
+      form:rect(form),email:rect(form.querySelector('input[type=email]')),
+      submit:rect(form.querySelector('button[type=submit]')),
+      consent:rect(form.querySelector('[data-footer-newsletter-consent]')),
       sceneDisplayed:getComputedStyle(scene).display!=='none',
       phoneDisplayed:getComputedStyle(phone).display!=='none',
       natural:[scene.naturalWidth,scene.naturalHeight],
@@ -427,10 +431,19 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     expect(Math.abs(sr-r)).toBeLessThanOrEqual(2);
     expect(Math.abs(sy-y)).toBeLessThanOrEqual(2);
     expect(Math.abs((b-y)-(sb-sy))).toBeLessThanOrEqual(3);
-    expect(Math.abs((fx-x)/(r-x)-.0705)).toBeLessThan(.018);
-    expect(Math.abs((fy-y)/(b-y)-.5345)).toBeLessThan(.022);
-    expect(Math.abs((fr-fx)/(r-x)-.514)).toBeLessThan(.024);
-    expect(Math.abs((fb-fy)/(b-y)-.0908)).toBeLessThan(.024);
+    expect(Math.abs((fx-x)/(r-x)-.0312)).toBeLessThan(.018);
+    expect(Math.abs((fy-y)/(b-y)-.3920)).toBeLessThan(.022);
+    expect(Math.abs((fr-fx)/(r-x)-.4505)).toBeLessThan(.024);
+    expect(Math.abs((fb-fy)/(b-y)-.0800)).toBeLessThan(.024);
+    expect(r-x,'compact desktop newsletter width').toBeLessThanOrEqual(1121);
+    const [ex,ey,er,eb]=state.email;
+    const [bx,by,br,bb]=state.submit;
+    expect(er).toBeLessThanOrEqual(bx+2);
+    expect(Math.abs(ey-by)).toBeLessThanOrEqual(2);
+    expect(Math.abs(eb-bb)).toBeLessThanOrEqual(2);
+    expect(state.consent[0]).toBeGreaterThanOrEqual(fx-2);
+    expect(state.consent[1]).toBeGreaterThanOrEqual(fb+5);
+    expect(state.consent[2]).toBeLessThanOrEqual(r+2);
    }else{
     expect(state.sceneDisplayed).toBe(false);
     expect(state.phoneDisplayed).toBe(true);
