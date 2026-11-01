@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+const ownerReference=Buffer.concat(await Promise.all(Array.from({length:9},(_,index)=>readFile(new URL('./reference/part-'+String(index).padStart(2,'0')+'.bin',import.meta.url)))));
+if(ownerReference.byteLength!==4968 || ownerReference.subarray(0,4).toString()!=='RIFF' || ownerReference.subarray(8,12).toString()!=='WEBP' || ownerReference.readUInt32LE(4)+8!==ownerReference.byteLength)throw Error('OWNER_REFERENCE_INTEGRITY_FAILURE');
 const headers={
   'Content-Type':'text/html; charset=utf-8',
   'Content-Security-Policy':"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://gracz.pl; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
@@ -5,7 +8,7 @@ const headers={
   'Cache-Control':'no-store','X-Frame-Options':'DENY'
 };
 const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Załóż konto lub zaloguj się — gracz.pl</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="/konto/styl.css"><script src="/konto/app.js" defer></script></head><body>
-<header class="top"><a class="brand" href="https://gracz.pl/">gracz<span>.pl</span></a><nav aria-label="Nawigacja"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/">Forum</a><a href="https://gracz.pl/">Aktualności</a></nav><div class="actions"><button type="button" data-view="login" class="top-login">Zaloguj się</button><button type="button" data-view="register" class="top-register">♙ Zarejestruj się</button></div></header>
+<header class="top"><a class="brand" href="https://gracz.pl/">gracz<span>.pl</span></a><nav aria-label="Nawigacja"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/">Forum</a><a href="https://gracz.pl/">Aktualności</a><a href="https://gracz.pl/#spolecznosc">Społeczność</a><a href="https://gracz.pl/#gracz-next">Gracz Next</a></nav><span class="nav-icons" aria-hidden="true">⌕　☼</span><div class="actions"><button type="button" data-view="login" class="top-login">Zaloguj się</button><button type="button" data-view="register" class="top-register">♙ Zarejestruj się</button></div></header>
 <main class="scene">
 <aside class="left"><div class="left-copy"><em>Dołącz do społeczności</em><div class="hero-brand">gracz<span>.pl</span></div><div class="eyebrow">POLSKIE CENTRUM GRACZA</div><ul class="benefits"><li><b>♟</b><span><strong>Graj online</strong><small>Warcaby, Szachy, Tysiąc, Poker i inne gry</small></span></li><li><b>♧</b><span><strong>Ucz się i rozwijaj</strong><small>Poradniki, strategie, analizy</small></span></li><li><b>🏆</b><span><strong>Rywalizuj</strong><small>Turnieje, rankingi, kluby graczy</small></span></li><li><b>♧</b><span><strong>Twórz społeczność</strong><small>Forum, znajomi, wspólne pasje</small></span></li></ul></div><div class="cards" aria-hidden="true"><div class="stack">♠<br><span>gracz.pl</span></div><div class="chip">gracz<span>.pl</span></div></div></aside>
 <section class="panel" aria-label="Panel konta gracza"><div class="panel-heading"><div class="round"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="8" fill="currentColor"/><path d="M9 37c0-8 5-14 15-14s15 6 15 14v2H9z" fill="currentColor"/></svg></div><div><h1 id="page-title">Załóż konto w <span class="form-logo">gracz<span>.pl</span></span></h1><p>Graj, ucz się, rywalizuj – w jednym miejscu.</p></div></div>
@@ -67,6 +70,50 @@ footer{display:none}
 @media(min-width:1181px) and (max-width:1535px){.top{gap:3vw}.scene{grid-template-columns:minmax(0,39.7fr) minmax(0,39.4fr) minmax(0,20.9fr)}.left{padding-left:6.25vw}.left-copy em{font-size:2.6vw}.hero-brand{font-size:5vw}.eyebrow{font-size:1.35vw}.panel h1{font-size:2.25vw}.panel-heading p{font-size:1.09vw}.right{padding-right:2vw}}
 @media(min-width:780px) and (max-width:1180px){.scene{display:grid;grid-template-columns:minmax(200px,1fr) minmax(500px,605px);gap:0;padding:25px 14px}.left{padding:75px 14px 20px 22px;min-height:880px}.left-copy em{font-size:27px}.hero-brand{font-size:52px}.eyebrow{font-size:14px;white-space:normal}.panel{min-height:0}.panel h1{font-size:29px}.panel-heading p{font-size:13px}.right{display:none}.cards{display:none}}
 @media(max-width:779px){.top{height:67px;padding:0 13px}.brand{font-size:31px}.top .actions{margin-left:auto}.top .actions .top-register{display:none}.top nav{display:none}.scene{display:flex;flex-direction:column;gap:0;padding:0 0 20px;background:#071a27}.left{height:auto;min-height:0;align-self:stretch;padding:27px 18px 16px;background-position:center}.left-copy em{font-size:27px}.hero-brand{font-size:49px}.eyebrow{font-size:12px;margin:4px 0}.benefits,.cards{display:none}.panel{width:calc(100% - 20px);align-self:center;margin-top:8px;min-height:0;padding:20px 14px 22px;border-radius:15px}.panel-heading{gap:12px;margin-bottom:10px}.panel-heading .round{width:47px;height:47px}.round svg{width:29px;height:29px}.panel h1{font-size:clamp(20px,5vw,27px);white-space:normal}.panel-heading p{font-size:12px;white-space:normal}.panel form>label{margin-left:54px}.field{margin-left:54px}.field-icon{left:-53px;width:44px;height:44px;font-size:22px;top:0}.hint{margin-left:54px;font-size:11px}.field input{font-size:14px}.nickname-field input{padding-right:110px}#nick-status{width:110px;font-size:10px}.checks{margin:20px 0}.checks label{font-size:12px}.oauth-buttons{gap:6px}.oauth-buttons button{font-size:12px}.right{display:none}}
+
+/* Owner-provided photographic composition, verified byte-for-byte.
+   The real form stays HTML (keyboard, screen-reader and password manager safe). */
+.scene{
+ background-image:url('/konto/reference.webp');
+ background-size:100% auto;
+ background-position:center -74px;
+ background-repeat:no-repeat;
+ background-color:#06121e;
+}
+.left{background:linear-gradient(180deg,rgba(2,11,20,.66) 0%,rgba(2,11,20,.66) 51%,rgba(2,11,20,.23) 72%,transparent 100%)}
+.left-copy{filter:drop-shadow(0 2px 2px #04101a)}
+.cards{display:none}
+.right{background:transparent}
+.right .info{background:#051727ee}
+.right .avatars{
+ background:url('/konto/reference.webp') -1268px -478px/1536px 1024px no-repeat;
+ height:75px;
+ margin:5px 0 8px;
+ font-size:0;
+ color:transparent;
+}
+.top{gap:47px}
+.top nav{gap:29px}
+.top .nav-icons{font-size:26px;color:#eef5ff;white-space:nowrap;line-height:1}
+.top .actions{gap:12px}
+.panel{background:linear-gradient(150deg,#041623fb,#02111ffb)}
+#notice{word-break:break-word}
+@media(min-width:1181px) and (max-width:1535px){
+ .right .avatars{background-size:100vw auto;background-position:calc(-82.55vw) calc(-31.12vw)}
+ .top{gap:2.5vw}
+ .top nav{gap:1.75vw}
+}
+@media(max-width:1180px){
+ .top .nav-icons{display:none}
+ .scene{background-image:url('/konto/reference.webp');background-position:center top;background-size:cover}
+ .left{background:linear-gradient(180deg,rgba(2,10,21,.82),rgba(2,10,21,.66))}
+}
+@media(max-width:779px){
+ .scene{background-position:center center;background-size:cover}
+ .left{background:rgba(2,12,23,.68)}
+ .right{display:none}
+ .panel{background:#041727fa}
+}
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
@@ -106,6 +153,7 @@ export function serveIdentityPage(req,res,url){
  if(path==='/konto'&&req.method==='GET'){type='text/html; charset=utf-8';body=html;}
  else if(path==='/konto/styl.css'&&req.method==='GET'){type='text/css; charset=utf-8';body=css;}
  else if(path==='/konto/app.js'&&req.method==='GET'){type='application/javascript; charset=utf-8';body=js;}
+ else if(path==='/konto/reference.webp'&&req.method==='GET'){type='image/webp';body=ownerReference;}
  else return false;
  res.writeHead(200,{...headers,'Content-Type':type,'Content-Length':Buffer.byteLength(body)});
  res.end(body);
