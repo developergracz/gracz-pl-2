@@ -1,6 +1,7 @@
 import { installShutdown } from "./lifecycle.mjs";
 import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
 import { serveIdentityPage } from "./auth/page.mjs";
+import { servePlayerPanel } from "./auth/panel.mjs";
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
@@ -384,6 +385,7 @@ const server = createServer(async (req, res) => {
 
     // Account screen and its API share one origin; Secure HttpOnly session cookies work reliably.
     if (serveIdentityPage(req, res, url)) return;
+    if (servePlayerPanel(req, res, url)) return;
     if (await publicIdentity.handle(req, res, url)) return;
 
     if (url.pathname.startsWith("/owner/newsletter")) {

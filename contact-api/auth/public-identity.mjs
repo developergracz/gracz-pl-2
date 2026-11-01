@@ -68,6 +68,11 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
       created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
     await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_expiry ON gracz_public_identity.sessions(expires_at)');
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.profiles (
+      account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+      display_name text NOT NULL, bio text NOT NULL DEFAULT '',
+      country text NOT NULL DEFAULT 'PL', language text NOT NULL DEFAULT 'pl',
+      updated_at timestamptz NOT NULL DEFAULT now())`);
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
@@ -89,6 +94,52 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
     return json(res,200,q.rows.length?{ok:true,loggedIn:true,nickname:q.rows[0].nickname}:{ok:true,loggedIn:false}),true;
    }catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
+  }
+  if(url.pathname==='/auth/profile'){
+    if(req.method!=='GET' && req.method!=='PUT')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+    if(req.method==='PUT' && !authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+    try{
+      await ready();
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const readProfile=()=>database.query(`SELECT a.id, a.nickname, a.email_key, a.created_at,
+        p.display_name, p.bio, p.country, p.language
+        FROM gracz_public_identity.sessions s
+        JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+        LEFT JOIN gracz_public_identity.profiles p ON p.account_id=a.id
+        WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+      const result=await readProfile();
+      if(!result.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+      const account=result.rows[0];
+      if(req.method==='PUT'){
+        if(!allow('profile:'+account.id,25))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+        let body;
+        try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+        const displayName=typeof body.displayName==='string'?body.displayName.trim():'';
+        const bio=typeof body.bio==='string'?body.bio.trim():'';
+        const country=body.country,language=body.language;
+        if(displayName.length<2||displayName.length>40||/[\u0000-\u001f\u007f]/.test(displayName)||
+          bio.length>300||/[\u0000-\u0008\u000b-\u001f\u007f]/.test(bio)||
+          !['PL','DE','CZ','SK','OTHER'].includes(country)||!['pl','en','de'].includes(language))
+          return bad(res,400,'POPRAW_DANE_PROFILU'),true;
+        await database.query(`INSERT INTO gracz_public_identity.profiles
+          (account_id,display_name,bio,country,language,updated_at)
+          VALUES ($1,$2,$3,$4,$5,now())
+          ON CONFLICT (account_id) DO UPDATE SET display_name=excluded.display_name,
+          bio=excluded.bio,country=excluded.country,language=excluded.language,updated_at=now()`,
+          [account.id,displayName,bio,country,language]);
+        account.display_name=displayName;account.bio=bio;account.country=country;account.language=language;
+      }
+      return json(res,200,{ok:true,profile:{
+        nickname:account.nickname,email:account.email_key,
+        displayName:account.display_name||account.nickname,
+        bio:account.bio||'',country:account.country||'PL',
+        language:account.language||'pl',createdAt:account.created_at
+      }}),true;
+    }catch(e){
+      console.error('IDENTITY_PROFILE_ERROR',{code:safeText(e?.code)||'PROFILE_ERROR'});
+      return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+    }
   }
   if(url.pathname==='/auth/nick-available' && req.method==='GET'){
    if(!allow('nick-check:'+req.socket.remoteAddress,55))return bad(res,429,'ZBYT_WIELE_PROB'),true;
