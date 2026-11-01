@@ -1,4 +1,4 @@
-name: Inspect LIVE newsletter version (one-shot)
+name: Inspect LIVE newsletter R26 production check
 on:
   push:
     branches:
@@ -13,11 +13,13 @@ jobs:
       - name: Compare canonical and Render origin
         shell: bash
         run: |
-          for url in "https://gracz.pl/?liveprobe=20261101" "https://gracz-pl-maintenance.onrender.com/?liveprobe=20261101"; do
+          for url in "https://gracz.pl/?liveprobe=r26-20261101" "https://gracz-pl-maintenance.onrender.com/?liveprobe=r26-20261101"; do
             echo "=== URL $url ==="
             curl -sSIL --max-time 20 "$url" | grep -Ei '^(HTTP/|server:|cache-control:|cf-cache-status:|x-render-|age:|location:)' || true
             curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "$url" > /tmp/gracz-probe.html || true
             wc -c /tmp/gracz-probe.html
             grep -Eo 'home-lcp-bundle-r1[.]css[?]v=[^"]+' /tmp/gracz-probe.html | head -1 || true
             grep -Eo 'footer-news--approved-r16' /tmp/gracz-probe.html | head -1 || true
+            grep -q "css-lcp-20261101-newsletter-fullbleed-r26" /tmp/gracz-probe.html || exit 1
           done
+          echo "R26_CANONICAL_AND_RENDER_PASS"
