@@ -82,7 +82,7 @@ test('panel renders nine documented sections and syntactically valid browser Jav
     assert.equal(res.headers['Cache-Control'],'no-store');
     if(path.endsWith('/')) {
       assert.match(res.body,/noindex,nofollow,noarchive/);
-      assert.equal((res.body.match(/data-section="/g)||[]).length,11);
+      assert.equal((res.body.match(/data-section="/g)||[]).length,12);
     }
     if(path.endsWith('.js'))new Script(res.body);
     if(path.endsWith('.css'))assert.match(res.body,/@media\(max-width:610px\)/);
@@ -337,8 +337,113 @@ test('friends UI has real action handlers, no fabricated presence and all reques
   for(const id of ['friends-search-form','friends-search-results','friends-list','friends-incoming',
     'friends-outgoing','friends-blocked','friends-status'])
     assert.match(r.body,new RegExp('id="'+id+'"'));
-  assert.match(r.body,/Status online i wiadomości będą dostępne/);
+  assert.match(r.body,/Status online wymaga przyszłej integracji/);
+  assert.match(r.body,/Prywatne wiadomości są dostępne w osobnej zakładce/);
   assert.match(script.body,/api\('friends\/action'/);
   assert.match(script.body,/refreshFriends/);
   new Script(script.body);
+});
+
+
+test('social message and game challenge APIs enforce session, origin and actual friendship',async()=>{
+ const {createHash}=await import('node:crypto');
+ const idA='00000000-0000-4000-8000-000000000001';
+ const idB='00000000-0000-4000-8000-000000000002';
+ const tkA='a'.repeat(64),tkB='b'.repeat(64);
+ const digest=x=>createHash('sha256').update(x).digest('hex');
+ const messages=[],challenges=[];
+ let friends=true,blocked=false;
+ const now='2026-11-01T19:00:00Z';
+ const db={enabled:true,async query(sql,params=[]){
+  if(sql.startsWith('CREATE '))return {rows:[],rowCount:0};
+  if(sql.includes('SELECT a.id FROM gracz_public_identity.sessions s')){
+   const d=Buffer.from(params[0]||[]).toString('hex');
+   const id=d===digest(tkA)?idA:d===digest(tkB)?idB:null;
+   return {rows:id?[{id}]:[],rowCount:id?1:0};
+  }
+  if(sql.includes('SELECT a.id,a.nickname')&&sql.includes('friend_connections')){
+   const valid=friends&&!blocked;
+   const other=params[0]===idA?{id:idB,nickname:'GraczBeta'}:{id:idA,nickname:'TestowyGracz'};
+   return {rows:valid&&other.nickname.toLowerCase()===params[1]?[other]:[]};
+  }
+  if(sql.includes('INSERT INTO gracz_public_identity.friend_messages')){
+   if(!friends||blocked)return {rows:[],rowCount:0};
+   const [id,sender,recipient,body]=params;
+   messages.push({id,sender_id:sender,recipient_id:recipient,body,created_at:now});
+   return {rows:[{id,created_at:now}],rowCount:1};
+  }
+  if(sql.includes('SELECT id,sender_id,body,created_at FROM (')){
+   const [one,two]=params;
+   const rows=messages.filter(m=>[one,two].includes(m.sender_id)&&[one,two].includes(m.recipient_id));
+   return {rows,rowCount:rows.length};
+  }
+  if(sql.includes('SELECT c.id,c.game,')&&sql.includes('game_challenges')){
+   const rows=challenges.filter(c=>[c.sender_id,c.recipient_id].includes(params[0]))
+    .map(c=>({...c,opponent:c.sender_id===params[0]?'TestowyGracz':'GraczBeta',
+      outgoing:c.sender_id===params[0]}));
+   return {rows,rowCount:rows.length};
+  }
+  if(sql.includes('SET status=\'expired\''))return {rows:[],rowCount:0};
+  if(sql.includes('INSERT INTO gracz_public_identity.game_challenges')){
+   if(!friends||blocked||challenges.some(c=>c.game===params[3]&&c.status==='pending'))
+    return {rows:[],rowCount:0};
+   const [id,sender_id,recipient_id,game]=params;
+   challenges.push({id,sender_id,recipient_id,game,status:'pending',
+    created_at:now,expires_at:'2026-11-08T19:00:00Z'});
+   return {rows:[{id}],rowCount:1};
+  }
+  if(sql.includes('UPDATE gracz_public_identity.game_challenges c')){
+   const [status,id,actor]=params,c=challenges.find(v=>v.id===id&&v.status==='pending');
+   if(!c||!friends||blocked||
+     ((status==='cancelled'?c.sender_id:c.recipient_id)!==actor))
+     return {rows:[],rowCount:0};
+   c.status=status;return {rows:[{id}],rowCount:1};
+  }
+  throw Error('Unexpected query: '+sql.slice(0,130));
+ }};
+ const router=createPublicIdentityRouter({database:db,emailFrom:'test@example.test',resendKey:'synthetic'});
+ async function call(token,method,path,body,origin='https://gracz-contact-api.onrender.com'){
+  const req=request(method,path,{cookie:token,origin:method==='POST'?origin:undefined,body});
+  const res=response();
+  assert.equal(await router.handle(req,res,new URL(path,'https://gracz-contact-api.onrender.com')),true);
+  return {status:res.status,data:JSON.parse(res.body)};
+ }
+ assert.equal((await call(undefined,'GET','/auth/social/messages?nick=GraczBeta')).status,401);
+ assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:'Hi'},'https://bad.test')).status,403);
+ assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:''})).status,400);
+ assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:'X'.repeat(1001)})).status,400);
+ assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:'Cześć!'})).status,200);
+ const reply=await call(tkB,'GET','/auth/social/messages?nick=TestowyGracz');
+ assert.equal(reply.status,200);
+ assert.deepEqual(reply.data.messages.map(m=>({own:m.own,body:m.body})),[{own:false,body:'Cześć!'}]);
+ assert.doesNotMatch(JSON.stringify(reply.data),/sender_id|recipient_id|token_digest/);
+ const invalidGame=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'poker'});
+ assert.equal(invalidGame.status,400);
+ const sent=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku'});
+ assert.equal(sent.status,200);
+ assert.equal((await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku'})).status,409);
+ assert.equal((await call(tkA,'POST','/auth/social/challenges',{action:'accept',id:sent.data.id})).status,409);
+ assert.equal((await call(tkB,'POST','/auth/social/challenges',{action:'accept',id:sent.data.id})).status,200);
+ const accepted=await call(tkA,'GET','/auth/social/challenges');
+ assert.equal(accepted.data.challenges[0].status,'accepted');
+ assert.equal(accepted.data.challenges[0].game,'gomoku');
+ blocked=true;
+ assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:'Stop'})).status,403);
+ assert.equal((await call(tkB,'GET','/auth/social/messages?nick=TestowyGracz')).status,403);
+ assert.equal((await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'warcaby'})).status,403);
+});
+
+test('social UI declares limited game integration and renders safe message text without HTML injection',()=>{
+ const html=response(),js=response();
+ servePlayerPanel({method:'GET'},html,new URL('/konto/panel/','https://gracz-contact-api.onrender.com'));
+ servePlayerPanel({method:'GET'},js,new URL('/konto/panel/app.js','https://gracz-contact-api.onrender.com'));
+ for(const id of ['message-recipient','message-thread','message-form','challenge-friend',
+   'challenge-game','challenge-list','challenges-refresh']){
+  assert.match(html.body,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html.body,/nie uruchamia jeszcze wspólnej partii online/);
+ assert.match(js.body,/text\.textContent=item\.body/);
+ assert.match(js.body,/social\/messages/);
+ assert.match(js.body,/social\/challenges/);
+ new Script(js.body);
 });
