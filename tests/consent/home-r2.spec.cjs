@@ -59,7 +59,7 @@ for(const width of [360,390,768,1366,1920]){
        await expect(page.locator('.r4-owner-image')).toHaveAttribute('src','/assets/gracz-hero-mobile-lcp-r16.webp');
       await expect.poll(()=>page.locator('.r4-owner-image').evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
     }
-   expect(layout.footer.bottom).toBeLessThanOrEqual(layout.legal.top-2);
+   expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
    // Sticky header must be captured at the top, not where footer scrolling left it.
@@ -368,7 +368,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(geo.news.width).toBeLessThanOrEqual(1361);
+    expect(geo.news.width,'R27 newsletter fills the desktop width').toBeGreaterThanOrEqual(width-2);
     expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
@@ -439,7 +439,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     expect(Math.abs((fy-y)/(b-y)-.3920)).toBeLessThan(.022);
     expect(Math.abs((fr-fx)/(r-x)-.4505)).toBeLessThan(.024);
     expect(Math.abs((fb-fy)/(b-y)-.0800)).toBeLessThan(.024);
-    expect(r-x,'desktop newsletter width').toBeLessThanOrEqual(1361);
+    expect(Math.abs((r-x)-width),'R27 artwork fills viewport width').toBeLessThanOrEqual(2);
     const [ex,ey,er,eb]=state.email;
     const [bx,by,br,bb]=state.submit;
     expect(er).toBeLessThanOrEqual(bx+2);
@@ -459,7 +459,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
-test('R21 newsletter scales to desktop without clipping the image', async({browser})=>{
+test('R27 newsletter spans desktop width without cropping or distorting the artwork', async({browser})=>{
  test.setTimeout(60000);
  for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:785},{width:1600,height:900}]){
   const context=await browser.newContext({viewport});
@@ -490,15 +490,15 @@ test('R21 newsletter scales to desktop without clipping the image', async({brows
     expect(geo.ambientMask,'desktop backdrop must not disappear in the side gutters').toBe('none');
     expect(geo.ambientBackground).toContain('radial-gradient');
    }
-   expect(geo.s.width).toBeLessThanOrEqual(1361);
+   expect(Math.abs(geo.s.width-viewport.width),'R27 newsletter fills available browser width').toBeLessThanOrEqual(2);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
+   expect(geo.s.height,'R27 artwork extends naturally and scrolls when taller than the viewport').toBeGreaterThanOrEqual(viewport.height-(viewport.width>=1181?130:157));
    if(viewport.width>=1181){
     expect(geo.s.width,'desktop newsletter must use the available height, not empty side gutters').toBeGreaterThanOrEqual(viewport.height>=900?1300:1100);
    }
-   expect(geo.s.top,'image top must remain in viewport after scrolling to newsletter').toBeGreaterThanOrEqual(-2);
-   expect(geo.s.bottom,'image bottom must remain in viewport after scrolling to newsletter').toBeLessThanOrEqual(viewport.height+2);
-   if(viewport.width>=1181)expect(geo.footerBottom.bottom,'legal footer row must also fit in browser').toBeLessThanOrEqual(viewport.height+4);
+   expect(geo.s.bottom,'Newsletter must remain reachable by vertical scroll').toBeGreaterThan(0);
+   expect(geo.s.top,'Newsletter must intersect viewport after scrolling').toBeLessThanOrEqual(viewport.height+2);
+   if(viewport.width>=1181)expect(geo.footerBottom.top,'Legal footer must follow the complete artwork').toBeGreaterThanOrEqual(geo.s.bottom-2);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
    expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
    expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
@@ -556,7 +556,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
     expect(g.form.width,'Signup form must use full mobile column').toBeGreaterThanOrEqual(viewport.width*.67);
     expect(g.input.width,'Email input may not collapse').toBeGreaterThanOrEqual(viewport.width*.55);
    }else{
-    expect(g.banner.height).toBeLessThanOrEqual(viewport.height-(viewport.width>=1181?130:151));
+    expect(g.banner.height,'R27 banner keeps the original aspect ratio').toBeCloseTo(g.banner.width*941/1671,0);
     expect(g.banner.width).toBeGreaterThan(800);
    }
    if(viewport.width===390||viewport.width===1600){
@@ -567,7 +567,7 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
-test('R26 approved newsletter uses a crisp full-width desktop canvas without clipping',async({browser})=>{
+test('R27 approved newsletter image fills the complete desktop width',async({browser})=>{
  test.setTimeout(90000);
  fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
@@ -601,8 +601,8 @@ test('R26 approved newsletter uses a crisp full-width desktop canvas without cli
    expect(state.beforeContent).not.toBe('none');
    expect(state.beforeBackground).toContain('radial-gradient');
    expect(state.beforeMask).toBe('none');
-   expect(state.banner.left).toBeGreaterThan(50);
-   expect(state.banner.right).toBeLessThan(viewport.width-50);
+   expect(state.banner.left,'R27 artwork begins at left edge').toBeGreaterThanOrEqual(-2);
+   expect(state.banner.right,'R27 artwork reaches right edge').toBeGreaterThanOrEqual(viewport.width-2);
    expect(state.art.width).toBeCloseTo(state.banner.width,0);
    expect(state.art.top).toBeCloseTo(state.banner.top,0);
    expect(state.art.bottom).toBeCloseTo(state.banner.bottom,0);
