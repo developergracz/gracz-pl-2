@@ -1,4 +1,5 @@
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
+import { initialGame, playMove } from './game-engine.mjs';
 import { promisify } from 'node:util';
 
 const scrypt=promisify(rawScrypt);
@@ -119,6 +120,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_recipient ON gracz_public_identity.game_challenges(recipient_id,created_at DESC)');
      await database.query("CREATE UNIQUE INDEX IF NOT EXISTS gracz_challenges_one_pending ON gracz_public_identity.game_challenges(LEAST(sender_id,recipient_id),GREATEST(sender_id,recipient_id),game) WHERE status='pending'");
+
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_matches (
+       challenge_id uuid PRIMARY KEY REFERENCES gracz_public_identity.game_challenges(id) ON DELETE CASCADE,
+       state jsonb NOT NULL, version integer NOT NULL DEFAULT 0,
+       created_at timestamptz NOT NULL DEFAULT now(),
+       updated_at timestamptz NOT NULL DEFAULT now())`);
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
@@ -254,6 +261,81 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
   }
 
  
+
+  if(url.pathname==='/auth/match'){
+    if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+    if(req.method==='POST'&&!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+    try{
+      await ready();
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const authenticated=await database.query(`SELECT a.id FROM gracz_public_identity.sessions s
+        JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+        WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+      if(!authenticated.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+      const actor=authenticated.rows[0].id;
+      if(!allow('game-'+req.method+':'+actor,req.method==='GET'?240:80))
+        return bad(res,429,'ZBYT_WIELE_PROB'),true;
+      let body={};if(req.method==='POST'){
+        try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+      }
+      const matchId=req.method==='GET'?url.searchParams.get('id'):body.id;
+      if(typeof matchId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(matchId))
+        return bad(res,400,'BLEDNY_IDENTYFIKATOR'),true;
+      // A room is created only for an accepted invitation and one of its two verified participants.
+      const invite=await database.query(`SELECT c.game FROM gracz_public_identity.game_challenges c
+        WHERE c.id=$1 AND c.status='accepted' AND ($2=c.sender_id OR $2=c.recipient_id)
+        LIMIT 1`,[matchId,actor]);
+      if(!invite.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
+      await database.query(`INSERT INTO gracz_public_identity.game_matches(challenge_id,state)
+        SELECT c.id,$2::jsonb FROM gracz_public_identity.game_challenges c
+        WHERE c.id=$1 AND c.status='accepted'
+          AND (c.sender_id=$3 OR c.recipient_id=$3)
+        ON CONFLICT DO NOTHING`,[matchId,JSON.stringify(initialGame(invite.rows[0].game)),actor]);
+      const readMatch=()=>database.query(`SELECT m.state,m.version,c.game,
+        c.sender_id,c.recipient_id,
+        s.nickname AS sender_nick,r.nickname AS recipient_nick,
+        NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+          WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+          OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id)) AS playable
+        FROM gracz_public_identity.game_matches m
+        JOIN gracz_public_identity.game_challenges c ON c.id=m.challenge_id
+        JOIN gracz_public_identity.accounts s ON s.id=c.sender_id
+        JOIN gracz_public_identity.accounts r ON r.id=c.recipient_id
+        WHERE c.id=$1 AND c.status='accepted'
+          AND ($2=c.sender_id OR $2=c.recipient_id) LIMIT 1`,[matchId,actor]);
+      const current=await readMatch();
+      if(!current.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
+      let match=current.rows[0];
+      const player=match.sender_id===actor?1:2;
+      if(req.method==='POST'){
+        if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        if(!Number.isInteger(body.version)||body.version!==match.version)
+          return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        const result=playMove(match.game,match.state,player,body.move);
+        if(result.error)return bad(res,409,result.error),true;
+        const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
+          SET state=$1::jsonb,version=m.version+1,updated_at=now()
+          FROM gracz_public_identity.game_challenges c
+          WHERE m.challenge_id=$2 AND c.id=m.challenge_id AND c.status='accepted'
+            AND m.version=$3 AND (c.sender_id=$4 OR c.recipient_id=$4)
+            AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+              WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+              OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
+          RETURNING m.version`,[JSON.stringify(result.state),matchId,match.version,actor]);
+        if(!updated.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        match={...match,state:result.state,version:updated.rows[0].version};
+      }
+      return json(res,200,{ok:true,match:{
+        id:matchId,game:match.game,version:match.version,player,
+        players:[match.sender_nick,match.recipient_nick],
+        state:match.state,playable:match.playable===true
+      }}),true;
+    }catch(e){
+      console.error('MATCH_ERROR',{code:safeText(e?.code)||'MATCH_ERROR'});
+      return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+    }
+  }
   if(url.pathname==='/auth/social/messages'||url.pathname==='/auth/social/challenges'){
     const messages=url.pathname.endsWith('/messages');
     if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
