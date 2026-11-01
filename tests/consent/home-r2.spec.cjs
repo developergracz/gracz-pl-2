@@ -550,6 +550,51 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
  }
 });
 
+test('R22 approved newsletter has premium full-width side ambience without cropping the image',async({browser})=>{
+ test.setTimeout(90000);
+ fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
+ for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
+  const ctx=await browser.newContext({viewport});
+  try{
+   const page=await ctx.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
+   await section.scrollIntoViewIfNeeded();
+   const art=section.locator('img.footer-news-full-art-r16');
+   await expect(art).toBeVisible();
+   await expect.poll(()=>art.evaluate(img=>img.complete&&img.naturalWidth===1671&&img.naturalHeight===941),{timeout:12000}).toBe(true);
+   const state=await page.evaluate(()=>{
+    const footer=document.querySelector('.site-footer');
+    const banner=footer.querySelector('.footer-news--approved-r16');
+    const art=banner.querySelector('img.footer-news-full-art-r16');
+    const form=banner.querySelector('form[data-newsletter]');
+    const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,top:r.top,bottom:r.bottom}};
+    return {footer:rect(footer),banner:rect(banner),art:rect(art),
+      beforeContent:getComputedStyle(footer,'::before').content,
+      beforeBackground:getComputedStyle(footer,'::before').backgroundImage,
+      emailCount:form.querySelectorAll('input[type=email]').length,
+      submitCount:form.querySelectorAll('button[type=submit]').length,
+      overflow:document.documentElement.scrollWidth};
+   });
+   expect(state.footer.left).toBeGreaterThanOrEqual(-2);
+   expect(state.footer.right).toBeLessThanOrEqual(viewport.width+2);
+   expect(state.footer.width).toBeGreaterThanOrEqual(viewport.width-2);
+   expect(state.beforeContent).not.toBe('none');
+   expect(state.beforeBackground).toContain('radial-gradient');
+   expect(state.banner.left).toBeGreaterThan(50);
+   expect(state.banner.right).toBeLessThan(viewport.width-50);
+   expect(state.art.width).toBeCloseTo(state.banner.width,0);
+   expect(state.art.top).toBeCloseTo(state.banner.top,0);
+   expect(state.art.bottom).toBeCloseTo(state.banner.bottom,0);
+   expect(state.overflow).toBeLessThanOrEqual(viewport.width+2);
+   expect(state.emailCount).toBe(1);
+   expect(state.submitCount).toBe(1);
+   await page.screenshot({path:'test-results/home-r4/newsletter-r22-viewport-'+viewport.width+'.png',animations:'disabled',fullPage:false});
+  }finally{await ctx.close();}
+ }
+});
+
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
  ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-wide-approved-r10.avif'],
