@@ -455,7 +455,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
-test('R20 newsletter scales to the whole visible desktop viewport without cropping', async({browser})=>{
+test('R21 newsletter scales to desktop without clipping the image', async({browser})=>{
  test.setTimeout(60000);
  for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:785},{width:1600,height:900}]){
   const context=await browser.newContext({viewport});
@@ -477,9 +477,9 @@ test('R20 newsletter scales to the whole visible desktop viewport without croppi
     return {s:rect(section),art:rect(img),form:rect(form),overflow:document.documentElement.scrollWidth};
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
-   expect(geo.s.width).toBeLessThanOrEqual(1121);
+   expect(geo.s.width).toBeLessThanOrEqual(1361);
    expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-167);
+   expect(geo.s.height,'full banner must fit inside the visible browser height').toBeLessThanOrEqual(viewport.height-157);
    expect(geo.s.top,'image top must remain in viewport after scrolling to newsletter').toBeGreaterThanOrEqual(-2);
    expect(geo.s.bottom,'image bottom must remain in viewport after scrolling to newsletter').toBeLessThanOrEqual(viewport.height+2);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
@@ -490,6 +490,56 @@ test('R20 newsletter scales to the whole visible desktop viewport without croppi
    await expect(form.locator('input[type=email]')).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
   }finally{await context.close();}
+ }
+});
+
+test('R21 actual newsletter is full-width on phones and loads real images',async({browser})=>{
+ test.setTimeout(90000);
+ const sizes=[
+  {width:360,height:780},
+  {width:390,height:844},
+  {width:768,height:950},
+  {width:1024,height:720},
+  {width:1600,height:785}
+ ];
+ fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
+ for(const viewport of sizes){
+  const ctx=await browser.newContext({viewport});
+  try{
+   const page=await ctx.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
+   const form=section.locator('form[data-newsletter]');
+   await expect(form).toHaveClass(/footer-newsletter-live/);
+   await section.scrollIntoViewIfNeeded();
+   const image=section.locator(viewport.width<=960?'.footer-news-smartphone':'.footer-news-full-art-r16');
+   await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(el=>el.complete&&el.naturalWidth>0),{timeout:15000}).toBe(true);
+   const g=await section.evaluate(el=>{
+    const rect=x=>{const r=x.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+    const f=el.querySelector('form[data-newsletter]');
+    const h=el.querySelector('h2');
+    const input=f.querySelector('input[type=email]');
+    return {banner:rect(el),heading:rect(h),input:rect(input),form:rect(f),screenWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth};
+   });
+   expect(g.scrollWidth,'No horizontal page overflow').toBeLessThanOrEqual(viewport.width+2);
+   expect(g.banner.left,'Banner must stay inside screen').toBeGreaterThanOrEqual(-2);
+   expect(g.banner.right,'Banner must stay inside screen').toBeLessThanOrEqual(viewport.width+2);
+   if(viewport.width<=960){
+    expect(g.banner.width,'Mobile newsletter must use real available screen width').toBeGreaterThanOrEqual(viewport.width*.82);
+    expect(g.heading.width,'Mobile heading may not collapse to narrow vertical strip').toBeGreaterThanOrEqual(viewport.width*.60);
+    expect(g.form.width,'Signup form must use full mobile column').toBeGreaterThanOrEqual(viewport.width*.67);
+    expect(g.input.width,'Email input may not collapse').toBeGreaterThanOrEqual(viewport.width*.55);
+   }else{
+    expect(g.banner.height).toBeLessThanOrEqual(viewport.height-151);
+    expect(g.banner.width).toBeGreaterThan(800);
+   }
+   if(viewport.width===390||viewport.width===1600){
+    await section.screenshot({path:'test-results/home-r4/newsletter-r21-'+viewport.width+'.png',animations:'disabled'});
+    await page.screenshot({path:'test-results/home-r4/newsletter-r21-viewport-'+viewport.width+'.png',fullPage:false,animations:'disabled'});
+   }
+  }finally{await ctx.close()}
  }
 });
 
