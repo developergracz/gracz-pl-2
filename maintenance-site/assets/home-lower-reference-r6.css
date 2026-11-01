@@ -1281,6 +1281,13 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
   height:50px!important;
   min-height:50px!important;
  }
+ /* Legacy footer navigation duplicates the header and creates a second tall grid row.
+    Keep the legal/social bar; do not let this obsolete row push the scene off screen. */
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-brand,
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-col[aria-labelledby="f-nav"],
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-col[aria-labelledby="f-popular"]{
+  display:none!important;
+ }
  /* A single real checkbox must cover the painted checkbox, not appear above it. */
  body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > .news-form > .footer-newsletter-consent{
   top:calc(100% + clamp(12px,3dvh - 5px,28px))!important;
