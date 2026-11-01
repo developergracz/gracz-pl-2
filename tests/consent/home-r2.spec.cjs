@@ -455,7 +455,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
  }
 });
 
-test('R18 accepted newsletter artwork fits whole desktop viewport without clipping', async({browser})=>{
+test('R19 readable newsletter remains uncropped across desktop viewport sizes', async({browser})=>{
  test.setTimeout(60000);
  for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:900}]){
   const context=await browser.newContext({viewport});
@@ -478,7 +478,7 @@ test('R18 accepted newsletter artwork fits whole desktop viewport without clippi
    });
    expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
    expect(geo.s.width).toBeLessThanOrEqual(1121);
-   expect(geo.s.height,'entire scene must fit available browser height').toBeLessThanOrEqual(viewport.height-231);
+   expect(geo.s.width,'newsletter must remain legible instead of shrinking with viewport height').toBeGreaterThanOrEqual(viewport.width>1200?1100:850);
    expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
    expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
    expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
