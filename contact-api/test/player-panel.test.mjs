@@ -28,6 +28,8 @@ const account={id:'00000000-0000-4000-8000-000000000001',nickname:'TestowyGracz'
   email_key:'testowy@example.test',created_at:'2026-11-01T00:00:00Z'};
 function fixture(){
   let profile=null;
+  let preferences=null;
+  let otherSessions=1;
   const queries=[];
   const database={enabled:true,async query(sql,params=[]){
     queries.push({sql,params});
@@ -35,6 +37,26 @@ function fixture(){
       if(!params[0] || Buffer.from(params[0]).length!==32)return {rows:[]};
       return {rows:[{...account,display_name:profile?.displayName||null,
         bio:profile?.bio||null,country:profile?.country||null,language:profile?.language||null}]};
+    }
+    if(sql.includes('SELECT a.id FROM gracz_public_identity.sessions s')){
+      if(!params[0]||Buffer.from(params[0]).length!==32)return {rows:[]};
+      return {rows:[{id:account.id}],rowCount:1};
+    }
+    if(sql.includes('SELECT density,reduce_motion,large_text,favorite_games')){
+      return {rows:preferences?[preferences]:[]};
+    }
+    if(sql.includes('SELECT created_at,expires_at,(token_digest=$2)')){
+      return {rows:[
+        {created_at:'2026-11-01T09:00:00Z',expires_at:'2026-11-08T09:00:00Z',current:true},
+        ...(otherSessions?[{created_at:'2026-11-01T08:00:00Z',expires_at:'2026-11-08T08:00:00Z',current:false}]:[])
+      ]};
+    }
+    if(sql.includes('INSERT INTO gracz_public_identity.player_preferences')){
+      preferences={density:params[1],reduce_motion:params[2],large_text:params[3],favorite_games:params[4]};
+      return {rows:[],rowCount:1};
+    }
+    if(sql.includes('DELETE FROM gracz_public_identity.sessions')&&sql.includes('token_digest<>')){
+      const count=otherSessions;otherSessions=0;return {rows:[],rowCount:count};
     }
     if(sql.includes('INSERT INTO gracz_public_identity.profiles')){
       profile={displayName:params[1],bio:params[2],country:params[3],language:params[4]};
@@ -60,7 +82,7 @@ test('panel renders nine documented sections and syntactically valid browser Jav
     assert.equal(res.headers['Cache-Control'],'no-store');
     if(path.endsWith('/')) {
       assert.match(res.body,/noindex,nofollow,noarchive/);
-      assert.equal((res.body.match(/data-section="/g)||[]).length,9);
+      assert.equal((res.body.match(/data-section="/g)||[]).length,10);
     }
     if(path.endsWith('.js'))new Script(res.body);
     if(path.endsWith('.css'))assert.match(res.body,/@media\(max-width:610px\)/);
@@ -163,4 +185,76 @@ test('login page verifies server-side session cookie before opening player panel
   assert.equal(serveIdentityPage({method:'GET'},res,new URL('/konto/app.js','https://gracz-contact-api.onrender.com')),true);
   assert.match(res.body,/const session=await api\('session'\)/);
   assert.match(res.body,/if\(!session\.loggedIn \|\| session\.nickname!==b\.nickname\)/);
+});
+
+
+test('Full Max Premium center rejects unauthenticated requests and unsafe origins',async()=>{
+  const {call}=fixture();
+  const noSession=await call('GET','/auth/player-center');
+  assert.equal(noSession.status,401);
+  const invalidOrigin=await call('PUT','/auth/player-center',{cookie,origin:'https://attacker.test',
+    body:{density:'compact',reduceMotion:true,largeText:false,favoriteGames:[]}});
+  assert.equal(invalidOrigin.status,403);
+  const missing=await call('POST','/auth/player-center/revoke-others');
+  assert.equal(missing.status,403);
+  const wrongMethod=await call('POST','/auth/player-center',{cookie,origin:'https://gracz-contact-api.onrender.com'});
+  assert.equal(wrongMethod.status,405);
+});
+
+test('premium settings and game favorites persist for the owning account',async()=>{
+  const {call,queries}=fixture();
+  const first=await call('GET','/auth/player-center',{cookie});
+  assert.equal(first.status,200);
+  assert.deepEqual(first.body.center.preferences,
+    {density:'comfortable',reduceMotion:false,largeText:false,favoriteGames:[]});
+  assert.equal(first.body.center.sessions.length,2);
+  assert.equal(first.body.center.sessions.filter(x=>x.current).length,1);
+  assert.equal(JSON.stringify(first.body).includes('token_digest'),false);
+  const origin='https://gracz-contact-api.onrender.com';
+  const unsafe=await call('PUT','/auth/player-center',{cookie,origin,
+    body:{density:'full',reduceMotion:false,largeText:false,favoriteGames:[]}});
+  assert.equal(unsafe.status,400);
+  const duplicate=await call('PUT','/auth/player-center',{cookie,origin,
+    body:{density:'compact',reduceMotion:true,largeText:true,favoriteGames:['warcaby','warcaby']}});
+  assert.equal(duplicate.status,400);
+  const save=await call('PUT','/auth/player-center',{cookie,origin,
+    body:{density:'compact',reduceMotion:true,largeText:true,favoriteGames:['warcaby','gomoku']}});
+  assert.equal(save.status,200);
+  assert.deepEqual(save.body.center.preferences,
+    {density:'compact',reduceMotion:true,largeText:true,favoriteGames:['warcaby','gomoku']});
+  const entry=queries.find(x=>x.sql.includes('INSERT INTO gracz_public_identity.player_preferences'));
+  assert.deepEqual(entry.params,[account.id,'compact',true,true,['warcaby','gomoku']]);
+  const reread=await call('GET','/auth/player-center',{cookie});
+  assert.deepEqual(reread.body.center.preferences,save.body.center.preferences);
+});
+
+test('revoking other sessions retains current session and is idempotent',async()=>{
+  const {call,queries}=fixture();
+  const options={cookie,origin:'https://gracz-contact-api.onrender.com',body:{}};
+  const revoked=await call('POST','/auth/player-center/revoke-others',options);
+  assert.equal(revoked.status,200);
+  assert.equal(revoked.body.revoked,1);
+  const sql=queries.find(x=>x.sql.includes('token_digest<>'));
+  assert.equal(sql.params[0],account.id);
+  assert.equal(Buffer.from(sql.params[1]).byteLength,32);
+  const remaining=await call('GET','/auth/player-center',{cookie});
+  assert.equal(remaining.body.center.sessions.length,1);
+  assert.equal(remaining.body.center.sessions[0].current,true);
+  const again=await call('POST','/auth/player-center/revoke-others',options);
+  assert.equal(again.body.revoked,0);
+});
+
+test('dashboard includes real controls for sessions, favorites, preferences and limited data export',()=>{
+ const htmlRes=response(),jsRes=response();
+ servePlayerPanel({method:'GET'},htmlRes,new URL('/konto/panel/','https://gracz-contact-api.onrender.com'));
+ servePlayerPanel({method:'GET'},jsRes,new URL('/konto/panel/app.js','https://gracz-contact-api.onrender.com'));
+ for(const id of ['dashboard-sessions','dashboard-favorites','dashboard-joined','setting-density',
+   'setting-large','setting-motion','sessions-revoke','export-profile']){
+   assert.match(htmlRes.body,new RegExp('id="'+id+'"'));
+ }
+ assert.match(jsRes.body,/api\('player-center'/);
+ assert.match(jsRes.body,/player-center\/revoke-others/);
+ assert.match(htmlRes.body,/Poker treningowy/);
+ assert.match(htmlRes.body,/gracz\.pl\/gry\/warcaby/);
+ assert.match(htmlRes.body,/nie jest pełny eksport/i);
 });
