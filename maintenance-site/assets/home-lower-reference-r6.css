@@ -1194,3 +1194,50 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
     opacity:1!important;
   }
 }
+
+
+/* Owner R27 — full-width newsletter art, proportional 1671×941.
+   Do not constrain its width from the viewport height or blur/crop the image.
+   On short windows, natural vertical scrolling preserves all artwork and live controls. */
+@media (min-width:961px){
+ body.homepage-premium-max .site-footer {
+  width:100%!important;
+  max-width:none!important;
+  min-height:calc(100dvh - 76px)!important;
+  overflow:visible!important;
+ }
+ body.homepage-premium-max .site-footer > .footer-grid {
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  flex:1 0 auto!important;
+  align-items:stretch!important;
+  justify-content:stretch!important;
+ }
+ body.homepage-premium-max .site-footer .footer-grid > .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
+  grid-column:1 / -1!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  aspect-ratio:1671 / 941!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > .footer-news-full-art-r16 {
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1671 / 941!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  filter:none!important;
+  transform:none!important;
+ }
+}
