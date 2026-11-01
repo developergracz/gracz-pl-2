@@ -98,6 +98,27 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
        created_at timestamptz NOT NULL DEFAULT now(),
        PRIMARY KEY(blocker,blocked),CHECK(blocker<>blocked))`);
      await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_blocks_target ON gracz_public_identity.friend_blocks(blocked)');
+
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
+       id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       recipient_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1000),
+       created_at timestamptz NOT NULL DEFAULT now(),
+       CHECK (sender_id<>recipient_id))`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_messages_pair ON gracz_public_identity.friend_messages(sender_id,recipient_id,created_at DESC)');
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_messages_inbox ON gracz_public_identity.friend_messages(recipient_id,created_at DESC)');
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_challenges (
+       id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       recipient_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       game text NOT NULL CHECK (game IN ('warcaby','gomoku')),
+       status text NOT NULL CHECK (status IN ('pending','accepted','declined','cancelled','expired')),
+       created_at timestamptz NOT NULL DEFAULT now(),
+       updated_at timestamptz NOT NULL DEFAULT now(),
+       expires_at timestamptz NOT NULL DEFAULT (now()+interval '7 days'),
+       CHECK (sender_id<>recipient_id))`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_recipient ON gracz_public_identity.game_challenges(recipient_id,created_at DESC)');
+     await database.query("CREATE UNIQUE INDEX IF NOT EXISTS gracz_challenges_one_pending ON gracz_public_identity.game_challenges(LEAST(sender_id,recipient_id),GREATEST(sender_id,recipient_id),game) WHERE status='pending'");
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
@@ -232,7 +253,138 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
     }
   }
 
-   if(url.pathname==='/auth/friends' || url.pathname==='/auth/friends/search' ||
+ 
+  if(url.pathname==='/auth/social/messages'||url.pathname==='/auth/social/challenges'){
+    const messages=url.pathname.endsWith('/messages');
+    if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+    if(req.method==='POST'&&!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+    try{
+      await ready();
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const auth=await database.query(`SELECT a.id FROM gracz_public_identity.sessions s
+        JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+        WHERE s.token_digest=$1 AND s.expires_at>now()
+        AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+      if(!auth.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+      const actor=auth.rows[0].id;
+      // Only verified friends without a block in either direction may exchange content.
+      const findFriend=nickname=>database.query(`SELECT a.id,a.nickname
+        FROM gracz_public_identity.accounts a
+        JOIN gracz_public_identity.friend_connections c
+          ON c.account_a=LEAST($1::uuid,a.id) AND c.account_b=GREATEST($1::uuid,a.id)
+          AND c.status='accepted'
+        WHERE a.nickname_key=$2 AND a.id<>$1 AND a.verified_at IS NOT NULL
+          AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+            WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1))
+        LIMIT 1`,[actor,normalizeNick(nickname).toLowerCase()]);
+      if(messages){
+        if(req.method==='GET'){
+          const nick=normalizeNick(url.searchParams.get('nick'));
+          if(!validNick(nick))return bad(res,400,'WPISZ_NICK'),true;
+          if(!allow('thread-read:'+actor,180))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+          const friend=await findFriend(nick);
+          if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
+          const other=friend.rows[0];
+          const result=await database.query(`SELECT id,sender_id,body,created_at FROM (
+            SELECT id,sender_id,body,created_at FROM gracz_public_identity.friend_messages
+            WHERE (sender_id=$1 AND recipient_id=$2) OR (sender_id=$2 AND recipient_id=$1)
+            ORDER BY created_at DESC,id DESC LIMIT 60
+          ) recent ORDER BY created_at ASC,id ASC`,[actor,other.id]);
+          return json(res,200,{ok:true,friend:other.nickname,messages:result.rows.map(row=>({
+            id:row.id,own:row.sender_id===actor,body:row.body,createdAt:row.created_at
+          }))}),true;
+        }
+        if(!allow('message-send:'+actor,45))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+        let body;try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+        const nick=normalizeNick(body.nickname);
+        const content=typeof body.message==='string'?body.message.trim():'';
+        if(!validNick(nick)||content.length<1||content.length>1000||
+          /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(content))
+          return bad(res,400,'POPRAW_WIADOMOSC'),true;
+        const friend=await findFriend(nick);
+        if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
+        const saved=await database.query(`INSERT INTO gracz_public_identity.friend_messages(id,sender_id,recipient_id,body)
+          SELECT $1,$2,$3,$4
+          WHERE EXISTS(
+            SELECT 1 FROM gracz_public_identity.friend_connections c
+              WHERE c.account_a=LEAST($2::uuid,$3::uuid)
+              AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
+          AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+            WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
+          RETURNING id,created_at`,[randomUUID(),actor,friend.rows[0].id,content]);
+        if(!saved.rowCount)return bad(res,409,'TYLKO_ZNAJOMI'),true;
+        return json(res,200,{ok:true,message:{id:saved.rows[0].id,createdAt:saved.rows[0].created_at}}),true;
+      }
+      if(req.method==='GET'){
+        if(!allow('challenges-read:'+actor,120))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+        const result=await database.query(`SELECT c.id,c.game,
+          CASE WHEN c.expires_at<=now() AND c.status='pending' THEN 'expired' ELSE c.status END AS status,
+          c.created_at,c.expires_at,c.sender_id=$1 AS outgoing,
+          a.nickname AS opponent
+          FROM gracz_public_identity.game_challenges c
+          JOIN gracz_public_identity.accounts a ON a.id=CASE
+            WHEN c.sender_id=$1 THEN c.recipient_id ELSE c.sender_id END
+          WHERE (c.sender_id=$1 OR c.recipient_id=$1)
+          AND c.created_at>now()-interval '30 days'
+          ORDER BY c.created_at DESC LIMIT 60`,[actor]);
+        return json(res,200,{ok:true,challenges:result.rows.map(row=>({
+          id:row.id,game:row.game,status:row.status,opponent:row.opponent,
+          outgoing:row.outgoing===true,createdAt:row.created_at,expiresAt:row.expires_at
+        }))}),true;
+      }
+      if(!allow('challenge-action:'+actor,30))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+      let body;try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+      const action=safeText(body.action);
+      if(action==='send'){
+        const nick=normalizeNick(body.nickname),game=safeText(body.game);
+        if(!validNick(nick)||!['warcaby','gomoku'].includes(game))
+          return bad(res,400,'BLEDNE_DANE'),true;
+        const friend=await findFriend(nick);
+        if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
+        const other=friend.rows[0].id;
+        await database.query(`UPDATE gracz_public_identity.game_challenges
+          SET status='expired',updated_at=now()
+          WHERE status='pending' AND expires_at<=now()
+          AND ((sender_id=$1 AND recipient_id=$2) OR (sender_id=$2 AND recipient_id=$1))`,[actor,other]);
+        let saved;
+        try{
+          saved=await database.query(`INSERT INTO gracz_public_identity.game_challenges
+            (id,sender_id,recipient_id,game,status)
+            SELECT $1,$2,$3,$4,'pending'
+            WHERE EXISTS(SELECT 1 FROM gracz_public_identity.friend_connections c
+              WHERE c.account_a=LEAST($2::uuid,$3::uuid)
+              AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
+            AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+              WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
+            ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game]);
+        }catch(e){if(e?.code==='23505')return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;throw e;}
+        if(!saved.rowCount)return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;
+        return json(res,200,{ok:true,id:saved.rows[0].id,game}),true;
+      }
+      if(!['accept','decline','cancel'].includes(action)||
+        typeof body.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.id))
+        return bad(res,400,'BLEDNE_DANE'),true;
+      const status=action==='accept'?'accepted':action==='decline'?'declined':'cancelled';
+      const role=action==='cancel'?'sender_id':'recipient_id';
+      const changed=await database.query(`UPDATE gracz_public_identity.game_challenges c
+        SET status=$1,updated_at=now()
+        WHERE c.id=$2 AND c.${role}=$3 AND c.status='pending' AND c.expires_at>now()
+        AND EXISTS (SELECT 1 FROM gracz_public_identity.friend_connections f
+          WHERE f.account_a=LEAST(c.sender_id,c.recipient_id)
+          AND f.account_b=GREATEST(c.sender_id,c.recipient_id) AND f.status='accepted')
+        AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+          WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+          OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
+        RETURNING c.id`,[status,body.id,actor]);
+      if(!changed.rowCount)return bad(res,409,'ZAPROSZENIE_NIEAKTUALNE'),true;
+      return json(res,200,{ok:true,id:changed.rows[0].id,status}),true;
+    }catch(e){
+      console.error('SOCIAL_ERROR',{code:safeText(e?.code)||'SOCIAL_ERROR'});
+      return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+    }
+  }
+  if(url.pathname==='/auth/friends' || url.pathname==='/auth/friends/search' ||
       url.pathname==='/auth/friends/action'){
      const isSearch=url.pathname.endsWith('/search'),isAction=url.pathname.endsWith('/action');
      if((isAction&&req.method!=='POST')||(!isAction&&req.method!=='GET'))
