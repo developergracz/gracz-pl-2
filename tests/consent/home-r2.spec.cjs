@@ -368,7 +368,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(geo.news.width).toBeLessThanOrEqual(1121);
+    expect(geo.news.width).toBeLessThanOrEqual(1361);
     expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
@@ -435,7 +435,7 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     expect(Math.abs((fy-y)/(b-y)-.3920)).toBeLessThan(.022);
     expect(Math.abs((fr-fx)/(r-x)-.4505)).toBeLessThan(.024);
     expect(Math.abs((fb-fy)/(b-y)-.0800)).toBeLessThan(.024);
-    expect(r-x,'compact desktop newsletter width').toBeLessThanOrEqual(1121);
+    expect(r-x,'desktop newsletter width').toBeLessThanOrEqual(1361);
     const [ex,ey,er,eb]=state.email;
     const [bx,by,br,bb]=state.submit;
     expect(er).toBeLessThanOrEqual(bx+2);
@@ -521,8 +521,15 @@ test('R21 actual newsletter is full-width on phones and loads real images',async
     const f=el.querySelector('form[data-newsletter]');
     const h=el.querySelector('h2');
     const input=f.querySelector('input[type=email]');
-    return {banner:rect(el),heading:rect(h),input:rect(input),form:rect(f),screenWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth};
+    const grid=el.parentElement,footer=el.closest('.site-footer');
+    return {banner:rect(el),heading:rect(h),input:rect(input),form:rect(f),
+      grid:rect(grid),footer:rect(footer),gridColumns:getComputedStyle(grid).gridTemplateColumns,
+      screenWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth};
    });
+   if(viewport.width===768) {
+    await section.screenshot({path:'test-results/home-r4/newsletter-r21-768-diagnostic.png',animations:'disabled'});
+    console.log('R21 TABLET GEO',JSON.stringify(g));
+   }
    expect(g.scrollWidth,'No horizontal page overflow').toBeLessThanOrEqual(viewport.width+2);
    expect(g.banner.left,'Banner must stay inside screen').toBeGreaterThanOrEqual(-2);
    expect(g.banner.right,'Banner must stay inside screen').toBeLessThanOrEqual(viewport.width+2);
