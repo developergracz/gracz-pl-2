@@ -280,7 +280,7 @@ test('friends relationship mutations bind account IDs and do not accept client-s
     recorded.push({sql,params});
     if(sql.includes('SELECT a.id')&&sql.includes('FROM gracz_public_identity.sessions s'))
       return {rows:[{id:account.id}],rowCount:1};
-    if(sql.includes('SELECT id FROM gracz_public_identity.accounts WHERE nickname_key='))
+    if(sql.includes('SELECT id FROM gracz_public_identity.accounts')&&sql.includes('WHERE nickname_key='))
       return {rows:params[0]==='graczbeta'?[other]:[],rowCount:params[0]==='graczbeta'?1:0};
     if(sql.includes('INSERT INTO gracz_public_identity.friend_connections')){
       if(relations.has('pair')||blocks.size)return {rows:[],rowCount:0};
