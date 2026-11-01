@@ -82,7 +82,7 @@ test('panel renders nine documented sections and syntactically valid browser Jav
     assert.equal(res.headers['Cache-Control'],'no-store');
     if(path.endsWith('/')) {
       assert.match(res.body,/noindex,nofollow,noarchive/);
-      assert.equal((res.body.match(/data-section="/g)||[]).length,10);
+      assert.equal((res.body.match(/data-section="/g)||[]).length,11);
     }
     if(path.endsWith('.js'))new Script(res.body);
     if(path.endsWith('.css'))assert.match(res.body,/@media\(max-width:610px\)/);
