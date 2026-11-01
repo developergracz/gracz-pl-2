@@ -25,6 +25,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
+ assert.match(html,/id="ai-level"/);
+ assert.match(html,/<option value="expert" selected>/);
+ assert.match(html,/<option value="hard">/);
+ assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
  assert.match(css,/@media\(max-width:560px\)/);assert.match(css,/aspect-ratio:1/);
  new Script(served('/konto/gomoku/app.js').body);
@@ -93,4 +97,64 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children[44].classes.has('p1'),true);
  assert.equal(get('move-count').textContent,'Ruchy: 1');
  assert.ok(calls.every(x=>x.options.credentials==='same-origin'));
+});
+
+
+function getTrainedAI(){
+ const client=served('/konto/gomoku/app.js').body;
+ const head=client.indexOf('function victory('),end=client.indexOf('function describe(',head);
+ const from=client.indexOf('const axes='),until=client.indexOf('function trainMove(',from);
+ assert.ok(head>=0&&end>head&&from>=0&&until>from,'AI components are present');
+ const evaluator=[
+  'const size=15,count=225;',
+  'const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;',
+  client.slice(head,end),client.slice(from,until),
+  '({cpuMove,tacticalScore})'
+ ].join('\n');
+ return new Script(evaluator).runInNewContext({});
+}
+
+test('Expert Gomoku AI wins immediately rather than making a merely attractive move',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ for(const col of [4,5,6,7])board[7*15+col]=2;
+ for(const col of [3,4,5])board[10*15+col]=1;
+ const original=board.slice();
+ for(const level of ['normal','hard','expert']){
+  const move=cpuMove(board,level);
+  assert.ok([7*15+3,7*15+8].includes(move),level+' must finish five-in-a-row');
+  assert.deepEqual(board,original,'AI cannot mutate active board state');
+ }
+});
+
+test('Gomoku AI blocks the only immediate human win at all levels',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ board[7*15+3]=2; // Close the left end of the human four.
+ for(const col of [4,5,6,7])board[7*15+col]=1;
+ for(const level of ['normal','hard','expert']){
+  assert.equal(cpuMove(board,level),7*15+8,level+' must block human win');
+ }
+});
+
+test('Expert Gomoku AI builds a decisive crossing double threat',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ for(const col of [5,6,8])board[7*15+col]=2;
+ board[6*15+7]=2;board[8*15+7]=2;
+ for(const level of ['hard','expert'])
+  assert.equal(cpuMove(board,level),7*15+7,level+' must find crossing threat');
+});
+
+test('Expert Gomoku AI chooses legal, deterministic moves in a midgame position',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ for(let n=0;n<32;n++){
+  const r=5+(n*3)%6,c=4+(n*7)%7,at=r*15+c;
+  if(!board[at])board[at]=n%2+1;
+ }
+ const first=cpuMove(board,'expert'),second=cpuMove(board,'expert');
+ assert.equal(first,second,'Same position must yield same choice');
+ assert.ok(Number.isInteger(first)&&first>=0&&first<225);
+ assert.equal(board[first],0);
 });
