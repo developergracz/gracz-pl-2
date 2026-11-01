@@ -28,6 +28,7 @@ const html=String.raw`<!doctype html>
 <nav aria-label="Panel gracza">
 <button class="nav active" data-section="dashboard" type="button"><span aria-hidden="true">⌂</span> Pulpit gracza</button>
 <button class="nav" data-section="profile" type="button"><span aria-hidden="true">♙</span> Konto i profil</button>
+<button class="nav" data-section="friends" type="button"><span aria-hidden="true">♧</span> Moi znajomi</button>
 <button class="nav" data-section="security" type="button"><span aria-hidden="true">✦</span> Bezpieczeństwo</button>
 <button class="nav" data-section="privacy" type="button"><span aria-hidden="true">◈</span> Prywatność</button>
 <button class="nav" data-section="notifications" type="button"><span aria-hidden="true">♢</span> Powiadomienia</button>
@@ -65,6 +66,25 @@ const html=String.raw`<!doctype html>
 <label>Język<select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
 <label class="wide">O mnie<textarea id="bio" rows="4" maxlength="300" placeholder="Napisz kilka słów o sobie, ulubionych grach i stylu gry…"></textarea><small>Maksymalnie 300 znaków.</small></label></div>
 <div class="form-actions"><span id="saved-state">Dane zapisane bezpiecznie w koncie</span><button class="primary" id="save" type="submit">Zapisz profil</button></div></form></section>
+<section class="view" data-panel="friends">
+<div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
+<p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online i wiadomości będą dostępne po integracji modułu społeczności.</p>
+<form id="friends-search-form" class="friends-search" role="search">
+<label for="friends-query">Znajdź gracza</label><div class="friends-search-controls">
+<input id="friends-query" type="search" placeholder="Wpisz co najmniej 3 znaki nicku" minlength="3" maxlength="32" autocomplete="off" required>
+<button class="primary" type="submit">Szukaj</button></div></form>
+<div id="friends-search-results" class="friends-items" aria-live="polite"></div>
+<p id="friends-status" role="status" aria-live="polite">Twoja lista znajomych jest wczytywana…</p></div>
+<div class="stats friends-stats">
+<div class="card stat"><small>MOI ZNAJOMI</small><strong id="friends-count">—</strong><span>Zaakceptowane kontakty</span></div>
+<div class="card stat"><small>ZAPROSZENIA</small><strong id="friends-incoming-count">—</strong><span>Oczekujące na decyzję</span></div>
+<div class="card stat"><small>WYSŁANE</small><strong id="friends-outgoing-count">—</strong><span>Oczekujące na odpowiedź</span></div></div>
+<div class="card"><div class="card-heading"><div><p class="card-kicker">KONTAKTY</p><h2>Lista znajomych</h2></div><button id="friends-refresh" type="button" class="secondary">Odśwież</button></div><div id="friends-list" class="friends-items"></div></div>
+<div class="card"><p class="card-kicker">ZAPROSZENIA PRZYCHODZĄCE</p><h2>Zaproszenia do znajomych</h2><div id="friends-incoming" class="friends-items"></div></div>
+<div class="card"><p class="card-kicker">ZAPROSZENIA WYSŁANE</p><h2>Oczekujące odpowiedzi</h2><div id="friends-outgoing" class="friends-items"></div></div>
+<div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Zablokowani użytkownicy</h2>
+<p>Zablokowane osoby nie mogą wysyłać Ci zaproszeń. Możesz je odblokować w dowolnym momencie.</p><div id="friends-blocked" class="friends-items"></div></div>
+</section>
 <section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
 <div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła i 2FA</span><strong>W przygotowaniu</strong></div>
 <button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
@@ -106,6 +126,7 @@ const html=String.raw`<!doctype html>
 const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}html{background:#03101d;color:#f4f8fc;font-family:Inter,"Segoe UI",Arial,sans-serif}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 85% 12%,#073e52b5,transparent 38%),radial-gradient(ellipse at 14% 78%,#1830527d,transparent 38%),linear-gradient(145deg,#03101b,#071927 58%,#020914)}button,input,select,textarea{font:inherit}button,a{touch-action:manipulation}a{color:inherit}.skip{position:absolute;left:-999px;top:0;z-index:5}.skip:focus{left:15px;top:15px;background:#ffd07a;color:#071421;padding:9px}.top{min-height:80px;padding:14px clamp(16px,4.5vw,80px);display:flex;align-items:center;gap:30px;justify-content:space-between;background:#021321d9;border-bottom:1px solid #326073}.logo{font-size:clamp(30px,3vw,43px);font-weight:900;letter-spacing:-2px;text-decoration:none;white-space:nowrap}.logo span{color:#e92c49}.top-tag{font-size:11px;letter-spacing:2px;color:#99c7d8;font-weight:800}.top-tag b{color:#f7cb75;margin-left:13px}.top-link{border:1px solid #e9ba62;border-radius:9px;padding:11px 16px;text-decoration:none;color:#ffdc8c;font-weight:750;white-space:nowrap}.shell{max-width:1700px;margin:auto;display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;padding:clamp(14px,2.2vw,34px)}.sidebar{min-width:0;align-self:start;border:1px solid #2c5465;border-radius:22px;background:linear-gradient(160deg,#0b2434f5,#061824f5);box-shadow:0 18px 50px #0005;overflow:hidden;position:sticky;top:15px}.identity{padding:26px 23px 19px;border-bottom:1px solid #21475b}.avatar,.player-avatar{display:grid;place-items:center;border-radius:50%;border:2px solid #eac476;color:#ffd67d;background:radial-gradient(circle at 30% 25%,#246078,#041a2b 78%);font-weight:800;box-shadow:0 0 22px #0eb9da44}.avatar{height:64px;width:64px;font-size:31px}.small,.card-kicker,.eyebrow{font-size:11px;letter-spacing:2px;color:#e5bd74;font-weight:900}.identity strong{display:block;font-size:20px;overflow-wrap:anywhere}.identity .small{margin:16px 0 7px}.status{color:#99c9d3;font-size:12px;display:flex;align-items:center;gap:8px;margin-top:12px}.status i{height:8px;width:8px;background:#3ee5ac;border-radius:50%;box-shadow:0 0 10px #3ee5ac}.sidebar nav{display:grid;gap:5px;padding:17px 10px}.nav{display:flex;gap:12px;text-align:left;width:100%;align-items:center;background:transparent;color:#b6cfd9;border:1px solid transparent;border-radius:10px;padding:13px 14px;cursor:pointer;font-weight:700;font-size:13px}.nav span{width:23px;text-align:center;font-size:19px;color:#79c9d6}.nav:hover,.nav:focus-visible{background:#17364a;color:#fff}.nav.active{background:linear-gradient(90deg,#194454,#0b2c41);color:#fff;border-color:#427587}.nav.active span{color:#ffd07a}.signout{width:calc(100% - 24px);margin:2px 12px 16px;padding:13px;border:1px solid #42677a;border-radius:10px;background:#102c3d;color:#fff;font-weight:800;cursor:pointer}.signout span{float:right}.main{min-width:0}.masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:190px;margin-bottom:18px;padding:clamp(22px,3vw,42px);border-radius:22px;border:1px solid #266779;background:linear-gradient(110deg,#0c3249e8,#06162799 65%),radial-gradient(circle at 85% 45%,#0a778a8c,transparent 50%);position:relative;overflow:hidden}.masthead:after{content:"";pointer-events:none;position:absolute;inset:0;border-radius:22px;box-shadow:inset 0 0 65px #05b5ce16}.masthead h1{font-size:clamp(32px,4.4vw,55px);line-height:1.05;margin:12px 0;color:#fff;letter-spacing:-1px}.masthead p:last-child{color:#b4cfdc;margin:0}.mark{height:124px;width:124px;border:8px double #e4b96b;border-radius:50%;display:grid;place-items:center;align-content:center;transform:rotate(8deg);color:#ffd27c;background:#082638;box-shadow:0 0 40px #dcb56632;flex:none}.mark span{font-size:55px;line-height:1}.mark small{font-size:10px;font-weight:900}.notice{padding:12px 17px;background:#112d39;border:1px solid #386578;border-radius:12px;margin-bottom:16px;color:#c8e5ed;font-size:13px}.notice[hidden]{display:none}.notice.error{border-color:#a9505d;color:#ffdadc}.view{display:none}.view.active{display:grid;gap:18px}.card{background:linear-gradient(145deg,#0a2332f6,#061925f8);border:1px solid #2c5667;box-shadow:0 10px 40px #0004;border-radius:18px;padding:clamp(19px,2.5vw,32px)}.card h2{font-size:clamp(21px,2.5vw,30px);margin:5px 0 15px}.card p{line-height:1.7;color:#b7cbd4}.card-kicker{margin:0!important;color:#e8b967!important}.hero-card{display:flex;gap:24px;align-items:center;border-color:#906d3d;background:linear-gradient(100deg,#102b3d,#071d2e)}.player-avatar{width:87px;height:87px;flex:none;font-size:44px}.hero-card h2{margin:6px 0 2px}.hero-card p{margin:0}.verified{margin-left:auto;color:#66e6b9;border:1px solid #247967;background:#0d403d73;padding:9px 14px;border-radius:50px;font-size:12px;font-weight:800;white-space:nowrap}.card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}.card-note{font-size:12px;color:#95b4c1}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.form-grid label{display:grid;align-content:start;gap:9px;color:#d9e6ed;font-size:13px;font-weight:750}.form-grid .wide{grid-column:1/-1}.form-grid input,.form-grid select,.form-grid textarea{background:#091e2c;border:1px solid #426274;color:#fff;border-radius:9px;min-height:46px;padding:12px 13px;width:100%;min-width:0;outline-offset:3px}.form-grid textarea{resize:vertical;min-height:110px}.form-grid input:disabled{background:#0b2630;color:#a4bfce;cursor:not-allowed}.form-grid small{color:#85a8b9;font-size:11px}.form-actions{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;padding-top:25px}.form-actions span{color:#8bafbb;font-size:12px}.primary,.secondary{border-radius:10px;padding:14px 20px;font-size:14px;font-weight:850;cursor:pointer}.primary{border:1px solid #ffdd95;background:linear-gradient(180deg,#ffe1a0,#dca94f);color:#101725;box-shadow:0 5px 20px #edb35f35}.primary:disabled{opacity:.65;cursor:wait}.secondary{border:1px solid #5490a2;background:#10374b;color:#f2f9fb}.link-button{display:inline-flex;text-decoration:none;margin-top:12px}.detail{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #285062;padding:18px 0;color:#b2cad5}.detail strong{color:#fff;text-align:right}.footer{padding:23px;color:#7194a8;font-size:12px;text-align:center}:focus-visible{outline:3px solid #ffd17c;outline-offset:3px}@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:static}.sidebar nav{display:flex;overflow-x:auto;gap:8px}.nav{min-width:max-content;width:auto}.identity{display:flex;align-items:center;gap:13px;padding:14px}.identity .small,.identity .status{display:none}.avatar{width:45px;height:45px;font-size:24px}.identity strong{font-size:16px}.signout{width:auto;margin:0 12px 14px}.top-tag{display:none}}@media(max-width:610px){.top{min-height:65px}.top-link{font-size:12px;padding:10px}.shell{padding:12px;gap:14px}.masthead{min-height:155px;padding:20px}.mark{width:67px;height:67px;border-width:4px}.mark span{font-size:29px}.mark small{font-size:7px}.hero-card{flex-wrap:wrap;gap:12px}.player-avatar{height:68px;width:68px;font-size:33px}.verified{margin-left:0}.form-grid{grid-template-columns:1fr}.card-heading{display:block}.card-note{display:none}.form-actions{align-items:stretch}.form-actions button{width:100%}}.access-screen{min-height:calc(100dvh - 80px);display:grid;place-items:center;padding:20px}.access-card{width:min(100%,560px);text-align:center;border-radius:22px;border:1px solid #3d7080;background:linear-gradient(145deg,#102c41,#061925);box-shadow:0 18px 50px #0007;padding:clamp(25px,5vw,45px)}.access-icon{font-size:58px;color:#efc578;margin:12px auto}.access-card h1{font-size:clamp(26px,4vw,37px);margin:12px 0}.access-card>p:not(.card-kicker){color:#b8d1dc;line-height:1.6}.access-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:15px}.access-actions .primary,.access-actions .secondary{margin-top:0}
 
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.stat{padding:20px}.stat small{font-size:10px;color:#f4c67d;font-weight:900;letter-spacing:1.2px}.stat strong{display:block;font-size:clamp(22px,3vw,36px);margin:8px 0;color:#f6fbff}.stat span{font-size:12px;color:#a6c3d0}.favorite-links,.quick-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.favorite-links a{display:inline-flex;border:1px solid #478399;background:#103849;color:#e5f6fa;padding:10px 15px;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}.quick-actions .link-button{margin-top:0}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}.game-tile{padding:19px;border:1px solid #356679;background:linear-gradient(145deg,#0c3446,#081f30);border-radius:15px}.game-tile h3{font-size:19px;margin:8px 0 4px}.game-tile p{font-size:12px;margin:4px 0 14px}.game-emoji{font-size:30px;color:#f4cb80}.game-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}.game-actions a,.game-actions button{font-size:13px;font-weight:800;color:#dff9fd;border:1px solid #548b9c;border-radius:8px;background:#123e51;padding:9px 11px;text-decoration:none;cursor:pointer}.game-actions button[aria-pressed="true"]{background:#4c3e23;color:#f8d288;border-color:#d1aa66}.appearance-form{display:grid;gap:10px}.setting{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 0;border-bottom:1px solid #284858}.setting span{display:grid;gap:6px}.setting strong{font-size:14px}.setting small{font-size:12px;color:#9db6c5}.setting select{background:#0b2939;border:1px solid #4a8090;color:#fff;border-radius:8px;padding:11px;max-width:200px}.setting input{width:22px;height:22px;accent-color:#efc77d}.session-list{margin:18px 0}.session-item{border-bottom:1px solid #285364;padding:15px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.session-item strong{font-size:13px}.session-item span{display:block;margin-top:5px;color:#a1bcca;font-size:12px}.session-item em{font-size:11px;color:#a4ecd5;font-style:normal}body.panel-compact .card{padding:14px}body.panel-compact .view.active{gap:10px}body.panel-large{font-size:18px}body.panel-large .card p,body.panel-large .nav,body.panel-large .detail,body.panel-large .setting small{font-size:1rem}body.panel-no-motion *,body.panel-no-motion *:before,body.panel-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}@media(max-width:610px){.stats,.game-grid{grid-template-columns:1fr}.setting{flex-wrap:wrap}.session-item{align-items:flex-start}}
+.friends-search{display:grid;gap:10px}.friends-search label{font-size:13px;font-weight:800;color:#dcebf0}.friends-search-controls{display:flex;align-items:stretch;gap:10px}.friends-search-controls input{flex:1;min-width:0;background:#071e2a;border:1px solid #487a8d;color:#f1faff;font:inherit;font-size:14px;border-radius:10px;padding:13px}.friends-items{display:grid;gap:9px;margin:12px 0}.friend-person{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;background:linear-gradient(105deg,#0d3040,#081e2e);border:1px solid #35697b;border-radius:12px}.friend-name{font-size:14px;font-weight:850;overflow-wrap:anywhere}.friend-sub{font-size:11px;color:#9dbdcb;margin-top:4px}.friend-controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}.friend-controls button{border-radius:8px;border:1px solid #518b9c;background:#103849;color:#f1fcff;padding:9px 11px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}.friend-controls button.friend-main{border-color:#dfba73;background:#533e24;color:#ffdd9c}.friend-controls button:disabled{opacity:.55;cursor:wait}.friend-empty{color:#8daebb!important;font-size:13px;margin:6px 0!important}.friend-alert{color:#ffd59f!important;font-size:13px}.friends-stats .stat strong{font-variant-numeric:tabular-nums}@media(max-width:610px){.friends-search-controls{flex-wrap:wrap}.friends-search-controls button{width:100%}.friend-person{align-items:flex-start;flex-wrap:wrap}.friend-controls{width:100%;justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}`;
 const js=String.raw`(()=>{
 'use strict';
@@ -113,6 +134,7 @@ const $=id=>document.getElementById(id);
 const sectionNames={
  dashboard:['Pulpit gracza','Witaj w Twoim centrum rozgrywek.'],
  profile:['Konto i profil','Twoje miejsce w Polskim Centrum Gracza.'],
+ friends:['Moi znajomi','Kontakty, zaproszenia i bezpieczeństwo społeczności.'],
  security:['Bezpieczeństwo','Kontrola bezpieczeństwa Twojego konta.'],
  privacy:['Prywatność','Zarządzanie widocznością danych.'],
  notifications:['Powiadomienia','Informacje o Twoich aktywnościach.'],
@@ -190,18 +212,121 @@ async function saveCenter(next){
  applyCenter(result.center);
  return result.center;
 }
+
+let friendsState=null;
+function friendsStatus(message,error=false){
+ const el=$('friends-status');el.textContent=message;el.classList.toggle('friend-alert',error);
+}
+function friendRow(nickname,description,actions){
+ const row=document.createElement('div');row.className='friend-person';
+ const info=document.createElement('div');
+ const name=document.createElement('div');name.className='friend-name';name.textContent='♟ '+nickname;
+ const sub=document.createElement('div');sub.className='friend-sub';sub.textContent=description;
+ info.append(name,sub);row.append(info);
+ if(actions.length){
+  const controls=document.createElement('div');controls.className='friend-controls';
+  actions.forEach(({action,label})=>{
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   if(action==='accept'||action==='send')button.classList.add('friend-main');
+   button.setAttribute('aria-label',label+': '+nickname);
+   button.addEventListener('click',async()=>{
+    button.disabled=true;
+    try{await api('friends/action',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({action,nickname})});await refreshFriends();
+     friendsStatus('Wykonano: '+label.toLowerCase()+' — '+nickname+'.');
+    }catch(error){friendsStatus(error.message,true);}finally{button.disabled=false;}
+   });
+   controls.append(button);
+  });
+  row.append(controls);
+ }
+ return row;
+}
+function renderFriendList(id,items,empty,description,actions){
+ const container=$(id);container.replaceChildren();
+ if(!items.length){const p=document.createElement('p');p.className='friend-empty';p.textContent=empty;container.append(p);return;}
+ items.forEach(item=>container.append(friendRow(item.nickname,description,actions)));
+}
+async function refreshFriends(){
+ if(!sessionConfirmed)return;
+ try{
+  const result=await api('friends');
+  friendsState=result;
+  const accepted=result.connections.filter(x=>x.status==='accepted');
+  const incoming=result.connections.filter(x=>x.status==='pending'&&x.direction==='incoming');
+  const outgoing=result.connections.filter(x=>x.status==='pending'&&x.direction==='outgoing');
+  $('friends-count').textContent=String(accepted.length);
+  $('friends-incoming-count').textContent=String(incoming.length);
+  $('friends-outgoing-count').textContent=String(outgoing.length);
+  renderFriendList('friends-list',accepted,'Nie masz jeszcze znajomych.','Znajomy',
+   [{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
+  renderFriendList('friends-incoming',incoming,'Brak nowych zaproszeń.','Zaprasza Cię do znajomych',
+   [{action:'accept',label:'Akceptuj'},{action:'decline',label:'Odrzuć'},{action:'block',label:'Zablokuj'}]);
+  renderFriendList('friends-outgoing',outgoing,'Nie masz oczekujących zaproszeń.','Oczekuje na odpowiedź',
+   [{action:'cancel',label:'Anuluj'}]);
+  renderFriendList('friends-blocked',result.blocked,'Lista zablokowanych jest pusta.','Zablokowany użytkownik',
+   [{action:'unblock',label:'Odblokuj'}]);
+  friendsStatus('Znajomi: '+accepted.length+' · Zaproszenia: '+incoming.length+' · Wysłane: '+outgoing.length+'.');
+  return result;
+ }catch(error){
+  friendsStatus(error.message,true);
+  if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła. Zaloguj się, aby zarządzać znajomymi.',{login:true});
+  return null;
+ }
+}
+$('friends-refresh').addEventListener('click',()=>void refreshFriends());
+$('friends-search-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!sessionConfirmed)return;
+ const query=$('friends-query').value.trim();
+ if(!/^[a-z][a-z0-9._-]{2,31}$/i.test(query)){
+  friendsStatus('Nick musi mieć od 3 do 32 znaków i zaczynać się literą.',true);return;
+ }
+ const results=$('friends-search-results');results.replaceChildren();
+ friendsStatus('Wyszukiwanie graczy…');
+ try{
+  const result=await api('friends/search?nick='+encodeURIComponent(query));
+  const relationships=new Map((friendsState?.connections||[]).map(x=>[x.nickname.toLowerCase(),x]));
+  if(!result.players.length){
+   const message=document.createElement('p');message.className='friend-empty';
+   message.textContent='Nie znaleziono gracza o takim nicku.';results.append(message);
+  }
+  result.players.forEach(player=>{
+   const rel=relationships.get(player.nickname.toLowerCase());
+   let description='Możesz wysłać zaproszenie';
+   if(rel?.status==='accepted')description='Już jesteście znajomymi';
+   else if(rel?.direction==='outgoing')description='Zaproszenie już wysłane';
+   else if(rel?.direction==='incoming')description='Ta osoba już Cię zaprosiła';
+   const actions=rel?[]:[{action:'send',label:'Zaproś'}];
+   results.append(friendRow(player.nickname,description,actions));
+  });
+  friendsStatus('Wyniki wyszukiwania: '+result.players.length+'.');
+ }catch(error){friendsStatus(error.message,true);}
+});
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
  document.querySelectorAll('[data-section]').forEach(e=>{e.classList.toggle('active',e.dataset.section===name);e.setAttribute('aria-current',e.dataset.section===name?'page':'false');});
  document.querySelectorAll('[data-panel]').forEach(e=>e.classList.toggle('active',e.dataset.panel===name));
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
+ if(name==='friends'&&sessionConfirmed)void refreshFriends();
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
 async function api(path,options={}){
  const response=await fetch('/auth/'+path,{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...(options.headers||{})},...options});
  let body={};try{body=await response.json();}catch{}
- if(!response.ok||body.ok!==true){const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':'Nie udało się wykonać operacji.');error.status=response.status;throw error;}
+ if(!response.ok||body.ok!==true){
+  const messages={
+   WPISZ_NICK:'Wpisz co najmniej trzy poprawne znaki nicku.',
+   GRACZ_NIEDOSTEPNY:'Gracz nie istnieje, nie potwierdził e-maila albo nie może otrzymywać zaproszeń.',
+   ZAPROSZENIE_NIEDOSTEPNE:'Zaproszenie jest już wysłane, nieaktualne lub kontakt nie jest dozwolony.',
+   ZBYT_WIELE_ZAPROSZEN:'Limit zaproszeń został osiągnięty. Spróbuj później.',
+   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.'
+  };
+  const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
+   messages[body.error]||'Nie udało się wykonać operacji. Spróbuj ponownie.');
+  error.status=response.status;throw error;
+ }
  return body;
 }
 function fill(profile){
