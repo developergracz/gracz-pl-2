@@ -143,7 +143,7 @@ const $=id=>document.getElementById(id);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
- thinking:false,matchId:null,match:null,busy:false,epoch:0};
+ thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -186,6 +186,7 @@ function render(){
   if(col===size-1)cell.classList.add('edge-right');
   if([3,7,11].includes(row)&&[3,7,11].includes(col))cell.classList.add('star');
   if(piece){cell.classList.add('occupied','p'+piece);}
+  if(!online&&i===state.suggestion&&!piece)cell.classList.add('suggested');
   const last=online?(m?.state?.last??-1):state.last;
   if(last===i)cell.classList.add('last');
   cell.disabled=!!piece||!canPlay;
@@ -199,6 +200,8 @@ function render(){
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
  $('game-state').textContent=describe();
+ $('undo-move').disabled=online||state.snapshots.length===0;
+ $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
   $('black-name').textContent=m.players[0];$('white-name').textContent=m.players[1];
   $('session-heading').textContent='Partia online — Gomoku';
@@ -210,7 +213,8 @@ function render(){
 }
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
- state.last=-1;state.thinking=false;render();
+ state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;
+ $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
 // All candidate calculations temporarily place a stone and restore the board.
@@ -357,6 +361,8 @@ function cpuMove(board,level='expert'){
 }
 function trainMove(to){
  if(state.thinking||state.winner||state.board[to])return;
+ state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last});
+ state.suggestion=-1;$('analysis-note').hidden=true;
  state.board[to]=1;state.last=to;state.moves++;
  if(victory(state.board,to,1))state.winner=1;
  else if(state.moves===count)state.winner=3;
@@ -459,9 +465,45 @@ async function play(to){
  if(state.mode==='training')trainMove(to);
  else await onlineMove(to);
 }
+function undoTrainingMove(){
+ if(state.mode!=='training'||!state.snapshots.length)return;
+ ++state.epoch;state.thinking=false;
+ const previous=state.snapshots.pop();
+ state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
+ state.suggestion=-1;$('analysis-note').hidden=true;render();
+}
+function analyzeTrainingPosition(){
+ if(state.mode!=='training'||state.thinking||state.winner!==0)return;
+ const choices=rankedMoves(state.board,1,3);
+ if(!choices.length)return;
+ const candidate=choices[0];state.suggestion=candidate.at;
+ const row=Math.floor(candidate.at/15)+1,col=candidate.at%15+1;
+ const reason=candidate.attack>=decisive?'Możliwa natychmiastowa wygrana.':
+   candidate.block>=decisive?'Zablokuj natychmiastową wygraną komputera.':
+   candidate.attack>12000?'Rozwijaj silne zagrożenie.':'Propozycja na podstawie analizy taktycznej.';
+ const label=$('analysis-note');label.textContent='Analiza: rząd '+row+', kolumna '+col+'. '+reason;
+ label.hidden=false;render();
+}
+function openGameSettings(){
+ const section=state.mode==='training'?$('training-settings'):$('online-settings');
+ section.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+ const target=state.mode==='training'?$('ai-level'):$('room-select');
+ target.focus();
+}
+async function toggleFullscreen(){
+ try{
+  if(document.fullscreenElement){await document.exitFullscreen();return;}
+  if(!document.documentElement?.requestFullscreen)throw new Error('unsupported');
+  await document.documentElement.requestFullscreen();
+ }catch{
+  const label=$('analysis-note');label.textContent='Tryb pełnoekranowy nie jest dostępny w tej przeglądarce.';
+  label.hidden=false;
+ }
+}
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
  $('training-mode').classList.toggle('active',mode==='training');
@@ -474,6 +516,10 @@ function setMode(mode){
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
 $('restart').addEventListener('click',restart);
+$('undo-move').addEventListener('click',undoTrainingMove);
+$('analyze-position').addEventListener('click',analyzeTrainingPosition);
+$('game-settings').addEventListener('click',openGameSettings);
+$('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
 $('ai-level').addEventListener('change',()=>{
  const descriptions={
   normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
