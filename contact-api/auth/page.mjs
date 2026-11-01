@@ -1,6 +1,20 @@
 import { readFile } from 'node:fs/promises';
-const ownerReference=Buffer.concat(await Promise.all(Array.from({length:9},(_,index)=>readFile(new URL('./reference/part-'+String(index).padStart(2,'0')+'.bin',import.meta.url)))));
-if(ownerReference.byteLength!==4968 || ownerReference.subarray(0,4).toString()!=='RIFF' || ownerReference.subarray(8,12).toString()!=='WEBP' || ownerReference.readUInt32LE(4)+8!==ownerReference.byteLength)throw Error('OWNER_REFERENCE_INTEGRITY_FAILURE');
+// Full-resolution, text-free artwork from the approved GRACZ.PL casino set (no upscaled thumbnail,
+// no screenshot of this page). Native pixels only, no resampling:
+//  tlo    1672x847: maintenance-site/approved-maintenance.png outside its notice card,
+//                   frosted centre from maintenance-site/assets/img/hero-bg.webp (same scene).
+//  szachy  702x505: 1:1 crop of maintenance-site/assets/gracz-hero-approved-r14.webp (chess, checkers, cards).
+async function loadArtwork(name,width,height){
+ const bytes=await readFile(new URL('./assets/'+name,import.meta.url));
+ const riff=bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP'&&bytes.readUInt32LE(4)+8===bytes.byteLength;
+ const vp8=bytes.subarray(12,16).toString()==='VP8 '&&bytes.subarray(23,26).equals(Buffer.from([0x9d,0x01,0x2a]));
+ if(!riff||!vp8||(bytes.readUInt16LE(26)&0x3fff)!==width||(bytes.readUInt16LE(28)&0x3fff)!==height)throw Error('ACCOUNT_ARTWORK_INTEGRITY_FAILURE');
+ return bytes;
+}
+const artwork=new Map([
+ ['/konto/tlo.webp',await loadArtwork('konto-tlo.webp',1672,847)],
+ ['/konto/szachy.webp',await loadArtwork('konto-szachy.webp',702,505)],
+]);
 const headers={
   'Content-Type':'text/html; charset=utf-8',
   'Content-Security-Policy':"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://gracz.pl; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
@@ -71,24 +85,28 @@ footer{display:none}
 @media(min-width:780px) and (max-width:1180px){.scene{display:grid;grid-template-columns:minmax(200px,1fr) minmax(500px,605px);gap:0;padding:25px 14px}.left{padding:75px 14px 20px 22px;min-height:880px}.left-copy em{font-size:27px}.hero-brand{font-size:52px}.eyebrow{font-size:14px;white-space:normal}.panel{min-height:0}.panel h1{font-size:29px}.panel-heading p{font-size:13px}.right{display:none}.cards{display:none}}
 @media(max-width:779px){.top{height:67px;padding:0 13px}.brand{font-size:31px}.top .actions{margin-left:auto}.top .actions .top-register{display:none}.top nav{display:none}.scene{display:flex;flex-direction:column;gap:0;padding:0 0 20px;background:#071a27}.left{height:auto;min-height:0;align-self:stretch;padding:27px 18px 16px;background-position:center}.left-copy em{font-size:27px}.hero-brand{font-size:49px}.eyebrow{font-size:12px;margin:4px 0}.benefits,.cards{display:none}.panel{width:calc(100% - 20px);align-self:center;margin-top:8px;min-height:0;padding:20px 14px 22px;border-radius:15px}.panel-heading{gap:12px;margin-bottom:10px}.panel-heading .round{width:47px;height:47px}.round svg{width:29px;height:29px}.panel h1{font-size:clamp(20px,5vw,27px);white-space:normal}.panel-heading p{font-size:12px;white-space:normal}.panel form>label{margin-left:54px}.field{margin-left:54px}.field-icon{left:-53px;width:44px;height:44px;font-size:22px;top:0}.hint{margin-left:54px;font-size:11px}.field input{font-size:14px}.nickname-field input{padding-right:110px}#nick-status{width:110px;font-size:10px}.checks{margin:20px 0}.checks label{font-size:12px}.oauth-buttons{gap:6px}.oauth-buttons button{font-size:12px}.right{display:none}}
 
-/* Owner-provided photographic composition, verified byte-for-byte.
-   The real form stays HTML (keyboard, screen-reader and password manager safe). */
-.scene{
- background-image:url('/konto/reference.webp');
- background-size:100% auto;
- background-position:center -74px;
- background-repeat:no-repeat;
- background-color:#06121e;
+/* Sharp, text-free GRACZ.PL casino artwork (no page screenshot, no drawn form copy).
+   The only form is the real HTML form (keyboard, screen-reader and password manager safe). */
+body{
+ background:
+  radial-gradient(ellipse at 52% 40%,rgba(10,110,128,.30),transparent 62%),
+  linear-gradient(90deg,rgba(2,16,36,.64),rgba(2,18,38,.34) 34%,rgba(2,20,40,.16) 64%,rgba(2,16,36,.38)),
+  linear-gradient(180deg,rgba(2,16,34,.44),rgba(2,22,40,.08) 38%,rgba(2,16,34,.48)),
+  url('/konto/tlo.webp') center top/cover no-repeat,
+  #05111d;
 }
+.scene{background:none}
+@media(max-width:779px){body{background-position:0 0,0 0,0 0,left top,0 0}}
 .left{background:linear-gradient(180deg,rgba(2,11,20,.66) 0%,rgba(2,11,20,.66) 51%,rgba(2,11,20,.23) 72%,transparent 100%)}
 .left-copy{filter:drop-shadow(0 2px 2px #04101a)}
 .cards{display:none}
 .right{background:transparent}
 .right .info{background:#051727ee}
 .right .avatars{
- background:url('/konto/reference.webp') -1268px -478px/1536px 1024px no-repeat;
+ background:url('/konto/szachy.webp') center 58%/cover no-repeat;
  height:75px;
  margin:5px 0 8px;
+ border-radius:8px;
  font-size:0;
  color:transparent;
 }
@@ -99,13 +117,11 @@ footer{display:none}
 .panel{background:linear-gradient(150deg,#041623fb,#02111ffb)}
 #notice{word-break:break-word}
 @media(min-width:1181px) and (max-width:1535px){
- .right .avatars{background-size:100vw auto;background-position:calc(-82.55vw) calc(-31.12vw)}
  .top{gap:2.5vw}
  .top nav{gap:1.75vw}
 }
 @media(max-width:1180px){
  .top .nav-icons{display:none}
- .scene{background-image:url('/konto/reference.webp');background-position:center top;background-size:cover}
  .left{background:linear-gradient(180deg,rgba(2,10,21,.82),rgba(2,10,21,.66))}
 }
 @media(max-width:779px){
@@ -121,13 +137,10 @@ footer{display:none}
   .top {height:clamp(57px,8dvh,74px);padding-inline:clamp(16px,4vw,96px);gap:clamp(10px,2.7vw,47px)}
   .top nav{gap:clamp(10px,1.85vw,29px)}
   .scene{
-    height:calc(100dvh - clamp(57px,8dvh,74px));
-    min-height:0;
+    height:auto;
+    min-height:calc(100dvh - clamp(57px,8dvh,74px));
     padding:clamp(8px,1.3dvh,15px) 0 0;
-    overflow:hidden;
     grid-template-columns:minmax(0,39.7fr) minmax(0,39.4fr) minmax(0,20.9fr);
-    background-size:cover;
-    background-position:center center;
   }
   .left{height:100%;min-height:0;padding:clamp(10px,3dvh,34px) 20px 14px clamp(14px,6vw,96px)}
   .left-copy em{font-size:clamp(22px,2.5vw,37px)}
@@ -181,7 +194,6 @@ footer{display:none}
 #notice:not(:empty){background:linear-gradient(125deg,#263445,#091b2b);color:#ffdfa6;border:1px solid #e2ab52;border-radius:9px;box-shadow:0 6px 20px #0007}
 /* Keep premium validation in the document flow: it must not cover the next field. */
 .field .premium-feedback{position:relative;top:auto;left:auto;right:auto;margin-top:9px;z-index:2}
-@media(min-width:1181px){.panel{transform-origin:top left;will-change:transform}}
 /* Replace Chrome's native validation bubble with an accessible premium popover. */
 .field input[aria-invalid="true"]{border-color:#f4bd6b;box-shadow:0 0 0 1px #e2a73d,0 0 14px #e1ab3833;outline:0}
 .premium-feedback{
@@ -209,30 +221,26 @@ footer{display:none}
  .premium-feedback{font-size:12px;padding:10px 12px;right:0;left:0}
 }
 
-/* Responsive account screen: preserve the accepted artwork, with less dark masking. */
-.scene{
- background-image:linear-gradient(90deg,rgba(2,9,19,.10),rgba(2,9,19,.02)),url('/konto/reference.webp');
- background-position:center center;
- background-size:cover;
-}
+/* Responsive account screen: the stage fills the window and grows (page scroll) when
+   content needs more room. Nothing is clipped, scaled down or hidden by overflow. */
 @media (min-width:780px){
  .scene{
-  height:calc(100dvh - 74px);
-  min-height:0;
+  height:auto;
+  min-height:calc(100dvh - clamp(57px,8dvh,74px));
   padding-top:clamp(9px,1.3dvh,16px);
   padding-bottom:clamp(9px,1.3dvh,16px);
   align-items:stretch;
-  overflow:hidden;
  }
- .left{height:100%;min-height:0;background:linear-gradient(180deg,rgba(2,11,20,.43),rgba(2,11,20,.35) 52%,rgba(2,11,20,.15) 78%,transparent)}
- .panel{align-self:start;height:auto;min-height:0;max-height:none;overflow:visible;transform-origin:top left}
- .right{height:100%;min-height:0}
+ .left{height:auto;min-height:0;align-self:stretch;background:none}
+ .panel{align-self:start;height:auto;min-height:0;max-height:none;overflow:visible}
+ .right{height:auto;min-height:0;align-self:stretch}
  .right .info{background:#051727da}
 }
 @media (min-width:780px) and (max-width:1180px){
  .top{height:clamp(60px,8dvh,74px)}
  .scene{
-  height:calc(100dvh - clamp(60px,8dvh,74px));
+  height:auto;
+  min-height:calc(100dvh - clamp(60px,8dvh,74px));
   padding:clamp(8px,1.3dvh,14px) clamp(8px,1.5vw,18px);
   grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);
   gap:clamp(8px,1vw,14px);
@@ -264,7 +272,6 @@ footer{display:none}
  .switch{margin:7px 0 2px;font-size:12px}
 }
 @media (max-width:779px){
- .scene{background-image:linear-gradient(90deg,rgba(2,9,19,.14),rgba(2,9,19,.06)),url('/konto/reference.webp')}
  .left{background:rgba(2,12,23,.55)}
 }
 
@@ -272,40 +279,7 @@ footer{display:none}
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
 const form=document.getElementById('register-form'),login=document.getElementById('login-form'),account=document.getElementById('account'),verified=document.getElementById('verified'),heading=document.getElementById('page-title');
-const accountPanel=document.querySelector('.panel');
-let fitScheduled=false;
-function fitAccountPanel(){
- accountPanel.style.transform='';
- accountPanel.style.width='';
- accountPanel.style.maxHeight='';
- accountPanel.style.overflowY='';
- // Phones retain natural scrolling so form controls remain legible.
- if(window.innerWidth<780)return;
- accountPanel.style.maxHeight='none';
- accountPanel.style.overflowY='visible';
- const sceneBottom=document.querySelector('.scene').getBoundingClientRect().bottom;
- const panelTop=accountPanel.getBoundingClientRect().top;
- const available=Math.max(0,Math.min(sceneBottom,window.innerHeight)-panelTop-10);
- const naturalHeight=accountPanel.scrollHeight;
- if(naturalHeight<=available)return;
- // Uniform scaling keeps all fields active, with a readable minimum size.
- const scale=Math.max(.76,Math.min(1,available/naturalHeight));
- accountPanel.style.width=(100/scale)+'%';
- accountPanel.style.transform='scale('+scale+')';
- if(naturalHeight*scale>available+1){
-  // Exceptional short windows still allow access to every form control.
-  accountPanel.style.maxHeight=(available/scale)+'px';
-  accountPanel.style.overflowY='auto';
- }
-}
-function scheduleFit(){
- if(fitScheduled)return;
- fitScheduled=true;
- requestAnimationFrame(()=>{fitScheduled=false;fitAccountPanel();});
-}
-window.addEventListener('resize',scheduleFit);
-window.visualViewport?.addEventListener('resize',scheduleFit);
-function msg(s){notice.textContent=s;scheduleFit();}
+function msg(s){notice.textContent=s;}
 const nickInput=document.getElementById('nickname');
 const nickStatus=document.getElementById('nick-status');
 let nickDelay=0, nickVersion=0;
@@ -334,11 +308,11 @@ function showPasswordFeedback(){
  const count=passwordField.value.length;
  passwordFeedbackText.textContent='Hasło musi mieć co najmniej 15 znaków. Wpisano '+count+'.';
  passwordField.setAttribute('aria-invalid','true');
- passwordFeedback.hidden=false;scheduleFit();
+ passwordFeedback.hidden=false;
 }
 function hidePasswordFeedback(){
  passwordFeedback.hidden=true;
- passwordField.removeAttribute('aria-invalid');scheduleFit();
+ passwordField.removeAttribute('aria-invalid');
 }
 passwordField.addEventListener('input',()=>{
  if(passwordField.value.length>=15 || passwordField.value.length===0)hidePasswordFeedback();
@@ -373,7 +347,7 @@ function validateRegistration(){
  msg('');
  return true;
 }
-function view(name){form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');scheduleFit();}
+function view(name){form.hidden=name!=='register';login.hidden=name!=='login';account.hidden=name!=='account';verified.hidden=name!=='verified';heading.innerHTML=name==='login'?'Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>':name==='account'?'Twoje konto w gracz.pl':name==='verified'?'Potwierdzono e-mail':'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');}
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
@@ -388,7 +362,7 @@ export function serveIdentityPage(req,res,url){
  if(path==='/konto'&&req.method==='GET'){type='text/html; charset=utf-8';body=html;}
  else if(path==='/konto/styl.css'&&req.method==='GET'){type='text/css; charset=utf-8';body=css;}
  else if(path==='/konto/app.js'&&req.method==='GET'){type='application/javascript; charset=utf-8';body=js;}
- else if(path==='/konto/reference.webp'&&req.method==='GET'){type='image/webp';body=ownerReference;}
+ else if(artwork.has(path)&&req.method==='GET'){type='image/webp';body=artwork.get(path);}
  else return false;
  res.writeHead(200,{...headers,'Content-Type':type,'Content-Length':Buffer.byteLength(body)});
  res.end(body);
