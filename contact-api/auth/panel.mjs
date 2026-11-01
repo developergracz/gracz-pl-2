@@ -212,18 +212,121 @@ async function saveCenter(next){
  applyCenter(result.center);
  return result.center;
 }
+
+let friendsState=null;
+function friendsStatus(message,error=false){
+ const el=$('friends-status');el.textContent=message;el.classList.toggle('friend-alert',error);
+}
+function friendRow(nickname,description,actions){
+ const row=document.createElement('div');row.className='friend-person';
+ const info=document.createElement('div');
+ const name=document.createElement('div');name.className='friend-name';name.textContent='♟ '+nickname;
+ const sub=document.createElement('div');sub.className='friend-sub';sub.textContent=description;
+ info.append(name,sub);row.append(info);
+ if(actions.length){
+  const controls=document.createElement('div');controls.className='friend-controls';
+  actions.forEach(({action,label})=>{
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   if(action==='accept'||action==='send')button.classList.add('friend-main');
+   button.setAttribute('aria-label',label+': '+nickname);
+   button.addEventListener('click',async()=>{
+    button.disabled=true;
+    try{await api('friends/action',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({action,nickname})});await refreshFriends();
+     friendsStatus('Wykonano: '+label.toLowerCase()+' — '+nickname+'.');
+    }catch(error){friendsStatus(error.message,true);}finally{button.disabled=false;}
+   });
+   controls.append(button);
+  });
+  row.append(controls);
+ }
+ return row;
+}
+function renderFriendList(id,items,empty,description,actions){
+ const container=$(id);container.replaceChildren();
+ if(!items.length){const p=document.createElement('p');p.className='friend-empty';p.textContent=empty;container.append(p);return;}
+ items.forEach(item=>container.append(friendRow(item.nickname,description,actions)));
+}
+async function refreshFriends(){
+ if(!sessionConfirmed)return;
+ try{
+  const result=await api('friends');
+  friendsState=result;
+  const accepted=result.connections.filter(x=>x.status==='accepted');
+  const incoming=result.connections.filter(x=>x.status==='pending'&&x.direction==='incoming');
+  const outgoing=result.connections.filter(x=>x.status==='pending'&&x.direction==='outgoing');
+  $('friends-count').textContent=String(accepted.length);
+  $('friends-incoming-count').textContent=String(incoming.length);
+  $('friends-outgoing-count').textContent=String(outgoing.length);
+  renderFriendList('friends-list',accepted,'Nie masz jeszcze znajomych.','Znajomy',
+   [{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
+  renderFriendList('friends-incoming',incoming,'Brak nowych zaproszeń.','Zaprasza Cię do znajomych',
+   [{action:'accept',label:'Akceptuj'},{action:'decline',label:'Odrzuć'},{action:'block',label:'Zablokuj'}]);
+  renderFriendList('friends-outgoing',outgoing,'Nie masz oczekujących zaproszeń.','Oczekuje na odpowiedź',
+   [{action:'cancel',label:'Anuluj'}]);
+  renderFriendList('friends-blocked',result.blocked,'Lista zablokowanych jest pusta.','Zablokowany użytkownik',
+   [{action:'unblock',label:'Odblokuj'}]);
+  friendsStatus('Znajomi: '+accepted.length+' · Zaproszenia: '+incoming.length+' · Wysłane: '+outgoing.length+'.');
+  return result;
+ }catch(error){
+  friendsStatus(error.message,true);
+  if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła. Zaloguj się, aby zarządzać znajomymi.',{login:true});
+  return null;
+ }
+}
+$('friends-refresh').addEventListener('click',()=>void refreshFriends());
+$('friends-search-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!sessionConfirmed)return;
+ const query=$('friends-query').value.trim();
+ if(!/^[a-z][a-z0-9._-]{2,31}$/i.test(query)){
+  friendsStatus('Nick musi mieć od 3 do 32 znaków i zaczynać się literą.',true);return;
+ }
+ const results=$('friends-search-results');results.replaceChildren();
+ friendsStatus('Wyszukiwanie graczy…');
+ try{
+  const result=await api('friends/search?nick='+encodeURIComponent(query));
+  const relationships=new Map((friendsState?.connections||[]).map(x=>[x.nickname.toLowerCase(),x]));
+  if(!result.players.length){
+   const message=document.createElement('p');message.className='friend-empty';
+   message.textContent='Nie znaleziono gracza o takim nicku.';results.append(message);
+  }
+  result.players.forEach(player=>{
+   const rel=relationships.get(player.nickname.toLowerCase());
+   let description='Możesz wysłać zaproszenie';
+   if(rel?.status==='accepted')description='Już jesteście znajomymi';
+   else if(rel?.direction==='outgoing')description='Zaproszenie już wysłane';
+   else if(rel?.direction==='incoming')description='Ta osoba już Cię zaprosiła';
+   const actions=rel?[]:[{action:'send',label:'Zaproś'}];
+   results.append(friendRow(player.nickname,description,actions));
+  });
+  friendsStatus('Wyniki wyszukiwania: '+result.players.length+'.');
+ }catch(error){friendsStatus(error.message,true);}
+});
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
  document.querySelectorAll('[data-section]').forEach(e=>{e.classList.toggle('active',e.dataset.section===name);e.setAttribute('aria-current',e.dataset.section===name?'page':'false');});
  document.querySelectorAll('[data-panel]').forEach(e=>e.classList.toggle('active',e.dataset.panel===name));
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
+ if(name==='friends'&&sessionConfirmed)void refreshFriends();
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
 async function api(path,options={}){
  const response=await fetch('/auth/'+path,{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...(options.headers||{})},...options});
  let body={};try{body=await response.json();}catch{}
- if(!response.ok||body.ok!==true){const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':'Nie udało się wykonać operacji.');error.status=response.status;throw error;}
+ if(!response.ok||body.ok!==true){
+  const messages={
+   WPISZ_NICK:'Wpisz co najmniej trzy poprawne znaki nicku.',
+   GRACZ_NIEDOSTEPNY:'Gracz nie istnieje, nie potwierdził e-maila albo nie może otrzymywać zaproszeń.',
+   ZAPROSZENIE_NIEDOSTEPNE:'Zaproszenie jest już wysłane, nieaktualne lub kontakt nie jest dozwolony.',
+   ZBYT_WIELE_ZAPROSZEN:'Limit zaproszeń został osiągnięty. Spróbuj później.',
+   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.'
+  };
+  const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
+   messages[body.error]||'Nie udało się wykonać operacji. Spróbuj ponownie.');
+  error.status=response.status;throw error;
+ }
  return body;
 }
 function fill(profile){
