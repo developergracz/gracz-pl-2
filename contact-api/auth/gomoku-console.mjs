@@ -286,7 +286,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:''};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -305,7 +305,7 @@ function describe(){
   if(state.winner===1)return 'Wygrywasz! Pięć czarnych kamieni w rzędzie.';
   if(state.winner===2)return 'Komputer wygrał. Rozpocznij nową partię.';
   if(state.winner===3)return 'Remis — plansza została zapełniona.';
-  return state.thinking?'Komputer wykonuje ruch…':'Twój ruch — postaw czarny kamień.';
+  return state.thinking?'Komputer analizuje ruch…':state.moves>0&&state.last>=0&&state.board[state.last]===2?'🏆 Komputer zagrał ruch. Twoja kolej!':'Twój ruch — postaw czarny kamień.';
  }
  const m=state.match;
  if(!m)return 'Wybierz przyjęte wyzwanie i otwórz pokój.';
@@ -360,6 +360,8 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
+ state.localChat=[];state.chatSignature='';
+ showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
@@ -661,31 +663,37 @@ function setDockTab(tab){
  state.dockTab=tab;
  const moves=tab==='moves';
  $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
+ $('chat-preview').hidden=!moves;
  $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
  $('history-tab').setAttribute('aria-selected',String(moves));
  $('chat-tab').setAttribute('aria-selected',String(!moves));
  if(!moves)void refreshRoomChat();
 }
 function showChatNotice(text){
- const box=$('chat-messages');box.replaceChildren();
- const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
- $('chat-status').textContent='Wyłącznie uczestnicy tej partii · 600 znaków';
+ for(const id of ['chat-messages','chat-preview']){
+  const box=$(id);box.replaceChildren();
+  const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
+ }
+ $('chat-status').textContent=state.mode==='training'?
+  'Trening: krótkie odpowiedzi automatyczne · lokalnie':
+  'Prywatny czat dwóch uczestników · 600 znaków';
 }
 function drawRoomChat(messages){
- const signature=(state.matchId||'')+':'+messages.map(x=>x.id).join(',');
+ const signature=(state.mode==='training'?'training':state.matchId||'')+':'+messages.map(x=>x.id).join(',');
  if(signature===state.chatSignature)return;
  state.chatSignature=signature;
  const box=$('chat-messages');box.replaceChildren();
  if(!messages.length){
-  const p=document.createElement('p');p.className='dock-empty';
-  p.textContent='Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.';
-  box.append(p);return;
+  showChatNotice(state.mode==='training'?
+   'Napisz do komputera treningowego. Odpowiedzi są krótkimi, automatycznymi komentarzami.':
+   'Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.');
+  return;
  }
  messages.forEach(message=>{
-  const mine=message.player===state.match?.player;
+  const mine=message.player===(state.mode==='training'?1:state.match?.player);
   const bubble=document.createElement('div');bubble.className='chat-bubble'+(mine?' own':'');
   const title=document.createElement('strong');
-  title.textContent=mine?'Ty':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  title.textContent=mine?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
   const text=document.createElement('p');text.textContent=message.body;
   const time=document.createElement('time');
   const date=new Date(message.createdAt);
@@ -693,12 +701,30 @@ function drawRoomChat(messages){
   bubble.append(title,text,time);box.append(bubble);
  });
  box.scrollTop=box.scrollHeight;
+ const preview=$('chat-preview');preview.replaceChildren();
+ messages.slice(-2).forEach(message=>{
+  const own=message.player===(state.mode==='training'?1:state.match?.player);
+  const bubble=document.createElement('div');bubble.className='chat-bubble'+(own?' own':'');
+  const title=document.createElement('strong');
+  title.textContent=own?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
+  const content=document.createElement('p');content.textContent=message.body;
+  const time=document.createElement('time');const date=new Date(message.createdAt);
+  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  bubble.append(title,content,time);preview.append(bubble);
+ });
+ preview.scrollTop=preview.scrollHeight;
 }
 async function refreshRoomChat(){
- if(state.mode!=='online'||!state.matchId||!state.match){
+ if(state.mode==='training'){
+  $('chat-input').disabled=false;$('chat-send').disabled=false;
+  state.chatSignature='';
+  drawRoomChat(state.localChat);
+  $('chat-status').textContent='Trening: komentarze automatyczne · bez zapisu';
+  return;
+ }
+ if(!state.matchId||!state.match){
   $('chat-input').disabled=true;$('chat-send').disabled=true;
-  if(state.mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
-  else showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć rozmowę.');
+  showChatNotice('Otwórz zaakceptowany pokój, aby rozpocząć prywatny czat.');
   return;
  }
  if(state.chatBusy)return;
@@ -720,11 +746,26 @@ $('history-tab').addEventListener('click',()=>setDockTab('moves'));
 $('chat-tab').addEventListener('click',()=>setDockTab('chat'));
 $('chat-form').addEventListener('submit',async event=>{
  event.preventDefault();
- if(state.mode!=='online'||!state.matchId||state.chatBusy)return;
+ if(state.chatBusy)return;
  const message=$('chat-input').value.trim();
  if(!message||message.length>600){
   $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
  }
+ if(state.mode==='training'){
+  const now=new Date().toISOString();
+  state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:now});
+  const lower=message.toLocaleLowerCase('pl-PL');
+  const answer=/powodzen|cześć|witam|hej/.test(lower)?'Dzięki, wzajemnie! 🤝':
+   /ruch|porad|pomoc|wskaz/.test(lower)?'Szukaj otwartych trójek i pilnuj zagrożeń. ♟':
+   /dzięk|dziek/.test(lower)?'Nie ma za co! Powodzenia! 🙂':
+   'Dobry trening! Najważniejsze to pięć w jednej linii. ♟';
+  state.localChat.push({id:'local-'+(++state.chatSequence),player:2,body:answer,createdAt:new Date().toISOString()});
+  state.localChat=state.localChat.slice(-40);
+  $('chat-input').value='';state.chatSignature='';drawRoomChat(state.localChat);
+  $('chat-status').textContent='Trening: automatyczne komentarze komputera · lokalnie';
+  return;
+ }
+ if(!state.matchId)return;
  const id=state.matchId,epoch=state.epoch;
  $('chat-send').disabled=true;
  try{
@@ -782,8 +823,8 @@ function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
  state.chatSignature='';setDockTab('moves');
- $('chat-input').disabled=true;$('chat-send').disabled=true;
- if(mode==='training')showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+ $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
+ if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
  state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
@@ -818,7 +859,7 @@ window.setInterval(()=>{
   void refreshOnline();
 },4000);
 render();
-showChatNotice('Czat jest dostępny tylko w partii online ze znajomym.');
+showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
