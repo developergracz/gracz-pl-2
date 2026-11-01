@@ -525,6 +525,18 @@ function trainMove(to){
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
   state.trainHistory.push({player:2,to:at,number:state.moves});
+  if(state.moves===2 || (state.moves>=6&&state.moves%6===0)){
+   const reactions=[
+    'Twój ruch! Powodzenia! 🙂',
+    'Uważaj na otwarte trójki i czwarte kamienie. ♟',
+    'Ciekawa partia. Szukam najlepszego ruchu. ♟'
+   ];
+   state.localChat.push({id:'local-'+(++state.chatSequence),player:2,
+    body:reactions[state.moves===2?0:Math.floor(state.moves/6)%2+1],
+    createdAt:new Date().toISOString()});
+   state.localChat=state.localChat.slice(-40);
+   state.chatSignature='';drawRoomChat(state.localChat);
+  }
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
   state.thinking=false;render();
