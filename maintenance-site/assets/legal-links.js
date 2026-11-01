@@ -666,7 +666,7 @@
     if(document.querySelector('link[data-footer-newsletter-style]'))return;
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/assets/footer-newsletter.css?v=r28-opaque-email-input-20261101';
+    link.href='/assets/footer-newsletter.css?v=r29-premium-email-field-20261101';
     link.setAttribute('data-footer-newsletter-style','');
     document.head.appendChild(link);
   }

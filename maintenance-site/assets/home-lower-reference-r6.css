@@ -1241,3 +1241,55 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
   transform:none!important;
  }
 }
+
+/* Owner R29: show the WHOLE 1671x941 approved scene in the desktop viewport.
+   Width depends on available HEIGHT only when full width would clip the artwork.
+   Keep header and legal footer visible, preserve original pixels and mobile flow. */
+@media (min-width:961px){
+ body.homepage-premium-max .site-footer{
+  min-height:calc(100dvh - 76px)!important;
+  overflow:visible!important;
+ }
+ body.homepage-premium-max .site-footer > .footer-grid{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:clamp(0px,.5dvh,6px) 0!important;
+ }
+ body.homepage-premium-max .site-footer .footer-grid > .footer-news.footer-news--approved-r15.footer-news--approved-r16{
+  grid-column:1/-1!important;
+  width:min(100%,calc((100dvh - 148px)*1.77577))!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-width:0!important;
+  aspect-ratio:1671/941!important;
+  margin:0 auto!important;
+  justify-self:center!important;
+  align-self:center!important;
+  overflow:hidden!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > .footer-news-full-art-r16{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1671/941!important;
+  object-fit:contain!important;
+  filter:none!important;
+ }
+ body.homepage-premium-max .site-footer > .footer-bottom{
+  flex:0 0 auto!important;
+  height:50px!important;
+  min-height:50px!important;
+ }
+ /* Legacy footer navigation duplicates the header and creates a second tall grid row.
+    Keep the legal/social bar; do not let this obsolete row push the scene off screen. */
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-brand,
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-col[aria-labelledby="f-nav"],
+ body.homepage-premium-max .site-footer > .footer-grid > .footer-col[aria-labelledby="f-popular"]{
+  display:none!important;
+ }
+ /* A single real checkbox must cover the painted checkbox, not appear above it. */
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > .news-form > .footer-newsletter-consent{
+  top:calc(100% + clamp(12px,3dvh - 5px,28px))!important;
+ }
+}

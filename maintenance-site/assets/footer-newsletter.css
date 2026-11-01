@@ -407,3 +407,40 @@ form[data-newsletter].footer-newsletter-live button[disabled]{
   opacity:1!important;
  }
 }
+
+/* R29 Full Max Premium: high-contrast opaque email field over baked-in artwork. */
+@media(min-width:961px){
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > input#news-email[type="email"]{
+  background:#0b2535!important;
+  background-image:linear-gradient(115deg,#10354a 0%,#081c2c 100%)!important;
+  border:2px solid #edc16d!important;
+  border-radius:clamp(10px,1.15vw,18px)!important;
+  box-shadow:inset 0 1px 3px rgba(255,255,255,.08),0 0 0 1px rgba(246,204,119,.2),0 7px 22px rgba(0,0,0,.4),0 0 15px rgba(52,219,217,.18)!important;
+  color:#f5fcff!important;
+  -webkit-text-fill-color:#f5fcff!important;
+  caret-color:#76f1e5!important;
+  font-size:clamp(13px,1vw,17px)!important;
+  font-weight:600!important;
+  text-shadow:none!important;
+  opacity:1!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > input#news-email[type="email"]::placeholder{
+  color:#b6cbd5!important;
+  -webkit-text-fill-color:#b6cbd5!important;
+  font-weight:400!important;
+  opacity:1!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live:before{
+  color:#ffd16b!important;
+  text-shadow:0 0 9px rgba(245,191,70,.28)!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live:focus-within > input#news-email[type="email"]{
+  border-color:#79f0e6!important;
+  box-shadow:0 0 0 2px rgba(115,236,221,.66),0 0 18px rgba(36,221,214,.42),0 7px 22px rgba(0,0,0,.4)!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16 > form.news-form.footer-newsletter-live > input#news-email[type="email"]:-webkit-autofill{
+  -webkit-box-shadow:0 0 0 1000px #0b2535 inset,0 0 0 2px #edc16d!important;
+  -webkit-text-fill-color:#f5fcff!important;
+  caret-color:#76f1e5!important;
+ }
+}
