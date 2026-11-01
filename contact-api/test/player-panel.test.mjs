@@ -82,7 +82,7 @@ test('panel renders nine documented sections and syntactically valid browser Jav
     assert.equal(res.headers['Cache-Control'],'no-store');
     if(path.endsWith('/')) {
       assert.match(res.body,/noindex,nofollow,noarchive/);
-      assert.equal((res.body.match(/data-section="/g)||[]).length,12);
+      assert.equal((res.body.match(/data-section="/g)||[]).length,13);
     }
     if(path.endsWith('.js'))new Script(res.body);
     if(path.endsWith('.css'))assert.match(res.body,/@media\(max-width:610px\)/);
@@ -441,7 +441,9 @@ test('social UI declares limited game integration and renders safe message text 
    'challenge-game','challenge-list','challenges-refresh']){
   assert.match(html.body,new RegExp('id="'+id+'"'));
  }
- assert.match(html.body,/nie uruchamia jeszcze wspólnej partii online/);
+ assert.match(html.body,/Ruchy są zatwierdzane i zapisywane na serwerze/);
+ assert.match(html.body,/data-panel="play"/);
+ assert.match(js.body,/api\('match'/);
  assert.match(js.body,/text\.textContent=item\.body/);
  assert.match(js.body,/social\/messages/);
  assert.match(js.body,/social\/challenges/);

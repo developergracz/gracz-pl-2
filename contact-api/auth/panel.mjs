@@ -34,6 +34,7 @@ const html=String.raw`<!doctype html>
 <button class="nav" data-section="notifications" type="button"><span aria-hidden="true">♢</span> Powiadomienia</button>
 <button class="nav" data-section="messages" type="button"><span aria-hidden="true">✉</span> Wiadomości i chat</button>
 <button class="nav" data-section="challenges" type="button"><span aria-hidden="true">⚔</span> Zaproszenia do gier</button>
+<button class="nav" data-section="play" type="button"><span aria-hidden="true">▦</span> Moje partie</button>
 <button class="nav" data-section="games" type="button"><span aria-hidden="true">♜</span> Gry i rozgrywka</button>
 <button class="nav" data-section="appearance" type="button"><span aria-hidden="true">☼</span> Wygląd i dostępność</button>
 <button class="nav" data-section="sessions" type="button"><span aria-hidden="true">▣</span> Sesje i urządzenia</button>
@@ -108,7 +109,7 @@ const html=String.raw`<!doctype html>
 <section class="view" data-panel="challenges">
 <div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
 <p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
-<p class="social-limitation">Ważne: aktualne strony Warcabów i Gomoku są treningowe. Przyjęte zaproszenie nie uruchamia jeszcze wspólnej partii online — synchronizacja rozgrywki jest osobnym etapem.</p>
+<p class="social-limitation">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze. Stan gry odświeża się automatycznie.</p>
 <form id="challenge-form" class="social-send">
 <label class="social-label" for="challenge-friend">Zaproś znajomego</label>
 <div class="social-controls"><select id="challenge-friend"><option value="">Wybierz znajomego</option></select>
@@ -120,6 +121,18 @@ const html=String.raw`<!doctype html>
 <div id="challenge-list" class="friends-items" aria-live="polite"></div>
 <p id="challenges-state" aria-live="polite"></p>
 </div></section>
+<section class="view" data-panel="play">
+<div class="card"><p class="card-kicker">ROZGRYWKA DWÓCH GRACZY · FULL MAX PREMIUM</p>
+<h2 id="match-heading">Wybierz przyjęte wyzwanie</h2>
+<p id="match-state" aria-live="polite">Otwórz zakładkę „Zaproszenia do gier” i wybierz „Graj online” przy zaakceptowanym wyzwaniu.</p>
+<div class="match-top">
+<div id="match-players" class="match-players"></div>
+<button id="match-refresh" class="secondary" type="button">Odśwież partię</button>
+</div>
+<div id="match-board" class="match-board" role="group" aria-label="Plansza gry"></div>
+<p class="social-limitation">Gomoku: 15×15, wygrywa pięć w rzędzie. Warcaby: 8×8, obowiązkowe bicie, możliwe wielokrotne bicie, damka porusza się o jedno pole. Ruchy są zatwierdzane przez serwer i widoczne u obu graczy.</p>
+</div>
+</section>
 <section class="view" data-panel="games">
 <div class="card"><p class="card-kicker">MOJA BIBLIOTEKA</p><h2>Ulubione gry</h2>
 <p>Wybierz ulubione tytuły. Gwiazdka zapisuje wybór w Twoim koncie i dodaje skrót na pulpicie.</p>
@@ -166,6 +179,24 @@ const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}htm
 .social-send textarea{width:100%;min-height:90px;background:#091f2d;color:#f8fbfc;border:1px solid #416c80;border-radius:9px;padding:12px;font:inherit}
 .social-limitation{border:1px solid #816a42;border-radius:11px;background:#42311c55;color:#f6d6a2!important;padding:13px}
 @media(max-width:610px){.social-controls{align-items:stretch;flex-direction:column}.social-controls>*{width:100%}.social-bubble{max-width:95%}}
+
+.match-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:17px 0}
+.match-players{font-weight:800;font-size:14px;color:#ebc786}
+.match-board{display:grid;max-width:650px;width:100%;aspect-ratio:1;margin:12px auto;border:5px solid #d5ab63;border-radius:12px;overflow:hidden;background:#092337;gap:0}
+.match-cell{min-width:0;min-height:0;padding:0;display:grid;place-items:center;border:1px solid #52708155;font-weight:900;cursor:pointer;font-family:inherit;line-height:1}
+.match-board.checkers .match-cell{font-size:clamp(18px,3.1vw,49px)}
+.match-board.checkers .match-cell.dark{background:#254b5c}
+.match-board.checkers .match-cell.light{background:#b2c8c8}
+.match-board.checkers .match-cell.selected{box-shadow:inset 0 0 0 4px #ffdc84}
+.match-board.checkers .match-cell.p1{color:#e5eefa;text-shadow:0 2px 3px #0007}
+.match-board.checkers .match-cell.p2{color:#eac071;text-shadow:0 2px 3px #0009}
+.match-board.gomoku{background:#d9b77b}
+.match-board.gomoku .match-cell{background:transparent;border-color:#6f5b3c80;position:relative;font-size:clamp(8px,1.9vw,23px)}
+.match-board.gomoku .match-cell.p1{color:#193744}
+.match-board.gomoku .match-cell.p2{color:#faf8e9;text-shadow:0 1px 3px #000a}
+.match-cell:disabled{cursor:default}
+.match-cell:focus-visible{outline:3px solid #ffcb6b;outline-offset:-3px}
+@media(max-width:610px){.match-board{border-width:3px}.match-board.checkers .match-cell{font-size:clamp(15px,5vw,35px)}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}`;
 const js=String.raw`(()=>{
 'use strict';
@@ -179,6 +210,7 @@ const sectionNames={
  notifications:['Powiadomienia','Informacje o Twoich aktywnościach.'],
  messages:['Wiadomości','Prywatne rozmowy ze znajomymi.'],
  challenges:['Zaproszenia do gier','Wyzwania Warcaby i Gomoku dla znajomych.'],
+ play:['Moje partie','Wspólna rozgrywka online ze znajomym.'],
  games:['Gry i rozgrywka','Wszystkie gry w jednym miejscu.'],
  appearance:['Wygląd i dostępność','Panel dopasowany do Twojego ekranu.'],
  sessions:['Sesje i urządzenia','Kontrola zalogowanych urządzeń.'],
@@ -346,6 +378,106 @@ $('friends-search-form').addEventListener('submit',async event=>{
  }catch(error){friendsStatus(error.message,true);}
 });
 
+
+let activeMatchId=null,activeMatch=null,selectedChecker=null,moving=false;
+function gameDescription(match){
+ const state=match.state;
+ const names=match.players;
+ if(state.winner===3)return 'Remis. Partia zakończona.';
+ if(state.winner===1||state.winner===2)return 'Wygrał gracz '+names[state.winner-1]+'. Partia zakończona.';
+ return 'Tura: '+names[state.turn-1]+(state.turn===match.player?' (Twój ruch)':' (ruch przeciwnika)')+
+  (state.forced!==null&&state.forced!==undefined?' · obowiązkowe kolejne bicie':'')+
+  (match.playable?'':' · partia zablokowana');
+}
+function drawMatch(match){
+ activeMatch=match;
+ const state=match.state,game=match.game;
+ $('match-heading').textContent=(game==='warcaby'?'Warcaby 8×8':'Gomoku 15×15')+' — partia online';
+ $('match-players').textContent='Gracz 1: '+match.players[0]+' · Gracz 2: '+match.players[1];
+ $('match-state').textContent=gameDescription(match);
+ const board=$('match-board');
+ board.replaceChildren();
+ board.className='match-board '+(game==='warcaby'?'checkers':'gomoku');
+ const n=game==='warcaby'?8:15;
+ board.style.gridTemplateColumns='repeat('+n+',minmax(0,1fr))';
+ for(let i=0;i<n*n;i++){
+  const [r,c]=[Math.floor(i/n),i%n],piece=state.board[i];
+  const cell=document.createElement('button');cell.type='button';cell.className='match-cell';
+  cell.setAttribute('aria-label','Rząd '+(r+1)+', kolumna '+(c+1)+
+   (piece?(', '+(piece===1||piece===3?'gracz 1':'gracz 2')+(piece>=3?' damka':' pion')):' puste'));
+  if(game==='warcaby'){
+   cell.classList.add((r+c)%2===1?'dark':'light');
+   if(selectedChecker===i)cell.classList.add('selected');
+   cell.textContent=piece>=3?'♛':piece?'●':'';
+  }else cell.textContent=piece?'●':'';
+  if(piece)cell.classList.add((piece===1||piece===3)?'p1':'p2');
+  const yourTurn=state.turn===match.player&&state.winner===0&&match.playable;
+  cell.disabled=!yourTurn||(game==='warcaby'&&(r+c)%2===0);
+  if(!cell.disabled)cell.addEventListener('click',()=>void boardCellClick(i));
+  board.append(cell);
+ }
+}
+async function openMatch(id){
+ if(!sessionConfirmed)return;
+ activeMatchId=id;selectedChecker=null;
+ switchSection('play');
+ $('match-state').textContent='Łączenie z pokojem rozgrywki…';
+ await refreshMatch();
+}
+async function refreshMatch(){
+ if(!activeMatchId||!sessionConfirmed)return;
+ const expected=activeMatchId;
+ try{
+  const result=await api('match?id='+encodeURIComponent(expected));
+  if(activeMatchId!==expected)return;
+  drawMatch(result.match);
+ }catch(error){
+  $('match-state').textContent='Nie udało się otworzyć partii: '+error.message;
+ }
+}
+async function boardCellClick(to){
+ if(moving||!activeMatch||activeMatch.state.winner!==0||
+  activeMatch.state.turn!==activeMatch.player)return;
+ const {game,state,version}=activeMatch;
+ let move;
+ if(game==='gomoku'){
+  if(state.board[to]!==0)return;
+  move={to};
+ }else{
+  const piece=state.board[to];
+  const own=piece&&(piece===activeMatch.player||piece===activeMatch.player+2);
+  if(own){
+   if(state.forced!==null&&state.forced!==to){
+    $('match-state').textContent='Musisz kontynuować bicie wskazanym pionkiem.';
+    return;
+   }
+   selectedChecker=to;drawMatch(activeMatch);return;
+  }
+  if(selectedChecker===null){
+   $('match-state').textContent='Najpierw wybierz własny pionek.';
+   return;
+  }
+  move={from:selectedChecker,to};
+ }
+ moving=true;
+ try{
+  const result=await api('match',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id:activeMatchId,version,move})});
+  selectedChecker=result.match.state.forced??null;
+  drawMatch(result.match);
+ }catch(error){
+  await refreshMatch();
+  $('match-state').textContent='Ruch nie został wykonany: '+error.message;
+ }finally{moving=false;}
+}
+$('match-refresh').addEventListener('click',()=>void refreshMatch());
+if(typeof setInterval==='function')setInterval(()=>{
+ if(activeMatchId&&sessionConfirmed&&!moving&&
+  document.querySelector('[data-panel="play"]').classList.contains('active')&&
+  (typeof document.visibilityState==='undefined'||document.visibilityState==='visible'))
+   void refreshMatch();
+},4000);
 function socialNotice(id,message,error=false){
  const el=$(id);el.textContent=message;el.classList.toggle('friend-alert',error);
 }
@@ -454,11 +586,10 @@ async function refreshChallenges(){
     controls.append(button);
    });
    if(challenge.status==='accepted'){
-    const a=document.createElement('a');
-    a.href=challenge.game==='warcaby'?'https://gracz.pl/gry/warcaby/':'https://gracz.pl/gry/gomoku/';
-    a.className='secondary link-button';a.textContent='Otwórz trening '+(challenge.game==='warcaby'?'Warcabów':'Gomoku');
-    a.title='Strona Academy, bez wspólnej rozgrywki online';
-    controls.append(a);
+    const button=document.createElement('button');
+    button.type='button';button.textContent='Graj online';button.className='friend-main';
+    button.addEventListener('click',()=>void openMatch(challenge.id));
+    controls.append(button);
    }
    row.append(controls);list.append(row);
   });
