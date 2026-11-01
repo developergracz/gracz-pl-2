@@ -251,7 +251,7 @@ test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async
  }finally{await context.close();}
 });
 
-test('R15 desktop footer keeps logo aligned and approved phone within container',async({browser})=>{
+test('R16 desktop footer keeps logo aligned and approved full artwork within container',async({browser})=>{
  for(const width of [1366,1600,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -264,7 +264,7 @@ test('R15 desktop footer keeps logo aligned and approved phone within container'
        phone:rect('.r4-phone'),blog:rect('.r4-updates'),
        news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
        logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
-       photo:rect('.site-footer .footer-news-smartphone'),
+       photo:rect('.site-footer .footer-news-full-art-r16'),
        phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display,
        logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
      };
