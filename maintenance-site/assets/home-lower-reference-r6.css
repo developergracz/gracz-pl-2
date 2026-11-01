@@ -732,14 +732,14 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15 .f
 body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
   display:block!important;position:relative!important;isolation:isolate!important;
   width:100%!important;min-width:0!important;min-height:0!important;
-  aspect-ratio:1672 / 941!important;padding:0!important;margin:0!important;
+  aspect-ratio:1671 / 941!important;padding:0!important;margin:0!important;
   border:0!important;border-radius:clamp(12px,1.4vw,24px)!important;
   background:#041625!important;overflow:hidden!important;box-sizing:border-box!important;
 }
 body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.footer-news-full-art-r16 {
   display:block!important;position:relative!important;inset:auto!important;
   width:100%!important;height:auto!important;max-width:100%!important;
-  max-height:none!important;aspect-ratio:1672 / 941!important;
+  max-height:none!important;aspect-ratio:1671 / 941!important;
   object-fit:contain!important;margin:0!important;padding:0!important;
   transform:none!important;filter:none!important;mask-image:none!important;
   -webkit-mask-image:none!important;z-index:1!important;pointer-events:none!important;
@@ -802,7 +802,7 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.f
   white-space:normal!important;
 }
 }
-/* A full 1672px mockup is too small to read on phones. Preserve the existing
+/* A full 1671px mockup is too small to read on phones. Preserve the existing
    fully accessible responsive form and the approved upright smartphone instead. */
 @media (max-width:960px) {
 body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r15.footer-news--approved-r16 {
