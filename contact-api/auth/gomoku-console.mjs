@@ -286,7 +286,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -302,6 +302,7 @@ function victory(board,to,side){
 }
 function describe(){
  if(state.mode==='training'){
+  if(state.showcase)return 'Przykładowy układ partii — kliknij planszę, aby rozpocząć grę.';
   if(state.winner===1)return 'Wygrywasz! Pięć czarnych kamieni w rzędzie.';
   if(state.winner===2)return 'Komputer wygrał. Rozpocznij nową partię.';
   if(state.winner===3)return 'Remis — plansza została zapełniona.';
@@ -360,6 +361,7 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
+ state.showcase=false;
  state.localChat=[];state.chatSignature='';
  showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
@@ -508,6 +510,7 @@ function cpuMove(board,level='expert'){
  return result;
 }
 function trainMove(to){
+ if(state.showcase)restart();
  if(state.thinking||state.winner||state.board[to])return;
  state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last,history:state.trainHistory.slice()});
  state.suggestion=-1;$('analysis-note').hidden=true;
@@ -764,6 +767,7 @@ $('chat-form').addEventListener('submit',async event=>{
   $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
  }
  if(state.mode==='training'){
+  if(state.showcase)restart();
   const now=new Date().toISOString();
   state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:now});
   const lower=message.toLocaleLowerCase('pl-PL');
@@ -800,7 +804,7 @@ function undoTrainingMove(){
  ++state.epoch;state.thinking=false;
  const previous=state.snapshots.pop();
  state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
- state.trainHistory=previous.history;
+ state.trainHistory=previous.history;state.showcase=false;
  state.suggestion=-1;$('analysis-note').hidden=true;render();
 }
 function analyzeTrainingPosition(){
@@ -870,8 +874,33 @@ window.setInterval(()=>{
  if(state.mode==='online'&&state.matchId&&!state.busy&&document.visibilityState==='visible')
   void refreshOnline();
 },4000);
+// The reference artwork depicts a mid-game position. The opening display is clearly
+// marked as a visual example; the FIRST click starts a clean, playable game.
+function installReferenceShowcase(){
+ const sequence=[
+  [1,'H7'],[2,'H3'],[1,'I7'],[2,'H4'],[1,'J7'],[2,'H5'],
+  [1,'K7'],[2,'H6'],[1,'K6'],[2,'L7'],[1,'H10'],[2,'J8']
+ ];
+ state.board=Array(count).fill(0);
+ state.trainHistory=[];
+ for(let n=0;n<sequence.length;n++){
+  const [player,move]=sequence[n];
+  const at=(Number(move.slice(1))-1)*15+(move.charCodeAt(0)-65);
+  state.board[at]=player;
+  state.trainHistory.push({player,to:at,number:n+1});
+  state.last=at;
+ }
+ state.moves=sequence.length;state.winner=0;state.showcase=true;
+ state.localChat=[
+  {id:'example-1',player:1,body:'Powodzenia! 🙂',createdAt:'2026-11-01T20:34:00.000Z'},
+  {id:'example-2',player:2,body:'Dzięki, wzajemnie! 🤝',createdAt:'2026-11-01T20:35:00.000Z'}
+ ];
+ state.chatSignature='';state.chatSequence=2;
+}
+installReferenceShowcase();
 render();
-showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
+drawRoomChat(state.localChat);
+$('chat-status').textContent='Podgląd przykładowej partii · kliknij planszę, by rozpocząć';
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
