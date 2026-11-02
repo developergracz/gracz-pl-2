@@ -57,6 +57,11 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/Premium global navigation, crisp vector grid/);
  assert.match(css,/\.board \.cell::before/);
  assert.match(css,/#363b3e/);
+ assert.ok(css.includes('Gomoku board viewport fit R4'));
+ assert.ok(css.includes('grid-template-rows: minmax(52px,7vh) minmax(34px,5vh) minmax(0,1fr) 45px'));
+ assert.ok(css.includes('width:auto;\n  height:100%;'),'Desktop board width is derived from actual row height');
+ assert.ok(css.includes('max-height:100%;'),'Board does not overflow available desktop row');
+ assert.ok(css.includes('max-width:620px;'),'Mobile retains responsive board width');
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
