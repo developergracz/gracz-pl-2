@@ -9,16 +9,6 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
-<header class="game-topbar" aria-label="Główna nawigacja gracz.pl">
-<a class="topbar-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span><b>PREMIUM</b></a>
-<nav class="game-navigation" aria-label="Szybkie przejście do podstron">
-<a href="https://gracz.pl/">Strona główna</a>
-<a href="https://gracz.pl/gry/">Gry</a>
-<a href="https://gracz.pl/poradniki/">Poradniki</a>
-<a href="https://gracz.pl/#spolecznosc">Społeczność</a>
-<a href="https://gracz.pl/#aktualnosci">Aktualności</a>
-<a href="/konto/panel/">Panel Gracza</a>
-</nav><span class="topbar-caption">GOMOKU ONLINE</span></header>
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
@@ -54,6 +44,11 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="versus">VS</div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
+<nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
+<a class="premium-mini-link" href="https://gracz.pl/gry/gomoku/" title="Zasady gry w Gomoku" aria-label="Zasady gry w Gomoku" data-tooltip="Zasady gry w Gomoku"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5c-2-1.4-5-1.8-9-1.8V4.2c3.9 0 7.3.5 9 2.1 1.7-1.6 5.1-2.1 9-2.1v14.5c-4 0-7 .4-9 1.8Z"/><path d="M12 6.3v14.2M5.2 7.5c1.5 0 3.2.2 4.5.7M14.4 8.2c1.3-.5 3-.7 4.4-.7"/></svg></a>
+<a class="premium-mini-link" href="https://gracz.pl/#spolecznosc" title="Społeczność graczy" aria-label="Społeczność graczy" data-tooltip="Społeczność graczy"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.1" r="3"/><path d="M6 20v-2.3c0-3 2.5-5.1 6-5.1s6 2.1 6 5.1V20ZM4.8 9.9a2.2 2.2 0 1 1 .9-4.3M3.8 15c-1.5.6-2.3 1.9-2.3 3.7V20h3.1M19.2 9.9a2.2 2.2 0 1 0-.9-4.3M20.2 15c1.5.6 2.3 1.9 2.3 3.7V20h-3.1"/></svg></a>
+<a class="premium-mini-link" href="https://gracz.pl/#aktualnosci" title="Aktualności gracz.pl" aria-label="Aktualności gracz.pl" data-tooltip="Aktualności gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 10.5h10M7 14h4M13.5 14h3.5v3.5h-3.5ZM7 18h4"/></svg></a>
+<a class="premium-mini-link" href="/konto/panel/" title="Panel Gracza" aria-label="Panel Gracza" data-tooltip="Panel Gracza"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 4.6 4.2L12 3l4.4 7.2L21 6l-2 12H5L3 6ZM5.6 21h12.8"/><circle cx="12" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg></a></nav>
 <div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
 <div class="arena">
 <div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
@@ -512,6 +507,41 @@ select option{background:#102c34;color:#fff}
   margin:0 auto;
  }
 }
+
+
+/* Compact Premium navigation: five golden pictograms at player-bar height.
+   No extra top header; keep maximum available space for the live Gomoku board. */
+.layout{height:100dvh;max-height:100dvh}
+@media (min-width:801px){
+ .boardarea{padding-top:28px}
+ .premium-quick-links{grid-column:2;grid-row:1;align-self:center;justify-self:center;
+  display:flex;align-items:center;gap:clamp(4px,.45vw,8px);z-index:8}
+ .side-dock{margin-top:72px}
+}
+.premium-quick-links{display:flex;align-items:center;justify-content:center;gap:6px;position:relative;z-index:8}
+.premium-mini-link{display:grid;place-items:center;position:relative;flex:0 0 auto;
+ width:clamp(32px,2.4vw,39px);height:clamp(32px,2.4vw,39px);
+ border:1px solid #f9cd71;border-radius:9px;color:#ffda78;text-decoration:none;
+ background:linear-gradient(145deg,#0b4745,#031b24 72%);
+ box-shadow:inset 0 1px #fff1b04f,0 0 9px #eaba5e5c;
+ transition:box-shadow .15s,transform .15s,border-color .15s}
+.premium-mini-link svg{width:21px;height:21px;display:block;filter:drop-shadow(0 0 2px #e5b65f69)}
+.premium-mini-link:hover,.premium-mini-link:focus-visible{border-color:#ffeba9;color:#fff0b4;
+ transform:translateY(-1px);box-shadow:inset 0 1px #fff4c181,0 0 16px #ffc75a9e}
+.premium-mini-link::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 7px);
+ transform:translate(-50%,5px);padding:8px 12px;white-space:nowrap;pointer-events:none;
+ border:1px solid #f5cd7b;border-radius:9px;color:#ffe7ab;
+ font:750 12px/1.2 Inter,"Segoe UI",Arial,sans-serif;letter-spacing:.1px;
+ background:linear-gradient(135deg,#06383a,#021822);box-shadow:0 0 14px #daa84c75,0 8px 20px #0008;
+ opacity:0;visibility:hidden;transition:opacity .15s,transform .15s,visibility .15s;z-index:50}
+.premium-mini-link:is(:hover,:focus-visible)::after{opacity:1;visibility:visible;transform:translate(-50%,0)}
+@media (max-width:800px){
+ .layout{height:auto;max-height:none}
+ .premium-quick-links{width:100%;justify-content:center;gap:8px;margin:3px 0 8px;order:0}
+ .premium-mini-link{width:39px;height:39px}
+ .premium-mini-link::after{bottom:auto;top:calc(100% + 6px)}
+}
+@media(prefers-reduced-motion:reduce){.premium-mini-link,.premium-mini-link::after{transition:none}}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
