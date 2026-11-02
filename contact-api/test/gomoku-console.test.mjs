@@ -28,7 +28,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="ai-level"/);
  assert.doesNotMatch(html,/class="game-topbar"/);
  assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
- const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\\s\\S]*?)<\\/nav>/);
+ const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
  assert.ok(linkRegion,'Premium quick navigation should appear within the active game console');
  const quickLinks=[...linkRegion[1].matchAll(/<a class="premium-mini-link" href="([^"]+)" title="([^"]+)" aria-label="([^"]+)" data-tooltip="([^"]+)"/g)];
  assert.equal(quickLinks.length,5,'Exactly five compact premium icons');
