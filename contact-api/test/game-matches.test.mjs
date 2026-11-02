@@ -60,6 +60,14 @@ function fixture(){
  const db={enabled:true,async query(sql,p=[]){
   queries.push({sql,p});
   if(sql.startsWith('CREATE '))return {rows:[],rowCount:0};
+  if(sql.includes('INSERT INTO gracz_public_identity.online_presence')){
+   const key=Buffer.from(p[0]||[]).toString('hex');
+   const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:null;
+   return {rows:id?[{id}]:[],rowCount:id?1:0};
+  }
+  if(sql.includes('FROM gracz_public_identity.friend_connections c')&&
+     sql.includes('gracz_public_identity.online_presence active'))
+   return {rows:[{nickname:'GraczB',online:true},{nickname:'GraczC',online:false}],rowCount:2};
   if(sql.includes('SELECT a.id FROM gracz_public_identity.sessions s')){
    const key=Buffer.from(p[0]||[]).toString('hex');
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:key===digest(tokenC)?idC:null;
@@ -224,4 +232,15 @@ test('premium undo rejection leaves stones unchanged and blocking prevents conse
  const again=(await request(tokenA,{version:4,action:'request'})).body.match.undoRequest;
  f.setBlocked(true);
  assert.equal((await request(tokenB,{version:5,action:'accept',requestId:again.id})).status,403);
+});
+
+test('friend presence shows only a signed-in player and exposes server-observed activity',async()=>{
+ const f=fixture();
+ assert.equal((await f.call(null,'GET','/auth/friends/presence')).status,401);
+ const response=await f.call(tokenA,'GET','/auth/friends/presence');
+ assert.equal(response.status,200);
+ assert.deepEqual(response.body.friends,[{nickname:'GraczB',online:true},{nickname:'GraczC',online:false}]);
+ assert.match(f.queries.find(q=>q.sql.includes('gracz_public_identity.online_presence active')).sql,
+  /friend_blocks/,'Blocked relationships must be excluded from presence');
+ assert.equal((await f.call(tokenC,'GET','/auth/friends/presence')).status,401);
 });
