@@ -464,6 +464,55 @@ select option{background:#102c34;color:#fff}
  .layout{height:auto;max-height:none;min-height:100dvh}.boardframe{width:min(100%,560px)}
 }
 
+
+/* Gomoku board viewport fit R4: use the ACTUAL available grid row instead
+   of subtracting a fixed 355px from dvh (which shrank the board on laptops). */
+@media (min-width:801px) {
+ .boardarea{
+  grid-template-rows: minmax(52px,7vh) minmax(34px,5vh) minmax(0,1fr) 45px;
+  row-gap:6px;
+  padding:9px clamp(10px,1vw,18px);
+  column-gap:clamp(10px,1.1vw,19px);
+ }
+ .board-center{
+  grid-column:1;grid-row:3;
+  width:100%;height:100%;min-width:0;min-height:0;
+  display:grid;place-items:center;
+  overflow:visible;
+ }
+ .boardframe{
+  width:auto;
+  height:100%;
+  min-width:0;
+  max-width:100%;
+  max-height:100%;
+  aspect-ratio:1.12;
+  flex:none;
+  margin:0;
+ }
+}
+@media (min-width:801px) and (max-height:650px) {
+ .boardarea{
+  grid-template-rows:50px 34px minmax(0,1fr) 40px;
+  row-gap:5px;
+  padding:7px 11px;
+ }
+ .side-dock{margin-top:35px;margin-bottom:37px}
+}
+@media (max-width:800px) {
+ .board-center{
+  width:100%;height:auto;min-height:0;
+  display:flex;justify-content:center;align-items:center;
+ }
+ .boardframe{
+  width:100%;height:auto;
+  max-width:620px;
+  max-height:none;
+  aspect-ratio:1;
+  margin:0 auto;
+ }
+}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
