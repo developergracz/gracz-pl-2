@@ -616,7 +616,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null};
+ trainHistory:[],dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -1016,11 +1016,12 @@ function setDockTab(tab){
  state.dockTab=tab;
  const moves=tab==='moves';
  $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
- $('chat-preview').hidden=!moves;
+ $('chat-preview').hidden=!moves||!chatPrefs.preview;
  $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
  $('history-tab').setAttribute('aria-selected',String(moves));
  $('chat-tab').setAttribute('aria-selected',String(!moves));
  if(!moves)void refreshRoomChat();
+ applyChatPreferences();
 }
 function showChatNotice(text){
  for(const id of ['chat-messages','chat-preview']){
@@ -1218,11 +1219,95 @@ function analyzeTrainingPosition(){
  const label=$('analysis-note');label.textContent='Analiza: rząd '+row+', kolumna '+col+'. '+reason;
  label.hidden=false;render();
 }
+
+const chatPrefs={sounds:false,messages:true,preview:true};
+try{
+ const saved=window.localStorage?.getItem('gracz.gomoku.chat-prefs.v1');
+ if(saved){
+  const value=JSON.parse(saved);
+  for(const key of ['sounds','messages','preview'])if(typeof value[key]==='boolean')chatPrefs[key]=value[key];
+ }
+}catch{}
+function applyChatPreferences(){
+ $('chat-messages').hidden=!chatPrefs.messages;
+ $('chat-preview').hidden=!chatPrefs.preview||state.dockTab!=='moves';
+ $('chat-status').textContent=chatPrefs.messages?'Rozmowa aktywna · wiadomości widoczne':
+  'Wiadomości ukryte w Twoim widoku';
+}
+function closePremiumPopup(id){$(id).hidden=true;}
+$('chat-settings-close').addEventListener('click',()=>closePremiumPopup('chat-settings-modal'));
+$('player-actions-close').addEventListener('click',()=>closePremiumPopup('player-actions-modal'));
+$('chat-settings-save').addEventListener('click',()=>{
+ chatPrefs.sounds=$('chat-sounds').checked;
+ chatPrefs.messages=$('chat-show-messages').checked;
+ chatPrefs.preview=$('chat-show-preview').checked;
+ try{window.localStorage?.setItem('gracz.gomoku.chat-prefs.v1',JSON.stringify(chatPrefs));}catch{}
+ applyChatPreferences();closePremiumPopup('chat-settings-modal');
+});
+async function gameFriends(action){
+ $('player-actions-modal').hidden=false;
+ $('player-actions-title').textContent=action==='invite'?'Zaproś znajomego':
+  action==='block'?'Zablokuj gracza':'Wyproś gracza';
+ $('player-actions-list').replaceChildren();
+ $('player-actions-status').textContent='Sprawdzanie znajomych…';
+ try{
+  if(action==='remove'){
+   $('player-actions-status').textContent='Wypraszanie będzie dostępne dla gospodarza w lobby pokoi. W aktualnej partii 1 na 1 nie usuwamy przeciwnika bez zakończenia rozgrywki.';
+   return;
+  }
+  const result=await api('friends/presence');
+  $('player-actions-status').textContent=action==='invite'?
+   'Zielony znacznik: aktywny w ostatnich 100 sekundach.':
+   'Blokada uniemożliwia kontakt i dalsze zaproszenia.';
+  const list=$('player-actions-list');
+  const friends=result.friends||[];
+  if(!friends.length){
+   const p=document.createElement('p');p.className='premium-muted';
+   p.textContent='Nie masz jeszcze zaakceptowanych znajomych. Dodaj ich w Panelu Gracza.';
+   list.append(p);
+   return;
+  }
+  for(const friend of friends){
+   const row=document.createElement('div');row.className='friend-row';
+   const info=document.createElement('span');
+   const nickname=document.createElement('strong');nickname.textContent=friend.nickname;
+   const availability=document.createElement('small');availability.textContent=friend.online?'● online':'● offline';
+   if(friend.online)availability.className='online';
+   info.append(nickname,availability);
+   const button=document.createElement('button');button.type='button';
+   button.textContent=action==='invite'?'Zaproś':'Zablokuj';
+   button.disabled=action==='invite'&&!friend.online;
+   button.addEventListener('click',async()=>{
+    button.disabled=true;
+    try{
+     if(action==='invite')await api('social/challenges',{method:'POST',
+       headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({action:'send',game:'gomoku',nickname:friend.nickname})});
+     else await api('friends/action',{method:'POST',
+       headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({action:'block',nickname:friend.nickname})});
+     $('player-actions-status').textContent=action==='invite'?
+       'Wysłano zaproszenie do '+friend.nickname+'.':'Zablokowano '+friend.nickname+'.';
+     if(action==='block')row.hidden=true;
+    }catch(e){button.disabled=false;$('player-actions-status').textContent=e.message;}
+   });
+   row.append(info,button);list.append(row);
+  }
+ }catch(e){$('player-actions-status').textContent=e.message;}
+}
+$('invite-friend').addEventListener('click',()=>void gameFriends('invite'));
+$('remove-player').addEventListener('click',()=>void gameFriends('remove'));
+$('block-player').addEventListener('click',()=>void gameFriends('block'));
+window.setInterval(()=>{
+ if(document.visibilityState==='visible')void api('friends/presence').catch(()=>{});
+},45000);
+
 function openGameSettings(){
- const section=state.mode==='training'?$('training-settings'):$('online-settings');
- section.scrollIntoView?.({behavior:'smooth',block:'nearest'});
- const target=state.mode==='training'?$('ai-level'):$('room-select');
- target.focus();
+ $('chat-settings-modal').hidden=false;
+ $('chat-sounds').checked=chatPrefs.sounds;
+ $('chat-show-messages').checked=chatPrefs.messages;
+ $('chat-show-preview').checked=chatPrefs.preview;
+ $('chat-sounds').focus();
 }
 async function toggleFullscreen(){
  try{
@@ -1238,7 +1323,7 @@ function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
- state.chatSignature='';setDockTab('moves');
+ state.chatSignature='';setDockTab('chat');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
  if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
  state.suggestion=-1;$('analysis-note').hidden=true;
@@ -1300,6 +1385,7 @@ function installReferenceShowcase(){
 installReferenceShowcase();
 render();
 drawRoomChat(state.localChat);
+applyChatPreferences();
 $('chat-status').textContent='Podgląd przykładowej partii · kliknij planszę, by rozpocząć';
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
