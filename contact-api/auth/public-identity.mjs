@@ -97,6 +97,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
       created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
     await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_expiry ON gracz_public_identity.sessions(expires_at)');
+    await database.query('ALTER TABLE gracz_public_identity.sessions ADD COLUMN IF NOT EXISTS last_seen_at timestamptz');
+    await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_presence ON gracz_public_identity.sessions(account_id,last_seen_at DESC)');
     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.profiles (
       account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
       display_name text NOT NULL, bio text NOT NULL DEFAULT '',
@@ -607,6 +609,38 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       return json(res,200,{ok:true,id:changed.rows[0].id,status}),true;
     }catch(e){
       console.error('SOCIAL_ERROR',{code:safeText(e?.code)||'SOCIAL_ERROR'});
+      return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+    }
+  }
+  if(url.pathname==='/auth/friends/presence'&&req.method==='GET'){
+    try{
+      await ready();
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const own=await database.query(`UPDATE gracz_public_identity.sessions s SET last_seen_at=now()
+        FROM gracz_public_identity.accounts a WHERE s.account_id=a.id
+          AND s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL
+        RETURNING a.id`,[digest(token)]);
+      if(!own.rowCount)return bad(res,401,'BRAK_SESJI'),true;
+      const actor=own.rows[0].id;
+      if(!allow('friends-presence:'+actor,90))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+      const friends=await database.query(`SELECT a.nickname,
+        EXISTS(SELECT 1 FROM gracz_public_identity.sessions active
+          WHERE active.account_id=a.id AND active.expires_at>now()
+          AND active.last_seen_at>now()-interval '100 seconds') AS online
+        FROM gracz_public_identity.friend_connections c
+        JOIN gracz_public_identity.accounts a ON a.id=CASE
+          WHEN c.account_a=$1 THEN c.account_b ELSE c.account_a END
+        WHERE (c.account_a=$1 OR c.account_b=$1) AND c.status='accepted'
+          AND a.verified_at IS NOT NULL
+          AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+            WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1))
+        ORDER BY online DESC,a.nickname_key ASC LIMIT 200`,[actor]);
+      return json(res,200,{ok:true,friends:friends.rows.map(row=>({
+        nickname:row.nickname,online:row.online===true
+      }))}),true;
+    }catch(e){
+      console.error('FRIENDS_PRESENCE_ERROR',{code:safeText(e?.code)||'ERROR'});
       return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
     }
   }
