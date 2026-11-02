@@ -444,10 +444,10 @@ select option{background:#102c34;color:#fff}
  0 0 0 2px #ffbc47,0 0 14px 5px #ffb738a8,0 0 30px 7px #e9a03062,0 14px 24px #000a}
 .board{background:radial-gradient(ellipse at 34% 20%,#fff 8%,#f9f9f8 64%,#ecece9 100%);
  border:3px solid #654a2b;box-shadow:inset 0 0 11px #66564444}
-.cell.p1.occupied::after{background:radial-gradient(circle at 28% 17%,#aebcc2 0%,#535b61 20%,#171e24 43%,#010205 82%);
- box-shadow:inset -3px -4px 6px #000b,0 2px 4px #000a,0 0 1px #fff7}
+.cell.p1.occupied::after{background:radial-gradient(circle at 28% 17%,#45494d 0%,#202327 14%,#090b0e 42%,#010205 78%);
+ box-shadow:inset 0 1px 1px #ffffff24,inset -3px -4px 6px #000b,0 2px 4px #0009}
 .cell.p2.occupied::after{background:radial-gradient(circle at 26% 18%,#fff 0%,#fff 31%,#e1e6e8 62%,#a3afb2 100%);
- box-shadow:inset -3px -4px 5px #0005,0 2px 4px #0007,0 0 2px #fff}
+ box-shadow:inset 0 0 0 1px #78858c80,inset -3px -4px 5px #0003,0 2px 4px #0006}
 .side-dock{border:2px solid #e9bf6b;box-shadow:inset 0 0 0 2px #47695e,0 0 13px #eeb95b85,0 8px 25px #000a}
 .dock-tab.active{box-shadow:inset 0 2px #fff,0 0 14px #ffd06a8f}
 .move-row{background:linear-gradient(90deg,#05272d,#001a20);border-bottom:1px solid #5577706d}
@@ -480,23 +480,17 @@ select option{background:#102c34;color:#fff}
 .game-navigation a:hover,.game-navigation a:focus-visible{color:#ffe3a1;border-color:#ffcf76}
 .topbar-caption{font-size:10px;font-weight:900;letter-spacing:1.3px;color:#ffda91;white-space:nowrap}
 .layout{height:calc(100dvh - 62px);min-height:525px;max-height:calc(100dvh - 62px)}
-/* High contrast 2px true vector strokes, no blur/filter across gridlines. */
-.board .cell::before{background:
- linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
- linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px));
- filter:none!important;opacity:1}
-.board .cell.edge-top:not(.edge-left):not(.edge-right)::before{
- background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
- linear-gradient(to bottom,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
-.board .cell.edge-bottom:not(.edge-left):not(.edge-right)::before{
- background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
- linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%)}
-.board .cell.edge-left::before{
- background:linear-gradient(to right,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
- linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
-.board .cell.edge-right::before{
- background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%),
- linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+/* Opaque cells keep grid and stones consistent while moves are disabled. */
+.board .cell{opacity:1}
+/* One opaque 2px stroke per axis; edge variables also compose at corners. */
+.board .cell::before{inset:-1px;background:
+ linear-gradient(#363b3e,#363b3e) var(--grid-x,center) center / var(--grid-width,100%) 2px no-repeat,
+ linear-gradient(#363b3e,#363b3e) center var(--grid-y,center) / 2px var(--grid-height,100%) no-repeat;
+ filter:none;opacity:1}
+.board .cell.edge-top{--grid-y:bottom;--grid-height:50%}
+.board .cell.edge-bottom{--grid-y:top;--grid-height:50%}
+.board .cell.edge-left{--grid-x:right;--grid-width:50%}
+.board .cell.edge-right{--grid-x:left;--grid-width:50%}
 .undo-modal[hidden]{display:none!important}
 .undo-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;
  background:#001519d6;backdrop-filter:blur(6px);padding:15px}
