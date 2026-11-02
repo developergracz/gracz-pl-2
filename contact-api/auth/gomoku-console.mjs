@@ -402,6 +402,68 @@ select option{background:#102c34;color:#fff}
 .mode-icon{filter:sepia(1) saturate(2.5) hue-rotate(352deg) drop-shadow(0 0 3px #e5b353)}
 .brand-gamepad{filter:sepia(1) saturate(5) hue-rotate(343deg) brightness(1.25)}
 
+
+/* Premium global navigation, crisp vector grid and consent dialog */
+.game-topbar{height:62px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+ padding:0 clamp(14px,2.4vw,40px);color:#f3f8f4;background:linear-gradient(100deg,#01151b 0%,#064346 52%,#02161c);
+ border-bottom:2px solid #deaf5c;box-shadow:inset 0 1px #7dc0b73c,0 3px 16px #0008;position:relative;z-index:20}
+.topbar-brand{font-size:clamp(19px,1.8vw,27px);font-weight:950;letter-spacing:-1px;white-space:nowrap;text-decoration:none}
+.topbar-brand span{color:#ed3951}.topbar-brand b{font-size:9px;font-weight:900;letter-spacing:.4px;
+ display:inline-block;vertical-align:middle;margin-left:9px;padding:5px 8px;color:#172022;border:1px solid #f9dda3;
+ border-radius:12px;background:linear-gradient(#ffedba,#dba84f)}
+.game-navigation{display:flex;align-items:center;justify-content:center;gap:clamp(10px,1.6vw,25px);min-width:0}
+.game-navigation a{font-size:clamp(11px,.93vw,15px);font-weight:750;text-decoration:none;
+ white-space:nowrap;padding:9px 2px;color:#e6f8f5;transition:color .14s,border-color .14s;border-bottom:2px solid transparent}
+.game-navigation a:hover,.game-navigation a:focus-visible{color:#ffe3a1;border-color:#ffcf76}
+.topbar-caption{font-size:10px;font-weight:900;letter-spacing:1.3px;color:#ffda91;white-space:nowrap}
+.layout{height:calc(100dvh - 62px);min-height:525px;max-height:calc(100dvh - 62px)}
+/* High contrast 2px true vector strokes, no blur/filter across gridlines. */
+.board .cell::before{background:
+ linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px));
+ filter:none!important;opacity:1}
+.board .cell.edge-top:not(.edge-left):not(.edge-right)::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.board .cell.edge-bottom:not(.edge-left):not(.edge-right)::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%)}
+.board .cell.edge-left::before{
+ background:linear-gradient(to right,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.board .cell.edge-right::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.undo-modal[hidden]{display:none!important}
+.undo-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;
+ background:#001519d6;backdrop-filter:blur(6px);padding:15px}
+.undo-modal-card{position:relative;width:min(100%,470px);padding:29px 28px 31px;text-align:center;
+ background:radial-gradient(circle at 50% 0%,#146363,#04272d 67%,#03191f);
+ border:2px solid #f8d28f;border-radius:23px;box-shadow:inset 0 0 0 2px #bd8d48,0 0 30px #ecc36b8c,0 25px 80px #000b}
+.undo-modal-symbol{font-size:39px;color:#ffcf7b;filter:drop-shadow(0 0 8px #e2a94b)}
+.undo-modal-kicker{font-size:11px;letter-spacing:1.8px;color:#f1c57a;font-weight:900}
+.undo-modal-card h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(23px,3vw,33px);
+ color:#ffde9d;margin:13px 0}
+.undo-modal-card p#undo-modal-message{font-size:16px;line-height:1.5;color:#f4ffff;margin:13px 0 23px}
+.undo-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.undo-modal-actions button{min-height:47px;border-radius:11px;font-size:15px;font-weight:900}
+.undo-accept{background:linear-gradient(#fff0b8,#e7b24f);color:#132a2a;border:1px solid #fff5c5;
+ box-shadow:0 0 11px #e4b5576b}
+.undo-reject{background:linear-gradient(#0b4a50,#03262f);color:#f3fff9;border:1px solid #47d0c3}
+#undo-label{font-size:inherit;font-weight:inherit;min-width:0}
+@media(min-width:801px){.boardarea{grid-template-rows:60px 38px minmax(0,1fr) 45px}
+ .boardframe{width:min(100%,calc(100dvh - 355px),660px)}
+ .side-dock{margin:43px 0 49px}
+ .side-dock .tool-btn{min-height:55px;height:60px}
+}
+@media(max-width:1050px){.game-topbar{gap:10px}.topbar-caption{display:none}
+ .game-navigation{gap:12px}}
+@media(max-width:800px){.game-topbar{height:auto;min-height:60px;flex-wrap:wrap;gap:5px;padding:7px 12px}
+ .topbar-brand{font-size:20px}.game-navigation{width:100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;gap:17px}
+ .game-navigation a{font-size:12px;padding:5px 1px}
+ .layout{height:auto;max-height:none;min-height:100dvh}.boardframe{width:min(100%,560px)}
+}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
