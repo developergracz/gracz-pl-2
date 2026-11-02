@@ -53,7 +53,36 @@ async function sendVerifyEmail(apiKey,from,to,token){
  return response.ok;
  }finally{clearTimeout(timer);}
 }
-export function createPublicIdentityRouter({database,emailFrom,resendKey}){
+export 
+function activeUndo(state){
+ const pending=state?.undo;
+ if(!pending||typeof pending!=='object'||typeof pending.id!=='string'||
+    ![1,2].includes(pending.requester)||
+    !Number.isInteger(pending.targetTo)||pending.targetTo<0||pending.targetTo>=225)return null;
+ const started=Date.parse(pending.createdAt);
+ if(!Number.isFinite(started)||started>Date.now()+10000||
+    Date.now()-started>180000)return null;
+ return pending;
+}
+function evaluateGomokuBoard(board){
+ if(!Array.isArray(board)||board.length!==225)return 0;
+ const directions=[[1,0],[0,1],[1,1],[1,-1]];
+ for(let i=0;i<225;i++){
+  const p=board[i];if(p!==1&&p!==2)continue;
+  const r=Math.floor(i/15),c=i%15;
+  for(const [dr,dc] of directions){
+   let won=true;
+   for(let n=1;n<5;n++){
+    const rr=r+n*dr,cc=c+n*dc;
+    if(rr>=15||cc<0||cc>=15||board[rr*15+cc]!==p){won=false;break;}
+   }
+   if(won)return p;
+  }
+ }
+ return board.every(p=>p!==0)?3:0;
+}
+
+function createPublicIdentityRouter({database,emailFrom,resendKey}){
  let initialized;
  async function ready(){
   if(!database.enabled||!resendKey||!emailFrom)throw Error('AUTH_UNAVAILABLE');
@@ -269,8 +298,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
 
  
 
-  if(url.pathname==='/auth/match' || url.pathname==='/auth/match/chat'){
+  if(url.pathname==='/auth/match' || url.pathname==='/auth/match/chat' || url.pathname==='/auth/match/undo'){
     const isChat=url.pathname==='/auth/match/chat';
+    const isUndo=url.pathname==='/auth/match/undo';
     if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
     if(req.method==='POST'&&!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
     try{
@@ -282,8 +312,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
         WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
       if(!authenticated.rows.length)return bad(res,401,'BRAK_SESJI'),true;
       const actor=authenticated.rows[0].id;
-      if(!allow((isChat?'match-chat-':'game-')+req.method+':'+actor,
-        isChat?(req.method==='GET'?180:40):(req.method==='GET'?240:80)))
+      if(!allow((isChat?'match-chat-':isUndo?'match-undo-':'game-')+req.method+':'+actor,
+        isChat?(req.method==='GET'?180:40):isUndo?20:(req.method==='GET'?240:80)))
         return bad(res,429,'ZBYT_WIELE_PROB'),true;
       let body={};if(req.method==='POST'){
         try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
@@ -317,6 +347,73 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       if(!current.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
       let match=current.rows[0];
       const player=match.sender_id===actor?1:2;
+
+      if(isUndo){
+        if(match.game!=='gomoku')return bad(res,400,'COFANIE_TYLKO_GOMOKU'),true;
+        if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        const existing=activeUndo(match.state);
+        const exposed=existing?{
+          id:existing.id,requester:existing.requester,
+          requesterName:existing.requester===1?match.sender_nick:match.recipient_nick,
+          targetTo:existing.targetTo,createdAt:existing.createdAt
+        }:null;
+        if(req.method==='GET')return json(res,200,{ok:true,undoRequest:exposed}),true;
+        if(!Number.isInteger(body.version)||body.version!==match.version)
+          return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        let next;
+        if(body.action==='request'){
+          if(existing)return bad(res,409,'PROSBA_JUZ_WYSLANA'),true;
+          const history=match.state?.history;
+          const target=Array.isArray(history)?[...history].reverse().find(
+            item=>item.player===player&&Number.isInteger(item.to)&&match.state.board[item.to]===player):null;
+          if(!target)return bad(res,409,'BRAK_RUCHU_DO_COFNIECIA'),true;
+          next={...match.state,undo:{
+            id:randomUUID(),requester:player,targetTo:target.to,
+            createdAt:new Date().toISOString()
+          }};
+        }else if(body.action==='accept'||body.action==='reject'){
+          if(!existing||existing.id!==body.requestId||existing.requester===player)
+            return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+          next={...match.state};
+          delete next.undo;
+          if(body.action==='accept'){
+            const target=existing.targetTo,history=next.history;
+            if(!Array.isArray(history)||next.board?.[target]!==existing.requester)
+              return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+            const removed=history.map(item=>item.player).lastIndexOf(existing.requester);
+            if(removed<0||history[removed].to!==target)
+              return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+            const board=next.board.slice();board[target]=0;
+            const remaining=history.filter((_,i)=>i!==removed)
+              .map((item,i)=>({...item,number:i+1}));
+            next.board=board;next.history=remaining;
+            next.moves=board.filter(Boolean).length;
+            next.turn=existing.requester;
+            next.winner=evaluateGomokuBoard(board);
+            next.last=remaining.length?remaining[remaining.length-1].to:-1;
+          }
+        }else return bad(res,400,'BLEDNA_AKCJA'),true;
+        const changed=await database.query(`UPDATE gracz_public_identity.game_matches m
+          SET state=$1::jsonb,version=m.version+1,updated_at=now()
+          FROM gracz_public_identity.game_challenges c
+          WHERE m.challenge_id=$2 AND c.id=m.challenge_id AND c.status='accepted'
+            AND m.version=$3 AND (c.sender_id=$4 OR c.recipient_id=$4)
+            AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+              WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+              OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
+          RETURNING m.version`,[JSON.stringify(next),matchId,match.version,actor]);
+        if(!changed.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        match={...match,state:next,version:changed.rows[0].version};
+        const undo=activeUndo(next);
+        return json(res,200,{ok:true,match:{
+          id:matchId,game:match.game,version:match.version,player,
+          players:[match.sender_nick,match.recipient_nick],
+          state:match.state,playable:match.playable===true,
+          undoRequest:undo?{id:undo.id,requester:undo.requester,
+            requesterName:undo.requester===1?match.sender_nick:match.recipient_nick,
+            targetTo:undo.targetTo,createdAt:undo.createdAt}:null
+        }}),true;
+      }
       if(isChat){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
         if(match.game!=='gomoku')return bad(res,400,'CZAT_GOMOKU'),true;
@@ -348,6 +445,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       }
       if(req.method==='POST'){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        if(activeUndo(match.state))return bad(res,409,'OCZEKUJE_NA_DECYZJE'),true;
         if(!Number.isInteger(body.version)||body.version!==match.version)
           return bad(res,409,'ODSWIEZ_PARTIE'),true;
         const result=playMove(match.game,match.state,player,body.move);
@@ -371,7 +469,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       return json(res,200,{ok:true,match:{
         id:matchId,game:match.game,version:match.version,player,
         players:[match.sender_nick,match.recipient_nick],
-        state:match.state,playable:match.playable===true
+        state:match.state,playable:match.playable===true,
+        undoRequest:activeUndo(match.state)?{
+          id:match.state.undo.id,requester:match.state.undo.requester,
+          requesterName:match.state.undo.requester===1?match.sender_nick:match.recipient_nick,
+          targetTo:match.state.undo.targetTo,createdAt:match.state.undo.createdAt
+        }:null
       }}),true;
     }catch(e){
       console.error('MATCH_ERROR',{code:safeText(e?.code)||'MATCH_ERROR'});
