@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -40,6 +40,9 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/href="https:\/\/gracz.pl\/" aria-label="gracz.pl — strona główna"/);
  assert.match(html,/Poproś o cofnięcie ruchu|Cofnij czarny kamień/);
  assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
+ assert.match(html,/aria-labelledby="game-result-title"/);
+ assert.match(html,/Rozpocznij nową partię/);
+ assert.match(html,/Zobacz zakończoną planszę/);
  assert.match(html,/<option value="expert" selected>/);
  assert.match(html,/<option value="hard">/);
  assert.match(html,/<option value="normal">/);
@@ -57,6 +60,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
  assert.match(css,/Premium Gomoku micro-toolbars/);
+ assert.match(css,/Full Max Premium: game outcome announcement/);
+ assert.match(css,/\.result-overlay\[hidden\]/);
  assert.match(css,/\.side-dock \.game-tools \.tool-btn::after/);
  assert.match(html,/aria-label="Zaproś znajomego"/);
  assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
@@ -105,7 +110,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
- const fake=new Map(),queued=[],calls=[],storage=new Map();
+ const fake=new Map(),queued=[],calls=[],storage=new Map(),navigations=[];
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
    this.textContent='';this.style={};this.classes=new Set();this.focused=false;
@@ -144,13 +149,16 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  const context={
   document:{getElementById:get,createElement:()=>new Element(),visibilityState:'visible'},
-  window:{setTimeout:fn=>{queued.push(fn);},setInterval:()=>{},
+  window:{setTimeout:fn=>{queued.push(fn);},setInterval:()=>{},location:{assign:href=>navigations.push(href)},
    localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}},
   location:{search:'',pathname:'/konto/gomoku/'},
   history:{replaceState(){}},
   URLSearchParams,fetch,console
  };
- new Script(served('/konto/gomoku/app.js').body).runInNewContext(context);
+ const executable=served('/konto/gomoku/app.js').body.replace(/\}\)\(\);\s*$/,
+  'globalThis.__gomokuTest={state,render,restart};})();');
+ assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
+ new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
  assert.equal(get('move-count').textContent,'Ruchy: 12','Reference preview has 12 explicitly labelled sample moves');
  assert.equal(get('history-count').textContent,'12');
@@ -243,6 +251,39 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children[44].classes.has('p1'),true);
  assert.equal(get('move-count').textContent,'Ruchy: 1');
  assert.ok(calls.every(x=>x.options.credentials==='same-origin'));
+ // Result is derived from the server-authoritative online winner relative to this player.
+ match.state.winner=2;
+ context.__gomokuTest.render();
+ assert.equal(get('game-result-modal').hidden,false);
+ assert.equal(get('game-result-title').textContent,'Przegrałeś partię.');
+ assert.equal(get('game-result-description').textContent,'Zwycięzca: GraczBeta.');
+ assert.equal(get('game-result-online-hint').hidden,false);
+ get('game-result-review').listeners.click();
+ assert.equal(get('game-result-modal').hidden,true);
+ context.__gomokuTest.render();
+ assert.equal(get('game-result-modal').hidden,true,'Repeated polling must not reopen dismissed result');
+ match.state.winner=1;
+ context.__gomokuTest.render();
+ assert.equal(get('game-result-title').textContent,'Wygrałeś partię!');
+ match.state.winner=3;
+ context.__gomokuTest.render();
+ assert.equal(get('game-result-title').textContent,'Remis!');
+ get('game-result-new').listeners.click();
+ assert.equal(navigations[0],'/konto/panel/','Online requires a new invitation, not a local reset');
+ get('training-mode').listeners.click();
+ const training=context.__gomokuTest.state;
+ training.winner=2;training.showcase=false;
+ context.__gomokuTest.render();
+ assert.equal(get('game-result-title').textContent,'Przegrałeś z komputerem.');
+ assert.equal(get('game-result-online-hint').hidden,true);
+ get('game-result-new').listeners.click();
+ assert.equal(get('game-result-modal').hidden,true);
+ assert.equal(get('move-count').textContent,'Ruchy: 0');
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
+ training.winner=1;context.__gomokuTest.render();
+ assert.equal(get('game-result-title').textContent,'Wygrałeś z komputerem!');
+ training.winner=3;context.__gomokuTest.render();
+ assert.equal(get('game-result-title').textContent,'Remis!');
 });
 
 
