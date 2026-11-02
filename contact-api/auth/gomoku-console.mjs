@@ -41,7 +41,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
-<div class="versus">VS</div>
+<div class="versus" aria-label="kontra"><span class="vs-laurel" aria-hidden="true">❧</span>VS<span class="vs-laurel" aria-hidden="true">❧</span></div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
@@ -58,14 +58,14 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="match-panel">
 <div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
-<button type="button" class="dock-tab active" id="history-tab" role="tab" aria-selected="true" aria-controls="moves-panel">☷ &nbsp;Ruchy</button>
-<button type="button" class="dock-tab" id="chat-tab" role="tab" aria-selected="false" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button></div>
-<div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab">
+<button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button>
+<button type="button" class="dock-tab" id="history-tab" role="tab" aria-selected="false" aria-controls="moves-panel">☷ &nbsp;Ruchy</button></div>
+<div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab" hidden>
 <div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
 <div id="moves-list" class="moves-list" aria-live="polite"><p class="dock-empty">Wybierz pole i rozpocznij partię.</p></div>
 <div class="history-footer" id="history-info">Zapis lokalny w treningu</div>
 </div>
-<div id="chat-panel" class="dock-content" role="tabpanel" aria-labelledby="chat-tab" hidden>
+<div id="chat-panel" class="dock-content" role="tabpanel" aria-labelledby="chat-tab">
 <div class="dock-title"><strong>Czat przy stole</strong><span class="chat-lock">Prywatny</span></div>
 <div id="chat-messages" class="chat-messages" aria-live="polite"><p class="dock-empty">Rozmowa przy stole gry.</p></div>
 </div>
@@ -77,16 +77,37 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 </section>
 <div class="game-tools" aria-label="Narzędzia gry">
-<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> <span id="undo-label">Cofnij czarny kamień</span></button>
-<button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
-<button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
-<button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
-<button type="button" class="tool-btn" id="refresh-match" hidden><span aria-hidden="true">↻</span> Odśwież partię</button>
+<button type="button" class="tool-btn" id="undo-move" title="Cofnij ruch" aria-label="Cofnij ruch" data-tooltip="Cofnij ruch"><span aria-hidden="true">↶</span><span class="sr-only" id="undo-label">Cofnij czarny kamień</span></button>
+<button type="button" class="tool-btn" id="analyze-position" title="Analiza partii" aria-label="Analiza partii" data-tooltip="Analiza partii"><span aria-hidden="true">▥</span></button>
+<button type="button" class="tool-btn" id="game-settings" title="Ustawienia czata" aria-label="Ustawienia czata" data-tooltip="Ustawienia czata"><span aria-hidden="true">⚙</span></button>
+<button type="button" class="tool-btn" id="fullscreen-game" title="Pełny ekran" aria-label="Pełny ekran" data-tooltip="Pełny ekran"><span aria-hidden="true">⛶</span></button>
+<button type="button" class="tool-btn" id="invite-friend" title="Zaproś znajomego" aria-label="Zaproś znajomego" data-tooltip="Zaproś znajomego"><span aria-hidden="true">♧</span></button>
+<button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
+<button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
+<button type="button" class="tool-btn" id="refresh-match" title="Odśwież partię" aria-label="Odśwież partię" data-tooltip="Odśwież partię" hidden><span aria-hidden="true">↻</span></button>
 </div></aside></div>
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
+<div id="player-actions-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="player-actions-title" hidden>
+<section class="premium-popup"><button type="button" class="popup-close" id="player-actions-close" aria-label="Zamknij">×</button>
+<p class="premium-eyebrow">GOMOKU · FULL MAX PREMIUM</p>
+<h2 id="player-actions-title">Zaproś znajomego</h2>
+<p id="player-actions-status" role="status">Lista znajomych</p>
+<div id="player-actions-list" class="player-actions-list"></div></section></div>
+<div id="chat-settings-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" hidden>
+<section class="premium-popup"><button type="button" class="popup-close" id="chat-settings-close" aria-label="Zamknij">×</button>
+<p class="premium-eyebrow">GOMOKU · USTAWIENIA CZATA</p>
+<h2 id="chat-settings-title">Ustawienia rozmowy</h2>
+<div class="chat-settings-grid">
+<label for="chat-scope">Rozmowa</label><select id="chat-scope" disabled><option>Prywatna — uczestnicy partii</option></select>
+<label class="premium-option"><input id="chat-sounds" type="checkbox"> Dźwięk nowych wiadomości</label>
+<label class="premium-option"><input id="chat-show-messages" type="checkbox" checked> Pokazuj wiadomości</label>
+<label class="premium-option"><input id="chat-show-preview" type="checkbox" checked> Podgląd ostatnich wiadomości</label>
+</div><p class="premium-muted">Zmiany dotyczą Twojego widoku. Ustawienia czasu i rankingu będą dostępne przy tworzeniu pokoju.</p>
+<button type="button" class="premium-confirm" id="chat-settings-save">Zapisz ustawienia</button>
+</section></div>
 <div id="undo-request-modal" class="undo-modal" role="dialog" aria-modal="true"
  aria-labelledby="undo-modal-title" aria-describedby="undo-modal-message" hidden>
  <div class="undo-modal-card">
@@ -542,6 +563,51 @@ select option{background:#102c34;color:#fff}
  .premium-mini-link::after{bottom:auto;top:calc(100% + 6px)}
 }
 @media(prefers-reduced-motion:reduce){.premium-mini-link,.premium-mini-link::after{transition:none}}
+
+
+/* Premium Gomoku micro-toolbars and real modal controls. */
+.versus{display:flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap}
+.vs-laurel{font-size:clamp(13px,1.4vw,22px);color:#ffda83;filter:drop-shadow(0 0 4px #d09b41)}
+.dock-tabs{direction:ltr}
+.side-dock .game-tools{display:flex;justify-content:center;flex-wrap:nowrap;gap:clamp(3px,.38vw,7px);padding:3px 0 0}
+.side-dock .game-tools .tool-btn{position:relative;flex:1 1 0;min-width:0;max-width:49px;height:clamp(28px,2.9vw,38px);
+ min-height:28px;padding:2px;display:grid;place-items:center;gap:0;overflow:visible;
+ border:1px solid #eac178;border-radius:9px;background:linear-gradient(#0b4946,#031d27);color:#ffe09d}
+.side-dock .game-tools .tool-btn span:not(.sr-only){font-size:clamp(16px,1.6vw,23px);line-height:1;min-width:0}
+.side-dock .game-tools .tool-btn:is(:hover,:focus-visible):not(:disabled){border-color:#ffe7b2;box-shadow:0 0 13px #efbd5994}
+.side-dock .game-tools .tool-btn::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);
+ left:50%;transform:translate(-50%,5px);font:700 11px/1.3 Inter,"Segoe UI",sans-serif;
+ white-space:nowrap;background:linear-gradient(#0d4344,#031e28);border:1px solid #edbf6b;
+ border-radius:9px;color:#ffe5a8;padding:7px 9px;box-shadow:0 0 16px #e4b14b80;
+ opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s,transform .15s;z-index:40}
+.side-dock .game-tools .tool-btn:is(:hover,:focus-visible)::after{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.premium-overlay[hidden]{display:none!important}
+.premium-overlay{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#00171adc;padding:12px}
+.premium-popup{position:relative;width:min(100%,470px);max-height:85dvh;overflow-y:auto;border:2px solid #e8bc6f;
+ border-radius:22px;padding:24px;color:#f6fafa;background:linear-gradient(150deg,#0d4948,#031b25);
+ box-shadow:inset 0 0 0 1px #75baa764,0 0 24px #e0ac5770,0 20px 55px #000b}
+.popup-close{position:absolute;right:13px;top:9px;background:transparent;color:#ffdf9d;border:0;font-size:28px}
+.premium-eyebrow{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#f4c774}
+.premium-popup h2{font:700 27px Georgia,serif;color:#ffe2a3;margin:4px 0 12px}
+.player-actions-list{display:grid;gap:7px;margin-top:14px}
+.player-actions-list .friend-row{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:10px 11px;background:#05262c;border:1px solid #467e78;border-radius:11px}
+.friend-row strong{font-size:13px}.friend-row small{font-size:11px;margin-left:8px;color:#acbab9}
+.friend-row small.online{color:#72f6af}
+.friend-row button,.premium-confirm{padding:9px 12px;border:1px solid #ffe1a1;border-radius:10px;color:#172624;
+ background:linear-gradient(#ffe6a4,#ddb052);font-size:12px;font-weight:900}
+.friend-row button:disabled{opacity:.45}
+.premium-muted{font-size:12px;color:#b6d2d3;line-height:1.5}
+.chat-settings-grid{display:grid;gap:12px;margin:14px 0}
+.chat-settings-grid>label{font-size:13px}
+.chat-settings-grid .premium-option{display:flex;align-items:center;gap:9px}
+.chat-settings-grid input[type=checkbox]{accent-color:#e7bd67;width:17px;height:17px}
+.chat-settings-grid select{font-size:12px}
+@media(max-width:560px){
+ .side-dock .game-tools{gap:4px}
+ .side-dock .game-tools .tool-btn{height:37px;min-height:34px}
+ .side-dock .game-tools .tool-btn span:not(.sr-only){font-size:21px}
+}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
