@@ -26,9 +26,18 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
- assert.match(html,/Główna nawigacja gracz.pl/);
- const hrefs=[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
- assert.ok(hrefs.some(href=>href==='https://gracz.pl/poradniki/'));
+ assert.doesNotMatch(html,/class="game-topbar"/);
+ assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
+ const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
+ assert.ok(linkRegion,'Premium quick navigation should appear within the active game console');
+ const quickLinks=[...linkRegion[1].matchAll(/<a class="premium-mini-link" href="([^"]+)" title="([^"]+)" aria-label="([^"]+)" data-tooltip="([^"]+)"/g)];
+ assert.equal(quickLinks.length,5,'Exactly five compact premium icons');
+ assert.deepEqual(quickLinks.map(x=>x[2]),[
+  'Gry gracz.pl','Zasady gry w Gomoku','Społeczność graczy',
+  'Aktualności gracz.pl','Panel Gracza']);
+ assert.ok(quickLinks.some(x=>x[1]==='https://gracz.pl/gry/gomoku/'&&x[4]==='Zasady gry w Gomoku'));
+ assert.ok(quickLinks.every(x=>x[2]===x[3]&&x[3]===x[4]));
+ assert.match(html,/href="https:\/\/gracz.pl\/" aria-label="gracz.pl — strona główna"/);
  assert.match(html,/Poproś o cofnięcie ruchu|Cofnij czarny kamień/);
  assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
  assert.match(html,/<option value="expert" selected>/);
@@ -42,6 +51,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.boardframe\{[^}]*background:linear-gradient/);
  assert.match(css,/@media\(max-width:800px\)/);
  assert.match(css,/\.tool-btn/);
+ assert.match(css,/Compact Premium navigation: five golden pictograms/);
+ assert.match(css,/\.premium-mini-link::after/);
+ assert.match(css,/content:attr\(data-tooltip\)/);
+ assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
  assert.match(css,/\.move-row/);
  assert.match(css,/\.chat-bubble/);
