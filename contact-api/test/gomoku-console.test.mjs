@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -56,6 +56,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/Premium Gomoku micro-toolbars/);
+ assert.match(css,/\.side-dock \.game-tools \.tool-btn::after/);
+ assert.match(html,/aria-label="Zaproś znajomego"/);
+ assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
+ assert.match(html,/aria-label="Zablokuj gracza"/);
+ assert.ok(html.indexOf('id="chat-tab"')<html.indexOf('id="history-tab"'), 'Czat is the left tab');
+ assert.match(html,/class="vs-laurel"/);
  assert.match(css,/\.move-row/);
  assert.match(css,/\.chat-bubble/);
  assert.match(css,/grid-template-columns:27\.5%/);
@@ -146,7 +153,10 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('analysis-note').hidden,false);
  assert.equal(get('board').children.filter(x=>x.classes.has('suggested')).length,1);
  get('game-settings').listeners.click();
- assert.equal(get('ai-level').focused,true);
+ assert.equal(get('chat-settings-modal').hidden,false);
+ assert.equal(get('chat-sounds').focused,true);
+ get('chat-settings-close').listeners.click();
+ assert.equal(get('chat-settings-modal').hidden,true);
  get('undo-move').listeners.click();
  assert.equal(get('move-count').textContent,'Ruchy: 1');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1,
