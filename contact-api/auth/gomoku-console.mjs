@@ -41,7 +41,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
-<div class="versus" aria-label="kontra"><span class="vs-laurel" aria-hidden="true">❧</span>VS<span class="vs-laurel" aria-hidden="true">❧</span></div>
+<div class="versus" aria-label="kontra"><span class="versus-medallion" aria-hidden="true">(vs)</span></div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
@@ -607,6 +607,65 @@ select option{background:#102c34;color:#fff}
  .side-dock .game-tools{gap:4px}
  .side-dock .game-tools .tool-btn{height:37px;min-height:34px}
  .side-dock .game-tools .tool-btn span:not(.sr-only){font-size:21px}
+}
+
+
+/* R5: faithful MINIATURE (vs) motif, never oversize VS */
+.players .versus{
+ display:flex;align-items:center;justify-content:center;
+ padding:0;min-width:0;overflow:visible;
+ font:700 clamp(11px,.86vw,15px)/1 Georgia,"Times New Roman",serif;
+ letter-spacing:0;text-transform:none;color:#ffe29a;text-shadow:0 0 5px #f2c56a7f;
+}
+.players .versus .versus-medallion{
+ position:relative;display:inline-flex;align-items:center;justify-content:center;
+ white-space:nowrap;font-size:inherit;line-height:1;
+ padding:5px 9px;border-radius:50%;
+ background:radial-gradient(ellipse at center,#0d404054,transparent 75%);
+ filter:drop-shadow(0 0 3px #edba6b65);
+}
+.players .versus .versus-medallion::before,
+.players .versus .versus-medallion::after{
+ content:"❧";position:absolute;top:50%;font:700 10px/1 Georgia,serif;
+ color:#f3ce81;text-shadow:0 0 3px #e3ad49;white-space:nowrap
+}
+.players .versus .versus-medallion::before{right:calc(100% - 11px);transform:translateY(-48%) rotate(-30deg)}
+.players .versus .versus-medallion::after{left:calc(100% - 11px);transform:translateY(-48%) scaleX(-1) rotate(-30deg)}
+/* R5: one horizontal row of seven tiny golden tool icons at ALL widths */
+.side-dock .game-tools{
+ display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+ width:100%;min-width:0;max-width:100%;
+ flex-wrap:nowrap;align-items:center;justify-items:stretch;
+ gap:clamp(3px,.33vw,5px);padding:4px 0 0;
+}
+.side-dock .game-tools .tool-btn{
+ position:relative;display:grid;place-items:center;
+ width:100%;height:clamp(31px,2.35vw,37px);
+ min-height:31px;min-width:0;max-width:none;
+ flex:none;gap:0;padding:0;
+ border:1px solid #e5b968;border-radius:8px;
+ background:linear-gradient(145deg,#07524e,#041d29 80%);
+ color:#f9d485;
+ box-shadow:inset 0 1px #f1dca33d,0 0 5px #dca64759;
+ overflow:visible;
+}
+.side-dock .game-tools .tool-btn span:not(.sr-only){
+ display:block;font-size:clamp(16px,1.45vw,21px);line-height:1;min-width:0;
+}
+.side-dock .game-tools .tool-btn:is(:hover,:focus-visible){z-index:20}
+.side-dock .game-tools .tool-btn::after{z-index:60}
+@media(max-width:800px){
+ .side-dock .game-tools{
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+  width:100%;gap:clamp(3px,1vw,6px);
+ }
+ .side-dock .game-tools .tool-btn{
+  width:100%;height:clamp(34px,7vw,42px);min-height:34px;max-width:none;
+ }
+ .side-dock .game-tools .tool-btn span:not(.sr-only){font-size:clamp(18px,4vw,23px)}
+ .players .versus .versus-medallion{padding:4px 7px}
+ .players .versus .versus-medallion::before,
+ .players .versus .versus-medallion::after{font-size:8px}
 }
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
