@@ -169,3 +169,59 @@ test('Gomoku private match chat allows only the two players and blocks unsafe co
  assert.match(f.queries.find(q=>q.sql.includes('INSERT INTO gracz_public_identity.game_match_messages')).sql,
   /NOT EXISTS\(SELECT 1 FROM gracz_public_identity.friend_blocks/);
 });
+
+
+test('premium online undo requires opponent consent and removes only requester stone',async()=>{
+ const f=fixture();
+ const send=(token,body,origin=host)=>f.call(token,'POST','/auth/match/undo',{id:challenge,...body},origin);
+ const play=(token,version,to)=>f.call(token,'POST','/auth/match',{id:challenge,version,move:{to}});
+ const get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ assert.equal((await send(null,{version:0,action:'request'})).status,401);
+ assert.equal((await send(tokenC,{version:0,action:'request'})).status,404);
+ assert.equal((await send(tokenA,{version:0,action:'request'},'https://evil.example')).status,403);
+ assert.equal((await send(tokenA,{version:0,action:'request'})).status,409); // no own move
+ assert.equal((await play(tokenA,0,0)).status,200);
+ assert.equal((await play(tokenB,1,15)).status,200);
+ const requested=await send(tokenA,{version:2,action:'request'});
+ assert.equal(requested.status,200);
+ const pending=requested.body.match.undoRequest;
+ assert.equal(pending.requester,1);
+ assert.equal(pending.targetTo,0);
+ assert.equal(pending.requesterName,'GraczA');
+ assert.ok(pending.id);
+ assert.equal((await send(tokenA,{version:3,action:'accept',requestId:pending.id})).status,409);
+ assert.equal((await play(tokenA,3,1)).body.error,'OCZEKUJE_NA_DECYZJE');
+ assert.equal((await send(tokenB,{version:3,action:'accept',requestId:'00000000-0000-4000-8000-000000000000'})).status,409);
+ assert.equal((await send(tokenB,{version:2,action:'accept',requestId:pending.id})).status,409);
+ const opponent=await get(tokenB);
+ assert.equal(opponent.body.match.undoRequest.id,pending.id);
+ assert.equal(opponent.body.match.state.board[0],1);
+ assert.equal(opponent.body.match.state.board[15],2);
+ const decided=await send(tokenB,{version:3,action:'accept',requestId:pending.id});
+ assert.equal(decided.status,200);
+ assert.equal(decided.body.match.state.board[0],0,'black stone removed');
+ assert.equal(decided.body.match.state.board[15],2,'white stone preserved');
+ assert.equal(decided.body.match.state.turn,1,'requester may play again');
+ assert.equal(decided.body.match.state.moves,1);
+ assert.deepEqual(decided.body.match.state.history,[{player:2,to:15,number:1}]);
+ assert.equal(decided.body.match.undoRequest,null);
+ assert.equal((await send(tokenB,{version:4,action:'accept',requestId:pending.id})).status,409);
+ assert.equal((await play(tokenA,4,1)).status,200,'game continues after accepted undo');
+ assert.match(f.queries.find(x=>x.sql.includes('UPDATE gracz_public_identity.game_matches m')).sql,/m.version=\$3/);
+});
+
+test('premium undo rejection leaves stones unchanged and blocking prevents consent',async()=>{
+ const f=fixture();
+ const play=(token,version,to)=>f.call(token,'POST','/auth/match',{id:challenge,version,move:{to}});
+ const request=(token,body)=>f.call(token,'POST','/auth/match/undo',{id:challenge,...body});
+ assert.equal((await play(tokenA,0,5)).status,200);
+ const pending=(await request(tokenA,{version:1,action:'request'})).body.match.undoRequest;
+ assert.equal((await request(tokenB,{version:2,action:'reject',requestId:pending.id})).status,200);
+ const match=await f.call(tokenA,'GET','/auth/match?id='+challenge);
+ assert.equal(match.body.match.state.board[5],1);
+ assert.equal(match.body.match.undoRequest,null);
+ assert.equal((await play(tokenB,3,20)).status,200);
+ const again=(await request(tokenA,{version:4,action:'request'})).body.match.undoRequest;
+ f.setBlocked(true);
+ assert.equal((await request(tokenB,{version:5,action:'accept',requestId:again.id})).status,403);
+});

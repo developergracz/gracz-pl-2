@@ -9,6 +9,16 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
+<header class="game-topbar" aria-label="Główna nawigacja gracz.pl">
+<a class="topbar-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span><b>PREMIUM</b></a>
+<nav class="game-navigation" aria-label="Szybkie przejście do podstron">
+<a href="https://gracz.pl/">Strona główna</a>
+<a href="https://gracz.pl/gry/">Gry</a>
+<a href="https://gracz.pl/poradniki/">Poradniki</a>
+<a href="https://gracz.pl/#spolecznosc">Społeczność</a>
+<a href="https://gracz.pl/#aktualnosci">Aktualności</a>
+<a href="/konto/panel/">Panel Gracza</a>
+</nav><span class="topbar-caption">GOMOKU ONLINE</span></header>
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
@@ -72,7 +82,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 </section>
 <div class="game-tools" aria-label="Narzędzia gry">
-<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> Cofnij ruch</button>
+<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> <span id="undo-label">Cofnij czarny kamień</span></button>
 <button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
 <button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
 <button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
@@ -81,7 +91,21 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
-</main></body></html>`;
+</main>
+<div id="undo-request-modal" class="undo-modal" role="dialog" aria-modal="true"
+ aria-labelledby="undo-modal-title" aria-describedby="undo-modal-message" hidden>
+ <div class="undo-modal-card">
+ <span class="undo-modal-symbol" aria-hidden="true">♛</span>
+ <p class="undo-modal-kicker">GOMOKU · WSPÓLNA PARTIA</p>
+ <h2 id="undo-modal-title">Prośba o cofnięcie ruchu</h2>
+ <p id="undo-modal-message">Użytkownik prosi o cofnięcie ruchu.</p>
+ <div class="undo-modal-actions">
+ <button type="button" id="undo-accept" class="undo-accept">Akceptuj</button>
+ <button type="button" id="undo-reject" class="undo-reject">Odrzuć</button>
+ </div>
+ </div>
+</div>
+</body></html>`;
 const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none;--gold:#efca82;--teal:#51d6d3;--navy:#03171e;--line:#395f64}
 *{box-sizing:border-box}html{background:#031519}body{margin:0;min-height:100dvh;color:#f1f9fc;background:#031519}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 74% 53%,#08747555,transparent 72%),linear-gradient(135deg,#021218,#05202b 50%,#03151d)}
@@ -378,6 +402,68 @@ select option{background:#102c34;color:#fff}
 .mode-icon{filter:sepia(1) saturate(2.5) hue-rotate(352deg) drop-shadow(0 0 3px #e5b353)}
 .brand-gamepad{filter:sepia(1) saturate(5) hue-rotate(343deg) brightness(1.25)}
 
+
+/* Premium global navigation, crisp vector grid and consent dialog */
+.game-topbar{height:62px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+ padding:0 clamp(14px,2.4vw,40px);color:#f3f8f4;background:linear-gradient(100deg,#01151b 0%,#064346 52%,#02161c);
+ border-bottom:2px solid #deaf5c;box-shadow:inset 0 1px #7dc0b73c,0 3px 16px #0008;position:relative;z-index:20}
+.topbar-brand{font-size:clamp(19px,1.8vw,27px);font-weight:950;letter-spacing:-1px;white-space:nowrap;text-decoration:none}
+.topbar-brand span{color:#ed3951}.topbar-brand b{font-size:9px;font-weight:900;letter-spacing:.4px;
+ display:inline-block;vertical-align:middle;margin-left:9px;padding:5px 8px;color:#172022;border:1px solid #f9dda3;
+ border-radius:12px;background:linear-gradient(#ffedba,#dba84f)}
+.game-navigation{display:flex;align-items:center;justify-content:center;gap:clamp(10px,1.6vw,25px);min-width:0}
+.game-navigation a{font-size:clamp(11px,.93vw,15px);font-weight:750;text-decoration:none;
+ white-space:nowrap;padding:9px 2px;color:#e6f8f5;transition:color .14s,border-color .14s;border-bottom:2px solid transparent}
+.game-navigation a:hover,.game-navigation a:focus-visible{color:#ffe3a1;border-color:#ffcf76}
+.topbar-caption{font-size:10px;font-weight:900;letter-spacing:1.3px;color:#ffda91;white-space:nowrap}
+.layout{height:calc(100dvh - 62px);min-height:525px;max-height:calc(100dvh - 62px)}
+/* High contrast 2px true vector strokes, no blur/filter across gridlines. */
+.board .cell::before{background:
+ linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px));
+ filter:none!important;opacity:1}
+.board .cell.edge-top:not(.edge-left):not(.edge-right)::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.board .cell.edge-bottom:not(.edge-left):not(.edge-right)::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%)}
+.board .cell.edge-left::before{
+ background:linear-gradient(to right,transparent 50%,#363b3e 50%,#363b3e calc(50% + 1px),transparent calc(50% + 1px)),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.board .cell.edge-right::before{
+ background:linear-gradient(to right,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e 50%,transparent 50%),
+ linear-gradient(to bottom,transparent calc(50% - 1px),#363b3e calc(50% - 1px),#363b3e calc(50% + 1px),transparent calc(50% + 1px))}
+.undo-modal[hidden]{display:none!important}
+.undo-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;
+ background:#001519d6;backdrop-filter:blur(6px);padding:15px}
+.undo-modal-card{position:relative;width:min(100%,470px);padding:29px 28px 31px;text-align:center;
+ background:radial-gradient(circle at 50% 0%,#146363,#04272d 67%,#03191f);
+ border:2px solid #f8d28f;border-radius:23px;box-shadow:inset 0 0 0 2px #bd8d48,0 0 30px #ecc36b8c,0 25px 80px #000b}
+.undo-modal-symbol{font-size:39px;color:#ffcf7b;filter:drop-shadow(0 0 8px #e2a94b)}
+.undo-modal-kicker{font-size:11px;letter-spacing:1.8px;color:#f1c57a;font-weight:900}
+.undo-modal-card h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(23px,3vw,33px);
+ color:#ffde9d;margin:13px 0}
+.undo-modal-card p#undo-modal-message{font-size:16px;line-height:1.5;color:#f4ffff;margin:13px 0 23px}
+.undo-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.undo-modal-actions button{min-height:47px;border-radius:11px;font-size:15px;font-weight:900}
+.undo-accept{background:linear-gradient(#fff0b8,#e7b24f);color:#132a2a;border:1px solid #fff5c5;
+ box-shadow:0 0 11px #e4b5576b}
+.undo-reject{background:linear-gradient(#0b4a50,#03262f);color:#f3fff9;border:1px solid #47d0c3}
+#undo-label{font-size:inherit;font-weight:inherit;min-width:0}
+@media(min-width:801px){.boardarea{grid-template-rows:60px 38px minmax(0,1fr) 45px}
+ .boardframe{width:min(100%,calc(100dvh - 355px),660px)}
+ .side-dock{margin:43px 0 49px}
+ .side-dock .tool-btn{min-height:55px;height:60px}
+}
+@media(max-width:1050px){.game-topbar{gap:10px}.topbar-caption{display:none}
+ .game-navigation{gap:12px}}
+@media(max-width:800px){.game-topbar{height:auto;min-height:60px;flex-wrap:wrap;gap:5px;padding:7px 12px}
+ .topbar-brand{font-size:20px}.game-navigation{width:100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;gap:17px}
+ .game-navigation a{font-size:12px;padding:5px 1px}
+ .layout{height:auto;max-height:none;min-height:100dvh}.boardframe{width:min(100%,560px)}
+}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -385,7 +471,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -412,12 +498,15 @@ function describe(){
  if(m.state.winner===1||m.state.winner===2)return 'Wygrał '+m.players[m.state.winner-1]+'.';
  if(m.state.winner===3)return 'Remis — zakończono partię.';
  if(!m.playable)return 'Partia jest niedostępna z powodu blokady.';
+ if(m.undoRequest)return m.undoRequest.requester===m.player?
+  'Prośba o cofnięcie wysłana. Oczekiwanie na odpowiedź przeciwnika…':
+  'Przeciwnik prosi o cofnięcie ruchu — odpowiedz w oknie Premium.';
  return m.state.turn===m.player?'Twoja tura — wybierz wolne pole.':'Tura gracza '+m.players[m.state.turn-1]+'.';
 }
 function render(){
  const online=state.mode==='online',m=state.match;
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
- const canPlay=online?Boolean(m&&m.playable&&!state.busy&&m.state.winner===0&&m.state.turn===m.player):
+ const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
   !state.thinking&&state.winner===0;
  const area=$('board');area.replaceChildren();
  for(let i=0;i<count;i++){
@@ -446,7 +535,12 @@ function render(){
  renderMoveHistory();
  $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
  $('history-info').textContent=online?'Ruchy potwierdzane na serwerze':'Zapis lokalny w treningu';
- $('undo-move').disabled=online||state.snapshots.length===0;
+ const myMove=online?Array.isArray(m?.state?.history)&&m.state.history.some(item=>
+  item.player===m.player&&m.state.board[item.to]===m.player):
+  !state.showcase&&state.trainHistory.some(item=>item.player===1&&state.board[item.to]===1);
+ $('undo-move').disabled=state.busy||(online?(!m||!m.playable||!!m.undoRequest||!myMove):!myMove);
+ $('undo-label').textContent=online?'Poproś o cofnięcie ruchu':'Cofnij czarny kamień';
+ syncUndoDialog();
  $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
   $('black-name').textContent=m.players[0];$('white-name').textContent=m.players[1];
@@ -898,13 +992,74 @@ window.setInterval(()=>{
  if(state.mode==='online'&&state.matchId&&document.visibilityState==='visible')void refreshRoomChat();
 },8000);
 
+
+function syncUndoDialog(){
+ const pending=state.mode==='online'?state.match?.undoRequest:null;
+ const receiving=!!pending&&pending.requester!==state.match?.player;
+ const modal=$('undo-request-modal');
+ const visible=receiving&&!state.busy;
+ modal.hidden=!visible;
+ if(!visible){state.undoDialogId=null;return;}
+ const actor=pending.requesterName||state.match.players[pending.requester-1]||'Gracz';
+ $('undo-modal-message').textContent='Użytkownik '+actor+' prosi o cofnięcie ruchu ('+
+  notation(pending.targetTo)+'). Czy akceptujesz tę prośbę?';
+ if(state.undoDialogId!==pending.id){
+  state.undoDialogId=pending.id;
+  $('undo-accept').focus?.();
+ }
+}
+async function sendUndoAction(action){
+ const match=state.match;
+ if(!match||state.mode!=='online'||!state.matchId||state.busy)return;
+ const request=match.undoRequest;
+ if(action!=='request'&&(!request||request.requester===match.player))return;
+ if(action==='request'&&request)return;
+ state.busy=true;
+ try{
+  const result=await api('match/undo',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id:state.matchId,version:match.version,
+    action,requestId:request?.id})});
+  if(state.matchId===match.id){
+   state.match=result.match;
+   if(action==='request')note('Prośba o cofnięcie ruchu została wysłana do przeciwnika.');
+   if(action==='accept')note('Prośba zaakceptowana. Cofnięto wyłącznie kamień proszącego gracza.');
+   if(action==='reject')note('Prośba o cofnięcie ruchu została odrzucona.');
+  }
+ }catch(error){
+  note(error.message);
+  await refreshOnline(true);
+ }finally{state.busy=false;render();}
+}
+$('undo-accept').addEventListener('click',()=>void sendUndoAction('accept'));
+$('undo-reject').addEventListener('click',()=>void sendUndoAction('reject'));
+function handleUndoClick(){
+ if(state.mode==='training')undoTrainingMove();
+ else void sendUndoAction('request');
+}
+
 function undoTrainingMove(){
- if(state.mode!=='training'||!state.snapshots.length)return;
+ if(state.mode!=='training'||state.showcase)return;
+ const index=state.trainHistory.map(item=>item.player).lastIndexOf(1);
+ if(index<0)return;
  ++state.epoch;state.thinking=false;
- const previous=state.snapshots.pop();
- state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
- state.trainHistory=previous.history;state.showcase=false;
- state.suggestion=-1;$('analysis-note').hidden=true;render();
+ const removed=state.trainHistory[index];
+ if(state.board[removed.to]!==1)return;
+ state.board[removed.to]=0;
+ state.trainHistory.splice(index,1);
+ state.trainHistory=state.trainHistory.map((item,i)=>({...item,number:i+1}));
+ state.moves=state.trainHistory.length;
+ state.last=state.trainHistory.length?state.trainHistory[state.trainHistory.length-1].to:-1;
+ state.winner=0;
+ for(let i=0;i<count;i++){
+  const piece=state.board[i];
+  if(piece&&victory(state.board,i,piece)){state.winner=piece;break;}
+ }
+ if(!state.winner&&state.moves===count)state.winner=3;
+ state.snapshots=[];state.suggestion=-1;
+ const label=$('analysis-note');
+ label.textContent='Cofnięto wyłącznie Twój czarny kamień. Białe kamienie pozostały na planszy.';
+ label.hidden=false;render();
 }
 function analyzeTrainingPosition(){
  if(state.mode!=='training'||state.thinking||state.winner!==0)return;
@@ -937,6 +1092,7 @@ async function toggleFullscreen(){
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('moves');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
  if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
@@ -953,7 +1109,7 @@ function setMode(mode){
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
 $('restart').addEventListener('click',restart);
-$('undo-move').addEventListener('click',undoTrainingMove);
+$('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());

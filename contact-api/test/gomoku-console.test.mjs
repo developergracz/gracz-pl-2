@@ -22,10 +22,15 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
+ assert.match(html,/Główna nawigacja gracz.pl/);
+ const hrefs=[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
+ assert.ok(hrefs.some(href=>href==='https://gracz.pl/poradniki/'));
+ assert.match(html,/Poproś o cofnięcie ruchu|Cofnij czarny kamień/);
+ assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
  assert.match(html,/<option value="expert" selected>/);
  assert.match(html,/<option value="hard">/);
  assert.match(html,/<option value="normal">/);
@@ -49,6 +54,9 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/aspect-ratio:1\.12/);
  assert.match(css,/#fff9d8/);
  assert.match(css,/\.cell\.p1\.occupied::after/);
+ assert.match(css,/Premium global navigation, crisp vector grid/);
+ assert.match(css,/\.board \.cell::before/);
+ assert.match(css,/#363b3e/);
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
@@ -122,10 +130,15 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('game-settings').listeners.click();
  assert.equal(get('ai-level').focused,true);
  get('undo-move').listeners.click();
- assert.equal(get('move-count').textContent,'Ruchy: 0');
- assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
+ assert.equal(get('move-count').textContent,'Ruchy: 1');
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1,
+   'Undo must remove ONLY black while preserving computer white stone');
+ assert.equal(get('board').children.filter(x=>x.classes.has('p1')).length,0);
+ assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
+ assert.match(get('analysis-note').textContent,/wyłącznie Twój czarny kamień/);
  assert.equal(get('undo-move').disabled,true);
- assert.equal(get('moves-list').children[0].textContent,'Wybierz pole i rozpocznij partię.');
+ assert.equal(get('moves-list').children.length,1);
+ assert.equal(get('moves-list').children[0].children[1].children[1].textContent,'Komputer');
  get('chat-tab').listeners.click();
  assert.equal(get('chat-panel').hidden,false);
  assert.equal(get('moves-panel').hidden,true);
@@ -141,6 +154,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('online-mode').listeners.click();
  assert.equal(get('chat-input').disabled,true);
  assert.equal(get('undo-move').disabled,true);
+ assert.equal(get('undo-label').textContent,'Poproś o cofnięcie ruchu');
  assert.equal(get('analyze-position').disabled,true);
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('room-select').children.length,2);
