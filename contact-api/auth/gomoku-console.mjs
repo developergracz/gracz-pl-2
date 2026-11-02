@@ -109,6 +109,18 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
+<div id="game-result-modal" class="result-overlay" role="dialog" aria-modal="true" aria-labelledby="game-result-title" aria-describedby="game-result-description" hidden>
+<section class="result-card" data-result="win">
+<button type="button" id="game-result-close" class="result-close" aria-label="Zamknij wynik i zobacz planszę">×</button>
+<span class="result-brand">GRACZ.PL <b>FULL MAX PREMIUM</b></span>
+<div class="result-medal" aria-hidden="true">♛</div>
+<span class="result-eyebrow">GOMOKU · WYNIK PARTII</span>
+<h2 id="game-result-title">Koniec partii</h2>
+<p id="game-result-description">Wynik został rozstrzygnięty.</p>
+<button type="button" class="result-start" id="game-result-new">▶ &nbsp; Rozpocznij nową partię</button>
+<button type="button" class="result-review" id="game-result-review">Zobacz zakończoną planszę</button>
+<p class="result-online-hint" id="game-result-online-hint" hidden>Nowy pojedynek online wymaga nowego zaproszenia. Otworzymy Panel Gracza.</p>
+</section></div>
 <div id="player-actions-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="player-actions-title" hidden>
 <section class="premium-popup"><button type="button" class="popup-close" id="player-actions-close" aria-label="Zamknij">×</button>
 <p class="premium-eyebrow">GOMOKU · FULL MAX PREMIUM</p>
@@ -792,6 +804,42 @@ select option{background:#102c34;color:#fff}
 }
 @media(prefers-reduced-motion:reduce){.chat-switch input,.chat-switch input:before{transition:none}}
 
+
+/* Full Max Premium: game outcome announcement, winner-specific and accessible. */
+.result-overlay[hidden]{display:none!important}
+.result-overlay{position:fixed;inset:0;z-index:125;display:grid;place-items:center;padding:16px;
+ background:#00141ae9;backdrop-filter:blur(5px)}
+.result-card{position:relative;width:min(100%,490px);padding:clamp(22px,3vw,35px);
+ display:flex;flex-direction:column;align-items:center;gap:11px;text-align:center;
+ border:2px solid #fbe09a;border-radius:26px;color:#f9ffff;
+ background:radial-gradient(ellipse at 50% 0%,#14615f,#05272d 65%,#03191f);
+ box-shadow:inset 0 0 0 2px #ab7937,inset 0 1px #fff5d0a5,0 0 36px #ffcd6f7a,0 24px 65px #000b}
+.result-card:before{content:"";position:absolute;inset:8px;pointer-events:none;
+ border:1px solid #a8d7ad4e;border-radius:19px}
+.result-close{position:absolute;top:10px;right:14px;border:0;background:none;color:#ffe8b7;font-size:27px}
+.result-brand{font-size:11px;font-weight:950;letter-spacing:1.1px;color:#f1f7f5}
+.result-brand b{display:inline-block;color:#15272a;font-size:9px;letter-spacing:0;
+ border-radius:8px;padding:3px 8px;background:linear-gradient(135deg,#fff2b8,#dfaa51)}
+.result-medal{display:grid;place-items:center;width:83px;height:83px;margin:4px 0 0;
+ border-radius:50%;font-size:43px;color:#ffdb85;border:2px solid #f9d68f;
+ background:radial-gradient(circle at 30% 20%,#197574,#02242c 75%);
+ box-shadow:inset 0 0 0 5px #02353b,0 0 0 2px #7f5327,0 0 22px #eebc5b96}
+.result-eyebrow{font-size:11px;letter-spacing:2px;font-weight:900;color:#f7ca75}
+.result-card h2{font:750 clamp(25px,3.3vw,38px)/1.13 Georgia,"Times New Roman",serif;
+ color:#ffe0a1;text-shadow:0 0 12px #e1af5591;margin:3px 0}
+.result-card p#game-result-description{font-size:14px;line-height:1.55;color:#ebf6f3;margin:0 0 7px}
+.result-start{width:100%;min-height:56px;padding:12px 17px;border:2px solid #fff3bc;
+ border-radius:13px;background:linear-gradient(#fff0b4,#f3c05a 58%,#ce8d2a);
+ color:#1b2724;font-size:clamp(15px,2vw,19px);font-weight:950;
+ box-shadow:inset 0 1px #fff9e6,0 0 14px #eeb64c85}
+.result-start:hover{filter:brightness(1.07);box-shadow:inset 0 1px #fff9e6,0 0 22px #efbe58b9}
+.result-review{padding:8px 13px;color:#bde9e1;border:0;background:none;
+ font-size:12px;text-decoration:underline;text-underline-offset:4px}
+.result-online-hint{font-size:11px;line-height:1.45;color:#accdca;margin:0}
+.result-card[data-result="loss"] .result-medal{color:#f4bd70;filter:saturate(.8)}
+.result-card[data-result="draw"] .result-medal{color:#dcf6ed;filter:saturate(.75)}
+@media(max-width:560px){.result-card{padding:24px 20px}.result-medal{width:67px;height:67px;font-size:36px}}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -799,7 +847,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null};
+ trainHistory:[],dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -831,6 +879,41 @@ function describe(){
   'Przeciwnik prosi o cofnięcie ruchu — odpowiedz w oknie Premium.';
  return m.state.turn===m.player?'Twoja tura — wybierz wolne pole.':'Tura gracza '+m.players[m.state.turn-1]+'.';
 }
+
+function syncGameResult(){
+ const online=state.mode==='online',match=state.match;
+ const winner=online?(match?.state?.winner||0):state.winner;
+ const modal=$('game-result-modal');
+ if((online&&!match)||(!online&&state.showcase)||![1,2,3].includes(winner)){
+  modal.hidden=true;state.resultShownKey=null;return;
+ }
+ const key=online?'online:'+(state.matchId||match.id)+':'+winner+':'+(match.state.moves||0):
+  'training:'+state.epoch+':'+winner+':'+state.moves;
+ if(state.resultShownKey===key||state.resultDismissedKey===key)return;
+ const outcome=winner===3?'draw':online?(match.player===winner?'win':'loss'):(winner===1?'win':'loss');
+ $('game-result-title').textContent=outcome==='draw'?'Remis!':outcome==='win'?
+  (online?'Wygrałeś partię!':'Wygrałeś z komputerem!'):
+  (online?'Przegrałeś partię.':'Przegrałeś z komputerem.');
+ $('game-result-description').textContent=outcome==='draw'?
+  'Nikt nie wygrał tej rozgrywki. Możesz rozpocząć kolejną partię.':
+  online?'Zwycięzca: '+(match.players?.[winner-1]||'Przeciwnik')+'.':
+  outcome==='win'?'Świetna partia! Pięć czarnych kamieni w jednej linii.':
+  'Komputer ułożył pięć białych kamieni w jednej linii.';
+ $('game-result-online-hint').hidden=!online;
+ modal.querySelector?.('.result-card')?.setAttribute('data-result',outcome);
+ state.resultShownKey=key;modal.hidden=false;$('game-result-new').focus?.();
+}
+function dismissGameResult(){
+ if(state.resultShownKey)state.resultDismissedKey=state.resultShownKey;
+ $('game-result-modal').hidden=true;
+}
+$('game-result-close').addEventListener('click',dismissGameResult);
+$('game-result-review').addEventListener('click',dismissGameResult);
+$('game-result-new').addEventListener('click',()=>{
+ dismissGameResult();
+ if(state.mode==='training')restart();
+ else window.location.assign('/konto/panel/');
+});
 function render(){
  const online=state.mode==='online',m=state.match;
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
@@ -878,6 +961,7 @@ function render(){
   $('black-name').textContent='Ty';$('white-name').textContent='Komputer';
   $('session-heading').textContent='Trening z komputerem';$('room-tag').textContent='TRENING';
  }
+ syncGameResult();
 }
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
