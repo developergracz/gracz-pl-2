@@ -27,7 +27,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
  assert.match(html,/Główna nawigacja gracz.pl/);
- assert.match(html,/https://gracz.pl/poradniki//);
+ assert.ok(html.includes('https://gracz.pl/poradniki/'));
  assert.match(html,/Poproś o cofnięcie ruchu|Cofnij czarny kamień/);
  assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
  assert.match(html,/<option value="expert" selected>/);
