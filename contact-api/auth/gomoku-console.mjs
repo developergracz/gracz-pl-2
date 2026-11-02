@@ -41,7 +41,26 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
-<div class="versus" aria-label="kontra"><span class="versus-medallion" aria-hidden="true">(vs)</span></div>
+<div class="versus" aria-label="VS — kontra">
+<svg class="versus-emblem" viewBox="0 0 120 80" aria-hidden="true" focusable="false">
+<defs><linearGradient id="vs-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3aa"/><stop offset=".4" stop-color="#ffcf4c"/><stop offset=".75" stop-color="#d8951b"/><stop offset="1" stop-color="#fff4ad"/></linearGradient></defs>
+<g id="vs-laurel-half" fill="url(#vs-foil)" stroke="#b77a1a" stroke-width=".45">
+<path d="M34 7C9 21 7 49 31 71" stroke="url(#vs-foil)" stroke-width="2.3" fill="none"/>
+<ellipse cx="34" cy="9" rx="3.5" ry="8" transform="rotate(35 34 9)"/>
+<ellipse cx="26" cy="14" rx="3.3" ry="7.2" transform="rotate(18 26 14)"/>
+<ellipse cx="20" cy="22" rx="3.5" ry="7.7" transform="rotate(-12 20 22)"/>
+<ellipse cx="15" cy="31" rx="3.4" ry="7.5" transform="rotate(-23 15 31)"/>
+<ellipse cx="14" cy="42" rx="3.5" ry="7.3" transform="rotate(-40 14 42)"/>
+<ellipse cx="17" cy="52" rx="3.3" ry="7.5" transform="rotate(-58 17 52)"/>
+<ellipse cx="23" cy="62" rx="3" ry="7" transform="rotate(-71 23 62)"/>
+<ellipse cx="31" cy="69" rx="2.7" ry="6.5" transform="rotate(-83 31 69)"/>
+<ellipse cx="33" cy="22" rx="2.5" ry="6" transform="rotate(78 33 22)"/>
+<ellipse cx="29" cy="34" rx="2.5" ry="6" transform="rotate(97 29 34)"/>
+<ellipse cx="31" cy="48" rx="2.5" ry="6" transform="rotate(113 31 48)"/>
+</g>
+<use href="#vs-laurel-half" transform="translate(120 0) scale(-1 1)"/>
+<text x="60" y="52" fill="url(#vs-foil)" stroke="#875514" stroke-width=".65" paint-order="stroke" text-anchor="middle" font-family="Georgia,serif" font-size="39" font-weight="800">VS</text>
+</svg></div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
@@ -96,17 +115,45 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <h2 id="player-actions-title">Zaproś znajomego</h2>
 <p id="player-actions-status" role="status">Lista znajomych</p>
 <div id="player-actions-list" class="player-actions-list"></div></section></div>
-<div id="chat-settings-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" hidden>
-<section class="premium-popup"><button type="button" class="popup-close" id="chat-settings-close" aria-label="Zamknij">×</button>
-<p class="premium-eyebrow">GOMOKU · USTAWIENIA CZATA</p>
-<h2 id="chat-settings-title">Ustawienia rozmowy</h2>
-<div class="chat-settings-grid">
-<label for="chat-scope">Rozmowa</label><select id="chat-scope" disabled><option>Prywatna — uczestnicy partii</option></select>
-<label class="premium-option"><input id="chat-sounds" type="checkbox"> Dźwięk nowych wiadomości</label>
-<label class="premium-option"><input id="chat-show-messages" type="checkbox" checked> Pokazuj wiadomości</label>
-<label class="premium-option"><input id="chat-show-preview" type="checkbox" checked> Podgląd ostatnich wiadomości</label>
-</div><p class="premium-muted">Zmiany dotyczą Twojego widoku. Ustawienia czasu i rankingu będą dostępne przy tworzeniu pokoju.</p>
-<button type="button" class="premium-confirm" id="chat-settings-save">Zapisz ustawienia</button>
+<div id="chat-settings-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" aria-describedby="chat-settings-intro" hidden>
+<section class="premium-popup chat-control-panel">
+ <button type="button" class="popup-close" id="chat-settings-close" aria-label="Zamknij ustawienia rozmowy">×</button>
+ <div class="chat-control-header">
+  <span class="chat-control-icon" aria-hidden="true">♛</span>
+  <div><p class="premium-eyebrow">GRACZ.PL · GOMOKU · FULL MAX PREMIUM</p>
+   <h2 id="chat-settings-title">Centrum rozmowy</h2>
+   <p id="chat-settings-intro">Dopasuj czat do swojego stylu gry. Wszystkie wybory zapisują się na tym urządzeniu.</p></div>
+ </div>
+ <div class="chat-control-status" role="status"><span class="chat-control-led" aria-hidden="true"></span>
+  <strong id="chat-settings-mode">Trening z komputerem</strong><span id="chat-settings-access">Komentarze treningowe · tylko lokalnie</span>
+ </div>
+ <div class="chat-settings-sections">
+  <fieldset class="chat-settings-section">
+   <legend><span aria-hidden="true">◈</span> Widok rozmowy</legend>
+   <p class="chat-settings-desc">To Ty decydujesz, jak wyświetlają się wiadomości.</p>
+   <label class="chat-switch"><span><strong>Pokazuj wiadomości</strong><small>Wyświetlaj pełną historię czatu</small></span><input id="chat-show-messages" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Podgląd przy planszy</strong><small>Ostatnie wiadomości pod historią ruchów</small></span><input id="chat-show-preview" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Godziny wiadomości</strong><small>Pokazuj czas wysłania obok rozmowy</small></span><input id="chat-timestamps" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Widok kompaktowy</strong><small>Więcej wiadomości w mniejszej przestrzeni</small></span><input id="chat-compact" type="checkbox"></label>
+  </fieldset>
+  <fieldset class="chat-settings-section">
+   <legend><span aria-hidden="true">✦</span> Komfort i powiadomienia</legend>
+   <p class="chat-settings-desc">Wybierz sposób czytania i obsługi rozmowy.</p>
+   <label class="chat-select-label" for="chat-font-size"><span><strong>Wielkość tekstu</strong><small>Wiadomości dopasowane do ekranu</small></span>
+    <select id="chat-font-size"><option value="small">Mała</option><option value="normal" selected>Standardowa</option><option value="large">Duża</option></select></label>
+   <label class="chat-switch"><span><strong>Automatyczne przewijanie</strong><small>Przechodź do najnowszych wiadomości</small></span><input id="chat-auto-scroll" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Wysyłaj klawiszem Enter</strong><small>Gdy wyłączysz, używaj złotego przycisku</small></span><input id="chat-enter-send" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Dźwięk nowej wiadomości</strong><small>Krótki sygnał podczas partii online</small></span><input id="chat-sounds" type="checkbox"></label>
+   <button type="button" class="chat-sound-test" id="chat-sound-test"><span aria-hidden="true">♫</span> Sprawdź dźwięk</button>
+  </fieldset>
+ </div>
+ <div class="chat-privacy-strip"><span aria-hidden="true">♧</span><div><strong>Bezpieczna rozmowa</strong>
+  <p id="chat-privacy-description">Trening nie wysyła wiadomości na serwer. W partii online czat jest dostępny tylko dla jej uczestników.</p>
+ </div></div>
+ <div class="chat-settings-actions">
+  <button type="button" class="chat-settings-reset" id="chat-settings-reset">Przywróć domyślne</button>
+  <button type="button" class="premium-confirm" id="chat-settings-save">✓ Zapisz ustawienia</button>
+ </div>
 </section></div>
 <div id="undo-request-modal" class="undo-modal" role="dialog" aria-modal="true"
  aria-labelledby="undo-modal-title" aria-describedby="undo-modal-message" hidden>
