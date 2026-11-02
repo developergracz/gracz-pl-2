@@ -9,6 +9,16 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
+<header class="game-topbar" aria-label="Główna nawigacja gracz.pl">
+<a class="topbar-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span><b>PREMIUM</b></a>
+<nav class="game-navigation" aria-label="Szybkie przejście do podstron">
+<a href="https://gracz.pl/">Strona główna</a>
+<a href="https://gracz.pl/gry/">Gry</a>
+<a href="https://gracz.pl/poradniki/">Poradniki</a>
+<a href="https://gracz.pl/#spolecznosc">Społeczność</a>
+<a href="https://gracz.pl/#aktualnosci">Aktualności</a>
+<a href="/konto/panel/">Panel Gracza</a>
+</nav><span class="topbar-caption">GOMOKU ONLINE</span></header>
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
@@ -72,7 +82,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 </section>
 <div class="game-tools" aria-label="Narzędzia gry">
-<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> Cofnij ruch</button>
+<button type="button" class="tool-btn" id="undo-move"><span aria-hidden="true">↶</span> <span id="undo-label">Cofnij czarny kamień</span></button>
 <button type="button" class="tool-btn" id="analyze-position"><span aria-hidden="true">▥</span> Analiza</button>
 <button type="button" class="tool-btn" id="game-settings"><span aria-hidden="true">⚙</span> Ustawienia</button>
 <button type="button" class="tool-btn" id="fullscreen-game"><span aria-hidden="true">⛶</span> Pełny ekran</button>
@@ -81,7 +91,21 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
-</main></body></html>`;
+</main>
+<div id="undo-request-modal" class="undo-modal" role="dialog" aria-modal="true"
+ aria-labelledby="undo-modal-title" aria-describedby="undo-modal-message" hidden>
+ <div class="undo-modal-card">
+ <span class="undo-modal-symbol" aria-hidden="true">♛</span>
+ <p class="undo-modal-kicker">GOMOKU · WSPÓLNA PARTIA</p>
+ <h2 id="undo-modal-title">Prośba o cofnięcie ruchu</h2>
+ <p id="undo-modal-message">Użytkownik prosi o cofnięcie ruchu.</p>
+ <div class="undo-modal-actions">
+ <button type="button" id="undo-accept" class="undo-accept">Akceptuj</button>
+ <button type="button" id="undo-reject" class="undo-reject">Odrzuć</button>
+ </div>
+ </div>
+</div>
+</body></html>`;
 const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none;--gold:#efca82;--teal:#51d6d3;--navy:#03171e;--line:#395f64}
 *{box-sizing:border-box}html{background:#031519}body{margin:0;min-height:100dvh;color:#f1f9fc;background:#031519}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 74% 53%,#08747555,transparent 72%),linear-gradient(135deg,#021218,#05202b 50%,#03151d)}
