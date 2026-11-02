@@ -62,7 +62,19 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
  assert.match(html,/aria-label="Zablokuj gracza"/);
  assert.ok(html.indexOf('id="chat-tab"')<html.indexOf('id="history-tab"'), 'Czat is the left tab');
- assert.match(html,/class="vs-laurel"/);
+ assert.match(html,/class="versus-medallion"[^>]*>\(vs\)<\/span>/);
+ assert.doesNotMatch(html,/class="vs-laurel"/);
+ assert.match(css,/R5: faithful MINIATURE \(vs\) motif/);
+ assert.match(css,/R5: one horizontal row of seven tiny golden tool icons/);
+ assert.match(css,/grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+ assert.match(css,/flex-wrap:nowrap/);
+ const toolBar=html.match(/<div class="game-tools"[^>]*>([\s\S]*?)<\/div>/);
+ assert.ok(toolBar,'Game toolbar exists');
+ const tools=[...toolBar[1].matchAll(/<button type="button" class="tool-btn" id="([^"]+)"/g)]
+  .map(match=>match[1]).filter(id=>id!=='refresh-match');
+ assert.deepEqual(tools,[
+  'undo-move','analyze-position','game-settings','fullscreen-game',
+  'invite-friend','remove-player','block-player']);
  assert.match(css,/\.move-row/);
  assert.match(css,/\.chat-bubble/);
  assert.match(css,/grid-template-columns:27\.5%/);
