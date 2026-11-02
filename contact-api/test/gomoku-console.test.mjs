@@ -44,6 +44,11 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.side-dock\{grid-column:2;grid-row:1 \/ 5/);
  assert.match(css,/\.side-dock \.game-tools\{grid-template-columns:repeat\(4/);
  assert.match(css,/\.boardframe\{width:min\(100%,calc\(100dvh - 270px\)/);
+ assert.match(css,/APPROVED REFERENCE R3/);
+ assert.match(css,/calc\(112dvh - 286px\)/);
+ assert.match(css,/aspect-ratio:1\.12/);
+ assert.match(css,/#fff9d8/);
+ assert.match(css,/\.cell\.p1\.occupied::after/);
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
@@ -93,9 +98,17 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  new Script(served('/konto/gomoku/app.js').body).runInNewContext(context);
  assert.equal(get('board').children.length,225);
+ assert.equal(get('move-count').textContent,'Ruchy: 12','Reference preview has 12 explicitly labelled sample moves');
+ assert.equal(get('history-count').textContent,'12');
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
+ assert.match(get('game-state').textContent,/Przykładowy układ partii/);
+ assert.equal(get('chat-preview').children.length,2,'Training sample chat is visible before play');
+ assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
  get('board').children[112].listeners.click();
- assert.equal(get('move-count').textContent,'Ruchy: 1');
+ assert.equal(get('move-count').textContent,'Ruchy: 1','First click starts clean real training rather than a 13th fictitious move');
  assert.equal(get('board').children[112].classes.has('p1'),true);
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1);
+ assert.equal(get('history-count').textContent,'1');
  assert.equal(queued.length,1);queued.pop()();
  assert.equal(get('move-count').textContent,'Ruchy: 2');
  assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
