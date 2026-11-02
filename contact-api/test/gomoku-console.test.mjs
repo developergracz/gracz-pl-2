@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -62,9 +62,17 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
  assert.match(html,/aria-label="Zablokuj gracza"/);
  assert.ok(html.indexOf('id="chat-tab"')<html.indexOf('id="history-tab"'), 'Czat is the left tab');
- assert.match(html,/class="versus-medallion"[^>]*>\(vs\)<\/span>/);
- assert.doesNotMatch(html,/class="vs-laurel"/);
+ assert.match(html,/class="versus-emblem" viewBox="0 0 120 80"/);
+ assert.match(html,/id="vs-laurel-half"/);
+ assert.match(html,/<text x="60" y="52"[^>]*>VS<\/text>/);
+ assert.doesNotMatch(html,/class="versus-medallion"/);
  assert.match(css,/R5: faithful MINIATURE \(vs\) motif/);
+ assert.match(css,/Full Max Premium R6: golden laurel VS reference/);
+ assert.match(css,/\.chat-settings-sections\{display:grid;grid-template-columns:repeat\(2/);
+ assert.match(css,/\.chat-messages\.chat-font-large/);
+ assert.match(html,/id="chat-settings-title">Centrum rozmowy/);
+ assert.match(html,/id="chat-settings-reset"/);
+ assert.match(html,/id="chat-sound-test"/);
  assert.match(css,/R5: one horizontal row of seven tiny golden tool icons/);
  assert.match(css,/grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
  assert.match(css,/flex-wrap:nowrap/);
@@ -97,7 +105,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
- const fake=new Map(),queued=[],calls=[];
+ const fake=new Map(),queued=[],calls=[],storage=new Map();
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
    this.textContent='';this.style={};this.classes=new Set();this.focused=false;
@@ -136,7 +144,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  const context={
   document:{getElementById:get,createElement:()=>new Element(),visibilityState:'visible'},
-  window:{setTimeout:fn=>{queued.push(fn);},setInterval:()=>{}},
+  window:{setTimeout:fn=>{queued.push(fn);},setInterval:()=>{},
+   localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}},
   location:{search:'',pathname:'/konto/gomoku/'},
   history:{replaceState(){}},
   URLSearchParams,fetch,console
@@ -167,6 +176,30 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('game-settings').listeners.click();
  assert.equal(get('chat-settings-modal').hidden,false);
  assert.equal(get('chat-sounds').focused,true);
+ assert.equal(get('chat-settings-mode').textContent,'Trening z komputerem');
+ get('chat-font-size').value='large';
+ get('chat-compact').checked=true;
+ get('chat-timestamps').checked=false;
+ get('chat-enter-send').checked=false;
+ get('chat-auto-scroll').checked=false;
+ get('chat-sounds').checked=true;
+ get('chat-settings-save').listeners.click();
+ assert.equal(get('chat-settings-modal').hidden,true);
+ assert.equal(get('chat-messages').classes.has('chat-font-large'),true);
+ assert.equal(get('chat-messages').classes.has('chat-compact'),true);
+ const savedPrefs=JSON.parse(storage.get('gracz.gomoku.chat-prefs.v1'));
+ assert.equal(savedPrefs.fontSize,'large');
+ assert.equal(savedPrefs.enterSend,false);
+ assert.equal(savedPrefs.autoScroll,false);
+ let prevented=false;
+ get('chat-input').listeners.keydown({key:'Enter',preventDefault(){prevented=true;}});
+ assert.equal(prevented,true,'Enter does not send when disabled in user preferences');
+ get('game-settings').listeners.click();
+ assert.equal(get('chat-font-size').value,'large');
+ get('chat-settings-reset').listeners.click();
+ assert.equal(get('chat-font-size').value,'normal');
+ assert.equal(get('chat-messages').classes.has('chat-compact'),false);
+ assert.equal(JSON.parse(storage.get('gracz.gomoku.chat-prefs.v1')).enterSend,true);
  get('chat-settings-close').listeners.click();
  assert.equal(get('chat-settings-modal').hidden,true);
  get('undo-move').listeners.click();
