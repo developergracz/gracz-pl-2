@@ -471,7 +471,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -498,12 +498,15 @@ function describe(){
  if(m.state.winner===1||m.state.winner===2)return 'Wygrał '+m.players[m.state.winner-1]+'.';
  if(m.state.winner===3)return 'Remis — zakończono partię.';
  if(!m.playable)return 'Partia jest niedostępna z powodu blokady.';
+ if(m.undoRequest)return m.undoRequest.requester===m.player?
+  'Prośba o cofnięcie wysłana. Oczekiwanie na odpowiedź przeciwnika…':
+  'Przeciwnik prosi o cofnięcie ruchu — odpowiedz w oknie Premium.';
  return m.state.turn===m.player?'Twoja tura — wybierz wolne pole.':'Tura gracza '+m.players[m.state.turn-1]+'.';
 }
 function render(){
  const online=state.mode==='online',m=state.match;
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
- const canPlay=online?Boolean(m&&m.playable&&!state.busy&&m.state.winner===0&&m.state.turn===m.player):
+ const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
   !state.thinking&&state.winner===0;
  const area=$('board');area.replaceChildren();
  for(let i=0;i<count;i++){
@@ -532,7 +535,12 @@ function render(){
  renderMoveHistory();
  $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
  $('history-info').textContent=online?'Ruchy potwierdzane na serwerze':'Zapis lokalny w treningu';
- $('undo-move').disabled=online||state.snapshots.length===0;
+ const myMove=online?Array.isArray(m?.state?.history)&&m.state.history.some(item=>
+  item.player===m.player&&m.state.board[item.to]===m.player):
+  !state.showcase&&state.trainHistory.some(item=>item.player===1&&state.board[item.to]===1);
+ $('undo-move').disabled=state.busy||(online?(!m||!m.playable||!!m.undoRequest||!myMove):!myMove);
+ $('undo-label').textContent=online?'Poproś o cofnięcie ruchu':'Cofnij czarny kamień';
+ syncUndoDialog();
  $('analyze-position').disabled=online||state.thinking||state.winner!==0;
  if(online&&m){
   $('black-name').textContent=m.players[0];$('white-name').textContent=m.players[1];
@@ -984,13 +992,74 @@ window.setInterval(()=>{
  if(state.mode==='online'&&state.matchId&&document.visibilityState==='visible')void refreshRoomChat();
 },8000);
 
+
+function syncUndoDialog(){
+ const pending=state.mode==='online'?state.match?.undoRequest:null;
+ const receiving=!!pending&&pending.requester!==state.match?.player;
+ const modal=$('undo-request-modal');
+ const visible=receiving&&!state.busy;
+ modal.hidden=!visible;
+ if(!visible){state.undoDialogId=null;return;}
+ const actor=pending.requesterName||state.match.players[pending.requester-1]||'Gracz';
+ $('undo-modal-message').textContent='Użytkownik '+actor+' prosi o cofnięcie ruchu ('+
+  notation(pending.targetTo)+'). Czy akceptujesz tę prośbę?';
+ if(state.undoDialogId!==pending.id){
+  state.undoDialogId=pending.id;
+  $('undo-accept').focus?.();
+ }
+}
+async function sendUndoAction(action){
+ const match=state.match;
+ if(!match||state.mode!=='online'||!state.matchId||state.busy)return;
+ const request=match.undoRequest;
+ if(action!=='request'&&(!request||request.requester===match.player))return;
+ if(action==='request'&&request)return;
+ state.busy=true;
+ try{
+  const result=await api('match/undo',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id:state.matchId,version:match.version,
+    action,requestId:request?.id})});
+  if(state.matchId===match.id){
+   state.match=result.match;
+   if(action==='request')note('Prośba o cofnięcie ruchu została wysłana do przeciwnika.');
+   if(action==='accept')note('Prośba zaakceptowana. Cofnięto wyłącznie kamień proszącego gracza.');
+   if(action==='reject')note('Prośba o cofnięcie ruchu została odrzucona.');
+  }
+ }catch(error){
+  note(error.message);
+  await refreshOnline(true);
+ }finally{state.busy=false;render();}
+}
+$('undo-accept').addEventListener('click',()=>void sendUndoAction('accept'));
+$('undo-reject').addEventListener('click',()=>void sendUndoAction('reject'));
+function handleUndoClick(){
+ if(state.mode==='training')undoTrainingMove();
+ else void sendUndoAction('request');
+}
+
 function undoTrainingMove(){
- if(state.mode!=='training'||!state.snapshots.length)return;
+ if(state.mode!=='training'||state.showcase)return;
+ const index=state.trainHistory.map(item=>item.player).lastIndexOf(1);
+ if(index<0)return;
  ++state.epoch;state.thinking=false;
- const previous=state.snapshots.pop();
- state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
- state.trainHistory=previous.history;state.showcase=false;
- state.suggestion=-1;$('analysis-note').hidden=true;render();
+ const removed=state.trainHistory[index];
+ if(state.board[removed.to]!==1)return;
+ state.board[removed.to]=0;
+ state.trainHistory.splice(index,1);
+ state.trainHistory=state.trainHistory.map((item,i)=>({...item,number:i+1}));
+ state.moves=state.trainHistory.length;
+ state.last=state.trainHistory.length?state.trainHistory[state.trainHistory.length-1].to:-1;
+ state.winner=0;
+ for(let i=0;i<count;i++){
+  const piece=state.board[i];
+  if(piece&&victory(state.board,i,piece)){state.winner=piece;break;}
+ }
+ if(!state.winner&&state.moves===count)state.winner=3;
+ state.snapshots=[];state.suggestion=-1;
+ const label=$('analysis-note');
+ label.textContent='Cofnięto wyłącznie Twój czarny kamień. Białe kamienie pozostały na planszy.';
+ label.hidden=false;render();
 }
 function analyzeTrainingPosition(){
  if(state.mode!=='training'||state.thinking||state.winner!==0)return;
@@ -1023,6 +1092,7 @@ async function toggleFullscreen(){
 function setMode(mode){
  if(state.mode===mode)return;
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('moves');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
  if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
@@ -1039,7 +1109,7 @@ function setMode(mode){
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
 $('restart').addEventListener('click',restart);
-$('undo-move').addEventListener('click',undoTrainingMove);
+$('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
