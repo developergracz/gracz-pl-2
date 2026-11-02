@@ -53,7 +53,6 @@ async function sendVerifyEmail(apiKey,from,to,token){
  return response.ok;
  }finally{clearTimeout(timer);}
 }
-export 
 function activeUndo(state){
  const pending=state?.undo;
  if(!pending||typeof pending!=='object'||typeof pending.id!=='string'||
@@ -82,7 +81,7 @@ function evaluateGomokuBoard(board){
  return board.every(p=>p!==0)?3:0;
 }
 
-function createPublicIdentityRouter({database,emailFrom,resendKey}){
+export function createPublicIdentityRouter({database,emailFrom,resendKey}){
  let initialized;
  async function ready(){
   if(!database.enabled||!resendKey||!emailFrom)throw Error('AUTH_UNAVAILABLE');
