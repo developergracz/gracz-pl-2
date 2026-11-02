@@ -1220,6 +1220,7 @@ function showChatNotice(text){
 function drawRoomChat(messages){
  const signature=(state.mode==='training'?'training':state.matchId||'')+':'+messages.map(x=>x.id).join(',');
  if(signature===state.chatSignature)return;
+ maybeNotifyNewChat(messages);
  state.chatSignature=signature;
  const box=$('chat-messages');box.replaceChildren();
  if(!messages.length){
@@ -1237,9 +1238,10 @@ function drawRoomChat(messages){
   const time=document.createElement('time');
   const date=new Date(message.createdAt);
   time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  time.hidden=!chatPrefs.timestamps;
   bubble.append(title,text,time);box.append(bubble);
  });
- box.scrollTop=box.scrollHeight;
+ if(chatPrefs.autoScroll)box.scrollTop=box.scrollHeight;
  const preview=$('chat-preview');preview.replaceChildren();
  messages.slice(-2).forEach(message=>{
   const own=message.player===(state.mode==='training'?1:state.match?.player);
@@ -1249,9 +1251,10 @@ function drawRoomChat(messages){
   const content=document.createElement('p');content.textContent=message.body;
   const time=document.createElement('time');const date=new Date(message.createdAt);
   time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  time.hidden=!chatPrefs.timestamps;
   bubble.append(title,content,time);preview.append(bubble);
  });
- preview.scrollTop=preview.scrollHeight;
+ if(chatPrefs.autoScroll)preview.scrollTop=preview.scrollHeight;
 }
 async function refreshRoomChat(){
  if(state.mode==='training'){
@@ -1405,19 +1408,77 @@ function analyzeTrainingPosition(){
  label.hidden=false;render();
 }
 
-const chatPrefs={sounds:false,messages:true,preview:true};
+
+const chatDefaults={sounds:false,messages:true,preview:true,timestamps:true,compact:false,
+ autoScroll:true,enterSend:true,fontSize:'normal'};
+const chatPrefs={...chatDefaults};
 try{
  const saved=window.localStorage?.getItem('gracz.gomoku.chat-prefs.v1');
  if(saved){
   const value=JSON.parse(saved);
-  for(const key of ['sounds','messages','preview'])if(typeof value[key]==='boolean')chatPrefs[key]=value[key];
+  for(const key of Object.keys(chatDefaults)){
+   if(key==='fontSize'){
+    if(['small','normal','large'].includes(value[key]))chatPrefs[key]=value[key];
+   }else if(typeof value[key]==='boolean')chatPrefs[key]=value[key];
+  }
  }
 }catch{}
 function applyChatPreferences(){
  $('chat-messages').hidden=!chatPrefs.messages;
  $('chat-preview').hidden=!chatPrefs.preview||state.dockTab!=='moves';
+ for(const id of ['chat-messages','chat-preview']){
+  const element=$(id);
+  element.classList.toggle('chat-compact',chatPrefs.compact);
+  for(const size of ['small','normal','large'])
+   element.classList.toggle('chat-font-'+size,chatPrefs.fontSize===size);
+  element.querySelectorAll?.('time').forEach(time=>{time.hidden=!chatPrefs.timestamps;});
+ }
  $('chat-status').textContent=chatPrefs.messages?'Rozmowa aktywna · wiadomości widoczne':
   'Wiadomości ukryte w Twoim widoku';
+}
+function updateChatSettingsForm(){
+ $('chat-sounds').checked=chatPrefs.sounds;
+ $('chat-show-messages').checked=chatPrefs.messages;
+ $('chat-show-preview').checked=chatPrefs.preview;
+ $('chat-timestamps').checked=chatPrefs.timestamps;
+ $('chat-compact').checked=chatPrefs.compact;
+ $('chat-auto-scroll').checked=chatPrefs.autoScroll;
+ $('chat-enter-send').checked=chatPrefs.enterSend;
+ $('chat-font-size').value=chatPrefs.fontSize;
+}
+function writeChatPrefs(){
+ try{window.localStorage?.setItem('gracz.gomoku.chat-prefs.v1',JSON.stringify(chatPrefs));}catch{}
+}
+function soundForIncomingMessage(){
+ try{
+  const Context=window.AudioContext||window.webkitAudioContext;
+  if(typeof Context!=='function')return;
+  const context=new Context();
+  const oscillator=context.createOscillator();
+  const gain=context.createGain();
+  const start=context.currentTime;
+  oscillator.type='sine';
+  oscillator.frequency.setValueAtTime(740,start);
+  oscillator.frequency.exponentialRampToValueAtTime(1050,start+.10);
+  gain.gain.setValueAtTime(.0001,start);
+  gain.gain.exponentialRampToValueAtTime(.055,start+.016);
+  gain.gain.exponentialRampToValueAtTime(.0001,start+.17);
+  oscillator.connect(gain);gain.connect(context.destination);
+  oscillator.start(start);oscillator.stop(start+.18);
+  oscillator.onended=()=>{void context.close?.().catch?.(()=>{});};
+ }catch{}
+}
+let soundMatchId=null,lastSoundMessageId='';
+function maybeNotifyNewChat(messages){
+ if(state.mode!=='online'||!state.matchId)return;
+ const tail=messages[messages.length-1];
+ const currentId=tail?.id||'';
+ if(soundMatchId===state.matchId&&lastSoundMessageId&&currentId!==lastSoundMessageId&&
+   tail?.player!==state.match?.player&&chatPrefs.sounds&&document.visibilityState==='visible'){
+  soundForIncomingMessage();
+ }
+ soundMatchId=state.matchId;
+ lastSoundMessageId=currentId;
 }
 function closePremiumPopup(id){$(id).hidden=true;}
 $('chat-settings-close').addEventListener('click',()=>closePremiumPopup('chat-settings-modal'));
@@ -1426,8 +1487,25 @@ $('chat-settings-save').addEventListener('click',()=>{
  chatPrefs.sounds=$('chat-sounds').checked;
  chatPrefs.messages=$('chat-show-messages').checked;
  chatPrefs.preview=$('chat-show-preview').checked;
- try{window.localStorage?.setItem('gracz.gomoku.chat-prefs.v1',JSON.stringify(chatPrefs));}catch{}
- applyChatPreferences();closePremiumPopup('chat-settings-modal');
+ chatPrefs.timestamps=$('chat-timestamps').checked;
+ chatPrefs.compact=$('chat-compact').checked;
+ chatPrefs.autoScroll=$('chat-auto-scroll').checked;
+ chatPrefs.enterSend=$('chat-enter-send').checked;
+ const font=$('chat-font-size').value;
+ chatPrefs.fontSize=['small','normal','large'].includes(font)?font:'normal';
+ writeChatPrefs();applyChatPreferences();
+ closePremiumPopup('chat-settings-modal');
+});
+$('chat-settings-reset').addEventListener('click',()=>{
+ Object.assign(chatPrefs,chatDefaults);
+ updateChatSettingsForm();writeChatPrefs();applyChatPreferences();
+});
+$('chat-sound-test').addEventListener('click',soundForIncomingMessage);
+$('chat-input').addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&!chatPrefs.enterSend)event.preventDefault();
+});
+document.addEventListener?.('keydown',event=>{
+ if(event.key==='Escape'&&!$('chat-settings-modal').hidden)closePremiumPopup('chat-settings-modal');
 });
 async function gameFriends(action){
  $('player-actions-modal').hidden=false;
@@ -1488,10 +1566,15 @@ window.setInterval(()=>{
 },45000);
 
 function openGameSettings(){
+ updateChatSettingsForm();
+ const online=state.mode==='online';
+ $('chat-settings-mode').textContent=online?'Partia online — 2 uczestników':'Trening z komputerem';
+ $('chat-settings-access').textContent=online?
+  'Wiadomości prywatne · zapis w pokoju':'Komentarze treningowe · tylko lokalnie';
+ $('chat-privacy-description').textContent=online?
+  'Rozmowę widzą tylko uczestnicy tej partii. Ustawienia są zapisywane tylko na Twoim urządzeniu.':
+  'Trening nie wysyła wiadomości na serwer. Odpowiedzi komputera są lokalnymi komentarzami, nie wiadomościami innych graczy.';
  $('chat-settings-modal').hidden=false;
- $('chat-sounds').checked=chatPrefs.sounds;
- $('chat-show-messages').checked=chatPrefs.messages;
- $('chat-show-preview').checked=chatPrefs.preview;
  $('chat-sounds').focus();
 }
 async function toggleFullscreen(){
