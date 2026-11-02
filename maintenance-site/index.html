@@ -41,6 +41,7 @@
 
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' https://*.google-analytics.com https://*.analytics.google.com; font-src 'self'; connect-src 'self' https://gracz-contact-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'self'">
 
+  <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
   <link rel="preload" href="/assets/fonts/montserrat-latin-ext.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
 
@@ -242,7 +243,7 @@
       <picture class="r4-owner-picture" aria-hidden="true">
         <source media="(min-width:1181px)" type="image/webp" srcset="/assets/gracz-hero-approved-r14.webp">
         <source media="(min-width:681px) and (max-width:1180px)" type="image/webp" srcset="/assets/gracz-hero-mobile-art-r14.webp">
-        <img class="r4-owner-image" src="/assets/gracz-hero-mobile-lcp-r16.webp" width="2172" height="724" alt="" loading="eager" decoding="sync" fetchpriority="high">
+        <img class="r4-owner-image" src="/assets/gracz-hero-mobile-lcp-r16.webp" width="2172" height="724" alt="" loading="eager" decoding="async" fetchpriority="high">
       </picture>
       <div class="r4-hero-copy">
         <h1 id="hero-title">Polskie Centrum <span>Gracza</span></h1>
