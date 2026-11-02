@@ -120,7 +120,6 @@ jobs:
               const details=lcpElement?.details?.items||[];
               const node=details[0]?.node||details[0]?.items?.[0]?.node;
               const breakdown=d.audits?.["lcp-breakdown-insight"]?.details?.items||[];
-              const requests=d.audits?.["network-requests"]?.details?.items||[];
               const important=requests.filter(r=>/gracz-hero|home-lcp-bundle|montserrat|opensans/.test(r.url||"")).map(r=>({url:r.url?.split("/").at(-1),start:r.startTime,end:r.endTime,size:r.transferSize,priority:r.priority}));
               console.log("HOME_LCP_DETAIL "+JSON.stringify({kind,i,lcp,element:node?.snippet||node?.selector||null,breakdown:breakdown.slice(0,2),requests:important}));
               return {lcp,cls};
