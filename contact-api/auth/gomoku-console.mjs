@@ -41,7 +41,26 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
-<div class="versus" aria-label="kontra"><span class="versus-medallion" aria-hidden="true">(vs)</span></div>
+<div class="versus" aria-label="VS — kontra">
+<svg class="versus-emblem" viewBox="0 0 120 80" aria-hidden="true" focusable="false">
+<defs><linearGradient id="vs-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3aa"/><stop offset=".4" stop-color="#ffcf4c"/><stop offset=".75" stop-color="#d8951b"/><stop offset="1" stop-color="#fff4ad"/></linearGradient></defs>
+<g id="vs-laurel-half" fill="url(#vs-foil)" stroke="#b77a1a" stroke-width=".45">
+<path d="M34 7C9 21 7 49 31 71" stroke="url(#vs-foil)" stroke-width="2.3" fill="none"/>
+<ellipse cx="34" cy="9" rx="3.5" ry="8" transform="rotate(35 34 9)"/>
+<ellipse cx="26" cy="14" rx="3.3" ry="7.2" transform="rotate(18 26 14)"/>
+<ellipse cx="20" cy="22" rx="3.5" ry="7.7" transform="rotate(-12 20 22)"/>
+<ellipse cx="15" cy="31" rx="3.4" ry="7.5" transform="rotate(-23 15 31)"/>
+<ellipse cx="14" cy="42" rx="3.5" ry="7.3" transform="rotate(-40 14 42)"/>
+<ellipse cx="17" cy="52" rx="3.3" ry="7.5" transform="rotate(-58 17 52)"/>
+<ellipse cx="23" cy="62" rx="3" ry="7" transform="rotate(-71 23 62)"/>
+<ellipse cx="31" cy="69" rx="2.7" ry="6.5" transform="rotate(-83 31 69)"/>
+<ellipse cx="33" cy="22" rx="2.5" ry="6" transform="rotate(78 33 22)"/>
+<ellipse cx="29" cy="34" rx="2.5" ry="6" transform="rotate(97 29 34)"/>
+<ellipse cx="31" cy="48" rx="2.5" ry="6" transform="rotate(113 31 48)"/>
+</g>
+<use href="#vs-laurel-half" transform="translate(120 0) scale(-1 1)"/>
+<text x="60" y="52" fill="url(#vs-foil)" stroke="#875514" stroke-width=".65" paint-order="stroke" text-anchor="middle" font-family="Georgia,serif" font-size="39" font-weight="800">VS</text>
+</svg></div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
 <nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
@@ -96,17 +115,45 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <h2 id="player-actions-title">Zaproś znajomego</h2>
 <p id="player-actions-status" role="status">Lista znajomych</p>
 <div id="player-actions-list" class="player-actions-list"></div></section></div>
-<div id="chat-settings-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" hidden>
-<section class="premium-popup"><button type="button" class="popup-close" id="chat-settings-close" aria-label="Zamknij">×</button>
-<p class="premium-eyebrow">GOMOKU · USTAWIENIA CZATA</p>
-<h2 id="chat-settings-title">Ustawienia rozmowy</h2>
-<div class="chat-settings-grid">
-<label for="chat-scope">Rozmowa</label><select id="chat-scope" disabled><option>Prywatna — uczestnicy partii</option></select>
-<label class="premium-option"><input id="chat-sounds" type="checkbox"> Dźwięk nowych wiadomości</label>
-<label class="premium-option"><input id="chat-show-messages" type="checkbox" checked> Pokazuj wiadomości</label>
-<label class="premium-option"><input id="chat-show-preview" type="checkbox" checked> Podgląd ostatnich wiadomości</label>
-</div><p class="premium-muted">Zmiany dotyczą Twojego widoku. Ustawienia czasu i rankingu będą dostępne przy tworzeniu pokoju.</p>
-<button type="button" class="premium-confirm" id="chat-settings-save">Zapisz ustawienia</button>
+<div id="chat-settings-modal" class="premium-overlay" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" aria-describedby="chat-settings-intro" hidden>
+<section class="premium-popup chat-control-panel">
+ <button type="button" class="popup-close" id="chat-settings-close" aria-label="Zamknij ustawienia rozmowy">×</button>
+ <div class="chat-control-header">
+  <span class="chat-control-icon" aria-hidden="true">♛</span>
+  <div><p class="premium-eyebrow">GRACZ.PL · GOMOKU · FULL MAX PREMIUM</p>
+   <h2 id="chat-settings-title">Centrum rozmowy</h2>
+   <p id="chat-settings-intro">Dopasuj czat do swojego stylu gry. Wszystkie wybory zapisują się na tym urządzeniu.</p></div>
+ </div>
+ <div class="chat-control-status" role="status"><span class="chat-control-led" aria-hidden="true"></span>
+  <strong id="chat-settings-mode">Trening z komputerem</strong><span id="chat-settings-access">Komentarze treningowe · tylko lokalnie</span>
+ </div>
+ <div class="chat-settings-sections">
+  <fieldset class="chat-settings-section">
+   <legend><span aria-hidden="true">◈</span> Widok rozmowy</legend>
+   <p class="chat-settings-desc">To Ty decydujesz, jak wyświetlają się wiadomości.</p>
+   <label class="chat-switch"><span><strong>Pokazuj wiadomości</strong><small>Wyświetlaj pełną historię czatu</small></span><input id="chat-show-messages" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Podgląd przy planszy</strong><small>Ostatnie wiadomości pod historią ruchów</small></span><input id="chat-show-preview" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Godziny wiadomości</strong><small>Pokazuj czas wysłania obok rozmowy</small></span><input id="chat-timestamps" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Widok kompaktowy</strong><small>Więcej wiadomości w mniejszej przestrzeni</small></span><input id="chat-compact" type="checkbox"></label>
+  </fieldset>
+  <fieldset class="chat-settings-section">
+   <legend><span aria-hidden="true">✦</span> Komfort i powiadomienia</legend>
+   <p class="chat-settings-desc">Wybierz sposób czytania i obsługi rozmowy.</p>
+   <label class="chat-select-label" for="chat-font-size"><span><strong>Wielkość tekstu</strong><small>Wiadomości dopasowane do ekranu</small></span>
+    <select id="chat-font-size"><option value="small">Mała</option><option value="normal" selected>Standardowa</option><option value="large">Duża</option></select></label>
+   <label class="chat-switch"><span><strong>Automatyczne przewijanie</strong><small>Przechodź do najnowszych wiadomości</small></span><input id="chat-auto-scroll" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Wysyłaj klawiszem Enter</strong><small>Gdy wyłączysz, używaj złotego przycisku</small></span><input id="chat-enter-send" type="checkbox" checked></label>
+   <label class="chat-switch"><span><strong>Dźwięk nowej wiadomości</strong><small>Krótki sygnał podczas partii online</small></span><input id="chat-sounds" type="checkbox"></label>
+   <button type="button" class="chat-sound-test" id="chat-sound-test"><span aria-hidden="true">♫</span> Sprawdź dźwięk</button>
+  </fieldset>
+ </div>
+ <div class="chat-privacy-strip"><span aria-hidden="true">♧</span><div><strong>Bezpieczna rozmowa</strong>
+  <p id="chat-privacy-description">Trening nie wysyła wiadomości na serwer. W partii online czat jest dostępny tylko dla jej uczestników.</p>
+ </div></div>
+ <div class="chat-settings-actions">
+  <button type="button" class="chat-settings-reset" id="chat-settings-reset">Przywróć domyślne</button>
+  <button type="button" class="premium-confirm" id="chat-settings-save">✓ Zapisz ustawienia</button>
+ </div>
 </section></div>
 <div id="undo-request-modal" class="undo-modal" role="dialog" aria-modal="true"
  aria-labelledby="undo-modal-title" aria-describedby="undo-modal-message" hidden>
@@ -668,6 +715,85 @@ select option{background:#102c34;color:#fff}
  .players .versus .versus-medallion::after{font-size:8px}
 }
 
+
+/* Full Max Premium R6: golden laurel VS reference and functional Chat Control Center */
+.players{grid-template-columns:minmax(0,1fr) clamp(78px,5.6vw,100px) minmax(0,1fr)}
+.players .versus{display:flex;align-items:center;justify-content:center;min-width:0;padding:0;overflow:visible;
+ color:#f9d577;filter:drop-shadow(0 0 7px #c887249c)}
+.players .versus .versus-emblem{display:block;width:clamp(74px,5.5vw,100px);max-width:100%;height:auto;aspect-ratio:3/2}
+.chat-control-panel{width:min(96vw,820px);max-height:calc(100dvh - 28px);padding:clamp(15px,2.5vw,29px);
+ background:radial-gradient(ellipse 55% 45% at 80% -15%,#0e7a6b81,transparent 95%),
+  linear-gradient(150deg,#0c4b4c,#031e27 56%,#061b22 100%);
+ border:2px solid #f0c876;border-radius:25px;
+ box-shadow:inset 0 0 0 1px #b2e4c842,inset 0 1px #ffeda268,0 0 34px #e4b7587e,0 26px 75px #000b}
+.chat-control-header{display:flex;align-items:center;gap:18px;padding:2px 38px 15px 0}
+.chat-control-icon{width:57px;height:57px;flex:none;display:grid;place-items:center;
+ border:1px solid #e7bd6e;border-radius:17px;font-size:33px;color:#ffdc8d;
+ background:linear-gradient(135deg,#165d56,#032a31);box-shadow:inset 0 1px #afedd97a,0 0 15px #e0b74b6b}
+.chat-control-header h2{font:700 clamp(26px,3vw,38px)/1.1 Georgia,"Times New Roman",serif;
+ margin:5px 0 6px;color:#ffe0a1;text-shadow:0 0 12px #e8b66164}
+.chat-control-header #chat-settings-intro{font-size:12px;line-height:1.55;color:#bdd6d6;margin:0}
+.chat-control-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;margin-bottom:16px;
+ background:linear-gradient(90deg,#0b5b55,#042a32);border:1px solid #479c87;border-radius:12px}
+.chat-control-led{width:9px;height:9px;flex:none;background:#56f1a7;border-radius:50%;box-shadow:0 0 7px #67f8a4}
+.chat-control-status strong{font-size:13px;color:#f8e0ae}
+.chat-control-status>span:last-child{font-size:12px;color:#bde7e1}
+.chat-settings-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.chat-settings-section{border:1px solid #467774;border-radius:14px;margin:0;min-width:0;padding:14px 14px 11px;
+ background:linear-gradient(160deg,#092f35dc,#03262edc);box-shadow:inset 0 1px #79d4b625}
+.chat-settings-section legend{font:700 18px Georgia,"Times New Roman",serif;color:#ffe0a1;padding:0 4px}
+.chat-settings-section legend span{color:#f2bd65;font-size:18px;margin-right:6px}
+.chat-settings-desc{font-size:11px;line-height:1.4;color:#b2cfd1;margin:0 0 10px}
+.chat-switch,.chat-select-label{display:flex;align-items:center;justify-content:space-between;gap:13px;
+ min-height:52px;padding:9px 3px;border-bottom:1px solid #5a7d7250;cursor:pointer}
+.chat-switch:last-child{border-bottom:0}
+.chat-switch span,.chat-select-label span{display:grid;gap:4px;min-width:0}
+.chat-switch strong,.chat-select-label strong{font-size:12px;font-weight:800;color:#f4ffff}
+.chat-switch small,.chat-select-label small{color:#a8c8cb;font-size:10px;line-height:1.3}
+.chat-switch input{width:37px;height:21px;flex:none;appearance:none;position:relative;border:1px solid #6c9893;
+ border-radius:16px;background:#173840;cursor:pointer;transition:background .16s,border-color .16s}
+.chat-switch input:before{content:"";position:absolute;left:3px;top:3px;width:13px;height:13px;
+ background:#b5c7c6;border-radius:50%;box-shadow:0 1px 3px #0008;transition:transform .16s}
+.chat-switch input:checked{background:linear-gradient(#ffdf9c,#dba34c);border-color:#ffe4a9}
+.chat-switch input:checked:before{background:#173c3d;transform:translateX(16px)}
+.chat-switch input:focus-visible,.chat-select-label select:focus-visible{outline:2px solid #66f1de;outline-offset:2px}
+.chat-select-label select{max-width:134px;min-width:114px;font-size:11px;border-radius:9px;padding:9px 7px;
+ color:#ffe5aa;border:1px solid #ba9556;background:#092d35}
+.chat-sound-test{margin-top:11px;border:1px solid #edbc6a;border-radius:9px;padding:9px 13px;
+ color:#ffe4a6;font-size:11px;font-weight:850;background:linear-gradient(#15524c,#062d32)}
+.chat-sound-test:hover{box-shadow:0 0 11px #f1c16c94}
+.chat-privacy-strip{display:flex;align-items:flex-start;gap:12px;margin:14px 0;
+ border:1px solid #6b895a86;border-radius:11px;padding:13px;background:#1c474042}
+.chat-privacy-strip>span{color:#f6c775;font-size:24px;line-height:1}
+.chat-privacy-strip strong{font-size:12px;color:#ffe4ae}
+.chat-privacy-strip p{font-size:11px;color:#bcd8d7;line-height:1.4;margin:4px 0 0}
+.chat-settings-actions{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.chat-settings-actions button{min-height:43px;padding:10px 17px;border-radius:10px;font-size:12px;font-weight:900}
+.chat-settings-reset{border:1px solid #89b8ae;background:#0d3b41;color:#f1faf7}
+.chat-settings-reset:hover{border-color:#f3d082;color:#ffe3a9}
+.chat-settings-actions .premium-confirm{min-width:178px;background:linear-gradient(#ffe6a3,#dfaa4c);
+ box-shadow:inset 0 1px #fff3d5,0 0 12px #e6b85e6b}
+.chat-messages[hidden],.chat-preview[hidden]{display:none!important}
+.chat-messages.chat-compact .chat-bubble,.chat-preview.chat-compact .chat-bubble{padding:5px 7px}
+.chat-messages.chat-compact{gap:4px}.chat-preview.chat-compact{gap:3px}
+.chat-messages.chat-font-small .chat-bubble p,.chat-preview.chat-font-small .chat-bubble p{font-size:10px}
+.chat-messages.chat-font-normal .chat-bubble p,.chat-preview.chat-font-normal .chat-bubble p{font-size:12px}
+.chat-messages.chat-font-large .chat-bubble p,.chat-preview.chat-font-large .chat-bubble p{font-size:15px;line-height:1.55}
+@media(max-width:700px){
+ .chat-control-panel{max-height:calc(100dvh - 16px);width:100%;padding:17px}
+ .chat-control-header{gap:10px;padding-right:25px}
+ .chat-control-icon{width:43px;height:43px;font-size:26px}
+ .chat-settings-sections{grid-template-columns:minmax(0,1fr);gap:15px}
+ .chat-control-status{margin-bottom:13px}
+ .chat-control-header #chat-settings-intro{font-size:11px}
+}
+@media(max-width:560px){
+ .players{grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr)}
+ .players .versus .versus-emblem{width:44px}
+ .chat-settings-actions .premium-confirm{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){.chat-switch input,.chat-switch input:before{transition:none}}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -1094,6 +1220,7 @@ function showChatNotice(text){
 function drawRoomChat(messages){
  const signature=(state.mode==='training'?'training':state.matchId||'')+':'+messages.map(x=>x.id).join(',');
  if(signature===state.chatSignature)return;
+ maybeNotifyNewChat(messages);
  state.chatSignature=signature;
  const box=$('chat-messages');box.replaceChildren();
  if(!messages.length){
@@ -1111,9 +1238,10 @@ function drawRoomChat(messages){
   const time=document.createElement('time');
   const date=new Date(message.createdAt);
   time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  time.hidden=!chatPrefs.timestamps;
   bubble.append(title,text,time);box.append(bubble);
  });
- box.scrollTop=box.scrollHeight;
+ if(chatPrefs.autoScroll)box.scrollTop=box.scrollHeight;
  const preview=$('chat-preview');preview.replaceChildren();
  messages.slice(-2).forEach(message=>{
   const own=message.player===(state.mode==='training'?1:state.match?.player);
@@ -1123,9 +1251,10 @@ function drawRoomChat(messages){
   const content=document.createElement('p');content.textContent=message.body;
   const time=document.createElement('time');const date=new Date(message.createdAt);
   time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  time.hidden=!chatPrefs.timestamps;
   bubble.append(title,content,time);preview.append(bubble);
  });
- preview.scrollTop=preview.scrollHeight;
+ if(chatPrefs.autoScroll)preview.scrollTop=preview.scrollHeight;
 }
 async function refreshRoomChat(){
  if(state.mode==='training'){
@@ -1279,19 +1408,77 @@ function analyzeTrainingPosition(){
  label.hidden=false;render();
 }
 
-const chatPrefs={sounds:false,messages:true,preview:true};
+
+const chatDefaults={sounds:false,messages:true,preview:true,timestamps:true,compact:false,
+ autoScroll:true,enterSend:true,fontSize:'normal'};
+const chatPrefs={...chatDefaults};
 try{
  const saved=window.localStorage?.getItem('gracz.gomoku.chat-prefs.v1');
  if(saved){
   const value=JSON.parse(saved);
-  for(const key of ['sounds','messages','preview'])if(typeof value[key]==='boolean')chatPrefs[key]=value[key];
+  for(const key of Object.keys(chatDefaults)){
+   if(key==='fontSize'){
+    if(['small','normal','large'].includes(value[key]))chatPrefs[key]=value[key];
+   }else if(typeof value[key]==='boolean')chatPrefs[key]=value[key];
+  }
  }
 }catch{}
 function applyChatPreferences(){
  $('chat-messages').hidden=!chatPrefs.messages;
  $('chat-preview').hidden=!chatPrefs.preview||state.dockTab!=='moves';
+ for(const id of ['chat-messages','chat-preview']){
+  const element=$(id);
+  element.classList.toggle('chat-compact',chatPrefs.compact);
+  for(const size of ['small','normal','large'])
+   element.classList.toggle('chat-font-'+size,chatPrefs.fontSize===size);
+  element.querySelectorAll?.('time').forEach(time=>{time.hidden=!chatPrefs.timestamps;});
+ }
  $('chat-status').textContent=chatPrefs.messages?'Rozmowa aktywna · wiadomości widoczne':
   'Wiadomości ukryte w Twoim widoku';
+}
+function updateChatSettingsForm(){
+ $('chat-sounds').checked=chatPrefs.sounds;
+ $('chat-show-messages').checked=chatPrefs.messages;
+ $('chat-show-preview').checked=chatPrefs.preview;
+ $('chat-timestamps').checked=chatPrefs.timestamps;
+ $('chat-compact').checked=chatPrefs.compact;
+ $('chat-auto-scroll').checked=chatPrefs.autoScroll;
+ $('chat-enter-send').checked=chatPrefs.enterSend;
+ $('chat-font-size').value=chatPrefs.fontSize;
+}
+function writeChatPrefs(){
+ try{window.localStorage?.setItem('gracz.gomoku.chat-prefs.v1',JSON.stringify(chatPrefs));}catch{}
+}
+function soundForIncomingMessage(){
+ try{
+  const Context=window.AudioContext||window.webkitAudioContext;
+  if(typeof Context!=='function')return;
+  const context=new Context();
+  const oscillator=context.createOscillator();
+  const gain=context.createGain();
+  const start=context.currentTime;
+  oscillator.type='sine';
+  oscillator.frequency.setValueAtTime(740,start);
+  oscillator.frequency.exponentialRampToValueAtTime(1050,start+.10);
+  gain.gain.setValueAtTime(.0001,start);
+  gain.gain.exponentialRampToValueAtTime(.055,start+.016);
+  gain.gain.exponentialRampToValueAtTime(.0001,start+.17);
+  oscillator.connect(gain);gain.connect(context.destination);
+  oscillator.start(start);oscillator.stop(start+.18);
+  oscillator.onended=()=>{void context.close?.().catch?.(()=>{});};
+ }catch{}
+}
+let soundMatchId=null,lastSoundMessageId='';
+function maybeNotifyNewChat(messages){
+ if(state.mode!=='online'||!state.matchId)return;
+ const tail=messages[messages.length-1];
+ const currentId=tail?.id||'';
+ if(soundMatchId===state.matchId&&lastSoundMessageId&&currentId!==lastSoundMessageId&&
+   tail?.player!==state.match?.player&&chatPrefs.sounds&&document.visibilityState==='visible'){
+  soundForIncomingMessage();
+ }
+ soundMatchId=state.matchId;
+ lastSoundMessageId=currentId;
 }
 function closePremiumPopup(id){$(id).hidden=true;}
 $('chat-settings-close').addEventListener('click',()=>closePremiumPopup('chat-settings-modal'));
@@ -1300,8 +1487,25 @@ $('chat-settings-save').addEventListener('click',()=>{
  chatPrefs.sounds=$('chat-sounds').checked;
  chatPrefs.messages=$('chat-show-messages').checked;
  chatPrefs.preview=$('chat-show-preview').checked;
- try{window.localStorage?.setItem('gracz.gomoku.chat-prefs.v1',JSON.stringify(chatPrefs));}catch{}
- applyChatPreferences();closePremiumPopup('chat-settings-modal');
+ chatPrefs.timestamps=$('chat-timestamps').checked;
+ chatPrefs.compact=$('chat-compact').checked;
+ chatPrefs.autoScroll=$('chat-auto-scroll').checked;
+ chatPrefs.enterSend=$('chat-enter-send').checked;
+ const font=$('chat-font-size').value;
+ chatPrefs.fontSize=['small','normal','large'].includes(font)?font:'normal';
+ writeChatPrefs();applyChatPreferences();
+ closePremiumPopup('chat-settings-modal');
+});
+$('chat-settings-reset').addEventListener('click',()=>{
+ Object.assign(chatPrefs,chatDefaults);
+ updateChatSettingsForm();writeChatPrefs();applyChatPreferences();
+});
+$('chat-sound-test').addEventListener('click',soundForIncomingMessage);
+$('chat-input').addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&!chatPrefs.enterSend)event.preventDefault();
+});
+document.addEventListener?.('keydown',event=>{
+ if(event.key==='Escape'&&!$('chat-settings-modal').hidden)closePremiumPopup('chat-settings-modal');
 });
 async function gameFriends(action){
  $('player-actions-modal').hidden=false;
@@ -1362,10 +1566,15 @@ window.setInterval(()=>{
 },45000);
 
 function openGameSettings(){
+ updateChatSettingsForm();
+ const online=state.mode==='online';
+ $('chat-settings-mode').textContent=online?'Partia online — 2 uczestników':'Trening z komputerem';
+ $('chat-settings-access').textContent=online?
+  'Wiadomości prywatne · zapis w pokoju':'Komentarze treningowe · tylko lokalnie';
+ $('chat-privacy-description').textContent=online?
+  'Rozmowę widzą tylko uczestnicy tej partii. Ustawienia są zapisywane tylko na Twoim urządzeniu.':
+  'Trening nie wysyła wiadomości na serwer. Odpowiedzi komputera są lokalnymi komentarzami, nie wiadomościami innych graczy.';
  $('chat-settings-modal').hidden=false;
- $('chat-sounds').checked=chatPrefs.sounds;
- $('chat-show-messages').checked=chatPrefs.messages;
- $('chat-show-preview').checked=chatPrefs.preview;
  $('chat-sounds').focus();
 }
 async function toggleFullscreen(){
