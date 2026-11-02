@@ -279,6 +279,105 @@ select option{background:#102c34;color:#fff}
 @media(max-width:560px){.layout{border-radius:15px}.sidebar{padding:14px}.side-header h1{font-size:30px}.mode-choice{min-height:55px}.mode-choice strong{font-size:16px}.mode-choice small{font-size:10px}.mode-icon{font-size:24px}.boardarea{padding:10px}.players{grid-template-columns:1fr 26px 1fr;gap:5px}.player{height:50px;padding:5px}.player .stone{height:26px;width:26px}.player strong{font-size:13px}.player small{font-size:9px}.player-icon{display:none}.versus{font-size:15px}.boardframe{width:100%;padding:7px;border-radius:15px}.board{border-width:1px}.state{font-size:12px}.match-panel{height:370px}.mini-chat{flex-basis:145px}.side-dock .tool-btn{height:62px;font-size:9px;gap:3px}.side-dock .tool-btn span{font-size:22px}.bottom{flex-wrap:wrap}.info-pill{font-size:12px;padding:7px}.help{order:3;width:100%}}
 @media(max-height:700px) and (min-width:801px){.layout{min-height:560px}.boardarea{grid-template-rows:54px 35px minmax(0,1fr) 44px;gap:6px;padding:8px 12px}.player{height:52px}.boardframe{width:min(100%,calc(100dvh - 192px))}.side-dock{margin:45px 0 46px}.mini-chat{flex-basis:155px}.side-dock .tool-btn{height:57px;min-height:54px}.mode-choice{min-height:48px}}
 
+
+/* APPROVED REFERENCE R3 — measured against 1672×941 source artwork.
+   Preserve live 15×15 interaction, game API and accessible controls. */
+@media (min-width:801px) {
+ .sidebar{padding:12px clamp(17px,2.7vw,39px) 13px}
+ .side-header{margin-bottom:10px}
+ .branding{margin-bottom:8px;min-height:27px}
+ .side-header h1{font-size:clamp(30px,2.5vw,43px);line-height:1.02}
+ .premium-sub{height:18px;margin:5px auto 7px;font-size:17px}
+ .lede{font-size:clamp(11px,.94vw,15px);line-height:1.35}
+ .mode{gap:8px;margin:2px 0 9px}
+ .mode-choice{min-height:clamp(52px,6.45vh,64px);padding:6px 11px;grid-template-columns:clamp(31px,2.7vw,44px) minmax(0,1fr) 13px}
+ .mode-choice strong{font-size:clamp(17px,1.45vw,24px)}
+ .mode-choice small{font-size:clamp(10px,.82vw,13px)}
+ .mode-icon{font-size:clamp(24px,2.25vw,34px)}
+ .sidecard{margin-top:9px;padding-top:12px}
+ .sidecard h2{margin-bottom:4px;font-size:clamp(19px,1.55vw,24px)}
+ .sidecard p{margin:5px 0;font-size:clamp(11px,.87vw,13px);line-height:1.34}
+ .sidecard label{margin:6px 0 5px}
+ .sidecard select{padding:9px 11px}
+ .sidecard .hint{margin:7px 0 9px;font-size:clamp(10px,.8vw,12px)}
+ #restart{padding:7px 10px;font-size:clamp(19px,1.48vw,26px)}
+ .rules{margin-top:13px}
+ .side-links{padding-top:9px}
+ .boardarea{grid-template-columns:minmax(0,1fr) clamp(315px,23vw,390px);
+    grid-template-rows:65px 42px minmax(0,1fr) 53px;
+    padding:15px clamp(15px,1.45vw,24px);row-gap:9px;column-gap:clamp(12px,1.3vw,22px)}
+ .boardframe{width:min(100%,calc(112dvh - 286px),680px);aspect-ratio:1.12;
+    padding:clamp(8px,.85vw,13px)}
+ .side-dock{margin:52px 0 58px;padding:9px;gap:7px}
+ .match-panel{min-height:0}
+ .mini-chat{flex-basis:clamp(165px,21vh,210px)}
+ .chat-preview .chat-bubble p{font-size:clamp(10px,.87vw,13px)}
+ .side-dock .tool-btn{height:clamp(61px,7.1vh,79px);min-height:55px}
+ .move-row{height:clamp(20px,2.45vh,26px)}
+ .dock-tab{height:43px}
+}
+@media (min-width:801px) and (max-height:740px) {
+ .sidebar{padding-top:7px}
+ .side-header{margin-bottom:6px}
+ .branding{margin-bottom:5px}
+ .mode-choice{min-height:49px}
+ .sidecard{margin-top:7px;padding-top:9px}
+ .rules{margin-top:8px}
+ .sidecard .hint{margin:4px 0 6px}
+ .boardarea{grid-template-rows:53px 35px minmax(0,1fr) 44px;row-gap:6px;padding-top:8px;padding-bottom:8px}
+ .player{height:52px}
+ .boardframe{width:min(100%,calc(112dvh - 236px),630px)}
+ .side-dock{margin:41px 0 44px}
+ .mini-chat{flex-basis:145px}
+ .side-dock .tool-btn{min-height:52px;height:52px}
+}
+@media (min-width:801px) and (max-width:1190px) {
+ .boardarea{grid-template-columns:minmax(0,1fr) clamp(240px,24vw,290px)}
+ .boardframe{width:min(100%,calc(112dvh - 286px),600px)}
+ .side-dock{margin:44px 0 50px}
+}
+@media (max-width:800px) {
+ .boardframe{width:min(100%,580px);aspect-ratio:1}
+ .sidebar{padding-top:15px}
+ .side-header{margin-bottom:11px}
+ .side-dock{margin:0}
+ .side-dock .tool-btn{min-height:58px}
+}
+@media (min-width:801px) {
+ .boardarea{background:
+  radial-gradient(ellipse 55% 60% at 48% 53%,#0a6c6f6b,transparent 79%),
+  linear-gradient(135deg,#00191d,#022e31 55%,#00151c)}
+}
+.layout{box-shadow:inset 0 0 0 1px #f4c4747d,0 0 0 3px #001716,0 0 45px #f2b7443d}
+.boardarea:before{border-top:3px solid #38e8e7a6;filter:drop-shadow(0 0 15px #22e9e9);opacity:.95}
+.boardarea:after{border-top:4px solid #ffda83;filter:drop-shadow(0 0 20px #ffd17c);opacity:1}
+.boardframe{border:3px solid #ffe2a0;background:
+ linear-gradient(128deg,#fff9d8 0%,#d68b1d 9%,#fffbd8 18%,#bd7919 33%,#ffeaa9 57%,#aa680f 80%,#fff4c2);
+ box-shadow:inset 0 0 0 2px #6f4319,inset 0 0 0 6px #ffdf87,
+ 0 0 0 2px #ffbc47,0 0 14px 5px #ffb738a8,0 0 30px 7px #e9a03062,0 14px 24px #000a}
+.board{background:radial-gradient(ellipse at 34% 20%,#fff 8%,#f9f9f8 64%,#ecece9 100%);
+ border:3px solid #654a2b;box-shadow:inset 0 0 11px #66564444}
+.cell.p1.occupied::after{background:radial-gradient(circle at 28% 17%,#aebcc2 0%,#535b61 20%,#171e24 43%,#010205 82%);
+ box-shadow:inset -3px -4px 6px #000b,0 2px 4px #000a,0 0 1px #fff7}
+.cell.p2.occupied::after{background:radial-gradient(circle at 26% 18%,#fff 0%,#fff 31%,#e1e6e8 62%,#a3afb2 100%);
+ box-shadow:inset -3px -4px 5px #0005,0 2px 4px #0007,0 0 2px #fff}
+.side-dock{border:2px solid #e9bf6b;box-shadow:inset 0 0 0 2px #47695e,0 0 13px #eeb95b85,0 8px 25px #000a}
+.dock-tab.active{box-shadow:inset 0 2px #fff,0 0 14px #ffd06a8f}
+.move-row{background:linear-gradient(90deg,#05272d,#001a20);border-bottom:1px solid #5577706d}
+.chat-preview .chat-bubble{border-color:#35c2ba;background:linear-gradient(145deg,#0c6664,#032e35)}
+.chat-preview .chat-bubble.own{border-color:#edc377;background:linear-gradient(145deg,#12555d,#05252e)}
+.state{color:#ffe49c;text-shadow:0 0 8px #d8a44b7a;box-shadow:inset 0 1px #b5f1e77b,0 4px 14px #0008}
+.bottom{position:relative}
+.bottom:before{content:"";position:absolute;left:30%;right:30%;top:50%;height:2px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,#ffd278 50%,transparent);box-shadow:0 0 10px #f9bf4a;opacity:.7}
+.bottom>*{position:relative;z-index:1}
+#move-count:before{content:"▱";font-weight:900;font-size:1.22em;color:#ffc956;margin-right:10px}
+#turn-label:before{content:"";display:inline-block;vertical-align:middle;width:20px;height:20px;margin-right:10px;border-radius:50%;
+ background:radial-gradient(circle at 28% 20%,#a2aeb4,#202b31 40%,#020408 85%);border:1px solid #ecc471;
+ box-shadow:0 0 8px #d6a94b,inset -3px -3px 4px #0008}
+.mode-icon{filter:sepia(1) saturate(2.5) hue-rotate(352deg) drop-shadow(0 0 3px #e5b353)}
+.brand-gamepad{filter:sepia(1) saturate(5) hue-rotate(343deg) brightness(1.25)}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -286,7 +385,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
- trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0};
+ trainHistory:[],dockTab:'moves',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -302,6 +401,7 @@ function victory(board,to,side){
 }
 function describe(){
  if(state.mode==='training'){
+  if(state.showcase)return 'Przykładowy układ partii — kliknij planszę, aby rozpocząć grę.';
   if(state.winner===1)return 'Wygrywasz! Pięć czarnych kamieni w rzędzie.';
   if(state.winner===2)return 'Komputer wygrał. Rozpocznij nową partię.';
   if(state.winner===3)return 'Remis — plansza została zapełniona.';
@@ -360,6 +460,7 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
+ state.showcase=false;
  state.localChat=[];state.chatSignature='';
  showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
@@ -508,6 +609,7 @@ function cpuMove(board,level='expert'){
  return result;
 }
 function trainMove(to){
+ if(state.showcase)restart();
  if(state.thinking||state.winner||state.board[to])return;
  state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last,history:state.trainHistory.slice()});
  state.suggestion=-1;$('analysis-note').hidden=true;
@@ -764,6 +866,7 @@ $('chat-form').addEventListener('submit',async event=>{
   $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
  }
  if(state.mode==='training'){
+  if(state.showcase)restart();
   const now=new Date().toISOString();
   state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:now});
   const lower=message.toLocaleLowerCase('pl-PL');
@@ -800,7 +903,7 @@ function undoTrainingMove(){
  ++state.epoch;state.thinking=false;
  const previous=state.snapshots.pop();
  state.board=previous.board;state.winner=previous.winner;state.moves=previous.moves;state.last=previous.last;
- state.trainHistory=previous.history;
+ state.trainHistory=previous.history;state.showcase=false;
  state.suggestion=-1;$('analysis-note').hidden=true;render();
 }
 function analyzeTrainingPosition(){
@@ -870,8 +973,33 @@ window.setInterval(()=>{
  if(state.mode==='online'&&state.matchId&&!state.busy&&document.visibilityState==='visible')
   void refreshOnline();
 },4000);
+// The reference artwork depicts a mid-game position. The opening display is clearly
+// marked as a visual example; the FIRST click starts a clean, playable game.
+function installReferenceShowcase(){
+ const sequence=[
+  [1,'H7'],[2,'H3'],[1,'I7'],[2,'H4'],[1,'J7'],[2,'H5'],
+  [1,'K7'],[2,'H6'],[1,'K6'],[2,'L7'],[1,'H10'],[2,'J8']
+ ];
+ state.board=Array(count).fill(0);
+ state.trainHistory=[];
+ for(let n=0;n<sequence.length;n++){
+  const [player,move]=sequence[n];
+  const at=(Number(move.slice(1))-1)*15+(move.charCodeAt(0)-65);
+  state.board[at]=player;
+  state.trainHistory.push({player,to:at,number:n+1});
+  state.last=at;
+ }
+ state.moves=sequence.length;state.winner=0;state.showcase=true;
+ state.localChat=[
+  {id:'example-1',player:1,body:'Powodzenia! 🙂',createdAt:'2026-11-01T20:34:00.000Z'},
+  {id:'example-2',player:2,body:'Dzięki, wzajemnie! 🤝',createdAt:'2026-11-01T20:35:00.000Z'}
+ ];
+ state.chatSignature='';state.chatSequence=2;
+}
+installReferenceShowcase();
 render();
-showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
+drawRoomChat(state.localChat);
+$('chat-status').textContent='Podgląd przykładowej partii · kliknij planszę, by rozpocząć';
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
