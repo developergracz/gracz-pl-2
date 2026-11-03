@@ -48,6 +48,34 @@ const baseUrl = `http://127.0.0.1:${server.address().port}/konto/gomoku/`;
       for (const mode of ["training", "online"]) {
         await p.locator("#" + mode + "-mode").evaluate((e) => e.click());
         await p.waitForTimeout(100);
+        // R22: Refresh is a seventh TOP icon online; the chat tools remain seven in one row.
+        const miniatures = await p.evaluate(() => {
+          const topNav = document.querySelector(".premium-quick-links");
+          const refresh = document.querySelector("#refresh-match");
+          const top = [...topNav.children].filter(e => e.getClientRects().length);
+          const bottom = [...document.querySelectorAll(".game-tools .tool-btn")]
+            .filter(e => e.getClientRects().length);
+          const t = topNav.getBoundingClientRect();
+          const b = bottom.map(e=>e.getBoundingClientRect());
+          return {
+            refreshInNav: refresh.parentElement === topNav,
+            refreshVisible: !!refresh.getClientRects().length,
+            topCount: top.length,
+            topSingleRow: top.every(e =>
+              Math.abs(e.getBoundingClientRect().top - top[0].getBoundingClientRect().top) < 2),
+            topFit: top.every(e => {
+              const r=e.getBoundingClientRect();
+              return r.left>=t.left-1 && r.right<=t.right+1;
+            }),
+            bottomCount: bottom.length,
+            bottomSingleRow: b.every(r => Math.abs(r.top-b[0].top)<2),
+          };
+        });
+        assert.deepEqual(miniatures,{
+          refreshInNav:true,refreshVisible:mode==="online",
+          topCount:mode==="online"?7:6,
+          topSingleRow:true,topFit:true,bottomCount:7,bottomSingleRow:true,
+        }, `${width}x${height} ${mode}: refresh miniature layout`);
         const result = await p.evaluate(() => {
           const sidebar = document.querySelector(".sidebar"),
             s = sidebar.getBoundingClientRect(),
