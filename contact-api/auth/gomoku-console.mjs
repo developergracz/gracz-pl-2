@@ -42,24 +42,35 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="players">
 <div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
 <div class="versus" aria-label="VS — kontra">
-<svg class="versus-emblem" viewBox="0 0 120 80" aria-hidden="true" focusable="false">
-<defs><linearGradient id="vs-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3aa"/><stop offset=".4" stop-color="#ffcf4c"/><stop offset=".75" stop-color="#d8951b"/><stop offset="1" stop-color="#fff4ad"/></linearGradient></defs>
-<g id="vs-laurel-half" fill="url(#vs-foil)" stroke="#b77a1a" stroke-width=".45">
-<path d="M34 7C9 21 7 49 31 71" stroke="url(#vs-foil)" stroke-width="2.3" fill="none"/>
-<ellipse cx="34" cy="9" rx="3.5" ry="8" transform="rotate(35 34 9)"/>
-<ellipse cx="26" cy="14" rx="3.3" ry="7.2" transform="rotate(18 26 14)"/>
-<ellipse cx="20" cy="22" rx="3.5" ry="7.7" transform="rotate(-12 20 22)"/>
-<ellipse cx="15" cy="31" rx="3.4" ry="7.5" transform="rotate(-23 15 31)"/>
-<ellipse cx="14" cy="42" rx="3.5" ry="7.3" transform="rotate(-40 14 42)"/>
-<ellipse cx="17" cy="52" rx="3.3" ry="7.5" transform="rotate(-58 17 52)"/>
-<ellipse cx="23" cy="62" rx="3" ry="7" transform="rotate(-71 23 62)"/>
-<ellipse cx="31" cy="69" rx="2.7" ry="6.5" transform="rotate(-83 31 69)"/>
-<ellipse cx="33" cy="22" rx="2.5" ry="6" transform="rotate(78 33 22)"/>
-<ellipse cx="29" cy="34" rx="2.5" ry="6" transform="rotate(97 29 34)"/>
-<ellipse cx="31" cy="48" rx="2.5" ry="6" transform="rotate(113 31 48)"/>
+<svg class="versus-emblem" viewBox="0 0 105 70" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="vs-foil" x1="0" y1="0" x2="0.25" y2="1"><stop offset="0" stop-color="#fff09b"/><stop offset=".25" stop-color="#ffd642"/><stop offset=".52" stop-color="#f4bb16"/><stop offset=".78" stop-color="#ffe16a"/><stop offset="1" stop-color="#c78b08"/></linearGradient>
+<linearGradient id="vs-leaf" x1="0" y1="0" x2="1" y2=".65"><stop stop-color="#b98307"/><stop offset=".42" stop-color="#ffcf26"/><stop offset=".6" stop-color="#ffe77d"/><stop offset="1" stop-color="#e6a90b"/></linearGradient>
+<path id="vs-leaf-shape" d="M0 0C-2.5-2-2.8-5.6 0-9C2.2-5.7 2.3-2.5 0 0Z"/>
+</defs>
+<g id="vs-laurel-half" fill="url(#vs-leaf)">
+<path d="M28 65C8 57 5 32 22 17" fill="none" stroke="url(#vs-foil)" stroke-width="1.05"/>
+<path d="M21 21C20 17 24 15 28 14C27 18 24 20 21 21Z"/>
+<use href="#vs-leaf-shape" transform="translate(19 25) rotate(-8)"/>
+<use href="#vs-leaf-shape" transform="translate(19 25) rotate(57) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(15 31) rotate(-19)"/>
+<use href="#vs-leaf-shape" transform="translate(15 31) rotate(66) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(13 38) rotate(-33)"/>
+<use href="#vs-leaf-shape" transform="translate(13 38) rotate(77) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(14 45) rotate(-49)"/>
+<use href="#vs-leaf-shape" transform="translate(14 45) rotate(92) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(17 52) rotate(-64)"/>
+<use href="#vs-leaf-shape" transform="translate(17 52) rotate(107) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(21 58) rotate(-76)"/>
+<use href="#vs-leaf-shape" transform="translate(21 58) rotate(117) scale(.85)"/>
+<use href="#vs-leaf-shape" transform="translate(27 63) rotate(-91)"/>
+<use href="#vs-leaf-shape" transform="translate(27 63) rotate(128) scale(.85)"/>
 </g>
-<use href="#vs-laurel-half" transform="translate(120 0) scale(-1 1)"/>
-<text x="60" y="52" fill="url(#vs-foil)" stroke="#875514" stroke-width=".65" paint-order="stroke" text-anchor="middle" font-family="Georgia,serif" font-size="39" font-weight="800">VS</text>
+<use href="#vs-laurel-half" transform="translate(105 0) scale(-1 1)"/>
+<g fill="url(#vs-foil)" stroke="#ae7a0a" stroke-width=".3" stroke-linejoin="round">
+<path d="M32 28H46V30H42.5L49 46L55 30H51.5V28H62V30H59L49.8 52H46.4L36.7 30H32Z"/>
+<path d="M72 29V35H70.2C69.5 31.3 67.8 29.5 65 29.5C62.8 29.5 61.4 30.6 61.4 32.4C61.4 34.4 63.4 35.3 67.2 36.8C71.7 38.6 74 40.6 74 44.3C74 49.3 70.4 52.5 65 52.5C62.1 52.5 59.7 51.8 57.5 50.5V44H59.3C60.2 48.3 62.3 50.6 65.4 50.6C68 50.6 69.6 49.3 69.6 47.2C69.6 45 67.4 44 63.8 42.5C59.4 40.8 57.2 38.7 57.2 35.2C57.2 30.6 60.7 27.6 65.4 27.6C68 27.6 70.3 28.2 72 29Z"/>
+</g>
 </svg></div>
 <div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
 </div>
@@ -729,8 +740,8 @@ select option{background:#102c34;color:#fff}
 /* Full Max Premium R6: golden laurel VS reference and functional Chat Control Center */
 .players{grid-template-columns:minmax(0,1fr) clamp(78px,5.6vw,100px) minmax(0,1fr)}
 .players .versus{display:flex;align-items:center;justify-content:center;min-width:0;padding:0;overflow:visible;
- color:#f9d577;filter:drop-shadow(0 0 7px #c887249c)}
-.players .versus .versus-emblem{display:block;width:clamp(74px,5.5vw,100px);max-width:100%;height:auto;aspect-ratio:3/2}
+ color:#f9d577;filter:none;text-shadow:none}
+.players .versus .versus-emblem{display:block;width:clamp(74px,5.5vw,100px);max-width:100%;height:auto;max-height:100%;aspect-ratio:3/2}
 .chat-control-panel{width:min(96vw,820px);max-height:calc(100dvh - 28px);padding:clamp(15px,2.5vw,29px);
  background:radial-gradient(ellipse 55% 45% at 80% -15%,#0e7a6b81,transparent 95%),
   linear-gradient(150deg,#0c4b4c,#031e27 56%,#061b22 100%);
@@ -1752,3 +1763,4 @@ export function serveGomokuConsole(req,res,url){
  res.writeHead(200,{...secure,'Content-Type':response[0],'Content-Length':Buffer.byteLength(response[1])});
  res.end(response[1]);return true;
 }
+
