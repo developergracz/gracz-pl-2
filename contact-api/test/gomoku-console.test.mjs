@@ -50,7 +50,15 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
   'Aktualności gracz.pl','Panel Gracza']);
  assert.ok(quickLinks.some(x=>x[1]==='https://gracz.pl/gry/gomoku/'&&x[4]==='Zasady gry w Gomoku'));
  assert.ok(quickLinks.every(x=>x[2]===x[3]&&x[3]===x[4]));
- assert.match(html,/href="https:\/\/gracz.pl\/" aria-label="gracz.pl — strona główna"/);
+ assert.match(html,/<h1 class="gomoku-heading-title">/);
+ assert.match(html,/class="gomoku-heading-gold">Gomoku<\/span>/);
+ assert.match(html,/class="gomoku-heading-white">Online<\/span>/);
+ assert.match(html,/class="gomoku-heading-crown"/);
+ const header=html.match(/<header class="side-header">([\s\S]*?)<\/header>/)?.[1]||'';
+ assert.doesNotMatch(header,/class="brand"|gracz<span>|badge-premium|premium-info|>PREMIUM</);
+ const headerCss=served('/konto/gomoku/styl.css').body;
+ assert.match(headerCss,/\.gomoku-heading-title/);
+ assert.match(headerCss,/\.gomoku-heading-ornament/);
  assert.match(html,/Poproś o cofnięcie ruchu|Cofnij czarny kamień/);
  assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
  assert.match(html,/aria-labelledby="game-result-title"/);
