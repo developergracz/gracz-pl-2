@@ -130,6 +130,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.dock-tabs \.dock-tab \.dock-tab-icon svg/);
  assert.match(css,/\.dock-tabs \.dock-tab\.active \.dock-tab-icon/);
  assert.match(css,/\.dock-tabs \.dock-tab:focus-visible/);
+ assert.match(css,/R23: faceted turquoise-and-gold Premium miniature replaces the plain green dot/);
+ assert.match(css,/\.dock-tabs \.dock-tab \.chat-led\.chat-led-premium\{position:relative/);
+ assert.match(css,/\.dock-tabs \.dock-tab \.chat-led-premium svg\{display:block;width:100%;height:100%\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.dock-tabs \.dock-tab \.chat-led-premium/);
  assert.match(css,/@media\(max-width:420px\)\{\.dock-tabs/);
  assert.match(css,/Real server-authoritative time controls/);
  assert.match(css,/\.replay-overlay\[hidden\]/);
@@ -162,7 +166,12 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(premiumTabs,/id="history-tab"[^>]*aria-selected="false"[^>]*aria-controls="moves-panel"/);
  assert.match(premiumTabs,/class="dock-tab-text">Czat<\/span>/);
  assert.match(premiumTabs,/class="dock-tab-text">Ruchy<\/span>/);
- assert.match(premiumTabs,/class="chat-led" aria-hidden="true"/);
+ assert.match(premiumTabs,/class="chat-led chat-led-premium" aria-hidden="true"><svg viewBox="0 0 24 24"/);
+ assert.match(premiumTabs,/id="chat-crystal-core"/);
+ assert.match(premiumTabs,/id="chat-crystal-rim"/);
+ assert.match(premiumTabs,/fill="url\(#chat-crystal-core\)"/);
+ assert.doesNotMatch(premiumTabs,/class="chat-led" aria-hidden="true"><\/span>/,
+  'Old empty green status dot was replaced by the ornamental SVG miniature');
  assert.doesNotMatch(premiumTabs,/▣|☷|&nbsp;/);
  assert.match(html,/class="versus-emblem" viewBox="0 0 105 70"/);
  assert.match(html,/id="vs-laurel-half"/);
