@@ -28,6 +28,21 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
+<div class="room-creator">
+ <h3>Utwórz pokój · ustawienia partii</h3>
+ <label for="create-room-friend">Nick znajomego, którego zapraszasz</label>
+ <input id="create-room-friend" type="text" maxlength="40" autocomplete="off" placeholder="Nick znajomego">
+ <label for="create-room-time">Czas dla każdego gracza</label>
+ <select id="create-room-time">
+  <option value="0">Bez limitu czasu</option>
+  <option value="3">3 minuty</option><option value="5">5 minut</option>
+  <option value="7" selected>7 minut</option><option value="10">10 minut</option>
+  <option value="15">15 minut</option><option value="30">30 minut</option>
+ </select>
+ <p class="room-creator-hint">Każdy gracz ma własny zegar. Czas biegnie tylko podczas jego tury i zaczyna się, gdy obie osoby otworzą pokój.</p>
+ <button type="button" class="primary" id="create-room">Utwórz pokój i zaproś</button>
+ <p id="create-room-status" role="status" class="muted"></p>
+</div>
 <label for="room-select">Wybierz zaakceptowane wyzwanie</label>
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
@@ -40,7 +55,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
-<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span></div>
+<div class="player first"><span class="stone black" aria-hidden="true"></span><div><strong id="black-name">Ty</strong><small>Czarne — zaczynają</small></div><span class="player-icon" aria-hidden="true">♛</span><span class="player-clock" id="clock-1" aria-label="Czas czarnych" hidden>07:00</span></div>
 <div class="versus" aria-label="VS — kontra">
 <svg class="versus-emblem" viewBox="0 0 105 70" aria-hidden="true" focusable="false">
 <defs>
@@ -72,7 +87,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <path d="M72 29V35H70.2C69.5 31.3 67.8 29.5 65 29.5C62.8 29.5 61.4 30.6 61.4 32.4C61.4 34.4 63.4 35.3 67.2 36.8C71.7 38.6 74 40.6 74 44.3C74 49.3 70.4 52.5 65 52.5C62.1 52.5 59.7 51.8 57.5 50.5V44H59.3C60.2 48.3 62.3 50.6 65.4 50.6C68 50.6 69.6 49.3 69.6 47.2C69.6 45 67.4 44 63.8 42.5C59.4 40.8 57.2 38.7 57.2 35.2C57.2 30.6 60.7 27.6 65.4 27.6C68 27.6 70.3 28.2 72 29Z"/>
 </g>
 </svg></div>
-<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span></div>
+<div class="player second"><span class="stone white" aria-hidden="true"></span><div><strong id="white-name">Komputer</strong><small>Białe</small></div><span class="player-icon" aria-hidden="true">♟</span><span class="player-clock" id="clock-2" aria-label="Czas białych" hidden>07:00</span></div>
 </div>
 <nav class="premium-quick-links" aria-label="Szybkie odnośniki gracz.pl"><a class="premium-mini-link" href="https://gracz.pl/gry/" title="Gry gracz.pl" aria-label="Gry gracz.pl" data-tooltip="Gry gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12c2 0 3 1.4 3.4 3.4l1 6.3c.3 2.2-2 3.2-3.6 1.8l-3.2-3H8.4l-3.2 3c-1.6 1.4-3.9.4-3.6-1.8l1-6.3C3 9.4 4 8 6 8Z"/><path d="M8 10.5v5M5.5 13h5"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></a>
 <a class="premium-mini-link" href="https://gracz.pl/gry/gomoku/" title="Zasady gry w Gomoku" aria-label="Zasady gry w Gomoku" data-tooltip="Zasady gry w Gomoku"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5c-2-1.4-5-1.8-9-1.8V4.2c3.9 0 7.3.5 9 2.1 1.7-1.6 5.1-2.1 9-2.1v14.5c-4 0-7 .4-9 1.8Z"/><path d="M12 6.3v14.2M5.2 7.5c1.5 0 3.2.2 4.5.7M14.4 8.2c1.3-.5 3-.7 4.4-.7"/></svg></a>
@@ -851,13 +866,35 @@ select option{background:#102c34;color:#fff}
 .result-card[data-result="draw"] .result-medal{color:#dcf6ed;filter:saturate(.75)}
 @media(max-width:560px){.result-card{padding:24px 20px}.result-medal{width:67px;height:67px;font-size:36px}}
 
+
+/* Real server-authoritative time controls for accepted Gomoku rooms */
+.room-creator{border:1px solid #bb9152;border-radius:13px;padding:12px;margin:10px 0 15px;
+ background:linear-gradient(150deg,#104e4b,#04242d);box-shadow:inset 0 1px #e8d28d3b}
+.room-creator h3{font:700 17px Georgia,serif;color:#ffdf9c;margin:0 0 8px}
+.room-creator label{display:block;font-size:11px;font-weight:750;color:#e5f9f5;margin:8px 0 5px}
+.room-creator input,.room-creator select{width:100%;min-height:38px;padding:9px 11px;border-radius:9px;
+ border:1px solid #c8a35f;color:#eafdfa;background:#05272e}
+.room-creator .room-creator-hint{color:#a9d4cd;font-size:11px;line-height:1.5;margin:9px 0}
+.room-creator button{width:100%;min-height:40px}
+.room-creator #create-room-status{font-size:11px;line-height:1.4;min-height:0}
+.player .player-clock{flex:none;font:800 clamp(12px,1vw,16px)/1.1 "Segoe UI",sans-serif;
+ font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap;color:#ffe5a6;
+ padding:6px 8px;border:1px solid #e5ba6b;border-radius:8px;
+ background:linear-gradient(#063f40,#031e27);box-shadow:0 0 9px #d8a34f54}
+.player .player-clock[hidden]{display:none!important}
+.player .player-clock.clock-running{border-color:#a5f2dc;color:#c3fff0;box-shadow:0 0 11px #2be8cc6b}
+.player .player-clock.clock-warning{border-color:#ffad67;color:#ffb376;background:#462018}
+.player .player-clock.clock-expired{border-color:#ff7878;color:#ff9797}
+@media(max-width:1120px){.player .player-clock{padding:4px 5px;font-size:11px}}
+@media(max-width:700px){.player .player-clock{font-size:10px;padding:3px 4px}}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
- thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,
+ thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,serverOffsetMs:0,
  trainHistory:[],dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
@@ -882,6 +919,10 @@ function describe(){
  }
  const m=state.match;
  if(!m)return 'Wybierz przyjęte wyzwanie i otwórz pokój.';
+ if(m.state.clock&&!m.state.clock.ready.every(Boolean)&&!m.state.winner)
+  return 'Pokój na czas: oczekiwanie na wejście drugiego gracza.';
+ if(m.state.clock?.timeoutLoser)
+  return m.state.clock.timeoutLoser===m.player?'Twój czas minął — przegrywasz na czas.':'Przeciwnik przekroczył czas — wygrywasz!';
  if(m.state.winner===1||m.state.winner===2)return 'Wygrał '+m.players[m.state.winner-1]+'.';
  if(m.state.winner===3)return 'Remis — zakończono partię.';
  if(!m.playable)return 'Partia jest niedostępna z powodu blokady.';
@@ -902,7 +943,9 @@ function syncGameResult(){
   'training:'+state.epoch+':'+winner+':'+state.moves;
  if(state.resultShownKey===key||state.resultDismissedKey===key)return;
  const outcome=winner===3?'draw':online?(match.player===winner?'win':'loss'):(winner===1?'win':'loss');
- $('game-result-title').textContent=outcome==='draw'?'Remis!':outcome==='win'?
+ $('game-result-title').textContent=online&&match.state.clock?.timeoutLoser?
+  (outcome==='win'?'Wygrałeś na czas!':'Przegrałeś na czas.'):
+  outcome==='draw'?'Remis!':outcome==='win'?
   (online?'Wygrałeś partię!':'Wygrałeś z komputerem!'):
   (online?'Przegrałeś partię.':'Przegrałeś z komputerem.');
  $('game-result-description').textContent=outcome==='draw'?
@@ -925,6 +968,52 @@ $('game-result-new').addEventListener('click',()=>{
  if(state.mode==='training')restart();
  else window.location.assign('/konto/panel/');
 });
+
+function formatGomokuClock(ms){
+ const whole=Math.max(0,Math.ceil(ms/1000));
+ return String(Math.floor(whole/60)).padStart(2,'0')+':'+String(whole%60).padStart(2,'0');
+}
+function renderGomokuClocks(){
+ const m=state.mode==='online'?state.match:null;
+ const clock=m?.state?.clock;
+ for(let player=1;player<=2;player++){
+  const el=$('clock-'+player);
+  if(!clock){el.hidden=true;continue;}
+  el.hidden=false;
+  const active=!!clock.since&&!m.state.winner&&m.state.turn===player;
+  const elapsed=active?Math.max(0,Date.now()+state.serverOffsetMs-Date.parse(clock.since)):0;
+  const remaining=Math.max(0,clock.remaining[player-1]-elapsed);
+  el.textContent=formatGomokuClock(remaining);
+  el.classList.toggle('clock-running',active);
+  el.classList.toggle('clock-warning',active&&remaining<=30000);
+  el.classList.toggle('clock-expired',m.state.winner>0&&clock.timeoutLoser===player);
+ }
+}
+function synchronizeGameTime(result){
+ const ts=Date.parse(result?.serverTime);
+ if(Number.isFinite(ts))state.serverOffsetMs=ts-Date.now();
+}
+async function createTimedRoom(){
+ if(state.busy)return;
+ const nickname=$('create-room-friend').value.trim();
+ const minutes=Number($('create-room-time').value);
+ if(!nickname||![0,3,5,7,10,15,30].includes(minutes)){
+  $('create-room-status').textContent='Wpisz nick znajomego i wybierz dozwolony czas.';return;
+ }
+ state.busy=true;$('create-room').disabled=true;
+ try{
+  const result=await api('social/challenges',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action:'send',game:'gomoku',nickname,timeLimitMinutes:minutes})});
+  $('create-room-status').textContent='Zaproszenie wysłane. Pokój '+(minutes?minutes+' min na gracza':'bez limitu')+
+   ' będzie dostępny po akceptacji przez '+nickname+'.';
+  await rooms();
+ }catch(e){$('create-room-status').textContent=e.message;}
+ finally{state.busy=false;$('create-room').disabled=false;}
+}
+$('create-room').addEventListener('click',()=>void createTimedRoom());
+window.setInterval(()=>{if(state.mode==='online'&&state.match?.state?.clock)renderGomokuClocks();},250);
+
 function render(){
  const online=state.mode==='online',m=state.match;
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
@@ -954,6 +1043,7 @@ function render(){
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
  $('game-state').textContent=describe();
+ renderGomokuClocks();
  renderMoveHistory();
  $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
  $('history-info').textContent=online?'Ruchy potwierdzane na serwerze':'Zapis lokalny w treningu';
@@ -1190,7 +1280,7 @@ async function rooms(){
   blank.textContent=available.length?'Wybierz rozgrywkę':'Brak przyjętych zaproszeń do Gomoku';
   select.append(blank);
   available.forEach(c=>{
-   const option=document.createElement('option');option.value=c.id;option.textContent='Gomoku z '+c.opponent;
+   const option=document.createElement('option');option.value=c.id;option.textContent='Gomoku z '+c.opponent+' · '+(c.timeLimitMinutes?c.timeLimitMinutes+' min':'bez limitu');
    select.append(option);
   });
   const wanted=new URLSearchParams(location.search).get('match');
@@ -1213,6 +1303,7 @@ async function loadMatch(id){
   const result=await api('match?id='+encodeURIComponent(id));
   if(epoch!==state.epoch||state.mode!=='online')return;
   if(result.match?.game!=='gomoku')throw new Error('Ten pokój nie jest partią Gomoku.');
+  synchronizeGameTime(result);
   state.matchId=id;state.match=result.match;
   state.chatSignature='';void refreshRoomChat();
   $('room-select').value=id;
@@ -1229,7 +1320,7 @@ async function onlineMove(to){
   const result=await api('match',{method:'POST',
    headers:{'Content-Type':'application/json'},
    body:JSON.stringify({id:state.matchId,version:m.version,move:{to}})});
-  state.match=result.match;
+  synchronizeGameTime(result);state.match=result.match;
  }catch(e){note(e.message);await refreshOnline(true);}
  finally{state.busy=false;render();}
 }
@@ -1239,7 +1330,9 @@ async function refreshOnline(force=false){
  const epoch=state.epoch,id=state.matchId;
  try{
   const result=await api('match?id='+encodeURIComponent(id));
-  if(epoch===state.epoch&&state.matchId===id&&result.match?.game==='gomoku')state.match=result.match;
+  if(epoch===state.epoch&&state.matchId===id&&result.match?.game==='gomoku'){
+   synchronizeGameTime(result);state.match=result.match;
+  }
  }catch(e){if(epoch===state.epoch)note(e.message);}
  finally{if(!force){state.busy=false;render();}}
 }
@@ -1682,7 +1775,7 @@ async function toggleFullscreen(){
 }
 function setMode(mode){
  if(state.mode===mode)return;
- state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;
+ state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;state.serverOffsetMs=0;
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('chat');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
