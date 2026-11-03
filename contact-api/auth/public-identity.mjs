@@ -491,6 +491,13 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
             next.turn=existing.requester;
             next.winner=evaluateGomokuBoard(board);
             next.last=remaining.length?remaining[remaining.length-1].to:-1;
+            // Consent undo reclaims the bonus granted for the withdrawn stone.
+            if(next.clock&&Number.isInteger(next.clock.incrementMs)&&next.clock.incrementMs>0){
+             const clockRemaining=[...next.clock.remaining];
+             clockRemaining[existing.requester-1]=Math.max(0,
+              clockRemaining[existing.requester-1]-next.clock.incrementMs);
+             next.clock={...next.clock,remaining:clockRemaining};
+            }
           }
           if(next.clock&&next.clock.ready.every(Boolean)&&!next.winner)
            next.clock={...next.clock,since:new Date().toISOString()};
