@@ -1023,6 +1023,9 @@ select option{background:#102c34;color:#fff}
  .dock-tabs .dock-tab .dock-tab-icon{flex-basis:24px;width:24px;height:24px}
  .dock-tabs .dock-tab .dock-tab-icon svg{width:16px;height:16px}}
 
+/* R15: Dock composer stays beside the bottom Premium tools, not above empty space. */
+.mini-chat .chat-form{flex:0 0 auto;margin-top:auto}
+.mini-chat .chat-footnote{flex:0 0 auto;margin-top:4px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
