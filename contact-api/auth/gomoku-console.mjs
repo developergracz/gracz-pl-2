@@ -25,6 +25,14 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <label for="ai-level">Poziom komputera</label>
 <select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — dla bardzo doświadczonych</option></select>
 <p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i rzadko popełnia błędy. Najtrudniejszy poziom.</p>
+<label for="training-time" class="training-timer-label">Czas na partię dla każdego gracza</label>
+<select id="training-time" aria-label="Czas gry z komputerem">
+<option value="0">Bez limitu czasu</option><option value="3">3 minuty</option>
+<option value="5">5 minut</option><option value="7" selected>7 minut</option>
+<option value="10">10 minut</option><option value="15">15 minut</option>
+<option value="30">30 minut</option>
+</select>
+<p class="training-clock-help">Każdy ma własny zegar. Czas mija tylko podczas jego tury. Zmiana limitu rozpoczyna nową partię.</p>
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -867,6 +875,10 @@ select option{background:#102c34;color:#fff}
 @media(max-width:560px){.result-card{padding:24px 20px}.result-medal{width:67px;height:67px;font-size:36px}}
 
 
+/* Local, independent time controls for the non-ranking computer training mode */
+.training-timer-label{display:block;margin:9px 0 6px;color:#e9fbf5;font-size:12px;font-weight:800}
+.training-clock-help{margin:7px 0 11px;font-size:11px;line-height:1.4;color:#afcfcb}
+
 /* Real server-authoritative time controls for accepted Gomoku rooms */
 .room-creator{border:1px solid #bb9152;border-radius:13px;padding:12px;margin:10px 0 15px;
  background:linear-gradient(150deg,#104e4b,#04242d);box-shadow:inset 0 1px #e8d28d3b}
@@ -895,7 +907,7 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,serverOffsetMs:0,
- trainHistory:[],dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
+ trainHistory:[],trainClock:null,dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -912,6 +924,8 @@ function victory(board,to,side){
 function describe(){
  if(state.mode==='training'){
   if(state.showcase)return 'Przykładowy układ partii — kliknij planszę, aby rozpocząć grę.';
+  if(state.trainClock?.timeoutLoser===1)return 'Twój czas minął — komputer wygrał na czas.';
+  if(state.trainClock?.timeoutLoser===2)return 'Czas komputera minął — wygrywasz na czas!';
   if(state.winner===1)return 'Wygrywasz! Pięć czarnych kamieni w rzędzie.';
   if(state.winner===2)return 'Komputer wygrał. Rozpocznij nową partię.';
   if(state.winner===3)return 'Remis — plansza została zapełniona.';
@@ -943,12 +957,15 @@ function syncGameResult(){
   'training:'+state.epoch+':'+winner+':'+state.moves;
  if(state.resultShownKey===key||state.resultDismissedKey===key)return;
  const outcome=winner===3?'draw':online?(match.player===winner?'win':'loss'):(winner===1?'win':'loss');
- $('game-result-title').textContent=online&&match.state.clock?.timeoutLoser?
+ const timedOut=online?match.state.clock?.timeoutLoser:state.trainClock?.timeoutLoser;
+ $('game-result-title').textContent=timedOut?
   (outcome==='win'?'Wygrałeś na czas!':'Przegrałeś na czas.'):
   outcome==='draw'?'Remis!':outcome==='win'?
   (online?'Wygrałeś partię!':'Wygrałeś z komputerem!'):
   (online?'Przegrałeś partię.':'Przegrałeś z komputerem.');
- $('game-result-description').textContent=outcome==='draw'?
+ $('game-result-description').textContent=timedOut&&!online?
+  (outcome==='win'?'Komputer przekroczył limit czasu.':'Twój zegar osiągnął zero.'):
+  outcome==='draw'?
   'Nikt nie wygrał tej rozgrywki. Możesz rozpocząć kolejną partię.':
   online?'Zwycięzca: '+(match.players?.[winner-1]||'Przeciwnik')+'.':
   outcome==='win'?'Świetna partia! Pięć czarnych kamieni w jednej linii.':
@@ -973,20 +990,46 @@ function formatGomokuClock(ms){
  const whole=Math.max(0,Math.ceil(ms/1000));
  return String(Math.floor(whole/60)).padStart(2,'0')+':'+String(whole%60).padStart(2,'0');
 }
+// Training is local and non-ranking; online clocks remain PostgreSQL-authoritative.
+const trainingNow=()=>window.performance?.now?.()??Date.now();
+function createTrainingClock(running){
+ const minutes=Number($('training-time').value);
+ if(![3,5,7,10,15,30].includes(minutes))return null;
+ const ms=minutes*60000;
+ return {remaining:[ms,ms],turn:1,since:running?trainingNow():null,timeoutLoser:0};
+}
+function advanceTrainingClock(){
+ const clock=state.mode==='training'?state.trainClock:null;
+ if(!clock||state.showcase||state.winner||clock.since===null)return false;
+ const now=trainingNow(),spent=Math.max(0,now-clock.since);
+ clock.remaining[clock.turn-1]=Math.max(0,clock.remaining[clock.turn-1]-spent);
+ clock.since=now;
+ if(clock.remaining[clock.turn-1]>0)return false;
+ clock.timeoutLoser=clock.turn;
+ state.winner=clock.turn===1?2:1;
+ state.thinking=false;
+ ++state.epoch; // invalidate an already scheduled computer move
+ return true;
+}
 function renderGomokuClocks(){
- const m=state.mode==='online'?state.match:null;
- const clock=m?.state?.clock;
+ const training=state.mode==='training';
+ const m=training?null:state.match;
+ const clock=training?state.trainClock:m?.state?.clock;
  for(let player=1;player<=2;player++){
   const el=$('clock-'+player);
   if(!clock){el.hidden=true;continue;}
   el.hidden=false;
-  const active=!!clock.since&&!m.state.winner&&m.state.turn===player;
-  const elapsed=active?Math.max(0,Date.now()+state.serverOffsetMs-Date.parse(clock.since)):0;
+  const active=training?
+   !state.showcase&&!state.winner&&clock.since!==null&&clock.turn===player:
+   !!clock.since&&!m.state.winner&&m.state.turn===player;
+  const elapsed=active?Math.max(0,training?trainingNow()-clock.since:
+   Date.now()+state.serverOffsetMs-Date.parse(clock.since)):0;
   const remaining=Math.max(0,clock.remaining[player-1]-elapsed);
   el.textContent=formatGomokuClock(remaining);
   el.classList.toggle('clock-running',active);
   el.classList.toggle('clock-warning',active&&remaining<=30000);
-  el.classList.toggle('clock-expired',m.state.winner>0&&clock.timeoutLoser===player);
+  el.classList.toggle('clock-expired',Boolean(clock.timeoutLoser===player&&
+   (training?state.winner:m.state.winner)));
  }
 }
 function synchronizeGameTime(result){
@@ -1012,9 +1055,15 @@ async function createTimedRoom(){
  finally{state.busy=false;$('create-room').disabled=false;}
 }
 $('create-room').addEventListener('click',()=>void createTimedRoom());
-window.setInterval(()=>{if(state.mode==='online'&&state.match?.state?.clock)renderGomokuClocks();},250);
+window.setInterval(()=>{
+ if(state.mode==='training'&&state.trainClock){
+  if(advanceTrainingClock())render();
+  else renderGomokuClocks();
+ }else if(state.mode==='online'&&state.match?.state?.clock)renderGomokuClocks();
+},250);
 
 function render(){
+ if(state.mode==='training')advanceTrainingClock();
  const online=state.mode==='online',m=state.match;
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
  const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
@@ -1050,7 +1099,7 @@ function render(){
  const myMove=online?Array.isArray(m?.state?.history)&&m.state.history.some(item=>
   item.player===m.player&&m.state.board[item.to]===m.player):
   !state.showcase&&state.trainHistory.some(item=>item.player===1&&state.board[item.to]===1);
- $('undo-move').disabled=state.busy||(online?(!m||!m.playable||!!m.undoRequest||!myMove):!myMove);
+ $('undo-move').disabled=state.busy||(online?(!m||!m.playable||!!m.undoRequest||!myMove):(!myMove||!!state.trainClock?.timeoutLoser));
  $('undo-label').textContent=online?'Poproś o cofnięcie ruchu':'Cofnij czarny kamień';
  syncUndoDialog();
  $('analyze-position').disabled=online||state.thinking||state.winner!==0;
@@ -1067,7 +1116,7 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
- state.showcase=false;
+ state.showcase=false;state.trainClock=createTrainingClock(true);
  state.localChat=[];state.chatSignature='';
  showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
@@ -1217,6 +1266,7 @@ function cpuMove(board,level='expert'){
 }
 function trainMove(to){
  if(state.showcase)restart();
+ if(advanceTrainingClock()){render();return;}
  if(state.thinking||state.winner||state.board[to])return;
  state.snapshots.push({board:state.board.slice(),winner:state.winner,moves:state.moves,last:state.last,history:state.trainHistory.slice()});
  state.suggestion=-1;$('analysis-note').hidden=true;
@@ -1225,12 +1275,17 @@ function trainMove(to){
  if(victory(state.board,to,1))state.winner=1;
  else if(state.moves===count)state.winner=3;
  else state.thinking=true;
+ if(state.thinking&&state.trainClock){
+  state.trainClock.turn=2;state.trainClock.since=trainingNow();
+ }
  render();
  if(!state.thinking)return;
  const epoch=state.epoch;
  window.setTimeout(()=>{
   if(epoch!==state.epoch||state.mode!=='training'||!state.thinking)return;
+  if(advanceTrainingClock()){render();return;}
   const at=cpuMove(state.board,$('ai-level').value);
+  if(advanceTrainingClock()){render();return;}
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
   state.trainHistory.push({player:2,to:at,number:state.moves});
@@ -1248,7 +1303,11 @@ function trainMove(to){
   }
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
-  state.thinking=false;render();
+  state.thinking=false;
+  if(!state.winner&&state.trainClock){
+   state.trainClock.turn=1;state.trainClock.since=trainingNow();
+  }
+  render();
  },330);
 }
 async function api(path,options={}){
@@ -1559,7 +1618,8 @@ function handleUndoClick(){
 }
 
 function undoTrainingMove(){
- if(state.mode!=='training'||state.showcase)return;
+ if(state.mode!=='training'||state.showcase||state.trainClock?.timeoutLoser)return;
+ if(advanceTrainingClock()){render();return;}
  const index=state.trainHistory.map(item=>item.player).lastIndexOf(1);
  if(index<0)return;
  ++state.epoch;state.thinking=false;
@@ -1577,6 +1637,9 @@ function undoTrainingMove(){
  }
  if(!state.winner&&state.moves===count)state.winner=3;
  state.snapshots=[];state.suggestion=-1;
+ if(!state.winner&&state.trainClock){
+  state.trainClock.turn=1;state.trainClock.since=trainingNow();
+ }
  const label=$('analysis-note');
  label.textContent='Cofnięto wyłącznie Twój czarny kamień. Białe kamienie pozostały na planszy.';
  label.hidden=false;render();
@@ -1797,6 +1860,7 @@ $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
+$('training-time').addEventListener('change',restart);
 $('ai-level').addEventListener('change',()=>{
  const descriptions={
   normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
@@ -1830,6 +1894,7 @@ function installReferenceShowcase(){
   state.last=at;
  }
  state.moves=sequence.length;state.winner=0;state.showcase=true;
+ state.trainClock=createTrainingClock(false);
  state.localChat=[
   {id:'example-1',player:1,body:'Powodzenia! 🙂',createdAt:'2026-11-01T20:34:00.000Z'},
   {id:'example-2',player:2,body:'Dzięki, wzajemnie! 🤝',createdAt:'2026-11-01T20:35:00.000Z'}
