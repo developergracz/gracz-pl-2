@@ -54,8 +54,12 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  const quickLinks=[...linkRegion[1].matchAll(/<a class="premium-mini-link" href="([^"]+)" title="([^"]+)" aria-label="([^"]+)" data-tooltip="([^"]+)"/g)];
  assert.equal(quickLinks.length,5,'Exactly five compact premium icons');
  assert.deepEqual(quickLinks.map(x=>x[2]),[
-  'Gry gracz.pl','Zasady gry w Gomoku','Społeczność graczy',
-  'Aktualności gracz.pl','Panel Gracza']);
+  'Strona główna gracz.pl','Gry gracz.pl','Zasady gry w Gomoku',
+  'Społeczność graczy','Panel Gracza']);
+ assert.equal(quickLinks[0][1],'https://gracz.pl/','The far-left Premium icon opens the homepage');
+ assert.equal(quickLinks[1][1],'https://gracz.pl/gry/','Games remains directly beside the homepage icon');
+ assert.doesNotMatch(linkRegion[1],/Aktualności gracz.pl|#aktualnosci/,
+  'The news shortcut is removed from the top navigation');
  assert.ok(quickLinks.some(x=>x[1]==='https://gracz.pl/gry/gomoku/'&&x[4]==='Zasady gry w Gomoku'));
  assert.ok(quickLinks.every(x=>x[2]===x[3]&&x[3]===x[4]));
  assert.match(linkRegion[1],/<button type="button" class="premium-mini-link" id="refresh-match"[^>]*aria-label="Odśwież partię"[^>]*hidden>/,
