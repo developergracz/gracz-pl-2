@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -37,6 +37,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/Czas dla każdego gracza/);
  assert.match(html,/id="clock-1"/);
  assert.match(html,/id="clock-2"/);
+ assert.match(html,/Powtórka partii Gomoku/);
+ assert.match(html,/Mój bilans treningu/);
  assert.doesNotMatch(html,/class="game-topbar"/);
  assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
  const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
@@ -71,6 +73,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
  assert.match(css,/Real server-authoritative time controls/);
+ assert.match(css,/\.replay-overlay\[hidden\]/);
+ assert.match(css,/\.records-grid/);
  assert.match(css,/Local, independent time controls for the non-ranking computer training mode/);
  assert.match(css,/\.player \.player-clock\.clock-running/);
  assert.match(css,/\.player \.player-clock\.clock-warning/);
@@ -358,6 +362,32 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('clock-2').textContent,'03:02','CPU receives the same bonus after its legal move');
  get('undo-move').listeners.click();
  assert.equal(get('clock-1').textContent,'03:00','Undo cannot be used to farm clock bonuses');
+ // A completed training match gets a visible replay and counts exactly once.
+ get('restart').listeners.click();
+ get('board').children[112].listeners.click();
+ queued.pop()();
+ training.winner=1;context.__gomokuTest.render();
+ assert.equal(get('replay-game').disabled,false,'Completed match enables replay');
+ const beforeCount=Number(get('record-wins').textContent);
+ assert.ok(beforeCount>=1,'Training wins are recorded on this device');
+ context.__gomokuTest.render();
+ assert.equal(Number(get('record-wins').textContent),beforeCount,'Repeated render cannot inflate results');
+ get('replay-game').listeners.click();
+ assert.equal(get('replay-modal').hidden,false);
+ assert.equal(get('replay-board').children.length,225);
+ assert.equal(get('replay-counter').textContent,'2 / 2');
+ get('replay-prev').listeners.click();
+ assert.equal(get('replay-counter').textContent,'1 / 2');
+ assert.equal(get('replay-board').children.filter(el=>el.classes.has('stone-black')).length,1);
+ assert.equal(get('replay-board').children.filter(el=>el.classes.has('stone-white')).length,0);
+ get('replay-start').listeners.click();
+ assert.equal(get('replay-counter').textContent,'0 / 2');
+ get('replay-end').listeners.click();
+ assert.equal(get('replay-counter').textContent,'2 / 2');
+ get('replay-close').listeners.click();
+ assert.equal(get('replay-modal').hidden,true);
+ assert.equal(get('board').children.filter(el=>el.classes.has('occupied')).length,2,'Replay cannot modify active board');
+ assert.ok(storage.get('gracz.gomoku.training-records.v1'),'Training record survives a page reload');
 });
 
 
