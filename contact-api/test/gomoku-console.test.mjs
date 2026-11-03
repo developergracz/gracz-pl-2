@@ -250,9 +250,9 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('game').classes.has('game-focus'),false,'Original console is restored');
  assert.equal(get('focus-game').focused,true);
  get('focus-game').listeners.click();
- let prevented=false;
- get('game').listeners.keydown({key:'Escape',preventDefault(){prevented=true;}});
- assert.equal(prevented,true,'Escape exits from within the game');
+ let preventedFocusEscape=false;
+ get('game').listeners.keydown({key:'Escape',preventDefault(){preventedFocusEscape=true;}});
+ assert.equal(preventedFocusEscape,true,'Escape exits from within the game');
  assert.equal(get('game').classes.has('game-focus'),false);
  assert.equal(get('board').children.length,225,'Toggling the view does not restart gameplay');
  assert.equal(get('clock-1').hidden,false,'Training clocks appear in the player bars');
