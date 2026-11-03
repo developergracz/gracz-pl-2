@@ -469,6 +469,32 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('replay-modal').hidden,true);
  assert.equal(get('board').children.filter(el=>el.classes.has('occupied')).length,2,'Replay cannot modify active board');
  assert.ok(storage.get('gracz.gomoku.training-records.v1'),'Training record survives a page reload');
+ // Boundary colors follow only the active clock, in training and server-supplied rooms.
+ for(const mode of ['training','online']){
+  training.mode=mode;training.showcase=false;
+  if(mode==='online'){training.match=match;match.state.turn=1;}
+  for(const [ms,critical,warning] of [[30000,false,true],[10000,false,true],[9000,true,false],[5000,true,false],[1000,true,false]]){
+   training.winner=0;match.state.winner=0;
+   const clock={remaining:[ms,5000],incrementMs:2000,turn:1,ready:[true,true],
+    since:mode==='training'?fakeTime:new Date(Date.now()+60000).toISOString(),timeoutLoser:0};
+   if(mode==='training')training.trainClock=clock;else match.state.clock=clock;
+   context.__gomokuTest.render();
+   assert.equal(get('clock-1').classes.has('clock-critical'),critical,mode+' alarm at '+ms);
+   assert.equal(get('clock-1').classes.has('clock-warning'),warning);
+   assert.equal(get('clock-2').classes.has('clock-critical'),false,'Stopped opponent never pulses');
+   clock.remaining[0]=31000;context.__gomokuTest.render();
+   assert.equal(get('clock-1').classes.has('clock-critical'),false,'Bonus above threshold clears alarm');
+  }
+  const clock=mode==='training'?training.trainClock:match.state.clock;
+  clock.remaining[0]=0;clock.timeoutLoser=1;training.winner=2;match.state.winner=2;
+  context.__gomokuTest.render();
+  assert.equal(get('clock-1').textContent,'00:00');
+  assert.equal(get('clock-1').classes.has('clock-critical'),false,'Finished game never pulses');
+  assert.equal(get('clock-1').classes.has('clock-expired'),true);
+ }
+ training.mode='training';get('restart').listeners.click();
+ assert.equal(get('clock-1').classes.has('clock-critical'),false,'Reset clears alarm');
+
 });
 
 
