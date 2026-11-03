@@ -123,7 +123,9 @@ function fixture({timeLimitMinutes=0}={}){
  return {call,queries,setBlocked:v=>{blocked=v;},setAccepted:v=>{accepted=v;},
   shiftClockSince:ms=>{const m=matches.get(challenge);if(m?.state.clock){
    const t=Date.parse(m.state.clock.since);m.state.clock.since=new Date(t-ms).toISOString();
-  }}};
+  }},
+  expireUndoBy:ms=>{const m=matches.get(challenge);if(m?.state.undo)
+   m.state.undo.createdAt=new Date(Date.now()-ms).toISOString();}};
 }
 test('match API isolates the two participants and rejects forged or stale moves',async()=>{
  const f=fixture();
@@ -308,4 +310,29 @@ test('untimed Gomoku keeps original turn rules without clocks',async()=>{
  const move=await f.call(tokenA,'POST','/auth/match',{id:challenge,version:0,move:{to:0}});
  assert.equal(move.status,200);
  assert.equal(move.body.match.version,1);
+});
+
+
+test('pending consent pauses both clocks, but its expiry reliably resumes the active timer',async()=>{
+ const f=fixture({timeLimitMinutes:7}),get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ await get(tokenA);await get(tokenB);
+ let version=2;
+ const play=async(token,to)=>{
+  const r=await f.call(token,'POST','/auth/match',{id:challenge,version,move:{to}});
+  assert.equal(r.status,200);version=r.body.match.version;
+ };
+ await play(tokenA,0);
+ await play(tokenB,15);
+ const request=await f.call(tokenA,'POST','/auth/match/undo',{id:challenge,version,action:'request'});
+ assert.equal(request.status,200);
+ version=request.body.match.version;
+ assert.equal(request.body.match.state.clock.since,null,'clock is paused during active consent');
+ f.expireUndoBy(190000); // request timed out 10 seconds ago
+ const read=await get(tokenB);
+ assert.equal(read.status,200);
+ assert.equal(read.body.match.state.undo,undefined,'stale request is cleared');
+ assert.equal(read.body.match.state.clock.ready[0],true);
+ assert.ok(read.body.match.state.clock.since,'active turn resumes automatically');
+ assert.ok(read.body.match.state.clock.remaining[0]>=409000,
+  'elapsed from consent expiry is accounted on the next server settlement');
 });
