@@ -115,7 +115,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <a class="premium-mini-link" href="https://gracz.pl/gry/gomoku/" title="Zasady gry w Gomoku" aria-label="Zasady gry w Gomoku" data-tooltip="Zasady gry w Gomoku"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5c-2-1.4-5-1.8-9-1.8V4.2c3.9 0 7.3.5 9 2.1 1.7-1.6 5.1-2.1 9-2.1v14.5c-4 0-7 .4-9 1.8Z"/><path d="M12 6.3v14.2M5.2 7.5c1.5 0 3.2.2 4.5.7M14.4 8.2c1.3-.5 3-.7 4.4-.7"/></svg></a>
 <a class="premium-mini-link" href="https://gracz.pl/#spolecznosc" title="Społeczność graczy" aria-label="Społeczność graczy" data-tooltip="Społeczność graczy"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.1" r="3"/><path d="M6 20v-2.3c0-3 2.5-5.1 6-5.1s6 2.1 6 5.1V20ZM4.8 9.9a2.2 2.2 0 1 1 .9-4.3M3.8 15c-1.5.6-2.3 1.9-2.3 3.7V20h3.1M19.2 9.9a2.2 2.2 0 1 0-.9-4.3M20.2 15c1.5.6 2.3 1.9 2.3 3.7V20h-3.1"/></svg></a>
 <a class="premium-mini-link" href="https://gracz.pl/#aktualnosci" title="Aktualności gracz.pl" aria-label="Aktualności gracz.pl" data-tooltip="Aktualności gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 10.5h10M7 14h4M13.5 14h3.5v3.5h-3.5ZM7 18h4"/></svg></a>
-<a class="premium-mini-link" href="/konto/panel/" title="Panel Gracza" aria-label="Panel Gracza" data-tooltip="Panel Gracza"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 4.6 4.2L12 3l4.4 7.2L21 6l-2 12H5L3 6ZM5.6 21h12.8"/><circle cx="12" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg></a><button type="button" class="premium-mini-link focus-launch" id="focus-game" title="Sama gra — pełne okno bez czatu" aria-label="Sama gra — pełne okno bez czatu" aria-pressed="false" data-tooltip="Sama gra"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4M21 16v4a1 1 0 0 1-1 1h-4"/><rect x="7.5" y="7.5" width="9" height="9" rx="1.2"/></svg><span class="sr-only">Sama gra</span></button></nav>
+<a class="premium-mini-link" href="/konto/panel/" title="Panel Gracza" aria-label="Panel Gracza" data-tooltip="Panel Gracza"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 4.6 4.2L12 3l4.4 7.2L21 6l-2 12H5L3 6ZM5.6 21h12.8"/><circle cx="12" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg></a><button type="button" class="premium-mini-link focus-launch" id="focus-game" title="Sama gra — pełne okno bez czatu" aria-label="Sama gra — pełne okno bez czatu" aria-pressed="false" data-tooltip="Sama gra"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4M21 16v4a1 1 0 0 1-1 1h-4"/><rect x="7.5" y="7.5" width="9" height="9" rx="1.2"/></svg><span class="sr-only">Sama gra</span></button><button type="button" class="premium-mini-link" id="refresh-match" title="Odśwież partię" aria-label="Odśwież partię" data-tooltip="Odśwież partię" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 10a8.5 8.5 0 1 0 1 5"/><path d="M20.5 4v6h-6" /><path d="M19 15.5l2.5-.5 0 3" /></svg></button></nav>
 <div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
 <div class="arena">
 <div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
@@ -152,7 +152,6 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button type="button" class="tool-btn" id="invite-friend" title="Zaproś znajomego" aria-label="Zaproś znajomego" data-tooltip="Zaproś znajomego"><span aria-hidden="true">♧</span></button>
 <button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
 <button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
-<button type="button" class="tool-btn" id="refresh-match" title="Odśwież partię" aria-label="Odśwież partię" data-tooltip="Odśwież partię" hidden><span aria-hidden="true">↻</span></button>
 </div></aside></div>
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
@@ -672,6 +671,19 @@ select option{background:#102c34;color:#fff}
  .premium-mini-link{width:39px;height:39px}
  .premium-mini-link::after{bottom:auto;top:calc(100% + 6px)}
 }
+/* R22: online refresh belongs in the upper-right Premium mini navigation, not the chat toolbar. */
+.premium-quick-links{width:100%;max-width:100%;min-width:0;flex-wrap:nowrap;gap:clamp(3px,.4vw,6px)}
+.premium-quick-links>.premium-mini-link{flex:0 1 clamp(30px,2.4vw,39px);
+ width:clamp(30px,2.4vw,39px);height:clamp(30px,2.4vw,39px);min-width:0;padding:0}
+.premium-quick-links>#refresh-match{cursor:pointer}
+.premium-quick-links>#refresh-match[hidden]{display:none!important}
+@media(max-width:800px){
+ .premium-quick-links{gap:clamp(3px,1vw,8px)}
+ .premium-quick-links>.premium-mini-link{flex-basis:clamp(28px,5vw,39px);
+  width:clamp(28px,5vw,39px);height:clamp(28px,5vw,39px)}
+ .premium-quick-links>.premium-mini-link svg{width:clamp(17px,3vw,21px);height:clamp(17px,3vw,21px)}
+}
+
 @media(prefers-reduced-motion:reduce){.premium-mini-link,.premium-mini-link::after{transition:none}}
 
 

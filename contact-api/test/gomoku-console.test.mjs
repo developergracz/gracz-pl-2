@@ -58,6 +58,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
   'Aktualności gracz.pl','Panel Gracza']);
  assert.ok(quickLinks.some(x=>x[1]==='https://gracz.pl/gry/gomoku/'&&x[4]==='Zasady gry w Gomoku'));
  assert.ok(quickLinks.every(x=>x[2]===x[3]&&x[3]===x[4]));
+ assert.match(linkRegion[1],/<button type="button" class="premium-mini-link" id="refresh-match"[^>]*aria-label="Odśwież partię"[^>]*hidden>/,
+  'Refresh is the same id and handler, positioned among the top miniatures');
+ assert.equal((html.match(/id="refresh-match"/g)||[]).length,1,'Exactly one refresh button');
+ assert.ok(html.indexOf('id="focus-game"')<html.indexOf('id="refresh-match"'),'Refresh appears to the right of the other top icons');
  assert.match(html,/<h1 class="gomoku-heading-title">/);
  assert.match(html,/class="gomoku-heading-gold">Gomoku<\/span>/);
  assert.match(html,/class="gomoku-heading-white">Online<\/span>/);
@@ -88,6 +92,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/R22: online refresh belongs in the upper-right Premium mini navigation/);
+ assert.match(css,/\.premium-quick-links>\.premium-mini-link\{flex:0 1 clamp\(30px,2\.4vw,39px\)/,
+  'Seven top miniatures fit side by side on desktop');
+ assert.match(css,/\.premium-quick-links>#refresh-match\[hidden\]\{display:none!important\}/);
  assert.match(css,/R21: integrated Full Max Premium strategy and two-player vector miniatures/);
  assert.match(css,/\.mode-icon\.mode-icon-premium\{display:grid/);
  assert.match(css,/\.mode-icon\.mode-icon-friends\{border-color:#9ee3d9/);
@@ -177,7 +185,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  const toolBar=html.match(/<div class="game-tools"[^>]*>([\s\S]*?)<\/div>/);
  assert.ok(toolBar,'Game toolbar exists');
  const tools=[...toolBar[1].matchAll(/<button type="button" class="tool-btn" id="([^"]+)"/g)]
-  .map(match=>match[1]).filter(id=>id!=='refresh-match');
+  .map(match=>match[1]);
+ assert.doesNotMatch(toolBar[1],/id="refresh-match"/,'Bottom toolbar contains only seven icons in both modes');
  assert.deepEqual(tools,[
   'undo-move','analyze-position','game-settings','fullscreen-game',
   'invite-friend','remove-player','block-player']);
@@ -373,6 +382,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('chat-preview').hidden,false);
  assert.equal(get('chat-panel').hidden,true);
  get('online-mode').listeners.click();
+ assert.equal(get('refresh-match').hidden,false,'Refresh top mini button is shown only in online mode');
  assert.equal(get('chat-input').disabled,true);
  assert.equal(get('undo-move').disabled,true);
  assert.equal(get('undo-label').textContent,'Poproś o cofnięcie ruchu');
@@ -417,6 +427,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('game-result-new').listeners.click();
  assert.equal(navigations[0],'/konto/panel/','Online requires a new invitation, not a local reset');
  get('training-mode').listeners.click();
+ assert.equal(get('refresh-match').hidden,true,'Refresh is hidden again during training');
  assert.equal(get('focus-start').hidden,false,'Training makes the Start control available');
  const training=context.__gomokuTest.state;
  training.winner=2;training.showcase=false;
