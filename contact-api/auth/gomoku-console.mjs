@@ -32,8 +32,8 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <details class="panel-help"><summary>O treningu</summary><p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p></details>
 <label for="ai-level">Poziom komputera</label>
-<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert" selected>♛ Ekspert — dla bardzo doświadczonych</option></select>
-<details class="panel-help"><summary>Opis poziomu</summary><p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i rzadko popełnia błędy. Najtrudniejszy poziom.</p></details>
+<select id="ai-level" aria-label="Poziom trudności komputera"><option value="normal">Normalny</option><option value="hard">Trudny</option><option value="expert">♛ Ekspert — dla bardzo doświadczonych</option><option value="master" selected>♛ Arcymistrz — maksymalna siła</option></select>
+<details class="panel-help"><summary>Opis poziomu</summary><p id="ai-hint" class="hint">Arcymistrz szuka wymuszonych wygranych, podwójnych zagrożeń i głębszych wariantów. Najsilniejszy poziom tej gry.</p></details>
 <label for="training-time" class="training-timer-label">Czas na partię dla każdego gracza</label>
 <select id="training-time" aria-label="Czas gry z komputerem">
 <option value="0">Bez limitu czasu</option><option value="1">1 minuta</option><option value="2">2 minuty</option><option value="3">3 minuty</option>
@@ -1609,6 +1609,110 @@ function searchPosition(board,turn,depth,alpha,beta,last,ply,search){
  }
  return best;
 }
+
+// R25: stronger local Gomoku master engine (forced-win forks + bounded iterative deepening).
+const masterZobrist=(()=>{
+ let seed=0x9e3779b9;
+ const rand=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;};
+ return Array.from({length:count*2},()=>[rand(),rand()]);
+})();
+function masterHash(board){
+ let h1=0,h2=0;
+ for(let at=0;at<count;at++)if(board[at]){
+  const salt=masterZobrist[at*2+board[at]-1];
+  h1^=salt[0];h2^=salt[1];
+ }
+ return [h1>>>0,h2>>>0];
+}
+function masterWinReplies(board,player,limit=2){
+ let wins=0;
+ for(const at of vicinity(board))
+  if(tacticalScore(board,at,player)>=decisive&&++wins>=limit)break;
+ return wins;
+}
+function masterSearch(board,turn,depth,alpha,beta,last,ply,ctx,h1,h2){
+ if(++ctx.nodes>ctx.maxNodes||Date.now()>ctx.deadline){ctx.stopped=true;return 0;}
+ if(last>=0&&victory(board,last,3-turn))return -decisive*4+ply;
+ if(depth===0){
+  const score=positionValue(board,turn);
+  return turn===2?score:-score;
+ }
+ const key=h1.toString(36)+':'+h2.toString(36)+':'+turn;
+ const entry=ctx.tt.get(key);
+ const originalAlpha=alpha,originalBeta=beta;
+ if(entry&&entry.depth>=depth){
+  if(entry.flag===0)return entry.score;
+  if(entry.flag===1)alpha=Math.max(alpha,entry.score);
+  else beta=Math.min(beta,entry.score);
+  if(alpha>=beta)return entry.score;
+ }
+ const width=depth>=4?7:depth===3?7:depth===2?6:5;
+ const moves=rankedMoves(board,turn,width);
+ if(!moves.length)return 0;
+ if(entry&&entry.best>=0){
+  const index=moves.findIndex(m=>m.at===entry.best);
+  if(index>0)moves.unshift(moves.splice(index,1)[0]);
+ }
+ let best=-Infinity,bestAt=-1;
+ for(const move of moves){
+  const salt=masterZobrist[move.at*2+turn-1];
+  board[move.at]=turn;
+  const score=-masterSearch(board,3-turn,depth-1,-beta,-alpha,move.at,ply+1,
+   ctx,(h1^salt[0])>>>0,(h2^salt[1])>>>0);
+  board[move.at]=0;
+  if(ctx.stopped)return 0;
+  if(score>best){best=score;bestAt=move.at;}
+  if(score>alpha)alpha=score;
+  if(alpha>=beta)break;
+ }
+ if(ctx.tt.size<9000){
+  const flag=best<=originalAlpha?-1:best>=originalBeta?1:0;
+  ctx.tt.set(key,{depth,score:best,flag,best:bestAt});
+ }
+ return best;
+}
+function masterMove(board){
+ const roots=rankedMoves(board,2,14);
+ if(!roots.length)return -1;
+ // A double-four with two different follow-up victories is unblockable in one reply.
+ for(const move of roots){
+  board[move.at]=2;
+  const forks=masterWinReplies(board,2,2);
+  board[move.at]=0;
+  if(forks>=2)return move.at;
+ }
+ // A simple deterministic opening saves thinking time before tactical contact.
+ let occupied=0;
+ for(const piece of board)if(piece)occupied++;
+ if(occupied<3)return roots[0].at;
+ const ctx={nodes:0,maxNodes:7500,deadline:Date.now()+520,stopped:false,tt:new Map()};
+ const [h1,h2]=masterHash(board);
+ let chosen=roots[0].at;
+ // Keep the most recent COMPLETE depth; aborted iterations cannot leak partial moves.
+ for(let depth=2;depth<=6;depth++){
+  if(Date.now()>=ctx.deadline||ctx.stopped)break;
+  const width=depth>=5?8:depth===4?10:12;
+  const candidates=roots.slice(0,width);
+  const preferred=candidates.findIndex(m=>m.at===chosen);
+  if(preferred>0)candidates.unshift(candidates.splice(preferred,1)[0]);
+  let best=-Infinity,bestAt=chosen;
+  for(const move of candidates){
+   const salt=masterZobrist[move.at*2+1];
+   board[move.at]=2;
+   const score=-masterSearch(board,1,depth-1,-Infinity,Infinity,move.at,1,
+    ctx,(h1^salt[0])>>>0,(h2^salt[1])>>>0);
+   board[move.at]=0;
+   if(ctx.stopped)break;
+   const adjusted=score+move.attack*.003+move.block*.001;
+   if(adjusted>best){best=adjusted;bestAt=move.at;}
+  }
+  if(ctx.stopped)break;
+  chosen=bestAt;
+  if(best>=decisive*3)break;
+ }
+ return chosen;
+}
+
 function cpuMove(board,level='expert'){
  const places=vicinity(board);
  if(!places.length)return -1;
@@ -1621,6 +1725,7 @@ function cpuMove(board,level='expert'){
   if(tacticalScore(board,at,1)>=decisive){bestBlock=at;break;}
  }
  if(bestBlock>=0)return bestBlock;
+ if(level==='master')return masterMove(board);
  const moves=rankedMoves(board,2,level==='expert'?8:level==='hard'?6:1);
  if(!moves.length)return -1;
  if(level==='normal')return moves[0].at;
@@ -2274,7 +2379,8 @@ $('ai-level').addEventListener('change',()=>{
  const descriptions={
   normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
   hard:'Trudny: analizuje zagrożenia oraz odpowiedź przeciwnika.',
-  expert:'Ekspert: analizuje kilka kolejnych ruchów, podwójne zagrożenia i wymuszone bloki.'
+  expert:'Ekspert: analizuje kilka kolejnych ruchów, podwójne zagrożenia i wymuszone bloki.',
+  master:'Arcymistrz: głębsze wyszukiwanie, kombinacje i pamięć ocenionych pozycji.'
  };
  $('ai-hint').textContent=descriptions[$('ai-level').value]||descriptions.expert;
  restart();

@@ -34,6 +34,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="gomoku-train-gold"/);
  assert.match(html,/id="gomoku-friends-duo"/);
  assert.match(html,/id="ai-level"/);
+ assert.match(html,/<option value="master" selected>♛ Arcymistrz — maksymalna siła<\/option>/);
+ assert.match(html,/Arcymistrz szuka wymuszonych wygranych, podwójnych zagrożeń/);
  assert.match(html,/id="training-time"/);
  assert.match(html,/id="training-increment"/);
  assert.match(html,/Czas na partię dla każdego gracza/);
@@ -80,7 +82,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-labelledby="game-result-title"/);
  assert.match(html,/Rozpocznij nową partię/);
  assert.match(html,/Zobacz zakończoną planszę/);
- assert.match(html,/<option value="expert" selected>/);
+ assert.match(html,/<option value="expert">/);
+ assert.match(html,/<option value="master" selected>/);
  assert.match(html,/<option value="hard">/);
  assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
@@ -604,7 +607,7 @@ test('Expert Gomoku AI wins immediately rather than making a merely attractive m
  for(const col of [4,5,6,7])board[7*15+col]=2;
  for(const col of [3,4,5])board[10*15+col]=1;
  const original=board.slice();
- for(const level of ['normal','hard','expert']){
+ for(const level of ['normal','hard','expert','master']){
   const move=cpuMove(board,level);
   assert.ok([7*15+3,7*15+8].includes(move),level+' must finish five-in-a-row');
   assert.deepEqual(board,original,'AI cannot mutate active board state');
@@ -616,7 +619,7 @@ test('Gomoku AI blocks the only immediate human win at all levels',()=>{
  const board=Array(225).fill(0);
  board[7*15+3]=2; // Close the left end of the human four.
  for(const col of [4,5,6,7])board[7*15+col]=1;
- for(const level of ['normal','hard','expert']){
+ for(const level of ['normal','hard','expert','master']){
   assert.equal(cpuMove(board,level),7*15+8,level+' must block human win');
  }
 });
@@ -626,8 +629,33 @@ test('Expert Gomoku AI builds a decisive crossing double threat',()=>{
  const board=Array(225).fill(0);
  for(const col of [5,6,8])board[7*15+col]=2;
  board[6*15+7]=2;board[8*15+7]=2;
- for(const level of ['hard','expert'])
+ for(const level of ['hard','expert','master'])
   assert.equal(cpuMove(board,level),7*15+7,level+' must find crossing threat');
+});
+
+
+test('Master AI detects a forced double-four, respects the board, and remains legal',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ for(const col of [5,6,8])board[7*15+col]=2;
+ board[6*15+7]=2;board[8*15+7]=2;
+ board[4*15+4]=1;board[9*15+10]=1;
+ const original=board.slice();
+ const start=Date.now(),move=cpuMove(board,'master');
+ assert.equal(move,112,'Arcymistrz creates multiple immediate winning replies');
+ assert.deepEqual(board,original,'Search and fork proof must restore the entire active board');
+ assert.ok(Date.now()-start<3000,'Master tactical decision remains bounded');
+});
+test('Master AI makes a legal bounded move in a dense middle game without mutating state',()=>{
+ const {cpuMove}=getTrainedAI();
+ const board=Array(225).fill(0);
+ for(const [r,c,p] of [[7,7,1],[7,8,2],[8,8,1],[6,7,2],[8,6,1],
+  [6,9,2],[5,8,1],[9,7,2],[10,5,1],[5,4,2]])board[r*15+c]=p;
+ const original=board.slice(),before=Date.now();
+ const move=cpuMove(board,'master');
+ assert.ok(Number.isInteger(move)&&move>=0&&move<225&&board[move]===0);
+ assert.ok(Date.now()-before<3000,'Bounded master search completes without prolonged UI lock');
+ assert.deepEqual(board,original,'Bounded search cannot leave speculative stones');
 });
 
 test('Expert Gomoku AI chooses legal, deterministic moves in a midgame position',()=>{
