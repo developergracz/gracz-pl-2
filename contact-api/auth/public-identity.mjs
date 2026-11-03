@@ -102,8 +102,18 @@ function advanceGomokuClock(state,now,joinPlayer=0){
    return {state,changed:false,expired:false};
  const next={...state,clock:{...clock,remaining:[...clock.remaining],ready:[...clock.ready]}};
  let changed=false,expired=false;
- if(clock.since&&clock.ready[0]&&clock.ready[1]&&[1,2].includes(state.turn)){
-  const start=Date.parse(clock.since);
+ // Waiting for a consent response pauses clocks, but an unanswered request
+ // expires after three minutes. Restore the interrupted turn from that
+ // expiry instant rather than allowing an indefinite frozen clock.
+ if(state.undo&&!activeUndo(state)&&!clock.since&&clock.ready.every(Boolean)){
+  const requested=Date.parse(state.undo.createdAt);
+  delete next.undo;
+  next.clock.since=new Date(Number.isFinite(requested)?requested+180000:now).toISOString();
+  changed=true;
+ }
+ const runningSince=next.clock.since;
+ if(runningSince&&clock.ready[0]&&clock.ready[1]&&[1,2].includes(state.turn)){
+  const start=Date.parse(runningSince);
   if(Number.isFinite(start)){
    const elapsed=Math.max(0,now-start);
    if(elapsed>=clock.remaining[state.turn-1]){
