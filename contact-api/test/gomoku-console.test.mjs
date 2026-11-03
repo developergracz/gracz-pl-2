@@ -67,9 +67,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
  assert.match(html,/aria-label="Zablokuj gracza"/);
  assert.ok(html.indexOf('id="chat-tab"')<html.indexOf('id="history-tab"'), 'Czat is the left tab');
- assert.match(html,/class="versus-emblem" viewBox="0 0 120 80"/);
+ assert.match(html,/class="versus-emblem" viewBox="0 0 105 70"/);
  assert.match(html,/id="vs-laurel-half"/);
- assert.match(html,/<text x="60" y="52"[^>]*>VS<\/text>/);
+ const emblem=html.match(/<svg class="versus-emblem"[\s\S]*?<\/svg>/)?.[0];
+ assert.ok(emblem,'VS remains an inline vector emblem');
+ assert.match(emblem,/<use href="#vs-laurel-half" transform="translate\(105 0\) scale\(-1 1\)"/);
+ assert.doesNotMatch(emblem,/<(?:ellipse|image|foreignObject|text)\b/);
+ assert.match(html,/class="versus" aria-label="VS — kontra"/);
  assert.doesNotMatch(html,/class="versus-medallion"/);
  assert.match(css,/R5: faithful MINIATURE \(vs\) motif/);
  assert.match(css,/Full Max Premium R6: golden laurel VS reference/);
