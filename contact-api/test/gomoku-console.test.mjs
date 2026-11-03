@@ -378,8 +378,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('replay-counter').textContent,'2 / 2');
  get('replay-prev').listeners.click();
  assert.equal(get('replay-counter').textContent,'1 / 2');
- assert.equal(get('replay-board').children.filter(el=>el.classes.has('stone-black')).length,1);
- assert.equal(get('replay-board').children.filter(el=>el.classes.has('stone-white')).length,0);
+ assert.equal(get('replay-board').children.filter(el=>el.className.includes('stone-black')).length,1);
+ assert.equal(get('replay-board').children.filter(el=>el.className.includes('stone-white')).length,0);
  get('replay-start').listeners.click();
  assert.equal(get('replay-counter').textContent,'0 / 2');
  get('replay-end').listeners.click();
