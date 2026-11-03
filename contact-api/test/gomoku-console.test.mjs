@@ -103,6 +103,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/Local, independent time controls for the non-ranking computer training mode/);
  assert.match(css,/\.player \.player-clock\.clock-running/);
  assert.match(css,/\.player \.player-clock\.clock-warning/);
+ assert.match(css,/R18: slightly larger clock BOXES, with the R17 digits and alarms preserved/);
+ assert.match(css,/min-width:clamp\(67px,5vw,78px\);min-height:clamp\(36px,2.5vw,42px\)/,
+  'Clock boxes have responsive minimum dimensions on desktop');
+ assert.match(css,/min-width:0;min-height:30px;font-size:11\.2px/,
+  'Narrow-layout clocks reduce width to protect player names');
+ assert.match(css,/\.player \.player-clock\.clock-critical/,
+  'Red time-pressure warning remains intact');
  assert.match(css,/Premium Gomoku micro-toolbars/);
  assert.match(css,/Full Max Premium: game outcome announcement/);
  assert.match(css,/\.result-overlay\[hidden\]/);

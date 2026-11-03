@@ -904,9 +904,12 @@ select option{background:#102c34;color:#fff}
 .player small{font-size:clamp(8px,4cqi,12px);line-height:1.2;margin-top:3px;white-space:nowrap}
 .player .stone{flex:none;width:clamp(20px,10cqi,40px);height:clamp(20px,10cqi,40px)}
 .player .player-icon{flex:none;margin-left:0;font-size:24px;line-height:1}
-.player .player-clock{flex:none;font:800 clamp(11.2px,5.6cqi,18px)/1.1 "Segoe UI",sans-serif;
+/* R18: slightly larger clock BOXES, with the R17 digits and alarms preserved. */
+.player .player-clock{flex:none;display:inline-grid;place-items:center;
+ min-width:clamp(67px,5vw,78px);min-height:clamp(36px,2.5vw,42px);
+ font:800 clamp(11.2px,5.6cqi,18px)/1.1 "Segoe UI",sans-serif;
  font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;color:#ffe5a6;
- padding:6px 7px;border:1px solid #e5ba6b;border-radius:8px;
+ padding:7px 9px;border:1px solid #e5ba6b;border-radius:9px;
  background:linear-gradient(#063f40,#031e27);box-shadow:0 0 9px #d8a34f54}
 .player .player-clock[hidden]{display:none!important}
 .player .player-clock.clock-running{border-color:#a5f2dc;color:#c3fff0;box-shadow:0 0 11px #2be8cc6b}
@@ -923,7 +926,8 @@ select option{background:#102c34;color:#fff}
  .player .stone{grid-column:1;grid-row:1;width:18px;height:18px}
  .player strong{grid-column:2;grid-row:1;align-self:center;font-size:clamp(11px,8cqi,14px)}
  .player small{grid-column:1 / 3;grid-row:2;margin:0;font-size:8px;line-height:1.15;white-space:normal}
- .player .player-clock{grid-column:3;grid-row:1 / 3;font-size:11.2px;padding:4.5px 3.5px}
+ .player .player-clock{grid-column:3;grid-row:1 / 3;
+  min-width:0;min-height:30px;font-size:11.2px;padding:4.5px 3.5px}
 }
 
 .replay-shortcut{margin:0 0 6px;text-align:center}.replay-shortcut button{width:100%;min-height:29px;border:1px solid #aa8a51;border-radius:8px;background:linear-gradient(135deg,#0c5558,#052635);color:#fbe4a1;font:700 11px "Segoe UI",sans-serif}.replay-shortcut button:disabled{opacity:.5}
