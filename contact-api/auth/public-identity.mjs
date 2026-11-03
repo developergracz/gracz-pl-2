@@ -82,12 +82,14 @@ function evaluateGomokuBoard(board){
 }
 
 
-const gomokuTimeOptions=new Set([0,3,5,7,10,15,30]);
-function createTimedGame(game,minutes){
+const gomokuTimeOptions=new Set([0,1,2,3,5,7,10,15,30]);
+const gomokuIncrementOptions=new Set([0,2,3,5,10]);
+function createTimedGame(game,minutes,incrementSeconds=0){
  const state=initialGame(game);
  if(game==='gomoku'&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
   const ms=minutes*60000;
-  state.clock={limitMs:ms,remaining:[ms,ms],ready:[false,false],since:null};
+  state.clock={limitMs:ms,incrementMs:(gomokuIncrementOptions.has(incrementSeconds)?incrementSeconds:0)*1000,
+   remaining:[ms,ms],ready:[false,false],since:null};
  }
  return state;
 }
@@ -139,6 +141,9 @@ function clockAfterMove(previous,next,at){
  const elapsed=Number.isFinite(since)?Math.max(0,at-since):0;
  const remaining=[...clock.remaining];
  remaining[previous.turn-1]=Math.max(0,remaining[previous.turn-1]-elapsed);
+ // Fischer bonus applies once, only after an accepted, non-terminal legal move.
+ if(!next.winner&&Number.isInteger(clock.incrementMs)&&clock.incrementMs>=0&&clock.incrementMs<=10000)
+  remaining[previous.turn-1]+=clock.incrementMs;
  return {...next,clock:{...clock,remaining,
   since:next.winner?null:new Date(at).toISOString()}};
 }
@@ -209,6 +214,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
        expires_at timestamptz NOT NULL DEFAULT (now()+interval '7 days'),
        CHECK (sender_id<>recipient_id))`);
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS time_limit_minutes integer NOT NULL DEFAULT 0');
+     await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS increment_seconds integer NOT NULL DEFAULT 0');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_recipient ON gracz_public_identity.game_challenges(recipient_id,created_at DESC)');
      await database.query("CREATE UNIQUE INDEX IF NOT EXISTS gracz_challenges_one_pending ON gracz_public_identity.game_challenges(LEAST(sender_id,recipient_id),GREATEST(sender_id,recipient_id),game) WHERE status='pending'");
@@ -385,7 +391,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       if(typeof matchId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(matchId))
         return bad(res,400,'BLEDNY_IDENTYFIKATOR'),true;
       // A room is created only for an accepted invitation and one of its two verified participants.
-      const invite=await database.query(`SELECT c.game,c.time_limit_minutes FROM gracz_public_identity.game_challenges c
+      const invite=await database.query(`SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c
         WHERE c.id=$1 AND c.status='accepted' AND ($2=c.sender_id OR $2=c.recipient_id)
         LIMIT 1`,[matchId,actor]);
       if(!invite.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
@@ -393,7 +399,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
         SELECT c.id,$2::jsonb FROM gracz_public_identity.game_challenges c
         WHERE c.id=$1 AND c.status='accepted'
           AND (c.sender_id=$3 OR c.recipient_id=$3)
-        ON CONFLICT DO NOTHING`,[matchId,JSON.stringify(createTimedGame(invite.rows[0].game,invite.rows[0].time_limit_minutes)),actor]);
+        ON CONFLICT DO NOTHING`,[matchId,JSON.stringify(createTimedGame(invite.rows[0].game,invite.rows[0].time_limit_minutes,invite.rows[0].increment_seconds)),actor]);
       const readMatch=()=>database.query(`SELECT m.state,m.version,c.game,
         c.sender_id,c.recipient_id,
         s.nickname AS sender_nick,r.nickname AS recipient_nick,
@@ -647,7 +653,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       }
       if(req.method==='GET'){
         if(!allow('challenges-read:'+actor,120))return bad(res,429,'ZBYT_WIELE_PROB'),true;
-        const result=await database.query(`SELECT c.id,c.game,c.time_limit_minutes,
+        const result=await database.query(`SELECT c.id,c.game,c.time_limit_minutes,c.increment_seconds,
           CASE WHEN c.expires_at<=now() AND c.status='pending' THEN 'expired' ELSE c.status END AS status,
           c.created_at,c.expires_at,c.sender_id=$1 AS outgoing,
           a.nickname AS opponent
@@ -659,7 +665,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
           ORDER BY c.created_at DESC LIMIT 60`,[actor]);
         return json(res,200,{ok:true,challenges:result.rows.map(row=>({
           id:row.id,game:row.game,status:row.status,opponent:row.opponent,
-          timeLimitMinutes:row.time_limit_minutes||0,
+          timeLimitMinutes:row.time_limit_minutes||0,incrementSeconds:row.increment_seconds||0,
           outgoing:row.outgoing===true,createdAt:row.created_at,expiresAt:row.expires_at
         }))}),true;
       }
@@ -669,8 +675,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       if(action==='send'){
         const nick=normalizeNick(body.nickname),game=safeText(body.game);
         const minutes=body.timeLimitMinutes===undefined?0:body.timeLimitMinutes;
+        const incrementSeconds=body.incrementSeconds===undefined?0:body.incrementSeconds;
         if(!validNick(nick)||!['warcaby','gomoku'].includes(game)||
-           !gomokuTimeOptions.has(minutes)||(game!=='gomoku'&&minutes!==0))
+           !gomokuTimeOptions.has(minutes)||!gomokuIncrementOptions.has(incrementSeconds)||
+           (minutes===0&&incrementSeconds!==0)||(game!=='gomoku'&&(minutes!==0||incrementSeconds!==0)))
           return bad(res,400,'BLEDNE_DANE'),true;
         const friend=await findFriend(nick);
         if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
@@ -682,17 +690,17 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
         let saved;
         try{
           saved=await database.query(`INSERT INTO gracz_public_identity.game_challenges
-            (id,sender_id,recipient_id,game,status,time_limit_minutes)
-            SELECT $1,$2,$3,$4,'pending',$5
+            (id,sender_id,recipient_id,game,status,time_limit_minutes,increment_seconds)
+            SELECT $1,$2,$3,$4,'pending',$5,$6
             WHERE EXISTS(SELECT 1 FROM gracz_public_identity.friend_connections c
               WHERE c.account_a=LEAST($2::uuid,$3::uuid)
               AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
             AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
               WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
-            ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes]);
+            ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes,incrementSeconds]);
         }catch(e){if(e?.code==='23505')return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;throw e;}
         if(!saved.rowCount)return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;
-        return json(res,200,{ok:true,id:saved.rows[0].id,game,timeLimitMinutes:minutes}),true;
+        return json(res,200,{ok:true,id:saved.rows[0].id,game,timeLimitMinutes:minutes,incrementSeconds}),true;
       }
       if(!['accept','decline','cancel'].includes(action)||
         typeof body.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.id))
