@@ -22,10 +22,16 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
+ assert.match(html,/id="create-room-time"/);
+ assert.match(html,/value="7" selected>7 minut/);
+ assert.match(html,/id="create-room"/);
+ assert.match(html,/Czas dla każdego gracza/);
+ assert.match(html,/id="clock-1"/);
+ assert.match(html,/id="clock-2"/);
  assert.doesNotMatch(html,/class="game-topbar"/);
  assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
  const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
@@ -59,6 +65,9 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/Real server-authoritative time controls/);
+ assert.match(css,/\.player \.player-clock\.clock-running/);
+ assert.match(css,/\.player \.player-clock\.clock-warning/);
  assert.match(css,/Premium Gomoku micro-toolbars/);
  assert.match(css,/Full Max Premium: game outcome announcement/);
  assert.match(css,/\.result-overlay\[hidden\]/);
