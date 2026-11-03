@@ -117,8 +117,8 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="match-panel">
 <div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
-<button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button>
-<button type="button" class="dock-tab" id="history-tab" role="tab" aria-selected="false" aria-controls="moves-panel">☷ &nbsp;Ruchy</button></div>
+<button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.5h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4.8 3v-3.1A2 2 0 0 1 3.5 15.5v-8a2 2 0 0 1 2-2Z"/><path d="M8 10.1h8M8 13.4h5"/></svg></span><span class="dock-tab-text">Czat</span><span class="chat-led" aria-hidden="true"></span></button>
+<button type="button" class="dock-tab" id="history-tab" role="tab" aria-selected="false" aria-controls="moves-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h10M9 12h10M9 18h10"/><circle cx="5" cy="6" r="1.2"/><circle cx="5" cy="12" r="1.2"/><circle cx="5" cy="18" r="1.2"/></svg></span><span class="dock-tab-text">Ruchy</span></button></div>
 <div class="replay-shortcut"><button type="button" id="replay-game" aria-label="Powtórka zakończonej partii" title="Odtwórz zakończoną partię">⏮ &nbsp; Powtórka zakończonej partii</button></div>
 <div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab" hidden>
 <div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
@@ -990,6 +990,38 @@ select option{background:#102c34;color:#fff}
  .training-records{padding:8px}
 }
 @media(max-width:800px){.sidebar{height:auto;overflow:visible;border-right:0;gap:8px}.side-links{margin-top:0}.mode-choice{min-height:44px}}
+
+/* R14: Full Max Premium chat and move-history tabs with embedded vector miniatures. */
+.dock-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(5px,.5vw,9px);min-width:0}
+.dock-tabs .dock-tab{position:relative;display:flex;align-items:center;justify-content:center;gap:clamp(5px,.65vw,10px);
+ min-width:0;width:100%;height:clamp(43px,5.4vh,55px);padding:5px clamp(5px,.75vw,12px);
+ white-space:nowrap;overflow:hidden;border:1px solid #48c6bd;border-radius:13px 13px 8px 8px;
+ background:linear-gradient(152deg,#0d5554 0%,#062e36 46%,#021c28 100%);color:#f8ffff;
+ font:700 clamp(13px,1.2vw,19px)/1.15 Georgia,"Times New Roman",serif;
+ box-shadow:inset 0 1px 0 #92eee058,0 4px 9px #0007;isolation:isolate;
+ transition:background-color .15s,border-color .15s,box-shadow .15s,filter .15s}
+.dock-tabs .dock-tab::before{content:"";position:absolute;inset:2px 2px auto;height:42%;
+ border-radius:10px 10px 45% 45%;background:linear-gradient(#dcfff00d,transparent);pointer-events:none}
+.dock-tabs .dock-tab .dock-tab-icon{position:relative;z-index:1;display:grid;place-items:center;
+ flex:0 0 clamp(24px,2.1vw,30px);width:clamp(24px,2.1vw,30px);height:clamp(24px,2.1vw,30px);
+ border:1px solid #caaf73;border-radius:8px;color:#ffda86;background:linear-gradient(145deg,#1c6260,#06353d 76%);
+ box-shadow:inset 0 1px 0 #b4f3e842,0 0 8px #06191e96}
+.dock-tabs .dock-tab .dock-tab-icon svg{display:block;width:clamp(15px,1.35vw,19px);
+ height:clamp(15px,1.35vw,19px);fill:none;flex:none}
+.dock-tabs .dock-tab .dock-tab-text{position:relative;z-index:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dock-tabs .dock-tab .chat-led{position:relative;z-index:1;flex:0 0 7px;width:7px;height:7px;
+ border-radius:50%;background:#36eea2;box-shadow:0 0 0 2px #137a5850,0 0 7px #23e699a6}
+.dock-tabs .dock-tab.active{border:2px solid #fff3c5;
+ background:linear-gradient(180deg,#fff2bd 0%,#ffd77d 32%,#eeb84f 63%,#bd7e20 100%);color:#132529;
+ box-shadow:inset 0 2px 0 #fffbe0,0 0 0 1px #b8893e,0 0 13px #f9bd57b1,0 5px 12px #0008}
+.dock-tabs .dock-tab.active .dock-tab-icon{color:#ffdf8a;border-color:#7d6134;
+ background:linear-gradient(145deg,#154a48,#08252d 85%);box-shadow:inset 0 1px #bbf5d23b,0 1px 4px #0006}
+.dock-tabs .dock-tab:is(:hover,:focus-visible){border-color:#fff1bb;filter:brightness(1.07)}
+.dock-tabs .dock-tab:not(.active):hover{box-shadow:inset 0 1px #a4fce889,0 0 12px #25cfb44f}
+.dock-tabs .dock-tab:focus-visible{outline:2px solid #79f5df;outline-offset:3px}
+@media(max-width:420px){.dock-tabs .dock-tab{gap:5px;padding:4px 5px;font-size:14px}
+ .dock-tabs .dock-tab .dock-tab-icon{flex-basis:24px;width:24px;height:24px}
+ .dock-tabs .dock-tab .dock-tab-icon svg{width:16px;height:16px}}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
