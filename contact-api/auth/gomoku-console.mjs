@@ -36,6 +36,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <select id="training-increment" aria-label="Dodatkowe sekundy po ruchu w treningu"><option value="0" selected>Bez bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
 <p class="training-clock-help">Zegary są niezależne. Czas mija tylko podczas własnej tury, a bonus dolicza się po prawidłowym ruchu. Zmiana ustawień rozpoczyna nową partię.</p>
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
+<section class="sidecard training-records" id="training-records" aria-label="Statystyki treningu"><h2>♛ Mój bilans treningu</h2><p class="records-note">Wyniki partii z komputerem na tym urządzeniu, bez rankingu.</p><div class="records-grid"><div><strong id="record-wins">0</strong><small>Wygrane</small></div><div><strong id="record-draws">0</strong><small>Remisy</small></div><div><strong id="record-losses">0</strong><small>Przegrane</small></div></div><p class="records-total">Rozegrano: <strong id="record-total">0</strong> · Skuteczność: <strong id="record-rate">0%</strong></p></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
 <div class="room-creator">
@@ -117,6 +118,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
 <button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel">▣ &nbsp;Czat <span class="chat-led" aria-hidden="true"></span></button>
 <button type="button" class="dock-tab" id="history-tab" role="tab" aria-selected="false" aria-controls="moves-panel">☷ &nbsp;Ruchy</button></div>
+<div class="replay-shortcut"><button type="button" id="replay-game" aria-label="Powtórka zakończonej partii" title="Odtwórz zakończoną partię">⏮ &nbsp; Powtórka zakończonej partii</button></div>
 <div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab" hidden>
 <div class="dock-title"><strong>Historia ruchów</strong><span id="history-count">0</span></div>
 <div id="moves-list" class="moves-list" aria-live="polite"><p class="dock-empty">Wybierz pole i rozpocznij partię.</p></div>
@@ -147,6 +149,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
+<div id="replay-modal" class="replay-overlay" role="dialog" aria-modal="true" aria-labelledby="replay-title" hidden>
+<section class="replay-card"><div class="replay-header"><div><span class="replay-kicker">GRACZ.PL · STUDIO ANALIZY</span><h2 id="replay-title">Powtórka partii Gomoku</h2></div><button type="button" id="replay-close" class="replay-close" aria-label="Zamknij powtórkę">×</button></div>
+<p id="replay-status" class="replay-status" aria-live="polite">Przebieg rozegranej partii</p><div id="replay-board" class="replay-board" role="img" aria-label="Plansza powtórki 15 na 15"></div>
+<div class="replay-controls" role="group" aria-label="Przewijanie partii"><button type="button" id="replay-start" aria-label="Początek partii">⏮</button><button type="button" id="replay-prev" aria-label="Poprzedni ruch">◀</button><span id="replay-counter">0 / 0</span><button type="button" id="replay-next" aria-label="Następny ruch">▶</button><button type="button" id="replay-end" aria-label="Koniec partii">⏭</button></div><p class="replay-footnote">Odtwarzanie nie zmienia wyniku, planszy ani zegarów rozegranej partii.</p></section></div>
 <div id="game-result-modal" class="result-overlay" role="dialog" aria-modal="true" aria-labelledby="game-result-title" aria-describedby="game-result-description" hidden>
 <section class="result-card" data-result="win">
 <button type="button" id="game-result-close" class="result-close" aria-label="Zamknij wynik i zobacz planszę">×</button>
@@ -904,6 +910,10 @@ select option{background:#102c34;color:#fff}
 @media(max-width:1120px){.player .player-clock{padding:4px 5px;font-size:11px}}
 @media(max-width:700px){.player .player-clock{font-size:10px;padding:3px 4px}}
 
+.replay-shortcut{margin:0 0 6px;text-align:center}.replay-shortcut button{width:100%;min-height:29px;border:1px solid #aa8a51;border-radius:8px;background:linear-gradient(135deg,#0c5558,#052635);color:#fbe4a1;font:700 11px "Segoe UI",sans-serif}.replay-shortcut button:disabled{opacity:.5}
+.training-records .records-note{font-size:11px;color:#b7d2ce;margin:5px 0 10px}.records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.records-grid>div{background:linear-gradient(160deg,#104349,#031e2b);border:1px solid #b38c4b;border-radius:11px;padding:8px 4px;text-align:center}.records-grid strong{display:block;color:#ffe29d;font-size:clamp(16px,1.6vw,22px);font-variant-numeric:tabular-nums}.records-grid small{display:block;color:#c6e3de;font-size:10px}.training-records .records-total{color:#dcebe7;font-size:11px}
+.replay-overlay{position:fixed;inset:0;z-index:9000;display:grid;place-items:center;overflow-y:auto;background:#000b;padding:12px}.replay-overlay[hidden]{display:none!important}.replay-card{width:min(94vw,570px);max-height:96dvh;overflow:auto;background:linear-gradient(145deg,#073b43,#031925);border:2px solid #ddb772;border-radius:19px;padding:clamp(12px,2vw,23px);box-shadow:0 25px 85px #000e,0 0 50px #00766a3c;color:#ecf9f5}.replay-header{display:flex;align-items:start;justify-content:space-between;gap:10px}.replay-kicker{font-size:10px;letter-spacing:1.1px;color:#ffd987}.replay-header h2{font:700 clamp(18px,2.5vw,27px) Georgia,serif;color:#ffe5a8;margin:4px 0 8px}.replay-close{border:1px solid #d5ad66;border-radius:9px;background:#082a32;color:#ffe4b6;font-size:27px;width:38px;height:38px;flex:none}.replay-status{font-size:13px;text-align:center;color:#d5eae7;margin:6px 0 10px}.replay-board{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));grid-template-rows:repeat(15,minmax(0,1fr));width:min(100%,420px);aspect-ratio:1;margin:0 auto;border:5px solid #d7ac68;border-radius:10px;overflow:hidden;background:#f6f4ea;box-shadow:0 9px 24px #0008}.replay-cell{min-width:0;min-height:0;display:grid;place-items:center;border-right:1px solid #787b73;border-bottom:1px solid #787b73;position:relative}.replay-cell.stone-black:after,.replay-cell.stone-white:after{content:"";width:79%;height:79%;border-radius:50%;z-index:1;box-shadow:inset -3px -4px 5px #0008,0 2px 5px #0007}.replay-cell.stone-black:after{background:radial-gradient(circle at 30% 25%,#606873,#11151b 58%,#000)}.replay-cell.stone-white:after{background:radial-gradient(circle at 30% 25%,#fff,#f2f6f7 65%,#a8b4bd)}.replay-cell.is-last{background:#dec58a}.replay-controls{display:grid;grid-template-columns:48px 48px minmax(64px,1fr) 48px 48px;align-items:center;justify-content:center;gap:7px;margin:14px auto 5px;max-width:400px}.replay-controls button{height:39px;border:1px solid #e5bf75;background:linear-gradient(#116060,#05313c);color:#ffefa9;border-radius:10px;font-size:17px}.replay-controls button:disabled{opacity:.32}.replay-controls span{text-align:center;font-weight:800;font-variant-numeric:tabular-nums}.replay-footnote{font-size:11px;text-align:center;color:#aacbc5;margin:10px 0 0}
+@media(max-width:560px){.replay-card{width:100%;padding:11px}.replay-board{width:min(100%,calc(92dvh - 205px))}.replay-controls{grid-template-columns:40px 40px minmax(50px,1fr) 40px 40px;gap:4px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -912,6 +922,94 @@ const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,serverOffsetMs:0,
  trainHistory:[],trainClock:null,dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
+
+const trainingRecordKey='gracz.gomoku.training-records.v1';
+function loadTrainingRecord(){
+ const record={wins:0,draws:0,losses:0};
+ try{
+  const saved=JSON.parse(window.localStorage?.getItem(trainingRecordKey)||'null');
+  if(saved&&typeof saved==='object'){
+   for(const key of Object.keys(record))
+    if(Number.isSafeInteger(saved[key])&&saved[key]>=0&&saved[key]<=1000000)record[key]=saved[key];
+  }
+ }catch{}
+ return record;
+}
+state.trainingRecord=loadTrainingRecord();
+state.recordedEpoch=null;
+state.replayEntries=[];
+state.replayIndex=0;
+function recordTrainingFinish(){
+ if(state.mode!=='training'||state.showcase||![1,2,3].includes(state.winner)||
+    state.recordedEpoch===state.epoch)return;
+ state.recordedEpoch=state.epoch;
+ const key=state.winner===1?'wins':state.winner===2?'losses':'draws';
+ state.trainingRecord[key]++;
+ try{window.localStorage?.setItem(trainingRecordKey,JSON.stringify(state.trainingRecord));}catch{}
+}
+function renderTrainingRecord(){
+ const r=state.trainingRecord,total=r.wins+r.draws+r.losses;
+ $('record-wins').textContent=String(r.wins);
+ $('record-draws').textContent=String(r.draws);
+ $('record-losses').textContent=String(r.losses);
+ $('record-total').textContent=String(total);
+ $('record-rate').textContent=(total?Math.round(100*r.wins/total):0)+'%';
+}
+function replaySource(){
+ const online=state.mode==='online',m=state.match;
+ if(online&&(!m?.state?.winner||!Array.isArray(m?.state?.history)||
+   m.state.history.length!==m.state.moves))return null;
+ if(!online&&(state.showcase||!state.winner))return null;
+ const entries=online?m.state.history:state.trainHistory;
+ if(!Array.isArray(entries)||!entries.length||entries.length>225)return null;
+ const occupied=new Set();
+ for(const entry of entries){
+  if(!entry||![1,2].includes(entry.player)||!Number.isInteger(entry.to)||
+     entry.to<0||entry.to>=225||occupied.has(entry.to))return null;
+  occupied.add(entry.to);
+ }
+ return entries.map(e=>({player:e.player,to:e.to}));
+}
+function renderReplay(){
+ const entries=state.replayEntries,limit=Math.min(state.replayIndex,entries.length);
+ const board=Array(225).fill(0);
+ for(let i=0;i<limit;i++)board[entries[i].to]=entries[i].player;
+ const last=limit?entries[limit-1]:null;
+ const area=$('replay-board');area.replaceChildren();
+ for(let i=0;i<225;i++){
+  const square=document.createElement('div');
+  square.className='replay-cell'+(board[i]===1?' stone-black':board[i]===2?' stone-white':'')+
+   (last?.to===i?' is-last':'');
+  area.append(square);
+ }
+ $('replay-counter').textContent=limit+' / '+entries.length;
+ $('replay-status').textContent=last?
+  ('Ruch '+limit+': '+(last.player===1?'czarne':'białe')+' · '+notation(last.to)):
+  'Początek partii — pusta plansza';
+ $('replay-start').disabled=limit===0;$('replay-prev').disabled=limit===0;
+ $('replay-next').disabled=limit===entries.length;
+ $('replay-end').disabled=limit===entries.length;
+}
+function openReplay(){
+ const moves=replaySource();
+ if(!moves)return;
+ state.replayEntries=moves;state.replayIndex=moves.length;
+ renderReplay();
+ $('replay-modal').hidden=false;
+ $('replay-close').focus?.();
+}
+function stepReplay(to){
+ state.replayIndex=Math.max(0,Math.min(state.replayEntries.length,to));
+ renderReplay();
+}
+function closeReplay(){$('replay-modal').hidden=true;}
+$('replay-game').addEventListener('click',openReplay);
+$('replay-close').addEventListener('click',closeReplay);
+$('replay-start').addEventListener('click',()=>stepReplay(0));
+$('replay-prev').addEventListener('click',()=>stepReplay(state.replayIndex-1));
+$('replay-next').addEventListener('click',()=>stepReplay(state.replayIndex+1));
+$('replay-end').addEventListener('click',()=>stepReplay(state.replayEntries.length));
+
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -1120,6 +1218,9 @@ function render(){
   $('black-name').textContent='Ty';$('white-name').textContent='Komputer';
   $('session-heading').textContent='Trening z komputerem';$('room-tag').textContent='TRENING';
  }
+ recordTrainingFinish();
+ renderTrainingRecord();
+ $('replay-game').disabled=!replaySource();
  syncGameResult();
 }
 function restart(){
@@ -1859,7 +1960,7 @@ function setMode(mode){
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
  if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
  state.suggestion=-1;$('analysis-note').hidden=true;
- $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
+ $('training-settings').hidden=mode!=='training';$('training-records').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
  $('training-mode').classList.toggle('active',mode==='training');
  $('online-mode').classList.toggle('active',mode==='online');
