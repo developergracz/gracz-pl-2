@@ -54,7 +54,7 @@ const challenge='b92e5507-609f-42f6-941f-12e8438aace3';
 const tokenA='a'.repeat(64),tokenB='b'.repeat(64),tokenC='c'.repeat(64);
 const digest=t=>createHash('sha256').update(t).digest('hex');
 
-function fixture({timeLimitMinutes=0}={}){
+function fixture({timeLimitMinutes=0,incrementSeconds=0}={}){
  const matches=new Map(),queries=[],messages=[];
  let blocked=false,accepted=true;
  const db={enabled:true,async query(sql,p=[]){
@@ -73,9 +73,9 @@ function fixture({timeLimitMinutes=0}={}){
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:key===digest(tokenC)?idC:null;
    return {rows:id?[{id}]:[],rowCount:id?1:0};
   }
-  if(sql.includes('SELECT c.game,c.time_limit_minutes FROM gracz_public_identity.game_challenges c')){
+  if(sql.includes('SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c')){
    return {rows:accepted&&p[0]===challenge&&[idA,idB].includes(p[1])?
-    [{game:'gomoku',time_limit_minutes:timeLimitMinutes}]:[]};
+    [{game:'gomoku',time_limit_minutes:timeLimitMinutes,increment_seconds:incrementSeconds}]:[]};
   }
   if(sql.includes('INSERT INTO gracz_public_identity.game_matches')){
    if(!matches.has(p[0]))matches.set(p[0],{state:JSON.parse(p[1]),version:0});
@@ -280,6 +280,35 @@ test('timed Gomoku starts only when both players open their accepted private roo
  const white=await f.call(tokenB,'GET','/auth/match?id='+challenge);
  assert.equal(white.body.match.version,3);
  assert.equal(white.body.match.state.board[0],1);
+});
+
+test('Fischer time bonus is credited after legal moves, never to a timed-out or rejected player',async()=>{
+ const f=fixture({timeLimitMinutes:3,incrementSeconds:2});
+ const get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ const first=await get(tokenA),second=await get(tokenB);
+ assert.equal(first.body.match.state.clock.incrementMs,2000);
+ assert.equal(second.body.match.state.clock.incrementMs,2000);
+ f.shiftClockSince(4000);
+ const black=await f.call(tokenA,'POST','/auth/match',{
+  id:challenge,version:second.body.match.version,move:{to:0}});
+ assert.equal(black.status,200);
+ assert.equal(black.body.match.state.turn,2);
+ assert.ok(black.body.match.state.clock.remaining[0]>=177000);
+ assert.ok(black.body.match.state.clock.remaining[0]<=178100);
+ assert.equal(black.body.match.state.clock.remaining[1],180000);
+ const stale=await f.call(tokenA,'POST','/auth/match',{
+  id:challenge,version:second.body.match.version,move:{to:1}});
+ assert.equal(stale.status,409);
+ const next=await get(tokenB);
+ assert.equal(next.body.match.state.clock.remaining[0],black.body.match.state.clock.remaining[0],
+  'stale move must not mint a second bonus');
+ f.shiftClockSince(3000);
+ const white=await f.call(tokenB,'POST','/auth/match',{
+  id:challenge,version:next.body.match.version,move:{to:15}});
+ assert.equal(white.status,200);
+ assert.ok(white.body.match.state.clock.remaining[1]>=178000);
+ assert.ok(white.body.match.state.clock.remaining[1]<=179100);
+ assert.equal(white.body.match.state.clock.incrementMs,2000);
 });
 
 test('server ends timed Gomoku when active player exceeds seven minutes, even after reconnect',async()=>{
