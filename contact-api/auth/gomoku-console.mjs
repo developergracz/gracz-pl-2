@@ -26,8 +26,8 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 </div>
 </header>
 <div class="mode" role="group" aria-label="Tryb gry">
-<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">🎓</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
-<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon" aria-hidden="true">👥</span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon mode-icon-premium mode-icon-training" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><defs><linearGradient id="gomoku-train-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7c7"/><stop offset=".48" stop-color="#f7c85d"/><stop offset="1" stop-color="#c48728"/></linearGradient></defs><path d="M10.5 7h11v7c0 5-2.4 8-5.5 8s-5.5-3-5.5-8V7Z" fill="url(#gomoku-train-gold)" stroke="#ffeeb5" stroke-width=".8"/><path d="M10.5 9H6v4c0 3.7 2.2 5.2 5.5 5.2M21.5 9H26v4c0 3.7-2.2 5.2-5.5 5.2" fill="none" stroke="#ffe0a0" stroke-width="1.8" stroke-linecap="round"/><path d="M16 22v4m-6 2h12m-9-2h6" fill="none" stroke="#fff2bb" stroke-width="2.1" stroke-linecap="round"/><path d="m25.5 2.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z" fill="#80fff0"/><path d="M14 10.5h4l-2 3-2-3Z" fill="#6b4612" opacity=".8"/></svg></span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
+<button type="button" class="mode-choice" id="online-mode" aria-pressed="false"><span class="mode-icon mode-icon-premium mode-icon-friends" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><defs><linearGradient id="gomoku-friends-duo" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7a7ff"/><stop offset=".55" stop-color="#9777e9"/><stop offset="1" stop-color="#55e8e0"/></linearGradient></defs><circle cx="11.7" cy="11.1" r="4" fill="#ffdb87" stroke="#fff0b9" stroke-width=".75"/><circle cx="22.5" cy="11.5" r="3.6" fill="url(#gomoku-friends-duo)" stroke="#e3c6ff" stroke-width=".75"/><path d="M4.6 25.3c.2-4.7 2.9-7.6 7.1-7.6s7 2.9 7.1 7.6v1H4.6v-1Z" fill="#ffce70" stroke="#fff0ad" stroke-width=".9"/><path d="M20.6 18.2c4.5-1.7 7.3 1.3 7.5 6.7v1.4h-7.5" fill="url(#gomoku-friends-duo)" stroke="#c1b7ff" stroke-width=".9"/><path d="M17.1 16.2c1.7-1.4 3.1-1.5 4.2 0" fill="none" stroke="#80fff0" stroke-width="1.5" stroke-linecap="round"/><path d="m26.1 3 .65 1.75 1.75.65-1.75.65-.65 1.75-.65-1.75-1.75-.65 1.75-.65Z" fill="#fff0b8"/></svg></span><span><strong>Ze znajomym</strong><small>Wspólna partia online</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
 </div>
 <section class="sidecard" id="training-settings"><h2>Twój trening</h2>
 <details class="panel-help"><summary>O treningu</summary><p>Grasz czarnymi kamieniami. Komputer odpowiada białymi. Bez konta i bez rankingu.</p></details>
@@ -969,6 +969,35 @@ select option{background:#102c34;color:#fff}
 .mode-choice strong{font:700 clamp(13px,1.1vw,17px)/1.2 Georgia,serif;white-space:nowrap}
 .mode-choice small,.mode-arrow{display:none}
 .mode-icon{font-size:18px;line-height:1}
+/* R21: integrated Full Max Premium strategy and two-player vector miniatures. */
+.mode{container-type:inline-size}
+.mode-choice{min-width:0;gap:clamp(4px,.65vw,9px);padding-inline:4px}
+.mode-choice>span:nth-child(2){min-width:0}
+.mode-choice strong{font-size:clamp(12px,1.1vw,17px)}
+.mode-icon.mode-icon-premium{display:grid;place-items:center;flex:0 0 clamp(27px,2.2vw,34px);
+ width:clamp(27px,2.2vw,34px);height:clamp(27px,2.2vw,34px);min-width:0;
+ position:relative;border:1px solid #e6bf71;border-radius:10px;
+ background:radial-gradient(circle at 22% 18%,#3bb9b04d,transparent 54%),linear-gradient(142deg,#144d52,#05212d 79%);
+ box-shadow:inset 0 1px 0 #fff3b35c,inset 0 -1px 0 #0005,0 0 9px #e5b65b3a;
+ transition:box-shadow .18s ease,transform .18s ease}
+.mode-icon.mode-icon-premium svg{display:block;width:83%;height:83%;
+ filter:drop-shadow(0 1px 2px #0008)}
+.mode-icon.mode-icon-friends{border-color:#9ee3d9;
+ background:radial-gradient(circle at 20% 15%,#c09af55f,transparent 54%),linear-gradient(140deg,#223d62,#092c39 74%);
+ box-shadow:inset 0 1px 0 #dbb9ff6a,0 0 10px #8f7dff3c,0 0 5px #37d8c736}
+.mode-choice:is(:hover,:focus-visible) .mode-icon-premium{transform:translateY(-1px);
+ box-shadow:inset 0 1px 0 #fff9d89c,0 0 13px #f2c36f96}
+.mode-choice:is(:hover,:focus-visible) .mode-icon-friends{
+ box-shadow:inset 0 1px 0 #f0deffae,0 0 12px #bda1ff9e}
+.mode-choice.active .mode-icon-premium{border-color:#ffdfa0;box-shadow:inset 0 1px 0 #fff9c290,0 0 11px #ffd37e7a}
+@container (max-width:280px){
+ .mode-choice{gap:3px;padding-inline:2px}
+ .mode-choice strong{font-size:11.5px}
+ .mode-icon.mode-icon-premium{flex-basis:24px;width:24px;height:24px;border-radius:8px}
+}
+@media(prefers-reduced-motion:reduce){.mode-icon.mode-icon-premium{transition:none}
+ .mode-choice:is(:hover,:focus-visible) .mode-icon-premium{transform:none}}
+
 .sidecard{margin:0;padding:0;border:0}
 .sidecard h2{font:700 clamp(16px,1.25vw,21px)/1.25 Georgia,serif;color:#f2d49a;margin:0 0 7px}
 .sidecard label,.room-creator label{display:block;font-size:12px;font-weight:700;line-height:1.3;margin:8px 0 4px;color:#d8ece9}
