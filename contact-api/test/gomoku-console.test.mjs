@@ -22,10 +22,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','training-time','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
+ assert.match(html,/id="training-time"/);
+ assert.match(html,/Czas na partię dla każdego gracza/);
+ assert.match(html,/<option value="7" selected>7 minut<\/option>/);
  assert.match(html,/id="create-room-time"/);
  assert.match(html,/value="7" selected>7 minut/);
  assert.match(html,/id="create-room"/);
@@ -66,6 +69,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
  assert.match(css,/Real server-authoritative time controls/);
+ assert.match(css,/Local, independent time controls for the non-ranking computer training mode/);
  assert.match(css,/\.player \.player-clock\.clock-running/);
  assert.match(css,/\.player \.player-clock\.clock-warning/);
  assert.match(css,/Premium Gomoku micro-toolbars/);
@@ -123,7 +127,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  new Script(served('/konto/gomoku/app.js').body);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
- const fake=new Map(),queued=[],calls=[],storage=new Map(),navigations=[];
+ const fake=new Map(),queued=[],calls=[],storage=new Map(),navigations=[],intervals=[];
+ let fakeTime=0;
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
    this.textContent='';this.style={};this.classes=new Set();this.focused=false;
@@ -162,17 +167,24 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  const context={
   document:{getElementById:get,createElement:()=>new Element(),visibilityState:'visible'},
-  window:{setTimeout:fn=>{queued.push(fn);},setInterval:()=>{},location:{assign:href=>navigations.push(href)},
+  window:{performance:{now:()=>fakeTime},setTimeout:fn=>{queued.push(fn);},
+   setInterval:fn=>{intervals.push(fn);},location:{assign:href=>navigations.push(href)},
    localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}},
   location:{search:'',pathname:'/konto/gomoku/'},
   history:{replaceState(){}},
   URLSearchParams,fetch,console
  };
+ get('training-time').value='7'; // Browser <select> defaults to the selected 7-minute option.
  const executable=served('/konto/gomoku/app.js').body.replace(/\}\)\(\);\s*$/,
   'globalThis.__gomokuTest={state,render,restart};})();');
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
  new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
+ assert.equal(get('clock-1').hidden,false,'Training clocks appear in the player bars');
+ assert.equal(get('clock-1').textContent,'07:00');
+ assert.equal(get('clock-2').textContent,'07:00');
+ fakeTime+=60000;intervals[0]();
+ assert.equal(get('clock-1').textContent,'07:00','Reference preview is not a timed match');
  assert.equal(get('move-count').textContent,'Ruchy: 12','Reference preview has 12 explicitly labelled sample moves');
  assert.equal(get('history-count').textContent,'12');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
@@ -184,8 +196,16 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children[112].classes.has('p1'),true);
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1);
  assert.equal(get('history-count').textContent,'1');
- assert.equal(queued.length,1);queued.pop()();
+ assert.equal(queued.length,1);
+ assert.equal(get('clock-2').classes.has('clock-running'),true,'Computer clock runs during its turn');
+ fakeTime+=5000;intervals[0]();
+ assert.equal(get('clock-1').textContent,'07:00');
+ assert.equal(get('clock-2').textContent,'06:55');
+ queued.pop()();
  assert.equal(get('move-count').textContent,'Ruchy: 2');
+ fakeTime+=30000;intervals[0]();
+ assert.equal(get('clock-1').textContent,'06:30','Human clock runs only on their turn');
+ assert.equal(get('clock-2').textContent,'06:55','Computer clock stops after its move');
  assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
  assert.equal(get('moves-list').children.length,2,'History includes player and AI response');
  assert.equal(get('history-count').textContent,'2');
@@ -297,6 +317,35 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('game-result-title').textContent,'Wygrałeś z komputerem!');
  training.winner=3;context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Remis!');
+ // Both clocks end the game on time and prevent further moves.
+ get('restart').listeners.click();
+ assert.equal(get('clock-1').textContent,'07:00','New match resets each clock');
+ fakeTime+=420001;intervals[0]();
+ assert.equal(training.winner,2);
+ assert.equal(training.trainClock.timeoutLoser,1);
+ assert.equal(get('clock-1').textContent,'00:00');
+ assert.equal(get('clock-1').classes.has('clock-expired'),true);
+ assert.equal(get('game-result-title').textContent,'Przegrałeś na czas.');
+ assert.equal(get('board').children.every(cell=>cell.disabled),true);
+ assert.equal(get('game-result-online-hint').hidden,true);
+ get('restart').listeners.click();
+ get('board').children[112].listeners.click(); // Human makes a move, CPU clock starts.
+ assert.equal(training.thinking,true);
+ fakeTime+=420001;intervals[0]();
+ assert.equal(training.winner,1);
+ assert.equal(training.trainClock.timeoutLoser,2);
+ assert.equal(get('game-result-title').textContent,'Wygrałeś na czas!');
+ assert.equal(get('clock-2').textContent,'00:00');
+ assert.equal(training.thinking,false);
+ const terminalMoveCount=training.moves;
+ queued.pop()();
+ assert.equal(training.moves,terminalMoveCount,'An old AI timeout cannot move after time forfeiture');
+ get('training-time').value='0';get('training-time').listeners.change();
+ assert.equal(get('clock-1').hidden,true,'Unlimited training has no timers');
+ assert.equal(get('clock-2').hidden,true);
+ get('training-time').value='3';get('training-time').listeners.change();
+ assert.equal(get('clock-1').textContent,'03:00','Selecting a new limit starts a fresh timed match');
+ assert.equal(get('clock-2').textContent,'03:00');
 });
 
 
