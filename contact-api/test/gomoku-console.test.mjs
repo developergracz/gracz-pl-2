@@ -22,14 +22,16 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','training-time','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
  assert.match(html,/id="training-time"/);
+ assert.match(html,/id="training-increment"/);
  assert.match(html,/Czas na partię dla każdego gracza/);
  assert.match(html,/<option value="7" selected>7 minut<\/option>/);
  assert.match(html,/id="create-room-time"/);
+ assert.match(html,/id="create-room-increment"/);
  assert.match(html,/value="7" selected>7 minut/);
  assert.match(html,/id="create-room"/);
  assert.match(html,/Czas dla każdego gracza/);
@@ -346,6 +348,16 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('training-time').value='3';get('training-time').listeners.change();
  assert.equal(get('clock-1').textContent,'03:00','Selecting a new limit starts a fresh timed match');
  assert.equal(get('clock-2').textContent,'03:00');
+ // Fischer bonus is awarded after an accepted move to each player independently.
+ get('training-increment').value='2';get('training-increment').listeners.change();
+ assert.equal(training.trainClock.incrementMs,2000);
+ get('board').children[112].listeners.click();
+ assert.equal(get('clock-1').textContent,'03:02','Human receives +2 sec only after moving');
+ assert.equal(get('clock-2').textContent,'03:00');
+ queued.pop()();
+ assert.equal(get('clock-2').textContent,'03:02','CPU receives the same bonus after its legal move');
+ get('undo-move').listeners.click();
+ assert.equal(get('clock-1').textContent,'03:00','Undo cannot be used to farm clock bonuses');
 });
 
 
