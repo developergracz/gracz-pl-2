@@ -410,8 +410,8 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
       const css=getComputedStyle(el);
       return {background:css.backgroundColor,fill:css.webkitTextFillColor,shadow:css.boxShadow,opacity:css.opacity};
     });
-    expect(style.background).toBe('rgb(11, 37, 53)');
-    expect(style.fill).toBe('rgb(245, 252, 255)');
+    expect(style.background).toBe('rgb(255, 255, 255)');
+    expect(style.fill).toBe('rgb(12, 33, 50)');
     expect(style.shadow).toContain('rgba');
     expect(style.opacity).toBe('1');
    }
@@ -446,10 +446,10 @@ test('R16 displays exact accepted full newsletter artwork with a genuine aligned
     expect(Math.abs(sr-r)).toBeLessThanOrEqual(2);
     expect(Math.abs(sy-y)).toBeLessThanOrEqual(2);
     expect(Math.abs((b-y)-(sb-sy))).toBeLessThanOrEqual(3);
-    expect(Math.abs((fx-x)/(r-x)-.0312)).toBeLessThan(.018);
-    expect(Math.abs((fy-y)/(b-y)-.3920)).toBeLessThan(.022);
-    expect(Math.abs((fr-fx)/(r-x)-.4505)).toBeLessThan(.024);
-    expect(Math.abs((fb-fy)/(b-y)-.0800)).toBeLessThan(.024);
+    expect(Math.abs((fx-x)/(r-x)-.0695)).toBeLessThan(.018);
+    expect(Math.abs((fy-y)/(b-y)-.5345)).toBeLessThan(.022);
+    expect(Math.abs((fr-fx)/(r-x)-.5110)).toBeLessThan(.024);
+    expect(Math.abs((fb-fy)/(b-y)-.0930)).toBeLessThan(.024);
     expect(Math.abs((r-x)-Math.min(width,(900-148)*1.77577)),'R29 art fits both viewport dimensions').toBeLessThanOrEqual(3);
     const [ex,ey,er,eb]=state.email;
     const [bx,by,br,bb]=state.submit;
