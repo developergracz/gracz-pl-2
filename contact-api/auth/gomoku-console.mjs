@@ -13,7 +13,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <nav class="focus-nav" id="focus-nav" aria-label="Nawigacja trybu samej gry">
 <a class="focus-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
 <strong>Gomoku <span>Online</span></strong>
+<div class="focus-actions">
+<button type="button" id="focus-start" class="focus-start" aria-label="Rozpocznij grę">▶ <span>Rozpocznij grę</span></button>
 <button type="button" id="focus-exit" class="focus-exit" aria-label="Wróć do pełnego panelu Gomoku">↩ <span>Powrót do panelu</span></button>
+</div>
 </nav>
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
@@ -1099,6 +1102,26 @@ select option{background:#102c34;color:#fff}
  .game-focus .players{gap:4px}
 }
 @media(max-width:380px){.focus-nav>strong{display:none}.focus-nav .focus-exit{font-size:11px}}
+/* R20: visible premium start control in the slim board-only toolbar. */
+.focus-nav .focus-actions{display:flex;align-items:center;justify-content:flex-end;
+ flex:0 0 auto;gap:clamp(4px,.8vw,10px);min-width:0;margin-left:auto}
+.focus-nav .focus-start{display:inline-flex;align-items:center;justify-content:center;
+ gap:6px;flex:0 0 auto;min-height:34px;padding:5px clamp(8px,1vw,16px);
+ border:1px solid #fff1c0;border-radius:9px;
+ background:linear-gradient(180deg,#fff3b9 0%,#f7c85d 53%,#c88a28 100%);
+ color:#17282a;font:900 clamp(11px,1vw,14px)/1.15 "Segoe UI",sans-serif;
+ box-shadow:inset 0 1px 0 #fffbe5,0 0 11px #f0bd5590;
+ white-space:nowrap}
+.focus-nav .focus-start:is(:hover,:focus-visible){filter:brightness(1.08);
+ outline:2px solid #fff4c9;outline-offset:2px}
+.focus-nav .focus-start[hidden]{display:none!important}
+@media(max-width:600px){
+ .focus-nav>strong{display:none}
+ .focus-nav .focus-exit span{display:none}
+ .focus-nav .focus-exit{width:34px;min-width:34px;min-height:34px;padding:3px;
+  font-size:19px}
+ .focus-nav .focus-start{padding:5px 8px;font-size:12px}
+}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
@@ -1359,6 +1382,7 @@ window.setInterval(()=>{
 function render(){
  if(state.mode==='training')advanceTrainingClock();
  const online=state.mode==='online',m=state.match;
+ $('focus-start').hidden=online; // Never reset or re-create an accepted server-authoritative online match.
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
  const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
   !state.thinking&&state.winner===0;
@@ -2173,6 +2197,10 @@ function setBoardFocusMode(enabled){
  else $('focus-game').focus?.();
 }
 $('focus-game').addEventListener('click',()=>setBoardFocusMode(true));
+$('focus-start').addEventListener('click',()=>{
+ if(state.mode!=='training')return;
+ restart(); // Clear the showcase and prepare both stopped clocks; first legal move starts play.
+});
 $('focus-exit').addEventListener('click',()=>setBoardFocusMode(false));
 $('game').addEventListener('keydown',event=>{
  if(event.key==='Escape'&&$('game').classList.contains('game-focus')){

@@ -118,6 +118,18 @@ const baseUrl = `http://127.0.0.1:${server.address().port}/konto/gomoku/`;
       assert.ok(Object.values(boardOnly).every(Boolean),
         `${width}x${height} focus mode: ${JSON.stringify(boardOnly)}`);
       assert.equal(await p.locator("#board .cell").count(), beforeFocus);
+      assert.equal(await p.locator("#focus-start").isVisible(), true,
+        "The Premium Start button is visible in board-only training mode");
+      await p.locator("#focus-start").click();
+      assert.equal(await p.locator("#move-count").innerText(), "Ruchy: 0",
+        "Start resets the example board without leaving focus mode");
+      assert.equal(await p.locator("#clock-1").innerText(), "07:00");
+      assert.equal(await p.locator("#clock-2").innerText(), "07:00");
+      assert.equal(await p.locator("#clock-1").evaluate(e=>e.classList.contains("clock-running")), false);
+      assert.equal(await p.locator("#clock-2").evaluate(e=>e.classList.contains("clock-running")), false);
+      await p.locator("#board .cell").first().click();
+      assert.equal(await p.locator("#move-count").innerText(), "Ruchy: 1",
+        "The first stone begins play after pressing Start");
       await p.locator("#focus-exit").click();
       assert.equal(await p.locator("#game").evaluate((e) => e.classList.contains("game-focus")), false);
       assert.equal(await p.locator("#board .cell").count(), beforeFocus);
