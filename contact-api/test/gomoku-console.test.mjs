@@ -81,6 +81,11 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
  assert.match(css,/R14: Full Max Premium chat and move-history tabs with embedded vector miniatures/);
+ assert.match(css,/R15: Dock composer stays beside the bottom Premium tools, not above empty space/);
+ assert.match(css,/\.mini-chat \.chat-form\{flex:0 0 auto;margin-top:auto\}/,
+  'Composer is pushed to the bottom when chat preview is hidden');
+ assert.match(css,/\.mini-chat \.chat-footnote\{flex:0 0 auto;margin-top:4px\}/,
+  'Chat status stays immediately below the composer');
  assert.match(css,/\.dock-tabs \.dock-tab \.dock-tab-icon svg/);
  assert.match(css,/\.dock-tabs \.dock-tab\.active \.dock-tab-icon/);
  assert.match(css,/\.dock-tabs \.dock-tab:focus-visible/);
