@@ -54,12 +54,12 @@ const challenge='b92e5507-609f-42f6-941f-12e8438aace3';
 const tokenA='a'.repeat(64),tokenB='b'.repeat(64),tokenC='c'.repeat(64);
 const digest=t=>createHash('sha256').update(t).digest('hex');
 
-function fixture(){
+function fixture({timeLimitMinutes=0}={}){
  const matches=new Map(),queries=[],messages=[];
  let blocked=false,accepted=true;
  const db={enabled:true,async query(sql,p=[]){
   queries.push({sql,p});
-  if(sql.startsWith('CREATE '))return {rows:[],rowCount:0};
+  if(sql.startsWith('CREATE ')||sql.startsWith('ALTER TABLE '))return {rows:[],rowCount:0};
   if(sql.includes('INSERT INTO gracz_public_identity.online_presence')){
    const key=Buffer.from(p[0]||[]).toString('hex');
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:null;
@@ -73,8 +73,9 @@ function fixture(){
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:key===digest(tokenC)?idC:null;
    return {rows:id?[{id}]:[],rowCount:id?1:0};
   }
-  if(sql.includes('SELECT c.game FROM gracz_public_identity.game_challenges c')){
-   return {rows:accepted&&p[0]===challenge&&[idA,idB].includes(p[1])?[{game:'gomoku'}]:[]};
+  if(sql.includes('SELECT c.game,c.time_limit_minutes FROM gracz_public_identity.game_challenges c')){
+   return {rows:accepted&&p[0]===challenge&&[idA,idB].includes(p[1])?
+    [{game:'gomoku',time_limit_minutes:timeLimitMinutes}]:[]};
   }
   if(sql.includes('INSERT INTO gracz_public_identity.game_matches')){
    if(!matches.has(p[0]))matches.set(p[0],{state:JSON.parse(p[1]),version:0});
@@ -119,7 +120,10 @@ function fixture(){
   assert.equal(await router.handle(req,res,new URL(path,host)),true);
   return {status:res.status,body:JSON.parse(res.body)};
  }
- return {call,queries,setBlocked:v=>{blocked=v;},setAccepted:v=>{accepted=v;}};
+ return {call,queries,setBlocked:v=>{blocked=v;},setAccepted:v=>{accepted=v;},
+  shiftClockSince:ms=>{const m=matches.get(challenge);if(m?.state.clock){
+   const t=Date.parse(m.state.clock.since);m.state.clock.since=new Date(t-ms).toISOString();
+  }}};
 }
 test('match API isolates the two participants and rejects forged or stale moves',async()=>{
  const f=fixture();
@@ -243,4 +247,65 @@ test('friend presence shows only a signed-in player and exposes server-observed 
  assert.match(f.queries.find(q=>q.sql.includes('gracz_public_identity.online_presence active')).sql,
   /friend_blocks/,'Blocked relationships must be excluded from presence');
  assert.equal((await f.call(tokenC,'GET','/auth/friends/presence')).status,401);
+});
+
+
+test('timed Gomoku starts only when both players open their accepted private room',async()=>{
+ const f=fixture({timeLimitMinutes:7});
+ const get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ const first=await get(tokenA);
+ assert.equal(first.status,200);
+ assert.equal(first.body.match.state.clock.limitMs,420000);
+ assert.deepEqual(first.body.match.state.clock.ready,[true,false]);
+ assert.equal(first.body.match.state.clock.since,null);
+ assert.equal((await f.call(tokenA,'POST','/auth/match',{
+  id:challenge,version:first.body.match.version,move:{to:0}
+ })).body.error,'OCZEKIWANIE_NA_GRACZA');
+ const second=await get(tokenB);
+ assert.equal(second.status,200);
+ assert.deepEqual(second.body.match.state.clock.ready,[true,true]);
+ assert.ok(second.body.match.state.clock.since);
+ assert.ok(Number.isFinite(Date.parse(second.body.serverTime)));
+ assert.equal(second.body.match.version,2);
+ const black=await f.call(tokenA,'POST','/auth/match',{
+  id:challenge,version:second.body.match.version,move:{to:0}
+ });
+ assert.equal(black.status,200);
+ assert.equal(black.body.match.state.turn,2);
+ assert.ok(black.body.match.state.clock.remaining[0]<=420000);
+ assert.equal(black.body.match.state.clock.remaining[1],420000);
+ assert.ok(Number.isFinite(Date.parse(black.body.match.state.clock.since)));
+ const white=await f.call(tokenB,'GET','/auth/match?id='+challenge);
+ assert.equal(white.body.match.version,3);
+ assert.equal(white.body.match.state.board[0],1);
+});
+
+test('server ends timed Gomoku when active player exceeds seven minutes, even after reconnect',async()=>{
+ const f=fixture({timeLimitMinutes:7});
+ const get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ await get(tokenA);await get(tokenB);
+ f.shiftClockSince(421000);
+ const expired=await get(tokenA);
+ assert.equal(expired.status,200);
+ assert.equal(expired.body.match.state.clock.remaining[0],0);
+ assert.equal(expired.body.match.state.clock.timeoutLoser,1);
+ assert.equal(expired.body.match.state.winner,2);
+ assert.equal(expired.body.match.state.clock.since,null);
+ const opponent=await get(tokenB);
+ assert.equal(opponent.body.match.state.winner,2);
+ assert.equal(opponent.body.match.version,expired.body.match.version);
+ assert.equal((await f.call(tokenA,'POST','/auth/match',{
+  id:challenge,version:expired.body.match.version,move:{to:0}
+ })).body.error,'PARTIA_ZAKONCZONA');
+});
+
+test('untimed Gomoku keeps original turn rules without clocks',async()=>{
+ const f=fixture();
+ const room=await f.call(tokenA,'GET','/auth/match?id='+challenge);
+ assert.equal(room.status,200);
+ assert.equal(room.body.match.state.clock,undefined);
+ assert.equal(room.body.match.version,0);
+ const move=await f.call(tokenA,'POST','/auth/match',{id:challenge,version:0,move:{to:0}});
+ assert.equal(move.status,200);
+ assert.equal(move.body.match.version,1);
 });
