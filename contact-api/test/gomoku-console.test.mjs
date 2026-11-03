@@ -80,6 +80,11 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/R14: Full Max Premium chat and move-history tabs with embedded vector miniatures/);
+ assert.match(css,/\.dock-tabs \.dock-tab \.dock-tab-icon svg/);
+ assert.match(css,/\.dock-tabs \.dock-tab\.active \.dock-tab-icon/);
+ assert.match(css,/\.dock-tabs \.dock-tab:focus-visible/);
+ assert.match(css,/@media\(max-width:420px\)\{\.dock-tabs/);
  assert.match(css,/Real server-authoritative time controls/);
  assert.match(css,/\.replay-overlay\[hidden\]/);
  assert.match(css,/\.records-grid/);
@@ -94,6 +99,18 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-label="Wyproś gracza z pokoju"/);
  assert.match(html,/aria-label="Zablokuj gracza"/);
  assert.ok(html.indexOf('id="chat-tab"')<html.indexOf('id="history-tab"'), 'Czat is the left tab');
+ const premiumTabs=html.match(/<div class="dock-tabs"[^>]*>([\s\S]*?)<\/div>/)?.[1]||'';
+ assert.equal((premiumTabs.match(/class="dock-tab-icon"/g)||[]).length,2,
+  'Each premium tab has a dedicated integrated vector miniature');
+ assert.equal((premiumTabs.match(/<svg\s+viewBox="0 0 24 24"[^>]*aria-hidden/g)||[]).length,0,
+  'Decorative icons are hidden through their parent wrappers');
+ assert.equal((premiumTabs.match(/<svg\s+viewBox="0 0 24 24"/g)||[]).length,2);
+ assert.match(premiumTabs,/id="chat-tab"[^>]*aria-selected="true"[^>]*aria-controls="chat-panel"/);
+ assert.match(premiumTabs,/id="history-tab"[^>]*aria-selected="false"[^>]*aria-controls="moves-panel"/);
+ assert.match(premiumTabs,/class="dock-tab-text">Czat<\/span>/);
+ assert.match(premiumTabs,/class="dock-tab-text">Ruchy<\/span>/);
+ assert.match(premiumTabs,/class="chat-led" aria-hidden="true"/);
+ assert.doesNotMatch(premiumTabs,/▣|☷|&nbsp;/);
  assert.match(html,/class="versus-emblem" viewBox="0 0 105 70"/);
  assert.match(html,/id="vs-laurel-half"/);
  const emblem=html.match(/<svg class="versus-emblem"[\s\S]*?<\/svg>/)?.[0];
@@ -268,6 +285,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('moves-list').children.length,1);
  assert.equal(get('moves-list').children[0].children[1].children[1].textContent,'Komputer');
  get('chat-tab').listeners.click();
+ assert.equal(get('chat-tab').classes.has('active'),true,'Czat tab becomes selected');
+ assert.equal(get('history-tab').classes.has('active'),false);
  assert.equal(get('chat-panel').hidden,false);
  assert.equal(get('moves-panel').hidden,true);
  assert.equal(get('chat-input').disabled,false);
@@ -277,6 +296,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('chat-messages').children[2].children[1].textContent,'Dzięki, wzajemnie! 🤝');
  assert.equal(get('chat-preview').children.length,2);
  get('history-tab').listeners.click();
+ assert.equal(get('history-tab').classes.has('active'),true,'Ruchy tab becomes selected');
+ assert.equal(get('chat-tab').classes.has('active'),false);
  assert.equal(get('chat-preview').hidden,false);
  assert.equal(get('chat-panel').hidden,true);
  get('online-mode').listeners.click();
