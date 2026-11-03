@@ -161,7 +161,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
   'Each premium tab has a dedicated integrated vector miniature');
  assert.equal((premiumTabs.match(/<svg\s+viewBox="0 0 24 24"[^>]*aria-hidden/g)||[]).length,0,
   'Decorative icons are hidden through their parent wrappers');
- assert.equal((premiumTabs.match(/<svg\s+viewBox="0 0 24 24"/g)||[]).length,2);
+ assert.equal((premiumTabs.match(/<svg\s+viewBox="0 0 24 24"/g)||[]).length,3,
+  'Chat and history have left icons; Chat additionally has a decorative gem on the right');
  assert.match(premiumTabs,/id="chat-tab"[^>]*aria-selected="true"[^>]*aria-controls="chat-panel"/);
  assert.match(premiumTabs,/id="history-tab"[^>]*aria-selected="false"[^>]*aria-controls="moves-panel"/);
  assert.match(premiumTabs,/class="dock-tab-text">Czat<\/span>/);
