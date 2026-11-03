@@ -405,7 +405,7 @@ select option{background:#102c34;color:#fff}
 .move-row.latest{background:#1f514e75;border:0;border-bottom:1px solid #5f8d73}
 .move-number{font-size:12px;color:#ecf4ec;font-weight:700}.move-player strong{font-size:12px;color:#fff}.move-coordinate{font-size:13px;color:#fff}.mini-stone{width:17px;height:17px}
 .history-footer{display:none}
-.mini-chat{display:flex;flex-direction:column;flex:0 0 clamp(178px,22vh,225px);min-height:0;border-top:1px solid #b785327d;padding:6px 1px 1px}
+.mini-chat{display:flex;flex-direction:column;flex:0 0 clamp(178px,22vh,225px);min-height:0;border-top:0;padding:6px 1px 1px}
 .chat-preview{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:4px 0}
 .chat-preview .chat-bubble{max-width:94%;padding:5px 8px;border-radius:11px;background:linear-gradient(145deg,#0b6665,#082f3d)}
 .chat-preview .chat-bubble.own{background:linear-gradient(140deg,#13696a,#03343b);align-self:flex-start}
@@ -1026,6 +1026,9 @@ select option{background:#102c34;color:#fff}
 /* R15: Dock composer stays beside the bottom Premium tools, not above empty space. */
 .mini-chat .chat-form{flex:0 0 auto;margin-top:auto}
 .mini-chat .chat-footnote{flex:0 0 auto;margin-top:4px}
+/* R16: move the existing fine gold separator directly above message input. */
+.mini-chat .chat-form{border-top:1px solid #b785327d;padding-top:2px}
+.mini-chat .chat-compose{margin-top:5px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
