@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','focus-game','focus-exit','focus-nav','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  assert.match(html,/id="ai-level"/);
@@ -80,6 +80,14 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(html,/id="focus-game"[^>]*aria-pressed="false"/);
+ assert.match(html,/id="focus-exit"[^>]*aria-label="Wróć do pełnego panelu Gomoku"/);
+ assert.match(html,/class="focus-nav" id="focus-nav"/);
+ assert.match(css,/R19: dedicated, reversible board-only browser viewport layout/);
+ assert.match(css,/\.layout\.game-focus>\.sidebar\{display:none!important\}/);
+ assert.match(css,/\.game-focus \.premium-quick-links,\.game-focus \.side-dock\{display:none!important\}/);
+ assert.match(css,/\.game-focus \.boardframe\{[^}]*aspect-ratio:1/);
+ assert.match(css,/\.layout\.game-focus>\.focus-nav/);
  assert.match(css,/R14: Full Max Premium chat and move-history tabs with embedded vector miniatures/);
  assert.match(css,/R15: Dock composer stays beside the bottom Premium tools, not above empty space/);
  assert.match(css,/R16: move the existing fine gold separator directly above message input/);
@@ -230,6 +238,23 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
  new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
+ const openingCells=get('board').children.length;
+ const openingClock=get('clock-1').textContent;
+ assert.equal(get('game').classes.has('game-focus'),false);
+ get('focus-game').listeners.click();
+ assert.equal(get('game').classes.has('game-focus'),true,'Board-only mode enters without reset');
+ assert.equal(get('focus-exit').focused,true,'Exit button receives keyboard focus');
+ assert.equal(get('board').children.length,openingCells);
+ assert.equal(get('clock-1').textContent,openingClock);
+ get('focus-exit').listeners.click();
+ assert.equal(get('game').classes.has('game-focus'),false,'Original console is restored');
+ assert.equal(get('focus-game').focused,true);
+ get('focus-game').listeners.click();
+ let preventedFocusEscape=false;
+ get('game').listeners.keydown({key:'Escape',preventDefault(){preventedFocusEscape=true;}});
+ assert.equal(preventedFocusEscape,true,'Escape exits from within the game');
+ assert.equal(get('game').classes.has('game-focus'),false);
+ assert.equal(get('board').children.length,225,'Toggling the view does not restart gameplay');
  assert.equal(get('clock-1').hidden,false,'Training clocks appear in the player bars');
  assert.equal(get('clock-1').textContent,'07:00');
  assert.equal(get('clock-2').textContent,'07:00');

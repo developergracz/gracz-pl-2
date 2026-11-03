@@ -93,6 +93,37 @@ const baseUrl = `http://127.0.0.1:${server.address().port}/konto/gomoku/`;
           );
         console.log("PASS", width, height, mode, result);
       }
+      // R19: the board-only mode hides the sidebar and chat but keeps the same live board.
+      await p.locator("#training-mode").evaluate((e) => e.click());
+      const beforeFocus = await p.locator("#board .cell").count();
+      await p.locator("#focus-game").evaluate((e) => e.click());
+      assert.equal(await p.locator("#game").evaluate((e) => e.classList.contains("game-focus")), true);
+      const boardOnly = await p.evaluate(() => {
+        const nav = document.querySelector("#focus-nav").getBoundingClientRect();
+        const frame = document.querySelector(".boardframe").getBoundingClientRect();
+        const board = document.querySelector("#board").getBoundingClientRect();
+        return {
+          navVisible: nav.height >= 35 && nav.bottom <= innerHeight,
+          sidebarHidden: getComputedStyle(document.querySelector(".sidebar")).display === "none",
+          dockHidden: getComputedStyle(document.querySelector(".side-dock")).display === "none",
+          boardVisible: board.width > 100 && board.height > 100 &&
+            board.top >= nav.bottom - 1 && board.bottom <= innerHeight + 1,
+          boardSquare: Math.abs(board.width - board.height) < 4,
+          frameInside: frame.left >= -1 && frame.right <= innerWidth + 1 &&
+            frame.top >= nav.bottom - 1 && frame.bottom <= innerHeight + 1,
+          windowFit: document.documentElement.scrollWidth <= innerWidth + 1 &&
+            document.documentElement.scrollHeight <= innerHeight + 1,
+        };
+      });
+      assert.ok(Object.values(boardOnly).every(Boolean),
+        `${width}x${height} focus mode: ${JSON.stringify(boardOnly)}`);
+      assert.equal(await p.locator("#board .cell").count(), beforeFocus);
+      await p.locator("#focus-exit").click();
+      assert.equal(await p.locator("#game").evaluate((e) => e.classList.contains("game-focus")), false);
+      assert.equal(await p.locator("#board .cell").count(), beforeFocus);
+      await p.locator("#focus-game").evaluate((e) => e.click());
+      await p.keyboard.press("Escape");
+      assert.equal(await p.locator("#game").evaluate((e) => e.classList.contains("game-focus")), false);
       await p.locator(".rules summary").focus();
       await p.keyboard.press("Enter");
       assert.equal(await p.locator(".rules").getAttribute("open"), "");

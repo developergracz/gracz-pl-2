@@ -10,6 +10,11 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
 <main class="layout" id="game">
+<nav class="focus-nav" id="focus-nav" aria-label="Nawigacja trybu samej gry">
+<a class="focus-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+<strong>Gomoku <span>Online</span></strong>
+<button type="button" id="focus-exit" class="focus-exit" aria-label="Wróć do pełnego panelu Gomoku">↩ <span>Powrót do panelu</span></button>
+</nav>
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
 <div class="gomoku-heading" aria-label="Gomoku Online">
@@ -107,7 +112,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <a class="premium-mini-link" href="https://gracz.pl/gry/gomoku/" title="Zasady gry w Gomoku" aria-label="Zasady gry w Gomoku" data-tooltip="Zasady gry w Gomoku"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5c-2-1.4-5-1.8-9-1.8V4.2c3.9 0 7.3.5 9 2.1 1.7-1.6 5.1-2.1 9-2.1v14.5c-4 0-7 .4-9 1.8Z"/><path d="M12 6.3v14.2M5.2 7.5c1.5 0 3.2.2 4.5.7M14.4 8.2c1.3-.5 3-.7 4.4-.7"/></svg></a>
 <a class="premium-mini-link" href="https://gracz.pl/#spolecznosc" title="Społeczność graczy" aria-label="Społeczność graczy" data-tooltip="Społeczność graczy"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.1" r="3"/><path d="M6 20v-2.3c0-3 2.5-5.1 6-5.1s6 2.1 6 5.1V20ZM4.8 9.9a2.2 2.2 0 1 1 .9-4.3M3.8 15c-1.5.6-2.3 1.9-2.3 3.7V20h3.1M19.2 9.9a2.2 2.2 0 1 0-.9-4.3M20.2 15c1.5.6 2.3 1.9 2.3 3.7V20h-3.1"/></svg></a>
 <a class="premium-mini-link" href="https://gracz.pl/#aktualnosci" title="Aktualności gracz.pl" aria-label="Aktualności gracz.pl" data-tooltip="Aktualności gracz.pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 10.5h10M7 14h4M13.5 14h3.5v3.5h-3.5ZM7 18h4"/></svg></a>
-<a class="premium-mini-link" href="/konto/panel/" title="Panel Gracza" aria-label="Panel Gracza" data-tooltip="Panel Gracza"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 4.6 4.2L12 3l4.4 7.2L21 6l-2 12H5L3 6ZM5.6 21h12.8"/><circle cx="12" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg></a></nav>
+<a class="premium-mini-link" href="/konto/panel/" title="Panel Gracza" aria-label="Panel Gracza" data-tooltip="Panel Gracza"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 4.6 4.2L12 3l4.4 7.2L21 6l-2 12H5L3 6ZM5.6 21h12.8"/><circle cx="12" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg></a><button type="button" class="premium-mini-link focus-launch" id="focus-game" title="Sama gra — pełne okno bez czatu" aria-label="Sama gra — pełne okno bez czatu" aria-pressed="false" data-tooltip="Sama gra"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4M21 16v4a1 1 0 0 1-1 1h-4"/><rect x="7.5" y="7.5" width="9" height="9" rx="1.2"/></svg><span class="sr-only">Sama gra</span></button></nav>
 <div class="state" id="game-state" role="status" aria-live="polite">Twój ruch — postaw czarny kamień.</div>
 <div class="arena">
 <div class="board-center"><div class="boardtop"><h2 id="session-heading">Trening z komputerem</h2><span id="room-tag" class="roomtag">TRENING</span></div>
@@ -1036,6 +1041,65 @@ select option{background:#102c34;color:#fff}
 /* R16: move the existing fine gold separator directly above message input. */
 .mini-chat .chat-form{border-top:1px solid #b785327d;padding-top:2px}
 .mini-chat .chat-compose{margin-top:5px}
+/* R19: dedicated, reversible board-only browser viewport layout; gameplay state is preserved. */
+.focus-nav{display:none}
+.focus-launch{font:inherit;padding:0;cursor:pointer}
+.layout.game-focus{display:flex;flex-direction:column;gap:0;align-items:stretch;
+ width:100%;max-width:none;min-width:0;height:100dvh;max-height:100dvh;min-height:0;
+ overflow:hidden;border-radius:0}
+.layout.game-focus>.sidebar{display:none!important}
+.layout.game-focus>.focus-nav{flex:0 0 clamp(42px,6dvh,53px);display:flex;align-items:center;
+ justify-content:space-between;gap:12px;min-width:0;padding:5px clamp(10px,2vw,28px);
+ border-bottom:1px solid #d8ab60;background:linear-gradient(100deg,#031c24,#064747 48%,#02191f);
+ box-shadow:inset 0 1px #fff1b029;color:#f8faf8;position:relative;z-index:9}
+.focus-nav .focus-brand{font:900 clamp(16px,1.8vw,22px)/1.1 "Segoe UI",sans-serif;
+ color:#fff;text-decoration:none;letter-spacing:-.5px;white-space:nowrap}
+.focus-nav .focus-brand span{color:#f34055}
+.focus-nav>strong{font:700 clamp(14px,1.6vw,20px)/1.2 Georgia,serif;color:#f6d78a;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.focus-nav>strong span{color:#f7fffa}
+.focus-nav .focus-exit{flex:none;display:inline-flex;align-items:center;justify-content:center;
+ gap:7px;min-height:32px;padding:5px 12px;border:1px solid #ffdf91;border-radius:9px;
+ color:#fff0bf;background:linear-gradient(#0a5956,#03242c);
+ box-shadow:inset 0 1px #c6fff132;white-space:nowrap;font:750 12px/1.2 "Segoe UI",sans-serif}
+.focus-nav .focus-exit:is(:hover,:focus-visible){background:#13716b;outline-color:#ffe39e}
+.layout.game-focus>.boardarea{display:grid;flex:1 1 auto;align-self:stretch;
+ grid-template-columns:minmax(0,1fr);
+ grid-template-rows:clamp(48px,8dvh,70px) clamp(28px,4.6dvh,42px) minmax(0,1fr) clamp(37px,6dvh,54px);
+ column-gap:0;row-gap:clamp(3px,.8dvh,9px);
+ min-width:0;min-height:0;width:100%;height:auto;
+ padding:clamp(5px,1dvh,12px) clamp(6px,1.5vw,20px);overflow:hidden}
+.game-focus .premium-quick-links,.game-focus .side-dock{display:none!important}
+.game-focus .players{grid-column:1;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr) clamp(36px,6vw,74px) minmax(0,1fr);
+ width:min(100%,940px);max-width:100%;justify-self:center;align-self:center;min-height:0;gap:clamp(4px,1vw,12px)}
+.game-focus .player{height:clamp(45px,7dvh,65px);min-height:0;max-width:100%;padding:4px clamp(4px,1vw,14px)}
+.game-focus .player .player-icon{display:none}
+.game-focus .state{grid-column:1;grid-row:2;width:min(100%,940px);
+ justify-self:center;align-self:stretch;min-height:0;padding:3px 8px;
+ font-size:clamp(10px,1.35vw,16px);line-height:1.2}
+.game-focus .arena{display:contents}
+.game-focus .board-center{grid-column:1;grid-row:3;display:grid;place-items:center;
+ min-height:0;min-width:0;width:100%;height:100%;align-self:stretch;justify-self:center}
+.game-focus .boardframe{box-sizing:border-box;display:block;flex:none;
+ width:auto;height:100%;max-height:100%;max-width:100%;
+ aspect-ratio:1;margin:0;min-height:0;
+ padding:clamp(5px,.75vw,12px)}
+.game-focus .board{width:100%;height:100%;aspect-ratio:1}
+.game-focus .bottom{grid-column:1;grid-row:4;width:min(100%,940px);justify-self:center;
+ align-self:center;min-height:0;height:auto;gap:clamp(3px,1vw,12px)}
+.game-focus .bottom .info-pill{padding:clamp(5px,1dvh,10px) clamp(6px,1vw,15px);
+ font-size:clamp(10px,1vw,14px)}
+.game-focus .bottom .help{font-size:clamp(9px,1vw,12px)}
+@media(max-width:600px){
+ .focus-nav>strong{font-size:13px}
+ .focus-nav .focus-exit{padding:4px 8px}
+ .game-focus .player{padding:2px 4px}
+ .game-focus .player strong{font-size:clamp(11px,3vw,15px)}
+ .game-focus .bottom .help{display:none}
+ .game-focus .players{gap:4px}
+}
+@media(max-width:380px){.focus-nav>strong{display:none}.focus-nav .focus-exit{font-size:11px}}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -2100,6 +2164,21 @@ $('restart').addEventListener('click',restart);
 $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
+// Board-only mode fills the browser viewport without requesting OS fullscreen.
+function setBoardFocusMode(enabled){
+ const game=$('game');
+ game.classList.toggle('game-focus',enabled);
+ $('focus-game').setAttribute('aria-pressed',String(enabled));
+ if(enabled)$('focus-exit').focus?.();
+ else $('focus-game').focus?.();
+}
+$('focus-game').addEventListener('click',()=>setBoardFocusMode(true));
+$('focus-exit').addEventListener('click',()=>setBoardFocusMode(false));
+$('game').addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&$('game').classList.contains('game-focus')){
+  event.preventDefault?.();setBoardFocusMode(false);
+ }
+});
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
 $('training-time').addEventListener('change',()=>{
  const unlimited=$('training-time').value==='0';
