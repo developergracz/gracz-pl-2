@@ -283,6 +283,12 @@ test('Gomoku browser console can play immediately against a computer and join a 
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('board').children.length,225);
  assert.equal(get('black-name').textContent,'GraczAlfa');
+ const longNickname='BardzoDlugiNickGracza1234567890';
+ match.players[1]=longNickname;context.__gomokuTest.render();
+ assert.equal(get('white-name').textContent,longNickname);
+ assert.equal(get('white-name').title,longNickname,'Ellipsized online names retain their full title');
+ match.players[1]='GraczBeta';context.__gomokuTest.render();
+ assert.equal(get('white-name').title,'GraczBeta','Title follows the current opponent');
  assert.equal(get('room-tag').textContent,'POKÓJ ONLINE');
  assert.equal(get('chat-input').disabled,false);
  get('board').children[44].listeners.click();
@@ -326,6 +332,18 @@ test('Gomoku browser console can play immediately against a computer and join a 
  // Both clocks end the game on time and prevent further moves.
  get('restart').listeners.click();
  assert.equal(get('clock-1').textContent,'07:00','New match resets each clock');
+ fakeTime+=600000;intervals[0]();
+ assert.equal(get('clock-1').textContent,'07:00','Ten idle minutes before the opening must cost no human time');
+ assert.equal(get('clock-2').textContent,'07:00','Computer clock also waits for the opening');
+ assert.equal(get('clock-1').classes.has('clock-running'),false);
+ assert.equal(get('clock-2').classes.has('clock-running'),false);
+ assert.equal(training.winner,0);
+ get('board').children[112].listeners.click();
+ assert.equal(get('clock-1').textContent,'07:00','First legal black move costs no time');
+ assert.equal(get('clock-2').classes.has('clock-running'),true);
+ queued.pop()();
+ assert.equal(get('clock-1').classes.has('clock-running'),true);
+ assert.equal(get('clock-2').classes.has('clock-running'),false);
  fakeTime+=420001;intervals[0]();
  assert.equal(training.winner,2);
  assert.equal(training.trainClock.timeoutLoser,1);
@@ -352,9 +370,23 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('training-time').value='3';get('training-time').listeners.change();
  assert.equal(get('clock-1').textContent,'03:00','Selecting a new limit starts a fresh timed match');
  assert.equal(get('clock-2').textContent,'03:00');
+ for(const minutes of ['1','2','3','5','7','10','15','30']){
+  get('training-time').value=minutes;get('training-time').listeners.change();
+  fakeTime+=120000;intervals[0]();
+  const label=minutes.padStart(2,'0')+':00';
+  assert.equal(get('clock-1').textContent,label,'Changing the time control resets to an idle clock');
+  assert.equal(get('clock-2').textContent,label);
+  assert.equal(get('clock-1').classes.has('clock-running'),false);
+  assert.equal(get('clock-2').classes.has('clock-running'),false);
+  assert.equal(training.winner,0);
+ }
+ get('training-time').value='3';get('training-time').listeners.change();
  // Fischer bonus is awarded after an accepted move to each player independently.
  get('training-increment').value='2';get('training-increment').listeners.change();
  assert.equal(training.trainClock.incrementMs,2000);
+ fakeTime+=240000;intervals[0]();
+ assert.equal(get('clock-1').textContent,'03:00','Changing the increment leaves both clocks idle');
+ assert.equal(get('clock-2').textContent,'03:00');
  get('board').children[112].listeners.click();
  assert.equal(get('clock-1').textContent,'03:02','Human receives +2 sec only after moving');
  assert.equal(get('clock-2').textContent,'03:00');
@@ -362,6 +394,14 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('clock-2').textContent,'03:02','CPU receives the same bonus after its legal move');
  get('undo-move').listeners.click();
  assert.equal(get('clock-1').textContent,'03:00','Undo cannot be used to farm clock bonuses');
+ get('restart').listeners.click();
+ get('board').children[112].listeners.click();
+ get('restart').listeners.click();
+ fakeTime+=600000;intervals[0]();queued.pop()();
+ assert.equal(training.moves,0,'Restart invalidates a pending AI move');
+ assert.equal(training.winner,0);
+ assert.equal(get('clock-1').textContent,'03:00','Restart during AI thinking returns to waiting for the opening');
+ assert.equal(get('clock-2').textContent,'03:00');
  // A completed training match gets a visible replay and counts exactly once.
  get('restart').listeners.click();
  get('board').children[112].listeners.click();

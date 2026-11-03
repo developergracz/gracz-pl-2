@@ -899,16 +899,32 @@ select option{background:#102c34;color:#fff}
 .room-creator .room-creator-hint{color:#a9d4cd;font-size:11px;line-height:1.5;margin:9px 0}
 .room-creator button{width:100%;min-height:40px}
 .room-creator #create-room-status{font-size:11px;line-height:1.4;min-height:0}
-.player .player-clock{flex:none;font:800 clamp(12px,1vw,16px)/1.1 "Segoe UI",sans-serif;
- font-variant-numeric:tabular-nums;letter-spacing:.3px;white-space:nowrap;color:#ffe5a6;
- padding:6px 8px;border:1px solid #e5ba6b;border-radius:8px;
+/* R11: player content fits the existing gold frame without changing board geometry. */
+.players{container:players / inline-size}
+.player{container:player-panel / inline-size;gap:clamp(3px,.6vw,9px);padding:6px 8px}
+.player>div{flex:1;min-width:0;line-height:1.2}
+.player strong{font-size:clamp(12px,7cqi,27px);line-height:1.15}
+.player small{font-size:clamp(8px,4cqi,12px);line-height:1.2;margin-top:3px;white-space:nowrap}
+.player .stone{flex:none;width:clamp(20px,10cqi,40px);height:clamp(20px,10cqi,40px)}
+.player .player-icon{flex:none;margin-left:0;font-size:24px;line-height:1}
+.player .player-clock{flex:none;font:800 clamp(10px,5cqi,16px)/1.1 "Segoe UI",sans-serif;
+ font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;color:#ffe5a6;
+ padding:5px 6px;border:1px solid #e5ba6b;border-radius:8px;
  background:linear-gradient(#063f40,#031e27);box-shadow:0 0 9px #d8a34f54}
 .player .player-clock[hidden]{display:none!important}
 .player .player-clock.clock-running{border-color:#a5f2dc;color:#c3fff0;box-shadow:0 0 11px #2be8cc6b}
 .player .player-clock.clock-warning{border-color:#ffad67;color:#ffb376;background:#462018}
 .player .player-clock.clock-expired{border-color:#ff7878;color:#ff9797}
-@media(max-width:1120px){.player .player-clock{padding:4px 5px;font-size:11px}}
-@media(max-width:700px){.player .player-clock{font-size:10px;padding:3px 4px}}
+@container player-panel (max-width:300px){.player .player-icon{display:none}}
+@container players (max-width:450px){
+ .player{display:grid;grid-template-columns:18px minmax(0,1fr) auto;
+  grid-template-rows:auto auto;align-content:center;gap:2px 3px;padding:3px}
+ .player>div{display:contents}
+ .player .stone{grid-column:1;grid-row:1;width:18px;height:18px}
+ .player strong{grid-column:2;grid-row:1;align-self:center;font-size:clamp(11px,8cqi,14px)}
+ .player small{grid-column:1 / 3;grid-row:2;margin:0;font-size:8px;line-height:1.15;white-space:normal}
+ .player .player-clock{grid-column:3;grid-row:1 / 3;font-size:10px;padding:4px 3px}
+}
 
 .replay-shortcut{margin:0 0 6px;text-align:center}.replay-shortcut button{width:100%;min-height:29px;border:1px solid #aa8a51;border-radius:8px;background:linear-gradient(135deg,#0c5558,#052635);color:#fbe4a1;font:700 11px "Segoe UI",sans-serif}.replay-shortcut button:disabled{opacity:.5}
 .training-records .records-note{font-size:11px;color:#b7d2ce;margin:5px 0 10px}.records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.records-grid>div{background:linear-gradient(160deg,#104349,#031e2b);border:1px solid #b38c4b;border-radius:11px;padding:8px 4px;text-align:center}.records-grid strong{display:block;color:#ffe29d;font-size:clamp(16px,1.6vw,22px);font-variant-numeric:tabular-nums}.records-grid small{display:block;color:#c6e3de;font-size:10px}.training-records .records-total{color:#dcebe7;font-size:11px}
@@ -1094,13 +1110,13 @@ function formatGomokuClock(ms){
 }
 // Training is local and non-ranking; online clocks remain PostgreSQL-authoritative.
 const trainingNow=()=>window.performance?.now?.()??Date.now();
-function createTrainingClock(running){
+function createTrainingClock(){
  const minutes=Number($('training-time').value);
  if(![1,2,3,5,7,10,15,30].includes(minutes))return null;
  const ms=minutes*60000;
  const selected=Number($('training-increment').value);
  const incrementMs=[0,2,3,5,10].includes(selected)?selected*1000:0;
- return {remaining:[ms,ms],incrementMs,turn:1,since:running?trainingNow():null,timeoutLoser:0};
+ return {remaining:[ms,ms],incrementMs,turn:1,since:null,timeoutLoser:0};
 }
 function advanceTrainingClock(){
  const clock=state.mode==='training'?state.trainClock:null;
@@ -1218,6 +1234,8 @@ function render(){
   $('black-name').textContent='Ty';$('white-name').textContent='Komputer';
   $('session-heading').textContent='Trening z komputerem';$('room-tag').textContent='TRENING';
  }
+ $('black-name').title=$('black-name').textContent;
+ $('white-name').title=$('white-name').textContent;
  recordTrainingFinish();
  renderTrainingRecord();
  $('replay-game').disabled=!replaySource();
@@ -1226,7 +1244,7 @@ function render(){
 function restart(){
  ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
- state.showcase=false;state.trainClock=createTrainingClock(true);
+ state.showcase=false;state.trainClock=createTrainingClock();
  state.localChat=[];state.chatSignature='';
  showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
  $('analysis-note').hidden=true;render();
@@ -2021,7 +2039,7 @@ function installReferenceShowcase(){
   state.last=at;
  }
  state.moves=sequence.length;state.winner=0;state.showcase=true;
- state.trainClock=createTrainingClock(false);
+ state.trainClock=createTrainingClock();
  state.localChat=[
   {id:'example-1',player:1,body:'Powodzenia! 🙂',createdAt:'2026-11-01T20:34:00.000Z'},
   {id:'example-2',player:2,body:'Dzięki, wzajemnie! 🤝',createdAt:'2026-11-01T20:35:00.000Z'}
