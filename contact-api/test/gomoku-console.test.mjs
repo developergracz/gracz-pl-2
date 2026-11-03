@@ -25,6 +25,14 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','focus-game','focus-start','focus-exit','focus-nav','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
+ for(const [id,icon] of [['training-mode','mode-icon-training'],['online-mode','mode-icon-friends']]){
+  const button=html.match(new RegExp('id="'+id+'"[^>]*>([\\s\\S]*?)<\\/button>'))?.[1]||'';
+  assert.match(button,new RegExp('class="mode-icon mode-icon-premium '+icon+'" aria-hidden="true"><svg viewBox="0 0 32 32"'),
+   id+' has a premium self-contained decorative SVG thumbnail');
+  assert.doesNotMatch(button,/🎓|👥/,'Emoji are not used for either mode thumbnail');
+ }
+ assert.match(html,/id="gomoku-train-gold"/);
+ assert.match(html,/id="gomoku-friends-duo"/);
  assert.match(html,/id="ai-level"/);
  assert.match(html,/id="training-time"/);
  assert.match(html,/id="training-increment"/);
@@ -80,6 +88,11 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/R21: integrated Full Max Premium strategy and two-player vector miniatures/);
+ assert.match(css,/\.mode-icon\.mode-icon-premium\{display:grid/);
+ assert.match(css,/\.mode-icon\.mode-icon-friends\{border-color:#9ee3d9/);
+ assert.match(css,/@container \(max-width:280px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.mode-icon\.mode-icon-premium/);
  assert.match(html,/id="focus-game"[^>]*aria-pressed="false"/);
  assert.match(html,/id="focus-exit"[^>]*aria-label="Wróć do pełnego panelu Gomoku"/);
  assert.match(html,/id="focus-start"[^>]*aria-label="Rozpocznij grę"/);
