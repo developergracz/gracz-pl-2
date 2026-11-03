@@ -12,8 +12,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <main class="layout" id="game">
 <aside class="sidebar" aria-label="Panel gry">
 <header class="side-header">
-<div class="branding"><a class="brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a><details class="premium-info"><summary class="badge-premium">PREMIUM</summary><p>Full Max Premium — trening, prywatne partie, zegary i studio powtórek. Bez płatności w konsoli.</p></details></div>
-<h1 class="sr-only">Gomoku Online</h1>
+<div class="gomoku-heading" aria-label="Gomoku Online">
+<h1 class="gomoku-heading-title"><span class="gomoku-heading-gold">Gomoku</span><span class="gomoku-heading-white">Online</span></h1>
+<div class="gomoku-heading-ornament" aria-hidden="true"><span class="gomoku-heading-line"></span><svg class="gomoku-heading-crown" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 7.2 7.8 11 12 3.5 16.2 11 21 7.2 19.2 17.6H4.8L3 7.2Z" fill="currentColor" stroke="#FBE19C" stroke-width=".8" stroke-linejoin="round"/><path d="M5.3 20h13.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="3" cy="6.3" r="1.4" fill="#FFE4A5"/><circle cx="12" cy="2.8" r="1.4" fill="#FFE4A5"/><circle cx="21" cy="6.3" r="1.4" fill="#FFE4A5"/></svg><span class="gomoku-heading-line"></span></div>
+</div>
 </header>
 <div class="mode" role="group" aria-label="Tryb gry">
 <button type="button" class="mode-choice active" id="training-mode" aria-pressed="true"><span class="mode-icon" aria-hidden="true">🎓</span><span><strong>Trening</strong><small>Graj od razu z komputerem</small></span><span class="mode-arrow" aria-hidden="true">›</span></button>
@@ -933,16 +935,18 @@ select option{background:#102c34;color:#fff}
  border-right:1px solid #426569;box-shadow:inset -6px 0 18px #0004;position:relative;z-index:1}
 .sidebar>*{flex:none;min-width:0}
 .side-header{margin:0;position:relative}
-.branding{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px}
-.branding .brand{font:950 clamp(24px,2vw,30px)/1 "Segoe UI",sans-serif;letter-spacing:-1.35px;color:#fff;text-decoration:none;white-space:nowrap}
-.brand span{color:#f34055}
-.premium-info{position:relative}
-.badge-premium{list-style:none;cursor:pointer;font:850 11px/1 "Segoe UI",sans-serif;letter-spacing:.7px;
- padding:11px 12px;border:1px solid #ffe5a1;border-radius:10px;color:#312408;white-space:nowrap;
- background:linear-gradient(145deg,#fff0bb,#edc365 48%,#c28a2f);box-shadow:inset 0 1px #fff8,0 0 12px #d3aa3c35}
-.badge-premium::-webkit-details-marker{display:none}
-.premium-info p{position:absolute;right:0;top:100%;width:210px;padding:14px;background:#082d38;
- border:1px solid #c9a45b;border-radius:12px;z-index:10;font-size:13px;line-height:1.5;box-shadow:0 12px 30px #000a}
+.gomoku-heading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:2px 0 4px;
+ background:radial-gradient(ellipse 80% 90% at 48% 10%,#a7822121,transparent 72%)}
+.gomoku-heading-title{display:flex;align-items:baseline;justify-content:center;gap:.22em;white-space:nowrap;min-width:0;width:100%;margin:0;
+ font:700 clamp(24px,2.35vw,36px)/1.08 Georgia,"Times New Roman",serif;letter-spacing:-.055em}
+.gomoku-heading-gold{color:#ffe49b;text-shadow:0 0 11px #caa24c66,0 1px 0 #fff4ce7a}
+.gomoku-heading-white{color:#fffdf8;text-shadow:0 2px 7px #0009}
+.gomoku-heading-ornament{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);align-items:center;
+ gap:10px;width:min(94%,295px);height:24px;margin-top:3px}
+.gomoku-heading-line{height:1px;background:linear-gradient(90deg,transparent,#f2c96f 70%,#ffdf8c);box-shadow:0 0 4px #d1a34966}
+.gomoku-heading-line:last-child{transform:rotate(180deg)}
+.gomoku-heading-crown{display:block;justify-self:center;color:#e6b54a;filter:drop-shadow(0 0 5px #e8b55766)}
+@media(max-width:320px){.gomoku-heading-title{font-size:22px}}
 .mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
 .mode-choice{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;padding:8px 5px;
  border:1px solid #47777b;border-radius:11px;color:#e2f6f4;background:linear-gradient(145deg,#0d424c,#06252e);text-align:center}
