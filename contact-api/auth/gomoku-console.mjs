@@ -27,12 +27,14 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p id="ai-hint" class="hint">Ekspert szuka wymuszonych wygranych, blokuje zagrożenia i rzadko popełnia błędy. Najtrudniejszy poziom.</p>
 <label for="training-time" class="training-timer-label">Czas na partię dla każdego gracza</label>
 <select id="training-time" aria-label="Czas gry z komputerem">
-<option value="0">Bez limitu czasu</option><option value="3">3 minuty</option>
+<option value="0">Bez limitu czasu</option><option value="1">1 minuta</option><option value="2">2 minuty</option><option value="3">3 minuty</option>
 <option value="5">5 minut</option><option value="7" selected>7 minut</option>
 <option value="10">10 minut</option><option value="15">15 minut</option>
 <option value="30">30 minut</option>
 </select>
-<p class="training-clock-help">Każdy ma własny zegar. Czas mija tylko podczas jego tury. Zmiana limitu rozpoczyna nową partię.</p>
+<label for="training-increment" class="training-timer-label">Bonus czasu po każdym ruchu</label>
+<select id="training-increment" aria-label="Dodatkowe sekundy po ruchu w treningu"><option value="0" selected>Bez bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
+<p class="training-clock-help">Zegary są niezależne. Czas mija tylko podczas własnej tury, a bonus dolicza się po prawidłowym ruchu. Zmiana ustawień rozpoczyna nową partię.</p>
 <button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -43,11 +45,13 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
  <label for="create-room-time">Czas dla każdego gracza</label>
  <select id="create-room-time">
   <option value="0">Bez limitu czasu</option>
-  <option value="3">3 minuty</option><option value="5">5 minut</option>
+  <option value="1">1 minuta</option><option value="2">2 minuty</option><option value="3">3 minuty</option><option value="5">5 minut</option>
   <option value="7" selected>7 minut</option><option value="10">10 minut</option>
   <option value="15">15 minut</option><option value="30">30 minut</option>
  </select>
- <p class="room-creator-hint">Każdy gracz ma własny zegar. Czas biegnie tylko podczas jego tury i zaczyna się, gdy obie osoby otworzą pokój.</p>
+ <label for="create-room-increment">Dodatkowy czas po ruchu</label>
+ <select id="create-room-increment" aria-label="Bonus czasu na każdy legalny ruch"><option value="0" selected>Brak bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
+ <p class="room-creator-hint">Każdy ma własny zegar. Po każdym zaakceptowanym ruchu otrzymuje wybrany bonus. Zegary startują dopiero po wejściu obojga graczy.</p>
  <button type="button" class="primary" id="create-room">Utwórz pokój i zaproś</button>
  <p id="create-room-status" role="status" class="muted"></p>
 </div>
@@ -994,9 +998,11 @@ function formatGomokuClock(ms){
 const trainingNow=()=>window.performance?.now?.()??Date.now();
 function createTrainingClock(running){
  const minutes=Number($('training-time').value);
- if(![3,5,7,10,15,30].includes(minutes))return null;
+ if(![1,2,3,5,7,10,15,30].includes(minutes))return null;
  const ms=minutes*60000;
- return {remaining:[ms,ms],turn:1,since:running?trainingNow():null,timeoutLoser:0};
+ const selected=Number($('training-increment').value);
+ const incrementMs=[0,2,3,5,10].includes(selected)?selected*1000:0;
+ return {remaining:[ms,ms],incrementMs,turn:1,since:running?trainingNow():null,timeoutLoser:0};
 }
 function advanceTrainingClock(){
  const clock=state.mode==='training'?state.trainClock:null;
@@ -1026,6 +1032,7 @@ function renderGomokuClocks(){
    Date.now()+state.serverOffsetMs-Date.parse(clock.since)):0;
   const remaining=Math.max(0,clock.remaining[player-1]-elapsed);
   el.textContent=formatGomokuClock(remaining);
+  el.title=clock.incrementMs?('Po ruchu: +'+(clock.incrementMs/1000)+' s'):'Bez bonusu czasu';
   el.classList.toggle('clock-running',active);
   el.classList.toggle('clock-warning',active&&remaining<=30000);
   el.classList.toggle('clock-expired',Boolean(clock.timeoutLoser===player&&
@@ -1040,15 +1047,17 @@ async function createTimedRoom(){
  if(state.busy)return;
  const nickname=$('create-room-friend').value.trim();
  const minutes=Number($('create-room-time').value);
- if(!nickname||![0,3,5,7,10,15,30].includes(minutes)){
+ const incrementSeconds=Number($('create-room-increment').value);
+ if(!nickname||![0,1,2,3,5,7,10,15,30].includes(minutes)||
+    ![0,2,3,5,10].includes(incrementSeconds)||(minutes===0&&incrementSeconds!==0)){
   $('create-room-status').textContent='Wpisz nick znajomego i wybierz dozwolony czas.';return;
  }
  state.busy=true;$('create-room').disabled=true;
  try{
   const result=await api('social/challenges',{method:'POST',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({action:'send',game:'gomoku',nickname,timeLimitMinutes:minutes})});
-  $('create-room-status').textContent='Zaproszenie wysłane. Pokój '+(minutes?minutes+' min na gracza':'bez limitu')+
+   body:JSON.stringify({action:'send',game:'gomoku',nickname,timeLimitMinutes:minutes,incrementSeconds})});
+  $('create-room-status').textContent='Zaproszenie wysłane. Pokój '+(minutes?minutes+' min'+(incrementSeconds?' + '+incrementSeconds+' s/ruch':'')+' na gracza':'bez limitu')+
    ' będzie dostępny po akceptacji przez '+nickname+'.';
   await rooms();
  }catch(e){$('create-room-status').textContent=e.message;}
@@ -1276,6 +1285,8 @@ function trainMove(to){
  else if(state.moves===count)state.winner=3;
  else state.thinking=true;
  if(state.thinking&&state.trainClock){
+  state.trainClock.remaining[0]+=state.trainClock.incrementMs;
+  state.trainHistory[state.trainHistory.length-1].incrementApplied=true;
   state.trainClock.turn=2;state.trainClock.since=trainingNow();
  }
  render();
@@ -1305,6 +1316,7 @@ function trainMove(to){
   else if(state.moves===count)state.winner=3;
   state.thinking=false;
   if(!state.winner&&state.trainClock){
+   state.trainClock.remaining[1]+=state.trainClock.incrementMs;
    state.trainClock.turn=1;state.trainClock.since=trainingNow();
   }
   render();
@@ -1339,7 +1351,7 @@ async function rooms(){
   blank.textContent=available.length?'Wybierz rozgrywkę':'Brak przyjętych zaproszeń do Gomoku';
   select.append(blank);
   available.forEach(c=>{
-   const option=document.createElement('option');option.value=c.id;option.textContent='Gomoku z '+c.opponent+' · '+(c.timeLimitMinutes?c.timeLimitMinutes+' min':'bez limitu');
+   const option=document.createElement('option');option.value=c.id;option.textContent='Gomoku z '+c.opponent+' · '+(c.timeLimitMinutes?c.timeLimitMinutes+' min'+(c.incrementSeconds?' + '+c.incrementSeconds+' s/ruch':''):'bez limitu');
    select.append(option);
   });
   const wanted=new URLSearchParams(location.search).get('match');
@@ -1625,6 +1637,9 @@ function undoTrainingMove(){
  ++state.epoch;state.thinking=false;
  const removed=state.trainHistory[index];
  if(state.board[removed.to]!==1)return;
+ // A revoked move must not mint free Fischer time via repeated undo.
+ if(state.trainClock&&removed.incrementApplied)
+  state.trainClock.remaining[0]=Math.max(0,state.trainClock.remaining[0]-state.trainClock.incrementMs);
  state.board[removed.to]=0;
  state.trainHistory.splice(index,1);
  state.trainHistory=state.trainHistory.map((item,i)=>({...item,number:i+1}));
@@ -1860,7 +1875,18 @@ $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
-$('training-time').addEventListener('change',restart);
+$('training-time').addEventListener('change',()=>{
+ const unlimited=$('training-time').value==='0';
+ $('training-increment').disabled=unlimited;
+ if(unlimited)$('training-increment').value='0';
+ restart();
+});
+$('training-increment').addEventListener('change',restart);
+$('create-room-time').addEventListener('change',()=>{
+ const unlimited=$('create-room-time').value==='0';
+ $('create-room-increment').disabled=unlimited;
+ if(unlimited)$('create-room-increment').value='0';
+});
 $('ai-level').addEventListener('change',()=>{
  const descriptions={
   normal:'Normalny: podstawowe szukanie pięciu w rzędzie, blokowanie i ocena bliskich pól.',
