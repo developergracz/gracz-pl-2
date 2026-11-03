@@ -904,14 +904,17 @@ select option{background:#102c34;color:#fff}
 .player small{font-size:clamp(8px,4cqi,12px);line-height:1.2;margin-top:3px;white-space:nowrap}
 .player .stone{flex:none;width:clamp(20px,10cqi,40px);height:clamp(20px,10cqi,40px)}
 .player .player-icon{flex:none;margin-left:0;font-size:24px;line-height:1}
-.player .player-clock{flex:none;font:800 clamp(10px,5cqi,16px)/1.1 "Segoe UI",sans-serif;
+.player .player-clock{flex:none;font:800 clamp(11.2px,5.6cqi,18px)/1.1 "Segoe UI",sans-serif;
  font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;color:#ffe5a6;
- padding:5px 6px;border:1px solid #e5ba6b;border-radius:8px;
+ padding:6px 7px;border:1px solid #e5ba6b;border-radius:8px;
  background:linear-gradient(#063f40,#031e27);box-shadow:0 0 9px #d8a34f54}
 .player .player-clock[hidden]{display:none!important}
 .player .player-clock.clock-running{border-color:#a5f2dc;color:#c3fff0;box-shadow:0 0 11px #2be8cc6b}
 .player .player-clock.clock-warning{border-color:#ffad67;color:#ffb376;background:#462018}
-.player .player-clock.clock-expired{border-color:#ff7878;color:#ff9797}
+.player .player-clock.clock-critical{color:#ff3838;border-color:#ff6868;animation:clock-critical-pulse .5s ease-in-out infinite}
+@keyframes clock-critical-pulse{0%,100%{text-shadow:0 0 2px #ff303055;box-shadow:0 0 4px #ff303033}50%{text-shadow:0 0 6px #ff3030aa;box-shadow:0 0 9px #ff303066}}
+.player .player-clock.clock-expired{border-color:#ff7878;color:#ff3838;animation:none}
+@media(prefers-reduced-motion:reduce){.player .player-clock.clock-critical{animation:none;text-shadow:none}}
 @container player-panel (max-width:300px){.player .player-icon{display:none}}
 @container players (max-width:450px){
  .player{display:grid;grid-template-columns:18px minmax(0,1fr) auto;
@@ -920,7 +923,7 @@ select option{background:#102c34;color:#fff}
  .player .stone{grid-column:1;grid-row:1;width:18px;height:18px}
  .player strong{grid-column:2;grid-row:1;align-self:center;font-size:clamp(11px,8cqi,14px)}
  .player small{grid-column:1 / 3;grid-row:2;margin:0;font-size:8px;line-height:1.15;white-space:normal}
- .player .player-clock{grid-column:3;grid-row:1 / 3;font-size:10px;padding:4px 3px}
+ .player .player-clock{grid-column:3;grid-row:1 / 3;font-size:11.2px;padding:4.5px 3.5px}
 }
 
 .replay-shortcut{margin:0 0 6px;text-align:center}.replay-shortcut button{width:100%;min-height:29px;border:1px solid #aa8a51;border-radius:8px;background:linear-gradient(135deg,#0c5558,#052635);color:#fbe4a1;font:700 11px "Segoe UI",sans-serif}.replay-shortcut button:disabled{opacity:.5}
@@ -1236,7 +1239,7 @@ function renderGomokuClocks(){
  const clock=training?state.trainClock:m?.state?.clock;
  for(let player=1;player<=2;player++){
   const el=$('clock-'+player);
-  if(!clock){el.hidden=true;continue;}
+  if(!clock){el.hidden=true;el.classList.toggle('clock-critical',false);continue;}
   el.hidden=false;
   const active=training?
    !state.showcase&&!state.winner&&clock.since!==null&&clock.turn===player:
@@ -1247,7 +1250,8 @@ function renderGomokuClocks(){
   el.textContent=formatGomokuClock(remaining);
   el.title=clock.incrementMs?('Po ruchu: +'+(clock.incrementMs/1000)+' s'):'Bez bonusu czasu';
   el.classList.toggle('clock-running',active);
-  el.classList.toggle('clock-warning',active&&remaining<=30000);
+  el.classList.toggle('clock-warning',active&&remaining>=10000&&remaining<=30000);
+  el.classList.toggle('clock-critical',active&&remaining>0&&remaining<10000);
   el.classList.toggle('clock-expired',Boolean(clock.timeoutLoser===player&&
    (training?state.winner:m.state.winner)));
  }
