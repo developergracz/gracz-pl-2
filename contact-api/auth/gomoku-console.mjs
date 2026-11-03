@@ -125,7 +125,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <section class="match-panel">
 <div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
-<button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.5h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4.8 3v-3.1A2 2 0 0 1 3.5 15.5v-8a2 2 0 0 1 2-2Z"/><path d="M8 10.1h8M8 13.4h5"/></svg></span><span class="dock-tab-text">Czat</span><span class="chat-led" aria-hidden="true"></span></button>
+<button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.5h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4.8 3v-3.1A2 2 0 0 1 3.5 15.5v-8a2 2 0 0 1 2-2Z"/><path d="M8 10.1h8M8 13.4h5"/></svg></span><span class="dock-tab-text">Czat</span><span class="chat-led chat-led-premium" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chat-crystal-core" cx="33%" cy="24%" r="78%"><stop offset="0%" stop-color="#ddfff4"/><stop offset="37%" stop-color="#66f8d5"/><stop offset="72%" stop-color="#16ba9e"/><stop offset="100%" stop-color="#076367"/></radialGradient><linearGradient id="chat-crystal-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff4c4"/><stop offset="48%" stop-color="#f3bd58"/><stop offset="100%" stop-color="#ab741f"/></linearGradient></defs><circle cx="12" cy="12" r="10.1" fill="#032e34" stroke="url(#chat-crystal-rim)" stroke-width="1.7"/><path d="M12 3.8 19 9.3 16.6 17.4 12 20.6 7.4 17.4 5 9.3Z" fill="url(#chat-crystal-core)" stroke="#bfffe8" stroke-width=".7" stroke-linejoin="round"/><path d="M5 9.3h14M12 3.8l3 5.5-3 11.3-3-11.3Z" fill="none" stroke="#e4fff4" stroke-opacity=".6" stroke-width=".72"/><path d="m17.4 3.5.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z" fill="#ffdf8d"/></svg></span></button>
 <button type="button" class="dock-tab" id="history-tab" role="tab" aria-selected="false" aria-controls="moves-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h10M9 12h10M9 18h10"/><circle cx="5" cy="6" r="1.2"/><circle cx="5" cy="12" r="1.2"/><circle cx="5" cy="18" r="1.2"/></svg></span><span class="dock-tab-text">Ruchy</span></button></div>
 <div class="replay-shortcut"><button type="button" id="replay-game" aria-label="Powtórka zakończonej partii" title="Odtwórz zakończoną partię">⏮ &nbsp; Powtórka zakończonej partii</button></div>
 <div id="moves-panel" class="dock-content" role="tabpanel" aria-labelledby="history-tab" hidden>
@@ -1065,8 +1065,18 @@ select option{background:#102c34;color:#fff}
 .dock-tabs .dock-tab .dock-tab-icon svg{display:block;width:clamp(15px,1.35vw,19px);
  height:clamp(15px,1.35vw,19px);fill:none;flex:none}
 .dock-tabs .dock-tab .dock-tab-text{position:relative;z-index:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.dock-tabs .dock-tab .chat-led{position:relative;z-index:1;flex:0 0 7px;width:7px;height:7px;
- border-radius:50%;background:#36eea2;box-shadow:0 0 0 2px #137a5850,0 0 7px #23e699a6}
+/* R23: faceted turquoise-and-gold Premium miniature replaces the plain green dot. */
+.dock-tabs .dock-tab .chat-led.chat-led-premium{position:relative;z-index:1;display:grid;place-items:center;
+ flex:0 0 clamp(16px,1.4vw,19px);width:clamp(16px,1.4vw,19px);height:clamp(16px,1.4vw,19px);
+ min-width:0;border-radius:50%;background:none;box-shadow:none;
+ filter:drop-shadow(0 0 4px #26dabb9c);transition:filter .18s ease,transform .18s ease}
+.dock-tabs .dock-tab .chat-led-premium svg{display:block;width:100%;height:100%}
+.dock-tabs .dock-tab.active .chat-led-premium{filter:drop-shadow(0 0 5px #10cda69e) drop-shadow(0 0 4px #e8b85483)}
+.dock-tabs .dock-tab:is(:hover,:focus-visible) .chat-led-premium{filter:drop-shadow(0 0 7px #5affd7d9);
+ transform:translateY(-1px)}
+@media(max-width:420px){.dock-tabs .dock-tab .chat-led.chat-led-premium{flex-basis:16px;width:16px;height:16px}}
+@media(prefers-reduced-motion:reduce){.dock-tabs .dock-tab .chat-led-premium{transition:none}
+ .dock-tabs .dock-tab:is(:hover,:focus-visible) .chat-led-premium{transform:none}}
 .dock-tabs .dock-tab.active{border:2px solid #fff3c5;
  background:linear-gradient(180deg,#fff2bd 0%,#ffd77d 32%,#eeb84f 63%,#bd7e20 100%);color:#132529;
  box-shadow:inset 0 2px 0 #fffbe0,0 0 0 1px #b8893e,0 0 13px #f9bd57b1,0 5px 12px #0008}
