@@ -342,6 +342,33 @@ test('untimed Gomoku keeps original turn rules without clocks',async()=>{
 });
 
 
+test('online consent undo cannot be used to farm Fischer bonuses',async()=>{
+ const f=fixture({timeLimitMinutes:3,incrementSeconds:2});
+ const get=token=>f.call(token,'GET','/auth/match?id='+challenge);
+ await get(tokenA);
+ const joined=await get(tokenB);
+ let version=joined.body.match.version;
+ const play=async(token,to)=>{
+  const r=await f.call(token,'POST','/auth/match',{id:challenge,version,move:{to}});
+  assert.equal(r.status,200);
+  version=r.body.match.version;return r;
+ };
+ await play(tokenA,0);await play(tokenB,15);
+ const requested=await f.call(tokenA,'POST','/auth/match/undo',{
+  id:challenge,version,action:'request'});
+ assert.equal(requested.status,200);
+ version=requested.body.match.version;
+ const previous=requested.body.match.state.clock.remaining[0];
+ const pending=requested.body.match.undoRequest;
+ const accepted=await f.call(tokenB,'POST','/auth/match/undo',{
+  id:challenge,version,action:'accept',requestId:pending.id});
+ assert.equal(accepted.status,200);
+ assert.equal(accepted.body.match.state.clock.remaining[0],previous-2000,
+  'retracted stone loses its Fischer credit');
+ assert.equal(accepted.body.match.state.clock.incrementMs,2000);
+ assert.equal(accepted.body.match.state.turn,1);
+});
+
 test('pending consent pauses both clocks, but its expiry reliably resumes the active timer',async()=>{
  const f=fixture({timeLimitMinutes:7}),get=token=>f.call(token,'GET','/auth/match?id='+challenge);
  await get(tokenA);await get(tokenB);
