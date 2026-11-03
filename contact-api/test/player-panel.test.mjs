@@ -355,7 +355,7 @@ test('social message and game challenge APIs enforce session, origin and actual 
  let friends=true,blocked=false;
  const now='2026-11-01T19:00:00Z';
  const db={enabled:true,async query(sql,params=[]){
-  if(sql.startsWith('CREATE '))return {rows:[],rowCount:0};
+  if(sql.startsWith('CREATE ')||sql.startsWith('ALTER TABLE '))return {rows:[],rowCount:0};
   if(sql.includes('SELECT a.id FROM gracz_public_identity.sessions s')){
    const d=Buffer.from(params[0]||[]).toString('hex');
    const id=d===digest(tkA)?idA:d===digest(tkB)?idB:null;
@@ -387,8 +387,8 @@ test('social message and game challenge APIs enforce session, origin and actual 
   if(sql.includes('INSERT INTO gracz_public_identity.game_challenges')){
    if(!friends||blocked||challenges.some(c=>c.game===params[3]&&c.status==='pending'))
     return {rows:[],rowCount:0};
-   const [id,sender_id,recipient_id,game]=params;
-   challenges.push({id,sender_id,recipient_id,game,status:'pending',
+   const [id,sender_id,recipient_id,game,time_limit_minutes]=params;
+   challenges.push({id,sender_id,recipient_id,game,time_limit_minutes,status:'pending',
     created_at:now,expires_at:'2026-11-08T19:00:00Z'});
    return {rows:[{id}],rowCount:1};
   }
@@ -419,14 +419,18 @@ test('social message and game challenge APIs enforce session, origin and actual 
  assert.doesNotMatch(JSON.stringify(reply.data),/sender_id|recipient_id|token_digest/);
  const invalidGame=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'poker'});
  assert.equal(invalidGame.status,400);
- const sent=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku'});
+ const badTime=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku',timeLimitMinutes:999});
+ assert.equal(badTime.status,400);
+ const sent=await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku',timeLimitMinutes:7});
  assert.equal(sent.status,200);
+ assert.equal(sent.data.timeLimitMinutes,7);
  assert.equal((await call(tkA,'POST','/auth/social/challenges',{action:'send',nickname:'GraczBeta',game:'gomoku'})).status,409);
  assert.equal((await call(tkA,'POST','/auth/social/challenges',{action:'accept',id:sent.data.id})).status,409);
  assert.equal((await call(tkB,'POST','/auth/social/challenges',{action:'accept',id:sent.data.id})).status,200);
  const accepted=await call(tkA,'GET','/auth/social/challenges');
  assert.equal(accepted.data.challenges[0].status,'accepted');
  assert.equal(accepted.data.challenges[0].game,'gomoku');
+ assert.equal(accepted.data.challenges[0].timeLimitMinutes,7);
  blocked=true;
  assert.equal((await call(tkA,'POST','/auth/social/messages',{nickname:'GraczBeta',message:'Stop'})).status,403);
  assert.equal((await call(tkB,'GET','/auth/social/messages?nick=TestowyGracz')).status,403);
