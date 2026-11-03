@@ -921,6 +921,94 @@ const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,serverOffsetMs:0,
  trainHistory:[],trainClock:null,dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
+
+const trainingRecordKey='gracz.gomoku.training-records.v1';
+function loadTrainingRecord(){
+ const record={wins:0,draws:0,losses:0};
+ try{
+  const saved=JSON.parse(window.localStorage?.getItem(trainingRecordKey)||'null');
+  if(saved&&typeof saved==='object'){
+   for(const key of Object.keys(record))
+    if(Number.isSafeInteger(saved[key])&&saved[key]>=0&&saved[key]<=1000000)record[key]=saved[key];
+  }
+ }catch{}
+ return record;
+}
+state.trainingRecord=loadTrainingRecord();
+state.recordedEpoch=null;
+state.replayEntries=[];
+state.replayIndex=0;
+function recordTrainingFinish(){
+ if(state.mode!=='training'||state.showcase||![1,2,3].includes(state.winner)||
+    state.recordedEpoch===state.epoch)return;
+ state.recordedEpoch=state.epoch;
+ const key=state.winner===1?'wins':state.winner===2?'losses':'draws';
+ state.trainingRecord[key]++;
+ try{window.localStorage?.setItem(trainingRecordKey,JSON.stringify(state.trainingRecord));}catch{}
+}
+function renderTrainingRecord(){
+ const r=state.trainingRecord,total=r.wins+r.draws+r.losses;
+ $('record-wins').textContent=String(r.wins);
+ $('record-draws').textContent=String(r.draws);
+ $('record-losses').textContent=String(r.losses);
+ $('record-total').textContent=String(total);
+ $('record-rate').textContent=(total?Math.round(100*r.wins/total):0)+'%';
+}
+function replaySource(){
+ const online=state.mode==='online',m=state.match;
+ if(online&&(!m?.state?.winner||!Array.isArray(m?.state?.history)||
+   m.state.history.length!==m.state.moves))return null;
+ if(!online&&(state.showcase||!state.winner))return null;
+ const entries=online?m.state.history:state.trainHistory;
+ if(!Array.isArray(entries)||!entries.length||entries.length>225)return null;
+ const occupied=new Set();
+ for(const entry of entries){
+  if(!entry||![1,2].includes(entry.player)||!Number.isInteger(entry.to)||
+     entry.to<0||entry.to>=225||occupied.has(entry.to))return null;
+  occupied.add(entry.to);
+ }
+ return entries.map(e=>({player:e.player,to:e.to}));
+}
+function renderReplay(){
+ const entries=state.replayEntries,limit=Math.min(state.replayIndex,entries.length);
+ const board=Array(225).fill(0);
+ for(let i=0;i<limit;i++)board[entries[i].to]=entries[i].player;
+ const last=limit?entries[limit-1]:null;
+ const area=$('replay-board');area.replaceChildren();
+ for(let i=0;i<225;i++){
+  const square=document.createElement('div');
+  square.className='replay-cell'+(board[i]===1?' stone-black':board[i]===2?' stone-white':'')+
+   (last?.to===i?' is-last':'');
+  area.append(square);
+ }
+ $('replay-counter').textContent=limit+' / '+entries.length;
+ $('replay-status').textContent=last?
+  ('Ruch '+limit+': '+(last.player===1?'czarne':'białe')+' · '+notation(last.to)):
+  'Początek partii — pusta plansza';
+ $('replay-start').disabled=limit===0;$('replay-prev').disabled=limit===0;
+ $('replay-next').disabled=limit===entries.length;
+ $('replay-end').disabled=limit===entries.length;
+}
+function openReplay(){
+ const moves=replaySource();
+ if(!moves)return;
+ state.replayEntries=moves;state.replayIndex=moves.length;
+ renderReplay();
+ $('replay-modal').hidden=false;
+ $('replay-close').focus?.();
+}
+function stepReplay(to){
+ state.replayIndex=Math.max(0,Math.min(state.replayEntries.length,to));
+ renderReplay();
+}
+function closeReplay(){$('replay-modal').hidden=true;}
+$('replay-game').addEventListener('click',openReplay);
+$('replay-close').addEventListener('click',closeReplay);
+$('replay-start').addEventListener('click',()=>stepReplay(0));
+$('replay-prev').addEventListener('click',()=>stepReplay(state.replayIndex-1));
+$('replay-next').addEventListener('click',()=>stepReplay(state.replayIndex+1));
+$('replay-end').addEventListener('click',()=>stepReplay(state.replayEntries.length));
+
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
@@ -1129,6 +1217,9 @@ function render(){
   $('black-name').textContent='Ty';$('white-name').textContent='Komputer';
   $('session-heading').textContent='Trening z komputerem';$('room-tag').textContent='TRENING';
  }
+ recordTrainingFinish();
+ renderTrainingRecord();
+ $('replay-game').disabled=!replaySource();
  syncGameResult();
 }
 function restart(){
@@ -1868,7 +1959,7 @@ function setMode(mode){
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
  if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
  state.suggestion=-1;$('analysis-note').hidden=true;
- $('training-settings').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
+ $('training-settings').hidden=mode!=='training';$('training-records').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
  $('training-mode').classList.toggle('active',mode==='training');
  $('online-mode').classList.toggle('active',mode==='online');
