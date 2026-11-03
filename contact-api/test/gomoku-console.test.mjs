@@ -82,7 +82,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/aria-labelledby="game-result-title"/);
  assert.match(html,/Rozpocznij nową partię/);
  assert.match(html,/Zobacz zakończoną planszę/);
- assert.match(html,/<option value="expert" selected>/);
+ assert.match(html,/<option value="expert">/);
+ assert.match(html,/<option value="master" selected>/);
  assert.match(html,/<option value="hard">/);
  assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
