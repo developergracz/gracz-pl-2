@@ -1,3 +1,4 @@
+import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
 import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
@@ -168,6 +169,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
       created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
     await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_expiry ON gracz_public_identity.sessions(expires_at)');
+    await ensureSecuritySchema(database);
     await database.query('CREATE TABLE IF NOT EXISTS gracz_public_identity.online_presence(account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,last_seen timestamptz NOT NULL DEFAULT now())');
     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.profiles (
       account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -243,9 +245,11 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  }
  const premiumProfile=createPremiumProfileRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow,validNick});
  const addressBook=createAddressBookRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ const securityCenter=createSecurityCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
   if(await premiumProfile.handle(req,res,url))return true;
   if(await addressBook.handle(req,res,url))return true;
+  if(await securityCenter.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
@@ -285,6 +289,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      [account.id,currentHash,newSalt,newHash,tokenDigest]);
     if(Number(saved.rows[0]?.changed)!==1)
      return bad(res,409,'HASLO_ZMIENIONE_PONOW_PROBE'),true;
+    try{await recordSecurityEvent(database,account.id,'password_changed')}catch{}
     return json(res,200,{ok:true,otherSessionsRevoked:Number(saved.rows[0]?.revoked)||0}),true;
    }catch(e){
     console.error('IDENTITY_PASSWORD_CHANGE_ERROR',{code:safeText(e?.code)||'PASSWORD_CHANGE_ERROR'});
@@ -981,6 +986,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     const token=randomBytes(32).toString('hex');
     await database.query(`INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)
       VALUES($1,$2,now()+interval '7 days')`,[digest(token),account.id]);
+    // Audit labels are best-effort: login remains valid if activity logging fails.
+    try{await recordSessionBrowser(database,digest(token),req.headers['user-agent']);}catch{}
+    try{await recordSecurityEvent(database,account.id,'login_success');}catch{}
     res.setHeader('Set-Cookie',cookie(token));
     return json(res,200,{ok:true,nickname:account.nickname}),true;
    }

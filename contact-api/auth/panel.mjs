@@ -197,9 +197,85 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  </div>
 </div>
 </section>
-<section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
-<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
-<button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
+<section class="view" data-panel="security">
+<div class="sec-hero">
+ <div><p class="card-kicker">GRACZ.PL · CENTRUM OCHRONY · FULL MAX PREMIUM</p><h2>Bezpieczeństwo konta</h2><p>Kontroluj aktywne sesje, urządzenia, hasło, historię operacji i ustawienia widoczności alertów.</p></div>
+ <span class="sec-shield" aria-hidden="true">♜</span>
+</div>
+<div class="sec-metrics">
+ <div><small>WERYFIKACJA E-MAIL</small><strong id="sec-email-status">Sprawdzanie</strong><span>Tożsamość konta</span></div>
+ <div><small>AKTYWNE SESJE</small><strong id="sec-session-count">—</strong><span>Przeglądarki i urządzenia</span></div>
+ <div><small>OSTATNIE ZDARZENIE</small><strong id="sec-last-event">—</strong><span>Od wdrożenia historii</span></div>
+ <div><small>2FA</small><strong>Planowane</strong><span>Nie jest aktywne</span></div>
+</div>
+<nav class="sec-tabs" role="tablist" aria-label="Moduły bezpieczeństwa">
+ <button class="active" role="tab" type="button" data-sec-tab="overview" aria-selected="true">◈ Centrum ochrony</button>
+ <button role="tab" type="button" data-sec-tab="devices" aria-selected="false">▣ Urządzenia i sesje</button>
+ <button role="tab" type="button" data-sec-tab="history" aria-selected="false">◷ Historia zdarzeń</button>
+ <button role="tab" type="button" data-sec-tab="alerts" aria-selected="false">♢ Alerty i ustawienia</button>
+ <button role="tab" type="button" data-sec-tab="recovery" aria-selected="false">✧ Odzyskiwanie</button>
+</nav>
+<p class="sec-status" id="sec-status" role="status" aria-live="polite">Ochrona konta: oczekiwanie na weryfikację danych sesji.</p>
+<div class="sec-pane" data-sec-pane="overview">
+ <div class="sec-two">
+  <div class="card sec-feature"><p class="card-kicker">HASŁO I DOSTĘP</p><h2>Ochrona hasłem</h2><p>Sprawdzenie aktualnego hasła, szyfrowane połączenie oraz bezpieczny skrót kryptograficzny. Zmiana hasła unieważnia pozostałe sesje.</p>
+   <div class="sec-feature-actions"><button id="sec-change-password" class="primary" type="button">Zmień hasło</button><span class="sec-inline-note">Bezpośrednio w „Konto i profil”</span></div>
+  </div>
+  <div class="card sec-feature"><p class="card-kicker">BEZPIECZNA SESJA</p><h2>Kontrola dostępu</h2><p>Możesz wylogować się z bieżącej przeglądarki albo unieważnić sesje pozostałych urządzeń.</p>
+   <div class="sec-feature-actions"><button id="sec-revoke-quick" class="secondary" type="button">Wyloguj inne urządzenia</button><button class="secondary" id="security-logout" type="button">Wyloguj tutaj</button></div>
+  </div>
+ </div>
+ <div class="card"><p class="card-kicker">BEZPIECZEŃSTWO W PRAKTYCE</p><h2>Stan zabezpieczeń</h2>
+  <div class="sec-checklist">
+   <div><strong>✓ Potwierdzony e-mail</strong><span>Wymagany do aktywnego konta.</span></div>
+   <div><strong>✓ Sesje HttpOnly</strong><span>Tokeny sesji nie są dostępne skryptom w przeglądarce.</span></div>
+   <div><strong>✓ Zmiana hasła</strong><span>Weryfikacja aktualnego hasła i wylogowanie pozostałych sesji.</span></div>
+   <div><strong>○ Uwierzytelnianie dwuskładnikowe</strong><span>Funkcja nie jest obecnie uruchomiona — nie można jej włączyć tutaj.</span></div>
+  </div>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="devices" hidden>
+ <div class="card">
+  <div class="card-heading"><div><p class="card-kicker">PRZEGLĄDARKI I URZĄDZENIA</p><h2>Aktywne sesje konta</h2><p>Rozpoznawanie przeglądarek jest orientacyjne; nie zbieramy lokalizacji ani dokładnego adresu IP do tego widoku.</p></div><div class="sec-feature-actions"><button class="secondary" id="sec-devices-refresh" type="button">Odśwież</button><button class="primary" id="sec-revoke-others" type="button">Wyloguj pozostałe</button></div></div>
+  <div id="sec-device-list" class="sec-device-list"><p>Odczytywanie sesji…</p></div>
+  <p class="sec-inline-note">Bieżącej sesji nie można usunąć z tej listy. Aby ją zamknąć, użyj „Wyloguj tutaj” w Centrum ochrony.</p>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="history" hidden>
+ <div class="card">
+  <div class="card-heading"><div><p class="card-kicker">DZIENNIK BEZPIECZEŃSTWA</p><h2>Historia wybranych zdarzeń</h2></div><div class="sec-feature-actions"><button id="sec-history-refresh" class="secondary" type="button">Odśwież</button><button id="sec-export-events" class="secondary" type="button">Eksport CSV</button></div></div>
+  <p class="sec-inline-note" id="sec-history-note">Dziennik obejmuje jedynie zdarzenia zapisywane od wdrożenia tego modułu, nie wcześniejsze logowania.</p>
+  <label class="sec-history-filter">Pokaż wydarzenia<select id="sec-event-filter">
+   <option value="all">Wszystkie</option><option value="login_success">Udane logowania</option>
+   <option value="password_changed">Zmiana hasła</option><option value="session_revoked">Wylogowane urządzenia</option>
+   <option value="other_sessions_revoked">Wylogowanie pozostałych</option><option value="preferences_updated">Zmiana ustawień</option>
+  </select></label>
+  <div id="sec-event-list" class="sec-event-list"><p>Historia jest wczytywana…</p></div>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="alerts" hidden>
+ <div class="card sec-feature"><p class="card-kicker">POWIADOMIENIA W PANELU</p><h2>Wyróżnianie ważnych zdarzeń</h2><p>Ustawienia wpływają na oznaczenia w panelu bezpieczeństwa, a nie na wysyłkę e-mail lub SMS.</p>
+  <form id="sec-alert-form" class="sec-alert-form">
+   <label><span><strong>Nowe logowania</strong><small>Wyróżniaj udane logowania w historii.</small></span><input type="checkbox" id="sec-alert-logins"></label>
+   <label><span><strong>Zmiana hasła</strong><small>Wyróżniaj zdarzenia zmiany hasła.</small></span><input type="checkbox" id="sec-alert-password"></label>
+   <div class="sec-feature-actions"><button class="primary" id="sec-alert-save" type="submit">Zapisz ustawienia</button><span id="sec-alert-status" role="status" aria-live="polite"></span></div>
+  </form>
+  <p class="sec-inline-note" id="sec-alert-note">Wysyłka e-mail/SMS nie została uruchomiona.</p>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="recovery" hidden>
+ <div class="card sec-feature">
+  <p class="card-kicker">PRZYWRACANIE DOSTĘPU</p><h2>Bezpieczne odzyskiwanie konta</h2>
+  <div class="sec-checklist">
+   <div><strong>1. Potwierdzony adres e-mail</strong><span>Sprawdzaj, czy nadal masz dostęp do swojej skrzynki. Obecnie brak formularza zmiany adresu w tej sekcji.</span></div>
+   <div><strong>2. Zmiana hasła</strong><span>Jeżeli znasz obecne hasło, możesz zmienić je bez wylogowania.</span></div>
+   <div><strong>3. Podejrzane sesje</strong><span>Jeżeli nie rozpoznajesz aktywnej sesji, unieważnij ją lub wszystkie pozostałe i zmień hasło.</span></div>
+   <div><strong>4. 2FA i kody odzyskiwania</strong><span>Dostępne dopiero po osobnym wdrożeniu i weryfikacji mechanizmu 2FA. Obecnie nie generujemy żadnych fikcyjnych kodów.</span></div>
+  </div>
+  <div class="sec-feature-actions"><button type="button" class="secondary" id="sec-recovery-password">Przejdź do zmiany hasła</button><button type="button" class="secondary" id="sec-recovery-devices">Zobacz sesje</button></div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
 <section class="view" data-panel="messages">
@@ -772,6 +848,51 @@ body.pw-success-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
  #player-shell .card,#player-shell .nav{transition:none}
 }
+
+/* GRACZ.PL security center — compact, accessible Full Max Premium */
+#player-shell .sec-hero{display:flex;justify-content:space-between;align-items:center;gap:17px;padding:17px 22px;border:1px solid #2ee7d3;border-radius:17px;background:radial-gradient(ellipse at 85% 5%,#12b8b568,transparent 54%),linear-gradient(115deg,#063544,#03202f);min-height:114px;box-shadow:0 12px 30px #00121d33}
+#player-shell .sec-hero h2{font-size:clamp(25px,2.3vw,36px);line-height:1.16;margin:4px 0 7px;color:#fff}
+#player-shell .sec-hero p:last-child{font-size:12px;line-height:1.45;margin:0;color:#b7d7dc}
+#player-shell .sec-shield{display:grid;place-items:center;width:78px;height:78px;flex:0 0 auto;border:2px solid #f0ce7a;border-radius:24px;color:#ffe49d;background:#06303c;font-size:35px;box-shadow:0 0 26px #0cf7d54d}
+#player-shell .sec-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .sec-metrics>div{min-width:0;border:1px solid #267f84;border-radius:13px;padding:12px 13px;background:linear-gradient(140deg,#07434c,#041f2b)}
+#player-shell .sec-metrics small{display:block;font-size:9px;font-weight:800;letter-spacing:.09em;color:#f1ce87}
+#player-shell .sec-metrics strong{display:block;font-size:clamp(15px,1.6vw,22px);margin:6px 0;overflow-wrap:anywhere;color:#f8ffff}
+#player-shell .sec-metrics span{font-size:10px;color:#a2c9cc}
+#player-shell .sec-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;padding:7px;border-radius:14px;border:1px solid #276f78;background:#062a37;position:sticky;top:0;z-index:5}
+#player-shell .sec-tabs button{font:750 11px Inter,"Segoe UI",sans-serif;cursor:pointer;min-height:39px;min-width:0;border-radius:9px;border:1px solid #285d68;padding:7px 5px;background:#073644;color:#def2ef}
+#player-shell .sec-tabs button.active{background:linear-gradient(130deg,#087d77,#0a424c);color:#fff;border-color:#29ecd6;box-shadow:0 0 12px #0ce5d43b}
+#player-shell .sec-tabs button:focus-visible{outline:2px solid #ffe3a4;outline-offset:2px}
+#player-shell .sec-pane{display:grid;gap:11px}
+#player-shell .sec-pane[hidden]{display:none!important}
+#player-shell .sec-status{margin:0;border:1px solid #26656d;border-radius:11px;padding:9px 12px;background:#05343f;color:#a9e4de;font-size:11px}
+#player-shell .sec-status.sec-error{color:#ffbbbc;border-color:#bd5f6b}
+#player-shell .sec-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#player-shell .sec-feature{padding:15px}
+#player-shell .sec-feature-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:13px}
+#player-shell .sec-feature-actions button{min-height:37px;padding:8px 12px;font-size:11px}
+#player-shell .sec-inline-note{font-size:11px;line-height:1.6;color:#99bdc5}
+#player-shell .sec-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+#player-shell .sec-checklist>div{border:1px solid #2d7380;border-radius:11px;padding:11px 12px;background:#052a38;display:grid;gap:5px}
+#player-shell .sec-checklist strong{font-size:12px;color:#f3d28c}
+#player-shell .sec-checklist span{font-size:11px;color:#b9d4d7;line-height:1.55}
+#player-shell .sec-device-list,#player-shell .sec-event-list{display:grid;gap:9px;margin-top:13px}
+#player-shell .sec-device-item,#player-shell .sec-event-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #2d7b83;border-radius:11px;background:linear-gradient(120deg,#083d47,#042636)}
+#player-shell .sec-device-item strong,#player-shell .sec-event-item strong{display:block;color:#f2fcfc;font-size:12px;margin-bottom:3px}
+#player-shell .sec-device-item small,#player-shell .sec-event-item small{display:block;font-size:10px;line-height:1.45;color:#a4c9cd}
+#player-shell .sec-event-item.sec-event-highlight{border-color:#deb569;box-shadow:inset 3px 0 0 #f4d486}
+#player-shell .sec-device-item button{min-height:34px;padding:6px 10px;white-space:nowrap;font-size:11px}
+#player-shell .sec-device-current{border:1px solid #21ceba;border-radius:20px;padding:5px 9px;color:#92ffe7;font-size:10px;font-weight:800}
+#player-shell .sec-history-filter{display:flex;align-items:center;gap:10px;font-size:11px;margin:12px 0;color:#d0e6e6}
+#player-shell .sec-history-filter select{min-height:37px;border:1px solid #2b7982;border-radius:9px;background:#052a37;color:#edfafa;padding:7px}
+#player-shell .sec-alert-form{display:grid;gap:10px;margin-top:13px}
+#player-shell .sec-alert-form>label{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:12px;border:1px solid #2c7181;border-radius:11px;background:#062c38}
+#player-shell .sec-alert-form>label span{display:grid;gap:5px}
+#player-shell .sec-alert-form strong{font-size:13px;color:#f6fdfd}
+#player-shell .sec-alert-form small{font-size:11px;color:#a6cfd0}
+#player-shell .sec-alert-form input[type=checkbox]{width:20px;height:20px;accent-color:#10d8bf;cursor:pointer}
+@media(max-width:1130px){#player-shell .sec-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#player-shell .sec-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){#player-shell .sec-hero{padding:12px}#player-shell .sec-shield{width:56px;height:56px;font-size:26px;border-radius:16px}#player-shell .sec-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .sec-tabs button{min-height:41px}#player-shell .sec-two,#player-shell .sec-checklist{grid-template-columns:1fr}#player-shell .sec-device-item,#player-shell .sec-event-item{align-items:flex-start;flex-direction:column}#player-shell .sec-device-item button{min-height:40px}#player-shell .sec-metrics>div{padding:10px}#player-shell .sec-history-filter{flex-wrap:wrap}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -1200,6 +1321,7 @@ function switchSection(name){
  document.querySelectorAll('[data-panel]').forEach(e=>e.classList.toggle('active',e.dataset.panel===name));
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
+ if(name==='security'&&sessionConfirmed)void securityLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -1675,6 +1797,153 @@ $('ab-import-file').addEventListener('change',async event=>{
   }catch{failed++}
  }
  await abLoad(0);abMessage('Import zakończony: '+ok+' zapisanych, '+failed+' pominiętych (duplikaty lub niedozwolone powiązania).');
+});
+
+
+// Full Max Premium Security Center — bound only to server-authenticated session data.
+let secState=null,secLoading=false,secTab='overview';
+const secLabels={
+ login_success:'Udane logowanie',password_changed:'Hasło zostało zmienione',
+ other_sessions_revoked:'Wylogowano inne urządzenia',session_revoked:'Zakończono sesję',
+ preferences_updated:'Zmieniono ustawienia alertów'
+};
+function securityNotice(message,error=false){
+ const el=$('sec-status');el.textContent=message;el.classList.toggle('sec-error',error);
+}
+function securityTab(name){
+ secTab=name;
+ document.querySelectorAll('[data-sec-tab]').forEach(button=>{
+  const selected=button.dataset.secTab===name;
+  button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));
+  button.tabIndex=selected?0:-1;
+ });
+ document.querySelectorAll('[data-sec-pane]').forEach(p=>p.hidden=p.dataset.secPane!==name);
+}
+document.querySelectorAll('[data-sec-tab]').forEach(button=>button.addEventListener('click',()=>securityTab(button.dataset.secTab)));
+function securityDate(value){
+ if(!value)return 'Brak daty';
+ const d=new Date(value);
+ return Number.isFinite(d.getTime())?d.toLocaleString('pl-PL',{dateStyle:'medium',timeStyle:'short'}):'Brak daty';
+}
+function securityButton(label,run){
+ const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;
+ b.addEventListener('click',()=>void run(b));return b;
+}
+function securityRenderDevices(){
+ const rows=secState?.sessions||[],out=$('sec-device-list');out.replaceChildren();
+ $('sec-session-count').textContent=String(rows.length);
+ const others=rows.filter(x=>!x.current);
+ $('sec-revoke-quick').disabled=others.length===0;
+ $('sec-revoke-others').disabled=others.length===0;
+ if(!rows.length){const p=document.createElement('p');p.textContent='Nie znaleziono aktywnych sesji.';out.append(p);return}
+ for(const session of rows){
+  const item=document.createElement('article');item.className='sec-device-item';
+  const body=document.createElement('div'),title=document.createElement('strong'),time=document.createElement('small');
+  title.textContent=session.label||(session.current?'Bieżąca przeglądarka':'Inna przeglądarka');
+  time.textContent='Utworzona: '+securityDate(session.createdAt)+' · ważna do: '+securityDate(session.expiresAt);
+  body.append(title,time);item.append(body);
+  if(session.current){
+   const badge=document.createElement('span');badge.className='sec-device-current';
+   badge.textContent='BIEŻĄCA SESJA';item.append(badge);
+  }else{
+   item.append(securityButton('Zakończ sesję',async button=>{
+    button.disabled=true;
+    try{
+     await api('security-center/revoke-session',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:session.id})});
+     await Promise.all([securityLoad(),refreshCenter()]);
+     securityNotice('Wybrana sesja została zakończona.');
+    }catch(error){securityNotice(error.message,true);}
+    finally{button.disabled=false}
+   }));
+  }
+  out.append(item);
+ }
+}
+function securityRenderEvents(){
+ const history=secState?.events||[],filter=$('sec-event-filter').value;
+ const output=$('sec-event-list');output.replaceChildren();
+ const visible=history.filter(event=>filter==='all'||event.code===filter);
+ $('sec-last-event').textContent=history.length?(secLabels[history[0].code]||'Zdarzenie'):'Brak zdarzeń';
+ $('sec-history-note').textContent=secState?.historyNote||'Historia wybranych zdarzeń od uruchomienia modułu.';
+ if(!visible.length){
+  const p=document.createElement('p');p.className='sec-inline-note';p.textContent='Brak zapisanych zdarzeń dla tego filtra.';output.append(p);return;
+ }
+ for(const event of visible){
+  const item=document.createElement('article');item.className='sec-event-item';
+  const isHighlighted=(event.code==='login_success'&&secState.preferences.newSessionAlert)||
+   (event.code==='password_changed'&&secState.preferences.passwordAlert);
+  if(isHighlighted)item.classList.add('sec-event-highlight');
+  const body=document.createElement('div'),strong=document.createElement('strong'),time=document.createElement('small');
+  strong.textContent=(isHighlighted?'◆ ':'')+(secLabels[event.code]||'Zdarzenie konta');
+  time.textContent=securityDate(event.at);
+  body.append(strong,time);item.append(body);output.append(item);
+ }
+}
+function securityPaint(){
+ if(!secState)return;
+ $('sec-email-status').textContent=secState.verifiedEmail?'Potwierdzony':'Niepotwierdzony';
+ $('sec-alert-logins').checked=secState.preferences.newSessionAlert;
+ $('sec-alert-password').checked=secState.preferences.passwordAlert;
+ $('sec-alert-note').textContent=secState.notificationsNote||'Alerty w panelu, bez e-mail i SMS.';
+ securityRenderDevices();securityRenderEvents();
+}
+async function securityLoad(){
+ if(!sessionConfirmed||secLoading)return;
+ secLoading=true;securityNotice('Sprawdzanie ustawień bezpieczeństwa…');
+ try{
+  secState=await api('security-center');
+  securityPaint();
+  securityNotice('Dane bezpieczeństwa pobrano z Twojego konta.');
+ }catch(error){securityNotice(error.message,true)}
+ finally{secLoading=false}
+}
+async function securityRevokeOthers(button){
+ if(!sessionConfirmed)return;
+ button.disabled=true;
+ try{
+  const res=await api('security-center/revoke-others',{method:'POST',
+   headers:{'Content-Type':'application/json'},body:'{}'});
+  await Promise.all([securityLoad(),refreshCenter()]);
+  securityNotice('Zakończono inne sesje: '+res.revoked+'. Bieżąca sesja pozostała aktywna.');
+ }catch(error){securityNotice(error.message,true)}
+ finally{button.disabled=false}
+}
+$('sec-revoke-quick').addEventListener('click',()=>void securityRevokeOthers($('sec-revoke-quick')));
+$('sec-revoke-others').addEventListener('click',()=>void securityRevokeOthers($('sec-revoke-others')));
+$('sec-devices-refresh').addEventListener('click',()=>void securityLoad());
+$('sec-history-refresh').addEventListener('click',()=>void securityLoad());
+$('sec-event-filter').addEventListener('change',securityRenderEvents);
+function securityOpenPassword(){
+ switchSection('profile');
+ const target=$('profile-password-section');
+ if(target){target.scrollIntoView({behavior:'smooth',block:'center'});$('pw-current').focus({preventScroll:true})}
+}
+$('sec-change-password').addEventListener('click',securityOpenPassword);
+$('sec-recovery-password').addEventListener('click',securityOpenPassword);
+$('sec-recovery-devices').addEventListener('click',()=>securityTab('devices'));
+$('sec-alert-form').addEventListener('submit',async event=>{
+ event.preventDefault();if(!sessionConfirmed)return;
+ const button=$('sec-alert-save'),status=$('sec-alert-status');
+ button.disabled=true;status.textContent='Zapisywanie…';
+ try{
+  secState=await api('security-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({newSessionAlert:$('sec-alert-logins').checked,
+    passwordAlert:$('sec-alert-password').checked})});
+  securityPaint();status.textContent='Ustawienia zapisane na Twoim koncie.';
+  securityNotice('Zaktualizowano ustawienia wyróżniania zdarzeń w panelu.');
+ }catch(error){status.textContent=error.message}
+ finally{button.disabled=false}
+});
+$('sec-export-events').addEventListener('click',()=>{
+ if(!secState){securityNotice('Najpierw pobierz historię zdarzeń.',true);return;}
+ const rows=[['Rodzaj','Data'],...secState.events.map(event=>
+  [secLabels[event.code]||'Zdarzenie',securityDate(event.at)])];
+ const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-historia-bezpieczenstwa.csv';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ securityNotice('Wyeksportowano dostępne zdarzenia bezpieczeństwa.');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
