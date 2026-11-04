@@ -213,7 +213,19 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <p>Samodzielne usunięcie konta wymaga osobnego, bezpiecznego procesu. Nie jest jeszcze dostępne w panelu.</p>
 <a class="secondary link-button" href="mailto:kontakt@gracz.pl">Kontakt z administracją</a>
 </div></section>
-<footer class="footer">© gracz.pl · Polskie Centrum Gracza · Full Max Premium</footer></main></div></body></html>`);
+<footer class="footer">© gracz.pl · Polskie Centrum Gracza · Full Max Premium</footer></main></div>
+
+<div class="pw-success-overlay" id="pw-success-overlay" hidden>
+ <section class="pw-success-modal" role="dialog" aria-modal="true" aria-labelledby="pw-success-title" aria-describedby="pw-success-message">
+  <div class="pw-success-seal" aria-hidden="true"><span>✓</span></div>
+  <p class="pw-success-kicker">GRACZ.PL · BEZPIECZEŃSTWO KONTA</p>
+  <h2 id="pw-success-title">Hasło zostało zmienione</h2>
+  <p id="pw-success-message">Twoje nowe hasło jest już aktywne. Konto jest zabezpieczone.</p>
+  <div class="pw-success-confirmed"><span aria-hidden="true">✓</span> Operacja zakończona pomyślnie</div>
+  <button class="pw-success-close" id="pw-success-close" type="button">Zamknij</button>
+ </section>
+</div>
+</body></html>`);
 const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}html{background:#03101d;color:#f4f8fc;font-family:Inter,"Segoe UI",Arial,sans-serif}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 85% 12%,#073e52b5,transparent 38%),radial-gradient(ellipse at 14% 78%,#1830527d,transparent 38%),linear-gradient(145deg,#03101b,#071927 58%,#020914)}button,input,select,textarea{font:inherit}button,a{touch-action:manipulation}a{color:inherit}.skip{position:absolute;left:-999px;top:0;z-index:5}.skip:focus{left:15px;top:15px;background:#ffd07a;color:#071421;padding:9px}.top{min-height:80px;padding:14px clamp(16px,4.5vw,80px);display:flex;align-items:center;gap:30px;justify-content:space-between;background:#021321d9;border-bottom:1px solid #326073}.logo{font-size:clamp(30px,3vw,43px);font-weight:900;letter-spacing:-2px;text-decoration:none;white-space:nowrap}.logo span{color:#e92c49}.top-tag{font-size:11px;letter-spacing:2px;color:#99c7d8;font-weight:800}.top-tag b{color:#f7cb75;margin-left:13px}.top-link{border:1px solid #e9ba62;border-radius:9px;padding:11px 16px;text-decoration:none;color:#ffdc8c;font-weight:750;white-space:nowrap}.shell{max-width:1700px;margin:auto;display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;padding:clamp(14px,2.2vw,34px)}.sidebar{min-width:0;align-self:start;border:1px solid #2c5465;border-radius:22px;background:linear-gradient(160deg,#0b2434f5,#061824f5);box-shadow:0 18px 50px #0005;overflow:hidden;position:sticky;top:15px}.identity{padding:26px 23px 19px;border-bottom:1px solid #21475b}.avatar,.player-avatar{display:grid;place-items:center;border-radius:50%;border:2px solid #eac476;color:#ffd67d;background:radial-gradient(circle at 30% 25%,#246078,#041a2b 78%);font-weight:800;box-shadow:0 0 22px #0eb9da44}.avatar{height:64px;width:64px;font-size:31px}.small,.card-kicker,.eyebrow{font-size:11px;letter-spacing:2px;color:#e5bd74;font-weight:900}.identity strong{display:block;font-size:20px;overflow-wrap:anywhere}.identity .small{margin:16px 0 7px}.status{color:#99c9d3;font-size:12px;display:flex;align-items:center;gap:8px;margin-top:12px}.status i{height:8px;width:8px;background:#3ee5ac;border-radius:50%;box-shadow:0 0 10px #3ee5ac}.sidebar nav{display:grid;gap:5px;padding:17px 10px}.nav{display:flex;gap:12px;text-align:left;width:100%;align-items:center;background:transparent;color:#b6cfd9;border:1px solid transparent;border-radius:10px;padding:13px 14px;cursor:pointer;font-weight:700;font-size:13px}.nav span{width:23px;text-align:center;font-size:19px;color:#79c9d6}.nav:hover,.nav:focus-visible{background:#17364a;color:#fff}.nav.active{background:linear-gradient(90deg,#194454,#0b2c41);color:#fff;border-color:#427587}.nav.active span{color:#ffd07a}.signout{width:calc(100% - 24px);margin:2px 12px 16px;padding:13px;border:1px solid #42677a;border-radius:10px;background:#102c3d;color:#fff;font-weight:800;cursor:pointer}.signout span{float:right}.main{min-width:0}.masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:190px;margin-bottom:18px;padding:clamp(22px,3vw,42px);border-radius:22px;border:1px solid #266779;background:linear-gradient(110deg,#0c3249e8,#06162799 65%),radial-gradient(circle at 85% 45%,#0a778a8c,transparent 50%);position:relative;overflow:hidden}.masthead:after{content:"";pointer-events:none;position:absolute;inset:0;border-radius:22px;box-shadow:inset 0 0 65px #05b5ce16}.masthead h1{font-size:clamp(32px,4.4vw,55px);line-height:1.05;margin:12px 0;color:#fff;letter-spacing:-1px}.masthead p:last-child{color:#b4cfdc;margin:0}.mark{height:124px;width:124px;border:8px double #e4b96b;border-radius:50%;display:grid;place-items:center;align-content:center;transform:rotate(8deg);color:#ffd27c;background:#082638;box-shadow:0 0 40px #dcb56632;flex:none}.mark span{font-size:55px;line-height:1}.mark small{font-size:10px;font-weight:900}.notice{padding:12px 17px;background:#112d39;border:1px solid #386578;border-radius:12px;margin-bottom:16px;color:#c8e5ed;font-size:13px}.notice[hidden]{display:none}.notice.error{border-color:#a9505d;color:#ffdadc}.view{display:none}.view.active{display:grid;gap:18px}.card{background:linear-gradient(145deg,#0a2332f6,#061925f8);border:1px solid #2c5667;box-shadow:0 10px 40px #0004;border-radius:18px;padding:clamp(19px,2.5vw,32px)}.card h2{font-size:clamp(21px,2.5vw,30px);margin:5px 0 15px}.card p{line-height:1.7;color:#b7cbd4}.card-kicker{margin:0!important;color:#e8b967!important}.hero-card{display:flex;gap:24px;align-items:center;border-color:#906d3d;background:linear-gradient(100deg,#102b3d,#071d2e)}.player-avatar{width:87px;height:87px;flex:none;font-size:44px}.hero-card h2{margin:6px 0 2px}.hero-card p{margin:0}.verified{margin-left:auto;color:#66e6b9;border:1px solid #247967;background:#0d403d73;padding:9px 14px;border-radius:50px;font-size:12px;font-weight:800;white-space:nowrap}.card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}.card-note{font-size:12px;color:#95b4c1}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.form-grid label{display:grid;align-content:start;gap:9px;color:#d9e6ed;font-size:13px;font-weight:750}.form-grid .wide{grid-column:1/-1}.form-grid input,.form-grid select,.form-grid textarea{background:#091e2c;border:1px solid #426274;color:#fff;border-radius:9px;min-height:46px;padding:12px 13px;width:100%;min-width:0;outline-offset:3px}.form-grid textarea{resize:vertical;min-height:110px}.form-grid input:disabled{background:#0b2630;color:#a4bfce;cursor:not-allowed}.form-grid small{color:#85a8b9;font-size:11px}.form-actions{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;padding-top:25px}.form-actions span{color:#8bafbb;font-size:12px}.primary,.secondary{border-radius:10px;padding:14px 20px;font-size:14px;font-weight:850;cursor:pointer}.primary{border:1px solid #ffdd95;background:linear-gradient(180deg,#ffe1a0,#dca94f);color:#101725;box-shadow:0 5px 20px #edb35f35}.primary:disabled{opacity:.65;cursor:wait}.secondary{border:1px solid #5490a2;background:#10374b;color:#f2f9fb}.link-button{display:inline-flex;text-decoration:none;margin-top:12px}.detail{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #285062;padding:18px 0;color:#b2cad5}.detail strong{color:#fff;text-align:right}.footer{padding:23px;color:#7194a8;font-size:12px;text-align:center}:focus-visible{outline:3px solid #ffd17c;outline-offset:3px}@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:static}.sidebar nav{display:flex;overflow-x:auto;gap:8px}.nav{min-width:max-content;width:auto}.identity{display:flex;align-items:center;gap:13px;padding:14px}.identity .small,.identity .status{display:none}.avatar{width:45px;height:45px;font-size:24px}.identity strong{font-size:16px}.signout{width:auto;margin:0 12px 14px}.top-tag{display:none}}@media(max-width:610px){.top{min-height:65px}.top-link{font-size:12px;padding:10px}.shell{padding:12px;gap:14px}.masthead{min-height:155px;padding:20px}.mark{width:67px;height:67px;border-width:4px}.mark span{font-size:29px}.mark small{font-size:7px}.hero-card{flex-wrap:wrap;gap:12px}.player-avatar{height:68px;width:68px;font-size:33px}.verified{margin-left:0}.form-grid{grid-template-columns:1fr}.card-heading{display:block}.card-note{display:none}.form-actions{align-items:stretch}.form-actions button{width:100%}}.access-screen{min-height:calc(100dvh - 80px);display:grid;place-items:center;padding:20px}.access-card{width:min(100%,560px);text-align:center;border-radius:22px;border:1px solid #3d7080;background:linear-gradient(145deg,#102c41,#061925);box-shadow:0 18px 50px #0007;padding:clamp(25px,5vw,45px)}.access-icon{font-size:58px;color:#efc578;margin:12px auto}.access-card h1{font-size:clamp(26px,4vw,37px);margin:12px 0}.access-card>p:not(.card-kicker){color:#b8d1dc;line-height:1.6}.access-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:15px}.access-actions .primary,.access-actions .secondary{margin-top:0}
 
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.stat{padding:20px}.stat small{font-size:10px;color:#f4c67d;font-weight:900;letter-spacing:1.2px}.stat strong{display:block;font-size:clamp(22px,3vw,36px);margin:8px 0;color:#f6fbff}.stat span{font-size:12px;color:#a6c3d0}.favorite-links,.quick-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.favorite-links a{display:inline-flex;border:1px solid #478399;background:#103849;color:#e5f6fa;padding:10px 15px;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}.quick-actions .link-button{margin-top:0}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}.game-tile{padding:19px;border:1px solid #356679;background:linear-gradient(145deg,#0c3446,#081f30);border-radius:15px}.game-tile h3{font-size:19px;margin:8px 0 4px}.game-tile p{font-size:12px;margin:4px 0 14px}.game-emoji{font-size:30px;color:#f4cb80}.game-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}.game-actions a,.game-actions button{font-size:13px;font-weight:800;color:#dff9fd;border:1px solid #548b9c;border-radius:8px;background:#123e51;padding:9px 11px;text-decoration:none;cursor:pointer}.game-actions button[aria-pressed="true"]{background:#4c3e23;color:#f8d288;border-color:#d1aa66}.appearance-form{display:grid;gap:10px}.setting{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 0;border-bottom:1px solid #284858}.setting span{display:grid;gap:6px}.setting strong{font-size:14px}.setting small{font-size:12px;color:#9db6c5}.setting select{background:#0b2939;border:1px solid #4a8090;color:#fff;border-radius:8px;padding:11px;max-width:200px}.setting input{width:22px;height:22px;accent-color:#efc77d}.session-list{margin:18px 0}.session-item{border-bottom:1px solid #285364;padding:15px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.session-item strong{font-size:13px}.session-item span{display:block;margin-top:5px;color:#a1bcca;font-size:12px}.session-item em{font-size:11px;color:#a4ecd5;font-style:normal}body.panel-compact .card{padding:14px}body.panel-compact .view.active{gap:10px}body.panel-large{font-size:18px}body.panel-large .card p,body.panel-large .nav,body.panel-large .detail,body.panel-large .setting small{font-size:1rem}body.panel-no-motion *,body.panel-no-motion *:before,body.panel-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}@media(max-width:610px){.stats,.game-grid{grid-template-columns:1fr}.setting{flex-wrap:wrap}.session-item{align-items:flex-start}}
@@ -302,6 +314,24 @@ body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),line
 .profile-password-form .form-actions #pw-change-status{max-width:470px;line-height:1.5;font-size:13px}
 .profile-password-form .form-actions button{min-width:165px}
 @media(max-width:650px){.profile-password-form .form-actions button{width:100%}}
+
+/* Single success dialog shown only after a confirmed /auth/change-password response. */
+body.pw-success-open{overflow:hidden}
+.pw-success-overlay[hidden]{display:none!important}
+.pw-success-overlay{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:20px;background:rgba(0,13,21,.83);backdrop-filter:blur(9px)}
+.pw-success-modal{position:relative;width:min(100%,510px);border:1px solid #32e8d3;border-radius:24px;padding:34px clamp(22px,4vw,42px) 30px;text-align:center;color:#f2fcfa;background:radial-gradient(ellipse at 50% 0%,#136f74 0%,#063a45 47%,#031d2c 100%);box-shadow:0 0 0 1px #d2aa5359,0 23px 90px #000b,inset 0 0 32px #11dcd51b}
+.pw-success-modal::before{content:"";position:absolute;top:0;left:17%;right:17%;height:2px;background:linear-gradient(90deg,transparent,#f3d483,transparent);pointer-events:none}
+.pw-success-seal{width:96px;height:96px;display:grid;place-items:center;margin:0 auto 20px;border-radius:50%;border:2px solid #f7d181;background:#053e46;box-shadow:0 0 0 8px #0abfb520,0 0 37px #06e6bf65,inset 0 0 20px #00d6bf35}
+.pw-success-seal span{font-size:57px;font-weight:800;line-height:1;color:#95fff0}
+.pw-success-kicker{font-size:11px;font-weight:850;letter-spacing:.14em;color:#f5d88a;margin:0 0 13px}
+.pw-success-modal h2{font-size:clamp(27px,4vw,36px);letter-spacing:-.02em;line-height:1.15;margin:0 0 16px;color:#fff}
+.pw-success-modal p#pw-success-message{font-size:15px;line-height:1.65;color:#c6e7e7;margin:0 auto 21px;max-width:385px}
+.pw-success-confirmed{display:inline-flex;gap:9px;align-items:center;justify-content:center;flex-wrap:wrap;color:#80ffde;font-weight:760;font-size:13px;margin:0 0 25px}
+.pw-success-confirmed span{font-size:19px}
+.pw-success-close{display:block;margin:0 auto;width:min(100%,250px);min-height:49px;border:1px solid #f9d991;border-radius:12px;color:#132b2d;background:linear-gradient(160deg,#ffe7aa,#eabd64);font-weight:850;cursor:pointer;box-shadow:0 6px 25px #e6c67534}
+.pw-success-close:hover{filter:brightness(1.07)}
+.pw-success-close:focus-visible{outline:3px solid #69fce9;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.pw-success-overlay{scroll-behavior:auto;backdrop-filter:none}}
 `+premiumProfileStyles;
 const js=String.raw`(()=>{
 'use strict';
@@ -836,6 +866,32 @@ document.querySelectorAll('[data-password-toggle]').forEach(button=>button.addEv
  button.setAttribute('aria-pressed',String(reveal));
  button.setAttribute('aria-label',(reveal?'Ukryj':'Pokaż')+' hasło');
 }));
+
+function showPasswordSuccessModal(revokedCount){
+ const overlay=$('pw-success-overlay');
+ const count=Number.isSafeInteger(revokedCount)&&revokedCount>=0?revokedCount:0;
+ $('pw-success-message').textContent=count>0
+  ?'Twoje nowe hasło jest aktywne. Ze względów bezpieczeństwa wylogowano inne sesje: '+count+'.'
+  :'Twoje nowe hasło jest aktywne. Konto zostało zabezpieczone.';
+ overlay.hidden=false;
+ document.body.classList.add('pw-success-open');
+ $('pw-success-close').focus();
+}
+function closePasswordSuccessModal(){
+ $('pw-success-overlay').hidden=true;
+ document.body.classList.remove('pw-success-open');
+ $('pw-change-submit').focus();
+}
+$('pw-success-close').addEventListener('click',closePasswordSuccessModal);
+$('pw-success-overlay').addEventListener('click',event=>{
+ if(event.target===$('pw-success-overlay'))closePasswordSuccessModal();
+});
+if(typeof document.addEventListener==='function')document.addEventListener('keydown',event=>{
+ if($('pw-success-overlay').hidden)return;
+ if(event.key==='Escape'){event.preventDefault();closePasswordSuccessModal();}
+ if(event.key==='Tab'){event.preventDefault();$('pw-success-close').focus();}
+});
+
 $('pw-change-form').addEventListener('submit',async event=>{
  event.preventDefault();
  const form=$('pw-change-form'),save=$('pw-change-submit'),label=$('pw-change-status');
@@ -856,7 +912,7 @@ $('pw-change-form').addEventListener('submit',async event=>{
    button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Pokaż hasło');
   });
   label.textContent='Hasło zmieniono. Wylogowano pozostałe sesje: '+result.otherSessionsRevoked+'.';
-  notice('Hasło zostało zmienione. Inne urządzenia zostały wylogowane.');
+  showPasswordSuccessModal(result.otherSessionsRevoked);
  }catch(error){label.textContent=error.message;}
  finally{save.disabled=false;}
 });
