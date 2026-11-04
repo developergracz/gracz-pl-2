@@ -69,11 +69,11 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
-<details class="sidecard rules"><summary>Jak grać?</summary>
-<p>Ułóż 5 swoich kamieni w linii: poziomo, pionowo lub na skos. Blokuj zagrożenia przeciwnika i planuj ruchy z wyprzedzeniem.</p>
-<p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p>
+<details class="sidecard rules premium-howto"><summary><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></summary>
+<div class="premium-howto-content"><p>Ułóż 5 swoich kamieni w linii: poziomo, pionowo lub na skos. Blokuj zagrożenia przeciwnika i planuj ruchy z wyprzedzeniem.</p>
+<p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p></div>
 </details>
-<nav class="side-links"><a href="/konto/panel/">Mój panel</a><a href="https://gracz.pl/gry/gomoku/">Zasady Gomoku</a></nav>
+<nav class="side-links" aria-label="Pomoc i panel gracza"><a href="/konto/panel/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M3.5 9h17M9 9.5v10.5M7 6.25h.01M11 6.25h.01"/></svg></span><span>Mój panel</span></a><a href="https://gracz.pl/gry/gomoku/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2"/></svg></span><span>Zasady Gomoku</span></a></nav>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
@@ -1096,6 +1096,50 @@ select option{background:#102c34;color:#fff}
 .sidebar .textlink{font-size:11px;line-height:1.4;margin:6px 0}
 .side-links{display:flex;justify-content:space-between;gap:10px;margin-top:0;padding-top:7px;font-size:12px}
 .side-links a{color:#c7e6e1;text-decoration:none;padding:4px 0}
+/* R34: compact, interactive Full Max Premium bottom navigation. */
+.sidebar .rules.premium-howto{margin:2px 0 0;padding:0;border:1px solid #c7a15e;
+ border-radius:11px;overflow:hidden;background:linear-gradient(160deg,#105255 0%,#092f3a 54%,#041e2b 100%);
+ box-shadow:inset 0 1px 0 #efffe04a,0 2px 9px #0007,0 0 8px #a9863833}
+.sidebar .rules.premium-howto>summary{display:flex;align-items:center;gap:8px;list-style:none;
+ min-height:39px;width:100%;padding:5px 10px;border-radius:10px;color:#ffe6af;
+ font:800 clamp(11px,1vw,14px)/1.2 Georgia,"Times New Roman",serif;
+ text-shadow:0 1px 2px #0009;transition:background-color .16s,box-shadow .16s}
+.sidebar .rules.premium-howto>summary::-webkit-details-marker{display:none}
+.sidebar .rules.premium-howto>summary::marker{content:""}
+.sidebar .rules.premium-howto[open]>summary{border-radius:10px 10px 0 0;
+ background:linear-gradient(145deg,#175f5c,#0a3139)}
+.sidebar .rules.premium-howto>summary:hover{background:#16636666}
+.sidebar .premium-nav-icon{flex:0 0 26px;display:inline-grid;place-items:center;width:26px;height:26px;
+ border:1px solid #d4ae68;border-radius:7px;background:linear-gradient(135deg,#175c5c,#052a34);
+ color:#ffe19b;box-shadow:inset 0 1px 0 #fff6ce42,0 0 6px #b8a15a45}
+.sidebar .premium-nav-icon svg{display:block;width:16px;height:16px}
+.sidebar .premium-nav-label{flex:1;min-width:0}
+.sidebar .premium-nav-chevron{width:9px;height:9px;flex:0 0 9px;transform:rotate(45deg);
+ border-right:2px solid #f1c773;border-bottom:2px solid #f1c773;margin-right:4px;margin-top:-4px;
+ transition:transform .16s}
+.sidebar .premium-howto[open] .premium-nav-chevron{transform:rotate(225deg);margin-top:4px}
+.sidebar .premium-howto-content{padding:4px 11px 9px;color:#d9eee8;background:#041e28ae}
+.sidebar .premium-howto-content p{margin:5px 0;font-size:11px;line-height:1.35}
+.sidebar .side-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ margin:0;padding:0;font-size:12px}
+.sidebar .side-links a{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;
+ min-height:38px;padding:4px 5px;border:1px solid #b99c62;border-radius:10px;
+ background:linear-gradient(150deg,#105557 0%,#08313a 50%,#041d2a 100%);
+ box-shadow:inset 0 1px 0 #edffd344,0 2px 8px #0007,0 0 7px #c3983838;
+ color:#f8ead0;text-align:center;text-decoration:none;
+ font:700 clamp(9px,.92vw,12px)/1.15 "Segoe UI",sans-serif;
+ transition:background-color .16s,box-shadow .16s,filter .16s}
+.sidebar .side-links a:hover,.sidebar .side-links a:focus-visible{border-color:#ffe2a1;
+ background:linear-gradient(150deg,#18706c,#0b3a45 75%);box-shadow:0 0 11px #dcb66a65,inset 0 1px 0 #fff6cf72}
+.sidebar .side-links a .premium-nav-icon{flex:0 0 21px;width:21px;height:21px;border-radius:6px}
+.sidebar .side-links a .premium-nav-icon svg{width:14px;height:14px}
+.sidebar .side-links a span:last-child{min-width:0}
+@media(max-height:800px){.sidebar .rules.premium-howto>summary{min-height:34px;padding:3px 9px}
+ .sidebar .side-links a{min-height:34px}}
+@media(max-width:380px){.sidebar .side-links{grid-template-columns:1fr}
+ .sidebar .side-links a{min-height:35px}}
+@media(prefers-reduced-motion:reduce){.sidebar .rules.premium-howto>summary,
+ .sidebar .premium-nav-chevron,.sidebar .side-links a{transition:none}}
 .sidebar :is(button,a,summary,select,input):focus-visible{outline:2px solid #ffe3a1;outline-offset:3px}
 .sidebar :is(button,a,summary):hover{filter:brightness(1.15)}
 .sidebar button:active{filter:brightness(.95)}
