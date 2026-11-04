@@ -105,3 +105,129 @@
  body.homepage-premium-max .r4-owner-image{object-fit:contain!important;object-position:center!important;background:#002f32}
  body.homepage-premium-max .r4-hero-art{background-image:none!important}
 }
+
+/* GRACZ.PL HERO — the approved hero and console stay static.
+   Only the board, console heading and game CTA transition. No embeds or game API. */
+.r4-hero{isolation:isolate}
+.r4-console-dynamic{position:absolute;inset:0;z-index:5;pointer-events:none}
+.r4-console-title{position:absolute;left:43.45%;top:8.8%;width:11.3%;height:4.9%;display:flex;align-items:center;justify-content:center;
+ background:linear-gradient(95deg,#003038 0%,#001d2b 92%);color:#fff0bb;text-shadow:0 1px 2px #000,0 0 6px rgba(255,211,109,.35);
+ font:700 clamp(11px,1.3vw,29px)/1.05 Georgia,serif;white-space:nowrap;border-radius:5px}
+.r4-console-board{position:absolute;left:58.4%;top:20.8%;width:21.8%;height:58.8%;box-sizing:border-box;
+ border:clamp(5px,.65vw,14px) ridge #f5cf7d;border-radius:clamp(8px,.9vw,20px);
+ background:linear-gradient(150deg,#e7c786,#ac782d);box-shadow:0 0 9px rgba(250,193,65,.8),inset 0 0 0 2px #fff1b9;padding:clamp(6px,.55vw,14px)}
+.r4-console-board-squares{position:relative;width:100%;height:100%;background:#e9d6b0;overflow:hidden;box-shadow:inset 0 0 0 2px #765633}
+.r4-console-board-squares--warcaby{background:conic-gradient(#83552e 25%,#f5e7c6 0 50%,#83552e 0 75%,#f5e7c6 0);background-size:25% 25%}
+.r4-console-piece{position:absolute;left:calc(var(--x)*12.5% + 1.2%);top:calc(var(--y)*12.5% + 1.2%);width:10.1%;height:10.1%;box-sizing:border-box;
+ border-radius:50%;border:1px solid rgba(0,0,0,.42);box-shadow:inset 0 2px 4px rgba(255,255,255,.56),inset 0 -3px 3px rgba(0,0,0,.35),0 2px 3px #241a14}
+.r4-console-piece--white{background:radial-gradient(circle at 32% 22%,#fff,#ded6bb 56%,#97805a)}
+.r4-console-piece--black{background:radial-gradient(circle at 32% 18%,#657078,#14202b 50%,#02060a)}
+.r4-console-board-squares--soon{background:linear-gradient(90deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,
+ linear-gradient(0deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,linear-gradient(125deg,#fff9e8,#d3c1a0)}
+.r4-console-soon-caption{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:5%;box-sizing:border-box;
+ background:radial-gradient(ellipse at center,rgba(0,32,39,.88),rgba(0,40,43,.3) 77%);
+ color:#fff1c7;text-align:center;text-shadow:0 1px 4px #00191d,0 0 10px #bc8b39;
+ font:900 clamp(13px,1.46vw,32px)/1.18 Georgia,serif}
+.r4-console-title,.r4-console-board{opacity:0;visibility:hidden;transition:opacity .42s ease,visibility 0s linear .42s}
+.r4-hero[data-hero-slide="warcaby"] .r4-console-title--warcaby,
+.r4-hero[data-hero-slide="warcaby"] .r4-console-board--warcaby,
+.r4-hero[data-hero-slide="soon"] .r4-console-title--soon,
+.r4-hero[data-hero-slide="soon"] .r4-console-board--soon{opacity:1;visibility:visible;transition:opacity .42s ease,visibility 0s}
+/* Native controls entirely cover button artwork baked into the approved screenshot.
+   The controls remain permanently mounted in fixed slots; only the game CTA fades. */
+.r4-hero-live-actions{position:absolute;inset:0;z-index:8;pointer-events:none;display:none}
+.r4-hero-live-actions a{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:auto;box-sizing:border-box;
+ text-decoration:none!important;white-space:nowrap;overflow:hidden;font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif;
+ border-radius:clamp(8px,1.1vw,25px);transition:filter .2s ease,opacity .42s ease,visibility 0s linear .42s}
+.r4-hero-live-actions a:hover{filter:brightness(1.08)}
+.r4-hero-live-actions a:focus-visible{outline:3px solid #fff5bf;outline-offset:2px}
+.r4-hero-live-actions .r4-live-discover{top:65.7%;left:1.96%;width:12.3%;height:10.7%;
+ background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127);border:1px solid #fff0af;color:#002830;
+ box-shadow:inset 0 2px 2px rgba(255,255,255,.7)}
+.r4-hero-live-actions .r4-live-guides{top:65.7%;left:15.1%;width:16.5%;height:10.7%;
+ background:#002e32;border:1px solid #e0a940;color:#fff9ea}
+.r4-hero-live-actions .r4-live-game{top:79.65%;left:1.95%;width:29.7%;height:10.8%;
+ border:2px solid #ffe7a0;border-radius:100px;background:linear-gradient(180deg,#ffe49b 0%,#faca61 45%,#dc9514 100%);
+ color:#062e30;box-shadow:0 0 18px rgba(250,173,47,.35),inset 0 2px 3px rgba(255,255,255,.72);
+ font-size:clamp(14px,1.65vw,37px)}
+.r4-live-game[data-game="warcaby"],.r4-live-game[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none!important}
+.r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="warcaby"],
+.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto!important;transition:filter .2s ease,opacity .42s ease,visibility 0s}
+.r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="gomoku"],
+.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none!important}
+@media(min-width:1181px){
+ .homepage-premium-max .r4-hero-live-actions{display:block}
+ .homepage-premium-max .r4-owner-hotspot{display:none!important}
+}
+@media(max-width:1180px){
+ .homepage-premium-max .r4-hero-actions .r4-btn svg{display:none!important}
+ .r4-hero-live-actions{display:none!important}
+ .r4-console-dynamic{left:auto;top:10%;right:0;width:61%;height:auto;aspect-ratio:1250/663;
+ background:url('/assets/gracz-hero-gomoku-mobile-preview-r1.webp') center/contain no-repeat;z-index:4}
+ .r4-console-title{left:8.4%;top:6.4%;width:20%;height:7%;font-size:clamp(10px,1.65vw,19px)}
+ .r4-console-board{left:32.6%;top:18.1%;width:38.7%;height:66%;padding:2.1%;border-width:clamp(4px,.7vw,9px)}
+ .r4-console-soon-caption{font-size:clamp(10px,1.2vw,19px)}
+ .homepage-premium-max .r4-hero-art{background-image:none!important}
+ .r4-hero-actions .r4-game-cta-stack{position:relative;display:flex;flex-basis:100%;width:min(420px,100%);height:52px}
+ .r4-hero-actions .r4-game-cta-stack .r4-btn{position:absolute;inset:0;max-width:none;width:100%;min-height:100%;
+   display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+ .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="warcaby"],
+ .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .42s ease,visibility 0s linear .42s}
+ .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="warcaby"],
+ .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .42s ease,visibility 0s}
+ .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="gomoku"],
+ .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none}
+}
+@media(max-width:680px){
+ .r4-console-dynamic{top:auto;right:0;bottom:0;width:100%;height:auto;aspect-ratio:1250/663}
+ .r4-console-title{font-size:clamp(9px,2.5vw,16px)}
+ .r4-console-board{border-width:clamp(4px,1vw,8px)}
+ .r4-console-soon-caption{font-size:clamp(10px,3vw,18px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .r4-console-title,.r4-console-board,.r4-hero-live-actions a,.r4-game-cta-stack .r4-btn{transition:none!important}
+}
+
+
+
+/* Desktop: use the original semantic two HTML links, rather than a second
+   clickable overlay, so mouse and keyboard navigation cannot be intercepted. */
+@media(min-width:1181px){
+ .homepage-premium-max .r4-hero-copy{
+  position:absolute!important;inset:0!important;left:0!important;top:0!important;
+  z-index:7;width:100%!important;height:100%!important;max-width:none!important;min-height:0!important;
+  padding:0!important;margin:0!important;overflow:visible!important;clip:auto!important;
+  clip-path:none!important;white-space:normal!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy>:not(.r4-hero-actions){
+  position:absolute!important;width:1px!important;height:1px!important;max-width:1px!important;
+  clip-path:inset(50%)!important;overflow:hidden!important;white-space:nowrap!important;
+  padding:0!important;margin:-1px!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions{
+  display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  margin:0!important;padding:0!important;opacity:1!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a{
+  display:flex!important;position:absolute!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;padding:0!important;margin:0!important;min-width:0!important;
+  border-radius:clamp(8px,1.1vw,25px)!important;pointer-events:auto!important;cursor:pointer;
+  font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif!important;text-decoration:none!important;
+  white-space:nowrap!important;transform:none!important;transition:filter .2s ease!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/gry/"]{
+  top:65.7%!important;left:1.96%!important;width:12.3%!important;height:10.7%!important;
+  color:#002830!important;background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127)!important;
+  border:1px solid #fff0af!important;box-shadow:inset 0 2px 2px rgba(255,255,255,.7)!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/poradniki/"]{
+  top:65.7%!important;left:15.1%!important;width:16.5%!important;height:10.7%!important;
+  color:#fff9ea!important;background:#002e32!important;border:1px solid #e0a940!important;
+  box-shadow:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions .r4-game-cta-stack{display:none!important}
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a:focus-visible{
+  outline:3px solid #fff5bf!important;outline-offset:2px!important
+ }
+}
+
