@@ -11,11 +11,14 @@ function served(path,method='GET'){
 }
 test('Gomoku Full Max Premium serves its dedicated console and assets without login',()=>{
  for(const [path,type] of [['/konto/gomoku/','text/html'],['/konto/gomoku/styl.css','text/css'],
-  ['/konto/gomoku/app.js','application/javascript']]){
+  ['/konto/gomoku/app.js','application/javascript'],
+  ['/konto/gomoku/ai-worker.js','application/javascript']]){
   const res=served(path);assert.equal(res.found,true);
   assert.equal(res.status,200);assert.match(res.headers['Content-Type'],new RegExp(type));
   assert.equal(res.headers['Cache-Control'],'no-store');
   assert.match(res.headers['Content-Security-Policy'],/connect-src 'self'/);
+  assert.match(res.headers['Content-Security-Policy'],/worker-src 'self'/,
+   'Same-origin browser worker is explicitly allowed by CSP');
   assert.equal(Number(res.headers['Content-Length']),Buffer.byteLength(res.body));
  }
  assert.equal(served('/konto/gomoku/','POST').found,false);
@@ -298,10 +301,14 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(app,/if\(area\.children\.length!==count\)\{/,
   'Board buttons are created once rather than rebuilt for every status update');
  assert.doesNotMatch(app,/const area=\$\('board'\);area\.replaceChildren\(\);/);
+ assert.match(app,/new Worker\('\/konto\/gomoku\/ai-worker\.js'\)/);
+ assert.match(app,/worker\.postMessage\(\{id,level,board:state\.board\.slice\(\)\}\)/);
+ assert.match(app,/if\(state\.thinking\)queueCpuTurn\(state\.epoch\)/);
+ assert.doesNotMatch(app,/\},330\);/,'No artificial 330 ms wait before responding to a move');
  new Script(app);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
- const fake=new Map(),queued=[],calls=[],storage=new Map(),navigations=[],intervals=[];
+ const fake=new Map(),queued=[],queuedDelays=[],calls=[],storage=new Map(),navigations=[],intervals=[];
  let fakeTime=0;
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
@@ -350,7 +357,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  const context={
   document:{getElementById:get,createElement:()=>new Element(),visibilityState:'visible'},
-  window:{performance:{now:()=>fakeTime},setTimeout:fn=>{queued.push(fn);},
+  window:{performance:{now:()=>fakeTime},setTimeout:(fn,delay)=>{queued.push(fn);queuedDelays.push(delay);},
    setInterval:fn=>{intervals.push(fn);},location:{assign:href=>navigations.push(href)},
    localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}},
   location:{search:'',pathname:'/konto/gomoku/'},
@@ -432,6 +439,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1);
  assert.equal(get('history-count').textContent,'1');
  assert.equal(queued.length,1);
+ assert.equal(queuedDelays[0],0,'Fallback CPU reply is scheduled without the former 330 ms delay');
  assert.equal(get('clock-2').classes.has('clock-running'),true,'Computer clock runs during its turn');
  fakeTime+=5000;intervals[0]();
  assert.equal(get('clock-1').textContent,'07:00');
@@ -750,6 +758,33 @@ test('Gomoku AI chat replaces scripted automatic responses with real same-origin
   'The client remembers the specific board for which advice was requested');
  assert.match(script,/if\(isBoardQuestion&&\(requestedBoard!==state\.board\.join\(''\)\|\|requestedWinner!==state\.winner\)\)/,
   'Stale Gomoku advice cannot be presented after the board or outcome changes');
+});
+
+
+test('Gomoku off-thread Arcymistrz returns legal instant-win or block from a board snapshot',()=>{
+ const source=served('/konto/gomoku/ai-worker.js');
+ assert.equal(source.status,200);
+ assert.equal(source.found,true);
+ assert.doesNotMatch(source.body,/window\.setTimeout|330\);/,
+  'The worker never inserts a cosmetic waiting period');
+ const messages=[];
+ const scope={self:{postMessage:answer=>messages.push(answer)}};
+ new Script(source.body).runInNewContext(scope);
+ assert.equal(typeof scope.self.onmessage,'function');
+ const board=Array(225).fill(0);
+ board[7*15+3]=2;
+ for(const c of [4,5,6,7])board[7*15+c]=1;
+ const original=board.slice();
+ scope.self.onmessage({data:{id:7,level:'master',board:board.slice()}});
+ assert.equal(messages.length,1);
+ assert.equal(messages[0].id,7);
+ assert.equal(messages[0].at,7*15+8,'Arcymistrz blocks the forced human win');
+ assert.deepEqual(board,original,'Main-thread board is never mutated by worker calculation');
+ const winning=Array(225).fill(0);
+ for(const c of [4,5,6,7])winning[7*15+c]=2;
+ scope.self.onmessage({data:{id:8,level:'master',board:winning.slice()}});
+ assert.ok([7*15+3,7*15+8].includes(messages[1].at),
+  'Arcymistrz takes immediate wins with unchanged tactical logic');
 });
 
 test('Expert Gomoku AI wins immediately rather than making a merely attractive move',()=>{
