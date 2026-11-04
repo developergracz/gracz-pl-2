@@ -58,14 +58,23 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
 
  assert.match(style.body,/R7 pixel alignment: polished checkers/);
 
- // Final rules must win over the prior 1.12:1 frame from Gomoku parity.
- assert.match(style.body,/R8: board and gold frame are the same square/);
- assert.match(style.body,/container-type:size/);
- assert.match(style.body,/width:min\(100cqw,100cqh\)/);
- assert.match(style.body,/aspect-ratio:1 \/ 1/);
- assert.match(style.body,/grid-template-rows:minmax\(0,1fr\)/);
- assert.match(style.body,/overflow:hidden/);
- assert.match(style.body,/@media \(max-width:800px\)/);
+ // Regression: old R8 size containment collapsed the board and displaced panels.
+ assert.doesNotMatch(style.body,/container-type:size/);
+ assert.doesNotMatch(style.body,/100cqh/);
+ assert.match(style.body,/grid-template-rows:var\(--console-players-height,60px\)/);
+ assert.match(js.body,/gracz-warcaby-console-layout-v1/);
+ assert.match(js.body,/console-config-fab/);
+ assert.match(js.body,/setBoardFocusMode/);
+ for(const k of ['sidebar','dock','players','quicklinks','status','bottom','tools',
+    'training-settings','training-records','online-settings','replay','chat-history',
+    'chat-input','heading','mode']){
+  assert.match(js.body,new RegExp("'"+k+"'"),k);
+ }
+ assert.match(js.body,/consoleHidden=new Set/);
+ assert.match(js.body,/saveConsoleLayout\(\)/);
+ assert.match(js.body,/localStorage\?\.getItem\(consoleLayoutKey\)/);
+ assert.match(js.body,/console-preset-board/);
+ assert.match(js.body,/changeConsoleLayout\(key\)/);
 
  assert.match(style.body,/height:55px;min-height:55px;max-height:55px/);
  assert.match(style.body,/min-height:28px;height:28px/);
