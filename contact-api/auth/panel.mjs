@@ -481,7 +481,177 @@ body.pw-success-open{overflow:hidden}
  .site-nav nav{grid-column:1/-1;grid-row:2;margin-top:0;gap:9px 14px;min-width:0}
 }
 @media(prefers-reduced-motion:reduce){.site-nav .site-discover{transition:none}}
-`+premiumProfileStyles;
+`+premiumProfileStyles+String.raw`
+/* Compact v2: consistent density on EVERY player section.
+   Applied after premiumProfileStyles so profile tabs/cards follow the same scale.
+   Geometry-only; no zoom/transform or modification of game/account logic. */
+@media(min-width:1051px){
+ .site-nav{min-height:42px;padding:5px clamp(18px,2.7vw,45px);gap:clamp(13px,1.7vw,24px)}
+ .site-brand{font-size:23px}
+ .site-nav nav{gap:clamp(12px,1.5vw,26px)}
+ .site-nav nav a{font-size:12px}
+ .site-nav .site-discover{padding:7px 12px;border-radius:10px;font-size:12px}
+ body:not(.panel-large) #player-shell.shell{max-width:1480px;grid-template-columns:minmax(0,1fr) 235px;gap:14px;padding:10px clamp(12px,1.6vw,24px)}
+ body:not(.panel-large) #player-shell .sidebar{top:9px;border-radius:15px}
+ body:not(.panel-large) #player-shell .identity{padding:11px 13px 9px}
+ body:not(.panel-large) #player-shell .avatar{width:44px;height:44px;font-size:24px}
+ body:not(.panel-large) #player-shell .identity .small{font-size:9px;margin:9px 0 4px}
+ body:not(.panel-large) #player-shell .identity strong{font-size:14px}
+ body:not(.panel-large) #player-shell .identity .status{font-size:10px;margin-top:5px}
+ body:not(.panel-large) #player-shell .sidebar nav{padding:7px;gap:1px}
+ body:not(.panel-large) #player-shell .sidebar .nav{min-height:31px;padding:5px 9px;font-size:11px;gap:7px;border-radius:9px}
+ body:not(.panel-large) #player-shell .sidebar .nav span{width:18px;font-size:15px}
+ body:not(.panel-large) #player-shell .create-room{width:calc(100% - 20px)!important;margin:8px 10px 5px!important;padding:8px 10px!important;font-size:12px!important}
+ body:not(.panel-large) #player-shell .signout{padding:8px;margin:4px 9px 9px;font-size:11px;width:calc(100% - 18px)}
+ body:not(.panel-large) #player-shell .masthead{min-height:112px;padding:13px 20px;margin-bottom:9px;border-radius:15px;gap:10px}
+ body:not(.panel-large) #player-shell .masthead h1{font-size:clamp(27px,2.4vw,35px);margin:4px 0 6px}
+ body:not(.panel-large) #player-shell .masthead .eyebrow{font-size:9px;letter-spacing:1px}
+ body:not(.panel-large) #player-shell .masthead p:last-child{font-size:12px}
+ body:not(.panel-large) #player-shell .mark{width:67px;height:67px;border-width:4px}
+ body:not(.panel-large) #player-shell .mark span{font-size:29px}
+ body:not(.panel-large) #player-shell .mark small{font-size:7px}
+}
+@media(min-width:701px) and (max-width:1050px){
+ .site-nav{min-height:44px;padding:7px 13px;gap:10px}
+ .site-brand{font-size:22px}
+ .site-nav nav{gap:9px}
+ .site-nav nav a{font-size:11px}
+ .site-nav .site-discover{padding:8px 10px;font-size:11px}
+ body:not(.panel-large) #player-shell.shell{padding:11px;gap:11px}
+ body:not(.panel-large) #player-shell .masthead{min-height:117px;padding:14px;margin-bottom:10px}
+ body:not(.panel-large) #player-shell .masthead h1{font-size:clamp(27px,3.5vw,34px)}
+ body:not(.panel-large) #player-shell .mark{height:68px;width:68px;border-width:4px}
+ body:not(.panel-large) #player-shell .mark span{font-size:29px}
+ body:not(.panel-large) #player-shell .sidebar .nav{padding:7px 9px;font-size:11px}
+}
+@media(min-width:701px){
+ body:not(.panel-large) #player-shell .view.active{gap:9px}
+ body:not(.panel-large) #player-shell .card{padding:clamp(11px,1.2vw,17px);border-radius:13px}
+ body:not(.panel-large) #player-shell .card h2{font-size:clamp(17px,1.6vw,23px);margin:3px 0 8px}
+ body:not(.panel-large) #player-shell .card h3{font-size:clamp(15px,1.25vw,18px);margin:5px 0}
+ body:not(.panel-large) #player-shell .card p{font-size:12px;line-height:1.38}
+ body:not(.panel-large) #player-shell .card-heading{gap:9px;margin-bottom:5px}
+ body:not(.panel-large) #player-shell :is(.card-kicker,.eyebrow){font-size:9px;letter-spacing:1.1px}
+ body:not(.panel-large) #player-shell .stats{gap:8px}
+ body:not(.panel-large) #player-shell .stat{padding:10px}
+ body:not(.panel-large) #player-shell .stat strong{font-size:clamp(21px,2vw,29px);margin:4px 0}
+ body:not(.panel-large) #player-shell .stat span{font-size:11px}
+ body:not(.panel-large) #player-shell .hero-card{gap:12px;min-height:102px}
+ body:not(.panel-large) #player-shell .hero-card .player-avatar{width:57px;height:57px;font-size:31px}
+ body:not(.panel-large) #player-shell .hero-card h2{font-size:22px}
+ body:not(.panel-large) #player-shell .verified{padding:6px 9px;font-size:10px}
+ body:not(.panel-large) #player-shell :is(.primary,.secondary){padding:8px 12px;font-size:12px;border-radius:9px}
+ body:not(.panel-large) #player-shell .notice{padding:8px 12px;margin-bottom:9px}
+ body:not(.panel-large) #player-shell .detail{padding:9px 0;font-size:12px}
+ body:not(.panel-large) #player-shell .form-grid{gap:10px}
+ body:not(.panel-large) #player-shell .form-grid label{gap:5px;font-size:12px}
+ body:not(.panel-large) #player-shell .form-grid :is(input,select,textarea){min-height:36px;padding:8px 10px;font-size:12px}
+ body:not(.panel-large) #player-shell .form-grid textarea{min-height:80px}
+ body:not(.panel-large) #player-shell .form-actions{gap:9px;padding-top:12px}
+ body:not(.panel-large) #player-shell .setting{gap:9px;padding:10px 0}
+ body:not(.panel-large) #player-shell .setting strong{font-size:12px}
+ body:not(.panel-large) #player-shell .setting small{font-size:11px}
+ body:not(.panel-large) #player-shell .setting select{padding:7px}
+ body:not(.panel-large) #player-shell .session-list{margin:9px 0}
+ body:not(.panel-large) #player-shell .session-item{padding:9px 0}
+ body:not(.panel-large) #player-shell .game-grid{gap:9px;margin-top:10px}
+ body:not(.panel-large) #player-shell .game-tile{padding:12px;border-radius:12px}
+ body:not(.panel-large) #player-shell .game-tile h3{font-size:16px}
+ body:not(.panel-large) #player-shell .game-emoji{font-size:24px}
+ body:not(.panel-large) #player-shell .game-actions{gap:6px}
+ body:not(.panel-large) #player-shell .game-actions :is(a,button){padding:7px 9px;font-size:11px}
+ body:not(.panel-large) #player-shell .friends-items{gap:7px;margin:8px 0}
+ body:not(.panel-large) #player-shell .friend-person{padding:9px;gap:8px}
+ body:not(.panel-large) #player-shell .friend-name{font-size:12px}
+ body:not(.panel-large) #player-shell .friend-controls button{padding:7px 9px;font-size:11px}
+ body:not(.panel-large) #player-shell .social-controls{gap:8px;margin-bottom:10px}
+ body:not(.panel-large) #player-shell .social-controls select{padding:8px;font-size:12px}
+ body:not(.panel-large) #player-shell .social-thread{min-height:170px;max-height:310px;padding:10px;gap:7px}
+ body:not(.panel-large) #player-shell .social-bubble{padding:8px 11px}
+ body:not(.panel-large) #player-shell .match-top{margin:9px 0}
+ body:not(.panel-large) #player-shell .match-board{max-width:min(520px,100%);margin:8px auto;border-width:4px}
+ body:not(.panel-large) #player-shell .premium-profile{gap:10px}
+ body:not(.panel-large) #player-shell .premium-profile .profile-hero-premium{padding:12px 16px;border-radius:15px}
+ body:not(.panel-large) #player-shell .profile-topline{margin-bottom:10px;gap:5px}
+ body:not(.panel-large) #player-shell .profile-topline>span:first-child{font-size:9px;letter-spacing:1px}
+ body:not(.panel-large) #player-shell .profile-verified{padding:5px 8px;font-size:10px}
+ body:not(.panel-large) #player-shell .profile-hero-body{gap:9px}
+ body:not(.panel-large) #player-shell .profile-intro{gap:10px}
+ body:not(.panel-large) #player-shell .profile-avatar-frame{width:62px;height:62px;border-radius:14px}
+ body:not(.panel-large) #player-shell .profile-avatar-large{font-size:36px}
+ body:not(.panel-large) #player-shell .profile-avatar-check{width:19px;height:19px;bottom:-3px;right:-3px;font-size:11px}
+ body:not(.panel-large) #player-shell .profile-intro h2{font-size:clamp(23px,2.4vw,30px);margin:2px 0}
+ body:not(.panel-large) #player-shell .profile-intro #profile-handle{margin:2px 0 5px;font-size:11px}
+ body:not(.panel-large) #player-shell .profile-chips{gap:4px}
+ body:not(.panel-large) #player-shell .profile-chips span{padding:3px 6px;font-size:9px}
+ body:not(.panel-large) #player-shell .profile-hero-actions{gap:6px}
+ body:not(.panel-large) #player-shell .profile-hero-actions button{padding:7px 9px;font-size:11px}
+ body:not(.panel-large) #player-shell .profile-metrics{margin-top:10px;gap:7px}
+ body:not(.panel-large) #player-shell .profile-metric{padding:8px 9px;border-radius:10px}
+ body:not(.panel-large) #player-shell .profile-metric small{font-size:9px}
+ body:not(.panel-large) #player-shell .profile-metric strong{font-size:clamp(18px,1.9vw,26px);margin:4px 0 1px}
+ body:not(.panel-large) #player-shell .profile-metric span{font-size:10px}
+ body:not(.panel-large) #player-shell .profile-metric progress{height:5px;margin:4px 0}
+ body:not(.panel-large) #player-shell .profile-layout{gap:10px}
+ body:not(.panel-large) #player-shell :is(.profile-main-column,.profile-side-column){gap:10px}
+ body:not(.panel-large) #player-shell .profile-shortcut-grid{gap:7px}
+ body:not(.panel-large) #player-shell .profile-shortcut-grid button{padding:8px}
+ body:not(.panel-large) #player-shell .profile-shortcut-grid button span{width:30px;height:30px;font-size:17px}
+ body:not(.panel-large) #player-shell .profile-preview-inner{padding:12px;margin-top:8px}
+ body:not(.panel-large) #player-shell .profile-preview-avatar{width:57px;height:57px;font-size:32px}
+ body:not(.panel-large) #player-shell .profile-preview-inner p{min-height:0;margin:8px 0}
+ body:not(.panel-large) #player-shell .profile-game-links{gap:7px}
+ body:not(.panel-large) #player-shell .profile-game-links a{padding:9px 7px}
+ body:not(.panel-large) #player-shell .profile-edit-hint{padding:8px;margin-top:10px}
+ body:not(.panel-large) #player-shell .profile-pill{padding:5px 8px;font-size:9px}
+ body:not(.panel-large) #player-shell .premium-profile-tabs{padding:5px;gap:6px;margin:9px 0;border-radius:13px;top:0}
+ body:not(.panel-large) #player-shell .premium-profile-tabs button{min-height:34px;padding:5px;font-size:11px;border-radius:9px}
+ body:not(.panel-large) #player-shell .premium-profile-tab-panel .premium-profile-workspace{padding:12px!important;margin:9px 0}
+ body:not(.panel-large) #player-shell .premium-profile-two{gap:12px}
+ body:not(.panel-large) #player-shell .premium-profile-showcase{min-height:225px;padding:17px}
+ body:not(.panel-large) #player-shell .premium-showcase-avatar{width:74px;height:74px;font-size:39px}
+ body:not(.panel-large) #player-shell .premium-stats-grid{gap:7px;margin:12px 0}
+ body:not(.panel-large) #player-shell .premium-stats-grid>div{padding:10px 7px}
+ body:not(.panel-large) #player-shell .premium-stats-grid strong{font-size:26px}
+ body:not(.panel-large) #player-shell .premium-awards-grid{gap:8px}
+ body:not(.panel-large) #player-shell .premium-award{padding:11px}
+ body:not(.panel-large) #player-shell .premium-profile-form{gap:7px}
+ body:not(.panel-large) #player-shell .premium-profile-form select,
+ body:not(.panel-large) #player-shell .premium-profile-form input:not([type="checkbox"]){min-height:37px;padding:7px 10px;font-size:12px}
+ body:not(.panel-large) #player-shell .profile-password-form{gap:6px;margin-top:10px}
+ body:not(.panel-large) #player-shell .profile-password-field input{min-height:40px;padding:9px 11px!important}
+ body:not(.panel-large) #player-shell .profile-password-field button{min-width:68px;padding:0 12px}
+ body:not(.panel-large) #player-shell .footer{padding:12px}
+}
+@media(max-width:700px){
+ /* Smaller cards and banners without shrinking mobile touch targets below 40px. */
+ #player-shell.shell{padding:9px;gap:10px}
+ #player-shell .masthead{min-height:107px;padding:12px;margin-bottom:8px}
+ #player-shell .masthead h1{font-size:clamp(24px,6.2vw,32px)}
+ #player-shell .mark{width:54px;height:54px}
+ #player-shell .mark span{font-size:23px}
+ #player-shell .view.active{gap:9px}
+ #player-shell .card{padding:12px}
+ #player-shell .card h2{font-size:20px;margin:5px 0 9px}
+ #player-shell .premium-profile .profile-hero-premium{padding:11px}
+ #player-shell .profile-avatar-frame{height:59px;width:59px}
+ #player-shell .profile-avatar-large{font-size:35px}
+ #player-shell .profile-metrics{margin-top:9px}
+ #player-shell .profile-metric{padding:9px}
+ #player-shell .profile-metric strong{font-size:22px}
+ #player-shell .premium-profile-tabs{padding:6px;gap:6px;margin:8px 0}
+ #player-shell .premium-profile-tabs button{min-height:40px;font-size:12px}
+ #player-shell .premium-profile-workspace{padding:12px!important}
+ #player-shell .profile-preview-inner{padding:12px}
+ #player-shell .friend-person,#player-shell .game-tile{padding:11px}
+ #player-shell .setting,#player-shell .session-item{padding:10px 0}
+ #player-shell .social-thread{min-height:160px;padding:10px}
+ #player-shell .match-board{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ #player-shell .card,#player-shell .nav{transition:none}
+}
+`;
 const js=String.raw`(()=>{
 'use strict';
 const $=id=>document.getElementById(id);

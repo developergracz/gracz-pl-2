@@ -485,3 +485,39 @@ test('player header has one navigation bar and one premium discover-games action
  assert.match(styles.body,/\.site-nav \.site-discover/);
  assert.match(styles.body,/@media\(max-width:700px\)/);
 });
+
+test('all player-panel sections share compact responsive geometry after premium styles',()=>{
+ const page=response(),css=response();
+ const origin='https://gracz-contact-api.onrender.com';
+ assert.equal(servePlayerPanel({method:'GET'},page,new URL('/konto/panel/',origin)),true);
+ assert.equal(servePlayerPanel({method:'GET'},css,new URL('/konto/panel/styl.css',origin)),true);
+ assert.equal(page.status,200);
+ assert.equal(css.status,200);
+ const marker='/* Compact v2: consistent density on EVERY player section.';
+ const start=css.body.lastIndexOf(marker);
+ assert.ok(start>0,'compact density must be present in served stylesheet');
+ const condensed=css.body.slice(start);
+ const required=[
+  '@media(min-width:1051px)',
+  '@media(min-width:701px) and (max-width:1050px)',
+  '@media(min-width:701px)',
+  '@media(max-width:700px)',
+  '#player-shell .card{',
+  '#player-shell .sidebar .nav{',
+  '#player-shell .profile-metric{',
+  '#player-shell .premium-profile-tabs button{',
+  '#player-shell .game-tile{',
+  '#player-shell .friend-person{',
+  '#player-shell .social-thread{',
+  '#player-shell .match-board{',
+  '#player-shell .session-item{',
+  '#player-shell .setting{'
+ ];
+ for(const rule of required)assert.ok(condensed.includes(rule),'missing compact section style: '+rule);
+ assert.doesNotMatch(condensed,/(^|[;{])\s*(zoom|transform)\s*:/m);
+ assert.match(condensed,/body:not\(\.panel-large\)/,'desktop accessibility large-text mode remains available');
+ assert.match(page.body,/data-panel="profile"/);
+ assert.match(page.body,/data-panel="security"/);
+ assert.match(page.body,/data-panel="friends"/);
+ assert.match(page.body,/data-panel="games"/);
+});
