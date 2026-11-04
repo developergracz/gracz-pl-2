@@ -197,9 +197,85 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  </div>
 </div>
 </section>
-<section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
-<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
-<button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
+<section class="view" data-panel="security">
+<div class="sec-hero">
+ <div><p class="card-kicker">GRACZ.PL · CENTRUM OCHRONY · FULL MAX PREMIUM</p><h2>Bezpieczeństwo konta</h2><p>Kontroluj aktywne sesje, urządzenia, hasło, historię operacji i ustawienia widoczności alertów.</p></div>
+ <span class="sec-shield" aria-hidden="true">♜</span>
+</div>
+<div class="sec-metrics">
+ <div><small>WERYFIKACJA E-MAIL</small><strong id="sec-email-status">Sprawdzanie</strong><span>Tożsamość konta</span></div>
+ <div><small>AKTYWNE SESJE</small><strong id="sec-session-count">—</strong><span>Przeglądarki i urządzenia</span></div>
+ <div><small>OSTATNIE ZDARZENIE</small><strong id="sec-last-event">—</strong><span>Od wdrożenia historii</span></div>
+ <div><small>2FA</small><strong>Planowane</strong><span>Nie jest aktywne</span></div>
+</div>
+<nav class="sec-tabs" role="tablist" aria-label="Moduły bezpieczeństwa">
+ <button class="active" role="tab" type="button" data-sec-tab="overview" aria-selected="true">◈ Centrum ochrony</button>
+ <button role="tab" type="button" data-sec-tab="devices" aria-selected="false">▣ Urządzenia i sesje</button>
+ <button role="tab" type="button" data-sec-tab="history" aria-selected="false">◷ Historia zdarzeń</button>
+ <button role="tab" type="button" data-sec-tab="alerts" aria-selected="false">♢ Alerty i ustawienia</button>
+ <button role="tab" type="button" data-sec-tab="recovery" aria-selected="false">✧ Odzyskiwanie</button>
+</nav>
+<p class="sec-status" id="sec-status" role="status" aria-live="polite">Ochrona konta: oczekiwanie na weryfikację danych sesji.</p>
+<div class="sec-pane" data-sec-pane="overview">
+ <div class="sec-two">
+  <div class="card sec-feature"><p class="card-kicker">HASŁO I DOSTĘP</p><h2>Ochrona hasłem</h2><p>Sprawdzenie aktualnego hasła, szyfrowane połączenie oraz bezpieczny skrót kryptograficzny. Zmiana hasła unieważnia pozostałe sesje.</p>
+   <div class="sec-feature-actions"><button id="sec-change-password" class="primary" type="button">Zmień hasło</button><span class="sec-inline-note">Bezpośrednio w „Konto i profil”</span></div>
+  </div>
+  <div class="card sec-feature"><p class="card-kicker">BEZPIECZNA SESJA</p><h2>Kontrola dostępu</h2><p>Możesz wylogować się z bieżącej przeglądarki albo unieważnić sesje pozostałych urządzeń.</p>
+   <div class="sec-feature-actions"><button id="sec-revoke-quick" class="secondary" type="button">Wyloguj inne urządzenia</button><button class="secondary" id="security-logout" type="button">Wyloguj tutaj</button></div>
+  </div>
+ </div>
+ <div class="card"><p class="card-kicker">BEZPIECZEŃSTWO W PRAKTYCE</p><h2>Stan zabezpieczeń</h2>
+  <div class="sec-checklist">
+   <div><strong>✓ Potwierdzony e-mail</strong><span>Wymagany do aktywnego konta.</span></div>
+   <div><strong>✓ Sesje HttpOnly</strong><span>Tokeny sesji nie są dostępne skryptom w przeglądarce.</span></div>
+   <div><strong>✓ Zmiana hasła</strong><span>Weryfikacja aktualnego hasła i wylogowanie pozostałych sesji.</span></div>
+   <div><strong>○ Uwierzytelnianie dwuskładnikowe</strong><span>Funkcja nie jest obecnie uruchomiona — nie można jej włączyć tutaj.</span></div>
+  </div>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="devices" hidden>
+ <div class="card">
+  <div class="card-heading"><div><p class="card-kicker">PRZEGLĄDARKI I URZĄDZENIA</p><h2>Aktywne sesje konta</h2><p>Rozpoznawanie przeglądarek jest orientacyjne; nie zbieramy lokalizacji ani dokładnego adresu IP do tego widoku.</p></div><div class="sec-feature-actions"><button class="secondary" id="sec-devices-refresh" type="button">Odśwież</button><button class="primary" id="sec-revoke-others" type="button">Wyloguj pozostałe</button></div></div>
+  <div id="sec-device-list" class="sec-device-list"><p>Odczytywanie sesji…</p></div>
+  <p class="sec-inline-note">Bieżącej sesji nie można usunąć z tej listy. Aby ją zamknąć, użyj „Wyloguj tutaj” w Centrum ochrony.</p>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="history" hidden>
+ <div class="card">
+  <div class="card-heading"><div><p class="card-kicker">DZIENNIK BEZPIECZEŃSTWA</p><h2>Historia wybranych zdarzeń</h2></div><div class="sec-feature-actions"><button id="sec-history-refresh" class="secondary" type="button">Odśwież</button><button id="sec-export-events" class="secondary" type="button">Eksport CSV</button></div></div>
+  <p class="sec-inline-note" id="sec-history-note">Dziennik obejmuje jedynie zdarzenia zapisywane od wdrożenia tego modułu, nie wcześniejsze logowania.</p>
+  <label class="sec-history-filter">Pokaż wydarzenia<select id="sec-event-filter">
+   <option value="all">Wszystkie</option><option value="login_success">Udane logowania</option>
+   <option value="password_changed">Zmiana hasła</option><option value="session_revoked">Wylogowane urządzenia</option>
+   <option value="other_sessions_revoked">Wylogowanie pozostałych</option><option value="preferences_updated">Zmiana ustawień</option>
+  </select></label>
+  <div id="sec-event-list" class="sec-event-list"><p>Historia jest wczytywana…</p></div>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="alerts" hidden>
+ <div class="card sec-feature"><p class="card-kicker">POWIADOMIENIA W PANELU</p><h2>Wyróżnianie ważnych zdarzeń</h2><p>Ustawienia wpływają na oznaczenia w panelu bezpieczeństwa, a nie na wysyłkę e-mail lub SMS.</p>
+  <form id="sec-alert-form" class="sec-alert-form">
+   <label><span><strong>Nowe logowania</strong><small>Wyróżniaj udane logowania w historii.</small></span><input type="checkbox" id="sec-alert-logins"></label>
+   <label><span><strong>Zmiana hasła</strong><small>Wyróżniaj zdarzenia zmiany hasła.</small></span><input type="checkbox" id="sec-alert-password"></label>
+   <div class="sec-feature-actions"><button class="primary" id="sec-alert-save" type="submit">Zapisz ustawienia</button><span id="sec-alert-status" role="status" aria-live="polite"></span></div>
+  </form>
+  <p class="sec-inline-note" id="sec-alert-note">Wysyłka e-mail/SMS nie została uruchomiona.</p>
+ </div>
+</div>
+<div class="sec-pane" data-sec-pane="recovery" hidden>
+ <div class="card sec-feature">
+  <p class="card-kicker">PRZYWRACANIE DOSTĘPU</p><h2>Bezpieczne odzyskiwanie konta</h2>
+  <div class="sec-checklist">
+   <div><strong>1. Potwierdzony adres e-mail</strong><span>Sprawdzaj, czy nadal masz dostęp do swojej skrzynki. Obecnie brak formularza zmiany adresu w tej sekcji.</span></div>
+   <div><strong>2. Zmiana hasła</strong><span>Jeżeli znasz obecne hasło, możesz zmienić je bez wylogowania.</span></div>
+   <div><strong>3. Podejrzane sesje</strong><span>Jeżeli nie rozpoznajesz aktywnej sesji, unieważnij ją lub wszystkie pozostałe i zmień hasło.</span></div>
+   <div><strong>4. 2FA i kody odzyskiwania</strong><span>Dostępne dopiero po osobnym wdrożeniu i weryfikacji mechanizmu 2FA. Obecnie nie generujemy żadnych fikcyjnych kodów.</span></div>
+  </div>
+  <div class="sec-feature-actions"><button type="button" class="secondary" id="sec-recovery-password">Przejdź do zmiany hasła</button><button type="button" class="secondary" id="sec-recovery-devices">Zobacz sesje</button></div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
 <section class="view" data-panel="messages">
