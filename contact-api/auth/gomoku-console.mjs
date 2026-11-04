@@ -71,7 +71,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
 <div class="sidebar-footer"><div class="sidecard rules premium-howto"><button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></button></div>
 <nav class="side-links" aria-label="Pomoc i panel gracza"><a href="/konto/panel/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M3.5 9h17M9 9.5v10.5M7 6.25h.01M11 6.25h.01"/></svg></span><span>Mój panel</span></a><a href="https://gracz.pl/gry/gomoku/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2"/></svg></span><span>Zasady Gomoku</span></a></nav>
-<button type="button" id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"><span aria-hidden="true">⚙</span> Skonfiguruj wygląd konsoli</button>
+
 </div>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
@@ -152,8 +152,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
 <button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
 </div>
-<button type="button" id="console-config-open" class="console-config-open">⚙ Skonfiguruj wygląd konsoli</button>
-</div>
+<div class="game-controls-bottom"><button type="button" id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"><span aria-hidden="true">⚙</span> Skonfiguruj wygląd konsoli</button></div></div>
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Ruch czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
@@ -252,7 +251,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
  </div>
  </div>
 </div>
-<div id="console-config-modal" class="console-config-modal" role="dialog" aria-modal="true" aria-labelledby="console-config-title" hidden><section class="console-config-card"><header><div><small>GRACZ.PL · FULL MAX PREMIUM</small><h2 id="console-config-title">Skonfiguruj wygląd konsoli</h2><p>Ukryj lub dodaj elementy układu. Ustawienia zapisują się automatycznie.</p></div><button type="button" id="console-config-close" aria-label="Zamknij">✕</button></header><div class="console-config-tiles" id="console-config-tiles"></div><footer><button type="button" id="console-config-reset">Przywróć układ domyślny</button><button type="button" id="console-config-done">Zapisz i zamknij</button></footer></section></div></body></html>`;
+</body></html>`;
 const css=String.raw`:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif;font-synthesis:none;--gold:#efca82;--teal:#51d6d3;--navy:#03171e;--line:#395f64}
 *{box-sizing:border-box}html{background:#031519}body{margin:0;min-height:100dvh;color:#f1f9fc;background:#031519}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 74% 53%,#08747555,transparent 72%),linear-gradient(135deg,#021218,#05202b 50%,#03151d)}
@@ -1539,33 +1538,18 @@ select option{background:#102c34;color:#fff}
  .console-config-preview small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.console-config-preview>div{transition:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
-/* Premium console configurator */
-.console-config-modal[hidden]{display:none!important}.console-config-modal{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:16px;background:#000c15dc;backdrop-filter:blur(8px)}
-.console-config-card{width:min(920px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #e7bf78;border-radius:23px;background:radial-gradient(ellipse at 90% 0,#11666b80,transparent 60%),linear-gradient(145deg,#092e38,#031721);box-shadow:0 25px 80px #000b;padding:clamp(14px,2vw,28px);color:#e8fcfc}
-.console-config-card header,.console-config-card footer{display:flex;justify-content:space-between;align-items:start;gap:15px}.console-config-card header{margin-bottom:18px}.console-config-card header small{color:#f3c983;letter-spacing:2px;font-weight:900}.console-config-card h2{font-size:clamp(21px,3vw,30px);color:#ffe5b2;margin:8px 0}.console-config-card p{font-size:13px;color:#c5dddd;margin:0}.console-config-card button{border:1px solid #dfba72;background:linear-gradient(#175660,#06303d);color:#fff1d5;border-radius:10px;padding:10px;font-weight:800}.console-config-card footer{margin-top:18px;flex-wrap:wrap}.console-config-card #console-config-done{background:linear-gradient(#ffe4ab,#d6a34f);color:#16252a}
-.console-config-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.console-config-tile{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;padding:13px;border:1px solid #527b80;border-radius:15px;background:linear-gradient(145deg,#0e4650,#052734)}.console-config-tile.off{opacity:.7;border-style:dashed}.console-config-tile strong{display:block;font-size:12px}.console-config-tile small{display:block;font-size:10px;color:#b9d1d4;margin-top:4px}.console-config-tile button{flex:none;background:linear-gradient(#ffe1a5,#c99545);color:#13272b;font-size:11px;min-width:53px}
-.arena{grid-template-rows:minmax(0,1fr) auto auto}.game-tools{grid-column:1/-1;display:flex;flex-direction:row;flex-wrap:nowrap;gap:7px;align-items:center;justify-content:center}.game-tools .tool-btn{width:clamp(35px,4vw,50px);min-height:40px;height:40px;flex:0 1 50px;padding:5px;justify-content:center}.game-tools .tool-btn span{font-size:19px;min-width:0}.console-config-open{grid-column:1/-1;justify-self:center;width:min(100%,420px);margin:0 auto;border:1px solid #ebc581;border-radius:12px;background:linear-gradient(145deg,#14535c,#07313b);color:#ffe9bf;font-size:12px;font-weight:900;padding:12px}
-.layout.hide-console-sidebar{grid-template-columns:minmax(0,1fr)}.layout.hide-console-sidebar>.sidebar{display:none!important}.layout.hide-console-dock .arena{grid-template-columns:minmax(0,1fr)}.layout.hide-console-dock .side-dock{display:none!important}.layout.hide-console-players .players,.layout.hide-console-status .state,.layout.hide-console-info .bottom,.layout.hide-console-heading .boardtop,.layout.hide-console-tools .game-tools{display:none!important}
-.layout.hide-console-chat .mini-chat,.layout.hide-console-chat #chat-tab,.layout.hide-console-chat #chat-panel,.layout.hide-console-history #history-tab,.layout.hide-console-history #moves-panel,.layout.hide-console-history .replay-shortcut{display:none!important}
-.layout.hide-console-chat.hide-console-history .match-panel{display:none!important}.layout.hide-console-chat:not(.hide-console-history) .dock-tabs,.layout.hide-console-history:not(.hide-console-chat) .dock-tabs{display:none!important}
-@media(max-width:650px){.console-config-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.console-config-tile{flex-direction:column;align-items:stretch}.game-tools{gap:3px}.game-tools .tool-btn{width:37px;min-height:36px;height:36px}}
-@media(max-width:390px){.console-config-tiles{grid-template-columns:1fr}.console-config-tile{flex-direction:row}}
-@media(max-width:560px){.arena{display:grid;grid-template-columns:minmax(0,1fr)}.board-center,.side-dock,.game-tools,.console-config-open{grid-column:1}}
+/* R42: single-row tools above the existing 15-tile appearance configurator. */
+.arena{grid-template-rows:minmax(0,1fr) auto auto}
+.arena>.game-tools{grid-column:1/-1;display:flex;flex-flow:row nowrap;gap:clamp(4px,.7vw,9px);align-items:center;justify-content:center;min-width:0}
+.arena>.game-tools .tool-btn{flex:0 1 48px;width:clamp(34px,4vw,48px);height:40px;min-height:40px;padding:4px;justify-content:center}
+.arena>.game-tools .tool-btn span{min-width:0;font-size:19px}
+.arena>.game-controls-bottom{grid-column:1/-1;display:flex;justify-content:center;min-width:0}
+.arena .console-config-launch{display:flex;align-items:center;justify-content:center;gap:9px;width:min(100%,430px);min-height:39px;border:1px solid #e0b96a;border-radius:11px;background:linear-gradient(165deg,#145657,#083039 58%,#031d2a);color:#ffe3a6;font:800 13px Georgia,serif;box-shadow:inset 0 1px #d7fff465,0 0 10px #e4b65235;padding:8px 14px}
+.arena .console-config-launch span{color:#f6d18a}
+@media(max-width:560px){.arena{display:grid;grid-template-columns:minmax(0,1fr)}.arena>.board-center,.arena>.side-dock,.arena>.game-tools,.arena>.game-controls-bottom{grid-column:1}.arena>.game-tools{display:flex;flex-flow:row nowrap;width:100%;gap:3px}.arena>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:auto;height:37px;min-height:37px}}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
-const consoleItems=[['sidebar','Lewy panel nawigacji','Tryby i ustawienia gry'],['dock','Prawy panel','Czat i historia ruchów'],['chat','Czat','Rozmowa i wpisywanie wiadomości'],['history','Historia ruchów','Lista i powtórka'],['players','Panel graczy','Gracze i zegary'],['status','Stan rozgrywki','Komunikaty gry'],['heading','Nagłówek planszy','Nazwa partii'],['info','Dolny pasek','Podpowiedzi i liczba ruchów'],['tools','Narzędzia gry','Miniaturowe przyciski']];
-const consoleKey='gracz.gomoku.layout.v1';let consoleHidden={};let configFocus=null;
-try{const saved=JSON.parse(localStorage.getItem(consoleKey)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))for(const [key] of consoleItems)consoleHidden[key]=saved[key]===true;}catch{}
-function applyConsole(){for(const [key] of consoleItems)$('game').classList.toggle('hide-console-'+key,!!consoleHidden[key]);if(consoleHidden.chat&&!consoleHidden.history)$('history-tab').click();if(consoleHidden.history&&!consoleHidden.chat)$('chat-tab').click();try{localStorage.setItem(consoleKey,JSON.stringify(consoleHidden));}catch{}}
-function renderConsoleConfig(){const tiles=$('console-config-tiles');tiles.replaceChildren();for(const [key,title,description] of consoleItems){const tile=document.createElement('div');tile.className='console-config-tile'+(consoleHidden[key]?' off':'');const info=document.createElement('div'),label=document.createElement('strong'),hint=document.createElement('small'),button=document.createElement('button');label.textContent=title;hint.textContent=description;info.append(label,hint);button.type='button';button.textContent=consoleHidden[key]?'Dodaj':'Ukryj';button.setAttribute('aria-label',button.textContent+' '+title);button.addEventListener('click',()=>{consoleHidden[key]=!consoleHidden[key];applyConsole();renderConsoleConfig();});tile.append(info,button);tiles.append(tile);}}
-function closeConsoleConfig(){$('console-config-modal').hidden=true;(configFocus?.isConnected?configFocus:$('console-config-open')).focus();}
-$('console-config-open').addEventListener('click',()=>{configFocus=document.activeElement;renderConsoleConfig();$('console-config-modal').hidden=false;$('console-config-close').focus();});
-$('console-config-close').addEventListener('click',closeConsoleConfig);$('console-config-done').addEventListener('click',closeConsoleConfig);
-$('console-config-reset').addEventListener('click',()=>{consoleHidden={};applyConsole();renderConsoleConfig();});
-$('console-config-modal').addEventListener('click',event=>{if(event.target===$('console-config-modal'))closeConsoleConfig();});
-$('console-config-modal').addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeConsoleConfig();}if(event.key==='Tab'){const controls=[...$('console-config-modal').querySelectorAll('button:not([disabled])')];const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
-queueMicrotask(applyConsole);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
