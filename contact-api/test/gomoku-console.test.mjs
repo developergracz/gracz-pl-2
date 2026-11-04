@@ -50,6 +50,18 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="clock-2"/);
  assert.match(html,/Powtórka partii Gomoku/);
  assert.match(html,/Mój bilans treningu/);
+ const howto=html.match(/<details class="sidecard rules premium-howto">([\s\S]*?)<\/details>/)?.[1]||'';
+ assert.match(howto,/<summary><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"/,
+  'Native accessible Jak grać accordion has a Premium inline SVG');
+ assert.match(howto,/class="premium-nav-label">Jak grać\?<\/span>/);
+ assert.match(howto,/class="premium-nav-chevron" aria-hidden="true"/);
+ assert.match(howto,/Ułóż 5 swoich kamieni w linii/,'The original rules remain accessible after expanding');
+ const bottomNav=html.match(/<nav class="side-links" aria-label="Pomoc i panel gracza">([\s\S]*?)<\/nav>/)?.[1]||'';
+ assert.match(bottomNav,/<a href="\/konto\/panel\/"><span class="premium-nav-icon"/,
+  'My panel retains the original destination');
+ assert.match(bottomNav,/<a href="https:\/\/gracz\.pl\/gry\/gomoku\/"><span class="premium-nav-icon"/,
+  'Gomoku rules retain their original destination');
+ assert.equal((bottomNav.match(/<a href=/g)||[]).length,2,'Exactly two Premium navigation buttons');
  assert.match(html,/class="records-heading"/);
  assert.match(html,/class="records-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"/);
  assert.match(html,/class="record-stat record-stat-win"/);
@@ -102,6 +114,12 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
  assert.match(css,/R33: restrained Full Max Premium secondary action for reviewing the finished board/);
+ assert.match(css,/R34: compact, interactive Full Max Premium bottom navigation/);
+ assert.match(css,/\.sidebar \.rules\.premium-howto>summary\{display:flex;align-items:center;gap:8px;list-style:none/);
+ assert.match(css,/\.sidebar \.side-links\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-height:800px\)\{\.sidebar \.rules\.premium-howto>summary/);
+ assert.match(css,/@media\(max-width:380px\)\{\.sidebar \.side-links\{grid-template-columns:1fr\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.sidebar \.rules\.premium-howto>summary/);
  assert.match(css,/\.result-review\{position:relative;display:inline-flex;align-items:center;justify-content:center/);
  assert.match(css,/width:min\(100%,310px\);min-height:43px/);
  assert.match(css,/border:1px solid #d6aa61;border-radius:12px/);
