@@ -23,6 +23,10 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(js.body,/\/auth\//);
  assert.match(js.body,/credentials:'same-origin'/);
  assert.match(js.body,/version:current.version/);
+ assert.match(page.body,/id="begin-match"[^>]*href="\/konto\/panel\/#challenges"/);
+ assert.match(js.body,/function renderPreviewBoard\(\)/);
+ assert.match(js.body,/if\(!validMatch\)\{renderPreviewBoard\(\)/);
+ assert.match(js.body,/r<3\?1:r>4\?2:0/);
  assert.equal(load('/konto/warcaby/styl.css').status,200);
  assert.equal(load('/konto/warcaby/').headers['Content-Length'],Buffer.byteLength(page.body));
  assert.equal(load('/konto/warcaby/', 'POST').served,false);
