@@ -61,7 +61,7 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
   assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
   assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fit-r29");
-  assert.ok(html.indexOf("gracz-hero-mobile-art-r14.webp")<html.indexOf("home-lcp-bundle-r1.css"),
+  assert.ok(html.indexOf("gracz-hero-gomoku-mobile-preview-r1.webp")<html.indexOf("home-lcp-bundle-r1.css"),
     "Preload mobile LCP image before requesting CSS bundle");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
