@@ -50,6 +50,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="clock-2"/);
  assert.match(html,/Powtórka partii Gomoku/);
  assert.match(html,/Mój bilans treningu/);
+ const restartMarkup=html.match(/<button class="primary" id="restart" type="button">([\s\S]*?)<\/button>/)?.[1]||'';
+ assert.match(restartMarkup,/class="restart-premium-icon" aria-hidden="true"><svg viewBox="0 0 36 36"/);
+ assert.match(restartMarkup,/class="restart-label">Nowa rozgrywka<\/span>/);
+ assert.doesNotMatch(restartMarkup,/▶|Nowa partia/,'The old black play triangle and button label are gone');
  assert.doesNotMatch(html,/class="game-topbar"/);
  assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
  const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
@@ -100,6 +104,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
+ assert.match(css,/R30: integrated Full Max Premium Gomoku-board miniature replaces plain/);
+ assert.match(css,/#restart \.restart-premium-icon\{display:grid/);
+ assert.match(css,/#restart \.restart-label\{font:inherit/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{#restart \.restart-premium-icon/);
  assert.match(css,/R22: online refresh belongs in the upper-right Premium mini navigation/);
  assert.match(css,/\.premium-quick-links>\.premium-mini-link\{flex:0 1 clamp\(30px,2\.4vw,39px\)/,
   'Seven top miniatures fit side by side on desktop');
@@ -319,7 +327,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
  assert.match(get('game-state').textContent,/Przykładowy układ partii/);
  assert.equal(get('turn-label').textContent,'Podgląd partii');
- assert.match(get('board-help').textContent,/Nowa partia/);
+ assert.match(get('board-help').textContent,/Nowa rozgrywka/);
  assert.equal(get('chat-preview').children.length,1,'No fictional conversation shown in showcase');
  assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
  get('focus-game').listeners.click();
