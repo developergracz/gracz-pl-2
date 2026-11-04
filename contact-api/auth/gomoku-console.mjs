@@ -2678,7 +2678,7 @@ async function sendUndoAction(action){
    body:JSON.stringify({id:state.matchId,version:match.version,
     action,requestId:request?.id})});
   if(state.matchId===match.id){
-   state.match=result.match;
+   if(!state.match||result.match.version>=state.match.version){synchronizeGameTime(result);state.match=result.match;}
    if(action==='request')note('Prośba o cofnięcie ruchu została wysłana do przeciwnika.');
    if(action==='accept')note('Prośba zaakceptowana. Cofnięto wyłącznie kamień proszącego gracza.');
    if(action==='reject')note('Prośba o cofnięcie ruchu została odrzucona.');
