@@ -2011,6 +2011,10 @@ $('chat-form').addEventListener('submit',async event=>{
   // Only actual model answers enter the conversation. No fixed/fabricated replies.
   if(state.showcase)restart();
   const epoch=state.epoch;
+  const requestedBoard=state.board.join('');
+  const requestedWinner=state.winner;
+  const isBoardQuestion=/gomoku|plansz|parti|ruch|wygran|przegran|wygrał|przegrał|zagra|pion|kamien|kamień|blok|groźb|co teraz|co mam zrobić|gdzie postawić|kolej|zagrożen/i
+   .test(message);
   const previous=state.localChat.slice(-8).map(x=>({
    role:x.player===1?'user':'assistant',content:String(x.body||'').slice(0,600)
   }));
@@ -2031,6 +2035,11 @@ $('chat-form').addEventListener('submit',async event=>{
    });
    const payload=await response.json().catch(()=>({}));
    if(epoch!==state.epoch||state.mode!=='training')return;
+   // A board-specific answer generated for an older position cannot be shown as current.
+   if(isBoardQuestion&&(requestedBoard!==state.board.join('')||requestedWinner!==state.winner)){
+    $('chat-status').textContent='Pozycja na planszy zmieniła się podczas odpowiedzi AI. Zapytaj ponownie o aktualny stan partii.';
+    return;
+   }
    if(!response.ok||payload.ok!==true||typeof payload.answer!=='string')
     throw new Error(payload?.error?.message||'Czat AI jest chwilowo niedostępny.');
    state.localChat.push({id:'local-'+(++state.chatSequence),player:2,
