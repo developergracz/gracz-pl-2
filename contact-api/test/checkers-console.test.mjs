@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Script} from 'node:vm';
+import {readFileSync} from 'node:fs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 
 function load(path,method='GET'){
@@ -49,7 +50,26 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(style.body,/\.warcaby-console \.boardframe/);
  assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(285px,21\.5vw,360px\)/);
  assert.match(style.body,/@media \(max-width:800px\)/);
- assert.match(style.body,/\.warcaby-console \.mode\{grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(style.body,/\.warcaby-console \.mode\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ for(const id of ['training-mode','online-mode','ai-level','training-time','training-increment','training-records','training-undo','training-hint','restart','game-result-modal']){
+  assert.match(page.body,new RegExp('id="'+id+'"'));
+ }
+ assert.match(page.body,/Gra z komputerem/);
+ for(const path of ['/konto/warcaby/rules.mjs','/konto/warcaby/bot.mjs','/konto/warcaby/training-ui.mjs']){
+  const asset=load(path);
+  assert.equal(asset.status,200,path);
+  assert.match(asset.headers['Content-Type'],/javascript/);
+  assert.equal(asset.headers['Content-Length'],Buffer.byteLength(asset.body));
+ }
+ assert.match(load('/konto/warcaby/rules.mjs').body,/export function playMove/);
+ assert.equal(load('/konto/warcaby/rules.mjs').body,readFileSync(new URL('../auth/game-engine.mjs',import.meta.url),'utf8'));
+ assert.equal(load('/konto/warcaby/bot.mjs').body,readFileSync(new URL('../auth/checkers-training-ai.mjs',import.meta.url),'utf8').replace("from './game-engine.mjs'","from '/konto/warcaby/rules.mjs'"));
+ assert.equal(load('/konto/warcaby/training-ui.mjs').body,readFileSync(new URL('../auth/checkers-training-ui.mjs',import.meta.url),'utf8').replace("from './checkers-training-ai.mjs'","from '/konto/warcaby/bot.mjs'"));
+ assert.match(load('/konto/warcaby/bot.mjs').body,/\/konto\/warcaby\/rules\.mjs/);
+ assert.match(load('/konto/warcaby/training-ui.mjs').body,/\/konto\/warcaby\/bot\.mjs/);
+ assert.match(js.body,/initializeWarcaby\(/);
+ assert.match(js.body,/playTrainingMove\(/);
+ assert.match(js.body,/mode!=='online'/);
  assert.doesNotMatch(page.body,/src="\/konto\/gomoku\/app\.js"/);
  assert.equal(load('/konto/warcaby/').headers['Content-Length'],Buffer.byteLength(page.body));
  assert.equal(load('/konto/warcaby/', 'POST').served,false);
