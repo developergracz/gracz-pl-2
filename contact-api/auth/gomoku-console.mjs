@@ -303,6 +303,8 @@ select option{background:#102c34;color:#fff}
 .cell.last::after{outline:2px solid #d69f4e;outline-offset:1px}
 .cell.suggested:not(.occupied){background:#31bbb455!important;box-shadow:inset 0 0 0 2px #008f92}
 .cell:not(:disabled):hover{background:#c9e6df6e;cursor:pointer}.cell:focus-visible{outline:2px solid #078a91;outline-offset:-2px;z-index:3}
+/* R38: native tap acknowledgement without 300ms double-tap delay on touch devices. */
+.board .cell{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .game-tools{display:flex;flex-direction:column;justify-content:center;gap:clamp(9px,1.5vh,17px)}
 .tool-btn{display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;min-height:44px;text-align:left;border:1px solid #93baa9;border-radius:12px;color:#f6faf9;padding:8px 11px;background:linear-gradient(155deg,#0b4946,#05242d 77%);box-shadow:inset 0 1px #7cafa27a,0 7px 17px #0005;font-size:11px;font-weight:750;transition:transform .15s,border-color .15s}
 .tool-btn:hover:not(:disabled){transform:translateY(-2px);border-color:#f4cf88}.tool-btn span{font-size:22px;color:#f3c676;min-width:27px;text-align:center}
@@ -1398,14 +1400,17 @@ function recordTrainingFinish(){
 }
 function renderTrainingRecord(){
  const r=state.trainingRecord,total=r.wins+r.draws+r.losses;
- $('record-wins').textContent=String(r.wins);
- $('record-draws').textContent=String(r.draws);
- $('record-losses').textContent=String(r.losses);
- $('record-total').textContent=String(total);
+ setGameStatus('record-wins',String(r.wins));
+ setGameStatus('record-draws',String(r.draws));
+ setGameStatus('record-losses',String(r.losses));
+ setGameStatus('record-total',String(total));
  const rate=total?Math.round(100*r.wins/total):0;
- $('record-rate').textContent=rate+'%';
- $('records-progress-fill').style.width=rate+'%';
- $('records-progress').setAttribute('aria-valuenow',String(rate));
+ const current=rate+'%';
+ if($('record-rate').textContent!==current){
+  $('record-rate').textContent=current;
+  $('records-progress-fill').style.width=current;
+  $('records-progress').setAttribute('aria-valuenow',String(rate));
+ }
 }
 function replaySource(){
  const online=state.mode==='online',m=state.match;
