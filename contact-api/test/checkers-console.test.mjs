@@ -55,6 +55,17 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(style.body,/\.warcaby-console \.layout:not\(\.game-focus\)/);
  assert.match(style.body,/\.warcaby-console \.boardframe/);
  assert.match(style.body,/Reference parity with Gomoku console/);
+
+ assert.match(style.body,/R7 pixel alignment: polished checkers/);
+ assert.match(style.body,/height:55px;min-height:55px;max-height:55px/);
+ assert.match(style.body,/min-height:28px;height:28px/);
+ assert.match(style.body,/min-height:38px;height:38px/);
+ assert.match(style.body,/background:linear-gradient\(115deg,#fffcf4/);
+ assert.match(style.body,/border:2px solid #967c54/);
+ assert.match(style.body,/margin-bottom:48px/);
+ assert.match(style.body,/@media \(min-width:801px\) and \(max-height:800px\)/);
+ assert.match(style.body,/@media \(max-width:800px\)/);
+
  assert.match(style.body,/grid-template-columns:27\.5% minmax\(0,1fr\)/);
  assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(315px,23vw,390px\)/);
  assert.match(style.body,/aspect-ratio:1\.12/);
