@@ -50,12 +50,18 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="clock-2"/);
  assert.match(html,/Powtórka partii Gomoku/);
  assert.match(html,/Mój bilans treningu/);
- const howto=html.match(/<details class="sidecard rules premium-howto">([\s\S]*?)<\/details>/)?.[1]||'';
- assert.match(howto,/<summary><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"/,
-  'Native accessible Jak grać accordion has a Premium inline SVG');
+ const howto=html.match(/<div class="sidecard rules premium-howto">([\s\S]*?)<\/div>/)?.[1]||'';
+ assert.match(howto,/<button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal">/);
+ assert.match(howto,/class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"/,
+  'Premium how-to trigger retains a crisp self-contained book icon');
  assert.match(howto,/class="premium-nav-label">Jak grać\?<\/span>/);
- assert.match(howto,/class="premium-nav-chevron" aria-hidden="true"/);
- assert.match(howto,/Ułóż 5 swoich kamieni w linii/,'The original rules remain accessible after expanding');
+ assert.match(html,/<div id="howto-modal" class="howto-overlay" role="dialog" aria-modal="true" aria-labelledby="howto-title" aria-describedby="howto-description" hidden>/);
+ assert.match(html,/id="howto-board" class="replay-board howto-board" role="img"/);
+ assert.match(html,/Pięć czarnych kamieni w poziomie — zwycięstwo!/);
+ for(const id of ['howto-modal','howto-open','howto-close','howto-done','howto-board','howto-title','howto-description'])
+  assert.match(html,new RegExp('id="'+id+'"'),'How-to popup must provide '+id);
+ assert.match(html,/Cel gry/);assert.match(html,/Jak wykonać ruch\?/);
+ assert.match(html,/Atak i obrona/);assert.match(html,/Trening i gra online/);
  const bottomNav=html.match(/<nav class="side-links" aria-label="Pomoc i panel gracza">([\s\S]*?)<\/nav>/)?.[1]||'';
  assert.match(bottomNav,/<a href="\/konto\/panel\/"><span class="premium-nav-icon"/,
   'My panel retains the original destination');
@@ -115,11 +121,18 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  const css=served('/konto/gomoku/styl.css').body;
  assert.match(css,/R33: restrained Full Max Premium secondary action for reviewing the finished board/);
  assert.match(css,/R34: compact, interactive Full Max Premium bottom navigation/);
- assert.match(css,/\.sidebar \.rules\.premium-howto>summary\{display:flex;align-items:center;gap:8px;list-style:none/);
+ assert.match(css,/\.sidebar \.rules\.premium-howto>\.premium-howto-trigger\{display:flex;align-items:center;gap:8px/);
  assert.match(css,/\.sidebar \.side-links\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
- assert.match(css,/@media\(max-height:800px\)\{\.sidebar \.rules\.premium-howto>summary/);
+ assert.match(css,/@media\(max-height:800px\)\{\.sidebar \.rules\.premium-howto>\.premium-howto-trigger/);
  assert.match(css,/@media\(max-width:380px\)\{\.sidebar \.side-links\{grid-template-columns:1fr\}/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.sidebar \.rules\.premium-howto>summary/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.sidebar \.rules\.premium-howto>\.premium-howto-trigger/);
+ assert.match(css,/R35: compact balanced footer, no showcase hint and centered illustrated Gomoku how-to/);
+ assert.match(css,/\.bottom #move-count\{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center/);
+ assert.match(css,/\.bottom #turn-label\{flex:0 0 clamp\(181px,15\.5vw,223px\)/);
+ assert.match(css,/\.bottom #board-help:empty\{display:none\}/);
+ assert.match(css,/\.howto-overlay\{position:fixed;inset:0;z-index:9500/);
+ assert.match(css,/\.howto-board \.replay-cell\.win-line/);
+ assert.match(css,/@media\(max-width:680px\)\{\.howto-layout\{grid-template-columns:1fr/);
  assert.match(css,/\.result-review\{position:relative;display:inline-flex;align-items:center;justify-content:center/);
  assert.match(css,/width:min\(100%,310px\);min-height:43px/);
  assert.match(css,/border:1px solid #d6aa61;border-radius:12px/);
@@ -342,6 +355,21 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
  new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
+ // Premium tutorial opens centrally, independent of the live game state.
+ get('howto-open').listeners.click();
+ assert.equal(get('howto-modal').hidden,false,'Jak grać opens the centered Premium tutorial');
+ assert.equal(get('howto-board').children.length,225,'Illustrated tutorial has a full 15×15 example board');
+ assert.equal(get('howto-board').children.filter(x=>x.classes.has('win-line')).length,5,
+  'Exactly five example black stones mark the winning line');
+ assert.equal(get('board').children.length,225,'Tutorial does not rebuild the active board');
+ assert.equal(get('move-count').textContent,'Ruchy: 12','Tutorial does not reset training preview');
+ assert.equal(get('howto-close').focused,true,'Close control receives keyboard focus');
+ get('howto-close').listeners.click();
+ assert.equal(get('howto-modal').hidden,true,'Close hides tutorial');
+ assert.equal(get('howto-open').focused,true,'Focus returns to how-to trigger');
+ get('howto-open').listeners.click();
+ get('howto-done').listeners.click();
+ assert.equal(get('howto-modal').hidden,true,'The bottom action closes tutorial too');
  const openingCells=get('board').children.length;
  const openingClock=get('clock-1').textContent;
  assert.equal(get('game').classes.has('game-focus'),false);
@@ -369,7 +397,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
  assert.match(get('game-state').textContent,/Przykładowy układ partii/);
  assert.equal(get('turn-label').textContent,'Podgląd partii');
- assert.match(get('board-help').textContent,/Nowa rozgrywka/);
+ assert.equal(get('board-help').textContent,'','No prompt appears in the showcase between bottom badges');
  assert.equal(get('chat-preview').children.length,1,'No fictional conversation shown in showcase');
  assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
  get('focus-game').listeners.click();

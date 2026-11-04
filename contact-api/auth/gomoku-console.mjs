@@ -69,10 +69,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
-<details class="sidecard rules premium-howto"><summary><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></summary>
-<div class="premium-howto-content"><p>Ułóż 5 swoich kamieni w linii: poziomo, pionowo lub na skos. Blokuj zagrożenia przeciwnika i planuj ruchy z wyprzedzeniem.</p>
-<p class="muted">W trybie online serwer zatwierdza ruchy. Trening nie jest rankingowy.</p></div>
-</details>
+<div class="sidecard rules premium-howto"><button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></button></div>
 <nav class="side-links" aria-label="Pomoc i panel gracza"><a href="/konto/panel/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M3.5 9h17M9 9.5v10.5M7 6.25h.01M11 6.25h.01"/></svg></span><span>Mój panel</span></a><a href="https://gracz.pl/gry/gomoku/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2"/></svg></span><span>Zasady Gomoku</span></a></nav>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
@@ -156,6 +153,15 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
+<div id="howto-modal" class="howto-overlay" role="dialog" aria-modal="true" aria-labelledby="howto-title" aria-describedby="howto-description" hidden>
+<section class="howto-card">
+<header class="howto-header"><div><span class="howto-kicker">GRACZ.PL · AKADEMIA GOMOKU</span><h2 id="howto-title">Jak grać w Gomoku?</h2><p id="howto-description">Pięć kamieni w jednej linii — poznaj zasady i zobacz przykładową zwycięską planszę.</p></div><button type="button" id="howto-close" class="howto-close" aria-label="Zamknij instrukcję Gomoku">×</button></header>
+<div class="howto-layout">
+<div class="howto-board-area"><div id="howto-board" class="replay-board howto-board" role="img" aria-label="Przykładowa plansza Gomoku 15 na 15: pięć czarnych kamieni w poziomie, wygrywająca linia"></div><p class="howto-board-caption"><span class="howto-black-dot" aria-hidden="true"></span> Pięć czarnych kamieni w poziomie — zwycięstwo!</p></div>
+<div class="howto-steps"><div class="howto-step"><span class="howto-step-index">01</span><div><h3>Cel gry</h3><p>Ułóż <strong>pięć swoich kamieni obok siebie</strong> — poziomo, pionowo lub po skosie.</p></div></div><div class="howto-step"><span class="howto-step-index">02</span><div><h3>Jak wykonać ruch?</h3><p>Gracze stawiają kamienie na wolnych przecięciach linii. <strong>Czarne zaczynają</strong>, potem ruchy są na przemian.</p></div></div><div class="howto-step"><span class="howto-step-index">03</span><div><h3>Atak i obrona</h3><p>Buduj otwarte trójki i czwórki oraz blokuj linie rywala. Zwracaj uwagę na <strong>zagrożenia w dwóch kierunkach</strong>.</p></div></div><div class="howto-step"><span class="howto-step-index">04</span><div><h3>Trening i gra online</h3><p>W treningu grasz z komputerem; online przeciwnikiem jest drugi gracz. Jeśli wybrano zegary, pilnuj swojego czasu.</p></div></div></div>
+</div>
+<div class="howto-footer"><span>Przykładowa plansza służy tylko do nauki — nie zmienia Twojej partii.</span><button type="button" id="howto-done" class="howto-done">Rozumiem, wracam do gry</button></div>
+</section></div>
 <div id="replay-modal" class="replay-overlay" role="dialog" aria-modal="true" aria-labelledby="replay-title" hidden>
 <section class="replay-card"><div class="replay-header"><div><span class="replay-kicker">GRACZ.PL · STUDIO ANALIZY</span><h2 id="replay-title">Powtórka partii Gomoku</h2></div><button type="button" id="replay-close" class="replay-close" aria-label="Zamknij powtórkę">×</button></div>
 <p id="replay-status" class="replay-status" aria-live="polite">Przebieg rozegranej partii</p><div id="replay-board" class="replay-board" role="img" aria-label="Plansza powtórki 15 na 15"></div>
@@ -1100,15 +1106,12 @@ select option{background:#102c34;color:#fff}
 .sidebar .rules.premium-howto{margin:2px 0 0;padding:0;border:1px solid #c7a15e;
  border-radius:11px;overflow:hidden;background:linear-gradient(160deg,#105255 0%,#092f3a 54%,#041e2b 100%);
  box-shadow:inset 0 1px 0 #efffe04a,0 2px 9px #0007,0 0 8px #a9863833}
-.sidebar .rules.premium-howto>summary{display:flex;align-items:center;gap:8px;list-style:none;
- min-height:39px;width:100%;padding:5px 10px;border-radius:10px;color:#ffe6af;
+.sidebar .rules.premium-howto>.premium-howto-trigger{display:flex;align-items:center;gap:8px;
+ width:100%;min-height:39px;padding:5px 10px;border:0;border-radius:10px;
+ background:transparent;color:#ffe6af;text-align:left;
  font:800 clamp(11px,1vw,14px)/1.2 Georgia,"Times New Roman",serif;
  text-shadow:0 1px 2px #0009;transition:background-color .16s,box-shadow .16s}
-.sidebar .rules.premium-howto>summary::-webkit-details-marker{display:none}
-.sidebar .rules.premium-howto>summary::marker{content:""}
-.sidebar .rules.premium-howto[open]>summary{border-radius:10px 10px 0 0;
- background:linear-gradient(145deg,#175f5c,#0a3139)}
-.sidebar .rules.premium-howto>summary:hover{background:#16636666}
+.sidebar .rules.premium-howto>.premium-howto-trigger:hover{background:#16636666}
 .sidebar .premium-nav-icon{flex:0 0 26px;display:inline-grid;place-items:center;width:26px;height:26px;
  border:1px solid #d4ae68;border-radius:7px;background:linear-gradient(135deg,#175c5c,#052a34);
  color:#ffe19b;box-shadow:inset 0 1px 0 #fff6ce42,0 0 6px #b8a15a45}
@@ -1117,9 +1120,6 @@ select option{background:#102c34;color:#fff}
 .sidebar .premium-nav-chevron{width:9px;height:9px;flex:0 0 9px;transform:rotate(45deg);
  border-right:2px solid #f1c773;border-bottom:2px solid #f1c773;margin-right:4px;margin-top:-4px;
  transition:transform .16s}
-.sidebar .premium-howto[open] .premium-nav-chevron{transform:rotate(225deg);margin-top:4px}
-.sidebar .premium-howto-content{padding:4px 11px 9px;color:#d9eee8;background:#041e28ae}
-.sidebar .premium-howto-content p{margin:5px 0;font-size:11px;line-height:1.35}
 .sidebar .side-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
  margin:0;padding:0;font-size:12px}
 .sidebar .side-links a{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;
@@ -1134,11 +1134,11 @@ select option{background:#102c34;color:#fff}
 .sidebar .side-links a .premium-nav-icon{flex:0 0 21px;width:21px;height:21px;border-radius:6px}
 .sidebar .side-links a .premium-nav-icon svg{width:14px;height:14px}
 .sidebar .side-links a span:last-child{min-width:0}
-@media(max-height:800px){.sidebar .rules.premium-howto>summary{min-height:34px;padding:3px 9px}
+@media(max-height:800px){.sidebar .rules.premium-howto>.premium-howto-trigger{min-height:34px;padding:3px 9px}
  .sidebar .side-links a{min-height:34px}}
 @media(max-width:380px){.sidebar .side-links{grid-template-columns:1fr}
  .sidebar .side-links a{min-height:35px}}
-@media(prefers-reduced-motion:reduce){.sidebar .rules.premium-howto>summary,
+@media(prefers-reduced-motion:reduce){.sidebar .rules.premium-howto>.premium-howto-trigger,
  .sidebar .premium-nav-chevron,.sidebar .side-links a{transition:none}}
 .sidebar :is(button,a,summary,select,input):focus-visible{outline:2px solid #ffe3a1;outline-offset:3px}
 .sidebar :is(button,a,summary):hover{filter:brightness(1.15)}
@@ -1298,6 +1298,71 @@ select option{background:#102c34;color:#fff}
 @media(max-width:380px){
  #turn-label{flex-basis:clamp(152px,48vw,175px);width:clamp(152px,48vw,175px);font-size:11px}
 }
+/* R35: compact balanced footer, no showcase hint and centered illustrated Gomoku how-to. */
+.bottom #board-help:empty{display:none}
+.bottom #move-count{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 clamp(145px,12.2vw,181px);width:clamp(145px,12.2vw,181px);
+ height:clamp(38px,5vh,47px);min-width:0;padding:5px 10px;
+ font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
+.bottom #move-count:before{margin-right:6px;font-size:1.05em}
+.bottom #turn-label{flex:0 0 clamp(181px,15.5vw,223px);width:clamp(181px,15.5vw,223px);
+ height:clamp(38px,5vh,47px);min-width:0;padding:5px 9px;
+ font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
+.bottom #turn-label:before{flex:0 0 16px;width:16px;height:16px;margin-right:7px}
+@media(max-width:1100px){.bottom #move-count{flex-basis:clamp(126px,15vw,159px);width:clamp(126px,15vw,159px)}
+ .bottom #turn-label{flex-basis:clamp(166px,21vw,205px);width:clamp(166px,21vw,205px)}}
+@media(max-width:560px){.bottom #move-count{flex-basis:clamp(112px,35vw,155px);width:clamp(112px,35vw,155px);font-size:13px}
+ .bottom #turn-label{flex-basis:clamp(150px,46vw,195px);width:clamp(150px,46vw,195px);font-size:12px}
+ .bottom{gap:5px}}
+.howto-overlay{position:fixed;inset:0;z-index:9500;display:grid;place-items:center;
+ padding:clamp(8px,2vw,18px);background:#010c13d9;backdrop-filter:blur(7px)}
+.howto-overlay[hidden]{display:none!important}
+.howto-card{box-sizing:border-box;width:min(96vw,880px);max-height:94dvh;overflow:auto;
+ padding:clamp(12px,2vw,24px);border:2px solid #e2ba70;border-radius:22px;
+ background:radial-gradient(ellipse at 5% 0%,#1166665c,transparent 55%),
+ linear-gradient(140deg,#093f45 0%,#031c2b 55%,#052b35 100%);
+ box-shadow:inset 0 1px 0 #fff0b57d,0 28px 75px #000d,0 0 37px #bd9b5557;color:#f3fbf8}
+.howto-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;
+ border-bottom:1px solid #ac96525c;padding-bottom:12px}
+.howto-kicker{display:block;color:#e7bf6e;font:800 10px/1.2 "Segoe UI",sans-serif;letter-spacing:1.1px}
+.howto-header h2{margin:5px 0;color:#ffe3a3;font:800 clamp(22px,3vw,34px)/1.1 Georgia,serif}
+.howto-header p{margin:5px 0 0;color:#c9ebe6;font-size:clamp(11px,1.1vw,13px);line-height:1.4}
+.howto-close{flex:0 0 38px;width:38px;height:38px;border:1px solid #e5c17c;border-radius:10px;
+ background:linear-gradient(#126062,#062e39);color:#ffebbd;font-size:26px;line-height:1;cursor:pointer}
+.howto-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ align-items:center;gap:clamp(12px,2vw,22px);margin-top:14px}
+.howto-board-area{min-width:0;text-align:center}
+.howto-board{width:min(100%,355px,41dvh);max-width:100%;border-width:7px;
+ box-shadow:0 0 0 2px #7a582e,0 9px 19px #0009,0 0 19px #c39c4f50}
+.howto-board .replay-cell.win-line{background:#dfc888a6}
+.howto-board .replay-cell.win-line.stone-black:after{box-shadow:0 0 0 2px #ffd981,inset -2px -3px 4px #0009,0 0 8px #e7b645}
+.howto-board-caption{display:flex;align-items:center;justify-content:center;gap:7px;
+ color:#ffe1a1;font:700 12px/1.35 "Segoe UI",sans-serif;margin:12px 0 0}
+.howto-black-dot{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 30% 24%,#83888b,#10171c 55%,#010307);border:1px solid #d2b16c}
+.howto-steps{display:flex;flex-direction:column;gap:9px;min-width:0}
+.howto-step{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;
+ border:1px solid #427c7b;border-radius:12px;background:linear-gradient(140deg,#125052a3,#062532e0);
+ box-shadow:inset 0 1px 0 #c0fbe62c,0 3px 8px #0004}
+.howto-step-index{flex:0 0 28px;display:grid;place-items:center;width:28px;height:28px;
+ border:1px solid #d9b56d;border-radius:8px;background:#092e37;color:#ffe5a8;font:800 12px Georgia,serif}
+.howto-step h3{margin:0 0 4px;font:800 clamp(13px,1.4vw,16px)/1.2 Georgia,serif;color:#ffe4a6}
+.howto-step p{margin:0;font:500 clamp(11px,1.05vw,12px)/1.4 "Segoe UI",sans-serif;color:#e0f5ef}
+.howto-step strong{color:#fff1b7}
+.howto-footer{display:flex;gap:12px;justify-content:space-between;align-items:center;
+ margin-top:16px;padding-top:12px;border-top:1px solid #af9a6652}
+.howto-footer>span{font:500 11px/1.4 "Segoe UI",sans-serif;color:#b9d9d7;max-width:50%}
+.howto-done{min-height:40px;padding:8px 15px;border:1px solid #ffe5ae;border-radius:11px;
+ background:linear-gradient(180deg,#fff0b9,#edc066 60%,#ba852e);color:#112b2e;
+ font:800 13px Georgia,serif;box-shadow:inset 0 1px #fffad7,0 0 12px #d9af4a68}
+.howto-done:hover,.howto-close:hover{filter:brightness(1.12)}
+.howto-close:focus-visible,.howto-done:focus-visible,.premium-howto-trigger:focus-visible{
+ outline:2px solid #a8fff1;outline-offset:3px}
+@media(max-width:680px){.howto-layout{grid-template-columns:1fr;gap:12px}
+ .howto-board{width:min(100%,270px,31dvh)}.howto-step{padding:8px 9px}
+ .howto-steps{gap:6px}.howto-card{width:100%;max-height:96dvh}
+ .howto-footer{flex-direction:column;align-items:stretch}
+ .howto-footer>span{max-width:100%;text-align:center}}
+@media(prefers-reduced-motion:reduce){.howto-overlay{backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -1603,7 +1668,7 @@ function render(){
    'Komputer wygrał na czas.':'Wygrał komputer.';
  }else if(!online&&state.showcase){
   bottomTurn='Podgląd partii';
-  bottomHelp='Kliknij planszę lub wybierz „Nowa rozgrywka”, aby rozpocząć.';
+  bottomHelp='';
  }else if(online&&!m){
   bottomTurn='Oczekiwanie na pokój';
   bottomHelp='Wybierz przyjęte wyzwanie i otwórz pokój.';
@@ -2517,6 +2582,45 @@ function setMode(mode){
 }
 $('training-mode').addEventListener('click',()=>setMode('training'));
 $('online-mode').addEventListener('click',()=>setMode('online'));
+// R35: illustrated Premium rules dialog, independent of the live board and clocks.
+function renderHowtoBoard(){
+ const target=$('howto-board');
+ if(target.children.length)return;
+ const black=[7*15+5,7*15+6,7*15+7,7*15+8,7*15+9];
+ const white=[6*15+4,6*15+10,8*15+6,8*15+9,9*15+10];
+ for(let at=0;at<count;at++){
+  const cell=document.createElement('div');
+  cell.classList.add('replay-cell');
+  if(black.includes(at))cell.classList.add('stone-black','win-line');
+  else if(white.includes(at))cell.classList.add('stone-white');
+  cell.setAttribute('aria-hidden','true');
+  target.append(cell);
+ }
+}
+function closeHowto(){
+ $('howto-modal').hidden=true;
+ $('howto-open').focus?.();
+}
+function openHowto(){
+ renderHowtoBoard();
+ $('howto-modal').hidden=false;
+ $('howto-close').focus?.();
+}
+$('howto-open').addEventListener('click',openHowto);
+$('howto-close').addEventListener('click',closeHowto);
+$('howto-done').addEventListener('click',closeHowto);
+$('howto-modal').addEventListener('click',event=>{
+ if(event.target===$('howto-modal'))closeHowto();
+});
+$('howto-modal').addEventListener('keydown',event=>{
+ if(event.key==='Escape'){event.preventDefault?.();closeHowto();}
+ if(event.key==='Tab'){
+  // Two dialog controls: trap focus to avoid interacting with the covered game.
+  event.preventDefault?.();
+  if(document.activeElement===$('howto-close'))$('howto-done').focus?.();
+  else $('howto-close').focus?.();
+ }
+});
 $('restart').addEventListener('click',restart);
 $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
