@@ -2190,6 +2190,7 @@ $('priv-save').addEventListener('click',async()=>{
   const result=await api('privacy-center',{method:'PUT',headers:{'Content-Type':'application/json'},
    body:JSON.stringify(privacyValues())});
   privacySource=result.preferences;privacyFill(privacySource);
+  if(typeof window!=='undefined')window.dispatchEvent(new Event('gracz:privacy-updated'));
   privacyNotice('Ustawienia prywatności zostały zapisane na Twoim koncie.');
  }catch(error){privacyNotice(error.message,true)}
  finally{privacySaving=false;privacyRepaint()}
