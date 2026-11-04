@@ -1,6 +1,6 @@
 // Standalone Gomoku console. Online games use the existing authenticated, server-authoritative /auth/match API.
 const secure={
- 'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+ 'Content-Security-Policy':"default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
  'Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'
 };
@@ -1723,7 +1723,7 @@ function render(){
  syncGameResult();
 }
 function restart(){
- ++state.epoch;state.board=Array(count).fill(0);state.winner=0;state.moves=0;
+ ++state.epoch;cancelPendingCpu();state.board=Array(count).fill(0);state.winner=0;state.moves=0;
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
  state.showcase=false;state.trainClock=createTrainingClock();
  state.localChat=[];state.chatSignature='';
@@ -1978,6 +1978,81 @@ function cpuMove(board,level='expert'){
  }
  return result;
 }
+// R37: no artificial 330 ms pause. CPU calculations run off the UI thread when supported.
+let cpuWorker=null;
+let cpuJobSequence=0;
+let cpuWorkerDisabled=false;
+function cancelPendingCpu(){
+ if(!state.cpuJob)return;
+ state.cpuJob=null;
+ if(cpuWorker){cpuWorker.terminate();cpuWorker=null;}
+}
+function finishCpuTurn(at,epoch){
+ if(epoch!==state.epoch||state.mode!=='training'||!state.thinking||state.winner)return;
+ if(advanceTrainingClock()){render();return;}
+ // Defend against broken or stale worker replies: never occupy a used field.
+ if(!Number.isInteger(at)||at<0||at>=count||state.board[at]){
+  if(state.board.some(v=>!v))at=cpuMove(state.board,$('ai-level').value);
+  else at=-1;
+ }
+ if(advanceTrainingClock()){render();return;}
+ if(at<0){state.winner=3;state.thinking=false;render();return;}
+ state.board[at]=2;state.last=at;state.moves++;
+ state.trainHistory.push({player:2,to:at,number:state.moves});
+ if(victory(state.board,at,2))state.winner=2;
+ else if(state.moves===count)state.winner=3;
+ state.thinking=false;
+ if(!state.winner&&state.trainClock){
+  state.trainClock.remaining[1]+=state.trainClock.incrementMs;
+  state.trainClock.turn=1;state.trainClock.since=trainingNow();
+ }
+ render();
+}
+function fallbackCpuTurn(epoch,level){
+ // Fallback remains playable without Web Workers, and never adds a fixed pause.
+ window.setTimeout(()=>{
+  if(epoch!==state.epoch||state.mode!=='training'||!state.thinking||state.winner)return;
+  if(advanceTrainingClock()){render();return;}
+  finishCpuTurn(cpuMove(state.board,level),epoch);
+ },0);
+}
+function ensureCpuWorker(){
+ if(cpuWorker)return cpuWorker;
+ if(cpuWorkerDisabled||typeof Worker!=='function')return null;
+ try{
+  const worker=new Worker('/konto/gomoku/ai-worker.js');
+  worker.onmessage=event=>{
+   const job=state.cpuJob;
+   if(!job||event.data?.id!==job.id)return;
+   state.cpuJob=null;
+   finishCpuTurn(event.data?.at,job.epoch);
+  };
+  worker.onerror=event=>{
+   event?.preventDefault?.();
+   if(cpuWorker!==worker)return;
+   const job=state.cpuJob;
+   state.cpuJob=null;
+   cpuWorker=null;
+   cpuWorkerDisabled=true;
+   worker.terminate();
+   if(job)fallbackCpuTurn(job.epoch,job.level);
+  };
+  cpuWorker=worker;
+  return worker;
+ }catch{
+  cpuWorkerDisabled=true;
+  return null;
+ }
+}
+function queueCpuTurn(epoch){
+ const level=$('ai-level').value;
+ const worker=ensureCpuWorker();
+ if(!worker){fallbackCpuTurn(epoch,level);return;}
+ const id=++cpuJobSequence;
+ state.cpuJob={id,epoch,level};
+ try{worker.postMessage({id,level,board:state.board.slice()});}
+ catch{worker.onerror?.();}
+}
 function trainMove(to){
  if(state.showcase)restart();
  if(advanceTrainingClock()){render();return;}
@@ -1994,26 +2069,8 @@ function trainMove(to){
   state.trainHistory[state.trainHistory.length-1].incrementApplied=true;
   state.trainClock.turn=2;state.trainClock.since=trainingNow();
  }
- render();
- if(!state.thinking)return;
- const epoch=state.epoch;
- window.setTimeout(()=>{
-  if(epoch!==state.epoch||state.mode!=='training'||!state.thinking)return;
-  if(advanceTrainingClock()){render();return;}
-  const at=cpuMove(state.board,$('ai-level').value);
-  if(advanceTrainingClock()){render();return;}
-  if(at<0){state.winner=3;state.thinking=false;render();return;}
-  state.board[at]=2;state.last=at;state.moves++;
-  state.trainHistory.push({player:2,to:at,number:state.moves});
-  if(victory(state.board,at,2))state.winner=2;
-  else if(state.moves===count)state.winner=3;
-  state.thinking=false;
-  if(!state.winner&&state.trainClock){
-   state.trainClock.remaining[1]+=state.trainClock.incrementMs;
-   state.trainClock.turn=1;state.trainClock.since=trainingNow();
-  }
-  render();
- },330);
+ render(); // Player's stone is painted before CPU search begins.
+ if(state.thinking)queueCpuTurn(state.epoch);
 }
 async function api(path,options={}){
  const response=await fetch('/auth/'+path,{
@@ -2581,6 +2638,7 @@ async function toggleFullscreen(){
 }
 function setMode(mode){
  if(state.mode===mode)return;
+ cancelPendingCpu();
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;state.serverOffsetMs=0;
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('chat');
@@ -2712,6 +2770,7 @@ function installReferenceShowcase(){
  state.chatSignature='';state.chatSequence=0;
 }
 installReferenceShowcase();
+ensureCpuWorker(); // Warm the worker once; no startup delay on the first human move.
 render();
 drawRoomChat(state.localChat);
 applyChatPreferences();
@@ -2719,13 +2778,30 @@ $('chat-status').textContent='GRACZ AI · GroqCloud · rozmowy ogólne i o Gomok
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
+// Build the worker from the exact same tactical engine used by the browser.
+// One source of truth: Arcymistrz search strength, rules and legal-move logic do not drift.
+const workerVictoryStart=js.indexOf('function victory(');
+const workerVictoryEnd=js.indexOf('function describe()',workerVictoryStart);
+const workerSearchStart=js.indexOf('const axes=',workerVictoryEnd);
+const workerSearchEnd=js.indexOf('// R37: no artificial',workerSearchStart);
+if(workerVictoryStart<0||workerVictoryEnd<workerVictoryStart||
+ workerSearchStart<0||workerSearchEnd<workerSearchStart)
+ throw new Error('Gomoku AI worker source boundaries changed');
+const gomokuWorkerJs=[
+ "'use strict';const size=15,count=225;",
+ 'const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;',
+ js.slice(workerVictoryStart,workerVictoryEnd),
+ js.slice(workerSearchStart,workerSearchEnd),
+ "self.onmessage=event=>{\n  const {id,level,board}=event.data||{};\n  if(!Number.isSafeInteger(id)||!Array.isArray(board)||board.length!==225||\n    board.some(v=>v!==0&&v!==1&&v!==2)){\n   self.postMessage({id,at:-1});return;\n  }\n  let at=-1;\n  try{at=cpuMove(board,['normal','hard','expert','master'].includes(level)?level:'master');}\n  catch{at=-1;}\n  self.postMessage({id,at});\n };"
+].join('\n');
 export function serveGomokuConsole(req,res,url){
  if(req.method!=='GET')return false;
  const path=url.pathname.replace(/\/+$/,'')||'/';
  const response={
   '/konto/gomoku':['text/html; charset=utf-8',html],
   '/konto/gomoku/styl.css':['text/css; charset=utf-8',css],
-  '/konto/gomoku/app.js':['application/javascript; charset=utf-8',js]
+  '/konto/gomoku/app.js':['application/javascript; charset=utf-8',js],
+  '/konto/gomoku/ai-worker.js':['application/javascript; charset=utf-8',gomokuWorkerJs]
  }[path];
  if(!response)return false;
  res.writeHead(200,{...secure,'Content-Type':response[0],'Content-Length':Buffer.byteLength(response[1])});
