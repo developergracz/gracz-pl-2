@@ -773,7 +773,7 @@ function fill(profile){
  const initial=profile.displayName.slice(0,1).toUpperCase()||'G';
  $('nav-avatar').textContent=initial;$('profile-avatar').textContent=initial;$('dashboard-avatar').textContent=initial;
  renderProfilePreview();
- window.dispatchEvent(new Event('gracz:profile-ready'));
+ if(typeof window!=='undefined' && typeof Event!=='undefined')window.dispatchEvent(new Event('gracz:profile-ready'));
 }
 let sessionConfirmed=false;
 function accessState(title,message,{login=false,retry=false}={}){
