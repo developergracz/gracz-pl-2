@@ -22,7 +22,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.equal(served('/konto/gomoku/unknown').found,false);
  const html=served('/konto/gomoku/').body;
  assert.match(html,/noindex,nofollow,noarchive/);
- for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','focus-game','focus-start','focus-exit','focus-nav','analysis-note','history-tab','chat-tab','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
+ for(const id of ['board','training-mode','online-mode','training-time','training-increment','room-select','join-room','create-room','create-room-friend','create-room-time','create-room-increment','create-room-status','clock-1','clock-2','training-records','record-wins','record-draws','record-losses','record-total','record-rate','replay-game','replay-modal','replay-board','replay-counter','replay-status','replay-start','replay-prev','replay-next','replay-end','replay-close','game-state','restart','refresh-match','undo-move','analyze-position','game-settings','fullscreen-game','focus-game','focus-start','focus-exit','focus-nav','analysis-note','history-tab','chat-tab','match-panel','moves-list','chat-messages','chat-preview','chat-form','chat-input','chat-send','undo-label','undo-request-modal','undo-modal-message','undo-accept','undo-reject','game-result-modal','game-result-close','game-result-title','game-result-description','game-result-new','game-result-review','game-result-online-hint','invite-friend','remove-player','block-player','player-actions-modal','player-actions-close','player-actions-list','player-actions-title','player-actions-status','chat-settings-modal','chat-settings-close','chat-settings-save','chat-settings-reset','chat-sound-test','chat-settings-mode','chat-settings-access','chat-privacy-description','chat-timestamps','chat-compact','chat-auto-scroll','chat-enter-send','chat-font-size','chat-sounds','chat-show-messages','chat-show-preview'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/Trening/);assert.match(html,/Ze znajomym/);
  for(const [id,icon] of [['training-mode','mode-icon-training'],['online-mode','mode-icon-friends']]){
@@ -51,9 +51,9 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/Powtórka partii Gomoku/);
  assert.match(html,/Mój bilans treningu/);
  const restartMarkup=html.match(/<button class="primary" id="restart" type="button">([\s\S]*?)<\/button>/)?.[1]||'';
- assert.match(restartMarkup,/class="restart-premium-icon" aria-hidden="true"><svg viewBox="0 0 36 36"/);
- assert.match(restartMarkup,/class="restart-label">Nowa rozgrywka<\/span>/);
- assert.doesNotMatch(restartMarkup,/▶|Nowa partia/,'The old black play triangle and button label are gone');
+ assert.match(restartMarkup,/^<span class="restart-label">Nowa rozgrywka<\/span>$/);
+ assert.doesNotMatch(restartMarkup,/svg|restart-premium-icon|▶|Nowa partia/,
+  'Restart is text only, without the previous Premium SVG miniature');
  assert.doesNotMatch(html,/class="game-topbar"/);
  assert.match(html,/aria-label="Szybkie odnośniki gracz.pl"/);
  const linkRegion=html.match(/<nav class="premium-quick-links"[^>]*>([\s\S]*?)<\/nav>/);
@@ -104,10 +104,15 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/content:attr\(data-tooltip\)/);
  assert.match(css,/\.layout\{height:100dvh;max-height:100dvh\}/);
  assert.match(css,/\.side-dock/);
- assert.match(css,/R30: integrated Full Max Premium Gomoku-board miniature replaces plain/);
- assert.match(css,/#restart \.restart-premium-icon\{display:grid/);
  assert.match(css,/#restart \.restart-label\{font:inherit/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{#restart \.restart-premium-icon/);
+ assert.doesNotMatch(css,/restart-premium-icon/);
+ assert.match(css,/R31: history owns the panel down to the bottom quick tools/);
+ assert.match(css,/\.match-panel\.moves-only \.mini-chat\{display:none!important\}/);
+ assert.match(css,/\.match-panel\.moves-only #moves-list\{flex:1 1 auto;min-height:0;max-height:none/);
+ assert.match(css,/#turn-label\{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center/);
+ assert.match(css,/#turn-label:before\{flex:0 0 20px\}/);
+ assert.match(html,/<section class="match-panel" id="match-panel">/);
+ assert.match(html,/id="turn-label">Ruch czarne<\/span>/);
  assert.match(css,/R22: online refresh belongs in the upper-right Premium mini navigation/);
  assert.match(css,/\.premium-quick-links>\.premium-mini-link\{flex:0 1 clamp\(30px,2\.4vw,39px\)/,
   'Seven top miniatures fit side by side on desktop');
@@ -334,8 +339,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('focus-start').listeners.click();
  assert.equal(get('game').classes.has('game-focus'),true,'Start remains within board-only mode');
  assert.equal(get('move-count').textContent,'Ruchy: 0','Start begins a clean training match');
- assert.equal(get('turn-label').textContent,'Ruch: czarne','Start returns to normal turn label');
- assert.equal(get('turn-label').textContent.includes('Tura:'),false,'New wording does not mention Tura');
+ assert.equal(get('turn-label').textContent,'Ruch czarne','Start returns to normal turn label without colon');
+ assert.equal(get('turn-label').textContent.includes(':'),false,'Move indicator has no colon');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
  assert.equal(get('clock-1').textContent,'07:00');
@@ -408,6 +413,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('chat-tab').listeners.click();
  assert.equal(get('chat-tab').classes.has('active'),true,'Czat tab becomes selected');
  assert.equal(get('history-tab').classes.has('active'),false);
+ assert.equal(get('match-panel').classes.has('moves-only'),false,'Chat mode restores composer');
  assert.equal(get('chat-panel').hidden,false);
  assert.equal(get('moves-panel').hidden,true);
  assert.equal(get('chat-input').disabled,false);
@@ -422,6 +428,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(calls.filter(x=>x.path==='/konto/gomoku/ai-chat').length,1);
  get('history-tab').listeners.click();
  assert.equal(get('history-tab').classes.has('active'),true,'Ruchy tab becomes selected');
+ assert.equal(get('match-panel').classes.has('moves-only'),true,
+  'Ruchy fills the entire match panel and hides mini-chat, down to the tool icons');
  assert.equal(get('chat-tab').classes.has('active'),false);
  assert.equal(get('chat-preview').hidden,false);
  assert.equal(get('chat-panel').hidden,true);
@@ -626,7 +634,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  }
  training.mode='training';get('restart').listeners.click();
  assert.equal(get('clock-1').classes.has('clock-critical'),false,'Reset clears alarm');
- assert.equal(get('turn-label').textContent,'Ruch: czarne');
+ assert.equal(get('turn-label').textContent,'Ruch czarne');
  assert.equal(get('turn-label').classes.has('game-over'),false,'Reset clears result marker');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
 
