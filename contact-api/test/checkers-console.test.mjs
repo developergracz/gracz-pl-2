@@ -43,6 +43,12 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(page.body,/role="toolbar" aria-label="Narzędzia Warcabów"/);
  assert.match(style.body,/\.game-tools\.checkers-toolbar/);
  assert.match(style.body,/repeat\(7,minmax\(0,1fr\)\)/);
+ // Full Max Premium pieces: CSS bodies, vector gold crown medallion for kings, decorative SVG only.
+ for(const piece of ['.piece.white{','.piece.black{','.piece.king:after{content:none}','.piece .crown{'])assert.ok(style.body.includes(piece),piece);
+ assert.doesNotMatch(style.body,/♛/);
+ assert.match(page.body,/<svg class="checkers-piece-defs" aria-hidden="true" focusable="false"[^>]*>[\s\S]*?<symbol id="checkers-crown"/);
+ assert.match(js.body,/if\(p>=3\)token\.append\(crownEmblem\(\)\)/);
+ assert.match(js.body,/setAttribute\('aria-hidden','true'\)/);
  for(const id of ['checkers-history','checkers-settings','checkers-chat','checkers-refresh'])assert.match(js.body,new RegExp(id));
  assert.match(page.body,/Pokoje i zaproszenia/);
  assert.match(page.body,/checkers-room-subtitle/);
