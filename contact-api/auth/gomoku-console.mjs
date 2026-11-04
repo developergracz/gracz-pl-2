@@ -1793,7 +1793,7 @@ function renderGomokuClocks(){
   const elapsed=active?Math.max(0,training?trainingNow()-clock.since:
    Date.now()+state.serverOffsetMs-Date.parse(clock.since)):0;
   const remaining=Math.max(0,clock.remaining[player-1]-elapsed);
-  el.textContent=formatGomokuClock(remaining);
+  setGameStatus('clock-'+player,formatGomokuClock(remaining));
   el.title=clock.incrementMs?('Po ruchu: +'+(clock.incrementMs/1000)+' s'):'Bez bonusu czasu';
   el.classList.toggle('clock-running',active);
   el.classList.toggle('clock-warning',active&&remaining>=10000&&remaining<=30000);
@@ -1828,6 +1828,7 @@ async function createTimedRoom(){
 }
 $('create-room').addEventListener('click',()=>void createTimedRoom());
 window.setInterval(()=>{
+ if(document.visibilityState!=='visible')return;
  if(state.mode==='training'&&state.trainClock){
   if(advanceTrainingClock())render();
   else renderGomokuClocks();
@@ -2308,7 +2309,20 @@ function trainMove(to){
  render(); // Player's stone is painted before CPU search begins.
  if(state.thinking)queueCpuTurn(state.epoch);
 }
-async function api(path,options={}){
+// Share only in-flight reads; never cache snapshots or deduplicate mutations.
+const pendingReads=new Map();
+function api(path,options={}){
+ if(options.method&&options.method!=='GET')return requestApi(path,options);
+ if(pendingReads.has(path))return pendingReads.get(path);
+ const controller=new AbortController();
+ const timeout=window.setTimeout(()=>controller.abort(),15000);
+ const pending=requestApi(path,{...options,signal:controller.signal}).finally(()=>{
+  window.clearTimeout(timeout);pendingReads.delete(path);
+ });
+ pendingReads.set(path,pending);
+ return pending;
+}
+async function requestApi(path,options={}){
  const response=await fetch('/auth/'+path,{
   credentials:'same-origin',cache:'no-store',
   headers:{Accept:'application/json',...(options.headers||{})},...options
@@ -2324,11 +2338,13 @@ async function api(path,options={}){
  return body;
 }
 function note(message){$('account-note').textContent=message;}
+let roomsBusy=false;
 async function rooms(){
+ if(roomsBusy)return;
+ roomsBusy=true;
  note('Wczytywanie pokoi…');
  $('join-room').disabled=true;
  try{
-  await api('profile');
   const result=await api('social/challenges');
   const available=result.challenges.filter(c=>c.game==='gomoku'&&c.status==='accepted');
   const select=$('room-select'),previous=select.value;
@@ -2350,7 +2366,7 @@ async function rooms(){
  }catch(e){
   $('room-select').replaceChildren();$('join-room').disabled=true;
   note(e.message+' Otwórz panel, aby się zalogować lub wysłać zaproszenie.');
- }
+ }finally{roomsBusy=false;}
 }
 async function loadMatch(id){
  if(!matchPattern.test(id))return;
@@ -2399,13 +2415,24 @@ async function refreshOnline(force=false){
  if(state.mode!=='online'||!state.matchId||(!force&&state.busy))return;
  if(!force)state.busy=true;
  const epoch=state.epoch,id=state.matchId;
+ let changed=false;
  try{
   const result=await api('match?id='+encodeURIComponent(id));
   if(epoch===state.epoch&&state.matchId===id&&result.match?.game==='gomoku'){
-   synchronizeGameTime(result);state.match=result.match;
+   const previous=state.match,next=result.match;
+   // Version covers durable board/clock changes; permissions, names and expiring
+   // undo requests can change independently of the match version.
+   changed=!previous||previous.version!==next.version||previous.playable!==next.playable||
+    JSON.stringify(previous.players)!==JSON.stringify(next.players)||
+    JSON.stringify(previous.undoRequest)!==JSON.stringify(next.undoRequest);
+   synchronizeGameTime(result);state.match=next;
   }
- }catch(e){if(epoch===state.epoch)note(e.message);}
- finally{if(!force){state.busy=false;render();}}
+ }catch(e){if(epoch===state.epoch&&state.matchId===id)note(e.message);}
+ finally{
+  if(epoch===state.epoch&&state.matchId===id){
+   if(!force){state.busy=false;if(changed)render();else renderGomokuClocks();}
+  }
+ }
 }
 async function play(to){
  if(state.mode==='training')trainMove(to);
@@ -2602,6 +2629,7 @@ $('chat-form').addEventListener('submit',async event=>{
  }
  if(!state.matchId)return;
  const id=state.matchId,epoch=state.epoch;
+ state.chatBusy=true;
  $('chat-send').disabled=true;
  try{
   await api('match/chat',{method:'POST',
@@ -2609,13 +2637,13 @@ $('chat-form').addEventListener('submit',async event=>{
    body:JSON.stringify({id,message})});
   if(epoch!==state.epoch||state.matchId!==id)return;
   $('chat-input').value='';
-  state.chatSignature='';
+  state.chatBusy=false;
   await refreshRoomChat();
- }catch(error){$('chat-status').textContent=error.message;}
- finally{if(epoch===state.epoch&&state.matchId===id)$('chat-send').disabled=false;}
+ }catch(error){if(epoch===state.epoch&&state.matchId===id)$('chat-status').textContent=error.message;}
+ finally{state.chatBusy=false;if(epoch===state.epoch&&state.matchId===id)$('chat-send').disabled=false;}
 });
 window.setInterval(()=>{
- if(state.mode==='online'&&state.matchId&&document.visibilityState==='visible')void refreshRoomChat();
+ if(canSynchronize()&&state.matchId)void refreshRoomChat();
 },8000);
 
 
@@ -2861,7 +2889,7 @@ $('invite-friend').addEventListener('click',()=>void gameFriends('invite'));
 $('remove-player').addEventListener('click',()=>void gameFriends('remove'));
 $('block-player').addEventListener('click',()=>void gameFriends('block'));
 window.setInterval(()=>{
- if(document.visibilityState==='visible')void api('friends/presence').catch(()=>{});
+ if(canSynchronize())void api('friends/presence').catch(()=>{});
 },45000);
 
 function openGameSettings(){
@@ -3105,9 +3133,22 @@ $('reload-rooms').addEventListener('click',()=>void rooms());
 $('join-room').addEventListener('click',()=>void loadMatch($('room-select').value));
 $('refresh-match').addEventListener('click',()=>void refreshOnline());
 window.setInterval(()=>{
- if(state.mode==='online'&&state.matchId&&!state.busy&&document.visibilityState==='visible')
+ if(canSynchronize()&&state.matchId&&!state.busy)
   void refreshOnline();
 },4000);
+function canSynchronize(){
+ return state.mode==='online'&&document.visibilityState==='visible'&&window.navigator?.onLine!==false;
+}
+function resumeSynchronization(){
+ if(document.visibilityState!=='visible')return;
+ if(state.mode==='training'){if(advanceTrainingClock())render();else renderGomokuClocks();return;}
+ if(!canSynchronize())return;
+ void refreshOnline();
+ void refreshRoomChat();
+ void api('friends/presence').catch(()=>{});
+}
+document.addEventListener?.('visibilitychange',resumeSynchronization);
+window.addEventListener?.('online',resumeSynchronization);
 // The reference artwork depicts a mid-game position. The opening display is clearly
 // marked as a visual example; the FIRST click starts a clean, playable game.
 function installReferenceShowcase(){
