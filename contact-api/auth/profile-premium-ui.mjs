@@ -77,6 +77,12 @@ export function enhanceProfileHtml(html){
 }
 export const premiumProfileStyles=String.raw`
 /* Full Max Premium account workspace: extends, never replaces, the existing profile. */
+.profile-hero-premium[data-cover="aurora"]{background:radial-gradient(ellipse at 10% 5%,#17c1b476,transparent 58%),radial-gradient(ellipse at 90% 65%,#8f78c374,transparent 56%),#041c2b}
+.profile-hero-premium[data-cover="minimal"]{background:linear-gradient(135deg,#051a27,#16333c)}
+.profile-hero-premium[data-cover="chess"]{background:repeating-conic-gradient(#073942 0 25%,#05232d 0 50%) 50%/85px 85px}
+.profile-hero-premium[data-accent="royal"]{border-color:#e9b966}
+.profile-hero-premium[data-accent="midnight"]{border-color:#7398b6}
+.profile-hero-premium[data-accent="light"]{background:#e5eff0;color:#122e38;border-color:#498a8e}
 .premium-profile-tabs{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:18px 0;padding:10px;border:1px solid #237c80;border-radius:18px;background:linear-gradient(140deg,#041d29f5,#06343af5);backdrop-filter:blur(14px)}
 .premium-profile-tabs button{border:1px solid #286c71;border-radius:12px;background:#082a34;color:#dcecf0;font-weight:800;font-size:clamp(11px,1vw,14px);min-height:48px;padding:7px;cursor:pointer}
 .premium-profile-tabs button.is-active,.premium-profile-tabs button:hover{border-color:#28e6d3;background:linear-gradient(120deg,#076a67,#07414a);color:#fff;box-shadow:inset 0 1px 10px #3ffff02a,0 0 13px #0de3c52c}
@@ -139,7 +145,12 @@ export const premiumProfileScript=String.raw`
   $('premium-showcase-name').textContent=name;
   $('premium-showcase-motto').textContent=$('premium-motto').value||'Twoja gra. Twoje zasady.';
   $('premium-showcase-city').textContent=$('premium-city').value;
+  const actual=glyph[avatar]||name.slice(0,1).toUpperCase()||'G';
+  for(const id of ['profile-avatar','profile-preview-avatar','dashboard-avatar','nav-avatar'])$(id).textContent=actual;
+  const hero=document.querySelector('.profile-hero-premium');
+  if(hero){hero.dataset.cover=cover;hero.dataset.accent=accent}
  }
+ $('display-name').addEventListener('input',view);
  ['premium-accent','premium-cover','premium-avatar','premium-motto','premium-city'].forEach(id=>$(id).addEventListener('input',view));
  const bool=['publicProfile','showStats','showCountry','showBadges','sounds'];
  const ids={publicProfile:'premium-public',showStats:'premium-public-stats',
@@ -185,7 +196,7 @@ export const premiumProfileScript=String.raw`
   buttons.push($('premium-privacy-save'));buttons.forEach(b=>b.disabled=true);status(statusId,'Zapisywanie…');
   try{
    const d=await call('profile/premium',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(values())});
-   stored=d.preferences;publicUrl=d.publicUrl;paintLink();view();confirmationSound();status(statusId,'Zapisano na Twoim koncie.');
+   stored=d.preferences;publicUrl=d.publicUrl;paintLink();view();if(stats)paintStats();confirmationSound();status(statusId,'Zapisano na Twoim koncie.');
   }catch(e){status(statusId,'Nie zapisano: '+e.message)}
   finally{buttons.forEach(b=>b.disabled=false)}
  }
@@ -199,6 +210,14 @@ export const premiumProfileScript=String.raw`
    stats=(await call('profile/stats')).stats;paintStats();
    status('premium-stats-status','Dane aktualne — tylko zapisane rozgrywki online.');
   }catch(e){status('premium-stats-status','Nie udało się pobrać wyników: '+e.message);status('premium-awards-status','Nie można wczytać odznak.')}
+ }
+ function formattedPremiumDate(raw){
+  try{
+   if(!raw)return '';
+   const value=new Date(raw);if(Number.isNaN(value.getTime()))return '';
+   return new Intl.DateTimeFormat(stored?.dateFormat==='iso'?'sv-SE':'pl-PL',
+    {year:'numeric',month:'2-digit',day:'2-digit',timeZone:stored?.timeZone||'Europe/Warsaw'}).format(value);
+  }catch{return ''}
  }
  function paintStats(){
   if(!stats)return;
@@ -224,7 +243,8 @@ export const premiumProfileScript=String.raw`
    const a=document.createElement('a');a.href=m.game==='warcaby'?'/konto/warcaby/?match='+encodeURIComponent(m.id):'/konto/gomoku/?match='+encodeURIComponent(m.id);
    const label=document.createElement('strong');label.textContent=(m.game==='warcaby'?'♟ Warcaby':'◉ Gomoku')+' · '+m.opponent;
    const res=document.createElement('span');res.textContent=({win:'Wygrana',loss:'Porażka',draw:'Remis',active:'W toku'})[m.result]||'Partia';
-   a.append(label,res);recent.append(a);
+   const when=document.createElement('small');when.textContent=formattedPremiumDate(m.updatedAt);
+   a.append(label,res,when);recent.append(a);
   }
  }
  $('premium-refresh-stats').addEventListener('click',()=>void loadStats(true));
