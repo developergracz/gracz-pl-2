@@ -87,6 +87,16 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <div class="profile-edit-hint"><span aria-hidden="true">✦</span> Podgląd obok aktualizuje się podczas pisania. Tylko zapisane dane zostają na koncie.</div>
  <div class="form-actions"><span id="saved-state" role="status" aria-live="polite">Dane zapisane bezpiecznie w koncie</span><div class="profile-form-buttons"><button class="secondary" id="profile-reset" type="button">Cofnij zmiany</button><button class="primary" id="save" type="submit">Zapisz profil</button></div></div>
  </form>
+ <div class="card profile-password-card" id="profile-password-section">
+  <div class="card-heading"><div><p class="card-kicker">OCHRONA KONTA · FULL MAX PREMIUM</p><h2>Zmiana hasła</h2><p>Zmień hasło bez opuszczania panelu gracza. Po zapisaniu pozostałe zalogowane urządzenia zostaną wylogowane.</p></div><span class="profile-pill">BEZPIECZNE KONTO</span></div>
+  <form id="pw-change-form" class="profile-password-form" autocomplete="on">
+   <label for="pw-current">Obecne hasło</label><div class="profile-password-field"><input type="password" id="pw-current" autocomplete="current-password" required maxlength="256"><button type="button" data-password-toggle="pw-current" aria-label="Pokaż obecne hasło" aria-pressed="false">Pokaż</button></div>
+   <label for="pw-next">Nowe hasło</label><div class="profile-password-field"><input type="password" id="pw-next" autocomplete="new-password" minlength="15" maxlength="256" required aria-describedby="pw-hint"><button type="button" data-password-toggle="pw-next" aria-label="Pokaż nowe hasło" aria-pressed="false">Pokaż</button></div>
+   <small id="pw-hint">Co najmniej 15 znaków. Użyj unikalnego hasła, którego nie używasz w innych serwisach.</small>
+   <label for="pw-confirm">Powtórz nowe hasło</label><div class="profile-password-field"><input type="password" id="pw-confirm" autocomplete="new-password" minlength="15" maxlength="256" required><button type="button" data-password-toggle="pw-confirm" aria-label="Pokaż potwierdzenie hasła" aria-pressed="false">Pokaż</button></div>
+   <div class="form-actions"><span id="pw-change-status" role="status" aria-live="polite">Aktualne hasło nie jest wyświetlane ani zapisywane w panelu.</span><button class="primary" id="pw-change-submit" type="submit">Zmień hasło</button></div>
+  </form>
+ </div>
  <div class="card profile-shortcuts"><p class="card-kicker">02 / CENTRUM GRACZA</p><h2>Szybkie zarządzanie</h2><div class="profile-shortcut-grid">
  <button type="button" data-profile-jump="games"><span aria-hidden="true">♜</span><strong>Moje gry</strong><small>Ulubione tytuły</small></button>
  <button type="button" data-profile-jump="friends"><span aria-hidden="true">♧</span><strong>Moi znajomi</strong><small>Kontakty i zaproszenia</small></button>
@@ -127,7 +137,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <p>Zablokowane osoby nie mogą wysyłać Ci zaproszeń. Możesz je odblokować w dowolnym momencie.</p><div id="friends-blocked" class="friends-items"></div></div>
 </section>
 <section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
-<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła i 2FA</span><strong>W przygotowaniu</strong></div>
+<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
 <button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
 <section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
@@ -278,6 +288,20 @@ body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),line
 .profile-game-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.profile-game-links a{text-decoration:none;text-align:center;padding:15px 8px;background:#085662;border:1px solid #19b9ab;color:#eefeff;border-radius:12px;font-size:12px;font-weight:850}.profile-game-links a:hover{background:#097481}
 @media(max-width:1250px){.profile-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-layout{grid-template-columns:minmax(0,1fr)}.profile-side-column{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-game-links{grid-column:1/-1}}
 @media(max-width:650px){.premium-profile .profile-hero-premium{padding:18px}.profile-avatar-frame{width:90px;height:90px;border-radius:19px}.profile-avatar-large{font-size:52px}.profile-topline{margin-bottom:19px}.profile-metrics{gap:9px;margin-top:19px}.profile-metric{padding:12px}.profile-metric strong{font-size:25px}.premium-profile .form-grid{grid-template-columns:1fr}.profile-side-column,.profile-shortcut-grid{grid-template-columns:1fr}.profile-form-buttons{width:100%}.profile-form-buttons button{flex:1}.profile-hero-actions button{flex:1}}
+
+.profile-password-card{margin-top:18px;border:1px solid #268d8c!important;background:radial-gradient(ellipse at 87% 0%,#097a7960,transparent 54%),linear-gradient(145deg,#063741,#041d2b)!important}
+.profile-password-form{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;margin-top:18px;max-width:710px}
+.profile-password-form>label{color:#ffe0a2;font-weight:800;font-size:13px;margin-top:8px}
+.profile-password-form>small{color:#a8d9d8;font-size:12px}
+.profile-password-field{display:flex;align-items:stretch;overflow:hidden;border:1px solid #348d91;border-radius:12px;background:#041f2a}
+.profile-password-field:focus-within{border-color:#24f3da;box-shadow:0 0 0 2px #1bdbca31}
+.profile-password-field input{flex:1;min-width:0;min-height:48px;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;padding:11px 13px!important}
+.profile-password-field button{border:0;border-left:1px solid #286b70;background:#10404a;color:#aaf6e8;font-weight:750;padding:0 17px;min-width:81px;cursor:pointer}
+.profile-password-field button:hover{background:#14616a}
+.profile-password-form .form-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px}
+.profile-password-form .form-actions #pw-change-status{max-width:470px;line-height:1.5;font-size:13px}
+.profile-password-form .form-actions button{min-width:165px}
+@media(max-width:650px){.profile-password-form .form-actions button{width:100%}}
 `+premiumProfileStyles;
 const js=String.raw`(()=>{
 'use strict';
@@ -716,10 +740,13 @@ async function api(path,options={}){
    GRACZ_NIEDOSTEPNY:'Gracz nie istnieje, nie potwierdził e-maila albo nie może otrzymywać zaproszeń.',
    ZAPROSZENIE_NIEDOSTEPNE:'Zaproszenie jest już wysłane, nieaktualne lub kontakt nie jest dozwolony.',
    ZBYT_WIELE_ZAPROSZEN:'Limit zaproszeń został osiągnięty. Spróbuj później.',
-   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.'
+   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.',
+   BLEDNE_AKTUALNE_HASLO:'Obecne hasło jest nieprawidłowe.',
+   POPRAW_NOWE_HASLO:'Sprawdź długość nowego hasła, potwierdzenie i to, czy różni się od obecnego.',
+   HASLO_ZMIENIONE_PONOW_PROBE:'Hasło zostało zmienione w innej sesji. Odśwież stronę i spróbuj ponownie.'
   };
-  const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
-   messages[body.error]||'Nie udało się wykonać operacji. Spróbuj ponownie.');
+  const error=new Error(messages[body.error]||(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
+   'Nie udało się wykonać operacji. Spróbuj ponownie.'));
   error.status=response.status;throw error;
  }
  return body;
@@ -802,6 +829,38 @@ async function load(){
  }
 }
 $('access-retry').addEventListener('click',load);
+
+document.querySelectorAll('[data-password-toggle]').forEach(button=>button.addEventListener('click',()=>{
+ const field=$(button.dataset.passwordToggle),reveal=field.type==='password';
+ field.type=reveal?'text':'password';button.textContent=reveal?'Ukryj':'Pokaż';
+ button.setAttribute('aria-pressed',String(reveal));
+ button.setAttribute('aria-label',(reveal?'Ukryj':'Pokaż')+' hasło');
+}));
+$('pw-change-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const form=$('pw-change-form'),save=$('pw-change-submit'),label=$('pw-change-status');
+ if(!sessionConfirmed){label.textContent='Zaloguj się ponownie, aby zmienić hasło.';return;}
+ const currentPassword=$('pw-current').value,newPassword=$('pw-next').value,repeatPassword=$('pw-confirm').value;
+ if(newPassword.length<15||new TextEncoder().encode(newPassword).length>256){
+  label.textContent='Nowe hasło musi mieć co najmniej 15 znaków i maksymalnie 256 bajtów.';return;
+ }
+ if(newPassword!==repeatPassword){label.textContent='Nowe hasła nie są identyczne.';return;}
+ if(currentPassword===newPassword){label.textContent='Nowe hasło musi różnić się od obecnego.';return;}
+ save.disabled=true;label.textContent='Bezpieczne zapisywanie nowego hasła…';
+ try{
+  const result=await api('change-password',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({currentPassword,newPassword,repeatPassword})});
+  form.reset();
+  document.querySelectorAll('[data-password-toggle]').forEach(button=>{
+   $(button.dataset.passwordToggle).type='password';button.textContent='Pokaż';
+   button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Pokaż hasło');
+  });
+  label.textContent='Hasło zmieniono. Wylogowano pozostałe sesje: '+result.otherSessionsRevoked+'.';
+  notice('Hasło zostało zmienione. Inne urządzenia zostały wylogowane.');
+ }catch(error){label.textContent=error.message;}
+ finally{save.disabled=false;}
+});
+
 $('profile-form').addEventListener('submit',async event=>{
  event.preventDefault();
  if(!sessionConfirmed){accessState('Zaloguj się do konta','Zaloguj się ponownie, aby edytować profil.',{login:true});return;}
