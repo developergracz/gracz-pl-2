@@ -1452,13 +1452,13 @@ function fhUpdateFromFriends(result){
  const incoming=(result.connections||[]).filter(x=>x.status==='pending'&&x.direction==='incoming').length;
  badge.textContent=incoming?'('+incoming+')':'';
 }
-function fhTab(tab){
+function fhTab(tab,skipLoad=false){
  for(const b of document.querySelectorAll('[data-fh-tab]')){
   const active=b.dataset.fhTab===tab;b.classList.toggle('active',active);
   b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
  }
  for(const pane of document.querySelectorAll('[data-fh-pane]'))pane.hidden=pane.dataset.fhPane!==tab;
- if(tab==='book'&&sessionConfirmed)void abLoad(0);
+ if(tab==='book'&&sessionConfirmed&&!skipLoad)void abLoad(0);
 }
 document.querySelectorAll('[data-fh-tab]').forEach(b=>b.addEventListener('click',()=>fhTab(b.dataset.fhTab)));
 function abMessage(text){$('ab-status').textContent=text}
@@ -1587,8 +1587,8 @@ async function abLoad(page=0){
  }catch(e){abMessage(e.message)}
 }
 async function abOpenFriend(nickname){
- fhTab('book');
  $('ab-search').value=nickname;
+ fhTab('book',true);
  $('ab-group-filter').value='';
  $('ab-favorites-filter').checked=false;
  await abLoad(0);
