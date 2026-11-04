@@ -15,6 +15,8 @@ export const productionModules=Object.freeze([
   'auth/premium-profile.mjs',
   // Private address-book API: owner-scoped PostgreSQL, CSRF protection, no external calls.
   'auth/address-book.mjs',
+  // Same-origin, owner-scoped security center; opaque session handles, bounded event history.
+  'auth/security-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
   // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session
