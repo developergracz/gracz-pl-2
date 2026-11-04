@@ -469,3 +469,19 @@ test('player panel uses compact responsive dimensions without zooming the UI',()
   assert.ok(dense.includes(expected),'missing compact responsive rule: '+expected);
  assert.doesNotMatch(dense,/(^|[;{])\s*(zoom|transform)\s*:/m,'do not scale or blur whole panel');
 });
+
+test('player header has one navigation bar and one premium discover-games action',()=>{
+ const page=response(),styles=response();
+ const origin='https://gracz-contact-api.onrender.com';
+ assert.equal(servePlayerPanel({method:'GET'},page,new URL('/konto/panel/',origin)),true);
+ assert.equal(servePlayerPanel({method:'GET'},styles,new URL('/konto/panel/styl.css',origin)),true);
+ assert.equal(page.status,200);
+ assert.equal(styles.status,200);
+ assert.match(page.body,/<div class="site-nav">/);
+ assert.match(page.body,/<a class="site-discover" href="https:\/\/gracz\.pl\/gry\/">Odkryj gry /);
+ assert.equal((page.body.match(/class="site-discover"/g)||[]).length,1);
+ assert.doesNotMatch(page.body,/<header class="top">/);
+ assert.doesNotMatch(page.body,/class="top-link"/);
+ assert.match(styles.body,/\.site-nav \.site-discover/);
+ assert.match(styles.body,/@media\(max-width:700px\)/);
+});
