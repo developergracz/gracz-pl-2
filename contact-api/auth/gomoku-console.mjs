@@ -71,7 +71,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
 <div class="sidebar-footer"><div class="sidecard rules premium-howto"><button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></button></div>
 <nav class="side-links" aria-label="Pomoc i panel gracza"><a href="/konto/panel/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M3.5 9h17M9 9.5v10.5M7 6.25h.01M11 6.25h.01"/></svg></span><span>Mój panel</span></a><a href="https://gracz.pl/gry/gomoku/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2"/></svg></span><span>Zasady Gomoku</span></a></nav>
-
+<button type="button" id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"><span aria-hidden="true">⚙</span> Skonfiguruj wygląd konsoli</button>
 </div>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
@@ -142,7 +142,6 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="chat-footnote" id="chat-status">Komentarze treningowe · bez zapisu na serwerze</p>
 </div>
 </section>
-</aside>
 <div class="game-tools" aria-label="Narzędzia gry">
 <button type="button" class="tool-btn" id="undo-move" title="Cofnij ruch" aria-label="Cofnij ruch" data-tooltip="Cofnij ruch"><span aria-hidden="true">↶</span><span class="sr-only" id="undo-label">Cofnij czarny kamień</span></button>
 <button type="button" class="tool-btn" id="analyze-position" title="Analiza partii" aria-label="Analiza partii" data-tooltip="Analiza partii"><span aria-hidden="true">▥</span></button>
@@ -152,7 +151,8 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
 <button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
 </div>
-<div class="game-controls-bottom"><button type="button" id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"><span aria-hidden="true">⚙</span> Skonfiguruj wygląd konsoli</button></div></div>
+</aside>
+</div>
 <div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Ruch czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
@@ -1538,16 +1538,14 @@ select option{background:#102c34;color:#fff}
  .console-config-preview small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.console-config-preview>div{transition:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
-/* R42: single-row tools above the existing 15-tile appearance configurator. */
-.arena>.game-tools{grid-column:1/-1;display:flex;flex-flow:row nowrap;gap:clamp(4px,.7vw,9px);align-items:center;justify-content:center;min-width:0}
-.arena>.game-tools .tool-btn{flex:0 1 48px;width:clamp(34px,4vw,48px);height:40px;min-height:40px;padding:4px;justify-content:center}
-.arena>.game-tools .tool-btn span{min-width:0;font-size:19px}
-.arena>.game-controls-bottom{grid-column:1/-1;display:flex;justify-content:center;min-width:0}
-.arena .console-config-launch{display:flex;align-items:center;justify-content:center;gap:9px;width:min(100%,430px);min-height:39px;border:1px solid #e0b96a;border-radius:11px;background:linear-gradient(165deg,#145657,#083039 58%,#031d2a);color:#ffe3a6;font:800 13px Georgia,serif;box-shadow:inset 0 1px #d7fff465,0 0 10px #e4b65235;padding:8px 14px}
-.arena .console-config-launch span{color:#f6d18a}
-.game-focus .game-tools,.game-focus .game-controls-bottom{display:none!important}
-@media(max-width:800px){.arena,.arena>.game-tools,.arena>.game-controls-bottom{width:100%}}
-@media(max-width:560px){.arena>.game-tools{gap:3px}.arena>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:auto;height:37px;min-height:37px}}
+/* R43: Restore the toolbar under the chat; configurator belongs in the left sidebar. */
+.sidebar .sidebar-footer>.console-config-launch{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:40px;padding:8px;border:1px solid #e0b96a;border-radius:11px;background:linear-gradient(165deg,#145657,#083039 58%,#031d2a);color:#ffe3a6;font:800 13px Georgia,serif;box-shadow:inset 0 1px #d7fff465,0 0 10px #e4b65235}
+.sidebar .sidebar-footer>.console-config-launch span{color:#f6d18a}
+.side-dock>.game-tools{display:flex;flex-flow:row nowrap;align-items:center;justify-content:center;gap:clamp(3px,.45vw,7px);min-width:0;width:100%;flex:0 0 auto}
+.side-dock>.game-tools .tool-btn{flex:1 1 0;width:0;min-width:0;min-height:36px;height:38px;padding:3px;justify-content:center}
+.side-dock>.game-tools .tool-btn span{font-size:17px;min-width:0}
+.game-focus .side-dock>.game-tools{display:none!important}
+@media(max-width:560px){.side-dock>.game-tools{display:flex;flex-flow:row nowrap;gap:4px}.side-dock>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:0;min-height:40px;height:40px}}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
