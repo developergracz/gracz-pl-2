@@ -87,6 +87,11 @@ test('P1: training makes no presence requests; online keeps 4s/8s cadence and sk
  assert.equal(c.calls.filter(x=>x.path.startsWith('/auth/match?id')).length,2);
  assert.equal(c.calls.filter(x=>x.path.startsWith('/auth/match/chat?id')).length,1);
  assert.equal(c.context.renderCount,rendered);
+ // Session/participant projection may change even at the same durable version.
+ c.hooks.state.match.player=2;
+ await c.hooks.refreshOnline();
+ assert.equal(c.hooks.state.match.player,1);
+ assert.equal(c.context.renderCount,rendered+1);
 });
 
 test('P1: coalesce concurrent reads, release failed/timed out requests, prevent double chat submits',async()=>{

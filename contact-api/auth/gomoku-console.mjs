@@ -2422,7 +2422,7 @@ async function refreshOnline(force=false){
    const previous=state.match,next=result.match;
    // Version covers durable board/clock changes; permissions, names and expiring
    // undo requests can change independently of the match version.
-   changed=!previous||previous.version!==next.version||previous.playable!==next.playable||
+   changed=!previous||previous.version!==next.version||previous.player!==next.player||previous.playable!==next.playable||
     JSON.stringify(previous.players)!==JSON.stringify(next.players)||
     JSON.stringify(previous.undoRequest)!==JSON.stringify(next.undoRequest);
    synchronizeGameTime(result);state.match=next;
