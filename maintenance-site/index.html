@@ -145,7 +145,7 @@
   <link rel="preload" href="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" as="image" type="image/webp" media="(min-width:681px) and (max-width:1180px)" fetchpriority="high">
   <link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fit-r29">
   <script src="/assets/newsletter-interactive-r30-loader.js?v=20261103" defer></script>
-  <script src="/assets/hero-rotator-premium.js?v=20261104-r2" defer></script>
+  <script src="/assets/hero-rotator-premium.js?v=20261105-r3" defer></script>
 
 
 
@@ -242,23 +242,33 @@
 
   <main id="tresc" tabindex="-1" class="r4-homepage">
     <section class="r4-hero" aria-labelledby="hero-title" data-hero-slide="gomoku">
-      <picture class="r4-owner-picture" aria-hidden="true">
-        <source media="(min-width:1181px)" type="image/webp" srcset="/assets/gracz-hero-gomoku-approved-r1.webp">
-        <source media="(min-width:681px) and (max-width:1180px)" type="image/webp" srcset="/assets/gracz-hero-gomoku-mobile-preview-r1.webp">
-        <img class="r4-owner-image" src="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" width="2172" height="724" alt="" loading="eager" decoding="async" fetchpriority="high">
-      </picture>
-      <!-- The original console in the approved HERO is always preserved.
-           These static overlays change only its title and board, never its layout. -->
-      <div class="r4-console-dynamic" aria-hidden="true">
-        <span class="r4-console-title r4-console-title--warcaby">Warcaby Online</span>
-        <span class="r4-console-title r4-console-title--soon">Kolejne gry</span>
-        <div class="r4-console-board r4-console-board--warcaby">
-          <div class="r4-console-board-squares r4-console-board-squares--warcaby" id="r4-hero-checkers-board"></div>
-        </div>
-        <div class="r4-console-board r4-console-board--soon">
-          <div class="r4-console-board-squares r4-console-board-squares--soon">
-            <span class="r4-console-soon-caption">W niedługim czasie więcej gier!</span>
+      <!-- One fixed Full Max Premium console. The approved artwork is the static layer.
+           Each slot covers exactly one game-specific detail baked into it with an opaque pane,
+           so the Gomoku view never shows through Warcaby or the coming-soon view.
+           The rotator only switches data-hero-slide; nothing is re-mounted or downloaded. -->
+      <div class="r4-console-stage">
+        <picture class="r4-owner-picture" aria-hidden="true">
+          <source media="(min-width:1181px)" type="image/webp" srcset="/assets/gracz-hero-gomoku-approved-r1.webp">
+          <source media="(min-width:681px) and (max-width:1180px)" type="image/webp" srcset="/assets/gracz-hero-gomoku-mobile-preview-r1.webp">
+          <img class="r4-owner-image" src="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" width="2172" height="724" alt="" loading="eager" decoding="async" fetchpriority="high">
+        </picture>
+        <div class="r4-console-layer" aria-hidden="true">
+          <div class="r4-slot r4-slot--title"><span class="r4-pane" data-pane="warcaby"><b>Warcaby</b>&nbsp;Online</span><span class="r4-pane" data-pane="soon"><b>Kolejne</b>&nbsp;gry</span></div>
+          <div class="r4-slot r4-slot--p1icon"><i class="r4-pane r4-chip r4-chip--white" data-pane="warcaby"></i></div>
+          <div class="r4-slot r4-slot--p1sub"><span class="r4-pane" data-pane="warcaby">Białe — zaczynają</span><span class="r4-pane" data-pane="soon">Gotowy do gry</span></div>
+          <div class="r4-slot r4-slot--p2icon"><i class="r4-pane r4-chip r4-chip--black" data-pane="warcaby"></i></div>
+          <div class="r4-slot r4-slot--p2sub"><span class="r4-pane" data-pane="warcaby">Czarne</span><span class="r4-pane" data-pane="soon">Wkrótce</span></div>
+          <div class="r4-slot r4-slot--status"><span class="r4-pane" data-pane="warcaby">Nowa partia z komputerem. Grasz białymi, masz pierwszy ruch.</span><span class="r4-pane" data-pane="soon">Zapowiedź — kolejne gry premium już wkrótce na gracz.pl.</span></div>
+          <div class="r4-slot r4-slot--board">
+            <div class="r4-pane r4-board-checkers" data-pane="warcaby"><div class="r4-checkers" id="r4-hero-checkers-board"></div></div>
+            <div class="r4-pane r4-board-soon" data-pane="soon"><span class="r4-soon-caption">W niedługim czasie<br>więcej gier!</span></div>
           </div>
+          <div class="r4-slot r4-slot--moves"><span class="r4-pane" data-pane="warcaby">0</span><span class="r4-pane" data-pane="soon">0</span></div>
+          <div class="r4-slot r4-slot--lost"><span class="r4-pane" data-pane="warcaby">0</span><span class="r4-pane" data-pane="soon">0</span></div>
+          <div class="r4-slot r4-slot--played"><span class="r4-pane" data-pane="warcaby">0</span><span class="r4-pane" data-pane="soon">0</span></div>
+          <div class="r4-slot r4-slot--rules"><span class="r4-pane" data-pane="warcaby">Zasady warcabów</span><span class="r4-pane" data-pane="soon">Zasady gier</span></div>
+          <div class="r4-slot r4-slot--hint"><span class="r4-pane" data-pane="warcaby">Notatki treningowe.<br>Nie są zapisywane na serwerze.</span><span class="r4-pane" data-pane="soon">Napisz do GRACZ AI — zapytaj o nowe gry<br>lub porozmawiaj na dowolny temat.</span></div>
+          <div class="r4-slot r4-slot--foot"><span class="r4-pane" data-pane="warcaby">Notatki treningowe · tylko w tej przeglądarce</span><span class="r4-pane" data-pane="soon">GRACZ AI · GroqCloud · rozmowy ogólne i o grach</span></div>
         </div>
       </div>
       <div class="r4-hero-copy">
@@ -270,21 +280,15 @@
         <div class="r4-hero-actions">
           <a href="/gry/" class="r4-btn r4-btn-gold">Odkryj gry</a>
           <a href="/poradniki/" class="r4-btn r4-btn-outline">Poznaj poradniki</a>
-          <div class="r4-game-cta-stack">
+          <span class="r4-game-cta-stack">
             <a href="https://gracz-contact-api.onrender.com/konto/gomoku/" class="r4-btn r4-btn-gomoku" data-game="gomoku">Zagraj w gomoku</a>
             <a href="https://gracz-contact-api.onrender.com/konto/warcaby/" class="r4-btn r4-btn-gomoku" data-game="warcaby">Zagraj w warcaby</a>
-            <a href="https://gracz.pl/gry/" class="r4-btn r4-btn-gomoku" data-game="soon">Poznaj kolejne gry</a>
-          </div>
+            <a href="/gry/" class="r4-btn r4-btn-gomoku" data-game="soon">Poznaj kolejne gry</a>
+          </span>
         </div>
       </div>
       <div class="r4-hero-art" aria-hidden="true"></div>
-      <nav class="r4-hero-live-actions" aria-label="Zagraj w wybraną grę">
-        <a class="r4-live-game" data-game="gomoku" href="https://gracz-contact-api.onrender.com/konto/gomoku/">Zagraj w gomoku</a>
-        <a class="r4-live-game" data-game="warcaby" href="https://gracz-contact-api.onrender.com/konto/warcaby/">Zagraj w warcaby</a>
-        <a class="r4-live-game" data-game="soon" href="/gry/">Poznaj kolejne gry</a>
-      </nav>
-      <!-- Backward-compatible DOM hooks for the existing approved HERO checks.
-           The real clickable links are in .r4-hero-live-actions above. -->
+      <!-- Legacy DOM hooks kept hidden for existing checks; the real links are in .r4-hero-actions. -->
       <a class="r4-owner-hotspot r4-owner-hotspot--games" href="/gry/" aria-label="Odkryj gry" tabindex="-1"><span class="r4-owner-hotspot__label">Odkryj gry</span></a>
       <a class="r4-owner-hotspot r4-owner-hotspot--guides" href="/poradniki/" aria-label="Poznaj poradniki" tabindex="-1"><span class="r4-owner-hotspot__label">Poznaj poradniki</span></a>
       <a class="r4-owner-hotspot r4-owner-hotspot--gomoku" href="https://gracz-contact-api.onrender.com/konto/gomoku/" aria-label="Zagraj w gomoku" tabindex="-1"><span class="r4-owner-hotspot__label">Zagraj w gomoku</span></a>

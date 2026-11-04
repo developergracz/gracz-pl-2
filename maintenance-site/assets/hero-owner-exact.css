@@ -1,8 +1,16 @@
-/* GRACZ.PL — approved Full Max Premium hero (R14), actual supplied artwork on desktop.
- * Text / links remain accessible native HTML; mobile keeps semantic R4 layout.
- * Artwork intrinsic size 2172x724: keep whole desktop image in its 3:1 ratio.
+/* GRACZ.PL — HERO Full Max Premium R3.
+ * Left: native HTML copy and links (always visible, never drawn twice).
+ * Right: ONE fixed console. Static layer = approved artwork:
+ *   desktop 2172x724 (its baked lettering is covered by the R6 fade), tablet/phone 1250x655.
+ * Variable layer = .r4-console-layer: opaque panes placed in artwork pixels
+ *   (slot = --x/--y/--w/--h × --px, --px = stage width / artwork width) over every
+ *   game-specific detail of the artwork. Only .r4-hero[data-hero-slide] changes.
  */
-.r4-owner-picture,.r4-owner-hotspot{display:none}
+.r4-owner-hotspot{display:none!important}
+.r4-console-stage{position:relative;z-index:0;display:block;container-type:inline-size;line-height:0}
+.r4-owner-picture{display:block;width:100%;line-height:0}
+.r4-owner-image{display:block;width:100%;height:auto;max-width:none}
+
 @media(min-width:1181px){
  .homepage-premium-max .r4-hero{
    position:relative!important;display:block!important;width:100%!important;
@@ -10,224 +18,164 @@
    background:#041421!important;border-bottom:1px solid rgba(235,187,98,.25)!important;
    overflow:hidden!important;
  }
- .homepage-premium-max .r4-owner-picture{display:block;width:100%;height:auto;line-height:0}
- .homepage-premium-max .r4-owner-image{
-   display:block;width:100%;height:auto;aspect-ratio:2172/724;
-   object-fit:contain;object-position:center;
-   max-width:none;filter:none!important;image-rendering:auto;
- }
- /* Image contains the approved visible copy; keep the original actual H1 and
-    paragraph in DOM for assistive technology and SEO without doubled text. */
- .homepage-premium-max .r4-hero-copy{
-   position:absolute!important;left:0!important;top:0!important;
-   width:1px!important;height:1px!important;max-width:1px!important;
-   padding:0!important;margin:-1px!important;overflow:hidden!important;
-   clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;
-   white-space:nowrap!important;
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions{display:none!important}
+ .r4-console-stage{--px:calc(100cqw / 2172)}
+ .homepage-premium-max .r4-owner-image{aspect-ratio:2172/724;object-fit:contain;object-position:center}
+ /* Same colour treatment as the artwork (R6 filters .r4-owner-image on desktop). */
+ .r4-console-layer{filter:saturate(1.14) contrast(1.07)}
  .homepage-premium-max .r4-hero-art{display:none!important}
- .homepage-premium-max .r4-owner-hotspot{
-   display:block;position:absolute;z-index:5;top:69.1%;height:14.1%;
-   background:transparent;border:0;border-radius:10px;
-   text-decoration:none!important;cursor:pointer;
- }
- .homepage-premium-max .r4-owner-hotspot--games{left:1.35%;width:19.2%}
- .homepage-premium-max .r4-owner-hotspot--guides{left:21.35%;width:20.8%}
- /* The clickable hotspots overlay text baked into the HERO image: no hover border, which would be displaced from the visible buttons. */
- .homepage-premium-max .r4-owner-hotspot:focus-visible{
-    outline:3px solid #ffe3a0;outline-offset:3px;background:rgba(250,196,97,.12)
- }
- .homepage-premium-max .r4-owner-hotspot__label{
-   position:absolute;width:1px;height:1px;margin:-1px;padding:0;
-   overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0
- }
 }
-/* On tablets/phones, keep the existing reflowing, sharp HTML text and genuine
-   buttons; do not squeeze rasterized typography to unreadable dimensions. */
+
+/* Tablets and phones: copy first, then the whole console. Nothing overlaps. */
 @media(max-width:1180px){
- .homepage-premium-max .r4-owner-picture,.homepage-premium-max .r4-owner-hotspot{display:none!important}
- .homepage-premium-max .r4-hero-art{
-   background-image:linear-gradient(90deg,rgba(3,14,25,.40),rgba(3,14,25,.05) 65%),url("/assets/gracz-hero-mobile-art-r14.webp")!important;
-   background-size:100% 100%,cover!important;
-   background-position:center,center!important;
-   background-repeat:no-repeat!important;
- }
+ .homepage-premium-max .r4-hero{display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important}
+ .homepage-premium-max .r4-hero-art{display:none!important}
+ .r4-console-stage{--px:calc(100cqw / 1250);order:1;width:100%}
+ .homepage-premium-max .r4-owner-image{aspect-ratio:1250/655;object-fit:cover}
  .homepage-premium-max .r4-hero-motto{font-style:italic;letter-spacing:.01em}
  .homepage-premium-max .r4-hero-claim{color:#e5eef9!important}
-}
-
-/* Mobile LCP: render the preloaded hero art as a native image, not a CSS
- * background. Keep the same lower image panel geometry and dark fade. */
-@media (max-width:680px) {
- .homepage-premium-max .r4-hero {position:relative!important}
- .homepage-premium-max .r4-owner-picture{
-   display:block!important;position:absolute!important;left:0;right:0;bottom:0;
-   z-index:2;width:100%;height:clamp(190px,58vw,290px);overflow:hidden;
-   line-height:0;pointer-events:none;
- }
- .homepage-premium-max .r4-owner-image{
-   display:block;width:100%;height:100%;object-fit:cover;object-position:center;
- }
- .homepage-premium-max .r4-owner-picture::after{
-   content:"";position:absolute;inset:0;pointer-events:none;
-   background:linear-gradient(90deg,rgba(3,14,25,.40),rgba(3,14,25,.05) 65%),
-     linear-gradient(0deg,#041625 0%,transparent 19%);
- }
- .homepage-premium-max .r4-hero-art{background-image:none!important}
-}
-
-
-/* GRACZ.PL — Owner-approved Gomoku hero, only layout-specific overrides. */
-@media (min-width:1181px) {
- body.homepage-premium-max .r4-owner-hotspot--games {top:65.7%;left:1.96%;width:12.3%;height:10.7%}
- body.homepage-premium-max .r4-owner-hotspot--guides {top:65.7%;left:15.1%;width:16.5%;height:10.7%}
- body.homepage-premium-max .r4-owner-hotspot--gomoku {top:79.65%;left:1.95%;width:29.7%;height:10.8%}
-}
-@media (max-width:1180px) {
- body.homepage-premium-max .r4-hero-art {
-  background-image:linear-gradient(90deg,rgba(0,46,46,.66),rgba(0,46,46,.04) 65%),url("/assets/gracz-hero-gomoku-mobile-preview-r1.webp")!important;
-  background-position:center,right center!important;
-  background-size:100% 100%,cover!important;
-  background-repeat:no-repeat!important;
- }
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku {
-  display:inline-flex;flex-basis:100%;max-width:420px;
+ body.homepage-premium-max .r4-hero-copy .r4-hero-actions{flex-wrap:wrap!important}
+ body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku{
   background:linear-gradient(180deg,#fff0b0 0%,#f6c14d 54%,#d99418 100%)!important;
   color:#052a2c!important;border:2px solid #fff0ad!important;
   border-radius:16px;box-shadow:0 0 0 1px #a46712,0 8px 23px rgba(244,174,40,.32);
   font-weight:900;letter-spacing:.015em;text-decoration:none!important;
  }
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:hover {filter:brightness(1.06)}
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:focus-visible {outline:3px solid #fff0ad;outline-offset:3px}
-}
-@media (max-width:680px) {
- body.homepage-premium-max .r4-owner-image{object-fit:contain!important;object-position:center!important;background:#002f32}
- body.homepage-premium-max .r4-hero-art{background-image:none!important}
-}
-
-/* GRACZ.PL HERO — the approved hero and console stay static.
-   Only the board, console heading and game CTA transition. No embeds or game API. */
-.r4-hero{isolation:isolate}
-.r4-console-dynamic{position:absolute;inset:0;z-index:5;pointer-events:none}
-.r4-console-title{position:absolute;left:43.45%;top:8.8%;width:11.3%;height:4.9%;display:flex;align-items:center;justify-content:center;
- background:linear-gradient(95deg,#003038 0%,#001d2b 92%);color:#fff0bb;text-shadow:0 1px 2px #000,0 0 6px rgba(255,211,109,.35);
- font:700 clamp(11px,1.3vw,29px)/1.05 Georgia,serif;white-space:nowrap;border-radius:5px}
-.r4-console-board{position:absolute;left:58.4%;top:20.8%;width:21.8%;height:58.8%;box-sizing:border-box;
- border:clamp(5px,.65vw,14px) ridge #f5cf7d;border-radius:clamp(8px,.9vw,20px);
- background:linear-gradient(150deg,#e7c786,#ac782d);box-shadow:0 0 9px rgba(250,193,65,.8),inset 0 0 0 2px #fff1b9;padding:clamp(6px,.55vw,14px)}
-.r4-console-board-squares{position:relative;width:100%;height:100%;background:#e9d6b0;overflow:hidden;box-shadow:inset 0 0 0 2px #765633}
-.r4-console-board-squares--warcaby{background:conic-gradient(#83552e 25%,#f5e7c6 0 50%,#83552e 0 75%,#f5e7c6 0);background-size:25% 25%}
-.r4-console-piece{position:absolute;left:calc(var(--x)*12.5% + 1.2%);top:calc(var(--y)*12.5% + 1.2%);width:10.1%;height:10.1%;box-sizing:border-box;
- border-radius:50%;border:1px solid rgba(0,0,0,.42);box-shadow:inset 0 2px 4px rgba(255,255,255,.56),inset 0 -3px 3px rgba(0,0,0,.35),0 2px 3px #241a14}
-.r4-console-piece--white{background:radial-gradient(circle at 32% 22%,#fff,#ded6bb 56%,#97805a)}
-.r4-console-piece--black{background:radial-gradient(circle at 32% 18%,#657078,#14202b 50%,#02060a)}
-.r4-console-board-squares--soon{background:linear-gradient(90deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,
- linear-gradient(0deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,linear-gradient(125deg,#fff9e8,#d3c1a0)}
-.r4-console-soon-caption{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:5%;box-sizing:border-box;
- background:radial-gradient(ellipse at center,rgba(0,32,39,.88),rgba(0,40,43,.3) 77%);
- color:#fff1c7;text-align:center;text-shadow:0 1px 4px #00191d,0 0 10px #bc8b39;
- font:900 clamp(13px,1.46vw,32px)/1.18 Georgia,serif}
-.r4-console-title,.r4-console-board{opacity:0;visibility:hidden;transition:opacity .42s ease,visibility 0s linear .42s}
-.r4-hero[data-hero-slide="warcaby"] .r4-console-title--warcaby,
-.r4-hero[data-hero-slide="warcaby"] .r4-console-board--warcaby,
-.r4-hero[data-hero-slide="soon"] .r4-console-title--soon,
-.r4-hero[data-hero-slide="soon"] .r4-console-board--soon{opacity:1;visibility:visible;transition:opacity .42s ease,visibility 0s}
-/* Native controls entirely cover button artwork baked into the approved screenshot.
-   The controls remain permanently mounted in fixed slots; only the game CTA fades. */
-.r4-hero-live-actions{position:absolute;inset:0;z-index:8;pointer-events:none;display:none}
-.r4-hero-live-actions a{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:auto;box-sizing:border-box;
- text-decoration:none!important;white-space:nowrap;overflow:hidden;font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif;
- border-radius:clamp(8px,1.1vw,25px);transition:filter .2s ease,opacity .42s ease,visibility 0s linear .42s}
-.r4-hero-live-actions a:hover{filter:brightness(1.08)}
-.r4-hero-live-actions a:focus-visible{outline:3px solid #fff5bf;outline-offset:2px}
-.r4-hero-live-actions .r4-live-discover{top:65.7%;left:1.96%;width:12.3%;height:10.7%;
- background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127);border:1px solid #fff0af;color:#002830;
- box-shadow:inset 0 2px 2px rgba(255,255,255,.7)}
-.r4-hero-live-actions .r4-live-guides{top:65.7%;left:15.1%;width:16.5%;height:10.7%;
- background:#002e32;border:1px solid #e0a940;color:#fff9ea}
-.r4-hero-live-actions .r4-live-game{top:79.65%;left:1.95%;width:29.7%;height:10.8%;
- border:2px solid #ffe7a0;border-radius:100px;background:linear-gradient(180deg,#ffe49b 0%,#faca61 45%,#dc9514 100%);
- color:#062e30;box-shadow:0 0 18px rgba(250,173,47,.35),inset 0 2px 3px rgba(255,255,255,.72);
- font-size:clamp(14px,1.65vw,37px)}
-.r4-live-game[data-game="warcaby"],.r4-live-game[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none!important}
-.r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="warcaby"],
-.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto!important;transition:filter .2s ease,opacity .42s ease,visibility 0s}
-.r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="gomoku"],
-.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none!important}
-@media(min-width:1181px){
- .homepage-premium-max .r4-hero-live-actions{display:block}
- .homepage-premium-max .r4-owner-hotspot{display:none!important}
-}
-@media(max-width:1180px){
- .homepage-premium-max .r4-hero-actions .r4-btn svg{display:none!important}
- .r4-hero-live-actions{display:none!important}
- .r4-console-dynamic{left:auto;top:10%;right:0;width:61%;height:auto;aspect-ratio:1250/663;
- background:url('/assets/gracz-hero-gomoku-mobile-preview-r1.webp') center/contain no-repeat;z-index:4}
- .r4-console-title{left:8.4%;top:6.4%;width:20%;height:7%;font-size:clamp(10px,1.65vw,19px)}
- .r4-console-board{left:32.6%;top:18.1%;width:38.7%;height:66%;padding:2.1%;border-width:clamp(4px,.7vw,9px)}
- .r4-console-soon-caption{font-size:clamp(10px,1.2vw,19px)}
- .homepage-premium-max .r4-hero-art{background-image:none!important}
- .r4-hero-actions .r4-game-cta-stack{position:relative;display:flex;flex-basis:100%;width:min(420px,100%);height:52px}
- .r4-hero-actions .r4-game-cta-stack .r4-btn{position:absolute;inset:0;max-width:none;width:100%;min-height:100%;
-   display:flex;align-items:center;justify-content:center;box-sizing:border-box}
- .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="warcaby"],
- .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .42s ease,visibility 0s linear .42s}
- .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="warcaby"],
- .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .42s ease,visibility 0s}
- .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="gomoku"],
- .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none}
+ body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:hover{filter:brightness(1.06)}
+ body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:focus-visible{outline:3px solid #fff0ad;outline-offset:3px}
 }
 @media(max-width:680px){
- .r4-console-dynamic{top:auto;right:0;bottom:0;width:100%;height:auto;aspect-ratio:1250/663}
- .r4-console-title{font-size:clamp(9px,2.5vw,16px)}
- .r4-console-board{border-width:clamp(4px,1vw,8px)}
- .r4-console-soon-caption{font-size:clamp(10px,3vw,18px)}
+ .r4-hero-actions .r4-game-cta-stack{flex:1 1 100%;max-width:420px}
+}
+
+/* ---- Rotation: gomoku -> warcaby -> soon. Prebuilt, only visibility changes. ---- */
+.r4-hero{--hero-fade:.4s}
+.r4-game-cta-stack{display:inline-grid;flex:none}
+.r4-game-cta-stack>.r4-btn{grid-area:1/1;opacity:0;visibility:hidden;
+ transition:opacity var(--hero-fade) ease,visibility 0s linear var(--hero-fade)}
+.r4-hero[data-hero-slide="gomoku"] .r4-game-cta-stack>[data-game="gomoku"],
+.r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack>[data-game="warcaby"],
+.r4-hero[data-hero-slide="soon"] .r4-game-cta-stack>[data-game="soon"]{
+ opacity:1;visibility:visible;transition:opacity var(--hero-fade) ease,visibility 0s}
+
+.r4-console-layer{position:absolute;inset:0;z-index:1;pointer-events:none;user-select:none;
+ font-family:"Open Sans",Arial,sans-serif;line-height:1.2;color:#dbe6e4}
+.r4-slot{position:absolute;left:calc(var(--x) * var(--px));top:calc(var(--y) * var(--px));
+ width:calc(var(--w) * var(--px));height:calc(var(--h) * var(--px))}
+.r4-pane{position:absolute;inset:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+ overflow:hidden;white-space:nowrap;background:var(--bg);
+ opacity:0;visibility:hidden;transition:opacity var(--hero-fade) ease,visibility 0s linear var(--hero-fade)}
+.r4-hero[data-hero-slide="warcaby"] .r4-pane[data-pane="warcaby"],
+.r4-hero[data-hero-slide="soon"] .r4-pane[data-pane="soon"]{
+ opacity:1;visibility:visible;transition:opacity var(--hero-fade) ease,visibility 0s}
+/* Text panes fade into the artwork over --fx/--fy artwork px; the covered text lies inside the opaque core. */
+.r4-slot .r4-pane{
+ -webkit-mask:linear-gradient(90deg,transparent,#000 calc(var(--fx,0) * var(--px)),#000 calc(100% - var(--fx,0) * var(--px)),transparent),
+  linear-gradient(180deg,transparent,#000 calc(var(--fy,0) * var(--px)),#000 calc(100% - var(--fy,0) * var(--px)),transparent);
+ -webkit-mask-composite:source-in;
+ mask:linear-gradient(90deg,transparent,#000 calc(var(--fx,0) * var(--px)),#000 calc(100% - var(--fx,0) * var(--px)),transparent),
+  linear-gradient(180deg,transparent,#000 calc(var(--fy,0) * var(--px)),#000 calc(100% - var(--fy,0) * var(--px)),transparent);
+ mask-composite:intersect}
+.r4-slot--board .r4-pane,.r4-slot .r4-chip{-webkit-mask:none;mask:none}
+/* warcaby -> soon: the leaving pane stays opaque under the arriving one (its next sibling),
+   so the Gomoku artwork underneath never shows through during the cross-fade. */
+.r4-hero[data-hero-slide="soon"] .r4-pane[data-pane="warcaby"]:not(:last-child){
+ transition:opacity 0s linear var(--hero-fade),visibility 0s linear var(--hero-fade)}
+
+/* Slot typography (artwork pixels). */
+.r4-slot--title .r4-pane{font:700 calc(29 * var(--px))/1 Georgia,"Times New Roman",serif;color:#f6f4ee;
+ letter-spacing:-.012em;text-shadow:0 calc(1.5 * var(--px)) calc(2 * var(--px)) rgba(0,0,0,.55)}
+.r4-slot--title b{font-weight:700;color:#efcb73}
+.r4-slot--p1sub .r4-pane,.r4-slot--p2sub .r4-pane{justify-content:flex-start;padding-left:calc(3 * var(--px));
+ font-size:calc(10.5 * var(--px));color:#c9d8d6}
+.r4-slot--status .r4-pane{font:700 calc(16.5 * var(--px))/1 Georgia,"Times New Roman",serif;color:#f5e7a2;
+ text-shadow:0 calc(1 * var(--px)) calc(1.5 * var(--px)) rgba(0,0,0,.6)}
+.r4-slot--moves .r4-pane{justify-content:flex-start;padding-left:calc(4 * var(--px));
+ font:700 calc(18 * var(--px))/1 Georgia,"Times New Roman",serif;color:#f3f7f7}
+.r4-slot--lost .r4-pane{font:700 calc(26 * var(--px))/1 Georgia,"Times New Roman",serif;color:#f1c39a}
+.r4-slot--played .r4-pane{justify-content:flex-start;padding-left:calc(3 * var(--px));
+ font-weight:700;font-size:calc(11 * var(--px));color:#f4eebc}
+.r4-slot--rules .r4-pane{justify-content:flex-start;padding-left:calc(3 * var(--px));
+ font-weight:700;font-size:calc(9.6 * var(--px));letter-spacing:-.01em;color:#eef8f8}
+.r4-slot--rules .r4-pane[data-pane="warcaby"]{padding-left:calc(2 * var(--px));font-size:calc(8.4 * var(--px))}
+.r4-slot--hint .r4-pane{white-space:normal;text-align:center;font-size:calc(11 * var(--px));line-height:1.55;color:#e1e9e9}
+.r4-slot--foot .r4-pane{justify-content:flex-start;padding-left:calc(6 * var(--px));
+ font-size:calc(9.5 * var(--px));color:#c3cfcf}
+
+/* Player chips: Warcaby — you play white and move first. */
+.r4-chip{border-radius:50%;background:none}
+.r4-chip--white{background:radial-gradient(circle at 36% 30%,#fff 0 16%,#f3eee3 38%,#d8cfbb 68%,#a8997b 92%)}
+.r4-chip--black{background:radial-gradient(circle at 36% 28%,#68727a 0 8%,#262d33 34%,#0b0f12 66%,#000 100%)}
+.r4-chip--white,.r4-chip--black{box-shadow:0 0 0 calc(1.4 * var(--px)) #b88d3f,inset 0 calc(-2 * var(--px)) calc(3 * var(--px)) rgba(0,0,0,.3)}
+
+/* Board slot = cream playing surface inside the artwork's own gold frame. */
+.r4-slot--board .r4-pane{border-radius:calc(9 * var(--px))}
+.r4-board-checkers{background:#f5f3ed}
+.r4-checkers{position:absolute;left:2.66%;top:3.49%;width:94.01%;height:93.52%;
+ display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+ box-shadow:0 0 0 calc(1.6 * var(--px)) #26332f,0 calc(2 * var(--px)) calc(7 * var(--px)) rgba(0,0,0,.22)}
+.r4-sq{display:grid;place-items:center;background:#ece2cf}
+.r4-sq--dark{background:linear-gradient(150deg,#438b8e,#2f7376)}
+.r4-man{position:relative;height:80%;aspect-ratio:1;border-radius:50%}
+.r4-man::after{content:"";position:absolute;inset:24%;border-radius:50%}
+.r4-man--white{background:radial-gradient(circle at 34% 28%,#fff 0 12%,#f7f3ea 34%,#e2d9c6 62%,#bcae90 86%,#968767);
+ box-shadow:inset 0 calc(-3 * var(--px)) calc(4 * var(--px)) rgba(110,88,50,.35),0 calc(2.5 * var(--px)) calc(3.5 * var(--px)) rgba(0,0,0,.42)}
+.r4-man--white::after{box-shadow:0 0 0 calc(1.2 * var(--px)) rgba(164,140,98,.55),inset 0 calc(1 * var(--px)) calc(2 * var(--px)) rgba(255,255,255,.7)}
+.r4-man--black{background:radial-gradient(circle at 34% 26%,#5d676e 0 7%,#20272d 32%,#0a0d10 64%,#000 100%);
+ box-shadow:inset 0 calc(-3 * var(--px)) calc(4 * var(--px)) rgba(0,0,0,.6),0 calc(2.5 * var(--px)) calc(3.5 * var(--px)) rgba(0,0,0,.5)}
+.r4-man--black::after{box-shadow:0 0 0 calc(1.2 * var(--px)) rgba(120,132,140,.35),inset 0 calc(1 * var(--px)) calc(2 * var(--px)) rgba(255,255,255,.12)}
+
+/* Coming soon: exclusive dark-turquoise board with gold inlay, soft light and one clear caption. */
+.r4-board-soon{
+ background:radial-gradient(ellipse 62% 48% at 50% 46%,rgba(255,213,125,.17),transparent 72%),
+  radial-gradient(ellipse 95% 85% at 50% 42%,#0c5355 0%,#073a42 48%,#04213a 100%);
+ box-shadow:inset 0 0 0 calc(9 * var(--px)) #041f34,inset 0 0 0 calc(10.5 * var(--px)) #d9ad55,
+  inset 0 0 0 calc(14 * var(--px)) rgba(4,31,52,.9),inset 0 0 0 calc(15 * var(--px)) rgba(217,173,85,.55),
+  inset 0 0 calc(40 * var(--px)) rgba(0,0,0,.45)}
+.r4-board-soon::before{content:"";position:absolute;inset:calc(15 * var(--px));
+ background:linear-gradient(90deg,rgba(236,196,108,.12) calc(1 * var(--px)),transparent 0) 0 0/12.5% 12.5%,
+  linear-gradient(0deg,rgba(236,196,108,.12) calc(1 * var(--px)),transparent 0) 0 0/12.5% 12.5%;
+ -webkit-mask-image:radial-gradient(ellipse at center,#000 18%,transparent 72%);
+ mask-image:radial-gradient(ellipse at center,#000 18%,transparent 72%)}
+.r4-soon-caption{position:relative;display:flex;flex-direction:column;align-items:center;white-space:nowrap;text-align:center;
+ font:700 calc(37 * var(--px))/1.18 Georgia,"Times New Roman",serif;letter-spacing:-.01em;color:#fbe3a0;
+ text-shadow:0 calc(2 * var(--px)) calc(3 * var(--px)) rgba(0,0,0,.65),0 0 calc(16 * var(--px)) rgba(240,180,70,.45)}
+.r4-soon-caption::before{content:"";width:calc(60 * var(--px));height:calc(49 * var(--px));margin-bottom:calc(14 * var(--px));
+ background:url("/assets/gracz-crown-premium.svg") center/contain no-repeat;
+ filter:drop-shadow(0 0 calc(8 * var(--px)) rgba(255,208,103,.45))}
+.r4-soon-caption::after{content:"";width:calc(170 * var(--px));height:calc(2 * var(--px));margin-top:calc(16 * var(--px));
+ background:linear-gradient(90deg,transparent,#f1c45f 30%,#fff0b8 50%,#f1c45f 70%,transparent)}
+
+/* Slot geometry (artwork px), soft edge (--fx/--fy) and the background sampled around each covered detail. */
+@media(min-width:1181px){
+ .r4-slot--p1icon{--x:1250;--y:81;--w:26;--h:26}
+ .r4-slot--p2icon{--x:1560;--y:75;--w:27;--h:27}
+ .r4-slot--board{--x:1284;--y:162;--w:451;--h:401}
+ .r4-slot--title{--x:962;--y:64;--w:236;--h:36;--fx:8;--fy:3;--bg:linear-gradient(90deg,#072d2e,#052728 25%,#082324 50%,#021c23 75%,#011c20)}
+ .r4-slot--p1sub{--x:1278;--y:97;--w:92;--h:14;--fx:3;--fy:1;--bg:linear-gradient(90deg,#073534,#082d2f 25%,#062325 50%,#092225 75%,#061c1c)}
+ .r4-slot--p2sub{--x:1589;--y:92;--w:70;--h:12;--fx:3;--fy:2;--bg:linear-gradient(90deg,#053331,#053230 25%,#032e30 50%,#022728 75%,#012022)}
+ .r4-slot--status{--x:1262;--y:116;--w:516;--h:27;--fx:16;--fy:1;--bg:linear-gradient(180deg,#044a47,#004a49 12%,#044743 25%,#0a4239 38%,#163a2a 50%,#0c281d 62%,#05201e 75%,#012121 88%,#012022)}
+ .r4-slot--moves{--x:1343;--y:591;--w:30;--h:18;--fx:3;--fy:2;--bg:linear-gradient(90deg,#022020,#021a1f 25%,#02181d 50%,#03191c 75%,#021c1d)}
+ .r4-slot--lost{--x:1135;--y:462;--w:40;--h:27;--fx:4;--fy:3;--bg:linear-gradient(90deg,#033234,#023031 25%,#083132 50%,#063a37 75%,#043633)}
+ .r4-slot--played{--x:980;--y:510;--w:20;--h:14;--fx:2;--fy:2;--bg:linear-gradient(90deg,#022326,#052424 25%,#04251f 50%,#032021 75%,#032228)}
+ .r4-slot--rules{--x:1129;--y:552;--w:78;--h:17;--fx:2;--fy:2;--bg:linear-gradient(90deg,#083035,#052d33 25%,#052e31 50%,#032a2f 75%,#05292e)}
+ .r4-slot--hint{--x:1812;--y:222;--w:294;--h:56;--fx:10;--fy:10;--bg:linear-gradient(90deg,#012d2f,#002b2c 25%,#02272a 50%,#012629 75%,#012327)}
+ .r4-slot--foot{--x:1806;--y:521;--w:248;--h:16;--fx:6;--fy:3;--bg:linear-gradient(90deg,#03181b,#04191c 25%,#03181a 50%,#03181a 75%,#03181b)}
+}
+@media(max-width:1180px){
+ .r4-slot--p1icon{--x:389;--y:55;--w:27;--h:27}
+ .r4-slot--p2icon{--x:700;--y:49;--w:28;--h:28}
+ .r4-slot--board{--x:424;--y:137;--w:451;--h:401}
+ .r4-slot--title{--x:100;--y:40;--w:236;--h:36;--fx:8;--fy:3;--bg:linear-gradient(90deg,#072d2f,#062728 25%,#072423 50%,#031d21 75%,#021b20)}
+ .r4-slot--p1sub{--x:419;--y:73;--w:92;--h:15;--fx:3;--fy:1;--bg:linear-gradient(90deg,#073433,#092c2a 25%,#0a2423 50%,#0e2525 75%,#0c211e)}
+ .r4-slot--p2sub{--x:729;--y:65;--w:70;--h:14;--fx:3;--fy:2;--bg:linear-gradient(90deg,#063230,#053232 25%,#032d2e 50%,#022829 75%,#012023)}
+ .r4-slot--status{--x:400;--y:91;--w:515;--h:27;--fx:16;--fy:1;--bg:linear-gradient(180deg,#034a47,#024947 12%,#044744 25%,#09423a 38%,#173d2a 50%,#0d2b1f 62%,#03201e 75%,#022022 88%,#011f21)}
+ .r4-slot--moves{--x:483;--y:567;--w:30;--h:18;--fx:3;--fy:2;--bg:linear-gradient(90deg,#052026,#041a24 25%,#041922 50%,#04181d 75%,#011b1f)}
+ .r4-slot--lost{--x:273;--y:438;--w:42;--h:30;--fx:4;--fy:3;--bg:linear-gradient(90deg,#023336,#092f30 25%,#072f2e 50%,#073231 75%,#023332)}
+ .r4-slot--played{--x:117;--y:485;--w:21;--h:15;--fx:2;--fy:2;--bg:linear-gradient(90deg,#032526,#00201e 25%,#041f1f 50%,#052021 75%,#042326)}
+ .r4-slot--rules{--x:268;--y:527;--w:80;--h:18;--fx:2;--fy:2;--bg:linear-gradient(90deg,#043238,#022c34 25%,#042c32 50%,#042c2e 75%,#04292a)}
+ .r4-slot--hint{--x:952;--y:196;--w:294;--h:58;--fx:10;--fy:10;--bg:linear-gradient(90deg,#012d2e,#002b2c 25%,#01272a 50%,#012529 75%,#002327)}
+ .r4-slot--foot{--x:946;--y:495;--w:248;--h:16;--fx:6;--fy:3;--bg:linear-gradient(90deg,#02181c,#04191f 25%,#02181c 50%,#04191c 75%,#03181c)}
 }
 @media(prefers-reduced-motion:reduce){
- .r4-console-title,.r4-console-board,.r4-hero-live-actions a,.r4-game-cta-stack .r4-btn{transition:none!important}
+ .r4-hero{--hero-fade:0s}
 }
-
-
-
-/* Desktop: use the original semantic two HTML links, rather than a second
-   clickable overlay, so mouse and keyboard navigation cannot be intercepted. */
-@media(min-width:1181px){
- .homepage-premium-max .r4-hero-copy{
-  position:absolute!important;inset:0!important;left:0!important;top:0!important;
-  z-index:7;width:100%!important;height:100%!important;max-width:none!important;min-height:0!important;
-  padding:0!important;margin:0!important;overflow:visible!important;clip:auto!important;
-  clip-path:none!important;white-space:normal!important;pointer-events:none!important
- }
- .homepage-premium-max .r4-hero-copy>:not(.r4-hero-actions){
-  position:absolute!important;width:1px!important;height:1px!important;max-width:1px!important;
-  clip-path:inset(50%)!important;overflow:hidden!important;white-space:nowrap!important;
-  padding:0!important;margin:-1px!important;pointer-events:none!important
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions{
-  display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
-  margin:0!important;padding:0!important;opacity:1!important;pointer-events:none!important
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions>a{
-  display:flex!important;position:absolute!important;align-items:center!important;justify-content:center!important;
-  box-sizing:border-box!important;padding:0!important;margin:0!important;min-width:0!important;
-  border-radius:clamp(8px,1.1vw,25px)!important;pointer-events:auto!important;cursor:pointer;
-  font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif!important;text-decoration:none!important;
-  white-space:nowrap!important;transform:none!important;transition:filter .2s ease!important
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/gry/"]{
-  top:65.7%!important;left:1.96%!important;width:12.3%!important;height:10.7%!important;
-  color:#002830!important;background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127)!important;
-  border:1px solid #fff0af!important;box-shadow:inset 0 2px 2px rgba(255,255,255,.7)!important
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/poradniki/"]{
-  top:65.7%!important;left:15.1%!important;width:16.5%!important;height:10.7%!important;
-  color:#fff9ea!important;background:#002e32!important;border:1px solid #e0a940!important;
-  box-shadow:none!important
- }
- .homepage-premium-max .r4-hero-copy .r4-hero-actions .r4-game-cta-stack{display:none!important}
- .homepage-premium-max .r4-hero-copy .r4-hero-actions>a:focus-visible{
-  outline:3px solid #fff5bf!important;outline-offset:2px!important
- }
-}
-
