@@ -118,5 +118,5 @@ test('privacy center serves six compact tabs, nine effective controls, presets a
  assert.match(js,/api\('privacy-center',\{method:'PUT'/);
  assert.match(js,/const privacyPresets=/);
  assert.match(css,/Privacy Center Full Max Premium/);
- assert.match(html,/nie są jeszcze połączone/);
+ assert.match(html,/Po uruchomieniu forum będzie można/);
 });
