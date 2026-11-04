@@ -276,7 +276,111 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  </div>
 </div>
 </section>
-<section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
+<section class="view" data-panel="privacy">
+<div class="priv-hero">
+ <div><p class="card-kicker">GRACZ.PL · CENTRUM PRYWATNOŚCI · FULL MAX PREMIUM</p>
+ <h2>Twoja prywatność. Twoje zasady.</h2>
+ <p>Ty decydujesz, kto znajdzie Twoje konto, co zobaczy na wizytówce i kto może nawiązać z Tobą kontakt.</p></div>
+ <div class="priv-emblem" aria-hidden="true"><span>✦</span><small>PRIVACY</small></div>
+</div>
+<div class="priv-metrics">
+ <div><small>WIDOCZNOŚĆ PROFILU</small><strong id="priv-metric-profile">—</strong><span>Dla innych graczy</span></div>
+ <div><small>WYSZUKIWANIE</small><strong id="priv-metric-search">—</strong><span>Znajdowanie nicku</span></div>
+ <div><small>STATUS ONLINE</small><strong id="priv-metric-online">—</strong><span>Widoczność dla znajomych</span></div>
+ <div><small>KONTAKTY</small><strong id="priv-metric-contact">—</strong><span>Wiadomości i zaproszenia</span></div>
+</div>
+<nav class="priv-tabs" role="tablist" aria-label="Opcje prywatności">
+ <button type="button" role="tab" aria-selected="true" class="active" data-priv-tab="overview">◈ Centrum prywatności</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="profile">♙ Profil publiczny</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="contacts">◇ Znajomi i kontakt</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="games">♟ Gry i aktywność</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="data">▤ Moje dane</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="future">✧ Forum i przyszłość</button>
+</nav>
+<p class="priv-notice" id="priv-status" role="status" aria-live="polite">Wczytywanie zapisanych preferencji prywatności…</p>
+<div class="priv-pane" data-priv-pane="overview">
+ <div class="card">
+  <p class="card-kicker">JEDNYM KLIKNIĘCIEM</p><h2>Wybierz poziom prywatności</h2>
+  <p>Wybór ustawia przełączniki w panelu. Zmiany zostaną wprowadzone dopiero po naciśnięciu „Zapisz ustawienia”.</p>
+  <div class="priv-presets">
+   <button type="button" data-priv-preset="private"><strong><span>♜</span> Maksymalna prywatność</strong><small>Profil ukryty, bez wyszukiwania, zaproszeń i widoczności online.</small></button>
+   <button type="button" data-priv-preset="friends"><strong><span>♟</span> Tylko znajomi</strong><small>Kontakty od zaakceptowanych znajomych, bez publicznej wizytówki.</small></button>
+   <button type="button" data-priv-preset="open"><strong><span>✦</span> Profil otwarty</strong><small>Publiczna wizytówka, odkrywanie i wiadomości od znajomych.</small></button>
+  </div>
+ </div>
+ <div class="priv-info-grid">
+  <div class="card"><p class="card-kicker">PROFIL</p><h2>Publiczna wizytówka</h2><p>Imię wyświetlane, opis, statystyki i osiągnięcia są pokazywane zgodnie z Twoimi zgodami.</p><button class="secondary" type="button" data-priv-goto="profile">Zarządzaj wizytówką</button></div>
+  <div class="card"><p class="card-kicker">RELACJE</p><h2>Kontakty i zaproszenia</h2><p>Zezwalaj lub blokuj nowe zaproszenia do znajomych, wiadomości i wyzwania w grach.</p><button class="secondary" type="button" data-priv-goto="contacts">Ustaw kontakty</button></div>
+  <div class="card"><p class="card-kicker">PRESENCE</p><h2>Status online</h2><p>Decyduj, czy zaakceptowani znajomi widzą Twoją bieżącą dostępność.</p><button class="secondary" type="button" data-priv-goto="games">Ustaw aktywność</button></div>
+  <div class="card"><p class="card-kicker">PRAWA DO DANYCH</p><h2>Eksport ustawień</h2><p>Pobierz swoje ustawienia prywatności i podstawowe dane wizytówki w pliku JSON.</p><button class="secondary" type="button" data-priv-goto="data">Przejdź do danych</button></div>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="profile" hidden>
+ <div class="card">
+  <p class="card-kicker">PREZENTACJA W SERWISIE</p><h2>Publiczny profil gracza</h2>
+  <p>To są te same uprawnienia, które obowiązują w module „Konto i profil”. Profil prywatny nie jest udostępniany publicznym odwiedzającym.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Publiczna wizytówka</strong><small>Umożliwiaj otwarcie profilu innym osobom przez publiczny adres GRACZ.PL.</small></span><input type="checkbox" id="priv-publicProfile"></label>
+   <label class="priv-option"><span><strong>Pokazuj statystyki gier</strong><small>Udostępniaj zestawienie rozegranych partii i zwycięstw na publicznym profilu (tylko gdy jest włączony).</small></span><input type="checkbox" id="priv-showStats"></label>
+   <label class="priv-option"><span><strong>Pokazuj miasto i kraj</strong><small>Ujawniaj lokalizację wpisaną we własnym profilu — nigdy dokładny adres urządzenia.</small></span><input type="checkbox" id="priv-showCountry"></label>
+   <label class="priv-option"><span><strong>Pokazuj osiągnięcia</strong><small>Publikuj zdobyte odznaki tylko, gdy włączone jest również pokazywanie statystyk.</small></span><input type="checkbox" id="priv-showBadges"></label>
+  </div>
+  <div class="priv-actions"><button type="button" class="secondary" id="priv-preview-profile">Otwórz mój profil publiczny</button><button type="button" class="secondary" id="priv-edit-card">Edytuj wygląd wizytówki</button></div>
+  <p class="priv-hint">Wyłączenie profilu publicznego ukrywa go przed anonimowym dostępem. Zapisane statystyki i odznaki nie są usuwane.</p>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="contacts" hidden>
+ <div class="card"><p class="card-kicker">ODKRYWANIE I ZNAJOMOŚCI</p><h2>Kto może Cię znaleźć i zaprosić?</h2>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Widoczność w wyszukiwarce graczy</strong><small>Twój nick może pojawić się w wynikach wyszukiwania GRACZ.PL. Bez tej zgody nowe osoby nie znajdą Cię przez wyszukiwanie w panelu.</small></span><input type="checkbox" id="priv-discoverable"></label>
+   <label class="priv-option"><span><strong>Otrzymuj zaproszenia do znajomych</strong><small>Inni gracze mogą wysyłać zaproszenia do znajomych. Wyłączenie blokuje nowe zaproszenia, nie usuwa dotychczasowych.</small></span><input type="checkbox" id="priv-friendRequests"></label>
+   <label class="priv-option"><span><strong>Wiadomości od zaakceptowanych znajomych</strong><small>Twoi znajomi mogą wysyłać nowe wiadomości. Wyłączenie nie usuwa istniejących rozmów.</small></span><input type="checkbox" id="priv-friendMessages"></label>
+  </div>
+  <div class="priv-actions"><button type="button" id="priv-manage-friends" class="secondary">Moi znajomi</button><button type="button" id="priv-manage-blocks" class="secondary">Zarządzaj blokadami</button></div>
+ </div>
+ <div class="card"><p class="card-kicker">CO ZOSTAJE PRYWATNE</p><h2>Twoje kontakty są Twoje</h2><p>Notatki, telefony, adresy e-mail oraz grupy w Twojej książce adresowej nie są udostępniane innym graczom.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="games" hidden>
+ <div class="card"><p class="card-kicker">ROZGRYWKI I AKTYWNOŚĆ</p><h2>Zaproszenia oraz status online</h2>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Zezwalaj na wyzwania do gier</strong><small>Zaakceptowani znajomi mogą wysyłać nowe zaproszenia do Gomoku i Warcabów.</small></span><input type="checkbox" id="priv-gameInvites"></label>
+   <label class="priv-option"><span><strong>Pokazuj mój status online</strong><small>Zaakceptowani znajomi widzą, kiedy jesteś aktywny w serwisie. Wyłączenie ukrywa status dla innych.</small></span><input type="checkbox" id="priv-showOnline"></label>
+  </div>
+  <div class="priv-hint">Wyniki i statystyki na publicznej wizytówce kontrolujesz w zakładce „Profil publiczny”. Samo wyłączenie widoczności nie usuwa historii z Twojego konta.</div>
+ </div>
+ <div class="card"><p class="card-kicker">PRZYSZŁE OPCJE</p><h2>Historia partii i rankingi</h2><p>Osobna kontrola widoczności poszczególnych rozegranych partii, rankingów i historii turniejowej wymaga przyszłej integracji rozgrywek społecznościowych. Ta funkcja nie jest jeszcze aktywna.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="data" hidden>
+ <div class="card"><p class="card-kicker">PRAWA DO WŁASNYCH DANYCH</p><h2>Moje dane i eksport</h2>
+  <p>Możesz pobrać kopię swoich preferencji prywatności oraz podstawowych danych profilu w postaci pliku JSON. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.</p>
+  <div class="priv-actions"><button type="button" class="primary" id="priv-export">Pobierz ustawienia i profil (JSON)</button><button type="button" class="secondary" id="priv-open-addressbook">Książka adresowa — import/eksport</button></div>
+  <p id="priv-export-status" role="status" aria-live="polite" class="priv-hint">Eksport nie jest kompletną kopią konta; nie zawiera wiadomości ani pełnej historii gier.</p>
+ </div>
+ <div class="priv-info-grid">
+  <div class="card"><p class="card-kicker">DANE PROFILU</p><h2>Aktualizacja</h2><p>Nick, opis, kraj oraz wygląd wizytówki znajdują się w zakładce „Konto i profil”.</p><button id="priv-open-editor" type="button" class="secondary">Otwórz edycję</button></div>
+  <div class="card"><p class="card-kicker">DANE ZNAJOMYCH</p><h2>Własna książka</h2><p>Wpisy możesz edytować, usuwać i eksportować z modułu „Moi znajomi”.</p><button id="priv-open-friends" type="button" class="secondary">Otwórz książkę</button></div>
+  <div class="card"><p class="card-kicker">OCHRONA KONTA</p><h2>Sesje i hasło</h2><p>Wylogowywanie urządzeń i zmiana hasła są dostępne w Centrum Bezpieczeństwa.</p><button id="priv-open-security" type="button" class="secondary">Przejdź do ochrony</button></div>
+  <div class="card"><p class="card-kicker">USUNIĘCIE KONTA</p><h2>Żądania dotyczące danych</h2><p>Samodzielne usuwanie całego konta i pełny eksport archiwum nie zostały jeszcze wdrożone. Nie ma tutaj pozornego przycisku usuwania.</p></div>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="future" hidden>
+ <div class="card"><p class="card-kicker">GRACZ NEXT · FORUM I KLUBY</p><h2>Prywatność przyszłej społeczności</h2>
+ <p>Po uruchomieniu forum będzie można niezależnie kontrolować widoczność wpisów, listy klubów, zaproszeń do grup, obserwowania, powiadomień forum i komunikacji społecznościowej.</p>
+ <div class="priv-roadmap">
+  <div><strong>✓ Działa</strong><span>Wyszukiwanie kont i prywatność zaproszeń do znajomych</span></div>
+  <div><strong>✓ Działa</strong><span>Kontrola wiadomości, wyzwań i statusu online</span></div>
+  <div><strong>Planowane</strong><span>Widoczność tematów i profilu na forum</span></div>
+  <div><strong>Planowane</strong><span>Zgody na kluby, turnieje i udostępnianie aktywności</span></div>
+  <div><strong>Planowane</strong><span>Blokowanie wzmiankowania, obserwowania i tagowania</span></div>
+  <div><strong>Planowane</strong><span>Pełne archiwum danych, żądanie usunięcia konta i automatyczna realizacja wniosków</span></div>
+ </div>
+ <p class="priv-hint">Nie przedstawiamy ustawień przyszłych usług jako działających zabezpieczeń.</p></div>
+</div>
+<div class="priv-savebar">
+ <div><strong id="priv-save-state">Ustawienia nie zostały jeszcze wczytane</strong><small>Zmiany wymagają zapisania na serwerze</small></div>
+ <div class="priv-actions"><button type="button" class="secondary" id="priv-reset">Cofnij niezapisane</button><button type="button" class="primary" id="priv-save">Zapisz ustawienia</button></div>
+</div>
+</section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
 <section class="view" data-panel="messages">
 <div class="card">
@@ -893,6 +997,64 @@ body.pw-success-open{overflow:hidden}
 #player-shell .sec-alert-form input[type=checkbox]{width:20px;height:20px;accent-color:#10d8bf;cursor:pointer}
 @media(max-width:1130px){#player-shell .sec-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#player-shell .sec-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){#player-shell .sec-hero{padding:12px}#player-shell .sec-shield{width:56px;height:56px;font-size:26px;border-radius:16px}#player-shell .sec-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .sec-tabs button{min-height:41px}#player-shell .sec-two,#player-shell .sec-checklist{grid-template-columns:1fr}#player-shell .sec-device-item,#player-shell .sec-event-item{align-items:flex-start;flex-direction:column}#player-shell .sec-device-item button{min-height:40px}#player-shell .sec-metrics>div{padding:10px}#player-shell .sec-history-filter{flex-wrap:wrap}}
+
+/* Privacy Center Full Max Premium — adaptive, compact, no global zoom */
+#player-shell .priv-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:122px;padding:17px 23px;border:1px solid #1dd8c7;border-radius:17px;background:radial-gradient(ellipse at 85% 5%,#15b6b272,transparent 55%),linear-gradient(120deg,#073947,#032330);box-shadow:0 12px 32px #0016203e}
+#player-shell .priv-hero h2{font-size:clamp(26px,2.5vw,37px);line-height:1.15;letter-spacing:-.02em;margin:5px 0 7px;color:#fff}
+#player-shell .priv-hero p:last-child{font-size:12px;color:#b7d4da;line-height:1.5;margin:0;max-width:670px}
+#player-shell .priv-emblem{height:79px;width:79px;flex:0 0 auto;display:grid;place-content:center;gap:3px;border:2px solid #f1cc79;border-radius:24px;background:#052d39;box-shadow:0 0 25px #16f1d84c;text-align:center;color:#ffe09a}
+#player-shell .priv-emblem span{font-size:29px;line-height:1}
+#player-shell .priv-emblem small{font-size:8px;font-weight:900;letter-spacing:.11em}
+#player-shell .priv-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .priv-metrics>div{min-width:0;padding:12px 13px;border-radius:12px;border:1px solid #277b83;background:linear-gradient(135deg,#08414d,#042330)}
+#player-shell .priv-metrics small{display:block;font-size:9px;letter-spacing:.08em;font-weight:900;color:#efd18d}
+#player-shell .priv-metrics strong{display:block;font-size:clamp(15px,1.6vw,21px);margin:6px 0;color:#fff;overflow-wrap:anywhere}
+#player-shell .priv-metrics span{font-size:10px;color:#a9cdd1}
+#player-shell .priv-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;border:1px solid #246c74;padding:7px;border-radius:15px;background:#052b39;position:sticky;top:0;z-index:5}
+#player-shell .priv-tabs button{min-width:0;min-height:40px;padding:7px 4px;background:#073642;border:1px solid #2b6570;border-radius:9px;color:#daeeed;font:780 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .priv-tabs button.active{border-color:#2fe7d0;background:linear-gradient(130deg,#087b75,#0a4b56);color:#fff;box-shadow:0 0 14px #10d6c54c}
+#player-shell .priv-tabs button:focus-visible,#player-shell .priv-actions button:focus-visible{outline:2px solid #ffe0a2;outline-offset:2px}
+#player-shell .priv-pane{display:grid;gap:10px}
+#player-shell .priv-pane[hidden]{display:none!important}
+#player-shell .priv-pane .card{padding:clamp(13px,1.3vw,19px)}
+#player-shell .priv-pane .card h2{font-size:clamp(18px,1.7vw,24px)}
+#player-shell .priv-pane .card>p{font-size:12px;line-height:1.55}
+#player-shell .priv-notice{margin:0;padding:9px 12px;border:1px solid #267986;border-radius:10px;font-size:11px;color:#a7e4d9;background:#053540}
+#player-shell .priv-notice.priv-error{border-color:#b76466;color:#ffbec2}
+#player-shell .priv-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#player-shell .priv-info-grid .card{display:flex;flex-direction:column;gap:8px}
+#player-shell .priv-info-grid .card h2{margin:1px 0}
+#player-shell .priv-info-grid .card p{margin:0}
+#player-shell .priv-info-grid button{align-self:flex-start;margin-top:auto}
+#player-shell .priv-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+#player-shell .priv-presets button{min-width:0;text-align:left;display:grid;align-content:start;gap:9px;border:1px solid #2e8790;border-radius:13px;padding:15px;background:linear-gradient(125deg,#08444d,#052835);color:#d9f3f0;cursor:pointer}
+#player-shell .priv-presets button:hover{border-color:#f5cc84;background:linear-gradient(125deg,#10636a,#053c49)}
+#player-shell .priv-presets button:focus-visible{outline:2px solid #ffe0aa;outline-offset:3px}
+#player-shell .priv-presets strong{font-size:13px;color:#f8da98}
+#player-shell .priv-presets strong span{font-size:21px;margin-right:6px}
+#player-shell .priv-presets small{font-size:11px;line-height:1.55;color:#b8d8dc}
+#player-shell .priv-options{display:grid;gap:9px;margin:12px 0}
+#player-shell .priv-option{display:flex;align-items:center;justify-content:space-between;gap:17px;padding:13px 15px;border:1px solid #287e85;border-radius:12px;background:linear-gradient(130deg,#073743,#052531);cursor:pointer}
+#player-shell .priv-option:hover{border-color:#34caba}
+#player-shell .priv-option span{display:grid;gap:5px;min-width:0}
+#player-shell .priv-option strong{color:#f9ffff;font-size:13px}
+#player-shell .priv-option small{font-size:11px;line-height:1.5;color:#afd2d5}
+#player-shell .priv-option input{width:22px;height:22px;accent-color:#15dfcd;cursor:pointer;flex:0 0 auto}
+#player-shell .priv-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#player-shell .priv-actions button{min-height:38px;padding:9px 13px;font-size:11px}
+#player-shell .priv-hint{font-size:11px!important;line-height:1.6;color:#a9cbcf}
+#player-shell .priv-roadmap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:13px 0}
+#player-shell .priv-roadmap>div{display:grid;gap:5px;padding:12px;border:1px solid #306f77;border-radius:12px;background:#073541}
+#player-shell .priv-roadmap strong{font-size:12px;color:#efc983}
+#player-shell .priv-roadmap span{font-size:11px;line-height:1.5;color:#bbd9db}
+#player-shell .priv-savebar{position:sticky;bottom:10px;z-index:7;display:flex;justify-content:space-between;align-items:center;gap:13px;padding:11px 15px;border:1px solid #34cbb5;border-radius:14px;background:#052b39;box-shadow:0 12px 32px #000a,0 0 25px #10cdb633}
+#player-shell .priv-savebar strong{display:block;font-size:12px;color:#f2ffff}
+#player-shell .priv-savebar small{display:block;font-size:10px;color:#a8c8cd;margin-top:4px}
+#player-shell .priv-savebar .primary{border-color:#ebc372;background:linear-gradient(130deg,#ffe6ab,#e2b764);color:#122d35;font-weight:900}
+#player-shell .priv-savebar button:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:1200px){#player-shell .priv-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){#player-shell .priv-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:1fr}#player-shell .priv-info-grid{grid-template-columns:1fr}#player-shell .priv-roadmap{grid-template-columns:1fr}}
+@media(max-width:700px){#player-shell .priv-hero{padding:12px;min-height:105px}#player-shell .priv-hero h2{font-size:25px}#player-shell .priv-emblem{height:55px;width:55px;border-radius:15px}#player-shell .priv-emblem span{font-size:22px}#player-shell .priv-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .priv-tabs button{min-height:41px;font-size:11px}#player-shell .priv-savebar{bottom:0;flex-wrap:wrap;border-radius:12px;padding:10px}#player-shell .priv-savebar .priv-actions{width:100%}#player-shell .priv-savebar .priv-actions button{flex:1;min-height:41px}#player-shell .priv-option{padding:11px;gap:10px}#player-shell .priv-option input{width:23px;height:23px}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -1322,6 +1484,7 @@ function switchSection(name){
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
  if(name==='security'&&sessionConfirmed)void securityLoad();
+ if(name==='privacy'&&sessionConfirmed)void privacyLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -1944,6 +2107,128 @@ $('sec-export-events').addEventListener('click',()=>{
  const a=document.createElement('a');a.href=url;a.download='gracz-pl-historia-bezpieczenstwa.csv';
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  securityNotice('Wyeksportowano dostępne zdarzenia bezpieczeństwa.');
+});
+
+
+// Full Max Premium Privacy Center — one source of truth, server-enforced policies.
+const privacyFields=['discoverable','friendRequests','friendMessages','gameInvites','showOnline',
+ 'publicProfile','showStats','showCountry','showBadges'];
+let privacySource=null,privacyLoading=false,privacyTabName='overview',privacySaving=false;
+function privacyTab(name){
+ privacyTabName=name;
+ for(const button of document.querySelectorAll('[data-priv-tab]')){
+  const active=button.dataset.privTab===name;button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ }
+ for(const pane of document.querySelectorAll('[data-priv-pane]'))pane.hidden=pane.dataset.privPane!==name;
+}
+function privacyNotice(message,error=false){
+ const item=$('priv-status');item.textContent=message;item.classList.toggle('priv-error',error);
+}
+function privacyValues(){
+ const out={};for(const key of privacyFields)out[key]=$('priv-'+key).checked;
+ return out;
+}
+function privacyFill(values){
+ for(const key of privacyFields)$('priv-'+key).checked=values[key]===true;
+ privacyRepaint();
+}
+function privacyDirty(){
+ if(!privacySource)return false;
+ const current=privacyValues();
+ return privacyFields.some(key=>privacySource[key]!==current[key]);
+}
+function privacyRepaint(){
+ const x=privacyValues();
+ $('priv-metric-profile').textContent=x.publicProfile?'Publiczny':'Prywatny';
+ $('priv-metric-search').textContent=x.discoverable?'Widoczny':'Ukryty';
+ $('priv-metric-online').textContent=x.showOnline?'Widoczny':'Niewidoczny';
+ $('priv-metric-contact').textContent=
+  [x.friendRequests,x.friendMessages,x.gameInvites].filter(Boolean).length+'/3 włączone';
+ const state=$('priv-save-state');
+ state.textContent=!privacySource?'Nie wczytano ustawień':privacyDirty()?'Masz niezapisane zmiany':'Wszystkie ustawienia zapisane';
+ $('priv-save').disabled=!privacySource||!privacyDirty()||privacySaving;
+ $('priv-reset').disabled=!privacySource||!privacyDirty()||privacySaving;
+ const badge=$('priv-showBadges');
+ badge.disabled=!x.showStats;
+ badge.closest('.priv-option').title=!x.showStats?'Odznaki są publiczne tylko przy włączonych statystykach':'';
+}
+async function privacyLoad(){
+ if(!sessionConfirmed||privacyLoading||privacySaving)return;
+ privacyLoading=true;privacyNotice('Wczytywanie ustawień z konta…');
+ try{
+  const result=await api('privacy-center');
+  privacySource=result.preferences;privacyFill(privacySource);
+  privacyNotice('Ustawienia wczytane z serwera. Wprowadź zmiany i wybierz „Zapisz ustawienia”.');
+ }catch(error){privacyNotice(error.message,true)}
+ finally{privacyLoading=false}
+}
+for(const key of privacyFields)$('priv-'+key).addEventListener('change',privacyRepaint);
+document.querySelectorAll('[data-priv-tab]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privTab)));
+document.querySelectorAll('[data-priv-goto]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privGoto)));
+const privacyPresets={
+ private:{discoverable:false,friendRequests:false,friendMessages:false,gameInvites:false,showOnline:false,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+ friends:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+ open:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
+  publicProfile:true,showStats:true,showCountry:false,showBadges:true}
+};
+document.querySelectorAll('[data-priv-preset]').forEach(button=>button.addEventListener('click',()=>{
+ if(!privacySource){privacyNotice('Najpierw wczytaj zapisane ustawienia.',true);return;}
+ privacyFill(privacyPresets[button.dataset.privPreset]);
+ privacyNotice('Wybrano zestaw ustawień. Aby go włączyć, kliknij „Zapisz ustawienia”.');
+}));
+$('priv-reset').addEventListener('click',()=>{
+ if(!privacySource)return;privacyFill(privacySource);
+ privacyNotice('Przywrócono ostatnio zapisane ustawienia.');
+});
+$('priv-save').addEventListener('click',async()=>{
+ if(!sessionConfirmed||!privacySource||privacySaving)return;
+ privacySaving=true;privacyRepaint();privacyNotice('Bezpieczne zapisywanie ustawień…');
+ try{
+  const result=await api('privacy-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(privacyValues())});
+  privacySource=result.preferences;privacyFill(privacySource);
+  if(typeof window!=='undefined')window.dispatchEvent(new Event('gracz:privacy-updated'));
+  privacyNotice('Ustawienia prywatności zostały zapisane na Twoim koncie.');
+ }catch(error){privacyNotice(error.message,true)}
+ finally{privacySaving=false;privacyRepaint()}
+});
+function privacyFriends(tab){
+ switchSection('friends');fhTab(tab);
+}
+$('priv-manage-friends').addEventListener('click',()=>privacyFriends('overview'));
+$('priv-manage-blocks').addEventListener('click',()=>privacyFriends('blocked'));
+$('priv-open-addressbook').addEventListener('click',()=>privacyFriends('book'));
+$('priv-open-friends').addEventListener('click',()=>privacyFriends('book'));
+$('priv-open-security').addEventListener('click',()=>switchSection('security'));
+$('priv-open-editor').addEventListener('click',()=>switchSection('profile'));
+$('priv-edit-card').addEventListener('click',()=>switchSection('profile'));
+$('priv-preview-profile').addEventListener('click',async()=>{
+ if(!privacySource?.publicProfile){
+  privacyNotice('Twój profil publiczny jest wyłączony. Najpierw włącz go i zapisz ustawienia.');return;
+ }
+ try{
+  const data=await api('profile/premium');
+  if(typeof data.publicUrl==='string'&&data.publicUrl.startsWith('/konto/profil/'))
+   window.open(data.publicUrl,'_blank','noopener,noreferrer');
+ }catch(error){privacyNotice(error.message,true)}
+});
+$('priv-export').addEventListener('click',async()=>{
+ if(!sessionConfirmed)return;
+ const status=$('priv-export-status'),button=$('priv-export');
+ button.disabled=true;status.textContent='Przygotowywanie prywatnego eksportu…';
+ try{
+  const data=await api('privacy-center/export');
+  const link=document.createElement('a');
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  link.href=url;link.download='gracz-pl-prywatnosc-ustawienia.json';
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  status.textContent='Pobrano ustawienia i podstawowe dane profilu. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.';
+ }catch(error){status.textContent=error.message}
+ finally{button.disabled=false}
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));

@@ -1,3 +1,4 @@
+import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
 import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
 import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
@@ -202,6 +203,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
        PRIMARY KEY(blocker,blocked),CHECK(blocker<>blocked))`);
      await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_blocks_target ON gracz_public_identity.friend_blocks(blocked)');
      await ensureAddressBookSchema(database);
+     await ensurePrivacySchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -246,10 +248,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const premiumProfile=createPremiumProfileRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow,validNick});
  const addressBook=createAddressBookRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const securityCenter=createSecurityCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ const privacyCenter=createPrivacyRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
   if(await premiumProfile.handle(req,res,url))return true;
   if(await addressBook.handle(req,res,url))return true;
   if(await securityCenter.handle(req,res,url))return true;
+  if(await privacyCenter.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
@@ -715,6 +719,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
               AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
           AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
             WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
+          AND COALESCE((SELECT p.friend_messages FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),true)
           RETURNING id,created_at`,[randomUUID(),actor,friend.rows[0].id,content]);
         if(!saved.rowCount)return bad(res,409,'TYLKO_ZNAJOMI'),true;
         return json(res,200,{ok:true,message:{id:saved.rows[0].id,createdAt:saved.rows[0].created_at}}),true;
@@ -765,6 +770,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
               AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
             AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
               WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
+            AND COALESCE((SELECT p.game_invites FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),true)
             ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes,incrementSeconds]);
         }catch(e){if(e?.code==='23505')return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;throw e;}
         if(!saved.rowCount)return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;
@@ -808,7 +814,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       if(!allow('friends-presence:'+actor,90))return bad(res,429,'ZBYT_WIELE_PROB'),true;
       const friends=await database.query(`SELECT a.nickname,
         EXISTS(SELECT 1 FROM gracz_public_identity.online_presence active
-          WHERE active.account_id=a.id AND active.last_seen>now()-interval '100 seconds') AS online
+          WHERE active.account_id=a.id AND active.last_seen>now()-interval '100 seconds'
+          AND COALESCE((SELECT p.show_online FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),true)) AS online
         FROM gracz_public_identity.friend_connections c
         JOIN gracz_public_identity.accounts a ON a.id=CASE
           WHEN c.account_a=$1 THEN c.account_b ELSE c.account_a END
@@ -849,6 +856,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
          const result=await database.query(`SELECT a.nickname
            FROM gracz_public_identity.accounts a
            WHERE a.verified_at IS NOT NULL AND a.id<>$1 AND starts_with(a.nickname_key,$2)
+           AND COALESCE((SELECT p.discoverable FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),true)
            AND NOT EXISTS (SELECT 1 FROM gracz_public_identity.friend_blocks b
              WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1))
            ORDER BY a.nickname_key ASC LIMIT 15`,[accountId,term]);
@@ -873,7 +881,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
            result=await database.query(`INSERT INTO gracz_public_identity.friend_connections
              (account_a,account_b,requested_by,status)
              SELECT LEAST($1::uuid,$2::uuid),GREATEST($1::uuid,$2::uuid),$1::uuid,'pending'
-             WHERE NOT EXISTS (SELECT 1 FROM gracz_public_identity.friend_blocks b
+             WHERE COALESCE((SELECT p.friend_requests FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$2),true)
+             AND NOT EXISTS (SELECT 1 FROM gracz_public_identity.friend_blocks b
                WHERE (b.blocker=$1 AND b.blocked=$2) OR (b.blocker=$2 AND b.blocked=$1))
              ON CONFLICT DO NOTHING RETURNING account_a`,[accountId,otherId]);
            if(!result.rowCount)return bad(res,409,'ZAPROSZENIE_NIEDOSTEPNE'),true;
