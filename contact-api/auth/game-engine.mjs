@@ -23,11 +23,24 @@ export function legalCaptures(board,turn,from){
  if(side(piece)!==turn)return [];
  const results=[];
  for(const [dr,dc] of dirs){
-  const nr=r+dr*2,nc=c+dc*2;
-  if(!inBounds(nr,nc,8)||!inBounds(r+dr,c+dc,8))continue;
-  const mid=index(r+dr,c+dc,8),target=index(nr,nc,8);
-  if(board[target]===0&&side(board[mid])===3-turn)
-   results.push({from,to:target,taken:mid});
+  if(piece<=2&&dr!==(turn===1?1:-1))continue;
+  if(piece<=2){
+   const mr=r+dr,mc=c+dc,tr=r+2*dr,tc=c+2*dc;
+   if(!inBounds(mr,mc,8)||!inBounds(tr,tc,8))continue;
+   const mid=index(mr,mc,8),to=index(tr,tc,8);
+   if(side(board[mid])===3-turn&&board[to]===0)results.push({from,to,taken:mid});
+   continue;
+  }
+  let rr=r+dr,cc=c+dc,taken=null;
+  while(inBounds(rr,cc,8)){
+   const at=index(rr,cc,8),occupant=board[at];
+   if(!occupant){
+    if(taken!==null)results.push({from,to:at,taken});
+   }else if(taken===null&&side(occupant)===3-turn){
+    taken=at;
+   }else break;
+   rr+=dr;cc+=dc;
+  }
  }
  return results;
 }
@@ -70,33 +83,37 @@ function playGomoku(state,move){
 }
 function playWarcaby(state,move){
  const from=move?.from,to=move?.to,board=state.board;
+ const forced=state.forced??null; // Existing saved games may predate the forced field.
  if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||from>=64||to<0||to>=64||
-  board[to]!==0||side(board[from])!==state.turn||(state.forced!==null&&state.forced!==from))
+  board[to]!==0||side(board[from])!==state.turn||(forced!==null&&forced!==from))
   return {error:'NIEDOZWOLONY_RUCH'};
  const [r,c]=coords(from,8),[nr,nc]=coords(to,8),dr=nr-r,dc=nc-c;
- if(Math.abs(dr)!==Math.abs(dc)||!inBounds(nr,nc,8))return {error:'NIEDOZWOLONY_RUCH'};
- const piece=board[from],jump=Math.abs(dr)===2;
- if(state.forced!==null&&!jump)return {error:'BICIE_OBOWIAZKOWE'};
+ if(!dr||Math.abs(dr)!==Math.abs(dc))return {error:'NIEDOZWOLONY_RUCH'};
+ const piece=board[from];
  const capture=legalCaptures(board,state.turn,from).find(x=>x.to===to);
- const mustCapture=state.forced!==null||hasCapture(board,state.turn);
- if(jump&&!capture)return {error:'NIEDOZWOLONY_RUCH'};
- if(!jump){
-  if(Math.abs(dr)!==1||(piece<=2&&dr!==(state.turn===1?1:-1)))
-   return {error:'NIEDOZWOLONY_RUCH'};
+ const mustCapture=forced!==null||hasCapture(board,state.turn);
+ if(!capture){
   if(mustCapture)return {error:'BICIE_OBOWIAZKOWE'};
+  if(piece<=2){
+   if(Math.abs(dr)!==1||dr!==(state.turn===1?1:-1))return {error:'NIEDOZWOLONY_RUCH'};
+  }else{
+   const stepR=Math.sign(dr),stepC=Math.sign(dc);
+   for(let k=1;k<Math.abs(dr);k++){
+    if(board[index(r+k*stepR,c+k*stepC,8)]!==0)return {error:'NIEDOZWOLONY_RUCH'};
+   }
+  }
  }
  const next=board.slice();next[from]=0;next[to]=piece;
- if(jump)next[capture.taken]=0;
+ if(capture)next[capture.taken]=0;
  const promote=(piece===1&&nr===7)||(piece===2&&nr===0);
  if(promote)next[to]=state.turn===1?3:4;
- // Rule variant: short kings; crowning finishes the current turn.
- const continued=jump&&!promote&&legalCaptures(next,state.turn,to).length>0;
+ // A man crowned during a capture continues immediately as a flying king.
+ const continued=!!capture&&legalCaptures(next,state.turn,to).length>0;
  const turn=continued?state.turn:3-state.turn;
- const forced=continued?to:null;
- const quiet=jump||promote?0:state.quiet+1;
+ const quiet=capture||piece<=2?0:(state.quiet??0)+1;
  const moves=state.moves+1;
  const winner=quiet>=80?3:!continued&&!canMove(next,turn)?state.turn:0;
- return {state:{board:next,turn:winner?state.turn:turn,winner,moves,forced,quiet}};
+ return {state:{...state,board:next,turn:winner?state.turn:turn,winner,moves,forced:continued?to:null,quiet}};
 }
 export function playMove(game,state,player,move){
  const expected=game==='gomoku'?225:game==='warcaby'?64:0;
