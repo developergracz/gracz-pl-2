@@ -3,6 +3,7 @@ import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
 import { serveIdentityPage } from "./auth/page.mjs";
 import { servePlayerPanel } from "./auth/panel.mjs";
 import { serveGomokuConsole } from "./auth/gomoku-console.mjs";
+import { createGomokuAiChatRoute } from "./routes/gomoku-ai-chat-route.mjs";
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
@@ -349,6 +350,8 @@ const handlePremiumReplyRequest = createPremiumReplyRoute({
   recordProviderSuccess,
 });
 
+const handleGomokuAiChat = createGomokuAiChatRoute();
+
 const server = createServer(async (req, res) => {
   const requestId = randomUUID();
   let reservedIdempotency = null;
@@ -388,6 +391,7 @@ const server = createServer(async (req, res) => {
     if (serveIdentityPage(req, res, url)) return;
     if (servePlayerPanel(req, res, url)) return;
     if (serveGomokuConsole(req, res, url)) return;
+    if (await handleGomokuAiChat(req, res, url)) return;
     if (await publicIdentity.handle(req, res, url)) return;
 
     if (url.pathname.startsWith("/owner/newsletter")) {

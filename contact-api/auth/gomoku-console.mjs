@@ -1491,7 +1491,7 @@ function restart(){
  state.last=-1;state.thinking=false;state.snapshots=[];state.suggestion=-1;state.trainHistory=[];
  state.showcase=false;state.trainClock=createTrainingClock();
  state.localChat=[];state.chatSignature='';
- showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne i nie są zapisywane.');
+ showChatNotice('Rozmawiaj z GRACZ AI na dowolny temat lub zapytaj o Gomoku. Wiadomości AI są przetwarzane przez GroqCloud i nie są zapisywane w tym serwisie.');
  $('analysis-note').hidden=true;render();
 }
 // Tactical evaluation for free-style Gomoku (five or more wins).
@@ -1769,18 +1769,6 @@ function trainMove(to){
   if(at<0){state.winner=3;state.thinking=false;render();return;}
   state.board[at]=2;state.last=at;state.moves++;
   state.trainHistory.push({player:2,to:at,number:state.moves});
-  if(state.moves===2 || (state.moves>=6&&state.moves%6===0)){
-   const reactions=[
-    'Twój ruch! Powodzenia! 🙂',
-    'Uważaj na otwarte trójki i czwarte kamienie. ♟',
-    'Ciekawa partia. Szukam najlepszego ruchu. ♟'
-   ];
-   state.localChat.push({id:'local-'+(++state.chatSequence),player:2,
-    body:reactions[state.moves===2?0:Math.floor(state.moves/6)%2+1],
-    createdAt:new Date().toISOString()});
-   state.localChat=state.localChat.slice(-40);
-   state.chatSignature='';drawRoomChat(state.localChat);
-  }
   if(victory(state.board,at,2))state.winner=2;
   else if(state.moves===count)state.winner=3;
   state.thinking=false;
@@ -1940,7 +1928,7 @@ function showChatNotice(text){
   const p=document.createElement('p');p.className='dock-empty';p.textContent=text;box.append(p);
  }
  $('chat-status').textContent=state.mode==='training'?
-  'Trening: krótkie odpowiedzi automatyczne · lokalnie':
+  'GRACZ AI · GroqCloud · rozmowy ogólne i o Gomoku':
   'Prywatny czat dwóch uczestników · 600 znaków';
 }
 function drawRoomChat(messages){
@@ -1951,7 +1939,7 @@ function drawRoomChat(messages){
  const box=$('chat-messages');box.replaceChildren();
  if(!messages.length){
   showChatNotice(state.mode==='training'?
-   'Napisz do komputera treningowego. Odpowiedzi są krótkimi, automatycznymi komentarzami.':
+   'Napisz do GRACZ AI — pytaj o Gomoku lub rozmawiaj na dowolny temat.':
    'Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.');
   return;
  }
@@ -2020,18 +2008,43 @@ $('chat-form').addEventListener('submit',async event=>{
   $('chat-status').textContent='Wpisz wiadomość o długości do 600 znaków.';return;
  }
  if(state.mode==='training'){
+  // Only actual model answers enter the conversation. No fixed/fabricated replies.
   if(state.showcase)restart();
-  const now=new Date().toISOString();
-  state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:now});
-  const lower=message.toLocaleLowerCase('pl-PL');
-  const answer=/powodzen|cześć|witam|hej/.test(lower)?'Dzięki, wzajemnie! 🤝':
-   /ruch|porad|pomoc|wskaz/.test(lower)?'Szukaj otwartych trójek i pilnuj zagrożeń. ♟':
-   /dzięk|dziek/.test(lower)?'Nie ma za co! Powodzenia! 🙂':
-   'Dobry trening! Najważniejsze to pięć w jednej linii. ♟';
-  state.localChat.push({id:'local-'+(++state.chatSequence),player:2,body:answer,createdAt:new Date().toISOString()});
+  const epoch=state.epoch;
+  const previous=state.localChat.slice(-8).map(x=>({
+   role:x.player===1?'user':'assistant',content:String(x.body||'').slice(0,600)
+  }));
+  state.localChat.push({id:'local-'+(++state.chatSequence),player:1,body:message,createdAt:new Date().toISOString()});
   state.localChat=state.localChat.slice(-40);
   $('chat-input').value='';state.chatSignature='';drawRoomChat(state.localChat);
-  $('chat-status').textContent='Trening: automatyczne komentarze komputera · lokalnie';
+  $('chat-status').textContent='GRACZ AI przygotowuje odpowiedź…';
+  state.chatBusy=true;$('chat-send').disabled=true;
+  try{
+   const response=await fetch('/konto/gomoku/ai-chat',{
+    method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({
+     message,history:previous,
+     game:{board:state.board.join(''),turn:state.thinking?2:1,winner:state.winner,
+      history:state.trainHistory.slice(-8).map(x=>({player:x.player,to:x.to}))}
+    })
+   });
+   const payload=await response.json().catch(()=>({}));
+   if(epoch!==state.epoch||state.mode!=='training')return;
+   if(!response.ok||payload.ok!==true||typeof payload.answer!=='string')
+    throw new Error(payload?.error?.message||'Czat AI jest chwilowo niedostępny.');
+   state.localChat.push({id:'local-'+(++state.chatSequence),player:2,
+    body:payload.answer.slice(0,1800),createdAt:new Date().toISOString()});
+   state.localChat=state.localChat.slice(-40);
+   state.chatSignature='';drawRoomChat(state.localChat);
+   $('chat-status').textContent='GRACZ AI · GroqCloud · rozmowy o dowolnym temacie i Gomoku';
+  }catch(error){
+   if(epoch===state.epoch&&state.mode==='training')
+    $('chat-status').textContent=error?.message||'Czat AI jest chwilowo niedostępny.';
+  }finally{
+   state.chatBusy=false;
+   if(state.mode==='training')$('chat-send').disabled=false;
+  }
   return;
  }
  if(!state.matchId)return;
@@ -2303,10 +2316,10 @@ function openGameSettings(){
  const online=state.mode==='online';
  $('chat-settings-mode').textContent=online?'Partia online — 2 uczestników':'Trening z komputerem';
  $('chat-settings-access').textContent=online?
-  'Wiadomości prywatne · zapis w pokoju':'Komentarze treningowe · tylko lokalnie';
+  'Wiadomości prywatne · zapis w pokoju':'GRACZ AI · rozmowa z modelem GroqCloud';
  $('chat-privacy-description').textContent=online?
   'Rozmowę widzą tylko uczestnicy tej partii. Ustawienia są zapisywane tylko na Twoim urządzeniu.':
-  'Trening nie wysyła wiadomości na serwer. Odpowiedzi komputera są lokalnymi komentarzami, nie wiadomościami innych graczy.';
+  'W treningu wiadomości i stan planszy są przekazywane do GroqCloud przez serwer GRACZ.PL. Rozmowa nie jest zapisywana w bazie GRACZ.PL.';
  $('chat-settings-modal').hidden=false;
  $('chat-sounds').focus();
 }
@@ -2326,7 +2339,7 @@ function setMode(mode){
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('chat');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
- if(mode==='training')showChatNotice('Napisz komentarz do komputera treningowego. Odpowiedzi są automatyczne.');
+ if(mode==='training')showChatNotice('Rozmawiaj z GRACZ AI na dowolny temat albo zapytaj o aktualną partię Gomoku.');
  state.suggestion=-1;$('analysis-note').hidden=true;
  $('training-settings').hidden=mode!=='training';$('training-records').hidden=mode!=='training';$('online-settings').hidden=mode!=='online';
  $('refresh-match').hidden=mode!=='online';
@@ -2410,17 +2423,14 @@ function installReferenceShowcase(){
  }
  state.moves=sequence.length;state.winner=0;state.showcase=true;
  state.trainClock=createTrainingClock();
- state.localChat=[
-  {id:'example-1',player:1,body:'Powodzenia! 🙂',createdAt:'2026-11-01T20:34:00.000Z'},
-  {id:'example-2',player:2,body:'Dzięki, wzajemnie! 🤝',createdAt:'2026-11-01T20:35:00.000Z'}
- ];
- state.chatSignature='';state.chatSequence=2;
+ state.localChat=[];
+ state.chatSignature='';state.chatSequence=0;
 }
 installReferenceShowcase();
 render();
 drawRoomChat(state.localChat);
 applyChatPreferences();
-$('chat-status').textContent='Podgląd przykładowej partii · kliknij planszę, by rozpocząć';
+$('chat-status').textContent='GRACZ AI · GroqCloud · rozmowy ogólne i o Gomoku';
 const entry=new URLSearchParams(location.search).get('match');
 if(entry&&matchPattern.test(entry))setMode('online');
 })();`;
