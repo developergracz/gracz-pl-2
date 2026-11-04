@@ -139,7 +139,7 @@ const html=String.raw`<!doctype html>
 <div class="card"><p class="card-kicker">MOJA BIBLIOTEKA</p><h2>Ulubione gry</h2>
 <p>Wybierz ulubione tytuły. Gwiazdka zapisuje wybór w Twoim koncie i dodaje skrót na pulpicie.</p>
 <div class="game-grid">
-<div class="game-tile"><div class="game-emoji" aria-hidden="true">♟</div><h3>Warcaby</h3><p>Gra strategiczna</p><div class="game-actions"><a href="https://gracz.pl/gry/warcaby/">Otwórz</a><button type="button" data-favorite="warcaby" aria-pressed="false" aria-label="Dodaj Warcaby do ulubionych">☆ Ulubione</button></div></div>
+<div class="game-tile"><div class="game-emoji" aria-hidden="true">♟</div><h3>Warcaby</h3><p>Gra strategiczna</p><div class="game-actions"><a href="/konto/warcaby/">Graj teraz</a><button type="button" data-favorite="warcaby" aria-pressed="false" aria-label="Dodaj Warcaby do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">◉</div><h3>Gomoku</h3><p>Pięć w rzędzie</p><div class="game-actions"><a href="/konto/gomoku/">Graj teraz</a><a href="https://gracz.pl/gry/gomoku/">Zasady</a><button type="button" data-favorite="gomoku" aria-pressed="false" aria-label="Dodaj Gomoku do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♣</div><h3>Tysiąc</h3><p>Gra karciana</p><div class="game-actions"><a href="https://gracz.pl/gry/tysiac/">Otwórz</a><button type="button" data-favorite="tysiac" aria-pressed="false" aria-label="Dodaj Tysiąc do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♠</div><h3>Poker treningowy</h3><p>Trening rozgrywki</p><div class="game-actions"><a href="https://gracz.pl/gry/poker-treningowy/">Otwórz</a><button type="button" data-favorite="poker" aria-pressed="false" aria-label="Dodaj Poker do ulubionych">☆ Ulubione</button></div></div>
@@ -592,11 +592,10 @@ async function refreshChallenges(){
       const link=document.createElement('a');link.className='secondary link-button';
       link.href='/konto/gomoku/?match='+encodeURIComponent(challenge.id);
       link.textContent='Graj w Gomoku';controls.append(link);
-    }else{
-      const button=document.createElement('button');
-      button.type='button';button.textContent='Graj online';button.className='friend-main';
-      button.addEventListener('click',()=>void openMatch(challenge.id));
-      controls.append(button);
+    }else if(challenge.game==='warcaby'){
+      const link=document.createElement('a');link.className='secondary link-button';
+      link.href='/konto/warcaby/?match='+encodeURIComponent(challenge.id);
+      link.textContent='Graj w Warcaby';controls.append(link);
     }
    }
    row.append(controls);list.append(row);
