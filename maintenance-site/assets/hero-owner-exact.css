@@ -179,7 +179,6 @@
  .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none}
 }
 @media(max-width:680px){
- .homepage-premium-max .r4-owner-picture{display:none!important}
  .r4-console-dynamic{top:auto;right:0;bottom:0;width:100%;height:auto;aspect-ratio:1250/663}
  .r4-console-title{font-size:clamp(9px,2.5vw,16px)}
  .r4-console-board{border-width:clamp(4px,1vw,8px)}
