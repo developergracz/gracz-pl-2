@@ -1,3 +1,4 @@
+import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
 import { promisify } from 'node:util';
@@ -231,11 +232,14 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
        body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 600),
        created_at timestamptz NOT NULL DEFAULT now())`);
      await database.query('CREATE INDEX IF NOT EXISTS gracz_match_messages_recent ON gracz_public_identity.game_match_messages(match_id,created_at DESC,id DESC)');
+     await ensurePremiumProfileSchema(database);
    })().catch(e=>{initialized=undefined;throw e;});
   }
   await initialized;
  }
+ const premiumProfile=createPremiumProfileRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow,validNick});
  async function respond(req,res,url){
+  if(await premiumProfile.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
