@@ -161,6 +161,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.match-panel\.moves-only #moves-list\{flex:1 1 auto;min-height:0;max-height:none/);
  assert.match(css,/#turn-label\{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center/);
  assert.match(css,/#turn-label:before\{flex:0 0 20px\}/);
+ assert.doesNotMatch(css,/\.bottom:before\{content:""/,
+  'Golden decorative divider must not cross instant result messages');
  assert.match(html,/<section class="match-panel" id="match-panel">/);
  assert.match(html,/id="turn-label">Ruch czarne<\/span>/);
  assert.match(css,/R22: online refresh belongs in the upper-right Premium mini navigation/);
@@ -290,7 +292,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.ok(css.includes('width:auto;\n  height:100%;'),'Desktop board width is derived from actual row height');
  assert.ok(css.includes('max-height:100%;'),'Board does not overflow available desktop row');
  assert.ok(css.includes('max-width:620px;'),'Mobile retains responsive board width');
- new Script(served('/konto/gomoku/app.js').body);
+ const app=served('/konto/gomoku/app.js').body;
+ assert.ok(app.indexOf("setGameStatus('game-state',describe());")<app.indexOf("const area=$('board');"),
+  'Both result labels are updated before any board work');
+ assert.match(app,/if\(area\.children\.length!==count\)\{/,
+  'Board buttons are created once rather than rebuilt for every status update');
+ assert.doesNotMatch(app,/const area=\$\('board'\);area\.replaceChildren\(\);/);
+ new Script(app);
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
  const fake=new Map(),queued=[],calls=[],storage=new Map(),navigations=[],intervals=[];
@@ -371,6 +379,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('howto-done').listeners.click();
  assert.equal(get('howto-modal').hidden,true,'The bottom action closes tutorial too');
  const openingCells=get('board').children.length;
+ const stableBoardCell=get('board').children[112];
  const openingClock=get('clock-1').textContent;
  assert.equal(get('game').classes.has('game-focus'),false);
  get('focus-game').listeners.click();
@@ -408,6 +417,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('turn-label').textContent.includes(':'),false,'Move indicator has no colon');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
+ assert.strictEqual(get('board').children[112],stableBoardCell,
+  'The visible board remains mounted when the game starts');
  assert.equal(get('clock-1').textContent,'07:00');
  assert.equal(get('clock-2').textContent,'07:00');
  assert.equal(get('clock-1').classes.has('clock-running'),false,'No timer until first stone');
@@ -416,6 +427,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('board').children[112].listeners.click();
  assert.equal(get('move-count').textContent,'Ruchy: 1','First click after pressing Start places the first legal stone');
  assert.equal(get('board').children[112].classes.has('p1'),true);
+ assert.strictEqual(get('board').children[112],stableBoardCell,
+  'Playing a move must not reconstruct all 225 board buttons');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,1);
  assert.equal(get('history-count').textContent,'1');
  assert.equal(queued.length,1);
@@ -429,6 +442,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('clock-1').textContent,'06:30','Human clock runs only on their turn');
  assert.equal(get('clock-2').textContent,'06:55','Computer clock stops after its move');
  assert.equal(get('board').children.filter(x=>x.classes.has('p2')).length,1);
+ assert.strictEqual(get('board').children[112],stableBoardCell,
+  'Computer thinking/result render reuses existing cells');
  assert.equal(get('moves-list').children.length,2,'History includes player and AI response');
  assert.equal(get('history-count').textContent,'2');
  assert.equal(get('moves-list').children[0].children[2].textContent,'H8');
@@ -558,6 +573,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  context.__gomokuTest.render();
  assert.equal(get('turn-label').textContent,'Partia zakończona');
  assert.equal(get('board-help').textContent,'Wygrał komputer.');
+ assert.match(get('game-state').textContent,/Komputer wygrał/,
+  'Top banner and bottom result must update in the same synchronous render');
  assert.equal(get('turn-label').classes.has('game-over'),true);
  assert.equal(get('game-result-title').textContent,'Przegrałeś z komputerem.');
  assert.equal(get('game-result-online-hint').hidden,true);

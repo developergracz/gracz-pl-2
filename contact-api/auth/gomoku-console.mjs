@@ -528,8 +528,7 @@ select option{background:#102c34;color:#fff}
 .chat-preview .chat-bubble.own{border-color:#edc377;background:linear-gradient(145deg,#12555d,#05252e)}
 .state{color:#ffe49c;text-shadow:0 0 8px #d8a44b7a;box-shadow:inset 0 1px #b5f1e77b,0 4px 14px #0008}
 .bottom{position:relative}
-.bottom:before{content:"";position:absolute;left:30%;right:30%;top:50%;height:2px;pointer-events:none;
- background:linear-gradient(90deg,transparent,#ffd278 50%,transparent);box-shadow:0 0 10px #f9bf4a;opacity:.7}
+/* No decoration across the center text: status must remain instantly legible. */
 .bottom>*{position:relative;z-index:1}
 #move-count:before{content:"▱";font-weight:900;font-size:1.22em;color:#ffc956;margin-right:10px}
 #turn-label:before{content:"";display:inline-block;vertical-align:middle;width:20px;height:20px;margin-right:10px;border-radius:50%;
@@ -1622,34 +1621,18 @@ window.setInterval(()=>{
  }else if(state.mode==='online'&&state.match?.state?.clock)renderGomokuClocks();
 },250);
 
+// Update all status labels at the start of a render, without blocking on 225 DOM rebuilds.
+function setGameStatus(id,value){
+ const node=$(id);
+ if(node.textContent!==value)node.textContent=value;
+}
 function render(){
  if(state.mode==='training')advanceTrainingClock();
  const online=state.mode==='online',m=state.match;
  $('focus-start').hidden=online; // Never reset or re-create an accepted server-authoritative online match.
  const board=online?(m?m.state.board:Array(count).fill(0)):state.board;
- const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
-  !state.thinking&&state.winner===0;
- const area=$('board');area.replaceChildren();
- for(let i=0;i<count;i++){
-  const row=Math.floor(i/size),col=i%size,piece=board[i];
-  const cell=document.createElement('button');cell.type='button';cell.className='cell';
-  if(row===0)cell.classList.add('edge-top');
-  if(row===size-1)cell.classList.add('edge-bottom');
-  if(col===0)cell.classList.add('edge-left');
-  if(col===size-1)cell.classList.add('edge-right');
-  if([3,7,11].includes(row)&&[3,7,11].includes(col))cell.classList.add('star');
-  if(piece){cell.classList.add('occupied','p'+piece);}
-  if(!online&&i===state.suggestion&&!piece)cell.classList.add('suggested');
-  const last=online?(m?.state?.last??-1):state.last;
-  if(last===i)cell.classList.add('last');
-  cell.disabled=!!piece||!canPlay;
-  cell.setAttribute('aria-label','Wiersz '+(row+1)+', kolumna '+(col+1)+
-    (piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole'));
-  if(!cell.disabled)cell.addEventListener('click',()=>void play(i));
-  area.append(cell);
- }
  const moves=online?(m?.state?.moves||0):state.moves;
- $('move-count').textContent='Ruchy: '+moves;
+ setGameStatus('move-count','Ruchy: '+moves);
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
  // R28: bottom indicators reflect the actual match result, never a phantom next turn.
  const winner=online?(m?.state?.winner||0):state.winner;
@@ -1676,10 +1659,43 @@ function render(){
   bottomTurn='Oczekiwanie na grę';
   bottomHelp='Partia nie jest jeszcze dostępna.';
  }
- $('turn-label').textContent=bottomTurn;
+ setGameStatus('turn-label',bottomTurn);
  $('turn-label').classList.toggle('game-over',ended);
- $('board-help').textContent=bottomHelp;
- $('game-state').textContent=describe();
+ setGameStatus('board-help',bottomHelp);
+ setGameStatus('game-state',describe());
+
+ const canPlay=online?Boolean(m&&m.playable&&!state.busy&&!m.undoRequest&&m.state.winner===0&&m.state.turn===m.player):
+  !state.thinking&&state.winner===0;
+ const area=$('board');
+ // Keep the 225 physical buttons and their listeners; only update changed stones and permissions.
+ if(area.children.length!==count){
+  area.replaceChildren();
+  for(let i=0;i<count;i++){
+   const row=Math.floor(i/size),col=i%size;
+   const cell=document.createElement('button');cell.type='button';cell.className='cell';
+   if(row===0)cell.classList.add('edge-top');
+   if(row===size-1)cell.classList.add('edge-bottom');
+   if(col===0)cell.classList.add('edge-left');
+   if(col===size-1)cell.classList.add('edge-right');
+   if([3,7,11].includes(row)&&[3,7,11].includes(col))cell.classList.add('star');
+   cell.addEventListener('click',()=>void play(i));
+   area.append(cell);
+  }
+ }
+ const last=online?(m?.state?.last??-1):state.last;
+ for(let i=0;i<count;i++){
+  const cell=area.children[i],piece=board[i];
+  cell.classList.toggle('occupied',!!piece);
+  cell.classList.toggle('p1',piece===1);
+  cell.classList.toggle('p2',piece===2);
+  cell.classList.toggle('suggested',!online&&i===state.suggestion&&!piece);
+  cell.classList.toggle('last',last===i);
+  cell.disabled=!!piece||!canPlay;
+  const row=Math.floor(i/size),col=i%size;
+  const label='Wiersz '+(row+1)+', kolumna '+(col+1)+
+   (piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole');
+  if(cell.getAttribute?.('aria-label')!==label)cell.setAttribute('aria-label',label);
+ }
  renderGomokuClocks();
  renderMoveHistory();
  $('dock-status').textContent=online?(m?'● POKÓJ ONLINE':'● ŁĄCZENIE'):'● TRENING';
