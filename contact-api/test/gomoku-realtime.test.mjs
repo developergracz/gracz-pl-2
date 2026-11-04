@@ -79,11 +79,11 @@ test('realtime: deny foreign origins, missing session, outsider subscription and
 });
 
 test('realtime: deadline uses authoritative clock validation and heartbeats do not access DB',async t=>{
- const f=await setup(t,{heartbeatMs:30});const a=await f.open(tokenA),b=await f.open(tokenB);
+ const f=await setup(t,{heartbeatMs:1000});const a=await f.open(tokenA),b=await f.open(tokenB);
  a.subscribe();await a.next('snapshot');b.subscribe();await b.next('snapshot');await a.next('match');
  const count=f.queries.length;await a.next('heartbeat');await a.next('heartbeat');
  assert.equal(f.queries.length,count);
- f.shiftClockSince(419700);f.hub.notify(challenge);
+ f.clockExpiresIn(500);f.hub.notify(challenge);
  // First update schedules the actual server deadline; no subsequent notification.
  const ticking=await b.next('match');assert.equal(ticking.match.state.winner,0);
  const ended=await b.next('match');assert.equal(ended.match.state.winner,2);

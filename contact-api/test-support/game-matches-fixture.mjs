@@ -82,6 +82,9 @@ function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange}={}){
   return {status:res.status,body:JSON.parse(res.body)};
  }
  return {router,call,queries,revoke:()=>{revoked=true;},setBlocked:v=>{blocked=v;},setAccepted:v=>{accepted=v;},
+  clockExpiresIn:ms=>{const m=matches.get(challenge);if(m?.state.clock){
+   m.state.clock.since=new Date(Date.now()+ms-m.state.clock.remaining[m.state.turn-1]).toISOString();
+  }},
   shiftClockSince:ms=>{const m=matches.get(challenge);if(m?.state.clock){
    const t=Date.parse(m.state.clock.since);m.state.clock.since=new Date(t-ms).toISOString();
   }},
