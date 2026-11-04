@@ -529,6 +529,9 @@ select option{background:#102c34;color:#fff}
 #turn-label:before{content:"";display:inline-block;vertical-align:middle;width:20px;height:20px;margin-right:10px;border-radius:50%;
  background:radial-gradient(circle at 28% 20%,#a2aeb4,#202b31 40%,#020408 85%);border:1px solid #ecc471;
  box-shadow:0 0 8px #d6a94b,inset -3px -3px 4px #0008}
+/* Finished games use a gold result marker instead of an active-turn black stone. */
+#turn-label.game-over:before{background:radial-gradient(circle at 28% 20%,#fff9da,#f1c462 43%,#a36b20 85%);
+ border-color:#ffe19b;box-shadow:0 0 10px #f3c45a94,inset -2px -3px 4px #603a1870}
 
 
 
@@ -1458,7 +1461,34 @@ function render(){
  const moves=online?(m?.state?.moves||0):state.moves;
  $('move-count').textContent='Ruchy: '+moves;
  const turn=online?(m?.state?.turn||1):(state.thinking?2:1);
- $('turn-label').textContent='Tura: '+(turn===1?'czarne':'białe');
+ // R28: bottom indicators reflect the actual match result, never a phantom next turn.
+ const winner=online?(m?.state?.winner||0):state.winner;
+ const ended=winner!==0;
+ let bottomTurn='Tura: '+(turn===1?'czarne':'białe');
+ let bottomHelp=online?
+  (m?.state?.turn===m?.player?'Wybierz wolne pole, aby wykonać ruch.':'Czekaj na ruch przeciwnika.'):
+  (state.thinking?'Komputer analizuje ruch…':'Wybierz wolne pole, aby postawić czarny kamień.');
+ if(ended){
+  bottomTurn='Partia zakończona';
+  if(winner===3)bottomHelp='Remis — partia zakończona.';
+  else if(online)bottomHelp='Wygrał '+(m?.players?.[winner-1]||'gracz')+'.';
+  else if(winner===1)bottomHelp=state.trainClock?.timeoutLoser===2?
+   'Wygrałeś na czas!':'Wygrałeś partię!';
+  else bottomHelp=state.trainClock?.timeoutLoser===1?
+   'Komputer wygrał na czas.':'Wygrał komputer.';
+ }else if(!online&&state.showcase){
+  bottomTurn='Podgląd partii';
+  bottomHelp='Kliknij planszę lub wybierz „Nowa partia”, aby rozpocząć.';
+ }else if(online&&!m){
+  bottomTurn='Oczekiwanie na pokój';
+  bottomHelp='Wybierz przyjęte wyzwanie i otwórz pokój.';
+ }else if(online&&!m.playable){
+  bottomTurn='Oczekiwanie na grę';
+  bottomHelp='Partia nie jest jeszcze dostępna.';
+ }
+ $('turn-label').textContent=bottomTurn;
+ $('turn-label').classList.toggle('game-over',ended);
+ $('board-help').textContent=bottomHelp;
  $('game-state').textContent=describe();
  renderGomokuClocks();
  renderMoveHistory();

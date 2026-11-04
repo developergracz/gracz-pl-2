@@ -318,12 +318,16 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('history-count').textContent,'12');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
  assert.match(get('game-state').textContent,/Przykładowy układ partii/);
+ assert.equal(get('turn-label').textContent,'Podgląd partii');
+ assert.match(get('board-help').textContent,/Nowa partia/);
  assert.equal(get('chat-preview').children.length,1,'No fictional conversation shown in showcase');
  assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
  get('focus-game').listeners.click();
  get('focus-start').listeners.click();
  assert.equal(get('game').classes.has('game-focus'),true,'Start remains within board-only mode');
  assert.equal(get('move-count').textContent,'Ruchy: 0','Start begins a clean training match');
+ assert.equal(get('turn-label').textContent,'Tura: czarne','Start returns to normal turn label');
+ assert.match(get('board-help').textContent,/Wybierz wolne pole/);
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
  assert.equal(get('clock-1').textContent,'07:00');
  assert.equal(get('clock-2').textContent,'07:00');
@@ -441,6 +445,9 @@ test('Gomoku browser console can play immediately against a computer and join a 
  // Result is derived from the server-authoritative online winner relative to this player.
  match.state.winner=2;
  context.__gomokuTest.render();
+ assert.equal(get('turn-label').textContent,'Partia zakończona','Online result replaces turn label');
+ assert.equal(get('board-help').textContent,'Wygrał GraczBeta.');
+ assert.equal(get('turn-label').classes.has('game-over'),true);
  assert.equal(get('game-result-modal').hidden,false);
  assert.equal(get('game-result-title').textContent,'Przegrałeś partię.');
  assert.equal(get('game-result-description').textContent,'Zwycięzca: GraczBeta.');
@@ -452,9 +459,13 @@ test('Gomoku browser console can play immediately against a computer and join a 
  match.state.winner=1;
  context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Wygrałeś partię!');
+ assert.equal(get('turn-label').textContent,'Partia zakończona');
+ assert.equal(get('board-help').textContent,'Wygrał GraczAlfa.');
  match.state.winner=3;
  context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Remis!');
+ assert.equal(get('turn-label').textContent,'Partia zakończona');
+ assert.equal(get('board-help').textContent,'Remis — partia zakończona.');
  get('game-result-new').listeners.click();
  assert.equal(navigations[0],'/konto/panel/','Online requires a new invitation, not a local reset');
  get('training-mode').listeners.click();
@@ -463,6 +474,9 @@ test('Gomoku browser console can play immediately against a computer and join a 
  const training=context.__gomokuTest.state;
  training.winner=2;training.showcase=false;
  context.__gomokuTest.render();
+ assert.equal(get('turn-label').textContent,'Partia zakończona');
+ assert.equal(get('board-help').textContent,'Wygrał komputer.');
+ assert.equal(get('turn-label').classes.has('game-over'),true);
  assert.equal(get('game-result-title').textContent,'Przegrałeś z komputerem.');
  assert.equal(get('game-result-online-hint').hidden,true);
  get('game-result-new').listeners.click();
@@ -471,8 +485,12 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
  training.winner=1;context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Wygrałeś z komputerem!');
+ assert.equal(get('turn-label').textContent,'Partia zakończona');
+ assert.equal(get('board-help').textContent,'Wygrałeś partię!');
  training.winner=3;context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Remis!');
+ assert.equal(get('turn-label').textContent,'Partia zakończona');
+ assert.equal(get('board-help').textContent,'Remis — partia zakończona.');
  // Both clocks end the game on time and prevent further moves.
  get('restart').listeners.click();
  assert.equal(get('clock-1').textContent,'07:00','New match resets each clock');
@@ -594,9 +612,14 @@ test('Gomoku browser console can play immediately against a computer and join a 
   assert.equal(get('clock-1').textContent,'00:00');
   assert.equal(get('clock-1').classes.has('clock-critical'),false,'Finished game never pulses');
   assert.equal(get('clock-1').classes.has('clock-expired'),true);
+  assert.equal(get('turn-label').textContent,'Partia zakończona','Clock timeout also ends turn');
+  assert.match(get('board-help').textContent,mode==='training'?/Komputer wygrał na czas/:/Wygrał GraczBeta/);
  }
  training.mode='training';get('restart').listeners.click();
  assert.equal(get('clock-1').classes.has('clock-critical'),false,'Reset clears alarm');
+ assert.equal(get('turn-label').textContent,'Tura: czarne');
+ assert.equal(get('turn-label').classes.has('game-over'),false,'Reset clears result marker');
+ assert.match(get('board-help').textContent,/Wybierz wolne pole/);
 
 });
 
