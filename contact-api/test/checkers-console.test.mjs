@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Script} from 'node:vm';
+import {readFileSync} from 'node:fs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 
 function load(path,method='GET'){
@@ -61,6 +62,9 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
   assert.equal(asset.headers['Content-Length'],Buffer.byteLength(asset.body));
  }
  assert.match(load('/konto/warcaby/rules.mjs').body,/export function playMove/);
+ assert.equal(load('/konto/warcaby/rules.mjs').body,readFileSync(new URL('../auth/game-engine.mjs',import.meta.url),'utf8'));
+ assert.equal(load('/konto/warcaby/bot.mjs').body,readFileSync(new URL('../auth/checkers-training-ai.mjs',import.meta.url),'utf8').replace("from './game-engine.mjs'","from '/konto/warcaby/rules.mjs'"));
+ assert.equal(load('/konto/warcaby/training-ui.mjs').body,readFileSync(new URL('../auth/checkers-training-ui.mjs',import.meta.url),'utf8').replace("from './checkers-training-ai.mjs'","from '/konto/warcaby/bot.mjs'"));
  assert.match(load('/konto/warcaby/bot.mjs').body,/\/konto\/warcaby\/rules\.mjs/);
  assert.match(load('/konto/warcaby/training-ui.mjs').body,/\/konto\/warcaby\/bot\.mjs/);
  assert.match(js.body,/initializeWarcaby\(/);
