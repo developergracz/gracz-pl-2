@@ -289,6 +289,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/\.cell\.p1\.occupied::after/);
  assert.match(css,/Premium global navigation, crisp vector grid/);
  assert.match(css,/\.board \.cell::before/);
+ assert.match(css,/\.board \.cell\{touch-action:manipulation;-webkit-tap-highlight-color:transparent\}/);
  assert.match(css,/#363b3e/);
  assert.ok(css.includes('Gomoku board viewport fit R4'));
  assert.ok(css.includes('grid-template-rows: minmax(52px,7vh) minmax(34px,5vh) minmax(0,1fr) 45px'));
@@ -301,6 +302,8 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(app,/if\(area\.children\.length!==count\)\{/,
   'Board buttons are created once rather than rebuilt for every status update');
  assert.doesNotMatch(app,/const area=\$\('board'\);area\.replaceChildren\(\);/);
+ assert.match(app,/if\(cell\._gomokuVisual!==visual\)\{/);
+ assert.match(app,/state\.pendingOnlineMove=\{to,player:m\.player,matchId,version:m\.version\}/);
  assert.match(app,/new Worker\('\/konto\/gomoku\/ai-worker\.js'\)/);
  assert.match(app,/worker\.postMessage\(\{id,level,board:state\.board\.slice\(\)\}\)/);
  assert.match(app,/if\(state\.thinking\)queueCpuTurn\(state\.epoch\)/);
@@ -309,13 +312,13 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
 });
 test('Gomoku browser console can play immediately against a computer and join a real accepted room',async()=>{
  const fake=new Map(),queued=[],queuedDelays=[],calls=[],storage=new Map(),navigations=[],intervals=[];
- let fakeTime=0;
+ let fakeTime=0,holdOnlineMove=false,releaseOnlineMove=null,failOnlineMove=false;
  class Element{
   constructor(){this.children=[];this.listeners={};this.value='';this.hidden=false;this.disabled=false;
-   this.textContent='';this.style={};this.classes=new Set();this.focused=false;
+   this.textContent='';this.style={};this.classes=new Set();this.focused=false;this.toggleCount=0;
    this.classList={add:(...x)=>x.forEach(v=>this.classes.add(v)),
     contains:x=>this.classes.has(x),
-    toggle:(x,value)=>{if(value===undefined)value=!this.classes.has(x);if(value)this.classes.add(x);else this.classes.delete(x);}};
+    toggle:(x,value)=>{this.toggleCount++;if(value===undefined)value=!this.classes.has(x);if(value)this.classes.add(x);else this.classes.delete(x);}};
   }
   addEventListener(name,handler){this.listeners[name]=handler;}
   append(...children){this.children.push(...children);}
@@ -349,8 +352,10 @@ test('Gomoku browser console can play immediately against a computer and join a 
   if(path==='/auth/match/chat?id='+matchId)return {ok:true,status:200,json:async()=>({ok:true,messages:[]})};
   if(path==='/auth/match'&&options.method==='POST'){
    const sent=JSON.parse(options.body);
-   assert.equal(sent.version,0);assert.equal(sent.id,matchId);
-   match.version=1;match.state.board[sent.move.to]=1;match.state.turn=2;match.state.moves=1;
+   assert.equal(sent.version,match.version);assert.equal(sent.id,matchId);
+   if(failOnlineMove){failOnlineMove=false;return {ok:false,status:409,json:async()=>({ok:false,error:'Conflict'})};}
+   if(holdOnlineMove){holdOnlineMove=false;await new Promise(resolve=>{releaseOnlineMove=resolve;});}
+   match.version++;match.state.board[sent.move.to]=1;match.state.turn=2;match.state.moves++;
    return {ok:true,status:200,json:async()=>({ok:true,match})};
   }
   throw Error('unexpected fetch '+path);
@@ -430,6 +435,10 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('clock-2').textContent,'07:00');
  assert.equal(get('clock-1').classes.has('clock-running'),false,'No timer until first stone');
  assert.equal(get('clock-2').classes.has('clock-running'),false,'CPU timer starts only after first stone');
+ const beforeSameRender=get('board').children.reduce((n,c)=>n+c.toggleCount,0);
+ context.__gomokuTest.render();
+ assert.equal(get('board').children.reduce((n,c)=>n+c.toggleCount,0),beforeSameRender,
+  'Unchanged board does not reapply CSS classes to all 225 cells');
  get('focus-exit').listeners.click();
  get('board').children[112].listeners.click();
  assert.equal(get('move-count').textContent,'Ruchy: 1','First click after pressing Start places the first legal stone');
@@ -542,10 +551,30 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('white-name').title,'GraczBeta','Title follows the current opponent');
  assert.equal(get('room-tag').textContent,'POKÓJ ONLINE');
  assert.equal(get('chat-input').disabled,false);
+ holdOnlineMove=true;
  get('board').children[44].listeners.click();
+ assert.equal(get('board').children[44].classes.has('p1'),true,'Instant visible stone before HTTP reply');
+ assert.equal(get('board').children[44].classes.has('pending'),true);
+ assert.equal(match.state.board[44],0,'Client cannot mutate authoritative board');
+ assert.equal(context.__gomokuTest.state.pendingOnlineMove.to,44);
+ assert.equal(get('move-count').textContent,'Ruchy: 0');
+ assert.equal(typeof releaseOnlineMove,'function');
+ releaseOnlineMove();
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('board').children[44].classes.has('p1'),true);
+ assert.equal(get('board').children[44].classes.has('pending'),false);
+ assert.equal(context.__gomokuTest.state.pendingOnlineMove,null);
  assert.equal(get('move-count').textContent,'Ruchy: 1');
+ match.state.turn=1;context.__gomokuTest.render();failOnlineMove=true;
+ get('board').children[45].listeners.click();
+ assert.equal(get('board').children[45].classes.has('p1'),true);
+ assert.equal(get('board').children[45].classes.has('pending'),true);
+ assert.equal(match.state.board[45],0);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(get('board').children[45].classes.has('p1'),false,'Rejected move rolls back');
+ assert.equal(get('board').children[45].classes.has('pending'),false);
+ assert.equal(match.state.board[45],0);
+ assert.equal(context.__gomokuTest.state.pendingOnlineMove,null);
  assert.ok(calls.every(x=>x.options.credentials==='same-origin'));
  // Result is derived from the server-authoritative online winner relative to this player.
  match.state.winner=2;
