@@ -1693,3 +1693,34 @@ body.homepage-premium-max .site-footer {
     background-color: transparent !important;
   }
 }
+
+/* Approved Owner Crown: real transparent gold artwork extracted from accepted image.
+   Embedded in the existing CSS bundle to avoid a second critical request. */
+body.homepage-premium-max .r4-hero-rule {
+  height: 38px !important;
+  min-height: 38px !important;
+}
+body.homepage-premium-max .r4-hero-rule::after {
+  content: "" !important;
+  display: block !important;
+  width: 52px;
+  height: 43px;
+  background-image: url("/assets/gracz-crown-approved-r2.webp") !important;
+  background-position: center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+  color: transparent !important;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.42)) drop-shadow(0 0 7px rgba(255,208,103,.2));
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-hero-rule {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+  body.homepage-premium-max .r4-hero-rule::after {
+    width: 44px;
+    height: 37px;
+  }
+}
