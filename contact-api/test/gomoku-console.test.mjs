@@ -34,6 +34,7 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/id="gomoku-train-gold"/);
  assert.match(html,/id="gomoku-friends-duo"/);
  assert.match(html,/id="ai-level"/);
+ assert.match(html,/GRACZ AI|Komputer/);
  assert.match(html,/<option value="master" selected>♛ Arcymistrz — maksymalna siła<\/option>/);
  assert.match(html,/Arcymistrz szuka wymuszonych wygranych, podwójnych zagrożeń/);
  assert.match(html,/id="training-time"/);
@@ -252,6 +253,15 @@ test('Gomoku browser console can play immediately against a computer and join a 
   playable:true,state:{board,turn:1,winner:0,moves:0}};
  const fetch=async(path,options)=>{
   calls.push({path,options});
+  if(path==='/konto/gomoku/ai-chat'){
+   assert.equal(options.method,'POST');
+   assert.equal(options.credentials,'same-origin');
+   const sent=JSON.parse(options.body);
+   assert.equal(sent.message,'Powodzenia!');
+   assert.equal(sent.game.board.length,225);
+   assert.ok(sent.game.history.some(x=>x.player===2),'AI receives last computer move as context');
+   return {ok:true,status:200,json:async()=>({ok:true,answer:'Dziękuję! Co chciałbyś omówić w Gomoku?'})};
+  }
   if(path==='/auth/profile')return {ok:true,status:200,json:async()=>({ok:true,profile:{nickname:'GraczAlfa'}})};
   if(path==='/auth/social/challenges')return {ok:true,status:200,json:async()=>({ok:true,challenges:[
    {id:matchId,game:'gomoku',status:'accepted',opponent:'GraczBeta'}
@@ -308,7 +318,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('history-count').textContent,'12');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
  assert.match(get('game-state').textContent,/Przykładowy układ partii/);
- assert.equal(get('chat-preview').children.length,2,'Training sample chat is visible before play');
+ assert.equal(get('chat-preview').children.length,1,'No fictional conversation shown in showcase');
  assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
  get('focus-game').listeners.click();
  get('focus-start').listeners.click();
@@ -390,9 +400,13 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('chat-input').disabled,false);
  get('chat-input').value='Powodzenia!';
  await get('chat-form').listeners.submit({preventDefault(){}});
- assert.equal(get('chat-messages').children.length,3);
- assert.equal(get('chat-messages').children[2].children[1].textContent,'Dzięki, wzajemnie! 🤝');
+ assert.equal(get('chat-messages').children.length,2,'Actual request and AI reply displayed');
+ assert.equal(get('chat-messages').children[1].children[1].textContent,
+  'Dziękuję! Co chciałbyś omówić w Gomoku?');
  assert.equal(get('chat-preview').children.length,2);
+ assert.match(get('chat-status').textContent,/GroqCloud/);
+ assert.equal(get('chat-send').disabled,false,'AI response unlocks sending');
+ assert.equal(calls.filter(x=>x.path==='/konto/gomoku/ai-chat').length,1);
  get('history-tab').listeners.click();
  assert.equal(get('history-tab').classes.has('active'),true,'Ruchy tab becomes selected');
  assert.equal(get('chat-tab').classes.has('active'),false);
@@ -600,6 +614,15 @@ function getTrainedAI(){
  ].join('\n');
  return new Script(evaluator).runInNewContext({});
 }
+
+test('Gomoku AI chat replaces scripted automatic responses with real same-origin provider requests',()=>{
+ const script=served('/konto/gomoku/app.js').body;
+ assert.match(script,/fetch\('\/konto\/gomoku\/ai-chat'/);
+ assert.match(script,/game:\{board:state\.board\.join\(''\)/);
+ assert.doesNotMatch(script,/Dobry trening! Najważniejsze to pięć/);
+ assert.doesNotMatch(script,/Ciekawa partia\. Szukam najlepszego ruchu/);
+ assert.match(script,/AI_NOT_CONFIGURED|Czat AI|payload\?\.error\?\.message/);
+});
 
 test('Expert Gomoku AI wins immediately rather than making a merely attractive move',()=>{
  const {cpuMove}=getTrainedAI();
