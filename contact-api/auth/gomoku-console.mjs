@@ -303,6 +303,8 @@ select option{background:#102c34;color:#fff}
 .cell.last::after{outline:2px solid #d69f4e;outline-offset:1px}
 .cell.suggested:not(.occupied){background:#31bbb455!important;box-shadow:inset 0 0 0 2px #008f92}
 .cell:not(:disabled):hover{background:#c9e6df6e;cursor:pointer}.cell:focus-visible{outline:2px solid #078a91;outline-offset:-2px;z-index:3}
+/* R38: native tap acknowledgement without 300ms double-tap delay on touch devices. */
+.board .cell{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .game-tools{display:flex;flex-direction:column;justify-content:center;gap:clamp(9px,1.5vh,17px)}
 .tool-btn{display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;min-height:44px;text-align:left;border:1px solid #93baa9;border-radius:12px;color:#f6faf9;padding:8px 11px;background:linear-gradient(155deg,#0b4946,#05242d 77%);box-shadow:inset 0 1px #7cafa27a,0 7px 17px #0005;font-size:11px;font-weight:750;transition:transform .15s,border-color .15s}
 .tool-btn:hover:not(:disabled){transform:translateY(-2px);border-color:#f4cf88}.tool-btn span{font-size:22px;color:#f3c676;min-width:27px;text-align:center}
@@ -1369,7 +1371,8 @@ const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
  thinking:false,matchId:null,match:null,busy:false,epoch:0,snapshots:[],suggestion:-1,serverOffsetMs:0,
- trainHistory:[],trainClock:null,dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null};
+ trainHistory:[],trainClock:null,dockTab:'chat',chatBusy:false,chatSignature:'',localChat:[],chatSequence:0,showcase:false,undoDialogId:null,resultShownKey:null,resultDismissedKey:null,
+ pendingOnlineMove:null};
 
 const trainingRecordKey='gracz.gomoku.training-records.v1';
 function loadTrainingRecord(){
@@ -1397,14 +1400,17 @@ function recordTrainingFinish(){
 }
 function renderTrainingRecord(){
  const r=state.trainingRecord,total=r.wins+r.draws+r.losses;
- $('record-wins').textContent=String(r.wins);
- $('record-draws').textContent=String(r.draws);
- $('record-losses').textContent=String(r.losses);
- $('record-total').textContent=String(total);
+ setGameStatus('record-wins',String(r.wins));
+ setGameStatus('record-draws',String(r.draws));
+ setGameStatus('record-losses',String(r.losses));
+ setGameStatus('record-total',String(total));
  const rate=total?Math.round(100*r.wins/total):0;
- $('record-rate').textContent=rate+'%';
- $('records-progress-fill').style.width=rate+'%';
- $('records-progress').setAttribute('aria-valuenow',String(rate));
+ const current=rate+'%';
+ if($('record-rate').textContent!==current){
+  $('record-rate').textContent=current;
+  $('records-progress-fill').style.width=current;
+  $('records-progress').setAttribute('aria-valuenow',String(rate));
+ }
 }
 function replaySource(){
  const online=state.mode==='online',m=state.match;
@@ -1682,19 +1688,36 @@ function render(){
    area.append(cell);
   }
  }
- const last=online?(m?.state?.last??-1):state.last;
+ // Render only changed cells: the grid is immutable between moves and must not be repainted 225 times.
+ // A pending online stone is visual ONLY; the backend remains the sole source of the match board.
+ const pending=online&&state.pendingOnlineMove&&m&&state.matchId===state.pendingOnlineMove.matchId&&
+  m.version===state.pendingOnlineMove.version?state.pendingOnlineMove:null;
+ const last=online?(pending?.to??m?.state?.last??-1):state.last;
  for(let i=0;i<count;i++){
-  const cell=area.children[i],piece=board[i];
-  cell.classList.toggle('occupied',!!piece);
-  cell.classList.toggle('p1',piece===1);
-  cell.classList.toggle('p2',piece===2);
-  cell.classList.toggle('suggested',!online&&i===state.suggestion&&!piece);
-  cell.classList.toggle('last',last===i);
-  cell.disabled=!!piece||!canPlay;
+  const cell=area.children[i],confirmed=board[i];
+  const isPending=Boolean(pending&&pending.to===i&&!confirmed);
+  const piece=confirmed||(isPending?pending.player:0);
+  const suggested=!online&&i===state.suggestion&&!piece;
+  const visual=piece+':'+(last===i?1:0)+':'+(suggested?1:0)+':'+(isPending?1:0);
+  if(cell._gomokuVisual!==visual){
+   cell.classList.toggle('occupied',!!piece);
+   cell.classList.toggle('p1',piece===1);
+   cell.classList.toggle('p2',piece===2);
+   cell.classList.toggle('suggested',suggested);
+   cell.classList.toggle('last',last===i);
+   cell.classList.toggle('pending',isPending);
+   cell._gomokuVisual=visual;
+  }
+  const disabled=!!piece||!canPlay;
+  if(cell.disabled!==disabled)cell.disabled=disabled;
+  // No repeated attribute writes and layout work when a clock or another widget updates.
   const row=Math.floor(i/size),col=i%size;
   const label='Wiersz '+(row+1)+', kolumna '+(col+1)+
-   (piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole');
-  if(cell.getAttribute?.('aria-label')!==label)cell.setAttribute('aria-label',label);
+   (isPending?' kamień oczekuje na potwierdzenie':piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole');
+  if(cell._gomokuLabel!==label){
+   cell.setAttribute('aria-label',label);
+   cell._gomokuLabel=label;
+  }
  }
  renderGomokuClocks();
  renderMoveHistory();
@@ -2125,7 +2148,7 @@ async function loadMatch(id){
   if(epoch!==state.epoch||state.mode!=='online')return;
   if(result.match?.game!=='gomoku')throw new Error('Ten pokój nie jest partią Gomoku.');
   synchronizeGameTime(result);
-  state.matchId=id;state.match=result.match;
+  state.matchId=id;state.match=result.match;state.pendingOnlineMove=null;
   state.chatSignature='';void refreshRoomChat();
   $('room-select').value=id;
   history.replaceState(null,'','/konto/gomoku/?match='+encodeURIComponent(id));
@@ -2136,14 +2159,28 @@ async function loadMatch(id){
 async function onlineMove(to){
  const m=state.match;
  if(!m||state.busy||!m.playable||m.state.turn!==m.player||m.state.winner||m.state.board[to])return;
+ const epoch=state.epoch,matchId=state.matchId;
+ // Show the stone immediately; until server ACK it is a reversible visual preview.
+ // Do not mutate m.state.board, turn, clocks, version or history before confirmation.
+ state.pendingOnlineMove={to,player:m.player,matchId,version:m.version};
  state.busy=true;render();
  try{
   const result=await api('match',{method:'POST',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({id:state.matchId,version:m.version,move:{to}})});
-  synchronizeGameTime(result);state.match=result.match;
- }catch(e){note(e.message);await refreshOnline(true);}
- finally{state.busy=false;render();}
+   body:JSON.stringify({id:matchId,version:m.version,move:{to}})});
+  if(epoch===state.epoch&&state.matchId===matchId){
+   synchronizeGameTime(result);state.match=result.match;
+  }
+ }catch(e){
+  if(epoch===state.epoch&&state.matchId===matchId){
+   note(e.message);
+   await refreshOnline(true);
+  }
+ }finally{
+  if(epoch===state.epoch&&state.matchId===matchId){
+   state.pendingOnlineMove=null;state.busy=false;render();
+  }
+ }
 }
 async function refreshOnline(force=false){
  if(state.mode!=='online'||!state.matchId||(!force&&state.busy))return;
@@ -2640,6 +2677,7 @@ function setMode(mode){
  if(state.mode===mode)return;
  cancelPendingCpu();
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;state.serverOffsetMs=0;
+ state.pendingOnlineMove=null;
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('chat');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
