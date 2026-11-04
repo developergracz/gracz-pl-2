@@ -157,7 +157,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
-<button type="button" id="console-config-fab" class="console-config-fab" aria-haspopup="dialog" aria-controls="console-config-modal" hidden>⚙ Dostosuj konsolę</button>
+<button type="button" id="console-config-fab" class="console-config-fab" aria-haspopup="dialog" aria-controls="console-config-modal" hidden>⚙ Dostosuj konsolę do swoich upodobań</button>
 <div id="console-config-modal" class="console-config-overlay" role="dialog" aria-modal="true" aria-labelledby="console-config-title" aria-describedby="console-config-intro" hidden>
 <section class="console-config-card">
 <header class="console-config-header"><div><span class="console-config-kicker">GRACZ.PL · TWOJA KONSOLA</span><h2 id="console-config-title">Studio konfiguracji <em>Full Max Premium</em></h2><p id="console-config-intro">Zbuduj wygląd swojej gry jak z kafelków. Ukryj lub dodaj dowolny panel — plansza i rozgrywka pozostają aktywne.</p></div><button type="button" id="console-config-close" class="console-config-close" aria-label="Zamknij konfigurator">×</button></header>
@@ -1458,7 +1458,7 @@ select option{background:#102c34;color:#fff}
  .layout.console-hide-players .premium-quick-links,.layout.console-hide-dock .premium-quick-links{position:relative;right:auto;top:auto}}
 /* Floating restore control cannot disappear when the left sidebar is removed. */
 .console-config-fab[hidden],.console-config-overlay[hidden]{display:none!important}
-.console-config-fab{position:fixed;top:12px;left:12px;z-index:9000;padding:9px 13px;
+.console-config-fab{position:fixed;top:12px;right:12px;max-width:calc(100vw - 24px);box-sizing:border-box;z-index:9000;padding:9px 13px;
  border:1px solid #f4ce81;border-radius:12px;background:linear-gradient(155deg,#0b5355,#031d27);
  color:#ffe3a2;font:800 12px Georgia,serif;box-shadow:0 0 17px #e3b65593,0 4px 13px #0009;cursor:pointer}
 .console-config-fab:is(:hover,:focus-visible){background:#116c65;outline-color:#b0fff0}
