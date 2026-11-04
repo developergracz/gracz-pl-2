@@ -2935,6 +2935,114 @@ $('howto-modal').addEventListener('keydown',event=>{
   else $('howto-close').focus?.();
  }
 });
+// R41: A puzzle-style appearance editor. Layout preferences never mutate the game state.
+const consoleLayoutKey='gracz.gomoku.console-layout.v1';
+const consoleParts=[
+ ['sidebar','Panel lewy','Nawigacja, tryby i ustawienia','▣'],
+ ['dock','Panel prawy','Czat, historia ruchów i narzędzia','▤'],
+ ['players','Gracze i zegary','Nazwy, czas i oznaczenie VS','◷'],
+ ['quicklinks','Miniaturki górne','Odnośniki do gier i funkcji','⌂'],
+ ['status','Komunikat nad planszą','Informacja o ruchu i wyniku','✧'],
+ ['bottom','Pasek pod planszą','Liczba ruchów i bieżąca tura','≡'],
+ ['tools','Miniaturki narzędzi','Cofanie, analiza, zaproszenia','⚙'],
+ ['training-settings','Ustawienia treningu','Poziom AI i kontrola czasu','♟'],
+ ['training-records','Bilans treningu','Wygrane, remisy i przegrane','♛'],
+ ['online-settings','Pokoje online','Tworzenie i wybór pokoi','♧'],
+ ['replay','Powtórka partii','Otwieranie odtworzenia ruchów','↶'],
+ ['chat-history','Wiadomości czatu','Treść rozmowy i odpowiedzi AI','☷'],
+ ['chat-input','Pole wpisywania','Formularz wiadomości czatu','✉'],
+ ['heading','Nagłówek Gomoku','Tytuł i korona lewego panelu','♕'],
+ ['mode','Wybór trybu','Trening albo gra ze znajomym','⚑']
+];
+const consoleHidden=new Set(),consoleTileButtons=new Map(),consoleTileCards=new Map();
+function saveConsoleLayout(){
+ try{window.localStorage?.setItem(consoleLayoutKey,JSON.stringify([...consoleHidden]));}catch{}
+}
+function applyConsoleLayout(){
+ const game=$('game');
+ for(const [key] of consoleParts){
+  const hidden=consoleHidden.has(key);
+  game.classList.toggle('console-hide-'+key,hidden);
+  const button=consoleTileButtons.get(key),card=consoleTileCards.get(key);
+  if(button){
+   button.textContent=hidden?'Dodaj':'Ukryj';
+   button.setAttribute('aria-pressed',String(hidden));
+   button.setAttribute('aria-label',(hidden?'Dodaj: ':'Ukryj: ')+consoleParts.find(p=>p[0]===key)[1]);
+  }
+  if(card)card.classList.toggle('is-hidden',hidden);
+ }
+ $('console-preview-sidebar').classList.toggle('is-off',consoleHidden.has('sidebar'));
+ $('console-preview-dock').classList.toggle('is-off',consoleHidden.has('dock'));
+ $('console-config-count').textContent='Widoczne: '+(consoleParts.length-consoleHidden.size)+' z '+consoleParts.length;
+ // Always provide a way to reopen the editor after hiding the navigation panel.
+ $('console-config-fab').hidden=!consoleHidden.has('sidebar')||game.classList.contains('game-focus');
+}
+function changeConsoleLayout(key){
+ if(consoleHidden.has(key))consoleHidden.delete(key);
+ else consoleHidden.add(key);
+ applyConsoleLayout();saveConsoleLayout();
+}
+function setConsolePreset(keys){
+ consoleHidden.clear();
+ for(const key of keys)if(consoleParts.some(part=>part[0]===key))consoleHidden.add(key);
+ applyConsoleLayout();saveConsoleLayout();
+}
+function openConsoleLayout(){
+ $('console-config-modal').hidden=false;
+ $('console-config-close').focus?.();
+}
+function closeConsoleLayout(){
+ $('console-config-modal').hidden=true;
+ (consoleHidden.has('sidebar')?$('console-config-fab'):$('console-config-open')).focus?.();
+}
+function initConsoleLayout(){
+ try{
+  const saved=JSON.parse(window.localStorage?.getItem(consoleLayoutKey)||'null');
+  if(Array.isArray(saved))for(const key of saved){
+   if(typeof key==='string'&&consoleParts.some(part=>part[0]===key))consoleHidden.add(key);
+  }
+ }catch{}
+ const container=$('console-config-tiles');
+ for(const [key,title,description,symbol] of consoleParts){
+  const card=document.createElement('div');card.className='console-config-tile';
+  const icon=document.createElement('span');icon.className='console-tile-icon';
+  icon.setAttribute('aria-hidden','true');icon.textContent=symbol;
+  const info=document.createElement('div');info.className='console-tile-info';
+  const heading=document.createElement('strong');heading.textContent=title;
+  const detail=document.createElement('small');detail.textContent=description;
+  info.append(heading,detail);
+  const button=document.createElement('button');button.type='button';button.className='console-tile-action';
+  button.addEventListener('click',()=>changeConsoleLayout(key));
+  card.append(icon,info,button);container.append(card);
+  consoleTileButtons.set(key,button);consoleTileCards.set(key,card);
+ }
+ $('console-config-modal').hidden=true;
+ $('console-config-open').addEventListener('click',openConsoleLayout);
+ $('console-config-fab').addEventListener('click',openConsoleLayout);
+ $('console-config-close').addEventListener('click',closeConsoleLayout);
+ $('console-config-done').addEventListener('click',closeConsoleLayout);
+ $('console-config-reset').addEventListener('click',()=>setConsolePreset([]));
+ $('console-preset-full').addEventListener('click',()=>setConsolePreset([]));
+ $('console-preset-social').addEventListener('click',()=>setConsolePreset(['sidebar','quicklinks','players']));
+ $('console-preset-board').addEventListener('click',()=>setConsolePreset(['sidebar','dock','players','quicklinks','status','bottom']));
+ $('console-config-modal').addEventListener('click',event=>{
+  if(event.target===$('console-config-modal'))closeConsoleLayout();
+ });
+ $('console-config-modal').addEventListener('keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault?.();closeConsoleLayout();return;}
+  if(event.key==='Tab'){
+   const focusables=[$('console-config-close'),$('console-preset-full'),$('console-preset-social'),
+    $('console-preset-board'),...consoleTileButtons.values(),$('console-config-reset'),$('console-config-done')];
+   const at=focusables.indexOf(document.activeElement);
+   if((event.shiftKey&&at<=0)||(!event.shiftKey&&at===focusables.length-1)){
+    event.preventDefault?.();
+    (event.shiftKey?focusables[focusables.length-1]:focusables[0]).focus?.();
+   }
+  }
+ });
+ applyConsoleLayout();
+}
+initConsoleLayout();
 $('restart').addEventListener('click',restart);
 $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
@@ -2943,6 +3051,7 @@ $('game-settings').addEventListener('click',openGameSettings);
 function setBoardFocusMode(enabled){
  const game=$('game');
  game.classList.toggle('game-focus',enabled);
+ applyConsoleLayout();
  $('focus-game').setAttribute('aria-pressed',String(enabled));
  if(enabled)$('focus-exit').focus?.();
  else $('focus-game').focus?.();
