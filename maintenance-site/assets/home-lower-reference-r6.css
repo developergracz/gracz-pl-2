@@ -1355,7 +1355,7 @@ body.homepage-premium-max .r4-btn-gold:hover {
     position: relative !important;
     isolation: isolate !important;
     aspect-ratio: 2172 / 724 !important;
-    min-height: 460px !important;
+    min-height: 0 !important;
     height: auto !important;
     background: #002c2d !important;
     overflow: hidden !important;
