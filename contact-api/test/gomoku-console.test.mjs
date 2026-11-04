@@ -622,6 +622,10 @@ test('Gomoku AI chat replaces scripted automatic responses with real same-origin
  assert.doesNotMatch(script,/Dobry trening! Najważniejsze to pięć/);
  assert.doesNotMatch(script,/Ciekawa partia\. Szukam najlepszego ruchu/);
  assert.match(script,/AI_NOT_CONFIGURED|Czat AI|payload\?\.error\?\.message/);
+ assert.match(script,/const requestedBoard=state\.board\.join\(''\)/,
+  'The client remembers the specific board for which advice was requested');
+ assert.match(script,/if\(isBoardQuestion&&\(requestedBoard!==state\.board\.join\(''\)\|\|requestedWinner!==state\.winner\)\)/,
+  'Stale Gomoku advice cannot be presented after the board or outcome changes');
 });
 
 test('Expert Gomoku AI wins immediately rather than making a merely attractive move',()=>{
