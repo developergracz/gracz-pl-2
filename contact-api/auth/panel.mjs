@@ -115,6 +115,20 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 </aside></div>
 </section>
 <section class="view" data-panel="friends">
+<div class="friendshub-hero">
+ <div><p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Moja społeczność</h2>
+ <p>Znajomi, kluby, osobista książka adresowa i zaproszenia — wszystko w jednym bezpiecznym miejscu.</p></div>
+ <div class="friendshub-hero-badge"><strong>GRACZ.PL</strong><span>TWOJE KONTAKTY</span></div>
+</div>
+<nav id="friendshub-tabs" class="friendshub-tabs" role="tablist" aria-label="Zarządzanie znajomymi">
+ <button type="button" class="active" role="tab" aria-selected="true" data-fh-tab="overview">♟ Znajomi</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="book">▤ Książka adresowa</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="requests">✉ Zaproszenia <span id="fh-requests-badge" aria-live="polite"></span></button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="blocked">◇ Blokady</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="forum">◈ Forum i kluby</button>
+</nav>
+<div data-fh-pane="overview" class="friendshub-pane">
+
 <div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
 <p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online wymaga przyszłej integracji. Prywatne wiadomości są dostępne w osobnej zakładce.</p>
 <form id="friends-search-form" class="friends-search" role="search">
@@ -128,10 +142,60 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <div class="card stat"><small>ZAPROSZENIA</small><strong id="friends-incoming-count">—</strong><span>Oczekujące na decyzję</span></div>
 <div class="card stat"><small>WYSŁANE</small><strong id="friends-outgoing-count">—</strong><span>Oczekujące na odpowiedź</span></div></div>
 <div class="card"><div class="card-heading"><div><p class="card-kicker">KONTAKTY</p><h2>Lista znajomych</h2></div><button id="friends-refresh" type="button" class="secondary">Odśwież</button></div><div id="friends-list" class="friends-items"></div></div>
+</div><div data-fh-pane="requests" class="friendshub-pane" hidden>
 <div class="card"><p class="card-kicker">ZAPROSZENIA PRZYCHODZĄCE</p><h2>Zaproszenia do znajomych</h2><div id="friends-incoming" class="friends-items"></div></div>
 <div class="card"><p class="card-kicker">ZAPROSZENIA WYSŁANE</p><h2>Oczekujące odpowiedzi</h2><div id="friends-outgoing" class="friends-items"></div></div>
+</div><div data-fh-pane="blocked" class="friendshub-pane" hidden>
 <div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Zablokowani użytkownicy</h2>
 <p>Zablokowane osoby nie mogą wysyłać Ci zaproszeń. Możesz je odblokować w dowolnym momencie.</p><div id="friends-blocked" class="friends-items"></div></div>
+</div>
+<div data-fh-pane="book" class="friendshub-pane" hidden>
+ <div class="card friendshub-book-top">
+  <div class="card-heading"><div><p class="card-kicker">PRYWATNA KSIĄŻKA ADRESOWA</p><h2>Kontakty i grupy</h2>
+   <p>Uporządkuj znajomych, zapisz prywatne notatki, numery i adresy, które samodzielnie podasz. Tych informacji nie udostępniamy innym graczom.</p></div>
+   <div class="friendshub-actions"><button type="button" id="ab-new" class="primary">＋ Nowy kontakt</button><button type="button" id="ab-export" class="secondary">Eksport JSON</button><button type="button" id="ab-import-trigger" class="secondary">Import JSON</button><input id="ab-import-file" type="file" accept=".json,application/json" hidden></div>
+  </div>
+  <div class="friendshub-stat-grid"><div><small>KONTAKTY W KSIĄŻCE</small><strong id="ab-total">—</strong></div><div><small>GRUPY</small><strong id="ab-groups-count">—</strong></div><div><small>ULUBIONE</small><strong id="ab-favorites-count">—</strong></div></div>
+  <div class="friendshub-book-filters">
+   <label>Wyszukaj kontakt<input type="search" id="ab-search" maxlength="80" placeholder="Nick, alias, etykieta lub notatka"></label>
+   <label>Grupa<select id="ab-group-filter"><option value="">Wszystkie grupy</option></select></label>
+   <label class="friendshub-only-favs"><input id="ab-favorites-filter" type="checkbox"> Tylko ulubione</label>
+   <button type="button" class="secondary" id="ab-refresh">Odśwież</button>
+  </div>
+  <div class="friendshub-group-chips" id="ab-group-chips" aria-label="Grupy kontaktów"></div>
+ </div>
+ <div class="friendshub-book-grid">
+  <div class="card"><div class="card-heading"><div><p class="card-kicker">TWOJA BAZA KONTAKTÓW</p><h2>Lista kontaktów</h2></div></div>
+   <div id="ab-list" class="friendshub-contact-list"><p>Otwórz książkę adresową, aby wczytać kontakty.</p></div>
+   <div class="friendshub-pagination"><button id="ab-prev" class="secondary" type="button" disabled>Poprzednia</button><span id="ab-page-status"></span><button id="ab-next" class="secondary" type="button" disabled>Następna</button></div>
+  </div>
+  <div class="card friendshub-editor"><div class="card-heading"><div><p class="card-kicker">PRYWATNA WIZYTÓWKA</p><h2 id="ab-form-title">Dodaj kontakt</h2></div></div>
+   <form id="ab-form" class="friendshub-form" autocomplete="off">
+    <input id="ab-id" type="hidden">
+    <label for="ab-name">Nazwa / alias kontaktu</label><input id="ab-name" maxlength="64" required placeholder="Np. Mój partner do Gomoku">
+    <label for="ab-nickname">Nick znajomego na GRACZ.PL (opcjonalnie)</label><input id="ab-nickname" maxlength="32" placeholder="Tylko zaakceptowany znajomy">
+    <p class="friendshub-hint">Powiązanie z kontem jest możliwe wyłącznie dla zaakceptowanego znajomego. Własne kontakty spoza platformy można zapisać bez nicku.</p>
+    <label for="ab-group">Grupa / klub</label><input id="ab-group" maxlength="32" required list="ab-group-options" value="Bez grupy"><datalist id="ab-group-options"><option value="Przyjaciele"><option value="Klub graczy"><option value="Trening"><option value="Turnieje"><option value="Rodzina"><option value="Bez grupy"></datalist>
+    <label for="ab-tags">Etykiety (oddzielone przecinkami, maks. 8)</label><input id="ab-tags" maxlength="200" placeholder="szachy, warcaby, drużyna">
+    <div class="friendshub-split"><label for="ab-email">E-mail (opcjonalnie)<input id="ab-email" type="email" maxlength="160" placeholder="Dopisany przez Ciebie"></label>
+    <label for="ab-phone">Telefon (opcjonalnie)<input id="ab-phone" type="tel" maxlength="40" placeholder="Dopisany przez Ciebie"></label></div>
+    <label for="ab-note">Prywatna notatka</label><textarea id="ab-note" maxlength="1000" rows="4" placeholder="Wspólne turnieje, preferowane gry, ważne ustalenia…"></textarea>
+    <label class="friendshub-check"><input type="checkbox" id="ab-favorite"> ★ Dodaj do ulubionych</label>
+    <div class="friendshub-actions"><button id="ab-save" class="primary" type="submit">Zapisz kontakt</button><button type="button" id="ab-cancel" class="secondary">Wyczyść</button><button type="button" id="ab-delete" class="secondary" hidden>Usuń z książki</button></div>
+    <p role="status" aria-live="polite" id="ab-form-status">Twoje dane kontaktowe pozostają prywatne.</p>
+   </form>
+  </div>
+ </div>
+ <p id="ab-status" role="status" aria-live="polite"></p>
+</div>
+<div data-fh-pane="forum" class="friendshub-pane" hidden>
+ <div class="card friendshub-forum">
+  <p class="card-kicker">ARCHITEKTURA GOTOWA NA FORUM · FULL MAX PREMIUM</p><h2>Forum, kluby i społeczność</h2>
+  <p>W przyszłości zaakceptowane znajomości będzie można łączyć z profilami forum, klubami, tematami, turniejami i wspólnymi drużynami. Książka adresowa korzysta ze stabilnego identyfikatora konta, więc nie będzie potrzeby tworzenia kolejnych kont gracza.</p>
+  <div class="friendshub-roadmap"><div><strong>✓ Teraz</strong><span>Znajomi, prywatne kontakty i grupy</span></div><div><strong>✓ Teraz</strong><span>Wiadomości i zaproszenia do gier</span></div><div><strong>Planowane</strong><span>Powiązanie z profilem forum i aktywnością klubową</span></div><div><strong>Planowane</strong><span>Wspólne turnieje, społeczności i powiadomienia forum</span></div></div>
+  <p class="friendshub-hint">Integracja forum nie została jeszcze uruchomiona. Nie wyświetlamy fikcyjnego statusu online ani nieistniejących wiadomości forum.</p>
+ </div>
+</div>
 </section>
 <section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
 <div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
@@ -482,6 +546,63 @@ body.pw-success-open{overflow:hidden}
 }
 @media(prefers-reduced-motion:reduce){.site-nav .site-discover{transition:none}}
 `+premiumProfileStyles+String.raw`
+/* Friends Hub Full Max Premium: responsive, accessible and compact across tabs. */
+#player-shell [data-fh-pane][hidden]{display:none!important}
+#player-shell .friendshub-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #16b6aa;border-radius:18px;padding:17px 21px;background:radial-gradient(ellipse at 84% 10%,#12d7bb57,transparent 55%),linear-gradient(125deg,#063d49,#031d2d)}
+#player-shell .friendshub-hero h2{font-size:clamp(23px,2.2vw,30px);margin:5px 0}
+#player-shell .friendshub-hero p{font-size:12px;line-height:1.4;color:#b3d7d7;max-width:620px;margin:5px 0}
+#player-shell .friendshub-hero-badge{display:grid;place-items:center;gap:5px;min-width:135px;min-height:76px;border-radius:15px;border:1px solid #deb76d;background:#042e39;color:#ffdf91;box-shadow:0 0 22px #09e4cb30}
+#player-shell .friendshub-hero-badge strong{font-size:15px}#player-shell .friendshub-hero-badge span{font-size:9px;letter-spacing:.13em}
+#player-shell .friendshub-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:8px;border:1px solid #267d83;background:#052c39;border-radius:15px;position:sticky;top:0;z-index:4}
+#player-shell .friendshub-tabs button{min-width:0;min-height:41px;padding:8px 5px;border-radius:10px;background:#073744;border:1px solid #286f78;color:#cbe5e5;font:800 12px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .friendshub-tabs button.active{background:linear-gradient(120deg,#076c70,#084854);border-color:#41ebd8;color:#fff;box-shadow:0 0 17px #0fe2cf42}
+#player-shell .friendshub-tabs button:focus-visible{outline:3px solid #ffe2a3;outline-offset:2px}
+#player-shell .friendshub-tabs button span{color:#ffe0a0}
+#player-shell .friendshub-pane{display:grid;gap:12px}
+#player-shell .friendshub-book-top .card-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}
+#player-shell .friendshub-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#player-shell .friendshub-actions button{min-height:39px;padding:8px 12px;font-size:11px}
+#player-shell .friendshub-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:11px 0}
+#player-shell .friendshub-stat-grid>div{border:1px solid #229a9c;border-radius:12px;padding:11px;background:linear-gradient(130deg,#063f4c,#052330)}
+#player-shell .friendshub-stat-grid small{display:block;font-size:9px;letter-spacing:.07em;font-weight:800;color:#eec986}
+#player-shell .friendshub-stat-grid strong{display:block;font-size:25px;margin-top:5px}
+#player-shell .friendshub-book-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr) auto auto;gap:9px;align-items:end}
+#player-shell .friendshub-book-filters label,#player-shell .friendshub-form label{display:grid;gap:6px;font-size:12px;color:#dbeaec;font-weight:740}
+#player-shell .friendshub-book-filters input[type=search],#player-shell .friendshub-book-filters select,
+#player-shell .friendshub-form :is(input:not([type=checkbox]),textarea){width:100%;min-height:39px;border:1px solid #358b92;border-radius:10px;background:#062934;color:#f0fafb;padding:8px 10px;font-size:12px;min-width:0}
+#player-shell .friendshub-form textarea{resize:vertical;min-height:85px}
+#player-shell .friendshub-book-filters .friendshub-only-favs{display:flex;align-items:center;min-height:39px;white-space:nowrap;gap:7px}
+#player-shell .friendshub-only-favs input,#player-shell .friendshub-check input{accent-color:#31e6d3;width:16px;height:16px}
+#player-shell .friendshub-group-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#player-shell .friendshub-group-chips button{padding:6px 9px;font-size:11px;border:1px solid #3f888d;border-radius:20px;color:#cef8f5;background:#073746;cursor:pointer}
+#player-shell .friendshub-group-chips button[aria-pressed=true]{background:#087c75;color:#fff;border-color:#29ddbe}
+#player-shell .friendshub-book-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,1fr);gap:12px;align-items:start}
+#player-shell .friendshub-contact-list{display:grid;gap:9px}
+#player-shell .friendshub-contact{padding:11px 12px;border:1px solid #327c85;background:linear-gradient(125deg,#0a4650,#052734);border-radius:12px;display:grid;gap:7px}
+#player-shell .friendshub-contact-head{display:flex;align-items:center;gap:9px;justify-content:space-between;min-width:0}
+#player-shell .friendshub-contact-name{font-weight:850;font-size:15px;overflow-wrap:anywhere}
+#player-shell .friendshub-contact-badge{display:inline-flex;flex-wrap:wrap;gap:6px}
+#player-shell .friendshub-contact-badge span{color:#f5d38a;font-size:10px;border:1px solid #4d8286;border-radius:18px;padding:3px 7px}
+#player-shell .friendshub-contact-sub{font-size:11px;color:#aed3d4;overflow-wrap:anywhere}
+#player-shell .friendshub-contact-controls{display:flex;gap:6px;flex-wrap:wrap}
+#player-shell .friendshub-contact-controls button{border:1px solid #3e8c92;border-radius:8px;padding:6px 9px;min-height:32px;color:#def5f4;background:#0a4450;font:750 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .friendshub-contact-controls button:hover{background:#0b6b6d}
+#player-shell .friendshub-contact-controls button:disabled{opacity:.55;cursor:default}
+#player-shell .friendshub-form{display:grid;gap:7px}
+#player-shell .friendshub-form label{margin-top:5px}
+#player-shell .friendshub-form .friendshub-check{display:flex;align-items:center;margin:7px 0;color:#ffdb94}
+#player-shell .friendshub-form .friendshub-split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#player-shell .friendshub-hint{color:#9ebec6;font-size:11px;line-height:1.5}
+#player-shell .friendshub-pagination{display:flex;align-items:center;gap:10px;justify-content:center;margin:12px 0 0}
+#player-shell .friendshub-pagination span{font-size:11px;color:#b6ced1}
+#player-shell .friendshub-roadmap{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin:15px 0}
+#player-shell .friendshub-roadmap div{padding:14px;border:1px solid #377a80;border-radius:13px;background:#07323f;display:grid;gap:6px}
+#player-shell .friendshub-roadmap strong{color:#f6d08c;font-size:12px}
+#player-shell .friendshub-roadmap span{font-size:12px}
+#player-shell .friendshub-forum h2{color:#f4fcff}
+@media(max-width:1180px){#player-shell .friendshub-book-grid{grid-template-columns:1fr}#player-shell .friendshub-book-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .friendshub-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){#player-shell .friendshub-hero{padding:13px}#player-shell .friendshub-hero-badge{display:none}#player-shell .friendshub-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:6px;gap:6px}#player-shell .friendshub-tabs button{min-height:41px}#player-shell .friendshub-stat-grid{gap:6px}#player-shell .friendshub-stat-grid>div{padding:9px}#player-shell .friendshub-book-filters{grid-template-columns:1fr}#player-shell .friendshub-book-grid{grid-template-columns:1fr}#player-shell .friendshub-form .friendshub-split,#player-shell .friendshub-roadmap{grid-template-columns:1fr}#player-shell .friendshub-contact-controls button{min-height:40px}}
+`+String.raw`
 /* Compact v2: consistent density on EVERY player section.
    Applied after premiumProfileStyles so profile tabs/cards follow the same scale.
    Geometry-only; no zoom/transform or modification of game/account logic. */
@@ -759,6 +880,7 @@ function friendRow(nickname,description,actions){
    button.setAttribute('aria-label',label+': '+nickname);
    button.addEventListener('click',async()=>{
     if(action==='message'){void openSocialContact('messages',nickname);return;}
+    if(action==='book'){void abOpenFriend(nickname);return;}
     if(action==='challenge'){void openSocialContact('challenges',nickname);return;}
     button.disabled=true;
     try{await api('friends/action',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -789,7 +911,7 @@ async function refreshFriends(){
   $('friends-incoming-count').textContent=String(incoming.length);
   $('friends-outgoing-count').textContent=String(outgoing.length);
   renderFriendList('friends-list',accepted,'Nie masz jeszcze znajomych.','Znajomy',
-   [{action:'message',label:'Napisz'},{action:'challenge',label:'Zaproś do gry'},{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
+   [{action:'book',label:'Wizytówka'},{action:'message',label:'Napisz'},{action:'challenge',label:'Zaproś do gry'},{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-incoming',incoming,'Brak nowych zaproszeń.','Zaprasza Cię do znajomych',
    [{action:'accept',label:'Akceptuj'},{action:'decline',label:'Odrzuć'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-outgoing',outgoing,'Nie masz oczekujących zaproszeń.','Oczekuje na odpowiedź',
@@ -797,6 +919,7 @@ async function refreshFriends(){
   renderFriendList('friends-blocked',result.blocked,'Lista zablokowanych jest pusta.','Zablokowany użytkownik',
    [{action:'unblock',label:'Odblokuj'}]);
   friendsStatus('Znajomi: '+accepted.length+' · Zaproszenia: '+incoming.length+' · Wysłane: '+outgoing.length+'.');
+  fhUpdateFromFriends(result);
   return result;
  }catch(error){
   friendsStatus(error.message,true);
@@ -1318,6 +1441,240 @@ $('export-profile').addEventListener('click',()=>{
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
  notice('Przygotowano plik JSON z danymi profilu.');
+});
+
+
+// Friends Hub Full Max Premium — account-scoped address book, lazy loaded.
+let abState={contacts:[],groups:[],total:0,page:0,pageSize:60},abReady=false,abSearchTimer=null;
+function fhUpdateFromFriends(result){
+ const badge=$('fh-requests-badge');
+ if(!badge)return;
+ const incoming=(result.connections||[]).filter(x=>x.status==='pending'&&x.direction==='incoming').length;
+ badge.textContent=incoming?'('+incoming+')':'';
+}
+function fhTab(tab,skipLoad=false){
+ for(const b of document.querySelectorAll('[data-fh-tab]')){
+  const active=b.dataset.fhTab===tab;b.classList.toggle('active',active);
+  b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
+ }
+ for(const pane of document.querySelectorAll('[data-fh-pane]'))pane.hidden=pane.dataset.fhPane!==tab;
+ if(tab==='book'&&sessionConfirmed&&!skipLoad)void abLoad(0);
+}
+document.querySelectorAll('[data-fh-tab]').forEach(b=>b.addEventListener('click',()=>fhTab(b.dataset.fhTab)));
+function abMessage(text){$('ab-status').textContent=text}
+const abErrors={TYLKO_ZNAJOMI:'Powiązać można wyłącznie zaakceptowanego, niezablokowanego znajomego.',
+ POPRAW_DANE_KONTAKTU:'Sprawdź dane: nazwa, etykiety, e-mail, telefon i maksymalną długość notatki.',
+ KONTAKT_JUZ_ISTNIEJE:'Ten znajomy jest już w Twojej książce. Odszukaj go i edytuj wpis.',
+ KONTAKT_NIE_ZNALEZIONY:'Kontakt został już usunięty lub jest niedostępny.',
+ LIMIT_KONTAKTOW:'Osiągnięto limit 2000 kontaktów w książce.',
+ BRAK_SESJI:'Sesja wygasła. Zaloguj się ponownie.',
+ ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj ponownie później.'};
+async function abApi(path,options={}){
+ const res=await fetch('/auth/'+path,{credentials:'same-origin',cache:'no-store',
+  headers:{Accept:'application/json',...(options.headers||{})},...options});
+ let data={};try{data=await res.json()}catch{}
+ if(!res.ok||!data.ok)throw Error(abErrors[data.error]||'Nie udało się zapisać lub pobrać kontaktów.');
+ return data;
+}
+function abValueText(id){return $(id).value.trim()}
+function abReset(focus=false){
+ $('ab-form').reset();$('ab-id').value='';$('ab-group').value='Bez grupy';
+ $('ab-nickname').disabled=false;$('ab-delete').hidden=true;
+ $('ab-form-title').textContent='Dodaj kontakt';$('ab-form-status').textContent='Twoja prywatna wizytówka.';
+ if(focus)$('ab-name').focus();
+}
+function abPopulate(entry){
+ $('ab-id').value=entry.id||'';
+ $('ab-name').value=entry.name||'';
+ $('ab-nickname').value=entry.nickname||'';
+ $('ab-nickname').disabled=Boolean(entry.id);
+ $('ab-email').value=entry.email||'';$('ab-phone').value=entry.phone||'';
+ $('ab-note').value=entry.note||'';$('ab-group').value=entry.group||'Bez grupy';
+ $('ab-tags').value=(entry.tags||[]).join(', ');
+ $('ab-favorite').checked=entry.favorite===true;
+ $('ab-delete').hidden=!entry.id;
+ $('ab-form-title').textContent='Edytuj: '+(entry.name||'Kontakt');
+ $('ab-form-status').textContent='Notatki i dane kontaktowe są prywatne.';
+ $('ab-form').scrollIntoView({behavior:'smooth',block:'nearest'});
+ $('ab-name').focus();
+}
+function abRead(){
+ const tags=[...new Set(abValueText('ab-tags').split(',').map(x=>x.trim()).filter(Boolean))];
+ if(tags.length>8||tags.some(x=>x.length>24))throw Error('Podaj maksymalnie 8 etykiet, każda do 24 znaków.');
+ const item={name:abValueText('ab-name'),nickname:abValueText('ab-nickname'),
+  email:abValueText('ab-email'),phone:abValueText('ab-phone'),
+  note:abValueText('ab-note'),group:abValueText('ab-group')||'Bez grupy',
+  tags,favorite:$('ab-favorite').checked};
+ if(!item.name||item.name.length>64)throw Error('Podaj nazwę kontaktu do 64 znaków.');
+ const id=$('ab-id').value;if(id)item.id=id;
+ return item;
+}
+function abControl(label,callback,disabled=false){
+ const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.disabled=disabled;
+ if(!disabled)btn.addEventListener('click',callback);
+ return btn;
+}
+function abTagChip(text){
+ const chip=document.createElement('span');chip.textContent=text;return chip;
+}
+function abRender(){
+ const container=$('ab-list');container.replaceChildren();
+ $('ab-total').textContent=String(abState.total);
+ $('ab-groups-count').textContent=String(abState.groups.length);
+ $('ab-favorites-count').textContent=String(abState.favoritesTotal||0);
+ $('ab-prev').disabled=abState.page<=0;
+ $('ab-next').disabled=(abState.page+1)*abState.pageSize>=abState.total;
+ $('ab-page-status').textContent=abState.total?'Strona '+(abState.page+1)+' / '+Math.ceil(abState.total/abState.pageSize):'Brak kontaktów';
+ if(!abState.contacts.length){
+  const p=document.createElement('p');p.className='friend-empty';p.textContent=
+   'Nie znaleziono kontaktów. Dodaj pierwszy wpis lub zmień filtry.';container.append(p);
+ }
+ for(const item of abState.contacts){
+  const card=document.createElement('article');card.className='friendshub-contact';
+  const top=document.createElement('div');top.className='friendshub-contact-head';
+  const title=document.createElement('strong');title.className='friendshub-contact-name';
+  title.textContent=(item.favorite?'★ ':'')+item.name;top.append(title);
+  const group=document.createElement('span');group.className='friendshub-contact-sub';group.textContent=item.group;
+  top.append(group);card.append(top);
+  const sub=document.createElement('div');sub.className='friendshub-contact-sub';
+  sub.textContent=item.linked?
+   '@'+item.nickname+(item.connected?' · Znajomy GRACZ.PL':' · Brak aktywnej znajomości'):
+   'Prywatny kontakt · bez połączenia z kontem gracza';
+  card.append(sub);
+  if(item.tags.length){
+   const tags=document.createElement('div');tags.className='friendshub-contact-badge';
+   for(const label of item.tags)tags.append(abTagChip(label));
+   card.append(tags);
+  }
+  const controls=document.createElement('div');controls.className='friendshub-contact-controls';
+  controls.append(abControl('Edytuj',()=>abPopulate(item)));
+  controls.append(abControl(item.favorite?'Usuń ★':'Ulubione ★',async()=>{
+   try{
+    await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({...item,id:item.id,group:item.group,favorite:!item.favorite})});
+    await abLoad(abState.page);
+   }catch(e){abMessage(e.message)}
+  }));
+  if(item.connected){
+   controls.append(abControl('Napisz',()=>void openSocialContact('messages',item.nickname)));
+   controls.append(abControl('Zaproś do gry',()=>void openSocialContact('challenges',item.nickname)));
+  }
+  card.append(controls);container.append(card);
+ }
+}
+function abRenderGroups(){
+ const select=$('ab-group-filter'),current=select.value;
+ const fixed=document.createElement('option');fixed.value='';fixed.textContent='Wszystkie grupy';
+ select.replaceChildren(fixed);
+ const chips=$('ab-group-chips');chips.replaceChildren();
+ for(const item of abState.groups){
+  const opt=document.createElement('option');opt.value=item.name;opt.textContent=item.name+' ('+item.count+')';select.append(opt);
+  const chip=abControl(item.name+' · '+item.count,()=>{select.value=item.name;void abLoad(0)});
+  chip.setAttribute('aria-pressed',String(current===item.name));chips.append(chip);
+ }
+ select.value=abState.groups.some(x=>x.name===current)?current:'';
+ for(const c of chips.children)c.setAttribute('aria-pressed',String(c.textContent.startsWith(select.value+' · ')&&select.value!==''));
+}
+async function abLoad(page=0){
+ if(!sessionConfirmed)return;
+ const query=new URLSearchParams({page:String(page),query:abValueText('ab-search'),
+  group:$('ab-group-filter').value,favorites:$('ab-favorites-filter').checked?'1':'0'});
+ abMessage('Wczytywanie prywatnej książki adresowej…');
+ try{
+  const data=await abApi('address-book?'+query.toString());
+  abState=data;abReady=true;abRender();abRenderGroups();
+  abMessage('Kontakty wczytane. Edycja wpisów nie zmienia listy znajomych ani ustawień innych graczy.');
+ }catch(e){abMessage(e.message)}
+}
+async function abOpenFriend(nickname){
+ $('ab-search').value=nickname;
+ fhTab('book',true);
+ $('ab-group-filter').value='';
+ $('ab-favorites-filter').checked=false;
+ await abLoad(0);
+ const found=abState.contacts.find(x=>x.linked&&x.nickname.toLowerCase()===nickname.toLowerCase());
+ if(found){abPopulate(found);return}
+ abReset();
+ $('ab-nickname').value=nickname;$('ab-name').value=nickname;
+ $('ab-form-title').textContent='Dodaj znajomego: '+nickname;
+ $('ab-name').focus();
+}
+$('ab-new').addEventListener('click',()=>{fhTab('book');abReset(true)});
+$('ab-cancel').addEventListener('click',()=>abReset(true));
+$('ab-refresh').addEventListener('click',()=>void abLoad(abState.page));
+$('ab-prev').addEventListener('click',()=>void abLoad(Math.max(0,abState.page-1)));
+$('ab-next').addEventListener('click',()=>void abLoad(abState.page+1));
+$('ab-group-filter').addEventListener('change',()=>void abLoad(0));
+$('ab-favorites-filter').addEventListener('change',()=>void abLoad(0));
+$('ab-search').addEventListener('input',()=>{
+ if(abSearchTimer)clearTimeout(abSearchTimer);
+ abSearchTimer=setTimeout(()=>void abLoad(0),260);
+});
+$('ab-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const button=$('ab-save');if(!sessionConfirmed)return;
+ let record;try{record=abRead()}catch(e){$('ab-form-status').textContent=e.message;return}
+ button.disabled=true;$('ab-form-status').textContent='Zapisywanie…';
+ try{
+  await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});
+  abReset();$('ab-form-status').textContent='Kontakt zapisany. Tylko Ty widzisz te informacje.';
+  await abLoad(0);
+ }catch(e){$('ab-form-status').textContent=e.message}
+ finally{button.disabled=false}
+});
+$('ab-delete').addEventListener('click',async()=>{
+ const id=$('ab-id').value;if(!id)return;
+ if(!window.confirm('Usunąć prywatną wizytówkę z książki adresowej? To nie usuwa znajomości ani wiadomości.'))return;
+ const button=$('ab-delete');button.disabled=true;
+ try{
+  await abApi('address-book',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  abReset();await abLoad(0);abMessage('Wpis został usunięty z Twojej książki.');
+ }catch(e){$('ab-form-status').textContent=e.message}
+ finally{button.disabled=false}
+});
+$('ab-export').addEventListener('click',async()=>{
+ if(!window.confirm('Eksport zawiera prywatne dane, w tym notatki i telefony. Zapisz plik w bezpiecznym miejscu. Kontynuować?'))return;
+ const button=$('ab-export');button.disabled=true;
+ try{
+  const contacts=[];
+  for(let page=0;page<34;page++){
+   const d=await abApi('address-book?page='+page);
+   contacts.push(...d.contacts);
+   if(contacts.length>=d.total||!d.contacts.length)break;
+  }
+  const data={format:'gracz-address-book-v1',exportedAt:new Date().toISOString(),contacts};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download='gracz-pl-prywatna-ksiazka-adresowa.json';
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  abMessage('Przygotowano prywatną kopię '+contacts.length+' kontaktów.');
+ }catch(e){abMessage(e.message)}
+ finally{button.disabled=false}
+});
+$('ab-import-trigger').addEventListener('click',()=>$('ab-import-file').click());
+$('ab-import-file').addEventListener('change',async event=>{
+ const file=event.target.files?.[0];event.target.value='';
+ if(!file)return;
+ if(file.size>2*1024*1024){abMessage('Plik jest za duży (maksymalnie 2 MB).');return}
+ let items;
+ try{
+  const data=JSON.parse(await file.text());
+  if(data.format!=='gracz-address-book-v1'||!Array.isArray(data.contacts))throw Error('Nieobsługiwany format');
+  items=data.contacts.slice(0,40);
+  if(!items.length)throw Error('Brak kontaktów w pliku');
+ }catch(e){abMessage('Nieprawidłowy plik książki adresowej: '+e.message);return}
+ if(!window.confirm('Zaimportować do 40 kontaktów? Istniejące wpisy nie będą nadpisywane. Dane z pliku zostaną zapisane wyłącznie na Twoim koncie.'))return;
+ let ok=0,failed=0;
+ for(const item of items){
+  try{
+   await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:item.name,nickname:item.linked?item.nickname||'':'',
+     email:item.email||'',phone:item.phone||'',note:item.note||'',
+     group:item.group||'Bez grupy',tags:item.tags||[],favorite:item.favorite===true})});
+   ok++;
+  }catch{failed++}
+ }
+ await abLoad(0);abMessage('Import zakończony: '+ok+' zapisanych, '+failed+' pominiętych (duplikaty lub niedozwolone powiązania).');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
