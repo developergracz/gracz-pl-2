@@ -144,6 +144,10 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/@media\(max-width:560px\)/);assert.match(css,/aspect-ratio:1/);
  assert.match(css,/\.cell\.p1\.occupied::after/);
  assert.match(css,/\.cell\.p2\.occupied::after/);
+ assert.match(css,/R39: Full Max Premium — only the decisive five winning stones change colour/);
+ assert.match(css,/\.board \.cell\.win-line\.p1\.occupied::after\{/);
+ assert.match(css,/\.board \.cell\.win-line\.p2\.occupied::after\{/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.board \.cell\.win-line\.occupied::after\{animation:none\}\}/);
  assert.match(css,/#edf0ec/); // pearl white board, no dark wooden board
  assert.match(css,/\.boardframe\{[^}]*background:linear-gradient/);
  assert.match(css,/@media\(max-width:800px\)/);
@@ -371,10 +375,32 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  get('training-time').value='7'; // Browser <select> defaults to the selected 7-minute option.
  const executable=served('/konto/gomoku/app.js').body.replace(/\}\)\(\);\s*$/,
-  'globalThis.__gomokuTest={state,render,restart};})();');
+  'globalThis.__gomokuTest={state,render,restart,winningFive};})();');
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
  new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
+ // All four Gomoku directions, both colours, exact five rather than all matching stones.
+ for(const [dr,dc] of [[1,0],[0,1],[1,1],[1,-1]]){
+  for(const side of [1,2]){
+   const b=Array(225).fill(0),cells=[];
+   for(let k=0;k<5;k++){
+    const index=(4+k*dr)*15+4+k*dc;
+    b[index]=side;cells.push(index);
+   }
+   const line=context.__gomokuTest.winningFive(b,cells[4],side);
+   assert.deepEqual(Array.from(line),cells,
+    'Winning five are selected in all directions without altering player colour');
+   b[cells[0]]=0;
+   assert.equal(context.__gomokuTest.winningFive(b,cells[4],side).length,0,
+    'Four in a row are not marked as a win');
+  }
+ }
+ const longer=Array(225).fill(0);
+ for(let c=3;c<=8;c++)longer[7*15+c]=2;
+ assert.equal(context.__gomokuTest.winningFive(longer,7*15+8,2).length,5,
+  'An overline highlights exactly five contiguous stones');
+ assert.equal(context.__gomokuTest.winningFive(longer,-1,2).length,0,
+  'Timed wins without a decisive five do not highlight stones');
  // Premium tutorial opens centrally, independent of the live game state.
  get('howto-open').listeners.click();
  assert.equal(get('howto-modal').hidden,false,'Jak grać opens the centered Premium tutorial');
@@ -590,6 +616,19 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('game-result-modal').hidden,true);
  context.__gomokuTest.render();
  assert.equal(get('game-result-modal').hidden,true,'Repeated polling must not reopen dismissed result');
+ // The authoritative ONLINE winner highlights five only after a real winning row exists.
+ const onlineWinners=[7*15+4,7*15+5,7*15+6,7*15+7,7*15+8];
+ for(const index of onlineWinners)match.state.board[index]=2;
+ match.state.last=onlineWinners[4];
+ context.__gomokuTest.render();
+ assert.equal(get('board').children.filter(cell=>cell.classes.has('win-line')).length,5,
+  'Exactly five winning white stones are highlighted in the online match');
+ assert.ok(onlineWinners.every(index=>get('board').children[index].classes.has('win-line')));
+ for(const index of onlineWinners)match.state.board[index]=0;
+ match.state.last=-1;
+ context.__gomokuTest.render();
+ assert.equal(get('board').children.filter(cell=>cell.classes.has('win-line')).length,0,
+  'Online highlight disappears after win line no longer exists');
  match.state.winner=1;
  context.__gomokuTest.render();
  assert.equal(get('game-result-title').textContent,'Wygrałeś partię!');
@@ -619,16 +658,28 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('game-result-modal').hidden,true);
  assert.equal(get('move-count').textContent,'Ruchy: 0');
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
- training.winner=1;context.__gomokuTest.render();
+ const trainingWinners=[8*15+3,8*15+4,8*15+5,8*15+6,8*15+7];
+ training.board.fill(0);
+ for(const index of trainingWinners)training.board[index]=1;
+ training.last=trainingWinners[4];training.winner=1;
+ context.__gomokuTest.render();
+ assert.equal(get('board').children.filter(cell=>cell.classes.has('win-line')).length,5,
+  'Black training victory highlights exactly the winning five');
+ assert.ok(trainingWinners.every(index=>get('board').children[index].classes.has('win-line')));
+ assert.equal(get('board').children[trainingWinners[4]].classes.has('p1'),true);
  assert.equal(get('game-result-title').textContent,'Wygrałeś z komputerem!');
  assert.equal(get('turn-label').textContent,'Partia zakończona');
  assert.equal(get('board-help').textContent,'Wygrałeś partię!');
  training.winner=3;context.__gomokuTest.render();
+ assert.equal(get('board').children.filter(cell=>cell.classes.has('win-line')).length,0,
+  'Draw removes win-line styling even when five same-colour stones remain');
  assert.equal(get('game-result-title').textContent,'Remis!');
  assert.equal(get('turn-label').textContent,'Partia zakończona');
  assert.equal(get('board-help').textContent,'Remis — partia zakończona.');
  // Both clocks end the game on time and prevent further moves.
  get('restart').listeners.click();
+ assert.equal(get('board').children.filter(cell=>cell.classes.has('win-line')).length,0,
+  'New match clears previous winning-stone colours');
  assert.equal(get('clock-1').textContent,'07:00','New match resets each clock');
  fakeTime+=600000;intervals[0]();
  assert.equal(get('clock-1').textContent,'07:00','Ten idle minutes before the opening must cost no human time');
