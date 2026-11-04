@@ -1484,6 +1484,7 @@ function switchSection(name){
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
  if(name==='security'&&sessionConfirmed)void securityLoad();
+ if(name==='privacy'&&sessionConfirmed)void privacyLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -2106,6 +2107,127 @@ $('sec-export-events').addEventListener('click',()=>{
  const a=document.createElement('a');a.href=url;a.download='gracz-pl-historia-bezpieczenstwa.csv';
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  securityNotice('Wyeksportowano dostępne zdarzenia bezpieczeństwa.');
+});
+
+
+// Full Max Premium Privacy Center — one source of truth, server-enforced policies.
+const privacyFields=['discoverable','friendRequests','friendMessages','gameInvites','showOnline',
+ 'publicProfile','showStats','showCountry','showBadges'];
+let privacySource=null,privacyLoading=false,privacyTabName='overview',privacySaving=false;
+function privacyTab(name){
+ privacyTabName=name;
+ for(const button of document.querySelectorAll('[data-priv-tab]')){
+  const active=button.dataset.privTab===name;button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ }
+ for(const pane of document.querySelectorAll('[data-priv-pane]'))pane.hidden=pane.dataset.privPane!==name;
+}
+function privacyNotice(message,error=false){
+ const item=$('priv-status');item.textContent=message;item.classList.toggle('priv-error',error);
+}
+function privacyValues(){
+ const out={};for(const key of privacyFields)out[key]=$('priv-'+key).checked;
+ return out;
+}
+function privacyFill(values){
+ for(const key of privacyFields)$('priv-'+key).checked=values[key]===true;
+ privacyRepaint();
+}
+function privacyDirty(){
+ if(!privacySource)return false;
+ const current=privacyValues();
+ return privacyFields.some(key=>privacySource[key]!==current[key]);
+}
+function privacyRepaint(){
+ const x=privacyValues();
+ $('priv-metric-profile').textContent=x.publicProfile?'Publiczny':'Prywatny';
+ $('priv-metric-search').textContent=x.discoverable?'Widoczny':'Ukryty';
+ $('priv-metric-online').textContent=x.showOnline?'Widoczny':'Niewidoczny';
+ $('priv-metric-contact').textContent=
+  [x.friendRequests,x.friendMessages,x.gameInvites].filter(Boolean).length+'/3 włączone';
+ const state=$('priv-save-state');
+ state.textContent=!privacySource?'Nie wczytano ustawień':privacyDirty()?'Masz niezapisane zmiany':'Wszystkie ustawienia zapisane';
+ $('priv-save').disabled=!privacySource||!privacyDirty()||privacySaving;
+ $('priv-reset').disabled=!privacySource||!privacyDirty()||privacySaving;
+ const badge=$('priv-showBadges');
+ badge.disabled=!x.showStats;
+ badge.closest('.priv-option').title=!x.showStats?'Odznaki są publiczne tylko przy włączonych statystykach':'';
+}
+async function privacyLoad(){
+ if(!sessionConfirmed||privacyLoading||privacySaving)return;
+ privacyLoading=true;privacyNotice('Wczytywanie ustawień z konta…');
+ try{
+  const result=await api('privacy-center');
+  privacySource=result.preferences;privacyFill(privacySource);
+  privacyNotice('Ustawienia wczytane z serwera. Wprowadź zmiany i wybierz „Zapisz ustawienia”.');
+ }catch(error){privacyNotice(error.message,true)}
+ finally{privacyLoading=false}
+}
+for(const key of privacyFields)$('priv-'+key).addEventListener('change',privacyRepaint);
+document.querySelectorAll('[data-priv-tab]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privTab)));
+document.querySelectorAll('[data-priv-goto]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privGoto)));
+const privacyPresets={
+ private:{discoverable:false,friendRequests:false,friendMessages:false,gameInvites:false,showOnline:false,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+ friends:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+ open:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
+  publicProfile:true,showStats:true,showCountry:false,showBadges:true}
+};
+document.querySelectorAll('[data-priv-preset]').forEach(button=>button.addEventListener('click',()=>{
+ if(!privacySource){privacyNotice('Najpierw wczytaj zapisane ustawienia.',true);return;}
+ privacyFill(privacyPresets[button.dataset.privPreset]);
+ privacyNotice('Wybrano zestaw ustawień. Aby go włączyć, kliknij „Zapisz ustawienia”.');
+}));
+$('priv-reset').addEventListener('click',()=>{
+ if(!privacySource)return;privacyFill(privacySource);
+ privacyNotice('Przywrócono ostatnio zapisane ustawienia.');
+});
+$('priv-save').addEventListener('click',async()=>{
+ if(!sessionConfirmed||!privacySource||privacySaving)return;
+ privacySaving=true;privacyRepaint();privacyNotice('Bezpieczne zapisywanie ustawień…');
+ try{
+  const result=await api('privacy-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(privacyValues())});
+  privacySource=result.preferences;privacyFill(privacySource);
+  privacyNotice('Ustawienia prywatności zostały zapisane na Twoim koncie.');
+ }catch(error){privacyNotice(error.message,true)}
+ finally{privacySaving=false;privacyRepaint()}
+});
+function privacyFriends(tab){
+ switchSection('friends');fhTab(tab);
+}
+$('priv-manage-friends').addEventListener('click',()=>privacyFriends('overview'));
+$('priv-manage-blocks').addEventListener('click',()=>privacyFriends('blocked'));
+$('priv-open-addressbook').addEventListener('click',()=>privacyFriends('book'));
+$('priv-open-friends').addEventListener('click',()=>privacyFriends('book'));
+$('priv-open-security').addEventListener('click',()=>switchSection('security'));
+$('priv-open-editor').addEventListener('click',()=>switchSection('profile'));
+$('priv-edit-card').addEventListener('click',()=>switchSection('profile'));
+$('priv-preview-profile').addEventListener('click',async()=>{
+ if(!privacySource?.publicProfile){
+  privacyNotice('Twój profil publiczny jest wyłączony. Najpierw włącz go i zapisz ustawienia.');return;
+ }
+ try{
+  const data=await api('profile/premium');
+  if(typeof data.publicUrl==='string'&&data.publicUrl.startsWith('/konto/profil/'))
+   window.open(data.publicUrl,'_blank','noopener,noreferrer');
+ }catch(error){privacyNotice(error.message,true)}
+});
+$('priv-export').addEventListener('click',async()=>{
+ if(!sessionConfirmed)return;
+ const status=$('priv-export-status'),button=$('priv-export');
+ button.disabled=true;status.textContent='Przygotowywanie prywatnego eksportu…';
+ try{
+  const data=await api('privacy-center/export');
+  const link=document.createElement('a');
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  link.href=url;link.download='gracz-pl-prywatnosc-ustawienia.json';
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  status.textContent='Pobrano ustawienia i podstawowe dane profilu. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.';
+ }catch(error){status.textContent=error.message}
+ finally{button.disabled=false}
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
