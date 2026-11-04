@@ -152,7 +152,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
 <button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
 </div></aside></div>
-<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Tura: czarne</span></div>
+<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Ruch: czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
@@ -1464,7 +1464,7 @@ function render(){
  // R28: bottom indicators reflect the actual match result, never a phantom next turn.
  const winner=online?(m?.state?.winner||0):state.winner;
  const ended=winner!==0;
- let bottomTurn='Tura: '+(turn===1?'czarne':'białe');
+ let bottomTurn='Ruch: '+(turn===1?'czarne':'białe');
  let bottomHelp=online?
   (m?.state?.turn===m?.player?'Wybierz wolne pole, aby wykonać ruch.':'Czekaj na ruch przeciwnika.'):
   (state.thinking?'Komputer analizuje ruch…':'Wybierz wolne pole, aby postawić czarny kamień.');
