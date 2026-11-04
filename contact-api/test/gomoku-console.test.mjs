@@ -93,12 +93,20 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(html,/Akceptuj/);assert.match(html,/Odrzuć/);
  assert.match(html,/aria-labelledby="game-result-title"/);
  assert.match(html,/Rozpocznij nową partię/);
- assert.match(html,/Zobacz zakończoną planszę/);
+ assert.match(html,/<button type="button" class="result-review" id="game-result-review">Zobacz zakończoną planszę<\/button>/);
+ assert.equal((html.match(/id="game-result-review"/g)||[]).length,1,
+  'Premium review action preserves the single existing button and event handler');
  assert.match(html,/<option value="expert">/);
  assert.match(html,/<option value="master" selected>/);
  assert.match(html,/<option value="hard">/);
  assert.match(html,/<option value="normal">/);
  const css=served('/konto/gomoku/styl.css').body;
+ assert.match(css,/R33: restrained Full Max Premium secondary action for reviewing the finished board/);
+ assert.match(css,/\.result-review\{position:relative;display:inline-flex;align-items:center;justify-content:center/);
+ assert.match(css,/width:min\(100%,310px\);min-height:43px/);
+ assert.match(css,/border:1px solid #d6aa61;border-radius:12px/);
+ assert.match(css,/\.result-review:focus-visible\{outline:2px solid #9af5e7;outline-offset:3px\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.result-review\{transition:none\}/);
  assert.match(css,/@media\(max-width:560px\)/);assert.match(css,/aspect-ratio:1/);
  assert.match(css,/\.cell\.p1\.occupied::after/);
  assert.match(css,/\.cell\.p2\.occupied::after/);
