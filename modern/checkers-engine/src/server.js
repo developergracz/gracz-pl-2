@@ -45,6 +45,10 @@ export function createGameHttpServer({
   realtime = new RealtimeHub(),
 }) {
   if (!store) throw new TypeError("Magazyn sesji jest wymagany.");
+  // Fail closed: production game sessions must never trust x-player-id from the client.
+  if (process.env.NODE_ENV === "production" && (!auth || typeof auth.verify !== "function")) {
+    throw new TypeError("Produkcyjny serwer gry wymaga aktywnego modułu uwierzytelniania.");
+  }
   return createServer(async (request, response) => {
     try {
       trafficGuard.assertAllowed(request);

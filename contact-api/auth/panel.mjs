@@ -1,3 +1,4 @@
+import {enhanceProfileHtml,premiumProfileStyles,premiumProfileScript,servePublicProfile} from './profile-premium-ui.mjs';
 const headers = {
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   'X-Content-Type-Options': 'nosniff',
@@ -5,15 +6,13 @@ const headers = {
   'Referrer-Policy': 'no-referrer',
   'Cache-Control': 'no-store',
 };
-const html=String.raw`<!doctype html>
+const html=enhanceProfileHtml(String.raw`<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Panel Gracza Full Max Premium — gracz.pl</title>
 <link rel="stylesheet" href="/konto/panel/styl.css"><script src="/konto/panel/app.js" defer></script></head>
 <body><a class="skip" href="#content">Przejdź do treści</a>
-<header class="top"><a class="logo" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-<span class="top-tag">POLSKIE CENTRUM GRACZA <b>FULL MAX PREMIUM</b></span>
-<a class="top-link" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></header>
+<div class="site-nav"><a class="site-brand" href="https://gracz.pl/" aria-label="Strona startowa gracz.pl">gracz<span>.pl</span></a><nav aria-label="Menu główne serwisu"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/gry/tysiac/">Gry karciane</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/blog/">Blog</a><a href="https://gracz.pl/spolecznosc/">Społeczność</a><a href="https://gracz.pl/#newsletter">Newsletter</a></nav><a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></div>
 <section id="access-screen" class="access-screen" aria-live="polite">
 <div class="access-card">
 <p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p>
@@ -40,7 +39,7 @@ const html=String.raw`<!doctype html>
 <button class="nav" data-section="appearance" type="button"><span aria-hidden="true">☼</span> Wygląd i dostępność</button>
 <button class="nav" data-section="sessions" type="button"><span aria-hidden="true">▣</span> Sesje i urządzenia</button>
 <button class="nav" data-section="data" type="button"><span aria-hidden="true">▤</span> Dane i konto</button>
-</nav><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
+</nav><button class="nav create-room" id="create-room" type="button"><span aria-hidden="true">＋</span> Utwórz pokój</button><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
 <main id="content" class="main">
 <div class="masthead"><div><p class="eyebrow">CENTRUM GRACZA <span aria-hidden="true">◆</span> FULL MAX PREMIUM</p>
 <h1 id="title">Pulpit gracza</h1><p id="subtitle">Witaj w Twoim centrum rozgrywek.</p></div>
@@ -59,17 +58,62 @@ const html=String.raw`<!doctype html>
 <a class="primary link-button" href="/konto/gomoku/">Zagraj w Gomoku</a>
 <a class="secondary link-button" href="https://gracz.pl/gry/">Pozostałe gry</a></div></div>
 </section>
-<section class="view" data-panel="profile">
-<div class="card hero-card"><div class="player-avatar" id="profile-avatar" aria-hidden="true">G</div><div><p class="card-kicker">PROFIL GRACZA</p><h2 id="profile-heading">Gracz</h2><p id="profile-handle">@gracz</p></div><div class="verified">✓ E-mail potwierdzony</div></div>
-<form id="profile-form" class="card" autocomplete="on"><div class="card-heading"><div><p class="card-kicker">PERSONALIZACJA</p><h2>Twoje dane</h2></div><span class="card-note">Pola z konta</span></div>
-<div class="form-grid">
-<label>Nick gracza<input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
-<label>Adres e-mail<input id="email" type="email" disabled title="Adres potwierdzony podczas rejestracji"></label>
-<label>Nazwa wyświetlana<input id="display-name" maxlength="40" minlength="2" autocomplete="nickname" required></label>
-<label>Kraj<select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="OTHER">Inny</option></select></label>
-<label>Język<select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
-<label class="wide">O mnie<textarea id="bio" rows="4" maxlength="300" placeholder="Napisz kilka słów o sobie, ulubionych grach i stylu gry…"></textarea><small>Maksymalnie 300 znaków.</small></label></div>
-<div class="form-actions"><span id="saved-state">Dane zapisane bezpiecznie w koncie</span><button class="primary" id="save" type="submit">Zapisz profil</button></div></form></section>
+<section class="view premium-profile" data-panel="profile">
+<div class="card profile-hero-premium">
+ <div class="profile-topline"><span>✦ TWOJA STREFA · FULL MAX PREMIUM</span><span class="profile-verified">● Konto zweryfikowane</span></div>
+ <div class="profile-hero-body"><div class="profile-intro"><div class="profile-avatar-frame"><div class="profile-avatar-large" id="profile-avatar" aria-hidden="true">G</div><span class="profile-avatar-check">✓</span></div>
+ <div><p class="card-kicker">PROFIL GRACZA</p><h2 id="profile-heading">Gracz</h2><p id="profile-handle">@gracz</p><div class="profile-chips"><span id="profile-country-tag">Polska</span><span id="profile-language-tag">Polski</span><span>GRACZ.PL</span></div></div></div>
+ <div class="profile-hero-actions"><button type="button" class="primary" id="profile-edit-scroll">Edytuj wizytówkę</button><button type="button" class="secondary" data-profile-jump="appearance">Wygląd panelu</button></div></div>
+ <div class="profile-metrics">
+ <div class="profile-metric"><small>UZUPEŁNIENIE PROFILU</small><strong id="profile-completion">—</strong><progress id="profile-progress" max="100" value="0" aria-label="Stopień uzupełnienia profilu"></progress><span id="profile-next-step">Uzupełnij wizytówkę</span></div>
+ <div class="profile-metric"><small>ULUBIONE GRY</small><strong id="profile-favorites">—</strong><span>Zapisane na koncie</span></div>
+ <div class="profile-metric"><small>AKTYWNE SESJE</small><strong id="profile-sessions">—</strong><span>Zalogowane urządzenia</span></div>
+ <div class="profile-metric"><small>GRACZ OD</small><strong id="profile-joined-summary">—</strong><span>Data dołączenia</span></div>
+ </div></div>
+<div class="profile-layout"><div class="profile-main-column">
+ <form id="profile-form" class="card profile-editor" autocomplete="on">
+ <div class="card-heading"><div><p class="card-kicker">01 / PERSONALIZACJA</p><h2>Edytuj dane gracza</h2><p>Ustaw swoją wizytówkę. Edycja zapisuje się na koncie dopiero po zatwierdzeniu.</p></div><span class="profile-pill">BEZPIECZNA EDYCJA</span></div>
+ <div class="form-grid">
+ <label>Nick gracza <small>Stały identyfikator</small><input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
+ <label>Adres e-mail <small>Zweryfikowany</small><input id="email" type="email" disabled title="Adres potwierdzony podczas rejestracji"></label>
+ <label>Nazwa wyświetlana <small>Widoczna w wizytówce</small><input id="display-name" maxlength="40" minlength="2" autocomplete="nickname" required></label>
+ <label>Kraj <small>Informacja w profilu</small><select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="OTHER">Inny</option></select></label>
+ <label>Język <small>Twój język</small><select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
+ <label class="wide">O mnie <small>Twój styl gry i zainteresowania</small><textarea id="bio" rows="5" maxlength="300" placeholder="W jakie gry lubisz grać? Jakim jesteś graczem?"></textarea><small id="profile-bio-counter">0 / 300 znaków</small></label>
+ </div>
+ <div class="profile-edit-hint"><span aria-hidden="true">✦</span> Podgląd obok aktualizuje się podczas pisania. Tylko zapisane dane zostają na koncie.</div>
+ <div class="form-actions"><span id="saved-state" role="status" aria-live="polite">Dane zapisane bezpiecznie w koncie</span><div class="profile-form-buttons"><button class="secondary" id="profile-reset" type="button">Cofnij zmiany</button><button class="primary" id="save" type="submit">Zapisz profil</button></div></div>
+ </form>
+ <div class="card profile-password-card" id="profile-password-section">
+  <div class="card-heading"><div><p class="card-kicker">OCHRONA KONTA · FULL MAX PREMIUM</p><h2>Zmiana hasła</h2><p>Zmień hasło bez opuszczania panelu gracza. Po zapisaniu pozostałe zalogowane urządzenia zostaną wylogowane.</p></div><span class="profile-pill">BEZPIECZNE KONTO</span></div>
+  <form id="pw-change-form" class="profile-password-form" autocomplete="on">
+   <label for="pw-current">Obecne hasło</label><div class="profile-password-field"><input type="password" id="pw-current" autocomplete="current-password" required maxlength="256"><button type="button" data-password-toggle="pw-current" aria-label="Pokaż obecne hasło" aria-pressed="false">Pokaż</button></div>
+   <label for="pw-next">Nowe hasło</label><div class="profile-password-field"><input type="password" id="pw-next" autocomplete="new-password" minlength="15" maxlength="256" required aria-describedby="pw-hint"><button type="button" data-password-toggle="pw-next" aria-label="Pokaż nowe hasło" aria-pressed="false">Pokaż</button></div>
+   <small id="pw-hint">Co najmniej 15 znaków. Użyj unikalnego hasła, którego nie używasz w innych serwisach.</small>
+   <label for="pw-confirm">Powtórz nowe hasło</label><div class="profile-password-field"><input type="password" id="pw-confirm" autocomplete="new-password" minlength="15" maxlength="256" required><button type="button" data-password-toggle="pw-confirm" aria-label="Pokaż potwierdzenie hasła" aria-pressed="false">Pokaż</button></div>
+   <div class="form-actions"><span id="pw-change-status" role="status" aria-live="polite">Aktualne hasło nie jest wyświetlane ani zapisywane w panelu.</span><button class="primary" id="pw-change-submit" type="submit">Zmień hasło</button></div>
+  </form>
+ </div>
+ <div class="card profile-shortcuts"><p class="card-kicker">02 / CENTRUM GRACZA</p><h2>Szybkie zarządzanie</h2><div class="profile-shortcut-grid">
+ <button type="button" data-profile-jump="games"><span aria-hidden="true">♜</span><strong>Moje gry</strong><small>Ulubione tytuły</small></button>
+ <button type="button" data-profile-jump="friends"><span aria-hidden="true">♧</span><strong>Moi znajomi</strong><small>Kontakty i zaproszenia</small></button>
+ <button type="button" data-profile-jump="sessions"><span aria-hidden="true">▣</span><strong>Sesje i urządzenia</strong><small>Kontrola logowań</small></button>
+ <button type="button" data-profile-jump="data"><span aria-hidden="true">⇩</span><strong>Dane konta</strong><small>Eksport profilu</small></button></div></div>
+</div>
+<aside class="profile-side-column" aria-label="Podgląd i informacje o profilu">
+ <div class="card profile-preview-card"><p class="card-kicker">PODGLĄD NA ŻYWO</p><h2>Twoja wizytówka</h2>
+ <div class="profile-preview-inner"><div class="profile-preview-avatar" id="profile-preview-avatar" aria-hidden="true">G</div><strong id="profile-preview-name">Gracz</strong><span id="profile-preview-handle">@gracz</span><p id="profile-preview-bio">Tutaj pojawi się Twój opis gracza.</p>
+ <div class="profile-chips"><span id="profile-preview-country">Polska</span><span id="profile-preview-language">Polski</span></div></div>
+ <p class="profile-preview-caption">Podgląd widoczny tylko w Twoim panelu. Nie oznacza publicznego opublikowania profilu.</p></div>
+ <div class="card profile-account-card"><p class="card-kicker">TWOJA TOŻSAMOŚĆ</p><h2>Informacje o koncie</h2>
+ <div class="detail"><span>Nick</span><strong id="profile-info-nick">—</strong></div>
+ <div class="detail"><span>E-mail</span><strong id="profile-info-email">—</strong></div>
+ <div class="detail"><span>Dołączono</span><strong id="profile-info-joined">—</strong></div>
+ <div class="detail"><span>Status</span><strong>Potwierdzony</strong></div>
+ <button type="button" class="secondary profile-security-link" data-profile-jump="security">Bezpieczeństwo konta</button></div>
+ <div class="profile-game-links"><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a></div>
+</aside></div>
+</section>
 <section class="view" data-panel="friends">
 <div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
 <p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online wymaga przyszłej integracji. Prywatne wiadomości są dostępne w osobnej zakładce.</p>
@@ -90,7 +134,7 @@ const html=String.raw`<!doctype html>
 <p>Zablokowane osoby nie mogą wysyłać Ci zaproszeń. Możesz je odblokować w dowolnym momencie.</p><div id="friends-blocked" class="friends-items"></div></div>
 </section>
 <section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
-<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła i 2FA</span><strong>W przygotowaniu</strong></div>
+<div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
 <button class="secondary" id="security-logout" type="button">Wyloguj z tego urządzenia</button></div></section>
 <section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
@@ -139,7 +183,7 @@ const html=String.raw`<!doctype html>
 <div class="card"><p class="card-kicker">MOJA BIBLIOTEKA</p><h2>Ulubione gry</h2>
 <p>Wybierz ulubione tytuły. Gwiazdka zapisuje wybór w Twoim koncie i dodaje skrót na pulpicie.</p>
 <div class="game-grid">
-<div class="game-tile"><div class="game-emoji" aria-hidden="true">♟</div><h3>Warcaby</h3><p>Gra strategiczna</p><div class="game-actions"><a href="https://gracz.pl/gry/warcaby/">Otwórz</a><button type="button" data-favorite="warcaby" aria-pressed="false" aria-label="Dodaj Warcaby do ulubionych">☆ Ulubione</button></div></div>
+<div class="game-tile"><div class="game-emoji" aria-hidden="true">♟</div><h3>Warcaby</h3><p>Gra strategiczna</p><div class="game-actions"><a href="/konto/warcaby/">Graj teraz</a><button type="button" data-favorite="warcaby" aria-pressed="false" aria-label="Dodaj Warcaby do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">◉</div><h3>Gomoku</h3><p>Pięć w rzędzie</p><div class="game-actions"><a href="/konto/gomoku/">Graj teraz</a><a href="https://gracz.pl/gry/gomoku/">Zasady</a><button type="button" data-favorite="gomoku" aria-pressed="false" aria-label="Dodaj Gomoku do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♣</div><h3>Tysiąc</h3><p>Gra karciana</p><div class="game-actions"><a href="https://gracz.pl/gry/tysiac/">Otwórz</a><button type="button" data-favorite="tysiac" aria-pressed="false" aria-label="Dodaj Tysiąc do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♠</div><h3>Poker treningowy</h3><p>Trening rozgrywki</p><div class="game-actions"><a href="https://gracz.pl/gry/poker-treningowy/">Otwórz</a><button type="button" data-favorite="poker" aria-pressed="false" aria-label="Dodaj Poker do ulubionych">☆ Ulubione</button></div></div>
@@ -166,7 +210,19 @@ const html=String.raw`<!doctype html>
 <p>Samodzielne usunięcie konta wymaga osobnego, bezpiecznego procesu. Nie jest jeszcze dostępne w panelu.</p>
 <a class="secondary link-button" href="mailto:kontakt@gracz.pl">Kontakt z administracją</a>
 </div></section>
-<footer class="footer">© gracz.pl · Polskie Centrum Gracza · Full Max Premium</footer></main></div></body></html>`;
+<footer class="footer">© gracz.pl · Polskie Centrum Gracza · Full Max Premium</footer></main></div>
+
+<div class="pw-success-overlay" id="pw-success-overlay" hidden>
+ <section class="pw-success-modal" role="dialog" aria-modal="true" aria-labelledby="pw-success-title" aria-describedby="pw-success-message">
+  <div class="pw-success-seal" aria-hidden="true"><span>✓</span></div>
+  <p class="pw-success-kicker">GRACZ.PL · BEZPIECZEŃSTWO KONTA</p>
+  <h2 id="pw-success-title">Hasło zostało zmienione</h2>
+  <p id="pw-success-message">Twoje nowe hasło jest już aktywne. Konto jest zabezpieczone.</p>
+  <div class="pw-success-confirmed"><span aria-hidden="true">✓</span> Operacja zakończona pomyślnie</div>
+  <button class="pw-success-close" id="pw-success-close" type="button">Zamknij</button>
+ </section>
+</div>
+</body></html>`);
 const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}html{background:#03101d;color:#f4f8fc;font-family:Inter,"Segoe UI",Arial,sans-serif}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 85% 12%,#073e52b5,transparent 38%),radial-gradient(ellipse at 14% 78%,#1830527d,transparent 38%),linear-gradient(145deg,#03101b,#071927 58%,#020914)}button,input,select,textarea{font:inherit}button,a{touch-action:manipulation}a{color:inherit}.skip{position:absolute;left:-999px;top:0;z-index:5}.skip:focus{left:15px;top:15px;background:#ffd07a;color:#071421;padding:9px}.top{min-height:80px;padding:14px clamp(16px,4.5vw,80px);display:flex;align-items:center;gap:30px;justify-content:space-between;background:#021321d9;border-bottom:1px solid #326073}.logo{font-size:clamp(30px,3vw,43px);font-weight:900;letter-spacing:-2px;text-decoration:none;white-space:nowrap}.logo span{color:#e92c49}.top-tag{font-size:11px;letter-spacing:2px;color:#99c7d8;font-weight:800}.top-tag b{color:#f7cb75;margin-left:13px}.top-link{border:1px solid #e9ba62;border-radius:9px;padding:11px 16px;text-decoration:none;color:#ffdc8c;font-weight:750;white-space:nowrap}.shell{max-width:1700px;margin:auto;display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;padding:clamp(14px,2.2vw,34px)}.sidebar{min-width:0;align-self:start;border:1px solid #2c5465;border-radius:22px;background:linear-gradient(160deg,#0b2434f5,#061824f5);box-shadow:0 18px 50px #0005;overflow:hidden;position:sticky;top:15px}.identity{padding:26px 23px 19px;border-bottom:1px solid #21475b}.avatar,.player-avatar{display:grid;place-items:center;border-radius:50%;border:2px solid #eac476;color:#ffd67d;background:radial-gradient(circle at 30% 25%,#246078,#041a2b 78%);font-weight:800;box-shadow:0 0 22px #0eb9da44}.avatar{height:64px;width:64px;font-size:31px}.small,.card-kicker,.eyebrow{font-size:11px;letter-spacing:2px;color:#e5bd74;font-weight:900}.identity strong{display:block;font-size:20px;overflow-wrap:anywhere}.identity .small{margin:16px 0 7px}.status{color:#99c9d3;font-size:12px;display:flex;align-items:center;gap:8px;margin-top:12px}.status i{height:8px;width:8px;background:#3ee5ac;border-radius:50%;box-shadow:0 0 10px #3ee5ac}.sidebar nav{display:grid;gap:5px;padding:17px 10px}.nav{display:flex;gap:12px;text-align:left;width:100%;align-items:center;background:transparent;color:#b6cfd9;border:1px solid transparent;border-radius:10px;padding:13px 14px;cursor:pointer;font-weight:700;font-size:13px}.nav span{width:23px;text-align:center;font-size:19px;color:#79c9d6}.nav:hover,.nav:focus-visible{background:#17364a;color:#fff}.nav.active{background:linear-gradient(90deg,#194454,#0b2c41);color:#fff;border-color:#427587}.nav.active span{color:#ffd07a}.signout{width:calc(100% - 24px);margin:2px 12px 16px;padding:13px;border:1px solid #42677a;border-radius:10px;background:#102c3d;color:#fff;font-weight:800;cursor:pointer}.signout span{float:right}.main{min-width:0}.masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:190px;margin-bottom:18px;padding:clamp(22px,3vw,42px);border-radius:22px;border:1px solid #266779;background:linear-gradient(110deg,#0c3249e8,#06162799 65%),radial-gradient(circle at 85% 45%,#0a778a8c,transparent 50%);position:relative;overflow:hidden}.masthead:after{content:"";pointer-events:none;position:absolute;inset:0;border-radius:22px;box-shadow:inset 0 0 65px #05b5ce16}.masthead h1{font-size:clamp(32px,4.4vw,55px);line-height:1.05;margin:12px 0;color:#fff;letter-spacing:-1px}.masthead p:last-child{color:#b4cfdc;margin:0}.mark{height:124px;width:124px;border:8px double #e4b96b;border-radius:50%;display:grid;place-items:center;align-content:center;transform:rotate(8deg);color:#ffd27c;background:#082638;box-shadow:0 0 40px #dcb56632;flex:none}.mark span{font-size:55px;line-height:1}.mark small{font-size:10px;font-weight:900}.notice{padding:12px 17px;background:#112d39;border:1px solid #386578;border-radius:12px;margin-bottom:16px;color:#c8e5ed;font-size:13px}.notice[hidden]{display:none}.notice.error{border-color:#a9505d;color:#ffdadc}.view{display:none}.view.active{display:grid;gap:18px}.card{background:linear-gradient(145deg,#0a2332f6,#061925f8);border:1px solid #2c5667;box-shadow:0 10px 40px #0004;border-radius:18px;padding:clamp(19px,2.5vw,32px)}.card h2{font-size:clamp(21px,2.5vw,30px);margin:5px 0 15px}.card p{line-height:1.7;color:#b7cbd4}.card-kicker{margin:0!important;color:#e8b967!important}.hero-card{display:flex;gap:24px;align-items:center;border-color:#906d3d;background:linear-gradient(100deg,#102b3d,#071d2e)}.player-avatar{width:87px;height:87px;flex:none;font-size:44px}.hero-card h2{margin:6px 0 2px}.hero-card p{margin:0}.verified{margin-left:auto;color:#66e6b9;border:1px solid #247967;background:#0d403d73;padding:9px 14px;border-radius:50px;font-size:12px;font-weight:800;white-space:nowrap}.card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}.card-note{font-size:12px;color:#95b4c1}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.form-grid label{display:grid;align-content:start;gap:9px;color:#d9e6ed;font-size:13px;font-weight:750}.form-grid .wide{grid-column:1/-1}.form-grid input,.form-grid select,.form-grid textarea{background:#091e2c;border:1px solid #426274;color:#fff;border-radius:9px;min-height:46px;padding:12px 13px;width:100%;min-width:0;outline-offset:3px}.form-grid textarea{resize:vertical;min-height:110px}.form-grid input:disabled{background:#0b2630;color:#a4bfce;cursor:not-allowed}.form-grid small{color:#85a8b9;font-size:11px}.form-actions{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;padding-top:25px}.form-actions span{color:#8bafbb;font-size:12px}.primary,.secondary{border-radius:10px;padding:14px 20px;font-size:14px;font-weight:850;cursor:pointer}.primary{border:1px solid #ffdd95;background:linear-gradient(180deg,#ffe1a0,#dca94f);color:#101725;box-shadow:0 5px 20px #edb35f35}.primary:disabled{opacity:.65;cursor:wait}.secondary{border:1px solid #5490a2;background:#10374b;color:#f2f9fb}.link-button{display:inline-flex;text-decoration:none;margin-top:12px}.detail{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #285062;padding:18px 0;color:#b2cad5}.detail strong{color:#fff;text-align:right}.footer{padding:23px;color:#7194a8;font-size:12px;text-align:center}:focus-visible{outline:3px solid #ffd17c;outline-offset:3px}@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:static}.sidebar nav{display:flex;overflow-x:auto;gap:8px}.nav{min-width:max-content;width:auto}.identity{display:flex;align-items:center;gap:13px;padding:14px}.identity .small,.identity .status{display:none}.avatar{width:45px;height:45px;font-size:24px}.identity strong{font-size:16px}.signout{width:auto;margin:0 12px 14px}.top-tag{display:none}}@media(max-width:610px){.top{min-height:65px}.top-link{font-size:12px;padding:10px}.shell{padding:12px;gap:14px}.masthead{min-height:155px;padding:20px}.mark{width:67px;height:67px;border-width:4px}.mark span{font-size:29px}.mark small{font-size:7px}.hero-card{flex-wrap:wrap;gap:12px}.player-avatar{height:68px;width:68px;font-size:33px}.verified{margin-left:0}.form-grid{grid-template-columns:1fr}.card-heading{display:block}.card-note{display:none}.form-actions{align-items:stretch}.form-actions button{width:100%}}.access-screen{min-height:calc(100dvh - 80px);display:grid;place-items:center;padding:20px}.access-card{width:min(100%,560px);text-align:center;border-radius:22px;border:1px solid #3d7080;background:linear-gradient(145deg,#102c41,#061925);box-shadow:0 18px 50px #0007;padding:clamp(25px,5vw,45px)}.access-icon{font-size:58px;color:#efc578;margin:12px auto}.access-card h1{font-size:clamp(26px,4vw,37px);margin:12px 0}.access-card>p:not(.card-kicker){color:#b8d1dc;line-height:1.6}.access-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:15px}.access-actions .primary,.access-actions .secondary{margin-top:0}
 
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.stat{padding:20px}.stat small{font-size:10px;color:#f4c67d;font-weight:900;letter-spacing:1.2px}.stat strong{display:block;font-size:clamp(22px,3vw,36px);margin:8px 0;color:#f6fbff}.stat span{font-size:12px;color:#a6c3d0}.favorite-links,.quick-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.favorite-links a{display:inline-flex;border:1px solid #478399;background:#103849;color:#e5f6fa;padding:10px 15px;border-radius:10px;text-decoration:none;font-weight:750;font-size:13px}.quick-actions .link-button{margin-top:0}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}.game-tile{padding:19px;border:1px solid #356679;background:linear-gradient(145deg,#0c3446,#081f30);border-radius:15px}.game-tile h3{font-size:19px;margin:8px 0 4px}.game-tile p{font-size:12px;margin:4px 0 14px}.game-emoji{font-size:30px;color:#f4cb80}.game-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}.game-actions a,.game-actions button{font-size:13px;font-weight:800;color:#dff9fd;border:1px solid #548b9c;border-radius:8px;background:#123e51;padding:9px 11px;text-decoration:none;cursor:pointer}.game-actions button[aria-pressed="true"]{background:#4c3e23;color:#f8d288;border-color:#d1aa66}.appearance-form{display:grid;gap:10px}.setting{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 0;border-bottom:1px solid #284858}.setting span{display:grid;gap:6px}.setting strong{font-size:14px}.setting small{font-size:12px;color:#9db6c5}.setting select{background:#0b2939;border:1px solid #4a8090;color:#fff;border-radius:8px;padding:11px;max-width:200px}.setting input{width:22px;height:22px;accent-color:#efc77d}.session-list{margin:18px 0}.session-item{border-bottom:1px solid #285364;padding:15px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.session-item strong{font-size:13px}.session-item span{display:block;margin-top:5px;color:#a1bcca;font-size:12px}.session-item em{font-size:11px;color:#a4ecd5;font-style:normal}body.panel-compact .card{padding:14px}body.panel-compact .view.active{gap:10px}body.panel-large{font-size:18px}body.panel-large .card p,body.panel-large .nav,body.panel-large .detail,body.panel-large .setting small{font-size:1rem}body.panel-no-motion *,body.panel-no-motion *:before,body.panel-no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}@media(max-width:610px){.stats,.game-grid{grid-template-columns:1fr}.setting{flex-wrap:wrap}.session-item{align-items:flex-start}}
@@ -199,7 +255,233 @@ const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}htm
 .match-cell:disabled{cursor:default}
 .match-cell:focus-visible{outline:3px solid #ffcb6b;outline-offset:-3px}
 @media(max-width:610px){.match-board{border-width:3px}.match-board.checkers .match-cell{font-size:clamp(15px,5vw,35px)}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}`;
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}/* Player panel reference layout — 2026-11-04. Visual only; existing account logic retained. */
+.site-nav{min-height:54px;padding:8px clamp(18px,4vw,70px);display:flex;align-items:center;gap:42px;background:#001622;border-bottom:1px solid #17c4be}
+.site-brand{text-decoration:none;font-size:29px;line-height:1;font-weight:950;letter-spacing:-1.7px;color:#fff;white-space:nowrap}
+.site-brand span{color:#eb2b4a}.site-nav nav{display:flex;align-items:center;gap:clamp(18px,3vw,52px);flex-wrap:wrap}
+.site-nav nav a{text-decoration:none;color:#e6eff6;font-weight:650;font-size:clamp(13px,1.2vw,18px)}.site-nav nav a:hover{color:#65fff0}
+.top{min-height:74px;padding:12px clamp(20px,4.5vw,76px);background:#031c29;border-color:#18ccc2}
+.top-tag{color:#f3f7f9}.top-tag b{color:#f8ce65}.top-link{border-color:#e4b04d;color:#ffd772}
+.shell{max-width:1800px;grid-template-columns:minmax(0,1fr) 310px;gap:30px;padding:26px clamp(20px,2.3vw,44px)}
+.main{grid-column:1;grid-row:1}.sidebar{grid-column:2;grid-row:1;top:16px;background:linear-gradient(145deg,#07313e,#031925 72%);border:1px solid #368190;box-shadow:inset 0 0 36px #00e5de11,0 14px 42px #0006;border-radius:22px}
+.identity{padding:19px 24px 15px}.identity .small{color:#f9cb53}.identity strong{font-size:19px}.avatar,.player-avatar{border-color:#ffe08a;box-shadow:0 0 0 2px #1fe9d8,0 0 27px #16e6d96e;color:#ffe0a1}
+.sidebar nav{gap:3px;padding:12px 16px}.sidebar .nav{padding:8px 13px;font-weight:650;border-radius:12px;color:#e6f3f5}.sidebar .nav span{color:#65e8e0}
+.sidebar .nav.active{border-color:#10f3d9;background:linear-gradient(90deg,#095e63,#037277 55%,#063b49);box-shadow:inset 0 0 12px #00f9e55c,0 0 14px #00e6d85c}.sidebar .nav.active span{color:#8bfff2}
+.create-room{width:calc(100% - 34px)!important;margin:14px 17px 7px!important;justify-content:center;color:#ffdf81!important;border:1px solid #ffd266!important;background:linear-gradient(180deg,#685427,#29251c)!important;box-shadow:0 0 20px #eecb5d4d;font-size:15px!important}
+.create-room span{color:#ffdb80!important}.signout{border-color:#2a7679}
+.masthead{min-height:224px;border:1px solid #099b9b;border-radius:23px;background:radial-gradient(ellipse at 76% 45%,#007b85b8,transparent 51%),linear-gradient(145deg,#034751,#002432 48%,#00616a);box-shadow:inset 0 -30px 45px #00454b80}
+.masthead:before{content:"";position:absolute;inset:auto -5% -42% 40%;height:85%;border-top:2px solid #15f6dc;border-radius:50%;transform:rotate(-22deg);box-shadow:0 -10px 20px #00e9c74d;pointer-events:none}
+.masthead h1{font-size:clamp(36px,4.8vw,60px);text-shadow:0 3px 10px #00171d7a}.masthead .eyebrow,.card-kicker,.stat small{color:#ffd25c!important}
+.mark{width:136px;height:136px;border:9px double #ffd659;transform:none;box-shadow:0 0 0 3px #08ccb7,0 0 32px #03e4d36b;background:#00222d}
+.card{background:linear-gradient(135deg,#073544,#031d2c 80%);border-color:#0b999c;box-shadow:inset 0 0 26px #04b8b014,0 11px 30px #0003}
+.hero-card{min-height:155px;border-color:#d1a04b;background:radial-gradient(ellipse at 58% 140%,#135d67,transparent 65%),linear-gradient(110deg,#053540,#031d2b)}
+.hero-card .player-avatar{width:89px;height:89px}.hero-card h2{font-size:32px}.verified{border-color:#00ebc4;color:#48ffdc;background:#003c40}
+.stats{gap:18px}.stat{border-color:#02aca9!important;box-shadow:inset 0 -2px 0 #17edda,0 0 18px #04bdb91a!important}.stat strong{font-size:clamp(30px,3vw,42px)}
+body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),linear-gradient(125deg,#001b29,#001420 75%,#011c26)}
+@media(max-width:900px){.shell{grid-template-columns:minmax(0,1fr) 250px;gap:16px;padding:16px}.sidebar{grid-column:2;grid-row:1;position:sticky;top:10px}.main{grid-column:1;grid-row:1}.site-nav{gap:15px}.site-nav nav{gap:12px}.site-nav nav a{font-size:12px}.masthead{min-height:185px}}
+@media(max-width:700px){.site-nav{padding:12px 16px;display:block}.site-nav nav{margin-top:12px;gap:12px 20px}.shell{display:flex;flex-direction:column;padding:12px}.main{order:1}.sidebar{order:2;position:static;width:100%}.masthead{min-height:170px;padding:20px}.mark{width:84px;height:84px;border-width:5px}.mark span{font-size:36px}.hero-card{flex-wrap:wrap}.verified{margin-left:0}.top-tag{display:none}}
+
+/* Konto i profil — premium bez zmian w pozostałych panelach */
+.premium-profile{gap:21px}.premium-profile .profile-hero-premium{position:relative;overflow:hidden;border:1px solid #19c7bd;border-radius:23px;padding:clamp(20px,3vw,38px);background:radial-gradient(ellipse at 80% 10%,#00a99a52,transparent 45%),radial-gradient(ellipse at 5% 90%,#037b965e,transparent 45%),linear-gradient(135deg,#053746,#011e2d 70%,#064656);box-shadow:inset 0 0 42px #0cf7dc17,0 14px 38px #0005}
+.profile-topline{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:28px}.profile-topline>span:first-child{color:#9dffec;font-size:11px;font-weight:900;letter-spacing:1.6px}.profile-verified{border-radius:30px;background:#075b5480;border:1px solid #13a893;padding:8px 12px;color:#a4ffe2;font-size:12px;font-weight:800}
+.profile-hero-body,.profile-intro{display:flex;align-items:center;gap:23px;flex-wrap:wrap}.profile-hero-body{justify-content:space-between}.profile-intro{min-width:0}.profile-avatar-frame{height:118px;width:118px;border:2px solid #19f4d8;box-shadow:0 0 28px #08eac44d,inset 0 0 18px #0debc524;border-radius:26px;display:grid;place-items:center;position:relative;background:#063747}
+.profile-avatar-large{font-size:68px;font-weight:900;color:#ffe0a1}.profile-avatar-check{position:absolute;bottom:-8px;right:-8px;background:#069e8b;color:#fff;border:2px solid #8dffe1;border-radius:50%;height:31px;width:31px;display:grid;place-items:center}
+.profile-intro h2{margin:4px 0 0;font-size:clamp(30px,3.7vw,47px);line-height:1.1;overflow-wrap:anywhere}.profile-intro #profile-handle{margin:5px 0 12px;color:#7ffff0;font-weight:800}.profile-chips{display:flex;flex-wrap:wrap;gap:8px}.profile-chips span{background:#095565;color:#e2ffff;border:1px solid #1b8790;border-radius:24px;padding:6px 11px;font-size:11px;font-weight:800}
+.profile-hero-actions{display:flex;gap:11px;flex-wrap:wrap}.profile-hero-actions button{padding:12px 15px}.profile-metrics{display:grid;grid-template-columns:1.4fr repeat(3,minmax(0,1fr));gap:13px;margin-top:30px}.profile-metric{min-width:0;background:#073e4e9c;border:1px solid #168c98;border-radius:15px;padding:16px}.profile-metric small{display:block;color:#a9d9df;font-size:10px;font-weight:900;letter-spacing:.9px}.profile-metric strong{display:block;font-size:clamp(24px,2.7vw,35px);margin:9px 0 2px;line-height:1.2;color:#fff}.profile-metric span{color:#a7d3da;font-size:11px}.profile-metric progress{width:100%;height:8px;border-radius:20px;overflow:hidden;accent-color:#13e3cb;margin:6px 0;display:block}.profile-metric progress::-webkit-progress-bar{background:#07303e}.profile-metric progress::-webkit-progress-value{background:#29efd7}.profile-metric progress::-moz-progress-bar{background:#29efd7}
+.profile-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,1fr);gap:20px;align-items:start}.profile-main-column,.profile-side-column{display:grid;gap:20px;min-width:0}.premium-profile .profile-editor,.premium-profile .profile-shortcuts,.premium-profile .profile-preview-card,.premium-profile .profile-account-card{background:linear-gradient(140deg,#073746,#031e2d);border:1px solid #178d97;border-radius:20px}
+.premium-profile .card-heading{align-items:flex-start;flex-wrap:wrap}.premium-profile .card-heading p{margin:0 0 12px}.profile-pill{color:#8cffe5;background:#0a5b54;border-radius:30px;border:1px solid #17a08e;padding:8px 10px;font-size:10px;letter-spacing:.5px;font-weight:900}
+.premium-profile .form-grid{gap:18px}.premium-profile .form-grid label{gap:7px}.premium-profile .form-grid input,.premium-profile .form-grid textarea,.premium-profile .form-grid select{border-radius:12px;border:1px solid #2a8694;background:#041e2d}.premium-profile .form-grid :is(input,textarea,select):focus-visible{outline:2px solid #63fce3;outline-offset:2px}.premium-profile #profile-bio-counter{text-align:right}
+.profile-edit-hint{display:flex;gap:9px;margin-top:19px;padding:13px;border:1px solid #197a83;border-radius:11px;background:#075e6559;color:#b3e1e5;font-size:12px}.profile-edit-hint span{color:#8affe4}.profile-form-buttons{display:flex;flex-wrap:wrap;gap:10px}.profile-form-buttons button{padding:12px 16px}.premium-profile .form-actions{margin-top:16px;border-top:1px solid #1f5a66;padding-top:17px}
+.profile-shortcut-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.profile-shortcut-grid button{display:grid;grid-template-columns:40px 1fr;align-items:center;column-gap:10px;min-width:0;cursor:pointer;text-align:left;padding:13px;color:#eefbff;background:#083948;border:1px solid #147d8b;border-radius:13px}.profile-shortcut-grid button span{grid-row:span 2;background:#08646c;border-radius:11px;width:40px;height:40px;display:grid;place-items:center;color:#8bffdf;font-size:23px}.profile-shortcut-grid button strong{font-size:13px}.profile-shortcut-grid button small{color:#a4cbd2;font-size:11px}.profile-shortcut-grid button:hover,.profile-shortcut-grid button:focus-visible{background:#0b5660;border-color:#53f5dc}
+.profile-preview-inner{display:flex;flex-direction:column;align-items:center;text-align:center;border:1px solid #148b97;border-radius:18px;padding:25px 18px;margin-top:16px;background:radial-gradient(ellipse at 50% 0%,#09869561,transparent 65%),linear-gradient(150deg,#073d4b,#03202f);min-width:0}.profile-preview-avatar{width:85px;height:85px;border:2px solid #1af8d7;border-radius:23px;background:#075764;color:#ffe1a1;font-size:49px;font-weight:900;display:grid;place-items:center;box-shadow:0 0 20px #0defcc55}.profile-preview-inner strong{margin-top:14px;font-size:clamp(20px,2.5vw,29px);overflow-wrap:anywhere}.profile-preview-inner>span{color:#81ffeb;font-weight:800;font-size:12px;margin-top:5px;overflow-wrap:anywhere}.profile-preview-inner p{font-size:13px;min-height:52px;margin:18px 0;overflow-wrap:anywhere}.profile-preview-inner .profile-chips{justify-content:center}.profile-preview-caption{color:#99bdc6!important;font-size:11px;line-height:1.5!important}.profile-account-card .detail{font-size:12px;align-items:center;padding:14px 0}.profile-account-card .detail strong{max-width:61%;overflow-wrap:anywhere;font-size:12px}.profile-security-link{margin-top:18px;width:100%;font-size:12px}
+.profile-game-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.profile-game-links a{text-decoration:none;text-align:center;padding:15px 8px;background:#085662;border:1px solid #19b9ab;color:#eefeff;border-radius:12px;font-size:12px;font-weight:850}.profile-game-links a:hover{background:#097481}
+@media(max-width:1250px){.profile-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-layout{grid-template-columns:minmax(0,1fr)}.profile-side-column{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-game-links{grid-column:1/-1}}
+@media(max-width:650px){.premium-profile .profile-hero-premium{padding:18px}.profile-avatar-frame{width:90px;height:90px;border-radius:19px}.profile-avatar-large{font-size:52px}.profile-topline{margin-bottom:19px}.profile-metrics{gap:9px;margin-top:19px}.profile-metric{padding:12px}.profile-metric strong{font-size:25px}.premium-profile .form-grid{grid-template-columns:1fr}.profile-side-column,.profile-shortcut-grid{grid-template-columns:1fr}.profile-form-buttons{width:100%}.profile-form-buttons button{flex:1}.profile-hero-actions button{flex:1}}
+
+.profile-password-card{margin-top:18px;border:1px solid #268d8c!important;background:radial-gradient(ellipse at 87% 0%,#097a7960,transparent 54%),linear-gradient(145deg,#063741,#041d2b)!important}
+.profile-password-form{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;margin-top:18px;max-width:710px}
+.profile-password-form>label{color:#ffe0a2;font-weight:800;font-size:13px;margin-top:8px}
+.profile-password-form>small{color:#a8d9d8;font-size:12px}
+.profile-password-field{display:flex;align-items:stretch;overflow:hidden;border:1px solid #348d91;border-radius:12px;background:#041f2a}
+.profile-password-field:focus-within{border-color:#24f3da;box-shadow:0 0 0 2px #1bdbca31}
+.profile-password-field input{flex:1;min-width:0;min-height:48px;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;padding:11px 13px!important}
+.profile-password-field button{border:0;border-left:1px solid #286b70;background:#10404a;color:#aaf6e8;font-weight:750;padding:0 17px;min-width:81px;cursor:pointer}
+.profile-password-field button:hover{background:#14616a}
+.profile-password-form .form-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px}
+.profile-password-form .form-actions #pw-change-status{max-width:470px;line-height:1.5;font-size:13px}
+.profile-password-form .form-actions button{min-width:165px}
+@media(max-width:650px){.profile-password-form .form-actions button{width:100%}}
+
+/* Single success dialog shown only after a confirmed /auth/change-password response. */
+body.pw-success-open{overflow:hidden}
+.pw-success-overlay[hidden]{display:none!important}
+.pw-success-overlay{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:20px;background:rgba(0,13,21,.83);backdrop-filter:blur(9px)}
+.pw-success-modal{position:relative;width:min(100%,510px);border:1px solid #32e8d3;border-radius:24px;padding:34px clamp(22px,4vw,42px) 30px;text-align:center;color:#f2fcfa;background:radial-gradient(ellipse at 50% 0%,#136f74 0%,#063a45 47%,#031d2c 100%);box-shadow:0 0 0 1px #d2aa5359,0 23px 90px #000b,inset 0 0 32px #11dcd51b}
+.pw-success-modal::before{content:"";position:absolute;top:0;left:17%;right:17%;height:2px;background:linear-gradient(90deg,transparent,#f3d483,transparent);pointer-events:none}
+.pw-success-seal{width:96px;height:96px;display:grid;place-items:center;margin:0 auto 20px;border-radius:50%;border:2px solid #f7d181;background:#053e46;box-shadow:0 0 0 8px #0abfb520,0 0 37px #06e6bf65,inset 0 0 20px #00d6bf35}
+.pw-success-seal span{font-size:57px;font-weight:800;line-height:1;color:#95fff0}
+.pw-success-kicker{font-size:11px;font-weight:850;letter-spacing:.14em;color:#f5d88a;margin:0 0 13px}
+.pw-success-modal h2{font-size:clamp(27px,4vw,36px);letter-spacing:-.02em;line-height:1.15;margin:0 0 16px;color:#fff}
+.pw-success-modal p#pw-success-message{font-size:15px;line-height:1.65;color:#c6e7e7;margin:0 auto 21px;max-width:385px}
+.pw-success-confirmed{display:inline-flex;gap:9px;align-items:center;justify-content:center;flex-wrap:wrap;color:#80ffde;font-weight:760;font-size:13px;margin:0 0 25px}
+.pw-success-confirmed span{font-size:19px}
+.pw-success-close{display:block;margin:0 auto;width:min(100%,250px);min-height:49px;border:1px solid #f9d991;border-radius:12px;color:#132b2d;background:linear-gradient(160deg,#ffe7aa,#eabd64);font-weight:850;cursor:pointer;box-shadow:0 6px 25px #e6c67534}
+.pw-success-close:hover{filter:brightness(1.07)}
+.pw-success-close:focus-visible{outline:3px solid #69fce9;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.pw-success-overlay{scroll-behavior:auto;backdrop-filter:none}}
+
+
+/* OWNER 2026-11-04: compact, proportional panel layout.
+   Responsive element sizing, not zoom/transform, so text and focus stay crisp. */
+@media(min-width:981px){
+ .site-nav{min-height:43px;padding:6px clamp(18px,3vw,52px);gap:28px}
+ .site-brand{font-size:24px}
+ .site-nav nav{gap:clamp(14px,2vw,32px)}
+ .site-nav nav a{font-size:clamp(12px,.92vw,15px)}
+ .top{min-height:53px;padding:7px clamp(18px,3vw,50px);gap:16px}
+ .top .logo{font-size:clamp(27px,2.3vw,33px)}
+ .top-tag{font-size:10px;letter-spacing:1.1px}
+ .top-tag b{margin-left:7px}
+ .top-link{padding:8px 12px;font-size:12px}
+ .shell{max-width:1620px;grid-template-columns:minmax(0,1fr) 265px;gap:17px;padding:15px clamp(15px,2vw,32px)}
+ .sidebar{top:11px;border-radius:17px}
+ .identity{padding:14px 16px 12px}
+ .avatar{width:52px;height:52px;font-size:27px}
+ .identity .small{margin:11px 0 5px;font-size:10px;letter-spacing:1.3px}
+ .identity strong{font-size:16px}
+ .identity .status{margin-top:8px;font-size:11px}
+ .sidebar nav{padding:10px;gap:2px}
+ .sidebar .nav{padding:7px 10px;min-height:36px;font-size:12px;gap:9px}
+ .sidebar .nav span{font-size:16px;width:20px}
+ .sidebar .create-room{margin:10px 13px 6px!important;width:calc(100% - 26px)!important;padding:10px 12px!important;font-size:13px!important}
+ .signout{margin:5px 12px 12px;padding:10px;font-size:12px}
+ .masthead{min-height:154px;padding:18px clamp(22px,2.5vw,34px);margin-bottom:12px;border-radius:18px}
+ .masthead h1{font-size:clamp(32px,3.4vw,46px);margin:6px 0 9px}
+ .masthead .eyebrow{font-size:10px;letter-spacing:1.3px}
+ .masthead p:last-child{font-size:13px}
+ .mark{width:95px;height:95px;border-width:6px}
+ .mark span{font-size:40px}
+ .mark small{font-size:8px}
+ .view.active{gap:12px}
+ .card{padding:clamp(14px,1.5vw,23px);border-radius:16px}
+ .card h2{font-size:clamp(20px,2vw,26px);margin:4px 0 10px}
+ .card p{line-height:1.5}
+ .stats{gap:10px}
+ .stat{padding:14px}
+ .stat strong{font-size:clamp(24px,2.5vw,33px);margin:5px 0}
+ .hero-card{gap:16px;min-height:128px}
+ .hero-card .player-avatar{width:67px;height:67px;font-size:36px}
+ .hero-card h2{font-size:26px}
+ .form-grid{gap:13px}
+ .form-grid input,.form-grid select,.form-grid textarea{min-height:41px;padding:9px 11px}
+ .primary,.secondary{padding:10px 14px;font-size:12px}
+ .detail{padding:12px 0}
+ .premium-profile{gap:13px}
+ .premium-profile .profile-hero-premium{padding:18px clamp(18px,2vw,27px);border-radius:17px}
+ .profile-topline{margin-bottom:14px;gap:8px}
+ .profile-topline>span:first-child{font-size:10px;letter-spacing:1.1px}
+ .profile-verified{padding:6px 10px;font-size:11px}
+ .profile-hero-body,.profile-intro{gap:15px}
+ .profile-avatar-frame{width:83px;height:83px;border-radius:19px}
+ .profile-avatar-large{font-size:48px}
+ .profile-avatar-check{height:25px;width:25px;bottom:-5px;right:-5px}
+ .profile-intro h2{font-size:clamp(29px,3vw,37px)}
+ .profile-intro #profile-handle{margin:3px 0 8px;font-size:12px}
+ .profile-chips{gap:5px}
+ .profile-chips span{padding:4px 8px;font-size:10px}
+ .profile-hero-actions{gap:8px}
+ .profile-hero-actions button{padding:9px 12px}
+ .profile-metrics{gap:10px;margin-top:16px}
+ .profile-metric{padding:11px 13px;border-radius:12px}
+ .profile-metric small{font-size:9px}
+ .profile-metric strong{font-size:clamp(23px,2.2vw,30px);margin:6px 0 2px}
+ .profile-metric span{font-size:10px}
+ .profile-metric progress{height:6px;margin:4px 0}
+ .profile-layout,.profile-main-column,.profile-side-column{gap:13px}
+ .profile-edit-hint{margin-top:12px;padding:10px}
+ .premium-profile .form-grid{gap:12px}
+ .profile-shortcut-grid{gap:8px}
+ .profile-shortcut-grid button{padding:10px}
+ .profile-preview-inner{padding:16px;margin-top:10px}
+ .profile-preview-avatar{width:65px;height:65px;font-size:39px}
+ .profile-preview-inner p{min-height:0;margin:10px 0}
+ .premium-profile-tabs{padding:7px;gap:6px;margin:12px 0}
+ .premium-profile-tabs button{min-height:42px;padding:6px;font-size:12px}
+ .premium-profile-workspace{padding:clamp(13px,1.5vw,20px)!important}
+}
+@media(min-width:981px) and (max-height:780px){
+ .top{min-height:47px}
+ .site-nav{min-height:39px}
+ .shell{padding-top:10px;gap:13px}
+ .masthead{min-height:138px;padding-top:13px;padding-bottom:13px;margin-bottom:10px}
+ .mark{width:82px;height:82px}
+ .mark span{font-size:34px}
+ .profile-topline{margin-bottom:10px}
+ .profile-metrics{margin-top:12px}
+ .profile-metric{padding:9px 11px}
+}
+@media(min-width:701px) and (max-width:980px){
+ .site-nav{min-height:43px;padding:8px 16px;gap:12px}
+ .site-brand{font-size:23px}
+ .site-nav nav{gap:10px}
+ .top{min-height:53px;padding:8px 16px}
+ .top .logo{font-size:28px}
+ .top-link{padding:9px 11px;font-size:12px}
+ .shell{padding:14px;gap:12px}
+ .masthead{min-height:151px;padding:18px;margin-bottom:12px}
+ .masthead h1{font-size:clamp(30px,4.1vw,40px)}
+ .view.active{gap:12px}
+ .card{padding:16px}
+ .premium-profile .profile-hero-premium{padding:18px}
+ .profile-topline{margin-bottom:15px}
+ .profile-avatar-frame{width:84px;height:84px}
+ .profile-avatar-large{font-size:48px}
+ .profile-metrics{margin-top:16px;gap:10px}
+ .profile-metric{padding:11px}
+ .profile-metric strong{font-size:24px}
+ .profile-hero-actions button{padding:10px 12px}
+}
+@media(max-width:700px){
+ .top{min-height:55px;padding:9px 13px;gap:8px}
+ .top .logo{font-size:27px}
+ .top-link{padding:8px 10px;font-size:11px}
+ .site-nav{padding:10px 13px}
+ .site-nav nav{margin-top:8px;gap:9px 13px}
+ .shell{padding:10px;gap:12px}
+ .masthead{min-height:135px;padding:15px;margin-bottom:10px}
+ .masthead h1{font-size:clamp(27px,7vw,37px);margin:6px 0}
+ .mark{width:68px;height:68px;border-width:4px}
+ .mark span{font-size:28px}
+ .view.active{gap:11px}
+ .card{padding:15px;border-radius:15px}
+ .premium-profile .profile-hero-premium{padding:15px}
+ .profile-avatar-frame{width:74px;height:74px}
+ .profile-avatar-large{font-size:43px}
+ .profile-intro{gap:12px}
+ .profile-intro h2{font-size:29px}
+ .profile-topline{margin-bottom:12px}
+ .profile-metrics{margin-top:14px;gap:8px}
+ .profile-metric{padding:10px}
+ .profile-metric strong{font-size:23px;margin:6px 0 2px}
+ .profile-hero-actions button{padding:10px}
+ .premium-profile-tabs{margin:12px 0}
+}
+
+/* One top navigation bar: premium game discovery CTA, no secondary logo strip. */
+.site-nav{gap:clamp(12px,2vw,27px)}
+.site-nav nav{flex:1;min-width:0}
+.site-nav .site-discover{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-left:auto;flex-shrink:0;white-space:nowrap;text-decoration:none;font-weight:850;font-size:clamp(12px,1vw,14px);letter-spacing:.015em;color:#ffe2a2;border:1px solid #f5c868;border-radius:12px;padding:10px 15px;background:linear-gradient(145deg,#144449,#072b3b 78%);box-shadow:inset 0 1px 0 #ffffff22,0 0 20px #14d9c21d;transition:background-color .15s ease,box-shadow .15s ease}
+.site-nav .site-discover:hover{background:linear-gradient(145deg,#146d70,#0a3c46);border-color:#ffe4a0;box-shadow:0 0 20px #26e8d75c}
+.site-nav .site-discover:focus-visible{outline:3px solid #5fffee;outline-offset:3px}
+@media(min-width:701px) and (max-width:980px){.site-nav .site-discover{font-size:12px;padding:9px 11px}.site-nav nav{gap:9px}}
+@media(max-width:700px){
+ .site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:9px}
+ .site-nav .site-brand{grid-column:1;grid-row:1;align-self:center}
+ .site-nav .site-discover{grid-column:2;grid-row:1;margin-left:0;font-size:12px;padding:9px 12px}
+ .site-nav nav{grid-column:1/-1;grid-row:2;margin-top:0;gap:9px 14px;min-width:0}
+}
+@media(prefers-reduced-motion:reduce){.site-nav .site-discover{transition:none}}
+`+premiumProfileStyles;
 const js=String.raw`(()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -233,6 +515,7 @@ function formattedDate(value){
 function renderFavorites(){
  const favorites=centerState?.preferences?.favoriteGames||[];
  $('dashboard-favorites').textContent=String(favorites.length);
+ $('profile-favorites').textContent=String(favorites.length);
  $('favorites-empty').hidden=favorites.length>0;
  const links=$('favorites-links');links.replaceChildren();
  favorites.forEach(key=>{
@@ -250,6 +533,7 @@ function renderFavorites(){
 function renderSessions(){
  const sessions=centerState?.sessions||[];
  $('dashboard-sessions').textContent=String(sessions.length);
+ $('profile-sessions').textContent=String(sessions.length);
  const list=$('session-list');list.replaceChildren();
  if(!sessions.length){list.textContent='Nie znaleziono aktywnych sesji.';return;}
  sessions.forEach((session,index)=>{
@@ -592,11 +876,10 @@ async function refreshChallenges(){
       const link=document.createElement('a');link.className='secondary link-button';
       link.href='/konto/gomoku/?match='+encodeURIComponent(challenge.id);
       link.textContent='Graj w Gomoku';controls.append(link);
-    }else{
-      const button=document.createElement('button');
-      button.type='button';button.textContent='Graj online';button.className='friend-main';
-      button.addEventListener('click',()=>void openMatch(challenge.id));
-      controls.append(button);
+    }else if(challenge.game==='warcaby'){
+      const link=document.createElement('a');link.className='secondary link-button';
+      link.href='/konto/warcaby/?match='+encodeURIComponent(challenge.id);
+      link.textContent='Graj w Warcaby';controls.append(link);
     }
    }
    row.append(controls);list.append(row);
@@ -636,13 +919,45 @@ async function api(path,options={}){
    GRACZ_NIEDOSTEPNY:'Gracz nie istnieje, nie potwierdził e-maila albo nie może otrzymywać zaproszeń.',
    ZAPROSZENIE_NIEDOSTEPNE:'Zaproszenie jest już wysłane, nieaktualne lub kontakt nie jest dozwolony.',
    ZBYT_WIELE_ZAPROSZEN:'Limit zaproszeń został osiągnięty. Spróbuj później.',
-   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.'
+   ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.',
+   BLEDNE_AKTUALNE_HASLO:'Obecne hasło jest nieprawidłowe.',
+   POPRAW_NOWE_HASLO:'Sprawdź długość nowego hasła, potwierdzenie i to, czy różni się od obecnego.',
+   HASLO_ZMIENIONE_PONOW_PROBE:'Hasło zostało zmienione w innej sesji. Odśwież stronę i spróbuj ponownie.'
   };
-  const error=new Error(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
-   messages[body.error]||'Nie udało się wykonać operacji. Spróbuj ponownie.');
+  const error=new Error(messages[body.error]||(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
+   'Nie udało się wykonać operacji. Spróbuj ponownie.'));
   error.status=response.status;throw error;
  }
  return body;
+}
+const countryLabels={PL:'Polska',DE:'Niemcy',CZ:'Czechy',SK:'Słowacja',OTHER:'Inny'};
+const languageLabels={pl:'Polski',en:'English',de:'Deutsch'};
+function profileDraft(){
+ return {displayName:$('display-name').value.trim(),bio:$('bio').value.trim(),country:$('country').value,language:$('language').value};
+}
+function renderProfilePreview(){
+ if(!profileSnapshot)return;
+ const draft=profileDraft();
+ const name=draft.displayName||profileSnapshot.nickname||'Gracz';
+ const initial=name.slice(0,1).toUpperCase()||'G';
+ const country=countryLabels[draft.country]||'Nie podano',language=languageLabels[draft.language]||'Nie podano';
+ $('profile-preview-avatar').textContent=initial;
+ $('profile-preview-name').textContent=name;
+ $('profile-preview-handle').textContent='@'+profileSnapshot.nickname;
+ $('profile-preview-bio').textContent=draft.bio||'Dodaj opis, aby Twoja wizytówka opowiadała o Tobie.';
+ $('profile-preview-country').textContent=country;
+ $('profile-preview-language').textContent=language;
+ $('profile-country-tag').textContent=country;
+ $('profile-language-tag').textContent=language;
+ $('profile-bio-counter').textContent=$('bio').value.length+' / 300 znaków';
+ const score=[Boolean(profileSnapshot.nickname),Boolean(profileSnapshot.email),draft.displayName.length>=2,draft.bio.length>=10,Boolean(draft.country),Boolean(draft.language)];
+ const percent=Math.round(score.filter(Boolean).length/score.length*100);
+ $('profile-completion').textContent=percent+'%';
+ $('profile-progress').value=percent;
+ $('profile-next-step').textContent=draft.bio.length<10?'Dodaj opis (minimum 10 znaków)':'Wizytówka jest uzupełniona';
+ const dirty=['displayName','bio','country','language'].some(key=>draft[key]!==profileSnapshot[key]);
+ $('profile-reset').disabled=!dirty;
+ $('saved-state').textContent=dirty?'Masz niezapisane zmiany':'Dane zapisane bezpiecznie w koncie';
 }
 function fill(profile){
  $('nickname').value=profile.nickname;
@@ -655,10 +970,16 @@ function fill(profile){
  $('profile-heading').textContent=profile.displayName;
  $('profile-handle').textContent='@'+profile.nickname;
  profileSnapshot=profile;
+ $('profile-info-nick').textContent=profile.nickname;
+ $('profile-info-email').textContent=profile.email;
+ $('profile-info-joined').textContent=formattedDate(profile.createdAt);
+ $('profile-joined-summary').textContent=formattedDate(profile.createdAt);
  $('dashboard-name').textContent=profile.displayName;
  $('dashboard-joined').textContent=formattedDate(profile.createdAt);
  const initial=profile.displayName.slice(0,1).toUpperCase()||'G';
  $('nav-avatar').textContent=initial;$('profile-avatar').textContent=initial;$('dashboard-avatar').textContent=initial;
+ renderProfilePreview();
+ if(typeof window!=='undefined' && typeof Event!=='undefined')window.dispatchEvent(new Event('gracz:profile-ready'));
 }
 let sessionConfirmed=false;
 function accessState(title,message,{login=false,retry=false}={}){
@@ -687,6 +1008,64 @@ async function load(){
  }
 }
 $('access-retry').addEventListener('click',load);
+
+document.querySelectorAll('[data-password-toggle]').forEach(button=>button.addEventListener('click',()=>{
+ const field=$(button.dataset.passwordToggle),reveal=field.type==='password';
+ field.type=reveal?'text':'password';button.textContent=reveal?'Ukryj':'Pokaż';
+ button.setAttribute('aria-pressed',String(reveal));
+ button.setAttribute('aria-label',(reveal?'Ukryj':'Pokaż')+' hasło');
+}));
+
+function showPasswordSuccessModal(revokedCount){
+ const overlay=$('pw-success-overlay');
+ const count=Number.isSafeInteger(revokedCount)&&revokedCount>=0?revokedCount:0;
+ $('pw-success-message').textContent=count>0
+  ?'Twoje nowe hasło jest aktywne. Ze względów bezpieczeństwa wylogowano inne sesje: '+count+'.'
+  :'Twoje nowe hasło jest aktywne. Konto zostało zabezpieczone.';
+ overlay.hidden=false;
+ document.body.classList.add('pw-success-open');
+ $('pw-success-close').focus();
+}
+function closePasswordSuccessModal(){
+ $('pw-success-overlay').hidden=true;
+ document.body.classList.remove('pw-success-open');
+ $('pw-change-submit').focus();
+}
+$('pw-success-close').addEventListener('click',closePasswordSuccessModal);
+$('pw-success-overlay').addEventListener('click',event=>{
+ if(event.target===$('pw-success-overlay'))closePasswordSuccessModal();
+});
+if(typeof document.addEventListener==='function')document.addEventListener('keydown',event=>{
+ if($('pw-success-overlay').hidden)return;
+ if(event.key==='Escape'){event.preventDefault();closePasswordSuccessModal();}
+ if(event.key==='Tab'){event.preventDefault();$('pw-success-close').focus();}
+});
+
+$('pw-change-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const form=$('pw-change-form'),save=$('pw-change-submit'),label=$('pw-change-status');
+ if(!sessionConfirmed){label.textContent='Zaloguj się ponownie, aby zmienić hasło.';return;}
+ const currentPassword=$('pw-current').value,newPassword=$('pw-next').value,repeatPassword=$('pw-confirm').value;
+ if(newPassword.length<15||new TextEncoder().encode(newPassword).length>256){
+  label.textContent='Nowe hasło musi mieć co najmniej 15 znaków i maksymalnie 256 bajtów.';return;
+ }
+ if(newPassword!==repeatPassword){label.textContent='Nowe hasła nie są identyczne.';return;}
+ if(currentPassword===newPassword){label.textContent='Nowe hasło musi różnić się od obecnego.';return;}
+ save.disabled=true;label.textContent='Bezpieczne zapisywanie nowego hasła…';
+ try{
+  const result=await api('change-password',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({currentPassword,newPassword,repeatPassword})});
+  form.reset();
+  document.querySelectorAll('[data-password-toggle]').forEach(button=>{
+   $(button.dataset.passwordToggle).type='password';button.textContent='Pokaż';
+   button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Pokaż hasło');
+  });
+  label.textContent='Hasło zmieniono. Wylogowano pozostałe sesje: '+result.otherSessionsRevoked+'.';
+  showPasswordSuccessModal(result.otherSessionsRevoked);
+ }catch(error){label.textContent=error.message;}
+ finally{save.disabled=false;}
+});
+
 $('profile-form').addEventListener('submit',async event=>{
  event.preventDefault();
  if(!sessionConfirmed){accessState('Zaloguj się do konta','Zaloguj się ponownie, aby edytować profil.',{login:true});return;}
@@ -705,6 +1084,18 @@ async function logout(){
  catch(error){notice(error.message,true);}
 }
 
+['display-name','bio'].forEach(id=>$(id).addEventListener('input',renderProfilePreview));
+['country','language'].forEach(id=>$(id).addEventListener('change',renderProfilePreview));
+$('profile-reset').addEventListener('click',()=>{
+ if(!profileSnapshot)return;
+ fill(profileSnapshot);
+ notice('Przywrócono ostatnio zapisane dane profilu.');
+});
+$('profile-edit-scroll').addEventListener('click',()=>{
+ $('profile-form').scrollIntoView({behavior:document.body.classList.contains('panel-no-motion')?'auto':'smooth',block:'start'});
+ $('display-name').focus({preventScroll:true});
+});
+document.querySelectorAll('[data-profile-jump]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.profileJump)));
 $('dashboard-profile').addEventListener('click',()=>switchSection('profile'));
 $('dashboard-manage-games').addEventListener('click',()=>switchSection('games'));
 $('dashboard-devices').addEventListener('click',()=>switchSection('sessions'));
@@ -759,11 +1150,13 @@ $('export-profile').addEventListener('click',()=>{
  notice('Przygotowano plik JSON z danymi profilu.');
 });
 
+$('create-room').addEventListener('click',()=>switchSection('challenges'));
 ['side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
 load();
-})();`;
+})();`+premiumProfileScript;
 export function servePlayerPanel(req,res,url){
   if(req.method!=='GET')return false;
+  if(servePublicProfile(req,res,url,css,headers))return true;
   const path=url.pathname.replace(/\/+$/,'')||'/';
   const responses={
     '/konto/panel':['text/html; charset=utf-8',html],

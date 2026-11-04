@@ -142,7 +142,7 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
 });
 
 
-test('R14: approved Full Max artwork is actually displayed with accessible clickable CTAs',async({browser})=>{
+test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',async({browser})=>{
  for(const width of [1181,1366,1649,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -168,22 +168,14 @@ test('R14: approved Full Max artwork is actually displayed with accessible click
    expect(Math.abs(dims.heroRect.height/dims.heroRect.width-724/2172)).toBeLessThan(.01);
    expect(Math.abs(dims.imageRect.height/dims.imageRect.width-724/2172)).toBeLessThan(.02);
    expect(dims.heroRect.height).toBeGreaterThan(380);
-   expect(dims.copyVisible).toContain('inset');
+   expect(dims.copyVisible).toBe('none');
+   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
    expect(dims.overflow).toBeLessThanOrEqual(width+2);
-   for(const rect of [dims.game,dims.guides]){
-    expect(rect.left).toBeGreaterThanOrEqual(dims.heroRect.left);
-    expect(rect.right).toBeLessThanOrEqual(dims.heroRect.right+2);
-    expect(rect.top).toBeGreaterThanOrEqual(dims.heroRect.top);
-    expect(rect.bottom).toBeLessThanOrEqual(dims.heroRect.bottom+2);
-   }
-   await expect(page.locator('.r4-owner-hotspot--games')).toHaveAttribute('href','/gry/');
-   await expect(page.locator('.r4-owner-hotspot--guides')).toHaveAttribute('href','/poradniki/');
-   for(const hotspot of ['.r4-owner-hotspot--games','.r4-owner-hotspot--guides']) {
-     await page.locator(hotspot).hover();
-     expect(await page.locator(hotspot).evaluate(el=>getComputedStyle(el).boxShadow)).toBe('none');
-   }
+   await expect(page.locator('.r4-owner-hotspot--games')).toBeHidden();
+   await expect(page.locator('.r4-owner-hotspot--guides')).toBeHidden();
    if(width===1366) {
-     await page.locator('.r4-owner-hotspot--games').click();
+     await page.locator('.r4-hero-actions a[href="/gry/"]').click();
      await expect(page).toHaveURL(/\/gry\/$/);
    }
   }finally{await context.close()}

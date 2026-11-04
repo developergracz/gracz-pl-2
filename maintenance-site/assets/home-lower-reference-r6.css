@@ -1293,3 +1293,437 @@ body.homepage-premium-max .site-footer .footer-news.footer-news--approved-r16>.n
   top:calc(100% + clamp(12px,3dvh - 5px,28px))!important;
  }
 }
+
+
+/* OWNER FULL MAX PREMIUM — 2026-11-04 */
+/*
+ * GRACZ.PL / Full Max Premium — zaakceptowany kierunek 04.11.2026.
+ * Scope: homepage only. Deliberately leaves navigation, account links,
+ * newsletter, JS, SEO, subpages and backend unchanged.
+ * The original image contains baked-in lettering. On desktop the left
+ * image zone is masked and replaced by selectable, accessible HTML text.
+ */
+body.homepage-premium-max {
+  --owner-deep: #002b2b;
+  --owner-teal: #024847;
+  --owner-teal-2: #08605d;
+  --owner-cream: #fff4dc;
+  --owner-gold: #f3c763;
+  --owner-gold-light: #ffe9a2;
+  --owner-gold-dark: #bd7d23;
+  background: radial-gradient(ellipse at 50% 0%, #07504d 0%, #002d30 40%, #001f26 100%) !important;
+  color: var(--owner-cream);
+}
+
+body.homepage-premium-max .site-header {
+  background: linear-gradient(110deg, #002c30 0%, #003c3d 49%, #002b31 100%) !important;
+  border-bottom: 1px solid rgba(244,198,95,.65) !important;
+  box-shadow: 0 6px 28px rgba(0,0,0,.35), inset 0 -1px 16px rgba(235,177,68,.12);
+}
+body.homepage-premium-max .site-header .nav-link,
+body.homepage-premium-max .site-header .menu-toggle {
+  color: #fff5e5 !important;
+}
+body.homepage-premium-max .site-header .nav-link:hover,
+body.homepage-premium-max .site-header .nav-link:focus-visible,
+body.homepage-premium-max .site-header .nav-link.newsletter-trigger {
+  color: #ffe18a !important;
+}
+body.homepage-premium-max .site-header .btn--outline.btn--head {
+  background: rgba(1,28,32,.82) !important;
+  border: 1.5px solid #e6b650 !important;
+  border-radius: 12px !important;
+  color: #fff8e8 !important;
+  box-shadow: 0 0 14px rgba(223,174,72,.12);
+}
+body.homepage-premium-max .site-header .btn--gold.btn--head,
+body.homepage-premium-max .r4-btn-gold,
+body.homepage-premium-max .site-footer .btn--gold {
+  border: 1px solid #ffe19b !important;
+  background: linear-gradient(180deg, #ffe9a0 0%, #ffd766 33%, #eba72c 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 7px 22px rgba(215,143,23,.20) !important;
+  color: #171b17 !important;
+}
+body.homepage-premium-max .site-header .btn--gold.btn--head:hover,
+body.homepage-premium-max .r4-btn-gold:hover {
+  filter: brightness(1.07);
+}
+
+/* HERO / desktop: hide the OLD lettering embedded in the picture, not the art */
+@media (min-width: 1181px) {
+  body.homepage-premium-max .r4-hero {
+    position: relative !important;
+    isolation: isolate !important;
+    aspect-ratio: 2172 / 724 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    background: #002c2d !important;
+    overflow: hidden !important;
+  }
+  body.homepage-premium-max .r4-hero::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg,
+        #003232 0%, #003535 22%, #003637 35%,
+        rgba(0,52,52,.99) 44%, rgba(0,51,52,.88) 48%,
+        rgba(0,45,48,.40) 54%, rgba(0,34,40,0) 64%),
+      radial-gradient(circle at 23% 80%, rgba(0,119,114,.16), transparent 42%);
+  }
+  body.homepage-premium-max .r4-owner-picture {
+    z-index: 0 !important;
+    position: relative !important;
+  }
+  body.homepage-premium-max .r4-owner-image {
+    filter: saturate(1.14) contrast(1.07) !important;
+  }
+  body.homepage-premium-max .r4-hero-copy {
+    position: absolute !important;
+    z-index: 3 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 51% !important;
+    height: 100% !important;
+    max-width: 820px !important;
+    margin: 0 !important;
+    padding: 19px 0 22px clamp(30px,3.3vw,58px) !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    text-shadow: 0 2px 6px rgba(0,0,0,.35) !important;
+  }
+  body.homepage-premium-max .r4-hero-copy .r4-hero-actions {
+    display: flex !important;
+  }
+  body.homepage-premium-max .r4-owner-hotspot {
+    display: none !important;
+  }
+}
+body.homepage-premium-max .r4-hero {
+  background-color: #003333 !important;
+  border-bottom: 1px solid rgba(248,211,127,.5) !important;
+}
+body.homepage-premium-max .r4-hero h1 {
+  order: 0;
+  margin: 0 !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  color: #fff3dc !important;
+  font-size: clamp(31px, 3.15vw, 60px) !important;
+  font-weight: 750 !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.032em !important;
+  white-space: nowrap !important;
+  text-shadow: 1px 3px 3px rgba(0,0,0,.75), 0 0 12px rgba(255,232,168,.14);
+}
+body.homepage-premium-max .r4-hero h1 span {
+  background: linear-gradient(180deg, #fff3b7 0%, #ffcf56 49%, #b97b24 100%) !important;
+  color: transparent !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+body.homepage-premium-max .r4-hero-motto {
+  order: 1;
+  margin: 7px 0 0 !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-style: italic !important;
+  font-size: clamp(24px,3.15vw,59px) !important;
+  letter-spacing: -.038em !important;
+  line-height: 1.18 !important;
+  color: #ffe2a0 !important;
+  background: linear-gradient(180deg,#fff7d5 0%,#ffdf89 48%,#d79c40 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap !important;
+}
+body.homepage-premium-max .r4-hero-rule {
+  order: 2;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  position: relative;
+  width: 90% !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  background: linear-gradient(90deg, transparent, rgba(255,204,102,.82) 35%, transparent 40%, transparent 60%, rgba(255,204,102,.85) 65%, transparent) center / 100% 1px no-repeat !important;
+  margin: 5px 0 5px !important;
+}
+body.homepage-premium-max .r4-hero-rule::after {
+  content: "♛";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -52%);
+  font-family: Georgia, serif;
+  font-size: 34px;
+  line-height: 1;
+  color: #ffdf80;
+  text-shadow: 0 1px 0 #8f5c14, 0 0 12px rgba(248,194,72,.43);
+}
+body.homepage-premium-max .r4-hero-claim {
+  order: 3;
+  margin: 0 0 10px !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  color: #fff2d7 !important;
+  font-size: clamp(19px, 2.05vw, 37px) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.025em !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  text-shadow: 0 2px 4px #001f27, 0 0 13px rgba(255,230,159,.14);
+}
+body.homepage-premium-max .r4-hero-description {
+  order: 4;
+  margin: 4px 0 16px !important;
+  font-family: "Open Sans", Arial, sans-serif !important;
+  color: #fff9ed !important;
+  font-size: clamp(13px, 1.03vw, 19px) !important;
+  line-height: 1.42 !important;
+  max-width: 99% !important;
+  text-wrap: pretty;
+}
+body.homepage-premium-max .r4-hero-description strong {
+  font-weight: 850 !important;
+}
+body.homepage-premium-max .r4-hero-actions {
+  order: 5;
+  flex-wrap: nowrap !important;
+  gap: 14px !important;
+  width: 100% !important;
+  max-width: 680px;
+}
+body.homepage-premium-max .r4-hero-actions .r4-btn {
+  min-width: 0 !important;
+  min-height: 56px !important;
+  padding: 12px 18px !important;
+  font-size: clamp(15px,1.42vw,23px) !important;
+  border-radius: 14px !important;
+  white-space: nowrap !important;
+}
+body.homepage-premium-max .r4-btn-outline {
+  background: rgba(0,33,36,.83) !important;
+  border: 1.5px solid #f5c45d !important;
+  color: #fff8e9 !important;
+  box-shadow: inset 0 0 13px rgba(10,104,99,.15), 0 5px 16px rgba(0,0,0,.2);
+}
+body.homepage-premium-max .r4-btn-outline:hover {
+  background: rgba(4,74,68,.95) !important;
+}
+
+/* Navigation ribbon & games keep their actual links, not flattened screenshots. */
+body.homepage-premium-max .r4-homepage .r4-shortcuts {
+  background: linear-gradient(105deg, rgba(0,38,40,.96), rgba(3,72,69,.72), rgba(0,39,43,.98)) !important;
+  border: 1px solid rgba(243,192,85,.76) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 18px rgba(3,149,132,.1), 0 7px 28px rgba(0,0,0,.24);
+  margin-top: 13px !important;
+  margin-bottom: 11px !important;
+}
+body.homepage-premium-max .r4-shortcuts a {
+  color: #fff2d5 !important;
+  border-color: rgba(243,194,95,.25) !important;
+  transition: background .2s ease, transform .2s ease !important;
+}
+body.homepage-premium-max .r4-shortcuts a:hover {
+  background: rgba(255,207,102,.09) !important;
+  transform: translateY(-2px);
+}
+body.homepage-premium-max .r4-shortcuts strong {
+  color: #fff7e5 !important;
+  font-family: Georgia, serif !important;
+  font-weight: 700 !important;
+}
+body.homepage-premium-max .r4-shortcuts small {
+  color: #d3e8de !important;
+}
+body.homepage-premium-max .r4-homepage .r4-section {
+  border-bottom-color: rgba(232,189,99,.2) !important;
+}
+body.homepage-premium-max .r4-homepage .r4-section-title h2,
+body.homepage-premium-max .r4-homepage .r4-community h2,
+body.homepage-premium-max .r4-homepage .r4-next h2 {
+  font-family: Georgia, "Times New Roman", serif !important;
+  color: #fff1d9 !important;
+  font-weight: 800 !important;
+  letter-spacing: -.03em !important;
+  text-shadow: 0 3px 4px rgba(0,0,0,.46), 0 0 16px rgba(250,205,110,.15);
+}
+body.homepage-premium-max .r4-homepage .r4-section-title h2 span,
+body.homepage-premium-max .r4-homepage .r4-community h2 span {
+  color: #ffd47a !important;
+}
+body.homepage-premium-max .r4-homepage .r4-section-title>a {
+  color: #ffda7c !important;
+}
+body.homepage-premium-max .r4-homepage .r4-games-grid .r4-game {
+  border: 1px solid rgba(248,194,90,.78) !important;
+  background: linear-gradient(160deg,#003b3d,#001e29) !important;
+  border-radius: 17px !important;
+  box-shadow: 0 12px 24px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,237,171,.13);
+  overflow: hidden !important;
+}
+body.homepage-premium-max .r4-homepage .r4-game:hover,
+body.homepage-premium-max .r4-homepage .r4-game:focus-visible {
+  border-color: #ffdf86 !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.32),0 0 17px rgba(241,198,91,.15) !important;
+}
+body.homepage-premium-max .r4-game-image {
+  filter: saturate(1.13) contrast(1.06);
+}
+body.homepage-premium-max .r4-game h3,
+body.homepage-premium-max .r4-guide strong,
+body.homepage-premium-max .r4-update strong {
+  font-family: Georgia, "Times New Roman", serif !important;
+  color: #fff0cd !important;
+}
+body.homepage-premium-max .r4-game p,
+body.homepage-premium-max .r4-homepage .r4-section-title p,
+body.homepage-premium-max .r4-guide-body>span,
+body.homepage-premium-max .r4-update em {
+  color: #dce8df !important;
+}
+body.homepage-premium-max .r4-homepage .r4-guide,
+body.homepage-premium-max .r4-homepage .r4-update,
+body.homepage-premium-max .r4-homepage .r4-next {
+  background-color: #00343a !important;
+  border-color: rgba(229,179,81,.38) !important;
+}
+body.homepage-premium-max .r4-homepage .r4-card-action,
+body.homepage-premium-max .r4-homepage .r4-premium-section-link {
+  border-color: #d8ad57 !important;
+  color: #ffdf87 !important;
+}
+body.homepage-premium-max .site-footer {
+  background: #002b2e !important;
+  border-top: 1px solid rgba(235,189,92,.38) !important;
+}
+
+/* Responsive: text remains real, usable, and all links stay tappable. */
+@media (min-width: 1181px) and (max-width: 1450px) {
+  body.homepage-premium-max .r4-hero h1 {
+    font-size: clamp(30px,3.1vw,47px) !important;
+  }
+  body.homepage-premium-max .r4-hero-motto {
+    font-size: clamp(24px,3.1vw,44px) !important;
+  }
+  body.homepage-premium-max .r4-hero-claim {
+    font-size: clamp(18px,1.9vw,28px) !important;
+  }
+  body.homepage-premium-max .r4-hero-description {
+    font-size: clamp(12px,1.04vw,15px) !important;
+  }
+  body.homepage-premium-max .r4-hero-actions .r4-btn {
+    font-size: 16px !important;
+    min-height: 49px !important;
+  }
+}
+@media (max-width: 1180px) {
+  body.homepage-premium-max .r4-hero {
+    background: linear-gradient(125deg,#003b3d 0%,#00262f 100%) !important;
+  }
+  body.homepage-premium-max .r4-hero-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    position: relative !important;
+    z-index: 3 !important;
+  }
+  body.homepage-premium-max .r4-hero h1 {
+    white-space: normal !important;
+    font-size: clamp(27px,4.3vw,48px) !important;
+  }
+  body.homepage-premium-max .r4-hero-motto {
+    white-space: normal !important;
+    font-size: clamp(27px,4.1vw,46px) !important;
+  }
+  body.homepage-premium-max .r4-hero-claim {
+    white-space: normal !important;
+    font-size: clamp(17px,2.4vw,27px) !important;
+  }
+  body.homepage-premium-max .r4-hero-art {
+    background-image: linear-gradient(90deg,rgba(0,50,51,.92),rgba(0,49,48,.16) 80%), url("/assets/gracz-hero-mobile-art-r14.webp") !important;
+  }
+}
+@media (max-width: 680px) {
+  body.homepage-premium-max .r4-hero-copy {
+    padding: 25px 18px 14px !important;
+  }
+  body.homepage-premium-max .r4-hero h1 { font-size: clamp(26px,7.6vw,38px) !important; }
+  body.homepage-premium-max .r4-hero-motto { font-size: clamp(25px,7.5vw,37px) !important; }
+  body.homepage-premium-max .r4-hero-claim { font-size: clamp(16px,4.5vw,23px) !important; }
+  body.homepage-premium-max .r4-hero-description { font-size: 13px !important; }
+  body.homepage-premium-max .r4-hero-actions {
+    flex-wrap: wrap !important;
+    gap: 9px !important;
+  }
+  body.homepage-premium-max .r4-hero-actions .r4-btn {
+    font-size: 14px !important;
+    min-height: 43px !important;
+    padding: 8px 11px !important;
+  }
+  body.homepage-premium-max .r4-owner-picture::after {
+    background: linear-gradient(0deg,#003336 0%,transparent 34%),linear-gradient(90deg,rgba(0,55,53,.36),transparent 85%) !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-shortcuts {
+    border-radius: 10px !important;
+    margin-top: 8px !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-games-grid .r4-game {
+    border-radius: 11px !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.homepage-premium-max .r4-shortcuts a {transition:none!important;transform:none!important}
+}
+
+/* Mobile LCP: use only preloaded picture, never load duplicate decorative CSS hero. */
+@media (max-width: 680px) {
+  body.homepage-premium-max .r4-hero-art {
+    background-image: none !important;
+    background-color: transparent !important;
+  }
+}
+
+/* Approved Owner Crown: hand-coded vector SVG traced 1:1 from the accepted artwork
+   (same 60x49 proportions), served same-origin from /assets/ under the CSP.
+   skewX(18deg) cancels the rule's inherited skew(-18deg) so the crown stays
+   upright, symmetric and centred between the decorative lines. */
+body.homepage-premium-max .r4-hero-rule {
+  height: 38px !important;
+  min-height: 38px !important;
+}
+body.homepage-premium-max .r4-hero-rule::after {
+  content: "" !important;
+  display: block !important;
+  width: 52px;
+  height: 43px;
+  transform: translate(-50%, -52%) skewX(18deg);
+  background-image: url("/assets/gracz-crown-premium.svg") !important;
+  background-position: center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+  color: transparent !important;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.42)) drop-shadow(0 0 7px rgba(255,208,103,.2));
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-hero-rule {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+  body.homepage-premium-max .r4-hero-rule::after {
+    width: 44px;
+    height: 37px;
+  }
+}

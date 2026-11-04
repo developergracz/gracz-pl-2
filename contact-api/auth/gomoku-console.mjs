@@ -3248,3 +3248,6 @@ export function serveGomokuConsole(req,res,url){
  res.end(response[1]);return true;
 }
 
+
+// Shared, presentation-only premium console shell. Games provide their own boards and controllers.
+export function getSharedGameConsoleHtml(){return html;}
