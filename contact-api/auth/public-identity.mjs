@@ -987,8 +987,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     await database.query(`INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)
       VALUES($1,$2,now()+interval '7 days')`,[digest(token),account.id]);
     // Audit labels are best-effort: login remains valid if activity logging fails.
-    try{await recordSessionBrowser(database,digest(token),req.headers['user-agent']);
-      await recordSecurityEvent(database,account.id,'login_success');}catch{}
+    try{await recordSessionBrowser(database,digest(token),req.headers['user-agent']);}catch{}
+    try{await recordSecurityEvent(database,account.id,'login_success');}catch{}
     res.setHeader('Set-Cookie',cookie(token));
     return json(res,200,{ok:true,nickname:account.nickname}),true;
    }
