@@ -91,3 +91,28 @@ test('premium player profile renders password form and sends only the authentica
  assert.match(js.body,/api\('change-password'/);
  assert.match(js.body,/otherSessionsRevoked/);
 });
+
+test('premium confirmation dialog is hidden by default, accessible, and shown only after API success',()=>{
+ const read=pathname=>{
+  const r={body:'',status:0};
+  const response={writeHead(status){r.status=status},end(body){r.body=String(body)}};
+  assert.equal(servePlayerPanel({method:'GET'},response,new URL(pathname,host)),true);
+  assert.equal(r.status,200);
+  return r.body;
+ };
+ const html=read('/konto/panel/');
+ const js=read('/konto/panel/app.js');
+ const css=read('/konto/panel/styl.css');
+ assert.match(html,/id="pw-success-overlay" hidden/);
+ assert.match(html,/class="pw-success-modal" role="dialog" aria-modal="true"/);
+ assert.match(html,/id="pw-success-title">Hasło zostało zmienione/);
+ assert.match(html,/id="pw-success-close" type="button">Zamknij/);
+ assert.match(css,/\.pw-success-modal/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(js,/function showPasswordSuccessModal\(revokedCount\)/);
+ assert.match(js,/function closePasswordSuccessModal\(\)/);
+ assert.match(js,/showPasswordSuccessModal\(result\.otherSessionsRevoked\)/);
+ assert.match(js,/try\{\s*const result=await api\('change-password'/);
+ assert.match(js,/catch\(error\)\{label\.textContent=error\.message;\}/);
+ assert.doesNotMatch(js,/catch\(error\)\{showPasswordSuccessModal/);
+});
