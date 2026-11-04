@@ -1281,6 +1281,14 @@ select option{background:#102c34;color:#fff}
  .focus-nav .focus-start{padding:5px 8px;font-size:12px}
 }
 
+/* R40: Chat conversation reaches the composer instead of leaving an unused preview-height gap.
+   Keep the input and status as compact natural-height elements; chat bubbles scroll above them. */
+.match-panel:not(.moves-only) .mini-chat{flex:0 0 auto;height:auto;min-height:0;padding:0 1px 1px}
+.match-panel:not(.moves-only) #chat-panel{flex:1 1 0;min-height:0;padding-bottom:0}
+.match-panel:not(.moves-only) #chat-panel .chat-messages{flex:1 1 auto;min-height:0;
+ max-height:none;height:auto;overflow-y:auto;overscroll-behavior:contain;padding-bottom:6px}
+.match-panel:not(.moves-only) .mini-chat .chat-form{flex:0 0 auto;margin-top:0}
+.match-panel:not(.moves-only) .mini-chat .chat-footnote{flex:0 0 auto;margin-top:4px}
 /* R31: history owns the panel down to the bottom quick tools; chat remains accessible in Czat tab. */
 .match-panel.moves-only .mini-chat{display:none!important}
 .match-panel.moves-only #moves-panel{flex:1 1 auto;min-height:0;padding-bottom:1px}
