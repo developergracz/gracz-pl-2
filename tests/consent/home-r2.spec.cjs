@@ -52,7 +52,12 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   if(width>680 && width<1181)expect(layout.illustration).toContain('gracz-hero-mobile-art-r14.webp');
+   if(width>680 && width<1181){
+     // Tablets show the same fixed console below the copy, not a second decorative artwork.
+     await expect(page.locator('.r4-owner-picture')).toBeVisible();
+     await expect(page.locator('.r4-hero-art')).toBeHidden();
+     expect(await page.locator('.r4-owner-image').evaluate(img=>img.currentSrc)).toContain('gracz-hero-gomoku-mobile-preview-r1.webp');
+   }
     if(width<=680){
       await expect(page.locator('.r4-owner-picture')).toBeVisible();
       await expect(page.locator('.r4-owner-image')).toHaveAttribute('fetchpriority','high');
@@ -169,13 +174,13 @@ test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',as
    expect(Math.abs(dims.imageRect.height/dims.imageRect.width-724/2172)).toBeLessThan(.02);
    expect(dims.heroRect.height).toBeGreaterThan(380);
    expect(dims.copyVisible).toBe('none');
-   await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
    expect(dims.overflow).toBeLessThanOrEqual(width+2);
    await expect(page.locator('.r4-owner-hotspot--games')).toBeHidden();
    await expect(page.locator('.r4-owner-hotspot--guides')).toBeHidden();
    if(width===1366) {
-     await page.locator('.r4-hero-actions a[href="/gry/"]').click();
+     await page.locator('.r4-hero-actions > a[href="/gry/"]').click();
      await expect(page).toHaveURL(/\/gry\/$/);
    }
   }finally{await context.close()}
@@ -190,8 +195,8 @@ test('Owner hero preserves responsive HTML copy and ordinary links on mobile',as
   await expect(page.locator('.r4-owner-picture')).toBeVisible();
    await expect(page.locator('.r4-owner-image')).toBeVisible();
   await expect(page.locator('.r4-hero-copy')).toBeVisible();
-  await expect(page.locator('.r4-hero-actions a[href="/gry/"]')).toBeVisible();
-  await expect(page.locator('.r4-hero-actions a[href="/poradniki/"]')).toBeVisible();
+  await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toBeVisible();
+  await expect(page.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
  }finally{await context.close()}
 });
 
@@ -820,5 +825,53 @@ test('Approved Full Max Premium game images load and display in chess and checke
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
+ }
+});
+
+// HERO R3: one fixed console; only the board, console details and the game CTA change every 5 s.
+test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',async({browser})=>{
+ const steps=[
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/'],
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/'],
+  ['soon','Poznaj kolejne gry','/gry/'],
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/']];
+ for(const width of [390,768,1366,1920]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();
+   await page.clock.install();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const hero=page.locator('.r4-hero');
+   for(const selector of ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description'])
+     await expect(page.locator(selector)).toBeVisible();
+   await expect(page.locator('.r4-hero-actions svg')).toHaveCount(0);
+   await expect(page.locator('.r4-hero-live-actions')).toHaveCount(0);
+   await expect(page.locator('#r4-hero-checkers-board .r4-sq')).toHaveCount(64);
+   await expect(page.locator('#r4-hero-checkers-board .r4-sq--dark .r4-man--white')).toHaveCount(12);
+   await expect(page.locator('#r4-hero-checkers-board .r4-sq--dark .r4-man--black')).toHaveCount(12);
+   const stage=await page.locator('.r4-console-stage').boundingBox();
+   for(const [i,[slide,label,href]] of steps.entries()){
+    if(i)await page.clock.runFor(5000);
+    await expect(hero).toHaveAttribute('data-hero-slide',slide);
+    const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
+    await expect(active).toHaveCount(1);
+    await expect(active).toHaveText(label);
+    await expect(active).toHaveAttribute('href',href);
+    // Only the current game's panes are shown; Gomoku is the artwork itself.
+    await expect.poll(()=>page.evaluate(()=>[...new Set([...document.querySelectorAll('.r4-pane')]
+      .filter(e=>getComputedStyle(e).visibility==='visible').map(e=>e.dataset.pane))].join('|'))).toBe(slide==='gomoku'?'':slide);
+    expect(await page.locator('.r4-console-stage').boundingBox()).toEqual(stage);
+    const layout=await page.evaluate(()=>{
+     const boxes=[...document.querySelectorAll('.r4-hero-actions > a, .r4-game-cta-stack')].map(e=>e.getBoundingClientRect());
+     const overlap=boxes.some((a,i)=>boxes.some((b,j)=>j>i&&a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1));
+     const clipped=[...document.querySelectorAll('.r4-hero-actions .r4-btn')].some(e=>e.scrollWidth>e.clientWidth+1);
+     return {overlap,clipped,scrollWidth:document.documentElement.scrollWidth};
+    });
+    expect(layout.overlap).toBe(false);
+    expect(layout.clipped).toBe(false);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(width+2);
+   }
+  }finally{await context.close()}
  }
 });
