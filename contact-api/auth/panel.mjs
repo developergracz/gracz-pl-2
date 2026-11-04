@@ -1321,6 +1321,7 @@ function switchSection(name){
  document.querySelectorAll('[data-panel]').forEach(e=>e.classList.toggle('active',e.dataset.panel===name));
  $('title').textContent=sectionNames[name][0];$('subtitle').textContent=sectionNames[name][1];
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
+ if(name==='security'&&sessionConfirmed)void securityLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -1796,6 +1797,153 @@ $('ab-import-file').addEventListener('change',async event=>{
   }catch{failed++}
  }
  await abLoad(0);abMessage('Import zakończony: '+ok+' zapisanych, '+failed+' pominiętych (duplikaty lub niedozwolone powiązania).');
+});
+
+
+// Full Max Premium Security Center — bound only to server-authenticated session data.
+let secState=null,secLoading=false,secTab='overview';
+const secLabels={
+ login_success:'Udane logowanie',password_changed:'Hasło zostało zmienione',
+ other_sessions_revoked:'Wylogowano inne urządzenia',session_revoked:'Zakończono sesję',
+ preferences_updated:'Zmieniono ustawienia alertów'
+};
+function securityNotice(message,error=false){
+ const el=$('sec-status');el.textContent=message;el.classList.toggle('sec-error',error);
+}
+function securityTab(name){
+ secTab=name;
+ document.querySelectorAll('[data-sec-tab]').forEach(button=>{
+  const selected=button.dataset.secTab===name;
+  button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));
+  button.tabIndex=selected?0:-1;
+ });
+ document.querySelectorAll('[data-sec-pane]').forEach(p=>p.hidden=p.dataset.secPane!==name);
+}
+document.querySelectorAll('[data-sec-tab]').forEach(button=>button.addEventListener('click',()=>securityTab(button.dataset.secTab)));
+function securityDate(value){
+ if(!value)return 'Brak daty';
+ const d=new Date(value);
+ return Number.isFinite(d.getTime())?d.toLocaleString('pl-PL',{dateStyle:'medium',timeStyle:'short'}):'Brak daty';
+}
+function securityButton(label,run){
+ const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;
+ b.addEventListener('click',()=>void run(b));return b;
+}
+function securityRenderDevices(){
+ const rows=secState?.sessions||[],out=$('sec-device-list');out.replaceChildren();
+ $('sec-session-count').textContent=String(rows.length);
+ const others=rows.filter(x=>!x.current);
+ $('sec-revoke-quick').disabled=others.length===0;
+ $('sec-revoke-others').disabled=others.length===0;
+ if(!rows.length){const p=document.createElement('p');p.textContent='Nie znaleziono aktywnych sesji.';out.append(p);return}
+ for(const session of rows){
+  const item=document.createElement('article');item.className='sec-device-item';
+  const body=document.createElement('div'),title=document.createElement('strong'),time=document.createElement('small');
+  title.textContent=session.label||(session.current?'Bieżąca przeglądarka':'Inna przeglądarka');
+  time.textContent='Utworzona: '+securityDate(session.createdAt)+' · ważna do: '+securityDate(session.expiresAt);
+  body.append(title,time);item.append(body);
+  if(session.current){
+   const badge=document.createElement('span');badge.className='sec-device-current';
+   badge.textContent='BIEŻĄCA SESJA';item.append(badge);
+  }else{
+   item.append(securityButton('Zakończ sesję',async button=>{
+    button.disabled=true;
+    try{
+     await api('security-center/revoke-session',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:session.id})});
+     await Promise.all([securityLoad(),refreshCenter()]);
+     securityNotice('Wybrana sesja została zakończona.');
+    }catch(error){securityNotice(error.message,true);}
+    finally{button.disabled=false}
+   }));
+  }
+  out.append(item);
+ }
+}
+function securityRenderEvents(){
+ const history=secState?.events||[],filter=$('sec-event-filter').value;
+ const output=$('sec-event-list');output.replaceChildren();
+ const visible=history.filter(event=>filter==='all'||event.code===filter);
+ $('sec-last-event').textContent=history.length?(secLabels[history[0].code]||'Zdarzenie'):'Brak zdarzeń';
+ $('sec-history-note').textContent=secState?.historyNote||'Historia wybranych zdarzeń od uruchomienia modułu.';
+ if(!visible.length){
+  const p=document.createElement('p');p.className='sec-inline-note';p.textContent='Brak zapisanych zdarzeń dla tego filtra.';output.append(p);return;
+ }
+ for(const event of visible){
+  const item=document.createElement('article');item.className='sec-event-item';
+  const isHighlighted=(event.code==='login_success'&&secState.preferences.newSessionAlert)||
+   (event.code==='password_changed'&&secState.preferences.passwordAlert);
+  if(isHighlighted)item.classList.add('sec-event-highlight');
+  const body=document.createElement('div'),strong=document.createElement('strong'),time=document.createElement('small');
+  strong.textContent=(isHighlighted?'◆ ':'')+(secLabels[event.code]||'Zdarzenie konta');
+  time.textContent=securityDate(event.at);
+  body.append(strong,time);item.append(body);output.append(item);
+ }
+}
+function securityPaint(){
+ if(!secState)return;
+ $('sec-email-status').textContent=secState.verifiedEmail?'Potwierdzony':'Niepotwierdzony';
+ $('sec-alert-logins').checked=secState.preferences.newSessionAlert;
+ $('sec-alert-password').checked=secState.preferences.passwordAlert;
+ $('sec-alert-note').textContent=secState.notificationsNote||'Alerty w panelu, bez e-mail i SMS.';
+ securityRenderDevices();securityRenderEvents();
+}
+async function securityLoad(){
+ if(!sessionConfirmed||secLoading)return;
+ secLoading=true;securityNotice('Sprawdzanie ustawień bezpieczeństwa…');
+ try{
+  secState=await api('security-center');
+  securityPaint();
+  securityNotice('Dane bezpieczeństwa pobrano z Twojego konta.');
+ }catch(error){securityNotice(error.message,true)}
+ finally{secLoading=false}
+}
+async function securityRevokeOthers(button){
+ if(!sessionConfirmed)return;
+ button.disabled=true;
+ try{
+  const res=await api('security-center/revoke-others',{method:'POST',
+   headers:{'Content-Type':'application/json'},body:'{}'});
+  await Promise.all([securityLoad(),refreshCenter()]);
+  securityNotice('Zakończono inne sesje: '+res.revoked+'. Bieżąca sesja pozostała aktywna.');
+ }catch(error){securityNotice(error.message,true)}
+ finally{button.disabled=false}
+}
+$('sec-revoke-quick').addEventListener('click',()=>void securityRevokeOthers($('sec-revoke-quick')));
+$('sec-revoke-others').addEventListener('click',()=>void securityRevokeOthers($('sec-revoke-others')));
+$('sec-devices-refresh').addEventListener('click',()=>void securityLoad());
+$('sec-history-refresh').addEventListener('click',()=>void securityLoad());
+$('sec-event-filter').addEventListener('change',securityRenderEvents);
+function securityOpenPassword(){
+ switchSection('profile');
+ const target=$('profile-password-section');
+ if(target){target.scrollIntoView({behavior:'smooth',block:'center'});$('pw-current').focus({preventScroll:true})}
+}
+$('sec-change-password').addEventListener('click',securityOpenPassword);
+$('sec-recovery-password').addEventListener('click',securityOpenPassword);
+$('sec-recovery-devices').addEventListener('click',()=>securityTab('devices'));
+$('sec-alert-form').addEventListener('submit',async event=>{
+ event.preventDefault();if(!sessionConfirmed)return;
+ const button=$('sec-alert-save'),status=$('sec-alert-status');
+ button.disabled=true;status.textContent='Zapisywanie…';
+ try{
+  secState=await api('security-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({newSessionAlert:$('sec-alert-logins').checked,
+    passwordAlert:$('sec-alert-password').checked})});
+  securityPaint();status.textContent='Ustawienia zapisane na Twoim koncie.';
+  securityNotice('Zaktualizowano ustawienia wyróżniania zdarzeń w panelu.');
+ }catch(error){status.textContent=error.message}
+ finally{button.disabled=false}
+});
+$('sec-export-events').addEventListener('click',()=>{
+ if(!secState){securityNotice('Najpierw pobierz historię zdarzeń.',true);return;}
+ const rows=[['Rodzaj','Data'],...secState.events.map(event=>
+  [secLabels[event.code]||'Zdarzenie',securityDate(event.at)])];
+ const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-historia-bezpieczenstwa.csv';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ securityNotice('Wyeksportowano dostępne zdarzenia bezpieczeństwa.');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
