@@ -44,7 +44,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <label for="training-increment" class="training-timer-label">Bonus czasu po każdym ruchu</label>
 <select id="training-increment" aria-label="Dodatkowe sekundy po ruchu w treningu"><option value="0" selected>Bez bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
 <details class="panel-help"><summary>Jak działają zegary?</summary><p class="training-clock-help">Zegary są niezależne. Czas mija tylko podczas własnej tury, a bonus dolicza się po prawidłowym ruchu. Zmiana ustawień rozpoczyna nową partię.</p></details>
-<button class="primary" id="restart" type="button"><span aria-hidden="true">▶</span> Nowa partia</button></section>
+<button class="primary" id="restart" type="button"><span class="restart-premium-icon" aria-hidden="true"><svg viewBox="0 0 36 36" focusable="false" xmlns="http://www.w3.org/2000/svg"><rect x="6.8" y="8.2" width="22.4" height="22.4" rx="5.5" fill="#07383f" stroke="#fff0b0" stroke-width="1.3"/><path d="M14.2 9.5v19.7M21.7 9.5v19.7M8.1 15.4h19.8M8.1 23h19.8" stroke="#74e6d8" stroke-opacity=".85" stroke-width="1.15"/><circle cx="14.2" cy="15.4" r="3.45" fill="#101a22" stroke="#f6d078" stroke-width="1.05"/><circle cx="21.7" cy="23" r="3.45" fill="#fffaf0" stroke="#ebc26b" stroke-width=".9"/><path d="m28.8 4 .85 2.7 2.7.85-2.7.85-.85 2.7-.85-2.7-2.7-.85 2.7-.85Z" fill="#fff2b8" stroke="#ffe59c" stroke-width=".3"/></svg></span><span class="restart-label">Nowa rozgrywka</span></button></section>
 <section class="sidecard training-records" id="training-records" aria-label="Statystyki treningu"><h2>♛ Mój bilans treningu</h2><p class="records-note sr-only">Wyniki partii z komputerem na tym urządzeniu, bez rankingu.</p><div class="records-grid"><div><strong id="record-wins">0</strong><small>Wygrane</small></div><div><strong id="record-draws">0</strong><small>Remisy</small></div><div><strong id="record-losses">0</strong><small>Przegrane</small></div></div><p class="records-total">Rozegrano: <strong id="record-total">0</strong> · Skuteczność: <strong id="record-rate">0%</strong></p></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -1019,6 +1019,23 @@ select option{background:#102c34;color:#fff}
  border-radius:9px;background:#062630;color:#f0f8f6;font:500 12px/1.3 "Segoe UI",sans-serif;text-overflow:ellipsis}
 .sidebar .primary{min-height:39px;padding:8px 10px;font:750 13px/1.25 "Segoe UI",sans-serif;border-radius:10px}
 .sidebar #restart{width:100%;min-height:44px;margin-top:9px;font:750 18px/1.2 Georgia,serif}
+/* R30: integrated Full Max Premium Gomoku-board miniature replaces plain ▶. */
+.sidebar #restart{gap:clamp(9px,1vw,13px);padding:6px 10px;justify-content:center}
+#restart .restart-premium-icon{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;
+ min-width:0;border:1px solid #c29139;border-radius:10px;
+ background:radial-gradient(circle at 20% 15%,#97fff048,transparent 56%),linear-gradient(145deg,#144951,#07232c);
+ box-shadow:inset 0 1px 0 #ffecb58c,0 0 9px #29cbb879,0 0 5px #fbd27b59;
+ font-size:0;line-height:0;transition:box-shadow .18s ease,transform .18s ease}
+#restart .restart-premium-icon svg{width:27px;height:27px;display:block;
+ filter:drop-shadow(0 1px 1px #0009)}
+#restart .restart-label{font:inherit;line-height:1.15;min-width:0;white-space:nowrap;font-size:clamp(15px,1.4vw,21px)}
+#restart:is(:hover,:focus-visible) .restart-premium-icon{transform:translateY(-1px);
+ box-shadow:inset 0 1px 0 #fff8cfaf,0 0 12px #0edac69c,0 0 10px #ffc86c91}
+@media(max-width:360px){#restart .restart-premium-icon{flex-basis:28px;width:28px;height:28px}
+ #restart .restart-premium-icon svg{width:24px;height:24px}
+ #restart .restart-label{font-size:15px}}
+@media(prefers-reduced-motion:reduce){#restart .restart-premium-icon{transition:none}
+ #restart:is(:hover,:focus-visible) .restart-premium-icon{transform:none}}
 .sidebar .secondary{min-height:36px;padding:7px;font-size:12px}
 .sidebar .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
 .panel-help{margin:5px 0;font-size:11px;line-height:1.4;color:#adcac8}
@@ -1478,7 +1495,7 @@ function render(){
    'Komputer wygrał na czas.':'Wygrał komputer.';
  }else if(!online&&state.showcase){
   bottomTurn='Podgląd partii';
-  bottomHelp='Kliknij planszę lub wybierz „Nowa partia”, aby rozpocząć.';
+  bottomHelp='Kliknij planszę lub wybierz „Nowa rozgrywka”, aby rozpocząć.';
  }else if(online&&!m){
   bottomTurn='Oczekiwanie na pokój';
   bottomHelp='Wybierz przyjęte wyzwanie i otwórz pokój.';
