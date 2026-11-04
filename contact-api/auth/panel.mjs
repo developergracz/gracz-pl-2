@@ -41,7 +41,7 @@ const html=String.raw`<!doctype html>
 <button class="nav" data-section="appearance" type="button"><span aria-hidden="true">☼</span> Wygląd i dostępność</button>
 <button class="nav" data-section="sessions" type="button"><span aria-hidden="true">▣</span> Sesje i urządzenia</button>
 <button class="nav" data-section="data" type="button"><span aria-hidden="true">▤</span> Dane i konto</button>
-</nav><button class="nav create-room" data-section="challenges" type="button"><span aria-hidden="true">＋</span> Utwórz pokój</button><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
+</nav><button class="nav create-room" id="create-room" type="button"><span aria-hidden="true">＋</span> Utwórz pokój</button><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
 <main id="content" class="main">
 <div class="masthead"><div><p class="eyebrow">CENTRUM GRACZA <span aria-hidden="true">◆</span> FULL MAX PREMIUM</p>
 <h1 id="title">Pulpit gracza</h1><p id="subtitle">Witaj w Twoim centrum rozgrywek.</p></div>
@@ -785,6 +785,7 @@ $('export-profile').addEventListener('click',()=>{
  notice('Przygotowano plik JSON z danymi profilu.');
 });
 
+$('create-room').addEventListener('click',()=>switchSection('challenges'));
 ['side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
 load();
 })();`;
