@@ -16,7 +16,7 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(page.body,/Warcaby Online/);
  assert.match(page.body,/class="layout"/);
  assert.match(page.body,/class="board checkers-grid"/);
- assert.match(page.body,/id="start-checkers"/);
+ assert.doesNotMatch(page.body,/id="start-checkers"/);
  assert.match(page.body,/id="chat-panel"/);
  assert.match(page.body,/id="moves-panel"/);
  assert.match(page.body,/id="console-config-modal"/);
@@ -36,6 +36,13 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(js.body,/renderBoard\(/);
  const style=load('/konto/warcaby/styl.css');
  assert.equal(style.status,200);
+ for(const id of ['rotate-board','checkers-history','checkers-settings','fullscreen-game','invite-friend','checkers-chat','checkers-refresh']){
+  assert.match(page.body,new RegExp('id="'+id+'"'));
+ }
+ assert.match(page.body,/role="toolbar" aria-label="Narzędzia Warcabów"/);
+ assert.match(style.body,/\.game-tools\.checkers-toolbar/);
+ assert.match(style.body,/repeat\(7,minmax\(0,1fr\)\)/);
+ for(const id of ['checkers-history','checkers-settings','checkers-chat','checkers-refresh'])assert.match(js.body,new RegExp(id));
  assert.match(page.body,/Pokoje i zaproszenia/);
  assert.match(page.body,/checkers-room-subtitle/);
  assert.match(style.body,/\.warcaby-console \.layout:not\(\.game-focus\)/);
