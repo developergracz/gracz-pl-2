@@ -79,3 +79,49 @@ test('UI computes the remaining forced chain without confusing alternatives',()=
  const king=Array(64).fill(0);king[42]=3;king[35]=2;
  assert.deepEqual(Array.from(guide.captureTargets(king,42,1)).sort((a,b)=>a-b),[7,14,21,28]);
 });
+
+
+test('a real Warcaby board can render 64 squares and 24 figures when training starts',()=>{
+ const js=asset('/konto/warcaby/app.js');
+ const from=js.indexOf('function renderBoard(){'),to=js.indexOf('function renderHistory(){',from);
+ assert.ok(from>=0&&to>from,'renderBoard is present');
+ const fragment=()=>({children:[],append(element){this.children.push(element)}});
+ const element=tag=>({
+  tagName:tag,children:[],className:'',attributes:{},textContent:'',
+  classList:{
+   classes:new Set(),
+   add(name){this.classes.add(name)},
+   contains(name){return this.classes.has(name)}
+  },
+  append(child){this.children.push(child)},
+  addEventListener(){},
+  setAttribute(name,value){this.attributes[name]=value},
+ });
+ const fields=new Map();
+ const $=id=>{if(!fields.has(id))fields.set(id,element('output'));return fields.get(id)};
+ const board={classList:{remove(){}},replaceChildren(f){this.children=f.children}};
+ const initial={
+  board:Array.from({length:64},(_,i)=>{
+   const row=Math.floor(i/8),col=i%8;
+   return (row+col)%2 ? (row<3?1:row>4?2:0):0;
+  }),
+  turn:1,winner:0,moves:0,forced:null
+ };
+ for(const rotated of [false,true]){
+  const context={
+   document:{createDocumentFragment:fragment,createElement:element},
+   board,current:{state:initial,player:1,playable:true,players:['Ty','Komputer']},
+   selected:null,rotated,mode:'training',
+   $,
+   squareLabel:i=>'ABCDEFGH'[i%8]+(8-Math.floor(i/8)),
+   captureSources:()=>[],captureTargets:()=>[],destinations:()=>[],
+   renderHistory(){},syncCaptureNotice(){}
+  };
+  assert.doesNotThrow(()=>new Script(js.slice(from,to)+'\nrenderBoard();').runInNewContext(context));
+  assert.equal(board.children.length,64);
+  const tokens=board.children.flatMap(square=>square.children);
+  assert.equal(tokens.filter(t=>t.className.includes('piece white')).length,12);
+  assert.equal(tokens.filter(t=>t.className.includes('piece black')).length,12);
+  assert.equal(board.children[0].attributes['aria-label'],rotated?'H1':'A8');
+ }
+});

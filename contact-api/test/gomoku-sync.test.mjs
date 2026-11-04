@@ -9,7 +9,7 @@ function backend(){
  return {version:0,players:['A','B'],state:{board:Array(225).fill(0),turn:1,winner:0,moves:0,history:[],
   clock:{remaining:[420000,420000],since:new Date(1700000000000).toISOString(),ready:[true,true],incrementMs:0}},undoRequest:null};
 }
-function client(shared=backend(),player=1,source){
+function client(shared=backend(),player=1,source,WebSocketImpl){
  const elements=new Map(),intervals=[],timeouts=new Map(),events={},calls=[];
  let now=1700000000000,sequence=0,fail=false,hold=null;
  class Element{
@@ -26,7 +26,7 @@ function client(shared=backend(),player=1,source){
  const get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
  const document={getElementById:get,createElement:()=>new Element(),visibilityState:'visible',
   addEventListener:(k,fn)=>{events[k]=fn;}};
- const window={navigator:{onLine:true},performance:{now:()=>now},
+ const window={WebSocket:WebSocketImpl,navigator:{onLine:true},performance:{now:()=>now},
   setInterval:(fn,ms)=>{intervals.push({fn,ms,next:now+ms});},
   setTimeout:(fn,ms)=>{const key=++sequence;timeouts.set(key,{fn,at:now+ms});return key;},
   clearTimeout:key=>timeouts.delete(key),addEventListener:(k,fn)=>{events[k]=fn;},
@@ -134,3 +134,39 @@ test('P1: two clients preserve optimistic moves, clocks, undo, result and reconn
 });
 
 export {client};
+
+
+test('P2: pushed state replaces polling; version gaps restore HTTP and hidden tabs close transport',async()=>{
+ const sockets=[];
+ class Socket{
+  constructor(){sockets.push(this);}
+  send(raw){this.sent=JSON.parse(raw);}
+  close(){this.onclose?.();}
+  receive(m){this.onmessage({data:JSON.stringify(m)});}
+ }
+ const shared=backend(),c=client(shared,2,undefined,Socket);await c.join();
+ const socket=sockets[0];socket.onopen();assert.equal(socket.sent.type,'subscribe');
+ socket.receive({type:'snapshot',matchId:id,seq:1,match:structuredClone(c.hooks.state.match),messages:[],serverTime:new Date(1700000000000).toISOString()});
+ await flush();c.calls.length=0;
+ const rendered=c.context.renderCount;await c.tick(8000);
+ assert.equal(c.calls.filter(x=>x.path.startsWith('/auth/match')).length,0);
+ assert.equal(c.context.renderCount,rendered);
+ assert.equal(c.get('clock-1').textContent,'06:52');
+ shared.version=1;shared.state.board[0]=1;shared.state.turn=2;shared.state.moves=1;
+ shared.state.history=[{player:1,to:0,number:1}];shared.state.clock.since=new Date(1700000008000).toISOString();
+ const {board,history,...state}=structuredClone(shared.state);
+ socket.receive({type:'match',matchId:id,seq:2,baseVersion:0,version:1,
+  match:{...structuredClone(c.hooks.state.match),version:1,state},changes:[[0,1]],historyFrom:0,historyAppend:history,
+  serverTime:new Date(1700000008000).toISOString()});
+ assert.equal(c.get('board').children[0].classes.has('p1'),true);
+ assert.equal(c.hooks.state.match.state.history.length,1);
+ socket.receive({type:'chat',matchId:id,seq:3,messages:[{id:'message',player:1,body:'hello',createdAt:new Date().toISOString()}]});
+ assert.equal(c.get('chat-input').disabled===false,true);
+ // Losing an event cannot silently advance the local revision.
+ socket.receive({type:'match',matchId:id,seq:5});await flush();
+ assert.ok(c.calls.some(x=>x.path.startsWith('/auth/match?id')));
+ c.document.visibilityState='hidden';c.events.visibilitychange();c.calls.length=0;await c.tick(8000);
+ assert.equal(c.calls.length,0);
+ c.document.visibilityState='visible';c.events.visibilitychange();await flush();assert.equal(sockets.length,2);
+ assert.ok(c.calls.some(x=>x.path.startsWith('/auth/match?id')));
+});

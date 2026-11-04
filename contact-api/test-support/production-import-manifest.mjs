@@ -15,6 +15,10 @@ export const productionModules=Object.freeze([
   'auth/premium-profile.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
+  // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session
+  // and match authorization on reads; no new mutation protocol or outbound hosts.
+  'auth/gomoku-realtime.mjs',
+  'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
@@ -80,5 +84,5 @@ export const productionModules=Object.freeze([
 ]);
 export const productionDependencies=Object.freeze([
   'node:http','node:crypto','node:dns/promises','node:net','node:url',
-  'node:fs/promises','node:util','pg',
+  'node:fs/promises','node:util','pg','ws',
 ]);

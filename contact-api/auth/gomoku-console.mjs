@@ -1,6 +1,7 @@
+import {createGomokuRealtimeClient} from './gomoku-realtime-client.mjs';
 // Standalone Gomoku console. Online games use the existing authenticated, server-authoritative /auth/match API.
 const secure={
- 'Content-Security-Policy':"default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+ 'Content-Security-Policy':"default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self' wss://gracz-contact-api.onrender.com; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
  'Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'
 };
@@ -2378,7 +2379,7 @@ async function loadMatch(id){
   if(result.match?.game!=='gomoku')throw new Error('Ten pokój nie jest partią Gomoku.');
   synchronizeGameTime(result);
   state.matchId=id;state.match=result.match;state.pendingOnlineMove=null;
-  state.chatSignature='';void refreshRoomChat();
+  state.chatSignature='';onlineChatMessages=[];realtime.update();void refreshRoomChat();
   $('room-select').value=id;
   history.replaceState(null,'','/konto/gomoku/?match='+encodeURIComponent(id));
   note('Połączono z pokojem. Ruchy są zatwierdzane przez serwer.');
@@ -2398,7 +2399,7 @@ async function onlineMove(to){
    headers:{'Content-Type':'application/json'},
    body:JSON.stringify({id:matchId,version:m.version,move:{to}})});
   if(epoch===state.epoch&&state.matchId===matchId){
-   synchronizeGameTime(result);state.match=result.match;
+   if(!state.match||result.match.version>=state.match.version){synchronizeGameTime(result);state.match=result.match;}
   }
  }catch(e){
   if(epoch===state.epoch&&state.matchId===matchId){
@@ -2420,6 +2421,7 @@ async function refreshOnline(force=false){
   const result=await api('match?id='+encodeURIComponent(id));
   if(epoch===state.epoch&&state.matchId===id&&result.match?.game==='gomoku'){
    const previous=state.match,next=result.match;
+   if(previous&&next.version<previous.version)return;
    // Version covers durable board/clock changes; permissions, names and expiring
    // undo requests can change independently of the match version.
    changed=!previous||previous.version!==next.version||previous.player!==next.player||previous.playable!==next.playable||
@@ -2561,7 +2563,8 @@ async function refreshRoomChat(){
   const result=await api('match/chat?id='+encodeURIComponent(id));
   if(epoch!==state.epoch||state.matchId!==id)return;
   $('chat-input').disabled=false;$('chat-send').disabled=false;
-  drawRoomChat(result.messages);
+  if(realtime.isReady())return;
+  onlineChatMessages=result.messages;drawRoomChat(onlineChatMessages);
   $('chat-status').textContent='Prywatny czat partii · ostatnie 60 wiadomości';
  }catch(error){
   if(epoch!==state.epoch)return;
@@ -2638,12 +2641,12 @@ $('chat-form').addEventListener('submit',async event=>{
   if(epoch!==state.epoch||state.matchId!==id)return;
   $('chat-input').value='';
   state.chatBusy=false;
-  await refreshRoomChat();
+  if(!realtime.isReady())await refreshRoomChat();
  }catch(error){if(epoch===state.epoch&&state.matchId===id)$('chat-status').textContent=error.message;}
  finally{state.chatBusy=false;if(epoch===state.epoch&&state.matchId===id)$('chat-send').disabled=false;}
 });
 window.setInterval(()=>{
- if(canSynchronize()&&state.matchId)void refreshRoomChat();
+ if(canSynchronize()&&state.matchId&&!realtime.isReady())void refreshRoomChat();
 },8000);
 
 
@@ -2675,7 +2678,7 @@ async function sendUndoAction(action){
    body:JSON.stringify({id:state.matchId,version:match.version,
     action,requestId:request?.id})});
   if(state.matchId===match.id){
-   state.match=result.match;
+   if(!state.match||result.match.version>=state.match.version){synchronizeGameTime(result);state.match=result.match;}
    if(action==='request')note('Prośba o cofnięcie ruchu została wysłana do przeciwnika.');
    if(action==='accept')note('Prośba zaakceptowana. Cofnięto wyłącznie kamień proszącego gracza.');
    if(action==='reject')note('Prośba o cofnięcie ruchu została odrzucona.');
@@ -2918,7 +2921,7 @@ function setMode(mode){
  if(state.mode===mode)return;
  cancelPendingCpu();
  state.mode=mode;state.epoch++;state.busy=false;state.match=null;state.matchId=null;state.serverOffsetMs=0;
- state.pendingOnlineMove=null;
+ state.pendingOnlineMove=null;realtime.update();
  state.undoDialogId=null;$('undo-request-modal').hidden=true;
  state.chatSignature='';setDockTab('chat');
  $('chat-input').disabled=mode!=='training';$('chat-send').disabled=mode!=='training';
@@ -3129,26 +3132,62 @@ $('ai-level').addEventListener('change',()=>{
  $('ai-hint').textContent=descriptions[$('ai-level').value]||descriptions.expert;
  restart();
 });
+let onlineChatMessages=[];
+const realtime=(${createGomokuRealtimeClient.toString()})({
+ WebSocketImpl:window.WebSocket,url:(location.protocol==='https:'?'wss://':'ws://')+location.host+'/auth/gomoku/realtime',
+ schedule:(fn,ms)=>window.setTimeout(fn,ms),cancel:id=>window.clearTimeout(id),
+ getMatchId:()=>state.matchId,getVersion:()=>state.match?.version??-1,canConnect:canSynchronize,
+ onFallback:()=>{if(canSynchronize()){void refreshOnline();void refreshRoomChat();}},
+ onMessage:message=>{
+  if(state.mode!=='online'||message.matchId!==state.matchId)return false;
+  const current=state.match;
+  if(message.type==='snapshot'){
+   if(message.match?.game!=='gomoku'||!message.match.playable||message.match.version<(current?.version??-1))return false;
+   state.match=message.match;onlineChatMessages=message.messages;
+   synchronizeGameTime(message);render();
+  }else if(message.type==='match'){
+   if(!current)return false;
+   if(message.version<current.version)return true;
+   // An HTTP acknowledgement may already contain this exact committed move.
+   if(message.baseVersion!==current.version)return message.version===current.version;
+   const board=current.state.board.slice();
+   for(const [at,piece] of message.changes)board[at]=piece;
+   state.match={...message.match,state:{...message.match.state,board,
+    history:(current.state.history||[]).slice(0,message.historyFrom).concat(message.historyAppend)}};
+   synchronizeGameTime(message);render();
+  }else if(message.type==='chat'){
+   const known=new Set(onlineChatMessages.map(m=>m.id));
+   onlineChatMessages=onlineChatMessages.concat(message.messages.filter(m=>!known.has(m.id))).slice(-60);
+  }else return false;
+  if(message.type!=='match'){
+   drawRoomChat(onlineChatMessages);$('chat-input').disabled=false;
+   if(!state.chatBusy)$('chat-send').disabled=false;
+   $('chat-status').textContent='Prywatny czat partii · ostatnie 60 wiadomości';
+  }
+  return true;
+ }
+});
 $('reload-rooms').addEventListener('click',()=>void rooms());
 $('join-room').addEventListener('click',()=>void loadMatch($('room-select').value));
 $('refresh-match').addEventListener('click',()=>void refreshOnline());
 window.setInterval(()=>{
- if(canSynchronize()&&state.matchId&&!state.busy)
+ if(canSynchronize()&&state.matchId&&!state.busy&&!realtime.isReady())
   void refreshOnline();
 },4000);
 function canSynchronize(){
  return state.mode==='online'&&document.visibilityState==='visible'&&window.navigator?.onLine!==false;
 }
 function resumeSynchronization(){
+ realtime.update();
  if(document.visibilityState!=='visible')return;
  if(state.mode==='training'){if(advanceTrainingClock())render();else renderGomokuClocks();return;}
  if(!canSynchronize())return;
- void refreshOnline();
- void refreshRoomChat();
+ if(!realtime.isReady()){void refreshOnline();void refreshRoomChat();}
  void api('friends/presence').catch(()=>{});
 }
 document.addEventListener?.('visibilitychange',resumeSynchronization);
 window.addEventListener?.('online',resumeSynchronization);
+window.addEventListener?.('offline',()=>realtime.update());
 // The reference artwork depicts a mid-game position. The opening display is clearly
 // marked as a visual example; the FIRST click starts a clean, playable game.
 function installReferenceShowcase(){
