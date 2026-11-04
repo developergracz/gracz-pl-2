@@ -14,7 +14,8 @@
     "contact-data:contract-prep": "node persistence/contact-data-contract-prep.mjs"
   },
   "dependencies": {
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "ws": "^8.22.1"
   },
   "devDependencies": {
     "acorn": "8.15.0"

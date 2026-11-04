@@ -1,10 +1,11 @@
 /** Bounded drain; a hard deadline never clears durable send reservations. */
-export function installShutdown({server,newsletter,database,signals=process,exit=code=>process.exit(code),timeoutMs=25000,logger=console}) {
+export function installShutdown({server,newsletter,database,realtime,signals=process,exit=code=>process.exit(code),timeoutMs=25000,logger=console}) {
   let stopping=false;
   async function shutdown() {
     if(stopping)return;
     stopping=true;
     newsletter.stopAccepting();
+    realtime?.close();
     const deadline=setTimeout(()=>{
       logger.error('[shutdown] deadline exceeded',{code:'API_DRAIN_TIMEOUT'});
       server.closeAllConnections?.();
