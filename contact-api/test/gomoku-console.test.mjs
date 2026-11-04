@@ -71,6 +71,14 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(bottomNav,/<a href="https:\/\/gracz\.pl\/gry\/gomoku\/"><span class="premium-nav-icon"/,
   'Gomoku rules retain their original destination');
  assert.equal((bottomNav.match(/<a href=/g)||[]).length,2,'Exactly two Premium navigation buttons');
+ assert.match(html,/<div class="sidebar-footer"><div class="sidecard rules premium-howto">/);
+ assert.match(html,/id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"/);
+ assert.match(html,/id="console-config-fab" class="console-config-fab" aria-haspopup="dialog" aria-controls="console-config-modal" hidden/);
+ assert.match(html,/id="console-config-modal" class="console-config-overlay" role="dialog" aria-modal="true"/);
+ for(const id of ['console-config-tiles','console-config-count','console-config-close','console-config-reset',
+  'console-config-done','console-preset-full','console-preset-social','console-preset-board'])
+  assert.match(html,new RegExp('id="'+id+'"'),'Console editor includes '+id);
+ assert.match(html,/id="console-preview-sidebar"/);assert.match(html,/id="console-preview-dock"/);
  assert.match(html,/class="records-heading"/);
  assert.match(html,/class="records-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"/);
  assert.match(html,/class="record-stat record-stat-win"/);
@@ -124,6 +132,15 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  const css=served('/konto/gomoku/styl.css').body;
  assert.match(css,/R33: restrained Full Max Premium secondary action for reviewing the finished board/);
  assert.match(css,/R34: compact, interactive Full Max Premium bottom navigation/);
+ assert.match(css,/R41: Three compact Premium navigation controls in a single row/);
+ assert.match(css,/\.sidebar \.sidebar-footer\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.sidebar \.sidebar-footer>\.side-links\{grid-column:2\/4/);
+ assert.match(css,/\.sidebar \.sidebar-footer>\.console-config-launch\{grid-column:1\/-1/);
+ assert.match(css,/\.layout\.console-hide-sidebar>\.sidebar\{display:none!important\}/);
+ assert.match(css,/\.layout\.console-hide-dock \.side-dock\{display:none!important\}/);
+ assert.match(css,/\.layout\.console-hide-dock \.boardarea\{grid-template-columns:minmax\(0,1fr\)!important\}/);
+ assert.match(css,/\.console-config-overlay\{position:fixed;inset:0;z-index:12000/);
+ assert.match(css,/@media\(max-width:530px\)\{\.console-config-overlay\{padding:5px\}/);
  assert.match(css,/\.sidebar \.rules\.premium-howto>\.premium-howto-trigger\{display:flex;align-items:center;gap:8px/);
  assert.match(css,/\.sidebar \.side-links\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/@media\(max-height:800px\)\{\.sidebar \.rules\.premium-howto>\.premium-howto-trigger/);
@@ -387,6 +404,41 @@ test('Gomoku browser console can play immediately against a computer and join a 
   'globalThis.__gomokuTest={state,render,restart,winningFive};})();');
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
  new Script(executable).runInNewContext(context);
+ assert.equal(get('board').children.length,225);
+ // R41: appearance customization neither creates a new game nor destroys the active board.
+ const configTiles=get('console-config-tiles').children;
+ assert.equal(configTiles.length,15,'Fifteen independent tiles in the Premium console editor');
+ assert.equal(get('console-config-modal').hidden,true);
+ assert.equal(get('console-config-fab').hidden,true);
+ get('console-config-open').listeners.click();
+ assert.equal(get('console-config-modal').hidden,false);
+ const sidebarTile=configTiles[0],dockTile=configTiles[1];
+ sidebarTile.children[2].listeners.click();
+ assert.equal(get('game').classes.has('console-hide-sidebar'),true);
+ assert.equal(get('console-config-fab').hidden,false,'Hidden sidebar has a visible restore control');
+ assert.equal(sidebarTile.children[2].textContent,'Dodaj');
+ assert.equal(get('console-preview-sidebar').classes.has('is-off'),true);
+ assert.equal(JSON.parse(storage.get('gracz.gomoku.console-layout.v1'))[0],'sidebar');
+ get('console-config-done').listeners.click();
+ assert.equal(get('console-config-modal').hidden,true);
+ assert.equal(get('console-config-fab').focused,true);
+ get('console-config-fab').listeners.click();
+ dockTile.children[2].listeners.click();
+ assert.equal(get('game').classes.has('console-hide-dock'),true);
+ assert.equal(get('console-preview-dock').classes.has('is-off'),true);
+ get('console-preset-board').listeners.click();
+ assert.equal(get('game').classes.has('console-hide-players'),true);
+ assert.equal(get('board').children.length,225,'Board remains mounted in minimal layout');
+ assert.equal(get('move-count').textContent,'Ruchy: 12','Appearance update does not restart game');
+ get('console-preset-full').listeners.click();
+ assert.equal(get('game').classes.has('console-hide-sidebar'),false);
+ assert.equal(get('game').classes.has('console-hide-dock'),false);
+ assert.equal(sidebarTile.children[2].textContent,'Ukryj');
+ assert.equal(get('console-config-fab').hidden,true);
+ assert.deepEqual(JSON.parse(storage.get('gracz.gomoku.console-layout.v1')),[]);
+ get('console-config-reset').listeners.click();
+ get('console-config-close').listeners.click();
+ assert.equal(get('console-config-modal').hidden,true);
  assert.equal(get('board').children.length,225);
  // All four Gomoku directions, both colours, exact five rather than all matching stones.
  for(const [dr,dc] of [[1,0],[0,1],[1,1],[1,-1]]){

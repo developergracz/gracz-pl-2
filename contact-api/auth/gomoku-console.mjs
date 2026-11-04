@@ -69,8 +69,10 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <select id="room-select"><option value="">Brak wybranego pokoju</option></select>
 <div class="actions"><button class="primary" id="join-room" type="button">Otwórz partię</button><button class="secondary" id="reload-rooms" type="button">Odśwież listę</button></div>
 <a class="textlink" href="/konto/panel/">Dodaj znajomego lub wyślij zaproszenie w Panelu Gracza</a></section>
-<div class="sidecard rules premium-howto"><button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></button></div>
+<div class="sidebar-footer"><div class="sidecard rules premium-howto"><button type="button" id="howto-open" class="premium-howto-trigger" aria-haspopup="dialog" aria-controls="howto-modal"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2M15 12h2"/></svg></span><span class="premium-nav-label">Jak grać?</span><span class="premium-nav-chevron" aria-hidden="true"></span></button></div>
 <nav class="side-links" aria-label="Pomoc i panel gracza"><a href="/konto/panel/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M3.5 9h17M9 9.5v10.5M7 6.25h.01M11 6.25h.01"/></svg></span><span>Mój panel</span></a><a href="https://gracz.pl/gry/gomoku/"><span class="premium-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2.1-1.6-4.6-1.8-8-1.1v12.1c3.4-.7 5.9-.5 8 1.1 2.1-1.6 4.6-1.8 8-1.1V5.4c-3.4-.7-5.9-.5-8 1.1Z"/><path d="M12 6.5v12.1M7 9h2M15 9h2"/></svg></span><span>Zasady Gomoku</span></a></nav>
+<button type="button" id="console-config-open" class="console-config-launch" aria-haspopup="dialog" aria-controls="console-config-modal"><span aria-hidden="true">⚙</span> Skonfiguruj wygląd konsoli</button>
+</div>
 </aside>
 <section class="boardarea" aria-label="Konsola gry Gomoku">
 <div class="players">
@@ -153,6 +155,16 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
+<button type="button" id="console-config-fab" class="console-config-fab" aria-haspopup="dialog" aria-controls="console-config-modal" hidden>⚙ Dostosuj konsolę</button>
+<div id="console-config-modal" class="console-config-overlay" role="dialog" aria-modal="true" aria-labelledby="console-config-title" aria-describedby="console-config-intro" hidden>
+<section class="console-config-card">
+<header class="console-config-header"><div><span class="console-config-kicker">GRACZ.PL · TWOJA KONSOLA</span><h2 id="console-config-title">Studio konfiguracji <em>Full Max Premium</em></h2><p id="console-config-intro">Zbuduj wygląd swojej gry jak z kafelków. Ukryj lub dodaj dowolny panel — plansza i rozgrywka pozostają aktywne.</p></div><button type="button" id="console-config-close" class="console-config-close" aria-label="Zamknij konfigurator">×</button></header>
+<div class="console-config-preview" aria-label="Schemat układu konsoli"><div class="console-preview-side" id="console-preview-sidebar"><span aria-hidden="true">▣</span><strong>Panel lewy</strong><small>Nawigacja</small></div><div class="console-preview-board"><span aria-hidden="true">✦</span><strong>Plansza 15 × 15</strong><small>Zawsze dostępna</small></div><div class="console-preview-side" id="console-preview-dock"><span aria-hidden="true">▤</span><strong>Panel prawy</strong><small>Czat i ruchy</small></div></div>
+<div class="console-config-presets"><span>Gotowe układy</span><button type="button" id="console-preset-full">Pełna konsola</button><button type="button" id="console-preset-social">Gra + czat</button><button type="button" id="console-preset-board">Sama plansza</button></div>
+<div class="console-config-divider"><h3>Elementy konsoli</h3><span id="console-config-count" aria-live="polite">Widoczne: 15 z 15</span></div>
+<div class="console-config-tiles" id="console-config-tiles" aria-label="Kafelki elementów konsoli"></div>
+<footer class="console-config-footer"><span>Ustawienia zapisują się lokalnie w tej przeglądarce. Plansza i zegary gry nie są resetowane.</span><div><button type="button" class="console-config-reset" id="console-config-reset">Przywróć wszystkie</button><button type="button" class="console-config-done" id="console-config-done">Gotowe</button></div></footer>
+</section></div>
 <div id="howto-modal" class="howto-overlay" role="dialog" aria-modal="true" aria-labelledby="howto-title" aria-describedby="howto-description" hidden>
 <section class="howto-card">
 <header class="howto-header"><div><span class="howto-kicker">GRACZ.PL · AKADEMIA GOMOKU</span><h2 id="howto-title">Jak grać w Gomoku?</h2><p id="howto-description">Pięć kamieni w jednej linii — poznaj zasady i zobacz przykładową zwycięską planszę.</p></div><button type="button" id="howto-close" class="howto-close" aria-label="Zamknij instrukcję Gomoku">×</button></header>
@@ -1390,6 +1402,139 @@ select option{background:#102c34;color:#fff}
 @media(prefers-reduced-motion:reduce){
  .board .cell.win-line.occupied::after{animation:none}}
 @media(prefers-reduced-motion:reduce){.howto-overlay{backdrop-filter:none}}
+/* R41: Three compact Premium navigation controls in a single row and a full-width designer. */
+.sidebar .sidebar-footer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:6px;margin-top:5px}
+.sidebar .sidebar-footer>.rules.premium-howto{grid-column:1;min-width:0;margin:0;min-height:0}
+.sidebar .sidebar-footer>.side-links{grid-column:2/4;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:0}
+.sidebar .sidebar-footer .premium-howto-trigger{min-height:36px!important;padding:4px 5px!important;gap:4px!important;justify-content:center}
+.sidebar .sidebar-footer .premium-nav-chevron{display:none}
+.sidebar .sidebar-footer .premium-nav-label{flex:0 1 auto;font-size:clamp(9px,.88vw,12px);white-space:nowrap}
+.sidebar .sidebar-footer .premium-nav-icon{flex:0 0 21px;width:21px;height:21px;border-radius:6px}
+.sidebar .sidebar-footer .premium-nav-icon svg{width:14px;height:14px}
+.sidebar .sidebar-footer .side-links a{width:100%;min-width:0;min-height:36px;padding:3px;gap:4px;font-size:clamp(9px,.78vw,11px);white-space:nowrap}
+.sidebar .sidebar-footer>.console-config-launch{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:9px;
+ min-height:40px;padding:7px 9px;border:1px solid #e0b96a;border-radius:11px;
+ background:linear-gradient(165deg,#145657 0%,#083039 58%,#031d2a 100%);color:#ffe3a6;
+ font:800 clamp(11px,1vw,15px)/1.2 Georgia,serif;letter-spacing:.14px;
+ box-shadow:inset 0 1px 0 #d7fff465,0 0 10px #e4b65235,0 3px 9px #0006}
+.sidebar .sidebar-footer>.console-config-launch span{display:inline-grid;place-items:center;width:22px;height:22px;
+ border:1px solid #dab56e;border-radius:7px;color:#ffe0a0;background:#092f36}
+.sidebar .sidebar-footer>.console-config-launch:is(:hover,:focus-visible){border-color:#fff0bb;filter:brightness(1.11);box-shadow:0 0 14px #e9b75b67}
+@media(max-width:380px){.sidebar .sidebar-footer>.side-links{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .sidebar .sidebar-footer{gap:4px}.sidebar .sidebar-footer .premium-nav-icon{flex-basis:18px;width:18px;height:18px}
+ .sidebar .sidebar-footer .side-links a,.sidebar .sidebar-footer .premium-nav-label{font-size:9px}}
+@media(max-height:790px) and (min-width:801px){.sidebar .sidebar-footer .side-links a,.sidebar .sidebar-footer .premium-howto-trigger{min-height:32px!important}
+ .sidebar .sidebar-footer>.console-config-launch{min-height:34px;padding:5px}}
+/* Hide only requested UI pieces. The 15×15 board, gameplay state, server and timers remain mounted. */
+.layout.console-hide-sidebar{grid-template-columns:minmax(0,1fr)}
+.layout.console-hide-sidebar>.sidebar{display:none!important}
+.layout.console-hide-sidebar>.boardarea{grid-column:1}
+.layout.console-hide-dock .side-dock{display:none!important}
+.layout.console-hide-dock .boardarea{grid-template-columns:minmax(0,1fr)!important}
+.layout.console-hide-dock .boardframe{width:min(100%,calc(100dvh - 232px),850px)}
+.layout.console-hide-dock .premium-quick-links,
+.layout.console-hide-players .premium-quick-links{position:absolute;right:14px;top:14px;z-index:4}
+.layout.console-hide-players .players,.layout.console-hide-quicklinks .premium-quick-links,
+.layout.console-hide-status #game-state,.layout.console-hide-bottom .bottom,
+.layout.console-hide-tools .game-tools,.layout.console-hide-training-settings #training-settings,
+.layout.console-hide-training-records #training-records,.layout.console-hide-online-settings #online-settings,
+.layout.console-hide-replay .replay-shortcut,.layout.console-hide-chat-history #chat-messages,
+.layout.console-hide-chat-input .mini-chat .chat-form,.layout.console-hide-chat-input .chat-footnote,
+.layout.console-hide-heading .side-header,.layout.console-hide-mode .sidebar .mode{display:none!important}
+@media(min-width:801px){
+ .layout .boardarea{grid-template-rows:var(--console-players-height,60px) var(--console-status-height,38px)
+  minmax(0,1fr) var(--console-bottom-height,45px)}
+ .layout.console-hide-players{--console-players-height:0px}
+ .layout.console-hide-status{--console-status-height:0px}
+ .layout.console-hide-bottom{--console-bottom-height:0px}
+}
+@media(min-width:801px) and (max-height:740px){
+ .layout{--console-players-height:53px;--console-status-height:35px;--console-bottom-height:44px}
+}
+@media(max-width:800px){.layout.console-hide-sidebar>.boardarea{width:100%}
+ .layout.console-hide-dock .boardframe{width:min(100%,580px)}
+ .layout.console-hide-players .premium-quick-links,.layout.console-hide-dock .premium-quick-links{position:relative;right:auto;top:auto}}
+/* Floating restore control cannot disappear when the left sidebar is removed. */
+.console-config-fab[hidden],.console-config-overlay[hidden]{display:none!important}
+.console-config-fab{position:fixed;top:12px;left:12px;z-index:9000;padding:9px 13px;
+ border:1px solid #f4ce81;border-radius:12px;background:linear-gradient(155deg,#0b5355,#031d27);
+ color:#ffe3a2;font:800 12px Georgia,serif;box-shadow:0 0 17px #e3b65593,0 4px 13px #0009;cursor:pointer}
+.console-config-fab:is(:hover,:focus-visible){background:#116c65;outline-color:#b0fff0}
+.console-config-overlay{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;
+ padding:clamp(6px,1.5vw,22px);background:#010c14e8;backdrop-filter:blur(8px)}
+.console-config-card{box-sizing:border-box;width:min(98vw,1050px);max-height:96dvh;min-height:0;
+ display:flex;flex-direction:column;gap:13px;overflow-y:auto;padding:clamp(13px,2.2vw,25px);
+ border:2px solid #e6bd73;border-radius:23px;background:radial-gradient(ellipse 55% 55% at 0 0,#125c606a,transparent 80%),
+ linear-gradient(145deg,#082f37,#031a27 65%,#07383e);color:#f7fbf8;
+ box-shadow:inset 0 1px 0 #fff8c07d,0 24px 80px #000e,0 0 27px #e5ae534d}
+.console-config-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;
+ padding-bottom:11px;border-bottom:1px solid #c6a15c66}
+.console-config-kicker{font:800 10px/1.3 "Segoe UI",sans-serif;letter-spacing:1.4px;color:#e3b96e}
+.console-config-header h2{font:800 clamp(22px,2.7vw,32px)/1.15 Georgia,serif;color:#ffe4b0;margin:5px 0 7px}
+.console-config-header h2 em{font-style:normal;color:#70e7d6}
+.console-config-header p{font:500 12px/1.48 "Segoe UI",sans-serif;color:#c8e5de;margin:0}
+.console-config-close{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid #e7c47d;
+ background:linear-gradient(#165c5d,#052730);color:#fff0cb;font-size:25px;cursor:pointer}
+.console-config-preview{display:grid;grid-template-columns:1fr 1.55fr 1fr;gap:8px;padding:11px;
+ border:1px solid #6d8d76;border-radius:15px;background:#021b25;box-shadow:inset 0 0 14px #053a43}
+.console-config-preview>div{display:flex;flex-direction:column;align-items:center;justify-content:center;
+ min-height:69px;gap:2px;padding:7px 3px;border:1px solid #d5aa68;border-radius:11px;
+ background:linear-gradient(135deg,#125a5c,#072631);transition:opacity .18s,filter .18s}
+.console-config-preview .console-preview-board{background:linear-gradient(145deg,#26585a,#092e35);
+ border-color:#fff1b4;box-shadow:inset 0 0 16px #d8ab4f37}
+.console-config-preview>div.is-off{opacity:.3;filter:grayscale(1)}
+.console-config-preview strong{font:800 clamp(10px,1.1vw,14px)/1.2 Georgia,serif;color:#ffe6b0;text-align:center}
+.console-config-preview span{font-size:18px;color:#8df1dc}
+.console-config-preview small{font-size:10px;color:#bfe1df}
+.console-config-presets{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.console-config-presets>span{font:700 11px "Segoe UI",sans-serif;color:#ddc18a;margin-right:5px}
+.console-config-presets button,.console-config-reset{padding:8px 12px;min-height:33px;
+ border:1px solid #a88e5e;border-radius:9px;background:linear-gradient(#12444b,#062732);
+ color:#ffe6b9;font:700 11px "Segoe UI",sans-serif;cursor:pointer}
+.console-config-presets button:is(:hover,:focus-visible),.console-config-reset:is(:hover,:focus-visible){border-color:#ffe3a3;filter:brightness(1.15)}
+.console-config-divider{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.console-config-divider h3{margin:0;font:800 18px Georgia,serif;color:#ffe2a0}
+.console-config-divider>span{color:#90e9d9;font-size:11px}
+.console-config-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.console-config-tile{display:flex;align-items:center;gap:9px;min-width:0;min-height:82px;padding:10px;
+ border:1px solid #438f8a;border-radius:13px;background:linear-gradient(150deg,#10434a,#062734 70%);
+ box-shadow:inset 0 1px 0 #b3f8df3a,0 3px 9px #0005}
+.console-config-tile.is-hidden{border-color:#77715e;background:#092c34b8}
+.console-config-tile.is-hidden .console-tile-info{opacity:.68}
+.console-tile-icon{flex:0 0 31px;display:grid;place-items:center;width:31px;height:31px;
+ border:1px solid #d2b16c;border-radius:9px;background:linear-gradient(#135d59,#09262e);
+ color:#ffe1a3;font-size:19px}
+.console-tile-info{flex:1 1 auto;min-width:0}
+.console-tile-info strong{display:block;font:800 12px/1.25 Georgia,serif;color:#ffe4b0}
+.console-tile-info small{display:block;margin-top:4px;font:500 10px/1.35 "Segoe UI",sans-serif;color:#bde0da}
+.console-tile-action{flex:0 0 auto;min-width:49px;min-height:31px;padding:5px 7px;border:1px solid #edc879;
+ border-radius:8px;background:linear-gradient(180deg,#0d5557,#082e36);color:#ffe6b0;
+ font:800 10px "Segoe UI",sans-serif;cursor:pointer}
+.console-config-tile.is-hidden .console-tile-action{background:linear-gradient(#ffe9ae,#dea944);
+ color:#1a3130}
+.console-tile-action:is(:hover,:focus-visible){outline:2px solid #83ffe4;outline-offset:2px}
+.console-config-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;
+ padding-top:11px;border-top:1px solid #c8a46265}
+.console-config-footer>span{max-width:49%;font:500 10px/1.5 "Segoe UI",sans-serif;color:#b8dad7}
+.console-config-footer>div{display:flex;gap:8px}
+.console-config-done{min-height:37px;padding:9px 18px;border:1px solid #fff0ba;border-radius:10px;
+ background:linear-gradient(#fff0b4,#edbc58,#bf862c);color:#142e32;font:800 12px Georgia,serif;cursor:pointer}
+.console-config-close:focus-visible,.console-config-done:focus-visible,
+.console-config-fab:focus-visible,.console-config-launch:focus-visible{outline:2px solid #83ffe4;outline-offset:3px}
+@media(max-width:830px){.console-config-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .console-config-tile{min-height:74px}}
+@media(max-width:530px){.console-config-overlay{padding:5px}
+ .console-config-card{width:100%;max-height:98dvh;padding:13px;gap:10px;border-radius:15px}
+ .console-config-header h2{font-size:21px}
+ .console-config-tiles{grid-template-columns:1fr}
+ .console-config-tile{min-height:66px;padding:8px}
+ .console-config-footer{flex-direction:column;align-items:stretch}
+ .console-config-footer>span{max-width:100%}
+ .console-config-footer>div{justify-content:space-between}
+ .console-config-preview>div{min-height:60px}
+ .console-config-preview strong{font-size:10px}
+ .console-config-preview small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.console-config-preview>div{transition:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -2790,6 +2935,114 @@ $('howto-modal').addEventListener('keydown',event=>{
   else $('howto-close').focus?.();
  }
 });
+// R41: A puzzle-style appearance editor. Layout preferences never mutate the game state.
+const consoleLayoutKey='gracz.gomoku.console-layout.v1';
+const consoleParts=[
+ ['sidebar','Panel lewy','Nawigacja, tryby i ustawienia','▣'],
+ ['dock','Panel prawy','Czat, historia ruchów i narzędzia','▤'],
+ ['players','Gracze i zegary','Nazwy, czas i oznaczenie VS','◷'],
+ ['quicklinks','Miniaturki górne','Odnośniki do gier i funkcji','⌂'],
+ ['status','Komunikat nad planszą','Informacja o ruchu i wyniku','✧'],
+ ['bottom','Pasek pod planszą','Liczba ruchów i bieżąca tura','≡'],
+ ['tools','Miniaturki narzędzi','Cofanie, analiza, zaproszenia','⚙'],
+ ['training-settings','Ustawienia treningu','Poziom AI i kontrola czasu','♟'],
+ ['training-records','Bilans treningu','Wygrane, remisy i przegrane','♛'],
+ ['online-settings','Pokoje online','Tworzenie i wybór pokoi','♧'],
+ ['replay','Powtórka partii','Otwieranie odtworzenia ruchów','↶'],
+ ['chat-history','Wiadomości czatu','Treść rozmowy i odpowiedzi AI','☷'],
+ ['chat-input','Pole wpisywania','Formularz wiadomości czatu','✉'],
+ ['heading','Nagłówek Gomoku','Tytuł i korona lewego panelu','♕'],
+ ['mode','Wybór trybu','Trening albo gra ze znajomym','⚑']
+];
+const consoleHidden=new Set(),consoleTileButtons=new Map(),consoleTileCards=new Map();
+function saveConsoleLayout(){
+ try{window.localStorage?.setItem(consoleLayoutKey,JSON.stringify([...consoleHidden]));}catch{}
+}
+function applyConsoleLayout(){
+ const game=$('game');
+ for(const [key] of consoleParts){
+  const hidden=consoleHidden.has(key);
+  game.classList.toggle('console-hide-'+key,hidden);
+  const button=consoleTileButtons.get(key),card=consoleTileCards.get(key);
+  if(button){
+   button.textContent=hidden?'Dodaj':'Ukryj';
+   button.setAttribute('aria-pressed',String(hidden));
+   button.setAttribute('aria-label',(hidden?'Dodaj: ':'Ukryj: ')+consoleParts.find(p=>p[0]===key)[1]);
+  }
+  if(card)card.classList.toggle('is-hidden',hidden);
+ }
+ $('console-preview-sidebar').classList.toggle('is-off',consoleHidden.has('sidebar'));
+ $('console-preview-dock').classList.toggle('is-off',consoleHidden.has('dock'));
+ $('console-config-count').textContent='Widoczne: '+(consoleParts.length-consoleHidden.size)+' z '+consoleParts.length;
+ // Always provide a way to reopen the editor after hiding the navigation panel.
+ $('console-config-fab').hidden=!consoleHidden.has('sidebar')||game.classList.contains('game-focus');
+}
+function changeConsoleLayout(key){
+ if(consoleHidden.has(key))consoleHidden.delete(key);
+ else consoleHidden.add(key);
+ applyConsoleLayout();saveConsoleLayout();
+}
+function setConsolePreset(keys){
+ consoleHidden.clear();
+ for(const key of keys)if(consoleParts.some(part=>part[0]===key))consoleHidden.add(key);
+ applyConsoleLayout();saveConsoleLayout();
+}
+function openConsoleLayout(){
+ $('console-config-modal').hidden=false;
+ $('console-config-close').focus?.();
+}
+function closeConsoleLayout(){
+ $('console-config-modal').hidden=true;
+ (consoleHidden.has('sidebar')?$('console-config-fab'):$('console-config-open')).focus?.();
+}
+function initConsoleLayout(){
+ try{
+  const saved=JSON.parse(window.localStorage?.getItem(consoleLayoutKey)||'null');
+  if(Array.isArray(saved))for(const key of saved){
+   if(typeof key==='string'&&consoleParts.some(part=>part[0]===key))consoleHidden.add(key);
+  }
+ }catch{}
+ const container=$('console-config-tiles');
+ for(const [key,title,description,symbol] of consoleParts){
+  const card=document.createElement('div');card.className='console-config-tile';
+  const icon=document.createElement('span');icon.className='console-tile-icon';
+  icon.setAttribute('aria-hidden','true');icon.textContent=symbol;
+  const info=document.createElement('div');info.className='console-tile-info';
+  const heading=document.createElement('strong');heading.textContent=title;
+  const detail=document.createElement('small');detail.textContent=description;
+  info.append(heading,detail);
+  const button=document.createElement('button');button.type='button';button.className='console-tile-action';
+  button.addEventListener('click',()=>changeConsoleLayout(key));
+  card.append(icon,info,button);container.append(card);
+  consoleTileButtons.set(key,button);consoleTileCards.set(key,card);
+ }
+ $('console-config-modal').hidden=true;
+ $('console-config-open').addEventListener('click',openConsoleLayout);
+ $('console-config-fab').addEventListener('click',openConsoleLayout);
+ $('console-config-close').addEventListener('click',closeConsoleLayout);
+ $('console-config-done').addEventListener('click',closeConsoleLayout);
+ $('console-config-reset').addEventListener('click',()=>setConsolePreset([]));
+ $('console-preset-full').addEventListener('click',()=>setConsolePreset([]));
+ $('console-preset-social').addEventListener('click',()=>setConsolePreset(['sidebar','quicklinks','players']));
+ $('console-preset-board').addEventListener('click',()=>setConsolePreset(['sidebar','dock','players','quicklinks','status','bottom']));
+ $('console-config-modal').addEventListener('click',event=>{
+  if(event.target===$('console-config-modal'))closeConsoleLayout();
+ });
+ $('console-config-modal').addEventListener('keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault?.();closeConsoleLayout();return;}
+  if(event.key==='Tab'){
+   const focusables=[$('console-config-close'),$('console-preset-full'),$('console-preset-social'),
+    $('console-preset-board'),...consoleTileButtons.values(),$('console-config-reset'),$('console-config-done')];
+   const at=focusables.indexOf(document.activeElement);
+   if((event.shiftKey&&at<=0)||(!event.shiftKey&&at===focusables.length-1)){
+    event.preventDefault?.();
+    (event.shiftKey?focusables[focusables.length-1]:focusables[0]).focus?.();
+   }
+  }
+ });
+ applyConsoleLayout();
+}
+initConsoleLayout();
 $('restart').addEventListener('click',restart);
 $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
@@ -2798,6 +3051,7 @@ $('game-settings').addEventListener('click',openGameSettings);
 function setBoardFocusMode(enabled){
  const game=$('game');
  game.classList.toggle('game-focus',enabled);
+ applyConsoleLayout();
  $('focus-game').setAttribute('aria-pressed',String(enabled));
  if(enabled)$('focus-exit').focus?.();
  else $('focus-game').focus?.();
