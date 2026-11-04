@@ -74,7 +74,7 @@ function verifiedGameResult(state){
  const line=state.line?' Zwycięska linia pięciu kamieni: '+state.line+'.':'';
  const reason=state.verified?'To wynik potwierdzony układem kamieni na planszy.':
   'Informację o zakończeniu podaje aktualny stan gry.';
- return 'Partia jest już zakończona. Wygrał '+winner+'.'+line+' '+reason+
+ return (state.winner===3?'Partia jest już zakończona remisem.':'Partia jest już zakończona. Wygrał '+winner+'.')+line+' '+reason+
   ' Po zakończeniu partii nie wykonuje się kolejnych ruchów. Aby zagrać ponownie, wybierz „Nowa partia”.';
 }
 
