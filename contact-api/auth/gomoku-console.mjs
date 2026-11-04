@@ -121,7 +121,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="boardframe"><div class="board" id="board" role="grid" aria-label="Plansza Gomoku 15 na 15"></div></div>
 </div>
 <aside class="side-dock" aria-label="Historia ruchów i rozmowa">
-<section class="match-panel">
+<section class="match-panel" id="match-panel">
 <div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
 <button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.5h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4.8 3v-3.1A2 2 0 0 1 3.5 15.5v-8a2 2 0 0 1 2-2Z"/><path d="M8 10.1h8M8 13.4h5"/></svg></span><span class="dock-tab-text">Czat</span><span class="chat-led chat-led-premium" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chat-crystal-core" cx="33%" cy="24%" r="78%"><stop offset="0%" stop-color="#ddfff4"/><stop offset="37%" stop-color="#66f8d5"/><stop offset="72%" stop-color="#16ba9e"/><stop offset="100%" stop-color="#076367"/></radialGradient><linearGradient id="chat-crystal-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff4c4"/><stop offset="48%" stop-color="#f3bd58"/><stop offset="100%" stop-color="#ab741f"/></linearGradient></defs><circle cx="12" cy="12" r="10.1" fill="#032e34" stroke="url(#chat-crystal-rim)" stroke-width="1.7"/><path d="M12 3.8 19 9.3 16.6 17.4 12 20.6 7.4 17.4 5 9.3Z" fill="url(#chat-crystal-core)" stroke="#bfffe8" stroke-width=".7" stroke-linejoin="round"/><path d="M5 9.3h14M12 3.8l3 5.5-3 11.3-3-11.3Z" fill="none" stroke="#e4fff4" stroke-opacity=".6" stroke-width=".72"/><path d="m17.4 3.5.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z" fill="#ffdf8d"/></svg></span></button>
@@ -1965,7 +1965,7 @@ function renderMoveHistory(){
 function setDockTab(tab){
  state.dockTab=tab;
  const moves=tab==='moves';
- document.querySelector('.match-panel').classList.toggle('moves-only',moves);
+ $('match-panel').classList.toggle('moves-only',moves);
  $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
  $('chat-preview').hidden=!moves||!chatPrefs.preview;
  $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
