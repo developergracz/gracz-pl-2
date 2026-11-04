@@ -5,7 +5,7 @@ import {initialGame,playMove,legalMoves,evaluate,chooseComputerMove} from './che
 export function setupTraining(a){
  const $=a.$;
  let mode='online',generation=0,finished=false,recorded=false;
- let clocks={1:0,2:0},lastTick=0,snapshots=[],notes=[];
+ let clocks={1:0,2:0},lastTick=0,clockStarted=false,snapshots=[],notes=[];
  const storageKey='gracz-warcaby-training-v1';
  const clone=value=>JSON.parse(JSON.stringify(value));
  const current=()=>a.getCurrent();
@@ -62,7 +62,7 @@ export function setupTraining(a){
   displayClocks();a.renderBoard();showResult(game().winner);
  }
  function tick(){
-  if(mode!=='training'||finished||!game()||!Number($('training-time').value))return;
+  if(mode!=='training'||finished||!game()||!clockStarted||!Number($('training-time').value))return;
   const now=performance.now(),delta=Math.max(0,now-lastTick);lastTick=now;
   clocks[game().turn]=Math.max(0,clocks[game().turn]-delta);
   if(clocks[game().turn]===0){
@@ -91,6 +91,8 @@ export function setupTraining(a){
   if(mode!=='training'||finished||!game())return;
   const before=game(),response=playMove('warcaby',before,actor,move);
   if(response.error){announce(response.error);return}
+  // White gets the full thinking time before the first legal move; never start on "New game".
+  if(!clockStarted&&actor===1)clockStarted=true;
   if(before.turn!==response.state.turn&&Number($('training-time').value))
    clocks[actor]+=Number($('training-increment').value)*1000;
   const history=[...(before.history||[]),{player:actor,from:move.from,to:move.to}];
@@ -119,7 +121,7 @@ export function setupTraining(a){
  }
  async function startTraining(){
   if(mode!=='training')return;
-  generation++;finished=false;recorded=false;snapshots=[];notes=[];
+  generation++;finished=false;recorded=false;clockStarted=false;snapshots=[];notes=[];
   hideResult();
   const minutes=Number($('training-time').value)||0;
   clocks={1:minutes*60000,2:minutes*60000};
@@ -133,7 +135,7 @@ export function setupTraining(a){
  function playTrainingMove(move){
   if(mode!=='training'||finished||!game()||game().turn!==1)return;
   if(game().forced==null){
-   snapshots.push({state:clone(game()),clocks:{...clocks}});
+   snapshots.push({state:clone(game()),clocks:{...clocks},clockStarted});
    if(snapshots.length>20)snapshots.shift();
   }
   tick();
@@ -145,7 +147,7 @@ export function setupTraining(a){
   }
   generation++;
   const last=snapshots.pop();
-  clocks={...last.clocks};
+  clocks={...last.clocks};clockStarted=last.clockStarted;
   a.setCurrent({type:'training',state:last.state,players:['Ty','Komputer'],player:1,playable:true});
   a.setSelected(null);lastTick=performance.now();
   a.renderBoard();displayClocks();
