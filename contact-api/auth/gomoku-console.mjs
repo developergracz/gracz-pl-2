@@ -1363,6 +1363,24 @@ select option{background:#102c34;color:#fff}
  .howto-steps{gap:6px}.howto-card{width:100%;max-height:96dvh}
  .howto-footer{flex-direction:column;align-items:stretch}
  .howto-footer>span{max-width:100%;text-align:center}}
+/* R39: Full Max Premium — only the decisive five winning stones change colour. */
+.board .cell.win-line.occupied::after{
+ width:90%;height:90%;z-index:4;border-radius:50%;
+ animation:gomoku-five-reveal .72s cubic-bezier(.16,.82,.24,1) both}
+.board .cell.win-line.p1.occupied::after{
+ background:radial-gradient(circle at 28% 18%,#f2ffea 0%,#7cffde 20%,#0eac9a 51%,#03594e 82%,#012f31 100%);
+ box-shadow:inset 0 2px 3px #ffffeead,inset -4px -5px 8px #003d43,
+  0 0 0 2px #ffe4a5,0 0 11px #43ffdfb5,0 0 4px #f7c96bb0}
+.board .cell.win-line.p2.occupied::after{
+ background:radial-gradient(circle at 28% 18%,#fffef0 0%,#ffe9a1 22%,#ffc64c 52%,#cf9131 79%,#845218 100%);
+ box-shadow:inset 0 2px 3px #fffff0bb,inset -4px -5px 8px #75421680,
+  0 0 0 2px #fff2be,0 0 11px #fdd872c7,0 0 4px #66efd7a1}
+@keyframes gomoku-five-reveal{
+ 0%{transform:scale(.82);opacity:.72}
+ 65%{transform:scale(1.09);opacity:1}
+ 100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){
+ .board .cell.win-line.occupied::after{animation:none}}
 @media(prefers-reduced-motion:reduce){.howto-overlay{backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
@@ -1468,6 +1486,31 @@ $('replay-next').addEventListener('click',()=>stepReplay(state.replayIndex+1));
 $('replay-end').addEventListener('click',()=>stepReplay(state.replayEntries.length));
 
 const inBounds=(r,c)=>r>=0&&r<size&&c>=0&&c<size;
+// R39: mark exactly five stones in the line created by the decisive move.
+// No misleading highlights for a draw or a win awarded when a clock expires.
+function winningFive(board,last,side){
+ if(!Array.isArray(board)||board.length!==count||
+    !Number.isInteger(last)||last<0||last>=count||
+    (side!==1&&side!==2)||board[last]!==side)return [];
+ const row=Math.floor(last/size),col=last%size;
+ for(const [dr,dc] of [[1,0],[0,1],[1,1],[1,-1]]){
+  const run=[last];
+  for(const sign of [-1,1]){
+   for(let step=1;step<size;step++){
+    const r=row+dr*step*sign,c=col+dc*step*sign;
+    if(!inBounds(r,c)||board[r*size+c]!==side)break;
+    if(sign<0)run.unshift(r*size+c);else run.push(r*size+c);
+   }
+  }
+  if(run.length>=5){
+   const at=run.indexOf(last);
+   // If the winning line has 6+ stones, choose five containing the final move.
+   const start=Math.min(Math.max(0,at-4),run.length-5);
+   return run.slice(start,start+5);
+  }
+ }
+ return [];
+}
 function victory(board,to,side){
  const r=Math.floor(to/size),c=to%size;
  for(const [dr,dc] of [[1,0],[0,1],[1,1],[1,-1]]){
@@ -1693,12 +1736,16 @@ function render(){
  const pending=online&&state.pendingOnlineMove&&m&&state.matchId===state.pendingOnlineMove.matchId&&
   m.version===state.pendingOnlineMove.version?state.pendingOnlineMove:null;
  const last=online?(pending?.to??m?.state?.last??-1):state.last;
+ const decisive=online?(m?.state?.last??m?.state?.history?.at(-1)?.to??-1):state.last;
+ const winningCells=(winner===1||winner===2)?winningFive(board,decisive,winner):[];
+ const winningSet=new Set(winningCells);
  for(let i=0;i<count;i++){
   const cell=area.children[i],confirmed=board[i];
   const isPending=Boolean(pending&&pending.to===i&&!confirmed);
   const piece=confirmed||(isPending?pending.player:0);
   const suggested=!online&&i===state.suggestion&&!piece;
-  const visual=piece+':'+(last===i?1:0)+':'+(suggested?1:0)+':'+(isPending?1:0);
+  const isWinning=winningSet.has(i);
+  const visual=piece+':'+(last===i?1:0)+':'+(suggested?1:0)+':'+(isPending?1:0)+':'+(isWinning?1:0);
   if(cell._gomokuVisual!==visual){
    cell.classList.toggle('occupied',!!piece);
    cell.classList.toggle('p1',piece===1);
@@ -1706,6 +1753,7 @@ function render(){
    cell.classList.toggle('suggested',suggested);
    cell.classList.toggle('last',last===i);
    cell.classList.toggle('pending',isPending);
+   cell.classList.toggle('win-line',isWinning);
    cell._gomokuVisual=visual;
   }
   const disabled=!!piece||!canPlay;
@@ -1713,7 +1761,8 @@ function render(){
   // No repeated attribute writes and layout work when a clock or another widget updates.
   const row=Math.floor(i/size),col=i%size;
   const label='Wiersz '+(row+1)+', kolumna '+(col+1)+
-   (isPending?' kamień oczekuje na potwierdzenie':piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole');
+   (isPending?' kamień oczekuje na potwierdzenie':piece===1?' czarny kamień':piece===2?' biały kamień':' wolne pole')+
+   (isWinning?' — zwycięska piątka':'');
   if(cell._gomokuLabel!==label){
    cell.setAttribute('aria-label',label);
    cell._gomokuLabel=label;
