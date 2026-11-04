@@ -34,7 +34,16 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(js.body,/function renderPreview\(/);
  assert.match(js.body,/game:'warcaby'/);
  assert.match(js.body,/renderBoard\(/);
- assert.equal(load('/konto/warcaby/styl.css').status,200);
+ const style=load('/konto/warcaby/styl.css');
+ assert.equal(style.status,200);
+ assert.match(page.body,/Pokoje i zaproszenia/);
+ assert.match(page.body,/checkers-room-subtitle/);
+ assert.match(style.body,/\.warcaby-console \.layout:not\(\.game-focus\)/);
+ assert.match(style.body,/\.warcaby-console \.boardframe/);
+ assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(285px,21\.5vw,360px\)/);
+ assert.match(style.body,/@media \(max-width:800px\)/);
+ assert.match(style.body,/\.warcaby-console \.mode\{grid-template-columns:minmax\(0,1fr\)/);
+ assert.doesNotMatch(page.body,/src="\/konto\/gomoku\/app\.js"/);
  assert.equal(load('/konto/warcaby/').headers['Content-Length'],Buffer.byteLength(page.body));
  assert.equal(load('/konto/warcaby/', 'POST').served,false);
  assert.equal(load('/konto/warcaby/no-such').served,false);
