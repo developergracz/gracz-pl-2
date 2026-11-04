@@ -149,8 +149,10 @@ function clockAfterMove(previous,next,at){
   since:next.winner?null:new Date(at).toISOString()}};
 }
 
-export function createPublicIdentityRouter({database,emailFrom,resendKey}){
+export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomokuChange=()=>{}}){
  let initialized;
+ // Notification only, after existing durable writes; authorization and rules are unchanged.
+ const notifyGomoku=id=>{try{onGomokuChange(id);}catch{}};
  async function ready(){
   if(!database.enabled||!resendKey||!emailFrom)throw Error('AUTH_UNAVAILABLE');
   if(!initialized){
@@ -474,6 +476,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
           RETURNING m.version`,[JSON.stringify(tick.state),matchId,match.version,actor]);
         if(saved.rowCount){
          match={...match,state:tick.state,version:saved.rows[0].version};
+         notifyGomoku(matchId);
          break;
         }
         const refreshed=await readMatch();
@@ -555,6 +558,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
           RETURNING m.version`,[JSON.stringify(next),matchId,match.version,actor]);
         if(!changed.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
         match={...match,state:next,version:changed.rows[0].version};
+        notifyGomoku(matchId);
         const undo=activeUndo(next);
         return json(res,200,{ok:true,serverTime:new Date().toISOString(),match:{
           id:matchId,game:match.game,version:match.version,player,
@@ -592,6 +596,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
              OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
           RETURNING id,created_at`,[randomUUID(),actor,message,matchId]);
         if(!sent.rowCount)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        if(match.game==='gomoku')notifyGomoku(matchId);
         return json(res,200,{ok:true,message:{id:sent.rows[0].id,createdAt:sent.rows[0].created_at}}),true;
       }
       if(req.method==='POST'){
@@ -626,6 +631,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
           RETURNING m.version`,[JSON.stringify(result.state),matchId,match.version,actor]);
         if(!updated.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
         match={...match,state:result.state,version:updated.rows[0].version};
+        if(match.game==='gomoku')notifyGomoku(matchId);
       }
       return json(res,200,{ok:true,serverTime:new Date().toISOString(),match:{
         id:matchId,game:match.game,version:match.version,player,

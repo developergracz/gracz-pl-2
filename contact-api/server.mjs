@@ -1,3 +1,4 @@
+import { createGomokuRealtime } from './auth/gomoku-realtime.mjs';
 import { installShutdown } from "./lifecycle.mjs";
 import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
 import { serveIdentityPage } from "./auth/page.mjs";
@@ -58,7 +59,9 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
 }
 
 const database = createDatabase();
+let gomokuRealtime;
 const publicIdentity = createPublicIdentityRouter({
+  onGomokuChange: id => gomokuRealtime?.notify(id),
   database,
   emailFrom: EMAIL_FROM,
   resendKey: RESEND_API_KEY,
@@ -394,6 +397,7 @@ const server = createServer(async (req, res) => {
     if (serveGomokuConsole(req, res, url)) return;
     if (serveCheckersConsole(req, res, url)) return;
     if (await handleGomokuAiChat(req, res, url)) return;
+    gomokuRealtime.observe(req, res, url);
     if (await publicIdentity.handle(req, res, url)) return;
 
     if (url.pathname.startsWith("/owner/newsletter")) {
@@ -794,7 +798,8 @@ const server = createServer(async (req, res) => {
     });
   }
 });
-const lifecycle = installShutdown({server,newsletter,database,timeoutMs:process.env.API_SHUTDOWN_TIMEOUT_MS});
+gomokuRealtime = createGomokuRealtime({server,router:publicIdentity});
+const lifecycle = installShutdown({server,newsletter,database,realtime:gomokuRealtime,timeoutMs:process.env.API_SHUTDOWN_TIMEOUT_MS});
 server.listen(PORT, HOST, () => {
   console.log("gracz.pl contact API listening", {
     port: PORT,
