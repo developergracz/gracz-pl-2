@@ -60,17 +60,52 @@ const html=String.raw`<!doctype html>
 <a class="primary link-button" href="/konto/gomoku/">Zagraj w Gomoku</a>
 <a class="secondary link-button" href="https://gracz.pl/gry/">Pozostałe gry</a></div></div>
 </section>
-<section class="view" data-panel="profile">
-<div class="card hero-card"><div class="player-avatar" id="profile-avatar" aria-hidden="true">G</div><div><p class="card-kicker">PROFIL GRACZA</p><h2 id="profile-heading">Gracz</h2><p id="profile-handle">@gracz</p></div><div class="verified">✓ E-mail potwierdzony</div></div>
-<form id="profile-form" class="card" autocomplete="on"><div class="card-heading"><div><p class="card-kicker">PERSONALIZACJA</p><h2>Twoje dane</h2></div><span class="card-note">Pola z konta</span></div>
-<div class="form-grid">
-<label>Nick gracza<input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
-<label>Adres e-mail<input id="email" type="email" disabled title="Adres potwierdzony podczas rejestracji"></label>
-<label>Nazwa wyświetlana<input id="display-name" maxlength="40" minlength="2" autocomplete="nickname" required></label>
-<label>Kraj<select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="OTHER">Inny</option></select></label>
-<label>Język<select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
-<label class="wide">O mnie<textarea id="bio" rows="4" maxlength="300" placeholder="Napisz kilka słów o sobie, ulubionych grach i stylu gry…"></textarea><small>Maksymalnie 300 znaków.</small></label></div>
-<div class="form-actions"><span id="saved-state">Dane zapisane bezpiecznie w koncie</span><button class="primary" id="save" type="submit">Zapisz profil</button></div></form></section>
+<section class="view premium-profile" data-panel="profile">
+<div class="card profile-hero-premium">
+ <div class="profile-topline"><span>✦ TWOJA STREFA · FULL MAX PREMIUM</span><span class="profile-verified">● Konto zweryfikowane</span></div>
+ <div class="profile-hero-body"><div class="profile-intro"><div class="profile-avatar-frame"><div class="profile-avatar-large" id="profile-avatar" aria-hidden="true">G</div><span class="profile-avatar-check">✓</span></div>
+ <div><p class="card-kicker">PROFIL GRACZA</p><h2 id="profile-heading">Gracz</h2><p id="profile-handle">@gracz</p><div class="profile-chips"><span id="profile-country-tag">Polska</span><span id="profile-language-tag">Polski</span><span>GRACZ.PL</span></div></div></div>
+ <div class="profile-hero-actions"><button type="button" class="primary" id="profile-edit-scroll">Edytuj wizytówkę</button><button type="button" class="secondary" data-profile-jump="appearance">Wygląd panelu</button></div></div>
+ <div class="profile-metrics">
+ <div class="profile-metric"><small>UZUPEŁNIENIE PROFILU</small><strong id="profile-completion">—</strong><progress id="profile-progress" max="100" value="0" aria-label="Stopień uzupełnienia profilu"></progress><span id="profile-next-step">Uzupełnij wizytówkę</span></div>
+ <div class="profile-metric"><small>ULUBIONE GRY</small><strong id="profile-favorites">—</strong><span>Zapisane na koncie</span></div>
+ <div class="profile-metric"><small>AKTYWNE SESJE</small><strong id="profile-sessions">—</strong><span>Zalogowane urządzenia</span></div>
+ <div class="profile-metric"><small>GRACZ OD</small><strong id="profile-joined-summary">—</strong><span>Data dołączenia</span></div>
+ </div></div>
+<div class="profile-layout"><div class="profile-main-column">
+ <form id="profile-form" class="card profile-editor" autocomplete="on">
+ <div class="card-heading"><div><p class="card-kicker">01 / PERSONALIZACJA</p><h2>Edytuj dane gracza</h2><p>Ustaw swoją wizytówkę. Edycja zapisuje się na koncie dopiero po zatwierdzeniu.</p></div><span class="profile-pill">BEZPIECZNA EDYCJA</span></div>
+ <div class="form-grid">
+ <label>Nick gracza <small>Stały identyfikator</small><input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
+ <label>Adres e-mail <small>Zweryfikowany</small><input id="email" type="email" disabled title="Adres potwierdzony podczas rejestracji"></label>
+ <label>Nazwa wyświetlana <small>Widoczna w wizytówce</small><input id="display-name" maxlength="40" minlength="2" autocomplete="nickname" required></label>
+ <label>Kraj <small>Informacja w profilu</small><select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="OTHER">Inny</option></select></label>
+ <label>Język <small>Twój język</small><select id="language"><option value="pl">Polski</option><option value="en">English</option><option value="de">Deutsch</option></select></label>
+ <label class="wide">O mnie <small>Twój styl gry i zainteresowania</small><textarea id="bio" rows="5" maxlength="300" placeholder="W jakie gry lubisz grać? Jakim jesteś graczem?"></textarea><small id="profile-bio-counter">0 / 300 znaków</small></label>
+ </div>
+ <div class="profile-edit-hint"><span aria-hidden="true">✦</span> Podgląd obok aktualizuje się podczas pisania. Tylko zapisane dane zostają na koncie.</div>
+ <div class="form-actions"><span id="saved-state" role="status" aria-live="polite">Dane zapisane bezpiecznie w koncie</span><div class="profile-form-buttons"><button class="secondary" id="profile-reset" type="button">Cofnij zmiany</button><button class="primary" id="save" type="submit">Zapisz profil</button></div></div>
+ </form>
+ <div class="card profile-shortcuts"><p class="card-kicker">02 / CENTRUM GRACZA</p><h2>Szybkie zarządzanie</h2><div class="profile-shortcut-grid">
+ <button type="button" data-profile-jump="games"><span aria-hidden="true">♜</span><strong>Moje gry</strong><small>Ulubione tytuły</small></button>
+ <button type="button" data-profile-jump="friends"><span aria-hidden="true">♧</span><strong>Moi znajomi</strong><small>Kontakty i zaproszenia</small></button>
+ <button type="button" data-profile-jump="sessions"><span aria-hidden="true">▣</span><strong>Sesje i urządzenia</strong><small>Kontrola logowań</small></button>
+ <button type="button" data-profile-jump="data"><span aria-hidden="true">⇩</span><strong>Dane konta</strong><small>Eksport profilu</small></button></div></div>
+</div>
+<aside class="profile-side-column" aria-label="Podgląd i informacje o profilu">
+ <div class="card profile-preview-card"><p class="card-kicker">PODGLĄD NA ŻYWO</p><h2>Twoja wizytówka</h2>
+ <div class="profile-preview-inner"><div class="profile-preview-avatar" id="profile-preview-avatar" aria-hidden="true">G</div><strong id="profile-preview-name">Gracz</strong><span id="profile-preview-handle">@gracz</span><p id="profile-preview-bio">Tutaj pojawi się Twój opis gracza.</p>
+ <div class="profile-chips"><span id="profile-preview-country">Polska</span><span id="profile-preview-language">Polski</span></div></div>
+ <p class="profile-preview-caption">Podgląd widoczny tylko w Twoim panelu. Nie oznacza publicznego opublikowania profilu.</p></div>
+ <div class="card profile-account-card"><p class="card-kicker">TWOJA TOŻSAMOŚĆ</p><h2>Informacje o koncie</h2>
+ <div class="detail"><span>Nick</span><strong id="profile-info-nick">—</strong></div>
+ <div class="detail"><span>E-mail</span><strong id="profile-info-email">—</strong></div>
+ <div class="detail"><span>Dołączono</span><strong id="profile-info-joined">—</strong></div>
+ <div class="detail"><span>Status</span><strong>Potwierdzony</strong></div>
+ <button type="button" class="secondary profile-security-link" data-profile-jump="security">Bezpieczeństwo konta</button></div>
+ <div class="profile-game-links"><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a></div>
+</aside></div>
+</section>
 <section class="view" data-panel="friends">
 <div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
 <p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online wymaga przyszłej integracji. Prywatne wiadomości są dostępne w osobnej zakładce.</p>
@@ -225,6 +260,23 @@ const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}htm
 body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),linear-gradient(125deg,#001b29,#001420 75%,#011c26)}
 @media(max-width:900px){.shell{grid-template-columns:minmax(0,1fr) 250px;gap:16px;padding:16px}.sidebar{grid-column:2;grid-row:1;position:sticky;top:10px}.main{grid-column:1;grid-row:1}.site-nav{gap:15px}.site-nav nav{gap:12px}.site-nav nav a{font-size:12px}.masthead{min-height:185px}}
 @media(max-width:700px){.site-nav{padding:12px 16px;display:block}.site-nav nav{margin-top:12px;gap:12px 20px}.shell{display:flex;flex-direction:column;padding:12px}.main{order:1}.sidebar{order:2;position:static;width:100%}.masthead{min-height:170px;padding:20px}.mark{width:84px;height:84px;border-width:5px}.mark span{font-size:36px}.hero-card{flex-wrap:wrap}.verified{margin-left:0}.top-tag{display:none}}
+
+/* Konto i profil — premium bez zmian w pozostałych panelach */
+.premium-profile{gap:21px}.premium-profile .profile-hero-premium{position:relative;overflow:hidden;border:1px solid #19c7bd;border-radius:23px;padding:clamp(20px,3vw,38px);background:radial-gradient(ellipse at 80% 10%,#00a99a52,transparent 45%),radial-gradient(ellipse at 5% 90%,#037b965e,transparent 45%),linear-gradient(135deg,#053746,#011e2d 70%,#064656);box-shadow:inset 0 0 42px #0cf7dc17,0 14px 38px #0005}
+.profile-topline{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:28px}.profile-topline>span:first-child{color:#9dffec;font-size:11px;font-weight:900;letter-spacing:1.6px}.profile-verified{border-radius:30px;background:#075b5480;border:1px solid #13a893;padding:8px 12px;color:#a4ffe2;font-size:12px;font-weight:800}
+.profile-hero-body,.profile-intro{display:flex;align-items:center;gap:23px;flex-wrap:wrap}.profile-hero-body{justify-content:space-between}.profile-intro{min-width:0}.profile-avatar-frame{height:118px;width:118px;border:2px solid #19f4d8;box-shadow:0 0 28px #08eac44d,inset 0 0 18px #0debc524;border-radius:26px;display:grid;place-items:center;position:relative;background:#063747}
+.profile-avatar-large{font-size:68px;font-weight:900;color:#ffe0a1}.profile-avatar-check{position:absolute;bottom:-8px;right:-8px;background:#069e8b;color:#fff;border:2px solid #8dffe1;border-radius:50%;height:31px;width:31px;display:grid;place-items:center}
+.profile-intro h2{margin:4px 0 0;font-size:clamp(30px,3.7vw,47px);line-height:1.1;overflow-wrap:anywhere}.profile-intro #profile-handle{margin:5px 0 12px;color:#7ffff0;font-weight:800}.profile-chips{display:flex;flex-wrap:wrap;gap:8px}.profile-chips span{background:#095565;color:#e2ffff;border:1px solid #1b8790;border-radius:24px;padding:6px 11px;font-size:11px;font-weight:800}
+.profile-hero-actions{display:flex;gap:11px;flex-wrap:wrap}.profile-hero-actions button{padding:12px 15px}.profile-metrics{display:grid;grid-template-columns:1.4fr repeat(3,minmax(0,1fr));gap:13px;margin-top:30px}.profile-metric{min-width:0;background:#073e4e9c;border:1px solid #168c98;border-radius:15px;padding:16px}.profile-metric small{display:block;color:#a9d9df;font-size:10px;font-weight:900;letter-spacing:.9px}.profile-metric strong{display:block;font-size:clamp(24px,2.7vw,35px);margin:9px 0 2px;line-height:1.2;color:#fff}.profile-metric span{color:#a7d3da;font-size:11px}.profile-metric progress{width:100%;height:8px;border-radius:20px;overflow:hidden;accent-color:#13e3cb;margin:6px 0;display:block}.profile-metric progress::-webkit-progress-bar{background:#07303e}.profile-metric progress::-webkit-progress-value{background:#29efd7}.profile-metric progress::-moz-progress-bar{background:#29efd7}
+.profile-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,1fr);gap:20px;align-items:start}.profile-main-column,.profile-side-column{display:grid;gap:20px;min-width:0}.premium-profile .profile-editor,.premium-profile .profile-shortcuts,.premium-profile .profile-preview-card,.premium-profile .profile-account-card{background:linear-gradient(140deg,#073746,#031e2d);border:1px solid #178d97;border-radius:20px}
+.premium-profile .card-heading{align-items:flex-start;flex-wrap:wrap}.premium-profile .card-heading p{margin:0 0 12px}.profile-pill{color:#8cffe5;background:#0a5b54;border-radius:30px;border:1px solid #17a08e;padding:8px 10px;font-size:10px;letter-spacing:.5px;font-weight:900}
+.premium-profile .form-grid{gap:18px}.premium-profile .form-grid label{gap:7px}.premium-profile .form-grid input,.premium-profile .form-grid textarea,.premium-profile .form-grid select{border-radius:12px;border:1px solid #2a8694;background:#041e2d}.premium-profile .form-grid :is(input,textarea,select):focus-visible{outline:2px solid #63fce3;outline-offset:2px}.premium-profile #profile-bio-counter{text-align:right}
+.profile-edit-hint{display:flex;gap:9px;margin-top:19px;padding:13px;border:1px solid #197a83;border-radius:11px;background:#075e6559;color:#b3e1e5;font-size:12px}.profile-edit-hint span{color:#8affe4}.profile-form-buttons{display:flex;flex-wrap:wrap;gap:10px}.profile-form-buttons button{padding:12px 16px}.premium-profile .form-actions{margin-top:16px;border-top:1px solid #1f5a66;padding-top:17px}
+.profile-shortcut-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.profile-shortcut-grid button{display:grid;grid-template-columns:40px 1fr;align-items:center;column-gap:10px;min-width:0;cursor:pointer;text-align:left;padding:13px;color:#eefbff;background:#083948;border:1px solid #147d8b;border-radius:13px}.profile-shortcut-grid button span{grid-row:span 2;background:#08646c;border-radius:11px;width:40px;height:40px;display:grid;place-items:center;color:#8bffdf;font-size:23px}.profile-shortcut-grid button strong{font-size:13px}.profile-shortcut-grid button small{color:#a4cbd2;font-size:11px}.profile-shortcut-grid button:hover,.profile-shortcut-grid button:focus-visible{background:#0b5660;border-color:#53f5dc}
+.profile-preview-inner{display:flex;flex-direction:column;align-items:center;text-align:center;border:1px solid #148b97;border-radius:18px;padding:25px 18px;margin-top:16px;background:radial-gradient(ellipse at 50% 0%,#09869561,transparent 65%),linear-gradient(150deg,#073d4b,#03202f);min-width:0}.profile-preview-avatar{width:85px;height:85px;border:2px solid #1af8d7;border-radius:23px;background:#075764;color:#ffe1a1;font-size:49px;font-weight:900;display:grid;place-items:center;box-shadow:0 0 20px #0defcc55}.profile-preview-inner strong{margin-top:14px;font-size:clamp(20px,2.5vw,29px);overflow-wrap:anywhere}.profile-preview-inner>span{color:#81ffeb;font-weight:800;font-size:12px;margin-top:5px;overflow-wrap:anywhere}.profile-preview-inner p{font-size:13px;min-height:52px;margin:18px 0;overflow-wrap:anywhere}.profile-preview-inner .profile-chips{justify-content:center}.profile-preview-caption{color:#99bdc6!important;font-size:11px;line-height:1.5!important}.profile-account-card .detail{font-size:12px;align-items:center;padding:14px 0}.profile-account-card .detail strong{max-width:61%;overflow-wrap:anywhere;font-size:12px}.profile-security-link{margin-top:18px;width:100%;font-size:12px}
+.profile-game-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.profile-game-links a{text-decoration:none;text-align:center;padding:15px 8px;background:#085662;border:1px solid #19b9ab;color:#eefeff;border-radius:12px;font-size:12px;font-weight:850}.profile-game-links a:hover{background:#097481}
+@media(max-width:1250px){.profile-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-layout{grid-template-columns:minmax(0,1fr)}.profile-side-column{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-game-links{grid-column:1/-1}}
+@media(max-width:650px){.premium-profile .profile-hero-premium{padding:18px}.profile-avatar-frame{width:90px;height:90px;border-radius:19px}.profile-avatar-large{font-size:52px}.profile-topline{margin-bottom:19px}.profile-metrics{gap:9px;margin-top:19px}.profile-metric{padding:12px}.profile-metric strong{font-size:25px}.premium-profile .form-grid{grid-template-columns:1fr}.profile-side-column,.profile-shortcut-grid{grid-template-columns:1fr}.profile-form-buttons{width:100%}.profile-form-buttons button{flex:1}.profile-hero-actions button{flex:1}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -259,6 +311,7 @@ function formattedDate(value){
 function renderFavorites(){
  const favorites=centerState?.preferences?.favoriteGames||[];
  $('dashboard-favorites').textContent=String(favorites.length);
+ $('profile-favorites').textContent=String(favorites.length);
  $('favorites-empty').hidden=favorites.length>0;
  const links=$('favorites-links');links.replaceChildren();
  favorites.forEach(key=>{
@@ -276,6 +329,7 @@ function renderFavorites(){
 function renderSessions(){
  const sessions=centerState?.sessions||[];
  $('dashboard-sessions').textContent=String(sessions.length);
+ $('profile-sessions').textContent=String(sessions.length);
  const list=$('session-list');list.replaceChildren();
  if(!sessions.length){list.textContent='Nie znaleziono aktywnych sesji.';return;}
  sessions.forEach((session,index)=>{
@@ -669,6 +723,35 @@ async function api(path,options={}){
  }
  return body;
 }
+const countryLabels={PL:'Polska',DE:'Niemcy',CZ:'Czechy',SK:'Słowacja',OTHER:'Inny'};
+const languageLabels={pl:'Polski',en:'English',de:'Deutsch'};
+function profileDraft(){
+ return {displayName:$('display-name').value.trim(),bio:$('bio').value.trim(),country:$('country').value,language:$('language').value};
+}
+function renderProfilePreview(){
+ if(!profileSnapshot)return;
+ const draft=profileDraft();
+ const name=draft.displayName||profileSnapshot.nickname||'Gracz';
+ const initial=name.slice(0,1).toUpperCase()||'G';
+ const country=countryLabels[draft.country]||'Nie podano',language=languageLabels[draft.language]||'Nie podano';
+ $('profile-preview-avatar').textContent=initial;
+ $('profile-preview-name').textContent=name;
+ $('profile-preview-handle').textContent='@'+profileSnapshot.nickname;
+ $('profile-preview-bio').textContent=draft.bio||'Dodaj opis, aby Twoja wizytówka opowiadała o Tobie.';
+ $('profile-preview-country').textContent=country;
+ $('profile-preview-language').textContent=language;
+ $('profile-country-tag').textContent=country;
+ $('profile-language-tag').textContent=language;
+ $('profile-bio-counter').textContent=$('bio').value.length+' / 300 znaków';
+ const score=[Boolean(profileSnapshot.nickname),Boolean(profileSnapshot.email),draft.displayName.length>=2,draft.bio.length>=10,Boolean(draft.country),Boolean(draft.language)];
+ const percent=Math.round(score.filter(Boolean).length/score.length*100);
+ $('profile-completion').textContent=percent+'%';
+ $('profile-progress').value=percent;
+ $('profile-next-step').textContent=draft.bio.length<10?'Dodaj opis (minimum 10 znaków)':'Wizytówka jest uzupełniona';
+ const dirty=['displayName','bio','country','language'].some(key=>draft[key]!==profileSnapshot[key]);
+ $('profile-reset').disabled=!dirty;
+ $('saved-state').textContent=dirty?'Masz niezapisane zmiany':'Dane zapisane bezpiecznie w koncie';
+}
 function fill(profile){
  $('nickname').value=profile.nickname;
  $('email').value=profile.email;
@@ -680,10 +763,15 @@ function fill(profile){
  $('profile-heading').textContent=profile.displayName;
  $('profile-handle').textContent='@'+profile.nickname;
  profileSnapshot=profile;
+ $('profile-info-nick').textContent=profile.nickname;
+ $('profile-info-email').textContent=profile.email;
+ $('profile-info-joined').textContent=formattedDate(profile.createdAt);
+ $('profile-joined-summary').textContent=formattedDate(profile.createdAt);
  $('dashboard-name').textContent=profile.displayName;
  $('dashboard-joined').textContent=formattedDate(profile.createdAt);
  const initial=profile.displayName.slice(0,1).toUpperCase()||'G';
  $('nav-avatar').textContent=initial;$('profile-avatar').textContent=initial;$('dashboard-avatar').textContent=initial;
+ renderProfilePreview();
 }
 let sessionConfirmed=false;
 function accessState(title,message,{login=false,retry=false}={}){
@@ -730,6 +818,18 @@ async function logout(){
  catch(error){notice(error.message,true);}
 }
 
+['display-name','bio'].forEach(id=>$(id).addEventListener('input',renderProfilePreview));
+['country','language'].forEach(id=>$(id).addEventListener('change',renderProfilePreview));
+$('profile-reset').addEventListener('click',()=>{
+ if(!profileSnapshot)return;
+ fill(profileSnapshot);
+ notice('Przywrócono ostatnio zapisane dane profilu.');
+});
+$('profile-edit-scroll').addEventListener('click',()=>{
+ $('profile-form').scrollIntoView({behavior:document.body.classList.contains('panel-no-motion')?'auto':'smooth',block:'start'});
+ $('display-name').focus({preventScroll:true});
+});
+document.querySelectorAll('[data-profile-jump]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.profileJump)));
 $('dashboard-profile').addEventListener('click',()=>switchSection('profile'));
 $('dashboard-manage-games').addEventListener('click',()=>switchSection('games'));
 $('dashboard-devices').addEventListener('click',()=>switchSection('sessions'));
