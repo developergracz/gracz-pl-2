@@ -164,6 +164,15 @@ test('Gomoku Full Max Premium serves its dedicated console and assets without lo
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.records-progress-fill\{transition:none\}\}/);
  assert.doesNotMatch(css,/restart-premium-icon/);
  assert.match(css,/R31: history owns the panel down to the bottom quick tools/);
+ assert.match(css,/R40: Chat conversation reaches the composer instead of leaving an unused preview-height gap/);
+ assert.match(css,/\.match-panel:not\(\.moves-only\) \.mini-chat\{flex:0 0 auto;height:auto;min-height:0;padding:0 1px 1px\}/,
+  'Chat composer no longer reserves a tall invisible preview container');
+ assert.match(css,/\.match-panel:not\(\.moves-only\) #chat-panel\{flex:1 1 0;min-height:0;padding-bottom:0\}/,
+  'Conversation panel expands into the space above input');
+ assert.match(css,/\.match-panel:not\(\.moves-only\) #chat-panel \.chat-messages\{flex:1 1 auto;min-height:0;[\s\S]*?max-height:none;height:auto;overflow-y:auto/,
+  'Messages stretch to composer and scroll internally even on smaller screens');
+ assert.match(css,/\.match-panel:not\(\.moves-only\) \.mini-chat \.chat-form\{flex:0 0 auto;margin-top:0\}/,
+  'Message input remains directly below conversation');
  assert.match(css,/\.match-panel\.moves-only \.mini-chat\{display:none!important\}/);
  assert.match(css,/\.match-panel\.moves-only #moves-list\{flex:1 1 auto;min-height:0;max-height:none/);
  assert.match(css,/#turn-label\{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center/);
