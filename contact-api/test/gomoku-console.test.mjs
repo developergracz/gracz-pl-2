@@ -326,7 +326,8 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('focus-start').listeners.click();
  assert.equal(get('game').classes.has('game-focus'),true,'Start remains within board-only mode');
  assert.equal(get('move-count').textContent,'Ruchy: 0','Start begins a clean training match');
- assert.equal(get('turn-label').textContent,'Tura: czarne','Start returns to normal turn label');
+ assert.equal(get('turn-label').textContent,'Ruch: czarne','Start returns to normal turn label');
+ assert.equal(get('turn-label').textContent.includes('Tura:'),false,'New wording does not mention Tura');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
  assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
  assert.equal(get('clock-1').textContent,'07:00');
@@ -617,7 +618,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  }
  training.mode='training';get('restart').listeners.click();
  assert.equal(get('clock-1').classes.has('clock-critical'),false,'Reset clears alarm');
- assert.equal(get('turn-label').textContent,'Tura: czarne');
+ assert.equal(get('turn-label').textContent,'Ruch: czarne');
  assert.equal(get('turn-label').classes.has('game-over'),false,'Reset clears result marker');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
 
