@@ -2,12 +2,12 @@
    Only the board, console heading and game CTA transition. No embeds or game API. */
 .r4-hero{isolation:isolate}
 .r4-console-dynamic{position:absolute;inset:0;z-index:5;pointer-events:none}
-.r4-console-title{position:absolute;left:43.45%;top:8.8%;width:13.2%;height:5.55%;display:flex;align-items:center;justify-content:center;
+.r4-console-title{position:absolute;left:43.45%;top:8.8%;width:11.3%;height:4.9%;display:flex;align-items:center;justify-content:center;
  background:linear-gradient(95deg,#003038 0%,#001d2b 92%);color:#fff0bb;text-shadow:0 1px 2px #000,0 0 6px rgba(255,211,109,.35);
  font:700 clamp(11px,1.3vw,29px)/1.05 Georgia,serif;white-space:nowrap;border-radius:5px}
 .r4-console-board{position:absolute;left:58.4%;top:20.8%;width:21.8%;height:58.8%;box-sizing:border-box;
  border:clamp(5px,.65vw,14px) ridge #f5cf7d;border-radius:clamp(8px,.9vw,20px);
- background:linear-gradient(150deg,#e7c786,#ac782d);box-shadow:0 0 9px rgba(250,193,65,.8),inset 0 0 0 2px #fff1b9;padding:2.4%}
+ background:linear-gradient(150deg,#e7c786,#ac782d);box-shadow:0 0 9px rgba(250,193,65,.8),inset 0 0 0 2px #fff1b9;padding:clamp(6px,.55vw,14px)}
 .r4-console-board-squares{position:relative;width:100%;height:100%;background:#e9d6b0;overflow:hidden;box-shadow:inset 0 0 0 2px #765633}
 .r4-console-board-squares--warcaby{background:conic-gradient(#83552e 25%,#f5e7c6 0 50%,#83552e 0 75%,#f5e7c6 0);background-size:25% 25%}
 .r4-console-piece{position:absolute;left:calc(var(--x)*12.5% + 1.2%);top:calc(var(--y)*12.5% + 1.2%);width:10.1%;height:10.1%;box-sizing:border-box;
@@ -56,7 +56,7 @@
  .r4-hero-live-actions{display:none!important}
  .r4-console-dynamic{left:auto;top:10%;right:0;width:61%;height:auto;aspect-ratio:1250/663;
  background:url('/assets/gracz-hero-gomoku-mobile-preview-r1.webp') center/contain no-repeat;z-index:4}
- .r4-console-title{left:8.4%;top:6.4%;width:23%;height:7%;font-size:clamp(10px,1.65vw,19px)}
+ .r4-console-title{left:8.4%;top:6.4%;width:20%;height:7%;font-size:clamp(10px,1.65vw,19px)}
  .r4-console-board{left:32.6%;top:18.1%;width:38.7%;height:66%;padding:2.1%;border-width:clamp(4px,.7vw,9px)}
  .r4-console-soon-caption{font-size:clamp(10px,1.2vw,19px)}
  .homepage-premium-max .r4-hero-art{background-image:none!important}
