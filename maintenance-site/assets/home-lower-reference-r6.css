@@ -1694,8 +1694,10 @@ body.homepage-premium-max .site-footer {
   }
 }
 
-/* Approved Owner Crown: real transparent gold artwork extracted from accepted image.
-   Embedded in the existing CSS bundle to avoid a second critical request. */
+/* Approved Owner Crown: hand-coded vector SVG traced 1:1 from the accepted artwork
+   (same 60x49 proportions), served same-origin from /assets/ under the CSP.
+   skewX(18deg) cancels the rule's inherited skew(-18deg) so the crown stays
+   upright, symmetric and centred between the decorative lines. */
 body.homepage-premium-max .r4-hero-rule {
   height: 38px !important;
   min-height: 38px !important;
@@ -1705,7 +1707,8 @@ body.homepage-premium-max .r4-hero-rule::after {
   display: block !important;
   width: 52px;
   height: 43px;
-  background-image: url("/assets/gracz-crown-approved-r2.webp") !important;
+  transform: translate(-50%, -52%) skewX(18deg);
+  background-image: url("/assets/gracz-crown-premium.svg") !important;
   background-position: center !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
