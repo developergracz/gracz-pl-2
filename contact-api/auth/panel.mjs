@@ -11,6 +11,7 @@ const html=String.raw`<!doctype html>
 <title>Panel Gracza Full Max Premium — gracz.pl</title>
 <link rel="stylesheet" href="/konto/panel/styl.css"><script src="/konto/panel/app.js" defer></script></head>
 <body><a class="skip" href="#content">Przejdź do treści</a>
+<div class="site-nav"><a class="site-brand" href="https://gracz.pl/" aria-label="Strona startowa gracz.pl">gracz<span>.pl</span></a><nav aria-label="Menu główne serwisu"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/gry/tysiac/">Gry karciane</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/blog/">Blog</a><a href="https://gracz.pl/spolecznosc/">Społeczność</a><a href="https://gracz.pl/#newsletter">Newsletter</a></nav></div>
 <header class="top"><a class="logo" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
 <span class="top-tag">POLSKIE CENTRUM GRACZA <b>FULL MAX PREMIUM</b></span>
 <a class="top-link" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></header>
@@ -40,7 +41,7 @@ const html=String.raw`<!doctype html>
 <button class="nav" data-section="appearance" type="button"><span aria-hidden="true">☼</span> Wygląd i dostępność</button>
 <button class="nav" data-section="sessions" type="button"><span aria-hidden="true">▣</span> Sesje i urządzenia</button>
 <button class="nav" data-section="data" type="button"><span aria-hidden="true">▤</span> Dane i konto</button>
-</nav><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
+</nav><button class="nav create-room" id="create-room" type="button"><span aria-hidden="true">＋</span> Utwórz pokój</button><button class="signout" id="side-logout" type="button">Wyloguj się <span aria-hidden="true">↗</span></button></aside>
 <main id="content" class="main">
 <div class="masthead"><div><p class="eyebrow">CENTRUM GRACZA <span aria-hidden="true">◆</span> FULL MAX PREMIUM</p>
 <h1 id="title">Pulpit gracza</h1><p id="subtitle">Witaj w Twoim centrum rozgrywek.</p></div>
@@ -199,7 +200,32 @@ const css=String.raw`[hidden]{display:none!important}*{box-sizing:border-box}htm
 .match-cell:disabled{cursor:default}
 .match-cell:focus-visible{outline:3px solid #ffcb6b;outline-offset:-3px}
 @media(max-width:610px){.match-board{border-width:3px}.match-board.checkers .match-cell{font-size:clamp(15px,5vw,35px)}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}`;
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}/* Player panel reference layout — 2026-11-04. Visual only; existing account logic retained. */
+.site-nav{min-height:54px;padding:8px clamp(18px,4vw,70px);display:flex;align-items:center;gap:42px;background:#001622;border-bottom:1px solid #17c4be}
+.site-brand{text-decoration:none;font-size:29px;line-height:1;font-weight:950;letter-spacing:-1.7px;color:#fff;white-space:nowrap}
+.site-brand span{color:#eb2b4a}.site-nav nav{display:flex;align-items:center;gap:clamp(18px,3vw,52px);flex-wrap:wrap}
+.site-nav nav a{text-decoration:none;color:#e6eff6;font-weight:650;font-size:clamp(13px,1.2vw,18px)}.site-nav nav a:hover{color:#65fff0}
+.top{min-height:74px;padding:12px clamp(20px,4.5vw,76px);background:#031c29;border-color:#18ccc2}
+.top-tag{color:#f3f7f9}.top-tag b{color:#f8ce65}.top-link{border-color:#e4b04d;color:#ffd772}
+.shell{max-width:1800px;grid-template-columns:minmax(0,1fr) 310px;gap:30px;padding:26px clamp(20px,2.3vw,44px)}
+.main{grid-column:1;grid-row:1}.sidebar{grid-column:2;grid-row:1;top:16px;background:linear-gradient(145deg,#07313e,#031925 72%);border:1px solid #368190;box-shadow:inset 0 0 36px #00e5de11,0 14px 42px #0006;border-radius:22px}
+.identity{padding:19px 24px 15px}.identity .small{color:#f9cb53}.identity strong{font-size:19px}.avatar,.player-avatar{border-color:#ffe08a;box-shadow:0 0 0 2px #1fe9d8,0 0 27px #16e6d96e;color:#ffe0a1}
+.sidebar nav{gap:3px;padding:12px 16px}.sidebar .nav{padding:8px 13px;font-weight:650;border-radius:12px;color:#e6f3f5}.sidebar .nav span{color:#65e8e0}
+.sidebar .nav.active{border-color:#10f3d9;background:linear-gradient(90deg,#095e63,#037277 55%,#063b49);box-shadow:inset 0 0 12px #00f9e55c,0 0 14px #00e6d85c}.sidebar .nav.active span{color:#8bfff2}
+.create-room{width:calc(100% - 34px)!important;margin:14px 17px 7px!important;justify-content:center;color:#ffdf81!important;border:1px solid #ffd266!important;background:linear-gradient(180deg,#685427,#29251c)!important;box-shadow:0 0 20px #eecb5d4d;font-size:15px!important}
+.create-room span{color:#ffdb80!important}.signout{border-color:#2a7679}
+.masthead{min-height:224px;border:1px solid #099b9b;border-radius:23px;background:radial-gradient(ellipse at 76% 45%,#007b85b8,transparent 51%),linear-gradient(145deg,#034751,#002432 48%,#00616a);box-shadow:inset 0 -30px 45px #00454b80}
+.masthead:before{content:"";position:absolute;inset:auto -5% -42% 40%;height:85%;border-top:2px solid #15f6dc;border-radius:50%;transform:rotate(-22deg);box-shadow:0 -10px 20px #00e9c74d;pointer-events:none}
+.masthead h1{font-size:clamp(36px,4.8vw,60px);text-shadow:0 3px 10px #00171d7a}.masthead .eyebrow,.card-kicker,.stat small{color:#ffd25c!important}
+.mark{width:136px;height:136px;border:9px double #ffd659;transform:none;box-shadow:0 0 0 3px #08ccb7,0 0 32px #03e4d36b;background:#00222d}
+.card{background:linear-gradient(135deg,#073544,#031d2c 80%);border-color:#0b999c;box-shadow:inset 0 0 26px #04b8b014,0 11px 30px #0003}
+.hero-card{min-height:155px;border-color:#d1a04b;background:radial-gradient(ellipse at 58% 140%,#135d67,transparent 65%),linear-gradient(110deg,#053540,#031d2b)}
+.hero-card .player-avatar{width:89px;height:89px}.hero-card h2{font-size:32px}.verified{border-color:#00ebc4;color:#48ffdc;background:#003c40}
+.stats{gap:18px}.stat{border-color:#02aca9!important;box-shadow:inset 0 -2px 0 #17edda,0 0 18px #04bdb91a!important}.stat strong{font-size:clamp(30px,3vw,42px)}
+body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),linear-gradient(125deg,#001b29,#001420 75%,#011c26)}
+@media(max-width:900px){.shell{grid-template-columns:minmax(0,1fr) 250px;gap:16px;padding:16px}.sidebar{grid-column:2;grid-row:1;position:sticky;top:10px}.main{grid-column:1;grid-row:1}.site-nav{gap:15px}.site-nav nav{gap:12px}.site-nav nav a{font-size:12px}.masthead{min-height:185px}}
+@media(max-width:700px){.site-nav{padding:12px 16px;display:block}.site-nav nav{margin-top:12px;gap:12px 20px}.shell{display:flex;flex-direction:column;padding:12px}.main{order:1}.sidebar{order:2;position:static;width:100%}.masthead{min-height:170px;padding:20px}.mark{width:84px;height:84px;border-width:5px}.mark span{font-size:36px}.hero-card{flex-wrap:wrap}.verified{margin-left:0}.top-tag{display:none}}
+`;
 const js=String.raw`(()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -758,6 +784,7 @@ $('export-profile').addEventListener('click',()=>{
  notice('Przygotowano plik JSON z danymi profilu.');
 });
 
+$('create-room').addEventListener('click',()=>switchSection('challenges'));
 ['side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
 load();
 })();`;
