@@ -31,8 +31,12 @@
 
   let hovered = false;
   let focused = false;
-  hero.addEventListener('pointerenter', () => { hovered = true; });
-  hero.addEventListener('pointerleave', () => { hovered = false; });
+  for (const link of hero.querySelectorAll('.r4-hero-live-actions a, .r4-hero-actions a')) {
+    link.addEventListener('pointerenter', event => {
+      if (event.pointerType === 'mouse') hovered = true;
+    });
+    link.addEventListener('pointerleave', () => { hovered = false; });
+  }
   hero.addEventListener('focusin', () => { focused = true; });
   hero.addEventListener('focusout', event => {
     if (!hero.contains(event.relatedTarget)) focused = false;
