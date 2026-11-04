@@ -54,6 +54,14 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(page.body,/checkers-room-subtitle/);
  assert.match(style.body,/\.warcaby-console \.layout:not\(\.game-focus\)/);
  assert.match(style.body,/\.warcaby-console \.boardframe/);
+ assert.match(style.body,/Reference parity with Gomoku console/);
+ assert.match(style.body,/grid-template-columns:27\.5% minmax\(0,1fr\)/);
+ assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(315px,23vw,390px\)/);
+ assert.match(style.body,/aspect-ratio:1\.12/);
+ assert.match(style.body,/\.boardframe>\.board\.checkers-grid\{/);
+ assert.match(style.body,/aspect-ratio:1;min-width:0;min-height:0/);
+ assert.match(style.body,/margin:72px 0 58px/);
+ assert.match(style.body,/@media \(max-width:800px\)/);
  assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(285px,21\.5vw,360px\)/);
  assert.match(style.body,/@media \(max-width:800px\)/);
  assert.match(style.body,/\.warcaby-console \.mode\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
