@@ -63,12 +63,12 @@ export function createAddressBookRouter({database,ready,sessionToken,digest,auth
     const where="WHERE b.owner_id=$1 AND (b.name ILIKE $2 ESCAPE '\\' OR COALESCE(a.nickname,'') ILIKE $2 ESCAPE '\\' OR b.note ILIKE $2 ESCAPE '\\' OR b.tags::text ILIKE $2 ESCAPE '\\') AND ($3='' OR b.group_name=$3) AND (NOT $4::boolean OR b.favorite=true)";
     const rows=await database.query('SELECT b.id,b.name,b.email,b.phone,b.note,b.group_name,b.tags,b.favorite,b.friend_id,a.nickname, b.created_at,b.updated_at, EXISTS(SELECT 1 FROM gracz_public_identity.friend_connections f WHERE f.account_a=LEAST(b.owner_id,b.friend_id) AND f.account_b=GREATEST(b.owner_id,b.friend_id) AND f.status=\'accepted\') AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks x WHERE (x.blocker=b.owner_id AND x.blocked=b.friend_id) OR (x.blocker=b.friend_id AND x.blocked=b.owner_id)) AS connected FROM '+table+' b LEFT JOIN gracz_public_identity.accounts a ON a.id=b.friend_id '+where+' ORDER BY b.favorite DESC,b.name COLLATE "C" ASC,b.id ASC LIMIT 60 OFFSET $5',[...params,page*60]);
     const count=await database.query('SELECT COUNT(*)::integer AS total FROM '+table+' b LEFT JOIN gracz_public_identity.accounts a ON a.id=b.friend_id '+where,params);
-    const groups=await database.query('SELECT group_name,COUNT(*)::integer AS total FROM '+table+' WHERE owner_id=$1 GROUP BY group_name ORDER BY group_name COLLATE "C" LIMIT 100',[owner]);
+    const groups=await database.query('SELECT group_name,COUNT(*)::integer AS total,COUNT(*) FILTER (WHERE favorite)::integer AS favorites FROM '+table+' WHERE owner_id=$1 GROUP BY group_name ORDER BY group_name COLLATE "C" LIMIT 100',[owner]);
     return send(res,200,{ok:true,contacts:rows.rows.map(r=>({
      id:r.id,name:r.name,email:r.email,phone:r.phone,note:r.note,group:r.group_name,tags:r.tags||[],
      favorite:r.favorite===true,nickname:r.nickname||'',linked:!!r.friend_id,connected:r.connected===true,
      updatedAt:r.updated_at,createdAt:r.created_at
-    })),total:Number(count.rows[0]?.total)||0,page,pageSize:60,groups:groups.rows.map(r=>({name:r.group_name,count:Number(r.total)}))});
+    })),total:Number(count.rows[0]?.total)||0,page,pageSize:60,favoritesTotal:groups.rows.reduce((sum,r)=>sum+(Number(r.favorites)||0),0),groups:groups.rows.map(r=>({name:r.group_name,count:Number(r.total)}))});
    }
    let body;
    try{body=await readBody(req)}catch{return bad(res,400,'BLEDNE_DANE')}
