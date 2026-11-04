@@ -880,6 +880,7 @@ function friendRow(nickname,description,actions){
    button.setAttribute('aria-label',label+': '+nickname);
    button.addEventListener('click',async()=>{
     if(action==='message'){void openSocialContact('messages',nickname);return;}
+    if(action==='book'){void abOpenFriend(nickname);return;}
     if(action==='challenge'){void openSocialContact('challenges',nickname);return;}
     button.disabled=true;
     try{await api('friends/action',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -910,7 +911,7 @@ async function refreshFriends(){
   $('friends-incoming-count').textContent=String(incoming.length);
   $('friends-outgoing-count').textContent=String(outgoing.length);
   renderFriendList('friends-list',accepted,'Nie masz jeszcze znajomych.','Znajomy',
-   [{action:'message',label:'Napisz'},{action:'challenge',label:'Zaproś do gry'},{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
+   [{action:'book',label:'Wizytówka'},{action:'message',label:'Napisz'},{action:'challenge',label:'Zaproś do gry'},{action:'remove',label:'Usuń'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-incoming',incoming,'Brak nowych zaproszeń.','Zaprasza Cię do znajomych',
    [{action:'accept',label:'Akceptuj'},{action:'decline',label:'Odrzuć'},{action:'block',label:'Zablokuj'}]);
   renderFriendList('friends-outgoing',outgoing,'Nie masz oczekujących zaproszeń.','Oczekuje na odpowiedź',
@@ -918,6 +919,7 @@ async function refreshFriends(){
   renderFriendList('friends-blocked',result.blocked,'Lista zablokowanych jest pusta.','Zablokowany użytkownik',
    [{action:'unblock',label:'Odblokuj'}]);
   friendsStatus('Znajomi: '+accepted.length+' · Zaproszenia: '+incoming.length+' · Wysłane: '+outgoing.length+'.');
+  fhUpdateFromFriends(result);
   return result;
  }catch(error){
   friendsStatus(error.message,true);
@@ -1439,6 +1441,240 @@ $('export-profile').addEventListener('click',()=>{
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
  notice('Przygotowano plik JSON z danymi profilu.');
+});
+
+
+// Friends Hub Full Max Premium — account-scoped address book, lazy loaded.
+let abState={contacts:[],groups:[],total:0,page:0,pageSize:60},abReady=false,abSearchTimer=null;
+function fhUpdateFromFriends(result){
+ const badge=$('fh-requests-badge');
+ if(!badge)return;
+ const incoming=(result.connections||[]).filter(x=>x.status==='pending'&&x.direction==='incoming').length;
+ badge.textContent=incoming?'('+incoming+')':'';
+}
+function fhTab(tab){
+ for(const b of document.querySelectorAll('[data-fh-tab]')){
+  const active=b.dataset.fhTab===tab;b.classList.toggle('active',active);
+  b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
+ }
+ for(const pane of document.querySelectorAll('[data-fh-pane]'))pane.hidden=pane.dataset.fhPane!==tab;
+ if(tab==='book'&&sessionConfirmed)void abLoad(0);
+}
+document.querySelectorAll('[data-fh-tab]').forEach(b=>b.addEventListener('click',()=>fhTab(b.dataset.fhTab)));
+function abMessage(text){$('ab-status').textContent=text}
+const abErrors={TYLKO_ZNAJOMI:'Powiązać można wyłącznie zaakceptowanego, niezablokowanego znajomego.',
+ POPRAW_DANE_KONTAKTU:'Sprawdź dane: nazwa, etykiety, e-mail, telefon i maksymalną długość notatki.',
+ KONTAKT_JUZ_ISTNIEJE:'Ten znajomy jest już w Twojej książce. Odszukaj go i edytuj wpis.',
+ KONTAKT_NIE_ZNALEZIONY:'Kontakt został już usunięty lub jest niedostępny.',
+ LIMIT_KONTAKTOW:'Osiągnięto limit 2000 kontaktów w książce.',
+ BRAK_SESJI:'Sesja wygasła. Zaloguj się ponownie.',
+ ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj ponownie później.'};
+async function abApi(path,options={}){
+ const res=await fetch('/auth/'+path,{credentials:'same-origin',cache:'no-store',
+  headers:{Accept:'application/json',...(options.headers||{})},...options});
+ let data={};try{data=await res.json()}catch{}
+ if(!res.ok||!data.ok)throw Error(abErrors[data.error]||'Nie udało się zapisać lub pobrać kontaktów.');
+ return data;
+}
+function abValueText(id){return $(id).value.trim()}
+function abReset(focus=false){
+ $('ab-form').reset();$('ab-id').value='';$('ab-group').value='Bez grupy';
+ $('ab-nickname').disabled=false;$('ab-delete').hidden=true;
+ $('ab-form-title').textContent='Dodaj kontakt';$('ab-form-status').textContent='Twoja prywatna wizytówka.';
+ if(focus)$('ab-name').focus();
+}
+function abPopulate(entry){
+ $('ab-id').value=entry.id||'';
+ $('ab-name').value=entry.name||'';
+ $('ab-nickname').value=entry.nickname||'';
+ $('ab-nickname').disabled=Boolean(entry.id);
+ $('ab-email').value=entry.email||'';$('ab-phone').value=entry.phone||'';
+ $('ab-note').value=entry.note||'';$('ab-group').value=entry.group||'Bez grupy';
+ $('ab-tags').value=(entry.tags||[]).join(', ');
+ $('ab-favorite').checked=entry.favorite===true;
+ $('ab-delete').hidden=!entry.id;
+ $('ab-form-title').textContent='Edytuj: '+(entry.name||'Kontakt');
+ $('ab-form-status').textContent='Notatki i dane kontaktowe są prywatne.';
+ $('ab-form').scrollIntoView({behavior:'smooth',block:'nearest'});
+ $('ab-name').focus();
+}
+function abRead(){
+ const tags=[...new Set(abValueText('ab-tags').split(',').map(x=>x.trim()).filter(Boolean))];
+ if(tags.length>8||tags.some(x=>x.length>24))throw Error('Podaj maksymalnie 8 etykiet, każda do 24 znaków.');
+ const item={name:abValueText('ab-name'),nickname:abValueText('ab-nickname'),
+  email:abValueText('ab-email'),phone:abValueText('ab-phone'),
+  note:abValueText('ab-note'),group:abValueText('ab-group')||'Bez grupy',
+  tags,favorite:$('ab-favorite').checked};
+ if(!item.name||item.name.length>64)throw Error('Podaj nazwę kontaktu do 64 znaków.');
+ const id=$('ab-id').value;if(id)item.id=id;
+ return item;
+}
+function abControl(label,callback,disabled=false){
+ const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.disabled=disabled;
+ if(!disabled)btn.addEventListener('click',callback);
+ return btn;
+}
+function abTagChip(text){
+ const chip=document.createElement('span');chip.textContent=text;return chip;
+}
+function abRender(){
+ const container=$('ab-list');container.replaceChildren();
+ $('ab-total').textContent=String(abState.total);
+ $('ab-groups-count').textContent=String(abState.groups.length);
+ $('ab-favorites-count').textContent=String(abState.favoritesTotal||0);
+ $('ab-prev').disabled=abState.page<=0;
+ $('ab-next').disabled=(abState.page+1)*abState.pageSize>=abState.total;
+ $('ab-page-status').textContent=abState.total?'Strona '+(abState.page+1)+' / '+Math.ceil(abState.total/abState.pageSize):'Brak kontaktów';
+ if(!abState.contacts.length){
+  const p=document.createElement('p');p.className='friend-empty';p.textContent=
+   'Nie znaleziono kontaktów. Dodaj pierwszy wpis lub zmień filtry.';container.append(p);
+ }
+ for(const item of abState.contacts){
+  const card=document.createElement('article');card.className='friendshub-contact';
+  const top=document.createElement('div');top.className='friendshub-contact-head';
+  const title=document.createElement('strong');title.className='friendshub-contact-name';
+  title.textContent=(item.favorite?'★ ':'')+item.name;top.append(title);
+  const group=document.createElement('span');group.className='friendshub-contact-sub';group.textContent=item.group;
+  top.append(group);card.append(top);
+  const sub=document.createElement('div');sub.className='friendshub-contact-sub';
+  sub.textContent=item.linked?
+   '@'+item.nickname+(item.connected?' · Znajomy GRACZ.PL':' · Brak aktywnej znajomości'):
+   'Prywatny kontakt · bez połączenia z kontem gracza';
+  card.append(sub);
+  if(item.tags.length){
+   const tags=document.createElement('div');tags.className='friendshub-contact-badge';
+   for(const label of item.tags)tags.append(abTagChip(label));
+   card.append(tags);
+  }
+  const controls=document.createElement('div');controls.className='friendshub-contact-controls';
+  controls.append(abControl('Edytuj',()=>abPopulate(item)));
+  controls.append(abControl(item.favorite?'Usuń ★':'Ulubione ★',async()=>{
+   try{
+    await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({...item,id:item.id,group:item.group,favorite:!item.favorite})});
+    await abLoad(abState.page);
+   }catch(e){abMessage(e.message)}
+  }));
+  if(item.connected){
+   controls.append(abControl('Napisz',()=>void openSocialContact('messages',item.nickname)));
+   controls.append(abControl('Zaproś do gry',()=>void openSocialContact('challenges',item.nickname)));
+  }
+  card.append(controls);container.append(card);
+ }
+}
+function abRenderGroups(){
+ const select=$('ab-group-filter'),current=select.value;
+ const fixed=document.createElement('option');fixed.value='';fixed.textContent='Wszystkie grupy';
+ select.replaceChildren(fixed);
+ const chips=$('ab-group-chips');chips.replaceChildren();
+ for(const item of abState.groups){
+  const opt=document.createElement('option');opt.value=item.name;opt.textContent=item.name+' ('+item.count+')';select.append(opt);
+  const chip=abControl(item.name+' · '+item.count,()=>{select.value=item.name;void abLoad(0)});
+  chip.setAttribute('aria-pressed',String(current===item.name));chips.append(chip);
+ }
+ select.value=abState.groups.some(x=>x.name===current)?current:'';
+ for(const c of chips.children)c.setAttribute('aria-pressed',String(c.textContent.startsWith(select.value+' · ')&&select.value!==''));
+}
+async function abLoad(page=0){
+ if(!sessionConfirmed)return;
+ const query=new URLSearchParams({page:String(page),query:abValueText('ab-search'),
+  group:$('ab-group-filter').value,favorites:$('ab-favorites-filter').checked?'1':'0'});
+ abMessage('Wczytywanie prywatnej książki adresowej…');
+ try{
+  const data=await abApi('address-book?'+query.toString());
+  abState=data;abReady=true;abRender();abRenderGroups();
+  abMessage('Kontakty wczytane. Edycja wpisów nie zmienia listy znajomych ani ustawień innych graczy.');
+ }catch(e){abMessage(e.message)}
+}
+async function abOpenFriend(nickname){
+ fhTab('book');
+ $('ab-search').value=nickname;
+ $('ab-group-filter').value='';
+ $('ab-favorites-filter').checked=false;
+ await abLoad(0);
+ const found=abState.contacts.find(x=>x.linked&&x.nickname.toLowerCase()===nickname.toLowerCase());
+ if(found){abPopulate(found);return}
+ abReset();
+ $('ab-nickname').value=nickname;$('ab-name').value=nickname;
+ $('ab-form-title').textContent='Dodaj znajomego: '+nickname;
+ $('ab-name').focus();
+}
+$('ab-new').addEventListener('click',()=>{fhTab('book');abReset(true)});
+$('ab-cancel').addEventListener('click',()=>abReset(true));
+$('ab-refresh').addEventListener('click',()=>void abLoad(abState.page));
+$('ab-prev').addEventListener('click',()=>void abLoad(Math.max(0,abState.page-1)));
+$('ab-next').addEventListener('click',()=>void abLoad(abState.page+1));
+$('ab-group-filter').addEventListener('change',()=>void abLoad(0));
+$('ab-favorites-filter').addEventListener('change',()=>void abLoad(0));
+$('ab-search').addEventListener('input',()=>{
+ if(abSearchTimer)clearTimeout(abSearchTimer);
+ abSearchTimer=setTimeout(()=>void abLoad(0),260);
+});
+$('ab-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const button=$('ab-save');if(!sessionConfirmed)return;
+ let record;try{record=abRead()}catch(e){$('ab-form-status').textContent=e.message;return}
+ button.disabled=true;$('ab-form-status').textContent='Zapisywanie…';
+ try{
+  await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});
+  abReset();$('ab-form-status').textContent='Kontakt zapisany. Tylko Ty widzisz te informacje.';
+  await abLoad(0);
+ }catch(e){$('ab-form-status').textContent=e.message}
+ finally{button.disabled=false}
+});
+$('ab-delete').addEventListener('click',async()=>{
+ const id=$('ab-id').value;if(!id)return;
+ if(!window.confirm('Usunąć prywatną wizytówkę z książki adresowej? To nie usuwa znajomości ani wiadomości.'))return;
+ const button=$('ab-delete');button.disabled=true;
+ try{
+  await abApi('address-book',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  abReset();await abLoad(0);abMessage('Wpis został usunięty z Twojej książki.');
+ }catch(e){$('ab-form-status').textContent=e.message}
+ finally{button.disabled=false}
+});
+$('ab-export').addEventListener('click',async()=>{
+ if(!window.confirm('Eksport zawiera prywatne dane, w tym notatki i telefony. Zapisz plik w bezpiecznym miejscu. Kontynuować?'))return;
+ const button=$('ab-export');button.disabled=true;
+ try{
+  const contacts=[];
+  for(let page=0;page<34;page++){
+   const d=await abApi('address-book?page='+page);
+   contacts.push(...d.contacts);
+   if(contacts.length>=d.total||!d.contacts.length)break;
+  }
+  const data={format:'gracz-address-book-v1',exportedAt:new Date().toISOString(),contacts};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download='gracz-pl-prywatna-ksiazka-adresowa.json';
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  abMessage('Przygotowano prywatną kopię '+contacts.length+' kontaktów.');
+ }catch(e){abMessage(e.message)}
+ finally{button.disabled=false}
+});
+$('ab-import-trigger').addEventListener('click',()=>$('ab-import-file').click());
+$('ab-import-file').addEventListener('change',async event=>{
+ const file=event.target.files?.[0];event.target.value='';
+ if(!file)return;
+ if(file.size>2*1024*1024){abMessage('Plik jest za duży (maksymalnie 2 MB).');return}
+ let items;
+ try{
+  const data=JSON.parse(await file.text());
+  if(data.format!=='gracz-address-book-v1'||!Array.isArray(data.contacts))throw Error('Nieobsługiwany format');
+  items=data.contacts.slice(0,40);
+  if(!items.length)throw Error('Brak kontaktów w pliku');
+ }catch(e){abMessage('Nieprawidłowy plik książki adresowej: '+e.message);return}
+ if(!window.confirm('Zaimportować do 40 kontaktów? Istniejące wpisy nie będą nadpisywane. Dane z pliku zostaną zapisane wyłącznie na Twoim koncie.'))return;
+ let ok=0,failed=0;
+ for(const item of items){
+  try{
+   await abApi('address-book',{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:item.name,nickname:item.linked?item.nickname||'':'',
+     email:item.email||'',phone:item.phone||'',note:item.note||'',
+     group:item.group||'Bez grupy',tags:item.tags||[],favorite:item.favorite===true})});
+   ok++;
+  }catch{failed++}
+ }
+ await abLoad(0);abMessage('Import zakończony: '+ok+' zapisanych, '+failed+' pominiętych (duplikaty lub niedozwolone powiązania).');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
