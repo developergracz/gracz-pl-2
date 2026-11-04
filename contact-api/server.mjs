@@ -3,6 +3,7 @@ import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
 import { serveIdentityPage } from "./auth/page.mjs";
 import { servePlayerPanel } from "./auth/panel.mjs";
 import { serveGomokuConsole } from "./auth/gomoku-console.mjs";
+import { serveCheckersConsole } from "./auth/checkers-console.mjs";
 import { createGomokuAiChatRoute } from "./routes/gomoku-ai-chat-route.mjs";
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
@@ -391,6 +392,7 @@ const server = createServer(async (req, res) => {
     if (serveIdentityPage(req, res, url)) return;
     if (servePlayerPanel(req, res, url)) return;
     if (serveGomokuConsole(req, res, url)) return;
+    if (serveCheckersConsole(req, res, url)) return;
     if (await handleGomokuAiChat(req, res, url)) return;
     if (await publicIdentity.handle(req, res, url)) return;
 

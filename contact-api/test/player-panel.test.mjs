@@ -255,7 +255,7 @@ test('dashboard includes real controls for sessions, favorites, preferences and 
  assert.match(jsRes.body,/api\('player-center'/);
  assert.match(jsRes.body,/player-center\/revoke-others/);
  assert.match(htmlRes.body,/Poker treningowy/);
- assert.match(htmlRes.body,/gracz\.pl\/gry\/warcaby/);
+ assert.match(htmlRes.body,/\/konto\/warcaby\//);
  assert.match(htmlRes.body,/nie jest pełny eksport/i);
 });
 

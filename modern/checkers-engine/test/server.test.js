@@ -112,3 +112,15 @@ test("SSE sends an initial real-time snapshot to a connected player", async () =
     assert.match(chunk, /"color":"white"/);
   });
 });
+
+test("production game server refuses to start without authenticated identity", () => {
+  const previous = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = "production";
+    assert.throws(() => createGameHttpServer({ store: new MemorySessionStore() }),
+      /wymaga aktywnego modułu uwierzytelniania/);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
+});

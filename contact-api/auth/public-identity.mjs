@@ -525,7 +525,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
       }
       if(isChat){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
-        if(match.game!=='gomoku')return bad(res,400,'CZAT_GOMOKU'),true;
+        if(match.game!=='gomoku'&&match.game!=='warcaby')return bad(res,400,'CZAT_NIEDOSTEPNY'),true;
         if(req.method==='GET'){
           const messages=await database.query(`SELECT id,sender_id,body,created_at FROM (
             SELECT id,sender_id,body,created_at
@@ -568,6 +568,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
           const previous=Array.isArray(match.state.history)?match.state.history.slice(-224):[];
           result.state.history=[...previous,{player,to:body.move.to,number:result.state.moves}];
           result.state=clockAfterMove(match.state,result.state,movedAt);
+        }
+        if(match.game==='warcaby'){
+          const previous=Array.isArray(match.state.history)?match.state.history.slice(-159):[];
+          result.state.history=[...previous,{player,from:body.move.from,to:body.move.to,number:result.state.moves}];
         }
         const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
@@ -937,5 +941,18 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
   }catch(e){console.error('IDENTITY_PUBLIC_ERROR',{code:safeText(e?.code)||'AUTH_ERROR'});return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
   return bad(res,404,'NIE_ZNALEZIONO'),true;
  }
- return {handle:respond,probe:ready};
+ // Reuse the production identity session for game endpoints without creating a second login.
+ // Return only the verified account identity. Never accept a player ID from client input.
+ async function authenticateGameRequest(req){
+  await ready();
+  const token=sessionToken(req);
+  if(!/^[a-f0-9]{64}$/.test(token))return null;
+  const result=await database.query(`SELECT a.id, a.nickname
+    FROM gracz_public_identity.sessions s
+    JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+    WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+  const account=result.rows[0];
+  return account?{userId:String(account.id),displayName:String(account.nickname)}:null;
+ }
+ return {handle:respond,probe:ready,authenticateGameRequest};
 }
