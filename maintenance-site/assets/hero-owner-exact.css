@@ -188,3 +188,46 @@
  .r4-console-title,.r4-console-board,.r4-hero-live-actions a,.r4-game-cta-stack .r4-btn{transition:none!important}
 }
 
+
+
+/* Desktop: use the original semantic two HTML links, rather than a second
+   clickable overlay, so mouse and keyboard navigation cannot be intercepted. */
+@media(min-width:1181px){
+ .homepage-premium-max .r4-hero-copy{
+  position:absolute!important;inset:0!important;left:0!important;top:0!important;
+  z-index:7;width:100%!important;height:100%!important;max-width:none!important;min-height:0!important;
+  padding:0!important;margin:0!important;overflow:visible!important;clip:auto!important;
+  clip-path:none!important;white-space:normal!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy>:not(.r4-hero-actions){
+  position:absolute!important;width:1px!important;height:1px!important;max-width:1px!important;
+  clip-path:inset(50%)!important;overflow:hidden!important;white-space:nowrap!important;
+  padding:0!important;margin:-1px!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions{
+  display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  margin:0!important;padding:0!important;opacity:1!important;pointer-events:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a{
+  display:flex!important;position:absolute!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;padding:0!important;margin:0!important;min-width:0!important;
+  border-radius:clamp(8px,1.1vw,25px)!important;pointer-events:auto!important;cursor:pointer;
+  font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif!important;text-decoration:none!important;
+  white-space:nowrap!important;transform:none!important;transition:filter .2s ease!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/gry/"]{
+  top:65.7%!important;left:1.96%!important;width:12.3%!important;height:10.7%!important;
+  color:#002830!important;background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127)!important;
+  border:1px solid #fff0af!important;box-shadow:inset 0 2px 2px rgba(255,255,255,.7)!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a[href="/poradniki/"]{
+  top:65.7%!important;left:15.1%!important;width:16.5%!important;height:10.7%!important;
+  color:#fff9ea!important;background:#002e32!important;border:1px solid #e0a940!important;
+  box-shadow:none!important
+ }
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions .r4-game-cta-stack{display:none!important}
+ .homepage-premium-max .r4-hero-copy .r4-hero-actions>a:focus-visible{
+  outline:3px solid #fff5bf!important;outline-offset:2px!important
+ }
+}
+
