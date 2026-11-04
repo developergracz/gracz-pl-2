@@ -12,10 +12,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <title>Panel Gracza Full Max Premium — gracz.pl</title>
 <link rel="stylesheet" href="/konto/panel/styl.css"><script src="/konto/panel/app.js" defer></script></head>
 <body><a class="skip" href="#content">Przejdź do treści</a>
-<div class="site-nav"><a class="site-brand" href="https://gracz.pl/" aria-label="Strona startowa gracz.pl">gracz<span>.pl</span></a><nav aria-label="Menu główne serwisu"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/gry/tysiac/">Gry karciane</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/blog/">Blog</a><a href="https://gracz.pl/spolecznosc/">Społeczność</a><a href="https://gracz.pl/#newsletter">Newsletter</a></nav></div>
-<header class="top"><a class="logo" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-<span class="top-tag">POLSKIE CENTRUM GRACZA <b>FULL MAX PREMIUM</b></span>
-<a class="top-link" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></header>
+<div class="site-nav"><a class="site-brand" href="https://gracz.pl/" aria-label="Strona startowa gracz.pl">gracz<span>.pl</span></a><nav aria-label="Menu główne serwisu"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/gry/tysiac/">Gry karciane</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/blog/">Blog</a><a href="https://gracz.pl/spolecznosc/">Społeczność</a><a href="https://gracz.pl/#newsletter">Newsletter</a></nav><a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></div>
 <section id="access-screen" class="access-screen" aria-live="polite">
 <div class="access-card">
 <p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p>
@@ -469,6 +466,21 @@ body.pw-success-open{overflow:hidden}
  .profile-hero-actions button{padding:10px}
  .premium-profile-tabs{margin:12px 0}
 }
+
+/* One top navigation bar: premium game discovery CTA, no secondary logo strip. */
+.site-nav{gap:clamp(12px,2vw,27px)}
+.site-nav nav{flex:1;min-width:0}
+.site-nav .site-discover{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-left:auto;flex-shrink:0;white-space:nowrap;text-decoration:none;font-weight:850;font-size:clamp(12px,1vw,14px);letter-spacing:.015em;color:#ffe2a2;border:1px solid #f5c868;border-radius:12px;padding:10px 15px;background:linear-gradient(145deg,#144449,#072b3b 78%);box-shadow:inset 0 1px 0 #ffffff22,0 0 20px #14d9c21d;transition:background-color .15s ease,box-shadow .15s ease}
+.site-nav .site-discover:hover{background:linear-gradient(145deg,#146d70,#0a3c46);border-color:#ffe4a0;box-shadow:0 0 20px #26e8d75c}
+.site-nav .site-discover:focus-visible{outline:3px solid #5fffee;outline-offset:3px}
+@media(min-width:701px) and (max-width:980px){.site-nav .site-discover{font-size:12px;padding:9px 11px}.site-nav nav{gap:9px}}
+@media(max-width:700px){
+ .site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:9px}
+ .site-nav .site-brand{grid-column:1;grid-row:1;align-self:center}
+ .site-nav .site-discover{grid-column:2;grid-row:1;margin-left:0;font-size:12px;padding:9px 12px}
+ .site-nav nav{grid-column:1/-1;grid-row:2;margin-top:0;gap:9px 14px;min-width:0}
+}
+@media(prefers-reduced-motion:reduce){.site-nav .site-discover{transition:none}}
 `+premiumProfileStyles;
 const js=String.raw`(()=>{
 'use strict';
