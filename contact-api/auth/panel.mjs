@@ -332,6 +332,143 @@ body.pw-success-open{overflow:hidden}
 .pw-success-close:hover{filter:brightness(1.07)}
 .pw-success-close:focus-visible{outline:3px solid #69fce9;outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.pw-success-overlay{scroll-behavior:auto;backdrop-filter:none}}
+
+
+/* OWNER 2026-11-04: compact, proportional panel layout.
+   Responsive element sizing, not zoom/transform, so text and focus stay crisp. */
+@media(min-width:981px){
+ .site-nav{min-height:43px;padding:6px clamp(18px,3vw,52px);gap:28px}
+ .site-brand{font-size:24px}
+ .site-nav nav{gap:clamp(14px,2vw,32px)}
+ .site-nav nav a{font-size:clamp(12px,.92vw,15px)}
+ .top{min-height:53px;padding:7px clamp(18px,3vw,50px);gap:16px}
+ .top .logo{font-size:clamp(27px,2.3vw,33px)}
+ .top-tag{font-size:10px;letter-spacing:1.1px}
+ .top-tag b{margin-left:7px}
+ .top-link{padding:8px 12px;font-size:12px}
+ .shell{max-width:1620px;grid-template-columns:minmax(0,1fr) 265px;gap:17px;padding:15px clamp(15px,2vw,32px)}
+ .sidebar{top:11px;border-radius:17px}
+ .identity{padding:14px 16px 12px}
+ .avatar{width:52px;height:52px;font-size:27px}
+ .identity .small{margin:11px 0 5px;font-size:10px;letter-spacing:1.3px}
+ .identity strong{font-size:16px}
+ .identity .status{margin-top:8px;font-size:11px}
+ .sidebar nav{padding:10px;gap:2px}
+ .sidebar .nav{padding:7px 10px;min-height:36px;font-size:12px;gap:9px}
+ .sidebar .nav span{font-size:16px;width:20px}
+ .sidebar .create-room{margin:10px 13px 6px!important;width:calc(100% - 26px)!important;padding:10px 12px!important;font-size:13px!important}
+ .signout{margin:5px 12px 12px;padding:10px;font-size:12px}
+ .masthead{min-height:154px;padding:18px clamp(22px,2.5vw,34px);margin-bottom:12px;border-radius:18px}
+ .masthead h1{font-size:clamp(32px,3.4vw,46px);margin:6px 0 9px}
+ .masthead .eyebrow{font-size:10px;letter-spacing:1.3px}
+ .masthead p:last-child{font-size:13px}
+ .mark{width:95px;height:95px;border-width:6px}
+ .mark span{font-size:40px}
+ .mark small{font-size:8px}
+ .view.active{gap:12px}
+ .card{padding:clamp(14px,1.5vw,23px);border-radius:16px}
+ .card h2{font-size:clamp(20px,2vw,26px);margin:4px 0 10px}
+ .card p{line-height:1.5}
+ .stats{gap:10px}
+ .stat{padding:14px}
+ .stat strong{font-size:clamp(24px,2.5vw,33px);margin:5px 0}
+ .hero-card{gap:16px;min-height:128px}
+ .hero-card .player-avatar{width:67px;height:67px;font-size:36px}
+ .hero-card h2{font-size:26px}
+ .form-grid{gap:13px}
+ .form-grid input,.form-grid select,.form-grid textarea{min-height:41px;padding:9px 11px}
+ .primary,.secondary{padding:10px 14px;font-size:12px}
+ .detail{padding:12px 0}
+ .premium-profile{gap:13px}
+ .premium-profile .profile-hero-premium{padding:18px clamp(18px,2vw,27px);border-radius:17px}
+ .profile-topline{margin-bottom:14px;gap:8px}
+ .profile-topline>span:first-child{font-size:10px;letter-spacing:1.1px}
+ .profile-verified{padding:6px 10px;font-size:11px}
+ .profile-hero-body,.profile-intro{gap:15px}
+ .profile-avatar-frame{width:83px;height:83px;border-radius:19px}
+ .profile-avatar-large{font-size:48px}
+ .profile-avatar-check{height:25px;width:25px;bottom:-5px;right:-5px}
+ .profile-intro h2{font-size:clamp(29px,3vw,37px)}
+ .profile-intro #profile-handle{margin:3px 0 8px;font-size:12px}
+ .profile-chips{gap:5px}
+ .profile-chips span{padding:4px 8px;font-size:10px}
+ .profile-hero-actions{gap:8px}
+ .profile-hero-actions button{padding:9px 12px}
+ .profile-metrics{gap:10px;margin-top:16px}
+ .profile-metric{padding:11px 13px;border-radius:12px}
+ .profile-metric small{font-size:9px}
+ .profile-metric strong{font-size:clamp(23px,2.2vw,30px);margin:6px 0 2px}
+ .profile-metric span{font-size:10px}
+ .profile-metric progress{height:6px;margin:4px 0}
+ .profile-layout,.profile-main-column,.profile-side-column{gap:13px}
+ .profile-edit-hint{margin-top:12px;padding:10px}
+ .premium-profile .form-grid{gap:12px}
+ .profile-shortcut-grid{gap:8px}
+ .profile-shortcut-grid button{padding:10px}
+ .profile-preview-inner{padding:16px;margin-top:10px}
+ .profile-preview-avatar{width:65px;height:65px;font-size:39px}
+ .profile-preview-inner p{min-height:0;margin:10px 0}
+ .premium-profile-tabs{padding:7px;gap:6px;margin:12px 0}
+ .premium-profile-tabs button{min-height:42px;padding:6px;font-size:12px}
+ .premium-profile-workspace{padding:clamp(13px,1.5vw,20px)!important}
+}
+@media(min-width:981px) and (max-height:780px){
+ .top{min-height:47px}
+ .site-nav{min-height:39px}
+ .shell{padding-top:10px;gap:13px}
+ .masthead{min-height:138px;padding-top:13px;padding-bottom:13px;margin-bottom:10px}
+ .mark{width:82px;height:82px}
+ .mark span{font-size:34px}
+ .profile-topline{margin-bottom:10px}
+ .profile-metrics{margin-top:12px}
+ .profile-metric{padding:9px 11px}
+}
+@media(min-width:701px) and (max-width:980px){
+ .site-nav{min-height:43px;padding:8px 16px;gap:12px}
+ .site-brand{font-size:23px}
+ .site-nav nav{gap:10px}
+ .top{min-height:53px;padding:8px 16px}
+ .top .logo{font-size:28px}
+ .top-link{padding:9px 11px;font-size:12px}
+ .shell{padding:14px;gap:12px}
+ .masthead{min-height:151px;padding:18px;margin-bottom:12px}
+ .masthead h1{font-size:clamp(30px,4.1vw,40px)}
+ .view.active{gap:12px}
+ .card{padding:16px}
+ .premium-profile .profile-hero-premium{padding:18px}
+ .profile-topline{margin-bottom:15px}
+ .profile-avatar-frame{width:84px;height:84px}
+ .profile-avatar-large{font-size:48px}
+ .profile-metrics{margin-top:16px;gap:10px}
+ .profile-metric{padding:11px}
+ .profile-metric strong{font-size:24px}
+ .profile-hero-actions button{padding:10px 12px}
+}
+@media(max-width:700px){
+ .top{min-height:55px;padding:9px 13px;gap:8px}
+ .top .logo{font-size:27px}
+ .top-link{padding:8px 10px;font-size:11px}
+ .site-nav{padding:10px 13px}
+ .site-nav nav{margin-top:8px;gap:9px 13px}
+ .shell{padding:10px;gap:12px}
+ .masthead{min-height:135px;padding:15px;margin-bottom:10px}
+ .masthead h1{font-size:clamp(27px,7vw,37px);margin:6px 0}
+ .mark{width:68px;height:68px;border-width:4px}
+ .mark span{font-size:28px}
+ .view.active{gap:11px}
+ .card{padding:15px;border-radius:15px}
+ .premium-profile .profile-hero-premium{padding:15px}
+ .profile-avatar-frame{width:74px;height:74px}
+ .profile-avatar-large{font-size:43px}
+ .profile-intro{gap:12px}
+ .profile-intro h2{font-size:29px}
+ .profile-topline{margin-bottom:12px}
+ .profile-metrics{margin-top:14px;gap:8px}
+ .profile-metric{padding:10px}
+ .profile-metric strong{font-size:23px;margin:6px 0 2px}
+ .profile-hero-actions button{padding:10px}
+ .premium-profile-tabs{margin:12px 0}
+}
 `+premiumProfileStyles;
 const js=String.raw`(()=>{
 'use strict';
