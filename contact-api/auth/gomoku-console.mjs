@@ -898,8 +898,24 @@ select option{background:#102c34;color:#fff}
  color:#1b2724;font-size:clamp(15px,2vw,19px);font-weight:950;
  box-shadow:inset 0 1px #fff9e6,0 0 14px #eeb64c85}
 .result-start:hover{filter:brightness(1.07);box-shadow:inset 0 1px #fff9e6,0 0 22px #efbe58b9}
-.result-review{padding:8px 13px;color:#bde9e1;border:0;background:none;
- font-size:12px;text-decoration:underline;text-underline-offset:4px}
+/* R33: restrained Full Max Premium secondary action for reviewing the finished board. */
+.result-review{position:relative;display:inline-flex;align-items:center;justify-content:center;
+ width:min(100%,310px);min-height:43px;max-width:100%;padding:9px 15px;
+ border:1px solid #d6aa61;border-radius:12px;
+ background:linear-gradient(160deg,#126260 0%,#08383d 42%,#031d29 100%);
+ color:#ffe4aa;font:800 clamp(12px,1.35vw,15px)/1.3 Georgia,"Times New Roman",serif;
+ letter-spacing:.1px;text-decoration:none;text-shadow:0 1px 1px #00171b,0 0 7px #edc56b77;
+ box-shadow:inset 0 1px 0 #e8fbcb59,inset 0 0 0 1px #3a757055,0 3px 8px #0007;
+ cursor:pointer;transition:border-color .16s,box-shadow .16s,filter .16s,transform .16s}
+.result-review:is(:hover,:focus-visible){
+ border-color:#fff0bb;color:#fff4cd;filter:brightness(1.09);
+ box-shadow:inset 0 1px 0 #fff7c794,0 0 15px #dcb36571,0 4px 11px #0009;
+ transform:translateY(-1px)}
+.result-review:focus-visible{outline:2px solid #9af5e7;outline-offset:3px}
+.result-review:active{transform:translateY(0);filter:brightness(.98)}
+@media(max-width:560px){.result-review{width:min(100%,285px);min-height:42px;padding:9px 12px}}
+@media(prefers-reduced-motion:reduce){.result-review{transition:none}
+ .result-review:is(:hover,:focus-visible,:active){transform:none}}
 .result-online-hint{font-size:11px;line-height:1.45;color:#accdca;margin:0}
 .result-card[data-result="loss"] .result-medal{color:#f4bd70;filter:saturate(.8)}
 .result-card[data-result="draw"] .result-medal{color:#dcf6ed;filter:saturate(.75)}
