@@ -1,86 +1,82 @@
-/* GRACZ.PL — synchronized, zero-reload HERO carousel. Static previews, no game/API requests. */
-.r4-hero-showcase{position:absolute;left:40.7%;top:4.1%;width:56.8%;height:83.6%;z-index:6;pointer-events:none;isolation:isolate}
-.r4-hero-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .48s ease,visibility 0s linear .48s;will-change:opacity}
-.r4-hero[data-hero-slide="warcaby"] .r4-hero-slide--warcaby,
-.r4-hero[data-hero-slide="soon"] .r4-hero-slide--soon{opacity:1;visibility:visible;transition:opacity .48s ease,visibility 0s}
-.r4-showcase-console{height:100%;overflow:hidden;color:#f6e2b0;background:radial-gradient(ellipse at 65% 0%,#19504a 0%,#00383a 42%,#001a24 100%);border:clamp(1px,.13vw,3px) solid #f5c46e;border-radius:clamp(12px,1.65vw,34px);box-shadow:0 0 0 2px rgba(96,56,16,.72),0 0 25px rgba(253,180,68,.38),0 16px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;font-family:Georgia,'Times New Roman',serif}
-.r4-showcase-head{flex:0 0 11%;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:1.1%;padding:0 3.5%;border-bottom:1px solid rgba(238,186,78,.35)}
-.r4-showcase-brand{font-size:clamp(13px,1.43vw,29px);font-weight:800;line-height:1;color:#ffe4a7;text-shadow:0 1px 1px #000,0 0 9px rgba(249,190,77,.35);white-space:nowrap}
-.r4-showcase-nav{display:flex;gap:clamp(4px,.48vw,12px);align-items:center;white-space:nowrap}
-.r4-showcase-pill{display:inline-flex;align-items:center;justify-content:center;font-size:clamp(9px,.67vw,15px);min-height:1.85em;padding:.2em .75em;background:linear-gradient(180deg,#0a5759,#012a37);border:1px solid #d0a557;border-radius:9px;box-shadow:inset 0 1px rgba(255,235,153,.18)}
-.r4-showcase-main{display:grid;grid-template-columns:25% 49% 26%;gap:0;min-height:0;flex:1}
-.r4-showcase-aside,.r4-showcase-chat{min-height:0;display:flex;flex-direction:column;gap:2.6%;padding:4.7% 4.5%;font-size:clamp(9px,.74vw,16px);overflow:hidden;background:linear-gradient(180deg,rgba(0,26,37,.45),rgba(0,19,31,.65))}
-.r4-showcase-aside{border-right:1px solid rgba(238,187,92,.3)}
-.r4-showcase-chat{border-left:1px solid rgba(238,187,92,.3)}
-.r4-showcase-aside strong,.r4-showcase-chat strong{font-size:clamp(11px,1.02vw,21px);color:#ffdfa0;white-space:nowrap}
-.r4-showcase-aside small,.r4-showcase-chat small{display:block;font-size:clamp(8px,.62vw,14px);line-height:1.35;color:#bcd3d4}
-.r4-showcase-field{padding:.5em .6em;border-radius:7px;color:#dbe9e8;border:1px solid #4e857d;background:#042c35;font:600 clamp(8px,.65vw,15px) Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r4-showcase-action{padding:.43em .4em;text-align:center;border-radius:9px;background:linear-gradient(#fff0b6,#ffc957 55%,#c98912);color:#09252b;font-size:clamp(10px,1.1vw,22px);font-weight:800;box-shadow:0 0 8px rgba(255,210,104,.48);white-space:nowrap}
-.r4-showcase-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:2%}
-.r4-showcase-stats span{background:#093b43;border:1px solid rgba(235,189,100,.45);border-radius:7px;text-align:center;padding:.4em .1em;font-weight:800}
-.r4-showcase-center{min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.6% 2%;gap:2%;background:radial-gradient(ellipse at center,#095459 0%,#002e37 73%)}
-.r4-showcase-versus{display:flex;align-items:center;justify-content:space-around;width:100%;min-height:9%;font-size:clamp(9px,.78vw,18px);font-weight:800;white-space:nowrap}
-.r4-showcase-versus b{color:#ffc451;font-size:1.35em}
-.r4-showcase-boardframe{width:min(96%,45vh);max-height:86%;aspect-ratio:1;padding:clamp(7px,.72vw,15px);border:clamp(4px,.55vw,12px) ridge #eac16d;border-radius:clamp(9px,.94vw,20px);background:#eed8a9;box-shadow:0 2px 8px #001019,0 0 16px rgba(247,183,64,.75);display:flex}
-.r4-showcase-board{position:relative;aspect-ratio:1;width:100%;background-color:#e9d6ad;box-shadow:inset 0 0 0 2px #79552c}
-.r4-showcase-board--checkers{background-image:conic-gradient(#80512c 25%,#f0dfba 0 50%,#80512c 0 75%,#f0dfba 0);background-size:25% 25%}
-.r4-showcase-piece{position:absolute;left:calc(var(--c)*12.5% + 1.15%);top:calc(var(--r)*12.5% + 1.15%);width:10.2%;height:10.2%;border-radius:50%;box-shadow:inset 0 2px 4px rgba(255,255,255,.65),inset 0 -4px 4px rgba(0,0,0,.27),0 2px 4px rgba(0,0,0,.7);border:1px solid rgba(0,0,0,.36)}
-.r4-showcase-piece--light{background:radial-gradient(circle at 32% 25%,#fffef4,#dfd1ad 66%,#a08a59)}
-.r4-showcase-piece--dark{background:radial-gradient(circle at 32% 22%,#68757d,#0b1721 56%,#02050a)}
-.r4-showcase-chathead{padding:.6em .3em;border:1px solid #d5ab59;border-radius:8px;text-align:center;background:linear-gradient(180deg,#ffe0a0,#cc9022);color:#062a32}
-.r4-showcase-chatbox{flex:1;border-top:1px solid rgba(228,177,74,.3);font:clamp(9px,.65vw,14px) Arial,sans-serif;color:#a7d7d7;display:grid;place-items:center;text-align:center}
-.r4-showcase-compose{padding:.5em;border:1px solid #cfa55f;border-radius:9px;font:clamp(8px,.66vw,14px) Arial,sans-serif;color:#90adb1}
-.r4-showcase-board--empty{background:linear-gradient(90deg,rgba(53,71,77,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,linear-gradient(0deg,rgba(53,71,77,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,linear-gradient(145deg,#fffaf0,#c9b69a)}
-.r4-showcase-empty-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:7%;text-align:center;color:#fff0bf;font-weight:900;font-size:clamp(18px,1.8vw,40px);line-height:1.15;text-shadow:0 2px 6px #001d24,0 0 16px #9f691a;background:radial-gradient(ellipse at center,rgba(0,31,39,.82),rgba(0,30,38,.05) 75%)}
-.r4-showcase-console--soon .r4-showcase-main{grid-template-columns:25% 49% 26%}
-.r4-showcase-console--soon .r4-showcase-boardframe{border-color:#f4d391}
-/* The original raster contains button artwork. Cover it with genuine, permanently
-   mounted controls; only opacity/href state changes, never node replacement. */
-.r4-hero-live-actions{position:absolute;inset:0;z-index:9;pointer-events:none;display:none}
-.r4-hero-live-actions a{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:auto;text-decoration:none!important;white-space:nowrap;overflow:hidden;box-sizing:border-box;font-family:Montserrat,Arial,sans-serif;font-weight:900;letter-spacing:.005em;font-size:clamp(12px,1.32vw,30px);transition:filter .2s ease,box-shadow .2s ease;color:#002830}
-.r4-hero-live-actions a:hover{filter:brightness(1.06)}
+/* GRACZ.PL HERO — the approved hero and console stay static.
+   Only the board, console heading and game CTA transition. No embeds or game API. */
+.r4-hero{isolation:isolate}
+.r4-console-dynamic{position:absolute;inset:0;z-index:5;pointer-events:none}
+.r4-console-title{position:absolute;left:43.45%;top:8.8%;width:13.2%;height:5.55%;display:flex;align-items:center;justify-content:center;
+ background:linear-gradient(95deg,#003038 0%,#001d2b 92%);color:#fff0bb;text-shadow:0 1px 2px #000,0 0 6px rgba(255,211,109,.35);
+ font:700 clamp(11px,1.3vw,29px)/1.05 Georgia,serif;white-space:nowrap;border-radius:5px}
+.r4-console-board{position:absolute;left:58.4%;top:20.8%;width:21.8%;height:58.8%;box-sizing:border-box;
+ border:clamp(5px,.65vw,14px) ridge #f5cf7d;border-radius:clamp(8px,.9vw,20px);
+ background:linear-gradient(150deg,#e7c786,#ac782d);box-shadow:0 0 9px rgba(250,193,65,.8),inset 0 0 0 2px #fff1b9;padding:2.4%}
+.r4-console-board-squares{position:relative;width:100%;height:100%;background:#e9d6b0;overflow:hidden;box-shadow:inset 0 0 0 2px #765633}
+.r4-console-board-squares--warcaby{background:conic-gradient(#83552e 25%,#f5e7c6 0 50%,#83552e 0 75%,#f5e7c6 0);background-size:25% 25%}
+.r4-console-piece{position:absolute;left:calc(var(--x)*12.5% + 1.2%);top:calc(var(--y)*12.5% + 1.2%);width:10.1%;height:10.1%;box-sizing:border-box;
+ border-radius:50%;border:1px solid rgba(0,0,0,.42);box-shadow:inset 0 2px 4px rgba(255,255,255,.56),inset 0 -3px 3px rgba(0,0,0,.35),0 2px 3px #241a14}
+.r4-console-piece--white{background:radial-gradient(circle at 32% 22%,#fff,#ded6bb 56%,#97805a)}
+.r4-console-piece--black{background:radial-gradient(circle at 32% 18%,#657078,#14202b 50%,#02060a)}
+.r4-console-board-squares--soon{background:linear-gradient(90deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,
+ linear-gradient(0deg,rgba(63,77,72,.65) 1px,transparent 1px) 0 0/9.09% 9.09%,linear-gradient(125deg,#fff9e8,#d3c1a0)}
+.r4-console-soon-caption{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:5%;box-sizing:border-box;
+ background:radial-gradient(ellipse at center,rgba(0,32,39,.88),rgba(0,40,43,.3) 77%);
+ color:#fff1c7;text-align:center;text-shadow:0 1px 4px #00191d,0 0 10px #bc8b39;
+ font:900 clamp(13px,1.46vw,32px)/1.18 Georgia,serif}
+.r4-console-title,.r4-console-board{opacity:0;visibility:hidden;transition:opacity .42s ease,visibility 0s linear .42s}
+.r4-hero[data-hero-slide="warcaby"] .r4-console-title--warcaby,
+.r4-hero[data-hero-slide="warcaby"] .r4-console-board--warcaby,
+.r4-hero[data-hero-slide="soon"] .r4-console-title--soon,
+.r4-hero[data-hero-slide="soon"] .r4-console-board--soon{opacity:1;visibility:visible;transition:opacity .42s ease,visibility 0s}
+/* Native controls entirely cover button artwork baked into the approved screenshot.
+   The controls remain permanently mounted in fixed slots; only the game CTA fades. */
+.r4-hero-live-actions{position:absolute;inset:0;z-index:8;pointer-events:none;display:none}
+.r4-hero-live-actions a{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:auto;box-sizing:border-box;
+ text-decoration:none!important;white-space:nowrap;overflow:hidden;font:900 clamp(12px,1.32vw,29px)/1.1 Montserrat,Arial,sans-serif;
+ border-radius:clamp(8px,1.1vw,25px);transition:filter .2s ease,opacity .42s ease,visibility 0s linear .42s}
+.r4-hero-live-actions a:hover{filter:brightness(1.08)}
 .r4-hero-live-actions a:focus-visible{outline:3px solid #fff5bf;outline-offset:2px}
-.r4-hero-live-actions .r4-live-discover{top:65.7%;left:1.96%;width:12.3%;height:10.7%;border-radius:clamp(8px,1.12vw,25px);border:1px solid #fff0af;background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127);box-shadow:inset 0 2px 2px rgba(255,255,255,.7)}
-.r4-hero-live-actions .r4-live-guides{top:65.7%;left:15.1%;width:16.5%;height:10.7%;border-radius:clamp(8px,1.12vw,25px);border:1px solid #e0a940;background:#002d31;color:#fff9ea}
-.r4-hero-live-actions .r4-live-game{top:79.65%;left:1.95%;width:29.7%;height:10.8%;border-radius:100px;border:2px solid #ffe7a0;background:linear-gradient(180deg,#ffe49b 0%,#faca61 45%,#dc9514 100%);box-shadow:0 0 18px rgba(250,173,47,.35),inset 0 2px 3px rgba(255,255,255,.72);font-size:clamp(14px,1.65vw,37px);color:#062e30;transition:opacity .48s ease,visibility 0s linear .48s,filter .2s ease}
-.r4-hero-live-actions .r4-live-game[data-game="warcaby"],
-.r4-hero-live-actions .r4-live-game[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none}
+.r4-hero-live-actions .r4-live-discover{top:65.7%;left:1.96%;width:12.3%;height:10.7%;
+ background:linear-gradient(180deg,#ffeba2,#f9c34d 52%,#e9a127);border:1px solid #fff0af;color:#002830;
+ box-shadow:inset 0 2px 2px rgba(255,255,255,.7)}
+.r4-hero-live-actions .r4-live-guides{top:65.7%;left:15.1%;width:16.5%;height:10.7%;
+ background:#002e32;border:1px solid #e0a940;color:#fff9ea}
+.r4-hero-live-actions .r4-live-game{top:79.65%;left:1.95%;width:29.7%;height:10.8%;
+ border:2px solid #ffe7a0;border-radius:100px;background:linear-gradient(180deg,#ffe49b 0%,#faca61 45%,#dc9514 100%);
+ color:#062e30;box-shadow:0 0 18px rgba(250,173,47,.35),inset 0 2px 3px rgba(255,255,255,.72);
+ font-size:clamp(14px,1.65vw,37px)}
+.r4-live-game[data-game="warcaby"],.r4-live-game[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none!important}
 .r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="warcaby"],
-.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .48s ease,visibility 0s,filter .2s ease}
+.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto!important;transition:filter .2s ease,opacity .42s ease,visibility 0s}
 .r4-hero[data-hero-slide="warcaby"] .r4-live-game[data-game="gomoku"],
-.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none}
+.r4-hero[data-hero-slide="soon"] .r4-live-game[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none!important}
 @media(min-width:1181px){
  .homepage-premium-max .r4-hero-live-actions{display:block}
  .homepage-premium-max .r4-owner-hotspot{display:none!important}
 }
 @media(max-width:1180px){
  .homepage-premium-max .r4-hero-actions .r4-btn svg{display:none!important}
- .r4-hero-showcase{left:auto;right:3%;width:59%;height:80%;top:10%;z-index:4}
  .r4-hero-live-actions{display:none!important}
- .r4-showcase-boardframe{max-height:83%}
- .r4-showcase-main{grid-template-columns:20% 60% 20%}
- .r4-showcase-aside,.r4-showcase-chat{gap:2%}
- .r4-showcase-aside strong,.r4-showcase-chat strong{font-size:clamp(9px,1.1vw,16px)}
- .r4-showcase-aside small,.r4-showcase-chat small{font-size:clamp(7px,.72vw,12px)}
- .r4-showcase-brand{font-size:clamp(10px,1.55vw,18px)}
+ .r4-console-dynamic{left:auto;top:10%;right:0;width:61%;height:auto;aspect-ratio:1250/663;
+ background:url('/assets/gracz-hero-gomoku-mobile-preview-r1.webp') center/contain no-repeat;z-index:4}
+ .r4-console-title{left:8.4%;top:6.4%;width:23%;height:7%;font-size:clamp(10px,1.65vw,19px)}
+ .r4-console-board{left:32.6%;top:18.1%;width:38.7%;height:66%;padding:2.1%;border-width:clamp(4px,.7vw,9px)}
+ .r4-console-soon-caption{font-size:clamp(10px,1.2vw,19px)}
+ .homepage-premium-max .r4-hero-art{background-image:none!important}
+ .r4-hero-actions .r4-game-cta-stack{position:relative;display:flex;flex-basis:100%;width:min(420px,100%);height:52px}
+ .r4-hero-actions .r4-game-cta-stack .r4-btn{position:absolute;inset:0;max-width:none;width:100%;min-height:100%;
+   display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+ .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="warcaby"],
+ .r4-hero-actions .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .42s ease,visibility 0s linear .42s}
+ .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="warcaby"],
+ .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="soon"]{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .42s ease,visibility 0s}
+ .r4-hero[data-hero-slide="warcaby"] .r4-game-cta-stack .r4-btn[data-game="gomoku"],
+ .r4-hero[data-hero-slide="soon"] .r4-game-cta-stack .r4-btn[data-game="gomoku"]{opacity:0;visibility:hidden;pointer-events:none}
 }
 @media(max-width:680px){
- .r4-hero-showcase{left:0;right:0;top:auto;bottom:0;width:100%;height:clamp(190px,58vw,290px);z-index:4}
- .r4-showcase-console{border-radius:16px}
- .r4-showcase-head{min-height:32px}
- .r4-showcase-brand{font-size:14px}
- .r4-showcase-pill{font-size:8px}
- .r4-showcase-main,.r4-showcase-console--soon .r4-showcase-main{grid-template-columns:18% 64% 18%}
- .r4-showcase-aside,.r4-showcase-chat{padding:5% 4%}
- .r4-showcase-aside strong,.r4-showcase-chat strong{font-size:8px;white-space:normal}
- .r4-showcase-aside small,.r4-showcase-chat small{font-size:7px}
- .r4-showcase-field{font-size:7px}
- .r4-showcase-action{font-size:8px}
- .r4-showcase-chatbox{font-size:7px}
- .r4-showcase-versus{font-size:8px}
- .r4-showcase-boardframe{width:min(93%,40vh);padding:5px;border-width:5px}
- .r4-showcase-empty-title{font-size:clamp(16px,4vw,25px)}
+ .homepage-premium-max .r4-owner-picture{display:none!important}
+ .r4-console-dynamic{top:auto;right:0;bottom:0;width:100%;height:auto;aspect-ratio:1250/663}
+ .r4-console-title{font-size:clamp(9px,2.5vw,16px)}
+ .r4-console-board{border-width:clamp(4px,1vw,8px)}
+ .r4-console-soon-caption{font-size:clamp(10px,3vw,18px)}
 }
 @media(prefers-reduced-motion:reduce){
- .r4-hero-slide,.r4-hero-live-actions .r4-live-game{transition:none!important;animation:none!important}
+ .r4-console-title,.r4-console-board,.r4-hero-live-actions a,.r4-game-cta-stack .r4-btn{transition:none!important}
 }
