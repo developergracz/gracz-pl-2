@@ -57,6 +57,16 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(style.body,/Reference parity with Gomoku console/);
 
  assert.match(style.body,/R7 pixel alignment: polished checkers/);
+
+ // Final rules must win over the prior 1.12:1 frame from Gomoku parity.
+ assert.match(style.body,/R8: board and gold frame are the same square/);
+ assert.match(style.body,/container-type:size/);
+ assert.match(style.body,/width:min\(100cqw,100cqh\)/);
+ assert.match(style.body,/aspect-ratio:1 \/ 1/);
+ assert.match(style.body,/grid-template-rows:minmax\(0,1fr\)/);
+ assert.match(style.body,/overflow:hidden/);
+ assert.match(style.body,/@media \(max-width:800px\)/);
+
  assert.match(style.body,/height:55px;min-height:55px;max-height:55px/);
  assert.match(style.body,/min-height:28px;height:28px/);
  assert.match(style.body,/min-height:38px;height:38px/);
