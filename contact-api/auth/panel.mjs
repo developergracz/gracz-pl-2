@@ -276,7 +276,111 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  </div>
 </div>
 </section>
-<section class="view" data-panel="privacy"><div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Widoczność profilu</h2><p>Ustawienia widoczności, historii rozgrywek i zaproszeń będą dostępne po wdrożeniu społeczności Gracz Next. Żadne niewdrożone ustawienie nie jest tutaj prezentowane jako aktywne.</p></div></section>
+<section class="view" data-panel="privacy">
+<div class="priv-hero">
+ <div><p class="card-kicker">GRACZ.PL · CENTRUM PRYWATNOŚCI · FULL MAX PREMIUM</p>
+ <h2>Twoja prywatność. Twoje zasady.</h2>
+ <p>Ty decydujesz, kto znajdzie Twoje konto, co zobaczy na wizytówce i kto może nawiązać z Tobą kontakt.</p></div>
+ <div class="priv-emblem" aria-hidden="true"><span>✦</span><small>PRIVACY</small></div>
+</div>
+<div class="priv-metrics">
+ <div><small>WIDOCZNOŚĆ PROFILU</small><strong id="priv-metric-profile">—</strong><span>Dla innych graczy</span></div>
+ <div><small>WYSZUKIWANIE</small><strong id="priv-metric-search">—</strong><span>Znajdowanie nicku</span></div>
+ <div><small>STATUS ONLINE</small><strong id="priv-metric-online">—</strong><span>Widoczność dla znajomych</span></div>
+ <div><small>KONTAKTY</small><strong id="priv-metric-contact">—</strong><span>Wiadomości i zaproszenia</span></div>
+</div>
+<nav class="priv-tabs" role="tablist" aria-label="Opcje prywatności">
+ <button type="button" role="tab" aria-selected="true" class="active" data-priv-tab="overview">◈ Centrum prywatności</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="profile">♙ Profil publiczny</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="contacts">◇ Znajomi i kontakt</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="games">♟ Gry i aktywność</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="data">▤ Moje dane</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="future">✧ Forum i przyszłość</button>
+</nav>
+<p class="priv-notice" id="priv-status" role="status" aria-live="polite">Wczytywanie zapisanych preferencji prywatności…</p>
+<div class="priv-pane" data-priv-pane="overview">
+ <div class="card">
+  <p class="card-kicker">JEDNYM KLIKNIĘCIEM</p><h2>Wybierz poziom prywatności</h2>
+  <p>Wybór ustawia przełączniki w panelu. Zmiany zostaną wprowadzone dopiero po naciśnięciu „Zapisz ustawienia”.</p>
+  <div class="priv-presets">
+   <button type="button" data-priv-preset="private"><strong><span>♜</span> Maksymalna prywatność</strong><small>Profil ukryty, bez wyszukiwania, zaproszeń i widoczności online.</small></button>
+   <button type="button" data-priv-preset="friends"><strong><span>♟</span> Tylko znajomi</strong><small>Kontakty od zaakceptowanych znajomych, bez publicznej wizytówki.</small></button>
+   <button type="button" data-priv-preset="open"><strong><span>✦</span> Profil otwarty</strong><small>Publiczna wizytówka, odkrywanie i wiadomości od znajomych.</small></button>
+  </div>
+ </div>
+ <div class="priv-info-grid">
+  <div class="card"><p class="card-kicker">PROFIL</p><h2>Publiczna wizytówka</h2><p>Imię wyświetlane, opis, statystyki i osiągnięcia są pokazywane zgodnie z Twoimi zgodami.</p><button class="secondary" type="button" data-priv-goto="profile">Zarządzaj wizytówką</button></div>
+  <div class="card"><p class="card-kicker">RELACJE</p><h2>Kontakty i zaproszenia</h2><p>Zezwalaj lub blokuj nowe zaproszenia do znajomych, wiadomości i wyzwania w grach.</p><button class="secondary" type="button" data-priv-goto="contacts">Ustaw kontakty</button></div>
+  <div class="card"><p class="card-kicker">PRESENCE</p><h2>Status online</h2><p>Decyduj, czy zaakceptowani znajomi widzą Twoją bieżącą dostępność.</p><button class="secondary" type="button" data-priv-goto="games">Ustaw aktywność</button></div>
+  <div class="card"><p class="card-kicker">PRAWA DO DANYCH</p><h2>Eksport ustawień</h2><p>Pobierz swoje ustawienia prywatności i podstawowe dane wizytówki w pliku JSON.</p><button class="secondary" type="button" data-priv-goto="data">Przejdź do danych</button></div>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="profile" hidden>
+ <div class="card">
+  <p class="card-kicker">PREZENTACJA W SERWISIE</p><h2>Publiczny profil gracza</h2>
+  <p>To są te same uprawnienia, które obowiązują w module „Konto i profil”. Profil prywatny nie jest udostępniany publicznym odwiedzającym.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Publiczna wizytówka</strong><small>Umożliwiaj otwarcie profilu innym osobom przez publiczny adres GRACZ.PL.</small></span><input type="checkbox" id="priv-publicProfile"></label>
+   <label class="priv-option"><span><strong>Pokazuj statystyki gier</strong><small>Udostępniaj zestawienie rozegranych partii i zwycięstw na publicznym profilu (tylko gdy jest włączony).</small></span><input type="checkbox" id="priv-showStats"></label>
+   <label class="priv-option"><span><strong>Pokazuj miasto i kraj</strong><small>Ujawniaj lokalizację wpisaną we własnym profilu — nigdy dokładny adres urządzenia.</small></span><input type="checkbox" id="priv-showCountry"></label>
+   <label class="priv-option"><span><strong>Pokazuj osiągnięcia</strong><small>Publikuj zdobyte odznaki tylko, gdy włączone jest również pokazywanie statystyk.</small></span><input type="checkbox" id="priv-showBadges"></label>
+  </div>
+  <div class="priv-actions"><button type="button" class="secondary" id="priv-preview-profile">Otwórz mój profil publiczny</button><button type="button" class="secondary" id="priv-edit-card">Edytuj wygląd wizytówki</button></div>
+  <p class="priv-hint">Wyłączenie profilu publicznego ukrywa go przed anonimowym dostępem. Zapisane statystyki i odznaki nie są usuwane.</p>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="contacts" hidden>
+ <div class="card"><p class="card-kicker">ODKRYWANIE I ZNAJOMOŚCI</p><h2>Kto może Cię znaleźć i zaprosić?</h2>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Widoczność w wyszukiwarce graczy</strong><small>Twój nick może pojawić się w wynikach wyszukiwania GRACZ.PL. Bez tej zgody nowe osoby nie znajdą Cię przez wyszukiwanie w panelu.</small></span><input type="checkbox" id="priv-discoverable"></label>
+   <label class="priv-option"><span><strong>Otrzymuj zaproszenia do znajomych</strong><small>Inni gracze mogą wysyłać zaproszenia do znajomych. Wyłączenie blokuje nowe zaproszenia, nie usuwa dotychczasowych.</small></span><input type="checkbox" id="priv-friendRequests"></label>
+   <label class="priv-option"><span><strong>Wiadomości od zaakceptowanych znajomych</strong><small>Twoi znajomi mogą wysyłać nowe wiadomości. Wyłączenie nie usuwa istniejących rozmów.</small></span><input type="checkbox" id="priv-friendMessages"></label>
+  </div>
+  <div class="priv-actions"><button type="button" id="priv-manage-friends" class="secondary">Moi znajomi</button><button type="button" id="priv-manage-blocks" class="secondary">Zarządzaj blokadami</button></div>
+ </div>
+ <div class="card"><p class="card-kicker">CO ZOSTAJE PRYWATNE</p><h2>Twoje kontakty są Twoje</h2><p>Notatki, telefony, adresy e-mail oraz grupy w Twojej książce adresowej nie są udostępniane innym graczom.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="games" hidden>
+ <div class="card"><p class="card-kicker">ROZGRYWKI I AKTYWNOŚĆ</p><h2>Zaproszenia oraz status online</h2>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Zezwalaj na wyzwania do gier</strong><small>Zaakceptowani znajomi mogą wysyłać nowe zaproszenia do Gomoku i Warcabów.</small></span><input type="checkbox" id="priv-gameInvites"></label>
+   <label class="priv-option"><span><strong>Pokazuj mój status online</strong><small>Zaakceptowani znajomi widzą, kiedy jesteś aktywny w serwisie. Wyłączenie ukrywa status dla innych.</small></span><input type="checkbox" id="priv-showOnline"></label>
+  </div>
+  <div class="priv-hint">Wyniki i statystyki na publicznej wizytówce kontrolujesz w zakładce „Profil publiczny”. Samo wyłączenie widoczności nie usuwa historii z Twojego konta.</div>
+ </div>
+ <div class="card"><p class="card-kicker">PRZYSZŁE OPCJE</p><h2>Historia partii i rankingi</h2><p>Osobna kontrola widoczności poszczególnych rozegranych partii, rankingów i historii turniejowej wymaga przyszłej integracji rozgrywek społecznościowych. Ta funkcja nie jest jeszcze aktywna.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="data" hidden>
+ <div class="card"><p class="card-kicker">PRAWA DO WŁASNYCH DANYCH</p><h2>Moje dane i eksport</h2>
+  <p>Możesz pobrać kopię swoich preferencji prywatności oraz podstawowych danych profilu w postaci pliku JSON. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.</p>
+  <div class="priv-actions"><button type="button" class="primary" id="priv-export">Pobierz ustawienia i profil (JSON)</button><button type="button" class="secondary" id="priv-open-addressbook">Książka adresowa — import/eksport</button></div>
+  <p id="priv-export-status" role="status" aria-live="polite" class="priv-hint">Eksport nie jest kompletną kopią konta; nie zawiera wiadomości ani pełnej historii gier.</p>
+ </div>
+ <div class="priv-info-grid">
+  <div class="card"><p class="card-kicker">DANE PROFILU</p><h2>Aktualizacja</h2><p>Nick, opis, kraj oraz wygląd wizytówki znajdują się w zakładce „Konto i profil”.</p><button id="priv-open-editor" type="button" class="secondary">Otwórz edycję</button></div>
+  <div class="card"><p class="card-kicker">DANE ZNAJOMYCH</p><h2>Własna książka</h2><p>Wpisy możesz edytować, usuwać i eksportować z modułu „Moi znajomi”.</p><button id="priv-open-friends" type="button" class="secondary">Otwórz książkę</button></div>
+  <div class="card"><p class="card-kicker">OCHRONA KONTA</p><h2>Sesje i hasło</h2><p>Wylogowywanie urządzeń i zmiana hasła są dostępne w Centrum Bezpieczeństwa.</p><button id="priv-open-security" type="button" class="secondary">Przejdź do ochrony</button></div>
+  <div class="card"><p class="card-kicker">USUNIĘCIE KONTA</p><h2>Żądania dotyczące danych</h2><p>Samodzielne usuwanie całego konta i pełny eksport archiwum nie zostały jeszcze wdrożone. Nie ma tutaj pozornego przycisku usuwania.</p></div>
+ </div>
+</div>
+<div class="priv-pane" data-priv-pane="future" hidden>
+ <div class="card"><p class="card-kicker">GRACZ NEXT · FORUM I KLUBY</p><h2>Prywatność przyszłej społeczności</h2>
+ <p>Po uruchomieniu forum będzie można niezależnie kontrolować widoczność wpisów, listy klubów, zaproszeń do grup, obserwowania, powiadomień forum i komunikacji społecznościowej.</p>
+ <div class="priv-roadmap">
+  <div><strong>✓ Działa</strong><span>Wyszukiwanie kont i prywatność zaproszeń do znajomych</span></div>
+  <div><strong>✓ Działa</strong><span>Kontrola wiadomości, wyzwań i statusu online</span></div>
+  <div><strong>Planowane</strong><span>Widoczność tematów i profilu na forum</span></div>
+  <div><strong>Planowane</strong><span>Zgody na kluby, turnieje i udostępnianie aktywności</span></div>
+  <div><strong>Planowane</strong><span>Blokowanie wzmiankowania, obserwowania i tagowania</span></div>
+  <div><strong>Planowane</strong><span>Pełne archiwum danych, żądanie usunięcia konta i automatyczna realizacja wniosków</span></div>
+ </div>
+ <p class="priv-hint">Nie przedstawiamy ustawień przyszłych usług jako działających zabezpieczeń.</p></div>
+</div>
+<div class="priv-savebar">
+ <div><strong id="priv-save-state">Ustawienia nie zostały jeszcze wczytane</strong><small>Zmiany wymagają zapisania na serwerze</small></div>
+ <div class="priv-actions"><button type="button" class="secondary" id="priv-reset">Cofnij niezapisane</button><button type="button" class="primary" id="priv-save">Zapisz ustawienia</button></div>
+</div>
+</section>
 <section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
 <section class="view" data-panel="messages">
 <div class="card">
