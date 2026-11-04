@@ -247,6 +247,44 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey}){
   if(req.method==='GET'&&(url.pathname==='/konto'||url.pathname==='/konto/')){
    return false;
   }
+  // Password changes share the existing account and HttpOnly-session backend.
+  if(url.pathname==='/auth/change-password'){
+   if(req.method!=='POST')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+   if(!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+   try{
+    await ready();
+    const token=sessionToken(req);
+    if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+    const tokenDigest=digest(token);
+    const q=await database.query('SELECT a.id,a.salt,a.password_digest FROM gracz_public_identity.sessions s JOIN gracz_public_identity.accounts a ON a.id=s.account_id WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1',[tokenDigest]);
+    if(!q.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+    const account=q.rows[0];
+    if(!allow('password-change:'+account.id,8))
+     return bad(res,429,'ZBYT_WIELE_PROB'),true;
+    let body;
+    try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+    const currentPassword=body.currentPassword,newPassword=body.newPassword,repeatPassword=body.repeatPassword;
+    if(!validPassword(currentPassword))
+     return bad(res,401,'BLEDNE_AKTUALNE_HASLO'),true;
+    if(!validPassword(newPassword)||newPassword!==repeatPassword||newPassword===currentPassword)
+     return bad(res,400,'POPRAW_NOWE_HASLO'),true;
+    const currentHash=Buffer.from(account.password_digest);
+    const computed=await hashPassword(currentPassword,Buffer.from(account.salt));
+    if(currentHash.length!==computed.length||!timingSafeEqual(currentHash,computed))
+     return bad(res,401,'BLEDNE_AKTUALNE_HASLO'),true;
+    const newSalt=randomBytes(16),newHash=await hashPassword(newPassword,newSalt);
+    // Update credentials and revoke all OTHER sessions in one atomic SQL statement.
+    // The current authenticated HttpOnly cookie remains valid.
+    const saved=await database.query('WITH updated AS (UPDATE gracz_public_identity.accounts SET salt=$3,password_digest=$4 WHERE id=$1 AND password_digest=$2 RETURNING id), revoked AS (DELETE FROM gracz_public_identity.sessions s USING updated u WHERE s.account_id=u.id AND s.token_digest<>$5 RETURNING s.token_digest) SELECT (SELECT count(*) FROM updated)::integer AS changed, (SELECT count(*) FROM revoked)::integer AS revoked',
+     [account.id,currentHash,newSalt,newHash,tokenDigest]);
+    if(Number(saved.rows[0]?.changed)!==1)
+     return bad(res,409,'HASLO_ZMIENIONE_PONOW_PROBE'),true;
+    return json(res,200,{ok:true,otherSessionsRevoked:Number(saved.rows[0]?.revoked)||0}),true;
+   }catch(e){
+    console.error('IDENTITY_PASSWORD_CHANGE_ERROR',{code:safeText(e?.code)||'PASSWORD_CHANGE_ERROR'});
+    return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+   }
+  }
   if(url.pathname==='/auth/session'&&req.method==='GET'){
    try{
     await ready();const token=sessionToken(req);
