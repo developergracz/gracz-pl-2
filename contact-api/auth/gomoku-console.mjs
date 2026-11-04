@@ -2617,8 +2617,8 @@ $('howto-modal').addEventListener('keydown',event=>{
  if(event.key==='Tab'){
   // Two dialog controls: trap focus to avoid interacting with the covered game.
   event.preventDefault?.();
-  if($('howto-close').focused){$('howto-close').blur?.();$('howto-done').focus?.();}
-  else {$('howto-done').blur?.();$('howto-close').focus?.();}
+  if(document.activeElement===$('howto-close'))$('howto-done').focus?.();
+  else $('howto-close').focus?.();
  }
 });
 $('restart').addEventListener('click',restart);
