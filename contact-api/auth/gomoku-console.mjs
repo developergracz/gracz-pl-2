@@ -45,7 +45,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <select id="training-increment" aria-label="Dodatkowe sekundy po ruchu w treningu"><option value="0" selected>Bez bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
 <details class="panel-help"><summary>Jak działają zegary?</summary><p class="training-clock-help">Zegary są niezależne. Czas mija tylko podczas własnej tury, a bonus dolicza się po prawidłowym ruchu. Zmiana ustawień rozpoczyna nową partię.</p></details>
 <button class="primary" id="restart" type="button"><span class="restart-label">Nowa rozgrywka</span></button></section>
-<section class="sidecard training-records" id="training-records" aria-label="Statystyki treningu"><h2>♛ Mój bilans treningu</h2><p class="records-note sr-only">Wyniki partii z komputerem na tym urządzeniu, bez rankingu.</p><div class="records-grid"><div><strong id="record-wins">0</strong><small>Wygrane</small></div><div><strong id="record-draws">0</strong><small>Remisy</small></div><div><strong id="record-losses">0</strong><small>Przegrane</small></div></div><p class="records-total">Rozegrano: <strong id="record-total">0</strong> · Skuteczność: <strong id="record-rate">0%</strong></p></section>
+<section class="sidecard training-records" id="training-records" aria-label="Statystyki treningu"><div class="records-heading"><span class="records-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18.5h16v2H4zM5 16 3 6l5.5 4L12 3l3.5 7L21 6l-2 10Z"/><circle cx="3" cy="5" r=".8" fill="currentColor"/><circle cx="12" cy="2" r=".8" fill="currentColor"/><circle cx="21" cy="5" r=".8" fill="currentColor"/></svg></span><h2>Mój bilans treningu</h2></div><p class="records-note sr-only">Wyniki partii z komputerem na tym urządzeniu, bez rankingu.</p><div class="records-grid" role="group" aria-label="Wygrane, remisy i przegrane"><div class="record-stat record-stat-win"><strong id="record-wins">0</strong><small>Wygrane</small></div><div class="record-stat record-stat-draw"><strong id="record-draws">0</strong><small>Remisy</small></div><div class="record-stat record-stat-loss"><strong id="record-losses">0</strong><small>Przegrane</small></div></div><div class="records-summary"><p class="records-total"><span>Rozegrano: <strong id="record-total">0</strong></span><span>Skuteczność: <strong id="record-rate">0%</strong></span></p><div class="records-progress" id="records-progress" role="progressbar" aria-label="Skuteczność wygranych" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="records-progress-fill" id="records-progress-fill"></span></div></div></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
 <div class="room-creator">
@@ -1027,11 +1027,52 @@ select option{background:#102c34;color:#fff}
 .panel-help{margin:5px 0;font-size:11px;line-height:1.4;color:#adcac8}
 .panel-help summary,.rules summary{cursor:pointer;border-radius:5px;padding:3px 0;color:#ddcfaa;font-size:12px;line-height:1.3}
 .sidebar p,.sidecard .hint{font-size:12px;line-height:1.4;margin:6px 0;color:#c7ded9}
-.training-records{padding:10px;border-radius:12px;background:linear-gradient(140deg,#0c3941,#062731)}
-.records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;text-align:center}
-.records-grid strong{display:block;color:#ffdc91;font:750 20px/1.2 Georgia,serif}
-.records-grid small{display:block;color:#c2dcd7;font-size:10px}
-.sidebar .records-total{margin:6px 0 0;font-size:11px;text-align:center}
+/* R32: compact Full Max Premium training scorecard — three inset counters and live success bar. */
+.training-records{position:relative;isolation:isolate;overflow:hidden;margin-top:0;
+ padding:clamp(8px,1.15vh,12px);border:1px solid #b99558;border-radius:16px;
+ background:radial-gradient(ellipse 78% 90% at 0% 0%,#12676355,transparent 80%),
+ linear-gradient(145deg,#093a41 0%,#052831 55%,#041a26 100%);
+ box-shadow:inset 0 1px 0 #fff3cb77,inset 0 0 0 1px #43696365,0 4px 14px #0009,0 0 11px #edc16c33}
+.training-records .records-heading{display:flex;align-items:center;gap:8px;min-width:0;margin:0 0 7px}
+.training-records .records-heading h2{min-width:0;margin:0;color:#ffe5ad;
+ font:700 clamp(15px,1.32vw,20px)/1.15 Georgia,"Times New Roman",serif;
+ letter-spacing:.05px;white-space:nowrap}
+.records-emblem{flex:0 0 25px;width:25px;height:25px;display:grid;place-items:center;
+ color:#ffe09c;border:1px solid #edc36e;border-radius:8px;
+ background:linear-gradient(150deg,#1c5e60,#071b25);
+ box-shadow:inset 0 1px 0 #fff4b45e,0 0 7px #eec06e66}
+.records-emblem svg{display:block;width:17px;height:17px}
+.training-records .records-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:clamp(4px,.55vw,8px);text-align:center}
+.training-records .record-stat{position:relative;min-width:0;padding:5px 2px 6px;
+ border:1px solid #447873b3;border-radius:10px;
+ background:linear-gradient(180deg,#164449c5,#062631db);
+ box-shadow:inset 0 1px 0 #8ff5dc2a,0 2px 6px #0006}
+.training-records .record-stat-win{border-color:#64b5a48c}
+.training-records .record-stat-draw{border-color:#cba66582}
+.training-records .record-stat-loss{border-color:#a4776a9c}
+.training-records .records-grid strong{display:block;font:800 clamp(20px,1.9vw,27px)/1.05 Georgia,serif;
+ font-variant-numeric:tabular-nums;color:#ffe6aa;text-shadow:0 0 8px #dba94b50}
+.training-records .record-stat-win strong{color:#a8f9dd}
+.training-records .record-stat-draw strong{color:#ffda86}
+.training-records .record-stat-loss strong{color:#ffd0b7}
+.training-records .records-grid small{display:block;margin-top:4px;color:#d8efec;
+ font:600 clamp(9px,.75vw,11px)/1.1 "Segoe UI",sans-serif}
+.training-records .records-summary{margin-top:7px}
+.training-records .records-total{display:flex;align-items:center;justify-content:space-between;gap:5px;
+ min-width:0;margin:0 1px 6px;color:#c8e5e1;font:500 clamp(10px,.78vw,12px)/1.2 "Segoe UI",sans-serif;
+ text-align:left}
+.training-records .records-total span{white-space:nowrap}
+.training-records .records-total strong{font-weight:800;color:#ffe0a4;font-variant-numeric:tabular-nums}
+.records-progress{position:relative;overflow:hidden;height:5px;border-radius:99px;
+ background:#021a22;box-shadow:inset 0 1px 2px #000b,0 0 0 1px #56807b66}
+.records-progress-fill{display:block;height:100%;width:0%;border-radius:inherit;
+ background:linear-gradient(90deg,#27c4b4,#91ffe3 60%,#edcd76);
+ box-shadow:0 0 9px #5af0d8b8;transition:width .25s ease}
+@media(max-width:380px){.training-records .records-heading h2{font-size:14px}
+ .records-emblem{flex-basis:22px;width:22px;height:22px}
+ .training-records .records-total{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.records-progress-fill{transition:none}}
 .room-creator{padding:0;margin:8px 0 10px}
 .room-creator h3{font:700 14px/1.3 Georgia,serif;color:#f0d49c;margin:0 0 5px}
 .room-creator button{width:100%;margin-top:7px}
@@ -1236,7 +1277,10 @@ function renderTrainingRecord(){
  $('record-draws').textContent=String(r.draws);
  $('record-losses').textContent=String(r.losses);
  $('record-total').textContent=String(total);
- $('record-rate').textContent=(total?Math.round(100*r.wins/total):0)+'%';
+ const rate=total?Math.round(100*r.wins/total):0;
+ $('record-rate').textContent=rate+'%';
+ $('records-progress-fill').style.width=rate+'%';
+ $('records-progress').setAttribute('aria-valuenow',String(rate));
 }
 function replaySource(){
  const online=state.mode==='online',m=state.match;
