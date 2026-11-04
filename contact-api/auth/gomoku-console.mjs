@@ -1539,14 +1539,15 @@ select option{background:#102c34;color:#fff}
 @media(prefers-reduced-motion:reduce){.console-config-preview>div{transition:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 /* R42: single-row tools above the existing 15-tile appearance configurator. */
-.arena{grid-template-rows:minmax(0,1fr) auto auto}
 .arena>.game-tools{grid-column:1/-1;display:flex;flex-flow:row nowrap;gap:clamp(4px,.7vw,9px);align-items:center;justify-content:center;min-width:0}
 .arena>.game-tools .tool-btn{flex:0 1 48px;width:clamp(34px,4vw,48px);height:40px;min-height:40px;padding:4px;justify-content:center}
 .arena>.game-tools .tool-btn span{min-width:0;font-size:19px}
 .arena>.game-controls-bottom{grid-column:1/-1;display:flex;justify-content:center;min-width:0}
 .arena .console-config-launch{display:flex;align-items:center;justify-content:center;gap:9px;width:min(100%,430px);min-height:39px;border:1px solid #e0b96a;border-radius:11px;background:linear-gradient(165deg,#145657,#083039 58%,#031d2a);color:#ffe3a6;font:800 13px Georgia,serif;box-shadow:inset 0 1px #d7fff465,0 0 10px #e4b65235;padding:8px 14px}
 .arena .console-config-launch span{color:#f6d18a}
-@media(max-width:560px){.arena{display:grid;grid-template-columns:minmax(0,1fr)}.arena>.board-center,.arena>.side-dock,.arena>.game-tools,.arena>.game-controls-bottom{grid-column:1}.arena>.game-tools{display:flex;flex-flow:row nowrap;width:100%;gap:3px}.arena>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:auto;height:37px;min-height:37px}}
+.game-focus .game-tools,.game-focus .game-controls-bottom{display:none!important}
+@media(max-width:800px){.arena,.arena>.game-tools,.arena>.game-controls-bottom{width:100%}}
+@media(max-width:560px){.arena>.game-tools{gap:3px}.arena>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:auto;height:37px;min-height:37px}}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
