@@ -392,12 +392,13 @@ test('Gomoku browser console can play immediately against a computer and join a 
  };
  const context={
   document:{getElementById:get,createElement:()=>new Element(),visibilityState:'visible'},
-  window:{performance:{now:()=>fakeTime},setTimeout:(fn,delay)=>{queued.push(fn);queuedDelays.push(delay);},
+  window:{performance:{now:()=>fakeTime},setTimeout:(fn,delay)=>{queued.push(fn);queuedDelays.push(delay);return fn;},
+   clearTimeout:fn=>{const at=queued.indexOf(fn);if(at>=0){queued.splice(at,1);queuedDelays.splice(at,1);}},
    setInterval:fn=>{intervals.push(fn);},location:{assign:href=>navigations.push(href)},
    localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}},
   location:{search:'',pathname:'/konto/gomoku/'},
   history:{replaceState(){}},
-  URLSearchParams,fetch,console
+  URLSearchParams,AbortController,fetch,console
  };
  get('training-time').value='7'; // Browser <select> defaults to the selected 7-minute option.
  const executable=served('/konto/gomoku/app.js').body.replace(/\}\)\(\);\s*$/,
