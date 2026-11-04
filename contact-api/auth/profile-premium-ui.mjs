@@ -231,8 +231,7 @@ export const premiumProfileScript=String.raw`
  $('premium-manage-favorites').addEventListener('click',()=>document.querySelector('[data-section="games"]').click());
  for(const [id,section] of [['premium-go-appearance','appearance'],['premium-go-security','security'],['premium-go-data','data']])
   $(id).addEventListener('click',()=>document.querySelector('[data-section="'+section+'"]').click());
- window.addEventListener('gracz:profile-ready',view);
- void loadPrefs();
+ if(typeof window!=='undefined')window.addEventListener('gracz:profile-ready',()=>{view();void loadPrefs()});
 })();`;
 const publicHtml=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="#031b25"><title>Profil gracza — GRACZ.PL</title><link rel="stylesheet" href="/konto/panel/styl.css"><script defer src="/konto/profil/public.js"></script></head><body class="public-profile-page"><main class="public-profile-card"><a href="https://gracz.pl/">gracz.pl · Polskie Centrum Gracza</a><h1 id="pub-title">Profil gracza</h1><p id="pub-status" role="status">Wczytywanie publicznej wizytówki…</p><section id="pub-card" class="premium-profile-showcase" hidden><span class="premium-showcase-eyebrow">FULL MAX PREMIUM</span><span class="premium-showcase-avatar" id="pub-avatar">G</span><strong id="pub-name"></strong><span id="pub-motto"></span><p id="pub-bio"></p><span id="pub-location"></span></section><div id="pub-stats"></div><div id="pub-badges"></div><a href="/konto/panel/">Panel gracza</a></main></body></html>`;
 const publicJs=String.raw`'use strict';(async()=>{
