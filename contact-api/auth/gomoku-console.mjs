@@ -1538,7 +1538,7 @@ select option{background:#102c34;color:#fff}
  .console-config-preview strong{font-size:10px}
  .console-config-preview small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.console-config-preview>div{transition:none}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 /* Premium console configurator */
 .console-config-modal[hidden]{display:none!important}.console-config-modal{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:16px;background:#000c15dc;backdrop-filter:blur(8px)}
 .console-config-card{width:min(920px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #e7bf78;border-radius:23px;background:radial-gradient(ellipse at 90% 0,#11666b80,transparent 60%),linear-gradient(145deg,#092e38,#031721);box-shadow:0 25px 80px #000b;padding:clamp(14px,2vw,28px);color:#e8fcfc}
@@ -1565,7 +1565,7 @@ $('console-config-close').addEventListener('click',closeConsoleConfig);$('consol
 $('console-config-reset').addEventListener('click',()=>{consoleHidden={};applyConsole();renderConsoleConfig();});
 $('console-config-modal').addEventListener('click',event=>{if(event.target===$('console-config-modal'))closeConsoleConfig();});
 $('console-config-modal').addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeConsoleConfig();}if(event.key==='Tab'){const controls=[...$('console-config-modal').querySelectorAll('button:not([disabled])')];const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
-applyConsole();
+queueMicrotask(applyConsole);
 const size=15,count=225;
 const matchPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const state={mode:'training',board:Array(count).fill(0),winner:0,moves:0,last:-1,
