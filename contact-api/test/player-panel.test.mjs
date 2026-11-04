@@ -453,3 +453,19 @@ test('social UI declares limited game integration and renders safe message text 
  assert.match(js.body,/social\/challenges/);
  new Script(js.body);
 });
+
+test('player panel uses compact responsive dimensions without zooming the UI',()=>{
+ const res=response();
+ assert.equal(servePlayerPanel({method:'GET'},res,new URL('/konto/panel/styl.css','https://gracz-contact-api.onrender.com')),true);
+ assert.equal(res.status,200);
+ const css=res.body;
+ const marker=css.indexOf('/* OWNER 2026-11-04: compact, proportional panel layout.');
+ assert.ok(marker>0,'compact design overrides must be served to the client');
+ const dense=css.slice(marker);
+ for(const expected of ['@media(min-width:981px)','@media(min-width:981px) and (max-height:780px)',
+  '@media(min-width:701px) and (max-width:980px)','@media(max-width:700px)',
+  '.masthead{min-height:154px','.profile-avatar-frame{width:83px;height:83px',
+  '.sidebar .nav{padding:7px 10px','.premium-profile .profile-hero-premium{padding:18px'])
+  assert.ok(dense.includes(expected),'missing compact responsive rule: '+expected);
+ assert.doesNotMatch(dense,/(^|[;{])\s*(zoom|transform)\s*:/m,'do not scale or blur whole panel');
+});
