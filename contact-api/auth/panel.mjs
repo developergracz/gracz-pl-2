@@ -546,6 +546,63 @@ body.pw-success-open{overflow:hidden}
 }
 @media(prefers-reduced-motion:reduce){.site-nav .site-discover{transition:none}}
 `+premiumProfileStyles+String.raw`
+/* Friends Hub Full Max Premium: responsive, accessible and compact across tabs. */
+#player-shell [data-fh-pane][hidden]{display:none!important}
+#player-shell .friendshub-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #16b6aa;border-radius:18px;padding:17px 21px;background:radial-gradient(ellipse at 84% 10%,#12d7bb57,transparent 55%),linear-gradient(125deg,#063d49,#031d2d)}
+#player-shell .friendshub-hero h2{font-size:clamp(23px,2.2vw,30px);margin:5px 0}
+#player-shell .friendshub-hero p{font-size:12px;line-height:1.4;color:#b3d7d7;max-width:620px;margin:5px 0}
+#player-shell .friendshub-hero-badge{display:grid;place-items:center;gap:5px;min-width:135px;min-height:76px;border-radius:15px;border:1px solid #deb76d;background:#042e39;color:#ffdf91;box-shadow:0 0 22px #09e4cb30}
+#player-shell .friendshub-hero-badge strong{font-size:15px}#player-shell .friendshub-hero-badge span{font-size:9px;letter-spacing:.13em}
+#player-shell .friendshub-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:8px;border:1px solid #267d83;background:#052c39;border-radius:15px;position:sticky;top:0;z-index:4}
+#player-shell .friendshub-tabs button{min-width:0;min-height:41px;padding:8px 5px;border-radius:10px;background:#073744;border:1px solid #286f78;color:#cbe5e5;font:800 12px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .friendshub-tabs button.active{background:linear-gradient(120deg,#076c70,#084854);border-color:#41ebd8;color:#fff;box-shadow:0 0 17px #0fe2cf42}
+#player-shell .friendshub-tabs button:focus-visible{outline:3px solid #ffe2a3;outline-offset:2px}
+#player-shell .friendshub-tabs button span{color:#ffe0a0}
+#player-shell .friendshub-pane{display:grid;gap:12px}
+#player-shell .friendshub-book-top .card-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}
+#player-shell .friendshub-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#player-shell .friendshub-actions button{min-height:39px;padding:8px 12px;font-size:11px}
+#player-shell .friendshub-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:11px 0}
+#player-shell .friendshub-stat-grid>div{border:1px solid #229a9c;border-radius:12px;padding:11px;background:linear-gradient(130deg,#063f4c,#052330)}
+#player-shell .friendshub-stat-grid small{display:block;font-size:9px;letter-spacing:.07em;font-weight:800;color:#eec986}
+#player-shell .friendshub-stat-grid strong{display:block;font-size:25px;margin-top:5px}
+#player-shell .friendshub-book-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr) auto auto;gap:9px;align-items:end}
+#player-shell .friendshub-book-filters label,#player-shell .friendshub-form label{display:grid;gap:6px;font-size:12px;color:#dbeaec;font-weight:740}
+#player-shell .friendshub-book-filters input[type=search],#player-shell .friendshub-book-filters select,
+#player-shell .friendshub-form :is(input:not([type=checkbox]),textarea){width:100%;min-height:39px;border:1px solid #358b92;border-radius:10px;background:#062934;color:#f0fafb;padding:8px 10px;font-size:12px;min-width:0}
+#player-shell .friendshub-form textarea{resize:vertical;min-height:85px}
+#player-shell .friendshub-book-filters .friendshub-only-favs{display:flex;align-items:center;min-height:39px;white-space:nowrap;gap:7px}
+#player-shell .friendshub-only-favs input,#player-shell .friendshub-check input{accent-color:#31e6d3;width:16px;height:16px}
+#player-shell .friendshub-group-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#player-shell .friendshub-group-chips button{padding:6px 9px;font-size:11px;border:1px solid #3f888d;border-radius:20px;color:#cef8f5;background:#073746;cursor:pointer}
+#player-shell .friendshub-group-chips button[aria-pressed=true]{background:#087c75;color:#fff;border-color:#29ddbe}
+#player-shell .friendshub-book-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,1fr);gap:12px;align-items:start}
+#player-shell .friendshub-contact-list{display:grid;gap:9px}
+#player-shell .friendshub-contact{padding:11px 12px;border:1px solid #327c85;background:linear-gradient(125deg,#0a4650,#052734);border-radius:12px;display:grid;gap:7px}
+#player-shell .friendshub-contact-head{display:flex;align-items:center;gap:9px;justify-content:space-between;min-width:0}
+#player-shell .friendshub-contact-name{font-weight:850;font-size:15px;overflow-wrap:anywhere}
+#player-shell .friendshub-contact-badge{display:inline-flex;flex-wrap:wrap;gap:6px}
+#player-shell .friendshub-contact-badge span{color:#f5d38a;font-size:10px;border:1px solid #4d8286;border-radius:18px;padding:3px 7px}
+#player-shell .friendshub-contact-sub{font-size:11px;color:#aed3d4;overflow-wrap:anywhere}
+#player-shell .friendshub-contact-controls{display:flex;gap:6px;flex-wrap:wrap}
+#player-shell .friendshub-contact-controls button{border:1px solid #3e8c92;border-radius:8px;padding:6px 9px;min-height:32px;color:#def5f4;background:#0a4450;font:750 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .friendshub-contact-controls button:hover{background:#0b6b6d}
+#player-shell .friendshub-contact-controls button:disabled{opacity:.55;cursor:default}
+#player-shell .friendshub-form{display:grid;gap:7px}
+#player-shell .friendshub-form label{margin-top:5px}
+#player-shell .friendshub-form .friendshub-check{display:flex;align-items:center;margin:7px 0;color:#ffdb94}
+#player-shell .friendshub-form .friendshub-split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#player-shell .friendshub-hint{color:#9ebec6;font-size:11px;line-height:1.5}
+#player-shell .friendshub-pagination{display:flex;align-items:center;gap:10px;justify-content:center;margin:12px 0 0}
+#player-shell .friendshub-pagination span{font-size:11px;color:#b6ced1}
+#player-shell .friendshub-roadmap{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin:15px 0}
+#player-shell .friendshub-roadmap div{padding:14px;border:1px solid #377a80;border-radius:13px;background:#07323f;display:grid;gap:6px}
+#player-shell .friendshub-roadmap strong{color:#f6d08c;font-size:12px}
+#player-shell .friendshub-roadmap span{font-size:12px}
+#player-shell .friendshub-forum h2{color:#f4fcff}
+@media(max-width:1180px){#player-shell .friendshub-book-grid{grid-template-columns:1fr}#player-shell .friendshub-book-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .friendshub-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){#player-shell .friendshub-hero{padding:13px}#player-shell .friendshub-hero-badge{display:none}#player-shell .friendshub-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:6px;gap:6px}#player-shell .friendshub-tabs button{min-height:41px}#player-shell .friendshub-stat-grid{gap:6px}#player-shell .friendshub-stat-grid>div{padding:9px}#player-shell .friendshub-book-filters{grid-template-columns:1fr}#player-shell .friendshub-book-grid{grid-template-columns:1fr}#player-shell .friendshub-form .friendshub-split,#player-shell .friendshub-roadmap{grid-template-columns:1fr}#player-shell .friendshub-contact-controls button{min-height:40px}}
+`+String.raw`
 /* Compact v2: consistent density on EVERY player section.
    Applied after premiumProfileStyles so profile tabs/cards follow the same scale.
    Geometry-only; no zoom/transform or modification of game/account logic. */
