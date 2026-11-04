@@ -94,3 +94,57 @@ test('Gomoku AI request validation rejects malformed board-free spam payloads',a
  assert.equal(res.status,400);
  assert.equal(res.payload.error.code,'INVALID_MESSAGE');
 });
+
+
+function finishedWhiteBoard(){
+ const board=Array(225).fill('0');
+ for(let row=4;row<=8;row++)board[row*15+6]='2'; // G5–G9: as in reported screenshot
+ for(const [r,c] of [[2,3],[3,4],[4,5],[2,6],[6,8],[4,9]])board[r*15+c]='1';
+ return board.join('');
+}
+test('Finished Gomoku is verified from five white stones even if client claims winner=0',async()=>{
+ let providerCalls=0;
+ const handler=createGomokuAiChatRoute({apiKey:'provider-key',
+  fetchImpl:async()=>{providerCalls++;throw Error('Completed board does not need Groq');}});
+ const req=request({message:'Jaki ruch powinienem wykonać na aktualnej planszy?',
+  history:[],game:{board:finishedWhiteBoard(),winner:0,turn:1,history:[]}});
+ const res=response();await handler(req,res,endpoint);
+ assert.equal(res.status,200);
+ assert.equal(res.payload.source,'verified-game-result');
+ assert.match(res.payload.answer,/komputer \(białe\)/);
+ assert.match(res.payload.answer,/G5–G9/);
+ assert.match(res.payload.answer,/nie wykonuje się kolejnych ruchów/);
+ assert.equal(providerCalls,0,'No fictitious advice and no Groq quota charge after the win');
+});
+test('A non-Gomoku question after a finished game still uses natural Groq conversation',async()=>{
+ let providerCalls=0;
+ const handler=createGomokuAiChatRoute({apiKey:'provider-key',fetchImpl:async(_url,opts)=>{
+  providerCalls++;
+  const sent=JSON.parse(opts.body);
+  assert.match(sent.messages[1].content,/"partiaZakonczona":true/);
+  assert.match(sent.messages[1].content,/"wynik":"wygrana białych"/);
+  assert.match(sent.messages[1].content,/"zwycieskaLinia":"G5–G9"/);
+  assert.match(sent.messages[1].content,/"czyjRuch":"brak — partia zakończona"/);
+  return {ok:true,json:async()=>({choices:[{message:{content:'Stolicą Australii jest Canberra.'}}]})};
+ }});
+ const res=response();await handler(request({
+  message:'Jaka jest stolica Australii?',game:{board:finishedWhiteBoard(),winner:0,turn:1}
+ }),res,endpoint);
+ assert.equal(res.status,200);
+ assert.equal(res.payload.answer,'Stolicą Australii jest Canberra.');
+ assert.equal(providerCalls,1);
+});
+test('Verified black diagonal is recognized without trusting client winner values',async()=>{
+ const board=Array(225).fill('0');
+ for(let n=0;n<5;n++)board[(3+n)*15+(2+n)]='1'; // C4–G8
+ let called=0;
+ const handler=createGomokuAiChatRoute({apiKey:'provider-key',
+  fetchImpl:async()=>{called++;throw Error('No AI model needed');}});
+ const res=response();await handler(request({
+  message:'Kto wygrał tę partię?',game:{board:board.join(''),winner:2,turn:2}
+ }),res,endpoint);
+ assert.equal(res.status,200);
+ assert.match(res.payload.answer,/gracz \(czarne\)/);
+ assert.match(res.payload.answer,/C4–G8/);
+ assert.equal(called,0);
+});
