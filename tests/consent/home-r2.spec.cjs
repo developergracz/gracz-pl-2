@@ -56,7 +56,7 @@ for(const width of [360,390,768,1366,1920]){
     if(width<=680){
       await expect(page.locator('.r4-owner-picture')).toBeVisible();
       await expect(page.locator('.r4-owner-image')).toHaveAttribute('fetchpriority','high');
-       await expect(page.locator('.r4-owner-image')).toHaveAttribute('src','/assets/gracz-hero-mobile-lcp-r16.webp');
+       await expect(page.locator('.r4-owner-image')).toHaveAttribute('src','/assets/gracz-hero-gomoku-mobile-preview-r1.webp');
       await expect.poll(()=>page.locator('.r4-owner-image').evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
     }
    expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
@@ -164,7 +164,7 @@ test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',as
    }));
    expect(dims.naturalWidth).toBe(2172);
    expect(dims.naturalHeight).toBe(724);
-   expect(dims.src).toContain('gracz-hero-approved-r14.webp');
+   expect(dims.src).toContain('gracz-hero-gomoku-approved-r1.webp');
    expect(Math.abs(dims.heroRect.height/dims.heroRect.width-724/2172)).toBeLessThan(.01);
    expect(Math.abs(dims.imageRect.height/dims.imageRect.width-724/2172)).toBeLessThan(.02);
    expect(dims.heroRect.height).toBeGreaterThan(380);
