@@ -1685,3 +1685,11 @@ body.homepage-premium-max .site-footer {
 @media (prefers-reduced-motion: reduce) {
   body.homepage-premium-max .r4-shortcuts a {transition:none!important;transform:none!important}
 }
+
+/* Mobile LCP: use only preloaded picture, never load duplicate decorative CSS hero. */
+@media (max-width: 680px) {
+  body.homepage-premium-max .r4-hero-art {
+    background-image: none !important;
+    background-color: transparent !important;
+  }
+}
