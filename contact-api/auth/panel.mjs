@@ -115,6 +115,20 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 </aside></div>
 </section>
 <section class="view" data-panel="friends">
+<div class="friendshub-hero">
+ <div><p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Moja społeczność</h2>
+ <p>Znajomi, kluby, osobista książka adresowa i zaproszenia — wszystko w jednym bezpiecznym miejscu.</p></div>
+ <div class="friendshub-hero-badge"><strong>GRACZ.PL</strong><span>TWOJE KONTAKTY</span></div>
+</div>
+<nav id="friendshub-tabs" class="friendshub-tabs" role="tablist" aria-label="Zarządzanie znajomymi">
+ <button type="button" class="active" role="tab" aria-selected="true" data-fh-tab="overview">♟ Znajomi</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="book">▤ Książka adresowa</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="requests">✉ Zaproszenia <span id="fh-requests-badge" aria-live="polite"></span></button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="blocked">◇ Blokady</button>
+ <button type="button" role="tab" aria-selected="false" data-fh-tab="forum">◈ Forum i kluby</button>
+</nav>
+<div data-fh-pane="overview" class="friendshub-pane">
+
 <div class="card"><p class="card-kicker">TWOJA SPOŁECZNOŚĆ · FULL MAX PREMIUM</p><h2>Moi znajomi</h2>
 <p>Wyszukaj gracza po nicku i wyślij zaproszenie. Kontrolujesz, kto może nawiązać z Tobą kontakt. Status online wymaga przyszłej integracji. Prywatne wiadomości są dostępne w osobnej zakładce.</p>
 <form id="friends-search-form" class="friends-search" role="search">
@@ -128,10 +142,60 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <div class="card stat"><small>ZAPROSZENIA</small><strong id="friends-incoming-count">—</strong><span>Oczekujące na decyzję</span></div>
 <div class="card stat"><small>WYSŁANE</small><strong id="friends-outgoing-count">—</strong><span>Oczekujące na odpowiedź</span></div></div>
 <div class="card"><div class="card-heading"><div><p class="card-kicker">KONTAKTY</p><h2>Lista znajomych</h2></div><button id="friends-refresh" type="button" class="secondary">Odśwież</button></div><div id="friends-list" class="friends-items"></div></div>
+</div><div data-fh-pane="requests" class="friendshub-pane" hidden>
 <div class="card"><p class="card-kicker">ZAPROSZENIA PRZYCHODZĄCE</p><h2>Zaproszenia do znajomych</h2><div id="friends-incoming" class="friends-items"></div></div>
 <div class="card"><p class="card-kicker">ZAPROSZENIA WYSŁANE</p><h2>Oczekujące odpowiedzi</h2><div id="friends-outgoing" class="friends-items"></div></div>
+</div><div data-fh-pane="blocked" class="friendshub-pane" hidden>
 <div class="card"><p class="card-kicker">PRYWATNOŚĆ</p><h2>Zablokowani użytkownicy</h2>
 <p>Zablokowane osoby nie mogą wysyłać Ci zaproszeń. Możesz je odblokować w dowolnym momencie.</p><div id="friends-blocked" class="friends-items"></div></div>
+</div>
+<div data-fh-pane="book" class="friendshub-pane" hidden>
+ <div class="card friendshub-book-top">
+  <div class="card-heading"><div><p class="card-kicker">PRYWATNA KSIĄŻKA ADRESOWA</p><h2>Kontakty i grupy</h2>
+   <p>Uporządkuj znajomych, zapisz prywatne notatki, numery i adresy, które samodzielnie podasz. Tych informacji nie udostępniamy innym graczom.</p></div>
+   <div class="friendshub-actions"><button type="button" id="ab-new" class="primary">＋ Nowy kontakt</button><button type="button" id="ab-export" class="secondary">Eksport JSON</button><button type="button" id="ab-import-trigger" class="secondary">Import JSON</button><input id="ab-import-file" type="file" accept=".json,application/json" hidden></div>
+  </div>
+  <div class="friendshub-stat-grid"><div><small>KONTAKTY W KSIĄŻCE</small><strong id="ab-total">—</strong></div><div><small>GRUPY</small><strong id="ab-groups-count">—</strong></div><div><small>ULUBIONE</small><strong id="ab-favorites-count">—</strong></div></div>
+  <div class="friendshub-book-filters">
+   <label>Wyszukaj kontakt<input type="search" id="ab-search" maxlength="80" placeholder="Nick, alias, etykieta lub notatka"></label>
+   <label>Grupa<select id="ab-group-filter"><option value="">Wszystkie grupy</option></select></label>
+   <label class="friendshub-only-favs"><input id="ab-favorites-filter" type="checkbox"> Tylko ulubione</label>
+   <button type="button" class="secondary" id="ab-refresh">Odśwież</button>
+  </div>
+  <div class="friendshub-group-chips" id="ab-group-chips" aria-label="Grupy kontaktów"></div>
+ </div>
+ <div class="friendshub-book-grid">
+  <div class="card"><div class="card-heading"><div><p class="card-kicker">TWOJA BAZA KONTAKTÓW</p><h2>Lista kontaktów</h2></div></div>
+   <div id="ab-list" class="friendshub-contact-list"><p>Otwórz książkę adresową, aby wczytać kontakty.</p></div>
+   <div class="friendshub-pagination"><button id="ab-prev" class="secondary" type="button" disabled>Poprzednia</button><span id="ab-page-status"></span><button id="ab-next" class="secondary" type="button" disabled>Następna</button></div>
+  </div>
+  <div class="card friendshub-editor"><div class="card-heading"><div><p class="card-kicker">PRYWATNA WIZYTÓWKA</p><h2 id="ab-form-title">Dodaj kontakt</h2></div></div>
+   <form id="ab-form" class="friendshub-form" autocomplete="off">
+    <input id="ab-id" type="hidden">
+    <label for="ab-name">Nazwa / alias kontaktu</label><input id="ab-name" maxlength="64" required placeholder="Np. Mój partner do Gomoku">
+    <label for="ab-nickname">Nick znajomego na GRACZ.PL (opcjonalnie)</label><input id="ab-nickname" maxlength="32" placeholder="Tylko zaakceptowany znajomy">
+    <p class="friendshub-hint">Powiązanie z kontem jest możliwe wyłącznie dla zaakceptowanego znajomego. Własne kontakty spoza platformy można zapisać bez nicku.</p>
+    <label for="ab-group">Grupa / klub</label><input id="ab-group" maxlength="32" required list="ab-group-options" value="Bez grupy"><datalist id="ab-group-options"><option value="Przyjaciele"><option value="Klub graczy"><option value="Trening"><option value="Turnieje"><option value="Rodzina"><option value="Bez grupy"></datalist>
+    <label for="ab-tags">Etykiety (oddzielone przecinkami, maks. 8)</label><input id="ab-tags" maxlength="200" placeholder="szachy, warcaby, drużyna">
+    <div class="friendshub-split"><label for="ab-email">E-mail (opcjonalnie)<input id="ab-email" type="email" maxlength="160" placeholder="Dopisany przez Ciebie"></label>
+    <label for="ab-phone">Telefon (opcjonalnie)<input id="ab-phone" type="tel" maxlength="40" placeholder="Dopisany przez Ciebie"></label></div>
+    <label for="ab-note">Prywatna notatka</label><textarea id="ab-note" maxlength="1000" rows="4" placeholder="Wspólne turnieje, preferowane gry, ważne ustalenia…"></textarea>
+    <label class="friendshub-check"><input type="checkbox" id="ab-favorite"> ★ Dodaj do ulubionych</label>
+    <div class="friendshub-actions"><button id="ab-save" class="primary" type="submit">Zapisz kontakt</button><button type="button" id="ab-cancel" class="secondary">Wyczyść</button><button type="button" id="ab-delete" class="secondary" hidden>Usuń z książki</button></div>
+    <p role="status" aria-live="polite" id="ab-form-status">Twoje dane kontaktowe pozostają prywatne.</p>
+   </form>
+  </div>
+ </div>
+ <p id="ab-status" role="status" aria-live="polite"></p>
+</div>
+<div data-fh-pane="forum" class="friendshub-pane" hidden>
+ <div class="card friendshub-forum">
+  <p class="card-kicker">ARCHITEKTURA GOTOWA NA FORUM · FULL MAX PREMIUM</p><h2>Forum, kluby i społeczność</h2>
+  <p>W przyszłości zaakceptowane znajomości będzie można łączyć z profilami forum, klubami, tematami, turniejami i wspólnymi drużynami. Książka adresowa korzysta ze stabilnego identyfikatora konta, więc nie będzie potrzeby tworzenia kolejnych kont gracza.</p>
+  <div class="friendshub-roadmap"><div><strong>✓ Teraz</strong><span>Znajomi, prywatne kontakty i grupy</span></div><div><strong>✓ Teraz</strong><span>Wiadomości i zaproszenia do gier</span></div><div><strong>Planowane</strong><span>Powiązanie z profilem forum i aktywnością klubową</span></div><div><strong>Planowane</strong><span>Wspólne turnieje, społeczności i powiadomienia forum</span></div></div>
+  <p class="friendshub-hint">Integracja forum nie została jeszcze uruchomiona. Nie wyświetlamy fikcyjnego statusu online ani nieistniejących wiadomości forum.</p>
+ </div>
+</div>
 </section>
 <section class="view" data-panel="security"><div class="card"><p class="card-kicker">BEZPIECZEŃSTWO</p><h2>Ochrona konta</h2><p>Adres e-mail został potwierdzony. Hasło jest przechowywane w formie kryptograficznego skrótu, a sesja jest chroniona ciasteczkiem HttpOnly.</p>
 <div class="detail"><span>Sesja</span><strong>Aktywna na tym urządzeniu</strong></div><div class="detail"><span>Zmiana hasła</span><strong>Dostępna w „Konto i profil”</strong></div><div class="detail"><span>2FA</span><strong>W przygotowaniu</strong></div>
