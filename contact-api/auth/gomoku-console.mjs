@@ -44,7 +44,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <label for="training-increment" class="training-timer-label">Bonus czasu po każdym ruchu</label>
 <select id="training-increment" aria-label="Dodatkowe sekundy po ruchu w treningu"><option value="0" selected>Bez bonusu</option><option value="2">+2 sekundy</option><option value="3">+3 sekundy</option><option value="5">+5 sekund</option><option value="10">+10 sekund</option></select>
 <details class="panel-help"><summary>Jak działają zegary?</summary><p class="training-clock-help">Zegary są niezależne. Czas mija tylko podczas własnej tury, a bonus dolicza się po prawidłowym ruchu. Zmiana ustawień rozpoczyna nową partię.</p></details>
-<button class="primary" id="restart" type="button"><span class="restart-premium-icon" aria-hidden="true"><svg viewBox="0 0 36 36" focusable="false" xmlns="http://www.w3.org/2000/svg"><rect x="6.8" y="8.2" width="22.4" height="22.4" rx="5.5" fill="#07383f" stroke="#fff0b0" stroke-width="1.3"/><path d="M14.2 9.5v19.7M21.7 9.5v19.7M8.1 15.4h19.8M8.1 23h19.8" stroke="#74e6d8" stroke-opacity=".85" stroke-width="1.15"/><circle cx="14.2" cy="15.4" r="3.45" fill="#101a22" stroke="#f6d078" stroke-width="1.05"/><circle cx="21.7" cy="23" r="3.45" fill="#fffaf0" stroke="#ebc26b" stroke-width=".9"/><path d="m28.8 4 .85 2.7 2.7.85-2.7.85-.85 2.7-.85-2.7-2.7-.85 2.7-.85Z" fill="#fff2b8" stroke="#ffe59c" stroke-width=".3"/></svg></span><span class="restart-label">Nowa rozgrywka</span></button></section>
+<button class="primary" id="restart" type="button"><span class="restart-label">Nowa rozgrywka</span></button></section>
 <section class="sidecard training-records" id="training-records" aria-label="Statystyki treningu"><h2>♛ Mój bilans treningu</h2><p class="records-note sr-only">Wyniki partii z komputerem na tym urządzeniu, bez rankingu.</p><div class="records-grid"><div><strong id="record-wins">0</strong><small>Wygrane</small></div><div><strong id="record-draws">0</strong><small>Remisy</small></div><div><strong id="record-losses">0</strong><small>Przegrane</small></div></div><p class="records-total">Rozegrano: <strong id="record-total">0</strong> · Skuteczność: <strong id="record-rate">0%</strong></p></section>
 <section class="sidecard" id="online-settings" hidden><h2>Moje pokoje Gomoku</h2>
 <p id="account-note" role="status">Sprawdzanie sesji gracza…</p>
@@ -121,7 +121,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <div class="boardframe"><div class="board" id="board" role="grid" aria-label="Plansza Gomoku 15 na 15"></div></div>
 </div>
 <aside class="side-dock" aria-label="Historia ruchów i rozmowa">
-<section class="match-panel">
+<section class="match-panel" id="match-panel">
 <div class="dock-header"><span class="dock-eyebrow">GOMOKU · PREMIUM</span><span class="dock-live" id="dock-status">● TRENING</span></div>
 <div class="dock-tabs" role="tablist" aria-label="Panel partii">
 <button type="button" class="dock-tab active" id="chat-tab" role="tab" aria-selected="true" aria-controls="chat-panel"><span class="dock-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.5h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4.8 3v-3.1A2 2 0 0 1 3.5 15.5v-8a2 2 0 0 1 2-2Z"/><path d="M8 10.1h8M8 13.4h5"/></svg></span><span class="dock-tab-text">Czat</span><span class="chat-led chat-led-premium" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chat-crystal-core" cx="33%" cy="24%" r="78%"><stop offset="0%" stop-color="#ddfff4"/><stop offset="37%" stop-color="#66f8d5"/><stop offset="72%" stop-color="#16ba9e"/><stop offset="100%" stop-color="#076367"/></radialGradient><linearGradient id="chat-crystal-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff4c4"/><stop offset="48%" stop-color="#f3bd58"/><stop offset="100%" stop-color="#ab741f"/></linearGradient></defs><circle cx="12" cy="12" r="10.1" fill="#032e34" stroke="url(#chat-crystal-rim)" stroke-width="1.7"/><path d="M12 3.8 19 9.3 16.6 17.4 12 20.6 7.4 17.4 5 9.3Z" fill="url(#chat-crystal-core)" stroke="#bfffe8" stroke-width=".7" stroke-linejoin="round"/><path d="M5 9.3h14M12 3.8l3 5.5-3 11.3-3-11.3Z" fill="none" stroke="#e4fff4" stroke-opacity=".6" stroke-width=".72"/><path d="m17.4 3.5.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z" fill="#ffdf8d"/></svg></span></button>
@@ -152,7 +152,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button type="button" class="tool-btn" id="remove-player" title="Wyproś gracza z pokoju" aria-label="Wyproś gracza z pokoju" data-tooltip="Wyproś gracza"><span aria-hidden="true">⊖</span></button>
 <button type="button" class="tool-btn" id="block-player" title="Zablokuj gracza" aria-label="Zablokuj gracza" data-tooltip="Zablokuj gracza"><span aria-hidden="true">⊘</span></button>
 </div></aside></div>
-<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Ruch: czarne</span></div>
+<div class="bottom"><span class="info-pill" id="move-count">Ruchy: 0</span><span id="board-help" class="help">Wybierz wolne pole, aby postawić czarny kamień.</span><span class="info-pill" id="turn-label">Ruch czarne</span></div>
 <p class="analysis-note" id="analysis-note" role="status" aria-live="polite" hidden></p>
 </section>
 </main>
@@ -1019,23 +1019,9 @@ select option{background:#102c34;color:#fff}
  border-radius:9px;background:#062630;color:#f0f8f6;font:500 12px/1.3 "Segoe UI",sans-serif;text-overflow:ellipsis}
 .sidebar .primary{min-height:39px;padding:8px 10px;font:750 13px/1.25 "Segoe UI",sans-serif;border-radius:10px}
 .sidebar #restart{width:100%;min-height:44px;margin-top:9px;font:750 18px/1.2 Georgia,serif}
-/* R30: integrated Full Max Premium Gomoku-board miniature replaces plain ▶. */
-.sidebar #restart{gap:clamp(9px,1vw,13px);padding:6px 10px;justify-content:center}
-#restart .restart-premium-icon{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;
- min-width:0;border:1px solid #c29139;border-radius:10px;
- background:radial-gradient(circle at 20% 15%,#97fff048,transparent 56%),linear-gradient(145deg,#144951,#07232c);
- box-shadow:inset 0 1px 0 #ffecb58c,0 0 9px #29cbb879,0 0 5px #fbd27b59;
- font-size:0;line-height:0;transition:box-shadow .18s ease,transform .18s ease}
-#restart .restart-premium-icon svg{width:27px;height:27px;display:block;
- filter:drop-shadow(0 1px 1px #0009)}
-#restart .restart-label{font:inherit;line-height:1.15;min-width:0;white-space:nowrap;font-size:clamp(15px,1.4vw,21px)}
-#restart:is(:hover,:focus-visible) .restart-premium-icon{transform:translateY(-1px);
- box-shadow:inset 0 1px 0 #fff8cfaf,0 0 12px #0edac69c,0 0 10px #ffc86c91}
-@media(max-width:360px){#restart .restart-premium-icon{flex-basis:28px;width:28px;height:28px}
- #restart .restart-premium-icon svg{width:24px;height:24px}
- #restart .restart-label{font-size:15px}}
-@media(prefers-reduced-motion:reduce){#restart .restart-premium-icon{transition:none}
- #restart:is(:hover,:focus-visible) .restart-premium-icon{transform:none}}
+.sidebar #restart{justify-content:center;padding:7px 12px}
+#restart .restart-label{font:inherit;line-height:1.15;white-space:nowrap;font-size:clamp(15px,1.4vw,21px)}
+@media(max-width:360px){#restart .restart-label{font-size:15px}}
 .sidebar .secondary{min-height:36px;padding:7px;font-size:12px}
 .sidebar .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
 .panel-help{margin:5px 0;font-size:11px;line-height:1.4;color:#adcac8}
@@ -1193,6 +1179,24 @@ select option{background:#102c34;color:#fff}
  .focus-nav .focus-start{padding:5px 8px;font-size:12px}
 }
 
+/* R31: history owns the panel down to the bottom quick tools; chat remains accessible in Czat tab. */
+.match-panel.moves-only .mini-chat{display:none!important}
+.match-panel.moves-only #moves-panel{flex:1 1 auto;min-height:0;padding-bottom:1px}
+.match-panel.moves-only #moves-list{flex:1 1 auto;min-height:0;max-height:none;height:auto;overflow-y:auto}
+.match-panel.moves-only .replay-shortcut{flex:0 0 auto}
+/* Fixed footprint prevents the result/active-colour indicator changing its size every move. */
+#turn-label{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 clamp(235px,18vw,275px);width:clamp(235px,18vw,275px);height:clamp(47px,5.6vh,58px);
+ min-width:0;line-height:1.15;font-variant-numeric:tabular-nums}
+#turn-label:before{flex:0 0 20px}
+@media(max-width:800px){
+ #turn-label{flex-basis:clamp(170px,38vw,225px);width:clamp(170px,38vw,225px);
+  height:clamp(42px,6vh,53px);padding-inline:6px;font-size:clamp(11px,2vw,16px)}
+ #turn-label:before{flex-basis:16px;width:16px;height:16px;margin-right:6px}
+}
+@media(max-width:380px){
+ #turn-label{flex-basis:clamp(152px,48vw,175px);width:clamp(152px,48vw,175px);font-size:11px}
+}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}`;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -1481,7 +1485,7 @@ function render(){
  // R28: bottom indicators reflect the actual match result, never a phantom next turn.
  const winner=online?(m?.state?.winner||0):state.winner;
  const ended=winner!==0;
- let bottomTurn='Ruch: '+(turn===1?'czarne':'białe');
+ let bottomTurn='Ruch '+(turn===1?'czarne':'białe');
  let bottomHelp=online?
   (m?.state?.turn===m?.player?'Wybierz wolne pole, aby wykonać ruch.':'Czekaj na ruch przeciwnika.'):
   (state.thinking?'Komputer analizuje ruch…':'Wybierz wolne pole, aby postawić czarny kamień.');
@@ -1961,6 +1965,7 @@ function renderMoveHistory(){
 function setDockTab(tab){
  state.dockTab=tab;
  const moves=tab==='moves';
+ $('match-panel').classList.toggle('moves-only',moves);
  $('moves-panel').hidden=!moves;$('chat-panel').hidden=moves;
  $('chat-preview').hidden=!moves||!chatPrefs.preview;
  $('history-tab').classList.toggle('active',moves);$('chat-tab').classList.toggle('active',!moves);
