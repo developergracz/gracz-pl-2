@@ -5,13 +5,14 @@ import {servePlayerPanel} from '../auth/panel.mjs';
 const owner1='11111111-1111-4111-8111-111111111111',owner2='22222222-2222-4222-8222-222222222222';
 const friend='33333333-3333-4333-8333-333333333333';
 const host='https://gracz-contact-api.onrender.com';
+const t1='a'.repeat(64),t2='b'.repeat(64);
 function factory(){
  const records=[],sqls=[];
  let allowedFriend=true;
  const database={async query(sql,params=[]){
   sqls.push({sql,params});
   if(sql.includes('FROM gracz_public_identity.sessions s JOIN gracz_public_identity.accounts a'))
-   return {rows:params[0]==='token-1'?[{id:owner1}]:params[0]==='token-2'?[{id:owner2}]:[]};
+   return {rows:params[0]===t1?[{id:owner1}]:params[0]===t2?[{id:owner2}]:[]};
   if(sql.includes('SELECT a.id FROM gracz_public_identity.accounts a JOIN gracz_public_identity.friend_connections f'))
    return {rows:allowedFriend&&params[0]===owner1&&params[1]==='szachista'?[{id:friend}]:[]};
   if(sql.includes('INSERT INTO gracz_public_identity.player_address_book')){
@@ -80,40 +81,40 @@ test('schema has private owner FK and stable optional friend identity without ne
 test('private address book requires session and authorized mutation origin',async()=>{
  const f=factory();
  assert.equal((await f.call('','GET','/auth/address-book')).status,401);
- assert.equal((await f.call('token-1','PUT','/auth/address-book',entry,'https://attacker.invalid')).status,403);
- assert.equal((await f.call('token-1','POST','/auth/address-book',entry)).status,405);
+ assert.equal((await f.call(t1,'PUT','/auth/address-book',entry,'https://attacker.invalid')).status,403);
+ assert.equal((await f.call(t1,'POST','/auth/address-book',entry)).status,405);
  assert.equal(f.records.length,0);
 });
 test('each account reads and edits only its own contacts, with private notes and email',async()=>{
  const f=factory();
- const create=await f.call('token-1','PUT','/auth/address-book',{...entry,email:'own@example.test',phone:'+48 600 123 456'});
+ const create=await f.call(t1,'PUT','/auth/address-book',{...entry,email:'own@example.test',phone:'+48 600 123 456'});
  assert.equal(create.status,200);
- const owner=await f.call('token-1','GET','/auth/address-book');
+ const owner=await f.call(t1,'GET','/auth/address-book');
  assert.equal(owner.status,200);assert.equal(owner.body.contacts.length,1);
  assert.equal(owner.body.contacts[0].email,'own@example.test');
  assert.equal(owner.body.contacts[0].note,'Warcaby i Gomoku');
- const stranger=await f.call('token-2','GET','/auth/address-book');
+ const stranger=await f.call(t2,'GET','/auth/address-book');
  assert.equal(stranger.body.contacts.length,0);
- const edit=await f.call('token-2','PUT','/auth/address-book',{...entry,id:create.body.id,name:'Cudzy kontakt'});
+ const edit=await f.call(t2,'PUT','/auth/address-book',{...entry,id:create.body.id,name:'Cudzy kontakt'});
  assert.equal(edit.status,404);
- const deleting=await f.call('token-2','DELETE','/auth/address-book',{id:create.body.id});
+ const deleting=await f.call(t2,'DELETE','/auth/address-book',{id:create.body.id});
  assert.equal(deleting.status,404);
  assert.equal(f.records[0].name,entry.name);
- assert.equal((await f.call('token-1','DELETE','/auth/address-book',{id:create.body.id})).status,200);
+ assert.equal((await f.call(t1,'DELETE','/auth/address-book',{id:create.body.id})).status,200);
 });
 test('linking a platform account requires accepted unblocked friendship',async()=>{
  const f=factory(),linked={...entry,nickname:'Szachista'};
- assert.equal((await f.call('token-1','PUT','/auth/address-book',linked)).status,200);
+ assert.equal((await f.call(t1,'PUT','/auth/address-book',linked)).status,200);
  assert.equal(f.records[0].friend_id,friend);
- const duplicate=await f.call('token-1','PUT','/auth/address-book',linked);assert.equal(duplicate.status,409);
+ const duplicate=await f.call(t1,'PUT','/auth/address-book',linked);assert.equal(duplicate.status,409);
  f.setAllowed(false);
- assert.equal((await f.call('token-1','PUT','/auth/address-book',{...linked,name:'Nowy'})).status,403);
- assert.equal((await f.call('token-2','PUT','/auth/address-book',linked)).status,403);
+ assert.equal((await f.call(t1,'PUT','/auth/address-book',{...linked,name:'Nowy'})).status,403);
+ assert.equal((await f.call(t2,'PUT','/auth/address-book',linked)).status,403);
 });
 test('invalid input and oversized notes are rejected without database writes',async()=>{
  const f=factory();
  for(const change of [{note:'A'.repeat(1001)},{tags:Array(9).fill('tag')},{email:'bad email'}, {phone:'DROP TABLE'}]){
-  const r=await f.call('token-1','PUT','/auth/address-book',{...entry,...change});
+  const r=await f.call(t1,'PUT','/auth/address-book',{...entry,...change});
   assert.equal(r.status,400);
  }
  assert.equal(f.records.length,0);
