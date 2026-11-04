@@ -1,3 +1,4 @@
+import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
@@ -198,6 +199,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
        created_at timestamptz NOT NULL DEFAULT now(),
        PRIMARY KEY(blocker,blocked),CHECK(blocker<>blocked))`);
      await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_blocks_target ON gracz_public_identity.friend_blocks(blocked)');
+     await ensureAddressBookSchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -240,8 +242,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
   await initialized;
  }
  const premiumProfile=createPremiumProfileRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow,validNick});
+ const addressBook=createAddressBookRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
   if(await premiumProfile.handle(req,res,url))return true;
+  if(await addressBook.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
