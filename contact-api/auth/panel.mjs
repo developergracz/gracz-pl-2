@@ -705,6 +705,7 @@ async function load(){
   $('player-shell').hidden=false;
   $('access-screen').hidden=true;
   notice('');
+  if(location.hash==='#challenges')switchSection('challenges');
   try{await refreshCenter();}catch{notice('Profil jest dostępny, ale ustawienia premium lub lista sesji są chwilowo niedostępne.',true);}
  }catch(error){
   if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła lub nie została rozpoznana. Zaloguj się, aby otworzyć swój panel.',{login:true});
