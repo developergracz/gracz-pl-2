@@ -76,32 +76,3 @@
  }
  .homepage-premium-max .r4-hero-art{background-image:none!important}
 }
-
-
-/* HERO approved 2026-11-04: image-backed desktop links + clean Gomoku preview mobile. */
-@media (min-width:1181px) {
- body.homepage-premium-max .r4-owner-hotspot--games {top:65.7%;left:1.96%;width:12.3%;height:10.7%}
- body.homepage-premium-max .r4-owner-hotspot--guides {top:65.7%;left:15.1%;width:16.5%;height:10.7%}
- body.homepage-premium-max .r4-owner-hotspot--gomoku {top:79.65%;left:1.95%;width:29.7%;height:10.8%}
-}
-@media (max-width:1180px) {
- body.homepage-premium-max .r4-hero-art {
-  background-image:linear-gradient(90deg,rgba(0,46,46,.66),rgba(0,46,46,.04) 65%),url("/assets/gracz-hero-gomoku-mobile-preview-r1.webp")!important;
-  background-position:center,right center!important;
-  background-size:100% 100%,cover!important;
-  background-repeat:no-repeat!important;
- }
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku {
-  display:inline-flex;flex-basis:100%;max-width:420px;
-  background:linear-gradient(180deg,#fff0b0 0%,#f6c14d 54%,#d99418 100%)!important;
-  color:#052a2c!important;border:2px solid #fff0ad!important;
-  border-radius:16px;box-shadow:0 0 0 1px #a46712,0 8px 23px rgba(244,174,40,.32);
-  font-weight:900;letter-spacing:.015em;text-decoration:none!important;
- }
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:hover {filter:brightness(1.06)}
- body.homepage-premium-max .r4-hero-actions .r4-btn-gomoku:focus-visible {outline:3px solid #fff0ad;outline-offset:3px}
-}
-@media (max-width:680px) {
- body.homepage-premium-max .r4-owner-image{object-fit:contain!important;object-position:center!important;background:#002f32}
- body.homepage-premium-max .r4-hero-art{background-image:none!important}
-}
