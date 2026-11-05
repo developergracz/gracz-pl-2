@@ -397,6 +397,25 @@ requireCheck(searchCss.includes('font:700 12.5px/1.28'), "search nav: enlarged d
 requireCheck(searchCss.includes('overflow:visible!important'), "search nav: desktop overflow escape missing");
 
 
+
+// Premium search link: canonical header loupe on all public pages navigates to
+// the dedicated /szukaj/ page; no legacy modal triggers in the top bar.
+for (const page of sharedHeaderPages) {
+  const html = read(page);
+  const headerMarkup = html.match(/<header\b[\s\S]*?<\/header>/i)?.[0] ?? "";
+  const links = [...headerMarkup.matchAll(
+    /<a\b(?=[^>]*\bclass="[^"]*(?:head-search|search-btn)[^"]*")(?=[^>]*\bhref="\/szukaj\/")[^>]*>[\s\S]*?<\/a>/gi
+  )];
+  requireCheck(
+    links.length === (page === "index.html" ? 1 : 2),
+    page + ": top-bar search (desktop and mobile) must link to /szukaj/"
+  );
+  requireCheck(
+    !/<button\b[^>]*\bdata-modal="search"/i.test(headerMarkup),
+    page + ": legacy search-modal trigger remains in top bar"
+  );
+}
+
 if (failures.length) {
   console.error("SEO GATE: FAIL");
   for (const failure of failures) console.error(`- ${failure}`);

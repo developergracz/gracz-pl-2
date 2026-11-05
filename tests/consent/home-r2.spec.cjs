@@ -76,14 +76,16 @@ for(const width of [360,390,768,1366,1920]){
   }finally{await context.close()}
  });
 }
-test('Search remains lazy and opens after real click',async({page})=>{
+test('Header loupe navigates directly to the Full Max Premium search page',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  await page.waitForLoadState('networkidle');
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
+ await expect(page.locator('.search-btn--desktop')).toHaveAttribute('href','/szukaj/');
  await page.locator('.search-btn--desktop').click();
- await expect(page.locator('dialog.gracz-search')).toBeVisible({timeout:15000});
- await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
+ await expect(page).toHaveURL(/\/szukaj\/$/,{timeout:15000});
+ await expect(page.locator('#search-page-app input')).toBeVisible({timeout:15000});
+ await expect(page.locator('dialog.gracz-search')).toHaveCount(0);
 });
 
 // R4 visual-fidelity regression: no clipped header search and the game card is a real link.
