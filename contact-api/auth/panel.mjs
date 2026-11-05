@@ -1661,6 +1661,7 @@ function switchSection(name){
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
  if(name==='security'&&sessionConfirmed)void securityLoad();
  if(name==='privacy'&&sessionConfirmed)void privacyLoad();
+ if(name==='notifications'&&sessionConfirmed)void ntLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -2426,6 +2427,202 @@ $('priv-export').addEventListener('click',async()=>{
   status.textContent='Pobrano ustawienia i podstawowe dane profilu. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.';
  }catch(error){status.textContent=error.message}
  finally{button.disabled=false}
+});
+
+
+// Full Max Premium Notifications Center — server-authorized feed and per-account state.
+let ntData=null,ntSelected='all',ntShowing=20,ntBusy=false,ntSettingsDirty=false;
+const ntCategories={messages:'Wiadomości',friends:'Znajomi',games:'Gry',security:'Bezpieczeństwo'};
+const ntSymbols={messages:'✉',friends:'♙',games:'♟',security:'◇'};
+const ntSettingsKeys=['messages','friends','games','highlightUnread','showNicknames','showDates','autoReadOnOpen'];
+const ntTabTitles={all:'Wszystkie powiadomienia',unread:'Nieprzeczytane',messages:'Wiadomości',friends:'Znajomi',
+ games:'Gry i wyzwania',security:'Bezpieczeństwo',archive:'Archiwum'};
+const ntNav=document.querySelector('[data-section="notifications"]');
+const ntNavCount=document.createElement('span');
+ntNavCount.className='notif-nav-count';ntNavCount.hidden=true;
+ntNavCount.style.cssText='display:none;margin-left:7px;border-radius:12px;padding:3px 6px;color:#052c35;background:#f6ce7c;font-size:10px;font-weight:900';
+if(ntNav)ntNav.append(ntNavCount);
+function ntMessage(message,error=false){
+ const target=$('nt-feedback');target.textContent=message;target.classList.toggle('error',error);
+}
+function ntDate(timestamp){
+ const date=new Date(timestamp);
+ return Number.isFinite(date.getTime())?date.toLocaleString('pl-PL',{dateStyle:'medium',timeStyle:'short'}):'';
+}
+function ntPrefsToForm(){
+ if(!ntData)return;
+ for(const key of ntSettingsKeys)$('nt-set-'+key).checked=ntData.preferences[key]===true;
+ const until=ntData.preferences.mutedUntil?new Date(ntData.preferences.mutedUntil).getTime():0;
+ const rem=Math.max(0,Math.ceil((until-Date.now())/60000));
+ $('nt-mute').value=rem===0?'0':rem<=60?'60':rem<=480?'480':'1440';
+ ntSettingsDirty=false;
+ ntPaintMute();
+}
+function ntPaintMute(){
+ const until=ntData?.preferences?.mutedUntil;
+ $('nt-mute-note').textContent=until?
+  'Wyciszenie obowiązuje do '+ntDate(until)+'. Zdarzenia nadal pozostają w skrzynce.':
+  'Bez wyciszenia. Wyciszenie ogranicza wyłącznie podświetlenia, nie usuwa wiadomości.';
+}
+function ntSettingsFormValues(){
+ const values={};for(const key of ntSettingsKeys)values[key]=$('nt-set-'+key).checked;
+ values.muteMinutes=Number($('nt-mute').value);return values;
+}
+function ntTab(name){
+ ntSelected=name;ntShowing=20;
+ document.querySelectorAll('[data-nt-tab]').forEach(button=>{
+  const active=button.dataset.ntTab===name;button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ });
+ for(const pane of document.querySelectorAll('[data-nt-view]'))pane.hidden=pane.dataset.ntView!==(name==='settings'?'settings':'inbox');
+ if(name!=='settings')ntRender();
+}
+function ntVisibleItems(){
+ if(!ntData)return [];
+ const text=$('nt-search').value.trim().toLowerCase();
+ const days=Number($('nt-period').value);
+ const threshold=Date.now()-days*86400000;
+ const rows=ntData.items.filter(item=>{
+  if(ntSelected==='archive'){if(!item.archived)return false}
+  else{
+   if(item.archived)return false;
+   if(ntSelected==='unread'&&item.read)return false;
+   if(ntCategories[ntSelected]&&item.category!==ntSelected)return false;
+  }
+  if(new Date(item.at).getTime()<threshold)return false;
+  if(text&&!([item.title,item.actor,item.detail,ntCategories[item.category]||''].join(' ').toLowerCase().includes(text)))return false;
+  return true;
+ });
+ if($('nt-sort').value==='old')rows.reverse();
+ return rows;
+}
+function ntUpdateMetrics(){
+ if(!ntData)return;
+ const rows=ntData.items,inbox=rows.filter(x=>!x.archived);
+ const unread=inbox.filter(x=>!x.read).length;
+ $('nt-unread').textContent=String(unread);
+ $('nt-inbox-total').textContent=String(inbox.length);
+ $('nt-archive-total').textContent=String(rows.length-inbox.length);
+ const start=new Date();start.setHours(0,0,0,0);
+ $('nt-today').textContent=String(rows.filter(x=>new Date(x.at)>=start).length);
+ ntNavCount.textContent=unread>99?'99+':String(unread);
+ ntNavCount.hidden=unread===0;
+ ntNavCount.style.display=unread===0?'none':'inline-block';
+}
+function ntButton(label,onClick){
+ const button=document.createElement('button');button.type='button';button.textContent=label;
+ button.addEventListener('click',onClick);return button;
+}
+function ntOpenTarget(item){
+ if(!item)return;
+ if(item.category==='messages'){
+  switchSection('messages');
+  if(item.actor)void openSocialContact('messages',item.actor);
+ }else if(item.category==='friends'){
+  switchSection('friends');fhTab(item.title==='Zaproszenie do znajomych'?'requests':'overview');
+ }else if(item.category==='games'){
+  switchSection('challenges');
+ }else if(item.category==='security'){
+  switchSection('security');securityTab('history');
+ }
+}
+async function ntAction(action,id){
+ if(!ntData||ntBusy)return false;
+ ntBusy=true;
+ try{
+  const result=await api('notification-center/action',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action,ids:id?[id]:[]})});
+  await ntLoad(true);
+  ntMessage('Zaktualizowano '+result.changed+' powiadomień.');
+  return true;
+ }catch(error){ntMessage(error.message,true);return false}
+ finally{ntBusy=false}
+}
+function ntRender(){
+ if(!ntData)return;
+ ntUpdateMetrics();
+ $('nt-list-title').textContent=ntTabTitles[ntSelected]||'Twoje powiadomienia';
+ const rows=ntVisibleItems();
+ $('nt-list-count').textContent=rows.length+' pozycji';
+ const list=$('nt-list');list.replaceChildren();
+ const muted=Boolean(ntData.preferences.mutedUntil);
+ for(const item of rows.slice(0,ntShowing)){
+  const article=document.createElement('article');
+  article.className='notif-item'+(!item.read&&ntData.preferences.highlightUnread&&!muted?' unread':'')+(muted?' muted':'');
+  const icon=document.createElement('div');icon.className='notif-item-icon';icon.textContent=ntSymbols[item.category]||'✦';
+  const main=document.createElement('div');main.className='notif-item-main';
+  const title=document.createElement('div');title.className='notif-item-title';title.textContent=item.title;
+  if(!item.read){const dot=document.createElement('span');dot.className='notif-unread-dot';dot.setAttribute('aria-label','Nieprzeczytane');title.append(dot)}
+  const desc=document.createElement('span');desc.className='notif-item-info';
+  desc.textContent=item.detail+(item.actor?' · '+item.actor:'');
+  main.append(title,desc);
+  if(ntData.preferences.showDates){
+   const date=document.createElement('time');date.className='notif-item-date';date.textContent=ntDate(item.at);
+   main.append(date);
+  }
+  const controls=document.createElement('div');controls.className='notif-item-controls';
+  controls.append(ntButton('Otwórz',async()=>{
+   if(ntData.preferences.autoReadOnOpen&&!item.read){
+    const success=await ntAction('read',item.id);if(!success)return;
+   }
+   ntOpenTarget(item);
+  }));
+  controls.append(ntButton(item.read?'Nieprzeczytane':'Przeczytane',()=>void ntAction(item.read?'unread':'read',item.id)));
+  controls.append(ntButton(item.archived?'Przywróć':'Archiwizuj',()=>void ntAction(item.archived?'restore':'archive',item.id)));
+  article.append(icon,main,controls);list.append(article);
+ }
+ if(!rows.length){
+  const empty=document.createElement('p');empty.className='notif-empty';
+  empty.textContent=ntSelected==='archive'?'Archiwum jest puste.':'Brak powiadomień w wybranej kategorii i okresie.';
+  list.append(empty);
+ }
+ $('nt-more').hidden=rows.length<=ntShowing;
+ $('nt-mark-all').disabled=ntData.items.every(x=>x.read||x.archived);
+ $('nt-archive-read').disabled=ntData.items.every(x=>!x.read||x.archived);
+}
+async function ntLoad(silent=false){
+ if(!sessionConfirmed)return;
+ if(!silent)ntMessage('Aktualizacja skrzynki powiadomień…');
+ try{
+  ntData=await api('notification-center');
+  if(!ntSettingsDirty)ntPrefsToForm();
+  ntRender();
+  if(!silent)ntMessage('Skrzynka aktualna: '+ntData.meta.unread+' nieprzeczytanych. Dane z ostatnich 90 dni.');
+ }catch(error){ntMessage(error.message,true)}
+}
+document.querySelectorAll('[data-nt-tab]').forEach(b=>b.addEventListener('click',()=>ntTab(b.dataset.ntTab)));
+for(const id of ['nt-search','nt-period','nt-sort']){
+ $(id).addEventListener(id==='nt-search'?'input':'change',()=>{ntShowing=20;ntRender()});
+}
+$('nt-more').addEventListener('click',()=>{ntShowing+=20;ntRender()});
+$('nt-refresh').addEventListener('click',()=>void ntLoad());
+$('nt-mark-all').addEventListener('click',()=>void ntAction('read-all'));
+$('nt-archive-read').addEventListener('click',()=>void ntAction('archive-read'));
+$('nt-settings-form').addEventListener('change',()=>{ntSettingsDirty=true});
+$('nt-settings-form').addEventListener('submit',async event=>{
+ event.preventDefault();if(!sessionConfirmed)return;
+ const button=$('nt-save');button.disabled=true;
+ try{
+  const values=ntSettingsFormValues();
+  await api('notification-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(values)});
+  ntSettingsDirty=false;
+  await ntLoad(true);
+  ntMessage('Preferencje powiadomień zapisano na Twoim koncie.');
+ }catch(error){ntMessage(error.message,true)}finally{button.disabled=false}
+});
+$('nt-cancel').addEventListener('click',()=>{ntPrefsToForm();ntMessage('Przywrócono zapisane ustawienia.')});
+$('nt-export').addEventListener('click',()=>{
+ if(!ntData){ntMessage('Najpierw wczytaj powiadomienia.',true);return}
+ if(!window.confirm('Eksport może zawierać nicki znajomych i zdarzenia konta. Zachowaj plik prywatnie. Kontynuować?'))return;
+ const clean=v=>'"'+String(v??'').replaceAll('"','""')+'"';
+ const rows=[['Kategoria','Tytuł','Nick','Opis','Data','Przeczytane','Archiwum'],
+  ...ntVisibleItems().map(x=>[ntCategories[x.category],x.title,x.actor,x.detail,ntDate(x.at),x.read?'Tak':'Nie',x.archived?'Tak':'Nie'])];
+ const csv='\uFEFF'+rows.map(row=>row.map(clean).join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-powiadomienia.csv';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ ntMessage('Wyeksportowano wybrane powiadomienia z aktualnej listy.');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
