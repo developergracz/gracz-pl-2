@@ -46,6 +46,8 @@ jobs:
         run: npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
       - name: Block high/critical backend production CVEs
         run: npm --prefix contact-api audit --omit=dev --audit-level=high
+      - name: Verify all 15 Warcaby console configurator options
+        run: node --test contact-api/test/checkers-config-options.test.mjs
 
   secrets:
     runs-on: ubuntu-latest
