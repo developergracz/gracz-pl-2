@@ -83,7 +83,7 @@ test('Header loupe opens the actual search page behind the guest gate',async({pa
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
  await expect(page.locator('.search-btn--desktop')).toHaveAttribute('href','/szukaj/');
  await page.locator('.search-btn--desktop').click();
- await expect(page).toHaveURL(/\\/szukaj\\/$/,{timeout:15000});
+ await expect(page).toHaveURL(new URL('/szukaj/',page.url()).toString(),{timeout:15000});
  await expect(page.locator('#search-page-app input')).toBeVisible({timeout:15000});
  await expect(page.locator('#search-page-app')).toHaveAttribute('inert','');
  await expect(page.locator('#search-access-layer')).toBeVisible();
@@ -94,6 +94,7 @@ test('Header loupe opens the actual search page behind the guest gate',async({pa
 });
 
 test('Search guest gate is responsive and the background stays visible',async({browser})=>{
+ fs.mkdirSync(path.resolve('test-results/home-r4'),{recursive:true});
  for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   const ctx=await browser.newContext({viewport});
   try{
