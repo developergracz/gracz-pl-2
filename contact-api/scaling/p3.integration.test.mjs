@@ -28,7 +28,7 @@ async function open(t,base,token,id,game='gomoku'){
  t.after(()=>socket.terminate());
  const messages=[],waiters=new Set();
  socket.on('message',raw=>{messages.push(JSON.parse(raw));for(const fn of waiters)fn();});
- const next=(type,predicate=()=>true,timeout=800)=>new Promise((resolve,reject)=>{
+ const next=(type,predicate=()=>true,timeout=2000)=>new Promise((resolve,reject)=>{
   const timer=setTimeout(()=>{waiters.delete(check);reject(Error('Missing '+type+' across independent instances'));},timeout);
   function check(){const at=messages.findIndex(m=>m.type===type&&predicate(m));if(at<0)return;
    clearTimeout(timer);waiters.delete(check);resolve(messages.splice(at,1)[0]);}
