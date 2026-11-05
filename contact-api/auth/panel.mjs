@@ -2076,14 +2076,14 @@ let challState=[],challTab='all',challDisplay=15,challLoading=false,challBusy=fa
 const challStatuses={pending:'Oczekuje',accepted:'Zaakceptowano',declined:'Odrzucono',cancelled:'Anulowano',expired:'Wygasło'};
 const challTabs={all:'Twoje zaproszenia',incoming:'Otrzymane wyzwania',outgoing:'Wysłane zaproszenia',accepted:'Zaakceptowane partie',starred:'Ważne wyzwania',history:'Historia zaproszeń',archive:'Archiwum'};
 function challUpdatePreview(){
- const game=$('challenge-game').value,timed=true;
+ const game=$('challenge-game').value;
  $('chall-time-options').hidden=false;
  if($('challenge-time').value==='0')$('challenge-increment').value='0';
- $('challenge-increment').disabled=!timed||$('challenge-time').value==='0';
+ $('challenge-increment').disabled=$('challenge-time').value==='0';
  $('chall-preview-icon').textContent=game==='gomoku'?'◉':'♟';
  $('chall-preview-name').textContent=game==='gomoku'?'Gomoku Online':'Warcaby Online';
  const minutes=Number($('challenge-time').value),increment=Number($('challenge-increment').value);
- $('chall-preview-details').textContent=timed&&minutes>0?
+ $('chall-preview-details').textContent=minutes>0?
   minutes+' min na gracza'+(increment>0?' · +'+increment+' s za ruch':' · bez przyrostu'):
   'Klasyczna partia online · bez zegara';
  $('chall-clock-description').textContent=minutes>0?
