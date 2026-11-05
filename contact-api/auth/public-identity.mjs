@@ -1,6 +1,7 @@
-import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
 import {ensureNotificationSchema,createNotificationRouter} from './notification-center.mjs';
+import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
 import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
+import {createOAuthRegistrationRouter} from './oauth-registration.mjs';
 import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
 import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
@@ -172,6 +173,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  let initialized;
  // Notification only, after existing durable writes; authorization and rules are unchanged.
  const notifyGomoku=id=>{try{onGomokuChange(id);}catch{}};
+ const oauth=createOAuthRegistrationRouter({
+  database,ready:()=>ready(),
+  sendVerifyEmail:(email,token)=>sendVerifyEmail(resendKey,emailFrom,email,token),
+  recordSessionBrowser:(token,userAgent)=>recordSessionBrowser(database,token,userAgent),
+  recordSecurityEvent:(accountId,event)=>recordSecurityEvent(database,accountId,event)
+ });
  async function ready(){
   if(!database.enabled||!resendKey||!emailFrom)throw Error('AUTH_UNAVAILABLE');
   if(!initialized){
@@ -272,6 +279,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const notificationCenter=createNotificationRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const messageCenter=createMessageCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
+  if(await oauth.handle(req,res,url))return true;
   if(await premiumProfile.handle(req,res,url))return true;
   if(await addressBook.handle(req,res,url))return true;
   if(await securityCenter.handle(req,res,url))return true;
