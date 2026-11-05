@@ -2145,7 +2145,9 @@ $('sec-export-events').addEventListener('click',()=>{
 
 // Full Max Premium Privacy Center — one source of truth, server-enforced policies.
 const privacyFields=['discoverable','friendRequests','friendMessages','gameInvites','showOnline',
- 'publicProfile','showStats','showCountry','showBadges'];
+ 'exactSearchOnly','mutualFriendsOnlyRequests','trustedMessagesOnly','trustedInvitesOnly','trustedPresenceOnly',
+ 'publicProfile','showStats','showCountry','showBadges',
+ 'showDisplayName','showBio','showMotto','showJoined','showCity','showWinRate'];
 let privacySource=null,privacyLoading=false,privacyTabName='overview',privacySaving=false;
 function privacyTab(name){
  privacyTabName=name;
@@ -2185,6 +2187,14 @@ function privacyRepaint(){
  const badge=$('priv-showBadges');
  badge.disabled=!x.showStats;
  badge.closest('.priv-option').title=!x.showStats?'Odznaki są publiczne tylko przy włączonych statystykach':'';
+ $('priv-showCity').disabled=!x.showCountry;
+ $('priv-showWinRate').disabled=!x.showStats;
+ $('priv-showCity').closest('.priv-option').title=!x.showCountry?'Najpierw włącz ujawnianie kraju i lokalizacji':'';
+ $('priv-showWinRate').closest('.priv-option').title=!x.showStats?'Najpierw włącz statystyki publiczne':'';
+ document.querySelectorAll('[data-priv-tab]').forEach(b=>{
+  const pane=b.dataset.privTab;
+  if(pane==='trusted')b.title='Zaufane kontakty działają na podstawie gwiazdki w książce adresowej';
+ });
 }
 async function privacyLoad(){
  if(!sessionConfirmed||privacyLoading||privacySaving)return;
@@ -2201,11 +2211,20 @@ document.querySelectorAll('[data-priv-tab]').forEach(button=>button.addEventList
 document.querySelectorAll('[data-priv-goto]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privGoto)));
 const privacyPresets={
  private:{discoverable:false,friendRequests:false,friendMessages:false,gameInvites:false,showOnline:false,
-  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+  exactSearchOnly:true,mutualFriendsOnlyRequests:true,trustedMessagesOnly:true,
+  trustedInvitesOnly:true,trustedPresenceOnly:true,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false,
+  showDisplayName:false,showBio:false,showMotto:false,showJoined:false,showCity:false,showWinRate:false},
  friends:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
-  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+  exactSearchOnly:true,mutualFriendsOnlyRequests:false,trustedMessagesOnly:false,
+  trustedInvitesOnly:false,trustedPresenceOnly:false,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false,
+  showDisplayName:true,showBio:false,showMotto:false,showJoined:false,showCity:false,showWinRate:false},
  open:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
-  publicProfile:true,showStats:true,showCountry:false,showBadges:true}
+  exactSearchOnly:false,mutualFriendsOnlyRequests:false,trustedMessagesOnly:false,
+  trustedInvitesOnly:false,trustedPresenceOnly:false,
+  publicProfile:true,showStats:true,showCountry:false,showBadges:true,
+  showDisplayName:true,showBio:true,showMotto:true,showJoined:true,showCity:true,showWinRate:true}
 };
 document.querySelectorAll('[data-priv-preset]').forEach(button=>button.addEventListener('click',()=>{
  if(!privacySource){privacyNotice('Najpierw wczytaj zapisane ustawienia.',true);return;}
@@ -2233,6 +2252,8 @@ function privacyFriends(tab){
 }
 $('priv-manage-friends').addEventListener('click',()=>privacyFriends('overview'));
 $('priv-manage-blocks').addEventListener('click',()=>privacyFriends('blocked'));
+$('priv-trusted-manage').addEventListener('click',()=>privacyFriends('book'));
+$('priv-trusted-blocks').addEventListener('click',()=>privacyFriends('blocked'));
 $('priv-open-addressbook').addEventListener('click',()=>privacyFriends('book'));
 $('priv-open-friends').addEventListener('click',()=>privacyFriends('book'));
 $('priv-open-security').addEventListener('click',()=>switchSection('security'));
