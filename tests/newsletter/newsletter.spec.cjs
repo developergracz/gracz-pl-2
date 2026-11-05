@@ -33,6 +33,35 @@ async function mock(page, handler = () => ({ok:true,state:'request_received'})) 
   });
   return requests;
 }
+// Owner-approved layout: withdrawal and status self-service live in disclosures
+// below the hero, so only the subscribe e-mail field is visible by default.
+async function openPanel(page,id){
+  const panel=page.locator('#'+id);
+  if(!(await panel.evaluate(node=>node.open)))await panel.locator('summary').click();
+  await expect(panel).toHaveAttribute('open','');
+}
+test('approved layout shows one e-mail field, no duplicate signup and opens linked panels',async({page})=>{
+  const posts=[];
+  page.on('request',r=>{if(r.method()==='POST')posts.push(r.url());});
+  await page.goto('/newsletter/');
+  await expect(page.locator('input[type="email"]:visible')).toHaveCount(1);
+  await expect(page.locator('#nl-email')).toBeVisible();
+  await expect(page.locator('#nl-form input[name="name"]')).toHaveAttribute('type','hidden');
+  const nav=page.locator('.site-header .nl-nav-current');
+  await expect(nav).toHaveAttribute('aria-current','page');
+  await expect(nav).toHaveAttribute('href','/newsletter/');
+  await expect(page.locator('.site-header [data-newsletter-open]')).toHaveCount(0);
+  await expect(page.locator('#newsletter-signup-modal')).toHaveCount(0);
+  await expect(page.locator('form[data-newsletter]')).toHaveCount(0);
+  await expect(page.locator('#nl-maintenance-notice')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.evaluate(()=>{location.hash='nl-status-panel';});
+  await expect(page.locator('#nl-status-panel')).toHaveAttribute('open','');
+  await expect(page.locator('#nl-check-email')).toBeVisible();
+  await page.goto('/newsletter/#nl-withdrawal-panel');
+  await expect(page.locator('#nl-withdrawal-panel')).toHaveAttribute('open','');
+  expect(posts).toEqual([]);
+});
 test('#283 withdrawal-only flow: readiness, neutral request and manual fragment proof confirm',{timeout:45000},async({page})=>{
   const requests=[];
   await page.route('**/*',async route=>{
@@ -59,6 +88,7 @@ test('#283 withdrawal-only flow: readiness, neutral request and manual fragment 
   )).toBe(true);
   await expect(page.locator('#nl-withdrawal-submit')).toBeEnabled();
   await expect(page.locator('#nl-submit')).toBeDisabled();
+  await openPanel(page,'nl-withdrawal-panel');
   await page.locator('#nl-withdrawal-email').fill('synthetic@example.test');
   await page.locator('#nl-withdrawal-submit').click();
   await expect(page.locator('#nl-withdrawal-status')).toContainText(/sprawdź skrzynkę/i);
@@ -184,6 +214,7 @@ test('inline validation, keyboard focus, clearing and voluntary status request',
   await expect(modal.locator('#nl-result-check')).toBeVisible();
   await modal.locator('#nl-result-close').click();
   await expect(modal).toBeHidden();
+  await openPanel(page,'nl-status-panel');
   await page.locator('#nl-check-email').fill('owner@example.com');
   await expect(page.locator('#nl-request-button')).toBeEnabled();
   await page.locator('#nl-request-button').click();
@@ -307,6 +338,7 @@ test('bounded timeout is ambiguous, no concurrent duplicate request',async({page
   await page.clock.install();
   const requests=await mock(page,()=>new Promise(()=>{}));
   await page.goto('/newsletter/');
+  await openPanel(page,'nl-status-panel');
   await page.locator('#nl-check-email').fill('owner@example.com');
   await page.locator('#nl-request-button').click();
   await page.locator('#nl-status-form').evaluate(form=>{form.dispatchEvent(new Event('submit',{cancelable:true}));});
@@ -373,6 +405,7 @@ test('active email immediately shows the correct Premium dialog on newsletter pa
 test('malformed email blocks request and leaving page discards bearer action',async({page})=>{
   const requests=await mock(page);
   await page.goto('/newsletter/');
+  await openPanel(page,'nl-status-panel');
   await page.locator('#nl-check-email').fill('broken-address');
   await page.locator('#nl-request-button').click();
   await expect(page.locator('#nl-check-email')).toBeFocused();
