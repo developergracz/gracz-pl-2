@@ -523,7 +523,7 @@ test('all player-panel sections share compact responsive geometry after premium 
 });
 
 
-test('personalized premium farewell appears only after confirmed logout and returns home in 7 seconds',async()=>{
+test('personalized premium farewell appears only after confirmed logout and returns home in 15 seconds',async()=>{
  const serve=path=>{
   const res=response();
   assert.equal(servePlayerPanel({method:'GET'},res,new URL('https://gracz-contact-api.onrender.com'+path)),true);
@@ -566,7 +566,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  assert.equal(context.centerState,null);
  assert.equal(context.sessionConfirmed,false);
  assert.equal(focused,true);
- assert.equal(scheduled.ms,7000);
+ assert.equal(scheduled.ms,15000);
  assert.equal(visited,'','redirect not immediate');
  scheduled.fn();
  assert.equal(visited,'https://gracz.pl/');
