@@ -1,0 +1,25 @@
+name: Gomoku P4 isolated WebSocket capacity
+on:
+  pull_request:
+    paths:
+      - "contact-api/performance/gomoku-p4-capacity.test.mjs"
+      - ".github/workflows/gomoku-p4-capacity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staged-load:
+    name: P4 local transport 100–512 sockets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Install existing backend dependencies
+        run: npm --prefix contact-api ci --ignore-scripts --no-audit --no-fund
+      - name: Staged load against loopback only (no production traffic)
+        run: node --test contact-api/performance/gomoku-p4-capacity.test.mjs
