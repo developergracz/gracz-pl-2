@@ -68,6 +68,18 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  const local=await pages[0].context().newPage();
  await local.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'});
  await local.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+ // Regression: switching to Online without a selected match must never blank the board.
+ await local.locator('#online-mode').click();
+ await local.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+ assert.equal(await local.locator('#board .chess-square').count(),64);
+ assert.equal(await local.locator('#board .chess-square.white-piece').count(),16);
+ assert.equal(await local.locator('#board .chess-square.black-piece').count(),16);
+ assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
+ assert.match(await local.locator('#game-state').innerText(),/plansza poglądowa/i);
+ assert.match(await local.locator('#turn-label').innerText(),/Oczekiwanie na partię/);
+ await local.locator('#training-mode').click();
+ assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
+
  for(const id of ['training-settings','training-records','training-time','training-increment','clock-1','clock-2']){
   assert.equal(await local.locator('#'+id).isVisible(),true,id+' should be visible');
  }
