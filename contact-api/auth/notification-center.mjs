@@ -4,7 +4,7 @@ const ROOT='gracz_public_identity';
 const categories=['messages','friends','games','security'];
 const settingKeys=['messages','friends','games','highlightUnread','showNicknames','showDates','autoReadOnOpen'];
 const defaults=Object.freeze({messages:true,friends:true,games:true,highlightUnread:true,showNicknames:true,showDates:true,autoReadOnOpen:false,mutedUntil:null});
-const SOURCE_QUERY=String.raw\`
+const SOURCE_QUERY=String.raw`
 WITH source AS (
  SELECT 'message:'||m.id::text AS source_id,'messages' AS category,'Nowa wiadomość' AS title,
   a.nickname AS actor,'Otrzymano wiadomość prywatną' AS detail,m.created_at AS happened_at
@@ -55,7 +55,7 @@ FROM recent r
 LEFT JOIN gracz_public_identity.notification_item_state st
  ON st.account_id=$1 AND st.source_id=r.source_id
 ORDER BY r.happened_at DESC,r.source_id ASC
-\`;
+`;
 function send(res,status,body){
  res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store',
  'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
@@ -124,8 +124,8 @@ export function createNotificationRouter({database,ready,sessionToken,digest,aut
     if(!permitted.includes(action)||!Array.isArray(body.ids)||body.ids.length>200 ||
        !body.ids.every(id=>typeof id==='string'&&id.length<=160))return bad(res,400,'BLEDNE_DANE');
     const available=new Set(visible.map(row=>row.id)),eligible=new Set();
-    if(action==='read-all')for(const x of visible)if(!x.archived&&!x.read)eligible.add(x.id);
-    else if(action==='archive-read')for(const x of visible)if(!x.archived&&x.read)eligible.add(x.id);
+    if(action==='read-all'){for(const x of visible)if(!x.archived&&!x.read)eligible.add(x.id);}
+    if(action==='archive-read'){for(const x of visible)if(!x.archived&&x.read)eligible.add(x.id);}
     if(action!=='read-all'&&action!=='archive-read'){
      if(body.ids.length!==1||!available.has(body.ids[0]))return bad(res,404,'POWIADOMIENIE_NIEDOSTEPNE');
      eligible.add(body.ids[0]);
@@ -134,7 +134,7 @@ export function createNotificationRouter({database,ready,sessionToken,digest,aut
     if(ids.length){
      const column=['read','unread','read-all'].includes(action)?'read_at':'archived_at';
      const value=['unread','restore'].includes(action)?'NULL':'now()';
-     const sql='INSERT INTO '+ROOT+'.notification_item_state(account_id,source_id,'+column+') SELECT $1,id,'+value+' FROM UNNEST($2::text[]) AS id ON CONFLICT(account_id,source_id) DO UPDATE SET '+column+'='+value+',updated_at=now()';
+     const sql='INSERT INTO '+ROOT+'.notification_item_state(account_id,source_id,'+column+') SELECT $1,id,'+value+' FROM UNNEST($2::text[]) AS ids(id) ON CONFLICT(account_id,source_id) DO UPDATE SET '+column+'='+value+',updated_at=now()';
      await database.query(sql,[owner,ids]);
     }
     return send(res,200,{ok:true,changed:ids.length});
