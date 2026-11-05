@@ -386,8 +386,11 @@ body.auth-login-mode .scene{
  display:flex!important;align-items:center!important;justify-content:center!important;
  position:relative;isolation:isolate;width:100%!important;max-width:none!important;
  min-height:calc(100dvh - 74px)!important;height:auto!important;padding:22px!important;
- background:linear-gradient(90deg,rgba(0,21,26,.45),rgba(0,15,30,.42)),
- url('https://gracz.pl/assets/gracz-hero-gomoku-approved-r1.webp') center center/cover no-repeat!important
+ /* Show the COMPLETE approved 3:1 HERO art: never crop its left copy or console.
+    The dark teal base fills the spare height on taller displays. */
+ background:linear-gradient(90deg,rgba(0,21,26,.34),rgba(0,15,30,.30)),
+ url('https://gracz.pl/assets/gracz-hero-gomoku-approved-r1.webp') center center/contain no-repeat,
+ linear-gradient(115deg,#003c3b,#00232b 58%,#031b28)!important
 }
 body.auth-login-mode .left,body.auth-login-mode .right{display:none!important}
 body.auth-login-mode .panel{
