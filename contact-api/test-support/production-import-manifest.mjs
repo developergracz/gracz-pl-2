@@ -33,9 +33,11 @@ export const productionModules=Object.freeze([
   'auth/challenge-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
-  // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session
-  // and match authorization on reads; no new mutation protocol or outbound hosts.
+  // Shared same-origin game subscriptions: bounded sockets/payloads and existing
+  // session/match authorization. Optional Redis sends room invalidations only.
   'auth/gomoku-realtime.mjs',
+  // Reviewed P3 bus: fixed channel, bounded queues; no sessions or game state in Redis.
+  'auth/match-event-bus.mjs',
   'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
@@ -102,5 +104,5 @@ export const productionModules=Object.freeze([
 ]);
 export const productionDependencies=Object.freeze([
   'node:http','node:crypto','node:dns/promises','node:net','node:url',
-  'node:fs/promises','node:util','pg','ws',
+  'node:fs/promises','node:util','pg','ws','@redis/client',
 ]);

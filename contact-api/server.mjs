@@ -61,7 +61,7 @@ if (EMAIL_FROM_ADDRESS === CONTACT_TO_ADDRESS) {
 const database = createDatabase();
 let gomokuRealtime;
 const publicIdentity = createPublicIdentityRouter({
-  onGomokuChange: id => gomokuRealtime?.notify(id),
+  onMatchChange: id => gomokuRealtime?.notify(id),
   database,
   emailFrom: EMAIL_FROM,
   resendKey: RESEND_API_KEY,
@@ -798,7 +798,7 @@ const server = createServer(async (req, res) => {
     });
   }
 });
-gomokuRealtime = createGomokuRealtime({server,router:publicIdentity});
+gomokuRealtime = createGomokuRealtime({server,router:publicIdentity,redisUrl:process.env.GAME_REDIS_URL});
 const lifecycle = installShutdown({server,newsletter,database,realtime:gomokuRealtime,timeoutMs:process.env.API_SHUTDOWN_TIMEOUT_MS});
 server.listen(PORT, HOST, () => {
   console.log("gracz.pl contact API listening", {

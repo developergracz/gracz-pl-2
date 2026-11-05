@@ -1,0 +1,46 @@
+name: Multiplayer scaling
+on:
+  pull_request:
+    paths:
+      - 'contact-api/auth/**'
+      - 'contact-api/scaling/**'
+      - 'contact-api/package*.json'
+      - 'contact-api/server.mjs'
+      - 'contact-api/test/*realtime*'
+      - '.github/workflows/multiplayer-scaling.yml'
+permissions:
+  contents: read
+jobs:
+  two-instance-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gracz
+          POSTGRES_PASSWORD: local_integration_only
+          POSTGRES_DB: gracz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gracz -d gracz_test"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+    env:
+      DATABASE_URL: postgresql://gracz:local_integration_only@127.0.0.1:5432/gracz_test
+      GAME_REDIS_URL: redis://127.0.0.1:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: contact-api/package-lock.json
+      - run: npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
+      - run: npm --prefix contact-api run test:scaling
+      - run: node --test contact-api/test/gomoku-realtime.test.mjs contact-api/test/gomoku-realtime-client.test.mjs contact-api/test/gomoku-sync.test.mjs contact-api/test/checkers-realtime.test.mjs contact-api/test/checkers-two-player-match.test.mjs contact-api/test/match-admission.test.mjs
