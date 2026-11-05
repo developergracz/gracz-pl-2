@@ -7,7 +7,7 @@
   if (!document.querySelector("link[data-newsletter-fullmax-home]")) {
     const premium=document.createElement("link");
     premium.rel="stylesheet";
-    premium.href="/assets/newsletter-home-fullmax-r1.css?v=20261105-fullscreen-r2";
+    premium.href="/assets/newsletter-home-fullmax-r1.css?v=20261105-email-phone-r3";
     premium.setAttribute("data-newsletter-fullmax-home","");
     document.head.appendChild(premium);
   }

@@ -49,3 +49,41 @@ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-tru
  body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>input#news-email[type=email]{grid-column:1!important;grid-row:1!important}
  body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>button.btn--news{grid-column:1!important;grid-row:2!important}
 }
+
+/* R3 — owner fix: genuinely white input with black typed/autofilled e-mail.
+   Scope to homepage only; leave signup validation and disabled-state logic intact. */
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"],
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]:disabled,
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]:-webkit-autofill,
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]:-webkit-autofill:hover,
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]:-webkit-autofill:focus{
+  background:#fff!important;
+  background-image:none!important;
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
+  caret-color:#111!important;
+  border:2px solid #e8c264!important;
+  box-shadow:inset 0 0 0 1000px #fff,0 5px 16px rgba(0,0,0,.22)!important;
+  -webkit-box-shadow:inset 0 0 0 1000px #fff,0 5px 16px rgba(0,0,0,.22)!important;
+  opacity:1!important;
+  text-shadow:none!important;
+  transition:background-color 9999s ease-out 0s;
+}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]::placeholder{
+  color:#646464!important;
+  -webkit-text-fill-color:#646464!important;
+  opacity:1!important;
+}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live > input#news-email[type="email"]:focus{
+  outline:none!important;
+  border-color:#d6aa46!important;
+  box-shadow:inset 0 0 0 1000px #fff,0 0 0 3px rgba(242,195,73,.25)!important;
+}
+/* Keep the entire approved device illustration inside the desktop viewport.
+   The teal stage fills spare space rather than cutting the phone bezel. */
+@media(min-width:961px){
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{
+  object-fit:contain!important;
+  object-position:center center!important;
+ }
+}
