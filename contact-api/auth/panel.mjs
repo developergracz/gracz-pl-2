@@ -606,6 +606,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
    <button class="secondary" type="button" id="chall-open-privacy">Prywatność zaproszeń</button>
   </div>
   <p class="chall-fineprint">Zaproszenie można wysłać tylko zaakceptowanemu, niezablokowanemu znajomemu zgodnie z jego ustawieniami prywatności. Warcaby: bez konfiguracji zegara w tym module.</p>
+  <p class="chall-fineprint">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze.</p>
  </div>
  <div class="card chall-inbox">
   <div class="chall-heading"><div><p class="card-kicker">CENTRUM ZAPROSZEŃ</p><h2 id="chall-list-heading">Twoje zaproszenia</h2></div><button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
