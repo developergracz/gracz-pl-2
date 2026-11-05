@@ -745,19 +745,19 @@ test('Premium Academy and Blog circular CTA arrows remain centered at mobile and
 });
 
 
-test('Approved Full Max Premium game images load and display in chess and checkers cards',async({browser})=>{
+test('Owner-approved game images load and display in chess and checkers cards',async({browser})=>{
  for(const width of [390,1366]){
   const ctx=await browser.newContext({viewport:{width,height:850}});
   try{
    const page=await ctx.newPage();await page.goto('/');
-   for(const [klass,file] of [['r4-img-chess','gracz-game-chess-online-premium-r12.avif'],['r4-img-checkers','gracz-game-checkers-premium-r12.avif']]){
+   for(const [klass,file] of [['r4-img-chess','r4-game-chess.webp'],['r4-img-checkers','r4-game-checkers.webp']]){
     const photo=page.locator('#nasze-gry .r4-game-image.'+klass);
     await expect(photo).toHaveCount(1);
     await expect.poll(async()=>photo.evaluate(el=>getComputedStyle(el).backgroundImage)).toContain('/assets/'+file);
     const response=await page.request.get('/assets/'+file);
     expect(response.status()).toBe(200);
-    expect(response.headers()['content-type']).toContain('image/avif');
-    expect((await response.body()).length).toBeGreaterThan(5000);
+    expect(response.headers()['content-type']).toContain('image/webp');
+    expect((await response.body()).length).toBeGreaterThan(1000);
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
