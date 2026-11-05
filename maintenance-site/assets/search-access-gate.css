@@ -70,14 +70,14 @@ body.search-access-pending{overflow:hidden!important}
 }
 .search-access-join strong{color:#f3c15d}
 .search-access-join .brand{font-family:Montserrat,Arial,sans-serif;font-weight:800;white-space:nowrap}
-.search-access-actions{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin:auto;max-width:625px}
+.search-access-actions{display:grid;grid-template-columns:repeat(2,minmax(0,220px));justify-content:center;gap:14px;margin:0 auto;max-width:454px}
 .search-access-action{
- display:flex;align-items:center;justify-content:center;gap:12px;
- min-height:70px;padding:12px 16px;border-radius:15px;
- text-align:center;text-decoration:none;font:800 clamp(19px,2vw,24px)/1.15 Montserrat,Arial,sans-serif;
+ display:flex;align-items:center;justify-content:center;gap:9px;
+ min-height:50px;padding:9px 13px;border-radius:11px;
+ text-align:center;text-decoration:none;font:800 16px/1.2 Montserrat,Arial,sans-serif;
  transition:background-color .15s ease,border-color .15s ease;
 }
-.search-access-action svg{width:36px;height:36px;flex:none}
+.search-access-action svg{width:24px;height:24px;flex:none}
 .search-access-action:focus-visible{outline:3px solid #fff7e7;outline-offset:3px}
 .search-access-primary{
  border:1px solid #ffe4a0;background:linear-gradient(180deg,#ffe08b,#f2b83f);
@@ -95,8 +95,9 @@ body.search-access-pending{overflow:hidden!important}
  .search-access-crown{width:55px;height:43px;margin-bottom:16px}
  .search-access-heading{font-size:clamp(20px,5vw,26px)}
  .search-access-rule{margin:17px auto}
- .search-access-actions{grid-template-columns:1fr;gap:11px}
- .search-access-action{min-height:58px;font-size:19px}
+ .search-access-actions{grid-template-columns:minmax(0,260px);max-width:260px;gap:10px}
+ .search-access-action{min-height:48px;font-size:16px}
+ .search-access-action svg{width:23px;height:23px}
  .search-access-join{font-size:16px;margin-bottom:20px}
  .search-access-close{top:8px;right:9px}
 }
@@ -108,6 +109,6 @@ body.search-access-pending{overflow:hidden!important}
  .search-access-symbol svg{width:100px;height:100px}
  .search-access-rule{margin:13px auto}
  .search-access-join{margin-bottom:13px}
- .search-access-action{min-height:57px}
+ .search-access-action{min-height:48px}
 }
 @media(prefers-reduced-motion:reduce){.search-access-action{transition:none}}
