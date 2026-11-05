@@ -736,6 +736,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
           AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
             WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
           AND COALESCE((SELECT p.friend_messages FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),true)
+          AND (NOT COALESCE((SELECT p.trusted_messages_only FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),false)
+            OR EXISTS (SELECT 1 FROM gracz_public_identity.player_address_book ab WHERE ab.owner_id=$3 AND ab.friend_id=$2 AND ab.favorite=true))
           RETURNING id,created_at`,[randomUUID(),actor,friend.rows[0].id,content]);
         if(!saved.rowCount)return bad(res,409,'TYLKO_ZNAJOMI'),true;
         return json(res,200,{ok:true,message:{id:saved.rows[0].id,createdAt:saved.rows[0].created_at}}),true;
@@ -787,6 +789,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
             AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
               WHERE (b.blocker=$2 AND b.blocked=$3) OR (b.blocker=$3 AND b.blocked=$2))
             AND COALESCE((SELECT p.game_invites FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),true)
+            AND (NOT COALESCE((SELECT p.trusted_invites_only FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),false)
+             OR EXISTS (SELECT 1 FROM gracz_public_identity.player_address_book ab WHERE ab.owner_id=$3 AND ab.friend_id=$2 AND ab.favorite=true))
             ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes,incrementSeconds]);
         }catch(e){if(e?.code==='23505')return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;throw e;}
         if(!saved.rowCount)return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;
@@ -831,7 +835,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       const friends=await database.query(`SELECT a.nickname,
         EXISTS(SELECT 1 FROM gracz_public_identity.online_presence active
           WHERE active.account_id=a.id AND active.last_seen>now()-interval '100 seconds'
-          AND COALESCE((SELECT p.show_online FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),true)) AS online
+          AND COALESCE((SELECT p.show_online FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),true)
+          AND (NOT COALESCE((SELECT p.trusted_presence_only FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),false)
+            OR EXISTS (SELECT 1 FROM gracz_public_identity.player_address_book ab WHERE ab.owner_id=a.id AND ab.friend_id=$1 AND ab.favorite=true))) AS online
         FROM gracz_public_identity.friend_connections c
         JOIN gracz_public_identity.accounts a ON a.id=CASE
           WHEN c.account_a=$1 THEN c.account_b ELSE c.account_a END
@@ -871,7 +877,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
            return bad(res,400,'WPISZ_NICK'),true;
          const result=await database.query(`SELECT a.nickname
            FROM gracz_public_identity.accounts a
-           WHERE a.verified_at IS NOT NULL AND a.id<>$1 AND starts_with(a.nickname_key,$2)
+           WHERE a.verified_at IS NOT NULL AND a.id<>$1
+           AND (CASE WHEN COALESCE((SELECT p.exact_search_only FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),false)
+             THEN a.nickname_key=$2 ELSE starts_with(a.nickname_key,$2) END)
            AND COALESCE((SELECT p.discoverable FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=a.id),true)
            AND NOT EXISTS (SELECT 1 FROM gracz_public_identity.friend_blocks b
              WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1))
@@ -898,6 +906,13 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
              (account_a,account_b,requested_by,status)
              SELECT LEAST($1::uuid,$2::uuid),GREATEST($1::uuid,$2::uuid),$1::uuid,'pending'
              WHERE COALESCE((SELECT p.friend_requests FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$2),true)
+             AND (NOT COALESCE((SELECT p.mutual_friends_only_requests FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$2),false)
+               OR EXISTS(SELECT 1 FROM gracz_public_identity.friend_connections f1
+                JOIN gracz_public_identity.friend_connections f2
+                  ON (CASE WHEN f1.account_a=$1 THEN f1.account_b ELSE f1.account_a END)
+                   = (CASE WHEN f2.account_a=$2 THEN f2.account_b ELSE f2.account_a END)
+                WHERE (f1.account_a=$1 OR f1.account_b=$1) AND f1.status='accepted'
+                  AND (f2.account_a=$2 OR f2.account_b=$2) AND f2.status='accepted'))
              AND NOT EXISTS (SELECT 1 FROM gracz_public_identity.friend_blocks b
                WHERE (b.blocker=$1 AND b.blocked=$2) OR (b.blocker=$2 AND b.blocked=$1))
              ON CONFLICT DO NOTHING RETURNING account_a`,[accountId,otherId]);
