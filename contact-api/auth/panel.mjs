@@ -2437,11 +2437,15 @@ const ntSymbols={messages:'✉',friends:'♙',games:'♟',security:'◇'};
 const ntSettingsKeys=['messages','friends','games','highlightUnread','showNicknames','showDates','autoReadOnOpen'];
 const ntTabTitles={all:'Wszystkie powiadomienia',unread:'Nieprzeczytane',messages:'Wiadomości',friends:'Znajomi',
  games:'Gry i wyzwania',security:'Bezpieczeństwo',archive:'Archiwum'};
-const ntNav=document.querySelector('[data-section="notifications"]');
-const ntNavCount=document.createElement('span');
-ntNavCount.className='notif-nav-count';ntNavCount.hidden=true;
-ntNavCount.style.cssText='display:none;margin-left:7px;border-radius:12px;padding:3px 6px;color:#052c35;background:#f6ce7c;font-size:10px;font-weight:900';
-if(ntNav)ntNav.append(ntNavCount);
+const ntNav=typeof document.querySelector==='function'?
+ document.querySelector('[data-section="notifications"]'):null;
+const ntNavCount=ntNav&&typeof document.createElement==='function'?
+ document.createElement('span'):null;
+if(ntNavCount){
+ ntNavCount.className='notif-nav-count';ntNavCount.hidden=true;
+ ntNavCount.style.cssText='display:none;margin-left:7px;border-radius:12px;padding:3px 6px;color:#052c35;background:#f6ce7c;font-size:10px;font-weight:900';
+ ntNav.append(ntNavCount);
+}
 function ntMessage(message,error=false){
  const target=$('nt-feedback');target.textContent=message;target.classList.toggle('error',error);
 }
@@ -2505,9 +2509,11 @@ function ntUpdateMetrics(){
  $('nt-archive-total').textContent=String(rows.length-inbox.length);
  const start=new Date();start.setHours(0,0,0,0);
  $('nt-today').textContent=String(rows.filter(x=>new Date(x.at)>=start).length);
- ntNavCount.textContent=unread>99?'99+':String(unread);
- ntNavCount.hidden=unread===0;
- ntNavCount.style.display=unread===0?'none':'inline-block';
+ if(ntNavCount){
+  ntNavCount.textContent=unread>99?'99+':String(unread);
+  ntNavCount.hidden=unread===0;
+  ntNavCount.style.display=unread===0?'none':'inline-block';
+ }
 }
 function ntButton(label,onClick){
  const button=document.createElement('button');button.type='button';button.textContent=label;
