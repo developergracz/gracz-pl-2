@@ -49,6 +49,12 @@ body.homepage-premium-max #nasze-gry .r4-game-image{
   border:0!important;border-radius:21px 21px 14px 14px!important;
   filter:none!important;transform:none!important
 }
+/* Neutral game imagery from existing repository assets; no casino effects. */
+body.homepage-premium-max #nasze-gry .r4-img-chess{background-image:url("/assets/r4-game-chess.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-checkers{background-image:url("/assets/r4-game-checkers.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-gomoku{background-image:url("/assets/r4-game-gomoku.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-thousand{background-image:url("/assets/r4-game-thousand.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-poker{background-image:url("/assets/gracz-guide-poker-clean-r2.avif")!important}
 body.homepage-premium-max #nasze-gry .r4-game-body{
   display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
   align-items:stretch!important;gap:13px!important;
