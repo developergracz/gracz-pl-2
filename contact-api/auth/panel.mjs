@@ -594,7 +594,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
      <option value="3">+3 sekundy</option><option value="5">+5 sekund</option>
      <option value="10">+10 sekund</option>
     </select></label>
-    <small id="chall-clock-description">Zegar dotyczy Gomoku. Dla gry bez zegara przyrost wynosi 0 sekund.</small>
+    <small id="chall-clock-description">Zegar dostępny dla Gomoku i Warcabów. Bez zegara przyrost wynosi 0 sekund.</small>
    </div>
    <div class="chall-preview"><span class="chall-preview-icon" id="chall-preview-icon">♟</span>
     <div><strong id="chall-preview-name">Warcaby Online</strong>
@@ -605,7 +605,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
    <button class="secondary" type="button" id="chall-open-friends">Moi znajomi</button>
    <button class="secondary" type="button" id="chall-open-privacy">Prywatność zaproszeń</button>
   </div>
-  <p class="chall-fineprint">Zaproszenie można wysłać tylko zaakceptowanemu, niezablokowanemu znajomemu zgodnie z jego ustawieniami prywatności. Warcaby: bez konfiguracji zegara w tym module.</p>
+  <p class="chall-fineprint">Zaproszenie można wysłać tylko zaakceptowanemu, niezablokowanemu znajomemu zgodnie z jego ustawieniami prywatności. Warcaby i Gomoku: dostępne limity czasu dla obu graczy.</p>
   <p class="chall-fineprint">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze.</p>
  </div>
  <div class="card chall-inbox">
@@ -2076,19 +2076,18 @@ let challState=[],challTab='all',challDisplay=15,challLoading=false,challBusy=fa
 const challStatuses={pending:'Oczekuje',accepted:'Zaakceptowano',declined:'Odrzucono',cancelled:'Anulowano',expired:'Wygasło'};
 const challTabs={all:'Twoje zaproszenia',incoming:'Otrzymane wyzwania',outgoing:'Wysłane zaproszenia',accepted:'Zaakceptowane partie',starred:'Ważne wyzwania',history:'Historia zaproszeń',archive:'Archiwum'};
 function challUpdatePreview(){
- const game=$('challenge-game').value,timed=game==='gomoku';
- $('chall-time-options').hidden=!timed;
- if(!timed){$('challenge-time').value='0';$('challenge-increment').value='0';}
+ const game=$('challenge-game').value;
+ $('chall-time-options').hidden=false;
  if($('challenge-time').value==='0')$('challenge-increment').value='0';
- $('challenge-increment').disabled=!timed||$('challenge-time').value==='0';
- $('chall-preview-icon').textContent=timed?'◉':'♟';
- $('chall-preview-name').textContent=timed?'Gomoku Online':'Warcaby Online';
+ $('challenge-increment').disabled=$('challenge-time').value==='0';
+ $('chall-preview-icon').textContent=game==='gomoku'?'◉':'♟';
+ $('chall-preview-name').textContent=game==='gomoku'?'Gomoku Online':'Warcaby Online';
  const minutes=Number($('challenge-time').value),increment=Number($('challenge-increment').value);
- $('chall-preview-details').textContent=timed&&minutes>0?
+ $('chall-preview-details').textContent=minutes>0?
   minutes+' min na gracza'+(increment>0?' · +'+increment+' s za ruch':' · bez przyrostu'):
   'Klasyczna partia online · bez zegara';
  $('chall-clock-description').textContent=minutes>0?
-  'Zegar uruchomi się po dołączeniu obu graczy.': 'Gomoku bez zegara nie dodaje czasu po ruchu.';
+  'Zegar uruchomi się po dołączeniu obu graczy.': 'Bez zegara przyrost czasu wynosi 0 sekund.';
 }
 function challTabSelect(tab){
  challTab=tab;challDisplay=15;
@@ -2135,7 +2134,7 @@ function challButton(text,fn,emphasize=false){
 }
 function challReadDate(value){return safeDate(value)}
 function challGameLabel(ch){return ch.game==='gomoku'?'◉ Gomoku':'♟ Warcaby'}
-function challClockLabel(ch){return ch.game==='gomoku'&&ch.timeLimitMinutes>0?
+function challClockLabel(ch){return ch.timeLimitMinutes>0?
   ch.timeLimitMinutes+' min'+(ch.incrementSeconds?' + '+ch.incrementSeconds+' s':''): 'Bez zegara'}
 function challRender(){
  challCounts();
@@ -2268,8 +2267,8 @@ $('challenge-form').addEventListener('submit',async event=>{
  if(challBusy)return;
  const nickname=$('challenge-friend').value,game=$('challenge-game').value;
  if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return}
- const timeLimitMinutes=game==='gomoku'?Number($('challenge-time').value):0;
- const incrementSeconds=game==='gomoku'&&timeLimitMinutes>0?Number($('challenge-increment').value):0;
+ const timeLimitMinutes=Number($('challenge-time').value);
+ const incrementSeconds=timeLimitMinutes>0?Number($('challenge-increment').value):0;
  const button=$('chall-submit');button.disabled=true;challBusy=true;
  try{
   await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},

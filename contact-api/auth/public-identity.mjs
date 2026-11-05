@@ -114,7 +114,7 @@ const gomokuTimeOptions=new Set([0,1,2,3,5,7,10,15,30]);
 const gomokuIncrementOptions=new Set([0,2,3,5,10]);
 function createTimedGame(game,minutes,incrementSeconds=0){
  const state=initialGame(game);
- if(game==='gomoku'&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
+ if(['gomoku','warcaby'].includes(game)&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
   const ms=minutes*60000;
   state.clock={limitMs:ms,incrementMs:(gomokuIncrementOptions.has(incrementSeconds)?incrementSeconds:0)*1000,
    remaining:[ms,ms],ready:[false,false],since:null};
@@ -170,7 +170,7 @@ function clockAfterMove(previous,next,at){
  const remaining=[...clock.remaining];
  remaining[previous.turn-1]=Math.max(0,remaining[previous.turn-1]-elapsed);
  // Fischer bonus applies once, only after an accepted, non-terminal legal move.
- if(!next.winner&&Number.isInteger(clock.incrementMs)&&clock.incrementMs>=0&&clock.incrementMs<=10000)
+ if(!next.winner&&next.turn!==previous.turn&&Number.isInteger(clock.incrementMs)&&clock.incrementMs>=0&&clock.incrementMs<=10000)
   remaining[previous.turn-1]+=clock.incrementMs;
  return {...next,clock:{...clock,remaining,
   since:next.winner?null:new Date(at).toISOString()}};
@@ -548,7 +548,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       // Joining a time-controlled room marks this participant ready.
       // Only after both participants have visited the room does the first clock start.
       // A wall-clock timeout is finalized by the backend even if the browser was closed.
-      if(match.game==='gomoku'&&match.state?.clock){
+      if(['gomoku','warcaby'].includes(match.game)&&match.state?.clock){
        for(let attempt=0;attempt<4;attempt++){
         const tick=advanceGomokuClock(match.state,Date.now(),req.method==='GET'&&!isChat&&!isUndo?player:0);
         if(!tick.changed)break;
@@ -703,6 +703,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         if(match.game==='warcaby'){
           const previous=Array.isArray(match.state.history)?match.state.history.slice(-159):[];
           result.state.history=[...previous,{player,from:body.move.from,to:body.move.to,number:result.state.moves}];
+          result.state=clockAfterMove(match.state,result.state,movedAt);
         }
         const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
@@ -838,7 +839,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         const incrementSeconds=body.incrementSeconds===undefined?0:body.incrementSeconds;
         if(!validNick(nick)||!['warcaby','gomoku'].includes(game)||
            !gomokuTimeOptions.has(minutes)||!gomokuIncrementOptions.has(incrementSeconds)||
-           (minutes===0&&incrementSeconds!==0)||(game!=='gomoku'&&(minutes!==0||incrementSeconds!==0)))
+           (minutes===0&&incrementSeconds!==0))
           return bad(res,400,'BLEDNE_DANE'),true;
         const friend=await findFriend(nick);
         if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
