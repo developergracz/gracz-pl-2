@@ -1,6 +1,5 @@
 import {readFileSync} from 'node:fs';
 import {getSharedGameConsoleHtml} from './gomoku-console.mjs';
-import {createGomokuRealtimeClient} from './gomoku-realtime-client.mjs';
 // P1 visual skeleton only. No online chess gameplay or match API.
 const headers={'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' wss://gracz-contact-api.onrender.com; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'};
 const html=getSharedGameConsoleHtml().replaceAll('Gomoku','Szachy').replaceAll('GOMOKU','SZACHY').replace('<body>','<body class="chess-console">').replace('href="/konto/gomoku/styl.css"','href="/konto/gomoku/styl.css"><link rel="stylesheet" href="/konto/szachy/styl.css"').replace('src="/konto/gomoku/app.js"','type="module" src="/konto/szachy/app.js"').replace('class="board" id="board"','class="board chess-board" id="board"').replace('Plansza Szachy 15 na 15','Plansza szachowa 8 na 8');
