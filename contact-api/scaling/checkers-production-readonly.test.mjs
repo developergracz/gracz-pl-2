@@ -6,7 +6,7 @@ import {chromium} from 'playwright';
 
 const origin='https://gracz-contact-api.onrender.com';
 const pages=[
- ['/health','health'],
+ ['/health','application/json'],
  ['/konto/warcaby/','text/html'],
  ['/konto/warcaby/styl.css','text/css'],
  ['/konto/warcaby/app.js','javascript'],
