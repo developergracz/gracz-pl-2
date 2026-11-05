@@ -1,0 +1,201 @@
+/* Gracz.pl / Nasze gry — owner-approved premium layout, scoped only to homepage games. */
+body.homepage-premium-max .r4-homepage #nasze-gry {
+  background:#003a39!important;
+  background-image:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  color:#fff4df;
+  padding-top:clamp(24px,3vw,45px)!important;
+  padding-bottom:clamp(28px,3vw,52px)!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry::before,
+body.homepage-premium-max .r4-homepage #nasze-gry::after {
+  content:none!important;
+  display:none!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-section-title {
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:16px!important;
+  margin:0 0 clamp(18px,2vw,28px)!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry #r4-games-title {
+  margin:0!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:clamp(36px,4.5vw,68px)!important;
+  font-style:italic!important;
+  font-weight:750!important;
+  line-height:1.06!important;
+  letter-spacing:-.035em!important;
+  color:#fff2d6!important;
+  text-shadow:none!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry #r4-games-title span:first-child {
+  color:#fff2df!important;
+  background:none!important;
+  -webkit-text-fill-color:#fff2df!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry #r4-games-title span:last-child {
+  color:#e8b65f!important;
+  background:none!important;
+  -webkit-text-fill-color:#e8b65f!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-section-title>a {
+  display:inline-flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  width:auto!important;
+  min-height:48px!important;
+  padding:9px 24px!important;
+  border:1.5px solid #dda449!important;
+  border-radius:999px!important;
+  background:#00332f!important;
+  color:#fff5e9!important;
+  font:700 clamp(14px,1vw,19px)/1.2 Georgia,"Times New Roman",serif!important;
+  text-decoration:none!important;
+  box-shadow:none!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-games-grid {
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:clamp(10px,1.1vw,17px)!important;
+  align-items:stretch!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game {
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  border:1.5px solid #d29d45!important;
+  border-radius:25px!important;
+  background:#00312f!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  transform:none!important;
+  text-decoration:none!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game:hover,
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game:focus-visible {
+  border-color:#ffe3a2!important;
+  box-shadow:0 0 0 2px rgba(255,229,164,.12)!important;
+  outline-offset:3px;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game-image {
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1.6!important;
+  flex:0 0 auto!important;
+  background-position:center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  border-radius:0 0 17px 17px!important;
+  filter:none!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game-body {
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:12px!important;
+  padding:15px clamp(10px,1.05vw,17px) 15px!important;
+  min-width:0!important;
+  background:transparent!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game h3 {
+  margin:0!important;
+  min-height:2.15em;
+  display:flex;
+  align-items:center;
+  font:700 clamp(19px,1.48vw,27px)/1.08 Georgia,"Times New Roman",serif!important;
+  color:#fff1d7!important;
+  text-wrap:balance;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-game p {
+  margin:0!important;
+  min-height:4.6em!important;
+  font:400 clamp(12px,.9vw,16px)/1.42 Arial,sans-serif!important;
+  color:#f0f2ed!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-status {
+  display:inline-flex!important;
+  align-self:flex-start!important;
+  justify-content:center!important;
+  align-items:center!important;
+  width:auto!important;
+  margin-top:auto!important;
+  padding:7px 12px!important;
+  border:0!important;
+  border-radius:999px!important;
+  font:700 clamp(11px,.76vw,14px)/1.25 Arial,sans-serif!important;
+  white-space:normal!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-status-soon {
+  background:#f6e1b9!important;
+  color:#201c17!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-status-ready {
+  background:#007956!important;
+  color:#fff!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-status-training {
+  background:#9b6843!important;
+  color:#fff!important;
+}
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-card-action,
+body.homepage-premium-max .r4-homepage #nasze-gry .r4-card-action-outline {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-height:46px!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:8px 10px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#ffe397 0%,#e9aa3f 100%)!important;
+  color:#061d1b!important;
+  box-shadow:none!important;
+  font:800 clamp(12px,.9vw,17px)/1.16 Arial,sans-serif!important;
+  text-align:center!important;
+}
+@media(max-width:1100px) {
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-games-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:700px) {
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-section-title {
+    align-items:flex-start!important;
+  }
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-games-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:480px) {
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-games-grid {
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-game-body {
+    padding:14px 16px!important;
+  }
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-game h3 {
+    min-height:0;
+    font-size:24px!important;
+  }
+  body.homepage-premium-max .r4-homepage #nasze-gry .r4-game p {
+    min-height:0!important;
+    font-size:14px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  body.homepage-premium-max .r4-homepage #nasze-gry *,
+  body.homepage-premium-max .r4-homepage #nasze-gry *::before,
+  body.homepage-premium-max .r4-homepage #nasze-gry *::after {
+    transition:none!important;
+    animation:none!important;
+  }
+}
