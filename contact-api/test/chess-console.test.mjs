@@ -56,6 +56,22 @@ test('premium chess panels include real clocks, six top icons and right dock too
  assert.match(css.body,/game-tools/);
  assert.match(css.body,/clock:not\(\[hidden\]\)/);
 });
+test('computer mode and premium layout reuse Gomoku without duplicated focus navigation',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),styles=load('/konto/szachy/styl.css'),ai=load('/konto/szachy/computer.mjs');
+ assert.equal(ai.status,200);
+ assert.match(ai.body,/export function chooseComputerMove/);
+ assert.match(app.body,/import \{chooseComputerMove\} from '\/konto\/szachy\/computer\.mjs'/);
+ assert.match(app.body,/scheduleComputer/);
+ assert.match(app.body,/textContent='Komputer'/);
+ assert.match(app.body,/id='chess-opponent'/);
+ assert.match(app.body,/layout\.classList\.toggle\('game-focus'/);
+ assert.match(app.body,/console-config-open/);
+ assert.match(app.body,/howto-open/);
+ assert.match(styles.body,/\.layout\.game-focus/);
+ assert.match(styles.body,/\.chess-square\.white-piece/);
+ assert.match(styles.body,/grid-template-columns:clamp\(355px,26vw,465px\)/);
+ assert.match(page.body,/id="focus-nav"/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
