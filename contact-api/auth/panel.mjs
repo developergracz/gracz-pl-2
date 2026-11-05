@@ -1638,6 +1638,183 @@ function safeDate(value){
  const date=new Date(value);
  return Number.isNaN(date.getTime())?'—':date.toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'});
 }
+// Full Max Premium Messenger — private inbox metadata over existing friend message API.
+let msgState=null,msgView='all',msgRecords=[],msgCurrentLoading=false,msgSending=false;
+let msgLastReload=0;
+const msgLabels={'':'Bez grupy',priority:'Ważne',team:'Drużyna',family:'Rodzina',friends:'Znajomi'};
+function msgCurrent(){
+ const nick=$('message-recipient').value.toLowerCase();
+ return msgState?.conversations.find(c=>c.nickname.toLowerCase()===nick)||null;
+}
+function msgNotice(message,error=false){socialNotice('messages-state',message,error)}
+function msgApplyToolbar(){
+ const selected=msgCurrent();
+ $('msg-chat-name').textContent=selected?.nickname||'Wybierz znajomego';
+ $('msg-chat-avatar').textContent=(selected?.nickname||'G').charAt(0).toUpperCase();
+ $('msg-chat-status').textContent=selected?
+  (selected.muted?'Wyciszona na Twoim koncie · ':'Rozmowa prywatna · ')+
+  (selected.unread>0?selected.unread+' nieprzeczytanych':'wiadomości aktualne'):
+  'Wiadomości tylko między zaakceptowanymi znajomymi';
+ $('msg-pin').textContent=selected?.pinned?'Odepnij':'Przypnij';
+ $('msg-mute').textContent=selected?.muted?'Włącz powiadomienia':'Wycisz';
+ $('msg-archive').textContent=selected?.archived?'Przywróć':'Archiwizuj';
+ $('msg-label').value=selected?.label||'';
+ for(const id of ['msg-pin','msg-mute','msg-archive','msg-label','msg-export','msg-invite-game','msg-profile']){
+  $(id).disabled=!selected;
+ }
+}
+function msgRenderList(){
+ if(!msgState)return;
+ const rows=msgState.conversations;
+ $('msg-count').textContent=String(rows.filter(c=>!c.archived).length);
+ $('msg-unread').textContent=String(rows.filter(c=>!c.archived).reduce((sum,c)=>sum+c.unread,0));
+ $('msg-pinned').textContent=String(rows.filter(c=>c.pinned&&!c.archived).length);
+ $('msg-archived').textContent=String(rows.filter(c=>c.archived).length);
+ const filter=$('msg-find').value.trim().toLowerCase();
+ const label=$('msg-label-filter').value;
+ const list=$('msg-conversations');list.replaceChildren();
+ const displayed=rows.filter(c=>{
+  if(msgView==='archive'){if(!c.archived)return false}
+  else {
+   if(c.archived)return false;
+   if(msgView==='unread'&&c.unread===0)return false;
+   if(msgView==='pinned'&&!c.pinned)return false;
+  }
+  return c.nickname.toLowerCase().includes(filter)&&
+   (label==='all'||c.label===label);
+ });
+ for(const item of displayed){
+  const row=document.createElement('button');row.type='button';row.className='msg-conversation';
+  const active=$('message-recipient').value.toLowerCase()===item.nickname.toLowerCase();
+  if(active)row.classList.add('active');
+  row.setAttribute('aria-current',String(active));
+  const avatar=document.createElement('span');avatar.className='msg-avatar';
+  avatar.textContent=item.nickname.charAt(0).toUpperCase();
+  const info=document.createElement('span');info.className='msg-conversation-info';
+  const title=document.createElement('strong');title.textContent=
+   (item.pinned?'★ ':'')+item.nickname+(item.muted?' · wyciszono':'');
+  const last=document.createElement('small');
+  const preview=item.lastMessage||(item.lastAt?'Wiadomość':'Rozpocznij rozmowę');
+  last.textContent=(item.lastOwn?'Ty: ':'')+preview.slice(0,85);
+  info.append(title,last);row.append(avatar,info);
+  if(item.unread){
+   const counter=document.createElement('span');counter.className='msg-conversation-count';
+   counter.textContent=item.unread>99?'99+':String(item.unread);row.append(counter);
+  }
+  row.addEventListener('click',()=>void msgChoose(item.nickname));
+  list.append(row);
+ }
+ if(!displayed.length){
+  const empty=document.createElement('p');empty.className='msg-empty';
+  empty.textContent=msgView==='archive'?'Archiwum rozmów jest puste.':
+   msgView==='unread'?'Nie masz nieprzeczytanych wiadomości.':
+   'Brak rozmów dla wybranego filtra. Znajomych znajdziesz w „Moi znajomi”.';
+  list.append(empty);
+ }
+ msgApplyToolbar();
+}
+async function messageCenterLoad(){
+ if(!sessionConfirmed||msgCurrentLoading)return;
+ msgCurrentLoading=true;
+ try{
+  const result=await api('message-center');
+  msgState=result;msgLastReload=Date.now();
+  msgRenderList();
+ }catch(error){msgNotice(error.message,true)}
+ finally{msgCurrentLoading=false}
+}
+async function msgChoose(nick){
+ await prepareSocial('messages');
+ const select=$('message-recipient');select.value=nick;
+ if(select.value!==nick){msgNotice('Ta znajomość nie jest już aktywna.',true);return;}
+ $('msg-search-thread').value='';
+ msgRenderList();await refreshThread();
+}
+async function msgChange(action,label=''){
+ const current=msgCurrent();
+ if(!current){msgNotice('Najpierw wybierz rozmowę.',true);return false}
+ try{
+  await api('message-center/state',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({nickname:current.nickname,action,...(action==='label'?{label}:{})})});
+  await messageCenterLoad();
+  return true;
+ }catch(error){msgNotice(error.message,true);return false}
+}
+function msgFilterThread(){
+ const term=$('msg-search-thread').value.trim().toLowerCase();
+ const bubbles=$('message-thread').querySelectorAll('.social-bubble');
+ let count=0;
+ for(const el of bubbles){
+  const found=el.textContent.toLowerCase().includes(term);
+  el.hidden=!found;if(found)count++;
+ }
+ if(term)msgNotice('Znaleziono '+count+' wiadomości w ostatnich 60 pozycjach rozmowy.');
+}
+const msgControlActions=[
+ ['msg-pin',()=>msgCurrent()?.pinned?'unpin':'pin'],
+ ['msg-mute',()=>msgCurrent()?.muted?'unmute':'mute'],
+ ['msg-archive',()=>msgCurrent()?.archived?'restore':'archive']
+];
+for(const [id,action] of msgControlActions)$(id).addEventListener('click',async()=>{
+ const button=$(id);button.disabled=true;
+ await msgChange(action());button.disabled=!msgCurrent();
+});
+$('msg-label').addEventListener('change',()=>void msgChange('label',$('msg-label').value));
+document.querySelectorAll('[data-msg-filter]').forEach(button=>button.addEventListener('click',()=>{
+ msgView=button.dataset.msgFilter;
+ for(const b of document.querySelectorAll('[data-msg-filter]')){
+  const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+ }
+ msgRenderList();
+}));
+$('msg-find').addEventListener('input',msgRenderList);
+$('msg-label-filter').addEventListener('change',msgRenderList);
+$('msg-search-thread').addEventListener('input',msgFilterThread);
+$('msg-refresh-all').addEventListener('click',async()=>{await messageCenterLoad();await refreshThread()});
+$('msg-open-friends').addEventListener('click',()=>{switchSection('friends');fhTab('overview')});
+$('msg-open-book').addEventListener('click',()=>{switchSection('friends');fhTab('book')});
+$('msg-block-link').addEventListener('click',()=>{switchSection('friends');fhTab('blocked')});
+$('msg-privacy-link').addEventListener('click',()=>switchSection('privacy'));
+$('msg-invite-game').addEventListener('click',async()=>{
+ const current=msgCurrent();if(!current)return;
+ switchSection('challenges');await prepareSocial('challenges');
+ $('challenge-friend').value=current.nickname;
+});
+$('msg-profile').addEventListener('click',()=>{
+ const current=msgCurrent();if(!current)return;
+ window.open('/konto/profil/'+encodeURIComponent(current.nickname),'_blank','noopener,noreferrer');
+});
+$('message-content').addEventListener('input',()=>{
+ $('msg-counter').textContent=String($('message-content').value.length)+' / 1000 znaków';
+});
+$('message-content').addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
+  event.preventDefault();
+  if(!msgSending&&$('message-recipient').value&&$('message-content').value.trim())
+   $('message-form').requestSubmit();
+ }
+});
+$('msg-export').addEventListener('click',()=>{
+ const selected=msgCurrent();if(!selected)return;
+ const payload={format:'gracz-messages-v1',friend:selected.nickname,
+  scope:'Ostatnie maksymalnie 60 wiadomości widocznych w bieżącej rozmowie.',
+  exportedAt:new Date().toISOString(),messages:msgRecords};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-rozmowa-'+selected.nickname+'.json';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ msgNotice('Pobrano maksymalnie 60 ostatnich wiadomości. Zachowaj prywatność pliku.');
+});
+if(typeof setInterval==='function')setInterval(()=>{
+ if(!sessionConfirmed||msgSending||msgCurrentLoading)return;
+ const section=typeof document.querySelector==='function'?
+  document.querySelector('[data-panel="messages"]'):null;
+ if(!section?.classList.contains('active'))return;
+ if(typeof document.visibilityState!=='undefined'&&document.visibilityState!=='visible')return;
+ if(Date.now()-msgLastReload<16000)return;
+ void messageCenterLoad();
+ if($('message-recipient').value)void refreshThread();
+},20000);
+
 async function prepareSocial(name){
  if(!sessionConfirmed)return;
  if(!friendsState)await refreshFriends();
@@ -1677,6 +1854,7 @@ async function refreshThread(){
   if(!response.messages.length){
    const p=document.createElement('p');p.textContent='Nie ma jeszcze wiadomości. Rozpocznij rozmowę.';thread.append(p);
   }
+  msgRecords=response.messages;
   response.messages.forEach(item=>{
    const bubble=document.createElement('div');bubble.className='social-bubble'+(item.own?' own':'');
    const text=document.createElement('p');text.textContent=item.body;
@@ -1684,23 +1862,28 @@ async function refreshThread(){
    bubble.append(text,date);thread.append(bubble);
   });
   thread.scrollTop=thread.scrollHeight;
+  msgFilterThread();
+  const active=msgCurrent();
+  if(active?.unread>0)void msgChange('read');
+  else msgRenderList();
   socialNotice('messages-state','Wiadomości w rozmowie: '+response.messages.length+'.');
  }catch(error){socialNotice('messages-state',error.message,true);}
 }
-$('message-recipient').addEventListener('change',()=>void refreshThread());
+$('message-recipient').addEventListener('change',()=>{msgRecords=[];msgRenderList();void refreshThread()});
 $('messages-refresh').addEventListener('click',()=>void refreshThread());
 $('message-form').addEventListener('submit',async event=>{
  event.preventDefault();
  const nick=$('message-recipient').value,body=$('message-content').value.trim();
  if(!nick||!body||body.length>1000){socialNotice('messages-state','Wybierz znajomego i wpisz wiadomość (maks. 1000 znaków).',true);return;}
- const button=$('message-send');button.disabled=true;
+ const button=$('message-send');button.disabled=true;msgSending=true;
  try{
   await api('social/messages',{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({nickname:nick,message:body})});
-  $('message-content').value='';await refreshThread();
+  $('message-content').value='';$('msg-counter').textContent='0 / 1000 znaków';await refreshThread();
+  await messageCenterLoad();
   socialNotice('messages-state','Wiadomość wysłana.');
  }catch(error){socialNotice('messages-state',error.message,true);}
- finally{button.disabled=!$('message-recipient').value;}
+ finally{msgSending=false;button.disabled=!$('message-recipient').value;}
 });
 async function refreshChallenges(){
  const list=$('challenge-list');list.replaceChildren();
@@ -1777,6 +1960,7 @@ function switchSection(name){
  if(name==='security'&&sessionConfirmed)void securityLoad();
  if(name==='privacy'&&sessionConfirmed)void privacyLoad();
  if(name==='notifications'&&sessionConfirmed)void ntLoad();
+ if(name==='messages'&&sessionConfirmed)void messageCenterLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
