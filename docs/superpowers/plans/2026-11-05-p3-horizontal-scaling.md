@@ -21,9 +21,12 @@
 - Queues, subscriptions, read concurrency and reconnect work must be bounded.
 
 ## Tasks
-- [ ] 1. Add and run a failing two-process integration test for cross-instance moves/chat, both games, stale writes, clocks/undo, reconnect and access denial. Use disposable loopback services only.
-- [ ] 2. Extend `contact-api/auth/gomoku-realtime.mjs` as the shared transport, with an optional Redis bus and indexed rooms, bounded publication/admission/read queues, reconciliation and reconnect. Wire `server.mjs` without enabling production configuration.
-- [ ] 3. Update `public-identity.mjs`: shared change hook, a trusted internal combined snapshot read, lazy match initialization and bounded game-query work. Keep public HTTP contracts and version guards.
-- [ ] 4. Connect `checkers-console.mjs` to the existing realtime client, keeping HTTP fallback and all UI/rules unchanged. Verify browser behavior and existing relevant regression tests.
+- [x] 1. Add and run a failing two-process integration test for cross-instance moves/chat, both games, stale writes, clocks/undo, reconnect and access denial. Use disposable loopback services only.
+- [x] 2. Extend `contact-api/auth/gomoku-realtime.mjs` as the shared transport, with an optional Redis bus and indexed rooms, bounded publication/admission/read queues, reconciliation and reconnect. Wire `server.mjs` without enabling production configuration.
+- [x] 3. Update `public-identity.mjs`: shared change hook, a trusted internal combined snapshot read, lazy match initialization and bounded game-query work. Keep public HTTP contracts and version guards.
+- [x] 4. Connect `checkers-console.mjs` to the existing realtime client, keeping HTTP fallback and all UI/rules unchanged. Verify browser behavior and existing relevant regression tests.
 - [ ] 5. Run acceptance against two independent processes, including Redis outage and abrupt instance loss. Record actual results/configuration, review diff, create PR and respect GitHub protections when merging.
 - [ ] 6. Only after P3 PASS/merge, create P4 branch and run progressive real-player load tests in an isolated environment; report measured failures or concrete infrastructure blockers.
+
+P3 review: fixed incomplete POST bodies exhausting DB admission (RED→GREEN).
+Required CI exposed the explicit production import manifest; registered the reviewed optional bus and Redis client without weakening the import gate. Full contact-api suite: 571/571 PASS.
