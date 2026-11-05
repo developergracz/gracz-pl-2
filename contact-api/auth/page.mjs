@@ -11,10 +11,20 @@ async function loadArtwork(name,width,height){
  if(!riff||!vp8||(bytes.readUInt16LE(26)&0x3fff)!==width||(bytes.readUInt16LE(28)&0x3fff)!==height)throw Error('ACCOUNT_ARTWORK_INTEGRITY_FAILURE');
  return bytes;
 }
+// Alpha WebP (VP8X canvas) for cut-out artwork that must sit directly on the teal stage.
+async function loadAlphaArtwork(name,width,height){
+ const bytes=await readFile(new URL('./assets/'+name,import.meta.url));
+ const riff=bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP'&&bytes.readUInt32LE(4)+8===bytes.byteLength;
+ const vp8x=bytes.subarray(12,16).toString()==='VP8X'&&(bytes[20]&0x10)===0x10;
+ if(!riff||!vp8x||bytes.readUIntLE(24,3)+1!==width||bytes.readUIntLE(27,3)+1!==height)throw Error('ACCOUNT_ARTWORK_INTEGRITY_FAILURE');
+ return bytes;
+}
 const artwork=new Map([
  ['/konto/tlo.webp',await loadArtwork('konto-tlo.webp',1672,847)],
  ['/konto/szachy.webp',await loadArtwork('konto-szachy.webp',702,505)],
  ['/konto/owner-layout.webp',await loadArtwork('owner-layout.webp',1536,950)],
+ // Owner-approved gracz.pl chip + red-back deck, cut out of the Owner registration reference (R2), 2× master.
+ ['/konto/zeton-talia.webp',await loadAlphaArtwork('konto-zeton-talia.webp',1186,628)],
 ]);
 // The original gold crown hand-coded for gracz.pl (#646): a byte-identical copy of
 // maintenance-site/assets/gracz-crown-premium.svg, kept equal by a test. Served as a vector image.
@@ -43,22 +53,21 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <li><a class="bar-link" href="https://gracz.pl/poradniki/">Poradniki</a></li><li><a class="bar-link" href="https://gracz.pl/#aktualnosci">Blog</a></li><li><a class="bar-link" href="https://gracz.pl/#spolecznosc">Społeczność</a></li><li><a class="bar-link bar-newsletter" href="https://gracz.pl/newsletter/">Newsletter</a></li></ul></nav>
 <div class="site-bar-actions"><a class="bar-search" href="https://gracz.pl/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></a><a class="bar-btn bar-btn--outline" href="/konto/?widok=login" data-view="login">Zaloguj się</a><a class="bar-btn bar-btn--gold" href="/konto/" data-view="register">Załóż konto</a></div></div></div></header>
 <main class="scene">
-<aside class="left"><div class="left-copy"><em>Dołącz do społeczności</em><div class="hero-brand">gracz<span>.pl</span></div><div class="eyebrow">POLSKIE CENTRUM GRACZA</div><ul class="benefits"><li><b>♟</b><span><strong>Graj online</strong><small>Warcaby, Szachy, Tysiąc, Poker i inne gry</small></span></li><li><b>♧</b><span><strong>Ucz się i rozwijaj</strong><small>Poradniki, strategie, analizy</small></span></li><li><b>🏆</b><span><strong>Rywalizuj</strong><small>Turnieje, rankingi, kluby graczy</small></span></li><li><b>♧</b><span><strong>Twórz społeczność</strong><small>Forum, znajomi, wspólne pasje</small></span></li></ul></div><div class="cards" aria-hidden="true"><div class="stack">♠<br><span>gracz.pl</span></div><div class="chip">gracz<span>.pl</span></div></div></aside>
+<aside class="left"><div class="left-copy"><em>Dołącz do społeczności</em><div class="hero-brand">gracz<span>.pl</span></div><div class="eyebrow">POLSKIE CENTRUM GRACZA</div><ul class="benefits"><li><b aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><circle cx="12" cy="7.4" r="4.3"/><path d="M3.8 21c.4-5 3.7-8.1 8.2-8.1s7.8 3.1 8.2 8.1z"/></svg></b><span><strong>Graj online</strong><small>Warcaby, Szachy, Tysiąc, Poker i inne gry</small></span></li><li><b aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><circle cx="12" cy="6.9" r="4.1"/><circle cx="6.9" cy="13.1" r="4.1"/><circle cx="17.1" cy="13.1" r="4.1"/><path d="M9.4 10.6h5.2v4.2H9.4zM12 12.5l2.3 8.7H9.7z"/></svg></b><span><strong>Ucz się i rozwijaj</strong><small>Poradniki, strategie, analizy</small></span></li><li><b aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M6.6 3h10.8v1.6h3.6v2.1c0 3-2 5.3-4.8 5.8a5.4 5.4 0 0 1-3 2.7V18h3.4v3H7.4v-3h3.4v-2.8a5.4 5.4 0 0 1-3-2.7C5 12 3 9.7 3 6.7V4.6h3.6zm0 3.4H4.9v.4c0 1.8 1 3.2 2.5 3.8a8.6 8.6 0 0 1-.8-3.9zm10.8 0v.3c0 1.4-.3 2.7-.8 3.9 1.5-.6 2.5-2 2.5-3.8v-.4z" fill-rule="evenodd"/></svg></b><span><strong>Rywalizuj</strong><small>Turnieje, rankingi, kluby graczy</small></span></li><li><b aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><circle cx="12" cy="7.3" r="3.6"/><path d="M5.8 20c.4-4.2 3-6.6 6.2-6.6s5.8 2.4 6.2 6.6z"/><circle cx="5" cy="9.1" r="2.7"/><path d="M.6 18.4c.3-3.1 2.1-4.9 4.5-4.9 1 0 1.9.3 2.7.9-1.3 1.1-2.1 2.6-2.5 4z"/><circle cx="19" cy="9.1" r="2.7"/><path d="M23.4 18.4c-.3-3.1-2.1-4.9-4.5-4.9-1 0-1.9.3-2.7.9 1.3 1.1 2.1 2.6 2.5 4z"/></svg></b><span><strong>Twórz społeczność</strong><small>Forum, znajomi, wspólne pasje</small></span></li></ul></div><div class="cards" aria-hidden="true"><img class="cards-art" src="/konto/zeton-talia.webp" width="1186" height="628" alt="" decoding="async" fetchpriority="low"></div></aside>
 <section class="panel" aria-label="Panel konta gracza"><a class="login-close" href="https://gracz.pl/" aria-label="Zamknij i wróć na gracz.pl">×</a><img class="login-crown" src="/konto/korona.svg" width="60" height="49" alt="" aria-hidden="true"><div class="panel-heading"><div class="round"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="8" fill="currentColor"/><path d="M9 37c0-8 5-14 15-14s15 6 15 14v2H9z" fill="currentColor"/></svg></div><div><h1 id="page-title">Załóż konto w <span class="form-logo">gracz<span>.pl</span></span></h1><p>Graj, ucz się, rywalizuj – w jednym miejscu.</p></div></div>
 <div id="notice" role="status" aria-live="polite"></div>
-<form id="register-form" autocomplete="on" novalidate><label for="nickname">Nick gracza</label><div class="field nickname-field"><span class="field-icon" aria-hidden="true">♧</span><input name="nickname" id="nickname" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required placeholder="Wpisz swój nick" autocomplete="username"><output id="nick-status" aria-live="polite"></output></div><p class="hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – .</p>
-<label for="email">Adres e-mail</label><div class="field"><span class="field-icon">✉</span><input name="email" id="email" maxlength="254" required type="email" placeholder="Wpisz swój adres e-mail" autocomplete="email"></div>
-<label for="password">Hasło</label><div class="field"><span class="field-icon">♙</span><input name="password" id="password" minlength="15" maxlength="256" required type="password" placeholder="Utwórz hasło" autocomplete="new-password" aria-describedby="password-feedback"><button class="eye" type="button" data-show="password" aria-label="Pokaż hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><div id="password-feedback" class="premium-feedback" role="alert" aria-live="polite" hidden><span class="premium-feedback-icon" aria-hidden="true">!</span><span id="password-feedback-text"></span></div></div><p class="hint">Co najmniej 15 znaków — najlepiej długa, unikalna fraza.</p>
-<label for="repeatPassword">Powtórz hasło</label><div class="field"><span class="field-icon">♙</span><input name="repeatPassword" id="repeatPassword" minlength="15" maxlength="256" required type="password" placeholder="Wpisz ponownie hasło" autocomplete="new-password"><button class="eye" type="button" data-show="repeatPassword" aria-label="Pokaż powtórzone hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>
-<div class="checks"><label><input name="terms" type="checkbox" required>Akceptuję <a href="https://gracz.pl/regulamin/" target="_blank" rel="noopener">Regulamin serwisu gracz.pl</a></label><label><input name="privacy" type="checkbox" required>Akceptuję <a href="https://gracz.pl/polityka-prywatnosci/" target="_blank" rel="noopener">Politykę prywatności</a></label><label class="muted"><input type="checkbox" disabled>Chcę otrzymywać newsletter <small>(dostępne wkrótce)</small></label></div>
-<button type="button" class="register-forgot" data-view="forgot">⚿&nbsp; Zapomniałem hasła?</button>
-<button class="submit" type="submit">♟ &nbsp; Zarejestruj się &nbsp; →</button>
-<p class="oauth-separator">lub zarejestruj się przez</p>
+<form id="register-form" autocomplete="on" novalidate><label for="nickname">Nick gracza</label><div class="field nickname-field"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><circle cx="12" cy="7.4" r="4.3"/><path d="M3.8 21c.4-5 3.7-8.1 8.2-8.1s7.8 3.1 8.2 8.1z"/></svg></span><input name="nickname" id="nickname" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required placeholder="Wpisz swój nick" autocomplete="username"><output id="nick-status" aria-live="polite"></output></div><p class="hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – .</p>
+<label for="email">Adres e-mail</label><div class="field"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" focusable="false"><path d="M3.2 5.6h17.6v12.8H3.2z"/><path d="m3.8 6.4 8.2 6.7 8.2-6.7"/></svg></span><input name="email" id="email" maxlength="254" required type="email" placeholder="Wpisz swój adres e-mail" autocomplete="email"></div>
+<label for="password">Hasło</label><div class="field"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path fill-rule="evenodd" d="M7.2 10V7.6a4.8 4.8 0 0 1 9.6 0V10h1.1c.8 0 1.4.6 1.4 1.4v8.2c0 .8-.6 1.4-1.4 1.4H6.1c-.8 0-1.4-.6-1.4-1.4v-8.2c0-.8.6-1.4 1.4-1.4zm2.5 0h4.6V7.6a2.3 2.3 0 0 0-4.6 0zm3.7 5.1a1.4 1.4 0 1 0-2.3 1.1v2.2h1.8v-2.2c.3-.3.5-.7.5-1.1z"/></svg></span><input name="password" id="password" minlength="15" maxlength="256" required type="password" placeholder="Utwórz hasło" autocomplete="new-password" aria-describedby="password-feedback"><button class="eye" type="button" data-show="password" aria-label="Pokaż hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><div id="password-feedback" class="premium-feedback" role="alert" aria-live="polite" hidden><span class="premium-feedback-icon" aria-hidden="true">!</span><span id="password-feedback-text"></span></div></div><p class="hint">Co najmniej 15 znaków — najlepiej długa, unikalna fraza.</p>
+<label for="repeatPassword">Powtórz hasło</label><div class="field"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path fill-rule="evenodd" d="M7.2 10V7.6a4.8 4.8 0 0 1 9.6 0V10h1.1c.8 0 1.4.6 1.4 1.4v8.2c0 .8-.6 1.4-1.4 1.4H6.1c-.8 0-1.4-.6-1.4-1.4v-8.2c0-.8.6-1.4 1.4-1.4zm2.5 0h4.6V7.6a2.3 2.3 0 0 0-4.6 0zm3.7 5.1a1.4 1.4 0 1 0-2.3 1.1v2.2h1.8v-2.2c.3-.3.5-.7.5-1.1z"/></svg></span><input name="repeatPassword" id="repeatPassword" minlength="15" maxlength="256" required type="password" placeholder="Wpisz ponownie hasło" autocomplete="new-password"><button class="eye" type="button" data-show="repeatPassword" aria-label="Pokaż powtórzone hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>
+<div class="checks"><label><input name="terms" type="checkbox" required><span>Akceptuję <a href="https://gracz.pl/regulamin/" target="_blank" rel="noopener">Regulamin serwisu gracz.pl</a></span></label><label><input name="privacy" type="checkbox" required><span>Akceptuję <a href="https://gracz.pl/polityka-prywatnosci/" target="_blank" rel="noopener">Politykę prywatności</a></span></label><label class="muted"><input type="checkbox" disabled><span>Chcę otrzymywać newsletter <small>(dostępne wkrótce)</small></span></label><button type="button" class="register-forgot" data-view="forgot"><svg class="forgot-key" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="15.6" cy="8.4" r="4.6" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12.4 11.6 4.2 19.8M7.2 16.8l2.4 2.4M4.9 19.1l1.7 1.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Zapomniałem hasła?</span></button></div>
+<button class="submit register-submit" type="submit"><svg class="submit-user" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7.4" r="4.4" fill="currentColor"/><path d="M3.6 21.2c.4-5.2 3.8-8.2 8.4-8.2s8 3 8.4 8.2z" fill="currentColor"/></svg><span>Zarejestruj się</span></button>
+<p class="oauth-separator"><span>lub zarejestruj się przez</span></p>
 <div class="oauth-buttons" aria-label="Rejestracja przez dostawców kont">
- <a href="/auth/oauth/google/start" data-oauth-provider="google" aria-disabled="true" tabindex="-1" title="Google — wymaga konfiguracji dostawcy"><span class="google-logo" aria-hidden="true">G</span> Google</a>
- <a href="/auth/oauth/microsoft/start" data-oauth-provider="microsoft" aria-disabled="true" tabindex="-1" title="Microsoft — wymaga konfiguracji dostawcy"><span class="microsoft-logo" aria-hidden="true">▦</span> Microsoft</a>
- <a href="/auth/oauth/discord/start" data-oauth-provider="discord" aria-disabled="true" tabindex="-1" title="Discord — wymaga konfiguracji dostawcy"><span class="discord-logo" aria-hidden="true">●</span> Discord</a>
-</div><p class="switch">Masz już konto? <button type="button" data-view="login">Zaloguj się</button></p></form>
+ <a href="/auth/oauth/google/start" data-oauth-provider="google" aria-disabled="true" tabindex="-1" title="Google — wymaga konfiguracji dostawcy"><svg class="oauth-logo google-logo" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Google</span></a>
+ <a href="/auth/oauth/microsoft/start" data-oauth-provider="microsoft" aria-disabled="true" tabindex="-1" title="Microsoft — wymaga konfiguracji dostawcy"><svg class="oauth-logo microsoft-logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#F25022" d="M2 2h9.5v9.5H2z"/><path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z"/><path fill="#00A4EF" d="M2 12.5h9.5V22H2z"/><path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z"/></svg><span>Microsoft</span></a>
+ <a href="/auth/oauth/discord/start" data-oauth-provider="discord" aria-disabled="true" tabindex="-1" title="Discord — wymaga konfiguracji dostawcy"><svg class="oauth-logo discord-logo" viewBox="0 0 127.14 96.36" aria-hidden="true" focusable="false"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15zM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69z"/></svg><span>Discord</span></a>
+</div><p class="switch register-switch"><svg class="switch-ornament" viewBox="0 0 70 16" aria-hidden="true" focusable="false"><defs><linearGradient id="reg-orn-fade" gradientUnits="userSpaceOnUse" x1="1" x2="41" y1="8" y2="8"><stop offset="0" stop-color="#e9b94e" stop-opacity=".15"/><stop offset="1" stop-color="#f3c862"/></linearGradient></defs><path d="M1 8 39 6.2v3.6z" fill="url(#reg-orn-fade)"/><path d="M37 8c3.2-4.4 8.6-4.4 11.8 0-3.2 4.4-8.6 4.4-11.8 0z" fill="currentColor"/><path d="M40.4 8c1.6-2 3.4-2 5 0-1.6 2-3.4 2-5 0z" fill="#06221f"/><path d="M45.6 4.5c1.9-3.2 5.8-4.4 8.6-2.6-2.8 0-4.7 1.3-5.7 3.3zM45.6 11.5c1.9 3.2 5.8 4.4 8.6 2.6-2.8 0-4.7-1.3-5.7-3.3z" fill="currentColor"/><path d="M48.4 6.2 69 8 48.4 9.8z" fill="currentColor"/></svg><span class="switch-question">Masz już konto?</span> <a class="switch-login" href="/konto/?widok=login" data-view="login">Zaloguj się</a><svg class="switch-ornament switch-ornament--end" viewBox="0 0 70 16" aria-hidden="true" focusable="false"><path d="M1 8 39 6.2v3.6z" fill="url(#reg-orn-fade)"/><path d="M37 8c3.2-4.4 8.6-4.4 11.8 0-3.2 4.4-8.6 4.4-11.8 0z" fill="currentColor"/><path d="M40.4 8c1.6-2 3.4-2 5 0-1.6 2-3.4 2-5 0z" fill="#06221f"/><path d="M45.6 4.5c1.9-3.2 5.8-4.4 8.6-2.6-2.8 0-4.7 1.3-5.7 3.3zM45.6 11.5c1.9 3.2 5.8 4.4 8.6 2.6-2.8 0-4.7-1.3-5.7-3.3z" fill="currentColor"/><path d="M48.4 6.2 69 8 48.4 9.8z" fill="currentColor"/></svg></p></form>
 <form id="login-form" hidden novalidate>
 <label for="login">E-mail lub nick gracza</label><div class="field"><span class="field-icon" aria-hidden="true">✉</span><input id="login" name="login" autocomplete="username" placeholder="Wpisz e-mail lub nick" required></div>
 <label for="loginPassword">Hasło</label><div class="field"><span class="field-icon" aria-hidden="true">♙</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Wpisz hasło"><button class="eye" type="button" data-show="loginPassword" aria-label="Pokaż hasło">◉</button></div>
@@ -597,311 +606,350 @@ body{--account-header-height:68px}
 @media(min-width:780px) and (max-width:1180px){.scene{min-height:calc(100dvh - 66px)}}
 @media(max-width:420px){.site-bar-inner{width:calc(100% - 20px)}}
 
-/* Full Max Premium registration — live HTML fields over independent visual layers.
-   Artwork is not a screenshot of the form, so input fields remain real and accessible. */
-body[data-account-view="register"]{background:#002a2d;overflow-x:hidden}
+/* Full Max Premium registration — Owner reference R2 (register view only).
+   The Owner image (1672×941) is a 1493×840 window shown at 1.12×. On desktop every size
+   below is a reference CSS pixel × --u, so 1366…2560 px windows keep its proportions.
+   Live HTML form; the approved chip + deck are a cut-out of the Owner reference.
+   Nothing is clipped: short windows scroll vertically. */
+.benefits b svg{width:54%;height:54%;display:block}
+body[data-account-view="register"]{
+ --u:1.12px;
+ --reg-indent:calc(46.4*var(--u));--reg-input-h:calc(32*var(--u));--reg-icon:calc(34*var(--u));
+ --reg-label-fs:max(12px,calc(13.4*var(--u)));--reg-input-fs:max(13px,calc(14.3*var(--u)));
+ --reg-hint-fs:max(10.5px,calc(10.7*var(--u)));--reg-check-fs:max(12px,calc(13.4*var(--u)));
+ --reg-check:calc(16*var(--u));--reg-submit-h:calc(49*var(--u));--reg-submit-fs:calc(25*var(--u));
+ --reg-oauth-h:calc(35*var(--u));--reg-oauth-fs:max(12px,calc(15.2*var(--u)));
+ --reg-q-fs:calc(17*var(--u));--reg-link-fs:calc(19.5*var(--u));--reg-orn:calc(58*var(--u));
+ background:#003a3c;overflow-x:hidden
+}
+@media(min-width:1181px){
+ body[data-account-view="register"]{--u:min(calc(100vw / 1493),calc((100dvh - 68px) / 772))}
+}
 body[data-account-view="register"]::before{content:none!important}
 body[data-account-view="register"] .scene{
- display:grid!important;grid-template-columns:minmax(0,40fr) minmax(460px,42fr) minmax(0,18fr)!important;
- gap:0!important;align-items:stretch!important;width:100%!important;max-width:none!important;
- margin:0!important;padding:18px 0 24px!important;min-height:calc(100dvh - 68px)!important;height:auto!important;
- background:radial-gradient(ellipse at 67% 29%,#0bb3a63b,transparent 48%),
- linear-gradient(130deg,#002727,#003e3f 42%,#001a20 85%)!important
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) calc(595*var(--u)) calc(638*var(--u)) calc(260*var(--u)) minmax(0,1fr)!important;
+ grid-template-rows:auto!important;gap:0!important;align-items:start!important;
+ width:100%!important;max-width:none!important;margin:0!important;padding:0 0 calc(24*var(--u))!important;
+ min-height:calc(100dvh - 68px)!important;height:auto!important;overflow:visible!important;
+ background:
+  linear-gradient(180deg,rgba(0,16,15,.62),rgba(0,16,15,0) calc(22*var(--u))),
+  radial-gradient(ellipse 30% 44% at 93% 24%,rgba(1,84,85,.95),rgba(1,84,85,0)),
+  radial-gradient(ellipse 40% 44% at 4% 30%,rgba(1,70,71,.8),rgba(1,70,71,0)),
+  linear-gradient(180deg,#003d3e 0%,#003a3c 58%,#002f31 100%)!important
 }
+/* Left: community copy, four oval benefit badges, approved chip + deck on the teal stage. */
 body[data-account-view="register"] .left{
- display:flex!important;flex-direction:column!important;justify-content:space-between!important;
- position:relative;isolation:isolate;height:auto!important;min-height:0!important;
- padding:clamp(25px,4vw,65px) 12px 14px clamp(22px,7vw,120px)!important;
- background:radial-gradient(ellipse at 2% 23%,#07c7bb2a,transparent 46%),
- linear-gradient(150deg,#002729d9,#003e40ba 65%,#001923f4)!important
+ grid-column:2!important;grid-row:1!important;position:relative!important;display:block!important;
+ align-self:stretch!important;height:auto!important;min-height:calc(706*var(--u))!important;
+ padding:calc(25*var(--u)) 0 0 calc(107*var(--u))!important;background:none!important
 }
-body[data-account-view="register"] .left::before{
- content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
- background:linear-gradient(170deg,transparent 35%,#072627a1 85%),
- url('https://gracz.pl/assets/gracz-blog-thousand-cardback-premium-r5.avif') left bottom/72% auto no-repeat;
- opacity:.36
-}
+body[data-account-view="register"] .left::before{content:none!important}
 body[data-account-view="register"] .left-copy{
- opacity:1!important;pointer-events:auto!important;text-shadow:0 3px 12px #00140f;
+ position:relative;z-index:1;opacity:1!important;pointer-events:auto!important;
+ filter:none!important;text-shadow:0 2px 8px rgba(0,16,16,.55)
 }
 body[data-account-view="register"] .left-copy em{
- font:italic 700 clamp(23px,2.35vw,39px)/1.12 Georgia,serif!important;
- color:#ffdda0!important
+ display:inline-block;font:italic 700 calc(36*var(--u))/1.15 Georgia,"Times New Roman",serif!important;
+ color:#f3deaa!important;background:linear-gradient(180deg,#fff4d6 20%,#e6c27c 92%);
+ -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+ text-shadow:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))
 }
 body[data-account-view="register"] .hero-brand{
- margin-top:8px!important;color:#fff!important;font-size:clamp(46px,4.65vw,76px)!important;
- line-height:1!important;font-weight:850!important;white-space:nowrap
+ display:block;margin:calc(23*var(--u)) 0 0!important;color:#fff!important;
+ font:800 calc(63*var(--u))/1.04 Montserrat,Arial,sans-serif!important;letter-spacing:-.04em!important;white-space:nowrap
 }
-body[data-account-view="register"] .hero-brand span{color:#e82440!important}
+body[data-account-view="register"] .hero-brand span{color:#f80a33!important}
 body[data-account-view="register"] .eyebrow{
- font-size:clamp(12px,1.18vw,19px)!important;color:#ffdb84!important;
- margin:9px 0 22px!important;white-space:normal!important
+ margin:calc(3*var(--u)) 0 0!important;color:#f5d66c!important;white-space:nowrap!important;
+ font:700 calc(18.5*var(--u))/1.2 Montserrat,Arial,sans-serif!important;letter-spacing:.07em!important
 }
-body[data-account-view="register"] .benefits{gap:clamp(11px,1.8dvh,18px)!important}
-body[data-account-view="register"] .benefits li{gap:13px!important}
+body[data-account-view="register"] .benefits{display:grid!important;gap:calc(13.5*var(--u))!important;margin:calc(15*var(--u)) 0 0!important;padding:0!important}
+body[data-account-view="register"] .benefits li{display:flex!important;align-items:center!important;gap:calc(15*var(--u))!important}
 body[data-account-view="register"] .benefits b{
- width:48px!important;height:48px!important;flex:0 0 48px!important;
- border:2px solid #ffd977!important;border-radius:50%;font-size:24px!important;
- color:#ffd977!important;background:#002c2caa
+ display:grid!important;place-items:center;flex:0 0 auto!important;min-width:0!important;
+ width:calc(52*var(--u))!important;height:calc(39*var(--u))!important;font-size:0!important;
+ border:calc(2*var(--u)) solid #ebc25a!important;border-radius:50%!important;
+ color:#efc95c!important;background:rgba(0,34,34,.55)!important;box-shadow:none!important
 }
-body[data-account-view="register"] .benefits strong{font-size:clamp(14px,1.2vw,18px)!important}
-body[data-account-view="register"] .benefits small{font-size:clamp(12px,1vw,15px)!important;color:#f7f0e1!important}
+body[data-account-view="register"] .benefits b svg{width:calc(22*var(--u));height:calc(22*var(--u))}
+body[data-account-view="register"] .benefits strong{display:block;font-size:calc(19.5*var(--u))!important;font-weight:700;line-height:1.12;color:#fff}
+body[data-account-view="register"] .benefits small{
+ display:block;max-width:calc(222*var(--u))!important;margin-top:calc(3*var(--u))!important;
+ font-size:calc(15*var(--u))!important;line-height:1.1!important;color:#eef3ef!important
+}
 body[data-account-view="register"] .cards{
- display:block!important;position:relative!important;flex:0 0 clamp(150px,23dvh,230px)!important;
- width:100%;min-height:130px!important;margin:14px 0 0!important
+ display:block!important;position:absolute!important;left:calc(52*var(--u));top:calc(448*var(--u));
+ width:calc(529.5*var(--u));height:auto!important;min-height:0!important;margin:0!important;pointer-events:none
 }
-body[data-account-view="register"] .cards .stack{
- position:absolute!important;top:13px!important;left:33%!important;
- display:block!important;width:clamp(155px,18vw,280px)!important;height:clamp(112px,12vw,190px)!important;
- transform:perspective(400px) rotateX(18deg) rotateZ(-12deg)!important;
- border:7px solid #fbead1!important;border-radius:13px!important;
- background:#f4dfc6 url('https://gracz.pl/assets/gracz-blog-thousand-cardback-premium-r5.avif') center/cover no-repeat!important;
- color:transparent!important;font-size:0!important;
- box-shadow:4px 8px 0 #d7ac68,7px 12px 0 #a87437,10px 16px 0 #6d431f,0 20px 42px #000b!important
-}
-body[data-account-view="register"] .cards .stack span{display:none!important}
-body[data-account-view="register"] .cards .chip{
- position:absolute!important;top:40px!important;left:0!important;transform:rotate(-10deg)!important;
- width:clamp(90px,9vw,140px)!important;height:clamp(90px,9vw,140px)!important;
- display:flex!important;align-items:center!important;justify-content:center!important;
- border:12px dashed #ffc35d!important;border-radius:50%!important;background:#141c1b!important;
- color:#fff!important;font-size:clamp(15px,1.4vw,21px)!important;font-weight:900!important;
- box-shadow:0 7px 0 #63301e,0 14px 0 #0b1617,0 20px 30px #000b!important;
-}
-body[data-account-view="register"] .cards .chip span{color:#f01e39!important}
+body[data-account-view="register"] .cards-art{display:block;width:100%;height:auto}
+/* Centre: glowing gold Premium frame sized to the form; crown clear of the border. */
 body[data-account-view="register"] .panel{
- position:relative!important;align-self:stretch!important;z-index:2;
- display:flex!important;flex-direction:column!important;
- width:100%!important;min-height:0!important;max-height:none!important;margin:0!important;
- padding:24px clamp(20px,2.2vw,37px) 20px!important;
- border:3px solid #ffd17a!important;border-radius:36px!important;
- background:radial-gradient(ellipse at 50% 0%,#064c46,#021b20 47%,#00171b 90%)!important;
- box-shadow:0 0 0 1px #ffdd8e inset,0 0 22px #ffb94b9c,0 20px 62px #000b!important;
+ grid-column:3!important;grid-row:1!important;position:relative!important;z-index:2;align-self:start!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+ width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;max-height:none!important;
+ margin:calc(16*var(--u)) 0 0!important;
+ padding:calc(10*var(--u)) calc(31*var(--u)) calc(23.5*var(--u)) calc(34*var(--u))!important;overflow:visible!important;
+ border:max(2px,calc(3*var(--u))) solid #ffd36b!important;border-radius:calc(27*var(--u))!important;
+ background:radial-gradient(ellipse 80% 60% at 50% 32%,#002d2c 0%,#002626 55%,#011b1b 100%)!important;
+ box-shadow:inset 0 0 0 1px rgba(255,232,160,.5),0 0 calc(12*var(--u)) rgba(255,196,80,.85),0 0 calc(30*var(--u)) rgba(255,176,56,.35),0 calc(14*var(--u)) calc(40*var(--u)) rgba(0,0,0,.4)!important
 }
 body[data-account-view="register"] .panel::before{
- content:"";height:3px;position:absolute;top:0;left:12%;right:12%;
- border-radius:60%;background:#fff0b9;box-shadow:0 0 12px 3px #ffca66;
+ content:"";height:2px;position:absolute;top:-1px;left:22%;right:22%;pointer-events:none;
+ border-radius:60%;background:#fff3c4;box-shadow:0 0 calc(10*var(--u)) 2px #ffcf6a
 }
 body[data-account-view="register"] .login-close{display:none!important}
 body[data-account-view="register"] .login-crown{
- display:block!important;align-self:center!important;position:relative!important;
- width:64px!important;height:52px!important;margin:-5px 0 5px!important;
- object-fit:contain!important;filter:drop-shadow(0 0 9px #e4a83d)!important
+ display:block!important;position:relative!important;align-self:center!important;flex:none!important;
+ width:auto!important;height:calc(31*var(--u))!important;aspect-ratio:60/49;margin:0!important;object-fit:contain!important;
+ filter:drop-shadow(0 0 calc(6*var(--u)) rgba(240,180,70,.75))!important
 }
 body[data-account-view="register"] .panel-heading{
- display:block!important;align-self:stretch!important;text-align:center!important;
- margin:0 0 12px!important;padding:0!important
+ position:relative;z-index:1;display:block!important;align-self:stretch!important;text-align:center!important;
+ margin:calc(5.5*var(--u)) 0 0!important;padding:0!important
 }
 body[data-account-view="register"] .panel-heading .round{display:none!important}
 body[data-account-view="register"] .panel-heading h1{
- color:#fff0d2!important;font:700 clamp(25px,2.4vw,39px)/1.15 Georgia,serif!important;
- margin:0 0 5px!important;white-space:normal!important
+ margin:0!important;color:#fff5e2!important;font:700 calc(31*var(--u))/1.1 Georgia,"Times New Roman",serif!important;
+ letter-spacing:0!important;white-space:nowrap!important;text-shadow:0 2px 6px rgba(0,0,0,.5)
 }
-body[data-account-view="register"] .panel-heading h1 .form-logo{color:#fff!important}
-body[data-account-view="register"] .panel-heading h1 .form-logo span{color:#ea304d!important}
+body[data-account-view="register"] .panel-heading h1 .form-logo{color:inherit!important}
+body[data-account-view="register"] .panel-heading h1 .form-logo span{color:#e3142c!important}
 body[data-account-view="register"] .panel-heading p{
- margin:0!important;font-size:clamp(12px,1vw,16px)!important;color:#fff4e6!important;
- white-space:normal!important
+ margin:calc(3*var(--u)) 0 0!important;font-size:calc(15*var(--u))!important;font-weight:400!important;
+ color:#f3f6f2!important;white-space:nowrap!important
 }
-body[data-account-view="register"] #register-form{display:grid!important;width:100%;gap:0}
+body[data-account-view="register"] #register-form{display:grid!important;grid-template-columns:minmax(0,1fr);width:100%;min-width:0;gap:0}
 body[data-account-view="register"] #register-form>label{
- margin:11px 0 6px 56px!important;color:#fffaf4!important;font-size:14px!important;font-weight:750!important
+ margin:calc(10*var(--u)) 0 calc(3*var(--u)) var(--reg-indent)!important;color:#fff!important;
+ font-size:var(--reg-label-fs)!important;font-weight:700!important;line-height:1
 }
-body[data-account-view="register"] #register-form .field{margin-left:56px!important}
+body[data-account-view="register"] #register-form>label:first-child{margin-top:calc(12*var(--u))!important}
+body[data-account-view="register"] #register-form>.hint+label{margin-top:calc(3*var(--u))!important}
+body[data-account-view="register"] #register-form .field{margin-left:var(--reg-indent)!important}
 body[data-account-view="register"] #register-form .field input{
- height:42px!important;border:1px solid #8ebcb3!important;background:#063a3a!important;
- color:white!important;border-radius:12px!important;padding:8px 46px 8px 15px!important
+ height:var(--reg-input-h)!important;min-height:0!important;
+ border:max(1px,calc(1.2*var(--u))) solid #6b9594!important;background:#003d3a!important;color:#fff!important;
+ border-radius:calc(8*var(--u))!important;padding:0 calc(42*var(--u)) 0 calc(11*var(--u))!important;font-size:var(--reg-input-fs)!important
 }
-body[data-account-view="register"] #register-form .field input:focus{
- outline:2px solid #ffda89!important;outline-offset:2px
-}
+body[data-account-view="register"] #register-form .field input::placeholder{color:#aebfbc}
+body[data-account-view="register"] #register-form .nickname-field input{padding-right:150px!important}
+/* Reserve room for the nick status only while it is shown (older browsers keep the reserve). */
+body[data-account-view="register"] #register-form .nickname-field:has(#nick-status:not([data-state])) input,
+body[data-account-view="register"] #register-form #email{padding-right:calc(11*var(--u))!important}
+body[data-account-view="register"] #register-form #nick-status{height:var(--reg-input-h);border-radius:calc(8*var(--u))}
+body[data-account-view="register"] #register-form .field input:focus{outline:2px solid #ffda89!important;outline-offset:2px}
 body[data-account-view="register"] #register-form .field-icon{
- position:absolute!important;left:-52px!important;top:1px!important;
- width:40px!important;height:40px!important;border:1px solid #ffdb76!important;
- border-radius:50%!important;color:#ffdb76!important;background:#002f33!important
+ position:absolute!important;left:calc(-1 * var(--reg-indent) + 1*var(--u))!important;
+ top:calc((var(--reg-input-h) - var(--reg-icon)) / 2)!important;
+ display:grid!important;place-items:center!important;width:var(--reg-icon)!important;height:var(--reg-icon)!important;
+ border:max(1.5px,calc(2*var(--u))) solid #e9bd50!important;border-radius:50%!important;
+ color:#f0c655!important;background:#002424!important;font-size:0!important
 }
+body[data-account-view="register"] #register-form .field-icon svg{width:58%;height:58%}
+body[data-account-view="register"] #register-form .eye{
+ top:0!important;right:calc(4*var(--u))!important;height:var(--reg-input-h);display:grid;place-items:center;padding:0 calc(8*var(--u))!important;color:#fff
+}
+body[data-account-view="register"] #register-form .eye svg{width:calc(22*var(--u));height:calc(22*var(--u))}
 body[data-account-view="register"] #register-form .hint{
- margin:4px 0 3px 56px!important;font-size:11px!important;color:#ddebe8!important
+ margin:calc(3*var(--u)) 0 0 var(--reg-indent)!important;font-size:var(--reg-hint-fs)!important;line-height:1.25!important;color:#eef4f3!important
 }
+/* Consents; „Zapomniałem hasła?” shares the newsletter row on desktop, as in the reference. */
 body[data-account-view="register"] #register-form .checks{
- position:relative;display:grid!important;gap:6px!important;margin:12px 0 7px!important;
- padding-right:0!important
+ position:relative;display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:calc(12*var(--u));
+ row-gap:calc(7*var(--u))!important;gap:calc(7*var(--u)) calc(12*var(--u))!important;align-items:center;
+ margin:calc(14*var(--u)) 0 0!important;padding:0 0 0 calc(3*var(--u))!important
 }
-body[data-account-view="register"] #register-form .checks label{font-size:13px!important;line-height:1.25!important}
+body[data-account-view="register"] #register-form .checks label{
+ grid-column:1;display:flex!important;align-items:center!important;gap:calc(14*var(--u))!important;margin:0!important;
+ font-size:var(--reg-check-fs)!important;font-weight:400;line-height:1.3!important;color:#f6f8f7!important
+}
+body[data-account-view="register"] #register-form .checks label>span>a,
+body[data-account-view="register"] #register-form .checks small{margin-left:calc(8*var(--u))}
+body[data-account-view="register"] #register-form .checks a{color:#3fd8e6;text-underline-offset:2px}
+body[data-account-view="register"] #register-form .checks small{font-size:1em;color:inherit}
 body[data-account-view="register"] #register-form .checks input{
- width:19px!important;height:19px!important;border:1px solid #ffdc78!important;accent-color:#f8c552
+ width:var(--reg-check)!important;height:var(--reg-check)!important;flex:0 0 auto!important;margin:0!important;accent-color:#f8c552
 }
+body[data-account-view="register"] #register-form .checks input:disabled{
+ -webkit-appearance:none;appearance:none;background:#fff;border:1px solid #c8d3d1;border-radius:calc(3*var(--u));cursor:not-allowed
+}
+/* B. „Zapomniałem hasła?” — small glowing Premium button: gold border, dark-teal interior,
+   gold key, gold glint and reflection sweep; opens the existing recovery form. */
 body[data-account-view="register"] .register-forgot{
- display:block!important;align-self:flex-end!important;justify-self:end!important;
- margin:3px 0 7px!important;padding:3px 0!important;border:none!important;
- background:transparent!important;color:#ffd273!important;text-decoration:underline;
- font-size:13px!important;font-weight:700!important
+ grid-column:2;grid-row:3;justify-self:end!important;align-self:center!important;
+ position:relative;isolation:isolate;overflow:visible;
+ display:inline-flex!important;align-items:center!important;justify-content:center;gap:calc(7*var(--u));
+ width:auto;min-width:calc(183*var(--u));height:calc(30.5*var(--u));min-height:0;
+ margin:calc(-7*var(--u)) calc(-4*var(--u)) calc(-7*var(--u)) 0!important;padding:0 calc(10*var(--u))!important;
+ border:max(1.5px,calc(2*var(--u))) solid #f6c445!important;border-radius:999px!important;
+ background:radial-gradient(ellipse 34% 30% at 50% 100%,rgba(255,214,110,.35),rgba(255,214,110,0)),linear-gradient(180deg,#0e2421 0%,#06110f 100%)!important;
+ color:#f8d060!important;font-size:max(12px,calc(15*var(--u)))!important;font-weight:700!important;line-height:1!important;
+ letter-spacing:0;text-decoration:none!important;white-space:nowrap;cursor:pointer;
+ box-shadow:0 0 calc(8*var(--u)) rgba(255,196,64,.75),0 0 calc(18*var(--u)) rgba(255,180,50,.32),inset 0 0 calc(6*var(--u)) rgba(255,200,90,.22)!important;
+ transition:border-color .2s ease,box-shadow .25s ease,color .2s ease,transform .2s ease
 }
+body[data-account-view="register"] .register-forgot::before{
+ content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;overflow:hidden;
+ background:linear-gradient(110deg,transparent 30%,rgba(255,226,150,.14) 43%,rgba(255,246,214,.34) 50%,rgba(255,226,150,.14) 57%,transparent 70%) -140% 0/220% 100% no-repeat;
+ transition:background-position .7s ease
+}
+body[data-account-view="register"] .register-forgot::after{
+ content:"";position:absolute;right:16%;top:calc(-9*var(--u));width:calc(18*var(--u));height:calc(18*var(--u));pointer-events:none;
+ background:
+  radial-gradient(circle,#fff 0 9%,rgba(255,240,190,.9) 16%,rgba(255,210,110,0) 52%),
+  linear-gradient(90deg,rgba(255,240,200,0),rgba(255,244,214,.95) 50%,rgba(255,240,200,0)) center/100% 1.5px no-repeat,
+  linear-gradient(180deg,rgba(255,240,200,0),rgba(255,244,214,.95) 50%,rgba(255,240,200,0)) center/1.5px 70% no-repeat
+}
+body[data-account-view="register"] .register-forgot .forgot-key{
+ width:calc(19*var(--u));height:calc(19*var(--u));flex:none;color:#f4c246;filter:drop-shadow(0 0 2px rgba(255,196,80,.6))
+}
+body[data-account-view="register"] .register-forgot:hover,
+body[data-account-view="register"] .register-forgot:focus-visible{
+ color:#ffe7a0!important;border-color:#ffe39a!important;transform:translateY(-1px);
+ box-shadow:0 0 calc(12*var(--u)) rgba(255,204,80,.95),0 0 calc(26*var(--u)) rgba(255,186,60,.45),inset 0 0 calc(8*var(--u)) rgba(255,210,110,.32)!important
+}
+body[data-account-view="register"] .register-forgot:hover::before,
+body[data-account-view="register"] .register-forgot:focus-visible::before{background-position:240% 0}
+body[data-account-view="register"] .register-forgot:focus-visible{outline:2px solid #ffe39c;outline-offset:3px}
+body[data-account-view="register"] .register-forgot:active{transform:translateY(0)}
+/* A. „Zarejestruj się” — gold gradient, user icon, centred label, no arrow.
+   The invisible ::after balances the icon so the label stays optically centred. */
 body[data-account-view="register"] #register-form>.submit{
- min-height:54px!important;height:auto!important;margin:7px 0 0!important;
- padding:10px!important;color:#06201b!important;border-radius:13px!important;
- font-size:clamp(18px,1.5vw,24px)!important;font-weight:900!important;
- border:1px solid #ffe4a2!important;background:linear-gradient(180deg,#ffe8a2,#ffca57 55%,#e5a328)!important;
- box-shadow:0 0 18px #ffc24e8a,inset 0 2px 1px #fff5cf!important
+ display:flex!important;align-items:center!important;justify-content:center!important;gap:calc(12*var(--u));
+ width:100%;height:var(--reg-submit-h)!important;min-height:0!important;margin:calc(27.5*var(--u)) 0 0!important;
+ padding:0 calc(14*var(--u))!important;color:#2a1b00!important;border-radius:calc(10*var(--u))!important;
+ font-size:var(--reg-submit-fs)!important;font-weight:800!important;line-height:1;letter-spacing:0;
+ border:1px solid #ffe7a0!important;background:linear-gradient(180deg,#ffe57f 0%,#ffcf5e 46%,#fbb02c 100%)!important;
+ box-shadow:0 0 calc(14*var(--u)) rgba(255,190,60,.45),inset 0 1px 0 rgba(255,250,220,.8)!important;
+ transition:filter .2s ease,box-shadow .2s ease,transform .2s ease
 }
-body[data-account-view="register"] .oauth-separator{color:#f3e5c6!important}
+body[data-account-view="register"] #register-form>.submit::after{content:"";flex:0 0 calc(22*var(--u))}
+body[data-account-view="register"] #register-form>.submit .submit-user{width:calc(22*var(--u));height:calc(22*var(--u));flex:0 0 calc(22*var(--u))}
+body[data-account-view="register"] #register-form>.submit:hover:not(:disabled){
+ filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 0 calc(22*var(--u)) rgba(255,190,60,.7),inset 0 1px 0 rgba(255,250,220,.8)!important
+}
+body[data-account-view="register"] #register-form>.submit:focus-visible{outline:3px solid #fff0c2;outline-offset:3px}
+body[data-account-view="register"] .oauth-separator{
+ display:flex!important;align-items:center;gap:0!important;margin:calc(4*var(--u)) 0 calc(3*var(--u))!important;
+ color:#f1f3ea!important;font-size:max(11px,calc(12.5*var(--u)))!important;line-height:1.2
+}
+body[data-account-view="register"] .oauth-separator::before,
+body[data-account-view="register"] .oauth-separator::after{content:"";flex:1;height:1px;background:#4f5f4a!important}
+body[data-account-view="register"] .oauth-separator span{padding:calc(2*var(--u)) calc(9*var(--u));border-radius:calc(5*var(--u));background:#012321}
+body[data-account-view="register"] .oauth-buttons{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(10.7*var(--u))!important}
 body[data-account-view="register"] .oauth-buttons a{
- display:flex;align-items:center;justify-content:center;
- height:44px;border:1px solid #c89b46;border-radius:12px;
- color:#fff;text-decoration:none;background:#002a2db8;font-size:14px;
+ display:flex;align-items:center;justify-content:center;gap:calc(7*var(--u));min-width:0;
+ height:var(--reg-oauth-h);border:max(1px,calc(1.5*var(--u))) solid #bb933f;border-radius:calc(10*var(--u));white-space:nowrap;
+ color:#fff;text-decoration:none;background:rgba(0,22,22,.55);font-size:var(--reg-oauth-fs);font-weight:600
 }
-body[data-account-view="register"] .oauth-buttons a[aria-disabled="true"]{
- opacity:.55;cursor:not-allowed;filter:grayscale(.45)
-}
+body[data-account-view="register"] .oauth-buttons a[aria-disabled="true"]{cursor:not-allowed}
 body[data-account-view="register"] .oauth-buttons a:not([aria-disabled="true"]):hover,
 body[data-account-view="register"] .oauth-buttons a:not([aria-disabled="true"]):focus-visible{
  border-color:#ffe6a0;box-shadow:0 0 12px #ffc96577
 }
-body[data-account-view="register"] .oauth-note{font-size:11px!important;color:#c8d4d1!important}
+body[data-account-view="register"] .oauth-logo{width:calc(19*var(--u));height:calc(19*var(--u));flex:none;margin:0!important;vertical-align:middle}
+/* C. „Masz już konto? Zaloguj się” — centred, italic gold question, bright turquoise
+   link, symmetric gold spear ornaments. */
+body[data-account-view="register"] .register-switch{
+ display:flex!important;align-items:center;justify-content:center;gap:0!important;
+ margin:calc(21.5*var(--u)) 0 0!important;padding:0!important;min-width:0;text-align:center;line-height:1.2;white-space:nowrap;color:inherit!important
+}
+body[data-account-view="register"] .switch-ornament{
+ flex:0 1 var(--reg-orn);min-width:0;height:calc(18*var(--u));margin-right:calc(26*var(--u));color:#f0c052;overflow:visible;
+ filter:drop-shadow(0 0 2px rgba(255,200,80,.8)) drop-shadow(0 0 6px rgba(255,180,60,.4))
+}
+body[data-account-view="register"] .switch-ornament--end{transform:scaleX(-1);margin:0 0 0 calc(26*var(--u))}
+body[data-account-view="register"] .switch-question{
+ font:italic 700 var(--reg-q-fs)/1.2 Georgia,"Times New Roman",serif;color:#f6dca4;
+ text-shadow:0 1px 2px rgba(0,0,0,.6),0 0 calc(8*var(--u)) rgba(255,200,100,.22)
+}
+body[data-account-view="register"] .switch-login{
+ margin-left:calc(12*var(--u));padding:0 1px;border:0;
+ font:italic 700 var(--reg-link-fs)/1.2 Georgia,"Times New Roman",serif;color:#25e8e8;
+ text-decoration:underline;text-decoration-thickness:max(1px,calc(1.5*var(--u)));text-underline-offset:calc(3*var(--u));
+ text-shadow:0 0 calc(8*var(--u)) rgba(37,232,232,.55);transition:color .2s ease,text-shadow .2s ease
+}
+body[data-account-view="register"] .switch-login:hover,
+body[data-account-view="register"] .switch-login:focus-visible{color:#a8fff6;text-decoration-color:#ffd77e;text-shadow:0 0 calc(14*var(--u)) rgba(37,232,232,.85)}
+body[data-account-view="register"] .switch-login:focus-visible{outline:2px solid #ffd77e;outline-offset:3px;border-radius:4px}
+body[data-account-view="register"] .oauth-note{display:none!important}
+/* Right: the same teal stage, no scenery. */
 body[data-account-view="register"] .right{
- display:block!important;position:relative!important;height:auto!important;min-height:0!important;
- padding:0!important;background:
- linear-gradient(90deg,#00272d33,#00121baa),
- url('https://gracz.pl/assets/gracz-game-chess-online-premium-r12.avif') center/cover no-repeat!important
+ grid-column:4!important;grid-row:1!important;display:block!important;position:relative!important;
+ height:auto!important;min-height:0!important;padding:0!important;background:none!important
 }
 body[data-account-view="register"] .right .info{display:none!important}
-body[data-account-view="register"] .right::after{
- content:"♚  ♞";white-space:nowrap;position:absolute;left:4%;right:0;bottom:17%;
- color:#fff;text-shadow:0 8px 0 #021e26,2px 10px 6px #000;
- font:clamp(60px,9vw,150px)/1 Georgia,serif;opacity:.65
+/* Owner screenshot R5: the right column never shows decorative glyphs. */
+body[data-account-view="register"] .right::after{content:none!important}
+@media (prefers-reduced-motion:reduce){
+ body[data-account-view="register"] .register-forgot,
+ body[data-account-view="register"] .register-forgot::before,
+ body[data-account-view="register"] #register-form>.submit,
+ body[data-account-view="register"] .switch-login{transition:none!important}
 }
-@media(min-width:1181px) and (max-height:820px){
- body[data-account-view="register"] .panel{padding-top:10px!important;padding-bottom:9px!important}
- body[data-account-view="register"] .login-crown{height:37px!important}
- body[data-account-view="register"] #register-form>label{margin-top:7px!important}
- body[data-account-view="register"] #register-form .checks{margin:7px 0 2px!important}
- body[data-account-view="register"] #register-form>.submit{min-height:43px!important}
- body[data-account-view="register"] .oauth-buttons a{height:38px!important}
- body[data-account-view="register"] .oauth-note{margin-top:10px!important;padding-top:8px!important}
-}
+/* Tablet: form beside the community copy; right column folds away. */
 @media(max-width:1180px){
+ body[data-account-view="register"]{--reg-submit-fs:21px;--reg-q-fs:16px;--reg-link-fs:18px;--reg-orn:48px}
+ body[data-account-view="register"] .switch-ornament{margin-right:12px}
+ body[data-account-view="register"] .switch-ornament--end{margin:0 0 0 12px}
  body[data-account-view="register"] .scene{
-  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.18fr)!important;
-  padding:14px!important;gap:15px!important
+  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)!important;
+  gap:clamp(12px,2vw,22px)!important;padding:clamp(12px,2vw,20px)!important;min-height:calc(100dvh - 66px)!important
  }
- body[data-account-view="register"] .left{
-  min-height:680px!important;padding:30px 20px!important
- }
+ body[data-account-view="register"] .left{grid-column:1!important;min-height:0!important;padding:clamp(16px,3dvh,34px) 4px 4px clamp(4px,1.5vw,16px)!important}
+ body[data-account-view="register"] .left-copy em{font-size:clamp(21px,2.9vw,30px)!important}
+ body[data-account-view="register"] .hero-brand{font-size:clamp(40px,5.6vw,60px)!important}
+ body[data-account-view="register"] .eyebrow{font-size:clamp(11px,1.45vw,15px)!important;white-space:normal!important}
+ body[data-account-view="register"] .benefits strong{font-size:clamp(13px,1.7vw,16px)!important}
+ body[data-account-view="register"] .benefits small{font-size:clamp(11.5px,1.45vw,14px)!important}
+ body[data-account-view="register"] .cards{position:relative!important;left:auto;top:auto;width:min(100%,430px);margin:clamp(20px,4dvh,48px) 0 0 -10px!important}
+ body[data-account-view="register"] .panel{grid-column:2!important;margin:0!important;padding:16px clamp(16px,2.4vw,26px) 20px!important}
+ body[data-account-view="register"] .panel-heading h1{font-size:clamp(24px,3.3vw,34px)!important;white-space:normal!important}
+ body[data-account-view="register"] .panel-heading p{white-space:normal!important}
  body[data-account-view="register"] .right{display:none!important}
- body[data-account-view="register"] .panel{min-height:0!important}
- body[data-account-view="register"] .cards{display:none!important}
+ body[data-account-view="register"] #register-form .checks{grid-template-columns:minmax(0,1fr)}
+ body[data-account-view="register"] .register-forgot{grid-column:1;grid-row:auto;margin:calc(4*var(--u)) 0 0!important}
+ body[data-account-view="register"] #register-form>.submit{margin-top:calc(16*var(--u))!important}
 }
+/* Phone: one column, full-width form, 16px inputs (no iOS focus zoom). */
 @media(max-width:779px){
- body[data-account-view="register"] .scene{display:flex!important;flex-direction:column!important;gap:12px!important;padding:10px!important}
- body[data-account-view="register"] .left{min-height:0!important;padding:15px!important}
+ body[data-account-view="register"]{
+  --u:1.06px;--reg-input-h:44px;--reg-icon:36px;--reg-indent:46px;--reg-label-fs:13.5px;--reg-input-fs:16px;
+  --reg-hint-fs:11.5px;--reg-check-fs:13px;--reg-check:18px;--reg-submit-h:52px;--reg-submit-fs:20px;
+  --reg-oauth-h:42px;--reg-oauth-fs:12.5px;--reg-q-fs:16px;--reg-link-fs:18px;--reg-orn:44px
+ }
+ body[data-account-view="register"] .scene{display:flex!important;flex-direction:column!important;gap:10px!important;padding:10px!important;min-height:0!important}
+ body[data-account-view="register"] .left{min-height:0!important;padding:14px 8px 4px!important}
  body[data-account-view="register"] .left-copy em{font-size:23px!important}
  body[data-account-view="register"] .hero-brand{font-size:45px!important}
- body[data-account-view="register"] .eyebrow{font-size:12px!important;margin:5px 0!important}
- body[data-account-view="register"] .benefits{display:none!important}
- body[data-account-view="register"] .panel{padding:17px!important;border-radius:22px!important}
- body[data-account-view="register"] .panel-heading h1{font-size:clamp(22px,6vw,29px)!important}
- body[data-account-view="register"] #register-form>label{margin-left:43px!important}
- body[data-account-view="register"] #register-form .field{margin-left:43px!important}
- body[data-account-view="register"] #register-form .field-icon{left:-42px!important;width:35px!important;height:35px!important}
- body[data-account-view="register"] #register-form .hint{margin-left:43px!important}
- body[data-account-view="register"] .oauth-buttons{gap:5px!important}
- body[data-account-view="register"] .oauth-buttons a{font-size:12px!important}
+ body[data-account-view="register"] .eyebrow{font-size:12px!important;margin:5px 0 0!important}
+ body[data-account-view="register"] .benefits,
+ body[data-account-view="register"] .cards{display:none!important}
+ body[data-account-view="register"] .panel{padding:16px 15px 18px!important;border-radius:22px!important}
+ body[data-account-view="register"] .login-crown{height:34px!important}
+ body[data-account-view="register"] .panel-heading h1{font-size:clamp(22px,6.4vw,29px)!important}
+ body[data-account-view="register"] .panel-heading p{font-size:13px!important}
+ body[data-account-view="register"] #register-form>label{margin-top:10px!important}
+ body[data-account-view="register"] #register-form .field-icon{left:calc(-1 * var(--reg-indent))!important}
+ body[data-account-view="register"] #register-form .nickname-field input{padding-right:112px!important}
+ body[data-account-view="register"] #register-form #nick-status{width:108px;font-size:10.5px}
+ body[data-account-view="register"] #register-form .checks{gap:9px!important;margin-top:14px!important}
+ body[data-account-view="register"] #register-form .checks label{align-items:flex-start!important;gap:12px!important}
+ body[data-account-view="register"] .register-forgot{width:auto;height:36px;padding:0 15px!important;margin:6px 0 0!important;font-size:13px!important}
+ body[data-account-view="register"] #register-form>.submit{margin-top:16px!important}
+ body[data-account-view="register"] .oauth-separator{margin:14px 0 10px!important}
+ body[data-account-view="register"] .oauth-buttons{gap:6px!important}
+ body[data-account-view="register"] .register-switch{margin-top:18px!important}
+ body[data-account-view="register"] .switch-ornament{margin-right:10px}
+ body[data-account-view="register"] .switch-ornament--end{margin:0 0 0 10px}
 }
-
-/* Owner screenshot R5: no wrong signup splash for login, no oversized art,
-   and a full registration panel on standard desktop viewport heights. */
-body[data-account-view="register"] .left::before{
- background:radial-gradient(ellipse at 10% 95%,rgba(224,159,62,.12),transparent 46%),
- linear-gradient(145deg,transparent 58%,rgba(0,17,22,.6))!important;
- opacity:1!important
+@media(max-width:379px){
+ body[data-account-view="register"] #register-form .field input::placeholder{font-size:14px}
 }
-body[data-account-view="register"] .cards .stack{
- background-color:#e9ceab!important;background-size:cover!important;
- background-position:center!important;
-}
-body[data-account-view="register"] .right{
- background:linear-gradient(180deg,rgba(0,28,30,.05),rgba(0,24,29,.62)),
- url('/konto/szachy.webp') center/cover no-repeat!important;
-}
-body[data-account-view="register"] .right::after{content:none!important}
-body[data-account-view="register"] .panel-heading{position:relative;z-index:1}
-body[data-account-view="register"] .left-copy{z-index:1}
-@media(min-width:1181px) and (max-height:900px){
- body[data-account-view="register"] .scene{
-  padding:8px 0!important;
-  min-height:calc(100dvh - 68px)!important
- }
- body[data-account-view="register"] .panel{
-  padding:7px clamp(15px,2vw,31px) 7px!important;
-  border-radius:27px!important
- }
- body[data-account-view="register"] .login-crown{
-  height:32px!important;width:49px!important;margin:-4px 0 0!important
- }
- body[data-account-view="register"] .panel-heading{
-  margin:0 0 3px!important
- }
- body[data-account-view="register"] .panel-heading h1{
-  font-size:clamp(22px,2vw,33px)!important;margin:0 0 2px!important
- }
- body[data-account-view="register"] .panel-heading p{
-  font-size:clamp(11px,.85vw,14px)!important
- }
- body[data-account-view="register"] #register-form>label{
-  margin:5px 0 3px 48px!important;font-size:12px!important
- }
- body[data-account-view="register"] #register-form .field{
-  margin-left:48px!important
- }
- body[data-account-view="register"] #register-form .field input{
-  height:36px!important;min-height:36px!important;
-  padding:6px 42px 6px 12px!important;font-size:13px!important
- }
- body[data-account-view="register"] #register-form .field-icon{
-  left:-44px!important;width:33px!important;height:33px!important;
-  font-size:17px!important;top:1px!important
- }
- body[data-account-view="register"] #register-form .hint{
-  font-size:10px!important;margin:1px 0 0 48px!important;line-height:1.15!important
- }
- body[data-account-view="register"] #register-form .checks{
-  margin:6px 0 3px!important;gap:3px!important
- }
- body[data-account-view="register"] #register-form .checks label{
-  font-size:11px!important;line-height:1.15!important
- }
- body[data-account-view="register"] #register-form .checks input{
-  width:16px!important;height:16px!important
- }
- body[data-account-view="register"] .register-forgot{
-  margin:1px 0 2px!important;font-size:11px!important
- }
- body[data-account-view="register"] #register-form>.submit{
-  margin:3px 0 0!important;min-height:43px!important;
-  font-size:clamp(16px,1.2vw,20px)!important;padding:6px!important
- }
- body[data-account-view="register"] .oauth-separator{
-  margin:5px 0 3px!important;font-size:11px!important
- }
- body[data-account-view="register"] .oauth-buttons{gap:7px!important}
- body[data-account-view="register"] .oauth-buttons a{
-  height:35px!important;font-size:12px!important
- }
- body[data-account-view="register"] .switch{
-  margin:4px 0 0!important;font-size:11px!important
- }
- body[data-account-view="register"] .oauth-note{display:none!important}
- body[data-account-view="register"] .left{
-  padding-top:clamp(17px,3dvh,26px)!important
- }
- body[data-account-view="register"] .eyebrow{margin-bottom:12px!important}
- body[data-account-view="register"] .benefits{gap:7px!important}
- body[data-account-view="register"] .benefits b{
-  width:39px!important;height:39px!important;flex-basis:39px!important;font-size:19px!important
- }
- body[data-account-view="register"] .cards{
-  flex-basis:clamp(110px,21dvh,170px)!important
- }
+@media(max-width:350px){
+ body[data-account-view="register"] .oauth-buttons{grid-template-columns:1fr!important}
+ body[data-account-view="register"] .switch-ornament{display:none}
 }
 
 `;
