@@ -178,7 +178,10 @@ test('two agents independently play timed Warcaby to a final result through two 
   assert.equal(committed.match.state.turn,move.result.turn);
   const notified=await passive.next('match',event=>event.version===committed.match.version);
   assert.equal(notified.version,committed.match.version,'remote player observes same version');
-  assert.deepEqual(notified.match.state.board,committed.match.state.board,'remote player sees same board');
+  const observed=await passive.read();
+  assert.equal(observed.status,200);
+  assert.equal(observed.match.version,committed.match.version);
+  assert.deepEqual(observed.match.state.board,committed.match.state.board,'remote player sees same authoritative board');
   if(plies===0)assert.equal((await active.move(version,{from:move.from,to:move.to})).status,409,'replay rejected');
   state=committed.match.state;
   version=committed.match.version;
