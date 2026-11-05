@@ -145,6 +145,7 @@
   <link rel="preload" href="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" as="image" type="image/webp" media="(min-width:681px) and (max-width:1180px)" fetchpriority="high">
   <link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261101-newsletter-fit-r29">
   <script src="/assets/newsletter-interactive-r30-loader.js?v=20261103" defer></script>
+  <link rel="stylesheet" href="/assets/newsletter-home-fullmax-r1.css?v=20261105">
   <script src="/assets/hero-rotator-premium.js?v=20261105-r3" defer></script>
 
 
@@ -459,27 +460,22 @@
         </ul>
       </nav>
 
-      <div class="footer-col footer-news footer-news--approved-r15 footer-news--approved-r16">
-        <img class="footer-news-full-art-r16" src="/assets/gracz-newsletter-full-approved-r16.webp" alt="" aria-hidden="true" width="1671" height="941" loading="lazy" decoding="async" fetchpriority="low">
-        <h2 id="f-news" class="footer-title">Bądź na bieżąco z nowościami, turniejami <span>i wydarzeniami!</span></h2>
-        <p>Zapisz się do newslettera gracz.pl i otrzymuj:</p>
-        <ul class="footer-news-benefits">
-          <li>informacje o nowych grach i aktualizacjach</li>
-          <li>zapowiedzi turniejów i wydarzeń</li>
-          <li>poradniki, ciekawostki i inspiracje dla graczy</li>
-        </ul>
-        <form class="news-form" data-newsletter aria-labelledby="f-news" novalidate>
-          <label class="sr-only" for="news-email">Twój adres e-mail</label>
-          <input id="news-email" type="email" autocomplete="email" placeholder="Wpisz swój adres e-mail">
-          <button class="btn btn--gold btn--news" type="submit">Zapisz się</button>
-        </form>
-        <p class="footer-news-trust">Twoje dane są bezpieczne. W każdej chwili możesz się wypisać.</p>
-        <img class="footer-news-smartphone" src="/assets/gracz-newsletter-phone-approved-r15.webp"
-             alt="Wizualizacja mobilnej strony głównej gracz.pl na smartfonie"
-             width="600" height="917" loading="lazy" decoding="async" fetchpriority="low">
-        <img class="footer-news-details" src="/assets/gracz-newsletter-details-approved-r15.webp"
-             alt="" aria-hidden="true" width="810" height="254"
-             loading="lazy" decoding="async" fetchpriority="low">
+      <div class="footer-col footer-news footer-news--approved-r15 footer-news--approved-r16 footer-news--fullmax-r1" id="newsletter-home" aria-labelledby="f-news">
+        <picture class="footer-news-fullmax-scene" aria-hidden="true">
+          <source type="image/avif" srcset="/assets/gracz-newsletter-fullmax-scene-r1-1690.avif 1690w, /assets/gracz-newsletter-fullmax-scene-r1-3380.avif 3380w" sizes="(min-width:1200px) 1360px, 100vw">
+          <source type="image/webp" srcset="/assets/gracz-newsletter-fullmax-scene-r1-1690.webp 1690w, /assets/gracz-newsletter-fullmax-scene-r1-3380.webp 3380w" sizes="(min-width:1200px) 1360px, 100vw">
+          <img src="/assets/gracz-newsletter-fullmax-scene-r1-1690.webp" width="1690" height="709" alt="" loading="lazy" decoding="async">
+        </picture>
+        <div class="footer-news-fullmax-content">
+          <h2 id="f-news" class="footer-title"><span>Bądź na bieżąco</span><span>z nowościami, <em>turniejami</em></span><span><em>i wydarzeniami!</em></span></h2>
+          <p class="footer-news-fullmax-lead">Bądź pierwszy, który dowie się o nowych turniejach, aktualizacjach i wydarzeniach. Zapisz się do newslettera i nie przegap informacji ze świata gier.</p>
+          <form class="news-form" data-newsletter aria-labelledby="f-news" novalidate>
+            <label class="sr-only" for="news-email">Twój adres e-mail</label>
+            <input id="news-email" type="email" autocomplete="email" placeholder="Twój adres e-mail" maxlength="254" required>
+            <button class="btn btn--gold btn--news" type="submit">Zapisz się</button>
+          </form>
+          <p class="footer-news-trust">Zapis jest dobrowolny i wymaga potwierdzenia e-mail. Możesz wycofać zgodę w każdej chwili. <a href="/polityka-prywatnosci/#newsletter">Polityka prywatności</a>.</p>
+        </div>
       </div>
     </div>
 
