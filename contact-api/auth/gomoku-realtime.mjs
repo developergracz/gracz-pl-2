@@ -1,7 +1,8 @@
+import {createMatchEventBus} from './match-event-bus.mjs';
 import {WebSocketServer,WebSocket} from 'ws';
 import {createHash} from 'node:crypto';
 
-const endpoint='/auth/gomoku/realtime';
+const endpoints=new Set(['/auth/gomoku/realtime','/auth/match/realtime']);
 const origin='https://gracz-contact-api.onrender.com';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const maxBuffered=256*1024;
@@ -10,9 +11,9 @@ const sessionKey=req=>createHash('sha256').update(String(req.headers.cookie||'')
 
 // Transport adapter only: all session/room checks and clock decisions run through
 // the existing router. No new DB pool, game engine, identity or write protocol.
-export function createGomokuRealtime({server,router,maxConnections=512,heartbeatMs=25000}){
+export function createGomokuRealtime({server,router,maxConnections=4096,heartbeatMs=25000,reconcileMs=60000,redisUrl}){
  const wss=new WebSocketServer({noServer:true,maxPayload:1024,perMessageDeflate:false});
- const clients=new Set(),accounts=new Map(),queue=new Set();
+ const clients=new Set(),accounts=new Map(),rooms=new Map(),queue=new Set();
  let stopping=false,handshakes=0,running=0,admissionStart=0,admissions=0;
  async function read(req,path){
   let status=0,body;
@@ -58,10 +59,10 @@ export function createGomokuRealtime({server,router,maxConnections=512,heartbeat
   // Thus a slow database cannot create an unbounded backlog of abandoned queries.
   const timeout=setTimeout(()=>client.socket.terminate(),10000);
   try{
-   const result=await read(client.req,'/auth/match?id='+id);
+   const result=router.readRealtime?await router.readRealtime(client.req,id):await read(client.req,'/auth/match?id='+id);
    const match=result.match;
-   if(match?.game!=='gomoku'||!match.playable)throw Object.assign(Error('ROOM_DENIED'),{status:403});
-   const chat=await read(client.req,'/auth/match/chat?id='+id);
+   if(!['gomoku','warcaby'].includes(match?.game)||!match.playable)throw Object.assign(Error('ROOM_DENIED'),{status:403});
+   const chat=result.messages?result:await read(client.req,'/auth/match/chat?id='+id);
    if(!clients.has(client)||id!==client.id||generation!==client.generation)return;
    const previous=client.match;
    if(!previous){
@@ -89,16 +90,22 @@ export function createGomokuRealtime({server,router,maxConnections=512,heartbeat
    client.socket.close([401,403,404].includes(error.status)?1008:1013,'resync required');
   }finally{clearTimeout(timeout);}
  }
- function notify(id){for(const client of clients)if(client.id===id)enqueue(client);}
+ function receive(id){for(const client of rooms.get(id)||[])enqueue(client);}
+ const bus=redisUrl?createMatchEventBus({url:redisUrl,onChange:receive,
+  onReconnect:()=>{for(const client of clients)client.reconcileAt=Date.now()+Math.random()*reconcileMs;}}):null;
+ function notify(id){receive(id);bus?.notify(id);}
+ function leave(client){
+  const room=rooms.get(client.id);room?.delete(client);if(room?.size===0)rooms.delete(client.id);
+ }
  function onConnection(socket,req,account){
   const client={socket,req,account,key:sessionKey(req),alive:true,id:null,match:null,messages:[],seq:0,
-   generation:0,syncing:false,dirty:false,bucketStart:Date.now(),messagesReceived:0,deadline:null};
+   generation:0,syncing:false,dirty:false,bucketStart:Date.now(),messagesReceived:0,deadline:null,reconcileAt:Date.now()+Math.random()*reconcileMs};
   clients.add(client);accounts.set(account,(accounts.get(account)||0)+1);
   const subscribeTimeout=setTimeout(()=>{if(!client.id)socket.close(1008,'subscription required');},10000);
   socket.on('pong',()=>{client.alive=true;});
   socket.on('error',()=>socket.terminate());
   socket.on('close',()=>{
-   clearTimeout(subscribeTimeout);clearTimeout(client.deadline);clients.delete(client);queue.delete(client);
+   clearTimeout(subscribeTimeout);clearTimeout(client.deadline);clients.delete(client);queue.delete(client);leave(client);
    const count=(accounts.get(account)||1)-1;if(count)accounts.set(account,count);else accounts.delete(account);
   });
   socket.on('message',(data,binary)=>{
@@ -108,16 +115,18 @@ export function createGomokuRealtime({server,router,maxConnections=512,heartbeat
    if(message?.type!=='subscribe'||!uuid.test(message.matchId)||!Number.isSafeInteger(message.version)||message.version< -1){
     socket.close(1008,'invalid subscription');return;
    }
-   client.id=message.matchId;client.generation++;client.match=null;client.messages=[];
+   leave(client);client.id=message.matchId;
+   if(!rooms.has(client.id))rooms.set(client.id,new Set());rooms.get(client.id).add(client);
+   client.generation++;client.match=null;client.messages=[];
    clearTimeout(subscribeTimeout);clearTimeout(client.deadline);enqueue(client);
   });
  }
  async function upgrade(req,socket,head){
   socket.on('error',()=>socket.destroy());
   const reject=(status=403)=>{if(!socket.destroyed)socket.end('HTTP/1.1 '+status+' Rejected\r\nConnection: close\r\n\r\n');};
-  if(req.url!==endpoint||req.headers.origin!==origin||req.headers['sec-fetch-site']==='cross-site')return reject();
+  if(!endpoints.has(req.url)||req.headers.origin!==origin||req.headers['sec-fetch-site']==='cross-site')return reject();
   const now=Date.now();if(now-admissionStart>=1000){admissionStart=now;admissions=0;}
-  if(stopping||clients.size+handshakes>=maxConnections||handshakes>=16||++admissions>20)return reject(503);
+  if(stopping||clients.size+handshakes>=maxConnections||handshakes>=32||++admissions>200)return reject(503);
   handshakes++;socket.setTimeout(5000,()=>socket.destroy());
   try{
    const session=await read(req,'/auth/session');
@@ -139,7 +148,12 @@ export function createGomokuRealtime({server,router,maxConnections=512,heartbeat
  },heartbeatMs);heartbeat.unref();
  // Bounded reconciliation also detects revoked sessions and external changes.
  // This is not the ping/pong heartbeat and never writes online_presence.
- const reconcile=setInterval(()=>{for(const client of clients)enqueue(client);},60000);reconcile.unref();
+ const reconcile=setInterval(()=>{
+  const now=Date.now();
+  for(const client of clients)if(now>=client.reconcileAt){
+   client.reconcileAt=now+reconcileMs;enqueue(client);
+  }
+ },Math.min(1000,reconcileMs));reconcile.unref();
  function observe(req,res,url){
   if(req.method!=='POST'||!['/auth/logout','/auth/friends/action'].includes(url.pathname))return;
   res.once('finish',()=>{
@@ -152,7 +166,7 @@ export function createGomokuRealtime({server,router,maxConnections=512,heartbeat
  }
  function close(){
   if(stopping)return;stopping=true;clearInterval(heartbeat);clearInterval(reconcile);
-  server.off('upgrade',upgrade);queue.clear();for(const client of clients)client.socket.terminate();wss.close();
+  bus?.close();server.off('upgrade',upgrade);queue.clear();rooms.clear();for(const client of clients)client.socket.terminate();wss.close();
  }
- return {notify,observe,close};
+ return {notify,observe,close,ready:bus?.ready||Promise.resolve()};
 }

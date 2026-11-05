@@ -11,9 +11,11 @@
     "test": "node scripts/run-tests.mjs unit",
     "test:persistence": "node scripts/run-tests.mjs persistence",
     "migrate": "node persistence/migrator.mjs",
-    "contact-data:contract-prep": "node persistence/contact-data-contract-prep.mjs"
+    "contact-data:contract-prep": "node persistence/contact-data-contract-prep.mjs",
+    "test:scaling": "node --test scaling/p3.integration.test.mjs"
   },
   "dependencies": {
+    "@redis/client": "6.3.1",
     "pg": "^8.13.1",
     "ws": "^8.22.1"
   },

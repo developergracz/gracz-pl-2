@@ -10,6 +10,7 @@ import { initialGame, playMove } from './game-engine.mjs';
 import { promisify } from 'node:util';
 
 const scrypt=promisify(rawScrypt);
+const realtimeRead=Symbol('trusted realtime snapshot');
 const HOST='https://gracz-contact-api.onrender.com';
 const COOKIE='__Host-gracz_session';
 const MAX_BODY=4096;
@@ -29,14 +30,18 @@ const hashPassword=async (pwd,salt)=>Buffer.from(await scrypt(pwd,salt,64,{N:327
 const cookie=value=>COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
 const clearCookie=()=>COOKIE+'=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
 function sessionToken(req){const raw=String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='));return raw?.slice(COOKIE.length+1)||'';}
-async function readBody(req){
+async function readBody(req,timeoutMs=0){
  return new Promise((resolve,reject)=>{
-  let total=0,buf='';
-  req.on('data',chunk=>{total+=chunk.length;if(total>MAX_BODY){reject(new Error('TOO_LARGE'));req.destroy();return;}buf+=chunk.toString('utf8');});
-  req.on('end',()=>{try{const x=JSON.parse(buf);if(!x||typeof x!=='object'||Array.isArray(x))throw Error('BAD_JSON');resolve(x);}catch{reject(new Error('BAD_JSON'));}});
-  req.on('error',reject);
+  let total=0,buf='',timer;
+  const fail=error=>{clearTimeout(timer);reject(error);};
+  if(timeoutMs)timer=setTimeout(()=>{fail(new Error('BODY_TIMEOUT'));req.destroy();},timeoutMs);
+  req.on('data',chunk=>{total+=chunk.length;if(total>MAX_BODY){fail(new Error('TOO_LARGE'));req.destroy();return;}buf+=chunk.toString('utf8');});
+  req.on('end',()=>{clearTimeout(timer);try{const x=JSON.parse(buf);if(!x||typeof x!=='object'||Array.isArray(x))throw Error('BAD_JSON');resolve(x);}catch{reject(new Error('BAD_JSON'));}});
+  req.on('error',fail);
+  req.on('close',()=>fail(new Error('BODY_CLOSED')));
  });
 }
+
 function allow(key,max=8){
  const now=Date.now();let state=failures.get(key);
  if(!state||state.until<now){state={until:now+900000,count:0};failures.set(key,state);}
@@ -169,10 +174,11 @@ function clockAfterMove(previous,next,at){
   since:next.winner?null:new Date(at).toISOString()}};
 }
 
-export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomokuChange=()=>{}}){
- let initialized;
+export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomokuChange=()=>{},onMatchChange=onGomokuChange}){
+ let initialized,activeGameRequests=0,pendingGameBodies=0;
+ const gameBodyReaders=new Map();
  // Notification only, after existing durable writes; authorization and rules are unchanged.
- const notifyGomoku=id=>{try{onGomokuChange(id);}catch{}};
+ const notifyGomoku=id=>{try{onMatchChange(id);}catch{}};
  const oauth=createOAuthRegistrationRouter({
   database,ready:()=>ready(),
   sendVerifyEmail:(email,token)=>sendVerifyEmail(resendKey,emailFrom,email,token),
@@ -461,6 +467,22 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     const isUndo=url.pathname==='/auth/match/undo';
     if(!['GET','POST'].includes(req.method))return bad(res,405,'METODA_NIEDOZWOLONA'),true;
     if(req.method==='POST'&&!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+    // Slow bodies have a separate, bounded budget and never hold DB/read slots.
+    let body={};
+    if(req.method==='POST'){
+      const token=sessionToken(req);
+      if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+      const key=digest(token).toString('hex'),count=gameBodyReaders.get(key)||0;
+      if(count>=2||pendingGameBodies>=64)return bad(res,429,'ZBYT_WIELE_PROB'),true;
+      gameBodyReaders.set(key,count+1);pendingGameBodies++;
+      try{body=await readBody(req,5000);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+      finally{
+        pendingGameBodies--;const left=gameBodyReaders.get(key)-1;
+        if(left)gameBodyReaders.set(key,left);else gameBodyReaders.delete(key);
+      }
+    }
+    if(activeGameRequests>=32)return bad(res,503,'SYSTEM_ZAJETY'),true;
+    activeGameRequests++;
     try{
       await ready();
       const token=sessionToken(req);
@@ -470,25 +492,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
       if(!authenticated.rows.length)return bad(res,401,'BRAK_SESJI'),true;
       const actor=authenticated.rows[0].id;
-      if(!allow((isChat?'match-chat-':isUndo?'match-undo-':'game-')+req.method+':'+actor,
+      if(!req[realtimeRead]&&!allow((isChat?'match-chat-':isUndo?'match-undo-':'game-')+req.method+':'+actor,
         isChat?(req.method==='GET'?180:40):isUndo?20:(req.method==='GET'?240:80)))
         return bad(res,429,'ZBYT_WIELE_PROB'),true;
-      let body={};if(req.method==='POST'){
-        try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
-      }
       const matchId=req.method==='GET'?url.searchParams.get('id'):body.id;
       if(typeof matchId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(matchId))
         return bad(res,400,'BLEDNY_IDENTYFIKATOR'),true;
-      // A room is created only for an accepted invitation and one of its two verified participants.
-      const invite=await database.query(`SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c
-        WHERE c.id=$1 AND c.status='accepted' AND ($2=c.sender_id OR $2=c.recipient_id)
-        LIMIT 1`,[matchId,actor]);
-      if(!invite.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
-      await database.query(`INSERT INTO gracz_public_identity.game_matches(challenge_id,state)
-        SELECT c.id,$2::jsonb FROM gracz_public_identity.game_challenges c
-        WHERE c.id=$1 AND c.status='accepted'
-          AND (c.sender_id=$3 OR c.recipient_id=$3)
-        ON CONFLICT DO NOTHING`,[matchId,JSON.stringify(createTimedGame(invite.rows[0].game,invite.rows[0].time_limit_minutes,invite.rows[0].increment_seconds)),actor]);
       const readMatch=()=>database.query(`SELECT m.state,m.version,c.game,
         c.sender_id,c.recipient_id,
         s.nickname AS sender_nick,r.nickname AS recipient_nick,
@@ -501,7 +510,20 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         JOIN gracz_public_identity.accounts r ON r.id=c.recipient_id
         WHERE c.id=$1 AND c.status='accepted'
           AND ($2=c.sender_id OR $2=c.recipient_id) LIMIT 1`,[matchId,actor]);
-      const current=await readMatch();
+      let current=await readMatch();
+      if(!current.rows[0]?.state){
+        // A room is created only for an accepted invitation and one of its two verified participants.
+        const invite=await database.query(`SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c
+          WHERE c.id=$1 AND c.status='accepted' AND ($2=c.sender_id OR $2=c.recipient_id)
+          LIMIT 1`,[matchId,actor]);
+        if(!invite.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
+        await database.query(`INSERT INTO gracz_public_identity.game_matches(challenge_id,state)
+          SELECT c.id,$2::jsonb FROM gracz_public_identity.game_challenges c
+          WHERE c.id=$1 AND c.status='accepted'
+            AND (c.sender_id=$3 OR c.recipient_id=$3)
+          ON CONFLICT DO NOTHING`,[matchId,JSON.stringify(createTimedGame(invite.rows[0].game,invite.rows[0].time_limit_minutes,invite.rows[0].increment_seconds)),actor]);
+        current=await readMatch();
+      }
       if(!current.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
       let match=current.rows[0];
       const player=match.sender_id===actor?1:2;
@@ -641,7 +663,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
              OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
           RETURNING id,created_at`,[randomUUID(),actor,message,matchId]);
         if(!sent.rowCount)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
-        if(match.game==='gomoku')notifyGomoku(matchId);
+        notifyGomoku(matchId);
         return json(res,200,{ok:true,message:{id:sent.rows[0].id,createdAt:sent.rows[0].created_at}}),true;
       }
       if(req.method==='POST'){
@@ -676,9 +698,19 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
           RETURNING m.version`,[JSON.stringify(result.state),matchId,match.version,actor]);
         if(!updated.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
         match={...match,state:result.state,version:updated.rows[0].version};
-        if(match.game==='gomoku')notifyGomoku(matchId);
+        notifyGomoku(matchId);
       }
-      return json(res,200,{ok:true,serverTime:new Date().toISOString(),match:{
+      let messages;
+      if(req[realtimeRead]){
+        if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        const chat=await database.query(`SELECT id,sender_id,body,created_at FROM (
+          SELECT id,sender_id,body,created_at FROM gracz_public_identity.game_match_messages
+          WHERE match_id=$1 ORDER BY created_at DESC,id DESC LIMIT 60
+        ) recent ORDER BY created_at,id`,[matchId]);
+        messages=chat.rows.map(row=>({id:row.id,player:row.sender_id===match.sender_id?1:2,
+          body:row.body,createdAt:row.created_at}));
+      }
+      return json(res,200,{ok:true,messages,serverTime:new Date().toISOString(),match:{
         id:matchId,game:match.game,version:match.version,player,
         players:[match.sender_nick,match.recipient_nick],
         state:match.state,playable:match.playable===true,
@@ -691,7 +723,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     }catch(e){
       console.error('MATCH_ERROR',{code:safeText(e?.code)||'MATCH_ERROR'});
       return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
-    }
+    }finally{activeGameRequests--;}
   }
   if(url.pathname==='/auth/social/messages'||url.pathname==='/auth/social/challenges'){
     const messages=url.pathname.endsWith('/messages');
@@ -1107,5 +1139,13 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
   const account=result.rows[0];
   return account?{userId:String(account.id),displayName:String(account.nickname)}:null;
  }
- return {handle:respond,probe:ready,authenticateGameRequest};
+ async function readRealtime(req,id){
+  let status=0,body;
+  const res={writeHead(code){status=code;},end(raw){body=JSON.parse(String(raw));}};
+  await respond({method:'GET',headers:req.headers,socket:req.socket,[realtimeRead]:true},res,
+   new URL('/auth/match?id='+encodeURIComponent(id),HOST));
+  if(status!==200||!body?.ok)throw Object.assign(Error('READ_DENIED'),{status});
+  return body;
+ }
+ return {handle:respond,probe:ready,authenticateGameRequest,readRealtime};
 }
