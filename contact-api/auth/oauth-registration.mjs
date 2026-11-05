@@ -202,7 +202,8 @@ export function createOAuthRegistrationRouter({database,ready,sendVerifyEmail,re
     account=created;
     if(verificationToken){
      let sent=false;try{sent=await sendVerifyEmail(ident.email,verificationToken);}catch{}
-     return sent?redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true:fail(res,'email-send-failed'),true;
+     if(!sent){fail(res,'email-send-failed');return true;}
+     redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]);return true;
     }
    }
    if(!account.rows[0].verified_at){
@@ -211,7 +212,8 @@ export function createOAuthRegistrationRouter({database,ready,sendVerifyEmail,re
       "verify_expires_at=now()+interval '30 minutes' WHERE id=$2",
       [digest(verificationToken),account.rows[0].id]);
     let sent=false;try{sent=await sendVerifyEmail(ident.email,verificationToken);}catch{}
-    return sent?redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true:fail(res,'email-send-failed'),true;
+    if(!sent){fail(res,'email-send-failed');return true;}
+     redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]);return true;
    }
    const session= randomBytes(32).toString('hex');
    await database.query('INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)'+
