@@ -1724,6 +1724,7 @@ async function messageCenterLoad(){
  finally{msgCurrentLoading=false}
 }
 async function msgChoose(nick){
+ msgRecords=[];
  await prepareSocial('messages');
  const select=$('message-recipient');select.value=nick;
  if(select.value!==nick){msgNotice('Ta znajomość nie jest już aktywna.',true);return;}
@@ -1840,6 +1841,7 @@ async function openSocialContact(section,nick){
  if(section==='messages')await refreshThread();
 }
 async function refreshThread(){
+ msgRecords=[];
  const select=$('message-recipient'),nick=select.value;
  const thread=$('message-thread');thread.replaceChildren();
  $('message-send').disabled=!nick;
