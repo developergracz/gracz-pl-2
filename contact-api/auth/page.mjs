@@ -16,17 +16,35 @@ const artwork=new Map([
  ['/konto/szachy.webp',await loadArtwork('konto-szachy.webp',702,505)],
  ['/konto/owner-layout.webp',await loadArtwork('owner-layout.webp',1536,950)],
 ]);
+// The original gold crown hand-coded for gracz.pl (#646): a byte-identical copy of
+// maintenance-site/assets/gracz-crown-premium.svg, kept equal by a test. Served as a vector image.
+const crownSvg=await readFile(new URL('./assets/gracz-crown-premium.svg',import.meta.url));
+// Montserrat (OFL) from the homepage, so the login top bar uses the same typeface as gracz.pl.
+// A missing font only falls back to Arial; it never stops the account service.
+async function loadFont(name){
+ try{return await readFile(new URL('../../maintenance-site/assets/fonts/'+name,import.meta.url));}catch{return null;}
+}
+const fonts=new Map([
+ ['/konto/fonts/montserrat-latin.woff2',await loadFont('montserrat-latin.woff2')],
+ ['/konto/fonts/montserrat-latin-ext.woff2',await loadFont('montserrat-latin-ext.woff2')],
+]);
 const headers={
   'Content-Type':'text/html; charset=utf-8',
-  'Content-Security-Policy':"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://gracz.pl; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  'Content-Security-Policy':"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' https://gracz.pl; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
   'Cache-Control':'no-store','X-Frame-Options':'DENY'
 };
 const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Załóż konto lub zaloguj się — gracz.pl</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="/konto/styl.css"><script src="/konto/app.js" defer></script></head><body>
-<header class="top"><a class="brand" href="https://gracz.pl/">gracz<span>.pl</span></a><nav aria-label="Nawigacja"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/">Forum</a><a href="https://gracz.pl/">Aktualności</a><a href="https://gracz.pl/#spolecznosc">Społeczność</a><a href="https://gracz.pl/#gracz-next">Gracz Next</a></nav><span class="nav-icons" aria-hidden="true">⌕　☼</span><div class="actions"><button type="button" data-view="login" class="top-login">Zaloguj się</button><a href="/konto/" data-view="register" class="top-register">♙ Zarejestruj się</a></div></header>
+<header class="site-bar" data-account-header><div class="site-bar-inner"><a class="site-bar-logo" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+<button class="site-bar-burger" type="button" aria-expanded="false" aria-controls="site-bar-menu" aria-label="Otwórz menu"><svg class="burger-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><svg class="burger-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+<div class="site-bar-menu" id="site-bar-menu"><nav class="site-bar-nav" aria-label="Główna nawigacja"><ul class="site-bar-list">
+<li class="has-menu"><a class="bar-link" href="https://gracz.pl/gry/">Gry</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="bar-menu-gry" aria-label="Rozwiń menu Gry"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ul class="dropdown" id="bar-menu-gry"><li><a href="https://gracz.pl/gry/">Wszystkie gry</a></li><li><a href="https://gracz.pl/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="https://gracz.pl/gry/tysiac/">Tysiąc</a></li><li><a href="https://gracz.pl/gry/warcaby/">Warcaby</a></li><li><a href="https://gracz.pl/gry/gomoku/">Gomoku</a></li></ul></li>
+<li class="has-menu"><a class="bar-link" href="https://gracz.pl/gry-karciane/">Gry karciane</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="bar-menu-karciane" aria-label="Rozwiń menu Gry karciane"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ul class="dropdown" id="bar-menu-karciane"><li><a href="https://gracz.pl/gry-karciane/">Gry karciane</a></li><li><a href="https://gracz.pl/gry/poker-treningowy/">Poker treningowy</a></li><li><a href="https://gracz.pl/gry-karciane/#poker-academy">Poker Academy</a></li><li><a href="https://gracz.pl/gry/tysiac/">Tysiąc</a></li></ul></li>
+<li><a class="bar-link" href="https://gracz.pl/poradniki/">Poradniki</a></li><li><a class="bar-link" href="https://gracz.pl/#aktualnosci">Blog</a></li><li><a class="bar-link" href="https://gracz.pl/#spolecznosc">Społeczność</a></li><li><a class="bar-link bar-newsletter" href="https://gracz.pl/newsletter/">Newsletter</a></li></ul></nav>
+<div class="site-bar-actions"><a class="bar-search" href="https://gracz.pl/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M15.8 15.8l4.6 4.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></a><a class="bar-btn bar-btn--outline" href="/konto/?widok=login" data-view="login">Zaloguj się</a><a class="bar-btn bar-btn--gold" href="/konto/" data-view="register">Załóż konto</a></div></div></div></header>
 <main class="scene">
 <aside class="left"><div class="left-copy"><em>Dołącz do społeczności</em><div class="hero-brand">gracz<span>.pl</span></div><div class="eyebrow">POLSKIE CENTRUM GRACZA</div><ul class="benefits"><li><b>♟</b><span><strong>Graj online</strong><small>Warcaby, Szachy, Tysiąc, Poker i inne gry</small></span></li><li><b>♧</b><span><strong>Ucz się i rozwijaj</strong><small>Poradniki, strategie, analizy</small></span></li><li><b>🏆</b><span><strong>Rywalizuj</strong><small>Turnieje, rankingi, kluby graczy</small></span></li><li><b>♧</b><span><strong>Twórz społeczność</strong><small>Forum, znajomi, wspólne pasje</small></span></li></ul></div><div class="cards" aria-hidden="true"><div class="stack">♠<br><span>gracz.pl</span></div><div class="chip">gracz<span>.pl</span></div></div></aside>
-<section class="panel" aria-label="Panel konta gracza"><a class="login-close" href="https://gracz.pl/" aria-label="Zamknij i wróć na gracz.pl">×</a><div class="login-crown" aria-hidden="true">♛</div><div class="panel-heading"><div class="round"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="8" fill="currentColor"/><path d="M9 37c0-8 5-14 15-14s15 6 15 14v2H9z" fill="currentColor"/></svg></div><div><h1 id="page-title">Załóż konto w <span class="form-logo">gracz<span>.pl</span></span></h1><p>Graj, ucz się, rywalizuj – w jednym miejscu.</p></div></div>
+<section class="panel" aria-label="Panel konta gracza"><a class="login-close" href="https://gracz.pl/" aria-label="Zamknij i wróć na gracz.pl">×</a><img class="login-crown" src="/konto/korona.svg" width="60" height="49" alt="" aria-hidden="true"><div class="panel-heading"><div class="round"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="8" fill="currentColor"/><path d="M9 37c0-8 5-14 15-14s15 6 15 14v2H9z" fill="currentColor"/></svg></div><div><h1 id="page-title">Załóż konto w <span class="form-logo">gracz<span>.pl</span></span></h1><p>Graj, ucz się, rywalizuj – w jednym miejscu.</p></div></div>
 <div id="notice" role="status" aria-live="polite"></div>
 <form id="register-form" autocomplete="on" novalidate><label for="nickname">Nick gracza</label><div class="field nickname-field"><span class="field-icon" aria-hidden="true">♧</span><input name="nickname" id="nickname" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required placeholder="Wpisz swój nick" autocomplete="username"><output id="nick-status" aria-live="polite"></output></div><p class="hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – .</p>
 <label for="email">Adres e-mail</label><div class="field"><span class="field-icon">✉</span><input name="email" id="email" maxlength="254" required type="email" placeholder="Wpisz swój adres e-mail" autocomplete="email"></div>
@@ -385,7 +403,7 @@ body.auth-login-mode .top{z-index:3;position:relative;background:#031a25!importa
 body.auth-login-mode .scene{
  display:flex!important;align-items:center!important;justify-content:center!important;
  position:relative;isolation:isolate;width:100%!important;max-width:none!important;
- min-height:calc(100dvh - 74px)!important;height:auto!important;padding:22px!important;
+ min-height:calc(100dvh - 68px)!important;height:auto!important;padding:22px!important;
  /* Show the COMPLETE approved 3:1 HERO art: never crop its left copy or console.
     The dark teal base fills the spare height on taller displays. */
  background:linear-gradient(90deg,rgba(0,21,26,.34),rgba(0,15,30,.30)),
@@ -410,9 +428,10 @@ body.auth-login-mode .login-close{
 body.auth-login-mode .login-close:focus-visible,body.auth-login-mode .login-close:hover{
  outline:2px solid #ffd579;background:#163832
 }
+/* The original vector crown (60:49), centred on the whole panel, never stretched. */
 body.auth-login-mode .login-crown{
- display:block;text-align:center;margin:0 auto 10px;font-size:53px;line-height:1;
- color:#ffce65;text-shadow:0 0 10px #e9ac51
+ display:block;flex:none;width:clamp(56px,4.6vw,68px);height:auto;aspect-ratio:60/49;
+ margin:0 auto 12px;filter:drop-shadow(0 0 7px rgba(233,172,81,.5))
 }
 body.auth-login-mode .panel-heading{display:block!important;text-align:center!important;margin:0 0 20px!important}
 body.auth-login-mode .panel-heading .round{display:none!important}
@@ -457,13 +476,119 @@ body.auth-login-mode .switch button{color:#ffd473!important}
 body.auth-login-mode .recovery-intro{text-align:center;margin:6px 0 20px;line-height:1.55;color:#e7eeef}
 body.auth-login-mode .oauth-note,body.auth-login-mode footer{display:none!important}
 @media(max-width:780px){
- body.auth-login-mode .scene{min-height:calc(100dvh - 67px)!important;padding:15px!important}
+ body.auth-login-mode .scene{min-height:calc(100dvh - 66px)!important;padding:15px!important}
  body.auth-login-mode .panel{padding:30px 18px 22px!important;max-width:520px!important}
  body.auth-login-mode .panel h1{font-size:clamp(24px,6vw,32px)!important}
  body.auth-login-mode :is(#login-form,#forgot-form,#reset-form)>label{margin-left:45px!important}
  body.auth-login-mode :is(#login-form,#forgot-form,#reset-form) .field{margin-left:45px!important}
  body.auth-login-mode .field-icon{left:-43px!important;width:35px!important;height:35px!important}
 }
+
+/* R4 top bar: the approved gracz.pl homepage header (logo, Gry, Gry karciane, Poradniki, Blog,
+   Społeczność, Newsletter, search, Zaloguj się, Załóż konto), measured 1:1 in Chromium. */
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:500 800;font-display:swap;src:url("/konto/fonts/montserrat-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:500 800;font-display:swap;src:url("/konto/fonts/montserrat-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+body{--account-header-height:68px}
+.site-bar{
+ position:sticky;top:0;z-index:20;height:68px;
+ background:linear-gradient(110deg,#002c30 0%,#003c3d 49%,#002b31 100%);
+ border-bottom:1px solid rgba(244,198,95,.65);
+ color:#f5f5f2;font:16px/1.5 Montserrat,Arial,sans-serif
+}
+.site-bar *,.site-bar *::before,.site-bar *::after{box-sizing:border-box}
+.site-bar ul{list-style:none;margin:0;padding:0}
+.site-bar-inner{width:calc(100% - 56px);max-width:1444px;height:100%;margin:0 auto;display:flex;align-items:center;gap:14px}
+.site-bar-logo{
+ flex:none;margin-right:38px;color:#fff;text-decoration:none;white-space:nowrap;
+ font:800 36px/1 Montserrat,"Open Sans",Arial,sans-serif;letter-spacing:-.055em
+}
+.site-bar-logo span{color:#f21a34}
+.site-bar-burger{display:none}
+.site-bar-menu{display:flex;flex:1 1 auto;align-items:center;min-width:0;height:100%}
+.site-bar-nav{margin-left:8px;height:100%}
+.site-bar-list{display:flex;align-items:center;gap:clamp(10px,1vw,19px);height:100%}
+.site-bar-list>li{position:relative;display:flex;align-items:center;height:100%}
+.bar-link{
+ display:inline-flex;align-items:center;height:100%;color:#fff5e5;text-decoration:none;white-space:nowrap;
+ font:500 14px/1 Montserrat,Arial,sans-serif;letter-spacing:-.01em
+}
+.bar-link:hover,.bar-link:focus-visible,.has-menu.is-open>.bar-link{color:#ffe18a}
+.bar-newsletter{padding:0 17px;border-radius:999px;font-weight:700;color:#ffe18a}
+.bar-newsletter:hover{color:#f7ce84;background:rgba(239,189,96,.07)}
+.menu-toggle{
+ display:grid;place-items:center;width:22px;height:40px;padding:0;border:0;
+ background:transparent;color:#fff5e5;cursor:pointer
+}
+.menu-toggle svg{width:14px;height:14px;transition:transform .18s ease}
+.has-menu.is-open .menu-toggle svg{transform:rotate(180deg)}
+.dropdown{
+ display:none;position:absolute;top:100%;left:-14px;z-index:30;min-width:220px;padding:8px;
+ border-radius:14px;background:rgba(5,8,6,.99);box-shadow:0 20px 50px rgba(0,0,0,.62)
+}
+.has-menu.is-open>.dropdown{display:block}
+.dropdown a{
+ display:block;padding:10px 12px;border-radius:9px;color:#eee;text-decoration:none;white-space:nowrap;
+ font:500 14px/1.25 Montserrat,Arial,sans-serif
+}
+.dropdown a:hover,.dropdown a:focus-visible{background:rgba(244,198,95,.1);color:#ffe18a}
+.site-bar-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.bar-search{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:8px;color:#fff}
+.bar-search svg{width:22px;height:22px}
+.bar-search:hover{color:#ffe18a}
+.bar-btn{
+ display:inline-flex;align-items:center;justify-content:center;flex:none;height:41px;padding:0 14px;
+ font:700 13px/1 Montserrat,Arial,sans-serif;text-decoration:none;white-space:nowrap
+}
+.bar-btn--outline{
+ width:clamp(126px,9.09vw,153px);border:1.5px solid #e6b650;border-radius:12px;
+ background:rgba(1,28,32,.82);color:#fff8e8;box-shadow:0 0 14px rgba(223,174,72,.12)
+}
+.bar-btn--gold{
+ width:clamp(135px,9.447vw,159px);border:1px solid #ffe19b;border-radius:9px;color:#171b17;
+ background:linear-gradient(180deg,#ffe9a0 0%,#ffd766 33%,#eba72c 100%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.62),0 7px 22px rgba(215,143,23,.2)
+}
+.bar-btn--gold:hover{filter:brightness(1.07)}
+.bar-btn--outline:hover{border-color:#ffd579;color:#fff}
+.site-bar a:focus-visible,.site-bar button:focus-visible{outline:2px solid #ffd579;outline-offset:2px}
+@media(min-width:1181px){
+ .has-menu:hover>.dropdown,.has-menu:focus-within>.dropdown{display:block}
+ .has-menu:hover .menu-toggle svg,.has-menu:focus-within .menu-toggle svg{transform:rotate(180deg)}
+ .has-menu:hover>.bar-link,.has-menu:focus-within>.bar-link{color:#ffe18a}
+ .scene{min-height:calc(100dvh - 68px)}
+}
+@media(min-width:1181px) and (max-width:1400px){.site-bar-logo{margin-right:24px}}
+@media(max-width:1180px){
+ body{--account-header-height:66px}
+ .site-bar{height:66px}
+ .site-bar-inner{width:calc(100% - 32px);gap:0}
+ .site-bar-logo{margin-right:auto;font-size:34px}
+ .site-bar-burger{
+  display:grid;place-items:center;flex:none;width:42px;height:42px;padding:0;border:0;border-radius:50%;
+  background:#070907;color:#fff;cursor:pointer
+ }
+ .site-bar-burger svg{width:21px;height:21px}
+ .site-bar-burger .burger-close,.site-bar.menu-open .site-bar-burger .burger-open{display:none}
+ .site-bar.menu-open .site-bar-burger .burger-close{display:block}
+ .site-bar-menu{
+  display:none;position:absolute;top:100%;left:0;right:0;height:auto;max-height:calc(100dvh - 66px);overflow-y:auto;
+  padding:12px 18px 20px;background:#050706;box-shadow:0 18px 40px rgba(0,0,0,.45)
+ }
+ .site-bar.menu-open .site-bar-menu{display:block}
+ .site-bar-nav{margin:0;height:auto}
+ .site-bar-list{display:block;height:auto}
+ .site-bar-list>li{display:flex;flex-wrap:wrap;height:auto;border-bottom:1px solid rgba(255,255,255,.08)}
+ .bar-link{flex:1 1 auto;height:48px;font-size:15px}
+ .bar-newsletter{flex:0 0 auto;height:42px;margin:3px 0;padding:0 18px}
+ .menu-toggle{width:28px;height:40px}
+ .dropdown{position:static;flex:0 0 100%;min-width:0;margin:0 0 10px;padding:4px;box-shadow:none;background:rgba(255,255,255,.03)}
+ .site-bar-actions{display:grid;gap:10px;width:100%;margin:14px 0 0}
+ .bar-search{justify-self:start;width:48px;height:48px;border-radius:50%;background:#070907}
+ .bar-btn{width:100%;height:48px;padding:0 26px;font-size:15px}
+ .bar-btn--gold{border-radius:999px}
+}
+@media(min-width:780px) and (max-width:1180px){.scene{min-height:calc(100dvh - 66px)}}
+@media(max-width:420px){.site-bar-inner{width:calc(100% - 20px)}}
 
 `;
 const js=String.raw`(function(){'use strict';
@@ -551,6 +676,17 @@ function view(name){
 }
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
+// Top bar: burger panel (≤1180px) and the Gry / Gry karciane menus, as on gracz.pl.
+const bar=document.querySelector('[data-account-header]'),burger=bar.querySelector('.site-bar-burger');
+const barMenus=[...bar.querySelectorAll('.has-menu')];
+function setBarMenu(item,open){item.classList.toggle('is-open',open);item.querySelector('.menu-toggle').setAttribute('aria-expanded',open?'true':'false');}
+function closeBarMenus(except){barMenus.forEach(item=>{if(item!==except)setBarMenu(item,false);});}
+function setBar(open){bar.classList.toggle('menu-open',open);burger.setAttribute('aria-expanded',open?'true':'false');burger.setAttribute('aria-label',open?'Zamknij menu':'Otwórz menu');if(!open)closeBarMenus();}
+burger.addEventListener('click',()=>setBar(!bar.classList.contains('menu-open')));
+barMenus.forEach(item=>item.querySelector('.menu-toggle').addEventListener('click',event=>{event.stopPropagation();const open=!item.classList.contains('is-open');closeBarMenus(item);setBarMenu(item,open);}));
+bar.querySelectorAll('[data-view]').forEach(link=>link.addEventListener('click',()=>setBar(false)));
+document.addEventListener('click',event=>{if(!event.target.closest('.has-menu'))closeBarMenus();});
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;closeBarMenus();if(bar.classList.contains('menu-open')){setBar(false);burger.focus();}});
 document.querySelectorAll('[data-show]').forEach(button=>button.addEventListener('click',()=>{const el=document.getElementById(button.dataset.show);el.type=el.type==='password'?'text':'password';button.setAttribute('aria-label',el.type==='password'?'Pokaż hasło':'Ukryj hasło');}));
 form.addEventListener('submit',async e=>{e.preventDefault();if(!validateRegistration())return;const btn=form.querySelector('[type=submit]');const d=new FormData(form);btn.disabled=true;try{const b=await api('register',{nickname:d.get('nickname'),email:d.get('email'),password:d.get('password'),repeatPassword:d.get('repeatPassword'),terms:d.get('terms')==='on',privacy:d.get('privacy')==='on'});form.reset();hidePasswordFeedback();msg(b.message);}catch(err){msg(err.message);}finally{btn.disabled=false;}});
 login.addEventListener('submit',async e=>{e.preventDefault();const loginName=login.elements.namedItem('login'),loginPass=login.elements.namedItem('password');if(!loginName.value.trim())return invalid(loginName,'Wpisz e-mail lub nick gracza.');if(!loginPass.value)return invalid(loginPass,'Wpisz hasło.');const btn=login.querySelector('[type=submit]'),d=new FormData(login);btn.disabled=true;try{const b=await api('login',{login:d.get('login'),password:d.get('password')});const session=await api('session');
@@ -588,6 +724,8 @@ export function serveIdentityPage(req,res,url){
  else if(path==='/konto/styl.css'&&req.method==='GET'){type='text/css; charset=utf-8';body=css;}
  else if(path==='/konto/app.js'&&req.method==='GET'){type='application/javascript; charset=utf-8';body=js;}
  else if(artwork.has(path)&&req.method==='GET'){type='image/webp';body=artwork.get(path);}
+ else if(path==='/konto/korona.svg'&&req.method==='GET'){type='image/svg+xml';body=crownSvg;}
+ else if(fonts.get(path)&&req.method==='GET'){type='font/woff2';body=fonts.get(path);}
  else return false;
  res.writeHead(200,{...headers,'Content-Type':type,'Content-Length':Buffer.byteLength(body)});
  res.end(body);
