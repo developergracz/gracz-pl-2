@@ -96,13 +96,13 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical site-header missing`
   );
   requireCheck(
-    (page === "index.html" || page === "szukaj/index.html")
+    (page === "index.html" || page === "szukaj/index.html" || page === "newsletter/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/\?widok=login"[^>]*>Zaloguj się<\/a>/.test(html)
       : /data-modal="login"[^>]*>Zaloguj się</.test(html),
     `${page}: canonical login action missing`
   );
   requireCheck(
-    (page === "index.html" || page === "szukaj/index.html")
+    (page === "index.html" || page === "szukaj/index.html" || page === "newsletter/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Załóż konto<\/a>/.test(html)
       : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
@@ -110,7 +110,10 @@ for (const page of sharedHeaderPages) {
   requireCheck(
     (page === "szukaj/index.html"
       ? /class="[^"]*newsletter-trigger[^"]*"[^>]*href="\/#f-news"[^>]*>Newsletter<\/a>/.test(html)
-      : /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html)),
+      : page === "newsletter/index.html"
+        // The newsletter page is the destination itself: current-page link, no duplicate signup popup.
+        ? /class="[^"]*newsletter-trigger[^"]*"[^>]*href="\/newsletter\/"[^>]*aria-current="page"[^>]*>Newsletter<\/a>/.test(html) && !html.includes("data-newsletter-open")
+        : /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html)),
     `${page}: canonical Newsletter action missing`
   );
 }

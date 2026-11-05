@@ -346,3 +346,22 @@
   }
   actionButton.addEventListener('click',processAction);
 })();
+
+// Full Max Premium layout (Owner-approved, 2026-11-05): only the hero e-mail field
+// is visible by default. Withdrawal and status self-service stay in disclosures and
+// open when a link targets them (dialog follow-ups, footer modal, direct URL).
+// Presentation only: no request is sent and no consent is changed here.
+(function(){
+  'use strict';
+  var panels=['nl-status-panel','nl-withdrawal-panel'];
+  function reveal(){
+    var id=window.location.hash.slice(1);
+    if(panels.indexOf(id)<0)return;
+    var panel=document.getElementById(id);
+    if(!panel||panel.hidden||panel.tagName!=='DETAILS')return;
+    panel.open=true;
+    panel.scrollIntoView({block:'start'});
+  }
+  reveal();
+  window.addEventListener('hashchange',reveal);
+})();
