@@ -71,7 +71,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  for(const id of ['training-settings','training-records','training-time','training-increment','clock-1','clock-2']){
   assert.equal(await local.locator('#'+id).isVisible(),true,id+' should be visible');
  }
- assert.equal(await local.locator('.premium-quick-links .premium-mini-link').count(),6);
+ assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),6);
  assert.equal(await local.locator('.side-dock > .game-tools .tool-btn').count(),7);
  await local.locator('#training-time').selectOption('1');
  await local.locator('#training-increment').selectOption('2');
