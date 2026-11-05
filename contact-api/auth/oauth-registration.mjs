@@ -7,6 +7,13 @@ const hashPassword=promisify(rawScrypt);
 const HOST='https://gracz-contact-api.onrender.com';
 const STATE_COOKIE='__Host-gracz_oauth_state';
 const SESSION_COOKIE='__Host-gracz_session';
+const startAttempts=new Map();
+function allowStart(ip){
+ const now=Date.now();const key=String(ip||'unknown');
+ const current=startAttempts.get(key);const next=!current||current.until<now?{count:1,until:now+600000}:{count:current.count+1,until:current.until};
+ if(startAttempts.size>2000){for(const [k,v] of startAttempts){if(v.until<now)startAttempts.delete(k);}if(startAttempts.size>2000)startAttempts.clear();}
+ startAttempts.set(key,next);return next.count<=20;
+}
 const providers={
  google:{
   clientId:process.env.GRACZ_GOOGLE_CLIENT_ID||'',
@@ -136,14 +143,14 @@ export function createOAuthRegistrationRouter({database,ready,sendVerifyEmail,re
   try{
    await oauthReady();
    if(stage==='start'){
+    if(!allowStart(req.socket?.remoteAddress))return fail(res,'too-many-requests'),true;
     const state=rand(32),verifier=rand(32),nonce=rand(32);
     await database.query('DELETE FROM gracz_public_identity.oauth_pending WHERE expires_at < now()');
     await database.query('INSERT INTO gracz_public_identity.oauth_pending(state_digest,provider,verifier,nonce,expires_at)'+
      " VALUES($1,$2,$3,$4,now()+interval '10 minutes')",[digest(state),provider,verifier,nonce]);
     const auth=new URL(providers[provider].authorize);
     const args={client_id:providers[provider].clientId,redirect_uri:endpoint(provider),response_type:'code',
-     scope:providers[provider].scope,state,code_challenge:rand(1)};
-    delete args.code_challenge;
+     scope:providers[provider].scope,state};
     args.code_challenge=createHash('sha256').update(verifier).digest('base64url');
     args.code_challenge_method='S256';
     if(provider!=='discord')args.nonce=nonce;
@@ -194,8 +201,8 @@ export function createOAuthRegistrationRouter({database,ready,sendVerifyEmail,re
     if(created.rows.length===0)return fail(res,'email-already-used'),true;
     account=created;
     if(verificationToken){
-     try{await sendVerifyEmail(ident.email,verificationToken);}catch{}
-     return redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true;
+     let sent=false;try{sent=await sendVerifyEmail(ident.email,verificationToken);}catch{}
+     return sent?redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true:fail(res,'email-send-failed'),true;
     }
    }
    if(!account.rows[0].verified_at){
@@ -203,8 +210,8 @@ export function createOAuthRegistrationRouter({database,ready,sendVerifyEmail,re
     await database.query('UPDATE gracz_public_identity.accounts SET verify_digest=$1,'+
       "verify_expires_at=now()+interval '30 minutes' WHERE id=$2",
       [digest(verificationToken),account.rows[0].id]);
-    try{await sendVerifyEmail(ident.email,verificationToken);}catch{}
-    return redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true;
+    let sent=false;try{sent=await sendVerifyEmail(ident.email,verificationToken);}catch{}
+    return sent?redirect(res,HOST+'/konto/?oauth_notice=verify',[cookie(STATE_COOKIE,'',0)]),true:fail(res,'email-send-failed'),true;
    }
    const session= randomBytes(32).toString('hex');
    await database.query('INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at)'+
