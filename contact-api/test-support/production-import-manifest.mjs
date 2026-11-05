@@ -4,6 +4,9 @@ export const productionModules=Object.freeze([
   'server.mjs',
   // Public account signup and session UI; first-party API with hashed credentials.
   'auth/public-identity.mjs',
+  // Search guest check: fixed gracz.pl redirect only, 90s single-use anonymous
+  // in-memory ticket, allowed-origin POST validation, never exports cookies.
+  'auth/search-access.mjs',
   // Reviewed OAuth registration: fixed provider hosts, PKCE/state/nonce, signed JWTs,
   // one-use DB handoff, no dynamic imports, account binding only by provider subject.
   'auth/oauth-registration.mjs',
