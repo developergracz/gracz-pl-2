@@ -1,0 +1,37 @@
+/* Owner-approved Claude #687 newsletter scene reused on the homepage.
+   Scoped to homepage footer; preserves existing newsletter JS and safety state. */
+@font-face{font-family:PetronaNewsletterHome;font-style:italic;font-weight:900;font-display:swap;src:url("/assets/fonts/petrona-italic-latin-ext.woff2") format("woff2");unicode-range:U+0100-024F,U+1E00-1EFF}
+@font-face{font-family:PetronaNewsletterHome;font-style:italic;font-weight:900;font-display:swap;src:url("/assets/fonts/petrona-italic-latin.woff2") format("woff2")}
+body.homepage-premium-max .site-footer .footer-news.footer-news--fullmax-r1{isolation:isolate;position:relative!important;display:block!important;box-sizing:border-box!important;grid-column:1/-1!important;overflow:hidden!important;width:100%!important;max-width:none!important;min-height:0!important;aspect-ratio:1702/721!important;padding:0!important;border:5px solid #e6bb50!important;border-radius:28px!important;background:#003b38!important;box-shadow:0 18px 45px rgba(0,0,0,.3)!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1::before,body.homepage-premium-max .site-footer .footer-news--fullmax-r1::after{content:none!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{position:absolute;inset:0;display:block;width:100%;height:100%;z-index:-1;pointer-events:none}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{display:block;width:100%;height:100%;object-fit:fill}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-content{position:absolute;left:5%;top:8%;width:49%;height:85%;display:flex;flex-direction:column;align-items:flex-start;gap:0;z-index:1}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{position:static!important;display:flex!important;flex-direction:column;gap:0;width:100%!important;margin:0 0 3%!important;color:#f7f0df!important;font:italic 900 clamp(22px,3.3vw,52px)/1.05 PetronaNewsletterHome,Georgia,serif!important;letter-spacing:-.02em!important;text-shadow:0 3px 4px rgba(0,0,0,.5)!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news span{display:block!important;white-space:nowrap!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news em{font-style:italic!important;color:#e7bc65!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-lead{margin:0 0 5%!important;max-width:100%!important;color:#f8faf7!important;font:400 clamp(12px,1.35vw,19px)/1.42 "Open Sans",Arial,sans-serif!important;text-shadow:0 1px 2px #00221f!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form{display:flex!important;flex-wrap:nowrap!important;gap:12px!important;width:100%!important;max-width:100%!important;margin:0!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form input{flex:1 1 auto!important;width:0!important;min-width:0!important;height:52px!important;padding:0 20px!important;border:0!important;border-radius:99px!important;background:#fbf3e1!important;color:#1d1c19!important;font-size:16px!important;box-shadow:0 3px 12px rgba(0,0,0,.22)!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form input::placeholder{color:#5f5d55!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form .btn--news{flex:none!important;min-width:148px!important;width:auto!important;height:52px!important;padding:0 22px!important;border:0!important;border-radius:99px!important;background:linear-gradient(#f6e7a5,#fdcb51 40%,#e7a508)!important;color:#151009!important;font-size:17px!important;font-weight:800!important;box-shadow:0 4px 14px rgba(0,0,0,.25)!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-trust{margin:15px 0 0!important;max-width:100%!important;color:#f6f8f7!important;font-size:clamp(11px,1.05vw,15px)!important;line-height:1.45!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-trust a{color:#f8d477!important;text-decoration:underline!important}
+@media(max-width:960px){
+body.homepage-premium-max .site-footer .footer-news.footer-news--fullmax-r1{aspect-ratio:auto!important;min-height:580px!important;padding:36px 22px 250px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{top:auto!important;height:290px!important;bottom:0!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{object-fit:cover!important;object-position:right bottom!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-content{position:relative!important;top:auto!important;left:auto!important;width:100%!important;height:auto!important;max-width:660px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{font-size:clamp(28px,5vw,43px)!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-lead{font-size:15px!important;max-width:560px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form{max-width:550px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-trust{font-size:12px!important}
+}
+@media(max-width:550px){
+body.homepage-premium-max .site-footer .footer-news.footer-news--fullmax-r1{min-height:620px!important;padding:28px 17px 245px!important;border-width:3px!important;border-radius:20px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{font-size:clamp(23px,6vw,32px)!important;white-space:normal!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news span{white-space:normal!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form{flex-wrap:wrap!important;gap:9px!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form input{flex-basis:100%!important;width:100%!important}
+body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form .btn--news{width:100%!important}
+}

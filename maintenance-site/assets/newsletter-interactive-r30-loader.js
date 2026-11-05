@@ -9,4 +9,12 @@
   link.href="/assets/newsletter-approved-interactive-r30.css?v=20261103";
   link.setAttribute("data-newsletter-r30","");
   document.head.appendChild(link);
+  // Newsletter premium is below the fold: keep the single critical CSS request.
+  if (!document.querySelector("link[data-newsletter-fullmax-home]")) {
+    const premium=document.createElement("link");
+    premium.rel="stylesheet";
+    premium.href="/assets/newsletter-home-fullmax-r1.css?v=20261105";
+    premium.setAttribute("data-newsletter-fullmax-home","");
+    document.head.appendChild(premium);
+  }
 })();
