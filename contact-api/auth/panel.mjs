@@ -557,20 +557,92 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 </div>
 </section>
 <section class="view" data-panel="challenges">
-<div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
-<p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
-<p class="social-limitation">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze. Stan gry odświeża się automatycznie.</p>
-<form id="challenge-form" class="social-send">
-<label class="social-label" for="challenge-friend">Zaproś znajomego</label>
-<div class="social-controls"><select id="challenge-friend"><option value="">Wybierz znajomego</option></select>
-<select id="challenge-game" aria-label="Wybierz grę"><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option></select>
-<button class="primary" type="submit">Wyślij wyzwanie</button></div>
-</form>
-<div class="card-heading"><div><p class="card-kicker">AKTYWNE WYZWANIA</p><h2>Twoje zaproszenia</h2></div>
-<button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
-<div id="challenge-list" class="friends-items" aria-live="polite"></div>
-<p id="challenges-state" aria-live="polite"></p>
-</div></section>
+<div class="chall-metrics" aria-label="Podsumowanie zaproszeń">
+ <div><small>DO ODPOWIEDZI</small><strong id="chall-incoming-count">—</strong><span>Otrzymane i aktualne</span></div>
+ <div><small>OCZEKUJĄCE</small><strong id="chall-outgoing-count">—</strong><span>Wysłane zaproszenia</span></div>
+ <div><small>ZAAKCEPTOWANE</small><strong id="chall-accepted-count">—</strong><span>Wspólne rozgrywki</span></div>
+ <div><small>ULUBIONE</small><strong id="chall-star-count">—</strong><span>Oznaczone gwiazdką</span></div>
+</div>
+<nav class="chall-tabs" role="tablist" aria-label="Kategorie zaproszeń">
+ <button type="button" data-chall-tab="all" class="active" aria-selected="true">◈ Wszystkie</button>
+ <button type="button" data-chall-tab="incoming" aria-selected="false">✉ Otrzymane</button>
+ <button type="button" data-chall-tab="outgoing" aria-selected="false">➤ Wysłane</button>
+ <button type="button" data-chall-tab="accepted" aria-selected="false">✓ Przyjęte</button>
+ <button type="button" data-chall-tab="starred" aria-selected="false">★ Ważne</button>
+ <button type="button" data-chall-tab="history" aria-selected="false">◷ Historia</button>
+ <button type="button" data-chall-tab="archive" aria-selected="false">▤ Archiwum</button>
+ <button type="button" data-chall-tab="settings" aria-selected="false">⚙ Ustawienia</button>
+</nav>
+<p class="chall-notice" id="challenges-state" role="status" aria-live="polite">Wczytywanie Twoich zaproszeń…</p>
+<div class="chall-workspace" id="chall-workspace">
+ <div class="card chall-compose">
+  <p class="card-kicker">NOWE WYZWANIE · FULL MAX PREMIUM</p><h2>Zaproś znajomego</h2>
+  <p>Wybierz zaakceptowanego znajomego, grę i dostępne zasady. Wyzwanie wygasa po 7 dniach, jeżeli nie zostanie przyjęte.</p>
+  <form id="challenge-form" class="chall-form">
+   <label for="challenge-friend">Przeciwnik<select id="challenge-friend" required><option value="">Wybierz znajomego</option></select></label>
+   <label for="challenge-game">Gra<select id="challenge-game"><option value="warcaby">♟ Warcaby Online</option><option value="gomoku">◉ Gomoku Online</option></select></label>
+   <div class="chall-time-options" id="chall-time-options" hidden>
+    <label for="challenge-time">Czas na gracza<select id="challenge-time">
+     <option value="0">Bez zegara</option><option value="1">1 minuta</option>
+     <option value="2">2 minuty</option><option value="3">3 minuty</option>
+     <option value="5">5 minut</option><option value="7">7 minut</option>
+     <option value="10">10 minut</option><option value="15">15 minut</option>
+     <option value="30">30 minut</option>
+    </select></label>
+    <label for="challenge-increment">Dodawany czas za ruch<select id="challenge-increment">
+     <option value="0">Bez przyrostu</option><option value="2">+2 sekundy</option>
+     <option value="3">+3 sekundy</option><option value="5">+5 sekund</option>
+     <option value="10">+10 sekund</option>
+    </select></label>
+    <small id="chall-clock-description">Zegar dotyczy Gomoku. Dla gry bez zegara przyrost wynosi 0 sekund.</small>
+   </div>
+   <div class="chall-preview"><span class="chall-preview-icon" id="chall-preview-icon">♟</span>
+    <div><strong id="chall-preview-name">Warcaby Online</strong>
+    <small id="chall-preview-details">Klasyczna partia online · bez zegara</small></div></div>
+   <button class="primary" id="chall-submit" type="submit">Wyślij zaproszenie</button>
+  </form>
+  <div class="chall-shortcuts">
+   <button class="secondary" type="button" id="chall-open-friends">Moi znajomi</button>
+   <button class="secondary" type="button" id="chall-open-privacy">Prywatność zaproszeń</button>
+  </div>
+  <p class="chall-fineprint">Zaproszenie można wysłać tylko zaakceptowanemu, niezablokowanemu znajomemu zgodnie z jego ustawieniami prywatności. Warcaby: bez konfiguracji zegara w tym module.</p>
+  <p class="chall-fineprint">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze.</p>
+ </div>
+ <div class="card chall-inbox">
+  <div class="chall-heading"><div><p class="card-kicker">CENTRUM ZAPROSZEŃ</p><h2 id="chall-list-heading">Twoje zaproszenia</h2></div><button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
+  <div class="chall-filters">
+   <label for="chall-search">Znajdź gracza<input type="search" id="chall-search" placeholder="Wpisz nick…" maxlength="80"></label>
+   <label for="chall-filter-game">Gra<select id="chall-filter-game">
+    <option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option>
+   </select></label>
+   <label for="chall-filter-status">Status<select id="chall-filter-status">
+    <option value="all">Dowolny</option><option value="pending">Oczekuje</option><option value="accepted">Przyjęte</option>
+    <option value="declined">Odrzucone</option><option value="cancelled">Anulowane</option><option value="expired">Wygasłe</option>
+   </select></label>
+   <label for="chall-sort">Kolejność<select id="chall-sort"><option value="new">Najnowsze</option><option value="old">Najstarsze</option></select></label>
+  </div>
+  <div class="chall-list-summary"><span id="chall-result-count">—</span><span>Przechowujemy listę do 60 ostatnich zaproszeń z 30 dni</span></div>
+  <div id="challenge-list" class="chall-list" aria-live="polite"><p>Brak zaproszeń.</p></div>
+  <div class="chall-pagination"><button class="secondary" id="chall-more" type="button" hidden>Pokaż kolejne 15</button></div>
+ </div>
+</div>
+<div class="card chall-settings" id="chall-settings" hidden>
+ <p class="card-kicker">ZARZĄDZANIE WYZWANIAMI · FULL MAX PREMIUM</p><h2>Twoje zasady otrzymywania zaproszeń</h2>
+ <div class="chall-settings-grid">
+  <div><strong>Wybór, kto może Cię zapraszać</strong><p>W zakładce Prywatność ustawiasz, czy przyjmujesz zaproszenia do gier oraz czy ograniczasz je tylko do zaufanych kontaktów.</p><button class="secondary" id="chall-settings-privacy" type="button">Otwórz ustawienia prywatności</button></div>
+  <div><strong>Blokowanie kontaktu</strong><p>Niechciane zaproszenia ograniczysz również przez moduł znajomych i blokad. Twoje blokady obowiązują także przy tworzeniu nowych wyzwań.</p><button class="secondary" id="chall-settings-blocked" type="button">Zarządzaj blokadami</button></div>
+  <div><strong>Własne zaproszenia</strong><p>Oznaczaj wyzwania jako ważne, dodawaj prywatne notatki, archiwizuj i przywracaj je. Drugi gracz nie widzi tych oznaczeń.</p></div>
+  <div><strong>Terminy i historia</strong><p>Zaproszenia oczekują maksymalnie 7 dni. W panelu widzisz do 60 ostatnich wyzwań z 30 dni. Przedłużanie lub umawianie partii na konkretną godzinę nie jest jeszcze uruchomione.</p></div>
+ </div>
+</div>
+<div class="chall-note-overlay" id="chall-note-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="chall-note-title">
+ <div class="chall-note-dialog"><p class="card-kicker">PRYWATNA NOTATKA</p><h2 id="chall-note-title">Notatka do zaproszenia</h2>
+  <p>Widoczna tylko dla Ciebie. Nie jest wysyłana przeciwnikowi.</p>
+  <label for="chall-note-input">Treść notatki<textarea id="chall-note-input" rows="4" maxlength="300" placeholder="Dodaj własną notatkę…"></textarea></label>
+  <div class="chall-dialog-actions"><button class="secondary" type="button" id="chall-note-cancel">Anuluj</button><button class="primary" type="button" id="chall-note-save">Zapisz notatkę</button></div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="play">
 <div class="card"><p class="card-kicker">ROZGRYWKA DWÓCH GRACZY · FULL MAX PREMIUM</p>
 <h2 id="match-heading">Wybierz przyjęte wyzwanie</h2>
@@ -1386,6 +1458,78 @@ body.pw-success-open{overflow:hidden}
 @media(max-width:600px){.logout-farewell-card{padding:30px 22px;border-radius:20px}
 .logout-farewell-login{min-height:52px;font-size:17px}}
 
+
+/* GRACZ.PL Full Max Premium Challenges: compact, functional and responsive */
+#player-shell .chall-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .chall-metrics>div{min-width:0;padding:12px 13px;border:1px solid #237f87;border-radius:13px;background:linear-gradient(120deg,#07414d,#052633)}
+#player-shell .chall-metrics small{display:block;font-size:9px;color:#f8d28c;font-weight:900;letter-spacing:.08em}
+#player-shell .chall-metrics strong{display:block;font-size:clamp(19px,2vw,27px);line-height:1.1;color:#fff;margin:7px 0}
+#player-shell .chall-metrics span{font-size:10px;color:#b0d2d6}
+#player-shell .chall-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:7px;border:1px solid #2b7480;background:#052b39;border-radius:13px}
+#player-shell .chall-tabs button{min-height:39px;min-width:0;border:1px solid #316a76;background:#073543;border-radius:9px;color:#e5f4f4;font:800 11px Inter,"Segoe UI",sans-serif;padding:8px 5px;cursor:pointer}
+#player-shell .chall-tabs button.active{border-color:#25e2ca;color:#fff;background:linear-gradient(120deg,#087e78,#084958);box-shadow:0 0 13px #16decc50}
+#player-shell .chall-notice{margin:0;border:1px solid #297d84;background:#063846;color:#bde9e4;border-radius:11px;padding:9px 12px;font-size:11px}
+#player-shell .chall-notice.friend-alert{color:#ffbdb6;border-color:#bb6872}
+#player-shell .chall-workspace{display:grid;grid-template-columns:minmax(255px,32%) minmax(0,1fr);gap:12px;align-items:start}
+#player-shell .chall-workspace[hidden],#player-shell .chall-settings[hidden],#player-shell .chall-note-overlay[hidden]{display:none!important}
+#player-shell .chall-compose,#player-shell .chall-inbox{padding:15px;min-width:0}
+#player-shell .chall-compose h2,#player-shell .chall-inbox h2{font-size:clamp(17px,1.6vw,23px);margin:5px 0}
+#player-shell .chall-compose>p:not(.card-kicker){font-size:11px;line-height:1.55;color:#b6d0d6}
+#player-shell .chall-form{display:grid;gap:11px;margin-top:12px}
+#player-shell .chall-form label,#player-shell .chall-filters label{display:grid;gap:5px;font-size:11px;font-weight:800;color:#d7ecec}
+#player-shell .chall-form select,#player-shell .chall-filters select,#player-shell .chall-filters input{width:100%;min-width:0;min-height:37px;border:1px solid #38818c;border-radius:9px;background:#052e3c;color:#fff;padding:8px;font-size:12px}
+#player-shell .chall-time-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#player-shell .chall-time-options[hidden]{display:none!important}
+#player-shell .chall-time-options small{grid-column:1/-1;font-size:10px;line-height:1.5;color:#b1cfd2}
+#player-shell .chall-preview{display:flex;align-items:center;gap:11px;background:linear-gradient(115deg,#064753,#052b3b);border:1px solid #40858d;border-radius:13px;padding:10px}
+#player-shell .chall-preview-icon{display:grid;place-items:center;flex:0 0 auto;width:43px;height:43px;border:1px solid #edc878;border-radius:12px;color:#f9d898;font-size:23px;background:#052a38}
+#player-shell .chall-preview strong{display:block;font-size:13px;color:#f7ffff}
+#player-shell .chall-preview small{display:block;font-size:10px;color:#b7d3d6;margin-top:5px}
+#player-shell .chall-form>.primary{width:100%;min-height:40px;border:1px solid #f5d68d;background:linear-gradient(130deg,#ffe2a0,#d6ab57);color:#092631;font-weight:900}
+#player-shell .chall-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px}
+#player-shell .chall-shortcuts button{min-height:35px;padding:7px;font-size:11px}
+#player-shell .chall-fineprint{font-size:10px!important;margin:12px 0 0!important}
+#player-shell .chall-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#player-shell .chall-heading button{min-height:34px;font-size:11px}
+#player-shell .chall-filters{display:grid;grid-template-columns:minmax(125px,2fr) repeat(3,minmax(90px,1fr));gap:8px;margin:12px 0}
+#player-shell .chall-list-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:#abcfd2;padding:7px 0;border-bottom:1px solid #296976}
+#player-shell .chall-list-summary span:first-child{color:#ffe09a;font-weight:850}
+#player-shell .chall-list{display:grid;gap:9px;margin-top:10px}
+#player-shell .chall-card{border:1px solid #2b7780;border-radius:13px;background:linear-gradient(125deg,#073b47,#042630);padding:12px;display:grid;gap:9px;min-width:0}
+#player-shell .chall-card.is-new{border-color:#21d3bd;box-shadow:inset 3px 0 0 #32ebcd}
+#player-shell .chall-card-top{display:flex;justify-content:space-between;align-items:start;gap:10px}
+#player-shell .chall-card-title{font-size:13px;font-weight:900;color:#fff}
+#player-shell .chall-card-sub{font-size:11px;color:#b4d4d8;line-height:1.5;overflow-wrap:anywhere;margin-top:5px}
+#player-shell .chall-card-badge{white-space:nowrap;font-size:10px;padding:5px 8px;border:1px solid #3b9496;border-radius:16px;color:#d4efea;background:#08535b}
+#player-shell .chall-card-badge.pending{border-color:#e8c67d;color:#ffe0a4;background:#3f3c25}
+#player-shell .chall-card-details{display:flex;gap:9px;flex-wrap:wrap;font-size:10px;color:#bcd6d9}
+#player-shell .chall-card-details span{padding:4px 7px;background:#083441;border:1px solid #2c6e78;border-radius:7px}
+#player-shell .chall-card-note{font-size:11px;color:#ffdaa0;background:#133940;border-left:2px solid #e1bf77;padding:7px 9px;border-radius:6px}
+#player-shell .chall-card-actions{display:flex;gap:7px;flex-wrap:wrap}
+#player-shell .chall-card-actions button,#player-shell .chall-card-actions a{min-height:34px;padding:7px 10px;font-size:10px;border:1px solid #357780;background:#073b49;color:#e6f8f4;border-radius:8px;font-weight:850;text-decoration:none;cursor:pointer}
+#player-shell .chall-card-actions button:hover,#player-shell .chall-card-actions a:hover{border-color:#f0d18c}
+#player-shell .chall-card-actions .chall-important{border-color:#ebc77a;background:linear-gradient(115deg,#f8df9e,#d8af5f);color:#092b35}
+#player-shell .chall-pagination{display:flex;justify-content:center;padding-top:10px}
+#player-shell .chall-pagination button{min-height:36px;font-size:11px}
+#player-shell .chall-settings{padding:16px}
+#player-shell .chall-settings h2{font-size:21px}
+#player-shell .chall-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+#player-shell .chall-settings-grid>div{border:1px solid #307780;border-radius:12px;background:#073744;padding:14px}
+#player-shell .chall-settings-grid strong{font-size:13px;color:#ffe0a1}
+#player-shell .chall-settings-grid p{font-size:11px;line-height:1.6;color:#b9d8d8}
+#player-shell .chall-settings-grid button{min-height:36px;padding:7px 12px;font-size:11px}
+#player-shell .chall-note-overlay{position:fixed;inset:0;z-index:9999;background:#000b;display:grid;place-items:center;padding:16px}
+#player-shell .chall-note-dialog{width:min(450px,100%);padding:21px;border:1px solid #35d6c3;border-radius:18px;background:linear-gradient(145deg,#09444f,#032433);box-shadow:0 20px 60px #0009}
+#player-shell .chall-note-dialog h2{font-size:21px;margin:7px 0}
+#player-shell .chall-note-dialog p{font-size:12px;color:#c1d9db}
+#player-shell .chall-note-dialog label{display:grid;gap:7px;font-size:11px;color:#f5d58a}
+#player-shell .chall-note-dialog textarea{padding:10px;background:#052c38;border:1px solid #428c96;border-radius:9px;color:white;resize:vertical}
+#player-shell .chall-dialog-actions{display:flex;justify-content:end;gap:8px;margin-top:15px}
+#player-shell .chall-dialog-actions button{min-height:39px;padding:7px 15px;font-size:11px}
+#player-shell .chall-tabs button:focus-visible,#player-shell .chall-card button:focus-visible{outline:2px solid #ffe2a9;outline-offset:2px}
+@media(max-width:1180px){#player-shell .chall-workspace{grid-template-columns:minmax(230px,36%) minmax(0,1fr)}#player-shell .chall-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){#player-shell .chall-workspace{grid-template-columns:1fr}#player-shell .chall-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-compose{position:static}}
+@media(max-width:650px){#player-shell .chall-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-settings-grid{grid-template-columns:1fr}#player-shell .chall-list-summary{align-items:start;flex-wrap:wrap}#player-shell .chall-card-top{flex-wrap:wrap}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -1927,71 +2071,223 @@ $('message-form').addEventListener('submit',async event=>{
  }catch(error){socialNotice('messages-state',error.message,true);}
  finally{msgSending=false;button.disabled=!$('message-recipient').value;}
 });
-async function refreshChallenges(){
- const list=$('challenge-list');list.replaceChildren();
- socialNotice('challenges-state','Wczytywanie wyzwań…');
- try{
-  const response=await api('social/challenges');
-  if(!response.challenges.length){
-   const p=document.createElement('p');p.className='friend-empty';
-   p.textContent='Brak zaproszeń do gier. Zaproś znajomego do Warcabów lub Gomoku.';
-   list.append(p);
-  }
-  response.challenges.forEach(challenge=>{
-   const row=document.createElement('div');row.className='friend-person';
-   const info=document.createElement('div');
-   const title=document.createElement('div');title.className='friend-name';
-   title.textContent=(challenge.game==='warcaby'?'♟ Warcaby':'◉ Gomoku')+' · '+challenge.opponent;
-   const detail=document.createElement('div');detail.className='friend-sub';
-   const states={pending:'Oczekuje',accepted:'Przyjęto',declined:'Odrzucono',
-    cancelled:'Anulowano',expired:'Wygasło'};
-   detail.textContent=(challenge.outgoing?'Wysłane · ':'Otrzymane · ')+(states[challenge.status]||challenge.status)+' · '+safeDate(challenge.createdAt);
-   info.append(title,detail);row.append(info);
-   const controls=document.createElement('div');controls.className='friend-controls';
-   const actions=challenge.status==='pending'?
-     challenge.outgoing?[['cancel','Anuluj']]:[['accept','Akceptuj'],['decline','Odrzuć']]:[];
-   actions.forEach(([action,label])=>{
-    const button=document.createElement('button');button.type='button';button.textContent=label;
-    button.addEventListener('click',async()=>{
-     button.disabled=true;
-     try{
-      await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({action,id:challenge.id})});
-      await refreshChallenges();socialNotice('challenges-state','Zaktualizowano zaproszenie.');
-     }catch(error){socialNotice('challenges-state',error.message,true);}
-     finally{button.disabled=false;}
-    });
-    controls.append(button);
-   });
-   if(challenge.status==='accepted'){
-    if(challenge.game==='gomoku'){
-      const link=document.createElement('a');link.className='secondary link-button';
-      link.href='/konto/gomoku/?match='+encodeURIComponent(challenge.id);
-      link.textContent='Graj w Gomoku';controls.append(link);
-    }else if(challenge.game==='warcaby'){
-      const link=document.createElement('a');link.className='secondary link-button';
-      link.href='/konto/warcaby/?match='+encodeURIComponent(challenge.id);
-      link.textContent='Graj w Warcaby';controls.append(link);
-    }
-   }
-   row.append(controls);list.append(row);
-  });
-  socialNotice('challenges-state','Zaproszenia: '+response.challenges.length+'.');
- }catch(error){socialNotice('challenges-state',error.message,true);}
+// Full Max Premium Challenges — only existing game APIs execute invitations.
+let challState=[],challTab='all',challDisplay=15,challLoading=false,challBusy=false,challNoteId=null,challLastFetch=0;
+const challStatuses={pending:'Oczekuje',accepted:'Zaakceptowano',declined:'Odrzucono',cancelled:'Anulowano',expired:'Wygasło'};
+const challTabs={all:'Twoje zaproszenia',incoming:'Otrzymane wyzwania',outgoing:'Wysłane zaproszenia',accepted:'Zaakceptowane partie',starred:'Ważne wyzwania',history:'Historia zaproszeń',archive:'Archiwum'};
+function challUpdatePreview(){
+ const game=$('challenge-game').value,timed=game==='gomoku';
+ $('chall-time-options').hidden=!timed;
+ if(!timed){$('challenge-time').value='0';$('challenge-increment').value='0';}
+ if($('challenge-time').value==='0')$('challenge-increment').value='0';
+ $('challenge-increment').disabled=!timed||$('challenge-time').value==='0';
+ $('chall-preview-icon').textContent=timed?'◉':'♟';
+ $('chall-preview-name').textContent=timed?'Gomoku Online':'Warcaby Online';
+ const minutes=Number($('challenge-time').value),increment=Number($('challenge-increment').value);
+ $('chall-preview-details').textContent=timed&&minutes>0?
+  minutes+' min na gracza'+(increment>0?' · +'+increment+' s za ruch':' · bez przyrostu'):
+  'Klasyczna partia online · bez zegara';
+ $('chall-clock-description').textContent=minutes>0?
+  'Zegar uruchomi się po dołączeniu obu graczy.': 'Gomoku bez zegara nie dodaje czasu po ruchu.';
 }
-$('challenges-refresh').addEventListener('click',()=>void refreshChallenges());
-$('challenge-form').addEventListener('submit',async event=>{
- event.preventDefault();
- const nickname=$('challenge-friend').value,game=$('challenge-game').value;
- if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return;}
- const button=$('challenge-form').querySelector('button[type="submit"]');button.disabled=true;
+function challTabSelect(tab){
+ challTab=tab;challDisplay=15;
+ document.querySelectorAll('[data-chall-tab]').forEach(button=>{
+  const active=button.dataset.challTab===tab;
+  button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ });
+ $('chall-workspace').hidden=tab==='settings';$('chall-settings').hidden=tab!=='settings';
+ if(tab!=='settings')challRender();
+}
+function challRows(){
+ const query=$('chall-search').value.trim().toLowerCase(),game=$('chall-filter-game').value,
+  status=$('chall-filter-status').value;
+ const items=challState.filter(item=>{
+  if(challTab==='archive'){if(!item.archived)return false;}
+  else{
+   if(item.archived)return false;
+   if(challTab==='incoming'&&(item.outgoing||item.status!=='pending'))return false;
+   if(challTab==='outgoing'&&(!item.outgoing||item.status!=='pending'))return false;
+   if(challTab==='accepted'&&item.status!=='accepted')return false;
+   if(challTab==='starred'&&!item.starred)return false;
+   if(challTab==='history'&&['pending','accepted'].includes(item.status))return false;
+  }
+  if(game!=='all'&&game!==item.game)return false;
+  if(status!=='all'&&status!==item.status)return false;
+  if(query&&!item.opponent.toLowerCase().includes(query)&&!item.note.toLowerCase().includes(query))return false;
+  return true;
+ });
+ if($('chall-sort').value==='old')items.reverse();
+ return items;
+}
+function challCounts(){
+ const rows=challState.filter(x=>!x.archived);
+ $('chall-incoming-count').textContent=String(rows.filter(x=>!x.outgoing&&x.status==='pending').length);
+ $('chall-outgoing-count').textContent=String(rows.filter(x=>x.outgoing&&x.status==='pending').length);
+ $('chall-accepted-count').textContent=String(rows.filter(x=>x.status==='accepted').length);
+ $('chall-star-count').textContent=String(rows.filter(x=>x.starred).length);
+}
+function challButton(text,fn,emphasize=false){
+ const button=document.createElement('button');button.type='button';button.textContent=text;
+ if(emphasize)button.className='chall-important';
+ button.addEventListener('click',async()=>{if(challBusy)return;button.disabled=true;try{await fn();}finally{button.disabled=false;}});
+ return button;
+}
+function challReadDate(value){return safeDate(value)}
+function challGameLabel(ch){return ch.game==='gomoku'?'◉ Gomoku':'♟ Warcaby'}
+function challClockLabel(ch){return ch.game==='gomoku'&&ch.timeLimitMinutes>0?
+  ch.timeLimitMinutes+' min'+(ch.incrementSeconds?' + '+ch.incrementSeconds+' s':''): 'Bez zegara'}
+function challRender(){
+ challCounts();
+ const rows=challRows(),list=$('challenge-list');list.replaceChildren();
+ $('chall-list-heading').textContent=challTabs[challTab]||'Twoje zaproszenia';
+ $('chall-result-count').textContent='Znaleziono: '+rows.length;
+ for(const item of rows.slice(0,challDisplay)){
+  const card=document.createElement('article');card.className='chall-card'+(!item.seen&&!item.outgoing&&item.status==='pending'?' is-new':'');
+  const top=document.createElement('div');top.className='chall-card-top';
+  const block=document.createElement('div');
+  const title=document.createElement('div');title.className='chall-card-title';
+  title.textContent=challGameLabel(item)+' · '+item.opponent+(item.starred?' ★':'');
+  const sub=document.createElement('div');sub.className='chall-card-sub';
+  sub.textContent=(item.outgoing?'Wysłane do znajomego':'Otrzymane od znajomego')+' · '+challReadDate(item.createdAt);
+  block.append(title,sub);
+  const badge=document.createElement('span');badge.className='chall-card-badge'+(item.status==='pending'?' pending':'');
+  badge.textContent=challStatuses[item.status]||item.status;top.append(block,badge);
+  const details=document.createElement('div');details.className='chall-card-details';
+  for(const detail of [challClockLabel(item),item.status==='pending'?'Ważne do '+challReadDate(item.expiresAt):
+   'Aktualizacja: '+challReadDate(item.updatedAt||item.createdAt)]){
+   const el=document.createElement('span');el.textContent=detail;details.append(el);
+  }
+  card.append(top,details);
+  if(item.note){const note=document.createElement('div');note.className='chall-card-note';note.textContent='Notatka prywatna: '+item.note;card.append(note);}
+  const actions=document.createElement('div');actions.className='chall-card-actions';
+  if(item.status==='pending'){
+   if(item.outgoing){
+    actions.append(challButton('Anuluj wyzwanie',()=>challRespond('cancel',item.id),true));
+   }else{
+    actions.append(challButton('Akceptuj',()=>challRespond('accept',item.id),true));
+    actions.append(challButton('Odrzuć',()=>challRespond('decline',item.id)));
+   }
+  }
+  if(item.status==='accepted'){
+   const link=document.createElement('a');
+   link.href=(item.game==='gomoku'?'/konto/gomoku/':'/konto/warcaby/')+'?match='+encodeURIComponent(item.id);
+   link.textContent='Graj online';link.className='chall-important';
+   actions.append(link);
+  }
+  actions.append(challButton(item.starred?'Usuń gwiazdkę':'★ Ważne',
+   ()=>challMeta(item.starred?'unstar':'star',item.id)));
+  actions.append(challButton(item.archived?'Przywróć':'Archiwizuj',
+   ()=>challMeta(item.archived?'restore':'archive',item.id)));
+  actions.append(challButton('Notatka',()=>challOpenNote(item)));
+  if(!item.seen)actions.append(challButton('Oznacz jako obejrzane',()=>challMeta('seen',item.id)));
+  actions.append(challButton('Napisz',()=>openSocialContact('messages',item.opponent)));
+  card.append(actions);list.append(card);
+ }
+ if(!rows.length){
+  const message=document.createElement('p');message.className='friend-empty';
+  message.textContent=challTab==='archive'?'Archiwum jest puste.':
+   'Brak zaproszeń spełniających wybrane kryteria. Możesz wysłać nowe wyzwanie znajomemu.';
+  list.append(message);
+ }
+ $('chall-more').hidden=rows.length<=challDisplay;
+}
+async function refreshChallenges(){
+ if(challLoading||!sessionConfirmed)return;
+ challLoading=true;
+ socialNotice('challenges-state','Wczytywanie aktualnych wyzwań…');
+ try{
+  const result=await api('social/challenges');
+  challState=result.challenges.map(c=>({...c,note:c.note||''}));
+  challLastFetch=Date.now();
+  challRender();
+  socialNotice('challenges-state','Zaproszenia wczytane: '+challState.length+'. Akceptowanie i anulowanie zapisuje się na serwerze.');
+ }catch(error){socialNotice('challenges-state',error.message,true);}
+ finally{challLoading=false;}
+}
+async function challMeta(action,id,note=''){
+ if(challBusy)return false;challBusy=true;
+ try{
+  await api('challenge-center/state',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id,action,...(action==='note'?{note}:{})})});
+  await refreshChallenges();
+  socialNotice('challenges-state','Zapisano ustawienie zaproszenia na Twoim koncie.');
+  return true;
+ }catch(error){socialNotice('challenges-state',error.message,true);return false;}
+ finally{challBusy=false}
+}
+async function challRespond(action,id){
+ if(challBusy)return;challBusy=true;
  try{
   await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({action:'send',nickname,game})});
-  await refreshChallenges();socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='warcaby'?'Warcabów':'Gomoku')+'.');
- }catch(error){socialNotice('challenges-state',error.message,true);}
- finally{button.disabled=false;}
+   body:JSON.stringify({action,id})});
+  await refreshChallenges();
+  socialNotice('challenges-state',action==='accept'?'Zaproszenie przyjęte. Możesz uruchomić partię.':
+   action==='decline'?'Odrzucono zaproszenie.':'Anulowano zaproszenie.');
+ }catch(error){socialNotice('challenges-state',error.message,true)}
+ finally{challBusy=false}
+}
+function challOpenNote(item){
+ challNoteId=item.id;$('chall-note-input').value=item.note||'';
+ $('chall-note-overlay').hidden=false;$('chall-note-input').focus();
+}
+function challCloseNote(){
+ $('chall-note-overlay').hidden=true;challNoteId=null;
+}
+$('chall-note-cancel').addEventListener('click',challCloseNote);
+$('chall-note-overlay').addEventListener('click',event=>{
+ if(event.target===$('chall-note-overlay'))challCloseNote();
 });
+if(typeof document.addEventListener==='function')document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!$('chall-note-overlay').hidden)challCloseNote();
+});
+$('chall-note-save').addEventListener('click',async()=>{
+ if(!challNoteId)return;
+ const id=challNoteId,button=$('chall-note-save');button.disabled=true;
+ const result=await challMeta('note',id,$('chall-note-input').value);
+ if(result)challCloseNote();
+ button.disabled=false;
+});
+document.querySelectorAll('[data-chall-tab]').forEach(button=>button.addEventListener('click',()=>challTabSelect(button.dataset.challTab)));
+for(const id of ['chall-search','chall-filter-game','chall-filter-status','chall-sort']){
+ $(id).addEventListener(id==='chall-search'?'input':'change',()=>{challDisplay=15;challRender();});
+}
+$('chall-more').addEventListener('click',()=>{challDisplay+=15;challRender()});
+$('challenge-game').addEventListener('change',challUpdatePreview);
+$('challenge-time').addEventListener('change',challUpdatePreview);
+$('challenge-increment').addEventListener('change',challUpdatePreview);
+$('challenge-friend').addEventListener('change',challUpdatePreview);
+challUpdatePreview();
+$('challenges-refresh').addEventListener('click',()=>void refreshChallenges());
+$('chall-open-friends').addEventListener('click',()=>{switchSection('friends');fhTab('overview')});
+$('chall-open-privacy').addEventListener('click',()=>{switchSection('privacy');privacyTab('trusted')});
+$('chall-settings-privacy').addEventListener('click',()=>{switchSection('privacy');privacyTab('games')});
+$('chall-settings-blocked').addEventListener('click',()=>{switchSection('friends');fhTab('blocked')});
+$('challenge-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(challBusy)return;
+ const nickname=$('challenge-friend').value,game=$('challenge-game').value;
+ if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return}
+ const timeLimitMinutes=game==='gomoku'?Number($('challenge-time').value):0;
+ const incrementSeconds=game==='gomoku'&&timeLimitMinutes>0?Number($('challenge-increment').value):0;
+ const button=$('chall-submit');button.disabled=true;challBusy=true;
+ try{
+  await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action:'send',nickname,game,timeLimitMinutes,incrementSeconds})});
+  challTabSelect('outgoing');await refreshChallenges();
+  socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='gomoku'?'Gomoku':'Warcabów')+' dla '+nickname+'.');
+ }catch(error){socialNotice('challenges-state',error.message,true)}
+ finally{button.disabled=false;challBusy=false}
+});
+if(typeof setInterval==='function')setInterval(()=>{
+ if(!sessionConfirmed||challBusy||challLoading)return;
+ const element=typeof document.querySelector==='function'?document.querySelector('[data-panel="challenges"]'):null;
+ if(!element?.classList.contains('active'))return;
+ if(typeof document.visibilityState!=='undefined'&&document.visibilityState!=='visible')return;
+ if(Date.now()-challLastFetch<45000)return;
+ void refreshChallenges();
+},45000);
+
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
