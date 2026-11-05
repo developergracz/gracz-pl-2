@@ -134,7 +134,7 @@ export function createNotificationRouter({database,ready,sessionToken,digest,aut
     if(ids.length){
      const column=['read','unread','read-all'].includes(action)?'read_at':'archived_at';
      const value=['unread','restore'].includes(action)?'NULL':'now()';
-     const sql='INSERT INTO '+ROOT+'.notification_item_state(account_id,source_id,'+column+') SELECT $1,id,'+value+' FROM UNNEST($2::text[]) AS ids(id) ON CONFLICT(account_id,source_id) DO UPDATE SET '+column+'='+value+',updated_at=now()';
+     const sql='INSERT INTO '+ROOT+'.notification_item_state(account_id,source_id,'+column+') SELECT $1,id,'+value+' FROM UNNEST($2::text[]) AS ids(id) WHERE TRUE ON CONFLICT(account_id,source_id) DO UPDATE SET '+column+'='+value+',updated_at=now()';
      await database.query(sql,[owner,ids]);
     }
     return send(res,200,{ok:true,changed:ids.length});
