@@ -21,6 +21,8 @@ export const productionModules=Object.freeze([
   'auth/privacy-center.mjs',
   // Private notifications inbox projected from existing social and security events.
   'auth/notification-center.mjs',
+  // Owner-specific inbox metadata for existing friend-only messages.
+  'auth/message-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
   // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session

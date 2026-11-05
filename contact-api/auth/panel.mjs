@@ -492,19 +492,70 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <div class="card notif-footnote"><p>Pokazywane są wyłącznie rzeczywiste zdarzenia z istniejących modułów, maksymalnie 200 z ostatnich 90 dni. Dane pozostają na Twoim koncie; archiwizacja dotyczy powiadomienia, nie oryginalnej wiadomości lub partii.</p></div>
 </section>
 <section class="view" data-panel="messages">
-<div class="card">
-<p class="card-kicker">PRYWATNE ROZMOWY</p><h2>Wiadomości ze znajomymi</h2>
-<p>Rozmawiaj bezpośrednio z zaakceptowanymi znajomymi. Wiadomości są przechowywane w Twoim koncie. Rozmowę możesz odświeżyć ręcznie; czat na żywo jest przygotowywany.</p>
-<label class="social-label" for="message-recipient">Wybierz znajomego</label>
-<div class="social-controls"><select id="message-recipient"><option value="">Wybierz znajomego</option></select>
-<button id="messages-refresh" type="button" class="secondary">Odśwież rozmowę</button></div>
-<div id="message-thread" class="social-thread" aria-live="polite"><p>Wybierz znajomego, aby wyświetlić rozmowę.</p></div>
-<form id="message-form" class="social-send">
-<label class="social-label" for="message-content">Nowa wiadomość</label>
-<textarea id="message-content" rows="3" maxlength="1000" placeholder="Napisz prywatną wiadomość…" required></textarea>
-<div class="form-actions"><span>Do 1000 znaków · tylko znajomi</span><button class="primary" type="submit" id="message-send" disabled>Wyślij wiadomość</button></div>
-</form><p id="messages-state" aria-live="polite">Wybierz znajomego z listy.</p>
-</div></section>
+<div class="msg-hero"><div><p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Wiadomości i chat</h2>
+<p>Twoje rozmowy, znajomi i zaproszenia w jednym bezpiecznym miejscu.</p></div><div class="msg-hero-mark" aria-hidden="true">✉<small>GRACZ.PL</small></div></div>
+<div class="msg-metrics">
+ <div><small>AKTYWNE ROZMOWY</small><strong id="msg-count">—</strong><span>Twoi zaakceptowani znajomi</span></div>
+ <div><small>NIEPRZECZYTANE</small><strong id="msg-unread">—</strong><span>Wiadomości do przeczytania</span></div>
+ <div><small>PRZYPIĘTE</small><strong id="msg-pinned">—</strong><span>Szybki dostęp</span></div>
+ <div><small>ARCHIWUM</small><strong id="msg-archived">—</strong><span>Ukryte tylko u Ciebie</span></div>
+</div>
+<p class="msg-notice" id="messages-state" role="status" aria-live="polite">Wczytywanie Twoich rozmów…</p>
+<div class="msg-layout">
+ <aside class="msg-left card">
+  <div class="msg-left-head"><div><p class="card-kicker">CENTRUM KONTAKTÓW</p><h2>Moje rozmowy</h2></div><button class="secondary" id="msg-refresh-all" type="button" aria-label="Odśwież listę rozmów">↻</button></div>
+  <label for="msg-find">Znajdź rozmowę<input type="search" id="msg-find" placeholder="Wyszukaj nick…" maxlength="100"></label>
+  <nav class="msg-filter" aria-label="Filtr rozmów">
+   <button type="button" class="active" data-msg-filter="all" aria-pressed="true">Wszystkie</button>
+   <button type="button" data-msg-filter="unread" aria-pressed="false">Nowe</button>
+   <button type="button" data-msg-filter="pinned" aria-pressed="false">Przypięte</button>
+   <button type="button" data-msg-filter="archive" aria-pressed="false">Archiwum</button>
+  </nav>
+  <label for="msg-label-filter">Grupa kontaktów<select id="msg-label-filter"><option value="all">Wszystkie grupy</option><option value="priority">Ważne</option><option value="team">Drużyna</option><option value="family">Rodzina</option><option value="friends">Znajomi</option><option value="">Bez grupy</option></select></label>
+  <div id="msg-conversations" class="msg-conversations" aria-live="polite"><p>Wybierz znajomego, aby rozpocząć rozmowę.</p></div>
+  <div class="msg-left-footer"><button type="button" id="msg-open-friends" class="secondary">Moi znajomi</button><button type="button" id="msg-open-book" class="secondary">Książka adresowa</button></div>
+ </aside>
+ <div class="msg-right">
+  <div class="card msg-chat">
+   <header class="msg-chat-head">
+    <div class="msg-chat-person"><div id="msg-chat-avatar" class="msg-avatar" aria-hidden="true">G</div>
+     <div><p class="card-kicker">PRYWATNA ROZMOWA</p><h2 id="msg-chat-name">Wybierz znajomego</h2><small id="msg-chat-status">Wiadomości tylko między zaakceptowanymi znajomymi</small></div>
+    </div>
+    <div class="msg-chat-actions">
+     <button class="secondary" type="button" id="messages-refresh">Odśwież</button>
+     <button class="secondary" type="button" id="msg-invite-game">Zaproś do gry</button>
+     <button class="secondary" type="button" id="msg-profile">Wizytówka</button>
+    </div>
+   </header>
+   <div class="msg-chat-options">
+    <label for="message-recipient">Rozmowa z<select id="message-recipient"><option value="">Wybierz znajomego</option></select></label>
+    <label for="msg-search-thread">Znajdź w 60 ostatnich wiadomościach<input type="search" id="msg-search-thread" placeholder="Szukaj treści…" maxlength="100"></label>
+   </div>
+   <div class="msg-tools">
+    <button type="button" class="secondary" id="msg-pin">Przypnij</button>
+    <button type="button" class="secondary" id="msg-mute">Wycisz</button>
+    <button type="button" class="secondary" id="msg-archive">Archiwizuj</button>
+    <label for="msg-label" class="msg-label-control">Grupa<select id="msg-label"><option value="">Bez grupy</option><option value="priority">Ważne</option><option value="team">Drużyna</option><option value="family">Rodzina</option><option value="friends">Znajomi</option></select></label>
+    <button type="button" class="secondary" id="msg-export">Eksport rozmowy</button>
+   </div>
+   <div id="message-thread" class="social-thread msg-thread" role="log" aria-live="polite" aria-label="Wiadomości w rozmowie"><p>Wybierz znajomego, aby wyświetlić rozmowę.</p></div>
+   <form id="message-form" class="social-send msg-composer">
+    <label class="social-label" for="message-content">Nowa wiadomość</label>
+    <textarea id="message-content" rows="3" maxlength="1000" placeholder="Napisz prywatną wiadomość do znajomego…" required></textarea>
+    <div class="msg-compose-bottom">
+     <span id="msg-counter">0 / 1000 znaków</span><span>Ctrl + Enter: wyślij</span>
+     <button class="primary" type="submit" id="message-send" disabled>Wyślij wiadomość</button>
+    </div>
+   </form>
+  </div>
+  <div class="card msg-privacy">
+   <div><p class="card-kicker">TWOJA KONTROLA</p><h3>Bezpieczeństwo rozmów</h3>
+   <p>Wiadomości są przechowywane na serwerze GRACZ.PL. Nie deklarujemy szyfrowania end-to-end ani czatu WebSocket. Rozmowa odświeża się okresowo, gdy ta zakładka jest otwarta.</p></div>
+   <div class="msg-privacy-actions"><button id="msg-privacy-link" type="button" class="secondary">Prywatność</button><button id="msg-block-link" type="button" class="secondary">Blokady</button></div>
+  </div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="challenges">
 <div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
 <p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
@@ -1231,6 +1282,70 @@ body.pw-success-open{overflow:hidden}
 #player-shell #nt-mute{max-width:270px}
 @media(max-width:1100px){#player-shell .notif-toolbar-row{grid-template-columns:1fr 1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 2}}
 @media(max-width:700px){#player-shell .notif-hero{padding:12px;min-height:96px}#player-shell .notif-orb{height:55px;width:55px;font-size:22px}#player-shell .notif-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .notif-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .notif-settings-grid{grid-template-columns:1fr}#player-shell .notif-item{grid-template-columns:32px minmax(0,1fr)}#player-shell .notif-item-icon{height:32px;width:32px}#player-shell .notif-item-controls{grid-column:2;max-width:none;justify-content:flex-start}#player-shell .notif-item-controls button{min-height:40px}#player-shell .notif-toolbar-row{grid-template-columns:1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 1}}
+
+/* GRACZ.PL — Messages & Chat Full Max Premium: compact, responsive, legible */
+#player-shell .msg-hero{display:flex;justify-content:space-between;align-items:center;min-height:114px;gap:16px;padding:17px 21px;border-radius:16px;border:1px solid #28dfc9;background:radial-gradient(ellipse at 84% 14%,#0aaca65c,transparent 58%),linear-gradient(115deg,#063b48,#03232f)}
+#player-shell .msg-hero h2{font-size:clamp(25px,2.6vw,36px);color:#fff;line-height:1.16;margin:6px 0}
+#player-shell .msg-hero p:last-child{font-size:12px;color:#b5d9d7;margin:0}
+#player-shell .msg-hero-mark{display:grid;place-content:center;text-align:center;height:77px;width:77px;flex:0 0 auto;border:2px solid #f1cc80;border-radius:50%;box-shadow:0 0 25px #13dbc73d;background:#04313d;color:#f9d993;font-size:32px}
+#player-shell .msg-hero-mark small{font-weight:900;font-size:9px;letter-spacing:.08em}
+#player-shell .msg-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .msg-metrics>div{min-width:0;border-radius:12px;border:1px solid #277f83;padding:10px 13px;background:linear-gradient(125deg,#08424a,#052631)}
+#player-shell .msg-metrics small{display:block;font-size:9px;color:#ffda90;font-weight:900;letter-spacing:.07em}
+#player-shell .msg-metrics strong{display:block;color:#fff;font-size:clamp(19px,2vw,27px);margin:5px 0}
+#player-shell .msg-metrics span{display:block;font-size:10px;color:#aacbd0}
+#player-shell .msg-notice{margin:0;padding:9px 12px;border:1px solid #2b7c81;background:#06343c;border-radius:10px;font-size:11px;color:#bde8df}
+#player-shell .msg-notice.friend-alert{color:#ffd0c5;border-color:#b4786f}
+#player-shell .msg-layout{display:grid;grid-template-columns:minmax(235px,29%) minmax(0,1fr);gap:12px;align-items:start}
+#player-shell .msg-layout .card{padding:13px;min-width:0}
+#player-shell .msg-left{display:grid;gap:10px;position:sticky;top:8px}
+#player-shell .msg-left-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#player-shell .msg-left-head h2{font-size:18px;margin:3px 0}
+#player-shell .msg-left-head button{min-width:37px;min-height:37px;padding:5px 9px;font-size:20px}
+#player-shell .msg-left label,#player-shell .msg-chat-options label{display:grid;gap:5px;font-size:11px;color:#c8e5e7;font-weight:750}
+#player-shell .msg-left input,#player-shell .msg-left select,#player-shell .msg-chat-options input,#player-shell .msg-chat-options select,#player-shell .msg-label-control select{width:100%;min-width:0;min-height:37px;padding:7px 9px;border:1px solid #367b84;border-radius:9px;background:#052c39;color:#f2ffff;font-size:12px}
+#player-shell .msg-filter{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#player-shell .msg-filter button{min-height:37px;padding:7px 5px;border:1px solid #287884;border-radius:8px;background:#063645;color:#d3ebee;font:760 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .msg-filter button.active{border-color:#18e2cb;background:linear-gradient(115deg,#06796f,#0b4b56);color:#fff}
+#player-shell .msg-conversations{display:grid;gap:7px;max-height:min(610px,65vh);overflow:auto;scrollbar-width:thin;padding:2px}
+#player-shell .msg-conversation{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;border:1px solid #286e7b;border-radius:11px;padding:10px 8px;background:#072e3a;color:#eaf6f8;text-align:left;cursor:pointer}
+#player-shell .msg-conversation.active{border-color:#29e3c9;background:#075a60;box-shadow:inset 3px 0 0 #41e7ce}
+#player-shell .msg-conversation:hover{border-color:#e0bd70}
+#player-shell .msg-avatar{display:grid;place-items:center;width:38px;height:38px;border:1px solid #e1b96c;border-radius:50%;background:#05323e;color:#ffe2a1;font-size:17px;font-weight:900;flex:0 0 auto}
+#player-shell .msg-conversation-info{min-width:0;display:grid;gap:5px}
+#player-shell .msg-conversation-info strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff}
+#player-shell .msg-conversation-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aacbd0;font-size:10px}
+#player-shell .msg-conversation-count{border-radius:20px;background:#f4d17e;color:#062c36;padding:4px 7px;font-size:10px;font-weight:900}
+#player-shell .msg-left-footer{display:flex;gap:7px;flex-wrap:wrap}
+#player-shell .msg-left-footer button{flex:1;min-height:36px;padding:6px;font-size:11px}
+#player-shell .msg-right{display:grid;gap:11px;min-width:0}
+#player-shell .msg-chat{display:grid;gap:10px}
+#player-shell .msg-chat-head{display:flex;align-items:center;justify-content:space-between;gap:9px;border-bottom:1px solid #276b76;padding-bottom:11px}
+#player-shell .msg-chat-person{display:flex;align-items:center;gap:10px;min-width:0}
+#player-shell .msg-chat-person h2{font-size:18px;margin:4px 0;color:#fff}
+#player-shell .msg-chat-person small{color:#a8d4d2;font-size:10px}
+#player-shell .msg-chat-actions,#player-shell .msg-tools,#player-shell .msg-privacy-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#player-shell .msg-chat-actions button,#player-shell .msg-tools button,#player-shell .msg-privacy-actions button{min-height:34px;padding:7px 10px;font-size:11px}
+#player-shell .msg-chat-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#player-shell .msg-tools{border:1px solid #265d6a;background:#052e39;padding:8px;border-radius:10px}
+#player-shell .msg-label-control{display:flex;align-items:center;gap:7px;font-size:10px;color:#c6dfdf}
+#player-shell .msg-label-control select{min-height:32px;width:110px}
+#player-shell .msg-thread{min-height:280px;max-height:440px;overflow-y:auto;border:1px solid #296e76;border-radius:12px;padding:14px;background:radial-gradient(ellipse at center,#06495333,transparent 78%),#031f2d;scrollbar-width:thin}
+#player-shell .msg-thread .social-bubble{max-width:min(84%,450px);overflow-wrap:anywhere}
+#player-shell .msg-composer{border:1px solid #286a73;border-radius:12px;padding:10px;background:#052e3c}
+#player-shell .msg-composer textarea{width:100%;resize:vertical;min-height:77px;max-height:180px;border:1px solid #31888c;border-radius:9px;padding:11px;background:#031f2d;color:#fff}
+#player-shell .msg-compose-bottom{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#player-shell .msg-compose-bottom span{font-size:10px;color:#a6cbd0}
+#player-shell .msg-compose-bottom button{margin-left:auto;min-height:38px;padding:8px 17px}
+#player-shell .msg-privacy{display:flex;justify-content:space-between;gap:12px;align-items:center}
+#player-shell .msg-privacy h3{font-size:15px;margin:4px 0}
+#player-shell .msg-privacy p:last-child{font-size:11px;line-height:1.6;color:#accbd0;margin:0}
+#player-shell .msg-privacy .card-kicker{margin:0}
+#player-shell .msg-empty{font-size:11px;color:#afcfd3;padding:14px;text-align:center}
+#player-shell .msg-filter button:focus-visible,#player-shell .msg-conversation:focus-visible{outline:2px solid #ffdfa3;outline-offset:2px}
+@media(max-width:1150px){#player-shell .msg-layout{grid-template-columns:minmax(210px,34%) minmax(0,1fr)}#player-shell .msg-chat-head{align-items:flex-start;flex-wrap:wrap}}
+@media(max-width:850px){#player-shell .msg-layout{grid-template-columns:1fr}#player-shell .msg-left{position:static}#player-shell .msg-conversations{max-height:265px}#player-shell .msg-chat-options{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){#player-shell .msg-hero{padding:13px;min-height:104px}#player-shell .msg-hero-mark{width:55px;height:55px;font-size:24px}#player-shell .msg-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .msg-chat-options{grid-template-columns:1fr}#player-shell .msg-chat-actions{width:100%}#player-shell .msg-chat-actions button{flex:1;min-height:40px}#player-shell .msg-privacy{flex-wrap:wrap}#player-shell .msg-thread{min-height:220px;max-height:360px}#player-shell .msg-compose-bottom button{min-height:41px}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -1523,6 +1638,184 @@ function safeDate(value){
  const date=new Date(value);
  return Number.isNaN(date.getTime())?'—':date.toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'});
 }
+// Full Max Premium Messenger — private inbox metadata over existing friend message API.
+let msgState=null,msgView='all',msgRecords=[],msgCurrentLoading=false,msgSending=false;
+let msgLastReload=0;
+const msgLabels={'':'Bez grupy',priority:'Ważne',team:'Drużyna',family:'Rodzina',friends:'Znajomi'};
+function msgCurrent(){
+ const nick=$('message-recipient').value.toLowerCase();
+ return msgState?.conversations.find(c=>c.nickname.toLowerCase()===nick)||null;
+}
+function msgNotice(message,error=false){socialNotice('messages-state',message,error)}
+function msgApplyToolbar(){
+ const selected=msgCurrent();
+ $('msg-chat-name').textContent=selected?.nickname||'Wybierz znajomego';
+ $('msg-chat-avatar').textContent=(selected?.nickname||'G').charAt(0).toUpperCase();
+ $('msg-chat-status').textContent=selected?
+  (selected.muted?'Wyciszona na Twoim koncie · ':'Rozmowa prywatna · ')+
+  (selected.unread>0?selected.unread+' nieprzeczytanych':'wiadomości aktualne'):
+  'Wiadomości tylko między zaakceptowanymi znajomymi';
+ $('msg-pin').textContent=selected?.pinned?'Odepnij':'Przypnij';
+ $('msg-mute').textContent=selected?.muted?'Włącz powiadomienia':'Wycisz';
+ $('msg-archive').textContent=selected?.archived?'Przywróć':'Archiwizuj';
+ $('msg-label').value=selected?.label||'';
+ for(const id of ['msg-pin','msg-mute','msg-archive','msg-label','msg-export','msg-invite-game','msg-profile']){
+  $(id).disabled=!selected;
+ }
+}
+function msgRenderList(){
+ if(!msgState)return;
+ const rows=msgState.conversations;
+ $('msg-count').textContent=String(rows.filter(c=>!c.archived).length);
+ $('msg-unread').textContent=String(rows.filter(c=>!c.archived).reduce((sum,c)=>sum+c.unread,0));
+ $('msg-pinned').textContent=String(rows.filter(c=>c.pinned&&!c.archived).length);
+ $('msg-archived').textContent=String(rows.filter(c=>c.archived).length);
+ const filter=$('msg-find').value.trim().toLowerCase();
+ const label=$('msg-label-filter').value;
+ const list=$('msg-conversations');list.replaceChildren();
+ const displayed=rows.filter(c=>{
+  if(msgView==='archive'){if(!c.archived)return false}
+  else {
+   if(c.archived)return false;
+   if(msgView==='unread'&&c.unread===0)return false;
+   if(msgView==='pinned'&&!c.pinned)return false;
+  }
+  return c.nickname.toLowerCase().includes(filter)&&
+   (label==='all'||c.label===label);
+ });
+ for(const item of displayed){
+  const row=document.createElement('button');row.type='button';row.className='msg-conversation';
+  const active=$('message-recipient').value.toLowerCase()===item.nickname.toLowerCase();
+  if(active)row.classList.add('active');
+  row.setAttribute('aria-current',String(active));
+  const avatar=document.createElement('span');avatar.className='msg-avatar';
+  avatar.textContent=item.nickname.charAt(0).toUpperCase();
+  const info=document.createElement('span');info.className='msg-conversation-info';
+  const title=document.createElement('strong');title.textContent=
+   (item.pinned?'★ ':'')+item.nickname+(item.muted?' · wyciszono':'');
+  const last=document.createElement('small');
+  const preview=item.lastMessage||(item.lastAt?'Wiadomość':'Rozpocznij rozmowę');
+  last.textContent=(item.lastOwn?'Ty: ':'')+preview.slice(0,85);
+  info.append(title,last);row.append(avatar,info);
+  if(item.unread){
+   const counter=document.createElement('span');counter.className='msg-conversation-count';
+   counter.textContent=item.unread>99?'99+':String(item.unread);row.append(counter);
+  }
+  row.addEventListener('click',()=>void msgChoose(item.nickname));
+  list.append(row);
+ }
+ if(!displayed.length){
+  const empty=document.createElement('p');empty.className='msg-empty';
+  empty.textContent=msgView==='archive'?'Archiwum rozmów jest puste.':
+   msgView==='unread'?'Nie masz nieprzeczytanych wiadomości.':
+   'Brak rozmów dla wybranego filtra. Znajomych znajdziesz w „Moi znajomi”.';
+  list.append(empty);
+ }
+ msgApplyToolbar();
+}
+async function messageCenterLoad(){
+ if(!sessionConfirmed||msgCurrentLoading)return;
+ msgCurrentLoading=true;
+ try{
+  const result=await api('message-center');
+  msgState=result;msgLastReload=Date.now();
+  msgRenderList();
+ }catch(error){msgNotice(error.message,true)}
+ finally{msgCurrentLoading=false}
+}
+async function msgChoose(nick){
+ msgRecords=[];
+ await prepareSocial('messages');
+ const select=$('message-recipient');select.value=nick;
+ if(select.value!==nick){msgNotice('Ta znajomość nie jest już aktywna.',true);return;}
+ $('msg-search-thread').value='';
+ msgRenderList();await refreshThread();
+}
+async function msgChange(action,label=''){
+ const current=msgCurrent();
+ if(!current){msgNotice('Najpierw wybierz rozmowę.',true);return false}
+ try{
+  await api('message-center/state',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({nickname:current.nickname,action,...(action==='label'?{label}:{})})});
+  await messageCenterLoad();
+  return true;
+ }catch(error){msgNotice(error.message,true);return false}
+}
+function msgFilterThread(){
+ const term=$('msg-search-thread').value.trim().toLowerCase();
+ const bubbles=$('message-thread').querySelectorAll('.social-bubble');
+ let count=0;
+ for(const el of bubbles){
+  const found=el.textContent.toLowerCase().includes(term);
+  el.hidden=!found;if(found)count++;
+ }
+ if(term)msgNotice('Znaleziono '+count+' wiadomości w ostatnich 60 pozycjach rozmowy.');
+}
+const msgControlActions=[
+ ['msg-pin',()=>msgCurrent()?.pinned?'unpin':'pin'],
+ ['msg-mute',()=>msgCurrent()?.muted?'unmute':'mute'],
+ ['msg-archive',()=>msgCurrent()?.archived?'restore':'archive']
+];
+for(const [id,action] of msgControlActions)$(id).addEventListener('click',async()=>{
+ const button=$(id);button.disabled=true;
+ await msgChange(action());button.disabled=!msgCurrent();
+});
+$('msg-label').addEventListener('change',()=>void msgChange('label',$('msg-label').value));
+document.querySelectorAll('[data-msg-filter]').forEach(button=>button.addEventListener('click',()=>{
+ msgView=button.dataset.msgFilter;
+ for(const b of document.querySelectorAll('[data-msg-filter]')){
+  const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+ }
+ msgRenderList();
+}));
+$('msg-find').addEventListener('input',msgRenderList);
+$('msg-label-filter').addEventListener('change',msgRenderList);
+$('msg-search-thread').addEventListener('input',msgFilterThread);
+$('msg-refresh-all').addEventListener('click',async()=>{await messageCenterLoad();await refreshThread()});
+$('msg-open-friends').addEventListener('click',()=>{switchSection('friends');fhTab('overview')});
+$('msg-open-book').addEventListener('click',()=>{switchSection('friends');fhTab('book')});
+$('msg-block-link').addEventListener('click',()=>{switchSection('friends');fhTab('blocked')});
+$('msg-privacy-link').addEventListener('click',()=>switchSection('privacy'));
+$('msg-invite-game').addEventListener('click',async()=>{
+ const current=msgCurrent();if(!current)return;
+ switchSection('challenges');await prepareSocial('challenges');
+ $('challenge-friend').value=current.nickname;
+});
+$('msg-profile').addEventListener('click',()=>{
+ const current=msgCurrent();if(!current)return;
+ window.open('/konto/profil/'+encodeURIComponent(current.nickname),'_blank','noopener,noreferrer');
+});
+$('message-content').addEventListener('input',()=>{
+ $('msg-counter').textContent=String($('message-content').value.length)+' / 1000 znaków';
+});
+$('message-content').addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
+  event.preventDefault();
+  if(!msgSending&&$('message-recipient').value&&$('message-content').value.trim())
+   $('message-form').requestSubmit();
+ }
+});
+$('msg-export').addEventListener('click',()=>{
+ const selected=msgCurrent();if(!selected)return;
+ const payload={format:'gracz-messages-v1',friend:selected.nickname,
+  scope:'Ostatnie maksymalnie 60 wiadomości widocznych w bieżącej rozmowie.',
+  exportedAt:new Date().toISOString(),messages:msgRecords};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-rozmowa-'+selected.nickname+'.json';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ msgNotice('Pobrano maksymalnie 60 ostatnich wiadomości. Zachowaj prywatność pliku.');
+});
+if(typeof setInterval==='function')setInterval(()=>{
+ if(!sessionConfirmed||msgSending||msgCurrentLoading)return;
+ const section=typeof document.querySelector==='function'?
+  document.querySelector('[data-panel="messages"]'):null;
+ if(!section?.classList.contains('active'))return;
+ if(typeof document.visibilityState!=='undefined'&&document.visibilityState!=='visible')return;
+ if(Date.now()-msgLastReload<16000)return;
+ void messageCenterLoad();
+ if($('message-recipient').value)void refreshThread();
+},20000);
+
 async function prepareSocial(name){
  if(!sessionConfirmed)return;
  if(!friendsState)await refreshFriends();
@@ -1548,6 +1841,7 @@ async function openSocialContact(section,nick){
  if(section==='messages')await refreshThread();
 }
 async function refreshThread(){
+ msgRecords=[];
  const select=$('message-recipient'),nick=select.value;
  const thread=$('message-thread');thread.replaceChildren();
  $('message-send').disabled=!nick;
@@ -1562,6 +1856,7 @@ async function refreshThread(){
   if(!response.messages.length){
    const p=document.createElement('p');p.textContent='Nie ma jeszcze wiadomości. Rozpocznij rozmowę.';thread.append(p);
   }
+  msgRecords=response.messages;
   response.messages.forEach(item=>{
    const bubble=document.createElement('div');bubble.className='social-bubble'+(item.own?' own':'');
    const text=document.createElement('p');text.textContent=item.body;
@@ -1569,23 +1864,28 @@ async function refreshThread(){
    bubble.append(text,date);thread.append(bubble);
   });
   thread.scrollTop=thread.scrollHeight;
+  msgFilterThread();
+  const active=msgCurrent();
+  if(active?.unread>0)void msgChange('read');
+  else msgRenderList();
   socialNotice('messages-state','Wiadomości w rozmowie: '+response.messages.length+'.');
  }catch(error){socialNotice('messages-state',error.message,true);}
 }
-$('message-recipient').addEventListener('change',()=>void refreshThread());
+$('message-recipient').addEventListener('change',()=>{msgRecords=[];msgRenderList();void refreshThread()});
 $('messages-refresh').addEventListener('click',()=>void refreshThread());
 $('message-form').addEventListener('submit',async event=>{
  event.preventDefault();
  const nick=$('message-recipient').value,body=$('message-content').value.trim();
  if(!nick||!body||body.length>1000){socialNotice('messages-state','Wybierz znajomego i wpisz wiadomość (maks. 1000 znaków).',true);return;}
- const button=$('message-send');button.disabled=true;
+ const button=$('message-send');button.disabled=true;msgSending=true;
  try{
   await api('social/messages',{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({nickname:nick,message:body})});
-  $('message-content').value='';await refreshThread();
+  $('message-content').value='';$('msg-counter').textContent='0 / 1000 znaków';await refreshThread();
+  await messageCenterLoad();
   socialNotice('messages-state','Wiadomość wysłana.');
  }catch(error){socialNotice('messages-state',error.message,true);}
- finally{button.disabled=!$('message-recipient').value;}
+ finally{msgSending=false;button.disabled=!$('message-recipient').value;}
 });
 async function refreshChallenges(){
  const list=$('challenge-list');list.replaceChildren();
@@ -1662,6 +1962,7 @@ function switchSection(name){
  if(name==='security'&&sessionConfirmed)void securityLoad();
  if(name==='privacy'&&sessionConfirmed)void privacyLoad();
  if(name==='notifications'&&sessionConfirmed)void ntLoad();
+ if(name==='messages'&&sessionConfirmed)void messageCenterLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));

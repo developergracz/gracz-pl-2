@@ -1,3 +1,4 @@
+import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
 import {ensureNotificationSchema,createNotificationRouter} from './notification-center.mjs';
 import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
 import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
@@ -222,6 +223,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      await ensureAddressBookSchema(database);
      await ensurePrivacySchema(database);
      await ensureNotificationSchema(database);
+     await ensureMessageCenterSchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -268,12 +270,14 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const securityCenter=createSecurityCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const privacyCenter=createPrivacyRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const notificationCenter=createNotificationRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ const messageCenter=createMessageCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
   if(await premiumProfile.handle(req,res,url))return true;
   if(await addressBook.handle(req,res,url))return true;
   if(await securityCenter.handle(req,res,url))return true;
   if(await privacyCenter.handle(req,res,url))return true;
   if(await notificationCenter.handle(req,res,url))return true;
+  if(await messageCenter.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
