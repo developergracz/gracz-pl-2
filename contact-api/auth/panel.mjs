@@ -414,7 +414,83 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <div class="priv-actions"><button type="button" class="secondary" id="priv-reset">Cofnij niezapisane</button><button type="button" class="primary" id="priv-save">Zapisz ustawienia</button></div>
 </div>
 </section>
-<section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
+<section class="view" data-panel="notifications">
+<div class="notif-hero">
+ <div><p class="card-kicker">CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Centrum powiadomień</h2>
+ <p>Wiadomości, znajomi, zaproszenia do gier i bezpieczeństwo. Wszystko uporządkowane na Twoim koncie.</p></div>
+ <div class="notif-orb" aria-hidden="true">✦<small>GRACZ.PL</small></div>
+</div>
+<div class="notif-metrics">
+ <div><small>NIEPRZECZYTANE</small><strong id="nt-unread">—</strong><span>Ważne dla Ciebie</span></div>
+ <div><small>W SKRZYNCE</small><strong id="nt-inbox-total">—</strong><span>Aktualne zdarzenia</span></div>
+ <div><small>DZISIAJ</small><strong id="nt-today">—</strong><span>Ostatnie aktywności</span></div>
+ <div><small>ARCHIWUM</small><strong id="nt-archive-total">—</strong><span>Odłożone wiadomości</span></div>
+</div>
+<nav class="notif-tabs" role="tablist" aria-label="Kategorie powiadomień">
+ <button type="button" role="tab" class="active" aria-selected="true" data-nt-tab="all">◈ Wszystkie</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="unread">✦ Nieprzeczytane</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="messages">✉ Wiadomości</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="friends">♙ Znajomi</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="games">♟ Gry</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="security">◇ Bezpieczeństwo</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="archive">▤ Archiwum</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="settings">⚙ Ustawienia</button>
+</nav>
+<p class="notif-feedback" id="nt-feedback" role="status" aria-live="polite">Wczytywanie powiadomień…</p>
+<div class="notif-view" data-nt-view="inbox">
+ <div class="card notif-toolbar">
+  <div class="notif-toolbar-row">
+   <label for="nt-search">Wyszukaj powiadomienia<input id="nt-search" type="search" placeholder="Treść, nadawca lub nazwa gry…" maxlength="100"></label>
+   <label for="nt-period">Zakres<select id="nt-period"><option value="90">Ostatnie 90 dni</option><option value="30">Ostatnie 30 dni</option><option value="7">Ostatni tydzień</option><option value="1">Ostatnie 24 godziny</option></select></label>
+   <label for="nt-sort">Kolejność<select id="nt-sort"><option value="new">Najnowsze</option><option value="old">Najstarsze</option></select></label>
+  </div>
+  <div class="notif-actions">
+   <button id="nt-refresh" class="secondary" type="button">Odśwież</button>
+   <button id="nt-mark-all" class="secondary" type="button">Oznacz jako przeczytane</button>
+   <button id="nt-archive-read" class="secondary" type="button">Archiwizuj przeczytane</button>
+   <button id="nt-export" class="secondary" type="button">Eksport CSV</button>
+  </div>
+ </div>
+ <div class="card notif-inbox">
+  <div class="notif-list-header"><div><p class="card-kicker">TWOJA SKRZYNKA</p><h2 id="nt-list-title">Wszystkie powiadomienia</h2></div><span id="nt-list-count" class="notif-list-count">—</span></div>
+  <div id="nt-list" class="notif-items"><p>Brak załadowanych zdarzeń.</p></div>
+  <div class="notif-pagination"><button class="secondary" id="nt-more" type="button" hidden>Pokaż następne 20</button></div>
+ </div>
+</div>
+<div class="notif-view" data-nt-view="settings" hidden>
+ <div class="card">
+  <p class="card-kicker">CENTRUM PREFERENCJI · FULL MAX PREMIUM</p><h2>Co trafia do Twojej skrzynki?</h2>
+  <p>Każde ustawienie zapisuje się na Twoim koncie. Wyłączenie kategorii ukrywa ją w skrzynce, ale nie usuwa oryginalnych wiadomości, znajomości ani zaproszeń.</p>
+  <form id="nt-settings-form" class="notif-settings">
+   <div class="notif-settings-grid">
+    <label class="notif-setting"><span><strong>✉ Wiadomości prywatne</strong><small>Nowe wiadomości od zaakceptowanych znajomych.</small></span><input id="nt-set-messages" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>♙ Znajomi</strong><small>Zaproszenia do znajomych i ich akceptacja.</small></span><input id="nt-set-friends" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>♟ Zaproszenia do gier</strong><small>Nowe wyzwania i przyjęcie/odrzucenie zaproszeń.</small></span><input id="nt-set-games" type="checkbox"></label>
+    <div class="notif-setting notif-locked"><span><strong>◇ Zdarzenia bezpieczeństwa</strong><small>Zawsze widoczne — nie można ukryć zdarzeń związanych z ochroną konta.</small></span><span class="notif-required">Włączone</span></div>
+   </div>
+   <h3>Wygląd i sposób pracy</h3>
+   <div class="notif-settings-grid">
+    <label class="notif-setting"><span><strong>Wyróżniaj nieprzeczytane</strong><small>Podświetlaj nowe pozycje turkusową poświatą.</small></span><input id="nt-set-highlightUnread" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Pokazuj nick nadawcy</strong><small>Ukryj nicki na liście i w odpowiedzi centrum powiadomień.</small></span><input id="nt-set-showNicknames" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Pokazuj daty</strong><small>Data i godzina przy każdej pozycji w centrum.</small></span><input id="nt-set-showDates" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Oznaczaj jako przeczytane po otwarciu</strong><small>Po przejściu do powiązanego modułu automatycznie zaznaczaj pozycję jako odczytaną.</small></span><input id="nt-set-autoReadOnOpen" type="checkbox"></label>
+   </div>
+   <h3>Wyciszenie powiadomień</h3>
+   <label for="nt-mute">Wycisz wizualne wyróżnienia na<select id="nt-mute">
+    <option value="0">Nie wyciszaj</option><option value="60">1 godzinę</option><option value="480">8 godzin</option><option value="1440">24 godziny</option>
+   </select></label>
+   <p class="notif-hint" id="nt-mute-note">Wyciszenie nie usuwa powiadomień ani nie blokuje odczytu zdarzeń bezpieczeństwa.</p>
+   <div class="notif-actions"><button id="nt-save" type="submit" class="primary">Zapisz preferencje</button><button id="nt-cancel" type="button" class="secondary">Cofnij zmiany</button></div>
+  </form>
+ </div>
+ <div class="card">
+  <p class="card-kicker">PRZYSZŁE KANAŁY DOSTARCZANIA</p><h2>Powiadomienia e-mail, push i SMS</h2>
+  <p>Centrum działa teraz w panelu GRACZ.PL. Wysyłka zewnętrznych powiadomień e-mail, push i SMS nie jest uruchomiona. Nie przedstawiamy żadnego z tych kanałów jako aktywnego.</p>
+  <div class="notif-planned"><span>E-mail: planowane</span><span>Push: planowane</span><span>SMS: planowane</span><span>Forum i turnieje: po integracji</span></div>
+ </div>
+</div>
+<div class="card notif-footnote"><p>Pokazywane są wyłącznie rzeczywiste zdarzenia z istniejących modułów, maksymalnie 200 z ostatnich 90 dni. Dane pozostają na Twoim koncie; archiwizacja dotyczy powiadomienia, nie oryginalnej wiadomości lub partii.</p></div>
+</section>
 <section class="view" data-panel="messages">
 <div class="card">
 <p class="card-kicker">PRYWATNE ROZMOWY</p><h2>Wiadomości ze znajomymi</h2>
@@ -1094,6 +1170,67 @@ body.pw-success-open{overflow:hidden}
 @media(max-width:1200px){#player-shell .priv-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){#player-shell .priv-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:1fr}#player-shell .priv-info-grid{grid-template-columns:1fr}#player-shell .priv-roadmap{grid-template-columns:1fr}}
 @media(max-width:700px){#player-shell .priv-hero{padding:12px;min-height:105px}#player-shell .priv-hero h2{font-size:25px}#player-shell .priv-emblem{height:55px;width:55px;border-radius:15px}#player-shell .priv-emblem span{font-size:22px}#player-shell .priv-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .priv-tabs button{min-height:41px;font-size:11px}#player-shell .priv-savebar{bottom:0;flex-wrap:wrap;border-radius:12px;padding:10px}#player-shell .priv-savebar .priv-actions{width:100%}#player-shell .priv-savebar .priv-actions button{flex:1;min-height:41px}#player-shell .priv-option{padding:11px;gap:10px}#player-shell .priv-option input{width:23px;height:23px}}
+
+/* GRACZ.PL Notifications Full Max Premium — compact and responsive */
+#player-shell .notif-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:118px;padding:17px 21px;border:1px solid #27dac8;border-radius:17px;background:radial-gradient(ellipse at 83% 10%,#0ca9a65c,transparent 58%),linear-gradient(120deg,#073b47,#031f2d)}
+#player-shell .notif-hero h2{font-size:clamp(23px,2.5vw,33px);margin:5px 0;color:#fff}
+#player-shell .notif-hero p:last-child{font-size:12px;color:#b6d9d9;line-height:1.5;margin:0}
+#player-shell .notif-orb{height:76px;width:76px;flex:0 0 auto;border:2px solid #e9c674;border-radius:50%;background:#043344;color:#f5ce83;box-shadow:0 0 23px #21d6c848;display:grid;place-content:center;text-align:center;font-size:32px;gap:0}
+#player-shell .notif-orb small{font-size:8px;letter-spacing:.09em;font-weight:900}
+#player-shell .notif-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .notif-metrics>div{min-width:0;display:grid;gap:5px;border:1px solid #2a7e85;background:linear-gradient(130deg,#08424b,#052330);border-radius:12px;padding:12px}
+#player-shell .notif-metrics small{font-size:9px;font-weight:850;color:#f4d18a;letter-spacing:.1em}
+#player-shell .notif-metrics strong{font-size:clamp(20px,2vw,27px);line-height:1.1;color:#fff}
+#player-shell .notif-metrics span{font-size:10px;color:#a3c7cc}
+#player-shell .notif-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;background:#052a39;padding:7px;border:1px solid #27787f;border-radius:13px;position:sticky;top:0;z-index:5}
+#player-shell .notif-tabs button{min-width:0;min-height:38px;padding:7px;background:#073844;border:1px solid #376d75;border-radius:9px;color:#def2ef;font:800 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .notif-tabs button.active{border-color:#23e5ca;background:linear-gradient(115deg,#08766f,#064956);color:#fff;box-shadow:0 0 16px #12e3d53b}
+#player-shell .notif-tabs button:focus-visible{outline:2px solid #ffe1a4;outline-offset:2px}
+#player-shell .notif-feedback{margin:0;padding:9px 12px;border:1px solid #2a6e79;background:#062f3d;border-radius:11px;font-size:11px;color:#bfe8e3}
+#player-shell .notif-feedback.error{color:#ffc4bc;border-color:#ad6568}
+#player-shell .notif-view{display:grid;gap:11px}
+#player-shell .notif-view[hidden]{display:none!important}
+#player-shell .notif-toolbar{display:grid;gap:10px;padding:13px}
+#player-shell .notif-toolbar-row{display:grid;grid-template-columns:minmax(160px,2fr) minmax(100px,1fr) minmax(95px,1fr);gap:9px}
+#player-shell .notif-toolbar label,#player-shell .notif-settings label[for=nt-mute]{display:grid;gap:6px;font-size:11px;font-weight:750;color:#d8efec}
+#player-shell .notif-toolbar input,#player-shell .notif-toolbar select,#player-shell .notif-settings select{min-width:0;width:100%;min-height:38px;padding:7px 10px;border:1px solid #34838b;border-radius:9px;background:#052b38;color:#f7ffff;font-size:12px}
+#player-shell .notif-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+#player-shell .notif-actions button{min-height:37px;padding:8px 12px;font-size:11px}
+#player-shell .notif-list-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#player-shell .notif-list-header h2{font-size:19px;margin:4px 0}
+#player-shell .notif-list-count{padding:5px 10px;border:1px solid #3b9095;border-radius:20px;color:#ffe4a5;font-size:11px}
+#player-shell .notif-items{display:grid;gap:8px;margin-top:11px}
+#player-shell .notif-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:start;padding:11px;border:1px solid #2c747e;border-radius:12px;background:linear-gradient(110deg,#073e48,#062533)}
+#player-shell .notif-item.unread{border-color:#19c5b8;background:linear-gradient(110deg,#08646b,#05333e);box-shadow:inset 3px 0 0 #43e5c8}
+#player-shell .notif-item.muted{box-shadow:none}
+#player-shell .notif-item-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid #6ea8a8;border-radius:10px;color:#ffe0a1;background:#053544;font-size:17px}
+#player-shell .notif-item-main{min-width:0;display:grid;gap:5px}
+#player-shell .notif-item-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:850;font-size:12px;color:#fff}
+#player-shell .notif-unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#27e6cb;box-shadow:0 0 8px #28dfbd}
+#player-shell .notif-item-info{font-size:11px;color:#bed6d8;overflow-wrap:anywhere}
+#player-shell .notif-item-date{font-size:10px;color:#94b7bb}
+#player-shell .notif-item-controls{display:flex;justify-content:end;align-items:center;gap:6px;flex-wrap:wrap;max-width:255px}
+#player-shell .notif-item-controls button{padding:6px 9px;min-height:32px;border-radius:8px;background:#083c49;border:1px solid #367c84;color:#e5f6f3;font-size:10px;font-weight:760;cursor:pointer}
+#player-shell .notif-item-controls button:hover{border-color:#ffe2a2}
+#player-shell .notif-empty{padding:24px 12px;text-align:center;color:#b7d5d4;font-size:12px}
+#player-shell .notif-pagination{display:flex;justify-content:center;margin:12px 0 0}
+#player-shell .notif-settings{display:grid;gap:12px}
+#player-shell .notif-settings h3{color:#f4d28c;font-size:15px;margin:12px 0 0}
+#player-shell .notif-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#player-shell .notif-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #2a7c83;border-radius:12px;background:#063342;cursor:pointer}
+#player-shell .notif-setting strong{font-size:12px;color:#fff}
+#player-shell .notif-setting small{display:block;font-size:11px;line-height:1.5;color:#b4d5d7;margin-top:4px}
+#player-shell .notif-setting input{width:21px;height:21px;flex:0 0 auto;accent-color:#1bcbbb;cursor:pointer}
+#player-shell .notif-required{white-space:nowrap;color:#ffe09b;font-size:11px;font-weight:900}
+#player-shell .notif-locked{cursor:default}
+#player-shell .notif-hint,#player-shell .notif-footnote p{font-size:11px;line-height:1.6;color:#accbd0}
+#player-shell .notif-planned{display:flex;gap:8px;flex-wrap:wrap}
+#player-shell .notif-planned span{padding:7px 10px;border:1px solid #356c77;border-radius:20px;background:#052d38;color:#a7c3c7;font-size:11px}
+#player-shell .notif-footnote{padding:12px}
+#player-shell .notif-footnote p{margin:0}
+#player-shell #nt-mute{max-width:270px}
+@media(max-width:1100px){#player-shell .notif-toolbar-row{grid-template-columns:1fr 1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 2}}
+@media(max-width:700px){#player-shell .notif-hero{padding:12px;min-height:96px}#player-shell .notif-orb{height:55px;width:55px;font-size:22px}#player-shell .notif-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .notif-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .notif-settings-grid{grid-template-columns:1fr}#player-shell .notif-item{grid-template-columns:32px minmax(0,1fr)}#player-shell .notif-item-icon{height:32px;width:32px}#player-shell .notif-item-controls{grid-column:2;max-width:none;justify-content:flex-start}#player-shell .notif-item-controls button{min-height:40px}#player-shell .notif-toolbar-row{grid-template-columns:1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 1}}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -1524,6 +1661,7 @@ function switchSection(name){
  if(name==='friends'&&sessionConfirmed)void refreshFriends();
  if(name==='security'&&sessionConfirmed)void securityLoad();
  if(name==='privacy'&&sessionConfirmed)void privacyLoad();
+ if(name==='notifications'&&sessionConfirmed)void ntLoad();
  if((name==='messages'||name==='challenges')&&sessionConfirmed)void prepareSocial(name);
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>switchSection(button.dataset.section)));
@@ -2289,6 +2427,208 @@ $('priv-export').addEventListener('click',async()=>{
   status.textContent='Pobrano ustawienia i podstawowe dane profilu. Plik może zawierać adres e-mail — przechowuj go bezpiecznie.';
  }catch(error){status.textContent=error.message}
  finally{button.disabled=false}
+});
+
+
+// Full Max Premium Notifications Center — server-authorized feed and per-account state.
+let ntData=null,ntSelected='all',ntShowing=20,ntBusy=false,ntSettingsDirty=false;
+const ntCategories={messages:'Wiadomości',friends:'Znajomi',games:'Gry',security:'Bezpieczeństwo'};
+const ntSymbols={messages:'✉',friends:'♙',games:'♟',security:'◇'};
+const ntSettingsKeys=['messages','friends','games','highlightUnread','showNicknames','showDates','autoReadOnOpen'];
+const ntTabTitles={all:'Wszystkie powiadomienia',unread:'Nieprzeczytane',messages:'Wiadomości',friends:'Znajomi',
+ games:'Gry i wyzwania',security:'Bezpieczeństwo',archive:'Archiwum'};
+const ntNav=typeof document.querySelector==='function'?
+ document.querySelector('[data-section="notifications"]'):null;
+const ntNavCount=ntNav&&typeof document.createElement==='function'?
+ document.createElement('span'):null;
+if(ntNavCount){
+ ntNavCount.className='notif-nav-count';ntNavCount.hidden=true;
+ ntNavCount.style.cssText='display:none;margin-left:7px;border-radius:12px;padding:3px 6px;color:#052c35;background:#f6ce7c;font-size:10px;font-weight:900';
+ ntNav.append(ntNavCount);
+}
+function ntMessage(message,error=false){
+ const target=$('nt-feedback');target.textContent=message;target.classList.toggle('error',error);
+}
+function ntDate(timestamp){
+ const date=new Date(timestamp);
+ return Number.isFinite(date.getTime())?date.toLocaleString('pl-PL',{dateStyle:'medium',timeStyle:'short'}):'';
+}
+function ntPrefsToForm(){
+ if(!ntData)return;
+ for(const key of ntSettingsKeys)$('nt-set-'+key).checked=ntData.preferences[key]===true;
+ const until=ntData.preferences.mutedUntil?new Date(ntData.preferences.mutedUntil).getTime():0;
+ const rem=Math.max(0,Math.ceil((until-Date.now())/60000));
+ $('nt-mute').value=rem===0?'0':rem<=60?'60':rem<=480?'480':'1440';
+ ntSettingsDirty=false;
+ ntPaintMute();
+}
+function ntPaintMute(){
+ const until=ntData?.preferences?.mutedUntil;
+ $('nt-mute-note').textContent=until?
+  'Wyciszenie obowiązuje do '+ntDate(until)+'. Zdarzenia nadal pozostają w skrzynce.':
+  'Bez wyciszenia. Wyciszenie ogranicza wyłącznie podświetlenia, nie usuwa wiadomości.';
+}
+function ntSettingsFormValues(){
+ const values={};for(const key of ntSettingsKeys)values[key]=$('nt-set-'+key).checked;
+ values.muteMinutes=Number($('nt-mute').value);return values;
+}
+function ntTab(name){
+ ntSelected=name;ntShowing=20;
+ document.querySelectorAll('[data-nt-tab]').forEach(button=>{
+  const active=button.dataset.ntTab===name;button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ });
+ for(const pane of document.querySelectorAll('[data-nt-view]'))pane.hidden=pane.dataset.ntView!==(name==='settings'?'settings':'inbox');
+ if(name!=='settings')ntRender();
+}
+function ntVisibleItems(){
+ if(!ntData)return [];
+ const text=$('nt-search').value.trim().toLowerCase();
+ const days=Number($('nt-period').value);
+ const threshold=Date.now()-days*86400000;
+ const rows=ntData.items.filter(item=>{
+  if(ntSelected==='archive'){if(!item.archived)return false}
+  else{
+   if(item.archived)return false;
+   if(ntSelected==='unread'&&item.read)return false;
+   if(ntCategories[ntSelected]&&item.category!==ntSelected)return false;
+  }
+  if(new Date(item.at).getTime()<threshold)return false;
+  if(text&&!([item.title,item.actor,item.detail,ntCategories[item.category]||''].join(' ').toLowerCase().includes(text)))return false;
+  return true;
+ });
+ if($('nt-sort').value==='old')rows.reverse();
+ return rows;
+}
+function ntUpdateMetrics(){
+ if(!ntData)return;
+ const rows=ntData.items,inbox=rows.filter(x=>!x.archived);
+ const unread=inbox.filter(x=>!x.read).length;
+ $('nt-unread').textContent=String(unread);
+ $('nt-inbox-total').textContent=String(inbox.length);
+ $('nt-archive-total').textContent=String(rows.length-inbox.length);
+ const start=new Date();start.setHours(0,0,0,0);
+ $('nt-today').textContent=String(rows.filter(x=>new Date(x.at)>=start).length);
+ if(ntNavCount){
+  ntNavCount.textContent=unread>99?'99+':String(unread);
+  ntNavCount.hidden=unread===0;
+  ntNavCount.style.display=unread===0?'none':'inline-block';
+ }
+}
+function ntButton(label,onClick){
+ const button=document.createElement('button');button.type='button';button.textContent=label;
+ button.addEventListener('click',onClick);return button;
+}
+function ntOpenTarget(item){
+ if(!item)return;
+ if(item.category==='messages'){
+  switchSection('messages');
+  if(item.actor)void openSocialContact('messages',item.actor);
+ }else if(item.category==='friends'){
+  switchSection('friends');fhTab(item.title==='Zaproszenie do znajomych'?'requests':'overview');
+ }else if(item.category==='games'){
+  switchSection('challenges');
+ }else if(item.category==='security'){
+  switchSection('security');securityTab('history');
+ }
+}
+async function ntAction(action,id){
+ if(!ntData||ntBusy)return false;
+ ntBusy=true;
+ try{
+  const result=await api('notification-center/action',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action,ids:id?[id]:[]})});
+  await ntLoad(true);
+  ntMessage('Zaktualizowano '+result.changed+' powiadomień.');
+  return true;
+ }catch(error){ntMessage(error.message,true);return false}
+ finally{ntBusy=false}
+}
+function ntRender(){
+ if(!ntData)return;
+ ntUpdateMetrics();
+ $('nt-list-title').textContent=ntTabTitles[ntSelected]||'Twoje powiadomienia';
+ const rows=ntVisibleItems();
+ $('nt-list-count').textContent=rows.length+' pozycji';
+ const list=$('nt-list');list.replaceChildren();
+ const muted=Boolean(ntData.preferences.mutedUntil);
+ for(const item of rows.slice(0,ntShowing)){
+  const article=document.createElement('article');
+  article.className='notif-item'+(!item.read&&ntData.preferences.highlightUnread&&!muted?' unread':'')+(muted?' muted':'');
+  const icon=document.createElement('div');icon.className='notif-item-icon';icon.textContent=ntSymbols[item.category]||'✦';
+  const main=document.createElement('div');main.className='notif-item-main';
+  const title=document.createElement('div');title.className='notif-item-title';title.textContent=item.title;
+  if(!item.read){const dot=document.createElement('span');dot.className='notif-unread-dot';dot.setAttribute('aria-label','Nieprzeczytane');title.append(dot)}
+  const desc=document.createElement('span');desc.className='notif-item-info';
+  desc.textContent=item.detail+(item.actor?' · '+item.actor:'');
+  main.append(title,desc);
+  if(ntData.preferences.showDates){
+   const date=document.createElement('time');date.className='notif-item-date';date.textContent=ntDate(item.at);
+   main.append(date);
+  }
+  const controls=document.createElement('div');controls.className='notif-item-controls';
+  controls.append(ntButton('Otwórz',async()=>{
+   if(ntData.preferences.autoReadOnOpen&&!item.read){
+    const success=await ntAction('read',item.id);if(!success)return;
+   }
+   ntOpenTarget(item);
+  }));
+  controls.append(ntButton(item.read?'Nieprzeczytane':'Przeczytane',()=>void ntAction(item.read?'unread':'read',item.id)));
+  controls.append(ntButton(item.archived?'Przywróć':'Archiwizuj',()=>void ntAction(item.archived?'restore':'archive',item.id)));
+  article.append(icon,main,controls);list.append(article);
+ }
+ if(!rows.length){
+  const empty=document.createElement('p');empty.className='notif-empty';
+  empty.textContent=ntSelected==='archive'?'Archiwum jest puste.':'Brak powiadomień w wybranej kategorii i okresie.';
+  list.append(empty);
+ }
+ $('nt-more').hidden=rows.length<=ntShowing;
+ $('nt-mark-all').disabled=ntData.items.every(x=>x.read||x.archived);
+ $('nt-archive-read').disabled=ntData.items.every(x=>!x.read||x.archived);
+}
+async function ntLoad(silent=false){
+ if(!sessionConfirmed)return;
+ if(!silent)ntMessage('Aktualizacja skrzynki powiadomień…');
+ try{
+  ntData=await api('notification-center');
+  if(!ntSettingsDirty)ntPrefsToForm();
+  ntRender();
+  if(!silent)ntMessage('Skrzynka aktualna: '+ntData.meta.unread+' nieprzeczytanych. Dane z ostatnich 90 dni.');
+ }catch(error){ntMessage(error.message,true)}
+}
+document.querySelectorAll('[data-nt-tab]').forEach(b=>b.addEventListener('click',()=>ntTab(b.dataset.ntTab)));
+for(const id of ['nt-search','nt-period','nt-sort']){
+ $(id).addEventListener(id==='nt-search'?'input':'change',()=>{ntShowing=20;ntRender()});
+}
+$('nt-more').addEventListener('click',()=>{ntShowing+=20;ntRender()});
+$('nt-refresh').addEventListener('click',()=>void ntLoad());
+$('nt-mark-all').addEventListener('click',()=>void ntAction('read-all'));
+$('nt-archive-read').addEventListener('click',()=>void ntAction('archive-read'));
+$('nt-settings-form').addEventListener('change',()=>{ntSettingsDirty=true});
+$('nt-settings-form').addEventListener('submit',async event=>{
+ event.preventDefault();if(!sessionConfirmed)return;
+ const button=$('nt-save');button.disabled=true;
+ try{
+  const values=ntSettingsFormValues();
+  await api('notification-center',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(values)});
+  ntSettingsDirty=false;
+  await ntLoad(true);
+  ntMessage('Preferencje powiadomień zapisano na Twoim koncie.');
+ }catch(error){ntMessage(error.message,true)}finally{button.disabled=false}
+});
+$('nt-cancel').addEventListener('click',()=>{ntPrefsToForm();ntMessage('Przywrócono zapisane ustawienia.')});
+$('nt-export').addEventListener('click',()=>{
+ if(!ntData){ntMessage('Najpierw wczytaj powiadomienia.',true);return}
+ if(!window.confirm('Eksport może zawierać nicki znajomych i zdarzenia konta. Zachowaj plik prywatnie. Kontynuować?'))return;
+ const clean=v=>'"'+String(v??'').replaceAll('"','""')+'"';
+ const rows=[['Kategoria','Tytuł','Nick','Opis','Data','Przeczytane','Archiwum'],
+  ...ntVisibleItems().map(x=>[ntCategories[x.category],x.title,x.actor,x.detail,ntDate(x.at),x.read?'Tak':'Nie',x.archived?'Tak':'Nie'])];
+ const csv='\uFEFF'+rows.map(row=>row.map(clean).join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='gracz-pl-powiadomienia.csv';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ ntMessage('Wyeksportowano wybrane powiadomienia z aktualnej listy.');
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));

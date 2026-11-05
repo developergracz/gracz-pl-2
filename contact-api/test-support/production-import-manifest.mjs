@@ -19,6 +19,8 @@ export const productionModules=Object.freeze([
   'auth/security-center.mjs',
   // Owner-scoped privacy policies, atomic public-profile updates, session-only export.
   'auth/privacy-center.mjs',
+  // Private notifications inbox projected from existing social and security events.
+  'auth/notification-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
   // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session
