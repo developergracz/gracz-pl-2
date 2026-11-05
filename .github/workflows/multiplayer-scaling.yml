@@ -43,4 +43,5 @@ jobs:
           cache-dependency-path: contact-api/package-lock.json
       - run: npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
       - run: npm --prefix contact-api run test:scaling
+      - run: node --test contact-api/scaling/two-agent-checkers.integration.test.mjs
       - run: node --test contact-api/test/gomoku-realtime.test.mjs contact-api/test/gomoku-realtime-client.test.mjs contact-api/test/gomoku-sync.test.mjs contact-api/test/checkers-realtime.test.mjs contact-api/test/checkers-two-player-match.test.mjs contact-api/test/match-admission.test.mjs
