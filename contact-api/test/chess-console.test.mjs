@@ -27,7 +27,7 @@ test('chess UI uses native side panels without secondary actions under the board
  assert.match(app.body,/chatForm.addEventListener\('submit'/);
  assert.match(app.body,/match\/chat/);
  assert.match(app.body,/history-tab/);
- assert.match(app.body,/board\.parentElement\.after/);
+ assert.match(app.body,/sideTraining\.hidden=mode/);
  assert.doesNotMatch(app.body,/board\.parentElement\.after\(notice,toolbar/);
  assert.match(css.body,/\.chess-console \.boardframe/);
  assert.match(css.body,/aspect-ratio:1/);
