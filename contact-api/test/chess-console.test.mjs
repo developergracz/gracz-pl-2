@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initial,parseFen,legal,move,check,result,square,san} from '../auth/chess-rules.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
+import {readFileSync} from 'node:fs';
 function load(path,method='GET'){let status=0,headers={},body='';const res={writeHead(code,h){status=code;headers=h},end(text){body=String(text)}};const served=serveChessConsole({method},res,new URL('https://example.com'+path));return {served,status,headers,body};}
 test('Szachy P3 premium console exposes authenticated online controls',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css'),rules=load('/konto/szachy/rules.mjs');
@@ -9,6 +10,7 @@ test('Szachy P3 premium console exposes authenticated online controls',()=>{
  assert.match(page.body,/Szachy Online/);assert.match(page.body,/class="board chess-board"/);
  assert.match(page.body,/type="module" src="\/konto\/szachy\/app\.js"/);
  assert.equal(app.status,200);assert.equal(rules.status,200);assert.equal(style.status,200);
+ assert.equal(rules.body,readFileSync(new URL('../auth/chess-rules.mjs',import.meta.url),'utf8'),'browser and server rules must stay identical');
  assert.match(app.body,/import \{initial,legal,apply,san/);
  assert.match(app.body,/Gra lokalna/);
  assert.match(app.body,/fetch\('/);assert.match(app.body,/social\/challenges/);assert.match(app.body,/version:online.version/);
