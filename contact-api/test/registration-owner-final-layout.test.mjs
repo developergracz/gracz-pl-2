@@ -30,6 +30,7 @@ test('A: „Zarejestruj się” keeps gold gradient, user icon and centred label
  assert.doesNotMatch(button[1],/→|&rarr;|arrow/i);
  const submit=rule('body[data-account-view="register"] #register-form>.submit');
  assert.match(submit,/justify-content:center/);
+ assert.match(submit,/font-family:Montserrat,"Segoe UI",Arial,sans-serif!important/);
  assert.match(submit,/linear-gradient\(180deg,#ffe57f 0%,#ffcf5e 46%,#fbb02c 100%\)/);
  assert.match(css,/#register-form>\.submit::after\{content:"";flex:0 0 calc\(22\*var\(--u\)\)\}/,'icon balanced so the label stays centred');
 });

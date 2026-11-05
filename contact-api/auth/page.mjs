@@ -819,7 +819,7 @@ body[data-account-view="register"] #register-form>.submit{
  display:flex!important;align-items:center!important;justify-content:center!important;gap:calc(12*var(--u));
  width:100%;height:var(--reg-submit-h)!important;min-height:0!important;margin:calc(27.5*var(--u)) 0 0!important;
  padding:0 calc(14*var(--u))!important;color:#2a1b00!important;border-radius:calc(10*var(--u))!important;
- font-size:var(--reg-submit-fs)!important;font-weight:800!important;line-height:1;letter-spacing:0;
+ font-size:var(--reg-submit-fs)!important;font-weight:800!important;font-family:Montserrat,"Segoe UI",Arial,sans-serif!important;line-height:1;letter-spacing:0;
  border:1px solid #ffe7a0!important;background:linear-gradient(180deg,#ffe57f 0%,#ffcf5e 46%,#fbb02c 100%)!important;
  box-shadow:0 0 calc(14*var(--u)) rgba(255,190,60,.45),inset 0 1px 0 rgba(255,250,220,.8)!important;
  transition:filter .2s ease,box-shadow .2s ease,transform .2s ease
