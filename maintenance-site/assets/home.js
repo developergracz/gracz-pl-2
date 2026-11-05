@@ -17,7 +17,7 @@
   if (document.getElementById('spolecznosc')) {
     var communityStyle = document.createElement('link');
     communityStyle.rel = 'stylesheet';
-    communityStyle.href = '/assets/home-community-owner-r1.css?v=20261105-teal-guides-blog';
+    communityStyle.href = '/assets/home-community-owner-r1.css?v=20261105-teal-guides-blog-next';
     document.head.appendChild(communityStyle);
   }
 
