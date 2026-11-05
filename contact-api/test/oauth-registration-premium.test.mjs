@@ -61,3 +61,25 @@ test('OAuth endpoints have distinct origin, provider and callback and do not acc
  assert.equal(await oauth.handle(req,response,new URL('/auth/oauth/google/start',BASE)),true);
  assert.equal(await oauth.handle(req,response,new URL('/auth/oauth/not-a-provider/start',BASE)),false);
 });
+
+test('login query pre-renders the LOGIN form before session API can respond',()=>{
+ const loginHtml=serve('/konto/?widok=login');
+ assert.match(loginHtml,/<body class="auth-login-mode" data-account-view="login">/);
+ assert.match(loginHtml,/<form id="register-form" autocomplete="on" novalidate hidden>/);
+ assert.match(loginHtml,/<form id="login-form" novalidate>/);
+ assert.match(loginHtml,/Zaloguj się do <span class="form-logo">/);
+ const registerHtml=serve('/konto/');
+ assert.match(registerHtml,/<body data-account-view="register">/);
+ assert.match(registerHtml,/<form id="login-form" hidden novalidate>/);
+});
+test('login navigation stays in URL and initial view is applied before asynchronous session fetch',()=>{
+ const script=serve('/konto/app.js');
+ const css=serve('/konto/styl.css');
+ assert.match(script,/history\.replaceState\(null,'',requested==='login'\?'\/konto\/\?widok=login':'\/konto\/'\)/);
+ assert.match(script,/window\.scrollTo\(0,0\)/);
+ const position=script.indexOf("view(qp.get('widok')==='login'?'login':'register');");
+ const session=script.lastIndexOf("try{const s=await api('session')");
+ assert.ok(position>=0&&session>position,'requested view must precede session request');
+ assert.match(css,/Owner screenshot R5/);
+ assert.match(css,/body\[data-account-view="register"\] \.right::after\{content:none!important\}/);
+});
