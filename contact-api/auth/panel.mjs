@@ -292,11 +292,14 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <nav class="priv-tabs" role="tablist" aria-label="Opcje prywatności">
  <button type="button" role="tab" aria-selected="true" class="active" data-priv-tab="overview">◈ Centrum prywatności</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="profile">♙ Profil publiczny</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="detail">▤ Szczegóły profilu</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="contacts">◇ Znajomi i kontakt</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="trusted">★ Zaufane kontakty</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="games">♟ Gry i aktywność</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="data">▤ Moje dane</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="future">✧ Forum i przyszłość</button>
 </nav>
+<div class="priv-controlled-count"><strong>20</strong> szczegółowych ustawień prywatności · zapis po stronie serwera · ochrona konta bez dodatkowej usługi</div>
 <p class="priv-notice" id="priv-status" role="status" aria-live="polite">Wczytywanie zapisanych preferencji prywatności…</p>
 <div class="priv-pane" data-priv-pane="overview">
  <div class="card">
@@ -329,6 +332,21 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <p class="priv-hint">Wyłączenie profilu publicznego ukrywa go przed anonimowym dostępem. Zapisane statystyki i odznaki nie są usuwane.</p>
  </div>
 </div>
+<div class="priv-pane" data-priv-pane="detail" hidden>
+ <div class="card">
+  <p class="card-kicker">PRECYZYJNA KONTROLA WIZYTÓWKI</p><h2>Co dokładnie inni zobaczą?</h2>
+  <p>Możesz ukrywać poszczególne informacje nawet wtedy, gdy Twój profil jest publiczny. Zmiany dotyczą publicznego API — nie usuwają danych z Twojego własnego konta.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Moja nazwa wyświetlana</strong><small>Wyłączenie zastępuje nazwę wyświetlaną nickiem gracza na publicznej wizytówce.</small></span><input type="checkbox" id="priv-showDisplayName"></label>
+   <label class="priv-option"><span><strong>Opis biograficzny</strong><small>Ukryj opis profilu przed innymi graczami, bez usuwania jego treści.</small></span><input type="checkbox" id="priv-showBio"></label>
+   <label class="priv-option"><span><strong>Moje motto</strong><small>Decyduj, czy motto będzie widoczne na publicznej wizytówce.</small></span><input type="checkbox" id="priv-showMotto"></label>
+   <label class="priv-option"><span><strong>Data dołączenia</strong><small>Ukryj datę utworzenia konta na publicznym profilu.</small></span><input type="checkbox" id="priv-showJoined"></label>
+   <label class="priv-option"><span><strong>Miasto</strong><small>Kontroluj miasto osobno. Wyświetla się wyłącznie wtedy, gdy pozwolisz również na widoczność kraju i lokalizacji.</small></span><input type="checkbox" id="priv-showCity"></label>
+   <label class="priv-option"><span><strong>Wskaźnik skuteczności wygranych</strong><small>Ukryj procent wygranych w publicznym API. Własne statystyki pozostają dostępne po zalogowaniu.</small></span><input type="checkbox" id="priv-showWinRate"></label>
+  </div>
+  <p class="priv-hint">Statystyki i skuteczność są publiczne tylko wtedy, gdy włączono również publiczną wizytówkę i statystyki. Odznaki nadal mają odrębną zgodę.</p>
+ </div>
+</div>
 <div class="priv-pane" data-priv-pane="contacts" hidden>
  <div class="card"><p class="card-kicker">ODKRYWANIE I ZNAJOMOŚCI</p><h2>Kto może Cię znaleźć i zaprosić?</h2>
   <div class="priv-options">
@@ -339,6 +357,21 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <div class="priv-actions"><button type="button" id="priv-manage-friends" class="secondary">Moi znajomi</button><button type="button" id="priv-manage-blocks" class="secondary">Zarządzaj blokadami</button></div>
  </div>
  <div class="card"><p class="card-kicker">CO ZOSTAJE PRYWATNE</p><h2>Twoje kontakty są Twoje</h2><p>Notatki, telefony, adresy e-mail oraz grupy w Twojej książce adresowej nie są udostępniane innym graczom.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="trusted" hidden>
+ <div class="card">
+  <p class="card-kicker">KONTROLA ZAUFANIA FULL MAX PREMIUM</p><h2>Zaufani znajomi i bezpieczne zaproszenia</h2>
+  <p>Zaufani to zaakceptowani znajomi, których wizytówkę oznaczysz gwiazdką ★ w swojej książce adresowej. Ustawienia poniżej są sprawdzane przy każdej operacji w serwerze.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Wyszukiwanie wyłącznie po pełnym nicku</strong><small>Inni gracze nie znajdą Cię przez wpisanie fragmentu nicku. Nadal mogą znaleźć Cię po dokładnej nazwie, jeżeli pozwalasz na wyszukiwanie.</small></span><input type="checkbox" id="priv-exactSearchOnly"></label>
+   <label class="priv-option"><span><strong>Zaproszenia tylko przez wspólnych znajomych</strong><small>Nowe zaproszenie do znajomych jest dozwolone wyłącznie, gdy nadawca i odbiorca mają zaakceptowanego wspólnego znajomego.</small></span><input type="checkbox" id="priv-mutualFriendsOnlyRequests"></label>
+   <label class="priv-option"><span><strong>Wiadomości tylko od zaufanych</strong><small>Wiadomości może wysyłać tylko zaakceptowany znajomy oznaczony gwiazdką w Twojej książce adresowej. Istniejące rozmowy nie są kasowane.</small></span><input type="checkbox" id="priv-trustedMessagesOnly"></label>
+   <label class="priv-option"><span><strong>Zaproszenia do gier tylko od zaufanych</strong><small>Ogranicz nowe wyzwania do Gomoku i Warcabów do ulubionych, zaakceptowanych znajomych.</small></span><input type="checkbox" id="priv-trustedInvitesOnly"></label>
+   <label class="priv-option"><span><strong>Status online tylko dla zaufanych</strong><small>Twoją obecność widzą jedynie znajomi oznaczeni przez Ciebie gwiazdką ★. Pozostałym znajomym status będzie pokazywany jako offline.</small></span><input type="checkbox" id="priv-trustedPresenceOnly"></label>
+  </div>
+  <div class="priv-actions"><button class="secondary" id="priv-trusted-manage" type="button">Otwórz zaufane kontakty</button><button class="secondary" id="priv-trusted-blocks" type="button">Blokady graczy</button></div>
+  <p class="priv-hint">Włączenie restrykcji bez żadnego zaufanego kontaktu zablokuje odpowiednie interakcje dla wszystkich obecnych znajomych. Przyciski nie zmieniają statusu znajomości bez Twojej zgody.</p>
+ </div>
 </div>
 <div class="priv-pane" data-priv-pane="games" hidden>
  <div class="card"><p class="card-kicker">ROZGRYWKI I AKTYWNOŚĆ</p><h2>Zaproszenia oraz status online</h2>
