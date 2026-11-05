@@ -1170,6 +1170,67 @@ body.pw-success-open{overflow:hidden}
 @media(max-width:1200px){#player-shell .priv-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){#player-shell .priv-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .priv-presets{grid-template-columns:1fr}#player-shell .priv-info-grid{grid-template-columns:1fr}#player-shell .priv-roadmap{grid-template-columns:1fr}}
 @media(max-width:700px){#player-shell .priv-hero{padding:12px;min-height:105px}#player-shell .priv-hero h2{font-size:25px}#player-shell .priv-emblem{height:55px;width:55px;border-radius:15px}#player-shell .priv-emblem span{font-size:22px}#player-shell .priv-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .priv-tabs button{min-height:41px;font-size:11px}#player-shell .priv-savebar{bottom:0;flex-wrap:wrap;border-radius:12px;padding:10px}#player-shell .priv-savebar .priv-actions{width:100%}#player-shell .priv-savebar .priv-actions button{flex:1;min-height:41px}#player-shell .priv-option{padding:11px;gap:10px}#player-shell .priv-option input{width:23px;height:23px}}
+
+/* GRACZ.PL Notifications Full Max Premium — compact and responsive */
+#player-shell .notif-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:118px;padding:17px 21px;border:1px solid #27dac8;border-radius:17px;background:radial-gradient(ellipse at 83% 10%,#0ca9a65c,transparent 58%),linear-gradient(120deg,#073b47,#031f2d)}
+#player-shell .notif-hero h2{font-size:clamp(23px,2.5vw,33px);margin:5px 0;color:#fff}
+#player-shell .notif-hero p:last-child{font-size:12px;color:#b6d9d9;line-height:1.5;margin:0}
+#player-shell .notif-orb{height:76px;width:76px;flex:0 0 auto;border:2px solid #e9c674;border-radius:50%;background:#043344;color:#f5ce83;box-shadow:0 0 23px #21d6c848;display:grid;place-content:center;text-align:center;font-size:32px;gap:0}
+#player-shell .notif-orb small{font-size:8px;letter-spacing:.09em;font-weight:900}
+#player-shell .notif-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#player-shell .notif-metrics>div{min-width:0;display:grid;gap:5px;border:1px solid #2a7e85;background:linear-gradient(130deg,#08424b,#052330);border-radius:12px;padding:12px}
+#player-shell .notif-metrics small{font-size:9px;font-weight:850;color:#f4d18a;letter-spacing:.1em}
+#player-shell .notif-metrics strong{font-size:clamp(20px,2vw,27px);line-height:1.1;color:#fff}
+#player-shell .notif-metrics span{font-size:10px;color:#a3c7cc}
+#player-shell .notif-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;background:#052a39;padding:7px;border:1px solid #27787f;border-radius:13px;position:sticky;top:0;z-index:5}
+#player-shell .notif-tabs button{min-width:0;min-height:38px;padding:7px;background:#073844;border:1px solid #376d75;border-radius:9px;color:#def2ef;font:800 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
+#player-shell .notif-tabs button.active{border-color:#23e5ca;background:linear-gradient(115deg,#08766f,#064956);color:#fff;box-shadow:0 0 16px #12e3d53b}
+#player-shell .notif-tabs button:focus-visible{outline:2px solid #ffe1a4;outline-offset:2px}
+#player-shell .notif-feedback{margin:0;padding:9px 12px;border:1px solid #2a6e79;background:#062f3d;border-radius:11px;font-size:11px;color:#bfe8e3}
+#player-shell .notif-feedback.error{color:#ffc4bc;border-color:#ad6568}
+#player-shell .notif-view{display:grid;gap:11px}
+#player-shell .notif-view[hidden]{display:none!important}
+#player-shell .notif-toolbar{display:grid;gap:10px;padding:13px}
+#player-shell .notif-toolbar-row{display:grid;grid-template-columns:minmax(160px,2fr) minmax(100px,1fr) minmax(95px,1fr);gap:9px}
+#player-shell .notif-toolbar label,#player-shell .notif-settings label[for=nt-mute]{display:grid;gap:6px;font-size:11px;font-weight:750;color:#d8efec}
+#player-shell .notif-toolbar input,#player-shell .notif-toolbar select,#player-shell .notif-settings select{min-width:0;width:100%;min-height:38px;padding:7px 10px;border:1px solid #34838b;border-radius:9px;background:#052b38;color:#f7ffff;font-size:12px}
+#player-shell .notif-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+#player-shell .notif-actions button{min-height:37px;padding:8px 12px;font-size:11px}
+#player-shell .notif-list-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#player-shell .notif-list-header h2{font-size:19px;margin:4px 0}
+#player-shell .notif-list-count{padding:5px 10px;border:1px solid #3b9095;border-radius:20px;color:#ffe4a5;font-size:11px}
+#player-shell .notif-items{display:grid;gap:8px;margin-top:11px}
+#player-shell .notif-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:start;padding:11px;border:1px solid #2c747e;border-radius:12px;background:linear-gradient(110deg,#073e48,#062533)}
+#player-shell .notif-item.unread{border-color:#19c5b8;background:linear-gradient(110deg,#08646b,#05333e);box-shadow:inset 3px 0 0 #43e5c8}
+#player-shell .notif-item.muted{box-shadow:none}
+#player-shell .notif-item-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid #6ea8a8;border-radius:10px;color:#ffe0a1;background:#053544;font-size:17px}
+#player-shell .notif-item-main{min-width:0;display:grid;gap:5px}
+#player-shell .notif-item-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:850;font-size:12px;color:#fff}
+#player-shell .notif-unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#27e6cb;box-shadow:0 0 8px #28dfbd}
+#player-shell .notif-item-info{font-size:11px;color:#bed6d8;overflow-wrap:anywhere}
+#player-shell .notif-item-date{font-size:10px;color:#94b7bb}
+#player-shell .notif-item-controls{display:flex;justify-content:end;align-items:center;gap:6px;flex-wrap:wrap;max-width:255px}
+#player-shell .notif-item-controls button{padding:6px 9px;min-height:32px;border-radius:8px;background:#083c49;border:1px solid #367c84;color:#e5f6f3;font-size:10px;font-weight:760;cursor:pointer}
+#player-shell .notif-item-controls button:hover{border-color:#ffe2a2}
+#player-shell .notif-empty{padding:24px 12px;text-align:center;color:#b7d5d4;font-size:12px}
+#player-shell .notif-pagination{display:flex;justify-content:center;margin:12px 0 0}
+#player-shell .notif-settings{display:grid;gap:12px}
+#player-shell .notif-settings h3{color:#f4d28c;font-size:15px;margin:12px 0 0}
+#player-shell .notif-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#player-shell .notif-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #2a7c83;border-radius:12px;background:#063342;cursor:pointer}
+#player-shell .notif-setting strong{font-size:12px;color:#fff}
+#player-shell .notif-setting small{display:block;font-size:11px;line-height:1.5;color:#b4d5d7;margin-top:4px}
+#player-shell .notif-setting input{width:21px;height:21px;flex:0 0 auto;accent-color:#1bcbbb;cursor:pointer}
+#player-shell .notif-required{white-space:nowrap;color:#ffe09b;font-size:11px;font-weight:900}
+#player-shell .notif-locked{cursor:default}
+#player-shell .notif-hint,#player-shell .notif-footnote p{font-size:11px;line-height:1.6;color:#accbd0}
+#player-shell .notif-planned{display:flex;gap:8px;flex-wrap:wrap}
+#player-shell .notif-planned span{padding:7px 10px;border:1px solid #356c77;border-radius:20px;background:#052d38;color:#a7c3c7;font-size:11px}
+#player-shell .notif-footnote{padding:12px}
+#player-shell .notif-footnote p{margin:0}
+#player-shell #nt-mute{max-width:270px}
+@media(max-width:1100px){#player-shell .notif-toolbar-row{grid-template-columns:1fr 1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 2}}
+@media(max-width:700px){#player-shell .notif-hero{padding:12px;min-height:96px}#player-shell .notif-orb{height:55px;width:55px;font-size:22px}#player-shell .notif-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .notif-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .notif-settings-grid{grid-template-columns:1fr}#player-shell .notif-item{grid-template-columns:32px minmax(0,1fr)}#player-shell .notif-item-icon{height:32px;width:32px}#player-shell .notif-item-controls{grid-column:2;max-width:none;justify-content:flex-start}#player-shell .notif-item-controls button{min-height:40px}#player-shell .notif-toolbar-row{grid-template-columns:1fr}#player-shell .notif-toolbar-row label:first-child{grid-column:span 1}}
 `;
 const js=String.raw`(()=>{
 'use strict';
