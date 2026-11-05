@@ -1,0 +1,24 @@
+name: Warcaby production read-only acceptance
+on:
+  pull_request:
+    paths:
+      - 'contact-api/scaling/checkers-production-readonly.test.mjs'
+      - '.github/workflows/checkers-production-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-live-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: contact-api/package-lock.json
+      - run: npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
+      - run: npm --prefix contact-api install --no-save --no-package-lock --ignore-scripts --no-fund --no-audit playwright@1.58.2
+      - run: ./contact-api/node_modules/.bin/playwright install --with-deps chromium
+      - run: node --test contact-api/scaling/checkers-production-readonly.test.mjs
