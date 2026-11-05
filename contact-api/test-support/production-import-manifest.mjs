@@ -41,6 +41,8 @@ export const productionModules=Object.freeze([
   'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
+  // P1 chess preview, no match API or gameplay actions.
+  'auth/chess-console.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.
   'routes/gomoku-ai-chat-route.mjs',
