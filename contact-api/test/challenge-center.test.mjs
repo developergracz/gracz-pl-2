@@ -80,7 +80,7 @@ test('star, archive, mark seen and private note do not affect other player',asyn
  assert.equal(f.data.get(owner+invitation).archived,false);
  assert.equal(f.data.get(owner+invitation).seen,false);
 });
-test('original challenge permissions, Gomoku timer and expiration are preserved',()=>{
+test('challenge permissions, both game timers and expiration are preserved',()=>{
  const source=readFileSync(new URL('../auth/public-identity.mjs',import.meta.url),'utf8');
  assert.match(source,/if\(await challengeCenter.handle\(req,res,url\)\)return true/);
  assert.match(source,/c.time_limit_minutes,c.increment_seconds/);
@@ -88,7 +88,7 @@ test('original challenge permissions, Gomoku timer and expiration are preserved'
  assert.match(source,/starred:row.starred===true,archived:row.archived===true/);
  assert.match(source,/const gomokuTimeOptions=new Set\(\[0,1,2,3,5,7,10,15,30\]\)/);
  assert.match(source,/const gomokuIncrementOptions=new Set\(\[0,2,3,5,10\]\)/);
- assert.match(source,/game!=='gomoku'&&\(minutes!==0\|\|incrementSeconds!==0\)/);
+ assert.match(source,/\['gomoku','warcaby'\]\.includes\(game\)/);
  assert.match(source,/c.status='pending' AND c.expires_at>now\(\)/);
 });
 test('premium challenge page has all eight tabs and working personal tools',()=>{
@@ -108,5 +108,5 @@ test('premium challenge page has all eight tabs and working personal tools',()=>
  assert.match(js,/async function refreshChallenges/);
  assert.match(js,/timeLimitMinutes,incrementSeconds/);
  assert.match(css,/Full Max Premium Challenges/);
- assert.match(html,/Warcaby: bez konfiguracji zegara/);
+ assert.match(html,/Warcaby i Gomoku: dostępne limity czasu/);
 });
