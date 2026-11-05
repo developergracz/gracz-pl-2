@@ -2711,9 +2711,9 @@ body.search-page{
   color:#f7f7ee;
 }
 body.search-page .site-header.shared-global-header{
-  --gh-bg:#002925;
+  --gh-bg:#071d1a;
   --gh-teal:#56c8c1;
-  background:#002925!important;
+  background:#071d1a!important;
   border-bottom:1px solid rgba(214,175,91,.35)!important;
   box-shadow:0 5px 18px rgba(0,12,17,.28)!important;
 }
