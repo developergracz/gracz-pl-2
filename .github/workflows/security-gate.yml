@@ -31,6 +31,8 @@ jobs:
         run: npm run check
       - name: Tests
         run: npm test
+      - name: Warcaby viewport layout (real Chromium)
+        run: node e2e/warcaby-layout.browser.mjs
       - name: Block high/critical production CVEs
         run: npm audit --omit=dev --audit-level=high
 
