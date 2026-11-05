@@ -78,6 +78,26 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await pages[0].locator('#chat-input').fill('Witaj przy szachownicy!');
  await pages[0].locator('#chat-send').click();
  await pages[1].waitForFunction(()=>document.querySelector('#chat-messages')?.textContent.includes('Witaj przy szachownicy!'),{timeout:10000});
+ // Follow-up WebSocket events contain only new messages; the client must retain old ones.
+ await pages[1].locator('#chat-input').fill('Cześć, zaczynajmy!');
+ await pages[1].locator('#chat-send').click();
+ await pages[0].locator('#chat-input').fill('Powodzenia!');
+ await pages[0].locator('#chat-send').click();
+ for(const page of pages){
+  await page.waitForFunction(()=>document.querySelectorAll('.chess-chat-message').length===3,{timeout:10000});
+  const chat=await page.locator('#chat-messages').innerText();
+  assert.match(chat,/Witaj przy szachownicy!/);
+  assert.match(chat,/Cześć, zaczynajmy!/);
+  assert.match(chat,/Powodzenia!/);
+  assert.match(chat,/Chess1_/);
+  assert.match(chat,/Chess2_/);
+  assert.match(await page.locator('.player.first small').innerText(),/Czarne — drugi ruch/);
+  assert.match(await page.locator('.player.second small').innerText(),/Białe — zaczynają/);
+  for(const link of await page.locator('.sidebar-footer .side-links a').all()){
+   const ok=await link.evaluate(el=>el.scrollWidth<=el.clientWidth+2);
+   assert.ok(ok,'Sidebar link text must fit without horizontal clipping');
+  }
+ }
  await pages[1].locator('#history-tab').click();
  assert.equal(await pages[1].locator('#moves-panel').isVisible(),true);
  await pages[1].locator('#chat-tab').click();
