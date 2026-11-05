@@ -74,7 +74,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <form id="profile-form" class="card profile-editor" autocomplete="on">
  <div class="card-heading"><div><p class="card-kicker">01 / PERSONALIZACJA</p><h2>Edytuj dane gracza</h2><p>Ustaw swoją wizytówkę. Edycja zapisuje się na koncie dopiero po zatwierdzeniu.</p></div><span class="profile-pill">BEZPIECZNA EDYCJA</span></div>
  <div class="form-grid">
- <label>Nick gracza <small>Stały identyfikator</small><input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
+ <label>Nick gracza <small>Login · zmiana w sekcji „Zmiana nicku”</small><input id="nickname" disabled title="Nick jest identyfikatorem konta"></label>
  <label>Adres e-mail <small>Zweryfikowany</small><input id="email" type="email" disabled title="Adres potwierdzony podczas rejestracji"></label>
  <label>Nazwa wyświetlana <small>Widoczna w wizytówce</small><input id="display-name" maxlength="40" minlength="2" autocomplete="nickname" required></label>
  <label>Kraj <small>Informacja w profilu</small><select id="country"><option value="PL">Polska</option><option value="DE">Niemcy</option><option value="CZ">Czechy</option><option value="SK">Słowacja</option><option value="OTHER">Inny</option></select></label>
@@ -92,6 +92,15 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
    <small id="pw-hint">Co najmniej 15 znaków. Użyj unikalnego hasła, którego nie używasz w innych serwisach.</small>
    <label for="pw-confirm">Powtórz nowe hasło</label><div class="profile-password-field"><input type="password" id="pw-confirm" autocomplete="new-password" minlength="15" maxlength="256" required><button type="button" data-password-toggle="pw-confirm" aria-label="Pokaż potwierdzenie hasła" aria-pressed="false">Pokaż</button></div>
    <div class="form-actions"><span id="pw-change-status" role="status" aria-live="polite">Aktualne hasło nie jest wyświetlane ani zapisywane w panelu.</span><button class="primary" id="pw-change-submit" type="submit">Zmień hasło</button></div>
+  </form>
+ </div>
+ <div class="card profile-password-card" id="profile-nickname-section">
+  <div class="card-heading"><div><p class="card-kicker">LOGIN GRACZA · FULL MAX PREMIUM</p><h2>Zmiana nicku</h2><p>Nowy nick służy do logowania i jest widoczny dla innych graczy. Konto, e-mail, hasło, sesje, znajomi i historia gier pozostają bez zmian.</p></div><span class="profile-pill">BEZPIECZNA ZMIANA</span></div>
+  <form id="nick-change-form" class="profile-password-form" autocomplete="off">
+   <label for="nick-next">Nowy nick</label><div class="profile-password-field"><input id="nick-next" maxlength="32" minlength="3" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required spellcheck="false" autocapitalize="off" aria-describedby="nick-hint"></div>
+   <small id="nick-hint">3–32 znaki, zaczyna się literą. Litery, cyfry, _ – . Po zmianie logujesz się nowym nickiem albo adresem e-mail.</small>
+   <label for="nick-password">Obecne hasło</label><div class="profile-password-field"><input type="password" id="nick-password" autocomplete="current-password" required maxlength="256"><button type="button" data-password-toggle="nick-password" aria-label="Pokaż obecne hasło" aria-pressed="false">Pokaż</button></div>
+   <div class="form-actions"><span id="nick-change-status" role="status" aria-live="polite">Zmiana wymaga potwierdzenia obecnym hasłem.</span><button class="primary" id="nick-change-submit" type="submit">Zmień nick</button></div>
   </form>
  </div>
  <div class="card profile-shortcuts"><p class="card-kicker">02 / CENTRUM GRACZA</p><h2>Szybkie zarządzanie</h2><div class="profile-shortcut-grid">
@@ -796,7 +805,7 @@ body{background:radial-gradient(ellipse at 60% 22%,#064653,transparent 55%),line
 .profile-password-field button{border:0;border-left:1px solid #286b70;background:#10404a;color:#aaf6e8;font-weight:750;padding:0 17px;min-width:81px;cursor:pointer}
 .profile-password-field button:hover{background:#14616a}
 .profile-password-form .form-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px}
-.profile-password-form .form-actions #pw-change-status{max-width:470px;line-height:1.5;font-size:13px}
+.profile-password-form .form-actions #pw-change-status,.profile-password-form .form-actions #nick-change-status{max-width:470px;line-height:1.5;font-size:13px}
 .profile-password-form .form-actions button{min-width:165px}
 @media(max-width:650px){.profile-password-form .form-actions button{width:100%}}
 
@@ -2313,11 +2322,14 @@ async function api(path,options={}){
    ZBYT_WIELE_PROB:'Zbyt wiele operacji. Spróbuj później.',
    BLEDNE_AKTUALNE_HASLO:'Obecne hasło jest nieprawidłowe.',
    POPRAW_NOWE_HASLO:'Sprawdź długość nowego hasła, potwierdzenie i to, czy różni się od obecnego.',
-   HASLO_ZMIENIONE_PONOW_PROBE:'Hasło zostało zmienione w innej sesji. Odśwież stronę i spróbuj ponownie.'
+   HASLO_ZMIENIONE_PONOW_PROBE:'Hasło zostało zmienione w innej sesji. Odśwież stronę i spróbuj ponownie.',
+   POPRAW_NICK:'Nick musi mieć 3–32 znaki, zaczynać się literą i zawierać tylko litery, cyfry, kropki, podkreślenia lub łączniki.',
+   NICK_BEZ_ZMIAN:'To jest Twój obecny nick.',
+   NICK_ZAJETY:'Ten nick jest już zajęty. Wybierz inny.'
   };
   const error=new Error(messages[body.error]||(response.status===401?'Sesja wygasła. Zaloguj się ponownie.':
    'Nie udało się wykonać operacji. Spróbuj ponownie.'));
-  error.status=response.status;throw error;
+  error.status=response.status;error.code=body.error;throw error;
  }
  return body;
 }
@@ -2454,6 +2466,29 @@ $('pw-change-form').addEventListener('submit',async event=>{
   label.textContent='Hasło zmieniono. Wylogowano pozostałe sesje: '+result.otherSessionsRevoked+'.';
   showPasswordSuccessModal(result.otherSessionsRevoked);
  }catch(error){label.textContent=error.message;}
+ finally{save.disabled=false;}
+});
+
+$('nick-change-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const form=$('nick-change-form'),save=$('nick-change-submit'),label=$('nick-change-status');
+ if(!sessionConfirmed){label.textContent='Zaloguj się ponownie, aby zmienić nick.';return;}
+ const nickname=$('nick-next').value.trim(),currentPassword=$('nick-password').value;
+ if(!/^[a-z][a-z0-9._-]{2,31}$/i.test(nickname)){label.textContent='Nick musi mieć 3–32 znaki, zaczynać się literą i zawierać tylko litery, cyfry, kropki, podkreślenia lub łączniki.';return;}
+ if(nickname===profileSnapshot?.nickname){label.textContent='To jest Twój obecny nick.';return;}
+ if(!currentPassword){label.textContent='Potwierdź zmianę obecnym hasłem.';return;}
+ save.disabled=true;label.textContent='Bezpieczne zapisywanie nowego nicku…';
+ try{
+  const result=await api('change-nickname',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({nickname,currentPassword})});
+  form.reset();$('nick-password').type='password';
+  label.textContent='Nick zmieniono na '+result.nickname+'. Loguj się nowym nickiem albo adresem e-mail.';
+  notice('Nick został zmieniony na '+result.nickname+'.');
+  try{fill((await api('profile')).profile);}catch{}
+ }catch(error){
+  label.textContent=error.message;
+  if(error.code==='BRAK_SESJI')accessState('Zaloguj się do konta','Sesja wygasła. Zaloguj się ponownie, aby zmienić nick.',{login:true});
+ }
  finally{save.disabled=false;}
 });
 

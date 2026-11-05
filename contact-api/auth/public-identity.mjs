@@ -362,6 +362,43 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
    }
   }
+  // Login nickname change for the authenticated account only. Account id, e-mail, password and
+  // sessions stay as they are; every relation is keyed by account id. UNIQUE(nickname_key) in
+  // PostgreSQL settles concurrent requests, so another account's nick is never overwritten.
+  if(url.pathname==='/auth/change-nickname'){
+   if(req.method!=='POST')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+   if(!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
+   try{
+    await ready();
+    const token=sessionToken(req);
+    if(!/^[a-f0-9]{64}$/.test(token))return bad(res,401,'BRAK_SESJI'),true;
+    const q=await database.query('SELECT a.id,a.nickname,a.salt,a.password_digest FROM gracz_public_identity.sessions s JOIN gracz_public_identity.accounts a ON a.id=s.account_id WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1',[digest(token)]);
+    if(!q.rows.length)return bad(res,401,'BRAK_SESJI'),true;
+    const account=q.rows[0];
+    if(!allow('nickname-change:'+account.id,10))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+    let body;
+    try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
+    const nick=normalizeNick(body.nickname),currentPassword=body.currentPassword;
+    if(!validNick(nick))return bad(res,400,'POPRAW_NICK'),true;
+    if(nick===account.nickname)return bad(res,400,'NICK_BEZ_ZMIAN'),true;
+    if(!validPassword(currentPassword))return bad(res,401,'BLEDNE_AKTUALNE_HASLO'),true;
+    const currentHash=Buffer.from(account.password_digest);
+    const computed=await hashPassword(currentPassword,Buffer.from(account.salt));
+    if(currentHash.length!==computed.length||!timingSafeEqual(currentHash,computed))
+     return bad(res,401,'BLEDNE_AKTUALNE_HASLO'),true;
+    let changed;
+    try{
+     changed=await database.query(`UPDATE gracz_public_identity.accounts SET nickname=$2,nickname_key=$3
+       WHERE id=$1 AND password_digest=$4 AND verified_at IS NOT NULL RETURNING nickname`,
+       [account.id,nick,nick.toLowerCase(),currentHash]);
+    }catch(e){if(e?.code==='23505')return bad(res,409,'NICK_ZAJETY'),true;throw e;}
+    if(changed.rowCount!==1)return bad(res,409,'HASLO_ZMIENIONE_PONOW_PROBE'),true;
+    return json(res,200,{ok:true,nickname:changed.rows[0].nickname}),true;
+   }catch(e){
+    console.error('IDENTITY_NICKNAME_CHANGE_ERROR',{code:safeText(e?.code)||'NICKNAME_CHANGE_ERROR'});
+    return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
+   }
+  }
   if(url.pathname==='/auth/session'&&req.method==='GET'){
    try{
     await ready();const token=sessionToken(req);
