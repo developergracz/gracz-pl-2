@@ -2070,71 +2070,223 @@ $('message-form').addEventListener('submit',async event=>{
  }catch(error){socialNotice('messages-state',error.message,true);}
  finally{msgSending=false;button.disabled=!$('message-recipient').value;}
 });
-async function refreshChallenges(){
- const list=$('challenge-list');list.replaceChildren();
- socialNotice('challenges-state','Wczytywanie wyzwań…');
- try{
-  const response=await api('social/challenges');
-  if(!response.challenges.length){
-   const p=document.createElement('p');p.className='friend-empty';
-   p.textContent='Brak zaproszeń do gier. Zaproś znajomego do Warcabów lub Gomoku.';
-   list.append(p);
-  }
-  response.challenges.forEach(challenge=>{
-   const row=document.createElement('div');row.className='friend-person';
-   const info=document.createElement('div');
-   const title=document.createElement('div');title.className='friend-name';
-   title.textContent=(challenge.game==='warcaby'?'♟ Warcaby':'◉ Gomoku')+' · '+challenge.opponent;
-   const detail=document.createElement('div');detail.className='friend-sub';
-   const states={pending:'Oczekuje',accepted:'Przyjęto',declined:'Odrzucono',
-    cancelled:'Anulowano',expired:'Wygasło'};
-   detail.textContent=(challenge.outgoing?'Wysłane · ':'Otrzymane · ')+(states[challenge.status]||challenge.status)+' · '+safeDate(challenge.createdAt);
-   info.append(title,detail);row.append(info);
-   const controls=document.createElement('div');controls.className='friend-controls';
-   const actions=challenge.status==='pending'?
-     challenge.outgoing?[['cancel','Anuluj']]:[['accept','Akceptuj'],['decline','Odrzuć']]:[];
-   actions.forEach(([action,label])=>{
-    const button=document.createElement('button');button.type='button';button.textContent=label;
-    button.addEventListener('click',async()=>{
-     button.disabled=true;
-     try{
-      await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({action,id:challenge.id})});
-      await refreshChallenges();socialNotice('challenges-state','Zaktualizowano zaproszenie.');
-     }catch(error){socialNotice('challenges-state',error.message,true);}
-     finally{button.disabled=false;}
-    });
-    controls.append(button);
-   });
-   if(challenge.status==='accepted'){
-    if(challenge.game==='gomoku'){
-      const link=document.createElement('a');link.className='secondary link-button';
-      link.href='/konto/gomoku/?match='+encodeURIComponent(challenge.id);
-      link.textContent='Graj w Gomoku';controls.append(link);
-    }else if(challenge.game==='warcaby'){
-      const link=document.createElement('a');link.className='secondary link-button';
-      link.href='/konto/warcaby/?match='+encodeURIComponent(challenge.id);
-      link.textContent='Graj w Warcaby';controls.append(link);
-    }
-   }
-   row.append(controls);list.append(row);
-  });
-  socialNotice('challenges-state','Zaproszenia: '+response.challenges.length+'.');
- }catch(error){socialNotice('challenges-state',error.message,true);}
+// Full Max Premium Challenges — only existing game APIs execute invitations.
+let challState=[],challTab='all',challDisplay=15,challLoading=false,challBusy=false,challNoteId=null,challLastFetch=0;
+const challStatuses={pending:'Oczekuje',accepted:'Zaakceptowano',declined:'Odrzucono',cancelled:'Anulowano',expired:'Wygasło'};
+const challTabs={all:'Twoje zaproszenia',incoming:'Otrzymane wyzwania',outgoing:'Wysłane zaproszenia',accepted:'Zaakceptowane partie',starred:'Ważne wyzwania',history:'Historia zaproszeń',archive:'Archiwum'};
+function challUpdatePreview(){
+ const game=$('challenge-game').value,timed=game==='gomoku';
+ $('chall-time-options').hidden=!timed;
+ if(!timed){$('challenge-time').value='0';$('challenge-increment').value='0';}
+ if($('challenge-time').value==='0')$('challenge-increment').value='0';
+ $('challenge-increment').disabled=!timed||$('challenge-time').value==='0';
+ $('chall-preview-icon').textContent=timed?'◉':'♟';
+ $('chall-preview-name').textContent=timed?'Gomoku Online':'Warcaby Online';
+ const minutes=Number($('challenge-time').value),increment=Number($('challenge-increment').value);
+ $('chall-preview-details').textContent=timed&&minutes>0?
+  minutes+' min na gracza'+(increment>0?' · +'+increment+' s za ruch':' · bez przyrostu'):
+  'Klasyczna partia online · bez zegara';
+ $('chall-clock-description').textContent=minutes>0?
+  'Zegar uruchomi się po dołączeniu obu graczy.': 'Gomoku bez zegara nie dodaje czasu po ruchu.';
 }
-$('challenges-refresh').addEventListener('click',()=>void refreshChallenges());
-$('challenge-form').addEventListener('submit',async event=>{
- event.preventDefault();
- const nickname=$('challenge-friend').value,game=$('challenge-game').value;
- if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return;}
- const button=$('challenge-form').querySelector('button[type="submit"]');button.disabled=true;
+function challTabSelect(tab){
+ challTab=tab;challDisplay=15;
+ document.querySelectorAll('[data-chall-tab]').forEach(button=>{
+  const active=button.dataset.challTab===tab;
+  button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ });
+ $('chall-workspace').hidden=tab==='settings';$('chall-settings').hidden=tab!=='settings';
+ if(tab!=='settings')challRender();
+}
+function challRows(){
+ const query=$('chall-search').value.trim().toLowerCase(),game=$('chall-filter-game').value,
+  status=$('chall-filter-status').value;
+ const items=challState.filter(item=>{
+  if(challTab==='archive'){if(!item.archived)return false;}
+  else{
+   if(item.archived)return false;
+   if(challTab==='incoming'&&(item.outgoing||item.status!=='pending'))return false;
+   if(challTab==='outgoing'&&(!item.outgoing||item.status!=='pending'))return false;
+   if(challTab==='accepted'&&item.status!=='accepted')return false;
+   if(challTab==='starred'&&!item.starred)return false;
+   if(challTab==='history'&&['pending','accepted'].includes(item.status))return false;
+  }
+  if(game!=='all'&&game!==item.game)return false;
+  if(status!=='all'&&status!==item.status)return false;
+  if(query&&!item.opponent.toLowerCase().includes(query)&&!item.note.toLowerCase().includes(query))return false;
+  return true;
+ });
+ if($('chall-sort').value==='old')items.reverse();
+ return items;
+}
+function challCounts(){
+ const rows=challState.filter(x=>!x.archived);
+ $('chall-incoming-count').textContent=String(rows.filter(x=>!x.outgoing&&x.status==='pending').length);
+ $('chall-outgoing-count').textContent=String(rows.filter(x=>x.outgoing&&x.status==='pending').length);
+ $('chall-accepted-count').textContent=String(rows.filter(x=>x.status==='accepted').length);
+ $('chall-star-count').textContent=String(rows.filter(x=>x.starred).length);
+}
+function challButton(text,fn,emphasize=false){
+ const button=document.createElement('button');button.type='button';button.textContent=text;
+ if(emphasize)button.className='chall-important';
+ button.addEventListener('click',async()=>{if(challBusy)return;button.disabled=true;try{await fn();}finally{button.disabled=false;}});
+ return button;
+}
+function challReadDate(value){return safeDate(value)}
+function challGameLabel(ch){return ch.game==='gomoku'?'◉ Gomoku':'♟ Warcaby'}
+function challClockLabel(ch){return ch.game==='gomoku'&&ch.timeLimitMinutes>0?
+  ch.timeLimitMinutes+' min'+(ch.incrementSeconds?' + '+ch.incrementSeconds+' s':''): 'Bez zegara'}
+function challRender(){
+ challCounts();
+ const rows=challRows(),list=$('challenge-list');list.replaceChildren();
+ $('chall-list-heading').textContent=challTabs[challTab]||'Twoje zaproszenia';
+ $('chall-result-count').textContent='Znaleziono: '+rows.length;
+ for(const item of rows.slice(0,challDisplay)){
+  const card=document.createElement('article');card.className='chall-card'+(!item.seen&&!item.outgoing&&item.status==='pending'?' is-new':'');
+  const top=document.createElement('div');top.className='chall-card-top';
+  const block=document.createElement('div');
+  const title=document.createElement('div');title.className='chall-card-title';
+  title.textContent=challGameLabel(item)+' · '+item.opponent+(item.starred?' ★':'');
+  const sub=document.createElement('div');sub.className='chall-card-sub';
+  sub.textContent=(item.outgoing?'Wysłane do znajomego':'Otrzymane od znajomego')+' · '+challReadDate(item.createdAt);
+  block.append(title,sub);
+  const badge=document.createElement('span');badge.className='chall-card-badge'+(item.status==='pending'?' pending':'');
+  badge.textContent=challStatuses[item.status]||item.status;top.append(block,badge);
+  const details=document.createElement('div');details.className='chall-card-details';
+  for(const detail of [challClockLabel(item),item.status==='pending'?'Ważne do '+challReadDate(item.expiresAt):
+   'Aktualizacja: '+challReadDate(item.updatedAt||item.createdAt)]){
+   const el=document.createElement('span');el.textContent=detail;details.append(el);
+  }
+  card.append(top,details);
+  if(item.note){const note=document.createElement('div');note.className='chall-card-note';note.textContent='Notatka prywatna: '+item.note;card.append(note);}
+  const actions=document.createElement('div');actions.className='chall-card-actions';
+  if(item.status==='pending'){
+   if(item.outgoing){
+    actions.append(challButton('Anuluj wyzwanie',()=>challRespond('cancel',item.id),true));
+   }else{
+    actions.append(challButton('Akceptuj',()=>challRespond('accept',item.id),true));
+    actions.append(challButton('Odrzuć',()=>challRespond('decline',item.id)));
+   }
+  }
+  if(item.status==='accepted'){
+   const link=document.createElement('a');
+   link.href=(item.game==='gomoku'?'/konto/gomoku/':'/konto/warcaby/')+'?match='+encodeURIComponent(item.id);
+   link.textContent='Graj online';link.className='chall-important';
+   actions.append(link);
+  }
+  actions.append(challButton(item.starred?'Usuń gwiazdkę':'★ Ważne',
+   ()=>challMeta(item.starred?'unstar':'star',item.id)));
+  actions.append(challButton(item.archived?'Przywróć':'Archiwizuj',
+   ()=>challMeta(item.archived?'restore':'archive',item.id)));
+  actions.append(challButton('Notatka',()=>challOpenNote(item)));
+  if(!item.seen)actions.append(challButton('Oznacz jako obejrzane',()=>challMeta('seen',item.id)));
+  actions.append(challButton('Napisz',()=>openSocialContact('messages',item.opponent)));
+  card.append(actions);list.append(card);
+ }
+ if(!rows.length){
+  const message=document.createElement('p');message.className='friend-empty';
+  message.textContent=challTab==='archive'?'Archiwum jest puste.':
+   'Brak zaproszeń spełniających wybrane kryteria. Możesz wysłać nowe wyzwanie znajomemu.';
+  list.append(message);
+ }
+ $('chall-more').hidden=rows.length<=challDisplay;
+}
+async function refreshChallenges(){
+ if(challLoading||!sessionConfirmed)return;
+ challLoading=true;
+ socialNotice('challenges-state','Wczytywanie aktualnych wyzwań…');
+ try{
+  const result=await api('social/challenges');
+  challState=result.challenges.map(c=>({...c,note:c.note||''}));
+  challLastFetch=Date.now();
+  challRender();
+  socialNotice('challenges-state','Zaproszenia wczytane: '+challState.length+'. Akceptowanie i anulowanie zapisuje się na serwerze.');
+ }catch(error){socialNotice('challenges-state',error.message,true);}
+ finally{challLoading=false;}
+}
+async function challMeta(action,id,note=''){
+ if(challBusy)return false;challBusy=true;
+ try{
+  await api('challenge-center/state',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id,action,...(action==='note'?{note}:{})})});
+  await refreshChallenges();
+  socialNotice('challenges-state','Zapisano ustawienie zaproszenia na Twoim koncie.');
+  return true;
+ }catch(error){socialNotice('challenges-state',error.message,true);return false;}
+ finally{challBusy=false}
+}
+async function challRespond(action,id){
+ if(challBusy)return;challBusy=true;
  try{
   await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({action:'send',nickname,game})});
-  await refreshChallenges();socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='warcaby'?'Warcabów':'Gomoku')+'.');
- }catch(error){socialNotice('challenges-state',error.message,true);}
- finally{button.disabled=false;}
+   body:JSON.stringify({action,id})});
+  await refreshChallenges();
+  socialNotice('challenges-state',action==='accept'?'Zaproszenie przyjęte. Możesz uruchomić partię.':
+   action==='decline'?'Odrzucono zaproszenie.':'Anulowano zaproszenie.');
+ }catch(error){socialNotice('challenges-state',error.message,true)}
+ finally{challBusy=false}
+}
+function challOpenNote(item){
+ challNoteId=item.id;$('chall-note-input').value=item.note||'';
+ $('chall-note-overlay').hidden=false;$('chall-note-input').focus();
+}
+function challCloseNote(){
+ $('chall-note-overlay').hidden=true;challNoteId=null;
+}
+$('chall-note-cancel').addEventListener('click',challCloseNote);
+$('chall-note-overlay').addEventListener('click',event=>{
+ if(event.target===$('chall-note-overlay'))challCloseNote();
 });
+if(typeof document.addEventListener==='function')document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!$('chall-note-overlay').hidden)challCloseNote();
+});
+$('chall-note-save').addEventListener('click',async()=>{
+ if(!challNoteId)return;
+ const id=challNoteId,button=$('chall-note-save');button.disabled=true;
+ const result=await challMeta('note',id,$('chall-note-input').value);
+ if(result)challCloseNote();
+ button.disabled=false;
+});
+document.querySelectorAll('[data-chall-tab]').forEach(button=>button.addEventListener('click',()=>challTabSelect(button.dataset.challTab)));
+for(const id of ['chall-search','chall-filter-game','chall-filter-status','chall-sort']){
+ $(id).addEventListener(id==='chall-search'?'input':'change',()=>{challDisplay=15;challRender();});
+}
+$('chall-more').addEventListener('click',()=>{challDisplay+=15;challRender()});
+$('challenge-game').addEventListener('change',challUpdatePreview);
+$('challenge-time').addEventListener('change',challUpdatePreview);
+$('challenge-increment').addEventListener('change',challUpdatePreview);
+$('challenge-friend').addEventListener('change',challUpdatePreview);
+challUpdatePreview();
+$('challenges-refresh').addEventListener('click',()=>void refreshChallenges());
+$('chall-open-friends').addEventListener('click',()=>{switchSection('friends');fhTab('overview')});
+$('chall-open-privacy').addEventListener('click',()=>{switchSection('privacy');privacyTab('trusted')});
+$('chall-settings-privacy').addEventListener('click',()=>{switchSection('privacy');privacyTab('games')});
+$('chall-settings-blocked').addEventListener('click',()=>{switchSection('friends');fhTab('blocked')});
+$('challenge-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(challBusy)return;
+ const nickname=$('challenge-friend').value,game=$('challenge-game').value;
+ if(!nickname){socialNotice('challenges-state','Wybierz znajomego.',true);return}
+ const timeLimitMinutes=game==='gomoku'?Number($('challenge-time').value):0;
+ const incrementSeconds=game==='gomoku'&&timeLimitMinutes>0?Number($('challenge-increment').value):0;
+ const button=$('chall-submit');button.disabled=true;challBusy=true;
+ try{
+  await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action:'send',nickname,game,timeLimitMinutes,incrementSeconds})});
+  challTabSelect('outgoing');await refreshChallenges();
+  socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='gomoku'?'Gomoku':'Warcabów')+' dla '+nickname+'.');
+ }catch(error){socialNotice('challenges-state',error.message,true)}
+ finally{button.disabled=false;challBusy=false}
+});
+if(typeof setInterval==='function')setInterval(()=>{
+ if(!sessionConfirmed||challBusy||challLoading)return;
+ const element=typeof document.querySelector==='function'?document.querySelector('[data-panel="challenges"]'):null;
+ if(!element?.classList.contains('active'))return;
+ if(typeof document.visibilityState!=='undefined'&&document.visibilityState!=='visible')return;
+ if(Date.now()-challLastFetch<45000)return;
+ void refreshChallenges();
+},45000);
+
 function notice(text,error=false){const n=$('notice');n.textContent=text;n.hidden=!text;n.classList.toggle('error',error);}
 function switchSection(name){
  if(!sectionNames[name])return;
