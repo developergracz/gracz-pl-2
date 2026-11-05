@@ -44,6 +44,7 @@ export const productionModules=Object.freeze([
   // P1 chess preview, no match API or gameplay actions.
   'auth/chess-console.mjs',
   'auth/chess-rules.mjs',
+  'auth/chess-computer.mjs',
   'auth/chess-match.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.

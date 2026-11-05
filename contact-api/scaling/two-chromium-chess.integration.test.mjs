@@ -27,7 +27,7 @@ async function read(base,token,id){
   headers:{Cookie:'__Host-gracz_session='+token,Origin:origin}});
  return {status:r.status,...await r.json()};
 }
-const glyph={r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',p:'♟',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',P:'♙'};
+const glyph={r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',p:'♟',R:'♜',N:'♞',B:'♝',Q:'♛',K:'♚',P:'♟'};
 function visible(state){
  const out=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)out.push(glyph[state.board[r*16+c]]||'');
  return out;
@@ -78,10 +78,30 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await local.locator('#board .chess-square').nth(52).click();
  await local.locator('#board .chess-square').nth(36).click();
  await local.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='01:00',{timeout:5000});
+ await local.waitForFunction(()=>document.querySelector('#move-count')?.textContent==='Ruchy: 2',{timeout:12000});
+ assert.match(await local.locator('#black-name').textContent(),/Komputer/);
+ assert.match(await local.locator('#white-name').textContent(),/Ty/);
+ assert.equal(await local.locator('#training-mode strong').textContent(),'Komputer');
+ const white=local.locator('.chess-square.white-piece').first();
+ assert.equal(await white.evaluate(e=>getComputedStyle(e).webkitTextFillColor),'rgb(255, 255, 255)');
+ const layout=await local.locator('#game').boundingBox(),left=await local.locator('.sidebar').boundingBox(),right=await local.locator('.side-dock').boundingBox();
+ assert.ok(left.width>=350,'left panel should match wider Gomoku geometry');
+ assert.ok(right.x<layout.x+layout.width-300,'chat dock should not be pinned to far right');
+ await local.locator('#howto-open').click();
+ assert.equal(await local.locator('#howto-modal').isVisible(),true);
+ assert.match(await local.locator('#howto-title').textContent(),/Szachy/);
+ await local.locator('#howto-close').click();
+ await local.locator('#console-config-open').click();
+ assert.equal(await local.locator('#console-config-modal').isVisible(),true);
+ await local.locator('#console-config-close').click();
  await local.locator('#undo-move').click();
  assert.equal(await local.locator('#move-count').textContent(),'Ruchy: 0');
  await local.locator('#focus-game').click();
  assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
+ assert.equal(await local.locator('#game').evaluate(x=>x.classList.contains('game-focus')),true);
+ assert.equal(await local.locator('#focus-nav').isVisible(),true);
+ assert.equal(await local.locator('.sidebar').isVisible(),false);
+ assert.equal(await local.locator('.side-dock').isVisible(),false);
  await local.locator('#focus-exit').click();
  await local.close();
  // Full premium layout: controls belong to the sidebars, not below the board.
