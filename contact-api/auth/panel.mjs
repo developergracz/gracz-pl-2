@@ -492,19 +492,70 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <div class="card notif-footnote"><p>Pokazywane są wyłącznie rzeczywiste zdarzenia z istniejących modułów, maksymalnie 200 z ostatnich 90 dni. Dane pozostają na Twoim koncie; archiwizacja dotyczy powiadomienia, nie oryginalnej wiadomości lub partii.</p></div>
 </section>
 <section class="view" data-panel="messages">
-<div class="card">
-<p class="card-kicker">PRYWATNE ROZMOWY</p><h2>Wiadomości ze znajomymi</h2>
-<p>Rozmawiaj bezpośrednio z zaakceptowanymi znajomymi. Wiadomości są przechowywane w Twoim koncie. Rozmowę możesz odświeżyć ręcznie; czat na żywo jest przygotowywany.</p>
-<label class="social-label" for="message-recipient">Wybierz znajomego</label>
-<div class="social-controls"><select id="message-recipient"><option value="">Wybierz znajomego</option></select>
-<button id="messages-refresh" type="button" class="secondary">Odśwież rozmowę</button></div>
-<div id="message-thread" class="social-thread" aria-live="polite"><p>Wybierz znajomego, aby wyświetlić rozmowę.</p></div>
-<form id="message-form" class="social-send">
-<label class="social-label" for="message-content">Nowa wiadomość</label>
-<textarea id="message-content" rows="3" maxlength="1000" placeholder="Napisz prywatną wiadomość…" required></textarea>
-<div class="form-actions"><span>Do 1000 znaków · tylko znajomi</span><button class="primary" type="submit" id="message-send" disabled>Wyślij wiadomość</button></div>
-</form><p id="messages-state" aria-live="polite">Wybierz znajomego z listy.</p>
-</div></section>
+<div class="msg-hero"><div><p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Wiadomości i chat</h2>
+<p>Twoje rozmowy, znajomi i zaproszenia w jednym bezpiecznym miejscu.</p></div><div class="msg-hero-mark" aria-hidden="true">✉<small>GRACZ.PL</small></div></div>
+<div class="msg-metrics">
+ <div><small>AKTYWNE ROZMOWY</small><strong id="msg-count">—</strong><span>Twoi zaakceptowani znajomi</span></div>
+ <div><small>NIEPRZECZYTANE</small><strong id="msg-unread">—</strong><span>Wiadomości do przeczytania</span></div>
+ <div><small>PRZYPIĘTE</small><strong id="msg-pinned">—</strong><span>Szybki dostęp</span></div>
+ <div><small>ARCHIWUM</small><strong id="msg-archived">—</strong><span>Ukryte tylko u Ciebie</span></div>
+</div>
+<p class="msg-notice" id="messages-state" role="status" aria-live="polite">Wczytywanie Twoich rozmów…</p>
+<div class="msg-layout">
+ <aside class="msg-left card">
+  <div class="msg-left-head"><div><p class="card-kicker">CENTRUM KONTAKTÓW</p><h2>Moje rozmowy</h2></div><button class="secondary" id="msg-refresh-all" type="button" aria-label="Odśwież listę rozmów">↻</button></div>
+  <label for="msg-find">Znajdź rozmowę<input type="search" id="msg-find" placeholder="Wyszukaj nick…" maxlength="100"></label>
+  <nav class="msg-filter" aria-label="Filtr rozmów">
+   <button type="button" class="active" data-msg-filter="all" aria-pressed="true">Wszystkie</button>
+   <button type="button" data-msg-filter="unread" aria-pressed="false">Nowe</button>
+   <button type="button" data-msg-filter="pinned" aria-pressed="false">Przypięte</button>
+   <button type="button" data-msg-filter="archive" aria-pressed="false">Archiwum</button>
+  </nav>
+  <label for="msg-label-filter">Grupa kontaktów<select id="msg-label-filter"><option value="all">Wszystkie grupy</option><option value="priority">Ważne</option><option value="team">Drużyna</option><option value="family">Rodzina</option><option value="friends">Znajomi</option><option value="">Bez grupy</option></select></label>
+  <div id="msg-conversations" class="msg-conversations" aria-live="polite"><p>Wybierz znajomego, aby rozpocząć rozmowę.</p></div>
+  <div class="msg-left-footer"><button type="button" id="msg-open-friends" class="secondary">Moi znajomi</button><button type="button" id="msg-open-book" class="secondary">Książka adresowa</button></div>
+ </aside>
+ <div class="msg-right">
+  <div class="card msg-chat">
+   <header class="msg-chat-head">
+    <div class="msg-chat-person"><div id="msg-chat-avatar" class="msg-avatar" aria-hidden="true">G</div>
+     <div><p class="card-kicker">PRYWATNA ROZMOWA</p><h2 id="msg-chat-name">Wybierz znajomego</h2><small id="msg-chat-status">Wiadomości tylko między zaakceptowanymi znajomymi</small></div>
+    </div>
+    <div class="msg-chat-actions">
+     <button class="secondary" type="button" id="messages-refresh">Odśwież</button>
+     <button class="secondary" type="button" id="msg-invite-game">Zaproś do gry</button>
+     <button class="secondary" type="button" id="msg-profile">Wizytówka</button>
+    </div>
+   </header>
+   <div class="msg-chat-options">
+    <label for="message-recipient">Rozmowa z<select id="message-recipient"><option value="">Wybierz znajomego</option></select></label>
+    <label for="msg-search-thread">Znajdź w 60 ostatnich wiadomościach<input type="search" id="msg-search-thread" placeholder="Szukaj treści…" maxlength="100"></label>
+   </div>
+   <div class="msg-tools">
+    <button type="button" class="secondary" id="msg-pin">Przypnij</button>
+    <button type="button" class="secondary" id="msg-mute">Wycisz</button>
+    <button type="button" class="secondary" id="msg-archive">Archiwizuj</button>
+    <label for="msg-label" class="msg-label-control">Grupa<select id="msg-label"><option value="">Bez grupy</option><option value="priority">Ważne</option><option value="team">Drużyna</option><option value="family">Rodzina</option><option value="friends">Znajomi</option></select></label>
+    <button type="button" class="secondary" id="msg-export">Eksport rozmowy</button>
+   </div>
+   <div id="message-thread" class="social-thread msg-thread" role="log" aria-live="polite" aria-label="Wiadomości w rozmowie"><p>Wybierz znajomego, aby wyświetlić rozmowę.</p></div>
+   <form id="message-form" class="social-send msg-composer">
+    <label class="social-label" for="message-content">Nowa wiadomość</label>
+    <textarea id="message-content" rows="3" maxlength="1000" placeholder="Napisz prywatną wiadomość do znajomego…" required></textarea>
+    <div class="msg-compose-bottom">
+     <span id="msg-counter">0 / 1000 znaków</span><span>Ctrl + Enter: wyślij</span>
+     <button class="primary" type="submit" id="message-send" disabled>Wyślij wiadomość</button>
+    </div>
+   </form>
+  </div>
+  <div class="card msg-privacy">
+   <div><p class="card-kicker">TWOJA KONTROLA</p><h3>Bezpieczeństwo rozmów</h3>
+   <p>Wiadomości są przechowywane na serwerze GRACZ.PL. Nie deklarujemy szyfrowania end-to-end ani czatu WebSocket. Rozmowa odświeża się okresowo, gdy ta zakładka jest otwarta.</p></div>
+   <div class="msg-privacy-actions"><button id="msg-privacy-link" type="button" class="secondary">Prywatność</button><button id="msg-block-link" type="button" class="secondary">Blokady</button></div>
+  </div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="challenges">
 <div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
 <p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
