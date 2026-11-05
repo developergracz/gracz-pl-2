@@ -61,7 +61,7 @@ export function createGomokuRealtime({server,router,maxConnections=4096,heartbea
   try{
    const result=router.readRealtime?await router.readRealtime(client.req,id):await read(client.req,'/auth/match?id='+id);
    const match=result.match;
-   if(!['gomoku','warcaby'].includes(match?.game)||!match.playable)throw Object.assign(Error('ROOM_DENIED'),{status:403});
+   if(!['gomoku','warcaby','szachy'].includes(match?.game)||!match.playable)throw Object.assign(Error('ROOM_DENIED'),{status:403});
    const chat=result.messages?result:await read(client.req,'/auth/match/chat?id='+id);
    if(!clients.has(client)||id!==client.id||generation!==client.generation)return;
    const previous=client.match;

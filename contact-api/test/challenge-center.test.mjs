@@ -88,7 +88,7 @@ test('challenge permissions, both game timers and expiration are preserved',()=>
  assert.match(source,/starred:row.starred===true,archived:row.archived===true/);
  assert.match(source,/const gomokuTimeOptions=new Set\(\[0,1,2,3,5,7,10,15,30\]\)/);
  assert.match(source,/const gomokuIncrementOptions=new Set\(\[0,2,3,5,10\]\)/);
- assert.match(source,/\['gomoku','warcaby'\]\.includes\(game\)/);
+ assert.match(source,/\['gomoku','warcaby','szachy'\]\.includes\(game\)/);
  assert.match(source,/c.status='pending' AND c.expires_at>now\(\)/);
 });
 test('premium challenge page has all eight tabs and working personal tools',()=>{
