@@ -16,11 +16,21 @@ export function setupTraining(a){
   return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
  }
  function displayClocks(){
-  const enabled=Number($('training-time').value)>0&&mode==='training';
+  const online=mode==='online'?game()?.clock:null;
+  const timedOnline=online&&Array.isArray(online.remaining)&&online.remaining.length===2;
+  const training=mode==='training'&&Number($('training-time').value)>0;
   // White moves first; shared Gomoku clock-1 is black, clock-2 is white.
   for(const [player,id] of [[1,'clock-2'],[2,'clock-1']]){
-   $(id).hidden=!enabled;
-   if(enabled)$(id).textContent=format(clocks[player]);
+   $(id).hidden=!training&&!timedOnline;
+   if(training)$(id).textContent=format(clocks[player]);
+   else if(timedOnline){
+    let ms=online.remaining[player-1];
+    if(!game().winner&&game().turn===player&&online.ready?.every(Boolean)&&online.since){
+     const since=Date.parse(online.since);
+     if(Number.isFinite(since))ms-=Math.max(0,Date.now()-since);
+    }
+    $(id).textContent=format(ms);
+   }
   }
  }
  function readStats(){
@@ -62,6 +72,7 @@ export function setupTraining(a){
   displayClocks();a.renderBoard();showResult(game().winner);
  }
  function tick(){
+  if(mode==='online'){displayClocks();return;}
   if(mode!=='training'||finished||!game()||!clockStarted||!Number($('training-time').value))return;
   const now=performance.now(),delta=Math.max(0,now-lastTick);lastTick=now;
   clocks[game().turn]=Math.max(0,clocks[game().turn]-delta);
