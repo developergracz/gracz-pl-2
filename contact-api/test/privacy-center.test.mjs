@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createPrivacyRouter,ensurePrivacySchema,privacyDefaults} from '../auth/privacy-center.mjs';
 import {servePlayerPanel} from '../auth/panel.mjs';
+import {createPremiumProfileRouter} from '../auth/premium-profile.mjs';
 
 const ownerA='11111111-1111-4111-8111-111111111111';
 const ownerB='22222222-2222-4222-8222-222222222222';
@@ -146,4 +147,48 @@ test('granular public data options are enforced before sending a public profile'
  assert.match(source,/row\.show_joined===false\?null:/);
  assert.match(source,/row\.show_motto===false\?'':/);
  assert.match(source,/delete publicData\.stats\.totals\.winRate/);
+});
+
+test('public profile response hides private fields, masks joined date and suppresses win rate',async()=>{
+ const settings={id:ownerA,nickname:'alpha',display_name:'Nazwa prywatna',bio:'Opis prywatny',
+  country:'PL',created_at:'2026-01-01T00:00:00Z',avatar:'crown',cover:'wave',accent:'turquoise',
+  motto:'Moje motto',city:'Tychy',public_profile:true,show_stats:true,show_country:true,
+  show_badges:false,show_display_name:false,show_bio:false,show_motto:false,
+  show_joined:false,show_city:false,show_win_rate:false};
+ const sqls=[];
+ const database={async query(sql,args){
+  sqls.push({sql,args});
+  if(sql.includes('WHERE a.nickname_key=$1'))return {rows:[settings]};
+  if(sql.includes('GROUP BY c.game'))return {rows:[{game:'gomoku',played:10,wins:6,losses:3,draws:1,active:0}]};
+  if(sql.includes('ORDER BY m.updated_at DESC LIMIT 12'))return {rows:[]};
+  throw Error('Unexpected query '+sql.slice(0,80));
+ }};
+ const router=createPremiumProfileRouter({database,ready:async()=>{},sessionToken:()=>'',digest:x=>x,
+  authorizedOrigin:()=>true,readBody:async()=>({}),allow:()=>true,validNick:x=>x==='alpha'});
+ async function read(){
+  const req={method:'GET',socket:{remoteAddress:'127.0.0.1'}};
+  const response={status:0,body:'',writeHead(code){this.status=code},end(body){this.body=String(body)}};
+  const handled=await router.handle(req,response,new URL('/auth/public-profile?nick=alpha',host));
+  assert.equal(handled,true);assert.equal(response.status,200);
+  return JSON.parse(response.body).profile;
+ }
+ const hidden=await read();
+ assert.equal(hidden.nickname,'alpha');
+ assert.equal(hidden.displayName,'alpha');
+ assert.equal(hidden.bio,'');assert.equal(hidden.motto,'');
+ assert.equal(hidden.createdAt,null);
+ assert.equal(hidden.city,'');
+ assert.equal(hidden.country,'PL');
+ assert.equal(Object.hasOwn(hidden.stats.totals,'winRate'),false);
+ assert.equal(hidden.stats.totals.wins,6);
+ assert.ok(sqls[0].sql.includes('LEFT JOIN gracz_public_identity.privacy_preferences privacy'));
+ Object.assign(settings,{show_display_name:true,show_bio:true,show_motto:true,
+  show_joined:true,show_city:true,show_win_rate:true});
+ const shown=await read();
+ assert.equal(shown.displayName,'Nazwa prywatna');
+ assert.equal(shown.bio,'Opis prywatny');
+ assert.equal(shown.motto,'Moje motto');
+ assert.equal(shown.createdAt,'2026-01-01T00:00:00Z');
+ assert.equal(shown.city,'Tychy');
+ assert.equal(shown.stats.totals.winRate,60);
 });
