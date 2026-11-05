@@ -13,6 +13,14 @@
     document.head.appendChild(gamesStyle);
   }
 
+  // Owner-approved, scoped community section colours; keep the original photograph.
+  if (document.getElementById('spolecznosc')) {
+    var communityStyle = document.createElement('link');
+    communityStyle.rel = 'stylesheet';
+    communityStyle.href = '/assets/home-community-owner-r1.css?v=20261105-teal';
+    document.head.appendChild(communityStyle);
+  }
+
   var MESSAGES = {
     community: {
       title: 'Funkcje społecznościowe są w przygotowaniu',
