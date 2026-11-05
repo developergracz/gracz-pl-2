@@ -96,13 +96,13 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical site-header missing`
   );
   requireCheck(
-    (page === "index.html" || page === "szukaj/index.html")
+    (page === "index.html" || page === "szukaj/index.html" || page === "newsletter/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/\?widok=login"[^>]*>Zaloguj się<\/a>/.test(html)
       : /data-modal="login"[^>]*>Zaloguj się</.test(html),
     `${page}: canonical login action missing`
   );
   requireCheck(
-    (page === "index.html" || page === "szukaj/index.html")
+    (page === "index.html" || page === "szukaj/index.html" || page === "newsletter/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Załóż konto<\/a>/.test(html)
       : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
@@ -110,7 +110,10 @@ for (const page of sharedHeaderPages) {
   requireCheck(
     (page === "szukaj/index.html"
       ? /class="[^"]*newsletter-trigger[^"]*"[^>]*href="\/#f-news"[^>]*>Newsletter<\/a>/.test(html)
-      : /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html)),
+      : page === "newsletter/index.html"
+        // The newsletter page is the destination itself: current-page link, no duplicate signup popup.
+        ? /class="[^"]*newsletter-trigger[^"]*"[^>]*href="\/newsletter\/"[^>]*aria-current="page"[^>]*>Newsletter<\/a>/.test(html) && !html.includes("data-newsletter-open")
+        : /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html)),
     `${page}: canonical Newsletter action missing`
   );
 }
@@ -396,6 +399,25 @@ requireCheck(searchCss.includes('font:700 12.5px/1.28'), "search nav: enlarged d
 
 requireCheck(searchCss.includes('overflow:visible!important'), "search nav: desktop overflow escape missing");
 
+
+
+// Premium search link: canonical header loupe on all public pages navigates to
+// the dedicated /szukaj/ page; no legacy modal triggers in the top bar.
+for (const page of sharedHeaderPages) {
+  const html = read(page);
+  const headerMarkup = html.match(/<header\b[\s\S]*?<\/header>/i)?.[0] ?? "";
+  const links = [...headerMarkup.matchAll(
+    /<a\b(?=[^>]*\bclass="[^"]*(?:head-search|search-btn)[^"]*")(?=[^>]*\bhref="\/szukaj\/")[^>]*>[\s\S]*?<\/a>/gi
+  )];
+  requireCheck(
+    links.length === (page === "index.html" ? 1 : 2),
+    page + ": top-bar search (desktop and mobile) must link to /szukaj/"
+  );
+  requireCheck(
+    !/<button\b[^>]*\bdata-modal="search"/i.test(headerMarkup),
+    page + ": legacy search-modal trigger remains in top bar"
+  );
+}
 
 if (failures.length) {
   console.error("SEO GATE: FAIL");

@@ -19,15 +19,17 @@
   <meta property="og:description" content="Szukaj po frazach lub wpisz całe pytanie. SEARCH R3 rozpoznaje intencję i kontekst w gracz.pl.">
   <meta property="og:url" content="https://gracz.pl/szukaj/">
   <meta property="og:image" content="https://gracz.pl/og-gracz-pl.jpg">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' https://*.google-analytics.com https://*.analytics.google.com; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; frame-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' https://*.google-analytics.com https://*.analytics.google.com; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; connect-src 'self' https://gracz-contact-api.onrender.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; frame-src 'self'">
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/search.css?v=homepage-header-parity-r2">
+  <link rel="stylesheet" href="/assets/search.css?v=search-full-max-premium-frame-r1">
+  <link rel="stylesheet" href="/assets/search-access-gate.css?v=search-guest-compact-buttons-r2">
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <script src="/assets/search-index.js?v=r5" defer></script>
   <script src="/assets/search.js?v=single-nav-home-teal-r1" defer></script>
+  <script src="/assets/search-access-gate.js?v=search-guest-r1" defer></script>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -41,13 +43,13 @@
   </script>
   <link rel="stylesheet" href="/assets/global-header-r1.css?v=r3">
 </head>
-<body class="search-page">
+<body class="search-page search-access-pending">
 <header class="site-header shared-global-header" data-shared-header="r1">
     <div class="header-inner">
       <a class="logo" href="/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
-      <button class="head-icon head-search-mobile" type="button" data-modal="search" aria-label="Szukaj w serwisie">
+      <a class="head-icon head-search-mobile" href="/szukaj/" aria-label="Szukaj w serwisie">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-      </button>
+      </a>
       <button class="head-icon burger" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Otwórz menu">
         <svg class="burger-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
         <svg class="burger-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
@@ -83,7 +85,7 @@
           </ul>
         </nav>
         <div class="header-actions">
-          <button class="head-icon head-search" type="button" data-modal="search" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+          <a class="head-icon head-search" href="/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></a>
           <a class="head-btn head-btn--outline" href="https://gracz-contact-api.onrender.com/konto/?widok=login">Zaloguj się</a>
           <a class="head-btn head-btn--gold" href="https://gracz-contact-api.onrender.com/konto/">Załóż konto</a>
         </div>
@@ -91,7 +93,48 @@
     </div>
   </header>
   <a class="sr-only" href="#search-page-app">Przejdź do wyszukiwarki</a>
-  <main class="gracz-search-page" id="search-page-app" data-search-page-root aria-label="Wyszukiwarka gracz.pl"></main>
+  <main class="gracz-search-page" id="search-page-app" data-search-page-root aria-label="Wyszukiwarka gracz.pl" inert></main>
+  <!-- LIVE search remains the actual, visually visible background. -->
+  <div id="search-access-layer" class="search-access-layer" role="dialog" aria-modal="true"
+       aria-labelledby="search-access-heading" aria-describedby="search-access-join">
+    <section class="search-access-panel">
+      <a href="/" class="search-access-close" aria-label="Zamknij i wróć na stronę główną">×</a>
+      <img class="search-access-crown" src="/assets/gracz-crown-premium.svg" width="66" height="53" alt="" aria-hidden="true">
+      <div class="search-access-main">
+        <div class="search-access-symbol" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none">
+            <circle cx="49" cy="49" r="32" stroke="#F7D17C" stroke-width="8"/>
+            <path d="M25 74L9 94" stroke="#F7D17C" stroke-width="9" stroke-linecap="round"/>
+            <rect x="59" y="64" width="47" height="39" rx="8" fill="#F0C15E" stroke="#FFE5A6" stroke-width="3"/>
+            <path d="M71 65V57a11.5 11.5 0 0 1 23 0v8" stroke="#F7D17C" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="82.5" cy="81" r="4" fill="#063536"/>
+            <path d="M82.5 84V92" stroke="#063536" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 class="search-access-heading" id="search-access-heading">Nasza wyszukiwarka jest dostępna tylko dla zalogowanych użytkowników naszego serwisu <span class="brand">gracz<span>.pl</span></span>.</h1>
+      </div>
+      <div class="search-access-rule" aria-hidden="true"><span>♠</span></div>
+      <p class="search-access-join" id="search-access-join"><strong>Zaloguj się</strong> i dołącz do naszej społeczności <span class="brand">gracz<span>.pl</span></span>.</p>
+      <p class="search-access-note" hidden></p>
+      <nav class="search-access-actions" aria-label="Dostęp do wyszukiwarki">
+        <a class="search-access-action search-access-primary" href="https://gracz-contact-api.onrender.com/konto/?widok=login">
+          <svg viewBox="0 0 32 32" aria-hidden="true" fill="none">
+            <rect x="15" y="6" width="12" height="20" rx="2" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M3 16h17m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Zaloguj się
+        </a>
+        <a class="search-access-action search-access-secondary" href="https://gracz-contact-api.onrender.com/konto/">
+          <svg viewBox="0 0 32 32" aria-hidden="true" fill="none">
+            <circle cx="13" cy="10" r="5.5" stroke="currentColor" stroke-width="2.2"/>
+            <path d="M3 27c.5-7 5-10 10-10 3.5 0 5.5 1 7 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M25 18v12m-6-6h12" stroke="#F0C15E" stroke-width="2.7" stroke-linecap="round"/>
+          </svg>
+          Załóż konto
+        </a>
+      </nav>
+    </section>
+  </div>
   <noscript>Do działania wyszukiwarki gracz.pl potrzebna jest obsługa JavaScript.</noscript>
   <script src="/assets/legal-links.js?v=r49-premium-email-input-20261022"></script>
   <script src="/assets/global-header-r1.js?v=r1"></script>

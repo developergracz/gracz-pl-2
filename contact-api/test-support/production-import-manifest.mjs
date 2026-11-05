@@ -4,6 +4,9 @@ export const productionModules=Object.freeze([
   'server.mjs',
   // Public account signup and session UI; first-party API with hashed credentials.
   'auth/public-identity.mjs',
+  // Search guest check: fixed gracz.pl redirect only, 90s single-use anonymous
+  // in-memory ticket, allowed-origin POST validation, never exports cookies.
+  'auth/search-access.mjs',
   // Reviewed OAuth registration: fixed provider hosts, PKCE/state/nonce, signed JWTs,
   // one-use DB handoff, no dynamic imports, account binding only by provider subject.
   'auth/oauth-registration.mjs',
@@ -26,6 +29,8 @@ export const productionModules=Object.freeze([
   'auth/notification-center.mjs',
   // Owner-specific inbox metadata for existing friend-only messages.
   'auth/message-center.mjs',
+  // Owner-only invitation organization; existing social/challenges remains authoritative.
+  'auth/challenge-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
   // Shared same-origin game subscriptions: bounded sockets/payloads and existing

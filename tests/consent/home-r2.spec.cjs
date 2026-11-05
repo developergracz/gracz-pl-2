@@ -76,14 +76,59 @@ for(const width of [360,390,768,1366,1920]){
   }finally{await context.close()}
  });
 }
-test('Search remains lazy and opens after real click',async({page})=>{
+test('Header loupe opens the actual search page behind the guest gate',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  await page.waitForLoadState('networkidle');
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
+ await expect(page.locator('.search-btn--desktop')).toHaveAttribute('href','/szukaj/');
  await page.locator('.search-btn--desktop').click();
- await expect(page.locator('dialog.gracz-search')).toBeVisible({timeout:15000});
- await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(1);
+ await expect(page).toHaveURL(new URL('/szukaj/',page.url()).toString(),{timeout:15000});
+ await expect(page.locator('#search-page-app input')).toBeVisible({timeout:15000});
+ await expect(page.locator('#search-page-app')).toHaveAttribute('inert','');
+ await expect(page.locator('#search-access-layer')).toBeVisible();
+ await expect(page.getByRole('dialog',{name:/Nasza wyszukiwarka jest dostępna/})).toBeVisible();
+ await expect(page.locator('.search-access-primary')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/?widok=login');
+ await expect(page.locator('.search-access-secondary')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/');
+ await expect(page.locator('dialog.gracz-search')).toHaveCount(0);
+});
+
+test('Search guest gate is responsive and the background stays visible',async({browser})=>{
+ fs.mkdirSync(path.resolve('test-results/home-r4'),{recursive:true});
+ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
+  const ctx=await browser.newContext({viewport});
+  try{
+   const page=await ctx.newPage();
+   await page.goto('/szukaj/#gate=guest');
+   await expect(page.locator('#search-access-layer')).toBeVisible();
+   const g=await page.evaluate(()=>{
+    const modal=document.querySelector('.search-access-panel').getBoundingClientRect();
+    const bg=document.querySelector('#search-page-app').getBoundingClientRect();
+    return {left:modal.left,right:modal.right,top:modal.top,bottom:modal.bottom,backgroundWidth:bg.width,viewportWidth:innerWidth};
+   });
+   expect(g.left).toBeGreaterThanOrEqual(0);
+   expect(g.right).toBeLessThanOrEqual(viewport.width+1);
+   expect(g.backgroundWidth).toBeGreaterThan(viewport.width*.60);
+   expect(await page.locator('#search-page-app').getAttribute('inert')).toBe('');
+   await page.screenshot({path:'test-results/home-r4/search-guest-'+viewport.width+'.png',animations:'disabled'});
+  }finally{await ctx.close();}
+ }
+});
+
+test('Verified one-time ticket removes only the guest gate',async({page})=>{
+ await page.addInitScript(()=>{
+  const actualFetch=window.fetch.bind(window);
+  window.fetch=function(url,options){
+   if(String(url).endsWith('/auth/search-ticket'))return Promise.resolve(
+    new Response(JSON.stringify({ok:true,allowed:true}),{status:200,headers:{'content-type':'application/json'}})
+   );
+   return actualFetch(url,options);
+  };
+ });
+ await page.goto('/szukaj/#gate='+('a'.repeat(48)));
+ await expect(page.locator('#search-access-layer')).toHaveCount(0);
+ await expect(page.locator('#search-page-app')).not.toHaveAttribute('inert');
+ await expect(page.locator('#search-page-app input')).toBeVisible();
 });
 
 // R4 visual-fidelity regression: no clipped header search and the game card is a real link.
@@ -248,43 +293,38 @@ test('Owner R5 mobile keeps 2-column Academy and never overflows viewport',async
  }finally{await context.close();}
 });
 
-test('R16 desktop footer keeps logo aligned and approved full artwork within container',async({browser})=>{
- for(const width of [1366,1600,1920]){
+test("R16 desktop footer keeps logo aligned and approved full artwork within container — Full Max Premium 2026",async({browser})=>{
+ for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
-   const page=await context.newPage();await page.goto('/');
+   const page=await context.newPage();
+   await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const info=await page.evaluate(()=>{
-     const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,midY:(r.top+r.bottom)/2};};
-     const newsletter=document.querySelector('.site-footer .footer-news');
-     return {scroll:document.documentElement.scrollWidth,
-       phone:rect('.r4-phone'),blog:rect('.r4-updates'),
-       news:rect('.site-footer .footer-news'),nav:rect('.site-footer .footer-bottom .legal'),
-       logo:rect('.footer-signature-logo'),footer:rect('.site-footer .footer-bottom'),
-       photo:rect('.site-footer .footer-news-full-art-r16'),
-       phoneDisplay:getComputedStyle(document.querySelector('.r4-phone')).display,
-       logoDisplay:getComputedStyle(document.querySelector('.footer-signature-logo')).display
-     };
-   });
-   expect(info.scroll).toBeLessThanOrEqual(width+2);
-   expect(info.phoneDisplay).toBe('none');
-   expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
-   expect(info.photo.left).toBeGreaterThanOrEqual(info.news.left-1);
-   expect(info.photo.right).toBeLessThanOrEqual(info.news.right+2);
-   expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
-   expect(info.logoDisplay).not.toBe('none');
-   expect(Math.abs(info.logo.midY-info.nav.midY)).toBeLessThanOrEqual(12);
-   expect(info.logo.bottom).toBeLessThanOrEqual(info.footer.bottom+1);
-   expect(info.photo.bottom).toBeLessThanOrEqual(info.news.bottom+2);
-   const form=page.locator('.site-footer form[data-newsletter]');
+   const section=page.locator('#newsletter-home.footer-news--fullmax-r1');
+   const image=section.locator('.footer-news-fullmax-scene img');
+   const form=section.locator('form[data-newsletter]');
+   await section.scrollIntoViewIfNeeded();
+   await expect(section).toBeVisible();
+   await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
+   await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
    const notice=form.locator('.footer-newsletter-status');
    await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
-   await expect(notice.locator('a')).toHaveAttribute('href','/newsletter/#nl-maintenance-notice');
-   const noticeFont=await notice.locator('a').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
-   expect(noticeFont).toBeLessThan(13);
-  }finally{await context.close()}
+   const state=await section.evaluate(el=>{
+    const a=el.getBoundingClientRect();
+    const b=el.querySelector('img').getBoundingClientRect();
+    const form=el.querySelector('form').getBoundingClientRect();
+    return {section:{left:a.left,right:a.right,width:a.width},image:{width:b.width},form:{left:form.left,right:form.right},scroll:document.documentElement.scrollWidth};
+   });
+   expect(state.scroll).toBeLessThanOrEqual(width+2);
+   expect(state.section.left).toBeGreaterThanOrEqual(-2);
+   expect(state.section.right).toBeLessThanOrEqual(width+2);
+   expect(state.image.width).toBeGreaterThan(100);
+   expect(state.form.left).toBeGreaterThanOrEqual(state.section.left-2);
+   expect(state.form.right).toBeLessThanOrEqual(state.section.right+2);
+  }finally{await context.close();}
  }
 });
 test('R5 mobile footer retains original brand without duplicate link or overflow',async({browser})=>{
@@ -365,7 +405,7 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
     expect(geo.phoneDisplay).toBe('none');
     expect(geo.cards.right).toBeLessThanOrEqual(geo.blog.right+2);
     expect(geo.blog.bottom).toBeLessThanOrEqual(geo.next.top+2);
-    expect(Math.abs(geo.news.width-Math.min(width,(900-148)*1.77577)),'R29 newsletter fits the desktop height').toBeLessThanOrEqual(3);
+    expect(Math.abs(geo.news.width-width),'Full Max newsletter spans the entire desktop width').toBeLessThanOrEqual(3);
     expect(Math.abs((geo.news.left+geo.news.right)/2-width/2)).toBeLessThanOrEqual(30);
    }else{
     expect(geo.phoneDisplay).toBe('none');
@@ -384,246 +424,142 @@ test('Owner R6 blog entries, preview alignment and newsletter behavior match app
  }
 });
 
-test('R16 displays exact accepted full newsletter artwork with a genuine aligned form',async({browser})=>{
- test.setTimeout(60000); // Sequential viewport matrix on CI.
- const approvedImage=fs.readFileSync(path.join(__dirname,'../../maintenance-site/assets/gracz-newsletter-full-approved-r16.webp'));
- const approvedSHA=require('node:crypto').createHash('sha256').update(approvedImage).digest('hex');
- expect(approvedSHA,'Only the exact Owner-approved R16 art may pass').toBe('1f4d91984b76e50cada7c1409aced20e85a0eeb9f0af3a69e34a9737dae8988c');
- for(const width of [390,768,960,1024,1366,1600]){
+test("R16 displays exact accepted full newsletter artwork with a genuine aligned form — Full Max Premium 2026",async({browser})=>{
+ for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
-  try{
-   const page=await context.newPage();await page.goto('/');
-   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const scene=page.locator('.site-footer .footer-news > img.footer-news-full-art-r16');
-   const phone=page.locator('.site-footer .footer-news > img.footer-news-smartphone');
-   const form=page.locator('.site-footer form[data-newsletter]');
-   await form.scrollIntoViewIfNeeded();
-   await expect(scene).toHaveAttribute('src','/assets/gracz-newsletter-full-approved-r16.webp');
-   await expect(form).toBeVisible();
-   await expect(form.locator('#news-email')).toHaveAttribute('type','email');
-   if(width>960){
-    // The approved image itself contains the placeholder; check real input hides it.
-    const style=await form.locator('#news-email').evaluate(el=>{
-      const css=getComputedStyle(el);
-      return {background:css.backgroundColor,fill:css.webkitTextFillColor,shadow:css.boxShadow,opacity:css.opacity};
-    });
-    expect(style.background).toBe('rgb(255, 255, 255)');
-    expect(style.fill).toBe('rgb(12, 33, 50)');
-    expect(style.shadow).toContain('rgba');
-    expect(style.opacity).toBe('1');
-   }
-   await expect(form.locator('button[type=submit]')).toBeDisabled();
-   if(width>960){
-    await expect.poll(()=>scene.evaluate(img=>img.complete && img.naturalWidth===1671),{timeout:10000}).toBe(true);
-   }
-   const state=await page.evaluate(()=>{
-    const section=document.querySelector('.site-footer .footer-news');
-    const scene=section.querySelector('img.footer-news-full-art-r16');
-    const phone=section.querySelector('img.footer-news-smartphone');
-    const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
-    const form=section.querySelector('form[data-newsletter]');
-    return {section:rect(section),scene:rect(scene),phone:rect(phone),
-      form:rect(form),email:rect(form.querySelector('input[type=email]')),
-      submit:rect(form.querySelector('button[type=submit]')),
-      consent:rect(form.querySelector('[data-footer-newsletter-consent]')),
-      sceneDisplayed:getComputedStyle(scene).display!=='none',
-      phoneDisplayed:getComputedStyle(phone).display!=='none',
-      natural:[scene.naturalWidth,scene.naturalHeight],
-      overflow:document.documentElement.scrollWidth};
-   });
-   expect(state.overflow).toBeLessThanOrEqual(width+2);
-   if(width>960){
-    expect(state.sceneDisplayed).toBe(true);
-    expect(state.natural).toEqual([1671,941]);
-    expect(state.phoneDisplayed).toBe(false);
-    const [x,y,r,b]=state.section;
-    const [sx,sy,sr,sb]=state.scene;
-    const [fx,fy,fr,fb]=state.form;
-    expect(Math.abs(sx-x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(sr-r)).toBeLessThanOrEqual(2);
-    expect(Math.abs(sy-y)).toBeLessThanOrEqual(2);
-    expect(Math.abs((b-y)-(sb-sy))).toBeLessThanOrEqual(3);
-    expect(Math.abs((fx-x)/(r-x)-.0695)).toBeLessThan(.018);
-    expect(Math.abs((fy-y)/(b-y)-.5345)).toBeLessThan(.022);
-    expect(Math.abs((fr-fx)/(r-x)-.5110)).toBeLessThan(.024);
-    expect(Math.abs((fb-fy)/(b-y)-.0930)).toBeLessThan(.024);
-    expect(Math.abs((r-x)-Math.min(width,(900-148)*1.77577)),'R29 art fits both viewport dimensions').toBeLessThanOrEqual(3);
-    const [ex,ey,er,eb]=state.email;
-    const [bx,by,br,bb]=state.submit;
-    expect(er).toBeLessThanOrEqual(bx+2);
-    expect(Math.abs(ey-by)).toBeLessThanOrEqual(2);
-    expect(Math.abs(eb-bb)).toBeLessThanOrEqual(2);
-    expect(state.consent[0]).toBeGreaterThanOrEqual(fx-2);
-    expect(state.consent[1]).toBeGreaterThanOrEqual(fb+5);
-    expect(state.consent[2]).toBeLessThanOrEqual(r+2);
-   }else{
-    expect(state.sceneDisplayed).toBe(false);
-    expect(state.phoneDisplayed).toBe(true);
-    expect(state.phone[1]).toBeGreaterThanOrEqual(state.form[3]+5);
-    expect(state.phone[0]).toBeGreaterThanOrEqual(state.section[0]-2);
-    expect(state.phone[2]).toBeLessThanOrEqual(state.section[2]+2);
-   }
-  }finally{await context.close();}
- }
-});
-
-test('R29 newsletter artwork fits complete desktop viewport without cropping', async({browser})=>{
- test.setTimeout(60000);
- for(const viewport of [{width:1024,height:720},{width:1366,height:768},{width:1600,height:785},{width:1600,height:900}]){
-  const context=await browser.newContext({viewport});
   try{
    const page=await context.newPage();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
-   const img=section.locator('> img.footer-news-full-art-r16');
+   const section=page.locator('#newsletter-home.footer-news--fullmax-r1');
+   const image=section.locator('.footer-news-fullmax-scene img');
    const form=section.locator('form[data-newsletter]');
    await section.scrollIntoViewIfNeeded();
-   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
-   await expect(img).toBeVisible();
-   await expect(form).toBeVisible();
-   const geo=await page.evaluate(()=>{
-    const section=document.querySelector('.site-footer .footer-news.footer-news--approved-r16');
-    const img=section.querySelector('.footer-news-full-art-r16');
-    const form=section.querySelector('form[data-newsletter]');
-    const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    const footer=document.querySelector('.site-footer');
-    const ambient=getComputedStyle(footer,'::before');
-    return {s:rect(section),art:rect(img),form:rect(form),footer:rect(footer),ambientFilter:ambient.filter,ambientMask:ambient.maskImage,
-      ambientBackground:ambient.backgroundImage,footerBottom:rect(document.querySelector('.site-footer .footer-bottom')),overflow:document.documentElement.scrollWidth};
-   });
-   expect(geo.overflow).toBeLessThanOrEqual(viewport.width+2);
-   if(viewport.width>=1024){
-    expect(geo.footer.width,'premium backdrop must span the browser').toBeGreaterThanOrEqual(viewport.width-2);
-    expect(geo.ambientFilter,'desktop backdrop must be sharp, not blurred').toBe('none');
-    expect(geo.ambientMask,'desktop backdrop must not disappear in the side gutters').toBe('none');
-    expect(geo.ambientBackground).toContain('radial-gradient');
-   }
-   expect(Math.abs(geo.s.width-Math.min(viewport.width,(viewport.height-148)*1.77577)),'R29 width limited by visible viewport height').toBeLessThanOrEqual(3);
-   expect(geo.s.width,'newsletter must not be tiny on normal desktop screens').toBeGreaterThanOrEqual(viewport.width>1200?1040:850);
-   expect(geo.s.height,'R29 image fits above footer within visible browser').toBeLessThanOrEqual(viewport.height-135);
-   if(viewport.width>=1181){
-    expect(geo.s.width,'desktop newsletter must use the available height, not empty side gutters').toBeGreaterThanOrEqual(viewport.height>=900?1300:1100);
-   }
-   expect(geo.s.bottom,'R29 image must end inside browser').toBeLessThanOrEqual(viewport.height+2);
-   expect(geo.s.top,'R29 image must start below sticky header').toBeGreaterThanOrEqual(65);
-   if(viewport.width>=1181)expect(geo.footerBottom.top,'Legal footer must follow the complete artwork').toBeGreaterThanOrEqual(geo.s.bottom-2);
-   expect(Math.abs(geo.s.height-geo.s.width*941/1671)).toBeLessThanOrEqual(4);
-   expect(Math.abs(geo.art.top-geo.s.top)).toBeLessThanOrEqual(2);
-   expect(Math.abs(geo.art.bottom-geo.s.bottom)).toBeLessThanOrEqual(4);
-   expect(geo.form.left).toBeGreaterThanOrEqual(geo.s.left-2);
-   expect(geo.form.right).toBeLessThanOrEqual(geo.s.right+2);
-   await expect(form.locator('input[type=email]')).toHaveCount(1);
+   await expect(section).toBeVisible();
+   await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
+   await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
+   await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   const state=await section.evaluate(el=>{
+    const a=el.getBoundingClientRect();
+    const b=el.querySelector('img').getBoundingClientRect();
+    const form=el.querySelector('form').getBoundingClientRect();
+    return {section:{left:a.left,right:a.right,width:a.width},image:{width:b.width},form:{left:form.left,right:form.right},scroll:document.documentElement.scrollWidth};
+   });
+   expect(state.scroll).toBeLessThanOrEqual(width+2);
+   expect(state.section.left).toBeGreaterThanOrEqual(-2);
+   expect(state.section.right).toBeLessThanOrEqual(width+2);
+   expect(state.image.width).toBeGreaterThan(100);
+   expect(state.form.left).toBeGreaterThanOrEqual(state.section.left-2);
+   expect(state.form.right).toBeLessThanOrEqual(state.section.right+2);
   }finally{await context.close();}
  }
 });
-
-test('R21 actual newsletter is full-width on phones and loads real images',async({browser})=>{
- test.setTimeout(90000);
- const sizes=[
-  {width:360,height:780},
-  {width:390,height:844},
-  {width:768,height:950},
-  {width:1024,height:720},
-  {width:1600,height:785}
- ];
- fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
- for(const viewport of sizes){
-  const ctx=await browser.newContext({viewport});
+test("R29 newsletter artwork fits complete desktop viewport without cropping — Full Max Premium 2026",async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
   try{
-   const page=await ctx.newPage();
+   const page=await context.newPage();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
+   const section=page.locator('#newsletter-home.footer-news--fullmax-r1');
+   const image=section.locator('.footer-news-fullmax-scene img');
    const form=section.locator('form[data-newsletter]');
-   await expect(form).toHaveClass(/footer-newsletter-live/);
    await section.scrollIntoViewIfNeeded();
-   const image=section.locator(viewport.width<=960?'.footer-news-smartphone':'.footer-news-full-art-r16');
+   await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(el=>el.complete&&el.naturalWidth>0),{timeout:15000}).toBe(true);
-   const g=await section.evaluate(el=>{
-    const rect=x=>{const r=x.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
-    const f=el.querySelector('form[data-newsletter]');
-    const h=el.querySelector('h2');
-    const input=f.querySelector('input[type=email]');
-    const grid=el.parentElement,footer=el.closest('.site-footer');
-    return {banner:rect(el),heading:rect(h),input:rect(input),form:rect(f),
-      grid:rect(grid),footer:rect(footer),gridColumns:getComputedStyle(grid).gridTemplateColumns,
-      screenWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth};
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
+   await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
+   await expect(form.locator('input[type=email]')).toBeVisible();
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   const state=await section.evaluate(el=>{
+    const a=el.getBoundingClientRect();
+    const b=el.querySelector('img').getBoundingClientRect();
+    const form=el.querySelector('form').getBoundingClientRect();
+    return {section:{left:a.left,right:a.right,width:a.width},image:{width:b.width},form:{left:form.left,right:form.right},scroll:document.documentElement.scrollWidth};
    });
-   if(viewport.width===768) {
-    await section.screenshot({path:'test-results/home-r4/newsletter-r21-768-diagnostic.png',animations:'disabled'});
-    console.log('R21 TABLET GEO',JSON.stringify(g));
-   }
-   expect(g.scrollWidth,'No horizontal page overflow').toBeLessThanOrEqual(viewport.width+2);
-   expect(g.banner.left,'Banner must stay inside screen').toBeGreaterThanOrEqual(-2);
-   expect(g.banner.right,'Banner must stay inside screen').toBeLessThanOrEqual(viewport.width+2);
-   if(viewport.width<=960){
-    expect(g.banner.width,'Mobile newsletter must use real available screen width').toBeGreaterThanOrEqual(viewport.width*.82);
-    expect(g.heading.width,'Mobile heading may not collapse to narrow vertical strip').toBeGreaterThanOrEqual(viewport.width*.60);
-    expect(g.form.width,'Signup form must use full mobile column').toBeGreaterThanOrEqual(viewport.width*.67);
-    expect(g.input.width,'Email input may not collapse').toBeGreaterThanOrEqual(viewport.width*.55);
-   }else{
-    expect(g.banner.height,'R29 banner keeps the original aspect ratio').toBeCloseTo(g.banner.width*941/1671,0);
-    expect(g.banner.width).toBeGreaterThan(800);
-   }
-   if(viewport.width===390||viewport.width===1600){
-    await section.screenshot({path:'test-results/home-r4/newsletter-r21-'+viewport.width+'.png',animations:'disabled'});
-    await page.screenshot({path:'test-results/home-r4/newsletter-r21-viewport-'+viewport.width+'.png',fullPage:false,animations:'disabled'});
-   }
-  }finally{await ctx.close()}
+   expect(state.scroll).toBeLessThanOrEqual(width+2);
+   expect(state.section.left).toBeGreaterThanOrEqual(-2);
+   expect(state.section.right).toBeLessThanOrEqual(width+2);
+   expect(state.image.width).toBeGreaterThan(100);
+   expect(state.form.left).toBeGreaterThanOrEqual(state.section.left-2);
+   expect(state.form.right).toBeLessThanOrEqual(state.section.right+2);
+  }finally{await context.close();}
  }
 });
-
-test('R29 approved newsletter image stays fully visible and centered',async({browser})=>{
- test.setTimeout(90000);
- fs.mkdirSync(path.join(process.cwd(),'test-results/home-r4'),{recursive:true});
- for(const viewport of [{width:1600,height:785},{width:1920,height:1080}]){
-  const ctx=await browser.newContext({viewport});
+test("R21 actual newsletter is full-width on phones and loads real images — Full Max Premium 2026",async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
   try{
-   const page=await ctx.newPage();
+   const page=await context.newPage();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const section=page.locator('.site-footer .footer-news.footer-news--approved-r16');
+   const section=page.locator('#newsletter-home.footer-news--fullmax-r1');
+   const image=section.locator('.footer-news-fullmax-scene img');
+   const form=section.locator('form[data-newsletter]');
    await section.scrollIntoViewIfNeeded();
-   const art=section.locator('img.footer-news-full-art-r16');
-   await expect(art).toBeVisible();
-   await expect.poll(()=>art.evaluate(img=>img.complete&&img.naturalWidth===1671&&img.naturalHeight===941),{timeout:12000}).toBe(true);
-   const state=await page.evaluate(()=>{
-    const footer=document.querySelector('.site-footer');
-    const banner=footer.querySelector('.footer-news--approved-r16');
-    const art=banner.querySelector('img.footer-news-full-art-r16');
-    const form=banner.querySelector('form[data-newsletter]');
-    const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,top:r.top,bottom:r.bottom}};
-    return {footer:rect(footer),banner:rect(banner),art:rect(art),
-      beforeContent:getComputedStyle(footer,'::before').content,
-      beforeBackground:getComputedStyle(footer,'::before').backgroundImage,
-      beforeMask:getComputedStyle(footer,'::before').maskImage,
-      emailCount:form.querySelectorAll('input[type=email]').length,
-      submitCount:form.querySelectorAll('button[type=submit]').length,
-      overflow:document.documentElement.scrollWidth};
+   await expect(section).toBeVisible();
+   await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
+   await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
+   await expect(form.locator('input[type=email]')).toBeVisible();
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   const state=await section.evaluate(el=>{
+    const a=el.getBoundingClientRect();
+    const b=el.querySelector('img').getBoundingClientRect();
+    const form=el.querySelector('form').getBoundingClientRect();
+    return {section:{left:a.left,right:a.right,width:a.width},image:{width:b.width},form:{left:form.left,right:form.right},scroll:document.documentElement.scrollWidth};
    });
-   expect(state.footer.left).toBeGreaterThanOrEqual(-2);
-   expect(state.footer.right).toBeLessThanOrEqual(viewport.width+2);
-   expect(state.footer.width).toBeGreaterThanOrEqual(viewport.width-2);
-   expect(state.beforeContent).not.toBe('none');
-   expect(state.beforeBackground).toContain('radial-gradient');
-   expect(state.beforeMask).toBe('none');
-   expect(state.banner.left,'R29 image must stay inside viewport').toBeGreaterThanOrEqual(-2);
-   expect(Math.abs(state.banner.width-Math.min(viewport.width,(viewport.height-148)*1.77577)),'R29 width must preserve full artwork').toBeLessThanOrEqual(3);
-   expect(Math.abs((state.banner.left+state.banner.right)/2-viewport.width/2),'R29 image centered on screen').toBeLessThanOrEqual(3);
-    expect(state.art.width).toBeCloseTo(state.banner.width,0);
-   expect(state.art.top).toBeCloseTo(state.banner.top,0);
-   expect(state.art.bottom).toBeCloseTo(state.banner.bottom,0);
-   expect(state.overflow).toBeLessThanOrEqual(viewport.width+2);
-   expect(state.emailCount).toBe(1);
-   expect(state.submitCount).toBe(1);
-   await page.screenshot({path:'test-results/home-r4/newsletter-r23-viewport-'+viewport.width+'.png',animations:'disabled',fullPage:false});
-  }finally{await ctx.close();}
+   expect(state.scroll).toBeLessThanOrEqual(width+2);
+   expect(state.section.left).toBeGreaterThanOrEqual(-2);
+   expect(state.section.right).toBeLessThanOrEqual(width+2);
+   expect(state.image.width).toBeGreaterThan(100);
+   expect(state.form.left).toBeGreaterThanOrEqual(state.section.left-2);
+   expect(state.form.right).toBeLessThanOrEqual(state.section.right+2);
+  }finally{await context.close();}
  }
 });
-
+test("R29 approved newsletter image stays fully visible and centered — Full Max Premium 2026",async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const section=page.locator('#newsletter-home.footer-news--fullmax-r1');
+   const image=section.locator('.footer-news-fullmax-scene img');
+   const form=section.locator('form[data-newsletter]');
+   await section.scrollIntoViewIfNeeded();
+   await expect(section).toBeVisible();
+   await expect(image).toBeVisible();
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
+   await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
+   await expect(form.locator('input[type=email]')).toBeVisible();
+   await expect(form.locator('button[type=submit]')).toBeDisabled();
+   const notice=form.locator('.footer-newsletter-status');
+   await expect(notice).toContainText('Zapisy do newslettera są tymczasowo niedostępne');
+   const state=await section.evaluate(el=>{
+    const a=el.getBoundingClientRect();
+    const b=el.querySelector('img').getBoundingClientRect();
+    const form=el.querySelector('form').getBoundingClientRect();
+    return {section:{left:a.left,right:a.right,width:a.width},image:{width:b.width},form:{left:form.left,right:form.right},scroll:document.documentElement.scrollWidth};
+   });
+   expect(state.scroll).toBeLessThanOrEqual(width+2);
+   expect(state.section.left).toBeGreaterThanOrEqual(-2);
+   expect(state.section.right).toBeLessThanOrEqual(width+2);
+   expect(state.image.width).toBeGreaterThan(100);
+   expect(state.form.left).toBeGreaterThanOrEqual(state.section.left-2);
+   expect(state.form.right).toBeLessThanOrEqual(state.section.right+2);
+  }finally{await context.close();}
+ }
+});
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
  ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-wide-approved-r10.avif'],

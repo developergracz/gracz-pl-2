@@ -2925,3 +2925,111 @@ body.search-page .site-header .dropdown{
 @media(max-width:560px){
   body.search-page .site-header .header-inner{width:calc(100% - 20px)!important}
 }
+
+
+/* SEARCH FULL MAX PREMIUM FRAME R1 — dedicated /szukaj/ only. */
+body.search-page .gracz-search-page__panel{
+  position:relative;
+  isolation:isolate;
+  border:2px solid rgba(240,193,102,.9);
+  border-radius:25px;
+  background:
+    radial-gradient(ellipse 68% 30% at 56% 0%,rgba(13,117,114,.3),transparent 86%),
+    radial-gradient(ellipse 90% 68% at 95% 55%,rgba(4,93,89,.18),transparent 84%),
+    linear-gradient(155deg,#063f40 0%,#042d35 49%,#031e2b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,238,173,.43),
+    inset 0 0 34px rgba(1,17,19,.16),
+    0 0 0 1px rgba(255,216,131,.23),
+    0 0 0 6px rgba(2,49,51,.43),
+    0 19px 65px rgba(0,13,18,.52),
+    0 0 35px rgba(230,177,72,.16);
+}
+body.search-page .gracz-search-page__panel::before{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border:1px solid rgba(252,218,146,.22);
+  border-radius:17px;
+  pointer-events:none;
+  z-index:1;
+}
+body.search-page .gracz-search-page__panel::after{
+  content:"";
+  position:absolute;
+  top:0;left:19%;right:19%;height:3px;
+  border-radius:0 0 100% 100%;
+  background:linear-gradient(90deg,transparent,rgba(255,217,128,.85) 28%,#fff1bb 50%,rgba(255,217,128,.85) 72%,transparent);
+  box-shadow:0 0 18px rgba(247,191,82,.38);
+  pointer-events:none;
+}
+body.search-page .gracz-search-page__panel .gracz-search__head{
+  position:relative;
+  background:linear-gradient(180deg,rgba(1,43,44,.26),transparent);
+}
+body.search-page .gracz-search-page__panel .gracz-search__box{
+  border:2px solid rgba(231,189,102,.85);
+  border-radius:19px;
+  background:linear-gradient(135deg,rgba(6,65,69,.96),rgba(4,35,48,.98));
+  box-shadow:
+    inset 0 1px 0 rgba(254,233,181,.24),
+    0 0 0 3px rgba(16,111,109,.38),
+    0 8px 28px rgba(0,11,20,.34),
+    0 0 18px rgba(229,181,82,.09);
+  transition:border-color .18s ease,box-shadow .18s ease;
+}
+body.search-page .gracz-search-page__panel .gracz-search__box:focus-within{
+  border-color:#ffe4a0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,246,215,.35),
+    0 0 0 3px rgba(88,211,200,.35),
+    0 0 0 5px rgba(244,194,93,.16),
+    0 8px 30px rgba(0,10,19,.45),
+    0 0 26px rgba(252,207,113,.22);
+}
+body.search-page .gracz-search-page__panel .gracz-search__box>svg{
+  color:#f9d58d;
+}
+body.search-page .gracz-search-page__panel .gracz-search__learn-more,
+body.search-page .gracz-search-page__panel .gracz-search__home{
+  border:1px solid rgba(231,188,97,.43);
+  background:linear-gradient(150deg,rgba(24,95,92,.5),rgba(5,52,60,.76));
+  color:#f7dfac;
+  box-shadow:inset 0 1px 0 rgba(255,236,179,.11);
+}
+body.search-page .gracz-search-page__panel .gracz-search__learn-more:hover,
+body.search-page .gracz-search-page__panel .gracz-search__learn-more:focus-visible,
+body.search-page .gracz-search-page__panel .gracz-search__home:hover,
+body.search-page .gracz-search-page__panel .gracz-search__home:focus-visible{
+  border-color:rgba(255,220,150,.85);
+  color:#fff5d5;
+  box-shadow:0 0 14px rgba(235,184,89,.22),inset 0 1px 0 rgba(255,236,179,.16);
+}
+body.search-page .gracz-search-page__panel .gracz-search__filter.is-active{
+  border-color:rgba(244,198,95,.64);
+  background:linear-gradient(180deg,rgba(42,134,128,.3),rgba(16,82,83,.33));
+  color:#fff1c2;
+  box-shadow:inset 0 1px 0 rgba(255,235,169,.13);
+}
+body.search-page .gracz-search-page__panel .gracz-search__result:hover,
+body.search-page .gracz-search-page__panel .gracz-search__result:focus-visible{
+  border-color:rgba(237,190,94,.49);
+  background:linear-gradient(110deg,rgba(35,117,111,.29),rgba(9,65,72,.48));
+}
+@media(max-width:720px){
+  body.search-page .gracz-search-page__panel{
+    border-left:0;border-right:0;border-radius:0;
+    box-shadow:inset 0 2px 0 rgba(244,198,95,.56);
+  }
+  body.search-page .gracz-search-page__panel::before{
+    inset:5px 7px;
+    border-left:0;border-right:0;
+    border-radius:10px;
+  }
+  body.search-page .gracz-search-page__panel .gracz-search__box{
+    border-width:1.5px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.search-page .gracz-search-page__panel .gracz-search__box{transition:none}
+}
