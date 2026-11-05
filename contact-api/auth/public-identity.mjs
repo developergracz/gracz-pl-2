@@ -9,6 +9,7 @@ import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mj
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
+import {initialChessMatch,playChessMatch} from './chess-match.mjs';
 import { promisify } from 'node:util';
 
 const scrypt=promisify(rawScrypt);
@@ -120,8 +121,8 @@ function evaluateGomokuBoard(board){
 const gomokuTimeOptions=new Set([0,1,2,3,5,7,10,15,30]);
 const gomokuIncrementOptions=new Set([0,2,3,5,10]);
 function createTimedGame(game,minutes,incrementSeconds=0){
- const state=initialGame(game);
- if(['gomoku','warcaby'].includes(game)&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
+ const state=game==='szachy'?initialChessMatch():initialGame(game);
+ if(['gomoku','warcaby','szachy'].includes(game)&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
   const ms=minutes*60000;
   state.clock={limitMs:ms,incrementMs:(gomokuIncrementOptions.has(incrementSeconds)?incrementSeconds:0)*1000,
    remaining:[ms,ms],ready:[false,false],since:null};
@@ -258,12 +259,14 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_challenges (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
        recipient_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
-       game text NOT NULL CHECK (game IN ('warcaby','gomoku')),
+       game text NOT NULL CHECK (game IN ('warcaby','gomoku','szachy')),
        status text NOT NULL CHECK (status IN ('pending','accepted','declined','cancelled','expired')),
        created_at timestamptz NOT NULL DEFAULT now(),
        updated_at timestamptz NOT NULL DEFAULT now(),
        expires_at timestamptz NOT NULL DEFAULT (now()+interval '7 days'),
        CHECK (sender_id<>recipient_id))`);
+     await database.query("ALTER TABLE gracz_public_identity.game_challenges DROP CONSTRAINT IF EXISTS game_challenges_game_check");
+     await database.query("ALTER TABLE gracz_public_identity.game_challenges ADD CONSTRAINT game_challenges_game_check CHECK (game IN ('warcaby','gomoku','szachy'))");
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS time_limit_minutes integer NOT NULL DEFAULT 0');
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS increment_seconds integer NOT NULL DEFAULT 0');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
@@ -481,7 +484,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         if(!allow('player-prefs:'+accountId,35))return bad(res,429,'ZBYT_WIELE_PROB'),true;
         let body;try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
         const {density,reduceMotion,largeText,favoriteGames}=body;
-        const allowedGames=['warcaby','gomoku','tysiac','poker'];
+        const allowedGames=['warcaby','gomoku','szachy','tysiac','poker'];
         if(!['comfortable','compact'].includes(density)||
           typeof reduceMotion!=='boolean'||typeof largeText!=='boolean'||
           !Array.isArray(favoriteGames)||favoriteGames.length>allowedGames.length||
@@ -592,7 +595,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       // Joining a time-controlled room marks this participant ready.
       // Only after both participants have visited the room does the first clock start.
       // A wall-clock timeout is finalized by the backend even if the browser was closed.
-      if(['gomoku','warcaby'].includes(match.game)&&match.state?.clock){
+      if(['gomoku','warcaby','szachy'].includes(match.game)&&match.state?.clock){
        for(let attempt=0;attempt<4;attempt++){
         const tick=advanceGomokuClock(match.state,Date.now(),req.method==='GET'&&!isChat&&!isUndo?player:0);
         if(!tick.changed)break;
@@ -699,7 +702,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       }
       if(isChat){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
-        if(match.game!=='gomoku'&&match.game!=='warcaby')return bad(res,400,'CZAT_NIEDOSTEPNY'),true;
+        if(!['gomoku','warcaby','szachy'].includes(match.game))return bad(res,400,'CZAT_NIEDOSTEPNY'),true;
         if(req.method==='GET'){
           const messages=await database.query(`SELECT id,sender_id,body,created_at FROM (
             SELECT id,sender_id,body,created_at
@@ -737,7 +740,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         const movedAt=Date.now();
         const overdue=advanceGomokuClock(match.state,movedAt);
         if(overdue.expired)return bad(res,409,'CZAS_MINAL'),true;
-        const result=playMove(match.game,match.state,player,body.move);
+        const result=match.game==='szachy'?playChessMatch(match.state,player,body.move):playMove(match.game,match.state,player,body.move);
         if(result.error)return bad(res,409,result.error),true;
         if(match.game==='gomoku'){
           const previous=Array.isArray(match.state.history)?match.state.history.slice(-224):[];
@@ -749,6 +752,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
           result.state.history=[...previous,{player,from:body.move.from,to:body.move.to,number:result.state.moves}];
           result.state=clockAfterMove(match.state,result.state,movedAt);
         }
+        if(match.game==='szachy')result.state=clockAfterMove(match.state,result.state,movedAt);
         const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
           FROM gracz_public_identity.game_challenges c
@@ -881,7 +885,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         const nick=normalizeNick(body.nickname),game=safeText(body.game);
         const minutes=body.timeLimitMinutes===undefined?0:body.timeLimitMinutes;
         const incrementSeconds=body.incrementSeconds===undefined?0:body.incrementSeconds;
-        if(!validNick(nick)||!['warcaby','gomoku'].includes(game)||
+        if(!validNick(nick)||!['warcaby','gomoku','szachy'].includes(game)||
            !gomokuTimeOptions.has(minutes)||!gomokuIncrementOptions.has(incrementSeconds)||
            (minutes===0&&incrementSeconds!==0))
           return bad(res,400,'BLEDNE_DANE'),true;
