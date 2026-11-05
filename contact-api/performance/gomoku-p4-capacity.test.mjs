@@ -115,10 +115,11 @@ test('P4: staged local sockets 100/256/500/512, fan-out and rejection at 513', {
    assert.equal(connections.length,size,'stage did not reach all active clients');
    const selectedRooms=new Set(Array.from({length:Math.min(24,Math.floor(size/2))},(_,i)=>idFor(i)));
    const recipients=connections.filter(c=>selectedRooms.has(c.room));
-   const awaiting=recipients.map(c=>awaitVersion(c,2));
-   for(const id of selectedRooms){versions.set(id,2);hub.notify(id);}
+   const changes=new Map([...selectedRooms].map(id=>[id,versions.get(id)+1]));
+   const awaiting=recipients.map(c=>awaitVersion(c,changes.get(c.room)));
+   for(const [id,version] of changes){versions.set(id,version);hub.notify(id);}
    const updateLatencies=await Promise.all(awaiting);
-   const stage={active:size,handshake_p95_ms:p95(latencies.slice(from,size)),
+   const stage={active:size,first_snapshot_p95_ms:p95(latencies.slice(from,size)),
     fanout_p95_ms:p95(updateLatencies),fanout_recipients:recipients.length,
     seconds_since_previous_stage:Math.round((performance.now()-latestStage)/1000),
     rss_mb:Math.round(process.memoryUsage().rss/(1024*1024)),router_reads:requestCount};
