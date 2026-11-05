@@ -1454,7 +1454,7 @@
     if(!root)return;
     root.innerHTML=shellMarkup('page');
     pageCtx=contextFromRoot(root,'page');
-    window.setTimeout(function(){pageCtx.input.focus();},0);
+    window.setTimeout(function(){if(!document.body.classList.contains('search-access-pending'))pageCtx.input.focus();},0);
   }
 
   document.addEventListener('click',function(event){
@@ -1466,6 +1466,7 @@
   },true);
 
   document.addEventListener('keydown',function(event){
+    if(document.body.classList.contains('search-access-pending'))return;
     var target=event.target;
     var typing=target&&(/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)||target.isContentEditable);
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
