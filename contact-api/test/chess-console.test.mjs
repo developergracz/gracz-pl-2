@@ -33,6 +33,16 @@ test('chess UI uses native side panels without secondary actions under the board
  assert.match(css.body,/aspect-ratio:1/);
  assert.match(css.body,/\.chess-console \.layout/);
 });
+test('Chess labels, sidebar sizing and additive WebSocket chat match the premium console',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css');
+ assert.match(page.body,/Czarne — drugi ruch/);
+ assert.match(page.body,/Białe — zaczynają/);
+ assert.doesNotMatch(page.body,/Czarne — zaczynają/);
+ assert.match(style.body,/\.chess-console \.sidebar \.sidebar-footer \.side-links a/);
+ assert.match(style.body,/white-space:normal!important/);
+ assert.match(app.body,/onlineMessages=mergeChat\(m\.messages\)/);
+ assert.match(app.body,/online\?\.players\?\.\[m\.player-1\]/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
