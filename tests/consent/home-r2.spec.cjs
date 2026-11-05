@@ -76,16 +76,58 @@ for(const width of [360,390,768,1366,1920]){
   }finally{await context.close()}
  });
 }
-test('Header loupe navigates directly to the Full Max Premium search page',async({page})=>{
+test('Header loupe opens the actual search page behind the guest gate',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  await page.waitForLoadState('networkidle');
  await expect(page.locator('link[data-gracz-search-style]')).toHaveCount(0);
  await expect(page.locator('.search-btn--desktop')).toHaveAttribute('href','/szukaj/');
  await page.locator('.search-btn--desktop').click();
- await expect(page).toHaveURL(/\/szukaj\/$/,{timeout:15000});
+ await expect(page).toHaveURL(/\\/szukaj\\/$/,{timeout:15000});
  await expect(page.locator('#search-page-app input')).toBeVisible({timeout:15000});
+ await expect(page.locator('#search-page-app')).toHaveAttribute('inert','');
+ await expect(page.locator('#search-access-layer')).toBeVisible();
+ await expect(page.getByRole('dialog',{name:/Nasza wyszukiwarka jest dostępna/})).toBeVisible();
+ await expect(page.locator('.search-access-primary')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/?widok=login');
+ await expect(page.locator('.search-access-secondary')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/');
  await expect(page.locator('dialog.gracz-search')).toHaveCount(0);
+});
+
+test('Search guest gate is responsive and the background stays visible',async({browser})=>{
+ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
+  const ctx=await browser.newContext({viewport});
+  try{
+   const page=await ctx.newPage();
+   await page.goto('/szukaj/#gate=guest');
+   await expect(page.locator('#search-access-layer')).toBeVisible();
+   const g=await page.evaluate(()=>{
+    const modal=document.querySelector('.search-access-panel').getBoundingClientRect();
+    const bg=document.querySelector('#search-page-app').getBoundingClientRect();
+    return {left:modal.left,right:modal.right,top:modal.top,bottom:modal.bottom,backgroundWidth:bg.width,viewportWidth:innerWidth};
+   });
+   expect(g.left).toBeGreaterThanOrEqual(0);
+   expect(g.right).toBeLessThanOrEqual(viewport.width+1);
+   expect(g.backgroundWidth).toBeGreaterThan(viewport.width*.60);
+   expect(await page.locator('#search-page-app').getAttribute('inert')).toBe('');
+   await page.screenshot({path:'test-results/home-r4/search-guest-'+viewport.width+'.png',animations:'disabled'});
+  }finally{await ctx.close();}
+ }
+});
+
+test('Verified one-time ticket removes only the guest gate',async({page})=>{
+ await page.addInitScript(()=>{
+  const actualFetch=window.fetch.bind(window);
+  window.fetch=function(url,options){
+   if(String(url).endsWith('/auth/search-ticket'))return Promise.resolve(
+    new Response(JSON.stringify({ok:true,allowed:true}),{status:200,headers:{'content-type':'application/json'}})
+   );
+   return actualFetch(url,options);
+  };
+ });
+ await page.goto('/szukaj/#gate='+('a'.repeat(48)));
+ await expect(page.locator('#search-access-layer')).toHaveCount(0);
+ await expect(page.locator('#search-page-app')).not.toHaveAttribute('inert');
+ await expect(page.locator('#search-page-app input')).toBeVisible();
 });
 
 // R4 visual-fidelity regression: no clipped header search and the game card is a real link.
