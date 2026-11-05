@@ -265,8 +265,290 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
        updated_at timestamptz NOT NULL DEFAULT now(),
        expires_at timestamptz NOT NULL DEFAULT (now()+interval '7 days'),
        CHECK (sender_id<>recipient_id))`);
-     await database.query("ALTER TABLE gracz_public_identity.game_challenges DROP CONSTRAINT IF EXISTS game_challenges_game_check");
-     await database.query("ALTER TABLE gracz_public_identity.game_challenges ADD CONSTRAINT game_challenges_game_check CHECK (game IN ('warcaby','gomoku','szachy'))");
+     // Idempotent upgrade: avoid table locking on every process restart.
+     await database.query(`DO $chess$
+       BEGIN
+         IF EXISTS(SELECT 1 FROM pg_constraint
+           WHERE conrelid='gracz_public_identity.game_challenges'::regclass
+             AND conname='game_challenges_game_check'
+             AND pg_get_constraintdef(oid) NOT LIKE '%szachy%') THEN
+           ALTER TABLE gracz_public_identity.game_challenges DROP CONSTRAINT game_challenges_game_check;
+         END IF;
+         IF NOT EXISTS(SELECT 1 FROM pg_constraint
+           WHERE conrelid='gracz_public_identity.game_challenges'::regclass
+             AND conname='game_challenges_game_check') THEN
+           ALTER TABLE gracz_public_identity.game_challenges
+             ADD CONSTRAINT game_challenges_game_check
+             CHECK (game IN ('warcaby','gomoku','szachy'));
+         END IF;
+       END $chessimport {ensureChallengeCenterSchema,createChallengeCenterRouter} from './challenge-center.mjs';
+import {ensureNotificationSchema,createNotificationRouter} from './notification-center.mjs';
+import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
+import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
+import {createOAuthRegistrationRouter} from './oauth-registration.mjs';
+import {createSearchAccessRouter} from './search-access.mjs';
+import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
+import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
+import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
+import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
+import { initialGame, playMove } from './game-engine.mjs';
+import {initialChessMatch,playChessMatch} from './chess-match.mjs';
+import { promisify } from 'node:util';
+
+const scrypt=promisify(rawScrypt);
+const realtimeRead=Symbol('trusted realtime snapshot');
+const HOST='https://gracz-contact-api.onrender.com';
+const COOKIE='__Host-gracz_session';
+const MAX_BODY=4096;
+const failures=new Map();
+const digest=x=>createHash('sha256').update(x).digest();
+const json=(res,status,obj)=>{
+  res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
+  res.end(JSON.stringify(obj));
+};
+const bad=(res,status,message)=>json(res,status,{ok:false,error:message});
+const normalizeEmail=x=>String(x||'').trim().toLowerCase();
+const normalizeNick=x=>String(x||'').trim();
+const validNick=x=>/^[a-z][a-z0-9._-]{2,31}$/i.test(x);
+const validEmail=x=>x.length<=254 && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x);
+const validPassword=x=>typeof x==='string'&&x.length>=15&&Buffer.byteLength(x)<=256;
+const hashPassword=async (pwd,salt)=>Buffer.from(await scrypt(pwd,salt,64,{N:32768,r:8,p:1,maxmem:64*1024*1024}));
+const cookie=value=>COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+const clearCookie=()=>COOKIE+'=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+function sessionToken(req){const raw=String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='));return raw?.slice(COOKIE.length+1)||'';}
+async function readBody(req,timeoutMs=0){
+ return new Promise((resolve,reject)=>{
+  let total=0,buf='',timer;
+  const fail=error=>{clearTimeout(timer);reject(error);};
+  if(timeoutMs)timer=setTimeout(()=>{fail(new Error('BODY_TIMEOUT'));req.destroy();},timeoutMs);
+  req.on('data',chunk=>{total+=chunk.length;if(total>MAX_BODY){fail(new Error('TOO_LARGE'));req.destroy();return;}buf+=chunk.toString('utf8');});
+  req.on('end',()=>{clearTimeout(timer);try{const x=JSON.parse(buf);if(!x||typeof x!=='object'||Array.isArray(x))throw Error('BAD_JSON');resolve(x);}catch{reject(new Error('BAD_JSON'));}});
+  req.on('error',fail);
+  req.on('close',()=>fail(new Error('BODY_CLOSED')));
+ });
+}
+
+function allow(key,max=8){
+ const now=Date.now();let state=failures.get(key);
+ if(!state||state.until<now){state={until:now+900000,count:0};failures.set(key,state);}
+ state.count++;
+ if(failures.size>20000){for(const [k,v] of failures){if(v.until<now)failures.delete(k);}if(failures.size>20000)failures.clear();}
+ return state.count<=max;
+}
+function safeText(x){return typeof x==='string'?x:'';}
+function authorizedOrigin(req){return req.headers.origin===HOST && req.headers['sec-fetch-site']!=='cross-site';}
+async function sendResetPasswordEmail(apiKey,from,to,token){
+ const link=HOST+'/konto/#nowe-haslo='+encodeURIComponent(token);
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),9000);
+ try{
+  const response=await fetch('https://api.resend.com/emails',{
+   method:'POST',signal:controller.signal,
+   headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
+   body:JSON.stringify({from,to,subject:'gracz.pl — odzyskiwanie hasła',
+    html:'<p>Otrzymaliśmy prośbę o zmianę hasła do konta gracz.pl.</p><p><a href="'+link+'">Ustaw nowe hasło</a></p><p>Link jest ważny 20 minut i działa tylko raz. Jeśli nie prosiłeś o zmianę, zignoruj wiadomość.</p>'})
+  });
+  return response.ok;
+ }finally{clearTimeout(timer);}
+}
+// Same text for a new and an already registered address (no account enumeration).
+const REGISTRATION_ACCEPTED='Jeżeli to nowe konto, wysłaliśmy link aktywacyjny ważny 30 minut. Sprawdź skrzynkę e-mail, także folder SPAM.';
+// Resolves false (never throws) when Resend did not accept the message; logs no address or token.
+async function sendVerifyEmail(apiKey,from,to,token){
+ const link=HOST+'/konto/#potwierdz='+encodeURIComponent(token);
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),9000);
+ try{
+ const response=await fetch('https://api.resend.com/emails',{
+  method:'POST',signal:controller.signal,
+  headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
+  body:JSON.stringify({from,to,subject:'gracz.pl — potwierdź konto',
+   html:'<p>Potwierdź nowe konto gracz.pl. Link jest ważny 30 minut.</p><p><a href="'+link+'">Potwierdź adres e-mail</a></p><p>Jeśli to nie Ty, zignoruj wiadomość.</p>'})
+ });
+ if(!response.ok)console.error('IDENTITY_VERIFY_EMAIL_ERROR',{status:response.status});
+ return response.ok;
+ }catch(e){
+  console.error('IDENTITY_VERIFY_EMAIL_ERROR',{code:e?.name==='AbortError'?'TIMEOUT':'NETWORK'});
+  return false;
+ }finally{clearTimeout(timer);}
+}
+function activeUndo(state){
+ const pending=state?.undo;
+ if(!pending||typeof pending!=='object'||typeof pending.id!=='string'||
+    ![1,2].includes(pending.requester)||
+    !Number.isInteger(pending.targetTo)||pending.targetTo<0||pending.targetTo>=225)return null;
+ const started=Date.parse(pending.createdAt);
+ if(!Number.isFinite(started)||started>Date.now()+10000||
+    Date.now()-started>180000)return null;
+ return pending;
+}
+function evaluateGomokuBoard(board){
+ if(!Array.isArray(board)||board.length!==225)return 0;
+ const directions=[[1,0],[0,1],[1,1],[1,-1]];
+ for(let i=0;i<225;i++){
+  const p=board[i];if(p!==1&&p!==2)continue;
+  const r=Math.floor(i/15),c=i%15;
+  for(const [dr,dc] of directions){
+   let won=true;
+   for(let n=1;n<5;n++){
+    const rr=r+n*dr,cc=c+n*dc;
+    if(rr>=15||cc<0||cc>=15||board[rr*15+cc]!==p){won=false;break;}
+   }
+   if(won)return p;
+  }
+ }
+ return board.every(p=>p!==0)?3:0;
+}
+
+
+const gomokuTimeOptions=new Set([0,1,2,3,5,7,10,15,30]);
+const gomokuIncrementOptions=new Set([0,2,3,5,10]);
+function createTimedGame(game,minutes,incrementSeconds=0){
+ const state=game==='szachy'?initialChessMatch():initialGame(game);
+ if(['gomoku','warcaby','szachy'].includes(game)&&Number.isInteger(minutes)&&minutes>0&&gomokuTimeOptions.has(minutes)){
+  const ms=minutes*60000;
+  state.clock={limitMs:ms,incrementMs:(gomokuIncrementOptions.has(incrementSeconds)?incrementSeconds:0)*1000,
+   remaining:[ms,ms],ready:[false,false],since:null};
+ }
+ return state;
+}
+// Every change to a timed game is guarded by the existing optimistic match version.
+// The browser only displays time; the PostgreSQL-backed state is authoritative.
+function advanceGomokuClock(state,now,joinPlayer=0){
+ if(!state?.clock||state.winner)return {state,changed:false,expired:false};
+ const clock=state.clock;
+ if(!Array.isArray(clock.remaining)||clock.remaining.length!==2||
+    !Array.isArray(clock.ready)||clock.ready.length!==2||
+    !Number.isInteger(clock.limitMs)||clock.limitMs<=0)
+   return {state,changed:false,expired:false};
+ const next={...state,clock:{...clock,remaining:[...clock.remaining],ready:[...clock.ready]}};
+ let changed=false,expired=false;
+ // Waiting for a consent response pauses clocks, but an unanswered request
+ // expires after three minutes. Restore the interrupted turn from that
+ // expiry instant rather than allowing an indefinite frozen clock.
+ if(state.undo&&!activeUndo(state)&&!clock.since&&clock.ready.every(Boolean)){
+  const requested=Date.parse(state.undo.createdAt);
+  delete next.undo;
+  next.clock.since=new Date(Number.isFinite(requested)?requested+180000:now).toISOString();
+  changed=true;
+ }
+ const runningSince=next.clock.since;
+ if(runningSince&&clock.ready[0]&&clock.ready[1]&&[1,2].includes(state.turn)){
+  const start=Date.parse(runningSince);
+  if(Number.isFinite(start)){
+   const elapsed=Math.max(0,now-start);
+   if(elapsed>=clock.remaining[state.turn-1]){
+    next.clock.remaining[state.turn-1]=0;
+    next.clock.since=null;
+    next.clock.timeoutLoser=state.turn;
+    next.winner=state.turn===1?2:1;
+    changed=true;expired=true;
+   }
+  }
+ }
+ if(!expired&&[1,2].includes(joinPlayer)&&!clock.ready[joinPlayer-1]){
+  next.clock.ready[joinPlayer-1]=true;
+  changed=true;
+  if(next.clock.ready.every(Boolean))next.clock.since=new Date(now).toISOString();
+ }
+ return {state:changed?next:state,changed,expired};
+}
+function clockAfterMove(previous,next,at){
+ if(!previous.clock)return next;
+ const clock=previous.clock;
+ const since=Date.parse(clock.since);
+ const elapsed=Number.isFinite(since)?Math.max(0,at-since):0;
+ const remaining=[...clock.remaining];
+ remaining[previous.turn-1]=Math.max(0,remaining[previous.turn-1]-elapsed);
+ // Fischer bonus applies once, only after an accepted, non-terminal legal move.
+ if(!next.winner&&next.turn!==previous.turn&&Number.isInteger(clock.incrementMs)&&clock.incrementMs>=0&&clock.incrementMs<=10000)
+  remaining[previous.turn-1]+=clock.incrementMs;
+ return {...next,clock:{...clock,remaining,
+  since:next.winner?null:new Date(at).toISOString()}};
+}
+
+export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomokuChange=()=>{},onMatchChange=onGomokuChange}){
+ let initialized,activeGameRequests=0,pendingGameBodies=0;
+ const gameBodyReaders=new Map();
+ // Notification only, after existing durable writes; authorization and rules are unchanged.
+ const notifyGomoku=id=>{try{onMatchChange(id);}catch{}};
+ const oauth=createOAuthRegistrationRouter({
+  database,ready:()=>ready(),
+  sendVerifyEmail:(email,token)=>sendVerifyEmail(resendKey,emailFrom,email,token),
+  recordSessionBrowser:(token,userAgent)=>recordSessionBrowser(database,token,userAgent),
+  recordSecurityEvent:(accountId,event)=>recordSecurityEvent(database,accountId,event)
+ });
+ async function ready(){
+  if(!database.enabled||!resendKey||!emailFrom)throw Error('AUTH_UNAVAILABLE');
+  if(!initialized){
+   initialized=(async()=>{
+    await database.query('CREATE SCHEMA IF NOT EXISTS gracz_public_identity');
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.accounts (
+      id uuid PRIMARY KEY, nickname text NOT NULL, nickname_key text NOT NULL UNIQUE,
+      email_key text NOT NULL UNIQUE, salt bytea NOT NULL, password_digest bytea NOT NULL,
+      verified_at timestamptz, verify_digest bytea, verify_expires_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now())`);
+    await database.query('ALTER TABLE gracz_public_identity.accounts ADD COLUMN IF NOT EXISTS reset_digest bytea');
+    await database.query('ALTER TABLE gracz_public_identity.accounts ADD COLUMN IF NOT EXISTS reset_expires_at timestamptz');
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.sessions (
+      token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+      created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
+    await database.query('CREATE INDEX IF NOT EXISTS gracz_public_sessions_expiry ON gracz_public_identity.sessions(expires_at)');
+    await ensureSecuritySchema(database);
+    await database.query('CREATE TABLE IF NOT EXISTS gracz_public_identity.online_presence(account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,last_seen timestamptz NOT NULL DEFAULT now())');
+    await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.profiles (
+      account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+      display_name text NOT NULL, bio text NOT NULL DEFAULT '',
+      country text NOT NULL DEFAULT 'PL', language text NOT NULL DEFAULT 'pl',
+      updated_at timestamptz NOT NULL DEFAULT now())`);
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.player_preferences (
+       account_id uuid PRIMARY KEY REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       density text NOT NULL DEFAULT 'comfortable',
+       reduce_motion boolean NOT NULL DEFAULT false,
+       large_text boolean NOT NULL DEFAULT false,
+       favorite_games text[] NOT NULL DEFAULT ARRAY[]::text[],
+       updated_at timestamptz NOT NULL DEFAULT now())`);
+
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_connections (
+       account_a uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       account_b uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       requested_by uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       status text NOT NULL CHECK(status IN ('pending','accepted')),
+       requested_at timestamptz NOT NULL DEFAULT now(),
+       updated_at timestamptz NOT NULL DEFAULT now(),
+       PRIMARY KEY(account_a,account_b),
+       CHECK(account_a<account_b),
+       CHECK(requested_by=account_a OR requested_by=account_b))`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_connections_b ON gracz_public_identity.friend_connections(account_b,status)');
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_blocks (
+       blocker uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       blocked uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       created_at timestamptz NOT NULL DEFAULT now(),
+       PRIMARY KEY(blocker,blocked),CHECK(blocker<>blocked))`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_blocks_target ON gracz_public_identity.friend_blocks(blocked)');
+     await ensureAddressBookSchema(database);
+     await ensurePrivacySchema(database);
+     await ensureNotificationSchema(database);
+     await ensureMessageCenterSchema(database);
+
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
+       id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       recipient_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1000),
+       created_at timestamptz NOT NULL DEFAULT now(),
+       CHECK (sender_id<>recipient_id))`);
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_messages_pair ON gracz_public_identity.friend_messages(sender_id,recipient_id,created_at DESC)');
+     await database.query('CREATE INDEX IF NOT EXISTS gracz_friend_messages_inbox ON gracz_public_identity.friend_messages(recipient_id,created_at DESC)');
+     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_challenges (
+       id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       recipient_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
+       game text NOT NULL CHECK (game IN ('warcaby','gomoku','szachy')),
+       status text NOT NULL CHECK (status IN ('pending','accepted','declined','cancelled','expired')),
+       created_at timestamptz NOT NULL DEFAULT now(),
+       updated_at timestamptz NOT NULL DEFAULT now(),
+       expires_at timestamptz NOT NULL DEFAULT (now()+interval '7 days'),
+       CHECK (sender_id<>recipient_id))`);
+);
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS time_limit_minutes integer NOT NULL DEFAULT 0');
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS increment_seconds integer NOT NULL DEFAULT 0');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
