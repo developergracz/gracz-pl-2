@@ -101,3 +101,14 @@ body.homepage-premium-max .r4-homepage #gracz-next::before {
   background:#003a37;
   pointer-events:none;
 }
+
+/* Owner approved: teal homepage canvas behind Nasze gry and Spolecznosc.
+   Hero, game cards, community photograph, text and section layout remain unchanged. */
+body.homepage-premium-max {
+  background-color:#003a37!important;
+  background-image:none!important;
+}
+body.homepage-premium-max #tresc.r4-homepage {
+  background-color:#003a37!important;
+  background-image:none!important;
+}
