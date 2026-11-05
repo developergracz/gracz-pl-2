@@ -51,7 +51,14 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <label for="password">Hasło</label><div class="field"><span class="field-icon">♙</span><input name="password" id="password" minlength="15" maxlength="256" required type="password" placeholder="Utwórz hasło" autocomplete="new-password" aria-describedby="password-feedback"><button class="eye" type="button" data-show="password" aria-label="Pokaż hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><div id="password-feedback" class="premium-feedback" role="alert" aria-live="polite" hidden><span class="premium-feedback-icon" aria-hidden="true">!</span><span id="password-feedback-text"></span></div></div><p class="hint">Co najmniej 15 znaków — najlepiej długa, unikalna fraza.</p>
 <label for="repeatPassword">Powtórz hasło</label><div class="field"><span class="field-icon">♙</span><input name="repeatPassword" id="repeatPassword" minlength="15" maxlength="256" required type="password" placeholder="Wpisz ponownie hasło" autocomplete="new-password"><button class="eye" type="button" data-show="repeatPassword" aria-label="Pokaż powtórzone hasło"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>
 <div class="checks"><label><input name="terms" type="checkbox" required>Akceptuję <a href="https://gracz.pl/regulamin/" target="_blank" rel="noopener">Regulamin serwisu gracz.pl</a></label><label><input name="privacy" type="checkbox" required>Akceptuję <a href="https://gracz.pl/polityka-prywatnosci/" target="_blank" rel="noopener">Politykę prywatności</a></label><label class="muted"><input type="checkbox" disabled>Chcę otrzymywać newsletter <small>(dostępne wkrótce)</small></label></div>
-<button class="submit" type="submit">♙　 Zarejestruj się　 →</button><p class="oauth-separator">lub zarejestruj się przez</p><div class="oauth-buttons"><button disabled title="Rejestracja Google nie jest jeszcze dostępna"><span class="google-logo">G</span> Google</button><button disabled title="Rejestracja Microsoft nie jest jeszcze dostępna"><span class="microsoft-logo">▦</span> Microsoft</button><button disabled title="Rejestracja Discord nie jest jeszcze dostępna"><span class="discord-logo">●</span> Discord</button></div><p class="switch">Masz już konto? <button type="button" data-view="login">Zaloguj się</button></p></form>
+<button type="button" class="register-forgot" data-view="forgot">⚿&nbsp; Zapomniałem hasła?</button>
+<button class="submit" type="submit">♟ &nbsp; Zarejestruj się &nbsp; →</button>
+<p class="oauth-separator">lub zarejestruj się przez</p>
+<div class="oauth-buttons" aria-label="Rejestracja przez dostawców kont">
+ <a href="/auth/oauth/google/start" data-oauth-provider="google" aria-disabled="true" tabindex="-1" title="Google — wymaga konfiguracji dostawcy"><span class="google-logo" aria-hidden="true">G</span> Google</a>
+ <a href="/auth/oauth/microsoft/start" data-oauth-provider="microsoft" aria-disabled="true" tabindex="-1" title="Microsoft — wymaga konfiguracji dostawcy"><span class="microsoft-logo" aria-hidden="true">▦</span> Microsoft</a>
+ <a href="/auth/oauth/discord/start" data-oauth-provider="discord" aria-disabled="true" tabindex="-1" title="Discord — wymaga konfiguracji dostawcy"><span class="discord-logo" aria-hidden="true">●</span> Discord</a>
+</div><p class="switch">Masz już konto? <button type="button" data-view="login">Zaloguj się</button></p></form>
 <form id="login-form" hidden novalidate>
 <label for="login">E-mail lub nick gracza</label><div class="field"><span class="field-icon" aria-hidden="true">✉</span><input id="login" name="login" autocomplete="username" placeholder="Wpisz e-mail lub nick" required></div>
 <label for="loginPassword">Hasło</label><div class="field"><span class="field-icon" aria-hidden="true">♙</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Wpisz hasło"><button class="eye" type="button" data-show="loginPassword" aria-label="Pokaż hasło">◉</button></div>
@@ -66,7 +73,7 @@ const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"
 <button class="submit" type="submit">Zapisz nowe hasło →</button><p class="switch"><button data-view="login" type="button">Wróć do logowania</button></p></form>
 <section id="account" hidden><h2>Twoje konto</h2><p>Zalogowano jako <strong id="user-nick"></strong></p><button id="logout" class="submit">Wyloguj się</button></section>
 <section id="verified" hidden><h2>Potwierdzenie adresu e-mail</h2><p>Twoje konto jest gotowe. Możesz się zalogować.</p><button type="button" class="submit" data-view="login">Przejdź do logowania</button></section>
-<div class="oauth-note">Bezpieczne konta przez e-mail. Logowania Google, Microsoft i Discord zostaną udostępnione po konfiguracji dostawców.</div></section>
+<div class="oauth-note">Bezpieczna rejestracja e-mail. Google, Microsoft i Discord działają po skonfigurowaniu kont aplikacji u dostawców.</div></section>
 <aside class="right"><div class="info"><h2>♢　Twoje dane są bezpieczne</h2><p>✓　Szyfrowane połączenie (HTTPS)</p><p>✓　Hasła nie są zapisywane jawnie</p><p>✓　Potwierdzenie adresu e-mail</p><p>✓　Bezpieczne sesje logowania</p></div><div class="info"><h2>♟　Dołącz do tysięcy graczy</h2><div class="avatars" aria-hidden="true">♟　♙　♟　♙　♟　♙</div><p>Wspólna pasja. Prawdziwi ludzie.</p><p>Gry, wiedza, turnieje i dobra zabawa.</p></div></aside>
 </main><footer><a href="https://gracz.pl/">gracz.pl</a> · Polskie Centrum Gracza</footer></body></html>`;
 const css=String.raw`*{box-sizing:border-box}html{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#05111d;color:#f5f8fc}body{margin:0;min-height:100vh;background:radial-gradient(circle at 8% 70%,#7c411b55,transparent 29%),radial-gradient(circle at 85% 85%,#bc692933,transparent 28%),linear-gradient(110deg,#06101d,#061c2b 50%,#040b14)}button,input{font:inherit}button{cursor:pointer}.top{height:73px;padding:0 max(24px,5.8vw);display:flex;align-items:center;gap:60px;background:#031321ed;border-bottom:1px solid #48617c80}.brand,.hero-brand{font-weight:900;letter-spacing:-3px;color:#fff;text-decoration:none}.brand{font-size:41px;white-space:nowrap}.brand span,.hero-brand span,.panel-heading h1 span,.chip span{color:#ed2c49}.top nav{display:flex;gap:32px;flex:1}.top nav a{color:#fff;text-decoration:none;font-size:15px}.actions{display:flex;gap:18px;align-items:center}.actions button{white-space:nowrap;background:transparent;color:#d8ebfa;border:0;padding:11px}.actions .top-register{color:#ffd278;border:1px solid #ffba43;border-radius:8px;font-weight:700;padding:13px 20px}.scene{max-width:1590px;margin:auto;min-height:calc(100vh - 117px);display:grid;grid-template-columns:minmax(255px,1fr) minmax(410px,605px) minmax(180px,285px);gap:16px;align-items:center;padding:25px 28px;background:linear-gradient(90deg,#020b15ac,transparent 42%,#020b15a4),url('https://gracz.pl/assets/gracz-hero-approved-r14.webp') center/cover no-repeat}.left{align-self:stretch;display:flex;justify-content:space-around;flex-direction:column;padding:38px 8px 10px 5vw;text-shadow:0 2px 12px #000}.left-copy em{font-family:Georgia,serif;font-size:clamp(24px,2.5vw,40px);color:#ffd17e}.hero-brand{font-size:clamp(50px,5vw,82px);line-height:1.05}.eyebrow{font-size:clamp(12px,1.4vw,21px);color:#ffc56d;letter-spacing:3px;font-weight:700;margin:12px 0 28px}.benefits{padding:0;margin:0;list-style:none;display:grid;gap:17px}.benefits li{display:flex;align-items:center;gap:14px}.benefits b{display:grid;place-items:center;border:2px solid #f3c05c;color:#ffd487;border-radius:50%;min-width:53px;height:53px;font-size:26px}.benefits strong,.benefits small{display:block}.benefits small{max-width:220px;font-size:13px;margin-top:7px}.cards{position:relative;min-height:230px}.stack{position:absolute;left:20%;top:10%;width:185px;height:225px;display:grid;place-items:center;align-content:center;gap:12px;font-weight:900;font-size:55px;color:#f4c482;text-shadow:0 2px 12px black;border:10px double #deaf60;border-radius:12px;background:repeating-linear-gradient(45deg,#6a101f,#6a101f 8px,#d02b3e 8px,#d02b3e 16px);transform:rotate(-18deg);box-shadow:0 15px 35px black}.stack span{font-size:23px;color:#fff}.chip{position:absolute;bottom:0;left:0;width:120px;height:120px;display:grid;place-items:center;border-radius:50%;border:13px dashed #b42c41;background:#041728;box-shadow:0 0 0 6px #f0b954,0 8px 25px #0009;font-weight:900}.panel{background:linear-gradient(150deg,#071c2df8,#01101eeb);border:2px solid #ffc36e;border-radius:22px;box-shadow:0 0 0 3px #6d3b18 inset,0 0 24px #ffbc5580,0 20px 60px #000b;padding:32px 34px;min-width:0}.panel-heading{display:flex;gap:22px;align-items:center;margin-bottom:26px}.round{display:grid;place-items:center;flex:none;width:64px;height:64px;border:2px solid #ffd377;border-radius:50%;font-size:34px;color:#ffce72}.panel h1{font-size:clamp(23px,2.2vw,35px);color:#ffd07c;line-height:1.12;margin:0 0 7px}.panel-heading p{font-weight:600;font-size:15px;margin:0}form{display:grid}form label:not(.checks label){font-size:14px;font-weight:750;margin:14px 0 7px}.field{position:relative}.field input{width:100%;height:49px;background:#102537eb;border:1px solid #45627d;border-radius:7px;padding:11px 44px 11px 44px;color:#fff;outline-offset:2px}.field input:focus{outline:2px solid #efbd5a}.field-icon{position:absolute;top:12px;left:14px;font-size:20px;color:#e8c27d}.eye{position:absolute;right:6px;top:4px;border:0;background:transparent;color:white;font-size:22px;padding:5px 12px}.hint{font-size:12px;color:#acbdca;margin:6px 0 10px}.checks{display:grid;gap:12px;margin:22px 0}.checks label{display:flex;gap:12px;font-size:13px;align-items:center}.checks input{width:23px;height:23px;flex:none;accent-color:#ffd071}.checks a,.switch button{color:#4ed8f3}.checks .muted{color:#aabcc8}.checks small{font-size:12px}.submit{width:100%;background:linear-gradient(#ffdc86,#efa92e);border:1px solid #ffe0a0;border-radius:9px;box-shadow:0 6px 25px #f5b63a42;color:#100e09;font-size:19px;font-weight:800;padding:17px 12px;margin-top:12px}.submit:disabled{opacity:.65;cursor:wait}.switch{text-align:center;color:#a8bacb;font-size:14px;margin:22px 0 2px}.switch button{border:0;background:transparent;text-decoration:underline;padding:3px;font-weight:700}.oauth-note{font-size:11px;color:#9eb3c3;text-align:center;border-top:1px solid #47617a;margin-top:22px;padding-top:15px}.right{display:grid;gap:14px;align-self:center}.info{background:#061727e8;border:1px solid #dda747;border-radius:12px;padding:19px 16px;box-shadow:0 8px 20px #0008}.info h2{color:#f7c069;font-size:14px}.info p{font-size:12px;color:#d0dce7;line-height:1.6}#notice{min-height:0;color:#ffe2a2;font-size:14px;line-height:1.4}#notice:not(:empty){padding:11px;border:1px solid #a67438;border-radius:6px;margin-bottom:8px}#account,#verified{text-align:center}#account h2,#verified h2{color:#f9ca76}footer{text-align:center;padding:14px;font-size:12px;color:#9eb3c3}footer a{color:#d5ddec}[hidden]{display:none!important}@media(max-width:1180px){.top nav{display:none}.top{justify-content:space-between;gap:12px}.scene{grid-template-columns:minmax(200px,1fr) minmax(400px,605px)}.right{display:none}.left{padding-left:12px}.cards{display:none}}@media(max-width:780px){.top{padding:0 16px}.brand{font-size:32px}.top-register{display:none}.scene{display:block;min-height:0;padding:16px;background-size:cover}.left{padding:10px 4px 20px}.left-copy em{font-size:24px}.hero-brand{font-size:48px}.eyebrow{font-size:12px;margin:5px 0}.benefits{display:none}.panel{padding:23px 20px}.round{width:50px;height:50px;font-size:27px}.panel-heading{gap:12px}.panel-heading p{font-size:12px}.panel h1{font-size:25px}}
@@ -590,9 +597,235 @@ body{--account-header-height:68px}
 @media(min-width:780px) and (max-width:1180px){.scene{min-height:calc(100dvh - 66px)}}
 @media(max-width:420px){.site-bar-inner{width:calc(100% - 20px)}}
 
+/* Full Max Premium registration — live HTML fields over independent visual layers.
+   Artwork is not a screenshot of the form, so input fields remain real and accessible. */
+body[data-account-view="register"]{background:#002a2d;overflow-x:hidden}
+body[data-account-view="register"]::before{content:none!important}
+body[data-account-view="register"] .scene{
+ display:grid!important;grid-template-columns:minmax(0,40fr) minmax(460px,42fr) minmax(0,18fr)!important;
+ gap:0!important;align-items:stretch!important;width:100%!important;max-width:none!important;
+ margin:0!important;padding:18px 0 24px!important;min-height:calc(100dvh - 68px)!important;height:auto!important;
+ background:radial-gradient(ellipse at 67% 29%,#0bb3a63b,transparent 48%),
+ linear-gradient(130deg,#002727,#003e3f 42%,#001a20 85%)!important
+}
+body[data-account-view="register"] .left{
+ display:flex!important;flex-direction:column!important;justify-content:space-between!important;
+ position:relative;isolation:isolate;height:auto!important;min-height:0!important;
+ padding:clamp(25px,4vw,65px) 12px 14px clamp(22px,7vw,120px)!important;
+ background:radial-gradient(ellipse at 2% 23%,#07c7bb2a,transparent 46%),
+ linear-gradient(150deg,#002729d9,#003e40ba 65%,#001923f4)!important
+}
+body[data-account-view="register"] .left::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:linear-gradient(170deg,transparent 35%,#072627a1 85%),
+ url('https://gracz.pl/assets/gracz-blog-thousand-cardback-premium-r5.avif') left bottom/72% auto no-repeat;
+ opacity:.36
+}
+body[data-account-view="register"] .left-copy{
+ opacity:1!important;pointer-events:auto!important;text-shadow:0 3px 12px #00140f;
+}
+body[data-account-view="register"] .left-copy em{
+ font:italic 700 clamp(23px,2.35vw,39px)/1.12 Georgia,serif!important;
+ color:#ffdda0!important
+}
+body[data-account-view="register"] .hero-brand{
+ margin-top:8px!important;color:#fff!important;font-size:clamp(46px,4.65vw,76px)!important;
+ line-height:1!important;font-weight:850!important;white-space:nowrap
+}
+body[data-account-view="register"] .hero-brand span{color:#e82440!important}
+body[data-account-view="register"] .eyebrow{
+ font-size:clamp(12px,1.18vw,19px)!important;color:#ffdb84!important;
+ margin:9px 0 22px!important;white-space:normal!important
+}
+body[data-account-view="register"] .benefits{gap:clamp(11px,1.8dvh,18px)!important}
+body[data-account-view="register"] .benefits li{gap:13px!important}
+body[data-account-view="register"] .benefits b{
+ width:48px!important;height:48px!important;flex:0 0 48px!important;
+ border:2px solid #ffd977!important;border-radius:50%;font-size:24px!important;
+ color:#ffd977!important;background:#002c2caa
+}
+body[data-account-view="register"] .benefits strong{font-size:clamp(14px,1.2vw,18px)!important}
+body[data-account-view="register"] .benefits small{font-size:clamp(12px,1vw,15px)!important;color:#f7f0e1!important}
+body[data-account-view="register"] .cards{
+ display:block!important;position:relative!important;flex:0 0 clamp(150px,23dvh,230px)!important;
+ width:100%;min-height:130px!important;margin:14px 0 0!important
+}
+body[data-account-view="register"] .cards .stack{
+ position:absolute!important;top:13px!important;left:33%!important;
+ display:block!important;width:clamp(155px,18vw,280px)!important;height:clamp(112px,12vw,190px)!important;
+ transform:perspective(400px) rotateX(18deg) rotateZ(-12deg)!important;
+ border:7px solid #fbead1!important;border-radius:13px!important;
+ background:#f4dfc6 url('https://gracz.pl/assets/gracz-blog-thousand-cardback-premium-r5.avif') center/cover no-repeat!important;
+ color:transparent!important;font-size:0!important;
+ box-shadow:4px 8px 0 #d7ac68,7px 12px 0 #a87437,10px 16px 0 #6d431f,0 20px 42px #000b!important
+}
+body[data-account-view="register"] .cards .stack span{display:none!important}
+body[data-account-view="register"] .cards .chip{
+ position:absolute!important;top:40px!important;left:0!important;transform:rotate(-10deg)!important;
+ width:clamp(90px,9vw,140px)!important;height:clamp(90px,9vw,140px)!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ border:12px dashed #ffc35d!important;border-radius:50%!important;background:#141c1b!important;
+ color:#fff!important;font-size:clamp(15px,1.4vw,21px)!important;font-weight:900!important;
+ box-shadow:0 7px 0 #63301e,0 14px 0 #0b1617,0 20px 30px #000b!important;
+}
+body[data-account-view="register"] .cards .chip span{color:#f01e39!important}
+body[data-account-view="register"] .panel{
+ position:relative!important;align-self:stretch!important;z-index:2;
+ display:flex!important;flex-direction:column!important;
+ width:100%!important;min-height:0!important;max-height:none!important;margin:0!important;
+ padding:24px clamp(20px,2.2vw,37px) 20px!important;
+ border:3px solid #ffd17a!important;border-radius:36px!important;
+ background:radial-gradient(ellipse at 50% 0%,#064c46,#021b20 47%,#00171b 90%)!important;
+ box-shadow:0 0 0 1px #ffdd8e inset,0 0 22px #ffb94b9c,0 20px 62px #000b!important;
+}
+body[data-account-view="register"] .panel::before{
+ content:"";height:3px;position:absolute;top:0;left:12%;right:12%;
+ border-radius:60%;background:#fff0b9;box-shadow:0 0 12px 3px #ffca66;
+}
+body[data-account-view="register"] .login-close{display:none!important}
+body[data-account-view="register"] .login-crown{
+ display:block!important;align-self:center!important;position:relative!important;
+ width:64px!important;height:52px!important;margin:-5px 0 5px!important;
+ object-fit:contain!important;filter:drop-shadow(0 0 9px #e4a83d)!important
+}
+body[data-account-view="register"] .panel-heading{
+ display:block!important;align-self:stretch!important;text-align:center!important;
+ margin:0 0 12px!important;padding:0!important
+}
+body[data-account-view="register"] .panel-heading .round{display:none!important}
+body[data-account-view="register"] .panel-heading h1{
+ color:#fff0d2!important;font:700 clamp(25px,2.4vw,39px)/1.15 Georgia,serif!important;
+ margin:0 0 5px!important;white-space:normal!important
+}
+body[data-account-view="register"] .panel-heading h1 .form-logo{color:#fff!important}
+body[data-account-view="register"] .panel-heading h1 .form-logo span{color:#ea304d!important}
+body[data-account-view="register"] .panel-heading p{
+ margin:0!important;font-size:clamp(12px,1vw,16px)!important;color:#fff4e6!important;
+ white-space:normal!important
+}
+body[data-account-view="register"] #register-form{display:grid!important;width:100%;gap:0}
+body[data-account-view="register"] #register-form>label{
+ margin:11px 0 6px 56px!important;color:#fffaf4!important;font-size:14px!important;font-weight:750!important
+}
+body[data-account-view="register"] #register-form .field{margin-left:56px!important}
+body[data-account-view="register"] #register-form .field input{
+ height:42px!important;border:1px solid #8ebcb3!important;background:#063a3a!important;
+ color:white!important;border-radius:12px!important;padding:8px 46px 8px 15px!important
+}
+body[data-account-view="register"] #register-form .field input:focus{
+ outline:2px solid #ffda89!important;outline-offset:2px
+}
+body[data-account-view="register"] #register-form .field-icon{
+ position:absolute!important;left:-52px!important;top:1px!important;
+ width:40px!important;height:40px!important;border:1px solid #ffdb76!important;
+ border-radius:50%!important;color:#ffdb76!important;background:#002f33!important
+}
+body[data-account-view="register"] #register-form .hint{
+ margin:4px 0 3px 56px!important;font-size:11px!important;color:#ddebe8!important
+}
+body[data-account-view="register"] #register-form .checks{
+ position:relative;display:grid!important;gap:6px!important;margin:12px 0 7px!important;
+ padding-right:0!important
+}
+body[data-account-view="register"] #register-form .checks label{font-size:13px!important;line-height:1.25!important}
+body[data-account-view="register"] #register-form .checks input{
+ width:19px!important;height:19px!important;border:1px solid #ffdc78!important;accent-color:#f8c552
+}
+body[data-account-view="register"] .register-forgot{
+ display:block!important;align-self:flex-end!important;justify-self:end!important;
+ margin:3px 0 7px!important;padding:3px 0!important;border:none!important;
+ background:transparent!important;color:#ffd273!important;text-decoration:underline;
+ font-size:13px!important;font-weight:700!important
+}
+body[data-account-view="register"] #register-form>.submit{
+ min-height:54px!important;height:auto!important;margin:7px 0 0!important;
+ padding:10px!important;color:#06201b!important;border-radius:13px!important;
+ font-size:clamp(18px,1.5vw,24px)!important;font-weight:900!important;
+ border:1px solid #ffe4a2!important;background:linear-gradient(180deg,#ffe8a2,#ffca57 55%,#e5a328)!important;
+ box-shadow:0 0 18px #ffc24e8a,inset 0 2px 1px #fff5cf!important
+}
+body[data-account-view="register"] .oauth-separator{color:#f3e5c6!important}
+body[data-account-view="register"] .oauth-buttons a{
+ display:flex;align-items:center;justify-content:center;
+ height:44px;border:1px solid #c89b46;border-radius:12px;
+ color:#fff;text-decoration:none;background:#002a2db8;font-size:14px;
+}
+body[data-account-view="register"] .oauth-buttons a[aria-disabled="true"]{
+ opacity:.55;cursor:not-allowed;filter:grayscale(.45)
+}
+body[data-account-view="register"] .oauth-buttons a:not([aria-disabled="true"]):hover,
+body[data-account-view="register"] .oauth-buttons a:not([aria-disabled="true"]):focus-visible{
+ border-color:#ffe6a0;box-shadow:0 0 12px #ffc96577
+}
+body[data-account-view="register"] .oauth-note{font-size:11px!important;color:#c8d4d1!important}
+body[data-account-view="register"] .right{
+ display:block!important;position:relative!important;height:auto!important;min-height:0!important;
+ padding:0!important;background:
+ linear-gradient(90deg,#00272d33,#00121baa),
+ url('https://gracz.pl/assets/gracz-game-chess-online-premium-r12.avif') center/cover no-repeat!important
+}
+body[data-account-view="register"] .right .info{display:none!important}
+body[data-account-view="register"] .right::after{
+ content:"♚  ♞";white-space:nowrap;position:absolute;left:4%;right:0;bottom:17%;
+ color:#fff;text-shadow:0 8px 0 #021e26,2px 10px 6px #000;
+ font:clamp(60px,9vw,150px)/1 Georgia,serif;opacity:.65
+}
+@media(min-width:1181px) and (max-height:820px){
+ body[data-account-view="register"] .panel{padding-top:10px!important;padding-bottom:9px!important}
+ body[data-account-view="register"] .login-crown{height:37px!important}
+ body[data-account-view="register"] #register-form>label{margin-top:7px!important}
+ body[data-account-view="register"] #register-form .checks{margin:7px 0 2px!important}
+ body[data-account-view="register"] #register-form>.submit{min-height:43px!important}
+ body[data-account-view="register"] .oauth-buttons a{height:38px!important}
+ body[data-account-view="register"] .oauth-note{margin-top:10px!important;padding-top:8px!important}
+}
+@media(max-width:1180px){
+ body[data-account-view="register"] .scene{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.18fr)!important;
+  padding:14px!important;gap:15px!important
+ }
+ body[data-account-view="register"] .left{
+  min-height:680px!important;padding:30px 20px!important
+ }
+ body[data-account-view="register"] .right{display:none!important}
+ body[data-account-view="register"] .panel{min-height:0!important}
+ body[data-account-view="register"] .cards{display:none!important}
+}
+@media(max-width:779px){
+ body[data-account-view="register"] .scene{display:flex!important;flex-direction:column!important;gap:12px!important;padding:10px!important}
+ body[data-account-view="register"] .left{min-height:0!important;padding:15px!important}
+ body[data-account-view="register"] .left-copy em{font-size:23px!important}
+ body[data-account-view="register"] .hero-brand{font-size:45px!important}
+ body[data-account-view="register"] .eyebrow{font-size:12px!important;margin:5px 0!important}
+ body[data-account-view="register"] .benefits{display:none!important}
+ body[data-account-view="register"] .panel{padding:17px!important;border-radius:22px!important}
+ body[data-account-view="register"] .panel-heading h1{font-size:clamp(22px,6vw,29px)!important}
+ body[data-account-view="register"] #register-form>label{margin-left:43px!important}
+ body[data-account-view="register"] #register-form .field{margin-left:43px!important}
+ body[data-account-view="register"] #register-form .field-icon{left:-42px!important;width:35px!important;height:35px!important}
+ body[data-account-view="register"] #register-form .hint{margin-left:43px!important}
+ body[data-account-view="register"] .oauth-buttons{gap:5px!important}
+ body[data-account-view="register"] .oauth-buttons a{font-size:12px!important}
+}
+
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
+document.querySelectorAll('[data-oauth-provider]').forEach(link=>{
+ link.addEventListener('click',event=>{
+  if(link.getAttribute('aria-disabled')==='true'){
+   event.preventDefault();notice.textContent='Logowanie przez tego dostawcę będzie możliwe po podłączeniu aplikacji OAuth.';
+  }
+ });
+});
+fetch('/auth/oauth/providers',{cache:'no-store',credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(data=>{
+ if(!data?.providers)return;
+ document.querySelectorAll('[data-oauth-provider]').forEach(link=>{
+  const name=link.dataset.oauthProvider;
+  if(data.providers[name]){link.removeAttribute('aria-disabled');link.removeAttribute('tabindex');link.removeAttribute('title');}
+ });
+}).catch(()=>{});
+
 const forgot=document.getElementById('forgot-form'),reset=document.getElementById('reset-form');
 let resetToken='';
 // Responsive CSS replaces viewport zoom of the whole page.
@@ -715,7 +948,14 @@ if(resetFromLink){
  if(!/^[a-f0-9]{64}$/.test(resetFromLink)){view('login');msg('Nieprawidłowy link do odzyskania hasła.');return;}
  resetToken=resetFromLink;view('reset');return;
 }
-const token=hash.get('potwierdz');if(token){history.replaceState(null,'','/konto/');try{await api('verify',{token});view('verified');}catch(err){view('login');msg(err.message);}return;}try{const s=await api('session');if(s.loggedIn){location.replace('/konto/panel/');return;}}catch{}view(new URLSearchParams(location.search).get('widok')==='login'?'login':'register');})();
+const token=hash.get('potwierdz');if(token){history.replaceState(null,'','/konto/');try{await api('verify',{token});view('verified');}catch(err){view('login');msg(err.message);}return;}try{const s=await api('session');if(s.loggedIn){location.replace('/konto/panel/');return;}}catch{}const qp=new URLSearchParams(location.search);
+view(qp.get('widok')==='login'?'login':'register');
+const oauthErr=qp.get('oauth_error');
+if(oauthErr)msg(oauthErr==='not-configured'?'Ten dostawca logowania nie został jeszcze skonfigurowany.':
+ oauthErr==='email-already-used'?'Adres e-mail jest już przypisany do istniejącego konta. Zaloguj się e-mailem.':
+ 'Nie udało się potwierdzić logowania przez dostawcę. Spróbuj ponownie.');
+if(qp.get('oauth_notice')==='verify')msg('Sprawdź pocztę i potwierdź adres e-mail przed pierwszym logowaniem.');
+})();
 })();`;
 export function serveIdentityPage(req,res,url){
  const path=url.pathname.replace(/\/+$/,'')||'/';
