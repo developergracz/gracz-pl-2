@@ -1,3 +1,4 @@
+import {ensureChallengeCenterSchema,createChallengeCenterRouter} from './challenge-center.mjs';
 import {ensureNotificationSchema,createNotificationRouter} from './notification-center.mjs';
 import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
 import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
@@ -231,6 +232,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      await ensurePrivacySchema(database);
      await ensureNotificationSchema(database);
      await ensureMessageCenterSchema(database);
+     await ensureChallengeCenterSchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -278,6 +280,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const privacyCenter=createPrivacyRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const notificationCenter=createNotificationRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const messageCenter=createMessageCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ const challengeCenter=createChallengeCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  async function respond(req,res,url){
   if(await oauth.handle(req,res,url))return true;
   if(await premiumProfile.handle(req,res,url))return true;
@@ -286,6 +289,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
   if(await privacyCenter.handle(req,res,url))return true;
   if(await notificationCenter.handle(req,res,url))return true;
   if(await messageCenter.handle(req,res,url))return true;
+  if(await challengeCenter.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
@@ -761,10 +765,12 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       if(req.method==='GET'){
         if(!allow('challenges-read:'+actor,120))return bad(res,429,'ZBYT_WIELE_PROB'),true;
         const result=await database.query(`SELECT c.id,c.game,c.time_limit_minutes,c.increment_seconds,
+          state.starred,state.archived,state.seen_at,state.note,c.updated_at,
           CASE WHEN c.expires_at<=now() AND c.status='pending' THEN 'expired' ELSE c.status END AS status,
           c.created_at,c.expires_at,c.sender_id=$1 AS outgoing,
           a.nickname AS opponent
           FROM gracz_public_identity.game_challenges c
+          LEFT JOIN gracz_public_identity.challenge_item_state state ON state.owner_id=$1 AND state.challenge_id=c.id
           JOIN gracz_public_identity.accounts a ON a.id=CASE
             WHEN c.sender_id=$1 THEN c.recipient_id ELSE c.sender_id END
           WHERE (c.sender_id=$1 OR c.recipient_id=$1)
@@ -773,7 +779,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         return json(res,200,{ok:true,challenges:result.rows.map(row=>({
           id:row.id,game:row.game,status:row.status,opponent:row.opponent,
           timeLimitMinutes:row.time_limit_minutes||0,incrementSeconds:row.increment_seconds||0,
-          outgoing:row.outgoing===true,createdAt:row.created_at,expiresAt:row.expires_at
+          outgoing:row.outgoing===true,createdAt:row.created_at,expiresAt:row.expires_at,
+          updatedAt:row.updated_at,starred:row.starred===true,archived:row.archived===true,
+          seen:row.seen_at!=null,note:row.note||''
         }))}),true;
       }
       if(!allow('challenge-action:'+actor,30))return bad(res,429,'ZBYT_WIELE_PROB'),true;

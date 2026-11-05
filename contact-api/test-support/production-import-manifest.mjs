@@ -26,6 +26,8 @@ export const productionModules=Object.freeze([
   'auth/notification-center.mjs',
   // Owner-specific inbox metadata for existing friend-only messages.
   'auth/message-center.mjs',
+  // Owner-only invitation organization; existing social/challenges remains authoritative.
+  'auth/challenge-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
   'auth/gomoku-console.mjs',
   // Gomoku-only same-origin subscriptions: bounded sockets/payloads, existing session
