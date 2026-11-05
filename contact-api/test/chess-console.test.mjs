@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initial,parseFen,legal,move,check,result,square,san} from '../auth/chess-rules.mjs';
+import {serveChessConsole} from '../auth/chess-console.mjs';
+import {readFileSync} from 'node:fs';
+function load(path,method='GET'){let status=0,headers={},body='';const res={writeHead(code,h){status=code;headers=h},end(text){body=String(text)}};const served=serveChessConsole({method},res,new URL('https://example.com'+path));return {served,status,headers,body};}
+test('Szachy P3 premium console exposes authenticated online controls',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css'),rules=load('/konto/szachy/rules.mjs');
+ assert.equal(page.served,true);assert.equal(page.status,200);
+ assert.match(page.body,/Szachy Online/);assert.match(page.body,/class="board chess-board"/);
+ assert.match(page.body,/type="module" src="\/konto\/szachy\/app\.js"/);
+ assert.equal(app.status,200);assert.equal(rules.status,200);assert.equal(style.status,200);
+ assert.equal(rules.body,readFileSync(new URL('../auth/chess-rules.mjs',import.meta.url),'utf8'),'browser and server rules must stay identical');
+ assert.match(app.body,/import \{initial,legal,apply,san/);
+ assert.match(app.body,/Gra lokalna/);
+ assert.match(app.body,/fetch\('/);assert.match(app.body,/social\/challenges/);assert.match(app.body,/version:online.version/);
+ assert.match(style.body,/repeat\(8,minmax\(0,1fr\)\)/);
+ assert.match(page.headers['Content-Security-Policy'],/script-src 'self'/);
+ assert.equal(load('/konto/szachy','POST').served,false);
+ assert.equal(load('/konto/szachy/unknown').served,false);
+});
+test('standard position and illegal moves',()=>{
+ const s=initial();assert.equal(legal(s).length,20);
+ assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
+ assert.equal(move(s,'e1g1'),null);assert.equal(move(s,'a7a6'),null);
+});
+test('fools mate, check and terminal status',()=>{
+ const states=[initial()];
+ for(const u of ['f2f3','e7e5','g2g4','d8h4']){const next=move(states.at(-1),u);assert.ok(next,u);states.push(next);}
+ assert.equal(check(states.at(-1)),true);
+ assert.match(result(states),/Mat/);
+ assert.equal(legal(states.at(-1)).length,0);
+});
+test('castling both sides, prohibited through attack',()=>{
+ const s=parseFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+ assert.ok(move(s,'e1g1'));assert.ok(move(s,'e1c1'));
+ const blocked=parseFen('r3k2r/8/8/8/8/8/5r2/R3K2R w KQkq - 0 1');
+ assert.equal(move(blocked,'e1g1'),null);
+});
+test('en passant and all four promotion choices',()=>{
+ const s=parseFen('4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1'),ep=move(s,'e5d6');
+ assert.ok(ep);assert.equal(ep.b[square('d5')],'.');
+ const p=parseFen('4k3/P7/8/8/8/8/8/4K3 w - - 0 1');
+ for(const x of ['q','r','b','n'])assert.equal(move(p,'a7a8'+x).b[square('a8')],x.toUpperCase());
+});
+test('stalemate and insufficient material',()=>{
+ assert.match(result([parseFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')]),/Pat/);
+ assert.match(result([parseFen('7k/8/6K1/8/8/8/8/8 w - - 0 1')]),/materiału/);
+});

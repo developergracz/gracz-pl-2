@@ -9,12 +9,13 @@ const challenge='b92e5507-609f-42f6-941f-12e8438aace3';
 const tokenA='a'.repeat(64),tokenB='b'.repeat(64),tokenC='c'.repeat(64);
 const digest=t=>createHash('sha256').update(t).digest('hex');
 
-function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange}={}){
+function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange,game='gomoku'}={}){
  const matches=new Map(),queries=[],messages=[];
  let blocked=false,accepted=true,revoked=false;
  const db={enabled:true,async query(sql,p=[]){
   queries.push({sql,p});
   if(sql.startsWith('CREATE ')||sql.startsWith('ALTER TABLE '))return {rows:[],rowCount:0};
+  if(sql.includes('SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint'))return {rows:[{definition:"CHECK ((game = ANY (ARRAY['warcaby', 'gomoku', 'szachy'])))"}],rowCount:1};
   if(sql.includes('INSERT INTO gracz_public_identity.online_presence')){
    const key=Buffer.from(p[0]||[]).toString('hex');
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:null;
@@ -36,7 +37,7 @@ function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange}={}){
   }
   if(sql.includes('SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c')){
    return {rows:accepted&&p[0]===challenge&&[idA,idB].includes(p[1])?
-    [{game:'gomoku',time_limit_minutes:timeLimitMinutes,increment_seconds:incrementSeconds}]:[]};
+    [{game,time_limit_minutes:timeLimitMinutes,increment_seconds:incrementSeconds}]:[]};
   }
   if(sql.includes('INSERT INTO gracz_public_identity.game_matches')){
    if(!matches.has(p[0]))matches.set(p[0],{state:JSON.parse(p[1]),version:0});
@@ -45,7 +46,7 @@ function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange}={}){
   if(sql.includes('SELECT m.state,m.version,c.game')){
    const m=matches.get(p[0]);
    return {rows:m&&[idA,idB].includes(p[1])?[{
-    state:m.state,version:m.version,game:'gomoku',sender_id:idA,recipient_id:idB,
+    state:m.state,version:m.version,game,sender_id:idA,recipient_id:idB,
     sender_nick:'GraczA',recipient_nick:'GraczB',playable:!blocked
    }]:[]};
   }

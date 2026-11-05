@@ -16,6 +16,8 @@ function mockDatabase(){
  return {enabled:true,
  async query(sql,params=[]){
   if(/^(CREATE |ALTER TABLE )/.test(sql))return {rows:[],rowCount:0};
+  // Existing Warcaby fixture also receives the idempotent Szachy constraint introspection.
+  if(sql.includes('SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint'))return {rows:[{definition:"CHECK (game IN ('warcaby','gomoku','szachy'))"}],rowCount:1};
   if(sql.includes('FROM gracz_public_identity.sessions s')){
    const hash=Buffer.from(params[0]).toString('hex'),found=cookies.find(([key])=>digest(key)===hash);
    return {rows:found?[{id:found[1]}]:[],rowCount:found?1:0};

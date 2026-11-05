@@ -5,6 +5,7 @@ import {createPublicIdentityRouter} from '../auth/public-identity.mjs';
 import {createGomokuRealtime} from '../auth/gomoku-realtime.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
+import {serveChessConsole} from '../auth/chess-console.mjs';
 const database=createDatabase(),origin='https://gracz-contact-api.onrender.com';
 let hub;
 const router=createPublicIdentityRouter({database,emailFrom:'browser-test@example.invalid',resendKey:'local-only',
@@ -15,7 +16,7 @@ const server=createServer(async(req,res)=>{
  if(req.headers.origin?.startsWith('http://localhost:'))req.headers.origin=origin;
  const url=new URL(req.url,origin);
  hub.observe(req,res,url);
- if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+ if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url)||serveChessConsole(req,res,url))return;
  if(!await router.handle(req,res,url)){res.writeHead(404);res.end();}
 });
 // A browser sends localhost Origin; only this private process rewrites it.
