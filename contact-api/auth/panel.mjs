@@ -120,7 +120,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <div class="detail"><span>Dołączono</span><strong id="profile-info-joined">—</strong></div>
  <div class="detail"><span>Status</span><strong>Potwierdzony</strong></div>
  <button type="button" class="secondary profile-security-link" data-profile-jump="security">Bezpieczeństwo konta</button></div>
- <div class="profile-game-links"><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a></div>
+ <div class="profile-game-links"><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a><a href="/konto/szachy/">♔ Graj w Szachy</a></div>
 </aside></div>
 </section>
 <section class="view" data-panel="friends">
@@ -589,7 +589,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <p>Wybierz zaakceptowanego znajomego, grę i dostępne zasady. Wyzwanie wygasa po 7 dniach, jeżeli nie zostanie przyjęte.</p>
   <form id="challenge-form" class="chall-form">
    <label for="challenge-friend">Przeciwnik<select id="challenge-friend" required><option value="">Wybierz znajomego</option></select></label>
-   <label for="challenge-game">Gra<select id="challenge-game"><option value="warcaby">♟ Warcaby Online</option><option value="gomoku">◉ Gomoku Online</option></select></label>
+   <label for="challenge-game">Gra<select id="challenge-game"><option value="warcaby">♟ Warcaby Online</option><option value="gomoku">◉ Gomoku Online</option><option value="szachy">♔ Szachy Online</option></select></label>
    <div class="chall-time-options" id="chall-time-options" hidden>
     <label for="challenge-time">Czas na gracza<select id="challenge-time">
      <option value="0">Bez zegara</option><option value="1">1 minuta</option>
@@ -622,7 +622,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <div class="chall-filters">
    <label for="chall-search">Znajdź gracza<input type="search" id="chall-search" placeholder="Wpisz nick…" maxlength="80"></label>
    <label for="chall-filter-game">Gra<select id="chall-filter-game">
-    <option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option>
+    <option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option><option value="szachy">Szachy</option>
    </select></label>
    <label for="chall-filter-status">Status<select id="chall-filter-status">
     <option value="all">Dowolny</option><option value="pending">Oczekuje</option><option value="accepted">Przyjęte</option>
@@ -669,6 +669,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <p>Wybierz ulubione tytuły. Gwiazdka zapisuje wybór w Twoim koncie i dodaje skrót na pulpicie.</p>
 <div class="game-grid">
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♟</div><h3>Warcaby</h3><p>Gra strategiczna</p><div class="game-actions"><a href="/konto/warcaby/">Graj teraz</a><button type="button" data-favorite="warcaby" aria-pressed="false" aria-label="Dodaj Warcaby do ulubionych">☆ Ulubione</button></div></div>
+<div class="game-tile"><div class="game-emoji" aria-hidden="true">♔</div><h3>Szachy</h3><p>Strategia szachowa</p><div class="game-actions"><a href="/konto/szachy/">Graj teraz</a><button type="button" data-favorite="szachy" aria-pressed="false" aria-label="Dodaj Szachy do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">◉</div><h3>Gomoku</h3><p>Pięć w rzędzie</p><div class="game-actions"><a href="/konto/gomoku/">Graj teraz</a><a href="https://gracz.pl/gry/gomoku/">Zasady</a><button type="button" data-favorite="gomoku" aria-pressed="false" aria-label="Dodaj Gomoku do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♣</div><h3>Tysiąc</h3><p>Gra karciana</p><div class="game-actions"><a href="https://gracz.pl/gry/tysiac/">Otwórz</a><button type="button" data-favorite="tysiac" aria-pressed="false" aria-label="Dodaj Tysiąc do ulubionych">☆ Ulubione</button></div></div>
 <div class="game-tile"><div class="game-emoji" aria-hidden="true">♠</div><h3>Poker treningowy</h3><p>Trening rozgrywki</p><div class="game-actions"><a href="https://gracz.pl/gry/poker-treningowy/">Otwórz</a><button type="button" data-favorite="poker" aria-pressed="false" aria-label="Dodaj Poker do ulubionych">☆ Ulubione</button></div></div>
@@ -2089,8 +2090,8 @@ function challUpdatePreview(){
  $('chall-time-options').hidden=false;
  if($('challenge-time').value==='0')$('challenge-increment').value='0';
  $('challenge-increment').disabled=$('challenge-time').value==='0';
- $('chall-preview-icon').textContent=game==='gomoku'?'◉':'♟';
- $('chall-preview-name').textContent=game==='gomoku'?'Gomoku Online':'Warcaby Online';
+ $('chall-preview-icon').textContent=game==='gomoku'?'◉':game==='szachy'?'♔':'♟';
+ $('chall-preview-name').textContent=game==='gomoku'?'Gomoku Online':game==='szachy'?'Szachy Online':'Warcaby Online';
  const minutes=Number($('challenge-time').value),increment=Number($('challenge-increment').value);
  $('chall-preview-details').textContent=minutes>0?
   minutes+' min na gracza'+(increment>0?' · +'+increment+' s za ruch':' · bez przyrostu'):
@@ -2142,7 +2143,7 @@ function challButton(text,fn,emphasize=false){
  return button;
 }
 function challReadDate(value){return safeDate(value)}
-function challGameLabel(ch){return ch.game==='gomoku'?'◉ Gomoku':'♟ Warcaby'}
+function challGameLabel(ch){return ch.game==='gomoku'?'◉ Gomoku':ch.game==='szachy'?'♔ Szachy':'♟ Warcaby'}
 function challClockLabel(ch){return ch.timeLimitMinutes>0?
   ch.timeLimitMinutes+' min'+(ch.incrementSeconds?' + '+ch.incrementSeconds+' s':''): 'Bez zegara'}
 function challRender(){
@@ -2179,7 +2180,7 @@ function challRender(){
   }
   if(item.status==='accepted'){
    const link=document.createElement('a');
-   link.href=(item.game==='gomoku'?'/konto/gomoku/':'/konto/warcaby/')+'?match='+encodeURIComponent(item.id);
+   link.href=({gomoku:'/konto/gomoku/',warcaby:'/konto/warcaby/',szachy:'/konto/szachy/'})[item.game]+'?match='+encodeURIComponent(item.id);
    link.textContent='Graj online';link.className='chall-important';
    actions.append(link);
   }
@@ -2283,7 +2284,7 @@ $('challenge-form').addEventListener('submit',async event=>{
   await api('social/challenges',{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({action:'send',nickname,game,timeLimitMinutes,incrementSeconds})});
   challTabSelect('outgoing');await refreshChallenges();
-  socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='gomoku'?'Gomoku':'Warcabów')+' dla '+nickname+'.');
+  socialNotice('challenges-state','Wysłano zaproszenie do '+(game==='gomoku'?'Gomoku':game==='szachy'?'Szachów':'Warcabów')+' dla '+nickname+'.');
  }catch(error){socialNotice('challenges-state',error.message,true)}
  finally{button.disabled=false;challBusy=false}
 });
