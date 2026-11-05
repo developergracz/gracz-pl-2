@@ -19,6 +19,20 @@ test('Szachy P3 premium console exposes authenticated online controls',()=>{
  assert.equal(load('/konto/szachy','POST').served,false);
  assert.equal(load('/konto/szachy/unknown').served,false);
 });
+test('chess UI uses native side panels without secondary actions under the board',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
+ assert.match(page.body,/id="training-mode"/);
+ assert.match(page.body,/id="online-mode"/);
+ assert.match(page.body,/id="chat-input"/);
+ assert.match(app.body,/chatForm.addEventListener\('submit'/);
+ assert.match(app.body,/match\/chat/);
+ assert.match(app.body,/history-tab/);
+ assert.match(app.body,/sideTraining\.hidden=mode/);
+ assert.doesNotMatch(app.body,/board\.parentElement\.after\(notice,toolbar/);
+ assert.match(css.body,/\.chess-console \.boardframe/);
+ assert.match(css.body,/aspect-ratio:1/);
+ assert.match(css.body,/\.chess-console \.layout/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);

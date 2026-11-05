@@ -65,6 +65,23 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   await page.goto(base+'/konto/szachy/?match='+id,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64,{timeout:12000});
  }
+ // Full premium layout: controls belong to the sidebars, not below the board.
+ for(const page of pages){
+  assert.equal(await page.locator('.chess-actions').count(),0);
+  assert.equal(await page.locator('#training-mode').isEnabled(),true);
+  assert.equal(await page.locator('#online-mode').isEnabled(),true);
+  assert.equal(await page.locator('#chat-input').isEnabled(),true);
+  assert.equal(await page.locator('#online-settings').isVisible(),true);
+  const boardFrame=await page.locator('.boardframe').boundingBox();
+  assert.ok(boardFrame&&boardFrame.width>=490,'full viewport board should be at least 490px wide');
+ }
+ await pages[0].locator('#chat-input').fill('Witaj przy szachownicy!');
+ await pages[0].locator('#chat-send').click();
+ await pages[1].waitForFunction(()=>document.querySelector('#chat-messages')?.textContent.includes('Witaj przy szachownicy!'),{timeout:10000});
+ await pages[1].locator('#history-tab').click();
+ assert.equal(await pages[1].locator('#moves-panel').isVisible(),true);
+ await pages[1].locator('#chat-tab').click();
+ assert.equal(await pages[1].locator('#chat-panel').isVisible(),true);
  let result=await read(base,users[0].token,id);
  assert.equal(result.status,200);
  assert.equal(result.match.game,'szachy');
@@ -99,6 +116,9 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   state=observed.match.state;version=observed.match.version;
   await Promise.all(pages.map(page=>waitForPosition(page,state)));
  }
+ await pages[0].locator('#history-tab').click();
+ await pages[0].waitForFunction(()=>document.querySelector('#moves-list')?.textContent.includes('e4'));
+ await pages[0].locator('#chat-tab').click();
  // Reconnect restores the final persisted position with a full snapshot.
  await pages[1].reload({waitUntil:'domcontentloaded'});
  await waitForPosition(pages[1],state);
