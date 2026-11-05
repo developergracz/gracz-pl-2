@@ -3,6 +3,7 @@ import {ensureNotificationSchema,createNotificationRouter} from './notification-
 import {ensureMessageCenterSchema,createMessageCenterRouter} from './message-center.mjs';
 import {ensurePrivacySchema,createPrivacyRouter} from './privacy-center.mjs';
 import {createOAuthRegistrationRouter} from './oauth-registration.mjs';
+import {createSearchAccessRouter} from './search-access.mjs';
 import {ensureSecuritySchema,createSecurityCenterRouter,recordSecurityEvent,recordSessionBrowser} from './security-center.mjs';
 import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mjs';
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
@@ -281,7 +282,18 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const notificationCenter=createNotificationRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const messageCenter=createMessageCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const challengeCenter=createChallengeCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ // SameSite=Lax __Host- session is readable only when navigating to this origin.
+ const searchAccess=createSearchAccessRouter({isAuthenticated:async req=>{
+  await ready();
+  const token=sessionToken(req);
+  if(!/^[a-f0-9]{64}$/.test(token))return false;
+  const result=await database.query(`SELECT 1 FROM gracz_public_identity.sessions s
+    JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+    WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+  return result.rows.length>0;
+ }});
  async function respond(req,res,url){
+  if(await searchAccess.handle(req,res,url))return true;
   if(await oauth.handle(req,res,url))return true;
   if(await premiumProfile.handle(req,res,url))return true;
   if(await addressBook.handle(req,res,url))return true;
