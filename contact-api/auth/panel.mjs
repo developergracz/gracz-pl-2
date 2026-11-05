@@ -2190,7 +2190,7 @@ async function logout(){
   $('access-screen').hidden=true;
   $('logout-farewell').hidden=false;
   $('logout-farewell-login').focus();
-  setTimeout(()=>location.replace('https://gracz.pl/'),7000);
+  setTimeout(()=>location.replace('https://gracz.pl/'),15000);
  }catch(error){
   logoutInProgress=false;
   notice(error.message,true);
