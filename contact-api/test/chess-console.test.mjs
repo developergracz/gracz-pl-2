@@ -72,6 +72,15 @@ test('computer mode and premium layout reuse Gomoku without duplicated focus nav
  assert.match(styles.body,/grid-template-columns:clamp\(355px,26vw,465px\)/);
  assert.match(page.body,/id="focus-nav"/);
 });
+test('online lobby renders a disabled initial board when no accepted match is selected',()=>{
+ const app=load('/konto/szachy/app.js');
+ assert.equal(app.status,200);
+ assert.match(app.body,/return g\?\{b:g\.board.*\}:initial\(\)/);
+ assert.match(app.body,/const preview=mode==='online'&&!online\?\.state/);
+ assert.match(app.body,/Szachy Online — plansza poglądowa/);
+ assert.match(app.body,/Oczekiwanie na partię/);
+ assert.match(app.body,/online&&mode==='online'&&online\.playable/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
