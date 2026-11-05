@@ -5,6 +5,22 @@
 (function () {
   'use strict';
 
+  // Load owner-approved games-only CSS without adding a render-blocking stylesheet.
+  if (document.getElementById('nasze-gry')) {
+    var gamesStyle = document.createElement('link');
+    gamesStyle.rel = 'stylesheet';
+    gamesStyle.href = '/assets/home-games-owner-premium-r1.css?v=20261105-owner';
+    document.head.appendChild(gamesStyle);
+  }
+
+  // Owner-approved, scoped community section colours; keep the original photograph.
+  if (document.getElementById('spolecznosc')) {
+    var communityStyle = document.createElement('link');
+    communityStyle.rel = 'stylesheet';
+    communityStyle.href = '/assets/home-community-owner-r1.css?v=20261105-teal-guides';
+    document.head.appendChild(communityStyle);
+  }
+
   var MESSAGES = {
     community: {
       title: 'Funkcje społecznościowe są w przygotowaniu',

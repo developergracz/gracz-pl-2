@@ -1,0 +1,67 @@
+/* Owner approved: community hero in navigation-bar teal. Only #spolecznosc is styled. */
+body.homepage-premium-max .r4-homepage #spolecznosc {
+  background:#003a37!important;
+  background-image:none!important;
+  border-color:#dcb86d!important;
+}
+body.homepage-premium-max .r4-homepage #spolecznosc::before {
+  background:linear-gradient(
+    90deg,
+    #003a37 0%,
+    rgba(0,58,55,.99) 18%,
+    rgba(0,58,55,.93) 29%,
+    rgba(0,58,55,.68) 42%,
+    rgba(0,58,55,.22) 57%,
+    rgba(0,58,55,0) 72%
+  )!important;
+}
+body.homepage-premium-max .r4-homepage #spolecznosc .r4-community-brand {
+  gap:0!important;
+}
+body.homepage-premium-max .r4-homepage #spolecznosc .r4-btn {
+  justify-content:center!important;
+  gap:0!important;
+  text-align:center!important;
+}
+@media (min-width:681px) and (max-width:1180px) {
+  body.homepage-premium-max .r4-homepage #spolecznosc::before {
+    background:linear-gradient(
+      90deg,
+      #003a37 0%,
+      rgba(0,58,55,.99) 23%,
+      rgba(0,58,55,.91) 40%,
+      rgba(0,58,55,.42) 62%,
+      transparent 83%
+    )!important;
+  }
+}
+@media (max-width:680px) {
+  body.homepage-premium-max .r4-homepage #spolecznosc::before {
+    background:linear-gradient(
+      180deg,
+      #003a37 0%,
+      rgba(0,58,55,.99) 36%,
+      rgba(0,58,55,.87) 53%,
+      rgba(0,58,55,.35) 78%,
+      rgba(0,58,55,.08) 100%
+    )!important;
+  }
+}
+
+/* Owner approved: Poradniki i Academy has the same flat teal as Spolecznosc. */
+body.homepage-premium-max .r4-homepage #poradniki-academy {
+  position:relative!important;
+  isolation:isolate;
+  background-color:#003a37!important;
+  background-image:none!important;
+}
+body.homepage-premium-max .r4-homepage #poradniki-academy::before {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 50%;
+  width:100vw;
+  transform:translateX(-50%);
+  z-index:-1;
+  background:#003a37;
+  pointer-events:none;
+}
