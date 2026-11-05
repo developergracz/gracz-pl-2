@@ -1727,3 +1727,136 @@ body.homepage-premium-max .r4-hero-rule::after {
     height: 37px;
   }
 }
+
+/* Gracz.pl — Owner-approved "Nasze gry" (2026-11-05).
+   Scope restricted to #nasze-gry. Do not change site-wide hero, header or links. */
+body.homepage-premium-max #nasze-gry.r4-games{
+  position:relative!important;isolation:isolate;
+  padding:28px 0 40px!important;margin-top:0!important;margin-bottom:0!important;
+  border:0!important;background:#012d2d!important;overflow:visible!important
+}
+body.homepage-premium-max #nasze-gry.r4-games::before{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:100vw;
+  transform:translateX(-50%);background:#012d2d;z-index:-1;pointer-events:none
+}
+body.homepage-premium-max #nasze-gry .r4-section-title{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:20px!important;margin:0 0 24px!important
+}
+body.homepage-premium-max #nasze-gry .r4-section-title h2{
+  margin:0!important;font-family:Georgia,"Times New Roman",serif!important;
+  font-size:clamp(36px,4.2vw,61px)!important;font-weight:700!important;
+  line-height:1.05!important;letter-spacing:-.025em!important;
+  color:#fff1dc!important;text-shadow:none!important
+}
+body.homepage-premium-max #nasze-gry .r4-section-title h2 span{color:#e6ac47!important}
+body.homepage-premium-max #nasze-gry .r4-section-title>a{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  padding:12px clamp(17px,2.2vw,30px)!important;min-height:48px!important;
+  font-family:Georgia,"Times New Roman",serif!important;font-size:clamp(14px,1.2vw,20px)!important;
+  font-weight:700!important;line-height:1.15!important;text-align:center!important;
+  color:#fff9ed!important;text-decoration:none!important;
+  border:1.5px solid #dfa63f!important;border-radius:999px!important;
+  background:#002a29!important;box-shadow:none!important;white-space:nowrap!important
+}
+body.homepage-premium-max #nasze-gry .r4-section-title>a:hover,
+body.homepage-premium-max #nasze-gry .r4-section-title>a:focus-visible{background:#06443e!important}
+body.homepage-premium-max #nasze-gry .r4-games-grid{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:stretch!important;gap:12px!important
+}
+body.homepage-premium-max #nasze-gry .r4-games-grid .r4-game{
+  display:flex!important;flex-direction:column!important;min-width:0!important;
+  overflow:hidden!important;border:1px solid #bd8b3c!important;border-radius:24px!important;
+  background:#002e2b!important;box-shadow:none!important;
+  color:#fff7e9!important;text-decoration:none!important
+}
+body.homepage-premium-max #nasze-gry .r4-game-image{
+  display:block!important;flex:0 0 auto!important;
+  width:100%!important;height:clamp(140px,11.2vw,190px)!important;
+  background-color:#24362f!important;background-size:cover!important;
+  background-position:center!important;background-repeat:no-repeat!important;
+  border:0!important;border-radius:21px 21px 14px 14px!important;
+  filter:none!important;transform:none!important
+}
+/* Neutral game imagery from existing repository assets; no casino effects. */
+body.homepage-premium-max #nasze-gry .r4-img-chess{background-image:url("/assets/r4-game-chess.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-checkers{background-image:url("/assets/r4-game-checkers.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-gomoku{background-image:url("/assets/r4-game-gomoku.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-thousand{background-image:url("/assets/r4-game-thousand.webp")!important}
+body.homepage-premium-max #nasze-gry .r4-img-poker{background-image:url("/assets/gracz-guide-poker-clean-r2.avif")!important}
+body.homepage-premium-max #nasze-gry .r4-game-body{
+  display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+  align-items:stretch!important;gap:13px!important;
+  padding:13px 13px 17px!important
+}
+body.homepage-premium-max #nasze-gry .r4-game h3{
+  display:flex!important;align-items:center!important;gap:10px!important;
+  margin:0!important;font-family:Georgia,"Times New Roman",serif!important;
+  font-size:clamp(16px,1.54vw,25px)!important;line-height:1.08!important;
+  font-weight:700!important;color:#fff0d4!important;
+  letter-spacing:-.025em!important;white-space:normal!important;text-shadow:none!important
+}
+body.homepage-premium-max #nasze-gry .r4-game-icon{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  min-width:31px;flex:0 0 31px;font:normal 30px/1 Georgia,serif!important;color:#f3f5e9!important
+}
+body.homepage-premium-max #nasze-gry .r4-game p{
+  margin:0!important;min-height:64px!important;
+  font-size:clamp(11px,.97vw,15px)!important;line-height:1.42!important;
+  font-family:OpenSans,Arial,sans-serif!important;
+  font-weight:400!important;color:#e7e9e5!important
+}
+body.homepage-premium-max #nasze-gry .r4-status{
+  display:inline-flex!important;align-items:center!important;align-self:flex-start!important;
+  border:0!important;border-radius:999px!important;
+  padding:8px 12px!important;font:700 clamp(11px,.92vw,14px)/1.1 OpenSans,Arial,sans-serif!important;
+  white-space:normal!important;box-shadow:none!important
+}
+body.homepage-premium-max #nasze-gry .r4-status-soon{background:#f7e7c9!important;color:#18201d!important}
+body.homepage-premium-max #nasze-gry .r4-status-ready{background:#046747!important;color:#fff!important}
+body.homepage-premium-max #nasze-gry .r4-status-training{background:#a3744a!important;color:#fff!important}
+body.homepage-premium-max #nasze-gry .r4-card-action,
+body.homepage-premium-max #nasze-gry .r4-card-action-outline{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  margin:auto 0 0!important;width:100%!important;min-height:51px!important;
+  padding:10px 9px!important;border:1px solid #e6b148!important;border-radius:999px!important;
+  background:linear-gradient(180deg,#ffe198,#f1b13e)!important;color:#032625!important;
+  font:800 clamp(12px,1.05vw,16px)/1.2 OpenSans,Arial,sans-serif!important;
+  text-align:center!important;box-shadow:none!important;text-shadow:none!important
+}
+body.homepage-premium-max #nasze-gry .r4-game:hover{border-color:#f0c06b!important}
+body.homepage-premium-max #nasze-gry .r4-game:hover .r4-card-action,
+body.homepage-premium-max #nasze-gry .r4-game:focus-visible .r4-card-action{filter:brightness(1.04)!important}
+body.homepage-premium-max #nasze-gry .r4-game:focus-visible{outline:3px solid #ffe09a;outline-offset:3px}
+@media(max-width:1180px){
+ body.homepage-premium-max #nasze-gry .r4-games-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.homepage-premium-max #nasze-gry .r4-game-image{height:clamp(150px,18vw,205px)!important}
+ body.homepage-premium-max #nasze-gry .r4-game h3{font-size:clamp(19px,2.2vw,25px)!important}
+ body.homepage-premium-max #nasze-gry .r4-game p{font-size:13px!important}
+}
+@media(max-width:680px){
+ body.homepage-premium-max #nasze-gry.r4-games{padding:22px 0 30px!important}
+ body.homepage-premium-max #nasze-gry .r4-section-title{align-items:flex-start!important;gap:10px!important;margin-bottom:16px!important}
+ body.homepage-premium-max #nasze-gry .r4-section-title h2{font-size:clamp(31px,7vw,44px)!important}
+ body.homepage-premium-max #nasze-gry .r4-section-title>a{min-height:39px!important;padding:9px 11px!important;font:700 12px/1.1 Georgia,serif!important;white-space:normal!important;max-width:47%!important}
+ body.homepage-premium-max #nasze-gry .r4-games-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+ body.homepage-premium-max #nasze-gry .r4-games-grid .r4-game{border-radius:16px!important}
+ body.homepage-premium-max #nasze-gry .r4-game-image{height:clamp(104px,27vw,160px)!important;border-radius:14px 14px 10px 10px!important}
+ body.homepage-premium-max #nasze-gry .r4-game-body{gap:9px!important;padding:10px!important}
+ body.homepage-premium-max #nasze-gry .r4-game h3{font-size:clamp(16px,3.6vw,20px)!important;gap:5px!important}
+ body.homepage-premium-max #nasze-gry .r4-game-icon{min-width:22px;flex-basis:22px;font-size:22px!important}
+ body.homepage-premium-max #nasze-gry .r4-game p{min-height:0!important;font-size:11.5px!important;line-height:1.35!important}
+ body.homepage-premium-max #nasze-gry .r4-status{font-size:10px!important;padding:7px 9px!important}
+ body.homepage-premium-max #nasze-gry .r4-card-action{min-height:43px!important;font-size:11.5px!important;padding:9px 5px!important}
+}
+@media(max-width:360px){
+ body.homepage-premium-max #nasze-gry .r4-games-grid{grid-template-columns:1fr!important}
+ body.homepage-premium-max #nasze-gry .r4-game-image{height:176px!important}
+ body.homepage-premium-max #nasze-gry .r4-game h3{font-size:21px!important}
+ body.homepage-premium-max #nasze-gry .r4-game p{font-size:13px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.homepage-premium-max #nasze-gry .r4-game,
+ body.homepage-premium-max #nasze-gry .r4-card-action{transition:none!important}
+}
