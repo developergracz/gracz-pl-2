@@ -356,6 +356,7 @@ test('social message and game challenge APIs enforce session, origin and actual 
  const now='2026-11-01T19:00:00Z';
  const db={enabled:true,async query(sql,params=[]){
   if(sql.startsWith('CREATE ')||sql.startsWith('ALTER TABLE '))return {rows:[],rowCount:0};
+  if(sql.includes('SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint'))return {rows:[{definition:"CHECK (game IN ('warcaby','gomoku','szachy'))"}],rowCount:1};
   if(sql.includes('SELECT a.id FROM gracz_public_identity.sessions s')){
    const d=Buffer.from(params[0]||[]).toString('hex');
    const id=d===digest(tkA)?idA:d===digest(tkB)?idB:null;
