@@ -94,7 +94,7 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
   const context=await browser.newContext({viewport:{width:1600,height:900}});
   contexts.push(context);t.after(async()=>context.close());
   await context.addCookies([{name:'__Host-gracz_session',value:user.token,url:base,
-   path:'/',httpOnly:true,secure:true,sameSite:'Lax'}]);
+   httpOnly:true,secure:true,sameSite:'Lax'}]);
   const page=await context.newPage();pages.push(page);
   page.on('pageerror',e=>console.error('BROWSER_PAGE_ERROR',user.role,e.message));
   await page.goto(base+'/konto/warcaby/?match='+matchId,{waitUntil:'domcontentloaded'});
