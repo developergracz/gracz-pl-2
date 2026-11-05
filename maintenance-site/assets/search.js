@@ -1255,7 +1255,7 @@
   function shellMarkup(mode){
     var page=mode==='page';
     return '<div class="'+(page?'gracz-search-page__panel':'gracz-search__panel')+'">'+
-      '<nav class="gracz-search__portal-nav" aria-label="Główna nawigacja gracz.pl">'+
+      (page?'':'<nav class="gracz-search__portal-nav" aria-label="Główna nawigacja gracz.pl">'+
         '<a class="gracz-search__portal-logo" href="/" aria-label="gracz.pl — strona główna"><span>gracz</span><b>.pl</b></a>'+
         '<a class="is-active" href="/">Start</a>'+
         '<div class="gracz-search__portal-nav-item">'+
@@ -1289,7 +1289,7 @@
         '</div>'+
         '<div class="gracz-search__portal-nav-item"><button class="gracz-search__forum-button" type="button" data-search-forum aria-haspopup="dialog">Forum</button></div>'+
         '<a href="/o-gracz-pl/">O gracz.pl</a>'+
-      '</nav>'+
+      '</nav>')+
       '<div class="gracz-search__head">'+
         '<div class="gracz-search__head-copy"><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>'+
         '<div class="gracz-search__head-actions">'+
