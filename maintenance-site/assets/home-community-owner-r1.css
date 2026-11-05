@@ -65,3 +65,21 @@ body.homepage-premium-max .r4-homepage #poradniki-academy::before {
   background:#003a37;
   pointer-events:none;
 }
+
+/* Owner approved: Blog i aktualnosci matches the flat turquoise of Spolecznosc. */
+body.homepage-premium-max .r4-homepage #aktualnosci {
+  position:relative!important;
+  isolation:isolate;
+  background-color:#003a37!important;
+  background-image:none!important;
+}
+body.homepage-premium-max .r4-homepage #aktualnosci::before {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 50%;
+  width:100vw;
+  transform:translateX(-50%);
+  z-index:-1;
+  background:#003a37;
+  pointer-events:none;
+}
