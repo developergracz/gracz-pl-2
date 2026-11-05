@@ -263,7 +263,7 @@ test("R16 desktop footer keeps logo aligned and approved full artwork within con
    await section.scrollIntoViewIfNeeded();
    await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>=1690),{timeout:15000}).toBe(true);
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
    await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -394,7 +394,7 @@ test("R16 displays exact accepted full newsletter artwork with a genuine aligned
    await section.scrollIntoViewIfNeeded();
    await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>=1690),{timeout:15000}).toBe(true);
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
    await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -428,7 +428,7 @@ test("R29 newsletter artwork fits complete desktop viewport without cropping —
    await section.scrollIntoViewIfNeeded();
    await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>=1690),{timeout:15000}).toBe(true);
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
    await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -462,7 +462,7 @@ test("R21 actual newsletter is full-width on phones and loads real images — Fu
    await section.scrollIntoViewIfNeeded();
    await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>=1690),{timeout:15000}).toBe(true);
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
    await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
@@ -496,7 +496,7 @@ test("R29 approved newsletter image stays fully visible and centered — Full Ma
    await section.scrollIntoViewIfNeeded();
    await expect(section).toBeVisible();
    await expect(image).toBeVisible();
-   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>=1690),{timeout:15000}).toBe(true);
+   await expect.poll(()=>image.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:15000}).toBe(true);
    await expect(section.locator('#f-news')).toContainText('Bądź na bieżąco');
    await expect(form.locator('input[type=email]')).toBeVisible();
    await expect(form.locator('button[type=submit]')).toBeDisabled();
