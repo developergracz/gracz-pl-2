@@ -43,6 +43,20 @@ function allow(key,max=8){
 }
 function safeText(x){return typeof x==='string'?x:'';}
 function authorizedOrigin(req){return req.headers.origin===HOST && req.headers['sec-fetch-site']!=='cross-site';}
+async function sendResetPasswordEmail(apiKey,from,to,token){
+ const link=HOST+'/konto/#nowe-haslo='+encodeURIComponent(token);
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),9000);
+ try{
+  const response=await fetch('https://api.resend.com/emails',{
+   method:'POST',signal:controller.signal,
+   headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
+   body:JSON.stringify({from,to,subject:'gracz.pl — odzyskiwanie hasła',
+    html:'<p>Otrzymaliśmy prośbę o zmianę hasła do konta gracz.pl.</p><p><a href="'+link+'">Ustaw nowe hasło</a></p><p>Link jest ważny 20 minut i działa tylko raz. Jeśli nie prosiłeś o zmianę, zignoruj wiadomość.</p>'})
+  });
+  return response.ok;
+ }finally{clearTimeout(timer);}
+}
 async function sendVerifyEmail(apiKey,from,to,token){
  const link=HOST+'/konto/#potwierdz='+encodeURIComponent(token);
  const controller=new AbortController();
@@ -166,6 +180,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       email_key text NOT NULL UNIQUE, salt bytea NOT NULL, password_digest bytea NOT NULL,
       verified_at timestamptz, verify_digest bytea, verify_expires_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now())`);
+    await database.query('ALTER TABLE gracz_public_identity.accounts ADD COLUMN IF NOT EXISTS reset_digest bytea');
+    await database.query('ALTER TABLE gracz_public_identity.accounts ADD COLUMN IF NOT EXISTS reset_expires_at timestamptz');
     await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.sessions (
       token_digest bytea PRIMARY KEY, account_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
       created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL)`);
@@ -965,7 +981,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
   }
   if(req.method!=='POST')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
   if(!authorizedOrigin(req))return bad(res,403,'NIEDOZWOLONE_POCHODZENIE'),true;
-  if(!['/auth/register','/auth/verify','/auth/login','/auth/logout'].includes(url.pathname))return bad(res,404,'NIE_ZNALEZIONO'),true;
+  if(!['/auth/register','/auth/verify','/auth/login','/auth/logout','/auth/forgot-password','/auth/reset-password'].includes(url.pathname))return bad(res,404,'NIE_ZNALEZIONO'),true;
   if(!allow('ip:'+req.socket.remoteAddress,35))return bad(res,429,'ZBYT_WIELE_PROB'),true;
   let body;
   try{body=await readBody(req);}catch{return bad(res,400,'BLEDNE_DANE'),true;}
@@ -997,6 +1013,43 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       SET verified_at=now(),verify_digest=NULL,verify_expires_at=NULL
       WHERE verify_digest=$1 AND verify_expires_at>now() AND verified_at IS NULL RETURNING id`,[digest(token)]);
     return x.rowCount?json(res,200,{ok:true}):bad(res,400,'LINK_NIEWAZNY_LUB_WYGASL'),true;
+   }
+   if(url.pathname==='/auth/forgot-password'){
+    const email=normalizeEmail(body.email);
+    if(!validEmail(email))return bad(res,400,'POPRAW_DANE_FORMULARZA'),true;
+    if(!allow('forgot:'+digest(email).toString('hex'),3))return bad(res,429,'ZBYT_WIELE_PROB'),true;
+    const match=await database.query(
+      'SELECT id FROM gracz_public_identity.accounts WHERE email_key=$1 AND verified_at IS NOT NULL LIMIT 1',[email]);
+    if(match.rows.length){
+      const token=randomBytes(32).toString('hex');
+      await database.query(`UPDATE gracz_public_identity.accounts
+        SET reset_digest=$1,reset_expires_at=now()+interval '20 minutes'
+        WHERE id=$2`,[digest(token),match.rows[0].id]);
+      // Generic answer prevents account enumeration, including when email delivery fails.
+      try{await sendResetPasswordEmail(resendKey,emailFrom,email,token);}catch(e){
+        console.error('IDENTITY_RESET_EMAIL_ERROR',{code:safeText(e?.code)||'SEND_ERROR'});
+      }
+    }
+    return json(res,200,{ok:true,message:'Jeżeli adres należy do potwierdzonego konta, wysłaliśmy instrukcję odzyskiwania hasła.'}),true;
+   }
+   if(url.pathname==='/auth/reset-password'){
+    const token=safeText(body.token),password=body.password;
+    if(!/^[a-f0-9]{64}$/.test(token)||!validPassword(password)||password!==body.repeatPassword)
+      return bad(res,400,'POPRAW_DANE_FORMULARZA'),true;
+    if(!allow('reset-password:'+req.socket.remoteAddress,12))
+      return bad(res,429,'ZBYT_WIELE_PROB'),true;
+    const salt=randomBytes(16),hash=await hashPassword(password,salt);
+    const changed=await database.query(`WITH updated AS (
+       UPDATE gracz_public_identity.accounts SET salt=$2,password_digest=$3,
+       reset_digest=NULL,reset_expires_at=NULL
+       WHERE reset_digest=$1 AND reset_expires_at>now() AND verified_at IS NOT NULL
+       RETURNING id
+      ), revoked AS (
+       DELETE FROM gracz_public_identity.sessions s USING updated a
+       WHERE s.account_id=a.id RETURNING s.account_id
+      ) SELECT id FROM updated`,[digest(token),salt,hash]);
+    if(!changed.rowCount)return bad(res,400,'LINK_NIEWAZNY_LUB_WYGASL'),true;
+    return json(res,200,{ok:true,message:'Hasło zostało zmienione. Możesz się zalogować.'}),true;
    }
    if(url.pathname==='/auth/login'){
     const login=normalizeEmail(body.login),pwd=body.password;
