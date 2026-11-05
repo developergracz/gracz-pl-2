@@ -9,7 +9,9 @@ WITH source AS (
  SELECT 'message:'||m.id::text AS source_id,'messages' AS category,'Nowa wiadomość' AS title,
   a.nickname AS actor,'Otrzymano wiadomość prywatną' AS detail,m.created_at AS happened_at
  FROM gracz_public_identity.friend_messages m
- JOIN gracz_public_identity.accounts a ON a.id=m.sender_id WHERE m.recipient_id=$1
+ JOIN gracz_public_identity.accounts a ON a.id=m.sender_id
+ LEFT JOIN gracz_public_identity.message_conversation_state state ON state.owner_id=$1 AND state.friend_id=m.sender_id
+ WHERE m.recipient_id=$1 AND COALESCE(state.muted,false)=false
  UNION ALL
  SELECT 'friend-request:'||c.account_a::text||':'||c.account_b::text,'friends',
   'Zaproszenie do znajomych',a.nickname,'Nowe zaproszenie do zaakceptowania',c.requested_at
