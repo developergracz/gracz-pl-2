@@ -4,6 +4,9 @@ export const productionModules=Object.freeze([
   'server.mjs',
   // Public account signup and session UI; first-party API with hashed credentials.
   'auth/public-identity.mjs',
+  // Reviewed OAuth registration: fixed provider hosts, PKCE/state/nonce, signed JWTs,
+  // one-use DB handoff, no dynamic imports, account binding only by provider subject.
+  'auth/oauth-registration.mjs',
   // Deterministic game engine: server-authoritative moves only; no external dependencies.
   'auth/game-engine.mjs',
   'auth/page.mjs',
