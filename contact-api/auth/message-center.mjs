@@ -69,13 +69,14 @@ export function createMessageCenterRouter({database,ready,sessionToken,digest,au
        (action==='label'&&!LABELS.has(body.label))||
        Object.keys(body).some(k=>!['nickname','action','label'].includes(k)))return reject(res,400,'BLEDNE_DANE');
    const operation=CHANGES[action];
-   const sql="INSERT INTO "+ROOT+".message_conversation_state (owner_id,friend_id) SELECT $1,a.id FROM "+ROOT+".accounts a JOIN "+ROOT+".friend_connections f ON f.account_a=LEAST($1::uuid,a.id) AND f.account_b=GREATEST($1::uuid,a.id) AND f.status='accepted' WHERE a.nickname_key=$2 AND a.id<>$1 AND a.verified_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM "+ROOT+".friend_blocks b WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1)) ON CONFLICT(owner_id,friend_id) DO UPDATE SET "+operation+",updated_at=now() RETURNING friend_id";
-   // Explicitly enforce the same operation on newly created rows as on existing rows.
-   // For new rows a two-phase upsert is needed: create metadata then update this owner+friend.
-   const result=await database.query(sql,[owner,nick,action==='label'?body.label:'']);
+   // The authoritative friend predicate runs inside this atomic INSERT..ON CONFLICT.
+   // The same action applies to the first metadata row and subsequent updates.
+   const sql="INSERT INTO "+ROOT+".message_conversation_state (owner_id,friend_id,pinned,archived,muted,label,last_read_at) SELECT $1,a.id,$4,$5,$6,$3,CASE WHEN $7::boolean THEN now() ELSE NULL END FROM "+ROOT+".accounts a JOIN "+ROOT+".friend_connections f ON f.account_a=LEAST($1::uuid,a.id) AND f.account_b=GREATEST($1::uuid,a.id) AND f.status='accepted' WHERE a.nickname_key=$2 AND a.id<>$1 AND a.verified_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM "+ROOT+".friend_blocks b WHERE (b.blocker=$1 AND b.blocked=a.id) OR (b.blocker=a.id AND b.blocked=$1)) ON CONFLICT(owner_id,friend_id) DO UPDATE SET "+operation+",updated_at=now() RETURNING friend_id";
+   const args=[owner,nick,action==='label'?body.label:'',action==='pin',
+    action==='archive',action==='mute',action==='read'];
+   const result=await database.query(sql,args);
    if(!result.rows.length)return reject(res,404,'ROZMOWA_NIEDOSTEPNA');
-   const updated=await database.query('UPDATE '+ROOT+'.message_conversation_state SET '+operation+',updated_at=now() WHERE owner_id=$1 AND friend_id=$2',[owner,result.rows[0].friend_id,action==='label'?body.label:'']);
-   return respond(res,200,{ok:true,action,nickname,changed:updated.rowCount||1});
+   return respond(res,200,{ok:true,action,nickname:body.nickname,changed:1});
   }catch(error){
    console.error('MESSAGE_CENTER_ERROR',{code:typeof error?.code==='string'?error.code:'MESSAGE_CENTER'});
    return reject(res,503,'SYSTEM_NIEDOSTEPNY');
