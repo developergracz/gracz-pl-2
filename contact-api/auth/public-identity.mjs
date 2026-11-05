@@ -67,6 +67,9 @@ async function sendResetPasswordEmail(apiKey,from,to,token){
   return response.ok;
  }finally{clearTimeout(timer);}
 }
+// Same text for a new and an already registered address (no account enumeration).
+const REGISTRATION_ACCEPTED='Jeżeli to nowe konto, wysłaliśmy link aktywacyjny ważny 30 minut. Sprawdź skrzynkę e-mail, także folder SPAM.';
+// Resolves false (never throws) when Resend did not accept the message; logs no address or token.
 async function sendVerifyEmail(apiKey,from,to,token){
  const link=HOST+'/konto/#potwierdz='+encodeURIComponent(token);
  const controller=new AbortController();
@@ -78,7 +81,11 @@ async function sendVerifyEmail(apiKey,from,to,token){
   body:JSON.stringify({from,to,subject:'gracz.pl — potwierdź konto',
    html:'<p>Potwierdź nowe konto gracz.pl. Link jest ważny 30 minut.</p><p><a href="'+link+'">Potwierdź adres e-mail</a></p><p>Jeśli to nie Ty, zignoruj wiadomość.</p>'})
  });
+ if(!response.ok)console.error('IDENTITY_VERIFY_EMAIL_ERROR',{status:response.status});
  return response.ok;
+ }catch(e){
+  console.error('IDENTITY_VERIFY_EMAIL_ERROR',{code:e?.name==='AbortError'?'TIMEOUT':'NETWORK'});
+  return false;
  }finally{clearTimeout(timer);}
 }
 function activeUndo(state){
@@ -1063,18 +1070,33 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       return bad(res,400,'POPRAW_DANE_FORMULARZA'),true;
     if(!allow('reg:'+digest(email).toString('hex'),3))return bad(res,429,'ZBYT_WIELE_PROB'),true;
     const salt=randomBytes(16),hash=await hashPassword(pwd,salt),verify=randomBytes(32).toString('hex');
-    let created=false;
-    try{
-     await database.query(`INSERT INTO gracz_public_identity.accounts
+    const id=randomUUID(),nickKey=nick.toLowerCase();
+    const insertAccount=async()=>(await database.query(`INSERT INTO gracz_public_identity.accounts
        (id,nickname,nickname_key,email_key,salt,password_digest,verify_digest,verify_expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,now()+interval '30 minutes')`,
-       [randomUUID(),nick,nick.toLowerCase(),email,salt,hash,digest(verify)]);created=true;
-    }catch(e){if(e?.code!=='23505')throw e;}
-    if(created){
-     const sent=await sendVerifyEmail(resendKey,emailFrom,email,verify);
-     if(!sent)return bad(res,503,'NIE_UDALO_SIE_WYSLAC_EMAIL'),true;
+       VALUES ($1,$2,$3,$4,$5,$6,$7,now()+interval '30 minutes') ON CONFLICT DO NOTHING`,
+       [id,nick,nickKey,email,salt,hash,digest(verify)])).rowCount===1;
+    let created=await insertAccount();
+    if(!created){
+     // An unconfirmed registration whose link expired can never sign in, reset or activate.
+     // Release its e-mail/nick so the mailbox owner can register again with a fresh link.
+     const released=await database.query(`DELETE FROM gracz_public_identity.accounts
+       WHERE (email_key=$1 OR nickname_key=$2) AND verified_at IS NULL
+       AND (verify_expires_at IS NULL OR verify_expires_at<=now())`,[email,nickKey]);
+     if(released.rowCount)created=await insertAccount();
     }
-    return json(res,200,{ok:true,message:'Sprawdź pocztę i potwierdź adres e-mail.'}),true;
+    if(created){
+     if(!await sendVerifyEmail(resendKey,emailFrom,email,verify)){
+      // Never keep an account whose activation link was not sent: a retry must start clean.
+      await database.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1 AND verified_at IS NULL',[id]);
+      return bad(res,503,'NIE_UDALO_SIE_WYSLAC_EMAIL'),true;
+     }
+     return json(res,200,{ok:true,message:REGISTRATION_ACCEPTED}),true;
+    }
+    // Nicknames are public (see /auth/nick-available). The answer never depends on the e-mail,
+    // so an existing address gets exactly the same response as a new one.
+    const nickTaken=await database.query('SELECT 1 FROM gracz_public_identity.accounts WHERE nickname_key=$1 LIMIT 1',[nickKey]);
+    if(nickTaken.rows.length)return bad(res,409,'NICK_ZAJETY'),true;
+    return json(res,200,{ok:true,message:REGISTRATION_ACCEPTED}),true;
    }
    if(url.pathname==='/auth/verify'){
     const token=safeText(body.token);
