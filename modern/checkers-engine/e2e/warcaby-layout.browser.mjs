@@ -64,6 +64,37 @@ try {
       Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2;
    assert.ok(!overlap(metrics.nav,metrics.clock),'Clock overlaps upper navigation '+label+' '+JSON.stringify(metrics));
    assert.ok(!overlap(metrics.nav,metrics.player),'Player card overlaps upper navigation '+label+' '+JSON.stringify(metrics));
+
+   // Check actual rendered rectangles, not only matching CSS strings.
+   const fit=await page.evaluate(()=>{
+    const game=document.getElementById('game');
+    const rect=selector=>{const e=document.querySelector(selector),r=e.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};
+    const frame=rect('.boardframe'),grid=rect('.boardframe>.board.checkers-grid');
+    const restore=document.getElementById('console-config-fab');
+    const before=restore.hidden;
+    restore.hidden=false;
+    game.classList.add('console-hide-sidebar');
+    const fab=rect('#console-config-fab');
+    const nav=rect('.premium-quick-links');
+    const status=rect('#game-state');
+    restore.hidden=before;
+    return {frame,grid,fab,nav,status};
+   });
+   const f=fit.frame,b=fit.grid;
+   assert.ok(b.width>100&&b.height>100,'Board grid disappeared '+label+' '+JSON.stringify(fit));
+   assert.ok(Math.abs(f.width-f.height)<3,'Gold frame is not square '+label+' '+JSON.stringify(fit));
+   assert.ok(Math.abs(b.width-b.height)<3,'Board fields not square '+label+' '+JSON.stringify(fit));
+   const inset=[b.left-f.left,f.right-b.right,b.top-f.top,f.bottom-b.bottom];
+   assert.ok(inset.every(v=>v>=5),'Board touches or crosses frame '+label+' '+JSON.stringify(inset));
+   assert.ok(Math.abs(inset[0]-inset[1])<4&&Math.abs(inset[2]-inset[3])<4,
+      'Board off-centre within gold frame '+label+' '+JSON.stringify(inset));
+   assert.ok(Math.abs(inset[0]-inset[2])<6,
+      'Board side margins differ too much from top margin '+label+' '+JSON.stringify(inset));
+   assert.ok(fit.fab.left>width/2&&width-fit.fab.right>=0&&width-fit.fab.right<=25,
+      'Restore gear must be on the right '+label+' '+JSON.stringify(fit));
+   assert.ok(!overlap({...fit.fab,visible:true},{...fit.nav,visible:true}),
+      'Restore gear overlaps upper navigation '+label);
+
    if(metrics.clock?.visible&&metrics.player?.visible){
     assert.ok(metrics.clock.left>=metrics.player.left-1 &&
       metrics.clock.right<=metrics.player.right+1,
