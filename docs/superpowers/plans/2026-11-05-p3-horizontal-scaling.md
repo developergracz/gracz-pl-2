@@ -30,3 +30,5 @@
 
 P3 review: fixed incomplete POST bodies exhausting DB admission (RED→GREEN).
 Required CI exposed the explicit production import manifest; registered the reviewed optional bus and Redis client without weakening the import gate. Full contact-api suite: 571/571 PASS.
+
+Resume: integrated main 560b88b5, corrected invitation schema initialization order exposed by fresh-database CI. Fresh PostgreSQL/Valkey P3 integration 4/4; current full contact-api suite 586/586 PASS.

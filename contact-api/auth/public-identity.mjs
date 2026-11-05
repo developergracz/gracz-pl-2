@@ -239,7 +239,6 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      await ensurePrivacySchema(database);
      await ensureNotificationSchema(database);
      await ensureMessageCenterSchema(database);
-     await ensureChallengeCenterSchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.friend_messages (
        id uuid PRIMARY KEY, sender_id uuid NOT NULL REFERENCES gracz_public_identity.accounts(id) ON DELETE CASCADE,
@@ -263,6 +262,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_recipient ON gracz_public_identity.game_challenges(recipient_id,created_at DESC)');
      await database.query("CREATE UNIQUE INDEX IF NOT EXISTS gracz_challenges_one_pending ON gracz_public_identity.game_challenges(LEAST(sender_id,recipient_id),GREATEST(sender_id,recipient_id),game) WHERE status='pending'");
+
+     await ensureChallengeCenterSchema(database);
 
      await database.query(`CREATE TABLE IF NOT EXISTS gracz_public_identity.game_matches (
        challenge_id uuid PRIMARY KEY REFERENCES gracz_public_identity.game_challenges(id) ON DELETE CASCADE,

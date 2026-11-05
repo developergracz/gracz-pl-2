@@ -81,7 +81,10 @@ Testy utraty transportu wykorzystują lokalny TCP proxy; nie zatrzymują cudzych
 W odbiorze lokalnym 2026-11-05: test integracyjny P3 (4 testy wraz z nadrzędnym)
 PASS; powiązane testy Gomoku/Warcabów i ochrony przyjmowania żądań (81) PASS; kontrola składni modułów PASS.
 Po uzupełnieniu jawnego manifestu importów pełny wymagany przez CI zestaw
-`contact-api` przechodzi: 571/571, bez pominięć.
+`contact-api` przechodzi: 586/586, bez pominięć (po włączeniu aktualnego main).
+Przy wznowieniu poprawiono kolejność inicjalizacji nowego modułu zaproszeń:
+FK do game_challenges jest tworzony dopiero po tej tabeli. Odbiór P3 powtórzony
+na pustej bazie PostgreSQL również przechodzi.
 To jest wynik poprawności P3, **nie wynik wydajności P4**. Test integracyjny skraca
 reconciliation do 1 s i heartbeat do 250 ms, aby zweryfikować awarie bez minut oczekiwania.
 P4 musi użyć ustawień docelowych i wykonać rzeczywiste operacje kolejno przy

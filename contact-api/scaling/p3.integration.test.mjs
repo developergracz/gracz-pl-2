@@ -55,9 +55,9 @@ async function transportProxy(t){
  return {url:'redis://127.0.0.1:'+port,down,up:async()=>{server.listen(port,'127.0.0.1');await once(server,'listening');}};
 }
 test('P3: independent instances share durable moves and private chat for both games', {timeout:30000},async t=>{
- const db=createDatabase();
+ const db=createDatabase(),players=[];
+ t.after(async()=>{try{for(const p of players)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[p.id]);}finally{await db.close();}});
  await createPublicIdentityRouter({database:db,emailFrom:'p3@example.test',resendKey:'not-used'}).probe();
- const players=[];
  for(let i=0;i<3;i++){
   const id=randomUUID(),token=randomBytes(32).toString('hex'),name='P3'+id.replaceAll('-','');
   await db.query(`INSERT INTO gracz_public_identity.accounts(id,nickname,nickname_key,email_key,salt,password_digest,verified_at)
@@ -65,7 +65,6 @@ test('P3: independent instances share durable moves and private chat for both ga
   await db.query(`INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at) VALUES($1,$2,now()+interval '1 hour')`,[hash(token),id]);
   players.push({id,token});
  }
- t.after(async()=>{for(const p of players)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[p.id]);await db.close();});
  const observer=createClient({url:process.env.GAME_REDIS_URL});await observer.connect();t.after(()=>observer.destroy());
  const proxy=await transportProxy(t);
  const a=await instance(t,proxy.url),b=await instance(t,proxy.url);
