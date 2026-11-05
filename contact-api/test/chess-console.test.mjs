@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initial,parseFen,legal,move,check,result,square,san} from '../auth/chess-rules.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
 function load(path,method='GET'){let status=0,headers={},body='';const res={writeHead(code,h){status=code;headers=h},end(text){body=String(text)}};const served=serveChessConsole({method},res,new URL('https://example.com'+path));return {served,status,headers,body};}
-test('Szachy P2 premium console serves the local chess module and blocks online gameplay',()=>{
+test('Szachy P3 premium console exposes authenticated online controls',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css'),rules=load('/konto/szachy/rules.mjs');
  assert.equal(page.served,true);assert.equal(page.status,200);
  assert.match(page.body,/Szachy Online/);assert.match(page.body,/class="board chess-board"/);
@@ -11,7 +11,7 @@ test('Szachy P2 premium console serves the local chess module and blocks online 
  assert.equal(app.status,200);assert.equal(rules.status,200);assert.equal(style.status,200);
  assert.match(app.body,/import \{initial,legal,apply,san/);
  assert.match(app.body,/Gra lokalna/);
- assert.doesNotMatch(app.body,/fetch\(|WebSocket|auth\/match/);
+ assert.match(app.body,/fetch\('/);assert.match(app.body,/social\/challenges/);assert.match(app.body,/version:online.version/);
  assert.match(style.body,/repeat\(8,minmax\(0,1fr\)\)/);
  assert.match(page.headers['Content-Security-Policy'],/script-src 'self'/);
  assert.equal(load('/konto/szachy','POST').served,false);
