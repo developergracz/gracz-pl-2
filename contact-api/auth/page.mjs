@@ -808,6 +808,102 @@ body[data-account-view="register"] .right::after{
  body[data-account-view="register"] .oauth-buttons a{font-size:12px!important}
 }
 
+/* Owner screenshot R5: no wrong signup splash for login, no oversized art,
+   and a full registration panel on standard desktop viewport heights. */
+body[data-account-view="register"] .left::before{
+ background:radial-gradient(ellipse at 10% 95%,rgba(224,159,62,.12),transparent 46%),
+ linear-gradient(145deg,transparent 58%,rgba(0,17,22,.6))!important;
+ opacity:1!important
+}
+body[data-account-view="register"] .cards .stack{
+ background-color:#e9ceab!important;background-size:cover!important;
+ background-position:center!important;
+}
+body[data-account-view="register"] .right{
+ background:linear-gradient(180deg,rgba(0,28,30,.05),rgba(0,24,29,.62)),
+ url('/konto/szachy.webp') center/cover no-repeat!important;
+}
+body[data-account-view="register"] .right::after{content:none!important}
+body[data-account-view="register"] .panel-heading{position:relative;z-index:1}
+body[data-account-view="register"] .left-copy{z-index:1}
+@media(min-width:1181px) and (max-height:900px){
+ body[data-account-view="register"] .scene{
+  padding:8px 0!important;
+  min-height:calc(100dvh - 68px)!important
+ }
+ body[data-account-view="register"] .panel{
+  padding:7px clamp(15px,2vw,31px) 7px!important;
+  border-radius:27px!important
+ }
+ body[data-account-view="register"] .login-crown{
+  height:32px!important;width:49px!important;margin:-4px 0 0!important
+ }
+ body[data-account-view="register"] .panel-heading{
+  margin:0 0 3px!important
+ }
+ body[data-account-view="register"] .panel-heading h1{
+  font-size:clamp(22px,2vw,33px)!important;margin:0 0 2px!important
+ }
+ body[data-account-view="register"] .panel-heading p{
+  font-size:clamp(11px,.85vw,14px)!important
+ }
+ body[data-account-view="register"] #register-form>label{
+  margin:5px 0 3px 48px!important;font-size:12px!important
+ }
+ body[data-account-view="register"] #register-form .field{
+  margin-left:48px!important
+ }
+ body[data-account-view="register"] #register-form .field input{
+  height:36px!important;min-height:36px!important;
+  padding:6px 42px 6px 12px!important;font-size:13px!important
+ }
+ body[data-account-view="register"] #register-form .field-icon{
+  left:-44px!important;width:33px!important;height:33px!important;
+  font-size:17px!important;top:1px!important
+ }
+ body[data-account-view="register"] #register-form .hint{
+  font-size:10px!important;margin:1px 0 0 48px!important;line-height:1.15!important
+ }
+ body[data-account-view="register"] #register-form .checks{
+  margin:6px 0 3px!important;gap:3px!important
+ }
+ body[data-account-view="register"] #register-form .checks label{
+  font-size:11px!important;line-height:1.15!important
+ }
+ body[data-account-view="register"] #register-form .checks input{
+  width:16px!important;height:16px!important
+ }
+ body[data-account-view="register"] .register-forgot{
+  margin:1px 0 2px!important;font-size:11px!important
+ }
+ body[data-account-view="register"] #register-form>.submit{
+  margin:3px 0 0!important;min-height:43px!important;
+  font-size:clamp(16px,1.2vw,20px)!important;padding:6px!important
+ }
+ body[data-account-view="register"] .oauth-separator{
+  margin:5px 0 3px!important;font-size:11px!important
+ }
+ body[data-account-view="register"] .oauth-buttons{gap:7px!important}
+ body[data-account-view="register"] .oauth-buttons a{
+  height:35px!important;font-size:12px!important
+ }
+ body[data-account-view="register"] .switch{
+  margin:4px 0 0!important;font-size:11px!important
+ }
+ body[data-account-view="register"] .oauth-note{display:none!important}
+ body[data-account-view="register"] .left{
+  padding-top:clamp(17px,3dvh,26px)!important
+ }
+ body[data-account-view="register"] .eyebrow{margin-bottom:12px!important}
+ body[data-account-view="register"] .benefits{gap:7px!important}
+ body[data-account-view="register"] .benefits b{
+  width:39px!important;height:39px!important;flex-basis:39px!important;font-size:19px!important
+ }
+ body[data-account-view="register"] .cards{
+  flex-basis:clamp(110px,21dvh,170px)!important
+ }
+}
+
 `;
 const js=String.raw`(function(){'use strict';
 const notice=document.getElementById('notice');
@@ -908,7 +1004,15 @@ function view(name){
  'Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>';msg('');
 }
 async function api(path,data){const r=await fetch('/auth/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data),cache:'no-store'});const b=await r.json();if(!r.ok||!b.ok)throw Error(({SYSTEM_NIEDOSTEPNY:'System kont jest chwilowo niedostępny.',BLEDNY_LOGIN_LUB_HASLO:'Nieprawidłowe dane albo konto nie zostało jeszcze potwierdzone.',POPRAW_DANE_FORMULARZA:'Sprawdź poprawność danych i zgody.',ZBYT_WIELE_PROB:'Zbyt wiele prób. Spróbuj później.',LINK_NIEWAZNY_LUB_WYGASL:'Link jest nieważny albo wygasł.',NIE_UDALO_SIE_WYSLAC_EMAIL:'Nie udało się wysłać e-maila.'})[b.error]||'Nie udało się wykonać operacji.');return b;}
-document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{if(button.tagName==='A')event.preventDefault();view(button.dataset.view);}));
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',event=>{
+ if(button.tagName==='A')event.preventDefault();
+ const requested=button.dataset.view;
+ view(requested);
+ if(requested==='login'||requested==='register'){
+  history.replaceState(null,'',requested==='login'?'/konto/?widok=login':'/konto/');
+  window.scrollTo(0,0);
+ }
+}));
 // Top bar: burger panel (≤1180px) and the Gry / Gry karciane menus, as on gracz.pl.
 const bar=document.querySelector('[data-account-header]'),burger=bar.querySelector('.site-bar-burger');
 const barMenus=[...bar.querySelectorAll('.has-menu')];
@@ -942,14 +1046,20 @@ reset.addEventListener('submit',async e=>{
  catch(err){msg(err.message);}finally{btn.disabled=false;}
 });
 document.getElementById('logout').addEventListener('click',async()=>{try{await api('logout',{});view('login');msg('Wylogowano.');}catch(err){msg(err.message);}});
-(async()=>{const hash=new URLSearchParams(location.hash.slice(1));const resetFromLink=hash.get('nowe-haslo');
+(async()=>{
+const qp=new URLSearchParams(location.search);
+try{if('scrollRestoration' in history)history.scrollRestoration='manual';window.scrollTo(0,0);}catch{}
+const hash=new URLSearchParams(location.hash.slice(1));const resetFromLink=hash.get('nowe-haslo');
 if(resetFromLink){
  history.replaceState(null,'','/konto/');
  if(!/^[a-f0-9]{64}$/.test(resetFromLink)){view('login');msg('Nieprawidłowy link do odzyskania hasła.');return;}
  resetToken=resetFromLink;view('reset');return;
 }
-const token=hash.get('potwierdz');if(token){history.replaceState(null,'','/konto/');try{await api('verify',{token});view('verified');}catch(err){view('login');msg(err.message);}return;}try{const s=await api('session');if(s.loggedIn){location.replace('/konto/panel/');return;}}catch{}const qp=new URLSearchParams(location.search);
+const token=hash.get('potwierdz');if(token){history.replaceState(null,'','/konto/');try{await api('verify',{token});view('verified');}catch(err){view('login');msg(err.message);}return;}
+// Paint the requested form immediately. Network or cold-start delays must NEVER
+// show registration on ?widok=login, even for a single frame.
 view(qp.get('widok')==='login'?'login':'register');
+try{const s=await api('session');if(s.loggedIn){location.replace('/konto/panel/');return;}}catch{}
 const oauthErr=qp.get('oauth_error');
 if(oauthErr)msg(oauthErr==='not-configured'?'Ten dostawca logowania nie został jeszcze skonfigurowany.':
  oauthErr==='email-already-used'?'Adres e-mail jest już przypisany do istniejącego konta. Zaloguj się e-mailem.':
@@ -960,7 +1070,18 @@ if(qp.get('oauth_notice')==='verify')msg('Sprawdź pocztę i potwierdź adres e-
 export function serveIdentityPage(req,res,url){
  const path=url.pathname.replace(/\/+$/,'')||'/';
  let type,body;
- if(path==='/konto'&&req.method==='GET'){type='text/html; charset=utf-8';body=html;}
+ if(path==='/konto'&&req.method==='GET'){
+  type='text/html; charset=utf-8';
+  const loginMode=url.searchParams.get('widok')==='login';
+  // Pre-render the correct initial form server-side, before deferred JS and
+  // before any session API request can finish.
+  body=loginMode
+   ? html.replace('<body>','<body class="auth-login-mode" data-account-view="login">')
+     .replace('<form id="register-form" autocomplete="on" novalidate>','<form id="register-form" autocomplete="on" novalidate hidden>')
+     .replace('<form id="login-form" hidden novalidate>','<form id="login-form" novalidate>')
+     .replace('Załóż konto w <span class="form-logo">gracz<span>.pl</span></span>','Zaloguj się do <span class="form-logo">gracz<span>.pl</span></span>')
+   : html.replace('<body>','<body data-account-view="register">');
+}
  else if(path==='/konto/styl.css'&&req.method==='GET'){type='text/css; charset=utf-8';body=css;}
  else if(path==='/konto/app.js'&&req.method==='GET'){type='application/javascript; charset=utf-8';body=js;}
  else if(artwork.has(path)&&req.method==='GET'){type='image/webp';body=artwork.get(path);}
