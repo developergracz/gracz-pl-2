@@ -178,7 +178,7 @@ export function setupTraining(a){
   $('training-records').hidden=next!=='training';
   $('online-settings').hidden=next!=='online';
   $('chat-status').textContent=next==='training'?'Notatki treningowe · tylko w tej przeglądarce, bez zapisu na serwerze':'Czat partii online';
-  $('checkers-refresh').title=next==='training'?'Cofnij turę':'Odśwież partię';
+  $('checkers-refresh').title=next==='training'?'Cofnij ruch':'Odśwież partię';
   $('checkers-refresh').setAttribute('aria-label',$('checkers-refresh').title);
   $('checkers-refresh').dataset.tooltip=$('checkers-refresh').title;
   $('chat-input').disabled=next==='online'&&!a.validMatch;
