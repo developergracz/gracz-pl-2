@@ -2757,3 +2757,171 @@ body.search-page .gracz-search-page__panel .gracz-search__result:focus-visible{
   }
   body.search-page .gracz-search-page__panel .gracz-search__head{padding-top:17px}
 }
+
+/* SEARCH HOMEPAGE HEADER PARITY R2 — exact contemporary gracz.pl menu order,
+   teal/navy header, warm gold accents. Dedicated /szukaj/ page only. */
+body.search-page .site-header.shared-global-header{
+  --gh-gold:#f4c65f;
+  --gh-gold-hi:#ffe49c;
+  --gh-teal:#56c8c1;
+  --gh-bg:#003436;
+  position:sticky!important;
+  top:0!important;
+  z-index:100!important;
+  height:80px!important;
+  min-height:80px!important;
+  background:linear-gradient(110deg,#002c30 0%,#003c3d 49%,#002b31 100%)!important;
+  border:0!important;
+  border-bottom:1px solid rgba(244,198,95,.65)!important;
+  box-shadow:0 6px 28px rgba(0,0,0,.28),inset 0 -1px 16px rgba(235,177,68,.12)!important;
+  backdrop-filter:none!important;
+}
+body.search-page .site-header .header-inner{
+  width:calc(100% - 96px)!important;
+  max-width:none!important;
+  gap:14px!important;
+}
+body.search-page .site-header .logo{
+  font-size:39px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  letter-spacing:-.06em!important;
+}
+body.search-page .site-header .main-nav{
+  margin-left:clamp(16px,2.5vw,48px)!important;
+}
+body.search-page .site-header .nav-list{
+  gap:clamp(16px,1.5vw,27px)!important;
+}
+body.search-page .site-header .nav-link{
+  height:80px!important;
+  color:#fff5e5!important;
+  font-size:16px!important;
+  font-weight:650!important;
+}
+body.search-page .site-header .nav-link:hover,
+body.search-page .site-header .nav-link:focus-visible,
+body.search-page .site-header .has-menu.is-open>.nav-link{
+  color:#ffe29c!important;
+}
+body.search-page .site-header .menu-toggle{
+  width:22px!important;
+  margin-left:0!important;
+  color:#fff5e5!important;
+}
+body.search-page .site-header .nav-link.newsletter-trigger{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#ffd36c!important;
+  box-shadow:none!important;
+  font-weight:800!important;
+  padding:0!important;
+  text-decoration:none!important;
+}
+body.search-page .site-header .nav-link.newsletter-trigger:hover{
+  color:#ffe9ad!important;
+}
+body.search-page .site-header .header-actions{
+  gap:12px!important;
+}
+body.search-page .site-header .head-icon.head-search,
+body.search-page .site-header .head-icon.head-search-mobile{
+  border:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  width:42px!important;
+  min-width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+}
+body.search-page .site-header .head-btn{
+  height:48px!important;
+  min-height:48px!important;
+  padding:0 22px!important;
+  border-radius:13px!important;
+  text-decoration:none!important;
+  font-size:16px!important;
+  font-weight:800!important;
+}
+body.search-page .site-header .head-btn--outline{
+  min-width:160px!important;
+  color:#fff8e8!important;
+  border:1.5px solid #e6b650!important;
+  background:rgba(1,28,32,.82)!important;
+  box-shadow:0 0 14px rgba(223,174,72,.1)!important;
+}
+body.search-page .site-header .head-btn--gold{
+  min-width:185px!important;
+  border:1px solid #ffe19b!important;
+  background:linear-gradient(180deg,#ffe9a0 0%,#ffd766 33%,#eba72c 100%)!important;
+  color:#1b170d!important;
+  box-shadow:0 0 17px rgba(223,174,72,.14),inset 0 1px rgba(255,255,255,.35)!important;
+}
+body.search-page .site-header .head-btn:hover,
+body.search-page .site-header .head-btn:focus-visible{
+  filter:brightness(1.08);
+}
+body.search-page .site-header .dropdown{
+  top:70px!important;
+  background:linear-gradient(145deg,#073f41,#031c28)!important;
+  border:1px solid rgba(244,198,95,.28)!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.5)!important;
+}
+@media(min-width:1181px) and (max-width:1500px){
+  body.search-page .site-header .header-inner{
+    width:calc(100% - 40px)!important;
+    gap:12px!important;
+  }
+  body.search-page .site-header .logo{font-size:34px!important}
+  body.search-page .site-header .main-nav{margin-left:12px!important}
+  body.search-page .site-header .nav-list{gap:12px!important}
+  body.search-page .site-header .nav-link{font-size:14px!important}
+  body.search-page .site-header .header-actions{gap:9px!important}
+  body.search-page .site-header .head-btn{
+    font-size:14px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0 14px!important;
+  }
+  body.search-page .site-header .head-btn--outline{min-width:130px!important}
+  body.search-page .site-header .head-btn--gold{min-width:152px!important}
+}
+@media(max-width:1180px){
+  body.search-page .site-header.shared-global-header{
+    height:66px!important;
+    min-height:66px!important;
+  }
+  body.search-page .site-header .header-inner{
+    width:calc(100% - 32px)!important;
+    gap:10px!important;
+  }
+  body.search-page .site-header .logo{font-size:34px!important}
+  body.search-page .site-header .menu-panel{
+    background:linear-gradient(165deg,#033d3e 0%,#031d2a 100%)!important;
+    border-bottom:1px solid rgba(244,198,95,.4)!important;
+  }
+  body.search-page .site-header .main-nav{margin:0!important}
+  body.search-page .site-header .nav-list{gap:0!important}
+  body.search-page .site-header .nav-link{
+    height:48px!important;
+    font-size:15px!important;
+    justify-content:flex-start!important;
+  }
+  body.search-page .site-header .head-btn{
+    width:100%!important;
+    min-width:0!important;
+    height:46px!important;
+    min-height:46px!important;
+  }
+  body.search-page .site-header .head-icon.head-search-mobile{
+    margin-left:auto!important;
+  }
+  body.search-page .site-header .dropdown{
+    background:#052a31!important;
+  }
+}
+@media(max-width:560px){
+  body.search-page .site-header .header-inner{width:calc(100% - 20px)!important}
+}

@@ -96,19 +96,21 @@ for (const page of sharedHeaderPages) {
     `${page}: canonical site-header missing`
   );
   requireCheck(
-    page === "index.html"
+    (page === "index.html" || page === "szukaj/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/\?widok=login"[^>]*>Zaloguj się<\/a>/.test(html)
       : /data-modal="login"[^>]*>Zaloguj się</.test(html),
     `${page}: canonical login action missing`
   );
   requireCheck(
-    page === "index.html"
+    (page === "index.html" || page === "szukaj/index.html")
       ? /href="https:\/\/gracz-contact-api\.onrender\.com\/konto\/"[^>]*>Załóż konto<\/a>/.test(html)
       : /data-modal="register"[^>]*>Załóż konto</.test(html),
     `${page}: canonical gold register action missing`
   );
   requireCheck(
-    /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html),
+    (page === "szukaj/index.html"
+      ? /class="[^"]*newsletter-trigger[^"]*"[^>]*href="\/#f-news"[^>]*>Newsletter<\/a>/.test(html)
+      : /class="[^"]*newsletter-trigger[^"]*"[^>]*data-newsletter-open[^>]*>Newsletter</.test(html)),
     `${page}: canonical Newsletter action missing`
   );
 }
