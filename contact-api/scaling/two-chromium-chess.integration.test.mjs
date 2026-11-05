@@ -65,6 +65,25 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   await page.goto(base+'/konto/szachy/?match='+id,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64,{timeout:12000});
  }
+ const local=await pages[0].context().newPage();
+ await local.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'});
+ await local.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+ for(const id of ['training-settings','training-records','training-time','training-increment','clock-1','clock-2']){
+  assert.equal(await local.locator('#'+id).isVisible(),true,id+' should be visible');
+ }
+ assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),6);
+ assert.equal(await local.locator('.side-dock > .game-tools .tool-btn').count(),7);
+ await local.locator('#training-time').selectOption('1');
+ await local.locator('#training-increment').selectOption('2');
+ await local.locator('#board .chess-square').nth(52).click();
+ await local.locator('#board .chess-square').nth(36).click();
+ await local.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='01:00',{timeout:5000});
+ await local.locator('#undo-move').click();
+ assert.equal(await local.locator('#move-count').textContent(),'Ruchy: 0');
+ await local.locator('#focus-game').click();
+ assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
+ await local.locator('#focus-exit').click();
+ await local.close();
  // Full premium layout: controls belong to the sidebars, not below the board.
  for(const page of pages){
   assert.equal(await page.locator('.chess-actions').count(),0);

@@ -43,6 +43,19 @@ test('Chess labels, sidebar sizing and additive WebSocket chat match the premium
  assert.match(app.body,/onlineMessages=mergeChat\(m\.messages\)/);
  assert.match(app.body,/online\?\.players\?\.\[m\.player-1\]/);
 });
+test('premium chess panels include real clocks, six top icons and right dock tools',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
+ for(const id of ['training-time','training-increment','training-records','clock-1','clock-2','focus-game','fullscreen-game','invite-friend','undo-move','analyze-position','game-settings'])assert.match(page.body,new RegExp('id="'+id+'"'));
+ assert.match(app.body,/function updateClocks\(\)/);
+ assert.match(app.body,/timeLimitMinutes:Number/);
+ assert.match(app.body,/clock\.remaining/);
+ assert.match(app.body,/localTimeout/);
+ assert.match(app.body,/focusButton\?\.addEventListener/);
+ assert.match(app.body,/game-settings/);
+ assert.match(css.body,/premium-quick-links/);
+ assert.match(css.body,/game-tools/);
+ assert.match(css.body,/clock:not\(\[hidden\]\)/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
