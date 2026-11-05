@@ -414,7 +414,83 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <div class="priv-actions"><button type="button" class="secondary" id="priv-reset">Cofnij niezapisane</button><button type="button" class="primary" id="priv-save">Zapisz ustawienia</button></div>
 </div>
 </section>
-<section class="view" data-panel="notifications"><div class="card"><p class="card-kicker">POWIADOMIENIA</p><h2>Informacje o rozgrywkach</h2><p>Powiadomienia o wiadomościach, turniejach i rankingach zostaną dodane po uruchomieniu tych modułów.</p></div></section>
+<section class="view" data-panel="notifications">
+<div class="notif-hero">
+ <div><p class="card-kicker">CENTRUM GRACZA · FULL MAX PREMIUM</p><h2>Centrum powiadomień</h2>
+ <p>Wiadomości, znajomi, zaproszenia do gier i bezpieczeństwo. Wszystko uporządkowane na Twoim koncie.</p></div>
+ <div class="notif-orb" aria-hidden="true">✦<small>GRACZ.PL</small></div>
+</div>
+<div class="notif-metrics">
+ <div><small>NIEPRZECZYTANE</small><strong id="nt-unread">—</strong><span>Ważne dla Ciebie</span></div>
+ <div><small>W SKRZYNCE</small><strong id="nt-inbox-total">—</strong><span>Aktualne zdarzenia</span></div>
+ <div><small>DZISIAJ</small><strong id="nt-today">—</strong><span>Ostatnie aktywności</span></div>
+ <div><small>ARCHIWUM</small><strong id="nt-archive-total">—</strong><span>Odłożone wiadomości</span></div>
+</div>
+<nav class="notif-tabs" role="tablist" aria-label="Kategorie powiadomień">
+ <button type="button" role="tab" class="active" aria-selected="true" data-nt-tab="all">◈ Wszystkie</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="unread">✦ Nieprzeczytane</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="messages">✉ Wiadomości</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="friends">♙ Znajomi</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="games">♟ Gry</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="security">◇ Bezpieczeństwo</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="archive">▤ Archiwum</button>
+ <button type="button" role="tab" aria-selected="false" data-nt-tab="settings">⚙ Ustawienia</button>
+</nav>
+<p class="notif-feedback" id="nt-feedback" role="status" aria-live="polite">Wczytywanie powiadomień…</p>
+<div class="notif-view" data-nt-view="inbox">
+ <div class="card notif-toolbar">
+  <div class="notif-toolbar-row">
+   <label for="nt-search">Wyszukaj powiadomienia<input id="nt-search" type="search" placeholder="Treść, nadawca lub nazwa gry…" maxlength="100"></label>
+   <label for="nt-period">Zakres<select id="nt-period"><option value="90">Ostatnie 90 dni</option><option value="30">Ostatnie 30 dni</option><option value="7">Ostatni tydzień</option><option value="1">Ostatnie 24 godziny</option></select></label>
+   <label for="nt-sort">Kolejność<select id="nt-sort"><option value="new">Najnowsze</option><option value="old">Najstarsze</option></select></label>
+  </div>
+  <div class="notif-actions">
+   <button id="nt-refresh" class="secondary" type="button">Odśwież</button>
+   <button id="nt-mark-all" class="secondary" type="button">Oznacz jako przeczytane</button>
+   <button id="nt-archive-read" class="secondary" type="button">Archiwizuj przeczytane</button>
+   <button id="nt-export" class="secondary" type="button">Eksport CSV</button>
+  </div>
+ </div>
+ <div class="card notif-inbox">
+  <div class="notif-list-header"><div><p class="card-kicker">TWOJA SKRZYNKA</p><h2 id="nt-list-title">Wszystkie powiadomienia</h2></div><span id="nt-list-count" class="notif-list-count">—</span></div>
+  <div id="nt-list" class="notif-items"><p>Brak załadowanych zdarzeń.</p></div>
+  <div class="notif-pagination"><button class="secondary" id="nt-more" type="button" hidden>Pokaż następne 20</button></div>
+ </div>
+</div>
+<div class="notif-view" data-nt-view="settings" hidden>
+ <div class="card">
+  <p class="card-kicker">CENTRUM PREFERENCJI · FULL MAX PREMIUM</p><h2>Co trafia do Twojej skrzynki?</h2>
+  <p>Każde ustawienie zapisuje się na Twoim koncie. Wyłączenie kategorii ukrywa ją w skrzynce, ale nie usuwa oryginalnych wiadomości, znajomości ani zaproszeń.</p>
+  <form id="nt-settings-form" class="notif-settings">
+   <div class="notif-settings-grid">
+    <label class="notif-setting"><span><strong>✉ Wiadomości prywatne</strong><small>Nowe wiadomości od zaakceptowanych znajomych.</small></span><input id="nt-set-messages" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>♙ Znajomi</strong><small>Zaproszenia do znajomych i ich akceptacja.</small></span><input id="nt-set-friends" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>♟ Zaproszenia do gier</strong><small>Nowe wyzwania i przyjęcie/odrzucenie zaproszeń.</small></span><input id="nt-set-games" type="checkbox"></label>
+    <div class="notif-setting notif-locked"><span><strong>◇ Zdarzenia bezpieczeństwa</strong><small>Zawsze widoczne — nie można ukryć zdarzeń związanych z ochroną konta.</small></span><span class="notif-required">Włączone</span></div>
+   </div>
+   <h3>Wygląd i sposób pracy</h3>
+   <div class="notif-settings-grid">
+    <label class="notif-setting"><span><strong>Wyróżniaj nieprzeczytane</strong><small>Podświetlaj nowe pozycje turkusową poświatą.</small></span><input id="nt-set-highlightUnread" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Pokazuj nick nadawcy</strong><small>Ukryj nicki na liście i w odpowiedzi centrum powiadomień.</small></span><input id="nt-set-showNicknames" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Pokazuj daty</strong><small>Data i godzina przy każdej pozycji w centrum.</small></span><input id="nt-set-showDates" type="checkbox"></label>
+    <label class="notif-setting"><span><strong>Oznaczaj jako przeczytane po otwarciu</strong><small>Po przejściu do powiązanego modułu automatycznie zaznaczaj pozycję jako odczytaną.</small></span><input id="nt-set-autoReadOnOpen" type="checkbox"></label>
+   </div>
+   <h3>Wyciszenie powiadomień</h3>
+   <label for="nt-mute">Wycisz wizualne wyróżnienia na<select id="nt-mute">
+    <option value="0">Nie wyciszaj</option><option value="60">1 godzinę</option><option value="480">8 godzin</option><option value="1440">24 godziny</option>
+   </select></label>
+   <p class="notif-hint" id="nt-mute-note">Wyciszenie nie usuwa powiadomień ani nie blokuje odczytu zdarzeń bezpieczeństwa.</p>
+   <div class="notif-actions"><button id="nt-save" type="submit" class="primary">Zapisz preferencje</button><button id="nt-cancel" type="button" class="secondary">Cofnij zmiany</button></div>
+  </form>
+ </div>
+ <div class="card">
+  <p class="card-kicker">PRZYSZŁE KANAŁY DOSTARCZANIA</p><h2>Powiadomienia e-mail, push i SMS</h2>
+  <p>Centrum działa teraz w panelu GRACZ.PL. Wysyłka zewnętrznych powiadomień e-mail, push i SMS nie jest uruchomiona. Nie przedstawiamy żadnego z tych kanałów jako aktywnego.</p>
+  <div class="notif-planned"><span>E-mail: planowane</span><span>Push: planowane</span><span>SMS: planowane</span><span>Forum i turnieje: po integracji</span></div>
+ </div>
+</div>
+<div class="card notif-footnote"><p>Pokazywane są wyłącznie rzeczywiste zdarzenia z istniejących modułów, maksymalnie 200 z ostatnich 90 dni. Dane pozostają na Twoim koncie; archiwizacja dotyczy powiadomienia, nie oryginalnej wiadomości lub partii.</p></div>
+</section>
 <section class="view" data-panel="messages">
 <div class="card">
 <p class="card-kicker">PRYWATNE ROZMOWY</p><h2>Wiadomości ze znajomymi</h2>
