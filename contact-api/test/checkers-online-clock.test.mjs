@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Readable} from 'node:stream';
 import {createHash} from 'node:crypto';
 import {createPublicIdentityRouter} from '../auth/public-identity.mjs';
+import {initialGame} from '../auth/game-engine.mjs';
 
 const matchId='11111111-1111-4111-8111-111111111111';
 const alice='22222222-2222-4222-8222-222222222222';
@@ -50,7 +51,7 @@ function mockDatabase(){
   }
   throw new Error('Unexpected query: '+sql.slice(0,160));
  },
- snapshot:()=>({state,version}),setBlocked:value=>{blocked=value}
+ snapshot:()=>({state,version}),setState:value=>{state=value;version=0},setBlocked:value=>{blocked=value}
  };
 }
 async function request(router,session,method,path,body){
@@ -84,4 +85,28 @@ test('timed checkers: accepted friends start authoritative clocks and increments
  assert.ok(played.body.match.state.clock.remaining[0]<=422000);
  const replay=await request(router,'a'.repeat(64),'POST','/auth/match',{id:matchId,version,move:{from:17,to:24}});
  assert.equal(replay.status,409);
+});
+
+test('timed checkers: forced multiple capture consumes time and grants one increment at the end',async()=>{
+ const db=mockDatabase(),router=createPublicIdentityRouter({database:db,emailFrom:'test@example.invalid',resendKey:'test-key'});
+ const state=initialGame('warcaby');
+ state.board=Array(64).fill(0);
+ for(const [square,piece] of [[40,1],[49,2],[44,2],[55,2]])state.board[square]=piece;
+ state.clock={limitMs:420000,incrementMs:2000,remaining:[420000,420000],
+  ready:[true,true],since:new Date().toISOString()};
+ state.history=[];
+ db.setState(state);
+ const first=await request(router,'a'.repeat(64),'POST','/auth/match',
+  {id:matchId,version:0,move:{from:40,to:58}});
+ assert.equal(first.status,200);
+ assert.equal(first.body.match.state.turn,1);
+ assert.equal(first.body.match.state.forced,58);
+ assert.ok(first.body.match.state.clock.remaining[0]<=420000,'no increment during ongoing capture');
+ const second=await request(router,'a'.repeat(64),'POST','/auth/match',
+  {id:matchId,version:first.body.match.version,move:{from:58,to:37}});
+ assert.equal(second.status,200);
+ assert.equal(second.body.match.state.turn,2);
+ assert.equal(second.body.match.state.forced,null);
+ assert.ok(second.body.match.state.clock.remaining[0]>420000,'one increment on full turn completion');
+ assert.ok(second.body.match.state.clock.remaining[0]<=422000);
 });
