@@ -292,11 +292,14 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <nav class="priv-tabs" role="tablist" aria-label="Opcje prywatności">
  <button type="button" role="tab" aria-selected="true" class="active" data-priv-tab="overview">◈ Centrum prywatności</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="profile">♙ Profil publiczny</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="detail">▤ Szczegóły profilu</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="contacts">◇ Znajomi i kontakt</button>
+ <button type="button" role="tab" aria-selected="false" data-priv-tab="trusted">★ Zaufane kontakty</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="games">♟ Gry i aktywność</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="data">▤ Moje dane</button>
  <button type="button" role="tab" aria-selected="false" data-priv-tab="future">✧ Forum i przyszłość</button>
 </nav>
+<div class="priv-controlled-count"><strong>20</strong> szczegółowych ustawień prywatności · zapis po stronie serwera · ochrona konta bez dodatkowej usługi</div>
 <p class="priv-notice" id="priv-status" role="status" aria-live="polite">Wczytywanie zapisanych preferencji prywatności…</p>
 <div class="priv-pane" data-priv-pane="overview">
  <div class="card">
@@ -329,6 +332,21 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <p class="priv-hint">Wyłączenie profilu publicznego ukrywa go przed anonimowym dostępem. Zapisane statystyki i odznaki nie są usuwane.</p>
  </div>
 </div>
+<div class="priv-pane" data-priv-pane="detail" hidden>
+ <div class="card">
+  <p class="card-kicker">PRECYZYJNA KONTROLA WIZYTÓWKI</p><h2>Co dokładnie inni zobaczą?</h2>
+  <p>Możesz ukrywać poszczególne informacje nawet wtedy, gdy Twój profil jest publiczny. Zmiany dotyczą publicznego API — nie usuwają danych z Twojego własnego konta.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Moja nazwa wyświetlana</strong><small>Wyłączenie zastępuje nazwę wyświetlaną nickiem gracza na publicznej wizytówce.</small></span><input type="checkbox" id="priv-showDisplayName"></label>
+   <label class="priv-option"><span><strong>Opis biograficzny</strong><small>Ukryj opis profilu przed innymi graczami, bez usuwania jego treści.</small></span><input type="checkbox" id="priv-showBio"></label>
+   <label class="priv-option"><span><strong>Moje motto</strong><small>Decyduj, czy motto będzie widoczne na publicznej wizytówce.</small></span><input type="checkbox" id="priv-showMotto"></label>
+   <label class="priv-option"><span><strong>Data dołączenia</strong><small>Ukryj datę utworzenia konta na publicznym profilu.</small></span><input type="checkbox" id="priv-showJoined"></label>
+   <label class="priv-option"><span><strong>Miasto</strong><small>Kontroluj miasto osobno. Wyświetla się wyłącznie wtedy, gdy pozwolisz również na widoczność kraju i lokalizacji.</small></span><input type="checkbox" id="priv-showCity"></label>
+   <label class="priv-option"><span><strong>Wskaźnik skuteczności wygranych</strong><small>Ukryj procent wygranych w publicznym API. Własne statystyki pozostają dostępne po zalogowaniu.</small></span><input type="checkbox" id="priv-showWinRate"></label>
+  </div>
+  <p class="priv-hint">Statystyki i skuteczność są publiczne tylko wtedy, gdy włączono również publiczną wizytówkę i statystyki. Odznaki nadal mają odrębną zgodę.</p>
+ </div>
+</div>
 <div class="priv-pane" data-priv-pane="contacts" hidden>
  <div class="card"><p class="card-kicker">ODKRYWANIE I ZNAJOMOŚCI</p><h2>Kto może Cię znaleźć i zaprosić?</h2>
   <div class="priv-options">
@@ -339,6 +357,21 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
   <div class="priv-actions"><button type="button" id="priv-manage-friends" class="secondary">Moi znajomi</button><button type="button" id="priv-manage-blocks" class="secondary">Zarządzaj blokadami</button></div>
  </div>
  <div class="card"><p class="card-kicker">CO ZOSTAJE PRYWATNE</p><h2>Twoje kontakty są Twoje</h2><p>Notatki, telefony, adresy e-mail oraz grupy w Twojej książce adresowej nie są udostępniane innym graczom.</p></div>
+</div>
+<div class="priv-pane" data-priv-pane="trusted" hidden>
+ <div class="card">
+  <p class="card-kicker">KONTROLA ZAUFANIA FULL MAX PREMIUM</p><h2>Zaufani znajomi i bezpieczne zaproszenia</h2>
+  <p>Zaufani to zaakceptowani znajomi, których wizytówkę oznaczysz gwiazdką ★ w swojej książce adresowej. Ustawienia poniżej są sprawdzane przy każdej operacji w serwerze.</p>
+  <div class="priv-options">
+   <label class="priv-option"><span><strong>Wyszukiwanie wyłącznie po pełnym nicku</strong><small>Inni gracze nie znajdą Cię przez wpisanie fragmentu nicku. Nadal mogą znaleźć Cię po dokładnej nazwie, jeżeli pozwalasz na wyszukiwanie.</small></span><input type="checkbox" id="priv-exactSearchOnly"></label>
+   <label class="priv-option"><span><strong>Zaproszenia tylko przez wspólnych znajomych</strong><small>Nowe zaproszenie do znajomych jest dozwolone wyłącznie, gdy nadawca i odbiorca mają zaakceptowanego wspólnego znajomego.</small></span><input type="checkbox" id="priv-mutualFriendsOnlyRequests"></label>
+   <label class="priv-option"><span><strong>Wiadomości tylko od zaufanych</strong><small>Wiadomości może wysyłać tylko zaakceptowany znajomy oznaczony gwiazdką w Twojej książce adresowej. Istniejące rozmowy nie są kasowane.</small></span><input type="checkbox" id="priv-trustedMessagesOnly"></label>
+   <label class="priv-option"><span><strong>Zaproszenia do gier tylko od zaufanych</strong><small>Ogranicz nowe wyzwania do Gomoku i Warcabów do ulubionych, zaakceptowanych znajomych.</small></span><input type="checkbox" id="priv-trustedInvitesOnly"></label>
+   <label class="priv-option"><span><strong>Status online tylko dla zaufanych</strong><small>Twoją obecność widzą jedynie znajomi oznaczeni przez Ciebie gwiazdką ★. Pozostałym znajomym status będzie pokazywany jako offline.</small></span><input type="checkbox" id="priv-trustedPresenceOnly"></label>
+  </div>
+  <div class="priv-actions"><button class="secondary" id="priv-trusted-manage" type="button">Otwórz zaufane kontakty</button><button class="secondary" id="priv-trusted-blocks" type="button">Blokady graczy</button></div>
+  <p class="priv-hint">Włączenie restrykcji bez żadnego zaufanego kontaktu zablokuje odpowiednie interakcje dla wszystkich obecnych znajomych. Przyciski nie zmieniają statusu znajomości bez Twojej zgody.</p>
+ </div>
 </div>
 <div class="priv-pane" data-priv-pane="games" hidden>
  <div class="card"><p class="card-kicker">ROZGRYWKI I AKTYWNOŚĆ</p><h2>Zaproszenia oraz status online</h2>
@@ -999,6 +1032,12 @@ body.pw-success-open{overflow:hidden}
 @media(max-width:700px){#player-shell .sec-hero{padding:12px}#player-shell .sec-shield{width:56px;height:56px;font-size:26px;border-radius:16px}#player-shell .sec-tabs{position:static;grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}#player-shell .sec-tabs button{min-height:41px}#player-shell .sec-two,#player-shell .sec-checklist{grid-template-columns:1fr}#player-shell .sec-device-item,#player-shell .sec-event-item{align-items:flex-start;flex-direction:column}#player-shell .sec-device-item button{min-height:40px}#player-shell .sec-metrics>div{padding:10px}#player-shell .sec-history-filter{flex-wrap:wrap}}
 
 /* Privacy Center Full Max Premium — adaptive, compact, no global zoom */
+#player-shell .priv-controlled-count{border:1px solid #327d83;background:linear-gradient(115deg,#073844,#062632);
+  border-radius:10px;padding:7px 12px;font-size:11px;letter-spacing:.015em;color:#b3d4d8}
+#player-shell .priv-controlled-count strong{font-size:17px;color:#ffda8f;margin-right:5px}
+#player-shell .priv-pane .priv-option:has(input:disabled){border-color:#2e5960;background:#052a34}
+#player-shell .priv-pane .priv-option:has(input:disabled) small{color:#8facb0}
+
 #player-shell .priv-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:122px;padding:17px 23px;border:1px solid #1dd8c7;border-radius:17px;background:radial-gradient(ellipse at 85% 5%,#15b6b272,transparent 55%),linear-gradient(120deg,#073947,#032330);box-shadow:0 12px 32px #0016203e}
 #player-shell .priv-hero h2{font-size:clamp(26px,2.5vw,37px);line-height:1.15;letter-spacing:-.02em;margin:5px 0 7px;color:#fff}
 #player-shell .priv-hero p:last-child{font-size:12px;color:#b7d4da;line-height:1.5;margin:0;max-width:670px}
@@ -1010,7 +1049,7 @@ body.pw-success-open{overflow:hidden}
 #player-shell .priv-metrics small{display:block;font-size:9px;letter-spacing:.08em;font-weight:900;color:#efd18d}
 #player-shell .priv-metrics strong{display:block;font-size:clamp(15px,1.6vw,21px);margin:6px 0;color:#fff;overflow-wrap:anywhere}
 #player-shell .priv-metrics span{font-size:10px;color:#a9cdd1}
-#player-shell .priv-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;border:1px solid #246c74;padding:7px;border-radius:15px;background:#052b39;position:sticky;top:0;z-index:5}
+#player-shell .priv-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;border:1px solid #246c74;padding:7px;border-radius:15px;background:#052b39;position:sticky;top:0;z-index:5}
 #player-shell .priv-tabs button{min-width:0;min-height:40px;padding:7px 4px;background:#073642;border:1px solid #2b6570;border-radius:9px;color:#daeeed;font:780 11px Inter,"Segoe UI",sans-serif;cursor:pointer}
 #player-shell .priv-tabs button.active{border-color:#2fe7d0;background:linear-gradient(130deg,#087b75,#0a4b56);color:#fff;box-shadow:0 0 14px #10d6c54c}
 #player-shell .priv-tabs button:focus-visible,#player-shell .priv-actions button:focus-visible{outline:2px solid #ffe0a2;outline-offset:2px}
@@ -2112,7 +2151,9 @@ $('sec-export-events').addEventListener('click',()=>{
 
 // Full Max Premium Privacy Center — one source of truth, server-enforced policies.
 const privacyFields=['discoverable','friendRequests','friendMessages','gameInvites','showOnline',
- 'publicProfile','showStats','showCountry','showBadges'];
+ 'exactSearchOnly','mutualFriendsOnlyRequests','trustedMessagesOnly','trustedInvitesOnly','trustedPresenceOnly',
+ 'publicProfile','showStats','showCountry','showBadges',
+ 'showDisplayName','showBio','showMotto','showJoined','showCity','showWinRate'];
 let privacySource=null,privacyLoading=false,privacyTabName='overview',privacySaving=false;
 function privacyTab(name){
  privacyTabName=name;
@@ -2152,6 +2193,14 @@ function privacyRepaint(){
  const badge=$('priv-showBadges');
  badge.disabled=!x.showStats;
  badge.closest('.priv-option').title=!x.showStats?'Odznaki są publiczne tylko przy włączonych statystykach':'';
+ $('priv-showCity').disabled=!x.showCountry;
+ $('priv-showWinRate').disabled=!x.showStats;
+ $('priv-showCity').closest('.priv-option').title=!x.showCountry?'Najpierw włącz ujawnianie kraju i lokalizacji':'';
+ $('priv-showWinRate').closest('.priv-option').title=!x.showStats?'Najpierw włącz statystyki publiczne':'';
+ document.querySelectorAll('[data-priv-tab]').forEach(b=>{
+  const pane=b.dataset.privTab;
+  if(pane==='trusted')b.title='Zaufane kontakty działają na podstawie gwiazdki w książce adresowej';
+ });
 }
 async function privacyLoad(){
  if(!sessionConfirmed||privacyLoading||privacySaving)return;
@@ -2168,11 +2217,20 @@ document.querySelectorAll('[data-priv-tab]').forEach(button=>button.addEventList
 document.querySelectorAll('[data-priv-goto]').forEach(button=>button.addEventListener('click',()=>privacyTab(button.dataset.privGoto)));
 const privacyPresets={
  private:{discoverable:false,friendRequests:false,friendMessages:false,gameInvites:false,showOnline:false,
-  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+  exactSearchOnly:true,mutualFriendsOnlyRequests:true,trustedMessagesOnly:true,
+  trustedInvitesOnly:true,trustedPresenceOnly:true,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false,
+  showDisplayName:false,showBio:false,showMotto:false,showJoined:false,showCity:false,showWinRate:false},
  friends:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
-  publicProfile:false,showStats:false,showCountry:false,showBadges:false},
+  exactSearchOnly:true,mutualFriendsOnlyRequests:false,trustedMessagesOnly:false,
+  trustedInvitesOnly:false,trustedPresenceOnly:false,
+  publicProfile:false,showStats:false,showCountry:false,showBadges:false,
+  showDisplayName:true,showBio:false,showMotto:false,showJoined:false,showCity:false,showWinRate:false},
  open:{discoverable:true,friendRequests:true,friendMessages:true,gameInvites:true,showOnline:true,
-  publicProfile:true,showStats:true,showCountry:false,showBadges:true}
+  exactSearchOnly:false,mutualFriendsOnlyRequests:false,trustedMessagesOnly:false,
+  trustedInvitesOnly:false,trustedPresenceOnly:false,
+  publicProfile:true,showStats:true,showCountry:false,showBadges:true,
+  showDisplayName:true,showBio:true,showMotto:true,showJoined:true,showCity:true,showWinRate:true}
 };
 document.querySelectorAll('[data-priv-preset]').forEach(button=>button.addEventListener('click',()=>{
  if(!privacySource){privacyNotice('Najpierw wczytaj zapisane ustawienia.',true);return;}
@@ -2200,6 +2258,8 @@ function privacyFriends(tab){
 }
 $('priv-manage-friends').addEventListener('click',()=>privacyFriends('overview'));
 $('priv-manage-blocks').addEventListener('click',()=>privacyFriends('blocked'));
+$('priv-trusted-manage').addEventListener('click',()=>privacyFriends('book'));
+$('priv-trusted-blocks').addEventListener('click',()=>privacyFriends('blocked'));
 $('priv-open-addressbook').addEventListener('click',()=>privacyFriends('book'));
 $('priv-open-friends').addEventListener('click',()=>privacyFriends('book'));
 $('priv-open-security').addEventListener('click',()=>switchSection('security'));
