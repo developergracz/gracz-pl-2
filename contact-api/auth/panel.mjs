@@ -557,20 +557,91 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 </div>
 </section>
 <section class="view" data-panel="challenges">
-<div class="card"><p class="card-kicker">WARCABY I GOMOKU</p><h2>Zaproszenia do gier</h2>
-<p>Wyślij znajomemu wyzwanie, zaakceptuj lub odrzuć zaproszenie. Wyzwania są zapisane na kontach obu graczy i wygasają po 7 dniach.</p>
-<p class="social-limitation">Po zaakceptowaniu wyzwania kliknij „Graj online”, aby otworzyć wspólną planszę. Ruchy są zatwierdzane i zapisywane na serwerze. Stan gry odświeża się automatycznie.</p>
-<form id="challenge-form" class="social-send">
-<label class="social-label" for="challenge-friend">Zaproś znajomego</label>
-<div class="social-controls"><select id="challenge-friend"><option value="">Wybierz znajomego</option></select>
-<select id="challenge-game" aria-label="Wybierz grę"><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option></select>
-<button class="primary" type="submit">Wyślij wyzwanie</button></div>
-</form>
-<div class="card-heading"><div><p class="card-kicker">AKTYWNE WYZWANIA</p><h2>Twoje zaproszenia</h2></div>
-<button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
-<div id="challenge-list" class="friends-items" aria-live="polite"></div>
-<p id="challenges-state" aria-live="polite"></p>
-</div></section>
+<div class="chall-metrics" aria-label="Podsumowanie zaproszeń">
+ <div><small>DO ODPOWIEDZI</small><strong id="chall-incoming-count">—</strong><span>Otrzymane i aktualne</span></div>
+ <div><small>OCZEKUJĄCE</small><strong id="chall-outgoing-count">—</strong><span>Wysłane zaproszenia</span></div>
+ <div><small>ZAAKCEPTOWANE</small><strong id="chall-accepted-count">—</strong><span>Wspólne rozgrywki</span></div>
+ <div><small>ULUBIONE</small><strong id="chall-star-count">—</strong><span>Oznaczone gwiazdką</span></div>
+</div>
+<nav class="chall-tabs" role="tablist" aria-label="Kategorie zaproszeń">
+ <button type="button" data-chall-tab="all" class="active" aria-selected="true">◈ Wszystkie</button>
+ <button type="button" data-chall-tab="incoming" aria-selected="false">✉ Otrzymane</button>
+ <button type="button" data-chall-tab="outgoing" aria-selected="false">➤ Wysłane</button>
+ <button type="button" data-chall-tab="accepted" aria-selected="false">✓ Przyjęte</button>
+ <button type="button" data-chall-tab="starred" aria-selected="false">★ Ważne</button>
+ <button type="button" data-chall-tab="history" aria-selected="false">◷ Historia</button>
+ <button type="button" data-chall-tab="archive" aria-selected="false">▤ Archiwum</button>
+ <button type="button" data-chall-tab="settings" aria-selected="false">⚙ Ustawienia</button>
+</nav>
+<p class="chall-notice" id="challenges-state" role="status" aria-live="polite">Wczytywanie Twoich zaproszeń…</p>
+<div class="chall-workspace" id="chall-workspace">
+ <div class="card chall-compose">
+  <p class="card-kicker">NOWE WYZWANIE · FULL MAX PREMIUM</p><h2>Zaproś znajomego</h2>
+  <p>Wybierz zaakceptowanego znajomego, grę i dostępne zasady. Wyzwanie wygasa po 7 dniach, jeżeli nie zostanie przyjęte.</p>
+  <form id="challenge-form" class="chall-form">
+   <label for="challenge-friend">Przeciwnik<select id="challenge-friend" required><option value="">Wybierz znajomego</option></select></label>
+   <label for="challenge-game">Gra<select id="challenge-game"><option value="warcaby">♟ Warcaby Online</option><option value="gomoku">◉ Gomoku Online</option></select></label>
+   <div class="chall-time-options" id="chall-time-options" hidden>
+    <label for="challenge-time">Czas na gracza<select id="challenge-time">
+     <option value="0">Bez zegara</option><option value="1">1 minuta</option>
+     <option value="2">2 minuty</option><option value="3">3 minuty</option>
+     <option value="5">5 minut</option><option value="7">7 minut</option>
+     <option value="10">10 minut</option><option value="15">15 minut</option>
+     <option value="30">30 minut</option>
+    </select></label>
+    <label for="challenge-increment">Dodawany czas za ruch<select id="challenge-increment">
+     <option value="0">Bez przyrostu</option><option value="2">+2 sekundy</option>
+     <option value="3">+3 sekundy</option><option value="5">+5 sekund</option>
+     <option value="10">+10 sekund</option>
+    </select></label>
+    <small id="chall-clock-description">Zegar dotyczy Gomoku. Dla gry bez zegara przyrost wynosi 0 sekund.</small>
+   </div>
+   <div class="chall-preview"><span class="chall-preview-icon" id="chall-preview-icon">♟</span>
+    <div><strong id="chall-preview-name">Warcaby Online</strong>
+    <small id="chall-preview-details">Klasyczna partia online · bez zegara</small></div></div>
+   <button class="primary" id="chall-submit" type="submit">Wyślij zaproszenie</button>
+  </form>
+  <div class="chall-shortcuts">
+   <button class="secondary" type="button" id="chall-open-friends">Moi znajomi</button>
+   <button class="secondary" type="button" id="chall-open-privacy">Prywatność zaproszeń</button>
+  </div>
+  <p class="chall-fineprint">Zaproszenie można wysłać tylko zaakceptowanemu, niezablokowanemu znajomemu zgodnie z jego ustawieniami prywatności. Warcaby: bez konfiguracji zegara w tym module.</p>
+ </div>
+ <div class="card chall-inbox">
+  <div class="chall-heading"><div><p class="card-kicker">CENTRUM ZAPROSZEŃ</p><h2 id="chall-list-heading">Twoje zaproszenia</h2></div><button class="secondary" id="challenges-refresh" type="button">Odśwież</button></div>
+  <div class="chall-filters">
+   <label for="chall-search">Znajdź gracza<input type="search" id="chall-search" placeholder="Wpisz nick…" maxlength="80"></label>
+   <label for="chall-filter-game">Gra<select id="chall-filter-game">
+    <option value="all">Wszystkie gry</option><option value="warcaby">Warcaby</option><option value="gomoku">Gomoku</option>
+   </select></label>
+   <label for="chall-filter-status">Status<select id="chall-filter-status">
+    <option value="all">Dowolny</option><option value="pending">Oczekuje</option><option value="accepted">Przyjęte</option>
+    <option value="declined">Odrzucone</option><option value="cancelled">Anulowane</option><option value="expired">Wygasłe</option>
+   </select></label>
+   <label for="chall-sort">Kolejność<select id="chall-sort"><option value="new">Najnowsze</option><option value="old">Najstarsze</option></select></label>
+  </div>
+  <div class="chall-list-summary"><span id="chall-result-count">—</span><span>Przechowujemy listę do 60 ostatnich zaproszeń z 30 dni</span></div>
+  <div id="challenge-list" class="chall-list" aria-live="polite"><p>Brak zaproszeń.</p></div>
+  <div class="chall-pagination"><button class="secondary" id="chall-more" type="button" hidden>Pokaż kolejne 15</button></div>
+ </div>
+</div>
+<div class="card chall-settings" id="chall-settings" hidden>
+ <p class="card-kicker">ZARZĄDZANIE WYZWANIAMI · FULL MAX PREMIUM</p><h2>Twoje zasady otrzymywania zaproszeń</h2>
+ <div class="chall-settings-grid">
+  <div><strong>Wybór, kto może Cię zapraszać</strong><p>W zakładce Prywatność ustawiasz, czy przyjmujesz zaproszenia do gier oraz czy ograniczasz je tylko do zaufanych kontaktów.</p><button class="secondary" id="chall-settings-privacy" type="button">Otwórz ustawienia prywatności</button></div>
+  <div><strong>Blokowanie kontaktu</strong><p>Niechciane zaproszenia ograniczysz również przez moduł znajomych i blokad. Twoje blokady obowiązują także przy tworzeniu nowych wyzwań.</p><button class="secondary" id="chall-settings-blocked" type="button">Zarządzaj blokadami</button></div>
+  <div><strong>Własne zaproszenia</strong><p>Oznaczaj wyzwania jako ważne, dodawaj prywatne notatki, archiwizuj i przywracaj je. Drugi gracz nie widzi tych oznaczeń.</p></div>
+  <div><strong>Terminy i historia</strong><p>Zaproszenia oczekują maksymalnie 7 dni. W panelu widzisz do 60 ostatnich wyzwań z 30 dni. Przedłużanie lub umawianie partii na konkretną godzinę nie jest jeszcze uruchomione.</p></div>
+ </div>
+</div>
+<div class="chall-note-overlay" id="chall-note-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="chall-note-title">
+ <div class="chall-note-dialog"><p class="card-kicker">PRYWATNA NOTATKA</p><h2 id="chall-note-title">Notatka do zaproszenia</h2>
+  <p>Widoczna tylko dla Ciebie. Nie jest wysyłana przeciwnikowi.</p>
+  <label for="chall-note-input">Treść notatki<textarea id="chall-note-input" rows="4" maxlength="300" placeholder="Dodaj własną notatkę…"></textarea></label>
+  <div class="chall-dialog-actions"><button class="secondary" type="button" id="chall-note-cancel">Anuluj</button><button class="primary" type="button" id="chall-note-save">Zapisz notatkę</button></div>
+ </div>
+</div>
+</section>
 <section class="view" data-panel="play">
 <div class="card"><p class="card-kicker">ROZGRYWKA DWÓCH GRACZY · FULL MAX PREMIUM</p>
 <h2 id="match-heading">Wybierz przyjęte wyzwanie</h2>
