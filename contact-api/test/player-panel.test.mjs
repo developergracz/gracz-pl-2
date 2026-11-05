@@ -521,3 +521,73 @@ test('all player-panel sections share compact responsive geometry after premium 
  assert.match(page.body,/data-panel="friends"/);
  assert.match(page.body,/data-panel="games"/);
 });
+
+
+test('personalized premium farewell appears only after confirmed logout and returns home in 7 seconds',async()=>{
+ const serve=path=>{
+  const res=response();
+  assert.equal(servePlayerPanel({method:'GET'},res,new URL('https://gracz-contact-api.onrender.com'+path)),true);
+  return res.body;
+ };
+ const page=serve('/konto/panel/');
+ const css=serve('/konto/panel/styl.css');
+ const app=serve('/konto/panel/app.js');
+ assert.match(page,/id="logout-farewell"[^>]*hidden/);
+ assert.match(page,/id="logout-farewell-nick"/);
+ assert.match(page,/Zapraszamy ponownie/);
+ assert.match(page,/id="logout-farewell-login"[^>]*>Zaloguj się/);
+ assert.match(page,/href="\/konto\/\?widok=login"/);
+ assert.match(css,/\.logout-farewell\{position:fixed;inset:0/);
+ assert.match(css,/\.logout-farewell-card\{/);
+ const start=app.indexOf('let logoutInProgress=false;');
+ const end=app.indexOf("\n\n['display-name'",start);
+ assert.ok(start>=0&&end>start,'dedicated logout routine exists');
+ const routine=app.slice(start,end);
+ let logoutCalls=0,noticeMessage='',scheduled=null,visited='',focused=false;
+ const nodes=Object.fromEntries(
+  ['logout-farewell','logout-farewell-nick','logout-farewell-login','player-shell','access-screen']
+   .map(id=>[id,{hidden:id==='logout-farewell',textContent:'',focus(){focused=true;}}])
+ );
+ const context={
+  profileSnapshot:{nickname:'TestowyGracz'},centerState:{private:'must clear'},sessionConfirmed:true,
+  $:id=>nodes[id],
+  api:async(path,options)=>{logoutCalls++;assert.equal(path,'logout');assert.equal(options.method,'POST');return {ok:true};},
+  location:{replace:url=>{visited=url}},
+  setTimeout:(fn,ms)=>{scheduled={fn,ms}},
+  notice:text=>{noticeMessage=text}
+ };
+ await new Script(routine+'\nPromise.all([logout(),logout()])').runInNewContext(context);
+ assert.equal(logoutCalls,1,'duplicate clicks do not send multiple logout requests');
+ assert.equal(nodes['logout-farewell-nick'].textContent,'TestowyGracz');
+ assert.equal(nodes['player-shell'].hidden,true,'private content hidden after logout');
+ assert.equal(nodes['access-screen'].hidden,true);
+ assert.equal(nodes['logout-farewell'].hidden,false);
+ assert.equal(context.profileSnapshot,null);
+ assert.equal(context.centerState,null);
+ assert.equal(context.sessionConfirmed,false);
+ assert.equal(focused,true);
+ assert.equal(scheduled.ms,7000);
+ assert.equal(visited,'','redirect not immediate');
+ scheduled.fn();
+ assert.equal(visited,'https://gracz.pl/');
+ assert.equal(noticeMessage,'');
+
+ const deniedNodes={
+  'logout-farewell':{hidden:true},'logout-farewell-nick':{textContent:''},
+  'player-shell':{hidden:false},'access-screen':{hidden:true}
+ };
+ let timer=false,errorMessage='';
+ const denied={
+  profileSnapshot:{nickname:'GraczX'},centerState:{},sessionConfirmed:true,
+  $:id=>deniedNodes[id],
+  api:async()=>{throw new Error('Serwer nie potwierdził wylogowania');},
+  location:{replace:()=>{throw new Error('unexpected redirect')}},
+  setTimeout:()=>{timer=true},
+  notice:message=>{errorMessage=message}
+ };
+ await new Script(routine+'\nlogout()').runInNewContext(denied);
+ assert.equal(deniedNodes['logout-farewell'].hidden,true,'failed logout does not show success');
+ assert.equal(deniedNodes['player-shell'].hidden,false);
+ assert.equal(timer,false);
+ assert.match(errorMessage,/nie potwierdził/);
+});
