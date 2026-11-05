@@ -137,19 +137,26 @@ export function createPremiumProfileRouter({database,ready,sessionToken,digest,a
     if(!validNick(nick)||!allow('public-profile-read:'+String(req.socket?.remoteAddress||'unknown'),180))
      return fail(res,400,'BLEDNY_IDENTYFIKATOR'),true;
     const q=await database.query(`SELECT a.id,a.nickname,a.created_at,p.display_name,p.bio,p.country,
-      x.* FROM gracz_public_identity.accounts a
+      privacy.show_display_name,privacy.show_bio,privacy.show_motto,privacy.show_joined,
+      privacy.show_city,privacy.show_win_rate,x.* FROM gracz_public_identity.accounts a
       JOIN gracz_public_identity.player_profile_premium x ON x.account_id=a.id
       LEFT JOIN gracz_public_identity.profiles p ON p.account_id=a.id
+      LEFT JOIN gracz_public_identity.privacy_preferences privacy ON privacy.account_id=a.id
       WHERE a.nickname_key=$1 AND a.verified_at IS NOT NULL AND x.public_profile=true LIMIT 1`,[nick.toLowerCase()]);
     if(!q.rows.length)return fail(res,404,'PROFIL_NIEPUBLICZNY'),true;
     const row=q.rows[0],settings=normalize(row);
-    const publicData={nickname:row.nickname,displayName:row.display_name||row.nickname,
-     bio:row.bio||'',createdAt:row.created_at,avatar:settings.avatar,cover:settings.cover,
-     accent:settings.accent,motto:settings.motto,city:settings.showCountry?settings.city:'',
+    const publicData={nickname:row.nickname,
+     displayName:row.show_display_name===false?row.nickname:(row.display_name||row.nickname),
+     bio:row.show_bio===false?'':(row.bio||''),
+     createdAt:row.show_joined===false?null:row.created_at,
+     avatar:settings.avatar,cover:settings.cover,accent:settings.accent,
+     motto:row.show_motto===false?'':settings.motto,
+     city:settings.showCountry&&row.show_city!==false?settings.city:'',
      country:settings.showCountry?row.country||'':'',badges:[]};
     if(settings.showStats){
      const stats=await summary(row.id);
-     publicData.stats={totals:stats.totals,byGame:stats.byGame};
+     publicData.stats={totals:{...stats.totals},byGame:stats.byGame};
+     if(row.show_win_rate===false)delete publicData.stats.totals.winRate;
      if(settings.showBadges)publicData.badges=stats.achievements.filter(a=>a.unlocked);
     }
     return output(res,200,{ok:true,profile:publicData}),true;
