@@ -73,6 +73,29 @@ test('Chess P4: two authenticated sessions receive initial positions and server-
  assert.equal(snapshot.match.state.history.length,2);
  assert.equal(snapshot.match.state.board.length,128);
 });
+test('Chess FIDE: server accepts draw claim from player on turn after threefold repetition',async t=>{
+ const f=await setup(t),a=await f.open(tokenA),b=await f.open(tokenB);
+ a.subscribe();await a.next('snapshot');
+ b.subscribe();const joined=await b.next('snapshot');
+ let version=joined.match.version;
+ const cycle=[[tokenA,'b1c3'],[tokenB,'b8c6'],[tokenA,'c3b1'],[tokenB,'c6b8']];
+ for(let i=0;i<2;i++)for(const [token,uci] of cycle){
+  const moved=await f.post(token,'/auth/match',{id:challenge,version,move:{uci}});
+  assert.equal(moved.status,200,uci);
+  version=moved.match.version;
+ }
+ const wrong=await f.post(tokenB,'/auth/match',{id:challenge,version,move:{claimDraw:true}});
+ assert.equal(wrong.status,409);
+ assert.equal(wrong.error,'NIE_TWOJA_TURA');
+ const claimed=await f.post(tokenA,'/auth/match',{id:challenge,version,move:{claimDraw:true}});
+ assert.equal(claimed.status,200);
+ assert.equal(claimed.match.state.winner,3);
+ assert.equal(claimed.match.state.drawReason,'TRZYKROTNE_POWTORZENIE');
+ assert.equal(claimed.match.state.history.length,8);
+ const ended=await f.post(tokenA,'/auth/match',{id:challenge,version:claimed.match.version,move:{uci:'e2e4'}});
+ assert.equal(ended.status,409);
+ assert.equal(ended.error,'PARTIA_ZAKONCZONA');
+});
 test('Chess P4: outsider cannot subscribe to another chess match',async t=>{
  const f=await setup(t),outsider=await f.open(tokenC);
  const closed=once(outsider.socket,'close');outsider.subscribe();

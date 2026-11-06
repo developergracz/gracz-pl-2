@@ -87,6 +87,16 @@ test('online preview preserves full opacity while keeping moves disabled',()=>{
  assert.match(css,/\.chess-board \.chess-square:disabled\{opacity:1!important/);
  assert.match(js,/cell\.disabled=!!terminal\|\|!allowed\|\|!!promotion/);
 });
+test('chess draw claim is exposed only for valid FIDE local or authenticated online positions',()=>{
+ const app=load('/konto/szachy/app.js'),styles=load('/konto/szachy/styl.css');
+ assert.match(app.body,/claimButton\.addEventListener\('click'/);
+ assert.match(app.body,/claimableDraw\(state,states\.map\(key\)\)/);
+ assert.match(app.body,/online\.player===online\.state\.turn&&claimableDraw/);
+ assert.match(app.body,/move:\{claimDraw:true\}/);
+ assert.match(app.body,/localDrawReason/);
+ assert.match(styles.body,/\.chess-claim-draw\[hidden\]/);
+ assert.equal(load('/konto/szachy/rules.mjs').body,readFileSync(new URL('../auth/chess-rules.mjs',import.meta.url),'utf8'));
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);

@@ -106,7 +106,18 @@ export function san(s,m){
  const next=apply(s,m);
  return text+(check(next)?legal(next).length?'+':'#':'');
 }
-export function key(s){return s.b.join('')+':'+s.t+':'+s.c+':'+s.ep;}
+export function key(s){
+ // Repetition rights include en passant only when an actual *legal* capture exists.
+ // A phantom or king-pinned en passant square does not distinguish FIDE positions.
+ const ep=s.ep>=0&&legal(s).some(m=>m[3]==='ep')?s.ep:-1;
+ return s.b.join('')+':'+s.t+':'+s.c+':'+ep;
+}
+export function claimableDraw(s,positions=[]){
+ if(s.half>=100)return '50_RUCHOW';
+ if(Array.isArray(positions)&&positions.filter(position=>position===key(s)).length>=3)
+  return 'TRZYKROTNE_POWTORZENIE';
+ return '';
+}
 export function result(states){
  const s=states[states.length-1],moves=legal(s);
  if(!moves.length)return check(s)?(s.t===1?'Mat — czarne wygrywają':'Mat — białe wygrywają'):'Pat — remis';
