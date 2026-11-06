@@ -2,6 +2,7 @@
 // Never change selectors, declarations, cascade order or strings. Fail closed if stale.
 import fs from "node:fs";
 import assert from "node:assert/strict";
+import {mobileCss} from "./build-home-mobile-css.mjs";
 
 export function compact(css) {
   let out="",quote=null,escaped=false,pendingSpace=false;
@@ -58,9 +59,16 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
   const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
   assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
-  const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
-  assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
-  assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1");
+  // Two mutually exclusive viewport-specific sheets, exactly one blocking per viewport.
+  const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)" media="([^"]+)">/g)];
+  assert.equal(stylesheetTags.length,2,"Homepage must have exactly two exclusive viewport CSS links");
+  assert.deepEqual(stylesheetTags.map(x=>[x[1],x[2]]), [
+    ["/assets/home-lcp-bundle-r1-mobile.css?v=20261106-mobile-v1","(max-width:680px)"],
+    ["/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1","(min-width:681px)"]
+  ],"Viewport stylesheets must cover all widths with no overlap");
+  const mobile=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1-mobile.css","utf8");
+  assert.equal(mobile,mobileCss(bundle).css,"Mobile stylesheet must preserve approved rule order");
+  assert.ok(mobile.length<bundle.length*.80,"Mobile CSS must save at least 20%");
   assert.ok(html.indexOf("gracz-hero-gomoku-mobile-preview-r1.webp")<html.indexOf("home-lcp-bundle-r1.css"),
     "Preload mobile LCP image before requesting CSS bundle");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
