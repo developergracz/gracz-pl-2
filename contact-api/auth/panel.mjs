@@ -22,7 +22,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <div class="panel-header-actions">
 <a class="panel-header-search" href="https://gracz.pl/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.8" stroke="currentColor" stroke-width="2.4"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></a>
 <a class="panel-header-account" href="/konto/panel/" aria-current="page">Panel gracza</a>
-<a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry</a>
+<a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a>
 </div></div>
 <section id="access-screen" class="access-screen" aria-live="polite">
 <div class="access-card">
