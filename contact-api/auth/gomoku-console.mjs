@@ -3188,28 +3188,9 @@ function resumeSynchronization(){
 document.addEventListener?.('visibilitychange',resumeSynchronization);
 window.addEventListener?.('online',resumeSynchronization);
 window.addEventListener?.('offline',()=>realtime.update());
-// The reference artwork depicts a mid-game position. The opening display is clearly
-// marked as a visual example; the FIRST click starts a clean, playable game.
-function installReferenceShowcase(){
- const sequence=[
-  [1,'H7'],[2,'H3'],[1,'I7'],[2,'H4'],[1,'J7'],[2,'H5'],
-  [1,'K7'],[2,'H6'],[1,'K6'],[2,'L7'],[1,'H10'],[2,'J8']
- ];
- state.board=Array(count).fill(0);
- state.trainHistory=[];
- for(let n=0;n<sequence.length;n++){
-  const [player,move]=sequence[n];
-  const at=(Number(move.slice(1))-1)*15+(move.charCodeAt(0)-65);
-  state.board[at]=player;
-  state.trainHistory.push({player,to:at,number:n+1});
-  state.last=at;
- }
- state.moves=sequence.length;state.winner=0;state.showcase=true;
- state.trainClock=createTrainingClock();
- state.localChat=[];
- state.chatSignature='';state.chatSequence=0;
-}
-installReferenceShowcase();
+// A new console opens on an empty, playable 15x15 board.
+// Timers stay stopped until the first legal move; room deep links still take precedence.
+restart();
 ensureCpuWorker(); // Warm the worker once; no startup delay on the first human move.
 render();
 drawRoomChat(state.localChat);

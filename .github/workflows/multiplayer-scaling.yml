@@ -50,6 +50,8 @@ jobs:
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
       - name: Two real Chromium windows play Warcaby by clicking squares
         run: node --test contact-api/scaling/two-chromium-windows.integration.test.mjs
+      - name: Two real Chromium windows play Gomoku by clicking stones
+        run: node --test contact-api/scaling/two-chromium-gomoku.integration.test.mjs
       - name: Two real Chromium windows play Szachy via WebSocket
         run: node --test contact-api/scaling/two-chromium-chess.integration.test.mjs
       - run: node --test contact-api/test/gomoku-realtime.test.mjs contact-api/test/gomoku-realtime-client.test.mjs contact-api/test/gomoku-sync.test.mjs contact-api/test/checkers-realtime.test.mjs contact-api/test/checkers-two-player-match.test.mjs contact-api/test/match-admission.test.mjs contact-api/test/chess-realtime.test.mjs contact-api/test/chess-match.test.mjs contact-api/test/chess-console.test.mjs
