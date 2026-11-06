@@ -75,6 +75,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(await local.locator('#board .chess-square.white-piece').count(),16);
  assert.equal(await local.locator('#board .chess-square.black-piece').count(),16);
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
+ assert.equal(await local.locator('#board .chess-square').first().evaluate(e=>getComputedStyle(e).opacity),'1','preview squares must remain fully opaque');
  assert.match(await local.locator('#game-state').innerText(),/plansza poglądowa/i);
  assert.match(await local.locator('#turn-label').innerText(),/Oczekiwanie na partię/);
  await local.locator('#training-mode').click();
