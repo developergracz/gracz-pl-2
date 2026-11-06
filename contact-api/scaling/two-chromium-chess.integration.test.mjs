@@ -78,7 +78,30 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
  assert.equal(await local.locator('#board .chess-square').first().evaluate(e=>getComputedStyle(e).opacity),'1','preview squares must remain fully opaque');
  assert.match(await local.locator('#game-state').innerText(),/plansza poglądowa/i);
- assert.match(await local.locator('#turn-label').innerText(),/Oczekiwanie na partię/);
+ assert.match(await local.locator('#turn-label').innerText(),/Oczekiwanie na grę/);
+ // The idle preview shows configured clocks for both sides, without starting either timer.
+ assert.equal(await local.locator('#clock-1').innerText(),'07:00');
+ assert.equal(await local.locator('#clock-2').innerText(),'07:00');
+ assert.match(await local.locator('#clock-1').getAttribute('aria-label'),/Czas czarnych przed rozpoczęciem/);
+ await local.locator('#create-room-time').selectOption('10');
+ assert.equal(await local.locator('#clock-1').innerText(),'10:00');
+ assert.equal(await local.locator('#clock-2').innerText(),'10:00');
+ await local.locator('#create-room-time').selectOption('7');
+ const rails=await local.evaluate(()=>{
+  const ids=['game-state','turn-label','move-count'];
+  return ids.map(id=>{
+   const node=document.getElementById(id),outer=node.getBoundingClientRect(),
+     boardarea=document.querySelector('.boardarea').getBoundingClientRect();
+   return {id,clipped:node.scrollWidth>node.clientWidth+2,
+     rightOverflow:outer.right>boardarea.right+2,leftOverflow:outer.left<boardarea.left-2,
+     text:node.textContent};
+  });
+ });
+ for(const rail of rails){
+  assert.equal(rail.clipped,false,rail.id+' text must fit within its gold frame');
+  assert.equal(rail.rightOverflow,false,rail.id+' must not stick out to the right');
+  assert.equal(rail.leftOverflow,false,rail.id+' must not stick out to the left');
+ }
  await local.locator('#training-mode').click();
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
 
