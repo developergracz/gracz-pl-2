@@ -430,7 +430,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  get('console-preset-board').listeners.click();
  assert.equal(get('game').classes.has('console-hide-players'),true);
  assert.equal(get('board').children.length,225,'Board remains mounted in minimal layout');
- assert.equal(get('move-count').textContent,'Ruchy: 12','Appearance update does not restart game');
+ assert.equal(get('move-count').textContent,'Ruchy: 0','Appearance change does not restart ready-to-play board');
  get('console-preset-full').listeners.click();
  assert.equal(get('game').classes.has('console-hide-sidebar'),false);
  assert.equal(get('game').classes.has('console-hide-dock'),false);
@@ -470,7 +470,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('howto-board').children.filter(x=>x.classes.has('win-line')).length,5,
   'Exactly five example black stones mark the winning line');
  assert.equal(get('board').children.length,225,'Tutorial does not rebuild the active board');
- assert.equal(get('move-count').textContent,'Ruchy: 12','Tutorial does not reset training preview');
+ assert.equal(get('move-count').textContent,'Ruchy: 0','Tutorial does not change initial empty board');
  assert.equal(get('howto-close').focused,true,'Close control receives keyboard focus');
  get('howto-close').listeners.click();
  assert.equal(get('howto-modal').hidden,true,'Close hides tutorial');
@@ -500,19 +500,18 @@ test('Gomoku browser console can play immediately against a computer and join a 
  assert.equal(get('clock-1').textContent,'07:00');
  assert.equal(get('clock-2').textContent,'07:00');
  fakeTime+=60000;intervals[0]();
- assert.equal(get('clock-1').textContent,'07:00','Reference preview is not a timed match');
- assert.equal(get('move-count').textContent,'Ruchy: 12','Reference preview has 12 explicitly labelled sample moves');
- assert.equal(get('history-count').textContent,'12');
- assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,12);
- assert.match(get('game-state').textContent,/Przykładowy układ partii/);
- assert.equal(get('turn-label').textContent,'Podgląd partii');
- assert.equal(get('board-help').textContent,'','No prompt appears in the showcase between bottom badges');
- assert.equal(get('chat-preview').children.length,1,'No fictional conversation shown in showcase');
- assert.equal(get('undo-move').disabled,true,'Sample history cannot be undone as if played');
+ assert.equal(get('clock-1').textContent,'07:00','No time elapses before the first human move');
+ assert.equal(get('move-count').textContent,'Ruchy: 0','No demo stones on startup');
+ assert.equal(get('history-count').textContent,'0');
+ assert.equal(get('board').children.filter(x=>x.classes.has('occupied')).length,0);
+ assert.match(get('game-state').textContent,/Twój ruch/);
+ assert.equal(get('turn-label').textContent,'Ruch czarne');
+ assert.equal(get('chat-preview').children.length,1,'No fabricated chat on startup');
+ assert.equal(get('undo-move').disabled,true,'No opening move to undo');
  get('focus-game').listeners.click();
  get('focus-start').listeners.click();
  assert.equal(get('game').classes.has('game-focus'),true,'Start remains within board-only mode');
- assert.equal(get('move-count').textContent,'Ruchy: 0','Start begins a clean training match');
+ assert.equal(get('move-count').textContent,'Ruchy: 0','Optional Start resets the ready-to-play board');
  assert.equal(get('turn-label').textContent,'Ruch czarne','Start returns to normal turn label without colon');
  assert.equal(get('turn-label').textContent.includes(':'),false,'Move indicator has no colon');
  assert.match(get('board-help').textContent,/Wybierz wolne pole/);
@@ -529,7 +528,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
   'Unchanged board does not reapply CSS classes to all 225 cells');
  get('focus-exit').listeners.click();
  get('board').children[112].listeners.click();
- assert.equal(get('move-count').textContent,'Ruchy: 1','First click after pressing Start places the first legal stone');
+ assert.equal(get('move-count').textContent,'Ruchy: 1','First legal click places the opening black stone');
  assert.equal(get('board').children[112].classes.has('p1'),true);
  assert.strictEqual(get('board').children[112],stableBoardCell,
   'Playing a move must not reconstruct all 225 board buttons');
