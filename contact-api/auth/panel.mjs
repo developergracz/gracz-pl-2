@@ -2520,7 +2520,7 @@ async function load(){
   // A logout click from the public site's authenticated header opens this
   // first-party session origin. Require the browser-confirmed gracz.pl referrer
   // before honoring the intent, preventing third-party logout links.
-  if(new URLSearchParams(location.search).get('header_logout')==='1'){
+  if(location.search && new URLSearchParams(location.search).get('header_logout')==='1'){
    let source='';
    try{source=new URL(document.referrer).origin;}catch{}
    if(source==='https://gracz.pl'||source==='https://www.gracz.pl'){
