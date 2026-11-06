@@ -2,6 +2,7 @@
 // Never change selectors, declarations, cascade order or strings. Fail closed if stale.
 import fs from "node:fs";
 import assert from "node:assert/strict";
+import {mobileCss} from "./build-home-mobile-css.mjs";
 
 export function compact(css) {
   let out="",quote=null,escaped=false,pendingSpace=false;
@@ -58,9 +59,23 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
   const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
   assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
+  // Exactly one selected stylesheet. No-JS visitors retain full approved CSS.
   const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
-  assert.equal(stylesheetTags.length,1,"Homepage must have one render-blocking CSS request");
-  assert.equal(stylesheetTags[0][1],"/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1");
+  assert.equal(stylesheetTags.length,1,"No-JS fallback must be the only static stylesheet");
+  assert.ok(html.includes('<noscript><link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1"></noscript>'),
+    "No-JS users must receive approved full stylesheet");
+  assert.ok(html.includes('<script src="/assets/home-css-viewport.js?v=20261106-lcp-v1"></script>'),
+    "Parser-early single stylesheet selector required");
+  const selector=fs.readFileSync("maintenance-site/assets/home-css-viewport.js","utf8");
+  assert.ok(selector.includes('matchMedia("(max-width:680px)")') &&
+    selector.includes('/assets/home-lcp-bundle-r1-mobile.css?v=20261106-mobile-v1') &&
+    selector.includes('/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1'),
+    "Selector must request only one of the two approved files");
+  assert.ok(selector.includes("document.write(") && selector.includes("data-home-css-viewport"),
+    "Parser-early stylesheet must be render blocking, avoiding first-paint CLS");
+  const mobile=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1-mobile.css","utf8");
+  assert.equal(mobile,mobileCss(bundle).css,"Mobile stylesheet must preserve approved rule order");
+  assert.ok(mobile.length<bundle.length*.80,"Mobile CSS must save at least 20%");
   assert.ok(html.indexOf("gracz-hero-gomoku-mobile-preview-r1.webp")<html.indexOf("home-lcp-bundle-r1.css"),
     "Preload mobile LCP image before requesting CSS bundle");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
