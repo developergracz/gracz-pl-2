@@ -24,15 +24,16 @@ jobs:
           import assert from 'node:assert/strict';
           import fs from 'node:fs';
           import {compact} from './scripts/check-home-premium-css-compact.mjs';
-          const names=['cookie-consent.css','poradniki.css','o-gracz-pl.css','related-thumbnails.css','unified-subpage-hero.css','sticky-sidebars.css'];
+          const names=['cookie-consent.css','poradniki.css','o-gracz-pl.css','related-thumbnails.css','unified-subpage-hero.css'];
           const source=names.map(n=>fs.readFileSync('maintenance-site/assets/'+n,'utf8')).join('\n');
           const bundle=fs.readFileSync('maintenance-site/assets/o-gracz-pl-lcp-bundle-r1.css','utf8');
           assert.equal(bundle,compact(source),'Bundle must preserve exact approved CSS cascade');
           const html=fs.readFileSync('maintenance-site/o-gracz-pl/index.html','utf8');
           const links=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>m[1]);
-          assert.equal(links.length,2);
+          assert.equal(links.length,3);
           assert.ok(links[0].startsWith('/assets/o-gracz-pl-lcp-bundle-r1.css?'));
-          assert.equal(links[1],'/assets/global-header-r1.css?v=r3');
+          assert.equal(links[1],'/assets/sticky-sidebars.css?v=r4');
+          assert.equal(links[2],'/assets/global-header-r1.css?v=r3');
           JS
       - name: Lighthouse base vs PR in matched mobile and desktop conditions
         env:
