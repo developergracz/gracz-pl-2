@@ -1,0 +1,81 @@
+name: GRACZ.PL LCP — home and subpages mobile desktop
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/lcp-site-matrix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lcp-matrix:
+    name: LCP mobile and desktop (laboratory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 -d maintenance-site --bind 127.0.0.1 > /tmp/gracz-lcp-server.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Measure eight fixed page and device combinations
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          mkdir -p lcp-site-reports
+          for path in root gry poradniki o-gracz-pl; do
+            route="/$path/"
+            [ "$path" = "root" ] && route="/"
+            for device in mobile desktop; do
+              preset=""
+              [ "$device" = "desktop" ] && preset="--preset=desktop"
+              npx --yes lighthouse@12.8.2 "http://127.0.0.1:4173$route" \
+                --quiet --only-categories=performance --output=json \
+                --output-path="lcp-site-reports/$path-$device.json" \
+                --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+                --max-wait-for-load=20000 $preset
+            done
+          done
+      - name: Publish exact LCP measurements and primary elements
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const rows=[];
+          for(const path of ['root','gry','poradniki','o-gracz-pl']){
+            for(const device of ['mobile','desktop']){
+              const json=JSON.parse(fs.readFileSync(`lcp-site-reports/${path}-${device}.json`,'utf8'));
+              const audits=json.audits||{};
+              const lcp=audits['largest-contentful-paint']?.numericValue;
+              const score=json.categories?.performance?.score;
+              const cls=audits['cumulative-layout-shift']?.numericValue;
+              const detail=audits['largest-contentful-paint-element']?.details?.items?.[0];
+              const node=detail?.node || detail?.items?.[0]?.node;
+              const selector=(node?.selector||node?.snippet||'unknown').replaceAll('|',' ').slice(0,180);
+              if(!Number.isFinite(lcp))throw Error('LCP metric missing for '+path+'/'+device);
+              rows.push({route:path==='root'?'/':'/'+path+'/',device,lcpMs:Math.round(lcp),score:Math.round((score||0)*100),cls,selector});
+            }
+          }
+          const report=['## GRACZ.PL — laboratoryjny LCP (local static server)','',
+            '| URL | Device | LCP | Perf | CLS | LCP element |',
+            '|---|---|---:|---:|---:|---|',
+            ...rows.map(x=>`| ${x.route} | ${x.device} | ${x.lcpMs} ms | ${x.score} | ${x.cls?.toFixed(3)??'—'} | ${x.selector} |`),
+            '','Targets: LCP <= 2500 ms, CLS <= 0.1. Laboratory measurements only; not field CrUX data.'].join('\n');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,report+'\n');
+          console.log('LCP_MATRIX '+JSON.stringify(rows));
+          fs.writeFileSync('lcp-site-reports/matrix.json',JSON.stringify(rows,null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gracz-lcp-matrix
+          path: lcp-site-reports
+          retention-days: 7
+          if-no-files-found: ignore
