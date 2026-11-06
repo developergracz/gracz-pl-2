@@ -105,7 +105,11 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
  const form=pages[0];
  assert.equal(await form.locator('#create-room-time').isVisible(),true);
  assert.equal(await form.locator('#create-room-increment').isVisible(),true);
+ await form.locator('#create-room-time').selectOption('0');
+ assert.equal(await form.locator('#create-room-increment').isDisabled(),true);
+ assert.equal(await form.locator('#create-room-increment').inputValue(),'0');
  await form.locator('#create-room-time').selectOption('7');
+ assert.equal(await form.locator('#create-room-increment').isEnabled(),true);
  await form.locator('#create-room-increment').selectOption('2');
  await form.locator('#create-room-friend').fill('ClockContractGuest');
  let invitationPayload=null;
