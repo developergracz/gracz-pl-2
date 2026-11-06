@@ -1,4 +1,4 @@
-import {initial,legal,apply,san,coord,result,key,check} from './chess-rules.mjs';
+import {initial,legal,apply,san,coord,result,key,claimableDraw} from './chess-rules.mjs';
 // Chess multiplayer adapter. Match state is always produced by trusted server code.
 export function initialChessMatch(){
  const s=initial();
@@ -23,6 +23,11 @@ export function playChessMatch(state,player,request){
  if(!before)return {error:'NIEPRAWIDLOWY_STAN'};
  if(state.winner!==0)return {error:'PARTIA_ZAKONCZONA'};
  if(player!==state.turn)return {error:'NIE_TWOJA_TURA'};
+ if(request?.claimDraw===true){
+  const reason=claimableDraw(before,state.positions);
+  if(!reason)return {error:'REMIS_NIEDOSTEPNY'};
+  return {state:{...state,winner:3,drawReason:reason}};
+ }
  const uci=request?.uci;
  if(typeof uci!=='string'||!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci))
    return {error:'NIEDOZWOLONY_RUCH'};
