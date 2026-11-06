@@ -55,6 +55,9 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(page.body,/id="create-room-increment"/);
  assert.match(js.body,/timeLimitMinutes:Number\(\$\('create-room-time'\)\.value\)/);
  assert.match(js.body,/incrementSeconds:Number\(\$\('create-room-increment'\)\.value\)/);
+ assert.match(js.body,/function syncInvitationClock\(\)/);
+ assert.match(js.body,/bonus\.disabled=untimed/);
+ assert.match(style.body,/\.room-creator details\{display:block!important/);
  assert.match(style.body,/\.warcaby-console #online-settings #create-room-time/);
  assert.match(style.body,/\.warcaby-console #online-settings #create-room-increment/);
  assert.doesNotMatch(style.body,/\.warcaby-console label\[for="create-room-time"\],\.warcaby-console #create-room-time,\s*\.warcaby-console label\[for="create-room-increment"\],\.warcaby-console #create-room-increment,/);
