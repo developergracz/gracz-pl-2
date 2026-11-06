@@ -43,12 +43,13 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  t.after(async()=>{try{for(const u of users)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[u.id]);}finally{await db.close();}});
  await createPublicIdentityRouter({database:db,emailFrom:'browser@example.invalid',resendKey:'local-only'}).probe();
  for(const player of [1,2]){
-  const id=randomUUID(),token=randomBytes(32).toString('hex'),nick='Chess'+player+'_'+id.replaceAll('-','');
-  await db.query('INSERT INTO gracz_public_identity.accounts(id,nickname,nickname_key,email_key,salt,password_digest,verified_at) VALUES($1,$2,$2,$3,$4,$4,now())',
-   [id,nick,nick+'@example.invalid',Buffer.alloc(64)]);
+  const id=randomUUID(),token=randomBytes(32).toString('hex'),nick='Chess'+player+'_'+id.replaceAll('-','').slice(0,10);
+  await db.query('INSERT INTO gracz_public_identity.accounts(id,nickname,nickname_key,email_key,salt,password_digest,verified_at) VALUES($1,$2,$3,$4,$5,$5,now())',
+   [id,nick,nick.toLowerCase(),nick.toLowerCase()+'@example.invalid',Buffer.alloc(64)]);
   await db.query("INSERT INTO gracz_public_identity.sessions(token_digest,account_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[hash(token),id]);
-  users.push({id,token,player});
+  users.push({id,token,player,nickname:nick});
  }
+ await db.query("INSERT INTO gracz_public_identity.friend_connections(account_a,account_b,requested_by,status) VALUES(LEAST($1::uuid,$2::uuid),GREATEST($1::uuid,$2::uuid),$1,'accepted')", [users[0].id,users[1].id]);
  const id=randomUUID();
  await db.query("INSERT INTO gracz_public_identity.game_challenges(id,sender_id,recipient_id,game,status,time_limit_minutes,increment_seconds) VALUES($1,$2,$3,'szachy','accepted',5,2)",
   [id,users[0].id,users[1].id]);
