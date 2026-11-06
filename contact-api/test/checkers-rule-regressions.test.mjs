@@ -69,6 +69,14 @@ test('P1-3: only eighty quiet king moves can trigger draw',()=>{
  assert.equal(result.state.quiet,80);
  assert.equal(result.state.winner,3);
 });
+test('P1-3: opponent with no legal move loses even on the 80th quiet ply',()=>{
+ // Black at a2 is trapped by white b1. White's king completes ply 80.
+ const s=game([[27,3],[1,1],[8,2]],{quiet:79});
+ const r=play(s,27,18);
+ assert.equal(r.error,undefined);
+ assert.equal(r.state.quiet,80);
+ assert.equal(r.state.winner,1,'blocking the opponent must win, not force a draw');
+});
 test('legacy persisted match without forced or quiet still accepts a valid move',()=>{
  const s=game([[17,1],[56,2]]);
  delete s.forced;delete s.quiet;
