@@ -229,8 +229,8 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  const sender=await pages[0].context().newPage(),receiver=await pages[1].context().newPage();
  await Promise.all([sender.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'}),
                     receiver.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'})]);
- await Promise.all([sender.waitForSelector('#chess-invite-overlay'),
-                    receiver.waitForSelector('#chess-invite-received')]);
+ await Promise.all([sender.locator('#chess-invite-overlay').waitFor({state:'attached'}),
+                    receiver.locator('#chess-invite-received').waitFor({state:'attached'})]);
  // Presence is derived from a real authenticated request, never fabricated.
  const recipientPresence=await receiver.evaluate(async()=>await (await fetch('/auth/friends/presence')).json());
  assert.equal(recipientPresence.ok,true);
