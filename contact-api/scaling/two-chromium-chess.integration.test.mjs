@@ -176,9 +176,12 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.ok(result.match.state.clock.since);
  let state=result.match.state,version=result.match.version;
  await Promise.all(pages.map(page=>waitForPosition(page,state)));
+ // Scholar's mate: two independent browser users finish a full game.
  const opening=[
   {player:1,from:'e2',to:'e4'},{player:2,from:'e7',to:'e5'},
-  {player:1,from:'g1',to:'f3'},{player:2,from:'b8',to:'c6'}
+  {player:1,from:'f1',to:'c4'},{player:2,from:'b8',to:'c6'},
+  {player:1,from:'d1',to:'h5'},{player:2,from:'g8',to:'f6'},
+  {player:1,from:'h5',to:'f7'}
  ];
  const index=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
  // Once synchronized, browser GET snapshots are blocked: updates must arrive over WebSocket.
@@ -203,6 +206,15 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   state=observed.match.state;version=observed.match.version;
   await Promise.all(pages.map(page=>waitForPosition(page,state)));
  }
+ assert.equal(state.winner,1,'server must detect white checkmate');
+ assert.equal(state.history.length,opening.length);
+ assert.match(state.history.at(-1).san,/#$/,'last move must be checkmate SAN');
+ for(const page of pages){
+  await page.waitForFunction(()=>/Partia zakończona|mat|wygrywają/i.test(document.querySelector('#game-state')?.textContent||'')||
+   /Partia zakończona|mat|wygrywają/i.test(document.querySelector('#turn-label')?.textContent||''));
+  assert.equal(await page.locator('#board .chess-square:not([disabled])').count(),0,
+   'after checkmate neither player may move');
+ }
  await pages[0].locator('#history-tab').click();
  await pages[0].waitForFunction(()=>document.querySelector('#moves-list')?.textContent.includes('e4'));
  await pages[0].locator('#chat-tab').click();
@@ -211,5 +223,5 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await waitForPosition(pages[1],state);
  assert.deepEqual(await pages[0].locator('#board .chess-square').allTextContents(),
   await pages[1].locator('#board .chess-square').allTextContents());
- console.log('CHESS_TWO_CHROMIUM_WINDOWS_PASS',{clickedMoves:opening.length,contexts:2,version,clock:'5m+2s',transport:'WebSocket'});
+ console.log('CHESS_TWO_CHROMIUM_WINDOWS_PASS',{clickedMoves:opening.length,contexts:2,version,clock:'5m+2s',transport:'WebSocket',winner:state.winner,checkmate:true});
 });
