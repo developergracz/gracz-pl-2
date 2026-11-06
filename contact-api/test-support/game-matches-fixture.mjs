@@ -35,9 +35,9 @@ function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange,game='gom
    const id=key===digest(tokenA)?idA:key===digest(tokenB)?idB:key===digest(tokenC)?idC:null;
    return {rows:id?[{id}]:[],rowCount:id?1:0};
   }
-  if(sql.includes('SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c')){
+  if(sql.includes('SELECT c.game,c.time_limit_minutes,c.increment_seconds,c.scheduled_at FROM gracz_public_identity.game_challenges c')){
    return {rows:accepted&&p[0]===challenge&&[idA,idB].includes(p[1])?
-    [{game,time_limit_minutes:timeLimitMinutes,increment_seconds:incrementSeconds}]:[]};
+    [{game,time_limit_minutes:timeLimitMinutes,increment_seconds:incrementSeconds,scheduled_at:null}]:[]};
   }
   if(sql.includes('INSERT INTO gracz_public_identity.game_matches')){
    if(!matches.has(p[0]))matches.set(p[0],{state:JSON.parse(p[1]),version:0});

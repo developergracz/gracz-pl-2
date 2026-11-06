@@ -45,6 +45,10 @@ export const productionModules=Object.freeze([
   'auth/chess-console.mjs',
   'auth/chess-rules.mjs',
   'auth/chess-computer.mjs',
+  // Reviewed chess invitations: only same-origin friend presence and authenticated friend-only challenges;
+  // server validates scheduled time, sender/recipient, message length and privacy before persistence.
+  'auth/chess-invitations.mjs',
+  'auth/chess-invite-contract.mjs',
   'auth/chess-match.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.

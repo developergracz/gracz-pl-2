@@ -10,6 +10,7 @@ import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-p
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
 import {initialChessMatch,playChessMatch} from './chess-match.mjs';
+import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
 const scrypt=promisify(rawScrypt);
@@ -272,6 +273,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
      }
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS time_limit_minutes integer NOT NULL DEFAULT 0');
      await database.query('ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS increment_seconds integer NOT NULL DEFAULT 0');
+     await database.query("ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS scheduled_at timestamptz");
+     await database.query("ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS invite_message text NOT NULL DEFAULT ''");
+     await database.query("ALTER TABLE gracz_public_identity.game_challenges ADD COLUMN IF NOT EXISTS send_reminder boolean NOT NULL DEFAULT false");
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_sender ON gracz_public_identity.game_challenges(sender_id,created_at DESC)');
      await database.query('CREATE INDEX IF NOT EXISTS gracz_challenges_recipient ON gracz_public_identity.game_challenges(recipient_id,created_at DESC)');
      await database.query("CREATE UNIQUE INDEX IF NOT EXISTS gracz_challenges_one_pending ON gracz_public_identity.game_challenges(LEAST(sender_id,recipient_id),GREATEST(sender_id,recipient_id),game) WHERE status='pending'");
@@ -610,7 +614,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       const matchId=req.method==='GET'?url.searchParams.get('id'):body.id;
       if(typeof matchId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(matchId))
         return bad(res,400,'BLEDNY_IDENTYFIKATOR'),true;
-      const readMatch=()=>database.query(`SELECT m.state,m.version,c.game,
+      const readMatch=()=>database.query(`SELECT m.state,m.version,c.game,c.scheduled_at,
         c.sender_id,c.recipient_id,
         s.nickname AS sender_nick,r.nickname AS recipient_nick,
         NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
@@ -623,12 +627,15 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         WHERE c.id=$1 AND c.status='accepted'
           AND ($2=c.sender_id OR $2=c.recipient_id) LIMIT 1`,[matchId,actor]);
       let current=await readMatch();
+      if(current.rows[0]?.scheduled_at&&Date.parse(current.rows[0].scheduled_at)>Date.now())
+       return bad(res,409,'PARTIA_ZAPLANOWANA'),true;
       if(!current.rows[0]?.state){
         // A room is created only for an accepted invitation and one of its two verified participants.
-        const invite=await database.query(`SELECT c.game,c.time_limit_minutes,c.increment_seconds FROM gracz_public_identity.game_challenges c
+        const invite=await database.query(`SELECT c.game,c.time_limit_minutes,c.increment_seconds,c.scheduled_at FROM gracz_public_identity.game_challenges c
           WHERE c.id=$1 AND c.status='accepted' AND ($2=c.sender_id OR $2=c.recipient_id)
           LIMIT 1`,[matchId,actor]);
         if(!invite.rows.length)return bad(res,404,'PARTIA_NIEDOSTEPNA'),true;
+        if(invite.rows[0].scheduled_at&&Date.parse(invite.rows[0].scheduled_at)>Date.now())return bad(res,409,'PARTIA_ZAPLANOWANA'),true;
         await database.query(`INSERT INTO gracz_public_identity.game_matches(challenge_id,state)
           SELECT c.id,$2::jsonb FROM gracz_public_identity.game_challenges c
           WHERE c.id=$1 AND c.status='accepted'
@@ -906,7 +913,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       }
       if(req.method==='GET'){
         if(!allow('challenges-read:'+actor,120))return bad(res,429,'ZBYT_WIELE_PROB'),true;
-        const result=await database.query(`SELECT c.id,c.game,c.time_limit_minutes,c.increment_seconds,
+        const result=await database.query(`SELECT c.id,c.game,c.time_limit_minutes,c.increment_seconds,c.scheduled_at,c.invite_message,c.send_reminder,
           state.starred,state.archived,state.seen_at,state.note,c.updated_at,
           CASE WHEN c.expires_at<=now() AND c.status='pending' THEN 'expired' ELSE c.status END AS status,
           c.created_at,c.expires_at,c.sender_id=$1 AS outgoing,
@@ -921,6 +928,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         return json(res,200,{ok:true,challenges:result.rows.map(row=>({
           id:row.id,game:row.game,status:row.status,opponent:row.opponent,
           timeLimitMinutes:row.time_limit_minutes||0,incrementSeconds:row.increment_seconds||0,
+          scheduledAt:row.scheduled_at||null,message:row.invite_message||'',sendReminder:row.send_reminder===true,
           outgoing:row.outgoing===true,createdAt:row.created_at,expiresAt:row.expires_at,
           updatedAt:row.updated_at,starred:row.starred===true,archived:row.archived===true,
           seen:row.seen_at!=null,note:row.note||''
@@ -937,6 +945,8 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
            !gomokuTimeOptions.has(minutes)||!gomokuIncrementOptions.has(incrementSeconds)||
            (minutes===0&&incrementSeconds!==0))
           return bad(res,400,'BLEDNE_DANE'),true;
+        const plan=validateChessInviteSchedule({...body,game});
+        if(plan.error)return bad(res,400,plan.error),true;
         const friend=await findFriend(nick);
         if(!friend.rows.length)return bad(res,403,'TYLKO_ZNAJOMI'),true;
         const other=friend.rows[0].id;
@@ -947,8 +957,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         let saved;
         try{
           saved=await database.query(`INSERT INTO gracz_public_identity.game_challenges
-            (id,sender_id,recipient_id,game,status,time_limit_minutes,increment_seconds)
-            SELECT $1,$2,$3,$4,'pending',$5,$6
+            (id,sender_id,recipient_id,game,status,time_limit_minutes,increment_seconds,scheduled_at,invite_message,send_reminder,expires_at)
+            SELECT $1,$2,$3,$4,'pending',$5,$6,$7::timestamptz,$8,$9,
+             CASE WHEN $7::timestamptz IS NULL THEN now()+interval '7 days'
+              ELSE GREATEST(now()+interval '7 days',$7::timestamptz+interval '48 hours') END
             WHERE EXISTS(SELECT 1 FROM gracz_public_identity.friend_connections c
               WHERE c.account_a=LEAST($2::uuid,$3::uuid)
               AND c.account_b=GREATEST($2::uuid,$3::uuid) AND c.status='accepted')
@@ -957,10 +969,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
             AND COALESCE((SELECT p.game_invites FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),true)
             AND (NOT COALESCE((SELECT p.trusted_invites_only FROM gracz_public_identity.privacy_preferences p WHERE p.account_id=$3),false)
              OR EXISTS (SELECT 1 FROM gracz_public_identity.player_address_book ab WHERE ab.owner_id=$3 AND ab.friend_id=$2 AND ab.favorite=true))
-            ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes,incrementSeconds]);
+            ON CONFLICT DO NOTHING RETURNING id`,[randomUUID(),actor,other,game,minutes,incrementSeconds,plan.scheduledAt,plan.message,plan.sendReminder]);
         }catch(e){if(e?.code==='23505')return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;throw e;}
         if(!saved.rowCount)return bad(res,409,'ZAPROSZENIE_JUZ_WYSLANE'),true;
-        return json(res,200,{ok:true,id:saved.rows[0].id,game,timeLimitMinutes:minutes,incrementSeconds}),true;
+        return json(res,200,{ok:true,id:saved.rows[0].id,game,timeLimitMinutes:minutes,incrementSeconds,scheduledAt:plan.scheduledAt}),true;
       }
       if(!['accept','decline','cancel'].includes(action)||
         typeof body.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.id))
