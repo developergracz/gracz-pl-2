@@ -38,7 +38,7 @@ async function waitForPosition(page,state){
   return squares.length===64&&squares.every((node,i)=>node.textContent===expected[i]);
  },visible(state),{timeout:10000});
 }
-test('two isolated Chromium windows play chess by clicking squares with WebSocket updates and reconnect', {timeout:120000},async t=>{
+test('two isolated Chromium windows play chess by clicking squares with WebSocket updates and reconnect', {timeout:180000},async t=>{
  const db=createDatabase(),users=[];
  t.after(async()=>{try{for(const u of users)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[u.id]);}finally{await db.close();}});
  await createPublicIdentityRouter({database:db,emailFrom:'browser@example.invalid',resendKey:'local-only'}).probe();
@@ -224,5 +224,63 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await waitForPosition(pages[1],state);
  assert.deepEqual(await pages[0].locator('#board .chess-square').allTextContents(),
   await pages[1].locator('#board .chess-square').allTextContents());
+
+ // Premium invitations: two separate authenticated browser contexts, no mocked invitation API.
+ const sender=await pages[0].context().newPage(),receiver=await pages[1].context().newPage();
+ await Promise.all([sender.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'}),
+                    receiver.goto(base+'/konto/szachy/',{waitUntil:'domcontentloaded'})]);
+ await Promise.all([sender.waitForSelector('#chess-invite-overlay'),
+                    receiver.waitForSelector('#chess-invite-received')]);
+ // Presence is derived from a real authenticated request, never fabricated.
+ const recipientPresence=await receiver.evaluate(async()=>await (await fetch('/auth/friends/presence')).json());
+ assert.equal(recipientPresence.ok,true);
+ await sender.locator('#create-room').click();
+ await sender.locator('#chess-invite-overlay').waitFor({state:'visible'});
+ const recipient=sender.locator('#chess-invite-friends .chess-invite-friend').filter({hasText:users[1].nickname});
+ await recipient.waitFor({state:'visible',timeout:10000});
+ assert.match(await recipient.innerText(),/Dostępny teraz/);
+ await recipient.click();
+ await sender.locator('#chess-invite-send').click();
+ await sender.waitForFunction(()=>document.getElementById('chess-invite-status')?.textContent.includes('Zaproszenie wysłane'),{timeout:10000});
+ await receiver.locator('#chess-invite-received').waitFor({state:'visible',timeout:16000});
+ assert.match(await receiver.locator('#chess-invite-from').textContent(),new RegExp(users[0].nickname));
+ await receiver.locator('#chess-invite-accept').click();
+ await receiver.waitForURL(/\/konto\/szachy\/\?match=/,{timeout:15000});
+ await sender.waitForURL(/\/konto\/szachy\/\?match=/,{timeout:16000});
+ assert.equal(new URL(sender.url()).searchParams.get('match'),new URL(receiver.url()).searchParams.get('match'),'accepted invitation must navigate both participants into one match');
+ // Offline appointment: use persisted presence (privacy-respecting friend status).
+ await db.query("UPDATE gracz_public_identity.online_presence SET last_seen=now()-interval '1 hour' WHERE account_id=$1",[users[1].id]);
+ await sender.locator('#create-room').click();
+ const offline=sender.locator('#chess-invite-friends .chess-invite-friend').filter({hasText:users[1].nickname});
+ await offline.waitFor({state:'visible'});
+ assert.match(await offline.innerText(),/Niedostępny/);
+ await offline.click();
+ await sender.locator('#chess-invite-scheduled-view').waitFor({state:'visible'});
+ const appointment=new Date(Date.now()+2*86400000);
+ const date=[appointment.getFullYear(),String(appointment.getMonth()+1).padStart(2,'0'),String(appointment.getDate()).padStart(2,'0')].join('-');
+ await sender.locator('#chess-invite-date').fill(date);
+ await sender.locator('#chess-invite-time').fill('19:30');
+ await sender.locator('#chess-invite-minutes').selectOption('10');
+ await sender.locator('#chess-invite-bonus').selectOption('5');
+ await sender.locator('#chess-invite-note').fill('Zapraszam w niedzielę na szachy.');
+ await sender.locator('#chess-invite-schedule-send').click();
+ await sender.waitForFunction(()=>document.getElementById('chess-invite-status')?.textContent.includes('Zaproszenie na'),{timeout:10000});
+ const stored=await db.query("SELECT id,scheduled_at,time_limit_minutes,increment_seconds,invite_message,send_reminder,status FROM gracz_public_identity.game_challenges WHERE sender_id=$1 AND recipient_id=$2 AND scheduled_at IS NOT NULL ORDER BY created_at DESC LIMIT 1",[users[0].id,users[1].id]);
+ assert.equal(stored.rowCount,1);
+ const planned=stored.rows[0];
+ assert.equal(planned.status,'pending');
+ assert.equal(planned.time_limit_minutes,10);assert.equal(planned.increment_seconds,5);
+ assert.equal(planned.invite_message,'Zapraszam w niedzielę na szachy.');
+ assert.equal(planned.send_reminder,true);
+ await receiver.locator('#chess-invite-received').waitFor({state:'visible',timeout:16000});
+ await receiver.waitForFunction(()=>document.getElementById('chess-invite-received-text')?.textContent.includes('Zaproszenie na'),{timeout:16000});
+ assert.equal(await receiver.locator('#chess-invite-accept').innerText(),'Akceptuj termin');
+ await receiver.locator('#chess-invite-accept').click();
+ const booked=await db.query("SELECT status FROM gracz_public_identity.game_challenges WHERE id=$1",[planned.id]);
+ assert.equal(booked.rows[0].status,'accepted');
+ const early=await read(base,users[0].token,planned.id);
+ assert.equal(early.status,409);
+ assert.equal(early.error,'PARTIA_ZAPLANOWANA');
+ await sender.close();await receiver.close();
  console.log('CHESS_TWO_CHROMIUM_WINDOWS_PASS',{clickedMoves:opening.length,contexts:2,version,clock:'5m+2s',transport:'WebSocket',winner:state.winner,checkmate:true});
 });
