@@ -12,7 +12,18 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 <title>Panel Gracza Full Max Premium — gracz.pl</title>
 <link rel="stylesheet" href="/konto/panel/styl.css"><script src="/konto/panel/app.js" defer></script></head>
 <body><a class="skip" href="#content">Przejdź do treści</a>
-<div class="site-nav"><a class="site-brand" href="https://gracz.pl/" aria-label="Strona startowa gracz.pl">gracz<span>.pl</span></a><nav aria-label="Menu główne serwisu"><a href="https://gracz.pl/gry/">Gry</a><a href="https://gracz.pl/gry/tysiac/">Gry karciane</a><a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/blog/">Blog</a><a href="https://gracz.pl/spolecznosc/">Społeczność</a><a href="https://gracz.pl/#newsletter">Newsletter</a></nav><a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a></div>
+<div class="site-nav">
+<a class="site-brand" href="https://gracz.pl/" aria-label="gracz.pl — strona główna">gracz<span>.pl</span></a>
+<nav aria-label="Menu główne serwisu">
+<details class="panel-header-menu"><summary>Gry <span class="menu-chevron" aria-hidden="true"></span></summary><div class="panel-header-dropdown"><a href="https://gracz.pl/gry/">Wszystkie gry</a><a href="https://gracz.pl/gry/gomoku/">Gomoku</a><a href="https://gracz.pl/gry/warcaby/">Warcaby</a><a href="https://gracz.pl/gry/poker-treningowy/">Poker treningowy</a></div></details>
+<details class="panel-header-menu"><summary>Gry karciane <span class="menu-chevron" aria-hidden="true"></span></summary><div class="panel-header-dropdown"><a href="https://gracz.pl/gry-karciane/">Wszystkie gry karciane</a><a href="https://gracz.pl/gry/tysiac/">Tysiąc</a><a href="https://gracz.pl/gry/poker-treningowy/">Poker treningowy</a></div></details>
+<a href="https://gracz.pl/poradniki/">Poradniki</a><a href="https://gracz.pl/#aktualnosci">Blog</a><a href="https://gracz.pl/#spolecznosc">Społeczność</a><a class="panel-newsletter-link" href="https://gracz.pl/newsletter/">Newsletter</a>
+</nav>
+<div class="panel-header-actions">
+<a class="panel-header-search" href="https://gracz.pl/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.8" stroke="currentColor" stroke-width="2.4"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></a>
+<a class="panel-header-account" href="/konto/panel/" aria-current="page">Panel gracza</a>
+<a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a>
+</div></div>
 <section id="access-screen" class="access-screen" aria-live="polite">
 <div class="access-card">
 <p class="card-kicker">POLSKIE CENTRUM GRACZA · FULL MAX PREMIUM</p>
@@ -1540,6 +1551,87 @@ body.pw-success-open{overflow:hidden}
 @media(max-width:1180px){#player-shell .chall-workspace{grid-template-columns:minmax(230px,36%) minmax(0,1fr)}#player-shell .chall-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:850px){#player-shell .chall-workspace{grid-template-columns:1fr}#player-shell .chall-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-compose{position:static}}
 @media(max-width:650px){#player-shell .chall-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#player-shell .chall-settings-grid{grid-template-columns:1fr}#player-shell .chall-list-summary{align-items:start;flex-wrap:wrap}#player-shell .chall-card-top{flex-wrap:wrap}}
+
+/* Owner R1 2026-11-06 — cohesive homepage turquoise theme and premium sidebar.
+   Presentation only: all button ids, data-section hooks and auth remain unchanged. */
+:root{--panel-teal:#003d3a;--panel-teal-deep:#002a29;--panel-teal-light:#08665f;--panel-gold:#f2c663}
+html{background:#003b39!important;color:#f8fcfa!important}
+body{background:radial-gradient(ellipse 57% 52% at 18% 18%,rgba(0,150,140,.18),transparent 75%),radial-gradient(ellipse 48% 70% at 92% 60%,rgba(29,201,177,.12),transparent 75%),linear-gradient(145deg,#00514d 0%,#003b3a 42%,#002d2c 100%)!important;color:#f8fcfa}
+.site-nav{position:relative;z-index:40;display:flex!important;align-items:center!important;gap:clamp(16px,2vw,34px)!important;width:100%;min-height:76px!important;padding:10px clamp(24px,2.5vw,48px)!important;background:#002f2d!important;border-bottom:2px solid rgba(215,179,79,.55)!important;box-shadow:0 7px 20px rgba(0,24,22,.2)!important}
+.site-nav .site-brand{font-family:Arial,"Segoe UI",sans-serif;font-size:clamp(29px,2.55vw,42px)!important;line-height:1!important;font-weight:950;letter-spacing:-2.7px!important;flex:none}
+.site-nav>nav{display:flex!important;align-items:center;flex:1;flex-wrap:nowrap!important;gap:clamp(13px,1.8vw,30px)!important}
+.site-nav>nav>a,.site-nav .panel-header-menu>summary{display:inline-flex;align-items:center;gap:8px;min-height:42px;color:#f3f8f5!important;font:750 clamp(12px,.98vw,16px)/1.15 Arial,"Segoe UI",sans-serif!important;text-decoration:none;white-space:nowrap;cursor:pointer}
+.site-nav>nav>a:hover,.site-nav .panel-header-menu>summary:hover{color:#ffe3a0!important}
+.site-nav>nav .panel-newsletter-link{color:#ffd46a!important}
+.panel-header-menu{position:relative;flex:none}
+.panel-header-menu>summary{list-style:none}
+.panel-header-menu>summary::-webkit-details-marker{display:none}
+.panel-header-menu .menu-chevron{display:inline-block;width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;rotate:45deg}
+.panel-header-menu[open] .menu-chevron{rotate:225deg}
+.panel-header-dropdown{position:absolute;top:calc(100% + 8px);left:0;width:max-content;min-width:208px;padding:8px;background:#034741;border:1px solid rgba(242,198,99,.65);border-radius:14px;box-shadow:0 15px 35px rgba(0,22,19,.5);display:grid;gap:2px;z-index:60}
+.panel-header-dropdown a{display:block;color:#f3faf6;text-decoration:none;padding:11px 12px;font:700 13px/1.3 Arial,sans-serif;border-radius:9px}
+.panel-header-dropdown a:hover,.panel-header-dropdown a:focus-visible{background:#0c6961;color:#ffe3aa}
+.panel-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:11px;flex:none;margin-left:auto}
+.panel-header-search{display:grid;place-items:center;width:40px;height:42px;color:#f7fffb;border-radius:10px;text-decoration:none}
+.panel-header-search:hover{background:rgba(111,233,211,.11)}
+.site-nav .panel-header-account,.site-nav .site-discover{display:inline-flex;justify-content:center;align-items:center;min-height:44px;min-width:130px;padding:0 19px!important;border:1px solid #e7b948!important;border-radius:12px!important;text-decoration:none;font:800 13px/1 Arial,sans-serif!important;white-space:nowrap;box-shadow:none!important}
+.site-nav .panel-header-account{color:#fff!important;background:#002624!important}
+.site-nav .panel-header-account:hover{background:#07514b!important}
+.site-nav .site-discover{color:#161c19!important;background:linear-gradient(180deg,#ffe6a2 0%,#f5c85f 45%,#e5a832 100%)!important;border-color:#ffe0a0!important}
+.site-nav .site-discover:hover{background:#ffe2a0!important;color:#161c19!important}
+.shell{max-width:1760px!important;gap:18px!important;padding:clamp(12px,1.25vw,24px) clamp(16px,2.8vw,52px)!important}
+.main{min-width:0}
+.masthead{background:radial-gradient(ellipse at 78% 28%,rgba(4,177,157,.34),transparent 52%),linear-gradient(116deg,#085951 0%,#00443f 56%,#0a7065 100%)!important;border:1px solid rgba(102,231,207,.6)!important;box-shadow:inset 0 0 35px rgba(49,217,187,.1),0 12px 30px rgba(0,37,32,.17)!important}
+.card{background:linear-gradient(145deg,rgba(4,77,72,.97),rgba(0,49,47,.99))!important;border-color:rgba(93,217,197,.43)!important;box-shadow:0 8px 28px rgba(0,32,28,.14),inset 0 1px 0 rgba(145,241,219,.06)!important}
+.hero-card{background:linear-gradient(116deg,#07594f,#003d3c)!important;border-color:rgba(232,185,84,.75)!important}
+.stat{border-bottom:2px solid #24b8a7!important}
+.card p,.stat span,.masthead p:last-child{color:#c6e5df!important}
+.sidebar{background:linear-gradient(165deg,#095a53,#003e3d 43%,#002f30 100%)!important;border:1px solid rgba(95,232,205,.55)!important;box-shadow:0 18px 48px rgba(0,30,28,.32),inset 0 1px 0 rgba(191,255,242,.08)!important;border-radius:20px!important;overflow:hidden;position:sticky;top:16px}
+.sidebar .identity{padding:23px 18px 18px!important;background:linear-gradient(145deg,rgba(13,114,104,.65),rgba(1,60,57,.35))!important;border-bottom:1px solid rgba(132,235,208,.3)!important}
+.sidebar .avatar{width:58px;height:58px;background:radial-gradient(circle at 30% 18%,#177c71,#003b37 80%)!important;border:2px solid #f5d37a!important;box-shadow:0 0 0 3px rgba(0,234,191,.14)!important}
+.sidebar .identity strong{font-size:18px!important;color:#fff!important}
+.sidebar .identity .small{color:#ffe3a2!important;letter-spacing:1.3px!important}
+.sidebar .identity .status{color:#bce8de!important}
+.sidebar nav{padding:14px 12px!important;gap:4px!important}
+.sidebar .nav:not(.create-room){display:flex;align-items:center;gap:11px;min-height:38px;padding:9px 12px!important;border:1px solid transparent!important;border-radius:10px!important;color:#e6f9f2!important;background:transparent!important;font-weight:750!important;font-size:12px!important;line-height:1.25;text-decoration:none;box-shadow:none!important;transition:background .17s ease,border-color .17s ease,color .17s ease}
+.sidebar .nav:not(.create-room)>span{width:22px;flex:0 0 22px;text-align:center;color:#85ebd6!important;font-size:17px!important}
+.sidebar .nav:not(.create-room):hover,.sidebar .nav:not(.create-room):focus-visible{background:rgba(80,211,189,.18)!important;border-color:rgba(129,233,209,.3)!important;color:#fff!important}
+.sidebar .nav.active:not(.create-room){color:#fff!important;border-color:#2ce8c6!important;background:linear-gradient(96deg,#0c8276,#075e59)!important;box-shadow:inset 3px 0 0 #f6d583,0 4px 16px rgba(0,25,22,.22)!important}
+.sidebar .nav.active:not(.create-room)>span{color:#ffe29a!important}
+.sidebar .create-room{border:1px solid #f1c96c!important;background:linear-gradient(180deg,#ffe6a1,#d6a74e)!important;color:#182821!important;font-weight:900!important;border-radius:12px!important;box-shadow:0 5px 20px rgba(0,25,22,.2)!important}
+.sidebar .create-room>span{color:#183831!important}
+.sidebar .signout{background:rgba(1,51,48,.75)!important;border:1px solid #6abda9!important;color:#f6fbf8!important;border-radius:11px!important}
+.sidebar .signout:hover{background:#0e756b!important}
+@media(max-width:1330px) and (min-width:901px){
+ .site-nav{gap:16px!important;padding-inline:22px!important}
+ .site-nav>nav{gap:14px!important}
+ .site-nav .panel-header-account,.site-nav .site-discover{min-width:112px;padding-inline:13px!important}
+}
+@media(max-width:1080px){
+ .site-nav{flex-wrap:wrap;min-height:70px!important;gap:10px!important}
+ .site-nav>nav{order:3;flex:1 1 100%;overflow-x:auto;scrollbar-width:thin;gap:18px!important}
+ .site-nav .panel-header-actions{margin-left:auto}
+ .shell{gap:13px!important}
+}
+@media(max-width:900px){
+ .shell{display:flex!important;flex-direction:column!important}
+ .main{order:1!important}
+ .sidebar{order:2!important;position:static!important;width:100%!important}
+ .sidebar nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
+ .sidebar .nav:not(.create-room){min-width:0!important;width:100%!important}
+}
+@media(max-width:570px){
+ .site-nav{padding:12px!important;gap:8px!important}
+ .site-nav .site-brand{font-size:30px!important}
+ .site-nav .panel-header-account{display:none!important}
+ .site-nav .site-discover{min-width:105px;padding:0 10px!important;font-size:12px!important}
+ .site-nav>nav{gap:15px!important}
+ .site-nav>nav>a,.site-nav .panel-header-menu>summary{font-size:12px!important}
+ .sidebar nav{grid-template-columns:1fr!important}
+ .sidebar .identity{padding:16px!important}
+}
+@media(prefers-reduced-motion:reduce){.sidebar .nav:not(.create-room){transition:none}}
+
 `;
 const js=String.raw`(()=>{
 'use strict';
