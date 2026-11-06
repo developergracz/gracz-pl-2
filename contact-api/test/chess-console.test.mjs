@@ -95,9 +95,22 @@ test('online lobby renders a disabled initial board when no accepted match is se
  assert.equal(app.status,200);
  assert.match(app.body,/return g\?\{b:g\.board.*\}:initial\(\)/);
  assert.match(app.body,/const preview=mode==='online'&&!online\?\.state/);
- assert.match(app.body,/Szachy Online — plansza poglądowa/);
- assert.match(app.body,/Oczekiwanie na partię/);
+ assert.match(app.body,/Plansza poglądowa — wybierz zaakceptowaną partię/);
+ assert.match(app.body,/Oczekiwanie na grę/);
  assert.match(app.body,/online&&mode==='online'&&online\.playable/);
+});
+test('Chess premium: readable status rails and clock displays for both players',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
+ assert.match(page.body,/id="clock-1"/);assert.match(page.body,/id="clock-2"/);
+ assert.match(app.body,/const preview=!local&&!online\?\.state/);
+ assert.match(app.body,/previewMs,previewMs/);
+ assert.match(app.body,/create-room-time/);
+ assert.match(app.body,/clock-preview/);
+ assert.match(app.body,/Czas białych/);assert.match(app.body,/Czas czarnych/);
+ assert.match(app.body,/setAttribute\('aria-label'/);
+ assert.match(css.body,/\.boardarea #game-state/);
+ assert.match(css.body,/\.boardarea>\.bottom #turn-label/);
+ assert.match(css.body,/\.player-clock\.clock-preview/);
 });
 test('online preview preserves full opacity while keeping moves disabled',()=>{
  const css=load('/konto/szachy/styl.css').body;
