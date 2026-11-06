@@ -81,6 +81,12 @@ test('online lobby renders a disabled initial board when no accepted match is se
  assert.match(app.body,/Oczekiwanie na partię/);
  assert.match(app.body,/online&&mode==='online'&&online\.playable/);
 });
+test('online preview preserves full opacity while keeping moves disabled',()=>{
+ const css=load('/konto/szachy/styl.css').body;
+ const js=load('/konto/szachy/app.js').body;
+ assert.match(css,/\.chess-board \.chess-square:disabled\{opacity:1!important/);
+ assert.match(js,/cell\.disabled=!!terminal\|\|!allowed\|\|!!promotion/);
+});
 test('standard position and illegal moves',()=>{
  const s=initial();assert.equal(legal(s).length,20);
  assert.ok(move(s,'e2e4'));assert.equal(move(s,'e2e5'),null);
