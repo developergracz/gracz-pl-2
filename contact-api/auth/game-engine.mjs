@@ -112,7 +112,8 @@ function playWarcaby(state,move){
  const turn=continued?state.turn:3-state.turn;
  const quiet=capture||piece<=2?0:(state.quiet??0)+1;
  const moves=state.moves+1;
- const winner=quiet>=80?3:!continued&&!canMove(next,turn)?state.turn:0;
+ // A blocked opponent loses even if the no-progress draw threshold is reached on this move.
+ const winner=!continued&&!canMove(next,turn)?state.turn:quiet>=80?3:0;
  return {state:{...state,board:next,turn:winner?state.turn:turn,winner,moves,forced:continued?to:null,quiet}};
 }
 export function playMove(game,state,player,move){

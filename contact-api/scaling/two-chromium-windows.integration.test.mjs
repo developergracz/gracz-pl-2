@@ -101,6 +101,28 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
   await page.locator('#board .square').first().waitFor({timeout:12000});
   await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  }
+ // Check the premium invitation form in a real browser (no new DB challenges).
+ const form=pages[0];
+ assert.equal(await form.locator('#create-room-time').isVisible(),true);
+ assert.equal(await form.locator('#create-room-increment').isVisible(),true);
+ await form.locator('#create-room-time').selectOption('0');
+ assert.equal(await form.locator('#create-room-increment').isDisabled(),true);
+ assert.equal(await form.locator('#create-room-increment').inputValue(),'0');
+ await form.locator('#create-room-time').selectOption('7');
+ assert.equal(await form.locator('#create-room-increment').isEnabled(),true);
+ await form.locator('#create-room-increment').selectOption('2');
+ await form.locator('#create-room-friend').fill('ClockContractGuest');
+ let invitationPayload=null;
+ await form.route('**/auth/social/challenges',async route=>{
+  if(route.request().method()!=='POST')return route.continue();
+  invitationPayload=route.request().postDataJSON();
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,id:randomUUID()})});
+ });
+ await form.locator('#create-room').click();
+ await form.waitForFunction(()=>document.getElementById('create-room-status')?.textContent.includes('Zaproszenie wysłane'));
+ assert.deepEqual({game:invitationPayload?.game,timeLimitMinutes:invitationPayload?.timeLimitMinutes,
+   incrementSeconds:invitationPayload?.incrementSeconds},{game:'warcaby',timeLimitMinutes:7,incrementSeconds:2});
+ await form.unroute('**/auth/social/challenges');
  let response=await api(base,users[0].token,'/auth/match?id='+matchId);
  assert.equal(response.status,200);
  assert.deepEqual(response.match.state.clock.ready,[true,true]);
