@@ -109,6 +109,21 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await local.locator('#console-config-close').click();
  await local.locator('#undo-move').click();
  assert.equal(await local.locator('#move-count').textContent(),'Ruchy: 0');
+ // FIDE draw claim: two complete knight cycles yield the third identical position.
+ await local.locator('#chess-opponent').selectOption('human');
+ const toIndex=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
+ const repeatedKnights=[['g1','f3'],['g8','f6'],['f3','g1'],['f6','g8'],
+                       ['g1','f3'],['g8','f6'],['f3','g1'],['f6','g8']];
+ for(const [from,to] of repeatedKnights){
+  await local.locator('#board .chess-square').nth(toIndex(from)).click();
+  await local.locator('#board .chess-square').nth(toIndex(to)).click();
+ }
+ const drawClaim=local.locator('#training-settings .chess-claim-draw');
+ await drawClaim.waitFor({state:'visible',timeout:7000});
+ assert.match(await drawClaim.innerText(),/trzykrotne powtórzenie/i);
+ await drawClaim.click();
+ assert.match(await local.locator('#game-state').innerText(),/Remis/);
+ assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
  await local.locator('#focus-game').click();
  assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
  assert.equal(await local.locator('#game').evaluate(x=>x.classList.contains('game-focus')),true);
