@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/lcp-site-matrix.yml"
+      - "maintenance-site/poradniki/index.html"
   workflow_dispatch:
 
 permissions:
