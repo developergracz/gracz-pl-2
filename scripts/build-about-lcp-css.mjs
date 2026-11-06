@@ -29,7 +29,7 @@ export function pruneAboutOnly(css, referenceText) {
   return css.replace(/([^{}]+)\{([^{}]*)\}/g,(whole,rawSelector)=>{
     const selector=rawSelector.trim();
     if(selector.startsWith('@')||/:not\(|:is\(|:where\(|:has\(/.test(selector))return whole;
-    if(/[\\[\\]\\\\]/.test(selector))return whole;
+    if(selector.includes('[')||selector.includes(']')||selector.includes('\\'))return whole;
     const impossible=selector.split(',').every(part=>{
       const classes=[...part.matchAll(/\.([A-Za-z][\w-]*)/g)].map(x=>x[1]);
       return classes.some(name=>!referenceText.includes(name));
@@ -44,7 +44,7 @@ export function buildAboutBundle() {
     return n==='poradniki.css'?pruneAboutOnly(css,ref):css;
   }).join('\n'));
 }
-const invoked=process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1];
+const invoked=Boolean(process.argv[1]?.endsWith('build-about-lcp-css.mjs'));
 if(invoked) {
   const expected=buildAboutBundle();
   if(process.argv.includes('--write'))fs.writeFileSync(output,expected);
