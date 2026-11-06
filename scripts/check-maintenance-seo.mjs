@@ -409,9 +409,12 @@ for (const page of sharedHeaderPages) {
   const links = [...headerMarkup.matchAll(
     /<a\b(?=[^>]*\bclass="[^"]*(?:head-search|search-btn)[^"]*")(?=[^>]*\bhref="\/szukaj\/")[^>]*>[\s\S]*?<\/a>/gi
   )];
+  // The search destination itself must not show a redundant magnifier;
+  // every other page keeps its existing desktop/mobile search entry.
+  const expectedTopBarSearchLinks = page === "szukaj/index.html" ? 0 : (page === "index.html" ? 1 : 2);
   requireCheck(
-    links.length === (page === "index.html" ? 1 : 2),
-    page + ": top-bar search (desktop and mobile) must link to /szukaj/"
+    links.length === expectedTopBarSearchLinks,
+    page + ": top-bar search links must match the expected page-specific count"
   );
   requireCheck(
     !/<button\b[^>]*\bdata-modal="search"/i.test(headerMarkup),
