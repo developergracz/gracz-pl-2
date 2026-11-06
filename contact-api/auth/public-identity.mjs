@@ -405,6 +405,41 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
     return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;
    }
   }
+  // Top-level, cookie-aware UI-state bridge for public static pages on gracz.pl.
+  // The HttpOnly SameSite=Lax cookie is never exposed to gracz.pl; only a display
+  // hint is returned. This hint MUST NEVER authorize an account operation.
+  if(url.pathname==='/auth/header-sync'){
+   if(req.method!=='GET')return bad(res,405,'METODA_NIEDOZWOLONA'),true;
+   const target=String(url.searchParams.get('to')||'');
+   let destination;
+   try{
+    if(!target||target.length>2000)throw Error('BAD_TARGET');
+    destination=new URL(target);
+    if(!['https://gracz.pl','https://www.gracz.pl'].includes(destination.origin)||
+       destination.username||destination.password)throw Error('BAD_ORIGIN');
+    destination.searchParams.delete('gracz_header_state');
+   }catch{return bad(res,400,'NIEPRAWIDLOWY_ADRES'),true;}
+   let state='unknown';
+   try{
+    await ready();
+    const token=sessionToken(req);
+    if(!/^[a-f0-9]{64}$/.test(token))state='out';
+    else{
+     const result=await database.query(`SELECT 1 FROM gracz_public_identity.sessions s
+      JOIN gracz_public_identity.accounts a ON a.id=s.account_id
+      WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
+     state=result.rows.length?'in':'out';
+    }
+   }catch{state='unknown';}
+   // No nickname, token, cookie, or other account data in the redirect.
+   destination.searchParams.set('gracz_header_state',state);
+   res.writeHead(302,{
+    'Location':destination.toString(),'Cache-Control':'no-store',
+    'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'
+   });
+   res.end();
+   return true;
+  }
   if(url.pathname==='/auth/session'&&req.method==='GET'){
    try{
     await ready();const token=sessionToken(req);

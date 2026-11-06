@@ -577,7 +577,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  assert.equal(scheduled.ms,15000);
  assert.equal(visited,'','redirect not immediate');
  scheduled.fn();
- assert.equal(visited,'https://gracz.pl/');
+ assert.equal(visited,'https://gracz.pl/?gracz_header_state=out');
  assert.equal(noticeMessage,'');
 
  const deniedNodes={
@@ -600,4 +600,62 @@ test('personalized premium farewell appears only after confirmed logout and retu
  assert.equal(deniedNodes['player-shell'].hidden,false);
  assert.equal(timer,false);
  assert.match(errorMessage,/nie potwierdził/);
+});
+
+
+test('public static header receives only a session display hint after top-level cookie verification',async()=>{
+ const testRouter=createPublicIdentityRouter({
+  database:{enabled:true,async query(sql){
+   if(sql.includes('SELECT 1 FROM gracz_public_identity.sessions s'))return {rows:[{authorized:1}]};
+   return {rows:[],rowCount:1};
+  }},
+  emailFrom:'test@example.test',resendKey:'synthetic-key'
+ });
+ const host='https://gracz-contact-api.onrender.com';
+ const target='https://gracz.pl/gry/gomoku/?from=panel#zasady';
+ const path='/auth/header-sync?to='+encodeURIComponent(target);
+ for(const [session,expected] of [[cookie,'in'],[null,'out']]){
+  const req=request('GET',path,{cookie:session}),res=response();
+  assert.equal(await testRouter.handle(req,res,new URL(path,host)),true);
+  assert.equal(res.status,302);
+  const redirect=new URL(res.headers.Location);
+  assert.equal(redirect.origin,'https://gracz.pl');
+  assert.equal(redirect.pathname,'/gry/gomoku/');
+  assert.equal(redirect.searchParams.get('from'),'panel');
+  assert.equal(redirect.searchParams.get('gracz_header_state'),expected);
+  assert.equal(redirect.hash,'#zasady');
+  assert.equal(res.headers['Cache-Control'],'no-store');
+  assert.ok(!String(res.headers.Location).includes(cookie),'never reveal session tokens');
+ }
+ const attack='/auth/header-sync?to='+encodeURIComponent('https://evil.example/steal');
+ const rejected=response();
+ assert.equal(await testRouter.handle(request('GET',attack,{cookie}),rejected,new URL(attack,host)),true);
+ assert.equal(rejected.status,400,'reject cross-origin redirect targets');
+ assert.equal(rejected.headers.Location,undefined);
+});
+
+test('all public gracz.pl headers use the shared session UI script, not separate client trust',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {resolve}=await import('node:path');
+ const root=resolve(new URL('../../maintenance-site/',import.meta.url).pathname);
+ const pages=[
+  'index.html','szukaj/index.html','newsletter/index.html','gry/index.html',
+  'gry-karciane/index.html','gry/gomoku/index.html','gry/warcaby/index.html',
+  'gry/tysiac/index.html','gry/poker-treningowy/index.html',
+  'gry/gomoku/zasady/index.html','gry/warcaby/zasady/index.html',
+  'gry/tysiac/zasady/index.html','gry/poker-treningowy/zasady/index.html',
+  'poradniki/index.html','o-gracz-pl/index.html','regulamin/index.html',
+  'polityka-prywatnosci/index.html','wyszukiwarka/index.html'
+ ];
+ for(const path of pages){
+  const html=readFileSync(resolve(root,path),'utf8');
+  assert.match(html,/<header class="site-header/,'must have a public site header: '+path);
+  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=header-auth-r1/,'missing shared auth header: '+path);
+ }
+ const js=readFileSync(resolve(root,'assets/header-auth-state-r1.js'),'utf8');
+ new Script(js);
+ assert.match(js,/auth\/header-sync\?to=/);
+ assert.match(js,/Wyloguj się/);
+ assert.match(js,/header_logout=1/);
+ assert.doesNotMatch(js,/document\.cookie/,'no session cookies in public JS');
 });
