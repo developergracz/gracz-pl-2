@@ -19,6 +19,24 @@ test('Szachy P3 premium console exposes authenticated online controls',()=>{
  assert.equal(load('/konto/szachy','POST').served,false);
  assert.equal(load('/konto/szachy/unknown').served,false);
 });
+test('Chess Premium invitation windows load as isolated same-origin assets',()=>{
+ const page=load('/konto/szachy/'),script=load('/konto/szachy/invitations.js'),style=load('/konto/szachy/invitations.css');
+ assert.equal(script.status,200);assert.equal(style.status,200);
+ assert.match(page.body,/id="chess-invite-overlay"/);
+ assert.match(page.body,/id="chess-invite-received"/);
+ assert.match(page.body,/id="chess-invite-schedule-form"/);
+ assert.match(page.body,/src="\/konto\/szachy\/invitations.js"/);
+ assert.match(page.body,/href="\/konto\/szachy\/invitations.css"/);
+ assert.match(script.body,/friends\/presence/);
+ assert.match(script.body,/action,\.\.\.options/);
+ assert.match(script.body,/sendReminder/);
+ assert.match(script.body,/scheduledAt/);
+ assert.match(script.body,/Akceptuj i przejdź do gry/);
+ assert.match(script.body,/location\.assign\(gameUrl\(row\.id\)\)/);
+ assert.match(style.body,/\.chess-invite-window/);
+ assert.match(style.body,/\.chess-invite-received/);
+ assert.equal(load('/konto/szachy/invitations.js','POST').served,false);
+});
 test('chess UI uses native side panels without secondary actions under the board',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
  assert.match(page.body,/id="training-mode"/);
