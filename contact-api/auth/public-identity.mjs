@@ -423,20 +423,30 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
        destination.username||destination.password)throw Error('BAD_ORIGIN');
     destination.searchParams.delete('gracz_header_state');
    }catch{return bad(res,400,'NIEPRAWIDLOWY_ADRES'),true;}
-   let state='unknown';
+   let state='unknown',nickname='';
    try{
     await ready();
     const token=sessionToken(req);
     if(!/^[a-f0-9]{64}$/.test(token))state='out';
     else{
-     const result=await database.query(`SELECT 1 FROM gracz_public_identity.sessions s
+     const result=await database.query(`SELECT a.nickname FROM gracz_public_identity.sessions s
       JOIN gracz_public_identity.accounts a ON a.id=s.account_id
       WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
      state=result.rows.length?'in':'out';
+     if(state==='in')nickname=String(result.rows[0].nickname||'').slice(0,32);
     }
    }catch{state='unknown';}
-   // No nickname, token, cookie, or other account data in the redirect.
+   // The display name travels only in the URL fragment (never sent in HTTP
+   // requests or logs) and is immediately stripped by the public header JS.
+   // Do not include credentials, cookies, or tokens; this is display-only.
    destination.searchParams.set('gracz_header_state',state);
+   if(state==='in'&&nickname){
+    const originalAnchor=destination.hash.slice(1);
+    const fragment=new URLSearchParams({
+     gracz_header_nick:nickname,gracz_header_anchor:originalAnchor
+    });
+    destination.hash=fragment.toString();
+   }
    res.writeHead(302,{
     'Location':destination.toString(),'Cache-Control':'no-store',
     'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'
