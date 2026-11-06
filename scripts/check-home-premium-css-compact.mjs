@@ -71,6 +71,8 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
     selector.includes('/assets/home-lcp-bundle-r1-mobile.css?v=20261106-mobile-v1') &&
     selector.includes('/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1'),
     "Selector must request only one of the two approved files");
+  assert.ok(selector.includes("document.write(") && selector.includes("data-home-css-viewport"),
+    "Parser-early stylesheet must be render blocking, avoiding first-paint CLS");
   const mobile=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1-mobile.css","utf8");
   assert.equal(mobile,mobileCss(bundle).css,"Mobile stylesheet must preserve approved rule order");
   assert.ok(mobile.length<bundle.length*.80,"Mobile CSS must save at least 20%");
