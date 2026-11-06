@@ -277,6 +277,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await receiver.waitForFunction(()=>document.getElementById('chess-invite-received-text')?.textContent.includes('Zaproszenie na'),{timeout:16000});
  assert.equal(await receiver.locator('#chess-invite-accept').innerText(),'Akceptuj termin');
  await receiver.locator('#chess-invite-accept').click();
+ await receiver.waitForFunction(()=>document.getElementById('chess-invite-status')?.textContent.includes('Termin zaakceptowany'),{timeout:10000});
  const booked=await db.query("SELECT status FROM gracz_public_identity.game_challenges WHERE id=$1",[planned.id]);
  assert.equal(booked.rows[0].status,'accepted');
  const early=await read(base,users[0].token,planned.id);
