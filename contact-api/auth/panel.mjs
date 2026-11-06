@@ -2517,6 +2517,17 @@ async function load(){
   $('player-shell').hidden=false;
   $('access-screen').hidden=true;
   notice('');
+  // A logout click from the public site's authenticated header opens this
+  // first-party session origin. Require the browser-confirmed gracz.pl referrer
+  // before honoring the intent, preventing third-party logout links.
+  if(location.search && new URLSearchParams(location.search).get('header_logout')==='1'){
+   let source='';
+   try{source=new URL(document.referrer).origin;}catch{}
+   if(source==='https://gracz.pl'||source==='https://www.gracz.pl'){
+    await logout();
+    return;
+   }
+  }
   try{await refreshCenter();}catch{notice('Profil jest dostępny, ale ustawienia premium lub lista sesji są chwilowo niedostępne.',true);}
  }catch(error){
   if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła lub nie została rozpoznana. Zaloguj się, aby otworzyć swój panel.',{login:true});
@@ -2634,7 +2645,7 @@ async function logout(){
   $('access-screen').hidden=true;
   $('logout-farewell').hidden=false;
   $('logout-farewell-login').focus();
-  setTimeout(()=>location.replace('https://gracz.pl/'),15000);
+  setTimeout(()=>location.replace('https://gracz.pl/?gracz_header_state=out'),15000);
  }catch(error){
   logoutInProgress=false;
   notice(error.message,true);
@@ -3435,6 +3446,16 @@ $('nt-export').addEventListener('click',()=>{
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
 ['header-logout','side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
+// All links back to gracz.pl pass through the verified top-level session
+// bridge once. Only the public URL is forwarded; no session token is exposed.
+document.querySelectorAll('a[href^="https://gracz.pl/"],a[href^="https://www.gracz.pl/"]').forEach(link=>{
+ link.addEventListener('click',event=>{
+  if(event.defaultPrevented)return;
+  const destination=new URL(link.href);
+  if(!['https://gracz.pl','https://www.gracz.pl'].includes(destination.origin))return;
+  link.href='/auth/header-sync?to='+encodeURIComponent(destination.href);
+ });
+});
 load();
 })();`+premiumProfileScript;
 export function servePlayerPanel(req,res,url){
