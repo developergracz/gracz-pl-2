@@ -25,7 +25,7 @@
   }, {rootMargin: "1600px 0px"});
   observer.observe(target);
   // Preserve decorated cards after following deep links to the related area.
-  if (location.hash && (location.hash === "#" + target.id || target.querySelector(location.hash))) {
+  if (location.hash) {
     observer.disconnect();
     load();
   }
