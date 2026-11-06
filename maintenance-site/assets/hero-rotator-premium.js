@@ -26,7 +26,7 @@
   }
 
   const slides = ['gomoku', 'warcaby', 'soon'];
-  const interval = 5000;
+  const interval = 15000; // DIAGNOSTIC ONLY: never merge; approved interval is 5000
   let index = Math.max(0, slides.indexOf(hero.dataset.heroSlide));
   let timer = 0;
   let hovered = false;
