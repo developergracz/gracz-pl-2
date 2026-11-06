@@ -234,6 +234,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  // Presence is derived from a real authenticated request, never fabricated.
  const recipientPresence=await receiver.evaluate(async()=>await (await fetch('/auth/friends/presence')).json());
  assert.equal(recipientPresence.ok,true);
+ await sender.locator('#online-mode').click();
  await sender.locator('#create-room').click();
  await sender.locator('#chess-invite-overlay').waitFor({state:'visible'});
  const recipient=sender.locator('#chess-invite-friends .chess-invite-friend').filter({hasText:users[1].nickname});
