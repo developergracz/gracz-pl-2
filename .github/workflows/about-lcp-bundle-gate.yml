@@ -1,0 +1,101 @@
+name: About page LCP mobile and desktop regression gate
+on:
+  pull_request:
+    paths:
+      - "maintenance-site/o-gracz-pl/index.html"
+      - "maintenance-site/assets/o-gracz-pl-lcp-bundle-r1.css"
+      - ".github/workflows/about-lcp-bundle-gate.yml"
+permissions:
+  contents: read
+jobs:
+  about-lcp:
+    name: About page mobile and desktop Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+      - name: Check original CSS cascade and SEO invariants
+        run: |
+          node scripts/check-maintenance-seo.mjs
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import {compact} from './scripts/check-home-premium-css-compact.mjs';
+          const names=['cookie-consent.css','poradniki.css','o-gracz-pl.css','related-thumbnails.css','unified-subpage-hero.css','sticky-sidebars.css'];
+          const source=names.map(n=>fs.readFileSync('maintenance-site/assets/'+n,'utf8')).join('\n');
+          const bundle=fs.readFileSync('maintenance-site/assets/o-gracz-pl-lcp-bundle-r1.css','utf8');
+          assert.equal(bundle,compact(source),'Bundle must preserve exact approved CSS cascade');
+          const html=fs.readFileSync('maintenance-site/o-gracz-pl/index.html','utf8');
+          const links=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>m[1]);
+          assert.equal(links.length,2);
+          assert.ok(links[0].startsWith('/assets/o-gracz-pl-lcp-bundle-r1.css?'));
+          assert.equal(links[1],'/assets/global-header-r1.css?v=r3');
+          JS
+      - name: Lighthouse base vs PR in matched mobile and desktop conditions
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "refs/heads/${GITHUB_BASE_REF:-main}"
+          mkdir -p "$RUNNER_TEMP/about-base" "$RUNNER_TEMP/about-reports"
+          git archive FETCH_HEAD maintenance-site/ | tar -xf - -C "$RUNNER_TEMP/about-base"
+          python3 -m http.server 4173 -d "$RUNNER_TEMP/about-base/maintenance-site" --bind 127.0.0.1 > /tmp/about-base.log 2>&1 &
+          PID1=$!
+          python3 -m http.server 4174 -d maintenance-site --bind 127.0.0.1 > /tmp/about-pr.log 2>&1 &
+          PID2=$!
+          trap 'kill "$PID1" "$PID2" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:4173/o-gracz-pl/ >/dev/null && curl -sf http://127.0.0.1:4174/o-gracz-pl/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for device in mobile desktop; do
+            if [ "$device" = mobile ]; then samples=2; else samples=1; fi
+            for sample in $(seq 1 "$samples"); do
+              for version in base pr; do
+                port=4173
+                [ "$version" = pr ] && port=4174
+                extra=""
+                [ "$device" = desktop ] && extra="--preset=desktop"
+                npx --yes lighthouse@12.8.2 "http://127.0.0.1:$port/o-gracz-pl/" \
+                  --quiet --only-categories=performance --output=json \
+                  --output-path="$RUNNER_TEMP/about-reports/$version-$device-$sample.json" \
+                  --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+                  --max-wait-for-load=20000 $extra
+              done
+            done
+          done
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const dir=process.env.RUNNER_TEMP+'/about-reports';
+          function summary(version,device){
+            const samples=device==='mobile'?2:1;
+            const result=[];
+            for(let i=1;i<=samples;i++){
+              const d=JSON.parse(fs.readFileSync(dir+'/'+version+'-'+device+'-'+i+'.json','utf8'));
+              const lcp=d.audits['largest-contentful-paint'].numericValue;
+              const cls=d.audits['cumulative-layout-shift'].numericValue;
+              if(!Number.isFinite(lcp)||!Number.isFinite(cls))throw Error('Missing Lighthouse metrics');
+              const paths=(d.audits['network-requests'].details.items||[]).filter(x=>x.statusCode===200).map(x=>x.url);
+              if(version==='pr'&&!paths.some(x=>x.includes('o-gracz-pl-lcp-bundle-r1.css')))throw Error('Optimized CSS not loaded');
+              result.push({lcp,cls});
+            }
+            return {lcp:result.reduce((s,x)=>s+x.lcp,0)/samples,cls:result.reduce((s,x)=>s+x.cls,0)/samples,items:result};
+          }
+          for(const device of ['mobile','desktop']){
+            const before=summary('base',device),after=summary('pr',device);
+            console.log('ABOUT_LCP_COMPARISON '+JSON.stringify({device,before,after,deltaMs:after.lcp-before.lcp}));
+            if(after.lcp>before.lcp*1.1+100)throw Error(device+' LCP regression');
+            if(after.cls>before.cls+0.03)throw Error(device+' CLS regression');
+          }
+          JS
+      - name: Keep Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: about-lcp-lighthouse
+          path: ${{ runner.temp }}/about-reports/*.json
+          if-no-files-found: ignore
+          retention-days: 7
