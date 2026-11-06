@@ -21,8 +21,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
 </nav>
 <div class="panel-header-actions">
 <a class="panel-header-search" href="https://gracz.pl/szukaj/" aria-label="Szukaj w serwisie"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.8" stroke="currentColor" stroke-width="2.4"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></a>
-<a class="panel-header-account" href="/konto/panel/" aria-current="page">Panel gracza</a>
-<a class="site-discover" href="https://gracz.pl/gry/">Odkryj gry <span aria-hidden="true">↗</span></a>
+<button class="panel-header-logout" id="header-logout" type="button" hidden>Wyloguj się</button>
 </div></div>
 <section id="access-screen" class="access-screen" aria-live="polite">
 <div class="access-card">
@@ -1632,6 +1631,25 @@ body{background:radial-gradient(ellipse 57% 52% at 18% 18%,rgba(0,150,140,.18),t
 }
 @media(prefers-reduced-motion:reduce){.sidebar .nav:not(.create-room){transition:none}}
 
+
+/* Header authenticated action — single real logout, shown only after profile verification. */
+.site-nav .panel-header-logout{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:auto!important;min-width:156px!important;min-height:44px!important;
+  padding:0 19px!important;margin:0!important;
+  border:1px solid #e7b948!important;border-radius:12px!important;
+  background:linear-gradient(180deg,#ffe5a0,#efb742)!important;
+  color:#10241f!important;font:800 13px/1 Arial,sans-serif!important;
+  box-shadow:0 0 14px rgba(223,174,72,.14)!important;
+  white-space:nowrap;cursor:pointer;
+}
+.site-nav .panel-header-logout[hidden]{display:none!important}
+.site-nav .panel-header-logout:hover{filter:brightness(1.07)}
+.site-nav .panel-header-logout:focus-visible{outline:3px solid #fff5b2;outline-offset:3px}
+@media(max-width:570px){
+ .site-nav .panel-header-logout{min-width:125px!important;min-height:42px!important;padding:0 12px!important;font-size:12px!important}
+ .site-nav .panel-header-actions{grid-column:2;grid-row:1;gap:5px!important}
+}
 `;
 const js=String.raw`(()=>{
 'use strict';
@@ -2480,6 +2498,7 @@ function fill(profile){
 let sessionConfirmed=false;
 function accessState(title,message,{login=false,retry=false}={}){
  sessionConfirmed=false;
+ $('header-logout').hidden=true;
  $('player-shell').hidden=true;
  $('access-screen').hidden=false;
  $('access-title').textContent=title;
@@ -2494,6 +2513,7 @@ async function load(){
   if(!result.profile || !result.profile.nickname)throw new Error('Nie udało się odczytać danych konta.');
   fill(result.profile);
   sessionConfirmed=true;
+  $('header-logout').hidden=false;
   $('player-shell').hidden=false;
   $('access-screen').hidden=true;
   notice('');
@@ -2607,6 +2627,7 @@ async function logout(){
  try{
   await api('logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   sessionConfirmed=false;
+  $('header-logout').hidden=true;
   profileSnapshot=null;centerState=null;
   $('logout-farewell-nick').textContent=nickname;
   $('player-shell').hidden=true;
@@ -3413,7 +3434,7 @@ $('nt-export').addEventListener('click',()=>{
 });
 
 $('create-room').addEventListener('click',()=>switchSection('challenges'));
-['side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
+['header-logout','side-logout','security-logout','session-logout'].forEach(id=>$(id).addEventListener('click',logout));
 load();
 })();`+premiumProfileScript;
 export function servePlayerPanel(req,res,url){

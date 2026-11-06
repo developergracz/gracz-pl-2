@@ -471,19 +471,25 @@ test('player panel uses compact responsive dimensions without zooming the UI',()
  assert.doesNotMatch(dense,/(^|[;{])\s*(zoom|transform)\s*:/m,'do not scale or blur whole panel');
 });
 
-test('player header has one navigation bar and one premium discover-games action',()=>{
- const page=response(),styles=response();
+test('player header shows only one authenticated logout action after verified session',()=>{
+ const page=response(),styles=response(),js=response();
  const origin='https://gracz-contact-api.onrender.com';
- assert.equal(servePlayerPanel({method:'GET'},page,new URL('/konto/panel/',origin)),true);
- assert.equal(servePlayerPanel({method:'GET'},styles,new URL('/konto/panel/styl.css',origin)),true);
- assert.equal(page.status,200);
- assert.equal(styles.status,200);
- assert.match(page.body,/<div class="site-nav">/);
- assert.match(page.body,/<a class="site-discover" href="https:\/\/gracz\.pl\/gry\/">Odkryj gry /);
- assert.equal((page.body.match(/class="site-discover"/g)||[]).length,1);
+ for(const [res,path] of [[page,'/konto/panel/'],[styles,'/konto/panel/styl.css'],[js,'/konto/panel/app.js']]){
+  assert.equal(servePlayerPanel({method:'GET'},res,new URL(path,origin)),true);
+  assert.equal(res.status,200);
+ }
+ const header=page.body.match(/<div class="site-nav">[\s\S]*?<\/div><\/div>/)?.[0];
+ assert.ok(header,'the shared panel header exists');
+ assert.match(header,/id="header-logout"[^>]*hidden>Wyloguj się<\/button>/);
+ assert.equal((header.match(/id="header-logout"/g)||[]).length,1);
+ assert.doesNotMatch(header,/Panel gracza<\/a>|Odkryj gry|Załóż konto|Zaloguj się/);
+ assert.match(styles.body,/\.site-nav \.panel-header-logout/);
+ assert.match(styles.body,/\.site-nav \.panel-header-logout\[hidden\]\{display:none!important\}/);
+ assert.match(js.body,/\$\('header-logout'\)\.hidden=true;/);
+ assert.match(js.body,/\$\('header-logout'\)\.hidden=false;/);
+ assert.match(js.body,/\['header-logout','side-logout','security-logout','session-logout'\]\.forEach/);
  assert.doesNotMatch(page.body,/<header class="top">/);
  assert.doesNotMatch(page.body,/class="top-link"/);
- assert.match(styles.body,/\.site-nav \.site-discover/);
  assert.match(styles.body,/@media\(max-width:700px\)/);
 });
 
@@ -546,7 +552,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  const routine=app.slice(start,end);
  let logoutCalls=0,noticeMessage='',scheduled=null,visited='',focused=false;
  const nodes=Object.fromEntries(
-  ['logout-farewell','logout-farewell-nick','logout-farewell-login','player-shell','access-screen']
+  ['header-logout','logout-farewell','logout-farewell-nick','logout-farewell-login','player-shell','access-screen']
    .map(id=>[id,{hidden:id==='logout-farewell',textContent:'',focus(){focused=true;}}])
  );
  const context={
@@ -563,6 +569,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  assert.equal(nodes['player-shell'].hidden,true,'private content hidden after logout');
  assert.equal(nodes['access-screen'].hidden,true);
  assert.equal(nodes['logout-farewell'].hidden,false);
+ assert.equal(nodes['header-logout'].hidden,true,'top logout is hidden after server confirmation');
  assert.equal(context.profileSnapshot,null);
  assert.equal(context.centerState,null);
  assert.equal(context.sessionConfirmed,false);
@@ -574,6 +581,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  assert.equal(noticeMessage,'');
 
  const deniedNodes={
+  'header-logout':{hidden:false},
   'logout-farewell':{hidden:true},'logout-farewell-nick':{textContent:''},
   'player-shell':{hidden:false},'access-screen':{hidden:true}
  };
@@ -588,6 +596,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
  };
  await new Script(routine+'\nlogout()').runInNewContext(denied);
  assert.equal(deniedNodes['logout-farewell'].hidden,true,'failed logout does not show success');
+ assert.equal(deniedNodes['header-logout'].hidden,false,'failed logout keeps authenticated action available');
  assert.equal(deniedNodes['player-shell'].hidden,false);
  assert.equal(timer,false);
  assert.match(errorMessage,/nie potwierdził/);
