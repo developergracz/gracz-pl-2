@@ -606,7 +606,7 @@ test('personalized premium farewell appears only after confirmed logout and retu
 test('public static header receives only a session display hint after top-level cookie verification',async()=>{
  const testRouter=createPublicIdentityRouter({
   database:{enabled:true,async query(sql){
-   if(sql.includes('SELECT 1 FROM gracz_public_identity.sessions s'))return {rows:[{authorized:1}]};
+   if(sql.includes('SELECT a.nickname FROM gracz_public_identity.sessions s'))return {rows:[{nickname:'TestowyGracz'}]};
    return {rows:[],rowCount:1};
   }},
   emailFrom:'test@example.test',resendKey:'synthetic-key'
@@ -623,7 +623,16 @@ test('public static header receives only a session display hint after top-level 
   assert.equal(redirect.pathname,'/gry/gomoku/');
   assert.equal(redirect.searchParams.get('from'),'panel');
   assert.equal(redirect.searchParams.get('gracz_header_state'),expected);
-  assert.equal(redirect.hash,'#zasady');
+  if(session){
+   // The nickname is a public display hint in a URL fragment, not a query
+   // parameter, and the original page anchor must be preserved.
+   const fragment=new URLSearchParams(redirect.hash.slice(1));
+   assert.equal(fragment.get('gracz_header_nick'),'TestowyGracz');
+   assert.equal(fragment.get('gracz_header_anchor'),'zasady');
+   assert.equal(redirect.searchParams.has('gracz_header_nick'),false);
+  }else{
+   assert.equal(redirect.hash,'#zasady');
+  }
   assert.equal(res.headers['Cache-Control'],'no-store');
   assert.ok(!String(res.headers.Location).includes(cookie),'never reveal session tokens');
  }
@@ -650,12 +659,21 @@ test('all public gracz.pl headers use the shared session UI script, not separate
  for(const path of pages){
   const html=readFileSync(resolve(root,path),'utf8');
   assert.match(html,/<header class="site-header/,'must have a public site header: '+path);
-  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=header-auth-r1/,'missing shared auth header: '+path);
+  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=player-name-panel-r2/,'missing shared auth header: '+path);
  }
  const js=readFileSync(resolve(root,'assets/header-auth-state-r1.js'),'utf8');
  new Script(js);
  assert.match(js,/auth\/header-sync\?to=/);
  assert.match(js,/Wyloguj się/);
+ assert.match(js,/Mój panel/);
+ assert.match(js,/gracz-header-user/);
+ assert.match(js,/gracz_header_nick/);
+ assert.match(js,/gracz-my-panel/);
+ assert.match(js,/nicknameFragment/);
+ const headerCss=readFileSync(resolve(root,'assets/header-auth-display-r1.css'),'utf8');
+ assert.match(headerCss,/\.gracz-header-user/);
+ assert.match(headerCss,/\.gracz-my-panel/);
+ assert.match(js,/textContent=state==='in'/);
  assert.match(js,/header_logout=1/);
  assert.doesNotMatch(js,/document\.cookie/,'no session cookies in public JS');
 });
