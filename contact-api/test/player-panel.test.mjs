@@ -659,7 +659,7 @@ test('all public gracz.pl headers use the shared session UI script, not separate
  for(const path of pages){
   const html=readFileSync(resolve(root,path),'utf8');
   assert.match(html,/<header class="site-header/,'must have a public site header: '+path);
-  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=header-auth-r1/,'missing shared auth header: '+path);
+  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=player-name-panel-r2/,'missing shared auth header: '+path);
  }
  const js=readFileSync(resolve(root,'assets/header-auth-state-r1.js'),'utf8');
  new Script(js);
@@ -668,6 +668,11 @@ test('all public gracz.pl headers use the shared session UI script, not separate
  assert.match(js,/Mój panel/);
  assert.match(js,/gracz-header-user/);
  assert.match(js,/gracz_header_nick/);
+ assert.match(js,/gracz-my-panel/);
+ assert.match(js,/nicknameFragment/);
+ const headerCss=readFileSync(resolve(root,'assets/header-auth-display-r1.css'),'utf8');
+ assert.match(headerCss,/\.gracz-header-user/);
+ assert.match(headerCss,/\.gracz-my-panel/);
  assert.match(js,/textContent=state==='in'/);
  assert.match(js,/header_logout=1/);
  assert.doesNotMatch(js,/document\.cookie/,'no session cookies in public JS');
