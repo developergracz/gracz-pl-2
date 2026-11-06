@@ -23,8 +23,11 @@
  logout.hidden=true;
  logout.style.setProperty('display','none','important');
  actions.appendChild(logout);
- var neutral=document.createElement('a');
- neutral.href=sessionOrigin+'/konto/panel/';
+ var neutral=document.createElement('button');
+ neutral.type='button';
+ neutral.addEventListener('click',function(){
+  location.assign(sessionOrigin+'/konto/panel/');
+ });
  neutral.textContent='Konto gracza';
  neutral.className=login.className;
  neutral.hidden=true;
