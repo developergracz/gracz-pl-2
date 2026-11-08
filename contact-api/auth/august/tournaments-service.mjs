@@ -92,7 +92,7 @@ export class TournamentService {
     const timeControl=String(input.timeControl||"5+0");
     parseTime(timeControl);
     const startsAt = input.startsAt && !Number.isNaN(new Date(input.startsAt).valueOf()) ? new Date(input.startsAt).toISOString() : null;
-    return { title, description: this.cleanText(input.description, 600), game, format, maxPlayers, rounds, timeControl, startsAt, rated: input.rated !== false, visibility: input.visibility === "unlisted" ? "unlisted" : "public" };
+    return { title, description: this.cleanText(input.description, 600), game, format, maxPlayers, rounds, timeControl, startsAt, rated: false /* Global rating requires a separate authoritative ranking service. */, visibility: input.visibility === "unlisted" ? "unlisted" : "public" };
   }
 
   async create(user, input) {
