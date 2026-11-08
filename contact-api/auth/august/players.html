@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#063f42">
   <title>Lobby graczy Premium — GRACZ.PL</title>
-  <link rel="stylesheet" href="/konto/sierpien/assets/players.css?v=premium-r2">
+  <link rel="stylesheet" href="/konto/sierpien/assets/players.css?v=premium-r3">
 </head>
 <body data-august-view="players">
   <main class="shell">
@@ -27,6 +27,26 @@
       </div>
     </header>
 
+    <div class="lobby-layout">
+    <aside class="player-sidebar" id="player-sidebar" aria-label="Menu gracza">
+      <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-expanded="false" aria-controls="player-menu"><span aria-hidden="true">☰</span>Menu gracza<b aria-hidden="true">›</b></button>
+      <nav class="sidebar-nav" id="player-menu" aria-label="Panel gracza">
+        <a class="sidebar-link active" href="/konto/lobby/" aria-current="page"><span aria-hidden="true">♧</span>Lobby graczy</a>
+        <p class="sidebar-title">USTAWIENIA KONTA</p>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=profile" data-section="profile"><span aria-hidden="true">♙</span>Konto i profil</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=security" data-section="security"><span aria-hidden="true">✦</span>Bezpieczeństwo</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=privacy" data-section="privacy"><span aria-hidden="true">◈</span>Prywatność</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=notifications" data-section="notifications"><span aria-hidden="true">♢</span>Powiadomienia</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=messages" data-section="messages"><span aria-hidden="true">✉&#xFE0E;</span>Wiadomości i chat</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=games" data-section="games"><span aria-hidden="true">♜</span>Gry i rozgrywka</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=appearance" data-section="appearance"><span aria-hidden="true">☼</span>Wygląd i dostępność</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=sessions" data-section="sessions"><span aria-hidden="true">▣</span>Sesje i urządzenia</a>
+        <a class="sidebar-link" href="/konto/panel/?sekcja=data" data-section="data"><span aria-hidden="true">▤</span>Dane i konto</a>
+        <p class="sidebar-footer"><i aria-hidden="true"></i>Połączenie chronione</p>
+      </nav>
+    </aside>
+
+    <div class="lobby-main">
     <section class="hero" aria-labelledby="lobby-title">
       <div class="hero-copy">
         <div class="eyebrow">GRACZ.PL <span aria-hidden="true">/</span> STREFA GRACZA</div>
@@ -79,6 +99,8 @@
         <div id="rooms" class="game-links"></div>
       </aside>
     </section>
+    </div>
+    </div>
     <footer><span>GRACZ.PL · Polskie Centrum Gracza</span><span>Jedno konto · Gomoku · Warcaby · Szachy</span></footer>
   </main>
   <script type="module" src="/konto/sierpien/assets/bridge.js?view=players"></script>
