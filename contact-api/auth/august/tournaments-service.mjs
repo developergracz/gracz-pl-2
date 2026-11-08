@@ -177,20 +177,97 @@ export class TournamentService {
     for(const m of matches) await db.query(`INSERT INTO gracz_public_identity.august_tournament_matches(match_id,tournament_id,round,board,white_id,white_name,black_id,black_name,result,status,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,[m.matchId,id,m.round,m.board,m.whiteId,m.whiteName,m.blackId,m.blackName,m.result,m.status,m.completedAt]);
   }
 
-  async report(user,id,matchId,result){
-    if(!RESULTS.has(result))throw tournamentError("Nieprawidłowy wynik.","INVALID_RESULT",400);
+  // One first-party match ID is bound to exactly one tournament board.
+  // Participants have already consented to scheduled pairings by joining.
+  // No second login or friend relationship is required for this match.
+  async launch(user,id,matchId){
+    let linked;
     await this.pool.transaction(async db=>{
-      // Lock the tournament first: simultaneous match reports cannot advance
-      // the same round twice or recompute points from intermediate state.
-      const t=await db.query('SELECT owner_id,status FROM gracz_public_identity.august_tournaments WHERE tournament_id=$1 FOR UPDATE',[id]);
-      if(!t.rows.length)throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
-      if(t.rows[0].owner_id!==user.userId)throw tournamentError("Wyniki ręczne zatwierdza organizator.","MATCH_FORBIDDEN",403);
-      if(t.rows[0].status!=='live')throw tournamentError("Turniej nie jest w trakcie.","TOURNAMENT_NOT_LIVE",409);
-      const m=await db.query('SELECT match_id,status,black_id FROM gracz_public_identity.august_tournament_matches WHERE tournament_id=$1 AND match_id=$2 FOR UPDATE',[id,matchId]);
-      if(!m.rows.length)throw tournamentError("Nie znaleziono partii.","MATCH_NOT_FOUND",404);
-      if(m.rows[0].status==='completed')throw tournamentError("Wynik już zapisany.","MATCH_COMPLETED",409);
-      if(!m.rows[0].black_id)throw tournamentError("Wolny los nie wymaga zgłoszenia.","MATCH_BYE",409);
-      await db.query("UPDATE gracz_public_identity.august_tournament_matches SET result=$3,status='completed',reported_by=$4,completed_at=now() WHERE tournament_id=$1 AND match_id=$2",[id,matchId,result,user.userId]);
+      const t=(await db.query(
+        'SELECT game,format,status,time_control,current_round FROM gracz_public_identity.august_tournaments WHERE tournament_id=$1 FOR UPDATE',
+        [id])).rows[0];
+      if(!t)throw tournamentError("Turniej nie istnieje.","TOURNAMENT_NOT_FOUND",404);
+      if(t.status!=='live')throw tournamentError("Turniej jeszcze nie trwa.","TOURNAMENT_NOT_LIVE",409);
+      const m=(await db.query(
+        'SELECT white_id,black_id,round,status,game_challenge_id FROM gracz_public_identity.august_tournament_matches WHERE tournament_id=$1 AND match_id=$2 FOR UPDATE',
+        [id,matchId])).rows[0];
+      if(!m)throw tournamentError("Partia nie istnieje.","MATCH_NOT_FOUND",404);
+      if(m.round!==t.current_round||m.status!=='scheduled'||!m.white_id||!m.black_id)
+        throw tournamentError("Ta para nie oczekuje na grę.","MATCH_NOT_OPEN",409);
+      if(user.userId!==m.white_id&&user.userId!==m.black_id)
+        throw tournamentError("Grę rozpoczyna uczestnik tej pary.","MATCH_FORBIDDEN",403);
+      if(m.game_challenge_id){
+        // In knockout a drawn game must be replayed. Never award a win for a draw.
+        const previous=(await db.query(
+          "SELECT state->>'winner' AS winner FROM gracz_public_identity.game_matches WHERE challenge_id=$1",
+          [m.game_challenge_id])).rows[0];
+        if(t.format!=='knockout'||previous?.winner!=='3'){
+          linked=String(m.game_challenge_id);
+          return;
+        }
+      }
+      const accounts=await db.query(
+        'SELECT count(*)::int AS count FROM gracz_public_identity.accounts WHERE id IN ($1::uuid,$2::uuid) AND verified_at IS NOT NULL',
+        [m.white_id,m.black_id]);
+      if(accounts.rows[0]?.count!==2)
+        throw tournamentError("Gracz ma nieaktywne konto.","MATCH_ACCOUNT_UNAVAILABLE",409);
+      const blocked=await db.query(
+        'SELECT 1 FROM gracz_public_identity.friend_blocks WHERE (blocker=$1::uuid AND blocked=$2::uuid) OR (blocker=$2::uuid AND blocked=$1::uuid) LIMIT 1',
+        [m.white_id,m.black_id]);
+      if(blocked.rows.length)
+        throw tournamentError("Partia zablokowana przez ustawienia prywatności.","MATCH_BLOCKED",403);
+      const {minutes,increment}=parseTime(t.time_control);
+      const challengeId=randomUUID();
+      await db.query(
+        "INSERT INTO gracz_public_identity.game_challenges (id,sender_id,recipient_id,game,status,time_limit_minutes,increment_seconds,expires_at) VALUES($1,$2::uuid,$3::uuid,$4,'accepted',$5,$6,now()+interval '60 days')",
+        [challengeId,m.white_id,m.black_id,t.game,minutes,increment]);
+      await db.query(
+        'UPDATE gracz_public_identity.august_tournament_matches SET game_challenge_id=$3 WHERE tournament_id=$1 AND match_id=$2',
+        [id,matchId,challengeId]);
+      linked=challengeId;
+    });
+    return {ok:true,gameMatchId:linked,href:'/konto/'+(await this.game(id))+'/?match='+encodeURIComponent(linked)};
+  }
+
+  async game(id){
+    const row=await this.pool.query(
+      'SELECT game FROM gracz_public_identity.august_tournaments WHERE tournament_id=$1',[id]);
+    return row.rows[0]?.game||'gomoku';
+  }
+
+  // Verified result is read from the authoritative PostgreSQL game state.
+  // Neither players nor the organizer may supply their own score.
+  async syncResult(user,id,matchId){
+    await this.pool.transaction(async db=>{
+      const t=(await db.query(
+        'SELECT owner_id,game,status,format,current_round FROM gracz_public_identity.august_tournaments WHERE tournament_id=$1 FOR UPDATE',
+        [id])).rows[0];
+      if(!t)throw tournamentError("Turniej nie istnieje.","TOURNAMENT_NOT_FOUND",404);
+      if(t.status!=='live')throw tournamentError("Turniej nie jest w trakcie.","TOURNAMENT_NOT_LIVE",409);
+      const m=(await db.query(
+        'SELECT white_id,black_id,round,status,game_challenge_id FROM gracz_public_identity.august_tournament_matches WHERE tournament_id=$1 AND match_id=$2 FOR UPDATE',
+        [id,matchId])).rows[0];
+      if(!m)throw tournamentError("Partia nie istnieje.","MATCH_NOT_FOUND",404);
+      if(user.userId!==m.white_id&&user.userId!==m.black_id&&user.userId!==t.owner_id)
+        throw tournamentError("Brak dostępu do wyniku.","MATCH_FORBIDDEN",403);
+      if(m.status==='completed')throw tournamentError("Wynik już zapisany.","MATCH_COMPLETED",409);
+      if(m.round!==t.current_round||!m.game_challenge_id)
+        throw tournamentError("Najpierw rozegraj przypisaną partię.","MATCH_NOT_LINKED",409);
+      const verified=(await db.query(
+        "SELECT c.status,c.game,c.sender_id::text AS sender_id,c.recipient_id::text AS recipient_id,m.state FROM gracz_public_identity.game_challenges c JOIN gracz_public_identity.game_matches m ON m.challenge_id=c.id WHERE c.id=$1 FOR SHARE OF m",
+        [m.game_challenge_id])).rows[0];
+      if(!verified||verified.status!=='accepted'||verified.game!==t.game||
+         verified.sender_id!==m.white_id||verified.recipient_id!==m.black_id)
+        throw tournamentError("Powiązanie partii nie jest prawidłowe.","MATCH_LINK_INVALID",409);
+      const winner=verified.state?.winner;
+      if(![1,2,3].includes(winner))
+        throw tournamentError("Partia jeszcze trwa. Poczekaj na wynik serwera.","MATCH_NOT_FINISHED",409);
+      if(winner===3&&t.format==='knockout')
+        throw tournamentError("Remis w systemie pucharowym wymaga dogrywki.","MATCH_REPLAY_REQUIRED",409);
+      const outcome=winner===1?'1-0':winner===2?'0-1':'1/2-1/2';
+      await db.query(
+        "UPDATE gracz_public_identity.august_tournament_matches SET result=$3,status='completed',reported_by=$4,completed_at=now() WHERE tournament_id=$1 AND match_id=$2",
+        [id,matchId,outcome,user.userId]);
       await this.recomputeStandings(id,db);
       await this.advanceDatabase(id,db);
     });
