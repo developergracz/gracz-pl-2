@@ -90,10 +90,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .game-row a:hover{background:#c7e9db}
 footer{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;padding:18px 3px;color:#77928b;font-size:10px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-/* Player sidebar (#744): August settings navigation in the current turquoise/white lobby palette. */
-.lobby-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
-.lobby-main{min-width:0}
-.player-sidebar{position:sticky;top:18px;margin-top:18px;max-height:calc(100vh - 36px);overflow-y:auto;overscroll-behavior:contain;background:#fffefdf0;border:1px solid #c8e3da;border-radius:17px;box-shadow:0 7px 28px #064d4b12}
+/* Right-side vertical player sidebar (#744): preserve existing premium turquoise and white lobby palette. */
+.lobby-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.lobby-main{grid-column:1;grid-row:1;min-width:0}
+.player-sidebar{grid-column:2;grid-row:1;position:sticky;top:18px;margin-top:18px;max-height:calc(100vh - 36px);overflow-y:auto;overscroll-behavior:contain;background:#fffefdf0;border:1px solid #c8e3da;border-radius:17px;box-shadow:0 7px 28px #064d4b12}
 .sidebar-toggle{display:none}
 .sidebar-nav{display:grid;gap:3px;padding:14px 12px}
 .sidebar-title{margin:13px 10px 6px;color:#0b8883;font-size:10px;font-weight:850;letter-spacing:.15em}
@@ -106,8 +106,8 @@ footer{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;paddin
 .sidebar-link.active span{background:#ffffff1c;color:#f1ce88}
 .sidebar-footer{display:flex;align-items:center;gap:8px;margin:12px 10px 2px;padding-top:12px;border-top:1px solid #e0ede7;color:#69847c;font-size:11px}
 .sidebar-footer i{width:8px;height:8px;border-radius:50%;background:#168b62;box-shadow:0 0 0 3px #168b6224}
-@media(max-width:1279px){.lobby-layout{grid-template-columns:260px minmax(0,1fr);gap:16px}}
-@media(max-width:1024px){.lobby-layout{grid-template-columns:minmax(0,1fr);gap:0}.player-sidebar{position:static;max-height:none;overflow:visible;margin-top:14px}.sidebar-toggle{display:flex;align-items:center;gap:11px;width:100%;min-height:50px;padding:10px 16px;border:0;border-radius:16px;background:transparent;color:#136865;font-size:14px;font-weight:850;text-align:left}.sidebar-toggle span{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#e3f3ee;color:#087e81;font-size:17px}.sidebar-toggle b{margin-left:auto;font-size:23px;line-height:1;color:#0d867f;transform:rotate(90deg);transition:transform .13s}.sidebar-toggle[aria-expanded="true"] b{transform:rotate(-90deg)}.sidebar-nav{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;padding:4px 12px 14px;border-top:1px solid #e0ede7}.player-sidebar.open .sidebar-nav{display:grid}.sidebar-title,.sidebar-footer{grid-column:1/-1}.sidebar-nav>.sidebar-link:first-child{grid-column:1/-1;margin-top:10px}}
+@media(max-width:1279px){.lobby-layout{grid-template-columns:minmax(0,1fr) 260px;gap:16px}}
+@media(max-width:1024px){.lobby-layout{grid-template-columns:minmax(0,1fr);gap:0}.lobby-main{grid-column:1;grid-row:2}.player-sidebar{grid-column:1;grid-row:1;position:static;max-height:none;overflow:visible;margin-top:14px}.sidebar-toggle{display:flex;align-items:center;gap:11px;width:100%;min-height:50px;padding:10px 16px;border:0;border-radius:16px;background:transparent;color:#136865;font-size:14px;font-weight:850;text-align:left}.sidebar-toggle span{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#e3f3ee;color:#087e81;font-size:17px}.sidebar-toggle b{margin-left:auto;font-size:23px;line-height:1;color:#0d867f;transform:rotate(90deg);transition:transform .13s}.sidebar-toggle[aria-expanded="true"] b{transform:rotate(-90deg)}.sidebar-nav{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;padding:4px 12px 14px;border-top:1px solid #e0ede7}.player-sidebar.open .sidebar-nav{display:grid}.sidebar-title,.sidebar-footer{grid-column:1/-1}.sidebar-nav>.sidebar-link:first-child{grid-column:1/-1;margin-top:10px}}
 @media(max-width:620px){.player-sidebar{margin-top:10px;border-radius:15px}.sidebar-nav{grid-template-columns:minmax(0,1fr)}.sidebar-link{min-height:46px}}
 @media(prefers-reduced-motion:reduce){.sidebar-link,.sidebar-toggle b{transition:none}}
 @media(max-width:1120px){.topbar{gap:12px}.game-nav{order:3;justify-content:center;width:100%}.hero{padding:28px;gap:18px}.stats{flex-basis:360px}}
