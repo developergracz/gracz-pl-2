@@ -1,3 +1,4 @@
+import {graczAiChatJs,graczAiChatCss} from './gracz-ai-chat-assets.mjs';
 import {createGomokuRealtimeClient} from './gomoku-realtime-client.mjs';
 // Standalone Gomoku console. Online games use the existing authenticated, server-authoritative /auth/match API.
 const secure={
@@ -7,7 +8,7 @@ const secure={
 };
 const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04191b"><meta name="robots" content="noindex,nofollow,noarchive">
 <title>Gomoku Online — Full Max Premium | gracz.pl</title>
-<link rel="stylesheet" href="/konto/gomoku/styl.css"><script src="/konto/gomoku/app.js" defer></script></head>
+<link rel="stylesheet" href="/konto/gomoku/styl.css"><link rel="stylesheet" href="/konto/gracz-ai-chat.css"><script src="/konto/gomoku/app.js" defer></script><script src="/konto/gracz-ai-chat.js" defer></script></head>
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
 <main class="layout" id="game">
@@ -3222,7 +3223,9 @@ export function serveGomokuConsole(req,res,url){
   '/konto/gomoku':['text/html; charset=utf-8',html],
   '/konto/gomoku/styl.css':['text/css; charset=utf-8',css],
   '/konto/gomoku/app.js':['application/javascript; charset=utf-8',js],
-  '/konto/gomoku/ai-worker.js':['application/javascript; charset=utf-8',gomokuWorkerJs]
+  '/konto/gomoku/ai-worker.js':['application/javascript; charset=utf-8',gomokuWorkerJs],
+  '/konto/gracz-ai-chat.js':['application/javascript; charset=utf-8',graczAiChatJs],
+  '/konto/gracz-ai-chat.css':['text/css; charset=utf-8',graczAiChatCss]
  }[path];
  if(!response)return false;
  res.writeHead(200,{...secure,'Content-Type':response[0],'Content-Length':Buffer.byteLength(response[1])});
