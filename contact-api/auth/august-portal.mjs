@@ -114,8 +114,12 @@ export function createAugustPortal({database,publicIdentity,enabled=process.env.
     const value=act==='join'?await svc.join(user,id):act==='leave'?await svc.leave(user,id):await svc.start(user,id);
     return answer(res,200,value);
    }
-   if(parts.length===4&&act==='matches'&&uuid.test(mid)&&resultAction==='result'&&req.method==='POST')
-    return answer(res,200,await svc.report(user,id,mid,(await jsonBody(req)).result));
+   if(parts.length===4&&act==='matches'&&uuid.test(mid)&&req.method==='POST'){
+    if(resultAction==='launch')
+      return answer(res,200,await svc.launch(user,id,mid));
+    if(resultAction==='result')
+      return answer(res,200,await svc.syncResult(user,id,mid));
+   }
    return fail(res,404,'Nie znaleziono operacji turniejowej');
   }catch(e){
    const known=Number.isInteger(e.status)&&e.status>=400&&e.status<500;
