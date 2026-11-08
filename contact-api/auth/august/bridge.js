@@ -9,7 +9,25 @@ const save=(path,value,method='POST')=>api(path,{method,headers:{'content-type':
 const a=(label,href)=>{const x=el('a',label);x.href=href;return x};
 const action=(label,cb)=>{const b=el('button',label);b.type='button';b.addEventListener('click',async()=>{b.disabled=true;try{await cb()}catch(e){tell(e.message)}finally{b.disabled=false}});return b};
 async function who(){const r=await api('/auth/session');if(!r.loggedIn){location.replace('/konto/?widok=login');throw Error('Brak zalogowania')}for(const id of ['#identity','#mail-user','#user-name','#me-name'])if($(id))$(id).textContent=r.nickname;if($('#me-id'))$('#me-id').textContent='@'+r.nickname;return r}
-function navigation(){const header=document.querySelector('header');if(!header)return;const lookup=document.querySelector('a[href="/auth/search-entry"]');if(lookup){lookup.style.cssText='position:static;color:#5deab1;background:transparent;padding:7px 10px;text-decoration:none;white-space:nowrap;font-weight:700';header.append(lookup)}const n=el('nav');n.style.cssText='display:flex;gap:12px;flex-wrap:wrap;font:12px Arial;padding:9px';for(const [title,id] of [['Panel','settings'],['Wiadomości','messages'],['Społeczność','community'],['Chat','global-chat'],['Turnieje','tournaments'],['Warcaby i gracze','players']])if(view!==id){const l=a(title,'/konto/sierpien/'+id+'.html');l.style.color='#b1efdc';n.append(l)}header.append(n)}
+function navigation(){
+ const header=document.querySelector('.topbar,header');
+ if(!header)return;
+ if(view==='players'){
+  const search=a('Wyszukiwarka','/auth/search-entry');
+  search.className='panel-link';
+  search.setAttribute('aria-label','Otwórz wyszukiwarkę GRACZ.PL');
+  const user=header.querySelector('.user');
+  if(user)user.insertBefore(search,user.querySelector('#back')||null);
+  return;
+ }
+ const lookup=document.querySelector('a[href="/auth/search-entry"]');
+ if(lookup){lookup.style.cssText='position:static;color:#5deab1;background:transparent;padding:7px 10px;text-decoration:none;white-space:nowrap;font-weight:700';header.append(lookup)}
+ const n=el('nav');n.style.cssText='display:flex;gap:12px;flex-wrap:wrap;font:12px Arial;padding:9px';
+ for(const [title,id] of [['Panel','settings'],['Wiadomości','messages'],['Społeczność','community'],['Chat','global-chat'],['Turnieje','tournaments'],['Warcaby i gracze','players']])
+  if(view!==id){const l=a(title,'/konto/sierpien/'+id+'.html');l.style.color='#b1efdc';n.append(l)}
+ header.append(n);
+}
+
 async function settings(){
  const labels={account:'Konto i profil',security:'Bezpieczeństwo',privacy:'Prywatność',notifications:'Powiadomienia',messages:'Wiadomości i chat',games:'Gry i rozgrywka',appearance:'Wygląd i dostępność',sessions:'Sesje i urządzenia',data:'Dane i konto'};
  const open=id=>{$$('.settings-nav [data-section]').forEach(b=>b.classList.toggle('active',b.dataset.section===id));$$('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));if($('#page-title'))$('#page-title').textContent=labels[id];history.replaceState(null,'','#'+id)};
@@ -101,34 +119,88 @@ async function community(){
  await reload();
 }
 async function players(){
- const f=(await api('/auth/friends/presence')).friends||[];
- for(const [id,n] of Object.entries({'#players-count':f.filter(x=>x.online).length,'#rooms-count':'—','#waiting-count':'—','#player-badge':f.length,'#room-badge':'—'}))if($(id))$(id).textContent=n;
- wipe($('#players'));
- for(const p of f){
-  const box=el('div');box.style.cssText='padding:10px;border-bottom:1px solid #22454c;display:flex;flex-wrap:wrap;align-items:center;gap:9px';
-  box.append(el('strong',p.nickname+(p.online?' • online':'')));
-  const select=el('select');for(const [id,name] of [['warcaby','Warcaby'],['gomoku','Gomoku'],['szachy','Szachy']]){const option=el('option',name);option.value=id;select.append(option)}
-  box.append(select,action('Zaproś do gry',async()=>{
-   await save('/auth/social/challenges',{action:'send',nickname:p.nickname,game:select.value,timeLimitMinutes:0,incrementSeconds:0});
-   tell('Wysłano zaproszenie do '+p.nickname+'.');
-  }));$('#players')?.append(box)
+ let friends=[],pending=[],selectedFilter='all',query='';
+ const games=[
+  {id:'warcaby',title:'Warcaby',info:'Plansza 8 × 8'},
+  {id:'gomoku',title:'Gomoku',info:'Pięć w rzędzie'},
+  {id:'szachy',title:'Szachy',info:'Gra strategiczna'}
+ ];
+ const rooms=$('#rooms');wipe(rooms);
+ for(const game of games){
+  const item=el('article',undefined,'game-row');
+  const info=el('span');info.append(el('strong',game.title),el('small',game.info));
+  item.append(info,a('Otwórz grę','/konto/'+game.id+'/'));
+  rooms?.append(item);
  }
- wipe($('#rooms'));
- $('#rooms')?.append(el('p','Bieżące pokoje i konsola gry:'),a('Warcaby','/konto/warcaby/'),el('p',' '),a('Gomoku','/konto/gomoku/'),el('p',' '),a('Szachy','/konto/szachy/'));
- const area=$('#incoming');
- const inv=await api('/auth/social/challenges');const pending=(inv.challenges||[]).filter(c=>!c.outgoing&&c.status==='pending');
- if(area){area.hidden=pending.length===0;wipe(area);
-  for(const c of pending){
-   const box=el('div');box.style.cssText='padding:8px;border-bottom:1px solid #31515b';
-   box.append(el('strong',c.opponent+' zaprasza do gry: '+c.game+' '));
-   for(const [label,actionName] of [['Akceptuj','accept'],['Odrzuć','decline']])
-    box.append(action(label,async()=>{await save('/auth/social/challenges',{action:actionName,id:c.id});tell('Zapisano odpowiedź');if(actionName==='accept')location.assign('/konto/'+c.game+'/?match='+encodeURIComponent(c.id));else box.remove()}));
-   area.append(box);
+ function showFriends(){
+  const target=$('#players');wipe(target);
+  const visible=friends.filter(f=>{
+   if(selectedFilter==='online'&&!f.online)return false;
+   if(selectedFilter==='offline'&&f.online)return false;
+   return f.nickname.toLowerCase().includes(query);
+  });
+  if(!visible.length){
+   target?.append(el('p',query?'Nie znaleziono znajomych o tym nicku.':friends.length?'Brak znajomych dla wybranego filtra.':'Nie masz jeszcze dodanych znajomych. Dodaj ich w sekcji „Moi znajomi” swojego panelu.','empty'));
+   if(!friends.length)target?.append(a('Przejdź do znajomych','/konto/panel/'));
+   return;
   }
+  for(const friend of visible){
+   const row=el('article',undefined,'friend-row');
+   const avatar=el('span',friend.nickname.slice(0,1).toUpperCase(),'friend-avatar');avatar.setAttribute('aria-hidden','true');
+   const info=el('span',undefined,'friend-info');
+   info.append(el('strong',friend.nickname),el('small',friend.online?'● Online':'○ Offline',friend.online?'online':'offline'));
+   const controls=el('span',undefined,'friend-controls');
+   const select=el('select');select.setAttribute('aria-label','Wybierz grę dla '+friend.nickname);
+   for(const game of games){const option=el('option',game.title);option.value=game.id;select.append(option)}
+   const invite=action('Zaproś do gry',async()=>{
+    await save('/auth/social/challenges',{action:'send',nickname:friend.nickname,game:select.value,timeLimitMinutes:0,incrementSeconds:0});
+    tell('Zaproszenie wysłane do '+friend.nickname);
+    await refreshInvites();
+   });
+   controls.append(select,invite);row.append(avatar,info,controls);target?.append(row);
+  }
+ }
+ async function refreshInvites(){
+  const data=await api('/auth/social/challenges');
+  pending=(data.challenges||[]).filter(c=>c.status==='pending'&&!c.outgoing);
+  if($('#waiting-count'))$('#waiting-count').textContent=pending.length;
+  const area=$('#incoming');if(!area)return;
+  wipe(area);area.hidden=pending.length===0;
+  for(const invitation of pending){
+   const row=el('div',undefined,'incoming-card');
+   const title=el('strong',invitation.opponent+' zaprasza do gry w '+(games.find(g=>g.id===invitation.game)?.title||'grę'));
+   const actions=el('span',undefined,'incoming-actions');
+   for(const [label,mode] of [['Akceptuj','accept'],['Odrzuć','decline']]){
+    actions.append(action(label,async()=>{
+     await save('/auth/social/challenges',{action:mode,id:invitation.id});
+     if(mode==='accept')location.assign('/konto/'+invitation.game+'/?match='+encodeURIComponent(invitation.id));
+     else await refreshInvites();
+    }));
+   }
+   row.append(title,actions);area.append(row);
+  }
+ }
+ async function refreshFriends(){
+  const p=await api('/auth/friends/presence');
+  friends=Array.isArray(p.friends)?p.friends:[];
+  if($('#players-count'))$('#players-count').textContent=friends.filter(f=>f.online).length;
+  if($('#rooms-count'))$('#rooms-count').textContent=friends.length;
+  if($('#player-badge'))$('#player-badge').textContent=friends.length;
+  showFriends();
+ }
+ $('#search')?.addEventListener('input',e=>{query=e.target.value.trim().toLowerCase();showFriends()});
+ for(const button of $$('[data-filter]')){
+  button.addEventListener('click',()=>{
+   selectedFilter=button.dataset.filter;
+   for(const b of $$('[data-filter]')){const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))}
+   showFriends();
+  });
  }
  $('#create-room')?.addEventListener('click',()=>location.assign('/konto/warcaby/'));
  $('#back')?.addEventListener('click',()=>location.assign('https://gracz.pl/'));
+ await Promise.all([refreshFriends(),refreshInvites()]);
 }
+
 async function chat(){
  const container=$('.chat-main')||$('.chat-shell')||document.body,wrap=el('section');wrap.className='august-live-chat';wrap.style.cssText='padding:22px;max-width:940px;margin:auto';
  const list=el('div');list.style.cssText='min-height:300px;max-height:500px;overflow:auto;background:#081b24;border:1px solid #35636b;border-radius:10px;padding:12px';
