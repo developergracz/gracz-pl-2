@@ -87,8 +87,10 @@ export class TournamentService {
       this.memory.set(item.tournamentId, { tournament: item, players: [{ userId:user.userId, displayName:user.displayName, seed:1, points:0, wins:0, draws:0, losses:0, buchholz:0, status:"active", joinedAt:new Date().toISOString() }], matches: [] });
       return item;
     }
-    await this.pool.query(`INSERT INTO gracz_public_identity.august_tournaments(tournament_id,owner_id,owner_name,title,description,game,format,visibility,max_players,rounds,time_control,rated,starts_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [item.tournamentId,item.ownerId,item.ownerName,item.title,item.description,item.game,item.format,item.visibility,item.maxPlayers,item.rounds,item.timeControl,item.rated,item.startsAt]);
-    await this.pool.query(`INSERT INTO gracz_public_identity.august_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,1)`, [item.tournamentId,user.userId,user.displayName]);
+    await this.pool.transaction(async db=>{
+    await db.query(`INSERT INTO gracz_public_identity.august_tournaments(tournament_id,owner_id,owner_name,title,description,game,format,visibility,max_players,rounds,time_control,rated,starts_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [item.tournamentId,item.ownerId,item.ownerName,item.title,item.description,item.game,item.format,item.visibility,item.maxPlayers,item.rounds,item.timeControl,item.rated,item.startsAt]);
+    await db.query(`INSERT INTO gracz_public_identity.august_tournament_players(tournament_id,user_id,display_name,seed) VALUES($1,$2,$3,1)`, [item.tournamentId,user.userId,user.displayName]);
+    });
     return item;
   }
 
