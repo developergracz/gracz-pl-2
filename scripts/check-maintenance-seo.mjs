@@ -62,6 +62,7 @@ const regulation = read("regulamin/index.html");
 const privacy = read("polityka-prywatnosci/index.html");
 const robots = read("robots.txt");
 const sitemap = read("sitemap.xml");
+const about = read("o-gracz-pl/index.html");
 
 const sharedHeaderPages = [
   "index.html",
@@ -200,6 +201,21 @@ requireCheck(
 requireCheck(
   sharedHeaderJs.includes("data-shared-header"),
   "global header: special-page runtime binding missing"
+);
+
+// The root is the primary Google landing page for the GRACZ.PL brand.
+// About stays accessible through site navigation but does not compete in Google.
+requireCheck(
+  /<meta name="googlebot" content="index,follow[^"]*">/.test(home),
+  "homepage: Googlebot indexing must remain enabled"
+);
+requireCheck(
+  /<meta name="googlebot" content="noindex,follow">/.test(about),
+  "about: Googlebot noindex must prevent competing branded SERP result"
+);
+requireCheck(
+  !sitemap.includes("<loc>https://gracz.pl/o-gracz-pl/</loc>"),
+  "sitemap: Google-excluded About page must not be listed"
 );
 
 const homeMeta = validateBasePage({
