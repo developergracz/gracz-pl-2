@@ -37,10 +37,20 @@ async function jsonBody(req){
  for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>8192)throw Error('Za duże żądanie');}
  try{return JSON.parse(raw||'{}');}catch{throw Error('Błędny JSON');}
 }
-export function createAugustPortal({database,publicIdentity,enabled=process.env.GRACZ_AUGUST_PORTAL_PREVIEW==='1'||process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1'}){
+export function createAugustPortal({
+ database,publicIdentity,
+ enabled=process.env.GRACZ_AUGUST_PORTAL_PREVIEW==='1'||process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1',
+ active=process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1',
+ previewAllowedNicknames=String(process.env.GRACZ_AUGUST_PORTAL_ALLOWED_NICKS||'').split(',')
+}){
  let servicePromise=null;
  let chatPromise=null;
  const attempts=new Map();
+ const allowedNicknames=new Set(previewAllowedNicknames.map(x=>String(x).trim().toLowerCase()).filter(Boolean));
+ const previewAllowed=user=>Boolean(user)&&(active||allowedNicknames.has(String(user.displayName||'').toLowerCase()));
+ // Preview access is private to selected verified accounts. Assets contain no user data.
+ // Production rollout uses a separate switch, never activated by the preview flag.
+
  const service=()=>{
   if(!servicePromise)servicePromise=(async()=>{
    await publicIdentity.probe();
@@ -56,6 +66,17 @@ export function createAugustPortal({database,publicIdentity,enabled=process.env.
    const name=url.pathname.slice(BASE.length);
    if(!pageFiles.has(name))return false;
    const filename=pageFiles.get(name);
+   if(filename.endsWith('.html')){
+    if(!active&&!allowedNicknames.size)return fail(res,404,'Podgląd nie jest aktywny');
+    try{
+     const account=await publicIdentity.authenticateGameRequest(req);
+     if(!account)return fail(res,401,'Zaloguj się do GRACZ.PL');
+     if(!previewAllowed(account))return fail(res,404,'Nie znaleziono zasobu');
+    }catch(error){
+     console.error('AUGUST_PREVIEW_AUTH_ERROR',{code:typeof error?.code==='string'?error.code:'UNAVAILABLE'});
+     return fail(res,503,'Autoryzacja czasowo niedostępna');
+    }
+   }
    let bytes=cache.get(filename);
    if(!bytes){bytes=await readFile(join(ROOT,filename));cache.set(filename,bytes);}
    const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':'text/html';
@@ -70,6 +91,7 @@ export function createAugustPortal({database,publicIdentity,enabled=process.env.
   try{
    const user=await publicIdentity.authenticateGameRequest(req);
    if(!user)return fail(res,401,'Zaloguj się do GRACZ.PL');
+   if(!previewAllowed(user))return fail(res,404,'Nie znaleziono zasobu');
    if(url.pathname===API+'whoami'&&req.method==='GET')
     return answer(res,200,{ok:true,user});
    if(url.pathname===API+'chat'){
