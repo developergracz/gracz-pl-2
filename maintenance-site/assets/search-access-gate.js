@@ -10,6 +10,12 @@
  var gate=new URLSearchParams(location.hash.slice(1)).get('gate')||'';
  var onCanonical=location.hostname==='gracz.pl'||location.hostname==='www.gracz.pl';
  var active=true;
+ // The search gate owns session verification on /szukaj/. Let the global header
+ // display its decision instead of starting a competing top-level auth redirect.
+ function publishAccess(state){
+  document.body.dataset.searchAccessState=state;
+  window.dispatchEvent(new CustomEvent('gracz:search-access-state',{detail:{state:state}}));
+ }
  function focusFirst(){
   if(!active)return;
   window.requestAnimationFrame(function(){try{first.focus({preventScroll:true});}catch(_){}});
@@ -21,6 +27,7 @@
  }
  function reveal(){
   active=false;
+  publishAccess('in');
   layer.remove();
   page.removeAttribute('inert');
   document.body.classList.remove('search-access-pending');
@@ -33,8 +40,10 @@
  // The production login cookie is host-only and SameSite=Lax, so a cross-site
  // fetch cannot prove login. Navigate top-level to the auth service instead.
  if(gate==='guest'){
+  publishAccess('out');
   showGate();
  }else if(gate==='unavailable'){
+  publishAccess('out');
   showGate('Nie udało się sprawdzić sesji. Wróć do serwisu i spróbuj ponownie.');
  }else if(/^[a-f0-9]{48}$/.test(gate)){
   fetch(service+'/auth/search-ticket',{
@@ -45,9 +54,11 @@
     .then(function(json){
      if(json&&json.allowed===true){reveal();return;}
      history.replaceState(null,'',location.pathname+location.search+'#gate=guest');
+     publishAccess('out');
      showGate('Potwierdzenie logowania wygasło. Otwórz wyszukiwarkę ponownie.');
     }).catch(function(){
      history.replaceState(null,'',location.pathname+location.search+'#gate=unavailable');
+     publishAccess('out');
      showGate('Nie udało się sprawdzić sesji. Spróbuj ponownie.');
     });
  }else if(onCanonical){
@@ -55,6 +66,7 @@
   window.location.replace(service+'/auth/search-entry'+location.search);
  }else{
   // Local/static previews display the guest view without navigating to LIVE.
+  publishAccess('out');
   showGate();
  }
  document.addEventListener('keydown',function(event){

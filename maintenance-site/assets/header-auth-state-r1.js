@@ -107,7 +107,21 @@
  }
  // Account origin can validate SameSite=Lax HttpOnly cookies only during a
  // top-level navigation. Redirect back with a non-privileged UI display hint.
- if(['in','out','unknown'].includes(observed)){
+ // Search already performs the authoritative top-level authentication bridge.
+ // Avoid a second /auth/header-sync redirect here; two redirects visibly flash
+ // the page and may race to replace the single-use search ticket in the URL.
+ if(document.body.classList.contains('search-page')){
+  var gateState=document.body.dataset.searchAccessState==='in'?'in':'out';
+  var gateCached=cached();
+  render(gateState,gateState==='in'&&gateCached?.state==='in'?gateCached.nickname:'');
+  window.addEventListener('gracz:search-access-state',function(event){
+   var state=event.detail?.state==='in'?'in':'out';
+   var previous=cached();
+   var nickname=state==='in'&&previous?.state==='in'?previous.nickname:'';
+   render(state,nickname);
+   remember(state,nickname);
+  });
+ }else if(['in','out','unknown'].includes(observed)){
   stateLink.searchParams.delete('gracz_header_state');
   // Restore any original anchor and immediately remove the temporary nickname
   // fragment from browser history before displaying the account name.
