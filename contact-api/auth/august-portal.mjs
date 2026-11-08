@@ -37,7 +37,7 @@ async function jsonBody(req){
  for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>8192)throw Error('Za duże żądanie');}
  try{return JSON.parse(raw||'{}');}catch{throw Error('Błędny JSON');}
 }
-export function createAugustPortal({database,publicIdentity}){
+export function createAugustPortal({database,publicIdentity,enabled=process.env.GRACZ_AUGUST_PORTAL_PREVIEW==='1'||process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1'}){
  let servicePromise=null;
  let chatPromise=null;
  const attempts=new Map();
@@ -51,6 +51,7 @@ export function createAugustPortal({database,publicIdentity}){
   return servicePromise;
  };
  async function handle(req,res,url){
+  if(!enabled)return false;
   if(req.method==='GET'&&url.pathname.startsWith(BASE)){
    const name=url.pathname.slice(BASE.length);
    if(!pageFiles.has(name))return false;
