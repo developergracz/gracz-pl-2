@@ -130,7 +130,7 @@ async function players(){
  $('#back')?.addEventListener('click',()=>location.assign('https://gracz.pl/'));
 }
 async function chat(){
- const container=$('.chat-main')||$('.chat-shell')||document.body,wrap=el('section');wrap.style.cssText='padding:22px;max-width:940px;margin:auto';
+ const container=$('.chat-main')||$('.chat-shell')||document.body,wrap=el('section');wrap.className='august-live-chat';wrap.style.cssText='padding:22px;max-width:940px;margin:auto';
  const list=el('div');list.style.cssText='min-height:300px;max-height:500px;overflow:auto;background:#081b24;border:1px solid #35636b;border-radius:10px;padding:12px';
  const form=el('form');form.style.cssText='display:flex;gap:10px;margin-top:12px';const input=el('input');input.required=true;input.maxLength=1000;input.placeholder='Napisz na chacie…';input.style.cssText='flex:1;min-width:100px;padding:10px';const sendButton=el('button','Wyślij');form.append(input,sendButton);wrap.append(el('h2','Chat ogólny'),list,form);container.replaceChildren(wrap);
  let busy=false;const load=async()=>{if(busy)return;busy=true;try{const data=await api('/auth/august/chat');wipe(list);for(const m of data.messages||[]){const p=el('p');p.style.cssText='white-space:pre-wrap;border-bottom:1px solid #24464c;padding:8px';p.append(el('strong',m.nickname+': '),document.createTextNode(m.body));list.append(p)}}catch(e){tell(e.message)}finally{busy=false}};
