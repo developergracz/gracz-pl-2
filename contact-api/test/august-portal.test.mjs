@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createAugustPortal} from '../auth/august-portal.mjs';
 
-function setup(user=null,enabled=true){
+function setup(user=null,enabled=true,previewAllowedNicknames=['PrzykładowyGracz']){
  const portal=createAugustPortal({
   database:{enabled:false},
   enabled,
+  previewAllowedNicknames,
   publicIdentity:{
    authenticateGameRequest:async()=>user,
    probe:async()=>{}
@@ -44,7 +45,7 @@ test('same-origin is required for August mutations',async()=>{
 });
 
 test('historical pages are available only under isolated path',async()=>{
- const {run}=setup();
+ const {run}=setup({userId:'account-uuid',displayName:'PrzykładowyGracz'});
  const {res}=await run('GET','/konto/sierpien/turnieje.html');
  assert.equal(res.status,200);
  assert.match(res.headers['Content-Type'],/text\/html/);
@@ -60,4 +61,25 @@ test('preview and API remain disabled until explicitly enabled',async()=>{
   assert.equal(handled,false);
   assert.equal(res.status,0);
  }
+});
+
+test('private preview never exposes pages or API to another verified account',async()=>{
+ const {run}=setup({userId:'account-uuid',displayName:'CudzyGracz'});
+ const html=await run('GET','/konto/sierpien/settings.html');
+ const data=await run('GET','/auth/august/whoami');
+ assert.equal(html.res.status,404);
+ assert.equal(data.res.status,404);
+});
+
+test('preview requires allowlist and a verified session even when feature flag is on',async()=>{
+ const noList=setup({userId:'account-uuid',displayName:'PrzykładowyGracz'},true,[]);
+ assert.equal((await noList.run('GET','/konto/sierpien/settings.html')).res.status,404);
+ assert.equal((await noList.run('GET','/auth/august/whoami')).res.status,404);
+ const anonymous=setup();
+ assert.equal((await anonymous.run('GET','/konto/sierpien/settings.html')).res.status,401);
+});
+
+test('private preview does not activate production panel routing',async()=>{
+ const portal=setup({userId:'account-uuid',displayName:'PrzykładowyGracz'});
+ assert.equal((await portal.run('GET','/konto/panel/')).handled,false);
 });
