@@ -41,7 +41,7 @@ export class TournamentService {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         finished_at TIMESTAMPTZ NULL
       );
-      CREATE INDEX IF NOT EXISTS gracz_public_identity.august_tournaments_status_idx ON gracz_public_identity.august_tournaments(status, starts_at);
+      CREATE INDEX IF NOT EXISTS august_tournaments_status_idx ON gracz_public_identity.august_tournaments(status, starts_at);
       CREATE TABLE IF NOT EXISTS gracz_public_identity.august_tournament_players (
         tournament_id UUID NOT NULL REFERENCES gracz_public_identity.august_tournaments(tournament_id) ON DELETE CASCADE,
         user_id TEXT NOT NULL,
@@ -71,7 +71,7 @@ export class TournamentService {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         completed_at TIMESTAMPTZ NULL
       );
-      CREATE INDEX IF NOT EXISTS gracz_public_identity.august_tournament_matches_idx ON gracz_public_identity.august_tournament_matches(tournament_id, round, board);
+      CREATE INDEX IF NOT EXISTS august_tournament_matches_idx ON gracz_public_identity.august_tournament_matches(tournament_id, round, board);
       ALTER TABLE gracz_public_identity.august_tournament_matches
         ADD COLUMN IF NOT EXISTS game_challenge_id uuid
         REFERENCES gracz_public_identity.game_challenges(id) ON DELETE SET NULL;
