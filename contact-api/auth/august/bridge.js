@@ -30,8 +30,8 @@ async function settings(){
   ['privacy.online',{root:pr,key:'showOnline',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
   ['privacy.messages',{root:pr,key:'friendMessages',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
   ['privacy.invites',{root:pr,key:'gameInvites',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
-  ['notify.messages',{root:nt,key:'messages',endpoint:'/auth/notification-center',transform:()=>({...nt,muteMinutes:0})}],
-  ['notify.invites',{root:nt,key:'games',endpoint:'/auth/notification-center',transform:()=>({...nt,muteMinutes:0})}]
+  ['notify.messages',{root:nt,key:'messages',endpoint:'/auth/notification-center',transform:()=>({messages:nt.messages,friends:nt.friends,games:nt.games,highlightUnread:nt.highlightUnread,showNicknames:nt.showNicknames,showDates:nt.showDates,autoReadOnOpen:nt.autoReadOnOpen,muteMinutes:0})}],
+  ['notify.invites',{root:nt,key:'games',endpoint:'/auth/notification-center',transform:()=>({messages:nt.messages,friends:nt.friends,games:nt.games,highlightUnread:nt.highlightUnread,showNicknames:nt.showNicknames,showDates:nt.showDates,autoReadOnOpen:nt.autoReadOnOpen,muteMinutes:0})}]
  ]);
  for(const input of $$('[data-setting]')){
   const item=supported.get(input.dataset.setting);
@@ -46,6 +46,7 @@ async function settings(){
    const prior=item.root[item.key];item.root[item.key]=item.select?item.write(input.value):input.checked;
    input.disabled=true;try{
     // Server requires the full preference set, not a partial patch.
+    if(item.root===nt&&nt.mutedUntil&&Date.parse(nt.mutedUntil)>Date.now())throw Error('Najpierw wyłącz wyciszenie powiadomień w centrum konta.');
     const result=await save(item.endpoint,item.transform(),'PUT');
     Object.assign(item.root,result.preferences||{});
     tell('Ustawienie zapisane w GRACZ.PL');
