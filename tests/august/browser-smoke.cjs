@@ -107,6 +107,21 @@ async function run(){
      title:document.title,header:!!document.querySelector('header'),
      loadedStyles:Array.from(document.styleSheets).filter(x=>x.href?.includes('/konto/sierpien/assets/')).length
     }));
+
+    if(name==='players'){
+     const gameCards=await page.locator('.quick-game[href^="/konto/"]').count();
+     if(gameCards!==3)pageErrors.push('premium lobby needs three live game links, got '+gameCards);
+     const allFriends=await page.locator('.friend-row').count();
+     if(allFriends!==2)pageErrors.push('live friends not rendered: '+allFriends);
+     await page.locator('[data-filter="online"]').click();
+     if(await page.locator('.friend-row').count()!==1)pageErrors.push('online friend filter did not work');
+     await page.locator('[data-filter="offline"]').click();
+     if(await page.locator('.friend-row').count()!==1)pageErrors.push('offline friend filter did not work');
+     await page.locator('[data-filter="all"]').click();
+     await page.fill('#search','gracz2');
+     if(await page.locator('.friend-row').count()!==1)pageErrors.push('nickname search did not filter');
+     await page.fill('#search','');
+    }
     await page.screenshot({path:path.join(output,device.name+'-'+name+'.png'),fullPage:true});
     const problems=[];
     if(response.status()!==200)problems.push('HTTP '+response.status());
