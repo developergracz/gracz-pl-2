@@ -2528,6 +2528,9 @@ async function load(){
     return;
    }
   }
+  // Lobby sidebar deep link (?sekcja=): opens only an existing own section id, after the verified session.
+  const requestedSection=location.search?new URLSearchParams(location.search).get('sekcja'):null;
+  if(requestedSection&&Object.hasOwn(sectionNames,requestedSection))switchSection(requestedSection);
   try{await refreshCenter();}catch{notice('Profil jest dostępny, ale ustawienia premium lub lista sesji są chwilowo niedostępne.',true);}
  }catch(error){
   if(error.status===401)accessState('Zaloguj się do konta','Sesja wygasła lub nie została rozpoznana. Zaloguj się, aby otworzyć swój panel.',{login:true});

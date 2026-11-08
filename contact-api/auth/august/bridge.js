@@ -28,6 +28,15 @@ function navigation(){
  header.append(n);
 }
 
+// Player sidebar (#744): mobile/tablet disclosure; desktop CSS keeps the menu always visible.
+function playerMenu(){
+ const box=$('#player-sidebar'),toggle=$('#sidebar-toggle');
+ if(!box||!toggle)return;
+ const set=open=>{box.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open))};
+ toggle.addEventListener('click',()=>set(toggle.getAttribute('aria-expanded')!=='true'));
+ document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!box.classList.contains('open'))return;const inside=box.contains(document.activeElement);set(false);if(inside)toggle.focus()});
+}
+
 async function settings(){
  const labels={account:'Konto i profil',security:'Bezpieczeństwo',privacy:'Prywatność',notifications:'Powiadomienia',messages:'Wiadomości i chat',games:'Gry i rozgrywka',appearance:'Wygląd i dostępność',sessions:'Sesje i urządzenia',data:'Dane i konto'};
  const open=id=>{$$('.settings-nav [data-section]').forEach(b=>b.classList.toggle('active',b.dataset.section===id));$$('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));if($('#page-title'))$('#page-title').textContent=labels[id];history.replaceState(null,'','#'+id)};
@@ -209,4 +218,4 @@ async function chat(){
  form.addEventListener('submit',async e=>{e.preventDefault();sendButton.disabled=true;try{await save('/auth/august/chat',{body:input.value});input.value='';await load()}catch(x){tell(x.message)}finally{sendButton.disabled=false}});
  await load();const tick=setInterval(()=>{if(document.hidden)return;void load()},15000);window.addEventListener('pagehide',()=>clearInterval(tick),{once:true});
 }
-(async()=>{try{await who();navigation();if(view==='settings')await settings();if(view==='messages')await messages();if(view==='community')await community();if(view==='global-chat')await chat();if(view==='players')await players()}catch(x){tell(x.message)}})();
+(async()=>{try{if(view==='players')playerMenu();await who();navigation();if(view==='settings')await settings();if(view==='messages')await messages();if(view==='community')await community();if(view==='global-chat')await chat();if(view==='players')await players()}catch(x){tell(x.message)}})();
