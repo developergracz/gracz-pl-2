@@ -110,7 +110,7 @@
  // Search already performs the authoritative top-level authentication bridge.
  // Avoid a second /auth/header-sync redirect here; two redirects visibly flash
  // the page and may race to replace the single-use search ticket in the URL.
- if(document.getElementById('search-access-layer')){
+ if(document.body.classList.contains('search-page')){
   var gateState=document.body.dataset.searchAccessState==='in'?'in':'out';
   var gateCached=cached();
   render(gateState,gateState==='in'&&gateCached?.state==='in'?gateCached.nickname:'');
