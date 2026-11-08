@@ -3,6 +3,7 @@ import { installShutdown } from "./lifecycle.mjs";
 import { createPublicIdentityRouter } from "./auth/public-identity.mjs";
 import { serveIdentityPage } from "./auth/page.mjs";
 import { servePlayerPanel } from "./auth/panel.mjs";
+import { createAugustPortal } from "./auth/august-portal.mjs";
 import { serveGomokuConsole } from "./auth/gomoku-console.mjs";
 import { serveCheckersConsole } from "./auth/checkers-console.mjs";
 import { serveChessConsole } from "./auth/chess-console.mjs";
@@ -73,6 +74,7 @@ void publicIdentity.probe().then(
     code: typeof error?.code === 'string' ? error.code : 'SCHEMA_SETUP_ERROR',
   }),
 );
+const augustPortal = createAugustPortal({database,publicIdentity});
 const persistence = database.enabled
   ? createPersistenceRepositories(database)
   : null;
@@ -395,6 +397,7 @@ const server = createServer(async (req, res) => {
     // Account screen and its API share one origin; Secure HttpOnly session cookies work reliably.
     if (serveIdentityPage(req, res, url)) return;
     if (servePlayerPanel(req, res, url)) return;
+    if (await augustPortal.handle(req, res, url)) return;
     if (serveGomokuConsole(req, res, url)) return;
     if (serveCheckersConsole(req, res, url)) return;
     if (serveChessConsole(req, res, url)) return;
