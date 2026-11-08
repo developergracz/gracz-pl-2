@@ -39,6 +39,7 @@ test('Gomoku, Warcaby and Szachy share private GRACZ AI links without replacing 
   }
   assert.match(get(serveGomokuConsole,'/konto/gracz-ai-chat.js').headers['Content-Type'],/javascript/);
   assert.match(get(serveGomokuConsole,'/konto/gracz-ai-chat.css').headers['Content-Type'],/css/);
+  assert.doesNotThrow(()=>new Function(graczAiChatJs),'shared browser script must parse');
   assert.match(graczAiChatJs,/gracz-ai-shell/);
   assert.match(graczAiChatJs,/playerMessages\.hidden = active/);
   assert.match(graczAiChatJs,/playerComposer\.hidden = active/);
