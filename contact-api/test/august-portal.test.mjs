@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createAugustPortal} from '../auth/august-portal.mjs';
 
-function setup(user=null,enabled=true,previewAllowedNicknames=['PrzykładowyGracz']){
+function setup(user=null,enabled=true,previewAllowedNicknames=['PrzykładowyGracz'],lobbyPublic=false){
  const portal=createAugustPortal({
   database:{enabled:false},
   enabled,
   previewAllowedNicknames,
+  lobbyPublic,
   publicIdentity:{
    authenticateGameRequest:async()=>user,
    probe:async()=>{}
@@ -82,4 +83,27 @@ test('preview requires allowlist and a verified session even when feature flag i
 test('private preview does not activate production panel routing',async()=>{
  const portal=setup({userId:'account-uuid',displayName:'PrzykładowyGracz'});
  assert.equal((await portal.run('GET','/konto/panel/')).handled,false);
+});
+
+test('public lobby requires first-party verified session but does not expose private modules',async()=>{
+ const invited={userId:'verified-id',displayName:'NieOwner'};
+ const {run}=setup(invited,false,[],true);
+ const lobby=await run('GET','/konto/lobby/');
+ assert.equal(lobby.res.status,200);
+ assert.match(lobby.res.body,/Lobby/);
+ assert.match(lobby.res.body,/Gomoku/);
+ assert.equal((await run('GET','/konto/sierpien/players.html')).res.status,200);
+ assert.equal((await run('GET','/konto/sierpien/settings.html')).res.status,404);
+ assert.equal((await run('GET','/auth/august/whoami')).handled,false);
+ assert.equal((await run('GET','/konto/panel/')).handled,false);
+});
+test('public lobby redirects unauthenticated visitors to existing login',async()=>{
+ const {run}=setup(null,false,[],true);
+ const result=await run('GET','/konto/lobby/');
+ assert.equal(result.res.status,302);
+ assert.equal(result.res.headers.Location,'/konto/?widok=login');
+});
+test('public lobby cannot be accessed if rollout switch is off',async()=>{
+ const {run}=setup({userId:'verified-id',displayName:'NieOwner'},false,[],false);
+ assert.equal((await run('GET','/konto/lobby/')).handled,false);
 });
