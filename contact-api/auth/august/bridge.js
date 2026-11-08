@@ -64,8 +64,29 @@ async function community(){
 async function players(){
  const f=(await api('/auth/friends/presence')).friends||[];
  for(const [id,n] of Object.entries({'#players-count':f.filter(x=>x.online).length,'#rooms-count':'—','#waiting-count':'—','#player-badge':f.length,'#room-badge':'—'}))if($(id))$(id).textContent=n;
- wipe($('#players'));for(const p of f){const box=el('p',p.nickname+(p.online?' • online':''));$('#players')?.append(box)}
- wipe($('#rooms'));$('#rooms')?.append(el('p','Pokoje znajdziesz w bieżącej konsoli gier.'),a('Otwórz Warcaby','/konto/warcaby/'),el('p',' '),a('Otwórz Gomoku','/konto/gomoku/'),el('p',' '),a('Otwórz Szachy','/konto/szachy/'));
+ wipe($('#players'));
+ for(const p of f){
+  const box=el('div');box.style.cssText='padding:10px;border-bottom:1px solid #22454c;display:flex;flex-wrap:wrap;align-items:center;gap:9px';
+  box.append(el('strong',p.nickname+(p.online?' • online':'')));
+  const select=el('select');for(const [id,name] of [['warcaby','Warcaby'],['gomoku','Gomoku'],['szachy','Szachy']]){const option=el('option',name);option.value=id;select.append(option)}
+  box.append(select,action('Zaproś do gry',async()=>{
+   await save('/auth/social/challenges',{action:'send',nickname:p.nickname,game:select.value,timeLimitMinutes:0,incrementSeconds:0});
+   tell('Wysłano zaproszenie do '+p.nickname+'.');
+  }));$('#players')?.append(box)
+ }
+ wipe($('#rooms'));
+ $('#rooms')?.append(el('p','Bieżące pokoje i konsola gry:'),a('Warcaby','/konto/warcaby/'),el('p',' '),a('Gomoku','/konto/gomoku/'),el('p',' '),a('Szachy','/konto/szachy/'));
+ const area=$('#incoming');
+ const inv=await api('/auth/social/challenges');const pending=(inv.challenges||[]).filter(c=>!c.outgoing&&c.status==='pending');
+ if(area){area.hidden=pending.length===0;wipe(area);
+  for(const c of pending){
+   const box=el('div');box.style.cssText='padding:8px;border-bottom:1px solid #31515b';
+   box.append(el('strong',c.opponent+' zaprasza do gry: '+c.game+' '));
+   for(const [label,actionName] of [['Akceptuj','accept'],['Odrzuć','decline']])
+    box.append(action(label,async()=>{await save('/auth/social/challenges',{action:actionName,id:c.id});tell('Zapisano odpowiedź');if(actionName==='accept')location.assign('/konto/'+c.game+'/?match='+encodeURIComponent(c.id));else box.remove()}));
+   area.append(box);
+  }
+ }
  $('#create-room')?.addEventListener('click',()=>location.assign('/konto/warcaby/'));
  $('#back')?.addEventListener('click',()=>location.assign('https://gracz.pl/'));
 }
