@@ -97,5 +97,7 @@ test('knockout draw requires replay rather than fictitious winner',async()=>{
 test('unsupported tournament clock is rejected rather than silently untimed',async()=>{
  const {service}=await harness();
  assert.throws(()=>service.validateCreate({title:'Puchar testowy',game:'gomoku',timeControl:'90+30'}),e=>e.code==='TOURNAMENT_TIME');
- assert.equal(service.validateCreate({title:'Puchar testowy',game:'gomoku',timeControl:'7+0'}).timeControl,'7+0');
+ const safe=service.validateCreate({title:'Puchar testowy',game:'gomoku',timeControl:'7+0',rated:true});
+ assert.equal(safe.timeControl,'7+0');
+ assert.equal(safe.rated,false);
 });
