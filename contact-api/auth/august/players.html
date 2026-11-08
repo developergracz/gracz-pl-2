@@ -1,1 +1,86 @@
-<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gracz.pl — Warcaby online</title><link rel="stylesheet" href="/konto/sierpien/assets/players.css"></head><body data-august-view="players"><main class="shell"><header class="topbar"><a class="brand" href="https://gracz.pl/"><strong>gracz</strong><span>.PL</span><small>Graj ze znajomymi i zdobywaj ranking</small></a><nav class="game-nav"><a class="active">●● Warcaby</a><a>Turnieje</a><a>Ranking</a><a>Sklep</a><a>Pomoc</a></nav><div class="user"><div><strong id="user-name">—</strong><small>Profil</small></div><button id="back" type="button">← Gry</button></div></header><section class="hero"><div class="hero-title"><div class="pieces">●●●</div><div><h1>Warcaby online</h1><p>Dołącz do gry lub zaproś znajomego</p></div></div><div class="stats"><article><b id="players-count">0</b><span>znajomych online</span></article><article><b id="rooms-count">0</b><span>aktywnych stołów</span></article><article><b id="waiting-count">0</b><span>wolnych stołów</span></article></div><button id="create-room" class="primary hero-create">＋ Utwórz nowy stół</button></section><section id="incoming" class="incoming" hidden></section><section class="toolbar"><div class="search"><input id="search" type="search" placeholder="Szukaj gracza lub stołu…" autocomplete="off"></div><div class="filters"><button class="active" data-filter="all">Stoły</button><button data-filter="waiting">Wolne stoły</button><button data-filter="available">Dostępni gracze</button><button data-filter="playing">W grze</button></div></section><section class="workspace"><div class="panel rooms-panel"><header><div><h2>Stoły</h2><p>Dołącz do wolnego stołu albo zobacz, kto już gra.</p></div><span id="room-badge" class="badge">0</span></header><div class="table-head room-grid"><span>Stół</span><span>Nazwa i gospodarz</span><span>Status</span><span>Akcja</span></div><div id="rooms" class="list"></div></div><aside class="panel players-panel"><header><div><h2>Znajomi online</h2><p>Wybierz osobę i wyślij zaproszenie.</p></div><span id="player-badge" class="badge">0</span></header><div id="players" class="list"></div></aside></section><section class="shortcuts"><article><b>✉ Zaproś znajomego</b><span>Wyślij zaproszenie do gry</span></article><article><b>🔗 Link do stołu</b><span>Udostępnij swój stół</span></article><article><b>⚙ Ustawienia gry</b><span>Dostosuj swoje preferencje</span></article></section><footer><span>Gracz.pl · Warcaby multiplayer</span><span>Lista znajomych z bieżącego konta</span></footer></main><div id="room-modal" class="room-modal" hidden><div class="room-modal-card" role="dialog" aria-modal="true" aria-labelledby="room-modal-title"><button id="room-modal-close" class="room-modal-close" type="button" aria-label="Zamknij">×</button><div class="room-modal-icon" aria-hidden="true">▰</div><h2 id="room-modal-title">Nowy stół</h2><p>Podaj nazwę swojego nowego stołu do gry w warcaby.</p><form id="room-modal-form"><label for="room-modal-name">Nazwa nowego stołu</label><div class="room-name-field"><span aria-hidden="true">▱</span><input id="room-modal-name" name="roomName" maxlength="40" value="Szybka gra" autocomplete="off" required></div><div class="room-modal-actions"><button id="room-modal-cancel" class="room-modal-cancel" type="button">Anuluj</button><button class="room-modal-ok" type="submit">OK</button></div></form></div></div><script type="module" src="/konto/sierpien/assets/bridge.js?view=players"></script><a style="position:fixed;bottom:12px;left:12px;color:#b0ffe1;background:#12382e;padding:8px 11px;border-radius:8px;z-index:999" href="/auth/search-entry">⌕ Wyszukiwarka GRACZ.PL</a></body></html>
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#063f42">
+  <title>Lobby graczy Premium — GRACZ.PL</title>
+  <link rel="stylesheet" href="/konto/sierpien/assets/players.css?v=premium-r2">
+</head>
+<body data-august-view="players">
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="https://gracz.pl/" aria-label="GRACZ.PL — strona główna">
+        <strong>GRACZ<span>.PL</span></strong><small>Polskie Centrum Gracza</small>
+      </a>
+      <nav class="game-nav" aria-label="Główne gry">
+        <a class="active" href="/konto/lobby/" aria-current="page">Lobby graczy</a>
+        <a href="/konto/gomoku/">Gomoku</a>
+        <a href="/konto/warcaby/">Warcaby</a>
+        <a href="/konto/szachy/">Szachy</a>
+      </nav>
+      <div class="user">
+        <div class="user-meta"><small>Zalogowany gracz</small><strong id="user-name">—</strong></div>
+        <a class="panel-link" href="/konto/panel/">Mój panel</a>
+        <button id="back" type="button" title="Powrót na stronę startową">Strona główna</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="lobby-title">
+      <div class="hero-copy">
+        <div class="eyebrow">GRACZ.PL <span aria-hidden="true">/</span> STREFA GRACZA</div>
+        <h1 id="lobby-title">Lobby <em>graczy</em></h1>
+        <p>Twoje gry, znajomi i zaproszenia w jednym miejscu. Wybierz konsolę lub zaproś znajomego do rozgrywki.</p>
+        <div class="hero-actions">
+          <button class="primary" id="create-room" type="button">Graj w Warcaby</button>
+          <a class="secondary" href="/konto/panel/">Przejdź do panelu gracza</a>
+        </div>
+      </div>
+      <div class="stats" aria-label="Statystyki konta">
+        <article><b id="players-count">—</b><span>znajomych online</span></article>
+        <article><b id="rooms-count">—</b><span>moich znajomych</span></article>
+        <article><b id="waiting-count">—</b><span>nowych zaproszeń</span></article>
+      </div>
+    </section>
+
+    <section class="incoming" id="incoming" aria-label="Zaproszenia do gier" hidden></section>
+
+    <section class="quick-games" aria-label="Gry dostępne online">
+      <a class="quick-game" href="/konto/warcaby/" data-game="warcaby"><span class="quick-icon" aria-hidden="true">⛀</span><span><strong>Warcaby</strong><small>Rozpocznij rozgrywkę</small></span><b aria-hidden="true">›</b></a>
+      <a class="quick-game" href="/konto/gomoku/" data-game="gomoku"><span class="quick-icon" aria-hidden="true">◉</span><span><strong>Gomoku</strong><small>Pięć w jednym rzędzie</small></span><b aria-hidden="true">›</b></a>
+      <a class="quick-game" href="/konto/szachy/" data-game="szachy"><span class="quick-icon" aria-hidden="true">♞</span><span><strong>Szachy</strong><small>Strategia i pojedynki</small></span><b aria-hidden="true">›</b></a>
+    </section>
+
+    <section class="workspace">
+      <div class="panel players-panel">
+        <div class="panel-heading">
+          <div><p class="section-kicker">SPOŁECZNOŚĆ</p><h2>Moi znajomi</h2><p>Wybierz znajomego i wyślij prawdziwe zaproszenie do gry.</p></div>
+          <span id="player-badge" class="badge" aria-label="Liczba znajomych">—</span>
+        </div>
+        <div class="toolbar">
+          <label class="search" for="search"><span class="sr-only">Szukaj znajomych</span><input id="search" type="search" placeholder="Szukaj znajomego po nicku…" autocomplete="off"></label>
+          <div class="filters" role="group" aria-label="Filtruj znajomych">
+            <button type="button" class="active" data-filter="all" aria-pressed="true">Wszyscy</button>
+            <button type="button" data-filter="online" aria-pressed="false">Online</button>
+            <button type="button" data-filter="offline" aria-pressed="false">Offline</button>
+          </div>
+        </div>
+        <div id="players" class="list" aria-live="polite"><p class="empty">Wczytywanie znajomych…</p></div>
+      </div>
+      <aside class="panel rooms-panel">
+        <div class="panel-heading">
+          <div><p class="section-kicker">ROZGRYWKA</p><h2>Wybierz konsolę</h2><p>Wszystkie trzy gry korzystają z obecnego systemu kont.</p></div>
+          <span id="room-badge" class="badge">3</span>
+        </div>
+        <div class="rooms-intro">
+          <p>Nie pokazujemy niezweryfikowanych liczników wolnych stołów. Pokój tworzysz bezpośrednio w wybranej grze.</p>
+        </div>
+        <div id="rooms" class="game-links"></div>
+      </aside>
+    </section>
+    <footer><span>GRACZ.PL · Polskie Centrum Gracza</span><span>Jedno konto · Gomoku · Warcaby · Szachy</span></footer>
+  </main>
+  <script type="module" src="/konto/sierpien/assets/bridge.js?view=players"></script>
+</body>
+</html>
