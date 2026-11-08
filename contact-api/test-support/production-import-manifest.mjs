@@ -15,6 +15,11 @@ export const productionModules=Object.freeze([
   'auth/page.mjs',
   // Authenticated player UI; same-origin HTML/CSS/JS, no runtime imports or new dependencies.
   'auth/panel.mjs',
+  // August UI is staged behind explicit route/feature flag; same verified session,
+  // fixed local assets only, no legacy token authentication. Tournament backend
+  // validates origin and session, uses parameterized PostgreSQL and owner checks.
+  'auth/august-portal.mjs',
+  'auth/august/tournaments-service.mjs',
   // Reviewed same-origin profile UI: fixed markup, DOM textContent, no new dependencies.
   'auth/profile-premium-ui.mjs',
   // Reviewed account-scoped queries and opt-in-only public profile; parameterized PostgreSQL.
@@ -113,5 +118,5 @@ export const productionModules=Object.freeze([
 ]);
 export const productionDependencies=Object.freeze([
   'node:http','node:crypto','node:dns/promises','node:net','node:url',
-  'node:fs/promises','node:util','pg','ws','@redis/client',
+  'node:fs/promises','node:path','node:util','pg','ws','@redis/client',
 ]);

@@ -1,0 +1,35 @@
+name: August portal browser acceptance
+on:
+  pull_request:
+    paths:
+      - 'contact-api/auth/august/**'
+      - 'contact-api/auth/august-portal.mjs'
+      - 'tests/august/**'
+      - '.github/workflows/august-portal-browser.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    name: Chromium desktop and mobile (isolated fixture)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - name: Install pinned Chromium runner
+        run: |
+          npm install --no-save --prefix .august-e2e playwright@1.56.1
+          ./.august-e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exercise real August HTML, CSS and JavaScript
+        env:
+          NODE_PATH: ${{ github.workspace }}/.august-e2e/node_modules
+        run: node tests/august/browser-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: august-portal-desktop-mobile-screens
+          path: test-results/august/
+          retention-days: 7
+          if-no-files-found: warn
