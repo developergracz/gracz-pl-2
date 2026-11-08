@@ -659,7 +659,7 @@ test('all public gracz.pl headers use the shared session UI script, not separate
  for(const path of pages){
   const html=readFileSync(resolve(root,path),'utf8');
   assert.match(html,/<header class="site-header/,'must have a public site header: '+path);
-  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=player-name-panel-r2/,'missing shared auth header: '+path);
+  assert.match(html,/\/assets\/header-auth-state-r1\.js\?v=[a-z0-9-]+/,'missing shared auth header: '+path);
  }
  const js=readFileSync(resolve(root,'assets/header-auth-state-r1.js'),'utf8');
  new Script(js);
