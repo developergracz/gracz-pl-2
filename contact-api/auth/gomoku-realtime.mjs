@@ -99,7 +99,10 @@ export function createGomokuRealtime({server,router,maxConnections=4096,heartbea
  }
  function onConnection(socket,req,account){
   const client={socket,req,account,key:sessionKey(req),alive:true,id:null,match:null,messages:[],seq:0,
-   generation:0,syncing:false,dirty:false,bucketStart:Date.now(),messagesReceived:0,deadline:null,reconcileAt:Date.now()+Math.random()*reconcileMs};
+   generation:0,syncing:false,dirty:false,bucketStart:Date.now(),messagesReceived:0,deadline:null,
+   // First subscription already reads authoritative state; delay the independent
+   // reconciliation pass to avoid redundant reads immediately after admission.
+   reconcileAt:Date.now()+reconcileMs/2+Math.random()*reconcileMs/2};
   clients.add(client);accounts.set(account,(accounts.get(account)||0)+1);
   const subscribeTimeout=setTimeout(()=>{if(!client.id)socket.close(1008,'subscription required');},10000);
   socket.on('pong',()=>{client.alive=true;});
