@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createAugustPortal} from '../auth/august-portal.mjs';
 
-function setup(user=null){
+function setup(user=null,enabled=true){
  const portal=createAugustPortal({
   database:{enabled:false},
+  enabled,
   publicIdentity:{
    authenticateGameRequest:async()=>user,
    probe:async()=>{}
@@ -50,4 +51,13 @@ test('historical pages are available only under isolated path',async()=>{
  assert.match(res.body,/Utwórz turniej/);
  const unknown=await run('GET','/konto/sierpien/nieistniejaca.html');
  assert.equal(unknown.handled,false);
+});
+
+test('preview and API remain disabled until explicitly enabled',async()=>{
+ const {run}=setup({userId:'account-uuid',displayName:'Gracz'},false);
+ for(const path of ['/konto/sierpien/turnieje.html','/auth/august/whoami','/auth/august/chat']){
+  const {handled,res}=await run('GET',path);
+  assert.equal(handled,false);
+  assert.equal(res.status,0);
+ }
 });
