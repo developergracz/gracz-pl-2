@@ -396,6 +396,14 @@ const server = createServer(async (req, res) => {
 
     // Account screen and its API share one origin; Secure HttpOnly session cookies work reliably.
     if (serveIdentityPage(req, res, url)) return;
+    // Owner-controlled rollout: the August portal is isolated until its
+    // authentication, messaging, tournament and game paths are verified.
+    if (process.env.GRACZ_AUGUST_PORTAL_ACTIVE === '1' &&
+        req.method === 'GET' && ['/konto/panel/', '/konto/panel'].includes(url.pathname)) {
+      res.writeHead(302, {Location:'/konto/sierpien/settings.html','Cache-Control':'no-store'});
+      res.end();
+      return;
+    }
     if (servePlayerPanel(req, res, url)) return;
     if (await augustPortal.handle(req, res, url)) return;
     if (serveGomokuConsole(req, res, url)) return;
