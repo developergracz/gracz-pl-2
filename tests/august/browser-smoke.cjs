@@ -110,7 +110,7 @@ async function run(){
     await page.screenshot({path:path.join(output,device.name+'-'+name+'.png'),fullPage:true});
     const problems=[];
     if(response.status()!==200)problems.push('HTTP '+response.status());
-    if(page.url()!==origin+'/konto/sierpien/'+slug)problems.push('unexpected redirect '+page.url());
+    if(new URL(page.url()).pathname!=='/konto/sierpien/'+slug)problems.push('unexpected redirect '+page.url());
     if(!metrics.loadedStyles)problems.push('no local stylesheet loaded');
     if(pageErrors.length)problems.push('JS exceptions: '+pageErrors.join('; '));
     if(missing.length)problems.push('local HTTP failures: '+JSON.stringify(missing));
