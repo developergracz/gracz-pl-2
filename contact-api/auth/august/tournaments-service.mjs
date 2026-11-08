@@ -1,7 +1,16 @@
 import { randomUUID } from "node:crypto";
 const GAMES = new Set(["warcaby", "gomoku", "szachy"]);
 const FORMATS = new Set(["swiss", "knockout", "round_robin"]);
-const RESULTS = new Set(["1-0", "0-1", "1/2-1/2"]);
+const TOURNAMENT_TIMES=new Set([0,1,2,3,5,7,10,15,30]);
+const TOURNAMENT_INCREMENT=new Set([0,2,3,5,10]);
+function parseTime(value){
+  const matched=/^(0|[1-9]\d{0,2})\+(0|[1-9]\d?)$/.exec(String(value));
+  if(!matched)throw tournamentError("Nieprawidłowe tempo partii.","TOURNAMENT_TIME",400);
+  const minutes=Number(matched[1]),increment=Number(matched[2]);
+  if(!TOURNAMENT_TIMES.has(minutes)||!TOURNAMENT_INCREMENT.has(increment)||(minutes===0&&increment!==0))
+    throw tournamentError("Wybierz tempo obsługiwane przez obecne gry.","TOURNAMENT_TIME",400);
+  return {minutes,increment};
+}
 
 export class TournamentService {
   constructor(database) {
@@ -63,6 +72,11 @@ export class TournamentService {
         completed_at TIMESTAMPTZ NULL
       );
       CREATE INDEX IF NOT EXISTS gracz_public_identity.august_tournament_matches_idx ON gracz_public_identity.august_tournament_matches(tournament_id, round, board);
+      ALTER TABLE gracz_public_identity.august_tournament_matches
+        ADD COLUMN IF NOT EXISTS game_challenge_id uuid
+        REFERENCES gracz_public_identity.game_challenges(id) ON DELETE SET NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS august_tournament_game_challenge_unique
+        ON gracz_public_identity.august_tournament_matches(game_challenge_id);
     `);
   }
 
@@ -75,7 +89,8 @@ export class TournamentService {
     const format = FORMATS.has(input.format) ? input.format : "swiss";
     const maxPlayers = Math.max(4, Math.min(128, Number(input.maxPlayers) || 16));
     const rounds = Math.max(1, Math.min(15, Number(input.rounds) || Math.ceil(Math.log2(maxPlayers)) + 1));
-    const timeControl = /^\d{1,3}(\+\d{1,2})?$/.test(String(input.timeControl || "")) ? String(input.timeControl) : "5+0";
+    const timeControl=String(input.timeControl||"5+0");
+    parseTime(timeControl);
     const startsAt = input.startsAt && !Number.isNaN(new Date(input.startsAt).valueOf()) ? new Date(input.startsAt).toISOString() : null;
     return { title, description: this.cleanText(input.description, 600), game, format, maxPlayers, rounds, timeControl, startsAt, rated: input.rated !== false, visibility: input.visibility === "unlisted" ? "unlisted" : "public" };
   }
@@ -111,7 +126,7 @@ export class TournamentService {
     const t = await this.pool.query(`SELECT t.*, COUNT(p.user_id)::int AS player_count, BOOL_OR(p.user_id=$2) AS joined FROM gracz_public_identity.august_tournaments t LEFT JOIN gracz_public_identity.august_tournament_players p ON p.tournament_id=t.tournament_id WHERE t.tournament_id=$1 GROUP BY t.tournament_id`, [id,user.userId]);
     if(!t.rows[0]) throw tournamentError("Nie znaleziono turnieju.","TOURNAMENT_NOT_FOUND",404);
     const p=await this.pool.query(`SELECT user_id,display_name,seed,points,wins,draws,losses,buchholz,status,joined_at FROM gracz_public_identity.august_tournament_players WHERE tournament_id=$1 ORDER BY points DESC,buchholz DESC,wins DESC,seed ASC`,[id]);
-    const m=await this.pool.query(`SELECT match_id,round,board,white_id,white_name,black_id,black_name,result,status,created_at,completed_at FROM gracz_public_identity.august_tournament_matches WHERE tournament_id=$1 ORDER BY round,board`,[id]);
+    const m=await this.pool.query(`SELECT match_id,round,board,white_id,white_name,black_id,black_name,result,status,created_at,completed_at,game_challenge_id FROM gracz_public_identity.august_tournament_matches WHERE tournament_id=$1 ORDER BY round,board`,[id]);
     return { tournament:mapTournament(t.rows[0]), players:p.rows.map(mapPlayer), matches:m.rows.map(mapMatch) };
   }
 
@@ -209,5 +224,5 @@ function sortStandings(p){return [...p].sort((a,b)=>Number(b.points)-Number(a.po
 function filterList(rows,q){const status=q.status;const game=q.game;const text=String(q.q||"").toLowerCase();const mine=q.mine==="1";return rows.filter(t=>(!status||status==="all"||t.status===status)&&(!game||game==="all"||t.game===game)&&(!mine||t.joined)&&( !text||`${t.title} ${t.ownerName} ${t.description}`.toLowerCase().includes(text)));}
 function mapTournament(r){return{tournamentId:r.tournament_id,ownerId:r.owner_id,ownerName:r.owner_name,title:r.title,description:r.description,game:r.game,format:r.format,status:r.status,visibility:r.visibility,maxPlayers:r.max_players,rounds:r.rounds,timeControl:r.time_control,rated:Boolean(r.rated),startsAt:r.starts_at,currentRound:r.current_round,createdAt:r.created_at,finishedAt:r.finished_at,playerCount:Number(r.player_count||0),joined:Boolean(r.joined)};}
 function mapPlayer(r){return{userId:r.user_id,displayName:r.display_name,seed:r.seed,points:Number(r.points),wins:r.wins,draws:r.draws,losses:r.losses,buchholz:Number(r.buchholz),status:r.status,joinedAt:r.joined_at};}
-function mapMatch(r){return{matchId:r.match_id,round:r.round,board:r.board,whiteId:r.white_id,whiteName:r.white_name,blackId:r.black_id,blackName:r.black_name,result:r.result,status:r.status,createdAt:r.created_at,completedAt:r.completed_at};}
+function mapMatch(r){return{matchId:r.match_id,round:r.round,board:r.board,whiteId:r.white_id,whiteName:r.white_name,blackId:r.black_id,blackName:r.black_name,result:r.result,status:r.status,gameMatchId:r.game_challenge_id||null,createdAt:r.created_at,completedAt:r.completed_at};}
 function tournamentError(message,code,status){const e=new Error(message);e.code=code;e.status=status;return e;}
