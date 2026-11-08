@@ -23,7 +23,7 @@
   <link rel="preload" href="/assets/fonts/opensans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/search.css?v=search-full-max-premium-frame-r1">
-  <link rel="stylesheet" href="/assets/search-access-gate.css?v=search-gate-clean-premium-r3">
+  <link rel="stylesheet" href="/assets/search-access-gate.css?v=search-background-first-paint-r4">
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <link rel="shortcut icon" type="image/png" href="/favicon-192.png?v=card-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
@@ -92,7 +92,22 @@
     </div>
   </header>
   <a class="sr-only" href="#search-page-app">Przejdź do wyszukiwarki</a>
-  <main class="gracz-search-page" id="search-page-app" data-search-page-root aria-label="Wyszukiwarka gracz.pl" inert></main>
+  <main class="gracz-search-page" id="search-page-app" data-search-page-root aria-label="Wyszukiwarka gracz.pl" inert>
+    <!-- First paint: real search geometry remains visible beneath the login gate
+         while deferred search.js builds its interactive version. Script replaces this
+         noninteractive fallback atomically. No guest search access is introduced. -->
+    <div class="gracz-search-page__panel search-first-paint" aria-hidden="true">
+      <div class="gracz-search__head">
+        <div class="gracz-search__head-copy"><p>Inteligentna wyszukiwarka stworzona specjalnie dla naszych użytkowników portalu gracz.pl.</p></div>
+        <div class="gracz-search__head-actions"><span class="search-first-paint-link">Poznaj zalety naszej wyszukiwarki</span><span class="search-first-paint-link">Wróć do serwisu</span></div>
+      </div>
+      <div class="search-first-paint-query"><span aria-hidden="true">⌕</span><span>Szukaj lub wpisz całe pytanie…</span></div>
+      <div class="gracz-search__quick"><span>Popularne:</span><span>Poker</span><span>Tysiąc</span><span>Warcaby</span><span>Gomoku</span><span>Zasady</span></div>
+      <div class="search-first-paint-filters"><span>Wszystko</span><span>Gry</span><span>Academy</span><span>Zasady</span><span>Poradniki</span><span>Informacje</span></div>
+      <div class="search-first-paint-meta">Popularne wyniki w serwisie gracz.pl</div>
+      <div class="search-first-paint-results"><span>Gry online</span><span>Poradniki i zasady</span><span>Poker Academy</span></div>
+    </div>
+  </main>
   <!-- LIVE search remains the actual, visually visible background. -->
   <div id="search-access-layer" class="search-access-layer" role="dialog" aria-modal="true"
        aria-labelledby="search-access-heading" aria-describedby="search-access-join">
