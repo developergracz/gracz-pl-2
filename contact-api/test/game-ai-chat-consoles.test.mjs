@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
@@ -79,4 +80,63 @@ test('AI rejects cross-origin requests for each game without sending to provider
     assert.equal(res.payload.error.code,'ORIGIN_NOT_ALLOWED');
   }
   assert.equal(count,0);
+});
+
+test('AI send button and Enter each send exactly once in all three game consoles',async()=>{
+  for(const slug of ['gomoku','warcaby','szachy']){
+    const calls=[];
+    const makeElement=()=>({
+      children:[],listeners:new Map(),attributes:{},hidden:false,disabled:false,
+      textContent:'',value:'',scrollTop:0,scrollHeight:0,
+      append(...nodes){this.children.push(...nodes)},
+      setAttribute(name,value){this.attributes[name]=String(value)},
+      addEventListener(name,handler){this.listeners.set(name,handler)},
+      dispatch(name,event={}){return this.listeners.get(name)?.({
+        preventDefault(){},stopPropagation(){},...event
+      })},
+      focus(){}
+    });
+    const panel=makeElement(),header=makeElement(),messages=makeElement(),composer=makeElement(),tab=makeElement();
+    tab.click=()=>{};
+    const document={
+      getElementById(id){return {'chat-panel':panel,'chat-messages':messages,'chat-tab':tab}[id]||null},
+      querySelector(q){return {'#match-panel .dock-header':header,'#match-panel .mini-chat':composer}[q]||null},
+      createElement(){return makeElement()}
+    };
+    const fetch=async(url,options)=>{
+      calls.push({url,body:JSON.parse(options.body)});
+      return {ok:true,json:async()=>({ok:true,answer:'Odpowiedź GRACZ AI'})};
+    };
+    runInNewContext(graczAiChatJs,{
+      document,location:{pathname:'/konto/'+slug+'/'},fetch,
+      AbortController,setTimeout,clearTimeout
+    });
+    const toggle=header.children[0];
+    assert.ok(toggle,slug+': AI toggle must initialize');
+    toggle.dispatch('click');
+    assert.equal(panel.children.length,1);
+    assert.equal(composer.hidden,true);
+    const section=panel.children[0],log=section.children[1],form=section.children[2];
+    const input=form.children[0],button=form.children[1];
+    assert.equal(section.hidden,false);
+    input.value='Pytanie przez przycisk';
+    button.dispatch('click');
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(calls.length,1,slug+': button must submit exactly once');
+    assert.equal(calls[0].url,'/konto/'+slug+'/ai-chat');
+    assert.equal(calls[0].body.message,'Pytanie przez przycisk');
+    assert.ok(log.children.some(row=>row.children[1]?.textContent==='Odpowiedź GRACZ AI'));
+    input.value='Pytanie przez Enter';
+    let keyPrevented=false;
+    input.dispatch('keydown',{key:'Enter',preventDefault(){keyPrevented=true}});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(keyPrevented,true);
+    assert.equal(calls.length,2,slug+': Enter must submit exactly once');
+    assert.equal(calls[1].body.message,'Pytanie przez Enter');
+    assert.equal(input.value,'');
+    assert.equal(button.disabled,false);
+    toggle.dispatch('click');
+    assert.equal(composer.hidden,false);
+    assert.equal(section.hidden,true);
+  }
 });
