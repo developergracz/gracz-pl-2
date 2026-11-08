@@ -40,6 +40,7 @@ async function jsonBody(req){
 export function createAugustPortal({
  database,publicIdentity,
  enabled=process.env.GRACZ_AUGUST_PORTAL_PREVIEW==='1'||process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1',
+ lobbyPublic=process.env.GRACZ_PLAYERS_LOBBY_ENABLED==='1',
  active=process.env.GRACZ_AUGUST_PORTAL_ACTIVE==='1',
  previewAllowedNicknames=String(process.env.GRACZ_AUGUST_PORTAL_ALLOWED_NICKS||'').split(',')
 }){
@@ -61,17 +62,23 @@ export function createAugustPortal({
   return servicePromise;
  };
  async function handle(req,res,url){
-  if(!enabled)return false;
-  if(req.method==='GET'&&url.pathname.startsWith(BASE)){
-   const name=url.pathname.slice(BASE.length);
+  // Releasing the players lobby never releases the other August modules.
+  if(!enabled&&!lobbyPublic)return false;
+  const isLobbyAlias=url.pathname==='/konto/lobby/'||url.pathname==='/konto/lobby';
+  if(req.method==='GET'&&(url.pathname.startsWith(BASE)||isLobbyAlias)){
+   const name=isLobbyAlias?'players.html':url.pathname.slice(BASE.length);
    if(!pageFiles.has(name))return false;
    const filename=pageFiles.get(name);
    if(filename.endsWith('.html')){
-    if(!active&&!allowedNicknames.size)return fail(res,404,'Podgląd nie jest aktywny');
+    const releasedLobby=lobbyPublic&&filename==='players.html';
+    if(!releasedLobby&&!active&&!allowedNicknames.size)return fail(res,404,'Podgląd nie jest aktywny');
     try{
      const account=await publicIdentity.authenticateGameRequest(req);
-     if(!account)return fail(res,401,'Zaloguj się do GRACZ.PL');
-     if(!previewAllowed(account))return fail(res,404,'Nie znaleziono zasobu');
+     if(!account){
+      if(releasedLobby){res.writeHead(302,{'Location':'/konto/?widok=login','Cache-Control':'no-store'});res.end();return true}
+      return fail(res,401,'Zaloguj się do GRACZ.PL');
+     }
+     if(!releasedLobby&&!previewAllowed(account))return fail(res,404,'Nie znaleziono zasobu');
     }catch(error){
      console.error('AUGUST_PREVIEW_AUTH_ERROR',{code:typeof error?.code==='string'?error.code:'UNAVAILABLE'});
      return fail(res,503,'Autoryzacja czasowo niedostępna');
@@ -81,10 +88,12 @@ export function createAugustPortal({
    if(!bytes){bytes=await readFile(join(ROOT,filename));cache.set(filename,bytes);}
    const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':'text/html';
    res.writeHead(200,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-store',
-    'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'});
+    'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY',
+    'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"});
    res.end(bytes);return true;
   }
   if(!url.pathname.startsWith(API))return false;
+  if(!enabled)return false; // Public lobby cannot enable private August API.
   if(!['GET','POST'].includes(req.method))return fail(res,405,'Niedozwolona metoda');
   if(req.method==='POST'&&(req.headers.origin!==ORIGIN||req.headers['sec-fetch-site']==='cross-site'))
    return fail(res,403,'Niedozwolone pochodzenie');
