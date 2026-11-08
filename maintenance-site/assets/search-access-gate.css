@@ -98,3 +98,25 @@ body.search-access-pending{overflow:hidden!important}
  .search-access-action{min-height:48px}
 }
 @media(prefers-reduced-motion:reduce){.search-access-action{transition:none}}
+
+/* Noninteractive first-paint search: visible immediately even before deferred JS.
+   The actual search.js replaces this preview in one DOM operation. */
+.search-first-paint{min-height:560px;pointer-events:none;user-select:none}
+.search-first-paint .gracz-search__head{min-height:74px}
+.search-first-paint-link{display:inline-block;border:1px solid rgba(105,208,201,.18);border-radius:9px;padding:9px 13px;color:#b4c6c0;font:700 11px OpenSans,Arial,sans-serif}
+.search-first-paint-query{display:flex;align-items:center;gap:17px;min-height:68px;margin:0 28px;border:2px solid rgba(80,186,177,.40);border-radius:18px;background:#102925;color:#90aaa3;font:700 clamp(16px,2.4vw,25px) OpenSans,Arial,sans-serif;padding:0 20px}
+.search-first-paint-query span:first-child{color:#e3ba66;font-size:34px;font-weight:400}
+.search-first-paint .gracz-search__quick>span:not(:first-child){padding:6px 10px;border-radius:8px;border:1px solid rgba(120,193,185,.14);background:rgba(120,193,185,.05)}
+.search-first-paint-filters{display:flex;gap:8px;flex-wrap:wrap;margin:32px 28px 26px}
+.search-first-paint-filters span{border:1px solid rgba(118,209,199,.18);border-radius:999px;padding:8px 13px;color:#a9bbb5;font:700 12px OpenSans,Arial,sans-serif}
+.search-first-paint-filters span:first-child{color:#e9d49e;background:rgba(96,160,141,.15)}
+.search-first-paint-meta{margin:0 28px 12px;color:#8daaa2;font:700 12px OpenSans,Arial,sans-serif}
+.search-first-paint-results{display:grid;gap:10px;margin:0 28px 24px}
+.search-first-paint-results span{border:1px solid rgba(112,206,200,.15);border-radius:12px;background:rgba(26,90,84,.12);padding:18px 22px;color:#d4e1da;font:700 15px Montserrat,Arial,sans-serif}
+@media(max-width:620px){
+ .search-first-paint{min-height:420px}
+ .search-first-paint-query{margin:0 14px;min-height:56px;padding:0 13px}
+ .search-first-paint-filters{margin:19px 14px;gap:6px}
+ .search-first-paint-meta{margin:0 14px 12px}
+ .search-first-paint-results{margin:0 14px 20px}
+}
