@@ -15,6 +15,12 @@ const views=[
  ['players','players.html'],
  ['tournaments','turnieje.html'],
 ];
+const sidebarSections=[
+ ['Konto i profil','profile'],['Bezpieczeństwo','security'],['Prywatność','privacy'],
+ ['Powiadomienia','notifications'],['Wiadomości i chat','messages'],['Gry i rozgrywka','games'],
+ ['Wygląd i dostępność','appearance'],['Sesje i urządzenia','sessions'],['Dane i konto','data']
+];
+let servePlayerPanel=null;
 const memberId='33333333-3333-4333-8333-333333333333';
 const accounts={memberId,displayName:'Gracz Testowy',nickname:'gracztest'};
 const fixtures={created:[],sent:[],chat:[{id:'1',nickname:'Gracz Testowy',body:'Witaj w społeczności!'}]};
@@ -66,6 +72,7 @@ async function listener(req,res){
  }
  if(pathname==='/auth/search-entry'){res.writeHead(302,{Location:'/wyszukiwarka/'});res.end();return}
  if(pathname==='/wyszukiwarka/'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end('<h1>Wyszukiwarka – podgląd testowy</h1>');return}
+ if(pathname.startsWith('/konto/panel')&&servePlayerPanel(req,res,request))return;
  const prefix='/konto/sierpien/';
  if(!pathname.startsWith(prefix)){res.writeHead(404);res.end('Not found');return}
  const local=pathname.slice(prefix.length);
@@ -83,6 +90,7 @@ async function listener(req,res){
  res.end(bytes);
 }
 async function run(){
+ ({servePlayerPanel}=await import(require('node:url').pathToFileURL(path.resolve(__dirname,'../../contact-api/auth/panel.mjs')).href));
  await fs.mkdir(output,{recursive:true});
  const server=http.createServer((req,res)=>{void listener(req,res).catch(e=>{console.error(e);res.writeHead(500);res.end('Internal fixture error')})});
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
@@ -121,6 +129,25 @@ async function run(){
      await page.fill('#search','gracz2');
      if(await page.locator('.friend-row').count()!==1)pageErrors.push('nickname search did not filter');
      await page.fill('#search','');
+     const entries=await page.locator('#player-menu a[data-section]').evaluateAll(xs=>xs.map(x=>[[...x.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(),x.getAttribute('href')]));
+     const expected=sidebarSections.map(([label,id])=>[label,'/konto/panel/?sekcja='+id]);
+     if(JSON.stringify(entries)!==JSON.stringify(expected))pageErrors.push('sidebar entries mismatch: '+JSON.stringify(entries));
+     if(await page.locator('#player-menu a.active[aria-current="page"]').count()!==1)pageErrors.push('sidebar active lobby item missing');
+     const toggle=page.locator('#sidebar-toggle'),menu=page.locator('#player-menu');
+     if(device.name==='desktop'){
+      const side=await page.locator('#player-sidebar').boundingBox(),hero=await page.locator('.hero').boundingBox();
+      if(!(await menu.isVisible())||await toggle.isVisible())pageErrors.push('desktop sidebar must be visible without toggle');
+      if(!side||!hero||side.x+side.width>hero.x||side.width<250||side.width>300)pageErrors.push('desktop sidebar not left of lobby: '+JSON.stringify({side,hero}));
+      if(await page.locator('#player-sidebar').evaluate(x=>getComputedStyle(x).position)!=='sticky')pageErrors.push('desktop sidebar not sticky');
+     }else{
+      if(!(await toggle.isVisible())||await menu.isVisible())pageErrors.push('mobile menu must start collapsed behind toggle');
+      await toggle.click();
+      if(!(await menu.isVisible())||await toggle.getAttribute('aria-expanded')!=='true')pageErrors.push('mobile menu toggle did not open');
+      await page.locator('#player-menu a[data-section="security"]').focus();
+      await page.keyboard.press('Escape');
+      if(await menu.isVisible()||await toggle.getAttribute('aria-expanded')!=='false')pageErrors.push('Escape did not close mobile menu');
+      if(!(await toggle.evaluate(x=>x===document.activeElement)))pageErrors.push('focus not returned to mobile menu toggle');
+     }
     }
     await page.screenshot({path:path.join(output,device.name+'-'+name+'.png'),fullPage:true});
     const problems=[];
@@ -135,6 +162,20 @@ async function run(){
     await page.close();
    }
   }
+  for(const device of [{name:'desktop',width:1440,height:900,isMobile:false,sections:sidebarSections},{name:'mobile',width:390,height:844,isMobile:true,sections:[sidebarSections[1]]}]){
+   const nav=await browser.newPage({viewport:{width:device.width,height:device.height},isMobile:device.isMobile,hasTouch:device.isMobile});
+   for(const [label,id] of device.sections){
+    await nav.goto(origin+'/konto/sierpien/players.html',{waitUntil:'load'});
+    if(device.isMobile)await nav.locator('#sidebar-toggle').click();
+    await nav.locator('#player-menu a[data-section="'+id+'"]').click();
+    await nav.waitForURL(origin+'/konto/panel/?sekcja='+id,{timeout:10000});
+    try{await nav.locator('[data-panel="'+id+'"].active').waitFor({state:'visible',timeout:10000})}
+    catch{issues.push(device.name+' sidebar "'+label+'" did not open panel section '+id);continue}
+    if(await nav.locator('.nav.active[data-section]').getAttribute('data-section')!==id)issues.push(device.name+' panel nav not active for '+id);
+   }
+   await nav.close();
+  }
+  console.log('PLAYER_SIDEBAR_NAVIGATION_PASS');
   const page=await browser.newPage({viewport:{width:1440,height:900}});
   page.on('pageerror',e=>issues.push('workflow JS: '+e.message));
   await page.goto(origin+'/konto/sierpien/turnieje.html');
@@ -161,7 +202,7 @@ async function run(){
   else console.log('GENERAL_CHAT_FORM_PASS');
   await page.close();
   if(issues.length)throw Error('AUGUST_BROWSER_SMOKE_FAILED\n'+issues.join('\n'));
-  console.log('AUGUST_BROWSER_SMOKE_PASS 6 modules x 2 viewports + 3 form workflows');
+  console.log('AUGUST_BROWSER_SMOKE_PASS 6 modules x 2 viewports + player sidebar + 3 form workflows');
  }finally{
   await browser.close();
   await new Promise(ok=>server.close(ok));
