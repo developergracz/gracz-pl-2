@@ -37,6 +37,9 @@ export const productionModules=Object.freeze([
   // Owner-only invitation organization; existing social/challenges remains authoritative.
   'auth/challenge-center.mjs',
   // Dedicated Gomoku game console: no dependencies, online via authenticated same-origin API.
+// Reviewed static GRACZ AI panel assets: same-origin only, textContent output,
+  // explicit consent to send prompts to existing bounded Groq endpoint; no player-chat access.
+  'auth/gracz-ai-chat-assets.mjs',
   'auth/gomoku-console.mjs',
   // Shared same-origin game subscriptions: bounded sockets/payloads and existing
   // session/match authorization. Optional Redis sends room invalidations only.
