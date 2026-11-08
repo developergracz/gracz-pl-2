@@ -137,8 +137,9 @@ async function run(){
      if(device.name==='desktop'){
       const side=await page.locator('#player-sidebar').boundingBox(),hero=await page.locator('.hero').boundingBox();
       if(!(await menu.isVisible())||await toggle.isVisible())pageErrors.push('desktop sidebar must be visible without toggle');
-      if(!side||!hero||side.x+side.width>hero.x||side.width<250||side.width>300)pageErrors.push('desktop sidebar not left of lobby: '+JSON.stringify({side,hero}));
+      if(!side||!hero||side.x<hero.x+hero.width||side.width<250||side.width>300)pageErrors.push('desktop sidebar not vertically aligned on the right of lobby: '+JSON.stringify({side,hero}));
       if(await page.locator('#player-sidebar').evaluate(x=>getComputedStyle(x).position)!=='sticky')pageErrors.push('desktop sidebar not sticky');
+       if(await page.locator('.lobby-layout').evaluate(x=>getComputedStyle(x).display)!=='grid')pageErrors.push('desktop lobby layout missing CSS grid');
      }else{
       if(!(await toggle.isVisible())||await menu.isVisible())pageErrors.push('mobile menu must start collapsed behind toggle');
       await toggle.click();
