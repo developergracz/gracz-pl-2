@@ -130,7 +130,7 @@ const html=enhanceProfileHtml(String.raw`<!doctype html>
  <div class="detail"><span>Dołączono</span><strong id="profile-info-joined">—</strong></div>
  <div class="detail"><span>Status</span><strong>Potwierdzony</strong></div>
  <button type="button" class="secondary profile-security-link" data-profile-jump="security">Bezpieczeństwo konta</button></div>
- <div class="profile-game-links"><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a><a href="/konto/szachy/">♔ Graj w Szachy</a></div>
+ <div class="profile-game-links"><a href="/konto/lobby/">♧ Lobby graczy · Premium</a><a href="/konto/warcaby/">♟ Graj w Warcaby</a><a href="/konto/gomoku/">◉ Graj w Gomoku</a><a href="/konto/szachy/">♔ Graj w Szachy</a></div>
 </aside></div>
 </section>
 <section class="view" data-panel="friends">
