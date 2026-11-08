@@ -28,7 +28,7 @@ test('August tournament: two verified users play Gomoku and advance round in rea
  {skip:!url},async t=>{
   assertDisposableDatabaseUrl(url);
   const db=createDatabase({connectionString:url});
-  t.after(()=>db.close());
+
   const identity=createPublicIdentityRouter({database:db,emailFrom:'test@example.test',resendKey:'disposable-test-only'});
   await identity.probe();
   const service=new TournamentService(db);
@@ -46,7 +46,8 @@ test('August tournament: two verified users play Gomoku and advance round in rea
   let tournamentId=null;
   t.after(async()=>{
    if(tournamentId)await db.query('DELETE FROM gracz_public_identity.august_tournaments WHERE tournament_id=$1',[tournamentId]);
-   for(const id of ids)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[id]);
+   try { for(const id of ids)await db.query('DELETE FROM gracz_public_identity.accounts WHERE id=$1',[id]); }
+   finally { await db.close(); }
   });
   const white=await newUser(),black=await newUser();
   const tournament=await service.create(white,{title:'Test PG dwie osoby',game:'gomoku',format:'swiss',rounds:2,maxPlayers:4,timeControl:'0+0',visibility:'unlisted',rated:false});
