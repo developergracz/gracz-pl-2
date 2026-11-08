@@ -63,10 +63,10 @@
         <label>System<select id="ct-format"><option value="swiss">Szwajcarski</option><option value="knockout">Pucharowy / knockout</option><option value="round_robin">Każdy z każdym</option></select></label>
         <label>Maks. graczy<select id="ct-max"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></label>
         <label>Liczba rund<input id="ct-rounds" type="number" min="1" max="15" value="5"></label>
-        <label>Tempo gry<input id="ct-time" value="5+0" pattern="\d{1,3}(\+\d{1,2})?" placeholder="5+0"></label>
+        <label>Tempo gry<select id="ct-time"><option>0+0</option><option>1+0</option><option>2+0</option><option>3+0</option><option selected>5+0</option><option>5+2</option><option>7+0</option><option>10+0</option><option>10+5</option><option>15+0</option><option>30+0</option></select></label>
         <label>Start<input id="ct-start" type="datetime-local"></label>
         <label>Widoczność<select id="ct-visibility"><option value="public">Publiczny</option><option value="unlisted">Tylko z linku</option></select></label>
-        <label class="switch-line"><span>Turniej rankingowy</span><input id="ct-rated" type="checkbox" checked></label>
+        <label class="switch-line"><span>Ranking globalny — w przygotowaniu</span><input id="ct-rated" type="checkbox" disabled></label>
         <label class="wide">Opis<textarea id="ct-description" maxlength="600" rows="4" placeholder="Zasady, informacje dla uczestników, nagrody…"></textarea></label>
       </div>
       <footer><button value="cancel">Anuluj</button><button id="create-submit" class="primary" value="default">Utwórz turniej</button></footer>
