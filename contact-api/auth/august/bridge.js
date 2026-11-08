@@ -14,15 +14,53 @@ async function settings(){
  const labels={account:'Konto i profil',security:'Bezpieczeństwo',privacy:'Prywatność',notifications:'Powiadomienia',messages:'Wiadomości i chat',games:'Gry i rozgrywka',appearance:'Wygląd i dostępność',sessions:'Sesje i urządzenia',data:'Dane i konto'};
  const open=id=>{$$('.settings-nav [data-section]').forEach(b=>b.classList.toggle('active',b.dataset.section===id));$$('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));if($('#page-title'))$('#page-title').textContent=labels[id];history.replaceState(null,'','#'+id)};
  $$('.settings-nav [data-section]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.section)));
- const p=(await api('/auth/profile')).profile;
+ const [profile,security,privacy,notice]=await Promise.all([
+  api('/auth/profile'),api('/auth/security-center'),api('/auth/privacy-center'),api('/auth/notification-center')
+ ]);
+ const p=profile.profile,sec=security.preferences,pr=privacy.preferences,nt=notice.preferences;
  for(const [id,v] of Object.entries({'#profile-name':p.displayName,'#profile-id':'@'+p.nickname,'#avatar':p.displayName.slice(0,1).toUpperCase()}))if($(id))$(id).textContent=v;
  for(const [id,v] of Object.entries({'#display-name':p.displayName,'#user-id':p.nickname,'#bio':p.bio||'','#country':p.country||'PL','#language':p.language||'pl','#email':p.email||''}))if($(id))$(id).value=v;
  if($('#bio-count'))$('#bio-count').textContent=String((p.bio||'').length);
  $('#bio')?.addEventListener('input',e=>{$('#bio-count').textContent=e.target.value.length});
- $('#save-profile')?.addEventListener('click',async()=>{const b=$('#save-profile');b.disabled=true;try{const payload={displayName:$('#display-name').value.trim(),bio:$('#bio').value.trim(),country:$('#country').value==='other'?'OTHER':$('#country').value,language:$('#language').value};const s=await save('/auth/profile',payload,'PUT');$('#profile-name').textContent=s.profile.displayName;tell('Zapisano profil w aktualnym systemie kont')}catch(e){tell(e.message)}finally{b.disabled=false}});
- // Security, 2FA and recovery MUST NOT be fake toggles.
- for(const ctl of $$('[data-setting],#twofa,#phone,#recovery-channel')){ctl.disabled=true;ctl.title='Ta opcja jest zarządzana w obecnym panelu konta'}
- const note=el('div','Dodatkowe ustawienia bezpieczeństwa i prywatności są dostępne w obecnym centrum konta.');note.style.cssText='margin:10px 0;padding:10px;border:1px solid #42654b;color:#a7e5cd';note.append(' ',a('Otwórz','/konto/panel/'));$('.settings-main')?.prepend(note);
+ $('#save-profile')?.addEventListener('click',async()=>{const btn=$('#save-profile');btn.disabled=true;try{const payload={displayName:$('#display-name').value.trim(),bio:$('#bio').value.trim(),country:$('#country').value==='other'?'OTHER':$('#country').value,language:$('#language').value};const d=await save('/auth/profile',payload,'PUT');$('#profile-name').textContent=d.profile.displayName;tell('Zapisano profil na koncie GRACZ.PL')}catch(e){tell(e.message)}finally{btn.disabled=false}});
+ const supported=new Map([
+  ['security.newLogin',{root:sec,key:'newSessionAlert',endpoint:'/auth/security-center',transform:()=>({newSessionAlert:sec.newSessionAlert,passwordAlert:sec.passwordAlert})}],
+  ['security.accountChanges',{root:sec,key:'passwordAlert',endpoint:'/auth/security-center',transform:()=>({newSessionAlert:sec.newSessionAlert,passwordAlert:sec.passwordAlert})}],
+  ['privacy.profile',{root:pr,key:'publicProfile',endpoint:'/auth/privacy-center',select:true,read:v=>v?'all':'none',write:v=>v==='all',transform:()=>pr}],
+  ['privacy.online',{root:pr,key:'showOnline',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
+  ['privacy.messages',{root:pr,key:'friendMessages',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
+  ['privacy.invites',{root:pr,key:'gameInvites',endpoint:'/auth/privacy-center',select:true,read:v=>v?'friends':'none',write:v=>v!=='none',transform:()=>pr}],
+  ['notify.messages',{root:nt,key:'messages',endpoint:'/auth/notification-center',transform:()=>({...nt,muteMinutes:0})}],
+  ['notify.invites',{root:nt,key:'games',endpoint:'/auth/notification-center',transform:()=>({...nt,muteMinutes:0})}]
+ ]);
+ for(const input of $$('[data-setting]')){
+  const item=supported.get(input.dataset.setting);
+  if(!item){input.disabled=true;input.title='Ta opcja wymaga dalszej integracji';continue}
+  if(item.select){
+   for(const option of input.options)if(!['all','friends','none'].includes(option.value)||(option.value==='all'&&input.dataset.setting!=='privacy.profile'))option.disabled=true;
+   if(input.dataset.setting==='privacy.profile')for(const option of input.options)if(option.value==='friends')option.disabled=true;
+  }
+  input.disabled=false;input.value=item.select?item.read(item.root[item.key]):input.value;
+  if(input.type==='checkbox')input.checked=Boolean(item.root[item.key]);
+  input.addEventListener('change',async()=>{
+   const prior=item.root[item.key];item.root[item.key]=item.select?item.write(input.value):input.checked;
+   input.disabled=true;try{
+    // Server requires the full preference set, not a partial patch.
+    const result=await save(item.endpoint,item.transform(),'PUT');
+    Object.assign(item.root,result.preferences||{});
+    tell('Ustawienie zapisane w GRACZ.PL');
+   }catch(e){item.root[item.key]=prior;if(input.type==='checkbox')input.checked=prior;else input.value=item.read(prior);tell(e.message)}
+   finally{input.disabled=false}
+  });
+ }
+ for(const ctl of ['#twofa','#phone','#recovery-channel'])if($(ctl)){$(ctl).disabled=true;$(ctl).title='Ta funkcja nie jest aktywna po stronie serwera'}
+ const note=el('div','Opcje nieobsługiwane przez obecne API są zablokowane, aby nie pozorować ich zapisu.');
+ note.style.cssText='margin:10px 0;padding:10px;border:1px solid #42654b;color:#a7e5cd';note.append(' ',a('Pełne centrum konta','/konto/panel/'));$('.settings-main')?.prepend(note);
+ if($('#security-score'))$('#security-score').textContent='Ustawienia ochrony';
+ if($('#twofa-badge'))$('#twofa-badge').textContent='Niedostępne';
+ if($('#device-info'))$('#device-info').textContent='Aktualna sesja jest weryfikowana przez GRACZ.PL';
+ const list=$('[data-panel=sessions] .empty-state');
+ if(list){list.replaceChildren();for(const x of security.sessions||[]){const item=el('p',(x.current?'● Bieżąca: ':'○ ')+(x.label||'Urządzenie'));list.append(item)}}
  for(const b of $$('[data-toast],[data-action]'))b.addEventListener('click',()=>location.assign('/konto/panel/'));
  open(labels[location.hash.slice(1)]?location.hash.slice(1):'account');
 }
