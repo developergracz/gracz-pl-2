@@ -258,17 +258,31 @@ async function main(){
             };
           });
           let hover={found:false};
-          const cell=page.locator('#board .cell:not(:disabled)').first();
-          if(await cell.count()){
-            await cell.hover({force:true,timeout:5000});
-            hover=await page.evaluate(()=>{
+          const candidates=page.locator('#board .cell:not(:disabled)');
+          if(await candidates.count()>=2){
+            await candidates.nth(0).hover({force:true,timeout:5000});
+            const first=await page.evaluate(()=>{
               const e=document.querySelector('#board .cell:hover');
               if(!e)return {found:false};
               const css=getComputedStyle(e);
-              return {found:true,noMovingCrosshair:css.cursor!=='crosshair',
-                noFieldFrame:css.boxShadow==='none'&&css.outlineStyle==='none',
-                anchoredMarker:css.backgroundImage.includes('radial-gradient')};
+              return {found:true,index:[...e.parentElement.children].indexOf(e),
+                square:css.boxShadow.includes('inset')&&css.boxShadow!=='none',
+                marker:css.backgroundImage.includes('radial-gradient'),
+                noMovingCrosshair:css.cursor!=='crosshair'};
             });
+            await candidates.nth(1).hover({force:true,timeout:5000});
+            hover=await page.evaluate(first=>{
+              const e=document.querySelector('#board .cell:hover');
+              if(!e)return {found:false,first};
+              const css=getComputedStyle(e),old=e.parentElement.children[first.index];
+              const prev=old?getComputedStyle(old):null;
+              return {found:true,first,
+                square:css.boxShadow.includes('inset')&&css.boxShadow!=='none',
+                marker:css.backgroundImage.includes('radial-gradient'),
+                noMovingCrosshair:css.cursor!=='crosshair',
+                followsPointer:[...e.parentElement.children].indexOf(e)!==first.index,
+                formerCellCleared:!!prev&&prev.boxShadow==='none'&&prev.backgroundImage==='none'};
+            },first);
           }
           await page.evaluate(()=>document.getElementById('focus-exit')?.click());
           const restored=await page.evaluate(()=>!document.getElementById('game')?.classList.contains('gomoku-board-only'));
@@ -298,15 +312,15 @@ async function main(){
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
     const boardOnlyMd=['','## GOMOKU-BOARD-ONLY-P1 — agent widoku wyłącznie planszy',
-      'Brak konsoli, plansza w kwadracie, środek viewportu i nieruchomy znacznik kursora.',
+      'Brak konsoli; kwadratowa plansza, stały znacznik środka i widoczny kwadrat wędrujący między polami.',
       '',
-      '| Okno | Sama plansza | Ukryta konsola | Kwadrat/środek | Marker bez ramki | Powrót | Rozszerz |',
+      '| Okno | Sama plansza | Ukryta konsola | Kwadrat/środek | Kwadrat pod kursorem | Powrót | Rozszerz |',
       '|---|---|---|---|---|---|---|'];
     for(const a of boardOnlyAudits){
       boardOnlyMd.push('| '+a.viewport+' | '+(a.enabled?'tak':'NIE')+
         ' | '+(a.hiddenChrome?'tak':'NIE')+
         ' | '+(a.boardSquare&&a.frameSquare&&a.centered?'tak':'NIE')+
-        ' | '+(a.hover.found&&a.hover.noMovingCrosshair&&a.hover.noFieldFrame&&a.hover.anchoredMarker?'tak':'NIE')+
+        ' | '+(a.hover.found&&a.hover.square&&a.hover.marker&&a.hover.noMovingCrosshair&&a.hover.followsPointer&&a.hover.formerCellCleared&&a.hover.first?.square?'tak':'NIE')+
         ' | '+(a.restored?'tak':'NIE')+
         ' | '+(a.expand.enabled&&a.expand.square&&a.expand.centered?'tak':'NIE')+' |');
     }
@@ -317,7 +331,7 @@ async function main(){
     const boardOnlyFailures=boardOnlyAudits.filter(x=>
       !x.enabled||!x.hiddenChrome||!x.returnVisible||!x.centered||!x.boardSquare||
       !x.frameSquare||!x.noDecorativeFrame||x.cells!==225||
-      !x.hover.found||!x.hover.noMovingCrosshair||!x.hover.noFieldFrame||!x.hover.anchoredMarker||
+      !x.hover.found||!x.hover.square||!x.hover.marker||!x.hover.noMovingCrosshair||!x.hover.followsPointer||!x.hover.formerCellCleared||!x.hover.first?.square||
       !x.restored||!x.expand.enabled||!x.expand.square||!x.expand.centered);
     console.log('CONSOLE_PARITY '+JSON.stringify({
       tested:measurements.length,comparisons:comparisons.length,
