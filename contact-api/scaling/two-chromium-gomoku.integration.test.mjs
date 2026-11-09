@@ -80,7 +80,15 @@ test('two Chromium users click full online Gomoku game, see sync and 5-in-line w
   await page.goto(base+'/konto/gomoku/?match='+matchId,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .cell').length===225);
   await page.locator('#room-select').selectOption(matchId,{timeout:12000});
-  await page.locator('#join-room').click();
+  // The server marks a participant ready while answering that participant's
+  // GET /auth/match (before the response is sent). Assert the clock only after
+  // this browser's own join request has been answered, not after the click.
+  const [joined]=await Promise.all([
+   page.waitForResponse(response=>response.request().method()==='GET'&&
+    response.url().includes('/auth/match?id='+matchId),{timeout:12000}),
+   page.locator('#join-room').click()
+  ]);
+  assert.equal(joined.status(),200,'join request accepted for player '+a.side);
   pages.push(page);
  }
  let current=await read(base,accounts[0].token,matchId);
