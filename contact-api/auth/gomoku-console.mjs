@@ -1366,6 +1366,33 @@ select option{background:#102c34;color:#fff}
 @media(max-width:560px){.bottom #move-count{flex-basis:clamp(112px,35vw,155px);width:clamp(112px,35vw,155px);font-size:13px}
  .bottom #turn-label{flex-basis:clamp(150px,46vw,195px);width:clamp(150px,46vw,195px);font-size:12px}
  .bottom{gap:5px}}
+/* Owner-approved console presentation fixes: no changes to panel dimensions. */
+.boardarea::before{display:none}
+.bottom #turn-label{
+ font-size:clamp(10px,1.0vw,14px);
+ letter-spacing:-.2px;
+}
+#chat-panel .chat-messages .chat-bubble,
+.chat-preview .chat-bubble{
+ align-self:flex-start;
+ width:max-content;
+ max-width:min(92%,100%);
+ min-width:0;
+ box-sizing:border-box;
+ text-align:left;
+}
+#chat-panel .chat-messages .chat-bubble.own,
+.chat-preview .chat-bubble.own{align-self:flex-start}
+#chat-panel .chat-messages .chat-bubble p,
+.chat-preview .chat-bubble p{
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ word-break:normal;
+}
+@media(max-width:560px){
+ .bottom #turn-label{font-size:clamp(9px,2.5vw,11px);letter-spacing:-.35px}
+}
+
 .howto-overlay{position:fixed;inset:0;z-index:9500;display:grid;place-items:center;
  padding:clamp(8px,2vw,18px);background:#010c13d9;backdrop-filter:blur(7px)}
 .howto-overlay[hidden]{display:none!important}
