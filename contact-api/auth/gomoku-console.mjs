@@ -1602,6 +1602,9 @@ select option{background:#102c34;color:#fff}
 .side-dock>.game-tools .tool-btn span{font-size:17px;min-width:0}
 .game-focus .side-dock>.game-tools{display:none!important}
 @media(max-width:560px){.side-dock>.game-tools{display:flex;flex-flow:row nowrap;gap:4px}.side-dock>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:0;min-height:40px;height:40px}}
+
+/* CONSOLE-1TO1-02: mobile arc remains inside viewport; desktop unchanged. */
+@media(max-width:800px){.boardarea:after{display:none}}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
