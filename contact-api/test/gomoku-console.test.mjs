@@ -404,6 +404,7 @@ test('Gomoku browser console can play immediately against a computer and join a 
  const executable=served('/konto/gomoku/app.js').body.replace(/\}\)\(\);\s*$/,
   'globalThis.__gomokuTest={state,render,restart,winningFive};})();');
  assert.match(executable,/__gomokuTest/,'Test harness exposes game state only inside VM');
+ new Script(served('/konto/game-chat.js').body).runInNewContext(context);
  new Script(executable).runInNewContext(context);
  assert.equal(get('board').children.length,225);
  // R41: appearance customization neither creates a new game nor destroys the active board.

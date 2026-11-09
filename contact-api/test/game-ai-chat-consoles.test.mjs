@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {gameChatJs} from '../auth/game-chat-messages.mjs';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
 import {parse} from 'acorn';
@@ -108,7 +109,8 @@ test('AI send button and Enter each send exactly once in all three game consoles
       calls.push({url,body:JSON.parse(options.body)});
       return {ok:true,json:async()=>({ok:true,answer:'Odpowiedź GRACZ AI'})};
     };
-    runInNewContext(graczAiChatJs,{
+    const window={};runInNewContext(gameChatJs,{document,window});
+    runInNewContext(graczAiChatJs,{window,
       document,location:{pathname:'/konto/'+slug+'/'},fetch,
       AbortController,setTimeout,clearTimeout
     });
