@@ -15,7 +15,7 @@ Gomoku to **jedyny wzorzec układu** dla konsol Warcabów i Szachów. Zmierzyć 
 3. Dla każdego rozmiaru 1920×1080, 1440×900, 1366×768, 1181×820, 1024×768, 768×1024, 390×844 i 375×667 porównaj .layout, .sidebar, .boardarea, .board-center, .boardframe, #board, .side-dock, .match-panel, .dock-tabs, .bottom oraz pozostałe elementy z raportu.
 4. Rozróżnij: **a)** różnice układu do usunięcia; **b)** różnice zamierzone (figury/siatka 8×8, zawartość gry); **c)** elementy celowo niedostępne dla danej gry. Dla grupy c podaj krótkie uzasadnienie, bez tworzenia imitacji.
 5. Popraw niezbędne reguły CSS/HTML **w Warcabach i Szachach**, preferując wspólne tokeny geometrii w kodzie Gomoku, jeśli ograniczy to duplikację i nie zmieni wyglądu Gomoku. Bez redesignu, neonów, nowych usług, baz i kosztów.
-6. Powtórz pomiar. Kryteria odbioru: brak odchyleń > 2 CSS px dla kluczowych wspólnych elementów na desktop/tablet, zachowana kolejność bloków na mobile, brak poziomego przewijania, plansza kwadratowa, elementy nieucięte. Treści i dostępne funkcje gry muszą zostać zachowane.
+6. Powtórz pomiar. Kryteria odbioru: brak odchyleń > 2 CSS px dla kluczowych wspólnych elementów na desktop/tablet, na mobile zgodne x/szerokości i zachowana kolejność bloków (różne wysokości wynikają z liczby dostępnych opcji gry), brak poziomego przewijania, plansza kwadratowa, elementy nieucięte. Treści i dostępne funkcje gry muszą zostać zachowane.
 7. Przygotuj jedną PR ze zmianami CSS/HTML, raport przed/po oraz linkami do screenshotów. Wdrożenie dopiero po odbiorze PR.
 
 ## Granice
