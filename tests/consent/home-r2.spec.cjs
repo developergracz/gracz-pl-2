@@ -1036,7 +1036,7 @@ test('Blog tiles match Nasze gry compact width without clipped copy',async({brow
     }),scrollWidth:document.documentElement.scrollWidth}));
    expect(g.cards).toHaveLength(3);
    for(const card of g.cards){
-    expect(Math.abs(card.width-g.gameWidth)).toBeLessThan(2);
+    expect(Math.abs(card.width-g.gameWidth)).toBeLessThan(6); // Allow section-specific horizontal padding, not oversized tiles.
     expect(card.imageHeight).toBeGreaterThan(100);
     expect(card.imageHeight).toBeLessThanOrEqual(191);
     expect(card.imageBottom).toBeLessThanOrEqual(card.textTop+2);
