@@ -84,8 +84,15 @@ test('mouse drag & drop uses the existing move path next to click-to-move',{time
  await page.waitForFunction(()=>document.getElementById('clock-2').classList.contains('clock-running'));
  assert.deepEqual(errors,[]);
 
- // 2. Click-to-move still works (default "both").
- await clickMove(page,'d2','d4');
+ // 2. A single press selects the piece and shows legal targets before any movement.
+ const press=await center(page,'d2');
+ await page.mouse.move(press.x,press.y);
+ await page.mouse.down();
+ assert.equal(await page.locator('#board .chess-square.chess-selected[data-square="99"]').count(),1,'d2 is selected on pointerdown');
+ assert.equal(await page.locator('#board .chess-square.chess-target').count(),2,'legal d3/d4 destinations appear immediately');
+ assert.equal(await moves(page),2,'pressing does not move a piece');
+ await page.mouse.up();
+ await squares(page).nth(index('d4')).click();
  await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 4',null,{timeout:12000});
  assert.equal((await position(page))[index('d4')],'P');
 
@@ -198,17 +205,17 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
 
   await page.locator('#console-config-open').click();
-  await page.locator('label[for],label.chess-input-mode').filter({hasText:'Tylko przeciąganie'}).click();
+  await page.locator('label[for],label.chess-input-mode').filter({hasText:'Przeciąganie (kliknięcie wybiera)'}).click();
   await page.locator('#console-config-done').click();
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
   assert.equal(await page.evaluate(()=>localStorage.getItem('gracz-chess-input-mode-v1')),'drag');
   await clickMove(page,'e2','e4');
-  assert.equal(await moves(page),0,'drag-only mode ignores pointer clicks');
+  await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
   await squares(page).nth(index('d2')).focus();await page.keyboard.press('Enter');
   await squares(page).nth(index('d4')).focus();await page.keyboard.press('Enter');
-  await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
-  await mouseDrag(page,'e2','e4');await noGhost(page);
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 4',null,{timeout:12000});
+  await mouseDrag(page,'g1','f3');await noGhost(page);
+  await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 6',null,{timeout:12000});
 
   // "Sama gra", fullscreen and page zoom keep an exact hit-test.
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','both'));
