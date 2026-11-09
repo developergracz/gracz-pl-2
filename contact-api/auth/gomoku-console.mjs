@@ -318,13 +318,12 @@ select option{background:#102c34;color:#fff}
 .cell.p2.occupied::after{background:radial-gradient(circle at 27% 18%,#fff 0%,#fbfcfc 34%,#dfe6e8 76%,#98a2a7)}
 .cell.last::after{outline:2px solid #d69f4e;outline-offset:1px}
 .cell.suggested:not(.occupied){background:#31bbb455!important;box-shadow:inset 0 0 0 2px #008f92}
-/* R42: visible gold/turquoise target under mouse and keyboard, without changing board geometry. */
+/* P1: fixed target exactly at the board intersection; no moving crosshair or tile outline. */
 .board .cell:not(:disabled):is(:hover,:focus-visible){
- background:#ffd36a6b;
- box-shadow:inset 0 0 0 2px #fff3bf,inset 0 0 0 4px #a36a23,0 0 8px #ffc65f85;
- cursor:crosshair;z-index:3;
+ background:radial-gradient(circle at 50% 50%,#fff1b7 0 2px,#067b7a 3px 5px,#f4d487 6px 7px,transparent 8px);
+ box-shadow:none!important;outline:none!important;cursor:pointer;z-index:3;
 }
-.board .cell:focus-visible{outline:2px solid #ffe19b;outline-offset:-2px;z-index:4}
+.board .cell:focus-visible{outline:none!important;box-shadow:none!important;z-index:4}
 /* R38: native tap acknowledgement without 300ms double-tap delay on touch devices. */
 .board .cell{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .game-tools{display:flex;flex-direction:column;justify-content:center;gap:clamp(9px,1.5vh,17px)}
@@ -1629,6 +1628,86 @@ select option{background:#102c34;color:#fff}
   box-sizing:border-box;width:100%;height:100%;aspect-ratio:1 / 1;
   min-width:0;min-height:0
  }
+}
+
+/* P1 BOARD-ONLY: dedicated square board viewport, unrelated to the original console grid.
+   This state is Gomoku-only (Chess/Checkers never receive gomoku-board-only). */
+.layout.gomoku-board-only{
+ position:fixed!important;inset:0!important;z-index:1;
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ box-sizing:border-box;width:100vw!important;height:100dvh!important;
+ min-width:0!important;min-height:0!important;max-width:none!important;max-height:100dvh!important;
+ margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;background:#041b20!important;overflow:hidden!important;
+}
+.layout.gomoku-board-only>.sidebar,
+.layout.gomoku-board-only .players,
+.layout.gomoku-board-only #game-state,
+.layout.gomoku-board-only .premium-quick-links,
+.layout.gomoku-board-only .side-dock,
+.layout.gomoku-board-only .bottom,
+.layout.gomoku-board-only .boardtop,
+.layout.gomoku-board-only .analysis-note{
+ display:none!important;
+}
+.layout.gomoku-board-only>.focus-nav{
+ position:fixed!important;top:clamp(8px,1.3vmin,16px)!important;
+ right:clamp(8px,1.3vmin,16px)!important;left:auto!important;bottom:auto!important;
+ z-index:15!important;display:flex!important;flex:0 0 auto!important;
+ width:auto!important;height:auto!important;min-height:0!important;
+ padding:0!important;margin:0!important;gap:0!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;
+}
+.layout.gomoku-board-only>.focus-nav>.focus-brand,
+.layout.gomoku-board-only>.focus-nav>strong,
+.layout.gomoku-board-only #focus-start{display:none!important}
+.layout.gomoku-board-only .focus-actions{margin:0!important;gap:0!important}
+.layout.gomoku-board-only #focus-exit{
+ box-sizing:border-box;width:42px!important;height:42px!important;min-height:42px!important;
+ padding:0!important;font-size:22px!important;line-height:1!important;
+ border:1px solid #d6b578!important;border-radius:11px!important;
+ background:#052a30e8!important;color:#fff0ba!important;
+ box-shadow:0 2px 8px #0009!important;cursor:pointer;
+}
+.layout.gomoku-board-only #focus-exit span{display:none!important}
+.layout.gomoku-board-only>.boardarea{
+ box-sizing:border-box;position:relative;display:flex!important;
+ flex:1 1 100%!important;align-self:stretch!important;
+ align-items:center!important;justify-content:center!important;
+ width:100%!important;height:100%!important;max-width:100%!important;
+ min-width:0!important;min-height:0!important;
+ grid-template-columns:none!important;grid-template-rows:none!important;
+ gap:0!important;margin:0!important;padding:clamp(10px,1.5vmin,18px)!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:transparent!important;overflow:hidden!important;
+}
+.layout.gomoku-board-only>.boardarea::before,
+.layout.gomoku-board-only>.boardarea::after{display:none!important;content:none!important}
+.layout.gomoku-board-only .arena{
+ box-sizing:border-box;display:flex!important;flex:1 1 100%!important;
+ align-items:center!important;justify-content:center!important;
+ width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;gap:0!important;
+}
+.layout.gomoku-board-only .board-center{
+ box-sizing:border-box;display:flex!important;flex:1 1 auto!important;
+ align-items:center!important;justify-content:center!important;
+ width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;
+ margin:0!important;padding:0!important;gap:0!important;
+}
+.layout.gomoku-board-only .boardframe{
+ box-sizing:border-box;display:block!important;flex:0 0 auto!important;
+ width:min(calc(100dvw - 36px),calc(100dvh - 36px))!important;
+ height:auto!important;aspect-ratio:1 / 1!important;
+ max-width:100%!important;max-height:100%!important;min-width:0!important;min-height:0!important;
+ margin:auto!important;padding:0!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:none!important;overflow:hidden!important;
+}
+.layout.gomoku-board-only #board{
+ box-sizing:border-box;width:100%!important;height:100%!important;aspect-ratio:1 / 1!important;
+ min-width:0!important;min-height:0!important;
+ border:2px solid #786441!important;border-radius:0!important;
+ box-shadow:none!important;
 }
 `;
 const js=String.raw`(()=>{'use strict';
@@ -2996,13 +3075,16 @@ function openGameSettings(){
  $('chat-sounds').focus();
 }
 async function toggleFullscreen(){
+ // Both expansion controls use the same board-only view, even when native Fullscreen is unavailable.
+ if($('game').classList.contains('gomoku-board-only')){
+  await leaveBoardFocusMode();return;
+ }
+ setBoardFocusMode(true);
  try{
-  if(document.fullscreenElement){await document.exitFullscreen();return;}
-  if(!document.documentElement?.requestFullscreen)throw new Error('unsupported');
-  await document.documentElement.requestFullscreen();
+  if(!document.fullscreenElement&&document.documentElement?.requestFullscreen)
+   await document.documentElement.requestFullscreen();
  }catch{
-  const label=$('analysis-note');label.textContent='Tryb pełnoekranowy nie jest dostępny w tej przeglądarce.';
-  label.hidden=false;
+  // CSS board-only remains fully usable without fullscreen permission.
  }
 }
 function setMode(mode){
@@ -3188,20 +3270,31 @@ $('game-settings').addEventListener('click',openGameSettings);
 function setBoardFocusMode(enabled){
  const game=$('game');
  game.classList.toggle('game-focus',enabled);
+ game.classList.toggle('gomoku-board-only',enabled);
  applyConsoleLayout();
  $('focus-game').setAttribute('aria-pressed',String(enabled));
  if(enabled)$('focus-exit').focus?.();
  else $('focus-game').focus?.();
 }
+async function leaveBoardFocusMode(){
+ setBoardFocusMode(false);
+ if(document.fullscreenElement&&document.exitFullscreen){
+  try{await document.exitFullscreen();}catch{}
+ }
+}
+document.addEventListener('fullscreenchange',()=>{
+ if(!document.fullscreenElement&&$('game').classList.contains('gomoku-board-only'))
+  setBoardFocusMode(false);
+});
 $('focus-game').addEventListener('click',()=>setBoardFocusMode(true));
 $('focus-start').addEventListener('click',()=>{
  if(state.mode!=='training')return;
  restart(); // Clear the showcase and prepare both stopped clocks; first legal move starts play.
 });
-$('focus-exit').addEventListener('click',()=>setBoardFocusMode(false));
+$('focus-exit').addEventListener('click',()=>void leaveBoardFocusMode());
 $('game').addEventListener('keydown',event=>{
- if(event.key==='Escape'&&$('game').classList.contains('game-focus')){
-  event.preventDefault?.();setBoardFocusMode(false);
+ if(event.key==='Escape'&&$('game').classList.contains('gomoku-board-only')){
+  event.preventDefault?.();void leaveBoardFocusMode();
  }
 });
 $('fullscreen-game').addEventListener('click',()=>void toggleFullscreen());
