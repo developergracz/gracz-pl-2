@@ -1,0 +1,36 @@
+name: GRACZ.PL — game-card hover preview
+on:
+  pull_request:
+    paths:
+      - 'maintenance-site/index.html'
+      - 'maintenance-site/assets/home-game-hover-preview-r1.*'
+      - 'tests/home-game-hover/**'
+      - '.github/workflows/home-game-hover.yml'
+permissions:
+  contents: read
+jobs:
+  hover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - name: Install Chromium browser test
+        run: |
+          npm install --no-save --prefix .home-hover-e2e playwright@1.56.1
+          ./.home-hover-e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Test five popups and cursor travel without neon
+        env:
+          NODE_PATH: ${{ github.workspace }}/.home-hover-e2e/node_modules
+        run: |
+          node --check maintenance-site/assets/home-game-hover-preview-r1.js
+          node tests/home-game-hover/browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game-hover-previews
+          path: test-results/game-hover/
+          retention-days: 7
+          if-no-files-found: ignore
