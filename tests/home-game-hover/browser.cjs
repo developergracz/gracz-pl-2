@@ -26,6 +26,7 @@ const server=createServer(async(req,res)=>{
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
   for(const item of files){
    const source=page.locator('.r4-game-image.r4-img-'+item);
    await source.scrollIntoViewIfNeeded();
