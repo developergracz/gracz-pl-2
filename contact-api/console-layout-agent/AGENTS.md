@@ -33,3 +33,6 @@ Zainstaluj zależności już używane w istniejących workflow projektu, bez zmi
     node contact-api/console-layout-agent/measure.mjs
 
 Domyślnie skrypt zbiera raport nawet przy różnicach. Parametr --strict włącza niezerowy kod wyjścia przy odchyleniach. Można wskazać CONSOLE_LAYOUT_BASE_URL do analizy działającego środowiska, **wyłącznie gdy strony są osiągalne i autoryzacja została rozwiązana**. Nie mieszać raportu lokalnego z produkcyjnym.
+
+## Synchronizacja z main
+Przed scaleniem PR należy uwzględnić bieżący HEAD main, uruchomić ponownie wymagane kontrole GitHub i nie omijać ochrony gałęzi produkcyjnej. Test geometrii w CI musi być zielony na tej samej rewizji, którą scalamy.
