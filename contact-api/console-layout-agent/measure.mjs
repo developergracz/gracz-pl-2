@@ -90,6 +90,8 @@ async function snapshot(page) {
     return {
       url:location.pathname,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},
       documentOverflow:document.documentElement.scrollWidth>innerWidth+2,
+      documentScrollWidth:document.documentElement.scrollWidth,
+      viewportClientWidth:document.documentElement.clientWidth,
       horizontalOverflowElements:[...document.querySelectorAll('body *')].filter(el=>{
         const s=getComputedStyle(el),r=el.getBoundingClientRect();
         return s.display!=='none' && s.visibility!=='hidden' && r.width>0 && (r.left < -2 || r.right > innerWidth+2);
@@ -119,13 +121,15 @@ function compare(base,target,game,viewport){
     differences,missing,missingInReference,
     criticalDifferences:differences.filter(x=>x.critical).length,
     documentOverflow:target.documentOverflow,
+    documentScrollWidth:target.documentScrollWidth,
     horizontalOverflowElements:target.horizontalOverflowElements,
     boardContained:(()=>{
       const f=target.parts['board-frame']?.rect,b=target.parts['board-container']?.rect;
       return !!(f&&b&&f.x>=b.x-2&&f.y>=b.y-2&&f.x+f.width<=b.x+b.width+2&&f.y+f.height<=b.y+b.height+2);
     })(),
     boardSquare:target.parts['game-board']?.rect
-      ? Math.abs(target.parts['game-board'].rect.width-target.parts['game-board'].rect.height)<=2
+      ? target.parts['game-board'].rect.width>=80 && target.parts['game-board'].rect.height>=80 &&
+        Math.abs(target.parts['game-board'].rect.width-target.parts['game-board'].rect.height)<=2
       : false
   };
 }
@@ -143,7 +147,7 @@ function markdown(report) {
   ];
   for(const entry of report.comparisons){
     text.push('| '+entry.viewport+' | '+entry.game+' | '+entry.criticalDifferences+
-      ' | '+entry.differences.length+' | '+(entry.documentOverflow?'TAK':'nie')+
+      ' | '+entry.differences.length+' | '+(entry.documentOverflow?'TAK ('+entry.documentScrollWidth+'px)':'nie')+
       ' | '+(entry.boardContained?'tak':'NIE')+' | '+(entry.boardSquare?'tak':'NIE')+' |');
   }
   for(const entry of report.comparisons){
