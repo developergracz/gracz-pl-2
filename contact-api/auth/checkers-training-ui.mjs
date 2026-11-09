@@ -188,6 +188,8 @@ export function setupTraining(a){
   $('training-settings').hidden=next!=='training';
   $('training-records').hidden=next!=='training';
   $('online-settings').hidden=next!=='online';
+  // Like Gomoku: the top "Odśwież partię" icon exists only for online matches.
+  $('refresh-match').hidden=next!=='online';
   $('chat-status').textContent=next==='training'?'GRACZ AI · rozmowa prywatna':'Czat partii online';
   $('checkers-refresh').title=next==='training'?'Cofnij ruch':'Odśwież partię';
   $('checkers-refresh').setAttribute('aria-label',$('checkers-refresh').title);

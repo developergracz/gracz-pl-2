@@ -87,13 +87,24 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(js.body,/console-preset-board/);
  assert.match(js.body,/changeConsoleLayout\(key\)/);
 
- assert.match(style.body,/height:55px;min-height:55px;max-height:55px/);
- assert.match(style.body,/min-height:28px;height:28px/);
- assert.match(style.body,/min-height:38px;height:38px/);
+ // CONSOLE-INTERACTION-1TO1-03: the left panel keeps Gomoku's own button, field and footer
+ // heights (no fixed-height copies) and one stable training ⇄ online settings slot.
+ assert.doesNotMatch(style.body,/height:55px;min-height:55px;max-height:55px/);
+ assert.doesNotMatch(style.body,/min-height:28px;height:28px/);
+ assert.doesNotMatch(style.body,/min-height:38px;height:38px/);
+ assert.match(page.body,/<div class="console-settings-slot"><section class="sidecard" id="training-settings">/);
+ assert.match(page.body,/<\/section>\n<\/div>\n<div class="sidebar-footer">/);
+ assert.match(style.body,/\.console-settings-slot>#online-settings\{grid-area:1\/1\/3\/2\}/);
+ assert.match(style.body,/#online-settings\[hidden\]\{display:block!important;visibility:hidden!important/);
+ assert.equal((style.body.match(/#console-config-fab:not\(\[hidden\]\)\{position/g)||[]).length,1,'one restore-gear placement rule');
+ assert.match(style.body,/console-hide-dock:not\(\.game-focus\):not\(\.console-hide-quicklinks\) \.premium-quick-links\{position:relative;[^}]*grid-row:2/,'hidden chat keeps navigation in the status row');
+ assert.doesNotMatch(style.body,/console-hide-dock[^{]*\{\s*grid-template-rows:var\(--console-players-height,60px\) 43px/,'hidden chat must not shrink the board with an extra row');
+ assert.match(js.body,/\$\('match-panel'\)\.classList\.toggle\('moves-only',!chat\)/);
+ assert.match(js.body,/document\.documentElement\.requestFullscreen\(\)/);
+ assert.doesNotMatch(js.body,/querySelector\('\.layout'\)\.requestFullscreen/);
  assert.match(style.body,/background:linear-gradient\(115deg,#fffcf4/);
  assert.match(style.body,/border:2px solid #967c54/);
  assert.match(style.body,/margin-bottom:48px/);
- assert.match(style.body,/@media \(min-width:801px\) and \(max-height:800px\)/);
  assert.match(style.body,/@media \(max-width:800px\)/);
 
  assert.match(style.body,/grid-template-columns:27\.5% minmax\(0,1fr\)/);
@@ -105,7 +116,7 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(style.body,/@media \(max-width:800px\)/);
  assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) clamp\(285px,21\.5vw,360px\)/);
  assert.match(style.body,/@media \(max-width:800px\)/);
- assert.match(style.body,/\.warcaby-console \.mode\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.doesNotMatch(style.body,/\.warcaby-console \.mode\{grid-template-columns/,'mode buttons use the Gomoku grid');
  for(const id of ['training-mode','online-mode','ai-level','training-time','training-increment','training-records','training-undo','training-hint','restart','game-result-modal']){
   assert.match(page.body,new RegExp('id="'+id+'"'));
  }
