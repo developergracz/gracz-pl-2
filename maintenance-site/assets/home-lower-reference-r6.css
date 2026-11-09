@@ -1964,7 +1964,7 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-premium-card-
 }
 @media(max-width:680px){
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important
+  grid-template-columns:minmax(0,1fr)!important;gap:10px!important
  }
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update{
   height:clamp(370px,100vw,405px)!important
@@ -1972,9 +1972,7 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-premium-card-
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-photo{
   height:clamp(106px,31vw,148px)!important
  }
- body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update:nth-child(3){
-  grid-column:1/-1;justify-self:center;width:calc(50% - 5px)!important
- }
+ 
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body{
   padding:9px 8px 45px!important;gap:5px!important
  }
