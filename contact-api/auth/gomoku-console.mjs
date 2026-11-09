@@ -1703,6 +1703,23 @@ select option{background:#102c34;color:#fff}
  box-shadow:inset 0 0 0 2px #f8d78f,inset 0 0 0 4px #0e6b6d!important;
  outline:none!important;cursor:pointer!important;z-index:5;
 }
+
+/* P3: cursor-following square over every board cell in both normal and
+   board-only views. Keep it visible when a cell is disabled while waiting for
+   the opponent or computer; the marker never enables an illegal move. */
+#board .cell:disabled{opacity:1}
+@media(hover:hover){
+ #board .cell:hover{
+  background:linear-gradient(135deg,#f8d57a91,#3bdad07d)!important;
+  box-shadow:inset 0 0 0 2px #ffdc88,inset 0 0 0 4px #0e6b6d!important;
+  outline:none!important;z-index:6;
+ }
+}
+#board .cell:focus-visible{
+ background:linear-gradient(135deg,#f8d57a91,#3bdad07d)!important;
+ box-shadow:inset 0 0 0 2px #ffdc88,inset 0 0 0 4px #0e6b6d!important;
+ outline:none!important;z-index:6;
+}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
