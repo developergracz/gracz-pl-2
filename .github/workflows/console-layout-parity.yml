@@ -32,7 +32,7 @@ jobs:
       - name: Validate and measure 24 rendered consoles (report-only)
         run: |
           node --check contact-api/console-layout-agent/measure.mjs
-          node contact-api/console-layout-agent/measure.mjs
+          node contact-api/console-layout-agent/measure.mjs --strict
       - name: Publish screenshot and measurements evidence
         if: always()
         uses: actions/upload-artifact@v4
