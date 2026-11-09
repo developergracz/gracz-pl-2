@@ -1920,7 +1920,7 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
 
 /* Compact Blog cards follow the column widths of Nasze gry, without changing other sections. */
 body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
- grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important
+ grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:11px!important
 }
 @media(min-width:961px){
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update:first-child{grid-column:2}
