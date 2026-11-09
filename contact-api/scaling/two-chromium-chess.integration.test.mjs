@@ -180,13 +180,15 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await pages[0].locator('#chat-input').fill('Powodzenia!');
  await pages[0].locator('#chat-send').click();
  for(const page of pages){
-  await page.waitForFunction(()=>document.querySelectorAll('.chess-chat-message').length===3,{timeout:10000});
+  await page.waitForFunction(()=>document.querySelectorAll('#chat-messages .game-chat-message').length===3,{timeout:10000});
   const chat=await page.locator('#chat-messages').innerText();
   assert.match(chat,/Witaj przy szachownicy!/);
   assert.match(chat,/Cześć, zaczynajmy!/);
   assert.match(chat,/Powodzenia!/);
-  assert.match(chat,/Chess1_/);
-  assert.match(chat,/Chess2_/);
+  assert.match(chat,/Ty:/);
+  assert.ok(chat.includes(users[page===pages[0]?1:0].nickname),'opponent keeps their real nickname');
+  assert.equal(await page.locator('#chat-messages .own').count(),page===pages[0]?2:1);
+  assert.equal(await page.locator('#chat-messages time[datetime]').count(),3);
   assert.match(await page.locator('.player.first small').innerText(),/Czarne — drugi ruch/);
   assert.match(await page.locator('.player.second small').innerText(),/Białe — zaczynają/);
   for(const link of await page.locator('.sidebar-footer .side-links a').all()){
