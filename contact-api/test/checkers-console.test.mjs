@@ -96,7 +96,8 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(page.body,/<\/section>\n<\/div>\n<div class="sidebar-footer">/);
  assert.match(style.body,/\.console-settings-slot>#online-settings\{grid-area:1\/1\/3\/2\}/);
  assert.match(style.body,/#online-settings\[hidden\]\{display:block!important;visibility:hidden!important/);
- assert.doesNotMatch(style.body,/#console-config-fab:not\(\[hidden\]\)\{/,'restore button keeps the Gomoku placement');
+ assert.equal((style.body.match(/#console-config-fab:not\(\[hidden\]\)\{position/g)||[]).length,1,'one restore-gear placement rule');
+ assert.match(style.body,/console-hide-dock:not\(\.game-focus\):not\(\.console-hide-quicklinks\) \.premium-quick-links\{position:relative;[^}]*grid-row:2/,'hidden chat keeps navigation in the status row');
  assert.doesNotMatch(style.body,/console-hide-dock[^{]*\{\s*grid-template-rows:var\(--console-players-height,60px\) 43px/,'hidden chat must not shrink the board with an extra row');
  assert.match(js.body,/\$\('match-panel'\)\.classList\.toggle\('moves-only',!chat\)/);
  assert.match(js.body,/document\.documentElement\.requestFullscreen\(\)/);

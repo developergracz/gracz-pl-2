@@ -214,6 +214,7 @@ test('CSS keeps chessboard and dock in their actual Gomoku grid tracks',()=>{
  assert.match(css,/\.layout\.console-hide-dock:not\(\.game-focus\)>\.boardarea/);
  assert.match(css,/@media \(min-width:801px\) and \(max-width:1190px\)/);
  assert.doesNotMatch(css,/container-type:size/);
- // CONSOLE-INTERACTION-1TO1-03: the restore button uses Gomoku's own fixed placement.
- assert.doesNotMatch(css,/#console-config-fab:not\(\[hidden\]\)\{\s*position:fixed/);
+ // Restore gear stays pinned to the right edge, below navigation and clocks (P1-B).
+ assert.match(css,/#console-config-fab:not\(\[hidden\]\)\{position:fixed;top:clamp\(275px,30vh,340px\);right:14px/);
+ assert.match(css,/width:46px;height:46px;max-width:46px/);
 });
