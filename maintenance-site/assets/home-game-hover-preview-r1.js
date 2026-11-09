@@ -74,7 +74,7 @@
  layer.addEventListener('pointerleave',queueClose);
  layer.addEventListener('focusin',clearClose);
  layer.addEventListener('focusout',()=>queueClose());
- layer.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hide();current?.focus()}});
+ layer.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();const source=current;hide();source?.focus()}});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&current)hide()});
  window.addEventListener('scroll',()=>{if(current){position(current);if(!current.getClientRects().length)hide()}},{passive:true});
  window.addEventListener('resize',()=>{if(current)position(current)},{passive:true});
