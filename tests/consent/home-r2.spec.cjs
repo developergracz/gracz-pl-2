@@ -849,9 +849,42 @@ test('Five premium game cards: linked live games and disabled upcoming games rem
  }
 });
 
+// Decodes a PNG screenshot in a blank page and walks inward from every edge of the
+// preview over a pure magenta test backdrop: each row and column must reach the solid
+// gold frame before meeting any turquoise-tinted pixel (blue above red). Anti-aliased
+// gold blended with magenta keeps red >= blue, so it is allowed on the way in.
+async function previewEdgeScan(context,png){
+ const page=await context.newPage();
+ try{
+  return await page.evaluate(async b64=>{
+   const img=new Image();img.src='data:image/png;base64,'+b64;await img.decode();
+   const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+   const g=c.getContext('2d');g.drawImage(img,0,0);
+   const {data,width:w,height:h}=g.getImageData(0,0,c.width,c.height);
+   const px=(x,y)=>{const k=(y*w+x)*4;return [data[k],data[k+1],data[k+2]];};
+   const magenta=([r,g,b])=>r>=250&&b>=250&&g<=5;
+   const bad=[];let edges=0;
+   const walk=(x,y,dx,dy)=>{
+    for(;x>=0&&y>=0&&x<w&&y<h;x+=dx,y+=dy){
+     const [r,g,b]=px(x,y);
+     if(r>=250&&b>=250&&g<=5)continue;
+     if(r>=120&&g>=100&&r-b>=20){edges++;return;}
+     if(b-r>2){bad.push([x,y,r,g,b]);return;}
+    }
+    bad.push([x,y,'no gold frame']);
+   };
+   for(let y=0;y<h;y++){walk(0,y,1,0);walk(w-1,y,-1,0);}
+   for(let x=0;x<w;x++){walk(x,0,0,1);walk(x,h-1,0,-1);}
+   return {w,h,edges,badCount:bad.length,bad:bad.slice(0,8),
+    corners:[px(0,0),px(w-1,0),px(0,h-1),px(w-1,h-1)].every(magenta)};
+  },png.toString('base64'));
+ }finally{await page.close();}
+}
+
 test('Chess console hover preview shows the Owner image enlarged, in view and without shifting cards',async({browser})=>{
- for(const [width,height] of [[1366,768],[1920,1080],[1024,768]]){
-  const context=await browser.newContext({viewport:{width,height}});
+ fs.mkdirSync(path.resolve('test-results/home-r4'),{recursive:true});
+ for(const [width,height,dpr] of [[1366,768,1],[1920,1080,2],[1024,768,1]]){
+  const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:dpr});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
@@ -875,11 +908,15 @@ test('Chess console hover preview shows the Owner image enlarged, in view and wi
    await expect.poll(()=>image.evaluate(i=>i.complete?i.naturalWidth:0)).toBeGreaterThan(0);
    const m=await page.evaluate(()=>{
     const p=document.querySelector('#nasze-gry .r4-game-chess .r4-game-preview'),i=p.querySelector('img');
-    const r=p.getBoundingClientRect(),ir=i.getBoundingClientRect();
-    return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,boxRatio:ir.width/ir.height,
-     natural:i.naturalWidth/i.naturalHeight,clamped:ir.height+1>=parseFloat(getComputedStyle(i).maxHeight),
-     fit:getComputedStyle(i).objectFit,pe:getComputedStyle(p).pointerEvents,
-     border:getComputedStyle(p).borderTopColor,sw:document.documentElement.scrollWidth};
+    const r=p.getBoundingClientRect(),ir=i.getBoundingClientRect(),s=getComputedStyle(p);
+    return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height,
+     gaps:[ir.left-r.left,ir.top-r.top,r.right-ir.right,r.bottom-ir.bottom],
+     boxRatio:ir.width/ir.height,natural:[i.naturalWidth,i.naturalHeight],
+     pad:[s.paddingTop,s.paddingRight,s.paddingBottom,s.paddingLeft],
+     border:[s.borderTopWidth,s.borderRightWidth,s.borderBottomWidth,s.borderLeftWidth],
+     bg:s.backgroundColor,bgImage:s.backgroundImage,shadow:s.boxShadow,outline:s.outlineStyle,
+     overflow:s.overflow,radius:[s.borderTopLeftRadius,s.borderTopRightRadius,s.borderBottomRightRadius,s.borderBottomLeftRadius],
+     pe:s.pointerEvents,sw:document.documentElement.scrollWidth};
    });
    expect(m.w).toBeGreaterThanOrEqual(500);
    expect(m.w).toBeLessThanOrEqual(600);
@@ -887,12 +924,37 @@ test('Chess console hover preview shows the Owner image enlarged, in view and wi
    expect(m.r).toBeLessThanOrEqual(width);
    expect(m.t).toBeGreaterThanOrEqual(0);
    expect(m.b).toBeLessThanOrEqual(height);
-   expect(m.fit).toBe('contain');
-   expect(Math.abs(m.boxRatio-m.natural)<0.02||m.clamped).toBe(true);
+   // Owner image cropped exactly to the outer gold frame; proportions preserved.
+   expect(m.natural).toEqual([588,329]);
+   expect(Math.abs(m.boxRatio-588/329)).toBeLessThan(0.01);
+   // The image fills the popup: no padding, frame, backdrop, shadow or empty margins.
+   for(const gap of m.gaps)expect(Math.abs(gap)).toBeLessThan(0.6);
+   expect(m.pad).toEqual(['0px','0px','0px','0px']);
+   expect(m.border).toEqual(['0px','0px','0px','0px']);
+   expect(m.bg).toBe('rgba(0, 0, 0, 0)');
+   expect(m.bgImage).toBe('none');
+   expect(m.shadow).toBe('none');
+   expect(m.outline).toBe('none');
+   expect(m.overflow).toBe('hidden');
+   for(const radius of m.radius)expect(parseFloat(radius)).toBeGreaterThan(0);
    expect(m.pe).toBe('none');
-   expect(m.border).toBe('rgb(195, 154, 84)');
    expect(m.sw).toBeLessThanOrEqual(width);
    expect(await cards()).toBe(before);
+   await page.screenshot({path:'test-results/home-r4/chess-hover-preview-'+width+'.png',animations:'disabled',
+    clip:{x:Math.max(0,m.l-24),y:Math.max(0,m.t-24),width:Math.min(width,m.r+24)-Math.max(0,m.l-24),height:Math.min(height,m.b+24)-Math.max(0,m.t-24)}});
+   // PASS criterion: paint everything around the image magenta (test-only), then no
+   // turquoise backdrop may appear between the popup edge and the outer gold frame.
+   await preview.evaluate(p=>{
+    p.style.setProperty('background','#f0f','important');
+    p.style.setProperty('box-shadow','0 0 0 48px #f0f','important');
+   });
+   const shot=await page.screenshot({clip:{x:m.l,y:m.t,width:m.w,height:m.h},animations:'disabled'});
+   await preview.evaluate(p=>{p.style.removeProperty('background');p.style.removeProperty('box-shadow');});
+   const scan=await previewEdgeScan(context,shot);
+   expect(scan.w).toBeGreaterThanOrEqual(Math.floor(m.w*dpr)-1);
+   expect(scan.corners).toBe(true);
+   expect(scan.edges).toBe(2*(scan.w+scan.h));
+   expect(scan.bad,'turquoise or non-gold pixels outside the gold frame').toEqual([]);
    await page.mouse.move(width-4,height-4);
    await expect(preview).toBeHidden();
    await card.locator('a.r4-game-play').scrollIntoViewIfNeeded();
