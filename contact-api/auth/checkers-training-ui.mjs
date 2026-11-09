@@ -87,7 +87,7 @@ export function setupTraining(a){
   const list=$('chat-messages');list.replaceChildren();
   if(!notes.length){
    const p=document.createElement('p');p.className='dock-empty';
-   p.textContent='Notatki treningowe. Nie są zapisywane na serwerze.';list.append(p);
+   p.textContent='Napisz do GRACZ AI. Rozmowa nie jest zapisywana na serwerze.';list.append(p);
    $('chat-preview').textContent=p.textContent;
    return;
   }
@@ -188,7 +188,7 @@ export function setupTraining(a){
   $('training-settings').hidden=next!=='training';
   $('training-records').hidden=next!=='training';
   $('online-settings').hidden=next!=='online';
-  $('chat-status').textContent=next==='training'?'Notatki treningowe · tylko w tej przeglądarce, bez zapisu na serwerze':'Czat partii online';
+  $('chat-status').textContent=next==='training'?'GRACZ AI · rozmowa prywatna':'Czat partii online';
   $('checkers-refresh').title=next==='training'?'Cofnij ruch':'Odśwież partię';
   $('checkers-refresh').setAttribute('aria-label',$('checkers-refresh').title);
   $('checkers-refresh').dataset.tooltip=$('checkers-refresh').title;
