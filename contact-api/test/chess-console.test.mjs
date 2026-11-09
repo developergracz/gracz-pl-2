@@ -184,3 +184,23 @@ test('CHESS-DRAG-P1: drag & drop shares the click move path and validates the in
  assert.doesNotMatch(css,/(^|\})\s*(html|body|body\.chess-console|\.layout)\s*\{[^}]*touch-action:none/);
  assert.match(css,/@media \(prefers-reduced-motion:reduce\)\{\n body\.chess-console \.chess-drag-ghost/);
 });
+
+test('CHESS-RESULT-P1: existing premium loss dialog is wired only to player losses',()=>{
+ const page=load('/konto/szachy/').body;
+ const app=load('/konto/szachy/app.js').body;
+ assert.ok(page.includes('href="/konto/gomoku/styl.css"'));
+ for(const id of ['game-result-modal','game-result-title','game-result-description','game-result-close','game-result-review','game-result-new'])
+  assert.ok(page.includes('id="'+id+'"'),id+' must be inherited from Gomoku');
+ assert.match(page,/class="result-overlay"/);
+ assert.match(app,/function syncChessLoss\(terminal\)/);
+ assert.match(app,/mode==='local'&&computerEnabled&&\(localTimeout===2\|\|\/czarne wygrywają\/\.test\(terminal\)\)/);
+ assert.match(app,/mode==='online'&&online\?\.state&&\(online\.state\.winner===1\|\|online\.state\.winner===2\)/);
+ assert.match(app,/online\.player!==online\.state\.winner/);
+ assert.match(app,/lossCard\.dataset\.result='loss'/);
+ assert.match(app,/if\(lossKey===announcedLoss\)return/);
+ assert.match(app,/syncChessLoss\(terminal\)/);
+ assert.match(app,/game-result-review/);
+ assert.match(app,/game-result-close/);
+ assert.match(app,/if\(mode==='online'\)\{location\.assign\('\/konto\/panel\/'\);return;\}/);
+ assert.match(app,/reset\.addEventListener\('click',\(\)=>\{announcedLoss='';hideChessLoss\(\);/);
+});
