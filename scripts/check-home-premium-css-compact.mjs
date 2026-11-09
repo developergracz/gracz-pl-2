@@ -64,7 +64,7 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   assert.equal(stylesheetTags.length,1,"No-JS fallback must be the only static stylesheet");
   assert.ok(html.includes('<noscript><link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1"></noscript>'),
     "No-JS users must receive approved full stylesheet");
-  assert.ok(html.includes('<script src="/assets/home-css-viewport.js?v=20261109-compact-news-r1"></script>'),
+  assert.ok(html.includes('<script src="/assets/home-css-viewport.js?v=20261109-large-news-r1"></script>'),
     "Parser-early single stylesheet selector required");
   const selector=fs.readFileSync("maintenance-site/assets/home-css-viewport.js","utf8");
   assert.ok(selector.includes('matchMedia("(max-width:680px)")') &&
