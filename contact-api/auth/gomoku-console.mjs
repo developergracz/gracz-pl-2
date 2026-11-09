@@ -1709,6 +1709,16 @@ select option{background:#102c34;color:#fff}
  border:2px solid #786441!important;border-radius:0!important;
  box-shadow:none!important;
 }
+
+/* P2: square follows the pointer over intersections in Gomoku board-only mode.
+   Center marker stays anchored; hover is a cell highlight, never the OS crosshair. */
+.layout.gomoku-board-only #board .cell:not(:disabled):is(:hover,:focus-visible){
+ background:
+  radial-gradient(circle at 50% 50%,#fff1b7 0 2px,#067b7a 3px 5px,#f4d487 6px 7px,transparent 8px),
+  linear-gradient(135deg,#f8d57a85,#3bdad082)!important;
+ box-shadow:inset 0 0 0 2px #f8d78f,inset 0 0 0 4px #0e6b6d!important;
+ outline:none!important;cursor:pointer!important;z-index:5;
+}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
