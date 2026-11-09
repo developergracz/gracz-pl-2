@@ -43,6 +43,22 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
   await inspectPieces(page);
+  // "Ruchy" must never show the chat/AI welcome text or composer below moves.
+  await page.locator('#history-tab').click();
+  assert.equal(await page.locator('#match-panel').evaluate(el=>el.classList.contains('moves-only')),true);
+  assert.equal(await page.locator('.mini-chat').isVisible(),false);
+  assert.equal(await page.locator('#chat-panel').isVisible(),false);
+  assert.equal(await page.locator('#moves-panel').isVisible(),true);
+  const historyBounds=await page.locator('#moves-list').evaluate(el=>{
+   const dock=el.closest('#match-panel');
+   return {height:el.getBoundingClientRect().height,
+    gap:dock.getBoundingClientRect().bottom-el.getBoundingClientRect().bottom};
+  });
+  assert.ok(historyBounds.height>100&&historyBounds.gap<24,
+   'Moves should fill the dock to the bottom: '+JSON.stringify(historyBounds));
+  await page.locator('#chat-tab').click();
+  assert.equal(await page.locator('#match-panel').evaluate(el=>el.classList.contains('moves-only')),false);
+  assert.equal(await page.locator('.mini-chat').isVisible(),true);
   assert.equal(new Set(await page.locator('.chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece))).size,12);
   await snapshot(page,'premium-'+viewport.width);
   const initial=await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece));
