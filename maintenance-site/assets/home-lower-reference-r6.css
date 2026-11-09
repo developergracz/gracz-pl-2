@@ -1860,3 +1860,22 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
     }
   }
 }
+
+/* Gomoku: same owner-approved flat preview as Chess and Warcaby.
+   Show only when the pointer is over the miniature board. */
+@media (hover:hover) and (pointer:fine) and (min-width:681px){
+  body.homepage-premium-max #nasze-gry .r4-game-gomoku{position:static}
+  body.homepage-premium-max #nasze-gry .r4-img-gomoku:hover + .r4-game-preview{display:block;opacity:1}
+  @starting-style{
+    body.homepage-premium-max #nasze-gry .r4-img-gomoku:hover + .r4-game-preview{opacity:0}
+  }
+  @supports (position-try-fallbacks:flip-block){
+    body.homepage-premium-max #nasze-gry .r4-img-gomoku{anchor-name:--gracz-gomoku-thumb}
+    body.homepage-premium-max #nasze-gry .r4-game-gomoku .r4-game-preview{
+      position:fixed;position-anchor:--gracz-gomoku-thumb;
+      top:anchor(top);left:anchor(left);
+      width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:flip-block,--gracz-preview-in-view;
+    }
+  }
+}
