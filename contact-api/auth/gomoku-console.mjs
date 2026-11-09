@@ -1,3 +1,4 @@
+import {gameChatJs,gameChatCss} from './game-chat-messages.mjs';
 import {graczAiChatJs,graczAiChatCss} from './gracz-ai-chat-assets.mjs';
 import {createGomokuRealtimeClient} from './gomoku-realtime-client.mjs';
 // Standalone Gomoku console. Online games use the existing authenticated, server-authoritative /auth/match API.
@@ -8,7 +9,7 @@ const secure={
 };
 const html=String.raw`<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04191b"><meta name="robots" content="noindex,nofollow,noarchive">
 <title>Gomoku Online — Full Max Premium | gracz.pl</title>
-<link rel="stylesheet" href="/konto/gomoku/styl.css"><link rel="stylesheet" href="/konto/gracz-ai-chat.css"><script src="/konto/gomoku/app.js" defer></script><script src="/konto/gracz-ai-chat.js" defer></script></head>
+<link rel="stylesheet" href="/konto/gomoku/styl.css"><link rel="stylesheet" href="/konto/gracz-ai-chat.css"><link rel="stylesheet" href="/konto/game-chat.css"><script src="/konto/game-chat.js" defer></script><script src="/konto/gomoku/app.js" defer></script><script src="/konto/gracz-ai-chat.js" defer></script></head>
 <body>
 <a class="skip" href="#board">Przejdź do planszy</a>
 <main class="layout" id="game">
@@ -1372,23 +1373,6 @@ select option{background:#102c34;color:#fff}
  font-size:clamp(10px,1.0vw,14px);
  letter-spacing:-.2px;
 }
-#chat-panel .chat-messages .chat-bubble,
-.chat-preview .chat-bubble{
- align-self:flex-start;
- width:max-content;
- max-width:min(92%,100%);
- min-width:0;
- box-sizing:border-box;
- text-align:left;
-}
-#chat-panel .chat-messages .chat-bubble.own,
-.chat-preview .chat-bubble.own{align-self:flex-start}
-#chat-panel .chat-messages .chat-bubble p,
-.chat-preview .chat-bubble p{
- white-space:pre-wrap;
- overflow-wrap:anywhere;
- word-break:normal;
-}
 @media(max-width:560px){
  .bottom #turn-label{font-size:clamp(9px,2.5vw,11px);letter-spacing:-.35px}
 }
@@ -2571,31 +2555,17 @@ function drawRoomChat(messages){
    'Rozpocznij rozmowę z przeciwnikiem. Czat jest prywatny dla uczestników partii.');
   return;
  }
- messages.forEach(message=>{
+ const bubbleFor=message=>{
   const mine=message.player===(state.mode==='training'?1:state.match?.player);
-  const bubble=document.createElement('div');bubble.className='chat-bubble'+(mine?' own':'');
-  const title=document.createElement('strong');
-  title.textContent=mine?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
-  const text=document.createElement('p');text.textContent=message.body;
-  const time=document.createElement('time');
-  const date=new Date(message.createdAt);
-  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
-  time.hidden=!chatPrefs.timestamps;
-  bubble.append(title,text,time);box.append(bubble);
- });
+  return window.GraczChat.createMessage({
+   sender:mine?'Ty':state.mode==='training'?'GRACZ AI':(state.match?.players?.[message.player-1]||'Przeciwnik'),
+   body:message.body,mine,createdAt:message.createdAt,timestamps:chatPrefs.timestamps
+  });
+ };
+ messages.forEach(message=>box.append(bubbleFor(message)));
  if(chatPrefs.autoScroll)box.scrollTop=box.scrollHeight;
  const preview=$('chat-preview');preview.replaceChildren();
- messages.slice(-2).forEach(message=>{
-  const own=message.player===(state.mode==='training'?1:state.match?.player);
-  const bubble=document.createElement('div');bubble.className='chat-bubble'+(own?' own':'');
-  const title=document.createElement('strong');
-  title.textContent=own?'Ty':state.mode==='training'?'Komputer':(state.match?.players?.[message.player-1]||'Przeciwnik');
-  const content=document.createElement('p');content.textContent=message.body;
-  const time=document.createElement('time');const date=new Date(message.createdAt);
-  time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
-  time.hidden=!chatPrefs.timestamps;
-  bubble.append(title,content,time);preview.append(bubble);
- });
+ messages.slice(-2).forEach(message=>preview.append(bubbleFor(message)));
  if(chatPrefs.autoScroll)preview.scrollTop=preview.scrollHeight;
 }
 async function refreshRoomChat(){
@@ -3290,6 +3260,8 @@ export function serveGomokuConsole(req,res,url){
   '/konto/gomoku/styl.css':['text/css; charset=utf-8',css],
   '/konto/gomoku/app.js':['application/javascript; charset=utf-8',js],
   '/konto/gomoku/ai-worker.js':['application/javascript; charset=utf-8',gomokuWorkerJs],
+  '/konto/game-chat.js':['application/javascript; charset=utf-8',gameChatJs],
+  '/konto/game-chat.css':['text/css; charset=utf-8',gameChatCss],
   '/konto/gracz-ai-chat.js':['application/javascript; charset=utf-8',graczAiChatJs],
   '/konto/gracz-ai-chat.css':['text/css; charset=utf-8',graczAiChatCss]
  }[path];
