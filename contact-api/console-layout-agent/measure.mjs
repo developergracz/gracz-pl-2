@@ -189,7 +189,7 @@ async function main(){
     });
     const base=externalBase||('http://127.0.0.1:'+server.address().port);
     browser=await chromium.launch({headless:true});
-    const measurements=[],comparisons=[],focusMeasurements=[];
+    const measurements=[],comparisons=[],focusMeasurements=[],boardOnlyAudits=[];
     for(const [width,height] of VIEWPORTS){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,locale:'pl-PL',reducedMotion:'reduce'});
       const byGame={};
@@ -232,6 +232,57 @@ async function main(){
           frame,board,center
         });
         if(focusEnabled)await page.screenshot({path:path.join(outDir,game+'-focus-'+width+'x'+height+'.png'),animations:'disabled',fullPage:false});
+
+        // Dedicated Gomoku BOARD-ONLY agent: prove that "Sama gra" hides console chrome,
+        // the board is centered and square, and pointer guidance is fixed at the intersection.
+        if(game==='gomoku'){
+          const chrome=await page.evaluate(()=>{
+            const el=s=>document.querySelector(s);
+            const rect=s=>el(s)?.getBoundingClientRect();
+            const visible=s=>{
+              const e=el(s);if(!e)return false;
+              const st=getComputedStyle(e),r=e.getBoundingClientRect();
+              return st.display!=='none'&&st.visibility!=='hidden'&&r.width>0&&r.height>0;
+            };
+            const b=rect('#board'),f=rect('.boardframe');
+            return {
+              enabled:el('#game')?.classList.contains('gomoku-board-only')||false,
+              hiddenChrome:['.sidebar','.players','#game-state','.premium-quick-links','.side-dock','.bottom','.boardtop','.focus-brand','#focus-start'].every(s=>!visible(s)),
+              returnVisible:visible('#focus-exit'),
+              centered:!!b&&Math.abs(b.left+b.width/2-innerWidth/2)<=2&&Math.abs(b.top+b.height/2-innerHeight/2)<=2,
+              boardSquare:!!b&&b.width>=80&&Math.abs(b.width-b.height)<=2,
+              frameSquare:!!f&&f.width>=80&&Math.abs(f.width-f.height)<=2,
+              noDecorativeFrame:!!f&&getComputedStyle(el('.boardframe')).paddingLeft==='0px'&&getComputedStyle(el('.boardframe')).borderLeftWidth==='0px',
+              cells:el('#board')?.children.length||0,
+              board:{x:b?.x,y:b?.y,width:b?.width,height:b?.height}
+            };
+          });
+          let hover={found:false};
+          const cell=page.locator('#board .cell:not(:disabled)').first();
+          if(await cell.count()){
+            await cell.hover({force:true,timeout:5000});
+            hover=await page.evaluate(()=>{
+              const e=document.querySelector('#board .cell:hover');
+              if(!e)return {found:false};
+              const css=getComputedStyle(e);
+              return {found:true,noMovingCrosshair:css.cursor!=='crosshair',
+                noFieldFrame:css.boxShadow==='none'&&css.outlineStyle==='none',
+                anchoredMarker:css.backgroundImage.includes('radial-gradient')};
+            });
+          }
+          await page.evaluate(()=>document.getElementById('focus-exit')?.click());
+          const restored=await page.evaluate(()=>!document.getElementById('game')?.classList.contains('gomoku-board-only'));
+          await page.evaluate(()=>document.getElementById('fullscreen-game')?.click());
+          await page.waitForTimeout(80);
+          const expand=await page.evaluate(()=>{
+            const g=document.getElementById('game'),b=document.getElementById('board')?.getBoundingClientRect();
+            return {enabled:!!g?.classList.contains('gomoku-board-only'),
+              square:!!b&&b.width>=80&&Math.abs(b.width-b.height)<=2,
+              centered:!!b&&Math.abs(b.x+b.width/2-innerWidth/2)<=2&&Math.abs(b.y+b.height/2-innerHeight/2)<=2};
+          });
+          boardOnlyAudits.push({viewport:width+'x'+height,...chrome,hover,restored,expand});
+          await page.evaluate(()=>document.getElementById('focus-exit')?.click());
+        }
         await page.close();
       }
       for(const game of ['warcaby','szachy'])
@@ -243,22 +294,41 @@ async function main(){
       source:externalBase?'external':'local',
       baseUrl:externalBase||'local fixture',
       reference:'Gomoku',tolerancePx:TOLERANCE,
-      measurements,comparisons,focusMeasurements
+      measurements,comparisons,focusMeasurements,boardOnlyAudits
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
-    await writeFile(path.join(outDir,'report.md'),markdown(report));
+    const boardOnlyMd=['','## GOMOKU-BOARD-ONLY-P1 — agent widoku wyłącznie planszy',
+      'Brak konsoli, plansza w kwadracie, środek viewportu i nieruchomy znacznik kursora.',
+      '',
+      '| Okno | Sama plansza | Ukryta konsola | Kwadrat/środek | Marker bez ramki | Powrót | Rozszerz |',
+      '|---|---|---|---|---|---|---|'];
+    for(const a of boardOnlyAudits){
+      boardOnlyMd.push('| '+a.viewport+' | '+(a.enabled?'tak':'NIE')+
+        ' | '+(a.hiddenChrome?'tak':'NIE')+
+        ' | '+(a.boardSquare&&a.frameSquare&&a.centered?'tak':'NIE')+
+        ' | '+(a.hover.found&&a.hover.noMovingCrosshair&&a.hover.noFieldFrame&&a.hover.anchoredMarker?'tak':'NIE')+
+        ' | '+(a.restored?'tak':'NIE')+
+        ' | '+(a.expand.enabled&&a.expand.square&&a.expand.centered?'tak':'NIE')+' |');
+    }
+    await writeFile(path.join(outDir,'report.md'),markdown(report)+boardOnlyMd.join('\n')+'\n');
     const failures=comparisons.filter(x=>x.criticalDifferences||x.documentOverflow||!x.boardSquare||!x.boardContained);
     const referenceOverflow=measurements.filter(x=>x.game==='gomoku'&&x.documentOverflow).map(x=>x.viewport.width+'x'+x.viewport.height);
     const focusFailures=focusMeasurements.filter(x=>!x.focusEnabled||!x.frameSquare||!x.boardSquare||!x.contained||x.documentOverflow);
+    const boardOnlyFailures=boardOnlyAudits.filter(x=>
+      !x.enabled||!x.hiddenChrome||!x.returnVisible||!x.centered||!x.boardSquare||
+      !x.frameSquare||!x.noDecorativeFrame||x.cells!==225||
+      !x.hover.found||!x.hover.noMovingCrosshair||!x.hover.noFieldFrame||!x.hover.anchoredMarker||
+      !x.restored||!x.expand.enabled||!x.expand.square||!x.expand.centered);
     console.log('CONSOLE_PARITY '+JSON.stringify({
       tested:measurements.length,comparisons:comparisons.length,
       divergentViewports:failures.length,
       referenceOverflow,
       focusFailures:focusFailures.map(x=>x.game+' '+x.viewport+' '+JSON.stringify({enabled:x.focusEnabled,frameSquare:x.frameSquare,boardSquare:x.boardSquare,contained:x.contained,overflow:x.documentOverflow})),
+      boardOnlyTested:boardOnlyAudits.length,boardOnlyFailures:boardOnlyFailures.map(x=>x.viewport+' '+JSON.stringify(x)),
       report:path.join(outDir,'report.md'),
       json:path.join(outDir,'measurements.json')
     }));
-    if(strict&&(failures.length||referenceOverflow.length||focusFailures.length))process.exitCode=1;
+    if(strict&&(failures.length||referenceOverflow.length||focusFailures.length||boardOnlyFailures.length))process.exitCode=1;
   } finally {
     await browser?.close();
     if(server)await new Promise(resolve=>server.close(resolve));
