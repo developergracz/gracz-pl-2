@@ -66,6 +66,7 @@
   source.setAttribute('aria-label',(source.getAttribute('aria-label')||item.title)+'. Podgląd konsoli po najechaniu lub fokusie.');
   source.setAttribute('aria-controls',layer.id);
   source.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')show(item,source)});
+  source.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){if(current!==source)show(item,source);else clearClose()}});
   source.addEventListener('pointerleave',queueClose);
   source.addEventListener('focus',()=>show(item,source));
   source.addEventListener('blur',()=>{if(!layer.contains(document.activeElement))queueClose()});
