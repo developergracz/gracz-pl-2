@@ -3150,7 +3150,7 @@ $('restart').addEventListener('click',restart);
 $('analysis-note').tabIndex=0;
 $('analysis-note').title='Kliknij, aby zamknąć komunikat';
 $('analysis-note').addEventListener('click',()=>{$('analysis-note').hidden=true;});
-document.addEventListener('keydown',event=>{
+document.addEventListener?.('keydown',event=>{
  if(event.key==='Escape'&&!$('analysis-note').hidden)$('analysis-note').hidden=true;
 });
 $('undo-move').addEventListener('click',handleUndoClick);
