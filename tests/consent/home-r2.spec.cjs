@@ -1034,6 +1034,7 @@ test('Blog tiles match Nasze gry compact width without clipped copy',async({brow
       return {width:r.width,right:r.right,imageHeight:im.height,imageBottom:im.bottom,
        textTop:body.getBoundingClientRect().top,bodyHeight:body.clientHeight,textScroll:body.scrollHeight};
     }),scrollWidth:document.documentElement.scrollWidth}));
+   console.log('NEWS_TILE_DIMENSIONS',width,JSON.stringify(g));
    expect(g.cards).toHaveLength(3);
    for(const card of g.cards){
     expect(Math.abs(card.width-g.gameWidth)).toBeLessThan(2);
