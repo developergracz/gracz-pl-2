@@ -683,13 +683,24 @@ select option{background:#102c34;color:#fff}
 .premium-mini-link svg{width:21px;height:21px;display:block;filter:drop-shadow(0 0 2px #e5b65f69)}
 .premium-mini-link:hover,.premium-mini-link:focus-visible{border-color:#ffeba9;color:#fff0b4;
  transform:translateY(-1px);box-shadow:inset 0 1px #fff4c181,0 0 16px #ffc75a9e}
-.premium-mini-link::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 7px);
+.premium-mini-link::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:auto;top:calc(100% + 7px);
  transform:translate(-50%,5px);padding:8px 12px;white-space:nowrap;pointer-events:none;
  border:1px solid #f5cd7b;border-radius:9px;color:#ffe7ab;
  font:750 12px/1.2 Inter,"Segoe UI",Arial,sans-serif;letter-spacing:.1px;
  background:linear-gradient(135deg,#06383a,#021822);box-shadow:0 0 14px #daa84c75,0 8px 20px #0008;
  opacity:0;visibility:hidden;transition:opacity .15s,transform .15s,visibility .15s;z-index:50}
 .premium-mini-link:is(:hover,:focus-visible)::after{opacity:1;visibility:visible;transform:translate(-50%,0)}
+/* Quick links sit against the top and right edges of the console.
+   Show labels BELOW the icons; align outer labels inward so nothing is clipped. */
+.premium-quick-links>a:first-of-type::after{left:0;right:auto;transform:translateY(5px)}
+.premium-quick-links>a:last-of-type::after,
+.premium-quick-links>#focus-game::after,
+.premium-quick-links>#refresh-match::after{left:auto;right:0;transform:translateY(5px)}
+.premium-quick-links>a:first-of-type:is(:hover,:focus-visible)::after,
+.premium-quick-links>a:last-of-type:is(:hover,:focus-visible)::after,
+.premium-quick-links>#focus-game:is(:hover,:focus-visible)::after,
+.premium-quick-links>#refresh-match:is(:hover,:focus-visible)::after{transform:translateY(0)}
+
 @media (max-width:800px){
  .layout{height:auto;max-height:none}
  .premium-quick-links{width:100%;justify-content:center;gap:8px;margin:3px 0 8px;order:0}
