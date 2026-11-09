@@ -188,7 +188,7 @@ test('CHESS-DRAG-P1: drag & drop shares the click move path and validates the in
 test('CHESS-RESULT-P1: existing premium loss dialog is wired only to player losses',()=>{
  const page=load('/konto/szachy/').body;
  const app=load('/konto/szachy/app.js').body;
- assert.match(page,/href="\\/konto\\/gomoku\\/styl\\.css"/);
+ assert.ok(page.includes('href="/konto/gomoku/styl.css"'));
  for(const id of ['game-result-modal','game-result-title','game-result-description','game-result-close','game-result-review','game-result-new'])
   assert.ok(page.includes('id="'+id+'"'),id+' must be inherited from Gomoku');
  assert.match(page,/class="result-overlay"/);
