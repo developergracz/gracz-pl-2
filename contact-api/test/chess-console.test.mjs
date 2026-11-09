@@ -163,3 +163,23 @@ test('stalemate and insufficient material',()=>{
  assert.match(result([parseFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')]),/Pat/);
  assert.match(result([parseFen('7k/8/6K1/8/8/8/8/8 w - - 0 1')]),/materiału/);
 });
+test('CHESS-DRAG-P1: drag & drop shares the click move path and validates the input setting',()=>{
+ const app=load('/konto/szachy/app.js').body,css=load('/konto/szachy/styl.css').body;
+ for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])assert.match(app,new RegExp("addEventListener\\('"+type+"'"));
+ assert.match(app,/board\.setPointerCapture\(d\.id\)/);
+ // A drop selects the piece and calls the same choose() as a click: no second rules engine or move path.
+ const controller=app.slice(app.indexOf('// CHESS-DRAG-P1: drag & drop'),app.indexOf(' function performLocalMove('));
+ assert.match(controller,/selected=d\.from;render\(\);\n   choose\(to\);/);
+ assert.doesNotMatch(controller,/performLocalMove\(|apply\(|commit\(|api\(/);
+ assert.match(app,/const inputModes=\['both','click','drag'\],inputModeKey='gracz-chess-input-mode-v1';/);
+ assert.match(app,/let inputMode='both'/);
+ assert.match(app,/if\(inputModes\.includes\(saved\)\)inputMode=saved;/);
+ for(const label of ['Obie metody','Tylko kliknięcie','Tylko przeciąganie'])assert.ok(app.includes(label),label);
+ assert.match(app,/input\.type='radio'/);
+ // Keyboard activation (click with detail 0) is never blocked by the input mode.
+ assert.match(app,/if\(event\.detail>0&&\(inputMode==='drag'\|\|dragClick\)\)\{dragClick=false;return;\}/);
+ // Touch scrolling is blocked only on squares holding a movable piece, never globally.
+ assert.match(css,/\.chess-square\.chess-draggable\{cursor:grab;touch-action:none\}/);
+ assert.doesNotMatch(css,/(^|\})\s*(html|body|body\.chess-console|\.layout)\s*\{[^}]*touch-action:none/);
+ assert.match(css,/@media \(prefers-reduced-motion:reduce\)\{\n body\.chess-console \.chess-drag-ghost/);
+});
