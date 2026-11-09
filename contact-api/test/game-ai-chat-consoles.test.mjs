@@ -173,19 +173,19 @@ test('Active chat tab hides the duplicate preview beneath conversation; moves ta
 test('Quick-link tooltip labels appear below all top-right icons without clipping',()=>{
   const gomokuCss=get(serveGomokuConsole,'/konto/gomoku/styl.css').raw;
   const checkersCss=get(serveCheckersConsole,'/konto/warcaby/styl.css').raw;
-  const chessCss=get(serveChessConsole,'/konto/szachy/styl.css').raw;
-  for(const [name,css] of [['Gomoku',gomokuCss],['Warcaby',checkersCss],['Szachy',chessCss]]){
-    assert.match(css,/\.premium-mini-link::after\{[^}]*bottom:auto;top:calc\(100% \+ 7px\)/,
-      name+': labels must open below the top rail instead of outside the frame');
-    assert.match(css,/\.premium-quick-links>a:first-of-type::after\{left:0;right:auto/,
-      name+': first label must stay within the left screen edge');
-    assert.match(css,/\.premium-quick-links>a:last-of-type::after,[\s\S]*?\.premium-quick-links>#focus-game::after,[\s\S]*?\.premium-quick-links>#refresh-match::after\{left:auto;right:0/,
-      name+': right-hand labels must stay within the right screen edge');
-  }
+  // All consoles inherit the Gomoku stylesheet. Chess and Checkers add only
+  // game-specific CSS, so verify inherited rules at their actual source.
+  assert.match(gomokuCss,/\.premium-mini-link::after\{[^}]*bottom:auto;top:calc\(100% \+ 7px\)/,
+    'shared labels must open below the top rail instead of outside the frame');
+  assert.match(gomokuCss,/\.premium-quick-links>a:first-of-type::after\{left:0;right:auto/,
+    'first label must stay within the left screen edge');
+  assert.match(gomokuCss,/\.premium-quick-links>a:last-of-type::after,[\s\S]*?\.premium-quick-links>#focus-game::after,[\s\S]*?\.premium-quick-links>#refresh-match::after\{left:auto;right:0/,
+    'right-hand labels must stay within the right screen edge');
   assert.match(checkersCss,/\.warcaby-console \.layout:not\(\.game-focus\) \.premium-quick-links \{[\s\S]*?overflow:visible;isolation:isolate;/,
     'Warcaby toolbar must not clip its tooltip labels');
   for(const [serve,slug] of [[serveGomokuConsole,'gomoku'],[serveCheckersConsole,'warcaby'],[serveChessConsole,'szachy']]){
     const html=get(serve,'/konto/'+slug+'/').raw;
+    assert.match(html,/href="\/konto\/gomoku\/styl\.css"/,'game must inherit shared quick-link CSS');
     assert.match(html,/class="premium-quick-links"/);
     assert.ok((html.match(/data-tooltip="/g)||[]).length>=6,slug+': navigation labels must remain accessible');
   }
