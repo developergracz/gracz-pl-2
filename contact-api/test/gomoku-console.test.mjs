@@ -998,3 +998,21 @@ test('Expert Gomoku AI chooses legal, deterministic moves in a midgame position'
  assert.ok(Number.isInteger(first)&&first>=0&&first<225);
  assert.equal(board[first],0);
 });
+
+test('Gomoku cursor-following square remains visible in normal and fullscreen layouts even when moves are blocked',()=>{
+ const css=served('/konto/gomoku/styl.css').body;
+ const markerStart=css.indexOf('/* P3: cursor-following square');
+ assert.ok(markerStart>0,'shared hover marker style is served on the Gomoku stylesheet');
+ const marker=css.slice(markerStart);
+ assert.match(marker,/#board \.cell:disabled\{opacity:1\}/,'disabled stones and waiting cells keep full visibility');
+ assert.match(marker,/@media\(hover:hover\)\{\s*#board \.cell:hover\{/,
+  'mouse hover covers all board cells without requiring an enabled button');
+ const rule=marker.match(/#board \.cell:hover\{([^}]+)\}/)?.[1]||'';
+ assert.match(rule,/background:linear-gradient\(/,'square hover has a visible premium fill');
+ assert.match(rule,/box-shadow:inset 0 0 0 2px/,'square hover has a visible cell-sized border');
+ assert.doesNotMatch(rule,/:not\(:disabled\)/,'the marker must work during the computer or opponent turn');
+ assert.match(marker,/#board \.cell:focus-visible\{/,'keyboard focus receives the same clear marker');
+ assert.match(css,/\.layout\.gomoku-board-only #board/,'board-only fullscreen geometry remains intact');
+ const js=served('/konto/gomoku/app.js').body;
+ assert.match(js,/const disabled=!!piece\|\|!canPlay/,'hover styling does not weaken move validation');
+});
