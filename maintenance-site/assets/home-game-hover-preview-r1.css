@@ -1,4 +1,9 @@
 /* Compact in-page previews: no neon and no extra card height. */
+body.homepage-premium-max #nasze-gry .r4-games-grid .r4-game:hover{
+ box-shadow:0 10px 22px rgba(0,0,0,.22)!important;
+ border-color:#d29d45!important;
+}
+
 body.homepage-premium-max #nasze-gry .r4-game-hover-preview{
  position:fixed;z-index:1001;display:block;
  box-sizing:border-box;width:min(430px,calc(100vw - 32px));
