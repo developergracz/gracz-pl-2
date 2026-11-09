@@ -4,8 +4,8 @@
 (() => {
   "use strict";
   const media = window.matchMedia("(max-width:680px)");
-  const mobileHref = "/assets/home-lcp-bundle-r1-mobile.css?v=20261106-mobile-v1&game-boards=r1";
-  const fullHref = "/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1&game-boards=r1";
+  const mobileHref = "/assets/home-lcp-bundle-r1-mobile.css?v=20261106-mobile-v1&game-boards=r1&five-premium-cards=r1";
+  const fullHref = "/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1&game-boards=r1&five-premium-cards=r1";
   const selected = media.matches ? mobileHref : fullHref;
   // This script is synchronous in <head>; document.write injects a parser-
   // inserted stylesheet, unlike appendChild which caused an observed CLS.
