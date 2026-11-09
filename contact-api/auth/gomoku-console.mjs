@@ -3282,7 +3282,7 @@ async function leaveBoardFocusMode(){
   try{await document.exitFullscreen();}catch{}
  }
 }
-document.addEventListener('fullscreenchange',()=>{
+document.addEventListener?.('fullscreenchange',()=>{
  if(!document.fullscreenElement&&$('game').classList.contains('gomoku-board-only'))
   setBoardFocusMode(false);
 });
