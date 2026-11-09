@@ -222,8 +222,15 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   const from=active.locator('#board .chess-square').nth(index(step.from));
   await from.waitFor({state:'visible'});
   await active.waitForFunction(s=>{const cell=document.querySelectorAll('#board .chess-square')[s];return cell&&!cell.disabled;},index(step.from));
-  await from.click();
-  await active.locator('#board .chess-square').nth(index(step.to)).click();
+  if(step.player===2){
+   // CHESS-DRAG-P1: black plays by mouse drag & drop through the same authoritative POST.
+   const a=await from.boundingBox(),b=await active.locator('#board .chess-square').nth(index(step.to)).boundingBox();
+   await active.mouse.move(a.x+a.width/2,a.y+a.height/2);await active.mouse.down();
+   await active.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:10});await active.mouse.up();
+  }else{
+   await from.click();
+   await active.locator('#board .chess-square').nth(index(step.to)).click();
+  }
   let observed;
   const deadline=Date.now()+7000;
   while(Date.now()<deadline){
@@ -232,7 +239,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
    await new Promise(resolve=>setTimeout(resolve,100));
   }
   assert.equal(observed.status,200);
-  assert.equal(observed.match.version,version+1,'one click pair commits exactly one move');
+  assert.equal(observed.match.version,version+1,'one click pair or one drag commits exactly one move');
   assert.equal(observed.match.state.history.at(-1).uci,step.from+step.to);
   state=observed.match.state;version=observed.match.version;
   await Promise.all(pages.map(page=>waitForPosition(page,state)));
