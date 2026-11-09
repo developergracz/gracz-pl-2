@@ -576,9 +576,9 @@ test('Approved six-card images are unique and all local assets resolve',async({b
  ['#poradniki-academy .r4-approved-guide-chess','academy-chess-premium-r1.webp'],
  ['#poradniki-academy .r4-approved-guide-checkers','academy-checkers-premium-r1.webp'],
  ['#poradniki-academy .r4-approved-guide-poker','academy-poker-premium-r1.webp'],
- ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
- ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
- ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
+ ['#aktualnosci .r4-approved-blog-tournament','gracz-news-tournament-premium-r1.webp'],
+ ['#aktualnosci .r4-approved-blog-analysis','gracz-news-analysis-premium-r1.webp'],
+ ['#aktualnosci .r4-approved-blog-thousand','gracz-news-thousand-premium-r1.webp']
  ];
  for(const width of [390,768,1366]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -616,7 +616,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'gracz-news-thousand-premium-r1.webp':selector.includes('blog-analysis')?'gracz-news-analysis-premium-r1.webp':selector.includes('blog-')?'gracz-news-tournament-premium-r1.webp':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
@@ -699,9 +699,9 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
    const cards=page.locator('#aktualnosci .r4-update');
    await expect(cards).toHaveCount(3);
    const expected=[
-     'gracz-blog-tournament-owner-premium-r3.avif',
-     'gracz-blog-analysis-wide-premium-r9.avif',
-     'gracz-blog-thousand-wide-premium-r9.avif'
+     'gracz-news-tournament-premium-r1.webp',
+     'gracz-news-analysis-premium-r1.webp',
+     'gracz-news-thousand-premium-r1.webp'
    ];
    for(let i=0;i<3;i++){
      const card=cards.nth(i),photo=card.locator('.r4-update-photo');
@@ -712,28 +712,28 @@ test('Owner-approved sharp Blog photos and Full Max Premium arrows render correc
      expect(await photo.evaluate(el=>getComputedStyle(el).filter)).toBe('none');
      const response=await page.request.get('/assets/'+expected[i]);
      expect(response.status(),expected[i]).toBe(200);
-     const bytes=(await response.body()).length;expect(bytes).toBeGreaterThan(i===0?25000:10000);if(i>0)expect(bytes).toBeLessThan(50000);
+     const bytes=(await response.body()).length;expect(bytes).toBeGreaterThan(i===0?25000:10000);if(i>0)expect(bytes).toBeLessThan(65000);
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
  }
 });
 
-test('Approved Tysiac premium chip photo appears uncropped without duplicated text',async({browser})=>{
+test('Approved Tysiac illustration loads without duplicated text',async({browser})=>{
  for(const width of [390,1366]){
   const ctx=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await ctx.newPage();await page.goto('/');
    const card=page.locator('#aktualnosci .r4-update').nth(2);
    const photo=card.locator('img.r4-approved-blog-thousand');
-   await expect(photo).toHaveAttribute('src','/assets/gracz-blog-thousand-wide-premium-r9.avif');
+   await expect(photo).toHaveAttribute('src','/assets/gracz-news-thousand-premium-r1.webp');
    await expect(photo).toHaveAttribute('alt','');
    await expect(photo).toHaveAttribute('loading','lazy');
    await photo.scrollIntoViewIfNeeded();
    await expect.poll(async()=>photo.evaluate(el=>el.naturalWidth)).toBe(720);
    await expect(photo).toHaveCSS('object-fit','cover');
    await expect(card.locator('.r4-update-body strong')).toHaveText('Tysiąc — zasady, taktyka i najważniejsze wskazówki');
-   const response=await page.request.get('/assets/gracz-blog-thousand-wide-premium-r9.avif');
+   const response=await page.request.get('/assets/gracz-news-thousand-premium-r1.webp');
    expect(response.status()).toBe(200);
    expect((await response.body()).length).toBeGreaterThan(10000);
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
@@ -741,15 +741,15 @@ test('Approved Tysiac premium chip photo appears uncropped without duplicated te
  }
 });
 
-// Both approved wide photographs use actual files (not baked-in headings/buttons).
-test('Two approved wide scenes load as native images without duplicate card copy',async({browser})=>{
+// The two approved static illustrations load as real files; card text remains HTML.
+test('Two illustrated Academy news scenes load as native images without duplicate card copy',async({browser})=>{
  for(const width of [390,1366]){
   const ctx=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await ctx.newPage();await page.goto('/');
    for(const [selector,filename] of [
-    ['.r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
-    ['.r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
+    ['.r4-approved-blog-analysis','gracz-news-analysis-premium-r1.webp'],
+    ['.r4-approved-blog-thousand','gracz-news-thousand-premium-r1.webp']
    ]){
     const photo=page.locator('#aktualnosci img'+selector);
     await expect(photo).toHaveCount(1);
