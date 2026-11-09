@@ -1604,7 +1604,7 @@ select option{background:#102c34;color:#fff}
 @media(max-width:560px){.side-dock>.game-tools{display:flex;flex-flow:row nowrap;gap:4px}.side-dock>.game-tools .tool-btn{flex:1 1 0;min-width:0;width:0;min-height:40px;height:40px}}
 
 /* CONSOLE-1TO1-02: mobile arc remains inside viewport; desktop unchanged. */
-@media(max-width:800px){.boardarea:after{display:none}}
+@media(max-width:800px){.boardarea:after{display:none}.side-dock>.game-tools{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(2px,.4vw,4px)}.side-dock>.game-tools .tool-btn{min-width:0;width:100%;max-width:100%}}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
