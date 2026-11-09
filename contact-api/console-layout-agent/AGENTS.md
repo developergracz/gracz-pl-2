@@ -35,6 +35,11 @@ Reguły odbioru (desktop: x, y, szerokość, wysokość; telefony: x i szerokoś
 
 Widoczność zegarów jest funkcją gry (Szachy pokazują ∞ i podgląd czasu pokoju), więc nie jest błędem układu — gdy zegary są widoczne w obu grach, ich geometria musi być zgodna.
 
+Stany odrębne funkcjonalnie i kolizje (P1, PR #774):
+- „Sama gra” i pełny ekran w Gomoku to widok wyłącznie planszy (`gomoku-board-only`, tylko Gomoku). Kroki `focus` i `fullscreen` nie są więc porównywane 1:1 z Gomoku; w Warcabach i Szachach muszą spełnić niezmienniki: włączone `game-focus`, ukryte panele boczne, kwadratowa i widoczna plansza, VS z pudełkiem, brak kolizji. Kroki powrotu (`focus-exit`, `fullscreen-exit`) nadal muszą odtworzyć geometrię początkową i zgadzać się z Gomoku.
+- Bezwzględnie w Warcabach i Szachach: brak nakładania się nawigacji górnej, przycisku przywracania panelu, zegarów, kart graczy, VS i statusu; zegar w obrębie karty gracza; VS ma pudełko zawsze, gdy widoczny jest pasek graczy (Chrome 145 gubił je po wejściu w „Sama gra”).
+- Przycisk przywracania ma położenie zależne od gry (Warcaby i Szachy: prawa krawędź, kontrakt `modern/checkers-engine/e2e/warcaby-layout.browser.mjs`), dlatego jest sprawdzany pod kątem kolizji, a nie równości z Gomoku. Gdy wzorzec Gomoku sam nakłada nawigację na kartę gracza lub zegar (ukryty czat), jego pozycja nawigacji nie jest wiążąca, a status porównuje się w x, y i wysokości.
+
 Uruchomienie: node contact-api/console-layout-agent/measure.mjs [--strict] [--static-only|--dynamic-only] [--viewports=1366x768,1280x720,...]. Flaga --viewports zawęża przebieg albo dodaje rozmiary spoza ośmiu wymaganych. Raport: sekcja „Analiza dynamiczna” w report.md, pełne dane w measurements.json (pole dynamic), zrzuty dynamic-*.png dla 1366×768 i 390×844.
 
 ## Granice

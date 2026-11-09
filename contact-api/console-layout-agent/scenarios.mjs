@@ -17,7 +17,15 @@ export const SHARED_PARTS = [
   'console','sidebar','game-area','board-container','chat-dock','match-panel',
   'dock-tabs','chat-tab','moves-tab','bottom-bar','players','versus','quick-links',
   'game-state','toolbar','chat-compose','chat-input','chat-send','clock-black','clock-white',
-  'config-card','config-tiles','config-fab','focus-nav'
+  'config-card','config-tiles','focus-nav'
+];
+// Overlap pairs that must never occur in Warcaby or Szachy (absolute rule, any step).
+// The restore button (config-fab) has a game-specific placement (Warcaby: right edge,
+// e2e/warcaby-layout.browser.mjs), so it is checked for collisions, not for Gomoku equality.
+const NO_OVERLAP = [
+  ['nav','p1'],['nav','p2'],['nav','vs'],['nav','c1'],['nav','c2'],['nav','status'],
+  ['fab','nav'],['fab','c1'],['fab','c2'],['fab','p1'],['fab','p2'],['fab','status'],
+  ['p1','vs'],['p2','vs'],['p1','p2']
 ];
 // Left-panel footer (Jak grać?, links, console configurator launcher): same size as
 // Gomoku; its vertical position follows the game's own settings, but it must never
@@ -175,9 +183,9 @@ export const SCENARIOS = [
   {id:'show-dock',label:'Ponowne dodanie prawego panelu',kind:'state',run:p=>toggleTile(p,'dock')},
   {id:'show-sidebar',label:'Ponowne dodanie lewego panelu',kind:'restore',run:p=>toggleTile(p,'sidebar')},
   {id:'config-close',label:'Zamknięcie konfiguratora',kind:'restore',run:p=>p.locator('#console-config-done').click()},
-  {id:'focus',label:'Tryb „Sama gra”',kind:'state',run:p=>p.locator('#focus-game').click()},
+  {id:'focus',label:'Tryb „Sama gra”',kind:'state',ownState:true,run:p=>p.locator('#focus-game').click()},
   {id:'focus-exit',label:'Wyjście z trybu „Sama gra”',kind:'restore',run:p=>p.locator('#focus-exit').click()},
-  {id:'fullscreen',label:'Pełny ekran (okno powiększone do ekranu)',kind:'state',run:async (p,g,ctx)=>{
+  {id:'fullscreen',label:'Pełny ekran (okno powiększone do ekranu)',kind:'state',ownState:true,run:async (p,g,ctx)=>{
     await p.locator('#fullscreen-game').click();
     await p.waitForFunction(()=>!!document.fullscreenElement,null,{timeout:3000}).catch(()=>{});
     // Real browsers enlarge the viewport to the screen when entering fullscreen.
@@ -200,7 +208,7 @@ export const SCENARIOS = [
 /* ---------------------------------------------------------------- analysis */
 
 export async function dynamicProbe(page){
-  return page.evaluate(()=>{
+  return page.evaluate(OVERLAP_PAIRS=>{
     const out={fullscreenElement:document.fullscreenElement?(document.fullscreenElement===document.documentElement?'html':document.fullscreenElement.tagName.toLowerCase()+(document.fullscreenElement.className?'.'+[...document.fullscreenElement.classList].join('.'):'')):null};
     const layout=document.querySelector('.layout');
     out.layoutClasses=[...(layout?.classList||[])].filter(c=>c!=='layout');
@@ -242,10 +250,21 @@ export async function dynamicProbe(page){
       // How far the panel content (incl. the configurator launcher) runs past the visible panel.
       out.sidebar={scrollHeight:side.scrollHeight,clientHeight:side.clientHeight,overflowPx:Math.max(0,side.scrollHeight-side.clientHeight)};
     }
+    const rectOf=sel=>{const e=document.querySelector(sel);if(!e||e.closest('[hidden]'))return null;
+      const st=getComputedStyle(e),r=e.getBoundingClientRect();
+      return st.display==='none'||st.visibility==='hidden'||r.width<=0||r.height<=0?null:{left:r.left,top:r.top,right:r.right,bottom:r.bottom};};
+    const R={nav:rectOf('.premium-quick-links'),p1:rectOf('.players .player.first'),p2:rectOf('.players .player.second'),
+      vs:rectOf('.players .versus'),c1:rectOf('#clock-1'),c2:rectOf('#clock-2'),status:rectOf('#game-state'),
+      fab:rectOf('#console-config-fab'),players:rectOf('.players')};
+    const hit=(a,b)=>!!a&&!!b&&Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2;
+    out.overlaps=OVERLAP_PAIRS.filter(([a,b])=>hit(R[a],R[b])).map(([a,b])=>a+'×'+b);
+    // Whenever the players row is shown, the VS emblem must have a box between both cards.
+    out.versusMissing=!!R.players&&!!R.p1&&!!R.p2&&!R.vs;
+    out.clockOutsideCard=[['c1','p1'],['c2','p2']].filter(([c,p])=>R[c]&&R[p]&&(R[c].left<R[p].left-1||R[c].right>R[p].right+1)).map(([c])=>c);
     out.modal=[...document.querySelectorAll('[role="dialog"],.premium-modal,.chess-invite-overlay,#console-config-modal,#player-actions-modal')]
       .filter(m=>!m.hidden&&m.getClientRects().length&&getComputedStyle(m).display!=='none').map(m=>m.id||m.className).slice(0,4);
     return out;
-  });
+  },NO_OVERLAP);
 }
 
 function rectDelta(a,b,props){
@@ -329,12 +348,22 @@ export function analyseStep({step,viewport,game,mobile,records,reference,initial
     }
     if(result.restore.length)issues.push('brak powrotu do geometrii początkowej: '+result.restore.map(d=>d.part).join(', '));
   }
-  if(reference&&game!=='gomoku'){
+  // Gomoku's "Sama gra"/fullscreen is its own Gomoku-only board-only view (gomoku-board-only,
+  // never applied to Warcaby/Szachy), i.e. a different functional state: no 1:1 comparison there.
+  const sameState=!step.ownState;
+  if(reference&&game!=='gomoku'&&sameState){
     // Same functional state, same viewport: shared chrome must match Gomoku.
-    // Board-only focus mode is a fixed 100dvh composition, so phones compare y/height too.
+    // A fixed 100dvh composition (focus) compares y/height on phones too.
     const fixed=records.settledProbe.layoutClasses?.includes('game-focus')&&reference.settledProbe.layoutClasses?.includes('game-focus');
     const refProps=fixed?['x','y','width','height']:props;
-    result.reference=partDeltas(reference.settled,records.settled,SHARED_PARTS,refProps)
+    // Where Gomoku itself floats its top navigation over a player card or clock (hidden-dock
+    // preset), its navigation position is not a valid reference; the status row sharing the
+    // navigation track keeps x, y and height. Collisions are checked separately below.
+    const refDefect=(reference.settledProbe.overlaps||[]).some(o=>o.startsWith('nav×')&&o!=='nav×status');
+    result.referenceDefect=refDefect?reference.settledProbe.overlaps:undefined;
+    const parts=SHARED_PARTS.filter(p=>!(refDefect&&(p==='quick-links'||p==='game-state')));
+    result.reference=partDeltas(reference.settled,records.settled,parts,refProps)
+      .concat(refDefect?partDeltas(reference.settled,records.settled,['game-state'],mobile?['x']:['x','y','height']):[])
       .concat(partDeltas(reference.settled,records.settled,FOOTER_PARTS,mobile?['x','width']:['x','width','height']));
     if(result.reference.length)issues.push('odchylenie od Gomoku: '+result.reference.map(d=>d.part).join(', '));
     const keys=SHARED_PARTS.filter(p=>!CLOCKS.includes(p)).concat(FOOTER_PARTS);
@@ -343,6 +372,8 @@ export function analyseStep({step,viewport,game,mobile,records,reference,initial
     result.missingVsReference=refShown;result.extraVsReference=extra;
     if(refShown.length)issues.push('widoczne w Gomoku, ukryte tutaj: '+refShown.join(', '));
     if(extra.length)issues.push('ukryte w Gomoku, widoczne tutaj: '+extra.join(', '));
+  }
+  if(reference&&game!=='gomoku'){
     const fs=reference.settledProbe.fullscreenElement,fsHere=records.settledProbe.fullscreenElement;
     if(fs!==fsHere)issues.push('inny element pełnego ekranu ('+fsHere+' zamiast '+fs+')');
     // Desktop: controls pushed out of the left panel where Gomoku keeps them in view.
@@ -356,6 +387,18 @@ export function analyseStep({step,viewport,game,mobile,records,reference,initial
   const square=board&&board.width>=80&&Math.abs(board.width-board.height)<=2;
   if(game!=='gomoku'&&!square)issues.push('plansza nie jest kwadratowa lub zwinięta');
   if(!records.settledProbe.boardInViewport)issues.push('plansza nie jest w pełni widoczna');
+  if(game!=='gomoku'){
+    const pr=records.settledProbe;
+    if(pr.overlaps?.length)issues.push('nakładające się elementy: '+pr.overlaps.join(', '));
+    if(pr.versusMissing)issues.push('znacznik VS bez pudełka przy widocznym pasku graczy');
+    if(pr.clockOutsideCard?.length)issues.push('zegar wystaje poza kartę gracza: '+pr.clockOutsideCard.join(', '));
+    if(step.ownState&&step.id==='focus'){
+      const g=s.parts;
+      if(!pr.layoutClasses?.includes('game-focus'))issues.push('tryb „Sama gra” nie został włączony');
+      if(g.sidebar?.visible||g['chat-dock']?.visible)issues.push('w trybie „Sama gra” widoczny jest boczny panel');
+    }
+  }
+  result.overlaps=records.settledProbe.overlaps;
   const chat=records.settledProbe.chat;
   if(chat&&(chat.horizontalOverflow||chat.widerChildren||!chat.insideDock))issues.push('wiadomości czatu wychodzą poza panel');
   const refClipped=new Set((reference?.settledProbe.clippedControls||[]).map(c=>c.control));
