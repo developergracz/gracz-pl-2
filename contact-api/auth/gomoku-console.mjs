@@ -318,7 +318,13 @@ select option{background:#102c34;color:#fff}
 .cell.p2.occupied::after{background:radial-gradient(circle at 27% 18%,#fff 0%,#fbfcfc 34%,#dfe6e8 76%,#98a2a7)}
 .cell.last::after{outline:2px solid #d69f4e;outline-offset:1px}
 .cell.suggested:not(.occupied){background:#31bbb455!important;box-shadow:inset 0 0 0 2px #008f92}
-.cell:not(:disabled):hover{background:#c9e6df6e;cursor:pointer}.cell:focus-visible{outline:2px solid #078a91;outline-offset:-2px;z-index:3}
+/* R42: visible gold/turquoise target under mouse and keyboard, without changing board geometry. */
+.board .cell:not(:disabled):is(:hover,:focus-visible){
+ background:#ffd36a6b;
+ box-shadow:inset 0 0 0 2px #fff3bf,inset 0 0 0 4px #a36a23,0 0 8px #ffc65f85;
+ cursor:crosshair;z-index:3;
+}
+.board .cell:focus-visible{outline:2px solid #ffe19b;outline-offset:-2px;z-index:4}
 /* R38: native tap acknowledgement without 300ms double-tap delay on touch devices. */
 .board .cell{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .game-tools{display:flex;flex-direction:column;justify-content:center;gap:clamp(9px,1.5vh,17px)}
