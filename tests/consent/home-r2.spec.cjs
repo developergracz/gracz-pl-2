@@ -22,15 +22,25 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('.r4-updates-grid .r4-update')).toHaveCount(3);
    await expect(page.locator('#spolecznosc')).toContainText('Forum w przygotowaniu');
    await expect(page.locator('#gracz-next')).toContainText('System kont użytkowników jest jeszcze przygotowywany');
-   for(const [label,href] of [['Warcaby','/gry/warcaby/'],['Gomoku','/gry/gomoku/'],['Tysiąc','/gry/tysiac/'],['Poker treningowy','/gry/poker-treningowy/']]){
-    const card=page.locator('.r4-game').filter({has:page.locator('h3', {hasText:label})});
-    await expect(card).toHaveAttribute('href',href);
+   for(const [label,href,academy] of [
+    ['Szachy online','https://gracz-contact-api.onrender.com/konto/szachy/','Akademia szachów'],
+    ['Warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/','Akademia warcabów'],
+    ['Gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/','Akademia gomoku']]){
+    const card=page.locator('#nasze-gry .r4-game').filter({has:page.locator('h3',{hasText:label})});
+    await expect(card.locator('a.r4-game-play')).toHaveAttribute('href',href);
+    await expect(card.locator('a.r4-game-academy')).toContainText(academy);
+   }
+   for(const label of ['Tysiąc','Poker treningowy']){
+    const card=page.locator('#nasze-gry .r4-game').filter({has:page.locator('h3',{hasText:label})});
+    await expect(card.locator('button.r4-game-coming')).toBeDisabled();
+    await expect(card.locator('button.r4-game-coming')).toHaveText('Wkrótce');
+    await expect(card.locator('a.r4-game-academy')).toHaveAttribute('href',/^\/gry\//);
    }
    const form=page.locator('.site-footer form[data-newsletter]');
    await expect(form).toHaveCount(1);
    await expect(form.locator('button[type=submit]')).toBeDisabled();
 
-   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','home-board-chess.svg','home-board-checkers.svg','home-board-gomoku.svg','r4-game-thousand.webp','r4-game-poker.webp']){
+   for(const asset of ['r4-reference-hero.webp','r4-reference-community.webp','r4-reference-newsletter.webp','home-board-chess.svg','home-board-checkers.svg','home-board-gomoku.svg','home-board-thousand.svg','home-board-poker.svg','r4-game-thousand.webp','r4-game-poker.webp']){
      const response=await page.request.get('/assets/'+asset);
      expect(response.status(),asset).toBe(200);
      expect((await response.body()).length,asset).toBeGreaterThan(1000);
@@ -160,8 +170,9 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
       expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 724 / 2172)).toBeLessThan(3);
       expect(geometry.heroPhotoPosition).toBe('absolute');
       if(width===1600){
-        await page.locator('.r4-game').nth(1).click();
-        await expect(page).toHaveURL(/\/gry\/warcaby\/$/);
+        const game=page.locator('.r4-game').nth(1);
+        await expect(game.locator('a.r4-game-play')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/warcaby/');
+        await expect(game.locator('a.r4-game-academy')).toHaveAttribute('href','/gry/warcaby/zasady/');
       }
     } finally {await context.close();}
   }
@@ -809,5 +820,31 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
     expect(layout.scrollWidth).toBeLessThanOrEqual(width+2);
    }
   }finally{await context.close()}
+ }
+});
+
+test('Five premium game cards: linked live games and disabled upcoming games remain compact',async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   const cards=page.locator('#nasze-gry .r4-game-premium');
+   await expect(cards).toHaveCount(5);
+   await expect(cards.locator('a.r4-game-play')).toHaveCount(3);
+   await expect(cards.locator('button.r4-game-coming:disabled')).toHaveCount(2);
+   await expect(cards.locator('a.r4-game-academy')).toHaveCount(5);
+   const measured=await page.evaluate(()=>({
+    sw:document.documentElement.scrollWidth,
+    cards:[...document.querySelectorAll('#nasze-gry .r4-game-premium')].map(e=>{
+     const r=e.getBoundingClientRect();return {h:r.height,l:r.left,r:r.right};
+    }),
+    images:[...document.querySelectorAll('#nasze-gry .r4-game-premium .r4-game-image')].map(e=>getComputedStyle(e).backgroundImage)
+   }));
+   expect(measured.sw).toBeLessThanOrEqual(width+2);
+   expect(measured.cards.every(c=>c.l>=-1&&c.r<=width+2&&c.h>235)).toBe(true);
+   expect(measured.images[3]).toContain('home-board-thousand.svg');
+   expect(measured.images[4]).toContain('home-board-poker.svg');
+   if(width>=1366)expect(Math.max(...measured.cards.map(c=>c.h))).toBeLessThan(415);
+  }finally{await context.close();}
  }
 });
