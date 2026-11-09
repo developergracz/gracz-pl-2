@@ -6,6 +6,7 @@ on:
       - 'contact-api/auth/gomoku-console.mjs'
       - 'contact-api/auth/checkers-console.mjs'
       - 'contact-api/auth/chess-console.mjs'
+      - 'contact-api/auth/checkers-training-ui.mjs'
       - '.github/workflows/console-layout-parity.yml'
   workflow_dispatch:
 
@@ -16,7 +17,7 @@ jobs:
   geometry:
     name: Measure Gomoku, Warcaby and Szachy in Chromium
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,9 +30,10 @@ jobs:
           npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
           npm --prefix contact-api install --no-save --no-package-lock --ignore-scripts --no-fund --no-audit playwright@1.58.2
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
-      - name: Validate and measure 24 rendered consoles (report-only)
+      - name: Measure 24 rendered consoles and 464 dynamic interaction steps
         run: |
           node --check contact-api/console-layout-agent/measure.mjs
+          node --check contact-api/console-layout-agent/scenarios.mjs
           node contact-api/console-layout-agent/measure.mjs --strict
       - name: Publish screenshot and measurements evidence
         if: always()

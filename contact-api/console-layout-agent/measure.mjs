@@ -12,6 +12,7 @@ import {fileURLToPath} from 'node:url';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
+import {SCENARIOS,SHARED_PARTS,JUMP_TOLERANCE,runScenarios,analyseStep} from './scenarios.mjs';
 
 const GAMES = ['gomoku','warcaby','szachy'];
 const VIEWPORTS = [
@@ -34,17 +35,24 @@ const PARTS = [
   ['chat-compose', '.chat-compose'], ['mini-chat', '.mini-chat'],
   ['toolbar', '.game-tools'], ['bottom-bar', '.bottom'],
   ['config-open', '#console-config-open'], ['clock-black', '#clock-1'],
-  ['clock-white', '#clock-2']
+  ['clock-white', '#clock-2'], ['players', '.players'],
+  ['versus', '.versus'], ['quick-links', '.premium-quick-links'],
+  ['game-state', '#game-state'], ['config-card', '.console-config-card'],
+  ['config-tiles', '#console-config-tiles'], ['config-fab', '#console-config-fab'],
+  ['focus-nav', '#focus-nav']
 ];
-const KEY_PARTS = new Set([
-  'console','sidebar','game-area','board-container',
-  'chat-dock','match-panel','dock-tabs','bottom-bar'
-]);
+// Every shared chrome element of the Gomoku console is critical (mandate CONSOLE-INTERACTION-1TO1-03).
+const KEY_PARTS = new Set(SHARED_PARTS);
 const TOLERANCE = 2; // device pixels at DPR=1
 const round = n => Math.round(n*100)/100;
 const outDir = path.resolve(fileURLToPath(new URL('./reports/', import.meta.url)));
 const externalBase = process.env.CONSOLE_LAYOUT_BASE_URL?.replace(/\/+$/, '') || '';
 const strict = process.argv.includes('--strict');
+const staticOnly = process.argv.includes('--static-only');
+const dynamicOnly = process.argv.includes('--dynamic-only');
+const viewportFilter = process.argv.find(a=>a.startsWith('--viewports='))?.slice(12).split(',').filter(Boolean);
+const SCREENSHOT_STEPS = new Set(['chat-send','online','config-open','hide-dock','focus','fullscreen']);
+const SCREENSHOT_VIEWPORTS = new Set(['1366x768','390x844']);
 const handlers = [serveGomokuConsole,serveCheckersConsole,serveChessConsole];
 
 function localServer() {
@@ -176,6 +184,71 @@ function markdown(report) {
   );
   return text.join('\n');
 }
+function dynamicMarkdown(dynamic){
+  const text=['','# Analiza dynamiczna — kliknięcia i zmiany stanu (CONSOLE-INTERACTION-1TO1-03)','',
+    '- Każdy krok mierzony **przed kliknięciem, 2 klatki po kliknięciu i po ustabilizowaniu** (cisza DOM, odpowiedź AI, modale).',
+    '- Skok > '+JUMP_TOLERANCE+' px wspólnych elementów jest błędem, chyba że Gomoku w tym samym kroku wykonuje identyczny skok.',
+    '- Po każdym kroku Warcaby i Szachy są porównywane z Gomoku **w tym samym stanie funkcjonalnym** (±'+JUMP_TOLERANCE+' px; mobile: x i szerokość).',
+    '- Kroki „restore” muszą przywrócić geometrię początkową. Odpowiedzi GRACZ AI pochodzą z lokalnego mocka (bez kosztów i API).',
+    '- Wspólne elementy: '+SHARED_PARTS.join(', ')+'.',
+    '','| Okno | Gra | Kroki | PASS | FAIL |','|---|---|---:|---:|---:|'];
+  for(const run of dynamic.runs){
+    const pass=run.steps.filter(s=>s.pass).length;
+    text.push('| '+run.viewport+' | '+run.game+' | '+run.steps.length+' | '+pass+' | '+(run.steps.length-pass)+' |');
+  }
+  text.push('','## Gomoku — zachowanie wzorca (diagnostyka, bez zmian)','');
+  const refJumps=dynamic.runs.filter(r=>r.game==='gomoku').flatMap(r=>r.steps.filter(s=>s.kind==='click'&&(s.jumpSettled?.length||s.jumpAfter?.length)).map(s=>'- '+r.viewport+' / '+s.id+': '+[...new Set([...(s.jumpAfter||[]),...(s.jumpSettled||[])].map(d=>d.part))].join(', ')));
+  text.push(...(refJumps.length?refJumps:['- Brak skoków > '+JUMP_TOLERANCE+' px we wspólnych elementach.']));
+  const failures=dynamic.runs.filter(r=>r.game!=='gomoku').flatMap(r=>r.steps.filter(s=>!s.pass).map(s=>({run:r,step:s})));
+  text.push('','## Błędy Warcabów i Szachów','');
+  if(!failures.length)text.push('Brak błędów: wszystkie kroki zgodne z Gomoku i bez niezamierzonych skoków.');
+  for(const {run,step} of failures){
+    text.push('### '+run.game+' / '+run.viewport+' / '+step.id+' — '+step.label,'',...step.issues.map(i=>'- '+i));
+    const rows=[...(step.unexplainedAfter||[]).map(d=>['skok (po kliknięciu)',d]),...(step.unexplainedSettled||[]).map(d=>['skok (ustabilizowany)',d]),
+      ...(step.reference||[]).map(d=>['vs Gomoku',d]),...(step.restore||[]).map(d=>['powrót',d])].slice(0,14);
+    if(rows.length){
+      const r=a=>['x','y','width','height'].map(k=>a?.[k]??'—').join(', ');
+      text.push('','| Typ | Element | Z (x, y, w, h) | Do (x, y, w, h) | Δ |','|---|---|---|---|---|');
+      for(const [type,d] of rows)text.push('| '+type+' | '+d.part+' | '+r(d.from)+' | '+r(d.to)+' | '+r(d.delta)+' |');
+    }
+    text.push('');
+  }
+  return text.join('\n')+'\n';
+}
+async function measureDynamic(browser,base,viewports){
+  const runs=[];let shots=0;
+  for(const [width,height] of viewports){
+    const viewport={width,height},label=width+'x'+height,mobile=width<=800;
+    const records=await Promise.all(GAMES.map(async game=>{
+      const context=await browser.newContext({viewport,deviceScaleFactor:1,locale:'pl-PL',reducedMotion:'reduce',screen:{width:Math.max(width,1920),height:Math.max(height,1200)}});
+      const page=await context.newPage();
+      try{
+        if(!externalBase) await page.route('**/*', route=>{
+          const reqUrl=new URL(route.request().url());
+          return reqUrl.hostname==='127.0.0.1'?route.continue():route.abort();
+        });
+        await page.goto(base+'/konto/'+game+'/',{waitUntil:'domcontentloaded',timeout:20000});
+        await page.locator('.layout').waitFor({state:'visible',timeout:10000});
+        await page.evaluate(()=>document.fonts?.ready);
+        return await runScenarios({page,game,viewport,snapshot,onStep:async record=>{
+          if(SCREENSHOT_VIEWPORTS.has(label)&&SCREENSHOT_STEPS.has(record.step.id)&&shots<80){
+            shots++;await page.screenshot({path:path.join(outDir,'dynamic-'+game+'-'+label+'-'+record.step.id+'.png'),animations:'disabled'});
+          }
+        }});
+      } finally { await context.close(); }
+    }));
+    const byGame=Object.fromEntries(GAMES.map((g,i)=>[g,records[i]]));
+    for(const game of GAMES){
+      const own=byGame[game],ref=game==='gomoku'?null:byGame.gomoku;
+      const steps=own.steps.map((record,i)=>analyseStep({
+        step:record.step,viewport:label,game,mobile,records:record,
+        reference:ref?.steps[i],initial:own.initial,referenceInitial:ref?.initial
+      }));
+      runs.push({game,viewport:label,steps});
+    }
+  }
+  return {scenarios:SCENARIOS.map(s=>({id:s.id,label:s.label,kind:s.kind})),runs};
+}
 async function main(){
   await mkdir(outDir,{recursive:true});
   const {chromium}=await import('playwright').catch(()=>{
@@ -189,8 +262,10 @@ async function main(){
     });
     const base=externalBase||('http://127.0.0.1:'+server.address().port);
     browser=await chromium.launch({headless:true});
+    // --viewports=WxH,... narrows the run or adds sizes outside the mandated eight.
+    const viewports=viewportFilter?viewportFilter.map(v=>v.split('x').map(Number)).filter(([w,h])=>w>0&&h>0):VIEWPORTS;
     const measurements=[],comparisons=[],focusMeasurements=[],boardOnlyAudits=[];
-    for(const [width,height] of VIEWPORTS){
+    if(!dynamicOnly)for(const [width,height] of viewports){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,locale:'pl-PL',reducedMotion:'reduce'});
       const byGame={};
       for(const game of GAMES){
@@ -303,12 +378,13 @@ async function main(){
         comparisons.push(compare(byGame.gomoku,byGame[game],game,width+'x'+height));
       await context.close();
     }
+    const dynamic=staticOnly?null:await measureDynamic(browser,base,viewports);
     const report={
       generatedAt:new Date().toISOString(),
       source:externalBase?'external':'local',
       baseUrl:externalBase||'local fixture',
       reference:'Gomoku',tolerancePx:TOLERANCE,
-      measurements,comparisons,focusMeasurements,boardOnlyAudits
+      measurements,comparisons,focusMeasurements,boardOnlyAudits,dynamic
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
     const boardOnlyMd=['','## GOMOKU-BOARD-ONLY-P1 — agent widoku wyłącznie planszy',
@@ -324,7 +400,7 @@ async function main(){
         ' | '+(a.restored?'tak':'NIE')+
         ' | '+(a.expand.enabled&&a.expand.square&&a.expand.centered?'tak':'NIE')+' |');
     }
-    await writeFile(path.join(outDir,'report.md'),markdown(report)+boardOnlyMd.join('\n')+'\n');
+    await writeFile(path.join(outDir,'report.md'),(dynamicOnly?'':markdown(report)+boardOnlyMd.join('\n')+'\n')+(dynamic?dynamicMarkdown(dynamic):''));
     const failures=comparisons.filter(x=>x.criticalDifferences||x.documentOverflow||!x.boardSquare||!x.boardContained);
     const referenceOverflow=measurements.filter(x=>x.game==='gomoku'&&x.documentOverflow).map(x=>x.viewport.width+'x'+x.viewport.height);
     const focusFailures=focusMeasurements.filter(x=>!x.focusEnabled||!x.frameSquare||!x.boardSquare||!x.contained||x.documentOverflow);
@@ -333,16 +409,20 @@ async function main(){
       !x.frameSquare||!x.noDecorativeFrame||x.cells!==225||
       !x.hover.found||!x.hover.square||!x.hover.marker||!x.hover.noMovingCrosshair||!x.hover.followsPointer||!x.hover.formerCellCleared||!x.hover.first?.square||
       !x.restored||!x.expand.enabled||!x.expand.square||!x.expand.centered);
+    const dynamicFailures=(dynamic?.runs||[]).filter(r=>r.game!=='gomoku').flatMap(r=>r.steps.filter(s=>!s.pass).map(s=>r.game+'@'+r.viewport+':'+s.id));
     console.log('CONSOLE_PARITY '+JSON.stringify({
       tested:measurements.length,comparisons:comparisons.length,
       divergentViewports:failures.length,
       referenceOverflow,
       focusFailures:focusFailures.map(x=>x.game+' '+x.viewport+' '+JSON.stringify({enabled:x.focusEnabled,frameSquare:x.frameSquare,boardSquare:x.boardSquare,contained:x.contained,overflow:x.documentOverflow})),
       boardOnlyTested:boardOnlyAudits.length,boardOnlyFailures:boardOnlyFailures.map(x=>x.viewport+' '+JSON.stringify(x)),
+      dynamicSteps:(dynamic?.runs||[]).filter(r=>r.game!=='gomoku').reduce((n,r)=>n+r.steps.length,0),
+      dynamicFailures:dynamicFailures.length,
+      firstDynamicFailures:dynamicFailures.slice(0,12),
       report:path.join(outDir,'report.md'),
       json:path.join(outDir,'measurements.json')
     }));
-    if(strict&&(failures.length||referenceOverflow.length||focusFailures.length||boardOnlyFailures.length))process.exitCode=1;
+    if(strict&&(failures.length||referenceOverflow.length||focusFailures.length||boardOnlyFailures.length||dynamicFailures.length))process.exitCode=1;
   } finally {
     await browser?.close();
     if(server)await new Promise(resolve=>server.close(resolve));
