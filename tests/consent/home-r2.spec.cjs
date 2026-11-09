@@ -681,7 +681,7 @@ test('Owner Full Max Premium gallery uses large responsive cards and circular li
     return {scroll:document.documentElement.scrollWidth,guide:rect('#poradniki-academy .r4-guide'),blog:rect('#aktualnosci .r4-update'),section:rect('#aktualnosci'),guides:cols('#poradniki-academy .r4-guides-grid'),blogs:cols('#aktualnosci .r4-updates-grid'),phone:getComputedStyle(document.querySelector('#aktualnosci .r4-phone')).display};
    });
    const n=width<=680?1:width<=1180?2:3;
-   const blogCols=width<=680?2:width<=960?3:5;
+   const blogCols=width<=680?1:width<=960?3:5;
    expect(d.guides).toBe(n);expect(d.blogs).toBe(blogCols);
    expect(d.guide.h).toBeGreaterThanOrEqual(width<=680?350:400);
    expect(d.blog.h).toBeGreaterThanOrEqual(370);
@@ -1034,7 +1034,6 @@ test('Blog tiles match Nasze gry compact width without clipped copy',async({brow
       return {width:r.width,right:r.right,imageHeight:im.height,imageBottom:im.bottom,
        textTop:body.getBoundingClientRect().top,bodyHeight:body.clientHeight,textScroll:body.scrollHeight};
     }),scrollWidth:document.documentElement.scrollWidth}));
-   console.log('NEWS_TILE_DIMENSIONS',width,JSON.stringify(g));
    expect(g.cards).toHaveLength(3);
    for(const card of g.cards){
     expect(Math.abs(card.width-g.gameWidth)).toBeLessThan(2);
