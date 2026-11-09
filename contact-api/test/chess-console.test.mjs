@@ -57,7 +57,8 @@ test('Chess labels, sidebar sizing and additive WebSocket chat match the premium
  assert.match(page.body,/Białe — zaczynają/);
  assert.doesNotMatch(page.body,/Czarne — zaczynają/);
  assert.match(style.body,/\.chess-console \.sidebar \.sidebar-footer \.side-links a/);
- assert.match(style.body,/white-space:normal!important/);
+ assert.match(style.body,/\.sidebar-footer \.side-links a\{white-space:normal;/);
+ assert.doesNotMatch(style.body,/min-height:51px!important/,'footer tiles keep the Gomoku height');
  assert.match(app.body,/onlineMessages=mergeChat\(m\.messages\)/);
  assert.match(app.body,/online\?\.players\?\.\[m\.player-1\]/);
 });
@@ -70,9 +71,15 @@ test('premium chess panels include real clocks, six top icons and right dock too
  assert.match(app.body,/localTimeout/);
  assert.match(app.body,/focusButton\?\.addEventListener/);
  assert.match(app.body,/game-settings/);
- assert.match(css.body,/premium-quick-links/);
+ // Top icons and clock boxes are inherited from Gomoku (no chess-only sizes or right alignment).
+ assert.doesNotMatch(css.body,/\.premium-quick-links\{grid-column:2;grid-row:1;display:flex!important/);
+ assert.doesNotMatch(css.body,/player-clock:not\(\[hidden\]\)\{[^}]*min-width/);
  assert.match(css.body,/game-tools/);
- assert.match(css.body,/clock:not\(\[hidden\]\)/);
+ // Same 15-tile configurator and stable settings slot as Gomoku/Warcaby.
+ assert.match(app.body,/layout\.classList\.toggle\('console-hide-'\+key,hidden\)/);
+ assert.match(app.body,/gracz-chess-layout-v1/);
+ assert.doesNotMatch(css.body,/chess-hide-/);
+ assert.match(page.body,/<div class="console-settings-slot"><section class="sidecard" id="training-settings">/);
 });
 test('computer mode and premium layout reuse Gomoku without duplicated focus navigation',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),styles=load('/konto/szachy/styl.css'),ai=load('/konto/szachy/computer.mjs');

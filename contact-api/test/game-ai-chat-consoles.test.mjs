@@ -183,8 +183,10 @@ test('Quick-link tooltip labels appear below all top-right icons without clippin
     'first label must stay within the left screen edge');
   assert.match(gomokuCss,/\.premium-quick-links>a:last-of-type::after,[\s\S]*?\.premium-quick-links>#focus-game::after,[\s\S]*?\.premium-quick-links>#refresh-match::after\{left:auto;right:0/,
     'right-hand labels must stay within the right screen edge');
-  assert.match(checkersCss,/\.warcaby-console \.layout:not\(\.game-focus\) \.premium-quick-links \{[\s\S]*?overflow:visible;isolation:isolate;/,
+  assert.doesNotMatch(checkersCss,/premium-quick-links[^{]*\{[^}]*overflow:(hidden|clip)/,
     'Warcaby toolbar must not clip its tooltip labels');
+  assert.doesNotMatch(checkersCss,/premium-quick-links[^{]*\{[^}]*position:relative!important/,
+    'Warcaby keeps the Gomoku quick-link rail in every configurator state');
   for(const [serve,slug] of [[serveGomokuConsole,'gomoku'],[serveCheckersConsole,'warcaby'],[serveChessConsole,'szachy']]){
     const html=get(serve,'/konto/'+slug+'/').raw;
     assert.match(html,/href="\/konto\/gomoku\/styl\.css"/,'game must inherit shared quick-link CSS');

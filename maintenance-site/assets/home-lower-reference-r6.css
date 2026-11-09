@@ -567,10 +567,11 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update:hover .r4-premium
 @media(prefers-reduced-motion:reduce){body.homepage-premium-max .r4-homepage #aktualnosci .r4-premium-card-arrow{transition:none!important}}
 
 
-/* Owner-approved focused photographs for the three Academy guide cards. */
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-chess{background-image:url("/assets/gracz-guide-chess-wide-approved-r10.avif")!important}
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-checkers{background-image:url("/assets/gracz-guide-checkers-wide-approved-r10.avif")!important}
-body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-poker{background-image:url("/assets/gracz-guide-poker-wide-approved-r10.avif")!important}
+/* Owner-approved Premium illustrations for the three Academy guide cards (HOME-ACADEMY-GRAPHICS-01).
+   The flat dark layer under the lower zone keeps the HTML copy readable; no shadows or motion. */
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-chess{background-image:linear-gradient(0deg,rgba(3,19,31,.6) 0%,rgba(3,19,31,.6) 40%,rgba(3,19,31,.5) 47%,rgba(3,19,31,0) 60%),url("/assets/academy-chess-premium-r1.webp")!important}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-checkers{background-image:linear-gradient(0deg,rgba(3,19,31,.6) 0%,rgba(3,19,31,.6) 40%,rgba(3,19,31,.5) 47%,rgba(3,19,31,0) 60%),url("/assets/academy-checkers-premium-r1.webp")!important}
+body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo.r4-approved-guide-poker{background-image:linear-gradient(0deg,rgba(3,19,31,.6) 0%,rgba(3,19,31,.6) 40%,rgba(3,19,31,.5) 47%,rgba(3,19,31,0) 60%),url("/assets/academy-poker-premium-r1.webp")!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide-photo{background-position:center top!important;background-size:cover!important;background-repeat:no-repeat!important;filter:none!important;transform:none!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide:hover .r4-guide-photo{transform:none!important}
 body.homepage-premium-max .r4-homepage #poradniki-academy .r4-guide::after{background:linear-gradient(0deg,rgba(3,19,31,.92) 0%,rgba(3,19,31,.75) 18%,rgba(3,19,31,.17) 40%,transparent 64%)!important}
@@ -1840,4 +1841,79 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   body.homepage-premium-max #nasze-gry .r4-game-preview{transition:none}
+}
+
+/* Warcaby: reuse the approved no-neon Chess preview mechanism. Visible only
+   while hovering over the miniature board, not over the entire card. */
+@media (hover:hover) and (pointer:fine) and (min-width:681px){
+  body.homepage-premium-max #nasze-gry .r4-game-checkers{position:static}
+  body.homepage-premium-max #nasze-gry .r4-img-checkers:hover + .r4-game-preview{display:block;opacity:1}
+  @starting-style{
+    body.homepage-premium-max #nasze-gry .r4-img-checkers:hover + .r4-game-preview{opacity:0}
+  }
+  @supports (position-try-fallbacks:flip-block){
+    body.homepage-premium-max #nasze-gry .r4-img-checkers{anchor-name:--gracz-checkers-thumb}
+    body.homepage-premium-max #nasze-gry .r4-game-checkers .r4-game-preview{
+      position:fixed;position-anchor:--gracz-checkers-thumb;
+      top:anchor(top);left:anchor(left);
+      width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:flip-block,--gracz-preview-in-view;
+    }
+  }
+}
+
+/* Gomoku: same owner-approved flat preview as Chess and Warcaby.
+   Show only when the pointer is over the miniature board. */
+@media (hover:hover) and (pointer:fine) and (min-width:681px){
+  body.homepage-premium-max #nasze-gry .r4-game-gomoku{position:static}
+  body.homepage-premium-max #nasze-gry .r4-img-gomoku:hover + .r4-game-preview{display:block;opacity:1}
+  @starting-style{
+    body.homepage-premium-max #nasze-gry .r4-img-gomoku:hover + .r4-game-preview{opacity:0}
+  }
+  @supports (position-try-fallbacks:flip-block){
+    body.homepage-premium-max #nasze-gry .r4-img-gomoku{anchor-name:--gracz-gomoku-thumb}
+    body.homepage-premium-max #nasze-gry .r4-game-gomoku .r4-game-preview{
+      position:fixed;position-anchor:--gracz-gomoku-thumb;
+      top:anchor(top);left:anchor(left);
+      width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:flip-block,--gracz-preview-in-view;
+    }
+  }
+}
+
+/* Tysiąc and Poker treningowy: same approved hover preview mechanism.
+   These cards are near the right edge of the grid, so align the right edge
+   of each popup to its own thumbnail. No neon, extra icon, or card resizing. */
+@media (hover:hover) and (pointer:fine) and (min-width:681px){
+  body.homepage-premium-max #nasze-gry .r4-game-thousand,
+  body.homepage-premium-max #nasze-gry .r4-game-poker{position:static}
+  body.homepage-premium-max #nasze-gry .r4-game-thousand .r4-game-preview,
+  body.homepage-premium-max #nasze-gry .r4-game-poker .r4-game-preview{
+    left:auto;right:0
+  }
+  body.homepage-premium-max #nasze-gry .r4-img-thousand:hover + .r4-game-preview,
+  body.homepage-premium-max #nasze-gry .r4-img-poker:hover + .r4-game-preview{
+    display:block;opacity:1
+  }
+  @starting-style{
+    body.homepage-premium-max #nasze-gry .r4-img-thousand:hover + .r4-game-preview,
+    body.homepage-premium-max #nasze-gry .r4-img-poker:hover + .r4-game-preview{opacity:0}
+  }
+  @supports (position-try-fallbacks:flip-block){
+    body.homepage-premium-max #nasze-gry .r4-img-thousand{anchor-name:--gracz-thousand-thumb}
+    body.homepage-premium-max #nasze-gry .r4-img-poker{anchor-name:--gracz-poker-thumb}
+    body.homepage-premium-max #nasze-gry .r4-game-thousand .r4-game-preview{
+      position:fixed;position-anchor:--gracz-thousand-thumb;
+      top:anchor(top);right:anchor(right);left:auto;
+      width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:--gracz-preview-left-safe,flip-block,--gracz-preview-in-view
+    }
+    body.homepage-premium-max #nasze-gry .r4-game-poker .r4-game-preview{
+      position:fixed;position-anchor:--gracz-poker-thumb;
+      top:anchor(top);right:anchor(right);left:auto;
+      width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:--gracz-preview-left-safe,flip-block,--gracz-preview-in-view
+    }
+    @position-try --gracz-preview-left-safe{right:auto;left:16px}
+  }
 }
