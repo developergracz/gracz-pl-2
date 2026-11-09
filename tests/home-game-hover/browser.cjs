@@ -27,7 +27,7 @@ const server=createServer(async(req,res)=>{
   const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
   for(const item of files){
-   const source=page.locator('.r4-img-'+item);
+   const source=page.locator('.r4-game-image.r4-img-'+item);
    await source.scrollIntoViewIfNeeded();
    const before=await page.locator('#nasze-gry .r4-game').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().height));
    const b=await source.boundingBox();
