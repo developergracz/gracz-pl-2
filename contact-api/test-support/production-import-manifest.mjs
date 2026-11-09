@@ -51,6 +51,8 @@ export const productionModules=Object.freeze([
   'auth/checkers-console.mjs',
   // P1 chess preview, no match API or gameplay actions.
   'auth/chess-console.mjs',
+  // Original local SVG descriptors and safe DOM factory; no external assets or dependencies.
+  'auth/chess-pieces.mjs',
   'auth/chess-rules.mjs',
   'auth/chess-computer.mjs',
   // Reviewed chess invitations: only same-origin friend presence and authenticated friend-only challenges;

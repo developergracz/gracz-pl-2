@@ -27,15 +27,18 @@ async function read(base,token,id){
   headers:{Cookie:'__Host-gracz_session='+token,Origin:origin}});
  return {status:r.status,...await r.json()};
 }
-const glyph={r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',p:'♟',R:'♜',N:'♞',B:'♝',Q:'♛',K:'♚',P:'♟'};
 function visible(state){
- const out=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)out.push(glyph[state.board[r*16+c]]||'');
+ const out=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)out.push(state.board[r*16+c]);
  return out;
 }
 async function waitForPosition(page,state){
  await page.waitForFunction(expected=>{
   const squares=[...document.querySelectorAll('#board .chess-square')];
-  return squares.length===64&&squares.every((node,i)=>node.textContent===expected[i]);
+  return squares.length===64&&squares.every((node,i)=>{
+   const piece=node.querySelector('svg.chess-piece'),expectedPiece=expected[i];
+   if(expectedPiece==='.')return !piece&&node.childElementCount===0;
+   return piece?.dataset.piece===expectedPiece&&piece.dataset.color===(expectedPiece===expectedPiece.toUpperCase()?'white':'black')&&!!piece.querySelector('path[data-body]');
+  });
  },visible(state),{timeout:10000});
 }
 test('two isolated Chromium windows play chess by clicking squares with WebSocket updates and reconnect', {timeout:180000},async t=>{
@@ -120,7 +123,9 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.match(await local.locator('#white-name').textContent(),/Ty/);
  assert.equal(await local.locator('#training-mode strong').textContent(),'Komputer');
  const white=local.locator('.chess-square.white-piece').first();
- assert.equal(await white.evaluate(e=>getComputedStyle(e).webkitTextFillColor),'rgb(255, 255, 255)');
+ assert.equal(await white.locator('svg').getAttribute('data-color'),'white');
+ assert.equal(await white.locator('linearGradient stop').nth(1).getAttribute('stop-color'),'#ffffff');
+ assert.equal(await white.locator('[data-body]').evaluate(e=>getComputedStyle(e).fillOpacity),'1');
  const layout=await local.locator('#game').boundingBox(),left=await local.locator('.sidebar').boundingBox(),right=await local.locator('.side-dock').boundingBox();
  assert.ok(left.width>=350,'left panel should match wider Gomoku geometry');
  assert.ok(right.x<layout.x+layout.width-300,'chat dock should not be pinned to far right');
@@ -245,8 +250,9 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  // Reconnect restores the final persisted position with a full snapshot.
  await pages[1].reload({waitUntil:'domcontentloaded'});
  await waitForPosition(pages[1],state);
- assert.deepEqual(await pages[0].locator('#board .chess-square').allTextContents(),
-  await pages[1].locator('#board .chess-square').allTextContents());
+ const renderedPosition=page=>page.locator('#board .chess-square').evaluateAll(cells=>cells.map(cell=>cell.querySelector('svg')?.dataset.piece||'.'));
+ assert.deepEqual(await renderedPosition(pages[0]),visible(state));
+ assert.deepEqual(await renderedPosition(pages[1]),visible(state));
 
  // Premium invitations: two separate authenticated browser contexts, no mocked invitation API.
  const sender=await pages[0].context().newPage(),receiver=await pages[1].context().newPage();
