@@ -101,6 +101,7 @@ async function snapshot(page) {
   },PARTS);
 }
 function compare(base,target,game,viewport){
+  const mobile=Number(viewport.split('x')[0])<=800;
   const differences=[], missing=[], missingInReference=[];
   for(const [name] of PARTS){
     const a=base.parts[name],b=target.parts[name];
@@ -113,7 +114,7 @@ function compare(base,target,game,viewport){
     }
     if(Object.keys(delta).length)differences.push({
       part:name,reference:a.rect,actual:b.rect,delta,
-      critical:KEY_PARTS.has(name)
+      critical:KEY_PARTS.has(name)&&(!mobile||'x' in delta||'width' in delta)
     });
   }
   return {
@@ -141,6 +142,7 @@ function markdown(report) {
     '- Źródło: '+(report.source==='local'?'lokalne strony generowane bezpośrednio z aktualnego kodu':'zewnętrzny adres '+report.baseUrl)+'.',
     '- Tolerancja: **±'+TOLERANCE+' px** dla wspólnego układu konsoli. Wewnętrzna rama/plansza są diagnostyczne: plansze 8×8 muszą być kwadratowe i mieścić się w obszarze Gomoku, który bywa prostokątny.',
     '- Pomiary w CSS-pikselach są odczytywane z getBoundingClientRect(), a nie zgadywane z wartości CSS.',
+    '- Mobile (≤800px): układ pionowy dostosowuje wysokość do liczby ustawień danej gry. Krytyczne porównanie 1:1 obejmuje x i szerokość wspólnych elementów; różnice y i wysokości raportujemy diagnostycznie bez ukrywania funkcji.',
     '',
     '| Okno | Gra | Odchylenia wspólnej geometrii | Odchylenia łącznie | Poziomy overflow | Plansza w obszarze | Kwadratowa |',
     '|---|---|---:|---:|---|---|---|'
@@ -222,13 +224,15 @@ async function main(){
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
     await writeFile(path.join(outDir,'report.md'),markdown(report));
     const failures=comparisons.filter(x=>x.criticalDifferences||x.documentOverflow||!x.boardSquare||!x.boardContained);
+    const referenceOverflow=measurements.filter(x=>x.game==='gomoku'&&x.documentOverflow).map(x=>x.viewport.width+'x'+x.viewport.height);
     console.log('CONSOLE_PARITY '+JSON.stringify({
       tested:measurements.length,comparisons:comparisons.length,
       divergentViewports:failures.length,
+      referenceOverflow,
       report:path.join(outDir,'report.md'),
       json:path.join(outDir,'measurements.json')
     }));
-    if(strict&&failures.length)process.exitCode=1;
+    if(strict&&(failures.length||referenceOverflow.length))process.exitCode=1;
   } finally {
     await browser?.close();
     if(server)await new Promise(resolve=>server.close(resolve));
