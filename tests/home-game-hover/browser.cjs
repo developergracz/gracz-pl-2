@@ -42,7 +42,7 @@ const server=createServer(async(req,res)=>{
    assert(p.width>=250 && p.height>=140,item+' preview is too small');
    assert(p.x>=0 && p.y>=0 && p.x+p.width<=viewport.width+1 && p.y+p.height<=viewport.height+1,item+' preview beyond viewport');
    assert(p.x<b.x+b.width&&p.x+p.width>b.x&&p.y<b.y+b.height&&p.y+p.height>b.y,
-     item+' popup must overlap thumbnail for continuous cursor travel');
+     item+' popup must overlap thumbnail for continuous cursor travel: '+JSON.stringify({source:b,popup:p,viewport}));
    await page.mouse.move(p.x+p.width*.65,p.y+p.height*.45,{steps:8});
    await page.waitForTimeout(300);
    assert(await preview.isVisible(),item+' popup disappears when cursor enters it');
