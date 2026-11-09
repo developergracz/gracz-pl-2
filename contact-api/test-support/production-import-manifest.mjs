@@ -40,6 +40,7 @@ export const productionModules=Object.freeze([
 // Reviewed static GRACZ AI panel assets: same-origin only, textContent output,
   // explicit consent to send prompts to existing bounded Groq endpoint; no player-chat access.
   'auth/gracz-ai-chat-assets.mjs',
+  'auth/game-chat-messages.mjs',
   'auth/gomoku-console.mjs',
   // Shared same-origin game subscriptions: bounded sockets/payloads and existing
   // session/match authorization. Optional Redis sends room invalidations only.

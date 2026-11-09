@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
+import {gameChatJs} from '../auth/game-chat-messages.mjs';
 import assert from 'node:assert/strict';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
@@ -28,7 +30,7 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  const js=asset(serveCheckersConsole,'/konto/warcaby/app.js');
  const gomokuCss=asset(serveGomokuConsole,'/konto/gomoku/styl.css');
  assert.match(gomokuCss,/\.chat-bubble\{/);
- assert.match(gomokuCss,/#chat-panel \.chat-messages \.chat-bubble\.own/);
+ assert.match(asset(serveGomokuConsole,'/konto/game-chat.css'),/#chat-panel \.game-chat-message\.own/);
  const from=js.indexOf('function makeChatBubble(');
  const to=js.indexOf('async function refreshChat()',from);
  const trainStart=js.indexOf('function renderTrainingAiChat()');
@@ -37,11 +39,12 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  const messages=node('section'),preview=node('section');
  const boxes={'chat-messages':messages,'chat-preview':preview};
  const document={createElement:node,createDocumentFragment:()=>node('#fragment')};
- const run=new Function('document','$',[
+ const window={};runInNewContext(gameChatJs,{document,window});
+ const run=new Function('document','$','window',[
   "let mode='training',current=null,chatSignature='',trainingAiMessages=[];",
   js.slice(from,to),js.slice(trainStart,trainEnd),
   "return {training(rows){mode='training';trainingAiMessages=rows;renderTrainingAiChat()},online(rows,match){mode='online';current=match;drawChat(rows)}};"
- ].join('\n'))(document,id=>boxes[id]);
+ ].join('\n'))(document,id=>boxes[id],window);
  const at='2026-11-09T02:56:00.000Z';
  run.training([
   {role:'user',content:'witam',createdAt:at},
@@ -49,15 +52,15 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  ]);
  assert.equal(messages.children.length,2);
  assert.equal(messages.children[0].tagName,'div');
- assert.equal(messages.children[0].className,'chat-bubble own');
- assert.equal(messages.children[0].children[0].textContent,'Ty');
+ assert.equal(messages.children[0].className,'chat-bubble game-chat-message own');
+ assert.equal(messages.children[0].children[0].textContent,'Ty:');
  assert.equal(messages.children[0].children[1].textContent,'witam');
  assert.equal(messages.children[0].children[2].tagName,'time');
- assert.equal(messages.children[1].className,'chat-bubble');
- assert.equal(messages.children[1].children[0].textContent,'GRACZ AI');
+ assert.equal(messages.children[1].className,'chat-bubble game-chat-message');
+ assert.equal(messages.children[1].children[0].textContent,'GRACZ AI:');
  assert.match(messages.children[1].children[1].textContent,/Drugie zdanie/);
  assert.equal(preview.children.length,2);
- assert.equal(preview.children[1].className,'chat-bubble');
+ assert.equal(preview.children[1].className,'chat-bubble game-chat-message');
  assert.ok(!messages.children[1].children[1].textContent.startsWith('GRACZ AI:'));
 
  run.online([
@@ -65,9 +68,9 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
   {id:'b',player:1,body:'Moja wiadomość',createdAt:at}
  ],{player:1,players:['Ala','Bartek']});
  assert.equal(messages.children.length,2);
- assert.equal(messages.children[0].children[0].textContent,'Bartek');
- assert.equal(messages.children[0].className,'chat-bubble');
- assert.equal(messages.children[1].children[0].textContent,'Ty');
- assert.equal(messages.children[1].className,'chat-bubble own');
+ assert.equal(messages.children[0].children[0].textContent,'Bartek:');
+ assert.equal(messages.children[0].className,'chat-bubble game-chat-message');
+ assert.equal(messages.children[1].children[0].textContent,'Ty:');
+ assert.equal(messages.children[1].className,'chat-bubble game-chat-message own');
  assert.equal(preview.children[1].children[1].textContent,'Moja wiadomość');
 });
