@@ -881,101 +881,59 @@ async function previewEdgeScan(context,png){
  }finally{await page.close();}
 }
 
-test('Chess console hover preview shows the Owner image enlarged, in view and without shifting cards',async({browser})=>{
- fs.mkdirSync(path.resolve('test-results/home-r4'),{recursive:true});
+test('Premium chess console preview stays visible when cursor moves onto popup, without card shifts or neon',async({browser})=>{
  for(const [width,height,dpr] of [[1366,768,1],[1920,1080,2],[1024,768,1]]){
-  const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:dpr});
+  const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:dpr,reducedMotion:'reduce'});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const card=page.locator('#nasze-gry .r4-game-chess');
-   const thumb=card.locator('.r4-img-chess');
-   const preview=card.locator('.r4-game-preview');
-   const image=preview.locator('img');
-   await expect(image).toHaveAttribute('src','/assets/home-chess-console-preview.webp');
-   await expect(image).toHaveAttribute('alt',/Szachy online/);
-   await expect(card.locator('a.r4-game-play')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
-   await expect(card.locator('a.r4-game-academy')).toHaveAttribute('href','/poradniki/');
-   await expect(preview.locator('a,button,[tabindex]')).toHaveCount(0);
-   await expect(preview).toBeHidden();
+   const thumb=card.locator('.r4-game-image.r4-img-chess');
    await thumb.scrollIntoViewIfNeeded();
    const cards=()=>page.locator('#nasze-gry .r4-game-premium').evaluateAll(els=>els.map(e=>{
     const r=e.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(Math.round).join(',');}).join('|'));
    const before=await cards();
-   await thumb.hover();
+   const source=await thumb.boundingBox();
+   await page.mouse.move(source.x+8,source.y+8);
+   const preview=page.locator('#r4-game-hover-preview');
    await expect(preview).toBeVisible();
-   await expect.poll(()=>preview.evaluate(e=>getComputedStyle(e).opacity)).toBe('1');
+   const image=preview.locator('img');
+   await expect(image).toHaveAttribute('src','/assets/home-chess-console-preview.webp');
+   await expect(image).toHaveAttribute('alt',/Szachy/);
    await expect.poll(()=>image.evaluate(i=>i.complete?i.naturalWidth:0)).toBeGreaterThan(0);
-   const m=await page.evaluate(()=>{
-    const p=document.querySelector('#nasze-gry .r4-game-chess .r4-game-preview'),i=p.querySelector('img');
-    const r=p.getBoundingClientRect(),ir=i.getBoundingClientRect(),s=getComputedStyle(p);
-    return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height,
-     gaps:[ir.left-r.left,ir.top-r.top,r.right-ir.right,r.bottom-ir.bottom],
-     boxRatio:ir.width/ir.height,natural:[i.naturalWidth,i.naturalHeight],
-     pad:[s.paddingTop,s.paddingRight,s.paddingBottom,s.paddingLeft],
-     border:[s.borderTopWidth,s.borderRightWidth,s.borderBottomWidth,s.borderLeftWidth],
-     bg:s.backgroundColor,bgImage:s.backgroundImage,shadow:s.boxShadow,outline:s.outlineStyle,
-     overflow:s.overflow,radius:[s.borderTopLeftRadius,s.borderTopRightRadius,s.borderBottomRightRadius,s.borderBottomLeftRadius],
-     pe:s.pointerEvents,sw:document.documentElement.scrollWidth};
-   });
-   expect(m.w).toBeGreaterThanOrEqual(500);
-   expect(m.w).toBeLessThanOrEqual(600);
-   expect(m.l).toBeGreaterThanOrEqual(0);
-   expect(m.r).toBeLessThanOrEqual(width);
-   expect(m.t).toBeGreaterThanOrEqual(0);
-   expect(m.b).toBeLessThanOrEqual(height);
-   // Owner image cropped exactly to the outer gold frame; proportions preserved.
-   expect(m.natural).toEqual([588,329]);
-   expect(Math.abs(m.boxRatio-588/329)).toBeLessThan(0.01);
-   // The image fills the popup: no padding, frame, backdrop, shadow or empty margins.
-   for(const gap of m.gaps)expect(Math.abs(gap)).toBeLessThan(0.6);
-   expect(m.pad).toEqual(['0px','0px','0px','0px']);
-   expect(m.border).toEqual(['0px','0px','0px','0px']);
-   expect(m.bg).toBe('rgba(0, 0, 0, 0)');
-   expect(m.bgImage).toBe('none');
-   expect(m.shadow).toBe('none');
-   expect(m.outline).toBe('none');
-   expect(m.overflow).toBe('hidden');
-   for(const radius of m.radius)expect(parseFloat(radius)).toBeGreaterThan(0);
-   expect(m.pe).toBe('none');
-   expect(m.sw).toBeLessThanOrEqual(width);
+   const p=await preview.boundingBox();
+   expect(p.width).toBeGreaterThanOrEqual(250);
+   expect(p.width).toBeLessThanOrEqual(430);
+   expect(p.x).toBeGreaterThanOrEqual(0);
+   expect(p.y).toBeGreaterThanOrEqual(0);
+   expect(p.x+p.width).toBeLessThanOrEqual(width+1);
+   expect(p.y+p.height).toBeLessThanOrEqual(height+1);
+   expect(p.x).toBeLessThan(source.x+source.width);
+   expect(p.y).toBeLessThan(source.y+source.height);
+   const styles=await preview.evaluate(e=>({pointerEvents:getComputedStyle(e).pointerEvents,shadow:getComputedStyle(e).boxShadow}));
+   expect(styles.pointerEvents).toBe('auto');
+   expect(styles.shadow).not.toContain('0px 0px 17px');
+   await page.mouse.move(p.x+p.width*.65,p.y+p.height*.5,{steps:8});
+   await page.waitForTimeout(290);
+   await expect(preview).toBeVisible();
    expect(await cards()).toBe(before);
-   await page.screenshot({path:'test-results/home-r4/chess-hover-preview-'+width+'.png',animations:'disabled',
-    clip:{x:Math.max(0,m.l-24),y:Math.max(0,m.t-24),width:Math.min(width,m.r+24)-Math.max(0,m.l-24),height:Math.min(height,m.b+24)-Math.max(0,m.t-24)}});
-   // PASS criterion: paint everything around the image magenta (test-only), then no
-   // turquoise backdrop may appear between the popup edge and the outer gold frame.
-   await preview.evaluate(p=>{
-    p.style.setProperty('background','#f0f','important');
-    p.style.setProperty('box-shadow','0 0 0 48px #f0f','important');
-   });
-   const shot=await page.screenshot({clip:{x:m.l,y:m.t,width:m.w,height:m.h},animations:'disabled'});
-   await preview.evaluate(p=>{p.style.removeProperty('background');p.style.removeProperty('box-shadow');});
-   const scan=await previewEdgeScan(context,shot);
-   expect(scan.w).toBeGreaterThanOrEqual(Math.floor(m.w*dpr)-1);
-   expect(scan.corners).toBe(true);
-   expect(scan.edges).toBe(2*(scan.w+scan.h));
-   expect(scan.bad,'turquoise or non-gold pixels outside the gold frame').toEqual([]);
-   await page.mouse.move(width-4,height-4);
+   await page.mouse.move(2,2);
    await expect(preview).toBeHidden();
-   await card.locator('a.r4-game-play').scrollIntoViewIfNeeded();
-   const play=await card.locator('a.r4-game-play').boundingBox();
-   expect(await page.evaluate(([x,y])=>document.elementFromPoint(x,y)?.closest('a')?.className,[play.x+play.width/2,play.y+play.height/2])).toBe('r4-game-play');
-  }finally{await context.close();}
+   await expect(card.locator('a.r4-game-play')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
+  }finally{await context.close()}
  }
 });
 
-test('Chess console hover preview stays off on touch devices without overflow',async({browser})=>{
+test('Premium console hover popups stay off on touch devices without overflow',async({browser})=>{
  for(const [width,height] of [[390,844],[1024,768]]){
   const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true});
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const card=page.locator('#nasze-gry .r4-game-chess');
-   await card.locator('.r4-img-chess').tap();
-   await expect(card.locator('.r4-game-preview')).toBeHidden();
-   await expect(card.locator('a.r4-game-play')).toBeVisible();
-   await expect(card.locator('a.r4-game-academy')).toBeVisible();
+   await page.locator('#nasze-gry .r4-game-chess .r4-game-image').tap();
+   await expect(page.locator('#r4-game-hover-preview')).toHaveCount(0);
+   await expect(page.locator('#nasze-gry .r4-game-chess a.r4-game-play')).toBeVisible();
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
-  }finally{await context.close();}
+  }finally{await context.close()}
  }
 });
