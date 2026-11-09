@@ -1801,3 +1801,43 @@ body.homepage-premium-max #nasze-gry .r4-game-premium .r4-game-academy span{
   body.homepage-premium-max #nasze-gry .r4-game-premium .r4-game-play{min-height:31px;padding:6px 10px}
   body.homepage-premium-max #nasze-gry .r4-game-premium h3{font-size:17px!important}
 }
+
+/* Owner-approved 2026-11-09: enlarged Chess console preview on thumbnail hover.
+   Mouse/trackpad only; touch devices keep the standard buttons. The preview is
+   positioned outside the card's containing block, so overflow:hidden never clips it.
+   The Owner image is cropped exactly to its outer gold frame (588x329, transparent
+   rounded corners): no extra padding, background, border or shadow around it. */
+body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
+@media (hover:hover) and (pointer:fine) and (min-width:681px){
+  body.homepage-premium-max #nasze-gry .r4-games-grid{position:relative}
+  body.homepage-premium-max #nasze-gry .r4-game-chess{position:static}
+  body.homepage-premium-max #nasze-gry .r4-game-preview{
+    position:absolute;top:0;left:0;z-index:20;
+    box-sizing:border-box;width:min(588px,100%,calc((100vh - 32px) * 588 / 329));
+    padding:0;border:0;background:none;box-shadow:none;
+    border-radius:4.8%/8.6%;overflow:hidden;
+    pointer-events:none;opacity:0;
+    transition:opacity .15s ease;
+    transition:opacity .15s ease,display .15s allow-discrete;
+  }
+  body.homepage-premium-max #nasze-gry .r4-img-chess:hover + .r4-game-preview{display:block;opacity:1}
+  @starting-style{
+    body.homepage-premium-max #nasze-gry .r4-img-chess:hover + .r4-game-preview{opacity:0}
+  }
+  body.homepage-premium-max #nasze-gry .r4-game-preview img{
+    display:block;width:100%;height:auto;
+  }
+  /* Where supported, anchor to the thumbnail and flip to stay inside the viewport. */
+  @supports (position-try-fallbacks:flip-block){
+    body.homepage-premium-max #nasze-gry .r4-img-chess{anchor-name:--gracz-chess-thumb}
+    body.homepage-premium-max #nasze-gry .r4-game-preview{
+      position:fixed;position-anchor:--gracz-chess-thumb;
+      top:anchor(top);left:anchor(left);width:min(588px,calc(100vw - 32px),calc((100vh - 32px) * 588 / 329));
+      position-try-fallbacks:flip-block,--gracz-preview-in-view;
+    }
+    @position-try --gracz-preview-in-view{top:auto;bottom:16px}
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  body.homepage-premium-max #nasze-gry .r4-game-preview{transition:none}
+}
