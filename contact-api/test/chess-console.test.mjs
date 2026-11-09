@@ -174,10 +174,11 @@ test('CHESS-DRAG-P1: drag & drop shares the click move path and validates the in
  assert.match(app,/const inputModes=\['both','click','drag'\],inputModeKey='gracz-chess-input-mode-v1';/);
  assert.match(app,/let inputMode='both'/);
  assert.match(app,/if\(inputModes\.includes\(saved\)\)inputMode=saved;/);
- for(const label of ['Obie metody','Tylko kliknięcie','Tylko przeciąganie'])assert.ok(app.includes(label),label);
+ for(const label of ['Obie metody','Tylko kliknięcie','Przeciąganie (kliknięcie wybiera)'])assert.ok(app.includes(label),label);
  assert.match(app,/input\.type='radio'/);
  // Keyboard activation (click with detail 0) is never blocked by the input mode.
- assert.match(app,/if\(event\.detail>0&&\(inputMode==='drag'\|\|dragClick\)\)\{dragClick=false;return;\}/);
+ assert.match(app,/if\(event\.detail>0&&dragClick\)\{dragClick=false;return;\}/);
+ assert.match(app,/dragClick=true;\n  if\(selected!==drag.from\)\{selected=drag.from;render\(\);\}/);
  // Touch scrolling is blocked only on squares holding a movable piece, never globally.
  assert.match(css,/\.chess-square\.chess-draggable\{cursor:grab;touch-action:none\}/);
  assert.doesNotMatch(css,/(^|\})\s*(html|body|body\.chess-console|\.layout)\s*\{[^}]*touch-action:none/);
