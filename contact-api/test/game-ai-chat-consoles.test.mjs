@@ -148,14 +148,14 @@ test('Computer-mode chat in Warcaby and Chess calls GRACZ AI; player chat remain
   for(const [name,src] of [['Warcaby',warcaby],['Szachy',szachy]]){
     assert.doesNotThrow(()=>parse(src,{ecmaVersion:'latest',sourceType:'module'}),name+' console JavaScript must parse');
     assert.match(src,/['"]chat-form['"]/,'existing native form remains wired');
-    assert.match(src,/match\\/chat/,'online player chat must remain available');
+    assert.match(src,/match\/chat/,'online player chat must remain available');
   }
-  assert.doesNotMatch(warcaby,/trainingNotes\\.push\\(/,'undefined trainingNotes must never block sending');
-  assert.match(warcaby,/if\\(mode==='training'\\)\\{await sendTrainingAi\\(value\\);return;\\}/);
-  assert.match(warcaby,/fetch\\('\\/konto\\/warcaby\\/ai-chat'/);
+  assert.doesNotMatch(warcaby,/trainingNotes\.push\(/,'undefined trainingNotes must never block sending');
+  assert.match(warcaby,/if\(mode==='training'\)\{await sendTrainingAi\(value\);return;\}/);
+  assert.match(warcaby,/fetch\('\/konto\/warcaby\/ai-chat'/);
   assert.match(warcaby,/GRACZ AI przygotowuje odpowiedź/);
-  assert.match(szachy,/if\\(mode==='local'\\)\\{\\s*if\\(!computerEnabled\\)/);
-  assert.match(szachy,/fetch\\('\\/konto\\/szachy\\/ai-chat'/);
+  assert.match(szachy,/if\(mode==='local'\)\{\s*if\(!computerEnabled\)/);
+  assert.match(szachy,/fetch\('\/konto\/szachy\/ai-chat'/);
   assert.match(szachy,/sender_nick:'GRACZ AI'/);
-  assert.match(szachy,/if\\(!online\\?\\.playable/,'online mode still checks match authorization');
+  assert.match(szachy,/if\(!online\?\.playable/,'online mode still checks match authorization');
 });
