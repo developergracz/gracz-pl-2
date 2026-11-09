@@ -2777,8 +2777,13 @@ function undoTrainingMove(){
   state.trainClock.turn=1;state.trainClock.since=trainingNow();
  }
  const label=$('analysis-note');
- label.textContent='Cofnięto wyłącznie Twój czarny kamień. Białe kamienie pozostały na planszy.';
+ const undoMessage='Cofnięto wyłącznie Twój czarny kamień. Białe kamienie pozostały na planszy.';
+ label.textContent=undoMessage;
  label.hidden=false;render();
+ // This feedback is informational, not a blocking dialog.
+ window.setTimeout(()=>{
+  if(!label.hidden&&label.textContent===undoMessage)label.hidden=true;
+ },5000);
 }
 function analyzeTrainingPosition(){
  if(state.mode!=='training'||state.thinking||state.winner!==0)return;
@@ -3141,6 +3146,13 @@ function initConsoleLayout(){
 }
 initConsoleLayout();
 $('restart').addEventListener('click',restart);
+// Dismiss the informational undo message by click/tap or Escape.
+$('analysis-note').tabIndex=0;
+$('analysis-note').title='Kliknij, aby zamknąć komunikat';
+$('analysis-note').addEventListener('click',()=>{$('analysis-note').hidden=true;});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!$('analysis-note').hidden)$('analysis-note').hidden=true;
+});
 $('undo-move').addEventListener('click',handleUndoClick);
 $('analyze-position').addEventListener('click',analyzeTrainingPosition);
 $('game-settings').addEventListener('click',openGameSettings);
