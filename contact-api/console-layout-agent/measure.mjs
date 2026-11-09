@@ -189,7 +189,7 @@ async function main(){
     });
     const base=externalBase||('http://127.0.0.1:'+server.address().port);
     browser=await chromium.launch({headless:true});
-    const measurements=[],comparisons=[];
+    const measurements=[],comparisons=[],focusMeasurements=[];
     for(const [width,height] of VIEWPORTS){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,locale:'pl-PL',reducedMotion:'reduce'});
       const byGame={};
@@ -208,6 +208,30 @@ async function main(){
         byGame[game]=measurement;
         measurements.push({game,viewport:width+'x'+height,...measurement});
         await page.screenshot({path:path.join(outDir,game+'-'+width+'x'+height+'.png'),animations:'disabled',fullPage:false});
+        // A maximized 16:9 browser uses the game's Focus / Full Screen control.
+        // Record its REAL click behavior, not a synthetic CSS-only class toggle.
+        const focusAction=await page.evaluate(()=>{
+          const button=document.getElementById('focus-game');
+          if(!button)return {controlFound:false};
+          button.click();
+          return {controlFound:true};
+        });
+        await page.waitForTimeout(180);
+        const focus=await snapshot(page);
+        const focusEnabled=await page.evaluate(()=>document.querySelector('.layout')?.classList.contains('game-focus')||false);
+        const frame=focus.parts['board-frame']?.rect;
+        const board=focus.parts['game-board']?.rect;
+        const center=focus.parts['board-container']?.rect;
+        const sq=r=>!!r&&r.width>=80&&r.height>=80&&Math.abs(r.width-r.height)<=2;
+        const contained=!!frame&&!!center&&frame.x>=center.x-2&&frame.y>=center.y-2&&frame.x+frame.width<=center.x+center.width+2&&frame.y+frame.height<=center.y+center.height+2;
+        focusMeasurements.push({
+          game,viewport:width+'x'+height,controlFound:focusAction.controlFound,
+          focusEnabled,frameSquare:sq(frame),boardSquare:sq(board),
+          contained,documentOverflow:focus.documentOverflow,
+          documentScrollWidth:focus.documentScrollWidth,
+          frame,board,center
+        });
+        if(focusEnabled)await page.screenshot({path:path.join(outDir,game+'-focus-'+width+'x'+height+'.png'),animations:'disabled',fullPage:false});
         await page.close();
       }
       for(const game of ['warcaby','szachy'])
@@ -219,20 +243,22 @@ async function main(){
       source:externalBase?'external':'local',
       baseUrl:externalBase||'local fixture',
       reference:'Gomoku',tolerancePx:TOLERANCE,
-      measurements,comparisons
+      measurements,comparisons,focusMeasurements
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
     await writeFile(path.join(outDir,'report.md'),markdown(report));
     const failures=comparisons.filter(x=>x.criticalDifferences||x.documentOverflow||!x.boardSquare||!x.boardContained);
     const referenceOverflow=measurements.filter(x=>x.game==='gomoku'&&x.documentOverflow).map(x=>x.viewport.width+'x'+x.viewport.height);
+    const focusFailures=focusMeasurements.filter(x=>!x.focusEnabled||!x.frameSquare||!x.boardSquare||!x.contained||x.documentOverflow);
     console.log('CONSOLE_PARITY '+JSON.stringify({
       tested:measurements.length,comparisons:comparisons.length,
       divergentViewports:failures.length,
       referenceOverflow,
+      focusFailures:focusFailures.map(x=>x.game+' '+x.viewport+' '+JSON.stringify({enabled:x.focusEnabled,frameSquare:x.frameSquare,boardSquare:x.boardSquare,contained:x.contained,overflow:x.documentOverflow})),
       report:path.join(outDir,'report.md'),
       json:path.join(outDir,'measurements.json')
     }));
-    if(strict&&(failures.length||referenceOverflow.length))process.exitCode=1;
+    if(strict&&(failures.length||referenceOverflow.length||focusFailures.length))process.exitCode=1;
   } finally {
     await browser?.close();
     if(server)await new Promise(resolve=>server.close(resolve));

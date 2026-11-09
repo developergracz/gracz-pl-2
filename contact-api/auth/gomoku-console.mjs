@@ -1605,6 +1605,25 @@ select option{background:#102c34;color:#fff}
 
 /* CONSOLE-1TO1-02: mobile arc remains inside viewport; desktop unchanged. */
 @media(max-width:800px){.boardarea:after{display:none}.side-dock>.game-tools{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(2px,.4vw,4px)}.side-dock>.game-tools .tool-btn{min-width:0;width:100%;max-width:100%}.side-dock>.game-tools .tool-btn::after{display:none}.side-dock>.game-tools .tool-btn:is(:hover,:focus-visible)::after{display:block;box-sizing:border-box;max-width:min(240px,calc(100vw - 30px));white-space:normal;overflow-wrap:anywhere}.side-dock>.game-tools .tool-btn:nth-last-child(-n+3)::after{left:auto;right:0;transform:translateY(5px)}.side-dock>.game-tools .tool-btn:nth-child(-n+3)::after{left:0;right:auto;transform:translateY(5px)}}
+
+
+/* R40: square board in Focus also when browser zoom switches to mobile CSS width. */
+@media (max-width:800px){
+ .layout.game-focus .board-center{
+  box-sizing:border-box;min-width:0;min-height:0;max-width:100%;
+  display:flex;align-items:center;justify-content:center
+ }
+ .layout.game-focus .boardframe{
+  box-sizing:border-box;display:block;flex:0 0 auto;
+  width:min(100%,calc(100dvh - 210px));height:auto;
+  max-width:100%;max-height:100%;aspect-ratio:1 / 1;
+  margin:auto;min-width:0;min-height:0
+ }
+ .layout.game-focus .board{
+  box-sizing:border-box;width:100%;height:100%;aspect-ratio:1 / 1;
+  min-width:0;min-height:0
+ }
+}
 `;
 const js=String.raw`(()=>{'use strict';
 const $=id=>document.getElementById(id);
