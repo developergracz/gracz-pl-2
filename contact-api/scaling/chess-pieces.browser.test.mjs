@@ -42,6 +42,15 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   const context=await browser.newContext({viewport,deviceScaleFactor:2,isMobile:viewport.width<800,hasTouch:viewport.width<800});
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
+  // The stray golden curved arc behind the board is gone, but the gold rim remains.
+  const decoration=await page.locator('.boardarea').evaluate(el=>{
+   const arc=getComputedStyle(el,'::after');
+   const frame=getComputedStyle(document.querySelector('.side-dock'));
+   return {arcContent:arc.content,arcDisplay:arc.display,frameBorderWidth:frame.borderTopWidth};
+  });
+  assert.ok(decoration.arcContent==='none'||decoration.arcDisplay==='none',
+   'stray golden curved arc still visible: '+JSON.stringify(decoration));
+  assert.notEqual(decoration.frameBorderWidth,'0px','premium gold rail must remain');
   await inspectPieces(page);
   // "Ruchy" must never show the chat/AI welcome text or composer below moves.
   await page.locator('#history-tab').click();
