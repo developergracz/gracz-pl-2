@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
+import {parse} from 'acorn';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
@@ -139,4 +140,22 @@ test('AI send button and Enter each send exactly once in all three game consoles
     assert.equal(composer.hidden,false);
     assert.equal(section.hidden,true);
   }
+});
+
+test('Computer-mode chat in Warcaby and Chess calls GRACZ AI; player chat remains isolated',()=>{
+  const warcaby=get(serveCheckersConsole,'/konto/warcaby/app.js').raw;
+  const szachy=get(serveChessConsole,'/konto/szachy/app.js').raw;
+  for(const [name,src] of [['Warcaby',warcaby],['Szachy',szachy]]){
+    assert.doesNotThrow(()=>parse(src,{ecmaVersion:'latest',sourceType:'module'}),name+' console JavaScript must parse');
+    assert.match(src,/['"]chat-form['"]/,'existing native form remains wired');
+    assert.match(src,/match\\/chat/,'online player chat must remain available');
+  }
+  assert.doesNotMatch(warcaby,/trainingNotes\\.push\\(/,'undefined trainingNotes must never block sending');
+  assert.match(warcaby,/if\\(mode==='training'\\)\\{await sendTrainingAi\\(value\\);return;\\}/);
+  assert.match(warcaby,/fetch\\('\\/konto\\/warcaby\\/ai-chat'/);
+  assert.match(warcaby,/GRACZ AI przygotowuje odpowiedź/);
+  assert.match(szachy,/if\\(mode==='local'\\)\\{\\s*if\\(!computerEnabled\\)/);
+  assert.match(szachy,/fetch\\('\\/konto\\/szachy\\/ai-chat'/);
+  assert.match(szachy,/sender_nick:'GRACZ AI'/);
+  assert.match(szachy,/if\\(!online\\?\\.playable/,'online mode still checks match authorization');
 });
