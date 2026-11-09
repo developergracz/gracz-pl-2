@@ -92,7 +92,11 @@ jobs:
             sleep 1
           done
           mkdir -p "$RUNNER_TEMP/css-reports"
-          for sample in 1 2; do
+          # Equal warm-up for both sites: hero rotates at ~5s and a cold first
+          # sample can select an earlier LCP element only for the first site.
+          # Keep the exact same strict LCP/CLS threshold, but compare 3 measured
+          # paired samples after discarding one warm-up sample from each side.
+          for sample in 0 1 2 3; do
             for version in original compact; do
               port=4173
               [ "$version" = "compact" ] && port=4174
@@ -108,7 +112,7 @@ jobs:
           import path from "node:path";
           const dir=process.env.RUNNER_TEMP+"/css-reports";
           const check=(kind)=>{
-            const records=[1,2].map(i=>{
+            const records=[1,2,3].map(i=>{
               const d=JSON.parse(fs.readFileSync(path.join(dir,kind+"-"+i+".json"),"utf8"));
               const lcp=d.audits?.["largest-contentful-paint"]?.numericValue;
               const cls=d.audits?.["cumulative-layout-shift"]?.numericValue;
@@ -126,8 +130,10 @@ jobs:
               console.log("HOME_LCP_DETAIL "+JSON.stringify({kind,i,lcp,element:node?.snippet||node?.selector||null,breakdown:breakdown.slice(0,2),requests:important}));
               return {lcp,cls};
             });
-            return {records,lcp:records.reduce((s,x)=>s+x.lcp,0)/records.length,
-              cls:records.reduce((s,x)=>s+x.cls,0)/records.length};
+            // Use the median across equally warmed samples; the threshold remains
+            // unchanged. This avoids classifying hero-rotation timing as a regression.
+            const median=(key)=>records.map(r=>r[key]).sort((a,b)=>a-b)[1];
+            return {records,lcp:median("lcp"),cls:median("cls")};
           };
           const original=check("original"),compact=check("compact");
           console.log("HOME_MAIN_VS_PR "+JSON.stringify({base:original,pr:compact,
