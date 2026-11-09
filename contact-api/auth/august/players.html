@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#063f42">
   <title>Lobby graczy Premium — GRACZ.PL</title>
-  <link rel="stylesheet" href="/konto/sierpien/assets/players.css?v=premium-r4-right">
+  <link rel="stylesheet" href="/konto/sierpien/assets/players.css?v=premium-r5-games-mail">
 </head>
 <body data-august-view="players">
   <main class="shell">
@@ -15,12 +15,13 @@
         <strong>GRACZ<span>.PL</span></strong><small>Polskie Centrum Gracza</small>
       </a>
       <nav class="game-nav" aria-label="Główne gry">
-        <a class="active" href="/konto/lobby/" aria-current="page">Lobby graczy</a>
-        <a href="/konto/gomoku/">Gomoku</a>
-        <a href="/konto/warcaby/">Warcaby</a>
-        <a href="/konto/szachy/">Szachy</a>
+        <a class="active lobby-nav-link" href="/konto/lobby/" aria-current="page">Lobby graczy</a>
+        <a class="game-mini" href="/konto/gomoku/" aria-label="Otwórz Gomoku" title="Gomoku"><span class="mini-symbol" aria-hidden="true">●●<span>●●●</span></span><span>Gomoku</span></a>
+        <a class="game-mini" href="/konto/warcaby/" aria-label="Otwórz Warcaby" title="Warcaby"><span class="mini-symbol" aria-hidden="true">⛀</span><span>Warcaby</span></a>
+        <a class="game-mini" href="/konto/szachy/" aria-label="Otwórz Szachy" title="Szachy"><span class="mini-symbol" aria-hidden="true">♞</span><span>Szachy</span></a>
       </nav>
       <div class="user">
+        <a id="unread-messages-link" class="mail-link" href="/konto/panel/?sekcja=messages" aria-label="Wiadomości — otwórz skrzynkę" title="Wiadomości"><span aria-hidden="true">✉</span><b id="unread-messages-count" class="mail-count" hidden></b></a>
         <div class="user-meta"><small>Zalogowany gracz</small><strong id="user-name">—</strong></div>
         <a class="panel-link" href="/konto/panel/">Mój panel</a>
         <button id="back" type="button" title="Powrót na stronę startową">Strona główna</button>
