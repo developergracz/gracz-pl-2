@@ -1973,7 +1973,7 @@ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-premium-card-
   height:clamp(106px,31vw,148px)!important
  }
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update:nth-child(3){
-  grid-column:1/-1;justify-self:center;width:calc((100% - 10px)/2)
+  grid-column:1/-1;justify-self:center;width:calc(50% - 5px)!important
  }
  body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body{
   padding:9px 8px 45px!important;gap:5px!important
