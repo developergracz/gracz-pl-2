@@ -1351,6 +1351,33 @@ select option{background:#102c34;color:#fff}
  #turn-label{flex-basis:clamp(152px,48vw,175px);width:clamp(152px,48vw,175px);font-size:11px}
 }
 /* R35: compact balanced footer, no showcase hint and centered illustrated Gomoku how-to. */
+/* Owner-approved console presentation fixes: no changes to panel dimensions. */
+.boardarea::before{display:none}
+.bottom #turn-label{
+ font-size:clamp(10px,1.0vw,14px);
+ letter-spacing:-.2px;
+}
+#chat-panel .chat-messages .chat-bubble,
+.chat-preview .chat-bubble{
+ align-self:flex-start;
+ width:max-content;
+ max-width:min(92%,100%);
+ min-width:0;
+ box-sizing:border-box;
+ text-align:left;
+}
+#chat-panel .chat-messages .chat-bubble.own,
+.chat-preview .chat-bubble.own{align-self:flex-start}
+#chat-panel .chat-messages .chat-bubble p,
+.chat-preview .chat-bubble p{
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ word-break:normal;
+}
+@media(max-width:560px){
+ .bottom #turn-label{font-size:clamp(9px,2.5vw,11px);letter-spacing:-.35px}
+}
+
 .bottom #board-help:empty{display:none}
 .bottom #move-count{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
  flex:0 0 clamp(145px,12.2vw,181px);width:clamp(145px,12.2vw,181px);
