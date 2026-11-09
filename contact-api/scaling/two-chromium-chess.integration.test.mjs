@@ -36,7 +36,7 @@ async function waitForPosition(page,state){
   const squares=[...document.querySelectorAll('#board .chess-square')];
   return squares.length===64&&squares.every((node,i)=>{
    const piece=node.querySelector('svg.chess-piece'),expectedPiece=expected[i];
-   if(expectedPiece==='.')return !piece&&node.childElementCount===0;
+   if(expectedPiece==='.')return !piece&&[...node.children].every(child=>child.classList.contains('chess-coordinate'));
    return piece?.dataset.piece===expectedPiece&&piece.dataset.color===(expectedPiece===expectedPiece.toUpperCase()?'white':'black')&&!!piece.querySelector('path[data-body]');
   });
  },visible(state),{timeout:10000});
