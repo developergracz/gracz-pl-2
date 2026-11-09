@@ -28,6 +28,23 @@ function navigation(){
  header.append(n);
 }
 
+// Unread inbox counter is based only on authenticated message-center data, never a placeholder.
+async function playerUnreadMessages(){
+ const badge=$('#unread-messages-count'),link=$('#unread-messages-link');
+ if(!badge||!link)return;
+ try{
+  const data=await api('/auth/message-center');
+  const conversations=Array.isArray(data.conversations)?data.conversations:[];
+  const unread=conversations.reduce((sum,item)=>sum+(item.archived?0:Math.max(0,Number(item.unread)||0)),0);
+  badge.hidden=unread===0;
+  badge.textContent=unread>99?'99+':String(unread);
+  link.setAttribute('aria-label',unread?('Wiadomości — '+unread+' nieprzeczytanych'):'Wiadomości — brak nieprzeczytanych');
+ }catch{
+  badge.hidden=true;
+  link.setAttribute('aria-label','Wiadomości — otwórz skrzynkę');
+ }
+}
+
 // Player sidebar (#744): mobile/tablet disclosure; desktop CSS keeps the menu always visible.
 function playerMenu(){
  const box=$('#player-sidebar'),toggle=$('#sidebar-toggle');
@@ -218,4 +235,4 @@ async function chat(){
  form.addEventListener('submit',async e=>{e.preventDefault();sendButton.disabled=true;try{await save('/auth/august/chat',{body:input.value});input.value='';await load()}catch(x){tell(x.message)}finally{sendButton.disabled=false}});
  await load();const tick=setInterval(()=>{if(document.hidden)return;void load()},15000);window.addEventListener('pagehide',()=>clearInterval(tick),{once:true});
 }
-(async()=>{try{if(view==='players')playerMenu();await who();navigation();if(view==='settings')await settings();if(view==='messages')await messages();if(view==='community')await community();if(view==='global-chat')await chat();if(view==='players')await players()}catch(x){tell(x.message)}})();
+(async()=>{try{if(view==='players')playerMenu();await who();navigation();if(view==='settings')await settings();if(view==='messages')await messages();if(view==='community')await community();if(view==='global-chat')await chat();if(view==='players'){await players();await playerUnreadMessages()}}catch(x){tell(x.message)}})();
