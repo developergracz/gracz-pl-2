@@ -573,9 +573,9 @@ test("R29 approved newsletter image stays fully visible and centered — Full Ma
 });
 test('Approved six-card images are unique and all local assets resolve',async({browser})=>{
  const cards=[
- ['#poradniki-academy .r4-approved-guide-chess','gracz-guide-chess-wide-approved-r10.avif'],
- ['#poradniki-academy .r4-approved-guide-checkers','gracz-guide-checkers-wide-approved-r10.avif'],
- ['#poradniki-academy .r4-approved-guide-poker','gracz-guide-poker-wide-approved-r10.avif'],
+ ['#poradniki-academy .r4-approved-guide-chess','academy-chess-premium-r1.webp'],
+ ['#poradniki-academy .r4-approved-guide-checkers','academy-checkers-premium-r1.webp'],
+ ['#poradniki-academy .r4-approved-guide-poker','academy-poker-premium-r1.webp'],
  ['#aktualnosci .r4-approved-blog-tournament','gracz-blog-tournament-owner-premium-r3.avif'],
  ['#aktualnosci .r4-approved-blog-analysis','gracz-blog-analysis-wide-premium-r9.avif'],
  ['#aktualnosci .r4-approved-blog-thousand','gracz-blog-thousand-wide-premium-r9.avif']
@@ -616,12 +616,50 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'-wide-approved-r10.avif');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await ctx.close();}
+ }
+});
+
+test('Academy premium graphics stay static, readable and only in Poradniki i Academy',async({browser})=>{
+ const files=['academy-chess-premium-r1.webp','academy-checkers-premium-r1.webp','academy-poker-premium-r1.webp'];
+ for(const file of files){
+  const bytes=fs.readFileSync(path.join(__dirname,'../../maintenance-site/assets',file));
+  expect(bytes.subarray(0,4).toString(),file).toBe('RIFF');
+  expect(bytes.subarray(8,12).toString(),file).toBe('WEBP');
+  expect(bytes.includes(Buffer.from('ANIM')),file+' must not be animated').toBe(false);
+ }
+ const guides=[
+  ['/poradniki/','SZACHY','10 zasad skutecznego rozwoju w szachach'],
+  ['/gry/warcaby/zasady/','WARCABY','Strategie w warcabach — od podstaw do zaawansowanych taktyk'],
+  ['/gry/poker-treningowy/','POKER','Jak czytać przeciwników w pokerze?']
+ ];
+ for(const width of [390,1366]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const users=await page.evaluate(()=>[...document.querySelectorAll('body *')]
+    .filter(el=>/academy-(chess|checkers|poker)-premium-r1\.webp/.test(getComputedStyle(el).backgroundImage))
+    .map(el=>({inAcademy:!!el.closest('#poradniki-academy'),inGames:!!el.closest('#nasze-gry'),cls:el.className})));
+   expect(users).toHaveLength(3);
+   for(const u of users){expect(u.inAcademy,u.cls).toBe(true);expect(u.inGames,u.cls).toBe(false);}
+   const cards=page.locator('#poradniki-academy .r4-guide');
+   await expect(cards).toHaveCount(3);
+   for(const [i,[href,label,title]] of guides.entries()){
+    const card=cards.nth(i);
+    await expect(card).toHaveAttribute('href',href);
+    await expect(card.locator('.r4-guide-body small')).toHaveText(label);
+    await expect(card.locator('.r4-guide-body strong')).toHaveText(title);
+    const s=await card.evaluate(a=>{const p=getComputedStyle(a.querySelector('.r4-guide-photo'));
+     return {anim:p.animationName,filter:p.filter,transform:p.transform}});
+    expect(s).toEqual({anim:'none',filter:'none',transform:'none'});
+   }
+  }finally{await context.close();}
  }
 });
 
