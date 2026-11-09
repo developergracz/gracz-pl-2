@@ -1351,6 +1351,21 @@ select option{background:#102c34;color:#fff}
  #turn-label{flex-basis:clamp(152px,48vw,175px);width:clamp(152px,48vw,175px);font-size:11px}
 }
 /* R35: compact balanced footer, no showcase hint and centered illustrated Gomoku how-to. */
+.bottom #board-help:empty{display:none}
+.bottom #move-count{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 clamp(145px,12.2vw,181px);width:clamp(145px,12.2vw,181px);
+ height:clamp(38px,5vh,47px);min-width:0;padding:5px 10px;
+ font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
+.bottom #move-count:before{margin-right:6px;font-size:1.05em}
+.bottom #turn-label{flex:0 0 clamp(181px,15.5vw,223px);width:clamp(181px,15.5vw,223px);
+ height:clamp(38px,5vh,47px);min-width:0;padding:5px 9px;
+ font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
+.bottom #turn-label:before{flex:0 0 16px;width:16px;height:16px;margin-right:7px}
+@media(max-width:1100px){.bottom #move-count{flex-basis:clamp(126px,15vw,159px);width:clamp(126px,15vw,159px)}
+ .bottom #turn-label{flex-basis:clamp(166px,21vw,205px);width:clamp(166px,21vw,205px)}}
+@media(max-width:560px){.bottom #move-count{flex-basis:clamp(112px,35vw,155px);width:clamp(112px,35vw,155px);font-size:13px}
+ .bottom #turn-label{flex-basis:clamp(150px,46vw,195px);width:clamp(150px,46vw,195px);font-size:12px}
+ .bottom{gap:5px}}
 /* Owner-approved console presentation fixes: no changes to panel dimensions. */
 .boardarea::before{display:none}
 .bottom #turn-label{
@@ -1378,21 +1393,6 @@ select option{background:#102c34;color:#fff}
  .bottom #turn-label{font-size:clamp(9px,2.5vw,11px);letter-spacing:-.35px}
 }
 
-.bottom #board-help:empty{display:none}
-.bottom #move-count{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
- flex:0 0 clamp(145px,12.2vw,181px);width:clamp(145px,12.2vw,181px);
- height:clamp(38px,5vh,47px);min-width:0;padding:5px 10px;
- font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
-.bottom #move-count:before{margin-right:6px;font-size:1.05em}
-.bottom #turn-label{flex:0 0 clamp(181px,15.5vw,223px);width:clamp(181px,15.5vw,223px);
- height:clamp(38px,5vh,47px);min-width:0;padding:5px 9px;
- font-size:clamp(13px,1.35vw,19px);line-height:1.1;white-space:nowrap}
-.bottom #turn-label:before{flex:0 0 16px;width:16px;height:16px;margin-right:7px}
-@media(max-width:1100px){.bottom #move-count{flex-basis:clamp(126px,15vw,159px);width:clamp(126px,15vw,159px)}
- .bottom #turn-label{flex-basis:clamp(166px,21vw,205px);width:clamp(166px,21vw,205px)}}
-@media(max-width:560px){.bottom #move-count{flex-basis:clamp(112px,35vw,155px);width:clamp(112px,35vw,155px);font-size:13px}
- .bottom #turn-label{flex-basis:clamp(150px,46vw,195px);width:clamp(150px,46vw,195px);font-size:12px}
- .bottom{gap:5px}}
 .howto-overlay{position:fixed;inset:0;z-index:9500;display:grid;place-items:center;
  padding:clamp(8px,2vw,18px);background:#010c13d9;backdrop-filter:blur(7px)}
 .howto-overlay[hidden]{display:none!important}
