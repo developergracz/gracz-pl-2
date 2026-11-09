@@ -1917,3 +1917,69 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
     @position-try --gracz-preview-left-safe{right:auto;left:16px}
   }
 }
+
+/* Compact Blog cards follow the column widths of Nasze gry, without changing other sections. */
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
+ grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:11px!important
+}
+@media(min-width:961px){
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update:first-child{grid-column:2}
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update{
+ display:flex!important;flex-direction:column!important;min-width:0!important;
+ height:clamp(370px,29vw,420px)!important;min-height:0!important;
+ background:#003331!important;border-radius:19px!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-photo{
+ position:relative!important;inset:auto!important;display:block!important;
+ width:100%!important;height:clamp(147px,12vw,190px)!important;
+ min-height:0!important;flex:none!important;
+ object-fit:cover!important;object-position:center center!important;
+ background-size:cover!important;background-position:center center!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update::after{display:none!important}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body{
+ position:static!important;inset:auto!important;display:flex!important;
+ flex-direction:column!important;justify-content:flex-start!important;
+ flex:1!important;min-height:0!important;min-width:0!important;
+ gap:6px!important;padding:10px 12px 49px!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body small{
+ font-size:10px!important;line-height:1.2!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body strong{
+ font-size:clamp(13px,1.07vw,16px)!important;line-height:1.17!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body em{
+ font-size:clamp(11px,.8vw,12px)!important;line-height:1.32!important
+}
+body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-premium-card-arrow{
+ width:35px!important;height:35px!important;right:10px!important;bottom:10px!important
+}
+@media(min-width:681px) and (max-width:960px){
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important
+ }
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update{height:380px!important}
+}
+@media(max-width:680px){
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid{
+  grid-template-columns:minmax(0,1fr)!important;gap:10px!important
+ }
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-updates-grid .r4-update{
+  height:clamp(370px,100vw,405px)!important
+ }
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-photo{
+  height:clamp(106px,31vw,148px)!important
+ }
+ 
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body{
+  padding:9px 8px 45px!important;gap:5px!important
+ }
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-update-body strong{
+  font-size:13px!important
+ }
+ body.homepage-premium-max .r4-homepage #aktualnosci .r4-update .r4-premium-card-arrow{
+  width:33px!important;height:33px!important;right:8px!important;bottom:8px!important
+ }
+}
