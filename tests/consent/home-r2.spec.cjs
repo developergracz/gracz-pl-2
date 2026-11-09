@@ -848,3 +848,72 @@ test('Five premium game cards: linked live games and disabled upcoming games rem
   }finally{await context.close();}
  }
 });
+
+test('Chess console hover preview shows the Owner image enlarged, in view and without shifting cards',async({browser})=>{
+ for(const [width,height] of [[1366,768],[1920,1080],[1024,768]]){
+  const context=await browser.newContext({viewport:{width,height}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const card=page.locator('#nasze-gry .r4-game-chess');
+   const thumb=card.locator('.r4-img-chess');
+   const preview=card.locator('.r4-game-preview');
+   const image=preview.locator('img');
+   await expect(image).toHaveAttribute('src','/assets/home-chess-console-preview.webp');
+   await expect(image).toHaveAttribute('alt',/Szachy online/);
+   await expect(card.locator('a.r4-game-play')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
+   await expect(card.locator('a.r4-game-academy')).toHaveAttribute('href','/poradniki/');
+   await expect(preview.locator('a,button,[tabindex]')).toHaveCount(0);
+   await expect(preview).toBeHidden();
+   await thumb.scrollIntoViewIfNeeded();
+   const cards=()=>page.locator('#nasze-gry .r4-game-premium').evaluateAll(els=>els.map(e=>{
+    const r=e.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(Math.round).join(',');}).join('|'));
+   const before=await cards();
+   await thumb.hover();
+   await expect(preview).toBeVisible();
+   await expect.poll(()=>preview.evaluate(e=>getComputedStyle(e).opacity)).toBe('1');
+   await expect.poll(()=>image.evaluate(i=>i.complete?i.naturalWidth:0)).toBeGreaterThan(0);
+   const m=await page.evaluate(()=>{
+    const p=document.querySelector('#nasze-gry .r4-game-chess .r4-game-preview'),i=p.querySelector('img');
+    const r=p.getBoundingClientRect(),ir=i.getBoundingClientRect();
+    return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,boxRatio:ir.width/ir.height,
+     natural:i.naturalWidth/i.naturalHeight,clamped:ir.height+1>=parseFloat(getComputedStyle(i).maxHeight),
+     fit:getComputedStyle(i).objectFit,pe:getComputedStyle(p).pointerEvents,
+     border:getComputedStyle(p).borderTopColor,sw:document.documentElement.scrollWidth};
+   });
+   expect(m.w).toBeGreaterThanOrEqual(500);
+   expect(m.w).toBeLessThanOrEqual(600);
+   expect(m.l).toBeGreaterThanOrEqual(0);
+   expect(m.r).toBeLessThanOrEqual(width);
+   expect(m.t).toBeGreaterThanOrEqual(0);
+   expect(m.b).toBeLessThanOrEqual(height);
+   expect(m.fit).toBe('contain');
+   expect(Math.abs(m.boxRatio-m.natural)<0.02||m.clamped).toBe(true);
+   expect(m.pe).toBe('none');
+   expect(m.border).toBe('rgb(195, 154, 84)');
+   expect(m.sw).toBeLessThanOrEqual(width);
+   expect(await cards()).toBe(before);
+   await page.mouse.move(width-4,height-4);
+   await expect(preview).toBeHidden();
+   await card.locator('a.r4-game-play').scrollIntoViewIfNeeded();
+   const play=await card.locator('a.r4-game-play').boundingBox();
+   expect(await page.evaluate(([x,y])=>document.elementFromPoint(x,y)?.closest('a')?.className,[play.x+play.width/2,play.y+play.height/2])).toBe('r4-game-play');
+  }finally{await context.close();}
+ }
+});
+
+test('Chess console hover preview stays off on touch devices without overflow',async({browser})=>{
+ for(const [width,height] of [[390,844],[1024,768]]){
+  const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const card=page.locator('#nasze-gry .r4-game-chess');
+   await card.locator('.r4-img-chess').tap();
+   await expect(card.locator('.r4-game-preview')).toBeHidden();
+   await expect(card.locator('a.r4-game-play')).toBeVisible();
+   await expect(card.locator('a.r4-game-academy')).toBeVisible();
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await context.close();}
+ }
+});
