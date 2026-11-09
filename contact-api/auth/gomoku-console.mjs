@@ -720,6 +720,22 @@ select option{background:#102c34;color:#fff}
  .premium-quick-links>.premium-mini-link svg{width:clamp(17px,3vw,21px);height:clamp(17px,3vw,21px)}
 }
 
+/* Tooltip visibility fix: keep top-right icon labels within the console frame. */
+.boardarea .premium-quick-links{overflow:visible;z-index:30}
+.boardarea .premium-quick-links>.premium-mini-link{overflow:visible}
+.boardarea .premium-quick-links>.premium-mini-link:is(:hover,:focus-visible){z-index:31}
+.boardarea .premium-quick-links>.premium-mini-link::after{
+ top:calc(100% + 8px);bottom:auto;z-index:9999;
+ box-sizing:border-box;max-width:min(260px,calc(100vw - 24px));
+ white-space:normal;overflow-wrap:break-word;text-align:center;
+}
+.boardarea .premium-quick-links>.premium-mini-link:nth-last-child(-n+4)::after{
+ left:auto;right:0;transform:translateY(5px)
+}
+.boardarea .premium-quick-links>.premium-mini-link:nth-last-child(-n+4):is(:hover,:focus-visible)::after{
+ transform:translateY(0)
+}
+
 @media(prefers-reduced-motion:reduce){.premium-mini-link,.premium-mini-link::after{transition:none}}
 
 
