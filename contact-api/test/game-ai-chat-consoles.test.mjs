@@ -159,3 +159,13 @@ test('Computer-mode chat in Warcaby and Chess calls GRACZ AI; player chat remain
   assert.match(szachy,/sender_nick:'GRACZ AI'/);
   assert.match(szachy,/if\(!online\?\.playable/,'online mode still checks match authorization');
 });
+
+test('Active chat tab hides the duplicate preview beneath conversation; moves tab can still preview',()=>{
+  const chess=get(serveChessConsole,'/konto/szachy/app.js').raw;
+  const checkers=get(serveCheckersConsole,'/konto/warcaby/app.js').raw;
+  assert.match(chess,/chatPreview\.hidden=isChat;/);
+  assert.match(checkers,/\$\('chat-preview'\)\.hidden=chat;/);
+  for(const src of [chess,checkers]){
+    assert.doesNotThrow(()=>parse(src,{ecmaVersion:'latest',sourceType:'module'}));
+  }
+});
