@@ -616,7 +616,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
    for(const [selector,y] of positions){
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
-    expect(s.photo).toContain(selector.includes('blog-thousand')?'-thousand-wide-premium-r9.avif':selector.includes('blog-analysis')?'-analysis-wide-premium-r9.avif':selector.includes('blog-')?'-owner-premium-r3.avif':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
+    expect(s.photo).toContain(selector.includes('blog-thousand')?'gracz-news-thousand-premium-r1.webp':selector.includes('blog-analysis')?'gracz-news-analysis-premium-r1.webp':selector.includes('blog-')?'gracz-news-tournament-premium-r1.webp':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
     expect(s.position).toContain(selector.includes('blog-')?'0%':y);
     expect(s.contrast).toBe('none');
    }
