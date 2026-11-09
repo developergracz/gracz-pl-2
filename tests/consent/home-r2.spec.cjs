@@ -617,7 +617,7 @@ test('Approved gallery photo framing, legibility and viewport stability',async({
     const tile=page.locator(selector);await expect(tile).toHaveCount(1);
     const s=await tile.evaluate(el=>({photo:getComputedStyle(el).backgroundImage,position:getComputedStyle(el).backgroundPosition,contrast:getComputedStyle(el).filter}));
     expect(s.photo).toContain(selector.includes('blog-thousand')?'gracz-news-thousand-premium-r1.webp':selector.includes('blog-analysis')?'gracz-news-analysis-premium-r1.webp':selector.includes('blog-')?'gracz-news-tournament-premium-r1.webp':'academy-'+selector.split('-').pop()+'-premium-r1.webp');
-    expect(s.position).toContain(selector.includes('blog-')?'0%':y);
+    expect(s.position).toContain(selector.includes('blog-')?'50%':y);
     expect(s.contrast).toBe('none');
    }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
@@ -681,9 +681,10 @@ test('Owner Full Max Premium gallery uses large responsive cards and circular li
     return {scroll:document.documentElement.scrollWidth,guide:rect('#poradniki-academy .r4-guide'),blog:rect('#aktualnosci .r4-update'),section:rect('#aktualnosci'),guides:cols('#poradniki-academy .r4-guides-grid'),blogs:cols('#aktualnosci .r4-updates-grid'),phone:getComputedStyle(document.querySelector('#aktualnosci .r4-phone')).display};
    });
    const n=width<=680?1:width<=1180?2:3;
-   expect(d.guides).toBe(n);expect(d.blogs).toBe(n);
+   const blogCols=width<=680?2:width<=960?3:5;
+   expect(d.guides).toBe(n);expect(d.blogs).toBe(blogCols);
    expect(d.guide.h).toBeGreaterThanOrEqual(width<=680?350:400);
-   expect(d.blog.h).toBeGreaterThanOrEqual(width<=680?350:400);
+   expect(d.blog.h).toBeGreaterThanOrEqual(370);
    expect(d.blog.bottom).toBeLessThanOrEqual(d.section.bottom+2);
    expect(d.phone).toBe('none');expect(d.scroll).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
@@ -1014,6 +1015,35 @@ test('Chess console hover preview stays off on touch devices without overflow',a
    await expect(card.locator('a.r4-game-play')).toBeVisible();
    await expect(card.locator('a.r4-game-academy')).toBeVisible();
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+  }finally{await context.close();}
+ }
+});
+
+
+test('Blog tiles match Nasze gry compact width without clipped copy',async({browser})=>{
+ for(const width of [390,768,1366,1600]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage();await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   const g=await page.evaluate(()=>({gameWidth:document.querySelector('#nasze-gry .r4-game').getBoundingClientRect().width,
+    cards:[...document.querySelectorAll('#aktualnosci .r4-update')].map(card=>{
+      const im=card.querySelector('.r4-update-photo').getBoundingClientRect();
+      const body=card.querySelector('.r4-update-body');
+      const r=card.getBoundingClientRect();
+      return {width:r.width,right:r.right,imageHeight:im.height,imageBottom:im.bottom,
+       textTop:body.getBoundingClientRect().top,bodyHeight:body.clientHeight,textScroll:body.scrollHeight};
+    }),scrollWidth:document.documentElement.scrollWidth}));
+   expect(g.cards).toHaveLength(3);
+   for(const card of g.cards){
+    expect(Math.abs(card.width-g.gameWidth)).toBeLessThan(2);
+    expect(card.imageHeight).toBeGreaterThan(100);
+    expect(card.imageHeight).toBeLessThanOrEqual(191);
+    expect(card.imageBottom).toBeLessThanOrEqual(card.textTop+2);
+    expect(card.textScroll).toBeLessThanOrEqual(card.bodyHeight+2);
+    expect(card.right).toBeLessThanOrEqual(width+2);
+   }
+   expect(g.scrollWidth).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
  }
 });
