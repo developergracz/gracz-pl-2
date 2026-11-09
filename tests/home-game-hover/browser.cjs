@@ -31,8 +31,10 @@ const server=createServer(async(req,res)=>{
    await source.scrollIntoViewIfNeeded();
    const before=await page.locator('#nasze-gry .r4-game').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().height));
    const b=await source.boundingBox();
-   await page.mouse.move(b.x+8,b.y+8);
+   await source.hover({position:{x:8,y:8}});
    const preview=page.locator('#r4-game-hover-preview');
+   const hoverState=await page.evaluate(()=>({hover:matchMedia('(hover:hover)').matches,coarse:matchMedia('(pointer:coarse)').matches,active:document.querySelector('#r4-game-hover-preview')?.className}));
+   console.log('PREVIEW_HOVER_STATE',item,JSON.stringify(hoverState));
    await preview.waitFor({state:'visible',timeout:5000});
    const p=await preview.boundingBox();
    const viewport=page.viewportSize();
