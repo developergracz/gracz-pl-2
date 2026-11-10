@@ -143,6 +143,7 @@
   <link rel="preload" href="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" as="image" type="image/webp" media="(max-width:680px)" fetchpriority="high">
   <link rel="preload" href="/assets/gracz-hero-gomoku-mobile-preview-r1.webp" as="image" type="image/webp" media="(min-width:681px) and (max-width:1180px)" fetchpriority="high">
   <script src="/assets/home-css-viewport.js?v=20261109-large-news-r1"></script>
+  <link rel="stylesheet" href="/assets/home-quick-play.css?v=20261110-r1">
   <noscript><link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1"></noscript>
 
   <script src="/assets/newsletter-interactive-r30-loader.js?v=20261106-lcp-near-viewport-r1" defer></script>
@@ -243,6 +244,17 @@
     </div>
   </header>
 
+  <!-- Minimal quick access: native details, no JavaScript or change to HERO rotator. -->
+  <div class="quick-play-strip">
+    <details class="quick-play-menu">
+      <summary>⚡ Szybka gra</summary>
+      <nav class="quick-play-links" aria-label="Szybki wybór gry">
+        <a href="https://gracz-contact-api.onrender.com/konto/gomoku/">Gomoku</a>
+        <a href="https://gracz-contact-api.onrender.com/konto/warcaby/">Warcaby</a>
+        <a href="https://gracz-contact-api.onrender.com/konto/szachy/">Szachy</a>
+      </nav>
+    </details>
+  </div>
   <main id="tresc" tabindex="-1" class="r4-homepage">
     <section class="r4-hero" aria-labelledby="hero-title" data-hero-slide="gomoku">
       <!-- One fixed Full Max Premium console. The approved artwork is the static layer.
