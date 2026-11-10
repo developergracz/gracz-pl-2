@@ -1917,3 +1917,66 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
     @position-try --gracz-preview-left-safe{right:auto;left:16px}
   }
 }
+
+/* Mobile-first landing: one primary game entry. Desktop/tablet layouts unchanged. */
+@media (max-width: 680px) {
+  body.homepage-premium-max .r4-homepage .r4-hero {
+    overflow: visible !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-copy {
+    align-items: stretch !important;
+    padding: 20px 18px 18px !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero h1 {
+    margin-bottom: 8px !important;
+    font-size: clamp(25px, 7.4vw, 36px) !important;
+    white-space: normal !important;
+    line-height: 1.13 !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-motto {
+    margin: 0 0 12px !important;
+    font-size: clamp(16px, 4vw, 21px) !important;
+    line-height: 1.3 !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-claim,
+  body.homepage-premium-max .r4-homepage .r4-hero-rule,
+  body.homepage-premium-max .r4-homepage .r4-hero-description,
+  body.homepage-premium-max .r4-homepage .r4-hero-actions,
+  body.homepage-premium-max .r4-homepage .r4-shortcuts {
+    display: none !important;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-strip {
+    order: 6;
+    display: block;
+    width: 100%;
+    padding: 0;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-menu {
+    width: 100%;
+    max-width: 100%;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-menu > summary {
+    min-height: 54px;
+    border-radius: 12px;
+    font-size: 17px;
+    background: #076064;
+    border: 1px solid #e1bf74;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .2);
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    transform: none;
+    box-shadow: none;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links a {
+    min-height: 50px;
+    font-size: 16px;
+    font-weight: 800;
+  }
+}
