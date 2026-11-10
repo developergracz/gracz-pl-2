@@ -69,12 +69,19 @@ for(const width of [360,390,768,1366,1920]){
      expect(await page.locator('.r4-owner-image').evaluate(img=>img.currentSrc)).toContain('gracz-hero-gomoku-mobile-preview-r1.webp');
    }
     if(width<=680){
-      await expect(page.locator('.r4-owner-picture')).toBeVisible();
-      await expect(page.locator('.r4-owner-image')).toHaveAttribute('fetchpriority','high');
-       await expect(page.locator('.r4-owner-image')).toHaveAttribute('src','/assets/gracz-hero-gomoku-mobile-preview-r1.webp');
-      await expect.poll(()=>page.locator('.r4-owner-image').evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
+      // The Owner-approved mobile home uses a dedicated painted illustration.
+      await expect(page.locator('.r4-owner-picture')).toBeHidden();
+      await expect(page.locator('.mobile-painted-art')).toBeVisible();
+      await expect(page.locator('.r4-hero-actions')).toBeHidden();
+      await expect(page.locator('.quick-play-menu > summary')).toBeVisible();
+      await expect(page.locator('#mobile-featured-title')).toBeVisible();
+      await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
+      for(const [name,game] of [['Gomoku','gomoku'],['Warcaby','warcaby'],['Szachy','szachy']]){
+        await expect(page.locator('.mobile-featured-card',{hasText:name}))
+          .toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
+      }
     }
-   expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
+    expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
    // Sticky header must be captured at the top, not where footer scrolling left it.
@@ -242,17 +249,26 @@ test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',as
   }finally{await context.close()}
  }
 });
-test('Owner hero preserves responsive HTML copy and ordinary links on mobile',async({browser})=>{
+test('Owner premium mobile hero offers accessible quick play and illustrated links',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  try{
   const page=await context.newPage();
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  await expect(page.locator('.r4-owner-picture')).toBeVisible();
-   await expect(page.locator('.r4-owner-image')).toBeVisible();
   await expect(page.locator('.r4-hero-copy')).toBeVisible();
-  await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toBeVisible();
-  await expect(page.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
+  await expect(page.locator('.mobile-painted-art')).toBeVisible();
+  await expect(page.locator('.r4-owner-picture')).toBeHidden();
+  await expect(page.locator('.r4-hero-actions')).toBeHidden();
+  const quick=page.locator('.quick-play-menu');
+  await expect(quick.locator('summary')).toBeVisible();
+  await quick.locator('summary').click();
+  await expect(quick).toHaveAttribute('open','');
+  await expect(page.getByRole('navigation',{name:'Szybki wybór gry'}).getByRole('link')).toHaveCount(3);
+  await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
+  const mobileHeader=page.locator('.mobile-header-search');
+  await expect(mobileHeader).toBeVisible();
+  await expect(mobileHeader).toHaveAttribute('href','/szukaj/');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
  }finally{await context.close()}
 });
 
@@ -828,7 +844,9 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const hero=page.locator('.r4-hero');
-   for(const selector of ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description'])
+   for(const selector of (width<=680
+     ? ['#hero-title','.r4-hero-motto','.mobile-painted-art']
+     : ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description']))
      await expect(page.locator(selector)).toBeVisible();
    await expect(page.locator('.r4-hero-actions svg')).toHaveCount(0);
    await expect(page.locator('.r4-hero-live-actions')).toHaveCount(0);
@@ -840,12 +858,17 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
     if(i)await page.clock.runFor(5000);
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
-    await expect(active).toHaveCount(1);
-    await expect(active).toHaveText(label);
-    await expect(active).toHaveAttribute('href',href);
-    // Only the current game's panes are shown; Gomoku is the artwork itself.
-    await expect.poll(()=>page.evaluate(()=>[...new Set([...document.querySelectorAll('.r4-pane')]
-      .filter(e=>getComputedStyle(e).visibility==='visible').map(e=>e.dataset.pane))].join('|'))).toBe(slide==='gomoku'?'':slide);
+    if(width<=680){
+      await expect(active).toHaveCount(0);
+      await expect(page.locator('.quick-play-menu > summary')).toBeVisible();
+      await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
+    }else{
+      await expect(active).toHaveCount(1);
+      await expect(active).toHaveText(label);
+      await expect(active).toHaveAttribute('href',href);
+      await expect.poll(()=>page.evaluate(()=>[...new Set([...document.querySelectorAll('.r4-pane')]
+       .filter(e=>getComputedStyle(e).visibility==='visible').map(e=>e.dataset.pane))].join('|'))).toBe(slide==='gomoku'?'':slide);
+    }
     expect(await page.locator('.r4-console-stage').boundingBox()).toEqual(stage);
     const layout=await page.evaluate(()=>{
      const boxes=[...document.querySelectorAll('.r4-hero-actions > a, .r4-game-cta-stack')].map(e=>e.getBoundingClientRect());

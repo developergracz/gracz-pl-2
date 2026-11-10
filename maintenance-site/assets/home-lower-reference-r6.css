@@ -1917,3 +1917,240 @@ body.homepage-premium-max #nasze-gry .r4-game-preview{display:none}
     @position-try --gracz-preview-left-safe{right:auto;left:16px}
   }
 }
+
+/* Mobile-first landing: one primary game entry. Desktop/tablet layouts unchanged. */
+@media (max-width: 680px) {
+  body.homepage-premium-max .r4-homepage .r4-hero {
+    overflow: visible !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-copy {
+    align-items: stretch !important;
+    padding: 20px 18px 18px !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero h1 {
+    margin-bottom: 8px !important;
+    font-size: clamp(25px, 7.4vw, 36px) !important;
+    white-space: normal !important;
+    line-height: 1.13 !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-motto {
+    margin: 0 0 12px !important;
+    font-size: clamp(16px, 4vw, 21px) !important;
+    line-height: 1.3 !important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero-claim,
+  body.homepage-premium-max .r4-homepage .r4-hero-rule,
+  body.homepage-premium-max .r4-homepage .r4-hero-description,
+  body.homepage-premium-max .r4-homepage .r4-hero-actions,
+  body.homepage-premium-max .r4-homepage .r4-shortcuts {
+    display: none !important;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-strip {
+    order: 6;
+    display: block;
+    width: 100%;
+    padding: 0;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-menu {
+    width: 100%;
+    max-width: 100%;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-menu > summary {
+    min-height: 54px;
+    border-radius: 12px;
+    font-size: 17px;
+    background: #076064;
+    border: 1px solid #e1bf74;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .2);
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    transform: none;
+    box-shadow: none;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links a {
+    min-height: 50px;
+    font-size: 16px;
+    font-weight: 800;
+  }
+}
+
+/* OWNER-approved hand-illustrated Full Premium mobile composition.
+   CSS-only decoration; mobile-first artwork is editable HTML/SVG, no screenshots. */
+.mobile-header-search,.mobile-painted-art,.mobile-illustrated-featured{display:none}
+@media (max-width:680px){
+  body.homepage-premium-max{background:#003b3c}
+  body.homepage-premium-max .site-header{
+    background:#003a3a!important;
+    border-bottom:3px solid #ddb663!important;
+    min-height:68px!important;height:68px!important;
+    box-shadow:none!important;
+  }
+  body.homepage-premium-max .site-header .header-inner{
+    position:relative!important;
+    width:100%!important;max-width:none!important;
+    padding:0 14px!important;height:65px!important;
+    display:flex!important;align-items:center!important;
+  }
+  body.homepage-premium-max .site-header .logo.home-header-logo{
+    display:block!important;flex:0 0 auto!important;
+    font-family:Georgia,"Times New Roman",serif!important;
+    font-style:italic!important;font-size:clamp(27px,8.2vw,37px)!important;
+    font-weight:800!important;line-height:1!important;
+    color:#f7e7be!important;text-shadow:1px 2px 0 #164344;
+    margin:0!important;padding:0!important;
+  }
+  body.homepage-premium-max .site-header .logo.home-header-logo::before{
+    content:"♛";position:absolute;top:0;left:27px;
+    color:#edc96e;font-size:21px;line-height:1;
+    font-style:normal;text-shadow:none;pointer-events:none;
+  }
+  body.homepage-premium-max .site-header .mobile-header-search{
+    display:flex!important;align-items:center;justify-content:center;
+    width:43px;height:43px;margin-left:auto;margin-right:52px;
+    color:#f2d486;border:1px solid #c79e53;border-radius:9px;
+    text-decoration:none;flex:0 0 auto;
+  }
+  body.homepage-premium-max .site-header .mobile-header-search svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8}
+  body.homepage-premium-max .site-header .mobile-header-search:focus-visible{
+    outline:3px solid #fff2ca;outline-offset:3px;
+  }
+  body.homepage-premium-max .site-header .icon-btn.burger{
+    position:absolute!important;right:13px;top:11px;
+    width:43px!important;height:43px!important;
+    border:1px solid #c79e53!important;border-radius:9px!important;
+    color:#f2d486!important;
+    background:#024142!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero{
+    display:block!important;position:relative!important;
+    height:auto!important;min-height:0!important;
+    padding:0!important;overflow:visible!important;
+    isolation:isolate;
+    border:0!important;border-bottom:2px solid #c9a25c!important;
+    background:
+      repeating-linear-gradient(164deg,transparent 0 4px,rgba(255,237,174,.025) 5px 6px,transparent 7px 14px),
+      radial-gradient(ellipse at 25% 23%,#075e5b 0%,transparent 65%),
+      linear-gradient(160deg,#014649,#003535 78%)!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-console-stage,
+  body.homepage-premium-max .r4-homepage .r4-hero-art{display:none!important}
+  body.homepage-premium-max .r4-homepage .r4-hero-copy{
+    width:100%!important;max-width:none!important;
+    position:relative!important;inset:auto!important;
+    height:auto!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:flex-start!important;
+    padding:24px 15px 20px!important;
+    box-sizing:border-box!important;text-align:center!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero h1{
+    order:1!important;color:#f8e8c1!important;
+    font-family:Georgia,"Times New Roman",serif!important;
+    font-size:clamp(28px,8.2vw,40px)!important;
+    line-height:1.06!important;letter-spacing:-.025em!important;
+    font-weight:800!important;font-style:italic;
+    text-shadow:1px 2px 0 #164f4c!important;
+    margin:3px 0 13px!important;max-width:100%!important;
+  }
+  body.homepage-premium-max .r4-homepage .r4-hero h1 span{color:#f8e8c1!important}
+  body.homepage-premium-max .r4-homepage .r4-hero-motto{
+    order:2!important;color:#f3e2ba!important;
+    font-family:Georgia,"Times New Roman",serif!important;
+    font-size:clamp(17px,5.3vw,23px)!important;
+    font-style:italic!important;font-weight:500!important;
+    margin:0 0 9px!important;text-align:center!important;
+    line-height:1.25!important;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-painted-art{
+    display:block!important;order:3!important;
+    width:min(100%,380px);height:auto;max-height:159px;
+    margin:1px auto 8px;overflow:visible;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-strip{
+    order:6!important;margin-top:0!important;max-width:100%!important;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-menu > summary{
+    min-height:54px!important;width:100%;font-family:Georgia,"Times New Roman",serif!important;
+    font-size:clamp(20px,6vw,26px)!important;font-style:italic;
+    font-weight:800!important;letter-spacing:.01em;
+    border:3px double #ebc66e!important;border-radius:18px!important;
+    background:linear-gradient(165deg,#087474,#004546)!important;
+    color:#fae9c1!important;box-shadow:inset 0 0 0 2px #16585a,0 3px 0 #002c2e!important;
+    text-shadow:1px 1px 0 #063b3d;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links{
+    z-index:20;border:2px solid #e4bc65!important;border-radius:15px!important;
+    background:#004647!important;box-shadow:none!important;
+  }
+  body.homepage-premium-max .r4-homepage .quick-play-links a{
+    background:#075557!important;border:1px solid #d9b569;
+    color:#fae8c3!important;min-height:47px;font-family:Georgia,"Times New Roman",serif;
+    font-size:19px;font-weight:800;box-shadow:none;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-illustrated-featured{
+    display:block!important;position:relative;
+    width:100%;max-width:none;
+    box-sizing:border-box;padding:22px 13px 30px;margin:0;
+    background:
+      repeating-linear-gradient(153deg,transparent 0 5px,rgba(247,221,153,.023) 6px 7px,transparent 8px 15px),
+      linear-gradient(140deg,#003e40,#002c2f 90%);
+    border-bottom:1px solid #b69254;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-illustrated-featured h2{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    margin:0 auto 15px;padding:0;color:#f5e4bd;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:clamp(25px,7.4vw,36px);font-style:italic;
+    font-weight:800;line-height:1.25;text-align:center;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-crown{
+    color:#f0c66a;font-size:31px;line-height:1;display:block;margin-bottom:5px;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-illustrated-featured h2 span:last-child{
+    padding:4px 18px 6px;
+    border:2px solid #dbb564;border-radius:28px;
+    background:linear-gradient(115deg,#075c5e,#004144);
+    box-shadow:inset 0 0 0 2px #0f4244;
+    white-space:nowrap;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-grid{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:clamp(6px,2.2vw,11px);width:100%;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-card{
+    box-sizing:border-box;min-width:0;
+    display:flex;flex-direction:column;align-items:center;
+    border:2px solid #e3bc65;border-radius:16px;
+    overflow:hidden;text-decoration:none;color:#f8e8c7;
+    background:#043b3d;box-shadow:inset 0 0 0 1px #926f36;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-card-art{
+    display:block;width:100%;height:auto;aspect-ratio:108 / 110;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-card strong{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:clamp(13px,4.3vw,19px);
+    font-weight:800;font-style:italic;line-height:1.3;
+    padding:7px 2px 3px;text-align:center;
+    white-space:nowrap;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-arrow{
+    display:flex;justify-content:center;align-items:center;
+    width:33px;height:33px;border:2px solid #edc56b;
+    border-radius:50%;margin:5px 0 9px;font-size:22px;
+    line-height:1;color:#f9e6b9;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-card:focus-visible{
+    outline:3px solid #fff0c8;outline-offset:3px;
+  }
+  body.homepage-premium-max .r4-homepage .mobile-featured-card:active{
+    background:#096062;
+  }
+}
