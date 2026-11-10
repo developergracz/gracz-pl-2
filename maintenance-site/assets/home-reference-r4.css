@@ -412,3 +412,83 @@ body.homepage-premium-max .site-footer .footer-news{background:
  .homepage-premium-max .r4-hero-description{color:#eef3f7!important;line-height:1.58!important}
  .homepage-premium-max .r4-shortcuts a{min-height:64px}
 }
+
+/* Quick Play — additive homepage enhancement; leaves the existing HERO intact. */
+.quick-play-strip {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px;
+  background: #064c4c;
+  border-bottom: 1px solid rgba(240, 200, 109, .35);
+}
+.quick-play-menu {
+  position: relative;
+  width: min(100%, 520px);
+  color: #fff8df;
+  font-family: inherit;
+  line-height: 1.35;
+}
+.quick-play-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #deb968;
+  border-radius: 10px;
+  background: #075d60;
+  color: #fff8df;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  touch-action: manipulation;
+}
+.quick-play-menu > summary::-webkit-details-marker { display: none; }
+.quick-play-menu > summary::after { content: "▾"; margin-left: 5px; }
+.quick-play-menu[open] > summary::after { content: "▴"; }
+.quick-play-menu > summary:hover,
+.quick-play-menu > summary:focus-visible { background: #096e70; }
+.quick-play-menu > summary:focus-visible,
+.quick-play-links a:focus-visible {
+  outline: 3px solid #ffe4a3;
+  outline-offset: 2px;
+}
+.quick-play-links {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #deb968;
+  border-radius: 12px;
+  background: #043e41;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .32);
+}
+.quick-play-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: #e4bd6a;
+  color: #092f31;
+  font-weight: 750;
+  text-align: center;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+.quick-play-links a:hover { background: #f8da95; }
+@media (max-width: 480px) {
+  .quick-play-strip { padding: 6px 10px; }
+  .quick-play-menu > summary { min-height: 44px; }
+  .quick-play-links { gap: 5px; padding: 7px; }
+  .quick-play-links a { font-size: 13px; }
+}
