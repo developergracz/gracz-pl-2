@@ -418,14 +418,14 @@ body.homepage-premium-max .site-footer .footer-news{background:
   position: relative;
   z-index: 30;
   display: flex;
-  justify-content: center;
-  padding: 8px 16px;
-  background: #064c4c;
-  border-bottom: 1px solid rgba(240, 200, 109, .35);
+  justify-content: flex-start;
+  padding: 10px 0 0;
+  background: transparent;
+  border: 0;
 }
 .quick-play-menu {
   position: relative;
-  width: min(100%, 520px);
+  width: min(100%, 320px);
   color: #fff8df;
   font-family: inherit;
   line-height: 1.35;
