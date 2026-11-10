@@ -417,6 +417,8 @@ body.homepage-premium-max .site-footer .footer-news{background:
 .quick-play-strip {
   position: relative;
   z-index: 30;
+  order: 6; /* after .r4-hero-actions (order 5); keeps H1, motto and claim together */
+  align-self: stretch; /* full copy width, so the menu reaches its designed width */
   display: flex;
   justify-content: flex-start;
   padding: 10px 0 0;
@@ -436,6 +438,7 @@ body.homepage-premium-max .site-footer .footer-news{background:
   justify-content: center;
   gap: 8px;
   width: 100%;
+  min-height: 44px;
   padding: 10px 16px;
   border: 1px solid #deb968;
   border-radius: 10px;
@@ -487,8 +490,13 @@ body.homepage-premium-max .site-footer .footer-news{background:
 }
 .quick-play-links a:hover { background: #f8da95; }
 @media (max-width: 480px) {
-  .quick-play-strip { padding: 6px 10px; }
-  .quick-play-menu > summary { min-height: 44px; }
+  .quick-play-strip { padding: 8px 0 0; }
   .quick-play-links { gap: 5px; padding: 7px; }
   .quick-play-links a { font-size: 13px; }
+}
+/* Desktop HERO has a fixed height with overflow:hidden: open beside the button, over the artwork. */
+@media (min-width: 1181px) {
+  .quick-play-links { top: 50%; left: calc(100% + 10px); right: auto; width: 100%; transform: translateY(-50%); }
+  .quick-play-menu > summary::after { content: "▸"; }
+  .quick-play-menu[open] > summary::after { content: "◂"; }
 }
