@@ -5,6 +5,14 @@
 (function () {
   'use strict';
 
+  // Non-blocking Premium styling for the existing Quick Play menu.
+  if (document.querySelector('.quick-play-menu')) {
+    var quickPlayStyle = document.createElement('link');
+    quickPlayStyle.rel = 'stylesheet';
+    quickPlayStyle.href = '/assets/quick-play-premium-r1.css?v=quick-play-text-premium-r1';
+    document.head.appendChild(quickPlayStyle);
+  }
+
   // Load owner-approved games-only CSS without adding a render-blocking stylesheet.
   if (document.getElementById('nasze-gry')) {
     var gamesStyle = document.createElement('link');
