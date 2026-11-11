@@ -77,7 +77,7 @@ test('premium tool buttons export the local game as PGN/FEN (copy and download)'
  const game=importPgn(pgn);
  assert.equal(game.uciMoves.length,2);assert.equal(game.uciMoves[0],'e2e4');
  assert.equal(fen,game.finalFen,'FEN shows the position on the board');
- assert.match(fen,/ w KQkq - \d+ 2$/);
+ assert.match(fen,/ w KQkq (?:-|[a-h]6) \d+ 2$/,'white to move after any computer reply, incl. a double pawn push');
 
  await page.locator('#chess-transfer-copy-pgn').click();
  await statusMatches(page,/PGN skopiowany do schowka/);
