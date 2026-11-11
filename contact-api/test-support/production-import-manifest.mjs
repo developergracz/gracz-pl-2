@@ -61,6 +61,9 @@ export const productionModules=Object.freeze([
   'auth/chess-invitations.mjs',
   'auth/chess-invite-contract.mjs',
   'auth/chess-match.mjs',
+  // CHESS-STOCKFISH-P1: serves verified, unmodified Stockfish.js 19.0.1 (GPLv3) vendor files same-origin
+  // (SHA-256 checked at start-up) and the browser UCI adapter source; no engine runs on the server.
+  'auth/chess-stockfish.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.
   'routes/gomoku-ai-chat-route.mjs',

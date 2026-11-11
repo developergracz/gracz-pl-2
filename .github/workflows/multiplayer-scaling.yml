@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'contact-api/auth/**'
+      - 'contact-api/vendor/**'
       - 'contact-api/scaling/**'
       - 'contact-api/package*.json'
       - 'contact-api/server.mjs'
@@ -58,6 +59,10 @@ jobs:
         run: node --test contact-api/scaling/chess-pieces.browser.test.mjs
       - name: Chess drag & drop (mouse, touch) next to click-to-move
         run: node --test contact-api/scaling/chess-drag.browser.test.mjs
+      - name: Chess PGN/FEN export and import in the premium console
+        run: node --test contact-api/scaling/chess-transfer.browser.test.mjs
+      - name: Chess Stockfish worker, limits and local-engine fallback
+        run: node --test contact-api/scaling/chess-stockfish.browser.test.mjs
       - name: Chess special rules acceptance
         run: node --test contact-api/test/chess-special-rules-acceptance.test.mjs
       - run: node --test contact-api/test/gomoku-realtime.test.mjs contact-api/test/gomoku-realtime-client.test.mjs contact-api/test/gomoku-sync.test.mjs contact-api/test/checkers-realtime.test.mjs contact-api/test/checkers-two-player-match.test.mjs contact-api/test/match-admission.test.mjs contact-api/test/chess-realtime.test.mjs contact-api/test/chess-match.test.mjs contact-api/test/chess-console.test.mjs
