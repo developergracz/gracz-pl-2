@@ -890,6 +890,18 @@ test('Five premium game cards: linked live games and disabled upcoming games rem
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await context.newPage();await page.goto('/');
+   if(width<=680){
+     const visible=page.locator('.comic-game-card');
+     await expect(visible).toHaveCount(3);
+     for(const [name,game] of [['Gomoku','gomoku'],['Warcaby','warcaby'],['Szachy','szachy']]){
+       const card=visible.filter({hasText:name});
+       await expect(card).toBeVisible();
+       await expect(card.locator('a')).toHaveText('ZAGRAJ');
+       await expect(card.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
+     }
+     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+     continue;
+   }
    const cards=page.locator('#nasze-gry .r4-game-premium');
    await expect(cards).toHaveCount(5);
    await expect(cards.locator('a.r4-game-play')).toHaveCount(3);
@@ -1032,6 +1044,13 @@ test('Chess console hover preview stays off on touch devices without overflow',a
   try{
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   if(width<=680){
+     const visible=page.locator('.comic-game-card').filter({hasText:'Szachy'});
+     await expect(visible).toBeVisible();
+     await expect(visible.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
+     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+     continue;
+   }
    const card=page.locator('#nasze-gry .r4-game-chess');
    await card.locator('.r4-img-chess').tap();
    await expect(card.locator('.r4-game-preview')).toBeHidden();
