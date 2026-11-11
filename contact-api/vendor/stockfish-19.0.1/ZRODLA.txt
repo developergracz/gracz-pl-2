@@ -1,0 +1,40 @@
+Stockfish 19 w GRACZ.PL Szachy - licencja i kod zrodlowy
+==========================================================
+
+Pliki w tym katalogu (/konto/szachy/stockfish/19.0.1/):
+
+  stockfish-19-lite-single.js
+    SHA-256 ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a
+  stockfish-19-lite-single.wasm
+    SHA-256 ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de
+
+to niezmodyfikowany program Stockfish.js 19.0.1, wariant "lite, single-threaded"
+(Nathan Rugg / Chess.com), zbudowany z silnika szachowego Stockfish 19
+(T. Romstad, M. Costalba, J. Kiiski, G. Linscott i wspoltworcy) z siecia
+neuronowa nn-61e7af4bb97d (Chris Bao).
+
+Program jest objety licencja GNU General Public License, wersja 3 (GPLv3).
+Pelny tekst licencji: COPYING.txt w tym samym katalogu.
+GRACZ.PL przekazuje ten program bez zmian. Masz prawo go kopiowac, zmieniac
+i rozpowszechniac na warunkach GPLv3. Program dziala wylacznie w Twojej
+przegladarce (Web Worker); GRACZ.PL nie uruchamia go na serwerze.
+
+Odpowiadajacy kod zrodlowy (GPLv3, sekcja 6):
+
+  1. Stockfish.js 19.0.1 - skrypty budowania WebAssembly
+     https://github.com/nmrugg/stockfish.js/tree/v19.0.1
+     tag v19.0.1, commit 0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6
+     polecenie budowania: node build.js --single-threaded --lite (emscripten 6.0.9)
+
+  2. Silnik Stockfish 19
+     https://github.com/official-stockfish/Stockfish/tree/sf_19
+     tag sf_19, commit edb0d9db6731067ec50ce619ff372b463bc4dd5d
+
+  3. Siec neuronowa nn-61e7af4bb97d
+     https://tests.stockfishchess.org/nns?network_name=nn-61e7af4bb97d
+
+----------------------------------------------------------------------------
+English: the files above are the unmodified Stockfish.js 19.0.1 "lite,
+single-threaded" build of the Stockfish 19 chess engine, licensed under the
+GNU GPL version 3 (see COPYING.txt). The Corresponding Source is available at
+the tagged repositories listed above. The engine runs only in your browser.
