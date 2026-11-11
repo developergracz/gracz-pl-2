@@ -50,8 +50,10 @@ for(const width of [360,390,768,1366,1920]){
       const rect=q=>{const e=document.querySelector(q),r=e.getBoundingClientRect();
         return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
       return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
-       hero:rect('.r4-hero'),card:rect('.r4-game'),footer:rect('.footer-news'),
-       legal:rect('.footer-bottom'),
+       hero:rect(innerWidth<=680?'.comic-mobile':'.r4-hero'),
+        card:rect(innerWidth<=680?'.comic-game-card':'.r4-game'),
+        footer:rect('.footer-news'),
+        legal:rect('.footer-bottom'),
        illustration:getComputedStyle(document.querySelector('.r4-hero-art')).backgroundImage,
        css:getComputedStyle(document.querySelector('.r4-games-grid')).gridTemplateColumns,
        header:rect('.site-header')};
@@ -69,16 +71,16 @@ for(const width of [360,390,768,1366,1920]){
      expect(await page.locator('.r4-owner-image').evaluate(img=>img.currentSrc)).toContain('gracz-hero-gomoku-mobile-preview-r1.webp');
    }
     if(width<=680){
-      // The Owner-approved mobile home uses a dedicated painted illustration.
-      await expect(page.locator('.r4-owner-picture')).toBeHidden();
-      await expect(page.locator('.mobile-painted-art')).toBeVisible();
-      await expect(page.locator('.r4-hero-actions')).toBeHidden();
-      await expect(page.locator('.quick-play-menu > summary')).toBeVisible();
-      await expect(page.locator('#mobile-featured-title')).toBeVisible();
-      await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
+      await expect(page.locator('.comic-mobile')).toBeVisible();
+      await expect(page.locator('.comic-scene-art')).toBeVisible();
+      await expect(page.locator('.r4-hero')).toBeHidden();
+      await expect(page.locator('.mobile-illustrated-featured')).toBeHidden();
+      await expect(page.locator('.comic-game-card')).toHaveCount(3);
+      await expect(page.locator('.comic-game-card img')).toHaveCount(3);
       for(const [name,game] of [['Gomoku','gomoku'],['Warcaby','warcaby'],['Szachy','szachy']]){
-        await expect(page.locator('.mobile-featured-card',{hasText:name}))
-          .toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
+        const card=page.locator('.comic-game-card').filter({hasText:name});
+        await expect(card.locator('a')).toHaveText('ZAGRAJ');
+        await expect(card.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
       }
     }
     expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
@@ -249,25 +251,24 @@ test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',as
   }finally{await context.close()}
  }
 });
-test('Owner premium mobile hero offers accessible quick play and illustrated links',async({browser})=>{
+test('Owner-approved mobile comic home offers immediate playable game links',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  try{
   const page=await context.newPage();
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  await expect(page.locator('.r4-hero-copy')).toBeVisible();
-  await expect(page.locator('.mobile-painted-art')).toBeVisible();
-  await expect(page.locator('.r4-owner-picture')).toBeHidden();
-  await expect(page.locator('.r4-hero-actions')).toBeHidden();
-  const quick=page.locator('.quick-play-menu');
-  await expect(quick.locator('summary')).toBeVisible();
-  await quick.locator('summary').click();
-  await expect(quick).toHaveAttribute('open','');
-  await expect(page.getByRole('navigation',{name:'Szybki wybór gry'}).getByRole('link')).toHaveCount(3);
-  await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
-  const mobileHeader=page.locator('.mobile-header-search');
-  await expect(mobileHeader).toBeVisible();
-  await expect(mobileHeader).toHaveAttribute('href','/szukaj/');
+  await expect(page.locator('.comic-mobile')).toBeVisible();
+  await expect(page.locator('.comic-scene-art')).toBeVisible();
+  await expect(page.locator('#comic-mobile-title')).toBeVisible();
+  await expect(page.locator('.r4-hero')).toBeHidden();
+  await expect(page.locator('.comic-login')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/?widok=login');
+  await expect(page.locator('.comic-register')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/');
+  await expect(page.locator('.comic-game-card')).toHaveCount(3);
+  await expect(page.locator('.comic-game-card a')).toHaveCount(3);
+  await expect(page.locator('.comic-header-profile')).toBeVisible();
+  await expect(page.locator('.mobile-header-search')).toBeVisible();
+  await expect(page.locator('.comic-bottom-nav a')).toHaveCount(4);
+  await expect(page.locator('.comic-bottom-nav button')).toHaveCount(1);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
  }finally{await context.close()}
 });
@@ -845,7 +846,7 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    const hero=page.locator('.r4-hero');
    for(const selector of (width<=680
-     ? ['#hero-title','.r4-hero-motto','.mobile-painted-art']
+     ? ['#comic-mobile-title','.comic-scene-art','.comic-login','.comic-register']
      : ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description']))
      await expect(page.locator(selector)).toBeVisible();
    await expect(page.locator('.r4-hero-actions svg')).toHaveCount(0);
@@ -860,8 +861,8 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     if(width<=680){
       await expect(active).toHaveCount(0);
-      await expect(page.locator('.quick-play-menu > summary')).toBeVisible();
-      await expect(page.locator('.mobile-featured-card')).toHaveCount(3);
+      await expect(page.locator('.comic-mobile')).toBeVisible();
+      await expect(page.locator('.comic-game-card')).toHaveCount(3);
     }else{
       await expect(active).toHaveCount(1);
       await expect(active).toHaveText(label);
