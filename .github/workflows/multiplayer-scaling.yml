@@ -59,6 +59,8 @@ jobs:
         run: node --test contact-api/scaling/chess-pieces.browser.test.mjs
       - name: Chess drag & drop (mouse, touch) next to click-to-move
         run: node --test contact-api/scaling/chess-drag.browser.test.mjs
+      - name: Chess PGN/FEN export and import in the premium console
+        run: node --test contact-api/scaling/chess-transfer.browser.test.mjs
       - name: Chess Stockfish worker, limits and local-engine fallback
         run: node --test contact-api/scaling/chess-stockfish.browser.test.mjs
       - name: Chess special rules acceptance

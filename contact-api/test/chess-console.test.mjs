@@ -204,3 +204,31 @@ test('CHESS-RESULT-P1: existing premium loss dialog is wired only to player loss
  assert.match(app,/if\(mode==='online'\)\{location\.assign\('\/konto\/panel\/'\);return;\}/);
  assert.match(app,/reset\.addEventListener\('click',\(\)=>\{announcedLoss='';hideChessLoss\(\);/);
 });
+
+test('CHESS-TRANSFER-P1: PGN/FEN tools use the premium tool row and never touch the online match',()=>{
+ const page=load('/konto/szachy/').body,app=load('/konto/szachy/app.js').body,css=load('/konto/szachy/styl.css').body,transfer=load('/konto/szachy/transfer.mjs');
+ const source=readFileSync(new URL('../auth/chess-transfer.mjs',import.meta.url),'utf8');
+ assert.equal(transfer.status,200);
+ assert.equal(transfer.body,source.replace("from './chess-rules.mjs';","from '/konto/szachy/rules.mjs';"),'browser and server PGN/FEN code must stay identical');
+ assert.equal(load('/konto/szachy/transfer.mjs','POST').served,false);
+ // Two tools replace the disabled chess placeholders in the existing .game-tools row: still 7 premium slots.
+ const tools=page.slice(page.indexOf('<div class="game-tools"'),page.indexOf('</div>',page.indexOf('<div class="game-tools"')));
+ for(const id of ['chess-export','chess-import'])assert.match(tools,new RegExp('<button type="button" class="tool-btn chess-transfer-tool" id="'+id+'"[^>]*data-tooltip='));
+ assert.equal((tools.match(/class="tool-btn/g)||[]).length,7);
+ assert.doesNotMatch(page,/id="remove-player"|id="block-player"/);
+ assert.match(css,/body\.chess-console \.chess-transfer-tool svg\{/);
+ for(const id of ['chess-transfer-modal','chess-transfer-fen','chess-transfer-pgn','chess-transfer-copy-pgn','chess-transfer-download','chess-transfer-input','chess-transfer-file','chess-transfer-load','chess-transfer-status'])
+  assert.ok(page.includes('id="'+id+'"'),id);
+ assert.match(page,/<div id="chess-transfer-modal" class="premium-overlay chess-transfer-overlay" role="dialog" aria-modal="true"[^>]*hidden>/);
+ assert.match(page,/class="premium-popup chess-transfer-popup"/);
+ assert.match(app,/import \{exportFen,exportPgn,importChessText,terminalOutcome,MAX_PGN\} from '\/konto\/szachy\/transfer\.mjs';/);
+ // Local history keeps UCI next to SAN so export is exact; undo and reset stay in sync.
+ assert.match(app,/history\.push\(notation\);uciHistory\.push\(coord\(m\[0\]\)\+coord\(m\[1\]\)\+m\[2\]\);/);
+ assert.match(app,/states\.pop\(\);history\.pop\(\);uciHistory\.pop\(\);if\(computerEnabled/);
+ assert.match(app,/history\.length=0;uciHistory\.length=0;localStartFen=START_FEN;localImport='';/);
+ const controller=app.slice(app.indexOf('// CHESS-TRANSFER-P1: PGN/FEN export'),app.indexOf("$('refresh-match')"));
+ assert.ok(controller.length>1000);
+ assert.match(controller,/function importTransfer\(\)\{\n  if\(mode!=='local'\)\{showTransferTab\('import'\);return;\}/);
+ assert.match(controller,/const blocked=mode!=='local';/);
+ assert.doesNotMatch(controller,/api\(|commit\(|fetch\(|online=|online\.state\.(board|history)=/,'import never writes or sends the online match');
+});

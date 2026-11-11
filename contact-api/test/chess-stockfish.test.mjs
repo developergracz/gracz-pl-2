@@ -227,6 +227,8 @@ test('console wiring: one lazy worker for local computer games only, with local-
  assert.match(app,/if\(document\.hidden\)stockfish\.terminate\('HIDDEN'\)/);
  assert.match(app,/window\.addEventListener\('pagehide',\(\)=>stockfish\.terminate\('PAGEHIDE'\)\)/);
  assert.match(app,/if\(wantsStockfish\(\)\)stockfish\.cancel\(\);else stockfish\.terminate\('OFF'\);/);
+ // Integration with PGN/FEN (#793): an import is a new local game and also stops a running search.
+ assert.ok(app.includes('computerGeneration++;computerThinking=false;stockfish.cancel();hideChessLoss();\n  states.splice(0,states.length,...game.states);'),'import cancels Stockfish');
  for(const hook of ["hideChessLoss();computerGeneration++;computerThinking=false;stockfish.cancel();","computerThinking=false;stockfish.cancel();localDrawReason=reason;","computerGeneration++;computerThinking=false;stockfish.cancel();\n   localTimeout="])
   assert.ok(app.includes(hook),hook);
  assert.doesNotMatch(app,/https?:\/\/[^'"]*stockfish/i,'no CDN or external engine URL');
