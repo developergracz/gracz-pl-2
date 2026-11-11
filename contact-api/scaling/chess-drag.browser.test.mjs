@@ -57,6 +57,9 @@ async function open(browser,base,options={}){
  page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/konto/szachy/');
  await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+ // These tests check input mechanics and assert squares after computer replies, so they keep the deterministic
+ // local engine. Stockfish replies vary (e.g. 1...c5 2...cxd4); drag against Stockfish is in chess-stockfish.browser.
+ await page.locator('#chess-opponent').selectOption('local');
  return {context,page,errors};
 }
 
@@ -193,6 +196,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   const {page,errors}=await open(browser,base);
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','nonsense'));
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+  await page.locator('#chess-opponent').selectOption('local'); // a reload restores the default opponent
   await page.locator('#console-config-open').click();
   assert.equal(await page.locator('#chess-input-mode-both').isChecked(),true,'invalid stored value falls back to both');
   await page.locator('#chess-input-mode-both').focus();
@@ -208,6 +212,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   await page.locator('label[for],label.chess-input-mode').filter({hasText:'Przeciąganie (kliknięcie wybiera)'}).click();
   await page.locator('#console-config-done').click();
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+  await page.locator('#chess-opponent').selectOption('local'); // a reload restores the default opponent
   assert.equal(await page.evaluate(()=>localStorage.getItem('gracz-chess-input-mode-v1')),'drag');
   await clickMove(page,'e2','e4');
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
@@ -220,6 +225,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   // "Sama gra", fullscreen and page zoom keep an exact hit-test.
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','both'));
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+  await page.locator('#chess-opponent').selectOption('local'); // a reload restores the default opponent
   await page.locator('#focus-game').click();
   assert.equal(await page.locator('#game').evaluate(e=>e.classList.contains('game-focus')),true);
   await mouseDrag(page,'e2','e4');await noGhost(page);
