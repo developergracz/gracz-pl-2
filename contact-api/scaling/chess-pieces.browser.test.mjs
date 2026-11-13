@@ -156,7 +156,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
    const response=await route.fetch();const body=(await response.text()).replace(/export const START_FEN='[^']+';/,"export const START_FEN='"+fen+"';");
    await route.fulfill({response,body});
   });
-  await page.goto(base+'/konto/szachy/');await page.locator('#chess-opponent').selectOption('human');
+  await page.goto(base+'/konto/szachy/');await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const from=color==='white'?'a7 biały pionek':'a2 czarny pionek',to=color==='white'?'a8':'a1';
   await page.getByRole('gridcell',{name:from,exact:true}).click();
   await page.getByRole('gridcell',{name:to+' puste',exact:true}).click();
