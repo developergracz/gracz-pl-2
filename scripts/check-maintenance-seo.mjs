@@ -210,6 +210,10 @@ requireCheck(
   "homepage: Googlebot indexing must remain enabled"
 );
 requireCheck(
+  /<meta name="robots" content="noindex,follow[^"]*">/.test(about),
+  "about: general robots noindex must prevent the About page from competing with the homepage"
+);
+requireCheck(
   /<meta name="googlebot" content="noindex,follow">/.test(about),
   "about: Googlebot noindex must prevent competing branded SERP result"
 );
