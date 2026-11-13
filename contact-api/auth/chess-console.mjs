@@ -267,6 +267,17 @@ body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
   flex:0 0 340px!important;min-height:340px!important;height:340px!important;
   max-height:none!important
 }
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) #chat-panel{
+  display:flex!important;flex:1 1 auto!important;min-height:155px!important;overflow:hidden
+}
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) #chat-messages{
+  display:block!important;flex:1 1 auto!important;min-height:125px!important;max-height:none!important;
+  overflow-y:auto!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) .mini-chat{
+  flex:0 0 auto!important;min-height:0!important;height:auto!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .mini-chat .chat-preview{display:none!important}
 body.chess-console .layout:not(.game-focus) .side-dock .dock-tabs{
   flex:0 0 auto;order:-1;margin-top:0!important
 }
