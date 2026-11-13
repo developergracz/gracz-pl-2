@@ -890,7 +890,7 @@ const mobileChessCss=String.raw`
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player .player-clock:not([hidden]){
     display:inline-flex!important;align-items:center!important;justify-content:flex-end!important;
-    width:auto!important;min-width:54px!important;max-width:none!important;
+    width:auto!important;flex:0 0 auto!important;max-width:none!important;
     height:34px!important;min-height:34px!important;margin:0!important;padding:0!important;
     background:transparent!important;border:0!important;border-radius:0!important;
     color:#092d30!important;font:750 clamp(16px,5vw,22px)/1 system-ui,sans-serif!important;
