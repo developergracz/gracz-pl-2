@@ -71,9 +71,10 @@ test('premium chess panels include real clocks, six top icons and right dock too
  assert.match(app.body,/localTimeout/);
  assert.match(app.body,/focusButton\?\.addEventListener/);
  assert.match(app.body,/game-settings/);
- // Top icons and clock boxes are inherited from Gomoku (no chess-only sizes or right alignment).
+ // The owner-approved layout hides the old quick links and uses stable clock widths.
  assert.doesNotMatch(css.body,/\.premium-quick-links\{grid-column:2;grid-row:1;display:flex!important/);
- assert.doesNotMatch(css.body,/player-clock:not\(\[hidden\]\)\{[^}]*min-width/);
+ assert.ok(css.body.includes('width:94px!important;min-width:94px!important;max-width:94px!important'),'desktop clocks keep fixed width');
+ assert.ok(css.body.includes('width:70px!important;min-width:70px!important;max-width:70px!important'),'mobile clocks keep fixed width');
  assert.match(css.body,/game-tools/);
  // Same 15-tile configurator and stable settings slot as Gomoku/Warcaby.
  assert.match(app.body,/layout\.classList\.toggle\('console-hide-'\+key,hidden\)/);
