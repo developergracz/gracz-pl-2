@@ -1487,15 +1487,15 @@ const approvedOwnerChessJs=String.raw`
       new MutationObserver(refreshClaim).observe(claim,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true});
       refreshClaim();
     }
-    const online=()=>!!dock.querySelector('#online-mode.active');
+    const online=()=>!!layout.querySelector('#online-mode.active');
     const update=()=>{onlineNew.hidden=!online();};
     onlineNew.addEventListener('click',()=>dock.querySelector('#invite-friend')?.click());
     rematch.addEventListener('click',()=>{
       if(online())dock.querySelector('#invite-friend')?.click();
       else restart.click();
     });
-    const training=dock.querySelector('#training-mode');
-    const onlineMode=dock.querySelector('#online-mode');
+    const training=layout.querySelector('#training-mode');
+    const onlineMode=layout.querySelector('#online-mode');
     for(const button of [training,onlineMode])button?.addEventListener('click',update);
     if(training)new MutationObserver(update).observe(training,{attributes:true,attributeFilter:['class']});
     if(onlineMode)new MutationObserver(update).observe(onlineMode,{attributes:true,attributeFilter:['class']});
