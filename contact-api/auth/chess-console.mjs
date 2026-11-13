@@ -1340,7 +1340,8 @@ body.chess-console .layout:not(.game-focus) .side-dock>.players>.player strong{
 }
 body.chess-console .layout:not(.game-focus) .side-dock>.players>.player .player-clock:not([hidden]){
   flex:0 0 auto!important;display:inline-flex!important;
-  width:auto!important;flex-basis:auto!important;max-width:none!important;
+  width:94px!important;min-width:94px!important;max-width:94px!important;
+  flex:0 0 94px!important;justify-content:flex-end!important;
   padding:0!important;margin:0!important;height:auto!important;
   color:inherit!important;background:transparent!important;
   font:800 clamp(18px,2vw,29px)/1 system-ui,sans-serif!important;
@@ -1431,7 +1432,8 @@ body.chess-console .layout:not(.game-focus) .side-dock #chat-send{
     padding:4px 6px!important;
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player .player-clock:not([hidden]){
-    width:auto!important;flex-basis:auto!important;
+    width:70px!important;min-width:70px!important;max-width:70px!important;
+    flex:0 0 70px!important;justify-content:flex-end!important;
     font-size:clamp(16px,4.7vw,21px)!important
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.side-dock{
