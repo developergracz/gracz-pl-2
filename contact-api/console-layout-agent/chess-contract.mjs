@@ -6,6 +6,7 @@ export async function readChessLayout(page){
   return page.evaluate(()=>{
     if(!document.body.classList.contains('chess-console'))return null;
     const layout=document.querySelector('.layout'),focus=layout.classList.contains('game-focus');
+    const minimal=layout.dataset.minimalChess==='yes',minimalDesktop=minimal&&innerWidth>800;
     const selectors={board:'#board',frame:'.boardframe',arena:'.arena',dock:'.side-dock',
       settings:'.sidebar',settingsSlot:'.console-settings-slot',players:'.players',status:'#game-state',
       match:'#match-panel',tabs:'.dock-tabs',moves:'#moves-list',chat:'#chat-messages',composer:'.mini-chat',
@@ -32,13 +33,16 @@ export async function readChessLayout(page){
     if(!focus){
       require(elements.dock?.parentElement===elements.arena?.parentElement,'dock nie jest obok obszaru planszy');
       require(elements.settings?.parentElement===elements.dock,'ustawienia nie należą do prawego panelu');
-      require(elements.players?.parentElement===elements.arena?.parentElement,'zegary nie są nad planszą');
+      if(minimalDesktop)require(elements.players?.parentElement===elements.dock,'zegary nie są w prawym panelu');
+      else require(elements.players?.parentElement===elements.arena?.parentElement,'zegary nie są nad planszą');
       require(getComputedStyle(elements.frame).padding==='0px'&&getComputedStyle(elements.frame).borderTopWidth==='0px','zewnętrzna rama planszy');
       const coordinates=[...document.querySelectorAll('.chess-coordinate')];
       require(coordinates.length===16&&coordinates.every(e=>inside(rect(e),rect(e.parentElement))),'oznaczenia poza polami planszy');
-      require(!!boxes.heading!==hidden('heading'),'niewłaściwa widoczność nagłówka');
+      if(minimalDesktop)require(!boxes.heading,'ozdobny nagłówek powinien być ukryty');
+      else require(!!boxes.heading!==hidden('heading'),'niewłaściwa widoczność nagłówka');
       require(!!boxes.dock!==hidden('dock'),'niewłaściwa widoczność prawego panelu');
-      require(!!boxes.nav!==hidden('quicklinks'),'niewłaściwa widoczność nawigacji');
+      if(minimalDesktop)require(!boxes.nav,'ozdobny pasek linków powinien być ukryty');
+      else require(!!boxes.nav!==hidden('quicklinks'),'niewłaściwa widoczność nawigacji');
       if(boxes.dock){
         require(!!boxes.settings!==hidden('sidebar'),'niewłaściwa widoczność ustawień');
         require(!!boxes.players!==hidden('players'),'niewłaściwa widoczność graczy');
@@ -48,7 +52,10 @@ export async function readChessLayout(page){
           const b=boxes[name],d=boxes.dock;
           require(!b||(b.x>=d.x-2&&b.x+b.width<=d.x+d.width+2),name+' wychodzi poza szerokość panelu');
         }
-        if(!hidden('players')){require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');require(!boxes.players||!boxes.board||boxes.players.y+boxes.players.height<=boxes.board.y+3,'zegary zachodzą na planszę');}
+        if(!hidden('players')){require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');if(minimalDesktop){
+            require(inside(boxes.players,boxes.dock),'zegary poza prawym panelem');
+            require(boxes.clock1?.width>=48&&boxes.clock2?.width>=48,'zegary nieczytelne w panelu');
+          }else require(!boxes.players||!boxes.board||boxes.players.y+boxes.players.height<=boxes.board.y+3,'zegary zachodzą na planszę');}
         if(innerWidth>800){
           require(boxes.dock.x>=boxes.board.x+boxes.board.width-2,'panel nie leży po prawej stronie planszy');
           require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
@@ -73,7 +80,7 @@ export async function readChessLayout(page){
       require(!boxes.dock&&!boxes.settings,'panel boczny widoczny w trybie Sama gra');
       require(boxes.players&&boxes.clock1&&boxes.clock2,'brak zegarów w trybie Sama gra');
     }
-    return {focus,boxes,issues};
+    return {focus,minimal:minimalDesktop,boxes,issues};
   });
 }
 
@@ -90,7 +97,8 @@ export function analyseChessStep({step,viewport,records,initial,reference}){
   const modeChange=['online','online-time','training','invite','invite-close'].includes(step.id);
   const props=mobile&&modeChange?['x','width']:['x','y','width','height'];
   if(!records.performed)issues.push('akcja niedostępna: '+(records.error||step.id));
-  if(step.kind==='click')for(const phase of ['after','settled']){
+  const expandedMinimalSettings=records.settled.chess?.minimal&&['time-bonus','config-open'].includes(step.id);
+  if(step.kind==='click'&&!expandedMinimalSettings)for(const phase of ['after','settled']){
     const jumps=deltas(records.before.chess,records[phase].chess,STABLE,props);
     if(jumps.length)issues.push('skok '+phase+': '+jumps.join(', '));
   }
