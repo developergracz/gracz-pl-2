@@ -7,6 +7,7 @@ export async function readChessLayout(page){
     if(!document.body.classList.contains('chess-console'))return null;
     const layout=document.querySelector('.layout'),focus=layout.classList.contains('game-focus');
     const minimal=layout.dataset.minimalChess==='yes',minimalDesktop=minimal&&innerWidth>800,minimalMobile=minimal&&innerWidth<=800;
+    const approved=layout.dataset.approvedOwnerChess==='yes';
     const selectors={board:'#board',frame:'.boardframe',arena:'.arena',dock:'.side-dock',
       settings:'.sidebar',settingsSlot:'.console-settings-slot',players:'.players',status:'#game-state',
       match:'#match-panel',tabs:'.dock-tabs',moves:'#moves-list',chat:'#chat-messages',composer:'.mini-chat',
@@ -46,8 +47,19 @@ export async function readChessLayout(page){
       if(boxes.dock){
         require(!!boxes.settings!==hidden('sidebar'),'niewłaściwa widoczność ustawień');
         require(!!boxes.players!==hidden('players'),'niewłaściwa widoczność graczy');
-        require(!!boxes.tools!==hidden('tools'),'niewłaściwa widoczność narzędzi');
-        require(!!boxes.status!==hidden('status'),'niewłaściwa widoczność komunikatu gry');
+        if(approved){
+          require(!boxes.tools,'zatwierdzony widok nie może pokazywać paska ikon');
+          require(!document.querySelector('.chess-minimal-more')?.getBoundingClientRect().height,'zatwierdzony widok nie może pokazywać Więcej ustawień');
+          require(!boxes.status||!!document.querySelector('#game-state .chess-promote'),'status poza wyborem promocji nie powinien zajmować miejsca');
+          const shown=[...document.querySelectorAll('.chess-reference-actions button')].filter(e=>{
+            const r=e.getBoundingClientRect();return r.width>0&&r.height>0;
+          });
+          require(shown.length===3,'muszą być dokładnie trzy działania: Nowa gra, Rewanż, Zaproś do gry');
+          require(shown.map(e=>e.textContent.trim()).join('|')==='Nowa gra|Rewanż|Zaproś do gry','niewłaściwa kolejność działań');
+        }else{
+          require(!!boxes.tools!==hidden('tools'),'niewłaściwa widoczność narzędzi');
+          require(!!boxes.status!==hidden('status'),'niewłaściwa widoczność komunikatu gry');
+        }
         for(const name of ['settings','status','match','tools']){
           const b=boxes[name],d=boxes.dock;
           require(!b||(b.x>=d.x-2&&b.x+b.width<=d.x+d.width+2),name+' wychodzi poza szerokość panelu');
@@ -77,7 +89,7 @@ export async function readChessLayout(page){
             require(!overflow,'mobilny interfejs wychodzi poza ekran');
           }
         }
-        for(const [a,b] of [['settings','status'],['status','match'],['match','tools']])
+        for(const [a,b] of (approved?[]:[['settings','status'],['status','match'],['match','tools']]))
           require(!overlap(boxes[a],boxes[b]),'kolizja '+a+' / '+b);
         const history=elements.match.classList.contains('moves-only');
         if(history){
