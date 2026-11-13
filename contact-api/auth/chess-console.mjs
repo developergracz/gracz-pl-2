@@ -365,7 +365,7 @@ body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{
 /* During browser fullscreen the top quick links must not overlay the game
    status inside the right dock when the dock has been scrolled. */
 @media (min-width:801px){
-  body.chess-console .layout:fullscreen .premium-quick-links{
+  html:fullscreen body.chess-console .layout:not(.game-focus) .premium-quick-links{
     grid-column:1!important;grid-row:1!important;justify-self:end!important;
     right:auto!important;z-index:5
   }
