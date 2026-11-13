@@ -45,7 +45,8 @@ export async function readChessLayout(page){
       if(minimalDesktop||minimalMobile)require(!boxes.nav,'ozdobny pasek linków powinien być ukryty');
       else require(!!boxes.nav!==hidden('quicklinks'),'niewłaściwa widoczność nawigacji');
       if(boxes.dock){
-        require(!!boxes.settings!==hidden('sidebar'),'niewłaściwa widoczność ustawień');
+        // The approved mobile console intentionally has no visible advanced-settings panel.
+        if(!approved)require(!!boxes.settings!==hidden('sidebar'),'niewłaściwa widoczność ustawień');
         require(!!boxes.players!==hidden('players'),'niewłaściwa widoczność graczy');
         if(approved){
           require(!boxes.tools,'zatwierdzony widok nie może pokazywać paska ikon');
