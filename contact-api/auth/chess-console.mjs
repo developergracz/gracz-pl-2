@@ -704,6 +704,19 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
   body.chess-console .layout:not(.game-focus) .side-dock .chess-time-row{display:grid;grid-template-columns:1fr 112px}
   body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more{margin:8px 0}
 }
+
+/* The older parity layout reserves an invisible online form. In the compact
+   design it must release its height, or the chat is pushed below the viewport. */
+body.chess-console .layout:not(.game-focus):not(.console-hide-online-settings) .side-dock .console-settings-slot > #online-settings[hidden],
+body.chess-console .layout:not(.game-focus):not(.console-hide-training-settings) .side-dock .console-settings-slot > #training-settings[hidden],
+body.chess-console .layout:not(.game-focus):not(.console-hide-training-records) .side-dock .console-settings-slot > #training-records[hidden]{
+  display:none!important
+}
+/* Keep the old full-board action interactive only while its disclosure is open;
+   otherwise it is visually clipped by the native details element. */
+body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more:not([open]) #focus-game{
+  display:none!important
+}
 `;
 
 
