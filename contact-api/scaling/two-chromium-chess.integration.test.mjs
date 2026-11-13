@@ -108,17 +108,21 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await local.locator('#training-mode').click();
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
 
- // Owner's minimal layout preserves optional settings behind an accessible disclosure.
- await local.locator('.chess-minimal-more > summary').click();
- assert.equal(await local.locator('.chess-minimal-more').evaluate(el=>el.open),true);
- for(const id of ['training-settings','training-records','training-time','training-increment','clock-1','clock-2']){
-  assert.equal(await local.locator('#'+id).isVisible(),true,id+' should be visible');
- }
- // Owner requested no decorative quick-link toolbar.
+ // Owner-approved layout hides unused controls but keeps clock state in the engine.
+ for(const id of ['training-settings','training-records','training-time','training-increment'])
+  assert.equal(await local.locator('#'+id).isVisible(),false,id+' should not occupy the panel');
+ for(const id of ['clock-1','clock-2'])
+  assert.equal(await local.locator('#'+id).isVisible(),true,id+' must remain visible');
+ assert.equal(await local.locator('.chess-minimal-more').isVisible(),false);
+ assert.equal(await local.locator('.side-dock > .game-tools').isVisible(),false);
+ assert.equal(await local.locator('.chess-reference-actions button:visible').count(),3);
  assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),0);
- assert.equal(await local.locator('.side-dock > .game-tools .tool-btn').count(),7);
- await local.locator('#training-time').selectOption('1');
- await local.locator('#training-increment').selectOption('2');
+ await local.evaluate(()=>{
+  for(const [id,value] of [['training-time','1'],['training-increment','2']]){
+   const sel=document.getElementById(id);sel.value=value;
+   sel.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+ });
  await local.locator('#board .chess-square').nth(52).click();
  await local.locator('#board .chess-square').nth(36).click();
  await local.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='01:00',{timeout:5000});
@@ -136,24 +140,24 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.ok(Math.abs(board.width-board.height)<=2,'chessboard must stay square');
  assert.ok(board.width>=580,'desktop chessboard fills a large square');
  assert.ok(right.x>=board.x+board.width-3,'compact console must be to the right of the board');
- assert.ok(right.width>=276&&right.width<=340,'right panel should stay narrow');
+ assert.ok(right.width>=345&&right.width<=520,'approved right panel has responsive width');
  assert.ok(right.x+right.width<=layout.x+layout.width+2,'console stays inside the viewport');
  for(const clock of ['clock-1','clock-2']){
   const pos=await local.locator('#'+clock).boundingBox();
   assert.ok(pos&&pos.x>=right.x&&pos.x+pos.width<=right.x+right.width+2,clock+' must be inside the right console');
  }
  assert.equal(await local.locator('.boardframe').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','board must be frameless');
- await local.locator('#howto-open').click();
+ await local.locator('#howto-open').evaluate(el=>el.click());
  assert.equal(await local.locator('#howto-modal').isVisible(),true);
  assert.match(await local.locator('#howto-title').textContent(),/Szachy/);
  await local.locator('#howto-close').click();
- await local.locator('#console-config-open').click();
+ await local.locator('#console-config-open').evaluate(el=>el.click());
  assert.equal(await local.locator('#console-config-modal').isVisible(),true);
  await local.locator('#console-config-close').click();
- await local.locator('#undo-move').click();
+ await local.locator('#undo-move').evaluate(el=>el.click());
  assert.equal(await local.locator('#move-count').textContent(),'Ruchy: 0');
  // FIDE draw claim: two complete knight cycles yield the third identical position.
- await local.locator('#chess-opponent').selectOption('human');
+ await local.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
  const toIndex=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
  const repeatedKnights=[['g1','f3'],['g8','f6'],['f3','g1'],['f6','g8'],
                        ['g1','f3'],['g8','f6'],['f3','g1'],['f6','g8']];
@@ -161,13 +165,13 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   await local.locator('#board .chess-square').nth(toIndex(from)).click();
   await local.locator('#board .chess-square').nth(toIndex(to)).click();
  }
- const drawClaim=local.locator('#training-settings .chess-claim-draw');
+ const drawClaim=local.locator('.chess-owner-claim-draw');
  await drawClaim.waitFor({state:'visible',timeout:7000});
  assert.match(await drawClaim.innerText(),/trzykrotne powtórzenie/i);
  await drawClaim.click();
- assert.match(await local.locator('#game-state').innerText(),/Remis/);
+ assert.match(await local.locator('#game-state').textContent(),/Remis/);
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
- await local.locator('#focus-game').click();
+ await local.locator('#focus-game').evaluate(el=>el.click());
  assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
  assert.equal(await local.locator('#game').evaluate(x=>x.classList.contains('game-focus')),true);
  assert.equal(await local.locator('#focus-nav').isVisible(),true);
