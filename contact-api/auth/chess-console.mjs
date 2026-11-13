@@ -390,6 +390,10 @@ const ownerCompactJs = String.raw`
       }
       const clockHelp=training.querySelector('.training-clock-help')?.closest('details');
       if(clockHelp)advanced.appendChild(clockHelp);
+      // Preserve existing modal entry points for keyboard users and game tests.
+      // Their oversized launcher cards no longer occupy the main game panel.
+      const utilityFooter=dock.querySelector('.sidebar-footer');
+      if(utilityFooter)advanced.appendChild(utilityFooter);
     }
     layout.dataset.ownerCompact='yes';
   }
