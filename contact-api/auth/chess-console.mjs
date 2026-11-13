@@ -279,6 +279,10 @@ body.chess-console .layout:not(.game-focus) .bottom .info-pill{
   background:rgba(0,25,30,.58)!important;border:0!important;border-radius:9px!important;
   box-shadow:none!important;padding:4px 9px!important;font-size:clamp(12px,1vw,18px)!important
 }
+body.chess-console .layout:not(.game-focus) .bottom #turn-label{
+  width:auto!important;min-width:0!important;max-width:100%!important;flex:0 0 auto!important;
+  white-space:nowrap!important;text-overflow:clip!important;
+}
 body.chess-console .layout:not(.game-focus) .bottom .help{
   text-align:center;font-size:clamp(10px,.8vw,13px);min-width:0
 }
