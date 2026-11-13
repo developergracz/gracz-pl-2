@@ -127,8 +127,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(await white.locator('linearGradient stop').nth(1).getAttribute('stop-color'),'#ffffff');
  assert.equal(await white.locator('[data-body]').evaluate(e=>getComputedStyle(e).fillOpacity),'1');
  const layout=await local.locator('#game').boundingBox(),left=await local.locator('.sidebar').boundingBox(),right=await local.locator('.side-dock').boundingBox();
- assert.ok(left.width>=350,'left panel should match wider Gomoku geometry');
- assert.ok(right.x<layout.x+layout.width-300,'chat dock should not be pinned to far right');
+ assert.ok(left.width>=220&&left.width<=270,'MAX BOARD PREMIUM sidebar should be compact');
+ assert.ok(right.width>=230&&right.width<=300,'MAX BOARD PREMIUM chat dock should be compact');
+ const boardBox=await local.locator('#board').boundingBox();
+ assert.ok(Math.abs(boardBox.width-boardBox.height)<=2,'chessboard must remain square');
+ assert.ok(boardBox.width>=550,'MAX BOARD PREMIUM should prioritize board size');
  await local.locator('#howto-open').click();
  assert.equal(await local.locator('#howto-modal').isVisible(),true);
  assert.match(await local.locator('#howto-title').textContent(),/Szachy/);
