@@ -1,3 +1,4 @@
+import {analyseChessStep} from './chess-contract.mjs';
 /**
  * GRACZ.CONSOLE.PARITY — dynamic interaction scenarios (CONSOLE-INTERACTION-1TO1-03).
  *
@@ -259,7 +260,8 @@ export async function dynamicProbe(page){
     const hit=(a,b)=>!!a&&!!b&&Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2;
     out.overlaps=OVERLAP_PAIRS.filter(([a,b])=>hit(R[a],R[b])).map(([a,b])=>a+'×'+b);
     // Whenever the players row is shown, the VS emblem must have a box between both cards.
-    out.versusMissing=!!R.players&&!!R.p1&&!!R.p2&&!R.vs;
+    out.versusMissing=!!R.players&&!!R.p1&&!!R.p2&&!R.vs&&
+      !(document.body.classList.contains('chess-console')&&layout?.dataset.referenceLayout==='yes'&&!layout.classList.contains('game-focus'));
     out.clockOutsideCard=[['c1','p1'],['c2','p2']].filter(([c,p])=>R[c]&&R[p]&&(R[c].left<R[p].left-1||R[c].right>R[p].right+1)).map(([c])=>c);
     out.modal=[...document.querySelectorAll('[role="dialog"],.premium-modal,.chess-invite-overlay,#console-config-modal,#player-actions-modal')]
       .filter(m=>!m.hidden&&m.getClientRects().length&&getComputedStyle(m).display!=='none').map(m=>m.id||m.className).slice(0,4);
@@ -311,6 +313,7 @@ function footerJumps(target,reference,mobile){
 }
 
 export function analyseStep({step,viewport,game,mobile,records,reference,initial,referenceInitial}){
+  if(game==='szachy')return analyseChessStep({step,viewport,records,initial,reference});
   const props=mobile?['x','width']:['x','y','width','height'];
   const checked=SHARED_PARTS.concat(BOARD_PARTS).filter(p=>!(step.allow||[]).includes(p));
   const result={id:step.id,label:step.label,kind:step.kind,game,viewport,performed:records.performed,error:records.error};

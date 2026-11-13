@@ -7,6 +7,7 @@ import {chromium} from 'playwright';
 import {serveChessConsole} from '../auth/chess-console.mjs';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 import {mkdir} from 'node:fs/promises';
+import {readChessLayout} from '../console-layout-agent/chess-contract.mjs';
 
 async function inspectPieces(page,count=32){
  const pieces=await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(svg=>{
@@ -42,7 +43,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   const context=await browser.newContext({viewport,deviceScaleFactor:2,isMobile:viewport.width<800,hasTouch:viewport.width<800});
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
-  // The stray golden curved arc behind the board is gone, but the gold rim remains.
+  // The board has no decorative arc; the right panel retains its gold rail.
   const decoration=await page.locator('.boardarea').evaluate(el=>{
    const arc=getComputedStyle(el,'::after');
    const frame=getComputedStyle(document.querySelector('.side-dock'));
@@ -52,7 +53,9 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
    'stray golden curved arc still visible: '+JSON.stringify(decoration));
   assert.notEqual(decoration.frameBorderWidth,'0px','premium gold rail must remain');
   await inspectPieces(page);
+  assert.deepEqual((await readChessLayout(page)).issues,[],'approved chess layout contract');
   // "Ruchy" must never show the chat/AI welcome text or composer below moves.
+  const panelBefore=await page.locator('#match-panel').boundingBox();
   await page.locator('#history-tab').click();
   assert.equal(await page.locator('#match-panel').evaluate(el=>el.classList.contains('moves-only')),true);
   assert.equal(await page.locator('.mini-chat').isVisible(),false);
@@ -65,12 +68,34 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   });
   assert.ok(historyBounds.height>100&&historyBounds.gap<24,
    'Moves should fill the dock to the bottom: '+JSON.stringify(historyBounds));
+  // Prove that the new chess-specific gate still rejects the original 26px bug.
+  const savedStyle=await page.locator('#moves-list').getAttribute('style');
+  await page.locator('#moves-list').evaluate(el=>{
+   for(const [key,value] of Object.entries({height:'26px','max-height':'26px',flex:'none'}))el.style.setProperty(key,value,'important');
+  });
+  assert.ok((await readChessLayout(page)).issues.includes('historia ruchów zwinięta do jednego wiersza'));
+  await page.locator('#moves-list').evaluate((el,style)=>style===null?el.removeAttribute('style'):el.setAttribute('style',style),savedStyle);
+  assert.deepEqual((await readChessLayout(page)).issues,[]);
+  const panelHistory=await page.locator('#match-panel').boundingBox();
+  assert.ok(Math.abs(panelBefore.height-panelHistory.height)<2,'switching tabs must preserve panel height');
+  // A long history scrolls inside the same allocation on desktop AND mobile.
+  const longHistory=await page.locator('#moves-list').evaluate(el=>{
+   const saved=[...el.childNodes];
+   for(let i=0;i<80;i++){const row=document.createElement('div');row.className='chess-move-row';row.textContent=(i+1)+'. e4 e5';el.append(row);}
+   el.scrollTop=el.scrollHeight;
+   const result={height:el.getBoundingClientRect().height,scrolls:el.scrollHeight>el.clientHeight&&el.scrollTop>0};
+   el.replaceChildren(...saved);return result;
+  });
+  assert.ok(longHistory.scrolls&&Math.abs(longHistory.height-historyBounds.height)<2,'long history must scroll without resizing the console');
   await page.locator('#chat-tab').click();
   assert.equal(await page.locator('#match-panel').evaluate(el=>el.classList.contains('moves-only')),false);
   assert.equal(await page.locator('.mini-chat').isVisible(),true);
   assert.equal(new Set(await page.locator('.chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece))).size,12);
   await snapshot(page,'premium-'+viewport.width);
   const initial=await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece));
+  await page.locator('.chess-reference-invite').click();
+  await page.locator('#chess-invite-overlay').waitFor({state:'visible'});
+  await page.locator('#chess-invite-close').click();
   await page.locator('#online-mode').click();await inspectPieces(page);
   assert.equal(await page.locator('.chess-square:enabled').count(),0);
   assert.deepEqual(await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece)),initial);
@@ -91,6 +116,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   await square('d5 czarny pionek').click();await inspectPieces(page,31);
   assert.equal(await square('d5 biały pionek').locator('svg').getAttribute('data-piece'),'P');
   await page.locator('#focus-game').click();await inspectPieces(page,31);
+  for(const selector of ['#clock-1','#clock-2','.players .versus'])assert.equal(await page.locator(selector).isVisible(),true,selector+' must remain visible in focus mode');
   await page.locator('#focus-exit').click();
   await page.locator('#fullscreen-game').focus();await page.keyboard.press('Enter');
   await page.waitForFunction(()=>!!document.fullscreenElement);await inspectPieces(page,31);

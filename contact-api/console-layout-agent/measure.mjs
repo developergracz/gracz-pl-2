@@ -12,6 +12,7 @@ import {fileURLToPath} from 'node:url';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
+import {readChessLayout} from './chess-contract.mjs';
 import {SCENARIOS,SHARED_PARTS,JUMP_TOLERANCE,runScenarios,analyseStep} from './scenarios.mjs';
 
 const GAMES = ['gomoku','warcaby','szachy'];
@@ -74,7 +75,7 @@ function localServer() {
   });
 }
 async function snapshot(page) {
-  return page.evaluate((parts) => {
+  const result=await page.evaluate((parts) => {
     const measure=(selector)=>{
       const el=document.querySelector(selector);
       if(!el)return {exists:false,visible:false};
@@ -107,8 +108,18 @@ async function snapshot(page) {
       parts:Object.fromEntries(parts.map(([name,selector])=>[name,measure(selector)]))
     };
   },PARTS);
+  result.chess=await readChessLayout(page);
+  return result;
 }
 function compare(base,target,game,viewport){
+  if(game==='szachy')return {
+    game,viewport,contract:'owner-approved chess layout',differences:[],missing:[],missingInReference:[],
+    criticalDifferences:target.chess.issues.length,contractIssues:target.chess.issues,
+    documentOverflow:target.documentOverflow,documentScrollWidth:target.documentScrollWidth,
+    horizontalOverflowElements:target.horizontalOverflowElements,
+    boardContained:!target.chess.issues.includes('plansza wychodzi poza swój obszar'),
+    boardSquare:!target.chess.issues.includes('plansza nie jest kwadratowa')
+  };
   const mobile=Number(viewport.split('x')[0])<=800;
   const differences=[], missing=[], missingInReference=[];
   for(const [name] of PARTS){
@@ -146,7 +157,7 @@ function markdown(report) {
   const text=[
     '# GRACZ.PL — agent geometrii konsol (Gomoku → Warcaby / Szachy)',
     '',
-    '- Referencja: **renderowana konsola Gomoku**, przy tym samym viewport, DPR=1 i stanie początkowym.',
+    '- Warcaby: referencja **renderowane Gomoku**. Szachy: osobny kontrakt zaakceptowanego układu PR #800 (duża plansza po lewej, ustawienia i czat po prawej; na telefonie panel poniżej).',
     '- Źródło: '+(report.source==='local'?'lokalne strony generowane bezpośrednio z aktualnego kodu':'zewnętrzny adres '+report.baseUrl)+'.',
     '- Tolerancja: **±'+TOLERANCE+' px** dla wspólnego układu konsoli. Wewnętrzna rama/plansza są diagnostyczne: plansze 8×8 muszą być kwadratowe i mieścić się w obszarze Gomoku, który bywa prostokątny.',
     '- Pomiary w CSS-pikselach są odczytywane z getBoundingClientRect(), a nie zgadywane z wartości CSS.',
@@ -164,7 +175,8 @@ function markdown(report) {
     text.push('','## '+entry.game+' / '+entry.viewport);
     if(entry.documentOverflow && entry.horizontalOverflowElements?.length)text.push('Elementy poza viewportem: '+entry.horizontalOverflowElements.map(x=>x.selector+' (right '+x.right+'px)').join(', ')+'.');
     if(!entry.boardContained)text.push('UWAGA: rama planszy wychodzi poza przeznaczony obszar gry.');
-    if(!entry.differences.length && !entry.missing.length) text.push('Brak odchyleń > '+TOLERANCE+' px w widocznych elementach.');
+    if(entry.contractIssues?.length)text.push(...entry.contractIssues.map(i=>'- '+i));
+    if(!entry.differences.length && !entry.missing.length && !entry.contractIssues?.length) text.push('Brak odchyleń > '+TOLERANCE+' px w widocznych elementach.');
     else {
       if(entry.missing.length)text.push('Elementy widoczne w Gomoku, niewidoczne tutaj: '+entry.missing.join(', ')+'.');
       text.push('','| Element | Gomoku (x, y, w, h) | Aktualne (x, y, w, h) | Różnice w px (x, y, w, h) |','|---|---|---|---|');
@@ -175,7 +187,7 @@ function markdown(report) {
     }
   }
   text.push('','## Mandat korygujący','',
-    '1. Utrzymaj układ, szerokości kolumn, obszary planszy, dock czatu, paski, marginesy i responsywność identyczne z **renderowaną** konsolą Gomoku.',
+    '1. Warcaby zachowują geometrię Gomoku; Szachy zachowują kontrakt PR #800, widoczne zegary, dostępne kontrolki, brak kolizji i stabilność podczas interakcji.',
     '2. Koryguj wyłącznie CSS/strukturę wizualną Warcabów i Szachów; nie kopiuj planszy 15×15, nie zmieniaj zasad, AI, czatu, autoryzacji ani protokołów.',
     '3. Jeśli odchylenie wynika z ukrycia elementu przez funkcję gry, udokumentuj wyjątek; nie dodawaj fikcyjnych elementów.',
     '4. Po poprawkach uruchom agenta ponownie. Kryterium: 0 odchyleń wspólnej geometrii > 2 px, brak poziomego overflow, kwadratowa plansza 8×8 w granicach obszaru gry. Rama nie musi być identycznie prostokątna jak w Gomoku.',
@@ -188,7 +200,7 @@ function dynamicMarkdown(dynamic){
   const text=['','# Analiza dynamiczna — kliknięcia i zmiany stanu (CONSOLE-INTERACTION-1TO1-03)','',
     '- Każdy krok mierzony **przed kliknięciem, 2 klatki po kliknięciu i po ustabilizowaniu** (cisza DOM, odpowiedź AI, modale).',
     '- Skok > '+JUMP_TOLERANCE+' px wspólnych elementów jest błędem, chyba że Gomoku w tym samym kroku wykonuje identyczny skok.',
-    '- Po każdym kroku Warcaby i Szachy są porównywane z Gomoku **w tym samym stanie funkcjonalnym** (±'+JUMP_TOLERANCE+' px; mobile: x i szerokość).',
+    '- Warcaby są porównywane z Gomoku. Szachy sprawdzają własną geometrię przed/po kliknięciu i po powrocie, z tolerancją ±2 px i uwzględnieniem przewijania panelu.',
     '- Kroki „restore” muszą przywrócić geometrię początkową. Odpowiedzi GRACZ AI pochodzą z lokalnego mocka (bez kosztów i API).',
     '- Wspólne elementy: '+SHARED_PARTS.join(', ')+'.',
     '','| Okno | Gra | Kroki | PASS | FAIL |','|---|---|---:|---:|---:|'];
@@ -201,7 +213,7 @@ function dynamicMarkdown(dynamic){
   text.push(...(refJumps.length?refJumps:['- Brak skoków > '+JUMP_TOLERANCE+' px we wspólnych elementach.']));
   const failures=dynamic.runs.filter(r=>r.game!=='gomoku').flatMap(r=>r.steps.filter(s=>!s.pass).map(s=>({run:r,step:s})));
   text.push('','## Błędy Warcabów i Szachów','');
-  if(!failures.length)text.push('Brak błędów: wszystkie kroki zgodne z Gomoku i bez niezamierzonych skoków.');
+  if(!failures.length)text.push('Brak błędów: wszystkie kroki spełniają kontrakt danej gry, bez niezamierzonych skoków.');
   for(const {run,step} of failures){
     text.push('### '+run.game+' / '+run.viewport+' / '+step.id+' — '+step.label,'',...step.issues.map(i=>'- '+i));
     const rows=[...(step.unexplainedAfter||[]).map(d=>['skok (po kliknięciu)',d]),...(step.unexplainedSettled||[]).map(d=>['skok (ustabilizowany)',d]),
@@ -383,7 +395,7 @@ async function main(){
       generatedAt:new Date().toISOString(),
       source:externalBase?'external':'local',
       baseUrl:externalBase||'local fixture',
-      reference:'Gomoku',tolerancePx:TOLERANCE,
+      reference:'Gomoku (Warcaby); owner-approved PR #800 (Szachy)',tolerancePx:TOLERANCE,
       measurements,comparisons,focusMeasurements,boardOnlyAudits,dynamic
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');
