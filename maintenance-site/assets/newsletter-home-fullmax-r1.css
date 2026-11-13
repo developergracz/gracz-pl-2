@@ -49,6 +49,7 @@ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-tru
  body.homepage-premium-max .site-footer .footer-grid>.footer-news.footer-news--fullmax-r1{
   grid-column:1/-1!important;
   grid-row:1!important;
+  scroll-margin-top:96px!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:stretch!important;
