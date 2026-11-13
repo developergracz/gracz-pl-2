@@ -1365,6 +1365,10 @@ body.chess-console .layout:not(.game-focus) .side-dock>.chess-reference-actions 
 body.chess-console .layout:not(.game-focus) .side-dock>.chess-reference-actions button[hidden]{
   display:none!important
 }
+/* Online uses its own invitation-based New game, never show duplicate reset. */
+body.chess-console .layout:not(.game-focus):has(#online-mode.active) .side-dock>.chess-reference-actions #restart{
+  display:none!important
+}
 body.chess-console .layout:not(.game-focus) .side-dock>.chess-reference-actions button:disabled{
   opacity:.55!important;cursor:not-allowed!important
 }
