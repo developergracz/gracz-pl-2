@@ -108,10 +108,14 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await local.locator('#training-mode').click();
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
 
+ // Owner's minimal layout preserves optional settings behind an accessible disclosure.
+ await local.locator('.chess-minimal-more > summary').click();
+ assert.equal(await local.locator('.chess-minimal-more').evaluate(el=>el.open),true);
  for(const id of ['training-settings','training-records','training-time','training-increment','clock-1','clock-2']){
   assert.equal(await local.locator('#'+id).isVisible(),true,id+' should be visible');
  }
- assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),6);
+ // Owner requested no decorative quick-link toolbar.
+ assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),0);
  assert.equal(await local.locator('.side-dock > .game-tools .tool-btn').count(),7);
  await local.locator('#training-time').selectOption('1');
  await local.locator('#training-increment').selectOption('2');
@@ -126,9 +130,19 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(await white.locator('svg').getAttribute('data-color'),'white');
  assert.equal(await white.locator('linearGradient stop').nth(1).getAttribute('stop-color'),'#ffffff');
  assert.equal(await white.locator('[data-body]').evaluate(e=>getComputedStyle(e).fillOpacity),'1');
- const layout=await local.locator('#game').boundingBox(),left=await local.locator('.sidebar').boundingBox(),right=await local.locator('.side-dock').boundingBox();
- assert.ok(left.width>=350,'left panel should match wider Gomoku geometry');
- assert.ok(right.x<layout.x+layout.width-300,'chat dock should not be pinned to far right');
+ const layout=await local.locator('#game').boundingBox(),
+  board=await local.locator('.boardframe').boundingBox(),right=await local.locator('.side-dock').boundingBox();
+ assert.ok(board&&right,'board and right console must both render');
+ assert.ok(Math.abs(board.width-board.height)<=2,'chessboard must stay square');
+ assert.ok(board.width>=580,'desktop chessboard fills a large square');
+ assert.ok(right.x>=board.x+board.width-3,'compact console must be to the right of the board');
+ assert.ok(right.width>=276&&right.width<=340,'right panel should stay narrow');
+ assert.ok(right.x+right.width<=layout.x+layout.width+2,'console stays inside the viewport');
+ for(const clock of ['clock-1','clock-2']){
+  const pos=await local.locator('#'+clock).boundingBox();
+  assert.ok(pos&&pos.x>=right.x&&pos.x+pos.width<=right.x+right.width+2,clock+' must be inside the right console');
+ }
+ assert.equal(await local.locator('.boardframe').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','board must be frameless');
  await local.locator('#howto-open').click();
  assert.equal(await local.locator('#howto-modal').isVisible(),true);
  assert.match(await local.locator('#howto-title').textContent(),/Szachy/);

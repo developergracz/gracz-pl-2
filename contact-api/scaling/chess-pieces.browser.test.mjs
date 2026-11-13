@@ -43,7 +43,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   const context=await browser.newContext({viewport,deviceScaleFactor:2,isMobile:viewport.width<800,hasTouch:viewport.width<800});
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
-  // The board has no decorative arc; the right panel retains its gold rail.
+  // The owner's approved minimal design has neither decorative arc nor gold panel rail.
   const decoration=await page.locator('.boardarea').evaluate(el=>{
    const arc=getComputedStyle(el,'::after');
    const frame=getComputedStyle(document.querySelector('.side-dock'));
@@ -51,7 +51,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   });
   assert.ok(decoration.arcContent==='none'||decoration.arcDisplay==='none',
    'stray golden curved arc still visible: '+JSON.stringify(decoration));
-  assert.notEqual(decoration.frameBorderWidth,'0px','premium gold rail must remain');
+  assert.equal(decoration.frameBorderWidth,'0px','owner-approved right panel has no border');
   await inspectPieces(page);
   assert.deepEqual((await readChessLayout(page)).issues,[],'approved chess layout contract');
   // "Ruchy" must never show the chat/AI welcome text or composer below moves.
@@ -115,6 +115,8 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   await snapshot(page,'capture-'+viewport.width);
   await square('d5 czarny pionek').click();await inspectPieces(page,31);
   assert.equal(await square('d5 biały pionek').locator('svg').getAttribute('data-piece'),'P');
+  const more=page.locator('.chess-minimal-more');
+  if(await more.count()&&!(await more.evaluate(el=>el.open)))await more.locator(':scope > summary').click();
   await page.locator('#focus-game').click();await inspectPieces(page,31);
   for(const selector of ['#clock-1','#clock-2','.players .versus'])assert.equal(await page.locator(selector).isVisible(),true,selector+' must remain visible in focus mode');
   await page.locator('#focus-exit').click();
