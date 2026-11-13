@@ -474,6 +474,12 @@ body.chess-console .layout:not(.game-focus) .side-dock :is(
   border:0!important;box-shadow:none!important;border-radius:0!important;
   background-image:none!important
 }
+body.chess-console .layout:not(.game-focus) .side-dock :is(.sidecard,.sidebar,.match-panel,.dock-content,.dock-header,.dock-title,.mini-chat,.game-tools,.mode,.console-settings-slot){
+  background:transparent!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock :is(button,input,select,textarea){
+  border:0!important;border-radius:0!important;box-shadow:none!important;background-image:none!important
+}
 body.chess-console .layout:not(.game-focus) .side-dock :is(button,input,select,summary):focus-visible{
   outline:2px solid #e8d8ac!important;outline-offset:2px!important
 }
