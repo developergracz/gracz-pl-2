@@ -117,6 +117,25 @@ async function sendChat(page,text){
   await page.locator('#chat-send').click();
   return true;
 }
+// Approved chess keeps legacy engine controls mounted but removes their old toolbar.
+async function engineAction(page,game,selector){
+ if(game==='szachy'){
+  await page.locator(selector).evaluate(el=>el.click());
+  return true;
+ }
+ await page.locator(selector).click();
+ return true;
+}
+async function engineSelect(page,game,selector,value){
+ if(game==='szachy'){
+  await page.locator(selector).evaluate((el,next)=>{
+   el.value=next;el.dispatchEvent(new Event('change',{bubbles:true}));
+  },value);
+  return true;
+ }
+ await page.selectOption(selector,value);
+ return true;
+}
 // Toggle a configurator tile by role. Gomoku and Warcaby render the 15 tile
 // buttons; legacy chess layout tiles are matched by their data attribute.
 async function toggleTile(page,key){
@@ -134,10 +153,12 @@ async function toggleTile(page,key){
   return true;
 }
 async function expandChessMoreIfNeeded(page){
+  if(await page.locator('body.chess-console .layout[data-approved-owner-chess="yes"]').count())return;
   const details=page.locator('body.chess-console .chess-minimal-more');
   if(await details.count()&&!(await details.evaluate(el=>el.open)))await details.locator(':scope > summary').click();
 }
 async function collapseChessMoreIfNeeded(page){
+  if(await page.locator('body.chess-console .layout[data-approved-owner-chess="yes"]').count())return;
   const more=page.locator('body.chess-console .chess-minimal-more');
   if(!(await more.count())||!(await more.evaluate(el=>el.open)))return;
   // When the real configurator modal covers the console, close the disclosure
@@ -171,38 +192,39 @@ export const SCENARIOS = [
     for(let i=0;i<4;i++){sent=await sendChat(p,'Wiadomość testowa '+(i+1)+' — '+'długi tekst gracza '.repeat(5))||sent;await quiet(p,{idle:200,max:2500});}
     return sent;
   }},
-  {id:'undo',label:'Cofnięcie ruchu',kind:'click',run:async (p,g)=>p.locator(g==='warcaby'?'#checkers-refresh':'#undo-move').click()},
+  {id:'undo',label:'Cofnięcie ruchu',kind:'click',run:async (p,g)=>engineAction(p,g,g==='warcaby'?'#checkers-refresh':'#undo-move')},
   {id:'undo-empty',label:'Kolejne cofnięcie (komunikat)',kind:'click',run:async (p,g)=>{
-    await p.locator(g==='warcaby'?'#checkers-refresh':'#undo-move').click({force:true});
+    if(g==='szachy')await engineAction(p,g,'#undo-move');
+    else await p.locator(g==='warcaby'?'#checkers-refresh':'#undo-move').click({force:true});
   }},
   {id:'restart',label:'Nowa rozgrywka',kind:'click',run:p=>p.locator('#restart').click()},
-  {id:'ai-level',label:'Zmiana poziomu komputera',kind:'click',allow:['training-options'],run:p=>p.selectOption('#ai-level','expert')},
-  {id:'time-unlimited',label:'Czas: bez limitu',kind:'click',allow:['training-options',...CLOCKS],run:p=>p.selectOption('#training-time','0')},
-  {id:'time-bonus',label:'Czas 5 min + bonus 3 s',kind:'click',allow:['training-options',...CLOCKS],run:async p=>{
-    await p.selectOption('#training-time','5');await quiet(p,{idle:150,max:1500});
-    await expandChessMoreIfNeeded(p);await p.selectOption('#training-increment','3');await collapseChessMoreIfNeeded(p);
+  {id:'ai-level',label:'Zmiana poziomu komputera',kind:'click',allow:['training-options'],run:(p,g)=>engineSelect(p,g,'#ai-level','expert')},
+  {id:'time-unlimited',label:'Czas: bez limitu',kind:'click',allow:['training-options',...CLOCKS],run:(p,g)=>engineSelect(p,g,'#training-time','0')},
+  {id:'time-bonus',label:'Czas 5 min + bonus 3 s',kind:'click',allow:['training-options',...CLOCKS],run:async (p,g)=>{
+    await engineSelect(p,g,'#training-time','5');await quiet(p,{idle:150,max:1500});
+    await expandChessMoreIfNeeded(p);await engineSelect(p,g,'#training-increment','3');await collapseChessMoreIfNeeded(p);
   }},
   {id:'online',label:'Przełączenie do gry online',kind:'click',allow:[...SIDEBAR_CONTENT,...CHAT_CONTENT,...CLOCKS],run:p=>p.locator('#online-mode').click()},
-  {id:'online-time',label:'Ustawienie czasu pokoju online',kind:'click',allow:[...SIDEBAR_CONTENT,...CLOCKS],run:p=>p.selectOption('#create-room-time','10')},
-  {id:'invite',label:'Otwarcie zaproszeń',kind:'click',allow:[...SIDEBAR_CONTENT],run:p=>p.locator('#invite-friend').click()},
+  {id:'online-time',label:'Ustawienie czasu pokoju online',kind:'click',allow:[...SIDEBAR_CONTENT,...CLOCKS],run:(p,g)=>engineSelect(p,g,'#create-room-time','10')},
+  {id:'invite',label:'Otwarcie zaproszeń',kind:'click',allow:[...SIDEBAR_CONTENT],run:(p,g)=>engineAction(p,g,'#invite-friend')},
   {id:'invite-close',label:'Zamknięcie zaproszeń',kind:'click',allow:[...SIDEBAR_CONTENT],run:p=>closeDialogs(p)},
   {id:'training',label:'Powrót do gry z komputerem',kind:'click',allow:[...SIDEBAR_CONTENT,...CHAT_CONTENT,...CLOCKS],run:p=>p.locator('#training-mode').click()},
-  {id:'tooltip',label:'Tooltip ikon górnych i narzędzi',kind:'click',run:async p=>{
+  {id:'tooltip',label:'Tooltip ikon górnych i narzędzi',kind:'click',run:async (p,g)=>{
     if(await p.locator('.premium-quick-links > .premium-mini-link:visible').count()){
       await p.locator('.premium-quick-links > .premium-mini-link:visible').first().hover();await frames(p);
     }
-    await p.locator('.side-dock .game-tools .tool-btn').first().hover();
+    await p.locator(g==='szachy'?'.side-dock .chess-reference-actions button:visible':'.side-dock .game-tools .tool-btn').first().hover();
   }},
-  {id:'config-open',label:'Otwarcie konfiguratora',kind:'click',run:async p=>{await expandChessMoreIfNeeded(p);await p.locator('#console-config-open').click();await collapseChessMoreIfNeeded(p);}},
+  {id:'config-open',label:'Otwarcie konfiguratora',kind:'click',run:async (p,g)=>{await expandChessMoreIfNeeded(p);await engineAction(p,g,'#console-config-open');await collapseChessMoreIfNeeded(p);}},
   {id:'hide-sidebar',label:'Ukrycie lewego panelu',kind:'state',run:p=>toggleTile(p,'sidebar')},
   {id:'hide-dock',label:'Ukrycie prawego panelu',kind:'state',run:p=>toggleTile(p,'dock')},
   {id:'show-dock',label:'Ponowne dodanie prawego panelu',kind:'state',run:p=>toggleTile(p,'dock')},
   {id:'show-sidebar',label:'Ponowne dodanie lewego panelu',kind:'restore',run:p=>toggleTile(p,'sidebar')},
   {id:'config-close',label:'Zamknięcie konfiguratora',kind:'restore',run:p=>p.locator('#console-config-done').click()},
-  {id:'focus',label:'Tryb „Sama gra”',kind:'state',ownState:true,run:async p=>{await expandChessMoreIfNeeded(p);await p.locator('#focus-game').click();}},
+  {id:'focus',label:'Tryb „Sama gra”',kind:'state',ownState:true,run:async (p,g)=>{await expandChessMoreIfNeeded(p);await engineAction(p,g,'#focus-game');}},
   {id:'focus-exit',label:'Wyjście z trybu „Sama gra”',kind:'restore',run:async p=>{await p.locator('#focus-exit').click();await collapseChessMoreIfNeeded(p);}},
   {id:'fullscreen',label:'Pełny ekran (okno powiększone do ekranu)',kind:'state',ownState:true,run:async (p,g,ctx)=>{
-    await p.locator('#fullscreen-game').click();
+    await engineAction(p,g,'#fullscreen-game');
     await p.waitForFunction(()=>!!document.fullscreenElement,null,{timeout:3000}).catch(()=>{});
     // Real browsers enlarge the viewport to the screen when entering fullscreen.
     // Headless windows cannot be resized while fullscreen, so emulate the bigger viewport.
