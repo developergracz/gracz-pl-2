@@ -10,7 +10,7 @@
     loaded = true;
     const premium = document.createElement("link");
     premium.rel = "stylesheet";
-    premium.href = "/assets/newsletter-home-fullmax-r1.css?v=20261105-email-phone-r3";
+    premium.href = "/assets/newsletter-home-fullmax-r1.css?v=20261113-mobile-reflow-r1";
     premium.setAttribute("data-newsletter-fullmax-home", "");
     document.head.appendChild(premium);
   };
