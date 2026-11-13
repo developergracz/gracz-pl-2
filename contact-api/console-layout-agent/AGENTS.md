@@ -60,3 +60,15 @@ Domyślnie skrypt zbiera raport nawet przy różnicach. Parametr --strict włąc
 
 ## Synchronizacja z main
 Przed scaleniem PR należy uwzględnić bieżący HEAD main, uruchomić ponownie wymagane kontrole GitHub i nie omijać ochrony gałęzi produkcyjnej. Test geometrii w CI musi być zielony na tej samej rewizji, którą scalamy.
+
+## Wyjątek Szachów — mandat Ownera PR #800 (2026-11-13)
+
+Dla Szachów nowszy zaakceptowany szkic zastępuje równość geometrii z Gomoku:
+plansza bez ramy po lewej, ustawienia/zegary/status/czat/narzędzia po prawej,
+a przy szerokości ≤800 px panel poniżej planszy. `chess-contract.mjs` sprawdza
+rzeczywiste wymiary i relacje tych elementów, stabilność po interakcjach i powrocie,
+kwadratową dużą planszę, oznaczenia w polach, widoczne zegary, wysokość historii
+>100 px, brak kolizji, overflow i obciętych kontrolek. Przewijanie strony, panelu
+oraz ustawień jest odejmowane przy porównywaniu pozycji. VS jest celowo ukryte
+w zwykłym widoku Szachów; w „Sama gra” nadal jest wymagane.
+Kontrakt Gomoku i Warcabów pozostaje bez zmian. Pracować w istniejącym PR #800.
