@@ -30,6 +30,10 @@ test('homepage Full Max newsletter fits phone/tablet and shows the dedicated pho
     await section.scrollIntoViewIfNeeded();
     await expect(page.locator('link[data-newsletter-fullmax-home]')).toHaveCount(1);
     await expect(section).toHaveCSS('display', 'flex');
+    // An anchor jump must not hide the heading underneath the sticky header.
+    await section.evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await expect.poll(() => section.evaluate(node => Math.round(node.getBoundingClientRect().top)))
+      .toBeGreaterThanOrEqual(80);
     await expect(image).toHaveCSS('object-fit', 'contain');
     await expect(email).toBeVisible();
     await expect(submit).toBeVisible();
