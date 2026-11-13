@@ -1334,7 +1334,7 @@ body.chess-console .layout:not(.game-focus) .side-dock>.players>.player strong{
 }
 body.chess-console .layout:not(.game-focus) .side-dock>.players>.player .player-clock:not([hidden]){
   flex:0 0 auto!important;display:inline-flex!important;
-  width:auto!important;min-width:58px!important;max-width:none!important;
+  width:auto!important;flex-basis:auto!important;max-width:none!important;
   padding:0!important;margin:0!important;height:auto!important;
   color:inherit!important;background:transparent!important;
   font:800 clamp(18px,2vw,29px)/1 system-ui,sans-serif!important;
