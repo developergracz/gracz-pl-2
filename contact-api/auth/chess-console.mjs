@@ -309,6 +309,27 @@ body.chess-console .layout:not(.game-focus)>.boardarea>.players{
   padding:0!important;overflow:visible!important
 }
 body.chess-console .layout.console-hide-players:not(.game-focus)>.boardarea>.players{display:none!important}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
+  justify-content:space-between!important
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-clock{
+  box-sizing:border-box!important;flex:0 0 74px!important;width:74px!important;
+  max-width:74px!important;justify-content:center!important
+}
+@media (min-width:801px){
+  body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{
+    box-sizing:border-box!important;flex:0 0 205px!important;height:205px!important;
+    min-height:205px!important;max-height:205px!important;overflow:hidden!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock .console-settings-slot{
+    flex:1 1 auto!important;min-height:0!important;max-height:100%!important;
+    overflow-x:hidden!important;overflow-y:auto!important;scrollbar-width:thin
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>#console-config-fab:not([hidden]){
+    position:fixed!important;inset:auto 12px 12px auto!important;
+    grid-column:auto!important;grid-row:auto!important;z-index:20
+  }
+}
 body.chess-console .layout:not(.game-focus)>.boardarea>.players>.versus{display:none!important}
 body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
   display:flex!important;align-items:center;justify-content:center;
