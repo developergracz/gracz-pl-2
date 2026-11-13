@@ -164,8 +164,8 @@ const referenceLayoutJs = String.raw`
     function placeGameRails(){
       const focused=layout.classList.contains('game-focus');
       for(const rail of [players,status])if(rail){
-        const parent=focused?boardarea:dock;
-        if(rail.parentElement!==parent)parent.insertBefore(rail,focused?arena:matchPanel);
+        const parent=rail===players?boardarea:(focused?boardarea:dock);
+        if(rail.parentElement!==parent)parent.insertBefore(rail,rail===players||focused?arena:matchPanel);
       }
     }
     placeGameRails();
@@ -189,4 +189,268 @@ const referenceLayoutJs = String.raw`
   else applyChessReferenceLayout();
 })();
 `;
-export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
+
+const ownerCompactCss = String.raw`
+/* OWNER COMPACT CHESS — preserve the exact coordinate-labelled board and game handlers.
+   Only the chess visual layout changes; Gomoku and Warcaby retain their rules. */
+body.chess-console .layout:not(.game-focus) .side-dock>.sidebar .sidebar-footer{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock .mode{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:center;gap:0!important;margin:0 0 7px!important;
+  padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice{
+  min-height:40px!important;height:40px!important;display:flex!important;
+  align-items:center;justify-content:center!important;gap:0!important;
+  padding:0 6px!important;margin:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;font:700 clamp(15px,1.1vw,19px)/1.2 Georgia,serif!important;
+  color:#e3edf0!important;cursor:pointer
+}
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice.active{
+  color:#ffd47b!important;border-bottom:2px solid #dfb96e!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice .mode-icon,
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice .mode-arrow,
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice small{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice>span{margin:0!important}
+body.chess-console .layout:not(.game-focus) .side-dock .mode-choice strong{font:inherit!important;color:inherit!important}
+body.chess-console .layout:not(.game-focus) .side-dock .console-settings-slot{
+  flex:0 0 auto!important;display:block!important;height:auto!important;
+  min-height:0!important;max-height:none!important;overflow:visible!important;
+  padding:0!important;margin:0!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{
+  min-height:0!important;flex:0 0 auto!important;overflow:visible!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock #training-records:not([hidden]){display:block!important}
+body.chess-console .layout:not(.game-focus) .side-dock #training-records[hidden]{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock #training-settings{
+  display:flex!important;flex-direction:column;gap:4px;min-height:0!important;
+  max-height:none!important;overflow:visible!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock #training-settings[hidden],
+body.chess-console .layout:not(.game-focus) .side-dock #online-settings[hidden]{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock #training-settings>h2{
+  font:700 clamp(16px,1.2vw,21px)/1.25 Georgia,serif!important;
+  margin:0 0 2px!important;padding:0!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock #training-settings>.panel-help{margin:0 0 4px!important}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:9px;align-items:center;min-width:0;margin:4px 0 7px
+}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options .chess-opponent-row,
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options .chess-owner-level{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr);
+  align-items:center;gap:5px;margin:0!important;min-width:0
+}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options label{
+  display:block;margin:0!important;font-size:clamp(10px,.8vw,12px);white-space:nowrap
+}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options select{
+  min-width:0!important;width:100%!important;max-width:100%!important;
+  height:34px!important;font-size:clamp(11px,.8vw,13px)!important;padding:0 20px 0 7px!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-level:has(>select[hidden]){display:none!important}
+/* Advanced training controls stay usable and scrollable below the chat;
+   they are not removed or made invisible to tests or keyboard users. */
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
+  display:flex;flex-direction:column;gap:5px;padding:10px 5px;
+  border-top:1px solid #6a807950;margin-top:8px;flex:0 0 auto
+}
+body.chess-console .layout:not(.game-focus) .side-dock:has(#training-settings[hidden]) .chess-owner-advanced{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>select{width:100%;max-width:100%}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>label{font-size:12px}
+
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
+  flex:0 0 340px!important;min-height:340px!important;height:340px!important;
+  max-height:none!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) #chat-panel{
+  display:flex!important;flex:1 1 auto!important;min-height:155px!important;overflow:hidden
+}
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) #chat-messages{
+  display:block!important;flex:1 1 auto!important;min-height:125px!important;max-height:none!important;
+  overflow-y:auto!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .match-panel:not(.moves-only) .mini-chat{
+  flex:0 0 auto!important;min-height:0!important;height:auto!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .mini-chat .chat-preview{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock .dock-tabs{
+  flex:0 0 auto;order:-1;margin-top:0!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-reference-actions{
+  display:grid!important;grid-template-columns:1fr 1fr;
+  gap:7px;margin:3px 0 0;padding:0
+}
+body.chess-console .layout:not(.game-focus) .side-dock #game-state{flex:0 0 auto}
+body.chess-console .layout:not(.game-focus) .bottom{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;gap:10px;padding:0!important;border:0!important;background:transparent!important
+}
+body.chess-console .layout:not(.game-focus) .bottom .info-pill{
+  background:rgba(0,25,30,.58)!important;border:0!important;border-radius:9px!important;
+  box-shadow:none!important;padding:4px 9px!important;font-size:clamp(12px,1vw,18px)!important
+}
+body.chess-console .layout:not(.game-focus) .bottom #turn-label{
+  width:auto!important;min-width:0!important;max-width:100%!important;flex:0 0 auto!important;
+  white-space:nowrap!important;text-overflow:clip!important;
+}
+body.chess-console .layout:not(.game-focus) .bottom .help{
+  text-align:center;font-size:clamp(10px,.8vw,13px);min-width:0
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-column:1;grid-row:1;align-self:end;justify-self:center;
+  width:min(100%,720px)!important;max-width:100%;height:30px!important;
+  min-height:0!important;gap:10px!important;margin:0!important;
+  padding:0!important;overflow:visible!important
+}
+body.chess-console .layout.console-hide-players:not(.game-focus)>.boardarea>.players{display:none!important}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
+  justify-content:space-between!important
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-clock{
+  box-sizing:border-box!important;flex:0 0 74px!important;width:74px!important;
+  max-width:74px!important;justify-content:center!important
+}
+@media (min-width:801px){
+  body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{
+    box-sizing:border-box!important;flex:0 0 205px!important;height:205px!important;
+    min-height:205px!important;max-height:205px!important;overflow:hidden!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock .console-settings-slot{
+    flex:1 1 auto!important;min-height:0!important;max-height:100%!important;
+    overflow-x:hidden!important;overflow-y:auto!important;scrollbar-width:thin
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>#console-config-fab:not([hidden]){
+    position:fixed!important;inset:auto 12px 12px auto!important;
+    grid-column:auto!important;grid-row:auto!important;z-index:20
+  }
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players>.versus{display:none!important}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
+  display:flex!important;align-items:center;justify-content:center;
+  min-width:0!important;max-width:none!important;width:100%!important;
+  min-height:0!important;height:30px!important;padding:0 4px!important;
+  gap:6px!important;background:transparent!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important;
+  font-size:clamp(11px,.87vw,15px)!important
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-clock{
+  display:inline-flex!important;min-width:44px!important;align-items:center;
+  font-size:clamp(12px,1vw,17px)!important;font-weight:800;color:#ffd47b;
+  border:0!important;background:transparent!important;box-shadow:none!important
+}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-icon{display:none!important}
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player strong,
+body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{
+  font-size:clamp(10px,.83vw,13px)!important;white-space:nowrap
+}
+@media (min-width:801px){
+  body.chess-console .layout:not(.game-focus)>.boardarea{
+    grid-template-rows:96px minmax(0,1fr) 36px!important
+  }
+  body.chess-console .layout:not(.game-focus) .chess-reference-heading{
+    grid-column:1;grid-row:1;justify-content:center!important;align-self:start!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock{
+    gap:6px!important;margin:62px 0 0!important;
+    height:calc(100% - 62px)!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock>.game-tools{flex:0 0 auto!important}
+}
+/* During browser fullscreen the top quick links must not overlay the game
+   status inside the right dock when the dock has been scrolled. */
+@media (min-width:801px){
+  html:fullscreen body.chess-console .layout:not(.game-focus) .premium-quick-links{
+    grid-column:1!important;grid-row:1!important;justify-self:end!important;
+    right:auto!important;z-index:5
+  }
+}
+@media (max-width:800px){
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players{
+    order:-1;align-self:stretch;height:auto!important;min-height:30px!important;
+    width:100%!important;gap:4px!important;margin:1px 0 6px!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
+    display:grid!important;grid-template-columns:15px minmax(0,1fr) 54px!important;
+    padding:1px!important;height:auto!important;gap:3px!important;
+    justify-content:stretch!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player>div{
+    min-width:0!important;max-width:100%!important;overflow:hidden!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-clock{
+    width:54px!important;min-width:54px!important;max-width:54px!important;flex:0 0 54px!important;
+    justify-content:center!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players .player strong,
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{font-size:10px!important}
+  body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options{gap:5px}
+  body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options .chess-opponent-row,
+  body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options .chess-owner-level{
+    grid-template-columns:1fr;gap:2px
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options label{font-size:11px}
+  body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
+    flex:0 0 340px!important;min-height:340px!important;height:340px!important
+  }
+  body.chess-console .layout:not(.game-focus) .bottom{
+    grid-template-columns:1fr 1fr;order:1;gap:3px
+  }
+  body.chess-console .layout:not(.game-focus) .bottom .help{
+    grid-column:1/-1;grid-row:2
+  }
+}
+`;
+const ownerCompactJs = String.raw`
+(function(){
+  function composeOwnerChessControls(){
+    const layout=document.querySelector('body.chess-console .layout');
+    if(!layout||layout.dataset.ownerCompact==='yes'||layout.dataset.referenceLayout!=='yes')return;
+    const dock=layout.querySelector('.boardarea>.side-dock');
+    const training=dock?.querySelector('#training-settings');
+    const row=training?.querySelector('.chess-opponent-row');
+    const level=training?.querySelector('label[for="ai-level"]');
+    const select=training?.querySelector('#ai-level');
+    if(!dock||!training||!row||!level||!select)return;
+    const options=document.createElement('div');options.className='chess-owner-options';
+    const levelPair=document.createElement('div');levelPair.className='chess-owner-level';
+    training.insertBefore(options,row);options.append(row,levelPair);
+    levelPair.append(level,select);
+    const trainingMode=dock.querySelector('#training-mode');
+    if(trainingMode?.querySelector('strong'))trainingMode.querySelector('strong').textContent='Komputer';
+    const actions=dock.querySelector('.chess-reference-actions');
+    const tools=dock.querySelector('.game-tools');
+    const match=dock.querySelector('#match-panel');
+    if(actions&&tools)dock.insertBefore(actions,tools);
+    if(match){
+      const advanced=document.createElement('section');
+      advanced.className='chess-owner-advanced';
+      advanced.setAttribute('aria-label','Dodatkowe ustawienia treningu');
+      dock.insertBefore(advanced,tools?tools.nextSibling:null);
+      const records=dock.querySelector('#training-records');
+      if(records)advanced.appendChild(records);
+      for(const selector of ['label[for="training-time"]','#training-time','label[for="training-increment"]','#training-increment']){
+        const el=training.querySelector(selector);
+        if(el)advanced.appendChild(el);
+      }
+      const levelHelp=training.querySelector('#ai-hint')?.closest('details');
+      if(levelHelp)advanced.appendChild(levelHelp);
+      const clockHelp=training.querySelector('.training-clock-help')?.closest('details');
+      if(clockHelp)advanced.appendChild(clockHelp);
+      // Preserve existing modal entry points for keyboard users and game tests.
+      // Their oversized launcher cards no longer occupy the main game panel.
+      const utilityFooter=dock.querySelector('.sidebar-footer');
+      if(utilityFooter)advanced.appendChild(utilityFooter);
+    }
+    layout.dataset.ownerCompact='yes';
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',composeOwnerChessControls,{once:true});
+  else composeOwnerChessControls();
+})();
+`;
+export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}

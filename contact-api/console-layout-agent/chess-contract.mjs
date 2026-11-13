@@ -32,7 +32,7 @@ export async function readChessLayout(page){
     if(!focus){
       require(elements.dock?.parentElement===elements.arena?.parentElement,'dock nie jest obok obszaru planszy');
       require(elements.settings?.parentElement===elements.dock,'ustawienia nie należą do prawego panelu');
-      require(elements.players?.parentElement===elements.dock,'zegary nie należą do prawego panelu');
+      require(elements.players?.parentElement===elements.arena?.parentElement,'zegary nie są nad planszą');
       require(getComputedStyle(elements.frame).padding==='0px'&&getComputedStyle(elements.frame).borderTopWidth==='0px','zewnętrzna rama planszy');
       const coordinates=[...document.querySelectorAll('.chess-coordinate')];
       require(coordinates.length===16&&coordinates.every(e=>inside(rect(e),rect(e.parentElement))),'oznaczenia poza polami planszy');
@@ -44,16 +44,16 @@ export async function readChessLayout(page){
         require(!!boxes.players!==hidden('players'),'niewłaściwa widoczność graczy');
         require(!!boxes.tools!==hidden('tools'),'niewłaściwa widoczność narzędzi');
         require(!!boxes.status!==hidden('status'),'niewłaściwa widoczność komunikatu gry');
-        for(const name of ['settings','players','status','match','tools']){
+        for(const name of ['settings','status','match','tools']){
           const b=boxes[name],d=boxes.dock;
           require(!b||(b.x>=d.x-2&&b.x+b.width<=d.x+d.width+2),name+' wychodzi poza szerokość panelu');
         }
-        if(!hidden('players'))require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');
+        if(!hidden('players')){require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');require(!boxes.players||!boxes.board||boxes.players.y+boxes.players.height<=boxes.board.y+3,'zegary zachodzą na planszę');}
         if(innerWidth>800){
           require(boxes.dock.x>=boxes.board.x+boxes.board.width-2,'panel nie leży po prawej stronie planszy');
           require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
         }else require(boxes.dock.y>=boxes.board.y+boxes.board.height-2,'panel nie leży pod planszą');
-        for(const [a,b] of [['settings','players'],['players','status'],['status','match'],['match','tools']])
+        for(const [a,b] of [['settings','status'],['status','match'],['match','tools']])
           require(!overlap(boxes[a],boxes[b]),'kolizja '+a+' / '+b);
         const history=elements.match.classList.contains('moves-only');
         if(history){
