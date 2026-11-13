@@ -890,7 +890,7 @@ const mobileChessCss=String.raw`
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player .player-clock:not([hidden]){
     display:inline-flex!important;align-items:center!important;justify-content:flex-end!important;
-    width:auto!important;flex:0 0 auto!important;max-width:none!important;
+    width:74px!important;flex:0 0 74px!important;max-width:74px!important;
     height:34px!important;min-height:34px!important;margin:0!important;padding:0!important;
     background:transparent!important;border:0!important;border-radius:0!important;
     color:#092d30!important;font:750 clamp(16px,5vw,22px)/1 system-ui,sans-serif!important;
@@ -1021,6 +1021,12 @@ const mobileChessCss=String.raw`
     border:0!important;border-radius:0!important;box-shadow:none!important;
     font:600 clamp(10px,2.9vw,12px)/1.2 system-ui,sans-serif!important
   }
+  /* The older responsive rule assigned a 112px flex basis to the time select.
+     On a column flex layout that becomes a 112px *height*. Keep one compact row. */
+  body.chess-console .layout:not(.game-focus) .side-dock .chess-time-row select{
+    flex:0 0 34px!important;width:100%!important;height:34px!important;
+    min-height:34px!important;max-height:34px!important
+  }
   body.chess-console .layout:not(.game-focus) .side-dock #online-settings:not([hidden]){
     display:block!important;max-height:180px!important;overflow-y:auto!important;
     margin:0!important;padding:8px!important;scrollbar-width:thin!important;
@@ -1143,6 +1149,15 @@ const mobileChessCss=String.raw`
     border:0!important;border-radius:0!important;box-shadow:none!important;
     background:#d9f1ed!important;color:#15565a!important
   }
+  body.chess-console .layout:not(.game-focus) .side-dock>.chess-minimal-more>#console-config-open{
+    box-sizing:border-box!important;display:flex!important;align-items:center!important;
+    justify-content:flex-start!important;width:100%!important;
+    min-width:0!important;max-width:100%!important;min-height:36px!important;
+    height:36px!important;margin:5px 0!important;padding:5px 9px!important;
+    font:650 12px system-ui,sans-serif!important;color:#10555a!important;
+    background:#c4e8e3!important;border:0!important;border-radius:0!important;
+    box-shadow:none!important
+  }
   body.chess-console .layout:not(.game-focus) .side-dock>.chess-minimal-more>summary{
     box-sizing:border-box!important;min-height:30px!important;
     padding:5px 0!important;color:#15565a!important;
@@ -1184,16 +1199,26 @@ const mobileChessJs=String.raw`
       header.append(brand,title);
       boardarea.insertBefore(header,boardarea.firstChild);
     }
+    // Keep the actual configurator button clickable in the mobile disclosure.
+    // Its old footer is intentionally hidden in the compact layout.
+    const configuratorButton=layout.querySelector('#console-config-open');
+    const configuratorHome=configuratorButton?.parentElement;
+    const configuratorNext=configuratorButton?.nextSibling;
+    const extra=layout.querySelector('.chess-minimal-more');
     function placeMobileControls(){
       const mobile=window.matchMedia('(max-width:800px)').matches;
       const focused=layout.classList.contains('game-focus');
       const players=boardarea.querySelector(':scope > .players');
       if(mobile&&!focused){
         mode.classList.add('chess-mobile-mode');
+        if(configuratorButton&&extra&&configuratorButton.parentElement!==extra)extra.appendChild(configuratorButton);
         if(mode.parentElement!==boardarea)boardarea.insertBefore(mode,players||boardarea.querySelector('.arena'));
         else if(players&&mode.nextElementSibling!==players)boardarea.insertBefore(mode,players);
       }else{
         mode.classList.remove('chess-mobile-mode');
+        if(configuratorButton&&configuratorHome&&configuratorButton.parentElement!==configuratorHome){
+          configuratorHome.insertBefore(configuratorButton,configuratorNext?.parentElement===configuratorHome?configuratorNext:null);
+        }
         if(mode.parentElement!==sidebar)sidebar.insertBefore(mode,sidebar.firstChild);
       }
     }
