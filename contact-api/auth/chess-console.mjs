@@ -456,7 +456,7 @@ const ownerCompactJs = String.raw`
 
 /* OWNER CHESS ONE-SCREEN: frameless board + compact, accessible right console.
    Keep original coordinates, all 64 squares, piece handlers, clocks, chat and moves. */
-const minimalChessCss=String.raw\`
+const minimalChessCss=String.raw`
 body.chess-console .layout:not(.game-focus) .boardframe,
 body.chess-console .layout:not(.game-focus) .board-center,
 body.chess-console .layout:not(.game-focus) .chess-board{
@@ -692,11 +692,11 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
   body.chess-console .layout:not(.game-focus) .side-dock .chess-time-row{display:grid;grid-template-columns:1fr 112px}
   body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more{margin:8px 0}
 }
-\`;
+`;
 
 
 /* Presentation-only placement. The live timers, chat form and original game remain wired. */
-const minimalChessJs=String.raw\`
+const minimalChessJs=String.raw`
 (function(){
   function compose(){
     const layout=document.querySelector('body.chess-console .layout');
@@ -741,6 +741,6 @@ const minimalChessJs=String.raw\`
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',compose,{once:true});
   else compose();
 })();
-\`;
+`;
 
 export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss+minimalChessCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs+minimalChessJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
