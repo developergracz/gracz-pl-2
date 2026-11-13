@@ -12,6 +12,13 @@ test('homepage Full Max newsletter fits phone/tablet and shows the dedicated pho
   for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/#newsletter-home');
+    // A first-visit cookie dialog can cover the screenshot on narrow phones.
+    // Dismiss it locally; this does not change newsletter consent or send data.
+    const rejectCookies = page.getByRole('button', { name: 'Odrzuć wszystko' });
+    if (await rejectCookies.isVisible()) {
+      await rejectCookies.click();
+      await expect(rejectCookies).toBeHidden();
+    }
     const section = page.locator('#newsletter-home');
     const content = section.locator('.footer-news-fullmax-content');
     const picture = section.locator('.footer-news-fullmax-scene');
