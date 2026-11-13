@@ -705,6 +705,16 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
   body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more{margin:8px 0}
 }
 
+/* No enclosing rounded frame, bevel or shadow around the chess canvas. */
+body.chess-console .layout:not(.game-focus),
+body.chess-console .layout:not(.game-focus) > .boardarea{
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  outline:0!important;filter:none!important
+}
+body.chess-console .layout:not(.game-focus)::before,
+body.chess-console .layout:not(.game-focus)::after{
+  display:none!important
+}
 /* The older parity layout reserves an invisible online form. In the compact
    design it must release its height, or the chat is pushed below the viewport. */
 body.chess-console .layout:not(.game-focus):not(.console-hide-online-settings) .side-dock .console-settings-slot > #online-settings[hidden],
