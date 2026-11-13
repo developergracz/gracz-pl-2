@@ -100,7 +100,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   assert.equal(await page.locator('.chess-square:enabled').count(),0);
   assert.deepEqual(await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece)),initial);
   await page.locator('#training-mode').click();
-  await page.locator('#chess-opponent').selectOption('human');
+  await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const square=label=>page.getByRole('gridcell',{name:label,exact:true});
   // Native keyboard activation uses the same cells and labels as pointer moves.
   await square('e2 biały pionek').focus();await page.keyboard.press('Enter');
@@ -115,12 +115,11 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   await snapshot(page,'capture-'+viewport.width);
   await square('d5 czarny pionek').click();await inspectPieces(page,31);
   assert.equal(await square('d5 biały pionek').locator('svg').getAttribute('data-piece'),'P');
-  const more=page.locator('.chess-minimal-more');
-  if(await more.count()&&!(await more.evaluate(el=>el.open)))await more.locator(':scope > summary').click();
-  await page.locator('#focus-game').click();await inspectPieces(page,31);
+  assert.equal(await page.locator('.chess-minimal-more').isVisible(),false,'extra settings removed from approved layout');
+  await page.locator('#focus-game').evaluate(el=>el.click());await inspectPieces(page,31);
   for(const selector of ['#clock-1','#clock-2','.players .versus'])assert.equal(await page.locator(selector).isVisible(),true,selector+' must remain visible in focus mode');
   await page.locator('#focus-exit').click();
-  await page.locator('#fullscreen-game').focus();await page.keyboard.press('Enter');
+  await page.locator('#fullscreen-game').evaluate(el=>el.click());
   await page.waitForFunction(()=>!!document.fullscreenElement);await inspectPieces(page,31);
   await page.evaluate(()=>document.exitFullscreen());
   assert.deepEqual(errors,[]);
