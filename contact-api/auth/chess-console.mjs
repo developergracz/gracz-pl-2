@@ -602,6 +602,12 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more>summa
 }
 body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more>summary::before{content:'+';margin-right:6px}
 body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more[open]>summary::before{content:'−'}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more #focus-game{
+  display:block!important;min-height:30px!important;padding:5px 3px!important;margin:0!important;
+  width:100%!important;text-align:left!important;font:12px system-ui,sans-serif!important;
+  color:#d6e8e2!important;background:#16474c!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important
+}
 body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
   display:flex!important;max-height:170px!important;overflow-y:auto!important;
   border:0!important;margin:0!important;padding:4px 0!important;background:transparent!important
@@ -741,6 +747,9 @@ const minimalChessJs=String.raw`
       summary.textContent='Więcej ustawień';
       advanced.parentElement.insertBefore(details,advanced);
       details.append(summary,advanced);
+      // Keep the existing focus/large-board action reachable without an extra toolbar.
+      const focus=boardarea.querySelector('#focus-game');
+      if(focus)details.appendChild(focus);
     }
     layout.dataset.minimalChess='yes';
   }
