@@ -264,7 +264,7 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>sel
 body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>label{font-size:12px}
 
 body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
-  flex:1 1 240px!important;min-height:220px!important;height:auto!important;
+  flex:0 0 340px!important;min-height:340px!important;height:340px!important;
   max-height:none!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock .dock-tabs{
@@ -347,7 +347,7 @@ body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{
   }
   body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options label{font-size:11px}
   body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
-    flex:0 0 300px!important;min-height:300px!important;height:300px!important
+    flex:0 0 340px!important;min-height:340px!important;height:340px!important
   }
   body.chess-console .layout:not(.game-focus) .bottom{
     grid-template-columns:1fr 1fr;order:1;gap:3px
