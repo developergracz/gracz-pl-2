@@ -362,13 +362,30 @@ body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{
   }
   body.chess-console .layout:not(.game-focus) .side-dock>.game-tools{flex:0 0 auto!important}
 }
+/* During browser fullscreen the top quick links must not overlay the game
+   status inside the right dock when the dock has been scrolled. */
+@media (min-width:801px){
+  body.chess-console .layout:fullscreen .premium-quick-links{
+    grid-column:1!important;grid-row:1!important;justify-self:end!important;
+    right:auto!important;z-index:5
+  }
+}
 @media (max-width:800px){
   body.chess-console .layout:not(.game-focus)>.boardarea>.players{
     order:-1;align-self:stretch;height:auto!important;min-height:30px!important;
     width:100%!important;gap:4px!important;margin:1px 0 6px!important
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
-    padding:1px!important;height:auto!important;flex-wrap:wrap;gap:3px!important
+    display:grid!important;grid-template-columns:15px minmax(0,1fr) 54px!important;
+    padding:1px!important;height:auto!important;gap:3px!important;
+    justify-content:stretch!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player>div{
+    min-width:0!important;max-width:100%!important;overflow:hidden!important
+  }
+  body.chess-console .layout:not(.game-focus)>.boardarea>.players .player-clock{
+    width:54px!important;min-width:54px!important;max-width:54px!important;flex:0 0 54px!important;
+    justify-content:center!important
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players .player strong,
   body.chess-console .layout:not(.game-focus)>.boardarea>.players .player small{font-size:10px!important}
@@ -414,7 +431,7 @@ const ownerCompactJs = String.raw`
       const advanced=document.createElement('section');
       advanced.className='chess-owner-advanced';
       advanced.setAttribute('aria-label','Dodatkowe ustawienia treningu');
-      dock.insertBefore(advanced,tools||null);
+      dock.insertBefore(advanced,tools?tools.nextSibling:null);
       const records=dock.querySelector('#training-records');
       if(records)advanced.appendChild(records);
       for(const selector of ['label[for="training-time"]','#training-time','label[for="training-increment"]','#training-increment']){
