@@ -97,6 +97,10 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   await page.locator('#chess-invite-overlay').waitFor({state:'visible'});
   await page.locator('#chess-invite-close').click();
   await page.locator('#online-mode').click();await inspectPieces(page);
+  // On mobile the mode switch is moved above the board; all three Online actions must stay visible.
+  await page.waitForFunction(()=>document.querySelector('.chess-owner-online-new')?.hidden===false);
+  assert.equal(await page.locator('.chess-owner-online-new').isVisible(),true,'Online New game should work on desktop and mobile');
+  assert.equal(await page.locator('.chess-reference-actions button:visible').count(),3,'Online keeps three owner-approved actions');
   assert.equal(await page.locator('.chess-square:enabled').count(),0);
   assert.deepEqual(await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece)),initial);
   await page.locator('#training-mode').click();
