@@ -50,6 +50,23 @@ const referenceLayoutCss = String.raw`
     width:100%;height:calc(100% - 58px);min-height:0;max-height:none!important;
     overflow-y:auto;overflow-x:hidden;align-self:stretch
   }
+  /* Keep live clock DOM visible in the right column; only the original top VS strip disappears. */
+  body.chess-console .layout:not(.game-focus) .side-dock>.players{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;
+    width:100%;min-width:0;min-height:44px;flex:0 0 auto;align-items:stretch
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock>.players>.versus{display:none!important}
+  body.chess-console .layout:not(.game-focus) .side-dock>.players>.player{
+    box-sizing:border-box;display:flex!important;min-width:0;width:100%;max-width:100%;
+    padding:5px 7px!important;gap:5px!important;font-size:12px!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock>.players>.player strong{
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock>.players .player-clock{
+    display:inline-flex!important;align-items:center;justify-content:center;min-width:51px;
+    font-size:12px!important
+  }
   body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{
     display:flex!important;flex-direction:column;flex:0 0 auto;box-sizing:border-box;
     position:static!important;width:100%!important;height:auto!important;max-height:none!important;
@@ -121,6 +138,8 @@ const referenceLayoutJs = String.raw`
     }
     boardarea.appendChild(dock);
     dock.insertBefore(sidebar,dock.firstChild);
+    const players=boardarea.querySelector(':scope > .players');
+    if(players)dock.insertBefore(players,sidebar.nextSibling);
     const restart=sidebar.querySelector('#restart');
     const invite=dock.querySelector('#invite-friend');
     if(restart&&invite){
