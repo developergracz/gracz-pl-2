@@ -1307,9 +1307,7 @@ body.chess-console .layout:not(.game-focus) .side-dock>.chess-owner-claim-draw:n
   font:700 13px system-ui,sans-serif!important;cursor:pointer
 }
 body.chess-console .layout:not(.game-focus) .side-dock>#game-state:not(:has(.chess-promote)){
-  position:absolute!important;width:1px!important;height:1px!important;
-  min-height:0!important;margin:0!important;padding:0!important;
-  clip-path:inset(50%)!important;overflow:hidden!important
+  display:none!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock>#game-state:has(.chess-promote){
   position:static!important;order:2!important;display:flex!important;
