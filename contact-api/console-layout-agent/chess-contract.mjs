@@ -122,10 +122,12 @@ const deltas=(from,to,names,props)=>names.filter(name=>{
 export function analyseChessStep({step,viewport,records,initial,reference}){
   const issues=[...(records.settled.chess?.issues||['brak pomiaru układu Szachów'])];
   const mobile=Number(viewport.split('x')[0])<=800;
-  // Switching settings on a scrolling phone changes downstream y positions.
-  // Ordinary moves, chat/history tabs and chat messages must keep full geometry.
+  // A mode change may reveal/hide Online room controls above clocks and chat,
+  // legitimately moving downstream content on desktop as well as mobile.
+  // Their horizontal position and width must remain stable; all ordinary
+  // interactions still require full x/y/width/height stability.
   const modeChange=['online','online-time','training','invite','invite-close'].includes(step.id);
-  const props=mobile&&modeChange?['x','width']:['x','y','width','height'];
+  const props=modeChange?['x','width']:['x','y','width','height'];
   if(!records.performed)issues.push('akcja niedostępna: '+(records.error||step.id));
   const expandedMinimalSettings=records.settled.chess?.minimal&&['time-bonus','config-open'].includes(step.id);
   if(step.kind==='click'&&!expandedMinimalSettings)for(const phase of ['after','settled']){
